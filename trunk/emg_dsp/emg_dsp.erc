@@ -1,0 +1,53 @@
+ERC control (28/2/2008-22:44:04)
+
+***** Sheet / (Root) 
+ERC: Warning Pin power_in not driven (Net 267) (X= 10.750 inches, Y= 3.450 inches
+ERC: Warning Pin unspc Unconnected (X= 12.200 inches, Y= 12.300 inches
+ERC: Warning Pin power_in not driven (Net 262) (X= 5.700 inches, Y= 5.000 inches
+ERC: Warning Pin input Unconnected (X= 7.400 inches, Y= 6.100 inches
+ERC: Warning Pin power_in not driven (Net 236) (X= 7.100 inches, Y= 13.700 inches
+ERC: Warning Pin power_in not driven (Net 169) (X= 17.550 inches, Y= 7.750 inches
+ERC: Warning Pin power_in not driven (Net 153) (X= 17.550 inches, Y= 7.850 inches
+ERC: Warning Pin input not driven (Net 123) (X= 7.400 inches, Y= 5.600 inches
+ERC: Warning Pin power_in not driven (Net 76) (X= 10.750 inches, Y= 4.200 inches
+ERC: Warning Pin input not driven (Net 49) (X= 7.400 inches, Y= 6.000 inches
+ERC: Warning Pin input not driven (Net 48) (X= 7.400 inches, Y= 5.900 inches
+ERC: Warning Pin power_in not driven (Net 28) (X= 16.000 inches, Y= 8.700 inches
+ERC: Warning Pin power_in not driven (Net 25) (X= 5.150 inches, Y= 13.750 inches
+ERC: Warning Pin power_in not driven (Net 6) (X= 13.750 inches, Y= 14.400 inches
+ERC: Warning Pin power_in not driven (Net 1) (X= 17.100 inches, Y= 9.400 inches
+
+***** Sheet /emg_16ch.sch/
+ERC: Warning Pin power_in not driven (Net 323) (X= 4.800 inches, Y= 4.250 inches
+ERC: Warning: Pin unspc connected to Pin input (net 322) (X= 6.350 inches, Y= 3.500 inches
+ERC: Warning Pin power_in not driven (Net 322) (X= 6.350 inches, Y= 4.950 inches
+ERC: Warning: Pin power_in connected to Pin unspc (net 322) (X= 6.350 inches, Y= 4.950 inches
+ERC: Warning Pin input not driven (Net 284) (X= 8.150 inches, Y= 1.450 inches
+ERC: Warning Pin input not driven (Net 283) (X= 9.000 inches, Y= 1.450 inches
+ERC: Error: Pin output connected to Pin output (net 176) (X= 6.350 inches, Y= 4.650 inches
+
+***** Sheet /emg_16ch.sch/emg_4adc_4/
+
+***** Sheet /emg_16ch.sch/emg_4adc_4/emg_4ch_2/
+
+***** Sheet /emg_16ch.sch/emg_4adc_4/emg_4ch_1/
+
+***** Sheet /emg_16ch.sch/emg_4adc_3/
+
+***** Sheet /emg_16ch.sch/emg_4adc_3/emg_4ch_2/
+
+***** Sheet /emg_16ch.sch/emg_4adc_3/emg_4ch_1/
+
+***** Sheet /emg_16ch.sch/emg_4adc_2/
+
+***** Sheet /emg_16ch.sch/emg_4adc_2/emg_4ch_2/
+
+***** Sheet /emg_16ch.sch/emg_4adc_2/emg_4ch_1/
+
+***** Sheet /emg_16ch.sch/emg_4adc_1/
+
+***** Sheet /emg_16ch.sch/emg_4adc_1/emg_4ch_2/
+
+***** Sheet /emg_16ch.sch/emg_4adc_1/emg_4ch_1/
+
+ >> Errors ERC: 22
