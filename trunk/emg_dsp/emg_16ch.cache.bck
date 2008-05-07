@@ -1,26 +1,3 @@
-EESchema-DOCLIB  Version 2.0  26/3/2008-04:04:57
-#
-$CMP C
-D Condensateur non polarise
-$ENDCMP
-#
-$CMP DIODE
-D Diode simple
-K DEV DIODE
-$ENDCMP
-#
-$CMP MOS_P
-F transistors/mos/*.*
-$ENDCMP
-#
-$CMP R
-D Resistance
-K R DEV
-$ENDCMP
-#
-$CMP ZENER
-D Diode zener
-K DEV DIODE
-$ENDCMP
+EESchema-DOCLIB  Version 2.0  7/5/2008-22:05:34
 #
 #End Doc Library
