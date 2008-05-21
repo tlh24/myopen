@@ -1,4 +1,4 @@
-update=1/5/2008-06:28:46
+update=7/5/2008-15:25:10
 last_client=pcbnew
 [general]
 version=1
@@ -108,9 +108,9 @@ MaxLnkS=3
 ShowRat=1
 ShowMRa=1
 [pcbnew/libraries]
-LibDir=
-LibName1=./emg_foot
-LibName2=supports
+LibDir=./lib/
+LibName1=supports
+LibName2=emg_foot
 LibName3=connect
 LibName4=discret
 LibName5=pin_array
