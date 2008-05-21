@@ -13,8 +13,12 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
-Text Notes 550  3200 1    60   ~
-todo: change this to 2x9 pin (for Vcc/2)
+Wire Wire Line
+	4100 5800 4100 5650
+Wire Wire Line
+	4100 5650 3700 5650
+Wire Wire Line
+	3700 5650 3700 5800
 Connection ~ 3600 6900
 Connection ~ 2700 6900
 Connection ~ 3850 4250
@@ -648,6 +652,22 @@ Wire Wire Line
 Wire Wire Line
 	3150 7350 3150 7400
 Connection ~ 3150 7400
+Wire Wire Line
+	3450 6150 3450 5800
+Wire Wire Line
+	3450 5800 3700 5800
+Connection ~ 3450 6150
+$Comp
+L JUMP U?
+U 1 1 48348138
+P 3900 5800
+F 0 "U?" H 3900 5700 60  0000 C C
+F 1 "JUMP" H 3900 5900 60  0000 C C
+	1    3900 5800
+	1    0    0    -1  
+$EndComp
+Text Notes 550  3200 1    60   ~
+todo: change this to 2x9 pin (for Vcc/2)
 $Comp
 L C C215
 U 1 1 47DD8AA0

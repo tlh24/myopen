@@ -1,4 +1,4 @@
-# EESchema Netlist Version 1.1 created  26/3/2008-04:13:43
+# EESchema Netlist Version 1.1 created  21/5/2008-20:10:19
 (
  ( /47DDF82C 2x100mil  U111 JUMP {Lib=JUMP}
   (    1 VCC )
@@ -1325,6 +1325,10 @@
   (    1 /Vbat )
   (    2 GND )
  )
+ ( /47A131D8/48348138 $noname  U112 JUMP {Lib=JUMP}
+  (    1 /emg_16ch.sch/emg_4adc_4/Vdd/2 )
+  (    2 /emg_16ch.sch/emg_4adc_4/Vdd/2 )
+ )
  ( /47A131D8/47DD8AA0 0402  C215 0.1uf {Lib=C}
   (    1 /emg_16ch.sch/emg_4adc_4/GND )
   (    2 /emg_16ch.sch/emg_4adc_4/Vdd )
@@ -1345,11 +1349,11 @@
   (    5  ? )
   (    6  ? )
   (    7  ? )
-  (    8 N-000320 )
+  (    8 N-000319 )
  )
  ( /47A131D8/47D6EDD6 0402  C212 1uf {Lib=C}
   (    1 /emg_16ch.sch/emg_4adc_4/GND )
-  (    2 N-000320 )
+  (    2 N-000319 )
  )
  ( /47A131D8/47D6ECB9 0402  C209 0.1uf {Lib=C}
   (    1 /emg_16ch.sch/emg_4adc_4/GND )
@@ -1488,7 +1492,7 @@
   (    3 N-000302 )
  )
  ( /47A131D8/47576E8C 78250  U46 78250M {Lib=78250M}
-  (    1 N-000319 )
+  (    1 N-000318 )
   (    2 VDD )
   (    3 N-000275 )
   (    4 N-000302 )
@@ -1496,7 +1500,7 @@
   (    6 N-000303 )
  )
  ( /47A131D8/47576E53 SOIC-8  U47 MAX253 {Lib=MAX253}
-  (    1 N-000319 )
+  (    1 N-000318 )
   (    2 GND )
   (    3 VDD )
   (    4 /afe_en )
@@ -4438,7 +4442,21 @@ Net 303 ""
 Net 315 ""
  U107 3
  C85 1
-/emg_16ch.sch/emg_4adc_4/Net 316 "Vdd/2"
+/emg_16ch.sch/emg_4adc_3/Net 316 "Dout"
+ U40 4
+ U53 12
+/emg_16ch.sch/emg_4adc_1/Net 317 "Dout"
+ U40 6
+ U57 12
+Net 318 ""
+ U46 1
+ U47 1
+Net 319 ""
+ U109 8
+ C212 2
+/emg_16ch.sch/emg_4adc_4/Net 320 "Vdd/2"
+ U112 2
+ U112 1
  C210 2
  U109 1
  D11 1
@@ -4599,18 +4617,6 @@ Net 315 ""
  U100 4
  C202 1
  R176 1
-/emg_16ch.sch/emg_4adc_3/Net 317 "Dout"
- U40 4
- U53 12
-/emg_16ch.sch/emg_4adc_1/Net 318 "Dout"
- U40 6
- U57 12
-Net 319 ""
- U46 1
- U47 1
-Net 320 ""
- U109 8
- C212 2
 /emg_16ch.sch/emg_4adc_4/Net 331 "Vref"
  C86 1
  R57 1
