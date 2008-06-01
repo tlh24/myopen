@@ -5,7 +5,7 @@ EELAYER END
 $Descr A4 11700 8267
 Sheet 2 4
 Title ""
-Date "17 mar 2008"
+Date "21 may 2008"
 Rev ""
 Comp ""
 Comment1 ""
@@ -658,11 +658,12 @@ Wire Wire Line
 	3450 5800 3700 5800
 Connection ~ 3450 6150
 $Comp
-L JUMP U?
+L JUMP U112
 U 1 1 48348138
 P 3900 5800
-F 0 "U?" H 3900 5700 60  0000 C C
+F 0 "U112" H 3900 5700 60  0000 C C
 F 1 "JUMP" H 3900 5900 60  0000 C C
+F 2 "2x100mil" H 3840 5640 60  0000 C C
 	1    3900 5800
 	1    0    0    -1  
 $EndComp

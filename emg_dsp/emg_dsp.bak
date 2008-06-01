@@ -5,7 +5,7 @@ EELAYER END
 $Descr User 21000 16000
 Sheet 1 4
 Title ""
-Date "17 mar 2008"
+Date "21 may 2008"
 Rev ""
 Comp ""
 Comment1 ""
@@ -13,6 +13,7 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
+NoConn ~ 12200 12300
 Connection ~ 11750 3050
 $Comp
 L JUMP U111
