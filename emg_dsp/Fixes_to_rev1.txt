@@ -1,0 +1,7 @@
+Things that we want to fix for next time: 
+* put a little dot on the silkscreen to incicate component orientation. 
+* FCI USB-B connector has the wrong PCB footprint (digikey 609-1039-ND)
+** need: 609-1045-ND !!! (that is, a type-A connector)
+* Get correct size for 33uh inductor.  (L5)
+* dot between pads of 0402s (or box around them)
+* dot by diode (or line!)
