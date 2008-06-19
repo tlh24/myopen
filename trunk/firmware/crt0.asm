@@ -74,6 +74,13 @@ start:
 no_soft_reset:
 	nop;
 	
+	/* turn off the onboard switching regulator */
+	r0 = 0x40d8 ; 
+	p0.l = LO(VR_CTL); 
+	p0.h = HI(VR_CTL); 
+	w[p0] = r0 ; 
+	SSYNC; 
+	
 	/* Clear EVT registers */
 	p0.h = (EVT_EMULATION_ADDR >> 16);
 	p0.l = (EVT_EMULATION_ADDR & 0xFFFF);
@@ -93,7 +100,7 @@ no_soft_reset:
 	/* PLL_LOCKCNT - how many SCLK Cycles to delay while PLL becomes stable */
 	p0.h = HI(PLL_LOCKCNT);
 	p0.l = LO(PLL_LOCKCNT);
-	r0 = 0x300(Z); /* 768*/
+	r0 = 0x300(Z); /* 768, default is 512*/
 	w[p0] = r0.l;
 	ssync;
 	

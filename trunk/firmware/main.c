@@ -86,7 +86,7 @@ int main() {
 	*/
 	
 	while(1) {
-		*pPORTFIO_TOGGLE = 0x40 ; //toggle the nordic CS pin.
+		*pPORTFIO_TOGGLE = 0x40 ; //toggle the nordic CSN pin.
 	}
 	return 0; 
 }
