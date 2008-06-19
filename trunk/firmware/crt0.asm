@@ -245,7 +245,6 @@ check_again:
 	r0.h = 0xffff; 
 	[p0] = r0;
 
-	
 	p0.l = LO(SIC_IAR2); 
 	p0.h = HI(SIC_IAR2);
 	r0.l = 0xffff; 
@@ -271,37 +270,6 @@ wait:
 call_main:
 	[--sp] = reti;  // pushing RETI allows interrupts to occur inside all main routines
 	
-	//probably we can move the index register assignment elsewhere. 
-	i0.l = LO(A1); 
-	i0.h = HI(A1); 
-	l0.l = 32; //enable circular buffering on the coeficients so it auto-magically loops back to the beginning.
-	l0.h = 0; 
-	m0.l = 2; 
-	m0.h = 0; 
-	b0 = i0; 
-	
-	//this is for reading delays.
-	i1.l = LO(W1); 
-	i1.h = HI(W1);
-	l1 = 640; //bytes: 10 32 bit words / channel by 16 channels --> 40 * 16
-	m1 = -28; //not used anymore
-	b1 = i1;  //base address of the delay taps. 
-	
-	//this is for writing delays. 
-	i2 = i1; 
-	l2 = l1; 
-	m2 = 28; // not used anymore.
-	b2 = b1; 
-	
-	//this is for writing circular buffered data. 
-	//i3.l = LO(WFBUF); 
-	//i3.h = HI(WFBUF); 
-	//l3 = WFBUF_LEN; 
-	//if we did a bit-clear, then we'd still have to write 0 to this register
-	//to turn o looping behavior.. which would save no time.
-	//m3 = 512;  //spacing, in bytes, between channels. 
-	//b3 = i3;
-	
 	p0.l = _main;
 	p0.h = _main;
 
@@ -315,15 +283,15 @@ end:
 	idle;
 	jump end;
 
+_I10HANDLER:          // IVG 10 Handler
+	rti; 
+
 _I11HANDLER:          // IVG 11 Handler
-	
 	rti; 
 
 _I12HANDLER:          // IVG 12 Handler
-	
 	rti; 
 	
-
 _I13HANDLER:		  // IVG 13 Handler
 	r0.l = 13;
 	jump display_fail;
@@ -335,7 +303,6 @@ _I14HANDLER:		  // IVG 14 Handler
 _I15HANDLER:		  // IVG 15 Handler
 	r0.l = 15;
 	jump display_fail;
-	
 
 
 .global idle_loop
@@ -354,7 +321,7 @@ start.end:
 display_fail:
 	r0 = seqstat;
 	r1 = retx;
-	call _exception_report; //this should not return.
+//	call _exception_report; //this should not return.
 	rtx;
 
 _HWHANDLER:           // HW Error Handler 5
@@ -367,7 +334,7 @@ stall:
 EXC_HANDLER:          // exception handler
 	r0 = seqstat;
 	r1 = retx;
-	call _exception_report; //this should not return.
+//	call _exception_report; //this should not return.
 	rtx;
 
 _THANDLER:            // Timer Handler 6 (core timer)
