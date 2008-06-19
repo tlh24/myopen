@@ -21,11 +21,11 @@ memory map:
 #define A1 			0xFF904000 //this is actually B's initially in the present direct form 1 scheme
 #define W1 			0xFF904020
 #define FP_BASE			0xFF904300 
-#define P5_BASE			FIO_FLAG_D
+#define P5_BASE			PORTFIO
 #define P5_FIO_DATA		0
-#define P5_FIO_CLEAR		FIO_FLAG_C - FIO_FLAG_D
-#define P5_FIO_SET		FIO_FLAG_S - FIO_FLAG_D
-#define P5_FIO_TOGGLE		FIO_FLAG_T - FIO_FLAG_D
+#define P5_FIO_CLEAR		PORTFIO_CLEAR - PORTFIO
+#define P5_FIO_SET			PORTFIO_SET - PORTFIO
+#define P5_FIO_TOGGLE		PORTFIO_TOGGLE - PORTFIO
 	//use the frame pointer to acess all the common variables - as it should be used. 
 	// compile with -fomit-frame-pointer to keep gcc from touching it.
 	// the addresses below are then the offsets from the fp.  
