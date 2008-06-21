@@ -43,13 +43,13 @@ int main() {
 	8	usb_int			(gpio input, usb output)
 	9	nordic CE		(gpio output)
 	10 flash _cs		(peripheral spi output)
-	11 mosi			(peripheral spi output)	0xd 0b1101 ; 0x2 0b0010 ; 0x1 0b0001
+	11 mosi			(peripheral spi output)	0xc 0b1100 ; 0x2 0b0010 ; 0x1 0b0001
 	12 miso			(peripheral spi input)
 	13 sclk				(peripheral spi output)
 	14 usb_ss			(gpio output, usb input)
 	15 sr_load		(gpio output)					0x3 0b0011 ; 0xc 0b1100 ; 0x0 0b0000
 	*/
-	*pPORTF_FER = 0x3d03 ;
+	*pPORTF_FER = 0x3c03 ;
 	*pPORTFIO_DIR = 0xc250 ; 
 	*pPORTFIO_INEN = 0x01a0 ; 
 	/* port g:
@@ -90,4 +90,3 @@ int main() {
 	}
 	return 0; 
 }
-	
