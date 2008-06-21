@@ -6,3 +6,14 @@ Things that we want to fix for next time:
 (1812 case, not great DC resistance but ehwell, it is narrow enough.
 * dot between pads of 0402s (or box around them)
 * dot by diode (or line!)
+
+Fixes to the board:
+* Dout3 should go to DR1SEC not DR0SEC !!! (fixable on the board with a jumper)
+* label "MISO" was deleted from U4 (74LCX541) pin 7 (a6).  should be connected to nordic
+	pin #6 (after the 25 ohm resistor). 
+* pin 6 on the CAT32TDI is not connected to Vbat. 
+	should not be connected to Vdd - too much current (50ma @ 7v )
+	for the switching regulator to start! 
+* use SN74LV595A, not 594A. 
+* SN74LV595A is mislabeled -- OE should be tied to the inverse of reset, so that it 
+	is normally enabled. Or, OE should be tied to ground. 
