@@ -223,7 +223,7 @@ void verify_page(unsigned char *d, int page_size, int page){
 	set_pin(_CS); 
 }
 int main(int argv, char* argc[]){
-	int 		i, j, ps; 
+	int 		i, j, ps, pass; 
 	int 		page_size = 264; 
 	FILE* 	file; 
 	int 		file_size; 
@@ -268,19 +268,23 @@ int main(int argv, char* argc[]){
 	set_pin(_PROG); 
 	clear_pin(SCLK); 
 
-	clear_pin(_CS | SCLK); 
-	write_byte(0x9f); 
-
-	for(j=0; j<4; j++){//see page 44 of the spec sheet.
-		byte = read_byte(); 
-		printf("read: 0x%x \n", byte);
-		if(byte != mfr_code[j]){
-			printf("manufacturer code does not look right, exiting.\n"); 
-			clear_pin(_PROG | _CS | SO | SCLK); //release the device! 
-			exit(0); 
+	for(pass=0; pass < 2; pass++){
+		//if a bad firmware has been written 
+		// (leaving the processor to constantly read the flash)
+		//the flash may need to be queried twice before it is ready. 
+		clear_pin(_CS | SCLK); 
+		write_byte(0x9f); 
+		for(j=0; j<4; j++){//see page 44 of the spec sheet.
+			byte = read_byte(); 
+			printf("read: 0x%x \n", byte);
+			if(byte != mfr_code[j] && pass == 1){
+				printf("manufacturer code does not look right, exiting.\n"); 
+				clear_pin(_PROG | _CS | SO | SCLK); //release the device! 
+				exit(0); 
+			}
 		}
+		set_pin(_CS); 
 	}
-	set_pin(_CS); 
 	//test(264); 
 	
 	for(i=0; i< (file_size / page_size)+1; i++){

@@ -1,5 +1,6 @@
 #include <cdefBF537.h>
 #include "memory.h"
+#include "lcd.h"
 
 int main() {
 	// disable cache. no imem_control on this proc? 
@@ -84,7 +85,7 @@ int main() {
 	10 nc				()
 	11 dt0pri			lcd_data, peripheral	
 	*/
-	
+	LCD_init() ; 
 	while(1) {
 		*pPORTFIO_TOGGLE = 0x40 ; //toggle the nordic CSN pin.
 	}
