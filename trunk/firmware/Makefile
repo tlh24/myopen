@@ -1,5 +1,5 @@
 ASMSRCS = crt0.asm
-CSRCS = main.c
+CSRCS = main.c lcd.c
 # note: the order of objects in the .ldr mirrors the order in this list!
 
 CPUDEFINES = -D__ADSPBF537__  -D__BLACKFIN__

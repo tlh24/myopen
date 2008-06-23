@@ -296,24 +296,24 @@ check_again:
 	
 	//don't need to setup the interrupt vector 10  & 11- setup above. 
 	
-	//SIC_IMASK: page 190.
+	//SIC_IMASK: page 132.
 	p0.l = LO(SIC_IMASK); 
 	p0.h = HI(SIC_IMASK); 
-	r0.l = 0x2c00; //port1 RX & port0 TX & SPI
+	r0.l = 0x1940; // uart0 tx, uart0 rx, sport0 tx, sport1 tx
 	r0.h = 0x0000; 
 	[p0] = r0; 
 	
-	//IAR - page 192. 
+	//IAR - page 130. 
 	p0.l = LO(SIC_IAR0); 
 	p0.h = HI(SIC_IAR0);
-	r0.l = 0xff5f; //SPI DMA -> IVG12
-	r0.h = 0xffff; 
+	r0.l = 0xffff;
+	r0.h = 0xf6ff; //	 sport0 TX -> IVG13
 	[p0] = r0;
 	
 	p0.l = LO(SIC_IAR1); 
 	p0.h = HI(SIC_IAR1);
-	r0.l = 0x34ff; //remember to +7, hence sport1 rx -> IVG10 & sport0 tx -> IVG11 
-	r0.h = 0xffff; 
+	r0.l = 0x7fff; //remember to +7, hence uart0 rx -> IVG14 
+	r0.h = 0xfff6; //sport1 tx -> IVG13
 	[p0] = r0;
 
 	p0.l = LO(SIC_IAR2); 
@@ -321,11 +321,18 @@ check_again:
 	r0.l = 0xffff; 
 	r0.h = 0xffff; 
 	[p0] = r0;
+	
+	p0.l = LO(SIC_IAR3); 
+	p0.h = HI(SIC_IAR3);
+	r0.l = 0xffff; 
+	r0.h = 0xffff; 
+	[p0] = r0;
 	csync; 
 
-	// IMASK : page 195, NOT THE SAME as SIC_IMASK (above) --both need to be set up correctly.
+	// IMASK : page 173 in the programming ref., 
+	//NOT THE SAME as SIC_IMASK (above) --both need to be set up correctly.
 	//r0 = 0x9c40(z);    // enable irq 15, 10 (sport1rx) 11 (sport0tx) 6 (core timer) 12 (SPI) 0x9c40
-	r0 = 0x8000(z); //only enable the lowest-priority interrupt. 
+	r0 = 0xa000(z); // enable 15 & 13. 
 	sti r0;            // set mask
 	raise 15;          // raise sw interrupt
 	
@@ -400,8 +407,35 @@ _I12HANDLER:          // IVG 12 Handler
 	rti; 
 	
 _I13HANDLER:		  // IVG 13 Handler
-	r0.l = 13;
-	jump display_fail;
+	//for SPORT0 -- the LCD!
+	[--sp] = p0; 
+	[--sp] = r0; 
+	[--sp] = r1; 
+	// first, check if something is in the queue -- 
+	// if there is nothing, then disable the serial port.
+	p0.l = LO(LCD_SERIAL_DATA); 
+	p0.h = HI(LCD_SERIAL_DATA); 
+	r0 = w[p0] ; 
+	cc = bittst(r0, 15); 
+	if cc jump i13_write ; 
+	// if not then turn off serial port. 
+	p0.l = LO(SPORT1_TCR1); 
+	p0.h = HI(SPORT1_TCR1); 
+	r1 = 0; 
+	w[p0] = r1;
+	jump i13_end; 
+i13_write: 
+	//clear the written data (hence the flag, bit 15)
+	r1 = 0; 
+	w[p0] = r1; 
+	p0.l = LO(SPORT1_TX); 
+	p0.h = HI(SPORT1_TX); 
+	w[p0] = r0; 
+i13_end: 
+	r1 = [sp++]; 
+	r0 = [sp++]; 
+	p0 = [sp++]; 
+	rti; 
  
 _I14HANDLER:		  // IVG 14 Handler
 	r0.l = 14;
@@ -445,21 +479,6 @@ EXC_HANDLER:          // exception handler
 	rtx;
 
 _THANDLER:            // Timer Handler 6 (core timer)
-	[--sp] = p2; 
-	[--sp] = r0; 
-	[--sp] = r1; 
-	[--sp] = astat; 
-	//don't think we have to clear the IRQ.. ?
-	p2.l = LO(TIMESTAMP); 
-	p2.h = HI(TIMESTAMP); 
-	r0 = [p2]; 
-	r1 = 1(z); 
-	r0 = r0 + r1; 
-	[p2] = r0; 
-	astat = [sp++];
-	r1 = [sp++]; 
-	r0 = [sp++]; 
-	p2 = [sp++]; 
 	rti; 
 
 

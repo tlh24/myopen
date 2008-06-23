@@ -2,58 +2,8 @@
 #define __MEMORY_H__
 
 //memory.h
-/*
-memory map: 
-	0xFF90 4000	filter coeficients, b[0] b[1] a[0] a[1] ordering. 
-			4 pairs of 4, 32 bytes (bote: last biquad in main is not used)
-	0xFF90 4020	x1 n-1
-				x1 n-2
-				y1 n-1	x2 n-1
-				y1 n-2	x2 n-2
-				y2 n-1	x3 n-1
-				y2 n-2	x3 n-2
-				y3 n-1	x4 n-1
-				y3 n-2	x4 n-2
-				y4 n-1
-				y4 n-2		--total: 10 32 bit words. 640 bytes total buffer for 16 chan.
-0	0xFF90 42A0	end of delay buffer.	
-*/
-#define A1 			0xFF904000 //this is actually B's initially in the present direct form 1 scheme
-#define W1 			0xFF904020
-#define FP_BASE			0xFF904300 
-#define P5_BASE			PORTFIO
-#define P5_FIO_DATA		0
-#define P5_FIO_CLEAR		PORTFIO_CLEAR - PORTFIO
-#define P5_FIO_SET			PORTFIO_SET - PORTFIO
-#define P5_FIO_TOGGLE		PORTFIO_TOGGLE - PORTFIO
-	//use the frame pointer to acess all the common variables - as it should be used. 
-	// compile with -fomit-frame-pointer to keep gcc from touching it.
-	// the addresses below are then the offsets from the fp.  
-	// use r1 = [fp - TXWRPTR]; for example.
-#define TXWRPTR				4
-#define TXRDPTR				8
-#define CONTMASK			12
-#define DROPCOUNT			16
-#define MUXCHAN				20
-#define TIMESTAMP			24
-#define TXEDPACKETS			28
-#define RXEDPACKETS			32
-#define TXEDSTATPACKETS 	36
-#define RADIO_STATE			40
-#define RADIO_COUNT			44
-#define RADIO_UNACKED		48
-#define RADIO_PACKETS		52
-#define RADIO_LASTTS		56
-#define RADIO_LASTSTATTS	60
-#define RADIO_WORKINPACKET	64 //pointer.
-#define RADIO_WORKINHDR		68 //actual header.
-#define RADIO_WORKINBASE	72 //base address for loop. 
-#define	WFBUF_BASE_PTR		76
-#define SPORT_BASE			80 //location: 42B0 (not a ton of headroom!)
-//now, we want to access the buffers below as quick as possible - 
-//store the pointers on the heap, and load them when needed. 
-//this requires a 16 bit instruction as opposed to 32 bit load-immediate
-// (don't need 2 load-immediates
+
+#define LCD_SERIAL_DATA 	0xFF900000 //what is to be written. 
 
 #define TXPTRBUF	0xFF904300 
 //circular buffer of 128*4 byte pointers

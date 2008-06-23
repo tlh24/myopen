@@ -17,3 +17,4 @@ Fixes to the board:
 * use SN74LV595A, not 594A. 
 * SN74LV595A is mislabeled -- OE should be tied to the inverse of reset, so that it 
 	is normally enabled. Or, OE should be tied to ground. 
+* bring the LCD signals out for probing... 
