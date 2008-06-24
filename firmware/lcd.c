@@ -2,42 +2,145 @@
 #include "memory.h"
 #include "lcd.h"
 // lcd_cs = portf 4 ; set low when writing 9 bits. 
-// lcd_clk = tsclk0 ; data is clocked in on the rising edge.
-// lcd_data = dt0pri ; data is msb first. 
-#define LCD_CS  0x40 //should be 0x10
+// lcd_clk = portg 5; data is clocked in on the rising edge.
+// lcd_data = portg 4 ; data is msb first. 
+#define LCD_CS  0x10 //should be 0x10
+#define LCD_CLK  0x20 
+#define LCD_DATA 0x10
+#define LCD_RESET 0x08
+#define LCD_DELAY 1
+#define SSYNC asm volatile ("ssync")
+extern void delay(int); 
 
 void LCD_send(char data, unsigned char word){
-	unsigned short r; 
-	*pPORTFIO_CLEAR = LCD_CS ;
-	asm volatile ("ssync"); 
-	r = (unsigned short) word; 
+	unsigned short r = (unsigned short) word; 
 	if(data) r |= 0x100; 
-	r |= 0x8000 ; //flag to indicate the data's presence. 
-	volatile unsigned short* p = (volatile unsigned short*)LCD_SERIAL_DATA ; 
-	*p = r ; 
-	*pSPORT1_TCR1 = 0x4803 ; //enable the serial port. 
-	//this will cause an interrupt to be raised, hence filling the tx buffer. 
-	//need to wait for it to be transmitted. 
-	while( *p & 0x8000) {
-		*pPORTFIO_TOGGLE = LCD_CS; 
-		r++; 
+	*pPORTFIO_CLEAR = LCD_CS ;
+	int i; 
+	for(i=0; i<9 ; i++){
+		*pPORTGIO_CLEAR = LCD_CLK; 
+		if (r & 0x100) *pPORTGIO_SET = LCD_DATA; 
+		else *pPORTGIO_CLEAR = LCD_DATA; 
+		SSYNC ; 
+		r = r << 1; 
+		//delay(LCD_DELAY); 
+		*pPORTGIO_SET = LCD_CLK; 
+		SSYNC ; 
+		//delay(LCD_DELAY); 
 	}
-	*pPORTFIO_SET = LCD_CS; 
-	asm volatile ("ssync"); 
+	*pPORTFIO_SET = LCD_CS ;
+	SSYNC ; 
+	delay(LCD_DELAY); 
 }
+void LCD_command(unsigned char word){
+	LCD_send(0,word); 
+}
+void LCD_data(unsigned char word){
+	LCD_send(1,word); 
+}
+//  sets the starting page(row) and column (x & y) coordinates in ram,
+//  then writes the colour to display memory.  The ending x & y are left
+//  maxed out so one can continue sending colour data bytes to the 'open'
+//  RAMWR command to fill further memory.  issuing any other command
+//  finishes RAMWR.
+void pset(unsigned char color, 
+	unsigned char x, unsigned char y,
+	unsigned char ex, unsigned char ey)
+{
+	LCD_command(PASET);   // page start/end ram
+	LCD_data(x);
+	LCD_data(ex);
 
+	LCD_command(CASET);   // column start/end ram
+	LCD_data(y);
+	LCD_data(ey);
+
+	LCD_command(RAMWR);    // write
+	LCD_data(color);
+}
 void LCD_init() {
-	// clock divider = 2 * (1 + TCLKDIV)
-	*pSPORT1_TCLKDIV = 4 ; //system clock is 100mhz; want 10mhz. 
-	// transmit configuration reg 2
-	// 0b 0000 0000 0000 1000
-	*pSPORT1_TCR2 = 0x0008;  //9-bit word.
-	//transmit configuration reg 1 -- do it last, since it enables the serial port. 
-	//0b 0100 1000 0000 0011
-	//*pSPORT1_TCR1 = 0x4803 ; 
-	//setup interupts so we know when the transmit is done. 
+	//while(1){
+	*pPORTGIO_CLEAR = LCD_RESET; 
+	delay(500); 
+	*pPORTGIO_SET = LCD_RESET; 
+	delay(500); 
+	LCD_command(DISCTL);  	// display control(EPSON)
+	LCD_data(0x0C);   	// 12 = 1100 - CL dividing ratio [don't divide] switching period 8H (default)
+	LCD_data(0x20);
+	LCD_data(0x02);
 	
+	LCD_command(COMSCN);  	// common scanning direction(EPSON)
+	LCD_data(0x01);
+	
+	LCD_command(OSCON);  	// internal oscialltor ON(EPSON)
+	
+	LCD_command(SLPOUT);  	// sleep out(EPSON)
+	LCD_command(SLEEPOUT);	//sleep out(PHILLIPS)
+	
+	LCD_command(VOLCTR);  	// electronic volume, this is the contrast/brightness(EPSON)
+	LCD_data(0x18);   	// volume (contrast) setting - fine tuning, original
+	LCD_data(0x03);   	// internal resistor ratio - coarse adjustment
+	LCD_command(SETCON);	//Set Contrast(PHILLIPS)
+	LCD_data(0x30);	
+	
+	
+	LCD_command(PWRCTR); 	// power ctrl(EPSON)
+	LCD_data(0x0F);    //everything on, no external reference resistors
+	LCD_command(BSTRON);	//Booset On(PHILLIPS)
+	
+	LCD_command(DISINV);  	// invert display mode(EPSON)
+	LCD_command(INVON);	// invert display mode(PHILLIPS)
+	
+	LCD_command(DATCTL);  	// data control(EPSON)
+	LCD_data(0x03);	//correct for normal sin7
+	LCD_data(0x00);   	// normal RGB arrangement
+	LCD_data(0x01);   	// 8-bit grayscale
+	LCD_command(MADCTL);	//Memory Access Control(PHILLIPS)
+	LCD_data(0xC8);
+	
+	LCD_command(COLMOD);	//Set Color Mode(PHILLIPS)
+	LCD_data(0x02);	
+	
+	
+	LCD_command(RGBSET8);   // setup 8-bit color lookup table  [RRRGGGBB](EPSON)
+	//RED
+	LCD_data(0);
+	LCD_data(2);
+	LCD_data(4);
+	LCD_data(6);
+	LCD_data(8);
+	LCD_data(10);
+	LCD_data(12);
+	LCD_data(15);
+	// GREEN
+	LCD_data(0);
+	LCD_data(2);
+	LCD_data(4);
+	LCD_data(6);
+	LCD_data(8);
+	LCD_data(10);
+	LCD_data(12);
+	LCD_data(15);
+	//BLUE
+	LCD_data(0);
+	LCD_data(4);
+	LCD_data(9);
+	LCD_data(15);
+	
+	LCD_command(NOP);  	// nop(EPSON)
+	LCD_command(NOPP);		// nop(PHILLIPS)
+
+	LCD_command(DISON);   	// display on(EPSON)
+	LCD_command(DISPON);	// display on(PHILLIPS)
+	unsigned char c = 0; 
 	while(1) {
-		LCD_send(1,DISCTL); 
+		pset(c, 0, 0, 98, 99);
+		int i; 
+		for (i=1; i< 98*99; i++){
+			c++; 
+			c &= 0xff; 
+			LCD_data(c); 
+		}
+		LCD_command(0); 
 	}
 }
