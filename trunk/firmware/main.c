@@ -25,7 +25,7 @@ int main() {
 	*pSPORT1_TFSDIV = 0; 
 	*pSPORT1_RFSDIV = 0; 
 	
-	/* port mux: 
+	/* port mux: (page 862)
 	0000 - default
 	1110 - tsclk1,tfs1,dt1pri ; rsclk1,rfs1,dr1pri; dr1sec, dt1sec
 	0000 - uart 1 tx/rx (but we don't actually use it)

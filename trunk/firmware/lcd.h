@@ -4,6 +4,9 @@
 // from the spark fun website. 
 void LCD_init() ; 
 void LCD_send(char data, unsigned char word); 
+
+#define ENDPAGE     132
+#define ENDCOL      132
 //******************************************************
 //
 //			EPSON Controller Definitions

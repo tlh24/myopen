@@ -12,6 +12,7 @@
 
 .global start
 .global _spi_delay
+.global _delay
 
 start:
 	// Avoid BF532 Anomaly #42
@@ -312,8 +313,8 @@ check_again:
 	
 	p0.l = LO(SIC_IAR1); 
 	p0.h = HI(SIC_IAR1);
-	r0.l = 0x7fff; //remember to +7, hence uart0 rx -> IVG14 
-	r0.h = 0xfff6; //sport1 tx -> IVG13
+	r0.l = 0x7ff6; //remember to +7, hence uart0 rx -> IVG14 
+	r0.h = 0xffff; //sport1 tx -> IVG13
 	[p0] = r0;
 
 	p0.l = LO(SIC_IAR2); 
@@ -332,7 +333,7 @@ check_again:
 	// IMASK : page 173 in the programming ref., 
 	//NOT THE SAME as SIC_IMASK (above) --both need to be set up correctly.
 	//r0 = 0x9c40(z);    // enable irq 15, 10 (sport1rx) 11 (sport0tx) 6 (core timer) 12 (SPI) 0x9c40
-	r0 = 0xa000(z); // enable 15 & 13. 
+	r0 = 0x8000(z); // enable 15 . 
 	sti r0;            // set mask
 	raise 15;          // raise sw interrupt
 	
@@ -384,6 +385,21 @@ spi_delay_check2:
 	if cc jump spi_delay_check2 ; 
 	rts ; //don't forget to set the 
 	
+_delay: 
+	//[--sp] = r1; 
+_delay_outer_start: 
+	cc = r0 == 0 ; 
+	if cc jump _delay_end ; 
+	r0 += -1 ; 
+	r1 = 10;
+_delay_inner_start: 
+	cc = r1 == 0; 
+	if cc jump _delay_outer_start; 
+	r1 += -1; 
+	jump _delay_inner_start ;
+_delay_end:
+	//r1 = [sp++]; 
+	rts; 
 	
 _RTCHANDLER:          // IVG 7 Handler  
 	r0.l = 7;
