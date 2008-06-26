@@ -7,7 +7,7 @@ INCLUDES = -I/opt/uClinux/bfin-elf/bfin-elf/include/
 ASMFLAGS = -x assembler-with-cpp $(INCLUDES) $(CPUDEFINES) -Wall
 ASMFLAGS += -mcpu=bf537 -include memory.h -include defBF537.h
 CFLAGS = $(INCLUDES) $(CPUDEFINES) -mcpu=bf537 -O -Wall -fomit-frame-pointer -ffixed-P5 -ffixed-P4 -ffixed-P0
-LDR = /home/tlh24/svn/bfin/ldr-utils/ldr
+LDR = /opt/uClinux/bfin-uclinux/bin/bfin-uclinux-ldr
 
 LDFLAGS = -T bftiny.x
 
@@ -34,7 +34,7 @@ emg_dsp.dxe: $(OBJS)
 	
 emg_dsp.ldr:emg_dsp.dxe
 	rm -f *.ldr
-	$(LDR) -T BF537 -c emg_dsp.ldr $<
+	$(LDR) -v -T BF537 -c emg_dsp.ldr $<
 	$(OBDMP) -d emg_dsp.dxe > decompile.asm
 #	perl register_check.pl
 

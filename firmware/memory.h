@@ -2,7 +2,7 @@
 #define __MEMORY_H__
 
 //memory.h
-
+//check bftiny.h, too.
 #define LCD_SERIAL_DATA 	0xFF900000 //what is to be written. 
 
 #define TXPTRBUF	0xFF904300 
