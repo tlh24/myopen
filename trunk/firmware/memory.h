@@ -52,7 +52,7 @@
 #define CONFIG_PLL_BYPASS               0
 /* CONFIG_VCO_MULT controls what the multiplier of the PLL is.   */
 /* Values can range from 1-64                                    */
-#define CONFIG_VCO_MULT			16
+#define CONFIG_VCO_MULT			20
 /* CONFIG_SCLK_DIV controls what the peripheral clock divider is */
 /* Values can range from 1-15                                    */
 #define CONFIG_SCLK_DIV			5
