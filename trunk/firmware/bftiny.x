@@ -17,8 +17,8 @@ SEARCH_DIR("/usr/local/bfin-elf/lib");
 
 MEMORY
 {
-	l1code(x)     : ORIGIN = 0xffa00000, LENGTH = 0x0000C000
-	l1data(rw)    : ORIGIN = 0xff800000, LENGTH = 0x8000
+	l1code(x)     : ORIGIN = 0xffa00000, LENGTH = 0xC000
+	l1data(rw)    : ORIGIN = 0xff900000, LENGTH = 0x4000
 }
 
 

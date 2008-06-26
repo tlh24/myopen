@@ -63,13 +63,13 @@ int main(int argv, char* argc[]){
 		else  printf("non-init block.\n"); 
 		if(buffer[ptr] & 0x10) printf("ignore block.\n"); 
 		else  printf("don't ingore block.\n"); 
-		printf("pflag 2:0 = %x \n", buffer[ptr] >>5); 
+		printf("pflag 2:0 = %x ", buffer[ptr] >>5); 
 		ptr ++; 
 		printf("pflag 3 = %x \n", buffer[ptr] & 1); 
 		if(buffer[ptr] & 0x80) printf("last block.\n"); 
 		else  printf("not last block.\n"); 
 		ptr++; 
-		printf("block contents (compare to objdump dissasembly):\n"); 
+		printf("block contents (compare to objdump dissasembly, 16 bytes/line):\n"); 
 		for(u=0; u<block_length && ptr < file_size; u++){
 			printf("%02x ", buffer[ptr++]); 
 			if(u % 16 == 15)

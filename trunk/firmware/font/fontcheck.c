@@ -4,6 +4,7 @@
   
 #include <stdio.h>
 #include <stdlib.h>
+#include "fontstruct.h"
 
 #define BITMAPDEPTH 1
   
@@ -12,17 +13,6 @@ int screen;
 #include "8x13.c"
 #include "6x12.c"
 
-typedef struct {
-    unsigned char phony_name[16];
-    unsigned char height;
-    unsigned char base_line;
-    struct {
-       unsigned char width;
-       unsigned char offset_msb;
-       unsigned char offset_lsb;
-    } per_char[256];   
-    unsigned char data[1];
-} picoFont;
 
 /* values for window_size in main */
 #define SMALL 1
@@ -107,7 +97,7 @@ void draw_graphics(
 			for(xx=0; xx < wincr; xx++){
 				unsigned char c = font->data[offset + xx + y*wincr]; 
 				int b; 
-				for(b=0; b<8; b++){
+				for(b=0; b<8 && b+xx*8 < w; b++){
 					if( c & (0x80 >> b) ){
 						XDrawPoint(display, win, gc, x+xx*8+b, y); 
 					}
