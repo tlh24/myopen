@@ -12,10 +12,11 @@
 #define SSYNC asm volatile ("ssync")
 extern void delay(int); 
 #define uchar unsigned char
-
+/*
 #include "font/fontstruct.h"
 #include "font/6x12.c"
 int LCD_draw_char(uchar ch, uchar xi, uchar yi); 
+*/
 
 void LCD_send(char data, unsigned char word){
 	unsigned short r = (unsigned short) word; 
@@ -132,6 +133,7 @@ void LCD_init() {
 
 	LCD_command(DISON);   	// display on(EPSON)
 	LCD_command(DISPON);	// display on(PHILLIPS)
+
 	unsigned char c = 0; 
 	unsigned char x = 0; 
 	unsigned char y = 0; 
@@ -161,7 +163,7 @@ void LCD_init() {
 		*/
 	}
 }
-
+/*
 int LCD_draw_char(uchar ch, uchar xi, uchar yi)
 {
 	picoFont* font = (picoFont*)font_6x12; 
@@ -188,3 +190,4 @@ int LCD_draw_char(uchar ch, uchar xi, uchar yi)
 	LCD_command(0x00); //nop
 	return (int)w; 
 }
+*/
