@@ -43,15 +43,15 @@ int main() {
 	7	usb_gpx		(gpio input, usb output) 	0x0 0b0000 ; 0x5 0b0101 ; 0xa 0b1010
 	8	usb_int			(gpio input, usb output)
 	9	nordic CE		(gpio output)
-	10 flash _cs		(peripheral spi output)
+	10 flash _cs		(peripheral spi output) (gpio output in bootloader?)
 	11 mosi			(peripheral spi output)	0xc 0b1100 ; 0x2 0b0010 ; 0x1 0b0001
 	12 miso			(peripheral spi input)
 	13 sclk				(peripheral spi output)
 	14 usb_ss			(gpio output, usb input)
 	15 sr_load		(gpio output)					0x3 0b0011 ; 0xc 0b1100 ; 0x0 0b0000
 	*/
-	*pPORTF_FER = 0x3c03 ;
-	*pPORTFIO_DIR = 0xc250 ; 
+	*pPORTF_FER = 0x3803 ;
+	*pPORTFIO_DIR = 0xc650 ; 
 	*pPORTFIO_INEN = 0x01a0 ; 
 	/* port g:
 	0-7	header		(gpio output)					0x00 ; 0xff ; 0x00

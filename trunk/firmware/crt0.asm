@@ -184,6 +184,7 @@ no_soft_reset:
 	[p0] = r0;
 	csync; 
 
+/*
 _test: 
 	p0.h = HI(PORTFIO_TOGGLE); 
 	p0.l = LO(PORTFIO_TOGGLE); 
@@ -191,7 +192,7 @@ _test:
 	bitset(r0, 6); 
 	w[p0] = r0.l; 
 	ssync; 
-	jump _test;
+	jump _test; */
 
 	// IMASK : page 173 in the programming ref., 
 	//NOT THE SAME as SIC_IMASK (above) --both need to be set up correctly.
@@ -227,19 +228,19 @@ end:
 	
 	
 _delay: 
-	//[--sp] = r1; 
+	[--sp] = r1; 
 _delay_outer_start: 
 	cc = r0 == 0 ; 
 	if cc jump _delay_end ; 
 	r0 += -1 ; 
-	r1 = 10;
+	r1 = 100;
 _delay_inner_start: 
 	cc = r1 == 0; 
 	if cc jump _delay_outer_start; 
 	r1 += -1; 
 	jump _delay_inner_start ;
 _delay_end:
-	//r1 = [sp++]; 
+	r1 = [sp++]; 
 	rts; 
 	
 _RTCHANDLER:          // IVG 7 Handler  
