@@ -8,22 +8,23 @@ _start_peripherals:
 	//set portf_fer : 
 	p0.l = LO(PORTF_FER); 
 	p0.h = HI(PORTF_FER); 
-	r0 = 0x3c03 (z); //see main.c
+	r0 = 0x3803 (z); //see main.c
 	w[p0] = r0 ; 
 	
 	p0.l = LO(PORTFIO_DIR); 
 	p0.h = HI(PORTFIO_DIR); 
-	r0 = 0xc250 (z) ; //see main.c
+	r0 = 0xc650 (z) ; //see main.c
 	w[p0] = r0 ; 
 	
 	p0.l = LO(SPI_BAUD) ; 
 	p0.h = HI(SPI_BAUD) ; 
-	r0 = 6 ; //baud rate = SCLK / (2* SPI_BAUD) -> 8.33Mhz. 
+	//r0 = 6 ; //baud rate = SCLK / (2* SPI_BAUD) -> 8.33Mhz. 
+	r0 = 140 ; 
 	w[p0] = r0; 
 	p0.l = LO(SPI_FLG) ; 
 	p0.h = HI(SPI_FLG) ; 
-	r0 = 0; //we don't use SPI_FLAG -- we use portF. 
-	w[p0] = r0; 
+	r0 = 0; //dont' forget that the flash _cs is on PF10.
+	w[p0] = r0; //the bootloader needs this value ??
 	p0.l = LO(SPI_STAT) ; 
 	p0.h = HI(SPI_STAT) ; 
 	r0 = 0x56 (z); //clear status flags. 

@@ -63,20 +63,20 @@ unsigned char read_status_register(){
 	stat= read_byte(); 
 	printf("status register= %x \n", stat); 
 	if(stat & 0x80)
-		printf("device is ready\n"); 
+		printf("flash ready; "); 
 	else
-		printf("device is busy.\n"); 
-	printf("comp bit = %d\n", (stat>>6)&1); 
+		printf("flash busy; "); 
+	printf("comp bit = %d; ", (stat>>6)&1); 
 	if( (stat & 0x3c) == 0x24)
-		printf("density OK for AT45DB081\n"); 
+		printf("density OK; "); 
 	else
-		printf("density mangled/different\n"); 
+		printf("density BAD; "); 
 	if(stat & 0x02)
-		printf("device is protected.\n"); 
+		printf("flash protected; "); 
 	else
-		printf("device is unprotected.\n"); 
+		printf("flash unprotected; "); 
 	if(stat & 0x01)
-		printf("page size 256 bytes\n"); 
+		printf("page size 256 bytes.\n"); 
 	else
 		printf("page size 264 bytes.\n"); 
 	set_pin(_CS); 
@@ -183,8 +183,8 @@ void write_page(unsigned char *d, int page_size, int page){
 	write_byte(0x83); 
 	//next, 3 bytes of page address. (page size = 256 bytes, 2^12 pages,
 	// hence first 4 bits don't matter. 
-	write_byte( (page & 0xfff) >>7); 			//0b000DDDDD
-	write_byte( ( (page & 0xfff) << 1 ) & 0xff); 	//0bDDDDDDD0
+	write_byte( (page & 0xfff) >>8); 		
+	write_byte( ( (page & 0xfff) << 0 ) & 0xff); 
 	write_byte(0x00); 
 	set_pin(_CS); 
 	
@@ -198,13 +198,13 @@ void verify_page(unsigned char *d, int page_size, int page){
 	int i, ok=1; 
 	unsigned char read; 
 	
-	//read back the flash & verify.
+	//read back the flash & verify.  page 7 of the datasheet.
 	clear_pin(_CS); 
 	write_byte(0xd2); 
 	//24 address bits - again, first 4 bits don't matter. 
-	write_byte( (page & 0xfff) >>7); 			//0b000DDDDD
-	write_byte( ( (page & 0xfff) << 1 ) & 0xff); 	//0bDDDDDDD0
-	write_byte(0x00); 
+	write_byte( (page & 0xfff) >>8); 		
+	write_byte( ( (page & 0xfff) << 0 ) & 0xff); 	
+	write_byte(0x00); //read out from the start of a page.
 	//32 don't care bits. 
 	write_byte(0x00); 
 	write_byte(0x00); 
@@ -224,7 +224,7 @@ void verify_page(unsigned char *d, int page_size, int page){
 }
 int main(int argv, char* argc[]){
 	int 		i, j, ps, pass; 
-	int 		page_size = 264; 
+	int 		page_size = 256; 
 	FILE* 	file; 
 	int 		file_size; 
 	unsigned char*	buffer;
@@ -270,8 +270,8 @@ int main(int argv, char* argc[]){
 
 	for(pass=0; pass < 2; pass++){
 		//if a bad firmware has been written 
-		// (leaving the processor to constantly read the flash)
-		//the flash may need to be queried twice before it is ready. 
+		// (leaving the processor to constantly reading the flash), 
+		// the flash may need to be queried twice before it is ready. 
 		clear_pin(_CS | SCLK); 
 		write_byte(0x9f); 
 		for(j=0; j<4; j++){//see page 44 of the spec sheet.
@@ -285,7 +285,34 @@ int main(int argv, char* argc[]){
 		}
 		set_pin(_CS); 
 	}
-	//test(264); 
+	//need to make sure the device is in power of 2 binary page size. 
+	//converting to this is a one-time operation. 
+	if( (read_status_register() & 0x01) == 0){
+		printf("this device is configured for 264-byte pages\n"); 
+		printf("this mode is incompatible with boot streams consisting of \n"); 
+		printf("multiple sections.  Permanently change to 256-byte pages?\n"); 
+		printf("**This operation can NEVER be undone** (type 'y' or 'n')\n"); 
+		char ans = 'n'; 
+		scanf("%c", &ans); 
+		if(ans != 'y'){
+			printf("operation cancelled. \n"); 
+			exit(0); 
+		}else{
+			clear_pin(_CS); 
+			write_byte(0x3d); 
+			write_byte(0x2a); 
+			write_byte(0x80); 
+			write_byte(0xa6); 
+			set_pin(_CS); 
+			//now have to wait for the device to finish. 
+			//wait until the device is done.
+			while( (read_status_register() & 0x80) == 0 ){
+				usleep(2000); 
+			}
+			printf("binary page size set. Please power down the board & turn back on to program.\n"); 
+			exit(0); 
+		}
+	}
 	
 	for(i=0; i< (file_size / page_size)+1; i++){
 		ps = file_size - i*page_size; 
