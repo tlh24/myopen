@@ -11,12 +11,24 @@
 #define LCD_DELAY 1
 #define SSYNC asm volatile ("ssync")
 extern void delay(int); 
-#define uchar unsigned char
+#define u8 unsigned char
 
 #include "font/fontstruct.h"
 #include "font/6x12.c"
-int LCD_draw_char(uchar ch, uchar xi, uchar yi); 
-int LCD_scroll(uchar dist); 
+char hello_msg[] = "blackfin says:"; 
+#define PRINTF_BUFFER_SIZE 256
+char printf_temp[PRINTF_BUFFER_SIZE];  
+char printf_out[PRINTF_BUFFER_SIZE];  
+int LCD_draw_char(u8 ch, u8 xi, u8 yi);
+void LCD_draw_str(char* str); 
+void LCD_scroll(u8 dist); 
+//the LCD has 132 lines, our font has a height of 12, so we can fit 11 lines.
+u8 g_lcd_y; //what line we are on
+u8 g_lcd_x; //hoizontal position. 
+
+int mod(int num, int denom); 
+int printf_int(char* str, int d);
+int printf_hex(char* str, int d);
 
 void LCD_send(char data, unsigned char word){
 	unsigned short r = (unsigned short) word; 
@@ -46,7 +58,7 @@ void LCD_data(unsigned char word){
 }
 //  sets the starting page(row) and column (x & y) coordinates in ram,
 // with the given stop columns.
-void LCD_pset( uchar x, uchar y, uchar ex, uchar ey)
+void LCD_pset( u8 x, u8 y, u8 ex, u8 ey)
 {
 	LCD_command(PASET);   // page start/end ram
 	LCD_data(y);
@@ -137,6 +149,8 @@ void LCD_init() {
 	unsigned char c = 0; 
 	unsigned char x = 0; 
 	unsigned char y = 0; 
+	g_lcd_y = 0; 
+	g_lcd_x = 0; 
 	//need to init the display with white or something. 
 	LCD_pset(0, 0, 131, 131); 
 	for(y=0; y<132; y++){
@@ -148,7 +162,7 @@ void LCD_init() {
 	x = 0; y = 0; 
 	//fill the screen with some stuff.
 	for(c=0; c<255; c++){
-		x += (uchar)(LCD_draw_char(c, x, y)); 
+		x += (u8)(LCD_draw_char(c, x, y)); 
 		if(x > 128){
 			y += 12; 
 			x = 2; 
@@ -156,6 +170,7 @@ void LCD_init() {
 		if(y > 128) y = 0; 
 	}
 	y = 0; 
+	int i = 0; 
 	while(1) {
 		 //colorful drawing demo 
 		/*
@@ -175,25 +190,43 @@ void LCD_init() {
 		/*
 		
 		*/
-		LCD_scroll(y); 
-		y++; 
-		if(y > 32) y = 0; 
+		printf_int(hello_msg, i) ; 
+		LCD_draw_str("\n"); 
+		printf_hex("some hex: ",i+0xf00); 
+		LCD_draw_str("\n"); 
+		delay(40000); 
+		delay(40000); 
+		delay(40000); 
+		delay(40000); 
+		i++; 
+		/*
+		LCD_draw_char(c, g_lcd_x, g_lcd_y); 
+		g_lcd_x += 6; 
+		if(g_lcd_x > 128) {
+			g_lcd_y += 12; 
+			g_lcd_x = 0; 
+		}
+		if(g_lcd_y > 132) g_lcd_y = 0; 
+		c++; 
+		y--; 
+		if(y > 32) y = 32; 
+		*/
 	}
 }
 
-int LCD_draw_char(uchar ch, uchar xi, uchar yi)
+int LCD_draw_char(u8 ch, u8 xi, u8 yi)
 {
 	picoFont* font = (picoFont*)font_6x12; 
 	int offset = ((int)(font->per_char[ch].offset_msb) << 8) + 
 				(int)(font->per_char[ch].offset_lsb) ;
-	uchar w = font->per_char[ch].width ;  
-	uchar h = font->height; 
+	u8 w = font->per_char[ch].width ;  
+	u8 h = font->height; 
 	LCD_pset(xi, yi, xi+w-1, yi+h-1); 
 	int y, xx; 
 	for(y=0; y<h; y++){
 		int wincr =  (w+7)/8; 
 		for(xx=0; xx < wincr; xx++){
-			uchar c = font->data[offset + xx + y*wincr]; 
+			u8 c = font->data[offset + xx + y*wincr]; 
 			int b; 
 			for(b=0; b<8 && b+xx*8 < w; b++){
 				if( c & (0x80 >> b) )
@@ -207,11 +240,52 @@ int LCD_draw_char(uchar ch, uchar xi, uchar yi)
 	LCD_command(0x00); //nop
 	return (int)w; 
 }
+void LCD_draw_str(char* str){
+	u8 oldy = g_lcd_y; 
+	int i =0; 
+	while(*str && i < PRINTF_BUFFER_SIZE){
+		u8 c = *str; 
+		if(c == '\n'){
+			//need to clear the rest of the line in video ram. 
+			LCD_pset(g_lcd_x+2, g_lcd_y*12, 132-1,  g_lcd_y*12 + 12-1); 
+			int x, y; 
+			for(y=0; y<12; y++){
+				for(x=g_lcd_x+2; x<132; x++){
+					LCD_data(0xff);
+				}
+			}
+			LCD_command(0x00); //nop
+			g_lcd_x = 255; 
+		}else {
+			g_lcd_x += LCD_draw_char(c, g_lcd_x+2, g_lcd_y*12); 
+		}
+		if(g_lcd_x > 128){
+			g_lcd_y += 1; 
+			g_lcd_x = 0; 
+		}
+		if(g_lcd_y > 10){
+			g_lcd_y = 0; 
+		}
+		if(oldy != g_lcd_y){
+			u8 scrol = 32 - (g_lcd_y*3) + 2; 
+			LCD_scroll(mod(scrol,33)); 
+			scrol --; 
+			LCD_scroll(mod(scrol,33)); 
+			scrol --; 
+			LCD_scroll(mod(scrol,33)); 
+			/*LCD_scroll( 32 - (g_lcd_y*3)+2); 
+			LCD_scroll( 32 - (g_lcd_y*3)+1); 
+			LCD_scroll( 32 - (g_lcd_y*3)); */
+			oldy = g_lcd_y; 
+		}
+		str++; 
+	}
+}
 //what we need is a printf() like thing, a terminal like linux, that starts 
 // at the bottom and scrolls up for each newline. 
-int LCD_scroll(uchar dist){
+void LCD_scroll(u8 where){
 	LCD_command(ASCSET); 
-	uchar top, bot; 
+	u8 top, bot; 
 	top = 0; 
 	bot = 32; 
 	LCD_data(top); 
@@ -219,7 +293,112 @@ int LCD_scroll(uchar dist){
 	LCD_data(bot-1); 
 	LCD_data(0x3); //whole screen scroll.
 	LCD_command(SCSTART); 
-	LCD_data(dist); 
+	LCD_data(where); 
 	LCD_command(0); 
-	delay(40000); 
+	delay(6000); //this makes it look kinda nice. 
 }
+
+int div(int num, int denom){
+	//see page 15-23 in the prog. ref. 
+	//the assembly this produces is much simpler than the c code :)
+	int i; 
+	num = num << 1; 
+	asm volatile("divs (%0, %1)":"+d"(num),"+d"(denom)); 
+	for(i=0; i<15; i++){
+		asm volatile("divq (%0, %1)":"+d"(num),"+d"(denom)); 
+	}
+	asm volatile("%0 = %0.l (x);":"+d"(num));
+	return num;
+}
+int mod(int num, int denom){
+	int b; 
+	b = div(num, denom); 
+	return num - b*denom;
+}
+void memcpy(u8* src, u8* dest, int len){
+	int i; 
+	//do it the simple way -- see http://docs.blackfin.uclinux.org/doku.php?id=memcpy
+	//the only thing that really beats this is DMA. (provided data cache is enabled). 
+	for(i=0; i<len; i++){
+		*dest++ = *src++; 
+	}
+}
+int strlen(char* str){
+	int i; 
+	for(i=0; i<1024; i++){
+		if(str[i] == 0)
+			return i; 
+	}
+	return 0; 
+}
+int printf_int(char* str, int d){
+	int len, i, m, j;
+	
+	//print the integer & figure out how long the string will be. 
+	//note: the integer will be printed backwards at first! 
+	i = 0; 
+	if(d == 0){
+		printf_temp[0] = '0'; 
+		i = 1; 
+	}else if(d > 0){
+		i = 0; 
+		while(d > 0 && i < 128){
+			m = mod(d, 10); 
+			printf_temp[i] = (char)m + 48; 
+			i++; 
+			d = div(d, 10);  
+		}
+	}else if(d < 0){
+		//convert to positive.
+		d = 0x80000000 - (0x7fffffff & d);
+		i = 0; 
+		while(d > 0 && i < 128){
+			m = mod(d, 10); 
+			printf_temp[i] = (char)m + 48; 
+			i++; 
+			d = div(d, 10);  
+		}
+		printf_temp[i] = '-'; 
+		i++; 
+	}
+	len = strlen(str); 
+	if(len + i +1 <= PRINTF_BUFFER_SIZE){
+		memcpy((u8*)str, (u8*)printf_out, len); 
+		for(j = 0; j < i; j++){
+			printf_out[len + j] = printf_temp[i-j-1]; 
+		}
+		printf_out[len+i] = 0; 
+		LCD_draw_str(printf_out); 
+		return 0; 
+	}
+	return -1;
+}
+
+int printf_hex(char* str, int d){
+	int len, i, j, out; 
+	short s;
+	//we already know the length of the hex number will be 10 chars.
+	len = strlen(str); 
+	if(len + 11 <= PRINTF_BUFFER_SIZE){
+		memcpy((u8*)str, (u8*)printf_out, len); 
+		j = len; 
+		printf_out[j] = '0'; j++; 
+		printf_out[j] = 'x'; j++; 
+		for(i=0; i< 8; i++){
+			out = d >> ((7-i)*4); 
+			s = out & 0x0f; 
+			if(s > 9){
+				s += 55; 
+			}else{
+				s += 48;
+			}
+			printf_out[j + i] = (char)s;
+		}
+		j += i; 
+		printf_out[j] = 0; 
+		LCD_draw_str(printf_out); 
+		return 0; 
+	}
+	return -1;
+}
+
