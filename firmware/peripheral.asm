@@ -1,38 +1,43 @@
-.global _start_peripherals ;
-.global _spi_delay ; 
+.global _start_peripherals
+.global _spi_delay 
+.global _delay 
 
 _start_peripherals: 
 	[--sp] = RETS; 
 /* need to enable/disable peripherals 
 	( through the 74LV595 ) */
-	//set portf_fer : 
+	//set portf_fer; SR_LOAD is on PORTF15: 
 	p0.l = LO(PORTF_FER); 
 	p0.h = HI(PORTF_FER); 
-	r0 = 0x3803 (z); //see main.c
-	w[p0] = r0 ; 
-	
+	r0.l = w[p0]; 
+	bitclr(r0, 15); 
+	w[p0] = r0.l ; 
+	//likewise for the direction register. 
 	p0.l = LO(PORTFIO_DIR); 
 	p0.h = HI(PORTFIO_DIR); 
-	r0 = 0xc650 (z) ; //see main.c
-	w[p0] = r0 ; 
+	r0.l = w[p0]; 
+	bitset(r0, 15); 
+	w[p0] = r0.l ; 
 	
+	//disable the spi port before changing / re-enabling. 
+	p0.l = LO(SPI_CTL); 
+	p0.h = HI(SPI_CTL); 
+	r0 = 0; 
+	w[p0] = r0;
+	ssync; 
 	p0.l = LO(SPI_BAUD) ; 
-	p0.h = HI(SPI_BAUD) ; 
-	//r0 = 6 ; //baud rate = SCLK / (2* SPI_BAUD) -> 8.33Mhz. 
-	r0 = 140 ; 
+	r0 = 120 ; //baud rate = SCLK / (2* SPI_BAUD) -> 8.33Mhz. 
 	w[p0] = r0; 
 	p0.l = LO(SPI_FLG) ; 
-	p0.h = HI(SPI_FLG) ; 
 	r0 = 0; //dont' forget that the flash _cs is on PF10.
 	w[p0] = r0; //the bootloader needs this value ??
 	p0.l = LO(SPI_STAT) ; 
-	p0.h = HI(SPI_STAT) ; 
 	r0 = 0x56 (z); //clear status flags. 
 	w[p0] = r0; 
 	p0.l = LO(SPI_CTL); 
-	p0.h = HI(SPI_CTL); 
-	r0 = TDBR_CORE | SZ | GM | MSTR | SPE ; 
+	r0 = TDBR_CORE | SZ | EMISO| GM | MSTR | SPE ; 
 	w[p0] = r0; 
+	ssync;
 	
 	//writeforever:
 	//clear SR_LOAD (signal is latched on rising edge)
@@ -57,7 +62,9 @@ _start_peripherals:
 	p0.l = LO(SPI_TDBR) ; 
 	p0.h = HI(SPI_TDBR) ; 
 	w[p0] = r0 ; 
-	call _spi_delay ; 
+	r0 = 10; //this value is relatively sensitive, don't know why.. 
+	call _delay ; //I have no clue why spi_delay does not work .. eh well.
+		//(it works, it just interferes with the bootloader). 
 	
 	//pulse SR_LOAD
 	r0 = 0; 
@@ -65,9 +72,16 @@ _start_peripherals:
 	bitset(r0, 6) ; //mirror w/ CSN
 	p1.l = LO(PORTFIO_SET); 
 	p1.h = HI(PORTFIO_SET); 
-	w[p1] = r0;  
-	ssync; 
-	//jump writeforever ; 
+	w[p1] = r0; 
+	/*
+testtest: 
+	p1.l = LO(PORTFIO_TOGGLE); 
+	p1.h = HI(PORTFIO_TOGGLE); 
+	r0 = 0; 
+	bitset(r0, 6); 
+	w[p1] = r0; 
+	jump testtest; 
+	*/
 	RETS = [sp++]; 
 	rts; //and return! 
 	
@@ -76,15 +90,8 @@ _spi_delay:
 	p0.l = LO(SPI_STAT); 
 	p0.h = HI(SPI_STAT);
 	//first, examine the TXS bit (buffer full)
-/*testtest: 
-	p1.l = LO(PORTFIO_TOGGLE); 
-	p1.h = HI(PORTFIO_TOGGLE); 
-	r0 = 0; 
-	bitset(r0, 6); 
-	w[p1] = r0; 
-	jump testtest; */
 spi_delay_check1:	
-	r0 = w[p0] ; 
+	r0.l = w[p0] ; 
 	cc = bittst(r0, 3)
 	if cc jump spi_delay_check1 ; 
 	//next, examine the SPIF bit (transfer finished)
@@ -92,4 +99,6 @@ spi_delay_check2:
 	r0 = w[p0]; 
 	cc = !bittst(r0, 0) ; 
 	if cc jump spi_delay_check2 ; 
-	rts ; 
+	r0 = 0x56 (z); //clear status flags. 
+	w[p0] = r0.l ;
+	rts; 

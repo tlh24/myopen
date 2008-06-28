@@ -2,6 +2,7 @@
 #include "memory.h"
 
 .global start
+.global _delay
 start:
 	[--SP] = ASTAT;
 	[--SP] = RETS;
@@ -18,7 +19,6 @@ start:
 	r0 = w[p0]; 
 	bitclr(r0, 6)
 	w[p0] = r0 ; 
-	jump _test ; 
 	
 	r0 = 0x32;
 	SYSCFG = r0;
@@ -37,23 +37,39 @@ start:
 	SSYNC; 
 	/* need to enable/disable peripherals before anything else -
 	most importantly, the core voltage needs to be set! */
-	//save the SPI control register! 
-	p0.l = LO(SPI_CTL); 
+	//save the SPI control register! the boot loader needs this in a particular state!
+	//rather than guessing what it needs, we just save to stack.
+	
 	p0.h = HI(SPI_CTL); 
+	p0.l = LO(SPI_CTL); 
+	r7.l = w[p0]; 
+	[--sp] = r7; 
+	p0.l = LO(SPI_FLG); 
 	r7.l = w[p0]; 
 	[--sp] = r7; 
 	call _start_peripherals ; //trounces a bunch of registers, fyi..
 	r7 = [sp++]; 
-	p0.l = LO(SPI_CTL); 
-	p0.h = HI(SPI_CTL); 
+	p0.h = HI(SPI_FLG); 
+	p0.l = LO(SPI_FLG); 
 	w[p0] = r7.l; 
-
+	r7 = [sp++]; 
+	p0.l = LO(SPI_CTL); 
+	//first write a zero to disable, then re-enable.
+	r0 = 0; 
+	w[p0] = r0.l ; 
+	ssync; 
+	w[p0] = r7.l; 
+	jump _test ; 
+	
+	
 	/* enable pll wakeup */
 	p0.h = HI(SIC_IWR);
 	p0.l = LO(SIC_IWR);
 	r0.l = 0x1;
 	w[p0] = r0.l;
 	SSYNC;
+	
+	jump _test ; 
 	
 	/* PLL_LOCKCNT - how many SCLK Cycles to delay while PLL becomes stable */
 	p0.h = HI(PLL_LOCKCNT);
@@ -168,7 +184,6 @@ _test:
 	w[p1] = r0.l; 
 	ssync; 
 	//jump _test;
-	
 	
 skip_init_sdram: 
 	/* might also want to speed up the SPI port here .. */

@@ -14,6 +14,7 @@ pin5	 D3 = _prog , pull low to hold the processor in reset &
 #include <parapin.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h> //for strcmp()
 #include <unistd.h> //for usleep(). 
 #include <time.h>
 
@@ -233,10 +234,11 @@ int main(int argv, char* argc[]){
 	unsigned char 	byte; 
 	
 	if(argv < 2){
-		printf("please specify the ldr file to be written to flash %d\n", argv); 
+		printf("please specify the ldr file to be written to flash. \n"); 
+		printf("alternately, you can call with the option -r or --reset\n"); 
+		printf("to reset the board without programming it\n"); 
 		return 0; 
 	}
-	printf("ldr file: %s\n", argc[1]); 
 	
 	if(pin_init_user(LPT1) < 0){
 		printf("could not open the parallel port! \n"); 
@@ -244,6 +246,14 @@ int main(int argv, char* argc[]){
 	}
 	pin_output_mode(LP_DATA_PINS); 
 	
+	if(strcmp(argc[1], "--reset") == 0 || strcmp(argc[1], "-r") == 0){
+		printf("resetting the board.\n"); 
+		set_pin(_PROG); 
+		usleep(90000); //90ms, enough?
+		clear_pin(_PROG); 
+		exit(0); 
+	}
+	printf("ldr file: %s\n", argc[1]); 
 	//read the binary file. 
 	file = fopen( argc[1], "r"); 
 	if(file == 0){
