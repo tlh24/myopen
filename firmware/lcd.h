@@ -4,6 +4,10 @@
 // from the spark fun website. 
 void LCD_init() ; 
 void LCD_send(char data, unsigned char word); 
+//exported symbols.. 
+int printf_str(char* str); 
+int printf_int(char* str, int d);
+int printf_hex(char* str, int d);
 
 #define ENDPAGE     132
 #define ENDCOL      132
