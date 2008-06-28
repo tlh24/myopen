@@ -16,6 +16,7 @@ extern void delay(int);
 #include "font/fontstruct.h"
 #include "font/6x12.c"
 int LCD_draw_char(uchar ch, uchar xi, uchar yi); 
+int LCD_scroll(uchar dist); 
 
 void LCD_send(char data, unsigned char word){
 	unsigned short r = (unsigned short) word; 
@@ -26,15 +27,15 @@ void LCD_send(char data, unsigned char word){
 		*pPORTGIO_CLEAR = LCD_CLK; 
 		if (r & 0x100) *pPORTGIO_SET = LCD_DATA; 
 		else *pPORTGIO_CLEAR = LCD_DATA; 
-		SSYNC ; 
+		//SSYNC ; 
 		r = r << 1; 
 		//delay(LCD_DELAY); 
 		*pPORTGIO_SET = LCD_CLK; 
-		SSYNC ; 
+		//SSYNC ; 
 		//delay(LCD_DELAY); 
 	}
 	*pPORTFIO_SET = LCD_CS ;
-	SSYNC ; 
+	//SSYNC ; 
 	//delay(100); 
 }
 void LCD_command(unsigned char word){
@@ -48,12 +49,12 @@ void LCD_data(unsigned char word){
 void LCD_pset( uchar x, uchar y, uchar ex, uchar ey)
 {
 	LCD_command(PASET);   // page start/end ram
-	LCD_data(x);
-	LCD_data(ex);
-
-	LCD_command(CASET);   // column start/end ram
 	LCD_data(y);
 	LCD_data(ey);
+
+	LCD_command(CASET);   // column start/end ram
+	LCD_data(x);
+	LCD_data(ex);
 
 	LCD_command(RAMWR);    // write
 }
@@ -136,6 +137,25 @@ void LCD_init() {
 	unsigned char c = 0; 
 	unsigned char x = 0; 
 	unsigned char y = 0; 
+	//need to init the display with white or something. 
+	LCD_pset(0, 0, 131, 131); 
+	for(y=0; y<132; y++){
+		for(x=0; x<132; x++){
+			LCD_data(0xff);
+		}
+	}
+	LCD_command(0); 
+	x = 0; y = 0; 
+	//fill the screen with some stuff.
+	for(c=0; c<255; c++){
+		x += (uchar)(LCD_draw_char(c, x, y)); 
+		if(x > 128){
+			y += 12; 
+			x = 2; 
+		}
+		if(y > 128) y = 0; 
+	}
+	y = 0; 
 	while(1) {
 		 //colorful drawing demo 
 		/*
@@ -152,15 +172,12 @@ void LCD_init() {
 		if(y > 112) y = 0; 
 		LCD_command(0); 
 		*/
+		/*
 		
-		LCD_draw_char(c, x, y); 
-		c++; 
-		c &= 0xff; 
-		x++; 
-		if (x & 0x1) y++; 
-		if( x > 115) x = 0; 
-		if(y > 112) y = 0; 
-		
+		*/
+		LCD_scroll(y); 
+		y++; 
+		if(y > 32) y = 0; 
 	}
 }
 
@@ -171,7 +188,7 @@ int LCD_draw_char(uchar ch, uchar xi, uchar yi)
 				(int)(font->per_char[ch].offset_lsb) ;
 	uchar w = font->per_char[ch].width ;  
 	uchar h = font->height; 
-	LCD_pset(xi, yi, xi+w, yi+h); 
+	LCD_pset(xi, yi, xi+w-1, yi+h-1); 
 	int y, xx; 
 	for(y=0; y<h; y++){
 		int wincr =  (w+7)/8; 
@@ -189,4 +206,20 @@ int LCD_draw_char(uchar ch, uchar xi, uchar yi)
 	}
 	LCD_command(0x00); //nop
 	return (int)w; 
+}
+//what we need is a printf() like thing, a terminal like linux, that starts 
+// at the bottom and scrolls up for each newline. 
+int LCD_scroll(uchar dist){
+	LCD_command(ASCSET); 
+	uchar top, bot; 
+	top = 0; 
+	bot = 32; 
+	LCD_data(top); 
+	LCD_data(bot); 
+	LCD_data(bot-1); 
+	LCD_data(0x3); //whole screen scroll.
+	LCD_command(SCSTART); 
+	LCD_data(dist); 
+	LCD_command(0); 
+	delay(40000); 
 }
