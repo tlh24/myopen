@@ -35,7 +35,7 @@ void LCD_send(char data, unsigned char word){
 	}
 	*pPORTFIO_SET = LCD_CS ;
 	SSYNC ; 
-	delay(100); 
+	//delay(100); 
 }
 void LCD_command(unsigned char word){
 	LCD_send(0,word); 
