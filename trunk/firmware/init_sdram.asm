@@ -193,7 +193,6 @@ skip_init_sdram:
 	ASTAT  = [SP++];
 	RTS;
 
-
 _delay: 
 	[--sp] = r1; 
 _delay_outer_start: 

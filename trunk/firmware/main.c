@@ -86,6 +86,33 @@ int main() {
 	11 dt0pri			lcd_data, peripheral	
 	*/
 	LCD_init() ; 
+	printf_int("Myopen svn v.", /*SVN_VERSION{*/51/*}*/ ) ; 
+	printf_str("\n"); 
+	printf_str("checking memory...\n"); 
+	unsigned short* p; 
+	p = 0; 
+	int i; 
+	for(i=0; i<4*1024*1024; i++){ //memory size = 32mbytes.
+		(*p++) = 0x5555; 
+		(*p++) = 0xAAAA; 
+		(*p++) = 0x3333; 
+		(*p++) = 0xCCCC; 
+	}
+	p = 0; 
+	unsigned short s; 
+	for(i=0; i<4*1024*1024; i++){
+		s = *p++; 
+		if(s!= 0x5555) {
+			printf_hex("mem err @ ",i); 
+			printf_hex("\ngot:", s); 
+			printf_str("\n"); 
+			delay(400000); 
+		}
+		s = *p++; 
+		s = *p++; 
+		s = *p++; 
+	}
+	printf_str("memory check done.\n"); 
 	while(1) {
 		*pPORTFIO_TOGGLE = 0x40 ; //toggle the nordic CSN pin.
 	}

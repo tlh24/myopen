@@ -15,20 +15,17 @@ extern void delay(int);
 
 #include "font/fontstruct.h"
 #include "font/6x12.c"
-char hello_msg[] = "blackfin says:"; 
 #define PRINTF_BUFFER_SIZE 256
 char printf_temp[PRINTF_BUFFER_SIZE];  
 char printf_out[PRINTF_BUFFER_SIZE];  
 int LCD_draw_char(u8 ch, u8 xi, u8 yi);
-void LCD_draw_str(char* str); 
+int LCD_draw_str(char* str); 
 void LCD_scroll(u8 dist); 
 //the LCD has 132 lines, our font has a height of 12, so we can fit 11 lines.
 u8 g_lcd_y; //what line we are on
 u8 g_lcd_x; //hoizontal position. 
 
 int mod(int num, int denom); 
-int printf_int(char* str, int d);
-int printf_hex(char* str, int d);
 
 void LCD_send(char data, unsigned char word){
 	unsigned short r = (unsigned short) word; 
@@ -171,7 +168,7 @@ void LCD_init() {
 	}
 	y = 0; 
 	int i = 0; 
-	while(1) {
+	while(0) {
 		 //colorful drawing demo 
 		/*
 		LCD_pset(x, y, x+11, y+11);
@@ -187,10 +184,7 @@ void LCD_init() {
 		if(y > 112) y = 0; 
 		LCD_command(0); 
 		*/
-		/*
-		
-		*/
-		printf_int(hello_msg, i) ; 
+		printf_int("Myopen svn v.", /*SVN_VERSION{*/0/*}*/ ) ; 
 		LCD_draw_str("\n"); 
 		printf_hex("some hex: ",i+0xf00); 
 		LCD_draw_str("\n"); 
@@ -240,7 +234,7 @@ int LCD_draw_char(u8 ch, u8 xi, u8 yi)
 	LCD_command(0x00); //nop
 	return (int)w; 
 }
-void LCD_draw_str(char* str){
+int LCD_draw_str(char* str){
 	u8 oldy = g_lcd_y; 
 	int i =0; 
 	while(*str && i < PRINTF_BUFFER_SIZE){
@@ -279,8 +273,11 @@ void LCD_draw_str(char* str){
 			oldy = g_lcd_y; 
 		}
 		str++; 
+		i++; 
 	}
+	return i; 
 }
+int printf_str(char* str){return LCD_draw_str(str); }
 //what we need is a printf() like thing, a terminal like linux, that starts 
 // at the bottom and scrolls up for each newline. 
 void LCD_scroll(u8 where){
