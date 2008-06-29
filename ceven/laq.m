@@ -161,7 +161,7 @@ switch adaptor                                                          % select
         choice = 0;                                                     % flag for sample rate setup (below)
         chan_ids = chan_ids-1;                                          % this a/d requires channel indexes begin at 0
     case 'nidaq'                                                        % if national instruments a/d
-        ai = analoginput(adaptor,1);                                    % create analog input object
+        ai = analoginput(adaptor,'Dev1');                                    % create analog input object
         ai.InputType = 'SingleEnded';                                   % set ai object input type
         choice = 0;                                                     % flag for sample rate setup (below)
         chan_ids = chan_ids-1;                                          % this a/d requires channel indexes begin at 0

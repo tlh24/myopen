@@ -105,6 +105,7 @@ set(gcf,'Renderer','painters')                                          % set to
 set(findobj('Type','surface','Visible','on'),'Visible','off');          % hide virtual arm surface objects
 
 cardinfo = get(handles.acq_cardtype,'UserData');                        % recover structure of cardinfo per ad_card
+
 idx = get(handles.acq_cardtype,'Value');                                % index of slected card in list
 numchans = cardinfo.channels(idx);                                      % find number of channels for selected card
 for i = (numchans+1):16                                                 % cycle through extra channels, and
@@ -592,7 +593,7 @@ end
 if ~isempty(strmatch('nid',dum))                                        % if 'nidaq' card is installed
     try                                                                 % monitor following statements for errors
         cards{n} = 'National Instruments';                              % store common name of card
-        out = daqhwinfo(analoginput('nidaq',1));                        % find out number of associated channels
+        out = daqhwinfo(analoginput('nidaq','Dev1'));                        % find out number of associated channels
         cardinfo.channels(n) = out.TotalChannels;                       % store the associated number of channels
         cardinfo.min_fs(n) = 40;                                        % store min sampling frequency
         cardinfo.max_fs(n) = 100000/out.TotalChannels;                  % store max sampling frequency
@@ -1067,7 +1068,7 @@ switch card                                                             % select
         chans = chans-1;                                                % this a/d requires channel indexes begin at 0
         forceFS = 40;                                                   % force FS minimum        
     case 'nidaq'                                                        % if national instruments a/d
-        ai = analoginput(card,1);                                       % create analog input object
+        ai = analoginput(card,'Dev1');                                       % create analog input object
         ai.InputType = 'SingleEnded';                                   % set ai object input type
         chans = chans-1;                                                % this a/d requires channel indexes begin at 0
         forceFS = 40;                                                   % force FS minimum        
@@ -3182,7 +3183,7 @@ switch card                                                             % select
         ai.ChannelSkewMode = skew;                                      % set ai object skew
         chans = chans-1;                                                % this a/d requires channel indexes begin at 0
     case 'nidaq'                                                        % if national instruments a/d
-        ai = analoginput(card,1);                                       % create analog input object
+        ai = analoginput(card,'Dev1');                                       % create analog input object
         ai.InputType = 'SingleEnded';                                   % set ai object input type
         chans = chans-1;                                                % this a/d requires channel indexes begin at 0
 end
