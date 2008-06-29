@@ -59,7 +59,7 @@ start:
 	w[p0] = r0.l ; 
 	ssync; 
 	w[p0] = r7.l; 
-	jump _test ; 
+	//jump _test ; 
 	
 	
 	/* enable pll wakeup */
@@ -68,8 +68,6 @@ start:
 	r0.l = 0x1;
 	w[p0] = r0.l;
 	SSYNC;
-	
-	jump _test ; 
 	
 	/* PLL_LOCKCNT - how many SCLK Cycles to delay while PLL becomes stable */
 	p0.h = HI(PLL_LOCKCNT);
@@ -98,7 +96,8 @@ start:
 	*   - [0]     = DF        : 1=Pass CLKIN/2 to PLL / 0=Pass CLKIN to PLL
 	*   all other bits set to zero
 	*/
-	r0 = CONFIG_VCO_MULT & 63;      /* Load the VCO multiplier         */
+	r0 = 24 & 63;      /* Load the VCO multiplier         */
+	/* core clock = 25MHz * 24 = 600Mhz */
 	r0 = r0 << 9;                   /* Shift it over,                  */
 	r1 = CONFIG_CLKIN_HALF;        /* Do we need to divide CLKIN by 2?*/
 	r0 = r1 | r0;
@@ -122,7 +121,7 @@ check_again:
 	if ! CC jump check_again;
 
 	/* Configure SCLK & CCLK Dividers */
-	r0 = (0x0 /*CSEL=0,CCLK=VCO*/ | 4 /* SCLK=VCO/4 */); 
+	r0 = (0x0 /*CSEL=0,CCLK=VCO*/ | 5 /* SCLK=VCO/5 */); 
 		//125MHz system clock, 500Mhz core clock.
 	p0.h = HI(PLL_DIV);
 	p0.l = LO(PLL_DIV);

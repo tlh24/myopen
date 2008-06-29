@@ -36,15 +36,15 @@ void LCD_send(char data, unsigned char word){
 		*pPORTGIO_CLEAR = LCD_CLK; 
 		if (r & 0x100) *pPORTGIO_SET = LCD_DATA; 
 		else *pPORTGIO_CLEAR = LCD_DATA; 
-		//SSYNC ; 
+		SSYNC ; 
 		r = r << 1; 
 		//delay(LCD_DELAY); 
 		*pPORTGIO_SET = LCD_CLK; 
-		//SSYNC ; 
+		SSYNC ; 
 		//delay(LCD_DELAY); 
 	}
 	*pPORTFIO_SET = LCD_CS ;
-	//SSYNC ; 
+	SSYNC ; 
 	//delay(100); 
 }
 void LCD_command(unsigned char word){

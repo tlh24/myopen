@@ -52,7 +52,7 @@
 #define CONFIG_PLL_BYPASS               0
 /* CONFIG_VCO_MULT controls what the multiplier of the PLL is.   */
 /* Values can range from 1-64                                    */
-#define CONFIG_VCO_MULT			20
+#define CONFIG_VCO_MULT			24
 
 #ifndef LO
 #define LO(con32) ((con32) & 0xFFFF)
