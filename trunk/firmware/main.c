@@ -109,8 +109,11 @@ int main() {
 			delay(400000); 
 		}
 		s = *p++; 
+		if(s!= 0xAAAA) printf_hex("mem err @ ",i); 
 		s = *p++; 
+		if(s!= 0x3333) printf_hex("mem err @ ",i); 
 		s = *p++; 
+		if(s!= 0xCCCC) printf_hex("mem err @ ",i); 
 	}
 	printf_str("memory check done.\n"); 
 	while(1) {
