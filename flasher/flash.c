@@ -277,6 +277,7 @@ int main(int argv, char* argc[]){
 	printf("requesting manufacturer opcode...\n"); 
 	set_pin(_PROG); 
 	clear_pin(SCLK); 
+	usleep(20000); 
 
 	for(pass=0; pass < 2; pass++){
 		//if a bad firmware has been written 
