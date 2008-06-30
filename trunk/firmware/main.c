@@ -1,6 +1,8 @@
 #include <cdefBF537.h>
 #include "memory.h"
+#include "util.h"
 #include "lcd.h"
+#include "ethernet.h"
 
 int main() {
 	// disable cache. no imem_control on this proc? 
@@ -86,7 +88,7 @@ int main() {
 	11 dt0pri			lcd_data, peripheral	
 	*/
 	LCD_init() ; 
-	printf_int("Myopen svn v.", /*SVN_VERSION{*/51/*}*/ ) ; 
+	printf_int("Myopen svn v.", /*SVN_VERSION{*/56/*}*/ ) ; 
 	printf_str("\n"); 
 	printf_str("checking memory...\n"); 
 	unsigned short* p; 
@@ -116,7 +118,11 @@ int main() {
 		if(s!= 0xCCCC) printf_hex("mem err @ ",i); 
 	}
 	printf_str("memory check done.\n"); 
+	bfin_EMAC_init(); 
+	DHCP_req	(); 
+	u8* data; 
 	while(1) {
+		bfin_EMAC_recv( &data ); //listen for packets? 
 		*pPORTFIO_TOGGLE = 0x40 ; //toggle the nordic CSN pin.
 	}
 	return 0; 

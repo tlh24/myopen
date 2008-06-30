@@ -1,5 +1,6 @@
 #include <cdefBF537.h>
 #include "memory.h"
+#include "util.h"
 #include "lcd.h"
 // lcd_cs = portf 4 ; set low when writing 9 bits. 
 // lcd_clk = portg 5; data is clocked in on the rising edge.
@@ -11,11 +12,9 @@
 #define LCD_DELAY 1
 #define SSYNC asm volatile ("ssync")
 extern void delay(int); 
-#define u8 unsigned char
 
 #include "font/fontstruct.h"
 #include "font/6x12.c"
-#define PRINTF_BUFFER_SIZE 256
 char printf_temp[PRINTF_BUFFER_SIZE];  
 char printf_out[PRINTF_BUFFER_SIZE];  
 int LCD_draw_char(u8 ch, u8 xi, u8 yi);
@@ -24,8 +23,6 @@ void LCD_scroll(u8 dist);
 //the LCD has 132 lines, our font has a height of 12, so we can fit 11 lines.
 u8 g_lcd_y; //what line we are on
 u8 g_lcd_x; //hoizontal position. 
-
-int mod(int num, int denom); 
 
 void LCD_send(char data, unsigned char word){
 	unsigned short r = (unsigned short) word; 
@@ -170,7 +167,6 @@ void LCD_init() {
 	int i = 0; 
 	while(0) {
 		 //colorful drawing demo 
-		/*
 		LCD_pset(x, y, x+11, y+11);
 		int i; 
 		for (i=0; i< 11*11; i++){
@@ -182,29 +178,7 @@ void LCD_init() {
 		if (x & 0x2) y++; 
 		if( x > 117) x = 0; 
 		if(y > 112) y = 0; 
-		LCD_command(0); 
-		*/
-		printf_int("Myopen svn v.", /*SVN_VERSION{*/0/*}*/ ) ; 
-		LCD_draw_str("\n"); 
-		printf_hex("some hex: ",i+0xf00); 
-		LCD_draw_str("\n"); 
-		delay(40000); 
-		delay(40000); 
-		delay(40000); 
-		delay(40000); 
-		i++; 
-		/*
-		LCD_draw_char(c, g_lcd_x, g_lcd_y); 
-		g_lcd_x += 6; 
-		if(g_lcd_x > 128) {
-			g_lcd_y += 12; 
-			g_lcd_x = 0; 
-		}
-		if(g_lcd_y > 132) g_lcd_y = 0; 
-		c++; 
-		y--; 
-		if(y > 32) y = 32; 
-		*/
+		LCD_command(0);
 	}
 }
 
@@ -278,6 +252,13 @@ int LCD_draw_str(char* str){
 	return i; 
 }
 int printf_str(char* str){return LCD_draw_str(str); }
+int printf_ip(char* str, u32 addr){
+	printf_int( str, (addr>>24)& 0xff); 
+	printf_int( ".", (addr>>16)& 0xff); 
+	printf_int( ".", (addr>>8)& 0xff); 
+	printf_int( ".", (addr)& 0xff); 
+	printf_str(" "); 
+}
 //what we need is a printf() like thing, a terminal like linux, that starts 
 // at the bottom and scrolls up for each newline. 
 void LCD_scroll(u8 where){
@@ -292,45 +273,10 @@ void LCD_scroll(u8 where){
 	LCD_command(SCSTART); 
 	LCD_data(where); 
 	LCD_command(0); 
-	delay(6000); //this makes it look kinda nice. 
-}
-
-int div(int num, int denom){
-	//see page 15-23 in the prog. ref. 
-	//the assembly this produces is much simpler than the c code :)
-	int i; 
-	num = num << 1; 
-	asm volatile("divs (%0, %1)":"+d"(num),"+d"(denom)); 
-	for(i=0; i<15; i++){
-		asm volatile("divq (%0, %1)":"+d"(num),"+d"(denom)); 
-	}
-	asm volatile("%0 = %0.l (x);":"+d"(num));
-	return num;
-}
-int mod(int num, int denom){
-	int b; 
-	b = div(num, denom); 
-	return num - b*denom;
-}
-void memcpy(u8* src, u8* dest, int len){
-	int i; 
-	//do it the simple way -- see http://docs.blackfin.uclinux.org/doku.php?id=memcpy
-	//the only thing that really beats this is DMA. (provided data cache is enabled). 
-	for(i=0; i<len; i++){
-		*dest++ = *src++; 
-	}
-}
-int strlen(char* str){
-	int i; 
-	for(i=0; i<1024; i++){
-		if(str[i] == 0)
-			return i; 
-	}
-	return 0; 
+	//delay(6000); //this makes it look kinda nice. 
 }
 int printf_int(char* str, int d){
 	int len, i, m, j;
-	
 	//print the integer & figure out how long the string will be. 
 	//note: the integer will be printed backwards at first! 
 	i = 0; 

@@ -8,6 +8,7 @@ void LCD_send(char data, unsigned char word);
 int printf_str(char* str); 
 int printf_int(char* str, int d);
 int printf_hex(char* str, int d);
+int printf_ip(char* str, u32 addr); 
 
 #define ENDPAGE     132
 #define ENDCOL      132
