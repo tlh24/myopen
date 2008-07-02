@@ -189,6 +189,7 @@ int bfin_EMAC_recv(u8** data){
 		}
 		length -= 4; 
 		printf_int("got a packet! length: ", length); 
+		printf_str("\n"); 
 		*data = (u8*)(rxbuf[rxIdx]->FrmData); 
 		if(ARP_respond(length))
 			length = -1; 
@@ -638,7 +639,8 @@ int ARP_respond(int length){
 	p = (arp_packet*)(rxbuf[rxIdx]->FrmData); 
 	if(htons(p->eth.protLen) == ETH_PROTO_ARP && 
 		length >= sizeof(arp_packet)){
-		printf_hex("ARP packet, dest ", p->arp.tpa); 
+		printf_ip("ARP packet, dest ", htonl(p->arp.tpa)); 
+		printf_str("\n"); 
 		if( 	p->arp.htype == htons(ARP_HTYPE_ETH)  && 
 			p->arp.ptype == htons(ARP_PTYPE_IPV4) &&
 			p->arp.hlen == 6 && 
@@ -979,10 +981,11 @@ int tcp_rx(u8* data, int length){
 			printf_str("got a TCP packet port 80");
 			printf_ip(" src ", htonl(p->ip.src)); 
 			printf_ip(" dest ", htonl(p->ip.dest)); 
+			printf_str("\n"); 
 			src = p->ip.src; 
 			//now, must decide what to do with this packet. 
 			if(p->tcp.flags == TCP_FLAG_RST){
-				printf_str("TCP RST"); 
+				printf_str("TCP RST\n"); 
 				TcpState = TCP_LISTEN; 
 				TcpSeqClient = htonl(p->tcp.seq); 
 				return 1; 
@@ -991,6 +994,7 @@ int tcp_rx(u8* data, int length){
 				printf_str("TCP got SYN"); 
 				TcpSeqClient = htonl(p->tcp.seq); 
 				printf_int("client tcp len ",  tcp_length(p)); 
+				printf_str("\n"); 
 				TcpSeqClient += tcp_length(p); 
 				TcpSeqClient++; //that's the arbitration protocol
 				TcpClientPort = p->tcp.src;
@@ -1008,15 +1012,16 @@ int tcp_rx(u8* data, int length){
 				if(htonl(p->tcp.ack) != TcpSeqHost){
 					printf_ip("TCP got unexpected ack, ", htonl(p->tcp.ack)); 
 					TcpState = TCP_LISTEN; 
+					printf_str("\n"); 
 					return 1; 
 				}
 				TcpState = TCP_CONNECTED; 
 				TcpSeqClient = htonl(p->tcp.seq); 
-				printf_str("TCP conneted"); 
+				printf_str("TCP conneted\n"); 
 				return 1; 
 			}
 			if(p->tcp.flags & TCP_FLAG_FIN && TcpState == TCP_CONNECTED){
-				printf_str("TCP got FIN"); 
+				printf_str("TCP got FIN\n"); 
 				TcpSeqClient = htonl(p->tcp.seq); 
 				//set up a response.
 				tcp_packet_setup(0, src,
@@ -1028,7 +1033,7 @@ int tcp_rx(u8* data, int length){
 				return 1; 
 			}
 			if(p->tcp.flags & TCP_FLAG_ACK && TcpState == TCP_CLOSE){
-				printf_str("TCP got random ACK"); 
+				printf_str("TCP got random ACK\n"); 
 				TcpSeqClient = htonl(p->tcp.seq); 
 				//set up a response.
 				TcpSeqHost++; 
@@ -1059,6 +1064,7 @@ int tcp_rx(u8* data, int length){
 					if(txlen & 0x1) txlen++; 
 					sprintf_int(&(HttpResp[cl_start + 16]), txlen-2); 
 					printf_int("sending length: ", txlen); 
+					printf_str("\n"); 
 					TcpSeqClient = htonl(p->tcp.seq); 
 					//TcpSeqClient += rxlen;
 					tx = tcp_packet_setup(txlen, src,  
@@ -1078,6 +1084,7 @@ int tcp_rx(u8* data, int length){
 					http = strcpy(http, &txlen, "HTTP/1.1 404 Not Found\r\n"); 
 					if(txlen & 0x1) txlen++; 
 					printf_hex("sending length: ", txlen); 
+					printf_str("\n"); 
 					TcpSeqClient = htonl(p->tcp.seq); 
 					TcpSeqClient += rxlen;
 					tx = tcp_packet_setup(txlen, src,  
@@ -1131,18 +1138,19 @@ int icmp_rx(u8* data, int length){
 		if( ( p->ip.p == IP_PROT_ICMP ) && 
 		       p->ip.dest == NetOurIP ){
 			if(p->icmp.type == ICMP_UNREACHABLE){
-				printf_str("got an ICMP unreachable reply"); 
+				printf_str("got an ICMP unreachable reply\n"); 
 				return 1; 
 			}
 			if(p->icmp.type == ICMP_ECHO_REQUEST ){
 				printf_ip("got an ICMP ping req from ", htonl(p->ip.src)); 
+				printf_str("\n"); 
 				//well then, reply to it! 
 				//note who is sending it. 
 				u32 src = p->ip.src; 
 				//have to copy the extra payload data over, as per wikipedia.
 				data += sizeof(icmp_packet); 
 				length -= sizeof(icmp_packet) - 2; //-2 b/c of the length short @ the beginning of the ethernet hdr.
-				printf_int(" d.len ", length ); 
+				//printf_int(" d.len ", length ); 
 				u8* out = icmp_packet_setup(length, src, ICMP_ECHO_REPLY,
 					p->icmp.id, p->icmp.seq);
 				memcpy(data, out, length); 
@@ -1232,7 +1240,6 @@ int DHCP_rx(){
 		p = (dhcp_packet*)data; 
 		if( htons(p->eth.protLen) == ETH_PROTO_IP4 && 
 			length >= sizeof(dhcp_packet)  && length > 0){
-			printf_ip("ip packet from: ", htonl(p->ip.src)); 
 			if( p->udp.src == htons(67) &&
 				p->udp.dest == htons(68) && 
 				p->dhcp.xid == *pEMAC_ADDRLO && 
@@ -1246,6 +1253,7 @@ int DHCP_rx(){
 				if(p->dhcp.yiaddr != 0){
 					NetOurIP = p->dhcp.yiaddr; 
 					printf_ip("got ip address ", htonl(NetOurIP)); 
+					printf_str("\n"); 
 				}
 				/*this, for some reason, does not work -- ?
 				lptr = (u32*)data;
@@ -1259,7 +1267,7 @@ int DHCP_rx(){
 				gotit = 1; 
 			}
 		}else{
-			printf_str("not an ip packet try again");
+			printf_str("not an ip packet try again\n");
 		}
 	}
 	return 0;
@@ -1274,7 +1282,7 @@ int DHCP_req(){
 	options[2] = DHCPDISCOVER; 
 	options[3] = DHCP_END;
 	
-	printf_str("Send DHCPDISCOVER\n	");
+	printf_str("Send DHCPDISCOVER\n");
 	DHCP_tx(4, &options[0], NetDHCPserv); 
 	
 	DHCP_rx(); 
@@ -1351,7 +1359,7 @@ void DHCP_parse(u8* ptr, int length){
 					printf_int(" len: ", olen); 
 					
 			}
-			printf_str(" "); 
+			printf_str("\n"); 
 			ptr += olen; 
 			i -= 1 + olen; 
 		}
