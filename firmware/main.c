@@ -88,7 +88,7 @@ int main() {
 	11 dt0pri			lcd_data, peripheral	
 	*/
 	LCD_init() ; 
-	printf_int("Myopen svn v.", /*SVN_VERSION{*/57/*}*/ ) ; 
+	printf_int("Myopen svn v.", /*SVN_VERSION{*/59/*}*/ ) ; 
 	printf_str("\n"); 
 	printf_str("checking SDRAM...\n"); 
 	unsigned short* p; 
