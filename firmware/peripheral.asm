@@ -49,16 +49,16 @@ _start_peripherals:
 	w[p1] = r0;  
 	ssync; 
 	/*write out a byte ..  SPI = MSB first. 
-	eth_en = 0 (enabled)
-	usb_reset = 0 (in reset)
-	usb_pout_en = 0 (disabled)
-	rs232_en = 0 (enabled)
-	lcd_led_en = 1 (enabled)
-	boost = 1 (enabled)
-	afe_en = 1 (disabled)
-	usb_pin_en = 1 (disabled)
+	0 eth_en = 0 (enabled)
+	1 usb_reset = 0 (in reset)
+	2 usb_pout_en = 0 (disabled)
+	3 rs232_en = 0 (enabled)
+	4 lcd_led_en = 1 (enabled)
+	5 boost = 1 (enabled)
+	6 afe_en = 1 (disabled)
+	7 usb_pin_en = 1 (disabled)
 	*/
-	r0 = 0b11110000 (z); //probably should make this a function.
+	r0 = 0b11100000 (z); //probably should make this a function.
 	p0.l = LO(SPI_TDBR) ; 
 	p0.h = HI(SPI_TDBR) ; 
 	w[p0] = r0 ; 

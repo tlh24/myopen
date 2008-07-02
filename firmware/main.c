@@ -88,9 +88,9 @@ int main() {
 	11 dt0pri			lcd_data, peripheral	
 	*/
 	LCD_init() ; 
-	printf_int("Myopen svn v.", /*SVN_VERSION{*/56/*}*/ ) ; 
+	printf_int("Myopen svn v.", /*SVN_VERSION{*/57/*}*/ ) ; 
 	printf_str("\n"); 
-	printf_str("checking memory...\n"); 
+	printf_str("checking SDRAM...\n"); 
 	unsigned short* p; 
 	p = 0; 
 	int i; 
@@ -118,6 +118,21 @@ int main() {
 		if(s!= 0xCCCC) printf_hex("mem err @ ",i); 
 	}
 	printf_str("memory check done.\n"); 
+	//let's test the UART here. 
+	//fix up the UART.  it will be useful for debugging. 
+	printf_str("turning on UART\n"); 
+	*pUART0_IER = 0; //turn off interrupts, turn them on later.
+	*pUART0_MCR = 0; 
+	*pUART0_LCR =  0x0080; //enable access to divisor latch. 
+	*pUART0_DLL = 65; //see page 810 of the BF537 hardware ref. this is the lower byte of the divisor.
+	*pUART0_DLH = 0;  //the system clock is 120Mhz. baud rate is 115200. 
+	*pUART0_LCR = 0x0003; //parity disabled, 1 stop bit, 8 bit word. 
+	*pUART0_GCTL = 0x0001; //enable the clock. 
+	//*pUART0_GCTL = 0x0000; //keep off
+	
+	
+	printf_str("test UART\n"); //should be echoed on the serial port, too.
+	
 	bfin_EMAC_init(); 
 	DHCP_req	(); 
 	u8* data; 

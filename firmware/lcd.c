@@ -164,7 +164,7 @@ void LCD_init() {
 		if(y > 128) y = 0; 
 	}
 	y = 0; 
-	int i = 0; 
+	/*
 	while(0) {
 		 //colorful drawing demo 
 		LCD_pset(x, y, x+11, y+11);
@@ -180,6 +180,7 @@ void LCD_init() {
 		if(y > 112) y = 0; 
 		LCD_command(0);
 	}
+	*/
 }
 
 int LCD_draw_char(u8 ch, u8 xi, u8 yi)
@@ -235,16 +236,29 @@ int LCD_draw_str(char* str){
 			g_lcd_y = 0; 
 		}
 		if(oldy != g_lcd_y){
+			//this logic is not exactly correct.. 
 			u8 scrol = 32 - (g_lcd_y*3) + 2; 
 			LCD_scroll(mod(scrol,33)); 
 			scrol --; 
 			LCD_scroll(mod(scrol,33)); 
 			scrol --; 
 			LCD_scroll(mod(scrol,33)); 
-			/*LCD_scroll( 32 - (g_lcd_y*3)+2); 
-			LCD_scroll( 32 - (g_lcd_y*3)+1); 
-			LCD_scroll( 32 - (g_lcd_y*3)); */
 			oldy = g_lcd_y; 
+		}
+		//write out to the UART, too. 
+		if(*pUART0_GCTL == 1){//if it is enabled. 
+			if(c == '\n' ) {
+				*pUART0_THR = 10; //line feed
+				while( (*pUART0_LSR & 0x0020) == 0 )
+					asm volatile("nop;"); 
+				*pUART0_THR = 13; //carrige return
+				while( (*pUART0_LSR & 0x0020) == 0 )
+					asm volatile("nop;"); 
+			} else {
+				*pUART0_THR = c; 
+				while( (*pUART0_LSR & 0x0020) == 0 )
+					asm volatile("nop;"); 
+			}
 		}
 		str++; 
 		i++; 
@@ -258,6 +272,7 @@ int printf_ip(char* str, u32 addr){
 	printf_int( ".", (addr>>8)& 0xff); 
 	printf_int( ".", (addr)& 0xff); 
 	printf_str(" "); 
+	return 0; 
 }
 //what we need is a printf() like thing, a terminal like linux, that starts 
 // at the bottom and scrolls up for each newline. 
