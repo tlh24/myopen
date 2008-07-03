@@ -50,7 +50,7 @@ _start_peripherals:
 	ssync; 
 	/*write out a byte ..  SPI = MSB first. 
 	0 eth_en = 0 (enabled)
-	1 usb_reset = 0 (in reset)
+	1 usb_reset = 1 (not reset -- use software reset.)
 	2 usb_pout_en = 0 (disabled)
 	3 rs232_en = 0 (enabled)
 	4 lcd_led_en = 1 (enabled)
@@ -58,7 +58,8 @@ _start_peripherals:
 	6 afe_en = 1 (disabled)
 	7 usb_pin_en = 1 (disabled)
 	*/
-	r0 = 0b11100000 (z); //probably should make this a function.
+	//looks like this register is shifted over by one (?)
+	r0 = 0b11100100 (z); //probably should make this a function.
 	p0.l = LO(SPI_TDBR) ; 
 	p0.h = HI(SPI_TDBR) ; 
 	w[p0] = r0 ; 
