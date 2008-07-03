@@ -88,7 +88,7 @@ int main() {
 	11 dt0pri			lcd_data, peripheral	
 	*/
 	LCD_init() ; 
-	printf_int("Myopen svn v.", /*SVN_VERSION{*/59/*}*/ ) ; 
+	printf_int("Myopen svn v.", /*SVN_VERSION{*/60/*}*/ ) ; 
 	printf_str("\n"); 
 	printf_str("checking SDRAM...\n"); 
 	unsigned short* p; 
@@ -127,12 +127,15 @@ int main() {
 	*pUART0_DLL = 65; //see page 810 of the BF537 hardware ref. this is the lower byte of the divisor.
 	*pUART0_DLH = 0;  //the system clock is 120Mhz. baud rate is 115200. 
 	*pUART0_LCR = 0x0003; //parity disabled, 1 stop bit, 8 bit word. 
-	*pUART0_GCTL = 0x0001; //enable the clock. 
-	//*pUART0_GCTL = 0x0000; //keep off
-	
-	
-	printf_str("test UART\n"); //should be echoed on the serial port, too.
-	
+	*pUART0_GCTL = 0x0001; //enable the clock.
+	printf_str("turning on USB\n"); //this should be echoed on the serial port now
+	//first have to set the SPI port up properly. 
+	*pSPI_CTL = 0; //disable while configuring. 
+	*pSPI_BAUD = 4 ; //baud rate = SCLK / (2*SPI_BAUD) = 12Mhz. 
+	*pSPI_FLG = 0; //don't use flags.
+	*pSPI_STAT = 0x56 ; //clear the flags.
+	*pSPI_CTL = TDBR_CORE | SZ | EMISO| GM | MSTR | SPE ; 
+	usb_test(); 
 	bfin_EMAC_init(); 
 	DHCP_req	(); 
 	u8* data; 

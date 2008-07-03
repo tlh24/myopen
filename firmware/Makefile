@@ -1,5 +1,5 @@
 ASMSRCS = crt0.asm peripheral.asm
-CSRCS = main.c lcd.c util.c ethernet.c
+CSRCS = main.c lcd.c util.c ethernet.c usb.c
 INITSRC = init_sdram.asm peripheral.asm
 # note: the order of objects in the .ldr mirrors the order in this list!
 

@@ -249,7 +249,7 @@ int main(int argv, char* argc[]){
 	if(strcmp(argc[1], "--reset") == 0 || strcmp(argc[1], "-r") == 0){
 		printf("resetting the board.\n"); 
 		set_pin(_PROG); 
-		usleep(90000); //90ms, enough?
+		usleep(400000); //enough?
 		clear_pin(_PROG); 
 		exit(0); 
 	}
