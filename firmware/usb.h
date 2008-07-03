@@ -1,9 +1,13 @@
 #ifndef _USB_h_
 #define _USB_h_
 
-u8 wreg(u8 reg, u8 val);
-u8 rreg(u8 reg);
-void usb_test();
+u8 		wreg(u8 reg, u8 val);
+u8 		wregAS(u8 reg, u8 val);
+void 	writebytes(u8 reg, u8 n, u8* p);
+u8 		rreg(u8 reg);
+u8 		rregAS(u8 reg);
+void 	readbytes(u8 reg, u8 n, u8* p);
+void 	usb_test();
 
 // MAX3420E Registers
 #define rEP0FIFO    0<<3
