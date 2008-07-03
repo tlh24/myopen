@@ -25,12 +25,27 @@ u8 wregAS(u8 reg, u8 val){
 	reg |= 1 ; //ACKSTAT = 1; 
 	return wreg(reg, val); 
 }
+void writebytes(u8 reg, u8 n, u8* p){
+	reg = reg | 0x2; //set the 'write' bit.
+	*pPORTFIO_CLEAR = USB_SS; 
+	asm volatile("ssync;"); 
+	*pSPI_TDBR = (u16)reg;
+	spi_delay(); 
+	while(n>0){
+		*pSPI_TDBR = (u16)(*p);
+		spi_delay(); 
+		p++; 
+		n--; 
+	}
+	*pPORTFIO_SET = USB_SS; 
+	asm volatile("ssync;"); 
+}
 u8 rreg(u8 reg){
 	*pPORTFIO_CLEAR = USB_SS; 
 	asm volatile("ssync;"); 
 	*pSPI_TDBR = (u16)reg; //note: does not mask out unused bits!
 	spi_delay(); 
-	reg = *pSPI_SHADOW; //read the status from the radio, has useful bits. 
+	reg = *pSPI_SHADOW; //read the status.
 	*pSPI_TDBR = 0; 
 	spi_delay();
 	reg = *pSPI_SHADOW; //read it in - the contents of the register.
@@ -42,7 +57,21 @@ u8 rregAS(u8 reg){
 	reg |= 1 ; //ACKSTAT = 1; 
 	return rreg(reg); 
 }
-//ah, dude, I'm too tired to implement the readbytes.. 
+void readbytes(u8 reg, u8 n, u8* p){
+	*pPORTFIO_CLEAR = USB_SS; 
+	asm volatile("ssync;"); 
+	*pSPI_TDBR = (u16)reg;
+	spi_delay(); 
+	while(n>0){
+		*pSPI_TDBR = 0;
+		spi_delay(); 
+		*p = (u8)(*pSPI_SHADOW); 
+		p++; 
+		n--; 
+	}
+	*pPORTFIO_SET = USB_SS; 
+	asm volatile("ssync;"); 
+}
 void usb_test() {
 	//let's just see if we can talk to the USB controller (for now). 
 	//have to set it up in full-duplex mode. 
