@@ -3254,8 +3254,8 @@ predicted = [];                                                         % initia
 start(ai);                                                              % start data acquisition object     
 
 pause(str2num(storage.reclen)/1000);                                    % pause for one record at start to ensure data is there for loop
-start = clock;                                                          % get start time
-voteStart = start;                                                      % get start time of auto-calibrating auto start
+start_time = clock;                                                          % get start time
+voteStart = start_time;                                                      % get start time of auto-calibrating auto start
 tic;                                                                    % a starting time point
 
 testing = 0;                                                            % initialize testing flag
