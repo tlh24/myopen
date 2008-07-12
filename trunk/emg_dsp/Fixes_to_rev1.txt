@@ -21,3 +21,4 @@ Fixes to the board:
 * use TFS0 to control the LCD _cs signal
 * use larger holes around the perimeter, e.g. 7/64 for 4-40 screws.
 * use female DB9-connector, and bring it out to the board edge. 
+* put LEDs on the output of the MAX3421 in case someone wants to use them.
