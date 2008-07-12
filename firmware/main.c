@@ -4,6 +4,9 @@
 #include "lcd.h"
 #include "ethernet.h"
 
+u8	g_rchan ; //recieve channel counter
+u8 	g_tchan ; //transmit channel counter
+
 int main() {
 	// disable cache. no imem_control on this proc? 
 	*pDMEM_CONTROL = 0x00001001; 
@@ -88,7 +91,7 @@ int main() {
 	11 dt0pri			lcd_data, peripheral	
 	*/
 	LCD_init() ; 
-	printf_int("Myopen svn v.", /*SVN_VERSION{*/61/*}*/ ) ; 
+	printf_int("Myopen svn v.", /*SVN_VERSION{*/62/*}*/ ) ; 
 	printf_str("\n"); 
 	printf_str("checking SDRAM...\n"); 
 	unsigned short* p; 
@@ -128,10 +131,31 @@ int main() {
 	*pUART0_DLH = 0;  //the system clock is 120Mhz. baud rate is 115200. 
 	*pUART0_LCR = 0x0003; //parity disabled, 1 stop bit, 8 bit word. 
 	*pUART0_GCTL = 0x0001; //enable the clock.
+	printf_str("turning on SPORTs\n"); 
+	//set up the receive first, since it is controled by the transmit sport. 
+	*pSPORT0_RCR2 = 0x0100 + 23; //enable second side, serial word length 24
+	*pSPORT1_RCR2 = 0x0100 + 23; 
+	/* RCR = 0100 0100 0000 0001
+	sample data on rising edge, 
+	early frame syncs,
+	active high frame syncs,
+	require frame sync for every word, 
+	external fram sync, 
+	msb first, 
+	zero fill data, 
+	external recieve clock,  
+	enable. */
+	*pSPORT0_RCR1 = 0x4401 ; 
+	*pSPORT1_RCR1 = 0x4401 ; 
+	*pSPORT1_TCLKDIV = 149 ; //120Mhz / 300 = 400k / 25 = 16k / 4 = 4 ksps/ch
+	*pSPORT1_TFSDIV = 24 ; //25 clocks between assertions of the frame sync
+	*pSPORT1_TCR2 = 23; //word length, secondary disabled. 
+	// TCR = 0100 0110 0000 0011
+	*pSPORT1_TCR1 = 0x4603 ; 
 	printf_str("turning on USB\n"); //this should be echoed on the serial port now
 	//first have to set the SPI port up properly. 
 	*pSPI_CTL = 0; //disable while configuring. 
-	*pSPI_BAUD = 4 ; //baud rate = SCLK / (2*SPI_BAUD) = 12Mhz. 
+	*pSPI_BAUD = 4 ; //baud rate = SCLK / (2*(SPI_BAUD+1)) = 12Mhz. 
 	*pSPI_FLG = 0; //don't use flags.
 	*pSPI_STAT = 0x56 ; //clear the flags.
 	*pSPI_CTL = TDBR_CORE | SZ | EMISO| GM | MSTR | SPE ; 

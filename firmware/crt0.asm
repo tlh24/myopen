@@ -13,6 +13,8 @@
 .global start
 .global _spi_delay
 .global _delay
+.extern _g_tchan
+.extern _g_rchan
 
 start:
 	r1 = 0;	/* Data registers zero'd */
@@ -137,8 +139,6 @@ no_soft_reset:
 	r0.h = _I15HANDLER;	// IVG15 Handler
 	[p0++] = r0;
 
-
-	
 	// we want to run our program in supervisor mode,
 	// therefore we need a few tricks:
 
@@ -153,8 +153,9 @@ no_soft_reset:
 	
 	//SIC_IMASK: page 132.
 	p0.l = LO(SIC_IMASK); 
-	p0.h = HI(SIC_IMASK); 
-	r0.l = 0x1940; // uart0 tx, uart0 rx, sport0 tx, sport1 tx
+	p0.h = HI(SIC_IMASK);
+	// SIC_IMASK lo : 0001 1001 0010 0000
+	r0.l = 0x1920; // uart0 tx, uart0 rx, sport0 rx, sport1 tx
 	r0.h = 0x0000; 
 	[p0] = r0; 
 	
@@ -162,13 +163,13 @@ no_soft_reset:
 	p0.l = LO(SIC_IAR0); 
 	p0.h = HI(SIC_IAR0);
 	r0.l = 0xffff;
-	r0.h = 0xf6ff; //	 sport0 TX -> IVG13
+	r0.h = 0xff4f; //	 sport0 RX -> IVG11
 	[p0] = r0;
 	
 	p0.l = LO(SIC_IAR1); 
 	p0.h = HI(SIC_IAR1);
-	r0.l = 0x7ff6; //remember to +7, hence uart0 rx -> IVG14 
-	r0.h = 0xffff; //sport1 tx -> IVG13
+	r0.l = 0xfff3; //remember to +7, sport1 tx -> IVG10
+	r0.h = 0xffff; 
 	[p0] = r0;
 
 	p0.l = LO(SIC_IAR2); 
@@ -256,44 +257,58 @@ _I9HANDLER:           // IVG 9 Handler
 	jump display_fail;
 	
 _I10HANDLER:          // IVG 10 Handler
+	// serial port transmission.
+	[--sp] = (r7:4, p5:4); 
+	p4.h = HI(_g_tchan);
+	p4.l = LO(_g_tchan); 
+	r7 = w[p4]; 
+	p5.h = HI(SPORT1_TX); 
+	r4 = 0x8; //start bit = 1, differential sampling.
+	p5.l = LO(SPORT1_TX); 
+	r5 = r4 | r7; 
+	r5 = r5 << 20 ; //24-bit word to write out, 1 start, 1differential, 2channel bits. 
+	//note: lsbit on the channel is always zero, as we do not want to invert the polarity
+	// of the channels (see the MCP3304 data sheet). 
+	[p5] = r5; //write the output buffah! 
+	r6 = 0x3;
+	r7 += 1; 
+	r7 = r7 & r6 ; //bitmask (make it rollover)
+	w[p4] = r7 ; //save it. 
+	(r7:4, p5:4) = [sp++]; 
 	rti; 
 
 _I11HANDLER:          // IVG 11 Handler
+	//serial port reception. note that all 4 longs - primary and secondary 
+	// on both sports will be captured at the same time. 
+	// we only need to enable interupts on one sport. 
+	[--sp] = (r7:4, p5:4); 
+	p5.h = HI(SPORT0_RX); 
+	p5.l = LO(SPORT0_RX); 
+	r7 = [p5]; 
+	r6 = [p5]; 
+	p5.h = HI(SPORT1_RX); 
+	p5.l = LO(SPORT1_RX); 
+	r5 = [p5]; 
+	r4 = [p5]; 
+	r7 = r7 >> 4; //24 bit data, 7 clocks control, 13 data, 4 throw-away. 
+	r6 = r6 >> 4; 
+	r5 = r5 >> 4; 
+	r4 = r4 >> 4; 
+	//yea.. now I must do DSP on these channels.  will be trixy; last time only had to do 2 at a time. 
+	p4.h = HI(_g_rchan); 
+	p4.l = LO(_g_rchan); 
+	r7 = w[p4]; 
+	r7 += 4 ; 
+	r6 = 0xf; 
+	r7 = r7 & r6; 
+	w[p4] = r7; 
+	(r7:4, p5:4) = [sp++]; 
 	rti; 
 
 _I12HANDLER:          // IVG 12 Handler
 	rti; 
 	
 _I13HANDLER:		  // IVG 13 Handler
-	//for SPORT0 -- the LCD!
-	/* this is not used anymore, the LCD is wired up to portG. 
-	[--sp] = p0; 
-	[--sp] = r0; 
-	[--sp] = r1; 
-	// first, check if something is in the queue -- 
-	// if there is nothing, then disable the serial port.
-	p0.l = LO(LCD_SERIAL_DATA); 
-	p0.h = HI(LCD_SERIAL_DATA); 
-	r0 = w[p0] ; 
-	cc = bittst(r0, 15); 
-	if cc jump i13_write ; 
-	// if not then turn off serial port. 
-	p0.l = LO(SPORT1_TCR1); 
-	p0.h = HI(SPORT1_TCR1); 
-	r1 = 0; 
-	w[p0] = r1;
-	jump i13_end; 
-i13_write: 
-	//clear the written data (hence the flag, bit 15)
-	r1 = 0; 
-	w[p0] = r1; 
-	p0.l = LO(SPORT1_TX); 
-	p0.h = HI(SPORT1_TX); 
-	w[p0] = r0; 
-i13_end: 
-	r1 = [sp++]; 
-	r0 = [sp++]; 
-	p0 = [sp++];  */
 	rti; 
  
 _I14HANDLER:		  // IVG 14 Handler
