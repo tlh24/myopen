@@ -40,7 +40,7 @@ _start_peripherals:
 	ssync;
 	
 	//writeforever:
-	//clear SR_LOAD (signal is latched on rising edge)
+	//;clear SR_LOAD (signal is latched on rising edge)
 	r0 = 0; 
 	bitset(r0, 15); 
 	bitset(r0, 6) ; //mirror w/ CSN
@@ -58,14 +58,13 @@ _start_peripherals:
 	6 afe_en = 1 (disabled)
 	7 usb_pin_en = 1 (disabled)
 	*/
-	//looks like this register is shifted over by one (?)
-	r0 = 0b11100100 (z); //probably should make this a function.
+	//;looks like this register is shifted over by one (?)
+	r0 = 0b11100110 (z); //probably should make this a function.
 	p0.l = LO(SPI_TDBR) ; 
 	p0.h = HI(SPI_TDBR) ; 
 	w[p0] = r0 ; 
 	r0 = 10; //this value is relatively sensitive, don't know why.. 
-	call _delay ; //I have no clue why spi_delay does not work .. eh well.
-		//(it works, it just interferes with the bootloader). 
+	call _delay ; //for some reason spi_delay works but interferes with the bootloader.
 	
 	//pulse SR_LOAD
 	r0 = 0; 
