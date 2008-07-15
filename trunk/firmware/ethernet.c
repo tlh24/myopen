@@ -134,6 +134,14 @@ int bfin_EMAC_send( volatile void *packet, int length){
 	return result;
 }
 
+int bfin_EMAC_send_check(){
+	// return 1 if the previous DMA has finished & we can queue up another, 
+	// 0 if it is not done and we should check back later. 
+	if((*pDMA2_IRQ_STATUS & DMA_RUN) != 0) {
+		return 0; 
+	}
+	return 1; 
+}
 int bfin_EMAC_send_nocopy(){
 // packet and length are already in txbuf[txIdx]->NoBytes & txbuf[txIdx]->FrmData->Dest
 	int i;
@@ -143,7 +151,7 @@ int bfin_EMAC_send_nocopy(){
 		printf_str("Ethernet: tx DMA error\n");
 		goto out;
 	}
-
+	//wait for the previous packet to be sent. 
 	for (i = 0; (*pDMA2_IRQ_STATUS & DMA_RUN) != 0; i++) {
 		if (i > TOUT_LOOP) {
 			printf_str("Ethernet: tx time out\n");
@@ -273,7 +281,7 @@ int bfin_EMAC_init( ){
 	rxIdx = 0;
 	NetIPID = 0;
 	NetOurIP = FormatIPAddress(192, 168, 1, 143); 
-	NetDestIP = FormatIPAddress(192, 168, 1, 149); 
+	NetDestIP = FormatIPAddress(192, 168, 1, 108); 
 	TcpState = TCP_LISTEN; 
 	TcpSeqClient = 0; 
 	TcpSeqHost = 0x09da24b5; 
@@ -382,9 +390,7 @@ void PollMdcDone(void){
 void WrPHYReg(u16 PHYAddr, u16 RegAddr, u16 Data){
 	//taken off the spec sheet.. 
 	PollMdcDone();
-
 	*pEMAC_STADAT = Data;
-
 	*pEMAC_STAADD = SET_PHYAD(PHYAddr) | SET_REGAD(RegAddr) |
 	    STAOP | STAIE | STABUSY;
 }
@@ -392,18 +398,12 @@ void WrPHYReg(u16 PHYAddr, u16 RegAddr, u16 Data){
 u16 RdPHYReg(u16 PHYAddr, u16 RegAddr){
 	//Read an off-chip register in a PHY through the MDC/MDIO port    
 	u16 Data;
-
 	PollMdcDone();
-
 	*pEMAC_STAADD = SET_PHYAD(PHYAddr) | SET_REGAD(RegAddr) |
 	    STAIE | STABUSY;
-
 	PollMdcDone();
-
 	Data = (u16) * pEMAC_STADAT;
-
 	PHYregs[RegAddr] = Data;	/* save shadow copy */
-
 	return Data;
 }
 

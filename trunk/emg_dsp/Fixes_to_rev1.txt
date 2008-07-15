@@ -22,3 +22,4 @@ Fixes to the board:
 * use larger holes around the perimeter, e.g. 7/64 for 4-40 screws.
 * use female DB9-connector, and bring it out to the board edge. 
 * put LEDs on the output of the MAX3421 in case someone wants to use them.
+* the EN signal on the ADUM2400 is active HIGH and must be tied to VCC! 

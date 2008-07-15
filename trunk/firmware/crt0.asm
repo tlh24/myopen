@@ -154,7 +154,7 @@ no_soft_reset:
 	//SIC_IMASK: page 132.
 	p0.l = LO(SIC_IMASK); 
 	p0.h = HI(SIC_IMASK);
-	// SIC_IMASK lo : 0001 1001 0010 0000
+	// SIC_IMASK lo : 0001 1001 0001 0000
 	r0.l = 0x1920; // uart0 tx, uart0 rx, sport0 rx, sport1 tx
 	r0.h = 0x0000; 
 	[p0] = r0; 
@@ -195,10 +195,10 @@ _test:
 	ssync; 
 	jump _test; */
 
-	// IMASK : page 173 in the programming ref., 
+	// IMASK : page 173 in the programming ref., (not hardware ref!)
 	//NOT THE SAME as SIC_IMASK (above) --both need to be set up correctly.
 	//r0 = 0x9c40(z);    // enable irq 15, 10 (sport1rx) 11 (sport0tx) 6 (core timer) 12 (SPI) 0x9c40
-	r0 = 0x8000(z); // enable 15 . 
+	r0 = 0x8c00(z); // enable 15, 11, 10
 	sti r0;            // set mask
 	raise 15;          // raise sw interrupt
 	
@@ -259,21 +259,25 @@ _I9HANDLER:           // IVG 9 Handler
 _I10HANDLER:          // IVG 10 Handler
 	// serial port transmission.
 	[--sp] = (r7:4, p5:4); 
-	p4.h = HI(_g_tchan);
-	p4.l = LO(_g_tchan); 
+	[--sp] = astat ; 
+	p4.h = _g_tchan;
+	p4.l = _g_tchan; 
 	r7 = w[p4]; 
 	p5.h = HI(SPORT1_TX); 
-	r4 = 0x8; //start bit = 1, differential sampling.
+	r4 = 0x10; //start bit = 1, differential sampling.
 	p5.l = LO(SPORT1_TX); 
 	r5 = r4 | r7; 
-	r5 = r5 << 20 ; //24-bit word to write out, 1 start, 1differential, 2channel bits. 
+	r5 = r5 << 15 ; //20-bit word to write out, 1 start, 1differential, 2channel bits. 
+	r5 += 1;
 	//note: lsbit on the channel is always zero, as we do not want to invert the polarity
 	// of the channels (see the MCP3304 data sheet). 
 	[p5] = r5; //write the output buffah! 
-	r6 = 0x3;
+	r6 = 0x7 (z); //for some strange reason, it looks like this routine is being called twice / this value is incrementing twice.. ?
 	r7 += 1; 
 	r7 = r7 & r6 ; //bitmask (make it rollover)
 	w[p4] = r7 ; //save it. 
+	
+	astat = [sp++]; 
 	(r7:4, p5:4) = [sp++]; 
 	rti; 
 
@@ -281,7 +285,8 @@ _I11HANDLER:          // IVG 11 Handler
 	//serial port reception. note that all 4 longs - primary and secondary 
 	// on both sports will be captured at the same time. 
 	// we only need to enable interupts on one sport. 
-	[--sp] = (r7:4, p5:4); 
+	[--sp] = (r7:0, p5:4); 
+	[--sp] = astat ; 
 	p5.h = HI(SPORT0_RX); 
 	p5.l = LO(SPORT0_RX); 
 	r7 = [p5]; 
@@ -290,19 +295,30 @@ _I11HANDLER:          // IVG 11 Handler
 	p5.l = LO(SPORT1_RX); 
 	r5 = [p5]; 
 	r4 = [p5]; 
-	r7 = r7 >> 4; //24 bit data, 7 clocks control, 13 data, 4 throw-away. 
-	r6 = r6 >> 4; 
-	r5 = r5 >> 4; 
-	r4 = r4 >> 4; 
+	r7 = r7 << 3; //20 bit data, 7 clocks control, 13 data, incl. sign bit. 
+	r6 = r6 << 3; 
+	r5 = r5 << 3; 
+	r4 = r4 << 3; 
 	//yea.. now I must do DSP on these channels.  will be trixy; last time only had to do 2 at a time. 
-	p4.h = HI(_g_rchan); 
-	p4.l = LO(_g_rchan); 
-	r7 = w[p4]; 
-	r7 += 4 ; 
-	r6 = 0xf; 
-	r7 = r7 & r6; 
-	w[p4] = r7; 
-	(r7:4, p5:4) = [sp++]; 
+	//in the meantime, let's just sent them out over enet, 
+	//so I can look at them on a real computer. 
+	p4.h = _g_rptr; 
+	p4.l = _g_rptr; 
+	r3 = [p4]; //pointer to a pointer!
+	//have to bitmask here so we address a looping region of 2^18 bytes (256k)
+	r1.l = 0xffff ; 
+	r1.h = 0x0003; 
+	r2 = r3 & r1; 
+	p5 = r2; 
+	w[p5++] = r7; //only stores the bottom 16bits. 
+	w[p5++] = r6; 
+	w[p5++] = r5; 
+	w[p5++] = r4; 
+	//increment the pointer to coincide with p5 - 8 bytes - and save. 
+	r3 += 8; 
+	[p4] = r3; //save the full 32 bits; we use this for computation of what needs to be sent. 
+	astat = [sp++]; 
+	(r7:0, p5:4) = [sp++]; 
 	rti; 
 
 _I12HANDLER:          // IVG 12 Handler
@@ -329,14 +345,11 @@ idle_loop:
 
 start.end:
 
-// If we get caught in one of these handlers for some reason, 
-// display the IRQ vector on the EZKIT LEDs and enter
-// endless loop.
 
 display_fail:
 	r0 = seqstat;
 	r1 = retx;
-//	call _exception_report; //this should not return.
+	call _exception_report; //this should not return.
 	rtx;
 
 _HWHANDLER:           // HW Error Handler 5
@@ -349,7 +362,7 @@ stall:
 EXC_HANDLER:          // exception handler
 	r0 = seqstat;
 	r1 = retx;
-//	call _exception_report; //this should not return.
+	call _exception_report; //this should not return.
 	rtx;
 
 _THANDLER:            // Timer Handler 6 (core timer)

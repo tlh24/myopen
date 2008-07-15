@@ -55,11 +55,11 @@ _start_peripherals:
 	3 rs232_en = 0 (enabled)
 	4 lcd_led_en = 1 (enabled)
 	5 boost = 1 (enabled)
-	6 afe_en = 1 (disabled)
+	6 afe_en = 0 (enabled)
 	7 usb_pin_en = 1 (disabled)
 	*/
 	//;looks like this register is shifted over by one (?)
-	r0 = 0b11100110 (z); //probably should make this a function.
+	r0 = 0b01100100 (z); //probably should make this a function.
 	p0.l = LO(SPI_TDBR) ; 
 	p0.h = HI(SPI_TDBR) ; 
 	w[p0] = r0 ; 
