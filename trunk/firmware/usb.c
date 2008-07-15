@@ -88,28 +88,28 @@ u8 g_send3zeros;        // EP3-IN function uses this to send HID (key up) codes 
 
 
 void usb_init() {
-	//printf_str("turning on USB\n"); //this should be echoed on the serial port now
+	printf_str("turning on USB\n"); //this should be echoed on the serial port now
 	//let's just see if we can talk to the USB controller (for now). 
 	//first have to set the SPI port up properly. 
 	*pSPI_CTL = 0; //disable while configuring. 
-	*pSPI_BAUD = 3 ; //baud rate = SCLK / (2*(SPI_BAUD+1)) = 15Mhz. 
+	*pSPI_BAUD = 4 ; //baud rate = SCLK / (2*(SPI_BAUD+1)) = 12Mhz. 
 	*pSPI_FLG = 0; //don't use flags.
 	*pSPI_STAT = 0x56 ; //clear the flags.
 	*pSPI_CTL = TDBR_CORE | SZ | EMISO| GM | MSTR | SPE ; 
 	//have to set MAX3421 up in full-duplex mode. 
 	wreg(rPINCTL,bmFDUPSPI | bmPOSINT);    // MAX3420: SPI=full-duplex
-	wreg(rPINCTL, 0x17);  //yea, what?? 
+	wreg(rPINCTL, 0x17); 
 	wreg(rUSBCTL,bmCHIPRES);    // reset the MAX3420E
 	udelay(20); 
-	wreg(rUSBCTL,0);            // remove the reset
-	//have to wait for the oscillator to stabilize. 
-	u8 d; 
-	do{
+	wreg(rUSBCTL,0 );            // remove the reset, leave disconnected.
+	u8 d = 0;
+	int i; 
+	//wait for the oscilator to come up. 
+	while(d == 0){
 		d = rreg(rUSBIRQ); 
 		d &= bmOSCOKIRQ ; 
-	}while(!d); 
+	}
 	u8 rd, wr = 1; 
-	int i; 
 	wreg(rPINCTL, 0x17); 
 
 	for(i=0; i<80;i++){
@@ -118,16 +118,13 @@ void usb_init() {
 		if(rd != wr){
 			printf_int("usb: wrote ", wr); 
 			printf_int(" got:", rd); 
-			printf_str("\n"); //total mystery why the first two writes fail. 
+			printf_str("\n"); //not exactly sure why the first two writes fail.. oscillator? 
 		}
 		wr++; 
 		if( wr == 255) wr = 0; 
 	}
 	initialize_MAX(); 
-	while(1){
-		
-	}
-	printf_str("usb init done"); 
+	printf_str("usb init done\n"); 
 }
 
 void usb_intr(){
@@ -161,7 +158,7 @@ void initialize_MAX(void){
 	// Therefore set the VBGATE bit to have the MAX3420E automatically disconnect the D+
 	// pullup resistor in the absense of Vbus. Note: the VBCOMP pin must be connected to Vbus
 	// or pulled high for this code to work--a low on VBCOMP will prevent USB connection.
-	wreg(rUSBCTL,(bmCONNECT+bmPOSINT)); 
+	wreg(rUSBCTL,(bmVBGATE+bmCONNECT+bmPOSINT)); 
 		// VBGATE=1 disconnects D+ pullup if host turns off VBUS
 	ENABLE_IRQS
 	wreg(rCPUCTL,bmIE);                 // Enable the INT pin
@@ -173,13 +170,16 @@ void service_irqs(void){
 	itest2 = rreg(rUSBIRQ);           // Check the USBIRQ bits
 	if(itest1 & bmSUDAVIRQ) {
 		wreg(rEPIRQ,bmSUDAVIRQ);     // clear the SUDAV IRQ
+		printf_str("usb irq: setup\n"); 
 		do_SETUP();
 	}
 	if(itest1 & bmIN3BAVIRQ){          // Was an EP3-IN packet just dispatched to the host?
+		printf_str("usb irq: ep3-in packet\n"); 
 		do_IN3();                     // Yes--load another keystroke and arm the endpoint
 	}                    // NOTE: don't clear the IN3BAVIRQ bit here--loading the EP3-IN byte
 						  // count register in the do_IN3() function does it.
 	if((g_configval != 0) && (itest2&bmSUSPIRQ)){   // HOST suspended bus for 3 msec
+		printf_str("usb irq: host suspend\n"); 
 		wreg(rUSBIRQ,(bmSUSPIRQ+bmBUSACTIRQ));  // clear the IRQ and bus activity IRQ
 		g_suspended=1;                  // signal the main loop
 	}
@@ -196,9 +196,18 @@ void service_irqs(void){
 void do_SETUP(void){							
 	readbytes(rSUDFIFO,8,g_SUD);          // got a SETUP packet. Read 8 SETUP bytes
 	switch(g_SUD[bmRequestType]&0x60){    // Parse the SETUP packet. For request type, look only at b6&b5
-		case 0x00:	std_request();		break;
-		case 0x20:	class_request();	break;  // just a stub in this program
-		case 0x40:	vendor_request();	break;  // just a stub in this program
+		case 0x00:
+			printf_str("std_request\n");	
+			std_request();		
+			break;
+		case 0x20:	
+			printf_str("class_request\n");	
+			class_request();	
+			break;  // just a stub in this program
+		case 0x40:	
+			printf_str("vendor_request\n");	
+			vendor_request();	
+			break;  // just a stub in this program
 		default:	STALL_EP0                       // unrecognized request type
 	}
 }
@@ -239,6 +248,7 @@ void std_request(void){
 }
 
 void set_configuration(void){
+	printf_str("set_configuration\n"); 
 	g_configval=g_SUD[wValueL];           // Store the config value
 	if(g_configval != 0)                // If we are configured, 
 	  SETBIT(rUSBIEN,bmSUSPIE);       // start looking for SUSPEND interrupts
@@ -246,6 +256,7 @@ void set_configuration(void){
 }
 
 void get_configuration(void){
+	printf_str("get_configuration\n"); 
 	wreg(rEP0FIFO,g_configval);         // Send the config value
 	wregAS(rEP0BC,1);   
 }

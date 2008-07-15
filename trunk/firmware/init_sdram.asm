@@ -35,11 +35,13 @@ start:
 	p0.h = HI(VR_CTL); 
 	w[p0] = r0 ; 
 	SSYNC; 
+	/*I've hard-wired boost to 'on', so we don't have to fuss with the 
+	SPI-sequenced peripherals here */
 	/* need to enable/disable peripherals before anything else -
 	most importantly, the core voltage needs to be set! */
 	//save the SPI control register! the boot loader needs this in a particular state!
 	//rather than guessing what it needs, we just save to stack.
-	
+	/*
 	p0.h = HI(SPI_CTL); 
 	p0.l = LO(SPI_CTL); 
 	r7.l = w[p0]; 
@@ -60,7 +62,7 @@ start:
 	ssync; 
 	w[p0] = r7.l; 
 	//jump _test ; 
-	
+	*/
 	
 	/* enable pll wakeup */
 	p0.h = HI(SIC_IWR);
@@ -173,15 +175,18 @@ _test:
 	w[p0] = r0.l; 
 	ssync; 
 	
-	r0 = 100 (z); 
+	r0 = 10 (z); 
 	call _delay; 
 	
-	p1.h = HI(PORTFIO_CLEAR); 
-	p1.l = LO(PORTFIO_CLEAR);
+	p0.h = HI(PORTFIO_CLEAR); 
+	p0.l = LO(PORTFIO_CLEAR);
 	r0 = 0 (z); 
 	bitset(r0, 6); 
-	w[p1] = r0.l; 
+	w[p0] = r0.l; 
 	ssync; 
+	
+	r0 = 10 (z); 
+	call _delay; 
 	//jump _test;
 	
 skip_init_sdram: 

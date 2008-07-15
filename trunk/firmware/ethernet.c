@@ -1238,8 +1238,8 @@ int DHCP_rx(){
 		length = bfin_EMAC_recv_poll( &data ); 
 		//printf_int("options length: ", length - sizeof(dhcp_packet) ); 
 		p = (dhcp_packet*)data; 
-		if( htons(p->eth.protLen) == ETH_PROTO_IP4 && 
-			length >= sizeof(dhcp_packet)  && length > 0){
+		if( length > 0 && length >= sizeof(dhcp_packet) 
+				  && htons(p->eth.protLen) == ETH_PROTO_IP4){
 			if( p->udp.src == htons(67) &&
 				p->udp.dest == htons(68) && 
 				p->dhcp.xid == *pEMAC_ADDRLO && 

@@ -8,11 +8,12 @@
 u32	g_rptr ; //recieve (SPORT) pointer. 
 u32	g_tptr ; // transmit (ethernet) pointer.
 u16 	g_tchan ; //transmit channel counter
+u32 g_excregs[14] ; //the regular data registers + pointer registers. 
 
 int main() {
 	// disable cache. no imem_control on this proc? 
-	*pDMEM_CONTROL = 0x00001001; 
-	asm volatile("csync"); 
+	//*pDMEM_CONTROL = 0x00001001; 
+	//asm volatile("csync"); 
 	// disable the serial ports (for now)
 	*pSPORT0_TCR1 = 0; 
 	*pSPORT0_TCR2 = 0; 
@@ -93,7 +94,14 @@ int main() {
 	11 dt0pri			lcd_data, peripheral	
 	*/
 	LCD_init() ; 
-	printf_int("Myopen svn v.", /*SVN_VERSION{*/64/*}*/ ) ; 
+	*pUART0_IER = 0; //turn off interrupts, turn them on later.
+	*pUART0_MCR = 0; 
+	*pUART0_LCR =  0x0080; //enable access to divisor latch. 
+	*pUART0_DLL = 65; //see page 810 of the BF537 hardware ref. this is the lower byte of the divisor.
+	*pUART0_DLH = 0;  //the system clock is 120Mhz. baud rate is 115200. 
+	*pUART0_LCR = 0x0003; //parity disabled, 1 stop bit, 8 bit word. 
+	*pUART0_GCTL = 0x0001; //enable the clock.
+	printf_int("Myopen svn v.", /*SVN_VERSION{*/66/*}*/ ) ; 
 	printf_str("\n"); 
 	printf_str("checking SDRAM...\n"); 
 	unsigned short* p; 
@@ -125,14 +133,6 @@ int main() {
 	printf_str("memory check done.\n"); 
 	//let's test the UART here. 
 	//fix up the UART.  it will be useful for debugging. 
-	printf_str("turning on UART\n"); 
-	*pUART0_IER = 0; //turn off interrupts, turn them on later.
-	*pUART0_MCR = 0; 
-	*pUART0_LCR =  0x0080; //enable access to divisor latch. 
-	*pUART0_DLL = 65; //see page 810 of the BF537 hardware ref. this is the lower byte of the divisor.
-	*pUART0_DLH = 0;  //the system clock is 120Mhz. baud rate is 115200. 
-	*pUART0_LCR = 0x0003; //parity disabled, 1 stop bit, 8 bit word. 
-	*pUART0_GCTL = 0x0001; //enable the clock.
 	usb_init(); 
 	bfin_EMAC_init(); 
 	DHCP_req	(); 
@@ -167,7 +167,7 @@ int main() {
 	u8* data; 
 	while(1) {
 		bfin_EMAC_recv( &data ); //listen for packets? (and respond)
-		if(bfin_EMAC_send_check() ){
+		if(bfin_EMAC_send_check() && 0 ){
 			if(g_rptr < g_tptr) g_tptr = 0; 
 			if(g_rptr - g_tptr >= 1024){//then we have at least one packet to send.
 				data = udp_packet_setup(1024 + 4); 
@@ -193,6 +193,35 @@ void exception_report(unsigned long seqstat, unsigned long retx){
 	printf_str("\n"); 
 	printf_hex("retx:", retx); 
 	printf_str("\n"); 
+	printf_hex("r0:", g_excregs[0]); 
+	printf_str("\n"); 
+	printf_hex("r1:", g_excregs[1]); 
+	printf_str("\n"); 
+	printf_hex("r2:", g_excregs[2]); 
+	printf_str("\n"); 
+	printf_hex("r3:", g_excregs[3]); 
+	printf_str("\n"); 
+	printf_hex("r4:", g_excregs[4]); 
+	printf_str("\n"); 
+	printf_hex("r5:", g_excregs[5]); 
+	printf_str("\n"); 
+	printf_hex("r6:", g_excregs[6]); 
+	printf_str("\n"); 
+	printf_hex("r7:", g_excregs[7]); 
+	printf_str("\n"); 
+	printf_hex("p0:", g_excregs[8]); 
+	printf_str("\n"); 
+	printf_hex("p1:", g_excregs[9]); 
+	printf_str("\n"); 
+	printf_hex("p2:", g_excregs[10]); 
+	printf_str("\n"); 
+	printf_hex("p3:", g_excregs[11]); 
+	printf_str("\n"); 
+	printf_hex("p4:", g_excregs[12]); 
+	printf_str("\n"); 
+	printf_hex("p5:", g_excregs[13]); 
+	printf_str("\n"); 
+	//would be nice to print out the registers, too. 
 	while(1) {
 		asm volatile("nop"); 
 	}
