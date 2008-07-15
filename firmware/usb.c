@@ -3,6 +3,7 @@
 #include "util.h"
 #include "lcd.h"
 #include "usb.h"
+#include "usb_data.h"
 
 #define USB_SS 0x4000 //on port F
 
@@ -86,9 +87,16 @@ u8 g_suspended;         // Tells the main loop to look for host resume and RWU p
 u8 g_send3zeros;        // EP3-IN function uses this to send HID (key up) codes between keystrokes
 
 
-void usb_test() {
+void usb_init() {
+	//printf_str("turning on USB\n"); //this should be echoed on the serial port now
 	//let's just see if we can talk to the USB controller (for now). 
-	//have to set it up in full-duplex mode. 
+	//first have to set the SPI port up properly. 
+	*pSPI_CTL = 0; //disable while configuring. 
+	*pSPI_BAUD = 3 ; //baud rate = SCLK / (2*(SPI_BAUD+1)) = 15Mhz. 
+	*pSPI_FLG = 0; //don't use flags.
+	*pSPI_STAT = 0x56 ; //clear the flags.
+	*pSPI_CTL = TDBR_CORE | SZ | EMISO| GM | MSTR | SPE ; 
+	//have to set MAX3421 up in full-duplex mode. 
 	wreg(rPINCTL,bmFDUPSPI | bmPOSINT);    // MAX3420: SPI=full-duplex
 	wreg(rPINCTL, 0x17);  //yea, what?? 
 	wreg(rUSBCTL,bmCHIPRES);    // reset the MAX3420E
@@ -102,9 +110,8 @@ void usb_test() {
 	}while(!d); 
 	u8 rd, wr = 1; 
 	int i; 
-	for(i=0; i<3; i++){
-		wreg(rPINCTL, 0x17);  //yea, what?? 
-	}
+	wreg(rPINCTL, 0x17); 
+
 	for(i=0; i<80;i++){
 		wreg(rUSBIEN, wr); 
 		rd = rreg(rUSBIEN); 
@@ -118,25 +125,22 @@ void usb_test() {
 	}
 	initialize_MAX(); 
 	while(1){
-		if(g_suspended){
-			if(rreg(rUSBIRQ) & bmBUSACTIRQ)     // the host resumed bus traffic
-				g_suspended=0;                    // no longer suspended
-			//we do not need the remote wake-up functionality here. 
-		}
-		if( *pPORTFIO & 0x0100 ){ //positive level interupt.  probably should actually make this an interupt!
-			printf_str("usb interupt\n"); 
-			service_irqs();
-		}
+		
 	}
-	printf_str("usb test done"); 
-	while(1){
-		wreg(rUSBIEN, wr); 
-		rd = rreg(rUSBIEN); 
-		wr <<= 1; 
-		if( wr == 0) wr = 1; 
-	}
+	printf_str("usb init done"); 
 }
 
+void usb_intr(){
+	if(g_suspended){
+		if(rreg(rUSBIRQ) & bmBUSACTIRQ)     // the host resumed bus traffic
+			g_suspended=0;                    // no longer suspended
+		//we do not need the remote wake-up functionality here. 
+	}
+	if( *pPORTFIO & 0x0100 ){ //positive level interupt.  probably should actually make this an interupt!
+		//printf_str("usb interupt\n"); 
+		service_irqs();
+	}
+}
 #define ENABLE_IRQS wreg(rEPIEN,(bmSUDAVIE+bmIN3BAVIE)); wreg(rUSBIEN,(bmURESIE+bmURESDNIE));
 #define SETBIT(reg,val) wreg(reg,(rreg(reg)|val));
 #define CLRBIT(reg,val) wreg(reg,(rreg(reg)&~val));

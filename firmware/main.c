@@ -3,9 +3,11 @@
 #include "util.h"
 #include "lcd.h"
 #include "ethernet.h"
+#include "usb.h"
 
-u8	g_rchan ; //recieve channel counter
-u8 	g_tchan ; //transmit channel counter
+u32	g_rptr ; //recieve (SPORT) pointer. 
+u32	g_tptr ; // transmit (ethernet) pointer.
+u16 	g_tchan ; //transmit channel counter
 
 int main() {
 	// disable cache. no imem_control on this proc? 
@@ -91,7 +93,7 @@ int main() {
 	11 dt0pri			lcd_data, peripheral	
 	*/
 	LCD_init() ; 
-	printf_int("Myopen svn v.", /*SVN_VERSION{*/62/*}*/ ) ; 
+	printf_int("Myopen svn v.", /*SVN_VERSION{*/64/*}*/ ) ; 
 	printf_str("\n"); 
 	printf_str("checking SDRAM...\n"); 
 	unsigned short* p; 
@@ -131,41 +133,67 @@ int main() {
 	*pUART0_DLH = 0;  //the system clock is 120Mhz. baud rate is 115200. 
 	*pUART0_LCR = 0x0003; //parity disabled, 1 stop bit, 8 bit word. 
 	*pUART0_GCTL = 0x0001; //enable the clock.
+	usb_init(); 
+	bfin_EMAC_init(); 
+	DHCP_req	(); 
+	
+	//turn on the SPORTS last, as the ethernet has to be ready to blast out the data. 
 	printf_str("turning on SPORTs\n"); 
+	g_tchan = 0; 
+	g_tptr = 0; 
+	g_rptr = 0; 
 	//set up the receive first, since it is controled by the transmit sport. 
-	*pSPORT0_RCR2 = 0x0100 + 23; //enable second side, serial word length 24
-	*pSPORT1_RCR2 = 0x0100 + 23; 
+	*pSPORT0_RCR2 = 0x0100 + 19; //enable second side, serial word length 20
+	*pSPORT1_RCR2 = 0x0100 + 19; 
 	/* RCR = 0100 0100 0000 0001
 	sample data on rising edge, 
 	early frame syncs,
 	active high frame syncs,
 	require frame sync for every word, 
-	external fram sync, 
+	external frame sync, 
 	msb first, 
 	zero fill data, 
 	external recieve clock,  
 	enable. */
 	*pSPORT0_RCR1 = 0x4401 ; 
 	*pSPORT1_RCR1 = 0x4401 ; 
+	//transmit port
 	*pSPORT1_TCLKDIV = 149 ; //120Mhz / 300 = 400k / 25 = 16k / 4 = 4 ksps/ch
 	*pSPORT1_TFSDIV = 24 ; //25 clocks between assertions of the frame sync
-	*pSPORT1_TCR2 = 23; //word length, secondary disabled. 
+	*pSPORT1_TCR2 = 19; //word length 20, secondary disabled. 
 	// TCR = 0100 0110 0000 0011
 	*pSPORT1_TCR1 = 0x4603 ; 
-	printf_str("turning on USB\n"); //this should be echoed on the serial port now
-	//first have to set the SPI port up properly. 
-	*pSPI_CTL = 0; //disable while configuring. 
-	*pSPI_BAUD = 4 ; //baud rate = SCLK / (2*(SPI_BAUD+1)) = 12Mhz. 
-	*pSPI_FLG = 0; //don't use flags.
-	*pSPI_STAT = 0x56 ; //clear the flags.
-	*pSPI_CTL = TDBR_CORE | SZ | EMISO| GM | MSTR | SPE ; 
-	usb_test(); 
-	bfin_EMAC_init(); 
-	DHCP_req	(); 
+	
 	u8* data; 
 	while(1) {
-		bfin_EMAC_recv( &data ); //listen for packets? 
+		bfin_EMAC_recv( &data ); //listen for packets? (and respond)
+		if(bfin_EMAC_send_check() ){
+			if(g_rptr < g_tptr) g_tptr = 0; 
+			if(g_rptr - g_tptr >= 1024){//then we have at least one packet to send.
+				data = udp_packet_setup(1024 + 4); 
+				//copy the data from SDRAM.. (starting @ 0x0000 0000, looping 256k bytes)
+				//include a copy of the tptr, so that we can (possibly) reorder it. 
+				(*(u32*)data) = g_tptr; 
+				data += 4; 
+				memcpy((u8*)(g_rptr & 0x0003ffff), data, 1024); 
+				g_tptr += 1024 ; 
+				bfin_EMAC_send_nocopy(); 
+			}
+		}
+		usb_intr(); //check to see if there are any USB events to respond to.
 		*pPORTFIO_TOGGLE = 0x40 ; //toggle the nordic CSN pin.
 	}
 	return 0; 
+}
+void exception_report(unsigned long seqstat, unsigned long retx){
+	printf_str("Exception!!\n"); 
+	printf_hex("hwerr:", (seqstat >> 14) & 0x1f); 
+	printf_str("\n"); 
+	printf_hex("excause:", seqstat & 0x3f); 
+	printf_str("\n"); 
+	printf_hex("retx:", retx); 
+	printf_str("\n"); 
+	while(1) {
+		asm volatile("nop"); 
+	}
 }

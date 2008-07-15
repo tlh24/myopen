@@ -218,6 +218,7 @@ typedef struct tcp_packet{
 int bfin_EMAC_init( );
 void bfin_EMAC_halt();
 int bfin_EMAC_send(volatile void *packet,int length);
+int bfin_EMAC_send_check();
 int bfin_EMAC_send_nocopy();
 int bfin_EMAC_recv(u8** data);
 int bfin_EMAC_recv_poll(u8** data);
