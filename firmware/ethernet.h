@@ -19,8 +19,8 @@
 #define PHY_DUPLEX		0x0100
 #define PHY_SPD_SET		0x2000
 
-#define RECV_BUFSIZE		(0x614) //1556, as per the spec sheet.
-#define HTTP_BUFFER_SIZE 1280
+#define RECV_BUFSIZE		(0x610) //1552, slightly smaller than spec sheet. 
+#define HTTP_BUFFER_SIZE (1280) // (0x500)
 
 typedef volatile u32 reg32;
 typedef volatile u16 reg16;

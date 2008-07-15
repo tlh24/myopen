@@ -78,7 +78,8 @@ no_soft_reset:
 	sp.l = 0x0400;
 	fp = sp;
 
-
+	//enable the peripherals. 
+	call _start_peripherals ; 
 ////////////////////////////////////////////////////////////////////////////
 // install default interrupt handlers
 
@@ -185,16 +186,6 @@ no_soft_reset:
 	[p0] = r0;
 	csync; 
 
-/*
-_test: 
-	p0.h = HI(PORTFIO_TOGGLE); 
-	p0.l = LO(PORTFIO_TOGGLE); 
-	r0 = 0 (z); 
-	bitset(r0, 6); 
-	w[p0] = r0.l; 
-	ssync; 
-	jump _test; */
-
 	// IMASK : page 173 in the programming ref., (not hardware ref!)
 	//NOT THE SAME as SIC_IMASK (above) --both need to be set up correctly.
 	//r0 = 0x9c40(z);    // enable irq 15, 10 (sport1rx) 11 (sport0tx) 6 (core timer) 12 (SPI) 0x9c40
@@ -212,6 +203,7 @@ wait:
 	jump wait;         // wait until irq 15 is being serviced.
 
 call_main:
+		
 	[--sp] = reti;  // pushing RETI allows interrupts to occur inside all main routines
 	
 	p0.l = _main;
@@ -360,6 +352,26 @@ stall:
 	jump stall;
 
 EXC_HANDLER:          // exception handler
+	//save registers to memory so we may print them out. 
+	[--sp] = p5; 
+	p5.l = _g_excregs ; 
+	p5.h = _g_excregs ; 
+	[p5++] = r0; 
+	[p5++] = r1; 
+	[p5++] = r2; 
+	[p5++] = r3; 
+	[p5++] = r4; 
+	[p5++] = r5; 
+	[p5++] = r6; 
+	[p5++] = r7; 
+	[p5++] = p0; 
+	[p5++] = p1; 
+	[p5++] = p2; 
+	[p5++] = p3; 
+	[p5++] = p4; 
+	p4 = p5; 
+	p5 = [sp++]; //pop back off the stack.
+	[p4++] = p5; 
 	r0 = seqstat;
 	r1 = retx;
 	call _exception_report; //this should not return.
@@ -368,6 +380,15 @@ EXC_HANDLER:          // exception handler
 _THANDLER:            // Timer Handler 6 (core timer)
 	rti; 
 
+
+_test: 
+	p0.h = HI(PORTFIO_TOGGLE); 
+	p0.l = LO(PORTFIO_TOGGLE); 
+	r0 = 0 (z); 
+	bitset(r0, 6); 
+	w[p0] = r0.l; 
+	ssync; 
+	jump _test; 
 
 ////////////////////////////////////////////////////////////////////////////
 // we need _atexit if we don't use a libc..

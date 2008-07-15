@@ -9,6 +9,9 @@
 extern char printf_temp[PRINTF_BUFFER_SIZE];  
 extern char printf_out[PRINTF_BUFFER_SIZE]; 
 
+//in crt0.asm
+void delay(int); 
+
 int div(int num, int denom); 
 int mod(int num, int denom); 
 void memcpy(u8* src, u8* dest, int len);

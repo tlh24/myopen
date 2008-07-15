@@ -3,14 +3,19 @@
 .global _delay 
 
 _start_peripherals: 
+	[--sp] = (r7:0, p5:0); 
+	[--sp] = astat ; 
 	[--sp] = RETS; 
 /* need to enable/disable peripherals 
 	( through the 74LV595 ) */
-	//set portf_fer; SR_LOAD is on PORTF15: 
+	//set portf_fer; SR_LOAD is on PORTF15, 
 	p0.l = LO(PORTF_FER); 
 	p0.h = HI(PORTF_FER); 
 	r0.l = w[p0]; 
 	bitclr(r0, 15); 
+	bitset(r0, 11); //MOSI
+	bitset(r0, 12); //MISO
+	bitset(r0, 13); //SCLK
 	w[p0] = r0.l ; 
 	//likewise for the direction register. 
 	p0.l = LO(PORTFIO_DIR); 
@@ -26,7 +31,7 @@ _start_peripherals:
 	w[p0] = r0;
 	ssync; 
 	p0.l = LO(SPI_BAUD) ; 
-	r0 = 120 ; //baud rate = SCLK / (2* SPI_BAUD) -> 8.33Mhz. 
+	r0 = 12 ; //baud rate = SCLK / (2* SPI_BAUD) -> 8.33Mhz. 
 	w[p0] = r0; 
 	p0.l = LO(SPI_FLG) ; 
 	r0 = 0; //dont' forget that the flash _cs is on PF10.
@@ -39,7 +44,7 @@ _start_peripherals:
 	w[p0] = r0; 
 	ssync;
 	
-	//writeforever:
+	writeforever:
 	//;clear SR_LOAD (signal is latched on rising edge)
 	r0 = 0; 
 	bitset(r0, 15); 
@@ -56,15 +61,14 @@ _start_peripherals:
 	4 lcd_led_en = 1 (enabled)
 	5 boost = 1 (enabled)
 	6 afe_en = 0 (enabled)
-	7 usb_pin_en = 1 (disabled)
+	7 usb_pin_en = 0 (enabled, we can't change this anymore)
 	*/
-	//;looks like this register is shifted over by one (?)
-	r0 = 0b01100100 (z); //probably should make this a function.
+	//;looks like this register is shifted over by one (?) 
+	r0 = 0b00110010 (z); //probably should make this a function.
 	p0.l = LO(SPI_TDBR) ; 
 	p0.h = HI(SPI_TDBR) ; 
 	w[p0] = r0 ; 
-	r0 = 10; //this value is relatively sensitive, don't know why.. 
-	call _delay ; //for some reason spi_delay works but interferes with the bootloader.
+	call _spi_delay ; 
 	
 	//pulse SR_LOAD
 	r0 = 0; 
@@ -73,6 +77,9 @@ _start_peripherals:
 	p1.l = LO(PORTFIO_SET); 
 	p1.h = HI(PORTFIO_SET); 
 	w[p1] = r0; 
+	r0 = 2; 
+	call _delay ; 
+	//jump writeforever ;
 	/*
 testtest: 
 	p1.l = LO(PORTFIO_TOGGLE); 
@@ -83,6 +90,8 @@ testtest:
 	jump testtest; 
 	*/
 	RETS = [sp++]; 
+	astat = [sp++]; 
+	(r7:0, p5:0) = [sp++]; 
 	rts; //and return! 
 	
 /* spi function to wait until the byte has been transmitted */
