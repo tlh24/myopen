@@ -98,7 +98,6 @@ void usb_init() {
 	*pSPI_CTL = TDBR_CORE | SZ | EMISO| GM | MSTR | SPE ; 
 	//have to set MAX3421 up in full-duplex mode. 
 	wreg(rPINCTL,bmFDUPSPI | bmPOSINT);    // MAX3420: SPI=full-duplex
-	wreg(rPINCTL, 0x17); 
 	wreg(rUSBCTL,bmCHIPRES);    // reset the MAX3420E
 	udelay(20); 
 	wreg(rUSBCTL,0 );            // remove the reset, leave disconnected.
@@ -110,7 +109,6 @@ void usb_init() {
 		d &= bmOSCOKIRQ ; 
 	}
 	u8 rd, wr = 1; 
-	wreg(rPINCTL, 0x17); 
 
 	for(i=0; i<80;i++){
 		wreg(rUSBIEN, wr); 
@@ -141,24 +139,26 @@ void usb_intr(){
 #define ENABLE_IRQS wreg(rEPIEN,(bmSUDAVIE+bmIN3BAVIE)); wreg(rUSBIEN,(bmURESIE+bmURESDNIE));
 #define SETBIT(reg,val) wreg(reg,(rreg(reg)|val));
 #define CLRBIT(reg,val) wreg(reg,(rreg(reg)&~val));
-#define STALL_EP0 wreg(rEPSTALLS,0x23);	// Set all three EP0 stall bits--data stage IN/OUT and status stage
+#define STALL_EP0 wreg(rEPSTALLS,0x23);	
+	// Set all three EP0 stall bits--data stage IN/OUT and status stage
 
 void initialize_MAX(void){
 	g_ep3stall=0;			// EP3 inintially un-halted (no stall) (CH9 testing)
 	g_msgidx = 0;			// start of KB Message[]
-	g_inhibit_send = 0x01;		// 0 means send, 1 means inhibit sending
+	g_inhibit_send = 1;		// 0 means send, 1 means inhibit sending
 	g_send3zeros=1;
 	// software flags
 	g_configval=0;                    // at pwr on OR bus reset we're unconfigured
 	g_suspended=0;
 	g_RWU_enabled=0;            // Set by host Set_Feature(enable RWU) request
-	wreg(rPINCTL,(bmFDUPSPI+gpxSOF)); 
+	wreg(rPINCTL,(bmFDUPSPI | gpxSOF | bmPOSINT)); 
+	wreg(rGPIO,0x00); 
 	// MAX3420: SPI=full-duplex, INT=positive level, GPX=SOF
 	// This is a self-powered design, so the host could turn off Vbus while we are powered.
 	// Therefore set the VBGATE bit to have the MAX3420E automatically disconnect the D+
 	// pullup resistor in the absense of Vbus. Note: the VBCOMP pin must be connected to Vbus
 	// or pulled high for this code to work--a low on VBCOMP will prevent USB connection.
-	wreg(rUSBCTL,(bmVBGATE+bmCONNECT+bmPOSINT)); 
+	wreg(rUSBCTL,(bmVBGATE | bmCONNECT)); 
 		// VBGATE=1 disconnects D+ pullup if host turns off VBUS
 	ENABLE_IRQS
 	wreg(rCPUCTL,bmIE);                 // Enable the INT pin
