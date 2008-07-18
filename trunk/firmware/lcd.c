@@ -42,7 +42,7 @@ void LCD_send(char data, unsigned char word){
 	}
 	*pPORTFIO_SET = LCD_CS ;
 	SSYNC ; 
-	//delay(100); 
+	//delay(1); 
 }
 void LCD_command(unsigned char word){
 	LCD_send(0,word); 
@@ -164,7 +164,7 @@ void LCD_init() {
 		if(y > 128) y = 0; 
 	}
 	y = 0; 
-	/*
+	
 	while(0) {
 		 //colorful drawing demo 
 		LCD_pset(x, y, x+11, y+11);
@@ -180,7 +180,7 @@ void LCD_init() {
 		if(y > 112) y = 0; 
 		LCD_command(0);
 	}
-	*/
+	
 }
 
 int LCD_draw_char(u8 ch, u8 xi, u8 yi)
