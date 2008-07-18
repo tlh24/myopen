@@ -12,8 +12,8 @@ u32 g_excregs[14] ; //the regular data registers + pointer registers.
 
 int main() {
 	// disable cache. no imem_control on this proc? 
-	//*pDMEM_CONTROL = 0x00001001; 
-	//asm volatile("csync"); 
+	*pDMEM_CONTROL = 0x00001001; 
+	asm volatile("csync"); 
 	// disable the serial ports (for now)
 	*pSPORT0_TCR1 = 0; 
 	*pSPORT0_TCR2 = 0; 
@@ -83,7 +83,7 @@ int main() {
 	0	mdc				(peripheral ethernet)
 	1	mdio			(peripheral ethernet)
 	2	twi sclk		(peripheral o.c.)
-	3	twi sda			(peripheral o.c.)				
+	3	twi sda			(peripheral o.c.)
 	4	dr0sec			(peripheral input)
 	5	nc				()
 	6	rsclk0			(peripheral input, slave)
@@ -101,7 +101,7 @@ int main() {
 	*pUART0_DLH = 0;  //the system clock is 120Mhz. baud rate is 115200. 
 	*pUART0_LCR = 0x0003; //parity disabled, 1 stop bit, 8 bit word. 
 	*pUART0_GCTL = 0x0001; //enable the clock.
-	printf_int("Myopen svn v.", /*SVN_VERSION{*/67/*}*/ ) ; 
+	printf_int("Myopen svn v.", /*SVN_VERSION{*/68/*}*/ ) ; 
 	printf_str("\n"); 
 	printf_str("checking SDRAM...\n"); 
 	unsigned short* p; 
@@ -134,8 +134,8 @@ int main() {
 	//let's test the UART here. 
 	//fix up the UART.  it will be useful for debugging. 
 	usb_init(); 
-	bfin_EMAC_init(); 
-	DHCP_req	(); 
+	int etherr = bfin_EMAC_init(); 
+	if(!etherr) DHCP_req	(); 
 	
 	//turn on the SPORTS last, as the ethernet has to be ready to blast out the data. 
 	printf_str("turning on SPORTs\n"); 
@@ -166,8 +166,8 @@ int main() {
 	
 	u8* data; 
 	while(1) {
-		bfin_EMAC_recv( &data ); //listen for packets? (and respond)
-		if(bfin_EMAC_send_check() && 0 ){
+		if(!etherr) bfin_EMAC_recv( &data ); //listen for packets? (and respond)
+		if(!etherr && bfin_EMAC_send_check() && 0 ){
 			if(g_rptr < g_tptr) g_tptr = 0; 
 			if(g_rptr - g_tptr >= 1024){//then we have at least one packet to send.
 				data = udp_packet_setup(1024 + 4); 

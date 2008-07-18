@@ -98,28 +98,31 @@ void usb_init() {
 	*pSPI_CTL = TDBR_CORE | SZ | EMISO| GM | MSTR | SPE ; 
 	//have to set MAX3421 up in full-duplex mode. 
 	wreg(rPINCTL,bmFDUPSPI | bmPOSINT);    // MAX3420: SPI=full-duplex
-	wreg(rUSBCTL,bmCHIPRES);    // reset the MAX3420E
-	udelay(20); 
-	wreg(rUSBCTL,0 );            // remove the reset, leave disconnected.
-	u8 d = 0;
-	int i; 
-	//wait for the oscilator to come up. 
-	while(d == 0){
-		d = rreg(rUSBIRQ); 
-		d &= bmOSCOKIRQ ; 
-	}
-	u8 rd, wr = 1; 
-
-	for(i=0; i<80;i++){
-		wreg(rUSBIEN, wr); 
-		rd = rreg(rUSBIEN); 
-		if(rd != wr){
-			printf_int("usb: wrote ", wr); 
-			printf_int(" got:", rd); 
-			printf_str("\n"); //not exactly sure why the first two writes fail.. oscillator? 
+	int i, j; 
+	for(j =0; j<2; j++){
+		wreg(rUSBCTL,bmCHIPRES);    // reset the MAX3420E
+		udelay(20); 
+		wreg(rUSBCTL,0 );            // remove the reset, leave disconnected.
+		u8 d = 0;
+		//wait for the oscilator to come up. 
+		while(d == 0){
+			d = rreg(rUSBIRQ); 
+			d &= bmOSCOKIRQ ; 
 		}
-		wr++; 
-		if( wr == 255) wr = 0; 
+		u8 rd, wr = 1; 
+		/*while(1){ */
+		for(i=0; i<80;i++){
+			wreg(rPINCTL,bmFDUPSPI | bmPOSINT);    // MAX3420: SPI=full-duplex
+			wreg(rUSBIEN, wr); 
+			rd = rreg(rUSBIEN); 
+			if(rd != wr ){
+				printf_int("usb: wrote ", wr); 
+				printf_int(" got:", rd); 
+				printf_str("\n"); //not exactly sure why the first two writes fail.. oscillator? 
+			}
+			wr++; 
+			if( wr == 255) wr = 0; 
+		}
 	}
 	initialize_MAX(); 
 	printf_str("usb init done\n"); 
