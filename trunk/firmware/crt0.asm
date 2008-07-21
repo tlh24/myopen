@@ -203,6 +203,22 @@ wait:
 	jump wait;         // wait until irq 15 is being serviced.
 
 call_main:
+	//need to setup the loop registers for NLMS prior to calling main. 
+	//i0 addresses the delay (x in the literature)
+	b0.l = LO(LMS_X); 
+	b0.h = HI(LMS_X); 
+	i0 = b0; 
+	//the  size of these buffers is 256 bytes - 16x8 shorts. 
+	l0 = 256 (z) ; //this matrix is fortran-layout. 
+	//i1 addresses the filter weights (h)
+	b1.l = LO(LMS_H); 
+	b1.h = HI(LMS_H); 
+	i1 = b1; 
+	l1 = 0xf00 ; //15 * 16 * 8 * 2 ; 15x8 weight matrix per channel.
+	//both increment by 32 (16 shorts, the vertical dimension of the array. )
+	m0 = 0 (x);
+	m1 = -15*8*2 (x); //moves the h-pointer back to the start of a given channel.
+	m2 = -2 (x); 
 		
 	[--sp] = reti;  // pushing RETI allows interrupts to occur inside all main routines
 	
@@ -273,44 +289,97 @@ _I10HANDLER:          // IVG 10 Handler
 	(r7:4, p5:4) = [sp++]; 
 	rti; 
 
+_LMS : 
+	//input on R0.  output on R0. 
+	//trashes basically all data registers, loop counter, p4. 
+	//shift the delay line.  doing this actually saves us cycles, 
+	//as it allows the weight-update step to proceed with both MAC active. 
+	i2 = i0; 
+	i0 += 14; //write ptr, last lag.
+	i2 += 12 ; //read ptr, second to last lag
+	r1.l = w[i2++m2] ; //read [6]
+	w[i0++m2] = r1.l || r1.h = w[i2++m2] ; // [6] -> [7]
+	w[i0++m2] = r1.h || r1.l = w[i2++m2] ; // [5] -> [6]
+	w[i0++m2] = r1.l || r1.h = w[i2++m2] ; // [4] -> [5]
+	w[i0++m2] = r1.h || r1.l = w[i2++m2] ; // [3] -> [4]
+	w[i0++m2] = r1.l || r1.h = w[i2++m2] ; // [2] -> [3]
+	w[i0++m2] = r1.h || r1.l = w[i2] ; 				// [1] -> [2]
+	w[i0++m2] = r1.l ; 									   // [0] -> [1]
+	w[i0] = r0.l ; //save the most recent sample. 
+	//compute the estimated noise from all channels but this one. 
+	i0 += 8*2 ; //move to next channel.
+	p4 = 15*4-2 ; // 4 because we slurp 2 weights and 2 samples at the same time. 
+							// -2 because we consume 2 (32bit words) outside of the loop.
+	r1 = [i0++] || r2 = [i1++]; 
+	a0 = r1.l * r2.l , a1 = r1.h * r2.h || r1 = [i0++]; r2 = [i1++] ; 
+	lsetup(flt_start, flt_end) lc0 = p4 ; 
+flt_start: 
+	a0 += r1.l * r2.l , a1 += r1.h * r2.h || r1 = [i0++]; r2 = [i1++]; 
+flt_end:
+	r3.l = (a0 += r1.l * r2.l) , r3.h = (a0 += r1.h * r2.h) ; //normal convert mode
+	r4.l = r3.l + r3.h ; //add the results of the odd-even word computations. 
+	r3.l = r0.l - r4.l ; //compute the error. 
+	r0.l = r3.l ; //save it for the output. 
+	r3.l  = r3.l >> 10 ; //divide by 1024. 
+	i0 += 16; //wraps to the start again
+	i1 += m1; //move back to the start of the h-matrix.  (or at least this segment of it)
+	i2 = i1 ;
+	//now the update step. 
+	r4.l = 0x7fff ; // weight decay.
+	r4.h = r4.l ; 
+	r1 = [i0++] || r2 = [i1++] ;
+	p4 = 15*4; //do some extra computation but it doesn't matter since we don't write it out. 
+	a0 = r2.l * r4.l , a1 = r2.h * r4.h ; 
+	lsetup(upd_start,upd_end) lc0 = p4; 
+upd_start:
+	r5.l = (a0 += r1.l * r3.l) , r5.h = (a1 += r1.h * r3.l) || r1 = [i0++] || r2 = [i1++] ; 
+	a0 = r2.l * r4.l , a1 = r2.h * r4.h || [i2++] = r5; 
+upd_end:
+	i0 += 16 - 4; //the pointers will have moved 
+	i1 += -4; //two words / four bytes too far due to the pipeline. 
+	//this will leave both pointers ready for the next channel. 
+	rets ; 
+	
 _I11HANDLER:          // IVG 11 Handler
 	//serial port reception. note that all 4 longs - primary and secondary 
 	// on both sports will be captured at the same time. 
 	// we only need to enable interupts on one sport. 
-	[--sp] = (r7:0, p5:4); 
+	[--sp] = (r7:0, p5:2); 
 	[--sp] = astat ; 
-	p5.h = HI(SPORT0_RX); 
-	p5.l = LO(SPORT0_RX); 
-	r7 = [p5]; 
-	r6 = [p5]; 
-	p5.h = HI(SPORT1_RX); 
-	p5.l = LO(SPORT1_RX); 
-	r5 = [p5]; 
-	r4 = [p5]; 
-	r7 = r7 << 3; //20 bit data, 7 clocks control, 13 data, incl. sign bit. 
-	r6 = r6 << 3; 
-	r5 = r5 << 3; 
-	r4 = r4 << 3; 
-	//yea.. now I must do DSP on these channels.  will be trixy; last time only had to do 2 at a time. 
-	//in the meantime, let's just sent them out over enet, 
-	//so I can look at them on a real computer. 
-	p4.h = _g_rptr; 
-	p4.l = _g_rptr; 
-	r3 = [p4]; //pointer to a pointer!
+	[--sp] = lc0 ;
+	p2.h = _g_rptr; 
+	p2.l = _g_rptr; 
+	r3 = [p2]; //pointer to a pointer!
 	//have to bitmask here so we address a looping region of 2^18 bytes (256k)
+	// in the lowest part of SDRAM. 
 	r1.l = 0xffff ; 
 	r1.h = 0x0003; 
 	r2 = r3 & r1; 
-	p5 = r2; 
-	w[p5++] = r7; //only stores the bottom 16bits. 
-	w[p5++] = r6; 
-	w[p5++] = r5; 
-	w[p5++] = r4; 
-	//increment the pointer to coincide with p5 - 8 bytes - and save. 
-	r3 += 8; 
-	[p4] = r3; //save the full 32 bits; we use this for computation of what needs to be sent. 
+	p3 = r2; 
+	p5.h = HI(SPORT0_RX); 
+	p5.l = LO(SPORT0_RX); 
+	r0 = [p5];  //channel. 1 (in this block)
+	r0 = r0 << 3; 
+	call _LMS ; 
+	w[p3++] = r0.l ; 
+	r0 = [p5];  // channel. 2 
+	r0 = r0 << 3; 
+	call _LMS ; 
+	w[p3++] = r0.l ; 
+	r0 = [p5];  // channel. 3
+	r0 = r0 << 3; 
+	call _LMS ; 
+	w[p3++] = r0.l ;
+	r0 = [p5];  // channel. 4
+	r0 = r0 << 3; 
+	call _LMS ; 
+	w[p3++] = r0.l ; 
+	r3 = [p2] ; //reload
+	r3 += 8 ; //keep around the full 32 bits, since we compare with the transmit pointer. 
+	[p2] = r3;
+	lc0 = [sp++]; 
 	astat = [sp++]; 
-	(r7:0, p5:4) = [sp++]; 
+	(r7:0, p5:2) = [sp++]; 
 	rti; 
 
 _I12HANDLER:          // IVG 12 Handler

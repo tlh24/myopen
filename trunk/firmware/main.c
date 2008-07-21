@@ -5,8 +5,8 @@
 #include "ethernet.h"
 #include "usb.h"
 
-u32	g_rptr ; //recieve (SPORT) pointer. 
-u32	g_tptr ; // transmit (ethernet) pointer.
+u32	g_rptr ; //recieve (SPORT) pointer.  (yea I know it's not a u32*)
+u32	g_tptr ; // transmit (ethernet) pointer. (actually points to external sdram)
 u16 	g_tchan ; //transmit channel counter
 u32 g_excregs[14] ; //the regular data registers + pointer registers. 
 
@@ -136,7 +136,6 @@ int main() {
 	usb_init(); 
 	int etherr = bfin_EMAC_init(); 
 	if(!etherr) DHCP_req	(); 
-	
 	//turn on the SPORTS last, as the ethernet has to be ready to blast out the data. 
 	printf_str("turning on SPORTs\n"); 
 	g_tchan = 0; 
@@ -167,7 +166,7 @@ int main() {
 	u8* data; 
 	while(1) {
 		if(!etherr) bfin_EMAC_recv( &data ); //listen for packets? (and respond)
-		if(!etherr && bfin_EMAC_send_check() && 0 ){
+		if(!etherr && bfin_EMAC_send_check() ){
 			if(g_rptr < g_tptr) g_tptr = 0; 
 			if(g_rptr - g_tptr >= 1024){//then we have at least one packet to send.
 				data = udp_packet_setup(1024 + 4); 

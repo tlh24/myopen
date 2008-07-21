@@ -2,45 +2,16 @@
 #define __MEMORY_H__
 
 //memory.h
-//check bftiny.h, too.
-#define LCD_SERIAL_DATA 	0xFF900000 //what is to be written. 
+//gcc gets to touch 0xFF90 0000 (sram bank B, size: 0x8000)
+// we get to stomp over 0xFF80 0000 (sram bank A, same size)
+#define LMS_X 0xFF800000 //16 * 8 matrix = 256 bytes. 
+//note: Both data transfers can access the same data bank if they use different sub-banks
+#define LMS_H 0xFF801000 //much larger matrix of weights - 
+// size 15*16*8*2 = 3840 bytes. (0xF00, of course)
 
-#define TXPTRBUF	0xFF904300 
-//circular buffer of 128*4 byte pointers
-#define	TXHDRBUF	0xFF904500 
-//corresponds to above, except 128*4 byte header info (channel, timestamp). 
-#define	TXBUF_LEN	128
-//		end	0xFF904700
-#define ISICOUNT	0xFF904700 //32 * 2bytes ea = 64, 0x40
-#define STATUSPKT	0xFF904740 //32 bytes
-#define RXPKT		0xFF904760 //32 bytes
-
-#define WFBUF		0xFF804000 //takes entire 16kb - thats 512 samples/channel, or 17ms. 
-#define WFBUF_LEN	0x4000 //thus it ends at 0xFF80 8000 - by simply clearing bit 15, we can make it loop.
-
-//<stuff for radio_control>
-//the primary state. 
-#define	RS_WAIT				0x1
-#define RS_TX_DATA			0x2
-#define RS_TX_STATUS		0x4
-#define	RS_RX_CMD			0x8
-#define	RS_SET_RX			0x10
-#define	RS_SET_TX			0x20
-#define RS_WAITIRQ			0x40
-#define RS_WAITIRQ_BIT		6
-#define RS_CLEARIRQ			0x80
-#define RS_CLEARIRQ_BIT		7
-
-
-//the secondary state.
-#define RS_PREAMBLE			256
-#define RS_PREAMBLE_BIT		8
-#define RS_SET_CE			512
-#define RS_SET_CE_BIT		9
-//timeouts...
-#define DATA_TIMEOUT 3000
-#define STATUS_TIMEOUT 5000
-//</radio control>
+#pointers for global variables indexed off the frame pointer (fp)
+#define CHAN_AVG 		0
+#define CHAN_SUM		4
 
 
 #define CONFIG_CLKIN_HZ          25000000 /*external clock*/
