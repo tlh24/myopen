@@ -13,6 +13,8 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
+Text Notes 13950 5000 0    60   ~
+** should be DR1 SEC
 NoConn ~ 12200 12300
 Connection ~ 11750 3050
 $Comp
