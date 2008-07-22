@@ -4,10 +4,12 @@
 //memory.h
 //gcc gets to touch 0xFF90 0000 (sram bank B, size: 0x8000)
 // we get to stomp over 0xFF80 0000 (sram bank A, same size)
-#define LMS_X 0xFF800000 //16 * 8 matrix = 256 bytes. 
+//#define LMS_X 0xFF800000 //16 * 8 matrix = 256 bytes. 
 //note: Both data transfers can access the same data bank if they use different sub-banks
-#define LMS_H 0xFF801000 //much larger matrix of weights - 
+//#define LMS_H 0xFF801000 //much larger matrix of weights - 
 // size 15*16*8*2 = 3840 bytes. (0xF00, of course)
+#define IIR_DELAY 0xFF800000 //length 320 (10 * 8 chan * 4 bytes)
+#define IIR_WEIGHTS 0xFF801000 //length 32 (4 biquads * 4 weights * 2 bytes )
 
 #pointers for global variables indexed off the frame pointer (fp)
 #define CHAN_AVG 		0
