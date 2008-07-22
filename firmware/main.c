@@ -147,7 +147,7 @@ int main() {
 	//highpass biquad
 	*p++ = 14488; 
 	*p++ = -28976; 
-	*p++ = -32510; //close to 0x7fff
+	*p++ = -32510; //close to 0x7fff ! 
 	*p++ = 16130; 
 	//lowpass biquad 2
 	*p++ = 1649; 
