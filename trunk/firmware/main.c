@@ -136,6 +136,37 @@ int main() {
 	usb_init(); 
 	int etherr = bfin_EMAC_init(); 
 	if(!etherr) DHCP_req	(); 
+	//setup the filters before we start acquiring samples! 
+	//please see (or run!) flt_design.m
+	short* p = (short*)IIR_WEIGHTS; 
+	//lowpass biquad 1
+	*p++ = 1649; //b0 , lowpass biquad 1 
+	*p++ = 1840; //b1
+	*p++ = -25793; //a0
+	*p++ = 15457 ; //a1
+	//highpass biquad
+	*p++ = 14488; 
+	*p++ = -28976; 
+	*p++ = -32510; //close to 0x7fff
+	*p++ = 16130; 
+	//lowpass biquad 2
+	*p++ = 1649; 
+	*p++ = -1751; 
+	*p++ = -26211; 
+	*p++ = 13500; 
+	//lowpass biquad 3
+	*p++ = 1649; 
+	*p++ = -1039; 
+	*p++ = -27280; 
+	*p++ = 11802; 
+	
+	//zero the delays. 
+	p = (short*)IIR_DELAYS; 
+	for(i=0; i<160; i++){
+		*p++ = 0; 
+	}
+	
+	
 	//turn on the SPORTS last, as the ethernet has to be ready to blast out the data. 
 	printf_str("turning on SPORTs\n"); 
 	g_tchan = 0; 
