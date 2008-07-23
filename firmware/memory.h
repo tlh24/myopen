@@ -5,15 +5,23 @@
 //gcc gets to touch 0xFF90 0000 (sram bank B, size: 0x8000)
 // we get to stomp over 0xFF80 0000 (sram bank A, same size)
 #define IIR_DELAY 0xFF800000 //length 320 (10 * 8 chan * 4 bytes)
-#define IIR_WEIGHTS 0xFF801000 //length 32 (4 biquads * 4 weights * 2 bytes )
+#define IIR_WEIGHT 0xFF801000 //length 32 (4 biquads * 4 weights * 2 bytes )
 #define LMS_DELAY (IIR_DELAY + 320) //16 * 32 matrix * 2 bytes each = 1024 bytes.
 //the extra 16 taps are for the decorrelating delay -- see lms_test.m
-#define LMS_WEIGHTS (IIR_WEIGHTS + 32) //16 * 16 matrix * 2bytes = 512 bytes. 
+#define LMS_WEIGHT (IIR_WEIGHT + 32) //16 * 16 matrix * 2bytes = 512 bytes. 
 //note: Both data transfers can access the same data bank if they use different sub-banks
+#define FRAME_PTR (LMS_DELAY + 1024 + 64) //where we store global variables. 
+	//frame pointer is indexed by *subtracting* from this address
 
-#pointers for global variables indexed off the frame pointer (fp)
-#define CHAN_AVG 		0
-#define CHAN_SUM		4
+//pointers for global variables indexed off the frame pointer (fp)
+#define F_SAMP_CTR	0 //is incermented 1 for every sample in. 
+								//used to downsample by 4 (4ksps -> 1ksps)
+#define F_WR_PTR		4 //where the sample will be written to in SDRAM. 
+#define F_TR_PTR		8 //the transmitted sample pointer.
+
+#define SAMP_CTR (FRAME_PTR - F_SAMP_CTR)
+#define WR_PTR (FRAME_PTR - F_WR_PTR)
+#define TR_PTR (FRAME_PTR - F_TR_PTR)
 
 
 #define CONFIG_CLKIN_HZ          25000000 /*external clock*/
