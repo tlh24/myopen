@@ -2,6 +2,8 @@
 #include "defBF537_ext.h"
 #include "memory.h"
 
+.global _LMS
+
 _LMS : //LMS adaptive decorrelator. 
 /*the arrangement of the delays in memory is: 
 	(in the matrix, the numbers are the offsets from the start of the matrix. 
@@ -30,10 +32,12 @@ arguments:
 	r1 global writepointer (used to figure out what channel we are on). 
 	output is on r0.  r1 is unchanged, all other data registers might be.
 		no pregs are modified.
+		
+	i1 += m0;
 */
 	//setup the shared i2 pointer. 
-	r2.l = LO(LMS_WEIGHTS); 
-	r2.h = HI(LMS_WEIGHTS); 
+	r2.l = LO(LMS_WEIGHT); 
+	r2.h = HI(LMS_WEIGHT); 
 	r4 = 0xf (z); //bottom 4 bits address the channel we are on
 	r3 = r1 & r4 ; 
 	r3 = r2 + r3; 
@@ -42,7 +46,7 @@ arguments:
 	l2 = 512; 
 	//i3 should be prepared already. 
 	[i3++m3] = r0; //save the new sample & post-inc to the read location.
-.align8 //otherwise we'll get instruction pipeline stalls! 
+.align 8 //otherwise we'll get instruction pipeline stalls! 
 	mnop || r2 = [i2++m2] || r3 = [i3++m2] ; //r2 = weights, r3 = samples
 		//m2 = 32 = vertical pitch of the matrix.
 	a0 = r2.l * r3.l , 	a1 = r2.h * r3.h 		|| r2 = [i2++m2]	|| r3 = [i3++m2] ;  // 1
@@ -71,6 +75,7 @@ arguments:
 	r6.l = 0x7fff ; //weight decay
 	// note: m1 = -1 * m2 (-32)
 	// m0 = 2 * m2 (64)
+.align 8
 	mnop || r2 = [i2++m2] || r3 = [i3++m2] ; 
 	a0 = r2.l * r6.l , a1 = r2.h * r6.l || nop || nop; 
 	r7.l = (a0 += r3.l * r5.l) , r7.h = (a1 += r3.h * r5.h) || r2 = [i2++m1] ; // calc 1
@@ -104,15 +109,8 @@ arguments:
 	r7.l = (a0 += r3.l * r5.l) , r7.h = (a1 += r3.h * r5.h) || r2 = [i2++m1] ; // calc 15
 	a0 = r2.l * r6.l , a1 = r2.h * r6.l || [i2++m0] = r7 || r3 = [i3++m2]; 		// write 15
 	r7.l = (a0 += r3.l * r5.l) , r7.h = (a1 += r3.h * r5.h) || nop ; 					// calc 16
-	[i2++m0] = r7 ; 																						// write 16
+	[i2] = r7 ; 																						// write 16
 	//finally, move i3 to the next 2 channels. 
 	i3+= 4; 
 	//that's it!
-	rets; 
-	
-	w[i1++] = r4; //2
-	[i1++] = r4; //4
-	//i1 += 3; //3
-	i1 += m0; //64
-	r4 = [i1--]; //-4
-	r4 = w[i1--]; //-2
+	rts; 

@@ -5,8 +5,6 @@
 #include "ethernet.h"
 #include "usb.h"
 
-u32	g_rptr ; //recieve (SPORT) pointer.  (yea I know it's not a u32*)
-u32	g_tptr ; // transmit (ethernet) pointer. (actually points to external sdram)
 u16 	g_tchan ; //transmit channel counter
 u32 g_excregs[14] ; //the regular data registers + pointer registers. 
 
@@ -101,7 +99,7 @@ int main() {
 	*pUART0_DLH = 0;  //the system clock is 120Mhz. baud rate is 115200. 
 	*pUART0_LCR = 0x0003; //parity disabled, 1 stop bit, 8 bit word. 
 	*pUART0_GCTL = 0x0001; //enable the clock.
-	printf_int("Myopen svn v.", /*SVN_VERSION{*/68/*}*/ ) ; 
+	printf_int("Myopen svn v.", /*SVN_VERSION{*/72/*}*/ ) ; 
 	printf_str("\n"); 
 	printf_str("checking SDRAM...\n"); 
 	unsigned short* p; 
@@ -138,40 +136,43 @@ int main() {
 	if(!etherr) DHCP_req	(); 
 	//setup the filters before we start acquiring samples! 
 	//please see (or run!) flt_design.m
-	short* p = (short*)IIR_WEIGHTS; 
+	short* ps = (short*)IIR_WEIGHT; 
 	//lowpass biquad 1
-	*p++ = 1649; //b0 , lowpass biquad 1 
-	*p++ = 1840; //b1
-	*p++ = -25793; //a0
-	*p++ = 15457 ; //a1
+	*ps++ = 1649; //b0 , lowpass biquad 1 
+	*ps++ = 1840; //b1
+	*ps++ = -25793; //a0
+	*ps++ = 15457 ; //a1
 	//highpass biquad
-	*p++ = 14488; 
-	*p++ = -28976; 
-	*p++ = -32510; //close to 0x7fff ! 
-	*p++ = 16130; 
+	*ps++ = 14488; 
+	*ps++ = -28976; 
+	*ps++ = -32510; //close to 0x7fff ! 
+	*ps++ = 16130; 
 	//lowpass biquad 2
-	*p++ = 1649; 
-	*p++ = -1751; 
-	*p++ = -26211; 
-	*p++ = 13500; 
+	*ps++ = 1649; 
+	*ps++ = -1751; 
+	*ps++ = -26211; 
+	*ps++ = 13500; 
 	//lowpass biquad 3
-	*p++ = 1649; 
-	*p++ = -1039; 
-	*p++ = -27280; 
-	*p++ = 11802; 
+	*ps++ = 1649; 
+	*ps++ = -1039; 
+	*ps++ = -27280; 
+	*ps++ = 11802; 
 	
 	//zero the delays. 
-	p = (short*)IIR_DELAYS; 
+	ps = (short*)IIR_DELAY; 
 	for(i=0; i<160; i++){
-		*p++ = 0; 
+		*ps++ = 0; 
 	}
 	
 	
 	//turn on the SPORTS last, as the ethernet has to be ready to blast out the data. 
 	printf_str("turning on SPORTs\n"); 
-	g_tchan = 0; 
-	g_tptr = 0; 
-	g_rptr = 0; 
+	u32* samp_ctr = (u32*)SAMP_CTR; 
+	u32* wr_ptr = (u32*)WR_PTR; 
+	u32* tr_ptr = (u32*)TR_PTR; 
+	*samp_ctr = 0; 
+	*wr_ptr = 0; 
+	*tr_ptr = 0; 
 	//set up the receive first, since it is controled by the transmit sport. 
 	*pSPORT0_RCR2 = 0x0100 + 19; //enable second side, serial word length 20
 	*pSPORT1_RCR2 = 0x0100 + 19; 
@@ -198,15 +199,15 @@ int main() {
 	while(1) {
 		if(!etherr) bfin_EMAC_recv( &data ); //listen for packets? (and respond)
 		if(!etherr && bfin_EMAC_send_check() ){
-			if(g_rptr < g_tptr) g_tptr = 0; 
-			if(g_rptr - g_tptr >= 1024){//then we have at least one packet to send.
+			if(*wr_ptr < *tr_ptr) *tr_ptr = 0; 
+			if(*wr_ptr - *tr_ptr >= 1024){//then we have at least one packet to send.
 				data = udp_packet_setup(1024 + 4); 
 				//copy the data from SDRAM.. (starting @ 0x0000 0000, looping 256k bytes)
 				//include a copy of the tptr, so that we can (possibly) reorder it. 
-				(*(u32*)data) = g_tptr; 
+				(*(u32*)data) = *tr_ptr; 
 				data += 4; 
-				memcpy((u8*)(g_rptr & 0x0003ffff), data, 1024); 
-				g_tptr += 1024 ; 
+				memcpy((u8*)((*tr_ptr) & 0x0003ffff), data, 1024); 
+				(*tr_ptr) += 1024 ; 
 				bfin_EMAC_send_nocopy(); 
 			}
 		}

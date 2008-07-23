@@ -13,8 +13,6 @@
 .global start
 .global _spi_delay
 .global _delay
-.extern _g_tchan
-.extern _g_rchan
 
 start:
 	r1 = 0;	/* Data registers zero'd */
@@ -204,13 +202,13 @@ wait:
 
 call_main:
 	//setup loop registers. 
-	i0.l = LO(IIR_WEIGHTS); 
-	i0.h = HI(IIR_WEIGHTS); 
+	i0.l = LO(IIR_WEIGHT); 
+	i0.h = HI(IIR_WEIGHT); 
 	l0 = 32; 
 	b0 = i0; 
 	
-	i1.l = LO(IIR_DELAYS); //used for reading IIR delays. 
-	i1.h = HI(IIR_DELAYS); //and writing, really.
+	i1.l = LO(IIR_DELAY); //used for reading IIR delays. 
+	i1.h = HI(IIR_DELAY); //and writing, really.
 	l1 = 320; 
 	b1 = i1; 
 	//note: i2 is setup in the serial port ISR. 
@@ -292,58 +290,6 @@ _I10HANDLER:          // IVG 10 Handler
 	astat = [sp++]; 
 	(r7:4, p5:4) = [sp++]; 
 	rti; 
-
-_LMS : 
-	//input on R0.  output on R0. 
-	//trashes basically all data registers, loop counter, p4. 
-	//shift the delay line.  doing this actually saves us cycles, 
-	//as it allows the weight-update step to proceed with both MAC active. 
-	i2 = i0; 
-	i0 += 14; //write ptr, last lag.
-	i2 += 12 ; //read ptr, second to last lag
-	r1.l = w[i2++m2] ; //read [6]
-	w[i0++m2] = r1.l || r1.h = w[i2++m2] ; // [6] -> [7]
-	w[i0++m2] = r1.h || r1.l = w[i2++m2] ; // [5] -> [6]
-	w[i0++m2] = r1.l || r1.h = w[i2++m2] ; // [4] -> [5]
-	w[i0++m2] = r1.h || r1.l = w[i2++m2] ; // [3] -> [4]
-	w[i0++m2] = r1.l || r1.h = w[i2++m2] ; // [2] -> [3]
-	w[i0++m2] = r1.h || r1.l = w[i2] ; 				// [1] -> [2]
-	w[i0++m2] = r1.l ; 									   // [0] -> [1]
-	w[i0] = r0.l ; //save the most recent sample. 
-	//compute the estimated noise from all channels but this one. 
-	i0 += 8*2 ; //move to next channel.
-	p4 = 15*4-2 ; // 4 because we slurp 2 weights and 2 samples at the same time. 
-							// -2 because we consume 2 (32bit words) outside of the loop.
-	r1 = [i0++] || r2 = [i1++]; 
-	a0 = r1.l * r2.l , a1 = r1.h * r2.h || r1 = [i0++]; r2 = [i1++] ; 
-	lsetup(flt_start, flt_end) lc0 = p4 ; 
-flt_start: 
-	a0 += r1.l * r2.l , a1 += r1.h * r2.h || r1 = [i0++]; r2 = [i1++]; 
-flt_end:
-	r3.l = (a0 += r1.l * r2.l) , r3.h = (a0 += r1.h * r2.h) ; //normal convert mode
-	r4.l = r3.l + r3.h ; //add the results of the odd-even word computations. 
-	r3.l = r0.l - r4.l ; //compute the error. 
-	r0.l = r3.l ; //save it for the output. 
-	r3.l  = r3.l >> 10 ; //divide by 1024. 
-	i0 += 16; //wraps to the start again
-	i1 += m1; //move back to the start of the h-matrix.  (or at least this segment of it)
-	i2 = i1 ;
-	//now the update step. 
-	r4.l = 0x7fff ; // weight decay.
-	r4.h = r4.l ; 
-	r1 = [i0++] || r2 = [i1++] ;
-	p4 = 15*4; //do some extra computation but it doesn't matter since we don't write it out. 
-	a0 = r2.l * r4.l , a1 = r2.h * r4.h ; 
-	lsetup(upd_start,upd_end) lc0 = p4; 
-upd_start:
-	r5.l = (a0 += r1.l * r3.l) , r5.h = (a1 += r1.h * r3.l) || r1 = [i0++] || r2 = [i1++] ; 
-	a0 = r2.l * r4.l , a1 = r2.h * r4.h || [i2++] = r5; 
-upd_end:
-	i0 += 16 - 4; //the pointers will have moved 
-	i1 += -4; //two words / four bytes too far due to the pipeline. 
-	//this will leave both pointers ready for the next channel. 
-	rets ; 
-
 
 _I12HANDLER:          // IVG 12 Handler
 	rti; 
