@@ -7,7 +7,11 @@ CPUDEFINES = -D__ADSPBF537__  -D__BLACKFIN__
 INCLUDES = -I/opt/uClinux/bfin-elf/bfin-elf/include/
 ASMFLAGS = -x assembler-with-cpp $(INCLUDES) $(CPUDEFINES) -Wall
 ASMFLAGS += -mcpu=bf537 -include memory.h -include defBF537.h
-CFLAGS = $(INCLUDES) $(CPUDEFINES) -mcpu=bf537 -O2 -Wall -fomit-frame-pointer
+CFLAGS = $(INCLUDES) $(CPUDEFINES) -mcpu=bf537 -O2 -Wall \
+ -fomit-frame-pointer -ffixed-I0 -ffixed-I1 -ffixed-I2 -ffixed-I3 \
+ -ffixed-B0 -ffixed-B1 -ffixed-B2 -ffixed-B3 \
+ -ffixed-L0 -ffixed-L1 -ffixed-L2 -ffixed-L3 \
+ -ffixed-M0 -ffixed-M1 -ffixed-M2 -ffixed-M3 
 LDR = /opt/uClinux/bfin-uclinux/bin/bfin-uclinux-ldr
 
 LDFLAGS = -T bftiny.x

@@ -195,7 +195,7 @@ void write_page(unsigned char *d, int page_size, int page){
 	}
 }
 
-void verify_page(unsigned char *d, int page_size, int page){
+int verify_page(unsigned char *d, int page_size, int page){
 	int i, ok=1; 
 	unsigned char read; 
 	
@@ -222,6 +222,7 @@ void verify_page(unsigned char *d, int page_size, int page){
 		printf("flash page %d has been verified :) \n", page); 
 	}
 	set_pin(_CS); 
+	return ok; //return 1 on success, 0 on failure.
 }
 int main(int argv, char* argc[]){
 	int 		i, j, ps, pass; 
@@ -331,13 +332,18 @@ int main(int argv, char* argc[]){
 		printf("writing page %d size %d\n", i, ps); 
 		write_page(&(buffer[i*page_size]), ps, i); 
 	}
+	int ok = 1; 
 	for(i=0; i< (file_size / page_size)+1; i++){
 		ps = file_size - i*page_size; 
 		ps = ps > page_size ? page_size : ps; 
 		printf("verifying page %d size %d\n", i, ps); 
-		verify_page(&(buffer[i*page_size]), ps, i); 
+		ok &= verify_page(&(buffer[i*page_size]), ps, i); 
 	}
-	
+	if(!ok){
+		printf("not all pages verified properly!  beware!\n"); 
+	}else{
+		printf("all pages verified correctly!\n"); 
+	}
 	free(buffer); 
 	clear_pin(_PROG | _CS | SO | SCLK); //release the device! 
 	return 0;

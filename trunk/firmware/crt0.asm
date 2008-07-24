@@ -74,7 +74,7 @@ no_soft_reset:
 	
 	sp.h = 0xFFB0;		//Set up supervisor stack in scratch pad
 	sp.l = 0x0400;
-	fp = sp;
+	fp = sp; 
 
 	//enable the peripherals. 
 	call _start_peripherals ; 
@@ -204,12 +204,12 @@ call_main:
 	//setup loop registers. 
 	i0.l = LO(IIR_WEIGHT); 
 	i0.h = HI(IIR_WEIGHT); 
-	l0 = 32; 
+	l0 = 32; //4 biquads * 4 weights each * 2 bytes/weight.
 	b0 = i0; 
 	
 	i1.l = LO(IIR_DELAY); //used for reading IIR delays. 
 	i1.h = HI(IIR_DELAY); //and writing, really.
-	l1 = 320; 
+	l1 = 320; //10 delays * 16 channels * 2bytes/delay.
 	b1 = i1; 
 	//note: i2 is setup in the serial port ISR. 
 	
@@ -267,25 +267,25 @@ _I9HANDLER:           // IVG 9 Handler
 	jump display_fail;
 	
 _I10HANDLER:          // IVG 10 Handler
-	// serial port transmission.
+	// serial port transmission (for switching between the 4 multiplexed ports on the ADC)
 	[--sp] = (r7:4, p5:4); 
 	[--sp] = astat ; 
-	p4.h = _g_tchan;
-	p4.l = _g_tchan; 
-	r7 = w[p4]; 
-	p5.h = HI(SPORT1_TX); 
+	p5.h = HI(F_P5); 
+	p5.l = LO(F_P5); 
+	r7 = [p5+F_ADC_CTR]; //the write pointer will increment 8 (4 samples) per TFS.
+	p4.h = HI(SPORT1_TX); 
 	r4 = 0x10; //start bit = 1, differential sampling.
-	p5.l = LO(SPORT1_TX); 
+	p4.l = LO(SPORT1_TX); 
 	r5 = r4 | r7; 
 	r5 = r5 << 15 ; //20-bit word to write out, 1 start, 1differential, 2channel bits. 
-	r5 += 1;
+	r5 += 1; //put a mark for debugging.
 	//note: lsbit on the channel is always zero, as we do not want to invert the polarity
 	// of the channels (see the MCP3304 data sheet). 
-	[p5] = r5; //write the output buffah! 
+	[p4] = r5; //write the output buffah! 
 	r6 = 0x7 (z); //for some strange reason, it looks like this routine is being called twice / this value is incrementing twice.. ?
 	r7 += 1; 
 	r7 = r7 & r6 ; //bitmask (make it rollover)
-	w[p4] = r7 ; //save it. 
+	[p5+F_ADC_CTR] = r7 ; //save it.
 	
 	astat = [sp++]; 
 	(r7:4, p5:4) = [sp++]; 
@@ -350,6 +350,44 @@ EXC_HANDLER:          // exception handler
 	p4 = p5; 
 	p5 = [sp++]; //pop back off the stack.
 	[p4++] = p5; 
+	
+	r0 = i0; 
+	[p4++] = r0; 
+	r0 = b0; 
+	[p4++] = r0; 
+	r0 = l0; 
+	[p4++] = r0; 
+	
+	r0 = i1; 
+	[p4++] = r0; 
+	r0 = b1; 
+	[p4++] = r0; 
+	r0 = l1; 
+	[p4++] = r0; 
+	
+	r0 = i2; 
+	[p4++] = r0; 
+	r0 = b2; 
+	[p4++] = r0; 
+	r0 = l2; 
+	[p4++] = r0; 
+	
+	r0 = i3; 
+	[p4++] = r0; 
+	r0 = b3; 
+	[p4++] = r0; 
+	r0 = l3; 
+	[p4++] = r0; 
+	
+	r0 = m0; 
+	[p4++] = r0; 
+	r0 = m1; 
+	[p4++] = r0; 
+	r0 = m2; 
+	[p4++] = r0; 
+	r0 = m3; 
+	[p4++] = r0; 
+	
 	r0 = seqstat;
 	r1 = retx;
 	call _exception_report; //this should not return.

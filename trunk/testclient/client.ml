@@ -21,12 +21,12 @@ let _ =
 	(* now need to make the GUI *)
 	let top = openTk () in
 	Wm.title_set top "myopen data client";
-	let togl = Togl.create ~width:640 ~height:480 
+	let togl = Togl.create ~width:1200 ~height:900 
 		~rgba:true ~double:true ~depth:true top in
 	gwfwind#bind top togl ;
 	(* need to set up the 16 wf traces *) 
 	(* 4 sec each = 16k samples, x, y each *)
-	let len = 4*1024 in
+	let len = 1*1024 in
 	let rawa = Array.init 16 (fun i -> Raw.create `short (len*2) ) in
 	Array.iter (fun raw -> 
 		for i = 0 to len-1 do (
@@ -36,18 +36,25 @@ let _ =
 		) done ;
 	) rawa ; 
 	let render () = 
+		GlMat.push(); 
+		GlMat.scale ~x:0.99 ~y:0.99 ~z:1.0 () ; 
 		(* draw each of the waveforms as a line strip *)
 		Array.iteri (fun i raw -> 
 			GlMat.push() ; 
 			let n = 16.0 in
 			let c = foi i in
 			GlMat.translate ~x:0.0 ~y:(-1.0 +. (1.0/. n) +. (2.0/. n)*.c)~z:0.0 ();  
-			GlMat.scale ~x:(0.9 /. (foi(len/2))) ~y:(1.0 /. (32768.0 *. n)) ~z:(1.0) () ;
-			GlDraw.color ~alpha:0.75 (0.5 , 1.0 , 1.0 ); 
+			GlMat.scale ~x:(1.0 /. (foi(len/2))) ~y:(1.0 /. (32768.0 *. n)) ~z:(1.0) () ;
+			if( i mod 4 = 2 || i mod 4 = 3) then (
+				GlDraw.color ~alpha:0.9 (0.5 , 1.0 , 1.0 ); 
+			) else (
+				GlDraw.color ~alpha:0.9 (0.8 , 1.0 , 0.3 ); 
+			); 
 			GlArray.vertex `two raw ; 
 			GlArray.draw_arrays `line_strip 0 (len-1) ; 
 			GlMat.pop() ; 
 		) rawa; 
+		GlMat.pop(); 
 	in
 	gwfwind#setRenderCB render ;
 	let datain () = 
