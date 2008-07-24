@@ -18,13 +18,17 @@ _I11HANDLER:          // IVG 11 Handler
 	i2 = i1; 
 	b2 = b1; 
 	l2 = l1; //after these operations, 4 cycles are required before doing anything with i2
-	p5.h = HI(SPORT0_RX); 
-	p5.l = LO(SPORT0_RX); 
-	r1 = [p5];  //channel. 1 (in this block)
+	i0 = b0; //not strictly necessary.
+	p4.h = HI(SPORT0_RX); 
+	p4.l = LO(SPORT0_RX); 
+	p5.h = HI(F_P5); 
+	p5.l = LO(F_P5); 
+	r1 = [p4];  //channel. 1 (in this block)
 	r1 = r1 << 3; 
-	r2 = [p5]; //need to read these with full 32 bit word as the serial word is 20 bits. 
+	r2 = [p4]; //need to read these with full 32 bit word as the serial word is 20 bits. 
 	r2 = r2 << 3; //we are using a 13-bit ADC. 
 	r0 = pack(r1.l, r2.l); 
+	r7 = r0; 
 	/*
 	directform 1 biquad, form II saturates 1.15 format.
 	operate on the two samples in parallel (both in 1 32bit reg). 
@@ -66,9 +70,9 @@ _I11HANDLER:          // IVG 11 Handler
 	a0 += r2.l * r5.l, a1 += r2.h * r5.l || r3 = [i1++] ; 
 	a0 += r3.l * r6.l, a1 += r3.h * r6.l || r4 = [i1++] ;
 	r0.l = (a0 += r4.l * r6.h), r0.h = (a1 += r4.h * r6.h) (s2rnd) || [i2++] = r1;
-	
+
 	mnop || r5 = [i0++] || [i2++] = r0; 
-	a0 = r0.l * r5.l, a1 += r0.h * r5.l || r6 = [i0++] || [i2++] = r3; 
+	a0 = r0.l * r5.l, a1 = r0.h * r5.l || r6 = [i0++] || [i2++] = r3; 
 	a0 += r3.l * r5.h, a1 += r3.h * r5.h || r1 = [i1++]; 
 	a0 += r4.l * r5.l, a1 += r4.h * r5.l || r2 = [i1++]; 
 	a0 += r1.l * r6.l, a1 += r1.h * r6.l; 
@@ -82,7 +86,7 @@ _I11HANDLER:          // IVG 11 Handler
 	r0.l = (a0 += r4.l * r6.h), r0.h = (a1 += r4.h * r6.h) (s2rnd); 
 	
 	mnop || r5 = [i0++] || [i2++] = r0; 
-	a0 = r0.l * r5.l, a1 += r0.h * r5.l || r6 = [i0++] || [i2++] = r3; 
+	a0 = r0.l * r5.l, a1 = r0.h * r5.l || r6 = [i0++] || [i2++] = r3; 
 	a0 += r3.l * r5.h, a1 += r3.h * r5.h || r1 = [i1++]; 
 	a0 += r4.l * r5.l, a1 += r4.h * r5.l || r2 = [i1++]; 
 	a0 += r1.l * r6.l, a1 += r1.h * r6.l; 
@@ -92,12 +96,12 @@ _I11HANDLER:          // IVG 11 Handler
 	[i2++] = r1; //normally this would be pipelined.
 	[--sp] = r0; //save on the stack for later (LMS, ethernet). 
 	//grab the next two samples. 
-	r1 = [p5];  //channel. 1 (in this block)
+	p4.l = LO(SPORT1_RX); 
+	r1 = [p4];  //channel. 1 (in this block)
 	r1 = r1 << 3; 
-	r2 = [p5]; //need to read these with full 32 bit word as the serial word is 20 bits. 
+	r2 = [p4]; //need to read these with full 32 bit word as the serial word is 20 bits. 
 	r2 = r2 << 3; //we are using a 13-bit ADC. 
 	r0 = pack(r1.l, r2.l); 
-	
 .align 8
 	mnop || r5 = [i0++] || r1 = [i1++]; 
 	a0 = r0.l * r5.l , a1 = r0.h * r5.l || r6 = [i0++] ||  [i2++] = r0; 
@@ -107,7 +111,7 @@ _I11HANDLER:          // IVG 11 Handler
 	r0.l = (a0 += r4.l * r6.h), r0.h = (a1 += r4.h * r6.h) (s2rnd) || [i2++] = r1;
 	
 	mnop || r5 = [i0++] || [i2++] = r0; 
-	a0 = r0.l * r5.l, a1 += r0.h * r5.l || r6 = [i0++] || [i2++] = r3; 
+	a0 = r0.l * r5.l, a1 = r0.h * r5.l || r6 = [i0++] || [i2++] = r3; 
 	a0 += r3.l * r5.h, a1 += r3.h * r5.h || r1 = [i1++]; 
 	a0 += r4.l * r5.l, a1 += r4.h * r5.l || r2 = [i1++]; 
 	a0 += r1.l * r6.l, a1 += r1.h * r6.l; 
@@ -121,7 +125,7 @@ _I11HANDLER:          // IVG 11 Handler
 	r0.l = (a0 += r4.l * r6.h), r0.h = (a1 += r4.h * r6.h) (s2rnd); 
 	
 	mnop || r5 = [i0++] || [i2++] = r0; 
-	a0 = r0.l * r5.l, a1 += r0.h * r5.l || r6 = [i0++] || [i2++] = r3; 
+	a0 = r0.l * r5.l, a1 = r0.h * r5.l || r6 = [i0++] || [i2++] = r3; 
 	a0 += r3.l * r5.h, a1 += r3.h * r5.h || r1 = [i1++]; 
 	a0 += r4.l * r5.l, a1 += r4.h * r5.l || r2 = [i1++]; 
 	a0 += r1.l * r6.l, a1 += r1.h * r6.l; 
@@ -131,23 +135,25 @@ _I11HANDLER:          // IVG 11 Handler
 	[i2++] = r1; //normally this would be pipelined.
 	
 	// downsample by 4 - that's 16*4 samples, so bits 4 & 5 must be 1.
-	r1 = [fp - F_SAMP_CTR]; 
-	r7 = r1 >> 4; 
+	r1 = [p5 + F_SAMP_CTR]; 
+	r5 = r1 >> 4; 
 	r6 = 0x3 ; 
-	r7 = r7 & r6 ; 
-	cc = r6 == r7 ; 
+	r5 = r5 & r6 ; 
+	cc = r6 == r5 ; 
 	if !cc jump skip_sample
 		//call LMS to filter the sample. 
 		//r0 = most recent filtered sample, r1 = sample counter. 
+		[--sp] = r7; 
 		call _LMS;
-		r3 = [fp - F_WR_PTR]; 
+		r3 = [p5 + F_WR_PTR]; 
 		r4.h = 0x0003; 
 		r4.l = 0xffff; 
 		r4 = r3 & r4; 
 		r3 += 8 ; //we'll save 4 samples here
-		[fp - F_WR_PTR] = r3; 
+		[p5 + F_WR_PTR] = r3; 
 		p4 = r4; 
-		[p4++] = r0; //write filtered sample to SDRAM.
+		r7 = [sp++]; 
+		[p4++] = r7; //write filtered sample to SDRAM.
 		r0 = [sp++]; //pop the old filtered sample. 
 		r1 += 2; 
 		call _LMS ; 
@@ -158,11 +164,7 @@ skip_sample: //samples 0, 1, or 2.
 	r0 = [sp++]; //if we did not pop it in the inner loop, we need to pop it here. 
 no_pop_sample: 
 	r1 += 4; //we read in 4 samples just now. 
-	[fp - F_SAMP_CTR] = r1; 
-	
-	r3 = [fp - F_WR_PTR] ; //reload
-	r3 += 8 ; //keep around the full 32 bits, since we compare with the transmit pointer. 
-	[fp - F_WR_PTR] = r3;
+	[p5 + F_SAMP_CTR] = r1; 
 	
 	rets = [sp++]; 
 	lc0 = [sp++]; 

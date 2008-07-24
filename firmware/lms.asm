@@ -40,6 +40,7 @@ arguments:
 	r2.h = HI(LMS_WEIGHT); 
 	r4 = 0xf (z); //bottom 4 bits address the channel we are on
 	r3 = r1 & r4 ; 
+	r3 = r3 << 1; //R1 is in samples, and we need to address i16 - so, * 2.
 	r3 = r2 + r3; 
 	i2 = r3; 
 	b2 = r2; 
@@ -68,8 +69,8 @@ arguments:
 	//r4 is the filter output (prediction from the past). 
 	r0.l = r0.l - r4.l; //compute the error.  
 	r0.h = r0.h - r4.h; 
-	r5.l = r0.l >>> 12 ; //arithmetic shift, divide by 4096 (= 1/mu)
-	r5.h = r0.h >>> 12 ; 
+	r5.l = r0.l  >>> 10 ; //arithmetic shift, divide by 1024 (= 1/mu)
+	r5.h = r0.h >>> 10 ; 
 	//at this point, i2 will have wrapped back to the beginning, but i3 will be at the start again. 
 	i3 += m3 ; 
 	r6.l = 0x7fff ; //weight decay

@@ -5,8 +5,7 @@
 #include "ethernet.h"
 #include "usb.h"
 
-u16 	g_tchan ; //transmit channel counter
-u32 g_excregs[14] ; //the regular data registers + pointer registers. 
+u32 g_excregs[8+6+16] ; //the regular data registers + pointer registers. 
 
 int main() {
 	// disable cache. no imem_control on this proc? 
@@ -99,7 +98,7 @@ int main() {
 	*pUART0_DLH = 0;  //the system clock is 120Mhz. baud rate is 115200. 
 	*pUART0_LCR = 0x0003; //parity disabled, 1 stop bit, 8 bit word. 
 	*pUART0_GCTL = 0x0001; //enable the clock.
-	printf_int("Myopen svn v.", /*SVN_VERSION{*/72/*}*/ ) ; 
+	printf_int("Myopen svn v.", /*SVN_VERSION{*/73/*}*/ ) ; 
 	printf_str("\n"); 
 	printf_str("checking SDRAM...\n"); 
 	unsigned short* p; 
@@ -129,50 +128,50 @@ int main() {
 		if(s!= 0xCCCC) printf_hex("mem err @ ",i); 
 	}
 	printf_str("memory check done.\n"); 
-	//let's test the UART here. 
-	//fix up the UART.  it will be useful for debugging. 
 	usb_init(); 
 	int etherr = bfin_EMAC_init(); 
 	if(!etherr) DHCP_req	(); 
+	
 	//setup the filters before we start acquiring samples! 
 	//please see (or run!) flt_design.m
 	short* ps = (short*)IIR_WEIGHT; 
 	//lowpass biquad 1
 	*ps++ = 1649; //b0 , lowpass biquad 1 
 	*ps++ = 1840; //b1
-	*ps++ = -25793; //a0
-	*ps++ = 15457 ; //a1
+	*ps++ = 25793; //a0  DON'T FORGET TO switch SIGN!! 
+	*ps++ = -15457; //a1 (look at how matlab reports denominator coef!!)
 	//highpass biquad
 	*ps++ = 14488; 
 	*ps++ = -28976; 
-	*ps++ = -32510; //close to 0x7fff ! 
-	*ps++ = 16130; 
+	*ps++ = 32510; //close to 0x7fff ! 
+	*ps++ = -16130; 
 	//lowpass biquad 2
 	*ps++ = 1649; 
 	*ps++ = -1751; 
-	*ps++ = -26211; 
-	*ps++ = 13500; 
+	*ps++ = 26211; 
+	*ps++ = -13500; 
 	//lowpass biquad 3
 	*ps++ = 1649; 
 	*ps++ = -1039; 
-	*ps++ = -27280; 
-	*ps++ = 11802; 
+	*ps++ = 27280; 
+	*ps++ = -11802; 
 	
 	//zero the delays. 
 	ps = (short*)IIR_DELAY; 
 	for(i=0; i<160; i++){
 		*ps++ = 0; 
 	}
-	
-	
+
 	//turn on the SPORTS last, as the ethernet has to be ready to blast out the data. 
 	printf_str("turning on SPORTs\n"); 
-	u32* samp_ctr = (u32*)SAMP_CTR; 
+	 u32* samp_ctr = (u32*)SAMP_CTR; 
 	u32* wr_ptr = (u32*)WR_PTR; 
 	u32* tr_ptr = (u32*)TR_PTR; 
+	u32* adc_ctr = (u32*)ADC_CTR; 
 	*samp_ctr = 0; 
 	*wr_ptr = 0; 
 	*tr_ptr = 0; 
+	*adc_ctr = 0; 
 	//set up the receive first, since it is controled by the transmit sport. 
 	*pSPORT0_RCR2 = 0x0100 + 19; //enable second side, serial word length 20
 	*pSPORT1_RCR2 = 0x0100 + 19; 
@@ -196,10 +195,10 @@ int main() {
 	*pSPORT1_TCR1 = 0x4603 ; 
 	
 	u8* data; 
-	while(1) {
+	 while(1) {
 		if(!etherr) bfin_EMAC_recv( &data ); //listen for packets? (and respond)
 		if(!etherr && bfin_EMAC_send_check() ){
-			if(*wr_ptr < *tr_ptr) *tr_ptr = 0; 
+			if(*wr_ptr < *tr_ptr) *tr_ptr = 0; //rollover.
 			if(*wr_ptr - *tr_ptr >= 1024){//then we have at least one packet to send.
 				data = udp_packet_setup(1024 + 4); 
 				//copy the data from SDRAM.. (starting @ 0x0000 0000, looping 256k bytes)
@@ -224,35 +223,57 @@ void exception_report(unsigned long seqstat, unsigned long retx){
 	printf_str("\n"); 
 	printf_hex("retx:", retx); 
 	printf_str("\n"); 
-	printf_hex("r0:", g_excregs[0]); 
+	u32* p = g_excregs; 
+	printf_hex("r0:", *p++); 
 	printf_str("\n"); 
-	printf_hex("r1:", g_excregs[1]); 
+	printf_hex("r1:", *p++); 
 	printf_str("\n"); 
-	printf_hex("r2:", g_excregs[2]); 
+	printf_hex("r2:", *p++); 
 	printf_str("\n"); 
-	printf_hex("r3:", g_excregs[3]); 
+	printf_hex("r3:", *p++); 
 	printf_str("\n"); 
-	printf_hex("r4:", g_excregs[4]); 
+	printf_hex("r4:", *p++); 
 	printf_str("\n"); 
-	printf_hex("r5:", g_excregs[5]); 
+	printf_hex("r5:", *p++); 
 	printf_str("\n"); 
-	printf_hex("r6:", g_excregs[6]); 
+	printf_hex("r6:", *p++); 
 	printf_str("\n"); 
-	printf_hex("r7:", g_excregs[7]); 
+	printf_hex("r7:", *p++); 
 	printf_str("\n"); 
-	printf_hex("p0:", g_excregs[8]); 
+	printf_hex("p0:", *p++); 
 	printf_str("\n"); 
-	printf_hex("p1:", g_excregs[9]); 
+	printf_hex("p1:", *p++); 
 	printf_str("\n"); 
-	printf_hex("p2:", g_excregs[10]); 
+	printf_hex("p2:", *p++); 
 	printf_str("\n"); 
-	printf_hex("p3:", g_excregs[11]); 
+	printf_hex("p3:", *p++); 
 	printf_str("\n"); 
-	printf_hex("p4:", g_excregs[12]); 
+	printf_hex("p4:", *p++); 
 	printf_str("\n"); 
-	printf_hex("p5:", g_excregs[13]); 
+	printf_hex("p5:", *p++); 
 	printf_str("\n"); 
-	//would be nice to print out the registers, too. 
+	//loop registers. 
+	printf_hex("i0:", *p++); 		printf_str(" "); 
+	printf_hex("b0:", *p++); 		printf_str(" "); 
+	printf_hex("l0:", *p++); 		printf_str("\n"); 
+	
+	printf_hex("i1:", *p++); 		printf_str(" "); 
+	printf_hex("b1:", *p++); 		printf_str(" "); 
+	printf_hex("l1:", *p++); 		printf_str("\n"); 
+	
+	printf_hex("i2:", *p++); 		printf_str(" "); 
+	printf_hex("b2:", *p++); 		printf_str(" "); 
+	printf_hex("l2:", *p++); 		printf_str("\n"); 
+	
+	printf_hex("i3:", *p++); 		printf_str(" "); 
+	printf_hex("b3:", *p++); 		printf_str(" "); 
+	printf_hex("l3:", *p++); 		printf_str("\n"); 
+	
+	printf_hex("m0:", *p++); 		printf_str(" "); 
+	printf_hex("m1:", *p++); 		printf_str(" "); 
+	printf_hex("m2:", *p++); 		printf_str(" "); 
+	printf_hex("m3:", *p++); 		printf_str("\n"); 
+	
 	while(1) {
 		asm volatile("nop"); 
 	}
