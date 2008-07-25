@@ -65,18 +65,87 @@ arguments:
 	a0 += r2.l * r3.l ,	a1 += r2.h * r3.h 	|| r2 = [i2++m2]	|| r3 = [i3++m2] ;  // 13
 	a0 += r2.l * r3.l ,	a1 += r2.h * r3.h 	|| r2 = [i2++m2]	|| r3 = [i3++m2] ;  // 14
 	a0 += r2.l * r3.l ,	a1 += r2.h * r3.h 	|| r2 = [i2++m2]	|| r3 = [i3++m2] ;  // 15
-	r4.l = (a0 += r2.l * r3.l ), r4.h = (a1 += r2.h * r3.h) || nop || nop;  // 16 , default round mode.
-	//r4 is the filter output (prediction from the past). 
-	r0.l = r0.l - r4.l; //compute the error.  
-	r0.h = r0.h - r4.h; 
-	r5.l = r0.l  >>> 10 ; //arithmetic shift, divide by 1024 (= 1/mu)
-	r5.h = r0.h >>> 10 ; 
+	r5.l = (a0 += r2.l * r3.l ), r5.h = (a1 += r2.h * r3.h) || nop || nop;  // 16 , default round mode.
+	//r5 is the filter output (prediction from the past). 
+	//now we must normalize. 
+	r2 = 0; 
+	//at this point, i2 will have wrapped back to the beginning, but i3 will be at the start again. 
+	i3 += m3 ; 
+	r3 = [i3++m2]; 
+.align 8
+	r4 = abs r3 || r3 = [i3++m2]; 
+	r2 = max(r2, r4) || nop || nop ; //1
+	r4 = abs r3 || r3 = [i3++m2]; 
+	r2 = max(r2, r4) || nop || nop ; //2
+	r4 = abs r3 || r3 = [i3++m2]; 
+	r2 = max(r2, r4) || nop || nop ; //3
+	r4 = abs r3 || r3 = [i3++m2]; 
+	r2 = max(r2, r4) || nop || nop ; //4
+	r4 = abs r3 || r3 = [i3++m2]; 
+	r2 = max(r2, r4) || nop || nop ; //5
+	r4 = abs r3 || r3 = [i3++m2]; 
+	r2 = max(r2, r4) || nop || nop ; //6
+	r4 = abs r3 || r3 = [i3++m2]; 
+	r2 = max(r2, r4) || nop || nop ; //7
+	r4 = abs r3 || r3 = [i3++m2]; 
+	r2 = max(r2, r4) || nop || nop ; //8
+	r4 = abs r3 || r3 = [i3++m2]; 
+	r2 = max(r2, r4) || nop || nop ; //9
+	r4 = abs r3 || r3 = [i3++m2]; 
+	r2 = max(r2, r4) || nop || nop ; //10
+	r4 = abs r3 || r3 = [i3++m2]; 
+	r2 = max(r2, r4) || nop || nop ; //11
+	r4 = abs r3 || r3 = [i3++m2]; 
+	r2 = max(r2, r4) || nop || nop ; //12
+	r4 = abs r3 || r3 = [i3++m2]; 
+	r2 = max(r2, r4) || nop || nop ; //13
+	r4 = abs r3 || r3 = [i3++m2]; 
+	r2 = max(r2, r4) || nop || nop ; //14
+	r4 = abs r3 || r3 = [i3++m2]; 
+	r2 = max(r2, r4) || nop || nop ; //15
+	r4 = abs r3; 
+	r2 = max(r2, r4); //16
+	//r2 now contains the maximum absolute value of the two signals.
+	
+	//need to compute the normalization factor : 2^16 / r2. 
+	r3 = 1; 
+	r3 = r3 << 16+1 //the 16 is to convert 1 to 2^16; the 1 is part of the divide algo. 
+	p4 = 15; //evaluate quotient to 16 bits
+	divs(r3, r2); // compute r3 / r2. 
+	lsetup (divls, divle) lc0=p4;
+divls: 
+		divq(r3, r2); //only operates on the low word of r4. 
+divle: 
+	r2 = r2 >> 16; //shift the high word into the low (denominator/divisor). 
+	r4 = 1; 
+	r4 = r4 << 16 + 1; 
+	divs(r4, r2); 
+	lsetup (divhs, divhe) lc0 = p4; 
+divhs: 
+		divq(r4, r2); 
+divhe: 
+	r6 = pack(r4.l, r3.l); //first argument goes in the high half.  
+
+	r0.l = r0.l - r5.l; //compute the error.  
+	r0.h = r0.h - r5.h; 
+	r5 = r0 >>> 8 (v) ; //vector shift, divide by 256 (= 1/mu)
+	//to get the sign, shift right arithmetic so it is either -1 or 0, shift left by 1 (mply by 2) and add 1.
+	r7 = r0 >>> 15 (v) ; 
+	r7 = r7 << 1 (v,s); 
+	r2.l = 1; 
+	r2.h = 1; 
+	r7 = r7 +|+ r2; 
+	r7 = r7 +|+ r5; //add in the scaled error (for faster convergence with large signals). 
+	//finally, multiply the error by the normalization factor. 
+	r5.l = r7.l * r6.l , r5.h = r7.h * r6.h ; 
+	
 	//at this point, i2 will have wrapped back to the beginning, but i3 will be at the start again. 
 	i3 += m3 ; 
 	r6.l = 0x7fff ; //weight decay
 	// note: m1 = -1 * m2 (-32)
 	// m0 = 2 * m2 (64)
 .align 8
+	//r2 = weights, r3 = samples
 	mnop || r2 = [i2++m2] || r3 = [i3++m2] ; 
 	a0 = r2.l * r6.l , a1 = r2.h * r6.l || nop || nop; 
 	r7.l = (a0 += r3.l * r5.l) , r7.h = (a1 += r3.h * r5.h) || r2 = [i2++m1] ; // calc 1
