@@ -22,6 +22,9 @@ c2);
 void multATA(matrix * A, matrix * C);
 void multAB(matrix * A, matrix * B, matrix * C);
 void multATB(matrix * A, matrix * B, matrix * C);
-void mean(matrix * m, matrix * mean);
+void mean(matrix * m, matrix * mmean);
+void colSum(matrix * m, matrix * msum);
+void elemMult(matrix * m, float x);
+void elemSquare(matrix * m);
 
 #endif

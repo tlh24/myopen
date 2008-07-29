@@ -150,21 +150,37 @@ void multATB(matrix * A, matrix * B, matrix * C) {
         A->d,A->r,B->d,B->r,beta,C->d,C->r);
 }
 
-/* take mean of each column of a matrix */
-void mean(matrix * m, matrix * mean) {
-
+/* sum of each column of a matrix */
+void colSum(matrix * m, matrix * msum) {
     int i, j;
 
-    allocMatrix(mean,1,m->c);
-    zeroMatrix(mean);
+    allocMatrix(msum,1,m->c);
+    zeroMatrix(msum);
 
-    for (i=0;i<m->r;i++) {
-        for (j=0;j<m->c;j++) {
-	    mean->d[j] += m->d[m->r*j+i];
-	}
-    }
-
-    for (j=0;j<m->c;j++) {
-        mean->d[j] /= (float) m->r;
-    }
+    for (i=0;i<m->r;i++)
+	for (j=0;j<m->c;j++)
+	    msum->d[j] += m->d[m->r*j+i];
 }
+
+/* in-place mult of each element */
+void elemMult(matrix * m, float x) {
+    int i;
+    for (i=0;i<m->r*m->c;i++)
+        m->d[i] *= x;
+}
+
+/* in-place square of each element */
+void elemSquare(matrix * m) {
+    int i;
+    
+    for (i=0;i<m->r*m->c;i++)
+            m->d[i] *= m->d[i];
+}
+
+/* take mean of each column of a matrix */
+void mean(matrix * m, matrix * mmean) {
+    colSum(m, mmean);
+    elemMult(mmean,(float)m->r);
+}
+
+
