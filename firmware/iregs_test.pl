@@ -88,7 +88,7 @@ if( $narg ne 1 ){
 			print $j;
 			$stack++; 
 		}
-		if( $j =~ /\[--sp\]\=\w+[^\d]/ ){
+		if( $j =~ /\[--sp\]\=\w+[^\d][\s;]/ ){
 			print $j;
 			$stack--; 
 		}
