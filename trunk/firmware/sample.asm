@@ -134,7 +134,7 @@ _I11HANDLER:          // IVG 11 Handler
 	[i2++] = r0; //save the delays. 
 	[i2++] = r1; //normally this would be pipelined.
 	
-	// downsample by 4 - that's 16*4 samples, so bits 4 & 5 must be 1.
+	// downsample by 4 - that's 16*4 samples, so bits 4 & 5 must both be 1.
 	r1 = [p5 + F_SAMP_CTR]; 
 	r5 = r1 >> 4; 
 	r6 = 0x3 ; 

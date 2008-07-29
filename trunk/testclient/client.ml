@@ -37,18 +37,42 @@ let _ =
 	) rawa ; 
 	let render () = 
 		GlMat.push(); 
-		GlMat.scale ~x:0.99 ~y:0.99 ~z:1.0 () ; 
+		GlMat.scale ~x:0.99 ~y:(-0.99) ~z:1.0 () ; 
 		(* draw each of the waveforms as a line strip *)
 		Array.iteri (fun i raw -> 
 			GlMat.push() ; 
 			let n = 16.0 in
 			let c = foi i in
+			let len2 = foi(len/2) in
 			GlMat.translate ~x:0.0 ~y:(-1.0 +. (1.0/. n) +. (2.0/. n)*.c)~z:0.0 ();  
-			GlMat.scale ~x:(1.0 /. (foi(len/2))) ~y:(1.0 /. (32768.0 *. n)) ~z:(1.0) () ;
+			GlMat.scale ~x:(1.0 /. len2 ) ~y:(1.0 /. (32768.0 *. n)) ~z:(1.0) () ;
+			(* the background *)
+			GlDraw.begins `lines ; 
+			GlDraw.color ~alpha:0.35 (1.0 , 0.0 , 0.3 ); 
+			GlDraw.vertex2 ((-1.0 *. len2) , 0.0) ; 
+			GlDraw.vertex2 ((1.0 *. len2) , 0.0) ; 
+			GlDraw.color ~alpha:0.2 (1.0 , 1.0 , 1.0 ); 
+			if i = 0 then (
+				GlDraw.vertex2 ((-1.0 *. len2) , -32700.0) ; 
+				GlDraw.vertex2 ((1.0 *. len2) , -32700.0) ; 
+			);
+			GlDraw.vertex2 ((-1.0 *. len2) , 32700.0) ; 
+			GlDraw.vertex2 ((1.0 *. len2) , 32700.0) ; 
+			GlDraw.ends () ; 
+			if(i mod 2 = 1) then (
+				GlDraw.begins `quads ; 
+				GlDraw.color ~alpha:0.1 (1.0 , 1.0 , 1.0 ); 
+				GlDraw.vertex2 ((-1.0 *. len2) , -32700.0) ; 
+				GlDraw.vertex2 ((1.0 *. len2) , -32700.0) ; 
+				GlDraw.vertex2 ((1.0 *. len2) , 32700.0) ; 
+				GlDraw.vertex2 ((-1.0 *. len2) , 32700.0) ; 
+				GlDraw.ends (); 
+			); 
+			(* the signals *)
 			if( i mod 4 = 2 || i mod 4 = 3) then (
 				GlDraw.color ~alpha:0.9 (0.5 , 1.0 , 1.0 ); 
 			) else (
-				GlDraw.color ~alpha:0.9 (0.8 , 1.0 , 0.3 ); 
+				GlDraw.color ~alpha:0.9 (1.0 , 1.0 , 0.3 ); 
 			); 
 			GlArray.vertex `two raw ; 
 			GlArray.draw_arrays `line_strip 0 (len-1) ; 
@@ -76,6 +100,14 @@ let _ =
 						for j = 0 to 15 do (
 							Raw.set (rawa.(j)) ~pos:(((pos +i) land (len-1))*2 + 1) (rs c) ; 
 						) done ; 
+						if i = 0 && pos mod 1024 = 0 then (
+							let cc = IO.input_string buffer in
+							ignore(ri cc); 
+							for j = 0 to 15 do (
+								printf "%d\t" (rs cc); 
+							) done ; 
+							printf "\n%!"; 
+						); 
 					) done ; 
 					gwfwind#render togl ; 
 				); 

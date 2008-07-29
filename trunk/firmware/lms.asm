@@ -35,6 +35,7 @@ arguments:
 		
 	i1 += m0;
 */
+	[--sp] = p4; 
 	//setup the shared i2 pointer. 
 	r2.l = LO(LMS_WEIGHT); 
 	r2.h = HI(LMS_WEIGHT); 
@@ -50,7 +51,7 @@ arguments:
 .align 8 //otherwise we'll get instruction pipeline stalls! 
 	mnop || r2 = [i2++m2] || r3 = [i3++m2] ; //r2 = weights, r3 = samples
 		//m2 = 32 = vertical pitch of the matrix.
-	a0 = r2.l * r3.l , 	a1 = r2.h * r3.h 		|| r2 = [i2++m2]	|| r3 = [i3++m2] ;  // 1
+	a0 = r2.l * r3.l , 	a1 = r2.h * r3.h 	|| r2 = [i2++m2]	|| r3 = [i3++m2] ;  // 1
 	a0 += r2.l * r3.l ,	a1 += r2.h * r3.h 	|| r2 = [i2++m2]	|| r3 = [i3++m2] ;  // 2
 	a0 += r2.l * r3.l ,	a1 += r2.h * r3.h 	|| r2 = [i2++m2]	|| r3 = [i3++m2] ;  // 3
 	a0 += r2.l * r3.l ,	a1 += r2.h * r3.h 	|| r2 = [i2++m2]	|| r3 = [i3++m2] ;  // 4
@@ -73,39 +74,43 @@ arguments:
 	i3 += m3 ; 
 	r3 = [i3++m2]; 
 .align 8
-	r4 = abs r3 || r3 = [i3++m2]; 
-	r2 = max(r2, r4) || nop || nop ; //1
-	r4 = abs r3 || r3 = [i3++m2]; 
-	r2 = max(r2, r4) || nop || nop ; //2
-	r4 = abs r3 || r3 = [i3++m2]; 
-	r2 = max(r2, r4) || nop || nop ; //3
-	r4 = abs r3 || r3 = [i3++m2]; 
-	r2 = max(r2, r4) || nop || nop ; //4
-	r4 = abs r3 || r3 = [i3++m2]; 
-	r2 = max(r2, r4) || nop || nop ; //5
-	r4 = abs r3 || r3 = [i3++m2]; 
-	r2 = max(r2, r4) || nop || nop ; //6
-	r4 = abs r3 || r3 = [i3++m2]; 
-	r2 = max(r2, r4) || nop || nop ; //7
-	r4 = abs r3 || r3 = [i3++m2]; 
-	r2 = max(r2, r4) || nop || nop ; //8
-	r4 = abs r3 || r3 = [i3++m2]; 
-	r2 = max(r2, r4) || nop || nop ; //9
-	r4 = abs r3 || r3 = [i3++m2]; 
-	r2 = max(r2, r4) || nop || nop ; //10
-	r4 = abs r3 || r3 = [i3++m2]; 
-	r2 = max(r2, r4) || nop || nop ; //11
-	r4 = abs r3 || r3 = [i3++m2]; 
-	r2 = max(r2, r4) || nop || nop ; //12
-	r4 = abs r3 || r3 = [i3++m2]; 
-	r2 = max(r2, r4) || nop || nop ; //13
-	r4 = abs r3 || r3 = [i3++m2]; 
-	r2 = max(r2, r4) || nop || nop ; //14
-	r4 = abs r3 || r3 = [i3++m2]; 
-	r2 = max(r2, r4) || nop || nop ; //15
-	r4 = abs r3; 
-	r2 = max(r2, r4); //16
+	r4 = abs r3 (v) || r3 = [i3++m2]; 
+	r2 = max(r2, r4) (v)|| nop || nop ; //1
+	r4 = abs r3 (v) || r3 = [i3++m2]; 
+	r2 = max(r2, r4) (v) || nop || nop ; //2
+	r4 = abs r3 (v) || r3 = [i3++m2]; 
+	r2 = max(r2, r4) (v) || nop || nop ; //3
+	r4 = abs r3 (v) || r3 = [i3++m2]; 
+	r2 = max(r2, r4) (v) || nop || nop ; //4
+	r4 = abs r3 (v) || r3 = [i3++m2]; 
+	r2 = max(r2, r4) (v) || nop || nop ; //5
+	r4 = abs r3 (v) || r3 = [i3++m2]; 
+	r2 = max(r2, r4) (v) || nop || nop ; //6
+	r4 = abs r3 (v) || r3 = [i3++m2]; 
+	r2 = max(r2, r4) (v) || nop || nop ; //7
+	r4 = abs r3 (v) || r3 = [i3++m2]; 
+	r2 = max(r2, r4) (v) || nop || nop ; //8
+	r4 = abs r3 (v) || r3 = [i3++m2]; 
+	r2 = max(r2, r4) (v) || nop || nop ; //9
+	r4 = abs r3 (v) || r3 = [i3++m2]; 
+	r2 = max(r2, r4) (v) || nop || nop ; //10
+	r4 = abs r3 (v) || r3 = [i3++m2]; 
+	r2 = max(r2, r4) (v) || nop || nop ; //11
+	r4 = abs r3 (v) || r3 = [i3++m2]; 
+	r2 = max(r2, r4) (v) || nop || nop ; //12
+	r4 = abs r3 (v) || r3 = [i3++m2]; 
+	r2 = max(r2, r4) (v) || nop || nop ; //13
+	r4 = abs r3 (v) || r3 = [i3++m2]; 
+	r2 = max(r2, r4) (v) || nop || nop ; //14
+	r4 = abs r3 (v) || r3 = [i3++m2]; 
+	r2 = max(r2, r4) (v) || nop || nop ; //15
+	r4 = abs r3 (v) ; 
+	r2 = max(r2, r4) (v); //16
 	//r2 now contains the maximum absolute value of the two signals.
+	r3.l = 16; 
+	r3.h = 16; 
+	r2 = r2 +|+ r3 (s); //add in a bit so we don't divide by zero.
+	//[--sp] = r2; 
 	
 	//need to compute the normalization factor : 2^16 / r2. 
 	r3 = 1; 
@@ -116,6 +121,7 @@ arguments:
 divls: 
 		divq(r3, r2); //only operates on the low word of r4. 
 divle: 
+	nop; 
 	r2 = r2 >> 16; //shift the high word into the low (denominator/divisor). 
 	r4 = 1; 
 	r4 = r4 << 16 + 1; 
@@ -124,20 +130,24 @@ divle:
 divhs: 
 		divq(r4, r2); 
 divhe: 
+	nop; 
+	//r2 = [sp++]; //can't pop off the stack after a loop.
 	r6 = pack(r4.l, r3.l); //first argument goes in the high half.  
 
-	r0.l = r0.l - r5.l; //compute the error.  
-	r0.h = r0.h - r5.h; 
+	r0.l = r0.l - r5.l (s); //compute the error.  
+	r0.h = r0.h - r5.h (s); 
 	r5 = r0 >>> 8 (v) ; //vector shift, divide by 256 (= 1/mu)
 	//to get the sign, shift right arithmetic so it is either -1 or 0, shift left by 1 (mply by 2) and add 1.
 	r7 = r0 >>> 15 (v) ; 
 	r7 = r7 << 1 (v,s); 
 	r2.l = 1; 
 	r2.h = 1; 
-	r7 = r7 +|+ r2; 
-	r7 = r7 +|+ r5; //add in the scaled error (for faster convergence with large signals). 
+	r7 = r7 +|+ r2 (s); 
+	r7 = r7 +|+ r5 (s); //add in the scaled error (for faster convergence with large signals). 
 	//finally, multiply the error by the normalization factor. 
-	r5.l = r7.l * r6.l , r5.h = r7.h * r6.h ; 
+	r5.l = r7.l * r6.l , r5.h = r7.h * r6.h (is) ; //signed integer multiply. 
+	//r0 = r5; //output the error.
+	//r5 = r7; 
 	
 	//at this point, i2 will have wrapped back to the beginning, but i3 will be at the start again. 
 	i3 += m3 ; 
@@ -183,4 +193,5 @@ divhe:
 	//finally, move i3 to the next 2 channels. 
 	i3+= 4; 
 	//that's it!
+	p4 = [sp++]; 
 	rts; 

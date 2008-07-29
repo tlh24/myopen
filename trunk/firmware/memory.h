@@ -4,13 +4,28 @@
 //memory.h
 //gcc gets to touch 0xFF90 0000 (sram bank B, size: 0x8000)
 // we get to stomp over 0xFF80 0000 (sram bank A, same size)
-#define IIR_DELAY 0xFF800000 //length 320 (10 * 8 chan * 4 bytes)
-#define IIR_WEIGHT 0xFF801000 //length 32 (4 biquads * 4 weights * 2 bytes )
-#define LMS_DELAY (IIR_DELAY + 320) //16 * 32 matrix * 2 bytes each = 1024 bytes.
-//the extra 16 taps are for the decorrelating delay -- see lms_test.m
-#define LMS_WEIGHT (IIR_WEIGHT + 32) //16 * 16 matrix * 2bytes = 512 bytes. 
+#define IIR_DELAY 0xFF800000 
+	//length 320 (10 * 8 chan * 4 bytes)
+#define IIR_WEIGHT 0xFF801000 
+	//length 32 (4 biquads * 4 weights * 2 bytes )
+#define LMS_DELAY (IIR_DELAY + 320) 
+	//16 * 32 matrix * 2 bytes each = 1024 bytes.
+	//the extra 16 taps are for the decorrelating delay -- see lms_test.m
+#define LMS_WEIGHT (IIR_WEIGHT + 32) 
+	//16 * 16 matrix * 2bytes = 512 bytes. 
 //note: Both data transfers can access the same data bank if they use different sub-banks
-#define F_P5 (LMS_DELAY + 1024) //where we store global variables. 
+#define F_P5 (LMS_DELAY + 1024) 
+	//where we store global variables. 
+
+/* ethernet buffers!! */
+#define RXBUF_BASE_ADDR		0xFF802000  
+	//length: 0x610 * 4 = 0x1840
+#define TXBUF_BASE_ADDR		0xFF804000 
+	//same length as the rxbuf.
+#define RECV_BUFSIZE		(0x610) 
+	//1552, slightly smaller than spec sheet. 
+#define TX_BUF_CNT		4
+#define RX_BUF_CNT		4
 
 //pointers for global variables indexed off the frame pointer (fp)
 #define F_SAMP_CTR	0 //is incremented 1 for every sample in. 

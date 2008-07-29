@@ -22,15 +22,10 @@
  * MA 02111-1307 USA
  */
 #include <cdefBF537.h>
+#include "memory.h"
 #include "util.h"
 #include "lcd.h"
 #include "ethernet.h"
-
-
-#define RXBUF_BASE_ADDR		0xFF800000 //data bank A sram
-#define TXBUF_BASE_ADDR		0xFF804000 //data bank A sram
-#define TX_BUF_CNT		4
-#define RX_BUF_CNT		4
 
 #define TOUT_LOOP		1000000
 
