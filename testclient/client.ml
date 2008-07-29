@@ -6,7 +6,11 @@ open Printf
 open Tk
 open Glwindow
 
+
+
 let gwfwind = new glwindow
+let goutsamp1000 = ref true
+let goutsamp1 = ref false
 
 let _ = 
 	let sock = Unix.socket Unix.PF_INET Unix.SOCK_DGRAM 0 in
@@ -24,6 +28,29 @@ let _ =
 	let togl = Togl.create ~width:1200 ~height:900 
 		~rgba:true ~double:true ~depth:true top in
 	gwfwind#bind top togl ;
+	(* menubar! *)
+	let menubar = Frame.create ~borderwidth:0 ~relief:`Raised top in
+	let fileb = Menubutton.create ~text:"File" menubar in
+	let optionb = Menubutton.create ~text:"Options" menubar in
+	let filemenu = Menu.create ~tearoff:false fileb in
+	let optionmenu = Menu.create ~tearoff:false optionb in
+	Menubutton.configure fileb ~menu:filemenu;
+	Menubutton.configure optionb ~menu:optionmenu;
+	Menu.add_command filemenu ~label:"Quit" ~command:(fun () -> closeTk () ; ) ; 
+	(*add options*)
+	let addOption label cmd ic = 
+		let v = Textvariable.create() in
+		Textvariable.set v (if ic then "On" else "Off") ; 
+		Menu.add_checkbutton optionmenu ~label ~indicatoron:true
+			~variable:v
+			~offvalue:"Off" ~onvalue:"On"
+			~command:(fun () -> cmd( (Textvariable.get v)="On" )) ; 
+	in 
+	addOption "output sample data full rate" (fun b -> goutsamp1 := b;  ) !goutsamp1 ; 
+	addOption "output sample data 1/sec rate" (fun b -> goutsamp1000 := b; ) !goutsamp1000 ; 
+	pack ~side:`Left [Tk.coe fileb; Tk.coe optionb] ; 
+	place ~height:28 ~x:0 ~y:0 menubar ; 
+	(*done with menu*)
 	(* need to set up the 16 wf traces *) 
 	(* 4 sec each = 16k samples, x, y each *)
 	let len = 1*1024 in
@@ -100,7 +127,22 @@ let _ =
 						for j = 0 to 15 do (
 							Raw.set (rawa.(j)) ~pos:(((pos +i) land (len-1))*2 + 1) (rs c) ; 
 						) done ; 
-						if i = 0 && pos mod 1024 = 0 then (
+					) done ; 
+					gwfwind#render togl ; 
+					(* write the data to stdout (e.g. for visual examination
+					or for piping to a file *)
+					if !goutsamp1 then (
+						let cc = IO.input_string buffer in
+						ignore(ri cc); 
+						for k = 0 to 1024/32 do (
+							for j = 0 to 15 do (
+								printf "%d\t" (rs cc); 
+							) done ; 
+							printf "\n%!";
+						) done; 
+						printf " %!" ; (* flush *)
+					) else (
+						if pos mod 1000 = 0 && !goutsamp1000 then (
 							let cc = IO.input_string buffer in
 							ignore(ri cc); 
 							for j = 0 to 15 do (
@@ -108,8 +150,7 @@ let _ =
 							) done ; 
 							printf "\n%!"; 
 						); 
-					) done ; 
-					gwfwind#render togl ; 
+					); 
 				); 
 			); 
 		) can_read ; 
