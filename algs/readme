@@ -1,0 +1,5 @@
+this needs blas and lapack.
+in debian i did:
+  apt-get install lapack3-dev atlas3-sse2-dev
+
+ymmv.

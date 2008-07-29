@@ -48,6 +48,15 @@ void freeMatrix(matrix * m) {
     safe_free(m);
 }
 
+void zeroMatrix(matrix * m) {
+  int i, j;
+  for(i=0;i<m->r;i++) {
+    for(j=0;j<m->c;j++) {
+      m->d[m->r*j+i] = 0.f;
+    }
+  }
+}
+
 /**
  * Print the contents of a matrix
  * mostly for debugging
@@ -139,4 +148,23 @@ void multATB(matrix * A, matrix * B, matrix * C) {
 
     cblas_sgemm(order,transA,transB,A->c,B->c,A->r,alpha,
         A->d,A->r,B->d,B->r,beta,C->d,C->r);
+}
+
+/* take mean of each column of a matrix */
+void mean(matrix * m, matrix * mean) {
+
+    int i, j;
+
+    allocMatrix(mean,1,m->c);
+    zeroMatrix(mean);
+
+    for (i=0;i<m->r;i++) {
+        for (j=0;j<m->c;j++) {
+	    mean->d[j] += m->d[m->r*j+i];
+	}
+    }
+
+    for (j=0;j<m->c;j++) {
+        mean->d[j] /= (float) m->r;
+    }
 }
