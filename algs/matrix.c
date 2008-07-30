@@ -2,6 +2,7 @@
   
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <clapack.h>
 #include "util.h"
 #include "matrix.h"
@@ -46,6 +47,12 @@ void allocMatrix(matrix * m, int rows, int cols) {
 void freeMatrix(matrix * m) {
     safe_free(m->d);
     safe_free(m);
+}
+
+/* copies matrix m -> n */
+void copyMatrix(matrix * m, matrix * n) {
+    allocMatrix(n, m->r, m->c);
+    memcpy(n->d, m->d, m->r*m->c*sizeof(float));
 }
 
 void zeroMatrix(matrix * m) {
@@ -177,10 +184,39 @@ void elemSquare(matrix * m) {
             m->d[i] *= m->d[i];
 }
 
-/* take mean of each column of a matrix */
-void mean(matrix * m, matrix * mmean) {
-    colSum(m, mmean);
-    elemMult(mmean,(float)m->r);
+/* add matrices m + n, result goes in m */
+void add(matrix * m, matrix * n) {
+    /* handle case where size mismatch */
+    int i;
+    for (i=0;i<m->r*m->c;i++)
+        m->d[i] += n->d[i];
 }
 
+/* take mean of each column of a matrix */
+void mean(matrix * m, matrix * _mean) {
+    colSum(m, _mean);
+    elemMult(_mean,(float)m->r);
+}
 
+/* standard deviation of each column of a matrix */
+void std(matrix * m, matrix * _std) {
+    matrix * meansq;
+    matrix * tmp;
+
+    /* mean(x^2) */
+    tmp = newMatrix();
+    copyMatrix(m, tmp);
+    elemSquare(tmp);
+    mean(tmp,_std);
+    freeMatrix(tmp);
+    
+    /* -(mean(x))^2 */
+    meansq = newMatrix();
+    colSum(m, meansq);
+    elemSquare(meansq);
+    elemMult(meansq,-1.f);
+
+    /* subtract */
+    add(_std,meansq);
+    freeMatrix(meansq);
+}

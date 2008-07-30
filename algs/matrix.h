@@ -17,14 +17,17 @@ matrix * newMatrix();
 void allocMatrix(matrix * m, int r, int c);
 void freeMatrix(matrix * m);
 void zeroMatrix(matrix * m);
+void copyMatrix(matrix * m, matrix * n);
 void submatrix(matrix * m1, matrix * m2, int r1, int c1, int r2, int 
 c2);
 void multATA(matrix * A, matrix * C);
 void multAB(matrix * A, matrix * B, matrix * C);
 void multATB(matrix * A, matrix * B, matrix * C);
-void mean(matrix * m, matrix * mmean);
 void colSum(matrix * m, matrix * msum);
 void elemMult(matrix * m, float x);
 void elemSquare(matrix * m);
+void add(matrix * m, matrix * n);
+void mean(matrix * m, matrix * _mean);
+void std(matrix * m, matrix * _std);
 
 #endif
