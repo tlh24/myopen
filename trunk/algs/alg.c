@@ -3,7 +3,7 @@
  *  the wiener algorithm
  *  see: Simon Haykin "Adaptive Fileter Theory" (4th edition, Prentice Hall)
  *
- * $Id: alg.c 131 2006-08-11 23:07:07Z joey $
+ * $Id$
  *
  */
 
