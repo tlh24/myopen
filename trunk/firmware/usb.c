@@ -80,6 +80,7 @@ u8 g_msgidx;
 u8 g_msglen;	// Text string in EnumApp_enum_data.h--index and length
 u8 g_configval;		// Set/Get_Configuration value
 u8 g_ep3stall;		// Flag for EP3 Stall, set by Set_Feature, reported back in Get_Status
+u8 g_ep2stall;		
 u8 g_interfacenum;      // Set/Get interface value
 u8 g_inhibit_send;	// Flag for the keyboard character send routine
 u8 g_RWU_enabled;       // Set by Set/Clear_Feature RWU request, sent back for Get_Status-RWU
@@ -147,7 +148,8 @@ void usb_intr(){
 	// Set all three EP0 stall bits--data stage IN/OUT and status stage
 
 void initialize_MAX(void){
-	g_ep3stall=0;			// EP3 inintially un-halted (no stall) (CH9 testing)
+	g_ep3stall=0;			// EP3 inintially un-halted (no stall) 
+	g_ep2stall=0;			// EP2 inintially un-halted (no stall) 
 	g_msgidx = 0;			// start of KB Message[]
 	g_inhibit_send = 1;		// 0 means send, 1 means inhibit sending
 	g_send3zeros=1;
@@ -203,6 +205,7 @@ void service_irqs(void){
 
 void do_SETUP(void){							
 	readbytes(rSUDFIFO,8,g_SUD);          // got a SETUP packet. Read 8 SETUP bytes
+	//looks like we completely ignore bits 0..3 here. (device/interface/endpoint)
 	switch(g_SUD[bmRequestType]&0x60){    // Parse the SETUP packet. For request type, look only at b6&b5
 		case 0x00:
 			printf_str("std_request\n");	
@@ -285,13 +288,13 @@ void get_configuration(void){
 void set_interface(void){	// All we accept are Interface=0 and AlternateSetting=0, otherwise send STALL
 	u8 dumval;
 	if((g_SUD[wValueL]==0)		// wValueL=Alternate Setting index
-	  &&(g_SUD[wIndexL]==0))		// wIndexL=Interface index
+	  &&(g_SUD[wIndexL]==0 || g_SUD[wIndexL]==1 ))		// wIndexL=Interface index
 		dumval=rregAS(rFNADDR);	// dummy read to set the ACKSTAT bit
 	else STALL_EP0
 }
 
 void get_interface(void){	// Check for Interface=0, always report AlternateSetting=0
-	if(g_SUD[wIndexL]==0) {		// wIndexL=Interface index
+	if(g_SUD[wIndexL]==0 || g_SUD[wIndexL]==1) {		// wIndexL=Interface index
 		wreg(rEP0FIFO,0);		// AS=0
 		wregAS(rEP0BC,1);		// send one byte, ACKSTAT
 	}
@@ -336,7 +339,7 @@ void get_status(void){
 void feature(u8 sc){
 	u8 mask;
 	if((g_SUD[bmRequestType]==0x02)	// dir=h->p, recipient = ENDPOINT
-	  &&  (g_SUD[wValueL]==0x00) {	// wValueL is feature selector, 00 is EP Halt
+	  &&  (g_SUD[wValueL]==0x00) ){	// wValueL is feature selector, 00 is EP Halt
 		if(g_SUD[wIndexL]==0x83){	// wIndexL is endpoint number IN3=83
 			mask=rreg(rEPSTALLS);   // read existing bits
 			if(sc==1){               // set_feature
@@ -353,10 +356,10 @@ void feature(u8 sc){
 		if(g_SUD[wIndexL]==0x82){	// wIndexL is endpoint number IN3=82
 			mask=rreg(rEPSTALLS);   // read existing bits
 			if(sc==1){               // set_feature
-				mask += bmSTLEP2IN;       // Halt EP3IN
+				mask += bmSTLEP2IN;       // Halt EP2IN
 				g_ep2stall=1;
 			}else {                      // clear_feature
-				mask &= ~bmSTLEP2IN;      // UnHalt EP3IN
+				mask &= ~bmSTLEP2IN;      // UnHalt EP2IN
 				g_ep2stall=0;
 				wreg(rCLRTOGS,bmCTGEP2IN);  // clear the EP3 data toggle
 			}
@@ -386,17 +389,30 @@ void send_descriptor(void) {
 			pDdata = (u8*)CD;
 			break;
 		case  GD_STRING:
-			desclen = strDesc[g_SUD[wValueL]][0];   // wValueL=string index, array[0] is the length
-			pDdata = (u8*)(strDesc[g_SUD[wValueL]]);       // point to first array element
+			if( g_SUD[wValueL] < 4){
+				desclen = strDesc[g_SUD[wValueL]][0];   // wValueL=string index, array[0] is the length
+				pDdata = (u8*)(strDesc[g_SUD[wValueL]]);       // point to first array element
+			}
 			break;
-		case  GD_HID:
-			desclen = CD[18];
-			pDdata = (u8*)(&CD[18]);
+		case  GD_HID: //get descriptor: HID
+			if(g_SUD[wIndexL] == 0){ //interface 0 (mouse)
+				desclen = CD[18];
+				pDdata = (u8*)(&CD[18]);
+			}
+			if(g_SUD[wIndexL] == 1){ //interface 1 (keyboard)
+				desclen = CD[43];
+				pDdata = (u8*)(&CD[43]);
+			}
 			break;
-		case  GD_REPORT:
-			print
-			desclen = CD[25];
-			pDdata = (u8*)RepD;
+		case  GD_REPORT: //get descriptor: report.
+			if(g_SUD[wIndexL] == 0){ //interface 0 (mouse)
+				desclen = 50;
+				pDdata = (u8*)RepMouse;
+			}
+			if(g_SUD[wIndexL] == 1){ //interface 1 (keyboard)
+				desclen = 43;
+				pDdata = (u8*)RepKbd;
+			}
 			break;
 	}
 	if (desclen!=0) {               // one of the case statements above filled in a value

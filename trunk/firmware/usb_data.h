@@ -12,7 +12,7 @@ const unsigned char DD[]=	// DEVICE Descriptor
 		1,2,3,			// iManufacturer, iProduct, iSerialNumber
 		1};			// bNumConfigurations
 		
-const unsigned char CD[]=	// CONFIGURATION Descriptor
+const unsigned char CD_old[]=	// CONFIGURATION Descriptor
 	{0x09,			// bLength
 	0x02,			// bDescriptorType = Config
 	0x22,0x00,		// wTotalLength(L/H) = 34 bytes
@@ -46,7 +46,7 @@ const unsigned char CD[]=	// CONFIGURATION Descriptor
 	64,0,                   // wMaxPacketSize (64)
 	10};			// bInterval (poll every 10 msec)
 
-const unsigned char CD2[]=
+const unsigned char CD[]=
 {	0x09, 		//length
 	0x02, 		//type = configuration
 	59, 0,		//total length, low/high
@@ -65,10 +65,10 @@ const unsigned char CD2[]=
 	0x01, 		//boot device
 	0x02, 		//interface protocol - mouse. 
 	0x00, 		//iInterface, index to a string descriptor. 
-// HID descriptor 1
+// HID descriptor 1 @ CD[18]
 	0x09, 		//length
 	0x21, 		//descritpor type (HID)
-	0x10, 0x01 // bcdHID(L/H) Rev 1.1
+	0x10, 0x01, // bcdHID(L/H) Rev 1.1
 	0x00, 		//country code
 	0x01, 		//number of report descriptors to follow
 	0x22, 		//report descriptor type - HID
@@ -89,7 +89,7 @@ const unsigned char CD2[]=
 	0x03,		// bInterfaceClass = HID
 	0x00,0x00,		// bInterfaceSubClass, bInterfaceProtocol
 	0x00,		// iInterface
-// HID descriptor 2 --It's at CD[18]
+// HID descriptor 2 @ CD[43]
 	0x09,		// bLength
 	0x21,		// bDescriptorType = HID
 	0x10,0x01,		// bcdHID(L/H) Rev 1.1
@@ -129,32 +129,6 @@ const unsigned char RepD[]=   // Report descriptor
         0x95,0x01,              //   Report Count = 1
         0x81,0x00,              //  Input(Data,Variable,Array)
         0xC0};                  // End Collection 
-
-	
-const unsigned char RepKbd[]=   // Report descriptor -- for the keyboard! 
-	{ //length 43 bytes
-	0x05,0x01,		// Usage Page (generic desktop)
-	0x09,0x06,		// Usage (keyboard)
-	0xA1,0x01,		// Collection
-	0x05,0x07,		//   Usage Page 7 (keyboard/keypad)
-	0x19,0xE0,		//   Usage Minimum = 224
-	0x29,0xE7,		//   Usage Maximum = 231
-	0x15,0x00,		//   Logical Minimum = 0
-	0x25,0x01,		//   Logical Maximum = 1
-	0x75,0x01,		//   Report Size = 1
-	0x95,0x08,		//   Report Count = 8
-	0x81,0x02,		//  Input(Data,Variable,Absolute)
-	0x95,0x01,		//   Report Count = 1
-	0x75,0x08,		//   Report Size = 8
-	0x81,0x01,		//  Input(Constant)
-	0x19,0x00,		//   Usage Minimum = 0
-	0x29,0x65,		//   Usage Maximum = 101
-	0x15,0x00,		//   Logical Minimum = 0,
-	0x25,0x65,		//   Logical Maximum = 101
-	0x75,0x08,		//   Report Size = 8
-	0x95,0x01,		//   Report Count = 1
-	0x81,0x00,		//  Input(Data,Variable,Array)
-	0xC0};			// End Collection 
 
 	// http://www.usb.org/developers/devclass_docs/HID1_11.pdf page 71 !!
 /* this is a usb trace from plugging in my optical mouse: 
@@ -204,7 +178,32 @@ const unsigned char RepMouse[] =
 	0x75, 0x08, 	//			report size = 8
 	0x95, 0x03, 	//			report count = 3
 	0x81, 0x06, 	//			input (2 position bytes X & Y)
-	0xC0, 0xC0 } 	//	end collection, end collection. 
+	0xC0, 0xC0 };  	//	end collection, end collection. 
+		
+const unsigned char RepKbd[]=   // Report descriptor -- for the keyboard! 
+	{ //length 43 bytes
+	0x05,0x01,		// Usage Page (generic desktop)
+	0x09,0x06,		// Usage (keyboard)
+	0xA1,0x01,		// Collection
+	0x05,0x07,		//   Usage Page 7 (keyboard/keypad)
+	0x19,0xE0,		//   Usage Minimum = 224
+	0x29,0xE7,		//   Usage Maximum = 231
+	0x15,0x00,		//   Logical Minimum = 0
+	0x25,0x01,		//   Logical Maximum = 1
+	0x75,0x01,		//   Report Size = 1
+	0x95,0x08,		//   Report Count = 8
+	0x81,0x02,		//  Input(Data,Variable,Absolute)
+	0x95,0x01,		//   Report Count = 1
+	0x75,0x08,		//   Report Size = 8
+	0x81,0x01,		//  Input(Constant)
+	0x19,0x00,		//   Usage Minimum = 0
+	0x29,0x65,		//   Usage Maximum = 101
+	0x15,0x00,		//   Logical Minimum = 0,
+	0x25,0x65,		//   Logical Maximum = 101
+	0x75,0x08,		//   Report Size = 8
+	0x95,0x01,		//   Report Count = 1
+	0x81,0x00,		//  Input(Data,Variable,Array)
+	0xC0};			// End Collection 
 	
 // STRING descriptors. An array of string arrays
 
