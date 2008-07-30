@@ -139,7 +139,8 @@ void usb_intr(){
 		service_irqs();
 	}
 }
-#define ENABLE_IRQS wreg(rEPIEN,(bmSUDAVIE+bmIN3BAVIE)); wreg(rUSBIEN,(bmURESIE+bmURESDNIE));
+#define ENABLE_IRQS wreg(rEPIEN,(bmSUDAVIE+bmIN3BAVIE+bmIN2BAVIE));\
+	wreg(rUSBIEN,(bmURESIE+bmURESDNIE));
 #define SETBIT(reg,val) wreg(reg,(rreg(reg)|val));
 #define CLRBIT(reg,val) wreg(reg,(rreg(reg)&~val));
 #define STALL_EP0 wreg(rEPSTALLS,0x23);	
@@ -181,6 +182,10 @@ void service_irqs(void){
 		do_IN3();                     // Yes--load another keystroke and arm the endpoint
 	}                    // NOTE: don't clear the IN3BAVIRQ bit here--loading the EP3-IN byte
 						  // count register in the do_IN3() function does it.
+	if(itest1 & bmIN2BAVIRQ){
+		printf_str("usb irq: ep2-in packet\n"); 
+		do_IN2(); 
+	}
 	if((g_configval != 0) && (itest2&bmSUSPIRQ)){   // HOST suspended bus for 3 msec
 		printf_str("usb irq: host suspend\n"); 
 		wreg(rUSBIRQ,(bmSUSPIRQ+bmBUSACTIRQ));  // clear the IRQ and bus activity IRQ
@@ -229,10 +234,23 @@ void do_IN3(void){
 		g_send3zeros=1;
 		wreg(rEP3INFIFO, 0x02); // shift
 		wreg(rEP3INFIFO, 0x00);
-		wreg(rEP3INFIFO, 0x17);
+		wreg(rEP3INFIFO, 0x17); //T
 		g_inhibit_send=1;                     // send the string once per pushbutton press
 	}
 	wreg(rEP3INBC,3);				// arm it
+}
+void do_IN2(void){
+	if (g_inhibit_send==0x01){
+		wreg(rEP2INFIFO, 0); 
+		wreg(rEP2INFIFO, 0); 
+		wreg(rEP2INFIFO, 0); 
+		wreg(rEP2INFIFO, 0); 
+	} else {
+		wreg(rEP2INFIFO, 0); 
+		wreg(rEP2INFIFO, 1); //x
+		wreg(rEP2INFIFO, 1); //y
+		wreg(rEP2INFIFO, 0); 
+	}
 }
 
 void std_request(void){
@@ -295,11 +313,15 @@ void get_status(void){
 		wregAS(rEP0BC,2); 		// load byte count, arm the IN transfer, ACK the status stage of the CTL transfer
 		break; 				
 	case 0x82: 			// directed to ENDPOINT
-		if(g_SUD[wIndexL]==0x83){	// We only reported ep3, so it's the only one the host can stall IN3=83
+		if(g_SUD[wIndexL]==0x83){	//  stall IN3=83
 			wreg(rEP0FIFO,g_ep3stall);	// first byte is 0000000h where h is the halt (stall) bit
 			wreg(rEP0FIFO,0x00);		// second byte is always 0
 			wregAS(rEP0BC,2); 		// load byte count, arm the IN transfer, ACK the status stage of the CTL transfer
-		}else  STALL_EP0		// Host tried to stall an invalid endpoint (not 3)	
+		}else if(g_SUD[wIndexL]==0x82){	// stall in2 = ep2
+			wreg(rEP0FIFO,g_ep2stall);	// first byte is 0000000h where h is the halt (stall) bit
+			wreg(rEP0FIFO,0x00);		// second byte is always 0
+			wregAS(rEP0BC,2); 		// load byte count, arm the IN transfer, ACK the status stage of the CTL transfer
+		}else  STALL_EP0		// Host tried to stall an invalid endpoint (not 3 or 2)	
 		break; 
 	default:      STALL_EP0		// don't recognize the request
 	}
@@ -314,18 +336,33 @@ void get_status(void){
 void feature(u8 sc){
 	u8 mask;
 	if((g_SUD[bmRequestType]==0x02)	// dir=h->p, recipient = ENDPOINT
-	&&  (g_SUD[wValueL]==0x00)	// wValueL is feature selector, 00 is EP Halt
-	&&  (g_SUD[wIndexL]==0x83)){	// wIndexL is endpoint number IN3=83
-		mask=rreg(rEPSTALLS);   // read existing bits
-		if(sc==1){               // set_feature
-			mask += bmSTLEP3IN;       // Halt EP3IN
-			g_ep3stall=1;
-		}else {                      // clear_feature
-			mask &= ~bmSTLEP3IN;      // UnHalt EP3IN
-			g_ep3stall=0;
-			wreg(rCLRTOGS,bmCTGEP3IN);  // clear the EP3 data toggle
+	  &&  (g_SUD[wValueL]==0x00) {	// wValueL is feature selector, 00 is EP Halt
+		if(g_SUD[wIndexL]==0x83){	// wIndexL is endpoint number IN3=83
+			mask=rreg(rEPSTALLS);   // read existing bits
+			if(sc==1){               // set_feature
+				mask += bmSTLEP3IN;       // Halt EP3IN
+				g_ep3stall=1;
+			}else {                      // clear_feature
+				mask &= ~bmSTLEP3IN;      // UnHalt EP3IN
+				g_ep3stall=0;
+				wreg(rCLRTOGS,bmCTGEP3IN);  // clear the EP3 data toggle
+			}
+			wreg(rEPSTALLS,(mask|bmACKSTAT)); 
+				// Don't use wregAS for this--directly writing the ACKSTAT bit
+		} 
+		if(g_SUD[wIndexL]==0x82){	// wIndexL is endpoint number IN3=82
+			mask=rreg(rEPSTALLS);   // read existing bits
+			if(sc==1){               // set_feature
+				mask += bmSTLEP2IN;       // Halt EP3IN
+				g_ep2stall=1;
+			}else {                      // clear_feature
+				mask &= ~bmSTLEP2IN;      // UnHalt EP3IN
+				g_ep2stall=0;
+				wreg(rCLRTOGS,bmCTGEP2IN);  // clear the EP3 data toggle
+			}
+			wreg(rEPSTALLS,(mask|bmACKSTAT)); 
+				// Don't use wregAS for this--directly writing the ACKSTAT bit
 		}
-		wreg(rEPSTALLS,(mask|bmACKSTAT)); // Don't use wregAS for this--directly writing the ACKSTAT bit
 	}else if ((g_SUD[bmRequestType]==0x00)	// dir=h->p, recipient = DEVICE
 	&&  (g_SUD[wValueL]==0x01)) {	// wValueL is feature selector, 01 is Device_Remote_Wakeup
 		g_RWU_enabled = sc<<1;	// =2 for set, =0 for clear feature. The shift puts it in the get_status bit position.			
@@ -357,6 +394,7 @@ void send_descriptor(void) {
 			pDdata = (u8*)(&CD[18]);
 			break;
 		case  GD_REPORT:
+			print
 			desclen = CD[25];
 			pDdata = (u8*)RepD;
 			break;

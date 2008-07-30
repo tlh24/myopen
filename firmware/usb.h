@@ -13,6 +13,7 @@ void 	initialize_MAX(void);
 void 	service_irqs(void); 
 void 	do_SETUP(void);
 void 	do_IN3(void);
+void 	do_IN2(void);
 void 	std_request(void);
 void 	set_configuration(void);
 void 	get_configuration(void);
