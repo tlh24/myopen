@@ -7,6 +7,7 @@ SHELL = /bin/sh
 INC = 
 
 CFLAGS = -Wall -std=c99 -pedantic 
+CFLAGS = -Wall -ansi -pedantic 
 #-I$(INC)
 DEBUG = -g
 #DEBUG =

@@ -3,6 +3,8 @@
 
 /* $Id$ */
 
+#define warn(s)         print_err(s,0);
+#define fatal(s)        print_err(s,1);
 #define safe_free(p) { if (p) free(p); p = NULL; }
 
 /* r and c are rows and cols
@@ -26,6 +28,7 @@ void multATB(matrix * A, matrix * B, matrix * C);
 void colSum(matrix * m, matrix * msum);
 void elemMult(matrix * m, float x);
 void elemSquare(matrix * m);
+void elemSqrt(matrix * m); 
 void add(matrix * m, matrix * n);
 void mean(matrix * m, matrix * _mean);
 void std(matrix * m, matrix * _std);

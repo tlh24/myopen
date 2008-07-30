@@ -1,14 +1,12 @@
-/* $Id$ */
-  
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include <clapack.h>
 #include "util.h"
 #include "matrix.h"
 
-#define warn(s)		print_err(s,0);
-#define error(s)	print_err(s,1);
+/* $Id$ */
 
 /**
  * Initializes a matrix of size zero,
@@ -93,9 +91,9 @@ void submatrix(matrix * m, matrix * n, int r1, int c1, int r2, int c2) {
 
     /** check for argument errors */
     if (r1>r2 || c1>c2) 
-        error("r1 and c1 should be less than r2 and c2."); 
+        fatal("r1 and c1 should be less than r2 and c2."); 
     if (c2 >= m->c || r2 >= m->r)
-        error("Submatrix bounds exceed larger matrix bounds.");
+        fatal("Submatrix bounds exceed larger matrix bounds.");
 
     allocMatrix(n,r2-r1+1,c2-c1+1);
   
@@ -179,9 +177,15 @@ void elemMult(matrix * m, float x) {
 /* in-place square of each element */
 void elemSquare(matrix * m) {
     int i;
-    
     for (i=0;i<m->r*m->c;i++)
-            m->d[i] *= m->d[i];
+        m->d[i] *= m->d[i];
+}
+
+/* in-place sqrt of each element */
+void elemSqrt(matrix * m) {
+    int i;
+    for (i=0;i<m->r*m->c;i++)
+        m->d[i] = sqrt(m->d[i]);    
 }
 
 /* add matrices m + n, result goes in m */
@@ -220,6 +224,6 @@ void std(matrix * m, matrix * _std) {
     add(_std,meansq);
     freeMatrix(meansq);
 
-    /* xxx need sqrt here!! */
-
+    /* sqrt */
+    elemSqrt(_std);
 }
