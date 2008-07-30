@@ -219,4 +219,7 @@ void std(matrix * m, matrix * _std) {
     /* subtract */
     add(_std,meansq);
     freeMatrix(meansq);
+
+    /* xxx need sqrt here!! */
+
 }
