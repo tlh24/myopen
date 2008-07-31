@@ -180,7 +180,7 @@ void service_irqs(void){
 		do_SETUP();
 	}
 	if(itest1 & bmIN3BAVIRQ){          // Was an EP3-IN packet just dispatched to the host?
-		printf_str("usb irq: ep3-in packet\n"); 
+		//printf_str("usb irq: ep3-in packet\n"); 
 		do_IN3();                     // Yes--load another keystroke and arm the endpoint
 	}                    // NOTE: don't clear the IN3BAVIRQ bit here--loading the EP3-IN byte
 						  // count register in the do_IN3() function does it.
@@ -189,7 +189,7 @@ void service_irqs(void){
 		do_IN2(); 
 	}
 	if((g_configval != 0) && (itest2&bmSUSPIRQ)){   // HOST suspended bus for 3 msec
-		printf_str("usb irq: host suspend\n"); 
+		//printf_str("usb irq: host suspend\n"); 
 		wreg(rUSBIRQ,(bmSUSPIRQ+bmBUSACTIRQ));  // clear the IRQ and bus activity IRQ
 		g_suspended=1;                  // signal the main loop
 	}
@@ -245,8 +245,8 @@ void do_IN3(void){
 void do_IN2(void){
 	if (g_inhibit_send==0x01){
 		wreg(rEP2INFIFO, 0); 
-		wreg(rEP2INFIFO, 0); 
-		wreg(rEP2INFIFO, 0); 
+		wreg(rEP2INFIFO, 1); 
+		wreg(rEP2INFIFO, 1); 
 		wreg(rEP2INFIFO, 0); 
 	} else {
 		wreg(rEP2INFIFO, 0); 
@@ -254,6 +254,7 @@ void do_IN2(void){
 		wreg(rEP2INFIFO, 1); //y
 		wreg(rEP2INFIFO, 0); 
 	}
+	wreg(rEP2INBC,4);				// arm it
 }
 
 void std_request(void){
@@ -334,7 +335,7 @@ void get_status(void){
 // FUNCTION: Set/Get_Feature. Call as feature(1) for Set_Feature or feature(0) for Clear_Feature.
 // There are two set/clear feature requests:
 //	To a DEVICE: 	Remote Wakeup (RWU). 
-//  	To an ENDPOINT:	Stall (EP3 only for this app)
+//  	To an ENDPOINT:	Stall (EP3 & EP2)
 //
 void feature(u8 sc){
 	u8 mask;
