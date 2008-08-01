@@ -39,6 +39,8 @@
 #define TR_PTR (F_P5 + F_TR_PTR)
 #define ADC_CTR (F_P5 + F_ADC_CTR)
 
+//SDRAM address 0x0 to 0x3ffff = circular data buffer.
+#define HTTP_BASE_ADDR 0x00040000
 
 #define CONFIG_CLKIN_HZ          25000000 /*external clock*/
 /* CONFIG_CLKIN_HALF controls what is passed to PLL 0=CLKIN      */
