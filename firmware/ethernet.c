@@ -1,7 +1,7 @@
 /*
  * ADI Blackfin 537 MAC Ethernet
  *
- * Copyright (c) 2005 Analog Device, Inc.
+ * Copyright (c) 2005 Analog Devices, Inc.
  *
  * See file CREDITS for list of people who contributed to this
  * project.
@@ -1043,7 +1043,7 @@ int tcp_rx(u8* data, int length){
 				//they are requesting something? 
 				rxlen = tcp_length(p); 
 				payload = (char*)( &(p->tcp) ); 
-				payload += p->tcp.dataoff/4; //divide by 4 b/c it is << 4 & specifies 32 bit words. 
+				payload += (p->tcp.dataoff & 0xf0)/4; //divide by 4 b/c it is << 4 & specifies 32 bit words. 
 				if(rxlen >= 10 && strcmp(payload, "GET / HTTP")){
 					//copy into a temp buffer, then copy it over 
 					//to the actual packet after figuring out the length.
@@ -1065,12 +1065,13 @@ int tcp_rx(u8* data, int length){
 					tx = tcp_packet_setup(txlen, src,  
 						TCP_FLAG_ACK | TCP_FLAG_PSH | TCP_FLAG_FIN,
 						TcpSeqHost, TcpSeqClient); 
-					TcpSeqHost+= txlen; //this is not actually the way it should be done.
+					TcpSeqHost+= txlen; //this is not actually the way it should be done. (?)
 					memcpy( (u8*)HttpResp, tx, txlen ); 
 					tcp_checksum(txlen); 
 					bfin_EMAC_send_nocopy();
 					return 1; 
 				}
+				//otherwise..
 				if(rxlen >= 4 && strcmp(payload, "GET ")){
 					//copy into a temp buffer, then copy it over 
 					//to the actual packet after figuring out the length.
