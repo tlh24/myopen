@@ -9,7 +9,7 @@ open Glwindow
 
 
 let gwfwind = new glwindow
-let goutsamp1000 = ref true
+let goutsamp1000 = ref false
 let goutsamp1 = ref false
 
 let _ = 
@@ -62,16 +62,18 @@ let _ =
 			Raw.set raw ~pos:(i*2+1) y ; (* y -- will be overwritten *)
 		) done ;
 	) rawa ; 
+	let invmap = Array.of_list [14; 10; 6; 2; 15; 11; 7; 3; 12; 8; 4; 0; 13; 9; 5; 1] in
 	let render () = 
 		GlMat.push(); 
-		GlMat.scale ~x:0.99 ~y:(-0.99) ~z:1.0 () ; 
+		GlMat.scale ~x:0.99 ~y:(0.99) ~z:1.0 () ; 
 		(* draw each of the waveforms as a line strip *)
 		Array.iteri (fun i raw -> 
 			GlMat.push() ; 
 			let n = 16.0 in
-			let c = foi i in
+			let invi = invmap.(i) in
+			let c = foi invi in
 			let len2 = foi(len/2) in
-			GlMat.translate ~x:0.0 ~y:(-1.0 +. (1.0/. n) +. (2.0/. n)*.c)~z:0.0 ();  
+			GlMat.translate ~x:0.0 ~y:(1.0 -. (1.0/. n) -. (2.0/. n)*.c)~z:0.0 ();  
 			GlMat.scale ~x:(1.0 /. len2 ) ~y:(1.0 /. (32768.0 *. n)) ~z:(1.0) () ;
 			(* the background *)
 			GlDraw.begins `lines ; 
@@ -79,14 +81,14 @@ let _ =
 			GlDraw.vertex2 ((-1.0 *. len2) , 0.0) ; 
 			GlDraw.vertex2 ((1.0 *. len2) , 0.0) ; 
 			GlDraw.color ~alpha:0.2 (1.0 , 1.0 , 1.0 ); 
-			if i = 0 then (
+			if invi = 0 then (
 				GlDraw.vertex2 ((-1.0 *. len2) , -32700.0) ; 
 				GlDraw.vertex2 ((1.0 *. len2) , -32700.0) ; 
 			);
 			GlDraw.vertex2 ((-1.0 *. len2) , 32700.0) ; 
 			GlDraw.vertex2 ((1.0 *. len2) , 32700.0) ; 
 			GlDraw.ends () ; 
-			if(i mod 2 = 1) then (
+			if(invi mod 2 = 1) then (
 				GlDraw.begins `quads ; 
 				GlDraw.color ~alpha:0.1 (1.0 , 1.0 , 1.0 ); 
 				GlDraw.vertex2 ((-1.0 *. len2) , -32700.0) ; 
@@ -96,7 +98,7 @@ let _ =
 				GlDraw.ends (); 
 			); 
 			(* the signals *)
-			if( i mod 4 = 2 || i mod 4 = 3) then (
+			if( invi mod 4 = 2 || invi mod 4 = 3) then (
 				GlDraw.color ~alpha:0.9 (0.5 , 1.0 , 1.0 ); 
 			) else (
 				GlDraw.color ~alpha:0.9 (1.0 , 1.0 , 0.3 ); 
@@ -131,23 +133,26 @@ let _ =
 					gwfwind#render togl ; 
 					(* write the data to stdout (e.g. for visual examination
 					or for piping to a file *)
+					let ar = Array.make 16 0 in
 					if !goutsamp1 then (
 						let cc = IO.input_string buffer in
 						ignore(ri cc); 
-						for k = 0 to 1024/32 do (
+						for k = 0 to 1024/32 -1 do (
 							for j = 0 to 15 do (
-								printf "%d\t" (rs cc); 
+								ar.(invmap.(j)) <- rs cc; 
 							) done ; 
+							Array.iter (fun s -> printf "%d\t" s) ar; 
 							printf "\n%!";
 						) done; 
 						printf " %!" ; (* flush *)
 					) else (
-						if pos mod 1000 = 0 && !goutsamp1000 then (
+						if pos mod 500 = 0 && !goutsamp1000 then (
 							let cc = IO.input_string buffer in
 							ignore(ri cc); 
 							for j = 0 to 15 do (
-								printf "%d\t" (rs cc); 
+								ar.(invmap.(j)) <- rs cc; 
 							) done ; 
+							Array.iter (fun s -> printf "%d\t" s) ar; 
 							printf "\n%!"; 
 						); 
 					); 

@@ -6,7 +6,15 @@
 #include "usb.h"
 
 u32 g_excregs[8+6+16] ; //the regular data registers + pointer registers. 
+u32 g_mouseXpos; //the channel used to drive positive x cursor movement.  
+u32 g_mouseXneg; 
+u32 g_mouseYpos; 
+u32 g_mouseYneg; 
+u32 g_mouseShift; //scaling factor. 
 
+int PhysicalToLogicalChan(int c){
+	return ((((c & 0x3) ^ 0x1) << 2) | ((c & 0xc) >> 2))^0xf; //yes could be simpler.
+}
 int main() {
 	// disable cache. no imem_control on this proc? 
 	*pDMEM_CONTROL = 0x00001001; 
@@ -98,7 +106,7 @@ int main() {
 	*pUART0_DLH = 0;  //the system clock is 120Mhz. baud rate is 115200. 
 	*pUART0_LCR = 0x0003; //parity disabled, 1 stop bit, 8 bit word. 
 	*pUART0_GCTL = 0x0001; //enable the clock.
-	printf_int("Myopen svn v.", /*SVN_VERSION{*/87/*}*/ ) ; 
+	printf_int("Myopen svn v.", /*SVN_VERSION{*/88/*}*/ ) ; 
 	printf_str("\n"); 
 	printf_str("checking SDRAM...\n"); 
 	unsigned short* p; 
@@ -162,6 +170,12 @@ int main() {
 		*ps++ = 0; 
 	}
 
+	//set up cursor control? 
+	g_mouseXpos = PhysicalToLogicalChan(0); 
+	g_mouseXneg = PhysicalToLogicalChan(1); 
+	g_mouseYpos = PhysicalToLogicalChan(2); 
+	g_mouseYneg = PhysicalToLogicalChan(3); 
+	g_mouseShift = 7; //scaling / threshold. 
 	//turn on the SPORTS last, as the ethernet has to be ready to blast out the data. 
 	printf_str("turning on SPORTs\n"); 
 	 u32* samp_ctr = (u32*)SAMP_CTR; 

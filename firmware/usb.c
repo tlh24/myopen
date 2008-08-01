@@ -185,7 +185,7 @@ void service_irqs(void){
 	}                    // NOTE: don't clear the IN3BAVIRQ bit here--loading the EP3-IN byte
 						  // count register in the do_IN3() function does it.
 	if(itest1 & bmIN2BAVIRQ){
-		printf_str("usb irq: ep2-in packet\n"); 
+		//printf_str("usb irq: ep2-in packet\n"); 
 		do_IN2(); 
 	}
 	if((g_configval != 0) && (itest2&bmSUSPIRQ)){   // HOST suspended bus for 3 msec
@@ -242,19 +242,40 @@ void do_IN3(void){
 	}
 	wreg(rEP3INBC,3);				// arm it
 }
-void do_IN2(void){
-	if (g_inhibit_send==0x01){
-		wreg(rEP2INFIFO, 0); 
-		wreg(rEP2INFIFO, 1); 
-		wreg(rEP2INFIFO, 1); 
-		wreg(rEP2INFIFO, 0); 
-	} else {
-		wreg(rEP2INFIFO, 0); 
-		wreg(rEP2INFIFO, 1); //x
-		wreg(rEP2INFIFO, 1); //y
-		wreg(rEP2INFIFO, 0); 
+int calcMeanOfChannel(u32 u, u32 chan){
+	u -= 64*32; 
+	u += chan * 2; 
+	u &= 0x0003ffff ; // in case it wrapped. 
+	int sum = 0; 
+	int i; 
+	for(i=0; i< 64; i++){
+		sum += *((short*)u); 
+		u += 32; 
+		u = u & 0x0003ffff; //again, in case there was a wrap.
 	}
-	wreg(rEP2INBC,4);				// arm it
+	sum = sum >> (6 + g_mouseShift); //divide by 64, divide by 128 (to get byte mouse output)
+	return sum; 
+}
+void do_IN2(void){
+	// zokay, figure out how to move the cursor. 
+	unsigned int u = *((unsigned int*)WR_PTR); 
+	u &= 0x0003ffe0; //size of the RAM buffer.
+		//last 4 bits masked out - those address bits specify channel. (16 channels, 32 bytes)
+	int x, y; 
+	x = calcMeanOfChannel(u, g_mouseXpos) - calcMeanOfChannel(u, g_mouseXneg); 
+	y = calcMeanOfChannel(u, g_mouseYpos) - calcMeanOfChannel(u, g_mouseYneg); 
+	x = x > 127 ? 127 : x; 
+	x = x < -127 ? -127 : x; 
+	y = y > 127 ? 127 : y; 
+	y = y < -127 ? -127 : y; 
+	char xb, yb; 
+	xb = (char)(x & 0xff); 
+	yb = (char)(y & 0xff); 
+	wreg(rEP2INFIFO, 0); 
+	wreg(rEP2INFIFO, (u8)xb); 
+	wreg(rEP2INFIFO, (u8)yb); 
+	wreg(rEP2INFIFO, 0); 
+	wreg(rEP2INBC,4);				// arm it!
 }
 
 void std_request(void){
