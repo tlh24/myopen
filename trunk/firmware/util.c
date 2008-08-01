@@ -49,6 +49,17 @@ char* strcpy(char* dest, int* len, char* str){
 	*len += i; 
 	return dest; 
 }
+//same as strcpy, but it puts it on the *beginning* of the buffer. 
+//have to make sure there is space, of course!!
+char* strprepend(char* dest, int *len, char * str){
+	int l = strlen(str); 
+	char* s = dest - len; 
+	int i; 
+	for(i=0; i<l ; i++){
+		*s++ = *str++; 
+	}
+	return dest - len; 
+}
 int strcmp(char* a, char* b){
 	int i=0; 
 	while(*a && *b&& i < 1280 ){
@@ -93,6 +104,13 @@ int sprintf_int(char* dest, int d){
 		dest[j] = printf_temp[i-j-1]; 
 	}
 	return i; //the length of the resulting string.
+}
+//this works the same way as strcpy : 
+char* strprintf_int(char* dest, int* len, int d){
+	int n = sprintf_int(dest, d); 
+	*len += n; 
+	dest += n; 
+	return dest; 
 }
 void udelay(int us){
 	//not super-well calibrated, but eh well. 
