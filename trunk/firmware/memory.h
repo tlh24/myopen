@@ -30,7 +30,7 @@
 //pointers for global variables indexed off the frame pointer (fp)
 #define F_SAMP_CTR	0 //is incremented 1 for every sample in. 
 								//used to downsample by 4 (4ksps -> 1ksps)
-#define F_WR_PTR		4 //where the sample will be written to in SDRAM. 
+#define F_WR_PTR		4 //where the sample will be written to in SDRAM. (pointer to pointer)
 #define F_TR_PTR		8 //the transmitted sample pointer.  (transmitted over enet!)
 #define F_ADC_CTR		12 //for switching between the 4 multiplexed ports of the ADC). 
 

@@ -145,18 +145,20 @@ _I11HANDLER:          // IVG 11 Handler
 		//r0 = most recent filtered sample, r1 = sample counter. 
 		[--sp] = r7; 
 		call _LMS;
+		r0 = abs r0 (v); 
 		r3 = [p5 + F_WR_PTR]; 
 		r4.h = 0x0003; 
 		r4.l = 0xffff; 
 		r4 = r3 & r4; 
-		r3 += 8 ; //we'll save 4 samples here
+		r3 += 8 ; //we'll save 4 samples here, 2 bytes each. 
 		[p5 + F_WR_PTR] = r3; 
 		p4 = r4; 
-		r7 = [sp++]; 
-		[p4++] = r7; //write filtered sample to SDRAM.
+		r7 = [sp++]; //r7 = raw EMG. 
+		[p4++] = r0; //write to ram.
 		r0 = [sp++]; //pop the old filtered sample. 
 		r1 += 2; 
 		call _LMS ; 
+		r0 = abs r0 (v); 
 		[p4++] = r0; 
 		r1 += -2 ; //so the increment by 4 below works.
 		jump no_pop_sample ;

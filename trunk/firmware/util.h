@@ -9,6 +9,12 @@
 extern char printf_temp[PRINTF_BUFFER_SIZE];  
 extern char printf_out[PRINTF_BUFFER_SIZE]; 
 
+extern u32 g_mouseXpos; 
+extern u32 g_mouseXneg; 
+extern u32 g_mouseYpos; 
+extern u32 g_mouseYneg; 
+extern u32 g_mouseShift; 
+
 //in crt0.asm
 void delay(int); 
 
