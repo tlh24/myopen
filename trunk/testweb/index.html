@@ -1,0 +1,102 @@
+<html>
+<head>
+<title>myopen</title>
+</head>
+<body>
+<h1>Myopen configuration</h1>
+<div style="background:#dedeee" align="center">
+<form action="test.pl" method="get">
+<input type="checkbox" name="en_data" value="1">
+	Enable Data Stream (port 4340, UDP)</input>
+<input type="submit" value="Save"/>
+</form></div>
+<div style="background:#d8eeee" align="center">
+<form action="test.pl" method="get">
+	Cursor control channels: 
+	<table>
+	<tr><td>Mouse x+: </td>
+	<td><select name="xpos_chan">
+		<option value="1">1</option>
+		<option value="2">2</option>
+		<option value="3">3</option>
+		<option value="4">4</option>
+		<option value="5">5</option>
+		<option value="6">6</option>
+		<option value="7">7</option>
+		<option value="8">8</option>
+		<option value="9">9</option>
+		<option value="10">10</option>
+		<option value="11">11</option>
+		<option value="12">12</option>
+		<option value="13">13</option>
+		<option value="14">14</option>
+		<option value="15">15</option>
+		<option value="16">16</option>
+	</select></td></tr>
+	<tr><td>Mouse x-: </td>
+	<td><select name="xneg_chan">
+		<option value="1">1</option>
+		<option value="2" selected="selected">2</option>
+		<option value="3">3</option>
+		<option value="4">4</option>
+		<option value="5">5</option>
+		<option value="6">6</option>
+		<option value="7">7</option>
+		<option value="8">8</option>
+		<option value="9">9</option>
+		<option value="10">10</option>
+		<option value="11">11</option>
+		<option value="12">12</option>
+		<option value="13">13</option>
+		<option value="14">14</option>
+		<option value="15">15</option>
+		<option value="16">16</option>
+	</select></td></tr>
+	<tr><td>Mouse y+: </td>
+	<td><select name="ypos_chan">
+		<option value="1">1</option>
+		<option value="2">2</option>
+		<option value="3" selected="selected">3</option>
+		<option value="4">4</option>
+		<option value="5">5</option>
+		<option value="6">6</option>
+		<option value="7">7</option>
+		<option value="8">8</option>
+		<option value="9">9</option>
+		<option value="10">10</option>
+		<option value="11">11</option>
+		<option value="12">12</option>
+		<option value="13">13</option>
+		<option value="14">14</option>
+		<option value="15">15</option>
+		<option value="16">16</option>
+	</select></td></tr>
+	<tr><td>Mouse y-: </td>
+	<td><select name="yneg_chan"> 
+		<option value="1">1</option>
+		<option value="2">2</option>
+		<option value="3">3</option>
+		<option value="4" selected="selected">4</option>
+		<option value="5">5</option>
+		<option value="6">6</option>
+		<option value="7">7</option>
+		<option value="8">8</option>
+		<option value="9">9</option>
+		<option value="10">10</option>
+		<option value="11">11</option>
+		<option value="12">12</option>
+		<option value="13">13</option>
+		<option value="14">14</option>
+		<option value="15">15</option>
+		<option value="16">16</option>
+	</select></td></tr>
+	</table>
+	<input type="submit" value="Save"/>
+</form>
+</div>
+<div style="background:#dedeee" align="center">
+<form action="test.pl" method="get">
+	<input type="submit" name="calibrate" value="Calibrate Thresholds"/>
+</form>
+</div>
+</body>
