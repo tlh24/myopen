@@ -26,6 +26,7 @@ int strlen(char* str);
 char* strcpy(char* dest, int* len, char* str); 
 int strcmp(char* a, char* b); 
 int sprintf_int(char* dest, int d);
+char* strprintf_int(char* dest, int* len, int d); 
 void udelay(int us) ; 
 void spi_delay(); 
 #endif

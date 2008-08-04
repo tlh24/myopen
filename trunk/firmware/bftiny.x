@@ -26,7 +26,7 @@ SECTIONS
 {
   /* L1 memory sections */
 
-  .l1code         : { crt0.o(STARTUP_SECTION) *(.l1code) } >l1code
+  .l1code         : {crt0.o(STARTUP_SECTION) *(.l1code) } >l1code
   .l1data         : { _l1_data_a = .; } > l1data
   /* Read-only sections, merged into text segment: */
   PROVIDE (__executable_start = 0x0); . = 0x0;

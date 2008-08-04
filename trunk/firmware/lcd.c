@@ -25,6 +25,7 @@ u8 g_lcd_y; //what line we are on
 u8 g_lcd_x; //hoizontal position. 
 
 void LCD_send(char data, unsigned char word){
+	return; 
 	unsigned short r = (unsigned short) word; 
 	if(data) r |= 0x100; 
 	*pPORTFIO_CLEAR = LCD_CS ;

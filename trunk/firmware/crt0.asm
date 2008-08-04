@@ -10,7 +10,7 @@
 // Short bootstrap
 //much of this is from u-boot codebase. 
 
-.global start
+.global start //crt0.asm
 .global _spi_delay
 .global _delay
 
@@ -46,7 +46,7 @@ start:
 	b1 = 0;
 	b2 = 0;
 	b3 = 0;
-
+	
 	/* Check soft reset status */
 	p0.h = SWRST >> 16;
 	p0.l = SWRST & 0xFFFF;
