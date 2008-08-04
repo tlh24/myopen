@@ -26,6 +26,7 @@
 #include "util.h"
 #include "lcd.h"
 #include "ethernet.h"
+#include "http.h"
 
 #define TOUT_LOOP		1000000
 
@@ -838,9 +839,9 @@ u8* tcp_header_setup(u8* data, int* length, u8 flags, u32 seq, u32 ack){
 	tcp->dest = TcpClientPort; 
 	tcp->seq = htonl(seq); 
 	tcp->ack = htonl(ack); 
-	tcp->dataoff = 0x50; //in 32-bit words -  
+	tcp->dataoff = 0x50; //in 32-bit words -  20 bytes.
 	tcp->flags = flags; 
-	tcp->window = htons(768);
+	tcp->window = htons(1024);
 	tcp->xsum = 0; //update later. 
 	tcp->urgent = 0;
 	
@@ -917,6 +918,8 @@ u8* tcp_packet_setup(int len, u32 dest, u8 flags, u32 seq, u32 ack){
 	
 	length = sizeof(tcp_packet) + len; 
 	data = eth_header_setup(&length); 
+	printf_int("tcp packet setup: ip packet length: ", length); 
+	printf_str("\n"); 
 	data = ip_header_setup(data, &length, dest, IP_PROT_TCP); 
 	data = tcp_header_setup(data, &length, flags, seq, ack); 
 	
@@ -926,7 +929,6 @@ void tcp_checksum(int length){
 	//assumes that we are working on a packet in outgoing dma buffer.
 	//length is the payload length.
 	// http://mathforum.org/library/drmath/view/54379.html
-	// 
 	int i; 
 	tcp_packet* p; 
 	p = (tcp_packet*)(txbuf[txIdx]->FrmData);
@@ -934,7 +936,8 @@ void tcp_checksum(int length){
 	u32 sum = 0;
 	u16* ptr; 	
 	//first, add up the IP pseudo-header. 
-	ptr = (u16*)( &(p->ip.src) ); 
+	u32* pp = &(p->ip.src) ; 
+	ptr = (u16*)( pp ); 
 	for(i=0; i<4; i++){
 		sum += *ptr++; 
 	}
@@ -949,7 +952,7 @@ void tcp_checksum(int length){
 	sum = (sum & 0xffff) + (sum >> 16);
 	//sum = (sum & 0xffff) + (sum >> 16);
 	p->tcp.xsum= ~( sum & 0xffff ); //don't think we need to change the byte-order, as we are 
-		//operating on stuff that is network-byte order. 
+		//operating on stuff that is network-byte order, ready to transmit.
 }
 
 int tcp_length(tcp_packet* p){
@@ -1039,55 +1042,65 @@ int tcp_rx(u8* data, int length){
 				bfin_EMAC_send_nocopy();
 				return 1; 
 			}
+			if(p->tcp.flags & TCP_FLAG_ACK && TcpState == TCP_CONNECTED){
+				//see if we have more data to send. 
+				if(g_httpRemainingLen > 0){
+					txlen = g_httpRemainingLen > RECV_BUFSIZE ? RECV_BUFSIZE : g_httpRemainingLen;
+					g_httpRemainingLen -= txlen; 
+					g_httpSendPtr += txlen; 
+					if(g_httpRemainingLen == 0){
+						tx = tcp_packet_setup(txlen, src,  
+							TCP_FLAG_ACK | TCP_FLAG_PSH | TCP_FLAG_FIN, //close connection after this.
+							TcpSeqHost, TcpSeqClient); 
+					}else{
+						tx = tcp_packet_setup(txlen, src,  
+							TCP_FLAG_ACK | TCP_FLAG_PSH, //don't close the connection.
+							TcpSeqHost, TcpSeqClient); 
+					}
+					TcpSeqHost+= txlen; 
+					memcpy(g_httpSendPtr, tx, txlen); 
+					tcp_checksum(txlen); 
+					bfin_EMAC_send_nocopy();
+					return 1; 
+				}
+				//not sure what to do otherwise.
+			}
 			if(TcpState == TCP_CONNECTED){
 				//they are requesting something? 
 				rxlen = tcp_length(p); 
 				payload = (char*)( &(p->tcp) ); 
 				payload += (p->tcp.dataoff & 0xf0)/4; //divide by 4 b/c it is << 4 & specifies 32 bit words. 
 				if(rxlen >= 10 && strcmp(payload, "GET / HTTP")){
-					//copy into a temp buffer, then copy it over 
-					//to the actual packet after figuring out the length.
-					txlen = 0; 
-					http = &(HttpResp[0]); 
-					http = strcpy(http, &txlen, "HTTP/1.1 200 OK\r\n"); 
-					http = strcpy(http, &txlen, "Server: Myopen\r\n"); 
-					http = strcpy(http, &txlen, "Content-Type: text/plain\r\n"); 
-					int cl_start = txlen; 
-					printf_int("cl_start: ", cl_start); 
-					http = strcpy(http, &txlen, "Content-Length:           \r\n\r\n"); //space to replace with integer.
-					http = strcpy(http, &txlen, "hello there from the wireless-to-ethernet bridge!\r\n");
-					if(txlen & 0x1) txlen++; 
-					sprintf_int(&(HttpResp[cl_start + 16]), txlen-2); 
+					//write the response into a large buffer, which we then copy over into packets.
+					printf_int("got http packet payload length ", rxlen); 
+					printf_str("\n"); 
+					httpResp(payload, rxlen); 
+					TcpSeqClient = htonl(p->tcp.seq); 
+					//TcpSeqClient += rxlen; //hum, why?
+					//need to figure out if we have to break it up into multiple packets. 
+					if(g_httpHeaderLen + g_httpContentLen + sizeof(tcp_packet) > RECV_BUFSIZE){
+						g_httpSendPtr = ((u8*)HTTP_CONTENT); 
+						txlen = RECV_BUFSIZE - sizeof(tcp_packet); 
+						g_httpSendPtr += (txlen - g_httpHeaderLen); 
+						g_httpRemainingLen = g_httpHeaderLen + g_httpContentLen - txlen; 
+						tx = tcp_packet_setup(txlen, src,  
+							TCP_FLAG_ACK | TCP_FLAG_PSH, //don't close connection (of course!)
+							TcpSeqHost, TcpSeqClient); 
+					}else{
+						txlen = g_httpHeaderLen + g_httpContentLen; 
+						g_httpSendPtr = 0; 
+						g_httpRemainingLen = 0; 
+						tx = tcp_packet_setup(txlen, src,  
+							TCP_FLAG_ACK | TCP_FLAG_PSH | TCP_FLAG_FIN, //close connection after this.
+							TcpSeqHost, TcpSeqClient); 
+					}
+					if(txlen & 0x1) txlen++; //this means a garbage byte at the end? 
 					printf_int("sending length: ", txlen); 
 					printf_str("\n"); 
-					TcpSeqClient = htonl(p->tcp.seq); 
-					//TcpSeqClient += rxlen;
-					tx = tcp_packet_setup(txlen, src,  
-						TCP_FLAG_ACK | TCP_FLAG_PSH | TCP_FLAG_FIN,
-						TcpSeqHost, TcpSeqClient); 
-					TcpSeqHost+= txlen; //this is not actually the way it should be done. (?)
-					memcpy( (u8*)HttpResp, tx, txlen ); 
-					tcp_checksum(txlen); 
-					bfin_EMAC_send_nocopy();
-					return 1; 
-				}
-				//otherwise..
-				if(rxlen >= 4 && strcmp(payload, "GET ")){
-					//copy into a temp buffer, then copy it over 
-					//to the actual packet after figuring out the length.
-					txlen = 0; 
-					http = &(HttpResp[0]); 
-					http = strcpy(http, &txlen, "HTTP/1.1 404 Not Found\r\n"); 
-					if(txlen & 0x1) txlen++; 
-					printf_hex("sending length: ", txlen); 
-					printf_str("\n"); 
-					TcpSeqClient = htonl(p->tcp.seq); 
-					TcpSeqClient += rxlen;
-					tx = tcp_packet_setup(txlen, src,  
-						TCP_FLAG_ACK | TCP_FLAG_PSH,
-						TcpSeqHost, TcpSeqClient); 
-					TcpSeqHost+= txlen; //this is not actually the way it should be done.
-					memcpy( (u8*)HttpResp, tx, txlen ); 
+					TcpSeqHost+= txlen; 
+					memcpy( (u8*)HTTP_HEADER, tx, g_httpHeaderLen); 
+					tx += g_httpHeaderLen; 
+					memcpy( (u8*)HTTP_CONTENT, tx, txlen - g_httpHeaderLen); 
 					tcp_checksum(txlen); 
 					bfin_EMAC_send_nocopy();
 					return 1; 

@@ -17,16 +17,6 @@
 #define F_P5 (LMS_DELAY + 1024) 
 	//where we store global variables. 
 
-/* ethernet buffers!! */
-#define RXBUF_BASE_ADDR		0xFF802000  
-	//length: 0x610 * 4 = 0x1840
-#define TXBUF_BASE_ADDR		0xFF804000 
-	//same length as the rxbuf.
-#define RECV_BUFSIZE		(0x610) 
-	//1552, slightly smaller than spec sheet. 
-#define TX_BUF_CNT		4
-#define RX_BUF_CNT		4
-
 //pointers for global variables indexed off the frame pointer (fp)
 #define F_SAMP_CTR	0 //is incremented 1 for every sample in. 
 								//used to downsample by 4 (4ksps -> 1ksps)
@@ -39,8 +29,20 @@
 #define TR_PTR (F_P5 + F_TR_PTR)
 #define ADC_CTR (F_P5 + F_ADC_CTR)
 
-//SDRAM address 0x0 to 0x3ffff = circular data buffer.
-#define HTTP_BASE_ADDR 0x00040000
+/* ethernet buffers!! */
+#define RXBUF_BASE_ADDR		0xFF802000  
+	//length: 0x610 * 4 = 0x1840
+#define TXBUF_BASE_ADDR		0xFF804000 
+	//same length as the rxbuf.
+#define RECV_BUFSIZE		(0x610) 
+	//1552, slightly smaller than spec sheet. 
+#define TX_BUF_CNT		4
+#define RX_BUF_CNT		4
+
+//SDRAM address 0x0 to 0x3ffff = circular data buffer. (that's 2^18 bytes = 256kb)
+//SDRAM, 32mbytes = 2^25 = 0x0 to 0x0020 0000 - 1
+#define HTTP_HEADER		0x00040000 //256 bytes. 
+#define HTTP_CONTENT		0x00040100 //i don't know how big we'll need? 
 
 #define CONFIG_CLKIN_HZ          25000000 /*external clock*/
 /* CONFIG_CLKIN_HALF controls what is passed to PLL 0=CLKIN      */

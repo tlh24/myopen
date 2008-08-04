@@ -1,13 +1,13 @@
-//this partially from u-boot, also GPL. 
+//this partially from u-boot, also under GPL. 
 #include "memory.h"
 
 .global start
 .global _delay
-start:
-	[--SP] = ASTAT;
-	[--SP] = RETS;
-	[--SP] = (r7:0);
-	[--SP] = (p5:0);
+start: //init_sdram.asm
+	[--sp] = ASTAT;
+	[--sp] = RETS;
+	[--sp] = (r7:0);
+	[--sp] = (p5:0);
 	
 	p0.l = LO(PORTFIO_DIR); 
 	p0.h = HI(PORTFIO_DIR); 
@@ -124,7 +124,7 @@ check_again:
 
 	/* Configure SCLK & CCLK Dividers */
 	r0 = (0x0 /*CSEL=0,CCLK=VCO*/ | 5 /* SCLK=VCO/5 */); 
-		//125MHz system clock, 500Mhz core clock.
+		//120MHz system clock, 600Mhz core clock.
 	p0.h = HI(PLL_DIV);
 	p0.l = LO(PLL_DIV);
 	w[p0] = r0.l;
@@ -167,6 +167,7 @@ check_again:
 	r0.l = w[p2];  //read the 'null' pointer - works here!
 	nop ;
 
+/*
 _test: 
 	p0.h = HI(PORTFIO_SET); 
 	p0.l = LO(PORTFIO_SET); 
@@ -188,6 +189,7 @@ _test:
 	r0 = 10 (z); 
 	call _delay; 
 	//jump _test;
+*/
 	
 skip_init_sdram: 
 	/* might also want to speed up the SPI port here .. */
@@ -195,8 +197,9 @@ skip_init_sdram:
 	(R7:0) = [SP++];
 	RETS   = [SP++];
 	ASTAT  = [SP++];
+	/* jump start_crt0; */
 	RTS;
-
+/*
 _delay: 
 	[--sp] = r1; 
 _delay_outer_start: 
@@ -212,3 +215,4 @@ _delay_inner_start:
 _delay_end:
 	r1 = [sp++]; 
 	rts; 
+*/

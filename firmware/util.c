@@ -22,6 +22,9 @@ void memcpy(u8* src, u8* dest, int len){
 	int i; 
 	//do it the simple way -- see http://docs.blackfin.uclinux.org/doku.php?id=memcpy
 	//the only thing that really beats this is DMA. (provided data cache is enabled). 
+	printf_hex("memcpy from ", src); 
+	printf_hex(" to ", dest); 
+	printf_str("\n"); 
 	for(i=0; i<len; i++){
 		*dest++ = *src++; 
 	}
@@ -53,12 +56,12 @@ char* strcpy(char* dest, int* len, char* str){
 //have to make sure there is space, of course!!
 char* strprepend(char* dest, int *len, char * str){
 	int l = strlen(str); 
-	char* s = dest - len; 
+	char* s = dest - *len; 
 	int i; 
 	for(i=0; i<l ; i++){
 		*s++ = *str++; 
 	}
-	return dest - len; 
+	return dest - *len; 
 }
 int strcmp(char* a, char* b){
 	int i=0; 
@@ -71,7 +74,6 @@ int strcmp(char* a, char* b){
 }
 int sprintf_int(char* dest, int d){
 	int i, m, j;
-	
 	//print the integer & figure out how long the string will be. 
 	//note: the integer will be printed backwards!
 	i = 0; 

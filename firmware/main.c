@@ -78,7 +78,7 @@ int main() {
 	15 dt1pri			(peripheral ,to ADCs)		0xf 0b1111 ; 0x0 ; 0x0
 	*/
 	*pPORTG_FER = 0xfd00 ; 
-	*pPORTGIO_DIR = 0x02ff ; 
+	*pPORTGIO_DIR = 0x0000 ; 
 	*pPORTGIO_INEN = 0x0000 ; 
 	/* port h:  all are hooked to the ethernet PHY */
 	*pPORTH_FER = 0xffff ; 
@@ -98,7 +98,7 @@ int main() {
 	10 nc				()
 	11 dt0pri			lcd_data, peripheral	
 	*/
-	LCD_init() ; 
+	//LCD_init() ; 
 	*pUART0_IER = 0; //turn off interrupts, turn them on later.
 	*pUART0_MCR = 0; 
 	*pUART0_LCR =  0x0080; //enable access to divisor latch. 
@@ -106,34 +106,34 @@ int main() {
 	*pUART0_DLH = 0;  //the system clock is 120Mhz. baud rate is 115200. 
 	*pUART0_LCR = 0x0003; //parity disabled, 1 stop bit, 8 bit word. 
 	*pUART0_GCTL = 0x0001; //enable the clock.
-	printf_int("Myopen svn v.", /*SVN_VERSION{*/88/*}*/ ) ; 
+	printf_int("Myopen svn v.", /*SVN_VERSION{*/91/*}*/ ) ; 
 	printf_str("\n"); 
 	printf_str("checking SDRAM...\n"); 
 	unsigned short* p; 
 	p = 0; 
 	int i; 
 	for(i=0; i<4*1024*1024; i++){ //memory size = 32mbytes.
-		(*p++) = 0x5555; 
-		(*p++) = 0xAAAA; 
-		(*p++) = 0x3333; 
-		(*p++) = 0xCCCC; 
+		(*p++) = 0xDECA; 
+		(*p++) = 0xFBAD; 
+		(*p++) = 0xC0ED; 
+		(*p++) = 0xBABE; 
 	}
 	p = 0; 
 	unsigned short s; 
 	for(i=0; i<4*1024*1024; i++){
 		s = *p++; 
-		if(s!= 0x5555) {
+		if(s!= 0xDECA) {
 			printf_hex("mem err @ ",i); 
 			printf_hex("\ngot:", s); 
 			printf_str("\n"); 
 			delay(400000); 
 		}
 		s = *p++; 
-		if(s!= 0xAAAA) printf_hex("mem err @ ",i); 
+		if(s!= 0xFBAD) printf_hex("mem err @ ",i); 
 		s = *p++; 
-		if(s!= 0x3333) printf_hex("mem err @ ",i); 
+		if(s!= 0xC0ED) printf_hex("mem err @ ",i); 
 		s = *p++; 
-		if(s!= 0xCCCC) printf_hex("mem err @ ",i); 
+		if(s!= 0xBABE) printf_hex("mem err @ ",i); 
 	}
 	printf_str("memory check done.\n"); 
 	usb_init(); 
@@ -199,19 +199,19 @@ int main() {
 	zero fill data, 
 	external recieve clock,  
 	enable. */
-	*pSPORT0_RCR1 = 0x4401 ; 
-	*pSPORT1_RCR1 = 0x4401 ; 
+	//*pSPORT0_RCR1 = 0x4401 ; 
+	//*pSPORT1_RCR1 = 0x4401 ; 
 	//transmit port
 	*pSPORT1_TCLKDIV = 149 ; //120Mhz / 300 = 400k / 25 = 16k / 4 = 4 ksps/ch
 	*pSPORT1_TFSDIV = 24 ; //25 clocks between assertions of the frame sync
 	*pSPORT1_TCR2 = 19; //word length 20, secondary disabled. 
 	// TCR = 0100 0110 0000 0011
-	*pSPORT1_TCR1 = 0x4603 ; 
+	//*pSPORT1_TCR1 = 0x4603 ; 
 	
 	u8* data; 
-	 while(1) {
+	while(1) {
 		if(!etherr) bfin_EMAC_recv( &data ); //listen for packets? (and respond)
-		if(!etherr && bfin_EMAC_send_check() ){
+		if(!etherr && bfin_EMAC_send_check() && 1){
 			if(*wr_ptr < *tr_ptr) *tr_ptr = 0; //rollover.
 			if(*wr_ptr - *tr_ptr >= 1024){//then we have at least one packet to send.
 				data = udp_packet_setup(1024 + 4); 

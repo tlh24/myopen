@@ -1,25 +1,56 @@
 // for serving up configuration pages.  
 #include "memory.h"
 #include "util.h"
+#include "lcd.h"
+#include "http.h"
 
-extern int g_enableUDP; 
-char int_tmp[20]; //for storing the content_length string.
+u8 g_enableUDP; 
+u32	g_httpHeaderLen; 
+u32	g_httpContentLen; 
+u8*	g_httpSendPtr; 
+u32	g_httpRemainingLen; 
 
-int httpResp(char* payload, int inlen){
+void httpResp(char* payload, int inlen){
+	u8* p = (u8*)HTTP_HEADER; 
+	int i; 
+	for(i=0; i<256; i++){
+		*p++ = 'c'; 
+	}
 	if( inlen > 10 && strcmp(payload, "GET / HTTP")){
 		//requested a webpage.
-		char* dest = ((char*)HTTP_BASE_ADDR); 
-		b += 256; //first 256 bytes are for the content-type and message length nonsense.. 
-		int txlen = 0; 
-		b = strcpy(b, &txlen, "HTTP/1.1 200 OK\r\n"); 
-		b = strcpy(b, &txlen, "Server: Myopen\r\n");
-		b = strcpy(b, &txlen, 
-		b = strcpy(b, &txlen, "Content-Type: text/html\r\n"); 
+		printf_str("requested a webpage!\n"); 
+		g_httpContentLen = htmlDefault(); 
 		//content length seems to be minus the headers, the actual content length (surprise!)
+		httpHeader(); 
+		printf_int("header length:", g_httpHeaderLen); 
+		printf_str("\n"); 
+		printf_int("content length:", g_httpContentLen); 
+		printf_str("\n"); 
+	} else {
+		g_httpContentLen = html404(); 
+		httpHeader(); 
 	}
+	//asm volatile("emuexcpt"); 
 }
 
-int htmlDefault(char* dest){
+void httpHeader(){
+	char* h = ((char*)HTTP_HEADER); 
+	int txlen = 0; 
+	h = strcpy(h, &txlen, "HTTP/1.1 200 OK\r\n"); 
+	h = strcpy(h, &txlen, "Server: Myopen\r\n");
+	h = strcpy(h, &txlen, "Content-Length "); 
+	h = strprintf_int(h, &txlen, g_httpContentLen); 
+	h = strcpy(h, &txlen, "\r\nContent-Type: text/html\r\n\r\n"); 
+	g_httpHeaderLen = txlen; 
+}
+int html404(){
+	char* dest = ((char*)HTTP_CONTENT); 
+	int len = 0; 
+	dest = strcpy(dest, &len, "HTTP/1.1 404 Not Found\r\n");
+	return len; 
+}
+int htmlDefault(){
+	char* dest = ((char*)HTTP_CONTENT); 
 	//fills *dest with the default webpage.
 	int len = 0; 
 	dest = strcpy(dest, &len, 
@@ -39,19 +70,20 @@ int htmlDefault(char* dest){
 	
 	dest = htmlDiv(dest, &len, 'g'); 
 	dest = htmlForm(dest, &len); 
-	dest = strcpy(dest, &len, "Cursor control channels: \n <table>\n"); 
+	dest = strcpy(dest, &len, "Cursor control channels:\n<table>\n"); 
 	dest = htmlCursorSelect(dest, &len, "+X (right)", "xpos_chan", g_mouseXpos); 
-	dest = htmlCursorSelect(dest, &len, "-X (left)", "xneg_chan", g_mouseXneg; 
+	dest = htmlCursorSelect(dest, &len, "-X (left)", "xneg_chan", g_mouseXneg); 
 	dest = htmlCursorSelect(dest, &len, "+Y (down)", "ypos_chan", g_mouseYpos); 
 	dest = htmlCursorSelect(dest, &len, "-Y (up)", "yneg_chan", g_mouseYneg); 
 	dest = strcpy(dest, &len, 
-		"</table>\n<input type=\"submit\" value=\"Save\"/>\n<\form><\div>\n");
+		"</table>\n<input type=\"submit\" value=\"Save\"/>\n</form></div>\n");
 	
 	dest = htmlDiv(dest, &len, 'b'); 
 	dest = htmlForm(dest, &len); 
 	dest = strcpy(dest, &len, 
 		"<input type=\"submit\" name=\"calibrate\" value=\"Calibrate Thresholds\"/>\n\
 		</form>\n</div>\n</body>\n</html>"); 
+	return len; 
 }
 char* htmlDiv(char* dest, int* len, char color){
 	if(color == 'b'){
@@ -67,7 +99,7 @@ char* htmlDiv(char* dest, int* len, char color){
 char* htmlForm(char* dest, int* len){
 	return strcpy(dest, len, "<form action=\"test.pl\" method=\"get\">"); 
 }
-char* httpCursorSelect(char* dest, int* len, char* desc, 
+char* htmlCursorSelect(char* dest, int* len, char* desc, 
 			char* selectName, int selectedNum){
 	dest = strcpy(dest, len, "<tr><td>"); 
 	dest = strcpy(dest, len, desc); 
