@@ -426,10 +426,6 @@ close(findobj('Tag','starterrors'));                                    % if win
 close(findobj('Tag','armspeeds'));                                      % if window is open, it will get closed
 close(findobj('Tag','clothespinSetup'));                                % if window is open, it will get closed
 
-try
-	UDP_close;
-catch
-end
 clear global                                                            % clear all global variables
 closereq                                                                % close ceven
 
@@ -618,13 +614,13 @@ if ~isempty(strmatch('win',dum))                                        % if 'wi
         n=n+1;                                                          % advance index counter
     catch, end                                                          % do nothing on error; continue along
     
-cards{n} = 'Myopen Daq';                                        % store common name of card
-cardinfo.channels(n) = 16;                       % store the associated number of channels
-cardinfo.min_fs(n) = 1000;                                       % store min sampling frequency
-cardinfo.max_fs(n) = 1000;                                     % store max sampling frequency
+cards{n} = 'Myopen';                                        % store common name of card
+out = daqhwinfo(analoginput('winsound',0));                     % find out number of associated channels
+cardinfo.channels(n) = out.TotalChannels;                       % store the associated number of channels
+cardinfo.min_fs(n) = 100;                                       % store min sampling frequency
+cardinfo.max_fs(n) = 44100;                                     % store max sampling frequency
 cardinfo.cur_fs(n) = 1000;                                      % store initial sampling frequency
-cardinfo.code(n) = {'myopen'};                                % store Matlab card code
-UDP_setup();
+cardinfo.code(n) = {'winsound'};                                % store Matlab card code
 n=n+1;
 end
 
@@ -771,8 +767,6 @@ if ~isempty(ch)                                                         % if at 
             forceFS = 40;                                               % force FS minimum
         case 'nidaq'                                                    % if nidaq card
             forceFS = 40;                                               % force FS minimum
-        case 'myopen'
-            forceFS = 1000; 
     end
     viewSigs.sampRate = max([forceFS cardinfo.cur_fs(idx)]);            % add sample rate to structure (force soundcard min to 8Khz)
     laq                                                                 % call the live acquisition program
@@ -927,9 +921,6 @@ switch abortchoice,
         end
         switch quitchoice,
             case 'Yes',                                                 % if 'Yes'
-                try
-                    UDP_close(); 
-                catch end
                 set(hObject,'UserData',1)                               % set quit flag
                 set(handles.acq_start,'UserData',1)                     % set redo flag
                 try,                                                    % try; in case no inmage shown
@@ -1249,8 +1240,7 @@ while i<=numtrials                                                      % start 
         if get(hObject,'UserData'), continue, end                       % check to catch redo request 
         set(handles.pro_waitbar,'BackgroundColor',[1 0 0]);             % set waitbar color back to red (for next contraction)
 
-        % data = getdata(ai); % copy acquired data to an array
-        data = UDP_receive(datasize, 0); 
+        data = getdata(ai);                                             % copy acquired data to an array
         stop(ai)                                                        % force stop of ai
         if length(chans)~=length(channels), data = data(:,channels); end  % strip out unselected channels
         if decimate > 1, data = data(1:decimate:end,:); end             % decimate data (for below min FS)
@@ -3305,8 +3295,7 @@ while strfind(get(handles.v_toggle,'FontWeight'),'bold')
     pause(wait-toc)                                                     % wait up to processing delay (what is left of it)                                         
     tic;                                                                % reset start point in time
     timenow = clock;                                                    % time now
-    % data = peekdata(ai,datasize);                                       % get block of data from a/d
-    data = UDP_receive(32, 1); 
+    data = peekdata(ai,datasize);                                       % get block of data from a/d
     if length(chans)~=length(channels), data = data(:,channels); end    % strip out unselected channels
     if decimate > 1, data = data(1:decimate:end,:); end                 % decimate data (for below min FS)
     if (size(data,1)-inc) ~= 0, continue, end                           % if proper number of samples is not available, skip ahead to next loop iteration 

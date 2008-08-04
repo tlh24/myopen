@@ -517,14 +517,14 @@ else                                                                    % if the
         NaNfill=floor(get(handles.hTimerPeriod,'Value')*fs)-size(data,1);% get size of data void at plot beginning
         pdata=[(zeros(NaNfill,length(ch))+NaN); data(:,ch)];            % pad with zeros to maintain plot window size at start
         time = fliplr((1:get(handles.hTimerPeriod,'Value')*fs)/fs);     % create array of corresponding time values of x axis 
-        time = 1:(size(pdata, 1))/fs; 
+        time = 1:(size(pdata, 1))./fs; 
         for i=1:size(pdata,2)                                           % loop through channels
 			plot(time,pdata(:,i),'Color',color(ch(i),:))                % plot channels with corresponding set colors
             text(get(handles.hTimerPeriod,'Value')*1.02,...             % place channel number to right of plot 
                 median(pdata(:,i)),num2str(ch(i)),...                   % at a position matching the data median
                 'Color',color(ch(i),:),...                              % and a color matching the data
                 'FontSize',12,'FontWeight','demi',...
-                'FontName','Arial Black'); 
+                'FontName','Arial Black');
             hold on;                                                    % specifiy hold on so all channels will appear
         end    
         
