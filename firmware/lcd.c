@@ -25,7 +25,6 @@ u8 g_lcd_y; //what line we are on
 u8 g_lcd_x; //hoizontal position. 
 
 void LCD_send(char data, unsigned char word){
-	return; 
 	unsigned short r = (unsigned short) word; 
 	if(data) r |= 0x100; 
 	*pPORTFIO_CLEAR = LCD_CS ;
@@ -43,7 +42,7 @@ void LCD_send(char data, unsigned char word){
 	}
 	*pPORTFIO_SET = LCD_CS ;
 	SSYNC ; 
-	//delay(1); 
+	delay(1); 
 }
 void LCD_command(unsigned char word){
 	LCD_send(0,word); 
@@ -322,7 +321,10 @@ int printf_int(char* str, int d){
 	}
 	len = strlen(str); 
 	if(len + i +1 <= PRINTF_BUFFER_SIZE){
-		memcpy((u8*)str, (u8*)printf_out, len); 
+		int n; 
+		for(n=0; n<len; n++){
+			printf_out[n] = *str++; 
+		}
 		for(j = 0; j < i; j++){
 			printf_out[len + j] = printf_temp[i-j-1]; 
 		}
@@ -339,7 +341,10 @@ int printf_hex(char* str, int d){
 	//we already know the length of the hex number will be 10 chars.
 	len = strlen(str); 
 	if(len + 11 <= PRINTF_BUFFER_SIZE){
-		memcpy((u8*)str, (u8*)printf_out, len); 
+		int n; 
+		for(n=0; n<len; n++){
+			printf_out[n] = *str++; 
+		}
 		j = len; 
 		printf_out[j] = '0'; j++; 
 		printf_out[j] = 'x'; j++; 

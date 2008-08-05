@@ -22,9 +22,9 @@ void memcpy(u8* src, u8* dest, int len){
 	int i; 
 	//do it the simple way -- see http://docs.blackfin.uclinux.org/doku.php?id=memcpy
 	//the only thing that really beats this is DMA. (provided data cache is enabled). 
-	printf_hex("memcpy from ", src); 
-	printf_hex(" to ", dest); 
-	printf_str("\n"); 
+	//printf_hex("memcpy from ", src); 
+	//printf_hex(" to ", dest); 
+	//printf_str("\n"); 
 	for(i=0; i<len; i++){
 		*dest++ = *src++; 
 	}
@@ -37,7 +37,7 @@ void memset(u8* dest, u8 fill, int len){
 }
 int strlen(char* str){
 	int i; 
-	for(i=0; i<1024; i++){
+	for(i=0; i<1280; i++){
 		if(str[i] == 0)
 			return i; 
 	}
@@ -71,6 +71,27 @@ int strcmp(char* a, char* b){
 		i++; 
 	}
 	return 1; 
+}
+int substr(char*a, char*b, int blen){
+	//see if 'a' is a substring of (contained within) 'b'. 
+	char* aa, *bb; 
+	int i = 0; 
+	while(*a && *b && i < blen){
+		if(*a == *b){ //first character matches!
+			aa = a+1; 
+			bb = b+1; 
+			while(*aa == *bb && *bb){
+				aa++; 
+				bb++; 
+				if(*aa == 0){
+					return 1; //found!! 
+				}
+			}
+		}
+		b++; 
+		i++; 
+	}
+	return 0; 
 }
 int sprintf_int(char* dest, int d){
 	int i, m, j;

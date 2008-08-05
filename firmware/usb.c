@@ -100,7 +100,7 @@ void usb_init() {
 	//have to set MAX3421 up in full-duplex mode. 
 	wreg(rPINCTL,bmFDUPSPI | bmPOSINT);    // MAX3420: SPI=full-duplex
 	int i, j; 
-	for(j =0; j<2; j++){
+	for(j =0; j<1; j++){
 		wreg(rUSBCTL,bmCHIPRES);    // reset the MAX3420E
 		udelay(20); 
 		wreg(rUSBCTL,0 );            // remove the reset, leave disconnected.

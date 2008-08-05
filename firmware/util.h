@@ -14,6 +14,7 @@ extern u32 g_mouseXneg;
 extern u32 g_mouseYpos; 
 extern u32 g_mouseYneg; 
 extern u32 g_mouseShift; 
+extern u8   g_streamEnabled; 
 
 //in crt0.asm
 void delay(int); 
@@ -25,6 +26,7 @@ void memset(u8* dest, u8 fill, int len);
 int strlen(char* str); 
 char* strcpy(char* dest, int* len, char* str); 
 int strcmp(char* a, char* b); 
+int substr(char*a, char*b, int blen); 
 int sprintf_int(char* dest, int d);
 char* strprintf_int(char* dest, int* len, int d); 
 void udelay(int us) ; 

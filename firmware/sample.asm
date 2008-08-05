@@ -28,7 +28,7 @@ _I11HANDLER:          // IVG 11 Handler
 	r2 = [p4]; //need to read these with full 32 bit word as the serial word is 20 bits. 
 	r2 = r2 << 3; //we are using a 13-bit ADC. 
 	r0 = pack(r1.l, r2.l); 
-	r7 = r0; 
+	[--sp] = r0; //save for raw output. 
 	/*
 	directform 1 biquad, form II saturates 1.15 format.
 	operate on the two samples in parallel (both in 1 32bit reg). 
@@ -102,6 +102,8 @@ _I11HANDLER:          // IVG 11 Handler
 	r2 = [p4]; //need to read these with full 32 bit word as the serial word is 20 bits. 
 	r2 = r2 << 3; //we are using a 13-bit ADC. 
 	r0 = pack(r1.l, r2.l); 
+	[--sp] = r0; 
+	
 .align 8
 	mnop || r5 = [i0++] || r1 = [i1++]; 
 	a0 = r0.l * r5.l , a1 = r0.h * r5.l || r6 = [i0++] ||  [i2++] = r0; 
@@ -143,9 +145,9 @@ _I11HANDLER:          // IVG 11 Handler
 	if !cc jump skip_sample
 		//call LMS to filter the sample. 
 		//r0 = most recent filtered sample, r1 = sample counter. 
-		[--sp] = r7; 
 		call _LMS;
 		r0 = abs r0 (v); 
+		r7 = [sp++]; //pop the old raw sample.
 		r3 = [p5 + F_WR_PTR]; 
 		r4.h = 0x0003; 
 		r4.l = 0xffff; 
@@ -153,17 +155,35 @@ _I11HANDLER:          // IVG 11 Handler
 		r3 += 8 ; //we'll save 4 samples here, 2 bytes each. 
 		[p5 + F_WR_PTR] = r3; 
 		p4 = r4; 
-		r7 = [sp++]; //r7 = raw EMG. 
-		[p4++] = r0; //write to ram.
-		r0 = [sp++]; //pop the old filtered sample. 
+		r6 = b[p5+F_RAW_ENAB]; 
+		cc = bittst(r6, 0) ; 
+		if !cc jump write_filtered_0
+			//otherwise, write the raw sample.
+			[p4++] = r7; 
+			jump write_filtered_done0; 
+	write_filtered_0: 
+			[p4++] = r0; //write to ram.
+	write_filtered_done0:
+		r0 = [sp++]; //pop the old filtered sample.
 		r1 += 2; 
 		call _LMS ; 
 		r0 = abs r0 (v); 
-		[p4++] = r0; 
+		r7 = [sp++]; 
+		r6 = b[p5+F_RAW_ENAB]; //r6 will have been clobbered by LMS.
+		cc = bittst(r6, 0) ; 
+		if !cc jump write_filtered_1
+			//otherwise, write the raw sample.
+			[p4++] = r7; 
+			jump write_filtered_done1; 
+	write_filtered_1: 
+			[p4++] = r0; //write to ram.
+	write_filtered_done1:
 		r1 += -2 ; //so the increment by 4 below works.
 		jump no_pop_sample ;
 skip_sample: //samples 0, 1, or 2. 
 	r0 = [sp++]; //if we did not pop it in the inner loop, we need to pop it here. 
+	r0 = [sp++]; //to keep delta stack = 0.
+	r0 = [sp++]; 
 no_pop_sample: 
 	r1 += 4; //we read in 4 samples just now. 
 	[p5 + F_SAMP_CTR] = r1; 
