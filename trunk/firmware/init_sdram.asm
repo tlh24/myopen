@@ -193,10 +193,10 @@ _test:
 	
 skip_init_sdram: 
 	/* might also want to speed up the SPI port here .. */
-	(P5:0) = [SP++];
-	(R7:0) = [SP++];
-	RETS   = [SP++];
-	ASTAT  = [SP++];
+	(P5:0) = [sp++];
+	(R7:0) = [sp++];
+	RETS   = [sp++];
+	ASTAT  = [sp++];
 	/* jump start_crt0; */
 	RTS;
 /*

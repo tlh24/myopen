@@ -5,17 +5,18 @@
 <body>
 <h1>Myopen configuration</h1>
 <div style="background:#dedeee" align="center">
-<form action="test.pl" method="get">
+<form action="test.pl" method="post">
 	Data Stream (port 4340, UDP)
 	<input type="submit" name="data_stream" value="Enable"/>
 	<input type="submit" name="data_stream" value="Disable"/>
 </form></div>
 <div style="background:#d8eeee" align="center">
-<form action="test.pl" method="get">
+<form action="test.pl" method="post">
 	Cursor control channels: 
 	<table>
 	<tr><td>Mouse x+: </td>
 	<td><select name="xpos_chan">
+		<option value="0">0</option>
 		<option value="1">1</option>
 		<option value="2">2</option>
 		<option value="3">3</option>
@@ -31,10 +32,10 @@
 		<option value="13">13</option>
 		<option value="14">14</option>
 		<option value="15">15</option>
-		<option value="16">16</option>
 	</select></td></tr>
 	<tr><td>Mouse x-: </td>
 	<td><select name="xneg_chan">
+		<option value="0">0</option>
 		<option value="1">1</option>
 		<option value="2" selected="selected">2</option>
 		<option value="3">3</option>
@@ -50,10 +51,10 @@
 		<option value="13">13</option>
 		<option value="14">14</option>
 		<option value="15">15</option>
-		<option value="16">16</option>
 	</select></td></tr>
 	<tr><td>Mouse y+: </td>
 	<td><select name="ypos_chan">
+		<option value="0">0</option>
 		<option value="1">1</option>
 		<option value="2">2</option>
 		<option value="3" selected="selected">3</option>
@@ -69,10 +70,10 @@
 		<option value="13">13</option>
 		<option value="14">14</option>
 		<option value="15">15</option>
-		<option value="16">16</option>
 	</select></td></tr>
 	<tr><td>Mouse y-: </td>
 	<td><select name="yneg_chan"> 
+		<option value="0">0</option>
 		<option value="1">1</option>
 		<option value="2">2</option>
 		<option value="3">3</option>
@@ -88,14 +89,13 @@
 		<option value="13">13</option>
 		<option value="14">14</option>
 		<option value="15">15</option>
-		<option value="16">16</option>
 	</select></td></tr>
 	</table>
 	<input type="submit" value="Save"/>
 </form>
 </div>
 <div style="background:#dedeee" align="center">
-<form action="test.pl" method="get">
+<form action="test.pl" method="post">
 	<input type="submit" name="calibrate" value="Calibrate Thresholds"/>
 </form>
 </div>

@@ -11,6 +11,8 @@ u32 g_mouseXneg;
 u32 g_mouseYpos; 
 u32 g_mouseYneg; 
 u32 g_mouseShift; //scaling factor. 
+u8   g_streamEnabled; 
+u8   g_streamRaw ; //output the raw samples.
 
 int PhysicalToLogicalChan(int c){
 	return ((((c & 0x3) ^ 0x1) << 2) | ((c & 0xc) >> 2))^0xf; //yes could be simpler.
@@ -78,7 +80,7 @@ int main() {
 	15 dt1pri			(peripheral ,to ADCs)		0xf 0b1111 ; 0x0 ; 0x0
 	*/
 	*pPORTG_FER = 0xfd00 ; 
-	*pPORTGIO_DIR = 0x0000 ; 
+	*pPORTGIO_DIR = 0x00ff ; 
 	*pPORTGIO_INEN = 0x0000 ; 
 	/* port h:  all are hooked to the ethernet PHY */
 	*pPORTH_FER = 0xffff ; 
@@ -98,7 +100,8 @@ int main() {
 	10 nc				()
 	11 dt0pri			lcd_data, peripheral	
 	*/
-	//LCD_init() ; 
+	asm volatile("ssync"); 
+	LCD_init() ; 
 	*pUART0_IER = 0; //turn off interrupts, turn them on later.
 	*pUART0_MCR = 0; 
 	*pUART0_LCR =  0x0080; //enable access to divisor latch. 
@@ -106,7 +109,7 @@ int main() {
 	*pUART0_DLH = 0;  //the system clock is 120Mhz. baud rate is 115200. 
 	*pUART0_LCR = 0x0003; //parity disabled, 1 stop bit, 8 bit word. 
 	*pUART0_GCTL = 0x0001; //enable the clock.
-	printf_int("Myopen svn v.", /*SVN_VERSION{*/91/*}*/ ) ; 
+	printf_int("Myopen svn v.", /*SVN_VERSION{*/93/*}*/ ) ; 
 	printf_str("\n"); 
 	printf_str("checking SDRAM...\n"); 
 	unsigned short* p; 
@@ -177,8 +180,11 @@ int main() {
 	g_mouseYneg = PhysicalToLogicalChan(3); 
 	g_mouseShift = 7; //scaling / threshold. 
 	//turn on the SPORTS last, as the ethernet has to be ready to blast out the data. 
+	g_streamEnabled = 0; 
+	u8* raw_enab = (u8*)RAW_ENAB; 
+	raw_enab = 0; 
 	printf_str("turning on SPORTs\n"); 
-	 u32* samp_ctr = (u32*)SAMP_CTR; 
+	u32* samp_ctr = (u32*)SAMP_CTR; 
 	u32* wr_ptr = (u32*)WR_PTR; 
 	u32* tr_ptr = (u32*)TR_PTR; 
 	u32* adc_ctr = (u32*)ADC_CTR; 
@@ -199,19 +205,19 @@ int main() {
 	zero fill data, 
 	external recieve clock,  
 	enable. */
-	//*pSPORT0_RCR1 = 0x4401 ; 
-	//*pSPORT1_RCR1 = 0x4401 ; 
+	*pSPORT0_RCR1 = 0x4401 ; 
+	*pSPORT1_RCR1 = 0x4401 ; 
 	//transmit port
 	*pSPORT1_TCLKDIV = 149 ; //120Mhz / 300 = 400k / 25 = 16k / 4 = 4 ksps/ch
 	*pSPORT1_TFSDIV = 24 ; //25 clocks between assertions of the frame sync
 	*pSPORT1_TCR2 = 19; //word length 20, secondary disabled. 
 	// TCR = 0100 0110 0000 0011
-	//*pSPORT1_TCR1 = 0x4603 ; 
+	*pSPORT1_TCR1 = 0x4603 ; 
 	
 	u8* data; 
 	while(1) {
 		if(!etherr) bfin_EMAC_recv( &data ); //listen for packets? (and respond)
-		if(!etherr && bfin_EMAC_send_check() && 1){
+		if(!etherr && bfin_EMAC_send_check() && g_streamEnabled){
 			if(*wr_ptr < *tr_ptr) *tr_ptr = 0; //rollover.
 			if(*wr_ptr - *tr_ptr >= 1024){//then we have at least one packet to send.
 				data = udp_packet_setup(1024 + 4); 

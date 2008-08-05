@@ -23,11 +23,13 @@
 #define F_WR_PTR		4 //where the sample will be written to in SDRAM. (pointer to pointer)
 #define F_TR_PTR		8 //the transmitted sample pointer.  (transmitted over enet!)
 #define F_ADC_CTR		12 //for switching between the 4 multiplexed ports of the ADC). 
+#define F_RAW_ENAB	16 ////enable the raw data output. only a byte.
 
 #define SAMP_CTR (F_P5 + F_SAMP_CTR)
 #define WR_PTR (F_P5 + F_WR_PTR)
 #define TR_PTR (F_P5 + F_TR_PTR)
 #define ADC_CTR (F_P5 + F_ADC_CTR)
+#define RAW_ENAB (F_P5 + F_RAW_ENAB)
 
 /* ethernet buffers!! */
 #define RXBUF_BASE_ADDR		0xFF802000  
@@ -42,7 +44,8 @@
 //SDRAM address 0x0 to 0x3ffff = circular data buffer. (that's 2^18 bytes = 256kb)
 //SDRAM, 32mbytes = 2^25 = 0x0 to 0x0020 0000 - 1
 #define HTTP_HEADER		0x00040000 //256 bytes. 
-#define HTTP_CONTENT		0x00040100 //i don't know how big we'll need? 
+#define HTTP_CONTENT	0x00040100 //i don't know how big we'll need? (have 65k - 0xFF00) 
+#define HTTP_RX				0x00050000
 
 #define CONFIG_CLKIN_HZ          25000000 /*external clock*/
 /* CONFIG_CLKIN_HALF controls what is passed to PLL 0=CLKIN      */

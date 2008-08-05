@@ -1251,6 +1251,7 @@ while i<=numtrials                                                      % start 
 
         % data = getdata(ai); % copy acquired data to an array
         data = UDP_receive(datasize, 0); 
+		data = UDP_recieve(u); 
         stop(ai)                                                        % force stop of ai
         if length(chans)~=length(channels), data = data(:,channels); end  % strip out unselected channels
         if decimate > 1, data = data(1:decimate:end,:); end             % decimate data (for below min FS)

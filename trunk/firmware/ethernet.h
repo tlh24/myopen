@@ -117,6 +117,7 @@ typedef struct icmp_header {
 } icmp_header; 
 #define ICMP_ECHO_REPLY	0
 #define ICMP_UNREACHABLE	3
+#define ICMP_PORT_UNREACHABLE	3
 #define ICMP_ECHO_REQUEST	8
 
 typedef struct udp_header {
@@ -149,7 +150,9 @@ enum{
 	TCP_LISTEN = 0, 
 	TCP_SYN_RXED, 
 	TCP_CONNECTED, 
-	TCP_CLOSE
+	TCP_CLOSING, //sent out a FIN.
+	TCP_CLOSE, 
+	TCP_ACKWAIT
 }; 
 
 typedef struct dhcp_header {
@@ -259,6 +262,27 @@ int DHCP_rx();
 int DHCP_req(); 
 void DHCP_parse(u8* ptr, int length);
 int ether_post_test();
+
+extern ADI_ETHER_BUFFER *txbuf[TX_BUF_CNT]; 
+extern ADI_ETHER_BUFFER *rxbuf[RX_BUF_CNT];
+extern u16 txIdx;		/* index of the current RX buffer */
+extern u16 rxIdx;		/* index of the current TX buffer */
+
+extern u32 TcpState; 
+extern u32 TcpSeqClient; //the last Syn packet recieved. host order.
+extern u32 TcpSeqHost; 		// our counter. host byte order.
+extern u16 TcpClientPort; //from which port a client is querying us. 
+					// IN NETWORK ORDER
+
+extern u16 txIdx;		/* index of the current RX buffer */
+extern u16 rxIdx;		/* index of the current TX buffer */
+extern u16 NetIPID;		// identification # for IP header.
+extern u32 NetOurIP;	//our IP address, in network byte-order 
+					//here reversed, 192.168.1.200 = 0xC801A8C0
+extern u32 NetDestIP; 	//destination IP address, as above. 
+					// 192.168.1.149 = 0x9501A8C0
+extern u32 NetDHCPserv; //same as above, network byte order.
+extern u8	NetDestMAC[6]; //where to send data to on the local network.
 
 /**
  * is_zero_ether_addr - Determine if give Ethernet address is all zeros.

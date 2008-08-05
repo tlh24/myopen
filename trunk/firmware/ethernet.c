@@ -20,6 +20,7 @@
  * You should have received a copy of the GNU General Public License
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
+ * MA 02111-1307 USA
  */
 #include <cdefBF537.h>
 #include "memory.h"
@@ -32,21 +33,14 @@
 
 ADI_ETHER_BUFFER *txbuf[TX_BUF_CNT]; 
 ADI_ETHER_BUFFER *rxbuf[RX_BUF_CNT];
-static u16 txIdx;		/* index of the current RX buffer */
-static u16 rxIdx;		/* index of the current TX buffer */
-static u16 NetIPID;		// identification # for IP header.
-static u32 NetOurIP;	//our IP address, in network byte-order 
+u16 txIdx;		/* index of the current RX buffer */
+u16 rxIdx;		/* index of the current TX buffer */
+u16 NetIPID;		// identification # for IP header.
+u32 NetOurIP;	//our IP address, in network byte-order 
 					//here reversed, 192.168.1.200 = 0xC801A8C0
-static u32 NetDestIP; 	//destination IP address, as above. 
+u32 NetDestIP; 	//destination IP address, as above. 
 					// 192.168.1.149 = 0x9501A8C0
-static u32 NetDHCPserv; //same as above, network byte order.
-
-static u32 TcpState; 
-static u32 TcpSeqClient; //the last Syn packet recieved. host order.
-static u32 TcpSeqHost; 		// our counter. host byte order.
-static u16 TcpClientPort; //from which port a client is querying us. 
-					// IN NETWORK ORDER
-char	HttpResp[HTTP_BUFFER_SIZE]; 
+u32 NetDHCPserv; //same as above, network byte order.
 
 u8 		NetOurMAC[6];
 u8		NetDestMAC[6]; //where to send data to on the local network.
@@ -642,8 +636,8 @@ int ARP_respond(int length){
 			p->arp.hlen == 6 && 
 			p->arp.plen == 4 && 
 			p->arp.operation == htons(ARP_OP_REQ) &&
-			p->arp.tpa == NetOurIP){
-				
+			p->arp.tpa == NetOurIP)
+		{
 			printf_str("ARP request with our IP\n"); 
 	
 			pt = (arp_packet*)(txbuf[txIdx]->FrmData); 
@@ -877,8 +871,8 @@ int ether_testUDP(){
 	p->ip.src = NetOurIP; 
 	p->ip.dest = NetDestIP; 
 	p->ip.sum  = ~ NetCksum((u8 *)(&(p->ip)), IP_HDR_SIZE_NO_UDP / 2);
-	p->udp.src = htons(4340); 
-	p->udp.dest = htons(4340); 
+	p->udp.src = htons(4341); 
+	p->udp.dest = htons(2404); 
 	p->udp.len = htons( 8 + 22); 
 	p->udp.xsum = 0; //zero indicates unused checksum. 
 	
@@ -909,217 +903,6 @@ u8* udp_packet_setup(int len){
 	
 	return data; 
 }
-u8* tcp_packet_setup(int len, u32 dest, u8 flags, u32 seq, u32 ack){
-	//setup a tcp packet, caller sends it. 
-	//len is the payload length.
-	
-	int length; 
-	u8* data; 
-	
-	length = sizeof(tcp_packet) + len; 
-	data = eth_header_setup(&length); 
-	printf_int("tcp packet setup: ip packet length: ", length); 
-	printf_str("\n"); 
-	data = ip_header_setup(data, &length, dest, IP_PROT_TCP); 
-	data = tcp_header_setup(data, &length, flags, seq, ack); 
-	
-	return data; 
-}
-void tcp_checksum(int length){
-	//assumes that we are working on a packet in outgoing dma buffer.
-	//length is the payload length.
-	// http://mathforum.org/library/drmath/view/54379.html
-	int i; 
-	tcp_packet* p; 
-	p = (tcp_packet*)(txbuf[txIdx]->FrmData);
-	
-	u32 sum = 0;
-	u16* ptr; 	
-	//first, add up the IP pseudo-header. 
-	u32* pp = &(p->ip.src) ; 
-	ptr = (u16*)( pp ); 
-	for(i=0; i<4; i++){
-		sum += *ptr++; 
-	}
-	sum += ((p->ip.p) << 8) & 0xffff; 
-	sum += htons(length + sizeof(tcp_header)); 
-	
-	ptr = (u16*)( &(p->tcp) ); 
-	for(i=0; i < length/2 + sizeof(tcp_header)/2; i++){
-		sum += *ptr++;
-	}
-	//manage the carries
-	sum = (sum & 0xffff) + (sum >> 16);
-	//sum = (sum & 0xffff) + (sum >> 16);
-	p->tcp.xsum= ~( sum & 0xffff ); //don't think we need to change the byte-order, as we are 
-		//operating on stuff that is network-byte order, ready to transmit.
-}
-
-int tcp_length(tcp_packet* p){
-	//calculate the payload length & return it. 
-	
-	int length = htons(p->ip.len);
-	length -= (p->ip.hl_v & 0x0f) << 2; // specifies 32 bit words, so only shift 2.
-	length -= (p->tcp.dataoff & 0xf0)  >> 2; //same here, 'cept the other direction.
-	return length; 
-}
-
-int tcp_rx(u8* data, int length){
-	tcp_packet* p; 
-	int txlen, rxlen; 
-	char* payload;
-	u8* tx; 
-	char* http; 
-	u32 src; 
-
-	p = (tcp_packet*)data; 
-	if(p->eth.protLen == htons(ETH_PROTO_IP4)){
-		if(p->ip.p == IP_PROT_TCP && 
-		    p->tcp.dest == htons(80) ){
-			printf_str("got a TCP packet port 80");
-			printf_ip(" src ", htonl(p->ip.src)); 
-			printf_ip(" dest ", htonl(p->ip.dest)); 
-			printf_str("\n"); 
-			src = p->ip.src; 
-			//now, must decide what to do with this packet. 
-			if(p->tcp.flags == TCP_FLAG_RST){
-				printf_str("TCP RST\n"); 
-				TcpState = TCP_LISTEN; 
-				TcpSeqClient = htonl(p->tcp.seq); 
-				return 1; 
-			}
-			if( p->tcp.flags == TCP_FLAG_SYN ){
-				printf_str("TCP got SYN"); 
-				TcpSeqClient = htonl(p->tcp.seq); 
-				printf_int("client tcp len ",  tcp_length(p)); 
-				printf_str("\n"); 
-				TcpSeqClient += tcp_length(p); 
-				TcpSeqClient++; //that's the arbitration protocol
-				TcpClientPort = p->tcp.src;
-				//set up a response.
-				tcp_packet_setup(0, src, 
-					TCP_FLAG_SYN | TCP_FLAG_ACK, TcpSeqHost, TcpSeqClient); 
-				TcpSeqHost++; 
-				TcpState = TCP_SYN_RXED; 
-				//checksum. 
-				tcp_checksum(0); //no payload.
-				bfin_EMAC_send_nocopy();
-				return 1; 
-			}
-			if(p->tcp.flags == TCP_FLAG_ACK && TcpState == TCP_SYN_RXED){
-				if(htonl(p->tcp.ack) != TcpSeqHost){
-					printf_ip("TCP got unexpected ack, ", htonl(p->tcp.ack)); 
-					TcpState = TCP_LISTEN; 
-					printf_str("\n"); 
-					return 1; 
-				}
-				TcpState = TCP_CONNECTED; 
-				TcpSeqClient = htonl(p->tcp.seq); 
-				printf_str("TCP conneted\n"); 
-				return 1; 
-			}
-			if(p->tcp.flags & TCP_FLAG_FIN && TcpState == TCP_CONNECTED){
-				printf_str("TCP got FIN\n"); 
-				TcpSeqClient = htonl(p->tcp.seq); 
-				//set up a response.
-				tcp_packet_setup(0, src,
-					TCP_FLAG_FIN | TCP_FLAG_ACK, TcpSeqHost, TcpSeqClient); 
-				TcpState = TCP_CLOSE; 
-				//checksum. 
-				tcp_checksum(0); //no payload.
-				bfin_EMAC_send_nocopy();
-				return 1; 
-			}
-			if(p->tcp.flags & TCP_FLAG_ACK && TcpState == TCP_CLOSE){
-				printf_str("TCP got random ACK\n"); 
-				TcpSeqClient = htonl(p->tcp.seq); 
-				//set up a response.
-				TcpSeqHost++; 
-				tcp_packet_setup(0, src, TCP_FLAG_ACK, TcpSeqHost, TcpSeqClient); 
-				TcpState = TCP_LISTEN; 
-				//checksum. 
-				tcp_checksum(0); //no payload.
-				bfin_EMAC_send_nocopy();
-				return 1; 
-			}
-			if(p->tcp.flags & TCP_FLAG_ACK && TcpState == TCP_CONNECTED){
-				//see if we have more data to send. 
-				if(g_httpRemainingLen > 0){
-					txlen = g_httpRemainingLen > RECV_BUFSIZE ? RECV_BUFSIZE : g_httpRemainingLen;
-					g_httpRemainingLen -= txlen; 
-					g_httpSendPtr += txlen; 
-					if(g_httpRemainingLen == 0){
-						tx = tcp_packet_setup(txlen, src,  
-							TCP_FLAG_ACK | TCP_FLAG_PSH | TCP_FLAG_FIN, //close connection after this.
-							TcpSeqHost, TcpSeqClient); 
-					}else{
-						tx = tcp_packet_setup(txlen, src,  
-							TCP_FLAG_ACK | TCP_FLAG_PSH, //don't close the connection.
-							TcpSeqHost, TcpSeqClient); 
-					}
-					TcpSeqHost+= txlen; 
-					memcpy(g_httpSendPtr, tx, txlen); 
-					tcp_checksum(txlen); 
-					bfin_EMAC_send_nocopy();
-					return 1; 
-				}
-				//not sure what to do otherwise.
-			}
-			if(TcpState == TCP_CONNECTED){
-				//they are requesting something? 
-				rxlen = tcp_length(p); 
-				payload = (char*)( &(p->tcp) ); 
-				payload += (p->tcp.dataoff & 0xf0)/4; //divide by 4 b/c it is << 4 & specifies 32 bit words. 
-				if(rxlen >= 10 && strcmp(payload, "GET / HTTP")){
-					//write the response into a large buffer, which we then copy over into packets.
-					printf_int("got http packet payload length ", rxlen); 
-					printf_str("\n"); 
-					httpResp(payload, rxlen); 
-					TcpSeqClient = htonl(p->tcp.seq); 
-					//TcpSeqClient += rxlen; //hum, why?
-					//need to figure out if we have to break it up into multiple packets. 
-					if(g_httpHeaderLen + g_httpContentLen + sizeof(tcp_packet) > RECV_BUFSIZE){
-						g_httpSendPtr = ((u8*)HTTP_CONTENT); 
-						txlen = RECV_BUFSIZE - sizeof(tcp_packet); 
-						g_httpSendPtr += (txlen - g_httpHeaderLen); 
-						g_httpRemainingLen = g_httpHeaderLen + g_httpContentLen - txlen; 
-						tx = tcp_packet_setup(txlen, src,  
-							TCP_FLAG_ACK | TCP_FLAG_PSH, //don't close connection (of course!)
-							TcpSeqHost, TcpSeqClient); 
-					}else{
-						txlen = g_httpHeaderLen + g_httpContentLen; 
-						g_httpSendPtr = 0; 
-						g_httpRemainingLen = 0; 
-						tx = tcp_packet_setup(txlen, src,  
-							TCP_FLAG_ACK | TCP_FLAG_PSH | TCP_FLAG_FIN, //close connection after this.
-							TcpSeqHost, TcpSeqClient); 
-					}
-					if(txlen & 0x1) txlen++; //this means a garbage byte at the end? 
-					printf_int("sending length: ", txlen); 
-					printf_str("\n"); 
-					TcpSeqHost+= txlen; 
-					memcpy( (u8*)HTTP_HEADER, tx, g_httpHeaderLen); 
-					tx += g_httpHeaderLen; 
-					memcpy( (u8*)HTTP_CONTENT, tx, txlen - g_httpHeaderLen); 
-					tcp_checksum(txlen); 
-					bfin_EMAC_send_nocopy();
-					return 1; 
-				}
-				if(rxlen > 0 ){
-					//then they sent us something - thank them! err, i mean ack it.
-					TcpSeqClient = htonl(p->tcp.seq); 
-					TcpSeqClient += rxlen;
-					tx = tcp_packet_setup(0, src, TCP_FLAG_ACK ,
-						TcpSeqHost, TcpSeqClient); 
-					tcp_checksum(0); 
-					bfin_EMAC_send_nocopy();
-					return 1;
-				}
-			}
-		}
-	}
-	return 0; 
-}
 
 u8* icmp_packet_setup(int len, u32 dest, u8 type, u16 id, u16 seq){
 	//returns a pointer which the caller can fill. 
@@ -1147,11 +930,18 @@ int icmp_rx(u8* data, int length){
 		if( ( p->ip.p == IP_PROT_ICMP ) && 
 		       p->ip.dest == NetOurIP ){
 			if(p->icmp.type == ICMP_UNREACHABLE){
-				printf_str("got an ICMP unreachable reply\n"); 
+				printf_str("got an ICMP unreachable, turning off UDP stream\n"); 
+				//probably we should stop sending data then!! 
+				g_streamEnabled = 0; 
 				return 1; 
 			}
 			if(p->icmp.type == ICMP_ECHO_REQUEST ){
-				printf_ip("got an ICMP ping req from ", htonl(p->ip.src)); 
+				printf_ip("got an ICMP ping req from ", htonl(p->ip.src));
+				NetDestIP = p->ip.src; 
+				int i; 
+				for(i=0; i<6; i++){
+					NetDestMAC[i] = p->eth.src[i]; 
+				}
 				printf_str("\n"); 
 				//well then, reply to it! 
 				//note who is sending it. 
