@@ -20,8 +20,8 @@ u8* tcp_packet_setup(int len, u32 dest, u8 flags, u32 seq, u32 ack){
 	
 	length = sizeof(tcp_packet) + len; 
 	data = eth_header_setup(&length); 
-	printf_int("tcp packet setup: ip packet length: ", length); 
-	printf_str("\n"); 
+	//printf_int("tcp packet setup: ip packet length: ", length); 
+	//printf_str("\n"); 
 	data = ip_header_setup(data, &length, dest, IP_PROT_TCP); 
 	data = tcp_header_setup(data, &length, flags, seq, ack); 
 	
@@ -89,14 +89,13 @@ int tcp_rx(u8* data, int length){
 	if(p->eth.protLen == htons(ETH_PROTO_IP4)){
 		if(p->ip.p == IP_PROT_TCP && 
 		    p->tcp.dest == htons(80) ){
-			printf_str("got a TCP packet port 80");
-			printf_ip(" src ", htonl(p->ip.src)); 
-			printf_ip(" dest ", htonl(p->ip.dest)); 
+			//printf_str("got a TCP packet port 80");
+			//printf_ip(" src ", htonl(p->ip.src)); 
+			//printf_str("\n"); 
 			NetDestIP = p->ip.src; //save it so we sent this guy data in the future.
 			for(i=0; i<6; i++){
 				NetDestMAC[i] = p->eth.src[i]; 
 			}
-			printf_str("\n"); 
 			src = p->ip.src; 
 			//now, must decide what to do with this packet. 
 			if(p->tcp.flags == TCP_FLAG_RST){
@@ -184,6 +183,7 @@ int tcp_rx(u8* data, int length){
 						return 1; 
 					} else {
 						//nothing left - that was just an ack, wait for something else.
+						//this is the keepalive mode of connection.
 						return 1; 
 					}
 				}
@@ -222,7 +222,7 @@ int tcp_rx(u8* data, int length){
 							TcpSeqHost, TcpSeqClient); 
 					} else {
 						tx = tcp_packet_setup(0, src, TCP_FLAG_ACK ,
-							TcpSeqHost, TcpSeqClient); 
+							TcpSeqHost, TcpSeqClient); //keepalive function.
 					}
 					tcp_checksum(0); 
 					bfin_EMAC_send_nocopy();

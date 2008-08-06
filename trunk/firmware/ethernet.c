@@ -929,7 +929,7 @@ int icmp_rx(u8* data, int length){
 		length >= sizeof(icmp_packet) ){
 		if( ( p->ip.p == IP_PROT_ICMP ) && 
 		       p->ip.dest == NetOurIP ){
-			if(p->icmp.type == ICMP_UNREACHABLE){
+			if(p->icmp.type == ICMP_UNREACHABLE && p->icmp.code == ICMP_PORT_CLOSED){
 				printf_str("got an ICMP unreachable, turning off UDP stream\n"); 
 				//probably we should stop sending data then!! 
 				g_streamEnabled = 0; 
