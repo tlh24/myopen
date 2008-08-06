@@ -136,7 +136,7 @@ divhe:
 
 	r0.l = r0.l - r5.l (s); //compute the error.  
 	r0.h = r0.h - r5.h (s); 
-	r5 = r0 >>> 8 (v) ; //vector shift, divide by 256 (= 1/mu)
+	r5 = r0 >>> 10 (v) ; //vector shift, divide by 256 (= 1/mu)
 	//to get the sign, shift right arithmetic so it is either -1 or 0, shift left by 1 (mply by 2) and add 1.
 	r7 = r0 >>> 15 (v) ; 
 	r7 = r7 << 1 (v,s); 

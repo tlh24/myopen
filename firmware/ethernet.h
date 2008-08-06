@@ -117,7 +117,7 @@ typedef struct icmp_header {
 } icmp_header; 
 #define ICMP_ECHO_REPLY	0
 #define ICMP_UNREACHABLE	3
-#define ICMP_PORT_UNREACHABLE	3
+#define ICMP_PORT_CLOSED	3
 #define ICMP_ECHO_REQUEST	8
 
 typedef struct udp_header {

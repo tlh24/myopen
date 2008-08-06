@@ -6,17 +6,23 @@
 #include "usb.h"
 
 u32 g_excregs[8+6+16] ; //the regular data registers + pointer registers. 
-u32 g_mouseXpos; //the channel used to drive positive x cursor movement.  
-u32 g_mouseXneg; 
-u32 g_mouseYpos; 
-u32 g_mouseYneg; 
+u8 g_mouseXpos; //the channel used to drive positive x cursor movement.  
+u8 g_mouseXneg; 
+u8 g_mouseYpos; 
+u8 g_mouseYneg; 
 u32 g_mouseShift; //scaling factor. 
 u8   g_streamEnabled; 
 u8   g_streamRaw ; //output the raw samples.
 
 int PhysicalToLogicalChan(int c){
-	return ((((c & 0x3) ^ 0x1) << 2) | ((c & 0xc) >> 2))^0xf; //yes could be simpler.
+	//converts a physical channel (connector # on the board!) 
+	// to logical channel (offset in memory)
+	return (((c & 0x3) ^ 0x1) << 2) | (((c & 0xc) >> 2) ^ 0x3); 
 }
+int LogicalToPhysicalChan(int c){
+	return (((c & 0x3) ^ 0x3) << 2) | (((c & 0xc) >> 2)^ 0x1); 
+}
+
 int main() {
 	// disable cache. no imem_control on this proc? 
 	*pDMEM_CONTROL = 0x00001001; 
@@ -109,7 +115,7 @@ int main() {
 	*pUART0_DLH = 0;  //the system clock is 120Mhz. baud rate is 115200. 
 	*pUART0_LCR = 0x0003; //parity disabled, 1 stop bit, 8 bit word. 
 	*pUART0_GCTL = 0x0001; //enable the clock.
-	printf_int("Myopen svn v.", /*SVN_VERSION{*/93/*}*/ ) ; 
+	printf_int("Myopen svn v.", /*SVN_VERSION{*/94/*}*/ ) ; 
 	printf_str("\n"); 
 	printf_str("checking SDRAM...\n"); 
 	unsigned short* p; 

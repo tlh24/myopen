@@ -39,20 +39,22 @@ int httpCollate(char* payload, int paylen){
 }
 
 int httpResp( char* payload, int paylen ){
-	if( paylen > 14 && strcmp(payload, "GET / HTTP")){ //start ( '/' is the trailing part of the URL )
+	if( paylen > 14 && strcmp(payload, "GET / HTTP")){ 
+		//start ( '/' is the trailing part of the URL )
 		if(substr("\r\n\r\n", payload, paylen)){ //end
 			//requested a webpage, in one packet.
-			printf_str("requested a webpage!\n"); 
+			//printf_str("requested a webpage!\n"); 
 			g_httpContentLen = htmlDefault(); 
 			//content length seems to be minus the headers, the actual content length (surprise!)
 			httpHeader(); 
-			printf_int("header length:", g_httpHeaderLen); 
-			printf_str("\n"); 
-			printf_int("content length:", g_httpContentLen); 
-			printf_str("\n"); 
+			//printf_int("header length:", g_httpHeaderLen); 
+			//printf_str("\n"); 
+			//printf_int("content length:", g_httpContentLen); 
+			//printf_str("\n"); 
 			return 1; 
 		}
 	}else if(paylen >= 18 && substr("POST",payload,paylen) ){
+		char paramChanged = 0; 
 		if(substr("data_stream=",payload, paylen) ){
 			if(substr("=Enable",payload, paylen) ){
 				//then turn on the data stream! 
@@ -60,31 +62,94 @@ int httpResp( char* payload, int paylen ){
 				u32* tr_ptr = (u32*)TR_PTR; 
 				g_streamEnabled = 1; 
 				(*tr_ptr) = (*wr_ptr);  //so that we don't spend a long time catching up.
-				g_httpContentLen = htmlDefault(); 
-				httpHeader(); 
-				return 1; 
+				paramChanged = 1; 
 			}
 			if(substr("=Disable",payload, paylen)){
 				g_streamEnabled = 0; 
-				g_httpContentLen = htmlDefault(); 
-				httpHeader(); 
-				return 1; 
+				paramChanged = 1; 
 			}
 		}
 		if(substr("filter_data",payload,paylen)){
 			u8* raw_enab = (u8*)RAW_ENAB; 
 			if(substr("=Enable",payload, paylen) ){
 				*raw_enab = 0; //enable filter = disable raw.
-				g_httpContentLen = htmlDefault(); 
-				httpHeader(); 
-				return 1; 
+				paramChanged = 1; 
 			}
 			if(substr("=Disable",payload, paylen)){
 				*raw_enab = 1; //enable filter = disable raw.
-				g_httpContentLen = htmlDefault(); 
-				httpHeader(); 
-				return 1; 
+				paramChanged = 1; 
 			}
+		}
+		// --- look at the mouse channels. 
+		int pos ; 
+		char* p; 
+		pos = substr("xpos_chan=",payload,paylen); 
+		if(pos){
+			p = payload; p += pos; 
+			g_mouseXpos = (u8)(PhysicalToLogicalChan(atoi( p, 3)) & 0xff); 
+			paramChanged = 1; 
+		}
+		pos = substr("ypos_chan=",payload,paylen); 
+		if(pos){
+			p = payload; p += pos; 
+			g_mouseYpos = (u8)(PhysicalToLogicalChan(atoi( p, 3)) & 0xff); 
+			paramChanged = 1; 
+		}
+		pos = substr("xneg_chan=",payload,paylen); 
+		if(pos){
+			p = payload; p += pos; 
+			g_mouseXneg = (u8)(PhysicalToLogicalChan(atoi( p, 3)) & 0xff); 
+			paramChanged = 1; 
+		}
+		pos = substr("yneg_chan=",payload,paylen); 
+		if(pos){
+			p = payload; p += pos; 
+			g_mouseYneg = (u8)(PhysicalToLogicalChan(atoi( p, 3)) & 0xff); 
+			paramChanged = 1; 
+		}
+		// --------------------------
+		if(paramChanged){
+			g_httpContentLen = htmlDefault(); 
+			httpHeader(); 
+			return 1; 
+		}
+		// calibrate thresholds! 
+		if(substr("calibrate=Cal",payload,paylen)){
+			//look at the last 2 seconds of data & measure mean. 
+			//*assuming that the absolute value has been taken*
+			int sum[16]; 
+			int i,j; 
+			for(i=0; i<16;i++){ sum[i] = 0; }
+			u32* wr_ptr = (u32*)WR_PTR; 
+			u32 ptr = ((*wr_ptr) & 0x3ffe0) - (16*2048*2); 
+			ptr &= 0x3ffff; 
+			u16* p = (u16*)ptr; 
+			for(j=0; j<2048; j++){
+				for(i=0; i<16; i++){
+					sum[i] += *p++; 
+					p = (u16*)((u32)p & 0x3ffff); 
+				}
+			}
+			for(i=0; i<16;i++){
+				sum[i] = sum[i] >> 11; 
+			}
+			int len = htmlDefault(); 
+			char* dest = ((char*)HTTP_CONTENT); 
+			len -= 19;  //overwrite the </body> </html>
+			dest += len;
+			dest = strcpy(dest, &len, "<table>\n"); 
+			for(i=0; i<16; i++){
+				int logical = PhysicalToLogicalChan(i); 
+				dest = strcpy(dest, &len, "<tr><td>Channel "); 
+				dest = strprintf_int(dest, &len, i ); 
+				dest = strcpy(dest, &len, "</td><td>mean "); 
+				dest = strprintf_int(dest, &len, sum[logical]); 
+				dest = strcpy(dest, &len, "</td></tr>\n"); 
+			}
+			dest = strcpy( dest, &len, "</table></body></html>\r\n" ); 
+			g_httpContentLen = len ; 
+			httpHeader(); 
+			return 1; 
 		}
 	} else {
 		if(substr("\r\n\r\n", payload, paylen)){ //end .. of some sort of request! 
@@ -154,10 +219,14 @@ int htmlDefault(){
 	dest = htmlDiv(dest, &len, 'b'); 
 	dest = htmlForm(dest, &len); 
 	dest = strcpy(dest, &len, "Cursor control channels:\n<table>\n"); 
-	dest = htmlCursorSelect(dest, &len, "+X (right)", "xpos_chan", g_mouseXpos); 
-	dest = htmlCursorSelect(dest, &len, "-X (left)", "xneg_chan", g_mouseXneg); 
-	dest = htmlCursorSelect(dest, &len, "+Y (down)", "ypos_chan", g_mouseYpos); 
-	dest = htmlCursorSelect(dest, &len, "-Y (up)", "yneg_chan", g_mouseYneg); 
+	dest = htmlCursorSelect(dest, &len, "+X (right)", "xpos_chan", 
+		LogicalToPhysicalChan(g_mouseXpos) ); 
+	dest = htmlCursorSelect(dest, &len, "-X (left)", "xneg_chan", 
+		LogicalToPhysicalChan(g_mouseXneg) ); 
+	dest = htmlCursorSelect(dest, &len, "+Y (down)", "ypos_chan", 
+		LogicalToPhysicalChan(g_mouseYpos) ); 
+	dest = htmlCursorSelect(dest, &len, "-Y (up)", "yneg_chan", 
+		LogicalToPhysicalChan(g_mouseYneg) ); 
 	dest = strcpy(dest, &len, 
 		"</table>\n<input type=\"submit\" value=\"Save\"/>\n</form></div>\n");
 	
@@ -180,7 +249,7 @@ char* htmlDiv(char* dest, int* len, char color){
 	return dest; 
 }
 char* htmlForm(char* dest, int* len){
-	return strcpy(dest, len, "<form action=\"test.pl\" method=\"POST\">"); 
+	return strcpy(dest, len, "<form action=\"/\" method=\"POST\">"); 
 }
 char* htmlCursorSelect(char* dest, int* len, char* desc, 
 			char* selectName, int selectedNum){
@@ -190,7 +259,7 @@ char* htmlCursorSelect(char* dest, int* len, char* desc,
 	dest = strcpy(dest, len, selectName); 
 	dest = strcpy(dest, len, "\">\n"); 
 	int i; 
-	for(i=0; i<15; i++){
+	for(i=0; i<16; i++){
 		dest = htmlCursorOption(dest, len, i, selectedNum); 
 	}
 	dest = strcpy(dest, len, "</select></td></tr>\n"); 
@@ -199,7 +268,7 @@ char* htmlCursorSelect(char* dest, int* len, char* desc,
 char* htmlCursorOption(char* dest, int* len, int num, int selectedNum){
 	dest = strcpy(dest, len, "<option value="); 
 	dest = strprintf_int(dest, len, num); 
-	if(num == selectedNum){
+	if(num == selectedNum ){
 		dest = strcpy(dest, len, " selected=\"selected\""); 
 	}
 	dest = strcpy(dest, len, ">"); 

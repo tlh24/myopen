@@ -74,17 +74,22 @@ int strcmp(char* a, char* b){
 }
 int substr(char*a, char*b, int blen){
 	//see if 'a' is a substring of (contained within) 'b'. 
+	// 'a' and 'b' must be at least 2 characters! 
 	char* aa, *bb; 
 	int i = 0; 
+	int j = 0;  //this is the return value - 
+		//points to the character after the last character matched in b.
 	while(*a && *b && i < blen){
 		if(*a == *b){ //first character matches!
 			aa = a+1; 
 			bb = b+1; 
+			j = i + 1; 
 			while(*aa == *bb && *bb){
 				aa++; 
 				bb++; 
+				j++; 
 				if(*aa == 0){
-					return 1; //found!! 
+					return j; //found!! 
 				}
 			}
 		}
@@ -134,6 +139,24 @@ char* strprintf_int(char* dest, int* len, int d){
 	*len += n; 
 	dest += n; 
 	return dest; 
+}
+int atoi(char* c, int maxlen){
+	int i = 0; 
+	int r = 0; 
+	int mply = 1; 
+	if(*c == '-'){
+		mply = -1; 
+		c++; 
+		i++; 
+	}
+	while( *c >= '0' && *c <= '9' && i < maxlen ){
+		r += (int)((*c) - '0'); 
+		c++; 
+		i++; 
+		if(*c >= '0' && *c <= '9')
+			r *= 10; 
+	}
+	return r * mply; 
 }
 void udelay(int us){
 	//not super-well calibrated, but eh well. 
