@@ -1,26 +1,30 @@
 function dataout = UDP_receive(datasize, peek)
 global udp_obj ; 
 global udp_data ;  %add to it when we peek! 
-
-if(peek)
-    disp('UDP_peek!'); 
-   % then get one packet, append to buffer. 
-   dataout = UDP_packet();
-else
-	%disp(['UDP_receive size ' num2str(datasize)]); 
-	dataout = zeros(datasize, 16); 
-	% not enough - get some packets. 
-	packets = ceil(datasize/32); 
-	n = 0; 
-	while(n < packets)
-		if(udp_obj.BytesAvailable > 0)
-			dataout(n*32+1:n*32+32,:) = UDP_packet(); 
-			n = n+1; 
-		else 
-			pause(0.001); 
+if( exist('udp_obj', 'var')
+	if(peek)
+		disp('UDP_peek!'); 
+	   % then get one packet, append to buffer. 
+	   dataout = UDP_packet();
+	else
+		%disp(['UDP_receive size ' num2str(datasize)]); 
+		dataout = zeros(datasize, 16); 
+		% not enough - get some packets. 
+		packets = ceil(datasize/32); 
+		n = 0; 
+		while(n < packets)
+			if(udp_obj.BytesAvailable > 0)
+				dataout(n*32+1:n*32+32,:) = UDP_packet(); 
+				n = n+1; 
+			else 
+				pause(0.001); 
+			end
 		end
+		% dataout = UDP_pop(datasize); % since we'll have enough at this point! 
+		dataout = dataout(1:datasize, :); % yes throw away some! 
 	end
-    % dataout = UDP_pop(datasize); % since we'll have enough at this point! 
+else
+	dataout = zeros(datasize, 16); 
 end
 
 function data = UDP_packet 
