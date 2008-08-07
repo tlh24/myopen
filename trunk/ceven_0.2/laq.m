@@ -167,6 +167,7 @@ switch adaptor                                                          % select
         chan_ids = chan_ids-1;                                          % this a/d requires channel indexes begin at 0
 	case 'myopen'                                                        % if myopen a/d
         choice = 0;                                                     % flag for sample rate setup (below)
+% 		chans = chans-1;
 end
 if(exist('ai','var'))
     addchannel(ai,chan_ids);                                                % analog channel allocation

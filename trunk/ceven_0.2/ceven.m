@@ -1253,16 +1253,11 @@ while i<=numtrials                                                      % start 
         set(handles.pro_waitbar,'BackgroundColor',[1 0 0]);             % set waitbar color back to red (for next contraction)
 
         % data = getdata(ai); % copy acquired data to an array
-<<<<<<< .mine
 		disp('getting data via UDP! '); 
 		UDP_bleed(); 
         data = UDP_receive(duration*fs, 0); 
-%         stop(ai)                                                        % force stop of ai
-=======
-        data = UDP_receive(datasize, 0); 
-		data = UDP_recieve(u); 
-        stop(ai)                                                        % force stop of ai
->>>>>>> .r96
+%         stop(ai)                                                        %
+%         force stop of ai
         if length(chans)~=length(channels), data = data(:,channels); end  % strip out unselected channels
         if decimate > 1, data = data(1:decimate:end,:); end             % decimate data (for below min FS)
            
@@ -3227,6 +3222,8 @@ switch card                                                             % select
         ai = analoginput(card,'Dev1');                                       % create analog input object
         ai.InputType = 'SingleEnded';                                   % set ai object input type
         chans = chans-1;                                                % this a/d requires channel indexes begin at 0
+	case 'myopen'
+		chans = chans-1;
 end
 
 %chan = addchannel(ai, chans);                                           % add channels to ai object
@@ -3238,18 +3235,23 @@ else                                                                    % if use
     fs = user_fs;                                                       % assign FS
 end
 numPC = str2num(storage.numPC);                                         % number of principal components
-ai.LoggingMode = 'Memory';                                              % set ai object to default log to memory 
-ai.LogToDiskMode = 'overwrite';                                         % set ai log to disk mode to overwrite
-ai.TriggerType = 'Immediate';                                           % set to start running immediately on 'start(ai)'
-ai.SamplesPerTrigger = inf;                                             % will enable ai run until 'stop(ai)'
-try
-    ai.SampleRate = fs;                                                 % set ai sample rate
-catch
+if(exist('ai'))
+	ai.LoggingMode = 'Memory';                                              % set ai object to default log to memory 
+	ai.LogToDiskMode = 'overwrite';                                         % set ai log to disk mode to overwrite
+	ai.TriggerType = 'Immediate';                                           % set to start running immediately on 'start(ai)'
+	ai.SamplesPerTrigger = inf;                                             % will enable ai run until 'stop(ai)'
+	try
+		ai.SampleRate = fs;                                                 % set ai sample rate
+	catch
+end
     warndlg('Available a/d hardware not compatible with selected control scheme',''); % warning
     return                                                              % exit the function and return to normal
 end
-actualRate = get(ai,'SampleRate');                                      % retrieve the actual sample rate for hardware
-
+if(exist('ai'))
+	actualRate = get(ai,'SampleRate');									% retrieve the actual sample rate for hardware
+else
+	actualRate = 1000;
+end
 ceven('v_toggle_Callback',handles.v_toggle,[],handles)                  % call to switch to virtual environment
 
 switch feat                                                             % choose features type
@@ -3292,7 +3294,7 @@ switch MVtype;                                                          % choose
 end
 
 predicted = [];                                                         % initialize mavority voting prediction vector
-start(ai);                                                              % start data acquisition object     
+%start(ai);                                                              % start data acquisition object     
 
 pause(str2num(storage.reclen)/1000);                                    % pause for one record at start to ensure data is there for loop
 start_time = clock;                                                          % get start time
@@ -3328,7 +3330,7 @@ while strfind(get(handles.v_toggle,'FontWeight'),'bold')
     tic;                                                                % reset start point in time
     timenow = clock;                                                    % time now
     % data = peekdata(ai,datasize);                                       % get block of data from a/d
-    data = UDP_receive(32, 1); 
+    data = UDP_receive(inc, 0); 
     if length(chans)~=length(channels), data = data(:,channels); end    % strip out unselected channels
     if decimate > 1, data = data(1:decimate:end,:); end                 % decimate data (for below min FS)
     if (size(data,1)-inc) ~= 0, continue, end                           % if proper number of samples is not available, skip ahead to next loop iteration 
@@ -3439,7 +3441,9 @@ while strfind(get(handles.v_toggle,'FontWeight'),'bold')
     drawnow;                                                            % force flush of graphics (pause should do this)
 end
 
-stop(ai);                                                               % stop data acquisition object
+if(exist('ai'))
+	stop(ai);                                                               % stop data acquisition object
+end
 
 try FtestParams.testing = 0; catch, end                                 % reset currently testing flag if running
 pindraw('end')                                                          % call to remove test bars and clothespin
