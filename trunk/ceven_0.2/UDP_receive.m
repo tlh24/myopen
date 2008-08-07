@@ -1,7 +1,7 @@
 function dataout = UDP_receive(datasize, peek)
 global udp_obj ; 
 global udp_data ;  %add to it when we peek! 
-if( exist('udp_obj', 'var')
+if( exist('udp_obj', 'var') && numel(udp_obj) > 0)
 	if(peek)
 		disp('UDP_peek!'); 
 	   % then get one packet, append to buffer. 

@@ -3414,12 +3414,14 @@ while strfind(get(handles.v_toggle,'FontWeight'),'bold')
                 vt(j) = length(find(predicted==j));                     % count number of each class
             end
             [dum, Pre] = max(vt);                                       % determine class with highest count
-            virtual_motion(handles,call{Pre},prop_spd)                  % call movement with Predicted class value
+			virtual_motion(handles,call{Pre},prop_spd)                  % call movement with Predicted class value
             if length(predicted) == MVfixValue-1                        % if number of predictions is one less than given number
                 MVflag = 1;                                             % set to call case 1 on next pass
-            end         
-    end 
-    
+			end
+	end
+    fprintf(1,'Class: %s  Intensity: %g\n',...
+      call{Pre},prop_spd);
+	%disp(call{Pre},'   ',prop_spd);    
     %%%%%%%%%%%%%%%%%%%%%%%%%%%% hand activity auto-releasing
     if get(findobj('Tag','hand_autorelease'),'UserData') && ...         % determine if auto hand releasing is intended
        isempty(call{Pre})                                               % if any motions were just called, no auto release this loop 

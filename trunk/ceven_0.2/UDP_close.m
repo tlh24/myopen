@@ -1,5 +1,4 @@
 global udp_obj ;
-global udp_data ; 
 global tcpip_obj;
 
 try
