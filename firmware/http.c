@@ -53,6 +53,34 @@ int httpResp( char* payload, int paylen ){
 			//printf_str("\n"); 
 			return 1; 
 		}
+	}else if(paylen >= 18 && substr("POST /data", payload, paylen)){
+		// get the specified past # ms of data. 
+		int pos = substr("rawLen=", payload, paylen); 
+		if(pos){
+			char* p; 
+			p = payload; p+= pos; 
+			int rawlen = atoi(p, 10); 
+			if(rawlen >= 32 && rawlen <= 4000){
+				u32* wr_ptr = (u32*)WR_PTR; 
+				u32 ptr = ((*wr_ptr) & 0x3ffe0) - (rawlen*16*2); 
+				u32* dest = (u32*)HTTP_CONTENT; 
+				u32* src = (u32*)ptr; 
+				int i; 
+				for(i=0; i< rawlen*8; i++){
+					src = (u32*) ( ((u32)src) & 0x3ffff ); 
+					*dest++ = *src++;
+				}
+				g_httpContentLen = rawlen * 32; 
+				httpHeader(); 
+			} else {
+				char* dest = (char*)HTTP_CONTENT; 
+				int len = 0; 
+				dest = strcpy(dest, &len, "/data: rawLen unspecified or out of range"); 
+				g_httpContentLen = len; 
+				httpHeader(); 
+			}
+			return 1; 
+		} 
 	}else if(paylen >= 18 && substr("POST",payload,paylen) ){
 		char paramChanged = 0; 
 		if(substr("data_stream=",payload, paylen) ){
@@ -81,8 +109,8 @@ int httpResp( char* payload, int paylen ){
 			}
 		}
 		// --- look at the mouse channels. 
-		int pos ; 
 		char* p; 
+		int pos ; 
 		pos = substr("xpos_chan=",payload,paylen); 
 		if(pos){
 			p = payload; p += pos; 
@@ -183,6 +211,7 @@ int htmlGeneric(char* str){
 	strcpy(dest, &len, str); 
 	g_httpContentLen = len; 
 	httpHeader(); 
+	return len;
 }
 int htmlDefault(){
 	char* dest = ((char*)HTTP_CONTENT); 
@@ -234,7 +263,12 @@ int htmlDefault(){
 	dest = htmlForm(dest, &len); 
 	dest = strcpy(dest, &len, 
 		"<input type=\"submit\" name=\"calibrate\" value=\"Calibrate Thresholds\"/>\n\
-		</form>\n</div>\n</body>\n</html>\r\n\r\n"); 
+		</form>\n</div>\n"); 
+		
+	dest = htmlDiv(dest, &len, 'b'); 
+	dest = strcpy(dest, &len, "<form action=\"/data\" method=POST/>\n"); 
+	dest = strcpy(dest, &len, "get last<input type=\"submit\" name=\"rawLen\" value=\"1500\"/> samples<br/>"); 
+	dest = strcpy(dest, &len, "</form>\n</div>\n</body>\n</html>\r\n\r\n"); 
 	return len; 
 }
 char* htmlDiv(char* dest, int* len, char color){

@@ -23,12 +23,14 @@
 #define F_WR_PTR		4 //where the sample will be written to in SDRAM. (pointer to pointer)
 #define F_TR_PTR		8 //the transmitted sample pointer.  (transmitted over enet!)
 #define F_ADC_CTR		12 //for switching between the 4 multiplexed ports of the ADC). 
-#define F_RAW_ENAB	16 ////enable the raw data output. only a byte.
+#define F_MS_CTR		16 //millisecond counter.	
+#define F_RAW_ENAB	20 ////enable the raw data output. only a byte.
 
 #define SAMP_CTR (F_P5 + F_SAMP_CTR)
 #define WR_PTR (F_P5 + F_WR_PTR)
 #define TR_PTR (F_P5 + F_TR_PTR)
 #define ADC_CTR (F_P5 + F_ADC_CTR)
+#define MS_CTR (F_P5 + F_MS_CTR)
 #define RAW_ENAB (F_P5 + F_RAW_ENAB)
 
 /* ethernet buffers!! */
