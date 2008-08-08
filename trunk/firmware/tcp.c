@@ -86,7 +86,6 @@ int tcp_rx(u8* data, int length){
 	int rxlen; 
 	char* payload;
 	u8* tx; 
-	u32 src; 
 	int i; 
 
 	p = (tcp_packet*)data; 
@@ -116,7 +115,7 @@ int tcp_rx(u8* data, int length){
 				TcpSeqClient++; //that's the arbitration protocol
 				TcpClientPort = p->tcp.src;
 				//set up a response.
-				tcp_packet_setup(0, src, 
+				tcp_packet_setup(0, NetDestIP, 
 					TCP_FLAG_SYN | TCP_FLAG_ACK, TcpSeqHost, TcpSeqClient); 
 				TcpSeqHost++; 
 				TcpState = TCP_SYN_RXED; 
@@ -142,7 +141,7 @@ int tcp_rx(u8* data, int length){
 				TcpSeqClient = htonl(p->tcp.seq); 
 				TcpSeqClient++; 
 				if( TcpState == TCP_CONNECTED ) {
-					tcp_packet_setup(0, src,
+					tcp_packet_setup(0, NetDestIP,
 						TCP_FLAG_FIN | TCP_FLAG_ACK, TcpSeqHost, TcpSeqClient); 
 					TcpState = TCP_CLOSE; 
 					tcp_checksum(0); //no payload.
@@ -150,7 +149,7 @@ int tcp_rx(u8* data, int length){
 					return 1; 
 				}
 				if( TcpState == TCP_CLOSING ) {
-					tcp_packet_setup(0, src,
+					tcp_packet_setup(0, NetDestIP,
 						 TCP_FLAG_ACK, TcpSeqHost, TcpSeqClient); //final ack.
 					TcpState = TCP_CLOSE; 
 					tcp_checksum(0); //no payload.
@@ -173,11 +172,6 @@ int tcp_rx(u8* data, int length){
 				u32 offset = htonl(p->tcp.ack) - TcpSeqHttpStart; 
 				//see if this was just an ack - if so, and we have more data to send, then send it. 
 				if(p->tcp.flags & TCP_FLAG_ACK && rxlen == 0){
-					//see if there are more packets to be dealt with (other acks) 
-					//if so,skip this one. 
-					if( (rxbuf[rxIdx]->StatusWord & RX_COMP) && (rxbuf[rxIdx]->StatusWord & RX_OK) ){
-						return 1;
-					}
 					//see if we have more data to send. 
 					if(offset == g_httpHeaderLen + g_httpContentLen){
 						g_httpRxed = 0; //reset the input counter. 
@@ -203,10 +197,10 @@ int tcp_rx(u8* data, int length){
 				} else {
 					//well, couldn't do anything with that packet - ack it, maybe they'll send another.
 					if(TcpState == TCP_CLOSING ){
-						tx = tcp_packet_setup(0, src, TCP_FLAG_ACK | TCP_FLAG_FIN,
+						tx = tcp_packet_setup(0, NetDestIP, TCP_FLAG_ACK | TCP_FLAG_FIN,
 							TcpSeqHost, TcpSeqClient); 
 					} else {
-						tx = tcp_packet_setup(0, src, TCP_FLAG_ACK ,
+						tx = tcp_packet_setup(0, NetDestIP, TCP_FLAG_ACK ,
 							TcpSeqHost, TcpSeqClient); //keepalive function.
 					}
 					tcp_checksum(0); 
