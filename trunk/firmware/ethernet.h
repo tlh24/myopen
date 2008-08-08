@@ -243,7 +243,7 @@ u32 pack4chars(u8* a);
 int ether_testUDP(); 
 void ARP_tx(u32 who);
 void ARP_rx();
-int ARP_respond(int length);
+int ARP_respond(u8* data, int length);
 void ARP_req();
 
 u8* eth_header_setup(int* length);
@@ -256,6 +256,7 @@ u8* udp_packet_setup(int len);
 u8* tcp_packet_setup(int len, u32 dest, u8 flags, u32 seq, u32 ack);
 void tcp_checksum(int length);
 int tcp_rx(u8* data, int length);
+int tcp_burst(int iter, u32 offset); 
 int icmp_rx(u8* data, int length);
 void DHCP_tx(int olen, u8* opt, u32 dest);
 int DHCP_rx();
@@ -283,6 +284,8 @@ extern u32 NetDestIP; 	//destination IP address, as above.
 					// 192.168.1.149 = 0x9501A8C0
 extern u32 NetDHCPserv; //same as above, network byte order.
 extern u8	NetDestMAC[6]; //where to send data to on the local network.
+
+extern u32	g_httpRxed;  //number of bytes received in a multi-packet transfer.
 
 /**
  * is_zero_ether_addr - Determine if give Ethernet address is all zeros.

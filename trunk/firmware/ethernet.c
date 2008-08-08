@@ -186,10 +186,18 @@ int bfin_EMAC_recv(u8** data){
 			break;
 		}
 		length -= 4; 
-		printf_int("got a packet! length: ", length); 
-		printf_str("\n"); 
+		//printf_int("got a packet! length: ", length); 
+		//printf_str("\n"); 
 		*data = (u8*)(rxbuf[rxIdx]->FrmData); 
-		if(ARP_respond(length))
+		*pDMA1_IRQ_STATUS |= DMA_DONE | DMA_ERR;
+		rxbuf[rxIdx]->StatusWord = 0x00000000;
+		if ((rxIdx + 1) >= RX_BUF_CNT)
+			rxIdx = 0;
+		else
+			rxIdx++;
+		
+		//note! might get overrun!! 
+		if(ARP_respond(*data, length))
 			length = -1; 
 		else if(icmp_rx(*data, length))
 			length = -1; 
@@ -201,12 +209,6 @@ int bfin_EMAC_recv(u8** data){
 		    (volatile u8 *)(rxbuf[rxIdx]->FrmData->Dest);
 		NetReceive(NetRxPackets[rxIdx], length - 4);
 		*/
-		*pDMA1_IRQ_STATUS |= DMA_DONE | DMA_ERR;
-		rxbuf[rxIdx]->StatusWord = 0x00000000;
-		if ((rxIdx + 1) >= RX_BUF_CNT)
-			rxIdx = 0;
-		else
-			rxIdx++;
 	}
 
 	return length;
@@ -235,7 +237,7 @@ int bfin_EMAC_recv_poll(u8** data){
 	length -= 4;
 	printf_int("got packet: length ", length); 
 	*data = (u8*)(rxbuf[rxIdx]->FrmData); 
-	if(ARP_respond(length))
+	if(ARP_respond(*data, length))
 		length = -1; 
 	else if(icmp_rx(*data, length))
 		length = -1; 
@@ -621,12 +623,12 @@ void ARP_tx(u32 who){
 	
 	bfin_EMAC_send_nocopy();
 }
-int ARP_respond(int length){
+int ARP_respond(u8* data, int length){
 	arp_packet * p; 
 	arp_packet * pt;
 	int i;
 	
-	p = (arp_packet*)(rxbuf[rxIdx]->FrmData); 
+	p = (arp_packet*)(data); 
 	if(htons(p->eth.protLen) == ETH_PROTO_ARP && 
 		length >= sizeof(arp_packet)){
 		printf_ip("ARP packet, dest ", htonl(p->arp.tpa)); 

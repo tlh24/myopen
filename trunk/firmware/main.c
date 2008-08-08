@@ -17,10 +17,10 @@ u8   g_streamRaw ; //output the raw samples.
 int PhysicalToLogicalChan(int c){
 	//converts a physical channel (connector # on the board!) 
 	// to logical channel (offset in memory)
-	return (((c & 0x3) ^ 0x1) << 2) | (((c & 0xc) >> 2) ^ 0x3); 
+	return (((c & 0x3) ^ 0x2) << 2) | (((c & 0xc) >> 2) ^ 0x3); 
 }
 int LogicalToPhysicalChan(int c){
-	return (((c & 0x3) ^ 0x3) << 2) | (((c & 0xc) >> 2)^ 0x1); 
+	return (((c & 0x3) ^ 0x3) << 2) | (((c & 0xc) >> 2)^ 0x2); 
 }
 
 int main() {
@@ -115,7 +115,7 @@ int main() {
 	*pUART0_DLH = 0;  //the system clock is 120Mhz. baud rate is 115200. 
 	*pUART0_LCR = 0x0003; //parity disabled, 1 stop bit, 8 bit word. 
 	*pUART0_GCTL = 0x0001; //enable the clock.
-	printf_int("Myopen svn v.", /*SVN_VERSION{*/94/*}*/ ) ; 
+	printf_int("Myopen svn v.", /*SVN_VERSION{*/97/*}*/ ) ; 
 	printf_str("\n"); 
 	printf_str("checking SDRAM...\n"); 
 	unsigned short* p; 
@@ -220,18 +220,24 @@ int main() {
 	// TCR = 0100 0110 0000 0011
 	*pSPORT1_TCR1 = 0x4603 ; 
 	
-	u8* data; 
+	u32* data; 
 	while(1) {
-		if(!etherr) bfin_EMAC_recv( &data ); //listen for packets? (and respond)
+		if(!etherr) bfin_EMAC_recv( (u8**)(&data) ); //listen for packets? (and respond)
 		if(!etherr && bfin_EMAC_send_check() && g_streamEnabled){
 			if(*wr_ptr < *tr_ptr) *tr_ptr = 0; //rollover.
 			if(*wr_ptr - *tr_ptr >= 1024){//then we have at least one packet to send.
-				data = udp_packet_setup(1024 + 4); 
+				data = (u32*) ( udp_packet_setup(1024 + 4) ); 
 				//copy the data from SDRAM.. (starting @ 0x0000 0000, looping 256k bytes)
 				//include a copy of the tptr, so that we can (possibly) reorder it. 
-				(*(u32*)data) = *tr_ptr; 
-				data += 4; 
-				memcpy((u8*)((*tr_ptr) & 0x0003ffff), data, 1024); 
+				(*data++) = *tr_ptr; 
+				//we don't know if the transmit pointer will be aligned with packet boundaries -- 
+				//so do the memcpy manually. 
+				//memcpy((u8*)((*tr_ptr) & 0x0003ffff), data, 1024); 
+				u32* src = (u32*)( *tr_ptr ); 
+				for(i=0; i<1024/4; i++){
+					src = (u32*) ( ((u32)src) & 0x3ffff ); 
+					*data++ = *src++; 
+				}
 				(*tr_ptr) += 1024 ; 
 				bfin_EMAC_send_nocopy(); 
 			}

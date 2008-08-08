@@ -6,10 +6,14 @@
 #include "http.h"
 
 u32 TcpState; 
-u32 TcpSeqClient; //the last Syn packet recieved. host order.
+u32 TcpSeqClient; //the last SYN/ACK packet recieved. host order.
 u32 TcpSeqHost; 		// our counter. host byte order.
 u16 TcpClientPort; //from which port a client is querying us. 
 					// IN NETWORK ORDER
+u32 TcpSeqHttpStart; //the sequence number of the start of a HTTP PDU. 
+u32 TcpHighestAck ; //the largest ACKed byte that the reciever claims to have gotten. 
+u32 TcpHighestAckTimeout; //when we should go back and transmit from HighestAck
+u32 TcpBurstOffset ; 
 
 u8* tcp_packet_setup(int len, u32 dest, u8 flags, u32 seq, u32 ack){
 	//setup a tcp packet, caller sends it. 
@@ -79,7 +83,7 @@ int tcp_length(tcp_packet* p){
 
 int tcp_rx(u8* data, int length){
 	tcp_packet* p; 
-	int txlen, rxlen; 
+	int rxlen; 
 	char* payload;
 	u8* tx; 
 	u32 src; 
@@ -96,7 +100,6 @@ int tcp_rx(u8* data, int length){
 			for(i=0; i<6; i++){
 				NetDestMAC[i] = p->eth.src[i]; 
 			}
-			src = p->ip.src; 
 			//now, must decide what to do with this packet. 
 			if(p->tcp.flags == TCP_FLAG_RST){
 				printf_str("TCP RST\n"); 
@@ -166,54 +169,36 @@ int tcp_rx(u8* data, int length){
 				payload += (p->tcp.dataoff & 0xf0)/4; //divide by 4 b/c it is << 4 & specifies 32 bit words. 
 				TcpSeqClient = htonl(p->tcp.seq); 
 				TcpSeqClient += rxlen; 
+				//start sending from whatever they acked last. 
+				u32 offset = htonl(p->tcp.ack) - TcpSeqHttpStart; 
 				//see if this was just an ack - if so, and we have more data to send, then send it. 
 				if(p->tcp.flags & TCP_FLAG_ACK && rxlen == 0){
+					//see if there are more packets to be dealt with (other acks) 
+					//if so,skip this one. 
+					if( (rxbuf[rxIdx]->StatusWord & RX_COMP) && (rxbuf[rxIdx]->StatusWord & RX_OK) ){
+						return 1;
+					}
 					//see if we have more data to send. 
-					if(g_httpRemainingLen > 0 ){
-						txlen = g_httpRemainingLen > 1024 ? 1024 : g_httpRemainingLen;
-						g_httpRemainingLen -= txlen; 
-						tx = tcp_packet_setup(txlen, src,  
-								TCP_FLAG_ACK | TCP_FLAG_PSH, //don't close the connection.
-								TcpSeqHost, TcpSeqClient); 
-						TcpSeqHost+= txlen; 
-						memcpy(g_httpSendPtr, tx, txlen); 
-						g_httpSendPtr += txlen; 
-						tcp_checksum(txlen); 
-						bfin_EMAC_send_nocopy();
-						return 1; 
+					if(offset == g_httpHeaderLen + g_httpContentLen){
+						g_httpRxed = 0; //reset the input counter. 
+						TcpSeqHost = offset + TcpSeqHttpStart; 
+						return 1; //nothing to send, everything acked.
 					} else {
-						//nothing left - that was just an ack, wait for something else.
-						//this is the keepalive mode of connection.
-						return 1; 
+						if(tcp_burst(1, offset)) {
+							return 1; 
+						} else {
+							//nothing left - that was just an ack, wait for something else.
+							//this is the keepalive mode of connection.
+							return 1; 
+						}
 					}
 				}
 				if( httpCollate(payload, rxlen) ){
 					//ok, we have assembled a response - send or start sending it. 
-					//need to figure out if we have to break it up into multiple packets. 
-					if(g_httpHeaderLen + g_httpContentLen + sizeof(tcp_packet) > 1024){
-						g_httpSendPtr = ((u8*)HTTP_CONTENT); 
-						txlen = 1024 - sizeof(tcp_packet); 
-						g_httpSendPtr += (txlen - g_httpHeaderLen); 
-						g_httpRemainingLen = g_httpHeaderLen + g_httpContentLen - txlen; 
-						tx = tcp_packet_setup(txlen, src,  
-							TCP_FLAG_ACK | TCP_FLAG_PSH, //don't close connection (of course!)
-							TcpSeqHost, TcpSeqClient); 
-					}else{
-						txlen = g_httpHeaderLen + g_httpContentLen; 
-						g_httpSendPtr = 0; 
-						g_httpRemainingLen = 0; 
-						tx = tcp_packet_setup(txlen, src,  
-							TCP_FLAG_ACK | TCP_FLAG_PSH | TCP_FLAG_FIN, //close connection after this.
-							TcpSeqHost, TcpSeqClient); 
-					}
-					printf_int("sending length: ", txlen); 
+					TcpSeqHttpStart = TcpSeqHost; 
+					printf_int("sending http data length ",g_httpHeaderLen + g_httpContentLen); 
 					printf_str("\n"); 
-					TcpSeqHost+= txlen; //this is after the packet has been set up. 
-					memcpy( (u8*)HTTP_HEADER, tx, g_httpHeaderLen); 
-					tx += g_httpHeaderLen; 
-					memcpy( (u8*)HTTP_CONTENT, tx, txlen - g_httpHeaderLen); 
-					tcp_checksum(txlen); 
-					bfin_EMAC_send_nocopy();
+					tcp_burst(1, 0); 
 					return 1; 
 				} else {
 					//well, couldn't do anything with that packet - ack it, maybe they'll send another.
@@ -232,4 +217,43 @@ int tcp_rx(u8* data, int length){
 		}
 	}
 	return 0; 
+}
+int tcp_burst(int iter, u32 offset){
+	int i = 0; 
+	int txlen;
+	u8* tx; 
+	int totalLen = g_httpHeaderLen + g_httpContentLen; 
+	while( i < iter && offset < totalLen ){
+		int remainingLen = totalLen - offset ; 
+		txlen = remainingLen > 1024 ? 1024 : remainingLen;
+		TcpSeqHost = offset + TcpSeqHttpStart;
+		tx = tcp_packet_setup(txlen, NetDestIP,  
+				TCP_FLAG_ACK | TCP_FLAG_PSH, //don't close the connection.
+				TcpSeqHost, TcpSeqClient); 
+		u8* src;
+		int txhdrlen = 0; 
+		if(offset < g_httpHeaderLen){
+			src = (u8*)HTTP_HEADER; 
+			src += offset; 
+			txhdrlen = g_httpHeaderLen - offset; 
+			memcpy(src, tx, txhdrlen); 
+			tx += txhdrlen ; 
+			txlen -= txhdrlen; 
+			offset += txhdrlen;  
+		}
+		src = (u8*)HTTP_CONTENT; 
+		src += offset - g_httpHeaderLen; 
+		memcpy(src, tx, txlen); 
+		offset += txlen; 
+		TcpSeqHost = offset + TcpSeqHttpStart;
+		tcp_checksum(txlen + txhdrlen); 
+		bfin_EMAC_send_nocopy();
+		i++; 
+		if( (rxbuf[rxIdx]->StatusWord & RX_COMP) && (rxbuf[rxIdx]->StatusWord & RX_OK) ) {
+			//we break out if another packet has been received -- so that we can take care of it.
+			// (it may be an ack to our data).  
+			i += iter; 
+		}
+	}
+	return i; 
 }

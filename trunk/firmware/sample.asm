@@ -137,7 +137,16 @@ _I11HANDLER:          // IVG 11 Handler
 	[i2++] = r1; //normally this would be pipelined.
 	
 	// downsample by 4 - that's 16*4 samples, so bits 4 & 5 must both be 1.
-	r1 = [p5 + F_SAMP_CTR]; 
+	r1 = [p5 + F_SAMP_CTR]; //F_SAMP_CTR is hence incremented at a rate of 16k/sec
+	r6 = 0xf ; 
+	r5 = r1; 
+	r5 = r5 & r6 ; 
+	cc = r6 == r5 ; 
+	if !cc jump skip_ms_incr
+		r5 = [p5 + F_MS_CTR]; 
+		r5 += 1; 
+		[p5 + F_MS_CTR] = r5; 
+skip_ms_incr:
 	r5 = r1 >> 4; 
 	r6 = 0x3 ; 
 	r5 = r5 & r6 ; 
