@@ -266,7 +266,7 @@ int htmlDefault(){
 		</form>\n</div>\n"); 
 		
 	dest = htmlDiv(dest, &len, 'b'); 
-	dest = strcpy(dest, &len, "<form action=\"/data\" method=POST/>\n"); 
+	dest = strcpy(dest, &len, "<form action=\"/data\" method=\"POST\"/>\n"); 
 	dest = strcpy(dest, &len, "get last<input type=\"submit\" name=\"rawLen\" value=\"1500\"/> samples<br/>"); 
 	dest = strcpy(dest, &len, "</form>\n</div>\n</body>\n</html>\r\n\r\n"); 
 	return len; 
