@@ -118,19 +118,27 @@ let _ =
 				let inlen, sockadr = Unix.recvfrom sock buffer 0 1028 [] in
 				if inlen = 1028 then (
 					(* sent from a little-endian proc to a little-endian proc - no need for byte translation. *)
-					let rs chan = IO.read_i16 chan in
+					let rssum = ref 0 in
+					let rs chan = 
+						let r = IO.read_i16 chan in
+						rssum := !rssum + r ; 
+						r
+					in
 					let ri chan = IO.read_i32 chan in
 					let c = IO.input_string buffer in
-					let pos = (ri c)/(16*2) in (* specifies the location in the array .. *)
+					let posor = ri c in
+					let pos = posor/(16*2) in (* specifies the location in the array .. *)
 					(* divide because the pointer counts bytes transmitted. *)
 					(*printf "got a packet len %d @ %x\n%!" inlen pos ;  *)
 					(* loop through the string, pulling off shorts *)
+					rssum := 0;
 					for i = 0 to 1024/(16*2) -1  do ( (* two bytes per short *)
 						for j = 0 to 15 do (
 							Raw.set (rawa.(j)) ~pos:(((pos +i) land (len-1))*2 + 1) (rs c) ; 
 						) done ; 
 					) done ; 
 					gwfwind#render togl ; 
+					(* printf "src ptr %x sum %d \n%!" posor !rssum; --debug! *)
 					(* write the data to stdout (e.g. for visual examination
 					or for piping to a file *)
 					let ar = Array.make 16 0 in
