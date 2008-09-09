@@ -14,6 +14,14 @@ Comment3 ""
 Comment4 ""
 $EndDescr
 Wire Wire Line
+	2100 4950 2100 4800
+Connection ~ 6850 5000
+Wire Wire Line
+	6850 5200 6850 4100
+Connection ~ 4650 3100
+Wire Wire Line
+	4650 3250 4650 2050
+Wire Wire Line
 	4000 2200 4000 1500
 Wire Wire Line
 	4000 1500 4250 1500
@@ -24,7 +32,7 @@ Wire Wire Line
 Wire Wire Line
 	8000 6100 3100 6100
 Wire Wire Line
-	6950 5000 6850 5000
+	6850 5000 6950 5000
 Connection ~ 6850 4600
 Wire Wire Line
 	6300 4600 6850 4600
@@ -34,17 +42,15 @@ Wire Wire Line
 Wire Wire Line
 	5250 4100 5700 4100
 Wire Wire Line
-	5750 4600 5900 4600
+	5900 4600 5750 4600
 Wire Wire Line
-	5250 4600 5200 4600
+	5200 4600 5250 4600
 Connection ~ 3450 6100
 Wire Wire Line
 	5800 6100 5800 5100
 Connection ~ 4650 5000
 Wire Wire Line
-	4650 4500 4650 5550
-Wire Wire Line
-	4650 4500 3600 4500
+	3600 4500 4650 4500
 Wire Wire Line
 	3100 6100 3100 5800
 Connection ~ 3450 5550
@@ -65,27 +71,25 @@ Wire Wire Line
 Wire Wire Line
 	4650 5550 4250 5550
 Wire Wire Line
-	4650 5000 4550 5000
+	4550 5000 4650 5000
 Wire Wire Line
-	3100 4500 3100 4900
+	3100 4900 3100 4500
 Connection ~ 3100 4800
 Wire Wire Line
 	2100 4800 1950 4800
 Wire Wire Line
-	4700 4600 4650 4600
+	4650 4600 4700 4600
 Connection ~ 4650 4600
 Wire Wire Line
 	5800 4900 5800 4600
 Connection ~ 5800 4600
 Wire Wire Line
-	6200 4100 6850 4100
+	6850 4100 6200 4100
 Wire Wire Line
-	6850 4100 6850 5000
-Wire Wire Line
-	5250 5300 5250 6100
+	5250 6100 5250 5300
 Connection ~ 5250 6100
 Wire Wire Line
-	6950 2550 6850 2550
+	6850 2550 6950 2550
 Connection ~ 6850 2150
 Wire Wire Line
 	6300 2150 6850 2150
@@ -95,13 +99,11 @@ Wire Wire Line
 Wire Wire Line
 	5250 1650 5700 1650
 Wire Wire Line
-	5750 2150 5900 2150
+	5900 2150 5750 2150
 Wire Wire Line
-	5250 2150 5200 2150
+	5200 2150 5250 2150
 Connection ~ 3450 3650
 Connection ~ 4650 2550
-Wire Wire Line
-	4650 2050 4650 3100
 Wire Wire Line
 	4650 2050 3600 2050
 Wire Wire Line
@@ -124,22 +126,18 @@ Wire Wire Line
 Wire Wire Line
 	4650 3100 4250 3100
 Wire Wire Line
-	4650 2550 4550 2550
+	4550 2550 4650 2550
 Wire Wire Line
-	3100 2050 3100 2450
+	3100 2450 3100 2050
 Connection ~ 3100 2350
 Wire Wire Line
-	2100 2350 1950 2350
-Wire Wire Line
-	4700 2150 4650 2150
+	4650 2150 4700 2150
 Connection ~ 4650 2150
 Wire Wire Line
 	5800 2450 5800 2150
 Connection ~ 5800 2150
 Wire Wire Line
 	6200 1650 6850 1650
-Wire Wire Line
-	6850 1650 6850 2550
 Wire Wire Line
 	5250 2850 5250 3650
 Connection ~ 5250 3650
@@ -152,6 +150,88 @@ Wire Wire Line
 	4250 1900 4250 2900
 Wire Wire Line
 	4250 2900 4000 2900
+Wire Wire Line
+	1950 2350 2100 2350
+Wire Wire Line
+	6850 1650 6850 2800
+Connection ~ 6850 2550
+Wire Wire Line
+	4650 4500 4650 5700
+Connection ~ 4650 5550
+Wire Wire Line
+	2100 2350 2100 2450
+$Comp
+L TP TP?
+U 1 1 48C5F56D
+P 7250 5200
+AR Path="/48BEB1D1/48C5F56D" Ref="TP?"  Part="1" 
+AR Path="/48BEAFD3/48C5F56D" Ref="TP?"  Part="1" 
+F 0 "TP?" H 7150 5100 60  0000 C C
+F 1 "TP" H 7150 5250 60  0000 C C
+F 2 "TP" H 7000 5250 60  0000 C C
+	1    7250 5200
+	1    0    0    -1  
+$EndComp
+$Comp
+L TP TP?
+U 1 1 48C5F567
+P 7250 2800
+AR Path="/48BEB1D1/48C5F567" Ref="TP?"  Part="1" 
+AR Path="/48BEAFD3/48C5F567" Ref="TP?"  Part="1" 
+F 0 "TP?" H 7150 2700 60  0000 C C
+F 1 "TP" H 7150 2850 60  0000 C C
+F 2 "TP" H 7000 2850 60  0000 C C
+	1    7250 2800
+	1    0    0    -1  
+$EndComp
+$Comp
+L TP TP?
+U 1 1 48C5F561
+P 5050 3250
+AR Path="/48BEAFD3/48C5F561" Ref="TP?"  Part="1" 
+AR Path="/48BEB1D1/48C5F561" Ref="TP?"  Part="1" 
+F 0 "TP?" H 4950 3150 60  0000 C C
+F 1 "TP" H 4950 3300 60  0000 C C
+F 2 "TP" H 4800 3300 60  0000 C C
+	1    5050 3250
+	1    0    0    -1  
+$EndComp
+$Comp
+L TP TP?
+U 1 1 48C5F54E
+P 5050 5700
+AR Path="/48BEAFD3/48C5F54E" Ref="TP?"  Part="1" 
+AR Path="/48BEB1D1/48C5F54E" Ref="TP?"  Part="1" 
+F 0 "TP?" H 4950 5600 60  0000 C C
+F 1 "TP" H 4950 5750 60  0000 C C
+F 2 "TP" H 4800 5750 60  0000 C C
+	1    5050 5700
+	1    0    0    -1  
+$EndComp
+$Comp
+L TP TP?
+U 1 1 48C5F544
+P 2100 5350
+AR Path="/48BEAFD3/48C5F544" Ref="TP?"  Part="1" 
+AR Path="/48BEB1D1/48C5F544" Ref="TP?"  Part="1" 
+F 0 "TP?" H 2000 5250 60  0000 C C
+F 1 "TP" H 2000 5400 60  0000 C C
+F 2 "TP" H 1850 5400 60  0000 C C
+	1    2100 5350
+	0    1    1    0   
+$EndComp
+$Comp
+L TP TP?
+U 1 1 48C5F51C
+P 2100 2850
+AR Path="/48BEAFD3/48C5F51C" Ref="TP?"  Part="1" 
+AR Path="/48BEB1D1/48C5F51C" Ref="TP?"  Part="1" 
+F 0 "TP?" H 2000 2750 60  0000 C C
+F 1 "TP" H 2000 2900 60  0000 C C
+F 2 "TP" H 1850 2900 60  0000 C C
+	1    2100 2850
+	0    1    1    0   
+$EndComp
 $Comp
 L C C?
 U 1 1 48BEAE97
@@ -267,7 +347,7 @@ P 3100 5100
 AR Path="/48BEAFD3/48BEADC3" Ref="C?"  Part="1" 
 AR Path="/48BEB1D1/48BEADC3" Ref="C?"  Part="1" 
 F 0 "C?" H 3150 5200 50  0000 L C
-F 1 "1uf" H 3150 5000 50  0000 L C
+F 1 "1uf" H 2950 5000 50  0000 L C
 F 2 "0402" H 2900 5250 60  0000 C C
 	1    3100 5100
 	-1   0    0    1   
@@ -433,7 +513,7 @@ P 3100 2650
 AR Path="/48BEAFD3/48BEABFB" Ref="C?"  Part="1" 
 AR Path="/48BEB1D1/48BEABFB" Ref="C?"  Part="1" 
 F 0 "C?" H 3150 2750 50  0000 L C
-F 1 "1uf" H 3150 2550 50  0000 L C
+F 1 "1uf" H 2950 2550 50  0000 L C
 F 2 "0402" H 2900 2800 60  0000 C C
 	1    3100 2650
 	-1   0    0    1   
@@ -470,7 +550,6 @@ AR Path="/48BEAFD3/48BEAB89" Ref="R?"  Part="1"
 AR Path="/48BEB1D1/48BEAB89" Ref="R?"  Part="1" 
 F 0 "R?" V 2430 2350 50  0000 C C
 F 1 "3k" V 2350 2350 50  0000 C C
-F 2 "0402" V 2480 2300 60  0000 C C
 	1    2350 2350
 	0    1    1    0   
 $EndComp
