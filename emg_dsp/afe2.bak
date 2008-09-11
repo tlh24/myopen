@@ -13,7 +13,6 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
-NoConn ~ 10000 5400
 Wire Wire Line
 	10000 5500 9700 5500
 Wire Wire Line
