@@ -1,9 +1,9 @@
 EESchema Schematic File Version 2
-LIBS:power,device,emg_sym
+LIBS:power,device,emg_sym,./stage2.cache
 EELAYER 24  0
 EELAYER END
 $Descr A4 11700 8267
-Sheet 3 3
+Sheet 5 5
 Title ""
 Date ""
 Rev ""

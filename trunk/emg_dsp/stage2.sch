@@ -1,9 +1,9 @@
 EESchema Schematic File Version 2
-LIBS:power,device,emg_sym
+LIBS:power,device,emg_sym,./stage2.cache
 EELAYER 24  0
 EELAYER END
-$Descr A4 11700 8267
-Sheet 1 3
+$Descr User 15000 9000
+Sheet 1 5
 Title ""
 Date "12 sep 2008"
 Rev ""
@@ -13,11 +13,904 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
+$Comp
+L VCC #PWR?
+U 1 1 490160DE
+P 4400 7700
+F 0 "#PWR?" H 4400 7800 30  0001 C C
+F 1 "VCC" H 4400 7800 30  0000 C C
+	1    4400 7700
+	1    0    0    -1  
+$EndComp
+$Comp
+L VDD #PWR?
+U 1 1 490160DA
+P 4400 6200
+F 0 "#PWR?" H 4400 6300 30  0001 C C
+F 1 "VDD" H 4400 6310 30  0000 C C
+	1    4400 6200
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	4000 7250 4000 7700
+Connection ~ 4000 7250
+Wire Wire Line
+	1000 6700 1000 7050
+Connection ~ 1300 7050
+Wire Wire Line
+	4150 6450 4150 6350
+Wire Wire Line
+	3850 7250 4150 7250
+Wire Wire Line
+	1300 7050 1300 7850
+Wire Wire Line
+	1300 7850 3150 7850
+Wire Wire Line
+	3150 7850 3150 6950
+Wire Wire Line
+	3150 6950 3050 6950
+Wire Wire Line
+	3850 7750 1550 7750
+Wire Wire Line
+	1550 7750 1550 7250
+Wire Wire Line
+	3850 6850 4150 6850
+Wire Wire Line
+	3050 6850 3250 6850
+Wire Wire Line
+	1900 5150 2050 5150
+Wire Wire Line
+	2500 4450 1900 4450
+Wire Wire Line
+	2000 2650 2150 2650
+Wire Wire Line
+	6900 7700 7200 7700
+Wire Wire Line
+	6900 6900 7200 6900
+Wire Wire Line
+	5700 7300 5400 7300
+Connection ~ 5500 7700
+Wire Wire Line
+	5500 7700 5700 7700
+Wire Wire Line
+	5500 8100 5700 8100
+Wire Wire Line
+	5700 6900 5500 6900
+Connection ~ 13150 3300
+Wire Wire Line
+	13400 3300 11000 3300
+Wire Wire Line
+	11150 4100 11000 4100
+Wire Wire Line
+	11000 4100 11000 4700
+Wire Wire Line
+	11000 4700 12800 4700
+Wire Wire Line
+	12800 4700 12800 3850
+Wire Wire Line
+	12800 3850 13050 3850
+Wire Wire Line
+	12400 3800 12550 3800
+Wire Wire Line
+	12550 3800 12550 3950
+Wire Wire Line
+	12550 3950 13050 3950
+Connection ~ 12400 3300
+Wire Wire Line
+	12650 3300 12650 4150
+Wire Wire Line
+	12300 2250 12350 2250
+Wire Wire Line
+	12300 2050 12350 2050
+Wire Wire Line
+	11000 2150 10650 2150
+Connection ~ 8000 5950
+Wire Wire Line
+	8000 6050 8000 5800
+Wire Wire Line
+	8000 5800 6950 5800
+Wire Wire Line
+	7200 6050 7050 6050
+Wire Wire Line
+	8000 5950 7800 5950
+Wire Wire Line
+	6950 5900 7050 5900
+Wire Wire Line
+	7050 5900 7050 6050
+Wire Wire Line
+	10650 1600 10650 1650
+Wire Wire Line
+	12300 2150 12350 2150
+Wire Wire Line
+	11000 2750 11150 2750
+Wire Wire Line
+	12650 4150 13050 4150
+Wire Wire Line
+	11150 3700 11000 3700
+Wire Wire Line
+	11000 3700 11000 3300
+Wire Wire Line
+	12400 3300 12400 3600
+Wire Wire Line
+	13050 3750 12800 3750
+Wire Wire Line
+	12800 3750 12800 3700
+Wire Wire Line
+	12800 3700 12400 3700
+Wire Wire Line
+	13050 4050 12500 4050
+Wire Wire Line
+	12500 4050 12500 3900
+Wire Wire Line
+	12500 3900 12400 3900
+Wire Wire Line
+	13150 3300 13150 2950
+Connection ~ 12650 3300
+Wire Wire Line
+	13150 2750 13400 2750
+Wire Wire Line
+	13400 2750 13400 2800
+Wire Wire Line
+	5700 7500 5500 7500
+Connection ~ 5500 7500
+Wire Wire Line
+	5500 7900 5700 7900
+Connection ~ 5500 7900
+Wire Wire Line
+	4900 7300 4800 7300
+Wire Wire Line
+	7700 6850 7700 6900
+Wire Wire Line
+	5500 6900 5500 8150
+Connection ~ 5500 8100
+Wire Wire Line
+	2500 4150 1900 4150
+Wire Wire Line
+	1900 5300 2050 5300
+Wire Wire Line
+	2050 5300 2050 5400
+Wire Wire Line
+	3050 7250 3250 7250
+Wire Wire Line
+	4550 6850 4550 7300
+Connection ~ 4550 7250
+Wire Wire Line
+	1550 7150 1400 7150
+Wire Wire Line
+	1400 7150 1400 8350
+Wire Wire Line
+	3050 7150 3150 7150
+Connection ~ 3150 7150
+Wire Wire Line
+	4150 7250 4150 8350
+Wire Wire Line
+	4150 8350 1400 8350
+Wire Wire Line
+	1550 6850 1550 6350
+Wire Wire Line
+	1550 6350 4150 6350
+Connection ~ 3850 6350
+Wire Wire Line
+	550  7050 1550 7050
+Connection ~ 1000 7050
+Connection ~ 4000 6850
+Wire Wire Line
+	4000 6850 4000 6200
+$Comp
+L JUMP U?
+U 1 1 490160C4
+P 4200 7700
+F 0 "U?" H 4200 7600 60  0000 C C
+F 1 "JUMP" H 4200 7800 60  0000 C C
+F 2 "2x100mil" H 4050 7900 60  0000 C C
+	1    4200 7700
+	-1   0    0    1   
+$EndComp
+$Comp
+L JUMP U?
+U 1 1 490160AA
+P 4200 6200
+F 0 "U?" H 4200 6100 60  0000 C C
+F 1 "JUMP" H 4200 6300 60  0000 C C
+F 2 "2x100mil" H 4000 6000 60  0000 C C
+	1    4200 6200
+	-1   0    0    1   
+$EndComp
+Text Notes 4450 7700 0    60   ~
+0.8V
+Text Notes 4450 6200 0    60   ~
+2.85V
+$Comp
+L GND #PWR?
+U 1 1 49015D38
+P 600 6700
+F 0 "#PWR?" H 600 6700 30  0001 C C
+F 1 "GND" H 600 6630 30  0001 C C
+	1    600  6700
+	0    1    1    0   
+$EndComp
+$Comp
+L JUMP U?
+U 1 1 49015D2B
+P 800 6700
+F 0 "U?" H 800 6600 60  0000 C C
+F 1 "JUMP" H 800 6800 60  0000 C C
+F 2 "2x100mil" H 740 6540 60  0000 C C
+	1    800  6700
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 49015CFF
+P 550 7450
+F 0 "#PWR?" H 550 7450 30  0001 C C
+F 1 "GND" H 550 7380 30  0001 C C
+	1    550  7450
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 49015CFB
+P 1000 7450
+F 0 "#PWR?" H 1000 7450 30  0001 C C
+F 1 "GND" H 1000 7380 30  0001 C C
+	1    1000 7450
+	1    0    0    -1  
+$EndComp
+$Comp
+L C C?
+U 1 1 49015CC8
+P 550 7250
+F 0 "C?" H 600 7350 50  0000 L C
+F 1 "0.1uf" H 650 7150 50  0000 L C
+F 2 "0402" H 800 7250 60  0000 C C
+	1    550  7250
+	-1   0    0    1   
+$EndComp
+$Comp
+L C C?
+U 1 1 49015CB6
+P 1000 7250
+F 0 "C?" H 1050 7350 50  0000 L C
+F 1 "10uf" H 1050 7150 50  0000 L C
+F 2 "0603" H 1100 7400 60  0000 C C
+	1    1000 7250
+	-1   0    0    1   
+$EndComp
+$Comp
+L C C?
+U 1 1 49015C82
+P 4150 6650
+F 0 "C?" H 4000 6450 50  0000 L C
+F 1 "33pf" H 3900 6550 50  0000 L C
+F 2 "0402" H 3950 6650 60  0000 C C
+	1    4150 6650
+	-1   0    0    1   
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 49015C41
+P 3850 5850
+F 0 "#PWR?" H 3850 5850 30  0001 C C
+F 1 "GND" H 3850 5780 30  0001 C C
+	1    3850 5850
+	-1   0    0    1   
+$EndComp
+$Comp
+L R R?
+U 1 1 49015C3B
+P 3850 6100
+F 0 "R?" V 3930 6100 50  0000 C C
+F 1 "220k" V 3850 6100 50  0000 C C
+F 2 "0402" V 3980 6050 60  0000 C C
+	1    3850 6100
+	1    0    0    -1  
+$EndComp
+$Comp
+L R R?
+U 1 1 49015C38
+P 3850 6600
+F 0 "R?" V 3930 6600 50  0000 C C
+F 1 "825k" V 3850 6600 50  0000 C C
+F 2 "0402" V 3750 6650 60  0000 C C
+	1    3850 6600
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 49015C2C
+P 1550 6950
+F 0 "#PWR?" H 1550 6950 30  0001 C C
+F 1 "GND" H 1550 6880 30  0001 C C
+	1    1550 6950
+	0    1    1    0   
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 49015C1A
+P 3050 7050
+F 0 "#PWR?" H 3050 7050 30  0001 C C
+F 1 "GND" H 3050 6980 30  0001 C C
+	1    3050 7050
+	0    -1   -1   0   
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 49015C15
+P 2400 7650
+F 0 "#PWR?" H 2400 7650 30  0001 C C
+F 1 "GND" H 2400 7580 30  0001 C C
+	1    2400 7650
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 49015BC9
+P 3850 8250
+F 0 "#PWR?" H 3850 8250 30  0001 C C
+F 1 "GND" H 3850 8180 30  0001 C C
+	1    3850 8250
+	1    0    0    -1  
+$EndComp
+$Comp
+L R R?
+U 1 1 49015BBE
+P 3850 8000
+F 0 "R?" V 3930 8000 50  0000 C C
+F 1 "270k" V 3850 8000 50  0000 C C
+F 2 "0402" V 3980 7950 60  0000 C C
+	1    3850 8000
+	1    0    0    -1  
+$EndComp
+$Comp
+L R R?
+U 1 1 49015BA5
+P 3850 7500
+F 0 "R?" V 3930 7500 50  0000 C C
+F 1 "90k" V 3850 7500 50  0000 C C
+F 2 "0402" V 3980 7450 60  0000 C C
+	1    3850 7500
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 49015B93
+P 4550 7300
+F 0 "#PWR?" H 4550 7300 30  0001 C C
+F 1 "GND" H 4550 7230 30  0001 C C
+	1    4550 7300
+	1    0    0    -1  
+$EndComp
+$Comp
+L C C?
+U 1 1 49015B78
+P 4350 7250
+F 0 "C?" H 4400 7350 50  0000 L C
+F 1 "10uf" H 4400 7150 50  0000 L C
+F 2 "0603" H 4450 7400 60  0000 C C
+	1    4350 7250
+	0    1    1    0   
+$EndComp
+$Comp
+L C C?
+U 1 1 49015B6B
+P 4350 6850
+F 0 "C?" H 4400 6950 50  0000 L C
+F 1 "10uf" H 4400 6750 50  0000 L C
+F 2 "0603" H 4450 7000 60  0000 C C
+	1    4350 6850
+	0    1    1    0   
+$EndComp
+$Comp
+L INDUCTOR L?
+U 1 1 49015B4A
+P 3550 7250
+F 0 "L?" V 3500 7250 40  0000 C C
+F 1 "2.2uh" V 3650 7250 40  0000 C C
+F 2 "0805" V 3500 7050 60  0000 C C
+	1    3550 7250
+	0    -1   -1   0   
+$EndComp
+$Comp
+L INDUCTOR L?
+U 1 1 49015A63
+P 3550 6850
+F 0 "L?" V 3500 6850 40  0000 C C
+F 1 "2.2uh" V 3650 6850 40  0000 C C
+F 2 "0805" V 3500 6650 60  0000 C C
+	1    3550 6850
+	0    -1   -1   0   
+$EndComp
+$Comp
+L TPS62410 U?
+U 1 1 49015A3F
+P 2300 7050
+F 0 "U?" H 2300 7000 60  0000 C C
+F 1 "TPS62410" H 2400 7400 60  0000 C C
+	1    2300 7050
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 490159EC
+P 2050 5400
+F 0 "#PWR?" H 2050 5400 30  0001 C C
+F 1 "GND" H 2050 5330 30  0001 C C
+	1    2050 5400
+	1    0    0    -1  
+$EndComp
+$Comp
+L VDD #PWR?
+U 1 1 490159E9
+P 2050 5150
+F 0 "#PWR?" H 2050 5250 30  0001 C C
+F 1 "VDD" H 2050 5260 30  0000 C C
+	1    2050 5150
+	1    0    0    -1  
+$EndComp
+Text Label 6950 4900 0    60   ~
+TSCLK1
+Text Label 6950 4800 0    60   ~
+TFS1
+Text Label 6950 4600 0    60   ~
+DT1PRI
+Text Label 6950 3950 0    60   ~
+RSCLK1
+Text Label 6950 3850 0    60   ~
+RFS1
+Text Label 6950 3750 0    60   ~
+DR1SEC
+Text Label 6950 3650 0    60   ~
+DR1PRI
+Text Label 6950 3500 0    60   ~
+RSCLK0
+Text Label 6950 3400 0    60   ~
+RFS0
+Text Label 6950 3200 0    60   ~
+DR0PRI
+Text Label 2500 4450 0    60   ~
+RFS0
+Text Label 2500 4150 0    60   ~
+RSCLK0
+Text Label 1900 4600 0    60   ~
+DR0PRI
+Text Label 1900 4450 0    60   ~
+TFS1
+Text Label 1900 4300 0    60   ~
+DT1PRI
+Text Label 1900 4150 0    60   ~
+TSCLK1
+$Comp
+L VDD #PWR?
+U 1 1 490157D9
+P 2150 2650
+F 0 "#PWR?" H 2150 2750 30  0001 C C
+F 1 "VDD" H 2150 2760 30  0000 C C
+	1    2150 2650
+	1    0    0    -1  
+$EndComp
+Text Label 2000 2400 0    60   ~
+DR1PRI
+Text Label 2000 2250 0    60   ~
+DR1SEC
+Text Label 2000 2100 0    60   ~
+RFS1
+Text Label 2000 1950 0    60   ~
+RSCLK1
+Text Label 8650 2700 2    60   ~
+MUX3
+Text Label 8650 2600 2    60   ~
+MUX2
+Text Label 8650 2500 2    60   ~
+MUX1
+Text Label 8650 2400 2    60   ~
+MUX0
+Text Label 2000 1750 0    60   ~
+MUX0
+Text Label 2000 1600 0    60   ~
+MUX1
+Text Label 2000 1450 0    60   ~
+MUX2
+Text Label 2000 1300 0    60   ~
+MUX3
+$Comp
+L GND #PWR?
+U 1 1 4901560F
+P 5500 8150
+F 0 "#PWR?" H 5500 8150 30  0001 C C
+F 1 "GND" H 5500 8080 30  0001 C C
+	1    5500 8150
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 49015596
+P 7700 7700
+F 0 "#PWR?" H 7700 7700 30  0001 C C
+F 1 "GND" H 7700 7630 30  0001 C C
+	1    7700 7700
+	0    -1   -1   0   
+$EndComp
+$Comp
+L R R?
+U 1 1 49015590
+P 7450 7700
+F 0 "R?" V 7350 7500 50  0000 C C
+F 1 "10k" V 7450 7700 50  0000 C C
+F 2 "0402" V 7350 7750 60  0000 C C
+	1    7450 7700
+	0    1    1    0   
+$EndComp
+$Comp
+L VDD #PWR?
+U 1 1 4901541E
+P 7700 6850
+F 0 "#PWR?" H 7700 6950 30  0001 C C
+F 1 "VDD" H 7700 6960 30  0000 C C
+	1    7700 6850
+	1    0    0    -1  
+$EndComp
+$Comp
+L R R?
+U 1 1 49015419
+P 7450 6900
+F 0 "R?" V 7350 6700 50  0000 C C
+F 1 "10k" V 7450 6900 50  0000 C C
+F 2 "0402" V 7350 6950 60  0000 C C
+	1    7450 6900
+	0    1    1    0   
+$EndComp
+$Comp
+L VDD #PWR?
+U 1 1 49015409
+P 4800 7300
+F 0 "#PWR?" H 4800 7400 30  0001 C C
+F 1 "VDD" H 4800 7410 30  0000 C C
+	1    4800 7300
+	1    0    0    -1  
+$EndComp
+$Comp
+L R R?
+U 1 1 490153F0
+P 5150 7300
+F 0 "R?" V 5050 7100 50  0000 C C
+F 1 "10k" V 5150 7300 50  0000 C C
+F 2 "0402" V 5050 7350 60  0000 C C
+	1    5150 7300
+	0    1    1    0   
+$EndComp
+NoConn ~ 5700 7100
+Text Label 6900 8100 0    60   ~
+TDO
+Text Label 6900 7900 0    60   ~
+TDI
+Text Label 6900 7700 0    60   ~
+_trst
+Text Label 6900 7500 0    60   ~
+TCK
+Text Label 6900 7300 0    60   ~
+TMS
+Text Label 6900 6900 0    60   ~
+_emu
+Text Label 6950 5600 0    60   ~
+_trst
+Text Label 6950 5500 0    60   ~
+TMS
+Text Label 6950 5400 0    60   ~
+TDO
+Text Label 6950 5300 0    60   ~
+TDI
+Text Label 6950 5200 0    60   ~
+TCK
+Text Label 6950 5100 0    60   ~
+_emu
+$Comp
+L ADSP_JTAG_CON U?
+U 1 1 4901536F
+P 6100 7650
+F 0 "U?" H 6300 7050 60  0000 C C
+F 1 "ADSP_JTAG_CON" H 6250 8550 60  0000 C C
+	1    6100 7650
+	1    0    0    -1  
+$EndComp
+Text Label 9950 1800 0    60   ~
+RESET
+Text Notes 11050 4650 0    60   ~
+the blackfin does not have 5v tolerant inputs
+$Comp
+L R R?
+U 1 1 49015264
+P 13400 3050
+F 0 "R?" V 13300 2850 50  0000 C C
+F 1 "10k" V 13400 3050 50  0000 C C
+F 2 "0402" V 13300 3100 60  0000 C C
+	1    13400 3050
+	1    0    0    -1  
+$EndComp
+$Comp
+L VDD #PWR?
+U 1 1 49015209
+P 13150 2750
+F 0 "#PWR?" H 13150 2850 30  0001 C C
+F 1 "VDD" H 13150 2860 30  0000 C C
+	1    13150 2750
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 490151FF
+P 12050 2750
+F 0 "#PWR?" H 12050 2750 30  0001 C C
+F 1 "GND" H 12050 2680 30  0001 C C
+	1    12050 2750
+	0    1    1    0   
+$EndComp
+Text Label 12050 2950 2    60   ~
+RESET
+$Comp
+L GND #PWR?
+U 1 1 490151EC
+P 13050 3650
+F 0 "#PWR?" H 13050 3650 30  0001 C C
+F 1 "GND" H 13050 3580 30  0001 C C
+	1    13050 3650
+	0    1    1    0   
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 490151E3
+P 13050 3550
+F 0 "#PWR?" H 13050 3550 30  0001 C C
+F 1 "GND" H 13050 3480 30  0001 C C
+	1    13050 3550
+	0    1    1    0   
+$EndComp
+$Comp
+L MAX6711 U?
+U 1 1 490151B5
+P 12600 2850
+F 0 "U?" H 12550 2850 60  0000 C C
+F 1 "MAX6711" H 12600 3050 60  0000 C C
+	1    12600 2850
+	1    0    0    -1  
+$EndComp
+Text Label 12400 4000 0    60   ~
+MISO
+Text Label 11150 4000 2    60   ~
+SCK
+Text Label 11150 3900 2    60   ~
+MOSI
+Text Label 11150 3800 2    60   ~
+PF2
+$Comp
+L VDD #PWR?
+U 1 1 490150A1
+P 11150 3600
+F 0 "#PWR?" H 11150 3700 30  0001 C C
+F 1 "VDD" H 11150 3710 30  0000 C C
+	1    11150 3600
+	1    0    0    -1  
+$EndComp
+$Comp
+L TESTCON U?
+U 1 1 4901503F
+P 13550 3800
+F 0 "U?" H 13450 4150 60  0000 C C
+F 1 "TESTCON" H 13450 3350 60  0000 C C
+	1    13550 3800
+	1    0    0    -1  
+$EndComp
+$Comp
+L 74LCX541 U?
+U 1 1 4901501F
+P 11750 4050
+F 0 "U?" H 11750 3950 60  0000 C C
+F 1 "74LCX541" H 11700 4600 60  0000 C C
+	1    11750 4050
+	-1   0    0    -1  
+$EndComp
+Text Label 8650 1800 2    60   ~
+PF2
+$Comp
+L VDD #PWR?
+U 1 1 49014F14
+P 12300 1450
+F 0 "#PWR?" H 12300 1550 30  0001 C C
+F 1 "VDD" H 12300 1560 30  0000 C C
+	1    12300 1450
+	1    0    0    -1  
+$EndComp
+$Comp
+L R R?
+U 1 1 49014F0E
+P 12300 1700
+F 0 "R?" V 12200 1500 50  0000 C C
+F 1 "10k" V 12300 1700 50  0000 C C
+F 2 "0402" V 12200 1750 60  0000 C C
+	1    12300 1700
+	1    0    0    -1  
+$EndComp
+$Comp
+L VDD #PWR?
+U 1 1 49014E61
+P 11150 2750
+F 0 "#PWR?" H 11150 2850 30  0001 C C
+F 1 "VDD" H 11150 2860 30  0000 C C
+	1    11150 2750
+	1    0    0    -1  
+$EndComp
+$Comp
+L R R?
+U 1 1 49014E5C
+P 11000 2500
+F 0 "R?" V 10900 2300 50  0000 C C
+F 1 "10k" V 11000 2500 50  0000 C C
+F 2 "0402" V 10900 2550 60  0000 C C
+	1    11000 2500
+	1    0    0    -1  
+$EndComp
+Text Label 11000 2250 2    60   ~
+PF2
+$Comp
+L VDD #PWR?
+U 1 1 49000171
+P 12350 2250
+F 0 "#PWR?" H 12350 2350 30  0001 C C
+F 1 "VDD" H 12350 2360 30  0000 C C
+	1    12350 2250
+	0    1    1    0   
+$EndComp
+$Comp
+L VDD #PWR?
+U 1 1 4900014D
+P 12350 2150
+F 0 "#PWR?" H 12350 2250 30  0001 C C
+F 1 "VDD" H 12350 2260 30  0000 C C
+	1    12350 2150
+	0    1    1    0   
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 49000147
+P 12350 2050
+F 0 "#PWR?" H 12350 2050 30  0001 C C
+F 1 "GND" H 12350 1980 30  0001 C C
+	1    12350 2050
+	0    -1   -1   0   
+$EndComp
+$Comp
+L VDD #PWR?
+U 1 1 49000133
+P 10650 1600
+F 0 "#PWR?" H 10650 1700 30  0001 C C
+F 1 "VDD" H 10650 1710 30  0000 C C
+	1    10650 1600
+	1    0    0    -1  
+$EndComp
+$Comp
+L R R?
+U 1 1 490000F1
+P 10650 1900
+F 0 "R?" V 10550 1700 50  0000 C C
+F 1 "10k" V 10650 1900 50  0000 C C
+F 2 "0402" V 10550 1950 60  0000 C C
+	1    10650 1900
+	1    0    0    -1  
+$EndComp
+Text Label 12300 1950 0    60   ~
+MISO
+Text Label 11000 2050 2    60   ~
+SCK
+Text Label 11000 1950 2    60   ~
+MOSI
+Text Label 9950 2150 0    60   ~
+MOSI
+Text Label 9950 2050 0    60   ~
+MISO
+Text Label 9950 1950 0    60   ~
+SCK
+$Comp
+L AT45DB081D U?
+U 1 1 48FFFE90
+P 11650 2100
+F 0 "U?" H 11650 2000 60  0000 C C
+F 1 "AT45DB081D" H 11650 2350 60  0000 C C
+	1    11650 2100
+	1    0    0    -1  
+$EndComp
+Text Notes 7350 6300 0    60   ~
+24Mhz
+$Comp
+L GND #PWR?
+U 1 1 48FFFD7E
+P 8000 6450
+F 0 "#PWR?" H 8000 6450 30  0001 C C
+F 1 "GND" H 8000 6380 30  0001 C C
+	1    8000 6450
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 48FFFD7A
+P 7050 6450
+F 0 "#PWR?" H 7050 6450 30  0001 C C
+F 1 "GND" H 7050 6380 30  0001 C C
+	1    7050 6450
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 48FFFD68
+P 7800 6050
+F 0 "#PWR?" H 7800 6050 30  0001 C C
+F 1 "GND" H 7800 5980 30  0001 C C
+	1    7800 6050
+	0    -1   -1   0   
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 48FFFD63
+P 7200 5950
+F 0 "#PWR?" H 7200 5950 30  0001 C C
+F 1 "GND" H 7200 5880 30  0001 C C
+	1    7200 5950
+	0    1    1    0   
+$EndComp
+$Comp
+L C C?
+U 1 1 48FFFD52
+P 8000 6250
+F 0 "C?" H 8050 6350 50  0000 L C
+F 1 "7pf" H 8050 6150 50  0000 L C
+	1    8000 6250
+	1    0    0    -1  
+$EndComp
+$Comp
+L C C?
+U 1 1 48FFFD4F
+P 7050 6250
+F 0 "C?" H 7100 6350 50  0000 L C
+F 1 "7pf" H 7100 6150 50  0000 L C
+	1    7050 6250
+	1    0    0    -1  
+$EndComp
+$Comp
+L ABM10XTAL U?
+U 1 1 48FFFD38
+P 7500 6000
+F 0 "U?" H 7500 6150 60  0000 C C
+F 1 "ABM10XTAL" H 7550 5850 60  0000 C C
+F 2 "ABM10" H 7500 6250 60  0000 C C
+	1    7500 6000
+	1    0    0    -1  
+$EndComp
 $Sheet
-S 1350 2100 2350 1900
+S 750  3700 1150 1900
+U 48FFEE1B
+F0 "afe2" 60
+F1 "afe2.sch" 60
+F2 "Gnd_digital" I R 1900 5300 60 
+F3 "Vdd_digital" I R 1900 5150 60 
+F4 "Dout" O R 1900 4600 60 
+F5 "_cs" I R 1900 4450 60 
+F6 "Din" I R 1900 4300 60 
+F7 "CLK" I R 1900 4150 60 
+$EndSheet
+$Sheet
+S 750  1100 1250 1900
 U 48C9FDD8
 F0 "analog" 60
 F1 "stage2_analog.sch" 60
+F2 "MUX3" I R 2000 1300 60 
+F3 "MUX2" I R 2000 1450 60 
+F4 "MUX1" I R 2000 1600 60 
+F5 "MUX0" I R 2000 1750 60 
+F6 "RSCLK1" I R 2000 1950 60 
+F7 "RFS1" I R 2000 2100 60 
+F8 "DR1SEC" I R 2000 2250 60 
+F9 "DR1PRI" I R 2000 2400 60 
+F10 "VIN" I R 2000 2650 60 
+F11 "AFEEN" I R 2000 2800 60 
 $EndSheet
 $Comp
 L BF532-160 U?
