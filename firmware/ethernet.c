@@ -41,6 +41,7 @@ u32 NetOurIP;	//our IP address, in network byte-order
 u32 NetDestIP; 	//destination IP address, as above. 
 					// 192.168.1.149 = 0x9501A8C0
 u32 NetDHCPserv; //same as above, network byte order.
+u32 NetSubnetMask; //also should be supplied by the DHCP server.
 
 u8 		NetOurMAC[6];
 u8		NetDestMAC[6]; //where to send data to on the local network.
@@ -271,8 +272,10 @@ int bfin_EMAC_init( ){
 
 	txIdx = 0;
 	rxIdx = 0;
-	NetIPID = 0;
-	NetOurIP = FormatIPAddress(192, 168, 1, 143); 
+	NetIPID = 0; //0 = unconfigured. 
+	NetOurIP = 0; 
+	NetSubnetMask = 0; 
+	NetOurIP = FormatIPAddress(192, 168, 0, 9); 
 	NetDestIP = FormatIPAddress(192, 168, 1, 108); 
 	TcpState = TCP_LISTEN; 
 	TcpSeqClient = 0; 
@@ -1104,6 +1107,10 @@ int DHCP_req(){
 	options[8] = (NetDHCPserv>>24) & 0xff;
 	options[9] = DHCP_END;
 	
+	//here we should see if we should expect another packet... 
+	if(NetOurIP != 0 && NetDHCPserv != 0xffffffff && NetSubnetMask != 0)
+		return 0; 
+	//otherwise, try again. 
 	printf_str("Send DHCPREQUEST\n");
 	DHCP_tx(10, &options[0], NetDHCPserv); 
 	
@@ -1127,7 +1134,8 @@ void DHCP_parse(u8* ptr, int length){
 				break; 
 			switch(option){
 				case 1: 
-					printf_ip("subnet mask: ", pack4chars(ptr) ); 
+					NetSubnetMask = pack4chars(ptr); 
+					printf_ip("subnet mask: ", NetSubnetMask); 
 					break; 
 				case 3: 
 					printf_ip("router addr: ", pack4chars(ptr) ); 
@@ -1145,9 +1153,9 @@ void DHCP_parse(u8* ptr, int length){
 					printf_int("DHCP message type ", *ptr); 
 					break; 
 				case 54: 
-					printf_ip("DHCP server id: ", pack4chars(ptr) ); 
-					NetDHCPserv = htonl(pack4chars(ptr)); 
+					NetDHCPserv = pack4chars(ptr); 
 					//pack4chars puts it in little-endian, htonl 2 get it back in net order
+					printf_ip("DHCP server id: ", NetDHCPserv); 
 					break; 
 				case 58: 
 					printf_int("DHCP renewal time: ", pack4chars(ptr) ); 

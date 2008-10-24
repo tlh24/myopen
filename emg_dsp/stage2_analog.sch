@@ -1,9 +1,9 @@
 EESchema Schematic File Version 2
-LIBS:power,device,emg_sym
+LIBS:power,device,emg_sym,./stage2.cache
 EELAYER 24  0
 EELAYER END
-$Descr User 11000 11000
-Sheet 2 3
+$Descr User 15000 9000
+Sheet 4 5
 Title ""
 Date ""
 Rev ""
@@ -13,6 +13,35 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
+Wire Wire Line
+	7350 6800 7300 6800
+Wire Wire Line
+	6550 6800 6900 6800
+Connection ~ 4950 8600
+Wire Wire Line
+	4950 8800 4950 1100
+Connection ~ 3650 8400
+Wire Wire Line
+	3650 900  3650 9050
+Connection ~ 1700 8400
+Wire Wire Line
+	1700 900  1700 9050
+Connection ~ 6900 8150
+Wire Wire Line
+	6800 8150 6900 8150
+Connection ~ 5950 7400
+Connection ~ 6550 8700
+Wire Wire Line
+	7000 8700 5700 8700
+Wire Wire Line
+	5700 7400 7000 7400
+Connection ~ 6250 7400
+Wire Wire Line
+	7700 7400 7900 7400
+Wire Wire Line
+	8550 7600 8650 7600
+Wire Wire Line
+	7700 8900 8150 8900
 Wire Wire Line
 	6250 5600 6250 5550
 Wire Wire Line
@@ -90,11 +119,9 @@ Connection ~ 3000 7600
 Wire Wire Line
 	2600 7600 3000 7600
 Wire Wire Line
-	2600 8600 3000 8600
+	3000 8600 2600 8600
 Wire Wire Line
-	3000 8600 3000 1100
-Wire Wire Line
-	3000 1100 2600 1100
+	2600 1100 3000 1100
 Connection ~ 1700 1900
 Wire Wire Line
 	2100 1900 1700 1900
@@ -269,9 +296,7 @@ Wire Wire Line
 Wire Wire Line
 	4050 2500 3800 2500
 Wire Wire Line
-	2100 900  1700 900 
-Wire Wire Line
-	1700 900  1700 8400
+	1700 900  2100 900 
 Wire Wire Line
 	1700 8400 2100 8400
 Wire Wire Line
@@ -317,9 +342,7 @@ Connection ~ 3650 7900
 Wire Wire Line
 	4050 7900 3650 7900
 Wire Wire Line
-	4050 900  3650 900 
-Wire Wire Line
-	3650 900  3650 8400
+	3650 900  4050 900 
 Wire Wire Line
 	3650 8400 4050 8400
 Wire Wire Line
@@ -386,9 +409,7 @@ Connection ~ 4950 7600
 Wire Wire Line
 	4550 7600 4950 7600
 Wire Wire Line
-	4550 8600 4950 8600
-Wire Wire Line
-	4950 8600 4950 1100
+	4950 8600 4550 8600
 Wire Wire Line
 	4950 1100 4550 1100
 Wire Wire Line
@@ -484,6 +505,402 @@ Wire Wire Line
 	7050 5400 7050 5600
 Wire Wire Line
 	6250 6000 6250 6100
+Wire Wire Line
+	7700 7600 8150 7600
+Wire Wire Line
+	8550 8900 8650 8900
+Wire Wire Line
+	7700 8700 7900 8700
+Connection ~ 6550 7400
+Wire Wire Line
+	7000 8900 6900 8900
+Wire Wire Line
+	6900 8900 6900 7600
+Wire Wire Line
+	6900 7600 7000 7600
+Wire Wire Line
+	1700 9050 2100 9050
+Wire Wire Line
+	3650 9050 4050 9050
+Connection ~ 3650 9050
+Connection ~ 1700 9050
+Wire Wire Line
+	3000 1100 3000 8800
+Connection ~ 3000 8600
+Wire Wire Line
+	5950 6800 5700 6800
+Wire Wire Line
+	5700 6800 5700 8700
+Connection ~ 5700 7400
+$Comp
+L GND #PWR?
+U 1 1 48FFF3A5
+P 6550 7200
+F 0 "#PWR?" H 6550 7200 30  0001 C C
+F 1 "GND" H 6550 7130 30  0001 C C
+	1    6550 7200
+	1    0    0    -1  
+$EndComp
+$Comp
+L JUMP U?
+U 1 1 48FFF399
+P 7100 6800
+F 0 "U?" H 7100 6700 60  0000 C C
+F 1 "JUMP" H 7100 6900 60  0000 C C
+F 2 "2x100mil" H 7040 6640 60  0000 C C
+	1    7100 6800
+	1    0    0    -1  
+$EndComp
+$Comp
+L C C?
+U 1 1 48FFF38E
+P 6550 7000
+F 0 "C?" H 6600 7100 50  0000 L C
+F 1 "0.012uf" H 6600 6900 50  0000 L C
+F 2 "0402" H 6650 7150 60  0000 C C
+	1    6550 7000
+	1    0    0    -1  
+$EndComp
+$Comp
+L INDUCTOR L?
+U 1 1 48FFF37D
+P 6250 6800
+F 0 "L?" V 6200 6800 40  0000 C C
+F 1 "INDUCTOR" V 6350 6800 40  0000 C C
+F 2 "0603" V 6160 6760 60  0000 C C
+	1    6250 6800
+	0    -1   -1   0   
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 48FFF257
+P 7850 3300
+F 0 "#PWR?" H 7850 3300 30  0001 C C
+F 1 "GND" H 7850 3230 30  0001 C C
+	1    7850 3300
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 48FFF254
+P 7850 1900
+F 0 "#PWR?" H 7850 1900 30  0001 C C
+F 1 "GND" H 7850 1830 30  0001 C C
+	1    7850 1900
+	1    0    0    -1  
+$EndComp
+$Comp
+L C C?
+U 1 1 48FFF24E
+P 7850 3100
+F 0 "C?" H 7900 3200 50  0000 L C
+F 1 "0.1uf" H 7900 3000 50  0000 L C
+F 2 "0402" H 8100 3100 60  0000 C C
+	1    7850 3100
+	1    0    0    -1  
+$EndComp
+$Comp
+L C C?
+U 1 1 48FFF240
+P 7850 1700
+F 0 "C?" H 7900 1800 50  0000 L C
+F 1 "0.1uf" H 7900 1600 50  0000 L C
+F 2 "0402" H 8100 1700 60  0000 C C
+	1    7850 1700
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 48FFF20C
+P 4950 8800
+F 0 "#PWR?" H 4950 8800 30  0001 C C
+F 1 "GND" H 4950 8730 30  0001 C C
+	1    4950 8800
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 48FFF209
+P 3000 8800
+F 0 "#PWR?" H 3000 8800 30  0001 C C
+F 1 "GND" H 3000 8730 30  0001 C C
+	1    3000 8800
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 48FFF205
+P 4050 9450
+F 0 "#PWR?" H 4050 9450 30  0001 C C
+F 1 "GND" H 4050 9380 30  0001 C C
+	1    4050 9450
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 48FFF202
+P 3650 9450
+F 0 "#PWR?" H 3650 9450 30  0001 C C
+F 1 "GND" H 3650 9380 30  0001 C C
+	1    3650 9450
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 48FFF200
+P 2100 9450
+F 0 "#PWR?" H 2100 9450 30  0001 C C
+F 1 "GND" H 2100 9380 30  0001 C C
+	1    2100 9450
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 48FFF1FE
+P 1700 9450
+F 0 "#PWR?" H 1700 9450 30  0001 C C
+F 1 "GND" H 1700 9380 30  0001 C C
+	1    1700 9450
+	1    0    0    -1  
+$EndComp
+$Comp
+L C C?
+U 1 1 48FFF1E1
+P 4050 9250
+F 0 "C?" H 4100 9350 50  0000 L C
+F 1 "2.2uf" H 4100 9150 50  0000 L C
+F 2 "0402" H 4150 9400 60  0000 C C
+	1    4050 9250
+	1    0    0    -1  
+$EndComp
+$Comp
+L C C?
+U 1 1 48FFF1E0
+P 3650 9250
+F 0 "C?" H 3700 9350 50  0000 L C
+F 1 "2.2uf" H 3700 9150 50  0000 L C
+F 2 "0402" H 3750 9400 60  0000 C C
+	1    3650 9250
+	1    0    0    -1  
+$EndComp
+$Comp
+L C C?
+U 1 1 48FFF1D3
+P 2100 9250
+F 0 "C?" H 2150 9350 50  0000 L C
+F 1 "2.2uf" H 2150 9150 50  0000 L C
+F 2 "0402" H 2200 9400 60  0000 C C
+	1    2100 9250
+	1    0    0    -1  
+$EndComp
+$Comp
+L C C?
+U 1 1 48FFF1C9
+P 1700 9250
+F 0 "C?" H 1750 9350 50  0000 L C
+F 1 "2.2uf" H 1750 9150 50  0000 L C
+F 2 "0402" H 1800 9400 60  0000 C C
+	1    1700 9250
+	1    0    0    -1  
+$EndComp
+Text Label 7900 7400 0    60   ~
+V27B
+Text Label 7900 8700 0    60   ~
+V27A
+Text HLabel 7350 6800 2    60   Input
+VIN
+Text HLabel 6800 8150 0    60   Input
+AFEEN
+$Comp
+L GND #PWR?
+U 1 1 48FFF0F2
+P 7000 8800
+F 0 "#PWR?" H 7000 8800 30  0001 C C
+F 1 "GND" H 7000 8730 30  0001 C C
+	1    7000 8800
+	0    1    1    0   
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 48FFF0EE
+P 7000 7500
+F 0 "#PWR?" H 7000 7500 30  0001 C C
+F 1 "GND" H 7000 7430 30  0001 C C
+	1    7000 7500
+	0    1    1    0   
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 48FFF0D7
+P 6550 9100
+F 0 "#PWR?" H 6550 9100 30  0001 C C
+F 1 "GND" H 6550 9030 30  0001 C C
+	1    6550 9100
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 48FFF0D4
+P 5950 7800
+F 0 "#PWR?" H 5950 7800 30  0001 C C
+F 1 "GND" H 5950 7730 30  0001 C C
+	1    5950 7800
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 48FFF0D2
+P 6250 7800
+F 0 "#PWR?" H 6250 7800 30  0001 C C
+F 1 "GND" H 6250 7730 30  0001 C C
+	1    6250 7800
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 48FFF0D0
+P 6550 7800
+F 0 "#PWR?" H 6550 7800 30  0001 C C
+F 1 "GND" H 6550 7730 30  0001 C C
+	1    6550 7800
+	1    0    0    -1  
+$EndComp
+$Comp
+L C C?
+U 1 1 48FFF0B4
+P 5950 7600
+F 0 "C?" H 6000 7700 50  0000 L C
+F 1 "2.2uf" H 6000 7500 50  0000 L C
+F 2 "0402" H 6050 7750 60  0000 C C
+	1    5950 7600
+	1    0    0    -1  
+$EndComp
+$Comp
+L C C?
+U 1 1 48FFF0AF
+P 6250 7600
+F 0 "C?" H 6300 7700 50  0000 L C
+F 1 "2.2uf" H 6300 7500 50  0000 L C
+F 2 "0402" H 6350 7750 60  0000 C C
+	1    6250 7600
+	1    0    0    -1  
+$EndComp
+$Comp
+L C C?
+U 1 1 48FFF074
+P 6550 8900
+F 0 "C?" H 6600 9000 50  0000 L C
+F 1 "0.012uf" H 6600 8800 50  0000 L C
+F 2 "0402" H 6650 9050 60  0000 C C
+	1    6550 8900
+	1    0    0    -1  
+$EndComp
+$Comp
+L C C?
+U 1 1 48FFF05D
+P 6550 7600
+F 0 "C?" H 6600 7700 50  0000 L C
+F 1 "0.012uf" H 6600 7500 50  0000 L C
+F 2 "0402" H 6650 7750 60  0000 C C
+	1    6550 7600
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 48FFF044
+P 7900 9100
+F 0 "#PWR?" H 7900 9100 30  0001 C C
+F 1 "GND" H 7900 9030 30  0001 C C
+	1    7900 9100
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 48FFF041
+P 7900 7800
+F 0 "#PWR?" H 7900 7800 30  0001 C C
+F 1 "GND" H 7900 7730 30  0001 C C
+	1    7900 7800
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 48FFF02A
+P 8650 8900
+F 0 "#PWR?" H 8650 8900 30  0001 C C
+F 1 "GND" H 8650 8830 30  0001 C C
+	1    8650 8900
+	0    -1   -1   0   
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 48FFF023
+P 8650 7600
+F 0 "#PWR?" H 8650 7600 30  0001 C C
+F 1 "GND" H 8650 7530 30  0001 C C
+	1    8650 7600
+	0    -1   -1   0   
+$EndComp
+$Comp
+L C C?
+U 1 1 48FFEFEF
+P 8350 8900
+F 0 "C?" H 8400 9000 50  0000 L C
+F 1 "0.012uf" H 8400 8800 50  0000 L C
+F 2 "0402" H 8450 9050 60  0000 C C
+	1    8350 8900
+	0    1    1    0   
+$EndComp
+$Comp
+L C C?
+U 1 1 48FFEFE5
+P 8350 7600
+F 0 "C?" H 8400 7700 50  0000 L C
+F 1 "0.012uf" H 8400 7500 50  0000 L C
+F 2 "0402" H 8450 7750 60  0000 C C
+	1    8350 7600
+	0    1    1    0   
+$EndComp
+$Comp
+L C C?
+U 1 1 48FFEFC1
+P 7900 8900
+F 0 "C?" H 7950 9000 50  0000 L C
+F 1 "2.2uf" H 7950 8800 50  0000 L C
+F 2 "0402" H 8000 9050 60  0000 C C
+	1    7900 8900
+	1    0    0    -1  
+$EndComp
+$Comp
+L C C?
+U 1 1 48FFEFB3
+P 7900 7600
+F 0 "C?" H 7950 7700 50  0000 L C
+F 1 "2.2uf" H 7950 7500 50  0000 L C
+F 2 "0402" H 8000 7750 60  0000 C C
+	1    7900 7600
+	1    0    0    -1  
+$EndComp
+$Comp
+L TPS717 U?
+U 1 1 48FFEF79
+P 7300 8900
+F 0 "U?" H 7300 8800 60  0000 C C
+F 1 "TPS71727" H 7300 9200 60  0000 C C
+F 2 "SC-70-5" H 7240 8740 60  0000 C C
+	1    7300 8900
+	1    0    0    -1  
+$EndComp
+$Comp
+L TPS717 U?
+U 1 1 48FFEF3A
+P 7300 7600
+F 0 "U?" H 7300 7500 60  0000 C C
+F 1 "TPS71727" H 7300 7900 60  0000 C C
+F 2 "SC-70-5" H 7240 7440 60  0000 C C
+	1    7300 7600
+	1    0    0    -1  
+$EndComp
 $Comp
 L GND #PWR?
 U 1 1 48CA0AAC

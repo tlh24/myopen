@@ -115,7 +115,7 @@ int main() {
 	*pUART0_DLH = 0;  //the system clock is 120Mhz. baud rate is 115200. 
 	*pUART0_LCR = 0x0003; //parity disabled, 1 stop bit, 8 bit word. 
 	*pUART0_GCTL = 0x0001; //enable the clock.
-	printf_int("Myopen svn v.", /*SVN_VERSION{*/100/*}*/ ) ; 
+	printf_int("Myopen svn v.", /*SVN_VERSION{*/105/*}*/ ) ; 
 	printf_str("\n"); 
 	printf_str("checking SDRAM...\n"); 
 	unsigned short* p; 
@@ -147,7 +147,7 @@ int main() {
 	printf_str("memory check done.\n"); 
 	usb_init(); 
 	int etherr = bfin_EMAC_init(); 
-	if(!etherr) DHCP_req	(); 
+	//if(!etherr) DHCP_req	();  //want to be able to turn this one off, if we need to operate with APL & XPC stuff.
 	
 	//setup the filters before we start acquiring samples! 
 	//please see (or run!) flt_design.m
