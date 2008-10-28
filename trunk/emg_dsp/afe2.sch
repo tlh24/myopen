@@ -2,7 +2,7 @@ EESchema Schematic File Version 2
 LIBS:power,device,emg_sym,./stage2.cache
 EELAYER 24  0
 EELAYER END
-$Descr User 15000 9000
+$Descr User 17000 9000
 Sheet 2 5
 Title ""
 Date "23 aug 2008"
