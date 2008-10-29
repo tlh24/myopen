@@ -13,39 +13,29 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
-Text Label 8150 7450 0    60   ~
-Gnd_digital
-Text Label 8150 7350 0    60   ~
-Vdd_digital
-Text Label 8150 7250 0    60   ~
-Vdd2
-Text Label 8150 7150 0    60   ~
-AVdd
-Text Label 8150 7050 0    60   ~
-ADC_DOUT
-Text Label 8150 6950 0    60   ~
-ADC_cs
-Text Label 8150 6850 0    60   ~
-ADC_DIN
-Text Label 8150 6750 0    60   ~
-ADC_CLK
-Text Label 8000 4700 0    60   ~
-ADC_cs
-Text Label 8000 4600 0    60   ~
-ADC_DIN
-Text Label 8000 4500 0    60   ~
-ADC_DOUT
-Text Label 8000 4400 0    60   ~
-ADC_CLK
-$Comp
-L 8X100 U?
-U 1 1 48FFFAE9
-P 7700 7150
-F 0 "U?" H 7700 7150 60  0000 C C
-F 1 "8X100" H 7700 7350 60  0000 C C
-	1    7700 7150
-	-1   0    0    -1  
-$EndComp
+Wire Wire Line
+	6800 2950 8200 2950
+Wire Wire Line
+	6900 2000 6650 2000
+Connection ~ 1600 4900
+Wire Wire Line
+	1600 4900 2150 4900
+Wire Wire Line
+	4750 4250 4950 4250
+Wire Wire Line
+	4750 3350 4950 3350
+Connection ~ 1100 3250
+Wire Wire Line
+	1050 3250 1100 3250
+Connection ~ 1100 3050
+Wire Wire Line
+	1050 3050 1100 3050
+Connection ~ 1100 2850
+Wire Wire Line
+	1050 2850 1100 2850
+Connection ~ 1100 2650
+Wire Wire Line
+	1050 2650 1100 2650
 Connection ~ 11300 5350
 Wire Wire Line
 	11300 5250 11300 5350
@@ -141,20 +131,11 @@ Wire Wire Line
 	3000 2250 3000 2400
 Wire Wire Line
 	2050 1250 1600 1250
-Wire Wire Line
-	2150 4900 1850 4900
 Connection ~ 1850 4900
 Wire Wire Line
 	7900 5800 7900 5500
 Wire Wire Line
 	3450 4800 3450 4850
-Connection ~ 6750 2000
-Wire Wire Line
-	6900 2200 6750 2200
-Wire Wire Line
-	6750 2200 6750 2000
-Wire Wire Line
-	6750 2000 6900 2000
 Connection ~ 8250 2100
 Wire Wire Line
 	8100 2000 8250 2000
@@ -501,13 +482,147 @@ Connection ~ 11000 4750
 Wire Wire Line
 	11300 4750 11300 4850
 Connection ~ 11300 4750
+Wire Wire Line
+	1050 2550 1100 2550
+Wire Wire Line
+	1100 2550 1100 3350
+Wire Wire Line
+	1050 2750 1100 2750
+Connection ~ 1100 2750
+Wire Wire Line
+	1050 2950 1100 2950
+Connection ~ 1100 2950
+Wire Wire Line
+	1050 3150 1100 3150
+Connection ~ 1100 3150
+Wire Wire Line
+	4750 3750 4750 3850
+Wire Wire Line
+	4750 3800 4950 3800
+Connection ~ 4750 3800
+Wire Wire Line
+	1200 4800 1200 5000
+Wire Wire Line
+	1200 5000 1600 5000
+Wire Wire Line
+	1600 5000 1600 4800
+Wire Wire Line
+	6650 2000 6650 2200
+Wire Wire Line
+	6650 2200 6900 2200
+Text Label 6800 2950 0    60   ~
+Vdd2
+Text Label 8850 5350 2    60   ~
+AGnd
+$Comp
+L C C?
+U 1 1 4907E719
+P 9050 5350
+F 0 "C?" H 8900 5400 50  0000 L C
+F 1 "0.1uf" H 8900 5250 50  0000 L C
+F 2 "0402" H 9050 5500 60  0000 C C
+	1    9050 5350
+	0    1    1    0   
+$EndComp
+$Comp
+L JUMP U?
+U 1 1 4907E5DA
+P 1400 4800
+F 0 "U?" H 1400 4700 60  0000 C C
+F 1 "JUMP" H 1400 4900 60  0000 C C
+F 2 "2x100mil" H 1400 5000 60  0000 C C
+	1    1400 4800
+	1    0    0    -1  
+$EndComp
+$Comp
+L DIODE D?
+U 1 1 4907E5B3
+P 4750 4050
+F 0 "D?" H 4750 4150 40  0000 C C
+F 1 "UCLAMP33" H 4750 3950 40  0000 C C
+F 2 "SOD-323" H 4710 4190 60  0000 C C
+	1    4750 4050
+	0    -1   -1   0   
+$EndComp
+$Comp
+L DIODE D?
+U 1 1 4907E59A
+P 4750 3550
+F 0 "D?" H 4750 3650 40  0000 C C
+F 1 "UCLAMP33" H 4750 3450 40  0000 C C
+F 2 "SOD-323" H 4710 3690 60  0000 C C
+	1    4750 3550
+	0    -1   -1   0   
+$EndComp
+Text Label 4950 3800 0    60   ~
+Vdd2
+Text Label 4950 3350 0    60   ~
+AVdd
+Text Label 4950 4250 0    60   ~
+AGnd
+$Comp
+L GND #PWR?
+U 1 1 4907E3D0
+P 1100 3350
+F 0 "#PWR?" H 1100 3350 30  0001 C C
+F 1 "GND" H 1100 3280 30  0001 C C
+	1    1100 3350
+	1    0    0    -1  
+$EndComp
+Text Label 7450 750  0    60   ~
+AVdd
+Text Label 7450 1150 0    60   ~
+AGnd
+$Comp
+L C C?
+U 1 1 4907E31C
+P 7450 950
+F 0 "C?" V 7400 1050 50  0000 L C
+F 1 "4.7uf" V 7500 850 50  0000 L C
+F 2 "0603" V 7650 950 60  0000 C C
+	1    7450 950 
+	-1   0    0    1   
+$EndComp
+Text Label 8150 7450 0    60   ~
+Gnd_digital
+Text Label 8150 7350 0    60   ~
+Vdd_digital
+Text Label 8150 7250 0    60   ~
+Vdd2
+Text Label 8150 7150 0    60   ~
+AVdd
+Text Label 8150 7050 0    60   ~
+ADC_DOUT
+Text Label 8150 6950 0    60   ~
+ADC_cs
+Text Label 8150 6850 0    60   ~
+ADC_DIN
+Text Label 8150 6750 0    60   ~
+ADC_CLK
+Text Label 8000 4700 0    60   ~
+ADC_cs
+Text Label 8000 4600 0    60   ~
+ADC_DIN
+Text Label 8000 4500 0    60   ~
+ADC_DOUT
+Text Label 8000 4400 0    60   ~
+ADC_CLK
+$Comp
+L 8X100 U?
+U 1 1 48FFFAE9
+P 7700 7150
+F 0 "U?" H 7700 7150 60  0000 C C
+F 1 "8X100" H 7700 7350 60  0000 C C
+	1    7700 7150
+	-1   0    0    -1  
+$EndComp
 $Comp
 L C C?
 U 1 1 48FFFA3C
 P 11300 5050
 F 0 "C?" H 11350 5150 50  0000 L C
-F 1 "2.2uf" H 11200 4950 50  0000 L C
-F 2 "0603" H 11550 5050 60  0000 C C
+F 1 "0.1uf" H 11200 4950 50  0000 L C
+F 2 "0402" H 11550 5050 60  0000 C C
 	1    11300 5050
 	1    0    0    -1  
 $EndComp
@@ -516,8 +631,8 @@ L C C?
 U 1 1 48FFF9EC
 P 11000 5050
 F 0 "C?" H 11050 5150 50  0000 L C
-F 1 "2.2uf" H 10750 4950 50  0000 L C
-F 2 "0603" H 10750 5050 60  0000 C C
+F 1 "0.1uf" H 10750 4950 50  0000 L C
+F 2 "0402" H 10750 5050 60  0000 C C
 	1    11000 5050
 	1    0    0    -1  
 $EndComp
@@ -548,7 +663,7 @@ L C C?
 U 1 1 48FFF757
 P 9450 3750
 F 0 "C?" H 9500 3850 50  0000 L C
-F 1 "2.2uf" H 9350 3650 50  0000 L C
+F 1 "4.7uf" H 9350 3650 50  0000 L C
 F 2 "0603" H 9450 3900 60  0000 C C
 	1    9450 3750
 	0    1    1    0   
@@ -577,6 +692,7 @@ U 1 1 48FFF5EE
 P 10100 4600
 F 0 "U?" H 10100 4300 60  0000 C C
 F 1 "ADUM2400" H 10100 5300 60  0000 C C
+F 2 "SOICW-16" H 10040 4240 60  0000 C C
 	1    10100 4600
 	-1   0    0    -1  
 $EndComp
@@ -586,6 +702,7 @@ U 1 1 48FFF5C9
 P 10250 5900
 F 0 "U?" H 10250 5600 60  0000 C C
 F 1 "ADUM2400" H 10250 6600 60  0000 C C
+F 2 "SOICW-16" H 10190 5540 60  0000 C C
 	1    10250 5900
 	1    0    0    -1  
 $EndComp
@@ -627,7 +744,7 @@ F 2 "0603" H 7400 6050 60  0000 C C
 	1    7300 5900
 	1    0    0    -1  
 $EndComp
-Text Label 6750 2000 0    60   ~
+Text Label 6650 2000 0    60   ~
 AGnd
 Text Label 8850 2100 0    60   ~
 Vdd2
@@ -653,7 +770,7 @@ U 1 1 48C60542
 P 6350 2100
 F 0 "C?" V 6300 2200 50  0000 L C
 F 1 "4.7uf" V 6400 2000 50  0000 L C
-F 2 "0603" V 6550 2100 60  0000 C C
+F 2 "0603" V 6500 2100 60  0000 C C
 	1    6350 2100
 	0    1    1    0   
 $EndComp
@@ -902,14 +1019,6 @@ F 2 "SOT-363" H 2850 850 60  0000 C C
 	1    2500 1100
 	1    0    0    -1  
 $EndComp
-NoConn ~ 1050 3250
-NoConn ~ 1050 3150
-NoConn ~ 1050 3050
-NoConn ~ 1050 2950
-NoConn ~ 1050 2850
-NoConn ~ 1050 2750
-NoConn ~ 1050 2650
-NoConn ~ 1050 2550
 $Comp
 L 8X2X100 U?
 U 1 1 48C5E690
@@ -953,6 +1062,7 @@ U 1 1 48BEB273
 P 7550 4450
 F 0 "U?" H 7700 3800 60  0000 C C
 F 1 "MCP3304" H 7600 5100 60  0000 C C
+F 2 "SOIC-16" H 7500 3950 60  0000 C C
 	1    7550 4450
 	1    0    0    -1  
 $EndComp
@@ -1015,7 +1125,7 @@ U 1 1 48BEB11A
 P 8650 2500
 F 0 "R?" V 8730 2500 50  0000 C C
 F 1 "327k" V 8650 2500 50  0000 C C
-F 2 "0402" V 8780 2450 60  0000 C C
+F 2 "0402" V 8550 2500 60  0000 C C
 	1    8650 2500
 	0    1    1    0   
 $EndComp
@@ -1025,7 +1135,7 @@ U 1 1 48BEB111
 P 8650 1700
 F 0 "R?" V 8730 1700 50  0000 C C
 F 1 "327k" V 8650 1700 50  0000 C C
-F 2 "0402" V 8780 1650 60  0000 C C
+F 2 "0402" V 8550 1700 60  0000 C C
 	1    8650 1700
 	0    1    1    0   
 $EndComp
@@ -1055,7 +1165,7 @@ U 1 1 48BEB063
 P 6350 2500
 F 0 "R?" V 6430 2500 50  0000 C C
 F 1 "327k" V 6350 2500 50  0000 C C
-F 2 "0402" V 6480 2450 60  0000 C C
+F 2 "0402" V 6250 2500 60  0000 C C
 	1    6350 2500
 	0    1    1    0   
 $EndComp
@@ -1098,7 +1208,7 @@ U 1 1 48BE2227
 P 6350 1700
 F 0 "R?" V 6430 1700 50  0000 C C
 F 1 "327k" V 6350 1700 50  0000 C C
-F 2 "0402" V 6480 1650 60  0000 C C
+F 2 "0402" V 6250 1700 60  0000 C C
 	1    6350 1700
 	0    1    1    0   
 $EndComp
