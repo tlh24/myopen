@@ -40,6 +40,7 @@ u32 NetOurIP;	//our IP address, in network byte-order
 					//here reversed, 192.168.1.200 = 0xC801A8C0
 u32 NetDestIP; 	//destination IP address, as above. 
 					// 192.168.1.149 = 0x9501A8C0
+u32 NetDataDestIP; // network byte order. 
 u32 NetDHCPserv; //same as above, network byte order.
 u32 NetSubnetMask; //also should be supplied by the DHCP server.
 
@@ -277,6 +278,7 @@ int bfin_EMAC_init( ){
 	NetSubnetMask = 0; 
 	NetOurIP = FormatIPAddress(192, 168, 0, 9); 
 	NetDestIP = FormatIPAddress(192, 168, 1, 108); 
+	NetDataDestIP = FormatIPAddress(192, 168, 0, 0); 
 	TcpState = TCP_LISTEN; 
 	TcpSeqClient = 0; 
 	TcpSeqHost = 0x09da24b5; 
@@ -903,7 +905,7 @@ u8* udp_packet_setup(int len){
 	
 	length = sizeof(udp_packet) + len; 
 	data = eth_header_setup(&length); 
-	data = ip_header_setup(data, &length, NetDestIP, IP_PROT_UDP); 
+	data = ip_header_setup(data, &length, NetDataDestIP, IP_PROT_UDP); 
 	data = udp_header_setup(data, &length, 4341, 4340); 
 	
 	return data; 
