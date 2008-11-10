@@ -3,6 +3,7 @@
 #include "util.h"
 #include "lcd.h"
 #include "http.h"
+#include "ethernet.h"
 
 u8 g_enableUDP; 
 u32	g_httpHeaderLen; 
@@ -135,6 +136,39 @@ int httpResp( char* payload, int paylen ){
 			g_mouseYneg = (u8)(PhysicalToLogicalChan(atoi( p, 3)) & 0xff); 
 			paramChanged = 1; 
 		}
+		//set the destination IP
+		pos = substr("ip1=",payload,paylen); 
+		if(pos){
+			p = payload; p+= pos; 
+			u32 tip = atoi(p,3) & 0xff; 
+			NetDataDestIP &= 0xffffff00 ; //big-endian order.
+			NetDataDestIP += tip; 
+			paramChanged = 1; 
+		}
+		pos = substr("ip2=",payload,paylen); 
+		if(pos){
+			p = payload; p+= pos; 
+			u32 tip = atoi(p,3) & 0xff; 
+			NetDataDestIP &= 0xffff00ff ; 
+			NetDataDestIP += tip << 8; 
+			paramChanged = 1; 
+		}
+		pos = substr("ip3=",payload,paylen); 
+		if(pos){
+			p = payload; p+= pos; 
+			u32 tip = atoi(p,3) & 0xff; 
+			NetDataDestIP &= 0xff00ffff ; 
+			NetDataDestIP += tip << 16; 
+			paramChanged = 1; 
+		}
+		pos = substr("ip4=",payload,paylen); 
+		if(pos){
+			p = payload; p+= pos; 
+			u32 tip = atoi(p,3) & 0xff; 
+			NetDataDestIP &= 0x00ffffff ; 
+			NetDataDestIP += tip << 24; 
+			paramChanged = 1; 
+		}
 		// --------------------------
 		if(paramChanged){
 			g_httpContentLen = htmlDefault(); 
@@ -217,6 +251,7 @@ int htmlDefault(){
 	char* dest = ((char*)HTTP_CONTENT); 
 	//fills *dest with the default webpage.
 	int len = 0; 
+	int j = 0; 
 	dest = strcpy(dest, &len, 
 	"<html><head><title>myopen</title></head>\n<body>\n<h1>Myopen configuration</h1>\n"); 
 	//------------------
@@ -230,6 +265,19 @@ int htmlDefault(){
 	}else {
 		dest = strcpy(dest, &len, "\"Enable\""); 
 	}
+	dest = strcpy(dest, &len, "/>\n</form></div>\n"); 
+	//------------------
+	dest = htmlDiv(dest, &len, 'b'); 
+	dest = htmlForm(dest, &len); 
+	dest = strcpy(dest, &len, "Data Stream Destination IP\n"); 
+	for( j=1; j<=4; j++){
+		dest = strcpy(dest, &len, "<input type=\"text\" name=\"ip"); 
+		dest = strprintf_int(dest, &len, j); 
+		dest = strcpy(dest, &len, "\" size=\"2\"/ value=\""); 
+		dest = strprintf_int(dest, &len, (NetDataDestIP >> (j-1)*8)& 0xff ) ; //big endian format.
+		dest = strcpy(dest, &len, "\"/>\n"); 
+	}
+	dest = strcpy(dest, &len, "<input type=\"submit\" value=\"Set\""); 
 	dest = strcpy(dest, &len, "/>\n</form></div>\n"); 
 	//------------------
 	u8* raw_enab = (u8*)RAW_ENAB; 

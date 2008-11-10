@@ -282,6 +282,7 @@ extern u32 NetOurIP;	//our IP address, in network byte-order
 					//here reversed, 192.168.1.200 = 0xC801A8C0
 extern u32 NetDestIP; 	//destination IP address, as above. 
 					// 192.168.1.149 = 0x9501A8C0
+extern u32 NetDataDestIP; //where to actually send the UDP data too! 
 extern u32 NetDHCPserv; //same as above, network byte order.
 extern u8	NetDestMAC[6]; //where to send data to on the local network.
 
