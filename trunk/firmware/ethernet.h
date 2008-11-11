@@ -89,6 +89,11 @@ typedef struct arp_header {
 #define ARP_PTYPE_IPV4	0x0800
 #define ARP_OP_REQ	1
 #define ARP_OP_REPLY	2
+typedef struct arp_lut{
+	u32	ip; 
+	u8	mac[6]; 
+	u16	count; 
+} arp_lut; 
 
 typedef struct ip_header {
 	u8		hl_v;	/* header length and version	*/
@@ -243,10 +248,12 @@ u32 pack4chars(u8* a);
 int ether_testUDP(); 
 void ARP_tx(u32 who);
 void ARP_rx();
+void ARP_lut_add(u32 who, u8* mac); 
+int ARP_lu(u32 who, u8* mac_dest);
 int ARP_respond(u8* data, int length);
-void ARP_req();
+void ARP_req(u32 who, u8* mac_dest);
 
-u8* eth_header_setup(int* length);
+u8* eth_header_setup(int* length, u32 destIP);
 u8* ip_header_setup(u8* data, int* length, u32 dest, u8 protocol);
 u8* icmp_header_setup(u8* data, int* length, u8 type, u16 id, u16 seq);
 u8* udp_header_setup(u8* data, int* length, u16 sport, u16 dport);

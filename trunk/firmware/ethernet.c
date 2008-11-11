@@ -45,8 +45,12 @@ u32 NetDHCPserv; //same as above, network byte order.
 u32 NetSubnetMask; //also should be supplied by the DHCP server.
 
 u8 		NetOurMAC[6];
-u8		NetDestMAC[6]; //where to send data to on the local network.
 u16 PHYregs[NO_PHY_REGS];	/* u16 PHYADDR; */
+
+//need to keep a IP -> MAC LUT.  may need timeout in this struct..
+arp_lut	NetArpLut[10]; 
+u16		NetArpLut_count; 
+
 
 /* DMAx_CONFIG values at DMA Restart */
 const ADI_DMA_CONFIG_REG rxdmacfg = { 1, 1, 2, 0, 0, 0, 0, 5, 7 };
@@ -239,6 +243,11 @@ int bfin_EMAC_recv_poll(u8** data){
 	length -= 4;
 	printf_int("got packet: length ", length); 
 	*data = (u8*)(rxbuf[rxIdx]->FrmData); 
+	/* todo!! 
+	need to make the ARP a bit more intelligent - instead of a blocking wait, 
+	need a non-blocking wait with timeout, incase we are ARPing something that does 
+	not exist (on our network). 
+	*/
 	if(ARP_respond(*data, length))
 		length = -1; 
 	else if(icmp_rx(*data, length))
@@ -268,7 +277,7 @@ u32 FormatIPAddress(u8 a, u8 b, u8 c, u8 d){
 int bfin_EMAC_init( ){
 	u32 opmode;
 	int dat;
-	int i;
+	int i, j;
 	printf_str("Eth_init...\n");
 
 	txIdx = 0;
@@ -283,6 +292,15 @@ int bfin_EMAC_init( ){
 	TcpSeqClient = 0; 
 	TcpSeqHost = 0x09da24b5; 
 	TcpClientPort = 0; 
+	
+	//init the ARP LUT
+	for(i=0; i<10; i++){
+		NetArpLut[i].ip = 0; 
+		for(j=0; j<6; j++){
+			NetArpLut[i].mac[j] = 0; 
+		}
+		NetArpLut[i].count = 0; 
+	}
 	
 	*pEMAC_OPMODE = 0; // hw ref p 8-70, writes to the address reg must occur when rx & tx disabled.
 
@@ -370,12 +388,6 @@ void SetupMacAddr(u8 * MACaddr){
 	printf_hex("MAC_ADDRHI ", *pEMAC_ADDRHI); 
 	printf_str("\n"); 
 	
-	NetDestMAC[0] = 0x00; 
-	NetDestMAC[1] = 0x19; 
-	NetDestMAC[2] = 0xD1; 
-	NetDestMAC[3] = 0x6A; 
-	NetDestMAC[4] = 0x40; 
-	NetDestMAC[5] = 0x8B; 
 }
 
 void PollMdcDone(void){
@@ -682,10 +694,10 @@ int ARP_respond(u8* data, int length){
 	}
 	return 0; 
 }
-void ARP_rx(){
+void ARP_rx(u32 who){
 	//implicity assumes that you want to discover the destination MAC.
 	//very simple networking...
-	int length, i;
+	int length;
 	arp_packet * p; 
 	u8* data;
 	int gotit = 0; 
@@ -709,15 +721,14 @@ void ARP_rx(){
 					p->arp.tha[4] == NetOurMAC[4] && 
 					p->arp.tha[5] == NetOurMAC[5] )
 				{
-					if(	(p->arp.spa[0] == (NetDestIP & 0xff)) &
-						(p->arp.spa[1] == ((NetDestIP>>8) & 0xff)) &&
-						(p->arp.spa[2] == ((NetDestIP>>16) & 0xff)) &&
-						(p->arp.spa[3] == ((NetDestIP>>24) & 0xff)) ){
-						printf_ip("ARP: discovered MAC address for ", NetDestIP);
-						for(i=0; i<6; i++){
-							//printf_hex("", (u32)(p->arp.sha[i])); 
-							NetDestMAC[i] = p->arp.sha[i]; 
-						}
+					if(	(p->arp.spa[0] == (who & 0xff)) &
+						(p->arp.spa[1] == ((who>>8) & 0xff)) &&
+						(p->arp.spa[2] == ((who>>16) & 0xff)) &&
+						(p->arp.spa[3] == ((who>>24) & 0xff)) )
+					{
+						printf_ip("ARP: discovered MAC address for ", who);
+						//save it to the LUT.  first find an open slot.
+						ARP_lut_add(who, p->arp.sha);
 					}
 					udelay(16000); 
 					gotit = 1; 
@@ -730,12 +741,48 @@ void ARP_rx(){
 		}
 	}
 }
-void ARP_req(){
-	ARP_tx(NetDestIP); 
-	ARP_rx(NetDestIP); 
+void ARP_lut_add(u32 who, u8* mac){
+	int i, j, cnt; 
+	for(i=0; i<10; i++){
+		if(NetArpLut[i].ip == 0) break; 
+	} //very limited networking stack here... 
+	if(i == 10){
+		//then we have to search for the oldest to replace. 
+		i = 0; 
+		cnt = NetArpLut[i].count; 
+		for(j=0; j<10; j++){
+			if(NetArpLut[j].count < cnt) i = j; 
+		}
+	}
+	NetArpLut[i].ip = who; 
+	for(j=0; j<6; j++){
+		NetArpLut[i].mac[j] = mac[j]; 
+	}
+	NetArpLut_count++; //let it wrap if need be..
+	NetArpLut[i].count = NetArpLut_count; 
+}
+int ARP_lu(u32 who, u8* mac_dest){
+	//see if it is in the ARP LUT; if not, get the address. 
+	int i, j; 
+	for(i=0; i<10; i++){
+		if(NetArpLut[i].ip == who){
+			//sweet, copy it over
+			for(j=0; j<6;j++) {
+				*mac_dest++ = NetArpLut[i].mac[j]; 
+			}
+			return 1; 
+		}
+	}
+	return 0; 
+}
+void ARP_req(u32 who, u8* mac_dest){
+	if(ARP_lu(who, mac_dest)) return; 
+	ARP_tx(who); 
+	ARP_rx(who); //probably need some timeouts here. for that need a realtime clock. 
+	ARP_lu(who, mac_dest); 
 }
 
-u8* eth_header_setup(int* length){
+u8* eth_header_setup(int* length, u32 destIP){
 	//length is the total number of bytes in the packet, including ethernet headers. 
 	int i;
 	eth_header* eth; 
@@ -745,10 +792,9 @@ u8* eth_header_setup(int* length){
 	
 	eth->length = (*length) - 2;//-2 for the length short.
 	*length -= sizeof(eth_header); //for passing to the next protocol layer.
+	//need to get the MAC address of this destination.. 
+	ARP_req(destIP, &(eth->dest[0])); 
 	
-	for(i=0; i<6; i++){
-		eth->dest[i] = NetDestMAC[i]; 
-	}
 	for(i=0; i<6; i++){
 		eth->src[i] = NetOurMAC[i];
 	}
@@ -851,7 +897,7 @@ u8* tcp_header_setup(u8* data, int* length, u8 flags, u32 seq, u32 ack){
 	return data; 
 }
 
-int ether_testUDP(){
+int ether_testUDP(u32 destIP){
 	int i; 
 	udp_packet * p;
 	u8*	data; 
@@ -859,9 +905,8 @@ int ether_testUDP(){
 	p = (udp_packet*)(txbuf[txIdx]->FrmData); 
 	p->eth.length = sizeof(udp_packet) + 22;
 	
-	for(i=0; i<6; i++){
-		p->eth.dest[i] = NetDestMAC[i]; 
-	}
+	ARP_req(destIP, NetDataDestIP); 
+
 	for(i=0; i<6; i++){
 		p->eth.src[i] = NetOurMAC[i];
 	}
@@ -904,7 +949,7 @@ u8* udp_packet_setup(int len){
 	u8*	data; 
 	
 	length = sizeof(udp_packet) + len; 
-	data = eth_header_setup(&length); 
+	data = eth_header_setup(&length, NetDataDestIP); 
 	data = ip_header_setup(data, &length, NetDataDestIP, IP_PROT_UDP); 
 	data = udp_header_setup(data, &length, 4341, 4340); 
 	
@@ -921,7 +966,7 @@ u8* icmp_packet_setup(int len, u32 dest, u8 type, u16 id, u16 seq){
 	u8* data; 
 	
 	length = sizeof(icmp_packet) + len; 
-	data = eth_header_setup(&length); 
+	data = eth_header_setup(&length, dest); 
 	data = ip_header_setup(data, &length, dest, IP_PROT_ICMP); 
 	data = icmp_header_setup(data, &length, type, id, seq); 
 	
@@ -945,10 +990,10 @@ int icmp_rx(u8* data, int length){
 			if(p->icmp.type == ICMP_ECHO_REQUEST ){
 				printf_ip("got an ICMP ping req from ", htonl(p->ip.src));
 				NetDestIP = p->ip.src; 
-				int i; 
-				for(i=0; i<6; i++){
-					NetDestMAC[i] = p->eth.src[i]; 
-				}
+				
+				//should copy this MAC address over, since we'll have to reply anyway. 
+				ARP_lut_add(p->ip.src, p->eth.src); 
+				
 				printf_str("\n"); 
 				//well then, reply to it! 
 				//note who is sending it. 

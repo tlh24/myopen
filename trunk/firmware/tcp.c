@@ -23,7 +23,7 @@ u8* tcp_packet_setup(int len, u32 dest, u8 flags, u32 seq, u32 ack){
 	u8* data; 
 	
 	length = sizeof(tcp_packet) + len; 
-	data = eth_header_setup(&length); 
+	data = eth_header_setup(&length, dest); 
 	//printf_int("tcp packet setup: ip packet length: ", length); 
 	//printf_str("\n"); 
 	data = ip_header_setup(data, &length, dest, IP_PROT_TCP); 
@@ -95,10 +95,8 @@ int tcp_rx(u8* data, int length){
 			//printf_str("got a TCP packet port 80");
 			//printf_ip(" src ", htonl(p->ip.src)); 
 			//printf_str("\n"); 
-			NetDestIP = p->ip.src; //save it so we sent this guy data in the future.
-			for(i=0; i<6; i++){
-				NetDestMAC[i] = p->eth.src[i]; 
-			}
+			//save it so we sent this guy data in the future.
+			ARP_lut_add(p->ip.src, p->eth.src); 
 			//now, must decide what to do with this packet. 
 			if(p->tcp.flags == TCP_FLAG_RST){
 				printf_str("TCP RST\n"); 
