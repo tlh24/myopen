@@ -394,6 +394,8 @@ EXC_HANDLER:          // exception handler
 	rtx;
 
 _THANDLER:            // Timer Handler 6 (core timer)
+	//don't need this (?) as we have the sample counter.. ?
+	
 	rti; 
 
 

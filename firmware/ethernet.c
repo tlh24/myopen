@@ -285,8 +285,8 @@ int bfin_EMAC_init( ){
 	NetIPID = 0; //0 = unconfigured. 
 	NetOurIP = 0; 
 	NetSubnetMask = 0; 
-	NetOurIP = FormatIPAddress(192, 168, 0, 9); 
-	NetDestIP = FormatIPAddress(192, 168, 1, 108); 
+	NetOurIP = FormatIPAddress(192, 168, 1, 9); 
+	NetDestIP = FormatIPAddress(192, 168, 0, 1); 
 	NetDataDestIP = FormatIPAddress(192, 168, 0, 0); 
 	TcpState = TCP_LISTEN; 
 	TcpSeqClient = 0; 

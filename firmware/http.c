@@ -315,8 +315,20 @@ int htmlDefault(){
 		
 	dest = htmlDiv(dest, &len, 'b'); 
 	dest = strcpy(dest, &len, "<form action=\"/data\" method=\"POST\"/>\n"); 
-	dest = strcpy(dest, &len, "get last<input type=\"submit\" name=\"rawLen\" value=\"1500\"/> samples<br/>"); 
-	dest = strcpy(dest, &len, "</form>\n</div>\n</body>\n</html>\r\n\r\n"); 
+	dest = strcpy(dest, &len, "get last<input type=\"submit\" name=\"rawLen\" value=\"1500\"/> samples<br"); 
+	dest = strcpy(dest, &len, "/>\n</form></div>\n"); 
+	//printout an 'uptime' indicator. 
+	j = *((u32*)MS_CTR); 
+	dest = strcpy(dest, &len, " uptime "); 
+	int s = j/1000;
+	int m = s/60; 
+	dest = strprintf_int(dest, &len, m);
+	dest = strcpy(dest, &len, ":"); 
+	dest = strprintf_int(dest, &len, s - m*60);
+	dest = strcpy(dest, &len, "."); 
+	dest = strprintf_int(dest, &len, j - s*1000); 
+	//
+	dest = strcpy(dest, &len, "\n</body>\n</html>\r\n\r\n"); 
 	return len; 
 }
 char* htmlDiv(char* dest, int* len, char color){

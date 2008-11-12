@@ -113,6 +113,7 @@ int tcp_rx(u8* data, int length){
 				TcpSeqClient++; //that's the arbitration protocol
 				TcpClientPort = p->tcp.src;
 				//set up a response.
+				NetDestIP = p->ip.src; 
 				tcp_packet_setup(0, NetDestIP, 
 					TCP_FLAG_SYN | TCP_FLAG_ACK, TcpSeqHost, TcpSeqClient); 
 				TcpSeqHost++; 
@@ -137,6 +138,7 @@ int tcp_rx(u8* data, int length){
 			if(p->tcp.flags & TCP_FLAG_FIN ){
 				printf_str("TCP got FIN\n"); 
 				TcpSeqClient = htonl(p->tcp.seq); 
+				NetDestIP = p->ip.src; 
 				TcpSeqClient++; 
 				if( TcpState == TCP_CONNECTED ) {
 					tcp_packet_setup(0, NetDestIP,
@@ -166,6 +168,7 @@ int tcp_rx(u8* data, int length){
 				payload += (p->tcp.dataoff & 0xf0)/4; //divide by 4 b/c it is << 4 & specifies 32 bit words. 
 				TcpSeqClient = htonl(p->tcp.seq); 
 				TcpSeqClient += rxlen; 
+				NetDestIP = p->ip.src; 
 				//start sending from whatever they acked last. 
 				u32 offset = htonl(p->tcp.ack) - TcpSeqHttpStart; 
 				//see if this was just an ack - if so, and we have more data to send, then send it. 
