@@ -115,7 +115,7 @@ int main() {
 	*pUART0_DLH = 0;  //the system clock is 120Mhz. baud rate is 115200. 
 	*pUART0_LCR = 0x0003; //parity disabled, 1 stop bit, 8 bit word. 
 	*pUART0_GCTL = 0x0001; //enable the clock.
-	printf_int("Myopen svn v.", /*SVN_VERSION{*/110/*}*/ ) ; 
+	printf_int("Myopen svn v.", /*SVN_VERSION{*/111/*}*/ ) ; 
 	printf_str("\n"); 
 	printf_str("checking SDRAM...\n"); 
 	unsigned short* p; 
@@ -198,6 +198,7 @@ int main() {
 	*wr_ptr = 0; 
 	*tr_ptr = 0; 
 	*adc_ctr = 0; 
+	*((u32*)MS_CTR) = 0; 
 	//set up the receive first, since it is controled by the transmit sport. 
 	*pSPORT0_RCR2 = 0x0100 + 19; //enable second side, serial word length 20
 	*pSPORT1_RCR2 = 0x0100 + 19; 

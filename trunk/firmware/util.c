@@ -99,7 +99,7 @@ int substr(char*a, char*b, int blen){
 	return 0; 
 }
 int sprintf_int(char* dest, int d){
-	int i, m, j;
+	int i, m, j, k;
 	//print the integer & figure out how long the string will be. 
 	//note: the integer will be printed backwards!
 	i = 0; 
@@ -108,21 +108,23 @@ int sprintf_int(char* dest, int d){
 		i = 1; 
 	}else if(d > 0){
 		i = 0; 
-		while(d > 0 && i < 128){
-			m = mod(d, 10); 
+		while(d > 0 && i < 11){
+			k = d/10; 
+			m = d-k*10; 
 			printf_temp[i] = (char)m + 48; 
 			i++; 
-			d = div(d, 10);  
+			d = k; 
 		}
 	}else if(d < 0){
 		//convert to positive.
 		d = 0x80000000 - (0x7fffffff & d);
 		i = 0; 
-		while(d > 0 && i < 128){
-			m = mod(d, 10); 
+		while(d > 0 && i < 11){
+			k = d/10; 
+			m = d-k*10; 
 			printf_temp[i] = (char)m + 48; 
 			i++; 
-			d = div(d, 10);  
+			d = k; 
 		}
 		printf_temp[i] = '-'; 
 		i++; 
@@ -133,9 +135,35 @@ int sprintf_int(char* dest, int d){
 	}
 	return i; //the length of the resulting string.
 }
+int sprintf_hex(char* dest, int d){
+	//we already know the length of the hex number will be 10 chars. (0x then 8 digits)
+	// so no need to reverse it.
+	int len, i, j, out; 
+	short s;
+	j = 0; 
+	dest[j] = '0'; j++; 
+	dest[j] = 'x'; j++; 
+	for(i=0; i< 8; i++){
+		out = d >> ((7-i)*4); 
+		s = out & 0x0f; 
+		if(s > 9){
+			s += 55; 
+		}else{
+			s += 48;
+		}
+		dest[j + i] = (char)s;
+	}
+	return 10;
+}
 //this works the same way as strcpy : 
 char* strprintf_int(char* dest, int* len, int d){
 	int n = sprintf_int(dest, d); 
+	*len += n; 
+	dest += n; 
+	return dest; 
+}
+char* strprintf_hex(char* dest, int* len, int d){
+	int n = sprintf_hex(dest, d); 
 	*len += n; 
 	dest += n; 
 	return dest; 
