@@ -198,7 +198,7 @@ int bfin_EMAC_recv(u8** data){
 			rxIdx++;
 		
 		//note! might get overrun!! 
-		if(ARP_respond(*data, length))
+		if(ARP_rx(*data, length))
 			length = -1; 
 		else if(icmp_rx(*data, length))
 			length = -1; 
@@ -240,7 +240,7 @@ int bfin_EMAC_recv_poll(u8** data){
 	*data = (u8*)(rxbuf[rxIdx]->FrmData); 
 
 	//ARP fixme here!! 
-	if(ARP_respond(*data, length))
+	if(ARP_rx(*data, length))
 		length = -1; 
 	else if(icmp_rx(*data, length))
 		length = -1; 
@@ -589,7 +589,7 @@ u32 pack4chars(u8* a){
 	return out; 
 }
 
-u8* eth_header_setup(int* length, u32 destIP){
+u8* eth_header_setup(int* length, char* result, u32 destIP){
 	//length is the total number of bytes in the packet, including ethernet headers. 
 	int i;
 	eth_header* eth; 
@@ -600,7 +600,10 @@ u8* eth_header_setup(int* length, u32 destIP){
 	eth->length = (*length) - 2;//-2 for the length short.
 	*length -= sizeof(eth_header); //for passing to the next protocol layer.
 	//need to get the MAC address of this destination.. 
-	ARP_req(destIP, &(eth->dest[0])); 
+	if(ARP_req(destIP, &(eth->dest[0])) == 0){
+		*result = -1; 
+		return 0; 
+	}
 	
 	for(i=0; i<6; i++){
 		eth->src[i] = NetOurMAC[i];
@@ -609,6 +612,7 @@ u8* eth_header_setup(int* length, u32 destIP){
 	
 	data = (u8*)eth; 
 	data += sizeof(eth_header); 
+	*result = 1; 
 	return data;
 }
 
@@ -712,7 +716,9 @@ int ether_testUDP(u32 destIP){
 	p = (udp_packet*)(txbuf[txIdx]->FrmData); 
 	p->eth.length = sizeof(udp_packet) + 22;
 	
-	ARP_req(destIP, NetDataDestIP); 
+	if(ARP_req(destIP, &(p->eth.dest[0])) == 0){
+		return -1; 
+	}
 
 	for(i=0; i<6; i++){
 		p->eth.src[i] = NetOurMAC[i];
@@ -746,7 +752,7 @@ int ether_testUDP(u32 destIP){
 	return 0; 
 }
 
-u8* udp_packet_setup(int len){
+u8* udp_packet_setup(int len, char* result){
 	//returns a pointer which the caller can fill. 
 	//len is the size of the data to be transmitted.
 	//after filling it with data, caller must call 
@@ -756,14 +762,15 @@ u8* udp_packet_setup(int len){
 	u8*	data; 
 	
 	length = sizeof(udp_packet) + len; 
-	data = eth_header_setup(&length, NetDataDestIP); 
+	data = eth_header_setup(&length, result, NetDataDestIP);
+	if(*result < 0) return 0; 
 	data = ip_header_setup(data, &length, NetDataDestIP, IP_PROT_UDP); 
 	data = udp_header_setup(data, &length, 4341, 4340); 
 	
 	return data; 
 }
 
-u8* icmp_packet_setup(int len, u32 dest, u8 type, u16 id, u16 seq){
+u8* icmp_packet_setup(int len, char* result, u32 dest, u8 type, u16 id, u16 seq){
 	//returns a pointer which the caller can fill. 
 	//len is the size of the data to be transmitted.
 	//after filling it with data, caller must call 
@@ -773,14 +780,15 @@ u8* icmp_packet_setup(int len, u32 dest, u8 type, u16 id, u16 seq){
 	u8* data; 
 	
 	length = sizeof(icmp_packet) + len; 
-	data = eth_header_setup(&length, dest); 
+	data = eth_header_setup(&length, result, dest); 
+	if(*result < 0) return 0; 
 	data = ip_header_setup(data, &length, dest, IP_PROT_ICMP); 
 	data = icmp_header_setup(data, &length, type, id, seq); 
 	
 	return data;
 }
 int icmp_rx(u8* data, int length){
-	
+	char result; 
 	icmp_packet* p; 
 	
 	p = (icmp_packet*)data; 
@@ -809,11 +817,13 @@ int icmp_rx(u8* data, int length){
 				data += sizeof(icmp_packet); 
 				length -= sizeof(icmp_packet) - 2; //-2 b/c of the length short @ the beginning of the ethernet hdr.
 				//printf_int(" d.len ", length ); 
-				u8* out = icmp_packet_setup(length, src, ICMP_ECHO_REPLY,
+				u8* out = icmp_packet_setup(length, &result, src, ICMP_ECHO_REPLY,
 					p->icmp.id, p->icmp.seq);
-				memcpy(data, out, length); 
-				bfin_EMAC_send_nocopy();
-				return 1;
+				if(result > 0){
+					memcpy(data, out, length); 
+					bfin_EMAC_send_nocopy();
+					return 1;
+				}
 			}
 		}
 	}

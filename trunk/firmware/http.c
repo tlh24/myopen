@@ -318,7 +318,7 @@ int htmlDefault(){
 	dest = strcpy(dest, &len, "get last<input type=\"submit\" name=\"rawLen\" value=\"1500\"/> samples<br"); 
 	dest = strcpy(dest, &len, "/>\n</form></div>\n"); 
 	//printout an 'uptime' indicator. 
-	j = *((u32*)MS_CTR); 
+	j = GTIME; 
 	dest = strcpy(dest, &len, " uptime "); 
 	int s = j/1000;
 	int m = s/60; 

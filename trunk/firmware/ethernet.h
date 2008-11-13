@@ -91,7 +91,7 @@ typedef struct arp_header {
 #define ARP_OP_REPLY	2
 #define ARP_LUT_N		10
 #define ARP_LUT_VALID 	1
-#define ARP_LUT_WAIT 	1
+#define ARP_LUT_WAIT 	2
 typedef struct arp_lut{
 	u32	ip; 
 	u8	mac[6]; 
@@ -235,6 +235,7 @@ int bfin_EMAC_send_nocopy();
 int bfin_EMAC_recv(u8** data);
 int bfin_EMAC_recv_poll(u8** data);
 
+u32 FormatIPAddress(u8 a, u8 b, u8 c, u8 d); 
 void SetupMacAddr();
 
 void PollMdcDone(void);
@@ -251,21 +252,23 @@ u32 htonl(u32 in);
 u32 pack4chars(u8* a);
 
 int ether_testUDP(); 
+void ARP_init(); 
 void ARP_tx(u32 who);
-void ARP_rx();
+int ARP_rx(u8* data, int length);
+int ARP_lut_find();
 void ARP_lut_add(u32 who, u8* mac); 
 int ARP_lu(u32 who, u8* mac_dest);
-int ARP_respond(u8* data, int length);
-void ARP_req(u32 who, u8* mac_dest);
+int ARP_req(u32 who, u8* mac_dest);
 
-u8* eth_header_setup(int* length, u32 destIP);
+u8* eth_header_setup(int* length,  char* result, u32 destIP);
 u8* ip_header_setup(u8* data, int* length, u32 dest, u8 protocol);
 u8* icmp_header_setup(u8* data, int* length, u8 type, u16 id, u16 seq);
 u8* udp_header_setup(u8* data, int* length, u16 sport, u16 dport);
 u8* tcp_header_setup(u8* data, int* length, u8 flags, u32 seq, u32 ack);
-u8* icmp_packet_setup(int len, u32 dest, u8 type, u16 id, u16 seq);
-u8* udp_packet_setup(int len);
-u8* tcp_packet_setup(int len, u32 dest, u8 flags, u32 seq, u32 ack);
+
+u8* icmp_packet_setup(int len, char* result, u32 dest, u8 type, u16 id, u16 seq);
+u8* udp_packet_setup(int len, char* result);
+u8* tcp_packet_setup(int len, char* result, u32 dest, u8 flags, u32 seq, u32 ack);
 void tcp_checksum(int length);
 int tcp_rx(u8* data, int length);
 int tcp_burst(int iter, u32 offset); 
@@ -293,6 +296,7 @@ extern u16 TcpClientPort; //from which port a client is querying us.
 extern u16 txIdx;		/* index of the current RX buffer */
 extern u16 rxIdx;		/* index of the current TX buffer */
 extern u16 NetIPID;		// identification # for IP header.
+extern u8   NetOurMAC[6];
 extern u32 NetOurIP;	//our IP address, in network byte-order 
 					//here reversed, 192.168.1.200 = 0xC801A8C0
 extern u32 NetDestIP; 	//destination IP address, as above. 
