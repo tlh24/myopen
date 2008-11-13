@@ -89,10 +89,15 @@ typedef struct arp_header {
 #define ARP_PTYPE_IPV4	0x0800
 #define ARP_OP_REQ	1
 #define ARP_OP_REPLY	2
+#define ARP_LUT_N		10
+#define ARP_LUT_VALID 	1
+#define ARP_LUT_WAIT 	1
 typedef struct arp_lut{
 	u32	ip; 
 	u8	mac[6]; 
-	u16	count; 
+	u16	age; //for ordering when it was entered into the db. 
+	u32	timeout; //when we should send another ARP request.
+	u32	flags; //has to be this big to mantain alignment. 
 } arp_lut; 
 
 typedef struct ip_header {
@@ -275,6 +280,9 @@ extern ADI_ETHER_BUFFER *txbuf[TX_BUF_CNT];
 extern ADI_ETHER_BUFFER *rxbuf[RX_BUF_CNT];
 extern u16 txIdx;		/* index of the current RX buffer */
 extern u16 rxIdx;		/* index of the current TX buffer */
+
+extern arp_lut		NetArpLut[ARP_LUT_N]; 
+extern u16		NetArpLut_count; 
 
 extern u32 TcpState; 
 extern u32 TcpSeqClient; //the last Syn packet recieved. host order.

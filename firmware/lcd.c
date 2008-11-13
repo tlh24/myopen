@@ -266,11 +266,11 @@ int LCD_draw_str(char* str){
 	return i; 
 }
 int printf_str(char* str){return LCD_draw_str(str); }
-int printf_ip(char* str, u32 addr){
-	printf_int( str, (addr>>24)& 0xff); 
-	printf_int( ".", (addr>>16)& 0xff); 
+int printf_ip(char* str, u32 addr){ //all IPs should be stored in network byte order. 
+	printf_int( str, (addr)& 0xff); 
 	printf_int( ".", (addr>>8)& 0xff); 
-	printf_int( ".", (addr)& 0xff); 
+	printf_int( ".", (addr>>16)& 0xff); 
+	printf_int( ".", (addr>>24)& 0xff); 
 	printf_str(" "); 
 	return 0; 
 }

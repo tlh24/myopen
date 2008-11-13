@@ -1,6 +1,6 @@
 ASMSRCS = crt0.asm peripheral.asm lms.asm sample.asm
 DBGASMSRCS = init_sdram_dbg.asm crt0_dbg.asm peripheral.asm lms.asm sample.asm
-CSRCS = main.c lcd.c util.c ethernet.c tcp.c http.c usb.c
+CSRCS = main.c lcd.c util.c ethernet.c arp.c tcp.c http.c usb.c
 INITSRC = init_sdram.asm
 # note: the order of objects in the .ldr mirrors the order in this list!
 

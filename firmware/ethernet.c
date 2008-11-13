@@ -47,11 +47,6 @@ u32 NetSubnetMask; //also should be supplied by the DHCP server.
 u8 		NetOurMAC[6];
 u16 PHYregs[NO_PHY_REGS];	/* u16 PHYADDR; */
 
-//need to keep a IP -> MAC LUT.  may need timeout in this struct..
-arp_lut	NetArpLut[10]; 
-u16		NetArpLut_count; 
-
-
 /* DMAx_CONFIG values at DMA Restart */
 const ADI_DMA_CONFIG_REG rxdmacfg = { 1, 1, 2, 0, 0, 0, 0, 5, 7 };
 
@@ -243,11 +238,8 @@ int bfin_EMAC_recv_poll(u8** data){
 	length -= 4;
 	printf_int("got packet: length ", length); 
 	*data = (u8*)(rxbuf[rxIdx]->FrmData); 
-	/* todo!! 
-	need to make the ARP a bit more intelligent - instead of a blocking wait, 
-	need a non-blocking wait with timeout, incase we are ARPing something that does 
-	not exist (on our network). 
-	*/
+
+	//ARP fixme here!! 
 	if(ARP_respond(*data, length))
 		length = -1; 
 	else if(icmp_rx(*data, length))
@@ -293,14 +285,7 @@ int bfin_EMAC_init( ){
 	TcpSeqHost = 0x09da24b5; 
 	TcpClientPort = 0; 
 	
-	//init the ARP LUT
-	for(i=0; i<10; i++){
-		NetArpLut[i].ip = 0; 
-		for(j=0; j<6; j++){
-			NetArpLut[i].mac[j] = 0; 
-		}
-		NetArpLut[i].count = 0; 
-	}
+	ARP_init(); 
 	
 	*pEMAC_OPMODE = 0; // hw ref p 8-70, writes to the address reg must occur when rx & tx disabled.
 
@@ -595,191 +580,13 @@ u32 htonl(u32 in){
 }
 u32 pack4chars(u8* a){
 	//takes care of memory-aligned access by looking only at bytes.
-	//also converts from network to host byte order. 
+	//mantains byte order - if it is stored little-endian, it remains that way.
 	u32 out; 
-	out = *a++; 
-	out = out << 8; 
-	out = out | *a++; 
-	out = out << 8; 
-	out = out | *a++; 
-	out = out << 8; 
-	out = out | *a++; 
+	out = ((*a++)&0xff); 
+	out = ((*a++)&0xff)<< 8; 
+	out = ((*a++)&0xff)<< 16; 
+	out = ((*a++)&0xff)<< 24; 
 	return out; 
-}
-
-void ARP_tx(u32 who){
-	int i; 
-	arp_packet* p; 
-	
-	p = (arp_packet*)(txbuf[txIdx]->FrmData); 
-	p->eth.length = sizeof(arp_packet); 
-	
-	//fill out the data structures. 
-	for(i=0; i<6; i++){
-		p->eth.dest[i] = 0xff; //broadcast.
-	}
-	for(i=0; i<6; i++){
-		p->eth.src[i] = NetOurMAC[i];
-	}
-	p->eth.protLen = htons(ETH_PROTO_ARP); 
-	
-	p->arp.htype = htons(ARP_HTYPE_ETH); 
-	p->arp.ptype = htons(ARP_PTYPE_IPV4); 
-	p->arp.hlen = 6; 
-	p->arp.plen = 4; 
-	p->arp.operation = htons(ARP_OP_REQ); 
-	for(i=0; i<6; i++){
-		p->arp.sha[i] = NetOurMAC[i]; 
-		p->arp.tha[i] = 0; //don't know it yet!
-	}
-	p->arp.spa[0] = NetOurIP & 0xff; 
-	p->arp.spa[1] = (NetOurIP >> 8) & 0xff; 
-	p->arp.spa[2] = (NetOurIP >> 16) & 0xff; 
-	p->arp.spa[3] = (NetOurIP >> 24) & 0xff; 
-	p->arp.tpa = who; 
-	
-	bfin_EMAC_send_nocopy();
-}
-int ARP_respond(u8* data, int length){
-	arp_packet * p; 
-	arp_packet * pt;
-	int i;
-	
-	p = (arp_packet*)(data); 
-	if(htons(p->eth.protLen) == ETH_PROTO_ARP && 
-		length >= sizeof(arp_packet)){
-		printf_ip("ARP packet, dest ", htonl(p->arp.tpa)); 
-		printf_str("\n"); 
-		if( 	p->arp.htype == htons(ARP_HTYPE_ETH)  && 
-			p->arp.ptype == htons(ARP_PTYPE_IPV4) &&
-			p->arp.hlen == 6 && 
-			p->arp.plen == 4 && 
-			p->arp.operation == htons(ARP_OP_REQ) &&
-			p->arp.tpa == NetOurIP)
-		{
-			printf_str("ARP request with our IP\n"); 
-	
-			pt = (arp_packet*)(txbuf[txIdx]->FrmData); 
-			pt->eth.length = sizeof(arp_packet) -2; 
-			
-			//fill out the data structures. 
-			for(i=0; i<6; i++){
-				pt->eth.dest[i] = p->eth.src[i];
-			}
-			for(i=0; i<6; i++){
-				pt->eth.src[i] = NetOurMAC[i];
-			}
-			pt->eth.protLen = htons(ETH_PROTO_ARP); 
-			
-			pt->arp.htype = htons(ARP_HTYPE_ETH); 
-			pt->arp.ptype = htons(ARP_PTYPE_IPV4); 
-			pt->arp.hlen = 6; 
-			pt->arp.plen = 4; 
-			pt->arp.operation = htons(ARP_OP_REPLY); 
-			for(i=0; i<6; i++){
-				pt->arp.sha[i] = NetOurMAC[i]; 
-				pt->arp.tha[i] = p->arp.sha[i]; 
-			}
-			pt->arp.spa[0] = NetOurIP & 0xff; 
-			pt->arp.spa[1] = (NetOurIP >> 8) & 0xff; 
-			pt->arp.spa[2] = (NetOurIP >> 16) & 0xff; 
-			pt->arp.spa[3] = (NetOurIP >> 24) & 0xff; 
-			pt->arp.tpa = FormatIPAddress(
-				p->arp.spa[0],p->arp.spa[1],p->arp.spa[2],p->arp.spa[3]); 
-			
-			printf_str("sending ARP response\n");
-			bfin_EMAC_send_nocopy();	
-			return 1; 
-		}
-	}
-	return 0; 
-}
-void ARP_rx(u32 who){
-	//implicity assumes that you want to discover the destination MAC.
-	//very simple networking...
-	int length;
-	arp_packet * p; 
-	u8* data;
-	int gotit = 0; 
-	
-	while(gotit == 0){
-		length = bfin_EMAC_recv_poll( &data); 
-		p = (arp_packet*)data; 
-
-		if(htons(p->eth.protLen) == ETH_PROTO_ARP){
-			//printf("ARP packet"); 
-			if( 	p->arp.htype == htons(ARP_HTYPE_ETH)  && 
-				p->arp.ptype == htons(ARP_PTYPE_IPV4) &&
-				p->arp.hlen == 6 && 
-				p->arp.plen == 4)
-			{
-				if(p->arp.operation == htons(ARP_OP_REPLY) && 
-					p->arp.tha[0] == NetOurMAC[0] && 
-					p->arp.tha[1] == NetOurMAC[1] && 
-					p->arp.tha[2] == NetOurMAC[2] && 
-					p->arp.tha[3] == NetOurMAC[3] && 
-					p->arp.tha[4] == NetOurMAC[4] && 
-					p->arp.tha[5] == NetOurMAC[5] )
-				{
-					if(	(p->arp.spa[0] == (who & 0xff)) &
-						(p->arp.spa[1] == ((who>>8) & 0xff)) &&
-						(p->arp.spa[2] == ((who>>16) & 0xff)) &&
-						(p->arp.spa[3] == ((who>>24) & 0xff)) )
-					{
-						printf_ip("ARP: discovered MAC address for ", who);
-						//save it to the LUT.  first find an open slot.
-						ARP_lut_add(who, p->arp.sha);
-					}
-					udelay(16000); 
-					gotit = 1; 
-				}
-			}else{
-				printf_str("ARP packet not addr. to us\n"); 
-			}
-		}else{
-			printf_str("not an ARP packet try again");
-		}
-	}
-}
-void ARP_lut_add(u32 who, u8* mac){
-	int i, j, cnt; 
-	for(i=0; i<10; i++){
-		if(NetArpLut[i].ip == 0) break; 
-	} //very limited networking stack here... 
-	if(i == 10){
-		//then we have to search for the oldest to replace. 
-		i = 0; 
-		cnt = NetArpLut[i].count; 
-		for(j=0; j<10; j++){
-			if(NetArpLut[j].count < cnt) i = j; 
-		}
-	}
-	NetArpLut[i].ip = who; 
-	for(j=0; j<6; j++){
-		NetArpLut[i].mac[j] = mac[j]; 
-	}
-	NetArpLut_count++; //let it wrap if need be..
-	NetArpLut[i].count = NetArpLut_count; 
-}
-int ARP_lu(u32 who, u8* mac_dest){
-	//see if it is in the ARP LUT; if not, get the address. 
-	int i, j; 
-	for(i=0; i<10; i++){
-		if(NetArpLut[i].ip == who){
-			//sweet, copy it over
-			for(j=0; j<6;j++) {
-				*mac_dest++ = NetArpLut[i].mac[j]; 
-			}
-			return 1; 
-		}
-	}
-	return 0; 
-}
-void ARP_req(u32 who, u8* mac_dest){
-	if(ARP_lu(who, mac_dest)) return; 
-	ARP_tx(who); 
-	ARP_rx(who); //probably need some timeouts here. for that need a realtime clock. 
-	ARP_lu(who, mac_dest); 
 }
 
 u8* eth_header_setup(int* length, u32 destIP){
@@ -988,7 +795,7 @@ int icmp_rx(u8* data, int length){
 				return 1; 
 			}
 			if(p->icmp.type == ICMP_ECHO_REQUEST ){
-				printf_ip("got an ICMP ping req from ", htonl(p->ip.src));
+				printf_ip("got an ICMP ping req from ", p->ip.src);
 				NetDestIP = p->ip.src; 
 				
 				//should copy this MAC address over, since we'll have to reply anyway. 
@@ -1103,7 +910,7 @@ int DHCP_rx(){
 				
 				if(p->dhcp.yiaddr != 0){
 					NetOurIP = p->dhcp.yiaddr; 
-					printf_ip("got ip address ", htonl(NetOurIP)); 
+					printf_ip("got ip address ", NetOurIP); 
 					printf_str("\n"); 
 				}
 				/*this, for some reason, does not work -- ?
@@ -1194,21 +1001,20 @@ void DHCP_parse(u8* ptr, int length){
 					printf_ip("bcast addr: ", pack4chars(ptr) ); 
 					break; 				
 				case 51: 
-					printf_int("DHCP lease time: ", pack4chars(ptr) ); 
+					printf_int("DHCP lease time: ", htonl(pack4chars(ptr)) ); 
 					break; 	
 				case 53: 
 					printf_int("DHCP message type ", *ptr); 
 					break; 
 				case 54: 
 					NetDHCPserv = pack4chars(ptr); 
-					//pack4chars puts it in little-endian, htonl 2 get it back in net order
 					printf_ip("DHCP server id: ", NetDHCPserv); 
 					break; 
 				case 58: 
-					printf_int("DHCP renewal time: ", pack4chars(ptr) ); 
+					printf_int("DHCP renewal time: ", htonl(pack4chars(ptr)) ); 
 					break; 	
 				case 59: 
-					printf_int("DHCP rebinding time: ", pack4chars(ptr) ); 
+					printf_int("DHCP rebinding time: ", htonl(pack4chars(ptr)) ); 
 					break; 	
 				default: 
 					printf_int("unkown DHCP opt.", option); 
