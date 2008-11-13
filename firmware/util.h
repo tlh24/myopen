@@ -5,6 +5,8 @@
 #define u16 unsigned short
 #define u32 unsigned int
 
+#define GTIME (*((u32*)(MS_CTR)))
+
 #define PRINTF_BUFFER_SIZE 256
 extern char printf_temp[PRINTF_BUFFER_SIZE];  
 extern char printf_out[PRINTF_BUFFER_SIZE]; 

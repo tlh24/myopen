@@ -15,7 +15,7 @@ u32 TcpHighestAck ; //the largest ACKed byte that the reciever claims to have go
 u32 TcpHighestAckTimeout; //when we should go back and transmit from HighestAck
 u32 TcpBurstOffset ; 
 
-u8* tcp_packet_setup(int len, u32 dest, u8 flags, u32 seq, u32 ack){
+u8* tcp_packet_setup(int len, char* result, u32 dest, u8 flags, u32 seq, u32 ack){
 	//setup a tcp packet, caller sends it. 
 	//len is the payload length.
 	
@@ -23,7 +23,8 @@ u8* tcp_packet_setup(int len, u32 dest, u8 flags, u32 seq, u32 ack){
 	u8* data; 
 	
 	length = sizeof(tcp_packet) + len; 
-	data = eth_header_setup(&length, dest); 
+	data = eth_header_setup(&length, result, dest);
+	if( *result < 0 ) return 0; 
 	//printf_int("tcp packet setup: ip packet length: ", length); 
 	//printf_str("\n"); 
 	data = ip_header_setup(data, &length, dest, IP_PROT_TCP); 
@@ -84,9 +85,8 @@ int tcp_length(tcp_packet* p){
 int tcp_rx(u8* data, int length){
 	tcp_packet* p; 
 	int rxlen; 
-	char* payload;
+	char* payload, result;
 	u8* tx; 
-	int i; 
 
 	p = (tcp_packet*)data; 
 	if(p->eth.protLen == htons(ETH_PROTO_IP4)){
@@ -114,14 +114,16 @@ int tcp_rx(u8* data, int length){
 				TcpClientPort = p->tcp.src;
 				//set up a response.
 				NetDestIP = p->ip.src; 
-				tcp_packet_setup(0, NetDestIP, 
+				tcp_packet_setup(0, &result, NetDestIP, 
 					TCP_FLAG_SYN | TCP_FLAG_ACK, TcpSeqHost, TcpSeqClient); 
-				TcpSeqHost++; 
-				TcpState = TCP_SYN_RXED; 
-				//checksum. 
-				tcp_checksum(0); //no payload.
-				bfin_EMAC_send_nocopy();
-				return 1; 
+				if(result > 0){
+					TcpSeqHost++; 
+					TcpState = TCP_SYN_RXED; 
+					//checksum. 
+					tcp_checksum(0); //no payload.
+					bfin_EMAC_send_nocopy();
+					return 1;
+				}					
 			}
 			if(p->tcp.flags == TCP_FLAG_ACK && TcpState == TCP_SYN_RXED){
 				if(htonl(p->tcp.ack) != TcpSeqHost){
@@ -141,20 +143,24 @@ int tcp_rx(u8* data, int length){
 				NetDestIP = p->ip.src; 
 				TcpSeqClient++; 
 				if( TcpState == TCP_CONNECTED ) {
-					tcp_packet_setup(0, NetDestIP,
+					tcp_packet_setup(0, &result, NetDestIP,
 						TCP_FLAG_FIN | TCP_FLAG_ACK, TcpSeqHost, TcpSeqClient); 
-					TcpState = TCP_CLOSE; 
-					tcp_checksum(0); //no payload.
-					bfin_EMAC_send_nocopy();
-					return 1; 
+					if(result > 0){
+						TcpState = TCP_CLOSE; 
+						tcp_checksum(0); //no payload.
+						bfin_EMAC_send_nocopy();
+						return 1; 
+					}
 				}
 				if( TcpState == TCP_CLOSING ) {
-					tcp_packet_setup(0, NetDestIP,
+					tcp_packet_setup(0, &result, NetDestIP,
 						 TCP_FLAG_ACK, TcpSeqHost, TcpSeqClient); //final ack.
-					TcpState = TCP_CLOSE; 
-					tcp_checksum(0); //no payload.
-					bfin_EMAC_send_nocopy();
-					return 1; 
+					if(result > 0){
+						TcpState = TCP_CLOSE; 
+						tcp_checksum(0); //no payload.
+						bfin_EMAC_send_nocopy();
+						return 1; 
+					}
 				}
 			}
 			if(p->tcp.flags & TCP_FLAG_ACK && TcpState == TCP_CLOSE){
@@ -198,15 +204,17 @@ int tcp_rx(u8* data, int length){
 				} else {
 					//well, couldn't do anything with that packet - ack it, maybe they'll send another.
 					if(TcpState == TCP_CLOSING ){
-						tx = tcp_packet_setup(0, NetDestIP, TCP_FLAG_ACK | TCP_FLAG_FIN,
+						tx = tcp_packet_setup(0, &result, NetDestIP, TCP_FLAG_ACK | TCP_FLAG_FIN,
 							TcpSeqHost, TcpSeqClient); 
 					} else {
-						tx = tcp_packet_setup(0, NetDestIP, TCP_FLAG_ACK ,
+						tx = tcp_packet_setup(0, &result, NetDestIP, TCP_FLAG_ACK ,
 							TcpSeqHost, TcpSeqClient); //keepalive function.
 					}
-					tcp_checksum(0); 
-					bfin_EMAC_send_nocopy();
-					return 1; 
+					if(result > 0){
+						tcp_checksum(0); 
+						bfin_EMAC_send_nocopy();
+						return 1; 
+					}
 				}
 			}
 		}
@@ -216,38 +224,41 @@ int tcp_rx(u8* data, int length){
 int tcp_burst(int iter, u32 offset){
 	int i = 0; 
 	int txlen;
+	char result; 
 	u8* tx; 
 	int totalLen = g_httpHeaderLen + g_httpContentLen; 
 	while( i < iter && offset < totalLen ){
 		int remainingLen = totalLen - offset ; 
 		txlen = remainingLen > 1024 ? 1024 : remainingLen;
 		TcpSeqHost = offset + TcpSeqHttpStart;
-		tx = tcp_packet_setup(txlen, NetDestIP,  
+		tx = tcp_packet_setup(txlen, &result, NetDestIP,  
 				TCP_FLAG_ACK | TCP_FLAG_PSH, //don't close the connection.
 				TcpSeqHost, TcpSeqClient); 
-		u8* src;
-		int txhdrlen = 0; 
-		if(offset < g_httpHeaderLen){
-			src = (u8*)HTTP_HEADER; 
-			src += offset; 
-			txhdrlen = g_httpHeaderLen - offset; 
-			memcpy(src, tx, txhdrlen); 
-			tx += txhdrlen ; 
-			txlen -= txhdrlen; 
-			offset += txhdrlen;  
-		}
-		src = (u8*)HTTP_CONTENT; 
-		src += offset - g_httpHeaderLen; 
-		memcpy(src, tx, txlen); 
-		offset += txlen; 
-		TcpSeqHost = offset + TcpSeqHttpStart;
-		tcp_checksum(txlen + txhdrlen); 
-		bfin_EMAC_send_nocopy();
-		i++; 
-		if( (rxbuf[rxIdx]->StatusWord & RX_COMP) && (rxbuf[rxIdx]->StatusWord & RX_OK) ) {
-			//we break out if another packet has been received -- so that we can take care of it.
-			// (it may be an ack to our data).  
-			i += iter; 
+		if(result > 0){
+			u8* src;
+			int txhdrlen = 0; 
+			if(offset < g_httpHeaderLen){
+				src = (u8*)HTTP_HEADER; 
+				src += offset; 
+				txhdrlen = g_httpHeaderLen - offset; 
+				memcpy(src, tx, txhdrlen); 
+				tx += txhdrlen ; 
+				txlen -= txhdrlen; 
+				offset += txhdrlen;  
+			}
+			src = (u8*)HTTP_CONTENT; 
+			src += offset - g_httpHeaderLen; 
+			memcpy(src, tx, txlen); 
+			offset += txlen; 
+			TcpSeqHost = offset + TcpSeqHttpStart;
+			tcp_checksum(txlen + txhdrlen); 
+			bfin_EMAC_send_nocopy();
+			i++; 
+			if( (rxbuf[rxIdx]->StatusWord & RX_COMP) && (rxbuf[rxIdx]->StatusWord & RX_OK) ) {
+				//we break out if another packet has been received -- so that we can take care of it.
+				// (it may be an ack to our data).  
+				i += iter; 
+			}
 		}
 	}
 	return i; 

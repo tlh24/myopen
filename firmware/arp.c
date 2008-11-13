@@ -10,6 +10,7 @@ arp_lut	NetArpLut[ARP_LUT_N];
 u16		NetArpLut_age; 
 
 void ARP_init(){
+	int i, j; 
 	for(i=0; i<ARP_LUT_N; i++){
 		NetArpLut[i].ip = 0; 
 		for(j=0; j<6; j++){
@@ -19,6 +20,7 @@ void ARP_init(){
 		NetArpLut[i].timeout = 0;
 		NetArpLut[i].flags = 0; 
 	}
+	NetArpLut_age = 100; 
 }
 
 void ARP_tx(u32 who){
@@ -62,8 +64,8 @@ int ARP_rx(u8* data, int length){
 	p = (arp_packet*)(data); 
 	if(htons(p->eth.protLen) == ETH_PROTO_ARP && 
 		length >= sizeof(arp_packet)){
-		printf_ip("ARP packet, dest ", htonl(p->arp.tpa)); 
-		printf_str("\n"); 
+		//printf_ip("ARP packet, dest ", p->arp.tpa); 
+		//printf_str("\n"); 
 		if( 	p->arp.htype == htons(ARP_HTYPE_ETH)  && 
 			p->arp.ptype == htons(ARP_PTYPE_IPV4) &&
 			p->arp.hlen == 6 && 
@@ -80,6 +82,7 @@ int ARP_rx(u8* data, int length){
 			{
 				u32 who = pack4chars(p->arp.spa);  
 				printf_ip("ARP: discovered MAC address for ", who);
+				printf_str("\n"); 
 				//save it to the LUT.  first find an open slot.
 				ARP_lut_add(who, p->arp.sha);
 				return 1; //handled. 
@@ -148,7 +151,23 @@ int ARP_lut_find(){
 	return i; 
 }
 void ARP_lut_add(u32 who, u8* mac){
-	int i = ARP_lut_find(); 
+	int i, j; 
+	//first have to see if it's already there... 
+	for(i=0; i<ARP_LUT_N; i++){
+		if(NetArpLut[i].ip == who){
+			//update the record.. 
+			//printf_ip("ARP updating LUT ", who); 
+			//printf_str("\n"); 
+			for(j=0; j<6; j++){
+				NetArpLut[i].mac[j] = mac[j]; 
+			}
+			return; 
+		}
+	}
+	printf_ip("ARP adding to LUT ", who); 
+	printf_str("\n"); 
+	//next try inserting into open slot. 
+	i = ARP_lut_find(); 
 	NetArpLut[i].ip = who; 
 	for(j=0; j<6; j++){
 		NetArpLut[i].mac[j] = mac[j]; 
@@ -176,19 +195,22 @@ if it is there, then return the MAC
 if it is not, then check the timeout. 
 if the timeout is zero or expired, send a request. 
 otherwise, give up.  (there is no limit to the 
-number of ARP requests in this scheme.. */
+number of ARP requests in this scheme.) */
 int ARP_req(u32 who, u8* mac_dest){
 	if(ARP_lu(who, mac_dest)) return 1; 
 	//look in present table.. 
-	int i, j; 
+	int i; 
+	u32 t = GTIME; 
 	for(i=0; i<ARP_LUT_N; i++){
 		if(NetArpLut[i].ip == who && (NetArpLut[i].flags & ARP_LUT_WAIT)){
-			if(NetArpLut[i].timeout < *((u32*)(MS_CTR))){
+			if(NetArpLut[i].timeout > t){
 				return 0; //have to wait longer... 
 			}else{
 				//the timer has expired. 
+				printf_ip("ARP error: no response from ", who); 
+				printf_str("\n"); 
 				ARP_tx(who); 
-				NetArpLut[i].timeout = *((u32*)(MS_CTR)) + 1000 ; //one second. 
+				NetArpLut[i].timeout = t + 1000 ; //one second. 
 				return 0; //still have to wait for the response. 
 			}
 		}
@@ -197,7 +219,7 @@ int ARP_req(u32 who, u8* mac_dest){
 	i = ARP_lut_find(); 
 	NetArpLut[i].ip = who; 
 	NetArpLut[i].flags = ARP_LUT_WAIT; 
-	NetArpLut[i].timeout = *((u32*)(MS_CTR)) + 1000 ;
+	NetArpLut[i].timeout = t + 1000 ;
 	NetArpLut_age++; //let it wrap if need be..
 	NetArpLut[i].age = NetArpLut_age; 
 	//finally ... 
