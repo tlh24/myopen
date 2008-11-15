@@ -1,5 +1,5 @@
 EESchema Schematic File Version 2
-LIBS:power,device,emg_sym,./stage2.cache
+LIBS:power,device,emg_sym
 EELAYER 24  0
 EELAYER END
 $Descr User 17000 9000
@@ -13,6 +13,8 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
+Text Notes 2200 6200 0    60   ~
+pinout for straight-through cable.
 NoConn ~ 3150 5800
 NoConn ~ 3150 5600
 NoConn ~ 3150 5400
@@ -2017,7 +2019,7 @@ U 1 1 49055295
 P 14450 5250
 F 0 "L6" V 14400 5250 40  0000 C C
 F 1 "ferrite" V 14550 5250 40  0000 C C
-F 2 "0402" V 14360 5210 60  0000 C C
+F 2 "0402" V 14600 5250 60  0000 C C
 	1    14450 5250
 	0    -1   -1   0   
 $EndComp

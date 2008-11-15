@@ -1,5 +1,5 @@
 EESchema Schematic File Version 2
-LIBS:power,device,emg_sym,./stage2.cache
+LIBS:power,device,emg_sym
 EELAYER 24  0
 EELAYER END
 $Descr A4 11700 8267
@@ -324,7 +324,7 @@ AR Path="/48BEB1D1/48BEADC9" Ref="C?"  Part="1"
 AR Path="/48FFEE1B/48BEAFD3/48BEADC9" Ref="C127"  Part="1" 
 AR Path="/48FFEE1B/48BEB1D1/48BEADC9" Ref="C138"  Part="1" 
 F 0 "C127" H 6150 4700 50  0000 L C
-F 1 "10nf" H 6150 4500 50  0000 L C
+F 1 "0.01uf" V 6150 4500 50  0000 L C
 F 2 "0402" V 5950 4600 60  0000 C C
 	1    6100 4600
 	0    1    1    0   
@@ -520,7 +520,7 @@ AR Path="/48BEB1D1/48BEACF4" Ref="C?"  Part="1"
 AR Path="/48FFEE1B/48BEAFD3/48BEACF4" Ref="C126"  Part="1" 
 AR Path="/48FFEE1B/48BEB1D1/48BEACF4" Ref="C137"  Part="1" 
 F 0 "C126" H 6150 2250 50  0000 L C
-F 1 "10nf" H 6150 2050 50  0000 L C
+F 1 "0.01uf" V 6150 2050 50  0000 L C
 F 2 "0402" V 5950 2150 60  0000 C C
 	1    6100 2150
 	0    1    1    0   

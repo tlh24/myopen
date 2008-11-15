@@ -1,5 +1,5 @@
 EESchema Schematic File Version 2
-LIBS:power,device,emg_sym,./stage2.cache
+LIBS:power,device,emg_sym
 EELAYER 24  0
 EELAYER END
 $Descr User 17000 9000
