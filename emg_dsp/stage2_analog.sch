@@ -1,5 +1,5 @@
 EESchema Schematic File Version 2
-LIBS:power,device,emg_sym,./stage2.cache
+LIBS:power,device,emg_sym
 EELAYER 24  0
 EELAYER END
 $Descr User 17000 9000
@@ -13,15 +13,15 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
-Connection ~ 12100 4700
+Connection ~ 9800 6350
 Wire Wire Line
-	12100 4700 12100 4850
+	9800 6350 9800 6500
 Wire Wire Line
-	12700 4500 12700 4700
+	10400 6150 10400 6350
 Wire Wire Line
-	12700 4700 11550 4700
+	10400 6350 9250 6350
 Wire Wire Line
-	11550 4700 11550 4500
+	9250 6350 9250 6150
 Wire Wire Line
 	7350 6800 7300 6800
 Wire Wire Line
@@ -542,104 +542,104 @@ Wire Wire Line
 	5700 6800 5700 8700
 Connection ~ 5700 7400
 Wire Wire Line
-	11550 2800 11550 2550
+	9250 4450 9250 4200
 Wire Wire Line
-	11550 2550 12700 2550
+	9250 4200 10400 4200
 Wire Wire Line
-	12700 2550 12700 2800
+	10400 4200 10400 4450
 Wire Wire Line
-	12100 2450 12100 2550
-Connection ~ 12100 2550
+	9800 4100 9800 4200
+Connection ~ 9800 4200
 $Comp
 L GND #PWR?
 U 1 1 4913DE9C
-P 12100 4850
-F 0 "#PWR?" H 12100 4850 30  0001 C C
-F 1 "GND" H 12100 4780 30  0001 C C
-	1    12100 4850
+P 9800 6500
+F 0 "#PWR?" H 9800 6500 30  0001 C C
+F 1 "GND" H 9800 6430 30  0001 C C
+	1    9800 6500
 	1    0    0    -1  
 $EndComp
 $Comp
 L GND #PWR?
 U 1 1 4913DE97
-P 12100 2450
-F 0 "#PWR?" H 12100 2450 30  0001 C C
-F 1 "GND" H 12100 2380 30  0001 C C
-	1    12100 2450
+P 9800 4100
+F 0 "#PWR?" H 9800 4100 30  0001 C C
+F 1 "GND" H 9800 4030 30  0001 C C
+	1    9800 4100
 	-1   0    0    1   
 $EndComp
-Text Label 12700 4400 0    60   ~
+Text Label 10400 6050 0    60   ~
 E32
-Text Label 12700 4300 0    60   ~
+Text Label 10400 5950 0    60   ~
 E31
-Text Label 12700 4200 0    60   ~
+Text Label 10400 5850 0    60   ~
 E30
-Text Label 12700 4100 0    60   ~
+Text Label 10400 5750 0    60   ~
 E29
-Text Label 12700 4000 0    60   ~
+Text Label 10400 5650 0    60   ~
 E28
-Text Label 12700 3900 0    60   ~
+Text Label 10400 5550 0    60   ~
 E27
-Text Label 12700 3800 0    60   ~
+Text Label 10400 5450 0    60   ~
 E26
-Text Label 12700 3700 0    60   ~
+Text Label 10400 5350 0    60   ~
 E25
-Text Label 12700 3600 0    60   ~
+Text Label 10400 5250 0    60   ~
 E24
-Text Label 12700 3500 0    60   ~
+Text Label 10400 5150 0    60   ~
 E23
-Text Label 12700 3400 0    60   ~
+Text Label 10400 5050 0    60   ~
 E22
-Text Label 12700 3300 0    60   ~
+Text Label 10400 4950 0    60   ~
 E21
-Text Label 12700 3200 0    60   ~
+Text Label 10400 4850 0    60   ~
 E20
-Text Label 12700 3100 0    60   ~
+Text Label 10400 4750 0    60   ~
 E19
-Text Label 12700 3000 0    60   ~
+Text Label 10400 4650 0    60   ~
 E18
-Text Label 12700 2900 0    60   ~
+Text Label 10400 4550 0    60   ~
 E17
-Text Label 11550 4400 2    60   ~
+Text Label 9250 6050 2    60   ~
 E16
-Text Label 11550 4300 2    60   ~
+Text Label 9250 5950 2    60   ~
 E15
-Text Label 11550 4200 2    60   ~
+Text Label 9250 5850 2    60   ~
 E14
-Text Label 11550 4100 2    60   ~
+Text Label 9250 5750 2    60   ~
 E13
-Text Label 11550 4000 2    60   ~
+Text Label 9250 5650 2    60   ~
 E12
-Text Label 11550 3900 2    60   ~
+Text Label 9250 5550 2    60   ~
 E11
-Text Label 11550 3800 2    60   ~
+Text Label 9250 5450 2    60   ~
 E10
-Text Label 11550 3700 2    60   ~
+Text Label 9250 5350 2    60   ~
 E9
-Text Label 11550 3600 2    60   ~
+Text Label 9250 5250 2    60   ~
 E8
-Text Label 11550 3500 2    60   ~
+Text Label 9250 5150 2    60   ~
 E7
-Text Label 11550 3400 2    60   ~
+Text Label 9250 5050 2    60   ~
 E6
-Text Label 11550 3300 2    60   ~
+Text Label 9250 4950 2    60   ~
 E5
-Text Label 11550 3200 2    60   ~
+Text Label 9250 4850 2    60   ~
 E4
-Text Label 11550 3100 2    60   ~
+Text Label 9250 4750 2    60   ~
 E3
-Text Label 11550 3000 2    60   ~
+Text Label 9250 4650 2    60   ~
 E2
-Text Label 11550 2900 2    60   ~
+Text Label 9250 4550 2    60   ~
 E1
 $Comp
 L OMNETICS_36 U?
 U 1 1 4913DE57
-P 12100 3600
-F 0 "U?" H 12800 3700 60  0000 C C
-F 1 "OMNETICS_36" H 12150 4550 60  0000 C C
-F 2 "omnetics_36" H 12860 3760 60  0000 C C
-	1    12100 3600
+P 9800 5250
+F 0 "U?" H 10500 5350 60  0000 C C
+F 1 "OMNETICS_36" H 9850 6200 60  0000 C C
+F 2 "omnetics_36" H 10560 5410 60  0000 C C
+	1    9800 5250
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -1373,6 +1373,7 @@ U 1 1 48CA01DA
 P 7050 4600
 F 0 "U24" H 7050 4500 60  0000 C C
 F 1 "ADG726" H 7050 4700 60  0000 C C
+F 2 "LFCSP-48" H 7050 4350 60  0000 C C
 	1    7050 4600
 	1    0    0    -1  
 $EndComp
