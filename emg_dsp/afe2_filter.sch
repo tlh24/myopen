@@ -1,5 +1,5 @@
-EESchema Schematic File Version 2
-LIBS:power,device,emg_sym
+EESchema Schematic File Version 2  date Wed 31 Dec 2008 07:37:48 PM EST
+LIBS:power,device,emg_sym,./stage2.cache
 EELAYER 24  0
 EELAYER END
 $Descr A4 11700 8267
@@ -13,10 +13,16 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
-Connection ~ 8250 3650
-Text Label 8250 4050 0    60   ~
+Text Label 4000 2900 0    60   ~ 0
 AGnd
-Text Label 8250 3250 0    60   ~
+Text Label 4000 1500 0    60   ~ 0
+AVdd
+Connection ~ 8250 4050
+Connection ~ 8250 3250
+Connection ~ 8250 3650
+Text Label 8250 4050 0    60   ~ 0
+AGnd
+Text Label 8250 3250 0    60   ~ 0
 AVdd
 $Comp
 L C C129
@@ -472,15 +478,15 @@ $EndComp
 $Comp
 L OPA4348 U?
 U 2 1 48BEADBE
-P 4000 5000
+P 6300 2550
 AR Path="/48BEAFD3/48BEADBE" Ref="U?"  Part="3" 
 AR Path="/48BEB1D1/48BEADBE" Ref="U?"  Part="3" 
 AR Path="/48FFEE1B/48BEAFD3/48BEADBE" Ref="U143"  Part="2" 
 AR Path="/48FFEE1B/48BEB1D1/48BEADBE" Ref="U144"  Part="2" 
-F 0 "U143" H 3800 5000 60  0000 C C
-F 1 "OPA4348" H 4300 5150 60  0000 C C
-F 2 "TSSOP-14" H 3800 5200 60  0000 C C
-	2    4000 5000
+F 0 "U143" H 6100 2550 60  0000 C C
+F 1 "OPA4348" H 6600 2700 60  0000 C C
+F 2 "TSSOP-14" H 6100 2750 60  0000 C C
+	2    6300 2550
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -654,15 +660,15 @@ $EndComp
 $Comp
 L OPA4348 U?
 U 3 1 48BEA6C1
-P 6300 2550
+P 4000 5000
 AR Path="/48BEAFD3/48BEA6C1" Ref="U?"  Part="2" 
 AR Path="/48BEB1D1/48BEA6C1" Ref="U?"  Part="2" 
 AR Path="/48FFEE1B/48BEAFD3/48BEA6C1" Ref="U143"  Part="3" 
 AR Path="/48FFEE1B/48BEB1D1/48BEA6C1" Ref="U144"  Part="3" 
-F 0 "U143" H 6100 2550 60  0000 C C
-F 1 "OPA4348" H 6450 2700 60  0000 C C
-F 2 "TSSOP-14" H 6200 2300 60  0000 C C
-	3    6300 2550
+F 0 "U143" H 3800 5000 60  0000 C C
+F 1 "OPA4348" H 4150 5150 60  0000 C C
+F 2 "TSSOP-14" H 3900 4750 60  0000 C C
+	3    4000 5000
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -679,18 +685,18 @@ F 2 "TSSOP-14" H 3700 2750 60  0000 C C
 	1    4000 2550
 	1    0    0    -1  
 $EndComp
-Text HLabel 6950 5000 2    60   Input
+Text HLabel 6950 5000 2    60   Input ~ 0
 Out2
-Text HLabel 1950 4800 0    60   Input
+Text HLabel 1950 4800 0    60   Input ~ 0
 In2
-Text HLabel 1950 2350 0    60   Input
+Text HLabel 1950 2350 0    60   Input ~ 0
 In1
-Text HLabel 4250 2900 2    60   Input
+Text HLabel 4250 2900 2    60   Input ~ 0
 Analog_GND
-Text HLabel 8500 3650 2    60   Input
+Text HLabel 8500 3650 2    60   Input ~ 0
 Vdd/2
-Text HLabel 6950 2550 2    60   Input
+Text HLabel 6950 2550 2    60   Input ~ 0
 Out1
-Text HLabel 4250 1500 2    60   Input
+Text HLabel 4250 1500 2    60   Input ~ 0
 Analog_Vdd
 $EndSCHEMATC
