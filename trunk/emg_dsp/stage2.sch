@@ -1,5 +1,5 @@
-EESchema Schematic File Version 2
-LIBS:power,device,emg_sym
+EESchema Schematic File Version 2  date Wed 31 Dec 2008 07:37:48 PM EST
+LIBS:power,device,emg_sym,./stage2.cache
 EELAYER 24  0
 EELAYER END
 $Descr User 17000 9000
@@ -13,7 +13,7 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
-Text Notes 2200 6200 0    60   ~
+Text Notes 2200 6200 0    60   ~ 0
 pinout for straight-through cable.
 NoConn ~ 3150 5800
 NoConn ~ 3150 5600
@@ -751,9 +751,9 @@ NoConn ~ 850  3100
 NoConn ~ 850  3000
 NoConn ~ 850  2900
 NoConn ~ 850  2800
-Text Label 10750 3200 0    60   ~
+Text Label 10750 3200 0    60   ~ 0
 TX
-Text Label 10750 3100 0    60   ~
+Text Label 10750 3100 0    60   ~ 0
 RX
 $Comp
 L VDD #PWR03
@@ -764,9 +764,9 @@ F 1 "VDD" H 2550 5010 30  0000 C C
 	1    2550 4900
 	1    0    0    -1  
 $EndComp
-Text Label 1350 5850 2    60   ~
+Text Label 1350 5850 2    60   ~ 0
 RX
-Text Label 1350 5600 2    60   ~
+Text Label 1350 5600 2    60   ~ 0
 TX
 $Comp
 L C C4
@@ -958,21 +958,21 @@ F 2 "2x100mil" H 1490 7640 60  0000 C C
 	1    1550 7800
 	1    0    0    -1  
 $EndComp
-Text Label 16850 2200 2    60   ~
+Text Label 16850 2200 2    60   ~ 0
 PF7
-Text Label 16850 2100 2    60   ~
+Text Label 16850 2100 2    60   ~ 0
 PF6
-Text Label 16850 2000 2    60   ~
+Text Label 16850 2000 2    60   ~ 0
 PF5
-Text Label 16850 1900 2    60   ~
+Text Label 16850 1900 2    60   ~ 0
 PF4
-Text Label 16850 1800 2    60   ~
+Text Label 16850 1800 2    60   ~ 0
 PF3
-Text Label 16850 1700 2    60   ~
+Text Label 16850 1700 2    60   ~ 0
 PF2
-Text Label 16850 1600 2    60   ~
+Text Label 16850 1600 2    60   ~ 0
 PF1
-Text Label 16850 1500 2    60   ~
+Text Label 16850 1500 2    60   ~ 0
 PF0
 $Comp
 L 8X2X100 U23
@@ -980,6 +980,7 @@ U 1 1 4906A41A
 P 17050 1400
 F 0 "U23" H 17050 500 60  0000 C C
 F 1 "8X2X100" H 17050 2200 60  0000 C C
+F 2 "2x8x100mil" H 16990 440 60  0001 C C
 	1    17050 1400
 	-1   0    0    -1  
 $EndComp
@@ -1055,31 +1056,31 @@ F 1 "GND" H 14400 1980 30  0001 C C
 	1    14400 2050
 	1    0    0    -1  
 $EndComp
-Text Notes 8700 2300 0    60   ~
+Text Notes 8700 2300 0    60   ~ 0
 usb _res
-Text Notes 8750 2200 0    60   ~
+Text Notes 8750 2200 0    60   ~ 0
 usb _ss
-Text Notes 8350 2100 0    60   ~
+Text Notes 8350 2100 0    60   ~ 0
 input usb gpx
-Text Notes 8350 2000 0    60   ~
+Text Notes 8350 2000 0    60   ~ 0
 input usb irq
-Text Notes 8350 1900 0    60   ~
+Text Notes 8350 1900 0    60   ~ 0
 input nrf irq
-Text Label 14400 1850 2    60   ~
+Text Label 14400 1850 2    60   ~ 0
 PF15
-Text Label 14400 1750 2    60   ~
+Text Label 14400 1750 2    60   ~ 0
 PF14
-Text Label 14400 1650 2    60   ~
+Text Label 14400 1650 2    60   ~ 0
 PF13
-Text Label 14400 1550 2    60   ~
+Text Label 14400 1550 2    60   ~ 0
 PF12
-Text Label 14400 1450 2    60   ~
+Text Label 14400 1450 2    60   ~ 0
 PF11
-Text Label 14400 1350 2    60   ~
+Text Label 14400 1350 2    60   ~ 0
 PF10
-Text Label 14400 1250 2    60   ~
+Text Label 14400 1250 2    60   ~ 0
 PF9
-Text Label 14400 1150 2    60   ~
+Text Label 14400 1150 2    60   ~ 0
 PF8
 $Comp
 L C C45
@@ -1181,7 +1182,7 @@ F 2 "0603" H 15350 2650 60  0000 C C
 	1    15400 2500
 	0    1    1    0   
 $EndComp
-Text Label 3800 1550 0    60   ~
+Text Label 3800 1550 0    60   ~ 0
 Vbat
 $Comp
 L BAT54A U9
@@ -1287,33 +1288,33 @@ F 1 "GND" H 2300 4080 30  0001 C C
 	1    2300 4150
 	1    0    0    -1  
 $EndComp
-Text Label 2200 3350 0    60   ~
+Text Label 2200 3350 0    60   ~ 0
 PF7
-Text Label 2200 3250 0    60   ~
+Text Label 2200 3250 0    60   ~ 0
 SCK
-Text Label 2200 3150 0    60   ~
+Text Label 2200 3150 0    60   ~ 0
 PF6
-Text Label 2200 2850 0    60   ~
+Text Label 2200 2850 0    60   ~ 0
 PF5
-Text Label 2200 2750 0    60   ~
+Text Label 2200 2750 0    60   ~ 0
 PF4
-Text Notes 8900 2800 0    60   ~
+Text Notes 8900 2800 0    60   ~ 0
 mux0
-Text Notes 8900 2900 0    60   ~
+Text Notes 8900 2900 0    60   ~ 0
 mux1
-Text Notes 8900 3000 0    60   ~
+Text Notes 8900 3000 0    60   ~ 0
 mux2
-Text Notes 8900 3100 0    60   ~
+Text Notes 8900 3100 0    60   ~ 0
 mux3
-Text Label 5450 2000 0    60   ~
+Text Label 5450 2000 0    60   ~ 0
 PF12
-Text Label 5450 1850 0    60   ~
+Text Label 5450 1850 0    60   ~ 0
 PF13
-Text Label 5450 1700 0    60   ~
+Text Label 5450 1700 0    60   ~ 0
 PF14
-Text Label 5450 1550 0    60   ~
+Text Label 5450 1550 0    60   ~ 0
 PF15
-Text Label 2700 3050 0    60   ~
+Text Label 2700 3050 0    60   ~ 0
 MISO
 $Comp
 L R R1
@@ -1325,7 +1326,7 @@ F 2 "0402" V 2350 3150 60  0000 C C
 	1    2450 3050
 	0    1    1    0   
 $EndComp
-Text Label 2200 2950 0    60   ~
+Text Label 2200 2950 0    60   ~ 0
 MOSI
 $Comp
 L GND #PWR028
@@ -1500,33 +1501,33 @@ F 2 "TQFP-32" H 1550 2200 60  0000 C C
 	1    1700 3200
 	1    0    0    -1  
 $EndComp
-Text Notes 8750 1700 0    60   ~
+Text Notes 8750 1700 0    60   ~ 0
 nrf csn
-Text Notes 8800 1600 0    60   ~
+Text Notes 8800 1600 0    60   ~ 0
 nrf ce
-Text Notes 8750 1800 0    60   ~
+Text Notes 8750 1800 0    60   ~ 0
 spi _cs
-Text Label 9450 3100 2    60   ~
+Text Label 9450 3100 2    60   ~ 0
 PF15
-Text Label 9450 3000 2    60   ~
+Text Label 9450 3000 2    60   ~ 0
 PF14
-Text Label 9450 2900 2    60   ~
+Text Label 9450 2900 2    60   ~ 0
 PF13
-Text Label 9450 2800 2    60   ~
+Text Label 9450 2800 2    60   ~ 0
 PF12
-Text Label 9450 2700 2    60   ~
+Text Label 9450 2700 2    60   ~ 0
 PF11
-Text Label 9450 2600 2    60   ~
+Text Label 9450 2600 2    60   ~ 0
 PF10
-Text Label 9450 2500 2    60   ~
+Text Label 9450 2500 2    60   ~ 0
 PF9
-Text Label 9450 2400 2    60   ~
+Text Label 9450 2400 2    60   ~ 0
 PF8
-Text Label 9450 2300 2    60   ~
+Text Label 9450 2300 2    60   ~ 0
 PF7
-Text Label 9450 2200 2    60   ~
+Text Label 9450 2200 2    60   ~ 0
 PF6
-Text Label 9450 2100 2    60   ~
+Text Label 9450 2100 2    60   ~ 0
 PF5
 $Comp
 L VDD #PWR035
@@ -1566,9 +1567,9 @@ F 1 "GND" H 10850 5780 30  0001 C C
 $EndComp
 NoConn ~ 9450 5800
 NoConn ~ 9450 5700
-Text Label 11700 4600 0    60   ~
+Text Label 11700 4600 0    60   ~ 0
 Vbat
-Text Label 1800 7050 0    60   ~
+Text Label 1800 7050 0    60   ~ 0
 Vbat
 $Comp
 L GND #PWR039
@@ -1598,21 +1599,21 @@ F 2 "7x100mil" H 11040 4660 60  0000 C C
 	1    11200 4250
 	-1   0    0    -1  
 $EndComp
-Text Label 13350 4400 0    60   ~
+Text Label 13350 4400 0    60   ~ 0
 TSCLK0
-Text Label 13350 4300 0    60   ~
+Text Label 13350 4300 0    60   ~ 0
 TFS0
-Text Label 13350 4200 0    60   ~
+Text Label 13350 4200 0    60   ~ 0
 DT0SEC
-Text Label 13350 4100 0    60   ~
+Text Label 13350 4100 0    60   ~ 0
 DT0PRI
-Text Label 7750 4450 0    60   ~
+Text Label 7750 4450 0    60   ~ 0
 TSCLK0
-Text Label 7750 4350 0    60   ~
+Text Label 7750 4350 0    60   ~ 0
 TFS0
-Text Label 7750 4250 0    60   ~
+Text Label 7750 4250 0    60   ~ 0
 DT0SEC
-Text Label 7750 4150 0    60   ~
+Text Label 7750 4150 0    60   ~ 0
 DT0PRI
 $Comp
 L C C41
@@ -1860,9 +1861,9 @@ F 2 "0402" H 2400 1000 60  0000 C C
 	1    2300 850 
 	1    0    0    -1  
 $EndComp
-Text Label 9450 2000 2    60   ~
+Text Label 9450 2000 2    60   ~ 0
 PF4
-Text Notes 9600 6200 0    60   ~
+Text Notes 9600 6200 0    60   ~ 0
 too keep radio from 
 $Comp
 L VDD #PWR045
@@ -1883,15 +1884,15 @@ F 2 "0402" V 11180 6350 60  0000 C C
 	1    11050 6400
 	0    1    1    0   
 $EndComp
-Text Label 11950 7100 3    60   ~
+Text Label 11950 7100 3    60   ~ 0
 PF3
-Text Label 11550 6400 2    60   ~
+Text Label 11550 6400 2    60   ~ 0
 PF1
-Text Label 11550 6300 2    60   ~
+Text Label 11550 6300 2    60   ~ 0
 PF0
-Text Label 9450 1900 2    60   ~
+Text Label 9450 1900 2    60   ~ 0
 PF3
-Text Label 9450 1600 2    60   ~
+Text Label 9450 1600 2    60   ~ 0
 PF0
 $Comp
 L R R13
@@ -1923,11 +1924,11 @@ F 2 "0402" V 11180 6650 60  0000 C C
 	1    11050 6700
 	0    1    1    0   
 $EndComp
-Text Label 11550 6500 2    60   ~
+Text Label 11550 6500 2    60   ~ 0
 SCK
-Text Label 10800 6700 2    60   ~
+Text Label 10800 6700 2    60   ~ 0
 MISO
-Text Label 11550 6600 2    60   ~
+Text Label 11550 6600 2    60   ~ 0
 MOSI
 $Comp
 L GND #PWR046
@@ -2041,7 +2042,7 @@ F 1 "GND" H 14050 6730 30  0001 C C
 	1    14050 6800
 	1    0    0    -1  
 $EndComp
-Text Notes 14150 6400 0    60   ~
+Text Notes 14150 6400 0    60   ~ 0
 50 Ohm PCB antenna
 $Comp
 L C C47
@@ -2188,9 +2189,9 @@ F 2 "QFN-20" H 12150 6400 60  0000 C C
 	1    12150 6500
 	1    0    0    -1  
 $EndComp
-Text Label 9450 1700 2    60   ~
+Text Label 9450 1700 2    60   ~ 0
 PF1
-Text Label 5450 3050 0    60   ~
+Text Label 5450 3050 0    60   ~ 0
 PF4
 $Comp
 L VCC #PWR059
@@ -2230,9 +2231,9 @@ F 2 "2x100mil" H 4800 6000 60  0000 C C
 	1    5000 6200
 	-1   0    0    1   
 $EndComp
-Text Notes 5250 7700 0    60   ~
+Text Notes 5250 7700 0    60   ~ 0
 0.8V
-Text Notes 5250 6200 0    60   ~
+Text Notes 5250 6200 0    60   ~ 0
 2.85V
 $Comp
 L GND #PWR061
@@ -2463,37 +2464,37 @@ F 1 "VDD" H 5300 5210 30  0000 C C
 	1    5300 5100
 	1    0    0    -1  
 $EndComp
-Text Label 7750 4900 0    60   ~
+Text Label 7750 4900 0    60   ~ 0
 TSCLK1
-Text Label 7750 4800 0    60   ~
+Text Label 7750 4800 0    60   ~ 0
 TFS1
-Text Label 7750 4600 0    60   ~
+Text Label 7750 4600 0    60   ~ 0
 DT1PRI
-Text Label 7750 3950 0    60   ~
+Text Label 7750 3950 0    60   ~ 0
 RSCLK1
-Text Label 7750 3850 0    60   ~
+Text Label 7750 3850 0    60   ~ 0
 RFS1
-Text Label 7750 3750 0    60   ~
+Text Label 7750 3750 0    60   ~ 0
 DR1SEC
-Text Label 7750 3650 0    60   ~
+Text Label 7750 3650 0    60   ~ 0
 DR1PRI
-Text Label 7750 3500 0    60   ~
+Text Label 7750 3500 0    60   ~ 0
 RSCLK0
-Text Label 7750 3400 0    60   ~
+Text Label 7750 3400 0    60   ~ 0
 RFS0
-Text Label 7750 3200 0    60   ~
+Text Label 7750 3200 0    60   ~ 0
 DR0PRI
-Text Label 5550 4400 0    60   ~
+Text Label 5550 4400 0    60   ~ 0
 RFS0
-Text Label 5600 4100 0    60   ~
+Text Label 5600 4100 0    60   ~ 0
 RSCLK0
-Text Label 5150 4550 0    60   ~
+Text Label 5150 4550 0    60   ~ 0
 DR0PRI
-Text Label 5150 4400 0    60   ~
+Text Label 5150 4400 0    60   ~ 0
 TFS1
-Text Label 5150 4250 0    60   ~
+Text Label 5150 4250 0    60   ~ 0
 DT1PRI
-Text Label 5150 4100 0    60   ~
+Text Label 5150 4100 0    60   ~ 0
 TSCLK1
 $Comp
 L VDD #PWR072
@@ -2504,13 +2505,13 @@ F 1 "VDD" H 5600 3010 30  0000 C C
 	1    5600 2900
 	1    0    0    -1  
 $EndComp
-Text Label 5450 2650 0    60   ~
+Text Label 5450 2650 0    60   ~ 0
 DR1PRI
-Text Label 5450 2500 0    60   ~
+Text Label 5450 2500 0    60   ~ 0
 DR1SEC
-Text Label 5450 2350 0    60   ~
+Text Label 5450 2350 0    60   ~ 0
 RFS1
-Text Label 5450 2200 0    60   ~
+Text Label 5450 2200 0    60   ~ 0
 RSCLK1
 $Comp
 L GND #PWR073
@@ -2579,29 +2580,29 @@ F 2 "0402" V 5850 7350 60  0000 C C
 	0    1    1    0   
 $EndComp
 NoConn ~ 6500 7100
-Text Label 7700 8100 0    60   ~
+Text Label 7700 8100 0    60   ~ 0
 TDO
-Text Label 7700 7900 0    60   ~
+Text Label 7700 7900 0    60   ~ 0
 TDI
-Text Label 7700 7700 0    60   ~
+Text Label 7700 7700 0    60   ~ 0
 _trst
-Text Label 7700 7500 0    60   ~
+Text Label 7700 7500 0    60   ~ 0
 TCK
-Text Label 7700 7300 0    60   ~
+Text Label 7700 7300 0    60   ~ 0
 TMS
-Text Label 7700 6900 0    60   ~
+Text Label 7700 6900 0    60   ~ 0
 _emu
-Text Label 7750 5600 0    60   ~
+Text Label 7750 5600 0    60   ~ 0
 _trst
-Text Label 7750 5500 0    60   ~
+Text Label 7750 5500 0    60   ~ 0
 TMS
-Text Label 7750 5400 0    60   ~
+Text Label 7750 5400 0    60   ~ 0
 TDO
-Text Label 7750 5300 0    60   ~
+Text Label 7750 5300 0    60   ~ 0
 TDI
-Text Label 7750 5200 0    60   ~
+Text Label 7750 5200 0    60   ~ 0
 TCK
-Text Label 7750 5100 0    60   ~
+Text Label 7750 5100 0    60   ~ 0
 _emu
 $Comp
 L ADSP_JTAG_CON U12
@@ -2613,9 +2614,9 @@ F 2 "7x2x100" H 7050 6950 60  0000 C C
 	1    6900 7650
 	1    0    0    -1  
 $EndComp
-Text Label 10750 1800 0    60   ~
+Text Label 10750 1800 0    60   ~ 0
 RESET
-Text Notes 12000 4650 0    60   ~
+Text Notes 12000 4650 0    60   ~ 0
 the blackfin does not have 5v tolerant inputs
 $Comp
 L R R21
@@ -2645,7 +2646,7 @@ F 1 "GND" H 13000 2680 30  0001 C C
 	1    13000 2750
 	0    1    1    0   
 $EndComp
-Text Label 13000 2950 2    60   ~
+Text Label 13000 2950 2    60   ~ 0
 RESET
 $Comp
 L GND #PWR079
@@ -2671,17 +2672,17 @@ U 1 1 490151B5
 P 13550 2850
 F 0 "U20" H 13500 2850 60  0000 C C
 F 1 "MAX6711" H 13550 3050 60  0000 C C
-F 2 "SV70-4" H 13550 3150 60  0000 C C
+F 2 "SC-70-4" H 13550 3150 60  0000 C C
 	1    13550 2850
 	1    0    0    -1  
 $EndComp
-Text Label 13350 4000 0    60   ~
+Text Label 13350 4000 0    60   ~ 0
 MISO
-Text Label 12100 4000 2    60   ~
+Text Label 12100 4000 2    60   ~ 0
 SCK
-Text Label 12100 3900 2    60   ~
+Text Label 12100 3900 2    60   ~ 0
 MOSI
-Text Label 12100 3800 2    60   ~
+Text Label 12100 3800 2    60   ~ 0
 PF2
 $Comp
 L VDD #PWR081
@@ -2712,7 +2713,7 @@ F 2 "TSSOP-20" H 12650 4700 60  0000 C C
 	1    12700 4050
 	-1   0    0    -1  
 $EndComp
-Text Label 9450 1800 2    60   ~
+Text Label 9450 1800 2    60   ~ 0
 PF2
 $Comp
 L VDD #PWR082
@@ -2752,7 +2753,7 @@ F 2 "0402" V 11850 2550 60  0000 C C
 	1    11950 2500
 	1    0    0    -1  
 $EndComp
-Text Label 11950 2250 2    60   ~
+Text Label 11950 2250 2    60   ~ 0
 PF2
 $Comp
 L VDD #PWR084
@@ -2800,17 +2801,17 @@ F 2 "0402" V 11500 1950 60  0000 C C
 	1    11600 1900
 	1    0    0    -1  
 $EndComp
-Text Label 13250 1950 0    60   ~
+Text Label 13250 1950 0    60   ~ 0
 MISO
-Text Label 11950 2050 2    60   ~
+Text Label 11950 2050 2    60   ~ 0
 SCK
-Text Label 11950 1950 2    60   ~
+Text Label 11950 1950 2    60   ~ 0
 MOSI
-Text Label 11250 2150 0    60   ~
+Text Label 11250 2150 0    60   ~ 0
 MOSI
-Text Label 10750 2050 0    60   ~
+Text Label 10750 2050 0    60   ~ 0
 MISO
-Text Label 11250 1950 0    60   ~
+Text Label 11250 1950 0    60   ~ 0
 SCK
 $Comp
 L AT45DB081D U18
@@ -2822,7 +2823,7 @@ F 2 "SOIC-8" H 12550 1850 60  0000 C C
 	1    12600 2100
 	1    0    0    -1  
 $EndComp
-Text Notes 8150 6300 0    60   ~
+Text Notes 8150 6300 0    60   ~ 0
 16Mhz
 $Comp
 L GND #PWR088
