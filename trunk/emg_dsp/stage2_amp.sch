@@ -1,11 +1,11 @@
-EESchema Schematic File Version 2  date Thu 01 Jan 2009 11:54:59 AM EST
+EESchema Schematic File Version 2
 LIBS:power,device,emg_sym,./stage2.cache
 EELAYER 24  0
 EELAYER END
 $Descr A4 11700 8267
 Sheet 5 5
 Title ""
-Date "1 jan 2009"
+Date "5 jan 2009"
 Rev ""
 Comp ""
 Comment1 ""
@@ -13,15 +13,15 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
-Text HLabel 5750 4050 2    60   Input ~ 0
+Text HLabel 5750 4050 2    60   Input
 Vdd
-Text HLabel 6750 3800 2    60   Input ~ 0
+Text HLabel 6750 3800 2    60   Input
 GND
-Text Notes 5950 3100 0    60   ~ 0
+Text Notes 5950 3100 0    60   ~
 25db
-Text Notes 4900 3100 0    60   ~ 0
+Text Notes 4900 3100 0    60   ~
 25db
-Text Notes 3700 3100 0    60   ~ 0
+Text Notes 3700 3100 0    60   ~
 15db
 Wire Wire Line
 	3550 3200 3400 3200
@@ -53,9 +53,9 @@ Connection ~ 6750 3200
 Connection ~ 6400 3800
 Wire Wire Line
 	7200 3200 6400 3200
-Text HLabel 3400 3200 0    60   Input ~ 0
+Text HLabel 3400 3200 0    60   Input
 in
-Text HLabel 7200 3200 2    60   Input ~ 0
+Text HLabel 7200 3200 2    60   Input
 out
 $Comp
 L C C87
@@ -93,7 +93,7 @@ AR Path="/48C9FDD8/48CA00A4/48C9FE70" Ref="C91"  Part="1"
 AR Path="/48C9FDD8/48CA008E/48C9FE70" Ref="C90"  Part="1" 
 AR Path="/48C9FDD8/48CA007D/48C9FE70" Ref="C89"  Part="1" 
 AR Path="/48C9FDD8/48CA002F/48C9FE70" Ref="C88"  Part="1" 
-F 0 "C104" H 6800 3500 50  0000 L C
+F 0 "C118" H 6800 3500 50  0000 L C
 F 1 "0.047uf" H 6800 3300 50  0000 L C
 F 2 "0402" H 6950 3200 60  0000 C C
 	1    6750 3400
@@ -135,7 +135,7 @@ AR Path="/48C9FDD8/48CA00A4/48C9FE5C" Ref="U61"  Part="1"
 AR Path="/48C9FDD8/48CA008E/48C9FE5C" Ref="U58"  Part="1" 
 AR Path="/48C9FDD8/48CA007D/48C9FE5C" Ref="U55"  Part="1" 
 AR Path="/48C9FDD8/48CA002F/48C9FE5C" Ref="U52"  Part="1" 
-F 0 "U100" H 6100 2950 60  0000 C C
+F 0 "U142" H 6100 2950 60  0000 C C
 F 1 "LMV1032" H 6100 3050 60  0000 C C
 F 2 "microSMD-4" H 6040 2890 60  0000 C C
 	1    6100 3250
@@ -177,7 +177,7 @@ AR Path="/48C9FDD8/48CA00A4/48C9FE4D" Ref="U60"  Part="1"
 AR Path="/48C9FDD8/48CA008E/48C9FE4D" Ref="U57"  Part="1" 
 AR Path="/48C9FDD8/48CA007D/48C9FE4D" Ref="U54"  Part="1" 
 AR Path="/48C9FDD8/48CA002F/48C9FE4D" Ref="U51"  Part="1" 
-F 0 "U99" H 5050 2950 60  0000 C C
+F 0 "U141" H 5050 2950 60  0000 C C
 F 1 "LMV1032" H 5050 3050 60  0000 C C
 F 2 "microSMD-4" H 4990 2890 60  0000 C C
 	1    5050 3250
@@ -219,7 +219,7 @@ AR Path="/48C9FDD8/48CA00A4/48C9FE38" Ref="U59"  Part="1"
 AR Path="/48C9FDD8/48CA008E/48C9FE38" Ref="U56"  Part="1" 
 AR Path="/48C9FDD8/48CA007D/48C9FE38" Ref="U53"  Part="1" 
 AR Path="/48C9FDD8/48CA002F/48C9FE38" Ref="U50"  Part="1" 
-F 0 "U98" H 3900 2950 60  0000 C C
+F 0 "U140" H 3900 2950 60  0000 C C
 F 1 "LMV1032" H 3900 3050 60  0000 C C
 F 2 "microSMD-4" H 3840 2890 60  0000 C C
 	1    3900 3250
