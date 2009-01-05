@@ -1,11 +1,11 @@
-EESchema Schematic File Version 2  date Thu 01 Jan 2009 11:54:59 AM EST
+EESchema Schematic File Version 2
 LIBS:power,device,emg_sym,./stage2.cache
 EELAYER 24  0
 EELAYER END
 $Descr User 17000 9000
 Sheet 2 5
 Title ""
-Date "1 jan 2009"
+Date "5 jan 2009"
 Rev ""
 Comp ""
 Comment1 "c. 2008 Timothy Hanson"
@@ -13,8 +13,10 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
-Text Label 6950 5050 0    60   ~ 0
-Vdd2
+Text Label 8300 3600 0    60   ~
+AGnd
+Wire Wire Line
+	8300 4000 8300 4100
 Connection ~ 6950 4800
 Wire Wire Line
 	7100 5050 6950 5050
@@ -60,21 +62,21 @@ Wire Wire Line
 	1200 5000 1200 4800
 Connection ~ 4750 3800
 Wire Wire Line
-	4750 3800 4950 3800
+	4950 3800 4750 3800
 Wire Wire Line
-	4750 3750 4750 3850
+	4750 3850 4750 3750
 Connection ~ 11300 4750
 Wire Wire Line
-	11300 4750 11300 4850
+	11300 4850 11300 4750
 Connection ~ 11000 4750
 Wire Wire Line
 	11000 4750 11000 4850
 Connection ~ 11450 6050
 Wire Wire Line
-	11550 6050 10950 6050
+	10950 6050 11550 6050
 Connection ~ 9300 5650
 Wire Wire Line
-	9400 5650 9300 5650
+	9300 5650 9400 5650
 Connection ~ 9300 5850
 Wire Wire Line
 	9400 5850 9300 5850
@@ -85,7 +87,7 @@ Wire Wire Line
 Wire Wire Line
 	11500 5950 10950 5950
 Wire Wire Line
-	10950 4050 11600 4050
+	11600 4050 10950 4050
 Wire Wire Line
 	7300 6100 7300 6200
 Wire Wire Line
@@ -166,7 +168,7 @@ Wire Wire Line
 Wire Wire Line
 	8850 2100 9100 2100
 Wire Wire Line
-	8100 2100 8450 2100
+	8450 2100 8100 2100
 Connection ~ 2000 5600
 Wire Wire Line
 	1850 5600 1850 5300
@@ -228,7 +230,7 @@ Wire Wire Line
 	7050 4600 6950 4600
 Connection ~ 8900 2700
 Wire Wire Line
-	9250 2700 8100 2700
+	8100 2700 9250 2700
 Wire Wire Line
 	8900 2700 8900 2500
 Connection ~ 8400 2500
@@ -249,7 +251,7 @@ Wire Wire Line
 	8200 1600 8100 1600
 Connection ~ 6100 2700
 Wire Wire Line
-	5750 2700 6900 2700
+	6900 2700 5750 2700
 Connection ~ 6600 2500
 Wire Wire Line
 	6800 3350 6800 3400
@@ -258,7 +260,7 @@ Wire Wire Line
 Wire Wire Line
 	6600 2900 6600 2500
 Wire Wire Line
-	6800 1600 6900 1600
+	6900 1600 6800 1600
 Wire Wire Line
 	6800 2600 6900 2600
 Wire Wire Line
@@ -338,7 +340,7 @@ Wire Wire Line
 Wire Wire Line
 	3000 1650 3250 1650
 Wire Wire Line
-	5450 4800 5600 4800
+	5600 4800 5450 4800
 Wire Wire Line
 	5450 4900 5550 4900
 Connection ~ 5550 4900
@@ -427,7 +429,7 @@ Wire Wire Line
 Wire Wire Line
 	9250 4050 9400 4050
 Wire Wire Line
-	9250 4650 9400 4650
+	9400 4650 9250 4650
 Wire Wire Line
 	9300 5450 9400 5450
 Wire Wire Line
@@ -446,7 +448,7 @@ Wire Wire Line
 	7900 6200 7900 6000
 Connection ~ 7650 6200
 Wire Wire Line
-	11500 5350 10950 5350
+	10950 5350 11500 5350
 Connection ~ 11500 4050
 Wire Wire Line
 	10950 4150 11450 4150
@@ -462,7 +464,7 @@ Wire Wire Line
 	10950 4550 11450 4550
 Connection ~ 11450 4550
 Wire Wire Line
-	10950 4750 11450 4750
+	11450 4750 10950 4750
 Wire Wire Line
 	11000 5250 11000 5350
 Connection ~ 11000 5350
@@ -474,7 +476,7 @@ Wire Wire Line
 Wire Wire Line
 	4750 4250 4950 4250
 Wire Wire Line
-	1600 4900 2150 4900
+	2150 4900 1600 4900
 Connection ~ 1600 4900
 Wire Wire Line
 	6650 2000 6900 2000
@@ -508,72 +510,98 @@ Wire Wire Line
 	3000 3000 3000 3200
 Wire Wire Line
 	2050 3500 1750 3500
+Wire Wire Line
+	8300 4100 8000 4100
 $Comp
-L GND #PWR094
+L C C?
+U 1 1 49618E13
+P 8300 3800
+F 0 "C?" H 8350 3900 50  0000 L C
+F 1 "0.1uf" H 8200 3700 50  0000 L C
+F 2 "0402" H 8300 3950 60  0000 C C
+	1    8300 3800
+	-1   0    0    1   
+$EndComp
+Text Label 8700 4100 0    60   ~
+AGnd
+$Comp
+L C C143
+U 1 1 49618DC4
+P 8500 4100
+F 0 "C143" H 8550 4200 50  0000 L C
+F 1 "4.7uf" H 8400 4000 50  0000 L C
+F 2 "0603" H 8500 4250 60  0000 C C
+	1    8500 4100
+	0    1    1    0   
+$EndComp
+Text Label 6950 5050 0    60   ~
+Vdd2
+$Comp
+L GND #PWR123
 U 1 1 495C0F81
 P 1100 1850
-F 0 "#PWR094" H 1100 1850 30  0001 C C
+F 0 "#PWR123" H 1100 1850 30  0001 C C
 F 1 "GND" H 1100 1780 30  0001 C C
 	1    1100 1850
 	0    -1   -1   0   
 $EndComp
 $Comp
-L GND #PWR095
+L GND #PWR124
 U 1 1 495C0F7F
 P 1100 2050
-F 0 "#PWR095" H 1100 2050 30  0001 C C
+F 0 "#PWR124" H 1100 2050 30  0001 C C
 F 1 "GND" H 1100 1980 30  0001 C C
 	1    1100 2050
 	0    -1   -1   0   
 $EndComp
 $Comp
-L GND #PWR096
+L GND #PWR125
 U 1 1 495C0F7C
 P 1100 2250
-F 0 "#PWR096" H 1100 2250 30  0001 C C
+F 0 "#PWR125" H 1100 2250 30  0001 C C
 F 1 "GND" H 1100 2180 30  0001 C C
 	1    1100 2250
 	0    -1   -1   0   
 $EndComp
 $Comp
-L GND #PWR097
+L GND #PWR126
 U 1 1 495C0F79
 P 1100 2450
-F 0 "#PWR097" H 1100 2450 30  0001 C C
+F 0 "#PWR126" H 1100 2450 30  0001 C C
 F 1 "GND" H 1100 2380 30  0001 C C
 	1    1100 2450
 	0    -1   -1   0   
 $EndComp
 $Comp
-L GND #PWR098
+L GND #PWR127
 U 1 1 495C0F37
 P 1100 2650
-F 0 "#PWR098" H 1100 2650 30  0001 C C
+F 0 "#PWR127" H 1100 2650 30  0001 C C
 F 1 "GND" H 1100 2580 30  0001 C C
 	1    1100 2650
 	0    -1   -1   0   
 $EndComp
 $Comp
-L GND #PWR099
+L GND #PWR128
 U 1 1 495C0F33
 P 1100 2850
-F 0 "#PWR099" H 1100 2850 30  0001 C C
+F 0 "#PWR128" H 1100 2850 30  0001 C C
 F 1 "GND" H 1100 2780 30  0001 C C
 	1    1100 2850
 	0    -1   -1   0   
 $EndComp
 $Comp
-L GND #PWR0100
+L GND #PWR129
 U 1 1 495C0F2F
 P 1100 3050
-F 0 "#PWR0100" H 1100 3050 30  0001 C C
+F 0 "#PWR129" H 1100 3050 30  0001 C C
 F 1 "GND" H 1100 2980 30  0001 C C
 	1    1100 3050
 	0    -1   -1   0   
 $EndComp
-Text Label 6800 2950 0    60   ~ 0
+Text Label 6800 2950 0    60   ~
 Vdd2
-Text Label 8850 5350 2    60   ~ 0
+Text Label 8850 5350 2    60   ~
 AGnd
 $Comp
 L C C83
@@ -615,24 +643,24 @@ F 2 "SOD-323" H 4710 3690 60  0000 C C
 	1    4750 3550
 	0    -1   -1   0   
 $EndComp
-Text Label 4950 3800 0    60   ~ 0
+Text Label 4950 3800 0    60   ~
 Vdd2
-Text Label 4950 3350 0    60   ~ 0
+Text Label 4950 3350 0    60   ~
 AVdd
-Text Label 4950 4250 0    60   ~ 0
+Text Label 4950 4250 0    60   ~
 AGnd
 $Comp
-L GND #PWR0101
+L GND #PWR130
 U 1 1 4907E3D0
 P 1100 3250
-F 0 "#PWR0101" H 1100 3250 30  0001 C C
+F 0 "#PWR130" H 1100 3250 30  0001 C C
 F 1 "GND" H 1100 3180 30  0001 C C
 	1    1100 3250
 	0    -1   -1   0   
 $EndComp
-Text Label 7450 750  0    60   ~ 0
+Text Label 7450 750  0    60   ~
 AVdd
-Text Label 7450 1150 0    60   ~ 0
+Text Label 7450 1150 0    60   ~
 AGnd
 $Comp
 L C C78
@@ -644,29 +672,29 @@ F 2 "0603" V 7650 950 60  0000 C C
 	1    7450 950 
 	-1   0    0    1   
 $EndComp
-Text Label 8150 7450 0    60   ~ 0
+Text Label 8150 7450 0    60   ~
 Gnd_digital
-Text Label 8150 7350 0    60   ~ 0
+Text Label 8150 7350 0    60   ~
 Vdd_digital
-Text Label 8150 7250 0    60   ~ 0
+Text Label 8150 7250 0    60   ~
 Vdd2
-Text Label 8150 7150 0    60   ~ 0
+Text Label 8150 7150 0    60   ~
 AVdd
-Text Label 8150 7050 0    60   ~ 0
+Text Label 8150 7050 0    60   ~
 ADC_DOUT
-Text Label 8150 6950 0    60   ~ 0
+Text Label 8150 6950 0    60   ~
 ADC_cs
-Text Label 8150 6850 0    60   ~ 0
+Text Label 8150 6850 0    60   ~
 ADC_DIN
-Text Label 8150 6750 0    60   ~ 0
+Text Label 8150 6750 0    60   ~
 ADC_CLK
-Text Label 8000 4700 0    60   ~ 0
+Text Label 8000 4700 0    60   ~
 ADC_cs
-Text Label 8000 4600 0    60   ~ 0
+Text Label 8000 4600 0    60   ~
 ADC_DIN
-Text Label 8000 4500 0    60   ~ 0
+Text Label 8000 4500 0    60   ~
 ADC_DOUT
-Text Label 8000 4400 0    60   ~ 0
+Text Label 8000 4400 0    60   ~
 ADC_CLK
 $Comp
 L 8X100 U43
@@ -698,27 +726,27 @@ F 2 "0402" H 10750 5050 60  0000 C C
 	1    11000 5050
 	1    0    0    -1  
 $EndComp
-Text HLabel 11550 6050 2    60   Input ~ 0
+Text HLabel 11550 6050 2    60   Input
 Gnd_digital
-Text HLabel 11600 4050 2    60   Input ~ 0
+Text HLabel 11600 4050 2    60   Input
 Vdd_digital
-Text Label 7650 5800 0    60   ~ 0
+Text Label 7650 5800 0    60   ~
 Vref
-Text Label 7300 5500 0    60   ~ 0
+Text Label 7300 5500 0    60   ~
 AVdd
-Text Label 7350 6200 0    60   ~ 0
+Text Label 7350 6200 0    60   ~
 AGnd
-Text Label 8000 4800 0    60   ~ 0
+Text Label 8000 4800 0    60   ~
 AGnd
-Text Label 8000 4300 0    60   ~ 0
+Text Label 8000 4300 0    60   ~
 AGnd
-Text Label 8000 4200 0    60   ~ 0
+Text Label 8000 4200 0    60   ~
 Vref
-Text Label 8000 4100 0    60   ~ 0
+Text Label 8000 4100 0    60   ~
 AVdd
-Text Label 9650 3750 0    60   ~ 0
+Text Label 9650 3750 0    60   ~
 AGnd
-Text Label 8500 3750 0    60   ~ 0
+Text Label 8500 3750 0    60   ~
 AVdd
 $Comp
 L C C84
@@ -740,13 +768,13 @@ F 2 "0603" V 8850 3750 60  0000 C C
 	1    8950 3750
 	0    -1   -1   0   
 $EndComp
-Text HLabel 11100 5550 2    60   Output ~ 0
+Text HLabel 11100 5550 2    60   Output
 Dout
-Text HLabel 11100 4450 2    60   Input ~ 0
+Text HLabel 11100 4450 2    60   Input
 _cs
-Text HLabel 11100 4350 2    60   Input ~ 0
+Text HLabel 11100 4350 2    60   Input
 Din
-Text HLabel 11100 4250 2    60   Input ~ 0
+Text HLabel 11100 4250 2    60   Input
 CLK
 $Comp
 L ADUM2400 U45
@@ -768,13 +796,13 @@ F 2 "SOICW-16" H 10190 5540 60  0000 C C
 	1    10250 5900
 	1    0    0    -1  
 $EndComp
-Text Notes 5450 4500 0    60   ~ 0
+Text Notes 5450 4500 0    60   ~
 e.g. 4x AAA (6V)
-Text Label 2300 550  0    60   ~ 0
+Text Label 2300 550  0    60   ~
 Vdd2
-Text Label 3850 5600 0    60   ~ 0
+Text Label 3850 5600 0    60   ~
 AGnd
-Text Label 3850 4800 0    60   ~ 0
+Text Label 3850 4800 0    60   ~
 AVdd
 $Comp
 L R R38
@@ -806,15 +834,15 @@ F 2 "0603" H 7400 6050 60  0000 C C
 	1    7300 5900
 	1    0    0    -1  
 $EndComp
-Text Label 6650 2000 0    60   ~ 0
+Text Label 6650 2000 0    60   ~
 AGnd
-Text Label 8850 2100 0    60   ~ 0
+Text Label 8850 2100 0    60   ~
 Vdd2
-Text Label 5900 2100 0    60   ~ 0
+Text Label 5900 2100 0    60   ~
 Vdd2
-Text Label 8100 2100 0    60   ~ 0
+Text Label 8100 2100 0    60   ~
 AGnd
-Text Label 6550 2100 0    60   ~ 0
+Text Label 6550 2100 0    60   ~
 AVdd
 $Comp
 L C C82
@@ -836,7 +864,7 @@ F 2 "0603" V 6500 2100 60  0000 C C
 	1    6350 2100
 	0    1    1    0   
 $EndComp
-Text Label 1850 4900 0    60   ~ 0
+Text Label 1850 4900 0    60   ~
 Vdd2
 $Comp
 L C C67
@@ -898,7 +926,7 @@ F 2 "0603" H 4600 5000 60  0000 C C
 	1    4450 5200
 	1    0    0    -1  
 $EndComp
-Text Notes 5700 4400 0    60   ~ 0
+Text Notes 5700 4400 0    60   ~
 battery
 $Comp
 L C C73
@@ -950,17 +978,17 @@ F 2 "SOIC-8" H 5110 4740 60  0000 C C
 	1    5000 5000
 	1    0    0    -1  
 $EndComp
-Text Notes 8600 3400 0    60   ~ 0
+Text Notes 8600 3400 0    60   ~
 for loop stability
-Text Notes 8600 3300 0    60   ~ 0
+Text Notes 8600 3300 0    60   ~
 may have to short the cap 
-Text Notes 8600 3200 0    60   ~ 0
+Text Notes 8600 3200 0    60   ~
 need to check this segment
-Text Notes 1550 4100 0    60   ~ 0
+Text Notes 1550 4100 0    60   ~
 if they are placed, need low leakage parts
-Text Notes 1550 4000 0    60   ~ 0
+Text Notes 1550 4000 0    60   ~
 as the inst. amp has ESD diodes
-Text Notes 1550 3900 0    60   ~ 0
+Text Notes 1550 3900 0    60   ~
 These diodes are optional
 $Comp
 L R R33
@@ -1092,33 +1120,33 @@ F 2 "2x8x100mil" H 790 1490 60  0000 C C
 	1    850  2450
 	1    0    0    -1  
 $EndComp
-Text Label 4300 2300 0    60   ~ 0
+Text Label 4300 2300 0    60   ~
 AGnd
-Text Label 4300 2150 0    60   ~ 0
+Text Label 4300 2150 0    60   ~
 Vdd2
-Text Label 4300 2000 0    60   ~ 0
+Text Label 4300 2000 0    60   ~
 AVdd
-Text Label 10750 2250 0    60   ~ 0
+Text Label 10750 2250 0    60   ~
 AGnd
-Text Label 10750 2100 0    60   ~ 0
+Text Label 10750 2100 0    60   ~
 Vdd2
-Text Label 10750 1950 0    60   ~ 0
+Text Label 10750 1950 0    60   ~
 AVdd
-Text Label 6750 4700 0    60   ~ 0
+Text Label 6750 4700 0    60   ~
 CH3
-Text Label 6750 4500 0    60   ~ 0
+Text Label 6750 4500 0    60   ~
 CH2
-Text Label 6750 4300 0    60   ~ 0
+Text Label 6750 4300 0    60   ~
 CH1
-Text Label 6750 4100 0    60   ~ 0
+Text Label 6750 4100 0    60   ~
 CH0
-Text Label 9050 2800 0    60   ~ 0
+Text Label 9050 2800 0    60   ~
 CH3
-Text Label 9050 1500 0    60   ~ 0
+Text Label 9050 1500 0    60   ~
 CH2
-Text Label 5800 2800 0    60   ~ 0
+Text Label 5800 2800 0    60   ~
 CH1
-Text Label 5800 1500 0    60   ~ 0
+Text Label 5800 1500 0    60   ~
 CH0
 $Comp
 L MCP3304 U42
@@ -1276,37 +1304,37 @@ F 2 "0402" V 6250 1700 60  0000 C C
 	1    6350 1700
 	0    1    1    0   
 $EndComp
-Text Label 8100 2400 0    60   ~ 0
+Text Label 8100 2400 0    60   ~
 IN-C
-Text Label 8100 2300 0    60   ~ 0
+Text Label 8100 2300 0    60   ~
 IN+C
-Text Label 8100 1800 0    60   ~ 0
+Text Label 8100 1800 0    60   ~
 IN-D
-Text Label 8100 1900 0    60   ~ 0
+Text Label 8100 1900 0    60   ~
 IN+D
-Text Label 6900 2400 2    60   ~ 0
+Text Label 6900 2400 2    60   ~
 IN-B
-Text Label 6900 2300 2    60   ~ 0
+Text Label 6900 2300 2    60   ~
 IN+B
-Text Label 6900 1800 2    60   ~ 0
+Text Label 6900 1800 2    60   ~
 IN-A
-Text Label 6900 1900 2    60   ~ 0
+Text Label 6900 1900 2    60   ~
 IN+A
-Text Label 3250 3650 0    60   ~ 0
+Text Label 3250 3650 0    60   ~
 IN-D
-Text Label 3250 3200 0    60   ~ 0
+Text Label 3250 3200 0    60   ~
 IN+D
-Text Label 3250 2850 0    60   ~ 0
+Text Label 3250 2850 0    60   ~
 IN-C
-Text Label 3250 2400 0    60   ~ 0
+Text Label 3250 2400 0    60   ~
 IN+C
-Text Label 3250 2100 0    60   ~ 0
+Text Label 3250 2100 0    60   ~
 IN-B
-Text Label 3250 1650 0    60   ~ 0
+Text Label 3250 1650 0    60   ~
 IN+B
-Text Label 3250 1400 0    60   ~ 0
+Text Label 3250 1400 0    60   ~
 IN-A
-Text Label 3250 950  0    60   ~ 0
+Text Label 3250 950  0    60   ~
 IN+A
 $Comp
 L ISL28470 U41

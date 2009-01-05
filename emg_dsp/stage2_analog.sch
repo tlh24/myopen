@@ -1,11 +1,11 @@
-EESchema Schematic File Version 2  date Thu 01 Jan 2009 11:54:59 AM EST
+EESchema Schematic File Version 2
 LIBS:power,device,emg_sym,./stage2.cache
 EELAYER 24  0
 EELAYER END
 $Descr User 17000 9000
 Sheet 4 5
 Title ""
-Date "1 jan 2009"
+Date "5 jan 2009"
 Rev ""
 Comp ""
 Comment1 ""
@@ -13,7 +13,7 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
-Text Label 1700 8900 0    60   ~ 0
+Text Label 1700 8900 0    60   ~
 V27A
 Connection ~ 1700 8900
 Connection ~ 3650 8900
@@ -557,86 +557,86 @@ Wire Wire Line
 	9800 6350 9800 6500
 Connection ~ 9800 6350
 $Comp
-L GND #PWR0102
+L GND #PWR122
 U 1 1 4913DE9C
 P 9800 6500
-F 0 "#PWR0102" H 9800 6500 30  0001 C C
+F 0 "#PWR122" H 9800 6500 30  0001 C C
 F 1 "GND" H 9800 6430 30  0001 C C
 	1    9800 6500
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR0103
+L GND #PWR121
 U 1 1 4913DE97
 P 9800 4100
-F 0 "#PWR0103" H 9800 4100 30  0001 C C
+F 0 "#PWR121" H 9800 4100 30  0001 C C
 F 1 "GND" H 9800 4030 30  0001 C C
 	1    9800 4100
 	-1   0    0    1   
 $EndComp
-Text Label 10400 6050 0    60   ~ 0
+Text Label 10400 6050 0    60   ~
 E32
-Text Label 10400 5950 0    60   ~ 0
+Text Label 10400 5950 0    60   ~
 E31
-Text Label 10400 5850 0    60   ~ 0
+Text Label 10400 5850 0    60   ~
 E30
-Text Label 10400 5750 0    60   ~ 0
+Text Label 10400 5750 0    60   ~
 E29
-Text Label 10400 5650 0    60   ~ 0
+Text Label 10400 5650 0    60   ~
 E28
-Text Label 10400 5550 0    60   ~ 0
+Text Label 10400 5550 0    60   ~
 E27
-Text Label 10400 5450 0    60   ~ 0
+Text Label 10400 5450 0    60   ~
 E26
-Text Label 10400 5350 0    60   ~ 0
+Text Label 10400 5350 0    60   ~
 E25
-Text Label 10400 5250 0    60   ~ 0
+Text Label 10400 5250 0    60   ~
 E24
-Text Label 10400 5150 0    60   ~ 0
+Text Label 10400 5150 0    60   ~
 E23
-Text Label 10400 5050 0    60   ~ 0
+Text Label 10400 5050 0    60   ~
 E22
-Text Label 10400 4950 0    60   ~ 0
+Text Label 10400 4950 0    60   ~
 E21
-Text Label 10400 4850 0    60   ~ 0
+Text Label 10400 4850 0    60   ~
 E20
-Text Label 10400 4750 0    60   ~ 0
+Text Label 10400 4750 0    60   ~
 E19
-Text Label 10400 4650 0    60   ~ 0
+Text Label 10400 4650 0    60   ~
 E18
-Text Label 10400 4550 0    60   ~ 0
+Text Label 10400 4550 0    60   ~
 E17
-Text Label 9250 6050 2    60   ~ 0
+Text Label 9250 6050 2    60   ~
 E16
-Text Label 9250 5950 2    60   ~ 0
+Text Label 9250 5950 2    60   ~
 E15
-Text Label 9250 5850 2    60   ~ 0
+Text Label 9250 5850 2    60   ~
 E14
-Text Label 9250 5750 2    60   ~ 0
+Text Label 9250 5750 2    60   ~
 E13
-Text Label 9250 5650 2    60   ~ 0
+Text Label 9250 5650 2    60   ~
 E12
-Text Label 9250 5550 2    60   ~ 0
+Text Label 9250 5550 2    60   ~
 E11
-Text Label 9250 5450 2    60   ~ 0
+Text Label 9250 5450 2    60   ~
 E10
-Text Label 9250 5350 2    60   ~ 0
+Text Label 9250 5350 2    60   ~
 E9
-Text Label 9250 5250 2    60   ~ 0
+Text Label 9250 5250 2    60   ~
 E8
-Text Label 9250 5150 2    60   ~ 0
+Text Label 9250 5150 2    60   ~
 E7
-Text Label 9250 5050 2    60   ~ 0
+Text Label 9250 5050 2    60   ~
 E6
-Text Label 9250 4950 2    60   ~ 0
+Text Label 9250 4950 2    60   ~
 E5
-Text Label 9250 4850 2    60   ~ 0
+Text Label 9250 4850 2    60   ~
 E4
-Text Label 9250 4750 2    60   ~ 0
+Text Label 9250 4750 2    60   ~
 E3
-Text Label 9250 4650 2    60   ~ 0
+Text Label 9250 4650 2    60   ~
 E2
-Text Label 9250 4550 2    60   ~ 0
+Text Label 9250 4550 2    60   ~
 E1
 $Comp
 L OMNETICS_36 U145
@@ -649,10 +649,10 @@ F 2 "omnetics_36" H 10560 5410 60  0000 C C
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR0104
+L GND #PWR103
 U 1 1 48FFF3A5
 P 6550 7200
-F 0 "#PWR0104" H 6550 7200 30  0001 C C
+F 0 "#PWR103" H 6550 7200 30  0001 C C
 F 1 "GND" H 6550 7130 30  0001 C C
 	1    6550 7200
 	1    0    0    -1  
@@ -688,19 +688,19 @@ F 2 "0603" V 6160 6760 60  0000 C C
 	0    -1   -1   0   
 $EndComp
 $Comp
-L GND #PWR0105
+L GND #PWR112
 U 1 1 48FFF257
 P 7850 3300
-F 0 "#PWR0105" H 7850 3300 30  0001 C C
+F 0 "#PWR112" H 7850 3300 30  0001 C C
 F 1 "GND" H 7850 3230 30  0001 C C
 	1    7850 3300
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR0106
+L GND #PWR111
 U 1 1 48FFF254
 P 7850 1900
-F 0 "#PWR0106" H 7850 1900 30  0001 C C
+F 0 "#PWR111" H 7850 1900 30  0001 C C
 F 1 "GND" H 7850 1830 30  0001 C C
 	1    7850 1900
 	1    0    0    -1  
@@ -726,55 +726,55 @@ F 2 "0402" H 8100 1700 60  0000 C C
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR0107
+L GND #PWR99
 U 1 1 48FFF20C
 P 4950 8800
-F 0 "#PWR0107" H 4950 8800 30  0001 C C
+F 0 "#PWR99" H 4950 8800 30  0001 C C
 F 1 "GND" H 4950 8730 30  0001 C C
 	1    4950 8800
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR0108
+L GND #PWR96
 U 1 1 48FFF209
 P 3000 8800
-F 0 "#PWR0108" H 3000 8800 30  0001 C C
+F 0 "#PWR96" H 3000 8800 30  0001 C C
 F 1 "GND" H 3000 8730 30  0001 C C
 	1    3000 8800
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR0109
+L GND #PWR98
 U 1 1 48FFF205
 P 4050 9450
-F 0 "#PWR0109" H 4050 9450 30  0001 C C
+F 0 "#PWR98" H 4050 9450 30  0001 C C
 F 1 "GND" H 4050 9380 30  0001 C C
 	1    4050 9450
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR0110
+L GND #PWR97
 U 1 1 48FFF202
 P 3650 9450
-F 0 "#PWR0110" H 3650 9450 30  0001 C C
+F 0 "#PWR97" H 3650 9450 30  0001 C C
 F 1 "GND" H 3650 9380 30  0001 C C
 	1    3650 9450
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR0111
+L GND #PWR95
 U 1 1 48FFF200
 P 2100 9450
-F 0 "#PWR0111" H 2100 9450 30  0001 C C
+F 0 "#PWR95" H 2100 9450 30  0001 C C
 F 1 "GND" H 2100 9380 30  0001 C C
 	1    2100 9450
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR0112
+L GND #PWR94
 U 1 1 48FFF1FE
 P 1700 9450
-F 0 "#PWR0112" H 1700 9450 30  0001 C C
+F 0 "#PWR94" H 1700 9450 30  0001 C C
 F 1 "GND" H 1700 9380 30  0001 C C
 	1    1700 9450
 	1    0    0    -1  
@@ -819,64 +819,64 @@ F 2 "0402" H 1800 9400 60  0000 C C
 	1    1700 9250
 	1    0    0    -1  
 $EndComp
-Text Label 7900 7400 0    60   ~ 0
+Text Label 7900 7400 0    60   ~
 V27B
-Text Label 7900 8700 0    60   ~ 0
+Text Label 7900 8700 0    60   ~
 V27A
-Text HLabel 7350 6800 2    60   Input ~ 0
+Text HLabel 7350 6800 2    60   Input
 VIN
-Text HLabel 6800 8150 0    60   Input ~ 0
+Text HLabel 6800 8150 0    60   Input
 AFEEN
 $Comp
-L GND #PWR0113
+L GND #PWR107
 U 1 1 48FFF0F2
 P 7000 8800
-F 0 "#PWR0113" H 7000 8800 30  0001 C C
+F 0 "#PWR107" H 7000 8800 30  0001 C C
 F 1 "GND" H 7000 8730 30  0001 C C
 	1    7000 8800
 	0    1    1    0   
 $EndComp
 $Comp
-L GND #PWR0114
+L GND #PWR106
 U 1 1 48FFF0EE
 P 7000 7500
-F 0 "#PWR0114" H 7000 7500 30  0001 C C
+F 0 "#PWR106" H 7000 7500 30  0001 C C
 F 1 "GND" H 7000 7430 30  0001 C C
 	1    7000 7500
 	0    1    1    0   
 $EndComp
 $Comp
-L GND #PWR0115
+L GND #PWR105
 U 1 1 48FFF0D7
 P 6550 9100
-F 0 "#PWR0115" H 6550 9100 30  0001 C C
+F 0 "#PWR105" H 6550 9100 30  0001 C C
 F 1 "GND" H 6550 9030 30  0001 C C
 	1    6550 9100
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR0116
+L GND #PWR100
 U 1 1 48FFF0D4
 P 5950 7800
-F 0 "#PWR0116" H 5950 7800 30  0001 C C
+F 0 "#PWR100" H 5950 7800 30  0001 C C
 F 1 "GND" H 5950 7730 30  0001 C C
 	1    5950 7800
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR0117
+L GND #PWR102
 U 1 1 48FFF0D2
 P 6250 7800
-F 0 "#PWR0117" H 6250 7800 30  0001 C C
+F 0 "#PWR102" H 6250 7800 30  0001 C C
 F 1 "GND" H 6250 7730 30  0001 C C
 	1    6250 7800
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR0118
+L GND #PWR104
 U 1 1 48FFF0D0
 P 6550 7800
-F 0 "#PWR0118" H 6550 7800 30  0001 C C
+F 0 "#PWR104" H 6550 7800 30  0001 C C
 F 1 "GND" H 6550 7730 30  0001 C C
 	1    6550 7800
 	1    0    0    -1  
@@ -922,37 +922,37 @@ F 2 "0402" H 6650 7750 60  0000 C C
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR0119
+L GND #PWR114
 U 1 1 48FFF044
 P 7900 9100
-F 0 "#PWR0119" H 7900 9100 30  0001 C C
+F 0 "#PWR114" H 7900 9100 30  0001 C C
 F 1 "GND" H 7900 9030 30  0001 C C
 	1    7900 9100
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR0120
+L GND #PWR113
 U 1 1 48FFF041
 P 7900 7800
-F 0 "#PWR0120" H 7900 7800 30  0001 C C
+F 0 "#PWR113" H 7900 7800 30  0001 C C
 F 1 "GND" H 7900 7730 30  0001 C C
 	1    7900 7800
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR0121
+L GND #PWR120
 U 1 1 48FFF02A
 P 8650 8900
-F 0 "#PWR0121" H 8650 8900 30  0001 C C
+F 0 "#PWR120" H 8650 8900 30  0001 C C
 F 1 "GND" H 8650 8830 30  0001 C C
 	1    8650 8900
 	0    -1   -1   0   
 $EndComp
 $Comp
-L GND #PWR0122
+L GND #PWR119
 U 1 1 48FFF023
 P 8650 7600
-F 0 "#PWR0122" H 8650 7600 30  0001 C C
+F 0 "#PWR119" H 8650 7600 30  0001 C C
 F 1 "GND" H 8650 7530 30  0001 C C
 	1    8650 7600
 	0    -1   -1   0   
@@ -1018,10 +1018,10 @@ F 2 "SC-70-5" H 7240 7440 60  0000 C C
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR0123
+L GND #PWR101
 U 1 1 48CA0AAC
 P 6250 6100
-F 0 "#PWR0123" H 6250 6100 30  0001 C C
+F 0 "#PWR101" H 6250 6100 30  0001 C C
 F 1 "GND" H 6250 6030 30  0001 C C
 	1    6250 6100
 	1    0    0    -1  
@@ -1036,50 +1036,50 @@ F 2 "0402" H 6500 5800 60  0000 C C
 	1    6250 5800
 	1    0    0    -1  
 $EndComp
-Text HLabel 7050 5600 1    60   Input ~ 0
+Text HLabel 7050 5600 1    60   Input
 MUX3
-Text HLabel 6950 5600 1    60   Input ~ 0
+Text HLabel 6950 5600 1    60   Input
 MUX2
-Text HLabel 6850 5600 1    60   Input ~ 0
+Text HLabel 6850 5600 1    60   Input
 MUX1
-Text HLabel 6750 5600 1    60   Input ~ 0
+Text HLabel 6750 5600 1    60   Input
 MUX0
 $Comp
-L GND #PWR0124
+L GND #PWR108
 U 1 1 48CA09DE
 P 7450 5600
-F 0 "#PWR0124" H 7450 5600 30  0001 C C
+F 0 "#PWR108" H 7450 5600 30  0001 C C
 F 1 "GND" H 7450 5530 30  0001 C C
 	1    7450 5600
 	1    0    0    -1  
 $EndComp
-Text Label 6250 5550 0    60   ~ 0
+Text Label 6250 5550 0    60   ~
 V27B
 $Comp
-L GND #PWR0125
+L GND #PWR116
 U 1 1 48CA0985
 P 8350 3400
-F 0 "#PWR0125" H 8350 3400 30  0001 C C
+F 0 "#PWR116" H 8350 3400 30  0001 C C
 F 1 "GND" H 8350 3330 30  0001 C C
 	1    8350 3400
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR0126
+L GND #PWR115
 U 1 1 48CA0983
 P 8350 2000
-F 0 "#PWR0126" H 8350 2000 30  0001 C C
+F 0 "#PWR115" H 8350 2000 30  0001 C C
 F 1 "GND" H 8350 1930 30  0001 C C
 	1    8350 2000
 	1    0    0    -1  
 $EndComp
-Text HLabel 9700 1900 2    60   Input ~ 0
+Text HLabel 9700 1900 2    60   Input
 RSCLK1
-Text HLabel 9700 1600 2    60   Input ~ 0
+Text HLabel 9700 1600 2    60   Input
 RFS1
-Text HLabel 9650 2500 2    60   Input ~ 0
+Text HLabel 9650 2500 2    60   Input
 DR1SEC
-Text HLabel 9700 1100 2    60   Input ~ 0
+Text HLabel 9700 1100 2    60   Input
 DR1PRI
 $Comp
 L C C63
@@ -1091,22 +1091,22 @@ F 2 "0402" H 8600 1700 60  0000 C C
 	1    8350 1700
 	1    0    0    -1  
 $EndComp
-Text Label 8350 950  0    60   ~ 0
+Text Label 8350 950  0    60   ~
 V27B
 $Comp
-L GND #PWR0127
+L GND #PWR117
 U 1 1 48CA08D8
 P 8500 1100
-F 0 "#PWR0127" H 8500 1100 30  0001 C C
+F 0 "#PWR117" H 8500 1100 30  0001 C C
 F 1 "GND" H 8500 1030 30  0001 C C
 	1    8500 1100
 	0    1    1    0   
 $EndComp
 $Comp
-L GND #PWR0128
+L GND #PWR109
 U 1 1 48CA08D7
 P 7550 700
-F 0 "#PWR0128" H 7550 700 30  0001 C C
+F 0 "#PWR109" H 7550 700 30  0001 C C
 F 1 "GND" H 7550 630 30  0001 C C
 	1    7550 700 
 	-1   0    0    1   
@@ -1141,22 +1141,22 @@ F 2 "0402" H 8600 3100 60  0000 C C
 	1    8350 3100
 	1    0    0    -1  
 $EndComp
-Text Label 8350 2350 0    60   ~ 0
+Text Label 8350 2350 0    60   ~
 V27B
 $Comp
-L GND #PWR0129
+L GND #PWR118
 U 1 1 48CA0880
 P 8500 2500
-F 0 "#PWR0129" H 8500 2500 30  0001 C C
+F 0 "#PWR118" H 8500 2500 30  0001 C C
 F 1 "GND" H 8500 2430 30  0001 C C
 	1    8500 2500
 	0    1    1    0   
 $EndComp
 $Comp
-L GND #PWR0130
+L GND #PWR110
 U 1 1 48CA087F
 P 7550 2100
-F 0 "#PWR0130" H 7550 2100 30  0001 C C
+F 0 "#PWR110" H 7550 2100 30  0001 C C
 F 1 "GND" H 7550 2030 30  0001 C C
 	1    7550 2100
 	-1   0    0    1   
@@ -1181,197 +1181,197 @@ F 2 "SOT-23-5" H 7700 2950 60  0000 C C
 	1    7650 2500
 	0    1    1    0   
 $EndComp
-Text Label 3800 8500 0    60   ~ 0
+Text Label 3800 8500 0    60   ~
 E32
-Text Label 3800 8000 0    60   ~ 0
+Text Label 3800 8000 0    60   ~
 E31
-Text Label 3800 7500 0    60   ~ 0
+Text Label 3800 7500 0    60   ~
 E30
-Text Label 3800 7000 0    60   ~ 0
+Text Label 3800 7000 0    60   ~
 E29
-Text Label 3800 6500 0    60   ~ 0
+Text Label 3800 6500 0    60   ~
 E28
-Text Label 3800 6000 0    60   ~ 0
+Text Label 3800 6000 0    60   ~
 E27
-Text Label 3800 5500 0    60   ~ 0
+Text Label 3800 5500 0    60   ~
 E26
-Text Label 3800 5000 0    60   ~ 0
+Text Label 3800 5000 0    60   ~
 E25
-Text Label 3800 4500 0    60   ~ 0
+Text Label 3800 4500 0    60   ~
 E24
-Text Label 3800 4000 0    60   ~ 0
+Text Label 3800 4000 0    60   ~
 E23
-Text Label 3800 3500 0    60   ~ 0
+Text Label 3800 3500 0    60   ~
 E22
-Text Label 3800 3000 0    60   ~ 0
+Text Label 3800 3000 0    60   ~
 E21
-Text Label 3800 2500 0    60   ~ 0
+Text Label 3800 2500 0    60   ~
 E20
-Text Label 3800 2000 0    60   ~ 0
+Text Label 3800 2000 0    60   ~
 E19
-Text Label 3800 1500 0    60   ~ 0
+Text Label 3800 1500 0    60   ~
 E18
-Text Label 3800 1000 0    60   ~ 0
+Text Label 3800 1000 0    60   ~
 E17
-Text Label 1850 8500 0    60   ~ 0
+Text Label 1850 8500 0    60   ~
 E16
-Text Label 1850 8000 0    60   ~ 0
+Text Label 1850 8000 0    60   ~
 E15
-Text Label 1850 7500 0    60   ~ 0
+Text Label 1850 7500 0    60   ~
 E14
-Text Label 1850 7000 0    60   ~ 0
+Text Label 1850 7000 0    60   ~
 E13
-Text Label 1850 6500 0    60   ~ 0
+Text Label 1850 6500 0    60   ~
 E12
-Text Label 1850 6000 0    60   ~ 0
+Text Label 1850 6000 0    60   ~
 E11
-Text Label 1850 5500 0    60   ~ 0
+Text Label 1850 5500 0    60   ~
 E10
-Text Label 1850 5000 0    60   ~ 0
+Text Label 1850 5000 0    60   ~
 E9
-Text Label 1850 4500 0    60   ~ 0
+Text Label 1850 4500 0    60   ~
 E8
-Text Label 1850 4000 0    60   ~ 0
+Text Label 1850 4000 0    60   ~
 E7
-Text Label 1850 3500 0    60   ~ 0
+Text Label 1850 3500 0    60   ~
 E6
-Text Label 1850 3000 0    60   ~ 0
+Text Label 1850 3000 0    60   ~
 E5
-Text Label 1850 2500 0    60   ~ 0
+Text Label 1850 2500 0    60   ~
 E4
-Text Label 1850 2000 0    60   ~ 0
+Text Label 1850 2000 0    60   ~
 E3
-Text Label 1850 1500 0    60   ~ 0
+Text Label 1850 1500 0    60   ~
 E2
-Text Label 1850 1000 0    60   ~ 0
+Text Label 1850 1000 0    60   ~
 E1
-Text Label 4650 8500 0    60   ~ 0
+Text Label 4650 8500 0    60   ~
 B15
-Text Label 4650 8000 0    60   ~ 0
+Text Label 4650 8000 0    60   ~
 B14
-Text Label 4650 7500 0    60   ~ 0
+Text Label 4650 7500 0    60   ~
 B13
-Text Label 4650 7000 0    60   ~ 0
+Text Label 4650 7000 0    60   ~
 B12
-Text Label 4650 6500 0    60   ~ 0
+Text Label 4650 6500 0    60   ~
 B11
-Text Label 4650 6000 0    60   ~ 0
+Text Label 4650 6000 0    60   ~
 B10
-Text Label 4650 5500 0    60   ~ 0
+Text Label 4650 5500 0    60   ~
 B9
-Text Label 4650 5000 0    60   ~ 0
+Text Label 4650 5000 0    60   ~
 B8
-Text Label 4650 4500 0    60   ~ 0
+Text Label 4650 4500 0    60   ~
 B7
-Text Label 4650 4000 0    60   ~ 0
+Text Label 4650 4000 0    60   ~
 B6
-Text Label 4650 3500 0    60   ~ 0
+Text Label 4650 3500 0    60   ~
 B5
-Text Label 4650 3000 0    60   ~ 0
+Text Label 4650 3000 0    60   ~
 B4
-Text Label 4650 2500 0    60   ~ 0
+Text Label 4650 2500 0    60   ~
 B3
-Text Label 4650 2000 0    60   ~ 0
+Text Label 4650 2000 0    60   ~
 B2
-Text Label 4650 1500 0    60   ~ 0
+Text Label 4650 1500 0    60   ~
 B1
-Text Label 4650 1000 0    60   ~ 0
+Text Label 4650 1000 0    60   ~
 B0
-Text Label 2700 8500 0    60   ~ 0
+Text Label 2700 8500 0    60   ~
 A15
-Text Label 2700 8000 0    60   ~ 0
+Text Label 2700 8000 0    60   ~
 A14
-Text Label 2700 7500 0    60   ~ 0
+Text Label 2700 7500 0    60   ~
 A13
-Text Label 2700 7000 0    60   ~ 0
+Text Label 2700 7000 0    60   ~
 A12
-Text Label 2700 6500 0    60   ~ 0
+Text Label 2700 6500 0    60   ~
 A11
-Text Label 2700 6000 0    60   ~ 0
+Text Label 2700 6000 0    60   ~
 A10
-Text Label 2700 5500 0    60   ~ 0
+Text Label 2700 5500 0    60   ~
 A9
-Text Label 2700 5000 0    60   ~ 0
+Text Label 2700 5000 0    60   ~
 A8
-Text Label 2700 4500 0    60   ~ 0
+Text Label 2700 4500 0    60   ~
 A7
-Text Label 2700 4000 0    60   ~ 0
+Text Label 2700 4000 0    60   ~
 A6
-Text Label 2700 3500 0    60   ~ 0
+Text Label 2700 3500 0    60   ~
 A5
-Text Label 2700 3000 0    60   ~ 0
+Text Label 2700 3000 0    60   ~
 A4
-Text Label 2700 2500 0    60   ~ 0
+Text Label 2700 2500 0    60   ~
 A3
-Text Label 2700 2000 0    60   ~ 0
+Text Label 2700 2000 0    60   ~
 A2
-Text Label 2700 1500 0    60   ~ 0
+Text Label 2700 1500 0    60   ~
 A1
-Text Label 2700 1000 0    60   ~ 0
+Text Label 2700 1000 0    60   ~
 A0
-Text Label 8150 5150 0    60   ~ 0
+Text Label 8150 5150 0    60   ~
 B0
-Text Label 8150 5050 0    60   ~ 0
+Text Label 8150 5050 0    60   ~
 B1
-Text Label 8150 4950 0    60   ~ 0
+Text Label 8150 4950 0    60   ~
 B2
-Text Label 8150 4850 0    60   ~ 0
+Text Label 8150 4850 0    60   ~
 B3
-Text Label 8150 4750 0    60   ~ 0
+Text Label 8150 4750 0    60   ~
 B4
-Text Label 8150 4650 0    60   ~ 0
+Text Label 8150 4650 0    60   ~
 B5
-Text Label 8150 4550 0    60   ~ 0
+Text Label 8150 4550 0    60   ~
 B6
-Text Label 8150 4450 0    60   ~ 0
+Text Label 8150 4450 0    60   ~
 B7
-Text Label 8150 4350 0    60   ~ 0
+Text Label 8150 4350 0    60   ~
 B8
-Text Label 8150 4250 0    60   ~ 0
+Text Label 8150 4250 0    60   ~
 B9
-Text Label 8150 4150 0    60   ~ 0
+Text Label 8150 4150 0    60   ~
 B10
-Text Label 8150 4050 0    60   ~ 0
+Text Label 8150 4050 0    60   ~
 B11
-Text Label 7650 3800 1    60   ~ 0
+Text Label 7650 3800 1    60   ~
 B12
-Text Label 7550 3800 1    60   ~ 0
+Text Label 7550 3800 1    60   ~
 B13
-Text Label 7450 3800 1    60   ~ 0
+Text Label 7450 3800 1    60   ~
 B14
-Text Label 7350 3800 1    60   ~ 0
+Text Label 7350 3800 1    60   ~
 B15
-Text Label 6850 3800 1    60   ~ 0
+Text Label 6850 3800 1    60   ~
 A15
-Text Label 6750 3800 1    60   ~ 0
+Text Label 6750 3800 1    60   ~
 A14
-Text Label 6650 3800 1    60   ~ 0
+Text Label 6650 3800 1    60   ~
 A13
-Text Label 6550 3800 1    60   ~ 0
+Text Label 6550 3800 1    60   ~
 A12
-Text Label 5800 4050 0    60   ~ 0
+Text Label 5800 4050 0    60   ~
 A11
-Text Label 5800 4150 0    60   ~ 0
+Text Label 5800 4150 0    60   ~
 A10
-Text Label 5800 4250 0    60   ~ 0
+Text Label 5800 4250 0    60   ~
 A9
-Text Label 5800 4350 0    60   ~ 0
+Text Label 5800 4350 0    60   ~
 A8
-Text Label 5800 4450 0    60   ~ 0
+Text Label 5800 4450 0    60   ~
 A7
-Text Label 5800 4550 0    60   ~ 0
+Text Label 5800 4550 0    60   ~
 A6
-Text Label 5800 4650 0    60   ~ 0
+Text Label 5800 4650 0    60   ~
 A5
-Text Label 5800 4750 0    60   ~ 0
+Text Label 5800 4750 0    60   ~
 A4
-Text Label 5800 5150 0    60   ~ 0
+Text Label 5800 5150 0    60   ~
 A0
-Text Label 5800 5050 0    60   ~ 0
+Text Label 5800 5050 0    60   ~
 A1
-Text Label 5800 4950 0    60   ~ 0
+Text Label 5800 4950 0    60   ~
 A2
-Text Label 5800 4850 0    60   ~ 0
+Text Label 5800 4850 0    60   ~
 A3
 $Comp
 L ADG726 U24

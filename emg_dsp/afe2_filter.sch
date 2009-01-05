@@ -1,11 +1,11 @@
-EESchema Schematic File Version 2  date Thu 01 Jan 2009 11:54:59 AM EST
+EESchema Schematic File Version 2
 LIBS:power,device,emg_sym,./stage2.cache
 EELAYER 24  0
 EELAYER END
 $Descr A4 11700 8267
 Sheet 3 5
 Title "noname.sch"
-Date "1 jan 2009"
+Date "5 jan 2009"
 Rev ""
 Comp ""
 Comment1 ""
@@ -13,16 +13,16 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
-Text Label 4000 2900 0    60   ~ 0
+Text Label 4000 2900 0    60   ~
 AGnd
-Text Label 4000 1500 0    60   ~ 0
+Text Label 4000 1500 0    60   ~
 AVdd
 Connection ~ 8250 4050
 Connection ~ 8250 3250
 Connection ~ 8250 3650
-Text Label 8250 4050 0    60   ~ 0
+Text Label 8250 4050 0    60   ~
 AGnd
-Text Label 8250 3250 0    60   ~ 0
+Text Label 8250 3250 0    60   ~
 AVdd
 $Comp
 L C C129
@@ -685,18 +685,18 @@ F 2 "TSSOP-14" H 3700 2750 60  0000 C C
 	1    4000 2550
 	1    0    0    -1  
 $EndComp
-Text HLabel 6950 5000 2    60   Input ~ 0
+Text HLabel 6950 5000 2    60   Input
 Out2
-Text HLabel 1950 4800 0    60   Input ~ 0
+Text HLabel 1950 4800 0    60   Input
 In2
-Text HLabel 1950 2350 0    60   Input ~ 0
+Text HLabel 1950 2350 0    60   Input
 In1
-Text HLabel 4250 2900 2    60   Input ~ 0
+Text HLabel 4250 2900 2    60   Input
 Analog_GND
-Text HLabel 8500 3650 2    60   Input ~ 0
+Text HLabel 8500 3650 2    60   Input
 Vdd/2
-Text HLabel 6950 2550 2    60   Input ~ 0
+Text HLabel 6950 2550 2    60   Input
 Out1
-Text HLabel 4250 1500 2    60   Input ~ 0
+Text HLabel 4250 1500 2    60   Input
 Analog_Vdd
 $EndSCHEMATC
