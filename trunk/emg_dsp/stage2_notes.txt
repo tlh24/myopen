@@ -1,3 +1,6 @@
 state2 notes: 
 x array distance on the LMV1023 circuit: 0.247"
 y array distance : 0.057
+
+Feb 11 2009: changed input capacitors from 1uf to 0.47uf to have 
+better rejection of ECG; updating the digikey order accordingly. 
