@@ -1,9 +1,9 @@
-EESchema Schematic File Version 2
+EESchema Schematic File Version 2  date Wed 04 Mar 2009 10:58:46 AM EST
 LIBS:power,device,emg_sym,./emg_dsp.cache
 EELAYER 23  0
 EELAYER END
 $Descr A 11000 8500
-Sheet 3 4
+Sheet 3 14
 Title ""
 Date "21 may 2008"
 Rev ""
@@ -227,43 +227,43 @@ AR Path="/47A131D8/47A131DA/476B67B2" Ref="U50"  Part="1"
 AR Path="/47A131D8/47A131DC/476B67B2" Ref="U52"  Part="1" 
 AR Path="/47A131D8/47A131DE/476B67B2" Ref="U54"  Part="1" 
 AR Path="/47A131D8/47A131E0/476B67B2" Ref="U56"  Part="1" 
-F 0 "U56" H 1650 2150 60  0000 C C
-F 1 "MNR18" H 1500 2750 60  0000 C C
-F 2 "0603x8" H 1500 1850 60  0000 C C
+F 0 "U56" H 1650 2150 60  0000 C CNN
+F 1 "MNR18" H 1500 2750 60  0000 C CNN
+F 2 "0603x8" H 1500 1850 60  0000 C CNN
 	1    1500 2250
 	1    0    0    -1  
 $EndComp
-Text HLabel 1000 2750 0    60   BiDi
+Text HLabel 1000 2750 0    60   BiDi ~ 0
 IN-3
-Text HLabel 1000 2600 0    60   BiDi
+Text HLabel 1000 2600 0    60   BiDi ~ 0
 IN+3
-Text HLabel 1000 2450 0    60   BiDi
+Text HLabel 1000 2450 0    60   BiDi ~ 0
 IN-2
-Text HLabel 1000 2300 0    60   BiDi
+Text HLabel 1000 2300 0    60   BiDi ~ 0
 IN+2
-Text HLabel 1000 2150 0    60   BiDi
+Text HLabel 1000 2150 0    60   BiDi ~ 0
 IN-1
-Text HLabel 1000 2000 0    60   BiDi
+Text HLabel 1000 2000 0    60   BiDi ~ 0
 IN+1
-Text HLabel 1000 1850 0    60   BiDi
+Text HLabel 1000 1850 0    60   BiDi ~ 0
 IN-0
-Text HLabel 1000 1700 0    60   BiDi
+Text HLabel 1000 1700 0    60   BiDi ~ 0
 IN+0
-Text HLabel 7750 1950 2    60   BiDi
+Text HLabel 7750 1950 2    60   BiDi ~ 0
 _cs
-Text HLabel 7750 1850 2    60   BiDi
+Text HLabel 7750 1850 2    60   BiDi ~ 0
 Din
-Text HLabel 7750 2050 2    60   Output
+Text HLabel 7750 2050 2    60   Output ~ 0
 Dout
-Text HLabel 7750 1750 2    60   BiDi
+Text HLabel 7750 1750 2    60   BiDi ~ 0
 CLK
-Text HLabel 7750 2850 2    60   BiDi
+Text HLabel 7750 2850 2    60   BiDi ~ 0
 Vdd/2
-Text HLabel 7750 2350 2    60   BiDi
+Text HLabel 7750 2350 2    60   BiDi ~ 0
 Vdd
-Text HLabel 7750 2450 2    60   BiDi
+Text HLabel 7750 2450 2    60   BiDi ~ 0
 Vref
-Text HLabel 7750 3050 2    60   BiDi
+Text HLabel 7750 3050 2    60   BiDi ~ 0
 GND
 $Comp
 L C C?
@@ -274,9 +274,9 @@ AR Path="/47A131D8/47A131DA/476738E9" Ref="C94"  Part="1"
 AR Path="/47A131D8/47A131DC/476738E9" Ref="C97"  Part="1" 
 AR Path="/47A131D8/47A131DE/476738E9" Ref="C100"  Part="1" 
 AR Path="/47A131D8/47A131E0/476738E9" Ref="C103"  Part="1" 
-F 0 "C103" H 6550 3350 50  0000 L C
-F 1 "1uf" H 6550 3150 50  0000 L C
-F 2 "0402" H 6600 3400 60  0000 C C
+F 0 "C103" H 6550 3350 50  0000 L CNN
+F 1 "1uf" H 6550 3150 50  0000 L CNN
+F 2 "0402" H 6600 3400 60  0000 C CNN
 	1    6500 3250
 	1    0    0    -1  
 $EndComp
@@ -289,9 +289,9 @@ AR Path="/47A131D8/47A131DA/47673645" Ref="C95"  Part="1"
 AR Path="/47A131D8/47A131DC/47673645" Ref="C98"  Part="1" 
 AR Path="/47A131D8/47A131DE/47673645" Ref="C101"  Part="1" 
 AR Path="/47A131D8/47A131E0/47673645" Ref="C104"  Part="1" 
-F 0 "C104" H 6900 2800 50  0000 L C
-F 1 "1uf" H 6900 2600 50  0000 L C
-F 2 "0402" H 6950 2850 60  0000 C C
+F 0 "C104" H 6900 2800 50  0000 L CNN
+F 1 "1uf" H 6900 2600 50  0000 L CNN
+F 2 "0402" H 6950 2850 60  0000 C CNN
 	1    6850 2700
 	1    0    0    -1  
 $EndComp
@@ -304,9 +304,9 @@ AR Path="/47A131D8/47A131DA/4767362C" Ref="C93"  Part="1"
 AR Path="/47A131D8/47A131DC/4767362C" Ref="C96"  Part="1" 
 AR Path="/47A131D8/47A131DE/4767362C" Ref="C99"  Part="1" 
 AR Path="/47A131D8/47A131E0/4767362C" Ref="C102"  Part="1" 
-F 0 "C102" H 6550 2800 50  0000 L C
-F 1 "1uf" H 6550 2600 50  0000 L C
-F 2 "0402" H 6600 2850 60  0000 C C
+F 0 "C102" H 6550 2800 50  0000 L CNN
+F 1 "1uf" H 6550 2600 50  0000 L CNN
+F 2 "0402" H 6600 2850 60  0000 C CNN
 	1    6500 2700
 	1    0    0    -1  
 $EndComp
@@ -319,9 +319,9 @@ AR Path="/47A131D8/47A131DA/47672159" Ref="U51"  Part="1"
 AR Path="/47A131D8/47A131DC/47672159" Ref="U53"  Part="1" 
 AR Path="/47A131D8/47A131DE/47672159" Ref="U55"  Part="1" 
 AR Path="/47A131D8/47A131E0/47672159" Ref="U57"  Part="1" 
-F 0 "U57" H 5650 2050 60  0000 C C
-F 1 "MCP3304" H 5550 3350 60  0000 C C
-F 2 "SOIC-16" H 5400 2200 60  0000 C C
+F 0 "U57" H 5650 2050 60  0000 C CNN
+F 1 "MCP3304" H 5550 3350 60  0000 C CNN
+F 2 "SOIC-16" H 5400 2200 60  0000 C CNN
 	1    5500 2700
 	1    0    0    -1  
 $EndComp

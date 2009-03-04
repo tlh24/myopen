@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Wed 11 Feb 2009 05:22:00 PM EST
+EESchema Schematic File Version 2  date Wed 04 Mar 2009 10:59:10 AM EST
 LIBS:power,device,emg_sym,./stage2.cache
 EELAYER 24  0
 EELAYER END
@@ -13,6 +13,8 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
+Text Notes 3150 3350 0    60   ~ 0
+12Mhz
 $Comp
 L FCI_USB_B U147
 U 1 1 4967BA25
