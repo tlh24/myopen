@@ -11,3 +11,8 @@ NEED thermal releif around all through holes; otherwise, cannot solder them!
 NEED more space around the electrolytic cap -- or need a surface mount cap. 
 	 I'm just going to leave it out for now. 
 NEED to get the large-bumped package for electret amps: LMV1032UR
+FOOTPRINT for SOD-523 and SOD-323 are incorrect; need to use SOD-523 for both 
+	on board (3.3 and 5v zener protection).  
+	http://www.diodes.com/zetex/_pdfs/3.0/pack/SOD523.pdf
+	http://www.diodes.com/zetex/_pdfs/3.0/pack/SOD323.pdf
+	323 is BIGGER than 523 (wha?)
