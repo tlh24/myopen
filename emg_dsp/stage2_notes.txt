@@ -4,3 +4,9 @@ y array distance : 0.057
 
 Feb 11 2009: changed input capacitors from 1uf to 0.47uf to have 
 better rejection of ECG; updating the digikey order accordingly. 
+
+March 10 2009 - 
+NEED thermal releif around all through holes; otherwise, cannot solder them! 
+(at least, not with a soldering iron; may be able to reflow them)
+NEED more space around the electrolytic cap -- or need a surface mount cap. 
+	 I'm just going to leave it out for now. 
