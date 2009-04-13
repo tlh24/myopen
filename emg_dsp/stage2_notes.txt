@@ -21,3 +21,5 @@ FOOTPRINT of nRF24L01 too small - fixed.
 	changed to 1.85mm for better exposed die clearance)
 FOOTPRINT of LFCSP-48 enhanced.  should be OK now, though - just no overhang. 
 	set overhang to 0.2mm. 
+VOLTAGE of the MAX3421E is 3.3V - it does not run at 2.85V!! DOH! 
+	next time need a 3.3v LDO off the USB power for this chip! 

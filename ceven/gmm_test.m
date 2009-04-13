@@ -14,7 +14,7 @@ for class = 1:9
 		for t = 1:64:5120-128
 			for chan = 1:4
 				d = data2( t:t+128, class, trial, chan); 
-				d = d - mean(d); % needed otherwise zer-crossings doesn't work! 
+				d = d - mean(d); % needed otherwise zero-crossings doesn't work! 
 				j = 1; 
 				if(feats(1)>0) f(chan, j, k, class) = c_mav(d); j = j+1; end
 				if(feats(2)>0) f(chan, j, k, class) = c_wl(d); j = j+1; end
