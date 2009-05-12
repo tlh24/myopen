@@ -1,4 +1,7 @@
-function maccuracy = gmm_test(Data, feats)
+pwed
+
+
+pwdfunction maccuracy = gmm_test(Data, feats)
 % feats is a logical array to determine feature inclusion. 
 % test script for jon's myo data.
 % (/myopen/ceven/Kuniholm062708_Fulldata.mat)
