@@ -165,15 +165,37 @@ Vector.prototype = {
     ]);
   },
 
-  // Returns the (absolute) largest element of the vector
-  max: function() {
-    var m = 0, n = this.elements.length, k = n, i;
-    do { i = k - n;
-      if (Math.abs(this.elements[i]) > Math.abs(m)) { m = this.elements[i]; }
-    } while (--n);
-    return m;
+  // Returns the largest element of the vector
+  max:function(){
+	var n= this.elements.length ; 
+	if(n == 0) {
+		return 0;
+	} else {
+		var m = this.elements[0]; 
+		var u ; 
+		for(i=0; i < n; i++){
+			u = this.elements[i]; 
+			//alert("u=" + u); 
+			if( u > m) {m = u ; }
+		}
+	}
+	return m; 
   },
-
+    // Returns the smallest element of the vector
+  min:function(){
+	var n= this.elements.length ; 
+	if(n == 0) {
+		return 0;
+	} else {
+		var m = this.elements[0]; 
+		var u ; 
+		for(i=0; i < n; i++){
+			u = this.elements[i]; 
+			if( u < m) {m = u ; }
+		}
+	}
+	return m; 
+  },
   // Returns the index of the first match found
   indexOf: function(x) {
     var index = null, n = this.elements.length, k = n, i;
@@ -339,15 +361,15 @@ Matrix.prototype = {
   // Returns row k of the matrix as a vector
   row: function(i) {
     if (i > this.elements.length) { return null; }
-    return Vector.create(this.elements[i-1]);
+    return Vector.create(this.elements[i]);
   },
 
   // Returns column k of the matrix as a vector
-  col: function(j) {
+  col:function(j) {
     if (j > this.elements[0].length) { return null; }
     var col = [], n = this.elements.length, k = n, i;
     do { i = k - n;
-      col.push(this.elements[i][j-1]);
+      col.push(this.elements[i][j]);
     } while (--n);
     return Vector.create(col);
   },
@@ -478,7 +500,7 @@ Matrix.prototype = {
       elements[i] = [];
       nj = d;
       do { j = d - nj;
-        elements[i][j] = this.elements[(a+i-1)%rows][(b+j-1)%cols];
+        elements[i][j] = this.elements[(a+i)%rows][(b+j)%cols];
       } while (--nj);
     } while (--ni);
     return Matrix.create(elements);
