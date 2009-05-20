@@ -2,10 +2,13 @@
 <head>
 <title>myopen</title>
 <script type="text/javascript" src="gmm_test.js"></script>
+<script type="text/javascript" src="gmm_plot.js"></script>
 <script type="text/javascript" src="sylvester.src.js"></script>
 </head>
 <body>
+<font face = "Times" color = "#470e78">
 <h1>Myopen configuration</h1>
+</font>
 <div style="background:#dedeee" align="center">
 <form action="test.pl" method="post">
 	Data Stream (port 4340, UDP)
@@ -111,9 +114,56 @@
 	<input type="submit" name="calibrate" value="Calibrate Thresholds"/>
 </form>
 </div>
-<div id="-2">
-<p><font color="green">nothing yet!</font></p>
+<div style="background:#d8eeee" align="center">
+<form action="javascript:retrieveData(10000)" method="post">
+	<p>Plot Features:</p>
+	<table>
+	<tr><td>Feature X: </td>
+	<td><select name ="featone" id="featone" >
+		<option value ="0">Mean value</option>
+		<option value ="1">Mean Absolute values</option>
+		<option value ="2">Wavelength Feature 1</option>
+		<option value ="3">Wavelength Feature 2</option>
+		<option value ="4">Zero Crossings</option>
+		<option value ="5">Slope Changes</option>
+		<option value ="6">Root Mean Square Values</option>
+	</select></td></tr>
+	<tr><td>Channel X: </td>
+	<td><select name ="chanone" id="chanone">
+		<option value ="0">1</option>
+		<option value ="1">2</option>
+		<option value ="2">3</option>
+		<option value ="3">4</option>
+		<option value ="4">5</option>
+	</select></td></tr>
+	</table>
+	<table>
+	<tr><td>Feature Y: </td>
+	<td><select name ="feattwo" id="feattwo" >
+		<option value ="0">Mean value</option>
+		<option value ="1">Mean Absolute values</option>
+		<option value ="2">Wavelength Feature 1</option>
+		<option value ="3">Wavelength Feature 2</option>
+		<option value ="4">Zero Crossings</option>
+		<option value ="5">Slope Changes</option>
+		<option value ="6">Root Mean Square Values</option>
+	</select></td></tr>
+	<tr><td>Channel Y: </td>
+	<td><select name ="chantwo" id="chantwo" >
+		<option value ="0">1</option>
+		<option value ="1">2</option>
+		<option value ="2">3</option>
+		<option value ="3">4</option>
+		<option value ="4">5</option>
+	</select></td></tr>
+	</table>
+	<p></p>
+	<input type= "Submit" value = "Plot"/>
+</form>
 </div>
-<a href="javascript:retrieveData(5000)">run GMM </a>
+<div>
+<p><font color="red"></font></p>
+<canvas id="canvas" width="300" height="300"></canvas>
+</div>
 </body>
 </html>
