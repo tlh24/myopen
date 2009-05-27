@@ -3,7 +3,9 @@
 <title>myopen</title>
 <script type="text/javascript" src="gmm_test.js"></script>
 <script type="text/javascript" src="gmm_plot.js"></script>
+<script type="text/javascript" src="gmm_ellipse.js"></script>
 <script type="text/javascript" src="sylvester.src.js"></script>
+<script type="text/javascript" src="wz_jsgraphics.js"></script>
 </head>
 <body>
 <font face = "Times" color = "#470e78">
@@ -121,12 +123,11 @@
 	<tr><td>Feature X: </td>
 	<td><select name ="featone" id="featone" >
 		<option value ="0">Zero Crossings</option>
-		<option value ="1">Mean Absolute values</option>
-		<option value ="2">Wavelength Feature 1</option>
-		<option value ="3">Wavelength Feature 2</option>
-		<option value ="4">Mean value</option>
-		<option value ="5">Slope Changes</option>
-		<option value ="6">Root Mean Square Values</option>
+		<option value ="1">Wavelength Feature 1</option>
+		<option value ="2">Wavelength Feature 2</option>
+		<option value ="3">Mean Absolute values</option>
+		<option value ="4">Slope Changes</option>
+		<option value ="5">Root Mean Square Values</option>
 	</select></td></tr>
 	<tr><td>Channel X: </td>
 	<td><select name ="chanone" id="chanone">
@@ -141,12 +142,11 @@
 	<tr><td>Feature Y: </td>
 	<td><select name ="feattwo" id="feattwo" >
 		<option value ="0">Zero Crossings</option>
-		<option value ="1">Mean Absolute values</option>
-		<option value ="2">Wavelength Feature 1</option>
-		<option value ="3">Wavelength Feature 2</option>
-		<option value ="4">Mean Value</option>
-		<option value ="5">Slope Changes</option>
-		<option value ="6">Root Mean Square Values</option>
+		<option value ="1">Wavelength Feature 1</option>
+		<option value ="2">Wavelength Feature 2</option>
+		<option value ="3">Mean Absolute values</option>
+		<option value ="4">Slope Changes</option>
+		<option value ="5">Root Mean Square Values</option>
 	</select></td></tr>
 	<tr><td>Channel Y: </td>
 	<td><select name ="chantwo" id="chantwo" >
@@ -161,9 +161,14 @@
 	<input type= "Submit" value = "Plot"/>
 </form>
 </div>
-<div>
+<div align="center"  style="background:#0a0e35">
 <p><font color="red"></font></p>
 <canvas id="canvas" width="300" height="300"></canvas>
 </div>
+<div id="-2">
+	<p>no results yet!</p>
+</div>
+
+
 </body>
 </html>

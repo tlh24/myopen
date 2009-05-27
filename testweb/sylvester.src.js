@@ -175,7 +175,6 @@ Vector.prototype = {
 		var u ; 
 		for(i=0; i < n; i++){
 			u = this.elements[i]; 
-			//alert("u=" + u); 
 			if( u > m) {m = u ; }
 		}
 	}

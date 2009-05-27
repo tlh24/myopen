@@ -1,15 +1,15 @@
 // using processing.js to show stuff
 
 
-function scatterDraw(x,y,color, clear) {
+function scatterDraw(x,y,color, clear, axes, dot) {
 
 	//does a scatterplot of the data. 
 	// x and y are vecrtors.
 	var len = Math.min(x.dimensions(), y.dimensions()); 
-	var minx = x.min(); 
-	var miny = y.min(); 
-	var spanx = x.max() - minx; 
-	var spany = y.max() - miny; 
+	var minx = axes[0]; 
+	var miny = axes[2];  
+	var spanx = axes[1] - minx; 
+	var spany = axes[3] - miny; 
 	var canvas = document.getElementById("canvas");
 	var ctx = canvas.getContext("2d");
 	if(clear){
@@ -25,23 +25,82 @@ function scatterDraw(x,y,color, clear) {
 	var oy = Math.round((0 - miny)/spany * sizey) ; 
 	if(ox >= 0 && ox <= canvas.width){
 		ctx.beginPath();  
-		ctx.moveTo(ox,0); ctx. lineTo(ox, canvas.height); 
+		ctx.moveTo(ox,0); ctx.lineTo(ox, canvas.height); 
 		ctx.stroke();
 	}
 	if(oy >= 0 && oy <= canvas.width){
 		ctx.beginPath();  
-		ctx.moveTo(0,oy); ctx. lineTo(canvas.width, oy); 
+		ctx.moveTo(0,oy); ctx.lineTo(canvas.width, oy); 
 		ctx.stroke();
 	}
 	
-	//alert(" minx=" + minx + " spanx=" + spanx +
-		//" miny=" + miny + " spany=" + spany +
-		//" len=" + len + " sizex=" + sizex); 
 	for(i=0; i< len; i++){
 		var xx = Math.round(((xe[i] - minx)/spanx) * sizex) ; 
 		var yy = Math.round(((ye[i] - miny)/spany) * sizey) ;
-		ctx.fillRect (xx,yy,3,3); 
+		ctx.fillRect(xx,yy,dot,dot); 
 	}
 }
 
-
+function ellipseDraw(x,y,color,axes){
+	var len = x.dimensions(); 
+	var m = Matrix.Zero(len, 2); 
+	var me = m.elements; 
+	var xe = x.elements; 
+	var ye = y.elements; 
+	for( i=0; i < len ; i++){
+		me[i][0] = xe[i]; 
+		me[i][1] = ye[i]; 
+	}
+	var mean = calcMean(m); 
+	var cov = calcCov(m, mean); 
+	var cove = cov.elements; 
+	var a = cove[0][0]; 
+	var b = cove[0][1]; 
+	var c = cove[1][0]; 
+	var d = cove[1][1]; 
+	alert(" cov: a = " +a+" b="+b+" c="+c+" d="+d); 
+	//get the eigenvalues
+	var lambda1 = ((a+d) + Math.sqrt(4*b*c+(a-d)*(a-d)))/2 ; 
+	var lambda2 = ((a+d) - Math.sqrt(4*b*c+(a-d)*(a-d)))/2 ; 
+	//calculate the eigenvectors. 
+	var vec1 = Vector.Zero(2);  var vec1e = vec1.elements; 
+	var vec2 = Vector.Zero(2); var vec2e = vec2.elements;
+	if( c != 0.0){
+		vec1e[0] = lambda1-d; 
+		vec2e[0] = lambda2-d; 
+		vec1e[1] = c; 
+		vec2e[1] = c; 
+	} else if (b != 0.0){
+		vec1e[0] = b; 
+		vec2e[0] = b; 
+		vec1e[1] = lambda1-a; 
+		vec2e[1] = lambda2-a; 
+	} else {
+		vec1e[0] = 1; 
+		vec2e[0] = 0; 
+		vec1e[1] = 0; 
+		vec2e[1] = 1; 
+	}
+	alert("cov: a = " +a+" b="+b+" c="+c+" d="+d+"\n"+
+		"eigvec1: [0]="+vec1e[0]+" [1]="+vec1e[1] +"\n"+ 
+		"eigvec2: [0]="+vec2e[0]+" [1]="+vec2e[1]); 
+	//now use these to plot an ellipse. 
+	var canvas = document.getElementById("canvas");
+	var ctx = canvas.getContext("2d");
+	
+	ctx.beginPath();  
+	for(theta = 0.0; theta <= Math.PI * 2 + 0.0001 ; theta += Math.pi / 6){
+		var x1 = vec1e[0] * Math.sin(theta) + vec1e[1] * Math.cos(theta) ; 
+		var y1 = vec1e[1] * Math.sin(theta) - vec1e[0] * Math.cos(theta) ; 
+		var x2 = vec2e[0] * Math.sin(theta) + vec2e[1] * Math.cos(theta) ; 
+		var y2 = vec2e[1] * Math.sin(theta) - vec2e[0] * Math.cos(theta) ; 
+		if(theta == 0.0){
+			ctx.moveTo(x1+x2, y1+y2); 
+		} else {
+			ctx.lineTo(x1+x2, y1+y2); 
+		}
+	}
+	ctx.closePath(); 
+	ctx.fillStyle="rgba(0,0,200,0.5)";
+	ctx.fill(); 
+}
