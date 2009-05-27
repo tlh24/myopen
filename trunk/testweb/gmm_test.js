@@ -93,10 +93,10 @@ function processData(d){
 		var iy = g_y_channel + g_y_feature * cols ; 
 		//alert("x channel = " + ix + " y channel = " + iy);
 		//res = res+printVector(cs[0].col(ix));
-		var colors = ["0,0,255", 
-				"0,85,255",
+		var colors = ["100,0,255", 
+				"35,85,255",
 				"0,170,255",
-				"0,200,200",
+				"0,250,200",
 				"85,255,170",
 				"170,255,85",
 				"255,255,0",
@@ -117,7 +117,8 @@ function processData(d){
 		for(v=0; v<classes; v++){
 			var clear = v == 0; 
 			scatterDraw(cs[v].col(ix), cs[v].col(iy),colors[v]+",0.75", clear, axes,3);
-			elp[v] = ellipse(cs[v].col(ix), cs[v].col(iy), axes);
+			//elp[v] = ellipse(cs[v].col(ix), cs[v].col(iy), axes);
+			ellipseDraw(cs[v].col(ix), cs[v].col(iy),colors[v]+",0.25", axes); 
 		}
 	}
 
@@ -247,7 +248,7 @@ function ellipse(x,y, axes){
 
 	}
 	scatterDraw(mapx, mapy, "255,255,255,0.75", false, axes,1);
-	ellipseDraw(mapx, mapy, "255,255,255,0.75", axes); 
+	ellipseDraw(mapx, mapy, "255,255,255,0.5", axes); 
 	return beta
 }
 
@@ -480,6 +481,26 @@ function printVector (p) {
 	return res ; 
 }
 
+function normalizeVec(v){
+	//this works in-palce
+	var k =  v.dimensions(); 
+	var sum = 0.0; 
+	var ve = v.elements; 
+	for(i=0; i<k; i++){
+		sum += ve[i] * ve[i] ; 
+	}
+	sum = Math.sqrt(sum); 
+	for(i=0; i<k; i++){
+		ve[i] = ve[i] / sum ; 
+	}
+}
+function scaleVec(v,scl){
+	var k =  v.dimensions(); 
+	var ve = v.elements; 
+	for(i=0; i<k; i++){
+		ve[i] = ve[i]*scl ; 
+	}
+}
 
 
 
