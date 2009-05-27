@@ -52,13 +52,13 @@ function ellipseDraw(x,y,color,axes){
 		me[i][1] = ye[i]; 
 	}
 	var mean = calcMean(m); 
+	var meane = mean.elements ;
 	var cov = calcCov(m, mean); 
 	var cove = cov.elements; 
 	var a = cove[0][0]; 
 	var b = cove[0][1]; 
 	var c = cove[1][0]; 
 	var d = cove[1][1]; 
-	alert(" cov: a = " +a+" b="+b+" c="+c+" d="+d); 
 	//get the eigenvalues
 	var lambda1 = ((a+d) + Math.sqrt(4*b*c+(a-d)*(a-d)))/2 ; 
 	var lambda2 = ((a+d) - Math.sqrt(4*b*c+(a-d)*(a-d)))/2 ; 
@@ -81,26 +81,42 @@ function ellipseDraw(x,y,color,axes){
 		vec1e[1] = 0; 
 		vec2e[1] = 1; 
 	}
-	alert("cov: a = " +a+" b="+b+" c="+c+" d="+d+"\n"+
+	normalizeVec(vec1); 
+	normalizeVec(vec2); 
+	scaleVec(vec1, Math.sqrt(lambda1) * 1.5); 
+	scaleVec(vec2, Math.sqrt(lambda2) * 1.5); 
+	/*console.log("cov: a = " +a+" b="+b+" c="+c+" d="+d+"\n"+
+		" lambda1="+lambda1+" lambda2="+lambda2+"\n"+
 		"eigvec1: [0]="+vec1e[0]+" [1]="+vec1e[1] +"\n"+ 
-		"eigvec2: [0]="+vec2e[0]+" [1]="+vec2e[1]); 
+		"eigvec2: [0]="+vec2e[0]+" [1]="+vec2e[1]); */
+		
+	/*vec1e[0] = 20; 
+	vec2e[0] = 0; 
+	vec1e[1] = 0; 
+	vec2e[1] = 20; */
 	//now use these to plot an ellipse. 
 	var canvas = document.getElementById("canvas");
 	var ctx = canvas.getContext("2d");
-	
+	var minx = axes[0]; 
+	var miny = axes[2];  
+	var spanx = axes[1] - minx; 
+	var spany = axes[3] - miny; 
+	var sizex = canvas.width - 3; 
+	var sizey = canvas.height -3; 
 	ctx.beginPath();  
-	for(theta = 0.0; theta <= Math.PI * 2 + 0.0001 ; theta += Math.pi / 6){
-		var x1 = vec1e[0] * Math.sin(theta) + vec1e[1] * Math.cos(theta) ; 
-		var y1 = vec1e[1] * Math.sin(theta) - vec1e[0] * Math.cos(theta) ; 
-		var x2 = vec2e[0] * Math.sin(theta) + vec2e[1] * Math.cos(theta) ; 
-		var y2 = vec2e[1] * Math.sin(theta) - vec2e[0] * Math.cos(theta) ; 
+	for(var theta = 0.0; theta <= Math.PI * 2 + 0.0001 ; theta += Math.PI / 8){
+		var x1 = vec1e[0] * Math.sin(theta) + vec2e[0] * Math.cos(theta) ; 
+		var y1 = vec1e[1] * Math.sin(theta) + vec2e[1] * Math.cos(theta) ; 
+		var xx = ((x1+meane[0])-minx)/spanx * sizex; 
+		var yy = ((y1+meane[1])-miny)/spany * sizey; 
 		if(theta == 0.0){
-			ctx.moveTo(x1+x2, y1+y2); 
+			ctx.moveTo(xx,yy); 
 		} else {
-			ctx.lineTo(x1+x2, y1+y2); 
+			//console.log("line at " + xx + " , " + yy); 
+			ctx.lineTo(xx,yy); 
 		}
 	}
 	ctx.closePath(); 
-	ctx.fillStyle="rgba(0,0,200,0.5)";
+	ctx.fillStyle = "rgba("+color+")";
 	ctx.fill(); 
 }
