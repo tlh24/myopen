@@ -1,5 +1,5 @@
-x = data4; 
-f = fopen('data4.txt', 'w');
+x = sigmainv; 
+f = fopen('sigmainv.txt', 'w');
 r = size(x,1); 
 c = size(x,2); 
 fprintf(f,['rows:' num2str(r) ' cols:' num2str(c) '\n']); 
