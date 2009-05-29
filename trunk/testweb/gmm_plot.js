@@ -104,7 +104,7 @@ function ellipseDraw(x,y,color,axes){
 	var sizex = canvas.width - 3; 
 	var sizey = canvas.height -3; 
 	ctx.beginPath();  
-	for(var theta = 0.0; theta <= Math.PI * 2 + 0.0001 ; theta += Math.PI / 8){
+	for(var theta = 0.0; theta <= Math.PI * 2 + 0.0001 ; theta += Math.PI / 16){
 		var x1 = vec1e[0] * Math.sin(theta) + vec2e[0] * Math.cos(theta) ; 
 		var y1 = vec1e[1] * Math.sin(theta) + vec2e[1] * Math.cos(theta) ; 
 		var xx = ((x1+meane[0])-minx)/spanx * sizex; 

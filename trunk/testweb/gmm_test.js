@@ -66,10 +66,12 @@ function processData(d){
 	var classes = 9; 
 	var cs_len =rows/ classes; 
 	var cs = [];
-	var elp = [];
+	var cs_test = [];
+
 
 	for(t=0; t<classes; t++){
 		cs[t] = cls(m,t*cs_len, 100, 50); 
+		cs_test[t] = cls_test(m,t*cs_len, 100, 50);
 	}
 	
 	//get the drop-down menu selections. 
@@ -114,20 +116,19 @@ function processData(d){
 			maxy = Math.max(cs[v].col(iy).max(), maxy); 
 		}
 		var axes = [minx, maxx, miny, maxy]; 
+		var acc = [];
 		for(v=0; v<classes; v++){
 			var clear = v == 0; 
 			scatterDraw(cs[v].col(ix), cs[v].col(iy),colors[v]+",0.75", clear, axes,3);
-			//elp[v] = ellipse(cs[v].col(ix), cs[v].col(iy), axes);
-			ellipseDraw(cs[v].col(ix), cs[v].col(iy),colors[v]+",0.25", axes); 
-		}
+			ellipseDraw(cs[v].col(ix), cs[v].col(iy),colors[v]+",0.25", axes);
+			acc[v] = accuracy(cs[v], cs_test[v], g_x_channel); 
+	
 	}
+	}
+	res = res + printMatrix(acc[0]);
+//	res = res+ printVector(acc[0]);
+//	res = res + acc[0];
 
-	/*
-	res = res + "<p>cs[0]:</p>"; 
-	res = res + printMatrix(cs[0]); 
-	res = res + "<p>cs[1]:</p>"; 
-	res = res + printMatrix(cs[1]); 
-	*/
 	return res ; 
 
 }
@@ -138,10 +139,9 @@ function cls(m,offset,len,shift){ // make variables work with this!!!
 	// len = window length, shift = window shift
 	var cl_num = 9;
 	var cl_len = m.rows()/cl_num;
-	
-	var c = m.minor(offset,0,cl_len, m.cols()); 
+	var c = m.minor(offset,0,cl_len-200, m.cols()); // used to make the model
+	var data = m.minor(offset+cl_len-200,0,200, m.cols()); // used to test accuracy
 	var a_len = Math.round((c.rows()/shift)-1);
-//	alert("a len=" +a_len);
 	var a = Matrix.Zero(a_len, 6*m.cols());
 	var ae = a.elements;
 	var klim = Math.floor(c.rows()/len)*len
@@ -175,82 +175,7 @@ function cls(m,offset,len,shift){ // make variables work with this!!!
 	return a
 }
 
-function ellipse(x,y, axes){
-	var xe = x.elements;
-	var ye = y.elements;
-	var lenx = x.dimensions();
-	var leny = y.dimensions();
-	var s = Matrix.Zero(lenx, 2);
-	var se = s.elements;
-	for(i =0; i<lenx; i++){
-			se[i][0] = xe[i];
-			se[i][1] = ye[i];
-	} 
-	var Lx = Matrix.Zero(lenx, 2); // least squares regression
-	var Lxe = Lx.elements;
-	for(i =0; i<lenx; i++){
-			Lxe[i][0] = 1;
-			Lxe[i][1] = xe[i];
-	} 
-	var xtx = 0;
-	var xty = 0;
-	var xtrans = Lx.transpose();
-	//alert("xtrans = " + xtrans + "xtx = " + xtx);
-	var xtranse = xtrans.elements;
-	for(i=0; i<lenx; i++){
-		for(j=0; j<2; j++){
-			xtx[j] = xtx[j] + (xtranse[j][i]*ye[i]);
-			xty[j] = xty[j] + (xtranse[j][i]*Lxe[i][j]);
-		}
-	}
-	var beta = [];
-	beta[0] = xty[0]/xtx[0];
-	beta[1] = xty[1]/xtx[1];
-	//alert("xty[0] = " + xty[0] + "xtx[0] = " + xtx[0] + "xty[1] = " + xty[1]);
-	var pi = Math.PI;
-	var size = 500;
-	var mean = calcMean(s);
-	var meane = mean.elements;
-	var mnx = meane[0];
-	var mny = meane[1];
-	var distx = Vector.Zero(size);
-	var distxe = distx.elements;
-	var disty = Vector.Zero(size);
-	var distye = disty.elements;
-	var varx= variance(x, mnx);
-	var stdx = Math.sqrt(varx);
-	var vary = variance(y, mny);
-	var stdy = Math.sqrt(vary);
-	var z_score = 1 // 1.96 is the z-score for a 95% confidence interval
-	var zx = z_score*stdx; 
-	var zy = z_score*stdy; 
-	for(i = 0; i <size; i++){
-		distxe[i] = zx*Math.sin(2*i*pi/size);
-		distye[i] = zy*Math.cos(2*i*pi/size);
-	}
-	
-	var theta = 0;
-	var theta2 = 1-theta;
-	var a =  theta/(2*varx) + theta2/(2*vary);
-	var b = theta2/(4*vary) - theta2/(4*varx);
-	var c = theta2/(2*varx) + theta/(2*vary);
-	
-	var fxy = Matrix.Zero(size, size);
-	var fxye = fxy.elements;
-	var mapx = Vector.Zero(size);
-	var mapxe = mapx.elements;
-	var mapy = Vector.Zero(size);
-	var mapye = mapy.elements;
 
-	for(i=1; i<size; i++){
-		mapxe[i] = mnx + distxe[i];
-		mapye[i] = mny + distye[i];
-
-	}
-	scatterDraw(mapx, mapy, "255,255,255,0.75", false, axes,1);
-	ellipseDraw(mapx, mapy, "255,255,255,0.5", axes); 
-	return beta
-}
 
 
 // processing functions
