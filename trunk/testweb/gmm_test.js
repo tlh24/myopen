@@ -131,9 +131,11 @@ function processData(d){
 		[4.3950,5.3439,3.4109],
 		[3.2449,3.4109,4.2245]
 		]);
-	var testcho = cholesky(testrun);
+	var testchol = cholesky(testrun);
+	var testinv = cholesky_invert(testrun);
 	
-	res = res + printMatrix(testcho);
+	res = res + printMatrix(testinv);
+
 //	res = res + printMatrix(acc[0]);
 //	res = res+ printVector(acc[0]);
 //	res = res + acc[0];
