@@ -66,12 +66,13 @@ function processData(d){
 	var classes = 9; 
 	var cs_len =rows/ classes; 
 	var cs = [];
-	var cs_test = [];
 
+	var cs_test = [];
 
 	for(t=0; t<classes; t++){
 		cs[t] = cls(m,t*cs_len, 100, 50); 
 		cs_test[t] = cls_test(m,t*cs_len, 100, 50);
+	
 	}
 	
 	//get the drop-down menu selections. 
@@ -117,15 +118,23 @@ function processData(d){
 		}
 		var axes = [minx, maxx, miny, maxy]; 
 		var acc = [];
-		for(v=0; v<classes; v++){
+		
+	for(v=0; v<classes; v++){
 			var clear = v == 0; 
 			scatterDraw(cs[v].col(ix), cs[v].col(iy),colors[v]+",0.75", clear, axes,3);
 			ellipseDraw(cs[v].col(ix), cs[v].col(iy),colors[v]+",0.25", axes);
-			acc[v] = accuracy(cs[v], cs_test[v], g_x_channel); 
+			//acc[v] = accuracy(cs[v], cs_test[v], g_x_channel); 
+		}
+	}
+	var testrun = $M([
+		[4.9685,4.3950,3.2449],
+		[4.3950,5.3439,3.4109],
+		[3.2449,3.4109,4.2245]
+		]);
+	var testcho = cholesky(testrun);
 	
-	}
-	}
-	res = res + printMatrix(acc[0]);
+	res = res + printMatrix(testcho);
+//	res = res + printMatrix(acc[0]);
 //	res = res+ printVector(acc[0]);
 //	res = res + acc[0];
 
