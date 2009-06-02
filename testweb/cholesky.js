@@ -3,9 +3,7 @@ function cholesky(a){
 	var el = a.dup(); //MUST NOT use = operator - need a new matrix here!
 	var ele = el.elements;
 	var i, j, k;
-	//var temp = Vector.Zero(n);
-	//var tempe = temp.elements;
-	var sum;
+	var sum = 0;
 	if(el.cols() !=n){
 		alert("need square matrix");
 	}else{
@@ -45,8 +43,8 @@ function cholesky_invert(a){
 	var ainv = Matrix.Zero(n, n);
 	var ainve = ainv.elements;
 	//alert("starting cholesky inversion!"); 
-	console.log(printMatrix(a)); 
-	console.log(printMatrix(el)); 
+	//console.log(printMatrix(a)); 
+	//console.log(printMatrix(el)); 
 	for(i=0; i<n; i++){
 		for(j=0; j<=i; j++){
 			if(i ==j){

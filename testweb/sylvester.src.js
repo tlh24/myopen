@@ -354,12 +354,12 @@ Matrix.prototype = {
   // Returns element (i,j) of the matrix
   e: function(i,j) {
     if (i < 1 || i > this.elements.length || j < 1 || j > this.elements[0].length) { return null; }
-    return this.elements[i-1][j-1];
+    return this.elements[i][j];
   },
 
   // Returns row k of the matrix as a vector
   row: function(i) {
-    if (i > this.elements.length) { return null; }
+    if (i >= this.elements.length) { return null; }
     return Vector.create(this.elements[i]);
   },
 
@@ -602,10 +602,11 @@ Matrix.prototype = {
   determinant: function() {
     if (!this.isSquare()) { return null; }
     var M = this.toRightTriangular();
-    var det = M.elements[0][0], n = M.elements.length - 1, k = n, i;
-    do { i = k - n + 1;
-      det = det * M.elements[i][i];
-    } while (--n);
+    var det = 1; 
+    var n = M.elements.length; 
+    for(i=0; i<n; i++){
+	det *=  M.elements[i][i];
+    }
     return det;
   },
 

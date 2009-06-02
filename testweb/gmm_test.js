@@ -126,15 +126,24 @@ function processData(d){
 			//acc[v] = accuracy(cs[v], cs_test[v], g_x_channel); 
 		}
 	}
-	var testrun = $M([
-		[4.9685,4.3950,3.2449],
-		[4.3950,5.3439,3.4109],
-		[3.2449,3.4109,4.2245]
-		]);
-	var testchol = cholesky(testrun);
-	var testinv = cholesky_invert(testrun);
 	
-	res = res + printMatrix(testinv);
+	var gmean = calcMean(cs_test[0]); 
+	var gsigma = calcCov(cs_test[0], gmean);
+//	var testchol = cholesky(gsigma);
+
+	
+//	res = res + printMatrix(cs_test[0]);
+//	res = res + printVector(gmean);
+	res = res + printMatrix(symm);
+
+	
+	//res = res + "<p>determinant: " + det + "</p>"; 
+	
+	//test gaussian pdf .. 
+	
+
+	//var pdf = mvgaussian(gmean, gsigma, testpts); 
+
 
 //	res = res + printMatrix(acc[0]);
 //	res = res+ printVector(acc[0]);
@@ -144,14 +153,14 @@ function processData(d){
 
 }
 
+
 // break up into classes
 
 function cls(m,offset,len,shift){ // make variables work with this!!!
 	// len = window length, shift = window shift
 	var cl_num = 9;
 	var cl_len = m.rows()/cl_num;
-	var c = m.minor(offset,0,cl_len-200, m.cols()); // used to make the model
-	var data = m.minor(offset+cl_len-200,0,200, m.cols()); // used to test accuracy
+	var c = m.minor(offset,0,cl_len, m.cols()); // used to make the model
 	var a_len = Math.round((c.rows()/shift)-1);
 	var a = Matrix.Zero(a_len, 6*m.cols());
 	var ae = a.elements;
@@ -208,12 +217,12 @@ function calcCov(m,mean){
 	var mz = subMean(m,mean); 
 	//now compute the covariance matrix. 
 	var n = mz.transpose(); 
-	var cov = n.x(mz) ;
+	var cov = mxx(n,mz) ;
 	var cove = cov.elements ; 
 	//divide by the number of elements...
 	for (i =0; i<cov.rows(); i++){
 		for (j=0; j < cov.cols(); j++){
-			cove[i][j] = cove[i][j] / m.rows() ; 
+			cove[i][j] = cove[i][j] / (m.rows()-1) ; 
 		}
 	}
 	return cov ; 
