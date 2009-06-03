@@ -63,17 +63,16 @@ function processData(d){
 			me[r][c] = parseFloat(samp); 
 		}
 	}
-	var classes = 9; 
+	var classes = 4; 
 	var cs_len =rows/ classes; 
 	var cs = [];
-
 	var cs_test = [];
 
 	for(t=0; t<classes; t++){
 		cs[t] = cls(m,t*cs_len, 100, 50); 
 		cs_test[t] = cls_test(m,t*cs_len, 100, 50);
-	
 	}
+
 	
 	//get the drop-down menu selections. 
 	var node = document.getElementById("featone"); 
@@ -84,6 +83,7 @@ function processData(d){
 	g_y_feature = node.selectedIndex;
 	node = document.getElementById("chantwo"); 
 	g_y_channel = node.selectedIndex;
+
 	if(g_x_channel>= cols){
 		alert("This channel does not exist, try again");
 	}
@@ -94,7 +94,7 @@ function processData(d){
 		//plot all the classes ...
 		var ix = g_x_channel + g_x_feature * cols; 
 		var iy = g_y_channel + g_y_feature * cols ; 
-		//alert("x channel = " + ix + " y channel = " + iy);
+
 		//res = res+printVector(cs[0].col(ix));
 		var colors = ["100,0,255", 
 				"35,85,255",
@@ -118,37 +118,59 @@ function processData(d){
 		}
 		var axes = [minx, maxx, miny, maxy]; 
 		var acc = [];
+		var pdf = [];
+
 		
 	for(v=0; v<classes; v++){
 			var clear = v == 0; 
-			scatterDraw(cs[v].col(ix), cs[v].col(iy),colors[v]+",0.75", clear, axes,3);
-			ellipseDraw(cs[v].col(ix), cs[v].col(iy),colors[v]+",0.25", axes);
-			//acc[v] = accuracy(cs[v], cs_test[v], g_x_channel); 
+			scatterDraw(cs[v].col(ix), cs[v].col(iy),colors[2*v]+",0.75", clear, axes,3);
+			ellipseDraw(cs[v].col(ix), cs[v].col(iy),colors[2*v]+",0.25", axes);
+			/*
+			var mu = calcMean(cs[v]);
+			var sigma = calcCov(cs[v], mu);
+				var pr = Matrix.Zero(cs_test[v].rows(), classes);
+				var pre = pr.elements;
+				for(vv=0; vv<classes; vv++){
+					var prob = mvgaussian(mu, sigma, cs_test[vv])
+					var probe = prob.elements;
+					for(k=0; k<prob.dimensions(); k++){
+						pre[k][vv] = probe[k];
+					}
+				
+				}	
+				pdf[v] = pr;
+				*/
+			
 		}
 	}
+	var twod = $M([
+		[-0.10224, -1.0891 ],
+		[-0.24145, 0.032557], 
+		[0.31921, 0.55253 ],
+		[0.31286, 1.1006 ],
+		[-0.86488, 1.5442 ],
+		[-0.030051, 0.085931 ],
+		[-0.16488, -1.4916] ,
+		[0.62771, -0.7423] ,
+		[1.0933, -1.0616 ],
+		[1.1093, 2.3505 ],
+		[-0.86365, -0.6156 ],
+		[0.077359, 0.74808 ],
+		[-1.2141, -0.19242 ],
+		[-1.1135, 0.88861 ],
+		[-0.0068493, -0.76485 ],
+		[1.5326, -1.4023 ],
+		[-0.76967, -1.4224 ],
+		[0.37138, 0.48819 ],
+		[-0.22558, -0.17738], 
+		[1.1174, -0.19605 ]
+		]);
 	
-	var gmean = calcMean(cs_test[0]); 
-	var gsigma = calcCov(cs_test[0], gmean);
-//	var testchol = cholesky(gsigma);
-
+	var gmean = calcMean(twod);
+	var gsigma = calcCov(twod, gmean);
+	var pdf = mvgaussian(gmean, gsigma, twod);
 	
-//	res = res + printMatrix(cs_test[0]);
-//	res = res + printVector(gmean);
-	res = res + printMatrix(symm);
-
-	
-	//res = res + "<p>determinant: " + det + "</p>"; 
-	
-	//test gaussian pdf .. 
-	
-
-	//var pdf = mvgaussian(gmean, gsigma, testpts); 
-
-
-//	res = res + printMatrix(acc[0]);
-//	res = res+ printVector(acc[0]);
-//	res = res + acc[0];
-
+	res = res + printVector(pdf);
 	return res ; 
 
 }
@@ -158,15 +180,16 @@ function processData(d){
 
 function cls(m,offset,len,shift){ // make variables work with this!!!
 	// len = window length, shift = window shift
-	var cl_num = 9;
+	var cl_num = 4;
 	var cl_len = m.rows()/cl_num;
-	var c = m.minor(offset,0,cl_len, m.cols()); // used to make the model
-	var a_len = Math.round((c.rows()/shift)-1);
+	var c = m.minor(offset,0,cl_len-2000, m.cols()); // used to make the model
+	var klim = Math.floor(c.rows()/len)*len
+	var a_len = Math.round((klim/shift)-(len/shift) + 1);
 	var a = Matrix.Zero(a_len, 6*m.cols());
 	var ae = a.elements;
-	var klim = Math.floor(c.rows()/len)*len
-	for(k=0; k<=(klim-len)/50; k++){
-		var samp = c.minor(k*50, 0, len, m.cols());
+	
+	for(k=0; k<=(klim-len)/shift; k++){
+		var samp = c.minor(k*shift, 0, len, m.cols());
 		var mn = calcMean(samp);
 		var sampz = subMean(samp, mn); 
 		var mne = mn.elements;
