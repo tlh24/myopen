@@ -1,5 +1,5 @@
-x = data5; 
-f = fopen('data5.txt', 'w');
+x = datan; 
+f = fopen('datan.txt', 'w');
 r = size(x,1); 
 c = size(x,2); 
 fprintf(f,['rows:' num2str(r) ' cols:' num2str(c) '\n']); 
