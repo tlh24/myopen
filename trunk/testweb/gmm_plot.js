@@ -104,7 +104,7 @@ function ellipseDraw(x,y,color,axes){
 	var sizex = canvas.width - 3; 
 	var sizey = canvas.height -3; 
 	ctx.beginPath();  
-	for(var theta = 0.0; theta <= Math.PI * 2 + 0.0001 ; theta += Math.PI / 16){
+	for(theta = 0.0; theta <= Math.PI * 2 + 0.0001 ; theta += Math.PI / 16){
 		var x1 = vec1e[0] * Math.sin(theta) + vec2e[0] * Math.cos(theta) ; 
 		var y1 = vec1e[1] * Math.sin(theta) + vec2e[1] * Math.cos(theta) ; 
 		var xx = ((x1+meane[0])-minx)/spanx * sizex; 
@@ -120,3 +120,44 @@ function ellipseDraw(x,y,color,axes){
 	ctx.fillStyle = "rgba("+color+")";
 	ctx.fill(); 
 }
+
+function displayData(x, feat, channel, axes){
+	var classes = 4
+	var xe = x.elements;
+	var mean = calcMean(x);
+	var b = subMean(x, mean); 
+	var be = b.elements;
+	var col = channels + feats*6;
+	var c = Vector.Zero(x.rows()); 
+	var ce = b.elements;
+	for(i=0; i<a.rows(); i++){
+		ce[i] = be[i][col];
+	}
+	var tim = Vector.Zero(x.rows()); //5 seconds * 100 ms
+	var time = time.elements;
+	for(i=1; i<x.rows(); i++){
+		time[i] = time[i] + 1;
+	}
+	var minx = 0; 
+	var miny = axes[2];  
+	var spanx = time.dimensions();
+	var spany = axes[3] - miny; 
+	var sizex = canvas.width - 3; 
+	var sizey = canvas.height -3; 
+	var canvas = document.getElementById("chartcanvas");
+	var ctx = canvas.getContext("2d");
+	for(a=0; a<x.rows(); a++){
+		yy = Math.round(((xe[i] - minx)/spanx) * sizex) ; 
+		xx = time[i];
+		if(a == 0.0){
+			ctx.moveTo(xx,yy); 
+		} else {
+			ctx.lineTo(xx,yy); 
+		}
+	}
+	ctx.closePath(); 
+	ctx.fillStyle = "rgba(255,255,255,0.75)";
+	ctx.fill();
+}
+
+	

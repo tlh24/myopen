@@ -2,7 +2,7 @@
 print "Content-type: text/xml\n\n"; # mime-type! 
 my $request ; 
 # open data file -- in real life this would be from SDRAM on myopen. 
-my $source = "data4.txt"; # must be in same dir.. 
+my $source = "data5.txt"; # must be in same dir.. 
 open(FH, "< $source"); 
 local( $/ ); # this allows us to slurp the whole thing.. 
 my $data = <FH>; 

@@ -32,6 +32,8 @@ function cholesky(a){
 	return el; 
 }
 
+
+
 function cholesky_invert(a){
 	//using the cholesky decomposition, 
 	//form the matrix inverse. 
