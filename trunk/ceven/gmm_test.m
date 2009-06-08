@@ -1,23 +1,21 @@
-pwed
-
-
-pwdfunction maccuracy = gmm_test(Data, feats)
+function [f, fmean, fcov, fp, maccuracy] = gmm_test(Data, feats)
 % feats is a logical array to determine feature inclusion. 
 % test script for jon's myo data.
 % (/myopen/ceven/Kuniholm062708_Fulldata.mat)
 data2 = reshape(Data, 1024*5, 9, 4, 4);
 % indexes: time, class, trial, channel. (checked!)
 nfeat = numel(find(feats>0)); 
-% ok, let's take 128ms segment overlapping by 64ms & 
-% compute each of the feature functions for each segment.
-f = zeros(4, nfeat, 78*4, 9); % feature.
+window = 100 ; % length of the window, in samples. 
+overlap = 50 ; % how much the windows overlap.
+windows = floor((5120-window) / overlap + 1); 
+f = zeros(4, nfeat, windows*4, 9); % feature.
 % indexes: channel, feature, time, class
 for class = 1:9
 	k = 1; 
 	for trial = 1:4
-		for t = 1:64:5120-128
+		for t = 1:overlap:5120-window
 			for chan = 1:4
-				d = data2( t:t+128, class, trial, chan); 
+				d = data2( t:t+window, class, trial, chan); 
 				d = d - mean(d); % needed otherwise zero-crossings doesn't work! 
 				j = 1; 
 				if(feats(1)>0) f(chan, j, k, class) = c_mav(d); j = j+1; end
@@ -31,7 +29,13 @@ for class = 1:9
 		end
 	end
 end
-if 2
+% zscore the samples to make the cov. matrices better conditioned. 
+fz = reshape(f, 4*nfeat, windows*4*9); 
+fz = zscore(fz'); 
+figure; plot(fz); 
+fz = fz' ; 
+f = reshape(fz, 4, nfeat, windows*4, 9); 
+if 0
 	for feat1 = 1:nfeat
 		for feat2 = feat1+1:nfeat
 			for chan1 = 1:4
@@ -73,9 +77,9 @@ end
 % (that's just mean and covariance matrix)
 fmean = zeros(4*nfeat, 9); 
 fcov = zeros(4*nfeat, 4*nfeat, 9); 
-f2 = reshape(f, 4*nfeat, 78*4, 9); 
+f2 = reshape(f, 4*nfeat, windows*4, 9); 
 for class = 1:9
-	d = squeeze(f2(:, :, class));
+	d = squeeze(f2(:, :, class)); %% !!!
 	d = d'; 
 	fmean(:, class) = mean(d)'; 
 	fcov(:,:,class) = cov(d); 
@@ -83,15 +87,15 @@ end
 
 % use this mean and cov to compute the probability of the data -- 
 % without the class labels. 
-fp = zeros(78*4, 9, 9); 
+fp = zeros(windows*4, 9, 9); 
 % indexes: sample, real class, test class. 
 for tclass = 1:9
 	for class = 1:9
 		sigma = squeeze(fcov(:,:,tclass)); 
 		mu = fmean(:, tclass); 
-		scl = 1/(((2*pi)^(24/2))*sqrt(det(sigma))) ; 
+		scl = 1/(((2*pi)^(24/2))*sqrt(det(sigma))) 
 		sigmainv = inv(sigma); 
-		for samp = 1:78*4
+		for samp = 1:windows*4
 			x = f2(:, samp, class) - mu; 
 			p = scl*exp(-0.5 * x' * sigmainv * x); 
 			fp(samp, class, tclass) = p; 
