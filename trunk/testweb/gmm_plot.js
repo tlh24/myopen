@@ -120,7 +120,7 @@ function ellipseDraw(x,y,color,axes){
 	ctx.fillStyle = "rgba("+color+")";
 	ctx.fill(); 
 }
-
+/*
 function displayData(x, feat, channel, axes){
 	var classes = 4
 	var xe = x.elements;
@@ -159,5 +159,5 @@ function displayData(x, feat, channel, axes){
 	ctx.fillStyle = "rgba(255,255,255,0.75)";
 	ctx.fill();
 }
-
+*/
 	
