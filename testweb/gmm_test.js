@@ -69,10 +69,9 @@ function processData(d){
 	var cs_test = [];
 
 	for(t=0; t<classes; t++){
-		cs[t] = cls(m,t*cs_len, 100, 50); 
+		cs[t] = cls(m,t*cs_len, 100, 50, 0); 
 		cs_test[t] = cls_test(m,t*cs_len, 100, 50);
 	}
-
 	
 	//get the drop-down menu selections. 
 	var node = document.getElementById("featone"); 
@@ -120,14 +119,14 @@ function processData(d){
 		var acc = [];
 		var pdf = [];
 
-		
+		/*
 	for(v=0; v<classes; v++){
 			var clear = v == 0; 
 			scatterDraw(cs[v].col(ix), cs[v].col(iy),colors[2*v]+",0.75", clear, axes,3);
 			ellipseDraw(cs[v].col(ix), cs[v].col(iy),colors[2*v]+",0.25", axes);
-			/*
-			var mu = calcMean(cs[v]);
-			var sigma = calcCov(cs[v], mu);
+			
+			var mu = calcMean(cs_test[v]);
+			var sigma = calcCov(cs_test[v], mu);
 				var pr = Matrix.Zero(cs_test[v].rows(), classes);
 				var pre = pr.elements;
 				for(vv=0; vv<classes; vv++){
@@ -139,38 +138,58 @@ function processData(d){
 				
 				}	
 				pdf[v] = pr;
-				*/
+				
 			
+		}*/
+	}
+
+/*	var twod = $M([
+	[0.53767, 0.6715 ],
+	[1.8339, -1.2075 ],
+	[-2.2588, 0.71724], 
+	[0.86217, 1.6302 ],
+	[0.31877, 0.48889], 
+	[-1.3077, 1.0347 ],
+	[-0.43359, 0.72689 ],
+	[0.34262, -0.30344 ],
+	[3.5784, 0.29387 ],
+	[2.7694, -0.78728 ],
+	[-1.3499, 0.8884 ],
+	[3.0349, -1.1471 ],
+	[0.7254, -1.0689 ],
+	[-0.063055, -0.8095], 
+	[0.71474, -2.9443 ],
+	[-0.20497, 1.4384 ],
+	[-0.12414, 0.32519], 
+	[1.4897, -0.75493 ],
+	[1.409, 1.3703 ],
+	[1.4172, -1.7115], 
+		]);
+
+	var mu4 = Matrix.Zero(2,1); 
+	var sigma4 = Matrix.I(2); 
+	var test4 = Matrix.Zero(169, 2); 
+	for( var g = 0 ; g < 13; g++){
+		for( var h = 0; h < 13; h++){
+			test4.elements[g*13 + h][0] = (h - 6) * 0.5; 
+			test4.elements[g*13 + h][1] = (g - 6) * 0.5; 
 		}
 	}
-	var twod = $M([
-		[-0.10224, -1.0891 ],
-		[-0.24145, 0.032557], 
-		[0.31921, 0.55253 ],
-		[0.31286, 1.1006 ],
-		[-0.86488, 1.5442 ],
-		[-0.030051, 0.085931 ],
-		[-0.16488, -1.4916] ,
-		[0.62771, -0.7423] ,
-		[1.0933, -1.0616 ],
-		[1.1093, 2.3505 ],
-		[-0.86365, -0.6156 ],
-		[0.077359, 0.74808 ],
-		[-1.2141, -0.19242 ],
-		[-1.1135, 0.88861 ],
-		[-0.0068493, -0.76485 ],
-		[1.5326, -1.4023 ],
-		[-0.76967, -1.4224 ],
-		[0.37138, 0.48819 ],
-		[-0.22558, -0.17738], 
-		[1.1174, -0.19605 ]
-		]);
+	var pdf4 = mvgaussian(mu4, sigma4, test4); 
+	res = res + printVector(pdf4);
+	res = res + printMatrix(test4);
+	this works!! */
 	
-	var gmean = calcMean(twod);
-	var gsigma = calcCov(twod, gmean);
-	var pdf = mvgaussian(gmean, gsigma, twod);
+	var mu = calcMean(cs[0]);
+	var sigma = calcCov(cs[0], mu);
+	var sigmainv = cholesky_invert(sigma);
+	var pdf = mvgaussian(mu, sigma, cs[0]);
 	
-	res = res + printVector(pdf);
+	//res = res + printMatrix(sigma);
+	res = res + printMatrix(cs[0]); 
+	res = res + printMatrix(sigma); 
+	res = res + printMatrix(sigmainv); 
+	res = res + printVector(pdf); 
 	return res ; 
 
 }
@@ -178,11 +197,11 @@ function processData(d){
 
 // break up into classes
 
-function cls(m,offset,len,shift){ // make variables work with this!!!
+function cls(m,offset,len,shift, omit){ // make variables work with this!!!
 	// len = window length, shift = window shift
 	var cl_num = 4;
 	var cl_len = m.rows()/cl_num;
-	var c = m.minor(offset,0,cl_len-2000, m.cols()); // used to make the model
+	var c = m.minor(offset,0,cl_len-omit, m.cols()); // used to make the model
 	var klim = Math.floor(c.rows()/len)*len
 	var a_len = Math.round((klim/shift)-(len/shift) + 1);
 	var a = Matrix.Zero(a_len, 6*m.cols());
@@ -206,10 +225,10 @@ function cls(m,offset,len,shift){ // make variables work with this!!!
 		var slope = slope_change(sampz); // slope changes
 		var slopee = slope.elements;
 		for(f=0; f<m.cols(); f++){
-			ae[k][f] = zeroce[f];
+			ae[k][f+(0*m.cols())] = meane[f];
 			ae[k][f+(1*m.cols())] = wave[f];
 			ae[k][f+(2*m.cols())] = wavtwoe[f];
-			ae[k][f+(3*m.cols())] = meane[f];
+			ae[k][f+(3*m.cols())] = zeroce[f];
 			ae[k][f+(4*m.cols())] = slopee[f];
 			ae[k][f+(5*m.cols())] = rmse[f];
 		}
@@ -217,8 +236,6 @@ function cls(m,offset,len,shift){ // make variables work with this!!!
 	}
 	return a
 }
-
-
 
 
 // processing functions
@@ -240,7 +257,7 @@ function calcCov(m,mean){
 	var mz = subMean(m,mean); 
 	//now compute the covariance matrix. 
 	var n = mz.transpose(); 
-	var cov = mxx(n,mz) ;
+	var cov = n.x(mz);
 	var cove = cov.elements ; 
 	//divide by the number of elements...
 	for (i =0; i<cov.rows(); i++){
