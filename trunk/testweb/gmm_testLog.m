@@ -30,10 +30,10 @@ for class = 1:9
 	end
 end
 % zscore the samples to make the cov. matrices better conditioned. 
-fz = reshape(f, 4*nfeat, windows*4*9); 
-fz = zscore(fz'); 
+fz = reshape(f, 4*nfeat, windows*4*9);
+fz = zscore(fz');
 figure; plot(fz); 
-fz = fz' ; 
+fz = fz';
 f = reshape(fz, 4, nfeat, windows*4, 9); 
 if 0
 	for feat1 = 1:nfeat
@@ -87,9 +87,6 @@ f2 = reshape(f, 4*nfeat, windows*4, 9);
 for class = 1:9
 	d = squeeze(f2(:, :, class)); %% !!!
 	d = d' * V; % reduce the dimensionality.  
-%     for j = 1:4*nfeat
-%         [h, p, k, c] = kstest(d(:,j),[], 0.05, 0)
-%     end
 	fmean(:, class) = mean(d)'; 
 	fcov(:,:,class) = cov(d);
 end
@@ -112,10 +109,6 @@ for tclass = 1:9
 			p = scl*exp(-0.5 * x' * sigmainv * x); 
 			fp(samp, class, tclass) = p; 
         end
-%         maxfp = max(fp);
-%         for j = 1:samp
-%             fp(j, :, :) = fp(j, :, :)./maxfp;
-%         end
 	end
 end
 % measure the accuracy for each prediction. 
@@ -125,7 +118,55 @@ for class = 1:9
 	disp(['class:' num2str(class) ' accuracy:' num2str(accuracy(class))]); 	
 end
 maccuracy = mean(accuracy)
+
+
+
+% compute probability individually by feature. 
+fcov2 = zeros(4, 4, nfeat, 9);
+% channel, channel, features, classes
+fmean2 = zeros(4, nfeat, 9);
+for class = 1:9
+    d = squeeze(f2(:, :, class));
+    for feat = 1:nfeat
+	dd = squeeze(d(:, feat:(feat+3)));
+    fcov2(:, :, feat, class) = cov(dd);
+    fmean2(:, feat, class) = mean(dd)';end
+end
+fp2 = zeros(nfeat, windows*4, 9, 9); 
+for tclass = 1:9
+	for class = 1:9
+        for feat = 1:nfeat
+            sigma2 = squeeze(fcov2(:, :, feat, tclass));
+            mu2 = squeeze(fmean2(:, feat, tclass));
+            scl2 = 1/(((2*pi)^(neig/2))*sqrt(det(sigma2))) ;
+            sigmainv2 = inv(sigma2); 
+            [m, n] = size(sigmainv2);
+            for samp = 1:windows*4
+                x2 = f2(feat:(feat+3), samp, class)-mu2;
+                p2 = scl2*exp(-0.5*x2'*sigmainv2*x2);
+                fp2(feat, samp, class, tclass) = p2;
+            end
+        end
+    end
+end
+
+sumsq = squeeze(fp2(1,:,:,:));
+for feat = 2:nfeat
+    sumsq = sumsq .* squeeze(fp2(feat,:,:,:));
+end
+
+% for class = 1:9
+% 	[n, i] = max(squeeze(fp3(:,class,:)), [], 2);
+% 	accuracy2(class) = numel(find(i==class)) / length(i); 
+% 	disp(['class:' num2str(class) ' accuracy2:' num2str(accuracy2(class))]); 	
+% end
+% maccuracy2 = mean(accuracy2);
+
 end % of function.
+
+
+
+    
 
 function norm = normalize(n)
 n22 = sqrt(diag(n'*n));
