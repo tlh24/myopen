@@ -1,4 +1,4 @@
-function [f, fmean, fcov, fp, maccuracy] = gmm_testLog(Data, feats, neig)
+function [f, fmean, fcov, fp, fplog, maccuracy] = gmm_testLog(Data, feats, neig)
 % feats is a logical array to determine feature inclusion. 
 % test script for jon's myo data.
 % (/myopen/ceven/Kuniholm062708_Fulldata.mat)
@@ -32,7 +32,7 @@ end
 % zscore the samples to make the cov. matrices better conditioned. 
 fz = reshape(f, 4*nfeat, windows*4*9);
 fz = zscore(fz');
-figure; plot(fz); 
+% figure; plot(fz); 
 fz = fz';
 f = reshape(fz, 4, nfeat, windows*4, 9); 
 if 0
@@ -95,19 +95,33 @@ end
 % use this mean and cov to compute the probability of the data -- 
 % without the class labels. 
 fp = zeros(windows*4, 9, 9); 
+fplog = zeros(windows*4, 9, 9); 
 % indexes: sample, real class, test class. 
 for tclass = 1:9
 	for class = 1:9
 		sigma = squeeze(fcov(:,:,tclass)); 
 		mu = fmean(:, tclass); 
 		scl = 1/(((2*pi)^(neig/2))*sqrt(det(sigma))) ;
-		sigmainv = inv(sigma); 
+        scllog = -1*( log(2*pi)*(neig/2) + log(det(sigma))/2)
+		[U,S,VV] = svd(sigma); 
+		ss = diag(S); 
+		[indx,y] = find(ss > 0.01); 
+		ss(indx) = 1./ss(indx); 
+		S = diag(ss,0);
+		sigmainv = VV*S*U'; 
+		%sigmainv = inv(sigma); 
         [m, n] = size(sigmainv);
             
 		for samp = 1:windows*4
 			x = (V'*f2(:, samp, class)) - mu; 
-			p = scl*exp(-0.5 * x' * sigmainv * x); 
+			e = -0.5 * x' * sigmainv * x; 
+			if(e > 0)
+				disp('ohnoes'); 
+			end
+			p = scl*exp(e); 
+            plog = scllog + e; 
 			fp(samp, class, tclass) = p; 
+            fplog(samp, class, tclass) = plog; 
         end
 	end
 end
@@ -118,8 +132,8 @@ for class = 1:9
 	disp(['class:' num2str(class) ' accuracy:' num2str(accuracy(class))]); 	
 end
 maccuracy = mean(accuracy)
-
-
+ff = reshape(fp, [404*81,1]);
+hist(ff, 150)
 
 % compute probability individually by feature. 
 fcov2 = zeros(4, 4, nfeat, 9);
