@@ -1,22 +1,24 @@
-
-function retrieveData(samples)
+function retrieveData(samples, callback)
 {       //id is the pid number in the sql database. 
         //div is the division id to replace in the xml schema.
         //first, we have to get the unformatted text at this node. 
         poststr = "samples=" + samples ; 
-        //alert(poststr); 
+        console.log("poststr="+poststr); 
         http_request = false;
         http_request = new XMLHttpRequest(); //this will only work for mozilla and safari, but that's ok
         if (http_request.overrideMimeType) {
                 http_request.overrideMimeType('text/xml');
-        }       
-        http_request.onreadystatechange = retrieveUpdate; //set the callback. 
+        }
+        http_request.onreadystatechange = callback; //set the callback. 
         //code that is independent of data. 
         http_request.open('POST', 'data.pl', true);
         http_request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
         http_request.setRequestHeader("Content-length", poststr.length);
         http_request.setRequestHeader("Connection", "close");
         http_request.send(poststr);
+}
+function retrieveDataBlock(samples){
+	retrieveData(samples, retrieveUpdate); 
 }
 function retrieveUpdate(){
         if (http_request.readyState == 4) {
@@ -63,16 +65,45 @@ function processData(d){
 			me[r][c] = parseFloat(samp); 
 		}
 	}
+	// break up into classes
 	var classes = 4; 
+	var omit = 2000;
+	var feats = 6
 	var cs_len =rows/ classes; 
+	var samp_len = rows-(classes*omit);
+	var samp = Matrix.Zero(samp_len, cols*feats);
+	var sampe = samp.elements;
+	for(cl = 0; cl<classes; cl++){
+		var c = m.minor(cl*cs_len, 0, cs_len-omit, samp.cols()); 
+		var ce = c.elements;
+		for(i=0; i<cs_len-omit; i++){
+			for(j=0; j< samp.cols(); j++){
+				sampe[i+(cl*(cs_len-omit))][j] = ce[i][j];
+			}
+		}
+	}
+	var test = Matrix.Zero(omit*classes, cols*feats);
+	var teste = test.elements;
+	for(cl = 0; cl < classes; cl++){
+		var ct = m.minor(cs_len*(cl+1)-omit, 0, omit, test.cols());
+		var cte = ct.elements;
+		for(i=0; i<omit; i++){
+			for(j=0;j<test.cols(); j++){
+				teste[i + (cl*omit)][j] = cte[i][j];
+			}
+		}
+	}
+
+	var zs = zscore(samp, 100, 50, classes);
+	var zs_test = zscore(test, 100, 50, classes); 
+	var clen = zs.rows()/classes;
+	var clen_test = zs_test.rows()/classes;
 	var cs = [];
 	var cs_test = [];
-
 	for(t=0; t<classes; t++){
-		cs[t] = cls(m,t*cs_len, 100, 50, 0); 
-		cs_test[t] = cls_test(m,t*cs_len, 100, 50);
+		cs[t] = zs.minor(t*clen, 0, clen, cols*feats);
+		cs_test[t] = zs_test.minor(t*clen_test, 0,clen_test, cols*feats);
 	}
-	
 	//get the drop-down menu selections. 
 	var node = document.getElementById("featone"); 
 	g_x_feature = node.selectedIndex;
@@ -93,7 +124,6 @@ function processData(d){
 		//plot all the classes ...
 		var ix = g_x_channel + g_x_feature * cols; 
 		var iy = g_y_channel + g_y_feature * cols ; 
-
 		//res = res+printVector(cs[0].col(ix));
 		var colors = ["100,0,255", 
 				"35,85,255",
@@ -116,10 +146,11 @@ function processData(d){
 			maxy = Math.max(cs[v].col(iy).max(), maxy); 
 		}
 		var axes = [minx, maxx, miny, maxy]; 
-		var acc = [];
 		var pdf = [];
+		var acc = Vector.Zero(classes);
+		var acce = acc.elements;
 
-		/*
+	
 	for(v=0; v<classes; v++){
 			var clear = v == 0; 
 			scatterDraw(cs[v].col(ix), cs[v].col(iy),colors[2*v]+",0.75", clear, axes,3);
@@ -127,131 +158,31 @@ function processData(d){
 			
 			var mu = calcMean(cs_test[v]);
 			var sigma = calcCov(cs_test[v], mu);
-				var pr = Matrix.Zero(cs_test[v].rows(), classes);
-				var pre = pr.elements;
-				for(vv=0; vv<classes; vv++){
-					var prob = mvgaussian(mu, sigma, cs_test[vv])
-					var probe = prob.elements;
-					for(k=0; k<prob.dimensions(); k++){
-						pre[k][vv] = probe[k];
-					}
-				
-				}	
-				pdf[v] = pr;
+			var pr = Matrix.Zero(cs_test[v].rows(), classes);
+			var pre = pr.elements;
+			for(vv=0; vv<classes; vv++){
+				var prob = mvgaussian(mu, sigma, cs_test[vv])
+				var probe = prob.elements;
+				for(k=0; k<prob.dimensions(); k++){
+					pre[k][vv] = probe[k];
+				}
+			
+			}	
+			pdf[v] = pr;
+			acce[v] = accuracy(pdf[v], v);
 				
 			
-		}*/
-	}
-
-/*	var twod = $M([
-	[0.53767, 0.6715 ],
-	[1.8339, -1.2075 ],
-	[-2.2588, 0.71724], 
-	[0.86217, 1.6302 ],
-	[0.31877, 0.48889], 
-	[-1.3077, 1.0347 ],
-	[-0.43359, 0.72689 ],
-	[0.34262, -0.30344 ],
-	[3.5784, 0.29387 ],
-	[2.7694, -0.78728 ],
-	[-1.3499, 0.8884 ],
-	[3.0349, -1.1471 ],
-	[0.7254, -1.0689 ],
-	[-0.063055, -0.8095], 
-	[0.71474, -2.9443 ],
-	[-0.20497, 1.4384 ],
-	[-0.12414, 0.32519], 
-	[1.4897, -0.75493 ],
-	[1.409, 1.3703 ],
-	[1.4172, -1.7115], 
-		]);
-
-	var mu4 = Matrix.Zero(2,1); 
-	var sigma4 = Matrix.I(2); 
-	var test4 = Matrix.Zero(169, 2); 
-	for( var g = 0 ; g < 13; g++){
-		for( var h = 0; h < 13; h++){
-			test4.elements[g*13 + h][0] = (h - 6) * 0.5; 
-			test4.elements[g*13 + h][1] = (g - 6) * 0.5; 
 		}
 	}
-	var pdf4 = mvgaussian(mu4, sigma4, test4); 
-	res = res + printVector(pdf4);
-	res = res + printMatrix(test4);
-	this works!! */
-	
-	var mu = calcMean(cs[0]);
-	var sigma = calcCov(cs[0], mu);
-	var sigmainv = cholesky_invert(sigma);
-	var pdf = mvgaussian(mu, sigma, cs[0]);
-	
-	//res = res + printMatrix(sigma);
-	res = res + printMatrix(cs[0]); 
-	res = res + printMatrix(sigma); 
-	res = res + printMatrix(sigmainv); 
-	res = res + printVector(pdf); 
+	res = res + printMatrix(pdf[0]);
+	res = res + printVector(acc)
 	return res ; 
 
 }
 
-
-// break up into classes
-
-function cls(m,offset,len,shift, omit){ // make variables work with this!!!
-	// len = window length, shift = window shift
-	var cl_num = 4;
-	var cl_len = m.rows()/cl_num;
-	var c = m.minor(offset,0,cl_len-omit, m.cols()); // used to make the model
-	var klim = Math.floor(c.rows()/len)*len
-	var a_len = Math.round((klim/shift)-(len/shift) + 1);
-	var a = Matrix.Zero(a_len, 6*m.cols());
-	var ae = a.elements;
-	
-	for(k=0; k<=(klim-len)/shift; k++){
-		var samp = c.minor(k*shift, 0, len, m.cols());
-		var mn = calcMean(samp);
-		var sampz = subMean(samp, mn); 
-		var mne = mn.elements;
-		var mean = mav(sampz); // mean absolute value
-		var meane = mean.elements;
-		var wav = wl(sampz); // first wavelength features
-		var wave=wav.elements;
-		var wavtwo = wavii(sampz); // second wl features
-		var wavtwoe = wavtwo.elements;
-		var zeroc = zc(sampz); // zero crossings
-		var zeroce = zeroc.elements;
-		var rms = rootms(sampz); // rms vales
-		var rmse = rms.elements;
-		var slope = slope_change(sampz); // slope changes
-		var slopee = slope.elements;
-		for(f=0; f<m.cols(); f++){
-			ae[k][f+(0*m.cols())] = meane[f];
-			ae[k][f+(1*m.cols())] = wave[f];
-			ae[k][f+(2*m.cols())] = wavtwoe[f];
-			ae[k][f+(3*m.cols())] = zeroce[f];
-			ae[k][f+(4*m.cols())] = slopee[f];
-			ae[k][f+(5*m.cols())] = rmse[f];
-		}
-		
-	}
-	return a
-}
-
-
 // processing functions
-function variance(m,mean){
-	var me=m.elements;
-	var mlen = m.dimensions();
-	var dif = Vector.Zero(mlen);
-	var dife = dif.elements;
-	var variance = 0;
-	
-	for(i = 0; i<mlen; i++){
-		dife[i] = me[i] - mean;
-		variance = variance + dife[i]*dife[i];
-	}
-	return variance
-}
+
+
 
 function calcCov(m,mean){
 	var mz = subMean(m,mean); 
@@ -468,7 +399,7 @@ function printVector (p) {
 
 function normalizeVec(v){
 	//this works in-palce
-	var k =  v.dimensions(); 
+	var k =  v.dimensions();
 	var sum = 0.0; 
 	var ve = v.elements; 
 	for(i=0; i<k; i++){
