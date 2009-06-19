@@ -4,6 +4,7 @@
 <script type="text/javascript" src="gmm_test.js"></script>
 <script type="text/javascript" src="gmm_plot.js"></script>
 <script type="text/javascript" src="gmm_features.js"></script>
+<script type="text/javascript" src="gmm_display.js"></script>
 <script type="text/javascript" src="sylvester.src.js"></script>
 <script type="text/javascript" src="cholesky.js"></script>
 <script type="text/javascript" src="mvgaussian.js"></script>
@@ -169,7 +170,36 @@
 <div id="-2">
 	<p>no results yet!</p>
 </div>
-
+<div style="background:#dedeee" align="center">
+<form>
+	<P> Plot</P>
+	<table>
+	<tr><td> Feature:</td>
+	<td><select name ="Lfeat" id="Lfeat" >
+		<option value ="0">Mean Absolute values</option>
+		<option value ="1">Wavelength Feature 1</option>
+		<option value ="2">Wavelength Feature 2</option>
+		<option value ="3">Zero Crossings</option>
+		<option value ="4">Slope Changes</option>
+		<option value ="5">Root Mean Square Values</option>
+	</select></td></tr>
+	<tr><td>Channel Y: </td>
+	<td><select name ="Lchan" id="Lchan" >
+		<option value ="0">1</option>
+		<option value ="1">2</option>
+		<option value ="2">3</option>
+		<option value ="3">4</option>
+		<option value ="4">5</option>
+	</select></td></tr>
+	</table>
+	<input type= "Button" value="Start Graph" OnClick="startPlot()"/>
+	<input type= "Button" value="Stop Graph" OnClick="stopPlot()"/>
+</form>
+</div>
+<div align= "center" style= "background: #0a0e35">
+<p><font color= "red"></font></p>
+<canvas id = "canvas2" width="400" height="400"></canvas>
+</div>
 
 </body>
 </html>
