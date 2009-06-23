@@ -153,8 +153,8 @@ function processData(d){
 	
 	for(v=0; v<classes; v++){
 			var clear = v == 0; 
-			scatterDraw(cs[v].col(ix), cs[v].col(iy),colors[2*v]+",0.75", clear, axes,3);
-			ellipseDraw(cs[v].col(ix), cs[v].col(iy),colors[2*v]+",0.25", axes);
+			scatterDraw(cs[v].col(ix), cs[v].col(iy),colors[v]+",0.75", clear, axes,3);
+			ellipseDraw(cs[v].col(ix), cs[v].col(iy),colors[v]+",0.25", axes);
 			
 			var mu = calcMean(cs_test[v]);
 			var sigma = calcCov(cs_test[v], mu);
