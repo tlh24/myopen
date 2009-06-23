@@ -41,6 +41,7 @@ function processDraw(d){
 			me[r][c] = parseFloat(samp); 
 		}
 	}
+	console.log("m.rows = " + m.rows() + "m.cols() = " + m.cols())
 	var node = document.getElementById("Lfeat"); 
 	g_x_feature = node.selectedIndex;
 	node = document.getElementById("Lchan"); 
@@ -75,7 +76,16 @@ function displayData(x){
 	var time = new Date();	
 	var canvas = document.getElementById("canvas2");	
 	var n = x.dimensions();
+//	var m = x.cols();
+//	console.log("m = " + x.cols() + "n = " + x.rows())
 	var xe = x.elements;
+	var ma = Matrix.Zero(n, 3);
+	var mae = ma.elements;
+	for(r = 0; r<n; r++){
+		for(c = 0; c<3; c++){
+			mae[r][c] = .7*(c+1)*xe[r]+0.5*c;
+		}
+	}	
 	var miny = -0.1
 	var spany = 2 - miny; 
 	var sizex = canvas.width - 3; 
@@ -87,26 +97,31 @@ function displayData(x){
 	scnt = scnt % 5000; 
 	var start = scnt * sizex / 5000; 
 	var stop = (scnt+n) * sizex / 5000; 
-	ctx.clearRect(start,0,stop-start,canvas.height);
-	ctx.beginPath();
+	ctx.clearRect(start,0,stop-start + 20,canvas.height);
+	
 	//console.log("sec="+seconds+" mili="+milisec); 
-	ctx.strokeStyle = "rgba(255,255,255,1)";
-	for(var k=0; k < n; k++){
-		var yy = xe[k] ; 
-		yy = yy + (seconds + milisec + k/1000)/10; 
-		yy = Math.round(((yy - miny)/spany) * sizey) ; 
-		var xx = (scnt+k) * sizex / 5000 ; 
-		//console.log("xx=" + xx + " yy=" + yy + " xe[k]=" + (xe[k]) + 
-		//	" spany="+spany+" miny="+miny+" n="+n); 
-		if(k == 0){
-			ctx.moveTo(xx,yy); 
-		} else {
-			ctx.lineTo(xx,yy); 
+	var colors = ["100,0,255", 
+			"0,250,200",
+			"170,255,85",
+			"255,85,0"]; 
+	for(var i = 0; i<3; i++){
+		ctx.beginPath();
+		ctx.strokeStyle ="rgb("+colors[i]+")";
+		for(var k=0; k < n; k++){
+			var yy = mae[k][i] ; 
+//			yy = yy + (seconds + milisec + k/1000)/10; 
+			yy = Math.round(((yy - miny)/spany) * sizey) ; 
+			var xx = (scnt+k) * sizex / 5000 ; 
+//			console.log("xx=" + xx + " yy=" + yy + " xe[k]=" + (xe[k]) + 
+//				" spany="+spany+" miny="+miny+" n="+n); 
+			if(k == 0){
+				ctx.moveTo(xx,yy); 
+			} else {
+				ctx.lineTo(xx,yy); 
+			}
 		}
+		ctx.stroke();
 	}
 	scnt += n; 
-	//alert("tc = " + tc + "time = " + time.getSeconds() + "xx = " + xx + "yy = " + yy +
-	//"xe[tc] = " + xe[tc] + "miny = " + miny + "spany = " + spany + "sizey = " + sizey)
-	ctx.stroke();
-	
+
 }
