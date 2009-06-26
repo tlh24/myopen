@@ -45,6 +45,7 @@ var g_y_feature = 0;
 var g_y_channel = 0; 
 
 function processData(d){
+	console.log("begining processData");
 	var res = " "; //what is to be returned.
 	var mat = d.split("\n"); 
 	//first line is the matrix size. 
@@ -67,6 +68,7 @@ function processData(d){
 	}
 	// break up into classes
 	var classes = 4; 
+	console.log("breaking into classes" + "classes = " + classes);
 	var omit = 2000;
 	var feats = 6
 	var cs_len =rows/ classes; 
@@ -100,6 +102,7 @@ function processData(d){
 	var clen_test = zs_test.rows()/classes;
 	var cs = [];
 	var cs_test = [];
+	console.log("found zs, zs test");
 	for(t=0; t<classes; t++){
 		cs[t] = zs.minor(t*clen, 0, clen, cols*feats);
 		cs_test[t] = zs_test.minor(t*clen_test, 0,clen_test, cols*feats);
@@ -147,12 +150,14 @@ function processData(d){
 		}
 		var axes = [minx, maxx, miny, maxy]; 
 		var pdf = [];
+		var pdf2 = [];
 		var acc = Vector.Zero(classes);
 		var acce = acc.elements;
 
 	
 	for(v=0; v<classes; v++){
 			var clear = v == 0; 
+			/*
 			scatterDraw(cs[v].col(ix), cs[v].col(iy),colors[v]+",0.75", clear, axes,3);
 			ellipseDraw(cs[v].col(ix), cs[v].col(iy),colors[v]+",0.25", axes);
 			
@@ -170,12 +175,16 @@ function processData(d){
 			}	
 			pdf[v] = pr;
 			acce[v] = accuracy(pdf[v], v);
-				
+			*/
+			// test using LDA
 			
+			pdf[v] = lda(zs, cs_test[v], classes);
 		}
 	}
 	res = res + printMatrix(pdf[0]);
-	res = res + printVector(acc)
+	res = res + printMatrix(pdf[1]);
+	res = res + printMatrix(pdf[2]);
+	res = res + printMatrix(pdf[3]);
 	return res ; 
 
 }

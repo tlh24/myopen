@@ -48,7 +48,7 @@ function processDraw(d){
 	if(node.selectedIndex>= cols){
 		alert("This channel does not exist, try again");
 	}
-	displayData(m.col(node.selectedIndex));
+	displayData(m);
 	/*
 	else if(g_y_channel>= cols){
 		alert("This channel does not exist, try again");
@@ -75,17 +75,17 @@ function stopPlot(){
 function displayData(x){
 	var time = new Date();	
 	var canvas = document.getElementById("canvas2");	
-	var n = x.dimensions();
-//	var m = x.cols();
+	var n = x.rows();
+	var m = x.cols();
 //	console.log("m = " + x.cols() + "n = " + x.rows())
 	var xe = x.elements;
-	var ma = Matrix.Zero(n, 3);
-	var mae = ma.elements;
-	for(r = 0; r<n; r++){
-		for(c = 0; c<3; c++){
-			mae[r][c] = .7*(c+1)*xe[r]+0.5*c;
-		}
-	}	
+//	var ma = Matrix.Zero(n, 3);
+//	var mae = ma.elements;
+//	for(r = 0; r<n; r++){
+//		for(c = 0; c<3; c++){
+//			mae[r][c] = .7*(c+1)*xe[r]+0.5*c;
+//		}
+//	}	
 	var miny = -0.1
 	var spany = 2 - miny; 
 	var sizex = canvas.width - 3; 
@@ -104,11 +104,11 @@ function displayData(x){
 			"0,250,200",
 			"170,255,85",
 			"255,85,0"]; 
-	for(var i = 0; i<3; i++){
+	for(var i = 0; i<m; i++){
 		ctx.beginPath();
 		ctx.strokeStyle ="rgb("+colors[i]+")";
 		for(var k=0; k < n; k++){
-			var yy = mae[k][i] ; 
+			var yy = xe[k][i] ; 
 //			yy = yy + (seconds + milisec + k/1000)/10; 
 			yy = Math.round(((yy - miny)/spany) * sizey) ; 
 			var xx = (scnt+k) * sizex / 5000 ; 

@@ -13,20 +13,22 @@ if( not defined ($ENV) ){
 	$request = "samples=$range"; 
 }
 my $samples = $range; 
-#if($request =~ /samples=(\d+)/){
+#Sif($request =~ /samples=(\d+)/){
 #	$samples = $1 + 0 ; 
 #}
-#generate some sinusoidal data (eventually need to revert to real data)
-print qq(<div>rows:$samples cols:4\n); 
 
-for( $k=0; $k<$samples; $k++){
-	for( $j=0; $j<4; $j++){
-		print (0.2*sin($k/40)) . " "; 
-	}
-	print "\n"; 
-}
-print "</div>"; 
-#print qq(<div>$data\n</div>); 
+
+#generate some sinusoidal data (eventually need to revert to real data)
+#print qq(<div>rows:$samples cols:4\n); 
+
+#for( $k=0; $k<$samples; $k++){
+#	for( $j=0; $j<4; $j++){
+#		print (0.2*sin($k/40)) . " "; 
+#	}
+#	print "\n"; 
+#}
+#print "</div>"; 
+print qq(<div>$data\n</div>); 
 #print qq(<p>@array</p></font>\n); 
 #print qq(<p> The features are: @feats</p>);
 
