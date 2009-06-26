@@ -1,5 +1,5 @@
-x = datasin; 
-f = fopen('datasin.txt', 'w');
+x = datalda; 
+f = fopen('datalda.txt', 'w');
 r = size(x,1); 
 c = size(x,2); 
 fprintf(f,['rows:' num2str(r) ' cols:' num2str(c) '\n']); 
