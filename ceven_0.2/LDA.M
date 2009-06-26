@@ -44,17 +44,17 @@ Ate = TestData'*Wg + ones(Ptest,1)*Cg;
 
 errtr = 0;
 AAtr = compet(Atr');
-errtr = errtr + sum(sum(abs(AAtr-ind2vec(TrainClass))))/2;
-netr = errtr/Ptrain;
-PeTrain = 1-netr;
+% errtr = errtr + sum(sum(abs(AAtr-ind2vec(TrainClass))))/2;
+% netr = errtr/Ptrain;
+% PeTrain = 1-netr;
 
 TrainPredict = vec2ind(AAtr);
 
 errte = 0;
 AAte = compet(Ate');
-errte = errte + sum(sum(abs(AAte-ind2vec(TestClass))))/2;
-nete = errte/Ptest;
-PeTest = 1-nete;
+% errte = errte + sum(sum(abs(AAte-ind2vec(TestClass))))/2;
+% nete = errte/Ptest;
+% PeTest = 1-nete;
 
 TestPredict = vec2ind(AAte);
 

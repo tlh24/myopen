@@ -168,7 +168,11 @@ sumsq = squeeze(fp2(1,:,:,:));
 for feat = 2:nfeat
     sumsq = sumsq .* squeeze(fp2(feat,:,:,:));
 end
-
+for class = 1:9
+	for tclass = 1:9
+		p3 = lda_test(f2(:, :, class), f2(:, :, tclass),9, 9)
+	end
+end
 % for class = 1:9
 % 	[n, i] = max(squeeze(fp3(:,class,:)), [], 2);
 % 	accuracy2(class) = numel(find(i==class)) / length(i); 
