@@ -1,13 +1,13 @@
 function mvgaussian(mean, sigma, x){
 	// x is a matrix for which we want to calculate the probability of each row. 
 	// (time is along the rows, feature along columns)
+	console.log("performing gaussian");
 	var sigmainv = cholesky_invert(sigma); 
 	var det = Math.sqrt(sigma.determinant()); 
 	var pi = Math.PI ; 
 	var n = sigma.cols(); 
 	var scl =  1/((Math.pow((2*pi), (n/2))) *det) ; 
 	var sclLog = -1*(Math.log(2*pi)*(n/2) + Math.log(det*det/2));
-	console.log("scl=" + scl + "\n");
 	//log_matrix(sigmainv); 
 	var s = x.rows(); 
 	var xe = x.elements ; 
@@ -125,6 +125,7 @@ function accuracy(m, cl){
 }
 
 function zscore(m, len, shift, classes){
+	console.log("performing zscore");
 	var me = m.elements;
 	var rows = m.rows();
 	var cols = m.cols();
