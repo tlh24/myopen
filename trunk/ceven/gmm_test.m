@@ -84,7 +84,6 @@ for class = 1:9
 	fmean(:, class) = mean(d)'; 
 	fcov(:,:,class) = cov(d); 
 end
-
 % use this mean and cov to compute the probability of the data -- 
 % without the class labels. 
 fp = zeros(windows*4, 9, 9); 
@@ -109,7 +108,13 @@ for class = 1:9
 	disp(['class:' num2str(class) ' accuracy:' num2str(accuracy(class))]); 	
 end
 maccuracy = mean(accuracy); 
+
+n = lda(f2, f2);
+
+
 end % of function.
+
+
 
 function s = c_mav(d)
 	% compute the mean absolute value.
