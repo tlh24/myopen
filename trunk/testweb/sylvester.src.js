@@ -373,6 +373,28 @@ Matrix.prototype = {
     return Vector.create(col);
   },
 
+//sets a column in a matrix. 
+setCol:function(v, col){
+	if(v.dimensions() != this.elements.length){
+	throw ("Error in setCol: sizes are not the same, arg length:"+
+		v.dimensions+" matrix rows:"+  this.elements.length); 
+	} else {
+		for( var j=0; j< v.dimensions(); j++){
+			this.elements[j][col] = v.elements[j]; 
+		}
+	}
+},
+//sets a row in a matrix. 
+setRow:function(v, row){
+	if(v.dimensions() != this.elements[0].length){
+	throw ("Error in setRow: sizes are not the same, arg length:"+
+		v.dimensions+" matrix cols:"+  this.elements[0].length); 
+	} else {
+		for( var j=0; j< v.dimensions(); j++){
+			this.elements[row][j] = v.elements[j]; 
+		}
+	}
+},
   // Returns the number of rows/columns the matrix has
   dimensions: function() {
     return {rows: this.elements.length, cols: this.elements[0].length};
