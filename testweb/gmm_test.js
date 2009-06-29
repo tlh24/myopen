@@ -178,13 +178,10 @@ function processData(d){
 			*/
 			// test using LDA
 			
-			pdf[v] = lda(zs, cs_test[v], classes);
+			pdf[v] = lda(zs, cs_test[v], classes, v);
 		}
 	}
 	res = res + printMatrix(pdf[0]);
-	res = res + printMatrix(pdf[1]);
-	res = res + printMatrix(pdf[2]);
-	res = res + printMatrix(pdf[3]);
 	return res ; 
 
 }
