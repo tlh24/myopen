@@ -1,4 +1,4 @@
-x = datalda; 
+x = x; 
 f = fopen('datalda.txt', 'w');
 r = size(x,1); 
 c = size(x,2); 
