@@ -243,7 +243,7 @@ void do_IN3(void){
 	wreg(rEP3INBC,3);				// arm it
 }
 int calcMeanOfChannel(u32 u, u8 chan){
-	u -= 64*32; 
+	u -= 64*16*2; 
 	u += (u32)(chan * 2); 
 	u &= 0x0003ffff ; // in case it wrapped. 
 	int sum = 0; 

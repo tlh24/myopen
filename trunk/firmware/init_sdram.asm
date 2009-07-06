@@ -98,8 +98,8 @@ start: //init_sdram.asm
 	*   - [0]     = DF        : 1=Pass CLKIN/2 to PLL / 0=Pass CLKIN to PLL
 	*   all other bits set to zero
 	*/
-	r0 = 24 & 63;      /* Load the VCO multiplier         */
-	/* core clock = 25MHz * 24 = 600Mhz */
+	r0 = 20 & 63;      /* Load the VCO multiplier         */
+	/* core clock = 25MHz * 20 = 500Mhz */
 	r0 = r0 << 9;                   /* Shift it over,                  */
 	r1 = CONFIG_CLKIN_HALF;        /* Do we need to divide CLKIN by 2?*/
 	r0 = r1 | r0;
@@ -124,7 +124,7 @@ check_again:
 
 	/* Configure SCLK & CCLK Dividers */
 	r0 = (0x0 /*CSEL=0,CCLK=VCO*/ | 5 /* SCLK=VCO/5 */); 
-		//120MHz system clock, 600Mhz core clock.
+		//100MHz system clock, 500Mhz core clock.
 	p0.h = HI(PLL_DIV);
 	p0.l = LO(PLL_DIV);
 	w[p0] = r0.l;

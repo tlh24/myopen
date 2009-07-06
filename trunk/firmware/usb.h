@@ -24,6 +24,8 @@ void 	feature(u8 sc);
 void 	send_descriptor(void);
 void 	class_request(void);
 void 	vendor_request(void);
+
+int calcMeanOfChannel(u32 u, u8 chan) ; 
 // MAX3420E Registers
 #define rEP0FIFO    0<<3
 #define rEP1OUTFIFO 1<<3

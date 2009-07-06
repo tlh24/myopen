@@ -269,7 +269,7 @@ u32 FormatIPAddress(u8 a, u8 b, u8 c, u8 d){
 int bfin_EMAC_init( ){
 	u32 opmode;
 	int dat;
-	int i, j;
+	int i;
 	printf_str("Eth_init...\n");
 
 	txIdx = 0;
@@ -279,7 +279,7 @@ int bfin_EMAC_init( ){
 	NetSubnetMask = 0; 
 	NetOurIP = FormatIPAddress(192, 168, 0, 9); 
 	NetDestIP = FormatIPAddress(192, 168, 0, 1); 
-	NetDataDestIP = FormatIPAddress(192, 168, 0, 0); 
+	NetDataDestIP = FormatIPAddress(192, 168, 0, 2); 
 	TcpState = TCP_LISTEN; 
 	TcpSeqClient = 0; 
 	TcpSeqHost = 0x09da24b5; 
@@ -421,7 +421,7 @@ int SetupSystemRegs(int *opmode){
 	/* Enable PHY output */
 	*pVR_CTL |= PHYCLKOE;
 	/* MDC  = 2.5 MHz */
-	sysctl = SET_MDCDIV(23); 
+	sysctl = SET_MDCDIV(19); 
 	//page 429 -- MDC clock is SCLK / [2*(MDCDIV + 1)]
 	/* Odd word alignment for Receive Frame DMA word */
 	/* Configure checksum support and recieve frame word alignment */
@@ -547,9 +547,11 @@ unsigned NetCksum(u8 * ptr, int len){
 	u16 *p = (u16 *)ptr;
 
 	xsum = 0;
-	while (len-- > 0)
-		xsum += *p++;
-	xsum = (xsum & 0xffff) + (xsum >> 16);
+	while (len-- > 0) {
+		xsum += *p;
+		p++; 
+		//printf_int(" xsum:", xsum); 
+	}
 	xsum = (xsum & 0xffff) + (xsum >> 16);
 	return (xsum & 0xffff);
 }
@@ -583,9 +585,9 @@ u32 pack4chars(u8* a){
 	//mantains byte order - if it is stored little-endian, it remains that way.
 	u32 out; 
 	out = ((*a++)&0xff); 
-	out = ((*a++)&0xff)<< 8; 
-	out = ((*a++)&0xff)<< 16; 
-	out = ((*a++)&0xff)<< 24; 
+	out += ((*a++)&0xff)<< 8; 
+	out += ((*a++)&0xff)<< 16; 
+	out += ((*a++)&0xff)<< 24; 
 	return out; 
 }
 
@@ -640,6 +642,19 @@ u8* ip_header_setup(u8* data, int* length, u32 dest, u8 protocol){
 	return data; 
 }
 
+u8 ip_header_checksum(u8* data){
+	//check the checksum in the IPv4 header. 
+	//data must point to this header. 
+	ip_header* ip;
+	ip = (ip_header*)data; 
+	if(NetCksum(data, IP_HDR_SIZE_NO_UDP)){
+		printf_str("IP header checksum correct\n"); 
+		return 1; //fail! 
+	}else{
+		printf_str("IP header checksum incorrect\n"); 
+		return 0; //success!
+	}
+}
 u8* icmp_header_setup(u8* data, int* length, u8 type, u16 id, u16 seq){
 	//length, as before, includes this header and the payload.
 	
@@ -697,7 +712,7 @@ u8* tcp_header_setup(u8* data, int* length, u8 flags, u32 seq, u32 ack){
 	tcp->dest = TcpClientPort; 
 	tcp->seq = htonl(seq); 
 	tcp->ack = htonl(ack); 
-	tcp->dataoff = 0x50; //in 32-bit words -  20 bytes.
+	tcp->dataoff = 0x50; //in 32-bit words -  20 bytes. (no options)
 	tcp->flags = flags; 
 	tcp->window = htons(1024);
 	tcp->xsum = 0; //update later. 
@@ -904,7 +919,7 @@ int DHCP_rx(){
 	while(gotit == 0){
 		//now, listen for a response. 
 		length = bfin_EMAC_recv_poll( &data ); 
-		//printf_int("options length: ", length - sizeof(dhcp_packet) ); 
+		printf_int("options length: ", length - sizeof(dhcp_packet) ); 
 		p = (dhcp_packet*)data; 
 		if( length > 0 && length >= sizeof(dhcp_packet) 
 				  && htons(p->eth.protLen) == ETH_PROTO_IP4){
@@ -989,7 +1004,7 @@ void DHCP_parse(u8* ptr, int length){
 	u8 	olen; 
 	int i = length; 
 	
-	while( i > 2 ){
+	while( i >= 2 ){
 		option = *ptr++;
 		i--; 
 		if(option != 0){ //not a pad
