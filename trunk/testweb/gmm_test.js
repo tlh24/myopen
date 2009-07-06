@@ -67,13 +67,13 @@ function processData(d){
 		}
 	}
 	// break up into classes
-	var classes = 4; 
-	console.log("breaking into classes" + "classes = " + classes);
-	var omit = 2000;
+	var classes = 9; 
+	console.log("breaking into classes" + "classes = " + classes + "m rows = " + m.rows() + "m cols = " + m.cols());
+	var omit = 30;
 	var feats = 6
 	var cs_len =rows/ classes; 
 	var samp_len = rows-(classes*omit);
-	var samp = Matrix.Zero(samp_len, cols*feats);
+	var samp = Matrix.Zero(samp_len, cols); // need to ad cols*feats when features are used
 	var sampe = samp.elements;
 	for(cl = 0; cl<classes; cl++){
 		var c = m.minor(cl*cs_len, 0, cs_len-omit, samp.cols()); 
@@ -84,9 +84,9 @@ function processData(d){
 			}
 		}
 	}
-	var test = Matrix.Zero(omit*classes, cols*feats);
+	var test = Matrix.Zero(omit*classes, cols); // need to ad cols*feats when features are used
 	var teste = test.elements;
-	for(cl = 0; cl < classes; cl++){
+	for(var cl = 0; cl < classes; cl++){
 		var ct = m.minor(cs_len*(cl+1)-omit, 0, omit, test.cols());
 		var cte = ct.elements;
 		for(i=0; i<omit; i++){
@@ -95,9 +95,17 @@ function processData(d){
 			}
 		}
 	}
-
-	var zs = zscore(samp, 100, 50, classes);
-	var zs_test = zscore(test, 100, 50, classes); 
+	
+	//
+	var ldatest = [];
+	var ltlen = test.rows()/classes;
+	for(var cl =0; cl<classes; cl++){
+		ldatest[cl] = test.minor(cl*ltlen, 0, ltlen, test.cols());
+	}
+	//
+	
+	var zs = zscore(samp, 10, 5, classes);
+	var zs_test = zscore(test, 10, 5, classes); 
 	var clen = zs.rows()/classes;
 	var clen_test = zs_test.rows()/classes;
 	var cs = [];
@@ -178,7 +186,8 @@ function processData(d){
 			*/
 			// test using LDA
 			
-			pdf[v] = lda(zs, cs_test[v], classes, v);
+			//pdf[v] = lda(zs, cs_test[v], classes, v);
+			pdf[v] = lda(samp, ldatest[v], classes, v);
 		}
 	}
 	res = res + printMatrix(pdf[0]);
