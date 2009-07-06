@@ -11,7 +11,7 @@ for j = 1:r
 end
 fclose(f); 
 
-f = fopen('databin.txt', 'w');
+f = fopen('databin.bin', 'w');
 r = size(x,1); 
 c = size(x,2); 
 fwrite(f,r,'integer*4');
