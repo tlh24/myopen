@@ -33,13 +33,12 @@ u8* tcp_packet_setup(int len, char* result, u32 dest, u8 flags, u32 seq, u32 ack
 	return data; 
 }
 
-void tcp_checksum(int length){
-	//assumes that we are working on a packet in outgoing dma buffer.
-	//length is the payload length.
+u16 tcp_checksum_calc(u8* data, int length){
+	// length is the length of tcp payoad data
 	// http://mathforum.org/library/drmath/view/54379.html
 	int i; 
 	tcp_packet* p; 
-	p = (tcp_packet*)(txbuf[txIdx]->FrmData);
+	p = (tcp_packet*)data;
 	
 	u32 sum = 0;
 	u16* ptr; 	
@@ -50,37 +49,64 @@ void tcp_checksum(int length){
 		sum += *ptr++; 
 	}
 	sum += ((p->ip.p) << 8) & 0xffff; 
-	sum += htons(length + sizeof(tcp_header)); 
+	sum += htons(length + ((p->tcp.dataoff)>>2)); 
 	
-	if(length & 0x1){
-		u8* c = (u8*)(txbuf[txIdx]->FrmData);
-		c += sizeof(tcp_packet) + length; 
+	if(length & 0x1){ //pad with zero. 
+		u8* c = (u8*)(&(p->tcp));
+		c +=  length + ((p->tcp.dataoff) >> 2); 
 		*c = 0; 
 		length++; 
 	}
-	
+	//checksum the actual packet.
+	p->tcp.xsum = 0; 
 	ptr = (u16*)( &(p->tcp) ); 
-	for(i=0; i < length/2 + sizeof(tcp_header)/2; i++){
+	for(i=0; i < length/2 + ((p->tcp.dataoff)>>3); i++){
 		sum += *ptr++;
 	}
 	//manage the carries
 	sum = (sum & 0xffff) + (sum >> 16);
-	//sum = (sum & 0xffff) + (sum >> 16);
-	p->tcp.xsum= ~( sum & 0xffff ); //don't think we need to change the byte-order, as we are 
-		//operating on stuff that is network-byte order, ready to transmit.
+	return ~(sum & 0xffff); 
+	//don't think we need to change the byte-order, as we are 
+	//operating on stuff that is network-byte order, ready to transmit.
+}
+
+void tcp_checksum_set(int length){
+	//assumes that we are working on a packet in an outgoing dma buffer.
+	//length is the payload length.
+	tcp_packet* p; 
+	p = (tcp_packet*)(txbuf[txIdx]->FrmData); 
+	p->tcp.xsum = tcp_checksum_calc((u8*)(txbuf[txIdx]->FrmData), length);
+}
+u8 tcp_checksum_check(u8* data, int length){
+	//assumes that we are working on a packet in the RX buffer. 
+	tcp_packet* p; 
+	u16 sump, sumc; 
+	p = (tcp_packet*)data; 
+	sump = p->tcp.xsum ; 
+	sumc = tcp_checksum_calc(data, length); 
+	//note: includes the present checksum; 
+	// set to zero if this is a packet to be transmitted. 
+	if(sump == sumc){
+		printf_hex("TCP checksum correct, is:", sump); 
+		printf_str("\n"); 
+		return 1; 
+	}else{
+		printf_hex("TCP checksum incorrect, is:", sump); 
+		printf_hex(" calculated: ", sumc); 
+		printf_str("\n"); 
+		return 0; 
+	}
 }
 
 int tcp_length(tcp_packet* p){
-	//calculate the payload length & return it. 
-	
+	//calculate the payload length in bytes & return it. 
 	int length = htons(p->ip.len);
 	length -= (p->ip.hl_v & 0x0f) << 2; // specifies 32 bit words, so only shift 2.
-	length -= (p->tcp.dataoff & 0xf0)  >> 2; //same here, 'cept the other direction.
+	length -= (p->tcp.dataoff & 0xf0)  >> 2; //same here, 'cept the other direction. (>>4 , << 2)
 	return length; 
 }
 
 //need to keep track of the bytes that were acknowleged. 
-
 
 int tcp_rx(u8* data, int length){
 	tcp_packet* p; 
@@ -91,129 +117,133 @@ int tcp_rx(u8* data, int length){
 	p = (tcp_packet*)data; 
 	if(p->eth.protLen == htons(ETH_PROTO_IP4)){
 		if(p->ip.p == IP_PROT_TCP && 
-		    p->tcp.dest == htons(80) ){
+		    p->tcp.dest == htons(80) && 
+			ip_header_checksum(data + sizeof(eth_header)) ){
 			//printf_str("got a TCP packet port 80");
 			//printf_ip(" src ", htonl(p->ip.src)); 
 			//printf_str("\n"); 
 			//save it so we sent this guy data in the future.
 			ARP_lut_add(p->ip.src, p->eth.src); 
-			//now, must decide what to do with this packet. 
-			if(p->tcp.flags == TCP_FLAG_RST){
-				printf_str("TCP RST\n"); 
-				TcpState = TCP_LISTEN; 
-				TcpSeqClient = htonl(p->tcp.seq); 
-				return 1; 
-			}
-			if( p->tcp.flags == TCP_FLAG_SYN ){
-				printf_str("TCP got SYN"); 
-				TcpSeqClient = htonl(p->tcp.seq); 
-				printf_int("client tcp len ",  tcp_length(p)); 
-				printf_str("\n"); 
-				TcpSeqClient += tcp_length(p); 
-				TcpSeqClient++; //that's the arbitration protocol
-				TcpClientPort = p->tcp.src;
-				//set up a response.
-				NetDestIP = p->ip.src; 
-				tcp_packet_setup(0, &result, NetDestIP, 
-					TCP_FLAG_SYN | TCP_FLAG_ACK, TcpSeqHost, TcpSeqClient); 
-				if(result > 0){
-					TcpSeqHost++; 
-					TcpState = TCP_SYN_RXED; 
-					//checksum. 
-					tcp_checksum(0); //no payload.
-					bfin_EMAC_send_nocopy();
-					return 1;
-				}					
-			}
-			if(p->tcp.flags == TCP_FLAG_ACK && TcpState == TCP_SYN_RXED){
-				if(htonl(p->tcp.ack) != TcpSeqHost){
-					printf_ip("TCP got unexpected ack, ", htonl(p->tcp.ack)); 
+			//check the checksum.
+			rxlen = tcp_length(p); 
+			printf_int(" client tcp len ",  rxlen); 
+			printf_str("\n"); 
+			if(tcp_checksum_check(data, rxlen)){
+				//now, must decide what to do with this packet. 
+				if(p->tcp.flags == TCP_FLAG_RST){
+					printf_str("TCP RST\n"); 
 					TcpState = TCP_LISTEN; 
-					printf_str("\n"); 
+					TcpSeqClient = htonl(p->tcp.seq); 
 					return 1; 
 				}
-				TcpState = TCP_CONNECTED; 
-				TcpSeqClient = htonl(p->tcp.seq); 
-				printf_str("TCP conneted\n"); 
-				return 1; 
-			}
-			if(p->tcp.flags & TCP_FLAG_FIN ){
-				printf_str("TCP got FIN\n"); 
-				TcpSeqClient = htonl(p->tcp.seq); 
-				NetDestIP = p->ip.src; 
-				TcpSeqClient++; 
-				if( TcpState == TCP_CONNECTED ) {
-					tcp_packet_setup(0, &result, NetDestIP,
-						TCP_FLAG_FIN | TCP_FLAG_ACK, TcpSeqHost, TcpSeqClient); 
+				if( p->tcp.flags == TCP_FLAG_SYN ){
+					printf_str("TCP got SYN"); 
+					TcpSeqClient = htonl(p->tcp.seq); 
+					TcpSeqClient += tcp_length(p); 
+					TcpSeqClient++; //that's the arbitration protocol
+					TcpClientPort = p->tcp.src;
+					//set up a response.
+					NetDestIP = p->ip.src; 
+					tcp_packet_setup(0, &result, NetDestIP, 
+						TCP_FLAG_SYN | TCP_FLAG_ACK, TcpSeqHost, TcpSeqClient); 
 					if(result > 0){
-						TcpState = TCP_CLOSE; 
-						tcp_checksum(0); //no payload.
+						TcpSeqHost++; 
+						TcpState = TCP_SYN_RXED; 
+						//checksum. 
+						tcp_checksum_set(0); //no payload.
 						bfin_EMAC_send_nocopy();
+						return 1;
+					}					
+				}
+				if(p->tcp.flags == TCP_FLAG_ACK && TcpState == TCP_SYN_RXED){
+					if(htonl(p->tcp.ack) != TcpSeqHost){
+						printf_ip("TCP got unexpected ack, ", htonl(p->tcp.ack)); 
+						TcpState = TCP_LISTEN; 
+						printf_str("\n"); 
 						return 1; 
 					}
+					TcpState = TCP_CONNECTED; 
+					TcpSeqClient = htonl(p->tcp.seq); 
+					printf_str("TCP conneted\n"); 
+					return 1; 
 				}
-				if( TcpState == TCP_CLOSING ) {
-					tcp_packet_setup(0, &result, NetDestIP,
-						 TCP_FLAG_ACK, TcpSeqHost, TcpSeqClient); //final ack.
-					if(result > 0){
-						TcpState = TCP_CLOSE; 
-						tcp_checksum(0); //no payload.
-						bfin_EMAC_send_nocopy();
-						return 1; 
-					}
-				}
-			}
-			if(p->tcp.flags & TCP_FLAG_ACK && TcpState == TCP_CLOSE){
-				printf_str("TCP got random ACK\n"); 
-				return 1; 
-			}
-			if(TcpState == TCP_CONNECTED){
-				//they are requesting something? 
-				rxlen = tcp_length(p); 
-				payload = (char*)( &(p->tcp) ); 
-				payload += (p->tcp.dataoff & 0xf0)/4; //divide by 4 b/c it is << 4 & specifies 32 bit words. 
-				TcpSeqClient = htonl(p->tcp.seq); 
-				TcpSeqClient += rxlen; 
-				NetDestIP = p->ip.src; 
-				//start sending from whatever they acked last. 
-				u32 offset = htonl(p->tcp.ack) - TcpSeqHttpStart; 
-				//see if this was just an ack - if so, and we have more data to send, then send it. 
-				if(p->tcp.flags & TCP_FLAG_ACK && rxlen == 0){
-					//see if we have more data to send. 
-					if(offset == g_httpHeaderLen + g_httpContentLen){
-						g_httpRxed = 0; //reset the input counter. 
-						TcpSeqHost = offset + TcpSeqHttpStart; 
-						return 1; //nothing to send, everything acked.
-					} else {
-						if(tcp_burst(1, offset)) {
+				if(p->tcp.flags & TCP_FLAG_FIN ){
+					printf_str("TCP got FIN\n"); 
+					TcpSeqClient = htonl(p->tcp.seq); 
+					NetDestIP = p->ip.src; 
+					TcpSeqClient++; 
+					if( TcpState == TCP_CONNECTED ) {
+						tcp_packet_setup(0, &result, NetDestIP,
+							TCP_FLAG_FIN | TCP_FLAG_ACK, TcpSeqHost, TcpSeqClient); 
+						if(result > 0){
+							TcpState = TCP_CLOSE; 
+							tcp_checksum_set(0); //no payload.
+							bfin_EMAC_send_nocopy();
 							return 1; 
-						} else {
-							//nothing left - that was just an ack, wait for something else.
-							//this is the keepalive mode of connection.
+						}
+					}
+					if( TcpState == TCP_CLOSING ) {
+						tcp_packet_setup(0, &result, NetDestIP,
+							 TCP_FLAG_ACK, TcpSeqHost, TcpSeqClient); //final ack.
+						if(result > 0){
+							TcpState = TCP_CLOSE; 
+							tcp_checksum_set(0); //no payload.
+							bfin_EMAC_send_nocopy();
 							return 1; 
 						}
 					}
 				}
-				if( httpCollate(payload, rxlen) ){
-					//ok, we have assembled a response - send or start sending it. 
-					TcpSeqHttpStart = TcpSeqHost; 
-					printf_int("sending http data length ",g_httpHeaderLen + g_httpContentLen); 
-					printf_str("\n"); 
-					tcp_burst(1, 0); 
+				if(p->tcp.flags & TCP_FLAG_ACK && TcpState == TCP_CLOSE){
+					printf_str("TCP got random ACK\n"); 
 					return 1; 
-				} else {
-					//well, couldn't do anything with that packet - ack it, maybe they'll send another.
-					if(TcpState == TCP_CLOSING ){
-						tx = tcp_packet_setup(0, &result, NetDestIP, TCP_FLAG_ACK | TCP_FLAG_FIN,
-							TcpSeqHost, TcpSeqClient); 
-					} else {
-						tx = tcp_packet_setup(0, &result, NetDestIP, TCP_FLAG_ACK ,
-							TcpSeqHost, TcpSeqClient); //keepalive function.
+				}
+				if(TcpState == TCP_CONNECTED){
+					//they are requesting something? 
+					payload = (char*)( &(p->tcp) ); 
+					payload += (p->tcp.dataoff & 0xf0)/4; //divide by 4 b/c it is << 4 & specifies 32 bit words. 
+					TcpSeqClient = htonl(p->tcp.seq); 
+					TcpSeqClient += rxlen; 
+					NetDestIP = p->ip.src; 
+					//start sending from whatever they acked last. 
+					u32 offset = htonl(p->tcp.ack) - TcpSeqHttpStart; 
+					//see if this was just an ack - if so, and we have more data to send, then send it. 
+					if(p->tcp.flags & TCP_FLAG_ACK && rxlen == 0){
+						//see if we have more data to send. 
+						if(offset == g_httpHeaderLen + g_httpContentLen){
+							g_httpRxed = 0; //reset the input counter. 
+							TcpSeqHost = offset + TcpSeqHttpStart; 
+							return 1; //nothing to send, everything acked.
+						} else {
+							if(tcp_burst(1, offset)) {
+								return 1; 
+							} else {
+								//nothing left - that was just an ack, wait for something else.
+								//this is the keepalive mode of connection.
+								return 1; 
+							}
+						}
 					}
-					if(result > 0){
-						tcp_checksum(0); 
-						bfin_EMAC_send_nocopy();
+					if( httpCollate(payload, rxlen) ){
+						//ok, we have assembled a response - send or start sending it. 
+						TcpSeqHttpStart = TcpSeqHost; 
+						printf_int("sending http data length ",g_httpHeaderLen + g_httpContentLen); 
+						printf_str("\n"); 
+						tcp_burst(1, 0); 
 						return 1; 
+					} else {
+						//well, couldn't do anything with that packet - ack it, maybe they'll send another.
+						if(TcpState == TCP_CLOSING ){
+							tx = tcp_packet_setup(0, &result, NetDestIP, TCP_FLAG_ACK | TCP_FLAG_FIN,
+								TcpSeqHost, TcpSeqClient); 
+						} else {
+							tx = tcp_packet_setup(0, &result, NetDestIP, TCP_FLAG_ACK ,
+								TcpSeqHost, TcpSeqClient); //keepalive function.
+						}
+						if(result > 0){
+							tcp_checksum_set(0); 
+							bfin_EMAC_send_nocopy();
+							return 1; 
+						}
 					}
 				}
 			}
@@ -251,7 +281,7 @@ int tcp_burst(int iter, u32 offset){
 			memcpy(src, tx, txlen); 
 			offset += txlen; 
 			TcpSeqHost = offset + TcpSeqHttpStart;
-			tcp_checksum(txlen + txhdrlen); 
+			tcp_checksum_set(txlen + txhdrlen); 
 			bfin_EMAC_send_nocopy();
 			i++; 
 			if( (rxbuf[rxIdx]->StatusWord & RX_COMP) && (rxbuf[rxIdx]->StatusWord & RX_OK) ) {

@@ -57,29 +57,31 @@ unsigned char read_byte(){
 	}
 	return data; 
 }
-unsigned char read_status_register(){
+unsigned char read_status_register(int doprint){
 	unsigned char stat; 
 	clear_pin(_CS); 
 	write_byte(0xd7); 
 	stat= read_byte(); 
-	printf("status register= %x \n", stat); 
-	if(stat & 0x80)
-		printf("flash ready; "); 
-	else
-		printf("flash busy; "); 
-	printf("comp bit = %d; ", (stat>>6)&1); 
-	if( (stat & 0x3c) == 0x24)
-		printf("density OK; "); 
-	else
-		printf("density BAD; "); 
-	if(stat & 0x02)
-		printf("flash protected; "); 
-	else
-		printf("flash unprotected; "); 
-	if(stat & 0x01)
-		printf("page size 256 bytes.\n"); 
-	else
-		printf("page size 264 bytes.\n"); 
+	if(doprint) {
+		printf("status register= %x \n", stat); 
+		if(stat & 0x80)
+			printf("flash ready; "); 
+		else
+			printf("flash busy; "); 
+		printf("comp bit = %d; ", (stat>>6)&1); 
+		if( (stat & 0x3c) == 0x24)
+			printf("density OK; "); 
+		else
+			printf("density BAD; "); 
+		if(stat & 0x02)
+			printf("flash protected; "); 
+		else
+			printf("flash unprotected; "); 
+		if(stat & 0x01)
+			printf("page size 256 bytes.\n"); 
+		else
+			printf("page size 264 bytes.\n"); 
+	}
 	set_pin(_CS); 
 	
 	return stat; 
@@ -124,7 +126,7 @@ void test(int page_size){
 	write_byte(0x00); 
 	
 	set_pin(_CS); 
-	while( (read_status_register() & 0x80) == 0 ){
+	while( (read_status_register(0) & 0x80) == 0 ){
 		usleep(1000); 
 	}
 	
@@ -140,7 +142,7 @@ void test(int page_size){
 	set_pin(_CS); 
 	
 	//wait until the device is done.
-	while( (read_status_register() & 0x80) == 0 ){
+	while( (read_status_register(0) & 0x80) == 0 ){
 		usleep(2000); 
 	}
 	
@@ -190,7 +192,7 @@ void write_page(unsigned char *d, int page_size, int page){
 	set_pin(_CS); 
 	
 	//wait until the device is done.
-	while( (read_status_register() & 0x80) == 0 ){
+	while( (read_status_register(0) & 0x80) == 0 ){
 		usleep(2000); 
 	}
 }
@@ -299,7 +301,7 @@ int main(int argv, char* argc[]){
 	}
 	//need to make sure the device is in power of 2 binary page size. 
 	//converting to this is a one-time operation. 
-	if( (read_status_register() & 0x01) == 0){
+	if( (read_status_register(1) & 0x01) == 0){
 		printf("this device is configured for 264-byte pages\n"); 
 		printf("this mode is incompatible with boot streams consisting of \n"); 
 		printf("multiple sections.  Permanently change to 256-byte pages?\n"); 
@@ -318,7 +320,7 @@ int main(int argv, char* argc[]){
 			set_pin(_CS); 
 			//now have to wait for the device to finish. 
 			//wait until the device is done.
-			while( (read_status_register() & 0x80) == 0 ){
+			while( (read_status_register(0) & 0x80) == 0 ){
 				usleep(2000); 
 			}
 			printf("binary page size set. Please power down the board & turn back on to program.\n"); 

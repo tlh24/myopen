@@ -262,6 +262,7 @@ int ARP_req(u32 who, u8* mac_dest);
 
 u8* eth_header_setup(int* length,  char* result, u32 destIP);
 u8* ip_header_setup(u8* data, int* length, u32 dest, u8 protocol);
+u8 ip_header_checksum(u8* data); 
 u8* icmp_header_setup(u8* data, int* length, u8 type, u16 id, u16 seq);
 u8* udp_header_setup(u8* data, int* length, u16 sport, u16 dport);
 u8* tcp_header_setup(u8* data, int* length, u8 flags, u32 seq, u32 ack);
@@ -269,7 +270,9 @@ u8* tcp_header_setup(u8* data, int* length, u8 flags, u32 seq, u32 ack);
 u8* icmp_packet_setup(int len, char* result, u32 dest, u8 type, u16 id, u16 seq);
 u8* udp_packet_setup(int len, char* result);
 u8* tcp_packet_setup(int len, char* result, u32 dest, u8 flags, u32 seq, u32 ack);
-void tcp_checksum(int length);
+u16 tcp_checksum_calc(u8* data, int length);
+void tcp_checksum_set(int length);
+u8 tcp_checksum_check(u8* data, int length);
 int tcp_rx(u8* data, int length);
 int tcp_burst(int iter, u32 offset); 
 int icmp_rx(u8* data, int length);

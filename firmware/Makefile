@@ -8,28 +8,40 @@ CPUDEFINES = -D__ADSPBF537__  -D__BLACKFIN__
 INCLUDES = -I/opt/uClinux/bfin-elf/bfin-elf/include/
 ASMFLAGS = -x assembler-with-cpp $(INCLUDES) $(CPUDEFINES) -Wall
 ASMFLAGS += -mcpu=bf537 -include memory.h -include defBF537.h
-CFLAGS = $(INCLUDES) $(CPUDEFINES) -mcpu=bf537 -O2 -Wall \
+OPTFLAGS = -O3 -ffast-math -mfast-fp -funsafe-math-optimizations 
+CFLAGS = $(INCLUDES) $(CPUDEFINES) -mcpu=bf537 -Wall \
  -ffixed-I0 -ffixed-I1 -ffixed-I2 -ffixed-I3 \
  -ffixed-B0 -ffixed-B1 -ffixed-B2 -ffixed-B3 \
  -ffixed-L0 -ffixed-L1 -ffixed-L2 -ffixed-L3 \
  -ffixed-M0 -ffixed-M1 -ffixed-M2 -ffixed-M3 
-LDR = /opt/uClinux/bfin-uclinux/bin/bfin-uclinux-ldr
 
-LDFLAGS = -T bftiny.x
+# see http://blackfin.uclinux.org/gf/project/toolchain/forum/?action=ForumBrowse&forum_id=44&_forum_action=ForumMessageBrowse&thread_id=3023
+# the archive file must have the same organization (FLAT, FDPIC ..)
+LDFLAGS = -T bftiny.x \
+ -L /opt/uClinux/bfin-uclinux/bfin-uclinux/runtime/usr/lib/
+#-L /opt/uClinux/bfin-elf/bfin-elf/lib/bf532-none/mid-shared-library/ -lbffastfp
+#  -L/opt/uClinux/bfin-elf/bfin-elf/lib/ -lbffastfp
 
 OBJS = $(ASMSRCS:%.asm=%.o) $(CSRCS:%.c=%.o)
-DBGOBJS = $(DBGASMSRCS:%.asm=%.o) $(CSRCS:%.c=%.o)
+DBGOBJS = $(DBGASMSRCS:%.asm=%.o) $(CSRCS:%.c=%.do)
 INITOBJS = $(INITSRC:%.asm=%.o)
 
 BFINROOT = /opt/uClinux/bfin-uclinux/bin
 AS = $(BFINROOT)/bfin-uclinux-as
 CC = $(BFINROOT)/bfin-uclinux-gcc
 LD = $(BFINROOT)/bfin-uclinux-ld
+LDR = /opt/uClinux/bfin-uclinux/bin/bfin-uclinux-ldr
 OBDMP = $(BFINROOT)/bfin-uclinux-objdump
 BIN = $(BFINROOT)/bfin-uclinux-objcopy
 
 %.o: %.asm
 	$(CC) $(ASMFLAGS) -c -o $@ $<
+	
+%.o: %.c
+	$(CC) $(CFLAGS) $(OPTFLAGS) -c -o $@ $<
+	
+%.do: %.c
+	$(CC) $(CFLAGS) -g -c -o $@ $<
 
 #svn version script runs at the /end/ of the build process, but this isn't such a problem as 
 #the version does not change frequently. 
@@ -49,7 +61,7 @@ init_sdram.dxe: $(INITOBJS)
 emg_dsp.dxe: $(OBJS)
 	$(LD) $(LDFLAGS) -o $@ $(OBJS)
 	
-# this is for loading with the JTAG cable. 
+# this is for loading with the JTAG cable (icebear, from section5.ch)
 emg_dbg.dxe: $(DBGOBJS)
 	./debug.pl bftiny.x > bftiny_dbg.x
 	$(LD) -T bftiny_dbg.x -o $@ $(DBGOBJS)
@@ -63,7 +75,7 @@ emg_dsp.ldr:emg_dsp.dxe init_sdram.dxe
 #	perl register_check.pl
 	
 clean:
-	rm -f *.o *.ldr *.dxe
+	rm -f *.o *.do *.ldr *.dxe
 
 
 

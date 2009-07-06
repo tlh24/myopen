@@ -138,7 +138,7 @@ int sprintf_int(char* dest, int d){
 int sprintf_hex(char* dest, int d){
 	//we already know the length of the hex number will be 10 chars. (0x then 8 digits)
 	// so no need to reverse it.
-	int len, i, j, out; 
+	int i, j, out; 
 	short s;
 	j = 0; 
 	dest[j] = '0'; j++; 

@@ -111,11 +111,13 @@ int main() {
 	*pUART0_IER = 0; //turn off interrupts, turn them on later.
 	*pUART0_MCR = 0; 
 	*pUART0_LCR =  0x0080; //enable access to divisor latch. 
-	*pUART0_DLL = 65; //see page 810 of the BF537 hardware ref. this is the lower byte of the divisor.
-	*pUART0_DLH = 0;  //the system clock is 120Mhz. baud rate is 115200. 
+	*pUART0_DLL = 108; //see page 810 of the BF537 hardware ref. this is the lower byte of the divisor.
+		// 65 -> 115200.  ;  130 -> 57600 (about).  w/ system clock of120Mhz. baud rate is 115200. 
+		// 108 -> 57600 w/ system clock of 100Mhz.
+	*pUART0_DLH = 0; 
 	*pUART0_LCR = 0x0003; //parity disabled, 1 stop bit, 8 bit word. 
 	*pUART0_GCTL = 0x0001; //enable the clock.
-	printf_int("Myopen svn v.", /*SVN_VERSION{*/114/*}*/ ) ; 
+	printf_int("Myopen svn v.", /*SVN_VERSION{*/148/*}*/ ) ; 
 	printf_str("\n"); 
 	printf_str("checking SDRAM...\n"); 
 	unsigned short* p; 
@@ -145,9 +147,19 @@ int main() {
 		if(s!= 0xBABE) printf_hex("mem err @ ",i); 
 	}
 	printf_str("memory check done.\n"); 
+	
+	//test out some floating point ... 
+	/*
+	float a = 1.3450693; 
+	for(i=0; i<120; i++){
+		a = a*a; 
+		if(a > 20.0) a /= 10.0; 
+	}
+	printf_hex("float, hex:", (int)a);
+	*/
 	usb_init(); 
 	int etherr = bfin_EMAC_init(); 
-	//if(!etherr) DHCP_req	();  //want to be able to turn this one off, if we need to operate with APL & XPC stuff.
+	if(!etherr) DHCP_req();  //want to be able to turn this one off, if we need to operate with APL & XPC stuff.
 	
 	//setup the filters before we start acquiring samples! 
 	//please see (or run!) flt_design.m
@@ -199,28 +211,29 @@ int main() {
 	*tr_ptr = 0; 
 	*adc_ctr = 0; 
 	GTIME = 0; 
-	//set up the receive first, since it is controled by the transmit sport. 
-	*pSPORT0_RCR2 = 0x0100 + 19; //enable second side, serial word length 20
-	*pSPORT1_RCR2 = 0x0100 + 19; 
-	/* RCR = 0100 0100 0000 0001
-	sample data on rising edge, 
-	early frame syncs,
-	active high frame syncs,
-	require frame sync for every word, 
-	external frame sync, 
-	msb first, 
-	zero fill data, 
-	external recieve clock,  
-	enable. */
-	*pSPORT0_RCR1 = 0x4401 ; 
-	*pSPORT1_RCR1 = 0x4401 ; 
-	//transmit port
-	*pSPORT1_TCLKDIV = 149 ; //120Mhz / 300 = 400k / 25 = 16k / 4 = 4 ksps/ch
-	*pSPORT1_TFSDIV = 24 ; //25 clocks between assertions of the frame sync
-	*pSPORT1_TCR2 = 19; //word length 20, secondary disabled. 
-	// TCR = 0100 0110 0000 0011
-	*pSPORT1_TCR1 = 0x4603 ; 
-	
+	if(0){
+		//set up the receive first, since it is controled by the transmit sport. 
+		*pSPORT0_RCR2 = 0x0100 + 19; //enable second side, serial word length 20
+		*pSPORT1_RCR2 = 0x0100 + 19; 
+		/* RCR = 0100 0100 0000 0001
+		sample data on rising edge, 
+		early frame syncs,
+		active high frame syncs,
+		require frame sync for every word, 
+		external frame sync, 
+		msb first, 
+		zero fill data, 
+		external recieve clock,  
+		enable. */
+		*pSPORT0_RCR1 = 0x4401 ; 
+		*pSPORT1_RCR1 = 0x4401 ; 
+		//transmit port
+		*pSPORT1_TCLKDIV = 149 ; //120Mhz / 300 = 400k / 25 = 16k / 4 = 4 ksps/ch
+		*pSPORT1_TFSDIV = 24 ; //25 clocks between assertions of the frame sync
+		*pSPORT1_TCR2 = 19; //word length 20, secondary disabled. 
+		// TCR = 0100 0110 0000 0011
+		*pSPORT1_TCR1 = 0x4603 ; 
+	}
 	u32* data; 
 	char result; 
 	while(1) {
@@ -252,6 +265,16 @@ int main() {
 		}
 		usb_intr(); //check to see if there are any USB events to respond to.
 		*pPORTFIO_TOGGLE = 0x40 ; //toggle the nordic CSN pin.
+		unsigned int u = *((unsigned int*)WR_PTR); 
+		int x, y; 
+		x = calcMeanOfChannel(u, g_mouseXpos) ; 
+		y = calcMeanOfChannel(u, g_mouseXneg) ; 
+		if(x-y > 60) {
+			printf_str("d"); 
+		}
+		if(y-x > 60){
+			printf_str("a"); 
+		}
 	}
 	return 0; 
 }
