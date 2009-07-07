@@ -1,17 +1,17 @@
 x = Data; 
-f = fopen('datalda.txt', 'w');
-r = size(x,1); 
-c = size(x,2); 
+% f = fopen('datalda.txt', 'w');
+% r = size(x,1); 
+% c = size(x,2); 
 span = (max(x) - min(x));
 scale = (1./span)*1000;
-fprintf(f,['rows:' num2str(r) ' cols:' num2str(c) '\n']); 
-for j = 1:r
-   for k = 1:c
-       fwrite(f, [num2str(x(j,k)) ' ']); 
-   end
-   fprintf(f, '\n'); 
-end
-fclose(f); 
+% fprintf(f,['rows:' num2str(r) ' cols:' num2str(c) '\n']); 
+% for j = 1:r
+%    for k = 1:c
+%        fwrite(f, [num2str(x(j,k)) ' ']); 
+%    end
+%    fprintf(f, '\n'); 
+% end
+% fclose(f); 
 
 f = fopen('datafull.bin', 'w');
 r = size(x,1); 
