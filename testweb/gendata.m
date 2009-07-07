@@ -16,7 +16,7 @@ scale = (1./span)*1000;
 f = fopen('datafull.bin', 'w');
 r = size(x,1); 
 c = size(x,2); 
-fwrite(f,r,'integer*4');
-fwrite(f,c,'integer*4');
+fwrite(f,r,'integer*4')
+fwrite(f,c,'integer*4')
 fwrite(f,x,'integer*2'); 
 fclose(f); 
