@@ -9,6 +9,7 @@
 <script type="text/javascript" src="cholesky.js"></script>
 <script type="text/javascript" src="mvgaussian.js"></script>
 <script type="text/javascript" src="Lda.js"></script>
+<script type="text/javascript" src="Binaryajax.js"></script>
 <script type="text/javascript" src="bin_test.js"></script>
 </head>
 <body>
@@ -203,11 +204,14 @@
 <canvas id = "canvas2" width="400" height="400"></canvas>
 </div>
 <div style = "background:#dedeee" align="center">
-<form action="binRequest()" method="post">
 <form>
-	<p> Binary Conversion <p>
-	<input type = "Button" value = "Convert"/>
+<p> Binary Conversion <p>
+<input type = "Button" value = "Convert" OnClick = "runBin();"/>
 </form>
 </div>
+<div id="-4">
+	<p> no results still!</p>
+</div>
 </body>
+
 </html>

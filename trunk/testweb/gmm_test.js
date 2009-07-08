@@ -3,7 +3,7 @@ function retrieveData(samples, callback)
         //div is the division id to replace in the xml schema.
         //first, we have to get the unformatted text at this node. 
         poststr = "samples=" + samples ; 
-        console.log("poststr="+poststr); 
+        //console.log("poststr="+poststr); 
         http_request = false;
         http_request = new XMLHttpRequest(); //this will only work for mozilla and safari, but that's ok
         if (http_request.overrideMimeType) {
@@ -27,7 +27,8 @@ function retrieveUpdate(){
 			//result is the data from myopen board!!
 			//need to process it here (call math functions)
 			// and return result. 
-			processed = processData(result); 
+			var parse = parseData(result);
+			processed = processData(parse); 
 			var node = document.getElementById("-2"); 
 			//var par = node.parentNode;
 			//var rep = node.cloneNode(true); 
@@ -44,9 +45,8 @@ var g_x_channel = 0;
 var g_y_feature = 0; 
 var g_y_channel = 0; 
 
-function processData(d){
-	console.log("begining processData");
-	var res = " "; //what is to be returned.
+function parseData(d){
+	//convert string data to a matrix. 
 	var mat = d.split("\n"); 
 	//first line is the matrix size. 
 	var header = mat[0] ; 
@@ -61,60 +61,38 @@ function processData(d){
 	for( var r = 0; r<rows; r++ ){
 		var row = mat[r + 1]; 
 		var col = row.split(" ");  
-		for( c = 0; c<cols; c++ ){
+		for( var c = 0; c<cols; c++ ){
 			var samp = col[c] ; 
 			me[r][c] = parseFloat(samp); 
 		}
 	}
-	// break up into classes
-	var classes = 9; 
-	console.log("breaking into classes" + "classes = " + classes + "m rows = " + m.rows() + "m cols = " + m.cols());
-	var omit = 30;
-	var feats = 6
+	return m; 
+}
+
+function processData(m){
+	var rows = m.rows(); 
+	var cols = m.cols(); 
+	var classes = 4; 
+	var feats = 6;
+	var len = 100; var shift = len/2;
 	var cs_len =rows/ classes; 
-	var samp_len = rows-(classes*omit);
-	var samp = Matrix.Zero(samp_len, cols); // need to ad cols*feats when features are used
-	var sampe = samp.elements;
-	for(cl = 0; cl<classes; cl++){
-		var c = m.minor(cl*cs_len, 0, cs_len-omit, samp.cols()); 
-		var ce = c.elements;
-		for(i=0; i<cs_len-omit; i++){
-			for(j=0; j< samp.cols(); j++){
-				sampe[i+(cl*(cs_len-omit))][j] = ce[i][j];
-			}
-		}
-	}
-	var test = Matrix.Zero(omit*classes, cols); // need to ad cols*feats when features are used
-	var teste = test.elements;
-	for(var cl = 0; cl < classes; cl++){
-		var ct = m.minor(cs_len*(cl+1)-omit, 0, omit, test.cols());
-		var cte = ct.elements;
-		for(i=0; i<omit; i++){
-			for(j=0;j<test.cols(); j++){
-				teste[i + (cl*omit)][j] = cte[i][j];
-			}
-		}
-	}
-	
-	//
-	var ldatest = [];
-	var ltlen = test.rows()/classes;
-	for(var cl =0; cl<classes; cl++){
-		ldatest[cl] = test.minor(cl*ltlen, 0, ltlen, test.cols());
-	}
-	//
-	
-	var zs = zscore(samp, 10, 5, classes);
-	var zs_test = zscore(test, 10, 5, classes); 
+	var omit = Math.round(cs_len/4);
+	var sampD = realData(m,rows, classes, feats, cols, cs_len,omit);
+	var testD = testData(m,rows, classes, feats, cols, cs_len,omit);
+	var zs = zscore(sampD, len, shift, classes);
+	var zs_test = zscore(testD, len, shift, classes); 
+	console.log("zs and zs_test found")
 	var clen = zs.rows()/classes;
 	var clen_test = zs_test.rows()/classes;
-	var cs = [];
 	var cs_test = [];
-	console.log("found zs, zs test");
-	for(t=0; t<classes; t++){
+	var cs = [];
+	console.log("finding cs");
+	for(var t=0; t<classes; t++){
 		cs[t] = zs.minor(t*clen, 0, clen, cols*feats);
 		cs_test[t] = zs_test.minor(t*clen_test, 0,clen_test, cols*feats);
 	}
+	
+	console.log("broken into classes");
 	//get the drop-down menu selections. 
 	var node = document.getElementById("featone"); 
 	g_x_feature = node.selectedIndex;
@@ -150,7 +128,7 @@ function processData(d){
 		var miny = cs[0].col(iy).min() ; 
 		var maxx = cs[0].col(ix).max() ; 
 		var maxy = cs[0].col(iy).max() ; 
-		for(v=1; v<classes; v++){
+		for(var v=1; v<classes; v++){
 			minx = Math.min(cs[v].col(ix).min(), minx); 
 			miny = Math.min(cs[v].col(iy).min(), miny); 
 			maxx = Math.max(cs[v].col(ix).max(), maxx); 
@@ -163,12 +141,12 @@ function processData(d){
 		var acce = acc.elements;
 
 	
-	for(v=0; v<classes; v++){
+	for(var v=0; v<classes; v++){
 			var clear = v == 0; 
-			/*
+			
 			scatterDraw(cs[v].col(ix), cs[v].col(iy),colors[v]+",0.75", clear, axes,3);
 			ellipseDraw(cs[v].col(ix), cs[v].col(iy),colors[v]+",0.25", axes);
-			
+			/*
 			var mu = calcMean(cs_test[v]);
 			var sigma = calcCov(cs_test[v], mu);
 			var pr = Matrix.Zero(cs_test[v].rows(), classes);
@@ -184,10 +162,6 @@ function processData(d){
 			pdf[v] = pr;
 			acce[v] = accuracy(pdf[v], v);
 			*/
-			// test using LDA
-			
-			//pdf[v] = lda(zs, cs_test[v], classes, v);
-			pdf[v] = lda(samp, ldatest[v], classes, v);
 		}
 	}
 	res = res + printMatrix(pdf[0]);
@@ -206,8 +180,8 @@ function calcCov(m,mean){
 	var cov = n.x(mz);
 	var cove = cov.elements ; 
 	//divide by the number of elements...
-	for (i =0; i<cov.rows(); i++){
-		for (j=0; j < cov.cols(); j++){
+	for (var i =0; i<cov.rows(); i++){
+		for (var j=0; j < cov.cols(); j++){
 			cove[i][j] = cove[i][j] / (m.rows()-1) ; 
 		}
 	}
@@ -218,12 +192,12 @@ function calcMean(m){
 	var me = m.elements ; 
 	var sum = Vector.Zero(m.cols());
 	var sume = sum.elements;
-	for (i =0; i<m.rows(); i++){
-		for (j=0; j < m.cols(); j++){
+	for (var i =0; i<m.rows(); i++){
+		for (var j=0; j < m.cols(); j++){
 			sume[j] = sume[j] + me[i][j];
 		}
 	}
-	for (j=0; j < m.cols(); j++){
+	for (var j=0; j < m.cols(); j++){
 		sume[j] = sume[j] / m.rows();
 	}
 	return sum;
@@ -237,8 +211,8 @@ function subMean(m, mean) {
 	var me = m.elements ; 
 	var ne = n.elements ; 
 	var se = mean.elements; 
-	for (i =0; i<m.rows(); i++){
-		for (j=0; j < m.cols(); j++){
+	for (var i =0; i<m.rows(); i++){
+		for (var j=0; j < m.cols(); j++){
 			ne[i][j] = me[i][j] - se[j] ; 
 		}
 	}
@@ -251,12 +225,12 @@ function mav(n){ // returns the mean absolute value of the data
 	var ne = n.elements ; 
 	var sumav = Vector.Zero(n.cols());
 	var sumave = sumav.elements;
-	for (i =0; i<n.rows(); i++){
-		for (j=0; j < n.cols(); j++){
+	for (var i =0; i<n.rows(); i++){
+		for (var j=0; j < n.cols(); j++){
 			sumave[j] = sumave[j] + Math.abs(ne[i][j]);
 		}
 	}
-	for (j=0; j < n.cols(); j++){
+	for (var j=0; j < n.cols(); j++){
 		sumave[j] = sumave[j] / n.rows();
 	}
 	return sumav;
@@ -269,8 +243,8 @@ function wl(m) { // compute the waveform length
 	var wav = Vector.Zero(m.cols());
 	var wave = wav.elements;
 	var length = (1/m.rows())*(1/m.rows());
-	for (i =0; i<m.rows()-1; i++){
-		for (j=0; j < m.cols(); j++){
+	for (var i =0; i<m.rows()-1; i++){
+		for (var j=0; j < m.cols(); j++){
 			dife[i][j] = me[i+1][j] - me[i][j];
 			dife[i][j] = dife[i][j]*dife[i][j];
 			dife[i][j] = dife[i][j] + length;
@@ -289,13 +263,13 @@ function wavii(m) { // compute the waveform length
 	var dife = dif.elements;
 	var wv = Vector.Zero(m.cols());
 	var wve = wv.elements;
-	for (i =0; i<m.rows()-1; i++){
-		for (j=0; j < m.cols(); j++){
+	for (var i =0; i<m.rows()-1; i++){
+		for (var j=0; j < m.cols(); j++){
 			dife[i][j] = me[i+1][j] - me[i][j];
 		}
 	}
-	for (j=0; j < m.cols(); j++){
-		for (i =0; i<m.rows()-1; i++){
+	for (var j=0; j < m.cols(); j++){
+		for (var i =0; i<m.rows()-1; i++){
 			wve[j] = wve[j] + Math.abs(dife[i][j]);
 		}
 	}
@@ -310,19 +284,19 @@ function zc(n) { //counts the zero crossings
 	var me = m.elements;
 	var a = Matrix.Zero(n.rows()-1, n.cols());
 	var ae = a.elements;
-	for (i =0; i <n.rows(); i++){
-		for (j=0; j < n.cols(); j++){
+	for (var i =0; i <n.rows(); i++){
+		for (var j=0; j < n.cols(); j++){
 			var cross = Boolean(ne[i][j] >= 0);
 			me[i][j] = cross;
 		}
 	}
-	for(i=0; i<n.rows()-1; i++){
-		for(j=0; j<n.cols(); j++) {
+	for(var i=0; i<n.rows()-1; i++){
+		for(var j=0; j<n.cols(); j++) {
 			ae[i][j] = me[i+1][j] - me[i][j];
 			ze[j] = ze[j] + Math.abs(ae[i][j])
 		}
 	}
-	for(j=0;j<n.cols(); j++){
+	for(var j=0;j<n.cols(); j++){
 		ze[j] = ze[j]/n.rows();
 	}
 	return z
@@ -340,20 +314,20 @@ function slope_change(m) { // finds the number of slope sign changes
 	var be = b.elements;
 	var c = Matrix.Zero(m.rows()-2, m.cols());
 	var ce= c.elements;
-	for(i=0; i<m.rows()-1; i++){
-		for (j=0; j < m.cols(); j++){
+	for(var i=0; i<m.rows()-1; i++){
+		for (var j=0; j < m.cols(); j++){
 			dife[i][j] = me[i+1][j] - me[i][j];
 			var cross = Boolean(dife[i][j] >= 0 );
 			be[i][j] = cross;
 		}
 	}
-	for(i=0; i<m.rows()-2; i++){
-		for(j=0; j<m.cols(); j++){
+	for(var i=0; i<m.rows()-2; i++){
+		for(var j=0; j<m.cols(); j++){
 			ce[i][j] = be[i+1][j] - be[i][j];
 			ssce[j] = ssce[j] + Math.abs(ce[i][j]);
 		}
 	}
-	for(j=0; j<m.cols(); j++){
+	for(var j=0; j<m.cols(); j++){
 		ssce[j] = ssce[j]/m.rows();
 	}
 	
@@ -365,12 +339,12 @@ function rootms(n){ // calculates the root mean squared value
 	var ne = n.elements ; 
 	var rms = Vector.Zero(n.cols());
 	var rmse = rms.elements;
-	for (i =0; i<n.rows(); i++){
-		for (j=0; j < n.cols(); j++){
+	for (var i =0; i<n.rows(); i++){
+		for (var j=0; j < n.cols(); j++){
 			rmse[j] = rmse[j] + ne[i][j]*ne[i][j];
 		}
 	}
-	for (j=0; j < n.cols(); j++){
+	for (var j=0; j < n.cols(); j++){
 		rmse[j] = rmse[j] / n.rows();
 		rmse[j] = Math.sqrt(rmse[j]);
 	}
@@ -382,9 +356,9 @@ function printMatrix (p) {
 	var pe = p.elements ; 
 	var res = "<p>matrix " + p.rows() + " by " + p.cols() + "</p>\n"; 
 	res += "<table><font color=\"green\">\n"; 
-	for ( i = -1; i<p.rows(); i++){
+	for (var i = -1; i<p.rows(); i++){
 		res = res + "<tr>\n"; 
-		for( j=-1; j<p.cols(); j++){
+		for( var j=-1; j<p.cols(); j++){
 			var inner = "" ; 
 			if(i < 0) { inner = "col" + j; }
 			else {
@@ -403,7 +377,7 @@ function printVector (p) {
 	var pe = p.elements ; 
 	var res = "<p>vector " + p.dimensions() + " elements </p>\n"; 
 	res += "<table><font color=\"green\">\n"; 
-	for ( i = 0; i<p.dimensions(); i++){
+	for (var i = 0; i<p.dimensions(); i++){
 		res = res + "<tr>\n"; 
 		res = res + "<td>" + pe[i] + "</td>\n"; 
 		res = res + "</tr>\n"; 
@@ -417,18 +391,18 @@ function normalizeVec(v){
 	var k =  v.dimensions();
 	var sum = 0.0; 
 	var ve = v.elements; 
-	for(i=0; i<k; i++){
+	for(var i=0; i<k; i++){
 		sum += ve[i] * ve[i] ; 
 	}
 	sum = Math.sqrt(sum); 
-	for(i=0; i<k; i++){
+	for(var i=0; i<k; i++){
 		ve[i] = ve[i] / sum ; 
 	}
 }
 function scaleVec(v,scl){
 	var k =  v.dimensions(); 
 	var ve = v.elements; 
-	for(i=0; i<k; i++){
+	for(var i=0; i<k; i++){
 		ve[i] = ve[i]*scl ; 
 	}
 }
