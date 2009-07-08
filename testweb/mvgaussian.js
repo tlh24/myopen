@@ -14,7 +14,7 @@ function mvgaussian(mean, sigma, x){
 	var f = Vector.Zero(s); 
 	var fe = f.elements ; 
 	var subx = subMean(x, mean);
-	for(i=0; i< s; i++){
+	for(var i=0; i< s; i++){
 		var xx = subx.row(i);
 		var e =-.5*mvv(xx,(mvx(sigmainv,xx))); 
 		//console.log("row=" + vector_to_string(xx) + " sum=" + sum + "\n"); 
@@ -32,9 +32,9 @@ function mvx(mtx,vec){
 	var r = Vector.Zero(p); 
 	var re = r.elements;
 	var i, j; 
-	for(i=0; i<p; i++){
+	for(var i=0; i<p; i++){
 		var sum = 0
-		for(j=0; j<n; j++){
+		for(var j=0; j<n; j++){
 			sum += mtxe[j][i] * vece[j];
 		}
 		re[i] = sum;
@@ -48,7 +48,7 @@ function mvv(v1, v2){
 	var sum = 0;
 	var n = v1.dimensions();
 	var i; 
-	for(i=0; i < n; i++){
+	for(var i=0; i < n; i++){
 		sum += v1e[i]*v2e[i];
 	}	
 	return sum;
@@ -61,13 +61,13 @@ function mxx(m1, m2){
 	var re = r.elements;
 	var v = Vector.Zero(m1.cols());
 	var ve = v.elements;
-	for(i=0; i<m1.rows(); i++){
-		for(j=0; j<m2.rows(); j++){
+	for(var i=0; i<m1.rows(); i++){
+		for(var j=0; j<m2.rows(); j++){
 			ve[j] = m2e[j][i];
 		}
 		var p = mvx(m1, v);
 		var pe = p.elements;
-		for(k=0; k<m1.rows(); k++){
+		for(var k=0; k<m1.rows(); k++){
 			re[i][k] = pe[k];
 		}
 	}
@@ -111,9 +111,9 @@ function accuracy(m, cl){
 	}
 	else {
 		var count = n;
-		for(i=0; i < n; i++){
+		for(var i=0; i < n; i++){
 			var m = me[i][cl]; 
-			for(j=0; j<c; j++){
+			for(var j=0; j<c; j++){
 				if(m<me[i][j]){
 					count = count - 1;
 				}
@@ -123,9 +123,40 @@ function accuracy(m, cl){
 	var acc = count/n;
 	return acc;
 }
+// breaks into classes after performing features and zscores
 
-function zscore(m, len, shift, classes){
-	console.log("performing zscore");
+function realData(m,rows, classes, feats, cols, cs_len,omit){
+	var samp_len = rows-(classes*omit);
+	var samp = Matrix.Zero(samp_len, feats*cols); //
+	var sampe = samp.elements;
+	for(var cl = 0; cl<classes; cl++){
+		var c = m.minor(cl*cs_len, 0, cs_len-omit, samp.cols()); 
+		var ce = c.elements;
+		for(var i=0; i<cs_len-omit; i++){
+			for(var j=0; j< samp.cols(); j++){
+				sampe[i+(cl*(cs_len-omit))][j] = ce[i][j];
+			}
+		}
+	}
+	return samp;
+}
+
+function testData(m, rows, classes, feats, cols, cs_len,omit){
+	var test = Matrix.Zero(omit*classes, feats*cols); 
+	var teste = test.elements;
+	for(var cl = 0; cl < classes; cl++){
+		var ct = m.minor(cs_len*(cl+1)-omit, 0, omit, test.cols());
+		var cte = ct.elements;
+		for(var i=0; i<omit; i++){
+			for(var j=0;j<test.cols(); j++){
+				teste[i + (cl*omit)][j] = cte[i][j];
+			}
+		}
+	}
+	return test;
+}
+
+function zscore(m, len, shift){
 	var me = m.elements;
 	var rows = m.rows();
 	var cols = m.cols();
@@ -134,8 +165,7 @@ function zscore(m, len, shift, classes){
 	var a_lim = klim/shift;
 	var a = Matrix.Zero(a_lim, cols);
 	var ae = a.elements;
-	
-	for(k=0; k<=(klim-len)/shift; k++){
+	for(var k=0; k<=(klim-len)/shift; k++){
 		var samp = m.minor(k*shift, 0, len, m.cols());
 		var mn = calcMean(samp);
 		var sampz = subMean(samp, mn); 
@@ -152,7 +182,7 @@ function zscore(m, len, shift, classes){
 		var rmse = rms.elements;
 		var slope = slope_change(sampz); // slope changes
 		var slopee = slope.elements;
-		for(f=0; f<chan; f++){
+		for(var f=0; f<chan; f++){
 			ae[k][f+(0*chan)] = meane[f];
 			ae[k][f+(1*chan)] = wave[f];
 			ae[k][f+(2*chan)] = wavtwoe[f];
@@ -167,8 +197,9 @@ function zscore(m, len, shift, classes){
 	var mu = calcMean(a);
 	var mue = mu.elements;
 	var sub = subMean(a, mu);
-	var zz = divStd(sub, mu);
-	return zz
+	var z = divStd(sub, mu);
+	console.log("zscore complete");
+	return z;
 }
 
 function divStd(m, mean){
@@ -178,17 +209,17 @@ function divStd(m, mean){
 	var ve = v.elements;
 	var dif = Matrix.Zero(m.rows(), m.cols());
 	var dife = dif.elements;
-	var z = Matrix.Zero(m.rows(), m.cols());
-	var ze = z.elements;
-	for(j = 0; j<m.cols(); j++){
-		for(i=0; i<m.rows(); i++){
+	var dz = Matrix.Zero(m.rows(), m.cols());
+	var dze = dz.elements;
+	for(var j = 0; j<m.cols(); j++){
+		for(var i=0; i<m.rows(); i++){
 			dife[i][j] = Math.abs(me[i][j] - meane[j]);
 			ve[j] = ve[j] + dife[i][j]*dife[i][j];
 		}
 		ve[j] = Math.sqrt(ve[j]);
-		for(r = 0; r<m.rows(); r++){
-			ze[r][j] = me[r][j]/ve[j];
+		for(var r = 0; r<m.rows(); r++){
+			dze[r][j] = me[r][j]/ve[j];
 		}
 	}
-	return z
+	return dz;
 }
