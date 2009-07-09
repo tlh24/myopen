@@ -126,95 +126,80 @@ function accuracy(m, cl){
 // breaks into classes after performing features and zscores
 
 function realData(m,rows, classes, feats, cols, cs_len,omit){
-	var samp_len = rows-(classes*omit);
-	var samp = Matrix.Zero(samp_len, feats*cols); //
-	var sampe = samp.elements;
+	var sampl = [];
 	for(var cl = 0; cl<classes; cl++){
-		var c = m.minor(cl*cs_len, 0, cs_len-omit, samp.cols()); 
-		var ce = c.elements;
-		for(var i=0; i<cs_len-omit; i++){
-			for(var j=0; j< samp.cols(); j++){
-				sampe[i+(cl*(cs_len-omit))][j] = ce[i][j];
-			}
-		}
+		sampl[cl] = m.minor(cl*cs_len, 0, cs_len-omit, feats*cols); 
 	}
-	return samp;
+	return sampl;
 }
 
 function testData(m, rows, classes, feats, cols, cs_len,omit){
-	var test = Matrix.Zero(omit*classes, feats*cols); 
-	var teste = test.elements;
+	var tests = [];
 	for(var cl = 0; cl < classes; cl++){
-		var ct = m.minor(cs_len*(cl+1)-omit, 0, omit, test.cols());
-		var cte = ct.elements;
-		for(var i=0; i<omit; i++){
-			for(var j=0;j<test.cols(); j++){
-				teste[i + (cl*omit)][j] = cte[i][j];
-			}
-		}
+		tests[cl] = m.minor(cs_len*(cl+1)-omit, 0, omit, feats*cols);
 	}
-	return test;
+	return tests;
 }
 
-function zscore(m, len, shift){
-	var me = m.elements;
-	var rows = m.rows();
-	var cols = m.cols();
+function zscore(n, len, shift, classes){
+
+	var rows = n[0].rows();
+	var cols = n[0].cols();
 	var chan = cols/6;
 	var klim = Math.floor(rows/len)*len
-	var a_lim = klim/shift;
-	var a = Matrix.Zero(a_lim, cols);
+	var a_lim = (klim)/shift;
+	var a = Matrix.Zero(classes*(a_lim-1), cols);
 	var ae = a.elements;
-	for(var k=0; k<=(klim-len)/shift; k++){
-		var samp = m.minor(k*shift, 0, len, m.cols());
-		var mn = calcMean(samp);
-		var sampz = subMean(samp, mn); 
-		var mne = mn.elements;
-		var mean = mav(sampz); // mean absolute value
-		var meane = mean.elements;
-		var wav = wl(sampz); // first wavelength features
-		var wave=wav.elements;
-		var wavtwo = wavii(sampz); // second wl features
-		var wavtwoe = wavtwo.elements;
-		var zeroc = zc(sampz); // zero crossings
-		var zeroce = zeroc.elements;
-		var rms = rootms(sampz); // rms vales
-		var rmse = rms.elements;
-		var slope = slope_change(sampz); // slope changes
-		var slopee = slope.elements;
-		for(var f=0; f<chan; f++){
-			ae[k][f+(0*chan)] = meane[f];
-			ae[k][f+(1*chan)] = wave[f];
-			ae[k][f+(2*chan)] = wavtwoe[f];
-			ae[k][f+(3*chan)] = zeroce[f];
-			ae[k][f+(4*chan)] = slopee[f];
-			ae[k][f+(5*chan)] = rmse[f];
+	for(var cl = 0; cl< classes; cl++){
+		var m = n[cl];
+		var me = m.elements;
+		for(var k=0; k<=(klim-len)/shift; k++){
+			var samp = m.minor(k*shift, 0, len, m.cols());
+			var mn = calcMean(samp);
+			var sampz = subMean(samp, mn); 
+			var mne = mn.elements;
+			var mean = mav(sampz); // mean absolute value
+			var meane = mean.elements;
+			var wav = wl(sampz); // first wavelength features
+			var wave=wav.elements;
+			var wavtwo = wavii(sampz); // second wl features
+			var wavtwoe = wavtwo.elements;
+			var zeroc = zc(sampz); // zero crossings
+			var zeroce = zeroc.elements;
+			var rms = rootms(sampz); // rms vales
+			var rmse = rms.elements;
+			var slope = slope_change(sampz); // slope changes
+			var slopee = slope.elements;
+			for(var f=0; f<chan; f++){
+				var offset = cl*(a.rows()/classes);
+				ae[k+offset][f+(0*chan)] = meane[f];
+				ae[k+offset][f+(1*chan)] = wave[f];
+				ae[k+offset][f+(2*chan)] = wavtwoe[f];
+				ae[k+offset][f+(3*chan)] = zeroce[f];
+				ae[k+offset][f+(4*chan)] = slopee[f];
+				ae[k+offset][f+(5*chan)] = rmse[f];
+			}
+			
 		}
-		
 	}
-	var z = Matrix.Zero(rows, m.cols());
+	var z = Matrix.Zero(a.rows(), m.cols());
 	var ze = z.elements;
 	var mu = calcMean(a);
 	var mue = mu.elements;
 	var sub = subMean(a, mu);
-	var z = divStd(sub, mu);
-	console.log("zscore complete");
+	var z = divStd(sub);
 	return z;
 }
 
-function divStd(m, mean){
+function divStd(m){
 	var me = m.elements;
-	var meane = mean.elements;
 	var v = Vector.Zero(m.cols());
 	var ve = v.elements;
-	var dif = Matrix.Zero(m.rows(), m.cols());
-	var dife = dif.elements;
 	var dz = Matrix.Zero(m.rows(), m.cols());
 	var dze = dz.elements;
 	for(var j = 0; j<m.cols(); j++){
 		for(var i=0; i<m.rows(); i++){
-			dife[i][j] = Math.abs(me[i][j] - meane[j]);
-			ve[j] = ve[j] + dife[i][j]*dife[i][j];
+			ve[j] = ve[j] + Math.abs(me[i][j]*me[i][j]);
 		}
 		ve[j] = Math.sqrt(ve[j]);
 		for(var r = 0; r<m.rows(); r++){
