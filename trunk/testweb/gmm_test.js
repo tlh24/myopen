@@ -46,6 +46,7 @@ var g_y_feature = 0;
 var g_y_channel = 0; 
 
 function parseData(d){
+
 	//convert string data to a matrix. 
 	var mat = d.split("\n"); 
 	//first line is the matrix size. 
@@ -70,28 +71,27 @@ function parseData(d){
 }
 
 function processData(m){
+	var res = "";
 	var rows = m.rows(); 
 	var cols = m.cols(); 
 	var classes = 4; 
 	var feats = 6;
-	var len = 100; var shift = len/2;
+	var len = 20; var shift = len/2;
 	var cs_len =rows/ classes; 
 	var omit = Math.round(cs_len/4);
-	var sampD = realData(m,rows, classes, feats, cols, cs_len,omit);
-	var testD = testData(m,rows, classes, feats, cols, cs_len,omit);
-	var zs = zscore(sampD, len, shift, classes);
-	var zs_test = zscore(testD, len, shift, classes); 
-	console.log("zs and zs_test found")
+	var samp = realData(m,rows, classes, feats, cols, cs_len,omit);
+	var test = testData(m,rows, classes, feats, cols, cs_len,omit);
+	var zs = zscore(samp, len, shift, classes);
+	var zs_test = zscore(test, len, shift, classes); 
 	var clen = zs.rows()/classes;
 	var clen_test = zs_test.rows()/classes;
 	var cs_test = [];
 	var cs = [];
-	console.log("finding cs");
+	console.log("finding cs" + "clen = " + clen + "clen_test = " + clen_test);
 	for(var t=0; t<classes; t++){
 		cs[t] = zs.minor(t*clen, 0, clen, cols*feats);
 		cs_test[t] = zs_test.minor(t*clen_test, 0,clen_test, cols*feats);
 	}
-	
 	console.log("broken into classes");
 	//get the drop-down menu selections. 
 	var node = document.getElementById("featone"); 
@@ -143,10 +143,9 @@ function processData(m){
 	
 	for(var v=0; v<classes; v++){
 			var clear = v == 0; 
+			scatterDraw(cs[v].col(ix), cs[v].col(iy),colors[v+1]+",0.75", clear, axes,3);
+			ellipseDraw(cs[v].col(ix), cs[v].col(iy),colors[v+1]+",0.25", axes);
 			
-			scatterDraw(cs[v].col(ix), cs[v].col(iy),colors[v]+",0.75", clear, axes,3);
-			ellipseDraw(cs[v].col(ix), cs[v].col(iy),colors[v]+",0.25", axes);
-			/*
 			var mu = calcMean(cs_test[v]);
 			var sigma = calcCov(cs_test[v], mu);
 			var pr = Matrix.Zero(cs_test[v].rows(), classes);
@@ -161,10 +160,9 @@ function processData(m){
 			}	
 			pdf[v] = pr;
 			acce[v] = accuracy(pdf[v], v);
-			*/
+			
 		}
 	}
-	res = res + printMatrix(pdf[0]);
 	return res ; 
 
 }
