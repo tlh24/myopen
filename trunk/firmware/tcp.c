@@ -87,8 +87,8 @@ u8 tcp_checksum_check(u8* data, int length){
 	//note: includes the present checksum; 
 	// set to zero if this is a packet to be transmitted. 
 	if(sump == sumc){
-		printf_hex("TCP checksum correct, is:", sump); 
-		printf_str("\n"); 
+		//printf_hex("TCP checksum correct, is:", sump); 
+		//printf_str("\n"); 
 		return 1; 
 	}else{
 		printf_hex("TCP checksum incorrect, is:", sump); 
@@ -134,6 +134,7 @@ int tcp_rx(u8* data, int length){
 					printf_str("TCP RST\n"); 
 					TcpState = TCP_LISTEN; 
 					TcpSeqClient = htonl(p->tcp.seq); 
+					g_httpRxed = 0; //reset the incoming buffer. 
 					return 1; 
 				}
 				if( p->tcp.flags == TCP_FLAG_SYN ){
@@ -142,6 +143,7 @@ int tcp_rx(u8* data, int length){
 					TcpSeqClient += tcp_length(p); 
 					TcpSeqClient++; //that's the arbitration protocol
 					TcpClientPort = p->tcp.src;
+					g_httpRxed = 0; //reset the incoming buffer. 
 					//set up a response.
 					NetDestIP = p->ip.src; 
 					tcp_packet_setup(0, &result, NetDestIP, 
@@ -176,13 +178,14 @@ int tcp_rx(u8* data, int length){
 						tcp_packet_setup(0, &result, NetDestIP,
 							TCP_FLAG_FIN | TCP_FLAG_ACK, TcpSeqHost, TcpSeqClient); 
 						if(result > 0){
-							TcpState = TCP_CLOSE; 
+							TcpState = TCP_CLOSING; 
 							tcp_checksum_set(0); //no payload.
 							bfin_EMAC_send_nocopy();
 							return 1; 
 						}
 					}
 					if( TcpState == TCP_CLOSING ) {
+						g_httpRxed = 0; //reset the incoming buffer. 
 						tcp_packet_setup(0, &result, NetDestIP,
 							 TCP_FLAG_ACK, TcpSeqHost, TcpSeqClient); //final ack.
 						if(result > 0){
@@ -193,9 +196,29 @@ int tcp_rx(u8* data, int length){
 						}
 					}
 				}
-				if(p->tcp.flags & TCP_FLAG_ACK && TcpState == TCP_CLOSE){
-					printf_str("TCP got random ACK\n"); 
-					return 1; 
+				if(p->tcp.flags & TCP_FLAG_ACK ){
+					if(TcpState == TCP_CLOSE){
+						printf_str("TCP got random ACK\n"); 
+						//do nothing .. !
+						return 1; 
+					}
+					if(TcpState == TCP_LISTEN){
+						//oops, the other side thinks we have a connection 
+						printf_str("TCP confused, sending RST\n"); //confused! 
+						g_httpRxed = 0; //reset the incoming buffer. 
+						TcpSeqClient = htonl(p->tcp.seq); 
+						NetDestIP = p->ip.src; 
+						TcpClientPort = p->tcp.src;
+						//TcpSeqClient++; 
+						tcp_packet_setup(0, &result, NetDestIP,
+								TCP_FLAG_RST, TcpSeqClient, 0); 
+						if(result > 0){
+							TcpState = TCP_LISTEN; 
+							tcp_checksum_set(0); //no payload.
+							bfin_EMAC_send_nocopy();
+							return 1; 
+						}
+					}
 				}
 				if(TcpState == TCP_CONNECTED){
 					//they are requesting something? 
@@ -232,13 +255,8 @@ int tcp_rx(u8* data, int length){
 						return 1; 
 					} else {
 						//well, couldn't do anything with that packet - ack it, maybe they'll send another.
-						if(TcpState == TCP_CLOSING ){
-							tx = tcp_packet_setup(0, &result, NetDestIP, TCP_FLAG_ACK | TCP_FLAG_FIN,
-								TcpSeqHost, TcpSeqClient); 
-						} else {
-							tx = tcp_packet_setup(0, &result, NetDestIP, TCP_FLAG_ACK ,
-								TcpSeqHost, TcpSeqClient); //keepalive function.
-						}
+						tx = tcp_packet_setup(0, &result, NetDestIP, TCP_FLAG_ACK ,
+							TcpSeqHost, TcpSeqClient); //keepalive function.
 						if(result > 0){
 							tcp_checksum_set(0); 
 							bfin_EMAC_send_nocopy();

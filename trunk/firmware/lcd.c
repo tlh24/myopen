@@ -266,6 +266,7 @@ int LCD_draw_str(char* str){
 	return i; 
 }
 int printf_str(char* str){return LCD_draw_str(str); }
+int printf_newline(){return LCD_draw_str("\n"); }
 int printf_ip(char* str, u32 addr){ //all IPs should be stored in network byte order. 
 	printf_int( str, (addr)& 0xff); 
 	printf_int( ".", (addr>>8)& 0xff); 
@@ -365,4 +366,36 @@ int printf_hex(char* str, int d){
 	}
 	return -1;
 }
+
+int printf_hex_byte(char* str, u8 d){
+	int len, i, j, out; 
+	short s;
+	//we already know the length of the hex number will be 10 chars.
+	len = strlen(str); 
+	if(len + 4 + 1 <= PRINTF_BUFFER_SIZE){
+		int n; 
+		for(n=0; n<len; n++){
+			printf_out[n] = *str++; 
+		}
+		j = len; 
+		printf_out[j] = '0'; j++; 
+		printf_out[j] = 'x'; j++; 
+		for(i=0; i< 2; i++){
+			out = d >> ((1-i)*4); 
+			s = out & 0x0f; 
+			if(s > 9){
+				s += 55; 
+			}else{
+				s += 48;
+			}
+			printf_out[j + i] = (char)s;
+		}
+		j += i; 
+		printf_out[j] = 0; 
+		LCD_draw_str(printf_out); 
+		return 0; 
+	}
+	return -1;
+}
+
 

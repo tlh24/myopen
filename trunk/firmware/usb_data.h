@@ -1,6 +1,6 @@
 #ifndef _USB_DATA_
 #define _USB_DATA_
-const unsigned char DD[]=	// DEVICE Descriptor
+const unsigned char DD[]=	// DEVICE Descriptor (should not change)
         {0x12,	       		// bLength = 18d
         0x01,			// bDescriptorType = Device (1)
         0x00,0x01,		// bcdUSB(L/H) USB spec rev (BCD)
@@ -46,7 +46,7 @@ const unsigned char CD_old[]=	// CONFIGURATION Descriptor
 	64,0,                   // wMaxPacketSize (64)
 	10};			// bInterval (poll every 10 msec)
 
-const unsigned char CD[]=
+const unsigned char CD_kbd[]= //keyboard and mouse. 
 {	0x09, 		//length
 	0x02, 		//type = configuration
 	59, 0,		//total length, low/high
@@ -105,6 +105,41 @@ const unsigned char CD[]=
 	64,0,        // wMaxPacketSize (64)
 	10};		// bInterval (poll every 10 msec)
 
+const unsigned char CD[]= //USB key configuration description.
+{	0x09, 		//length
+	0x02, 		//type = configuration
+	32, 0,		//total length, low/high
+	0x01, 		//number of interfaces
+	0x01, 		//config value
+	0x00, 		//iconfig, string index for this configuration. 
+	0xC0, 		//attributes, b7=1 b6=self-powered 
+	0x01, 		//2ma from bus
+// interface descriptor 1 - MSD (mass storage device).  CD[9] 
+	0x09, 		//length = 9
+	0x04, 		//type = interface
+	0x00, 		//IF # 0, zero-based.
+	0x00, 		//alternate setting
+	0x02, 		//number of endpoints used by this interface
+	0x08, 		//interface class = MSD
+	0x06, 		//subclass = SCSI transparent command set class 6.
+	0x50, 		//interface protocol = bulk-only transport. 
+	0x00, 		//iInterface, index to a string descriptor. 
+// endpoint descriptor 1 (EP 2, in) CD[18]
+	0x07, 		//length
+	0x05, 		//type endpoint
+	0x82, 		//endpoint 2, in (0x80)
+	0x02, 		//interrupt = 0x03, bulk = 0x02
+	64, 0, 		//max packet size
+	0, 			//polling interval (off)
+// endpoint descriptor 2 (EP 1, out) CD[25]
+	0x07, 		//length
+	0x05, 		//type endpoint
+	0x01, 		//endpoint 1, out (0x00)
+	0x02, 		//interrupt = 0x03, bulk = 0x02
+	64, 0, 		//max packet size
+	0 				//polling interval (off)
+};		//length: 32. 
+	
 const unsigned char RepD[]=   // Report descriptor 
         {
         0x05,0x01,              // Usage Page (generic desktop)
