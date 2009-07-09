@@ -648,11 +648,11 @@ u8 ip_header_checksum(u8* data){
 	ip_header* ip;
 	ip = (ip_header*)data; 
 	if(NetCksum(data, IP_HDR_SIZE_NO_UDP)){
-		printf_str("IP header checksum correct\n"); 
-		return 1; //fail! 
+		//printf_str("IP header checksum correct\n"); 
+		return 1; //success!
 	}else{
-		printf_str("IP header checksum incorrect\n"); 
-		return 0; //success!
+		//printf_str("IP header checksum incorrect\n"); 
+		return 0; //fail!
 	}
 }
 u8* icmp_header_setup(u8* data, int* length, u8 type, u16 id, u16 seq){

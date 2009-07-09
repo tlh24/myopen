@@ -117,7 +117,7 @@ int main() {
 	*pUART0_DLH = 0; 
 	*pUART0_LCR = 0x0003; //parity disabled, 1 stop bit, 8 bit word. 
 	*pUART0_GCTL = 0x0001; //enable the clock.
-	printf_int("Myopen svn v.", /*SVN_VERSION{*/148/*}*/ ) ; 
+	printf_int("Myopen svn v.", /*SVN_VERSION{*/204/*}*/ ) ; 
 	printf_str("\n"); 
 	printf_str("checking SDRAM...\n"); 
 	unsigned short* p; 

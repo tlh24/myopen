@@ -6,8 +6,10 @@ void LCD_init() ;
 void LCD_send(char data, unsigned char word); 
 //exported symbols.. 
 int printf_str(char* str); 
+int printf_newline(); 
 int printf_int(char* str, int d);
 int printf_hex(char* str, int d);
+int printf_hex_byte(char* str, u8 d); 
 int printf_ip(char* str, u32 addr); 
 
 #define ENDPAGE     132

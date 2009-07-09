@@ -81,12 +81,17 @@ u8 g_msglen;	// Text string in EnumApp_enum_data.h--index and length
 u8 g_configval;		// Set/Get_Configuration value
 u8 g_ep3stall;		// Flag for EP3 Stall, set by Set_Feature, reported back in Get_Status
 u8 g_ep2stall;		
+u8 g_ep1stall;		
 u8 g_interfacenum;      // Set/Get interface value
 u8 g_inhibit_send;	// Flag for the keyboard character send routine
 u8 g_RWU_enabled;       // Set by Set/Clear_Feature RWU request, sent back for Get_Status-RWU
 u8 g_suspended;         // Tells the main loop to look for host resume and RWU pushbutton
 u8 g_send3zeros;        // EP3-IN function uses this to send HID (key up) codes between keystrokes
 
+//SCSI stuff. 
+// CBW = command block wrapper
+// CSW = command status word
+g_CBWTag[4] ; //have to repeat this in the CSW. 
 
 void usb_init() {
 	printf_str("turning on USB\n"); //this should be echoed on the serial port now
@@ -113,13 +118,13 @@ void usb_init() {
 		u8 rd, wr = 1; 
 		/*while(1){ */
 		for(i=0; i<80;i++){
-			wreg(rPINCTL,bmFDUPSPI | bmPOSINT);    // MAX3420: SPI=full-duplex
-			wreg(rUSBIEN, wr); 
-			rd = rreg(rUSBIEN); 
-			if(rd != wr ){
+			wreg(rGPIO, wr); 
+			rd = rreg(rGPIO); 
+			if(rd&0xf != wr&0xf ){
 				printf_int("usb: wrote ", wr); 
 				printf_int(" got:", rd); 
 				printf_str("\n"); //not exactly sure why the first two writes fail.. oscillator? 
+					//no: voltage!!  should be 3.3V !!
 			}
 			wr++; 
 			if( wr == 255) wr = 0; 
@@ -128,20 +133,13 @@ void usb_init() {
 	initialize_MAX(); 
 	printf_str("usb init done\n"); 
 }
-
-void usb_intr(){
-	if(g_suspended){
-		if(rreg(rUSBIRQ) & bmBUSACTIRQ)     // the host resumed bus traffic
-			g_suspended=0;                    // no longer suspended
-		//we do not need the remote wake-up functionality here. 
-	}
-	if( *pPORTFIO & 0x0100 ){ //positive level interupt.  probably should actually make this an interupt!
-		//printf_str("usb interupt\n"); 
-		service_irqs();
-	}
-}
-#define ENABLE_IRQS wreg(rEPIEN,(bmSUDAVIE+bmIN3BAVIE+bmIN2BAVIE));\
-	wreg(rUSBIEN,(bmURESIE+bmURESDNIE));
+#ifdef KBDMOUSE
+	#define ENABLE_IRQS wreg(rEPIEN,(bmSUDAVIE+bmIN3BAVIE+bmIN2BAVIE));\
+		wreg(rUSBIEN,(bmURESIE+bmURESDNIE));
+#else
+	#define ENABLE_IRQS wreg(rEPIEN,(bmSUDAVIE+bmOUT1DAVIE+bmIN2BAVIE));\
+		wreg(rUSBIEN,(bmURESIE+bmURESDNIE));
+#endif
 #define SETBIT(reg,val) wreg(reg,(rreg(reg)|val));
 #define CLRBIT(reg,val) wreg(reg,(rreg(reg)&~val));
 #define STALL_EP0 wreg(rEPSTALLS,0x23);	
@@ -150,6 +148,7 @@ void usb_intr(){
 void initialize_MAX(void){
 	g_ep3stall=0;			// EP3 inintially un-halted (no stall) 
 	g_ep2stall=0;			// EP2 inintially un-halted (no stall) 
+	g_ep1stall=0;			// EP2 inintially un-halted (no stall) 
 	g_msgidx = 0;			// start of KB Message[]
 	g_inhibit_send = 1;		// 0 means send, 1 means inhibit sending
 	g_send3zeros=1;
@@ -169,9 +168,22 @@ void initialize_MAX(void){
 	ENABLE_IRQS
 	wreg(rCPUCTL,bmIE);                 // Enable the INT pin
 }
+void usb_intr(){
+	if(g_suspended){
+		if(rreg(rUSBIRQ) & bmBUSACTIRQ)     // the host resumed bus traffic
+			g_suspended=0;                    // no longer suspended
+		//we do not need the remote wake-up functionality here. 
+	}
+	if( *pPORTFIO & 0x0100 ){ //positive level interupt.  probably should actually make this an interupt!
+		//printf_str("usb interupt\n"); 
+		service_irqs();
+	}
+}
+
 
 void service_irqs(void){
 	u8 itest1,itest2;
+	u8 i,j; 
 	itest1 = rreg(rEPIRQ);            // Check the EPIRQ bits
 	itest2 = rreg(rUSBIRQ);           // Check the USBIRQ bits
 	if(itest1 & bmSUDAVIRQ) {
@@ -179,14 +191,33 @@ void service_irqs(void){
 		printf_str("usb irq: setup\n"); 
 		do_SETUP();
 	}
-	if(itest1 & bmIN3BAVIRQ){          // Was an EP3-IN packet just dispatched to the host?
-		//printf_str("usb irq: ep3-in packet\n"); 
-		do_IN3();                     // Yes--load another keystroke and arm the endpoint
+	else if(itest1 & bmIN3BAVIRQ){          // Was an EP3-IN packet just dispatched to the host?
+		printf_str("usb: ep3 pack\n"); 
+		wreg(rEPIRQ, bmIN3BAVIRQ); 
+		//do_IN3();                     // Yes--load another keystroke and arm the endpoint
 	}                    // NOTE: don't clear the IN3BAVIRQ bit here--loading the EP3-IN byte
 						  // count register in the do_IN3() function does it.
 	if(itest1 & bmIN2BAVIRQ){
-		//printf_str("usb irq: ep2-in packet\n"); 
-		do_IN2(); 
+		//printf_str("usb: ep2 pack\n"); 
+		wreg(rEPIRQ, bmIN3BAVIRQ); 
+		//do_IN2(); 
+	}
+	if(itest1 & bmIN0BAVIRQ){
+		//printf_str("usb: ep0 pack\n"); 
+		wreg(rEPIRQ, bmIN0BAVIRQ); 
+		//do_IN2(); 
+	}
+	if(itest1 & bmOUT1DAVIRQ){
+		u8 nbytes = rreg(rEP1OUTBC); 
+		printf_int("usb: ep1 pack size ", nbytes);
+		printf_newline(); 
+		nbytes &= 63; //limit the size.
+		for(i=0; i<nbytes; i++){
+			j = rreg(rEP1OUTFIFO); 
+			printf_hex_byte(" ", j); 
+		}
+		printf_newline(); 
+		wreg(rEPIRQ, bmOUT1DAVIRQ); //is this needed? 
 	}
 	if((g_configval != 0) && (itest2&bmSUSPIRQ)){   // HOST suspended bus for 3 msec
 		//printf_str("usb irq: host suspend\n"); 
@@ -280,7 +311,7 @@ void do_IN2(void){
 
 void std_request(void){
 	switch(g_SUD[bRequest]){
-		case	SR_GET_DESCRIPTOR:			send_descriptor();   break;
+		case	SR_GET_DESCRIPTOR:			send_descriptor();   break; //0x06
 		case	SR_SET_FEATURE:					feature(1);           	break;
 		case	SR_CLEAR_FEATURE:			feature(0);           	break;
 		case	SR_GET_STATUS:						get_status();         	break;
@@ -356,7 +387,7 @@ void get_status(void){
 // FUNCTION: Set/Get_Feature. Call as feature(1) for Set_Feature or feature(0) for Clear_Feature.
 // There are two set/clear feature requests:
 //	To a DEVICE: 	Remote Wakeup (RWU). 
-//  	To an ENDPOINT:	Stall (EP3 & EP2)
+//  	To an ENDPOINT:	Stall (EP1,2,3)
 //
 void feature(u8 sc){
 	u8 mask;
@@ -375,7 +406,7 @@ void feature(u8 sc){
 			wreg(rEPSTALLS,(mask|bmACKSTAT)); 
 				// Don't use wregAS for this--directly writing the ACKSTAT bit
 		} 
-		if(g_SUD[wIndexL]==0x82){	// wIndexL is endpoint number IN3=82
+		else if(g_SUD[wIndexL]==0x82){	// wIndexL is endpoint number IN3=82
 			mask=rreg(rEPSTALLS);   // read existing bits
 			if(sc==1){               // set_feature
 				mask += bmSTLEP2IN;       // Halt EP2IN
@@ -384,6 +415,19 @@ void feature(u8 sc){
 				mask &= ~bmSTLEP2IN;      // UnHalt EP2IN
 				g_ep2stall=0;
 				wreg(rCLRTOGS,bmCTGEP2IN);  // clear the EP3 data toggle
+			}
+			wreg(rEPSTALLS,(mask|bmACKSTAT)); 
+				// Don't use wregAS for this--directly writing the ACKSTAT bit
+		}
+		else if(g_SUD[wIndexL]==0x01){	// wIndexL is endpoint number OUT1 = 0x01
+			mask=rreg(rEPSTALLS);   // read existing bits
+			if(sc==1){               // set_feature
+				mask += bmSTLEP1OUT;       // Halt EP1OUT
+				g_ep1stall=1;
+			}else {                      // clear_feature
+				mask &= ~bmSTLEP1OUT;      // UnHalt EP1OUT
+				g_ep1stall=0;
+				wreg(rCLRTOGS,bmCTGEP1OUT);  // clear the EP1 data toggle
 			}
 			wreg(rEPSTALLS,(mask|bmACKSTAT)); 
 				// Don't use wregAS for this--directly writing the ACKSTAT bit
@@ -401,14 +445,23 @@ void send_descriptor(void) {
 	// NOTE This function assumes all descriptors are 64 or fewer bytes and can be sent in a single packet
 	desclen = 0;					// check for zero as error condition (no case statements satisfied)
 	reqlen = g_SUD[wLengthL] + 256*g_SUD[wLengthH];	// 16-bit
+	printf_int("usb: send_descriptor, reqlen:", reqlen); 
+	printf_newline();
+	printf_hex_byte("usb: descriptor type:", g_SUD[wValueH]); 
+	printf_hex_byte("usb: descriptor index:", g_SUD[wValueL]); 
+	printf_newline(); 
 	switch (g_SUD[wValueH]) {			// wValueH is descriptor type
 		case  GD_DEVICE:
 			desclen = DD[0];	// descriptor length
 			pDdata = (u8*)DD;
+			printf_int("usb: sending device descript, len:",desclen); 
+			printf_newline();
 			break;	
 		case  GD_CONFIGURATION:
 			desclen = CD[2];	// Config descriptor includes interface, HID, report and ep descriptors
 			pDdata = (u8*)CD;
+			printf_int("usb: sending config descript, len:",desclen); 
+			printf_newline();
 			break;
 		case  GD_STRING:
 			if( g_SUD[wValueL] < 4){
@@ -416,6 +469,7 @@ void send_descriptor(void) {
 				pDdata = (u8*)(strDesc[g_SUD[wValueL]]);       // point to first array element
 			}
 			break;
+#ifdef KBDMOUSE
 		case  GD_HID: //get descriptor: HID
 			if(g_SUD[wIndexL] == 0){ //interface 0 (mouse)
 				desclen = CD[18];
@@ -435,7 +489,17 @@ void send_descriptor(void) {
 				desclen = 43;
 				pDdata = (u8*)RepKbd;
 			}
+			break; 
+#else
+		case GD_INTERFACE:
+			printf_int("usb: get device descriptor interface ", g_SUD[wIndexL]); 
+			printf_newline(); 
 			break;
+		case GD_ENDPOINT:
+			printf_int("usb: get device descriptor endpoint ", g_SUD[wIndexL]); 
+			printf_newline(); 
+			break; 
+#endif
 	}
 	if (desclen!=0) {               // one of the case statements above filled in a value
 		sendlen = (reqlen <= desclen) ? reqlen : desclen; // send the smaller of requested and avaiable

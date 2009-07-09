@@ -143,11 +143,14 @@ int calcMeanOfChannel(u32 u, u8 chan) ;
 #define SR_SET_INTERFACE	0x0b	// Set Interface
 
 // Get Descriptor codes	
-#define GD_DEVICE		0x01	// Get device descriptor: Device
+#define GD_DEVICE				0x01	// Get device descriptor: Device
 #define GD_CONFIGURATION	0x02	// Get device descriptor: Configuration
-#define GD_STRING		0x03	// Get device descriptor: String
+#define GD_STRING				0x03	// Get device descriptor: String
+#define GD_INTERFACE		0x04	// Get descriptor: interface. 
+#define GD_ENDPOINT			0x05	// Get descriptor: endpoint. 
 #define GD_HID	            	0x21	// Get descriptor: HID
-#define GD_REPORT	        0x22	// Get descriptor: Report
+#define GD_REPORT	        	0x22	// Get descriptor: Report
+
 
 // SETUP packet offsets
 #define bmRequestType	0
