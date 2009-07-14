@@ -11,6 +11,7 @@ open Glwindow
 let gwfwind = new glwindow
 let goutsamp1000 = ref false
 let goutsamp1 = ref false
+let gbottom4 = ref false
 
 let _ = 
 	let sock = Unix.socket Unix.PF_INET Unix.SOCK_DGRAM 0 in
@@ -48,6 +49,7 @@ let _ =
 	in 
 	addOption "output sample data full rate" (fun b -> goutsamp1 := b;  ) !goutsamp1 ; 
 	addOption "output sample data 1/sec rate" (fun b -> goutsamp1000 := b; ) !goutsamp1000 ; 
+	addOption "show first 4 channels only" (fun b -> gbottom4 := b; ) !gbottom4 ; 
 	pack ~side:`Left [Tk.coe fileb; Tk.coe optionb] ; 
 	place ~height:28 ~x:0 ~y:0 menubar ; 
 	(*done with menu*)
@@ -69,42 +71,44 @@ let _ =
 		(* draw each of the waveforms as a line strip *)
 		Array.iteri (fun i raw -> 
 			GlMat.push() ; 
-			let n = 16.0 in
 			let invi = invmap.(i) in
-			let c = foi invi in
+			let c = if !gbottom4 then (foi invi) -. 12.0 else foi invi in
+			let n = if !gbottom4 then 4.0 else 16.0 in
 			let len2 = foi(len/2) in
-			GlMat.translate ~x:0.0 ~y:(1.0 -. (1.0/. n) -. (2.0/. n)*.c)~z:0.0 ();  
-			GlMat.scale ~x:(1.0 /. len2 ) ~y:(1.0 /. (32768.0 *. n)) ~z:(1.0) () ;
-			(* the background *)
-			GlDraw.begins `lines ; 
-			GlDraw.color ~alpha:0.35 (1.0 , 0.0 , 0.3 ); 
-			GlDraw.vertex2 ((-1.0 *. len2) , 0.0) ; 
-			GlDraw.vertex2 ((1.0 *. len2) , 0.0) ; 
-			GlDraw.color ~alpha:0.2 (1.0 , 1.0 , 1.0 ); 
-			if invi = 0 then (
-				GlDraw.vertex2 ((-1.0 *. len2) , -32700.0) ; 
-				GlDraw.vertex2 ((1.0 *. len2) , -32700.0) ; 
-			);
-			GlDraw.vertex2 ((-1.0 *. len2) , 32700.0) ; 
-			GlDraw.vertex2 ((1.0 *. len2) , 32700.0) ; 
-			GlDraw.ends () ; 
-			if(invi mod 2 = 1) then (
-				GlDraw.begins `quads ; 
-				GlDraw.color ~alpha:0.1 (1.0 , 1.0 , 1.0 ); 
-				GlDraw.vertex2 ((-1.0 *. len2) , -32700.0) ; 
-				GlDraw.vertex2 ((1.0 *. len2) , -32700.0) ; 
-				GlDraw.vertex2 ((1.0 *. len2) , 32700.0) ; 
+			if (!gbottom4 && c < 4.0 && c >= 0.0) || not !gbottom4 then (
+				GlMat.translate ~x:0.0 ~y:(1.0 -. (1.0/. n) -. (2.0/. n)*.c)~z:0.0 ();  
+				GlMat.scale ~x:(1.0 /. len2 ) ~y:(1.0 /. (32768.0 *. n)) ~z:(1.0) () ;
+				(* the background *)
+				GlDraw.begins `lines ; 
+				GlDraw.color ~alpha:0.35 (1.0 , 0.0 , 0.3 ); 
+				GlDraw.vertex2 ((-1.0 *. len2) , 0.0) ; 
+				GlDraw.vertex2 ((1.0 *. len2) , 0.0) ; 
+				GlDraw.color ~alpha:0.2 (1.0 , 1.0 , 1.0 ); 
+				if invi = 0 then (
+					GlDraw.vertex2 ((-1.0 *. len2) , -32700.0) ; 
+					GlDraw.vertex2 ((1.0 *. len2) , -32700.0) ; 
+				);
 				GlDraw.vertex2 ((-1.0 *. len2) , 32700.0) ; 
-				GlDraw.ends (); 
-			); 
-			(* the signals *)
-			if( invi mod 4 = 2 || invi mod 4 = 3) then (
-				GlDraw.color ~alpha:0.9 (0.5 , 1.0 , 1.0 ); 
-			) else (
-				GlDraw.color ~alpha:0.9 (1.0 , 1.0 , 0.3 ); 
-			); 
-			GlArray.vertex `two raw ; 
-			GlArray.draw_arrays `line_strip 0 (len-1) ; 
+				GlDraw.vertex2 ((1.0 *. len2) , 32700.0) ; 
+				GlDraw.ends () ; 
+				if(invi mod 2 = 1) then (
+					GlDraw.begins `quads ; 
+					GlDraw.color ~alpha:0.1 (1.0 , 1.0 , 1.0 ); 
+					GlDraw.vertex2 ((-1.0 *. len2) , -32700.0) ; 
+					GlDraw.vertex2 ((1.0 *. len2) , -32700.0) ; 
+					GlDraw.vertex2 ((1.0 *. len2) , 32700.0) ; 
+					GlDraw.vertex2 ((-1.0 *. len2) , 32700.0) ; 
+					GlDraw.ends (); 
+				); 
+				(* the signals *)
+				if( invi mod 4 = 2 || invi mod 4 = 3) then (
+					GlDraw.color ~alpha:0.9 (0.5 , 1.0 , 1.0 ); 
+				) else (
+					GlDraw.color ~alpha:0.9 (1.0 , 1.0 , 0.3 ); 
+				); 
+				GlArray.vertex `two raw ; 
+				GlArray.draw_arrays `line_strip 0 (len-1) ; 
+			) ;
 			GlMat.pop() ; 
 		) rawa; 
 		GlMat.pop(); 
