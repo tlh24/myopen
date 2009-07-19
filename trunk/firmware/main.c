@@ -117,7 +117,7 @@ int main() {
 	*pUART0_DLH = 0; 
 	*pUART0_LCR = 0x0003; //parity disabled, 1 stop bit, 8 bit word. 
 	*pUART0_GCTL = 0x0001; //enable the clock.
-	printf_int("Myopen svn v.", /*SVN_VERSION{*/204/*}*/ ) ; 
+	printf_int("Myopen svn v.", /*SVN_VERSION{*/219/*}*/ ) ; 
 	printf_str("\n"); 
 	printf_str("checking SDRAM...\n"); 
 	unsigned short* p; 
@@ -211,7 +211,7 @@ int main() {
 	*tr_ptr = 0; 
 	*adc_ctr = 0; 
 	GTIME = 0; 
-	if(0){
+	if(1){
 		//set up the receive first, since it is controled by the transmit sport. 
 		*pSPORT0_RCR2 = 0x0100 + 19; //enable second side, serial word length 20
 		*pSPORT1_RCR2 = 0x0100 + 19; 
@@ -236,12 +236,13 @@ int main() {
 	}
 	u32* data; 
 	char result; 
+	#define UDP_PACKET_SIZE 512
 	while(1) {
 		if(!etherr) bfin_EMAC_recv( (u8**)(&data) ); //listen for packets? (and respond)
 		if(!etherr && bfin_EMAC_send_check() && g_streamEnabled){
 			if(*wr_ptr < *tr_ptr) *tr_ptr = 0; //rollover.
-			if(*wr_ptr - *tr_ptr >= 1024){//then we have at least one packet to send.
-				data = (u32*) ( udp_packet_setup(1024 + 4, &result ) ); 
+			if(*wr_ptr - *tr_ptr >= UDP_PACKET_SIZE){//then we have at least one packet to send.
+				data = (u32*) ( udp_packet_setup(UDP_PACKET_SIZE + 4, &result ) ); 
 				if(result > 0){
 					//copy the data from SDRAM.. (starting @ 0x0000 0000, looping 256k bytes)
 					//include a copy of the tptr, so that we can (possibly) reorder it. 
@@ -250,16 +251,18 @@ int main() {
 					//so do the memcpy manually. 
 					//memcpy((u8*)((*tr_ptr) & 0x0003ffff), data, 1024); 
 					u32* src = (u32*)( *tr_ptr ); 
-					for(i=0; i<1024/4; i++){
+					//alignment errors?  need it to be 32-byte aligned. 
+					src = (u32*)((u32)src & (~0x1f)) ; 
+					for(i=0; i<UDP_PACKET_SIZE/4; i++){
 						src = (u32*) ( ((u32)src) & 0x3ffff ); 
 						*data++ = *src++; 
 					}
-					(*tr_ptr) += 1024 ; 
+					(*tr_ptr) += UDP_PACKET_SIZE ; 
 					bfin_EMAC_send_nocopy(); 
 				} else {
 					//reset, since we were not able to send anything 
 					// (possibly due to ARP). 
-					*tr_ptr += 1024; 
+					*tr_ptr += UDP_PACKET_SIZE; 
 				}
 			}
 		}

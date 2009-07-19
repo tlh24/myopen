@@ -273,7 +273,7 @@ int htmlDefault(){
 	for( j=1; j<=4; j++){
 		dest = strcpy(dest, &len, "<input type=\"text\" name=\"ip"); 
 		dest = strprintf_int(dest, &len, j); 
-		dest = strcpy(dest, &len, "\" size=\"2\"/ value=\""); 
+		dest = strcpy(dest, &len, "\" size=\"3\"/ value=\""); 
 		dest = strprintf_int(dest, &len, (NetDataDestIP >> (j-1)*8)& 0xff ) ; //big endian format.
 		dest = strcpy(dest, &len, "\"/>\n"); 
 	}

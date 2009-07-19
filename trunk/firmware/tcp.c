@@ -174,7 +174,7 @@ int tcp_rx(u8* data, int length){
 					TcpSeqClient = htonl(p->tcp.seq); 
 					NetDestIP = p->ip.src; 
 					TcpSeqClient++; 
-					if( TcpState == TCP_CONNECTED ) {
+					if( TcpState == TCP_CONNECTED || TcpState == TCP_LISTEN ) {
 						tcp_packet_setup(0, &result, NetDestIP,
 							TCP_FLAG_FIN | TCP_FLAG_ACK, TcpSeqHost, TcpSeqClient); 
 						if(result > 0){
