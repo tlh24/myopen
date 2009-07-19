@@ -63,8 +63,8 @@ let _ =
 			Raw.set raw ~pos:(i*2+0) y ; (* x -- will not be overwritten *)
 			Raw.set raw ~pos:(i*2+1) y ; (* y -- will be overwritten *)
 		) done ;
-	) rawa ; 
-	let invmap = Array.of_list [14; 10; 6; 2; 15; 11; 7; 3; 12; 8; 4; 0; 13; 9; 5; 1] in
+	) rawa ; 				(*0    1   2   3   4    5   6   7  8    9  10 11 12  13  14 15 *) (*4,0,12,8*)
+	let invmap = Array.of_list [14; 10; 6; 2; 15; 11; 7; 3; 12; 8; 4;  0; 13; 9;  5;  1] in
 	let render () = 
 		GlMat.push(); 
 		GlMat.scale ~x:0.99 ~y:(0.99) ~z:1.0 () ; 

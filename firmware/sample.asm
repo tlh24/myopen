@@ -156,7 +156,7 @@ skip_ms_incr:
 		//call LMS to filter the sample. 
 		//r0 = most recent filtered sample, r1 = sample counter. 
 		call _LMS;
-		r0 = abs r0 (v); 
+		//r0 = abs r0 (v); 
 		r7 = [sp++]; //pop the old raw sample.
 		r3 = [p5 + F_WR_PTR]; 
 		r4.h = 0x0003; 
@@ -177,7 +177,7 @@ skip_ms_incr:
 		r0 = [sp++]; //pop the old filtered sample.
 		r1 += 2; 
 		call _LMS ; 
-		r0 = abs r0 (v); 
+		//r0 = abs r0 (v); 
 		r7 = [sp++]; 
 		r6 = b[p5+F_RAW_ENAB]; //r6 will have been clobbered by LMS.
 		cc = bittst(r6, 0) ; 

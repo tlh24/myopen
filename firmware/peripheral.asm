@@ -64,7 +64,7 @@ _start_peripherals:
 	7 usb_pin_en = 0 (enabled, we can't change this anymore)
 	*/
 	//;looks like this register is shifted over by one (?) 
-	r0 = 0b00110010 (z); //probably should make this a function.
+	r0 = 0x32 (z) ; //  0b00110010 (z); //probably should make this a function.
 	p0.l = LO(SPI_TDBR) ; 
 	p0.h = HI(SPI_TDBR) ; 
 	w[p0] = r0 ; 
