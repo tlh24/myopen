@@ -1,5 +1,5 @@
 function retrieveDataDraw(samples){
-	retrieveData(samples, retrieveDraw); //this is in gmm_test.js
+	retrieveData("data_cont.pl",samples, retrieveDraw); //this is in gmm_test.js
 }
 function retrieveDraw(){
         if (http_request.readyState == 4) {
@@ -16,7 +16,7 @@ function retrieveDraw(){
 			//rep.setAttribute("id", "-1"); //this one to be replaced!
 			//par.insertBefore(rep, node);
                 } else {
-                        console.log('There was a problem with the request.');
+                        alert('There was a problem with the request.');
                 }
         }
 }
@@ -41,7 +41,7 @@ function processDraw(d){
 			me[r][c] = parseFloat(samp); 
 		}
 	}
-	console.log("m.rows = " + m.rows() + "m.cols() = " + m.cols())
+	//console.log("m.rows = " + m.rows() + "m.cols() = " + m.cols())
 	var node = document.getElementById("Lfeat"); 
 	g_x_feature = node.selectedIndex;
 	node = document.getElementById("Lchan"); 

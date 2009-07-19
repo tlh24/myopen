@@ -15,7 +15,7 @@ function cholesky(a){
 				}
 				if(i==j){
 					if(sum <= 0.0) {
-						alert("Cholesky failed");
+						console.log("Cholesky failed");
 					}
 					ele[i][i] = Math.sqrt(sum);
 				} else {
@@ -31,8 +31,6 @@ function cholesky(a){
 	}
 	return el; 
 }
-
-
 
 function cholesky_invert(a){
 	//using the cholesky decomposition, 
@@ -73,5 +71,4 @@ function cholesky_invert(a){
 		}
 	}
 	return ainv;
-	
 }
