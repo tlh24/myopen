@@ -1,5 +1,3 @@
-// using processing.js to show stuff
-
 
 function scatterDraw(x,y,color, clear, axes, dot) {
 	//does a scatterplot of the data. 

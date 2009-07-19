@@ -12,9 +12,9 @@
 <m key="dc.format">application/x-abiword</m>
 <m key="abiword.generator">AbiWord</m>
 </metadata>
-<history version="14" edit-time="12354" last-saved="1247346372" uid="cf8b7c94-6cec-11de-8e84-9117ba845f2f">
+<history version="15" edit-time="270293" last-saved="1247604311" uid="cf8b7c94-6cec-11de-8e84-9117ba845f2f">
 <version id="12" started="1247189183" uid="2a0c7dd0-6d06-11de-8e84-9117ba845f2f" auto="0" top-xid="40"/>
-<version id="14" started="1247345755" uid="a9b533d4-6e5e-11de-8a00-e65d94f592d4" auto="0" top-xid="133"/>
+<version id="15" started="1247345755" uid="39d8d1a0-70b7-11de-8a00-e65d94f592d4" auto="0" top-xid="133"/>
 </history>
 <styles>
 <s type="P" name="Normal" followedby="Current Settings" props="font-family:Times New Roman; margin-top:0pt; color:000000; margin-left:0pt; bgcolor:transparent; widows:2; font-style:normal; text-indent:0in; text-position:normal; margin-bottom:0pt; font-weight:normal; line-height:1.0; text-align:left; font-variant:normal; text-decoration:none; margin-right:0pt; font-size:12pt; font-stretch:normal"/>
@@ -49,7 +49,7 @@
 <p style="Normal" xid="28">** If the code is small enough, applications can run entirely from cache / external memory not required.  Large flash devices are not needed, either - can boot from a 8-pin SPI flash.  (This makes routing the board easy.)</p>
 <p style="Normal" xid="41">** Presently SDRAM only used for outgoing ethernet transmissions.  </p>
 <p style="Normal" xid="29">** Level of complexity well matched for the task to be done - we are not running a smartphone here! </p>
-<p style="Normal" xid="27">** (Most importantly) I am familiar with the architerture &amp; the assembly language.  </p>
+<p style="Normal" xid="27">** (Most importantly) I am familiar with the architecture &amp; the assembly language.  </p>
 <p style="Normal" xid="30"><c></c></p>
 <p style="Normal" xid="31">Interfaces: </p>
 <p style="Normal" xid="32">* Ethernet 10/100.  Ubiquitous, cross-platform, very well documented (but not necessarily easy).  (will talk later about how it is used on our platform).  </p>

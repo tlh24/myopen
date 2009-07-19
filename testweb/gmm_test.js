@@ -1,7 +1,5 @@
-function retrieveData(samples, callback)
-{       //id is the pid number in the sql database. 
-        //div is the division id to replace in the xml schema.
-        //first, we have to get the unformatted text at this node. 
+function retrieveData(url, samples, callback)
+{      
         poststr = "samples=" + samples ; 
         //console.log("poststr="+poststr); 
         http_request = false;
@@ -11,14 +9,14 @@ function retrieveData(samples, callback)
         }
         http_request.onreadystatechange = callback; //set the callback. 
         //code that is independent of data. 
-        http_request.open('POST', 'data.pl', true);
+        http_request.open('POST', url, true);
         http_request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
         http_request.setRequestHeader("Content-length", poststr.length);
         http_request.setRequestHeader("Connection", "close");
         http_request.send(poststr);
 }
 function retrieveDataBlock(samples){
-	retrieveData(samples, retrieveUpdate); 
+	retrieveData("data.pl",samples, retrieveUpdate); 
 }
 function retrieveUpdate(){
         if (http_request.readyState == 4) {
@@ -36,7 +34,7 @@ function retrieveUpdate(){
 			//rep.setAttribute("id", "-1"); //this one to be replaced!
 			//par.insertBefore(rep, node);
                 } else {
-                        alert('There was a problem with the request.');
+                        alert('There was a problem with the http request.');
                 }
         }
 }
@@ -46,7 +44,6 @@ var g_y_feature = 0;
 var g_y_channel = 0; 
 
 function parseData(d){
-
 	//convert string data to a matrix. 
 	var mat = d.split("\n"); 
 	//first line is the matrix size. 
@@ -56,7 +53,7 @@ function parseData(d){
 	//var matches = re.exec(header); 
 	var rows = parseInt(matches[0]); 
 	var cols = parseInt(matches[1]); 
-	//alert( "rows=" + rows + " cols=" + cols); 
+	console.log( "rows=" + rows + " cols=" + cols); 
 	var m = Matrix.Zero(rows, cols); 
 	var me = m.elements ;
 	for( var r = 0; r<rows; r++ ){
@@ -70,24 +67,164 @@ function parseData(d){
 	return m; 
 }
 
+function zscore(m) {
+	//zscore a matrix along the columns, just like matlab. 
+	//works in-place. 
+	var rows = m.rows();
+	var cols = m.cols();
+	var me = m.elements ; 
+	for(var c=0; c<cols; c++){
+		mean = 0; 
+		for(var r=0; r < rows; r++){
+			mean += me[r][c] ; 
+		}
+		mean = mean / rows ; 
+		//now calculate the variance. 
+		var v = 0; 
+		for(var r=0; r < rows; r++){
+			v += (me[r][c] - mean) * (me[r][c] - mean) ; 
+		}
+		v = v / rows; 
+		var std = Math.sqrt(v); 
+		for(var r=0; r < rows; r++){
+			me[r][c] = (me[r][c] - mean)/std ; 
+		}
+	}
+}
+function calculate_features(m, len, shift){
+	//given a matrix, calculates the features
+	//breaks the data in length len windows offset by shift samples. 
+	//i thinks this is better than trying to push everything back together - 
+	// keep the datastructures descriptive of the data.
+	var rows = m.rows(); 
+	var cols = m.cols(); 
+	var out = Matrix.Zero(rows, cols*6); 
+	var windows = Math.ceil((rows-len) / shift); //how many windowed sections of data.
+	for(var k=0; k<windows; k++){
+		//extract a window of the data.
+		var samp = m.minor(k*shift, 0, len, cols);
+		//remove the mean from this window.
+		var mn = calcMean(samp);
+		var sampz = subMean(samp, mn); 
+		var mne = mn.elements;
+		//calculate the features.
+		var mean = mav(sampz); // mean absolute value
+		var meane = mean.elements;
+		var wav = wl(sampz); // first wavelength features
+		var wave=wav.elements;
+		var wavtwo = wavii(sampz); // second wl features
+		var wavtwoe = wavtwo.elements;
+		var zeroc = zc(sampz); // zero crossings
+		var zeroce = zeroc.elements;
+		var rms = rootms(sampz); // rms vales
+		var rmse = rms.elements;
+		var slope = slope_change(sampz); // slope changes
+		var slopee = slope.elements;
+		for(var f=0; f<rows; f++){
+			out[k][f+(0*cols)] = meane[f];
+			out[k][f+(1*cols)] = wave[f];
+			out[k][f+(2*cols)] = wavtwoe[f];
+			out[k][f+(3*cols)] = zeroce[f];
+			out[k][f+(4*cols)] = slopee[f];
+			out[k][f+(5*cols)] = rmse[f];
+		}
+	}
+}
+
+function calculate_features(n, len, shift, classes)
+{
+	var rows = n[0].rows();
+	var cols = n[0].cols();
+	var chan = cols/6;
+	var klim = Math.floor(rows/len)*len
+	var a_lim = (klim)/shift;
+	var a = Matrix.Zero(classes*(a_lim-1), cols);
+	var ae = a.elements;
+	for(var cl = 0; cl< classes; cl++){
+		var m = n[cl];
+		var me = m.elements;
+		for(var k=0; k<=(klim-len)/shift; k++){
+			//extract a window of the data.
+			var samp = m.minor(k*shift, 0, len, m.cols());
+			//remove the mean from this window.
+			var mn = calcMean(samp);
+			var sampz = subMean(samp, mn); 
+			var mne = mn.elements;
+			//calculate the features.
+			var mean = mav(sampz); // mean absolute value
+			var meane = mean.elements;
+			var wav = wl(sampz); // first wavelength features
+			var wave=wav.elements;
+			var wavtwo = wavii(sampz); // second wl features
+			var wavtwoe = wavtwo.elements;
+			var zeroc = zc(sampz); // zero crossings
+			var zeroce = zeroc.elements;
+			var rms = rootms(sampz); // rms vales
+			var rmse = rms.elements;
+			var slope = slope_change(sampz); // slope changes
+			var slopee = slope.elements;
+			for(var f=0; f<chan; f++){
+				var offset = cl*(a.rows()/classes);
+				ae[k+offset][f+(0*chan)] = meane[f];
+				ae[k+offset][f+(1*chan)] = wave[f];
+				ae[k+offset][f+(2*chan)] = wavtwoe[f];
+				ae[k+offset][f+(3*chan)] = zeroce[f];
+				ae[k+offset][f+(4*chan)] = slopee[f];
+				ae[k+offset][f+(5*chan)] = rmse[f];
+			}
+		}
+	}
+	//finally, zscore along the features (ignoring class). 
+	var z = Matrix.Zero(a.rows(), m.cols());
+	var ze = z.elements;
+	var mu = calcMean(a);
+	var mue = mu.elements;
+	var sub = subMean(a, mu);
+	var z = divStd(sub);
+	return z;
+}
+//breaks the continuous time data into classes & train / test data.
+function trainData(m, classes, cols, cs_len, omit){
+	var sampl = [];
+	for(var cl = 0; cl<classes; cl++){
+		sampl[cl] = m.minor(cl*cs_len, 0, cs_len-omit, cols); 
+	}
+	return sampl;
+	//returns an array of matrices.
+}
+function testData(m, classes, cols, cs_len, omit){
+	var tests = [];
+	for(var cl = 0; cl < classes; cl++){
+		tests[cl] = m.minor(cs_len*(cl+1)-omit, 0, omit, cols);
+	}
+	return tests;
+}
 function processData(m){
+	// m is the raw data matrix in - usually say 3000 samples by 4 channels.
 	var res = "";
 	var rows = m.rows(); 
 	var cols = m.cols(); 
 	var classes = 4; 
 	var feats = 6;
-	var len = 20; var shift = len/2;
-	var cs_len =rows/ classes; 
+	var len = 20; var shift = len/2; //length of the windows.
+	var cs_len = rows / classes; //length of the classes.
 	var omit = Math.round(cs_len/4);
-	var samp = realData(m,rows, classes, feats, cols, cs_len,omit);
-	var test = testData(m,rows, classes, feats, cols, cs_len,omit);
+	//break the data into train and test data.
+	var train = trainData(m, classes, cols, cs_len, omit);
+	var test = testData(m, classes, cols, cs_len, omit);
+	//calculate the features across the test and train data. 
+	var train_feat = []
+	for(var c=0; c<classes; c++){
+		train_feat[c] = calculate_features(train[c]); 
+		test_feat[c] = calculate_features(test[c]); 
+	}
 	var zs = zscore(samp, len, shift, classes);
 	var zs_test = zscore(test, len, shift, classes); 
 	var clen = zs.rows()/classes;
 	var clen_test = zs_test.rows()/classes;
 	var cs_test = [];
 	var cs = [];
-	console.log("finding cs" + "clen = " + clen + "clen_test = " + clen_test);
+	console.log("finding cs_len = " + clen + " clen_test = " + clen_test);
 	for(var t=0; t<classes; t++){
 		cs[t] = zs.minor(t*clen, 0, clen, cols*feats);
 		cs_test[t] = zs_test.minor(t*clen_test, 0,clen_test, cols*feats);
@@ -140,8 +277,8 @@ function processData(m){
 		var acc = Vector.Zero(classes);
 		var acce = acc.elements;
 
-	
-	for(var v=0; v<classes; v++){
+		for(var v=0; v<classes; v++){
+			console.log("drawing class "+v); 
 			var clear = v == 0; 
 			scatterDraw(cs[v].col(ix), cs[v].col(iy),colors[v+1]+",0.75", clear, axes,3);
 			ellipseDraw(cs[v].col(ix), cs[v].col(iy),colors[v+1]+",0.25", axes);
@@ -160,11 +297,9 @@ function processData(m){
 			}	
 			pdf[v] = pr;
 			acce[v] = accuracy(pdf[v], v);
-			
 		}
 	}
 	return res ; 
-
 }
 
 // processing functions

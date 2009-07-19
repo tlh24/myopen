@@ -56,7 +56,7 @@ let _ =
 	(* need to set up the 16 wf traces *) 
 	(* 4 sec each = 16k samples, x, y each *)
 	let len = 1*1024 in
-	let rawa = Array.init 16 (fun i -> Raw.create `short (len*2) ) in
+	let rawa = Array.init 16 (fun i -> Raw.create_static `short (len*2) ) in
 	Array.iter (fun raw -> 
 		for i = 0 to len-1 do (
 			let y = i - (len/2) in
@@ -120,7 +120,7 @@ let _ =
 			if client = sock then (
 				let buffer = String.create (1028) in
 				let inlen, sockadr = Unix.recvfrom sock buffer 0 1028 [] in
-				if inlen = 1028 then (
+				if inlen = 1028 || inlen = 516 then (
 					(* sent from a little-endian proc to a little-endian proc - no need for byte translation. *)
 					let rssum = ref 0 in
 					let rs chan = 
@@ -136,7 +136,7 @@ let _ =
 					(*printf "got a packet len %d @ %x\n%!" inlen pos ;  *)
 					(* loop through the string, pulling off shorts *)
 					rssum := 0;
-					for i = 0 to 1024/(16*2) -1  do ( (* two bytes per short *)
+					for i = 0 to inlen/(16*2) -1  do ( (* two bytes per short *)
 						for j = 0 to 15 do (
 							Raw.set (rawa.(j)) ~pos:(((pos +i) land (len-1))*2 + 1) (rs c) ; 
 						) done ; 
@@ -147,9 +147,10 @@ let _ =
 					or for piping to a file *)
 					let ar = Array.make 16 0 in
 					if !goutsamp1 then (
+						(* just read it in again *)
 						let cc = IO.input_string buffer in
 						ignore(ri cc); 
-						for k = 0 to 1024/32 -1 do (
+						for k = 0 to inlen/32 -1 do (
 							for j = 0 to 15 do (
 								ar.(invmap.(j)) <- rs cc; 
 							) done ; 
