@@ -1,8 +1,10 @@
+// using processing.js to show stuff
+
 
 function scatterDraw(x,y,color, clear, axes, dot) {
+
 	//does a scatterplot of the data. 
 	// x and y are vecrtors.
-	console.log(" scatterDraw colors = " + color);
 	var len = Math.min(x.dimensions(), y.dimensions()); 
 	var minx = axes[0]; 
 	var miny = axes[2];  
@@ -39,7 +41,7 @@ function scatterDraw(x,y,color, clear, axes, dot) {
 	}
 }
 
-function ellipseDraw(x,y,color, axes){
+function ellipseDraw(x,y,color,axes){
 	var len = x.dimensions(); 
 	var m = Matrix.Zero(len, 2); 
 	var me = m.elements; 

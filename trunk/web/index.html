@@ -9,7 +9,6 @@
 <script type="text/javascript" src="cholesky.js"></script>
 <script type="text/javascript" src="mvgaussian.js"></script>
 <script type="text/javascript" src="Lda.js"></script>
-<script type="text/javascript" src="Binaryajax.js"></script>
 <script type="text/javascript" src="bin_test.js"></script>
 </head>
 <body>
@@ -122,7 +121,7 @@
 </form>
 </div>
 <div style="background:#d8eeee" align="center">
-<form>
+<form action="javascript:retrieveDataBlock(10000)" method="post">
 	<p>Plot Features:</p>
 	<table>
 	<tr><td>Feature X: </td>
@@ -163,8 +162,7 @@
 	</select></td></tr>
 	</table>
 	<p></p>
-	<input type= "Button" value="Plot Perl" OnClick="retrieveDataBlock(10000)"/>
-	<input type= "Button" value="Plot Binary" OnClick="getBinaryData()"/>
+	<input type= "Submit" value = "Plot"/>
 </form>
 </div>
 <div align="center"  style="background:#0a0e35">
@@ -204,6 +202,12 @@
 <p><font color= "red"></font></p>
 <canvas id = "canvas2" width="400" height="400"></canvas>
 </div>
+<div style = "background:#dedeee" align="center">
+<form action="binRequest(databin)" method="post">
+<form>
+	<p> Binary Conversion <p>
+	<input type = "Button" value = "Convert"/>
+</form>
+</div>
 </body>
-
 </html>
