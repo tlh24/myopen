@@ -3,6 +3,7 @@ print "Content-type: text/xml\n\n"; # mime-type!
 my $request ; 
 # open data file -- in real life this would be from SDRAM on myopen. 
 my $source = "data4.txt"; # when changing the data source, check variables: classes, omit, samp, test
+
 open(FH, "< $source"); 
 local( $/ ); # this allows us to slurp the whole thing.. 
 my $data = <FH>; 
