@@ -1,3 +1,5 @@
+//gmm_test.js
+
 function retrieveData(url, samples, callback)
 {      
         poststr = "samples=" + samples ; 
