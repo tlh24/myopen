@@ -1,5 +1,5 @@
-update=13/8/2009-16:40:31
-last_client=pcbnew
+update=13/8/2009-20:40:45
+last_client=cvpcb
 [eeschema]
 version=1
 LibDir=/home/jon/svn/myopen/emg_dsp/lib
@@ -82,4 +82,18 @@ ShowRat=0
 ShowMRa=1
 [pcbnew/libraries]
 LibDir=
-LibName1=/home/jon/svn/myopen/emg_dsp/lib/emg_foot
+LibName1=supports
+LibName2=connect
+LibName3=discret
+LibName4=pin_array
+LibName5=divers
+LibName6=libcms
+LibName7=display
+LibName8=valves
+[cvpcb]
+version=1
+NetIExt=.net
+[cvpcb/libraries]
+EquName1=devcms
+[common]
+NetDir=
