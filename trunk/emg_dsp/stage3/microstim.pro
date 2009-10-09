@@ -44,8 +44,15 @@ TimeOut=600
 ShowRat=0
 ShowMRa=1
 [pcbnew/libraries]
-LibDir=../lib/
-LibName1=emg_foot
+LibDir=
+LibName1=supports
+LibName2=connect
+LibName3=discret
+LibName4=pin_array
+LibName5=divers
+LibName6=libcms
+LibName7=display
+LibName8=valves
 [cvpcb]
 version=1
 NetIExt=.net
