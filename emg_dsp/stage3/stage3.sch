@@ -1,9 +1,9 @@
-EESchema Schematic File Version 2  date Fri 18 Sep 2009 01:14:26 AM EDT
-LIBS:device,power,emg_sym,./stage3.cache
+EESchema Schematic File Version 2  date Thu 08 Oct 2009 07:55:25 PM EDT
+LIBS:device,power,emg_sym,linear,./stage3.cache
 EELAYER 24  0
 EELAYER END
 $Descr User 11000 13000
-Sheet 1 1
+Sheet 1 2
 Title ""
 Date "11 sep 2009"
 Rev ""
@@ -13,6 +13,12 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
+$Sheet
+S 650  11000 650  500 
+U 4ACE693D
+F0 "microstim" 60
+F1 "microstim.sch" 60
+$EndSheet
 Connection ~ 4250 5000
 Wire Wire Line
 	4650 12100 3900 12100
