@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Thu 15 Oct 2009 05:46:58 PM EDT
+EESchema Schematic File Version 2  date Mon 26 Oct 2009 05:58:01 PM EDT
 LIBS:device,power,emg_sym,linear,./stage3.cache
 EELAYER 24  0
 EELAYER END
