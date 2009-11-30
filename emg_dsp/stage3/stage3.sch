@@ -1,8 +1,12 @@
-EESchema Schematic File Version 2  date Mon 26 Oct 2009 05:58:01 PM EDT
-LIBS:device,power,emg_sym,linear,./stage3.cache
+EESchema Schematic File Version 2  date Mon 30 Nov 2009 04:35:27 PM EST
+LIBS:device
+LIBS:power
+LIBS:emg_sym
+LIBS:linear
+LIBS:stage3-cache
 EELAYER 24  0
 EELAYER END
-$Descr User 11000 13000
+$Descr User 16000 12000
 Sheet 1 2
 Title ""
 Date "15 oct 2009"
