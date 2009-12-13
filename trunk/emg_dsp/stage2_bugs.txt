@@ -1,0 +1,13 @@
+fixes to stage2: 
+1. nRF24L01 footprint is incorrect. 
+2. MAX3421E needs to run on 3V min, not 2.85v.  
+	At 2.85V it will work only intermittently! 
+3.  Improve the multiplexer footprint. 
+	
+Notes on operation: 
+1. testing with plexon headstage tester. 4.25V pk-pk in -> 1V pk-pk out
+	gain = 10,000 / 4.25 = 2350. 
+	in dB: 67dB.  expected = 65 (25+25+15). ok!!
+	Lights must be turned off in the room for the mic preamps to work. 
+2. Next: test the USB?  if it is oscillating, that is good :)
+	it's not, ohwell. 
