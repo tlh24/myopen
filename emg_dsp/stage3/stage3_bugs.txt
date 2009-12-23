@@ -1,0 +1,8 @@
+fixes to stage3: 
+1. 74LVC2G04 ... wrong footprint/package.  ordered part too small. 
+	Need SOT-23-6; ordered SC-70-6 
+	correct PN is SN74LVC2G04DBVR
+2. Audio jack footprint inverted - jack needs to be mounted on the bottom of the board! 
+3. AD8220 has the wrong footprint.  It only comes in MSOP-8; 
+	used SOIC-8 on the board. 
+	
