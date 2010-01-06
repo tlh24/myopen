@@ -5,7 +5,30 @@ fixes to stage3:
 2. Audio jack footprint inverted - jack needs to be mounted on the bottom of the board! 
 3. AD8220 has the wrong footprint.  It only comes in MSOP-8; 
 	used SOIC-8 on the board. 
-	
+
+notes on operation of stage3: 
+1. INA331 needs to have an initial gain of 5 to work properly with the feedback 
+	to the ref electrode.  With this, it works quite well - though
+	is very very sensitive to AM radio and phones ringing etc. 
+	Headphone gain must be turned up to hear this, of course. 
+2. MAX4208 works ok, though it is easily saturated by movement artifact.  perhaps 
+	should put a high-pas filter in sooner, with less initial gain? 
+	The only way to really get it to work is to firmly press the grass electrodes to my skin. 
+	Right now I have them taped there with "Elastickon" elastic tape. 
+	Electrode-to-skin contact seems to matter more than anything else. 
+	Thuis inst amp seems to work about the same as 8236.. no, maybe better. 
+	2.1 changed the gain to ~10, it works much much better.  better than INA116 and INA331.
+		There is still a ton of microphonic noise, though - may have to mount the 
+		Inst. apm. at the muscle. 
+3. AD8236 is sensitive to saturation - again, I think the initial gain is set far too high. 
+	It is also rather sensitive to electrode contact & impedance. 
+	Given good contact, however, the DRL circuit seems to work... well is another story. 
+	The gain is too high for really large muscular contractions - at least for my bicep w.
+	Grass gold cup electrodes. 
+	Need, need to get rid of the low-freq energy that saturates the amplifier. 
+4. AD8221AR seems about the same as AD8236, though the noise is slightly worse, even with DRL. 
+5. AD8220B doesn't seem to have as good noise-rejection as AD8236.  If the electrodes are good, 
+	and the DRL is working, this functions better. But, perhaps, I messed it up somehow.
 	
 for the microstimulator: 
 1. Vbias can be 5.5 V - seems to work fine. 
