@@ -6,3 +6,21 @@ fixes to stage3:
 3. AD8220 has the wrong footprint.  It only comes in MSOP-8; 
 	used SOIC-8 on the board. 
 	
+	
+for the microstimulator: 
+1. Vbias can be 5.5 V - seems to work fine. 
+2. Need 100pf slew-rate limiting capacitor.
+3. Ground plane is fine, with the 100pf cap the output shows very little ringing. (~4us)
+4. Monitoring circuit is fine too. 
+5. Should add emitter resistors to the bottom side current mirror. 
+6. There is turn-off transient - topside PNPs take longer to turn off than bottomside NPN. 
+	This should be fixed. 
+	Tried adding a 47pf cap to the output-NPN base charge dissipating transistor, 
+	but it actually had a /negative/ effect on the residual voltgage. 
+7.  Should test it with an inductive load (e.g. long wires). 
+	Tried it with ethernet cable - seems more capacitive than inductive with such a 
+	large 'termination' impedance.  ethernet is 50 ohms, no.. ? 
+	have to review my transmission line theory. 
+	Anyway, the capacitive term dominates, so should try to minimize this 
+	(e.g. 300 ohm line?) 
+	
