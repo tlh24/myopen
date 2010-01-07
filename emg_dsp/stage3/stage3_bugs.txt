@@ -1,46 +1,124 @@
 fixes to stage3: 
-1. 74LVC2G04 ... wrong footprint/package.  ordered part too small. 
-	Need SOT-23-6; ordered SC-70-6 
-	correct PN is SN74LVC2G04DBVR
-2. Audio jack footprint inverted - jack needs to be mounted on the bottom of the board! 
-3. AD8220 has the wrong footprint.  It only comes in MSOP-8; 
+1. Audio jack footprint inverted - jack needs to be mounted on the bottom of the board! 
+2. AD8220 has the wrong footprint.  It only comes in MSOP-8; 
 	used SOIC-8 on the board. 
 
 notes on operation of stage3: 
-1. INA331 needs to have an initial gain of 5 to work properly with the feedback 
-	to the ref electrode.  With this, it works quite well - though
-	is very very sensitive to AM radio and phones ringing etc. 
-	Headphone gain must be turned up to hear this, of course. 
-2. MAX4208 works ok, though it is easily saturated by movement artifact.  perhaps 
-	should put a high-pas filter in sooner, with less initial gain? 
-	The only way to really get it to work is to firmly press the grass electrodes to my skin. 
-	Right now I have them taped there with "Elastickon" elastic tape. 
-	Electrode-to-skin contact seems to matter more than anything else. 
-	Thuis inst amp seems to work about the same as 8236.. no, maybe better. 
-	2.1 changed the gain to ~10, it works much much better.  better than INA116 and INA331.
-		There is still a ton of microphonic noise, though - may have to mount the 
-		Inst. apm. at the muscle. 
-3. AD8236 is sensitive to saturation - again, I think the initial gain is set far too high. 
-	It is also rather sensitive to electrode contact & impedance. 
-	Given good contact, however, the DRL circuit seems to work... well is another story. 
-	The gain is too high for really large muscular contractions - at least for my bicep w.
-	Grass gold cup electrodes. 
-	Need, need to get rid of the low-freq energy that saturates the amplifier. 
-4. AD8221AR seems about the same as AD8236, though the noise is slightly worse, even with DRL. 
-5. AD8220B doesn't seem to have as good noise-rejection as AD8236.  If the electrodes are good, 
-	and the DRL is working, this functions better. But, perhaps, I messed it up somehow.
+* stage3 was designed to test 6 different instrumentation amplifiers' ability and performance
+	in amplifying surface electromyography (sEMG) using dry electrodes. 
+* all instrumentation amplifiers were set to a gain of 10 (or so); 100 was far too much, 
+	it would cause the amps to saturate. Besides, the purpose of the INA is to reject common
+	mode and transform the impedance (probably, mismatched source impedance.)
+* Electrode to skin contact matters more than INA choice, to a large extent. 
+	With low-impedance gel electrodes, all amps performed well. 
+	High impedance electrodes - here just Grass gold-plated cups, dry no gel, 
+	held to my skin with "Elastickon" elastic tape - are a challenge to record sEMGs, 
+	but we consider that the consumer will poorly accept sticky, hard-to remove 
+	electrodes - especially those that leave a mark (AgCl).  These dry electrodes 
+	must be pressed to the skin rather firmly to get decent recordings. 
+* With dry electrodes, microphonic noise is often far larger than the EMG signal.
+	May have to put the INAs right next to the electrodes & muscle - more expensive, 
+	but (probably, have to test) better quality. 
+* In these experiments, dry cup electrodes took some time to 'warm up' -- 
+	I presume sweat lowers the contact restistance to the skin.  
+	Need to make the electrodes more reliable than that. 
+
+1. INA331 needs to have an initial gain of 5 or 10 to work properly with the feedback 
+	to the ref electrode.  Otherwise, it gets stuck on a rail. 
+	With lower gain it works quite well - though is very very sensitive to AM radio 
+	and phones ringing etc. Background noise of this INA is less than MAX4208, 
+	but this doesn't matter as AM signals corrupt the response.  (This was 
+	the best AM radio of the bunch of INAs - probably because of some nonlinear protection
+	elements in the input, and larger bandwidth.  Couldn't have discovered this from 
+	the spec sheet!)
+2. MAX4208 works ok at G=100, though it is easily saturated by movement artifact.  
+	A slightly higher initial high-pass filter may be warranted. 
+	2.1 Changed the gain to ~10, it works much much better.  Better than INA116 and INA331.
+		There is still a ton of microphonic noise, though. 
+	2.2 changed the feedback cap from 220 pf to 1.5nf.  noticable decrease in bandwidth ; 
+		I think that 1.5nf is too high.  It does kill the noise, though! 
+		I would estimate that somewhere around 500pf with 330k/27k feedback restistors 
+		would work well. (tested this, seems ok!)
+	2.3  The output of this amp was cleaner, but yet still I feel it's missing part of the signal - 
+		There is a certain 'flutter' to the EMG (as subjectively judged through headphones)
+		that the Analog Device's INAs 'capture' (or create?) that the Maxim chip does not have. 
+		I should test the bandwidth of these devices, maybe. 
+	2.4 Tried with mismatched electrode impedance - one wet gel, one dry cup - still worked ok. 
+	** I now feel that this is the best of the lot - cheap, works well, simplest circuit
+	(just ground referenced, no integrator-stabilized ref pin). 
+3. INA116 - good, but not as impressive as I might have expected.  
+	Changed the gain to 10; was 100.  
+	Too expensive for our application, and the femto-amp input current does not seem to buy 
+	that much - see mismatched source test above. 
+4. AD8236 is sensitive to saturation in the high gain config again.
+	With the gain reset to 10, i still was not impressed - AD8221 was better. 
+	Given good electrode contact, the DRL circuit seems to work... but again I'm 
+	not sure how much this buys, and it doesn't scale well to many channels (which one
+	should drive the DRL?)
+	With a gain of about 10, it has worse noise-rejection than MAX4208, 
+	even with lower-impedance wet electrodes and the DRL circuit. 
+5. AD8221AR is better than the AD8236.  With DRL, wet electrodes, and gain changed to 12, 
+	may be better than MAX4208, or just about the same. 
+	With good electrode contacts DRL does not improve the signal that much. 
+	Same CMRR as MAX4202, empirically... maybe a bit more high-freq noise. 
+	More suceptible to AM demodulation that the AD8220.
+	As mentioned above, captures a 'flutter' in the EMG signal that Maxim's chip does not -
+	but perhaps this is an artifact?  I can't imagine a biological source of this signal.
+6. AD8220BA with lower impedance electrodes seems to work quite well - little 60hz noise
+	despite the gain of 100. indeed, high gain means it is much better at picking up 
+	muscle tone.  
+	I think that AD8220 may be slightly better at picking up resting or slight muscle tone
+	than MAX4208, but MAX4208 has lower 60Hz noise, and with the feedback cap optimized, 
+	about the same background noise.  
+	
+Rank ordering : 
+# MAX4208
+	## cheapest. 
+	## simplest circuit. 
+	## best CMRR. 
+	## good source-impedance mismatch rejection. 
+	## small package. 
+	## 750ua current consumption - but OK. 
+	## available (from Maxim directly)
+	## best compromise of all criteria. 
+# AD8220A
+	## best subjective EMG quality, as judged through headphones. 
+	## small pkg. 
+	## good 60hz interference rejection.  
+	## low background noise, lowest of the lot. (60hz + AM radio + intrinsic). 
+	## very high input impedance. 
+	## 750ua .. current consumption - again, ok. 
+# AD8221
+	## about the same as AD8220, except a better AM demodulator. (more bandwidth)
+	## low intrinsic noise. 
+	## slightly higher current consumption - 1ma. 
+# AD8236
+	## cheaper than other Analog Devices, but:
+	## worse noise rejection
+# INA331
+	## worked quite well provided you shield from possible RF interference. 
+	## rather cheap. 
+	## not as good CMRR at higher frequencies. 
+# INA116 
+	## Even though it has almost no input bias current, and very good CMRR, 
+	it's too expensive and large.  
+	
+	
 	
 for the microstimulator: 
-1. Vbias can be 5.5 V - seems to work fine. 
-2. Need 100pf slew-rate limiting capacitor.
-3. Ground plane is fine, with the 100pf cap the output shows very little ringing. (~4us)
-4. Monitoring circuit is fine too. 
-5. Should add emitter resistors to the bottom side current mirror. 
-6. There is turn-off transient - topside PNPs take longer to turn off than bottomside NPN. 
+1. 74LVC2G04 ... wrong footprint/package.  ordered part too small. 
+	Need SOT-23-6; ordered SC-70-6 
+	correct PN is SN74LVC2G04DBVR
+2. Vbias can be 5.5 V - seems to work fine. 
+3. Need 100pf slew-rate limiting capacitor.
+4. Ground plane is fine, with the 100pf cap the output shows very little ringing. (~4us)
+5. Monitoring circuit is fine too. 
+6. Should add emitter resistors to the bottom side current mirror. 
+7. There is turn-off transient - topside PNPs take longer to turn off than bottomside NPN. 
 	This should be fixed. 
 	Tried adding a 47pf cap to the output-NPN base charge dissipating transistor, 
 	but it actually had a /negative/ effect on the residual voltgage. 
-7.  Should test it with an inductive load (e.g. long wires). 
+8.  Should test it with an inductive load (e.g. long wires). 
 	Tried it with ethernet cable - seems more capacitive than inductive with such a 
 	large 'termination' impedance.  ethernet is 50 ohms, no.. ? 
 	have to review my transmission line theory. 
