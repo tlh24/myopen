@@ -1,4 +1,4 @@
-# EESchema Netlist Version 1.1 created  Wed 13 Jan 2010 02:57:15 PM EST
+# EESchema Netlist Version 1.1 created  Wed 13 Jan 2010 04:55:22 PM EST
 (
  ( /4A8AF859 1725711  U11 8X100 {Lib=8X100}
   (    1 /aout5 )
@@ -234,6 +234,14 @@
  ( /47F002B2 0603  C6 0.1uf {Lib=C}
   (    1 VDD )
   (    2 GND )
+ )
+ ( /47EF07B9/4B4E3F8D 0603  C278 100pf {Lib=C}
+  (    1 /stim8/V0 )
+  (    2 /stim8/VdacB )
+ )
+ ( /47EF07B9/4B4E3F7C 0603  C277 100pf {Lib=C}
+  (    1 /stim8/V0 )
+  (    2 /stim8/VdacA )
  )
  ( /47EF07B9/4B4CE6AC 0603  R359 1M {Lib=R}
   (    1 /stim8/A_in_delay )
@@ -955,6 +963,14 @@
   (    7 /stim8/V0 )
   (    8 /stim8/VdacA )
  )
+ ( /47EF07B8/4B4E3F8D 0603  C276 100pf {Lib=C}
+  (    1 /stim7/V0 )
+  (    2 /stim7/VdacB )
+ )
+ ( /47EF07B8/4B4E3F7C 0603  C275 100pf {Lib=C}
+  (    1 /stim7/V0 )
+  (    2 /stim7/VdacA )
+ )
  ( /47EF07B8/4B4CE6AC 0603  R311 1M {Lib=R}
   (    1 /stim7/A_in_delay )
   (    2 N-000630 )
@@ -1674,6 +1690,14 @@
   (    6 /stim7/VdacB )
   (    7 /stim7/V0 )
   (    8 /stim7/VdacA )
+ )
+ ( /47EF07B7/4B4E3F8D 0603  C274 100pf {Lib=C}
+  (    1 /stim5/V0 )
+  (    2 /stim5/VdacB )
+ )
+ ( /47EF07B7/4B4E3F7C 0603  C273 100pf {Lib=C}
+  (    1 /stim5/V0 )
+  (    2 /stim5/VdacA )
  )
  ( /47EF07B7/4B4CE6AC 0603  R263 1M {Lib=R}
   (    1 /stim5/A_in_delay )
@@ -2395,6 +2419,14 @@
   (    7 /stim5/V0 )
   (    8 /stim5/VdacA )
  )
+ ( /47EF07B6/4B4E3F8D 0603  C272 100pf {Lib=C}
+  (    1 /stim6/V0 )
+  (    2 /stim6/VdacB )
+ )
+ ( /47EF07B6/4B4E3F7C 0603  C271 100pf {Lib=C}
+  (    1 /stim6/V0 )
+  (    2 /stim6/VdacA )
+ )
  ( /47EF07B6/4B4CE6AC 0603  R215 1M {Lib=R}
   (    1 /stim6/A_in_delay )
   (    2 N-000452 )
@@ -3114,6 +3146,14 @@
   (    6 /stim6/VdacB )
   (    7 /stim6/V0 )
   (    8 /stim6/VdacA )
+ )
+ ( /47EF0760/4B4E3F8D 0603  C270 100pf {Lib=C}
+  (    1 /stim4/V0 )
+  (    2 /stim4/VdacB )
+ )
+ ( /47EF0760/4B4E3F7C 0603  C269 100pf {Lib=C}
+  (    1 /stim4/V0 )
+  (    2 /stim4/VdacA )
  )
  ( /47EF0760/4B4CE6AC 0603  R167 1M {Lib=R}
   (    1 /stim4/A_in_delay )
@@ -3835,6 +3875,14 @@
   (    7 /stim4/V0 )
   (    8 /stim4/VdacA )
  )
+ ( /47EF0744/4B4E3F8D 0603  C268 100pf {Lib=C}
+  (    1 /stim3/V0 )
+  (    2 /stim3/VdacB )
+ )
+ ( /47EF0744/4B4E3F7C 0603  C267 100pf {Lib=C}
+  (    1 /stim3/V0 )
+  (    2 /stim3/VdacA )
+ )
  ( /47EF0744/4B4CE6AC 0603  R119 1M {Lib=R}
   (    1 /stim3/A_in_delay )
   (    2 N-000274 )
@@ -4555,6 +4603,14 @@
   (    7 /stim3/V0 )
   (    8 /stim3/VdacA )
  )
+ ( /47EF06D3/4B4E3F8D 0603  C266 100pf {Lib=C}
+  (    1 /stim1/V0 )
+  (    2 /stim1/VdacB )
+ )
+ ( /47EF06D3/4B4E3F7C 0603  C265 100pf {Lib=C}
+  (    1 /stim1/V0 )
+  (    2 /stim1/VdacA )
+ )
  ( /47EF06D3/4B4CE6AC 0603  R71 1M {Lib=R}
   (    1 /stim1/A_in_delay )
   (    2 N-000185 )
@@ -5274,6 +5330,14 @@
   (    6 /stim1/VdacB )
   (    7 /stim1/V0 )
   (    8 /stim1/VdacA )
+ )
+ ( /47EEFF01/4B4E3F8D 0603  C264 100pf {Lib=C}
+  (    1 /stim2/V0 )
+  (    2 /stim2/VdacB )
+ )
+ ( /47EEFF01/4B4E3F7C 0603  C263 100pf {Lib=C}
+  (    1 /stim2/V0 )
+  (    2 /stim2/VdacA )
  )
  ( /47EEFF01/4B4CE6AC 0603  R23 1M {Lib=R}
   (    1 /stim2/A_in_delay )
@@ -6783,6 +6847,7 @@ Net 121 "" ""
  D2 3
  Q2 E
 Net 122 "/stim2/VdacA" "VdacA"
+ C263 2
  R4 2
  TP12 1
  U18 8
@@ -6840,6 +6905,7 @@ Net 133 "" ""
  D7 3
  Q27 E
 Net 134 "/stim2/VdacB" "VdacB"
+ C264 2
  R41 2
  TP13 1
  U18 6
@@ -6899,6 +6965,8 @@ Net 146 "/stim2/A_in_" "A_in_"
  R8 1
  U14 6
 Net 147 "/stim2/V0" "V0"
+ C264 1
+ C263 1
  U23 5
  U19 5
  U17 3
@@ -7213,6 +7281,7 @@ Net 210 "" ""
  D10 3
  Q30 E
 Net 211 "/stim1/VdacA" "VdacA"
+ C265 2
  R52 2
  TP35 1
  U38 8
@@ -7270,6 +7339,7 @@ Net 222 "" ""
  D15 3
  Q55 E
 Net 223 "/stim1/VdacB" "VdacB"
+ C266 2
  R89 2
  TP36 1
  U38 6
@@ -7329,6 +7399,8 @@ Net 235 "/stim1/A_in_" "A_in_"
  R56 1
  U34 6
 Net 236 "/stim1/V0" "V0"
+ C266 1
+ C265 1
  U43 5
  U39 5
  U37 3
@@ -7643,6 +7715,7 @@ Net 299 "" ""
  D18 3
  Q58 E
 Net 300 "/stim3/VdacA" "VdacA"
+ C267 2
  R100 2
  TP58 1
  U58 8
@@ -7700,6 +7773,7 @@ Net 311 "" ""
  D23 3
  Q83 E
 Net 312 "/stim3/VdacB" "VdacB"
+ C268 2
  R137 2
  TP59 1
  U58 6
@@ -7759,6 +7833,8 @@ Net 324 "/stim3/A_in_" "A_in_"
  R104 1
  U54 6
 Net 325 "/stim3/V0" "V0"
+ C268 1
+ C267 1
  U63 5
  U59 5
  U57 3
@@ -8073,6 +8149,7 @@ Net 388 "" ""
  D26 3
  Q86 E
 Net 389 "/stim4/VdacA" "VdacA"
+ C269 2
  R148 2
  TP81 1
  U78 8
@@ -8130,6 +8207,7 @@ Net 400 "" ""
  D31 3
  Q111 E
 Net 401 "/stim4/VdacB" "VdacB"
+ C270 2
  R185 2
  TP82 1
  U78 6
@@ -8189,6 +8267,8 @@ Net 413 "/stim4/A_in_" "A_in_"
  R152 1
  U74 6
 Net 414 "/stim4/V0" "V0"
+ C270 1
+ C269 1
  U83 5
  U79 5
  U77 3
@@ -8503,6 +8583,7 @@ Net 477 "" ""
  D34 3
  Q114 E
 Net 478 "/stim6/VdacA" "VdacA"
+ C271 2
  R196 2
  TP104 1
  U98 8
@@ -8560,6 +8641,7 @@ Net 489 "" ""
  D39 3
  Q139 E
 Net 490 "/stim6/VdacB" "VdacB"
+ C272 2
  R233 2
  TP105 1
  U98 6
@@ -8619,6 +8701,8 @@ Net 502 "/stim6/A_in_" "A_in_"
  R200 1
  U94 6
 Net 503 "/stim6/V0" "V0"
+ C272 1
+ C271 1
  U103 5
  U99 5
  U97 3
@@ -8933,6 +9017,7 @@ Net 566 "" ""
  D42 3
  Q142 E
 Net 567 "/stim5/VdacA" "VdacA"
+ C273 2
  R244 2
  TP127 1
  U118 8
@@ -8990,6 +9075,7 @@ Net 578 "" ""
  D47 3
  Q167 E
 Net 579 "/stim5/VdacB" "VdacB"
+ C274 2
  R281 2
  TP128 1
  U118 6
@@ -9049,6 +9135,8 @@ Net 591 "/stim5/A_in_" "A_in_"
  R248 1
  U114 6
 Net 592 "/stim5/V0" "V0"
+ C274 1
+ C273 1
  U123 5
  U119 5
  U117 3
@@ -9363,6 +9451,7 @@ Net 655 "" ""
  D50 3
  Q170 E
 Net 656 "/stim7/VdacA" "VdacA"
+ C275 2
  R292 2
  TP150 1
  U138 8
@@ -9420,6 +9509,7 @@ Net 667 "" ""
  D55 3
  Q195 E
 Net 668 "/stim7/VdacB" "VdacB"
+ C276 2
  R329 2
  TP151 1
  U138 6
@@ -9479,6 +9569,8 @@ Net 680 "/stim7/A_in_" "A_in_"
  R296 1
  U134 6
 Net 681 "/stim7/V0" "V0"
+ C276 1
+ C275 1
  U143 5
  U139 5
  U137 3
@@ -9793,6 +9885,7 @@ Net 744 "" ""
  D58 3
  Q198 E
 Net 745 "/stim8/VdacA" "VdacA"
+ C277 2
  R340 2
  TP173 1
  U158 8
@@ -9850,6 +9943,7 @@ Net 756 "" ""
  D63 3
  Q223 E
 Net 757 "/stim8/VdacB" "VdacB"
+ C278 2
  R377 2
  TP174 1
  U158 6
@@ -9909,6 +10003,8 @@ Net 769 "/stim8/A_in_" "A_in_"
  R344 1
  U154 6
 Net 770 "/stim8/V0" "V0"
+ C278 1
+ C277 1
  U163 5
  U159 5
  U157 3

@@ -1,11 +1,11 @@
-EESchema Schematic File Version 2  date Wed 13 Jan 2010 02:57:01 PM EST
+EESchema Schematic File Version 2  date Wed 13 Jan 2010 05:05:10 PM EST
 LIBS:device,power,emg_sym,linear
 EELAYER 24  0
 EELAYER END
 $Descr User 16000 12000
 Sheet 8 9
 Title ""
-Date "12 jan 2010"
+Date "13 jan 2010"
 Rev ""
 Comp ""
 Comment1 ""
@@ -13,6 +13,12 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
+Connection ~ 11050 4650
+Wire Wire Line
+	11050 4500 11050 4650
+Connection ~ 2150 4650
+Wire Wire Line
+	2150 4450 2150 4650
 Wire Wire Line
 	8350 11200 5150 11200
 Connection ~ 3650 4650
@@ -528,7 +534,7 @@ Wire Wire Line
 Wire Wire Line
 	5500 5000 5500 5050
 Wire Wire Line
-	2150 3550 1900 3550
+	1900 3550 2150 3550
 Wire Wire Line
 	4050 5900 4050 6300
 Connection ~ 4050 6300
@@ -622,7 +628,7 @@ Wire Wire Line
 Wire Wire Line
 	7700 5000 7700 5050
 Wire Wire Line
-	11050 3550 11300 3550
+	11300 3550 11050 3550
 Wire Wire Line
 	9150 5900 9150 6300
 Connection ~ 9150 6300
@@ -790,6 +796,46 @@ Wire Wire Line
 Connection ~ 7750 10300
 Wire Wire Line
 	4450 11350 8000 11350
+Wire Wire Line
+	2150 3550 2150 4050
+Wire Wire Line
+	11050 3550 11050 4100
+$Comp
+L C C278
+U 1 1 4B4E3F8D
+P 11050 4300
+AR Path="/47EF07B9/4B4E3F8D" Ref="C278"  Part="1" 
+AR Path="/47EF07B8/4B4E3F8D" Ref="C276"  Part="1" 
+AR Path="/47EF07B7/4B4E3F8D" Ref="C274"  Part="1" 
+AR Path="/47EF07B6/4B4E3F8D" Ref="C272"  Part="1" 
+AR Path="/47EF0760/4B4E3F8D" Ref="C270"  Part="1" 
+AR Path="/47EF0744/4B4E3F8D" Ref="C268"  Part="1" 
+AR Path="/47EF06D3/4B4E3F8D" Ref="C266"  Part="1" 
+AR Path="/47EEFF01/4B4E3F8D" Ref="C264"  Part="1" 
+F 0 "C266" H 11100 4400 50  0000 L CNN
+F 1 "100pf" H 11100 4200 50  0000 L CNN
+F 2 "0603" H 11150 4450 60  0000 C CNN
+	1    11050 4300
+	-1   0    0    1   
+$EndComp
+$Comp
+L C C265
+U 1 1 4B4E3F7C
+P 2150 4250
+AR Path="/47EF06D3/4B4E3F7C" Ref="C265"  Part="1" 
+AR Path="/47EF07B9/4B4E3F7C" Ref="C277"  Part="1" 
+AR Path="/47EF07B8/4B4E3F7C" Ref="C275"  Part="1" 
+AR Path="/47EF07B7/4B4E3F7C" Ref="C273"  Part="1" 
+AR Path="/47EF07B6/4B4E3F7C" Ref="C271"  Part="1" 
+AR Path="/47EF0760/4B4E3F7C" Ref="C269"  Part="1" 
+AR Path="/47EF0744/4B4E3F7C" Ref="C267"  Part="1" 
+AR Path="/47EEFF01/4B4E3F7C" Ref="C263"  Part="1" 
+F 0 "C265" H 2200 4350 50  0000 L CNN
+F 1 "100pf" H 2200 4150 50  0000 L CNN
+F 2 "0603" H 2250 4400 60  0000 C CNN
+	1    2150 4250
+	-1   0    0    1   
+$EndComp
 $Comp
 L R R359
 U 1 1 4B4CE6AC
