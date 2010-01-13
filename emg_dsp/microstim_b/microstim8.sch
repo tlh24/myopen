@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Tue 12 Jan 2010 04:27:09 PM EST
+EESchema Schematic File Version 2  date Wed 13 Jan 2010 02:57:01 PM EST
 LIBS:device,power,emg_sym,linear
 EELAYER 24  0
 EELAYER END
@@ -678,6 +678,7 @@ U 1 1 4A8AEFE6
 P 650 1350
 F 0 "U1" H 300 1250 60  0000 C CNN
 F 1 "10X100" H 700 1250 60  0000 C CNN
+F 2 "11x100mil" H 240 1190 60  0000 C CNN
 	1    650  1350
 	0    1    1    0   
 $EndComp
