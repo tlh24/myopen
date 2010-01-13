@@ -1,11 +1,11 @@
-EESchema Schematic File Version 2  date Wed 13 Jan 2010 02:57:01 PM EST
+EESchema Schematic File Version 2  date Wed 13 Jan 2010 05:05:10 PM EST
 LIBS:device,power,emg_sym,linear
 EELAYER 24  0
 EELAYER END
 $Descr A4 11700 8267
 Sheet 1 9
 Title "noname.sch"
-Date "12 jan 2010"
+Date "13 jan 2010"
 Rev ""
 Comp ""
 Comment1 ""
