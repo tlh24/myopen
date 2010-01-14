@@ -18,7 +18,7 @@ int mod(int num, int denom){
 	b = div(num, denom); 
 	return num - b*denom;
 }
-void memcpy(u8* src, u8* dest, int len){
+void memcpy_(u8* src, u8* dest, int len){
 	int i; 
 	//do it the simple way -- see http://docs.blackfin.uclinux.org/doku.php?id=memcpy
 	//the only thing that really beats this is DMA. (provided data cache is enabled). 
@@ -29,13 +29,13 @@ void memcpy(u8* src, u8* dest, int len){
 		*dest++ = *src++; 
 	}
 }
-void memset(u8* dest, u8 fill, int len){
+void memset_(u8* dest, u8 fill, int len){
 	int i; 
 	for(i=0; i<len; i++){
 		*dest++ = fill; 
 	}
 }
-int strlen(char* str){
+int strlen_(char* str){
 	int i; 
 	for(i=0; i<1280; i++){
 		if(str[i] == 0)
@@ -43,7 +43,7 @@ int strlen(char* str){
 	}
 	return 0; 
 }
-char* strcpy(char* dest, int* len, char* str){
+char* strcpy_(char* dest, int* len, char* str){
 	int i = 0; 
 	while(*str && i < 1280 ){
 		*dest++ = *str++; 

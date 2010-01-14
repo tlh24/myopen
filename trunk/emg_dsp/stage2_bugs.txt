@@ -3,6 +3,11 @@ fixes to stage2:
 2. MAX3421E needs to run on 3V min, not 2.85v.  
 	At 2.85V it will work only intermittently! 
 3.  Improve the multiplexer footprint. 
+4.  PF4 is shared between AFEEN and usb irq.  oops! 
+5. RS232 pinout is reversed, left-right. 
+6. RS232 shell needs to be grounded.
+7. a DAC would be useful for debugging the filter / analog stuff.
+8. Doesn't seem to boot reliably when AC power is applied -- check the reset ckt? 
 	
 Notes on operation: 
 1. testing with plexon headstage tester. 4.25V pk-pk in -> 1V pk-pk out
@@ -11,3 +16,58 @@ Notes on operation:
 	Lights must be turned off in the room for the mic preamps to work. 
 2. Next: test the USB?  if it is oscillating, that is good :)
 	it's not, ohwell. 
+3. Great, the board boots.. now need to get the sampling working, and have it transmit data. 
+4. s-ports enabled. looks like it's running at 300khz - that's a sampling rate of 18.75ksps, right?
+	hum, no I' not understanding this correctly.
+	The serial clock is running at 5Mhz, and the external clock at 80Mhz. 
+	updated the Sclock to run at Cclock/2 -> 120Mhz. isr10 now running at 600khz. 
+	but, the mux is not being updated.. 
+	fixed, minor difference in portf assignments. 
+	muliplexer looks like it's doing something, that's good! 
+5. RS232 port would be good to get working, so we can see what's going on in there. 
+	will copy some stuff from myopen.
+	done.
+	baud rate seems to be 77; should be 57600 - but, eh, what?
+	looks like the sysclock is running at 160Mhz?  
+	seems correct now, though the damn thing is running twice as fast as expected?
+6.  now the problem seems to be with the strings - these are not in the bfiny.x file; 
+	gcc doesn't know where to put them. 
+	fixed, then. 
+7.  Strings and rs232 working fine - makes the exception reporrt much easier to read!
+	now, on to the analog section, which 'must be bulletproof'. 
+8. THS4281 oscillates! need a feedback resistor of ~ 1.5K. Must put this in next board. 
+	Actually, it needs 3 resistors - Rf of 1.5K, Rg 3.0K, and a resistor to isolate the 
+	ADC - have a 1.5k in there, but maybe it't too big. 
+	Noise from the switching signals on the ADC are corrupting the input pin  - 
+	and if i can see it on the scope, then it is definintely going to be in the codes.  
+	Need to have better layout + series resistors to kill some of the EMI on the clock / 
+	data pins (the frame sync will be the same every frame, and is low duty cycle, 
+	so we needn't worry about it.)
+	Also, need to use wires that are as short and narrow as possible, and as far away from 
+	the input pins as possible.
+9. LMV1032 oscillate, too, at about 20khz.  some of them become hot.  
+	Need to determine which are hot.. but they are so tiny!
+	In terms of oscillation, there must be feedback somewhere. 
+	ued alcohol to see which amps were producing the most heat .. 
+	two of them seemed to be broken.  removed them, oscillation gone! yay!
+10.  Want to actually look at the data. use the UART, i guess @ 921600 baud.
+	first, make it work @ higher baud. SCK = 128MHz. divisor = 9.
+	This does not work - probably the cable is too slow (too high capacitance).  
+	Let's try using the USB port, which should run at at least that rate. 
+11.  disconnected the USB reset line from portF.7 (also used on AFEEN!)
+	and tied it to Vdd.  USB chip now is oscillating, at least. 
+12. success! after I powered Vdd from 2 AA batteries (3.15v > 3.0V minimum on the 
+	MAX3421.  *MUST* put a 3.3V regulator on there .. or increase the peripheral voltage to 3.1V
+	(probably the latter, i think it will make the whole system more reliable?  have to go back and 
+	check all the spec sheets.)
+13.  Now, see if we can get it to come up as a peripheral...ok, yes!  it's coming up as a USB flash-key, 
+	which is what usb headers were last configured as. 
+	Let's change that to a serial port. 
+	Done!  Works well!
+14.  to get it to work, see - http://www.mjmwired.net/kernel/Documentation/usb/usb-serial.txt
+	namely - 
+	sudo rmmod usbserial
+	cd /wherever usbserial.ko is
+	sudo insmod usbserial.ko vendor=0x0b6a product=0x5346
+	(that's the vendor and serial number of our virtual device). 
+	note - should try to increase the clock rate on the SPI bus.. and check this! 

@@ -1,16 +1,23 @@
+#ifdef __ADSPBF532__
+#include "../common/spi.h"
+#include "print.h"
+#endif
+
+#ifdef __ADSPBF537__
 #include <cdefBF537.h>
 #include "memory.h"
 #include "util.h"
 #include "lcd.h"
+#endif 
+
 #include "usb.h"
 #include "usb_data.h"
 
-#define USB_SS 0x4000 //on port F
 
 u8 wreg(u8 reg, u8 val){
 	//write a register on the usb controller (MAX3421)
 	reg = reg | 0x2; //set the 'write' bit.
-	*pPORTFIO_CLEAR = USB_SS; 
+	*FIO_CLEAR = USB_SS; 
 	asm volatile("ssync;"); 
 	*pSPI_TDBR = (u16)reg;
 	spi_delay(); 
@@ -18,7 +25,7 @@ u8 wreg(u8 reg, u8 val){
 	reg = *pSPI_SHADOW; //read the status 
 	*pSPI_TDBR = (u16)val; 
 	spi_delay();
-	*pPORTFIO_SET = USB_SS; 
+	*FIO_SET = USB_SS; 
 	asm volatile("ssync;"); 
 	return reg; 
 }
@@ -28,7 +35,7 @@ u8 wregAS(u8 reg, u8 val){
 }
 void writebytes(u8 reg, u8 n, u8* p){
 	reg = reg | 0x2; //set the 'write' bit.
-	*pPORTFIO_CLEAR = USB_SS; 
+	*FIO_CLEAR = USB_SS; 
 	asm volatile("ssync;"); 
 	*pSPI_TDBR = (u16)reg;
 	spi_delay(); 
@@ -38,11 +45,11 @@ void writebytes(u8 reg, u8 n, u8* p){
 		p++; 
 		n--; 
 	}
-	*pPORTFIO_SET = USB_SS; 
+	*FIO_SET = USB_SS; 
 	asm volatile("ssync;"); 
 }
 u8 rreg(u8 reg){
-	*pPORTFIO_CLEAR = USB_SS; 
+	*FIO_CLEAR = USB_SS; 
 	asm volatile("ssync;"); 
 	*pSPI_TDBR = (u16)reg; //note: does not mask out unused bits!
 	spi_delay(); 
@@ -50,7 +57,7 @@ u8 rreg(u8 reg){
 	*pSPI_TDBR = 0; 
 	spi_delay();
 	reg = *pSPI_SHADOW; //read it in - the contents of the register.
-	*pPORTFIO_SET = USB_SS; 
+	*FIO_SET = USB_SS; 
 	asm volatile("ssync;"); 
 	return reg; 
 }
@@ -59,7 +66,7 @@ u8 rregAS(u8 reg){
 	return rreg(reg); 
 }
 void readbytes(u8 reg, u8 n, u8* p){
-	*pPORTFIO_CLEAR = USB_SS; 
+	*FIO_CLEAR = USB_SS; 
 	asm volatile("ssync;"); 
 	*pSPI_TDBR = (u16)reg;
 	spi_delay(); 
@@ -70,7 +77,7 @@ void readbytes(u8 reg, u8 n, u8* p){
 		p++; 
 		n--; 
 	}
-	*pPORTFIO_SET = USB_SS; 
+	*FIO_SET = USB_SS; 
 	asm volatile("ssync;"); 
 }
 
@@ -91,14 +98,14 @@ u8 g_send3zeros;        // EP3-IN function uses this to send HID (key up) codes 
 //SCSI stuff. 
 // CBW = command block wrapper
 // CSW = command status word
-g_CBWTag[4] ; //have to repeat this in the CSW. 
+//g_CBWTag[4] ; //have to repeat this in the CSW. 
 
 void usb_init() {
 	printf_str("turning on USB\n"); //this should be echoed on the serial port now
-	//let's just see if we can talk to the USB controller (for now). 
+	//let's just see if we can talk to the USB controller. 
 	//first have to set the SPI port up properly. 
 	*pSPI_CTL = 0; //disable while configuring. 
-	*pSPI_BAUD = 4 ; //baud rate = SCLK / (2*(SPI_BAUD+1)) = 12Mhz. 
+	*pSPI_BAUD = 16 ; //baud rate = SCLK / (2*(SPI_BAUD+1)) = 12Mhz. 
 	*pSPI_FLG = 0; //don't use flags.
 	*pSPI_STAT = 0x56 ; //clear the flags.
 	*pSPI_CTL = TDBR_CORE | SZ | EMISO| GM | MSTR | SPE ; 
@@ -106,10 +113,15 @@ void usb_init() {
 	wreg(rPINCTL,bmFDUPSPI | bmPOSINT);    // MAX3420: SPI=full-duplex
 	int i, j; 
 	for(j =0; j<1; j++){
-		wreg(rUSBCTL,bmCHIPRES);    // reset the MAX3420E
+		*FIO_CLEAR = USB_RESET; 
+		udelay(20); 
+		*FIO_SET = USB_RESET; 
+		udelay(40); 
+		wreg(rUSBCTL,bmCHIPRES);    // soft reset the MAX3420E
 		udelay(20); 
 		wreg(rUSBCTL,0 );            // remove the reset, leave disconnected.
 		u8 d = 0;
+		wreg(rPINCTL,bmFDUPSPI | bmPOSINT);    // MAX3420: SPI=full-duplex
 		//wait for the oscilator to come up. 
 		while(d == 0){
 			d = rreg(rUSBIRQ); 
@@ -120,7 +132,7 @@ void usb_init() {
 		for(i=0; i<80;i++){
 			wreg(rGPIO, wr); 
 			rd = rreg(rGPIO); 
-			if(rd&0xf != wr&0xf ){
+			if((rd&0xf) != (wr&0xf) ){
 				printf_int("usb: wrote ", wr); 
 				printf_int(" got:", rd); 
 				printf_str("\n"); //not exactly sure why the first two writes fail.. oscillator? 
@@ -174,8 +186,8 @@ void usb_intr(){
 			g_suspended=0;                    // no longer suspended
 		//we do not need the remote wake-up functionality here. 
 	}
-	if( *pPORTFIO & 0x0100 ){ //positive level interupt.  probably should actually make this an interupt!
-		//printf_str("usb interupt\n"); 
+	if( *FIO_IN & USB_IRQ ){ //positive level interupt.  probably should actually make this an interupt!
+		printf_str("usb interupt\n"); 
 		service_irqs();
 	}
 }
@@ -218,6 +230,9 @@ void service_irqs(void){
 		}
 		printf_newline(); 
 		wreg(rEPIRQ, bmOUT1DAVIRQ); //is this needed? 
+		//give a response.. or so. 
+		writebytes(rEP2INFIFO,12,"status=good\n");
+		wregAS(rEP2INBC,12);   // load EP2BC to arm the EP2-IN transfer & ACKSTAT
 	}
 	if((g_configval != 0) && (itest2&bmSUSPIRQ)){   // HOST suspended bus for 3 msec
 		//printf_str("usb irq: host suspend\n"); 
@@ -273,6 +288,7 @@ void do_IN3(void){
 	}
 	wreg(rEP3INBC,3);				// arm it
 }
+#ifdef __ADSPBF537__
 int calcMeanOfChannel(u32 u, u8 chan){
 	u -= 64*16*2; 
 	u += (u32)(chan * 2); 
@@ -308,7 +324,21 @@ void do_IN2(void){
 	wreg(rEP2INFIFO, 0); 
 	wreg(rEP2INBC,4);				// arm it!
 }
-
+#else
+int calcMeanOfChannel(u32 u, u8 chan){
+	return 0; 
+}
+void do_IN2(void){
+	char xb, yb; 
+	xb = 0; 
+	yb = 0; 
+	wreg(rEP2INFIFO, 0); 
+	wreg(rEP2INFIFO, (u8)xb); 
+	wreg(rEP2INFIFO, (u8)yb); 
+	wreg(rEP2INFIFO, 0); 
+	wreg(rEP2INBC,4);				// arm it!
+}
+#endif
 void std_request(void){
 	switch(g_SUD[bRequest]){
 		case	SR_GET_DESCRIPTOR:			send_descriptor();   break; //0x06
@@ -467,6 +497,7 @@ void send_descriptor(void) {
 			if( g_SUD[wValueL] < 4){
 				desclen = strDesc[g_SUD[wValueL]][0];   // wValueL=string index, array[0] is the length
 				pDdata = (u8*)(strDesc[g_SUD[wValueL]]);       // point to first array element
+				printf_int("usb: sending config string, len:",desclen); 
 			}
 			break;
 #ifdef KBDMOUSE
