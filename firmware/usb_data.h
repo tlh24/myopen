@@ -104,8 +104,42 @@ const unsigned char CD_kbd[]= //keyboard and mouse.
 	0x03,		// bmAttributes	(interrupt)
 	64,0,        // wMaxPacketSize (64)
 	10};		// bInterval (poll every 10 msec)
-
-const unsigned char CD[]= //USB key configuration description.
+const unsigned char CD [] = 
+{	9, 			//length
+	2, 			//type = configuration
+	32,0,			//total length, low/high
+	1,				//number of interfaces
+	1,				//config value 
+	0,				// config string index (none)
+	0xC0, 		//config attributes (self-powered)
+	0x01,		//2ma from bus
+//communication class interface descriptor
+	9,				//descriptor length
+	4,				//descriptor type (interface)
+	0,				// interface number, 0 based
+	0,				//alternate setting
+	2,				//number of endpoints (Except EP0)
+	0x02,		//interface class = communications class device (see usb spec, CDC120.pdf)
+	0x02, 		//interface subclass = abstract control model. (virtual COM, http://www.st.com/stonline/products/literature/an/12571.pdf
+	0x00, 		//no specific protocol required
+	0x00, 		//interface string
+// endpoint descriptor 1 (EP2, in) CD[18]
+	7, 			// desc length
+	0x05, 		// type endpoint
+	0x82, 		//endpoint 2, in
+	0x02, 		// bulk type
+	64, 0, 		//max packet size
+	0, 			//polling interval off. 
+// endpoint descriptor 2 (EP1, out) CD[25]
+	7, 			// desc length
+	0x05,		//type endpoint 
+	0x01, 		//endpoint 1, out?
+	0x02, 		//type bulk
+	64, 0, 		//max packet size
+	0				//polling interval = off.
+}; //length = 32.
+	
+const unsigned char CD_key []= //USB key configuration description.
 {	0x09, 		//length
 	0x02, 		//type = configuration
 	32, 0,		//total length, low/high
