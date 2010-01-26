@@ -1,9 +1,9 @@
-EESchema Schematic File Version 2  date Mon 25 Jan 2010 04:58:41 PM EST
-LIBS:power,device,emg_sym
+EESchema Schematic File Version 2  date Tue 26 Jan 2010 01:03:54 AM EST
+LIBS:power,device,emg_sym,./stage4.cache
 EELAYER 24  0
 EELAYER END
 $Descr A4 11700 8267
-Sheet 4 37
+Sheet 4 38
 Title "noname.sch"
 Date "9 jan 2009"
 Rev ""
