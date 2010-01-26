@@ -1,5 +1,5 @@
-EESchema Schematic File Version 2  date Wed 13 Jan 2010 05:05:10 PM EST
-LIBS:device,power,emg_sym,linear
+EESchema Schematic File Version 2  date Wed 13 Jan 2010 05:53:13 PM EST
+LIBS:device,/home/tlh24/svn/myopen/emg_dsp/lib/emg_sym,power,linear,./microstim8.cache
 EELAYER 24  0
 EELAYER END
 $Descr A4 11700 8267

@@ -37,7 +37,7 @@ Notes on operation of stage3:
 		There is still a ton of microphonic noise, though. 
 	2.2 changed the feedback cap from 220 pf to 1.5nf.  noticable decrease in bandwidth ; 
 		I think that 1.5nf is too high.  It does kill the noise, though! 
-		I would estimate that somewhere around 500pf with 330k/27k feedback restistors 
+		I would estimate that somewhere around 500pf with 330k/27k feedback resistors 
 		would work well. (tested this, seems ok!)
 	2.3  The output of this amp was cleaner, but yet still I feel it's missing part of the signal - 
 		There is a certain 'flutter' to the EMG (as subjectively judged through headphones)
@@ -128,4 +128,5 @@ for the microstimulator:
 	Anyway, the capacitive term dominates, so should try to minimize this 
 	(e.g. 300 ohm line?) 
 	The cable on Joey's setup is rather long, bleh. 
+	solution = USB? 
 	

@@ -1,4 +1,4 @@
-update=Tue 18 Aug 2009 02:23:38 PM EDT
+update=Wed 13 Jan 2010 05:31:46 PM EST
 last_client=eeschema
 [pcbnew]
 version=1
@@ -88,6 +88,6 @@ UseNetN=0
 LabSize=60
 [eeschema/libraries]
 LibName1=device
-LibName2=power
-LibName3=emg_sym
+LibName2=/home/tlh24/svn/myopen/emg_dsp/lib/emg_sym
+LibName3=power
 LibName4=linear
