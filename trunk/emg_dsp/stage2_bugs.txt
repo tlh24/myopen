@@ -1,4 +1,4 @@
-fixes to stage2: 
+fixes to stage2 (see also stage2_notes.txt): 
 1. nRF24L01 footprint is incorrect. 
 2. MAX3421E needs to run on 3V min, not 2.85v.  
 	At 2.85V it will work only intermittently! 
