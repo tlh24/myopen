@@ -1,6 +1,7 @@
 #ifdef __ADSPBF532__
 #include "../common/spi.h"
 #include "print.h"
+#include "headstage.h"
 #endif
 
 #ifdef __ADSPBF537__
@@ -105,7 +106,7 @@ void usb_init() {
 	//let's just see if we can talk to the USB controller. 
 	//first have to set the SPI port up properly. 
 	*pSPI_CTL = 0; //disable while configuring. 
-	*pSPI_BAUD = 16 ; //baud rate = SCLK / (2*(SPI_BAUD+1)) = 12Mhz. 
+	*pSPI_BAUD = 12 ; //baud rate = SCLK / (2*SPI_BAUD) = 12Mhz. 
 	*pSPI_FLG = 0; //don't use flags.
 	*pSPI_STAT = 0x56 ; //clear the flags.
 	*pSPI_CTL = TDBR_CORE | SZ | EMISO| GM | MSTR | SPE ; 
@@ -230,9 +231,12 @@ void service_irqs(void){
 		}
 		printf_newline(); 
 		wreg(rEPIRQ, bmOUT1DAVIRQ); //is this needed? 
+#ifdef __ADSPBF532__
 		//give a response.. or so. 
-		writebytes(rEP2INFIFO,12,"status=good\n");
-		wregAS(rEP2INBC,12);   // load EP2BC to arm the EP2-IN transfer & ACKSTAT
+		usb_rxbytes ++; 
+		writebytes(rEP2INFIFO,5,(u8*)"ack!\n");
+		wregAS(rEP2INBC,5);   // load EP2BC to arm the EP2-IN transfer & ACKSTAT
+#endif
 	}
 	if((g_configval != 0) && (itest2&bmSUSPIRQ)){   // HOST suspended bus for 3 msec
 		//printf_str("usb irq: host suspend\n"); 
