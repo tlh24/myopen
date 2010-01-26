@@ -1,9 +1,9 @@
-EESchema Schematic File Version 2  date Mon 25 Jan 2010 04:58:41 PM EST
-LIBS:power,device,emg_sym
+EESchema Schematic File Version 2  date Tue 26 Jan 2010 01:03:54 AM EST
+LIBS:power,device,emg_sym,./stage4.cache
 EELAYER 24  0
 EELAYER END
 $Descr User 17000 9000
-Sheet 1 37
+Sheet 1 38
 Title ""
 Date "9 jan 2009"
 Rev ""
@@ -13,10 +13,14 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
-Text Label 11650 2950 0    60   ~ 0
-TSCLK0
 Wire Wire Line
-	11150 2950 11250 2950
+	5050 5100 5300 5100
+Wire Wire Line
+	5150 4550 5050 4550
+Wire Wire Line
+	5050 4250 5150 4250
+Wire Wire Line
+	11250 2950 11150 2950
 Wire Wire Line
 	11150 2950 11150 2300
 Wire Wire Line
@@ -314,10 +318,6 @@ Wire Wire Line
 Wire Wire Line
 	3850 6850 4050 6850
 Wire Wire Line
-	5150 5100 5300 5100
-Wire Wire Line
-	5750 4400 5150 4400
-Wire Wire Line
 	5450 2900 5600 2900
 Wire Wire Line
 	7700 7700 8000 7700
@@ -418,11 +418,7 @@ Wire Wire Line
 	6300 6900 6300 8150
 Connection ~ 6300 8100
 Wire Wire Line
-	5750 4100 5150 4100
-Wire Wire Line
-	5150 5250 5300 5250
-Wire Wire Line
-	5300 5250 5300 5350
+	5300 5100 5300 5200
 Wire Wire Line
 	3850 7250 4050 7250
 Wire Wire Line
@@ -756,6 +752,26 @@ Wire Wire Line
 	9450 2700 8600 2700
 Wire Wire Line
 	11150 2300 10750 2300
+Wire Wire Line
+	5050 4100 5750 4100
+Wire Wire Line
+	5050 4400 5750 4400
+Wire Wire Line
+	5050 4950 5300 4950
+$Sheet
+S 4150 3850 900  1400
+U 4B5E1FC8
+F0 "afe3" 60
+F1 "afe3.sch" 60
+F2 "Gnd_digital" I R 5050 5100 60 
+F3 "Vdd_digital" I R 5050 4950 60 
+F4 "Dout" O R 5050 4550 60 
+F5 "_cs" I R 5050 4400 60 
+F6 "Din" I R 5050 4250 60 
+F7 "CLK" I R 5050 4100 60 
+$EndSheet
+Text Label 11650 2950 0    60   ~ 0
+TSCLK0
 $Comp
 L JUMP U?
 U 1 1 4B5E0A6A
@@ -2654,19 +2670,19 @@ $EndComp
 $Comp
 L GND #PWR073
 U 1 1 490159EC
-P 5300 5350
-F 0 "#PWR073" H 5300 5350 30  0001 C CNN
-F 1 "GND" H 5300 5280 30  0001 C CNN
-	1    5300 5350
+P 5300 5200
+F 0 "#PWR073" H 5300 5200 30  0001 C CNN
+F 1 "GND" H 5300 5130 30  0001 C CNN
+	1    5300 5200
 	1    0    0    -1  
 $EndComp
 $Comp
 L VDD #PWR074
 U 1 1 490159E9
-P 5300 5100
-F 0 "#PWR074" H 5300 5200 30  0001 C CNN
-F 1 "VDD" H 5300 5210 30  0000 C CNN
-	1    5300 5100
+P 5300 4950
+F 0 "#PWR074" H 5300 5050 30  0001 C CNN
+F 1 "VDD" H 5300 5060 30  0000 C CNN
+	1    5300 4950
 	1    0    0    -1  
 $EndComp
 Text Label 7750 4900 0    60   ~ 0
@@ -3096,18 +3112,6 @@ F 2 "ABM10" H 8300 6250 60  0000 C CNN
 	1    8300 6000
 	1    0    0    -1  
 $EndComp
-$Sheet
-S 4000 3650 1150 1900
-U 48FFEE1B
-F0 "afe2" 60
-F1 "afe2.sch" 60
-F2 "Gnd_digital" I R 5150 5250 60 
-F3 "Vdd_digital" I R 5150 5100 60 
-F4 "Dout" O R 5150 4550 60 
-F5 "_cs" I R 5150 4400 60 
-F6 "Din" I R 5150 4250 60 
-F7 "CLK" I R 5150 4100 60 
-$EndSheet
 $Sheet
 S 4200 1350 1250 1900
 U 48C9FDD8
