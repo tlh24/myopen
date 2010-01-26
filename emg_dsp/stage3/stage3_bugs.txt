@@ -46,6 +46,10 @@ Notes on operation of stage3:
 	2.4 Tried with mismatched electrode impedance - one wet gel, one dry cup - still worked ok. 
 	** I now feel that this is the best of the lot - cheap, works well, simplest circuit
 	(just ground referenced, no integrator-stabilized ref pin). 
+	2.5 for reference, the voltage output for dry-cup electrodes, G = 13.22 (INA) * 13 (opamp) 
+	was peak 1.5V (pk-pk 3V), usually 1V with full muscular contraction on my bicep, 
+	electrodes about 2" apart.
+	Moving the electrode wires around allowed about 2.5V excursions.  
 3. INA116 - good, but not as impressive as I might have expected.  
 	Changed the gain to 10; was 100.  
 	Too expensive for our application, and the femto-amp input current does not seem to buy 
