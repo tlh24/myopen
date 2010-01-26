@@ -106,7 +106,7 @@ void usb_init() {
 	//let's just see if we can talk to the USB controller. 
 	//first have to set the SPI port up properly. 
 	*pSPI_CTL = 0; //disable while configuring. 
-	*pSPI_BAUD = 12 ; //baud rate = SCLK / (2*SPI_BAUD) = 12Mhz. 
+	*pSPI_BAUD = 5 ; //baud rate = SCLK / (2*SPI_BAUD) = 12Mhz. 
 	*pSPI_FLG = 0; //don't use flags.
 	*pSPI_STAT = 0x56 ; //clear the flags.
 	*pSPI_CTL = TDBR_CORE | SZ | EMISO| GM | MSTR | SPE ; 
@@ -234,8 +234,13 @@ void service_irqs(void){
 #ifdef __ADSPBF532__
 		//give a response.. or so. 
 		usb_rxbytes ++; 
-		writebytes(rEP2INFIFO,5,(u8*)"ack!\n");
-		wregAS(rEP2INBC,5);   // load EP2BC to arm the EP2-IN transfer & ACKSTAT
+		if(j == 0x0a) {
+			writebytes(rEP2INFIFO,5,(u8*)"-ack!\n");
+			wregAS(rEP2INBC,5);   // load EP2BC to arm the EP2-IN transfer & ACKSTAT
+		}else{
+			writebytes(rEP2INFIFO,1,(u8*)&j);
+			wregAS(rEP2INBC,1);   // load EP2BC to arm the EP2-IN transfer & ACKSTAT
+		}
 #endif
 	}
 	if((g_configval != 0) && (itest2&bmSUSPIRQ)){   // HOST suspended bus for 3 msec

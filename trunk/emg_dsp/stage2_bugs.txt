@@ -80,3 +80,30 @@ Notes on operation:
 16.  big problem with the MAX usb chip - it really needs to run at 3.3V. 
 	I mistakenly plugged it into 4.6V, and think I broke it, shit - does not 
 	respond to USB requests properly anymore. guess I'll have to make another board.
+17. replaced the max chip.  works again!  yay!
+18. changed the pulldown on the reset signal to the max chip from 100k to 4.5k. 
+	The processor seems to boot somewhat more reliably - there must be weak pull-ups 
+	in PORTF while tristated during boot that keeps the MAX3421 out of reset, 
+	hence contending for the SPIO bus. 
+19. Now cutecom is crashing after a little bit - and MAX3421's INT pin is high. 
+	I wonder why? 
+	Looks like it is also high upon boot. 
+	GPX pin is oscillating w/ a freq of 1kHz on boot .. ? 
+	This square wave stops after cutecom crashes. 
+	Looks like the processor goes into complete chaos; at least, that's what the SPI bus looks like. 
+	Perhaps this is a result of the overvoltage damage? 
+	no, it seems if we write to the 3421 properly, it works; it /is/ a code chaos problem. 
+20. Now the problem seems to be that all the samples are exactly the same.. ? 
+21. ok, got it transmitting 16-bit samples, but the freq of the 60hz is not right. 
+	Let's test the actual transmission with a ramp, and see where the noise/inaccuracy is. 
+	Seems to be with the USB - getting dropped packets, wtf. 
+	If i fopen the /dev/ttyUSB0 in matlab, and fread it, still get jumps in the ramp - 
+	clearly, packets are being dropped. 
+	also get jumps in the output - let's try slowing down the SPI bus and see if that helps. 
+	maybe the packets are too large? 
+	maybe should write them all at once? hmm. I have a feeling that we may be overwriting the MAX's fifo.
+	it's probably best to write the whole thing at once. 
+	Nope, i looked at the spec sheet and the output fifo is doubled-buffered.
+	The issue is with the USB bus - our device seems to come up as a polling-based serial port, 
+	at least with the generic driver.  you know what I need?  I need a good book on USB. 
+22. I'll try changing the config. 
