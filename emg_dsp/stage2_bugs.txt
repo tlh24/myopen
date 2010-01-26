@@ -71,3 +71,12 @@ Notes on operation:
 	sudo insmod usbserial.ko vendor=0x0b6a product=0x5346
 	(that's the vendor and serial number of our virtual device). 
 	note - should try to increase the clock rate on the SPI bus.. and check this! 
+15. now get it to write out data.  want one channel @ full rate (58,823sps), 16 bits = 
+	<1mbps, hence USB should be able to handle it. 
+	okay, USB SS is not firing. 
+	fixed!  problem with my statebased control logic. 
+	Now it seems that we really need a client program to display all this data - 
+	importing into matlab is not very effective. 
+16.  big problem with the MAX usb chip - it really needs to run at 3.3V. 
+	I mistakenly plugged it into 4.6V, and think I broke it, shit - does not 
+	respond to USB requests properly anymore. guess I'll have to make another board.
