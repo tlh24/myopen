@@ -126,4 +126,7 @@ Notes on operation:
 	Test tone generator is ~ 400mV pk-pk w/ -20dB attenuation selected. 
 	Hence, input to the headstage is 40uV.  
 	on the output of the opamp, it's about 90mV pk-pk. gain =2200.  Hmm, guess that's correct. 
+28. Tested, via plexon, our custom headstages.  (I am assuming that the measurements are accurate?)
+	~ 18uV pk-pk noise with input shorted. This is about 2X better than stage2's amps. 
+	100uV pk-pk noise with artificial rat.  This is commensurate with stage2's amps.
 	

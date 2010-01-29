@@ -1,9 +1,9 @@
-EESchema Schematic File Version 2  date Mon 11 Jan 2010 07:17:06 PM EST
-LIBS:device,power,emg_sym,linear,./microstim.cache
+EESchema Schematic File Version 2  date Wed 27 Jan 2010 12:44:09 PM EST
+LIBS:device,power,emg_sym,linear,./stage3.cache
 EELAYER 24  0
 EELAYER END
 $Descr User 16000 12000
-Sheet 1 1
+Sheet 1 2
 Title ""
 Date "15 oct 2009"
 Rev ""

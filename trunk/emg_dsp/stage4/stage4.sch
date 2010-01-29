@@ -1,9 +1,9 @@
-EESchema Schematic File Version 2  date Tue 26 Jan 2010 03:16:39 PM EST
+EESchema Schematic File Version 2  date Thu 28 Jan 2010 05:31:53 PM EST
 LIBS:power,device,emg_sym,./stage4.cache
 EELAYER 24  0
 EELAYER END
 $Descr User 17000 9000
-Sheet 1 38
+Sheet 1 39
 Title ""
 Date "9 jan 2009"
 Rev ""
@@ -820,7 +820,7 @@ PPI0
 Text Label 2200 3350 0    60   ~ 0
 RESET
 Text Label 550  700  0    60   ~ 0
-Vbat
+V5
 $Comp
 L GND #PWR?
 U 1 1 4B5E03DD
@@ -1806,7 +1806,7 @@ NoConn ~ 9450 5700
 Text Label 11700 4600 0    60   ~ 0
 Vbat
 Text Label 1800 7050 0    60   ~ 0
-Vbat
+V5
 $Comp
 L GND #PWR042
 U 1 1 490685E2

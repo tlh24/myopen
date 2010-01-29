@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Tue 26 Jan 2010 03:16:39 PM EST
+EESchema Schematic File Version 2  date Tue 26 Jan 2010 06:07:26 PM EST
 LIBS:power,device,emg_sym,./stage4.cache
 EELAYER 24  0
 EELAYER END
