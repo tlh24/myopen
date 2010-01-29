@@ -1,4 +1,4 @@
-state2 notes: 
+stage2 notes: 
 x array distance on the LMV1023 circuit: 0.247"
 y array distance : 0.057
 
