@@ -240,6 +240,9 @@ void service_irqs(void){
 		}else{
 			writebytes(rEP2INFIFO,1,(u8*)&j);
 			wregAS(rEP2INBC,1);   // load EP2BC to arm the EP2-IN transfer & ACKSTAT
+			//change portF accordingly. 
+			*FIO_SET = (((u16)j - 97) << 12) & 0xf000; // 97 = 'a'
+			*FIO_CLEAR = ((((u16)j - 97) << 12)^0xf000) & 0xf000; 
 		}
 #endif
 	}

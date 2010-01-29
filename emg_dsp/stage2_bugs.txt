@@ -106,4 +106,24 @@ Notes on operation:
 	Nope, i looked at the spec sheet and the output fifo is doubled-buffered.
 	The issue is with the USB bus - our device seems to come up as a polling-based serial port, 
 	at least with the generic driver.  you know what I need?  I need a good book on USB. 
-22. I'll try changing the config. 
+22. I'll try changing the config - no that won't change anything - need to look at the generic USB driver. 
+23. Changed the packet size to 64 - the largest supported by the MAX4321 - and now it looks perfect. 
+	WTH??!!  anyway, awsome!  now I can fread it in matlab to my heart's content :-)
+24.  fread into matlab with the input pins shorted -> mean 1222, std 76.  not so good.  ~= pk-pk 400. 
+	That's a noise voltage of 2.7*400 / (2^12 * 2000) = 150uV.  baad. Let's look at the other channel.
+25. Other channel, sdt(noise) = 2.5 (samples), pk-pk = 13 more or less.  this is a resolution of 
+	2.7*13 / (2^12 * 2000) = 4uV - all with no filtering (filtering may remove more noise). 
+26.  Tried channel 'e' (4, first row) & got std(noise) = 49; 16uV; w/ input shorted; getting some AM signal in there.  
+	Noise seems very white; little 60Hz. (minus the AM stuff). 
+	Will try disabling everything on the proc & see if that makes the signal better.
+	Right now If i plug in the artificial monkey, noise goes to hell - it's bad. 
+	With no processor activity, noise seems mosly unchanged. 
+	Measured, at output of opamp, with input shorted: ~90mV pk-pk.  That's about 45uV at the source (gain = ~2k)
+	Measured, at output of opamp, with artificial rat: 200mV pk-pk.  That's 100uV at source. 
+	SNR is about 1 (0db).  perhaps we need better amps on the FE? 
+	Will test this with plexon headstages. 
+27. Checked and the artificial rat/monkey is as labeled - 10,000 attenuation for loop input, 1,000 for audio. 
+	Test tone generator is ~ 400mV pk-pk w/ -20dB attenuation selected. 
+	Hence, input to the headstage is 40uV.  
+	on the output of the opamp, it's about 90mV pk-pk. gain =2200.  Hmm, guess that's correct. 
+	
