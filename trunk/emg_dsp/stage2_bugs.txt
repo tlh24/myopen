@@ -147,4 +147,7 @@ Notes on operation:
 	I guess it's not that much different ... just much more high-freq energy. 
 	Again, to quantify: noise floor | bias = 0V =~ 77dB ; noise floor | bias = 0.684V =~ 87dB.  
 	Hence, about 3x increase in white noise, and hence I should capacitively couple each amplifier stage.
+31.  **REMEMBER** to change the solder-mak openings on the MicroSMD-4 footprint prior sending to the foundry!  
+	I checked the board, and the pads seem to be the right size (0.275mm), 
+	and the holes on the solder paste mask are 0.31mm.  Making the pads square now .. a little extra Au is good.
 	
