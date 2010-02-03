@@ -1,9 +1,9 @@
-EESchema Schematic File Version 2  date Mon 01 Feb 2010 06:40:42 PM EST
-LIBS:power,device,emg_sym,./stage4.cache
+EESchema Schematic File Version 2  date Tue 02 Feb 2010 08:14:07 PM EST
+LIBS:power,device,emg_sym,/home/tlh24/svn/myopen/emg_dsp/lib/linear,./stage4.cache
 EELAYER 24  0
 EELAYER END
-$Descr User 17000 9000
-Sheet 1 39
+$Descr User 16000 12000
+Sheet 1 44
 Title ""
 Date "9 jan 2009"
 Rev ""
@@ -13,736 +13,1538 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
-Connection ~ 750  2350
-Connection ~ 750  2450
+$Comp
+L VEE #PWR?
+U 1 1 4B68CB9F
+P 1800 6550
+F 0 "#PWR?" H 1800 6750 40  0001 C CNN
+F 1 "VEE" H 1800 6700 40  0000 C CNN
+	1    1800 6550
+	1    0    0    -1  
+$EndComp
+Connection ~ 4100 6350
 Wire Wire Line
-	750  2450 750  2150
+	3100 2000 2800 2000
+Connection ~ 18900 1950
 Wire Wire Line
-	550  1600 1200 1600
+	18900 2150 18900 1950
+Connection ~ 18300 1750
 Wire Wire Line
-	5050 5100 5300 5100
+	18300 2150 18300 1750
+Connection ~ 17700 1550
 Wire Wire Line
-	5150 4550 5050 4550
+	17700 2150 17700 1550
+Connection ~ 17100 1350
 Wire Wire Line
-	5050 4250 5150 4250
+	17100 2150 17100 1350
 Wire Wire Line
-	11250 2950 11150 2950
+	17050 1450 19300 1450
 Wire Wire Line
-	11150 2950 11150 2300
+	17050 1650 19300 1650
 Wire Wire Line
-	9450 2600 8600 2600
+	17050 1850 19300 1850
 Wire Wire Line
-	9450 2800 8600 2800
+	17050 2050 19300 2050
+Connection ~ 5150 4250
+Connection ~ 5150 4550
+Connection ~ 5550 4400
+Connection ~ 5150 4400
+Connection ~ 5150 4100
+Connection ~ 5600 4100
+Connection ~ 11950 4100
 Wire Wire Line
-	9450 3000 8600 3000
-Connection ~ 1200 1600
-Connection ~ 1350 7050
+	11700 4100 12100 4100
 Wire Wire Line
-	800  7050 2350 7050
+	11700 3900 12100 3900
+Connection ~ 11950 3700
 Wire Wire Line
-	1350 5700 1300 5700
+	11700 3700 12100 3700
 Wire Wire Line
-	3150 5500 2900 5500
+	4550 5850 4650 5850
+Connection ~ 4150 7750
 Wire Wire Line
-	2900 5500 2900 5850
+	4550 8250 4650 8250
 Wire Wire Line
-	2900 5850 2300 5850
+	550  2150 1200 2150
 Wire Wire Line
-	850  5350 850  5450
+	650  2450 850  2450
+Connection ~ 1200 2150
 Wire Wire Line
-	850  5450 1350 5450
-Wire Wire Line
-	850  5100 850  5200
-Wire Wire Line
-	850  5200 1350 5200
-Wire Wire Line
-	3150 6000 3150 5900
-Wire Wire Line
-	3050 5200 3150 5200
-Wire Wire Line
-	3150 5100 3050 5100
-Wire Wire Line
-	2300 5350 2550 5350
-Wire Wire Line
-	1950 4750 1950 4900
-Wire Wire Line
-	1350 4750 1350 4850
-Wire Wire Line
-	7700 7100 7800 7100
-Wire Wire Line
-	8250 3000 8300 3000
-Connection ~ 7900 2600
-Wire Wire Line
-	8350 2800 8350 2600
-Wire Wire Line
-	8350 2600 7750 2600
-Wire Wire Line
-	10750 1600 10800 1600
-Wire Wire Line
-	1350 7800 1350 8050
-Connection ~ 15900 1250
-Wire Wire Line
-	16850 700  16000 700 
-Wire Wire Line
-	16000 700  16000 1250
-Wire Wire Line
-	16000 1250 15650 1250
-Connection ~ 15800 1450
-Wire Wire Line
-	16850 900  16100 900 
-Wire Wire Line
-	16100 900  16100 1450
-Wire Wire Line
-	16100 1450 15650 1450
-Wire Wire Line
-	16850 1100 16200 1100
-Wire Wire Line
-	16200 1100 16200 1650
-Wire Wire Line
-	16200 1650 15650 1650
-Wire Wire Line
-	16850 1300 16300 1300
-Wire Wire Line
-	16300 1300 16300 1850
-Wire Wire Line
-	16300 1850 15650 1850
-Wire Wire Line
-	15850 1350 15850 2150
-Wire Wire Line
-	16300 2300 16300 2100
-Wire Wire Line
-	16300 2100 15900 2100
-Wire Wire Line
-	15900 2100 15900 1250
-Wire Wire Line
-	15400 2300 15400 2100
-Wire Wire Line
-	15400 2100 15750 2100
-Wire Wire Line
-	15750 2100 15750 1550
-Wire Wire Line
-	15650 1150 15700 1150
-Wire Wire Line
-	14400 1000 14400 1050
-Connection ~ 13300 1050
-Wire Wire Line
-	6650 1050 13900 1050
-Wire Wire Line
-	3450 1700 3450 2000
-Wire Wire Line
-	2650 4050 2650 4100
-Wire Wire Line
-	3350 3650 3400 3650
-Connection ~ 3500 3550
-Wire Wire Line
-	3350 3550 3500 3550
-Connection ~ 2650 3650
-Wire Wire Line
-	2750 3650 2200 3650
-Wire Wire Line
-	2200 3350 2350 3350
-Connection ~ 2300 4100
-Wire Wire Line
-	2200 4100 2300 4100
-Connection ~ 3500 2900
-Wire Wire Line
-	3500 2900 3500 2950
-Wire Wire Line
-	3050 2900 4000 2900
-Wire Wire Line
-	3050 2900 3050 2700
-Wire Wire Line
-	2800 1550 2800 1600
-Wire Wire Line
-	2200 2000 2250 2000
-Connection ~ 2500 2400
-Wire Wire Line
-	2500 2000 2500 2400
-Wire Wire Line
-	2550 2400 2350 2400
-Wire Wire Line
-	2350 2400 2350 2500
-Wire Wire Line
-	2350 2500 2200 2500
-Wire Wire Line
-	2200 2300 2200 2250
-Wire Wire Line
-	2200 2250 3050 2250
-Connection ~ 2800 2250
-Connection ~ 900  1600
-Connection ~ 750  2150
-Wire Wire Line
-	1200 2100 1200 2150
-Wire Wire Line
-	550  2100 550  2150
-Wire Wire Line
-	7900 2600 7900 2700
-Wire Wire Line
-	7900 2700 7750 2700
-Wire Wire Line
-	9450 5100 9200 5100
-Connection ~ 10850 5750
-Wire Wire Line
-	10850 5850 10850 3350
-Connection ~ 10850 3450
-Wire Wire Line
-	10750 3450 10850 3450
-Connection ~ 10850 3650
-Wire Wire Line
-	10850 3650 10750 3650
-Connection ~ 10850 3850
-Wire Wire Line
-	10850 3850 10750 3850
-Connection ~ 10850 4050
-Wire Wire Line
-	10850 4050 10750 4050
-Connection ~ 10850 4250
-Wire Wire Line
-	10850 4250 10750 4250
-Connection ~ 10850 4450
-Wire Wire Line
-	10850 4450 10750 4450
-Connection ~ 10850 4650
-Wire Wire Line
-	10850 4650 10750 4650
-Connection ~ 10850 4850
-Wire Wire Line
-	10850 4850 10750 4850
-Connection ~ 10850 5050
-Wire Wire Line
-	10850 5050 10750 5050
-Connection ~ 10850 5250
-Wire Wire Line
-	10850 5250 10750 5250
-Connection ~ 10850 5450
-Wire Wire Line
-	10850 5450 10750 5450
-Connection ~ 10850 5650
-Wire Wire Line
-	10850 5650 10750 5650
-Connection ~ 9300 5000
-Wire Wire Line
-	9450 5000 9300 5000
-Connection ~ 9300 5200
-Wire Wire Line
-	9450 5200 9300 5200
-Wire Wire Line
-	9450 5400 9300 5400
-Wire Wire Line
-	9300 5400 9300 4900
-Wire Wire Line
-	9300 4900 9450 4900
-Connection ~ 9300 3850
-Wire Wire Line
-	9450 3850 9300 3850
-Connection ~ 9300 4050
-Wire Wire Line
-	9450 4050 9300 4050
-Connection ~ 9300 4350
-Wire Wire Line
-	9450 4350 9300 4350
-Connection ~ 9300 4550
-Wire Wire Line
-	9450 4550 9300 4550
-Wire Wire Line
-	9450 4750 9300 4750
-Wire Wire Line
-	9300 3650 9450 3650
-Wire Wire Line
-	11700 4000 11750 4000
-Wire Wire Line
-	12100 4300 11700 4300
-Wire Wire Line
-	12100 4500 11700 4500
-Connection ~ 12750 650 
-Connection ~ 12200 650 
-Connection ~ 10550 650 
-Connection ~ 3750 650 
-Wire Wire Line
-	3750 650  3750 600 
-Wire Wire Line
-	1750 650  5650 650 
-Wire Wire Line
-	11550 6700 11300 6700
-Connection ~ 14050 5250
-Wire Wire Line
-	14150 5250 11350 5250
-Connection ~ 13150 5250
-Connection ~ 12150 5250
-Wire Wire Line
-	11350 5250 11350 7250
-Wire Wire Line
-	12750 6300 12850 6300
-Wire Wire Line
-	13050 7000 12900 7000
-Wire Wire Line
-	12900 7000 12900 6600
-Wire Wire Line
-	12900 6600 12750 6600
-Wire Wire Line
-	4800 7700 4800 7250
-Connection ~ 4800 7250
-Wire Wire Line
-	1800 7050 1800 6700
-Connection ~ 2100 7050
-Wire Wire Line
-	4950 6450 4950 6350
-Wire Wire Line
-	4650 7250 4950 7250
-Wire Wire Line
-	2100 7050 2100 7850
-Wire Wire Line
-	2100 7850 3950 7850
-Wire Wire Line
-	3950 7850 3950 6950
-Wire Wire Line
-	3950 6950 3850 6950
-Wire Wire Line
-	4650 7750 2350 7750
-Wire Wire Line
-	2350 7750 2350 7250
-Wire Wire Line
-	4650 6850 4950 6850
-Wire Wire Line
-	3850 6850 4050 6850
-Wire Wire Line
-	5450 2900 5600 2900
-Wire Wire Line
-	7700 7700 8000 7700
-Wire Wire Line
-	7700 6900 8000 6900
-Wire Wire Line
-	6500 7300 6200 7300
-Connection ~ 6300 7700
-Wire Wire Line
-	6300 7700 6500 7700
-Wire Wire Line
-	6300 8100 6500 8100
-Wire Wire Line
-	6500 6900 6300 6900
-Connection ~ 14100 3300
-Wire Wire Line
-	14350 3300 11950 3300
-Wire Wire Line
-	12100 4100 11950 4100
-Wire Wire Line
-	11950 4100 11950 4700
-Wire Wire Line
-	11950 4700 13750 4700
-Wire Wire Line
-	13750 4700 13750 3850
-Wire Wire Line
-	13750 3850 14000 3850
-Wire Wire Line
-	13350 3800 13500 3800
-Wire Wire Line
-	13500 3800 13500 3950
-Wire Wire Line
-	13500 3950 14000 3950
-Connection ~ 13350 3300
-Wire Wire Line
-	13600 3300 13600 4150
-Wire Wire Line
-	13250 2250 13300 2250
-Wire Wire Line
-	13250 2050 13300 2050
-Wire Wire Line
-	11950 2150 11600 2150
-Connection ~ 8800 5950
-Wire Wire Line
-	8800 6050 8800 5800
-Wire Wire Line
-	8800 5800 7750 5800
-Wire Wire Line
-	8000 6050 7850 6050
-Wire Wire Line
-	7750 5900 7850 5900
-Wire Wire Line
-	7850 5900 7850 6050
-Wire Wire Line
-	11600 1600 11600 1650
-Wire Wire Line
-	13250 2150 13300 2150
-Wire Wire Line
-	11950 2750 12100 2750
-Wire Wire Line
-	13600 4150 14000 4150
-Wire Wire Line
-	12100 3700 11950 3700
-Wire Wire Line
-	11950 3700 11950 3300
-Wire Wire Line
-	13350 3600 13350 3300
-Wire Wire Line
-	14000 3750 13750 3750
-Wire Wire Line
-	13750 3750 13750 3700
-Wire Wire Line
-	13750 3700 13350 3700
-Wire Wire Line
-	14000 4050 13450 4050
-Wire Wire Line
-	13450 4050 13450 3900
-Wire Wire Line
-	13450 3900 13350 3900
-Wire Wire Line
-	14100 3300 14100 2950
-Connection ~ 13600 3300
-Wire Wire Line
-	14100 2750 14350 2750
-Wire Wire Line
-	14350 2750 14350 2800
-Wire Wire Line
-	6500 7500 6300 7500
-Connection ~ 6300 7500
-Wire Wire Line
-	6300 7900 6500 7900
-Connection ~ 6300 7900
-Wire Wire Line
-	5700 7300 5600 7300
-Wire Wire Line
-	8500 6850 8500 6900
-Wire Wire Line
-	6300 6900 6300 8150
-Connection ~ 6300 8100
-Wire Wire Line
-	5300 5100 5300 5200
-Wire Wire Line
-	3850 7250 4050 7250
-Wire Wire Line
-	5350 6850 5350 7300
-Connection ~ 5350 7250
-Wire Wire Line
-	2350 7150 2200 7150
-Wire Wire Line
-	2200 7150 2200 8350
-Wire Wire Line
-	3850 7150 3950 7150
-Connection ~ 3950 7150
-Wire Wire Line
-	4950 7250 4950 8350
-Wire Wire Line
-	4950 8350 2200 8350
-Wire Wire Line
-	2350 6850 2350 6350
-Wire Wire Line
-	2350 6350 4950 6350
-Connection ~ 4650 6350
-Connection ~ 1800 7050
-Connection ~ 4800 6850
-Wire Wire Line
-	4800 6200 4800 6850
-Wire Wire Line
-	13650 7000 14500 7000
-Wire Wire Line
-	14500 7000 14500 7650
-Wire Wire Line
-	14500 7650 12750 7650
-Wire Wire Line
-	12750 7650 12750 6700
-Connection ~ 14150 7000
-Wire Wire Line
-	12750 6500 12900 6500
-Wire Wire Line
-	12900 6500 12900 6400
-Wire Wire Line
-	12900 6400 13050 6400
-Wire Wire Line
-	14050 6400 14750 6400
-Wire Wire Line
-	12050 7100 12050 7250
-Wire Wire Line
-	12050 7250 11350 7250
-Wire Wire Line
-	12150 5900 12150 5250
-Wire Wire Line
-	12850 6300 12850 5250
-Connection ~ 12850 5250
-Connection ~ 13550 5250
-Wire Wire Line
-	12750 6400 12800 6400
-Wire Wire Line
-	11550 6400 11300 6400
-Wire Wire Line
-	1750 1050 5650 1050
-Connection ~ 2300 650 
-Connection ~ 2850 650 
-Connection ~ 3450 650 
-Connection ~ 4050 650 
-Connection ~ 4650 650 
-Connection ~ 5150 650 
-Connection ~ 5150 1050
-Connection ~ 4650 1050
-Connection ~ 4050 1050
-Connection ~ 3450 1050
-Connection ~ 2850 1050
-Connection ~ 2300 1050
-Wire Wire Line
-	3750 1050 3750 1150
-Connection ~ 3750 1050
-Connection ~ 8650 650 
-Wire Wire Line
-	8650 600  8650 650 
-Connection ~ 7200 650 
-Connection ~ 7750 650 
-Connection ~ 8350 650 
-Connection ~ 8950 650 
-Connection ~ 9550 650 
-Connection ~ 10050 650 
-Connection ~ 10050 1050
-Connection ~ 9550 1050
-Connection ~ 8950 1050
-Connection ~ 8350 1050
-Connection ~ 7750 1050
-Connection ~ 7200 1050
-Wire Wire Line
-	8650 1050 8650 1150
-Connection ~ 8650 1050
-Connection ~ 10550 1050
-Connection ~ 11100 1050
-Connection ~ 11600 1050
-Connection ~ 11600 650 
-Connection ~ 11100 650 
-Connection ~ 12200 1050
-Connection ~ 12750 1050
-Wire Wire Line
-	12100 4400 11700 4400
-Wire Wire Line
-	12100 4200 11700 4200
-Wire Wire Line
-	11700 4100 11750 4100
-Wire Wire Line
-	9450 4650 9300 4650
-Connection ~ 9300 4650
-Wire Wire Line
-	9450 4450 9300 4450
-Connection ~ 9300 4450
-Wire Wire Line
-	9450 4250 9300 4250
-Connection ~ 9300 4250
-Wire Wire Line
-	9450 4150 9300 4150
-Connection ~ 9300 4150
-Wire Wire Line
-	9450 3950 9300 3950
-Connection ~ 9300 3950
-Wire Wire Line
-	9450 3750 9300 3750
-Connection ~ 9300 3750
-Wire Wire Line
-	9300 5300 9450 5300
-Connection ~ 9300 5300
-Connection ~ 9300 5100
-Wire Wire Line
-	10850 3350 10750 3350
-Wire Wire Line
-	10850 5750 10750 5750
-Wire Wire Line
-	10850 5550 10750 5550
-Connection ~ 10850 5550
-Wire Wire Line
-	10850 5350 10750 5350
-Connection ~ 10850 5350
-Wire Wire Line
-	10850 5150 10750 5150
-Connection ~ 10850 5150
-Wire Wire Line
-	10850 4950 10750 4950
-Connection ~ 10850 4950
-Wire Wire Line
-	10850 4750 10750 4750
-Connection ~ 10850 4750
-Wire Wire Line
-	10850 4550 10750 4550
-Connection ~ 10850 4550
-Wire Wire Line
-	10850 4350 10750 4350
-Connection ~ 10850 4350
-Wire Wire Line
-	10850 4150 10750 4150
-Connection ~ 10850 4150
-Wire Wire Line
-	10850 3950 10750 3950
-Connection ~ 10850 3950
-Wire Wire Line
-	10850 3750 10750 3750
-Connection ~ 10850 3750
-Wire Wire Line
-	10850 3550 10750 3550
-Connection ~ 10850 3550
-Wire Wire Line
-	9300 4750 9300 3600
-Connection ~ 9300 3650
-Wire Wire Line
-	900  2150 900  2100
-Connection ~ 900  2150
-Wire Wire Line
-	550  1600 550  1700
-Wire Wire Line
-	1200 1600 1200 1700
-Wire Wire Line
-	900  1700 900  1500
-Wire Wire Line
-	2800 2250 2800 2000
-Wire Wire Line
-	2250 2400 2200 2400
-Wire Wire Line
-	2550 2550 2250 2550
-Wire Wire Line
-	2250 2550 2250 2000
-Connection ~ 2250 2400
-Wire Wire Line
-	2200 1550 2200 1600
-Wire Wire Line
-	2500 1550 2500 1600
-Wire Wire Line
-	3100 1550 3100 1600
-Wire Wire Line
-	4000 2900 4000 2400
-Connection ~ 4000 2550
-Wire Wire Line
-	2200 4000 2300 4000
-Wire Wire Line
-	2300 4000 2300 4150
-Wire Wire Line
-	2850 3350 2950 3350
-Wire Wire Line
-	2200 3550 2550 3550
-Wire Wire Line
-	2550 3550 2550 3450
-Wire Wire Line
-	2550 3450 3500 3450
-Wire Wire Line
-	3500 3450 3500 3650
-Wire Wire Line
-	2750 3550 2700 3550
-Wire Wire Line
-	3500 4050 3500 4100
-Wire Wire Line
-	2800 2000 3450 2000
-Connection ~ 3100 2000
-Wire Wire Line
-	3800 1550 3900 1550
-Wire Wire Line
-	3900 1550 3900 1850
-Wire Wire Line
-	3900 1850 3800 1850
-Wire Wire Line
-	6650 650  13900 650 
-Connection ~ 13300 650 
-Wire Wire Line
-	14400 1950 14400 2050
-Wire Wire Line
-	15650 1000 15650 1050
-Wire Wire Line
-	15800 1450 15800 2150
-Wire Wire Line
-	15800 2150 15700 2150
-Wire Wire Line
-	15700 2150 15700 2300
-Wire Wire Line
-	15850 2150 16000 2150
-Wire Wire Line
-	16000 2150 16000 2300
-Wire Wire Line
-	15650 1950 16350 1950
-Wire Wire Line
-	16350 1950 16350 1400
-Wire Wire Line
-	16350 1400 16850 1400
-Wire Wire Line
-	15650 1750 16250 1750
-Wire Wire Line
-	16250 1750 16250 1200
-Wire Wire Line
-	16250 1200 16850 1200
-Wire Wire Line
-	15650 1550 16150 1550
-Wire Wire Line
-	16150 1550 16150 1000
-Wire Wire Line
-	16150 1000 16850 1000
-Connection ~ 15750 1550
-Wire Wire Line
-	15650 1350 16050 1350
-Wire Wire Line
-	16050 1350 16050 800 
-Wire Wire Line
-	16050 800  16850 800 
-Connection ~ 15850 1350
-Wire Wire Line
-	1750 7800 1750 8050
-Wire Wire Line
-	8600 5950 9150 5950
-Wire Wire Line
-	9150 5950 9150 7400
-Wire Wire Line
-	9150 7400 12350 7400
-Wire Wire Line
-	12350 7400 12350 7100
-Wire Wire Line
-	7750 2800 7850 2800
-Wire Wire Line
-	7750 3000 7850 3000
-Wire Wire Line
-	9450 5550 9250 5550
-Wire Wire Line
-	2350 4650 2350 4750
-Wire Wire Line
-	1750 4750 1750 4900
-Wire Wire Line
-	2300 5150 2300 4950
-Wire Wire Line
-	2300 4950 2550 4950
-Wire Wire Line
-	2550 5350 2550 5400
-Wire Wire Line
-	3050 5100 3050 5700
-Wire Wire Line
-	3050 5700 3150 5700
-Connection ~ 3050 5200
-Wire Wire Line
-	1350 5100 1250 5100
-Wire Wire Line
-	1350 5350 1250 5350
-Wire Wire Line
-	2300 5600 2850 5600
-Wire Wire Line
-	2850 5600 2850 5300
-Wire Wire Line
-	2850 5300 3150 5300
-Wire Wire Line
-	2550 4950 2550 4900
-Wire Wire Line
-	1350 5950 1300 5950
-Connection ~ 11500 5250
-Connection ~ 11800 5250
-Wire Wire Line
-	9450 3100 8600 3100
-Wire Wire Line
-	9450 2900 8600 2900
-Wire Wire Line
-	9450 2700 8600 2700
-Wire Wire Line
-	11150 2300 10750 2300
-Wire Wire Line
-	5050 4100 5750 4100
-Wire Wire Line
-	5050 4400 5750 4400
+	750  2350 850  2350
 Wire Wire Line
 	5050 4950 5300 4950
 Wire Wire Line
-	750  2350 850  2350
-Connection ~ 1200 2150
+	5050 4400 5750 4400
 Wire Wire Line
-	650  2450 850  2450
+	5050 4100 5750 4100
 Wire Wire Line
-	550  2150 1200 2150
+	10750 2300 11150 2300
+Wire Wire Line
+	9450 2700 8600 2700
+Wire Wire Line
+	9450 2900 8600 2900
+Wire Wire Line
+	9450 3100 8600 3100
+Connection ~ 11800 5250
+Connection ~ 11500 5250
+Wire Wire Line
+	1350 5950 1300 5950
+Wire Wire Line
+	2550 4900 2550 4950
+Wire Wire Line
+	3150 5300 2850 5300
+Wire Wire Line
+	2850 5300 2850 5600
+Wire Wire Line
+	2850 5600 2300 5600
+Wire Wire Line
+	1350 5350 1250 5350
+Wire Wire Line
+	1350 5100 1250 5100
+Connection ~ 3050 5200
+Wire Wire Line
+	3150 5700 3050 5700
+Wire Wire Line
+	3050 5700 3050 5100
+Wire Wire Line
+	2550 5400 2550 5350
+Wire Wire Line
+	2550 4950 2300 4950
+Wire Wire Line
+	2300 4950 2300 5150
+Wire Wire Line
+	1750 4750 1750 4900
+Wire Wire Line
+	2350 4650 2350 4750
+Wire Wire Line
+	9450 5550 9250 5550
+Wire Wire Line
+	7750 3000 7850 3000
+Wire Wire Line
+	7750 2800 7850 2800
+Wire Wire Line
+	12350 7100 12350 7400
+Wire Wire Line
+	12350 7400 9150 7400
+Wire Wire Line
+	9150 7400 9150 5950
+Wire Wire Line
+	9150 5950 8600 5950
+Wire Wire Line
+	1750 7800 1750 8050
+Wire Wire Line
+	17050 1100 17050 1150
+Wire Wire Line
+	15800 2050 15800 2150
+Connection ~ 13300 650 
+Wire Wire Line
+	6650 650  13900 650 
+Connection ~ 3100 2000
+Wire Wire Line
+	3500 4050 3500 4100
+Wire Wire Line
+	2750 3550 2700 3550
+Wire Wire Line
+	3500 3650 3500 3450
+Wire Wire Line
+	3500 3450 2550 3450
+Wire Wire Line
+	2550 3450 2550 3550
+Wire Wire Line
+	2550 3550 2200 3550
+Wire Wire Line
+	2850 3350 2950 3350
+Wire Wire Line
+	2300 4150 2300 4000
+Wire Wire Line
+	2300 4000 2200 4000
+Connection ~ 4000 2550
+Wire Wire Line
+	4000 2400 4000 2900
+Wire Wire Line
+	3100 1550 3100 1600
+Wire Wire Line
+	2500 1550 2500 1600
+Wire Wire Line
+	2200 1550 2200 1600
+Connection ~ 2250 2400
+Wire Wire Line
+	2250 2550 2250 2000
+Wire Wire Line
+	2250 2550 2550 2550
+Wire Wire Line
+	2250 2400 2200 2400
+Wire Wire Line
+	2800 2000 2800 2250
+Wire Wire Line
+	900  1700 900  1500
+Wire Wire Line
+	1200 1700 1200 1600
+Wire Wire Line
+	550  1700 550  1600
+Connection ~ 900  2150
+Wire Wire Line
+	900  2150 900  2100
+Connection ~ 9300 3650
+Wire Wire Line
+	9300 3600 9300 4750
+Connection ~ 10850 3550
+Wire Wire Line
+	10850 3550 10750 3550
+Connection ~ 10850 3750
+Wire Wire Line
+	10850 3750 10750 3750
+Connection ~ 10850 3950
+Wire Wire Line
+	10850 3950 10750 3950
+Connection ~ 10850 4150
+Wire Wire Line
+	10850 4150 10750 4150
+Connection ~ 10850 4350
+Wire Wire Line
+	10850 4350 10750 4350
+Connection ~ 10850 4550
+Wire Wire Line
+	10850 4550 10750 4550
+Connection ~ 10850 4750
+Wire Wire Line
+	10850 4750 10750 4750
+Connection ~ 10850 4950
+Wire Wire Line
+	10850 4950 10750 4950
+Connection ~ 10850 5150
+Wire Wire Line
+	10850 5150 10750 5150
+Connection ~ 10850 5350
+Wire Wire Line
+	10850 5350 10750 5350
+Connection ~ 10850 5550
+Wire Wire Line
+	10850 5550 10750 5550
+Wire Wire Line
+	10850 5750 10750 5750
+Wire Wire Line
+	10750 3350 10850 3350
+Connection ~ 9300 5100
+Connection ~ 9300 5300
+Wire Wire Line
+	9300 5300 9450 5300
+Connection ~ 9300 3750
+Wire Wire Line
+	9450 3750 9300 3750
+Connection ~ 9300 3950
+Wire Wire Line
+	9450 3950 9300 3950
+Connection ~ 9300 4150
+Wire Wire Line
+	9450 4150 9300 4150
+Connection ~ 9300 4250
+Wire Wire Line
+	9450 4250 9300 4250
+Connection ~ 9300 4450
+Wire Wire Line
+	9450 4450 9300 4450
+Connection ~ 9300 4650
+Wire Wire Line
+	9450 4650 9300 4650
+Wire Wire Line
+	12100 4200 11700 4200
+Wire Wire Line
+	12100 4400 11700 4400
+Connection ~ 12750 1050
+Connection ~ 12200 1050
+Connection ~ 11100 650 
+Connection ~ 11600 650 
+Connection ~ 11600 1050
+Connection ~ 11100 1050
+Connection ~ 10550 1050
+Connection ~ 8650 1050
+Wire Wire Line
+	8650 1050 8650 1150
+Connection ~ 7200 1050
+Connection ~ 7750 1050
+Connection ~ 8350 1050
+Connection ~ 8950 1050
+Connection ~ 9550 1050
+Connection ~ 10050 1050
+Connection ~ 10050 650 
+Connection ~ 9550 650 
+Connection ~ 8950 650 
+Connection ~ 8350 650 
+Connection ~ 7750 650 
+Connection ~ 7200 650 
+Wire Wire Line
+	8650 600  8650 650 
+Connection ~ 8650 650 
+Connection ~ 3750 1050
+Wire Wire Line
+	3750 1050 3750 1150
+Connection ~ 2300 1050
+Connection ~ 2850 1050
+Connection ~ 3450 1050
+Connection ~ 4050 1050
+Connection ~ 4650 1050
+Connection ~ 5150 1050
+Connection ~ 5150 650 
+Connection ~ 4650 650 
+Connection ~ 4050 650 
+Connection ~ 3450 650 
+Connection ~ 2850 650 
+Connection ~ 2300 650 
+Wire Wire Line
+	1750 1050 5650 1050
+Wire Wire Line
+	11550 6400 11300 6400
+Wire Wire Line
+	12750 6400 12800 6400
+Connection ~ 13550 5250
+Connection ~ 12850 5250
+Wire Wire Line
+	12850 5250 12850 6300
+Wire Wire Line
+	12150 5900 12150 5250
+Wire Wire Line
+	12050 7250 11350 7250
+Wire Wire Line
+	12050 7250 12050 7100
+Wire Wire Line
+	14050 6400 14750 6400
+Wire Wire Line
+	13050 6400 12900 6400
+Wire Wire Line
+	12900 6400 12900 6500
+Wire Wire Line
+	12900 6500 12750 6500
+Connection ~ 14150 7000
+Wire Wire Line
+	12750 6700 12750 7650
+Wire Wire Line
+	12750 7650 14500 7650
+Wire Wire Line
+	14500 7650 14500 7000
+Wire Wire Line
+	14500 7000 13650 7000
+Wire Wire Line
+	4800 6200 4800 6850
+Connection ~ 4800 6850
+Connection ~ 1800 7050
+Connection ~ 4650 6350
+Wire Wire Line
+	2350 6350 4950 6350
+Wire Wire Line
+	2350 6350 2350 6850
+Wire Wire Line
+	4950 8350 2200 8350
+Wire Wire Line
+	4950 8350 4950 7250
+Connection ~ 3950 7150
+Wire Wire Line
+	3850 7150 3950 7150
+Wire Wire Line
+	2200 8350 2200 7150
+Wire Wire Line
+	2200 7150 2350 7150
+Connection ~ 5350 7250
+Wire Wire Line
+	5350 6850 5350 7300
+Wire Wire Line
+	3850 7250 4050 7250
+Wire Wire Line
+	5300 5200 5300 5100
+Connection ~ 6300 8100
+Wire Wire Line
+	6300 8150 6300 6900
+Wire Wire Line
+	8500 6850 8500 6900
+Wire Wire Line
+	5700 7300 5600 7300
+Connection ~ 6300 7900
+Wire Wire Line
+	6300 7900 6500 7900
+Connection ~ 6300 7500
+Wire Wire Line
+	6500 7500 6300 7500
+Wire Wire Line
+	14350 2800 14350 2750
+Wire Wire Line
+	14350 2750 14100 2750
+Connection ~ 13600 3300
+Wire Wire Line
+	14100 3300 14100 2950
+Wire Wire Line
+	13350 3900 13450 3900
+Wire Wire Line
+	13450 3900 13450 4050
+Wire Wire Line
+	13450 4050 14000 4050
+Wire Wire Line
+	13350 3700 13750 3700
+Wire Wire Line
+	13750 3700 13750 3750
+Wire Wire Line
+	13750 3750 14000 3750
+Wire Wire Line
+	13350 3600 13350 3300
+Wire Wire Line
+	11950 3700 11950 3300
+Wire Wire Line
+	14000 4150 13600 4150
+Wire Wire Line
+	11950 2750 12100 2750
+Wire Wire Line
+	13250 2150 13300 2150
+Wire Wire Line
+	11600 1600 11600 1650
+Wire Wire Line
+	7850 5900 7850 6050
+Wire Wire Line
+	7850 5900 7750 5900
+Wire Wire Line
+	7850 6050 8000 6050
+Wire Wire Line
+	7750 5800 8800 5800
+Wire Wire Line
+	8800 5800 8800 6050
+Connection ~ 8800 5950
+Wire Wire Line
+	11950 2150 11600 2150
+Wire Wire Line
+	13250 2050 13300 2050
+Wire Wire Line
+	13250 2250 13300 2250
+Wire Wire Line
+	13600 4150 13600 3300
+Connection ~ 13350 3300
+Wire Wire Line
+	14000 3950 13500 3950
+Wire Wire Line
+	13500 3950 13500 3800
+Wire Wire Line
+	13500 3800 13350 3800
+Wire Wire Line
+	14000 3850 13750 3850
+Wire Wire Line
+	13750 3850 13750 4700
+Wire Wire Line
+	13750 4700 11950 4700
+Wire Wire Line
+	11950 4700 11950 4100
+Wire Wire Line
+	11950 3300 14350 3300
+Connection ~ 14100 3300
+Wire Wire Line
+	6300 6900 6500 6900
+Wire Wire Line
+	6300 8100 6500 8100
+Wire Wire Line
+	6300 7700 6500 7700
+Connection ~ 6300 7700
+Wire Wire Line
+	6500 7300 6200 7300
+Wire Wire Line
+	7700 6900 8000 6900
+Wire Wire Line
+	7700 7700 8000 7700
+Wire Wire Line
+	5450 2900 5600 2900
+Wire Wire Line
+	3850 6850 4050 6850
+Wire Wire Line
+	4650 6850 4950 6850
+Wire Wire Line
+	2350 7250 2350 7750
+Wire Wire Line
+	2350 7750 4650 7750
+Wire Wire Line
+	3850 6950 3950 6950
+Wire Wire Line
+	3950 6950 3950 7850
+Wire Wire Line
+	3950 7850 2100 7850
+Wire Wire Line
+	2100 7850 2100 7050
+Wire Wire Line
+	4950 7250 4650 7250
+Wire Wire Line
+	4950 6350 4950 6450
+Connection ~ 2100 7050
+Connection ~ 4800 7250
+Wire Wire Line
+	4800 7700 4800 7250
+Wire Wire Line
+	12750 6600 12900 6600
+Wire Wire Line
+	12900 6600 12900 7000
+Wire Wire Line
+	12900 7000 13050 7000
+Wire Wire Line
+	12850 6300 12750 6300
+Wire Wire Line
+	11350 7250 11350 5250
+Connection ~ 12150 5250
+Connection ~ 13150 5250
+Wire Wire Line
+	11350 5250 14150 5250
+Connection ~ 14050 5250
+Wire Wire Line
+	11550 6700 11300 6700
+Wire Wire Line
+	1750 650  5650 650 
+Wire Wire Line
+	3750 650  3750 600 
+Connection ~ 3750 650 
+Connection ~ 10550 650 
+Connection ~ 12200 650 
+Connection ~ 12750 650 
+Wire Wire Line
+	12100 4500 11700 4500
+Wire Wire Line
+	12100 4300 11700 4300
+Wire Wire Line
+	9300 3650 9450 3650
+Wire Wire Line
+	9300 4750 9450 4750
+Wire Wire Line
+	9450 4550 9300 4550
+Connection ~ 9300 4550
+Wire Wire Line
+	9450 4350 9300 4350
+Connection ~ 9300 4350
+Wire Wire Line
+	9450 4050 9300 4050
+Connection ~ 9300 4050
+Wire Wire Line
+	9450 3850 9300 3850
+Connection ~ 9300 3850
+Wire Wire Line
+	9450 4900 9300 4900
+Wire Wire Line
+	9300 4900 9300 5400
+Wire Wire Line
+	9300 5400 9450 5400
+Wire Wire Line
+	9450 5200 9300 5200
+Connection ~ 9300 5200
+Wire Wire Line
+	9450 5000 9300 5000
+Connection ~ 9300 5000
+Wire Wire Line
+	10850 5650 10750 5650
+Connection ~ 10850 5650
+Wire Wire Line
+	10850 5450 10750 5450
+Connection ~ 10850 5450
+Wire Wire Line
+	10850 5250 10750 5250
+Connection ~ 10850 5250
+Wire Wire Line
+	10850 5050 10750 5050
+Connection ~ 10850 5050
+Wire Wire Line
+	10850 4850 10750 4850
+Connection ~ 10850 4850
+Wire Wire Line
+	10850 4650 10750 4650
+Connection ~ 10850 4650
+Wire Wire Line
+	10850 4450 10750 4450
+Connection ~ 10850 4450
+Wire Wire Line
+	10850 4250 10750 4250
+Connection ~ 10850 4250
+Wire Wire Line
+	10850 4050 10750 4050
+Connection ~ 10850 4050
+Wire Wire Line
+	10850 3850 10750 3850
+Connection ~ 10850 3850
+Wire Wire Line
+	10850 3650 10750 3650
+Connection ~ 10850 3650
+Wire Wire Line
+	10750 3450 10850 3450
+Connection ~ 10850 3450
+Wire Wire Line
+	10850 3350 10850 5850
+Connection ~ 10850 5750
+Wire Wire Line
+	9450 5100 9200 5100
+Wire Wire Line
+	7750 2700 7900 2700
+Wire Wire Line
+	7900 2700 7900 2600
+Wire Wire Line
+	550  2150 550  2100
+Wire Wire Line
+	1200 2150 1200 2100
+Connection ~ 750  2150
+Connection ~ 900  1600
+Connection ~ 2800 2250
+Wire Wire Line
+	3050 2250 2200 2250
+Wire Wire Line
+	2200 2250 2200 2300
+Wire Wire Line
+	2200 2500 2350 2500
+Wire Wire Line
+	2350 2500 2350 2400
+Wire Wire Line
+	2350 2400 2550 2400
+Wire Wire Line
+	2500 2000 2500 2400
+Connection ~ 2500 2400
+Wire Wire Line
+	2250 2000 2200 2000
+Wire Wire Line
+	2800 1550 2800 1600
+Wire Wire Line
+	3050 2700 3050 2900
+Wire Wire Line
+	3050 2900 4000 2900
+Wire Wire Line
+	3500 2900 3500 2950
+Connection ~ 3500 2900
+Wire Wire Line
+	2200 4100 2300 4100
+Connection ~ 2300 4100
+Wire Wire Line
+	2200 3350 2350 3350
+Wire Wire Line
+	2750 3650 2200 3650
+Connection ~ 2650 3650
+Wire Wire Line
+	3350 3550 3500 3550
+Connection ~ 3500 3550
+Wire Wire Line
+	3350 3650 3400 3650
+Wire Wire Line
+	2650 4050 2650 4100
+Wire Wire Line
+	6650 1050 13900 1050
+Connection ~ 13300 1050
+Wire Wire Line
+	15800 1100 15800 1150
+Wire Wire Line
+	17050 1250 17100 1250
+Wire Wire Line
+	1350 7800 1350 8050
+Wire Wire Line
+	10750 1600 10800 1600
+Wire Wire Line
+	7750 2600 8350 2600
+Wire Wire Line
+	8350 2600 8350 2800
+Connection ~ 7900 2600
+Wire Wire Line
+	8250 3000 8300 3000
+Wire Wire Line
+	7700 7100 7800 7100
+Wire Wire Line
+	1350 4750 1350 4850
+Wire Wire Line
+	1950 4750 1950 4900
+Wire Wire Line
+	2550 5350 2300 5350
+Wire Wire Line
+	3050 5100 3150 5100
+Wire Wire Line
+	3050 5200 3150 5200
+Wire Wire Line
+	3150 6000 3150 5900
+Wire Wire Line
+	1350 5200 850  5200
+Wire Wire Line
+	850  5200 850  5100
+Wire Wire Line
+	1350 5450 850  5450
+Wire Wire Line
+	850  5450 850  5350
+Wire Wire Line
+	2300 5850 2900 5850
+Wire Wire Line
+	2900 5850 2900 5500
+Wire Wire Line
+	2900 5500 3150 5500
+Wire Wire Line
+	1350 5700 1300 5700
+Wire Wire Line
+	800  7050 2350 7050
+Connection ~ 1350 7050
+Connection ~ 1200 1600
+Wire Wire Line
+	9450 3000 8600 3000
+Wire Wire Line
+	9450 2800 8600 2800
+Wire Wire Line
+	9450 2600 8600 2600
+Wire Wire Line
+	11150 2300 11150 2950
+Wire Wire Line
+	11150 2950 11250 2950
+Wire Wire Line
+	5050 4250 5150 4250
+Wire Wire Line
+	5150 4550 5050 4550
+Wire Wire Line
+	5300 5100 5050 5100
+Wire Wire Line
+	550  1600 1200 1600
+Wire Wire Line
+	750  2450 750  2150
+Connection ~ 750  2450
+Connection ~ 750  2350
+Wire Wire Line
+	4100 5850 4150 5850
+Wire Wire Line
+	13350 4500 13350 4550
+Wire Wire Line
+	11700 3800 12100 3800
+Wire Wire Line
+	11700 4000 12100 4000
+Wire Wire Line
+	1800 6550 1800 7050
+Wire Wire Line
+	9400 7950 9700 7950
+Wire Wire Line
+	9400 8050 9700 8050
+Wire Wire Line
+	9400 8150 9700 8150
+Wire Wire Line
+	9400 8250 9700 8250
+Wire Wire Line
+	9400 8350 9700 8350
+Wire Wire Line
+	9400 8450 9700 8450
+Wire Wire Line
+	9400 8550 9700 8550
+Wire Wire Line
+	9400 8650 9700 8650
+Wire Wire Line
+	9400 8750 9700 8750
+Wire Wire Line
+	9400 8850 9700 8850
+Wire Wire Line
+	17050 1950 19300 1950
+Wire Wire Line
+	17050 1750 19300 1750
+Wire Wire Line
+	17050 1550 19300 1550
+Wire Wire Line
+	17050 1350 19300 1350
+Wire Wire Line
+	17400 2150 17400 1450
+Connection ~ 17400 1450
+Wire Wire Line
+	18000 2150 18000 1650
+Connection ~ 18000 1650
+Wire Wire Line
+	18600 2150 18600 1850
+Connection ~ 18600 1850
+Wire Wire Line
+	19200 2150 19200 2050
+Connection ~ 19200 2050
+Connection ~ 18900 4300
+Wire Wire Line
+	18900 4500 18900 4300
+Connection ~ 18300 4100
+Wire Wire Line
+	18300 4500 18300 4100
+Connection ~ 17700 3900
+Wire Wire Line
+	17700 4500 17700 3900
+Connection ~ 17100 3700
+Wire Wire Line
+	17100 4500 17100 3700
+Wire Wire Line
+	17050 3800 19300 3800
+Wire Wire Line
+	17050 4000 19300 4000
+Wire Wire Line
+	17050 4200 19300 4200
+Wire Wire Line
+	17050 4400 19300 4400
+Wire Wire Line
+	17050 3450 17050 3500
+Wire Wire Line
+	15800 4400 15800 4500
+Wire Wire Line
+	15800 3450 15800 3500
+Wire Wire Line
+	17050 3600 17100 3600
+Wire Wire Line
+	17050 4300 19300 4300
+Wire Wire Line
+	17050 4100 19300 4100
+Wire Wire Line
+	17050 3900 19300 3900
+Wire Wire Line
+	17050 3700 19300 3700
+Wire Wire Line
+	17400 4500 17400 3800
+Connection ~ 17400 3800
+Wire Wire Line
+	18000 4500 18000 4000
+Connection ~ 18000 4000
+Wire Wire Line
+	18600 4500 18600 4200
+Connection ~ 18600 4200
+Wire Wire Line
+	19200 4500 19200 4400
+Connection ~ 19200 4400
 $Comp
-L GND #PWR037
+L TP TP?
+U 1 1 4B68C906
+P 19500 2050
+F 0 "TP?" H 19600 2050 60  0000 C CNN
+F 1 "PF7" H 20050 2050 60  0000 C CNN
+F 2 "TP" H 19350 2000 60  0000 C CNN
+	1    19500 2050
+	1    0    0    -1  
+$EndComp
+$Comp
+L TP TP?
+U 1 1 4B68C903
+P 19500 1950
+F 0 "TP?" H 19600 1950 60  0000 C CNN
+F 1 "PF6_USB_SS" H 20050 1950 60  0000 C CNN
+F 2 "TP" H 19350 1900 60  0000 C CNN
+	1    19500 1950
+	1    0    0    -1  
+$EndComp
+$Comp
+L TP TP?
+U 1 1 4B68C900
+P 19500 1850
+F 0 "TP?" H 19600 1850 60  0000 C CNN
+F 1 "PF5_USB_GPX" H 20050 1850 60  0000 C CNN
+F 2 "TP" H 19350 1800 60  0000 C CNN
+	1    19500 1850
+	1    0    0    -1  
+$EndComp
+$Comp
+L TP TP?
+U 1 1 4B68C8FD
+P 19500 1750
+F 0 "TP?" H 19600 1750 60  0000 C CNN
+F 1 "PF4_USB_IRQ" H 20050 1750 60  0000 C CNN
+F 2 "TP" H 19350 1700 60  0000 C CNN
+	1    19500 1750
+	1    0    0    -1  
+$EndComp
+$Comp
+L TP TP?
+U 1 1 4B68C8FA
+P 19500 1650
+F 0 "TP?" H 19600 1650 60  0000 C CNN
+F 1 "PF3_NRF_IRQ" H 20050 1650 60  0000 C CNN
+F 2 "TP" H 19350 1600 60  0000 C CNN
+	1    19500 1650
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR01
+U 1 1 4B68C87F
+P 19200 5400
+F 0 "#PWR01" H 19200 5400 30  0001 C CNN
+F 1 "GND" H 19200 5330 30  0001 C CNN
+	1    19200 5400
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR02
+U 1 1 4B68C87E
+P 18900 5400
+F 0 "#PWR02" H 18900 5400 30  0001 C CNN
+F 1 "GND" H 18900 5330 30  0001 C CNN
+	1    18900 5400
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR03
+U 1 1 4B68C87D
+P 18600 5400
+F 0 "#PWR03" H 18600 5400 30  0001 C CNN
+F 1 "GND" H 18600 5330 30  0001 C CNN
+	1    18600 5400
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR04
+U 1 1 4B68C87C
+P 18300 5400
+F 0 "#PWR04" H 18300 5400 30  0001 C CNN
+F 1 "GND" H 18300 5330 30  0001 C CNN
+	1    18300 5400
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR05
+U 1 1 4B68C87B
+P 18000 5400
+F 0 "#PWR05" H 18000 5400 30  0001 C CNN
+F 1 "GND" H 18000 5330 30  0001 C CNN
+	1    18000 5400
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR06
+U 1 1 4B68C87A
+P 17700 5400
+F 0 "#PWR06" H 17700 5400 30  0001 C CNN
+F 1 "GND" H 17700 5330 30  0001 C CNN
+	1    17700 5400
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR07
+U 1 1 4B68C879
+P 17400 5400
+F 0 "#PWR07" H 17400 5400 30  0001 C CNN
+F 1 "GND" H 17400 5330 30  0001 C CNN
+	1    17400 5400
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR08
+U 1 1 4B68C878
+P 17100 5400
+F 0 "#PWR08" H 17100 5400 30  0001 C CNN
+F 1 "GND" H 17100 5330 30  0001 C CNN
+	1    17100 5400
+	1    0    0    -1  
+$EndComp
+$Comp
+L TP TP?
+U 1 1 4B68C877
+P 19500 3700
+F 0 "TP?" H 19600 3700 60  0000 C CNN
+F 1 "PF8_AFEEN" H 20050 3700 60  0000 C CNN
+F 2 "TP" H 19350 3650 60  0000 C CNN
+	1    19500 3700
+	1    0    0    -1  
+$EndComp
+$Comp
+L TP TP?
+U 1 1 4B68C876
+P 19500 3800
+F 0 "TP?" H 19600 3800 60  0000 C CNN
+F 1 "PF9" H 19850 3800 60  0000 C CNN
+F 2 "TP" H 19350 3750 60  0000 C CNN
+	1    19500 3800
+	1    0    0    -1  
+$EndComp
+$Comp
+L TP TP?
+U 1 1 4B68C875
+P 19500 3900
+F 0 "TP?" H 19600 3900 60  0000 C CNN
+F 1 "PF10_csin" H 20050 3900 60  0000 C CNN
+F 2 "TP" H 19350 3850 60  0000 C CNN
+	1    19500 3900
+	1    0    0    -1  
+$EndComp
+$Comp
+L TP TP?
+U 1 1 4B68C874
+P 19500 4000
+F 0 "TP?" H 19600 4000 60  0000 C CNN
+F 1 "PF11_LDACin" H 20100 4000 60  0000 C CNN
+F 2 "TP" H 19350 3950 60  0000 C CNN
+	1    19500 4000
+	1    0    0    -1  
+$EndComp
+$Comp
+L TP TP?
+U 1 1 4B68C873
+P 19500 4100
+F 0 "TP?" H 19600 4100 60  0000 C CNN
+F 1 "PF12_MUX0" H 20050 4100 60  0000 C CNN
+F 2 "TP" H 19350 4050 60  0000 C CNN
+	1    19500 4100
+	1    0    0    -1  
+$EndComp
+$Comp
+L TP TP?
+U 1 1 4B68C872
+P 19500 4200
+F 0 "TP?" H 19600 4200 60  0000 C CNN
+F 1 "PF13_MUX1" H 20050 4200 60  0000 C CNN
+F 2 "TP" H 19350 4150 60  0000 C CNN
+	1    19500 4200
+	1    0    0    -1  
+$EndComp
+$Comp
+L TP TP?
+U 1 1 4B68C871
+P 19500 4300
+F 0 "TP?" H 19600 4300 60  0000 C CNN
+F 1 "PF14_MUX2" H 20050 4300 60  0000 C CNN
+F 2 "TP" H 19350 4250 60  0000 C CNN
+	1    19500 4300
+	1    0    0    -1  
+$EndComp
+$Comp
+L TP TP?
+U 1 1 4B68C870
+P 19500 4400
+F 0 "TP?" H 19600 4400 60  0000 C CNN
+F 1 "PF15_MUX3" H 20050 4400 60  0000 C CNN
+F 2 "TP" H 19350 4350 60  0000 C CNN
+	1    19500 4400
+	1    0    0    -1  
+$EndComp
+$Comp
+L R R?
+U 1 1 4B68C86F
+P 19200 5150
+F 0 "R?" V 19280 5150 50  0000 C CNN
+F 1 "50" V 19200 5150 50  0000 C CNN
+F 2 "0402" V 19330 5100 60  0000 C CNN
+	1    19200 5150
+	1    0    0    -1  
+$EndComp
+$Comp
+L LED D?
+U 1 1 4B68C86E
+P 19200 4700
+F 0 "D?" H 19200 4800 50  0000 C CNN
+F 1 "LED" H 19200 4600 50  0000 C CNN
+F 2 "0603" H 19150 4850 60  0000 C CNN
+	1    19200 4700
+	0    1    1    0   
+$EndComp
+$Comp
+L R R?
+U 1 1 4B68C86D
+P 18900 5150
+F 0 "R?" V 18980 5150 50  0000 C CNN
+F 1 "50" V 18900 5150 50  0000 C CNN
+F 2 "0402" V 19030 5100 60  0000 C CNN
+	1    18900 5150
+	1    0    0    -1  
+$EndComp
+$Comp
+L LED D?
+U 1 1 4B68C86C
+P 18900 4700
+F 0 "D?" H 18900 4800 50  0000 C CNN
+F 1 "LED" H 18900 4600 50  0000 C CNN
+F 2 "0603" H 18850 4850 60  0000 C CNN
+	1    18900 4700
+	0    1    1    0   
+$EndComp
+$Comp
+L R R?
+U 1 1 4B68C86B
+P 18600 5150
+F 0 "R?" V 18680 5150 50  0000 C CNN
+F 1 "50" V 18600 5150 50  0000 C CNN
+F 2 "0402" V 18730 5100 60  0000 C CNN
+	1    18600 5150
+	1    0    0    -1  
+$EndComp
+$Comp
+L LED D?
+U 1 1 4B68C86A
+P 18600 4700
+F 0 "D?" H 18600 4800 50  0000 C CNN
+F 1 "LED" H 18600 4600 50  0000 C CNN
+F 2 "0603" H 18550 4850 60  0000 C CNN
+	1    18600 4700
+	0    1    1    0   
+$EndComp
+$Comp
+L R R?
+U 1 1 4B68C869
+P 18300 5150
+F 0 "R?" V 18380 5150 50  0000 C CNN
+F 1 "50" V 18300 5150 50  0000 C CNN
+F 2 "0402" V 18430 5100 60  0000 C CNN
+	1    18300 5150
+	1    0    0    -1  
+$EndComp
+$Comp
+L LED D?
+U 1 1 4B68C868
+P 18300 4700
+F 0 "D?" H 18300 4800 50  0000 C CNN
+F 1 "LED" H 18300 4600 50  0000 C CNN
+F 2 "0603" H 18250 4850 60  0000 C CNN
+	1    18300 4700
+	0    1    1    0   
+$EndComp
+$Comp
+L VDD #PWR09
+U 1 1 4B68C867
+P 17050 3450
+F 0 "#PWR09" H 17050 3550 30  0001 C CNN
+F 1 "VDD" H 17050 3560 30  0000 C CNN
+	1    17050 3450
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR010
+U 1 1 4B68C866
+P 17100 3600
+F 0 "#PWR010" H 17100 3600 30  0001 C CNN
+F 1 "GND" H 17100 3530 30  0001 C CNN
+	1    17100 3600
+	0    -1   -1   0   
+$EndComp
+$Comp
+L GND #PWR011
+U 1 1 4B68C865
+P 15800 3450
+F 0 "#PWR011" H 15800 3450 30  0001 C CNN
+F 1 "GND" H 15800 3380 30  0001 C CNN
+	1    15800 3450
+	-1   0    0    1   
+$EndComp
+$Comp
+L GND #PWR012
+U 1 1 4B68C864
+P 15800 4500
+F 0 "#PWR012" H 15800 4500 30  0001 C CNN
+F 1 "GND" H 15800 4430 30  0001 C CNN
+	1    15800 4500
+	1    0    0    -1  
+$EndComp
+Text Label 15800 4300 2    60   ~ 0
+PF15
+Text Label 15800 4200 2    60   ~ 0
+PF14
+Text Label 15800 4100 2    60   ~ 0
+PF13
+Text Label 15800 4000 2    60   ~ 0
+PF12
+Text Label 15800 3900 2    60   ~ 0
+PF11
+Text Label 15800 3800 2    60   ~ 0
+PF10
+Text Label 15800 3700 2    60   ~ 0
+PF9
+Text Label 15800 3600 2    60   ~ 0
+PF8
+$Comp
+L 74LCX541 U?
+U 1 1 4B68C863
+P 16450 3950
+F 0 "U?" H 16450 3850 60  0000 C CNN
+F 1 "74LCX541" H 16400 4500 60  0000 C CNN
+F 2 "TSSOP-20" H 16390 3790 60  0000 C CNN
+	1    16450 3950
+	1    0    0    -1  
+$EndComp
+$Comp
+L R R?
+U 1 1 4B68C862
+P 18000 5150
+F 0 "R?" V 18080 5150 50  0000 C CNN
+F 1 "50" V 18000 5150 50  0000 C CNN
+F 2 "0402" V 18130 5100 60  0000 C CNN
+	1    18000 5150
+	1    0    0    -1  
+$EndComp
+$Comp
+L LED D?
+U 1 1 4B68C861
+P 18000 4700
+F 0 "D?" H 18000 4800 50  0000 C CNN
+F 1 "LED" H 18000 4600 50  0000 C CNN
+F 2 "0603" H 17950 4850 60  0000 C CNN
+	1    18000 4700
+	0    1    1    0   
+$EndComp
+$Comp
+L R R?
+U 1 1 4B68C860
+P 17700 5150
+F 0 "R?" V 17780 5150 50  0000 C CNN
+F 1 "50" V 17700 5150 50  0000 C CNN
+F 2 "0402" V 17830 5100 60  0000 C CNN
+	1    17700 5150
+	1    0    0    -1  
+$EndComp
+$Comp
+L LED D?
+U 1 1 4B68C85F
+P 17700 4700
+F 0 "D?" H 17700 4800 50  0000 C CNN
+F 1 "LED" H 17700 4600 50  0000 C CNN
+F 2 "0603" H 17650 4850 60  0000 C CNN
+	1    17700 4700
+	0    1    1    0   
+$EndComp
+$Comp
+L R R?
+U 1 1 4B68C85E
+P 17400 5150
+F 0 "R?" V 17480 5150 50  0000 C CNN
+F 1 "50" V 17400 5150 50  0000 C CNN
+F 2 "0402" V 17530 5100 60  0000 C CNN
+	1    17400 5150
+	1    0    0    -1  
+$EndComp
+$Comp
+L LED D?
+U 1 1 4B68C85D
+P 17400 4700
+F 0 "D?" H 17400 4800 50  0000 C CNN
+F 1 "LED" H 17400 4600 50  0000 C CNN
+F 2 "0603" H 17350 4850 60  0000 C CNN
+	1    17400 4700
+	0    1    1    0   
+$EndComp
+$Comp
+L R R?
+U 1 1 4B68C85C
+P 17100 5150
+F 0 "R?" V 17180 5150 50  0000 C CNN
+F 1 "50" V 17100 5150 50  0000 C CNN
+F 2 "0402" V 17230 5100 60  0000 C CNN
+	1    17100 5150
+	1    0    0    -1  
+$EndComp
+$Comp
+L LED D?
+U 1 1 4B68C85B
+P 17100 4700
+F 0 "D?" H 17100 4800 50  0000 C CNN
+F 1 "LED" H 17100 4600 50  0000 C CNN
+F 2 "0603" H 17050 4850 60  0000 C CNN
+	1    17100 4700
+	0    1    1    0   
+$EndComp
+$Comp
+L TP TP?
+U 1 1 4B68C7E6
+P 19500 1350
+F 0 "TP?" H 19600 1350 60  0000 C CNN
+F 1 "PF0_NRF_ce" H 20050 1350 60  0000 C CNN
+F 2 "TP" H 19350 1300 60  0000 C CNN
+	1    19500 1350
+	1    0    0    -1  
+$EndComp
+$Comp
+L TP TP?
+U 1 1 4B68C7A9
+P 19500 1450
+F 0 "TP?" H 19600 1450 60  0000 C CNN
+F 1 "PF1_NRF_csn" H 20100 1450 60  0000 C CNN
+F 2 "TP" H 19350 1400 60  0000 C CNN
+	1    19500 1450
+	1    0    0    -1  
+$EndComp
+$Comp
+L TP TP?
+U 1 1 4B68C7A5
+P 19500 1550
+F 0 "TP?" H 19600 1550 60  0000 C CNN
+F 1 "PF2_SPI_cs" H 20050 1550 60  0000 C CNN
+F 2 "TP" H 19350 1500 60  0000 C CNN
+	1    19500 1550
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR013
+U 1 1 4B68C761
+P 19200 3050
+F 0 "#PWR013" H 19200 3050 30  0001 C CNN
+F 1 "GND" H 19200 2980 30  0001 C CNN
+	1    19200 3050
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR014
+U 1 1 4B68C760
+P 18900 3050
+F 0 "#PWR014" H 18900 3050 30  0001 C CNN
+F 1 "GND" H 18900 2980 30  0001 C CNN
+	1    18900 3050
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR015
+U 1 1 4B68C75F
+P 18600 3050
+F 0 "#PWR015" H 18600 3050 30  0001 C CNN
+F 1 "GND" H 18600 2980 30  0001 C CNN
+	1    18600 3050
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR016
+U 1 1 4B68C75E
+P 18300 3050
+F 0 "#PWR016" H 18300 3050 30  0001 C CNN
+F 1 "GND" H 18300 2980 30  0001 C CNN
+	1    18300 3050
+	1    0    0    -1  
+$EndComp
+$Comp
+L R R?
+U 1 1 4B68C75D
+P 19200 2800
+F 0 "R?" V 19280 2800 50  0000 C CNN
+F 1 "50" V 19200 2800 50  0000 C CNN
+F 2 "0402" V 19330 2750 60  0000 C CNN
+	1    19200 2800
+	1    0    0    -1  
+$EndComp
+$Comp
+L LED D?
+U 1 1 4B68C75C
+P 19200 2350
+F 0 "D?" H 19200 2450 50  0000 C CNN
+F 1 "LED" H 19200 2250 50  0000 C CNN
+F 2 "0603" H 19150 2500 60  0000 C CNN
+	1    19200 2350
+	0    1    1    0   
+$EndComp
+$Comp
+L R R?
+U 1 1 4B68C75B
+P 18900 2800
+F 0 "R?" V 18980 2800 50  0000 C CNN
+F 1 "50" V 18900 2800 50  0000 C CNN
+F 2 "0402" V 19030 2750 60  0000 C CNN
+	1    18900 2800
+	1    0    0    -1  
+$EndComp
+$Comp
+L LED D?
+U 1 1 4B68C75A
+P 18900 2350
+F 0 "D?" H 18900 2450 50  0000 C CNN
+F 1 "LED" H 18900 2250 50  0000 C CNN
+F 2 "0603" H 18850 2500 60  0000 C CNN
+	1    18900 2350
+	0    1    1    0   
+$EndComp
+$Comp
+L R R?
+U 1 1 4B68C759
+P 18600 2800
+F 0 "R?" V 18680 2800 50  0000 C CNN
+F 1 "50" V 18600 2800 50  0000 C CNN
+F 2 "0402" V 18730 2750 60  0000 C CNN
+	1    18600 2800
+	1    0    0    -1  
+$EndComp
+$Comp
+L LED D?
+U 1 1 4B68C758
+P 18600 2350
+F 0 "D?" H 18600 2450 50  0000 C CNN
+F 1 "LED" H 18600 2250 50  0000 C CNN
+F 2 "0603" H 18550 2500 60  0000 C CNN
+	1    18600 2350
+	0    1    1    0   
+$EndComp
+$Comp
+L R R?
+U 1 1 4B68C757
+P 18300 2800
+F 0 "R?" V 18380 2800 50  0000 C CNN
+F 1 "50" V 18300 2800 50  0000 C CNN
+F 2 "0402" V 18430 2750 60  0000 C CNN
+	1    18300 2800
+	1    0    0    -1  
+$EndComp
+$Comp
+L LED D?
+U 1 1 4B68C756
+P 18300 2350
+F 0 "D?" H 18300 2450 50  0000 C CNN
+F 1 "LED" H 18300 2250 50  0000 C CNN
+F 2 "0603" H 18250 2500 60  0000 C CNN
+	1    18300 2350
+	0    1    1    0   
+$EndComp
+Text Label 9400 8850 0    60   ~ 0
+PPI9
+Text Label 9400 8750 0    60   ~ 0
+PPI8
+Text Label 9400 8650 0    60   ~ 0
+PPI7
+Text Label 9400 8550 0    60   ~ 0
+PPI6
+Text Label 9400 8450 0    60   ~ 0
+PPI5
+Text Label 9400 8350 0    60   ~ 0
+PPI4
+Text Label 9400 8250 0    60   ~ 0
+PPI3
+Text Label 9400 8150 0    60   ~ 0
+PPI2
+Text Label 9400 8050 0    60   ~ 0
+PPI1
+Text Label 9400 7950 0    60   ~ 0
+PPI0
+$Sheet
+S 9700 7800 900  1250
+U 4B68B5E7
+F0 "microstim4" 60
+F1 "microstim4.sch" 60
+F2 "PPI9" I L 9700 8850 60 
+F3 "PPI8" I L 9700 8750 60 
+F4 "PPI7" I L 9700 8650 60 
+F5 "PPI6" I L 9700 8550 60 
+F6 "PPI5" I L 9700 8450 60 
+F7 "PPI4" I L 9700 8350 60 
+F8 "PPI3" I L 9700 8250 60 
+F9 "PPI2" I L 9700 8150 60 
+F10 "PPI1" I L 9700 8050 60 
+F11 "PPI0" I L 9700 7950 60 
+$EndSheet
+$Comp
+L TP TP?
+U 1 1 4B68AA78
+P 11500 3700
+F 0 "TP?" H 11500 3700 60  0000 C CNN
+F 1 "_prog" H 11800 3700 60  0000 C CNN
+F 2 "TP" H 11350 3650 60  0000 C CNN
+	1    11500 3700
+	-1   0    0    -1  
+$EndComp
+$Comp
+L TP TP?
+U 1 1 4B68AA75
+P 11500 3800
+F 0 "TP?" H 11500 3800 60  0000 C CNN
+F 1 "PF2" H 11800 3800 60  0000 C CNN
+F 2 "TP" H 11350 3750 60  0000 C CNN
+	1    11500 3800
+	-1   0    0    -1  
+$EndComp
+$Comp
+L TP TP?
+U 1 1 4B68AA71
+P 11500 3900
+F 0 "TP?" H 11500 3900 60  0000 C CNN
+F 1 "MOSI" H 11800 3900 60  0000 C CNN
+F 2 "TP" H 11350 3850 60  0000 C CNN
+	1    11500 3900
+	-1   0    0    -1  
+$EndComp
+$Comp
+L TP TP?
+U 1 1 4B68AA6E
+P 11500 4000
+F 0 "TP?" H 11500 4000 60  0000 C CNN
+F 1 "SCK" H 11800 4000 60  0000 C CNN
+F 2 "TP" H 11350 3950 60  0000 C CNN
+	1    11500 4000
+	-1   0    0    -1  
+$EndComp
+$Comp
+L TP TP?
+U 1 1 4B68AA68
+P 11500 4100
+F 0 "TP?" H 11500 4100 60  0000 C CNN
+F 1 "MISO" H 11800 4100 60  0000 C CNN
+F 2 "TP" H 11350 4050 60  0000 C CNN
+	1    11500 4100
+	-1   0    0    -1  
+$EndComp
+$Comp
+L TP TP?
+U 1 1 4B68AA57
+P 11500 4200
+F 0 "TP?" H 11500 4200 60  0000 C CNN
+F 1 "DT0PRI" H 11800 4200 60  0000 C CNN
+F 2 "TP" H 11350 4150 60  0000 C CNN
+	1    11500 4200
+	-1   0    0    -1  
+$EndComp
+$Comp
+L TP TP?
+U 1 1 4B68AA54
+P 11500 4300
+F 0 "TP?" H 11500 4300 60  0000 C CNN
+F 1 "DT0SEC" H 11800 4300 60  0000 C CNN
+F 2 "TP" H 11350 4250 60  0000 C CNN
+	1    11500 4300
+	-1   0    0    -1  
+$EndComp
+$Comp
+L TP TP?
+U 1 1 4B68AA51
+P 11500 4400
+F 0 "TP?" H 11500 4400 60  0000 C CNN
+F 1 "TFS0" H 11800 4400 60  0000 C CNN
+F 2 "TP" H 11350 4350 60  0000 C CNN
+	1    11500 4400
+	-1   0    0    -1  
+$EndComp
+$Comp
+L TP TP?
+U 1 1 4B68AA3D
+P 11500 4500
+F 0 "TP?" H 11500 4500 60  0000 C CNN
+F 1 "TSCLK0" H 11800 4500 60  0000 C CNN
+F 2 "TP" H 11350 4450 60  0000 C CNN
+	1    11500 4500
+	-1   0    0    -1  
+$EndComp
+$Comp
+L GND #PWR017
+U 1 1 4B68A9FB
+P 13350 4550
+F 0 "#PWR017" H 13350 4550 30  0001 C CNN
+F 1 "GND" H 13350 4480 30  0001 C CNN
+	1    13350 4550
+	1    0    0    -1  
+$EndComp
+Text Notes 4400 5750 0    60   ~ 0
+increase Vdd to 3.35V
+$Comp
+L JUMP U?
+U 1 1 4B68A745
+P 4350 5850
+F 0 "U?" H 4350 5750 60  0000 C CNN
+F 1 "JUMP" H 4350 5950 60  0000 C CNN
+F 2 "2x100mil" H 4150 5650 60  0000 C CNN
+	1    4350 5850
+	-1   0    0    1   
+$EndComp
+$Comp
+L R R?
+U 1 1 4B68A741
+P 4100 6100
+F 0 "R?" V 4180 6100 50  0000 C CNN
+F 1 "1M" V 4100 6100 50  0000 C CNN
+F 2 "0402" V 4230 6050 60  0000 C CNN
+	1    4100 6100
+	1    0    0    -1  
+$EndComp
+Text Notes 3650 8450 0    60   ~ 0
+increase core voltage to 1.2V
+$Comp
+L R R?
+U 1 1 4B68A620
+P 4150 8000
+F 0 "R?" V 4230 8000 50  0000 C CNN
+F 1 "135k" V 4150 8000 50  0000 C CNN
+F 2 "0402" V 4280 7950 60  0000 C CNN
+	1    4150 8000
+	1    0    0    -1  
+$EndComp
+$Comp
+L JUMP U?
+U 1 1 4B68A60F
+P 4350 8250
+F 0 "U?" H 4350 8150 60  0000 C CNN
+F 1 "JUMP" H 4350 8350 60  0000 C CNN
+F 2 "2x100mil" H 4150 8050 60  0000 C CNN
+	1    4350 8250
+	-1   0    0    1   
+$EndComp
+$Comp
+L GND #PWR018
 U 1 1 49068A91
 P 900 1500
-F 0 "#PWR037" H 900 1500 30  0001 C CNN
+F 0 "#PWR018" H 900 1500 30  0001 C CNN
 F 1 "GND" H 900 1430 30  0001 C CNN
 	1    900  1500
 	-1   0    0    1   
@@ -762,10 +1564,10 @@ use the 2.7V version
 Text Notes -650 2550 0    60   ~ 0
 level-translator voltage
 $Comp
-L VDD #PWR?
+L VDD #PWR019
 U 1 1 4B5F195F
 P 650 2450
-F 0 "#PWR?" H 650 2550 30  0001 C CNN
+F 0 "#PWR019" H 650 2550 30  0001 C CNN
 F 1 "VDD" H 650 2560 30  0000 C CNN
 	1    650  2450
 	1    0    0    -1  
@@ -828,7 +1630,7 @@ U 1 1 4967BA25
 P 3500 2500
 F 0 "U147" H 3700 2050 60  0000 C CNN
 F 1 "FCI_USB_B" H 3550 2150 60  0000 C CNN
-F 2 "FCI_USB_B" H 3390 1840 60  0001 C CNN
+F 2 "FCI_USB_B" H 3550 1950 60  0000 C CNN
 	1    3500 2500
 	1    0    0    -1  
 $EndComp
@@ -843,10 +1645,10 @@ F 2 "chip_ant" H 15150 6250 60  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR01
+L GND #PWR020
 U 1 1 49625B8A
 P 800 7450
-F 0 "#PWR01" H 800 7450 30  0001 C CNN
+F 0 "#PWR020" H 800 7450 30  0001 C CNN
 F 1 "GND" H 800 7380 30  0001 C CNN
 	1    800  7450
 	1    0    0    -1  
@@ -862,19 +1664,19 @@ F 2 "2x100mil" H 900 7400 60  0000 C CNN
 	-1   0    0    1   
 $EndComp
 $Comp
-L GND #PWR02
+L GND #PWR021
 U 1 1 495C3B9A
 P 11500 5650
-F 0 "#PWR02" H 11500 5650 30  0001 C CNN
+F 0 "#PWR021" H 11500 5650 30  0001 C CNN
 F 1 "GND" H 11500 5580 30  0001 C CNN
 	1    11500 5650
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR03
+L GND #PWR022
 U 1 1 495C3B97
 P 11800 5650
-F 0 "#PWR03" H 11800 5650 30  0001 C CNN
+F 0 "#PWR022" H 11800 5650 30  0001 C CNN
 F 1 "GND" H 11800 5580 30  0001 C CNN
 	1    11800 5650
 	1    0    0    -1  
@@ -899,7 +1701,7 @@ F 2 "0402" H 11800 5750 60  0000 C CNN
 	1    11800 5450
 	1    0    0    -1  
 $EndComp
-Text Notes 2200 6200 0    60   ~ 0
+Text Notes 3700 5500 0    60   ~ 0
 pinout for straight-through cable.
 NoConn ~ 3150 5800
 NoConn ~ 3150 5600
@@ -907,19 +1709,19 @@ NoConn ~ 3150 5400
 NoConn ~ 2300 5950
 NoConn ~ 2300 5700
 $Comp
-L GND #PWR04
+L GND #PWR023
 U 1 1 4907E1C1
 P 1300 5950
-F 0 "#PWR04" H 1300 5950 30  0001 C CNN
+F 0 "#PWR023" H 1300 5950 30  0001 C CNN
 F 1 "GND" H 1300 5880 30  0001 C CNN
 	1    1300 5950
 	0    1    1    0   
 $EndComp
 $Comp
-L GND #PWR05
+L GND #PWR024
 U 1 1 4907E1BD
 P 1300 5700
-F 0 "#PWR05" H 1300 5700 30  0001 C CNN
+F 0 "#PWR024" H 1300 5700 30  0001 C CNN
 F 1 "GND" H 1300 5630 30  0001 C CNN
 	1    1300 5700
 	0    1    1    0   
@@ -945,10 +1747,10 @@ TX
 Text Label 10750 3100 0    60   ~ 0
 RX
 $Comp
-L VDD #PWR06
+L VDD #PWR025
 U 1 1 4906ACAF
 P 2550 4900
-F 0 "#PWR06" H 2550 5000 30  0001 C CNN
+F 0 "#PWR025" H 2550 5000 30  0001 C CNN
 F 1 "VDD" H 2550 5010 30  0000 C CNN
 	1    2550 4900
 	1    0    0    -1  
@@ -978,19 +1780,19 @@ F 2 "0402" H 800 5100 60  0000 C CNN
 	0    1    1    0   
 $EndComp
 $Comp
-L GND #PWR07
+L GND #PWR026
 U 1 1 4906ABFA
 P 3150 6000
-F 0 "#PWR07" H 3150 6000 30  0001 C CNN
+F 0 "#PWR026" H 3150 6000 30  0001 C CNN
 F 1 "GND" H 3150 5930 30  0001 C CNN
 	1    3150 6000
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR08
+L GND #PWR027
 U 1 1 4906ABDC
 P 2550 5400
-F 0 "#PWR08" H 2550 5400 30  0001 C CNN
+F 0 "#PWR027" H 2550 5400 30  0001 C CNN
 F 1 "GND" H 2550 5330 30  0001 C CNN
 	1    2550 5400
 	1    0    0    -1  
@@ -1016,19 +1818,19 @@ F 2 "DB9" H 3400 5350 60  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L VDD #PWR09
+L VDD #PWR028
 U 1 1 4906AB9A
 P 2350 4650
-F 0 "#PWR09" H 2350 4750 30  0001 C CNN
+F 0 "#PWR028" H 2350 4750 30  0001 C CNN
 F 1 "VDD" H 2350 4760 30  0000 C CNN
 	1    2350 4650
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR010
+L GND #PWR029
 U 1 1 4906AB97
 P 1350 4850
-F 0 "#PWR010" H 1350 4850 30  0001 C CNN
+F 0 "#PWR029" H 1350 4850 30  0001 C CNN
 F 1 "GND" H 1350 4780 30  0001 C CNN
 	1    1350 4850
 	1    0    0    -1  
@@ -1064,28 +1866,28 @@ F 2 "TSSOP-16" H 1790 4840 60  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR011
+L GND #PWR030
 U 1 1 4906AAC4
 P 7800 7100
-F 0 "#PWR011" H 7800 7100 30  0001 C CNN
+F 0 "#PWR030" H 7800 7100 30  0001 C CNN
 F 1 "GND" H 7800 7030 30  0001 C CNN
 	1    7800 7100
 	0    -1   -1   0   
 $EndComp
 $Comp
-L VDD #PWR012
+L VDD #PWR031
 U 1 1 4906AA7B
 P 9250 5550
-F 0 "#PWR012" H 9250 5650 30  0001 C CNN
+F 0 "#PWR031" H 9250 5650 30  0001 C CNN
 F 1 "VDD" H 9250 5660 30  0000 C CNN
 	1    9250 5550
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR013
+L GND #PWR032
 U 1 1 4906AA44
 P 8300 3000
-F 0 "#PWR013" H 8300 3000 30  0001 C CNN
+F 0 "#PWR032" H 8300 3000 30  0001 C CNN
 F 1 "GND" H 8300 2930 30  0001 C CNN
 	1    8300 3000
 	0    -1   -1   0   
@@ -1111,28 +1913,28 @@ F 2 "0402" V 8000 2800 60  0000 C CNN
 	0    1    1    0   
 $EndComp
 $Comp
-L GND #PWR014
+L GND #PWR033
 U 1 1 4906A8EB
 P 10800 1600
-F 0 "#PWR014" H 10800 1600 30  0001 C CNN
+F 0 "#PWR033" H 10800 1600 30  0001 C CNN
 F 1 "GND" H 10800 1530 30  0001 C CNN
 	1    10800 1600
 	0    -1   -1   0   
 $EndComp
 $Comp
-L GND #PWR015
+L GND #PWR034
 U 1 1 4906A566
 P 1350 8050
-F 0 "#PWR015" H 1350 8050 30  0001 C CNN
+F 0 "#PWR034" H 1350 8050 30  0001 C CNN
 F 1 "GND" H 1350 7980 30  0001 C CNN
 	1    1350 8050
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR016
+L GND #PWR035
 U 1 1 4906A561
 P 1750 8050
-F 0 "#PWR016" H 1750 8050 30  0001 C CNN
+F 0 "#PWR035" H 1750 8050 30  0001 C CNN
 F 1 "GND" H 1750 7980 30  0001 C CNN
 	1    1750 8050
 	1    0    0    -1  
@@ -1147,106 +1949,94 @@ F 2 "2x100mil" H 1490 7640 60  0000 C CNN
 	1    1550 7800
 	1    0    0    -1  
 $EndComp
-Text Label 16850 2200 2    60   ~ 0
+Text Label 15800 1950 2    60   ~ 0
 PF7
-Text Label 16850 2100 2    60   ~ 0
+Text Label 15800 1850 2    60   ~ 0
 PF6
-Text Label 16850 2000 2    60   ~ 0
+Text Label 15800 1750 2    60   ~ 0
 PF5
-Text Label 16850 1900 2    60   ~ 0
+Text Label 15800 1650 2    60   ~ 0
 PF4
-Text Label 16850 1800 2    60   ~ 0
+Text Label 15800 1550 2    60   ~ 0
 PF3
-Text Label 16850 1700 2    60   ~ 0
+Text Label 15800 1450 2    60   ~ 0
 PF2
-Text Label 16850 1600 2    60   ~ 0
+Text Label 15800 1350 2    60   ~ 0
 PF1
-Text Label 16850 1500 2    60   ~ 0
+Text Label 15800 1250 2    60   ~ 0
 PF0
 $Comp
-L 8X2X100 U23
-U 1 1 4906A41A
-P 17050 1400
-F 0 "U23" H 17050 500 60  0000 C CNN
-F 1 "8X2X100" H 17050 2200 60  0000 C CNN
-F 2 "2x8x100mil" H 16990 440 60  0001 C CNN
-	1    17050 1400
-	-1   0    0    -1  
-$EndComp
-$Comp
-L GND #PWR017
+L GND #PWR036
 U 1 1 4906A3E8
-P 16300 3200
-F 0 "#PWR017" H 16300 3200 30  0001 C CNN
-F 1 "GND" H 16300 3130 30  0001 C CNN
-	1    16300 3200
+P 18000 3050
+F 0 "#PWR036" H 18000 3050 30  0001 C CNN
+F 1 "GND" H 18000 2980 30  0001 C CNN
+	1    18000 3050
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR018
+L GND #PWR037
 U 1 1 4906A3E6
-P 16000 3200
-F 0 "#PWR018" H 16000 3200 30  0001 C CNN
-F 1 "GND" H 16000 3130 30  0001 C CNN
-	1    16000 3200
+P 17700 3050
+F 0 "#PWR037" H 17700 3050 30  0001 C CNN
+F 1 "GND" H 17700 2980 30  0001 C CNN
+	1    17700 3050
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR019
+L GND #PWR038
 U 1 1 4906A3E4
-P 15700 3200
-F 0 "#PWR019" H 15700 3200 30  0001 C CNN
-F 1 "GND" H 15700 3130 30  0001 C CNN
-	1    15700 3200
+P 17400 3050
+F 0 "#PWR038" H 17400 3050 30  0001 C CNN
+F 1 "GND" H 17400 2980 30  0001 C CNN
+	1    17400 3050
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR020
+L GND #PWR039
 U 1 1 4906A3E2
-P 15400 3200
-F 0 "#PWR020" H 15400 3200 30  0001 C CNN
-F 1 "GND" H 15400 3130 30  0001 C CNN
-	1    15400 3200
+P 17100 3050
+F 0 "#PWR039" H 17100 3050 30  0001 C CNN
+F 1 "GND" H 17100 2980 30  0001 C CNN
+	1    17100 3050
 	1    0    0    -1  
 $EndComp
 $Comp
-L VDD #PWR021
+L VDD #PWR040
 U 1 1 4906A342
-P 15650 1000
-F 0 "#PWR021" H 15650 1100 30  0001 C CNN
-F 1 "VDD" H 15650 1110 30  0000 C CNN
-	1    15650 1000
+P 17050 1100
+F 0 "#PWR040" H 17050 1200 30  0001 C CNN
+F 1 "VDD" H 17050 1210 30  0000 C CNN
+	1    17050 1100
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR022
+L GND #PWR041
 U 1 1 4906A32C
-P 15700 1150
-F 0 "#PWR022" H 15700 1150 30  0001 C CNN
-F 1 "GND" H 15700 1080 30  0001 C CNN
-	1    15700 1150
+P 17100 1250
+F 0 "#PWR041" H 17100 1250 30  0001 C CNN
+F 1 "GND" H 17100 1180 30  0001 C CNN
+	1    17100 1250
 	0    -1   -1   0   
 $EndComp
 $Comp
-L GND #PWR023
+L GND #PWR042
 U 1 1 4906A31F
-P 14400 1000
-F 0 "#PWR023" H 14400 1000 30  0001 C CNN
-F 1 "GND" H 14400 930 30  0001 C CNN
-	1    14400 1000
+P 15800 1100
+F 0 "#PWR042" H 15800 1100 30  0001 C CNN
+F 1 "GND" H 15800 1030 30  0001 C CNN
+	1    15800 1100
 	-1   0    0    1   
 $EndComp
 $Comp
-L GND #PWR024
+L GND #PWR043
 U 1 1 4906A310
-P 14400 2050
-F 0 "#PWR024" H 14400 2050 30  0001 C CNN
-F 1 "GND" H 14400 1980 30  0001 C CNN
-	1    14400 2050
+P 15800 2150
+F 0 "#PWR043" H 15800 2150 30  0001 C CNN
+F 1 "GND" H 15800 2080 30  0001 C CNN
+	1    15800 2150
 	1    0    0    -1  
 $EndComp
-Text Notes 8700 2300 0    60   ~ 0
-usb _res
 Text Notes 8750 2200 0    60   ~ 0
 usb _ss
 Text Notes 8350 2100 0    60   ~ 0
@@ -1255,22 +2045,6 @@ Text Notes 8350 2000 0    60   ~ 0
 input usb irq
 Text Notes 8350 1900 0    60   ~ 0
 input nrf irq
-Text Label 14400 1850 2    60   ~ 0
-PF15
-Text Label 14400 1750 2    60   ~ 0
-PF14
-Text Label 14400 1650 2    60   ~ 0
-PF13
-Text Label 14400 1550 2    60   ~ 0
-PF12
-Text Label 14400 1450 2    60   ~ 0
-PF11
-Text Label 14400 1350 2    60   ~ 0
-PF10
-Text Label 14400 1250 2    60   ~ 0
-PF9
-Text Label 14400 1150 2    60   ~ 0
-PF8
 $Comp
 L C C45
 U 1 1 49069229
@@ -1284,137 +2058,125 @@ $EndComp
 $Comp
 L 74LCX541 U22
 U 1 1 49069215
-P 15050 1500
-F 0 "U22" H 15050 1400 60  0000 C CNN
-F 1 "74LCX541" H 15000 2050 60  0000 C CNN
-F 2 "TSSOP-20" H 14990 1340 60  0000 C CNN
-	1    15050 1500
+P 16450 1600
+F 0 "U22" H 16450 1500 60  0000 C CNN
+F 1 "74LCX541" H 16400 2150 60  0000 C CNN
+F 2 "TSSOP-20" H 16390 1440 60  0000 C CNN
+	1    16450 1600
 	1    0    0    -1  
 $EndComp
 $Comp
 L R R25
 U 1 1 490691AC
-P 16300 2950
-F 0 "R25" V 16380 2950 50  0000 C CNN
-F 1 "33" V 16300 2950 50  0000 C CNN
-F 2 "0402" V 16430 2900 60  0000 C CNN
-	1    16300 2950
+P 18000 2800
+F 0 "R25" V 18080 2800 50  0000 C CNN
+F 1 "50" V 18000 2800 50  0000 C CNN
+F 2 "0402" V 18130 2750 60  0000 C CNN
+	1    18000 2800
 	1    0    0    -1  
 $EndComp
 $Comp
 L LED D7
 U 1 1 490691AB
-P 16300 2500
-F 0 "D7" H 16300 2600 50  0000 C CNN
-F 1 "LED" H 16300 2400 50  0000 C CNN
-F 2 "0603" H 16250 2650 60  0000 C CNN
-	1    16300 2500
+P 18000 2350
+F 0 "D7" H 18000 2450 50  0000 C CNN
+F 1 "LED" H 18000 2250 50  0000 C CNN
+F 2 "0603" H 17950 2500 60  0000 C CNN
+	1    18000 2350
 	0    1    1    0   
 $EndComp
 $Comp
 L R R24
 U 1 1 490691A9
-P 16000 2950
-F 0 "R24" V 16080 2950 50  0000 C CNN
-F 1 "33" V 16000 2950 50  0000 C CNN
-F 2 "0402" V 16130 2900 60  0000 C CNN
-	1    16000 2950
+P 17700 2800
+F 0 "R24" V 17780 2800 50  0000 C CNN
+F 1 "50" V 17700 2800 50  0000 C CNN
+F 2 "0402" V 17830 2750 60  0000 C CNN
+	1    17700 2800
 	1    0    0    -1  
 $EndComp
 $Comp
 L LED D6
 U 1 1 490691A8
-P 16000 2500
-F 0 "D6" H 16000 2600 50  0000 C CNN
-F 1 "LED" H 16000 2400 50  0000 C CNN
-F 2 "0603" H 15950 2650 60  0000 C CNN
-	1    16000 2500
+P 17700 2350
+F 0 "D6" H 17700 2450 50  0000 C CNN
+F 1 "LED" H 17700 2250 50  0000 C CNN
+F 2 "0603" H 17650 2500 60  0000 C CNN
+	1    17700 2350
 	0    1    1    0   
 $EndComp
 $Comp
 L R R23
 U 1 1 490691A4
-P 15700 2950
-F 0 "R23" V 15780 2950 50  0000 C CNN
-F 1 "33" V 15700 2950 50  0000 C CNN
-F 2 "0402" V 15830 2900 60  0000 C CNN
-	1    15700 2950
+P 17400 2800
+F 0 "R23" V 17480 2800 50  0000 C CNN
+F 1 "50" V 17400 2800 50  0000 C CNN
+F 2 "0402" V 17530 2750 60  0000 C CNN
+	1    17400 2800
 	1    0    0    -1  
 $EndComp
 $Comp
 L LED D5
 U 1 1 490691A3
-P 15700 2500
-F 0 "D5" H 15700 2600 50  0000 C CNN
-F 1 "LED" H 15700 2400 50  0000 C CNN
-F 2 "0603" H 15650 2650 60  0000 C CNN
-	1    15700 2500
+P 17400 2350
+F 0 "D5" H 17400 2450 50  0000 C CNN
+F 1 "LED" H 17400 2250 50  0000 C CNN
+F 2 "0603" H 17350 2500 60  0000 C CNN
+	1    17400 2350
 	0    1    1    0   
 $EndComp
 $Comp
 L R R22
 U 1 1 49069186
-P 15400 2950
-F 0 "R22" V 15480 2950 50  0000 C CNN
-F 1 "33" V 15400 2950 50  0000 C CNN
-F 2 "0402" V 15530 2900 60  0000 C CNN
-	1    15400 2950
+P 17100 2800
+F 0 "R22" V 17180 2800 50  0000 C CNN
+F 1 "50" V 17100 2800 50  0000 C CNN
+F 2 "0402" V 17230 2750 60  0000 C CNN
+	1    17100 2800
 	1    0    0    -1  
 $EndComp
 $Comp
 L LED D4
 U 1 1 490690F4
-P 15400 2500
-F 0 "D4" H 15400 2600 50  0000 C CNN
-F 1 "LED" H 15400 2400 50  0000 C CNN
-F 2 "0603" H 15350 2650 60  0000 C CNN
-	1    15400 2500
+P 17100 2350
+F 0 "D4" H 17100 2450 50  0000 C CNN
+F 1 "LED" H 17100 2250 50  0000 C CNN
+F 2 "0603" H 17050 2500 60  0000 C CNN
+	1    17100 2350
 	0    1    1    0   
 $EndComp
-Text Label 3800 1550 0    60   ~ 0
-Vbat
 $Comp
-L BAT54A U9
-U 1 1 49069093
-P 3700 1850
-F 0 "U9" H 3600 1750 60  0000 C CNN
-F 1 "BAT54A" H 3650 2250 60  0000 C CNN
-F 2 "SOT-23" H 3850 2000 60  0000 C CNN
-	1    3700 1850
-	1    0    0    -1  
-$EndComp
-$Comp
-L GND #PWR025
+L GND #PWR044
 U 1 1 49069011
 P 2650 4100
-F 0 "#PWR025" H 2650 4100 30  0001 C CNN
+F 0 "#PWR044" H 2650 4100 30  0001 C CNN
 F 1 "GND" H 2650 4030 30  0001 C CNN
 	1    2650 4100
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR026
+L GND #PWR045
 U 1 1 4906900C
 P 3500 4100
-F 0 "#PWR026" H 3500 4100 30  0001 C CNN
+F 0 "#PWR045" H 3500 4100 30  0001 C CNN
 F 1 "GND" H 3500 4030 30  0001 C CNN
 	1    3500 4100
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR027
+L GND #PWR046
 U 1 1 49069001
 P 2700 3550
-F 0 "#PWR027" H 2700 3550 30  0001 C CNN
+F 0 "#PWR046" H 2700 3550 30  0001 C CNN
 F 1 "GND" H 2700 3480 30  0001 C CNN
 	1    2700 3550
 	0    1    1    0   
 $EndComp
 $Comp
-L GND #PWR028
+L GND #PWR047
 U 1 1 49068FFD
 P 3400 3650
-F 0 "#PWR028" H 3400 3650 30  0001 C CNN
+F 0 "#PWR047" H 3400 3650 30  0001 C CNN
 F 1 "GND" H 3400 3580 30  0001 C CNN
 	1    3400 3650
 	0    -1   -1   0   
@@ -1440,10 +2202,10 @@ F 2 "0402" H 2900 3850 60  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR029
+L GND #PWR048
 U 1 1 49068F56
 P 2950 3350
-F 0 "#PWR029" H 2950 3350 30  0001 C CNN
+F 0 "#PWR048" H 2950 3350 30  0001 C CNN
 F 1 "GND" H 2950 3280 30  0001 C CNN
 	1    2950 3350
 	0    -1   -1   0   
@@ -1453,7 +2215,7 @@ L R R2
 U 1 1 49068F42
 P 2600 3350
 F 0 "R2" V 2680 3350 50  0000 C CNN
-F 1 "100k" V 2600 3350 50  0000 C CNN
+F 1 "5k" V 2600 3350 50  0000 C CNN
 F 2 "0402" V 2500 3350 60  0000 C CNN
 	1    2600 3350
 	0    1    1    0   
@@ -1469,10 +2231,10 @@ F 2 "NDK_XTAL" H 3400 3800 60  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR030
+L GND #PWR049
 U 1 1 49068EE2
 P 2300 4150
-F 0 "#PWR030" H 2300 4150 30  0001 C CNN
+F 0 "#PWR049" H 2300 4150 30  0001 C CNN
 F 1 "GND" H 2300 4080 30  0001 C CNN
 	1    2300 4150
 	1    0    0    -1  
@@ -1516,19 +2278,19 @@ $EndComp
 Text Label 2200 2950 0    60   ~ 0
 MOSI
 $Comp
-L GND #PWR031
+L GND #PWR050
 U 1 1 49068D2C
 P 3500 2950
-F 0 "#PWR031" H 3500 2950 30  0001 C CNN
+F 0 "#PWR050" H 3500 2950 30  0001 C CNN
 F 1 "GND" H 3500 2880 30  0001 C CNN
 	1    3500 2950
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR032
+L GND #PWR051
 U 1 1 49068D11
 P 3100 1550
-F 0 "#PWR032" H 3100 1550 30  0001 C CNN
+F 0 "#PWR051" H 3100 1550 30  0001 C CNN
 F 1 "GND" H 3100 1480 30  0001 C CNN
 	1    3100 1550
 	-1   0    0    1   
@@ -1544,28 +2306,28 @@ F 2 "0402" H 3350 1800 60  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR033
+L GND #PWR052
 U 1 1 49068C8E
 P 2800 1550
-F 0 "#PWR033" H 2800 1550 30  0001 C CNN
+F 0 "#PWR052" H 2800 1550 30  0001 C CNN
 F 1 "GND" H 2800 1480 30  0001 C CNN
 	1    2800 1550
 	-1   0    0    1   
 $EndComp
 $Comp
-L GND #PWR034
+L GND #PWR053
 U 1 1 49068C8B
 P 2500 1550
-F 0 "#PWR034" H 2500 1550 30  0001 C CNN
+F 0 "#PWR053" H 2500 1550 30  0001 C CNN
 F 1 "GND" H 2500 1480 30  0001 C CNN
 	1    2500 1550
 	-1   0    0    1   
 $EndComp
 $Comp
-L GND #PWR035
+L GND #PWR054
 U 1 1 49068C83
 P 2200 1550
-F 0 "#PWR035" H 2200 1550 30  0001 C CNN
+F 0 "#PWR054" H 2200 1550 30  0001 C CNN
 F 1 "GND" H 2200 1480 30  0001 C CNN
 	1    2200 1550
 	-1   0    0    1   
@@ -1689,75 +2451,45 @@ PF6
 Text Label 9450 2100 2    60   ~ 0
 PF5
 $Comp
-L VDD #PWR038
+L VDD #PWR055
 U 1 1 490687A4
 P 7900 2600
-F 0 "#PWR038" H 7900 2700 30  0001 C CNN
+F 0 "#PWR055" H 7900 2700 30  0001 C CNN
 F 1 "VDD" H 7900 2710 30  0000 C CNN
 	1    7900 2600
 	1    0    0    -1  
 $EndComp
 $Comp
-L VCC #PWR039
+L VCC #PWR056
 U 1 1 490686E4
 P 9200 5100
-F 0 "#PWR039" H 9200 5200 30  0001 C CNN
+F 0 "#PWR056" H 9200 5200 30  0001 C CNN
 F 1 "VCC" H 9200 5200 30  0000 C CNN
 	1    9200 5100
 	1    0    0    -1  
 $EndComp
 $Comp
-L VDD #PWR040
+L VDD #PWR057
 U 1 1 490686DD
 P 9300 3600
-F 0 "#PWR040" H 9300 3700 30  0001 C CNN
+F 0 "#PWR057" H 9300 3700 30  0001 C CNN
 F 1 "VDD" H 9300 3710 30  0000 C CNN
 	1    9300 3600
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR041
+L GND #PWR058
 U 1 1 490686CA
 P 10850 5850
-F 0 "#PWR041" H 10850 5850 30  0001 C CNN
+F 0 "#PWR058" H 10850 5850 30  0001 C CNN
 F 1 "GND" H 10850 5780 30  0001 C CNN
 	1    10850 5850
 	1    0    0    -1  
 $EndComp
 NoConn ~ 9450 5800
 NoConn ~ 9450 5700
-Text Label 11700 4600 0    60   ~ 0
-Vbat
 Text Label 1800 7050 0    60   ~ 0
 V5
-$Comp
-L GND #PWR042
-U 1 1 490685E2
-P 11750 4100
-F 0 "#PWR042" H 11750 4100 30  0001 C CNN
-F 1 "GND" H 11750 4030 30  0001 C CNN
-	1    11750 4100
-	0    -1   -1   0   
-$EndComp
-$Comp
-L GND #PWR043
-U 1 1 490685D9
-P 11750 4000
-F 0 "#PWR043" H 11750 4000 30  0001 C CNN
-F 1 "GND" H 11750 3930 30  0001 C CNN
-	1    11750 4000
-	0    -1   -1   0   
-$EndComp
-$Comp
-L TESTCON U16
-U 1 1 49068598
-P 11200 4250
-F 0 "U16" H 11100 4600 60  0000 C CNN
-F 1 "TESTCON" H 11100 3800 60  0000 C CNN
-F 2 "7x100mil" H 11040 4660 60  0000 C CNN
-	1    11200 4250
-	-1   0    0    -1  
-$EndComp
 Text Label 13350 4400 0    60   ~ 0
 TSCLK0
 Text Label 13350 4300 0    60   ~ 0
@@ -1795,10 +2527,10 @@ F 2 "0402" H 12850 1000 60  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L VDD #PWR044
+L VDD #PWR059
 U 1 1 490559A9
 P 8650 600
-F 0 "#PWR044" H 8650 700 30  0001 C CNN
+F 0 "#PWR059" H 8650 700 30  0001 C CNN
 F 1 "VDD" H 8650 710 30  0000 C CNN
 	1    8650 600 
 	1    0    0    -1  
@@ -1834,10 +2566,10 @@ F 2 "0402" H 11200 1000 60  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR045
+L GND #PWR060
 U 1 1 4905594D
 P 8650 1150
-F 0 "#PWR045" H 8650 1150 30  0001 C CNN
+F 0 "#PWR060" H 8650 1150 30  0001 C CNN
 F 1 "GND" H 8650 1080 30  0001 C CNN
 	1    8650 1150
 	1    0    0    -1  
@@ -1923,19 +2655,19 @@ F 2 "0402" H 7300 1000 60  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L VCC #PWR046
+L VCC #PWR061
 U 1 1 49055924
 P 3750 600
-F 0 "#PWR046" H 3750 700 30  0001 C CNN
+F 0 "#PWR061" H 3750 700 30  0001 C CNN
 F 1 "VCC" H 3750 700 30  0000 C CNN
 	1    3750 600 
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR047
+L GND #PWR062
 U 1 1 4905591F
 P 3750 1150
-F 0 "#PWR047" H 3750 1150 30  0001 C CNN
+F 0 "#PWR062" H 3750 1150 30  0001 C CNN
 F 1 "GND" H 3750 1080 30  0001 C CNN
 	1    3750 1150
 	1    0    0    -1  
@@ -2015,10 +2747,10 @@ PF4
 Text Notes 9600 6200 0    60   ~ 0
 too keep radio from 
 $Comp
-L VDD #PWR048
+L VDD #PWR063
 U 1 1 490556AC
 P 10800 6400
-F 0 "#PWR048" H 10800 6500 30  0001 C CNN
+F 0 "#PWR063" H 10800 6500 30  0001 C CNN
 F 1 "VDD" H 10800 6510 30  0000 C CNN
 	1    10800 6400
 	1    0    0    -1  
@@ -2080,55 +2812,55 @@ MISO
 Text Label 11550 6600 2    60   ~ 0
 MOSI
 $Comp
-L GND #PWR049
+L GND #PWR064
 U 1 1 490553F1
 P 12800 6400
-F 0 "#PWR049" H 12800 6400 30  0001 C CNN
+F 0 "#PWR064" H 12800 6400 30  0001 C CNN
 F 1 "GND" H 12800 6330 30  0001 C CNN
 	1    12800 6400
 	0    -1   -1   0   
 $EndComp
 $Comp
-L GND #PWR050
+L GND #PWR065
 U 1 1 490553EC
 P 12150 7100
-F 0 "#PWR050" H 12150 7100 30  0001 C CNN
+F 0 "#PWR065" H 12150 7100 30  0001 C CNN
 F 1 "GND" H 12150 7030 30  0001 C CNN
 	1    12150 7100
 	1    0    0    -1  
 $EndComp
 $Comp
-L VDD #PWR051
+L VDD #PWR066
 U 1 1 4905532C
 P 14750 5250
-F 0 "#PWR051" H 14750 5350 30  0001 C CNN
+F 0 "#PWR066" H 14750 5350 30  0001 C CNN
 F 1 "VDD" H 14750 5360 30  0000 C CNN
 	1    14750 5250
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR052
+L GND #PWR067
 U 1 1 49055305
 P 14050 5650
-F 0 "#PWR052" H 14050 5650 30  0001 C CNN
+F 0 "#PWR067" H 14050 5650 30  0001 C CNN
 F 1 "GND" H 14050 5580 30  0001 C CNN
 	1    14050 5650
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR053
+L GND #PWR068
 U 1 1 49055302
 P 13550 5650
-F 0 "#PWR053" H 13550 5650 30  0001 C CNN
+F 0 "#PWR068" H 13550 5650 30  0001 C CNN
 F 1 "GND" H 13550 5580 30  0001 C CNN
 	1    13550 5650
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR054
+L GND #PWR069
 U 1 1 49055300
 P 13150 5650
-F 0 "#PWR054" H 13150 5650 30  0001 C CNN
+F 0 "#PWR069" H 13150 5650 30  0001 C CNN
 F 1 "GND" H 13150 5580 30  0001 C CNN
 	1    13150 5650
 	1    0    0    -1  
@@ -2174,19 +2906,19 @@ F 2 "0402" V 14600 5250 60  0000 C CNN
 	0    -1   -1   0   
 $EndComp
 $Comp
-L GND #PWR055
+L GND #PWR070
 U 1 1 49055257
 P 12350 5400
-F 0 "#PWR055" H 12350 5400 30  0001 C CNN
+F 0 "#PWR070" H 12350 5400 30  0001 C CNN
 F 1 "GND" H 12350 5330 30  0001 C CNN
 	1    12350 5400
 	-1   0    0    1   
 $EndComp
 $Comp
-L GND #PWR056
+L GND #PWR071
 U 1 1 490551E4
 P 14050 6800
-F 0 "#PWR056" H 14050 6800 30  0001 C CNN
+F 0 "#PWR071" H 14050 6800 30  0001 C CNN
 F 1 "GND" H 14050 6730 30  0001 C CNN
 	1    14050 6800
 	1    0    0    -1  
@@ -2212,19 +2944,19 @@ F 2 "0402" H 13650 6500 60  0000 C CNN
 	0    1    1    0   
 $EndComp
 $Comp
-L GND #PWR057
+L GND #PWR072
 U 1 1 49055164
 P 14150 7400
-F 0 "#PWR057" H 14150 7400 30  0001 C CNN
+F 0 "#PWR072" H 14150 7400 30  0001 C CNN
 F 1 "GND" H 14150 7330 30  0001 C CNN
 	1    14150 7400
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR058
+L GND #PWR073
 U 1 1 49055162
 P 13650 7400
-F 0 "#PWR058" H 13650 7400 30  0001 C CNN
+F 0 "#PWR073" H 13650 7400 30  0001 C CNN
 F 1 "GND" H 13650 7330 30  0001 C CNN
 	1    13650 7400
 	1    0    0    -1  
@@ -2290,28 +3022,28 @@ F 2 "0402" V 12480 5600 60  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR059
+L GND #PWR074
 U 1 1 49055083
 P 12250 5900
-F 0 "#PWR059" H 12250 5900 30  0001 C CNN
+F 0 "#PWR074" H 12250 5900 30  0001 C CNN
 F 1 "GND" H 12250 5830 30  0001 C CNN
 	1    12250 5900
 	-1   0    0    1   
 $EndComp
 $Comp
-L GND #PWR060
+L GND #PWR075
 U 1 1 4905506B
 P 11950 5900
-F 0 "#PWR060" H 11950 5900 30  0001 C CNN
+F 0 "#PWR075" H 11950 5900 30  0001 C CNN
 F 1 "GND" H 11950 5830 30  0001 C CNN
 	1    11950 5900
 	-1   0    0    1   
 $EndComp
 $Comp
-L GND #PWR061
+L GND #PWR076
 U 1 1 4905504E
 P 12050 5500
-F 0 "#PWR061" H 12050 5500 30  0001 C CNN
+F 0 "#PWR076" H 12050 5500 30  0001 C CNN
 F 1 "GND" H 12050 5430 30  0001 C CNN
 	1    12050 5500
 	-1   0    0    1   
@@ -2339,19 +3071,19 @@ $EndComp
 Text Label 9450 1700 2    60   ~ 0
 PF1
 $Comp
-L VCC #PWR062
+L VCC #PWR077
 U 1 1 490160DE
 P 5200 7700
-F 0 "#PWR062" H 5200 7800 30  0001 C CNN
+F 0 "#PWR077" H 5200 7800 30  0001 C CNN
 F 1 "VCC" H 5200 7800 30  0000 C CNN
 	1    5200 7700
 	1    0    0    -1  
 $EndComp
 $Comp
-L VDD #PWR063
+L VDD #PWR078
 U 1 1 490160DA
 P 5200 6200
-F 0 "#PWR063" H 5200 6300 30  0001 C CNN
+F 0 "#PWR078" H 5200 6300 30  0001 C CNN
 F 1 "VDD" H 5200 6310 30  0000 C CNN
 	1    5200 6200
 	1    0    0    -1  
@@ -2381,10 +3113,10 @@ Text Notes 5250 7700 0    60   ~ 0
 Text Notes 5250 6200 0    60   ~ 0
 2.85V
 $Comp
-L GND #PWR064
+L GND #PWR079
 U 1 1 49015D38
 P 1400 6700
-F 0 "#PWR064" H 1400 6700 30  0001 C CNN
+F 0 "#PWR079" H 1400 6700 30  0001 C CNN
 F 1 "GND" H 1400 6630 30  0001 C CNN
 	1    1400 6700
 	0    1    1    0   
@@ -2400,19 +3132,19 @@ F 2 "2x100mil" H 1540 6540 60  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR065
+L GND #PWR080
 U 1 1 49015CFF
 P 1350 7450
-F 0 "#PWR065" H 1350 7450 30  0001 C CNN
+F 0 "#PWR080" H 1350 7450 30  0001 C CNN
 F 1 "GND" H 1350 7380 30  0001 C CNN
 	1    1350 7450
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR066
+L GND #PWR081
 U 1 1 49015CFB
 P 1800 7450
-F 0 "#PWR066" H 1800 7450 30  0001 C CNN
+F 0 "#PWR081" H 1800 7450 30  0001 C CNN
 F 1 "GND" H 1800 7380 30  0001 C CNN
 	1    1800 7450
 	1    0    0    -1  
@@ -2448,10 +3180,10 @@ F 2 "0402" H 4750 6650 60  0000 C CNN
 	-1   0    0    1   
 $EndComp
 $Comp
-L GND #PWR067
+L GND #PWR082
 U 1 1 49015C41
 P 4650 5850
-F 0 "#PWR067" H 4650 5850 30  0001 C CNN
+F 0 "#PWR082" H 4650 5850 30  0001 C CNN
 F 1 "GND" H 4650 5780 30  0001 C CNN
 	1    4650 5850
 	-1   0    0    1   
@@ -2477,37 +3209,37 @@ F 2 "0402" V 4550 6650 60  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR068
+L GND #PWR083
 U 1 1 49015C2C
 P 2350 6950
-F 0 "#PWR068" H 2350 6950 30  0001 C CNN
+F 0 "#PWR083" H 2350 6950 30  0001 C CNN
 F 1 "GND" H 2350 6880 30  0001 C CNN
 	1    2350 6950
 	0    1    1    0   
 $EndComp
 $Comp
-L GND #PWR069
+L GND #PWR084
 U 1 1 49015C1A
 P 3850 7050
-F 0 "#PWR069" H 3850 7050 30  0001 C CNN
+F 0 "#PWR084" H 3850 7050 30  0001 C CNN
 F 1 "GND" H 3850 6980 30  0001 C CNN
 	1    3850 7050
 	0    -1   -1   0   
 $EndComp
 $Comp
-L GND #PWR070
+L GND #PWR085
 U 1 1 49015C15
 P 3200 7650
-F 0 "#PWR070" H 3200 7650 30  0001 C CNN
+F 0 "#PWR085" H 3200 7650 30  0001 C CNN
 F 1 "GND" H 3200 7580 30  0001 C CNN
 	1    3200 7650
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR071
+L GND #PWR086
 U 1 1 49015BC9
 P 4650 8250
-F 0 "#PWR071" H 4650 8250 30  0001 C CNN
+F 0 "#PWR086" H 4650 8250 30  0001 C CNN
 F 1 "GND" H 4650 8180 30  0001 C CNN
 	1    4650 8250
 	1    0    0    -1  
@@ -2533,10 +3265,10 @@ F 2 "0402" V 4780 7450 60  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR072
+L GND #PWR087
 U 1 1 49015B93
 P 5350 7300
-F 0 "#PWR072" H 5350 7300 30  0001 C CNN
+F 0 "#PWR087" H 5350 7300 30  0001 C CNN
 F 1 "GND" H 5350 7230 30  0001 C CNN
 	1    5350 7300
 	1    0    0    -1  
@@ -2592,19 +3324,19 @@ F 2 "QFN-10" H 3040 6940 60  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR073
+L GND #PWR088
 U 1 1 490159EC
 P 5300 5200
-F 0 "#PWR073" H 5300 5200 30  0001 C CNN
+F 0 "#PWR088" H 5300 5200 30  0001 C CNN
 F 1 "GND" H 5300 5130 30  0001 C CNN
 	1    5300 5200
 	1    0    0    -1  
 $EndComp
 $Comp
-L VDD #PWR074
+L VDD #PWR089
 U 1 1 490159E9
 P 5300 4950
-F 0 "#PWR074" H 5300 5050 30  0001 C CNN
+F 0 "#PWR089" H 5300 5050 30  0001 C CNN
 F 1 "VDD" H 5300 5060 30  0000 C CNN
 	1    5300 4950
 	1    0    0    -1  
@@ -2642,10 +3374,10 @@ DT1PRI
 Text Label 5150 4100 0    60   ~ 0
 TSCLK1
 $Comp
-L VDD #PWR075
+L VDD #PWR090
 U 1 1 490157D9
 P 5600 2900
-F 0 "#PWR075" H 5600 3000 30  0001 C CNN
+F 0 "#PWR090" H 5600 3000 30  0001 C CNN
 F 1 "VDD" H 5600 3010 30  0000 C CNN
 	1    5600 2900
 	1    0    0    -1  
@@ -2659,19 +3391,19 @@ RFS1
 Text Label 5450 2200 0    60   ~ 0
 RSCLK1
 $Comp
-L GND #PWR076
+L GND #PWR091
 U 1 1 4901560F
 P 6300 8150
-F 0 "#PWR076" H 6300 8150 30  0001 C CNN
+F 0 "#PWR091" H 6300 8150 30  0001 C CNN
 F 1 "GND" H 6300 8080 30  0001 C CNN
 	1    6300 8150
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR077
+L GND #PWR092
 U 1 1 49015596
 P 8500 7700
-F 0 "#PWR077" H 8500 7700 30  0001 C CNN
+F 0 "#PWR092" H 8500 7700 30  0001 C CNN
 F 1 "GND" H 8500 7630 30  0001 C CNN
 	1    8500 7700
 	0    -1   -1   0   
@@ -2687,10 +3419,10 @@ F 2 "0402" V 8150 7750 60  0000 C CNN
 	0    1    1    0   
 $EndComp
 $Comp
-L VDD #PWR078
+L VDD #PWR093
 U 1 1 4901541E
 P 8500 6850
-F 0 "#PWR078" H 8500 6950 30  0001 C CNN
+F 0 "#PWR093" H 8500 6950 30  0001 C CNN
 F 1 "VDD" H 8500 6960 30  0000 C CNN
 	1    8500 6850
 	1    0    0    -1  
@@ -2706,10 +3438,10 @@ F 2 "0402" V 8150 6950 60  0000 C CNN
 	0    1    1    0   
 $EndComp
 $Comp
-L VDD #PWR079
+L VDD #PWR094
 U 1 1 49015409
 P 5600 7300
-F 0 "#PWR079" H 5600 7400 30  0001 C CNN
+F 0 "#PWR094" H 5600 7400 30  0001 C CNN
 F 1 "VDD" H 5600 7410 30  0000 C CNN
 	1    5600 7300
 	1    0    0    -1  
@@ -2774,19 +3506,19 @@ F 2 "0402" V 14250 3100 60  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L VDD #PWR080
+L VDD #PWR095
 U 1 1 49015209
 P 14100 2750
-F 0 "#PWR080" H 14100 2850 30  0001 C CNN
+F 0 "#PWR095" H 14100 2850 30  0001 C CNN
 F 1 "VDD" H 14100 2860 30  0000 C CNN
 	1    14100 2750
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR081
+L GND #PWR096
 U 1 1 490151FF
 P 13000 2750
-F 0 "#PWR081" H 13000 2750 30  0001 C CNN
+F 0 "#PWR096" H 13000 2750 30  0001 C CNN
 F 1 "GND" H 13000 2680 30  0001 C CNN
 	1    13000 2750
 	0    1    1    0   
@@ -2794,19 +3526,19 @@ $EndComp
 Text Label 13000 2950 2    60   ~ 0
 RESET
 $Comp
-L GND #PWR082
+L GND #PWR097
 U 1 1 490151EC
 P 14000 3650
-F 0 "#PWR082" H 14000 3650 30  0001 C CNN
+F 0 "#PWR097" H 14000 3650 30  0001 C CNN
 F 1 "GND" H 14000 3580 30  0001 C CNN
 	1    14000 3650
 	0    1    1    0   
 $EndComp
 $Comp
-L GND #PWR083
+L GND #PWR098
 U 1 1 490151E3
 P 14000 3550
-F 0 "#PWR083" H 14000 3550 30  0001 C CNN
+F 0 "#PWR098" H 14000 3550 30  0001 C CNN
 F 1 "GND" H 14000 3480 30  0001 C CNN
 	1    14000 3550
 	0    1    1    0   
@@ -2830,10 +3562,10 @@ MOSI
 Text Label 12100 3800 2    60   ~ 0
 PF2
 $Comp
-L VDD #PWR084
+L VDD #PWR099
 U 1 1 490150A1
 P 12100 3600
-F 0 "#PWR084" H 12100 3700 30  0001 C CNN
+F 0 "#PWR099" H 12100 3700 30  0001 C CNN
 F 1 "VDD" H 12100 3710 30  0000 C CNN
 	1    12100 3600
 	1    0    0    -1  
@@ -2861,10 +3593,10 @@ $EndComp
 Text Label 9450 1800 2    60   ~ 0
 PF2
 $Comp
-L VDD #PWR085
+L VDD #PWR0100
 U 1 1 49014F14
 P 13250 1450
-F 0 "#PWR085" H 13250 1550 30  0001 C CNN
+F 0 "#PWR0100" H 13250 1550 30  0001 C CNN
 F 1 "VDD" H 13250 1560 30  0000 C CNN
 	1    13250 1450
 	1    0    0    -1  
@@ -2880,10 +3612,10 @@ F 2 "0402" V 13150 1750 60  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L VDD #PWR086
+L VDD #PWR0101
 U 1 1 49014E61
 P 12100 2750
-F 0 "#PWR086" H 12100 2850 30  0001 C CNN
+F 0 "#PWR0101" H 12100 2850 30  0001 C CNN
 F 1 "VDD" H 12100 2860 30  0000 C CNN
 	1    12100 2750
 	1    0    0    -1  
@@ -2901,37 +3633,37 @@ $EndComp
 Text Label 11950 2250 2    60   ~ 0
 PF2
 $Comp
-L VDD #PWR087
+L VDD #PWR0102
 U 1 1 49000171
 P 13300 2250
-F 0 "#PWR087" H 13300 2350 30  0001 C CNN
+F 0 "#PWR0102" H 13300 2350 30  0001 C CNN
 F 1 "VDD" H 13300 2360 30  0000 C CNN
 	1    13300 2250
 	0    1    1    0   
 $EndComp
 $Comp
-L VDD #PWR088
+L VDD #PWR0103
 U 1 1 4900014D
 P 13300 2150
-F 0 "#PWR088" H 13300 2250 30  0001 C CNN
+F 0 "#PWR0103" H 13300 2250 30  0001 C CNN
 F 1 "VDD" H 13300 2260 30  0000 C CNN
 	1    13300 2150
 	0    1    1    0   
 $EndComp
 $Comp
-L GND #PWR089
+L GND #PWR0104
 U 1 1 49000147
 P 13300 2050
-F 0 "#PWR089" H 13300 2050 30  0001 C CNN
+F 0 "#PWR0104" H 13300 2050 30  0001 C CNN
 F 1 "GND" H 13300 1980 30  0001 C CNN
 	1    13300 2050
 	0    -1   -1   0   
 $EndComp
 $Comp
-L VDD #PWR090
+L VDD #PWR0105
 U 1 1 49000133
 P 11600 1600
-F 0 "#PWR090" H 11600 1700 30  0001 C CNN
+F 0 "#PWR0105" H 11600 1700 30  0001 C CNN
 F 1 "VDD" H 11600 1710 30  0000 C CNN
 	1    11600 1600
 	1    0    0    -1  
@@ -2964,44 +3696,44 @@ U 1 1 48FFFE90
 P 12600 2100
 F 0 "U18" H 12600 2000 60  0000 C CNN
 F 1 "AT45DB081D" H 12600 2350 60  0000 C CNN
-F 2 "VFDN-8" H 12550 1850 60  0000 C CNN
+F 2 "SOIC-8" H 12550 1850 60  0000 C CNN
 	1    12600 2100
 	1    0    0    -1  
 $EndComp
 Text Notes 8150 6300 0    60   ~ 0
 16Mhz
 $Comp
-L GND #PWR091
+L GND #PWR0106
 U 1 1 48FFFD7E
 P 8800 6450
-F 0 "#PWR091" H 8800 6450 30  0001 C CNN
+F 0 "#PWR0106" H 8800 6450 30  0001 C CNN
 F 1 "GND" H 8800 6380 30  0001 C CNN
 	1    8800 6450
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR092
+L GND #PWR0107
 U 1 1 48FFFD7A
 P 7850 6450
-F 0 "#PWR092" H 7850 6450 30  0001 C CNN
+F 0 "#PWR0107" H 7850 6450 30  0001 C CNN
 F 1 "GND" H 7850 6380 30  0001 C CNN
 	1    7850 6450
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR093
+L GND #PWR0108
 U 1 1 48FFFD68
 P 8600 6050
-F 0 "#PWR093" H 8600 6050 30  0001 C CNN
+F 0 "#PWR0108" H 8600 6050 30  0001 C CNN
 F 1 "GND" H 8600 5980 30  0001 C CNN
 	1    8600 6050
 	0    -1   -1   0   
 $EndComp
 $Comp
-L GND #PWR094
+L GND #PWR0109
 U 1 1 48FFFD63
 P 8000 5950
-F 0 "#PWR094" H 8000 5950 30  0001 C CNN
+F 0 "#PWR0109" H 8000 5950 30  0001 C CNN
 F 1 "GND" H 8000 5880 30  0001 C CNN
 	1    8000 5950
 	0    1    1    0   
