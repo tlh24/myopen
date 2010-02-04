@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Tue 02 Feb 2010 08:14:08 PM EST
+EESchema Schematic File Version 2  date Wed 03 Feb 2010 07:07:18 PM EST
 LIBS:power,device,emg_sym,/home/tlh24/svn/myopen/emg_dsp/lib/linear,./stage4.cache
 EELAYER 24  0
 EELAYER END
@@ -13,6 +13,15 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
+$Comp
+L VEE #PWR?
+U 1 1 4B6A0F3E
+P 6550 5250
+F 0 "#PWR?" H 6550 5450 40  0001 C CNN
+F 1 "VEE" H 6550 5400 40  0000 C CNN
+	1    6550 5250
+	1    0    0    -1  
+$EndComp
 Wire Wire Line
 	4500 5850 4150 5850
 Wire Wire Line
@@ -872,15 +881,6 @@ F 0 "U?" H 6850 5350 60  0000 C CNN
 F 1 "JUMP" H 6850 5550 60  0000 C CNN
 F 2 "2x100mil" H 7150 5650 60  0000 C CNN
 	1    6850 5450
-	1    0    0    -1  
-$EndComp
-$Comp
-L VCC #PWR0122
-U 1 1 4B4BC2E0
-P 6550 5250
-F 0 "#PWR0122" H 6550 5350 30  0001 C CNN
-F 1 "VCC" H 6550 5350 30  0000 C CNN
-	1    6550 5250
 	1    0    0    -1  
 $EndComp
 $Comp

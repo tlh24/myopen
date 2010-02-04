@@ -1,9 +1,9 @@
-EESchema Schematic File Version 2  date Tue 02 Feb 2010 08:14:08 PM EST
+EESchema Schematic File Version 2  date Wed 03 Feb 2010 07:07:18 PM EST
 LIBS:power,device,emg_sym,/home/tlh24/svn/myopen/emg_dsp/lib/linear,./stage4.cache
 EELAYER 24  0
 EELAYER END
 $Descr User 16000 12000
-Sheet 7 44
+Sheet 12 44
 Title ""
 Date "9 jan 2009"
 Rev ""
@@ -13,30 +13,37 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
-Text Notes 11000 3550 0    60   ~ 0
-for measuring the noise charateristics of the amps.
+Connection ~ 13000 2850
+Wire Wire Line
+	13000 2800 13000 2850
+Wire Wire Line
+	1350 600  1350 8100
+Wire Wire Line
+	5700 9100 5450 9100
+Wire Wire Line
+	5450 9100 5450 9050
+Wire Wire Line
+	6450 9100 6100 9100
+Connection ~ 7050 9100
+Wire Wire Line
+	8350 9300 8250 9300
+Connection ~ 7900 9100
+Wire Wire Line
+	9050 9300 9500 9300
+Wire Wire Line
+	9900 9300 10000 9300
+Wire Wire Line
+	9050 9100 9250 9100
+Wire Wire Line
+	7050 9100 8350 9100
+Connection ~ 7300 9100
+Wire Wire Line
+	5700 8100 5450 8100
+Wire Wire Line
+	5450 8100 5450 8050
+Wire Wire Line
+	6450 8100 6100 8100
 Connection ~ 12700 2200
-$Comp
-L GND #PWR0198
-U 1 1 4B68AEDF
-P 12700 2600
-F 0 "#PWR0198" H 12700 2600 30  0001 C CNN
-F 1 "GND" H 12700 2530 30  0001 C CNN
-	1    12700 2600
-	1    0    0    -1  
-$EndComp
-$Comp
-L C C?
-U 1 1 4B68AED9
-P 12700 2400
-F 0 "C?" H 12750 2500 50  0000 L CNN
-F 1 "2.2uf" H 12750 2300 50  0000 L CNN
-F 2 "0402" H 12950 2400 60  0000 C CNN
-	1    12700 2400
-	1    0    0    -1  
-$EndComp
-Text Label 12200 2200 0    60   ~ 0
-V27A
 Connection ~ 12200 2200
 Wire Wire Line
 	12200 2200 12200 3000
@@ -52,8 +59,6 @@ Wire Wire Line
 	11000 2850 10600 2850
 Wire Wire Line
 	13050 2850 12900 2850
-Wire Wire Line
-	13450 2650 13450 2850
 Wire Wire Line
 	12150 2850 12250 2850
 Wire Wire Line
@@ -123,11 +128,7 @@ Wire Wire Line
 	10400 4200 9250 4200
 Wire Wire Line
 	9250 4200 9250 4450
-Connection ~ 5700 7400
-Wire Wire Line
-	5700 6800 5700 8700
-Wire Wire Line
-	5700 6800 5950 6800
+Connection ~ 7050 8100
 Connection ~ 1700 9050
 Connection ~ 3650 9050
 Wire Wire Line
@@ -135,18 +136,10 @@ Wire Wire Line
 Wire Wire Line
 	1700 9050 2100 9050
 Wire Wire Line
-	7000 7600 6900 7600
+	8350 8300 8250 8300
+Connection ~ 7900 8100
 Wire Wire Line
-	6900 7600 6900 8900
-Wire Wire Line
-	6900 8900 7000 8900
-Connection ~ 6550 7400
-Wire Wire Line
-	7700 8700 7900 8700
-Wire Wire Line
-	8550 8900 8650 8900
-Wire Wire Line
-	7700 7600 8150 7600
+	9050 8300 9500 8300
 Wire Wire Line
 	6250 6000 6250 6100
 Wire Wire Line
@@ -251,22 +244,12 @@ Wire Wire Line
 Wire Wire Line
 	6250 5550 6250 5600
 Wire Wire Line
-	7700 8900 8150 8900
+	9900 8300 10000 8300
 Wire Wire Line
-	8550 7600 8650 7600
+	9050 8100 9250 8100
 Wire Wire Line
-	7700 7400 7900 7400
-Wire Wire Line
-	5700 7400 7000 7400
-Wire Wire Line
-	5700 8700 7000 8700
-Connection ~ 6550 8700
-Connection ~ 5950 7400
-Connection ~ 6900 8150
-Wire Wire Line
-	6550 6800 6900 6800
-Wire Wire Line
-	7350 6800 7300 6800
+	7050 8100 8350 8100
+Connection ~ 7300 8100
 Wire Wire Line
 	9250 6150 9250 6350
 Wire Wire Line
@@ -293,8 +276,6 @@ Wire Wire Line
 Wire Wire Line
 	8200 2650 8600 2650
 Wire Wire Line
-	6900 8150 6450 8150
-Wire Wire Line
 	1500 800  1500 850 
 Wire Wire Line
 	2200 650  2300 650 
@@ -318,8 +299,6 @@ Wire Wire Line
 	1500 1800 1500 1850
 Wire Wire Line
 	2200 1650 2300 1650
-Wire Wire Line
-	1350 2100 1650 2100
 Wire Wire Line
 	1650 2300 1500 2300
 Wire Wire Line
@@ -449,7 +428,7 @@ Wire Wire Line
 Wire Wire Line
 	2200 8150 2300 8150
 Wire Wire Line
-	2950 600  3250 600 
+	3250 600  2950 600 
 Wire Wire Line
 	3250 800  3100 800 
 Wire Wire Line
@@ -599,7 +578,7 @@ Wire Wire Line
 Wire Wire Line
 	3800 7650 3900 7650
 Wire Wire Line
-	2950 8100 3250 8100
+	3250 8100 2950 8100
 Wire Wire Line
 	3250 8300 3100 8300
 Wire Wire Line
@@ -647,7 +626,7 @@ Wire Wire Line
 Wire Wire Line
 	11750 2850 11750 2650
 Wire Wire Line
-	13450 2850 13600 2850
+	13600 2850 13450 2850
 Wire Wire Line
 	10600 3350 10600 3400
 Wire Wire Line
@@ -661,11 +640,301 @@ Wire Wire Line
 Wire Wire Line
 	10850 3000 10850 2200
 Wire Wire Line
-	10850 2200 13550 2200
-Wire Wire Line
 	13550 2200 13550 3000
 Wire Wire Line
 	13550 3000 13600 3000
+Wire Wire Line
+	10850 2200 13800 2200
+Connection ~ 13550 2200
+Connection ~ 11250 2200
+Wire Wire Line
+	1350 2100 1650 2100
+Wire Wire Line
+	2950 8100 2950 600 
+Connection ~ 1350 1100
+Connection ~ 1350 1600
+Connection ~ 1350 2100
+Connection ~ 1350 2600
+Connection ~ 1350 3100
+Connection ~ 1350 3600
+Connection ~ 1350 4100
+Connection ~ 1350 4600
+Connection ~ 1350 5100
+Connection ~ 1350 5600
+Connection ~ 1350 6100
+Connection ~ 1350 6600
+Connection ~ 1350 7100
+Connection ~ 1350 7600
+Connection ~ 2950 7600
+Connection ~ 2950 7100
+Connection ~ 2950 6600
+Connection ~ 2950 6100
+Connection ~ 2950 5600
+Connection ~ 2950 5100
+Connection ~ 2950 4600
+Connection ~ 2950 4100
+Connection ~ 2950 3600
+Connection ~ 2950 3100
+Connection ~ 2950 2600
+Connection ~ 2950 2100
+Connection ~ 2950 1600
+Connection ~ 2950 1100
+$Comp
+L VAA #PWR?
+U 1 1 4B69FA63
+P 5450 9050
+F 0 "#PWR?" H 5450 9250 40  0001 C CNN
+F 1 "VAA" H 5450 9200 40  0000 C CNN
+	1    5450 9050
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 4B69FA61
+P 6450 9500
+F 0 "#PWR?" H 6450 9500 30  0001 C CNN
+F 1 "GND" H 6450 9430 30  0001 C CNN
+	1    6450 9500
+	-1   0    0    -1  
+$EndComp
+$Comp
+L JUMP U?
+U 1 1 4B69FA60
+P 5900 9100
+F 0 "U?" H 5900 9000 60  0000 C CNN
+F 1 "JUMP" H 5900 9200 60  0000 C CNN
+F 2 "2x100mil" H 5840 8940 60  0000 C CNN
+	1    5900 9100
+	-1   0    0    -1  
+$EndComp
+$Comp
+L C C?
+U 1 1 4B69FA5F
+P 6450 9300
+F 0 "C?" H 6500 9400 50  0000 L CNN
+F 1 "1uf" H 6500 9200 50  0000 L CNN
+F 2 "0402" H 6550 9450 60  0000 C CNN
+	1    6450 9300
+	-1   0    0    -1  
+$EndComp
+$Comp
+L INDUCTOR L?
+U 1 1 4B69FA5E
+P 6750 9100
+F 0 "L?" V 6700 9100 40  0000 C CNN
+F 1 "ferrite" V 6850 9100 40  0000 C CNN
+F 2 "0402" V 6660 9060 60  0000 C CNN
+	1    6750 9100
+	0    1    -1   0   
+$EndComp
+Text Label 9250 9100 0    60   ~ 0
+V18
+$Comp
+L GND #PWR?
+U 1 1 4B69FA5D
+P 8350 9200
+F 0 "#PWR?" H 8350 9200 30  0001 C CNN
+F 1 "GND" H 8350 9130 30  0001 C CNN
+	1    8350 9200
+	0    1    1    0   
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 4B69FA5C
+P 7300 9500
+F 0 "#PWR?" H 7300 9500 30  0001 C CNN
+F 1 "GND" H 7300 9430 30  0001 C CNN
+	1    7300 9500
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 4B69FA5B
+P 7900 9500
+F 0 "#PWR?" H 7900 9500 30  0001 C CNN
+F 1 "GND" H 7900 9430 30  0001 C CNN
+	1    7900 9500
+	1    0    0    -1  
+$EndComp
+$Comp
+L C C?
+U 1 1 4B69FA5A
+P 7300 9300
+F 0 "C?" H 7350 9400 50  0000 L CNN
+F 1 "2.2uf" H 7350 9200 50  0000 L CNN
+F 2 "0402" H 7400 9450 60  0000 C CNN
+	1    7300 9300
+	1    0    0    -1  
+$EndComp
+$Comp
+L C C?
+U 1 1 4B69FA59
+P 7900 9300
+F 0 "C?" H 7950 9400 50  0000 L CNN
+F 1 "0.1uf" H 7950 9200 50  0000 L CNN
+F 2 "0402" H 8000 9450 60  0000 C CNN
+	1    7900 9300
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 4B69FA58
+P 9250 9500
+F 0 "#PWR?" H 9250 9500 30  0001 C CNN
+F 1 "GND" H 9250 9430 30  0001 C CNN
+	1    9250 9500
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 4B69FA57
+P 10000 9300
+F 0 "#PWR?" H 10000 9300 30  0001 C CNN
+F 1 "GND" H 10000 9230 30  0001 C CNN
+	1    10000 9300
+	0    -1   -1   0   
+$EndComp
+$Comp
+L C C?
+U 1 1 4B69FA56
+P 9700 9300
+F 0 "C?" H 9750 9400 50  0000 L CNN
+F 1 "0.012uf" H 9750 9200 50  0000 L CNN
+F 2 "0402" H 9800 9450 60  0000 C CNN
+	1    9700 9300
+	0    1    1    0   
+$EndComp
+$Comp
+L C C?
+U 1 1 4B69FA55
+P 9250 9300
+F 0 "C?" H 9300 9400 50  0000 L CNN
+F 1 "2.2uf" H 9300 9200 50  0000 L CNN
+F 2 "0402" H 9350 9450 60  0000 C CNN
+	1    9250 9300
+	1    0    0    -1  
+$EndComp
+$Comp
+L TPS717 U?
+U 1 1 4B69FA54
+P 8650 9300
+F 0 "U?" H 8650 9200 60  0000 C CNN
+F 1 "TPS71718" H 8650 9600 60  0000 C CNN
+F 2 "SC-70-5" H 8590 9140 60  0000 C CNN
+	1    8650 9300
+	1    0    0    -1  
+$EndComp
+$Comp
+L VDD #PWR?
+U 1 1 4B69FA07
+P 5450 8050
+F 0 "#PWR?" H 5450 8150 30  0001 C CNN
+F 1 "VDD" H 5450 8160 30  0000 C CNN
+	1    5450 8050
+	-1   0    0    -1  
+$EndComp
+Text Notes 5250 7750 0    60   ~ 0
+dnp if not using AFE
+$Comp
+L GND #PWR?
+U 1 1 4B69FA06
+P 6450 8500
+F 0 "#PWR?" H 6450 8500 30  0001 C CNN
+F 1 "GND" H 6450 8430 30  0001 C CNN
+	1    6450 8500
+	-1   0    0    -1  
+$EndComp
+$Comp
+L JUMP U?
+U 1 1 4B69FA05
+P 5900 8100
+F 0 "U?" H 5900 8000 60  0000 C CNN
+F 1 "JUMP" H 5900 8200 60  0000 C CNN
+F 2 "2x100mil" H 5840 7940 60  0000 C CNN
+	1    5900 8100
+	-1   0    0    -1  
+$EndComp
+$Comp
+L C C?
+U 1 1 4B69FA04
+P 6450 8300
+F 0 "C?" H 6500 8400 50  0000 L CNN
+F 1 "1uf" H 6500 8200 50  0000 L CNN
+F 2 "0402" H 6550 8450 60  0000 C CNN
+	1    6450 8300
+	-1   0    0    -1  
+$EndComp
+$Comp
+L INDUCTOR L?
+U 1 1 4B69FA03
+P 6750 8100
+F 0 "L?" V 6700 8100 40  0000 C CNN
+F 1 "ferrite" V 6850 8100 40  0000 C CNN
+F 2 "0402" V 6660 8060 60  0000 C CNN
+	1    6750 8100
+	0    1    -1   0   
+$EndComp
+Text Notes 13150 2100 0    60   ~ 0
+supply your own voltage!
+$Comp
+L GND #PWR?
+U 1 1 4B69D0D8
+P 13800 2600
+F 0 "#PWR?" H 13800 2600 30  0001 C CNN
+F 1 "GND" H 13800 2530 30  0001 C CNN
+	1    13800 2600
+	1    0    0    -1  
+$EndComp
+$Comp
+L JUMP U?
+U 1 1 4B69D0D1
+P 13800 2400
+F 0 "U?" H 13800 2300 60  0000 C CNN
+F 1 "JUMP" H 13800 2500 60  0000 C CNN
+F 2 "2x100mil" H 13740 2240 60  0000 C CNN
+	1    13800 2400
+	0    1    1    0   
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 4B69D0B1
+P 11250 2600
+F 0 "#PWR?" H 11250 2600 30  0001 C CNN
+F 1 "GND" H 11250 2530 30  0001 C CNN
+	1    11250 2600
+	1    0    0    -1  
+$EndComp
+$Comp
+L C C?
+U 1 1 4B69D090
+P 11250 2400
+F 0 "C?" H 11300 2500 50  0000 L CNN
+F 1 "0.1uf" H 11300 2300 50  0000 L CNN
+F 2 "0402" H 11500 2400 60  0000 C CNN
+	1    11250 2400
+	1    0    0    -1  
+$EndComp
+Text Notes 11000 3550 0    60   ~ 0
+for measuring the noise charateristics of the amps.
+$Comp
+L GND #PWR0198
+U 1 1 4B68AEDF
+P 12700 2600
+F 0 "#PWR0198" H 12700 2600 30  0001 C CNN
+F 1 "GND" H 12700 2530 30  0001 C CNN
+	1    12700 2600
+	1    0    0    -1  
+$EndComp
+$Comp
+L C C?
+U 1 1 4B68AED9
+P 12700 2400
+F 0 "C?" H 12750 2500 50  0000 L CNN
+F 1 "2.2uf" H 12750 2300 50  0000 L CNN
+F 2 "0402" H 12950 2400 60  0000 C CNN
+	1    12700 2400
+	1    0    0    -1  
+$EndComp
 $Comp
 L GND #PWR0199
 U 1 1 4B68AEB5
@@ -754,11 +1023,11 @@ $EndComp
 $Comp
 L TP TP?
 U 1 1 4B68ADC6
-P 13450 2450
-F 0 "TP?" H 13450 2450 60  0000 C CNN
-F 1 "TP" H 13300 2400 60  0000 C CNN
-F 2 "TP" H 13300 2400 60  0000 C CNN
-	1    13450 2450
+P 13000 2600
+F 0 "TP?" H 13000 2600 60  0000 C CNN
+F 1 "TP" H 12850 2550 60  0000 C CNN
+F 2 "TP" H 12850 2550 60  0000 C CNN
+	1    13000 2600
 	0    -1   -1   0   
 $EndComp
 $Comp
@@ -831,7 +1100,7 @@ F 1 "GND" H 6100 2480 30  0001 C CNN
 	1    0    0    -1  
 $EndComp
 Text Label 6050 2350 0    60   ~ 0
-V27B
+V27
 $Comp
 L 74HC4067 U?
 U 1 1 4B6766CC
@@ -976,12 +1245,10 @@ F 1 "GND" H 3100 8280 30  0001 C CNN
 	1    3100 8350
 	1    0    0    -1  
 $EndComp
-Text Label 2950 8100 0    60   ~ 0
-V27A
 $Sheet
 S 3250 8050 550  300 
 U 4B67642C
-F0 "amp0" 60
+F0 "amp31" 60
 F1 "amp_0201.sch" 60
 F2 "Vdd" I L 3250 8100 60 
 F3 "GND" I L 3250 8300 60 
@@ -997,12 +1264,10 @@ F 1 "GND" H 3100 7780 30  0001 C CNN
 	1    3100 7850
 	1    0    0    -1  
 $EndComp
-Text Label 2950 7600 0    60   ~ 0
-V27A
 $Sheet
 S 3250 7550 550  300 
 U 4B67642A
-F0 "amp0" 60
+F0 "amp30" 60
 F1 "amp_0201.sch" 60
 F2 "Vdd" I L 3250 7600 60 
 F3 "GND" I L 3250 7800 60 
@@ -1018,12 +1283,10 @@ F 1 "GND" H 3100 7280 30  0001 C CNN
 	1    3100 7350
 	1    0    0    -1  
 $EndComp
-Text Label 2950 7100 0    60   ~ 0
-V27A
 $Sheet
 S 3250 7050 550  300 
 U 4B676428
-F0 "amp0" 60
+F0 "amp29" 60
 F1 "amp_0201.sch" 60
 F2 "Vdd" I L 3250 7100 60 
 F3 "GND" I L 3250 7300 60 
@@ -1039,12 +1302,10 @@ F 1 "GND" H 3100 6780 30  0001 C CNN
 	1    3100 6850
 	1    0    0    -1  
 $EndComp
-Text Label 2950 6600 0    60   ~ 0
-V27A
 $Sheet
 S 3250 6550 550  300 
 U 4B676426
-F0 "amp0" 60
+F0 "amp28" 60
 F1 "amp_0201.sch" 60
 F2 "Vdd" I L 3250 6600 60 
 F3 "GND" I L 3250 6800 60 
@@ -1060,12 +1321,10 @@ F 1 "GND" H 3100 6280 30  0001 C CNN
 	1    3100 6350
 	1    0    0    -1  
 $EndComp
-Text Label 2950 6100 0    60   ~ 0
-V27A
 $Sheet
 S 3250 6050 550  300 
 U 4B676424
-F0 "amp0" 60
+F0 "amp27" 60
 F1 "amp_0201.sch" 60
 F2 "Vdd" I L 3250 6100 60 
 F3 "GND" I L 3250 6300 60 
@@ -1081,12 +1340,10 @@ F 1 "GND" H 3100 5780 30  0001 C CNN
 	1    3100 5850
 	1    0    0    -1  
 $EndComp
-Text Label 2950 5600 0    60   ~ 0
-V27A
 $Sheet
 S 3250 5550 550  300 
 U 4B676422
-F0 "amp0" 60
+F0 "amp26" 60
 F1 "amp_0201.sch" 60
 F2 "Vdd" I L 3250 5600 60 
 F3 "GND" I L 3250 5800 60 
@@ -1102,12 +1359,10 @@ F 1 "GND" H 3100 5280 30  0001 C CNN
 	1    3100 5350
 	1    0    0    -1  
 $EndComp
-Text Label 2950 5100 0    60   ~ 0
-V27A
 $Sheet
 S 3250 5050 550  300 
 U 4B676420
-F0 "amp0" 60
+F0 "amp25" 60
 F1 "amp_0201.sch" 60
 F2 "Vdd" I L 3250 5100 60 
 F3 "GND" I L 3250 5300 60 
@@ -1123,12 +1378,10 @@ F 1 "GND" H 3100 4780 30  0001 C CNN
 	1    3100 4850
 	1    0    0    -1  
 $EndComp
-Text Label 2950 4600 0    60   ~ 0
-V27A
 $Sheet
 S 3250 4550 550  300 
 U 4B67641E
-F0 "amp0" 60
+F0 "amp24" 60
 F1 "amp_0201.sch" 60
 F2 "Vdd" I L 3250 4600 60 
 F3 "GND" I L 3250 4800 60 
@@ -1144,12 +1397,10 @@ F 1 "GND" H 3100 4280 30  0001 C CNN
 	1    3100 4350
 	1    0    0    -1  
 $EndComp
-Text Label 2950 4100 0    60   ~ 0
-V27A
 $Sheet
 S 3250 4050 550  300 
 U 4B67640C
-F0 "amp0" 60
+F0 "amp23" 60
 F1 "amp_0201.sch" 60
 F2 "Vdd" I L 3250 4100 60 
 F3 "GND" I L 3250 4300 60 
@@ -1165,12 +1416,10 @@ F 1 "GND" H 3100 3780 30  0001 C CNN
 	1    3100 3850
 	1    0    0    -1  
 $EndComp
-Text Label 2950 3600 0    60   ~ 0
-V27A
 $Sheet
 S 3250 3550 550  300 
 U 4B67640A
-F0 "amp0" 60
+F0 "amp22" 60
 F1 "amp_0201.sch" 60
 F2 "Vdd" I L 3250 3600 60 
 F3 "GND" I L 3250 3800 60 
@@ -1186,12 +1435,10 @@ F 1 "GND" H 3100 3280 30  0001 C CNN
 	1    3100 3350
 	1    0    0    -1  
 $EndComp
-Text Label 2950 3100 0    60   ~ 0
-V27A
 $Sheet
 S 3250 3050 550  300 
 U 4B676408
-F0 "amp0" 60
+F0 "amp21" 60
 F1 "amp_0201.sch" 60
 F2 "Vdd" I L 3250 3100 60 
 F3 "GND" I L 3250 3300 60 
@@ -1207,12 +1454,10 @@ F 1 "GND" H 3100 2780 30  0001 C CNN
 	1    3100 2850
 	1    0    0    -1  
 $EndComp
-Text Label 2950 2600 0    60   ~ 0
-V27A
 $Sheet
 S 3250 2550 550  300 
 U 4B676406
-F0 "amp0" 60
+F0 "amp20" 60
 F1 "amp_0201.sch" 60
 F2 "Vdd" I L 3250 2600 60 
 F3 "GND" I L 3250 2800 60 
@@ -1228,12 +1473,10 @@ F 1 "GND" H 3100 2280 30  0001 C CNN
 	1    3100 2350
 	1    0    0    -1  
 $EndComp
-Text Label 2950 2100 0    60   ~ 0
-V27A
 $Sheet
 S 3250 2050 550  300 
 U 4B6763FA
-F0 "amp0" 60
+F0 "amp19" 60
 F1 "amp_0201.sch" 60
 F2 "Vdd" I L 3250 2100 60 
 F3 "GND" I L 3250 2300 60 
@@ -1249,12 +1492,10 @@ F 1 "GND" H 3100 1780 30  0001 C CNN
 	1    3100 1850
 	1    0    0    -1  
 $EndComp
-Text Label 2950 1600 0    60   ~ 0
-V27A
 $Sheet
 S 3250 1550 550  300 
 U 4B6763F8
-F0 "amp0" 60
+F0 "amp18" 60
 F1 "amp_0201.sch" 60
 F2 "Vdd" I L 3250 1600 60 
 F3 "GND" I L 3250 1800 60 
@@ -1270,12 +1511,10 @@ F 1 "GND" H 3100 1280 30  0001 C CNN
 	1    3100 1350
 	1    0    0    -1  
 $EndComp
-Text Label 2950 1100 0    60   ~ 0
-V27A
 $Sheet
 S 3250 1050 550  300 
 U 4B6763EE
-F0 "amp0" 60
+F0 "amp17" 60
 F1 "amp_0201.sch" 60
 F2 "Vdd" I L 3250 1100 60 
 F3 "GND" I L 3250 1300 60 
@@ -1291,12 +1530,10 @@ F 1 "GND" H 3100 780 30  0001 C CNN
 	1    3100 850 
 	1    0    0    -1  
 $EndComp
-Text Label 2950 600  0    60   ~ 0
-V27A
 $Sheet
 S 3250 550  550  300 
 U 4B6763E2
-F0 "amp0" 60
+F0 "amp16" 60
 F1 "amp_0201.sch" 60
 F2 "Vdd" I L 3250 600 60 
 F3 "GND" I L 3250 800 60 
@@ -1376,12 +1613,10 @@ F 1 "GND" H 1500 8280 30  0001 C CNN
 	1    1500 8350
 	1    0    0    -1  
 $EndComp
-Text Label 1350 8100 0    60   ~ 0
-V27A
 $Sheet
 S 1650 8050 550  300 
 U 4B6763B1
-F0 "amp0" 60
+F0 "amp15" 60
 F1 "amp_0201.sch" 60
 F2 "Vdd" I L 1650 8100 60 
 F3 "GND" I L 1650 8300 60 
@@ -1397,12 +1632,10 @@ F 1 "GND" H 1500 7780 30  0001 C CNN
 	1    1500 7850
 	1    0    0    -1  
 $EndComp
-Text Label 1350 7600 0    60   ~ 0
-V27A
 $Sheet
 S 1650 7550 550  300 
 U 4B6763AF
-F0 "amp0" 60
+F0 "amp14" 60
 F1 "amp_0201.sch" 60
 F2 "Vdd" I L 1650 7600 60 
 F3 "GND" I L 1650 7800 60 
@@ -1418,12 +1651,10 @@ F 1 "GND" H 1500 7280 30  0001 C CNN
 	1    1500 7350
 	1    0    0    -1  
 $EndComp
-Text Label 1350 7100 0    60   ~ 0
-V27A
 $Sheet
 S 1650 7050 550  300 
 U 4B6763AD
-F0 "amp0" 60
+F0 "amp13" 60
 F1 "amp_0201.sch" 60
 F2 "Vdd" I L 1650 7100 60 
 F3 "GND" I L 1650 7300 60 
@@ -1439,12 +1670,10 @@ F 1 "GND" H 1500 6780 30  0001 C CNN
 	1    1500 6850
 	1    0    0    -1  
 $EndComp
-Text Label 1350 6600 0    60   ~ 0
-V27A
 $Sheet
 S 1650 6550 550  300 
 U 4B6763AB
-F0 "amp0" 60
+F0 "amp12" 60
 F1 "amp_0201.sch" 60
 F2 "Vdd" I L 1650 6600 60 
 F3 "GND" I L 1650 6800 60 
@@ -1460,12 +1689,10 @@ F 1 "GND" H 1500 6280 30  0001 C CNN
 	1    1500 6350
 	1    0    0    -1  
 $EndComp
-Text Label 1350 6100 0    60   ~ 0
-V27A
 $Sheet
 S 1650 6050 550  300 
 U 4B6763A9
-F0 "amp0" 60
+F0 "amp11" 60
 F1 "amp_0201.sch" 60
 F2 "Vdd" I L 1650 6100 60 
 F3 "GND" I L 1650 6300 60 
@@ -1481,12 +1708,10 @@ F 1 "GND" H 1500 5780 30  0001 C CNN
 	1    1500 5850
 	1    0    0    -1  
 $EndComp
-Text Label 1350 5600 0    60   ~ 0
-V27A
 $Sheet
 S 1650 5550 550  300 
 U 4B6763A7
-F0 "amp0" 60
+F0 "amp10" 60
 F1 "amp_0201.sch" 60
 F2 "Vdd" I L 1650 5600 60 
 F3 "GND" I L 1650 5800 60 
@@ -1502,12 +1727,10 @@ F 1 "GND" H 1500 5280 30  0001 C CNN
 	1    1500 5350
 	1    0    0    -1  
 $EndComp
-Text Label 1350 5100 0    60   ~ 0
-V27A
 $Sheet
 S 1650 5050 550  300 
 U 4B6763A5
-F0 "amp0" 60
+F0 "amp9" 60
 F1 "amp_0201.sch" 60
 F2 "Vdd" I L 1650 5100 60 
 F3 "GND" I L 1650 5300 60 
@@ -1523,12 +1746,10 @@ F 1 "GND" H 1500 4780 30  0001 C CNN
 	1    1500 4850
 	1    0    0    -1  
 $EndComp
-Text Label 1350 4600 0    60   ~ 0
-V27A
 $Sheet
 S 1650 4550 550  300 
 U 4B6763A3
-F0 "amp0" 60
+F0 "amp8" 60
 F1 "amp_0201.sch" 60
 F2 "Vdd" I L 1650 4600 60 
 F3 "GND" I L 1650 4800 60 
@@ -1544,12 +1765,10 @@ F 1 "GND" H 1500 4280 30  0001 C CNN
 	1    1500 4350
 	1    0    0    -1  
 $EndComp
-Text Label 1350 4100 0    60   ~ 0
-V27A
 $Sheet
 S 1650 4050 550  300 
 U 4B676391
-F0 "amp0" 60
+F0 "amp7" 60
 F1 "amp_0201.sch" 60
 F2 "Vdd" I L 1650 4100 60 
 F3 "GND" I L 1650 4300 60 
@@ -1565,12 +1784,10 @@ F 1 "GND" H 1500 3780 30  0001 C CNN
 	1    1500 3850
 	1    0    0    -1  
 $EndComp
-Text Label 1350 3600 0    60   ~ 0
-V27A
 $Sheet
 S 1650 3550 550  300 
 U 4B67638F
-F0 "amp0" 60
+F0 "amp6" 60
 F1 "amp_0201.sch" 60
 F2 "Vdd" I L 1650 3600 60 
 F3 "GND" I L 1650 3800 60 
@@ -1586,12 +1803,10 @@ F 1 "GND" H 1500 3280 30  0001 C CNN
 	1    1500 3350
 	1    0    0    -1  
 $EndComp
-Text Label 1350 3100 0    60   ~ 0
-V27A
 $Sheet
 S 1650 3050 550  300 
 U 4B67638D
-F0 "amp0" 60
+F0 "amp5" 60
 F1 "amp_0201.sch" 60
 F2 "Vdd" I L 1650 3100 60 
 F3 "GND" I L 1650 3300 60 
@@ -1607,12 +1822,10 @@ F 1 "GND" H 1500 2780 30  0001 C CNN
 	1    1500 2850
 	1    0    0    -1  
 $EndComp
-Text Label 1350 2600 0    60   ~ 0
-V27A
 $Sheet
 S 1650 2550 550  300 
 U 4B67638B
-F0 "amp0" 60
+F0 "amp4" 60
 F1 "amp_0201.sch" 60
 F2 "Vdd" I L 1650 2600 60 
 F3 "GND" I L 1650 2800 60 
@@ -1628,12 +1841,10 @@ F 1 "GND" H 1500 2280 30  0001 C CNN
 	1    1500 2350
 	1    0    0    -1  
 $EndComp
-Text Label 1350 2100 0    60   ~ 0
-V27A
 $Sheet
 S 1650 2050 550  300 
 U 4B676381
-F0 "amp0" 60
+F0 "amp3" 60
 F1 "amp_0201.sch" 60
 F2 "Vdd" I L 1650 2100 60 
 F3 "GND" I L 1650 2300 60 
@@ -1649,12 +1860,10 @@ F 1 "GND" H 1500 1780 30  0001 C CNN
 	1    1500 1850
 	1    0    0    -1  
 $EndComp
-Text Label 1350 1600 0    60   ~ 0
-V27A
 $Sheet
 S 1650 1550 550  300 
 U 4B67637F
-F0 "amp0" 60
+F0 "amp2" 60
 F1 "amp_0201.sch" 60
 F2 "Vdd" I L 1650 1600 60 
 F3 "GND" I L 1650 1800 60 
@@ -1670,12 +1879,10 @@ F 1 "GND" H 1500 1280 30  0001 C CNN
 	1    1500 1350
 	1    0    0    -1  
 $EndComp
-Text Label 1350 1100 0    60   ~ 0
-V27A
 $Sheet
 S 1650 1050 550  300 
 U 4B6762C5
-F0 "amp0" 60
+F0 "amp1" 60
 F1 "amp_0201.sch" 60
 F2 "Vdd" I L 1650 1100 60 
 F3 "GND" I L 1650 1300 60 
@@ -1691,8 +1898,6 @@ F 1 "GND" H 1500 780 30  0001 C CNN
 	1    1500 850 
 	1    0    0    -1  
 $EndComp
-Text Label 1350 600  0    60   ~ 0
-V27A
 $Sheet
 S 1650 550  550  300 
 U 4B675DBF
@@ -1703,27 +1908,6 @@ F3 "GND" I L 1650 800 60
 F4 "in" I L 1650 700 60 
 F5 "out" I R 2200 650 60 
 $EndSheet
-Text Notes 7000 6650 0    60   ~ 0
-dnp if not using AFE
-$Comp
-L GND #PWR0238
-U 1 1 4B5E7991
-P 7400 8150
-F 0 "#PWR0238" H 7400 8150 30  0001 C CNN
-F 1 "GND" H 7400 8080 30  0001 C CNN
-	1    7400 8150
-	0    -1   -1   0   
-$EndComp
-$Comp
-L R R?
-U 1 1 4B5E797E
-P 7150 8150
-F 0 "R?" V 7230 8150 50  0000 C CNN
-F 1 "100k" V 7150 8150 50  0000 C CNN
-F 2 "0402" V 7280 8100 60  0000 C CNN
-	1    7150 8150
-	0    1    1    0   
-$EndComp
 $Comp
 L TP TP?
 U 1 1 4B5E7928
@@ -1803,7 +1987,7 @@ F 2 "0402" V 7380 1700 60  0000 C CNN
 	1    0    0    -1  
 $EndComp
 Text Label 1700 8900 0    60   ~ 0
-V27A
+V18
 $Comp
 L GND #PWR0241
 U 1 1 4913DE9C
@@ -1892,48 +2076,9 @@ U 1 1 4913DE57
 P 9800 5250
 F 0 "U145" H 10500 5350 60  0000 C CNN
 F 1 "OMNETICS_36" H 9850 6200 60  0000 C CNN
-F 2 "omnetics_36" H 10560 5410 60  0000 C CNN
+F 2 "omnetics_36" V 9850 5450 60  0000 C CNN
 	1    9800 5250
 	1    0    0    -1  
-$EndComp
-$Comp
-L GND #PWR0243
-U 1 1 48FFF3A5
-P 6550 7200
-F 0 "#PWR0243" H 6550 7200 30  0001 C CNN
-F 1 "GND" H 6550 7130 30  0001 C CNN
-	1    6550 7200
-	1    0    0    -1  
-$EndComp
-$Comp
-L JUMP U25
-U 1 1 48FFF399
-P 7100 6800
-F 0 "U25" H 7100 6700 60  0000 C CNN
-F 1 "JUMP" H 7100 6900 60  0000 C CNN
-F 2 "2x100mil" H 7040 6640 60  0000 C CNN
-	1    7100 6800
-	1    0    0    -1  
-$EndComp
-$Comp
-L C C56
-U 1 1 48FFF38E
-P 6550 7000
-F 0 "C56" H 6600 7100 50  0000 L CNN
-F 1 "0.1uf" H 6600 6900 50  0000 L CNN
-F 2 "0402" H 6650 7150 60  0000 C CNN
-	1    6550 7000
-	1    0    0    -1  
-$EndComp
-$Comp
-L INDUCTOR L7
-U 1 1 48FFF37D
-P 6250 6800
-F 0 "L7" V 6200 6800 40  0000 C CNN
-F 1 "INDUCTOR" V 6350 6800 40  0000 C CNN
-F 2 "0603" V 6160 6760 60  0000 C CNN
-	1    6250 6800
-	0    -1   -1   0   
 $EndComp
 $Comp
 L GND #PWR0244
@@ -2049,183 +2194,101 @@ F 2 "0402" H 1800 9400 60  0000 C CNN
 	1    1700 9250
 	1    0    0    -1  
 $EndComp
-Text Label 7900 7400 0    60   ~ 0
-V27B
-Text Label 7900 8700 0    60   ~ 0
-V27A
-Text HLabel 7350 6800 2    60   Input ~ 0
-VIN
-Text HLabel 6450 8150 0    60   Input ~ 0
-AFEEN
-$Comp
-L GND #PWR0250
-U 1 1 48FFF0F2
-P 7000 8800
-F 0 "#PWR0250" H 7000 8800 30  0001 C CNN
-F 1 "GND" H 7000 8730 30  0001 C CNN
-	1    7000 8800
-	0    1    1    0   
-$EndComp
+Text Label 9250 8100 0    60   ~ 0
+V27
 $Comp
 L GND #PWR0251
 U 1 1 48FFF0EE
-P 7000 7500
-F 0 "#PWR0251" H 7000 7500 30  0001 C CNN
-F 1 "GND" H 7000 7430 30  0001 C CNN
-	1    7000 7500
+P 8350 8200
+F 0 "#PWR0251" H 8350 8200 30  0001 C CNN
+F 1 "GND" H 8350 8130 30  0001 C CNN
+	1    8350 8200
 	0    1    1    0   
-$EndComp
-$Comp
-L GND #PWR0252
-U 1 1 48FFF0D7
-P 6550 9100
-F 0 "#PWR0252" H 6550 9100 30  0001 C CNN
-F 1 "GND" H 6550 9030 30  0001 C CNN
-	1    6550 9100
-	1    0    0    -1  
 $EndComp
 $Comp
 L GND #PWR0253
 U 1 1 48FFF0D4
-P 5950 7800
-F 0 "#PWR0253" H 5950 7800 30  0001 C CNN
-F 1 "GND" H 5950 7730 30  0001 C CNN
-	1    5950 7800
+P 7300 8500
+F 0 "#PWR0253" H 7300 8500 30  0001 C CNN
+F 1 "GND" H 7300 8430 30  0001 C CNN
+	1    7300 8500
 	1    0    0    -1  
 $EndComp
 $Comp
 L GND #PWR0254
 U 1 1 48FFF0D0
-P 6550 7800
-F 0 "#PWR0254" H 6550 7800 30  0001 C CNN
-F 1 "GND" H 6550 7730 30  0001 C CNN
-	1    6550 7800
+P 7900 8500
+F 0 "#PWR0254" H 7900 8500 30  0001 C CNN
+F 1 "GND" H 7900 8430 30  0001 C CNN
+	1    7900 8500
 	1    0    0    -1  
 $EndComp
 $Comp
 L C C53
 U 1 1 48FFF0B4
-P 5950 7600
-F 0 "C53" H 6000 7700 50  0000 L CNN
-F 1 "2.2uf" H 6000 7500 50  0000 L CNN
-F 2 "0402" H 6050 7750 60  0000 C CNN
-	1    5950 7600
-	1    0    0    -1  
-$EndComp
-$Comp
-L C C58
-U 1 1 48FFF074
-P 6550 8900
-F 0 "C58" H 6600 9000 50  0000 L CNN
-F 1 "0.1uf" H 6600 8800 50  0000 L CNN
-F 2 "0402" H 6650 9050 60  0000 C CNN
-	1    6550 8900
+P 7300 8300
+F 0 "C53" H 7350 8400 50  0000 L CNN
+F 1 "2.2uf" H 7350 8200 50  0000 L CNN
+F 2 "0402" H 7400 8450 60  0000 C CNN
+	1    7300 8300
 	1    0    0    -1  
 $EndComp
 $Comp
 L C C57
 U 1 1 48FFF05D
-P 6550 7600
-F 0 "C57" H 6600 7700 50  0000 L CNN
-F 1 "0.1uf" H 6600 7500 50  0000 L CNN
-F 2 "0402" H 6650 7750 60  0000 C CNN
-	1    6550 7600
-	1    0    0    -1  
-$EndComp
-$Comp
-L GND #PWR0255
-U 1 1 48FFF044
-P 7900 9100
-F 0 "#PWR0255" H 7900 9100 30  0001 C CNN
-F 1 "GND" H 7900 9030 30  0001 C CNN
-	1    7900 9100
+P 7900 8300
+F 0 "C57" H 7950 8400 50  0000 L CNN
+F 1 "0.1uf" H 7950 8200 50  0000 L CNN
+F 2 "0402" H 8000 8450 60  0000 C CNN
+	1    7900 8300
 	1    0    0    -1  
 $EndComp
 $Comp
 L GND #PWR0256
 U 1 1 48FFF041
-P 7900 7800
-F 0 "#PWR0256" H 7900 7800 30  0001 C CNN
-F 1 "GND" H 7900 7730 30  0001 C CNN
-	1    7900 7800
+P 9250 8500
+F 0 "#PWR0256" H 9250 8500 30  0001 C CNN
+F 1 "GND" H 9250 8430 30  0001 C CNN
+	1    9250 8500
 	1    0    0    -1  
-$EndComp
-$Comp
-L GND #PWR0257
-U 1 1 48FFF02A
-P 8650 8900
-F 0 "#PWR0257" H 8650 8900 30  0001 C CNN
-F 1 "GND" H 8650 8830 30  0001 C CNN
-	1    8650 8900
-	0    -1   -1   0   
 $EndComp
 $Comp
 L GND #PWR0258
 U 1 1 48FFF023
-P 8650 7600
-F 0 "#PWR0258" H 8650 7600 30  0001 C CNN
-F 1 "GND" H 8650 7530 30  0001 C CNN
-	1    8650 7600
+P 10000 8300
+F 0 "#PWR0258" H 10000 8300 30  0001 C CNN
+F 1 "GND" H 10000 8230 30  0001 C CNN
+	1    10000 8300
 	0    -1   -1   0   
-$EndComp
-$Comp
-L C C66
-U 1 1 48FFEFEF
-P 8350 8900
-F 0 "C66" H 8400 9000 50  0000 L CNN
-F 1 "0.012uf" H 8400 8800 50  0000 L CNN
-F 2 "0402" H 8450 9050 60  0000 C CNN
-	1    8350 8900
-	0    1    1    0   
 $EndComp
 $Comp
 L C C65
 U 1 1 48FFEFE5
-P 8350 7600
-F 0 "C65" H 8400 7700 50  0000 L CNN
-F 1 "0.012uf" H 8400 7500 50  0000 L CNN
-F 2 "0402" H 8450 7750 60  0000 C CNN
-	1    8350 7600
+P 9700 8300
+F 0 "C65" H 9750 8400 50  0000 L CNN
+F 1 "0.012uf" H 9750 8200 50  0000 L CNN
+F 2 "0402" H 9800 8450 60  0000 C CNN
+	1    9700 8300
 	0    1    1    0   
-$EndComp
-$Comp
-L C C62
-U 1 1 48FFEFC1
-P 7900 8900
-F 0 "C62" H 7950 9000 50  0000 L CNN
-F 1 "2.2uf" H 7950 8800 50  0000 L CNN
-F 2 "0402" H 8000 9050 60  0000 C CNN
-	1    7900 8900
-	1    0    0    -1  
 $EndComp
 $Comp
 L C C61
 U 1 1 48FFEFB3
-P 7900 7600
-F 0 "C61" H 7950 7700 50  0000 L CNN
-F 1 "2.2uf" H 7950 7500 50  0000 L CNN
-F 2 "0402" H 8000 7750 60  0000 C CNN
-	1    7900 7600
-	1    0    0    -1  
-$EndComp
-$Comp
-L TPS717 U27
-U 1 1 48FFEF79
-P 7300 8900
-F 0 "U27" H 7300 8800 60  0000 C CNN
-F 1 "TPS71727" H 7300 9200 60  0000 C CNN
-F 2 "SC-70-5" H 7240 8740 60  0000 C CNN
-	1    7300 8900
+P 9250 8300
+F 0 "C61" H 9300 8400 50  0000 L CNN
+F 1 "2.2uf" H 9300 8200 50  0000 L CNN
+F 2 "0402" H 9350 8450 60  0000 C CNN
+	1    9250 8300
 	1    0    0    -1  
 $EndComp
 $Comp
 L TPS717 U26
 U 1 1 48FFEF3A
-P 7300 7600
-F 0 "U26" H 7300 7500 60  0000 C CNN
-F 1 "TPS71727" H 7300 7900 60  0000 C CNN
-F 2 "SC-70-5" H 7240 7440 60  0000 C CNN
-	1    7300 7600
+P 8650 8300
+F 0 "U26" H 8650 8200 60  0000 C CNN
+F 1 "TPS71727" H 8650 8600 60  0000 C CNN
+F 2 "SC-70-5" H 8590 8140 60  0000 C CNN
+	1    8650 8300
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -2265,7 +2328,7 @@ F 1 "GND" H 7450 5530 30  0001 C CNN
 	1    0    0    -1  
 $EndComp
 Text Label 6250 5550 0    60   ~ 0
-V27B
+V27
 $Comp
 L GND #PWR0261
 U 1 1 48CA0985
@@ -2303,7 +2366,7 @@ F 2 "0402" H 8600 1700 60  0000 C CNN
 	1    0    0    -1  
 $EndComp
 Text Label 8350 950  0    60   ~ 0
-V27B
+V27
 $Comp
 L GND #PWR0263
 U 1 1 48CA08D8
@@ -2353,7 +2416,7 @@ F 2 "0402" H 8600 3100 60  0000 C CNN
 	1    0    0    -1  
 $EndComp
 Text Label 8350 2350 0    60   ~ 0
-V27B
+V27
 $Comp
 L GND #PWR0265
 U 1 1 48CA0880
