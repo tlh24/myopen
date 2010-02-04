@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Tue 02 Feb 2010 08:14:08 PM EST
+EESchema Schematic File Version 2  date Wed 03 Feb 2010 07:07:18 PM EST
 LIBS:power,device,emg_sym,/home/tlh24/svn/myopen/emg_dsp/lib/linear,./stage4.cache
 EELAYER 24  0
 EELAYER END
