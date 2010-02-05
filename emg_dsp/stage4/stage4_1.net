@@ -1,0 +1,18 @@
+* C:\windows\profiles\tlh24\My Documents\svn\myopen\emg_dsp\stage4\stage4_1.asc
+R1 N003 N002 33k
+R2 N002 N007 2.7k
+R3 N004 P001 10k
+R4 N006 N004 180k
+C1 N007 0 44µf
+C2 P001 N003 10µf
+C3 N006 N004 270pf
+V1 N001 0 5
+V2 0 N008 5
+V3 N005 0 AC 0.001
+C4 N003 N002 1.5nf
+XU1 N005 N002 N001 N008 N003 LT1639
+XU2 0 N004 N001 N008 N006 LT1639
+.ac oct 16 0.01 1e5
+.lib LTC.lib
+.backanno
+.end
