@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Mon 08 Feb 2010 05:39:53 PM EST
+EESchema Schematic File Version 2  date Mon 08 Feb 2010 05:49:42 PM EST
 LIBS:power,device,emg_sym,/home/tlh24/svn/myopen/emg_dsp/lib/linear,./stage4.cache
 EELAYER 24  0
 EELAYER END
@@ -13,6 +13,17 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
+Connection ~ 2800 5850
+$Comp
+L C C90
+U 1 1 4B608FE2
+P 3750 5850
+F 0 "C90" H 3800 5950 50  0000 L CNN
+F 1 "22uf" H 3800 5750 50  0000 L CNN
+F 2 "0805" H 3850 6000 60  0000 C CNN
+	1    3750 5850
+	0    1    1    0   
+$EndComp
 Connection ~ 4450 4350
 Connection ~ 4450 3450
 Connection ~ 4450 2500
@@ -1190,16 +1201,6 @@ F 0 "C89" H 3050 5950 50  0000 L CNN
 F 1 "22uf" H 3050 5750 50  0000 L CNN
 F 2 "0805" H 3100 6000 60  0000 C CNN
 	1    3000 5850
-	0    1    1    0   
-$EndComp
-$Comp
-L C C90
-U 1 1 4B608FE2
-P 3750 5850
-F 0 "C90" H 3800 5950 50  0000 L CNN
-F 1 "22uf" H 3800 5750 50  0000 L CNN
-F 2 "0805" H 3850 6000 60  0000 C CNN
-	1    3750 5850
 	0    1    1    0   
 $EndComp
 $Comp
