@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Thu 04 Feb 2010 07:25:13 PM EST
+EESchema Schematic File Version 2  date Fri 05 Feb 2010 06:59:23 PM EST
 LIBS:power,device,emg_sym,/home/tlh24/svn/myopen/emg_dsp/lib/linear,./stage4.cache
 EELAYER 24  0
 EELAYER END
@@ -1173,7 +1173,7 @@ L TPS73025 U50
 U 1 1 4B6090B2
 P 2000 6150
 F 0 "U50" H 2000 5950 60  0000 C CNN
-F 1 "TPS78825" H 2000 6350 60  0000 C CNN
+F 1 "TPS73025" H 2000 6350 60  0000 C CNN
 F 2 "SOT-23-5" H 1940 5890 60  0000 C CNN
 	1    2000 6150
 	-1   0    0    -1  
