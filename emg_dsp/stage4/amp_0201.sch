@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Tue 09 Feb 2010 01:46:15 PM EST
+EESchema Schematic File Version 2  date Tue 09 Feb 2010 08:25:41 PM EST
 LIBS:power,device,emg_sym,/home/tlh24/svn/myopen/emg_dsp/lib/linear,./stage4.cache
 EELAYER 24  0
 EELAYER END
@@ -85,7 +85,7 @@ AR Path="/48C9FDD8/4B6762C5/4B671EFD" Ref="C123"  Part="1"
 AR Path="/48C9FDD8/4B675DBF/4B671EFD" Ref="C121"  Part="1" 
 F 0 "C153" H 6050 3300 50  0000 L CNN
 F 1 "0.1uf" H 6050 3100 50  0000 L CNN
-F 2 "0201" V 5850 3200 60  0000 C CNN
+F 2 "0201a" V 5850 3200 60  0000 C CNN
 	1    6000 3200
 	0    1    1    0   
 $EndComp
@@ -127,7 +127,7 @@ AR Path="/48C9FDD8/4B6762C5/4B671ED0" Ref="C122"  Part="1"
 AR Path="/48C9FDD8/4B675DBF/4B671ED0" Ref="C120"  Part="1" 
 F 0 "C152" H 4650 3300 50  0000 L CNN
 F 1 "0.1uf" H 4650 3100 50  0000 L CNN
-F 2 "0201" V 4450 3200 60  0000 C CNN
+F 2 "0201a" V 4450 3200 60  0000 C CNN
 	1    4600 3200
 	0    1    1    0   
 $EndComp
