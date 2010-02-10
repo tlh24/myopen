@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Tue 09 Feb 2010 01:46:15 PM EST
+EESchema Schematic File Version 2  date Tue 09 Feb 2010 08:25:41 PM EST
 LIBS:power,device,emg_sym,/home/tlh24/svn/myopen/emg_dsp/lib/linear,./stage4.cache
 EELAYER 24  0
 EELAYER END
@@ -13,6 +13,12 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
+Text Notes 8800 4250 0    60   ~ 0
+array spacing = 0.75"
+Wire Wire Line
+	6850 3350 6850 3550
+Wire Wire Line
+	6350 3550 6200 3550
 Connection ~ 2100 4800
 Wire Wire Line
 	2100 5050 2100 4600
@@ -29,10 +35,7 @@ Wire Wire Line
 	8650 3700 8650 4600
 Connection ~ 8650 3850
 Wire Wire Line
-	8650 3850 8550 3850
-Wire Wire Line
-	6200 3550 7100 3550
-Connection ~ 6700 3550
+	8550 3850 8650 3850
 Connection ~ 6700 5150
 Wire Wire Line
 	7600 4000 7600 5150
@@ -40,8 +43,6 @@ Wire Wire Line
 	4750 3600 4750 3650
 Wire Wire Line
 	6700 5150 6700 5050
-Wire Wire Line
-	6700 3550 6700 3700
 Connection ~ 6600 2700
 Connection ~ 6600 4600
 Connection ~ 5550 4600
@@ -49,7 +50,7 @@ Wire Wire Line
 	6050 4600 6050 4400
 Connection ~ 5900 2700
 Wire Wire Line
-	6600 2700 6600 4000
+	6600 4000 6600 2700
 Connection ~ 3400 4600
 Wire Wire Line
 	3400 4450 3400 4600
@@ -159,8 +160,6 @@ Wire Wire Line
 	7400 3850 7600 3850
 Connection ~ 6700 4600
 Wire Wire Line
-	7100 3550 7100 3700
-Wire Wire Line
 	8650 3700 8550 3700
 Connection ~ 7600 5150
 Wire Wire Line
@@ -173,6 +172,12 @@ Wire Wire Line
 Connection ~ 7050 4600
 Wire Wire Line
 	8650 4600 2100 4600
+Wire Wire Line
+	6850 3550 6950 3550
+Wire Wire Line
+	6950 3550 6950 3700
+Wire Wire Line
+	6950 3700 7600 3700
 $Comp
 L TP TP81
 U 1 1 4B608417
@@ -222,15 +227,15 @@ $EndComp
 $Comp
 L R R88
 U 1 1 4B607E53
-P 7350 3700
+P 6600 3550
 AR Path="/4B5E1FC8/4B607A5C/4B607E53" Ref="R88"  Part="1" 
 AR Path="/4B5E1FC8/4B6079F1/4B607E53" Ref="R81"  Part="1" 
 AR Path="/4B5E1FC8/4B6079DB/4B607E53" Ref="R74"  Part="1" 
 AR Path="/4B5E1FC8/4B5E2312/4B607E53" Ref="R67"  Part="1" 
-F 0 "R67" V 7430 3700 50  0000 C CNN
-F 1 "33" V 7350 3700 50  0000 C CNN
-F 2 "0402" V 7480 3650 60  0000 C CNN
-	1    7350 3700
+F 0 "R67" V 6680 3550 50  0000 C CNN
+F 1 "33" V 6600 3550 50  0000 C CNN
+F 2 "0402" V 6730 3500 60  0000 C CNN
+	1    6600 3550
 	0    1    1    0   
 $EndComp
 Text Notes 8800 3800 0    60   ~ 0
@@ -295,7 +300,7 @@ F 2 "TP" H 1750 4550 60  0000 C CNN
 	1    1900 4600
 	-1   0    0    1   
 $EndComp
-Text HLabel 6700 3700 2    60   Input ~ 0
+Text HLabel 6950 3550 2    60   Input ~ 0
 OUT
 Text HLabel 6700 4500 2    60   Input ~ 0
 V0
@@ -404,15 +409,15 @@ $EndComp
 $Comp
 L TP TP83
 U 1 1 4B5E82A4
-P 6900 3550
+P 7050 3350
 AR Path="/4B5E1FC8/4B607A5C/4B5E82A4" Ref="TP83"  Part="1" 
 AR Path="/4B5E1FC8/4B6079F1/4B5E82A4" Ref="TP74"  Part="1" 
 AR Path="/4B5E1FC8/4B6079DB/4B5E82A4" Ref="TP65"  Part="1" 
 AR Path="/4B5E1FC8/4B5E2312/4B5E82A4" Ref="TP56"  Part="1" 
-F 0 "TP56" H 6900 3550 60  0000 C CNN
-F 1 "OUT" H 7100 3550 60  0000 C CNN
-F 2 "TP" H 6750 3500 60  0000 C CNN
-	1    6900 3550
+F 0 "TP56" H 7050 3350 60  0000 C CNN
+F 1 "OUT" H 7250 3350 60  0000 C CNN
+F 2 "TP" H 6900 3300 60  0000 C CNN
+	1    7050 3350
 	1    0    0    -1  
 $EndComp
 $Comp

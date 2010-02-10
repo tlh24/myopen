@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Tue 09 Feb 2010 01:45:03 PM EST
+EESchema Schematic File Version 2  date Tue 09 Feb 2010 07:10:18 PM EST
 LIBS:power,device,emg_sym,/home/tlh24/svn/myopen/emg_dsp/lib/linear,./stage4.cache
 EELAYER 24  0
 EELAYER END
@@ -469,10 +469,10 @@ Wire Wire Line
 Wire Wire Line
 	2000 7750 2000 7850
 $Comp
-L GND #PWR0203
+L GND #PWR0205
 U 1 1 4B6B021D
 P 2000 7850
-F 0 "#PWR0203" H 2000 7850 30  0001 C CNN
+F 0 "#PWR0205" H 2000 7850 30  0001 C CNN
 F 1 "GND" H 2000 7780 30  0001 C CNN
 	1    2000 7850
 	1    0    0    -1  
@@ -574,10 +574,10 @@ $EndComp
 Text Notes 12150 2800 0    60   ~ 0
 min 3V supply
 $Comp
-L GND #PWR0204
+L GND #PWR0206
 U 1 1 4B6A0B2D
 P 3950 8550
-F 0 "#PWR0204" H 3950 8550 30  0001 C CNN
+F 0 "#PWR0206" H 3950 8550 30  0001 C CNN
 F 1 "GND" H 3950 8480 30  0001 C CNN
 	1    3950 8550
 	1    0    0    -1  
