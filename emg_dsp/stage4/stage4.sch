@@ -1,11 +1,11 @@
-EESchema Schematic File Version 2  date Wed 10 Feb 2010 04:04:46 PM EST
+EESchema Schematic File Version 2  date Thu 11 Feb 2010 02:35:45 PM EST
 LIBS:power,device,emg_sym,/home/tlh24/svn/myopen/emg_dsp/lib/linear,./stage4.cache
 EELAYER 24  0
 EELAYER END
 $Descr User 16000 12000
 Sheet 1 44
 Title ""
-Date "4 feb 2010"
+Date "11 feb 2010"
 Rev ""
 Comp ""
 Comment1 ""
@@ -1106,10 +1106,10 @@ saves power; input are 5V tol
 Text Notes 14350 5400 0    60   ~ 0
 running radio at 2.0V
 $Comp
-L VAA #PWR96
+L VAA #PWR98
 U 1 1 4B69FE60
 P 14750 5250
-F 0 "#PWR96" H 14750 5450 40  0001 C CNN
+F 0 "#PWR98" H 14750 5450 40  0001 C CNN
 F 1 "VAA" H 14750 5400 40  0000 C CNN
 	1    14750 5250
 	1    0    0    -1  
@@ -1119,10 +1119,10 @@ turning on during boot
 Text Notes 4900 10800 0    60   ~ 0
 2.0V
 $Comp
-L VAA #PWR42
+L VAA #PWR44
 U 1 1 4B69F7C2
 P 4800 10450
-F 0 "#PWR42" H 4800 10650 40  0001 C CNN
+F 0 "#PWR44" H 4800 10650 40  0001 C CNN
 F 1 "VAA" H 4800 10600 40  0000 C CNN
 	1    4800 10450
 	1    0    0    -1  
