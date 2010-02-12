@@ -1,4 +1,4 @@
-# EESchema Netlist Version 1.1 created  Thu 11 Feb 2010 06:13:04 PM EST
+# EESchema Netlist Version 1.1 created  Thu 11 Feb 2010 10:22:10 PM EST
 (
  ( /4B6B1DD2 2x100mil  U16 VAA_VDD {Lib=JUMP}
   (    1 VDD )
