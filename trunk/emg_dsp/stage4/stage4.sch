@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Thu 11 Feb 2010 02:35:45 PM EST
+EESchema Schematic File Version 2  date Thu 11 Feb 2010 06:12:59 PM EST
 LIBS:power,device,emg_sym,/home/tlh24/svn/myopen/emg_dsp/lib/linear,./stage4.cache
 EELAYER 24  0
 EELAYER END
@@ -13,15 +13,19 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
-$Comp
-L GND #PWR01
-U 1 1 4B71CE4B
-P 2100 4700
-F 0 "#PWR01" H 2100 4700 30  0001 C CNN
-F 1 "GND" H 2100 4630 30  0001 C CNN
-	1    2100 4700
-	0    -1   -1   0   
-$EndComp
+Text Notes 4150 1150 0    60   ~ 0
+I hope this is enough!
+Connection ~ 4900 1050
+Wire Wire Line
+	4900 1050 4900 1100
+Connection ~ 4900 650 
+Wire Wire Line
+	4900 600  4900 650 
+Connection ~ 8400 1150
+Wire Wire Line
+	8400 1150 8400 1250
+Wire Wire Line
+	8000 1150 11350 1150
 Connection ~ 4300 10850
 Wire Wire Line
 	3100 11550 3100 11300
@@ -230,9 +234,7 @@ Wire Wire Line
 	17050 1250 17100 1250
 Wire Wire Line
 	15800 1100 15800 1150
-Connection ~ 13300 1050
-Wire Wire Line
-	6650 1050 13900 1050
+Connection ~ 10750 1150
 Wire Wire Line
 	2650 4050 2650 4100
 Wire Wire Line
@@ -354,14 +356,9 @@ Wire Wire Line
 	12100 4300 11700 4300
 Wire Wire Line
 	12100 4500 11700 4500
-Connection ~ 12750 650 
-Connection ~ 12200 650 
-Connection ~ 10550 650 
-Connection ~ 3750 650 
-Wire Wire Line
-	3750 650  3750 600 
-Wire Wire Line
-	1750 650  5650 650 
+Connection ~ 10200 750 
+Connection ~ 9650 750 
+Connection ~ 8000 750 
 Wire Wire Line
 	11550 6700 11300 6700
 Connection ~ 14050 5250
@@ -557,48 +554,19 @@ Wire Wire Line
 	12750 6400 12800 6400
 Wire Wire Line
 	11550 6400 11300 6400
-Wire Wire Line
-	1750 1050 5650 1050
-Connection ~ 2300 650 
-Connection ~ 2850 650 
-Connection ~ 3450 650 
 Connection ~ 4050 650 
 Connection ~ 4650 650 
 Connection ~ 5150 650 
 Connection ~ 5150 1050
 Connection ~ 4650 1050
 Connection ~ 4050 1050
-Connection ~ 3450 1050
-Connection ~ 2850 1050
-Connection ~ 2300 1050
-Wire Wire Line
-	3750 1050 3750 1150
-Connection ~ 3750 1050
-Connection ~ 8650 650 
-Wire Wire Line
-	8650 600  8650 650 
-Connection ~ 7200 650 
-Connection ~ 7750 650 
-Connection ~ 8350 650 
-Connection ~ 8950 650 
-Connection ~ 9550 650 
-Connection ~ 10050 650 
-Connection ~ 10050 1050
-Connection ~ 9550 1050
-Connection ~ 8950 1050
-Connection ~ 8350 1050
-Connection ~ 7750 1050
-Connection ~ 7200 1050
-Wire Wire Line
-	8650 1050 8650 1150
-Connection ~ 8650 1050
-Connection ~ 10550 1050
-Connection ~ 11100 1050
-Connection ~ 11600 1050
-Connection ~ 11600 650 
-Connection ~ 11100 650 
-Connection ~ 12200 1050
-Connection ~ 12750 1050
+Connection ~ 8000 1150
+Connection ~ 8550 1150
+Connection ~ 9050 1150
+Connection ~ 9050 750 
+Connection ~ 8550 750 
+Connection ~ 9650 1150
+Connection ~ 10200 1150
 Wire Wire Line
 	12100 4400 11700 4400
 Wire Wire Line
@@ -711,9 +679,7 @@ Wire Wire Line
 Wire Wire Line
 	3500 4050 3500 4100
 Connection ~ 3100 2000
-Wire Wire Line
-	6650 650  13900 650 
-Connection ~ 13300 650 
+Connection ~ 10750 750 
 Wire Wire Line
 	15800 2050 15800 2150
 Wire Wire Line
@@ -884,6 +850,24 @@ Wire Wire Line
 Connection ~ 3100 11450
 Connection ~ 2650 11450
 Connection ~ 2300 11450
+Wire Wire Line
+	8000 750  11350 750 
+Wire Wire Line
+	8400 700  8400 750 
+Connection ~ 8400 750 
+Wire Wire Line
+	5650 650  4050 650 
+Wire Wire Line
+	4050 1050 5650 1050
+$Comp
+L GND #PWR01
+U 1 1 4B71CE4B
+P 2100 4700
+F 0 "#PWR01" H 2100 4700 30  0001 C CNN
+F 1 "GND" H 2100 4630 30  0001 C CNN
+	1    2100 4700
+	0    -1   -1   0   
+$EndComp
 $Comp
 L GND #PWR02
 U 1 1 4B71CA64
@@ -1986,16 +1970,6 @@ F 1 "GND" H 900 1430 30  0001 C CNN
 	1    900  1500
 	-1   0    0    1   
 $EndComp
-$Comp
-L C C13
-U 1 1 490558BB
-P 1750 850
-F 0 "C13" H 1800 950 50  0000 L CNN
-F 1 "0.001uf" H 1800 750 50  0000 L CNN
-F 2 "0402" H 1850 1000 60  0000 C CNN
-	1    1750 850 
-	1    0    0    -1  
-$EndComp
 Text Notes 11800 1800 0    60   ~ 0
 use the 2.7V version
 Text Notes -650 2550 0    60   ~ 0
@@ -2467,11 +2441,11 @@ input nrf irq
 $Comp
 L C C58
 U 1 1 49069229
-P 13900 850
-F 0 "C58" H 13950 950 50  0000 L CNN
-F 1 "0.1uf" H 13950 750 50  0000 L CNN
-F 2 "0402" H 14000 1000 60  0000 C CNN
-	1    13900 850 
+P 11350 950
+F 0 "C58" H 11400 1050 50  0000 L CNN
+F 1 "0.1uf" H 11400 850 50  0000 L CNN
+F 2 "0402" H 11450 1100 60  0000 C CNN
+	1    11350 950 
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -2926,167 +2900,97 @@ DT0PRI
 $Comp
 L C C54
 U 1 1 490559CE
-P 13300 850
-F 0 "C54" H 13350 950 50  0000 L CNN
-F 1 "0.1uf" H 13350 750 50  0000 L CNN
-F 2 "0402" H 13400 1000 60  0000 C CNN
-	1    13300 850 
+P 10750 950
+F 0 "C54" H 10800 1050 50  0000 L CNN
+F 1 "0.1uf" H 10800 850 50  0000 L CNN
+F 2 "0402" H 10850 1100 60  0000 C CNN
+	1    10750 950 
 	1    0    0    -1  
 $EndComp
 $Comp
 L C C52
 U 1 1 490559C5
-P 12750 850
-F 0 "C52" H 12800 950 50  0000 L CNN
-F 1 "0.1uf" H 12800 750 50  0000 L CNN
-F 2 "0402" H 12850 1000 60  0000 C CNN
-	1    12750 850 
+P 10200 950
+F 0 "C52" H 10250 1050 50  0000 L CNN
+F 1 "0.1uf" H 10250 850 50  0000 L CNN
+F 2 "0402" H 10300 1100 60  0000 C CNN
+	1    10200 950 
 	1    0    0    -1  
 $EndComp
 $Comp
 L VDD #PWR068
 U 1 1 490559A9
-P 8650 600
-F 0 "#PWR068" H 8650 700 30  0001 C CNN
-F 1 "VDD" H 8650 710 30  0000 C CNN
-	1    8650 600 
+P 8400 700
+F 0 "#PWR068" H 8400 800 30  0001 C CNN
+F 1 "VDD" H 8400 810 30  0000 C CNN
+	1    8400 700 
 	1    0    0    -1  
 $EndComp
 $Comp
 L C C51
 U 1 1 49055971
-P 12200 850
-F 0 "C51" H 12250 950 50  0000 L CNN
-F 1 "0.01uf" H 12250 750 50  0000 L CNN
-F 2 "0402" H 12300 1000 60  0000 C CNN
-	1    12200 850 
+P 9650 950
+F 0 "C51" H 9700 1050 50  0000 L CNN
+F 1 "0.1uf" H 9700 850 50  0000 L CNN
+F 2 "0402" H 9750 1100 60  0000 C CNN
+	1    9650 950 
 	1    0    0    -1  
 $EndComp
 $Comp
 L C C48
 U 1 1 49055962
-P 11600 850
-F 0 "C48" H 11650 950 50  0000 L CNN
-F 1 "0.01uf" H 11650 750 50  0000 L CNN
-F 2 "0402" H 11700 1000 60  0000 C CNN
-	1    11600 850 
+P 9050 950
+F 0 "C48" H 9100 1050 50  0000 L CNN
+F 1 "1uf" H 9100 850 50  0000 L CNN
+F 2 "0402" H 9150 1100 60  0000 C CNN
+	1    9050 950 
 	1    0    0    -1  
 $EndComp
 $Comp
 L C C46
 U 1 1 4905595C
-P 11100 850
-F 0 "C46" H 11150 950 50  0000 L CNN
-F 1 "1uf" H 11150 750 50  0000 L CNN
-F 2 "0402" H 11200 1000 60  0000 C CNN
-	1    11100 850 
+P 8550 950
+F 0 "C46" H 8600 1050 50  0000 L CNN
+F 1 "1uf" H 8600 850 50  0000 L CNN
+F 2 "0402" H 8650 1100 60  0000 C CNN
+	1    8550 950 
 	1    0    0    -1  
 $EndComp
 $Comp
 L GND #PWR069
 U 1 1 4905594D
-P 8650 1150
-F 0 "#PWR069" H 8650 1150 30  0001 C CNN
-F 1 "GND" H 8650 1080 30  0001 C CNN
-	1    8650 1150
+P 8400 1250
+F 0 "#PWR069" H 8400 1250 30  0001 C CNN
+F 1 "GND" H 8400 1180 30  0001 C CNN
+	1    8400 1250
 	1    0    0    -1  
 $EndComp
 $Comp
 L C C45
 U 1 1 4905594C
-P 10550 850
-F 0 "C45" H 10600 950 50  0000 L CNN
-F 1 "10uf" H 10600 750 50  0000 L CNN
-F 2 "0603" H 10650 1000 60  0000 C CNN
-	1    10550 850 
-	1    0    0    -1  
-$EndComp
-$Comp
-L C C44
-U 1 1 4905594B
-P 10050 850
-F 0 "C44" H 10100 950 50  0000 L CNN
-F 1 "1uf" H 10100 750 50  0000 L CNN
-F 2 "0402" H 10150 1000 60  0000 C CNN
-	1    10050 850 
-	1    0    0    -1  
-$EndComp
-$Comp
-L C C34
-U 1 1 4905594A
-P 6650 850
-F 0 "C34" H 6700 950 50  0000 L CNN
-F 1 "0.001uf" H 6700 750 50  0000 L CNN
-F 2 "0402" H 6750 1000 60  0000 C CNN
-	1    6650 850 
-	1    0    0    -1  
-$EndComp
-$Comp
-L C C43
-U 1 1 49055949
-P 9550 850
-F 0 "C43" H 9600 950 50  0000 L CNN
-F 1 "1uf" H 9600 750 50  0000 L CNN
-F 2 "0402" H 9650 1000 60  0000 C CNN
-	1    9550 850 
-	1    0    0    -1  
-$EndComp
-$Comp
-L C C42
-U 1 1 49055948
-P 8950 850
-F 0 "C42" H 9000 950 50  0000 L CNN
-F 1 "0.01uf" H 9000 750 50  0000 L CNN
-F 2 "0402" H 9050 1000 60  0000 C CNN
-	1    8950 850 
-	1    0    0    -1  
-$EndComp
-$Comp
-L C C40
-U 1 1 49055947
-P 8350 850
-F 0 "C40" H 8400 950 50  0000 L CNN
-F 1 "0.01uf" H 8400 750 50  0000 L CNN
-F 2 "0402" H 8450 1000 60  0000 C CNN
-	1    8350 850 
-	1    0    0    -1  
-$EndComp
-$Comp
-L C C38
-U 1 1 49055946
-P 7750 850
-F 0 "C38" H 7800 950 50  0000 L CNN
-F 1 "0.001uf" H 7800 750 50  0000 L CNN
-F 2 "0402" H 7850 1000 60  0000 C CNN
-	1    7750 850 
-	1    0    0    -1  
-$EndComp
-$Comp
-L C C36
-U 1 1 49055945
-P 7200 850
-F 0 "C36" H 7250 950 50  0000 L CNN
-F 1 "0.001uf" H 7250 750 50  0000 L CNN
-F 2 "0402" H 7300 1000 60  0000 C CNN
-	1    7200 850 
+P 8000 950
+F 0 "C45" H 8050 1050 50  0000 L CNN
+F 1 "10uf" H 8050 850 50  0000 L CNN
+F 2 "0603" H 8100 1100 60  0000 C CNN
+	1    8000 950 
 	1    0    0    -1  
 $EndComp
 $Comp
 L VCC #PWR070
 U 1 1 49055924
-P 3750 600
-F 0 "#PWR070" H 3750 700 30  0001 C CNN
-F 1 "VCC" H 3750 700 30  0000 C CNN
-	1    3750 600 
+P 4900 600
+F 0 "#PWR070" H 4900 700 30  0001 C CNN
+F 1 "VCC" H 4900 700 30  0000 C CNN
+	1    4900 600 
 	1    0    0    -1  
 $EndComp
 $Comp
 L GND #PWR071
 U 1 1 4905591F
-P 3750 1150
-F 0 "#PWR071" H 3750 1150 30  0001 C CNN
-F 1 "GND" H 3750 1080 30  0001 C CNN
-	1    3750 1150
+P 4900 1100
+F 0 "#PWR071" H 4900 1100 30  0001 C CNN
+F 1 "GND" H 4900 1030 30  0001 C CNN
+	1    4900 1100
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -3114,7 +3018,7 @@ L C C25
 U 1 1 490558AD
 P 4650 850
 F 0 "C25" H 4700 950 50  0000 L CNN
-F 1 "1uf" H 4700 750 50  0000 L CNN
+F 1 "0.1uf" H 4700 750 50  0000 L CNN
 F 2 "0402" H 4750 1000 60  0000 C CNN
 	1    4650 850 
 	1    0    0    -1  
@@ -3127,36 +3031,6 @@ F 0 "C24" H 4100 950 50  0000 L CNN
 F 1 "0.01uf" H 4100 750 50  0000 L CNN
 F 2 "0402" H 4150 1000 60  0000 C CNN
 	1    4050 850 
-	1    0    0    -1  
-$EndComp
-$Comp
-L C C22
-U 1 1 4905587E
-P 3450 850
-F 0 "C22" H 3500 950 50  0000 L CNN
-F 1 "0.01uf" H 3500 750 50  0000 L CNN
-F 2 "0402" H 3550 1000 60  0000 C CNN
-	1    3450 850 
-	1    0    0    -1  
-$EndComp
-$Comp
-L C C20
-U 1 1 4905587B
-P 2850 850
-F 0 "C20" H 2900 950 50  0000 L CNN
-F 1 "0.001uf" H 2900 750 50  0000 L CNN
-F 2 "0402" H 2950 1000 60  0000 C CNN
-	1    2850 850 
-	1    0    0    -1  
-$EndComp
-$Comp
-L C C16
-U 1 1 49055852
-P 2300 850
-F 0 "C16" H 2350 950 50  0000 L CNN
-F 1 "0.001uf" H 2350 750 50  0000 L CNN
-F 2 "0402" H 2400 1000 60  0000 C CNN
-	1    2300 850 
 	1    0    0    -1  
 $EndComp
 Text Label 9450 2000 2    60   ~ 0
@@ -3192,26 +3066,6 @@ Text Label 9450 1900 2    60   ~ 0
 PF3
 Text Label 9450 1600 2    60   ~ 0
 PF0
-$Comp
-L R R17
-U 1 1 49055588
-P 11000 1950
-F 0 "R17" V 11080 1950 50  0000 C CNN
-F 1 "25" V 11000 1950 50  0000 C CNN
-F 2 "0402" V 10900 1950 60  0000 C CNN
-	1    11000 1950
-	0    1    1    0   
-$EndComp
-$Comp
-L R R18
-U 1 1 49055546
-P 11000 2150
-F 0 "R18" V 11080 2150 50  0000 C CNN
-F 1 "25" V 11000 2150 50  0000 C CNN
-F 2 "0402" V 11100 2400 60  0000 C CNN
-	1    11000 2150
-	0    1    1    0   
-$EndComp
 $Comp
 L R R20
 U 1 1 49055527
@@ -4092,11 +3946,11 @@ Text Label 11950 2050 2    60   ~ 0
 SCK
 Text Label 11950 1950 2    60   ~ 0
 MOSI
-Text Label 11250 2150 0    60   ~ 0
+Text Label 10750 2150 0    60   ~ 0
 MOSI
 Text Label 10750 2050 0    60   ~ 0
 MISO
-Text Label 11250 1950 0    60   ~ 0
+Text Label 10750 1950 0    60   ~ 0
 SCK
 $Comp
 L AT45DB081D U25
