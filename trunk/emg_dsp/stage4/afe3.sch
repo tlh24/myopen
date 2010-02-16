@@ -1,11 +1,11 @@
-EESchema Schematic File Version 2  date Mon 15 Feb 2010 01:15:25 PM EST
+EESchema Schematic File Version 2  date Tue 16 Feb 2010 03:32:43 PM EST
 LIBS:power,device,emg_sym,/home/tlh24/svn/myopen/emg_dsp/lib/linear,./stage4.cache
 EELAYER 24  0
 EELAYER END
 $Descr User 16000 12000
 Sheet 7 44
 Title ""
-Date "15 feb 2010"
+Date "16 feb 2010"
 Rev ""
 Comp ""
 Comment1 "c. 2008 Timothy Hanson"
@@ -485,10 +485,10 @@ $EndComp
 Text Notes 900  5050 0    60   ~ 0
 note: changed to 4V to give the LDO more headroom
 $Comp
-L GND #PWR0207
+L GND #PWR0211
 U 1 1 4B6B021D
 P 2000 7850
-F 0 "#PWR0207" H 2000 7850 30  0001 C CNN
+F 0 "#PWR0211" H 2000 7850 30  0001 C CNN
 F 1 "GND" H 2000 7780 30  0001 C CNN
 	1    2000 7850
 	1    0    0    -1  
@@ -590,28 +590,28 @@ $EndComp
 Text Notes 12150 2800 0    60   ~ 0
 min 3V supply
 $Comp
-L GND #PWR0208
+L GND #PWR0212
 U 1 1 4B6A0B2D
 P 3950 8550
-F 0 "#PWR0208" H 3950 8550 30  0001 C CNN
+F 0 "#PWR0212" H 3950 8550 30  0001 C CNN
 F 1 "GND" H 3950 8480 30  0001 C CNN
 	1    3950 8550
 	1    0    0    -1  
 $EndComp
 $Comp
-L VEE #PWR200
+L VEE #PWR204
 U 1 1 4B6A0B22
 P 2550 8150
-F 0 "#PWR200" H 2550 8350 40  0001 C CNN
+F 0 "#PWR204" H 2550 8350 40  0001 C CNN
 F 1 "VEE" H 2550 8300 40  0000 C CNN
 	1    2550 8150
 	1    0    0    -1  
 $EndComp
 $Comp
-L VEE #PWR202
+L VEE #PWR206
 U 1 1 4B6A0B1D
 P 4350 8000
-F 0 "#PWR202" H 4350 8200 40  0001 C CNN
+F 0 "#PWR206" H 4350 8200 40  0001 C CNN
 F 1 "VEE" H 4350 8150 40  0000 C CNN
 	1    4350 8000
 	1    0    0    -1  
