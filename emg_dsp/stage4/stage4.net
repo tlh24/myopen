@@ -1,5 +1,13 @@
-# EESchema Netlist Version 1.1 created  Mon 15 Feb 2010 12:10:50 PM EST
+# EESchema Netlist Version 1.1 created  Tue 16 Feb 2010 03:32:52 PM EST
 (
+ ( /4B7AE9C9 0402  C359 0.1uf {Lib=C}
+  (    1 VDD )
+  (    2 GND )
+ )
+ ( /4B7AE9C4 0402  C360 0.1uf {Lib=C}
+  (    1 VDD )
+  (    2 GND )
+ )
  ( /4B797335 0402  C357 0.1uf {Lib=C}
   (    1 VDD )
   (    2 GND )
@@ -4971,9 +4979,6 @@
   (    1 N-000227 )
   (    2 GND )
  )
- ( /48C9FDD8/4B745883 TP  TP174 MUX_V {Lib=TP}
-  (    1 N-000227 )
- )
  ( /48C9FDD8/4B74571F 0402  R273 25 {Lib=R}
   (    1 /analog/V27 )
   (    2 N-000227 )
@@ -6113,6 +6118,8 @@
 *
 { Pin List by Nets
 Net 1 "GND" "GND"
+ C359 2
+ C360 2
  C357 2
  C3 1
  C2 1
@@ -6563,6 +6570,8 @@ Net 1 "GND" "GND"
  U240 2
  U238 5
 Net 2 "VDD" "VDD"
+ C359 1
+ C360 1
  C357 1
  U16 1
  U18 2
@@ -7236,7 +7245,6 @@ Net 178 "/RX" "RX"
  U22 L3
 Net 227 "" ""
  C356 1
- TP174 1
  R273 2
  U254 24
  C66 1
