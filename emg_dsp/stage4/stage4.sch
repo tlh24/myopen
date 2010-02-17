@@ -1,11 +1,11 @@
-EESchema Schematic File Version 2  date Tue 16 Feb 2010 08:11:20 PM EST
+EESchema Schematic File Version 2  date Wed 17 Feb 2010 06:02:14 PM EST
 LIBS:power,device,emg_sym,/home/tlh24/svn/myopen/emg_dsp/lib/linear,./stage4.cache
 EELAYER 24  0
 EELAYER END
 $Descr User 16000 12000
 Sheet 1 44
 Title ""
-Date "16 feb 2010"
+Date "17 feb 2010"
 Rev ""
 Comp ""
 Comment1 ""
@@ -1174,10 +1174,10 @@ saves power; input are 5V tol
 Text Notes 14350 5400 0    60   ~ 0
 running radio at 2.0V
 $Comp
-L VAA #PWR100
+L VAA #PWR99
 U 1 1 4B69FE60
 P 14750 5250
-F 0 "#PWR100" H 14750 5450 40  0001 C CNN
+F 0 "#PWR99" H 14750 5450 40  0001 C CNN
 F 1 "VAA" H 14750 5400 40  0000 C CNN
 	1    14750 5250
 	1    0    0    -1  
@@ -1187,10 +1187,10 @@ turning on during boot
 Text Notes 4900 10800 0    60   ~ 0
 2.0V
 $Comp
-L VAA #PWR42
+L VAA #PWR41
 U 1 1 4B69F7C2
 P 4800 10450
-F 0 "#PWR42" H 4800 10650 40  0001 C CNN
+F 0 "#PWR41" H 4800 10650 40  0001 C CNN
 F 1 "VAA" H 4800 10600 40  0000 C CNN
 	1    4800 10450
 	1    0    0    -1  
@@ -1288,10 +1288,10 @@ $EndComp
 Text Notes 14800 6750 0    60   ~ 0
 warning - output is polarized!
 $Comp
-L VEE #PWR19
+L VEE #PWR18
 U 1 1 4B68CB9F
 P 2000 8250
-F 0 "#PWR19" H 2000 8450 40  0001 C CNN
+F 0 "#PWR18" H 2000 8450 40  0001 C CNN
 F 1 "VEE" H 2000 8400 40  0000 C CNN
 	1    2000 8250
 	1    0    0    -1  
