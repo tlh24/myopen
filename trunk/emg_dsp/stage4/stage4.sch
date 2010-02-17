@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Tue 16 Feb 2010 05:30:46 PM EST
+EESchema Schematic File Version 2  date Tue 16 Feb 2010 06:01:42 PM EST
 LIBS:power,device,emg_sym,/home/tlh24/svn/myopen/emg_dsp/lib/linear,./stage4.cache
 EELAYER 24  0
 EELAYER END
@@ -14,91 +14,16 @@ Comment3 ""
 Comment4 ""
 $EndDescr
 $Comp
-L GND #PWR01
-U 1 1 4B7AE9CB
-P 16450 2650
-F 0 "#PWR01" H 16450 2650 30  0001 C CNN
-F 1 "GND" H 16450 2580 30  0001 C CNN
-	1    16450 2650
+L GND #PWR?
+U 1 1 4B7B23B8
+P 650 2850
+F 0 "#PWR?" H 650 2850 30  0001 C CNN
+F 1 "GND" H 650 2780 30  0001 C CNN
+	1    650  2850
 	1    0    0    -1  
 $EndComp
-$Comp
-L VDD #PWR02
-U 1 1 4B7AE9CA
-P 16450 2250
-F 0 "#PWR02" H 16450 2350 30  0001 C CNN
-F 1 "VDD" H 16450 2360 30  0000 C CNN
-	1    16450 2250
-	1    0    0    -1  
-$EndComp
-$Comp
-L C C359
-U 1 1 4B7AE9C9
-P 16450 2450
-F 0 "C359" H 16500 2550 50  0000 L CNN
-F 1 "0.1uf" H 16500 2350 50  0000 L CNN
-F 2 "0402" H 16550 2600 60  0000 C CNN
-	1    16450 2450
-	1    0    0    -1  
-$EndComp
-$Comp
-L GND #PWR03
-U 1 1 4B7AE9C6
-P 16450 5000
-F 0 "#PWR03" H 16450 5000 30  0001 C CNN
-F 1 "GND" H 16450 4930 30  0001 C CNN
-	1    16450 5000
-	1    0    0    -1  
-$EndComp
-$Comp
-L VDD #PWR04
-U 1 1 4B7AE9C5
-P 16450 4600
-F 0 "#PWR04" H 16450 4700 30  0001 C CNN
-F 1 "VDD" H 16450 4710 30  0000 C CNN
-	1    16450 4600
-	1    0    0    -1  
-$EndComp
-$Comp
-L C C360
-U 1 1 4B7AE9C4
-P 16450 4800
-F 0 "C360" H 16500 4900 50  0000 L CNN
-F 1 "0.1uf" H 16500 4700 50  0000 L CNN
-F 2 "0402" H 16550 4950 60  0000 C CNN
-	1    16450 4800
-	1    0    0    -1  
-$EndComp
-$Comp
-L GND #PWR05
-U 1 1 4B797342
-P 13950 4750
-F 0 "#PWR05" H 13950 4750 30  0001 C CNN
-F 1 "GND" H 13950 4680 30  0001 C CNN
-	1    13950 4750
-	1    0    0    -1  
-$EndComp
-$Comp
-L VDD #PWR06
-U 1 1 4B79733D
-P 13950 4350
-F 0 "#PWR06" H 13950 4450 30  0001 C CNN
-F 1 "VDD" H 13950 4460 30  0000 C CNN
-	1    13950 4350
-	1    0    0    -1  
-$EndComp
-$Comp
-L C C357
-U 1 1 4B797335
-P 13950 4550
-F 0 "C357" H 14000 4650 50  0000 L CNN
-F 1 "0.1uf" H 14000 4450 50  0000 L CNN
-F 2 "0402" H 14050 4700 60  0000 C CNN
-	1    13950 4550
-	1    0    0    -1  
-$EndComp
-Text Notes 4150 1150 0    60   ~ 0
-I hope this is enough!
+Wire Wire Line
+	550  2150 900  2150
 Connection ~ 4900 1050
 Wire Wire Line
 	4900 1050 4900 1100
@@ -252,8 +177,6 @@ Wire Wire Line
 Wire Wire Line
 	4300 7550 4350 7550
 Wire Wire Line
-	550  1600 1200 1600
-Wire Wire Line
 	5050 5100 5300 5100
 Wire Wire Line
 	5150 4550 5050 4550
@@ -269,7 +192,6 @@ Wire Wire Line
 	9450 2800 8600 2800
 Wire Wire Line
 	9450 3000 8600 3000
-Connection ~ 1200 1600
 Connection ~ 1550 8750
 Wire Wire Line
 	1000 8750 2550 8750
@@ -361,8 +283,6 @@ Wire Wire Line
 Connection ~ 2800 2250
 Connection ~ 900  1600
 Connection ~ 750  2150
-Wire Wire Line
-	1200 2100 1200 2150
 Wire Wire Line
 	7900 2600 7900 2700
 Wire Wire Line
@@ -721,9 +641,7 @@ Wire Wire Line
 	900  2150 900  2100
 Connection ~ 900  2150
 Wire Wire Line
-	550  1600 550  1700
-Wire Wire Line
-	1200 1600 1200 1700
+	550  1700 550  1600
 Wire Wire Line
 	900  1700 900  1500
 Wire Wire Line
@@ -827,11 +745,8 @@ Wire Wire Line
 	5050 4950 5300 4950
 Wire Wire Line
 	850  2350 750  2350
-Connection ~ 1200 2150
 Wire Wire Line
 	650  2450 850  2450
-Wire Wire Line
-	1200 2150 550  2150
 Wire Wire Line
 	4750 9950 4850 9950
 Connection ~ 4350 9450
@@ -943,6 +858,94 @@ Wire Wire Line
 	5650 650  4050 650 
 Wire Wire Line
 	4050 1050 5650 1050
+Wire Wire Line
+	550  1600 900  1600
+$Comp
+L GND #PWR01
+U 1 1 4B7AE9CB
+P 16450 2650
+F 0 "#PWR01" H 16450 2650 30  0001 C CNN
+F 1 "GND" H 16450 2580 30  0001 C CNN
+	1    16450 2650
+	1    0    0    -1  
+$EndComp
+$Comp
+L VDD #PWR02
+U 1 1 4B7AE9CA
+P 16450 2250
+F 0 "#PWR02" H 16450 2350 30  0001 C CNN
+F 1 "VDD" H 16450 2360 30  0000 C CNN
+	1    16450 2250
+	1    0    0    -1  
+$EndComp
+$Comp
+L C C359
+U 1 1 4B7AE9C9
+P 16450 2450
+F 0 "C359" H 16500 2550 50  0000 L CNN
+F 1 "0.1uf" H 16500 2350 50  0000 L CNN
+F 2 "0402" H 16550 2600 60  0000 C CNN
+	1    16450 2450
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR03
+U 1 1 4B7AE9C6
+P 16450 5000
+F 0 "#PWR03" H 16450 5000 30  0001 C CNN
+F 1 "GND" H 16450 4930 30  0001 C CNN
+	1    16450 5000
+	1    0    0    -1  
+$EndComp
+$Comp
+L VDD #PWR04
+U 1 1 4B7AE9C5
+P 16450 4600
+F 0 "#PWR04" H 16450 4700 30  0001 C CNN
+F 1 "VDD" H 16450 4710 30  0000 C CNN
+	1    16450 4600
+	1    0    0    -1  
+$EndComp
+$Comp
+L C C360
+U 1 1 4B7AE9C4
+P 16450 4800
+F 0 "C360" H 16500 4900 50  0000 L CNN
+F 1 "0.1uf" H 16500 4700 50  0000 L CNN
+F 2 "0402" H 16550 4950 60  0000 C CNN
+	1    16450 4800
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR05
+U 1 1 4B797342
+P 13950 4750
+F 0 "#PWR05" H 13950 4750 30  0001 C CNN
+F 1 "GND" H 13950 4680 30  0001 C CNN
+	1    13950 4750
+	1    0    0    -1  
+$EndComp
+$Comp
+L VDD #PWR06
+U 1 1 4B79733D
+P 13950 4350
+F 0 "#PWR06" H 13950 4450 30  0001 C CNN
+F 1 "VDD" H 13950 4460 30  0000 C CNN
+	1    13950 4350
+	1    0    0    -1  
+$EndComp
+$Comp
+L C C357
+U 1 1 4B797335
+P 13950 4550
+F 0 "C357" H 14000 4650 50  0000 L CNN
+F 1 "0.1uf" H 14000 4450 50  0000 L CNN
+F 2 "0402" H 14050 4700 60  0000 C CNN
+	1    13950 4550
+	1    0    0    -1  
+$EndComp
+Text Notes 4150 1150 0    60   ~ 0
+I hope this is enough!
 $Comp
 L GND #PWR07
 U 1 1 4B71CE4B
@@ -2056,7 +2059,7 @@ F 1 "GND" H 900 1430 30  0001 C CNN
 $EndComp
 Text Notes 11800 1800 0    60   ~ 0
 use the 2.7V version
-Text Notes -650 2550 0    60   ~ 0
+Text Notes -1000 2450 0    60   ~ 0
 level-translator voltage
 $Comp
 L VDD #PWR036
@@ -2882,11 +2885,11 @@ $EndComp
 $Comp
 L C C9
 U 1 1 49068A61
-P 1200 1900
-F 0 "C9" H 1250 2000 50  0000 L CNN
-F 1 "0.01uf" H 1250 1800 50  0000 L CNN
-F 2 "0402" H 1300 2050 60  0000 C CNN
-	1    1200 1900
+P 650 2650
+F 0 "C9" H 700 2750 50  0000 L CNN
+F 1 "0.1uf" H 700 2550 50  0000 L CNN
+F 2 "0402" H 400 2650 60  0000 C CNN
+	1    650  2650
 	1    0    0    -1  
 $EndComp
 $Comp
