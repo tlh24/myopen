@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Tue 23 Feb 2010 01:51:22 PM EST
+EESchema Schematic File Version 2  date Tue 23 Feb 2010 03:38:08 PM EST
 LIBS:power,device,emg_sym,/home/tlh24/svn/myopen/emg_dsp/lib/linear,./stage4.cache
 EELAYER 24  0
 EELAYER END
@@ -495,10 +495,10 @@ $EndComp
 Text Notes 900  5050 0    60   ~ 0
 note: changed to 4V to give the LDO more headroom
 $Comp
-L GND #PWR0206
+L GND #PWR0207
 U 1 1 4B6B021D
 P 2000 7850
-F 0 "#PWR0206" H 2000 7850 30  0001 C CNN
+F 0 "#PWR0207" H 2000 7850 30  0001 C CNN
 F 1 "GND" H 2000 7780 30  0001 C CNN
 	1    2000 7850
 	1    0    0    -1  
@@ -598,10 +598,10 @@ F 2 "TP" H 7800 5900 60  0000 C CNN
 	-1   0    0    1   
 $EndComp
 $Comp
-L GND #PWR0207
+L GND #PWR0208
 U 1 1 4B6A0B2D
 P 3950 8550
-F 0 "#PWR0207" H 3950 8550 30  0001 C CNN
+F 0 "#PWR0208" H 3950 8550 30  0001 C CNN
 F 1 "GND" H 3950 8480 30  0001 C CNN
 	1    3950 8550
 	1    0    0    -1  
