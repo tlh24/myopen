@@ -1,4 +1,4 @@
-# EESchema Netlist Version 1.1 created  Mon 22 Feb 2010 05:39:19 PM EST
+# EESchema Netlist Version 1.1 created  Tue 23 Feb 2010 01:51:42 PM EST
 (
  ( /4B7D79AE TP  TP177 G {Lib=TP}
   (    1 GND )
@@ -321,6 +321,8 @@
   (    2 N-000072 )
  )
  ( /4906ABC1 DB9  U9 RS232_CON {Lib=RS232_CON}
+  (   g2 GND )
+  (   g1 GND )
   (    1 N-000030 )
   (    2 N-000066 )
   (    3 N-000027 )
@@ -1275,6 +1277,8 @@
   (   66 /microstim4/d7 )
   (   67 /microstim4/_csin )
   (   68 GND )
+  (   69 GND )
+  (   70 GND )
  )
  ( /4B68B5E7/47F002B2 0603  C118 0.1uf {Lib=C}
   (    1 VEE )
@@ -6486,6 +6490,8 @@ Net 73 "GND" "GND"
  C47 2
  C49 2
  C17 1
+ U9 g2
+ U9 g1
  U9 5
  C14 1
  C10 2
@@ -6703,6 +6709,8 @@ Net 73 "GND" "GND"
  U65 18
  U65 14
  U65 11
+ U65 69
+ U65 70
  C118 2
  U80 A1
  U79 A1
