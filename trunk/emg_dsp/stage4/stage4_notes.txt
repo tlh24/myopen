@@ -1,0 +1,21 @@
+1.  Feb 26 2010 - Testing the 74HC467 to see if it will switch quick enough to 
+	multiplex for the neural headstage at low supply voltage; the datasheet warns 
+	that the switches are very nonlinear at low voltage, but nonlinear is OK
+	so long as the output settles to steady stage in time for the ADC to sample. 
+	Anyway, to sample 16 channels at 50ksps each, need to switch at 800kHz. 
+	First, we test at 3.15V (two AA batteries)
+	Set my function generator to that -> looks good, especially to ground. 
+	The slew rate is actually higher than that from my function gen!
+	Should test to Vcc/2, since per the spec sheet that appears to be the area 
+	where the multiplexing switches are the most nonlinear. 
+	With one input to the multiplexer at 0 and one at 1.5V, there is about 75ns
+	of ringing on the output/common line. Not too bad! 
+	Now, test at 2.45V (one alkaline and one NiMH battery): 
+	Still looks good!  There is about 75ns of delay, but little ringing, and the signal
+	seems to settle to the steady point very quickly. 
+	Indeed, the multiplexer seems to behave well even with the address lines
+	toggled at 2MHz.  I wouldn't use it that high, though.  
+	Slew rate at Vdd=3.15V about 1.5v/20ns; @ Vdd=2.45V about 0.8v/20ns.
+	----
+	Conclusion: NXP's 74HC467 will work well at 2.7V multiplexing signals
+	with the address lines changing at 800kHz. 
