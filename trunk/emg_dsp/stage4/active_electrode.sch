@@ -1,13 +1,13 @@
-EESchema Schematic File Version 2  date Thu 25 Feb 2010 02:20:12 AM EST
+EESchema Schematic File Version 2  date Tue 02 Mar 2010 02:43:37 PM EST
 LIBS:power,device,emg_sym,/home/tlh24/svn/myopen/emg_dsp/lib/linear,./stage4.cache
 EELAYER 24  0
 EELAYER END
 $Descr A4 11700 8267
 Sheet 11 44
-Title ""
+Title "Stage 4 / Copyright 2010 Timothy L Hanson "
 Date "18 feb 2010"
 Rev ""
-Comp ""
+Comp "This design is free: redistribute or modify under the GPL v. 3 or later"
 Comment1 ""
 Comment2 ""
 Comment3 ""
