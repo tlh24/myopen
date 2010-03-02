@@ -1,13 +1,13 @@
-EESchema Schematic File Version 2  date Tue 23 Feb 2010 03:38:08 PM EST
+EESchema Schematic File Version 2  date Tue 02 Mar 2010 02:43:09 PM EST
 LIBS:power,device,emg_sym,/home/tlh24/svn/myopen/emg_dsp/lib/linear,./stage4.cache
 EELAYER 24  0
 EELAYER END
 $Descr User 16000 12000
 Sheet 12 44
-Title ""
+Title "Stage 4 / Copyright 2010 Timothy L Hanson "
 Date "18 feb 2010"
 Rev ""
-Comp ""
+Comp "This design is free: redistribute or modify under the GPL v. 3 or later"
 Comment1 ""
 Comment2 ""
 Comment3 ""
@@ -32,8 +32,6 @@ Wire Wire Line
 	7100 5000 6800 5000
 Wire Wire Line
 	6800 5000 6800 4800
-Wire Wire Line
-	6800 4800 6250 4800
 Wire Wire Line
 	5450 5050 5200 5050
 Wire Wire Line
@@ -660,6 +658,9 @@ Wire Wire Line
 Wire Wire Line
 	5450 8100 6450 8100
 Connection ~ 6100 8100
+Wire Wire Line
+	7300 4800 6250 4800
+Connection ~ 6800 4800
 $Comp
 L GND #PWR0209
 U 1 1 4B7C7B85
@@ -744,16 +745,6 @@ F 1 "GND" H 6300 7080 30  0001 C CNN
 	1    6300 7150
 	1    0    0    -1  
 $EndComp
-$Comp
-L R R273
-U 1 1 4B74571F
-P 7050 4800
-F 0 "R273" V 7130 4800 50  0000 C CNN
-F 1 "25" V 7050 4800 50  0000 C CNN
-F 2 "0402" V 7180 4750 60  0000 C CNN
-	1    7050 4800
-	0    1    1    0   
-$EndComp
 Text Label 6250 6050 0    60   ~ 0
 mux3
 Text Label 6250 5950 0    60   ~ 0
@@ -825,10 +816,6 @@ F 2 "0402" H 6800 5150 60  0000 C CNN
 $EndComp
 Text Label 7300 4800 0    60   ~ 0
 V27
-Text Notes 5050 5600 0    60   ~ 0
-3.3V?
-Text Notes 5050 5500 0    60   ~ 0
-on resistance may be too high
 $Comp
 L VAA #PWR160
 U 1 1 4B69FA63
@@ -1220,10 +1207,6 @@ F 2 "VQFN-24" H 5850 5250 60  0000 C CNN
 	1    5850 4400
 	-1   0    0    -1  
 $EndComp
-Text Notes 5050 5400 0    60   ~ 0
-work ok at 2.7V..
-Text Notes 5050 5300 0    60   ~ 0
-not sure if this will
 $Comp
 L GND #PWR0230
 U 1 1 4B6764DE
