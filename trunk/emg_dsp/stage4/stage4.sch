@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Tue 02 Mar 2010 02:43:37 PM EST
+EESchema Schematic File Version 2  date Tue 02 Mar 2010 08:05:35 PM EST
 LIBS:power,device,emg_sym,/home/tlh24/svn/myopen/emg_dsp/lib/linear,./stage4.cache
 EELAYER 24  0
 EELAYER END
@@ -3943,7 +3943,7 @@ L C C41
 U 1 1 48FFFD52
 P 8800 6250
 F 0 "C41" H 8850 6350 50  0000 L CNN
-F 1 "4.7pf" H 8850 6150 50  0000 L CNN
+F 1 "4.7pF" H 8850 6150 50  0000 L CNN
 F 2 "0402" H 9050 6250 60  0000 C CNN
 	1    8800 6250
 	1    0    0    -1  
