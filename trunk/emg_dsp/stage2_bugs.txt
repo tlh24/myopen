@@ -33,7 +33,7 @@ Notes on operation:
 6.  now the problem seems to be with the strings - these are not in the bfiny.x file; 
 	gcc doesn't know where to put them. 
 	fixed, then. 
-7.  Strings and rs232 working fine - makes the exception reporrt much easier to read!
+7.  Strings and rs232 working fine - makes the exception report much easier to read!
 	now, on to the analog section, which 'must be bulletproof'. 
 8. THS4281 oscillates! need a feedback resistor of ~ 1.5K. Must put this in next board. 
 	Actually, it needs 3 resistors - Rf of 1.5K, Rg 3.0K, and a resistor to isolate the 

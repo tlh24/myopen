@@ -19,3 +19,22 @@
 	----
 	Conclusion: NXP's 74HC467 will work well at 2.7V multiplexing signals
 	with the address lines changing at 800kHz. 
+	
+2. March 30 2010 - The Shutdown (SD) pin on the MAX253 is not driven - 
+	Should be connected to ground, or so. 
+3. All the voltages seem to come up correctly (after I reflowed the damn little 
+	TPS62410 - internal short to center pad).  Next, thes out the microstim channels? 
+	Or try flashing the device?  need usb.h in svn!!
+4. Processor does not boot - no data on MISO lines.  (There is data on MOSI and SCK)
+	PF2 is high - why? perhaps a short somewhere? 
+	hmm... after a bit of probing, it seems the proc is booting! 
+	(maybe I disloged some bit of old solder paste?)
+	and the serial port is also working.  horray!  can use this for debugging. 
+5. Next thing, I think, is to get USB working, then maybe write a stim program. 
+	Nah, let's check the AFE. 
+	Looks like something is shorting the output of V18 LDO -- it's only ~287mV. 
+	Trying to reflow the thing -- better be careful though! 
+	Hmm.  These chips are really hard to work with ... but managed to fix the problem by 
+	removing mis-placed chips & applying current. 
+6. Check the gain:  4.5V in -> 450uv -> 1.5V out :: gain = 3k.  hmm, a bit high. 
+	Well, anyway, the multiplexer works - at least a few channels of it. 
