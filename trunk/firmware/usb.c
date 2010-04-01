@@ -130,7 +130,7 @@ void usb_init() {
 		}
 		u8 rd, wr = 1; 
 		/*while(1){ */
-		for(i=0; i<80;i++){
+		for(i=0; i<100;i++){
 			wreg(rGPIO, wr); 
 			rd = rreg(rGPIO); 
 			if((rd&0xf) != (wr&0xf) ){
@@ -233,7 +233,7 @@ void service_irqs(void){
 		wreg(rEPIRQ, bmOUT1DAVIRQ); //is this needed? 
 #ifdef __ADSPBF532__
 		//give a response.. or so. 
-		usb_rxbytes ++; 
+		usb_rxbyte = j; 
 		if(j == 0x0a) {
 			writebytes(rEP2INFIFO,5,(u8*)"-ack!\n");
 			wregAS(rEP2INBC,5);   // load EP2BC to arm the EP2-IN transfer & ACKSTAT
@@ -241,8 +241,13 @@ void service_irqs(void){
 			writebytes(rEP2INFIFO,1,(u8*)&j);
 			wregAS(rEP2INBC,1);   // load EP2BC to arm the EP2-IN transfer & ACKSTAT
 			//change portF accordingly. 
-			*FIO_SET = (((u16)j - 97) << 12) & 0xf000; // 97 = 'a'
-			*FIO_CLEAR = ((((u16)j - 97) << 12)^0xf000) & 0xf000; 
+			j = j - 97; 
+			if(j<16){
+				*FIO_SET = (((u16)j ) << 12) & 0xf000; // 97 = 'a'
+				*FIO_CLEAR = ((((u16)j ) << 12)^0xf000) & 0xf000; 
+				printf_int("channel changed to ", (int)(j)); 
+				printf_newline(); 
+			}
 		}
 #endif
 	}
