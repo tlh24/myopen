@@ -38,3 +38,39 @@
 	removing mis-placed chips & applying current. 
 6. Check the gain:  4.5V in -> 450uv -> 1.5V out :: gain = 3k.  hmm, a bit high. 
 	Well, anyway, the multiplexer works - at least a few channels of it. 
+	Let's read them in via USB. 
+7.  uclamp501 was oriented in the wong direction.  It has a bar - treat it as a diode!!
+	Just remember that on the PCB, pin 2 is the anode. 
+8.  Still having problems with flashing and booting the device - sometimes it works, 
+	sometime it does not!  this *needs* to be resolved. 
+	Also - and perhaps more importantly - the thing does not always boot! 
+9.  When I output a ramp, USB transmissions are all correct, in order, the right size etc, 
+	however! when i output actual samples, the file is read for a few sampels - say 100 - 
+	then fread dies.  why?  is it in the data, or is it in the code / data dependencies in the 
+	code? 
+	-- If the device is not transmitting data, then the fread blocks, as it should. 
+	Input, 2V sine wave at 1.5kHz -> 800mV sine wave on MUXA 
+	(gain = 4000, okay as the THS provides a bit of extra gain)
+	(this is equivalent to 200uV signal on the input)
+	signal is clear in the sampled signal, amplitude ~= 900 samples. 
+	minimum input size that is detectable on MUXA: 140mV pk-pk square wave. 
+	(14uV at input - okay, but not great). 
+10. Actually, it looks like some of the DAC signals are being driven onto the THS opamp's 
+	output - uhohs - let me check with the DAC disabled (this sychronous noise should 
+	ideally not factor into the ADC codes..)
+	ADC off, 1.5khz sq wave in -> MUXA pk-pk = ~144mV
+	ADC on, same input -> 156mV.  hmm.  that's actually a good bit; would be nice to get rid of it! 
+11. Input-referred noise: 220mV @ DAC => 55uV.  w/ 500k source resistance. 
+	Source shorted: 120mV @ DAC => 30uV.  note this is peak-peak!! 
+	If we use the scope to measure RMS values, I'd estimate it to be 25mV -> 6mV 
+	input-referred noise, input shorted to gnd. 
+12.  Well, anyway, I guess the analog section works oky - will need to test on a rat/mk, but 
+	first need to get the radio working?  or figure out why it does not boot reliably? 
+13.  Radio seems to come okay - at least can read and write through the SPI bus.
+	I'm tempted to try to get 'normal' SPI working - e.g. so that we don't have to manually toggle the 
+	PORTF flags & ssync.  eh, later, it works now!   (radio output is not verified - need another 
+	radio for that!)
+14.  Boot problem. Seems to boot perfectly when USB is not connected. hmm. Perhaps a radio issue? 
+	Weird as hell... hmm. I'll try turning it off for a while, then come back and see. 
+	Boots properly. good, but not good for debugging - ?
+	I guess I'll just order parts from mouser fro 3 microstims. 
