@@ -67,7 +67,7 @@ Notes on operation:
 14.  to get it to work, see - http://www.mjmwired.net/kernel/Documentation/usb/usb-serial.txt
 	namely - 
 	sudo rmmod usbserial
-	cd /wherever usbserial.ko is
+	cd /wherever usbserial.ko is  (e.g. /lib/modules/2.6.26-2-686/kernel/drivers/usb/serial )
 	sudo insmod usbserial.ko vendor=0x0b6a product=0x5346
 	(that's the vendor and serial number of our virtual device). 
 	note - should try to increase the clock rate on the SPI bus.. and check this! 
