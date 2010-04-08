@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Tue 02 Mar 2010 08:05:35 PM EST
+EESchema Schematic File Version 2  date Tue 30 Mar 2010 03:09:27 PM EDT
 LIBS:power,device,emg_sym,/home/tlh24/svn/myopen/emg_dsp/lib/linear,./stage4.cache
 EELAYER 24  0
 EELAYER END
@@ -13,6 +13,8 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
+Text Notes 350  8400 0    60   ~ 0
+this must be connected to something!
 Connection ~ 8950 2900
 Connection ~ 8550 2900
 Text Notes 12950 2850 0    60   ~ 0
