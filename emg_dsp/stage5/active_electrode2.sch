@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Mon 19 Apr 2010 01:17:39 PM EDT
+EESchema Schematic File Version 2  date Mon 19 Apr 2010 02:46:26 PM EDT
 LIBS:power,device,emg_sym,/home/tlh24/svn/myopen/emg_dsp/lib/linear
 EELAYER 24  0
 EELAYER END
@@ -165,7 +165,7 @@ Connection ~ 6600 3950
 Wire Wire Line
 	6200 3550 6350 3550
 Text Notes 5250 2850 0    60   ~ 0
-hp @ 3.2kHz
+lp @ 3.2kHz
 $Comp
 L ZENER D2
 U 1 1 4B608142
