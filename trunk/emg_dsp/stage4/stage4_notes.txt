@@ -74,3 +74,14 @@
 	Weird as hell... hmm. I'll try turning it off for a while, then come back and see. 
 	Boots properly. good, but not good for debugging - ?
 	I guess I'll just order parts from mouser fro 3 microstims. 
+15.  EMG: Testing the EMG electrodes with Jon and Prashant; need to increase the spacing on the contacts, 
+	relatively simple fix but needs a board revision.  
+	This should make it so we record more units -> more voltage output -> more informative signals.
+	Jon suggests 1/4" diameter stainless-steel dome electrodes.
+	The recordings, as well known, are very sensitive to ground noise - we need to decrease 
+	ground connection impedance & increase reliability - maybe a conductive fabric elastic belt?? 
+16: microstim: tried wiring all SYNCIN pins together, seems to help with the noise; 
+	there is still a nastish bit of switching noise on the output; I think the solution is to
+	synchronized them all together, with 4 phases, via the processor.  
+	As long as the noise is above the highpass frequency of plexon, it doesn't matter. 
+	(Provided there is no nonlinear/AM type demodulation)
