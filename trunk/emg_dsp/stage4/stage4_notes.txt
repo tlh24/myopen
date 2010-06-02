@@ -1,3 +1,16 @@
+---- board fixes ----
+1.  Mounting holes are still too small for standard 4-40 machine screws. 
+2.  FAN2001 footprint needs to be tweaked - EP can be smaller. 
+3.  Make sure to use LARGE DOME BUMP LMV1032s. 
+4.  SYNC_IN pins need to be connected together per channel to avoid excessive 
+	beat-frequency noise. 
+
+---- solder paste mask notes ----
+1.  Solder paste apeture for LMV1032 should be 13 mils: 
+	%ADD20C,0.013000*%
+2.  Solder paste apeture for TPS62410 should be %ADD29R,0.110100X0.030400*%
+3.  Remove holes - D51 in the present output.
+
 1.  Feb 26 2010 - Testing the 74HC467 to see if it will switch quick enough to 
 	multiplex for the neural headstage at low supply voltage; the datasheet warns 
 	that the switches are very nonlinear at low voltage, but nonlinear is OK
