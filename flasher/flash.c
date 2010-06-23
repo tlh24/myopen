@@ -86,6 +86,22 @@ unsigned char read_status_register(int doprint){
 	
 	return stat; 
 }
+void erasePage(int page){
+	set_pin(_CS); 
+	//erase a page. 
+	printf("erasing page 0 ... \n"); 
+	clear_pin(_CS); 
+	write_byte(0x81); 
+	//address : 3 don't care, 12 page address, 9 don't care. 
+	write_byte(0x00); 
+	write_byte(0x00); 
+	write_byte(0x00); 
+	
+	set_pin(_CS); 
+	while( (read_status_register(0) & 0x80) == 0 ){
+		usleep(1000); 
+	}
+}
 void test(int page_size){
 	int i; 
 	//just a procedure to exercise the flash - 
@@ -114,20 +130,6 @@ void test(int page_size){
 	write_byte(0x00); 
 	for(i=0; i<page_size; i++){
 		printf("read buffer[%d] = %x\n", i, read_byte()); 
-	}
-	set_pin(_CS); 
-	//erase a page. 
-	printf("erasing page 0 ... \n"); 
-	clear_pin(_CS); 
-	write_byte(0x81); 
-	//address : 3 don't care, 12 page address, 9 don't care. 
-	write_byte(0x00); 
-	write_byte(0x00); 
-	write_byte(0x00); 
-	
-	set_pin(_CS); 
-	while( (read_status_register(0) & 0x80) == 0 ){
-		usleep(1000); 
 	}
 	
 	//now, write the buffer to flash.  page 8. 
@@ -196,7 +198,15 @@ void write_page(unsigned char *d, int page_size, int page){
 		usleep(2000); 
 	}
 }
-
+void printByteBinary(unsigned char byte){
+	int i; 
+	unsigned char mask = 0x80; 
+	for(i=0; i < 8; i++){
+		if(byte & mask) printf("1"); 
+		else printf("0"); 
+		mask >>= 1; 
+	}
+}
 int verify_page(unsigned char *d, int page_size, int page){
 	int i, ok=1; 
 	unsigned char read; 
@@ -215,8 +225,15 @@ int verify_page(unsigned char *d, int page_size, int page){
 	write_byte(0x00); 
 	for(i=0; i<page_size; i++){
 		read = read_byte(); 
-		if(read != d[i]){
-			printf("read flash[%d] expected %x got %x\n", i, d[i], read); 
+		if(read != d[i] ){
+			printf("read flash[%d] expected %02x got %02x | ", i, d[i], read); 
+			// print the output in binary too. 
+			printByteBinary(d[i]); 
+			printf(" got "); 
+			printByteBinary(read); 
+			printf(" err "); 
+			printByteBinary(read ^ d[i]); 
+			printf("\n"); 
 			ok = 0; 
 		}
 	}
