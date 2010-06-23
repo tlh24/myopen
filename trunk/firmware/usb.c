@@ -106,7 +106,7 @@ void usb_init() {
 	//let's just see if we can talk to the USB controller. 
 	//first have to set the SPI port up properly. 
 	*pSPI_CTL = 0; //disable while configuring. 
-	*pSPI_BAUD = 5 ; //baud rate = SCLK / (2*SPI_BAUD) = 12Mhz. 
+	*pSPI_BAUD = 4 ; //baud rate = SCLK / (2*SPI_BAUD); 4 = 10Mhz. 
 	*pSPI_FLG = 0; //don't use flags.
 	*pSPI_STAT = 0x56 ; //clear the flags.
 	*pSPI_CTL = TDBR_CORE | SZ | EMISO| GM | MSTR | SPE ; 
@@ -129,7 +129,6 @@ void usb_init() {
 			d &= bmOSCOKIRQ ; 
 		}
 		u8 rd, wr = 1; 
-		/*while(1){ */
 		for(i=0; i<100;i++){
 			wreg(rGPIO, wr); 
 			rd = rreg(rGPIO); 
@@ -208,7 +207,7 @@ void service_irqs(void){
 		printf_str("usb: ep3 pack\n"); 
 		wreg(rEPIRQ, bmIN3BAVIRQ); 
 		//do_IN3();                     // Yes--load another keystroke and arm the endpoint
-	}                    // NOTE: don't clear the IN3BAVIRQ bit here--loading the EP3-IN byte
+	}                    //NOTE: don't clear the IN3BAVIRQ bit here--loading the EP3-IN byte
 						  // count register in the do_IN3() function does it.
 	if(itest1 & bmIN2BAVIRQ){
 		//printf_str("usb: ep2 pack\n"); 
@@ -230,13 +229,16 @@ void service_irqs(void){
 			printf_hex_byte(" ", j); 
 		}
 		printf_newline(); 
-		wreg(rEPIRQ, bmOUT1DAVIRQ); //is this needed? 
+		wreg(rEPIRQ, bmOUT1DAVIRQ); //this is critical.
+		//page 57 of the MAX3420 programming manual: 
+		// The CPU clears this bit by writing a 1 to it. 
+		// This also arms the endpoint for another transfer.
 #ifdef __ADSPBF532__
 		//give a response.. or so. 
 		usb_rxbyte = j; 
 		if(j == 0x0a) {
-			writebytes(rEP2INFIFO,5,(u8*)"-ack!\n");
-			wregAS(rEP2INBC,5);   // load EP2BC to arm the EP2-IN transfer & ACKSTAT
+			writebytes(rEP2INFIFO,14,(u8*)"-ack ack ack!\n");
+			wregAS(rEP2INBC,14);   // load EP2BC to arm the EP2-IN transfer & ACKSTAT
 		}else{
 			writebytes(rEP2INFIFO,1,(u8*)&j);
 			wregAS(rEP2INBC,1);   // load EP2BC to arm the EP2-IN transfer & ACKSTAT

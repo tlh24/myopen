@@ -1,6 +1,13 @@
 #ifndef _USB_h_
 #define _USB_h_
 
+#ifdef __ADSPBF537__
+#define FIO_CLEAR 		pPORTFIO_CLEAR
+#define FIO_SET 			pPORTFIO_SET
+#define FIO_TOGGLE 	pPORTFIO_TOGGLE
+#define FIO_IN				pPORTFIO
+#endif
+
 u8 		wreg(u8 reg, u8 val);
 u8 		wregAS(u8 reg, u8 val);
 void 	writebytes(u8 reg, u8 n, u8* p);
