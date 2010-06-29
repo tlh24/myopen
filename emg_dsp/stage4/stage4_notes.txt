@@ -11,6 +11,7 @@
 2.  Solder paste apeture for TPS62410 should be %ADD29R,0.110100X0.030400*%
 3.  Remove holes - D51 in the present output.
 
+---- electrical testing ----
 1.  Feb 26 2010 - Testing the 74HC467 to see if it will switch quick enough to 
 	multiplex for the neural headstage at low supply voltage; the datasheet warns 
 	that the switches are very nonlinear at low voltage, but nonlinear is OK
@@ -98,3 +99,45 @@
 	synchronized them all together, with 4 phases, via the processor.  
 	As long as the noise is above the highpass frequency of plexon, it doesn't matter. 
 	(Provided there is no nonlinear/AM type demodulation)
+17.  June 11 2010 - testing 3 x LMV1032-25 in series, total gain 75db = 5623. 
+	Input decimator 33k / 27 = divide by 1222. 
+	Input voltage: 79mV RMS -> 64uV @ input. 
+	output voltage: 650mv RMS _> total gain 10,000 (??)
+	This at a frequency of 1kHz; also tested with 3khz, same numbers. 
+	Seems RMS calc is inaccurate on the scope with noise; try again. 
+	Output noise: 144mV pk-pk. 
+	Output signal: 656mV pk-pk with 124mV input prior divider -> 100uV pk-pk
+	hence, total gain = 6500, which is close to the expected value. 
+	Input referred noise is then: 21uV pk-pk.   This agrees with earlier measured values (30uV, #11)
+	Note amplifier is running off of two AA batteries, 2.5V. 
+	There appears to be little dependence of noise on voltage above 1.7V.  
+18.  Bandwidth measurement of the 3 LMV1032-25: about 50Hz to 22kHz.  
+19.  The other worry is input offset - can't test with the current setup, as the offset voltage is / 1222 too!
+	Microelectrodes can have relatively large offset voltages, which may saturate the amp. 
+	The input saturates rather quickly - offset voltage of each amp is only 600mV, 
+	which is exactly what the spec sheet says. 
+	2 amps do not saturate with 2.25V -> 1.8mV input sine wave. 
+	Sturates at about 3.8V -> 3.1mV, and even then seems relatively offset-agnostic = good! 
+20. Let's think if we can get away with 2 LMV1032-25s.  That's 50dB gain -> 316.
+	With a 2.7V supply / reference, one bit of a 12-bit DAC corresponds to 659uV
+	referenced to the source, that's 2uv.  So, perhaps it does not make sense to 
+	use more than 2 LMV1032s.  just pass it into the mux and immediately digitize. 
+	Accordingly, 100uV spike correxponds to 47 counts.  kinda smallish. 
+	With an extra LMV1032-15, that's 268 counts.  Humm. 
+21.  Second full build-up works;  put the LEDs in backwards, oops. 
+	problem is that you need 2 radios for a communicationlink!  
+	Guess I'll have to build up yet another board - must make sure I have enough parts. 
+22.  Third full build-up eventually works - had to reflow the blackfin several times/
+	Timing signals, especialyl the clock, are ringing - need to put series 
+	resistors on these!  
+	Stil lhave to figure out how to get correct iming on the ting - ADCS7476 
+	wants falling edge of CS 10ns before falling edge of clock; 
+	blackfin wants to drive CS (framesync) on falling edge if data is to be sampled on rising edge. 
+	Aha!  the datasheet is wrong! THe ADC drives output on RISING edge of clock (and samples CS on rising edge)
+	(or at least for the headstage this is true)
+	We should sample on the FALLING edge of the clock.  now everything looks good, all samples 
+	properly scaled etc! 
+23.  Okay, SPI to the nordic is working properly - testing with spi_write_register_ver - 
+	But, SPI clock is *not* running during the actual sample loop?  why? 
+	(... much debugging later:  somehow i fixed it.)
+	
