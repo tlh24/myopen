@@ -87,7 +87,7 @@
 14.  Boot problem. Seems to boot perfectly when USB is not connected. hmm. Perhaps a radio issue? 
 	Weird as hell... hmm. I'll try turning it off for a while, then come back and see. 
 	Boots properly. good, but not good for debugging - ?
-	I guess I'll just order parts from mouser fro 3 microstims. 
+	I guess I'll just order parts from mouser for 3 microstims. 
 15.  EMG: Testing the EMG electrodes with Jon and Prashant; need to increase the spacing on the contacts, 
 	relatively simple fix but needs a board revision.  
 	This should make it so we record more units -> more voltage output -> more informative signals.
