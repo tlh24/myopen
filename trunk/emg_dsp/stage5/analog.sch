@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Tue 29 Jun 2010 08:13:18 PM EDT
+EESchema Schematic File Version 2  date Wed 30 Jun 2010 05:27:19 PM EDT
 LIBS:power
 LIBS:device
 LIBS:emg_sym
@@ -430,37 +430,37 @@ Text HLabel 9550 2600 2    60   Input ~ 0
 STEP
 Text HLabel 9550 2350 2    60   Input ~ 0
 _reset
-Text Label 7150 2600 0    60   ~ 0
-E32
-Text Label 7150 2500 0    60   ~ 0
-E31
-Text Label 7150 2400 0    60   ~ 0
-E30
-Text Label 7150 2300 0    60   ~ 0
-E29
-Text Label 7150 2200 0    60   ~ 0
-E28
-Text Label 7150 2100 0    60   ~ 0
-E27
-Text Label 7150 2000 0    60   ~ 0
-E26
-Text Label 7150 1900 0    60   ~ 0
-E25
-Text Label 7150 1800 0    60   ~ 0
-E24
-Text Label 7150 1700 0    60   ~ 0
-E23
-Text Label 7150 1600 0    60   ~ 0
-E22
-Text Label 7150 1500 0    60   ~ 0
-E21
-Text Label 7150 1400 0    60   ~ 0
-E20
-Text Label 7150 1300 0    60   ~ 0
-E19
-Text Label 7150 1200 0    60   ~ 0
-E18
 Text Label 7150 1100 0    60   ~ 0
+E32
+Text Label 7150 1200 0    60   ~ 0
+E31
+Text Label 7150 1300 0    60   ~ 0
+E30
+Text Label 7150 1400 0    60   ~ 0
+E29
+Text Label 7150 1500 0    60   ~ 0
+E28
+Text Label 7150 1600 0    60   ~ 0
+E27
+Text Label 7150 1700 0    60   ~ 0
+E26
+Text Label 7150 1800 0    60   ~ 0
+E25
+Text Label 7150 1900 0    60   ~ 0
+E24
+Text Label 7150 2000 0    60   ~ 0
+E23
+Text Label 7150 2100 0    60   ~ 0
+E22
+Text Label 7150 2200 0    60   ~ 0
+E21
+Text Label 7150 2300 0    60   ~ 0
+E20
+Text Label 7150 2400 0    60   ~ 0
+E19
+Text Label 7150 2500 0    60   ~ 0
+E18
+Text Label 7150 2600 0    60   ~ 0
 E17
 $Comp
 L R R53
@@ -577,16 +577,6 @@ F 0 "R49" V 9480 1800 50  0000 C CNN
 F 1 "15k" V 9400 1800 50  0000 C CNN
 F 2 "0402" V 9400 2150 60  0000 C CNN
 	1    9400 1800
-	0    1    1    0   
-$EndComp
-$Comp
-L R R51
-U 1 1 4C2A3384
-P 9400 1950
-F 0 "R51" V 9480 1950 50  0000 C CNN
-F 1 "3.3k" V 7500 550 50  0000 C CNN
-F 2 "0402" V 9400 2300 60  0000 C CNN
-	1    9400 1950
 	0    1    1    0   
 $EndComp
 $Comp
@@ -831,16 +821,6 @@ F 2 "0402" V 5450 2450 60  0000 C CNN
 	0    1    1    0   
 $EndComp
 $Comp
-L R R45
-U 1 1 4C2A306D
-P 5450 1950
-F 0 "R45" V 5530 1950 50  0000 C CNN
-F 1 "3.3k" V 3550 550 50  0000 C CNN
-F 2 "0402" V 5450 2300 60  0000 C CNN
-	1    5450 1950
-	0    1    1    0   
-$EndComp
-$Comp
 L R R44
 U 1 1 4C2A303D
 P 5450 1800
@@ -919,37 +899,37 @@ F 1 "GND" H 3350 2780 30  0001 C CNN
 	1    3350 2850
 	1    0    0    -1  
 $EndComp
-Text Label 3200 2600 0    60   ~ 0
-E16
-Text Label 3200 2500 0    60   ~ 0
-E15
-Text Label 3200 2400 0    60   ~ 0
-E14
-Text Label 3200 2300 0    60   ~ 0
-E13
-Text Label 3200 2200 0    60   ~ 0
-E12
-Text Label 3200 2100 0    60   ~ 0
-E11
-Text Label 3200 2000 0    60   ~ 0
-E10
-Text Label 3200 1900 0    60   ~ 0
-E9
-Text Label 3200 1800 0    60   ~ 0
-E8
-Text Label 3200 1700 0    60   ~ 0
-E7
-Text Label 3200 1600 0    60   ~ 0
-E6
-Text Label 3200 1500 0    60   ~ 0
-E5
-Text Label 3200 1400 0    60   ~ 0
-E4
-Text Label 3200 1300 0    60   ~ 0
-E3
-Text Label 3200 1200 0    60   ~ 0
-E2
 Text Label 3200 1100 0    60   ~ 0
+E16
+Text Label 3200 1200 0    60   ~ 0
+E15
+Text Label 3200 1300 0    60   ~ 0
+E14
+Text Label 3200 1400 0    60   ~ 0
+E13
+Text Label 3200 1500 0    60   ~ 0
+E12
+Text Label 3200 1600 0    60   ~ 0
+E11
+Text Label 3200 1700 0    60   ~ 0
+E10
+Text Label 3200 1800 0    60   ~ 0
+E9
+Text Label 3200 1900 0    60   ~ 0
+E8
+Text Label 3200 2000 0    60   ~ 0
+E7
+Text Label 3200 2100 0    60   ~ 0
+E6
+Text Label 3200 2200 0    60   ~ 0
+E5
+Text Label 3200 2300 0    60   ~ 0
+E4
+Text Label 3200 2400 0    60   ~ 0
+E3
+Text Label 3200 2500 0    60   ~ 0
+E2
+Text Label 3200 2600 0    60   ~ 0
 E1
 $Comp
 L RHA2116 U25
