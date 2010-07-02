@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Thu 01 Jul 2010 07:34:38 PM EDT
+EESchema Schematic File Version 2  date Thu 01 Jul 2010 09:28:05 PM EDT
 LIBS:power
 LIBS:device
 LIBS:emg_sym
@@ -9,7 +9,7 @@ EELAYER END
 $Descr User 16000 12000
 Sheet 1 2
 Title "Stage 4 / Copyright 2010 Timothy L Hanson "
-Date "1 jul 2010"
+Date "2 jul 2010"
 Rev ""
 Comp "This design is free: redistribute or modify under the GPL v. 3 or later"
 Comment1 ""
@@ -17,6 +17,19 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
+$Comp
+L VEE #PWR?
+U 1 1 4C2D40A0
+P 5800 7150
+F 0 "#PWR?" H 5800 7350 40  0001 C CNN
+F 1 "VEE" H 5800 7300 40  0000 C CNN
+	1    5800 7150
+	1    0    0    -1  
+$EndComp
+NoConn ~ 7750 4900
+NoConn ~ 7750 4800
+NoConn ~ 7750 4700
+NoConn ~ 7750 4600
 Wire Wire Line
 	2050 5800 2650 5800
 Connection ~ 3300 7400
@@ -858,15 +871,6 @@ F 0 "TP30" H 6150 7400 60  0000 C CNN
 F 1 "37" H 6300 7400 60  0000 C CNN
 F 2 "TP" H 6000 7500 60  0000 C CNN
 	1    6050 7400
-	1    0    0    -1  
-$EndComp
-$Comp
-L VCC #PWR01
-U 1 1 4C2D1FA6
-P 5800 7150
-F 0 "#PWR01" H 5800 7250 30  0001 C CNN
-F 1 "VCC" H 5800 7250 30  0000 C CNN
-	1    5800 7150
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -3619,12 +3623,6 @@ F 2 "QFN-10" H 4890 8540 60  0000 C CNN
 	1    4950 8650
 	1    0    0    -1  
 $EndComp
-Text Label 7750 4900 0    60   ~ 0
-TSCLK1
-Text Label 7750 4800 0    60   ~ 0
-TFS1
-Text Label 7750 4600 0    60   ~ 0
-DT1PRI
 Text Label 8250 3950 0    60   ~ 0
 RSCLK1
 Text Label 8250 3850 0    60   ~ 0
