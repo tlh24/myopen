@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Thu 01 Jul 2010 10:27:44 PM EDT
+EESchema Schematic File Version 2  date Mon 05 Jul 2010 03:17:40 PM EDT
 LIBS:power
 LIBS:device
 LIBS:emg_sym
@@ -9,7 +9,7 @@ EELAYER END
 $Descr User 16000 12000
 Sheet 1 2
 Title "Stage 4 / Copyright 2010 Timothy L Hanson "
-Date "2 jul 2010"
+Date "5 jul 2010"
 Rev ""
 Comp "This design is free: redistribute or modify under the GPL v. 3 or later"
 Comment1 ""
@@ -18,18 +18,16 @@ Comment3 ""
 Comment4 ""
 $EndDescr
 $Comp
-L VEE #PWR43
-U 1 1 4C2D40A0
-P 5800 7150
-F 0 "#PWR43" H 5800 7350 40  0001 C CNN
-F 1 "VEE" H 5800 7300 40  0000 C CNN
-	1    5800 7150
+L GND #PWR?
+U 1 1 4C322FD0
+P 11900 2050
+F 0 "#PWR?" H 11900 2050 30  0001 C CNN
+F 1 "GND" H 11900 1980 30  0001 C CNN
+	1    11900 2050
 	1    0    0    -1  
 $EndComp
-NoConn ~ 7750 4900
-NoConn ~ 7750 4800
-NoConn ~ 7750 4700
-NoConn ~ 7750 4600
+Wire Wire Line
+	11900 1950 11900 2050
 Wire Wire Line
 	2050 5800 2650 5800
 Connection ~ 3300 7400
@@ -819,6 +817,31 @@ Wire Wire Line
 	5800 7400 5850 7400
 Wire Wire Line
 	2600 5550 2050 5550
+Wire Wire Line
+	11250 1950 11400 1950
+$Comp
+L R R?
+U 1 1 4C322FBB
+P 11650 1950
+F 0 "R?" V 11730 1950 50  0000 C CNN
+F 1 "50k" V 11650 1950 50  0000 C CNN
+F 2 "0402" V 11780 1900 60  0000 C CNN
+	1    11650 1950
+	0    1    1    0   
+$EndComp
+$Comp
+L VEE #PWR43
+U 1 1 4C2D40A0
+P 5800 7150
+F 0 "#PWR43" H 5800 7350 40  0001 C CNN
+F 1 "VEE" H 5800 7300 40  0000 C CNN
+	1    5800 7150
+	1    0    0    -1  
+$EndComp
+NoConn ~ 7750 4900
+NoConn ~ 7750 4800
+NoConn ~ 7750 4700
+NoConn ~ 7750 4600
 Text Label 600  5800 0    60   ~ 0
 RX
 Text Label 600  5550 0    60   ~ 0
