@@ -1,0 +1,24 @@
+errors in the schematic
+1 - DR1PRI is not brought out, who knows why... but it looks okay.
+
+notes from debugging stage5. 
+
+August 3 2010 -- 
+	Got it booting to USB; no serial port as I bought the wrong ADUM3202 package.
+	The secret is to disable Vcc - processor internal voltage - while programming!
+		(should have thought of this before)
+	seems quite a bit of current is being dissipated on the 3V supply - 
+	perhaps there is a short somewhere? 
+	seems more likely to be an open circuit than short, as the solder paste volumes with the 
+	Pololu stencils are small. 
+	Hmm. What is connected to that net?  Just the RHA2116s - perhaps I've got them 
+	hooked wrong, and a diode somewhere is dissipating the current? 
+	Let's see if the power disipation is within spec. 
+	it's dropping ~ 1.75V.  Each RHA2116 should dissipate 5mw -> 
+	10mw, or 3.3mA.  say 3.5mA.  the regulator should hence be dissipating 6mw. 
+	It is almost certainly dissipating much more than that!  why? 
+	Also, the gain seems low. 
+	
+	Another mystery - DR1SEC is oscillating.  It should be driven by the ADC7476.  wha? 
+	(oscillations perhaps because of a bad ball connection below the blackfin?)
+	Checked it again, and it looks okay - there is an error in the schemactic, noted above.
