@@ -1,5 +1,6 @@
 errors in the schematic
 1 - DR1PRI is not brought out, who knows why... but it looks okay.
+2 - no electrolytic capacitor needed.  battery + ceramic is good enough.
 
 notes from debugging stage5. 
 
@@ -22,3 +23,77 @@ August 3 2010 --
 	Another mystery - DR1SEC is oscillating.  It should be driven by the ADC7476.  wha? 
 	(oscillations perhaps because of a bad ball connection below the blackfin?)
 	Checked it again, and it looks okay - there is an error in the schemactic, noted above.
+August 4 2010 --
+	Intan chips still consuming too much current. Tried reflowing them, 
+	no clear change.  Also reflowed the blackfin; seem to have resolved some open 
+	ckts there.  
+	Intan chips - specifically the 3.0V LDO - get hot independent of the presence 
+	of Vcc or Vdd.  (1.2 and 2.85v, respectively).  
+	One thing to note: I think it's isolated to the bottom chip. The top chip shows normal 
+	bias voltages across the three bandwidth-setting resistors. 
+	I'm going to ignore the bottom chip and work only with the top one. 
+	So: let's get the wireless working. 
+	no, no, first get clean samples from the headstage. 
+August 7 2010 --
+	Removed the bottom intan chip.  3V LDO no longer dissipating tons of heat = good. 
+	I seems that many of the inputs to the intan chip were not connected - 
+	Namely pins 1-10, excluding pin 9. 
+	Hence, only DVdd and DGnd were set - which is why the chip was heating up so much. 
+		(This implies that the other chip may have open-circuits underneath, too!)
+	Still have strange sampling-locked noise on the input of the ADC. 
+	According to the schematic and layout, there shouldn't be anything else connected
+	to the muc pin - ??
+	The input to the ADC is a square wave that goes high the instant RFS goes high, 
+	and falls 6.4us later - about 3 bits before the conversion is done. 
+	Perhaps the ADC is a bit broken... ? e.g. there is leakage when the track circuit is enabled?
+	Bottom ADC shows the same waveform, but it's not connected to anything. 
+	----
+	Anyway, input referred noise, with the input hooked to the plexon artificial rat
+	is 10uV RMS.  This was measured by recording via USB, lowpass filtering to 5khz 
+	(sampling rate set to 100ksps), and taking the std. I think this is reasonable?
+	----
+	Supply voltage are all close enough to not turn on any ESD protection diodes, I think. 
+	RHA2116 is at 3.018V. 
+	ADC is at 2.701V
+	Blackfin is at 2.872V. 
+	The biggest difference is between the ADC and RHA2116, which is still only 300mV - 
+	and the connection between them is just signal and ground. 
+	----
+	Let's test the gain. Input signal 4.5V pk-pk.  after plexon -> 450uV pk-pk. 
+	hum.  I don't see a sine wave. that's not good. 
+	Yea, I can't find the signal via fft, either, though it seems to be there on the 'scope. 
+		(with a good bit of noise from the sampling-locked noise mentioned above). 
+	The noise amplitude is about 100mV; the signal amplitude is approximately the same. 
+	Input-referred, that's 500uV, okay, chip is probably working. 
+	the SCK signal seems to be coupled to the input of the ADC, with 
+	the ADC off (no clock or frame sync) and the muliplexer off (no step signal). 
+	Let's look at the layout for that. 
+	There is no good reason for the two to be connected - 
+		they are not so close together in the layout; must be connected through input amplification?
+	This appears to have been a result of an open connection on the board.
+	----
+	Reflowed the board, put the 'broken' RHA2116 back on - now it seems to work. 
+	Unfortunately, the omentics connector fell off in the process. 
+	The problem is clearly the SOLDER PASTE- too little, and it does not wet the devices well 
+	(the nRF24L01 may have some open circuits, and it's interfereing with the flash - 
+		could try reflowing that if i want to destroy more shit)
+August 9 2010 --
+	reflowed the radio. board does not even get past the manufacturer ID without nRF24L01
+	on there!  Radio does, however, seem to be soldered corectly - at least now. 
+	reflowed the blackfin, again; perhaps there is a cold joint, but all pads and balls 
+	appeared to have solder / solder paste, so there (theoretically) should be no open-circuits. 
+	there is also the possibility that traces within the board are broken; will need to make another.
+	----
+	blackfin shorts Vdd. removed it; observed too much solder paste under the balls. 
+	will have to decrease apeture of associated solder paste mask.
+	behavior of the board without blackfin: still errors in writing the flash. 
+	specifically, the last segment of the first page is all zeros. 
+	modified the program, and now get the stuck-byte problem: same byte is written to flash
+	(or read from flash) for many memory locations in a row. 
+	Looks like it's a memory read error - the pattern changes with two serial reads, 
+	though the error seems to start around the same point.
+	Weird, I do it again, and the read seems repeatable, with only 2 errors - and the errors are 
+	consistent. 
+	And now it all works ??!! what the?  Must be a flaky connection somewhere. 
+	Perhaps the level translators? hmm. Flah voltage is correct, in any case. 
+	
