@@ -26,13 +26,15 @@ pin5	 D3 = _prog , pull low to hold the processor in reset &
 
 int g_type = 0; // 0 = AT45; 1 = AT25. 
 
-void cleanup(){
+void cleanup(int doexit){
 	clear_pin(_PROG | _CS | SO | SCLK); //release the device! 
-	exit(0); 	
+	if(!doexit) usleep(60000); 
+	else exit(0); 	
 }
 void write_byte(unsigned char byte){
 	// see the connections & commentary above. 
 	int i; 
+	clear_pin(SO); 
 	//msb first. 
 	for( i=0; i < 8; i++ ){
 		clear_pin(SCLK); 
@@ -44,7 +46,7 @@ void write_byte(unsigned char byte){
 		}
 		//data is always clocked in on the rising edge of SCLK.
 		set_pin(SCLK); 
-		//set_pin(LP_PIN06); 
+		set_pin(LP_PIN06); // 50% duty cycle.
 	}
 	
 }
@@ -56,12 +58,13 @@ unsigned char read_byte(){
 	for(i=0; i<8; i++){
 		clear_pin(SCLK); 
 		//data is latched out on the falling edge of SCLK. 
-		clear_pin(SO); //this works to delay thet signal..
-		set_pin(SCLK); 
+		clear_pin(SO); //this works to delay the signal..
 		if(pin_is_set(SI))
 			data++; 
 		if( i < 7)
 			data = data << 1; 
+		set_pin(SCLK); 
+		clear_pin(SO); //this works to delay the signal..
 	}
 	return data; 
 }
@@ -184,6 +187,7 @@ void block_erase_AT25(int data_length){
 		do{
 			usleep(4000); 
 		}while( (read_stat_AT25(0) & 0x01) );
+		usleep(20000); 
 	}
 }
 void write_page_AT25(unsigned char *d, int page_size, int page){
@@ -219,7 +223,7 @@ void write_page_AT25(unsigned char *d, int page_size, int page){
 	do{
 		usleep(4000); 
 	}while( (read_stat_AT25(0) & 0x01) );
-	usleep(4000); 
+	usleep(20000); 
 }
 int verify_AT25(unsigned char* d, int length, int page){
 	int i, ok=1; 
@@ -240,8 +244,10 @@ int verify_AT25(unsigned char* d, int length, int page){
 			ok = 0; 
 		}
 	}
-	if(ok) printf(" ... ok.\n"); 
+	if(ok) printf(" ... ok.\n");
+	else printf("... bad.\n"); 
 	set_pin(_CS); 
+	usleep(100); 
 	set_pin(SO); 
 	return ok; 
 }
@@ -345,6 +351,7 @@ int main(int argv, char* argc[]){
 	FILE* 	file; 
 	int 		file_size; 
 	unsigned char*	buffer;
+	int disp; 
 	size_t 	result; 
 	/*these are no longer used, but may be useful as reference.
 	unsigned char	mfr_code_AT45[4] = {0x1f, 0x25, 0x00, 0x00}; //for AT45DB081
@@ -396,8 +403,11 @@ int main(int argv, char* argc[]){
 	printf("requesting manufacturer opcode...\n"); 
 	set_pin(_PROG); 
 	clear_pin(SCLK); 
-	usleep(100000); 
+	usleep(40000); 
 
+	i = 0; 
+	disp = 0; 
+	while(i < 1000){
 	for(pass=0; pass < 2; pass++){
 		//if a bad firmware has been written 
 		// (leaving the processor to constantly reading the flash), 
@@ -406,38 +416,48 @@ int main(int argv, char* argc[]){
 		write_byte(0x9f); 
 		for(j=0; j<4; j++){//see page 44 of the spec sheet.
 			byte = read_byte(); 
-			printf("read: 0x%x \n", byte);
+			if(disp)printf("read: 0x%x \n", byte);
 			if(pass == 1){
 				switch(j){
 					case 0:
 						if(byte != 0x1f){
 							printf("manufacturer ID does not look correct.\n"); 
-							cleanup(); 
+							i=0;
+							cleanup(0); 
 						} break; 
 					case 1: 
 						if(byte == 0x44){
-							printf("looks like an AT25DF041\n");
+							if(disp) printf("looks like an AT25DF041\n");
 							g_type = 1; 
 						} else if(byte == 0x25){
-							printf("looks like an AT45DB081\n"); 	
+							if(disp) printf("looks like an AT45DB081\n"); 	
 							g_type = 0; 
 						} else {
 							printf("unrecognized device ID\n"); 
-							cleanup(); 
+							i = 0; 
+							cleanup(0); 
 						} break; 
 					case 2:
-						printf(" device version %d\n", (int)byte); 
+						if(disp) printf(" device version %d\n", (int)byte); 
 						break; 
-					case 4:
+					case 3:
 						if(byte != 0x00){
 							printf("extended device information != 0\n"); 
-							cleanup(); 
+							i = 0; 
+							cleanup(0); 
 						} break; 
 				}
+				i++; 
+				//this is a bit of overkill, but better not to write crap to flash! 
+				if(i >= 999) printf("communication test: completed passes: %d\n",i); 
 			}
 		}
 		set_pin(_CS); 
+		usleep(50); 
 	}
+	}
+	if(g_type == 1) printf("looks like an AT25DF041\n"); 
+	if(g_type == 0) printf("looks like an AT45DB081\n"); 
 	//need to make sure the device is in power of 2 binary page size. 
 	//converting to this is a one-time operation. 
 	if( g_type == 0 && (read_status_register(1) & 0x01) == 0){
@@ -478,7 +498,12 @@ int main(int argv, char* argc[]){
 			write_page(&(buffer[i*page_size]), ps, i); 
 		if(g_type == 1){
 			write_page_AT25(&(buffer[i*page_size]), ps, i); 
+			//while(1) verify_AT25(&(buffer[i*page_size]), ps, i); 
 			//verify_AT25(&(buffer[i*page_size]), ps, i); 
+			if(!verify_AT25(&(buffer[i*page_size]), ps, i)){
+				printf("page not verified, exiting.\n"); 	
+				cleanup(1); 
+			}
 		}
 	}
 	int ok = 1; 
@@ -491,7 +516,7 @@ int main(int argv, char* argc[]){
 		}
 	}
 	if(g_type == 1){
-		ok = verify_AT25(buffer, 512, 0); 	
+		ok = verify_AT25(buffer, file_size, 0); 	
 	}
 	if(!ok){
 		printf("not all pages verified properly!  beware!\n"); 
@@ -499,7 +524,7 @@ int main(int argv, char* argc[]){
 		printf("all pages verified correctly!\n"); 
 	}
 	free(buffer);
-	cleanup();
+	cleanup(0);
 	return 0;
 }
 
