@@ -96,4 +96,23 @@ August 9 2010 --
 	consistent. 
 	And now it all works ??!! what the?  Must be a flaky connection somewhere. 
 	Perhaps the level translators? hmm. Flah voltage is correct, in any case. 
+	-----
+	Trying to test communications in the simplest way possible - requesting the flash to ID itself, 
+	over and over agian. 
+	At first, it wouldn't work, but now it's quite reliable. WHY??
+	It looks like interupptions to the power are sufficient to cause strange and undesired response
+	post-query - let me try removing the electrolytic.
+	YES that fixed it.  why, oh so why? 
+	Also to note: 
+	* removed printf statements during program sequences. 
+	* I killed X.
+	Need to mantain constant clock rate!! 
+	Now, put the blackfin back on there, I guess.
+	Done.  works!  comes up as /dev/ttyUSB0 !
+	Both Intan chips appear to be working, despite all the reheating I've done to them! 
+	----
+	Next, to measure the signal and noise quality of the digitized data. 
+	Don't have an omnetics connector on there - in a box, it's 23uV RMS noise.
+	Not too bad for no input and possible contamination from USB. 
+	need to test this with input shorted, I guess. Or, better, a real input. 
 	
