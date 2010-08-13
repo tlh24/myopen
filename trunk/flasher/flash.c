@@ -10,6 +10,8 @@ pin3  D1 = SI , serial input to the flash, connected to an output, called SO her
 pin4  D2 = SCLK , output. 
 pin5	 D3 = _prog , pull low to hold the processor in reset &
 			prevent it from driving the bus. (& enable the buffer). 
+			in the cable, this is attached to the gate of a fet; 
+			hence, it's an inverted open-collector (drain) output.
 */
 #include <parapin.h>
 #include <stdio.h>
@@ -27,7 +29,7 @@ pin5	 D3 = _prog , pull low to hold the processor in reset &
 int g_type = 0; // 0 = AT45; 1 = AT25. 
 
 void cleanup(int doexit){
-	clear_pin(_PROG | _CS | SO | SCLK); //release the device! 
+	clear_pin( _PROG | _CS | SO | SCLK); //release the device! 
 	if(!doexit) usleep(60000); 
 	else exit(0); 	
 }
@@ -187,7 +189,7 @@ void block_erase_AT25(int data_length){
 		do{
 			usleep(4000); 
 		}while( (read_stat_AT25(0) & 0x01) );
-		usleep(20000); 
+		usleep(40000); 
 	}
 }
 void write_page_AT25(unsigned char *d, int page_size, int page){
@@ -223,7 +225,7 @@ void write_page_AT25(unsigned char *d, int page_size, int page){
 	do{
 		usleep(4000); 
 	}while( (read_stat_AT25(0) & 0x01) );
-	usleep(20000); 
+	usleep(40000); 
 }
 int verify_AT25(unsigned char* d, int length, int page){
 	int i, ok=1; 
@@ -263,9 +265,10 @@ void erasePage(int page){
 	write_byte(0x00); 
 	
 	set_pin(_CS); 
-	while( (read_status_register(0) & 0x80) == 0 ){
-		usleep(1000); 
-	}
+	do{
+		usleep(4000); 
+	}while( (read_status_register(0) & 0x80) == 0 );
+	usleep(4000); 
 }
 
 void write_page(unsigned char *d, int page_size, int page){
@@ -297,8 +300,8 @@ void write_page(unsigned char *d, int page_size, int page){
 	
 	//wait until the device is done.
 	while( (read_status_register(0) & 0x80) == 0 ){
-		usleep(2000); 
-	}
+		usleep(4000); 
+	}usleep(4000); 
 }
 void printByteBinary(unsigned char byte){
 	int i; 
@@ -376,8 +379,7 @@ int main(int argv, char* argc[]){
 		printf("resetting the board.\n"); 
 		set_pin(_PROG); 
 		usleep(400000); //enough?
-		clear_pin(_PROG); 
-		exit(0); 
+		cleanup(1); 
 	}
 	printf("ldr file: %s\n", argc[1]); 
 	//read the binary file. 
@@ -403,7 +405,7 @@ int main(int argv, char* argc[]){
 	printf("requesting manufacturer opcode...\n"); 
 	set_pin(_PROG); 
 	clear_pin(SCLK); 
-	usleep(40000); 
+	usleep(10000); 
 
 	i = 0; 
 	disp = 0; 
@@ -412,11 +414,13 @@ int main(int argv, char* argc[]){
 		//if a bad firmware has been written 
 		// (leaving the processor to constantly reading the flash), 
 		// the flash may need to be queried twice before it is ready. 
+		set_pin(_PROG); 
+		usleep(50); 
 		clear_pin(_CS | SCLK); 
 		write_byte(0x9f); 
 		for(j=0; j<4; j++){//see page 44 of the spec sheet.
 			byte = read_byte(); 
-			if(disp)printf("read: 0x%x \n", byte);
+			if(disp||1)printf("read: 0x%x \n", byte);
 			if(pass == 1){
 				switch(j){
 					case 0:
@@ -500,10 +504,10 @@ int main(int argv, char* argc[]){
 			write_page_AT25(&(buffer[i*page_size]), ps, i); 
 			//while(1) verify_AT25(&(buffer[i*page_size]), ps, i); 
 			//verify_AT25(&(buffer[i*page_size]), ps, i); 
-			if(!verify_AT25(&(buffer[i*page_size]), ps, i)){
+			/*if(!verify_AT25(&(buffer[i*page_size]), ps, i)){
 				printf("page not verified, exiting.\n"); 	
 				cleanup(1); 
-			}
+			} --this is overkill, verify at the end.*/
 		}
 	}
 	int ok = 1; 
