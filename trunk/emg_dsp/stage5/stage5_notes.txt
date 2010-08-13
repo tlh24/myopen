@@ -1,6 +1,7 @@
 errors in the schematic
 1 - DR1PRI is not brought out, who knows why... but it looks okay.
 2 - no electrolytic capacitor needed.  battery + ceramic is good enough.
+3 - need caps on all parallel-port driven inputs / outputs (especially the _cs - 33 or 100pf).
 
 notes from debugging stage5. 
 
@@ -105,7 +106,7 @@ August 9 2010 --
 	YES that fixed it.  why, oh so why? 
 	Also to note: 
 	* removed printf statements during program sequences. 
-	* I killed X.
+	* killed X.
 	Need to mantain constant clock rate!! 
 	Now, put the blackfin back on there, I guess.
 	Done.  works!  comes up as /dev/ttyUSB0 !
@@ -115,4 +116,74 @@ August 9 2010 --
 	Don't have an omnetics connector on there - in a box, it's 23uV RMS noise.
 	Not too bad for no input and possible contamination from USB. 
 	need to test this with input shorted, I guess. Or, better, a real input. 
-	
+August 10 2010 --
+	reflowed the nRF24L01 twice, the PA supply was not connected. works now, apparently. 
+	check the data. 
+	Now the flash isn't coming up $%^#!
+	** Need caps - 100pf maybe - on all the parallel-port driven signals!! **
+	finally - everything seems to be working! Need to debug the packetization. 
+August 11 2010 --
+	Debugging packetization: is it the write or the read? 
+	Disable write; fill buffer up with known pattern. 
+	looks like we are missing packets? No, the interrupts indicate otherwise. 
+	start byte = 
+	00, 40, 80, c0 (repeats 4 times) 00 c0 80 40 80 c0 
+	another trial: 
+	20 60 a0 e0 (repeats 8 times) a0 60 a0 e0 a0 60 20 60 a0 e0 20 60 a0 e0 20 60 a0 e0 20 60 a0 e0
+	Ok, first task is to determine why every-other packet is dropped. 
+	pretty sure it's the USB. yep, fixed!
+	now need to check fidelity, I guess - matlab.
+	matlab: looks like within a packet, everything is in order, though packets may come out-of-order.
+	is this a programmatical error, a USB error, or a radio error? 
+	The pattern seems to be repeating: 8 clear ramps, unordered pkts, 
+		8 clear ramps, unordered pkts, ditto, 
+	1 ramp = 256 bytes = 8 packets. Let's make sure it's not the USB, then.
+	It is USB! write a known pattern via SPI, and it appears the linux kernel reorders them. 
+	This is at the relatively low rate of 8 packets every 17ms -> 14.3kbytes/sec (115kbits/sec). 
+	Hum. may have to timestamp them on the radio-> USB bridge. or just fix the problem.
+	Another thing: looks like there are unequal number of instances of each octet. 
+	In a 640 packet stream, some are 76, some are 86. should be 80. 
+	Perhaps this is because the packets come in bursts?  Would buffering them help?
+	Upon noticing that the SPI clock was still running after nRF_CSN went high, 
+	tried switching from DMA-controlled SPI read-in to processor control 
+	- no change in transmitted data, though, still unordered packets. 
+	Looking at the USB_IRQ right now, and it's pretty clear that we are overfilling the output 
+	buffers during a radio burst - doh - sure would prefer ethernet here! 
+	Maybe next time i use a FDTI device? Ugh, re-engineering. perhaps ethernet is better.
+August 12 2010 --
+	Using libusb to read from the device; works much better, though the packets seem to be
+	reversed within the read.  I'm not sure why.  The bytes on the wire are, at least according
+	to the /dev/ttyUSB0 interface, in order.  
+	Bytes within the 64-byte packets are in order, however. 
+	Diff(recorded data) has only 3 values: +129, 1, -127.
+	Reversed packet order is independent of buffer length 
+		- at least for lengths 64*16 or 64*4 bytes.
+	Changed this, no idea why it would be reversed, but easy fix. cough, Fixed!
+	----
+	Next, the radio. uh - it's back to being disordered. - seems to depend on initialization?
+	Tried it again, looks good, no (none!) errors! this means the radio tx code is good.
+	----
+	Now, can use this to debug continuous data (not just ramp) transmission.
+	Turned back on p3 (WFBUF write pointer). 
+	Does not look correct - samples are saturated, 0xfff5; 0xbaadc0ed occurs aperiodically
+	intervening bytes: 56, 12, 56, 132, 104, 64 ...
+	ah, was writing *words* (16 bits) not *bytes*.  now it looks good, only the samples are 0xff..
+	seems that there is ~1 lsb of noise in the system.  humm.
+	channel 1: all 0x91 0r 0x91 lsbyte. 
+	channel 16: all 0x98
+	another problem: tx chan only goes to 16.. ? ah, that is correct given the code. 
+		fidelity looks fine with this; removed the packet reordering; why did we need it before??
+	note!!  seems you can only write to a full register when reading from the serial ports -
+		e.g. r0 = w[p0] (z) ; 
+		that's silli!
+		but now the signal looks okay (from only one of the chips - the bottom - the top one is hot)
+	----
+	finally, got the radio working properly - at least to some degree / resolution. 
+	now it seems that whenever there  channel is changed, there is a good bit of noise on the output.
+	but .. not always, not on all channels.  perhaps only on the channels that are floating? 
+	see http://m8ta.com/index.pl?pid=839
+	Seems to be the radio - artifact is clear when PA turns on.
+	No!  radio transmission disabled, PA disabled, SPI still active - strong artifact!
+		(this means that there is / should be sufficient isolation between radio and input. 
+		that is not to say it couldn't be larger - !)
+	SPI needs to be re-routed here, we need it to boot, etc.  shiiit. 
