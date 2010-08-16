@@ -187,3 +187,27 @@ August 12 2010 --
 		(this means that there is / should be sufficient isolation between radio and input. 
 		that is not to say it couldn't be larger - !)
 	SPI needs to be re-routed here, we need it to boot, etc.  shiiit. 
+August 13 2010 --
+	Reflowed the top RHA2116 - still does not work.  consumes a lot of power. 
+		Bummer, I was very careful this time. 
+	rerouting the MISO line & grounding the existing trace seems to fix the interference problem.
+		On the next revision, need to *not* do this!
+		Anyway, can debug filter.
+	Let's looks at this again: data comes in at 12 bits.  have 15 bits plus sign of headroom - 
+		so total gain through the filter should be 16., or 2 per biquad.
+		(have 4 biqads to work with).
+	First biquad = okay. 
+	Second biquad = saturating @ 0x7f.  shiit.
+August 15 2010 --
+	Figured out the filter problem - had a += instead of = on the b[0]*x multiply. oops.
+	Now the output is oscillating back n forth every 1,2,3 samples
+	Seems to occur after 2 biquads - checking with just FIR filters. looks okay.
+	try leaky integrator?
+	yes, that works - but after a while sharp edges re-appear. not sure why. 
+	looks like some part of the recording system - perhaps the USB - is getting hose'd . 
+	Seem it shifts into and out of proper ordering -- but why? 
+	Seem not to be the filters themselves. 
+	No, rather it seems we are dropping packets predictably - after making a sine wave generator, 
+	see that there is a pattern to diff(b3).  hummhum. mysteries abound!
+	decision: usb sucks, use ethernet. yesyes yall// and I've got the EMG board right here!
+	another decision: move away from the maxim chip, and toward FTDI 2322H.
