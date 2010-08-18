@@ -187,9 +187,9 @@ void block_erase_AT25(int data_length){
 		set_pin(_CS);
 		set_pin(SO); 
 		do{
-			usleep(4000); 
+			usleep(1000); 
 		}while( (read_stat_AT25(0) & 0x01) );
-		usleep(40000); 
+		usleep(1000); 
 	}
 }
 void write_page_AT25(unsigned char *d, int page_size, int page){
@@ -223,9 +223,9 @@ void write_page_AT25(unsigned char *d, int page_size, int page){
 	set_pin(SO); 
 	printf("waiting for write to finish.\n"); 
 	do{
-		usleep(4000); 
+		usleep(1000); 
 	}while( (read_stat_AT25(0) & 0x01) );
-	usleep(40000); 
+	usleep(1000); 
 }
 int verify_AT25(unsigned char* d, int length, int page){
 	int i, ok=1; 
@@ -266,7 +266,7 @@ void erasePage(int page){
 	
 	set_pin(_CS); 
 	do{
-		usleep(4000); 
+		usleep(1000); 
 	}while( (read_status_register(0) & 0x80) == 0 );
 	usleep(4000); 
 }
