@@ -211,3 +211,57 @@ August 15 2010 --
 	see that there is a pattern to diff(b3).  hummhum. mysteries abound!
 	decision: usb sucks, use ethernet. yesyes yall// and I've got the EMG board right here!
 	another decision: move away from the maxim chip, and toward FTDI 2322H.
+August 16 2010 --
+	Time is running out before the next trip. What is the most efficient use of my time? 
+	Redesign the board & get it shipped out by .. Thurs?  Not likely, given the complexity.  
+	Well, is the USB bug irrecoverable?  can we figure out what is causing it, and fix?
+	I presume it is because a USB packet is being overwritten while in the outgoing fifo.  
+	(this same problem again... damnit). 
+	Buffer the outgoing data? in a circular buffer?
+	Need to check to see if the outgoing buffer is emptied -- yea, the IN2BAVIRQ bit.
+	okay, fixed that.  are we completely sure that it's the USB and not radio? 
+	better check with ramp.
+	yea, we still get errors with the ramp - occasional jumps of 65, which corresponds to 
+	lost USB packets. damnit, gina! 
+	This seems to occur very consistently after the start of a new ramp. 
+	radio packets are 32 bytes, 8 of them -> 256 bytes, same as wrap period of ramp. 
+	so jump occurs on the second radio packet - i think? 
+	It jumps from -111 to -46.  hum, might have a 16 offset here in the ramp signal.
+	BUT, the error only occurs every 4th frame - and this is consistent.
+	perhaps it is the reading program?  this is 1024 bytes, which is what the buffer is set to.
+	try smaller buffer.
+	NOPE, it was a bug in the recording program.  USB works perfectly now!! YAY. 
+	test with radio -- much better. still, some dropped packets, but not so bad.
+		16 in 140samples = 16 in 5028 samples = 0.0032 error rate. hm. could be better?
+		perhaps my radio is imperfect?
+	With radios right next to eachother - 
+		37 dropped packets in 12734 packets = 0.0029 error rate. 
+		Assuming that chksum discards in case of one error, this is a BER of 1.1e-5
+		could turn off checksumming.
+	Okay, what next? filters, test the filters.
+		filters don't look good - not smooth enough, not enough lowpass action
+		(compared it to the same result computed in matlab). 
+		First lowpass is certainly not working -- lots of fs/2, fs/3, fs/4 noise.
+		period is not correlated with digital pipeline - 208 samples, def. 60hz noise.
+		sign of the coefs? hmm. 
+		Tested design procedure in matlab, filter works as expected (w/ some phase delay)
+August 17 2010 --
+	Testing the filter; seems to have the correct sensitivity to the different parameters. 
+		(at least for sine wave generation). 
+	Now testing impulse response.  Definantly different! In matlab, the main pulse is 6 samples.
+		In blackfin, 4 samples.
+	Looks the same in the C fixed-point test. 
+	after fiddling with the coeficients, looks like B tapped delay is not right!!
+	Reimplemented it, still messed up - guess I'll try pure FIR? 
+	Waaaait a second, this is pre-downsampling!  of course we're missing the middle sample. 
+	D'oh. 
+	Also: looks like we are saturating. really need AGC. otherwise, impulse response okay (for lp)
+	with all filters, the impulse respones looks fine. Test with realish data. 
+	Hmm.  try turning down the gain?
+	Nope, looks like the filter output is correct. 
+	Also -- seems like butterworth filters behave better on the real data than elliptic.
+		better phase characteristics.
+	Well, anyway, what's the next task?  I guess get the thresholding --
+		and decide if we want incoming bandwidth. Probably, yes.
+		Needn't be much - one packet after every frame? this will make 
+		the radio routine longer :-/  well.
