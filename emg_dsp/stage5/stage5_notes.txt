@@ -265,3 +265,117 @@ August 17 2010 --
 		and decide if we want incoming bandwidth. Probably, yes.
 		Needn't be much - one packet after every frame? this will make 
 		the radio routine longer :-/  well.
+September 10 2010 -- yesterday got the device fixed at Protronics; looks good, both chips working now!
+	Also they soldered on the omnetics connector again. 
+	now working on bidirectional radio protocol, but it seems that when transition into RX mode is 
+	included, transmit IRQ is no longer present -> not sure why? 
+	test: longer delay after CE is de-asserted. 
+		try 16us delay after de-asserting CE -> no dice. 
+		32us de-assertion after both transitions -> nada.
+		clearing IRQs before RX -> TX transition = also no effect.
+		disabling the PRIM_RX bit makes it work!  hum.
+		putting it in power-down mode between transitions: yea, that works!!
+	Actually, it seems that it's a BAD IDEA to change the IRQ mask bits in-flight - huh! 
+		best to leave both RX_DR and TX_DS bits un-masked.  not sure why -- ? 
+		(MAX_RT (retries) is always masked). 
+		And putting it in **power-down** mode is essential...
+		.. the delay after de-asserting CE is not essential.
+		.. flushing the TX fifo is not needed.
+		(I'm not sure why my notes (comments in spi.c) indicate that transition to 
+		power-down mode is not needed - ? 
+	Well,i  guess it's time to get the other end working.
+	-- Discussions with Zheng: how to sync the two sides?  The bridge needs to know when 
+	to send commands (hum, that said - need a better way of communicating, USB  <<< ethernet. 
+	ugh, don't want to make another board?!!  perhaps can populate emg_dsp?  might want to check.
+	Whatever.  Can use a bluetechnix iMX.51 maybe, although this is overkill. 
+	-- Let's look at bandwidth.  continuous transmit of one channel, 27 samples + 1 flag byte + 4 threshold 
+	bytes.  Data coming in at 1msps / 32 = 31.25ksps / 27 bytes/packet = 1157 packets/second. 
+	= 144.67 frames/second. 
+	Expressed in bits/sec: 
+		296 kbps outgoing.  
+		37 kbps incoming. 
+	without flag/data byte: 
+		285 kbps outgoing
+		35.7 kbps incoming.  -- not too much difference, might as well sacrafice! 
+	alrighty -- bidirectional seems to be working!!  with real data, too.  great. 
+	Next: incorporate the actual sample / filtering algo.  hopefully we don't need to re-write the damn thing in C. 
+September 13 2010 --
+	Thinking about the filtering again -- it will be hard to completely change the system, 
+	as there are 2 weights per 32-bit word, and these weights are shared between 2 simultaneous channels. 
+	making each channel have its own set of filter coefs would increase memory read bandwidth by 2. 
+		this may not be such a problem - really is only one more memory read per biquad. 
+		actually, it looks like we can have completely different filters per channel, no problem!
+	also, each biquad has relatively little capability for gain - 
+		for very small signals, probably have to distribute the gain.
+September 14 2010 --
+	Looked over the code, and - surprisingly - it's all basically working.  looks fine when the bridge is off, 
+	but when the bridge is on looks like we are forgetting a clear-interrupt? 
+	no not really -- seems that every other transition is not working. 
+	specifically, transition to TX mode?  hm.
+	This is dependent on the bridge transmitting a packet 
+		-- if it's turned off, output looks good. (8 packets, all good)
+	Aha!  looks like i was forgetting to terminate the CSN frame on the RX read-packet. oopsie.
+		now communication looks good - except for the fact that the channel is not getting through? 
+		ah, fixed.
+	Next: the samples look like shit; probably the filtering is not working.
+	Raw samples from ADC look fine; therefore, yes it must be the filter.
+	First filter stage looks okayish - mostly 0xc_ or so.  0x11-- ----.  really need a program for looking at this.
+		ah, I've already got pthread in there for display! nice. 
+	Okay, looking at the data - direct, pre-fitlering: there is noise. looks like it's sourced from the ADC? 
+	(tested with constant output in code - it's clean!)
+September 15 2010 --
+	Okay, first: diagnose the noise corruption.  
+	The zeros in the data stream do not occur when the device is on battery power, 
+		disconnected from programmer too. 
+	The noise occurs 8 times in a buffer of length 64 * 32 = 8 frames. 
+		makes sense, as the duration of the noise is consistent with SPI writes. 
+	So, the noise is either from the SPI bus, or from the radio (i'm leaning toward the SPI bus..)
+	also we need to be able to write to the bridge - to allow us to switch channels, e.g.
+	first biquad looks okay (lowpass). 
+	actually, all the filters look like they are doing their job. good! 
+	now, we should try to permit filtering changes (gain etc) from the computer. 
+	getting there ... looks like need to debug the bridge. 
+	yes: after you send a packet, seems that the radio is not emitting all IRQs. this is independent of USB activity.
+	removing the code that reads data in from EP1 fixes the problem - 
+	with the caveat that the write is blocking. 
+	if we just write one to rEPIRQ, bmOUT1DAVIRQ, works okay.  perhaps we are not using ACKSTAT properly -- 
+		these are bulk enpoints, not control endpoints.
+		yeap, don't need to call wregAS!
+		also don't write anything out on the UART.
+		fixed! now - why is the channel not changing? 
+	Looks like the packet sent to the headstage never changes.  why oh why?  it was working a sec ago.
+	problem: was sending full 64-byte packets over USB; should have sent 32-byte packets.  fixed!! 
+	now we can change channel! 
+	Next job: adjust the gain of each channel. 
+September 15 2010 --
+	Changed the bridge to run at 400Mhz.  no change in the packet-loss issue: 
+	looks like we'll need a more complicated protocol for transmitting data. 
+	Strangely, when i had inadvertently disabled the PLL, and the chip was running really slowly (not keeping up with data)
+	there seemed to be no lost USB packets.  yea right! 
+September 20 2010 --
+	Got the filtering working better, but reset filter coefs still not working perfectly.. this is v. tricxy! 
+	looks like the damn filter is oscillating - changing the gain does not affect the resultant sine wave.
+	Need to make the USB ultra reliable -- seems that the packets are being re-ordered?  
+	I've tagged them with unsigned integers, can use these to re-assemble. 
+		this did not fix anything .. wha? 
+	Tried it on the faster computer (loco) -- no difference. must be dropped packets? 
+	what happens if we turn off CRC on the radio? 
+	still works perfectly. 
+	now generating a sine wave on the headstage, with no CRC; sine waves look uniformly perfect on the screen, 
+	BUT this just means that USB is droppping packets -- we are assembling packets in the program 
+	depending on the earliest / first packet found in a given take. 
+	Hence, need to have a bidi protocol for reading from USB, where we can reset the read pointer where needed.
+	** I think it's the bridge -- the beat is periodic. let's plot with hex..
+	yes!  it seems that there is not enough outgoing bandwidth from the bridge -- the 
+	if(write - read) block is being triggered, causing the appearance of dropped pkts. 
+	however! during the actual transmit seq, no packets seem to be dropped - 
+	this is all a matter of proc speed? changing the # of printfs does not seem to change things. 
+	incoming data rate 296kbps. 
+	that's 37 kbytes/second
+	packets are 36 bytes, serviced every 1ksps -> this is presumably why we get skew.  yet yet.. 
+	what happens if we buffer them? expand the packet to 64 bytes? 
+	seems like we're just going to have to write full 64-byte packets out. bummer, i guess. 
+	it is seemingly certainly the outgoing b/w that is the problem.. bweh.  perhaps the spi bus? 
+	well can't really tell ... could try increasing the clk rate. 
+	
+	 
