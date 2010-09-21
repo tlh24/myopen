@@ -106,7 +106,7 @@ void usb_init() {
 	//let's just see if we can talk to the USB controller. 
 	//first have to set the SPI port up properly. 
 	*pSPI_CTL = 0; //disable while configuring. 
-	*pSPI_BAUD = 4 ; //baud rate = SCLK / (2*SPI_BAUD); 4 = 10Mhz. 
+	*pSPI_BAUD = 4 ; //baud rate = SCLK / (2*SPI_BAUD); 5 = 10Mhz / 8Mhz
 	*pSPI_FLG = 0; //don't use flags.
 	*pSPI_STAT = 0x56 ; //clear the flags.
 	*pSPI_CTL = TDBR_CORE | SZ | EMISO| GM | MSTR | SPE ; 
