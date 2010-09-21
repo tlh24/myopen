@@ -128,14 +128,14 @@ const unsigned char CD [] =
 	0x05, 		// type endpoint
 	0x82, 		//endpoint 2, in
 	0x02, 		// bulk type
-	64, 0, 		//max packet size
+	36, 0, 		//max packet size
 	0, 			//polling interval off. 
 // endpoint descriptor 2 (EP1, out) CD[25]
 	7, 			// desc length
 	0x05,		//type endpoint 
 	0x01, 		//endpoint 1, out?
 	0x02, 		//type bulk
-	64, 0, 		//max packet size
+	36, 0, 		//max packet size
 	0				//polling interval = off.
 }; //length = 32.
 	
