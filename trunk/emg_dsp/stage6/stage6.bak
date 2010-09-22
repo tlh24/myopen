@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Wed 22 Sep 2010 06:28:20 PM EDT
+EESchema Schematic File Version 2  date Wed 22 Sep 2010 06:28:02 PM EDT
 LIBS:power
 LIBS:device
 LIBS:emg_sym
@@ -369,10 +369,18 @@ Wire Wire Line
 Wire Wire Line
 	8650 8400 8500 8400
 Wire Wire Line
+	1800 5850 2000 5850
+Wire Wire Line
 	-3700 7650 -3150 7650
 Connection ~ 14350 150 
 Wire Wire Line
 	14750 150  11650 150 
+Wire Wire Line
+	2850 3650 2750 3650
+Wire Wire Line
+	1900 1350 1600 1350
+Wire Wire Line
+	3150 4350 3150 4250
 Connection ~ 14200 7000
 Wire Wire Line
 	14150 7000 14200 7000
@@ -522,6 +530,13 @@ Wire Wire Line
 	17200 4000 17250 4000
 Wire Wire Line
 	15950 3850 15950 3900
+Connection ~ 1300 2250
+Wire Wire Line
+	1300 2250 1300 2300
+Wire Wire Line
+	850  2250 1800 2250
+Wire Wire Line
+	850  2250 850  2050
 Connection ~ 13850 -250
 Connection ~ 13300 -250
 Connection ~ 11650 -250
@@ -597,6 +612,17 @@ Wire Wire Line
 Connection ~ 14150 6000
 Wire Wire Line
 	14400 6000 14400 6850
+Connection ~ 2000 5850
+Wire Wire Line
+	2000 5950 2000 5700
+Wire Wire Line
+	2000 5700 950  5700
+Wire Wire Line
+	1200 5950 1050 5950
+Wire Wire Line
+	950  5800 1050 5800
+Wire Wire Line
+	1050 5800 1050 5950
 Wire Wire Line
 	14400 6850 14800 6850
 Wire Wire Line
@@ -705,6 +731,14 @@ Connection ~ 12200 -250
 Connection ~ 13300 150 
 Connection ~ 13850 150 
 Wire Wire Line
+	600  1350 600  1600
+Wire Wire Line
+	2450 3900 2450 3950
+Wire Wire Line
+	1800 2250 1800 1750
+Connection ~ 1800 1900
+Connection ~ 900  1350
+Wire Wire Line
 	15950 4800 15950 4900
 Wire Wire Line
 	17200 3850 17200 3900
@@ -800,10 +834,18 @@ Wire Wire Line
 	14150 7100 14200 7100
 Connection ~ 14200 7100
 Wire Wire Line
+	600  1350 1300 1350
+Wire Wire Line
+	2850 4350 2850 4250
+Wire Wire Line
+	3150 3650 3250 3650
+Wire Wire Line
 	14750 -250 11650 -250
 Connection ~ 14350 -250
 Wire Wire Line
 	-3100 7900 -3700 7900
+Wire Wire Line
+	600  1600 850  1600
 Wire Wire Line
 	8500 10400 8650 10400
 Connection ~ 8650 10400
@@ -2017,6 +2059,7 @@ F 1 "VDD" H 15650 4910 30  0000 C CNN
 	1    15650 4800
 	0    -1   -1   0   
 $EndComp
+NoConn ~ 3000 4250
 $Comp
 L GND #PWR02
 U 1 1 4C2A861D
@@ -3261,6 +3304,15 @@ F 2 "0603" H 17200 5250 60  0000 C CNN
 	0    1    1    0   
 $EndComp
 $Comp
+L GND #PWR071
+U 1 1 49068D2C
+P 1300 2300
+F 0 "#PWR071" H 1300 2300 30  0001 C CNN
+F 1 "GND" H 1300 2230 30  0001 C CNN
+	1    1300 2300
+	1    0    0    -1  
+$EndComp
+$Comp
 L GND #PWR072
 U 1 1 49068D11
 P 5100 3650
@@ -4113,6 +4165,64 @@ F 1 "74LCX541" H 13450 7300 60  0000 C CNN
 F 2 "TSSOP-20" H 13450 7400 60  0000 C CNN
 	1    13500 6750
 	-1   0    0    -1  
+$EndComp
+Text Notes 1350 6200 0    60   ~ 0
+25Mhz
+$Comp
+L GND #PWR0116
+U 1 1 48FFFD7E
+P 2000 6350
+F 0 "#PWR0116" H 2000 6350 30  0001 C CNN
+F 1 "GND" H 2000 6280 30  0001 C CNN
+	1    2000 6350
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR0117
+U 1 1 48FFFD7A
+P 1050 6350
+F 0 "#PWR0117" H 1050 6350 30  0001 C CNN
+F 1 "GND" H 1050 6280 30  0001 C CNN
+	1    1050 6350
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR0118
+U 1 1 48FFFD68
+P 1800 5950
+F 0 "#PWR0118" H 1800 5950 30  0001 C CNN
+F 1 "GND" H 1800 5880 30  0001 C CNN
+	1    1800 5950
+	0    -1   -1   0   
+$EndComp
+$Comp
+L GND #PWR0119
+U 1 1 48FFFD63
+P 1200 5850
+F 0 "#PWR0119" H 1200 5850 30  0001 C CNN
+F 1 "GND" H 1200 5780 30  0001 C CNN
+	1    1200 5850
+	0    1    1    0   
+$EndComp
+$Comp
+L C C28
+U 1 1 48FFFD52
+P 2000 6150
+F 0 "C28" H 2050 6250 50  0000 L CNN
+F 1 "7pF" H 2050 6050 50  0000 L CNN
+F 2 "0402" H 2250 6150 60  0000 C CNN
+	1    2000 6150
+	1    0    0    -1  
+$EndComp
+$Comp
+L C C25
+U 1 1 48FFFD4F
+P 1050 6150
+F 0 "C25" H 1100 6250 50  0000 L CNN
+F 1 "7pf" H 1100 6050 50  0000 L CNN
+F 2 "0402" H 800 6150 60  0000 C CNN
+	1    1050 6150
+	1    0    0    -1  
 $EndComp
 $Comp
 L ABM10XTAL U13
