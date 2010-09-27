@@ -1,5 +1,5 @@
 errors in the schematic
-1 - DR1PRI is not brought out, who knows why... but it looks okay.
+1 - DR1PRI is not brought out, most likely b/c it was too hard to route. next time, 8 layers!
 2 - no electrolytic capacitor needed.  battery + ceramic is good enough.
 3 - need caps on all parallel-port driven inputs / outputs (especially the _cs - 33 or 100pf).
 
@@ -377,5 +377,23 @@ September 20 2010 --
 	seems like we're just going to have to write full 64-byte packets out. bummer, i guess. 
 	it is seemingly certainly the outgoing b/w that is the problem.. bweh.  perhaps the spi bus? 
 	well can't really tell ... could try increasing the clk rate. 
+September 21 -- starting a new board!  this one will have proper ethernet and USB2. horray!
+	blackfin BF527: both ethernet and USB OTG, 132k memory, mobile SDRAM. 
+	BF547: usb OTG, mobile DDR, lots of peripherals, many many pins. 
+		also looks like you need resistors on the DDR interface; 
+		gluing to an ethernet controller is probably not too bad. 
+		use a M25P16 SPI flash. (16 Mb) (?)
+September 22 -- designing stage6
+	wired headstage:  might as well as use a 16-bit ADC.  40ksps * 16 channels = 640ksps. 
+September 23 - to add: audio out on EMG board.
+	audio out on bridge, too! 
+	The LPC111x series may be better - about 8-9ma dynamic current draw @ 48Mhz.  
+		and we don't need to overkill with the EMG - fewer channels, lower sampling rate (4khz per channel). 
+		That said, the blackfin works pretty good, and I'd prefer not to have to make / learn a new toolchain.
+	Total power consumption, static: 
+		750uA / inst amp MAX4208.  5V -> 30mW. 
+		OPA4348: 2x, < 3mW
+		ADC, 0.7mW
+		radio: 11.2mA, 2.5V, 16ksps @ 16 bits -> 32kbytes/sec, 256kbits/sec, + incoming -> about 4mW. 
 	
 	 
