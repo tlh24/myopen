@@ -1,5 +1,9 @@
-EESchema Schematic File Version 2  date Mon 27 Sep 2010 02:27:07 AM EDT
-LIBS:power,device,emg_sym,/home/tlh24/svn/myopen/emg_dsp/lib/linear,./stage6.cache
+EESchema Schematic File Version 2  date Mon 27 Sep 2010 01:10:51 PM EDT
+LIBS:power
+LIBS:device
+LIBS:emg_sym
+LIBS:linear
+LIBS:stage6-cache
 EELAYER 24  0
 EELAYER END
 $Descr User 16000 12000
@@ -13,6 +17,18 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
+$Comp
+L RHA2116 U?
+U 1 1 4CA0D00F
+P 4100 2000
+F 0 "U?" H 4100 2150 60  0000 C CNN
+F 1 "RHA2116" H 4100 2400 60  0000 C CNN
+F 2 "QFN-40" H 4000 2050 60  0000 C CNN
+	1    4100 2000
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	5150 1750 4950 1750
 Wire Wire Line
 	3850 9900 5250 9900
 Connection ~ 3600 9150
@@ -193,9 +209,7 @@ Wire Wire Line
 Wire Wire Line
 	4200 750  4200 800 
 Wire Wire Line
-	5150 1700 5150 1750
-Wire Wire Line
-	5150 1750 4850 1750
+	5150 1750 5150 1700
 Wire Wire Line
 	5200 1800 5050 1800
 Wire Wire Line
@@ -298,7 +312,6 @@ Wire Wire Line
 Connection ~ 4950 1650
 Wire Wire Line
 	4850 1200 5150 1200
-Connection ~ 4950 1750
 Connection ~ 4950 1200
 Wire Wire Line
 	4150 3300 4150 3100
@@ -421,7 +434,7 @@ Wire Wire Line
 Wire Wire Line
 	6500 6600 7000 6600
 Wire Wire Line
-	4950 5150 4950 4850
+	4950 4850 4950 5150
 Connection ~ 5150 7350
 Wire Wire Line
 	4900 7350 5350 7350
@@ -449,7 +462,6 @@ Wire Wire Line
 Wire Wire Line
 	4150 6700 4150 6500
 Connection ~ 4950 4600
-Connection ~ 4950 5150
 Wire Wire Line
 	4850 4600 5150 4600
 Connection ~ 4950 5050
@@ -489,9 +501,7 @@ Wire Wire Line
 Wire Wire Line
 	5050 5200 5200 5200
 Wire Wire Line
-	4850 5150 5150 5150
-Wire Wire Line
-	5150 5150 5150 5100
+	5150 5100 5150 5150
 Wire Wire Line
 	4200 4200 4200 4150
 Wire Wire Line
@@ -580,6 +590,18 @@ Wire Wire Line
 	12200 3450 12300 3450
 Wire Wire Line
 	5250 10850 3600 10850
+Wire Wire Line
+	5150 5150 4950 5150
+$Comp
+L RHA2116 U?
+U 1 1 4CA0CFE7
+P 4100 5400
+F 0 "U?" H 4100 5550 60  0000 C CNN
+F 1 "RHA2116" H 4100 5800 60  0000 C CNN
+F 2 "QFN-40" H 4000 5450 60  0000 C CNN
+	1    4100 5400
+	1    0    0    -1  
+$EndComp
 Text Label 10550 3450 0    60   ~ 0
 V3C
 Text Label 11000 2400 0    60   ~ 0
@@ -766,16 +788,6 @@ rclk
 Text Label 7800 4350 0    60   ~ 0
 rfs
 $Comp
-L RHA2116 U40
-U 1 1 4C9B8FAF
-P 4100 5400
-F 0 "U40" H 4100 5550 60  0000 C CNN
-F 1 "RHA2116" H 4100 5800 60  0000 C CNN
-F 2 "QFN-40" H 4100 5400 60  0000 C CNN
-	1    4100 5400
-	1    0    0    -1  
-$EndComp
-$Comp
 L C C90
 U 1 1 4C9B8FAE
 P 4900 7150
@@ -937,8 +949,6 @@ F 2 "SOT-23" H 6190 7990 60  0000 C CNN
 	1    6250 8250
 	1    0    0    -1  
 $EndComp
-Text Label 3000 10150 0    60   ~ 0
-V5
 Text Label 3000 7900 0    60   ~ 0
 V5
 Text Label 4150 3300 0    60   ~ 0
@@ -967,6 +977,7 @@ U 1 1 4C9B885D
 P 8550 4450
 F 0 "U47" H 8550 4450 60  0000 C CNN
 F 1 "8X100" H 8550 4450 60  0000 C CNN
+F 2 "8x100MIL" H 8500 4000 60  0000 C CNN
 	1    8550 4450
 	1    0    0    -1  
 $EndComp
@@ -1024,7 +1035,7 @@ U 1 1 4C9B7FA2
 P 9050 4450
 F 0 "U48" H 9050 4450 60  0000 C CNN
 F 1 "8X100" H 9050 4450 60  0000 C CNN
-F 2 "8x100mil" H 8950 4350 60  0000 C CNN
+F 2 "8x100mil" H 9000 4000 60  0000 C CNN
 	1    9050 4450
 	-1   0    0    -1  
 $EndComp
@@ -1275,16 +1286,6 @@ Text Label 3200 2500 0    60   ~ 0
 E2
 Text Label 3200 2600 0    60   ~ 0
 E1
-$Comp
-L RHA2116 U39
-U 1 1 4C2A2D16
-P 4100 2000
-F 0 "U39" H 4100 2150 60  0000 C CNN
-F 1 "RHA2116" H 4100 2400 60  0000 C CNN
-F 2 "QFN-40" H 4100 2000 60  0000 C CNN
-	1    4100 2000
-	1    0    0    -1  
-$EndComp
 $Comp
 L C C99
 U 1 1 4C2A2B2F
