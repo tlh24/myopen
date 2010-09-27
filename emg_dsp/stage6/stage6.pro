@@ -1,4 +1,4 @@
-update=Tue 09 Feb 2010 08:28:38 PM EST
+update=Sun 26 Sep 2010 11:44:54 PM EDT
 last_client=pcbnew
 [eeschema]
 version=1
@@ -45,7 +45,6 @@ PadDimH=98
 PadDimV=236
 ViaDiam=450
 ViaDril=250
-ViaAltD=250
 MViaDia=200
 MViaDrl=80
 Isol=54
@@ -73,6 +72,10 @@ EdgeLar=150
 TxtLar=120
 MSegLar=150
 WpenSer=10
+UserGrX=0.01
+UserGrY=0.01
+UserGrU=1
+DivGrPc=1
 [pcbnew/libraries]
 LibDir=
 LibName1=/home/tlh24/svn/myopen/emg_dsp/lib/emg_foot

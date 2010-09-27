@@ -1,13 +1,9 @@
-EESchema Schematic File Version 2  date Fri 24 Sep 2010 11:59:13 PM EDT
-LIBS:power
-LIBS:device
-LIBS:emg_sym
-LIBS:linear
-LIBS:stage6-cache
+EESchema Schematic File Version 2  date Mon 27 Sep 2010 12:48:58 AM EDT
+LIBS:power,device,emg_sym,/home/tlh24/svn/myopen/emg_dsp/lib/linear
 EELAYER 24  0
 EELAYER END
 $Descr User 16000 12000
-Sheet 3 13
+Sheet 13 13
 Title "Stage 4 / Copyright 2010 Timothy L Hanson "
 Date "25 sep 2010"
 Rev ""
@@ -462,7 +458,7 @@ L R R53
 U 1 1 4C2A3478
 P 10350 3050
 F 0 "R53" V 10430 3050 50  0000 C CNN
-F 1 "50" V 10350 3050 50  0000 C CNN
+F 1 "33" V 10350 3050 50  0000 C CNN
 F 2 "0402" V 10250 3050 60  0000 C CNN
 	1    10350 3050
 	0    1    1    0   
@@ -472,7 +468,7 @@ L R R48
 U 1 1 4C2A3454
 P 6450 3050
 F 0 "R48" V 6530 3050 50  0000 C CNN
-F 1 "50" V 6450 3050 50  0000 C CNN
+F 1 "33" V 6450 3050 50  0000 C CNN
 F 2 "0402" V 6350 3050 60  0000 C CNN
 	1    6450 3050
 	0    1    1    0   

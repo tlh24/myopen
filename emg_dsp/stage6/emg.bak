@@ -1,9 +1,5 @@
-EESchema Schematic File Version 2  date Fri 24 Sep 2010 11:59:13 PM EDT
-LIBS:power
-LIBS:device
-LIBS:emg_sym
-LIBS:linear
-LIBS:stage6-cache
+EESchema Schematic File Version 2  date Mon 27 Sep 2010 12:48:58 AM EDT
+LIBS:power,device,emg_sym,/home/tlh24/svn/myopen/emg_dsp/lib/linear
 EELAYER 24  0
 EELAYER END
 $Descr User 16000 12000
@@ -17,6 +13,17 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
+$Comp
+L GND #PWR?
+U 1 1 4CA010EC
+P 2000 9050
+F 0 "#PWR?" H 2000 9050 30  0001 C CNN
+F 1 "GND" H 2000 8980 30  0001 C CNN
+	1    2000 9050
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	2350 8650 2000 8650
 Wire Wire Line
 	3700 4450 3900 4450
 Wire Wire Line
@@ -196,9 +203,6 @@ Wire Wire Line
 	13450 1850 13550 1850
 Wire Wire Line
 	12700 1950 12600 1950
-Wire Wire Line
-	3650 8300 3650 8650
-Connection ~ 3650 8300
 Connection ~ 6600 1100
 Wire Wire Line
 	6600 1100 6600 1150
@@ -600,13 +604,9 @@ Wire Wire Line
 Connection ~ 11500 5250
 Connection ~ 11800 5250
 Wire Wire Line
-	9450 3100 8600 3100
-Wire Wire Line
 	9450 2900 8600 2900
 Wire Wire Line
 	9450 2700 8600 2700
-Wire Wire Line
-	6400 9850 6500 9850
 Connection ~ 11950 3700
 Connection ~ 11950 4100
 Wire Wire Line
@@ -805,6 +805,50 @@ Wire Wire Line
 	3700 5350 3900 5350
 Wire Wire Line
 	3700 4250 3900 4250
+Wire Wire Line
+	8600 3100 9450 3100
+Text Label 1000 6250 0    60   ~ 0
+IN16
+Text Label 1000 6150 0    60   ~ 0
+IN15
+Text Label 1000 6050 0    60   ~ 0
+IN14
+Text Label 1000 5950 0    60   ~ 0
+IN13
+Text Label 1000 5850 0    60   ~ 0
+IN12
+Text Label 1000 5750 0    60   ~ 0
+IN11
+Text Label 1000 5650 0    60   ~ 0
+IN10
+Text Label 1000 5550 0    60   ~ 0
+IN9
+Text Label 1000 5450 0    60   ~ 0
+IN8
+Text Label 1000 5350 0    60   ~ 0
+IN7
+Text Label 1000 5250 0    60   ~ 0
+IN6
+Text Label 1000 5150 0    60   ~ 0
+IN5
+Text Label 1000 5050 0    60   ~ 0
+IN4
+Text Label 1000 4950 0    60   ~ 0
+IN3
+Text Label 1000 4850 0    60   ~ 0
+IN2
+Text Label 1000 4750 0    60   ~ 0
+IN1
+$Comp
+L 8X2X100 U?
+U 1 1 4C9FCC9C
+P 800 5450
+F 0 "U?" H 800 4550 60  0000 C CNN
+F 1 "8X2X100" H 800 6250 60  0000 C CNN
+F 2 "8x2x100mil" H 740 4490 60  0000 C CNN
+	1    800  5450
+	1    0    0    -1  
+$EndComp
 Text Label 3700 7150 0    60   ~ 0
 IN16
 Text Label 3700 6950 0    60   ~ 0
@@ -861,7 +905,7 @@ U 1 1 4C9D7236
 P 3600 1450
 F 0 "C?" H 3650 1550 50  0000 L CNN
 F 1 "2.2uf" H 3650 1350 50  0000 L CNN
-F 2 "0402" H 3700 1600 60  0000 C CNN
+F 2 "0402" H 4050 1700 60  0000 C CNN
 	1    3600 1450
 	-1   0    0    -1  
 $EndComp
@@ -881,7 +925,7 @@ U 1 1 4C9D7200
 P 3300 1250
 F 0 "L?" V 3250 1250 40  0000 C CNN
 F 1 "ferrite" V 3400 1250 40  0000 C CNN
-F 2 "0402" V 3450 1250 60  0000 C CNN
+F 2 "0402" V 3500 850 60  0000 C CNN
 	1    3300 1250
 	0    -1   1    0   
 $EndComp
@@ -1049,7 +1093,7 @@ U 1 1 4C9D6EAC
 P 3450 900
 F 0 "U?" H 3450 650 60  0000 C CNN
 F 1 "LM828" H 3400 1150 60  0000 C CNN
-F 2 "SOT-23-5" H 3200 600 60  0000 C CNN
+F 2 "SOT-23-5" H 3400 1250 60  0000 C CNN
 	1    3450 900 
 	-1   0    0    -1  
 $EndComp
@@ -2135,15 +2179,6 @@ turning on during boot
 Text Notes 14800 6750 0    60   ~ 0
 warning - output is polarized!
 $Comp
-L VEE #PWR25
-U 1 1 4B68CB9F
-P 3250 8300
-F 0 "#PWR25" H 3250 8500 40  0001 C CNN
-F 1 "VEE" H 3250 8450 40  0000 C CNN
-	1    3250 8300
-	1    0    0    -1  
-$EndComp
-$Comp
 L TP TP28
 U 1 1 4B68C906
 P 19650 4800
@@ -2348,8 +2383,6 @@ F 1 "GND" H 13350 4480 30  0001 C CNN
 	1    13350 4550
 	1    0    0    -1  
 $EndComp
-Text Notes 5500 10050 0    60   ~ 0
-increase core voltage to 1.3V
 Text Label 8600 2600 0    60   ~ 0
 PPI9
 Text Label 8600 2700 0    60   ~ 0
@@ -2674,14 +2707,6 @@ F 2 "0603" H 17200 5250 60  0000 C CNN
 	1    17250 5100
 	0    1    1    0   
 $EndComp
-Text Notes 8900 2800 0    60   ~ 0
-mux0
-Text Notes 8900 2900 0    60   ~ 0
-mux1
-Text Notes 8900 3000 0    60   ~ 0
-mux2
-Text Notes 8900 3100 0    60   ~ 0
-mux3
 Text Notes 8750 1700 0    60   ~ 0
 nrf csn
 Text Notes 8800 1600 0    60   ~ 0
@@ -3214,12 +3239,12 @@ Text Notes 7050 7650 0    60   ~ 0
 $Comp
 L JUMP U6
 U 1 1 49015D2B
-P 3450 8300
-F 0 "U6" H 3450 8200 60  0000 C CNN
-F 1 "VEE" H 3450 8400 60  0000 C CNN
-F 2 "2x100mil" H 3390 8140 60  0000 C CNN
-	1    3450 8300
-	1    0    0    -1  
+P 2000 8850
+F 0 "U6" H 2000 8750 60  0000 C CNN
+F 1 "VEE" H 2000 8950 60  0000 C CNN
+F 2 "2x100mil" H 1940 8690 60  0000 C CNN
+	1    2000 8850
+	0    1    1    0   
 $EndComp
 $Comp
 L GND #PWR099
