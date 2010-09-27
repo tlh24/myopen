@@ -1,13 +1,9 @@
-EESchema Schematic File Version 2  date Fri 24 Sep 2010 11:59:13 PM EDT
-LIBS:power
-LIBS:device
-LIBS:emg_sym
-LIBS:linear
-LIBS:stage6-cache
+EESchema Schematic File Version 2  date Mon 27 Sep 2010 12:48:58 AM EDT
+LIBS:power,device,emg_sym,/home/tlh24/svn/myopen/emg_dsp/lib/linear
 EELAYER 24  0
 EELAYER END
 $Descr A4 11700 8267
-Sheet 10 13
+Sheet 3 13
 Title "Stage 4 / Copyright 2010 Timothy L Hanson "
 Date "25 sep 2010"
 Rev ""
@@ -113,6 +109,8 @@ $Comp
 L TP TP?
 U 1 1 4C9D733B
 P 1950 4000
+AR Path="/4C9BA165/4C9D5FEB/4C9D733B" Ref="TP?"  Part="1" 
+AR Path="/4C9BA165/4C9D6BB6/4C9D733B" Ref="TP?"  Part="1" 
 F 0 "TP?" H 1950 4000 60  0000 C CNN
 F 1 "TP" H 1800 3950 60  0000 C CNN
 F 2 "TP" H 1800 3950 60  0000 C CNN
@@ -123,6 +121,8 @@ $Comp
 L TP TP?
 U 1 1 4C9D732E
 P 1950 3200
+AR Path="/4C9BA165/4C9D5FEB/4C9D732E" Ref="TP?"  Part="1" 
+AR Path="/4C9BA165/4C9D6BB6/4C9D732E" Ref="TP?"  Part="1" 
 F 0 "TP?" H 1950 3200 60  0000 C CNN
 F 1 "TP" H 1800 3150 60  0000 C CNN
 F 2 "TP" H 1800 3150 60  0000 C CNN
@@ -131,7 +131,7 @@ F 2 "TP" H 1800 3150 60  0000 C CNN
 $EndComp
 $Comp
 L OPA4348 U?
-U 1 1 4C9D6A40
+U 2 1 4C9D6A40
 P 6100 3550
 AR Path="/4C9BA165/4C9D5FEB/4C9D6A40" Ref="U?"  Part="1" 
 AR Path="/4C9BA165/4C9D6AD6/4C9D6A40" Ref="U?"  Part="2" 
@@ -144,7 +144,8 @@ AR Path="/4C9BA165/4C9D6C33/4C9D6A40" Ref="U?"  Part="2"
 AR Path="/4C9BA165/4C9D6C36/4C9D6A40" Ref="U?"  Part="1" 
 F 0 "U?" H 5900 3550 60  0000 C CNN
 F 1 "OPA4348" H 5900 4300 60  0000 C CNN
-	1    6100 3550
+F 2 "TSSOP-14" H 5840 3490 60  0000 C CNN
+	2    6100 3550
 	1    0    0    -1  
 $EndComp
 Text Label 6100 4100 0    60   ~ 0
@@ -575,7 +576,7 @@ AR Path="/4C9BA165/4C9D6C33/4B5E2341" Ref="U177"  Part="1"
 AR Path="/4C9BA165/4C9D6C36/4B5E2341" Ref="U177"  Part="1" 
 F 0 "U177" H 3200 3350 60  0000 C CNN
 F 1 "MAX4208" H 3250 3850 60  0000 C CNN
-F 2 "MSOP-8" H 3140 3290 60  0000 C CNN
+F 2 "uMAX-8" H 3140 3290 60  0000 C CNN
 	1    3200 3600
 	1    0    0    -1  
 $EndComp
