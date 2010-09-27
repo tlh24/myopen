@@ -1,5 +1,9 @@
-EESchema Schematic File Version 2  date Mon 27 Sep 2010 02:27:07 AM EDT
-LIBS:power,device,emg_sym,/home/tlh24/svn/myopen/emg_dsp/lib/linear,./stage6.cache
+EESchema Schematic File Version 2  date Mon 27 Sep 2010 01:11:23 PM EDT
+LIBS:power
+LIBS:device
+LIBS:emg_sym
+LIBS:linear
+LIBS:stage6-cache
 EELAYER 24  0
 EELAYER END
 $Descr User 16000 12000
@@ -13,6 +17,8 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
+Wire Wire Line
+	10150 1650 11100 1650
 Wire Wire Line
 	14100 9550 9700 9550
 Connection ~ 13300 9550
@@ -46,8 +52,6 @@ Connection ~ 10450 8750
 Wire Wire Line
 	12400 4250 12750 4250
 Connection ~ 10500 1650
-Wire Wire Line
-	10150 1650 11400 1650
 Wire Wire Line
 	10150 1650 10150 1600
 Wire Wire Line
@@ -154,12 +158,9 @@ Wire Wire Line
 	3600 6950 2100 6950
 Connection ~ 10800 1650
 Wire Wire Line
-	11400 1650 11400 1600
-Wire Wire Line
 	10500 1650 10500 1600
-Connection ~ 11100 1150
 Wire Wire Line
-	11100 1150 11100 1200
+	11100 1200 11100 1150
 Connection ~ 13150 1250
 Wire Wire Line
 	13150 1250 13150 1400
@@ -1045,13 +1046,10 @@ Wire Wire Line
 Wire Wire Line
 	10500 1150 10500 1200
 Wire Wire Line
-	11400 1200 11400 1150
-Wire Wire Line
 	10800 1150 10800 1200
 Connection ~ 10800 1150
 Wire Wire Line
-	11100 1600 11100 1650
-Connection ~ 11100 1650
+	11100 1650 11100 1600
 Wire Wire Line
 	10800 1700 10800 1600
 Wire Wire Line
@@ -1183,8 +1181,6 @@ Wire Wire Line
 	8500 5950 8700 5950
 Wire Wire Line
 	10150 1200 10150 1150
-Wire Wire Line
-	10150 1150 11400 1150
 Connection ~ 10500 1150
 Wire Wire Line
 	12400 3850 12750 3850
@@ -1192,6 +1188,8 @@ Wire Wire Line
 	9700 8350 12450 8350
 Wire Wire Line
 	14100 9150 9700 9150
+Wire Wire Line
+	10150 1150 11100 1150
 $Comp
 L C C44
 U 1 1 4CA00F85
@@ -2043,11 +2041,11 @@ EVDD
 $Comp
 L C C35
 U 1 1 4C9A7DB4
-P 11400 1400
-F 0 "C35" H 11450 1500 50  0000 L CNN
-F 1 "0.1uf" H 11450 1300 50  0000 L CNN
-F 2 "0402" H 11500 1550 60  0001 C CNN
-	1    11400 1400
+P 10800 1400
+F 0 "C35" H 10850 1500 50  0000 L CNN
+F 1 "0.1uf" H 10850 1300 50  0000 L CNN
+F 2 "0402" H 10900 1550 60  0001 C CNN
+	1    10800 1400
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -2058,16 +2056,6 @@ F 0 "C34" H 11150 1500 50  0000 L CNN
 F 1 "0.1uf" H 11150 1300 50  0000 L CNN
 F 2 "0402" H 11200 1550 60  0001 C CNN
 	1    11100 1400
-	1    0    0    -1  
-$EndComp
-$Comp
-L C C31
-U 1 1 4C9A7DB1
-P 10800 1400
-F 0 "C31" H 10850 1500 50  0000 L CNN
-F 1 "1uf" H 10850 1300 50  0000 L CNN
-F 2 "0402" H 10900 1550 60  0001 C CNN
-	1    10800 1400
 	1    0    0    -1  
 $EndComp
 $Comp

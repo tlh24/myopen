@@ -1,5 +1,9 @@
-EESchema Schematic File Version 2  date Mon 27 Sep 2010 02:27:07 AM EDT
-LIBS:power,device,emg_sym,/home/tlh24/svn/myopen/emg_dsp/lib/linear,./stage6.cache
+EESchema Schematic File Version 2  date Mon 27 Sep 2010 01:11:23 PM EDT
+LIBS:power
+LIBS:device
+LIBS:emg_sym
+LIBS:linear
+LIBS:stage6-cache
 EELAYER 24  0
 EELAYER END
 $Descr User 16000 12000
@@ -13,6 +17,8 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
+Wire Wire Line
+	8900 1750 9100 1750
 Wire Wire Line
 	800  2650 1000 2650
 Wire Wire Line
@@ -153,8 +159,6 @@ Wire Wire Line
 Wire Wire Line
 	9000 1800 9150 1800
 Wire Wire Line
-	8800 1750 9100 1750
-Wire Wire Line
 	9100 1750 9100 1700
 Wire Wire Line
 	8800 2350 8900 2350
@@ -178,8 +182,6 @@ Wire Wire Line
 	4850 2350 4950 2350
 Wire Wire Line
 	5150 1700 5150 1750
-Wire Wire Line
-	5150 1750 4850 1750
 Wire Wire Line
 	5200 1800 5050 1800
 Wire Wire Line
@@ -304,7 +306,6 @@ Wire Wire Line
 	4850 1200 5150 1200
 Wire Wire Line
 	4950 1450 4950 1800
-Connection ~ 4950 1750
 Wire Wire Line
 	4950 1200 4950 1250
 Connection ~ 4950 1200
@@ -352,6 +353,9 @@ Wire Wire Line
 	800  2350 1000 2350
 Wire Wire Line
 	800  2550 1000 2550
+Wire Wire Line
+	5150 1750 4950 1750
+Connection ~ 4950 1750
 Text Label 800  1150 0    60   ~ 0
 E16
 Text Label 800  1250 0    60   ~ 0
