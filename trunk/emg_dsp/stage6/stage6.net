@@ -1,4 +1,4 @@
-# EESchema Netlist Version 1.1 created  Mon 27 Sep 2010 05:00:00 PM EDT
+# EESchema Netlist Version 1.1 created  Mon 27 Sep 2010 10:08:47 PM EDT
 (
  ( /4CA00F85 0402  C44 0.1uf {Lib=C}
   (    1 ? )
@@ -399,7 +399,7 @@
   (   J2 ? )
   (   K2 /NRF_CE )
   (   L2 /RX )
-  (   M2 /WIRED_RESET )
+  (   M2 /wired/RESET )
   (   N2 N-000074 )
   (   P2 N-000073 )
   (   R2 ? )
@@ -425,7 +425,7 @@
   (   C1 /PF5 )
   (   D1 /PF3 )
   (   E1 /wired/RFS )
-  (   F1 /wired/D0 )
+  (   F1 /PF0 )
   (   G1 /PHYINT )
   (   H1 ? )
   (   J1 /NRF_IRQ )
@@ -444,7 +444,7 @@
   (   B2 ? )
   (   C2 /PF6 )
   (   D2 /PF4 )
-  (   E2 /PF2 )
+  (   E2 /wired/RCLK )
   (   F2 ? )
   (   W8 /DATA1 )
   (   Y8 /DATA0 )
@@ -881,9 +881,9 @@
  )
  ( /4CA0ED4A TSSOP-20  U23 74LCX541 {Lib=74LCX541}
   (    1 GND )
-  (    2 /wired/D0 )
+  (    2 /PF0 )
   (    3 /wired/RFS )
-  (    4 /PF2 )
+  (    4 /wired/RCLK )
   (    5 /PF3 )
   (    6 /PF4 )
   (    7 /PF5 )
@@ -1099,106 +1099,106 @@
  )
  ( /4C9BA165/4C9FCC9C 2x8x100mil  U53 8X2X100 {Lib=8X2X100}
   (    1 /emg/IN1 )
-  (    2 /emg/emg_amp1/IN2 )
-  (    3 /emg/IN3 )
+  (    2 /emg/IN2 )
+  (    3 /emg/emg_amp2/IN1 )
   (    4 /emg/IN4 )
-  (    5 /emg/emg_amp3/IN1 )
+  (    5 /emg/IN5 )
   (    6 /emg/IN6 )
   (    7 /emg/emg_amp4/IN1 )
-  (    8 /emg/IN8 )
+  (    8 /emg/emg_amp4/IN2 )
   (    9 /emg/IN9 )
-  (   10 /emg/IN10 )
+  (   10 /emg/emg_amp5/IN2 )
   (   11 /emg/IN11 )
   (   12 /emg/emg_amp6/IN2 )
   (   13 /emg/IN13 )
-  (   14 /emg/emg_amp7/IN2 )
+  (   14 /emg/IN14 )
   (   15 /emg/emg_amp8/IN1 )
-  (   16 /emg/emg_amp8/IN2 )
+  (   16 /emg/IN16 )
  )
  ( /4C9BA165/4C9D7236 0402  C117 2.2uf {Lib=C}
-  (    1 /emg/emg_amp4/VN )
+  (    1 /emg/emg_amp8/VN )
   (    2 GND )
  )
  ( /4C9BA165/4C9D722D 0402  C110 2.2uf {Lib=C}
-  (    1 /emg/VEMG+ )
+  (    1 /emg/emg_amp3/V+ )
   (    2 GND )
  )
  ( /4C9BA165/4C9D7200 0402  L13 ferrite {Lib=INDUCTOR}
-  (    1 N-000592 )
-  (    2 /emg/emg_amp4/VN )
+  (    1 N-000591 )
+  (    2 /emg/emg_amp8/VN )
  )
  ( /4C9BA165/4C9D71F9 0402  L12 ferrite {Lib=INDUCTOR}
-  (    1 N-000550 )
-  (    2 /emg/VEMG+ )
+  (    1 N-000549 )
+  (    2 /emg/emg_amp3/V+ )
  )
  ( /4C9BA165/4C9D712F 0603  C106 10uf {Lib=C}
-  (    1 /emg/emg_amp4/VREF )
+  (    1 /emg/COM )
   (    2 GND )
  )
  ( /4C9BA165/4C9D7100 0402  R95 100k {Lib=R}
-  (    1 /emg/emg_amp4/VREF )
+  (    1 /emg/COM )
   (    2 GND )
  )
  ( /4C9BA165/4C9D70F6 0402  R94 100k {Lib=R}
-  (    1 N-000551 )
-  (    2 /emg/emg_amp4/VREF )
+  (    1 N-000550 )
+  (    2 /emg/COM )
  )
  ( /4C9BA165/4C9D6F15 0603  C113 10uf {Lib=C}
   (    1 GND )
-  (    2 N-000592 )
+  (    2 N-000591 )
  )
  ( /4C9BA165/4C9D6EC9 0603  C119 10uf {Lib=C}
-  (    1 N-000549 )
-  (    2 N-000559 )
+  (    1 N-000548 )
+  (    2 N-000558 )
  )
  ( /4C9BA165/4C9D6EAC SOT-23-5  U58 LM828 {Lib=LM828}
-  (    1 N-000592 )
-  (    2 N-000550 )
-  (    3 N-000549 )
+  (    1 N-000591 )
+  (    2 N-000549 )
+  (    3 N-000548 )
   (    4 GND )
-  (    5 N-000559 )
+  (    5 N-000558 )
  )
  ( /4C9BA165/4C9D6E9C SC-70-5  U55 MIC5365 {Lib=MIC5365}
   (    1 VDD )
   (    2 GND )
   (    3 VDD )
   (    4 ? )
-  (    5 N-000550 )
+  (    5 N-000549 )
  )
  ( /4C9BA165/4C9D6E9A 0402  C108 2.2uf {Lib=C}
   (    1 VDD )
   (    2 GND )
  )
  ( /4C9BA165/4C9D6E94 0402  C112 2.2uf {Lib=C}
-  (    1 N-000550 )
+  (    1 N-000549 )
   (    2 GND )
  )
  ( /4C9BA165/4C9D5BA9 0402  R105 33 {Lib=R}
-  (    1 N-000599 )
+  (    1 N-000598 )
   (    2 /emg/TSCLK0 )
  )
  ( /4C9BA165/4C9D5BA7 0402  R104 33 {Lib=R}
-  (    1 N-000601 )
+  (    1 N-000600 )
   (    2 /emg/TFS0 )
  )
  ( /4C9BA165/4C9D5BA4 0402  R103 33 {Lib=R}
-  (    1 N-000602 )
+  (    1 N-000601 )
   (    2 /emg/DT0PRI )
  )
  ( /4C9BA165/4C9D5B25 0603  C107 10uf {Lib=C}
-  (    1 N-000551 )
+  (    1 N-000550 )
   (    2 GND )
  )
  ( /4C9BA165/4C9D59B7 0402  C109 0.1uf {Lib=C}
-  (    1 N-000558 )
-  (    2 GND )
- )
- ( /4C9BA165/4C9D586E 0402  C116 2.2uf {Lib=C}
   (    1 N-000557 )
   (    2 GND )
  )
- ( /4C9BA165/4C9D583E 0402  L14 ferrite {Lib=INDUCTOR}
+ ( /4C9BA165/4C9D586E 0402  C116 2.2uf {Lib=C}
   (    1 N-000556 )
+  (    2 GND )
+ )
+ ( /4C9BA165/4C9D583E 0402  L14 ferrite {Lib=INDUCTOR}
+  (    1 N-000555 )
   (    2 VDD )
  )
  ( /4C9BA165/4C9D5828 0402  C121 2.2uf {Lib=C}
@@ -1206,19 +1206,19 @@
   (    2 GND )
  )
  ( /4C9BA165/4C9D5822 0402  C120 2.2uf {Lib=C}
-  (    1 N-000556 )
+  (    1 N-000555 )
   (    2 GND )
  )
  ( /4C9BA165/4C9D56FB SC-70-5  U59 MIC5365 {Lib=MIC5365}
-  (    1 N-000556 )
+  (    1 N-000555 )
   (    2 GND )
-  (    3 N-000556 )
+  (    3 N-000555 )
   (    4 ? )
-  (    5 N-000557 )
+  (    5 N-000556 )
  )
  ( /4C9BA165/4C9D5575 0402  R96 50 {Lib=R}
   (    1 /emg/RSCLK0 )
-  (    2 N-000598 )
+  (    2 N-000597 )
  )
  ( /4C9BA165/4C9D555A 0402  C115 100pf {Lib=C}
   (    1 /emg/RSCLK0 )
@@ -1228,30 +1228,30 @@
   (    1 /emg/TSCLK0 )
   (    2 /emg/TFS0 )
   (    3 GND )
-  (    4 N-000598 )
+  (    4 N-000597 )
   (    5 VDD )
  )
  ( /4C9BA165/4C9BA2F3 LFCSP-20  U56 AD7689 {Lib=AD7689}
-  (    1 N-000557 )
-  (    2 N-000551 )
-  (    3 N-000558 )
+  (    1 N-000556 )
+  (    2 N-000550 )
+  (    3 N-000557 )
   (    4 GND )
   (    5 GND )
-  (    6 /emg/E5 )
-  (    7 /emg/emg_amp6/OUT )
-  (    8 /emg/emg_amp7/OUT )
+  (    6 /emg/emg_amp5/OUT )
+  (    7 /emg/E6 )
+  (    8 /emg/E7 )
   (    9 /emg/emg_amp8/OUT )
-  (   10 /emg/emg_amp4/VREF )
+  (   10 /emg/COM )
   (   11 /emg/TFS0 )
   (   12 /emg/DT0PRI )
   (   13 /emg/RSCLK0 )
-  (   14 N-000491 )
-  (   15 N-000557 )
+  (   14 N-000490 )
+  (   15 N-000556 )
   (   16 /emg/E1 )
   (   17 /emg/emg_amp2/OUT )
   (   18 /emg/E3 )
   (   19 /emg/E4 )
-  (   20 N-000557 )
+  (   20 N-000556 )
  )
  ( /4C9BA165/4CA0EDD3 0402  R112 22k {Lib=R}
   (    1 GND )
@@ -1266,42 +1266,42 @@
   (    2 GND )
  )
  ( /4C9BA165/4CA0EDD0 GT12MABE  U57 GT12MABE {Lib=GT12MABE}
-  (    1 N-000537 )
+  (    1 N-000536 )
   (    2 ? )
-  (    3 N-000510 )
+  (    3 N-000509 )
   (    4 ? )
   (    5 ? )
  )
  ( /4C9BA165/4C2A4C3F 0603  D21 LED {Lib=LED}
-  (    1 N-000560 )
-  (    2 N-000571 )
+  (    1 N-000559 )
+  (    2 N-000570 )
  )
  ( /4C9BA165/4C2A4C3E 0402  R120 50 {Lib=R}
-  (    1 N-000571 )
+  (    1 N-000570 )
   (    2 GND )
  )
  ( /4C9BA165/4C2A4C3D 0603  D23 LED {Lib=LED}
-  (    1 N-000555 )
-  (    2 N-000572 )
+  (    1 N-000554 )
+  (    2 N-000571 )
  )
  ( /4C9BA165/4C2A4C3C 0402  R122 50 {Lib=R}
-  (    1 N-000572 )
+  (    1 N-000571 )
   (    2 GND )
  )
  ( /4C9BA165/4C2A4C3B 0603  D25 LED {Lib=LED}
-  (    1 N-000561 )
-  (    2 N-000573 )
+  (    1 N-000560 )
+  (    2 N-000572 )
  )
  ( /4C9BA165/4C2A4C3A 0402  R124 50 {Lib=R}
-  (    1 N-000573 )
+  (    1 N-000572 )
   (    2 GND )
  )
  ( /4C9BA165/4CA0EDC9 0603  D27 LED {Lib=LED}
-  (    1 N-000554 )
-  (    2 N-000574 )
+  (    1 N-000553 )
+  (    2 N-000573 )
  )
  ( /4C9BA165/4CA0EDC8 0402  R126 50 {Lib=R}
-  (    1 N-000574 )
+  (    1 N-000573 )
   (    2 GND )
  )
  ( /4C9BA165/4C2A4C37 TSSOP-20  U73 74LCX541 {Lib=74LCX541}
@@ -1315,92 +1315,92 @@
   (    8 /emg/DR0PRI )
   (    9 /emg/PF8 )
   (   10 GND )
-  (   11 N-000552 )
-  (   12 N-000563 )
-  (   13 N-000553 )
-  (   14 N-000562 )
-  (   15 N-000554 )
-  (   16 N-000561 )
-  (   17 N-000555 )
-  (   18 N-000560 )
+  (   11 N-000551 )
+  (   12 N-000562 )
+  (   13 N-000552 )
+  (   14 N-000561 )
+  (   15 N-000553 )
+  (   16 N-000560 )
+  (   17 N-000554 )
+  (   18 N-000559 )
   (   19 GND )
   (   20 VDD )
  )
  ( /4C9BA165/4CA0EDC2 0603  D29 LED {Lib=LED}
-  (    1 N-000562 )
-  (    2 N-000577 )
+  (    1 N-000561 )
+  (    2 N-000576 )
  )
  ( /4C9BA165/4CA0EDC1 0402  R128 50 {Lib=R}
-  (    1 N-000577 )
+  (    1 N-000576 )
   (    2 GND )
  )
  ( /4C9BA165/4CA0EDC0 0603  D31 LED {Lib=LED}
-  (    1 N-000553 )
-  (    2 N-000578 )
+  (    1 N-000552 )
+  (    2 N-000577 )
  )
  ( /4C9BA165/4C2A4C2F 0402  R130 50 {Lib=R}
-  (    1 N-000578 )
+  (    1 N-000577 )
   (    2 GND )
  )
  ( /4C9BA165/4C2A4C2E 0603  D33 LED {Lib=LED}
-  (    1 N-000563 )
-  (    2 N-000579 )
+  (    1 N-000562 )
+  (    2 N-000578 )
  )
  ( /4C9BA165/4C2A4C2D 0402  R132 50 {Lib=R}
-  (    1 N-000579 )
+  (    1 N-000578 )
   (    2 GND )
  )
  ( /4C9BA165/4CA0EDBC 0603  D35 LED {Lib=LED}
-  (    1 N-000552 )
-  (    2 N-000580 )
+  (    1 N-000551 )
+  (    2 N-000579 )
  )
  ( /4C9BA165/4C2A4C2B 0402  R134 50 {Lib=R}
-  (    1 N-000580 )
+  (    1 N-000579 )
   (    2 GND )
  )
  ( /4C9BA165/4CA0EDBA TP  TP39 PF8 {Lib=TP}
-  (    1 N-000552 )
+  (    1 N-000551 )
  )
  ( /4C9BA165/4C2A4C29 TP  TP38 DR0PRI {Lib=TP}
-  (    1 N-000563 )
- )
- ( /4C9BA165/4CA0EDB8 TP  TP37 RSCLK0 {Lib=TP}
-  (    1 N-000553 )
- )
- ( /4C9BA165/4CA0EDB7 TP  TP36 DT0PRI {Lib=TP}
   (    1 N-000562 )
  )
- ( /4C9BA165/4CA0EDB6 TP  TP35 TFS0 {Lib=TP}
-  (    1 N-000554 )
+ ( /4C9BA165/4CA0EDB8 TP  TP37 RSCLK0 {Lib=TP}
+  (    1 N-000552 )
  )
- ( /4C9BA165/4CA0EDB5 TP  TP34 SCK {Lib=TP}
+ ( /4C9BA165/4CA0EDB7 TP  TP36 DT0PRI {Lib=TP}
   (    1 N-000561 )
  )
+ ( /4C9BA165/4CA0EDB6 TP  TP35 TFS0 {Lib=TP}
+  (    1 N-000553 )
+ )
+ ( /4C9BA165/4CA0EDB5 TP  TP34 SCK {Lib=TP}
+  (    1 N-000560 )
+ )
  ( /4C9BA165/4CA0EDB4 TP  TP33 MISO {Lib=TP}
-  (    1 N-000555 )
+  (    1 N-000554 )
  )
  ( /4C9BA165/4C2A4C23 TP  TP32 MOSI {Lib=TP}
-  (    1 N-000560 )
+  (    1 N-000559 )
  )
  ( /4C9BA165/4CA0EDAA 0402  C149 0.1uf {Lib=C}
   (    1 VDD )
   (    2 GND )
  )
  ( /4C9BA165/4CA0EDA4 0402  R108 33 {Lib=R}
-  (    1 N-000490 )
+  (    1 N-000489 )
   (    2 /emg/SCK )
  )
  ( /4C9BA165/4CA0EDA2 0402  R101 33 {Lib=R}
-  (    1 N-000491 )
+  (    1 N-000490 )
   (    2 /emg/DR0PRI )
  )
  ( /4C9BA165/4CA0EDA1 0402  R109 33 {Lib=R}
-  (    1 N-000492 )
+  (    1 N-000491 )
   (    2 /emg/MOSI )
  )
  ( /4C9BA165/4CA0ED9F 0402  R116 33 {Lib=R}
   (    1 /emg/MISO )
-  (    2 N-000494 )
+  (    2 N-000493 )
  )
  ( /4C9BA165/4C2A38F5 0402  R118 22k {Lib=R}
   (    1 VDD )
@@ -1408,11 +1408,11 @@
  )
  ( /4C9BA165/4C2A38D6 0402  R115 22k {Lib=R}
   (    1 VDD )
-  (    2 N-000494 )
+  (    2 N-000493 )
  )
  ( /4C9BA165/4CA0ED90 UFDN-8  U69 AT25DF041-MHF {Lib=AT25DF041-MHF}
   (    1 /emg/PF2 )
-  (    2 N-000494 )
+  (    2 N-000493 )
   (    3 VDD )
   (    4 GND )
   (    5 /emg/MOSI )
@@ -1429,80 +1429,80 @@
   (    2 GND )
  )
  ( /4C9BA165/4B68C906 TP  TP47 PF7 {Lib=TP}
-  (    1 N-000503 )
+  (    1 N-000502 )
  )
  ( /4C9BA165/4B68C903 TP  TP46 PF6 {Lib=TP}
-  (    1 N-000606 )
+  (    1 N-000605 )
  )
  ( /4C9BA165/4B68C900 TP  TP45 PF5 {Lib=TP}
-  (    1 N-000506 )
+  (    1 N-000505 )
  )
  ( /4C9BA165/4B68C8FD TP  TP44 PF4 {Lib=TP}
-  (    1 N-000607 )
+  (    1 N-000606 )
  )
  ( /4C9BA165/4B68C8FA TP  TP43 PF3_NRF_IRQ {Lib=TP}
-  (    1 N-000479 )
+  (    1 N-000478 )
  )
  ( /4C9BA165/4B68C7E6 TP  TP40 PF0_NRF_ce {Lib=TP}
-  (    1 N-000609 )
- )
- ( /4C9BA165/4CA0ED72 TP  TP41 PF1_NRF_csn {Lib=TP}
-  (    1 N-000482 )
- )
- ( /4C9BA165/4CA0ED71 TP  TP42 PF2_SPI_cs {Lib=TP}
   (    1 N-000608 )
  )
+ ( /4C9BA165/4CA0ED72 TP  TP41 PF1_NRF_csn {Lib=TP}
+  (    1 N-000481 )
+ )
+ ( /4C9BA165/4CA0ED71 TP  TP42 PF2_SPI_cs {Lib=TP}
+  (    1 N-000607 )
+ )
  ( /4C9BA165/4CA0ED6C 0402  R135 50 {Lib=R}
-  (    1 N-000502 )
+  (    1 N-000501 )
   (    2 GND )
  )
  ( /4C9BA165/4CA0ED6B 0603  D36 LED {Lib=LED}
-  (    1 N-000503 )
-  (    2 N-000502 )
+  (    1 N-000502 )
+  (    2 N-000501 )
  )
  ( /4C9BA165/4CA0ED6A 0402  R133 50 {Lib=R}
-  (    1 N-000504 )
+  (    1 N-000503 )
   (    2 GND )
  )
  ( /4C9BA165/4CA0ED69 0603  D34 LED {Lib=LED}
-  (    1 N-000606 )
-  (    2 N-000504 )
+  (    1 N-000605 )
+  (    2 N-000503 )
  )
  ( /4C9BA165/4B68C759 0402  R131 50 {Lib=R}
-  (    1 N-000505 )
+  (    1 N-000504 )
   (    2 GND )
  )
  ( /4C9BA165/4B68C758 0603  D32 LED {Lib=LED}
-  (    1 N-000506 )
-  (    2 N-000505 )
+  (    1 N-000505 )
+  (    2 N-000504 )
  )
  ( /4C9BA165/4B68C757 0402  R129 50 {Lib=R}
-  (    1 N-000507 )
+  (    1 N-000506 )
   (    2 GND )
  )
  ( /4C9BA165/4B68C756 0603  D30 LED {Lib=LED}
-  (    1 N-000607 )
-  (    2 N-000507 )
+  (    1 N-000606 )
+  (    2 N-000506 )
  )
  ( /4C9BA165/4966DC4A chip_ant  U72 ANTENNA {Lib=ANTENNA}
-  (    1 N-000530 )
+  (    1 N-000529 )
   (    2 ? )
  )
  ( /4C9BA165/49625B67 2x100mil  C111 150uf {Lib=C}
   (    1 GND )
-  (    2 N-000510 )
+  (    2 N-000509 )
  )
  ( /4C9BA165/495C3B89 0402  C138 0.001uf {Lib=C}
-  (    1 N-000529 )
+  (    1 N-000528 )
   (    2 GND )
  )
  ( /4C9BA165/495C3B79 0402  C139 0.001uf {Lib=C}
-  (    1 N-000529 )
+  (    1 N-000528 )
   (    2 GND )
  )
  ( /4C9BA165/4906A9EB 0402  R106 22k {Lib=R}
   (    1 VDD )
-  (    2 N-000484 )
+  (    2 N-000483 )
  )
  ( /4C9BA165/4CA0ED4B 0402  C135 0.1uf {Lib=C}
   (    1 VDD )
@@ -1519,48 +1519,48 @@
   (    8 /emg/PF6 )
   (    9 /emg/PF7 )
   (   10 GND )
-  (   11 N-000503 )
-  (   12 N-000606 )
-  (   13 N-000506 )
-  (   14 N-000607 )
-  (   15 N-000479 )
-  (   16 N-000608 )
-  (   17 N-000482 )
-  (   18 N-000609 )
+  (   11 N-000502 )
+  (   12 N-000605 )
+  (   13 N-000505 )
+  (   14 N-000606 )
+  (   15 N-000478 )
+  (   16 N-000607 )
+  (   17 N-000481 )
+  (   18 N-000608 )
   (   19 GND )
   (   20 VDD )
  )
  ( /4C9BA165/4CA0ED49 0402  R127 50 {Lib=R}
-  (    1 N-000478 )
+  (    1 N-000477 )
   (    2 GND )
  )
  ( /4C9BA165/4CA0ED48 0603  D28 LED {Lib=LED}
-  (    1 N-000479 )
-  (    2 N-000478 )
+  (    1 N-000478 )
+  (    2 N-000477 )
  )
  ( /4C9BA165/490691A9 0402  R125 50 {Lib=R}
-  (    1 N-000480 )
+  (    1 N-000479 )
   (    2 GND )
  )
  ( /4C9BA165/490691A8 0603  D26 LED {Lib=LED}
-  (    1 N-000608 )
-  (    2 N-000480 )
+  (    1 N-000607 )
+  (    2 N-000479 )
  )
  ( /4C9BA165/490691A4 0402  R123 50 {Lib=R}
-  (    1 N-000481 )
+  (    1 N-000480 )
   (    2 GND )
  )
  ( /4C9BA165/490691A3 0603  D24 LED {Lib=LED}
-  (    1 N-000482 )
-  (    2 N-000481 )
+  (    1 N-000481 )
+  (    2 N-000480 )
  )
  ( /4C9BA165/49069186 0402  R121 50 {Lib=R}
-  (    1 N-000483 )
+  (    1 N-000482 )
   (    2 GND )
  )
  ( /4C9BA165/490690F4 0603  D22 LED {Lib=LED}
-  (    1 N-000609 )
-  (    2 N-000483 )
+  (    1 N-000608 )
+  (    2 N-000482 )
  )
  ( /4C9BA165/490559CE 0402  C134 0.1uf {Lib=C}
   (    1 VDD )
@@ -1599,150 +1599,150 @@
   (    2 VDD )
  )
  ( /4C9BA165/49055527 0402  R111 33 {Lib=R}
-  (    1 N-000527 )
+  (    1 N-000526 )
   (    2 /emg/MISO )
  )
  ( /4C9BA165/490552D8 0402  C141 0.001uf {Lib=C}
-  (    1 N-000529 )
+  (    1 N-000528 )
   (    2 GND )
  )
  ( /4C9BA165/490552AE 0402  C142 0.01uf {Lib=C}
-  (    1 N-000529 )
+  (    1 N-000528 )
   (    2 GND )
  )
  ( /4C9BA165/490552A6 0402  C146 1uf {Lib=C}
-  (    1 N-000529 )
+  (    1 N-000528 )
   (    2 GND )
  )
  ( /4C9BA165/49055295 0402  L20 ferrite {Lib=INDUCTOR}
-  (    1 N-000529 )
+  (    1 N-000528 )
   (    2 VDD )
  )
  ( /4C9BA165/4CA0ED1D 0402  C147 1pF {Lib=C}
   (    1 GND )
-  (    2 N-000530 )
+  (    2 N-000529 )
  )
  ( /4C9BA165/4CA0ED1C 0402  C144 1.5pF {Lib=C}
-  (    1 N-000530 )
-  (    2 N-000523 )
+  (    1 N-000529 )
+  (    2 N-000522 )
  )
  ( /4C9BA165/4CA0ED19 0402  C148 2.2nF {Lib=C}
-  (    1 N-000535 )
+  (    1 N-000534 )
   (    2 GND )
  )
  ( /4C9BA165/49055138 0402  C143 4.7pF {Lib=C}
-  (    1 N-000535 )
+  (    1 N-000534 )
   (    2 GND )
  )
  ( /4C9BA165/49055113 0402  L19 2.7nH {Lib=INDUCTOR}
-  (    1 N-000536 )
-  (    2 N-000535 )
+  (    1 N-000535 )
+  (    2 N-000534 )
  )
  ( /4C9BA165/4CA0ED16 0402  L17 8.2nH {Lib=INDUCTOR}
-  (    1 N-000536 )
-  (    2 N-000522 )
+  (    1 N-000535 )
+  (    2 N-000521 )
  )
  ( /4C9BA165/4CA0ED15 0402  L18 3.9nH {Lib=INDUCTOR}
-  (    1 N-000522 )
-  (    2 N-000523 )
+  (    1 N-000521 )
+  (    2 N-000522 )
  )
  ( /4C9BA165/4CA0ED14 0402  R117 22K {Lib=R}
   (    1 GND )
-  (    2 N-000524 )
+  (    2 N-000523 )
  )
  ( /4C9BA165/49055026 0402  C140 33nF {Lib=C}
   (    1 GND )
-  (    2 N-000525 )
+  (    2 N-000524 )
  )
  ( /4C9BA165/49054FF9 QFN-20  U67 NRF24L01 {Lib=NRF24L01}
   (    1 /emg/PF0 )
   (    2 /emg/PF1 )
   (    3 /emg/SCK )
   (    4 /emg/MOSI )
-  (    5 N-000527 )
+  (    5 N-000526 )
   (    6 /emg/PF3 )
-  (    7 N-000529 )
+  (    7 N-000528 )
   (    8 GND )
   (    9 ? )
-  (   10 N-000662 )
-  (   11 N-000535 )
-  (   12 N-000536 )
-  (   13 N-000522 )
+  (   10 N-000661 )
+  (   11 N-000534 )
+  (   12 N-000535 )
+  (   13 N-000521 )
   (   14 GND )
-  (   15 N-000529 )
-  (   16 N-000524 )
+  (   15 N-000528 )
+  (   16 N-000523 )
   (   17 GND )
-  (   18 N-000529 )
-  (   19 N-000525 )
+  (   18 N-000528 )
+  (   19 N-000524 )
   (   20 GND )
  )
  ( /4C9BA165/4CA0ED09 2x100mil  U62 EN_VCC {Lib=JUMP}
   (    1 VCC )
-  (    2 N-000661 )
+  (    2 N-000660 )
  )
  ( /4C9BA165/4CA0ED08 2x100mil  U63 EN_VDD {Lib=JUMP}
   (    1 VDD )
-  (    2 N-000604 )
+  (    2 N-000603 )
  )
  ( /4C9BA165/4CA0ED06 2x100mil  U54 VEE {Lib=JUMP}
-  (    1 N-000537 )
+  (    1 N-000536 )
   (    2 GND )
  )
  ( /4C9BA165/4CA0ECFF 0402  C114 0.1uf {Lib=C}
   (    1 GND )
-  (    2 N-000510 )
+  (    2 N-000509 )
  )
  ( /4C9BA165/4CA0ECFD 0603  C118 10uf {Lib=C}
   (    1 GND )
-  (    2 N-000510 )
+  (    2 N-000509 )
  )
  ( /4C9BA165/4CA0ECFC 0402  C124 33pf {Lib=C}
-  (    1 N-000604 )
-  (    2 N-000531 )
+  (    1 N-000603 )
+  (    2 N-000530 )
  )
  ( /4C9BA165/4CA0ECF8 0402  R97 220k {Lib=R}
   (    1 GND )
-  (    2 N-000531 )
+  (    2 N-000530 )
  )
  ( /4C9BA165/4CA0ECF5 0402  R98 825k {Lib=R}
-  (    1 N-000531 )
-  (    2 N-000604 )
+  (    1 N-000530 )
+  (    2 N-000603 )
  )
  ( /4C9BA165/4CA0ECEB 0402  R100 270k {Lib=R}
-  (    1 N-000534 )
+  (    1 N-000533 )
   (    2 GND )
  )
  ( /4C9BA165/49015BA5 0402  R99 90k {Lib=R}
-  (    1 N-000661 )
-  (    2 N-000534 )
+  (    1 N-000660 )
+  (    2 N-000533 )
  )
  ( /4C9BA165/4CA0ECE5 0603  C127 10uf {Lib=C}
   (    1 GND )
-  (    2 N-000661 )
+  (    2 N-000660 )
  )
  ( /4C9BA165/4CA0ECE3 0603  C126 10uf {Lib=C}
   (    1 GND )
-  (    2 N-000604 )
+  (    2 N-000603 )
  )
  ( /4C9BA165/4CA0ECE2 1210  L16 2.2uh {Lib=INDUCTOR}
-  (    1 N-000532 )
-  (    2 N-000661 )
+  (    1 N-000531 )
+  (    2 N-000660 )
  )
  ( /4C9BA165/49015A63 1210  L15 2.2uh {Lib=INDUCTOR}
-  (    1 N-000533 )
-  (    2 N-000604 )
+  (    1 N-000532 )
+  (    2 N-000603 )
  )
  ( /4C9BA165/4CA0ECDE QFN-10  U61 TPS62410 {Lib=TPS62410}
-  (    1 N-000531 )
+  (    1 N-000530 )
   (    2 GND )
-  (    3 N-000510 )
-  (    4 N-000661 )
-  (    5 N-000534 )
-  (    6 N-000532 )
-  (    7 N-000510 )
+  (    3 N-000509 )
+  (    4 N-000660 )
+  (    5 N-000533 )
+  (    6 N-000531 )
+  (    7 N-000509 )
   (    8 GND )
-  (    9 N-000510 )
-  (   10 N-000533 )
+  (    9 N-000509 )
+  (   10 N-000532 )
   (   11 GND )
  )
  ( /4C9BA165/4CA0ECD7 0402  R114 10k {Lib=R}
@@ -1754,7 +1754,7 @@
   (    2 /emg/_emu )
  )
  ( /4C9BA165/4CA0ECCF 0402  R107 10k {Lib=R}
-  (    1 N-000512 )
+  (    1 N-000511 )
   (    2 VDD )
  )
  ( /4C9BA165/4CA0ECCD 7x2x100  U66 ADSP_JTAG_CON {Lib=ADSP_JTAG_CON}
@@ -1762,7 +1762,7 @@
   (    2 /emg/_emu )
   (    3 ? )
   (    4 GND )
-  (    5 N-000512 )
+  (    5 N-000511 )
   (    6 /emg/TMS )
   (    7 GND )
   (    8 /emg/TCK )
@@ -1775,28 +1775,28 @@
  )
  ( /4C9BA165/4CA0ECCC 0402  R119 22k {Lib=R}
   (    1 VDD )
-  (    2 N-000516 )
+  (    2 N-000515 )
  )
  ( /4C9BA165/4CA0ECC1 SC-70-4  U70 MAX6711Z {Lib=MAX6711}
   (    1 GND )
   (    2 /emg/RESET )
-  (    3 N-000516 )
+  (    3 N-000515 )
   (    4 VDD )
  )
  ( /4C9BA165/4901503F 7x100mil  U71 TESTCON {Lib=TESTCON}
   (    1 GND )
   (    2 GND )
-  (    3 N-000519 )
-  (    4 N-000517 )
-  (    5 N-000518 )
-  (    6 N-000520 )
-  (    7 N-000516 )
+  (    3 N-000518 )
+  (    4 N-000516 )
+  (    5 N-000517 )
+  (    6 N-000519 )
+  (    7 N-000515 )
  )
  ( /4C9BA165/4901501F TSSOP-20  U68 74LCX541 {Lib=74LCX541}
-  (    1 N-000516 )
-  (    2 N-000519 )
-  (    3 N-000518 )
-  (    4 N-000520 )
+  (    1 N-000515 )
+  (    2 N-000518 )
+  (    3 N-000517 )
+  (    4 N-000519 )
   (    5 /emg/MISO )
   (    6 GND )
   (    7 GND )
@@ -1807,25 +1807,25 @@
   (   12 ? )
   (   13 ? )
   (   14 ? )
-  (   15 N-000517 )
+  (   15 N-000516 )
   (   16 /emg/SCK )
   (   17 /emg/MOSI )
   (   18 /emg/PF2 )
-  (   19 N-000516 )
+  (   19 N-000515 )
   (   20 VDD )
  )
  ( /4C9BA165/48FFFD52 0402  C132 4.7pF {Lib=C}
-  (    1 N-000662 )
+  (    1 N-000661 )
   (    2 GND )
  )
  ( /4C9BA165/48FFFD4F 0402  C129 7pf {Lib=C}
-  (    1 N-000628 )
+  (    1 N-000627 )
   (    2 GND )
  )
  ( /4C9BA165/4CA0ECB3 ABM10  U64 ABM10XTAL {Lib=ABM10XTAL}
-  (    1 N-000628 )
+  (    1 N-000627 )
   (    2 GND )
-  (    3 N-000662 )
+  (    3 N-000661 )
   (    4 GND )
  )
  ( /4C9BA165/4CA0ECB0 MBGA-160  U65 BF532-160 {Lib=BF532-160}
@@ -1833,7 +1833,7 @@
   (  M10 GND )
   (  N10 ? )
   (  P10 ? )
-  (  A11 N-000662 )
+  (  A11 N-000661 )
   (  B11 GND )
   (  C11 GND )
   (  D11 GND )
@@ -1847,7 +1847,7 @@
   (  M11 ? )
   (  N11 ? )
   (  P11 ? )
-  (  A12 N-000628 )
+  (  A12 N-000627 )
   (  B12 ? )
   (   A8 ? )
   (   B8 ? )
@@ -1878,7 +1878,7 @@
   (  A14 GND )
   (  B14 ? )
   (  C14 ? )
-  (  D14 N-000484 )
+  (  D14 N-000483 )
   (  E14 ? )
   (  F14 ? )
   (  G14 ? )
@@ -1920,11 +1920,11 @@
   (   A3 ? )
   (   B3 /emg/PF6 )
   (   C3 /emg/PF3 )
-  (   D3 N-000492 )
+  (   D3 N-000491 )
   (   E3 ? )
   (   F3 ? )
   (   G3 ? )
-  (   H3 N-000601 )
+  (   H3 N-000600 )
   (   J3 /emg/TFS0 )
   (   K3 ? )
   (   L3 ? )
@@ -1932,12 +1932,12 @@
   (   A1 VDD )
   (   B1 /emg/PF4 )
   (   C1 /emg/PF1 )
-  (   D1 N-000490 )
+  (   D1 N-000489 )
   (   E1 ? )
   (   F1 ? )
   (   G1 ? )
-  (   H1 N-000602 )
-  (   J1 N-000599 )
+  (   H1 N-000601 )
+  (   J1 N-000598 )
   (   K1 /emg/DR0PRI )
   (   L1 /emg/RSCLK0 )
   (   M1 ? )
@@ -1994,169 +1994,169 @@
   (    1 /emg/IN4 )
  )
  ( /4C9BA165/4C9D6BB6/4C9D732E TP  TP50 TP {Lib=TP}
-  (    1 /emg/IN3 )
+  (    1 /emg/emg_amp2/IN1 )
  )
  ( /4C9BA165/4C9D6BB6/4C9D6A40 TSSOP-14  U83 OPA4348 {Lib=OPA4348}
   (    1 /emg/E1 )
-  (    2 N-000755 )
-  (    3 /emg/emg_amp4/VREF )
-  (    4 /emg/VEMG+ )
-  (    5 /emg/emg_amp4/VREF )
-  (    6 N-000763 )
+  (    2 N-000754 )
+  (    3 /emg/COM )
+  (    4 /emg/emg_amp3/V+ )
+  (    5 /emg/COM )
+  (    6 N-000762 )
   (    7 /emg/emg_amp2/OUT )
   (    8 /emg/E4 )
-  (    9 N-000766 )
-  (   10 /emg/emg_amp4/VREF )
-  (   11 /emg/emg_amp4/VN )
-  (   12 /emg/emg_amp4/VREF )
+  (    9 N-000765 )
+  (   10 /emg/COM )
+  (   11 /emg/emg_amp8/VN )
+  (   12 /emg/COM )
   (   13 N-000776 )
   (   14 /emg/E3 )
  )
  ( /4C9BA165/4C9D6BB6/4B607777 0603  C177 10uf {Lib=C}
-  (    1 N-000761 )
-  (    2 N-000762 )
+  (    1 N-000760 )
+  (    2 N-000761 )
  )
  ( /4C9BA165/4C9D6BB6/4B5E8316 0402  C173 1uf {Lib=C}
   (    1 GND )
-  (    2 /emg/VEMG+ )
+  (    2 /emg/emg_amp3/V+ )
  )
  ( /4C9BA165/4C9D6BB6/4B5E82D0 0402  C172 1uf {Lib=C}
-  (    1 /emg/emg_amp4/VN )
+  (    1 /emg/emg_amp8/VN )
   (    2 GND )
  )
  ( /4C9BA165/4C9D6BB6/4B5E2EEF 0402  C178 4nf {Lib=C}
   (    1 /emg/emg_amp2/OUT )
-  (    2 N-000763 )
+  (    2 N-000762 )
  )
  ( /4C9BA165/4C9D6BB6/4B5E2EB2 0402  R155 10k {Lib=R}
-  (    1 N-000763 )
+  (    1 N-000762 )
   (    2 /emg/emg_amp2/OUT )
  )
  ( /4C9BA165/4C9D6BB6/4B5E2EA6 0402  R154 10k {Lib=R}
-  (    1 N-000763 )
-  (    2 N-000761 )
+  (    1 N-000762 )
+  (    2 N-000760 )
  )
  ( /4C9BA165/4C9D6BB6/4B5E2BEE 0805  C176 22uf {Lib=C}
-  (    1 N-000760 )
+  (    1 N-000759 )
   (    2 GND )
  )
  ( /4C9BA165/4C9D6BB6/4B5E2631 0402  C175 180pf {Lib=C}
-  (    1 N-000762 )
-  (    2 N-000759 )
+  (    1 N-000761 )
+  (    2 N-000758 )
  )
  ( /4C9BA165/4C9D6BB6/4B5E2425 0805  C174 22uf {Lib=C}
-  (    1 N-000760 )
+  (    1 N-000759 )
   (    2 GND )
  )
  ( /4C9BA165/4C9D6BB6/4B5E23F1 0402  R152 330k {Lib=R}
-  (    1 N-000759 )
-  (    2 N-000762 )
+  (    1 N-000758 )
+  (    2 N-000761 )
  )
  ( /4C9BA165/4C9D6BB6/4B5E23EA 0402  R153 3.3k {Lib=R}
-  (    1 N-000760 )
-  (    2 N-000759 )
+  (    1 N-000759 )
+  (    2 N-000758 )
  )
  ( /4C9BA165/4C9D6BB6/4B5E2389 0402  R151 10k {Lib=R}
-  (    1 N-000758 )
+  (    1 N-000757 )
   (    2 /emg/IN4 )
  )
  ( /4C9BA165/4C9D6BB6/4B5E236D 0402  R150 10k {Lib=R}
-  (    1 N-000757 )
-  (    2 /emg/IN3 )
+  (    1 N-000756 )
+  (    2 /emg/emg_amp2/IN1 )
  )
  ( /4C9BA165/4C9D6BB6/4B5E2341 uMAX-8  U84 MAX4208 {Lib=MAX4208}
-  (    1 /emg/emg_amp4/VN )
-  (    2 N-000757 )
-  (    3 N-000758 )
-  (    4 /emg/emg_amp4/VN )
+  (    1 /emg/emg_amp8/VN )
+  (    2 N-000756 )
+  (    3 N-000757 )
+  (    4 /emg/emg_amp8/VN )
   (    5 GND )
-  (    6 N-000759 )
-  (    7 N-000762 )
-  (    8 /emg/VEMG+ )
+  (    6 N-000758 )
+  (    7 N-000761 )
+  (    8 /emg/emg_amp3/V+ )
  )
  ( /4C9BA165/4C9D6C36/4C9D733B TP  TP63 TP {Lib=TP}
-  (    1 /emg/IN10 )
+  (    1 /emg/emg_amp5/IN2 )
  )
  ( /4C9BA165/4C9D6C36/4C9D732E TP  TP62 TP {Lib=TP}
   (    1 /emg/IN9 )
  )
  ( /4C9BA165/4C9D6C36/4C9D6A40 TSSOP-14  U88 OPA4348 {Lib=OPA4348}
-  (    1 /emg/emg_amp7/OUT )
-  (    2 N-000783 )
-  (    3 /emg/emg_amp4/VREF )
-  (    4 /emg/VEMG+ )
-  (    5 /emg/emg_amp4/VREF )
-  (    6 N-000791 )
+  (    1 /emg/E7 )
+  (    2 N-000782 )
+  (    3 /emg/COM )
+  (    4 /emg/emg_amp3/V+ )
+  (    5 /emg/COM )
+  (    6 N-000790 )
   (    7 /emg/emg_amp8/OUT )
-  (    8 /emg/emg_amp6/OUT )
-  (    9 N-000793 )
-  (   10 /emg/emg_amp4/VREF )
-  (   11 /emg/emg_amp4/VN )
-  (   12 /emg/emg_amp4/VREF )
-  (   13 N-000799 )
-  (   14 /emg/E5 )
+  (    8 /emg/E6 )
+  (    9 N-000792 )
+  (   10 /emg/COM )
+  (   11 /emg/emg_amp8/VN )
+  (   12 /emg/COM )
+  (   13 N-000798 )
+  (   14 /emg/emg_amp5/OUT )
  )
  ( /4C9BA165/4C9D6C36/4B607777 0603  C219 10uf {Lib=C}
-  (    1 N-000805 )
-  (    2 N-000800 )
+  (    1 N-000804 )
+  (    2 N-000803 )
  )
  ( /4C9BA165/4C9D6C36/4B5E8316 0402  C215 1uf {Lib=C}
   (    1 GND )
-  (    2 /emg/VEMG+ )
+  (    2 /emg/emg_amp3/V+ )
  )
  ( /4C9BA165/4C9D6C36/4B5E82D0 0402  C214 1uf {Lib=C}
-  (    1 /emg/emg_amp4/VN )
+  (    1 /emg/emg_amp8/VN )
   (    2 GND )
  )
  ( /4C9BA165/4C9D6C36/4B5E2EEF 0402  C220 4nf {Lib=C}
-  (    1 /emg/E5 )
-  (    2 N-000799 )
+  (    1 /emg/emg_amp5/OUT )
+  (    2 N-000798 )
  )
  ( /4C9BA165/4C9D6C36/4B5E2EB2 0402  R191 10k {Lib=R}
-  (    1 N-000799 )
-  (    2 /emg/E5 )
+  (    1 N-000798 )
+  (    2 /emg/emg_amp5/OUT )
  )
  ( /4C9BA165/4C9D6C36/4B5E2EA6 0402  R190 10k {Lib=R}
-  (    1 N-000799 )
-  (    2 N-000805 )
+  (    1 N-000798 )
+  (    2 N-000804 )
  )
  ( /4C9BA165/4C9D6C36/4B5E2BEE 0805  C218 22uf {Lib=C}
-  (    1 N-000804 )
+  (    1 N-000802 )
   (    2 GND )
  )
  ( /4C9BA165/4C9D6C36/4B5E2631 0402  C217 180pf {Lib=C}
-  (    1 N-000800 )
-  (    2 N-000803 )
+  (    1 N-000803 )
+  (    2 N-000801 )
  )
  ( /4C9BA165/4C9D6C36/4B5E2425 0805  C216 22uf {Lib=C}
-  (    1 N-000804 )
+  (    1 N-000802 )
   (    2 GND )
  )
  ( /4C9BA165/4C9D6C36/4B5E23F1 0402  R188 330k {Lib=R}
-  (    1 N-000803 )
-  (    2 N-000800 )
- )
- ( /4C9BA165/4C9D6C36/4B5E23EA 0402  R189 3.3k {Lib=R}
-  (    1 N-000804 )
+  (    1 N-000801 )
   (    2 N-000803 )
  )
+ ( /4C9BA165/4C9D6C36/4B5E23EA 0402  R189 3.3k {Lib=R}
+  (    1 N-000802 )
+  (    2 N-000801 )
+ )
  ( /4C9BA165/4C9D6C36/4B5E2389 0402  R187 10k {Lib=R}
-  (    1 N-000801 )
-  (    2 /emg/IN10 )
+  (    1 N-000799 )
+  (    2 /emg/emg_amp5/IN2 )
  )
  ( /4C9BA165/4C9D6C36/4B5E236D 0402  R186 10k {Lib=R}
-  (    1 N-000802 )
+  (    1 N-000800 )
   (    2 /emg/IN9 )
  )
  ( /4C9BA165/4C9D6C36/4B5E2341 uMAX-8  U91 MAX4208 {Lib=MAX4208}
-  (    1 /emg/emg_amp4/VN )
-  (    2 N-000802 )
-  (    3 N-000801 )
-  (    4 /emg/emg_amp4/VN )
+  (    1 /emg/emg_amp8/VN )
+  (    2 N-000800 )
+  (    3 N-000799 )
+  (    4 /emg/emg_amp8/VN )
   (    5 GND )
-  (    6 N-000803 )
-  (    7 N-000800 )
-  (    8 /emg/VEMG+ )
+  (    6 N-000801 )
+  (    7 N-000803 )
+  (    8 /emg/emg_amp3/V+ )
  )
  ( /4C9BA165/4C9D6C33/4C9D733B TP  TP61 TP {Lib=TP}
   (    1 /emg/emg_amp6/IN2 )
@@ -2165,219 +2165,219 @@
   (    1 /emg/IN11 )
  )
  ( /4C9BA165/4C9D6C33/4B607777 0603  C212 10uf {Lib=C}
-  (    1 N-000792 )
-  (    2 N-000795 )
+  (    1 N-000791 )
+  (    2 N-000794 )
  )
  ( /4C9BA165/4C9D6C33/4B5E8316 0402  C208 1uf {Lib=C}
   (    1 GND )
-  (    2 /emg/VEMG+ )
+  (    2 /emg/emg_amp3/V+ )
  )
  ( /4C9BA165/4C9D6C33/4B5E82D0 0402  C207 1uf {Lib=C}
-  (    1 /emg/emg_amp4/VN )
+  (    1 /emg/emg_amp8/VN )
   (    2 GND )
  )
  ( /4C9BA165/4C9D6C33/4B5E2EEF 0402  C213 4nf {Lib=C}
-  (    1 /emg/emg_amp6/OUT )
-  (    2 N-000793 )
- )
- ( /4C9BA165/4C9D6C33/4B5E2EB2 0402  R185 10k {Lib=R}
-  (    1 N-000793 )
-  (    2 /emg/emg_amp6/OUT )
- )
- ( /4C9BA165/4C9D6C33/4B5E2EA6 0402  R184 10k {Lib=R}
-  (    1 N-000793 )
+  (    1 /emg/E6 )
   (    2 N-000792 )
  )
+ ( /4C9BA165/4C9D6C33/4B5E2EB2 0402  R185 10k {Lib=R}
+  (    1 N-000792 )
+  (    2 /emg/E6 )
+ )
+ ( /4C9BA165/4C9D6C33/4B5E2EA6 0402  R184 10k {Lib=R}
+  (    1 N-000792 )
+  (    2 N-000791 )
+ )
  ( /4C9BA165/4C9D6C33/4B5E2BEE 0805  C211 22uf {Lib=C}
-  (    1 N-000796 )
+  (    1 N-000797 )
   (    2 GND )
  )
  ( /4C9BA165/4C9D6C33/4B5E2631 0402  C210 180pf {Lib=C}
-  (    1 N-000795 )
-  (    2 N-000794 )
+  (    1 N-000794 )
+  (    2 N-000793 )
  )
  ( /4C9BA165/4C9D6C33/4B5E2425 0805  C209 22uf {Lib=C}
-  (    1 N-000796 )
+  (    1 N-000797 )
   (    2 GND )
  )
  ( /4C9BA165/4C9D6C33/4B5E23F1 0402  R182 330k {Lib=R}
-  (    1 N-000794 )
-  (    2 N-000795 )
- )
- ( /4C9BA165/4C9D6C33/4B5E23EA 0402  R183 3.3k {Lib=R}
-  (    1 N-000796 )
+  (    1 N-000793 )
   (    2 N-000794 )
  )
- ( /4C9BA165/4C9D6C33/4B5E2389 0402  R181 10k {Lib=R}
+ ( /4C9BA165/4C9D6C33/4B5E23EA 0402  R183 3.3k {Lib=R}
   (    1 N-000797 )
+  (    2 N-000793 )
+ )
+ ( /4C9BA165/4C9D6C33/4B5E2389 0402  R181 10k {Lib=R}
+  (    1 N-000795 )
   (    2 /emg/emg_amp6/IN2 )
  )
  ( /4C9BA165/4C9D6C33/4B5E236D 0402  R180 10k {Lib=R}
-  (    1 N-000798 )
+  (    1 N-000796 )
   (    2 /emg/IN11 )
  )
  ( /4C9BA165/4C9D6C33/4B5E2341 uMAX-8  U90 MAX4208 {Lib=MAX4208}
-  (    1 /emg/emg_amp4/VN )
-  (    2 N-000798 )
-  (    3 N-000797 )
-  (    4 /emg/emg_amp4/VN )
+  (    1 /emg/emg_amp8/VN )
+  (    2 N-000796 )
+  (    3 N-000795 )
+  (    4 /emg/emg_amp8/VN )
   (    5 GND )
-  (    6 N-000794 )
-  (    7 N-000795 )
-  (    8 /emg/VEMG+ )
+  (    6 N-000793 )
+  (    7 N-000794 )
+  (    8 /emg/emg_amp3/V+ )
  )
  ( /4C9BA165/4C9D6C30/4C9D733B TP  TP59 TP {Lib=TP}
-  (    1 /emg/emg_amp8/IN2 )
+  (    1 /emg/IN16 )
  )
  ( /4C9BA165/4C9D6C30/4C9D732E TP  TP58 TP {Lib=TP}
   (    1 /emg/emg_amp8/IN1 )
  )
  ( /4C9BA165/4C9D6C30/4B607777 0603  C205 10uf {Lib=C}
-  (    1 N-000786 )
-  (    2 N-000785 )
+  (    1 N-000789 )
+  (    2 N-000788 )
  )
  ( /4C9BA165/4C9D6C30/4B5E8316 0402  C201 1uf {Lib=C}
   (    1 GND )
-  (    2 /emg/VEMG+ )
+  (    2 /emg/emg_amp3/V+ )
  )
  ( /4C9BA165/4C9D6C30/4B5E82D0 0402  C200 1uf {Lib=C}
-  (    1 /emg/emg_amp4/VN )
+  (    1 /emg/emg_amp8/VN )
   (    2 GND )
  )
  ( /4C9BA165/4C9D6C30/4B5E2EEF 0402  C206 4nf {Lib=C}
   (    1 /emg/emg_amp8/OUT )
-  (    2 N-000791 )
+  (    2 N-000790 )
  )
  ( /4C9BA165/4C9D6C30/4B5E2EB2 0402  R179 10k {Lib=R}
-  (    1 N-000791 )
+  (    1 N-000790 )
   (    2 /emg/emg_amp8/OUT )
  )
  ( /4C9BA165/4C9D6C30/4B5E2EA6 0402  R178 10k {Lib=R}
-  (    1 N-000791 )
-  (    2 N-000786 )
+  (    1 N-000790 )
+  (    2 N-000789 )
  )
  ( /4C9BA165/4C9D6C30/4B5E2BEE 0805  C204 22uf {Lib=C}
-  (    1 N-000790 )
+  (    1 N-000787 )
   (    2 GND )
  )
  ( /4C9BA165/4C9D6C30/4B5E2631 0402  C203 180pf {Lib=C}
-  (    1 N-000785 )
-  (    2 N-000789 )
+  (    1 N-000788 )
+  (    2 N-000786 )
  )
  ( /4C9BA165/4C9D6C30/4B5E2425 0805  C202 22uf {Lib=C}
-  (    1 N-000790 )
+  (    1 N-000787 )
   (    2 GND )
  )
  ( /4C9BA165/4C9D6C30/4B5E23F1 0402  R176 330k {Lib=R}
-  (    1 N-000789 )
-  (    2 N-000785 )
+  (    1 N-000786 )
+  (    2 N-000788 )
  )
  ( /4C9BA165/4C9D6C30/4B5E23EA 0402  R177 3.3k {Lib=R}
-  (    1 N-000790 )
-  (    2 N-000789 )
+  (    1 N-000787 )
+  (    2 N-000786 )
  )
  ( /4C9BA165/4C9D6C30/4B5E2389 0402  R175 10k {Lib=R}
-  (    1 N-000787 )
-  (    2 /emg/emg_amp8/IN2 )
+  (    1 N-000784 )
+  (    2 /emg/IN16 )
  )
  ( /4C9BA165/4C9D6C30/4B5E236D 0402  R174 10k {Lib=R}
-  (    1 N-000788 )
+  (    1 N-000785 )
   (    2 /emg/emg_amp8/IN1 )
  )
  ( /4C9BA165/4C9D6C30/4B5E2341 uMAX-8  U89 MAX4208 {Lib=MAX4208}
-  (    1 /emg/emg_amp4/VN )
-  (    2 N-000788 )
-  (    3 N-000787 )
-  (    4 /emg/emg_amp4/VN )
+  (    1 /emg/emg_amp8/VN )
+  (    2 N-000785 )
+  (    3 N-000784 )
+  (    4 /emg/emg_amp8/VN )
   (    5 GND )
-  (    6 N-000789 )
-  (    7 N-000785 )
-  (    8 /emg/VEMG+ )
+  (    6 N-000786 )
+  (    7 N-000788 )
+  (    8 /emg/emg_amp3/V+ )
  )
  ( /4C9BA165/4C9D6C2D/4C9D733B TP  TP57 TP {Lib=TP}
-  (    1 /emg/emg_amp7/IN2 )
+  (    1 /emg/IN14 )
  )
  ( /4C9BA165/4C9D6C2D/4C9D732E TP  TP56 TP {Lib=TP}
   (    1 /emg/IN13 )
  )
  ( /4C9BA165/4C9D6C2D/4B607777 0603  C198 10uf {Lib=C}
-  (    1 N-000784 )
-  (    2 N-000779 )
+  (    1 N-000783 )
+  (    2 N-000778 )
  )
  ( /4C9BA165/4C9D6C2D/4B5E8316 0402  C194 1uf {Lib=C}
   (    1 GND )
-  (    2 /emg/VEMG+ )
+  (    2 /emg/emg_amp3/V+ )
  )
  ( /4C9BA165/4C9D6C2D/4B5E82D0 0402  C193 1uf {Lib=C}
-  (    1 /emg/emg_amp4/VN )
+  (    1 /emg/emg_amp8/VN )
   (    2 GND )
  )
  ( /4C9BA165/4C9D6C2D/4B5E2EEF 0402  C199 4nf {Lib=C}
-  (    1 /emg/emg_amp7/OUT )
-  (    2 N-000783 )
+  (    1 /emg/E7 )
+  (    2 N-000782 )
  )
  ( /4C9BA165/4C9D6C2D/4B5E2EB2 0402  R173 10k {Lib=R}
-  (    1 N-000783 )
-  (    2 /emg/emg_amp7/OUT )
+  (    1 N-000782 )
+  (    2 /emg/E7 )
  )
  ( /4C9BA165/4C9D6C2D/4B5E2EA6 0402  R172 10k {Lib=R}
-  (    1 N-000783 )
-  (    2 N-000784 )
+  (    1 N-000782 )
+  (    2 N-000783 )
  )
  ( /4C9BA165/4C9D6C2D/4B5E2BEE 0805  C197 22uf {Lib=C}
-  (    1 N-000780 )
+  (    1 N-000779 )
   (    2 GND )
  )
  ( /4C9BA165/4C9D6C2D/4B5E2631 0402  C196 180pf {Lib=C}
-  (    1 N-000779 )
-  (    2 N-000778 )
+  (    1 N-000778 )
+  (    2 N-000777 )
  )
  ( /4C9BA165/4C9D6C2D/4B5E2425 0805  C195 22uf {Lib=C}
-  (    1 N-000780 )
+  (    1 N-000779 )
   (    2 GND )
  )
  ( /4C9BA165/4C9D6C2D/4B5E23F1 0402  R170 330k {Lib=R}
-  (    1 N-000778 )
-  (    2 N-000779 )
- )
- ( /4C9BA165/4C9D6C2D/4B5E23EA 0402  R171 3.3k {Lib=R}
-  (    1 N-000780 )
+  (    1 N-000777 )
   (    2 N-000778 )
  )
+ ( /4C9BA165/4C9D6C2D/4B5E23EA 0402  R171 3.3k {Lib=R}
+  (    1 N-000779 )
+  (    2 N-000777 )
+ )
  ( /4C9BA165/4C9D6C2D/4B5E2389 0402  R169 10k {Lib=R}
-  (    1 N-000782 )
-  (    2 /emg/emg_amp7/IN2 )
+  (    1 N-000781 )
+  (    2 /emg/IN14 )
  )
  ( /4C9BA165/4C9D6C2D/4B5E236D 0402  R168 10k {Lib=R}
-  (    1 N-000781 )
+  (    1 N-000780 )
   (    2 /emg/IN13 )
  )
  ( /4C9BA165/4C9D6C2D/4B5E2341 uMAX-8  U87 MAX4208 {Lib=MAX4208}
-  (    1 /emg/emg_amp4/VN )
-  (    2 N-000781 )
-  (    3 N-000782 )
-  (    4 /emg/emg_amp4/VN )
+  (    1 /emg/emg_amp8/VN )
+  (    2 N-000780 )
+  (    3 N-000781 )
+  (    4 /emg/emg_amp8/VN )
   (    5 GND )
-  (    6 N-000778 )
-  (    7 N-000779 )
-  (    8 /emg/VEMG+ )
+  (    6 N-000777 )
+  (    7 N-000778 )
+  (    8 /emg/emg_amp3/V+ )
  )
  ( /4C9BA165/4C9D6BC3/4C9D733B TP  TP55 TP {Lib=TP}
   (    1 /emg/IN6 )
  )
  ( /4C9BA165/4C9D6BC3/4C9D732E TP  TP54 TP {Lib=TP}
-  (    1 /emg/emg_amp3/IN1 )
+  (    1 /emg/IN5 )
  )
  ( /4C9BA165/4C9D6BC3/4B607777 0603  C191 10uf {Lib=C}
-  (    1 N-000775 )
-  (    2 N-000777 )
+  (    1 N-000774 )
+  (    2 N-000775 )
  )
  ( /4C9BA165/4C9D6BC3/4B5E8316 0402  C187 1uf {Lib=C}
   (    1 GND )
-  (    2 /emg/VEMG+ )
+  (    2 /emg/emg_amp3/V+ )
  )
  ( /4C9BA165/4C9D6BC3/4B5E82D0 0402  C186 1uf {Lib=C}
-  (    1 /emg/emg_amp4/VN )
+  (    1 /emg/emg_amp8/VN )
   (    2 GND )
  )
  ( /4C9BA165/4C9D6BC3/4B5E2EEF 0402  C192 4nf {Lib=C}
@@ -2390,181 +2390,181 @@
  )
  ( /4C9BA165/4C9D6BC3/4B5E2EA6 0402  R166 10k {Lib=R}
   (    1 N-000776 )
-  (    2 N-000775 )
+  (    2 N-000774 )
  )
  ( /4C9BA165/4C9D6BC3/4B5E2BEE 0805  C190 22uf {Lib=C}
-  (    1 N-000774 )
+  (    1 N-000773 )
   (    2 GND )
  )
  ( /4C9BA165/4C9D6BC3/4B5E2631 0402  C189 180pf {Lib=C}
-  (    1 N-000777 )
-  (    2 N-000773 )
+  (    1 N-000775 )
+  (    2 N-000772 )
  )
  ( /4C9BA165/4C9D6BC3/4B5E2425 0805  C188 22uf {Lib=C}
-  (    1 N-000774 )
+  (    1 N-000773 )
   (    2 GND )
  )
  ( /4C9BA165/4C9D6BC3/4B5E23F1 0402  R164 330k {Lib=R}
-  (    1 N-000773 )
-  (    2 N-000777 )
+  (    1 N-000772 )
+  (    2 N-000775 )
  )
  ( /4C9BA165/4C9D6BC3/4B5E23EA 0402  R165 3.3k {Lib=R}
-  (    1 N-000774 )
-  (    2 N-000773 )
+  (    1 N-000773 )
+  (    2 N-000772 )
  )
  ( /4C9BA165/4C9D6BC3/4B5E2389 0402  R163 10k {Lib=R}
-  (    1 N-000771 )
+  (    1 N-000770 )
   (    2 /emg/IN6 )
  )
  ( /4C9BA165/4C9D6BC3/4B5E236D 0402  R162 10k {Lib=R}
-  (    1 N-000772 )
-  (    2 /emg/emg_amp3/IN1 )
+  (    1 N-000771 )
+  (    2 /emg/IN5 )
  )
  ( /4C9BA165/4C9D6BC3/4B5E2341 uMAX-8  U86 MAX4208 {Lib=MAX4208}
-  (    1 /emg/emg_amp4/VN )
-  (    2 N-000772 )
-  (    3 N-000771 )
-  (    4 /emg/emg_amp4/VN )
+  (    1 /emg/emg_amp8/VN )
+  (    2 N-000771 )
+  (    3 N-000770 )
+  (    4 /emg/emg_amp8/VN )
   (    5 GND )
-  (    6 N-000773 )
-  (    7 N-000777 )
-  (    8 /emg/VEMG+ )
+  (    6 N-000772 )
+  (    7 N-000775 )
+  (    8 /emg/emg_amp3/V+ )
  )
  ( /4C9BA165/4C9D6BC0/4C9D733B TP  TP53 TP {Lib=TP}
-  (    1 /emg/IN8 )
+  (    1 /emg/emg_amp4/IN2 )
  )
  ( /4C9BA165/4C9D6BC0/4C9D732E TP  TP52 TP {Lib=TP}
   (    1 /emg/emg_amp4/IN1 )
  )
  ( /4C9BA165/4C9D6BC0/4B607777 0603  C184 10uf {Lib=C}
-  (    1 N-000767 )
-  (    2 N-000770 )
+  (    1 N-000766 )
+  (    2 N-000769 )
  )
  ( /4C9BA165/4C9D6BC0/4B5E8316 0402  C180 1uf {Lib=C}
   (    1 GND )
-  (    2 /emg/VEMG+ )
+  (    2 /emg/emg_amp3/V+ )
  )
  ( /4C9BA165/4C9D6BC0/4B5E82D0 0402  C179 1uf {Lib=C}
-  (    1 /emg/emg_amp4/VN )
+  (    1 /emg/emg_amp8/VN )
   (    2 GND )
  )
  ( /4C9BA165/4C9D6BC0/4B5E2EEF 0402  C185 4nf {Lib=C}
   (    1 /emg/E4 )
-  (    2 N-000766 )
+  (    2 N-000765 )
  )
  ( /4C9BA165/4C9D6BC0/4B5E2EB2 0402  R161 10k {Lib=R}
-  (    1 N-000766 )
+  (    1 N-000765 )
   (    2 /emg/E4 )
  )
  ( /4C9BA165/4C9D6BC0/4B5E2EA6 0402  R160 10k {Lib=R}
-  (    1 N-000766 )
-  (    2 N-000767 )
+  (    1 N-000765 )
+  (    2 N-000766 )
  )
  ( /4C9BA165/4C9D6BC0/4B5E2BEE 0805  C183 22uf {Lib=C}
-  (    1 N-000765 )
+  (    1 N-000764 )
   (    2 GND )
  )
  ( /4C9BA165/4C9D6BC0/4B5E2631 0402  C182 180pf {Lib=C}
-  (    1 N-000770 )
-  (    2 N-000769 )
+  (    1 N-000769 )
+  (    2 N-000768 )
  )
  ( /4C9BA165/4C9D6BC0/4B5E2425 0805  C181 22uf {Lib=C}
-  (    1 N-000765 )
+  (    1 N-000764 )
   (    2 GND )
  )
  ( /4C9BA165/4C9D6BC0/4B5E23F1 0402  R158 330k {Lib=R}
-  (    1 N-000769 )
-  (    2 N-000770 )
- )
- ( /4C9BA165/4C9D6BC0/4B5E23EA 0402  R159 3.3k {Lib=R}
-  (    1 N-000765 )
+  (    1 N-000768 )
   (    2 N-000769 )
  )
- ( /4C9BA165/4C9D6BC0/4B5E2389 0402  R157 10k {Lib=R}
+ ( /4C9BA165/4C9D6BC0/4B5E23EA 0402  R159 3.3k {Lib=R}
   (    1 N-000764 )
-  (    2 /emg/IN8 )
+  (    2 N-000768 )
+ )
+ ( /4C9BA165/4C9D6BC0/4B5E2389 0402  R157 10k {Lib=R}
+  (    1 N-000763 )
+  (    2 /emg/emg_amp4/IN2 )
  )
  ( /4C9BA165/4C9D6BC0/4B5E236D 0402  R156 10k {Lib=R}
-  (    1 N-000768 )
+  (    1 N-000767 )
   (    2 /emg/emg_amp4/IN1 )
  )
  ( /4C9BA165/4C9D6BC0/4B5E2341 uMAX-8  U85 MAX4208 {Lib=MAX4208}
-  (    1 /emg/emg_amp4/VN )
-  (    2 N-000768 )
-  (    3 N-000764 )
-  (    4 /emg/emg_amp4/VN )
+  (    1 /emg/emg_amp8/VN )
+  (    2 N-000767 )
+  (    3 N-000763 )
+  (    4 /emg/emg_amp8/VN )
   (    5 GND )
-  (    6 N-000769 )
-  (    7 N-000770 )
-  (    8 /emg/VEMG+ )
+  (    6 N-000768 )
+  (    7 N-000769 )
+  (    8 /emg/emg_amp3/V+ )
  )
  ( /4C9BA165/4C9D5FEB/4C9D733B TP  TP49 TP {Lib=TP}
-  (    1 /emg/emg_amp1/IN2 )
+  (    1 /emg/IN2 )
  )
  ( /4C9BA165/4C9D5FEB/4C9D732E TP  TP48 TP {Lib=TP}
   (    1 /emg/IN1 )
  )
  ( /4C9BA165/4C9D5FEB/4B607777 0603  C170 10uf {Lib=C}
-  (    1 N-000756 )
-  (    2 N-000754 )
+  (    1 N-000755 )
+  (    2 N-000753 )
  )
  ( /4C9BA165/4C9D5FEB/4B5E8316 0402  C166 1uf {Lib=C}
   (    1 GND )
-  (    2 /emg/VEMG+ )
+  (    2 /emg/emg_amp3/V+ )
  )
  ( /4C9BA165/4C9D5FEB/4B5E82D0 0402  C165 1uf {Lib=C}
-  (    1 /emg/emg_amp4/VN )
+  (    1 /emg/emg_amp8/VN )
   (    2 GND )
  )
  ( /4C9BA165/4C9D5FEB/4B5E2EEF 0402  C171 4nf {Lib=C}
   (    1 /emg/E1 )
-  (    2 N-000755 )
+  (    2 N-000754 )
  )
  ( /4C9BA165/4C9D5FEB/4B5E2EB2 0402  R149 10k {Lib=R}
-  (    1 N-000755 )
+  (    1 N-000754 )
   (    2 /emg/E1 )
  )
  ( /4C9BA165/4C9D5FEB/4B5E2EA6 0402  R148 10k {Lib=R}
-  (    1 N-000755 )
-  (    2 N-000756 )
+  (    1 N-000754 )
+  (    2 N-000755 )
  )
  ( /4C9BA165/4C9D5FEB/4B5E2BEE 0805  C169 22uf {Lib=C}
-  (    1 N-000751 )
+  (    1 N-000750 )
   (    2 GND )
  )
  ( /4C9BA165/4C9D5FEB/4B5E2631 0402  C168 180pf {Lib=C}
-  (    1 N-000754 )
-  (    2 N-000753 )
+  (    1 N-000753 )
+  (    2 N-000752 )
  )
  ( /4C9BA165/4C9D5FEB/4B5E2425 0805  C167 22uf {Lib=C}
-  (    1 N-000751 )
+  (    1 N-000750 )
   (    2 GND )
  )
  ( /4C9BA165/4C9D5FEB/4B5E23F1 0402  R146 330k {Lib=R}
-  (    1 N-000753 )
-  (    2 N-000754 )
- )
- ( /4C9BA165/4C9D5FEB/4B5E23EA 0402  R147 3.3k {Lib=R}
-  (    1 N-000751 )
+  (    1 N-000752 )
   (    2 N-000753 )
  )
- ( /4C9BA165/4C9D5FEB/4B5E2389 0402  R145 10k {Lib=R}
+ ( /4C9BA165/4C9D5FEB/4B5E23EA 0402  R147 3.3k {Lib=R}
   (    1 N-000750 )
-  (    2 /emg/emg_amp1/IN2 )
+  (    2 N-000752 )
+ )
+ ( /4C9BA165/4C9D5FEB/4B5E2389 0402  R145 10k {Lib=R}
+  (    1 N-000749 )
+  (    2 /emg/IN2 )
  )
  ( /4C9BA165/4C9D5FEB/4B5E236D 0402  R144 10k {Lib=R}
-  (    1 N-000752 )
+  (    1 N-000751 )
   (    2 /emg/IN1 )
  )
  ( /4C9BA165/4C9D5FEB/4B5E2341 uMAX-8  U82 MAX4208 {Lib=MAX4208}
-  (    1 /emg/emg_amp4/VN )
-  (    2 N-000752 )
-  (    3 N-000750 )
-  (    4 /emg/emg_amp4/VN )
+  (    1 /emg/emg_amp8/VN )
+  (    2 N-000751 )
+  (    3 N-000749 )
+  (    4 /emg/emg_amp8/VN )
   (    5 GND )
-  (    6 N-000753 )
-  (    7 N-000754 )
-  (    8 /emg/VEMG+ )
+  (    6 N-000752 )
+  (    7 N-000753 )
+  (    8 /emg/emg_amp3/V+ )
  )
  ( /4C9ACC0C/4CA0EC7E 0402  C222 0.1uf {Lib=C}
   (    1 /wired/V3C )
@@ -2582,11 +2582,11 @@
   (    5 /wired/V0 )
   (    6 /wired/V3 )
   (    7 /wired/V0 )
-  (    8 N-000418 )
-  (    9 N-000444 )
-  (   10 N-000417 )
+  (    8 N-000417 )
+  (    9 N-000443 )
+  (   10 N-000416 )
   (   11 ? )
-  (   12 N-000396 )
+  (   12 N-000395 )
   (   13 /wired/V0 )
   (   14 /wired/_reset )
   (   15 /WIRED_STEP )
@@ -2624,11 +2624,11 @@
   (    5 /wired/V0 )
   (    6 /wired/V3 )
   (    7 /wired/V0 )
-  (    8 N-000391 )
-  (    9 N-000393 )
-  (   10 N-000392 )
+  (    8 N-000390 )
+  (    9 N-000392 )
+  (   10 N-000391 )
   (   11 ? )
-  (   12 N-000397 )
+  (   12 N-000396 )
   (   13 /wired/V0 )
   (   14 /wired/_reset )
   (   15 /WIRED_STEP )
@@ -2659,14 +2659,14 @@
   (   40 /wired/E29 )
  )
  ( /4C9ACC0C/4C9FD07C SC-70-5  U43 TC1016 {Lib=TC1016}
-  (    1 N-000468 )
+  (    1 N-000467 )
   (    2 ? )
   (    3 /wired/V0 )
   (    4 /wired/V3B )
-  (    5 N-000468 )
+  (    5 N-000467 )
  )
  ( /4C9ACC0C/4C9FD079 0402  C88 2.2uf {Lib=C}
-  (    1 N-000468 )
+  (    1 N-000467 )
   (    2 /wired/V0 )
  )
  ( /4C9ACC0C/4C9FD078 0402  C98 2.2uf {Lib=C}
@@ -2694,15 +2694,15 @@
  )
  ( /4C9ACC0C/4C9B8FAD 0402  R85 15k {Lib=R}
   (    1 /wired/V0 )
-  (    2 N-000391 )
+  (    2 N-000390 )
  )
  ( /4C9ACC0C/4C9B8FAC 0402  R87 7.5k {Lib=R}
   (    1 /wired/V0 )
-  (    2 N-000392 )
+  (    2 N-000391 )
  )
  ( /4C9ACC0C/4C9B8FAB 0402  R86 25.2k {Lib=R}
   (    1 /wired/V0 )
-  (    2 N-000393 )
+  (    2 N-000392 )
  )
  ( /4C9ACC0C/4C9B8FAA 0402  C95 0.1uf {Lib=C}
   (    1 /wired/V3 )
@@ -2714,7 +2714,7 @@
  )
  ( /4C9ACC0C/4C9B8FA8 0402  R89 200 {Lib=R}
   (    1 /wired/sd1 )
-  (    2 N-000471 )
+  (    2 N-000470 )
  )
  ( /4C9ACC0C/4C9B8FA7 0402  C96 2.2uf {Lib=C}
   (    1 /wired/V25 )
@@ -2723,12 +2723,12 @@
  ( /4C9ACC0C/4C9B8FA6 MSOP-10  U45 AD7980 {Lib=AD7980}
   (    1 /wired/VREF )
   (    2 /wired/V25 )
-  (    3 N-000397 )
+  (    3 N-000396 )
   (    4 /wired/V0 )
   (    5 /wired/V0 )
   (    6 /wired/RFS )
-  (    7 N-000471 )
-  (    8 /PF2 )
+  (    7 N-000470 )
+  (    8 /wired/RCLK )
   (    9 /wired/V3B )
   (   10 /wired/V3B )
  )
@@ -2748,12 +2748,12 @@
  ( /4C9ACC0C/4C9B8967 MSOP-10  U44 AD7980 {Lib=AD7980}
   (    1 /wired/VREF )
   (    2 /wired/V25 )
-  (    3 N-000396 )
+  (    3 N-000395 )
   (    4 /wired/V0 )
   (    5 /wired/V0 )
   (    6 /wired/RFS )
-  (    7 N-000453 )
-  (    8 /PF2 )
+  (    7 N-000452 )
+  (    8 /wired/RCLK )
   (    9 /wired/V3B )
   (   10 /wired/V3B )
  )
@@ -2762,7 +2762,7 @@
   (    2 /wired/sd0 )
   (    3 /wired/sd1 )
   (    4 /wired/RFS )
-  (    5 /PF2 )
+  (    5 /wired/RCLK )
   (    6 /WIRED_STEP )
   (    7 /wired/_reset )
   (    8 /wired/V5 )
@@ -2786,27 +2786,27 @@
  )
  ( /4C9ACC0C/4C9B7FA2 8x100mil  U48 8X100 {Lib=8X100}
   (    1 /wired/V0 )
-  (    2 N-000445 )
-  (    3 N-000424 )
-  (    4 N-000427 )
-  (    5 N-000425 )
-  (    6 N-000428 )
-  (    7 N-000426 )
+  (    2 N-000444 )
+  (    3 N-000423 )
+  (    4 N-000426 )
+  (    5 N-000424 )
+  (    6 N-000427 )
+  (    7 N-000425 )
   (    8 /wired/V5 )
  )
  ( /4C9ACC0C/4C9B7F77 0402  R93 200 {Lib=R}
-  (    1 N-000456 )
-  (    2 N-000426 )
+  (    1 N-000455 )
+  (    2 N-000425 )
  )
  ( /4C9ACC0C/4C9B7F75 0402  R92 200 {Lib=R}
-  (    1 N-000455 )
-  (    2 N-000428 )
+  (    1 N-000454 )
+  (    2 N-000427 )
  )
  ( /4C9ACC0C/4C9B7F27 SOIC-16  U52 IL715-3 {Lib=ADUM2400}
   (    1 /wired/V3C )
   (    2 /wired/V0 )
-  (    3 N-000445 )
-  (    4 N-000424 )
+  (    3 N-000444 )
+  (    4 N-000423 )
   (    5 /wired/V0 )
   (    6 /wired/V0 )
   (    7 /wired/V0 )
@@ -2816,7 +2816,7 @@
   (   11 ? )
   (   12 ? )
   (   13 /PF7 )
-  (   14 /wired/D0 )
+  (   14 /PF0 )
   (   15 GND )
   (   16 VDD )
  )
@@ -2824,24 +2824,24 @@
   (    1 VDD )
   (    2 GND )
   (    3 /wired/RFS )
-  (    4 /PF2 )
+  (    4 /wired/RCLK )
   (    5 /WIRED_STEP )
-  (    6 /WIRED_RESET )
+  (    6 /wired/RESET )
   (    7 ? )
   (    8 GND )
   (    9 /wired/V0 )
   (   10 /wired/V0 )
-  (   11 N-000456 )
-  (   12 N-000455 )
-  (   13 N-000454 )
-  (   14 N-000461 )
+  (   11 N-000455 )
+  (   12 N-000454 )
+  (   13 N-000453 )
+  (   14 N-000460 )
   (   15 /wired/V0 )
   (   16 /wired/V3C )
  )
  ( /4C9ACC0C/4C2A493F SC-70-5  U41 MIC5365 {Lib=MIC5365}
-  (    1 N-000468 )
+  (    1 N-000467 )
   (    2 GND )
-  (    3 N-000468 )
+  (    3 N-000467 )
   (    4 ? )
   (    5 /wired/V25 )
  )
@@ -2851,7 +2851,7 @@
  )
  ( /4C9ACC0C/4CA0ED8E 0402  R88 200 {Lib=R}
   (    1 /wired/sd0 )
-  (    2 N-000453 )
+  (    2 N-000452 )
  )
  ( /4C9ACC0C/4CA0ED8D 0402  C91 0.1uf {Lib=C}
   (    1 /wired/V3 )
@@ -2863,15 +2863,15 @@
  )
  ( /4C9ACC0C/4CA0ED8B 0402  R83 25.2k {Lib=R}
   (    1 /wired/V0 )
-  (    2 N-000444 )
+  (    2 N-000443 )
  )
  ( /4C9ACC0C/4CA0ED8A 0402  R84 7.5k {Lib=R}
   (    1 /wired/V0 )
-  (    2 N-000417 )
+  (    2 N-000416 )
  )
  ( /4C9ACC0C/4C2A303D 0402  R82 15k {Lib=R}
   (    1 /wired/V0 )
-  (    2 N-000418 )
+  (    2 N-000417 )
  )
  ( /4C9ACC0C/4C2A2E5D 0402  C89 0.1uf {Lib=C}
   (    1 /wired/V0 )
@@ -2882,22 +2882,22 @@
   (    2 /wired/V0 )
  )
  ( /4C9ACC0C/4CA0ED86 0402  C86 2.2uf {Lib=C}
-  (    1 N-000468 )
+  (    1 N-000467 )
   (    2 /wired/V0 )
  )
  ( /4C9ACC0C/4CA0ED84 SC-70-5  U42 TC1016 {Lib=TC1016}
-  (    1 N-000468 )
+  (    1 N-000467 )
   (    2 ? )
   (    3 /wired/V0 )
   (    4 /wired/V3 )
-  (    5 N-000468 )
+  (    5 N-000467 )
  )
  ( /4C9ACC0C/4CA0ED7A 0402  C85 2.2uf {Lib=C}
   (    1 /wired/V5 )
   (    2 /wired/V0 )
  )
  ( /4C9ACC0C/4B69FA03 0402  L11 ferrite {Lib=INDUCTOR}
-  (    1 N-000468 )
+  (    1 N-000467 )
   (    2 /wired/V5 )
  )
  ( /4C9ACC0C/4CA0ED59 omnetics_36  U38 OMNETICS_36 {Lib=OMNETICS_36}
@@ -2939,7 +2939,7 @@
   (   36 GND )
  )
  ( /4C9ACC0C/48FFF0B4 0402  C87 2.2uf {Lib=C}
-  (    1 N-000468 )
+  (    1 N-000467 )
   (    2 /wired/V0 )
  )
  ( /4C9ACC0C/48FFEFB3 0402  C97 2.2uf {Lib=C}
@@ -2947,12 +2947,12 @@
   (    2 /wired/V0 )
  )
  ( /4C9ACC0C/4C9ACC97 0402  R91 200 {Lib=R}
-  (    1 N-000454 )
-  (    2 N-000425 )
+  (    1 N-000453 )
+  (    2 N-000424 )
  )
  ( /4C9ACC0C/4C9ACC87 0402  R90 200 {Lib=R}
-  (    1 N-000461 )
-  (    2 N-000427 )
+  (    1 N-000460 )
+  (    2 N-000426 )
  )
  ( /4C9AC245/4C9D04C3 0402  C56 0.1uf {Lib=C}
   (    1 VDD )
@@ -2975,25 +2975,25 @@
   (   14 ? )
   (   15 N-000261 )
   (   16 N-000237 )
-  (   17 N-000260 )
-  (   18 N-000241 )
+  (   17 N-000259 )
+  (   18 N-000236 )
   (   19 GND )
   (   20 VDD )
  )
  ( /4C9AC245/4C9BA07F 0402  R58 50 {Lib=R}
-  (    1 N-000236 )
-  (    2 N-000262 )
- )
- ( /4C9AC245/4C9BA07E 0402  R59 50 {Lib=R}
   (    1 N-000235 )
   (    2 N-000262 )
  )
+ ( /4C9AC245/4C9BA07E 0402  R59 50 {Lib=R}
+  (    1 N-000260 )
+  (    2 N-000262 )
+ )
  ( /4C9AC245/4C9BA07C 0402  R60 50 {Lib=R}
-  (    1 N-000259 )
+  (    1 N-000258 )
   (    2 N-000262 )
  )
  ( /4C9AC245/4C9BA06E 0402  R61 50 {Lib=R}
-  (    1 N-000258 )
+  (    1 N-000257 )
   (    2 N-000262 )
  )
  ( /4C9AC245/4C9B9F66 TP  TP23 PF8_STEP {Lib=TP}
@@ -3003,30 +3003,30 @@
   (    1 N-000237 )
  )
  ( /4C9AC245/4C9B9F5F TP  TP21 PF1_nRF-CSN {Lib=TP}
-  (    1 N-000260 )
+  (    1 N-000259 )
  )
  ( /4C9AC245/4C9B9F3B 0603  D17 LED {Lib=LED}
   (    1 N-000261 )
-  (    2 N-000236 )
+  (    2 N-000235 )
  )
  ( /4C9AC245/4C9B9F39 0603  D18 LED {Lib=LED}
   (    1 N-000237 )
-  (    2 N-000235 )
+  (    2 N-000260 )
  )
  ( /4C9AC245/4C9B9F36 0603  D19 LED {Lib=LED}
-  (    1 N-000260 )
-  (    2 N-000259 )
- )
- ( /4C9AC245/4C9B9F12 0603  D20 LED {Lib=LED}
-  (    1 N-000241 )
+  (    1 N-000259 )
   (    2 N-000258 )
  )
+ ( /4C9AC245/4C9B9F12 0603  D20 LED {Lib=LED}
+  (    1 N-000236 )
+  (    2 N-000257 )
+ )
  ( /4C9AC245/4C9B9ECE TP  TP20 PF0_nRF-CE {Lib=TP}
-  (    1 N-000241 )
+  (    1 N-000236 )
  )
  ( /4C9AC245/4C9B9E40 0603  C53 10uf {Lib=C}
-  (    1 ? )
-  (    2 N-000390 )
+  (    1 GND )
+  (    2 N-000389 )
  )
  ( /4C9AC245/4C9B9ABA 0402  C83 33pf {Lib=C}
   (    1 GND )
@@ -3069,24 +3069,24 @@
   (    1 VDD )
  )
  ( /4C9AC245/4C2A3A63 0402  R70 33 {Lib=R}
-  (    1 N-000265 )
+  (    1 N-000264 )
   (    2 /neuro/SCK )
  )
  ( /4C9AC245/4C2A3A1E 0402  R67 33 {Lib=R}
-  (    1 N-000264 )
+  (    1 N-000263 )
   (    2 /neuro/analog/Sclk )
  )
  ( /4C9AC245/4C2A3A08 0402  R66 33 {Lib=R}
-  (    1 N-000263 )
-  (    2 /neuro/RFS1 )
+  (    1 N-000249 )
+  (    2 /neuro/analog/RFS1 )
  )
  ( /4C9AC245/4C2A39DB 0402  R71 33 {Lib=R}
-  (    1 N-000250 )
+  (    1 N-000248 )
   (    2 /neuro/MOSI )
  )
  ( /4C9AC245/4CA0EDA0 0402  R78 33 {Lib=R}
   (    1 /neuro/MISO )
-  (    2 N-000242 )
+  (    2 N-000241 )
  )
  ( /4C9AC245/4CA0ED9B 0402  R80 22k {Lib=R}
   (    1 VDD )
@@ -3094,11 +3094,11 @@
  )
  ( /4C9AC245/4CA0ED99 0402  R77 22k {Lib=R}
   (    1 VDD )
-  (    2 N-000242 )
+  (    2 N-000241 )
  )
  ( /4C9AC245/4C2A383E UFDN-8  U33 AT25DF041-MHF {Lib=AT25DF041-MHF}
   (    1 /neuro/PF2 )
-  (    2 N-000242 )
+  (    2 N-000241 )
   (    3 VDD )
   (    4 GND )
   (    5 /neuro/MOSI )
@@ -3111,20 +3111,20 @@
   (    2 GND )
  )
  ( /4C9AC245/4CA0ED62 chip_ant  U36 ANTENNA {Lib=ANTENNA}
-  (    1 N-000252 )
+  (    1 N-000251 )
   (    2 ? )
  )
  ( /4C9AC245/4CA0ED5D 0402  C73 0.001uf {Lib=C}
-  (    1 N-000386 )
+  (    1 N-000385 )
   (    2 GND )
  )
  ( /4C9AC245/4CA0ED5C 0402  C74 0.001uf {Lib=C}
-  (    1 N-000386 )
+  (    1 N-000385 )
   (    2 GND )
  )
  ( /4C9AC245/4CA0ED55 0402  R68 50k {Lib=R}
   (    1 VDD )
-  (    2 N-000271 )
+  (    2 N-000270 )
  )
  ( /4C9AC245/49069229 0402  C70 0.1uf {Lib=C}
   (    1 VDD )
@@ -3167,150 +3167,150 @@
   (    2 VDD )
  )
  ( /4C9AC245/4CA0ED29 0402  R73 33 {Lib=R}
-  (    1 N-000273 )
+  (    1 N-000277 )
   (    2 /neuro/MISO )
  )
  ( /4C9AC245/4CA0ED23 0402  C76 0.001uf {Lib=C}
-  (    1 N-000386 )
+  (    1 N-000385 )
   (    2 GND )
  )
  ( /4C9AC245/4CA0ED22 0402  C77 0.01uf {Lib=C}
-  (    1 N-000386 )
+  (    1 N-000385 )
   (    2 GND )
  )
  ( /4C9AC245/4CA0ED21 0402  C80 1uf {Lib=C}
-  (    1 N-000386 )
+  (    1 N-000385 )
   (    2 GND )
  )
  ( /4C9AC245/4CA0ED20 0402  L10 ferrite {Lib=INDUCTOR}
-  (    1 N-000386 )
+  (    1 N-000385 )
   (    2 VDD )
  )
  ( /4C9AC245/490551A6 0402  C81 1pF {Lib=C}
   (    1 GND )
-  (    2 N-000252 )
+  (    2 N-000251 )
  )
  ( /4C9AC245/49055197 0402  C79 1.5pF {Lib=C}
-  (    1 N-000252 )
-  (    2 N-000384 )
+  (    1 N-000251 )
+  (    2 N-000383 )
  )
  ( /4C9AC245/49055152 0402  C82 2.2nF {Lib=C}
-  (    1 N-000385 )
+  (    1 N-000384 )
   (    2 GND )
  )
  ( /4C9AC245/4CA0ED18 0402  C78 4.7pF {Lib=C}
-  (    1 N-000385 )
+  (    1 N-000384 )
   (    2 GND )
  )
  ( /4C9AC245/4CA0ED17 0402  L9 2.7nH {Lib=INDUCTOR}
-  (    1 N-000274 )
-  (    2 N-000385 )
+  (    1 N-000272 )
+  (    2 N-000384 )
  )
  ( /4C9AC245/49055106 0402  L7 8.2nH {Lib=INDUCTOR}
-  (    1 N-000274 )
-  (    2 N-000281 )
+  (    1 N-000272 )
+  (    2 N-000280 )
  )
  ( /4C9AC245/490550E4 0402  L8 3.9nH {Lib=INDUCTOR}
-  (    1 N-000281 )
-  (    2 N-000384 )
+  (    1 N-000280 )
+  (    2 N-000383 )
  )
  ( /4C9AC245/49055090 0402  R79 22K {Lib=R}
   (    1 GND )
-  (    2 N-000383 )
+  (    2 N-000382 )
  )
  ( /4C9AC245/4CA0ED10 0402  C75 33nF {Lib=C}
   (    1 GND )
-  (    2 N-000387 )
+  (    2 N-000386 )
  )
  ( /4C9AC245/4CA0ED0F QFN-20  U32 NRF24L01 {Lib=NRF24L01}
   (    1 /neuro/PF0 )
   (    2 /neuro/PF1 )
   (    3 /neuro/SCK )
   (    4 /neuro/MOSI )
-  (    5 N-000273 )
+  (    5 N-000277 )
   (    6 /neuro/PF3 )
-  (    7 N-000386 )
+  (    7 N-000385 )
   (    8 GND )
   (    9 ? )
-  (   10 N-000284 )
-  (   11 N-000385 )
-  (   12 N-000274 )
-  (   13 N-000281 )
+  (   10 N-000283 )
+  (   11 N-000384 )
+  (   12 N-000272 )
+  (   13 N-000280 )
   (   14 GND )
-  (   15 N-000386 )
-  (   16 N-000383 )
+  (   15 N-000385 )
+  (   16 N-000382 )
   (   17 GND )
-  (   18 N-000386 )
-  (   19 N-000387 )
+  (   18 N-000385 )
+  (   19 N-000386 )
   (   20 GND )
  )
  ( /4C9AC245/490160C4 2x100mil  U27 EN_VCC {Lib=JUMP}
   (    1 VCC )
-  (    2 N-000275 )
+  (    2 N-000273 )
  )
  ( /4C9AC245/4CA0ED07 2x100mil  U28 EN_VDD {Lib=JUMP}
   (    1 VDD )
-  (    2 N-000280 )
+  (    2 N-000279 )
  )
  ( /4C9AC245/4CA0ED05 2x100mil  U24 VEE {Lib=JUMP}
   (    1 VEE )
-  (    2 N-000390 )
+  (    2 N-000389 )
  )
  ( /4C9AC245/49015CC8 0402  C54 0.1uf {Lib=C}
   (    1 GND )
-  (    2 N-000390 )
+  (    2 N-000389 )
  )
  ( /4C9AC245/49015CB6 0603  C55 10uf {Lib=C}
   (    1 GND )
-  (    2 N-000390 )
+  (    2 N-000389 )
  )
  ( /4C9AC245/49015C82 0402  C61 33pf {Lib=C}
-  (    1 N-000280 )
-  (    2 N-000389 )
+  (    1 N-000279 )
+  (    2 N-000388 )
  )
  ( /4C9AC245/4CA0ECF7 0402  R62 220k {Lib=R}
   (    1 GND )
-  (    2 N-000389 )
+  (    2 N-000388 )
  )
  ( /4C9AC245/49015C38 0402  R63 825k {Lib=R}
-  (    1 N-000389 )
-  (    2 N-000280 )
+  (    1 N-000388 )
+  (    2 N-000279 )
  )
  ( /4C9AC245/4CA0ECEC 0402  R65 270k {Lib=R}
-  (    1 N-000276 )
+  (    1 N-000274 )
   (    2 GND )
  )
  ( /4C9AC245/4CA0ECE9 0402  R64 90k {Lib=R}
-  (    1 N-000275 )
-  (    2 N-000276 )
+  (    1 N-000273 )
+  (    2 N-000274 )
  )
  ( /4C9AC245/49015B78 0603  C63 10uf {Lib=C}
   (    1 GND )
-  (    2 N-000275 )
+  (    2 N-000273 )
  )
  ( /4C9AC245/49015B6B 0603  C62 10uf {Lib=C}
   (    1 GND )
-  (    2 N-000280 )
+  (    2 N-000279 )
  )
  ( /4C9AC245/49015B4A 1210  L6 2.2uh {Lib=INDUCTOR}
-  (    1 N-000279 )
-  (    2 N-000275 )
+  (    1 N-000278 )
+  (    2 N-000273 )
  )
  ( /4C9AC245/4CA0ECDF 1210  L5 2.2uh {Lib=INDUCTOR}
-  (    1 N-000277 )
-  (    2 N-000280 )
+  (    1 N-000275 )
+  (    2 N-000279 )
  )
  ( /4C9AC245/49015A3F QFN-10  U26 TPS62410 {Lib=TPS62410}
-  (    1 N-000389 )
+  (    1 N-000388 )
   (    2 GND )
-  (    3 N-000390 )
-  (    4 N-000275 )
-  (    5 N-000276 )
-  (    6 N-000279 )
-  (    7 N-000390 )
+  (    3 N-000389 )
+  (    4 N-000273 )
+  (    5 N-000274 )
+  (    6 N-000278 )
+  (    7 N-000389 )
   (    8 GND )
-  (    9 N-000390 )
-  (   10 N-000277 )
+  (    9 N-000389 )
+  (   10 N-000275 )
   (   11 GND )
  )
  ( /4C9AC245/49015590 0402  R76 10k {Lib=R}
@@ -3322,7 +3322,7 @@
   (    2 /neuro/_emu )
  )
  ( /4C9AC245/4CA0ECD0 0402  R69 10k {Lib=R}
-  (    1 N-000278 )
+  (    1 N-000276 )
   (    2 VDD )
  )
  ( /4C9AC245/4901536F 7x2x100  U31 ADSP_JTAG_CON {Lib=ADSP_JTAG_CON}
@@ -3330,7 +3330,7 @@
   (    2 /neuro/_emu )
   (    3 ? )
   (    4 GND )
-  (    5 N-000278 )
+  (    5 N-000276 )
   (    6 /neuro/TMS )
   (    7 GND )
   (    8 /neuro/TCK )
@@ -3343,28 +3343,28 @@
  )
  ( /4C9AC245/4CA0ECCB 0402  R81 10k {Lib=R}
   (    1 VDD )
-  (    2 N-000283 )
+  (    2 N-000282 )
  )
  ( /4C9AC245/4CA0ECC2 SC-70-4  U35 MAX6711Z {Lib=MAX6711}
   (    1 GND )
   (    2 /neuro/RESET )
-  (    3 N-000283 )
+  (    3 N-000282 )
   (    4 VDD )
  )
  ( /4C9AC245/4CA0ECBD 7x100mil  U37 TESTCON {Lib=TESTCON}
   (    1 GND )
   (    2 GND )
   (    3 N-000256 )
-  (    4 N-000272 )
-  (    5 N-000282 )
-  (    6 N-000286 )
-  (    7 N-000283 )
+  (    4 N-000271 )
+  (    5 N-000281 )
+  (    6 N-000285 )
+  (    7 N-000282 )
  )
  ( /4C9AC245/4CA0ECBB TSSOP-20  U34 74LCX541 {Lib=74LCX541}
-  (    1 N-000283 )
+  (    1 N-000282 )
   (    2 N-000256 )
-  (    3 N-000282 )
-  (    4 N-000286 )
+  (    3 N-000281 )
+  (    4 N-000285 )
   (    5 /neuro/MISO )
   (    6 GND )
   (    7 GND )
@@ -3375,25 +3375,25 @@
   (   12 ? )
   (   13 ? )
   (   14 ? )
-  (   15 N-000272 )
+  (   15 N-000271 )
   (   16 /neuro/SCK )
   (   17 /neuro/MOSI )
   (   18 /neuro/PF2 )
-  (   19 N-000283 )
+  (   19 N-000282 )
   (   20 VDD )
  )
  ( /4C9AC245/4CA0ECB6 0402  C67 4.7pF {Lib=C}
-  (    1 N-000284 )
+  (    1 N-000283 )
   (    2 GND )
  )
  ( /4C9AC245/4CA0ECB5 0402  C64 7pf {Lib=C}
-  (    1 N-000285 )
+  (    1 N-000284 )
   (    2 GND )
  )
  ( /4C9AC245/4CA0ECB4 ABM10  U29 ABM10XTAL {Lib=ABM10XTAL}
-  (    1 N-000285 )
+  (    1 N-000284 )
   (    2 GND )
-  (    3 N-000284 )
+  (    3 N-000283 )
   (    4 GND )
  )
  ( /4C9AC245/48C9FDBF MBGA-160  U30 BF532-160 {Lib=BF532-160}
@@ -3401,7 +3401,7 @@
   (  M10 GND )
   (  N10 ? )
   (  P10 ? )
-  (  A11 N-000284 )
+  (  A11 N-000283 )
   (  B11 GND )
   (  C11 GND )
   (  D11 GND )
@@ -3415,7 +3415,7 @@
   (  M11 ? )
   (  N11 ? )
   (  P11 ? )
-  (  A12 N-000285 )
+  (  A12 N-000284 )
   (  B12 ? )
   (   A8 ? )
   (   B8 ? )
@@ -3446,7 +3446,7 @@
   (  A14 GND )
   (  B14 ? )
   (  C14 ? )
-  (  D14 N-000271 )
+  (  D14 N-000270 )
   (  E14 ? )
   (  F14 ? )
   (  G14 ? )
@@ -3477,7 +3477,7 @@
   (  F13 ? )
   (  G13 ? )
   (  H13 ? )
-  (   G2 N-000263 )
+  (   G2 N-000249 )
   (   H2 ? )
   (   J2 ? )
   (   K2 ? )
@@ -3488,10 +3488,10 @@
   (   A3 ? )
   (   B3 ? )
   (   C3 /neuro/PF3 )
-  (   D3 N-000250 )
+  (   D3 N-000248 )
   (   E3 ? )
   (   F3 /neuro/analog/DR1SEC )
-  (   G3 /neuro/analog/DR1PRI )
+  (   G3 /neuro/DR1PRI )
   (   H3 ? )
   (   J3 ? )
   (   K3 ? )
@@ -3500,10 +3500,10 @@
   (   A1 VDD )
   (   B1 ? )
   (   C1 /neuro/PF1 )
-  (   D1 N-000265 )
+  (   D1 N-000264 )
   (   E1 ? )
   (   F1 ? )
-  (   G1 N-000264 )
+  (   G1 N-000263 )
   (   H1 ? )
   (   J1 ? )
   (   K1 ? )
@@ -3540,7 +3540,7 @@
   (   N3 /neuro/TDO )
   (   P3 VDD )
   (   A4 ? )
-  (   B4 /neuro/analog/_reset )
+  (   B4 /neuro/PF7 )
   (   C4 GND )
   (   D4 GND )
   (   E4 VCC )
@@ -3559,9 +3559,9 @@
   (   D5 VDD )
  )
  ( /4C9AC245/4C2A3702/4CA0EDA7 SC-70-5  U77 MIC5365 {Lib=MIC5365}
-  (    1 N-000745 )
+  (    1 N-000744 )
   (    2 GND )
-  (    3 N-000745 )
+  (    3 N-000744 )
   (    4 ? )
   (    5 /neuro/analog/V27 )
  )
@@ -3575,11 +3575,11 @@
  )
  ( /4C9AC245/4C2A3702/4C2A3478 0402  R143 33 {Lib=R}
   (    1 /neuro/analog/DR1SEC )
-  (    2 N-000748 )
+  (    2 N-000747 )
  )
  ( /4C9AC245/4C2A3702/4C2A3454 0402  R139 33 {Lib=R}
-  (    1 /neuro/analog/DR1PRI )
-  (    2 N-000747 )
+  (    1 /neuro/DR1PRI )
+  (    2 N-000746 )
  )
  ( /4C9AC245/4C2A3702/4C2A338C QFN-40  U80 RHA2116 {Lib=RHA2116}
   (    1 /neuro/analog/E30 )
@@ -3589,13 +3589,13 @@
   (    5 GND )
   (    6 /neuro/analog/V3 )
   (    7 GND )
-  (    8 N-000743 )
-  (    9 N-000698 )
-  (   10 N-000699 )
+  (    8 N-000742 )
+  (    9 N-000697 )
+  (   10 N-000698 )
   (   11 ? )
-  (   12 N-000746 )
+  (   12 N-000745 )
   (   13 GND )
-  (   14 /neuro/analog/_reset )
+  (   14 /neuro/PF7 )
   (   15 /neuro/PF8 )
   (   16 ? )
   (   17 ? )
@@ -3626,10 +3626,10 @@
  ( /4C9AC245/4C2A3702/4C2A3389 SOT-23-6  U81 ADCS7476 {Lib=ADCS7476}
   (    1 /neuro/analog/V27 )
   (    2 GND )
-  (    3 N-000746 )
+  (    3 N-000745 )
   (    4 /neuro/analog/Sclk )
-  (    5 N-000748 )
-  (    6 /neuro/RFS1 )
+  (    5 N-000747 )
+  (    6 /neuro/analog/RFS1 )
  )
  ( /4C9AC245/4C2A3702/4C2A3387 0402  C163 0.1uf {Lib=C}
   (    1 GND )
@@ -3637,15 +3637,15 @@
  )
  ( /4C9AC245/4C2A3702/4C2A3385 0402  R140 15k {Lib=R}
   (    1 GND )
-  (    2 N-000743 )
+  (    2 N-000742 )
  )
  ( /4C9AC245/4C2A3702/4C2A3383 0402  R142 7.5k {Lib=R}
   (    1 GND )
-  (    2 N-000699 )
+  (    2 N-000698 )
  )
  ( /4C9AC245/4C2A3702/4C2A3380 0402  R141 25.2k {Lib=R}
   (    1 GND )
-  (    2 N-000698 )
+  (    2 N-000697 )
  )
  ( /4C9AC245/4C2A3702/4C2A337E 0402  C162 0.1uf {Lib=C}
   (    1 /neuro/analog/V3 )
@@ -3665,15 +3665,15 @@
  )
  ( /4C9AC245/4C2A3702/4C2A308B 0402  R137 25.2k {Lib=R}
   (    1 GND )
-  (    2 N-000735 )
+  (    2 N-000734 )
  )
  ( /4C9AC245/4C2A3702/4C2A3071 0402  R138 7.5k {Lib=R}
   (    1 GND )
-  (    2 N-000736 )
+  (    2 N-000735 )
  )
  ( /4C9AC245/4C2A3702/4CA0ED89 0402  R136 15k {Lib=R}
   (    1 GND )
-  (    2 N-000734 )
+  (    2 N-000733 )
  )
  ( /4C9AC245/4C2A3702/4CA0ED88 0402  C157 0.1uf {Lib=C}
   (    1 GND )
@@ -3682,10 +3682,10 @@
  ( /4C9AC245/4C2A3702/4C2A2DFA SOT-23-6  U79 ADCS7476 {Lib=ADCS7476}
   (    1 /neuro/analog/V27 )
   (    2 GND )
-  (    3 N-000744 )
+  (    3 N-000743 )
   (    4 /neuro/analog/Sclk )
-  (    5 N-000747 )
-  (    6 /neuro/RFS1 )
+  (    5 N-000746 )
+  (    6 /neuro/analog/RFS1 )
  )
  ( /4C9AC245/4C2A3702/4C2A2D16 QFN-40  U76 RHA2116 {Lib=RHA2116}
   (    1 /neuro/analog/E14 )
@@ -3695,13 +3695,13 @@
   (    5 GND )
   (    6 /neuro/analog/V3 )
   (    7 GND )
-  (    8 N-000734 )
-  (    9 N-000735 )
-  (   10 N-000736 )
+  (    8 N-000733 )
+  (    9 N-000734 )
+  (   10 N-000735 )
   (   11 ? )
-  (   12 N-000744 )
+  (   12 N-000743 )
   (   13 GND )
-  (   14 /neuro/analog/_reset )
+  (   14 /neuro/PF7 )
   (   15 /neuro/PF8 )
   (   16 ? )
   (   17 ? )
@@ -3734,11 +3734,11 @@
   (    2 GND )
  )
  ( /4C9AC245/4C2A3702/4C2A2B2D 0402  C153 2.2uf {Lib=C}
-  (    1 N-000745 )
+  (    1 N-000744 )
   (    2 GND )
  )
  ( /4C9AC245/4C2A3702/4C2A2B2A 0402  L22 ferrite {Lib=INDUCTOR}
-  (    1 N-000745 )
+  (    1 N-000744 )
   (    2 VDD )
  )
  ( /4C9AC245/4C2A3702/4C2A2B29 0402  C152 2.2uf {Lib=C}
@@ -3746,18 +3746,18 @@
   (    2 GND )
  )
  ( /4C9AC245/4C2A3702/4C2A25EA SC-70-5  U78 TC1016 {Lib=TC1016}
-  (    1 N-000713 )
+  (    1 N-000712 )
   (    2 ? )
   (    3 GND )
   (    4 /neuro/analog/V3 )
-  (    5 N-000713 )
+  (    5 N-000712 )
  )
  ( /4C9AC245/4C2A3702/4B69FA04 0402  C151 2.2uf {Lib=C}
   (    1 VEE )
   (    2 GND )
  )
  ( /4C9AC245/4C2A3702/4CA0ED79 0402  L21 ferrite {Lib=INDUCTOR}
-  (    1 N-000713 )
+  (    1 N-000712 )
   (    2 VEE )
  )
  ( /4C9AC245/4C2A3702/4913DE57 omnetics_36  U75 OMNETICS_36 {Lib=OMNETICS_36}
@@ -3799,7 +3799,7 @@
   (   36 GND )
  )
  ( /4C9AC245/4C2A3702/4CA0ECB2 0402  C154 2.2uf {Lib=C}
-  (    1 N-000713 )
+  (    1 N-000712 )
   (    2 GND )
  )
  ( /4C9AC245/4C2A3702/4CA0ECB1 0402  C158 2.2uf {Lib=C}
@@ -6382,8 +6382,8 @@ $endfootprintlist
 }
 { Pin List by Nets
 Net 1 "" ""
- U18 1
  R32 2
+ U18 1
  U16 29
 Net 2 "/RESET" "RESET"
  U13 B18
@@ -6397,26 +6397,26 @@ Net 4 "/MDC" "MDC"
  U13 H2
  U16 17
 Net 8 "" ""
- U13 C19
  R7 2
+ U13 C19
 Net 9 "" ""
+ C20 1
  U12 1
  U13 A18
- C20 1
 Net 10 "/RXDV" "RXDV"
  U13 B16
  U16 26
 Net 12 "/RXCLK" "RXCLK"
- U13 B15
  U16 7
+ U13 B15
  R20 2
 Net 14 "" ""
  U18 7
- R34 2
  U16 31
+ R34 2
 Net 15 "/CLKBUF" "CLKBUF"
- R7 1
  U16 5
+ R7 1
 Net 16 "" ""
  U7 H9
  U13 U19
@@ -6424,23 +6424,23 @@ Net 21 "" ""
  U13 W18
  U7 J7
 Net 22 "" ""
- U13 W11
  U7 G7
+ U13 W11
 Net 23 "" ""
- U13 Y18
  U7 J3
+ U13 Y18
 Net 24 "" ""
  U7 H3
  U13 Y17
 Net 25 "" ""
- U13 W15
  U7 G3
+ U13 W15
 Net 26 "" ""
- U7 J2
  U13 W17
+ U7 J2
 Net 27 "" ""
- U7 H2
  U13 W16
+ U7 H2
 Net 28 "" ""
  U7 G2
  U13 W14
@@ -6448,17 +6448,17 @@ Net 30 "" ""
  U3 12
  R2 2
 Net 31 "/RX" "RX"
- R2 1
  U13 L2
+ R2 1
 Net 32 "" ""
- U3 11
  R1 2
+ U3 11
 Net 33 "/TX" "TX"
- U13 L1
  R1 1
+ U13 L1
 Net 34 "" ""
- U7 J8
  U13 Y19
+ U7 J8
 Net 35 "" ""
  U7 H8
  U13 W19
@@ -6466,8 +6466,8 @@ Net 36 "/SRAS" "SRAS"
  U7 F8
  U13 T19
 Net 37 "" ""
- U13 V19
  U7 E8
+ U13 V19
 Net 38 "/DATA0" "DATA0"
  U13 Y8
  U7 A8
@@ -6484,17 +6484,17 @@ Net 42 "/DATA4" "DATA4"
  U13 Y6
  U7 C8
 Net 43 "/DATA5" "DATA5"
- U13 W6
  U7 D9
+ U13 W6
 Net 44 "/DATA6" "DATA6"
  U7 D8
  U13 Y5
 Net 45 "/DATA7" "DATA7"
- U7 E9
  U13 W5
+ U7 E9
 Net 46 "" ""
- U7 H1
  U13 Y16
+ U7 H1
 Net 47 "" ""
  U13 Y14
  U7 G1
@@ -6508,24 +6508,24 @@ Net 56 "/DATA15" "DATA15"
  U7 A2
  U13 V1
 Net 57 "/NRF_CSN" "NRF_CSN"
- U19 3
  R37 2
- U22 6
+ U19 3
  U13 K1
+ U22 6
 Net 58 "/NRF_IRQ" "NRF_IRQ"
- U22 8
  U13 J1
  U19 7
+ U22 8
 Net 60 "/PHYINT" "PHYINT"
+ U16 18
  U13 G1
  R18 2
- U16 18
 Net 63 "/DATA8" "DATA8"
- U13 Y4
  U7 E1
+ U13 Y4
 Net 64 "/DATA9" "DATA9"
- U13 W4
  U7 D2
+ U13 W4
 Net 65 "" ""
  U13 A4
  TP1 1
@@ -6536,11 +6536,11 @@ Net 67 "/DATA11" "DATA11"
  U13 W3
  U7 C2
 Net 70 "/DATA12" "DATA12"
- U7 C1
  U13 Y2
+ U7 C1
 Net 71 "/DATA13" "DATA13"
- U7 B2
  U13 W2
+ U7 B2
 Net 73 "" ""
  R13 1
  U13 P2
@@ -6548,34 +6548,34 @@ Net 74 "" ""
  R14 1
  U13 N2
 Net 75 "/NRF_CE" "NRF_CE"
- R36 2
+ U13 K2
  U19 2
  U22 7
- U13 K2
+ R36 2
 Net 79 "" ""
  R31 2
  U16 32
 Net 84 "" ""
- U16 3
  U18 12
+ U16 3
  R29 2
 Net 85 "" ""
  R30 2
- U18 10
  U16 2
+ U18 10
 Net 86 "" ""
- U18 11
  R40 1
+ U18 11
 Net 87 "" ""
  R39 1
  U18 9
 Net 88 "/COL" "COL"
  U13 B17
- U16 15
  R25 2
+ U16 15
 Net 89 "/TXD2" "TXD2"
- U13 B12
  U16 24
+ U13 B12
 Net 90 "/RXD1" "RXD1"
  U13 A12
  R22 2
@@ -6591,31 +6591,31 @@ Net 93 "" ""
  C21 2
  U9 3
 Net 94 "" ""
- U7 H7
  U13 W20
+ U7 H7
 Net 95 "" ""
  U7 F1
  U13 V20
 Net 96 "/SCAS" "SCAS"
- U7 F7
  U13 U20
+ U7 F7
 Net 97 "/SWE" "SWE"
  U13 T20
  U7 F9
 Net 101 "" ""
- U13 K20
  U7 F2
+ U13 K20
 Net 104 "/RXD3" "RXD3"
+ U16 8
  R24 2
  U13 B14
- U16 8
 Net 105 "/TXD3" "TXD3"
  U13 B13
  U16 25
 Net 106 "/RXD2" "RXD2"
- U16 9
- U13 A13
  R23 2
+ U13 A13
+ U16 9
 Net 107 "/TXEN" "TXEN"
  U13 B8
  U16 21
@@ -6627,30 +6627,30 @@ Net 109 "/RXER" "RXER"
  R19 2
  U13 B7
 Net 110 "/CRS" "CRS"
- U13 A7
  U16 14
+ U13 A7
 Net 115 "" ""
- R9 2
  U13 Y10
+ R9 2
 Net 116 "" ""
  U13 W10
  R10 2
 Net 117 "/RXD0" "RXD0"
- U16 11
  U13 B10
+ U16 11
  R21 2
 Net 118 "" ""
  U13 Y9
  R11 2
 Net 119 "" ""
- R12 2
  U13 W9
+ R12 2
 Net 120 "/TXD0" "TXD0"
  U13 B9
  U16 22
 Net 121 "/TXCLK" "TXCLK"
- U13 A9
  U16 20
+ U13 A9
 Net 122 "" ""
  R43 1
  D2 2
@@ -6666,99 +6666,99 @@ Net 125 "" ""
  R47 1
 Net 126 "" ""
  TP14 1
- D6 1
  U23 16
+ D6 1
 Net 127 "" ""
- D8 2
  R49 1
+ D8 2
 Net 128 "" ""
+ U4 1
  R4 1
  R3 2
  C16 2
- U4 1
 Net 129 "" ""
- C19 2
- L2 2
  R5 1
  U4 4
+ L2 2
  U8 2
+ C19 2
 Net 132 "/PF7" "PF7"
+ U13 B1
  U52 13
  U23 9
- U13 B1
 Net 133 "/PF6" "PF6"
  U23 8
  U13 C2
 Net 134 "/PF5" "PF5"
- U13 C1
  U23 7
+ U13 C1
 Net 135 "/PF4" "PF4"
- U23 6
  U13 D2
+ U23 6
 Net 136 "/PF3" "PF3"
- U13 D1
  U23 5
-Net 137 "/PF2" "PF2"
- U13 E2
+ U13 D1
+Net 137 "/wired/RCLK" "RCLK"
  U23 4
- U50 4
  U44 8
+ U13 E2
  U47 5
  U45 8
+ U50 4
 Net 138 "/wired/RFS" "RFS"
- U47 4
+ U45 6
+ U50 3
  U23 3
+ U47 4
  U44 6
  U13 E1
- U50 3
- U45 6
-Net 139 "/wired/D0" "D0"
+Net 139 "/PF0" "PF0"
  U13 F1
  U23 2
  U52 14
 Net 140 "/TDO" "TDO"
- U13 T1
  U15 14
+ U13 T1
 Net 141 "/TDI" "TDI"
  U15 12
  U13 R1
 Net 142 "/TCK" "TCK"
- U15 8
  U13 V2
+ U15 8
 Net 143 "/SPISS" "SPISS"
  U17 18
  U22 5
- R17 2
- U14 1
  U13 P1
+ U14 1
+ R17 2
 Net 144 "/MOSI" "MOSI"
+ U17 17
+ U19 5
+ R14 2
  U14 5
  U22 2
- U19 5
- U17 17
- R14 2
 Net 145 "/SCK" "SCK"
  U22 4
  R13 2
- U17 16
  U14 6
  U19 4
+ U17 16
 Net 150 "" ""
- U21 5
  U17 3
+ U21 5
 Net 151 "" ""
- U21 6
  U17 4
+ U21 6
 Net 152 "" ""
  U17 2
  U21 3
 Net 153 "" ""
  R5 2
- U4 5
  R6 1
+ U4 5
 Net 154 "" ""
- L2 1
  U4 6
+ L2 1
 Net 155 "/TMS" "TMS"
  U15 6
  U13 U2
@@ -6767,63 +6767,63 @@ Net 157 "" ""
  R26 1
 Net 158 "/_emu" "_emu"
  R27 2
- U15 2
  U13 T2
+ U15 2
 Net 159 "/_trst" "_trst"
  R28 2
  U13 U1
  U15 10
 Net 160 "" ""
- U4 10
  L1 1
+ U4 10
 Net 161 "" ""
- D15 2
  R56 1
+ D15 2
 Net 162 "" ""
- U22 11
- D15 1
  TP11 1
+ D15 1
+ U22 11
 Net 163 "" ""
- R54 1
  D13 2
+ R54 1
 Net 164 "" ""
- R52 1
  D11 2
+ R52 1
 Net 165 "" ""
- TP9 1
  D11 1
  U22 13
+ TP9 1
 Net 166 "" ""
- R50 1
  D9 2
+ R50 1
 Net 167 "" ""
  D7 2
  R48 1
 Net 168 "" ""
- TP7 1
  D7 1
+ TP7 1
  U22 15
 Net 169 "" ""
- R46 1
  D5 2
+ R46 1
 Net 170 "" ""
  D3 2
  R44 1
 Net 171 "" ""
- U22 17
  D3 1
  TP5 1
+ U22 17
 Net 172 "" ""
- R42 1
  D1 2
+ R42 1
 Net 174 "/V5" "V5"
- U5 1
  U2 1
+ U5 1
 Net 175 "/MISO" "MISO"
- R16 1
- R38 1
  U22 3
+ R38 1
  U17 5
+ R16 1
  U13 N1
 Net 176 "" ""
  U3 5
@@ -6832,18 +6832,18 @@ Net 180 "" ""
  U11 6
  U6 2
 Net 181 "" ""
- U11 5
+ C17 1
  U5 3
  U6 1
- C17 1
+ U11 5
  U13 E19
 Net 182 "" ""
  D10 2
  R51 1
 Net 183 "" ""
- U23 14
- TP16 1
  D10 1
+ TP16 1
+ U23 14
 Net 184 "" ""
  D12 2
  R53 1
@@ -6857,24 +6857,24 @@ Net 187 "" ""
  C11 1
  U3 2
 Net 188 "" ""
- C8 2
  U3 6
+ C8 2
 Net 189 "" ""
  U3 13
  U1 3
 Net 190 "" ""
- C13 2
  U3 3
+ C13 2
 Net 191 "" ""
  R16 2
  U14 2
  R15 2
 Net 192 "" ""
- R55 1
  D14 2
+ R55 1
 Net 193 "" ""
- D14 1
  U23 12
+ D14 1
  TP18 1
 Net 194 "" ""
  D16 2
@@ -6882,211 +6882,209 @@ Net 194 "" ""
 Net 195 "" ""
  C18 2
  L1 2
+ U10 2
  R4 2
  C16 1
- U10 2
 Net 196 "" ""
- U17 15
  U21 4
+ U17 15
 Net 197 "" ""
- R41 2
+ U17 1
  U20 3
  U17 19
- U17 1
  U21 7
+ R41 2
 Net 198 "" ""
- U4 9
- U4 7
- U4 3
- U2 2
- C2 2
- C3 2
  C1 2
+ U4 3
+ C3 2
+ C2 2
+ U4 7
+ U4 9
+ U2 2
 Net 199 "" ""
  U1 6
  U1 4
  U1 1
 Net 200 "" ""
- U3 14
  U1 2
+ U3 14
 Net 201 "" ""
  TP10 1
  U22 12
  D13 1
 Net 202 "" ""
  TP8 1
- D9 1
  U22 14
+ D9 1
 Net 203 "" ""
+ U22 16
  D5 1
  TP6 1
- U22 16
 Net 204 "" ""
+ U22 18
  TP4 1
  D1 1
- U22 18
 Net 205 "" ""
- U23 11
  TP19 1
+ U23 11
  D16 1
 Net 206 "" ""
- U23 13
- TP17 1
  D12 1
+ TP17 1
+ U23 13
 Net 207 "" ""
- D8 1
- U23 15
  TP15 1
+ U23 15
+ D8 1
 Net 208 "" ""
- U23 17
  D4 1
+ U23 17
  TP13 1
 Net 209 "" ""
  U13 E20
  U11 3
 Net 210 "/EVDD" "EVDD"
- C45 1
- C27 1
+ C34 1
  U18 6
+ L3 1
  U16 27
+ R35 1
+ C30 1
+ R34 1
+ R33 1
+ R32 1
+ U18 3
+ U16 1
  R30 1
  R29 1
- U16 1
- U16 12
- C35 1
- C34 1
- C30 1
- R32 1
- R35 1
- U18 3
  R40 2
- R34 1
- L3 1
- R33 1
+ U16 12
  R39 2
+ C35 1
+ C45 1
+ C27 1
 Net 211 "VEE" "VEE"
- C151 1
- L21 2
  U51 1
- C48 2
+ L21 2
+ C151 1
  U24 1
- U19 1
  TP30 1
  TP31 1
+ U19 1
+ C48 2
 Net 212 "" ""
- U19 6
  R38 2
+ U19 6
 Net 213 "VDD" "VDD"
- U74 20
- C133 1
- U65 J12
- U65 F12
- U33 7
- U33 3
- U68 20
- C134 1
- C131 1
- L22 2
- C152 1
- C130 1
  U25 20
  U65 A1
- U70 4
- U33 8
  R110 2
- R77 1
- R80 1
+ U70 4
+ C131 1
  C135 1
- C84 1
+ U74 20
+ R80 1
+ R77 1
+ U33 3
  C56 1
  R106 1
- R10 1
- R9 1
- C71 1
- C72 1
- R118 1
- R115 1
- L3 2
- C12 1
- C10 1
- C4 1
- C5 1
- C7 1
- C9 1
- R119 1
- R113 1
- R37 1
- C33 1
- C37 1
- U50 1
- U52 16
- R107 2
- U69 3
- TP26 1
- TP27 1
- C149 1
- U69 7
- U69 8
+ U68 20
+ C84 1
+ C130 1
+ C145 1
  C46 1
  C47 1
  C49 1
+ C4 1
+ R118 1
  C24 1
  C26 1
  C150 1
+ C12 1
+ R115 1
+ C10 1
+ C33 1
+ C37 1
+ TP26 1
+ TP27 1
+ C5 1
  C29 1
+ C7 1
+ R37 1
+ C149 1
+ C9 1
+ R107 2
  C39 1
- C145 1
- U55 3
+ R113 1
+ C152 1
+ R10 1
+ L22 2
+ C134 1
+ R9 1
+ C133 1
+ U50 1
+ U52 16
+ U33 8
+ U33 7
+ C72 1
+ L3 2
+ C71 1
+ U69 3
+ R119 1
+ U69 7
+ U69 8
+ R17 1
  C51 1
- U13 G11
  U55 1
- U30 L11
- U13 P11
- U22 20
+ U30 F12
  R26 2
  R27 1
- U30 F12
- U28 1
  U30 C12
  C108 1
+ U28 1
  U13 G20
+ U13 G11
+ U55 3
  R15 1
- R17 1
- C50 1
- R72 2
- U65 L7
+ U73 20
  U65 C7
+ U65 C12
  C52 1
+ U65 L11
+ R22 1
+ R21 1
  U14 8
  U14 7
  U14 3
- U65 C12
- U63 1
- U65 L11
+ R72 2
+ U13 P11
+ U22 20
  R25 1
  U30 A1
+ U30 L11
  R18 1
- U73 20
  U65 D9
  C6 2
  U65 B9
- R22 1
- R21 1
- R75 1
+ U65 L7
+ C50 1
+ U3 16
  U13 G9
- U60 5
+ U23 20
+ R69 2
  U13 P9
- U20 4
- C69 1
+ U13 G10
+ R68 1
+ U60 5
  C68 1
+ C69 1
  U10 1
  C66 1
- U34 20
  R81 1
+ U34 20
  C65 1
- U3 16
- R69 2
- U23 20
+ U13 L7
  U13 M7
  U13 N7
  U13 P7
@@ -7096,182 +7094,191 @@ Net 213 "VDD" "VDD"
  U13 K8
  U13 L8
  U13 M8
+ U30 P1
  U13 N8
  U13 P8
- C121 1
  L10 2
- L14 2
  U30 J12
- U13 G10
- R68 1
- R41 1
- U35 4
- U13 P10
+ C121 1
+ L14 2
+ U20 4
+ R75 1
  C70 1
- U17 20
+ R41 1
+ U13 P10
  U13 G7
- U30 P1
  U13 H7
+ U35 4
  U13 J7
  U13 K7
- U13 L7
+ U17 20
  U30 B9
- U7 B3
- U65 P3
- U30 C7
- C137 1
- U13 F19
- L20 2
- U65 G4
- C136 1
- U30 L7
- U7 J9
- U65 J4
+ U30 D9
+ U7 A7
+ U7 C7
  U7 A9
+ U7 J9
+ C137 1
+ U30 L7
+ C136 1
+ U7 B3
+ U7 D3
  U30 J4
  U30 N4
- U13 A16
- U7 A7
- U7 E7
+ U65 J12
+ U65 F12
  U30 D5
- U30 G4
+ L20 2
+ U7 E7
  U30 P3
+ U13 A16
+ U30 G4
+ U13 B19
+ U13 D19
+ U13 F19
+ U65 P3
+ U65 G4
+ U65 J4
  U65 N4
  U65 D5
- U13 D19
- U7 C7
- U7 D3
- U30 D9
- U13 B19
  U65 P1
+ U63 1
+ U30 C7
 Net 214 "/WIRED_STEP" "WIRED_STEP"
  U50 5
- U93 15
- U47 6
- U92 15
  U22 9
+ U47 6
  U13 M1
-Net 215 "/WIRED_RESET" "WIRED_RESET"
- U13 M2
+ U93 15
+ U92 15
+Net 215 "/wired/RESET" "RESET"
  U50 6
+ U13 M2
 Net 216 "" ""
- TP3 1
  U13 R20
+ TP3 1
 Net 217 "" ""
- U13 B4
  TP2 1
+ U13 B4
 Net 218 "/EVCC" "EVCC"
- U16 6
  C43 1
- C40 1
+ U16 6
  L4 1
+ C40 1
 Net 219 "" ""
- U11 4
  U6 3
+ U11 4
 Net 220 "" ""
- U13 F20
  U11 1
+ U13 F20
 Net 221 "" ""
- C15 1
- U13 A10
  U9 1
+ U13 A10
+ C15 1
 Net 222 "" ""
+ R35 2
  U16 30
  U18 8
- R35 2
 Net 223 "" ""
- U13 A19
  U12 3
  C22 1
+ U13 A19
 Net 224 "GND" "GND"
+ U30 D7
  U30 H4
- U30 L5
+ R123 2
  C68 2
+ U80 26
+ U51 2
+ U30 L5
+ C66 2
+ R125 2
  U30 C5
- C69 2
- U30 F4
+ U30 M4
  U30 K4
+ C65 2
  C74 2
  C73 2
  C59 2
  C60 2
- U74 10
- C65 2
- U30 M4
- C66 2
- U80 13
- U80 4
- U80 5
- U80 7
- U80 22
- C76 2
- U30 L6
+ U80 23
+ U80 24
+ U80 25
  C57 2
- C58 2
- R79 1
- C78 2
+ U80 22
+ U80 7
+ C80 2
+ C77 2
+ C76 2
+ U80 5
+ U30 D8
  C82 2
- U51 2
+ U30 L8
+ U30 A9
+ C78 2
+ C81 1
+ R79 1
+ C58 2
+ U30 L6
  C160 2
+ U74 10
+ C70 2
+ U74 19
+ R127 2
+ U30 C4
+ U30 D4
+ U30 F4
+ U30 A10
+ U80 4
  C164 2
  U80 18
  U80 27
- U80 26
- U80 25
- U80 24
- U80 23
- U30 A10
+ U80 13
  U30 B10
- C70 2
- U30 C4
- U30 D4
- U30 D7
- U30 D8
- U30 L8
- U30 A9
- C81 1
- C80 2
- C77 2
+ U41 2
  C202 2
+ U52 9
+ U52 10
+ C211 2
+ C183 2
+ C207 2
+ C208 1
+ C181 2
+ U90 5
+ U85 5
+ C209 2
+ C195 2
+ U87 5
+ C194 1
+ C193 2
+ C197 2
+ C180 1
  U89 5
  C201 1
  C200 2
- C211 2
- C207 2
- C183 2
- C181 2
- U85 5
- C208 1
- U41 2
- U52 9
- U52 10
- U90 5
- C209 2
- C195 2
- C197 2
- C193 2
- U87 5
- C194 1
  C204 2
+ C179 2
  U52 15
  U50 2
+ C186 2
  U50 8
- C180 1
- C179 2
  C187 1
  U86 5
  C188 2
  C190 2
- C186 2
  R76 1
+ U38 1
  C169 2
  C165 2
+ C166 1
  U32 17
  U32 14
  U32 20
  U32 8
+ C172 2
  C75 1
- C166 1
+ C173 1
+ C69 2
  U26 11
  U26 8
  U26 2
@@ -7279,9 +7286,9 @@ Net 224 "GND" "GND"
  C63 1
  R65 2
  U77 2
- U38 1
  U82 5
  C167 2
+ C54 1
  C55 1
  U84 5
  C174 2
@@ -7294,103 +7301,98 @@ Net 224 "GND" "GND"
  U38 36
  U38 18
  U38 19
- C172 2
- C173 1
  R62 1
- C54 1
  U65 L8
  U65 D8
- U67 14
- U65 F11
- U65 G11
- U67 17
- U65 H11
- U65 K11
- U54 2
  C114 1
- U65 L6
- C118 1
- U65 D7
- C141 2
- U65 C4
- C142 2
- U65 D4
- C146 2
- C143 2
- R117 1
- C140 1
- U67 8
- U67 20
- U65 M4
- R100 2
- U65 C5
- C127 1
- C126 1
- U65 L5
- U65 A10
- U65 B10
  U65 D10
- U61 2
+ C118 1
  U65 L10
  U65 M10
  U65 B11
  U65 C11
  U65 D11
+ U65 F11
+ U65 G11
+ U65 H11
+ U65 K11
+ U65 L6
+ U65 D7
+ C113 1
+ C141 2
+ C142 2
+ C146 2
  C147 1
+ C140 1
+ U65 A14
+ U67 8
+ U67 20
+ U65 C4
+ U65 D4
  U65 F4
+ U61 2
  U65 H4
- R97 1
  U65 K4
- R126 2
- U73 1
- U73 10
+ U65 M4
+ U67 14
+ U65 C5
+ U67 17
+ U65 L5
+ U65 A10
+ U65 B10
+ U54 2
+ R97 1
+ R100 2
+ C127 1
+ C126 1
  U73 19
  U58 4
  U55 2
  C108 2
+ U60 3
  C115 2
  U59 2
  C120 2
  C121 2
  C112 2
- R128 2
- R112 1
- U56 5
- U56 4
- C137 2
- C136 2
- R124 2
- R122 2
- R120 2
  R134 2
  R132 2
  R130 2
+ R128 2
+ R112 1
+ R120 2
+ U56 5
+ U56 4
+ R122 2
+ R124 2
+ U73 10
+ U73 1
+ R126 2
+ C137 2
+ C136 2
+ R95 2
  C117 2
  C110 2
  C106 2
- R95 2
- C113 1
- U60 3
  C116 2
  C109 2
  C107 2
- U76 22
- U76 13
- C145 2
- C150 2
- U76 23
- U69 4
- U76 24
- C159 2
  C151 2
- C134 2
- C133 2
- U78 3
- C158 2
- U75 1
- C111 1
- C138 2
  C149 2
+ C153 2
+ U69 4
+ C159 2
+ C150 2
+ C145 2
+ C138 2
+ C139 2
+ C154 2
+ C158 2
+ U78 3
+ U76 24
+ U76 23
+ U76 13
+ U76 22
  U76 25
  U76 26
  U76 27
@@ -7398,75 +7400,67 @@ Net 224 "GND" "GND"
  U75 18
  U75 36
  U75 19
- C154 2
- U74 19
- R127 2
- R125 2
- R123 2
- R121 2
- C123 2
- C122 2
- C152 2
- C153 2
+ C111 1
  C135 2
  U74 1
  C131 2
+ R121 2
+ C152 2
+ C134 2
+ C133 2
  C130 2
  C128 2
  C125 2
- R136 1
- R138 1
- R114 1
+ C123 2
+ C122 2
+ C132 2
+ C129 2
+ U64 2
+ U64 4
+ C157 1
+ U70 1
+ U76 5
+ U76 7
+ R137 1
  C156 2
  C155 2
- C157 1
- U71 1
- U71 2
- U71 2
- U68 6
  U68 7
  U68 8
  U68 9
  U68 10
  C148 2
- U65 A14
- C132 2
- C129 2
- U64 2
- U64 4
+ C143 2
+ R117 1
+ R136 1
+ R138 1
+ U71 1
+ U71 2
+ U71 2
  U65 P14
- U70 1
+ U68 6
+ C161 2
+ R129 2
+ C162 2
+ U66 1
+ U66 4
+ U66 7
+ U75 1
  R135 2
  R133 2
  R131 2
- R129 2
- U81 2
- C139 2
- C161 2
- C162 2
- U66 13
- U61 8
+ R142 1
+ R141 1
+ R114 1
  U79 2
  U76 4
- U61 11
- U76 5
- U76 7
- R137 1
- C163 1
- U66 1
- R140 1
- R142 1
- U66 4
- U66 7
  U66 9
  U66 11
- R141 1
- U25 19
- U25 8
- U25 9
- U25 10
- R36 1
- C27 2
+ U66 13
+ U81 2
+ C163 1
+ U61 8
+ U61 11
+ R140 1
  C43 2
  C28 2
  C25 2
@@ -7474,23 +7468,6 @@ Net 224 "GND" "GND"
  C33 2
  C37 2
  C40 2
- U19 8
- C48 1
- C67 2
- C64 2
- U29 2
- U25 1
- U29 4
- U25 6
- U25 7
- C39 2
- C29 2
- C26 2
- C24 2
- C49 2
- C47 2
- C46 2
- C22 2
  C9 2
  C7 2
  C5 2
@@ -7499,32 +7476,127 @@ Net 224 "GND" "GND"
  C12 2
  U11 2
  C15 2
+ U19 8
+ C48 1
+ R36 1
+ C27 2
+ C22 2
+ U9 4
+ U9 2
+ C21 1
+ C20 2
  C30 2
  C34 2
  C35 2
  R11 1
  R12 1
- C20 2
- U9 4
- U9 2
- C21 1
- C41 2
- C17 2
+ U25 19
+ U25 10
+ U25 9
+ TP24 1
+ C72 2
+ C71 2
+ TP25 1
+ C53 1
+ C83 1
+ R74 1
+ U33 4
+ C84 2
+ U25 8
+ U25 7
+ U25 6
+ U25 1
+ C56 2
+ C39 2
+ C29 2
+ C26 2
+ C24 2
+ C49 2
+ C47 2
+ C46 2
+ U31 7
+ U31 9
+ U3 15
+ U3 10
+ U3 9
+ R49 2
+ U23 19
+ U31 11
+ U23 10
+ U31 13
+ U23 1
  R43 2
  R45 2
  R47 2
  R3 1
- U37 1
- U37 2
- U37 2
+ U34 6
+ U34 7
+ U34 8
+ U34 9
+ U34 10
  C3 1
  C2 1
- U13 J12
- U13 H12
+ U31 1
+ C32 2
+ U31 4
+ U35 1
+ U17 10
+ U17 9
+ U17 8
+ U17 7
+ U17 6
+ U4 8
+ U4 2
+ C18 1
+ C19 1
+ R6 2
+ U15 7
+ U15 4
+ U15 1
+ R28 1
+ U21 2
+ U21 2
+ U21 1
+ U20 1
+ U15 13
+ U15 11
+ U15 9
+ U12 4
+ U12 2
+ U13 A1
+ U30 A14
+ R31 1
+ C45 2
+ R23 1
+ R24 1
+ R19 1
+ R20 1
+ U13 N11
+ U13 M11
+ U13 L11
+ U13 K11
+ U13 J11
+ U13 H11
+ U13 Y20
+ U16 P4
+ U16 P3
+ U16 P2
+ U13 G19
+ U13 A17
+ U16 P1
+ U13 L19
+ U7 D7
+ U7 B7
+ U7 E3
+ U7 C3
+ U7 A3
+ R8 1
+ U7 J1
+ U7 A1
+ U13 Y1
  U13 B20
  U13 A20
  U13 N10
- U30 K11
  U13 M10
  U13 L10
  U13 K10
@@ -7536,87 +7608,37 @@ Net 224 "GND" "GND"
  U13 K9
  U13 J9
  U13 H9
+ U37 1
  C36 2
  C38 2
- U31 1
- U3 15
- U3 10
- U3 9
- U31 4
- R49 2
- U23 19
- U31 7
- U23 10
- U23 1
- TP25 1
- C32 2
- C71 2
- U34 6
- U34 7
- C72 2
- TP24 1
- U34 8
- U34 9
- U34 10
- C84 2
- R8 1
- U7 J1
- U7 A1
- U13 Y1
- U13 A1
- R31 1
- U30 A14
- C45 2
- R23 1
- R24 1
- R19 1
- U16 P4
- U16 P3
- U16 P2
- C83 1
- U13 G19
- U13 A17
- U16 P1
- U13 L19
- U7 D7
- U7 B7
- U7 E3
- R74 1
- U7 C3
- U7 A3
- U13 M13
- U13 L13
- U30 B11
- U13 K13
- U13 J13
- U13 H13
- U30 C11
- U30 D11
- U13 N12
- U30 F11
- U30 G11
- U13 M12
- U30 H11
- U13 L12
- U13 K12
- R20 1
- U13 N11
- U13 M11
- U13 L11
- U13 K11
- U13 J11
- U13 H11
- U13 Y20
+ C41 2
+ U37 2
+ U37 2
+ C17 2
  U13 A14
- U33 4
  U30 P14
  U30 D10
  U30 L10
  U30 M10
  U13 N13
- U22 10
- U22 1
- R48 2
+ U13 M13
+ U30 B11
+ U13 L13
+ U30 C11
+ U30 D11
+ U13 K13
+ U30 F11
+ U30 G11
+ U13 J13
+ U30 H11
+ U13 H13
+ U13 N12
+ U13 M12
+ U13 L12
+ U13 K12
+ U30 K11
+ U13 J12
+ U13 H12
  C1 1
  U6 s2
  U6 s1
@@ -7625,1570 +7647,1549 @@ Net 224 "GND" "GND"
  C11 2
  C8 1
  U1 g2
- U1 g1
- U1 5
- C56 2
- R46 2
- R44 2
- R42 2
- U5 5
- U5 4
  U22 19
- C50 2
- C6 1
- C52 2
+ U22 10
+ U22 1
+ C64 2
+ R48 2
  U14 4
  R53 2
  R55 2
  R57 2
- U4 8
- U4 2
- C18 1
- C19 1
- R6 2
- U35 1
- U15 7
- U15 4
- U15 1
- R28 1
- U31 9
- U21 2
- U21 2
- U21 1
- U20 1
- U31 11
- U31 13
- U15 13
- U15 11
- U15 9
- U12 4
- U12 2
- U17 10
- U17 9
- U17 8
- U17 7
- U17 6
+ C67 2
+ C50 2
+ U1 g1
+ U1 5
+ C6 1
+ C52 2
+ R50 2
+ C51 2
+ U29 2
+ U29 4
+ U4 11
  R56 2
  R54 2
  R52 2
- R50 2
- C51 2
- U4 11
+ U5 4
+ U5 5
+ R42 2
+ R44 2
+ R46 2
 Net 225 "" ""
  U7 F3
- R8 2
  U13 P20
+ R8 2
 Net 226 "VCC" "VCC"
- C122 1
- C123 1
- C125 1
- C128 1
- TP28 1
- TP29 1
- U65 E11
- U65 L9
- U65 L4
- U65 E4
- C41 1
- C38 1
- C36 1
- C60 1
- C59 1
  C58 1
- U8 1
- U27 1
- U65 D6
- U62 1
- U65 J11
- U13 K14
- U13 L14
- L4 2
- U13 M14
- U13 G12
- U30 L9
- U30 E4
- U30 L4
- U13 N14
- U13 P14
- U30 D6
- C32 1
- U30 J11
  C57 1
  U30 E11
+ U65 E11
+ C128 1
+ C125 1
+ C123 1
+ U65 D6
+ U30 J11
+ U30 L4
+ C23 1
  U13 P12
  U13 G13
+ U65 J11
+ U30 L9
+ U13 M14
+ L4 2
+ U65 E4
+ TP29 1
+ TP28 1
+ U13 G12
+ U30 D6
+ U65 L4
+ C122 1
  U13 P13
- U13 J14
- C23 1
- C25 1
- C28 1
- U13 H14
  U13 G14
+ U13 H14
+ U13 J14
+ U13 K14
+ U13 L14
+ C60 1
+ U27 1
+ C59 1
+ U62 1
+ U13 N14
+ U65 L9
+ U8 1
+ U30 E4
+ C32 1
+ C36 1
+ C25 1
+ C38 1
+ U13 P14
+ C41 1
+ C28 1
 Net 235 "" ""
- D18 2
- R59 1
-Net 236 "" ""
  D17 2
  R58 1
+Net 236 "" ""
+ TP20 1
+ U25 18
+ D20 1
 Net 237 "" ""
  TP22 1
  D18 1
  U25 16
 Net 238 "/neuro/PF3" "PF3"
- U25 4
- U30 C3
  U32 6
+ U30 C3
+ U25 4
 Net 239 "/neuro/PF1" "PF1"
- R72 1
  U30 C1
  U25 3
  U32 2
+ R72 1
 Net 240 "/neuro/PF0" "PF0"
- U25 2
- U30 D2
  U32 1
+ U30 D2
+ U25 2
 Net 241 "" ""
- D20 1
- TP20 1
- U25 18
-Net 242 "" ""
- R78 2
- R77 2
  U33 2
-Net 243 "/neuro/analog/DR1SEC" "DR1SEC"
+ R77 2
+ R78 2
+Net 242 "/neuro/analog/DR1SEC" "DR1SEC"
  U30 F3
  R143 1
-Net 244 "/neuro/RFS1" "RFS1"
- R66 2
+Net 243 "/neuro/analog/RFS1" "RFS1"
  U79 6
  U81 6
-Net 245 "/neuro/analog/_reset" "_reset"
- U76 14
- U30 B4
+ R66 2
+Net 244 "/neuro/PF7" "PF7"
  U80 14
-Net 246 "/neuro/SCK" "SCK"
- U34 16
- R74 2
- U33 6
- R70 2
- U32 3
-Net 247 "/neuro/MOSI" "MOSI"
- U32 4
- U34 17
- U33 5
+ U30 B4
+ U76 14
+Net 245 "/neuro/MOSI" "MOSI"
  R71 2
-Net 248 "/neuro/PF2" "PF2"
- U34 18
- U33 1
- U30 C2
+ U34 17
+ U32 4
+ U33 5
+Net 246 "/neuro/PF2" "PF2"
  R80 2
-Net 249 "/neuro/MISO" "MISO"
+ U30 C2
+ U33 1
+ U34 18
+Net 247 "/neuro/MISO" "MISO"
  R73 2
  U34 5
- R78 1
  U30 E2
-Net 250 "" ""
- R71 1
+ R78 1
+Net 248 "" ""
  U30 D3
-Net 252 "" ""
- C79 1
- C81 2
- U36 1
-Net 253 "/neuro/PF8" "PF8"
- U30 A2
- U25 5
- U80 15
- U76 15
-Net 254 "/neuro/analog/Sclk" "Sclk"
- R67 2
- U79 4
- U81 4
-Net 255 "/neuro/analog/DR1PRI" "DR1PRI"
- R139 1
- U30 G3
-Net 256 "" ""
- U34 2
- C83 2
- U37 3
-Net 258 "" ""
- R61 1
- D20 2
-Net 259 "" ""
- R60 1
- D19 2
-Net 260 "" ""
- U25 17
- D19 1
- TP21 1
-Net 261 "" ""
- U25 15
- TP23 1
- D17 1
-Net 262 "" ""
- R58 2
- R59 2
- R61 2
- R60 2
-Net 263 "" ""
+ R71 1
+Net 249 "" ""
  U30 G2
  R66 1
-Net 264 "" ""
+Net 251 "" ""
+ U36 1
+ C79 1
+ C81 2
+Net 252 "/neuro/PF8" "PF8"
+ U25 5
+ U30 A2
+ U76 15
+ U80 15
+Net 253 "/neuro/analog/Sclk" "Sclk"
+ R67 2
+ U81 4
+ U79 4
+Net 254 "/neuro/DR1PRI" "DR1PRI"
+ R139 1
+ U30 G3
+Net 255 "/neuro/SCK" "SCK"
+ U34 16
+ U32 3
+ R70 2
+ U33 6
+ R74 2
+Net 256 "" ""
+ U37 3
+ C83 2
+ U34 2
+Net 257 "" ""
+ D20 2
+ R61 1
+Net 258 "" ""
+ D19 2
+ R60 1
+Net 259 "" ""
+ D19 1
+ TP21 1
+ U25 17
+Net 260 "" ""
+ D18 2
+ R59 1
+Net 261 "" ""
+ D17 1
+ U25 15
+ TP23 1
+Net 262 "" ""
+ R60 2
+ R59 2
+ R58 2
+ R61 2
+Net 263 "" ""
  U30 G1
  R67 1
-Net 265 "" ""
- R70 1
+Net 264 "" ""
  U30 D1
-Net 271 "" ""
+ R70 1
+Net 270 "" ""
  U30 D14
  R68 2
-Net 272 "" ""
- U37 4
+Net 271 "" ""
  U34 15
-Net 273 "" ""
- R73 1
- U32 5
-Net 274 "" ""
+ U37 4
+Net 272 "" ""
  L9 1
- U32 12
  L7 1
-Net 275 "" ""
+ U32 12
+Net 273 "" ""
  R64 1
  C63 2
  U27 2
  L6 2
  U26 4
-Net 276 "" ""
+Net 274 "" ""
+ U26 5
  R64 2
  R65 1
- U26 5
-Net 277 "" ""
+Net 275 "" ""
  U26 10
  L5 1
-Net 278 "" ""
- U31 5
+Net 276 "" ""
  R69 1
-Net 279 "" ""
+ U31 5
+Net 277 "" ""
+ R73 1
+ U32 5
+Net 278 "" ""
  U26 6
  L6 1
-Net 280 "" ""
- C61 1
+Net 279 "" ""
+ U28 2
  R63 2
+ C61 1
  L5 2
  C62 2
- U28 2
-Net 281 "" ""
- U32 13
+Net 280 "" ""
  L8 1
+ U32 13
  L7 2
-Net 282 "" ""
- U34 3
+Net 281 "" ""
  U37 5
-Net 283 "" ""
- U37 7
- U34 1
+ U34 3
+Net 282 "" ""
+ U35 3
  U34 19
  R81 2
- U35 3
-Net 284 "" ""
- C67 1
- U29 3
- U32 10
+ U34 1
+ U37 7
+Net 283 "" ""
  U30 A11
-Net 285 "" ""
+ U29 3
+ C67 1
+ U32 10
+Net 284 "" ""
+ U29 1
  C64 1
  U30 A12
- U29 1
-Net 286 "" ""
- U34 4
+Net 285 "" ""
  U37 6
-Net 294 "/neuro/TCK" "TCK"
- U31 8
+ U34 4
+Net 293 "/neuro/TCK" "TCK"
  U30 P2
-Net 295 "/neuro/TMS" "TMS"
- U31 6
+ U31 8
+Net 294 "/neuro/TMS" "TMS"
  U30 N2
-Net 296 "/neuro/_emu" "_emu"
+ U31 6
+Net 295 "/neuro/_emu" "_emu"
  R75 2
  U30 M2
  U31 2
-Net 302 "/neuro/_trst" "_trst"
+Net 301 "/neuro/_trst" "_trst"
  U31 10
  U30 N1
  R76 2
-Net 307 "/neuro/RESET" "RESET"
+Net 306 "/neuro/RESET" "RESET"
  U30 C10
  U35 2
-Net 362 "/neuro/TDO" "TDO"
+Net 361 "/neuro/TDO" "TDO"
  U30 N3
  U31 14
-Net 363 "/neuro/TDI" "TDI"
+Net 362 "/neuro/TDI" "TDI"
  U30 M3
  U31 12
-Net 383 "" ""
+Net 382 "" ""
  R79 2
  U32 16
-Net 384 "" ""
- L8 2
+Net 383 "" ""
  C79 2
-Net 385 "" ""
- U32 11
- L9 2
- C78 1
+ L8 2
+Net 384 "" ""
  C82 1
-Net 386 "" ""
- U32 15
+ C78 1
+ L9 2
+ U32 11
+Net 385 "" ""
  U32 18
- C74 1
- C76 1
- C73 1
+ U32 15
  U32 7
- C77 1
  C80 1
+ C76 1
  L10 1
-Net 387 "" ""
+ C77 1
+ C74 1
+ C73 1
+Net 386 "" ""
  U32 19
  C75 2
-Net 389 "" ""
- R63 1
+Net 388 "" ""
  U26 1
  R62 2
  C61 2
-Net 390 "" ""
- U26 3
- C53 2
- C54 2
+ R63 1
+Net 389 "" ""
  U24 2
  C55 2
- U26 7
+ C53 2
+ C54 2
  U26 9
-Net 391 "" ""
- U93 8
+ U26 3
+ U26 7
+Net 390 "" ""
  R85 2
-Net 392 "" ""
+ U93 8
+Net 391 "" ""
  U93 10
  R87 2
-Net 393 "" ""
+Net 392 "" ""
  R86 2
  U93 9
-Net 394 "/wired/sd1" "sd1"
- U47 3
+Net 393 "/wired/sd1" "sd1"
  R89 1
-Net 395 "/wired/VREF" "VREF"
- C101 2
+ U47 3
+Net 394 "/wired/VREF" "VREF"
  U45 1
- C100 2
+ C101 2
  U44 1
-Net 396 "" ""
+ C100 2
+Net 395 "" ""
  U44 3
  U92 12
-Net 397 "" ""
+Net 396 "" ""
  U45 3
  U93 12
-Net 398 "/wired/V3" "V3"
+Net 397 "/wired/V3" "V3"
  U93 21
- U93 6
+ U46 1
  U92 19
  U93 19
- U46 1
- C95 1
- C94 1
+ U93 6
  U42 4
- C97 1
+ U92 21
  C91 1
  C92 1
- U92 21
+ C94 1
+ C95 1
  U92 6
-Net 401 "/wired/_reset" "_reset"
+ C97 1
+Net 400 "/wired/_reset" "_reset"
+ U47 7
  U93 14
  U92 14
- U47 7
-Net 402 "/wired/E22" "E22"
- U38 25
+Net 401 "/wired/E22" "E22"
  U93 33
-Net 403 "/wired/E21" "E21"
+ U38 25
+Net 402 "/wired/E21" "E21"
  U38 24
  U93 32
-Net 404 "/wired/E20" "E20"
+Net 403 "/wired/E20" "E20"
  U38 23
  U93 31
-Net 406 "/wired/E29" "E29"
- U38 32
+Net 405 "/wired/E29" "E29"
  U93 40
-Net 407 "/wired/E19" "E19"
+ U38 32
+Net 406 "/wired/E19" "E19"
  U38 22
  U93 30
-Net 409 "/wired/E32" "E32"
+Net 408 "/wired/E32" "E32"
  U93 3
  U38 35
-Net 410 "/wired/E31" "E31"
- U38 34
+Net 409 "/wired/E31" "E31"
  U93 2
-Net 411 "/wired/E30" "E30"
- U38 33
+ U38 34
+Net 410 "/wired/E30" "E30"
  U93 1
-Net 412 "/wired/E12" "E12"
+ U38 33
+Net 411 "/wired/E12" "E12"
  U38 6
  U92 39
-Net 413 "/wired/V3B" "V3B"
+Net 412 "/wired/V3B" "V3B"
+ U45 10
+ U45 9
  U44 9
  C98 1
  U43 4
- U45 9
  U44 10
- U45 10
-Net 415 "/wired/E13" "E13"
- U92 40
+Net 414 "/wired/E13" "E13"
  U38 5
-Net 417 "" ""
+ U92 40
+Net 416 "" ""
  U92 10
  R84 2
-Net 418 "" ""
+Net 417 "" ""
  U92 8
  R82 2
-Net 419 "/wired/E16" "E16"
+Net 418 "/wired/E16" "E16"
  U38 2
  U92 3
-Net 420 "/wired/E15" "E15"
+Net 419 "/wired/E15" "E15"
  U92 2
  U38 3
-Net 421 "/wired/E14" "E14"
- U92 1
+Net 420 "/wired/E14" "E14"
  U38 4
-Net 422 "/wired/V0" "V0"
- U92 23
- C90 1
- U92 13
- C96 2
- U45 4
- U45 5
- U92 22
- C101 1
- U51 5
- U48 1
- R86 1
- R87 1
- R85 1
- C100 1
- U46 3
- C92 2
- U44 4
- U44 5
- U92 24
- C102 1
- C104 2
- U93 27
- U93 26
- U93 7
- U43 3
- U93 5
- U93 25
- C88 2
- U93 4
- C98 2
- U93 24
- U52 2
- U52 5
- U93 23
- U93 13
- U93 22
- U47 1
- C89 1
- U93 18
- U50 15
- C97 2
- C87 2
- U92 7
+ U92 1
+Net 421 "/wired/V0" "V0"
  C93 2
- U92 5
- U92 4
- C221 2
- C222 2
+ C89 1
+ R82 1
+ R84 1
+ R83 1
+ C92 2
+ C91 2
  U50 10
  U50 9
  U52 8
  U52 7
  U52 6
- R83 1
- U49 3
- C103 2
- U92 25
- C95 2
- C94 2
- C91 2
- R82 1
- U92 26
- U92 27
- U92 18
- R84 1
- C105 2
+ U50 15
+ C97 2
+ C87 2
  C85 2
  U42 3
- C99 2
  C86 2
-Net 423 "/wired/V3C" "V3C"
+ C99 2
+ U52 5
+ U52 2
+ U48 1
+ U51 5
+ C101 1
+ U45 5
+ U45 4
+ C96 2
+ C100 1
+ U46 3
+ U44 5
+ U44 4
+ U49 3
+ C103 2
+ C105 2
+ C94 2
+ C95 2
+ R86 1
+ R87 1
+ R85 1
+ C90 1
+ U93 18
+ U93 27
+ U93 26
+ U93 25
+ U93 24
+ C98 2
+ C88 2
+ U43 3
+ C104 2
+ C102 1
+ U47 1
+ U92 18
+ U92 27
+ U92 26
+ U92 25
+ U92 24
+ U92 23
+ U92 13
+ U92 22
+ U93 23
+ U93 13
+ U93 22
+ U93 7
+ U93 5
+ U93 4
+ C222 2
+ C221 2
+ U92 4
+ U92 7
+ U92 5
+Net 422 "/wired/V3C" "V3C"
+ U50 16
+ U52 1
  C221 1
  C105 1
  C222 1
  U49 4
- U52 1
- U50 16
-Net 424 "" ""
+Net 423 "" ""
  U52 4
  U48 3
-Net 425 "" ""
+Net 424 "" ""
  R91 2
  U48 5
-Net 426 "" ""
+Net 425 "" ""
  R93 2
  U48 7
-Net 427 "" ""
- U48 4
+Net 426 "" ""
  R90 2
-Net 428 "" ""
+ U48 4
+Net 427 "" ""
  U48 6
  R92 2
-Net 429 "/wired/E24" "E24"
+Net 428 "/wired/E24" "E24"
  U93 35
  U38 27
-Net 430 "/wired/E26" "E26"
- U93 37
+Net 429 "/wired/E26" "E26"
  U38 29
-Net 431 "/wired/E28" "E28"
- U38 31
+ U93 37
+Net 430 "/wired/E28" "E28"
  U93 39
-Net 432 "/wired/E27" "E27"
- U38 30
+ U38 31
+Net 431 "/wired/E27" "E27"
  U93 38
-Net 433 "/wired/E25" "E25"
- U93 36
+ U38 30
+Net 432 "/wired/E25" "E25"
  U38 28
-Net 434 "/wired/E23" "E23"
+ U93 36
+Net 433 "/wired/E23" "E23"
  U38 26
  U93 34
-Net 435 "/wired/E17" "E17"
- U93 28
+Net 434 "/wired/E17" "E17"
  U38 20
-Net 436 "/wired/E10" "E10"
- U38 8
+ U93 28
+Net 435 "/wired/E10" "E10"
  U92 37
-Net 437 "/wired/E9" "E9"
- U92 36
+ U38 8
+Net 436 "/wired/E9" "E9"
  U38 9
-Net 438 "/wired/E7" "E7"
- U92 34
+ U92 36
+Net 437 "/wired/E7" "E7"
  U38 11
-Net 439 "/wired/E5" "E5"
+ U92 34
+Net 438 "/wired/E5" "E5"
  U92 32
  U38 13
-Net 440 "/wired/E3" "E3"
+Net 439 "/wired/E3" "E3"
  U92 30
  U38 15
-Net 441 "/wired/E1" "E1"
- U92 28
+Net 440 "/wired/E1" "E1"
  U38 17
-Net 442 "/wired/sd0" "sd0"
- R88 1
+ U92 28
+Net 441 "/wired/sd0" "sd0"
  U47 2
-Net 443 "/wired/V5" "V5"
- U49 5
- U49 1
- C104 1
- U48 8
- C102 2
- U47 8
+ R88 1
+Net 442 "/wired/V5" "V5"
  C103 1
- U51 6
- C85 1
+ U49 1
  L11 2
-Net 444 "" ""
+ U49 5
+ U48 8
+ C85 1
+ U47 8
+ U51 6
+ C102 2
+ C104 1
+Net 443 "" ""
  R83 2
  U92 9
-Net 445 "" ""
+Net 444 "" ""
  U52 3
  U48 2
-Net 446 "/wired/E2" "E2"
+Net 445 "/wired/E2" "E2"
  U38 16
  U92 29
-Net 447 "/wired/E4" "E4"
+Net 446 "/wired/E4" "E4"
  U38 14
  U92 31
-Net 448 "/wired/E6" "E6"
+Net 447 "/wired/E6" "E6"
  U92 33
  U38 12
-Net 449 "/wired/E8" "E8"
+Net 448 "/wired/E8" "E8"
  U92 35
  U38 10
-Net 450 "/wired/E11" "E11"
- U92 38
+Net 449 "/wired/E11" "E11"
  U38 7
-Net 451 "/wired/E18" "E18"
+ U92 38
+Net 450 "/wired/E18" "E18"
  U38 21
  U93 29
-Net 452 "/wired/V25" "V25"
- U46 2
+Net 451 "/wired/V25" "V25"
  U44 2
  C96 1
  U45 2
- C93 1
- U41 5
- C89 2
- C90 2
  C99 1
-Net 453 "" ""
+ C89 2
+ U41 5
+ C93 1
+ U46 2
+ C90 2
+Net 452 "" ""
  R88 2
  U44 7
-Net 454 "" ""
+Net 453 "" ""
  R91 1
  U50 13
-Net 455 "" ""
+Net 454 "" ""
  R92 1
  U50 12
-Net 456 "" ""
- R93 1
+Net 455 "" ""
  U50 11
-Net 461 "" ""
+ R93 1
+Net 460 "" ""
  U50 14
  R90 1
-Net 468 "" ""
+Net 467 "" ""
+ C87 1
+ U43 1
  U41 1
  U41 3
- U43 1
- C86 1
- C87 1
  U42 5
- L11 1
  U43 5
- U42 1
  C88 1
-Net 471 "" ""
+ U42 1
+ L11 1
+ C86 1
+Net 470 "" ""
  U45 7
  R89 2
-Net 472 "/emg/PF2" "PF2"
+Net 471 "/emg/PF2" "PF2"
  R118 2
- U68 18
- U74 4
  U65 C2
  U69 1
-Net 473 "/emg/PF3" "PF3"
+ U74 4
+ U68 18
+Net 472 "/emg/PF3" "PF3"
  U67 6
- U74 5
  U65 C3
-Net 474 "/emg/PF4" "PF4"
+ U74 5
+Net 473 "/emg/PF4" "PF4"
  U74 6
  U65 B1
-Net 475 "/emg/PF5" "PF5"
+Net 474 "/emg/PF5" "PF5"
  U65 B2
  U74 7
-Net 476 "/emg/PF6" "PF6"
- U65 B3
+Net 475 "/emg/PF6" "PF6"
  U74 8
-Net 477 "/emg/PF7" "PF7"
+ U65 B3
+Net 476 "/emg/PF7" "PF7"
  U65 B4
  U74 9
-Net 478 "" ""
- R127 1
+Net 477 "" ""
  D28 2
-Net 479 "" ""
+ R127 1
+Net 478 "" ""
  D28 1
- TP43 1
  U74 15
-Net 480 "" ""
- R125 1
+ TP43 1
+Net 479 "" ""
  D26 2
-Net 481 "" ""
- D24 2
+ R125 1
+Net 480 "" ""
  R123 1
-Net 482 "" ""
+ D24 2
+Net 481 "" ""
  U74 17
  TP41 1
  D24 1
-Net 483 "" ""
+Net 482 "" ""
  R121 1
  D22 2
-Net 484 "" ""
+Net 483 "" ""
  R106 2
  U65 D14
-Net 485 "/emg/PF0" "PF0"
+Net 484 "/emg/PF0" "PF0"
  U67 1
  U65 D2
  U74 2
-Net 486 "/emg/PF1" "PF1"
+Net 485 "/emg/PF1" "PF1"
  U74 3
  R110 1
- U67 2
  U65 C1
-Net 489 "/emg/MOSI" "MOSI"
- U73 2
- U68 17
- R109 2
+ U67 2
+Net 488 "/emg/MOSI" "MOSI"
  U67 4
+ U68 17
  U69 5
-Net 490 "" ""
- U65 D1
+ U73 2
+ R109 2
+Net 489 "" ""
  R108 1
-Net 491 "" ""
+ U65 D1
+Net 490 "" ""
  R101 1
  U56 14
-Net 492 "" ""
- R109 1
+Net 491 "" ""
  U65 D3
-Net 493 "/emg/MISO" "MISO"
+ R109 1
+Net 492 "/emg/MISO" "MISO"
+ U68 5
+ R116 1
  R111 2
  U73 3
- R116 1
  U65 E2
- U68 5
-Net 494 "" ""
+Net 493 "" ""
+ U69 2
  R116 2
  R115 2
- U69 2
-Net 502 "" ""
+Net 501 "" ""
  R135 1
  D36 2
-Net 503 "" ""
- D36 1
- TP47 1
+Net 502 "" ""
  U74 11
-Net 504 "" ""
- R133 1
+ TP47 1
+ D36 1
+Net 503 "" ""
  D34 2
-Net 505 "" ""
- R131 1
+ R133 1
+Net 504 "" ""
  D32 2
-Net 506 "" ""
- TP45 1
+ R131 1
+Net 505 "" ""
  D32 1
  U74 13
-Net 507 "" ""
- R129 1
+ TP45 1
+Net 506 "" ""
  D30 2
-Net 509 "/emg/TMS" "TMS"
+ R129 1
+Net 508 "/emg/TMS" "TMS"
  U65 N2
  U66 6
-Net 510 "" ""
- C114 2
- C118 2
+Net 509 "" ""
+ C111 2
  U61 3
  U57 3
- U61 7
+ C118 2
+ C114 2
  U61 9
- C111 2
-Net 511 "/emg/_emu" "_emu"
+ U61 7
+Net 510 "/emg/_emu" "_emu"
  U66 2
- U65 M2
  R113 2
-Net 512 "" ""
- U66 5
+ U65 M2
+Net 511 "" ""
  R107 1
-Net 516 "" ""
+ U66 5
+Net 515 "" ""
+ U70 3
+ R119 2
+ U68 19
  U68 1
  U71 7
- U68 19
- R119 2
- U70 3
-Net 517 "" ""
- U71 4
+Net 516 "" ""
  U68 15
-Net 518 "" ""
- U71 5
+ U71 4
+Net 517 "" ""
  U68 3
-Net 519 "" ""
- U71 3
+ U71 5
+Net 518 "" ""
  U68 2
-Net 520 "" ""
- U68 4
+ U71 3
+Net 519 "" ""
  U71 6
-Net 522 "" ""
+ U68 4
+Net 521 "" ""
  L18 1
- U67 13
  L17 2
-Net 523 "" ""
- C144 2
+ U67 13
+Net 522 "" ""
  L18 2
-Net 524 "" ""
- U67 16
+ C144 2
+Net 523 "" ""
  R117 2
-Net 525 "" ""
+ U67 16
+Net 524 "" ""
  U67 19
  C140 2
-Net 526 "/emg/SCK" "SCK"
+Net 525 "/emg/SCK" "SCK"
  U73 4
- U68 16
- U67 3
  R112 2
- U69 6
+ U68 16
  R108 2
-Net 527 "" ""
- R111 1
+ U69 6
+ U67 3
+Net 526 "" ""
  U67 5
-Net 529 "" ""
- C146 1
- C141 1
- C142 1
- U67 18
- U67 15
+ R111 1
+Net 528 "" ""
  C139 1
  U67 7
- L20 1
+ U67 15
  C138 1
-Net 530 "" ""
+ L20 1
+ U67 18
+ C146 1
+ C142 1
+ C141 1
+Net 529 "" ""
+ C144 1
  C147 2
  U72 1
- C144 1
-Net 531 "" ""
- R97 2
- R98 1
+Net 530 "" ""
  U61 1
  C124 2
-Net 532 "" ""
- L16 1
+ R97 2
+ R98 1
+Net 531 "" ""
  U61 6
-Net 533 "" ""
+ L16 1
+Net 532 "" ""
  U61 10
  L15 1
-Net 534 "" ""
+Net 533 "" ""
  R100 1
  R99 2
  U61 5
-Net 535 "" ""
- U67 11
- L19 2
- C148 1
+Net 534 "" ""
  C143 1
-Net 536 "" ""
+ C148 1
+ L19 2
+ U67 11
+Net 535 "" ""
+ U67 12
  L19 1
  L17 1
- U67 12
-Net 537 "" ""
+Net 536 "" ""
  U57 1
  U54 1
-Net 538 "/emg/IN1" "IN1"
- TP48 1
+Net 537 "/emg/IN1" "IN1"
  U53 1
  R144 2
-Net 539 "/emg/emg_amp1/IN2" "IN2"
- TP49 1
+ TP48 1
+Net 538 "/emg/IN2" "IN2"
  R145 2
  U53 2
-Net 540 "/emg/IN3" "IN3"
+ TP49 1
+Net 539 "/emg/emg_amp2/IN1" "IN1"
+ U53 3
  TP50 1
  R150 2
- U53 3
-Net 541 "/emg/emg_amp8/IN1" "IN1"
- TP58 1
+Net 540 "/emg/emg_amp8/IN1" "IN1"
  R174 2
+ TP58 1
  U53 15
-Net 542 "/emg/IN13" "IN13"
+Net 541 "/emg/IN13" "IN13"
  U53 13
- TP56 1
  R168 2
-Net 543 "/emg/IN11" "IN11"
+ TP56 1
+Net 542 "/emg/IN11" "IN11"
  TP60 1
- U53 11
  R180 2
-Net 544 "/emg/IN10" "IN10"
+ U53 11
+Net 543 "/emg/emg_amp5/IN2" "IN2"
  TP63 1
  U53 10
  R187 2
-Net 545 "/emg/IN8" "IN8"
- U53 8
+Net 544 "/emg/emg_amp4/IN2" "IN2"
  R157 2
  TP53 1
-Net 546 "/emg/IN6" "IN6"
+ U53 8
+Net 545 "/emg/IN6" "IN6"
  U53 6
  R163 2
  TP55 1
-Net 547 "/emg/IN4" "IN4"
- R151 2
- TP51 1
+Net 546 "/emg/IN4" "IN4"
  U53 4
-Net 548 "/emg/E1" "E1"
+ TP51 1
+ R151 2
+Net 547 "/emg/E1" "E1"
  C171 1
- U83 1
- U56 16
  R149 2
-Net 549 "" ""
- C119 1
+ U56 16
+ U83 1
+Net 548 "" ""
  U58 3
-Net 550 "" ""
+ C119 1
+Net 549 "" ""
  L12 1
- C112 1
- U55 5
  U58 2
-Net 551 "" ""
+ U55 5
+ C112 1
+Net 550 "" ""
+ U56 2
  C107 1
  R94 1
- U56 2
-Net 552 "" ""
+Net 551 "" ""
  D35 1
- U73 11
  TP39 1
-Net 553 "" ""
- TP37 1
- D31 1
+ U73 11
+Net 552 "" ""
  U73 13
-Net 554 "" ""
- TP35 1
+ D31 1
+ TP37 1
+Net 553 "" ""
  D27 1
+ TP35 1
  U73 15
-Net 555 "" ""
- D23 1
+Net 554 "" ""
  TP33 1
  U73 17
-Net 556 "" ""
+ D23 1
+Net 555 "" ""
  L14 1
  C120 1
  U59 1
  U59 3
-Net 557 "" ""
+Net 556 "" ""
+ U56 1
+ U56 20
+ U56 15
  U59 5
  C116 1
- U56 15
- U56 20
- U56 1
-Net 558 "" ""
- U56 3
+Net 557 "" ""
  C109 1
-Net 559 "" ""
+ U56 3
+Net 558 "" ""
  C119 2
  U58 5
-Net 560 "" ""
+Net 559 "" ""
+ TP32 1
  D21 1
  U73 18
- TP32 1
-Net 561 "" ""
- U73 16
+Net 560 "" ""
  TP34 1
  D25 1
-Net 562 "" ""
- U73 14
- TP36 1
+ U73 16
+Net 561 "" ""
  D29 1
-Net 563 "" ""
- U73 12
- D33 1
+ TP36 1
+ U73 14
+Net 562 "" ""
  TP38 1
-Net 571 "" ""
- D21 2
+ D33 1
+ U73 12
+Net 570 "" ""
  R120 1
-Net 572 "" ""
+ D21 2
+Net 571 "" ""
  D23 2
  R122 1
-Net 573 "" ""
+Net 572 "" ""
  D25 2
  R124 1
-Net 574 "" ""
- R126 1
+Net 573 "" ""
  D27 2
-Net 575 "/emg/emg_amp2/OUT" "OUT"
- R155 2
- C178 1
+ R126 1
+Net 574 "/emg/emg_amp2/OUT" "OUT"
  U83 7
+ C178 1
  U56 17
-Net 577 "" ""
+ R155 2
+Net 576 "" ""
  D29 2
  R128 1
-Net 578 "" ""
+Net 577 "" ""
  R130 1
  D31 2
-Net 579 "" ""
+Net 578 "" ""
  R132 1
  D33 2
-Net 580 "" ""
- R134 1
+Net 579 "" ""
  D35 2
-Net 581 "/emg/emg_amp6/OUT" "OUT"
+ R134 1
+Net 580 "/emg/E6" "E6"
  R185 2
  C213 1
- U88 8
  U56 7
-Net 582 "/emg/emg_amp4/VN" "VN"
+ U88 8
+Net 581 "/emg/emg_amp8/VN" "VN"
+ C117 1
  U85 4
+ U89 4
  U85 1
- U82 4
- U82 1
- C186 1
- C214 1
- U86 1
- U86 4
- U91 4
- U91 1
- C179 1
- C172 1
+ U89 1
  U84 1
  U84 4
- U83 11
- C165 1
- C117 1
- L13 2
- U90 4
- U88 11
- U90 1
- C207 1
- U87 4
- U89 1
- U89 4
+ C172 1
+ U82 1
  C193 1
+ U87 4
  U87 1
+ U91 1
+ U91 4
+ C214 1
+ U82 4
+ C165 1
+ L13 2
+ U90 1
+ U90 4
+ C179 1
  C200 1
-Net 583 "/emg/emg_amp8/IN2" "IN2"
- TP59 1
+ C186 1
+ C207 1
+ U83 11
+ U88 11
+ U86 4
+ U86 1
+Net 582 "/emg/IN16" "IN16"
  R175 2
  U53 16
-Net 584 "/emg/emg_amp8/OUT" "OUT"
- C206 1
- R179 2
- U56 9
+ TP59 1
+Net 583 "/emg/emg_amp8/OUT" "OUT"
  U88 7
-Net 585 "/emg/emg_amp7/IN2" "IN2"
- R169 2
- TP57 1
+ C206 1
+ U56 9
+ R179 2
+Net 584 "/emg/IN14" "IN14"
  U53 14
-Net 586 "/emg/emg_amp7/OUT" "OUT"
- C199 1
+ TP57 1
+ R169 2
+Net 585 "/emg/E7" "E7"
  U56 8
  U88 1
  R173 2
-Net 587 "/emg/VEMG+" "VEMG+"
- C110 1
- L12 2
- C166 2
+ C199 1
+Net 586 "/emg/emg_amp3/V+" "V+"
+ U87 8
  U88 4
+ C208 2
+ U86 8
  U83 4
+ C187 2
  C201 2
- U89 8
+ U91 8
+ C215 2
  U82 8
- U84 8
  C194 2
  C173 2
- U91 8
- U86 8
- C215 2
+ U84 8
+ L12 2
+ C110 1
+ C166 2
  U85 8
- U87 8
- C208 2
- C180 2
- C187 2
+ U89 8
  U90 8
-Net 588 "/emg/emg_amp3/IN1" "IN1"
- R162 2
- TP54 1
+ C180 2
+Net 587 "/emg/IN5" "IN5"
  U53 5
-Net 589 "/emg/E3" "E3"
+ TP54 1
+ R162 2
+Net 588 "/emg/E3" "E3"
+ C192 1
  R167 2
  U83 14
  U56 18
- C192 1
-Net 590 "/emg/emg_amp4/IN1" "IN1"
+Net 589 "/emg/emg_amp4/IN1" "IN1"
  U53 7
  R156 2
  TP52 1
-Net 591 "/emg/E4" "E4"
- R161 2
+Net 590 "/emg/E4" "E4"
+ U83 8
  C185 1
  U56 19
- U83 8
-Net 592 "" ""
+ R161 2
+Net 591 "" ""
  U58 1
  C113 2
  L13 1
-Net 594 "/emg/IN9" "IN9"
- TP62 1
- R186 2
+Net 593 "/emg/IN9" "IN9"
  U53 9
-Net 595 "/emg/E5" "E5"
- C220 1
+ R186 2
+ TP62 1
+Net 594 "/emg/emg_amp5/OUT" "OUT"
  R191 2
+ C220 1
  U56 6
  U88 14
-Net 596 "/emg/emg_amp6/IN2" "IN2"
+Net 595 "/emg/emg_amp6/IN2" "IN2"
  TP61 1
  U53 12
  R181 2
-Net 598 "" ""
+Net 597 "" ""
  R96 2
  U60 4
-Net 599 "" ""
+Net 598 "" ""
  U65 J1
  R105 1
-Net 600 "/emg/TSCLK0" "TSCLK0"
+Net 599 "/emg/TSCLK0" "TSCLK0"
  U60 1
  R105 2
-Net 601 "" ""
+Net 600 "" ""
  R104 1
  U65 H3
-Net 602 "" ""
+Net 601 "" ""
  U65 H1
  R103 1
-Net 603 "/emg/DT0PRI" "DT0PRI"
- U56 12
- R103 2
+Net 602 "/emg/DT0PRI" "DT0PRI"
  U73 6
-Net 604 "" ""
- L15 2
+ R103 2
+ U56 12
+Net 603 "" ""
  U63 2
  C126 2
+ L15 2
  R98 2
  C124 1
-Net 605 "/emg/emg_amp4/VREF" "VREF"
+Net 604 "/emg/COM" "COM"
  U83 5
- U83 12
- U83 3
- R94 2
  R95 1
  C106 1
+ R94 2
  U83 10
- U88 12
- U88 3
- U56 10
+ U83 3
  U88 10
  U88 5
-Net 606 "" ""
+ U56 10
+ U83 12
+ U88 3
+ U88 12
+Net 605 "" ""
  U74 12
- TP46 1
  D34 1
-Net 607 "" ""
+ TP46 1
+Net 606 "" ""
  TP44 1
- U74 14
  D30 1
-Net 608 "" ""
- U74 16
+ U74 14
+Net 607 "" ""
  D26 1
  TP42 1
-Net 609 "" ""
- TP40 1
- U74 18
+ U74 16
+Net 608 "" ""
  D22 1
-Net 628 "" ""
+ U74 18
+ TP40 1
+Net 627 "" ""
  U65 A12
- C129 1
  U64 1
-Net 634 "/emg/RESET" "RESET"
+ C129 1
+Net 633 "/emg/RESET" "RESET"
  U65 C10
  U70 2
-Net 639 "/emg/TCK" "TCK"
- U65 P2
+Net 638 "/emg/TCK" "TCK"
  U66 8
-Net 645 "/emg/PF8" "PF8"
- U73 9
+ U65 P2
+Net 644 "/emg/PF8" "PF8"
  U65 A2
-Net 646 "/emg/_trst" "_trst"
- R114 2
- U66 10
+ U73 9
+Net 645 "/emg/_trst" "_trst"
  U65 N1
-Net 648 "/emg/RSCLK0" "RSCLK0"
+ U66 10
+ R114 2
+Net 647 "/emg/RSCLK0" "RSCLK0"
  U65 L1
+ C115 1
+ R96 1
  U56 13
  U73 7
- R96 1
- C115 1
-Net 649 "/emg/DR0PRI" "DR0PRI"
+Net 648 "/emg/DR0PRI" "DR0PRI"
+ R101 2
  U73 8
  U65 K1
- R101 2
-Net 654 "/emg/TDO" "TDO"
- U66 14
+Net 653 "/emg/TDO" "TDO"
  U65 N3
-Net 655 "/emg/TDI" "TDI"
- U66 12
+ U66 14
+Net 654 "/emg/TDI" "TDI"
  U65 M3
-Net 658 "/emg/TFS0" "TFS0"
- U65 J3
- U56 11
- U60 2
- U73 5
+ U66 12
+Net 657 "/emg/TFS0" "TFS0"
  R104 2
-Net 661 "" ""
+ U73 5
+ U65 J3
+ U60 2
+ U56 11
+Net 660 "" ""
  U61 4
  L16 2
- U62 2
  R99 1
  C127 2
-Net 662 "" ""
+ U62 2
+Net 661 "" ""
  U67 10
  U65 A11
- U64 3
  C132 1
-Net 694 "/neuro/analog/V27" "V27"
+ U64 3
+Net 693 "/neuro/analog/V27" "V27"
  C163 2
  C164 1
  U77 5
  U81 1
- C160 1
  C157 2
- C159 1
+ C160 1
  U79 1
-Net 695 "/neuro/analog/E16" "E16"
+ C159 1
+Net 694 "/neuro/analog/E16" "E16"
  U75 2
  U76 3
-Net 696 "/neuro/analog/E15" "E15"
- U75 3
+Net 695 "/neuro/analog/E15" "E15"
  U76 2
-Net 697 "/neuro/analog/E14" "E14"
- U75 4
+ U75 3
+Net 696 "/neuro/analog/E14" "E14"
  U76 1
-Net 698 "" ""
- R141 2
+ U75 4
+Net 697 "" ""
  U80 9
-Net 699 "" ""
- R142 2
+ R141 2
+Net 698 "" ""
  U80 10
-Net 708 "/neuro/analog/E19" "E19"
- U75 22
+ R142 2
+Net 707 "/neuro/analog/E19" "E19"
  U80 30
-Net 709 "/neuro/analog/E28" "E28"
- U80 39
+ U75 22
+Net 708 "/neuro/analog/E28" "E28"
  U75 31
-Net 710 "/neuro/analog/E18" "E18"
+ U80 39
+Net 709 "/neuro/analog/E18" "E18"
  U80 29
  U75 21
-Net 711 "/neuro/analog/E27" "E27"
+Net 710 "/neuro/analog/E27" "E27"
  U75 30
  U80 38
-Net 712 "/neuro/analog/E17" "E17"
- U80 28
+Net 711 "/neuro/analog/E17" "E17"
  U75 20
-Net 713 "" ""
+ U80 28
+Net 712 "" ""
+ C154 1
  L21 1
  U78 5
  U78 1
- C154 1
-Net 714 "/neuro/analog/E26" "E26"
+Net 713 "/neuro/analog/E26" "E26"
  U80 37
  U75 29
-Net 715 "/neuro/analog/E29" "E29"
- U80 40
+Net 714 "/neuro/analog/E29" "E29"
  U75 32
-Net 716 "/neuro/analog/E20" "E20"
+ U80 40
+Net 715 "/neuro/analog/E20" "E20"
  U80 31
  U75 23
-Net 717 "/neuro/analog/E30" "E30"
- U80 1
+Net 716 "/neuro/analog/E30" "E30"
  U75 33
-Net 718 "/neuro/analog/E21" "E21"
- U75 24
+ U80 1
+Net 717 "/neuro/analog/E21" "E21"
  U80 32
-Net 719 "/neuro/analog/E31" "E31"
+ U75 24
+Net 718 "/neuro/analog/E31" "E31"
  U75 34
  U80 2
-Net 720 "/neuro/analog/E22" "E22"
+Net 719 "/neuro/analog/E22" "E22"
  U75 25
  U80 33
-Net 721 "/neuro/analog/E32" "E32"
+Net 720 "/neuro/analog/E32" "E32"
  U80 3
  U75 35
-Net 722 "/neuro/analog/E23" "E23"
- U75 26
+Net 721 "/neuro/analog/E23" "E23"
  U80 34
-Net 723 "/neuro/analog/E24" "E24"
+ U75 26
+Net 722 "/neuro/analog/E24" "E24"
  U75 27
  U80 35
-Net 724 "/neuro/analog/E25" "E25"
+Net 723 "/neuro/analog/E25" "E25"
  U80 36
  U75 28
-Net 725 "/neuro/analog/E12" "E12"
+Net 724 "/neuro/analog/E12" "E12"
  U75 6
  U76 39
-Net 726 "/neuro/analog/E2" "E2"
+Net 725 "/neuro/analog/E2" "E2"
  U75 16
  U76 29
-Net 727 "/neuro/analog/V3" "V3"
+Net 726 "/neuro/analog/V3" "V3"
  C156 1
  C155 1
- U80 6
- U80 21
  C158 1
- U76 21
+ U76 6
  U80 19
  U78 4
  U76 19
- U76 6
+ U76 21
  C162 1
  C161 1
-Net 728 "/neuro/analog/E11" "E11"
- U76 38
+ U80 21
+ U80 6
+Net 727 "/neuro/analog/E11" "E11"
  U75 7
-Net 729 "/neuro/analog/E1" "E1"
- U75 17
+ U76 38
+Net 728 "/neuro/analog/E1" "E1"
  U76 28
-Net 730 "/neuro/analog/E10" "E10"
- U75 8
+ U75 17
+Net 729 "/neuro/analog/E10" "E10"
  U76 37
-Net 731 "/neuro/analog/E9" "E9"
- U76 36
+ U75 8
+Net 730 "/neuro/analog/E9" "E9"
  U75 9
-Net 732 "/neuro/analog/E8" "E8"
+ U76 36
+Net 731 "/neuro/analog/E8" "E8"
  U76 35
  U75 10
-Net 733 "/neuro/analog/E7" "E7"
- U76 34
+Net 732 "/neuro/analog/E7" "E7"
  U75 11
-Net 734 "" ""
- U76 8
+ U76 34
+Net 733 "" ""
  R136 2
-Net 735 "" ""
- R137 2
+ U76 8
+Net 734 "" ""
  U76 9
-Net 736 "" ""
- U76 10
+ R137 2
+Net 735 "" ""
  R138 2
-Net 737 "/neuro/analog/E3" "E3"
+ U76 10
+Net 736 "/neuro/analog/E3" "E3"
  U75 15
  U76 30
-Net 738 "/neuro/analog/E13" "E13"
+Net 737 "/neuro/analog/E13" "E13"
  U76 40
  U75 5
-Net 739 "/neuro/analog/E4" "E4"
- U75 14
+Net 738 "/neuro/analog/E4" "E4"
  U76 31
-Net 740 "/neuro/analog/E5" "E5"
+ U75 14
+Net 739 "/neuro/analog/E5" "E5"
  U75 13
  U76 32
-Net 741 "/neuro/analog/E6" "E6"
- U75 12
+Net 740 "/neuro/analog/E6" "E6"
  U76 33
-Net 743 "" ""
- R140 2
+ U75 12
+Net 742 "" ""
  U80 8
-Net 744 "" ""
- U79 3
+ R140 2
+Net 743 "" ""
  U76 12
-Net 745 "" ""
- U77 1
+ U79 3
+Net 744 "" ""
  U77 3
+ U77 1
  L22 1
  C153 1
-Net 746 "" ""
- U80 12
+Net 745 "" ""
  U81 3
-Net 747 "" ""
- R139 2
+ U80 12
+Net 746 "" ""
  U79 5
-Net 748 "" ""
- R143 2
+ R139 2
+Net 747 "" ""
  U81 5
-Net 750 "" ""
+ R143 2
+Net 749 "" ""
  R145 1
  U82 3
-Net 751 "" ""
- C169 1
- R147 1
+Net 750 "" ""
  C167 1
-Net 752 "" ""
- R144 1
+ R147 1
+ C169 1
+Net 751 "" ""
  U82 2
-Net 753 "" ""
+ R144 1
+Net 752 "" ""
+ U82 6
  R147 2
  R146 1
  C168 2
- U82 6
-Net 754 "" ""
- U82 7
+Net 753 "" ""
+ C168 1
  C170 2
  R146 2
- C168 1
-Net 755 "" ""
+ U82 7
+Net 754 "" ""
+ U83 2
  R148 1
  R149 1
  C171 2
- U83 2
-Net 756 "" ""
- C170 1
+Net 755 "" ""
  R148 2
-Net 757 "" ""
- U84 2
+ C170 1
+Net 756 "" ""
  R150 1
-Net 758 "" ""
- R151 1
+ U84 2
+Net 757 "" ""
  U84 3
-Net 759 "" ""
- R153 2
- R152 1
+ R151 1
+Net 758 "" ""
  C175 2
+ R152 1
+ R153 2
  U84 6
-Net 760 "" ""
- C176 1
- C174 1
+Net 759 "" ""
  R153 1
-Net 761 "" ""
+ C174 1
+ C176 1
+Net 760 "" ""
  C177 1
  R154 2
-Net 762 "" ""
- C177 2
+Net 761 "" ""
  U84 7
+ C177 2
  R152 2
  C175 1
-Net 763 "" ""
- U83 6
+Net 762 "" ""
  C178 2
  R155 1
  R154 1
-Net 764 "" ""
- U85 3
+ U83 6
+Net 763 "" ""
  R157 1
-Net 765 "" ""
- R159 1
+ U85 3
+Net 764 "" ""
  C181 1
  C183 1
-Net 766 "" ""
- R160 1
- R161 1
+ R159 1
+Net 765 "" ""
  U83 9
  C185 2
-Net 767 "" ""
+ R161 1
+ R160 1
+Net 766 "" ""
  C184 1
  R160 2
-Net 768 "" ""
+Net 767 "" ""
  U85 2
  R156 1
-Net 769 "" ""
+Net 768 "" ""
  R159 2
- R158 1
  U85 6
  C182 2
-Net 770 "" ""
+ R158 1
+Net 769 "" ""
  C184 2
+ U85 7
  C182 1
  R158 2
- U85 7
-Net 771 "" ""
- R163 1
+Net 770 "" ""
  U86 3
-Net 772 "" ""
+ R163 1
+Net 771 "" ""
  R162 1
  U86 2
-Net 773 "" ""
+Net 772 "" ""
  U86 6
  R165 2
  R164 1
  C189 2
-Net 774 "" ""
+Net 773 "" ""
  C190 1
- R165 1
  C188 1
-Net 775 "" ""
+ R165 1
+Net 774 "" ""
  R166 2
  C191 1
+Net 775 "" ""
+ C191 2
+ U86 7
+ C189 1
+ R164 2
 Net 776 "" ""
  C192 2
  R167 1
  R166 1
  U83 13
 Net 777 "" ""
- R164 2
- C189 1
- C191 2
- U86 7
-Net 778 "" ""
- U87 6
- C196 2
- R170 1
  R171 2
-Net 779 "" ""
+ U87 6
+ R170 1
+ C196 2
+Net 778 "" ""
  C196 1
+ C198 2
  U87 7
  R170 2
- C198 2
-Net 780 "" ""
+Net 779 "" ""
+ C197 1
  R171 1
  C195 1
- C197 1
-Net 781 "" ""
- R168 1
+Net 780 "" ""
  U87 2
-Net 782 "" ""
- R169 1
+ R168 1
+Net 781 "" ""
  U87 3
-Net 783 "" ""
- R172 1
- R173 1
+ R169 1
+Net 782 "" ""
  C199 2
+ R173 1
+ R172 1
  U88 2
-Net 784 "" ""
- R172 2
+Net 783 "" ""
  C198 1
-Net 785 "" ""
- R176 2
- C203 1
- U89 7
- C205 2
-Net 786 "" ""
- C205 1
- R178 2
-Net 787 "" ""
- U89 3
+ R172 2
+Net 784 "" ""
  R175 1
-Net 788 "" ""
- U89 2
+ U89 3
+Net 785 "" ""
  R174 1
-Net 789 "" ""
- U89 6
- R176 1
+ U89 2
+Net 786 "" ""
  R177 2
+ R176 1
+ U89 6
  C203 2
-Net 790 "" ""
- C202 1
+Net 787 "" ""
  C204 1
  R177 1
-Net 791 "" ""
- C206 2
- R178 1
- R179 1
+ C202 1
+Net 788 "" ""
+ C205 2
+ C203 1
+ U89 7
+ R176 2
+Net 789 "" ""
+ R178 2
+ C205 1
+Net 790 "" ""
  U88 6
-Net 792 "" ""
- C212 1
+ C206 2
+ R179 1
+ R178 1
+Net 791 "" ""
  R184 2
-Net 793 "" ""
- U88 9
- C213 2
- R185 1
+ C212 1
+Net 792 "" ""
  R184 1
-Net 794 "" ""
+ R185 1
+ C213 2
+ U88 9
+Net 793 "" ""
+ C210 2
+ U90 6
  R183 2
  R182 1
- U90 6
- C210 2
-Net 795 "" ""
+Net 794 "" ""
+ C210 1
  R182 2
  U90 7
  C212 2
- C210 1
+Net 795 "" ""
+ U90 3
+ R181 1
 Net 796 "" ""
+ U90 2
+ R180 1
+Net 797 "" ""
+ R183 1
  C209 1
  C211 1
- R183 1
-Net 797 "" ""
- R181 1
- U90 3
 Net 798 "" ""
- R180 1
- U90 2
-Net 799 "" ""
+ U88 13
  R190 1
  R191 1
  C220 2
- U88 13
-Net 800 "" ""
- C217 1
- C219 2
- U91 7
- R188 2
-Net 801 "" ""
+Net 799 "" ""
  R187 1
  U91 3
-Net 802 "" ""
+Net 800 "" ""
  U91 2
  R186 1
-Net 803 "" ""
+Net 801 "" ""
  U91 6
+ R189 2
  R188 1
  C217 2
- R189 2
-Net 804 "" ""
- R189 1
+Net 802 "" ""
  C216 1
  C218 1
-Net 805 "" ""
+ R189 1
+Net 803 "" ""
+ R188 2
+ U91 7
+ C217 1
+ C219 2
+Net 804 "" ""
  C219 1
  R190 2
 }
