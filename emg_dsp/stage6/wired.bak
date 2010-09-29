@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Tue 28 Sep 2010 04:04:24 PM EDT
+EESchema Schematic File Version 2  date Wed 29 Sep 2010 05:47:10 PM EDT
 LIBS:power
 LIBS:device
 LIBS:emg_sym
@@ -9,7 +9,7 @@ EELAYER END
 $Descr User 16000 12000
 Sheet 11 13
 Title "Stage 4 / Copyright 2010 Timothy L Hanson "
-Date "28 sep 2010"
+Date "29 sep 2010"
 Rev ""
 Comp "This design is free: redistribute or modify under the GPL v. 3 or later"
 Comment1 ""
@@ -17,6 +17,38 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
+Connection ~ 7800 4750
+Connection ~ 7800 4050
+Text Label 6900 6400 0    60   ~ 0
+V0
+Text Label 6900 3000 0    60   ~ 0
+V0
+$Comp
+L C C223
+U 1 1 4CA3B060
+P 6700 3000
+F 0 "C223" H 6750 3100 50  0000 L CNN
+F 1 "0.1uf" H 6750 2900 50  0000 L CNN
+F 2 "0402" H 6950 3000 60  0001 C CNN
+	1    6700 3000
+	0    -1   -1   0   
+$EndComp
+$Comp
+L C C224
+U 1 1 4CA3B056
+P 6700 6400
+F 0 "C224" H 6750 6500 50  0000 L CNN
+F 1 "0.1uf" H 6750 6300 50  0000 L CNN
+F 2 "0402" H 6950 6400 60  0001 C CNN
+	1    6700 6400
+	0    -1   -1   0   
+$EndComp
+Text Label 5800 8350 0    60   ~ 0
+VREF
+Text Label 1550 800  0    60   ~ 0
+V0
+Text Label 1550 2950 0    60   ~ 0
+V0
 Text Label 7000 6700 0    60   ~ 0
 sd1
 Text Label 7000 3300 0    60   ~ 0
@@ -265,8 +297,6 @@ Wire Wire Line
 	3600 8050 4600 8050
 Connection ~ 1550 2950
 Wire Wire Line
-	1550 2950 1550 3100
-Wire Wire Line
 	2150 2750 2150 2950
 Wire Wire Line
 	2150 2950 1000 2950
@@ -279,8 +309,6 @@ Wire Wire Line
 	1000 800  2150 800 
 Wire Wire Line
 	2150 800  2150 1050
-Wire Wire Line
-	1550 700  1550 800 
 Connection ~ 1550 800 
 Connection ~ 4250 8050
 Wire Wire Line
@@ -712,55 +740,55 @@ NoConn ~ 12200 5300
 NoConn ~ 12200 3950
 NoConn ~ 12200 3850
 $Comp
-L GND #PWR0270
+L GND #PWR0271
 U 1 1 4C9B921B
 P 12350 4800
-F 0 "#PWR0270" H 12350 4800 30  0001 C CNN
+F 0 "#PWR0271" H 12350 4800 30  0001 C CNN
 F 1 "GND" H 12350 4730 30  0001 C CNN
 	1    12350 4800
 	0    -1   -1   0   
 $EndComp
 $Comp
-L VDD #PWR0271
+L VDD #PWR0272
 U 1 1 4C9B9218
 P 12250 4700
-F 0 "#PWR0271" H 12250 4800 30  0001 C CNN
+F 0 "#PWR0272" H 12250 4800 30  0001 C CNN
 F 1 "VDD" H 12250 4810 30  0000 C CNN
 	1    12250 4700
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR0272
+L GND #PWR0273
 U 1 1 4C9B9215
 P 12350 5400
-F 0 "#PWR0272" H 12350 5400 30  0001 C CNN
+F 0 "#PWR0273" H 12350 5400 30  0001 C CNN
 F 1 "GND" H 12350 5330 30  0001 C CNN
 	1    12350 5400
 	0    -1   -1   0   
 $EndComp
 $Comp
-L GND #PWR0273
+L GND #PWR0274
 U 1 1 4C9B9212
 P 12350 4150
-F 0 "#PWR0273" H 12350 4150 30  0001 C CNN
+F 0 "#PWR0274" H 12350 4150 30  0001 C CNN
 F 1 "GND" H 12350 4080 30  0001 C CNN
 	1    12350 4150
 	0    -1   -1   0   
 $EndComp
 $Comp
-L GND #PWR0274
+L GND #PWR0275
 U 1 1 4C9B920A
 P 12350 3550
-F 0 "#PWR0274" H 12350 3550 30  0001 C CNN
+F 0 "#PWR0275" H 12350 3550 30  0001 C CNN
 F 1 "GND" H 12350 3480 30  0001 C CNN
 	1    12350 3550
 	0    -1   -1   0   
 $EndComp
 $Comp
-L VDD #PWR0275
+L VDD #PWR0276
 U 1 1 4C9B9204
 P 12300 3450
-F 0 "#PWR0275" H 12300 3550 30  0001 C CNN
+F 0 "#PWR0276" H 12300 3550 30  0001 C CNN
 F 1 "VDD" H 12300 3560 30  0000 C CNN
 	1    12300 3450
 	1    0    0    -1  
@@ -965,8 +993,6 @@ F 2 "0603" H 5700 2800 60  0000 C CNN
 	1    5600 2650
 	0    1    1    0   
 $EndComp
-Text Label 5800 8350 0    60   ~ 0
-V25
 $Comp
 L ADR381 U46
 U 1 1 4C9B8D41
@@ -995,9 +1021,9 @@ Text Label 7800 4650 0    60   ~ 0
 _reset
 Text Label 7800 4550 0    60   ~ 0
 step
-Text Label 7800 4750 0    60   ~ 0
-V5
 Text Label 7800 4050 0    60   ~ 0
+V5
+Text Label 7800 4750 0    60   ~ 0
 V0
 $Comp
 L 8X100 U47
@@ -1030,19 +1056,19 @@ F 2 "0603" H 10400 6350 60  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR0276
+L GND #PWR0277
 U 1 1 4C9B8790
 P 12050 6250
-F 0 "#PWR0276" H 12050 6250 30  0001 C CNN
+F 0 "#PWR0277" H 12050 6250 30  0001 C CNN
 F 1 "GND" H 12050 6180 30  0001 C CNN
 	1    12050 6250
 	1    0    0    -1  
 $EndComp
 $Comp
-L VEE #PWR194
+L VEE #PWR192
 U 1 1 4C9B878C
 P 12000 6100
-F 0 "#PWR194" H 12000 6300 40  0001 C CNN
+F 0 "#PWR192" H 12000 6300 40  0001 C CNN
 F 1 "VEE" H 12000 6250 40  0000 C CNN
 	1    12000 6100
 	1    0    0    -1  
@@ -1335,10 +1361,10 @@ F 2 "0402" H 3700 10650 60  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR0277
+L GND #PWR0278
 U 1 1 4CA0ED85
 P 4100 10400
-F 0 "#PWR0277" H 4100 10400 30  0001 C CNN
+F 0 "#PWR0278" H 4100 10400 30  0001 C CNN
 F 1 "GND" H 4100 10330 30  0001 C CNN
 	1    4100 10400
 	0    1    1    0   
@@ -1372,24 +1398,6 @@ F 1 "ferrite" V 3400 8050 40  0000 C CNN
 F 2 "0402" V 3210 8010 60  0000 C CNN
 	1    3300 8050
 	0    1    -1   0   
-$EndComp
-$Comp
-L GND #PWR0278
-U 1 1 4913DE9C
-P 1550 3100
-F 0 "#PWR0278" H 1550 3100 30  0001 C CNN
-F 1 "GND" H 1550 3030 30  0001 C CNN
-	1    1550 3100
-	1    0    0    -1  
-$EndComp
-$Comp
-L GND #PWR0279
-U 1 1 4913DE97
-P 1550 700
-F 0 "#PWR0279" H 1550 700 30  0001 C CNN
-F 1 "GND" H 1550 630 30  0001 C CNN
-	1    1550 700 
-	-1   0    0    1   
 $EndComp
 Text Label 2150 2650 0    60   ~ 0
 E32
