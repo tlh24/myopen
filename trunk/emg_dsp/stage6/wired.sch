@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Wed 29 Sep 2010 05:47:59 PM EDT
+EESchema Schematic File Version 2  date Thu 30 Sep 2010 12:31:09 AM EDT
 LIBS:power
 LIBS:device
 LIBS:emg_sym
@@ -9,7 +9,7 @@ EELAYER END
 $Descr User 16000 12000
 Sheet 11 13
 Title "Stage 4 / Copyright 2010 Timothy L Hanson "
-Date "29 sep 2010"
+Date "30 sep 2010"
 Rev ""
 Comp "This design is free: redistribute or modify under the GPL v. 3 or later"
 Comment1 ""
@@ -18,9 +18,9 @@ Comment3 ""
 Comment4 ""
 $EndDescr
 Wire Wire Line
-	9500 6400 9500 4750
+	9500 4750 9500 6400
 Wire Wire Line
-	10750 6400 9500 6400
+	9500 6400 10750 6400
 Wire Wire Line
 	9850 6800 10200 6800
 Wire Wire Line
