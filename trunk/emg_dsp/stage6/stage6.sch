@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Thu 30 Sep 2010 05:10:58 PM EDT
+EESchema Schematic File Version 2  date Thu 30 Sep 2010 11:24:56 PM EDT
 LIBS:power
 LIBS:device
 LIBS:emg_sym
@@ -9,7 +9,7 @@ EELAYER END
 $Descr User 16000 12000
 Sheet 1 15
 Title "Stage 4 / Copyright 2010 Timothy L Hanson "
-Date "30 sep 2010"
+Date "1 oct 2010"
 Rev ""
 Comp "This design is free: redistribute or modify under the GPL v. 3 or later"
 Comment1 ""
@@ -1902,7 +1902,7 @@ L ABM10XTAL U9
 U 1 1 4C9AB7CA
 P 5150 5450
 F 0 "U9" H 5150 5600 60  0000 C CNN
-F 1 "ABM10XTAL" H 5200 5300 60  0000 C CNN
+F 1 "ABM10XTAL-25" H 5200 5300 60  0000 C CNN
 F 2 "ABM10" H 4900 5600 60  0000 C CNN
 	1    5150 5450
 	1    0    0    -1  
@@ -3275,7 +3275,7 @@ U 1 1 4CA0ED8F
 P 10100 700
 F 0 "U14" H 10150 450 60  0000 C CNN
 F 1 "AT25DF041-MHF" H 10150 1000 60  0000 C CNN
-F 2 "UFDN-8" H 10210 390 60  0000 C CNN
+F 2 "SOIC-8" H 10210 390 60  0000 C CNN
 	1    10100 700 
 	1    0    0    -1  
 $EndComp
@@ -4415,7 +4415,7 @@ L ABM10XTAL U12
 U 1 1 48FFFD38
 P 5900 4400
 F 0 "U12" H 5900 4550 60  0000 C CNN
-F 1 "ABM10XTAL" H 5950 4250 60  0000 C CNN
+F 1 "ABM10XTAL-24" H 5950 4250 60  0000 C CNN
 F 2 "ABM10" H 5650 4550 60  0000 C CNN
 	1    5900 4400
 	1    0    0    -1  
