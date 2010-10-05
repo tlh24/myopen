@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Thu 30 Sep 2010 11:24:33 PM EDT
+EESchema Schematic File Version 2  date Tue 05 Oct 2010 01:00:38 AM EDT
 LIBS:power
 LIBS:device
 LIBS:emg_sym
@@ -9,7 +9,7 @@ EELAYER END
 $Descr User 16000 12000
 Sheet 13 15
 Title "Stage 4 / Copyright 2010 Timothy L Hanson "
-Date "1 oct 2010"
+Date "5 oct 2010"
 Rev ""
 Comp "This design is free: redistribute or modify under the GPL v. 3 or later"
 Comment1 ""
@@ -17,6 +17,13 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
+Connection ~ 12050 6200
+Wire Wire Line
+	12400 6350 12200 6350
+Wire Wire Line
+	12200 6200 12200 6350
+Wire Wire Line
+	12000 6200 12200 6200
 Wire Wire Line
 	9500 4750 9500 6400
 Wire Wire Line
@@ -247,9 +254,7 @@ Wire Wire Line
 Wire Wire Line
 	9900 4450 9500 4450
 Wire Wire Line
-	12050 6250 12050 6200
-Wire Wire Line
-	12050 6200 12000 6200
+	12050 6200 12050 6250
 Wire Wire Line
 	10150 5100 9850 5100
 Wire Wire Line
@@ -582,6 +587,22 @@ Wire Wire Line
 	9650 4050 9650 6000
 Wire Wire Line
 	9650 6000 10750 6000
+Wire Wire Line
+	12000 6100 12200 6100
+Wire Wire Line
+	12200 6100 12200 5950
+Wire Wire Line
+	12200 5950 12400 5950
+$Comp
+L C C?
+U 1 1 4CAAB0E7
+P 12400 6150
+F 0 "C?" H 12450 6250 50  0000 L CNN
+F 1 "2.2uf" H 12450 6050 50  0000 L CNN
+F 2 "0402" H 12500 6300 60  0001 C CNN
+	1    12400 6150
+	1    0    0    -1  
+$EndComp
 Text Label 6900 6400 0    60   ~ 0
 V0
 Text Label 6900 3000 0    60   ~ 0
@@ -623,7 +644,7 @@ sd0
 Text Label 9850 6800 0    60   ~ 0
 V3C
 Text Label 9850 7200 0    60   ~ 0
-V0
+V0b
 $Comp
 L C C222
 U 1 1 4CA0EC7E
@@ -673,9 +694,9 @@ this ADC has 14 ENOB
 Text Notes 6000 3850 0    60   ~ 0
 when vref = 2.5v,
 Text Label 10300 6400 0    60   ~ 0
-V0
+V0b
 Text Label 10300 6000 0    60   ~ 0
-V5
+V5b
 Text Notes 6450 7100 0    60   ~ 0
 to gate this clock.
 Text Notes 6450 7000 0    60   ~ 0
@@ -738,55 +759,55 @@ NoConn ~ 12200 5300
 NoConn ~ 12200 3950
 NoConn ~ 12200 3850
 $Comp
-L GND #PWR0302
+L GND #PWR0303
 U 1 1 4C9B921B
 P 12350 4800
-F 0 "#PWR0302" H 12350 4800 30  0001 C CNN
+F 0 "#PWR0303" H 12350 4800 30  0001 C CNN
 F 1 "GND" H 12350 4730 30  0001 C CNN
 	1    12350 4800
 	0    -1   -1   0   
 $EndComp
 $Comp
-L VDD #PWR0303
+L VDD #PWR0304
 U 1 1 4C9B9218
 P 12250 4700
-F 0 "#PWR0303" H 12250 4800 30  0001 C CNN
+F 0 "#PWR0304" H 12250 4800 30  0001 C CNN
 F 1 "VDD" H 12250 4810 30  0000 C CNN
 	1    12250 4700
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR0304
+L GND #PWR0305
 U 1 1 4C9B9215
 P 12350 5400
-F 0 "#PWR0304" H 12350 5400 30  0001 C CNN
+F 0 "#PWR0305" H 12350 5400 30  0001 C CNN
 F 1 "GND" H 12350 5330 30  0001 C CNN
 	1    12350 5400
 	0    -1   -1   0   
 $EndComp
 $Comp
-L GND #PWR0305
+L GND #PWR0306
 U 1 1 4C9B9212
 P 12350 4150
-F 0 "#PWR0305" H 12350 4150 30  0001 C CNN
+F 0 "#PWR0306" H 12350 4150 30  0001 C CNN
 F 1 "GND" H 12350 4080 30  0001 C CNN
 	1    12350 4150
 	0    -1   -1   0   
 $EndComp
 $Comp
-L GND #PWR0306
+L GND #PWR0307
 U 1 1 4C9B920A
 P 12350 3550
-F 0 "#PWR0306" H 12350 3550 30  0001 C CNN
+F 0 "#PWR0307" H 12350 3550 30  0001 C CNN
 F 1 "GND" H 12350 3480 30  0001 C CNN
 	1    12350 3550
 	0    -1   -1   0   
 $EndComp
 $Comp
-L VDD #PWR0307
+L VDD #PWR0308
 U 1 1 4C9B9204
 P 12300 3450
-F 0 "#PWR0307" H 12300 3550 30  0001 C CNN
+F 0 "#PWR0308" H 12300 3550 30  0001 C CNN
 F 1 "VDD" H 12300 3560 30  0000 C CNN
 	1    12300 3450
 	1    0    0    -1  
@@ -794,9 +815,9 @@ $EndComp
 Text Notes 9850 2250 0    60   ~ 0
 this regulator is on the bridge
 Text Label 11000 3150 0    60   ~ 0
-V0
+V0b
 Text Label 9600 2400 0    60   ~ 0
-V5
+V5b
 $Comp
 L C C105
 U 1 1 4C9B9135
@@ -828,7 +849,7 @@ F 2 "SC-70-5" H 10400 2400 60  0000 C CNN
 	0    -1   -1   0   
 $EndComp
 Text Label 10450 3550 0    60   ~ 0
-V0
+V0b
 Text Label 7000 6600 0    60   ~ 0
 isorclk
 Text Label 7000 6800 0    60   ~ 0
@@ -840,7 +861,7 @@ isorclk
 Text Label 7800 4450 0    60   ~ 0
 isorclk
 Text Label 7800 4350 0    60   ~ 0
-rfs
+isorfs
 $Comp
 L C C90
 U 1 1 4C9B8FAE
@@ -914,7 +935,7 @@ NoConn ~ 4850 6050
 Text Label 5150 5850 0    60   ~ 0
 _reset
 Text Label 5150 5950 0    60   ~ 0
-step
+isostep
 $Comp
 L R R89
 U 1 1 4C9B8FA8
@@ -1054,19 +1075,19 @@ F 2 "0603" H 10400 6350 60  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR0308
+L GND #PWR0309
 U 1 1 4C9B8790
 P 12050 6250
-F 0 "#PWR0308" H 12050 6250 30  0001 C CNN
+F 0 "#PWR0309" H 12050 6250 30  0001 C CNN
 F 1 "GND" H 12050 6180 30  0001 C CNN
 	1    12050 6250
 	1    0    0    -1  
 $EndComp
 $Comp
-L VEE #PWR193
+L VEE #PWR195
 U 1 1 4C9B878C
 P 12000 6100
-F 0 "#PWR193" H 12000 6300 40  0001 C CNN
+F 0 "#PWR195" H 12000 6300 40  0001 C CNN
 F 1 "VEE" H 12000 6250 40  0000 C CNN
 	1    12000 6100
 	1    0    0    -1  
@@ -1233,7 +1254,7 @@ F 2 "0402" V 6650 3300 60  0001 C CNN
 	0    1    1    0   
 $EndComp
 Text Label 5150 2550 0    60   ~ 0
-step
+isostep
 Text Label 5150 2450 0    60   ~ 0
 _reset
 NoConn ~ 4850 2650
@@ -1359,10 +1380,10 @@ F 2 "0402" H 3700 10650 60  0000 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR0309
+L GND #PWR0310
 U 1 1 4CA0ED85
 P 4100 10400
-F 0 "#PWR0309" H 4100 10400 30  0001 C CNN
+F 0 "#PWR0310" H 4100 10400 30  0001 C CNN
 F 1 "GND" H 4100 10330 30  0001 C CNN
 	1    4100 10400
 	0    1    1    0   
