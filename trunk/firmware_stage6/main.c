@@ -1,4 +1,4 @@
-#include <cdefBF537.h>
+#include <cdefBF527.h>
 #include "memory.h"
 #include "util.h"
 #include "lcd.h"
@@ -46,82 +46,72 @@ int main() {
 	*pSPORT1_TFSDIV = 0; 
 	*pSPORT1_RFSDIV = 0; 
 	
-	/* port mux: (page 862)
-	0000 - default
-	1110 - tsclk1,tfs1,dt1pri ; rsclk1,rfs1,dr1pri; dr1sec, dt1sec
-	0000 - uart 1 tx/rx (but we don't actually use it)
-	0000 - uart0 tx/rx ; dr0sec, dt0sec ; tfs0, dt0pri
+	/* port f:
+	0	DR0PRI in
+	1	RFS0 out
+	2	RCLK0 out
+	3	PF3		0b0111 ; 0b0110 ; 0b0001
+	4	PF4
+	5	PF5
+	6	PF6
+	7	DR0SEC i	0b1000 ; 0b0000 ; 0b1000
+	8	PF8
+	9	PF9
+	10	PF10
+	11	TFS1 o	0b1000 ; 0b1000 ; 0b0000
+	12	DT1PRI o
+	13	TSCLK1 o
+	14	PF14
+	15	P15		0b0011 ; 0b0011 ; 0b0000
 	*/
-	*pPORT_MUX = 0x0e00 ; 
-	/* port f: emg_dsp
-	0	uart0 tx 		(peripheral enabled)
-	1	uart0 rx 		(peripheral enabled)
-	2	uart1 tx 		(gpio, input)
-	3	uart1 rx 		(gpio, input)	
-			0x3 0b0011 ; 0x0 0b0000 ; 0x0 0b0000
-	4	lcd_cs			(gpio, output)
-	5	nordic IRQ 	(gpio, input)
-	6	nordic CSN	(gpio output)
-	7	usb_gpx		(gpio input, usb output) 
-			0x0 0b0000 ; 0x5 0b0101 ; 0xa 0b1010
-	8	usb_int			(gpio input, usb output)
-	9	nordic CE		(gpio output)
-	10 flash _cs		(peripheral spi output) (gpio output in bootloader?)
-	11 mosi			(peripheral spi output)	
-			0xc 0b1100 ; 0x2 0b0010 ; 0x1 0b0001
-	12 miso			(peripheral spi input)
-	13 sclk				(peripheral spi output)
-	14 usb_ss			(gpio output, usb input)
-	15 sr_load		(gpio output)					
-			0x3 0b0011 ; 0xc 0b1100 ; 0x0 0b0000
-	*/
-	*pPORTF_FER = 0x3803 ;
-	*pPORTFIO_DIR = 0xc650 ; 
-	*pPORTFIO_INEN = 0x01a0 ; 
+	*pPORTF_FER = 0x3887 ;
+	*pPORTFIO_DIR = 0x3806 ; 
+	*pPORTFIO_INEN = 0x0081 ; 
 	/* port g:
-	0-7	header		(gpio output)					0x00 ; 0xff ; 0x00
-	8	dr1sec			(peripheral input)
-	9	dt1sec			(gpio output)
-	10 rsclk1			(peripheral input, slave)
-	11 rfs1				(peripheral input, slave)	0xd 0b1101 ; 0x2 0b0010 ; 0x0
-	12 dr1pri			(peripheral input)
-	13 tsclk1			(peripheral output, master)
-	14 tfs1				(peripheral output, master)
-	15 dt1pri			(peripheral ,to ADCs)		0xf 0b1111 ; 0x0 ; 0x0
+	0	PG0 o
+	1	PG1-SPISS o
+	2	SCK o
+	3	MISO i
+			0b1100 ; 0b0111 ; 0b1000
+	4	MOSI o
+	5	PG5-WIRED_STEP o
+	6	PG6-WIRED_RESET o
+	7	UART0TX o
+			0b1001 ; 0b1111 ; 0b0000
+	8	UART0RX i
+	9	PG9-NRF_CSN o
+	10	PG10-NRF_CE o
+	11	PG11-NRF_IRQ i
+			0b0001 ; 0b0110 ; 0b1001
+	12	PG12
+	13	PG13
+	14	MDC
+	15	PHYINIT
+			0b1100 ; 0b0111 ; 0b0000
 	*/
-	*pPORTG_FER = 0xfd00 ; 
-	*pPORTGIO_DIR = 0x00ff ; 
-	*pPORTGIO_INEN = 0x0000 ; 
+	*pPORTG_FER = 0xc19c ; 
+	*pPORTGIO_DIR = 0x76f7 ; 
+	*pPORTGIO_INEN = 0x0908 ; 
 	/* port h:  all are hooked to the ethernet PHY */
 	*pPORTH_FER = 0xffff ; 
 	*pPORTHIO_DIR = 0 ; 
 	*pPORTHIO_INEN = 0 ; 
-	/* port j:  (controlled by PORT_MUX register, no gpio)
-	0	mdc				(peripheral ethernet)
-	1	mdio			(peripheral ethernet)
-	2	twi sclk		(peripheral o.c.)
-	3	twi sda			(peripheral o.c.)
-	4	dr0sec			(peripheral input)
-	5	nc				()
-	6	rsclk0			(peripheral input, slave)
-	7	rfs0				(peripheral input, slave)
-	8	dr0pri			(peripheral input)
-	9	tsclk0 			lcd_clk, peripheral output, master
-	10 nc				()
-	11 dt0pri			lcd_data, peripheral	
-	*/
+	
 	asm volatile("ssync"); 
-	LCD_init() ; 
+
 	*pUART0_IER = 0; //turn off interrupts, turn them on later.
 	*pUART0_MCR = 0; 
 	*pUART0_LCR =  0x0080; //enable access to divisor latch. 
-	*pUART0_DLL = 108; //see page 810 of the BF537 hardware ref. this is the lower byte of the divisor.
-		// 65 -> 115200.  ;  130 -> 57600 (about).  w/ system clock of120Mhz. baud rate is 115200. 
-		// 108 -> 57600 w/ system clock of 100Mhz.
+	*pUART0_DLL = 136; 
+		//bit rate = SCLK / 16*divisor. 
+		//this is the lower byte of the divisor.
+		// 136 -> 57600 w/ system clock of 125MHz
 	*pUART0_DLH = 0; 
 	*pUART0_LCR = 0x0003; //parity disabled, 1 stop bit, 8 bit word. 
 	*pUART0_GCTL = 0x0001; //enable the clock.
-	printf_int("Myopen svn v.", /*SVN_VERSION{*/219/*}*/ ) ; 
+	printf_temp = (char*)PRINTF_TEMP; //init the pointers. 
+	printf_out = (char*)PRINTF_OUT; 
+	printf_int("Myopen svn v.", /*SVN_VERSION{*/378/*}*/ ) ; 
 	printf_str("\n"); 
 	printf_str("checking SDRAM...\n"); 
 	unsigned short* p; 
@@ -161,39 +151,12 @@ int main() {
 	}
 	printf_hex("float, hex:", (int)a);
 	*/
-	usb_init(); 
+	//usb_init(); 
 	int etherr = bfin_EMAC_init(); 
 	if(!etherr) DHCP_req();  //want to be able to turn this one off, if we need to operate with APL & XPC stuff.
 	
 	//setup the filters before we start acquiring samples! 
 	//please see (or run!) flt_design.m
-	short* ps = (short*)IIR_WEIGHT; 
-	//lowpass biquad 1
-	*ps++ = 1649; //b0 , lowpass biquad 1 
-	*ps++ = 1840; //b1
-	*ps++ = 25793; //a0  DON'T FORGET TO switch SIGN!! 
-	*ps++ = -15457; //a1 (look at how matlab reports denominator coef!!)
-	//highpass biquad
-	*ps++ = 14488; 
-	*ps++ = -28976; 
-	*ps++ = 32510; //close to 0x7fff ! 
-	*ps++ = -16130; 
-	//lowpass biquad 2
-	*ps++ = 1649; 
-	*ps++ = -1751; 
-	*ps++ = 26211; 
-	*ps++ = -13500; 
-	//lowpass biquad 3
-	*ps++ = 1649; 
-	*ps++ = -1039; 
-	*ps++ = 27280; 
-	*ps++ = -11802; 
-	
-	//zero the delays. 
-	ps = (short*)IIR_DELAY; 
-	for(i=0; i<160; i++){
-		*ps++ = 0; 
-	}
 
 	//set up cursor control? 
 	g_mouseXpos = PhysicalToLogicalChan(0); 
@@ -203,18 +166,7 @@ int main() {
 	g_mouseShift = 7; //scaling / threshold. 
 	//turn on the SPORTS last, as the ethernet has to be ready to blast out the data. 
 	g_streamEnabled = 0; 
-	u8* raw_enab = (u8*)RAW_ENAB; 
-	raw_enab = 0; 
 	printf_str("turning on SPORTs\n"); 
-	u32* samp_ctr = (u32*)SAMP_CTR; 
-	u32* wr_ptr = (u32*)WR_PTR; 
-	u32* tr_ptr = (u32*)TR_PTR; 
-	u32* adc_ctr = (u32*)ADC_CTR; 
-	*samp_ctr = 0; 
-	*wr_ptr = 0; 
-	*tr_ptr = 0; 
-	*adc_ctr = 0; 
-	GTIME = 0; 
 	if(1){
 		//set up the receive first, since it is controled by the transmit sport. 
 		*pSPORT0_RCR2 = 0x0100 + 19; //enable second side, serial word length 20
@@ -240,6 +192,8 @@ int main() {
 	}
 	u32* data; 
 	char result; 
+	u32* tr_ptr = pTR_PTR;
+	u32* wr_ptr = pWR_PTR; 
 	#define UDP_PACKET_SIZE 512
 	while(1) {
 		if(!etherr) bfin_EMAC_recv( (u8**)(&data) ); //listen for packets? (and respond)
@@ -270,18 +224,8 @@ int main() {
 				}
 			}
 		}
-		usb_intr(); //check to see if there are any USB events to respond to.
+		//usb_intr(); //check to see if there are any USB events to respond to.
 		*pPORTFIO_TOGGLE = 0x40 ; //toggle the nordic CSN pin.
-		unsigned int u = *((unsigned int*)WR_PTR); 
-		int x, y; 
-		x = calcMeanOfChannel(u, g_mouseXpos) ; 
-		y = calcMeanOfChannel(u, g_mouseXneg) ; 
-		if(x-y > 60) {
-			printf_str("d"); 
-		}
-		if(y-x > 60){
-			printf_str("a"); 
-		}
 	}
 	return 0; 
 }

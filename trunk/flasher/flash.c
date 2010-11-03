@@ -26,7 +26,8 @@ pin5	 D3 = _prog , pull low to hold the processor in reset &
 #define SCLK	LP_PIN04
 #define _PROG	LP_PIN05
 
-int g_type = 0; // 0 = AT45; 1 = AT25. 
+int g_type = 0; 
+// 0 = AT45; 1 = AT25041; 2 = AT25081 
 
 void cleanup(int doexit){
 	clear_pin( _PROG | _CS | SO | SCLK); //release the device! 
@@ -112,8 +113,8 @@ unsigned char read_stat_AT25(int doprint){
 	stat= read_byte(); 
 	set_pin(_CS); 
 	set_pin(SO);
-	if(stat != 0x11)
-		printf("status register %x \n", stat);
+	if(stat != 0x11 && stat != 0x13)
+		printf("status register 0x%x \n", stat);
 	if(stat & 0x80){
 		printf("sector protection registers locked!\n");
 	} else {
@@ -166,12 +167,15 @@ void unprotect_AT25(){
 }
 void block_erase_AT25(int data_length){
 	int addr = 0; 
+	int length = 512*1024; 
+	if(g_type == 2) length = 1024*1024; 
 	for(addr = 0; addr <= data_length && addr <= 512*1024; addr += 4096){
 		printf("block erase %d ( 0x%x )\n",addr, addr); 
 		//unprotect this block. 
 		write_enable_AT25();
 		clear_pin(_CS | SCLK); 
-		write_byte(0x39); 
+		if(g_type == 1) write_byte(0x39);
+		if(g_type == 2) write_byte(0x52); 
 		write_byte((addr >> 16) & 0xff);
 		write_byte((addr >> 8) & 0xff); 
 		write_byte((addr >> 0) & 0xff); 
@@ -186,9 +190,15 @@ void block_erase_AT25(int data_length){
 		write_byte((addr >> 0) & 0xff); 
 		set_pin(_CS);
 		set_pin(SO); 
-		do{
+		int ctr = 0; 
+		int stat = read_stat_AT25(0); 
+		while(stat & 0x01){
 			usleep(1000); 
-		}while( (read_stat_AT25(0) & 0x01) );
+			stat = read_stat_AT25(0);
+			ctr++; 
+			if(ctr % 1000 == 0)
+				printf("status register 0x%x\n", stat); 
+		}
 		usleep(1000); 
 	}
 }
@@ -406,6 +416,18 @@ int main(int argv, char* argc[]){
 	set_pin(_PROG); 
 	clear_pin(SCLK); 
 	usleep(10000); 
+	//leave deep power down.
+	clear_pin(_CS | SCLK); 
+	write_byte(0xBA); 
+	set_pin(_CS); 
+	set_pin(SO);
+	usleep(10000); 
+	//leave deep power down.
+	clear_pin(_CS | SCLK); 
+	write_byte(0xBA); 
+	set_pin(_CS); 
+	set_pin(SO);
+	usleep(10000); 
 
 	i = 0; 
 	disp = 0; 
@@ -420,7 +442,7 @@ int main(int argv, char* argc[]){
 		write_byte(0x9f); 
 		for(j=0; j<4; j++){//see page 44 of the spec sheet.
 			byte = read_byte(); 
-			if(disp||1)printf("read: 0x%x \n", byte);
+			if(disp||i<=2)printf("read: 0x%x \n", byte);
 			if(pass == 1){
 				switch(j){
 					case 0:
@@ -436,6 +458,9 @@ int main(int argv, char* argc[]){
 						} else if(byte == 0x25){
 							if(disp) printf("looks like an AT45DB081\n"); 	
 							g_type = 0; 
+						} else if(byte == 0x45){
+							if(disp) printf("looks like an AT25DF081\n"); 
+							g_type = 2; 
 						} else {
 							printf("unrecognized device ID\n"); 
 							i = 0; 
@@ -453,15 +478,17 @@ int main(int argv, char* argc[]){
 				}
 				i++; 
 				//this is a bit of overkill, but better not to write crap to flash! 
-				if(i >= 999) printf("communication test: completed passes: %d\n",i); 
+				if(i > 999) printf("communication test: completed passes: %d\n",i); 
 			}
 		}
 		set_pin(_CS); 
 		usleep(50); 
 	}
 	}
-	if(g_type == 1) printf("looks like an AT25DF041\n"); 
+	printf("status register 0x%x\n", read_stat_AT25(0)); 
 	if(g_type == 0) printf("looks like an AT45DB081\n"); 
+	if(g_type == 1) printf("looks like an AT25DF041\n"); 
+	if(g_type == 2) printf("looks like an AT25DF081\n"); 
 	//need to make sure the device is in power of 2 binary page size. 
 	//converting to this is a one-time operation. 
 	if( g_type == 0 && (read_status_register(1) & 0x01) == 0){
@@ -490,7 +517,27 @@ int main(int argv, char* argc[]){
 			exit(0); 
 		}
 	}
-	if(g_type == 1){
+	if( g_type == 2 ){
+		//enter deep power down. 
+		clear_pin(_CS | SCLK); 
+		write_byte(0xb9); 
+		set_pin(_CS); 
+		set_pin(SO);
+		usleep(100000); 
+		//leave deep pwr down.
+		clear_pin(_CS | SCLK); 
+		write_byte(0xab); 
+		set_pin(_CS); 
+		set_pin(SO);
+		usleep(10000);
+		//leave deep pwr down.
+		clear_pin(_CS | SCLK); 
+		write_byte(0xab); 
+		set_pin(_CS); 
+		set_pin(SO);
+		usleep(10000); 
+	}
+	if(g_type == 1 || g_type == 2){
 		unprotect_AT25();
 		block_erase_AT25(file_size); 
 	}

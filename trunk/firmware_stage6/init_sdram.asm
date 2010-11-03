@@ -9,63 +9,25 @@ start: //init_sdram.asm
 	[--sp] = (r7:0);
 	[--sp] = (p5:0);
 	
-	p0.l = LO(PORTFIO_DIR); 
-	p0.h = HI(PORTFIO_DIR); 
-	r0 = w[p0]; 
-	bitset(r0, 6)
-	w[p0] = r0 ; 
-	p0.l = LO(PORTF_FER); 
-	p0.h = HI(PORTF_FER); 
-	r0 = w[p0]; 
-	bitclr(r0, 6)
-	w[p0] = r0 ; 
-	
-	r0 = 0x32;
+	r0 = 0x32; //page 778.  enable 64 bit cycle counter.
 	SYSCFG = r0;
 	SSYNC; 
 	
-	/* Set loop counters to zero, to make sure that hw loops are disabled. */
+	/* Set loop counters to zero, 
+	to make sure that hw loops are disabled. */
 	r0  = 0;
 	lc0 = r0;
 	lc1 = r0;
 	
 	/* turn off the onboard switching regulator */
-	r0 = 0x40d8 ; 
-	p0.l = LO(VR_CTL); 
+	r0 = 0x4090 ; 
+	p0.l = LO(VR_CTL); //page 867
 	p0.h = HI(VR_CTL); 
 	w[p0] = r0 ; 
 	SSYNC; 
-	/*I've hard-wired boost to 'on', so we don't have to fuss with the 
-	SPI-sequenced peripherals here */
-	/* need to enable/disable peripherals before anything else -
-	most importantly, the core voltage needs to be set! */
-	//save the SPI control register! the boot loader needs this in a particular state!
-	//rather than guessing what it needs, we just save to stack.
-	/*
-	p0.h = HI(SPI_CTL); 
-	p0.l = LO(SPI_CTL); 
-	r7.l = w[p0]; 
-	[--sp] = r7; 
-	p0.l = LO(SPI_FLG); 
-	r7.l = w[p0]; 
-	[--sp] = r7; 
-	call _start_peripherals ; //trounces a bunch of registers, fyi..
-	r7 = [sp++]; 
-	p0.h = HI(SPI_FLG); 
-	p0.l = LO(SPI_FLG); 
-	w[p0] = r7.l; 
-	r7 = [sp++]; 
-	p0.l = LO(SPI_CTL); 
-	//first write a zero to disable, then re-enable.
-	r0 = 0; 
-	w[p0] = r0.l ; 
-	ssync; 
-	w[p0] = r7.l; 
-	//jump _test ; 
-	*/
 	
 	/* enable pll wakeup */
-	p0.h = HI(SIC_IWR);
+	p0.h = HI(SIC_IWR); //page 170 hardware ref
 	p0.l = LO(SIC_IWR);
 	r0.l = 0x1;
 	w[p0] = r0.l;
@@ -98,8 +60,8 @@ start: //init_sdram.asm
 	*   - [0]     = DF        : 1=Pass CLKIN/2 to PLL / 0=Pass CLKIN to PLL
 	*   all other bits set to zero
 	*/
-	r0 = 20 & 63;      /* Load the VCO multiplier         */
-	/* core clock = 25MHz * 20 = 500Mhz */
+	r0 = 24 & 63;      /* Load the VCO multiplier         */
+	/* core clock = 25MHz * 24 = 600Mhz */
 	r0 = r0 << 9;                   /* Shift it over,                  */
 	r1 = CONFIG_CLKIN_HALF;        /* Do we need to divide CLKIN by 2?*/
 	r0 = r1 | r0;
@@ -116,7 +78,7 @@ start: //init_sdram.asm
 	sti r2;                         /* Enable interrupts               */
 	
 check_again:
-	p0.h =HI(PLL_STAT);
+	p0.h = HI(PLL_STAT);
 	p0.l = LO(PLL_STAT);
 	R0 = W[P0](Z);
 	CC = BITTST(R0,5); /* PLL_locked bit */
