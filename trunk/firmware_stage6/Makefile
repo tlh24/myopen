@@ -8,6 +8,7 @@ CPUDEFINES = -D__ADSPBF527__  -D__BLACKFIN__
 INCLUDES = -I/opt/uClinux/bfin-elf/bfin-elf/include/
 ASMFLAGS = -x assembler-with-cpp $(INCLUDES) $(CPUDEFINES) -Wall
 ASMFLAGS += -mcpu=bf527 -include memory.h -include defBF527.h
+ASMFLAGS += -g
 OPTFLAGS = -O3 -ffast-math -mfast-fp -funsafe-math-optimizations 
 CFLAGS = $(INCLUDES) $(CPUDEFINES) -mcpu=bf527 -Wall
 
@@ -63,6 +64,13 @@ emg_dbg.dxe: $(DBGOBJS)
 	$(LD) -T bftiny_dbg.x -o $@ $(DBGOBJS)
 	$(OBDMP) -d emg_dbg.dxe > dbg_decompile.asm
 	
+# this is for loading with the JTAG cable (icebear, from section5.ch)
+test.dxe: test.o test_spi.do
+	./debug.pl bftiny.x > bftiny_dbg.x
+	$(LD) -T bftiny_test.x -o $@ test.o test_spi.do
+	$(OBDMP) -d $@ > test_decompile.asm
+
+# this written to flash. 
 emg_dsp.ldr:emg_dsp.dxe init_sdram.dxe
 	rm -f *.ldr
 	$(LDR) -v -T BF537 -c $@ -i init_sdram.dxe -v emg_dsp.dxe

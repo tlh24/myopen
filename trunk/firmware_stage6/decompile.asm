@@ -805,7 +805,7 @@ ffa008d0:	0a e1 d8 0c 	P2.L = 0xcd8;		/* (3288)	P2=0xff900cd8 <_printf_out> */
 ffa008d4:	50 4f       	R0 <<= 0xa;
 ffa008d6:	10 93       	[P2] = R0;
 ffa008d8:	40 e1 90 ff 	R0.H = 0xff90;		/* (-112)	R0=0xff90e001(-7282687) */
-ffa008dc:	21 e1 7a 01 	R1 = 0x17a (X);		/*		R1=0x17a(378) */
+ffa008dc:	21 e1 80 01 	R1 = 0x180 (X);		/*		R1=0x180(384) */
 ffa008e0:	00 e1 a4 00 	R0.L = 0xa4;		/* (164)	R0=0xff9000a4(-7339868) */
 ffa008e4:	00 e3 84 03 	CALL 0xffa00fec <_printf_int>;
 ffa008e8:	40 e1 90 ff 	R0.H = 0xff90;		/* (-112)	R0=0xff9000a4(-7339868) */
