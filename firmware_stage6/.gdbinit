@@ -1,4 +1,4 @@
-file emg_dbg.dxe 
+file test.dxe 
 
 target remote localhost:2000 
 
@@ -11,4 +11,4 @@ define target_init
 	monitor reset 
 end
 
-# load emg_dbg.dxe
+load test.dxe
