@@ -114,25 +114,25 @@ int httpResp( char* payload, int paylen ){
 		pos = substr("xpos_chan=",payload,paylen); 
 		if(pos){
 			p = payload; p += pos; 
-			g_mouseXpos = (u8)(PhysicalToLogicalChan(atoi( p, 3)) & 0xff); 
+			//g_mouseXpos = (u8)(PhysicalToLogicalChan(atoi( p, 3)) & 0xff); 
 			paramChanged = 1; 
 		}
 		pos = substr("ypos_chan=",payload,paylen); 
 		if(pos){
 			p = payload; p += pos; 
-			g_mouseYpos = (u8)(PhysicalToLogicalChan(atoi( p, 3)) & 0xff); 
+			//g_mouseYpos = (u8)(PhysicalToLogicalChan(atoi( p, 3)) & 0xff); 
 			paramChanged = 1; 
 		}
 		pos = substr("xneg_chan=",payload,paylen); 
 		if(pos){
 			p = payload; p += pos; 
-			g_mouseXneg = (u8)(PhysicalToLogicalChan(atoi( p, 3)) & 0xff); 
+			//g_mouseXneg = (u8)(PhysicalToLogicalChan(atoi( p, 3)) & 0xff); 
 			paramChanged = 1; 
 		}
 		pos = substr("yneg_chan=",payload,paylen); 
 		if(pos){
 			p = payload; p += pos; 
-			g_mouseYneg = (u8)(PhysicalToLogicalChan(atoi( p, 3)) & 0xff); 
+			//g_mouseYneg = (u8)(PhysicalToLogicalChan(atoi( p, 3)) & 0xff); 
 			paramChanged = 1; 
 		}
 		//set the destination IP
@@ -200,7 +200,7 @@ int httpResp( char* payload, int paylen ){
 			dest += len;
 			dest = strcpy_(dest, &len, "<table>\n"); 
 			for(i=0; i<16; i++){
-				int logical = PhysicalToLogicalChan(i); 
+				int logical = 0/*PhysicalToLogicalChan(i)*/; 
 				dest = strcpy_(dest, &len, "<tr><td>Channel "); 
 				dest = strprintf_int(dest, &len, i ); 
 				dest = strcpy_(dest, &len, "</td><td>mean "); 
@@ -296,13 +296,13 @@ int htmlDefault(){
 	dest = htmlForm(dest, &len); 
 	dest = strcpy_(dest, &len, "Cursor control channels:\n<table>\n"); 
 	dest = htmlCursorSelect(dest, &len, "+X (right)", "xpos_chan", 
-		LogicalToPhysicalChan(g_mouseXpos) ); 
+		0/*LogicalToPhysicalChan(g_mouseXpos) */); 
 	dest = htmlCursorSelect(dest, &len, "-X (left)", "xneg_chan", 
-		LogicalToPhysicalChan(g_mouseXneg) ); 
+		0/*LogicalToPhysicalChan(g_mouseXneg) */); 
 	dest = htmlCursorSelect(dest, &len, "+Y (down)", "ypos_chan", 
-		LogicalToPhysicalChan(g_mouseYpos) ); 
+		0/*LogicalToPhysicalChan(g_mouseYpos) */); 
 	dest = htmlCursorSelect(dest, &len, "-Y (up)", "yneg_chan", 
-		LogicalToPhysicalChan(g_mouseYneg) ); 
+		0/*LogicalToPhysicalChan(g_mouseYneg) */); 
 	dest = strcpy_(dest, &len, 
 		"</table>\n<input type=\"submit\" value=\"Save\"/>\n</form></div>\n");
 	

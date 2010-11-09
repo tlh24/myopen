@@ -1,7 +1,7 @@
-#ifndef __ETHER_BF537__
-#define __ETHER_BF537__
+#ifndef __ETHER_BF527__
+#define __ETHER_BF527__
 
-#define PHYADDR			0x06
+#define PHYADDR			0x00
 #define NO_PHY_REGS		0x20
 
 #define DEFAULT_PHY_PHYID1	0x0007
