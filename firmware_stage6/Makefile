@@ -1,6 +1,6 @@
 ASMSRCS = crt0.asm peripheral.asm
 DBGASMSRCS = init_sdram_dbg.asm crt0_dbg.asm peripheral.asm
-CSRCS = main.c print.c util.c ethernet.c arp.c tcp.c http.c
+CSRCS = test_spi.c print.c util.c spi.c ethernet.c arp.c tcp.c http.c
 INITSRC = init_sdram.asm
 # note: the order of objects in the .ldr mirrors the order in this list!
 
@@ -65,9 +65,9 @@ emg_dbg.dxe: $(DBGOBJS)
 	$(OBDMP) -d emg_dbg.dxe > dbg_decompile.asm
 	
 # this is for loading with the JTAG cable (icebear, from section5.ch)
-test.dxe: test.o test_spi.do print.do util.do ethernet.do arp.do tcp.do http.do
+test.dxe: test.o $(DBGOBJS)
 	./debug.pl bftiny.x > bftiny_dbg.x
-	$(LD) -T bftiny_test.x -o $@ test.o test_spi.do print.do util.do ethernet.do arp.do tcp.do http.do
+	$(LD) -T bftiny_test.x -o $@ test.o $(DBGOBJS)
 	$(OBDMP) -d $@ > test_decompile.asm
 
 # this written to flash. 
