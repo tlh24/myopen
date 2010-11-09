@@ -3,28 +3,13 @@
 #include "memory.h"
 #include "util.h"
 #include "print.h"
-#include "../../neurorecord/spi.h"
+#include "spi.h"
 #include "ethernet.h"
 
 u8 g_streamEnabled; 
 
-void spi_delay(){
-	//wait until the spi transation is done. 
-	u16 status = 8;
-	//the SPI port has a transmit fifo, but as we are using software to drive the pins, 
-	// only continue when this buffer is empty ( = has been transferred to the shift reg). 
-	//without this, the SPI behavior is pipelined and rather confusing! 
-	while( (status & 0x8) ){ //examine the TXS bit (buffer full)
-		status = *pSPI_STAT; 
-	}
-	while( (status & 0x1) == 0 ){ //examine the SPIF (transfer finished) bit. 
-		status = *pSPI_STAT; 
-	}
-}
-
 int main(void){
 	//the nordic chip has a SPI port rated up to 10Mhz.
-	u32 c = 0; 
 	*pPORTG_FER = 0xc19c; //UART, SPI, MDC
 	*pPORTGIO_DIR = 0x3; 
 	*pPORTG_MUX = 0x0020; 
@@ -87,30 +72,62 @@ int main(void){
 	
 	//enable the radio.
 	radio_init(124); 
+	radio_set_rx(); 
 	
 	//startup the ethernet..
 	int etherr = bfin_EMAC_init(); 
 	if(!etherr) DHCP_req();  
 	
-	//write out words.. 
+	//setup for heartbeat.
+	*pPORTF_FER &= (0xffff ^ 0x8);
+	*pPORTFIO_DIR |= 0x8; 
+	*pPORTFIO_INEN &= (0xffff ^ 0x8); 
+	
+	//write out data.
+	#define UDP_PACKET_SIZE 256
 	int prevtime = 0;
 	int secs; 
 	u32* data;
+	u32  wrptr = 0; //write pointer - actual address - SDRAM!
+	u32  trptr = 0;
+	char result;
 	while(1){
+		//listen for packets? (both interfaces, respond on eth)
 		if(!etherr) bfin_EMAC_recv( (u8**)(&data) ); 
-			//listen for packets? (and respond)
+		if(spi_read_packet((void*)(wrptr & 0xfff))){
+			wrptr += 32; 
+		}
+		if(wrptr < trptr) trptr = 0; 
+		if(wrptr - trptr >= UDP_PACKET_SIZE){
+			data = (u32*) ( udp_packet_setup(UDP_PACKET_SIZE + 4, &result )); 
+			if(result > 0){
+				//copy the data from SDRAM.. (starting @ 0x0000 0000, looping 256k bytes)
+				//include a copy of the tptr, so that we can (possibly) reorder it. 
+				(*data++) = trptr; //this is the +4
+				//we don't know if the transmit pointer will be aligned with packet boundaries -- 
+				//so do the memcpy manually. 
+				//memcpy((u8*)((*tr_ptr) & 0x0003ffff), data, 1024); 
+				u32* src = (u32*)trptr; 
+				//alignment errors?  need it to be 32-byte aligned. 
+				src = (u32*)((u32)src & (~0x1f)) ; 
+				for(i=0; i<UDP_PACKET_SIZE/4; i++){
+					src = (u32*) ( ((u32)src) & 0xfff ); 
+					*data++ = *src++; 
+				}
+				trptr += UDP_PACKET_SIZE ; 
+				bfin_EMAC_send_nocopy(); 
+			} else {
+				//reset, since we were not able to send anything 
+				// (possibly due to ARP). 
+				trptr += UDP_PACKET_SIZE; 
+			}
+		}
 		secs = (*pGTIME)/1000; // 0xff800800
 		if(secs != prevtime){
-			printf_int("time ", secs); 
+			*pPORTFIO_TOGGLE = 0x8; 
+			//printf_int("time ", secs); //heartbeat.
 			prevtime = secs; 
 		}
-		*pPORTGIO_CLEAR = 0x2; 
-		asm volatile("ssync"); 
-		*pSPI_TDBR = (u16)(c>>16); 
-		c++; 
-		spi_delay(); 
-		*pPORTGIO_SET = 0x2; 
-		asm volatile("ssync"); 
 	}
 	return 0;
 }

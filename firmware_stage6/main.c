@@ -111,7 +111,7 @@ int main() {
 	*pUART0_GCTL = 0x0001; //enable the clock.
 	printf_temp = (char*)PRINTF_TEMP; //init the pointers. 
 	printf_out = (char*)PRINTF_OUT; 
-	printf_int("Myopen svn v.", /*SVN_VERSION{*/384/*}*/ ) ; 
+	printf_int("Myopen svn v.", /*SVN_VERSION{*/392/*}*/ ) ; 
 	printf_str("\n"); 
 	printf_str("checking SDRAM...\n"); 
 	unsigned short* p; 
@@ -204,7 +204,7 @@ int main() {
 				if(result > 0){
 					//copy the data from SDRAM.. (starting @ 0x0000 0000, looping 256k bytes)
 					//include a copy of the tptr, so that we can (possibly) reorder it. 
-					(*data++) = *tr_ptr; 
+					(*data++) = *tr_ptr; //this is the +4
 					//we don't know if the transmit pointer will be aligned with packet boundaries -- 
 					//so do the memcpy manually. 
 					//memcpy((u8*)((*tr_ptr) & 0x0003ffff), data, 1024); 

@@ -1,17 +1,12 @@
 #ifndef __MEMORY_H__
 #define __MEMORY_H__
 
-//memory.h
-
-#define FIO_CLEAR 
-
 //gcc gets to touch 0xFF90 0000 (sram bank B, size: 0x8000)
 // we get to stomp over 0xFF80 0000 (sram bank A, same size)
 // don't need to run filters anymore - that's on the wireless part - 
 // so can use for whatever.
 #define PRINTF_TEMP	0xff800000
 #define PRINTF_OUT	0xff800400
-#define PRINTF_BUFFER_SIZE 0x0400 //1kbytes
 
 //global pointers!! 
 #define GTIME 0xff800800
@@ -30,10 +25,6 @@
 	//length: 0x610 * 4 = 0x1840
 #define TXBUF_BASE_ADDR		0xff803000
 	//same length as the rxbuf.
-#define RECV_BUFSIZE		(0x610) 
-	//1552, slightly smaller than spec sheet. 
-#define TX_BUF_CNT		4
-#define RX_BUF_CNT		4
 
 //SDRAM, 32mbytes = 2^25 = 0x0 to 0x0020 0000 - 1
 #define HTTP_HEADER		0x4000 //256 bytes. 

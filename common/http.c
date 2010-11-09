@@ -1,7 +1,6 @@
 // for serving up configuration pages.  
-#include "memory.h"
 #include "util.h"
-#include "lcd.h"
+#include "print.h"
 #include "http.h"
 #include "ethernet.h"
 
@@ -15,7 +14,7 @@ u32	g_httpRxed;  //number of bytes received in a multi-packet transfer.
 int httpCollate(char* payload, int paylen){
 	if( g_httpRxed ){
 		//then there is already data buffered -- merge it. 
-		u8* p = (u8*)HTTP_RX; 
+		u8* p = (u8*)HTTP_RX;
 		p += g_httpRxed; 
 		memcpy_((u8*)payload, p, paylen); 
 		g_httpRxed += paylen; 
@@ -195,7 +194,7 @@ int httpResp( char* payload, int paylen ){
 				sum[i] = sum[i] >> 11; 
 			}
 			int len = htmlDefault(); 
-			char* dest = ((char*)HTTP_CONTENT); 
+			char* dest = (char*)HTTP_CONTENT; 
 			len -= 19;  //overwrite the </body> </html>
 			dest += len;
 			dest = strcpy_(dest, &len, "<table>\n"); 
@@ -223,7 +222,7 @@ int httpResp( char* payload, int paylen ){
 }
 
 void httpHeader(){
-	char* h = ((char*)HTTP_HEADER); 
+	char* h = (char*)HTTP_HEADER; 
 	int txlen = 0; 
 	h = strcpy_(h, &txlen, "HTTP/1.1 200 OK\r\n"); 
 	h = strcpy_(h, &txlen, "Server: Myopen\r\n");
@@ -233,13 +232,13 @@ void httpHeader(){
 	g_httpHeaderLen = txlen; 
 }
 int html404(){
-	char* dest = ((char*)HTTP_CONTENT); 
+	char* dest = (char*)HTTP_CONTENT; 
 	int len = 0; 
 	dest = strcpy_(dest, &len, "HTTP/1.1 404 Not Found\r\n");
 	return len; 
 }
 int htmlGeneric(char* str){
-	char* dest = ((char*)HTTP_CONTENT); 
+	char* dest = (char*)HTTP_CONTENT; 
 	int len = 0; 
 	strcpy_(dest, &len, str); 
 	g_httpContentLen = len; 
@@ -247,7 +246,7 @@ int htmlGeneric(char* str){
 	return len;
 }
 int htmlDefault(){
-	char* dest = ((char*)HTTP_CONTENT); 
+	char* dest = (char*)HTTP_CONTENT; 
 	//fills *dest with the default webpage.
 	int len = 0; 
 	int j = 0; 

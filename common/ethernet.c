@@ -23,9 +23,8 @@
  * MA 02111-1307 USA
  */
 #include <cdefBF527.h>
-#include "memory.h"
 #include "util.h"
-#include "lcd.h"
+#include "print.h"
 #include "ethernet.h"
 #include "http.h"
 
@@ -273,9 +272,9 @@ int bfin_EMAC_init( ){
 	NetIPID = 0; //0 = unconfigured. 
 	NetOurIP = 0; 
 	NetSubnetMask = 0; 
-	NetOurIP = FormatIPAddress(192, 168, 0, 9); 
+	NetOurIP = FormatIPAddress(192, 168, 0, 9); //defaults, overwritten by dhcp
 	NetDestIP = FormatIPAddress(192, 168, 0, 1); 
-	NetDataDestIP = FormatIPAddress(192, 168, 0, 2); 
+	NetDataDestIP = FormatIPAddress(152, 16, 229, 44); 
 	TcpState = TCP_LISTEN; 
 	TcpSeqClient = 0; 
 	TcpSeqHost = 0x09da24b5; 

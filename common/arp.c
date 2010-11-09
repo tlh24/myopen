@@ -1,13 +1,12 @@
 #include <cdefBF537.h>
-#include "memory.h"
 #include "util.h"
-#include "lcd.h"
+#include "print.h"
 #include "ethernet.h"
 #include "http.h"
 
 //need to keep a IP -> MAC LUT. 
 arp_lut	NetArpLut[ARP_LUT_N]; 
-u16		NetArpLut_age; 
+u16		NetArpLut_age;
 
 void ARP_init(){
 	int i, j; 
@@ -145,36 +144,35 @@ int ARP_lut_find(){
 		i = 0; 
 		age = NetArpLut[i].age; 
 		for(j=0; j<ARP_LUT_N; j++){
-			if(NetArpLut[j].age < age) i = j; 
+			if(NetArpLut[j].age < age){
+				i = j; 
+				age = NetArpLut[j].age; 
+			}
 		}
 	}
 	return i; 
 }
 void ARP_lut_add(u32 who, u8* mac){
-	int i, j; 
+	int i, j, fnd; 
+	fnd = -1; 
 	//first have to see if it's already there... 
-	for(i=0; i<ARP_LUT_N; i++){
-		if(NetArpLut[i].ip == who){
-			//update the record.. 
-			//printf_ip("ARP updating LUT ", who); 
-			//printf_str("\n"); 
-			for(j=0; j<6; j++){
-				NetArpLut[i].mac[j] = mac[j]; 
-			}
-			return; 
-		}
+	for(i=0; i<ARP_LUT_N && fnd < 0; i++){
+		if(NetArpLut[i].ip == who)
+			fnd = i; 
+	}
+	if(fnd < 0){
+		fnd = ARP_lut_find(); 
 	}
 	printf_ip("ARP adding to LUT ", who); 
+	printf_int(" at ", fnd); 
 	printf_str("\n"); 
-	//next try inserting into open slot. 
-	i = ARP_lut_find(); 
-	NetArpLut[i].ip = who; 
+	NetArpLut[fnd].ip = who; 
 	for(j=0; j<6; j++){
-		NetArpLut[i].mac[j] = mac[j]; 
+		NetArpLut[fnd].mac[j] = mac[j]; 
 	}
 	NetArpLut_age++; //let it wrap if need be..
-	NetArpLut[i].age = NetArpLut_age; 
-	NetArpLut[i].flags = ARP_LUT_VALID; //clear any old wait flags in there.
+	NetArpLut[fnd].age = NetArpLut_age; 
+	NetArpLut[fnd].flags = ARP_LUT_VALID; //clear any old wait flags in there.
 }
 int ARP_lu(u32 who, u8* mac_dest){
 	//see if it is in the ARP LUT; if not, get the address. 
@@ -197,8 +195,8 @@ if the timeout is zero or expired, send a request.
 otherwise, give up.  (there is no limit to the 
 number of ARP requests in this scheme.) */
 int ARP_req(u32 who, u8* mac_dest){
-	if(ARP_lu(who, mac_dest)) return 1; 
-	//look in present table.. 
+	//look in present table..
+	if(ARP_lu(who, mac_dest)) return 1;  
 	int i; 
 	u32 t = *pGTIME; 
 	for(i=0; i<ARP_LUT_N; i++){

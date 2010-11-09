@@ -1,6 +1,5 @@
 (* simple test client *)
 
-(* first task - recieve from a udp socket *)
 open Unix
 open Printf
 open Tk
