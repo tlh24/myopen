@@ -3,6 +3,7 @@
 #include "memory.h"
 #include "util.h"
 #include "print.h"
+#include "../../neurorecord/spi.h"
 #include "ethernet.h"
 
 u8 g_streamEnabled; 
@@ -23,9 +24,8 @@ void spi_delay(){
 
 int main(void){
 	//the nordic chip has a SPI port rated up to 10Mhz.
-	// system clock is 125Mhz, so divide by 12. (10.41MHz)
 	u32 c = 0; 
-	*pPORTG_FER = 0x019c; //UART and SPI.
+	*pPORTG_FER = 0xc19c; //UART, SPI, MDC
 	*pPORTGIO_DIR = 0x3; 
 	*pPORTG_MUX = 0x0020; 
 	*pSPI_BAUD = 6; 
@@ -84,6 +84,9 @@ int main(void){
 	*pTIMER5_PERIOD = 125000; 
 	*pTIMER5_WIDTH = 62500; 
 	*pTIMER_ENABLE |= 0x20; //enable the timer.
+	
+	//enable the radio.
+	radio_init(124); 
 	
 	//startup the ethernet..
 	int etherr = bfin_EMAC_init(); 
