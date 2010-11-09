@@ -1,16 +1,16 @@
-ASMSRCS = crt0.asm peripheral.asm
-DBGASMSRCS = init_sdram_dbg.asm crt0_dbg.asm peripheral.asm
-CSRCS = test_spi.c print.c util.c spi.c ethernet.c arp.c tcp.c http.c
-INITSRC = init_sdram.asm
+COMMON = print.o util.o spi.o ethernet.o arp.o tcp.o http.o
+LOCAL = test.o test_spi.o 
 # note: the order of objects in the .ldr mirrors the order in this list!
 
 CPUDEFINES = -D__ADSPBF527__  -D__BLACKFIN__
-INCLUDES = -I/opt/uClinux/bfin-elf/bfin-elf/include/
+INCLUDES = -I../common/ -I/opt/uClinux/bfin-elf/bfin-elf/include/
 ASMFLAGS = -x assembler-with-cpp $(INCLUDES) $(CPUDEFINES) -Wall
 ASMFLAGS += -mcpu=bf527 -include memory.h -include defBF527.h
+CFLAGS = $(INCLUDES) $(CPUDEFINES) -mcpu=bf527 -Wall -include memory.h
+# CFLAGS += -O3 -ffast-math -mfast-fp -funsafe-math-optimizations 
+
 ASMFLAGS += -g
-OPTFLAGS = -O3 -ffast-math -mfast-fp -funsafe-math-optimizations 
-CFLAGS = $(INCLUDES) $(CPUDEFINES) -mcpu=bf527 -Wall
+CFLAGS += -g
 
 # see http://blackfin.uclinux.org/gf/project/toolchain/forum/?action=ForumBrowse&forum_id=44&_forum_action=ForumMessageBrowse&thread_id=3023
 # the archive file must have the same organization (FLAT, FDPIC ..)
@@ -19,6 +19,8 @@ LDFLAGS = -T bftiny.x \
 #-L /opt/uClinux/bfin-elf/bfin-elf/lib/bf532-none/mid-shared-library/ -lbffastfp
 #  -L/opt/uClinux/bfin-elf/bfin-elf/lib/ -lbffastfp
 
+COMSRC = $(COMMON:%.o=../common/%.c)
+COMDBG = $(COMMON:%o=%.do)
 OBJS = $(ASMSRCS:%.asm=%.o) $(CSRCS:%.c=%.o)
 DBGOBJS = $(DBGASMSRCS:%.asm=%.o) $(CSRCS:%.c=%.do)
 INITOBJS = $(INITSRC:%.asm=%.o)
@@ -35,14 +37,14 @@ BIN = $(BFINROOT)/bfin-uclinux-objcopy
 	$(CC) $(ASMFLAGS) -c -o $@ $<
 	
 %.o: %.c
-	$(CC) $(CFLAGS) $(OPTFLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS) -c -o $@ $<
 	
-%.do: %.c
-	$(CC) $(CFLAGS) -g -c -o $@ $<
+%.o: ../common/%.c
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 #svn version script runs at the /end/ of the build process, but this isn't such a problem as 
 #the version does not change frequently. 
-all: $(OBJS) emg_dsp.ldr emg_dbg.dxe
+all: $(LOCAL) $(COMMON) test.dxe
 	perl svn_version.pl
 	
 init_sdram_dbg.o: init_sdram.asm 
@@ -65,9 +67,9 @@ emg_dbg.dxe: $(DBGOBJS)
 	$(OBDMP) -d emg_dbg.dxe > dbg_decompile.asm
 	
 # this is for loading with the JTAG cable (icebear, from section5.ch)
-test.dxe: test.o $(DBGOBJS)
+test.dxe: $(LOCAL) $(COMMON)
 	./debug.pl bftiny.x > bftiny_dbg.x
-	$(LD) -T bftiny_test.x -o $@ test.o $(DBGOBJS)
+	$(LD) -T bftiny_test.x -o $@ $(LOCAL) $(COMMON)
 	$(OBDMP) -d $@ > test_decompile.asm
 
 # this written to flash. 

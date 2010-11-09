@@ -1,7 +1,6 @@
-#include "packet.h"
 #include "spi.h"
 #include "nordic_regs.h"
-#include "../stage/print.h"
+#include "print.h"
 
 #ifdef __ADSPBF537__
 #include "../bridge/bridge.h"
@@ -9,7 +8,7 @@
 
 void spi_delay(){
 	//wait until the spi transation is done. 
-	unsigned int status = 8;
+	u16 status = 8;
 	//the SPI port has a transmit fifo, but as we are using software to drive the pins, 
 	// only continue when this buffer is empty ( = has been transferred to the shift reg). 
 	//without this, the SPI behavior is pipelined and rather confusing! 

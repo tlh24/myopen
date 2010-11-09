@@ -1,6 +1,6 @@
 #include <cdefBF527.h>
-#include "memory.h"
 #include "util.h"
+#include "print.h"
 
 int uart_str(char* str){
 	int i =0; 

@@ -27,6 +27,8 @@
 #define SPI_BAUFDIV 4 //headstage
 #endif
 
+#endif
+
 #ifdef __ADSPBF537__
 #include <cdefBF537.h>
 

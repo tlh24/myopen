@@ -10,14 +10,20 @@
 #define PHY_MODESTAT		0x01
 #define PHY_PHYID1		0x02
 #define PHY_PHYID2		0x03
-#define PHY_ANAR		0x04
+#define PHY_ANAR			0x04
 #define PHY_ANLPAR		0x05
-#define PHY_ANER		0x06
+#define PHY_ANER			0x06
 
-#define PHY_RESET		0x8000
+#define PHY_RESET			0x8000
 #define PHY_ANEG_EN		0x1000
 #define PHY_DUPLEX		0x0100
 #define PHY_SPD_SET		0x2000
+
+#define RECV_BUFSIZE		(0x610) 	//1552, slightly smaller than spec sheet. 
+#define TX_BUF_CNT		4
+#define RX_BUF_CNT		4
+extern u8* rxbuf_base_addr; 
+extern u8* txbuf_base_addr;
 
 #define HTTP_BUFFER_SIZE (1280) // (0x500)
 
