@@ -65,9 +65,9 @@ emg_dbg.dxe: $(DBGOBJS)
 	$(OBDMP) -d emg_dbg.dxe > dbg_decompile.asm
 	
 # this is for loading with the JTAG cable (icebear, from section5.ch)
-test.dxe: test.o test_spi.do
+test.dxe: test.o test_spi.do print.do util.do
 	./debug.pl bftiny.x > bftiny_dbg.x
-	$(LD) -T bftiny_test.x -o $@ test.o test_spi.do
+	$(LD) -T bftiny_test.x -o $@ test.o test_spi.do print.do util.do
 	$(OBDMP) -d $@ > test_decompile.asm
 
 # this written to flash. 
