@@ -5,11 +5,8 @@
 #define u16 unsigned short
 #define u32 unsigned int
 
-#define GTIME (*((u32*)(MS_CTR)))
-
-#define PRINTF_BUFFER_SIZE 256
-extern char printf_temp[PRINTF_BUFFER_SIZE];  
-extern char printf_out[PRINTF_BUFFER_SIZE]; 
+extern char* printf_temp;  
+extern char* printf_out; 
 
 extern u8 g_mouseXpos; 
 extern u8 g_mouseXneg; 
@@ -27,10 +24,10 @@ int LogicalToPhysicalChan(int c);
 
 int div(int num, int denom); 
 int mod(int num, int denom); 
-void memcpy(u8* src, u8* dest, int len);
-void memset(u8* dest, u8 fill, int len); 
-int strlen(char* str); 
-char* strcpy(char* dest, int* len, char* str); 
+void memcpy_(u8* src, u8* dest, int len);
+void memset_(u8* dest, u8 fill, int len); 
+int strlen_(char* str); 
+char* strcpy_(char* dest, int* len, char* str); 
 int strcmp(char* a, char* b); 
 int substr(char*a, char*b, int blen); 
 int sprintf_int(char* dest, int d);

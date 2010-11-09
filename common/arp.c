@@ -200,7 +200,7 @@ int ARP_req(u32 who, u8* mac_dest){
 	if(ARP_lu(who, mac_dest)) return 1; 
 	//look in present table.. 
 	int i; 
-	u32 t = GTIME; 
+	u32 t = *pGTIME; 
 	for(i=0; i<ARP_LUT_N; i++){
 		if(NetArpLut[i].ip == who && (NetArpLut[i].flags & ARP_LUT_WAIT)){
 			if(NetArpLut[i].timeout > t){

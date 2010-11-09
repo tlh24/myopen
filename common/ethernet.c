@@ -22,7 +22,7 @@
  * MA 02111-1307 USA
  * MA 02111-1307 USA
  */
-#include <cdefBF537.h>
+#include <cdefBF527.h>
 #include "memory.h"
 #include "util.h"
 #include "lcd.h"
@@ -102,7 +102,7 @@ int bfin_EMAC_send( volatile void *packet, int length){
 		}
 	}
 	txbuf[txIdx]->FrmData->NoBytes = length;
-	memcpy((u8*)txbuf[txIdx]->FrmData->Dest, (u8*)packet, length);
+	memcpy_((u8*)txbuf[txIdx]->FrmData->Dest, (u8*)packet, length);
 	txbuf[txIdx]->Dma[0].START_ADDR = (u32) txbuf[txIdx]->FrmData;
 	*pDMA2_NEXT_DESC_PTR = &txbuf[txIdx]->Dma[0];
 	*pDMA2_CONFIG = *(u16 *) (void *)(&txdmacfg);
@@ -124,7 +124,6 @@ int bfin_EMAC_send( volatile void *packet, int length){
 	//DEBUGF("BFIN EMAC send: length = %d", length);
 	return result;
 }
-
 int bfin_EMAC_send_check(){
 	// return 1 if the previous DMA has finished & we can queue up another, 
 	// 0 if it is not done and we should check back later. 
@@ -164,7 +163,6 @@ int bfin_EMAC_send_nocopy(){
 	//DEBUGF("BFIN EMAC send: length = %d", length);
 	return result;
 }
-
 int bfin_EMAC_recv(u8** data){
 	int length = 0;
 
@@ -252,7 +250,6 @@ int bfin_EMAC_recv_poll(u8** data){
 		rxIdx++;
 	return length; 
 }
-
 u32 FormatIPAddress(u8 a, u8 b, u8 c, u8 d){
 	//simple utility routine for getting network-byte order for ip address.
 	u32 out; 
@@ -265,9 +262,8 @@ u32 FormatIPAddress(u8 a, u8 b, u8 c, u8 d){
 	out = out | (a & 0xff); 
 	return out; 
 }
-
 int bfin_EMAC_init( ){
-	u32 opmode;
+	u32 opmode = 0;
 	int dat;
 	int i;
 	printf_str("Eth_init...\n");
@@ -337,16 +333,12 @@ int bfin_EMAC_init( ){
 	else
 		opmode = ASTP | PSF;
 	opmode |= RE;
-#ifdef CONFIG_BFIN_MAC_RMII
-	opmode |= TE | RMII;
-#endif
 	/* Turn on the EMAC */
 	*pEMAC_OPMODE = opmode;
 	printf_hex("MAC_OPMODE ", opmode); 
 	printf_str("\n"); 
 	return 0;
 }
-
 void bfin_EMAC_halt(){
 	//DEBUGF("Eth_halt: ......");
 	/* Turn off the EMAC */
@@ -356,7 +348,6 @@ void bfin_EMAC_halt(){
 	*pDMA2_CONFIG = 0x0000;
 
 }
-
 void SetupMacAddr(u8 * MACaddr){
 	MACaddr[0] = 0x00; //this is on a sticker on the bottom of the dev board I bought from digikey 
 	MACaddr[1] = 0xe0; // will have to buy some ethernet addresses for meselves.
@@ -374,7 +365,6 @@ void SetupMacAddr(u8 * MACaddr){
 	printf_str("\n"); 
 	
 }
-
 void PollMdcDone(void){
 	/* poll the STABUSY bit */
 	while (*pEMAC_STAADD & STABUSY){
@@ -386,21 +376,18 @@ void WrPHYReg(u16 PHYAddr, u16 RegAddr, u16 Data){
 	PollMdcDone();
 	*pEMAC_STADAT = Data;
 	*pEMAC_STAADD = SET_PHYAD(PHYAddr) | SET_REGAD(RegAddr) |
-	    STAOP | STAIE | STABUSY;
+	    STAOP | STABUSY;
 }
-
 u16 RdPHYReg(u16 PHYAddr, u16 RegAddr){
 	//Read an off-chip register in a PHY through the MDC/MDIO port    
 	u16 Data;
 	PollMdcDone();
-	*pEMAC_STAADD = SET_PHYAD(PHYAddr) | SET_REGAD(RegAddr) |
-	    STAIE | STABUSY;
+	*pEMAC_STAADD = SET_PHYAD(PHYAddr) | SET_REGAD(RegAddr) | STABUSY;
 	PollMdcDone();
 	Data = (u16) * pEMAC_STADAT;
 	PHYregs[RegAddr] = Data;	/* save shadow copy */
 	return Data;
 }
-
 void SoftResetPHY(void){
 	u16 phydat;
 	/* set the reset bit */
@@ -412,16 +399,19 @@ void SoftResetPHY(void){
 		phydat = RdPHYReg(PHYADDR, PHY_MODECTL);
 	} while ((phydat & PHY_RESET) != 0);
 }
-
 int SetupSystemRegs(int *opmode){
 	u16 sysctl, phydat;
 	printf_str("setting up eth regs.\n"); 
 	int count = 0;
-	*pPORTH_FER = 0xffff;
+	*pPORTG_MUX &= (0x3000 ^ 0xffff); 
+	*pPORTG_MUX |= 0x1000; 
+	*pPORTG_FER |= 0xc000; 
+	*pPORTH_FER = 0xffff; 
+	*pPORTH_MUX = 0x0015; 
 	/* Enable PHY output */
 	*pVR_CTL |= PHYCLKOE;
 	/* MDC  = 2.5 MHz */
-	sysctl = SET_MDCDIV(19); 
+	sysctl = SET_MDCDIV(24); 
 	//page 429 -- MDC clock is SCLK / [2*(MDCDIV + 1)]
 	/* Odd word alignment for Receive Frame DMA word */
 	/* Configure checksum support and recieve frame word alignment */
@@ -478,9 +468,9 @@ ADI_ETHER_BUFFER *SetupRxBuffer(int no){
 	    (ADI_ETHER_FRAME_BUFFER *) (RXBUF_BASE_ADDR + no * total_size +
 					nobytes_buffer);
 
-	memset((u8*)buf, 0x00, nobytes_buffer);
+	memset_((u8*)buf, 0x00, nobytes_buffer);
 	buf->FrmData = frmbuf;
-	memset((u8*)frmbuf, 0xfe, RECV_BUFSIZE);
+	memset_((u8*)frmbuf, 0xfe, RECV_BUFSIZE);
 
 	/* set up first desc to point to receive frame buffer */
 	buf->Dma[0].NEXT_DESC_PTR = &(buf->Dma[1]);
@@ -515,9 +505,9 @@ ADI_ETHER_BUFFER *SetupTxBuffer(int no){
 	    (ADI_ETHER_FRAME_BUFFER *) (TXBUF_BASE_ADDR + no * total_size +
 					nobytes_buffer);
 
-	memset((u8*)buf, 0x00, nobytes_buffer);
+	memset_((u8*)buf, 0x00, nobytes_buffer);
 	buf->FrmData = frmbuf;
-	memset((u8*)frmbuf, 0xaa, RECV_BUFSIZE);
+	memset_((u8*)frmbuf, 0xaa, RECV_BUFSIZE);
 
 	/* set up first desc to point to receive frame buffer */
 	buf->Dma[0].NEXT_DESC_PTR = &(buf->Dma[1]);
@@ -835,7 +825,7 @@ int icmp_rx(u8* data, int length){
 				u8* out = icmp_packet_setup(length, &result, src, ICMP_ECHO_REPLY,
 					p->icmp.id, p->icmp.seq);
 				if(result > 0){
-					memcpy(data, out, length); 
+					memcpy_(data, out, length); 
 					bfin_EMAC_send_nocopy();
 					return 1;
 				}
@@ -906,7 +896,7 @@ void DHCP_tx(int olen, u8* opt, u32 dest){
 	}
 	data = (u8*)p; 
 	data += sizeof(dhcp_packet); 
-	memcpy(opt, data, olen); 
+	memcpy_(opt, data, olen); 
 	
 	bfin_EMAC_send_nocopy();
 }

@@ -20,4 +20,6 @@ November 8 2010
 	* Next task: get the UART working. soo useful. done.
 	* SDRAM: initalized.  works, checked!  yay!
 	* Ethernet: need to have a milisecond counter running first, in an interrupt.
-	
+	* Ethernet: works.  DCHP and all!
+November 9 2010
+	* Next: get the radio working. Needs to be soldered there first! 

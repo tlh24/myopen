@@ -1,6 +1,9 @@
 #include <cdefBF537.h>
 #include "util.h" 
 
+char* printf_temp; 
+char* printf_out; 
+
 int div(int num, int denom){
 	//see page 15-23 in the prog. ref. 
 	//the assembly this produces is much simpler than the c code :)
@@ -55,7 +58,7 @@ char* strcpy_(char* dest, int* len, char* str){
 //same as strcpy, but it puts it on the *beginning* of the buffer. 
 //have to make sure there is space, of course!!
 char* strprepend(char* dest, int *len, char * str){
-	int l = strlen(str); 
+	int l = strlen_(str); 
 	char* s = dest - *len; 
 	int i; 
 	for(i=0; i<l ; i++){
@@ -194,3 +197,4 @@ void udelay(int us){
 			asm volatile("nop"); 
 	}
 }
+
