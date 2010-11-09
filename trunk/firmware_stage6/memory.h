@@ -26,20 +26,19 @@
 
 
 /* ethernet buffers!! */
-#define RXBUF_BASE_ADDR		0xFF802000  
+#define RXBUF_BASE_ADDR		0xff801000  //in L1.
 	//length: 0x610 * 4 = 0x1840
-#define TXBUF_BASE_ADDR		0xFF804000 
+#define TXBUF_BASE_ADDR		0xff803000
 	//same length as the rxbuf.
 #define RECV_BUFSIZE		(0x610) 
 	//1552, slightly smaller than spec sheet. 
 #define TX_BUF_CNT		4
 #define RX_BUF_CNT		4
 
-//SDRAM address 0x0 to 0x3ffff = circular data buffer. (that's 2^18 bytes = 256kb)
 //SDRAM, 32mbytes = 2^25 = 0x0 to 0x0020 0000 - 1
-#define HTTP_HEADER		0x00040000 //256 bytes. 
-#define HTTP_CONTENT	0x00040100 //i don't know how big we'll need? (have 65k - 0xFF00) 
-#define HTTP_RX				0x00050000
+#define HTTP_HEADER		0x4000 //256 bytes. 
+#define HTTP_CONTENT	0x4100 //i don't know how big we'll need? 
+#define HTTP_RX		0x10000 //have 48K (0xBF00)
 
 
 #define CONFIG_CLKIN_HZ          25000000 /*external clock*/

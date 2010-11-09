@@ -3,6 +3,9 @@
 #include "memory.h"
 #include "util.h"
 #include "print.h"
+#include "ethernet.h"
+
+u8 g_streamEnabled; 
 
 void spi_delay(){
 	//wait until the spi transation is done. 
@@ -81,11 +84,19 @@ int main(void){
 	*pTIMER5_PERIOD = 125000; 
 	*pTIMER5_WIDTH = 62500; 
 	*pTIMER_ENABLE |= 0x20; //enable the timer.
+	
+	//startup the ethernet..
+	int etherr = bfin_EMAC_init(); 
+	if(!etherr) DHCP_req();  
+	
 	//write out words.. 
 	int prevtime = 0;
 	int secs; 
+	u32* data;
 	while(1){
-		secs = (*pGTIME)/1000; 
+		if(!etherr) bfin_EMAC_recv( (u8**)(&data) ); 
+			//listen for packets? (and respond)
+		secs = (*pGTIME)/1000; // 0xff800800
 		if(secs != prevtime){
 			printf_int("time ", secs); 
 			prevtime = secs; 
