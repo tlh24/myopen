@@ -1,5 +1,6 @@
 
 .global start
+.global _isr_mstimer
 
 start: 
 	/* PLL_LOCKCNT - how many SCLK Cycles to delay while PLL becomes stable */
@@ -62,6 +63,85 @@ check_again:
 	R0 = W[P0](Z);
 	CC = BITTST(R0,5); /* PLL_locked bit */
 	if ! CC jump check_again;
+	
+	//Init SDRAM!
+
+	/* Init the SDRAM Refresh Rate Control Register */
+	p0.l = LO(EBIU_SDRRC);
+	p0.h = HI(EBIU_SDRRC);
+	r0 = 976 (z);
+	w[p0] = r0.l;
+	ssync;
+
+	 /* SDRAM Memory Bank Control Register - bank specific parameters */
+	p0.l = LO(EBIU_SDBCTL);
+	p0.h = HI(EBIU_SDBCTL);
+	r0 = 0x13; //9 bit column address width, 32Mbyte bank size, enabled.
+	w[p0] = r0.l;
+	ssync;
+
+	/* configure timing in the global control register */
+	p2.h = HI(EBIU_SDGCTL);
+	p2.l = LO(EBIU_SDGCTL);
+	// 1110 0000 1011 0001
+	r0.h = 0xe0b1 ; // 8491 prev.
+	// 0001 0001 0100 1001
+	r0.l = 0x1149 ; // 998d 
+	[p2] = r0;
+	SSYNC;
+	nop;
+	nop; 
+	/* try accessing the SDRAM to get it to start up. */
+	p2 = 0(z); 
+	r0.l = w[p2];  //read the 'null' pointer - works here!
+	nop ;
+	
+	//need a ms timer for ethernet protocols. 
+	//this is basically copied from the hardware reference.
+	p0.l = LO(IMASK); 
+	p0.h = HI(IMASK); 
+	r0.l = _isr_mstimer;
+	r0.h = _isr_mstimer; 
+	[p0 + EVT12 - IMASK] = r0; 
+	//unmask IVG12 in CEC. 
+	r0 = [p0]; 
+	bitset(r0, 12); 
+	[p0] = r0; 
+	// assign timer 5 IRQ to IVG12
+	p0.l = LO(SIC_IAR4); 
+	p0.h = HI(SIC_IAR4); 
+	r0.h = 0xff5f; //check this
+	r0.l = 0xffff; 
+	[p0] = r0; 
+	//enable timer 5 IRQ
+	p0.l = LO(SIC_IMASK1); 
+	p0.h = HI(SIC_IMASK1); 
+	r0 = [p0]; 
+	bitset(r0, 5); //check this
+	[p0] = r0; 
+	//the timer is setup in main.
+	
+	//need a sequence to enable interrupts? 
+	// IMASK : page 173 in the programming ref., (not hardware ref!)
+	//NOT THE SAME as SIC_IMASK (above) --both need to be set up correctly.
+	r0 = 0x901f(z); // enable 15, 12.
+	sti r0;            // set mask
+	raise 15;          // raise sw interrupt
+	
+	p0.l = wait;
+	p0.h = wait;
+	p1.l = LO(EVT15); 
+	p1.h = HI(EVT15); 
+	[p1] = p0; //return address for 'raise 15'
+
+	reti = p0;
+	rti;               // return from RESET (this is important!)
+							// not sure if it's also important for booting from flash..
+wait:
+	
+	[--sp] = reti;  // pushing RETI allows interrupts to occur inside all main routines
+	nop; 
+	raise 12; 
 
 	p0.l = LO(PORTFIO_INEN);
 	p0.h = HI(PORTFIO_INEN); 
@@ -109,3 +189,20 @@ _test_loop:
 	jump _main; 
 	nop;
 	jump _test_loop; 
+
+_isr_mstimer: 
+	[--sp] = astat; 
+	[--sp] = (r7:7,p5:5);
+	p5.l = LO(TIMER_STATUS);
+	p5.h = HI(TIMER_STATUS); 
+	r7.l = LO(TIMIL5); 
+	r7.h = HI(TIMIL5); 
+	[p5] = r7; 
+	p5.l = LO(GTIME); 
+	p5.h = HI(GTIME); 
+	r7 = [p5]; 
+	r7 += 1; 
+	[p5] = r7; 
+	(r7:7,p5:5) = [sp++]; 
+	astat = [sp++]; 
+	rti; 

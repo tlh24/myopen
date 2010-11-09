@@ -1,6 +1,6 @@
 #include <cdefBF527.h>
 #include "memory.h"
-#include "util.h"
+// #include "util.h"
 #include "lcd.h"
 #include "ethernet.h"
 #include "usb.h"

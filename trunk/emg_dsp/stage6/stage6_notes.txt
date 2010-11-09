@@ -1,0 +1,23 @@
+Hardware Fixes: 
+	* The LEDs are TOO bright!  decrease the current to a more reasonable 
+	level.  Current LEDs Vf = 2.0V :: 26mA of current. 10ma better -> 
+	need 130 ohm resistors.
+	Total power dissipation of 16 LEDs: 1.3W..?
+	* Vdd_OTP NEEDS to be TIED TO 2.5V for the proc to boot.
+	I guess I'll need a regulator here.
+	(I assume this is needed by the security code)
+
+November 8 2010
+	* Wrote a simplified .dxe - one that just toggles a few pins - 
+	and the BF527 seems to run. Next: see if we can get the SPI interface running. 
+	(this will show if the SPI pins are connected - the proc does not boot, 
+	but this is likely because the flash originally ordered was a 2V part)
+	* putting the SDRAM in self refresh works. 
+	* setting the core clock at 600Mhz and the system clock at 125Mhz 
+	seems to work as well. the toggle rate is 6.666Mhz now; was 1.5Mhz.
+	(I'm sure glad JTAG works!!!)
+	* looks like the SPI port is working! Not sure why it doesn't try to boot..
+	* Next task: get the UART working. soo useful. done.
+	* SDRAM: initalized.  works, checked!  yay!
+	* Ethernet: need to have a milisecond counter running first, in an interrupt.
+	
