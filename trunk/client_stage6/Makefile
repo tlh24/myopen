@@ -1,37 +1,14 @@
-#!/bin/sh
+# the simplest makefile ever!
+CFLAGS=-I/usr/local/include -L. -lm -lc -L/usr/local/lib
+CFLAGS+= -I/usr/lib/ -L/usr/X11R6/lib -lGL -lGLU
+CFLAGS+= -g
+CFLAGS+= -Wall -Wcast-align -Wpointer-arith -Wshadow -Wsign-compare -Wformat=2 \
+-Wno-format-y2k -Wimplicit -Wmissing-braces -Wparentheses -Wtrigraphs -Wextra -Werror -pedantic
 
-OCAMLC = ocamlfind ocamlc -c -w x -g 
-OCAMOPT = ocamlfind ocamlopt -c -w x -inline 3 -ffast-math
-OPTIONS = -package lablGL,labltk,lablGL.togl,unix,extlib
-LINKER = ocamlfind ocamlc -g
+all: client
 
-OBJS =  pts2.cmo glwindow.cmo client.cmo
-#order matters above! 
-OPTOBJS = $(OBJS:.cmo=.cmx)
-
-.SUFFIXES: .ml .mli .cmo .cmi .cmx .c .o
-
-.mli.cmi:
-	$(OCAMLC) $(OPTIONS) $<
+client: main.c
+	gcc $(CFLAGS) main.c -o client
 	
-.ml.cmo:
-	$(OCAMLC) $(OPTIONS) $<
-	
-.ml.cmx:
-	$(OCAMOPT) $(OPTIONS) $<
-	
-client: $(OBJS)
-	$(LINKER) -linkpkg $(OPTIONS) $(OBJS) -o client
-
-client.opt:  $(OPTOBJS) 
-	ocamlfind ocamlopt -g -inline 3 -ffast-math -linkpkg $(OPTIONS) $(OPTOBJS) -o client.opt
-
-all: client 				#bytecode
-
-opt:	client.opt  	#native code
-
-clean: 
-	rm -f $(OBJS) $(OPTOBJS)
-	rm -f *.cmi
-	rm -f *.o
-	rm -f client client.opt
+clean:
+	rm -rf client 
