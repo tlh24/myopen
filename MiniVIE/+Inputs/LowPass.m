@@ -1,0 +1,21 @@
+classdef LowPass < Inputs.Filter
+    % Low Pass Filter object, extends filter object
+    %
+    % 01-Sept-2010 Armiger: Created
+    methods
+        function obj = LowPass(Fc,order,Fs)
+            % Create Filters
+            if nargin < 1
+                Fc = 450;
+            end
+            if nargin < 2
+                order = 8;
+            end
+            if nargin < 3
+                Fs = 1000;
+            end
+            F_Nyquist = Fs / 2;
+            [obj.Hb obj.Ha] = butter(order,Fc / F_Nyquist,'low');
+        end
+    end
+end
