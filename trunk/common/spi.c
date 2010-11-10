@@ -157,9 +157,9 @@ int spi_read_packet(void* packet){
 	u8 status, fifostatus, k; 
 	u8 *ptr = (u8*)packet; 
 	//this reads two registers at the same time, so to check all relevant bits.
-	status = spi_read_register_status(NOR_FIFO_STATUS, &fifostatus); 
-	if( ( (status & NOR_RX_DR) || (fifostatus & NOR_RXFIFO_FULL) )
-		&& ((fifostatus & NOR_RXFIFO_EMPTY) == 0) ){
+	//status = spi_read_register_status(NOR_FIFO_STATUS, &fifostatus); 
+	//if( ( (status & NOR_RX_DR) || (fifostatus & NOR_RXFIFO_FULL) )
+	//	&& ((fifostatus & NOR_RXFIFO_EMPTY) == 0) ){
 		//clear the interrupt flag so that, potentially, we can run / stop on the resulting interrupt.
 		spi_write_register(0x07, 0x70); 
 		//spi_write_byte(NOR_FLUSH_RX); //debug.
@@ -197,9 +197,9 @@ int spi_read_packet(void* packet){
 		asm volatile("ssync;"); 
 		
 		return 1; 
-	}else{
+	/*}else{
 		return 0; 
-	}
+	}*/
 }
 void spi_read_packet_nocheck(void* packet){
 	//assumes packet length 32! 
@@ -241,7 +241,7 @@ void radio_set_rx(){
 	spi_write_register(NOR_CONFIG, 0 ); // ?? needed seems to decrease reliability
 	spi_write_register(NOR_CONFIG, 
 		NOR_MASK_MAX_RT | NOR_PWR_UP | NOR_PRIM_RX ); 
-	//spi_write_byte(NOR_FLUSH_RX); 
+	spi_write_byte(NOR_FLUSH_RX); 
 	//spi_write_register(NOR_STATUS, 0x70); 
 	//spi_write_byte(NOR_FLUSH_TX); 
 	*pDMA5_IRQ_STATUS = DMA_DONE | DMA_ERR; //clear any irqs..

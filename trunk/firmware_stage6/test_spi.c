@@ -71,18 +71,14 @@ int main(void){
 	*pTIMER5_WIDTH = 62500; 
 	*pTIMER_ENABLE |= 0x20; //enable the timer.
 	
-	//enable the radio.
-	radio_init(124); 
-	radio_set_rx(); 
-	
 	//startup the ethernet..
 	int etherr = bfin_EMAC_init(); 
 	if(!etherr) DHCP_req();  
 	
 	//setup for heartbeat & eth activity
-	*pPORTF_FER &= (0xffff ^ 0x18);
-	*pPORTFIO_DIR |= 0x18; 
-	*pPORTFIO_INEN &= (0xffff ^ 0x18); 
+	*pPORTF_FER &= (0xffff ^ 0x38);
+	*pPORTFIO_DIR |= 0x38; 
+	*pPORTFIO_INEN &= (0xffff ^ 0x38); 
 	//and for the IRQ. 
 	*pPORTGIO_INEN |= SPI_IRQ; 
 	*pPORTGIO_DIR &= (0xffff ^ SPI_IRQ); 
@@ -96,11 +92,40 @@ int main(void){
 	u32  trptr = 0;
 	char result;
 	u8 outpkt[32]; 
+	
+	//enable the radio.
+	radio_init(124); 
+	printf_str("starting reception!\n"); 
+	radio_set_rx(); 
+	//you have to be ready to get packets immediately after RX mode is turned on --
+	//otherwise the  fifo gets confused, and you could have 2-3 packets
+	//in the fifo but only read out one. 
+	
 	while(1){
 		//listen for packets? (both interfaces, respond on eth)
 		if(!etherr) bfin_EMAC_recv( (u8**)(&data) ); 
+		//generate noise on the SPI bus.
+		u8 status, fifostatus; 
+		status = spi_read_register_status(NOR_FIFO_STATUS, &fifostatus);
 		if((*pPORTGIO & SPI_IRQ) == 0){
-			spi_read_packet((void*)(wrptr & 0xfff)); 
+			spi_write_register(NOR_STATUS, 0x70); //clear IRQ.
+			*pPORTFIO_SET = 0x20; //delay CSN pulse a bit
+			asm volatile("ssync;"); 
+			*pPORTGIO_CLEAR = SPI_CSN; 
+			asm volatile("ssync;"); 
+			*pSPI_TDBR = 0x61; //command for writing the fifo
+			spi_delay(); //wait for this to finish. 
+			u8* ptr = (u8*)wrptr;
+			for(i=0; i<32; i++){
+				*pSPI_TDBR = 0;
+				spi_delay(); 
+				*ptr++ = (u8)(*pSPI_SHADOW); 
+			}
+			*pPORTGIO_SET = SPI_CSN | SPI_CE; 
+			asm volatile("ssync;");
+			*pPORTFIO_CLEAR = 0x20; 
+			asm volatile("ssync;");
+			
 			//need to check if the headstage wants a response.
 			char* c = (char*)wrptr; 
 			wrptr += 32; 

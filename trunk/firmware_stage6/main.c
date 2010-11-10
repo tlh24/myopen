@@ -111,7 +111,7 @@ int main() {
 	*pUART0_GCTL = 0x0001; //enable the clock.
 	printf_temp = (char*)PRINTF_TEMP; //init the pointers. 
 	printf_out = (char*)PRINTF_OUT; 
-	printf_int("Myopen svn v.", /*SVN_VERSION{*/393/*}*/ ) ; 
+	printf_int("Myopen svn v.", /*SVN_VERSION{*/398/*}*/ ) ; 
 	printf_str("\n"); 
 	printf_str("checking SDRAM...\n"); 
 	unsigned short* p; 
