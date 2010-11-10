@@ -64,7 +64,7 @@
 //SPI pins, needed by spi.c
 #define SPI_IRQ	0x0800 //port G pin 11
 #define SPI_CSN	0x0200 //port G pin 9
-#define SPI_CE	0x0400 //port G pin 10
+#define SPI_CE		0x0400 //port G pin 10
 
 #define SPI_BAUDDIV 6
 // system clock is 125Mhz, so divide by 12. (10.41MHz)
