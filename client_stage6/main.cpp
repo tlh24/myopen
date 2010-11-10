@@ -16,6 +16,8 @@
 #include <math.h>
 #include <arpa/inet.h>
 
+#include "sock.h"
+
 #define NPACKETS 32
 
 typedef struct {
@@ -28,7 +30,8 @@ struct sockaddr_in g_sockAddr;
 
 static float	g_fbuf[27*NPACKETS*3];
 static float 	g_fbufColor[27*NPACKETS*4]; //did the headstage indicate that passed thresh?
-unsigned int* g_bufpos;
+unsigned int	g_bufpos;
+unsigned int*	g_sendbuf; 
 unsigned int g_sendW; //where to write to (in 32-byte increments)
 unsigned int g_sendR; //where to read from
 unsigned int g_sendL; //the length of the buffer.
@@ -161,6 +164,7 @@ int initGL(GLvoid)
 	float* f = g_fbuf; 
 	float* t = g_fbufColor; 
 	float r,g,b,x,y; 
+	int i; 
 	r = g = b = 0.6f; 
 	for(i=0; i<27*NPACKETS; i++){
 		x = (float)i / (float)(27*NPACKETS);
@@ -182,10 +186,7 @@ int initGL(GLvoid)
 /* Here goes our drawing code */
 int drawGLScene(GLvoid)
 {
-	int i, j, len; 
-	float x, y, *f; 
-	char *c;
-	unsigned int off = g_packetOffset; 
+	int i; 
 	
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glEnableClientState(GL_COLOR_ARRAY);
@@ -261,11 +262,7 @@ Bool createGLWindow(char* title, int width, int height, int bits,
 {
     XVisualInfo *vi;
     Colormap cmap;
-    int dpyWidth, dpyHeight;
-    int i;
     int glxMajorVersion, glxMinorVersion;
-    int vidModeMajorVersion, vidModeMinorVersion;
-    int modeNum;
     int bestMode;
     Atom wmDelete;
     Window winDummy;
@@ -567,11 +564,7 @@ void out_thread(void* unused){
 }
 int main(void)
 {
-	libusb_device **devs;
-	int r, i, j, k;
-	ssize_t cnt;
-	devh = 0; 
-	unsigned char *ptr; 
+	int i, j;
 	
 	for(i=0; i<32; i++){
 		g_gains[i] = 4.f; 	
@@ -591,99 +584,28 @@ int main(void)
 	pthread_t thread1;
 	pthread_attr_t attr;
 	pthread_attr_init(&attr);
-	pthread_create( &thread1, &attr, out_thread, 0 ); 
+	pthread_create( &thread1, &attr, &out_thread, 0 ); 
 	
-#ifdef __USB__
-	//open the headstage / bridge. 
-	devh = libusb_open_device_with_vid_pid(NULL, 0x0b6a, 0x5346);
-	if (devh <= 0) {
-		fprintf(stderr, "Could not find/open device\n");
-		goto out;
-	}
-	r = libusb_claim_interface(devh, 0);
-	if (r < 0) {
-		fprintf(stderr, "usb_claim_interface error %d\n", r);
-		goto out;
-	}
-	//first send "ttt" --transmit!!
-	unsigned char buf[4]; 
-	for(i=0;i<4; i++)
-		buf[i] = 't'; 
-	r = libusb_bulk_transfer(devh,1| LIBUSB_ENDPOINT_OUT,buf,4,
-									 &g_transferred,2000); 
-	if (r < 0) {
-		fprintf(stderr, "usb_bulk_transfer, endpoint 1, error %d\n", r);
-		goto out;
-	} 
-	fprintf(stderr, "transferred %d\n", g_transferred); 
-	//then get data.
-	g_packetOffset = 0;
-	unsigned short usbread = 0xffff; 
-	while(r >= 0 && g_die == 0){
-		int s = 0; 
-		g_transferred = 0; 
-		unsigned int off = g_packetOffset ^ 1;
-		int inpkts = 0;
-		packet p; 
-		while(inpkts < NPACKETS){
-			r = libusb_bulk_transfer(devh,
-				2 | LIBUSB_ENDPOINT_IN,
-				(unsigned char*)&(p),
-				sizeof(packet), &s,2000); 
-			if (r < 0) {
-				fprintf(stderr, "usb_bulk_transfer, endpoint 2, error %d\n", r);
-			}
-			//check if the packet is in-order. 
-			// (packet labeling by bridge - ignores if radio dropps packets)
-			unsigned short u = p.usbread;
-			if(usbread == 0xffff) usbread = u; 
-			if(u > usbread && u - usbread > 0){
-				//tell the bridge that a packet was dropped.
-				r = libusb_bulk_transfer(devh,
-						1| LIBUSB_ENDPOINT_OUT,
-						(unsigned char*)(&usbread),4,
-						&g_transferred,2000);
-				printf("-"); 
-				if (r < 0) {
-					fprintf(stderr, "usb_bulk_transfer, endpoint 1, error %d\n", r);
-					goto out;
-				} 
-			}else if(u == usbread){
-				memcpy((void*)&(g_packets[off*NPACKETS+inpkts]),(void*)&p, sizeof(p)); 
-				usbread++;
-				inpkts++;
-			}else{
-				usbread = u;//not sure what else to do..
-				printf("+"); 
-			}
-			//printf("usbread %d u %d\n", usbread, u); 	
-		}
-		g_packetOffset = off; 
-		pthread_cond_signal( &g_outthread_cond ); //unblock the other thread.
-		//printf("transferred %d\n", g_transferred); 
-		sendUSB(); //each frame, send another 32 byte pkt to the bridge.
-	}
-#endif
-#ifdef __UDP__
 	//open up a UDP socket, read from it.
 	g_sock = setup_socket(4340); 
-	char* buf[1024]; 
+	char buf[1024];
 	while(g_die == 0){
-		int n = recvfrom(sock, buf, sizeof(buf), 0,0,0); 
+		int n = recvfrom(g_sock, buf, sizeof(buf), 0,0,0); 
 		if(n > 0){
 			unsigned int trptr = *((unsigned int*)buf);
-			printf("tptr %x\n", tptr); 
-			buf += 4; 
+			printf("tptr %x\n", trptr); 
+			char* ptr = buf; 
+			ptr += 4; 
 			n -= 4; 
-			packet* p = (packet*)buf;
+			packet* p = (packet*)ptr;
 			int npack = n / 32; 
-			for(int i=0; i<npack && !g_pause; i++){
+			for(i=0; i<npack && !g_pause; i++){
 				//see if it exceeded threshold.
 				float r = 0.6; 
 				g_headch = (p->flag) >> 3 ; 
 				g_exceeded = p->exceeded; 
 				if(g_exceeded & (1<<g_headch)) r = 1.0; 
-				for(int j=0; j<27; j++){
+				for(j=0; j<27; j++){
 					g_fbuf[(g_bufpos % (27*NPACKETS))*3 + 1] = 
 						(float)(p->data[j]) / 128.f; 
 					g_fbufColor[(g_bufpos % (27*NPACKETS))*4 + 0] = r;
@@ -694,8 +616,7 @@ int main(void)
 			pthread_cond_signal( &g_outthread_cond ); //unblock the other thread.
 		}
 	}
-#endif
-	out:
+
 	g_die = 1; 
 	pthread_cond_signal( &g_outthread_cond ); //unblock so it can quit! 
 	pthread_mutex_destroy(&g_outthread_mutex); 
