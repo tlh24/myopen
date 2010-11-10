@@ -8,13 +8,13 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+#include <memory.h>
+#include <math.h>
+#include <arpa/inet.h>
 #include <GL/glx.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <X11/keysym.h>
-#include <memory.h>
-#include <math.h>
-#include <arpa/inet.h>
 
 #include "sock.h"
 
@@ -101,7 +101,7 @@ void resizeGLScene(unsigned int width, unsigned int height)
     glMatrixMode(GL_MODELVIEW);
 }
 
-GLvoid buildFont(GLvoid)
+void buildFont()
 {
     XFontStruct *font;
     
@@ -125,12 +125,12 @@ GLvoid buildFont(GLvoid)
     XFreeFont(GLWin.dpy, font);
 }
 
-GLvoid deleteFont(GLvoid)
+void deleteFont()
 {
     glDeleteLists(base, 96);
 }
 
-GLvoid printGLf(const char *fmt, ...)
+void printGLf(const char *fmt, ...)
 {
     va_list ap;     /* our argument pointer */
     char text[256];
@@ -148,7 +148,7 @@ GLvoid printGLf(const char *fmt, ...)
     glPopAttrib();
 }
 /* general OpenGL initialization function */
-int initGL(GLvoid)
+int initGL()
 {
     glShadeModel(GL_SMOOTH);
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -184,7 +184,7 @@ int initGL(GLvoid)
     return True;
 }
 /* Here goes our drawing code */
-int drawGLScene(GLvoid)
+int drawGLScene()
 {
 	int i; 
 	
@@ -240,7 +240,7 @@ int drawGLScene(GLvoid)
 }
 
 /* function to release/destroy our resources and restoring the old desktop */
-GLvoid killGLWindow(GLvoid)
+void killGLWindow()
 {
     if (GLWin.ctx)
     {
@@ -257,8 +257,7 @@ GLvoid killGLWindow(GLvoid)
 
 /* this function creates our window and sets it up properly */
 /* FIXME: bits is currently unused */
-Bool createGLWindow(char* title, int width, int height, int bits,
-                    Bool fullscreenflag)
+Bool createGLWindow(const char* title, int width, int height)
 {
     XVisualInfo *vi;
     Colormap cmap;
@@ -333,7 +332,7 @@ void updateGain(int chan){
 	int i,j,k; 
 	unsigned int u; 
 	for(i=0; i<4; i++){
-		int j = indx[i];
+		j = indx[i];
 		b[i*2+0] = lowpass_coefs[j]*gain1*16384.f;
 		b[i*2+1] = lowpass_coefs[j]*gain2*16384.f;
 	}
@@ -437,7 +436,6 @@ void resetBiquads(int chan){
 }
 void keyPressed(KeySym key)
 {
-	int i; 
     switch (key){
 		case XK_Escape:
 			g_die = 1;
@@ -450,7 +448,7 @@ void keyPressed(KeySym key)
 			break; 
 		case XK_F1:
 			killGLWindow();
-			createGLWindow("wireless headstage!", 640, 480, 24, False);
+			createGLWindow("wireless headstage!", 640, 480);
 			break;
 		case XK_Up: //zoom in
 			g_zoom *= 1.1; 
@@ -509,8 +507,8 @@ int opengl_disp(){
          	        break;
 	            case ConfigureNotify:
 	            /* call resizeGLScene only if our window-size changed */
-	                if ((event.xconfigure.width != GLWin.width) || 
-	                    (event.xconfigure.height != GLWin.height))
+	                if ((event.xconfigure.width != (int)GLWin.width) || 
+	                    (event.xconfigure.height != (int)GLWin.height))
 	                {
 	                    GLWin.width = event.xconfigure.width;
 	                    GLWin.height = event.xconfigure.height;
@@ -542,14 +540,12 @@ int opengl_disp(){
     }
     return 0;
 }
-void out_thread(void* unused){
+void* out_thread(void*){
 	//simply prints out the contents of the buffer 
 	//after it has been read in and presumably before it
 	// is written again!
-	int i, j, k, p, dif; 
-	unsigned char* ptr; 
 	//make an opengl window
-	createGLWindow("wireless headstage!", 640, 480, 24, False);
+	createGLWindow("wireless headstage!", 640, 480);
 	while(!g_die){
 		if(pthread_cond_wait(&g_outthread_cond, &g_outthread_mutex) == 0){
 			pthread_mutex_unlock(&g_outthread_mutex); 
@@ -561,6 +557,7 @@ void out_thread(void* unused){
 		}
 	}
 	killGLWindow();
+	return (void*)0;
 }
 int main(void)
 {
@@ -584,7 +581,7 @@ int main(void)
 	pthread_t thread1;
 	pthread_attr_t attr;
 	pthread_attr_init(&attr);
-	pthread_create( &thread1, &attr, &out_thread, 0 ); 
+	pthread_create( &thread1, &attr, out_thread, 0 ); 
 	
 	//open up a UDP socket, read from it.
 	g_sock = setup_socket(4340); 
@@ -593,7 +590,7 @@ int main(void)
 		int n = recvfrom(g_sock, buf, sizeof(buf), 0,0,0); 
 		if(n > 0){
 			unsigned int trptr = *((unsigned int*)buf);
-			printf("tptr %x\n", trptr); 
+			printf("%d\n", trptr); 
 			char* ptr = buf; 
 			ptr += 4; 
 			n -= 4; 

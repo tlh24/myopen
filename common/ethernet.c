@@ -164,7 +164,7 @@ int bfin_EMAC_send_nocopy(){
 }
 int bfin_EMAC_recv(u8** data){
 	int length = 0;
-
+	*pPORTFIO_SET = 0x10; 
 	for (;;) {
 		if ((rxbuf[rxIdx]->StatusWord & RX_COMP) == 0) {
 			length = -1;
@@ -208,7 +208,7 @@ int bfin_EMAC_recv(u8** data){
 		NetReceive(NetRxPackets[rxIdx], length - 4);
 		*/
 	}
-
+	*pPORTFIO_CLEAR = 0x10; 
 	return length;
 }
 int bfin_EMAC_recv_poll(u8** data){

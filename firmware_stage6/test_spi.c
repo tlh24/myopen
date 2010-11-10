@@ -5,6 +5,7 @@
 #include "print.h"
 #include "spi.h"
 #include "ethernet.h"
+#include "nordic_regs.h"
 
 u8 g_streamEnabled; 
 
@@ -78,10 +79,13 @@ int main(void){
 	int etherr = bfin_EMAC_init(); 
 	if(!etherr) DHCP_req();  
 	
-	//setup for heartbeat.
-	*pPORTF_FER &= (0xffff ^ 0x8);
-	*pPORTFIO_DIR |= 0x8; 
-	*pPORTFIO_INEN &= (0xffff ^ 0x8); 
+	//setup for heartbeat & eth activity
+	*pPORTF_FER &= (0xffff ^ 0x18);
+	*pPORTFIO_DIR |= 0x18; 
+	*pPORTFIO_INEN &= (0xffff ^ 0x18); 
+	//and for the IRQ. 
+	*pPORTGIO_INEN |= SPI_IRQ; 
+	*pPORTGIO_DIR &= (0xffff ^ SPI_IRQ); 
 	
 	//write out data.
 	#define UDP_PACKET_SIZE 256
@@ -91,11 +95,38 @@ int main(void){
 	u32  wrptr = 0; //write pointer - actual address - SDRAM!
 	u32  trptr = 0;
 	char result;
+	u8 outpkt[32]; 
 	while(1){
 		//listen for packets? (both interfaces, respond on eth)
 		if(!etherr) bfin_EMAC_recv( (u8**)(&data) ); 
-		if(spi_read_packet((void*)(wrptr & 0xfff))){
+		if((*pPORTGIO & SPI_IRQ) == 0){
+			spi_read_packet((void*)(wrptr & 0xfff)); 
+			//need to check if the headstage wants a response.
+			char* c = (char*)wrptr; 
 			wrptr += 32; 
+			c += 27; 
+			if(((*c)&0x7) == 7){
+				radio_set_tx();
+				//send whatever is in the buffer from the host..
+				*FIO_CLEAR = SPI_CSN; 
+				asm volatile("ssync;"); 
+				*pSPI_TDBR = 0xa0; //command for writing the fifo
+				spi_delay(); //wait for this to finish. 
+				u8* ptr = outpkt;
+				for(i=0; i<32; i++){
+					*pSPI_TDBR = *ptr++;
+					spi_delay(); 
+				}
+				*FIO_SET = SPI_CSN | SPI_CE; 
+				asm volatile("ssync;"); 
+				//wait for the resulting irq.
+				while(*pPORTGIO & SPI_IRQ){
+					asm volatile("nop;nop;"); 
+				}
+				*FIO_CLEAR = SPI_CE; 
+				spi_write_register(NOR_STATUS, 0x70); //clear IRQ.
+				radio_set_rx(); 
+			}
 		}
 		if(wrptr < trptr) trptr = 0; 
 		if(wrptr - trptr >= UDP_PACKET_SIZE){
@@ -108,8 +139,8 @@ int main(void){
 				//so do the memcpy manually. 
 				//memcpy((u8*)((*tr_ptr) & 0x0003ffff), data, 1024); 
 				u32* src = (u32*)trptr; 
-				//alignment errors?  need it to be 32-byte aligned. 
-				src = (u32*)((u32)src & (~0x1f)) ; 
+				//alignment errors?  need it to be 32-bit aligned. 
+				src = (u32*)((u32)src & (~0x3)) ; 
 				for(i=0; i<UDP_PACKET_SIZE/4; i++){
 					src = (u32*) ( ((u32)src) & 0xfff ); 
 					*data++ = *src++; 
