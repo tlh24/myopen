@@ -86,7 +86,7 @@ int main(void){
 	//write out data.
 	#define UDP_PACKET_SIZE 256
 	int prevtime = 0;
-	int secs; 
+	int secs, r; 
 	u32* data;
 	u32  wrptr = 0; //write pointer - actual address - SDRAM!
 	u32  trptr = 0;
@@ -103,7 +103,21 @@ int main(void){
 	
 	while(1){
 		//listen for packets? (both interfaces, respond on eth)
-		if(!etherr) bfin_EMAC_recv( (u8**)(&data) ); 
+		if(!etherr) r = bfin_EMAC_recv( (u8**)(&data) ); 
+		if(r > 0){
+			udp_packet* pkt = (udp_packet*)data; 
+			//printf_hex(" packet from ", pkt->ip.src); 
+			/*printf_int(" dest ", htons(pkt->udp.dest));
+			printf_int(" src ", htons(pkt->udp.src)); */
+			if(pkt->ip.src == NetDataDestIP && htons(pkt->udp.dest) == 4342){
+				//well then, copy it over! (don't check the checksum..)
+				u8* ptr = (u8*) data; 
+				ptr += sizeof(udp_packet); 
+				memcpy_(ptr, outpkt, 32); 
+				printf_hex(" ptr ", *((u32*)ptr));
+				//printf_hex(" ptr[1] ", ptr[1]); 
+			}
+		}
 		//generate noise on the SPI bus.
 		u8 status, fifostatus; 
 		status = spi_read_register_status(NOR_FIFO_STATUS, &fifostatus);

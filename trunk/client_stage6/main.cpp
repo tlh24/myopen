@@ -25,8 +25,9 @@ typedef struct {
 	unsigned char flag; 
 	unsigned int exceeded; 
 } packet; 
-int g_sock = 0;
-struct sockaddr_in g_sockAddr; 
+int g_rxsock = 0;//rx
+int g_txsock = 0; 
+struct sockaddr_in g_txsockAddr; 
 
 static float	g_fbuf[27*NPACKETS*3];
 static float 	g_fbufColor[27*NPACKETS*4]; //did the headstage indicate that passed thresh?
@@ -584,13 +585,16 @@ int main(void)
 	pthread_create( &thread1, &attr, out_thread, 0 ); 
 	
 	//open up a UDP socket, read from it.
-	g_sock = setup_socket(4340); 
+	g_rxsock = setup_socket(4340); 
+	g_txsock = connect_socket(4342, "152.16.229.22"); 
+	if(!g_txsock) printf("failed to connect to bridge.\n"); 
+	get_sockaddr(4342, "152.16.229.22", &g_txsockAddr); 
 	char buf[1024];
 	while(g_die == 0){
-		int n = recvfrom(g_sock, buf, sizeof(buf), 0,0,0); 
+		int n = recvfrom(g_rxsock, buf, sizeof(buf), 0,0,0); 
 		if(n > 0){
-			unsigned int trptr = *((unsigned int*)buf);
-			printf("%d\n", trptr); 
+			//unsigned int trptr = *((unsigned int*)buf);
+			//printf("%d\n", trptr); 
 			char* ptr = buf; 
 			ptr += 4; 
 			n -= 4; 
@@ -612,6 +616,18 @@ int main(void)
 			}
 			pthread_cond_signal( &g_outthread_cond ); //unblock the other thread.
 		}
+		//see if they want us to send something? 
+		if(g_sendR < g_sendW && n > 0){
+			printf("sending message to bridge ..\n"); 
+			unsigned int* ptr = g_sendbuf; 
+			ptr += (g_sendR % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
+			n = sendto(g_txsock,ptr,32,0, 
+				(struct sockaddr*)&g_txsockAddr, sizeof(g_txsockAddr));
+			if(n < 0)
+				printf("failed to send a message to bridge.\n"); 
+			else
+				g_sendR++;
+		}
 	}
 
 	g_die = 1; 
@@ -619,7 +635,7 @@ int main(void)
 	pthread_mutex_destroy(&g_outthread_mutex); 
 	pthread_cond_destroy(&g_outthread_cond); 
 
-	close_socket(g_sock); 
+	close_socket(g_rxsock);
 
 	free(g_sendbuf); 
 	return 0;
