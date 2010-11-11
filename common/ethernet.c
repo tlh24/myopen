@@ -164,7 +164,7 @@ int bfin_EMAC_send_nocopy(){
 }
 int bfin_EMAC_recv(u8** data){
 	int length = 0;
-	*pPORTFIO_SET = 0x10; 
+	
 	for (;;) {
 		if ((rxbuf[rxIdx]->StatusWord & RX_COMP) == 0) {
 			length = -1;
@@ -184,6 +184,7 @@ int bfin_EMAC_recv(u8** data){
 			break;
 		}
 		length -= 4; 
+		*pPORTFIO_TOGGLE = 0x10; 
 		//printf_int("got a packet! length: ", length); 
 		//printf_str("\n"); 
 		*data = (u8*)(rxbuf[rxIdx]->FrmData); 
@@ -207,8 +208,8 @@ int bfin_EMAC_recv(u8** data){
 		    (volatile u8 *)(rxbuf[rxIdx]->FrmData->Dest);
 		NetReceive(NetRxPackets[rxIdx], length - 4);
 		*/
+		if(length > 0) return length; //otherwise we loop.  can handle other packets on next pass.
 	}
-	*pPORTFIO_CLEAR = 0x10; 
 	return length;
 }
 int bfin_EMAC_recv_poll(u8** data){
@@ -687,7 +688,6 @@ u8* udp_header_setup(u8* data, int* length, u16 sport, u16 dport){
 	
 	data += sizeof(udp_header); 
 	return data;
-	
 }
 
 u8* tcp_header_setup(u8* data, int* length, u8 flags, u32 seq, u32 ack){

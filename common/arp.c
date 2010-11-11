@@ -65,7 +65,7 @@ int ARP_rx(u8* data, int length){
 		length >= sizeof(arp_packet)){
 		//printf_ip("ARP packet, dest ", p->arp.tpa); 
 		//printf_str("\n"); 
-		if( 	p->arp.htype == htons(ARP_HTYPE_ETH)  && 
+		if(p->arp.htype == htons(ARP_HTYPE_ETH)  && 
 			p->arp.ptype == htons(ARP_PTYPE_IPV4) &&
 			p->arp.hlen == 6 && 
 			p->arp.plen == 4)
@@ -163,9 +163,9 @@ void ARP_lut_add(u32 who, u8* mac){
 	if(fnd < 0){
 		fnd = ARP_lut_find(); 
 	}
-	printf_ip("ARP adding to LUT ", who); 
+	/*printf_ip("ARP adding to LUT ", who); 
 	printf_int(" at ", fnd); 
-	printf_str("\n"); 
+	printf_str("\n"); */
 	NetArpLut[fnd].ip = who; 
 	for(j=0; j<6; j++){
 		NetArpLut[fnd].mac[j] = mac[j]; 
