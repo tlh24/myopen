@@ -82,7 +82,7 @@ test.ldr:test.dxe
 clean:
 	rm -f *.o *.do *.ldr *.dxe
 
-flash: 
+flash: test.ldr
 	sudo ../flasher/flash test.ldr
 
 reset:

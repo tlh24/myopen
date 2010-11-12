@@ -7,6 +7,7 @@
 // so can use for whatever.
 #define PRINTF_TEMP	0xff800000
 #define PRINTF_OUT	0xff800400
+#define PRINTF_BUFFER_SIZE 0x0400 //1kbytes
 
 //global pointers!! 
 #define GTIME 0xff800800

@@ -1,6 +1,16 @@
-#include <cdefBF527.h>
 #include "util.h"
 #include "print.h"
+
+#ifdef __ADSPBF532__
+#include <cdefBF532.h>
+#define pUART0_GCTL pUART_GCTL
+#define pUART0_THR pUART_THR
+#define pUART0_LSR pUART_LSR
+#endif
+
+#ifdef __ADSPBF527__
+#include <cdefBF527.h>
+#endif
 
 int uart_str(char* str){
 	int i =0; 

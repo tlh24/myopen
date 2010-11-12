@@ -1,6 +1,5 @@
 #ifndef __PRINT_H__
 #define __PRINT_H__
-#define PRINTF_BUFFER_SIZE 0x0400 //1kbytes
 int uart_str(char* str);
 int printf_str(char* str);
 int printf_int(char* str, int d);

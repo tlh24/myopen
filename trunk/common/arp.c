@@ -94,7 +94,7 @@ int ARP_rx(u8* data, int length){
 				p->arp.operation == htons(ARP_OP_REQ) &&
 				p->arp.tpa == NetOurIP)
 			{
-				printf_str("ARP request with our IP\n"); 
+				//printf_str("ARP request with our IP\n"); 
 		
 				pt = (arp_packet*)(txbuf[txIdx]->FrmData); 
 				pt->eth.length = sizeof(arp_packet) -2; 
@@ -124,7 +124,7 @@ int ARP_rx(u8* data, int length){
 				pt->arp.tpa = FormatIPAddress(
 					p->arp.spa[0],p->arp.spa[1],p->arp.spa[2],p->arp.spa[3]); 
 				
-				printf_str("sending ARP response\n");
+				//printf_str("sending ARP response\n");
 				bfin_EMAC_send_nocopy();	
 				return 1; 
 			}
