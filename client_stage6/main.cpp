@@ -323,7 +323,7 @@ void updateGain(int chan){
 	//remember, channels 0 and 16 are written at the same time. 
 	//and the biquads are arranged as: 
 	// low1 high1 low2 high2
-	//olny can adjust the B coefs of the lowpass filters, though.
+	//only can adjust the B coefs of the lowpass filters, though.
 	//all emitted numbers are base 14.(s2rnd flag)
 	chan = chan & 0xf; //map to the lower channels.
 	float gain1 = sqrt(g_gains[chan]);
@@ -593,8 +593,8 @@ int main(void)
 	while(g_die == 0){
 		int n = recvfrom(g_rxsock, buf, sizeof(buf), 0,0,0); 
 		if(n > 0){
-			//unsigned int trptr = *((unsigned int*)buf);
-			//printf("%d\n", trptr); 
+			unsigned int trptr = *((unsigned int*)buf);
+			printf("%d\n", trptr); 
 			char* ptr = buf; 
 			ptr += 4; 
 			n -= 4; 

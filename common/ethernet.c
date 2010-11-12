@@ -135,7 +135,7 @@ int bfin_EMAC_send_nocopy(){
 // packet and length are already in txbuf[txIdx]->NoBytes & txbuf[txIdx]->FrmData->Dest
 	int i;
 	int result = 0;
-
+	*pPORTFIO_SET = 0x20; 
 	if ((*pDMA2_IRQ_STATUS & DMA_ERR) != 0) {
 		printf_str("Ethernet: tx DMA error\n");
 		goto out;
@@ -160,6 +160,7 @@ int bfin_EMAC_send_nocopy(){
 		txIdx++;
       out:
 	//DEBUGF("BFIN EMAC send: length = %d", length);
+	*pPORTFIO_CLEAR = 0x20; 
 	return result;
 }
 int bfin_EMAC_recv(u8** data){
@@ -184,7 +185,7 @@ int bfin_EMAC_recv(u8** data){
 			break;
 		}
 		length -= 4; 
-		*pPORTFIO_TOGGLE = 0x10; 
+		*pPORTFIO_SET = 0x10; 
 		//printf_int("got a packet! length: ", length); 
 		//printf_str("\n"); 
 		*data = (u8*)(rxbuf[rxIdx]->FrmData); 
@@ -208,6 +209,7 @@ int bfin_EMAC_recv(u8** data){
 		    (volatile u8 *)(rxbuf[rxIdx]->FrmData->Dest);
 		NetReceive(NetRxPackets[rxIdx], length - 4);
 		*/
+		*pPORTFIO_CLEAR = 0x10; 
 		if(length > 0) return length; //otherwise we loop.  can handle other packets on next pass.
 	}
 	return length;
@@ -801,7 +803,7 @@ int icmp_rx(u8* data, int length){
 		if( ( p->ip.p == IP_PROT_ICMP ) && 
 		       p->ip.dest == NetOurIP ){
 			if(p->icmp.type == ICMP_UNREACHABLE && p->icmp.code == ICMP_PORT_CLOSED){
-				printf_str("got an ICMP unreachable, turning off UDP stream\n"); 
+				//printf_str("got an ICMP unreachable, turning off UDP stream\n"); 
 				//probably we should stop sending data then!! 
 				g_streamEnabled = 0; 
 				return 1; 

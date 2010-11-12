@@ -75,7 +75,10 @@ int main(void){
 	int etherr = bfin_EMAC_init(); 
 	if(!etherr) DHCP_req();  
 	
-	//setup for heartbeat & eth activity
+	/*setup for heartbeat & eth activity
+		portF 3 = heartbeat
+		portF 4 = bfin_emac_recv
+		portF 5 = bfin_emac_send_nocopy */
 	*pPORTF_FER &= (0xffff ^ 0x38);
 	*pPORTFIO_DIR |= 0x38; 
 	*pPORTFIO_INEN &= (0xffff ^ 0x38); 
@@ -88,9 +91,10 @@ int main(void){
 	int prevtime = 0;
 	int secs, r; 
 	u32* data;
-	u32  wrptr = 0; //write pointer - actual address - SDRAM!
+	u32  wrptr = 0; //write pointer - not actual address! (must wrap by hand)
 	u32  trptr = 0;
 	char result;
+	char gotx = 0; 
 	u8 outpkt[32]; 
 	
 	//enable the radio.
@@ -118,18 +122,14 @@ int main(void){
 				//printf_hex(" ptr[1] ", ptr[1]); 
 			}
 		}
-		//generate noise on the SPI bus.
-		u8 status, fifostatus; 
-		status = spi_read_register_status(NOR_FIFO_STATUS, &fifostatus);
 		if((*pPORTGIO & SPI_IRQ) == 0){
 			spi_write_register(NOR_STATUS, 0x70); //clear IRQ.
-			*pPORTFIO_SET = 0x20; //delay CSN pulse a bit
 			asm volatile("ssync;"); 
 			*pPORTGIO_CLEAR = SPI_CSN; 
 			asm volatile("ssync;"); 
 			*pSPI_TDBR = 0x61; //command for writing the fifo
 			spi_delay(); //wait for this to finish. 
-			u8* ptr = (u8*)wrptr;
+			u8* ptr = (u8*)(wrptr); 
 			for(i=0; i<32; i++){
 				*pSPI_TDBR = 0;
 				spi_delay(); 
@@ -137,12 +137,11 @@ int main(void){
 			}
 			*pPORTGIO_SET = SPI_CSN | SPI_CE; 
 			asm volatile("ssync;");
-			*pPORTFIO_CLEAR = 0x20; 
-			asm volatile("ssync;");
 			
 			//need to check if the headstage wants a response.
-			char* c = (char*)wrptr; 
+			char* c = (char*)(wrptr); 
 			wrptr += 32; 
+			wrptr &= 0xfff; 
 			c += 27; 
 			if(((*c)&0x7) == 7){
 				radio_set_tx();
@@ -165,32 +164,25 @@ int main(void){
 				*FIO_CLEAR = SPI_CE; 
 				spi_write_register(NOR_STATUS, 0x70); //clear IRQ.
 				radio_set_rx(); 
+				gotx = 1; 
 			}
 		}
-		if(wrptr < trptr) trptr = 0; 
-		if(wrptr - trptr >= UDP_PACKET_SIZE){
+		if(gotx || wrptr >= UDP_PACKET_SIZE){
 			data = (u32*) ( udp_packet_setup(UDP_PACKET_SIZE + 4, &result )); 
 			if(result > 0){
 				//copy the data from SDRAM.. (starting @ 0x0000 0000, looping 256k bytes)
 				//include a copy of the tptr, so that we can (possibly) reorder it. 
 				(*data++) = trptr; //this is the +4
-				//we don't know if the transmit pointer will be aligned with packet boundaries -- 
-				//so do the memcpy manually. 
-				//memcpy((u8*)((*tr_ptr) & 0x0003ffff), data, 1024); 
-				u32* src = (u32*)trptr; 
-				//alignment errors?  need it to be 32-bit aligned. 
-				src = (u32*)((u32)src & (~0x3)) ; 
-				for(i=0; i<UDP_PACKET_SIZE/4; i++){
-					src = (u32*) ( ((u32)src) & 0xfff ); 
-					*data++ = *src++; 
-				}
-				trptr += UDP_PACKET_SIZE ; 
+				memcpy_(0, data, UDP_PACKET_SIZE); 
+				trptr ++ ; 
 				bfin_EMAC_send_nocopy(); 
 			} else {
 				//reset, since we were not able to send anything 
 				// (possibly due to ARP). 
-				trptr += UDP_PACKET_SIZE; 
+				trptr ++; 
 			}
+			gotx = 0; 
+			wrptr = 0; 
 		}
 		secs = (*pGTIME)/1000; // 0xff800800
 		if(secs != prevtime){

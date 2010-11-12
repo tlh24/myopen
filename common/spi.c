@@ -6,6 +6,15 @@
 #include "../bridge/bridge.h"
 #endif
 
+#ifdef __ADSPBF532__
+#include <cdefBF532.h>
+#ifdef __BRIDGE__
+#define SPI_BAUDDIV 5
+#else
+#define SPI_BAUDDIV 4
+#endif
+#endif
+
 void spi_delay(){
 	//wait until the spi transation is done. 
 	u16 status = 8;
@@ -153,8 +162,9 @@ void spi_write_packet_noDMA(void* packet){
 
 int spi_read_packet(void* packet){
 	//assumes packet length 32! 
-	//checks to see if a packet can be recieved.
-	u8 status, fifostatus, k; 
+	//assumes we are servicing an IRQ!
+	//u8 status, fifostatus;
+	u8 k; 
 	u8 *ptr = (u8*)packet; 
 	//this reads two registers at the same time, so to check all relevant bits.
 	//status = spi_read_register_status(NOR_FIFO_STATUS, &fifostatus); 
@@ -238,12 +248,13 @@ void radio_set_rx(){
 	*FIO_CLEAR = SPI_CE; 
 	asm volatile("ssync;"); 
 	//clear the interupts, we may start listening for packets immediately.
-	spi_write_register(NOR_CONFIG, 0 ); // ?? needed seems to decrease reliability
+	//spi_write_register(NOR_CONFIG, 0 ); // ?? needed seems to decrease reliability
+	//spi_write_byte(NOR_FLUSH_TX);
+	spi_write_byte(NOR_FLUSH_RX); 
 	spi_write_register(NOR_CONFIG, 
 		NOR_MASK_MAX_RT | NOR_PWR_UP | NOR_PRIM_RX ); 
-	spi_write_byte(NOR_FLUSH_RX); 
-	//spi_write_register(NOR_STATUS, 0x70); 
-	//spi_write_byte(NOR_FLUSH_TX); 
+	spi_write_register(NOR_STATUS, 0x70); 
+	
 	*pDMA5_IRQ_STATUS = DMA_DONE | DMA_ERR; //clear any irqs..
 	*FIO_SET = SPI_CE; 
 	asm volatile("ssync;"); 
@@ -254,9 +265,10 @@ void radio_set_tx(){
 	*FIO_CLEAR = SPI_CE; //this is also essential for transitioning between states.
 	asm volatile("ssync;"); 
 	spi_write_register(NOR_CONFIG, 0 ); // needed? seems to decrease reliability
+	spi_write_register(NOR_STATUS, 0x70); 
+	spi_write_byte(NOR_FLUSH_TX);
 	spi_write_register(NOR_CONFIG, 
 		NOR_MASK_MAX_RT | NOR_PWR_UP | NOR_PRIM_TX ); 
-	spi_write_byte(NOR_FLUSH_TX); 
 	//spi_write_register(NOR_STATUS, 0x70); 
 	*pDMA5_IRQ_STATUS = DMA_DONE | DMA_ERR; //clear any irqs..
 	//experiment - wait to enable the transmission (assert CE) until we have a packet.
