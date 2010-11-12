@@ -73,18 +73,17 @@ test.dxe: $(LOCAL) $(COMMON)
 	$(OBDMP) -d $@ > test_decompile.asm
 
 # this written to flash. 
-emg_dsp.ldr:emg_dsp.dxe init_sdram.dxe
+test.ldr:test.dxe
 	rm -f *.ldr
-	$(LDR) -v -T BF537 -c $@ -i init_sdram.dxe -v emg_dsp.dxe
-	$(OBDMP) -d emg_dsp.dxe > decompile.asm
-	$(OBDMP) -d init_sdram.dxe > init_decompile.asm
+	$(LDR) -v -T BF527 -c $@ test.dxe
+	$(OBDMP) -d test.dxe > decompile.asm
 #	perl register_check.pl
 	
 clean:
 	rm -f *.o *.do *.ldr *.dxe
 
 flash: 
-	sudo ../flasher/flash emg_dsp.ldr
+	sudo ../flasher/flash test.ldr
 
 reset:
 	sudo ../flasher/flash --reset

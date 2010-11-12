@@ -27,7 +27,11 @@ pin5	 D3 = _prog , pull low to hold the processor in reset &
 #define _PROG	LP_PIN05
 
 int g_type = 0; 
-// 0 = AT45; 1 = AT25041; 2 = AT25081 
+/* 0 = AT45
+	1 = AT25041
+	2 = AT25081 
+	3 = SST25VF04
+	*/
 
 void cleanup(int doexit){
 	clear_pin( _PROG | _CS | SO | SCLK); //release the device! 
@@ -100,11 +104,43 @@ unsigned char read_status_register(int doprint){
 	
 	return stat; 
 }
-void write_enable_AT25(){
+void write_enable_25(){
+	//also write the status register, w/ 0
+	//first EWSR
+	clear_pin(_CS | SCLK); 
+	write_byte(0x50);
+	set_pin(_CS); 
+	set_pin(SO); 
+	//now actual status register
+	clear_pin(_CS | SCLK); 
+	write_byte(0x01);
+	write_byte(0x00); 
+	set_pin(_CS); 
+	set_pin(SO); 
+	//works for both AT25 and SST25 chips.
 	clear_pin(_CS | SCLK); 
 	write_byte(0x06); 	
 	set_pin(_CS); 
 	set_pin(SO); 
+}
+void write_disable_SST25(){
+	//works for both AT25 and SST25 chips.
+	clear_pin(_CS | SCLK); 
+	write_byte(0x04); 	
+	set_pin(_CS); 
+	set_pin(SO); 
+	//also write the status register, w/ 0
+	//first EWSR
+	clear_pin(_CS | SCLK); 
+	write_byte(0x50);
+	set_pin(_CS); 
+	set_pin(SO); 
+	//now actual status register
+	clear_pin(_CS | SCLK); 
+	write_byte(0x01);
+	write_byte(0x00); 
+	set_pin(_CS); 
+	set_pin(SO);  
 }
 unsigned char read_stat_AT25(int doprint){
 	unsigned char stat; 
@@ -148,7 +184,7 @@ void unprotect_AT25(){
 	//first unprotect all sectors. 
 	// 4mbit device, 256 pages -> 2k pages
 	printf("unprotecting all pages..\n"); 
-	write_enable_AT25(); 
+	write_enable_25(); 
 	clear_pin(_CS | SCLK); 
 	write_byte(0x01); 
 	write_byte(0); //global unprotect. 
@@ -156,7 +192,7 @@ void unprotect_AT25(){
 	set_pin(SO); 
 	/*printf("erasing entire device.\n"); 
 	//erases the whole AT25 type device. 
-	write_enable_AT25(); 
+	write_enable_25(); 
 	clear_pin(_CS); 
 	write_byte(0xc7); 
 	set_pin(_CS); 
@@ -172,7 +208,7 @@ void block_erase_AT25(int data_length){
 	for(addr = 0; addr <= data_length && addr <= 512*1024; addr += 4096){
 		printf("block erase %d ( 0x%x )\n",addr, addr); 
 		//unprotect this block. 
-		write_enable_AT25();
+		write_enable_25();
 		clear_pin(_CS | SCLK); 
 		if(g_type == 1) write_byte(0x39);
 		if(g_type == 2) write_byte(0x52); 
@@ -182,7 +218,7 @@ void block_erase_AT25(int data_length){
 		set_pin(_CS);
 		set_pin(SO); 
 		//now do a block erase.
-		write_enable_AT25(); 
+		write_enable_25(); 
 		clear_pin(_CS | SCLK); 
 		write_byte(0x20); 
 		write_byte((addr >> 16) & 0xff);
@@ -220,7 +256,7 @@ void write_page_AT25(unsigned char *d, int page_size, int page){
 	printf("sector protection register %x\n", read); 
 	
 	printf("writing buffer..."); 
-	write_enable_AT25();
+	write_enable_25();
 	clear_pin(_CS | SCLK); 
 	write_byte(0x02); 
 	write_byte((page >> 16) & 0xff); 
@@ -250,6 +286,170 @@ int verify_AT25(unsigned char* d, int length, int page){
 	write_byte(0); //dont-care byte.
 	for(i=0; i< length; i++){
 		read = read_byte(); 
+		if(read != d[i]){
+			if(ok)printf("\n"); 
+			printf("read flash[%d] expected %02x got %02x \n", i, d[i], read); 
+			ok = 0; 
+		}
+	}
+	if(ok) printf(" ... ok.\n");
+	else printf("... bad.\n"); 
+	set_pin(_CS); 
+	usleep(100); 
+	set_pin(SO); 
+	return ok; 
+}
+unsigned char read_stat_SST25(int doprint){
+	unsigned char stat; 
+	clear_pin(_CS | SCLK); 
+	write_byte(0x05); 
+	stat= read_byte(); 
+	set_pin(_CS); 
+	set_pin(SO);
+	if(doprint)
+		printf("status register 0x%x \n", stat);
+	if(stat & 0x80){
+		printf("bank protect read-only!\n");
+	} else {
+		if(doprint) printf("bank potect bits read-write.\n"); 	
+	}
+	if(stat & 0x40){
+		printf("AAI on!\n");
+	} else {
+		if(doprint) printf("AAI off.\n"); 	
+	}
+	if(stat & 0x0c){
+		printf("block protection on!\n");
+	} else {
+		if(doprint) printf("block protect off.\n"); 	
+	}
+	if(stat & 0x02){
+		if(doprint) printf("device is write enabled\n"); 	
+	}else{
+		if(doprint) printf("device is not write enabled. (default)\n"); 	
+	}
+	if(stat & 0x01){
+		if(doprint) printf("device is busy.\n"); 	
+	}else{
+		if(doprint) printf("device is ready.\n"); 	
+	}
+	return stat; 
+}
+int sanityCheck_SST25(){
+	int good = 1; 
+	unsigned char r; 
+	//check the MFR id. 
+	clear_pin(_CS | SCLK); 
+	write_byte(0x90);
+	write_byte(0x00); 
+	write_byte(0x00);
+	write_byte(0x00);
+	r = read_byte(); 
+	if(r!= 0xbf){
+		printf("sanity check: mfr id %x should be 0xbf\n", r); 
+		good = 0; 
+	}
+	r = read_byte(); 
+	if(r!= 0x8d){
+		printf("sanity check: dev id %x should be 0x8d\n", r); 
+		good = 0; 
+	}
+	set_pin(_CS); 
+	set_pin(SO); 
+	write_enable_25(); 
+	int status = read_stat_SST25(0) & 0xcf; 
+	if(status != 0x02){ 
+		printf("sanity check: status %x should be 0x02\n", status); 
+		good = 0; 
+	}
+	write_disable_SST25(); 
+	status = read_stat_SST25(0) & 0xcf; 
+	if(status != 0){
+		printf("sanity check: status %d should be 0\n", status); 
+		good = 0; 
+	}
+	return good; 
+}
+void eraseChip_SST25(){
+	//erases the entire flash chip. 
+	read_stat_SST25(1);
+	printf("erasing SST25 !\n"); 
+	write_enable_25(); 
+	clear_pin(_CS | SCLK); 
+	write_byte(0x60); 
+	set_pin(_CS); 
+	set_pin(SO);
+	printf("waiting for the erase to complete..\n"); 
+	usleep(100000); 
+	unsigned char r = read_stat_SST25(1);
+	while(r & 0x1){
+		r = read_stat_SST25(0);
+		usleep(5000); 	
+	}
+}
+void write_all_SST25(unsigned char* d, int length){
+	printf("write_all_SST25 writing buffer length %d\n", length);  
+	int i; 
+	write_enable_25();
+	clear_pin(_CS | SCLK); 
+	write_byte(0xaf); 
+	write_byte(0); //start at the top!! 
+	write_byte(0); 
+	write_byte(0);
+	write_byte(d[0]); 
+	set_pin(_CS); 
+	set_pin(SO); 
+	usleep(22); //Tbp
+	for(i=1; i<length; i++){
+		clear_pin(_CS | SCLK); 
+		write_byte(0xaf); 
+		write_byte(d[i]); 
+		set_pin(_CS); 
+		set_pin(SO); 
+		usleep(22); //Tbp = 20us, add a bit.
+	}
+	//disable write.
+	clear_pin(_CS | SCLK); 
+	write_byte(0x04); 
+	set_pin(_CS); 
+	set_pin(SO); 
+	usleep(22); //Tbp
+}
+void write_all2_SST25(unsigned char* d, int length){
+	printf("write_all_SST25 writing buffer length %d\n", length);  
+	int i,r; 
+	for(i=0; i<length; i++){
+		write_enable_25();
+		clear_pin(_CS | SCLK); 
+		write_byte(0x02); 
+		write_byte((i>>16)&0xff); //start at the top!! 
+		write_byte((i>>8)&0xff); 
+		write_byte(i&0xff);
+		write_byte(d[i]); 
+		set_pin(_CS); 
+		set_pin(SO); 
+		usleep(22); //Tbp
+	}
+	//disable write.
+	clear_pin(_CS | SCLK); 
+	write_byte(0x04); 
+	set_pin(_CS); 
+	set_pin(SO); 
+	usleep(22); //Tbp
+	do{
+		r = read_stat_SST25(0);
+	}while(r & 0x1); 
+}
+int verify_SST25(unsigned char* d, int length){
+	int i, ok=1; 
+	printf("verifying all.."); 
+	clear_pin(_CS | SCLK); 
+	write_byte(0x03); 
+	write_byte(0x00);
+	write_byte(0x00);
+	write_byte(0x00);
+	for(i=0; i< length; i++){
+		unsigned char read = read_byte(); 
 		if(read != d[i]){
 			if(ok)printf("\n"); 
 			printf("read flash[%d] expected %02x got %02x \n", i, d[i], read); 
@@ -359,7 +559,7 @@ int verify_page(unsigned char *d, int page_size, int page){
 	return ok; //return 1 on success, 0 on failure.
 }
 int main(int argv, char* argc[]){
-	int 		i, j, ps, pass; 
+	int 		i, j, ps; 
 	int 		page_size = 256; 
 	FILE* 	file; 
 	int 		file_size; 
@@ -431,8 +631,8 @@ int main(int argv, char* argc[]){
 
 	i = 0; 
 	disp = 0; 
+	g_type = 0; 
 	while(i < 1000){
-	for(pass=0; pass < 2; pass++){
 		//if a bad firmware has been written 
 		// (leaving the processor to constantly reading the flash), 
 		// the flash may need to be queried twice before it is ready. 
@@ -440,55 +640,67 @@ int main(int argv, char* argc[]){
 		usleep(50); 
 		clear_pin(_CS | SCLK); 
 		write_byte(0x9f); 
+		if(i == 0) disp = 1; 
+		else disp = 0; 
 		for(j=0; j<4; j++){//see page 44 of the spec sheet.
 			byte = read_byte(); 
-			if(disp||i<=2)printf("read: 0x%x \n", byte);
-			if(pass == 1){
-				switch(j){
-					case 0:
-						if(byte != 0x1f){
-							printf("manufacturer ID does not look correct.\n"); 
-							i=0;
-							cleanup(0); 
-						} break; 
-					case 1: 
-						if(byte == 0x44){
-							if(disp) printf("looks like an AT25DF041\n");
-							g_type = 1; 
-						} else if(byte == 0x25){
-							if(disp) printf("looks like an AT45DB081\n"); 	
-							g_type = 0; 
-						} else if(byte == 0x45){
-							if(disp) printf("looks like an AT25DF081\n"); 
-							g_type = 2; 
+			if(disp)printf("read: 0x%x \n", byte);
+			switch(j){
+				case 0:
+					if(byte == 0xbf){
+						if(disp) printf("looks like microchip flash\n");
+						g_type = 3; 
+					} else if(byte == 0x1f ){
+						if(disp) printf("looks like atmel flash\n");
+					} else {
+						printf("manufacturer ID does not look correct.\n"); 
+						i=0;
+						cleanup(0); 
+					} break; 
+				case 1: 
+					if(byte == 0x44){
+						if(disp) printf("looks like an AT25DF041\n");
+						g_type = 1; 
+					} else if(byte == 0x25){
+						if(g_type == 3){//already set throu mfr opcode
+							if(disp) printf("looks like an SST25VF0404\n");
 						} else {
-							printf("unrecognized device ID\n"); 
-							i = 0; 
-							cleanup(0); 
-						} break; 
-					case 2:
-						if(disp) printf(" device version %d\n", (int)byte); 
-						break; 
-					case 3:
-						if(byte != 0x00){
-							printf("extended device information != 0\n"); 
-							i = 0; 
-							cleanup(0); 
-						} break; 
-				}
-				i++; 
-				//this is a bit of overkill, but better not to write crap to flash! 
-				if(i > 999) printf("communication test: completed passes: %d\n",i); 
+							if(disp) printf("looks like an AT45DB081\n");
+							g_type = 0; 
+						}
+					} else if(byte == 0x45){
+						if(disp) printf("looks like an AT25DF081\n"); 
+						g_type = 2; 
+					} else if(g_type != 3){
+						printf("pass %d unrecognized device ID\n",i); 
+						i = 0; 
+						cleanup(0); 
+					} break; 
+				case 2:
+					if(disp) printf(" device version %d\n", (int)byte); 
+					break; 
+				case 3:
+					if(g_type != 3 && byte != 0x00){
+						printf("extended device information != 0\n"); 
+						i = 0; 
+						cleanup(0); 
+					} break; 
 			}
+			if(g_type == 3) i = 1000; //early out. 
 		}
+		i++; 
+		//this is a bit of overkill, but better not to write crap to flash! 
+		if(i > 999) printf("communication test: completed passes: %d\n",i); 
 		set_pin(_CS); 
 		usleep(50); 
 	}
-	}
-	printf("status register 0x%x\n", read_stat_AT25(0)); 
-	if(g_type == 0) printf("looks like an AT45DB081\n"); 
-	if(g_type == 1) printf("looks like an AT25DF041\n"); 
-	if(g_type == 2) printf("looks like an AT25DF081\n"); 
+	printf("detected: "); 
+	if(g_type == 0) printf("AT45DB081\n"); 
+	if(g_type == 1) printf("AT25DF041\n"); 
+	if(g_type == 2) printf("AT25DF081\n");
+	if(g_type == 3) printf("SST25VF040\n"); 
+	if(g_type == 1 || g_type == 2)
+		printf("status register 0x%x\n", read_stat_AT25(0)); 
 	//need to make sure the device is in power of 2 binary page size. 
 	//converting to this is a one-time operation. 
 	if( g_type == 0 && (read_status_register(1) & 0x01) == 0){
@@ -541,13 +753,26 @@ int main(int argv, char* argc[]){
 		unprotect_AT25();
 		block_erase_AT25(file_size); 
 	}
+	if(g_type == 3){
+		for(i=0; i<2000; i++){
+			if(!sanityCheck_SST25()){
+				cleanup(1); 
+			}
+		}
+		printf("sanity check ok\n"); 	
+
+		eraseChip_SST25(); 
+		write_all2_SST25(buffer, file_size); 
+	}
 	for(i=0; i< (file_size / page_size)+1; i++){
 		ps = file_size - i*page_size; 
 		ps = ps > page_size ? page_size : ps; 
-		printf("writing page %d size %d\n", i, ps); 
-		if(g_type == 0)
-			write_page(&(buffer[i*page_size]), ps, i); 
-		if(g_type == 1){
+		if(g_type == 0){
+			printf("writing page %d size %d\n", i, ps); 
+			write_page(&(buffer[i*page_size]), ps, i);
+		}
+		if(g_type == 1 ){
+			printf("writing page %d size %d\n", i, ps); 
 			write_page_AT25(&(buffer[i*page_size]), ps, i); 
 			//while(1) verify_AT25(&(buffer[i*page_size]), ps, i); 
 			//verify_AT25(&(buffer[i*page_size]), ps, i); 
@@ -568,6 +793,9 @@ int main(int argv, char* argc[]){
 	}
 	if(g_type == 1){
 		ok = verify_AT25(buffer, file_size, 0); 	
+	}
+	if(g_type == 3){
+		ok = verify_SST25(buffer, file_size); 
 	}
 	if(!ok){
 		printf("not all pages verified properly!  beware!\n"); 

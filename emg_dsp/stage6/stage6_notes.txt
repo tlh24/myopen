@@ -6,6 +6,8 @@ Hardware Fixes:
 	* Vdd_OTP NEEDS to be TIED TO 2.5V for the proc to boot.
 	I guess I'll need a regulator here.
 	(I assume this is needed by the security code)
+	* Need caps on nordic lines to quench ringing (47pf, SCK & MOSI)
+	
 
 November 8 2010
 	* Wrote a simplified .dxe - one that just toggles a few pins - 
