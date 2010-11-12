@@ -7,10 +7,10 @@ INCLUDES = -I../common/ -I/opt/uClinux/bfin-elf/bfin-elf/include/
 ASMFLAGS = -x assembler-with-cpp $(INCLUDES) $(CPUDEFINES) -Wall
 ASMFLAGS += -mcpu=bf527 -include memory.h -include defBF527.h
 CFLAGS = $(INCLUDES) $(CPUDEFINES) -mcpu=bf527 -Wall -include memory.h
-# CFLAGS += -O3 -ffast-math -mfast-fp -funsafe-math-optimizations 
+#CFLAGS += -O3 -ffast-math -mfast-fp -funsafe-math-optimizations 
 
 ASMFLAGS += -g
-CFLAGS += -g
+CFLAGS += -O2
 
 # see http://blackfin.uclinux.org/gf/project/toolchain/forum/?action=ForumBrowse&forum_id=44&_forum_action=ForumMessageBrowse&thread_id=3023
 # the archive file must have the same organization (FLAT, FDPIC ..)
