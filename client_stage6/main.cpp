@@ -18,7 +18,7 @@
 
 #include "sock.h"
 
-#define NPACKETS 32
+#define NSAMP (8*1024)
 
 typedef struct {
 	char data[27]; 
@@ -29,8 +29,10 @@ int g_rxsock = 0;//rx
 int g_txsock = 0; 
 struct sockaddr_in g_txsockAddr; 
 
-static float	g_fbuf[27*NPACKETS*3];
-static float 	g_fbufColor[27*NPACKETS*4]; //did the headstage indicate that passed thresh?
+double g_time = 0.0; 
+
+static float	g_fbuf[NSAMP*3];
+static float 	g_fbufColor[NSAMP*4]; //did the headstage indicate that passed thresh?
 unsigned int	g_bufpos;
 unsigned int*	g_sendbuf; 
 unsigned int g_sendW; //where to write to (in 32-byte increments)
@@ -164,15 +166,14 @@ int initGL()
 	 //init the vertex buffers
 	float* f = g_fbuf; 
 	float* t = g_fbufColor; 
-	float r,g,b,x,y; 
+	float r,g,b,x; 
 	int i; 
 	r = g = b = 0.6f; 
-	for(i=0; i<27*NPACKETS; i++){
-		x = (float)i / (float)(27*NPACKETS);
+	for(i=0; i<NSAMP; i++){
+		x = (float)i / (float)(NSAMP);
 		x = x * 3.f - 1.5f; 
-		y = 0.f; 
 		*f++ = x; 
-		*f++ = y; 
+		*f++ = 0.f; 
 		*f++ = 0.f; 
 		*t++ = r;
 		*t++ = g; 
@@ -227,11 +228,11 @@ int drawGLScene()
 	glVertexPointer(3, GL_FLOAT, 0, g_fbuf);
 	glColorPointer(4, GL_FLOAT, 0, g_fbufColor);
 	glColor4f(1.f, 1.0f, 1.0f, 0.4f);
-	glDrawArrays(GL_POINTS, 0, NPACKETS*27);
+	glDrawArrays(GL_POINTS, 0, NSAMP);
 	glVertexPointer(3, GL_FLOAT, 0, g_fbuf);
 	glColorPointer(4, GL_FLOAT, 0, g_fbufColor);
 	glColor4f(0.f, 1.0f, 1.0f, 0.4f);
-	glDrawArrays(GL_LINE_STRIP, 0, NPACKETS*27);
+	glDrawArrays(GL_LINE_STRIP, 0, NSAMP);
 
 	glXSwapBuffers(GLWin.dpy, GLWin.win);
 	glDisableClientState(GL_VERTEX_ARRAY);
@@ -607,12 +608,23 @@ int main(void)
 				g_exceeded = p->exceeded; 
 				if(g_exceeded & (1<<g_headch)) r = 1.0; 
 				for(j=0; j<27; j++){
-					g_fbuf[(g_bufpos % (27*NPACKETS))*3 + 1] = 
+					g_fbuf[(g_bufpos % NSAMP)*3 + 1] = 
+						//sin(g_time); 
 						(float)(p->data[j]) / 128.f; 
-					g_fbufColor[(g_bufpos % (27*NPACKETS))*4 + 0] = r;
+					g_fbufColor[(g_bufpos % NSAMP)*4 + 0] = r;
+					g_fbufColor[(g_bufpos % NSAMP)*4 + 3] = 0.7f;
 					g_bufpos++; 
+					g_time += 0.03; 
 				}
 				p++; 
+			}
+			//'erase' the 10 oldest samples.
+			float alpha = 0.f; 
+			j = 0; 
+			while(alpha < 1.f){
+				g_fbufColor[((g_bufpos+j) % NSAMP)*4 + 3] = alpha;
+				alpha += 0.05; 
+				j++; 
 			}
 			pthread_cond_signal( &g_outthread_cond ); //unblock the other thread.
 		}

@@ -8,6 +8,27 @@
 #include "nordic_regs.h"
 
 u8 g_streamEnabled; 
+u8 g_outpkt[32]; 
+
+void eth_listen(int etherr){
+	int r = 0; 
+	u32* data;
+	if(!etherr) r = bfin_EMAC_recv( (u8**)(&data) ); 
+	if(r > 0){
+		udp_packet* pkt = (udp_packet*)data; 
+		//printf_hex(" packet from ", pkt->ip.src); 
+		/*printf_int(" dest ", htons(pkt->udp.dest));
+		printf_int(" src ", htons(pkt->udp.src)); */
+		if(pkt->ip.src == NetDataDestIP && htons(pkt->udp.dest) == 4342){
+			//well then, copy it over! (don't check the checksum..)
+			u8* ptr = (u8*) data; 
+			ptr += sizeof(udp_packet); 
+			memcpy_(ptr, g_outpkt, 32); 
+			//printf_hex(" ptr ", *((u32*)ptr));
+			//printf_hex(" ptr[1] ", ptr[1]); 
+		}
+	}
+}
 
 int main(void){
 	//the nordic chip has a SPI port rated up to 10Mhz.
@@ -89,13 +110,12 @@ int main(void){
 	//write out data.
 	#define UDP_PACKET_SIZE 256
 	int prevtime = 0;
-	int secs, r; 
+	int secs; 
 	u32* data;
 	u32  wrptr = 0; //write pointer - not actual address! (must wrap by hand)
 	u32  trptr = 0;
 	char result;
 	char gotx = 0; 
-	u8 outpkt[32]; 
 	
 	//enable the radio.
 	radio_init(124); 
@@ -107,21 +127,7 @@ int main(void){
 	
 	while(1){
 		//listen for packets? (both interfaces, respond on eth)
-		if(!etherr) r = bfin_EMAC_recv( (u8**)(&data) ); 
-		if(r > 0){
-			udp_packet* pkt = (udp_packet*)data; 
-			//printf_hex(" packet from ", pkt->ip.src); 
-			/*printf_int(" dest ", htons(pkt->udp.dest));
-			printf_int(" src ", htons(pkt->udp.src)); */
-			if(pkt->ip.src == NetDataDestIP && htons(pkt->udp.dest) == 4342){
-				//well then, copy it over! (don't check the checksum..)
-				u8* ptr = (u8*) data; 
-				ptr += sizeof(udp_packet); 
-				memcpy_(ptr, outpkt, 32); 
-				printf_hex(" ptr ", *((u32*)ptr));
-				//printf_hex(" ptr[1] ", ptr[1]); 
-			}
-		}
+		eth_listen(etherr); 
 		if((*pPORTGIO & SPI_IRQ) == 0){
 			spi_write_register(NOR_STATUS, 0x70); //clear IRQ.
 			asm volatile("ssync;"); 
@@ -146,22 +152,23 @@ int main(void){
 			if(((*c)&0x7) == 7){
 				radio_set_tx();
 				//send whatever is in the buffer from the host..
-				*FIO_CLEAR = SPI_CSN; 
+				*FIO_CLEAR = SPI_CSN | SPI_CE; //clearing CE is essential here!
+				// ESSENTIAL!!!
 				asm volatile("ssync;"); 
 				*pSPI_TDBR = 0xa0; //command for writing the fifo
 				spi_delay(); //wait for this to finish. 
-				u8* ptr = outpkt;
+				u8* ptr = g_outpkt;
 				for(i=0; i<32; i++){
 					*pSPI_TDBR = *ptr++;
 					spi_delay(); 
 				}
 				*FIO_SET = SPI_CSN | SPI_CE; 
 				asm volatile("ssync;"); 
+				eth_listen(etherr); //this inserts a bit of (useful) delay
 				//wait for the resulting irq.
 				while(*pPORTGIO & SPI_IRQ){
 					asm volatile("nop;nop;"); 
 				}
-				*FIO_CLEAR = SPI_CE; 
 				spi_write_register(NOR_STATUS, 0x70); //clear IRQ.
 				radio_set_rx(); 
 				gotx = 1; 

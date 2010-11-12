@@ -25,3 +25,14 @@ November 8 2010
 	* Ethernet: works.  DCHP and all!
 November 9 2010
 	* Next: get the radio working. Needs to be soldered there first! 
+November 12 2010
+	* okay, the bridge - at least in a debug build - seems to work. 
+	The radio is very sensitive to timing / sequencing: notably, NRF_CE
+	must be low while uploading the response (command) packet.  
+	so be it.  
+	* -O3 does not work, for whatever reason.  ??  just use -O or -O2.
+	* if you put the headstage in oscillate mode, it still appears that there
+	 are dropped packets. perhaps it is the client..?
+	 the trace from UDP packets indicates that nothing is being dropped, 
+	 and the o-scope similarly looks good. 
+	* I guess the next thing is to try out the new version of the headstage..
