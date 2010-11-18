@@ -26,39 +26,13 @@ classdef SignalInput < handle
         function numChannels = get.NumChannels(obj)
             numChannels = length(obj.ChannelIds);
         end
-        function preview(obj,channelIds)
-            % Note that we can devevlop more elaborate Signal preview
-            % interfaces, but this one is bare-bones to display current
-            % output
-            
-            if nargin < 2
-                channelIds = 1:obj.NumChannels;
-            end
-            
-            hFig = gcf;
-            clf(hFig);
-            hAx1 = gca;
-            hLines = plot(hAx1,zeros(2,obj.NumChannels));
-            ylim(hAx1,[-2 14]);
-            
-            offset = 1.5 * (1:obj.NumChannels);
-            
-            StartStopForm([]);
-            while StartStopForm
-                drawnow
-                
-                channelData = getData(obj);
-                % filteredData = getFilteredData(obj);
-                
-                if isempty(channelData)
-                    continue;
-                end
-                for i = channelIds
-                    set(hLines(i),'YData',channelData(:,i)+offset(i),'XData',1:size(channelData,1))
-                end
-            end
+        function previewFiltered(obj,channelIds)
+            previewCommon(obj,@(obj)getFilteredData(obj),channelIds);
         end
-        
+        function preview(obj,channelIds)
+            previewCommon(obj,@(obj)getData(obj),channelIds);
+            
+        end        
         function previewFeatures(obj,channelIds)
             if nargin < 2
                 channelIds = 1:obj.NumChannels;
@@ -162,11 +136,48 @@ classdef SignalInput < handle
                 for i = 1:length(obj.hFilter)
                     filtered = obj.hFilter{i}.apply(filtered);
                 end
-            end            
+            end
         end
         function addfilter(obj,newFilter)
             numFilters = length(obj.hFilter);
             obj.hFilter{numFilters+1} = newFilter;
         end
     end
+end
+
+
+function previewCommon(obj,previewFunction,channelIds)
+
+% Note that we can develop more elaborate Signal preview
+% interfaces, but this one is bare-bones to display current
+% output
+
+
+if nargin < 3
+    channelIds = 1:obj.NumChannels;
+end
+
+hFig = gcf;
+clf(hFig);
+hAx1 = gca;
+hLines = plot(hAx1,zeros(2,obj.NumChannels));
+ylim(hAx1,[-2 14]);
+
+offset = 1.5 * (1:obj.NumChannels);
+
+StartStopForm([]);
+while StartStopForm
+    drawnow
+    
+    channelData = previewFunction(obj);
+    
+    if isempty(channelData)
+        continue;
+    end
+    for i = channelIds
+        set(hLines(i),'YData',channelData(:,i)+offset(i),'XData',1:size(channelData,1))
+    end
+end
+
+
 end
