@@ -21,18 +21,23 @@ classdef SignalInput < handle
         data = getData(obj);
         isReady = isReady(obj,numSamples); % Consider removing extra arg
         stop(obj);
-    end
+    end %methods (Abstract)
     methods
         function numChannels = get.NumChannels(obj)
             numChannels = length(obj.ChannelIds);
-        end
+        end %get.NumChannels
         function previewFiltered(obj,channelIds)
+            if nargin < 2
+                channelIds = 1:obj.NumChannels;
+            end
             previewCommon(obj,@(obj)getFilteredData(obj),channelIds);
-        end
+        end %previewFiltered
         function preview(obj,channelIds)
+            if nargin < 2
+                channelIds = 1:obj.NumChannels;
+            end
             previewCommon(obj,@(obj)getData(obj),channelIds);
-            
-        end        
+        end %preview
         function previewFeatures(obj,channelIds)
             if nargin < 2
                 channelIds = 1:obj.NumChannels;
@@ -80,7 +85,7 @@ classdef SignalInput < handle
                     end
                 end
             end
-        end
+        end %previewFeatures
         
         function audiopreview(obj,channelIds,range)
             if nargin < 2
@@ -115,7 +120,7 @@ classdef SignalInput < handle
                 numBits = 16;
                 soundsc(filteredData(end-50:end,channelIds(1)),obj.SampleFrequency,numBits,[-range range]);
             end
-        end
+        end %audiopreview
         
         function filtered = getFilteredData(obj)
             % Simplified call to get data and apply filters
@@ -126,7 +131,7 @@ classdef SignalInput < handle
             
             data = getData(obj);
             filtered = applyAllFilters(obj,data);
-        end
+        end %getFilteredData
         
         function filtered = applyAllFilters(obj,data)
             % If filter handles exist, loop through each one and apply to
@@ -137,25 +142,19 @@ classdef SignalInput < handle
                     filtered = obj.hFilter{i}.apply(filtered);
                 end
             end
-        end
+        end %applyAllFilters
         function addfilter(obj,newFilter)
             numFilters = length(obj.hFilter);
             obj.hFilter{numFilters+1} = newFilter;
-        end
-    end
+        end %addfilter
+    end %methods
 end
-
-
 function previewCommon(obj,previewFunction,channelIds)
 
 % Note that we can develop more elaborate Signal preview
 % interfaces, but this one is bare-bones to display current
 % output
 
-
-if nargin < 3
-    channelIds = 1:obj.NumChannels;
-end
 
 hFig = gcf;
 clf(hFig);
@@ -180,4 +179,4 @@ while StartStopForm
 end
 
 
-end
+end %previewCommon
