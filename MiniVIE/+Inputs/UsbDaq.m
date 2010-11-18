@@ -1,41 +1,53 @@
 classdef UsbDaq < Inputs.SignalInput
     % Class for interfacing data acquisition hardware via the matlab data
     % acquisition toolbox.
+    % Sample Usage:
+    %     hSignalSource = Inputs.UsbDaq('mcc','0');
+    %     hSignalSource.addfilter(Inputs.HighPass());
+    %     hSignalSource.addfilter(Inputs.LowPass());
+    %     hSignalSource.addfilter(Inputs.Notch());
+    %     hSignalSource.NumSamples = 2000;
+    %     hSignalSource.initialize();
+    %     hSignalSource.preview(1:4)    
     %
     % 01-Sept-2010 Armiger: Created
     properties
         AnalogInput = [];
         AnalogInputName = '';
         
-        DaqDeviceName = '';
-        DaqDeviceId = [];
+        DaqDeviceName = 'mcc';
+        DaqDeviceId = '0';
 
     end
     methods
         function obj = UsbDaq(deviceName,deviceId,channelIds)
             % Constructor
-            if nargin < 1
-                obj.DaqDeviceName = 'mcc';
-            else
+            if nargin > 0
                 obj.DaqDeviceName = deviceName;
             end
-            if nargin < 2
-                obj.DaqDeviceId = 0;
-            else
+            if nargin > 1
                 obj.DaqDeviceId = deviceId;
             end
-            if nargin < 3
-                obj.ChannelIds = 0:7;
-            else
+            if nargin > 2
                 obj.ChannelIds = channelIds;
+            else
+                obj.ChannelIds = 0:7;
             end
-            
         end
         function initialize(obj)
+
+            assert(ischar(obj.DaqDeviceName));
+            assert(ischar(obj.DaqDeviceId));
+            
+            if strcmpi(obj.DaqDeviceName,'nidaq')
+                % Append MX to nidaq boards using the NI-DAQmx library
+                obj.AnalogInputName = [obj.DaqDeviceName 'mx' obj.DaqDeviceId '-AI'];
+            else
+                obj.AnalogInputName = [obj.DaqDeviceName obj.DaqDeviceId '-AI'];
+            end
+            
             try
                 % Check for existing daq objects:
-                obj.AnalogInputName = [obj.DaqDeviceName num2str(obj.DaqDeviceId) '-AI'];
-                
                 hExistingDaqs = daqfind('Name',obj.AnalogInputName);
                 numExisting = length(hExistingDaqs);
                 if ~isempty(hExistingDaqs)
@@ -46,9 +58,9 @@ classdef UsbDaq < Inputs.SignalInput
                     end
                 end
                 obj.AnalogInput = analoginput(obj.DaqDeviceName,obj.DaqDeviceId);
-                if (obj.Verbose >= 1),fprintf('Created analoginput for device "%s,%d"\n',obj.DaqDeviceName,obj.DaqDeviceId);end
+                if (obj.Verbose >= 1),fprintf('Created analoginput for device "%s"\n',obj.AnalogInputName);end
             catch ME
-                fprintf(2,'Failed during setup of device "%s,%d"\n',obj.DaqDeviceName,obj.DaqDeviceId);
+                fprintf(2,'Failed during setup of device "%s"\n',obj.AnalogInputName);
                 rethrow(ME);
             end
             

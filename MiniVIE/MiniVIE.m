@@ -1,15 +1,16 @@
 addpath('Utilities')
 
 %% Create an input source
-hSignalSource = Inputs.UsbDaq('mcc',0);
+hSignalSource = Inputs.UsbDaq('mcc','0');
 % hSignalSource = Inputs.SignalSimulator();
 hSignalSource.addfilter(Inputs.HighPass());
 hSignalSource.addfilter(Inputs.LowPass());
 hSignalSource.addfilter(Inputs.Notch());
+hSignalSource.addfilter(Inputs.MAV(150));
 hSignalSource.NumSamples = 2000;
 hSignalSource.initialize();
 
-hSignalSource.preview(1:4)
+hSignalSource.previewFiltered(1:4)
 %%
 hSignalSource.previewFeatures(1:4)
 %%
