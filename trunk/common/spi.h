@@ -24,7 +24,7 @@
 #ifdef __BRIDGE__
 #define SPI_BAUDDIV 5 //stimulator/bridge
 #else
-#define SPI_BAUFDIV 4 //headstage
+#define SPI_BAUDDIV 4 //headstage.  10Mhz, looks oaky (not okay, oaky)
 #endif
 
 #endif

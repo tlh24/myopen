@@ -7,6 +7,8 @@ Hardware Fixes:
 	I guess I'll need a regulator here.
 	(I assume this is needed by the security code)
 	* Need caps on nordic lines to quench ringing (47pf, SCK & MOSI)
+	* R61 & friends were not grounded (on the schematic) oops!
+		Can jumper to R12.
 	
 
 November 8 2010
@@ -35,4 +37,107 @@ November 12 2010
 	 are dropped packets. perhaps it is the client..?
 	 the trace from UDP packets indicates that nothing is being dropped, 
 	 and the o-scope similarly looks good. 
+November 15 2010
 	* I guess the next thing is to try out the new version of the headstage..
+	does not seem to transmit packets reliably. electrical issue?
+	tried hand-soldering all the pins again - from the outside, without removing
+	the chip, and no difference. 
+	perhaps in the future I should have protronics put both the RHA2116 and 
+	nRF24L01+ on the board?  Seems I'm not too good at it .. :-/
+November 16 2010
+	* Tried the same fimware with the first build of the headstage on stage6. 
+	Looks like exactly the same behavior... therefore, it's probably not 
+	a hardware issue (if it were, then the two different builds would 
+	probably have different behavior). 
+	Is it possible that the problem is bad data? e.g. sending 0x0000 for all
+	samples leads to corrupted packets? 
+	Perhaps one of the RF components is bad / the incorrect value? 
+		This would affect output power, presumably, and for the small distances
+		that i'm testing the radio at, there is no difference wrt orientation. 
+		If the power were iffy, then changing orientation would affect response.
+	Seems unlikely to be the SPI bus - both BF532s boot properly (so far as I can tell)
+	Power supply voltage?
+		Changing the supply voltage to 2.5V from 3.3V changes nothing. 
+		(below 2.5, the processor is in reset, properly so)
+		It's unlikely that changing the core voltage from 1.2 to 0.8 will change
+		anything but the proc power dissipation.  The BF532 is rated at that voltage.
+	Note the old version of the headstage - stage5 - works reliably. 
+	* I guess the appropriate thing to do now is to mess around with software, 
+	see if we can delve into why it's unreliable. 
+	Okay! radio_tst_bidi() transmits 8 packets reliably, but does not RX the resulting
+	command packet.  Hence, it is a software thing .. let's see if transition to RX 
+	is there ..?
+	Is putting the radio in off mode (NOR_CONFIG 0) needed? 
+		No. (prior RX mode .. but then again, it doesn't rx the packet.)
+		No. (prior TX mode). 
+	radio_tst_bidi() does not work on stage5!! IRQ is never asserted.
+Novemeber 19 2010
+	present version of neurorecord (262) works when compiled with -O
+	and uploaded using JTAG to headstage. 
+	serial port is somehow borked, which sucks -- speaking of which should
+	have ran some lines out so we can get the headstage serial on the bridge
+	port -- but not a serious issue. 
+	present version of the code flashed to stage6 headstage works fine, actually
+	**provided** that the USB endpoint is not connected. 
+	The instant you enable the USB endpoint, reception of the status packet
+	falters.  
+	Looks like it only sends full status packets when it says so...
+		and it does not seem to be claiming so.
+	Even after you disable the USB endpoint / kill the client, packet reception
+	is still flaky: not all command packets are recieved. (as indicated by the IRQ line)
+	Restarting the radio resets this behavior to default-good. 
+		(without resetting the bridge, which implies that it's the firmware on 
+		the stage6 headstage)
+	perhaps flush the fifos when switching states? 
+	if you try to debug the headstage without a hardware reset, it fails. .. why?
+	flushing the fifos when switching states does fix the behavior. 
+	rather, it appears that every other RX packet is dropped, and the proc
+	simply waits forever for it..
+	turning on and off the pc-side client does not affect this behavior. 
+	perhaps its a synchronization issue?  
+		No, as its a flag that tells the bridge to send a command packet.
+	** okay, with the mode switching, looks like all packets
+	get through ... with high reliability. perhaps the problem is the flag is
+	not being set.. ? 
+	it doesn't look like the bridge is even trying to send a command packet.
+	doesn't look like the packet format changed..
+	ugh, not sure bout this
+	if I put in a clear-fifo command before starting the transmit-only while 
+	loop, it's more reliable but not completely so: bridge only gets 7 packets
+	before deciding to transmit a status pkt. 
+	seems like there is a systematic offset somewhere.. ?
+	now looks like the first packet is not getting through. why?
+		adding a bit of delay between uploading the packets seems not to matter.
+		on the other hand, USB seems super reliable now.  huh.
+		clearing the fifo and re-writing the configuration also doesn't matter.
+	* okay, drastically simplified the data write - one packet at a time. 
+		it works fine. very consistent. 
+		of course, there is no memory writing going on. 
+	* let's use sample() instead of spi waits. 
+		YES that works.
+	* try no memory writes in real prog.
+		sorta works ... IRQ not getting cleared.
+		fixed, added a fifo clearing. 
+		now, data transmitted does not make sense!
+		It is ''definitely'' the memory read / write. perhaps to the wrong loc? 
+	* putting the RX mode back in there.  
+		Of course it does not work - need to send out the packet special byte. 
+		Now, bridge sees the special byte - and sends out a response - 
+		but the headscage does not hear it? 
+	* AHA!! the bridge does not have CRC ON!!! 
+		It occurs to me that CRC should be on bigtime when writing mem
+		but: not the other direction!! IMPORTANT
+	* turning back on memory writes. there seems to be some systematic offset.
+		wtf?
+	* It seems that this hardware is somehow more 'fragile' - the pointers are 
+	 more likely to go out of bounds or become desynchronized. 
+	 not really sure why.. 
+	 	Also: have a hard time programming the flash now.  more hardware gremlins?
+	* Anyway, now looks like we're not getting to RX mode fast enough.
+		Or, more accurately, still desyncronized. 
+November 22 2010 --
+	* Finally, got stage6 headstage werkin -- as the SVN log will attest, it *WAS*
+	setup / hold violations.  HAve no idea why the C version does not work reliably, 
+	but the ASM version does, and that is what matters. (neurorecord svn ver 265)
+	* Now: ethernet client does not switch channels properly.  hum hum. 
+		does switch with USB bridge, that packet dropping ho. 

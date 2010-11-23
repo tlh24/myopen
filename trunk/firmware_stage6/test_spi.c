@@ -133,7 +133,7 @@ int main(void){
 			asm volatile("ssync;"); 
 			*pPORTGIO_CLEAR = SPI_CSN; 
 			asm volatile("ssync;"); 
-			*pSPI_TDBR = 0x61; //command for writing the fifo
+			*pSPI_TDBR = 0x61; //command for reading the fifo
 			spi_delay(); //wait for this to finish. 
 			u8* ptr = (u8*)(wrptr); 
 			for(i=0; i<32; i++){
