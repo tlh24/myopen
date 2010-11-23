@@ -10,7 +10,7 @@ CFLAGS = $(INCLUDES) $(CPUDEFINES) -mcpu=bf527 -Wall -include memory.h
 #CFLAGS += -O3 -ffast-math -mfast-fp -funsafe-math-optimizations 
 
 ASMFLAGS += -g
-CFLAGS += -O2
+CFLAGS += -O2 #-03 does not work!
 
 # see http://blackfin.uclinux.org/gf/project/toolchain/forum/?action=ForumBrowse&forum_id=44&_forum_action=ForumMessageBrowse&thread_id=3023
 # the archive file must have the same organization (FLAT, FDPIC ..)
@@ -45,7 +45,7 @@ BIN = $(BFINROOT)/bfin-uclinux-objcopy
 #svn version script runs at the /end/ of the build process, but this isn't such a problem as 
 #the version does not change frequently. 
 all: $(LOCAL) $(COMMON) test.dxe
-	perl svn_version.pl
+#	perl svn_version.pl
 	
 init_sdram_dbg.o: init_sdram.asm 
 	./debug.pl init_sdram.asm | $(CC) $(ASMFLAGS) -g -c -o init_sdram_dbg.o -

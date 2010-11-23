@@ -6,15 +6,6 @@
 #include "../bridge/bridge.h"
 #endif
 
-#ifdef __ADSPBF532__
-#include <cdefBF532.h>
-#ifdef __BRIDGE__
-#define SPI_BAUDDIV 5
-#else
-#define SPI_BAUDDIV 4
-#endif
-#endif
-
 void spi_delay(){
 	//wait until the spi transation is done. 
 	u16 status = 8;
@@ -248,14 +239,16 @@ void radio_set_rx(){
 	*FIO_CLEAR = SPI_CE; 
 	asm volatile("ssync;"); 
 	//clear the interupts, we may start listening for packets immediately.
-	//spi_write_register(NOR_CONFIG, 0 ); // ?? needed seems to decrease reliability
+	spi_write_register(NOR_CONFIG, 0 ); // ?? needed seems to decrease reliability
 	//spi_write_byte(NOR_FLUSH_TX);
 	spi_write_byte(NOR_FLUSH_RX); 
-	spi_write_register(NOR_CONFIG, 
+	/** by default CRC is not enabled for RX - we accept anything!! **/
+	spi_write_register(NOR_CONFIG, /*NOR_EN_CRC | NOR_CRC0 |*/
 		NOR_MASK_MAX_RT | NOR_PWR_UP | NOR_PRIM_RX ); 
 	spi_write_register(NOR_STATUS, 0x70); 
 	
 	*pDMA5_IRQ_STATUS = DMA_DONE | DMA_ERR; //clear any irqs..
+	asm volatile("ssync;"); 
 	*FIO_SET = SPI_CE; 
 	asm volatile("ssync;"); 
 }
@@ -265,9 +258,11 @@ void radio_set_tx(){
 	*FIO_CLEAR = SPI_CE; //this is also essential for transitioning between states.
 	asm volatile("ssync;"); 
 	spi_write_register(NOR_CONFIG, 0 ); // needed? seems to decrease reliability
-	spi_write_register(NOR_STATUS, 0x70); 
 	spi_write_byte(NOR_FLUSH_TX);
-	spi_write_register(NOR_CONFIG, 
+	spi_write_register(NOR_STATUS, 0x70); 
+	/** by default, CRC is enabled for transmission - it is critical that the 
+	filter taps be written to the right location, with the correct values **/
+	spi_write_register(NOR_CONFIG, NOR_EN_CRC | NOR_CRC0 |
 		NOR_MASK_MAX_RT | NOR_PWR_UP | NOR_PRIM_TX ); 
 	//spi_write_register(NOR_STATUS, 0x70); 
 	*pDMA5_IRQ_STATUS = DMA_DONE | DMA_ERR; //clear any irqs..

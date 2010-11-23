@@ -561,7 +561,7 @@ void* out_thread(void*){
 	killGLWindow();
 	return (void*)0;
 }
-int main(void)
+int main(int argn, char* argc[])
 {
 	int i, j;
 	
@@ -585,11 +585,19 @@ int main(void)
 	pthread_attr_init(&attr);
 	pthread_create( &thread1, &attr, out_thread, 0 ); 
 	
+	char destIP[256]; 
+	if(argn == 2){
+		strncpy(destIP, argc[1], 255); 
+		destIP[255] = 0; 
+	}else{
+		snprintf(destIP, 256, "152.16.229.22"); 
+	}
+	
 	//open up a UDP socket, read from it.
 	g_rxsock = setup_socket(4340); 
-	g_txsock = connect_socket(4342, "152.16.229.22"); 
+	g_txsock = connect_socket(4342, destIP); 
 	if(!g_txsock) printf("failed to connect to bridge.\n"); 
-	get_sockaddr(4342, "152.16.229.22", &g_txsockAddr); 
+	get_sockaddr(4342, destIP, &g_txsockAddr); 
 	char buf[1024];
 	while(g_die == 0){
 		int n = recvfrom(g_rxsock, buf, sizeof(buf), 0,0,0); 
