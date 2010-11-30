@@ -18,7 +18,7 @@
 
 #include "sock.h"
 
-#define NSAMP (8*1024)
+#define NSAMP (4*1024)
 
 typedef struct {
 	char data[27]; 
@@ -52,6 +52,7 @@ GLuint base;    /* base display list of our font set */
 int g_channel = 0; 
 int g_headch = 0; 
 unsigned int g_exceeded = 0; 
+int g_thresh = 16000; 
 unsigned char g_prev = 0; 
 float lowpass_coefs[8] = {0.078146,0.156309,1.261974,-0.614587,
 								0.078146,0.156275,0.991706,-0.268803};
@@ -223,6 +224,16 @@ int drawGLScene()
 	glColor4f(1.f, 0.0f, 0.0f, 0.4f);
 	glVertex3f(-1.f*w,  0.f*h, 0.f);
 	glVertex3f( 1.f*w,  0.f*h, 0.f); 
+	glEnd();
+	glBegin(GL_LINE_STRIP); 
+	glColor4f(0.f, 1.0f, 0.0f, 0.4f);
+	glVertex3f(-1.f*w,  ((float)g_thresh/(256.f*128.f))*h, 0.f);
+	glVertex3f( 1.f*w,  ((float)g_thresh/(256.f*128.f))*h, 0.f); 
+	glEnd();
+	glBegin(GL_LINE_STRIP); 
+	glColor4f(0.f, 1.0f, 0.0f, 0.4f);
+	glVertex3f(-1.f*w,  ((float)g_thresh/(-256.f*128.f))*h, 0.f);
+	glVertex3f( 1.f*w,  ((float)g_thresh/(-256.f*128.f))*h, 0.f); 
 	glEnd();
 
 	glVertexPointer(3, GL_FLOAT, 0, g_fbuf);
@@ -499,7 +510,7 @@ int opengl_disp(){
         /* handle the events in the queue */
         while (XPending(GLWin.dpy) > 0)
         {
-            XNextEvent(GLWin.dpy, &event);
+            XNextEvent(GLWin.dpy, &event); //seems we cannot service these fast enough.
             switch (event.type)
             {
                 case Expose:
@@ -614,6 +625,11 @@ int main(int argn, char* argc[])
 				float r = 0.6; 
 				g_headch = (p->flag) >> 3 ; 
 				g_exceeded = p->exceeded; 
+				// encoding (makes the headstage code simpler)
+				// ch0 -> 0x1; ch1 -> 0x4; ch16 -> 0x2 ; ch17 -> 0x8
+				unsigned int bit = 0; 
+				if(g_headch < 16) bit = 1 << (g_headch*2);
+				else bit = 1 << ((g_headch&0xf)*2+1);
 				if(g_exceeded & (1<<g_headch)) r = 1.0; 
 				for(j=0; j<27; j++){
 					g_fbuf[(g_bufpos % NSAMP)*3 + 1] = 
