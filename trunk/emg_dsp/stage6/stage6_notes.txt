@@ -141,3 +141,27 @@ November 22 2010 --
 	but the ASM version does, and that is what matters. (neurorecord svn ver 265)
 	* Now: ethernet client does not switch channels properly.  hum hum. 
 		does switch with USB bridge, that packet dropping ho. 
+November 30th - back to work after a wonderful thanksgiving holiday. 
+	Everything is basically working, as expected. 
+	* Issue: client needs to be told the IP address of the bridge. is this reasonable?
+		Yes, I guess.  In the future there will likely be more than one headstage, 
+		more than one bridge. 
+	* Issue: no Intan chips on the headstage.  I guess I should install them? 
+		Assuming that I can?  or gear up for producing more headstages?
+		Probably best to test this wireless headstage in a mk, asap.
+	* Omnetics connector FAIL.  Fell off while I was inserting the jumper to the 
+		headstage test board; these must be mounted properly the first time
+		(they tend to warp during reflow), then glued to the board.
+	* Thresholding is not working either. check the code. seems to be off by one bit:
+		Looks like seeting gain high on channel 0 yields threshold of 0x3 (0b0011)
+		setting gain high on channel 1 yields threshold of 0xc (0b1100)
+		channel 2, 0x30. 
+		This is the same on stage5, as expected. 
+		Everything seems multiplied by 2...?
+		Try channel 16, 0x2 
+		channel 17, 0x8
+		Perhaps this is a strange consequence of how VIT_MAX works? 
+		aha!  "The accumulator register must be cleared before issuing VIT_MAX"
+		Indeed, it does. 
+	* Issue: seems to detect both positive and negative excursions.  Is this desired?
+		(otherwise, seems to be working)
