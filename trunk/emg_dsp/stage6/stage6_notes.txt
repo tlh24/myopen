@@ -141,7 +141,7 @@ November 22 2010 --
 	but the ASM version does, and that is what matters. (neurorecord svn ver 265)
 	* Now: ethernet client does not switch channels properly.  hum hum. 
 		does switch with USB bridge, that packet dropping ho. 
-November 30th - back to work after a wonderful thanksgiving holiday. 
+November 30 2010 - back to work after a wonderful thanksgiving holiday. 
 	Everything is basically working, as expected. 
 	* Issue: client needs to be told the IP address of the bridge. is this reasonable?
 		Yes, I guess.  In the future there will likely be more than one headstage, 
@@ -165,3 +165,5 @@ November 30th - back to work after a wonderful thanksgiving holiday.
 		Indeed, it does. 
 	* Issue: seems to detect both positive and negative excursions.  Is this desired?
 		(otherwise, seems to be working)
+Novemeber 31 2010 -
+	* Should have a disable-filter mode on the headstage, too. 
