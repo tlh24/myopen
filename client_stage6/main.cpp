@@ -373,7 +373,7 @@ void setOsc(int chan){
 	unsigned int u; 
 	int i,j; 
 	b[0] = 0.f; //assume there is already energy in the 
-	b[1] = 0.f; //dealy line.
+	b[1] = 0.f; //delay line.
 	b[2] = 32768.f - 10; //should be about 250Hz @ fs = 62.5khz
 	b[3] = -16384.f; 
 	unsigned int* ptr = g_sendbuf; 
@@ -397,6 +397,17 @@ void setChan(){
 	}
 	g_sendW++; 	
 }
+void setThresh(){
+	int i; 
+	unsigned int* ptr = g_sendbuf; 
+	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
+	ptr[0] = htonl(0xff904500 - 24); //frame pointer
+	ptr[1] = htonl(g_thresh/2); //see r4 >>> 1 (v) in radio3.asm
+	for(i=2; i<8; i++){
+		ptr[i] = 0xa5a5a5a5; 
+	}
+	g_sendW++; 	
+}
 void setBiquad(int chan, float* biquad, int biquadNum){
 	chan = chan & 0xf; //map to the lower channels.
 	float gain1 = sqrt(g_gains[chan]);
@@ -409,8 +420,8 @@ void setBiquad(int chan, float* biquad, int biquadNum){
 		gain1 = gain2 = 1.f; //no gain on the hpf.	
 	}
 	for(i=0; i<2; i++){
-		b[i*2+0] = biquad[i]*gain1*16384.f;
-		b[i*2+1] = biquad[i]*gain2*16384.f;
+		b[i*2+0] = biquad[i]*gain1*16384.f; //B coefs
+		b[i*2+1] = biquad[i]*gain2*16384.f; //lo and hi
 	}
 	for(i=2; i<4; i++){
 		b[i*2+0] = biquad[i]*16384.f;
@@ -446,6 +457,22 @@ void resetBiquads(int chan){
 	setBiquad(chan, &(highpass_coefs[0]), 1); 
 	setBiquad(chan, &(lowpass_coefs[4]), 2); 
 	setBiquad(chan, &(highpass_coefs[4]), 3); 
+}
+void setFlat(int chan){
+	//lets you look at the raw ADC samples.
+	chan &= 0xf; 
+	float gainSave1 = g_gains[chan]; 
+	float gainSave2 = g_gains[chan+16]; 
+	g_gains[chan] = 1.0;
+	g_gains[chan+16] = 1.0; // 0.5 ^ 0.25 = 0.84089
+	float biquad[] = {0.8409, 0.0, 0.0, 0.0}; 
+	setBiquad(chan, biquad, 0);
+	setBiquad(chan, biquad, 1); 
+	setBiquad(chan, biquad, 2); 
+	//fbiquad[0] *= -1.f; 
+	setBiquad(chan, biquad, 3); 
+	g_gains[chan] = gainSave1;
+	g_gains[chan+16] = gainSave2; 
 }
 void keyPressed(KeySym key)
 {
@@ -499,6 +526,19 @@ void keyPressed(KeySym key)
 		case XK_r:
 			resetBiquads(g_channel); 
 			break;
+		case XK_f:
+			setFlat(g_channel); 
+			break;
+		case XK_w:
+			g_thresh += 200; 
+			printf("threshold %d\n", g_thresh); 
+			setThresh(); 
+			break; 
+		case XK_q:
+			g_thresh -= 200; 
+			printf("threshold %d\n", g_thresh); 
+			setThresh(); 
+			break; 
     }
 }
 
@@ -610,11 +650,12 @@ int main(int argn, char* argc[])
 	if(!g_txsock) printf("failed to connect to bridge.\n"); 
 	get_sockaddr(4342, destIP, &g_txsockAddr); 
 	char buf[1024];
+	int send_delay = 0; 
 	while(g_die == 0){
 		int n = recvfrom(g_rxsock, buf, sizeof(buf), 0,0,0); 
 		if(n > 0){
 			unsigned int trptr = *((unsigned int*)buf);
-			printf("%d\n", trptr); 
+			if(g_print) printf("%d\n", trptr); 
 			char* ptr = buf; 
 			ptr += 4; 
 			n -= 4; 
@@ -630,7 +671,7 @@ int main(int argn, char* argc[])
 				unsigned int bit = 0; 
 				if(g_headch < 16) bit = 1 << (g_headch*2);
 				else bit = 1 << ((g_headch&0xf)*2+1);
-				if(g_exceeded & (1<<g_headch)) r = 1.0; 
+				if(g_exceeded & bit) r = 1.0; 
 				for(j=0; j<27; j++){
 					g_fbuf[(g_bufpos % NSAMP)*3 + 1] = 
 						//sin(g_time); 
@@ -653,16 +694,27 @@ int main(int argn, char* argc[])
 			pthread_cond_signal( &g_outthread_cond ); //unblock the other thread.
 		}
 		//see if they want us to send something? 
+		// (this occurs after RX of a packet, so we should not overflow the 
+		// bridge -- bridge sends out packets of 256 + 4 bytes (one frame
+		// of 8 32-byte radio packets)
 		if(g_sendR < g_sendW && n > 0){
-			printf("sending message to bridge ..\n"); 
-			unsigned int* ptr = g_sendbuf; 
-			ptr += (g_sendR % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
-			n = sendto(g_txsock,ptr,32,0, 
-				(struct sockaddr*)&g_txsockAddr, sizeof(g_txsockAddr));
-			if(n < 0)
-				printf("failed to send a message to bridge.\n"); 
-			else
-				g_sendR++;
+			//send one command packet for every 3 RXed frame -- 
+			// this allows 3 duplicate transmits from bridge to headstage of 
+			// each command packet.  redundancy = safety. 
+			if( send_delay >= 2 ){
+				send_delay = 0; 
+				printf("sending message to bridge ..\n"); 
+				unsigned int* ptr = g_sendbuf; 
+				ptr += (g_sendR % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
+				n = sendto(g_txsock,ptr,32,0, 
+					(struct sockaddr*)&g_txsockAddr, sizeof(g_txsockAddr));
+				if(n < 0)
+					printf("failed to send a message to bridge.\n"); 
+				else
+					g_sendR++;
+			} else {
+				send_delay++; 
+			}
 		}
 	}
 
