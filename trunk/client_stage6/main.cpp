@@ -230,11 +230,6 @@ int drawGLScene()
 	glVertex3f(-1.f*w,  ((float)g_thresh/(256.f*128.f))*h, 0.f);
 	glVertex3f( 1.f*w,  ((float)g_thresh/(256.f*128.f))*h, 0.f); 
 	glEnd();
-	glBegin(GL_LINE_STRIP); 
-	glColor4f(0.f, 1.0f, 0.0f, 0.4f);
-	glVertex3f(-1.f*w,  ((float)g_thresh/(-256.f*128.f))*h, 0.f);
-	glVertex3f( 1.f*w,  ((float)g_thresh/(-256.f*128.f))*h, 0.f); 
-	glEnd();
 
 	glVertexPointer(3, GL_FLOAT, 0, g_fbuf);
 	glColorPointer(4, GL_FLOAT, 0, g_fbufColor);
@@ -548,7 +543,7 @@ int opengl_disp(){
     /* wait for events*/ 
     if (!g_die){
         /* handle the events in the queue */
-        while (XPending(GLWin.dpy) > 0)
+        while (XPending(GLWin.dpy) > 0 && !g_die)
         {
             XNextEvent(GLWin.dpy, &event); //seems we cannot service these fast enough.
             switch (event.type)
@@ -653,7 +648,7 @@ int main(int argn, char* argc[])
 	int send_delay = 0; 
 	while(g_die == 0){
 		int n = recvfrom(g_rxsock, buf, sizeof(buf), 0,0,0); 
-		if(n > 0){
+		if(n > 0 && !g_die){
 			unsigned int trptr = *((unsigned int*)buf);
 			if(g_print) printf("%d\n", trptr); 
 			char* ptr = buf; 

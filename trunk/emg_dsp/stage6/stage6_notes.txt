@@ -167,3 +167,12 @@ November 30 2010 - back to work after a wonderful thanksgiving holiday.
 		(otherwise, seems to be working)
 Novemeber 31 2010 -
 	* Should have a disable-filter mode on the headstage, too. 
+		Done. Works as expected. 
+	* Using the flat-filter mode, threshold is definitely bidirectional - abs. 
+		Fixed.  VIT_MAX instruction only has 15 bits of dynamic range - so we simply 
+		divide both samples by 2 (>>> 1 (v) instruction). 
+		and divide the threshold by 2 prior transmission.
+	* Next up: work on the client program: 
+		+ need to save to disc and visualize spikes. (threshold crossings)
+		+ need to be able to invert gain. (that should be easy)
+		+ make the gui more reliable - raw x events is not cutting it! 
