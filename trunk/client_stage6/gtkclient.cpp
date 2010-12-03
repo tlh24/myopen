@@ -7,10 +7,15 @@
  *
  * to compile, see Makefile
  */
+// in order to get function prototypes from glext.h, 
+// define GL_GLEXT_PROTOTYPES before including glext.h
+#define GL_GLEXT_PROTOTYPES
 
 #include <gtk/gtk.h>
 #include <gtk/gtkgl.h>
 #include <GL/gl.h>
+#include "glext.h"
+#include "glInfo.h"  
 
 #include <math.h>
 
@@ -27,9 +32,13 @@ float boxv[][3] = {
 #define ALPHA 0.5
 
 static float ang = 30.;
+#define NSAMP (4*1024)
+static float	g_fbuf[NSAMP*3];
+bool	g_vboSupported = false; 
+GLuint g_vbo1 = 0; 
 
 static gboolean
-expose (GtkWidget *da, GdkEventExpose *event, gpointer user_data)
+expose_top (GtkWidget *da, GdkEventExpose *event, gpointer user_data)
 {
 	GdkGLContext *glcontext = gtk_widget_get_gl_context (da);
 	GdkGLDrawable *gldrawable = gtk_widget_get_gl_drawable (da);
@@ -45,52 +54,22 @@ expose (GtkWidget *da, GdkEventExpose *event, gpointer user_data)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glPushMatrix();
 	
-	glRotatef (ang, 1, 0, 1);
+	//glRotatef (ang, 1, 0, 1);
 	// glRotatef (ang, 0, 1, 0);
 	// glRotatef (ang, 0, 0, 1);
 
 	glShadeModel(GL_FLAT);
-
-#if 0
-	glBegin (GL_QUADS);
-	glColor4f(0.0, 0.0, 1.0, ALPHA);
-	glVertex3fv(boxv[0]);
-	glVertex3fv(boxv[1]);
-	glVertex3fv(boxv[2]);
-	glVertex3fv(boxv[3]);
-
-	glColor4f(1.0, 1.0, 0.0, ALPHA);
-	glVertex3fv(boxv[0]);
-	glVertex3fv(boxv[4]);
-	glVertex3fv(boxv[5]);
-	glVertex3fv(boxv[1]);
 	
-	glColor4f(0.0, 1.0, 1.0, ALPHA);
-	glVertex3fv(boxv[2]);
-	glVertex3fv(boxv[6]);
-	glVertex3fv(boxv[7]);
-	glVertex3fv(boxv[3]);
-	
-	glColor4f(1.0, 0.0, 0.0, ALPHA);
-	glVertex3fv(boxv[4]);
-	glVertex3fv(boxv[5]);
-	glVertex3fv(boxv[6]);
-	glVertex3fv(boxv[7]);
-	
-	glColor4f(1.0, 0.0, 1.0, ALPHA);
-	glVertex3fv(boxv[0]);
-	glVertex3fv(boxv[3]);
-	glVertex3fv(boxv[7]);
-	glVertex3fv(boxv[4]);
-	
-	glColor4f(0.0, 1.0, 0.0, ALPHA);
-	glVertex3fv(boxv[1]);
-	glVertex3fv(boxv[5]);
-	glVertex3fv(boxv[6]);
-	glVertex3fv(boxv[2]);
-
-	glEnd ();
-#endif
+	//VBO drawing.. 
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo1);
+	glVertexPointer(3, GL_FLOAT, 0, 0);
+	glColor3f (1., 1., 1.);
+	glDrawArrays(GL_LINE_STRIP, 0, NSAMP); 
+	//see glDrawElements for indexed arrays
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+	glDisableClientState(GL_VERTEX_ARRAY);
+	//end VBO
 
 	glBegin (GL_LINES);
 	glColor3f (1., 0., 0.);
@@ -168,8 +147,7 @@ configure (GtkWidget *da, GdkEventConfigure *event, gpointer user_data)
 	GdkGLContext *glcontext = gtk_widget_get_gl_context (da);
 	GdkGLDrawable *gldrawable = gtk_widget_get_gl_drawable (da);
 
-	if (!gdk_gl_drawable_gl_begin (gldrawable, glcontext))
-	{
+	if (!gdk_gl_drawable_gl_begin (gldrawable, glcontext)){
 		g_assert_not_reached ();
 	}
 
@@ -182,7 +160,36 @@ configure (GtkWidget *da, GdkEventConfigure *event, gpointer user_data)
 	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	glScalef (10., 10., 10.);
-	
+	if(!g_vboSupported){ //start it up!
+		glInfo glInfo;
+		glInfo.getInfo();
+		//glInfo.printSelf();
+		if(glInfo.isExtensionSupported("GL_ARB_vertex_buffer_object")){
+			g_vboSupported = true;
+			printf("Video card supports GL_ARB_vertex_buffer_object.\n");
+		}
+		else{
+			g_vboSupported = false;
+			printf("Video card does NOT support GL_ARB_vertex_buffer_object.\n");
+		}
+		//okay, want one vertex buffer (4now): draw the samples.
+		//fill the buffer with temp data. 
+		for(int i=0; i<NSAMP; i++){
+			g_fbuf[i*3+0] = ((float)i / NSAMP)*2.0 - 1.0;
+			g_fbuf[i*3+1] = sinf((float)i *0.02); 
+			g_fbuf[i*3+2] = 0.f; 
+		}
+		glGenBuffersARB(1, &g_vbo1);
+		glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo1);
+		glBufferDataARB(GL_ARRAY_BUFFER_ARB, NSAMP*3*sizeof(float), 
+			0, GL_DYNAMIC_DRAW_ARB);
+		glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, 
+			0, sizeof(g_fbuf), g_fbuf);
+		int bufferSize;
+		glGetBufferParameterivARB(GL_ARRAY_BUFFER_ARB, 
+			GL_BUFFER_SIZE_ARB, &bufferSize);
+		printf("Vertex Array in VBO:%d bytes", bufferSize);
+	}
 	gdk_gl_drawable_gl_end (gldrawable);
 
 	return TRUE;
@@ -205,6 +212,13 @@ rotate (gpointer user_data)
 	snprintf(str, 256, "%f", sin(ang)*4.0); 
 	gtk_label_set_text(GTK_LABEL(g_gainlabel[0]), str); //works!
 	return TRUE;
+}
+
+void destroy(GtkWidget *ign, gpointer ign2){
+	if(g_vboSupported){
+		glDeleteBuffersARB(1, &g_vbo1); 
+	}
+	gtk_main_quit(); 
 }
 
 int
@@ -274,7 +288,7 @@ main (int argc, char **argv)
 	//gtk_table_attach_defaults (GTK_TABLE (table), da, 0, 2, 1, 2);
 
 	g_signal_connect_swapped (window, "destroy",
-			G_CALLBACK (gtk_main_quit), NULL);
+			G_CALLBACK (destroy), NULL);
 	gtk_widget_set_events (da, GDK_EXPOSURE_MASK);
 
 	gtk_widget_show (window);
@@ -284,7 +298,7 @@ main (int argc, char **argv)
 			GDK_GL_MODE_RGB |
 			GDK_GL_MODE_DEPTH |
 			GDK_GL_MODE_DOUBLE));
-
+			
 	if (!glconfig)
 	{
 		g_assert_not_reached ();
@@ -299,7 +313,7 @@ main (int argc, char **argv)
 	g_signal_connect (da, "configure-event",
 			G_CALLBACK (configure), NULL);
 	g_signal_connect (da, "expose-event",
-			G_CALLBACK (expose), NULL);
+			G_CALLBACK (expose_top), NULL);
 
 	gtk_widget_show_all (window);
 
