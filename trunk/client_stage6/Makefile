@@ -10,7 +10,7 @@ GTKLD = `pkg-config --libs $(GLIBS) `
 
 OBJS = main.o sock.o
 
-GOBJS = gtkclient.o glInfo.o
+GOBJS = gtkclient.o glInfo.o sock.o
 
 all: gtkclient
 
