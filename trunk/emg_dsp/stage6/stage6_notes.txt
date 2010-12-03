@@ -176,3 +176,6 @@ Novemeber 31 2010 -
 		+ need to save to disc and visualize spikes. (threshold crossings)
 		+ need to be able to invert gain. (that should be easy)
 		+ make the gui more reliable - raw x events is not cutting it! 
+December 2 2010 -
+	* Decided to move to gtk2.0 as a gui toolkit for the client. The simple X protocol
+		was not cutting it!   Now, have to migrate...
