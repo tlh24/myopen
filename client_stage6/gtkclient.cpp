@@ -17,7 +17,20 @@
 #include "glext.h"
 #include "glInfo.h"  
 
+#include <stdio.h>
+#include <sys/types.h>
+#include <pthread.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <string.h>
+#include <memory.h>
 #include <math.h>
+#include <arpa/inet.h>
+#include "sock.h"
+
+#define NSAMP (4*1024)
 
 float boxv[][3] = {
 	{ -0.5, -0.5, -0.5 },
@@ -32,13 +45,52 @@ float boxv[][3] = {
 #define ALPHA 0.5
 
 static float ang = 30.;
-#define NSAMP (4*1024)
+
 static float	g_fbuf[NSAMP*3];
+unsigned int	g_fbufW; //where to write to (always increment) 
+unsigned int	g_fbufR; //display thread reads from here - copies to mem
+unsigned int*	g_sendbuf; 
+unsigned int g_sendW; //where to write to (in 32-byte increments)
+unsigned int g_sendR; //where to read from
+unsigned int g_sendL; //the length of the buffer.
+bool g_die = false; 
+bool g_pause = false;
+bool g_channel = 0; 
+bool g_headch = 0; 
+bool g_out = false; 
+unsigned int g_exceeded = 0; 
+int g_thresh = 16000; 
+float g_gains[32]; //per-channel gains.
+float lowpass_coefs[8] = {0.078146,0.156309,1.261974,-0.614587,
+								0.078146,0.156275,0.991706,-0.268803};
+float highpass_coefs[8] = {0.983715,-1.967430,1.980324,-0.980949,
+								0.983715,-1.967430,1.954002,-0.954619};
+
+typedef struct {
+	char data[27]; 
+	unsigned char flag; 
+	unsigned int exceeded; 
+} packet; 
+
+int g_rxsock = 0;//rx
+int g_txsock = 0; 
+struct sockaddr_in g_txsockAddr; 
+
+double g_time = 0.0; 
+
 bool	g_vboSupported = false; 
 GLuint g_vbo1 = 0; 
 
+void copyData(unsigned int sta, unsigned int fin){
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo1);
+	sta *= 3; 
+	fin *= 3; 
+	glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, sta*4, (fin-sta)*4, 
+							 (GLvoid*)&(g_fbuf[sta]));
+}
+
 static gboolean
-expose_top (GtkWidget *da, GdkEventExpose *event, gpointer user_data)
+expose_top (GtkWidget *da, GdkEventExpose*, gpointer )
 {
 	GdkGLContext *glcontext = gtk_widget_get_gl_context (da);
 	GdkGLDrawable *gldrawable = gtk_widget_get_gl_drawable (da);
@@ -48,6 +100,20 @@ expose_top (GtkWidget *da, GdkEventExpose *event, gpointer user_data)
 	if (!gdk_gl_drawable_gl_begin (gldrawable, glcontext))
 	{
 		g_assert_not_reached ();
+	}
+	
+	//copy over any new data.
+	if(g_fbufR < g_fbufW){
+		unsigned int w = g_fbufW; //atomic
+		unsigned int sta = g_fbufR % NSAMP; 
+		unsigned int fin = w % NSAMP; 
+		if(fin < sta) { //wrap
+			copyData(sta, NSAMP); 
+			copyData(0, fin); 
+		} else {
+			copyData(sta, fin); 
+		}
+		g_fbufR = w; 
 	}
 
 	/* draw in here */
@@ -142,7 +208,7 @@ expose_top (GtkWidget *da, GdkEventExpose *event, gpointer user_data)
 }
 
 static gboolean
-configure (GtkWidget *da, GdkEventConfigure *event, gpointer user_data)
+configure (GtkWidget *da, GdkEventConfigure *, gpointer)
 {
 	GdkGLContext *glcontext = gtk_widget_get_gl_context (da);
 	GdkGLDrawable *gldrawable = gtk_widget_get_gl_drawable (da);
@@ -214,29 +280,130 @@ rotate (gpointer user_data)
 	return TRUE;
 }
 
-void destroy(GtkWidget *ign, gpointer ign2){
+void destroy(GtkWidget *, gpointer){
+	g_die = true; 
 	if(g_vboSupported){
 		glDeleteBuffersARB(1, &g_vbo1); 
 	}
+	sleep(1); 
 	gtk_main_quit(); 
 }
 
+void* sock_thread(void* destIP){
+	g_rxsock = setup_socket(4340); 
+	g_txsock = connect_socket(4342,(char*)destIP); 
+	if(!g_txsock) printf("failed to connect to bridge.\n"); 
+	get_sockaddr(4342, (char*)destIP, &g_txsockAddr); 
+	char buf[1024];
+	int send_delay = 0; 
+	while(g_die == 0){
+		int n = recvfrom(g_rxsock, buf, sizeof(buf), 0,0,0); 
+		if(n > 0 && !g_die){
+			unsigned int trptr = *((unsigned int*)buf);
+			if(g_out) printf("%d\n", trptr); 
+			char* ptr = buf; 
+			ptr += 4; 
+			n -= 4; 
+			packet* p = (packet*)ptr;
+			int npack = n / 32; 
+			for(int i=0; i<npack && !g_pause; i++){
+				//see if it exceeded threshold.
+				float r = 0.6; 
+				g_headch = (p->flag) >> 3 ; 
+				g_exceeded = p->exceeded; 
+				// encoding (makes the headstage code simpler)
+				// ch0 -> 0x1; ch1 -> 0x4; ch16 -> 0x2 ; ch17 -> 0x8
+				unsigned int bit = 0; 
+				if(g_headch < 16) bit = 1 << (g_headch*2);
+				else bit = 1 << ((g_headch&0xf)*2+1);
+				if(g_exceeded & bit) r = 1.0; 
+				for(int j=0; j<27; j++){
+					g_fbuf[(g_fbufW % NSAMP)*3 + 1] = 
+						//sin(g_time); 
+						(float)(p->data[j]) / 128.f; 
+					//g_fbufColor[(g_bufpos % NSAMP)*4 + 0] = r;
+					//g_fbufColor[(g_bufpos % NSAMP)*4 + 3] = 0.7f;
+					g_fbufW++; 
+					g_time += 0.03; 
+				}
+				p++; 
+			}
+			//'erase' the 10 oldest samples.
+			/*float alpha = 0.f; 
+			j = 0; 
+			while(alpha < 1.f){
+				g_fbufColor[((g_bufpos+j) % NSAMP)*4 + 3] = alpha;
+				alpha += 0.05; 
+				j++; 
+			}
+			pthread_cond_signal( &g_outthread_cond ); //unblock the other thread.*/
+		}
+		//see if they want us to send something? 
+		// (this occurs after RX of a packet, so we should not overflow the 
+		// bridge -- bridge sends out packets of 256 + 4 bytes (one frame
+		// of 8 32-byte radio packets)
+		if(g_sendR < g_sendW && n > 0){
+			//send one command packet for every 3 RXed frame -- 
+			// this allows 3 duplicate transmits from bridge to headstage of 
+			// each command packet.  redundancy = safety. 
+			if( send_delay >= 2 ){
+				send_delay = 0; 
+				printf("sending message to bridge ..\n"); 
+				unsigned int* ptr = g_sendbuf; 
+				ptr += (g_sendR % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
+				n = sendto(g_txsock,ptr,32,0, 
+					(struct sockaddr*)&g_txsockAddr, sizeof(g_txsockAddr));
+				if(n < 0)
+					printf("failed to send a message to bridge.\n"); 
+				else
+					g_sendR++;
+			} else {
+				send_delay++; 
+			}
+		}
+	}
+	close_socket(g_rxsock);
+	return 0; 
+}
+
 int
-main (int argc, char **argv)
+main (int argn, char **argc)
 {
 	GtkWidget *window;
 	GtkWidget *da;
 	GtkWidget *da_spikes;
 	GdkGLConfig *glconfig;
 	//GtkWidget *table; 
-	GtkWidget *box1, *box2;
-	GtkWidget *button;
+	GtkWidget *box1;
+	//GtkWidget *button;
 	GtkWidget *paned;
 	GtkWidget *paned2;
 	int i; 
+	
+	g_sendL = 0x4000; 
+	g_sendbuf = (unsigned int*)malloc(g_sendL); 
+	if(!g_sendbuf){
+		fprintf(stderr, "could not allocate sendbuf\n");
+		exit(0); 
+	}
+	g_sendR = 0; 
+	g_sendW = 0; 
+	
+	char destIP[256]; 
+	if(argn == 2){
+		strncpy(destIP, argc[1], 255); 
+		destIP[255] = 0; 
+	}else{
+		snprintf(destIP, 256, "152.16.229.61"); 
+	}
+	
+	pthread_t thread1;
+	pthread_attr_t attr;
+	pthread_attr_init(&attr);
+	pthread_create( &thread1, &attr, sock_thread, (void*)destIP ); 
 
-	gtk_init (&argc, &argv);
-	gtk_gl_init (&argc, &argv);
+	gtk_init (&argn, &argc);
+	gtk_gl_init (&argn, &argc);
 
 	window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_title (GTK_WINDOW (window), "gtk headstage v6 client");
