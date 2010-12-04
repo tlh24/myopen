@@ -17,6 +17,9 @@
 #include "glext.h"
 #include "glInfo.h"  
 
+#include <Cg/cg.h>    /* Can't include this?  Is Cg Toolkit installed! */
+#include <Cg/cgGL.h>
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <pthread.h>
@@ -31,24 +34,14 @@
 #include "sock.h"
 
 #define NSAMP (4*1024)
-
-float boxv[][3] = {
-	{ -0.5, -0.5, -0.5 },
-	{  0.5, -0.5, -0.5 },
-	{  0.5,  0.5, -0.5 },
-	{ -0.5,  0.5, -0.5 },
-	{ -0.5, -0.5,  0.5 },
-	{  0.5, -0.5,  0.5 },
-	{  0.5,  0.5,  0.5 },
-	{ -0.5,  0.5,  0.5 }
-};
-#define ALPHA 0.5
-
-static float ang = 30.;
+#define u32 unsigned int
 
 static float	g_fbuf[NSAMP*3];
 unsigned int	g_fbufW; //where to write to (always increment) 
 unsigned int	g_fbufR; //display thread reads from here - copies to mem
+static float 	g_sbuf[32*1024*2]; 
+unsigned int	g_sbufW; 
+unsigned int	g_sbufR; 
 unsigned int*	g_sendbuf; 
 unsigned int g_sendW; //where to write to (in 32-byte increments)
 unsigned int g_sendR; //where to read from
@@ -78,27 +71,45 @@ struct sockaddr_in g_txsockAddr;
 
 double g_time = 0.0; 
 
-bool	g_vboSupported = false; 
-GLuint g_vbo1 = 0; 
+bool	g_vbo1Init = false; 
+GLuint g_vbo1 = 0; //for the waveform display
+bool	g_vbo2Init = false; 
+GLuint g_vbo2 = 0; //for spikes.
+static CGcontext   myCgContext;
+static CGprofile   myCgVertexProfile;
+static CGprogram   myCgVertexProgram;
 
-void copyData(unsigned int sta, unsigned int fin){
-	glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo1);
-	sta *= 3; 
-	fin *= 3; 
-	glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, sta*4, (fin-sta)*4, 
-							 (GLvoid*)&(g_fbuf[sta]));
+static void checkForCgError(const char *situation)
+{
+  CGerror error;
+  const char *string = cgGetLastErrorString(&error);
+
+  if (error != CG_NO_ERROR) {
+    printf("%s: %s\n", situation, string);
+    if (error == CG_COMPILER_ERROR) {
+      printf("%s\n", cgGetLastListing(myCgContext));
+    }
+	exit(1);
+  }
+}
+
+void copyData(GLuint vbo, u32 sta, u32 fin, float* ptr, int stride){
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB, vbo);
+	sta *= stride; 
+	fin *= stride; 
+	ptr += sta; 
+	glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, sta*4, (fin-sta)*4, (GLvoid*)ptr);
 }
 
 static gboolean
-expose_top (GtkWidget *da, GdkEventExpose*, gpointer )
+expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 {
 	GdkGLContext *glcontext = gtk_widget_get_gl_context (da);
 	GdkGLDrawable *gldrawable = gtk_widget_get_gl_drawable (da);
 
 	// g_print (" :: expose\n");
 
-	if (!gdk_gl_drawable_gl_begin (gldrawable, glcontext))
-	{
+	if (!gdk_gl_drawable_gl_begin (gldrawable, glcontext)){
 		g_assert_not_reached ();
 	}
 	
@@ -108,21 +119,23 @@ expose_top (GtkWidget *da, GdkEventExpose*, gpointer )
 		unsigned int sta = g_fbufR % NSAMP; 
 		unsigned int fin = w % NSAMP; 
 		if(fin < sta) { //wrap
-			copyData(sta, NSAMP); 
-			copyData(0, fin); 
+			copyData(g_vbo1, sta, NSAMP, g_fbuf, 3); 
+			copyData(g_vbo1, 0, fin, g_fbuf, 3); 
 		} else {
-			copyData(sta, fin); 
+			copyData(g_vbo1, sta, fin, g_fbuf, 3); 
 		}
 		g_fbufR = w; 
 	}
 
 	/* draw in here */
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glPushMatrix();
 	
-	//glRotatef (ang, 1, 0, 1);
-	// glRotatef (ang, 0, 1, 0);
-	// glRotatef (ang, 0, 0, 1);
+	cgGLBindProgram(myCgVertexProgram);
+	checkForCgError("binding vertex program");
+	cgGLEnableProfile(myCgVertexProfile);
+	checkForCgError("enabling vertex profile");
+	
+	glPushMatrix();
 
 	glShadeModel(GL_FLAT);
 	
@@ -137,68 +150,13 @@ expose_top (GtkWidget *da, GdkEventExpose*, gpointer )
 	glDisableClientState(GL_VERTEX_ARRAY);
 	//end VBO
 
-	glBegin (GL_LINES);
-	glColor3f (1., 0., 0.);
-	glVertex3f (0., 0., 0.);
-	glVertex3f (1., 0., 0.);
-	glEnd ();
-	
-	glBegin (GL_LINES);
-	glColor3f (0., 1., 0.);
-	glVertex3f (0., 0., 0.);
-	glVertex3f (0., 1., 0.);
-	glEnd ();
-	
-	glBegin (GL_LINES);
-	glColor3f (0., 0., 1.);
-	glVertex3f (0., 0., 0.);
-	glVertex3f (0., 0., 1.);
-	glEnd ();
-
-	glBegin(GL_LINES);
-	glColor3f (1., 1., 1.);
-	glVertex3fv(boxv[0]);
-	glVertex3fv(boxv[1]);
-	
-	glVertex3fv(boxv[1]);
-	glVertex3fv(boxv[2]);
-	
-	glVertex3fv(boxv[2]);
-	glVertex3fv(boxv[3]);
-	
-	glVertex3fv(boxv[3]);
-	glVertex3fv(boxv[0]);
-	
-	glVertex3fv(boxv[4]);
-	glVertex3fv(boxv[5]);
-	
-	glVertex3fv(boxv[5]);
-	glVertex3fv(boxv[6]);
-	
-	glVertex3fv(boxv[6]);
-	glVertex3fv(boxv[7]);
-	
-	glVertex3fv(boxv[7]);
-	glVertex3fv(boxv[4]);
-	
-	glVertex3fv(boxv[0]);
-	glVertex3fv(boxv[4]);
-	
-	glVertex3fv(boxv[1]);
-	glVertex3fv(boxv[5]);
-	
-	glVertex3fv(boxv[2]);
-	glVertex3fv(boxv[6]);
-	
-	glVertex3fv(boxv[3]);
-	glVertex3fv(boxv[7]);
-	glEnd();
-
 	glPopMatrix ();
 
+	cgGLDisableProfile(myCgVertexProfile);
+	checkForCgError("disabling vertex profile");
+	
 	if (gdk_gl_drawable_is_double_buffered (gldrawable))
 		gdk_gl_drawable_swap_buffers (gldrawable);
-
 	else
 		glFlush ();
 
@@ -206,9 +164,63 @@ expose_top (GtkWidget *da, GdkEventExpose*, gpointer )
 
 	return TRUE;
 }
-
 static gboolean
-configure (GtkWidget *da, GdkEventConfigure *, gpointer)
+expose2 (GtkWidget *da, GdkEventExpose*, gpointer )
+{
+	GdkGLContext *glcontext = gtk_widget_get_gl_context (da);
+	GdkGLDrawable *gldrawable = gtk_widget_get_gl_drawable (da);
+
+	if (!gdk_gl_drawable_gl_begin (gldrawable, glcontext)){
+		g_assert_not_reached ();
+	}
+	
+	//copy over any new data.
+	unsigned int len = sizeof(g_sbuf)/8; //total # of pts. 
+	if(g_sbufR < g_sbufW){
+		unsigned int w = g_sbufW; //atomic
+		unsigned int sta = g_sbufR % len; 
+		unsigned int fin = w % len; 
+		if(fin < sta) { //wrap
+			copyData(g_vbo2, sta, len, g_sbuf, 2); 
+			copyData(g_vbo2, 0, fin, g_sbuf, 2); 
+		} else {
+			copyData(g_vbo2, sta, fin, g_sbuf, 2); 
+		}
+		g_sbufR = w; 
+	}
+
+	/* draw in here */
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glPushMatrix();
+
+	glShadeModel(GL_FLAT);
+	
+	//VBO drawing.. 
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo2);
+	glVertexPointer(2, GL_FLOAT, 0, 0);
+	glColor3f (1., 1., 1.);
+	glPointSize(2.0);
+	glDrawArrays(GL_POINTS, 0, len);
+	//see glDrawElements for indexed arrays
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+	glDisableClientState(GL_VERTEX_ARRAY);
+	//end VBO
+
+	glPopMatrix ();
+	
+	if (gdk_gl_drawable_is_double_buffered (gldrawable))
+		gdk_gl_drawable_swap_buffers (gldrawable);
+	else
+		glFlush ();
+
+	gdk_gl_drawable_gl_end (gldrawable);
+
+	return TRUE;
+}
+static gboolean
+configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 {
 	GdkGLContext *glcontext = gtk_widget_get_gl_context (da);
 	GdkGLDrawable *gldrawable = gtk_widget_get_gl_drawable (da);
@@ -221,23 +233,44 @@ configure (GtkWidget *da, GdkEventConfigure *, gpointer)
 	glViewport (0, 0, da->allocation.width, da->allocation.height);
 	/*printf("allocation.width %d allocation_height %d\n", 
 		da->allocation.width, da->allocation.height); */
-	glOrtho (-10,10,-10,10,-20050,10000);
+	glOrtho (-1,1,-1,1,0,1);
 	glEnable (GL_BLEND);
 	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	glScalef (10., 10., 10.);
-	if(!g_vboSupported){ //start it up!
+	//glScalef (10., 10., 10.); //this nixes glOrtho above.
+	if(!g_vbo1Init){ //start it up!
+		//start up Cg first.(glInfo seems to trample some structures)
+		myCgContext = cgCreateContext();
+		checkForCgError("creating Cg context\n");
+		cgGLSetDebugMode(CG_FALSE);
+		cgSetParameterSettingMode(myCgContext, CG_DEFERRED_PARAMETER_SETTING);
+		checkForCgError("Cg parameter setting\n");
+
+		myCgVertexProfile = cgGLGetLatestProfile(CG_GL_VERTEX);
+		cgGLSetOptimalOptions(myCgVertexProfile);
+		checkForCgError("selecting vertex profile");
+
+		myCgVertexProgram = cgCreateProgramFromFile(
+			myCgContext,              /* Cg runtime context */
+			CG_SOURCE,                /* Program in human-readable form */
+			"threshold.cg",  /* Name of file containing program */
+			myCgVertexProfile,        /* Profile: OpenGL ARB vertex program */
+			"threshold",      /* Entry function name */
+			NULL);                    /* No extra compiler options */
+		checkForCgError("creating vertex program from file");
+		cgGLLoadProgram(myCgVertexProgram);
+		checkForCgError("loading vertex program");
+		
+		//now the vertex buffers.
 		glInfo glInfo;
 		glInfo.getInfo();
-		//glInfo.printSelf();
+		glInfo.printSelf();
 		if(glInfo.isExtensionSupported("GL_ARB_vertex_buffer_object")){
-			g_vboSupported = true;
 			printf("Video card supports GL_ARB_vertex_buffer_object.\n");
-		}
-		else{
-			g_vboSupported = false;
+		}else{
 			printf("Video card does NOT support GL_ARB_vertex_buffer_object.\n");
 		}
+		g_vbo1Init = true;
 		//okay, want one vertex buffer (4now): draw the samples.
 		//fill the buffer with temp data. 
 		for(int i=0; i<NSAMP; i++){
@@ -254,42 +287,89 @@ configure (GtkWidget *da, GdkEventConfigure *, gpointer)
 		int bufferSize;
 		glGetBufferParameterivARB(GL_ARRAY_BUFFER_ARB, 
 			GL_BUFFER_SIZE_ARB, &bufferSize);
-		printf("Vertex Array in VBO:%d bytes", bufferSize);
+		printf("Vertex Array in VBO:%d bytes\n", bufferSize);
+		
 	}
 	gdk_gl_drawable_gl_end (gldrawable);
 
 	return TRUE;
 }
+static gboolean
+configure2 (GtkWidget *da, GdkEventConfigure *, gpointer)
+{
+	GdkGLContext *glcontext = gtk_widget_get_gl_context (da);
+	GdkGLDrawable *gldrawable = gtk_widget_get_gl_drawable (da);
+	if (!gdk_gl_drawable_gl_begin (gldrawable, glcontext)){
+		g_assert_not_reached ();
+	}
 
+	glLoadIdentity();
+	glViewport (0, 0, da->allocation.width, da->allocation.height);
+	glOrtho (-1,1,0,32,0,1);
+	glEnable (GL_BLEND);
+	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	
+	if(!g_vbo2Init){ //start it up!
+		g_vbo2Init = true;
+		//have one VBO that's filled with spike times & channels.
+		for(int i=0; i<32; i++){
+			for(int j=0; j<1024; j++){
+				g_sbuf[(i*1024+j)*2+0] = (float)j/100.f; 
+				g_sbuf[(i*1024+j)*2+1] = (float)i + 0.5f; 
+			}
+		}
+		glGenBuffersARB(1, &g_vbo2);
+		glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo2);
+		glBufferDataARB(GL_ARRAY_BUFFER_ARB, sizeof(g_sbuf), 
+			0, GL_DYNAMIC_DRAW_ARB);
+		glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, 
+			0, sizeof(g_sbuf), g_sbuf);
+	}
+	gdk_gl_drawable_gl_end (gldrawable);
+
+	return TRUE;
+}
 //global labels.. 
 GtkWidget* g_gainlabel[32];
 
 static gboolean
 rotate (gpointer user_data)
 {
-	char str[256]; 
 	GtkWidget *da = GTK_WIDGET (user_data);
-
-	ang++;
 
 	gdk_window_invalidate_rect (da->window, &da->allocation, FALSE);
 	gdk_window_process_updates (da->window, FALSE);
 
-	snprintf(str, 256, "%f", sin(ang)*4.0); 
-	gtk_label_set_text(GTK_LABEL(g_gainlabel[0]), str); //works!
+	//char str[256]; 
+	//snprintf(str, 256, "%f", sin(ang)*4.0); 
+	//gtk_label_set_text(GTK_LABEL(g_gainlabel[0]), str); //works!
 	return TRUE;
 }
 
 void destroy(GtkWidget *, gpointer){
 	g_die = true; 
-	if(g_vboSupported){
+	if(g_vbo1Init){
 		glDeleteBuffersARB(1, &g_vbo1); 
 	}
+	if(g_vbo2Init){
+		glDeleteBuffersARB(1, &g_vbo2); 
+	}
+	cgDestroyProgram(myCgVertexProgram);
+	cgDestroyContext(myCgContext);
 	sleep(1); 
 	gtk_main_quit(); 
 }
 
 void* sock_thread(void* destIP){
+	g_sendL = 0x4000; 
+	g_sendbuf = (unsigned int*)malloc(g_sendL); 
+	if(!g_sendbuf){
+		fprintf(stderr, "could not allocate sendbuf\n");
+		return 0;
+	}
+	g_sendR = 0; 
+	g_sendW = 0; 
+	
 	g_rxsock = setup_socket(4340); 
 	g_txsock = connect_socket(4342,(char*)destIP); 
 	if(!g_txsock) printf("failed to connect to bridge.\n"); 
@@ -308,7 +388,7 @@ void* sock_thread(void* destIP){
 			int npack = n / 32; 
 			for(int i=0; i<npack && !g_pause; i++){
 				//see if it exceeded threshold.
-				float r = 0.6; 
+				float z = 0; 
 				g_headch = (p->flag) >> 3 ; 
 				g_exceeded = p->exceeded; 
 				// encoding (makes the headstage code simpler)
@@ -316,11 +396,11 @@ void* sock_thread(void* destIP){
 				unsigned int bit = 0; 
 				if(g_headch < 16) bit = 1 << (g_headch*2);
 				else bit = 1 << ((g_headch&0xf)*2+1);
-				if(g_exceeded & bit) r = 1.0; 
+				if(g_exceeded & bit) z = 1.0; 
 				for(int j=0; j<27; j++){
 					g_fbuf[(g_fbufW % NSAMP)*3 + 1] = 
-						//sin(g_time); 
 						(float)(p->data[j]) / 128.f; 
+					g_fbuf[(g_fbufW % NSAMP)*3 + 2] = z;
 					//g_fbufColor[(g_bufpos % NSAMP)*4 + 0] = r;
 					//g_fbufColor[(g_bufpos % NSAMP)*4 + 3] = 0.7f;
 					g_fbufW++; 
@@ -363,15 +443,14 @@ void* sock_thread(void* destIP){
 		}
 	}
 	close_socket(g_rxsock);
+	free(g_sendbuf); 
 	return 0; 
 }
 
-int
-main (int argn, char **argc)
+int main (int argn, char **argc)
 {
 	GtkWidget *window;
-	GtkWidget *da;
-	GtkWidget *da_spikes;
+	GtkWidget *da1, *da2;
 	GdkGLConfig *glconfig;
 	//GtkWidget *table; 
 	GtkWidget *box1;
@@ -379,15 +458,6 @@ main (int argn, char **argc)
 	GtkWidget *paned;
 	GtkWidget *paned2;
 	int i; 
-	
-	g_sendL = 0x4000; 
-	g_sendbuf = (unsigned int*)malloc(g_sendL); 
-	if(!g_sendbuf){
-		fprintf(stderr, "could not allocate sendbuf\n");
-		exit(0); 
-	}
-	g_sendR = 0; 
-	g_sendW = 0; 
 	
 	char destIP[256]; 
 	if(argn == 2){
@@ -408,10 +478,10 @@ main (int argn, char **argc)
 	window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_title (GTK_WINDOW (window), "gtk headstage v6 client");
 	gtk_window_set_default_size (GTK_WINDOW (window), 800, 600);
-	da = gtk_drawing_area_new ();
-	gtk_widget_set_size_request(GTK_WIDGET(da), 600, 450);
-	da_spikes = gtk_drawing_area_new ();
-	gtk_widget_set_size_request(GTK_WIDGET(da_spikes), 600, 150);
+	da1 = gtk_drawing_area_new ();
+	gtk_widget_set_size_request(GTK_WIDGET(da1), 600, 450);
+	da2 = gtk_drawing_area_new ();
+	gtk_widget_set_size_request(GTK_WIDGET(da2), 600, 150);
 
 	/* Create a 2x2 table */
 	//table = gtk_table_new (2, 2, TRUE);
@@ -436,8 +506,8 @@ main (int argn, char **argc)
 	gtk_widget_show (box1);
 	
 	paned2 = gtk_vpaned_new(); 
-	gtk_paned_add1(GTK_PANED(paned2), da);
-	gtk_paned_add2(GTK_PANED(paned2), da_spikes); 
+	gtk_paned_add1(GTK_PANED(paned2), da1);
+	gtk_paned_add2(GTK_PANED(paned2), da2); 
 	gtk_widget_show(paned2); 
 	
 	gtk_paned_add1(GTK_PANED(paned), box1);
@@ -456,7 +526,8 @@ main (int argn, char **argc)
 
 	g_signal_connect_swapped (window, "destroy",
 			G_CALLBACK (destroy), NULL);
-	gtk_widget_set_events (da, GDK_EXPOSURE_MASK);
+	gtk_widget_set_events (da1, GDK_EXPOSURE_MASK);
+	gtk_widget_set_events (da2, GDK_EXPOSURE_MASK);
 
 	gtk_widget_show (window);
 
@@ -471,20 +542,28 @@ main (int argn, char **argc)
 		g_assert_not_reached ();
 	}
 
-	if (!gtk_widget_set_gl_capability (da, glconfig, NULL, TRUE,
-				GDK_GL_RGBA_TYPE))
-	{
+	if (!gtk_widget_set_gl_capability (da1, glconfig, NULL, TRUE,
+				GDK_GL_RGBA_TYPE)){
+		g_assert_not_reached ();
+	}
+	if (!gtk_widget_set_gl_capability (da2, glconfig, NULL, TRUE,
+				GDK_GL_RGBA_TYPE)){
 		g_assert_not_reached ();
 	}
 
-	g_signal_connect (da, "configure-event",
-			G_CALLBACK (configure), NULL);
-	g_signal_connect (da, "expose-event",
-			G_CALLBACK (expose_top), NULL);
+	g_signal_connect (da1, "configure-event",
+			G_CALLBACK (configure1), NULL);
+	g_signal_connect (da1, "expose-event",
+			G_CALLBACK (expose1), NULL);
+	g_signal_connect (da2, "configure-event",
+			G_CALLBACK (configure2), NULL);
+	g_signal_connect (da2, "expose-event",
+			G_CALLBACK (expose2), NULL);
 
 	gtk_widget_show_all (window);
 
-	g_timeout_add (1000 / 60, rotate, da);
+	g_timeout_add (1000 / 60, rotate, da1);
+	g_timeout_add (1000 / 60, rotate, da2);
 
 	gtk_main ();
 }

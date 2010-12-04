@@ -1,0 +1,16 @@
+
+struct V_Output {
+  float4 position : POSITION;
+  float3 color    : COLOR;
+};
+
+V_Output threshold(float3 position : POSITION)
+{	
+	V_Output OUT;
+
+	OUT.position = float4(position.x, position.y,0,1);
+	float gb = 1.0 - (0.5*position.z); 
+	OUT.color = float3(1,gb,gb);
+
+	return OUT;	
+}
