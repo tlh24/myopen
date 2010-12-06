@@ -22,6 +22,7 @@
 
 #include <stdio.h>
 #include <sys/types.h>
+#include <sys/time.h>
 #include <pthread.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -34,6 +35,7 @@
 #include "sock.h"
 
 #define NSAMP (4*1024)
+#define NDISPW 512
 #define u32 unsigned int
 
 static float	g_fbuf[NSAMP*3];
@@ -42,14 +44,19 @@ unsigned int	g_fbufR; //display thread reads from here - copies to mem
 static float 	g_sbuf[32*1024*2]; 
 unsigned int	g_sbufW; 
 unsigned int	g_sbufR; 
+static float 	g_wbuf[2][3*34*NDISPW]; //32 samps / waveform + 2 endpoints
+unsigned int	g_wbufW[2]; 
+unsigned int	g_wbufR[2]; 
+GLuint			g_wvbo[2]; 
 unsigned int*	g_sendbuf; 
 unsigned int g_sendW; //where to write to (in 32-byte increments)
 unsigned int g_sendR; //where to read from
 unsigned int g_sendL; //the length of the buffer.
 bool g_die = false; 
 bool g_pause = false;
-bool g_channel = 0; 
-bool g_headch = 0; 
+int g_channel = 0; 
+int g_headch = 0; 
+int g_oldheadch = 100; 
 bool g_out = false; 
 unsigned int g_exceeded = 0; 
 int g_thresh = 16000; 
@@ -58,6 +65,8 @@ float lowpass_coefs[8] = {0.078146,0.156309,1.261974,-0.614587,
 								0.078146,0.156275,0.991706,-0.268803};
 float highpass_coefs[8] = {0.983715,-1.967430,1.980324,-0.980949,
 								0.983715,-1.967430,1.954002,-0.954619};
+double g_startTime = 0.0; 
+int g_totalPackets = 0; 
 
 typedef struct {
 	char data[27]; 
@@ -73,11 +82,12 @@ double g_time = 0.0;
 
 bool	g_vbo1Init = false; 
 GLuint g_vbo1 = 0; //for the waveform display
-bool	g_vbo2Init = false; 
 GLuint g_vbo2 = 0; //for spikes.
 static CGcontext   myCgContext;
 static CGprofile   myCgVertexProfile;
-static CGprogram   myCgVertexProgram;
+static CGprogram   myCgVertexProgram[2];
+static CGparameter myCgVertexParam_time;
+static CGparameter myCgVertexParam_col;
 
 static void checkForCgError(const char *situation)
 {
@@ -91,6 +101,15 @@ static void checkForCgError(const char *situation)
     }
 	exit(1);
   }
+}
+
+double gettime(){ //in seconds!
+	timespec pt ; 
+	clock_gettime(CLOCK_MONOTONIC, &pt); 
+	double ret = (double)(pt.tv_sec) ; 
+	ret += (double)(pt.tv_nsec) / 1e9 ; 
+	return ret - g_startTime; 
+	//printf( "present time: %d s %d ns \n", pt.tv_sec, pt.tv_nsec ) ; 
 }
 
 void copyData(GLuint vbo, u32 sta, u32 fin, float* ptr, int stride){
@@ -126,55 +145,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		}
 		g_fbufR = w; 
 	}
-
-	/* draw in here */
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	
-	cgGLBindProgram(myCgVertexProgram);
-	checkForCgError("binding vertex program");
-	cgGLEnableProfile(myCgVertexProfile);
-	checkForCgError("enabling vertex profile");
-	
-	glPushMatrix();
-
-	glShadeModel(GL_FLAT);
-	
-	//VBO drawing.. 
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo1);
-	glVertexPointer(3, GL_FLOAT, 0, 0);
-	glColor3f (1., 1., 1.);
-	glDrawArrays(GL_LINE_STRIP, 0, NSAMP); 
-	//see glDrawElements for indexed arrays
-	glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
-	glDisableClientState(GL_VERTEX_ARRAY);
-	//end VBO
-
-	glPopMatrix ();
-
-	cgGLDisableProfile(myCgVertexProfile);
-	checkForCgError("disabling vertex profile");
-	
-	if (gdk_gl_drawable_is_double_buffered (gldrawable))
-		gdk_gl_drawable_swap_buffers (gldrawable);
-	else
-		glFlush ();
-
-	gdk_gl_drawable_gl_end (gldrawable);
-
-	return TRUE;
-}
-static gboolean
-expose2 (GtkWidget *da, GdkEventExpose*, gpointer )
-{
-	GdkGLContext *glcontext = gtk_widget_get_gl_context (da);
-	GdkGLDrawable *gldrawable = gtk_widget_get_gl_drawable (da);
-
-	if (!gdk_gl_drawable_gl_begin (gldrawable, glcontext)){
-		g_assert_not_reached ();
-	}
-	
-	//copy over any new data.
+	//ditto for the spike buffers
 	unsigned int len = sizeof(g_sbuf)/8; //total # of pts. 
 	if(g_sbufR < g_sbufW){
 		unsigned int w = g_sbufW; //atomic
@@ -190,25 +161,72 @@ expose2 (GtkWidget *da, GdkEventExpose*, gpointer )
 	}
 
 	/* draw in here */
+	glMatrixMode(GL_MODELVIEW); 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+	
+	cgGLBindProgram(myCgVertexProgram[0]);
+	checkForCgError("binding vertex program");
+	cgGLEnableProfile(myCgVertexProfile);
+	checkForCgError("enabling vertex profile");
+	
 	glPushMatrix();
+	glScalef(1.f, 0.5f, 1.f); 
+	glTranslatef(0.f,0.5f, 0.f); 
 
 	glShadeModel(GL_FLAT);
 	
 	//VBO drawing.. 
 	glEnableClientState(GL_VERTEX_ARRAY);
-	glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo2);
-	glVertexPointer(2, GL_FLOAT, 0, 0);
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo1);
+	glVertexPointer(3, GL_FLOAT, 0, 0);
 	glColor3f (1., 1., 1.);
-	glPointSize(2.0);
-	glDrawArrays(GL_POINTS, 0, len);
+	glDrawArrays(GL_LINE_STRIP, 0, NSAMP); 
 	//see glDrawElements for indexed arrays
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
-	glDisableClientState(GL_VERTEX_ARRAY);
+	cgGLDisableProfile(myCgVertexProfile);
+	checkForCgError("disabling vertex profile");
 	//end VBO
 
 	glPopMatrix ();
+	
+	//rasters
+	glPushMatrix();
+	float t = (float)gettime(); 
+	float scl = 0.5; 
+	glScalef(-1.f*scl, 1.f/34.f, 1.f); 
+	glTranslatef((1.f/scl - t), -32.f, 0.f); 
+
+	glShadeModel(GL_FLAT);
+	
+	//VBO drawing.. 
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo2);
+	glVertexPointer(2, GL_FLOAT, 0, 0);
+	glColor4f (1., 1., 1., 0.4f);
+	glPointSize(2.0);
+	glDrawArrays(GL_POINTS, 0, len);
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+	//end VBO
+	glPopMatrix ();
+	//draw the spikes!! ya.
+	cgSetParameter1f(myCgVertexParam_time, t);
+	cgSetParameter3f(myCgVertexParam_col, 1.f,1.f,0.f);
+	cgGLBindProgram(myCgVertexProgram[1]);
+	checkForCgError("binding vertex program");
+	cgGLEnableProfile(myCgVertexProfile);
+	checkForCgError("enabling vertex profile");
+	
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_wvbo[1]);
+	glVertexPointer(3, GL_FLOAT, 0, 0);
+	glDrawArrays(GL_LINE_STRIP, 0, 34*NDISPW);
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+	
+	cgSetParameter3f(myCgVertexParam_col, 0.5f,0.5f,0.5f);
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_wvbo[2]);
+	glVertexPointer(3, GL_FLOAT, 0, 0);
+	glDrawArrays(GL_LINE_STRIP, 0, 34*NDISPW);
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+
+	glDisableClientState(GL_VERTEX_ARRAY);
 	
 	if (gdk_gl_drawable_is_double_buffered (gldrawable))
 		gdk_gl_drawable_swap_buffers (gldrawable);
@@ -219,6 +237,7 @@ expose2 (GtkWidget *da, GdkEventExpose*, gpointer )
 
 	return TRUE;
 }
+
 static gboolean
 configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 {
@@ -250,7 +269,7 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 		cgGLSetOptimalOptions(myCgVertexProfile);
 		checkForCgError("selecting vertex profile");
 
-		myCgVertexProgram = cgCreateProgramFromFile(
+		myCgVertexProgram[0] = cgCreateProgramFromFile(
 			myCgContext,              /* Cg runtime context */
 			CG_SOURCE,                /* Program in human-readable form */
 			"threshold.cg",  /* Name of file containing program */
@@ -258,13 +277,30 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 			"threshold",      /* Entry function name */
 			NULL);                    /* No extra compiler options */
 		checkForCgError("creating vertex program from file");
-		cgGLLoadProgram(myCgVertexProgram);
+		cgGLLoadProgram(myCgVertexProgram[0]);
 		checkForCgError("loading vertex program");
+		
+		myCgVertexProgram[1] = cgCreateProgramFromFile(
+			myCgContext,              /* Cg runtime context */
+			CG_SOURCE,                /* Program in human-readable form */
+			"fade.cg",  /* Name of file containing program */
+			myCgVertexProfile,        /* Profile: OpenGL ARB vertex program */
+			"fade",      /* Entry function name */
+			NULL);                    /* No extra compiler options */
+		checkForCgError("creating vertex program from file");
+		cgGLLoadProgram(myCgVertexProgram[1]);
+		checkForCgError("loading vertex program");
+		//need the time parameter --
+		myCgVertexParam_time =
+			cgGetNamedParameter(myCgVertexProgram[1], "time");
+		myCgVertexParam_col =
+			cgGetNamedParameter(myCgVertexProgram[1], "col");
+		checkForCgError("loading vertex program variables");
 		
 		//now the vertex buffers.
 		glInfo glInfo;
 		glInfo.getInfo();
-		glInfo.printSelf();
+		//glInfo.printSelf();
 		if(glInfo.isExtensionSupported("GL_ARB_vertex_buffer_object")){
 			printf("Video card supports GL_ARB_vertex_buffer_object.\n");
 		}else{
@@ -289,28 +325,6 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 			GL_BUFFER_SIZE_ARB, &bufferSize);
 		printf("Vertex Array in VBO:%d bytes\n", bufferSize);
 		
-	}
-	gdk_gl_drawable_gl_end (gldrawable);
-
-	return TRUE;
-}
-static gboolean
-configure2 (GtkWidget *da, GdkEventConfigure *, gpointer)
-{
-	GdkGLContext *glcontext = gtk_widget_get_gl_context (da);
-	GdkGLDrawable *gldrawable = gtk_widget_get_gl_drawable (da);
-	if (!gdk_gl_drawable_gl_begin (gldrawable, glcontext)){
-		g_assert_not_reached ();
-	}
-
-	glLoadIdentity();
-	glViewport (0, 0, da->allocation.width, da->allocation.height);
-	glOrtho (-1,1,0,32,0,1);
-	glEnable (GL_BLEND);
-	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	
-	if(!g_vbo2Init){ //start it up!
-		g_vbo2Init = true;
 		//have one VBO that's filled with spike times & channels.
 		for(int i=0; i<32; i++){
 			for(int j=0; j<1024; j++){
@@ -324,13 +338,44 @@ configure2 (GtkWidget *da, GdkEventConfigure *, gpointer)
 			0, GL_DYNAMIC_DRAW_ARB);
 		glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, 
 			0, sizeof(g_sbuf), g_sbuf);
+			
+		//an another 2 VBOs that are filled with waveforms. 
+		for(int k=0; k<2; k++){
+			for(int i=0; i < NDISPW; i++){
+				int j = 0; 
+				g_wbuf[k][(i*34+j)*3 + 0] = 0.f; //x
+				g_wbuf[k][(i*34+j)*3 + 1] = 0.f; //y
+				g_wbuf[k][(i*34+j)*3 + 2] = 0.f; //time!
+				for(j=1; j<33; j++){
+					g_wbuf[k][(i*34+j)*3 + 0] = (float)(j-1)/32.f; 
+					g_wbuf[k][(i*34+j)*3 + 1] = 
+						sinf((float)j/2.f + (float)i/1.2345296); 
+					g_wbuf[k][(i*34+j)*3 + 2] = 0.f;
+				}
+				g_wbuf[k][(i*34+j)*3 + 0] = 1.f; //x
+				g_wbuf[k][(i*34+j)*3 + 1] = 0.f; //y
+				g_wbuf[k][(i*34+j)*3 + 2] = 0.f; //time!
+			}
+			glGenBuffersARB(1, &g_wvbo[k]);
+			glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_wvbo[k]);
+			glBufferDataARB(GL_ARRAY_BUFFER_ARB, sizeof(g_wbuf[k]), 
+				0, GL_DYNAMIC_DRAW_ARB);
+			glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, 
+				0, sizeof(g_wbuf[k]), g_wbuf[0]);
+		}
+		
 	}
 	gdk_gl_drawable_gl_end (gldrawable);
 
 	return TRUE;
 }
+
 //global labels.. 
 GtkWidget* g_gainlabel[32];
+GtkWidget* g_headchLabel;
+GtkAdjustment* g_channelSpin;
+GtkAdjustment* g_gainSpin; 
+GtkWidget* g_pktpsLabel;
 
 static gboolean
 rotate (gpointer user_data)
@@ -340,9 +385,16 @@ rotate (gpointer user_data)
 	gdk_window_invalidate_rect (da->window, &da->allocation, FALSE);
 	gdk_window_process_updates (da->window, FALSE);
 
-	//char str[256]; 
-	//snprintf(str, 256, "%f", sin(ang)*4.0); 
-	//gtk_label_set_text(GTK_LABEL(g_gainlabel[0]), str); //works!
+	if(g_headch != g_oldheadch){
+		char str[256]; 
+		printf("g_headch %d\n", g_headch); 
+		snprintf(str, 256, "headch: %d", g_headch); 
+		gtk_label_set_text(GTK_LABEL(g_headchLabel), str); //works!
+		g_oldheadch = g_headch; 
+		//update the packets/sec label too
+		snprintf(str, 256, "pkts/sec: %.2f", (double)g_totalPackets/gettime()); 
+		gtk_label_set_text(GTK_LABEL(g_pktpsLabel), str); //works!
+	}
 	return TRUE;
 }
 
@@ -350,16 +402,159 @@ void destroy(GtkWidget *, gpointer){
 	g_die = true; 
 	if(g_vbo1Init){
 		glDeleteBuffersARB(1, &g_vbo1); 
+		glDeleteBuffersARB(1, &g_vbo2);
+		glDeleteBuffersARB(2, g_wvbo); 
 	}
-	if(g_vbo2Init){
-		glDeleteBuffersARB(1, &g_vbo2); 
-	}
-	cgDestroyProgram(myCgVertexProgram);
+	cgDestroyProgram(myCgVertexProgram[0]);
+	cgDestroyProgram(myCgVertexProgram[1]);
 	cgDestroyContext(myCgContext);
 	sleep(1); 
 	gtk_main_quit(); 
 }
 
+void updateGain(int chan){
+	//remember, channels 0 and 16 are written at the same time. 
+	//and the biquads are arranged as: 
+	// low1 high1 low2 high2
+	//only can adjust the B coefs of the lowpass filters, though.
+	//all emitted numbers are base 14.(s2rnd flag)
+	chan = chan & 0xf; //map to the lower channels.
+	float gain1 = sqrt(g_gains[chan]);
+	float gain2 = sqrt(g_gains[chan+16]); 
+	int indx [] = {0,1,4,5};
+	float b[8]; 
+	int i,j,k; 
+	unsigned int u; 
+	for(i=0; i<4; i++){
+		j = indx[i];
+		b[i*2+0] = lowpass_coefs[j]*gain1*16384.f;
+		b[i*2+1] = lowpass_coefs[j]*gain2*16384.f;
+	}
+	//clamp to acceptable values.
+	for(i=0; i<8; i++){
+		b[i] = b[i] < -32768.f ? -32768.f : b[i];
+		b[i] = b[i] > 32767.f ? 32767.f : b[i]; 
+	}
+	//now form the 32 bit uints to be written. 
+	int indx2[] = {0,1,8,9};
+	unsigned int* ptr = g_sendbuf; 
+	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
+	for(i=0; i<4; i++){
+		ptr[i*2+0] = htonl(0xff904000 + chan*16*4 + indx2[i]*4);
+		j = (int)(b[i*2+0]);
+		k = (int)(b[i*2+1]);
+		u = (unsigned int)((j&0xffff) | ((k&0xffff)<<16)); 
+		ptr[i*2+1] = htonl(u); 
+	}
+	g_sendW++; 
+}
+void setOsc(int chan){
+	//turn two channels e.g. 0 and 16 into oscillators.
+	float b[4]; 
+	unsigned int u; 
+	int i,j; 
+	b[0] = 0.f; //assume there is already energy in the 
+	b[1] = 0.f; //delay line.
+	b[2] = 32768.f - 10; //should be about 250Hz @ fs = 62.5khz
+	b[3] = -16384.f; 
+	unsigned int* ptr = g_sendbuf; 
+	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
+	for(i=0; i<4; i++){
+		ptr[i*2+0] = htonl(0xff904000 + (chan*16 + 3*4 + i)*4);
+		j = (int)(b[i]);
+		u = (unsigned int)((j&0xffff) | ((j&0xffff)<<16)); 
+		ptr[i*2+1] = htonl(u); 
+	}
+	g_sendW++; 
+}
+void setChan(){
+	int i; 
+	unsigned int* ptr = g_sendbuf; 
+	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
+	ptr[0] = htonl(0xff904500 - 8); //frame pointer
+	ptr[1] = htonl(g_channel);
+	for(i=2; i<8; i++){
+		ptr[i] = 0xa5a5a5a5; 
+	}
+	g_sendW++; 	
+}
+void setThresh(){
+	int i; 
+	unsigned int* ptr = g_sendbuf; 
+	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
+	ptr[0] = htonl(0xff904500 - 24); //frame pointer
+	ptr[1] = htonl(g_thresh/2); //see r4 >>> 1 (v) in radio3.asm
+	for(i=2; i<8; i++){
+		ptr[i] = 0xa5a5a5a5; 
+	}
+	g_sendW++; 	
+}
+void setBiquad(int chan, float* biquad, int biquadNum){
+	chan = chan & 0xf; //map to the lower channels.
+	float gain1 = sqrt(g_gains[chan]);
+	float gain2 = sqrt(g_gains[chan+16]); 
+	float b[8]; 
+	int i,j,k; 
+	short s; 
+	unsigned int u; 
+	if(biquadNum & 1){
+		gain1 = gain2 = 1.f; //no gain on the hpf.	
+	}
+	for(i=0; i<2; i++){
+		b[i*2+0] = biquad[i]*gain1*16384.f; //B coefs
+		b[i*2+1] = biquad[i]*gain2*16384.f; //lo and hi
+	}
+	for(i=2; i<4; i++){
+		b[i*2+0] = biquad[i]*16384.f;
+		b[i*2+1] = biquad[i]*16384.f;
+	}
+	//clamp to acceptable values.
+	printf("coefs!\n"); 
+	for(i=0; i<8; i++){
+		b[i] = b[i] < -32768.f ? -32768.f : b[i];
+		b[i] = b[i] > 32767.f ? 32767.f : b[i]; 
+		//printf("%d %f\n", i, b[i]); 
+	}
+	
+	//now form the 32 bit uints to be written. 
+	unsigned int* ptr = g_sendbuf; 
+	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
+	for(i=0; i<4; i++){
+		ptr[i*2+0] = htonl(0xff904000 + (chan*16 + biquadNum*4 +i)*4);
+		j = (int)(b[i*2+0]);
+		k = (int)(b[i*2+1]);
+		u = (unsigned int)((j&0xffff) | ((k&0xffff)<<16)); 
+		s = (short)(u & 0xffff); 
+		printf("%d ", s); 
+		s = (short)((u>>16) & 0xffff); 
+		printf("%d\n", s); 
+		ptr[i*2+1] = htonl(u); 
+	}
+	g_sendW++; 
+}
+void resetBiquads(int chan){
+	//reset all coefs in two channels.
+	setBiquad(chan, &(lowpass_coefs[0]), 0);
+	setBiquad(chan, &(highpass_coefs[0]), 1); 
+	setBiquad(chan, &(lowpass_coefs[4]), 2); 
+	setBiquad(chan, &(highpass_coefs[4]), 3); 
+}
+void setFlat(int chan){
+	//lets you look at the raw ADC samples.
+	chan &= 0xf; 
+	float gainSave1 = g_gains[chan]; 
+	float gainSave2 = g_gains[chan+16]; 
+	g_gains[chan] = 1.0;
+	g_gains[chan+16] = 1.0; // 0.5 ^ 0.25 = 0.84089
+	float biquad[] = {0.8409, 0.0, 0.0, 0.0}; 
+	setBiquad(chan, biquad, 0);
+	setBiquad(chan, biquad, 1); 
+	setBiquad(chan, biquad, 2); 
+	//fbiquad[0] *= -1.f; 
+	setBiquad(chan, biquad, 3); 
+	g_gains[chan] = gainSave1;
+	g_gains[chan+16] = gainSave2; 
+}
 void* sock_thread(void* destIP){
 	g_sendL = 0x4000; 
 	g_sendbuf = (unsigned int*)malloc(g_sendL); 
@@ -376,9 +571,12 @@ void* sock_thread(void* destIP){
 	get_sockaddr(4342, (char*)destIP, &g_txsockAddr); 
 	char buf[1024];
 	int send_delay = 0; 
+	g_totalPackets = 0; 
+	bool prevExceed = false; //did the previous packet (not frame) exceed thresh?
 	while(g_die == 0){
 		int n = recvfrom(g_rxsock, buf, sizeof(buf), 0,0,0); 
 		if(n > 0 && !g_die){
+			double rxtime = gettime(); 
 			unsigned int trptr = *((unsigned int*)buf);
 			if(g_out) printf("%d\n", trptr); 
 			char* ptr = buf; 
@@ -386,6 +584,7 @@ void* sock_thread(void* destIP){
 			n -= 4; 
 			packet* p = (packet*)ptr;
 			int npack = n / 32; 
+			g_totalPackets += npack; 
 			for(int i=0; i<npack && !g_pause; i++){
 				//see if it exceeded threshold.
 				float z = 0; 
@@ -393,6 +592,17 @@ void* sock_thread(void* destIP){
 				g_exceeded = p->exceeded; 
 				// encoding (makes the headstage code simpler)
 				// ch0 -> 0x1; ch1 -> 0x4; ch16 -> 0x2 ; ch17 -> 0x8
+				// 27 samples / packet, 31.25ksps = 1157 pkts/sec, 0.864ms/pkt
+				double time = rxtime - ((double)(npack-i)-0.5) * 0.000864; 
+				for(int j=0; j<32; j++){
+					int ch = ((j & 0xf) << 1) + ((j & 0x10) >> 4); 
+					if(g_exceeded & (0x1 << j)){
+						int w = g_sbufW % (sizeof(g_sbuf)/8); 
+						g_sbuf[w*2+0] = (float)time; 
+						g_sbuf[w*2+1] = (float)ch; 
+						g_sbufW ++; 
+					}
+				}
 				unsigned int bit = 0; 
 				if(g_headch < 16) bit = 1 << (g_headch*2);
 				else bit = 1 << ((g_headch&0xf)*2+1);
@@ -407,16 +617,22 @@ void* sock_thread(void* destIP){
 					g_time += 0.03; 
 				}
 				p++; 
+				if(prevExceeded){
+					//look back through the past 27 samples, select the largest.
+					float min = -100.f; 
+					float offset = 0; 
+					for(int j=-27; j > 0; j++){
+						float v = g_fbuf[mod2(g_fbufW +j, NSAMP)*3+1]; 
+						if(v > min){
+							min = v; 
+							offset = j; 
+						}
+					}
+				}
+				if(z > 0.f) prevExceed = true; 
+				else prevExceed = false; 
 			}
-			//'erase' the 10 oldest samples.
-			/*float alpha = 0.f; 
-			j = 0; 
-			while(alpha < 1.f){
-				g_fbufColor[((g_bufpos+j) % NSAMP)*4 + 3] = alpha;
-				alpha += 0.05; 
-				j++; 
-			}
-			pthread_cond_signal( &g_outthread_cond ); //unblock the other thread.*/
+			
 		}
 		//see if they want us to send something? 
 		// (this occurs after RX of a packet, so we should not overflow the 
@@ -447,16 +663,33 @@ void* sock_thread(void* destIP){
 	return 0; 
 }
 
+static void channelSpinCB( GtkAdjustment*, gpointer ){
+	int ch = (int)gtk_adjustment_get_value(g_channelSpin); 
+	printf("channelSpinCB: %d\n", ch); 
+	if(ch < 32 && ch >= 0 && ch != g_channel){
+		g_channel = ch; 
+		setChan(); 
+	}
+}
+static void gainSpinCB( GtkAdjustment*, gpointer ){
+	float gain = gtk_adjustment_get_value(g_gainSpin); 
+	printf("gainSpinCB: %f\n", gain); 
+	g_gains[g_channel] = gain; 
+	updateGain(g_channel);  
+	char str[256]; 
+	snprintf(str, 256, "%d gain: %.2f", g_channel, gain); 
+	gtk_label_set_text(GTK_LABEL(g_gainlabel[g_channel]), str);
+}
 int main (int argn, char **argc)
 {
 	GtkWidget *window;
-	GtkWidget *da1, *da2;
+	GtkWidget *da1;
 	GdkGLConfig *glconfig;
 	//GtkWidget *table; 
 	GtkWidget *box1;
 	//GtkWidget *button;
 	GtkWidget *paned;
-	GtkWidget *paned2;
+	//GtkWidget *paned2;
 	int i; 
 	
 	char destIP[256]; 
@@ -470,6 +703,7 @@ int main (int argn, char **argc)
 	pthread_t thread1;
 	pthread_attr_t attr;
 	pthread_attr_init(&attr);
+	g_startTime = gettime(); 
 	pthread_create( &thread1, &attr, sock_thread, (void*)destIP ); 
 
 	gtk_init (&argn, &argc);
@@ -479,9 +713,7 @@ int main (int argn, char **argc)
 	gtk_window_set_title (GTK_WINDOW (window), "gtk headstage v6 client");
 	gtk_window_set_default_size (GTK_WINDOW (window), 800, 600);
 	da1 = gtk_drawing_area_new ();
-	gtk_widget_set_size_request(GTK_WIDGET(da1), 600, 450);
-	da2 = gtk_drawing_area_new ();
-	gtk_widget_set_size_request(GTK_WIDGET(da2), 600, 150);
+	gtk_widget_set_size_request(GTK_WIDGET(da1), 640, 600);
 
 	/* Create a 2x2 table */
 	//table = gtk_table_new (2, 2, TRUE);
@@ -489,7 +721,7 @@ int main (int argn, char **argc)
 	gtk_container_add (GTK_CONTAINER (window), paned);
 	box1 = gtk_vbox_new (FALSE, 0);
 	for(i=0; i<32; i++){
-		g_gainlabel[i] = gtk_label_new ("gain :: 4.0");
+		g_gainlabel[i] = gtk_label_new ("");
 		/* Align the label to the left side.  We'll discuss this function and 
 		 * others in the section on Widget Attributes. */
 		gtk_misc_set_alignment (GTK_MISC (g_gainlabel[i]), 0, 0);
@@ -502,16 +734,51 @@ int main (int argn, char **argc)
 		/* Show the label */
 		gtk_widget_show (g_gainlabel[i]);
 	}
-	gtk_widget_set_size_request(GTK_WIDGET(box1), 200, 600);
+	//add in a headstage channel # label
+	g_headchLabel = gtk_label_new ("headch: 0");
+	gtk_misc_set_alignment (GTK_MISC (g_headchLabel), 0, 0);
+	gtk_box_pack_start (GTK_BOX (box1), g_headchLabel, FALSE, FALSE, 0);
+	gtk_widget_show(g_headchLabel); 
+	//and a channel spinner.
+	GtkWidget *spinner;
+	g_channelSpin = (GtkAdjustment *)gtk_adjustment_new(0.0, 
+		0.0, 31.0, 1.0, 5.0, 0.0);
+	spinner = gtk_spin_button_new (g_channelSpin, 0, 0);
+	gtk_spin_button_set_wrap (GTK_SPIN_BUTTON (spinner), TRUE);
+	gtk_box_pack_start (GTK_BOX (box1), spinner, FALSE, FALSE, 0);
+	g_signal_connect(spinner, "value-changed", 
+					G_CALLBACK(channelSpinCB), GINT_TO_POINTER (1));
+	gtk_widget_show(spinner); 
+	//and a gain spinner.
+	g_gainSpin = (GtkAdjustment *)gtk_adjustment_new(1000.0, 
+		0.0, 3000.0, 1.0, 100.0, 0.0);
+	spinner = gtk_spin_button_new (g_gainSpin, 0, 0);
+	gtk_spin_button_set_wrap (GTK_SPIN_BUTTON (spinner), FALSE);
+	gtk_box_pack_start (GTK_BOX (box1), spinner, FALSE, FALSE, 0);
+	g_signal_connect(spinner, "value-changed", 
+					G_CALLBACK(gainSpinCB), GINT_TO_POINTER (1));
+	gtk_widget_show(spinner); 
+	//update labels. 
+	for(i=0; i<32; i++){
+		g_channel = i; 
+		gainSpinCB(g_gainSpin, GINT_TO_POINTER (1)); 
+	}
+	//add in a packets/second label
+	g_pktpsLabel = gtk_label_new ("packets/sec");
+	gtk_misc_set_alignment (GTK_MISC (g_pktpsLabel), 0, 0);
+	gtk_box_pack_start (GTK_BOX (box1), g_pktpsLabel, FALSE, FALSE, 0);
+	gtk_widget_show(g_pktpsLabel); 
+	
+	gtk_widget_set_size_request(GTK_WIDGET(box1), 150, 600);
 	gtk_widget_show (box1);
 	
-	paned2 = gtk_vpaned_new(); 
+	/*paned2 = gtk_vpaned_new(); 
 	gtk_paned_add1(GTK_PANED(paned2), da1);
 	gtk_paned_add2(GTK_PANED(paned2), da2); 
-	gtk_widget_show(paned2); 
+	gtk_widget_show(paned2); */
 	
 	gtk_paned_add1(GTK_PANED(paned), box1);
-	gtk_paned_add2(GTK_PANED(paned), paned2); 
+	gtk_paned_add2(GTK_PANED(paned), da1); 
 	//gtk_box_pack_start (GTK_BOX (box2), box1, FALSE, FALSE, 0);
 	//gtk_box_pack_start (GTK_BOX (box2), da, TRUE, TRUE, 0);
 	gtk_widget_show (paned);
@@ -527,7 +794,6 @@ int main (int argn, char **argc)
 	g_signal_connect_swapped (window, "destroy",
 			G_CALLBACK (destroy), NULL);
 	gtk_widget_set_events (da1, GDK_EXPOSURE_MASK);
-	gtk_widget_set_events (da2, GDK_EXPOSURE_MASK);
 
 	gtk_widget_show (window);
 
@@ -546,24 +812,20 @@ int main (int argn, char **argc)
 				GDK_GL_RGBA_TYPE)){
 		g_assert_not_reached ();
 	}
-	if (!gtk_widget_set_gl_capability (da2, glconfig, NULL, TRUE,
-				GDK_GL_RGBA_TYPE)){
-		g_assert_not_reached ();
-	}
 
 	g_signal_connect (da1, "configure-event",
 			G_CALLBACK (configure1), NULL);
 	g_signal_connect (da1, "expose-event",
 			G_CALLBACK (expose1), NULL);
-	g_signal_connect (da2, "configure-event",
+	/*g_signal_connect (da2, "configure-event",
 			G_CALLBACK (configure2), NULL);
 	g_signal_connect (da2, "expose-event",
-			G_CALLBACK (expose2), NULL);
+			G_CALLBACK (expose2), NULL);*/
 
 	gtk_widget_show_all (window);
 
-	g_timeout_add (1000 / 60, rotate, da1);
-	g_timeout_add (1000 / 60, rotate, da2);
+	g_timeout_add (1000 / 30, rotate, da1);
+	//g_timeout_add (1000 / 60, rotate, da2);
 
 	gtk_main ();
 }
