@@ -74,11 +74,16 @@ typedef struct {
 	unsigned int exceeded; 
 } packet; 
 
+enum MODES {
+	MODE_RASTERS, 
+	MODE_SPIKES, 
+	MODE_NUM
+}; 
+
 int g_rxsock = 0;//rx
 int g_txsock = 0; 
 struct sockaddr_in g_txsockAddr; 
-
-double g_time = 0.0; 
+int g_mode = MODE_RASTERS; 
 
 bool	g_vbo1Init = false; 
 GLuint g_vbo1 = 0; //for the waveform display
@@ -187,78 +192,96 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 	/* draw in here */
 	glMatrixMode(GL_MODELVIEW); 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	
-	cgGLBindProgram(myCgVertexProgram[0]);
-	checkForCgError("binding vertex program");
-	cgGLEnableProfile(myCgVertexProfile);
-	checkForCgError("enabling vertex profile");
-	
-	glPushMatrix();
-	glScalef(1.f, 0.5f, 1.f); 
-	glTranslatef(0.f,0.5f, 0.f); 
-
 	glShadeModel(GL_FLAT);
-	
-	//VBO drawing.. 
 	glEnableClientState(GL_VERTEX_ARRAY);
-	glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo1);
-	glVertexPointer(3, GL_FLOAT, 0, 0);
-	glColor3f (1., 1., 1.);
-	glDrawArrays(GL_LINE_STRIP, 0, NSAMP); 
-	//see glDrawElements for indexed arrays
-	glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
-	cgGLDisableProfile(myCgVertexProfile);
-	checkForCgError("disabling vertex profile");
-	//end VBO
-
-	glPopMatrix ();
 	
-	//rasters
-	glPushMatrix();
 	float t = (float)gettime(); 
-	float scl = 0.5; 
-	glScalef(-1.f*scl, 1.f/34.f, 1.f); 
-	glTranslatef((1.f/scl - t), -32.f, 0.f); 
+	
+	if(g_mode == MODE_RASTERS){
+		cgGLBindProgram(myCgVertexProgram[0]);
+		checkForCgError("binding vertex program");
+		cgGLEnableProfile(myCgVertexProfile);
+		checkForCgError("enabling vertex profile");
+		
+		glPushMatrix();
+		glScalef(1.f, 0.5f, 1.f); 
+		glTranslatef(0.f,0.5f, 0.f); 
+		
+		//continuous waveform drawing.. 
+		glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo1);
+		glVertexPointer(3, GL_FLOAT, 0, 0);
+		glColor3f (1., 1., 1.);
+		glDrawArrays(GL_LINE_STRIP, 0, NSAMP); 
+		//see glDrawElements for indexed arrays
+		glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+		cgGLDisableProfile(myCgVertexProfile);
+		checkForCgError("disabling vertex profile");
+		
+		//draw threshold. 
+		glBegin(GL_LINE_STRIP); 
+		glColor4f (1., 0., 0., 0.5);
+		glVertex3f( -1.f, 0.5f+g_thresh/(256.f*128.f), 0.f);
+		glVertex3f( 1.f, 0.5f+g_thresh/(256.f*128.f), 0.f); 
+		glEnd(); 
+		//end VBO
 
-	glShadeModel(GL_FLAT);
-	
-	//VBO drawing.. 
-	glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo2);
-	glVertexPointer(2, GL_FLOAT, 0, 0);
-	glColor4f (1., 1., 1., 0.4f);
-	glPointSize(2.0);
-	glDrawArrays(GL_POINTS, 0, sizeof(g_sbuf)/8);
-	glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
-	//end VBO
-	glPopMatrix ();
-	//draw the spikes!! ya.
-	cgSetParameter1f(myCgVertexParam_time, t);
-	cgSetParameter3f(myCgVertexParam_col, 0.5f,0.5f,0.5f);
-	cgGLBindProgram(myCgVertexProgram[1]);
-	cgGLEnableProfile(myCgVertexProfile);
-	checkForCgError("enabling vertex profile");
-	
-	glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_wvbo[1]);
-	glVertexPointer(3, GL_FLOAT, 0, 0);
-	glDrawArrays(GL_LINE_STRIP, 0, 34*NDISPW);
-	glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
-	cgGLDisableProfile(myCgVertexProfile);
-	checkForCgError("disabling vertex profile");
-	
-	cgSetParameter1f(myCgVertexParam_time, t);
-	cgSetParameter3f(myCgVertexParam_col, 1.f,1.f,0.f);
-	cgGLBindProgram(myCgVertexProgram[1]);
-	cgGLEnableProfile(myCgVertexProfile);
-	checkForCgError("enabling vertex profile");
-	
-	glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_wvbo[0]);
-	glVertexPointer(3, GL_FLOAT, 0, 0);
-	glDrawArrays(GL_LINE_STRIP, 0, 34*NDISPW);
-	glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
-	cgGLDisableProfile(myCgVertexProfile);
-	checkForCgError("disabling vertex profile");
+		glPopMatrix ();
+		
+		//rasters
+		glPushMatrix();
+		float scl = 0.5; 
+		glScalef(-1.f*scl, 1.f/33.f, 1.f); 
+		glTranslatef((1.f/scl - t), -32.f, 0.f); 
 
-	glDisableClientState(GL_VERTEX_ARRAY);
+		glShadeModel(GL_FLAT);
+		
+		//VBO drawing.. 
+		glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo2);
+		glVertexPointer(2, GL_FLOAT, 0, 0);
+		glColor4f (1., 1., 1., 0.3f);
+		glPointSize(3.0);
+		glDrawArrays(GL_POINTS, 0, sizeof(g_sbuf)/8);
+		glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+		
+		glPopMatrix ();
+		//draw current channel
+		glBegin(GL_LINE_STRIP); 
+		glColor4f (1., 0., 0., 0.5);
+		glVertex3f( -1.f, (float)(32-g_channel)/-33.f, 0.f);
+		glVertex3f( 1.f, (float)(32-g_channel)/-33.f, 0.f); 
+		glEnd(); 
+		//end VBO
+	}
+	if(g_mode == MODE_SPIKES){
+		//draw the spikes!! ya.
+		cgSetParameter1f(myCgVertexParam_time, t);
+		cgSetParameter3f(myCgVertexParam_col, 0.5f,0.5f,0.5f);
+		cgGLBindProgram(myCgVertexProgram[1]);
+		cgGLEnableProfile(myCgVertexProfile);
+		checkForCgError("enabling vertex profile");
+		
+		glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_wvbo[1]);
+		glVertexPointer(3, GL_FLOAT, 0, 0);
+		glDrawArrays(GL_LINE_STRIP, 0, 34*NDISPW);
+		glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+		cgGLDisableProfile(myCgVertexProfile);
+		checkForCgError("disabling vertex profile");
+		
+		cgSetParameter1f(myCgVertexParam_time, t);
+		cgSetParameter3f(myCgVertexParam_col, 1.f,1.f,0.f);
+		cgGLBindProgram(myCgVertexProgram[1]);
+		cgGLEnableProfile(myCgVertexProfile);
+		checkForCgError("enabling vertex profile");
+		
+		glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_wvbo[0]);
+		glVertexPointer(3, GL_FLOAT, 0, 0);
+		glDrawArrays(GL_LINE_STRIP, 0, 34*NDISPW);
+		glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+		cgGLDisableProfile(myCgVertexProfile);
+		checkForCgError("disabling vertex profile");
+
+		glDisableClientState(GL_VERTEX_ARRAY);
+	}
 	
 	if (gdk_gl_drawable_is_double_buffered (gldrawable))
 		gdk_gl_drawable_swap_buffers (gldrawable);
@@ -407,6 +430,7 @@ GtkWidget* g_gainlabel[32];
 GtkWidget* g_headchLabel;
 GtkAdjustment* g_channelSpin;
 GtkAdjustment* g_gainSpin; 
+GtkAdjustment* g_thresholdSpin; 
 GtkWidget* g_pktpsLabel;
 
 static gboolean
@@ -628,10 +652,10 @@ void* sock_thread(void* destIP){
 				double time = rxtime - ((double)(npack-i)-0.5) * 0.000864; 
 				for(int j=0; j<32; j++){
 					int ch = ((j & 0xf) << 1) + ((j & 0x10) >> 4); 
-					if(g_exceeded & (0x1 << j)){
+					if(g_exceeded & (0x1 << ch)){
 						int w = g_sbufW % (sizeof(g_sbuf)/8); 
 						g_sbuf[w*2+0] = (float)time; 
-						g_sbuf[w*2+1] = (float)ch; 
+						g_sbuf[w*2+1] = (float)j; 
 						g_sbufW ++; 
 					}
 				}
@@ -646,45 +670,47 @@ void* sock_thread(void* destIP){
 					//g_fbufColor[(g_bufpos % NSAMP)*4 + 0] = r;
 					//g_fbufColor[(g_bufpos % NSAMP)*4 + 3] = 0.7f;
 					g_fbufW++; 
-					g_time += 0.03; 
 				}
 				p++; 
-				if(prevExceed){
-					//look back through the past 27 samples, select the largest.
-					float max = -100.f; 
-					float offset = 0; 
-					for(int j=-27; j < 0; j++){
-						float v = g_fbuf[mod2(g_fbufW +j, NSAMP)*3+1]; 
-						if(v > max){
-							max = v; 
-							offset = j; 
+				if(g_mode == MODE_SPIKES){
+					if(prevExceed){
+						//look back through the past 27 samples, select the largest.
+						float max = -100.f; 
+						float offset = 0; 
+						for(int j=-54; j < -20; j++){
+							float v = g_fbuf[mod2(g_fbufW +j, NSAMP)*3+1]; 
+							if(v > max){
+								max = v; 
+								offset = j; 
+							}
 						}
-					}
-					int w = g_wbufW[0] % NDISPW; 
-					for(int j=0; j < 32; j++){
-						//x coord does not need updating.
-						g_wbuf[0][w*34*3 + (j+1)*3 + 1] = 
-							g_fbuf[mod2(g_fbufW + j + offset -10, NSAMP)*3+1]; 
-						g_wbuf[0][w*34*3 + (j+1)*3 + 2] = time; 
-					}
-					g_wbufW[0]++; 
-				} else {
-					if(z < 1.f){
-						//if neither this nor the previous packet exceeded, 
-						// copy to unsorted buffer.
-						int w = g_wbufW[1] % NDISPW; 
-						int offset = -32; 
+						z = 0.f; //clear the exceeded signal -- should have found the peak.
+						int w = g_wbufW[0] % NDISPW; 
 						for(int j=0; j < 32; j++){
 							//x coord does not need updating.
-							g_wbuf[1][w*34*3 + (j+1)*3 + 1] = 
-								g_fbuf[mod2(g_fbufW + j + offset, NSAMP)*3+1]; 
-							g_wbuf[1][w*34*3 + (j+1)*3 + 2] = time; 
+							g_wbuf[0][w*34*3 + (j+1)*3 + 1] = 
+								g_fbuf[mod2(g_fbufW + j + offset -10, NSAMP)*3+1]; 
+							g_wbuf[0][w*34*3 + (j+1)*3 + 2] = time; 
 						}
-						g_wbufW[1]++; 
+						g_wbufW[0]++; 
+					} else {
+						if(z < 1.f){
+							//if neither this nor the previous packet exceeded, 
+							// copy to unsorted buffer.
+							int w = g_wbufW[1] % NDISPW; 
+							int offset = -32; 
+							for(int j=0; j < 32; j++){
+								//x coord does not need updating.
+								g_wbuf[1][w*34*3 + (j+1)*3 + 1] = 
+									g_fbuf[mod2(g_fbufW + j + offset, NSAMP)*3+1]; 
+								g_wbuf[1][w*34*3 + (j+1)*3 + 2] = time; 
+							}
+							g_wbufW[1]++; 
+						}
 					}
+					if(z > 0.f) prevExceed = true; 
+					else prevExceed = false; 
 				}
-				if(z > 0.f) prevExceed = true; 
-				else prevExceed = false; 
 			}
 			
 		}
@@ -734,6 +760,21 @@ static void gainSpinCB( GtkAdjustment*, gpointer ){
 	snprintf(str, 256, "%d gain: %.2f", g_channel, gain); 
 	gtk_label_set_text(GTK_LABEL(g_gainlabel[g_channel]), str);
 }
+static void thresholdSpinCB( GtkAdjustment*, gpointer ){
+	g_thresh = gtk_adjustment_get_value(g_thresholdSpin); 
+	printf("thresholdSpinCB: %d\n", g_thresh); 
+	setThresh();
+}
+static void modeRadioCB(GtkWidget *, gpointer * data){
+	char* ptr = (char*)data; 
+	if(*ptr == 'r') g_mode = MODE_RASTERS;
+	else g_mode = MODE_SPIKES; 
+}
+static void filterRadioCB(GtkWidget *, gpointer * data){
+	char* ptr = (char*)data; 
+	if(*ptr == 'o') setOsc(g_channel); 
+	else resetBiquads(g_channel); 
+}
 int main (int argn, char **argc)
 {
 	GtkWidget *window;
@@ -741,7 +782,7 @@ int main (int argn, char **argc)
 	GdkGLConfig *glconfig;
 	//GtkWidget *table; 
 	GtkWidget *box1;
-	//GtkWidget *button;
+	GtkWidget *modebox;
 	GtkWidget *paned;
 	//GtkWidget *paned2;
 	int i; 
@@ -765,9 +806,9 @@ int main (int argn, char **argc)
 
 	window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_title (GTK_WINDOW (window), "gtk headstage v6 client");
-	gtk_window_set_default_size (GTK_WINDOW (window), 800, 600);
+	gtk_window_set_default_size (GTK_WINDOW (window), 800, 650);
 	da1 = gtk_drawing_area_new ();
-	gtk_widget_set_size_request(GTK_WIDGET(da1), 640, 600);
+	gtk_widget_set_size_request(GTK_WIDGET(da1), 640, 650);
 
 	/* Create a 2x2 table */
 	//table = gtk_table_new (2, 2, TRUE);
@@ -804,8 +845,8 @@ int main (int argn, char **argc)
 					G_CALLBACK(channelSpinCB), GINT_TO_POINTER (1));
 	gtk_widget_show(spinner); 
 	//and a gain spinner.
-	g_gainSpin = (GtkAdjustment *)gtk_adjustment_new(1000.0, 
-		0.0, 3000.0, 1.0, 100.0, 0.0);
+	g_gainSpin = (GtkAdjustment *)gtk_adjustment_new(100.0, 
+		0.0, 10000.0, 1.0, 100.0, 0.0);
 	spinner = gtk_spin_button_new (g_gainSpin, 0, 0);
 	gtk_spin_button_set_wrap (GTK_SPIN_BUTTON (spinner), FALSE);
 	gtk_box_pack_start (GTK_BOX (box1), spinner, FALSE, FALSE, 0);
@@ -817,12 +858,64 @@ int main (int argn, char **argc)
 		g_channel = i; 
 		gainSpinCB(g_gainSpin, GINT_TO_POINTER (1)); 
 	}
+	//add in a threshold spinner.
+	g_thresholdSpin = (GtkAdjustment *)gtk_adjustment_new(16000.0, 
+		0.0, 32000.0, 50.0, 1000.0, 0.0);
+	spinner = gtk_spin_button_new (g_thresholdSpin, 0, 0);
+	gtk_spin_button_set_wrap (GTK_SPIN_BUTTON (spinner), FALSE);
+	gtk_box_pack_start (GTK_BOX (box1), spinner, FALSE, FALSE, 0);
+	g_signal_connect(spinner, "value-changed", 
+					G_CALLBACK(thresholdSpinCB), GINT_TO_POINTER (1));
+	gtk_widget_show(spinner); 
 	//add in a packets/second label
 	g_pktpsLabel = gtk_label_new ("packets/sec");
 	gtk_misc_set_alignment (GTK_MISC (g_pktpsLabel), 0, 0);
 	gtk_box_pack_start (GTK_BOX (box1), g_pktpsLabel, FALSE, FALSE, 0);
 	gtk_widget_show(g_pktpsLabel); 
 	
+	//add mode radio buttons
+	GtkWidget *button;
+	GSList *group;
+	modebox = gtk_vbox_new (FALSE, 10);
+	gtk_container_set_border_width (GTK_CONTAINER (modebox), 2);
+	gtk_box_pack_start (GTK_BOX (box1), modebox, TRUE, TRUE, 0);
+	gtk_widget_show (modebox);
+	
+	button = gtk_radio_button_new_with_label (NULL, "rasters");
+	gtk_box_pack_start (GTK_BOX (modebox), button, TRUE, TRUE, 0);
+	gtk_widget_show (button);
+	gtk_signal_connect (GTK_OBJECT (button), "clicked",
+		GTK_SIGNAL_FUNC (modeRadioCB), (gpointer) "r");
+
+	group = gtk_radio_button_get_group (GTK_RADIO_BUTTON (button));
+	button = gtk_radio_button_new_with_label (group, "spikes");
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), FALSE);
+	gtk_box_pack_start (GTK_BOX (modebox), button, TRUE, TRUE, 0);
+	gtk_widget_show (button);
+	gtk_signal_connect (GTK_OBJECT (button), "clicked",
+		GTK_SIGNAL_FUNC (modeRadioCB), (gpointer) "s");
+		
+	//add osc / reset radio buttons
+	modebox = gtk_vbox_new (FALSE, 10);
+	gtk_container_set_border_width (GTK_CONTAINER (modebox), 2);
+	gtk_box_pack_start (GTK_BOX (box1), modebox, TRUE, TRUE, 0);
+	gtk_widget_show (modebox);
+	
+	button = gtk_radio_button_new_with_label (NULL, "normal filter");
+	gtk_box_pack_start (GTK_BOX (modebox), button, TRUE, TRUE, 0);
+	gtk_widget_show (button);
+	gtk_signal_connect (GTK_OBJECT (button), "clicked",
+		GTK_SIGNAL_FUNC (filterRadioCB), (gpointer) "n");
+
+	group = gtk_radio_button_get_group (GTK_RADIO_BUTTON (button));
+	button = gtk_radio_button_new_with_label (group, "osc filter");
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), FALSE);
+	gtk_box_pack_start (GTK_BOX (modebox), button, TRUE, TRUE, 0);
+	gtk_widget_show (button);
+	gtk_signal_connect (GTK_OBJECT (button), "clicked",
+		GTK_SIGNAL_FUNC (filterRadioCB), (gpointer) "o");
+	
+	//show all.
 	gtk_widget_set_size_request(GTK_WIDGET(box1), 150, 600);
 	gtk_widget_show (box1);
 	
