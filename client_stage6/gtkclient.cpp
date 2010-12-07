@@ -89,6 +89,15 @@ static CGprogram   myCgVertexProgram[2];
 static CGparameter myCgVertexParam_time;
 static CGparameter myCgVertexParam_col;
 
+int mod2(int a, int b){
+	if(a >=0) return a % b;
+	else {
+		//map to the positive numbers: -1 -> b-1; -2 ->b-2 etc
+		int c = abs(a) / b+1; 
+		return (b*c+a)%b; 
+	}
+}
+
 static void checkForCgError(const char *situation)
 {
   CGerror error;
@@ -146,8 +155,8 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		g_fbufR = w; 
 	}
 	//ditto for the spike buffers
-	unsigned int len = sizeof(g_sbuf)/8; //total # of pts. 
 	if(g_sbufR < g_sbufW){
+		unsigned int len = sizeof(g_sbuf)/8; //total # of pts. 
 		unsigned int w = g_sbufW; //atomic
 		unsigned int sta = g_sbufR % len; 
 		unsigned int fin = w % len; 
@@ -159,7 +168,22 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		}
 		g_sbufR = w; 
 	}
-
+	//and the waveform buffers.
+	for(int k=0; k<2; k++){
+		if(g_wbufR[k] < g_wbufW[k]){
+			unsigned int len = NDISPW; 
+			unsigned int w = g_wbufW[k]; //atomic
+			unsigned int sta = g_wbufR[k] % len; 
+			unsigned int fin = w % len; 
+			if(fin < sta) { //wrap
+				copyData(g_wvbo[k], sta, len, g_wbuf[k], 3*34); 
+				copyData(g_wvbo[k], 0, fin, g_wbuf[k], 3*34); 
+			} else {
+				copyData(g_wvbo[k], sta, len, g_wbuf[k], 3*34); 
+			}
+			g_wbufR[k] = w; 
+		}
+	}
 	/* draw in here */
 	glMatrixMode(GL_MODELVIEW); 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -203,15 +227,14 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 	glVertexPointer(2, GL_FLOAT, 0, 0);
 	glColor4f (1., 1., 1., 0.4f);
 	glPointSize(2.0);
-	glDrawArrays(GL_POINTS, 0, len);
+	glDrawArrays(GL_POINTS, 0, sizeof(g_sbuf)/8);
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 	//end VBO
 	glPopMatrix ();
 	//draw the spikes!! ya.
 	cgSetParameter1f(myCgVertexParam_time, t);
-	cgSetParameter3f(myCgVertexParam_col, 1.f,1.f,0.f);
+	cgSetParameter3f(myCgVertexParam_col, 0.5f,0.5f,0.5f);
 	cgGLBindProgram(myCgVertexProgram[1]);
-	checkForCgError("binding vertex program");
 	cgGLEnableProfile(myCgVertexProfile);
 	checkForCgError("enabling vertex profile");
 	
@@ -219,12 +242,21 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 	glVertexPointer(3, GL_FLOAT, 0, 0);
 	glDrawArrays(GL_LINE_STRIP, 0, 34*NDISPW);
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+	cgGLDisableProfile(myCgVertexProfile);
+	checkForCgError("disabling vertex profile");
 	
-	cgSetParameter3f(myCgVertexParam_col, 0.5f,0.5f,0.5f);
-	glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_wvbo[2]);
+	cgSetParameter1f(myCgVertexParam_time, t);
+	cgSetParameter3f(myCgVertexParam_col, 1.f,1.f,0.f);
+	cgGLBindProgram(myCgVertexProgram[1]);
+	cgGLEnableProfile(myCgVertexProfile);
+	checkForCgError("enabling vertex profile");
+	
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_wvbo[0]);
 	glVertexPointer(3, GL_FLOAT, 0, 0);
 	glDrawArrays(GL_LINE_STRIP, 0, 34*NDISPW);
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+	cgGLDisableProfile(myCgVertexProfile);
+	checkForCgError("disabling vertex profile");
 
 	glDisableClientState(GL_VERTEX_ARRAY);
 	
@@ -361,7 +393,7 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 			glBufferDataARB(GL_ARRAY_BUFFER_ARB, sizeof(g_wbuf[k]), 
 				0, GL_DYNAMIC_DRAW_ARB);
 			glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, 
-				0, sizeof(g_wbuf[k]), g_wbuf[0]);
+				0, sizeof(g_wbuf[k]), g_wbuf[k]);
 		}
 		
 	}
@@ -617,16 +649,38 @@ void* sock_thread(void* destIP){
 					g_time += 0.03; 
 				}
 				p++; 
-				if(prevExceeded){
+				if(prevExceed){
 					//look back through the past 27 samples, select the largest.
-					float min = -100.f; 
+					float max = -100.f; 
 					float offset = 0; 
-					for(int j=-27; j > 0; j++){
+					for(int j=-27; j < 0; j++){
 						float v = g_fbuf[mod2(g_fbufW +j, NSAMP)*3+1]; 
-						if(v > min){
-							min = v; 
+						if(v > max){
+							max = v; 
 							offset = j; 
 						}
+					}
+					int w = g_wbufW[0] % NDISPW; 
+					for(int j=0; j < 32; j++){
+						//x coord does not need updating.
+						g_wbuf[0][w*34*3 + (j+1)*3 + 1] = 
+							g_fbuf[mod2(g_fbufW + j + offset -10, NSAMP)*3+1]; 
+						g_wbuf[0][w*34*3 + (j+1)*3 + 2] = time; 
+					}
+					g_wbufW[0]++; 
+				} else {
+					if(z < 1.f){
+						//if neither this nor the previous packet exceeded, 
+						// copy to unsorted buffer.
+						int w = g_wbufW[1] % NDISPW; 
+						int offset = -32; 
+						for(int j=0; j < 32; j++){
+							//x coord does not need updating.
+							g_wbuf[1][w*34*3 + (j+1)*3 + 1] = 
+								g_fbuf[mod2(g_fbufW + j + offset, NSAMP)*3+1]; 
+							g_wbuf[1][w*34*3 + (j+1)*3 + 2] = time; 
+						}
+						g_wbufW[1]++; 
 					}
 				}
 				if(z > 0.f) prevExceed = true; 
