@@ -53,7 +53,8 @@ unsigned int g_sendW; //where to write to (in 32-byte increments)
 unsigned int g_sendR; //where to read from
 unsigned int g_sendL; //the length of the buffer.
 bool g_die = false; 
-bool g_pause = false;
+double g_pause = -1.0;
+double g_rasterZoom = 1.0; 
 int g_channel = 0; 
 int g_headch = 0; 
 int g_oldheadch = 100; 
@@ -93,6 +94,7 @@ static CGprofile   myCgVertexProfile;
 static CGprogram   myCgVertexProgram[2];
 static CGparameter myCgVertexParam_time;
 static CGparameter myCgVertexParam_col;
+static CGparameter myCgVertexParam_xzoom;
 
 int mod2(int a, int b){
 	if(a >=0) return a % b;
@@ -147,46 +149,48 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 	}
 	
 	//copy over any new data.
-	if(g_fbufR < g_fbufW){
-		unsigned int w = g_fbufW; //atomic
-		unsigned int sta = g_fbufR % NSAMP; 
-		unsigned int fin = w % NSAMP; 
-		if(fin < sta) { //wrap
-			copyData(g_vbo1, sta, NSAMP, g_fbuf, 3); 
-			copyData(g_vbo1, 0, fin, g_fbuf, 3); 
-		} else {
-			copyData(g_vbo1, sta, fin, g_fbuf, 3); 
+	if(g_pause <= 0.0){
+		if(g_fbufR < g_fbufW){
+			unsigned int w = g_fbufW; //atomic
+			unsigned int sta = g_fbufR % NSAMP; 
+			unsigned int fin = w % NSAMP; 
+			if(fin < sta) { //wrap
+				copyData(g_vbo1, sta, NSAMP, g_fbuf, 3); 
+				copyData(g_vbo1, 0, fin, g_fbuf, 3); 
+			} else {
+				copyData(g_vbo1, sta, fin, g_fbuf, 3); 
+			}
+			g_fbufR = w; 
 		}
-		g_fbufR = w; 
-	}
-	//ditto for the spike buffers
-	if(g_sbufR < g_sbufW){
-		unsigned int len = sizeof(g_sbuf)/8; //total # of pts. 
-		unsigned int w = g_sbufW; //atomic
-		unsigned int sta = g_sbufR % len; 
-		unsigned int fin = w % len; 
-		if(fin < sta) { //wrap
-			copyData(g_vbo2, sta, len, g_sbuf, 2); 
-			copyData(g_vbo2, 0, fin, g_sbuf, 2); 
-		} else {
-			copyData(g_vbo2, sta, fin, g_sbuf, 2); 
-		}
-		g_sbufR = w; 
-	}
-	//and the waveform buffers.
-	for(int k=0; k<2; k++){
-		if(g_wbufR[k] < g_wbufW[k]){
-			unsigned int len = NDISPW; 
-			unsigned int w = g_wbufW[k]; //atomic
-			unsigned int sta = g_wbufR[k] % len; 
+		//ditto for the spike buffers
+		if(g_sbufR < g_sbufW){
+			unsigned int len = sizeof(g_sbuf)/8; //total # of pts. 
+			unsigned int w = g_sbufW; //atomic
+			unsigned int sta = g_sbufR % len; 
 			unsigned int fin = w % len; 
 			if(fin < sta) { //wrap
-				copyData(g_wvbo[k], sta, len, g_wbuf[k], 3*34); 
-				copyData(g_wvbo[k], 0, fin, g_wbuf[k], 3*34); 
+				copyData(g_vbo2, sta, len, g_sbuf, 2); 
+				copyData(g_vbo2, 0, fin, g_sbuf, 2); 
 			} else {
-				copyData(g_wvbo[k], sta, len, g_wbuf[k], 3*34); 
+				copyData(g_vbo2, sta, fin, g_sbuf, 2); 
 			}
-			g_wbufR[k] = w; 
+			g_sbufR = w; 
+		}
+		//and the waveform buffers.
+		for(int k=0; k<2; k++){
+			if(g_wbufR[k] < g_wbufW[k]){
+				unsigned int len = NDISPW; 
+				unsigned int w = g_wbufW[k]; //atomic
+				unsigned int sta = g_wbufR[k] % len; 
+				unsigned int fin = w % len; 
+				if(fin < sta) { //wrap
+					copyData(g_wvbo[k], sta, len, g_wbuf[k], 3*34); 
+					copyData(g_wvbo[k], 0, fin, g_wbuf[k], 3*34); 
+				} else {
+					copyData(g_wvbo[k], sta, len, g_wbuf[k], 3*34); 
+				}
+				g_wbufR[k] = w; 
+			}
 		}
 	}
 	/* draw in here */
@@ -196,8 +200,10 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 	glEnableClientState(GL_VERTEX_ARRAY);
 	
 	float t = (float)gettime(); 
+	if(g_pause > 0.0) t = g_pause; 
 	
 	if(g_mode == MODE_RASTERS){
+		cgSetParameter1f(myCgVertexParam_xzoom, g_rasterZoom);
 		cgGLBindProgram(myCgVertexProgram[0]);
 		checkForCgError("binding vertex program");
 		cgGLEnableProfile(myCgVertexProfile);
@@ -229,7 +235,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		
 		//rasters
 		glPushMatrix();
-		float scl = 0.5; 
+		float scl = 0.5*g_rasterZoom; 
 		glScalef(-1.f*scl, 1.f/33.f, 1.f); 
 		glTranslatef((1.f/scl - t), -32.f, 0.f); 
 
@@ -334,6 +340,8 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 		checkForCgError("creating vertex program from file");
 		cgGLLoadProgram(myCgVertexProgram[0]);
 		checkForCgError("loading vertex program");
+		myCgVertexParam_xzoom =
+			cgGetNamedParameter(myCgVertexProgram[0], "xzoom");
 		
 		myCgVertexProgram[1] = cgCreateProgramFromFile(
 			myCgContext,              /* Cg runtime context */
@@ -527,10 +535,9 @@ void setChan(){
 	int i; 
 	unsigned int* ptr = g_sendbuf; 
 	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
-	ptr[0] = htonl(0xff904500 - 8); //frame pointer
-	ptr[1] = htonl(g_channel);
-	for(i=2; i<8; i++){
-		ptr[i] = 0xa5a5a5a5; 
+	for(i=0; i<4;i++){
+		ptr[i*2+0] = htonl(0xff904500 - 8); //frame pointer
+		ptr[i*2+1] = htonl(g_channel);
 	}
 	g_sendW++; 	
 }
@@ -629,6 +636,8 @@ void* sock_thread(void* destIP){
 	int send_delay = 0; 
 	g_totalPackets = 0; 
 	bool prevExceed = false; //did the previous packet (not frame) exceed thresh?
+	char last = 0; 
+	char last2 = 0; 
 	while(g_die == 0){
 		int n = recvfrom(g_rxsock, buf, sizeof(buf), 0,0,0); 
 		if(n > 0 && !g_die){
@@ -641,7 +650,7 @@ void* sock_thread(void* destIP){
 			packet* p = (packet*)ptr;
 			int npack = n / 32; 
 			g_totalPackets += npack; 
-			for(int i=0; i<npack && !g_pause; i++){
+			for(int i=0; i<npack && g_pause <=0.0; i++){
 				//see if it exceeded threshold.
 				float z = 0; 
 				g_headch = (p->flag) >> 3 ; 
@@ -664,9 +673,17 @@ void* sock_thread(void* destIP){
 				else bit = 1 << ((g_headch&0xf)*2+1);
 				if(g_exceeded & bit) z = 1.0; 
 				for(int j=0; j<27; j++){
+					char samp = p->data[j]; 
+					char dither = (last << 4) & 0xf0; 
+					dither += last2 & 0xf; 
+					//dither ^= samp; 
 					g_fbuf[(g_fbufW % NSAMP)*3 + 1] = 
-						(float)(p->data[j]) / 128.f; 
+						(float)samp / 128.f + 
+						(float)dither/ 32768.f; 
+						//the last bit is pseudo-random dithering (for display)
 					g_fbuf[(g_fbufW % NSAMP)*3 + 2] = z;
+					last2 = last; 
+					last = samp; 
 					//g_fbufColor[(g_bufpos % NSAMP)*4 + 0] = r;
 					//g_fbufColor[(g_bufpos % NSAMP)*4 + 3] = 0.7f;
 					g_fbufW++; 
@@ -712,7 +729,6 @@ void* sock_thread(void* destIP){
 					else prevExceed = false; 
 				}
 			}
-			
 		}
 		//see if they want us to send something? 
 		// (this occurs after RX of a packet, so we should not overflow the 
@@ -775,13 +791,23 @@ static void filterRadioCB(GtkWidget *, gpointer * data){
 	if(*ptr == 'o') setOsc(g_channel); 
 	else resetBiquads(g_channel); 
 }
+static void pauseButtonCB(GtkWidget *button, gpointer * ){
+	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
+		g_pause = gettime(); 
+	else
+		g_pause = -1.0;
+}
+static void zoomSpinCB( GtkAdjustment* , gpointer p){
+	g_rasterZoom = gtk_adjustment_get_value((GtkAdjustment*)p); 
+	printf("zoomSpinCB: %f\n", g_rasterZoom); 
+}
 int main (int argn, char **argc)
 {
 	GtkWidget *window;
 	GtkWidget *da1;
 	GdkGLConfig *glconfig;
 	//GtkWidget *table; 
-	GtkWidget *box1;
+	GtkWidget *box1, *bx, *label;
 	GtkWidget *modebox;
 	GtkWidget *paned;
 	//GtkWidget *paned2;
@@ -806,7 +832,7 @@ int main (int argn, char **argc)
 
 	window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_title (GTK_WINDOW (window), "gtk headstage v6 client");
-	gtk_window_set_default_size (GTK_WINDOW (window), 800, 650);
+	gtk_window_set_default_size (GTK_WINDOW (window), 850, 650);
 	da1 = gtk_drawing_area_new ();
 	gtk_widget_set_size_request(GTK_WIDGET(da1), 640, 650);
 
@@ -835,38 +861,55 @@ int main (int argn, char **argc)
 	gtk_box_pack_start (GTK_BOX (box1), g_headchLabel, FALSE, FALSE, 0);
 	gtk_widget_show(g_headchLabel); 
 	//and a channel spinner.
+	bx = gtk_hbox_new (FALSE, 3);
+	label = gtk_label_new ("channel");
+	gtk_box_pack_start (GTK_BOX (bx), label, FALSE, FALSE, 0);
+	gtk_widget_show(label); 
 	GtkWidget *spinner;
 	g_channelSpin = (GtkAdjustment *)gtk_adjustment_new(0.0, 
 		0.0, 31.0, 1.0, 5.0, 0.0);
 	spinner = gtk_spin_button_new (g_channelSpin, 0, 0);
 	gtk_spin_button_set_wrap (GTK_SPIN_BUTTON (spinner), TRUE);
-	gtk_box_pack_start (GTK_BOX (box1), spinner, FALSE, FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (bx), spinner, FALSE, FALSE, 0);
 	g_signal_connect(spinner, "value-changed", 
 					G_CALLBACK(channelSpinCB), GINT_TO_POINTER (1));
 	gtk_widget_show(spinner); 
+	gtk_box_pack_start (GTK_BOX (box1), bx, TRUE, TRUE, 0);
+	
 	//and a gain spinner.
+	bx = gtk_hbox_new (FALSE, 3);
+	label = gtk_label_new ("gain");
+	gtk_box_pack_start (GTK_BOX (bx), label, FALSE, FALSE, 0);
+	gtk_widget_show(label); 
 	g_gainSpin = (GtkAdjustment *)gtk_adjustment_new(100.0, 
 		0.0, 10000.0, 1.0, 100.0, 0.0);
 	spinner = gtk_spin_button_new (g_gainSpin, 0, 0);
 	gtk_spin_button_set_wrap (GTK_SPIN_BUTTON (spinner), FALSE);
-	gtk_box_pack_start (GTK_BOX (box1), spinner, FALSE, FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (bx), spinner, FALSE, FALSE, 0);
 	g_signal_connect(spinner, "value-changed", 
 					G_CALLBACK(gainSpinCB), GINT_TO_POINTER (1));
 	gtk_widget_show(spinner); 
+	gtk_box_pack_start (GTK_BOX (box1), bx, TRUE, TRUE, 0);
 	//update labels. 
-	for(i=0; i<32; i++){
+	/*for(i=0; i<32; i++){
 		g_channel = i; 
 		gainSpinCB(g_gainSpin, GINT_TO_POINTER (1)); 
-	}
+	}*/
 	//add in a threshold spinner.
+	bx = gtk_hbox_new (FALSE, 3);
+	label = gtk_label_new ("threshold");
+	gtk_box_pack_start (GTK_BOX (bx), label, FALSE, FALSE, 0);
+	gtk_widget_show(label); 
 	g_thresholdSpin = (GtkAdjustment *)gtk_adjustment_new(16000.0, 
 		0.0, 32000.0, 50.0, 1000.0, 0.0);
 	spinner = gtk_spin_button_new (g_thresholdSpin, 0, 0);
 	gtk_spin_button_set_wrap (GTK_SPIN_BUTTON (spinner), FALSE);
-	gtk_box_pack_start (GTK_BOX (box1), spinner, FALSE, FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (bx), spinner, FALSE, FALSE, 0);
 	g_signal_connect(spinner, "value-changed", 
 					G_CALLBACK(thresholdSpinCB), GINT_TO_POINTER (1));
 	gtk_widget_show(spinner); 
+	gtk_box_pack_start (GTK_BOX (box1), bx, TRUE, TRUE, 0);
+	
 	//add in a packets/second label
 	g_pktpsLabel = gtk_label_new ("packets/sec");
 	gtk_misc_set_alignment (GTK_MISC (g_pktpsLabel), 0, 0);
@@ -876,7 +919,7 @@ int main (int argn, char **argc)
 	//add mode radio buttons
 	GtkWidget *button;
 	GSList *group;
-	modebox = gtk_vbox_new (FALSE, 10);
+	modebox = gtk_hbox_new (FALSE, 10);
 	gtk_container_set_border_width (GTK_CONTAINER (modebox), 2);
 	gtk_box_pack_start (GTK_BOX (box1), modebox, TRUE, TRUE, 0);
 	gtk_widget_show (modebox);
@@ -896,7 +939,7 @@ int main (int argn, char **argc)
 		GTK_SIGNAL_FUNC (modeRadioCB), (gpointer) "s");
 		
 	//add osc / reset radio buttons
-	modebox = gtk_vbox_new (FALSE, 10);
+	modebox = gtk_hbox_new (FALSE, 10);
 	gtk_container_set_border_width (GTK_CONTAINER (modebox), 2);
 	gtk_box_pack_start (GTK_BOX (box1), modebox, TRUE, TRUE, 0);
 	gtk_widget_show (modebox);
@@ -914,9 +957,25 @@ int main (int argn, char **argc)
 	gtk_widget_show (button);
 	gtk_signal_connect (GTK_OBJECT (button), "clicked",
 		GTK_SIGNAL_FUNC (filterRadioCB), (gpointer) "o");
+		
+	//add a pause / go button.
+	button = gtk_check_button_new_with_label("pause");
+	g_signal_connect (button, "toggled",
+			G_CALLBACK (pauseButtonCB), (gpointer) "o");
+	gtk_box_pack_start (GTK_BOX (box1), button, TRUE, TRUE, 0);
+	
+	//add in a zoom spinner.
+	GtkAdjustment* adj = (GtkAdjustment *)gtk_adjustment_new(1.0, 
+		0.2, 10.0, 0.2, 1.0, 0.0);
+	spinner = gtk_spin_button_new (adj, 1.0, 2);
+	gtk_spin_button_set_wrap (GTK_SPIN_BUTTON (spinner), FALSE);
+	gtk_box_pack_start (GTK_BOX (box1), spinner, FALSE, FALSE, 0);
+	g_signal_connect(spinner, "value-changed", 
+					G_CALLBACK(zoomSpinCB), (gpointer)adj );
+	gtk_widget_show(spinner); 
 	
 	//show all.
-	gtk_widget_set_size_request(GTK_WIDGET(box1), 150, 600);
+	gtk_widget_set_size_request(GTK_WIDGET(box1), 200, 600);
 	gtk_widget_show (box1);
 	
 	/*paned2 = gtk_vpaned_new(); 
