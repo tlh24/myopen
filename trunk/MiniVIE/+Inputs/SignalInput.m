@@ -42,8 +42,14 @@ classdef SignalInput < handle
             if nargin < 2
                 channelIds = 1:obj.NumChannels;
             end
+            
+            hTimer = UiTools.create_timer(mfilename,@(src,evt)cb_timer);
+            hTimer.Period = 0.05;
+            
             hFig = gcf;
             clf(hFig);
+            set(hFig,'CloseRequestFcn',@(src,evnt)previewCleanup);
+
             numFeatures = 4;
             hAx = zeros(1,numFeatures);
             hLines = zeros(obj.NumChannels,numFeatures);
@@ -59,22 +65,23 @@ classdef SignalInput < handle
             
             featureBuffer = NaN(obj.NumChannels,numFeatures,numSamplesToDisplay);
             
-            StartStopForm([]);
-            while StartStopForm
+            start(hTimer);
+            
+            function cb_timer
                 drawnow
                 
                 % channelData = getData(obj);
                 filteredData = getFilteredData(obj);
                 
                 if isempty(filteredData)
-                    continue;
+                    return;
                 end
                 
                 windowSize = 150;
-                zc_thresh = 0.05;
-                ssc_thresh = 0.05;
+                %                 zc_thresh = 0.1;
+                %                 ssc_thresh = 0.1;
                 
-                features = feature_extract(filteredData',windowSize,zc_thresh,ssc_thresh);
+                features = feature_extract(filteredData',windowSize);
                 
                 featureBuffer = circshift(featureBuffer,[0 0 1]);
                 featureBuffer(:,:,1) = features;
@@ -85,6 +92,12 @@ classdef SignalInput < handle
                     end
                 end
             end
+            function previewCleanup
+                stop(hTimer);
+                delete(hTimer)
+                delete(hFig);
+            end
+            
         end %previewFeatures
         
         function audiopreview(obj,channelIds,range)
@@ -156,27 +169,36 @@ function previewCommon(obj,previewFunction,channelIds)
 % output
 
 
-hFig = gcf;
+hTimer = UiTools.create_timer(mfilename,@(src,evt)cb_timer);
+hTimer.Period = 0.05;
+
+hFig = UiTools.create_figure('Preview Figure','Preview_Figure');
 clf(hFig);
-hAx1 = gca;
+set(hFig,'CloseRequestFcn',@(src,evnt)previewCleanup)
+
+hAx1 = axes('Parent',hFig);
 hLines = plot(hAx1,zeros(2,obj.NumChannels));
 ylim(hAx1,[-2 14]);
 
 offset = 1.5 * (1:obj.NumChannels);
+start(hTimer);
 
-StartStopForm([]);
-while StartStopForm
-    drawnow
-    
-    channelData = previewFunction(obj);
-    
-    if isempty(channelData)
-        continue;
+    function cb_timer
+        drawnow
+        channelData = previewFunction(obj);
+        
+        if isempty(channelData)
+            return;
+        end
+        for i = channelIds
+            set(hLines(i),'YData',channelData(:,i)+offset(i),'XData',1:size(channelData,1))
+        end
     end
-    for i = channelIds
-        set(hLines(i),'YData',channelData(:,i)+offset(i),'XData',1:size(channelData,1))
-    end
-end
 
+    function previewCleanup
+        stop(hTimer);
+        delete(hTimer)
+        delete(hFig);
+    end
 
 end %previewCommon
