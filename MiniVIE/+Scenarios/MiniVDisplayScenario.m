@@ -1,5 +1,6 @@
 classdef MiniVDisplayScenario < handle
     % Scenario for controlling a rendered 3d virtual hand/arm
+    % Depends on UiTools
     % 
     % 01-Sept-2010 Armiger: Created
     properties
@@ -22,12 +23,13 @@ classdef MiniVDisplayScenario < handle
         AutoOpenSpeed = 5;
         CloseGain = [40 40 40 40];
         FingerCommand = [0 0 0 0];
+        WristCommand = [0 0 0];
         
         JointAnglesDegrees = zeros(size(action_bus_definition));
     end
     methods
         function obj = MiniVDisplayScenario
-            obj.hTimer = obj.create_timer(mfilename,@(src,evt)cb_data_timer(src,evt,obj));
+            obj.hTimer = UiTools.create_timer(mfilename,@(src,evt)cb_data_timer(src,evt,obj));
             obj.hTimer.Period = 0.05;
         end
         function setup_display(obj)
@@ -74,22 +76,6 @@ classdef MiniVDisplayScenario < handle
             end
         end
     end
-    methods (Static = true)
-        function hTimer = create_timer(timerName,TimerFcn)
-            
-            hExisting = timerfindall('Name',timerName);
-            delete(hExisting);
-            
-            t = timer;
-            t.Name = timerName;
-            t.ExecutionMode = 'fixedRate';
-            t.TimerFcn = TimerFcn;
-            t.StartFcn = @(src,evt)fprintf('Started: %s\tPeriod: %f\n',timerName,t.Period);
-            t.StopFcn = @(src,evt)fprintf('Stopped: %s\tPeriod: %f\tAveragePeriod: %f\n',timerName,t.Period,t.AveragePeriod);
-            
-            hTimer = t;
-        end
-    end
 end
 
 %Private
@@ -121,7 +107,7 @@ try
     virtualChannels = obj.EmgClassifier.virtual_channels(features2D,cursorMoveClass);
 
     speed = max(virtualChannels);
-    
+    gain = 20;
     obj.FingerCommand = zeros(1,4);
     switch obj.EmgClassifier.ClassNames{cursorMoveClass}
         case 'No Movement'
@@ -133,9 +119,23 @@ try
             obj.FingerCommand(3) = speed;
         case 'Little'
             obj.FingerCommand(4) = speed;
+        case 'Up'
+            obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) = ...
+                obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) + speed*gain;
+        case 'Down'
+            obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) = ...
+                obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) - speed*gain;
+        case 'Left'
+            obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) = ...
+                obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) + speed*gain;
+        case 'Right'
+            obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) = ...
+                obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) - speed*gain;
         otherwise
     end
 
+    
+    
     obj.FingerCommand = obj.FingerCommand .* obj.CloseGain;
     
     obj.FingerCommand(obj.FingerCommand == 0) = -obj.AutoOpenSpeed;
@@ -144,18 +144,25 @@ try
         
     obj.handAngles = max(min(obj.handAngles,80),0);
     
-    jointAngles = zeros(size(action_bus_definition));
-    
+    % Apply finger angles to each finger segment
     id = [action_bus_enum.Index_MCP action_bus_enum.Index_DIP action_bus_enum.Index_PIP];
-    jointAngles(id) = obj.handAngles(1);
+    obj.JointAnglesDegrees(id) = obj.handAngles(1);
     id = [action_bus_enum.Middle_MCP action_bus_enum.Middle_DIP action_bus_enum.Middle_PIP];
-    jointAngles(id) = obj.handAngles(2);
+    obj.JointAnglesDegrees(id) = obj.handAngles(2);
     id = [action_bus_enum.Ring_MCP action_bus_enum.Ring_DIP action_bus_enum.Ring_PIP];
-    jointAngles(id) = obj.handAngles(3);
+    obj.JointAnglesDegrees(id) = obj.handAngles(3);
     id = [action_bus_enum.Little_MCP action_bus_enum.Little_DIP action_bus_enum.Little_PIP];
-    jointAngles(id) = obj.handAngles(4);
+    obj.JointAnglesDegrees(id) = obj.handAngles(4);
+        
+    % Apply Wrist Limits
+    obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) = max(min(...
+        obj.JointAnglesDegrees(action_bus_enum.Wrist_FE),80),-80);
+    obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) = max(min(...
+        obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev),45),-10);
     
-    obj.hOutput.set_hand_angles_degrees(jointAngles);
+    
+    obj.hOutput.set_hand_angles_degrees(obj.JointAnglesDegrees);
+    obj.hOutput.set_upper_arm_angles_degrees(obj.JointAnglesDegrees);
     obj.hOutput.redraw();
         
 catch ME
