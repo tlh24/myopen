@@ -51,21 +51,21 @@ classdef GuitarHeroTrainer < handle
             clf(hFig);
             
             % EMG Preview Plot
-            hAx1 = subplot(3,1,3);
-            obj.hg.hPreviewLines = plot(hAx1,zeros(2,length(obj.EmgClassifier.ActiveChannels)));
-            ylim(hAx1,[-2 2]);
+            obj.hg.AxesSignals = subplot(3,1,3);
+            obj.hg.hPreviewLines = plot(obj.hg.AxesSignals,zeros(2,length(obj.EmgClassifier.ActiveChannels)));
+            ylim(obj.hg.AxesSignals,[-2 2]);
             
             % Streaming Cue Plot
-            hAx2 = subplot(3,1,1:2);
-            hold(hAx2,'on')
-            plot(hAx2,[0 obj.EmgClassifier.NumClasses],[0 0],'k--');
+            obj.hg.AxesCues = subplot(3,1,1:2);
+            hold(obj.hg.AxesCues,'on')
+            plot(obj.hg.AxesCues,[0 obj.EmgClassifier.NumClasses],[0 0],'k--');
             
             % Create static class lines
             yRange = [-1 2];
-            hStaticLines = plot(hAx2,repmat(yRange(:),1,obj.EmgClassifier.NumClasses));
+            hStaticLines = plot(obj.hg.AxesCues,repmat(yRange(:),1,obj.EmgClassifier.NumClasses));
             
             % Create streaming cue lines
-            obj.hg.hCues = plot(hAx2,zeros(2,obj.EmgClassifier.NumClasses),'LineWidth',6);
+            obj.hg.hCues = plot(obj.hg.AxesCues,zeros(2,obj.EmgClassifier.NumClasses),'LineWidth',6);
             
             rgbOrange = [1.0000    0.6941    0.3922];
             aghColors = {'g' 'r' 'y' 'b' rgbOrange};  % Button Colors
@@ -77,15 +77,15 @@ classdef GuitarHeroTrainer < handle
                 set(hStaticLines(i),'XData',[i; i]);
             end
             
-            set(hAx2,'xtick',[],'ytick',[]);
-            %axis(hAx2,'off');
-            %set(hAx2,'Projection','perspective');
-            %view(hAx2,0,60);
+            set(obj.hg.AxesCues,'xtick',[],'ytick',[]);
+            %axis(obj.hg.AxesCues,'off');
+            %set(obj.hg.AxesCues,'Projection','perspective');
+            %view(obj.hg.AxesCues,0,60);
             
-            obj.hg.hClass = plot(hAx2,0,0,'k*');
-            ylim(hAx2,yRange);
+            obj.hg.hClass = plot(obj.hg.AxesCues,0,0,'k*');
+            ylim(obj.hg.AxesCues,yRange);
             
-            xlim(hAx2,[1 obj.EmgClassifier.NumClasses + 1]);
+            xlim(obj.hg.AxesCues,[1 obj.EmgClassifier.NumClasses + 1]);
             
             % Hide the no movement cue
             set([hStaticLines(1) obj.hg.hCues(1)],'Visible','off');
@@ -185,7 +185,8 @@ classdef GuitarHeroTrainer < handle
                     putvalue(obj.DigitalOutput,dec2binvec(classOut,4))
                 end
                 if lastCue ~= currentCue
-                    fprintf('Current Cue: %s\n',obj.EmgClassifier.ClassNames{currentCue});
+                    strCue = sprintf('Current Cue: %s\n',obj.EmgClassifier.ClassNames{currentCue});
+                    title(obj.hg.AxesSignals,strCue);
                     %                     KeyReleaseClassId = 1;
                     %classLabelId(sampleCounter-1:-1:sampleCounter-6) = KeyReleaseClassId;
                 end
