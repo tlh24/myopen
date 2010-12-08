@@ -95,10 +95,11 @@ classdef SimpleTrainer < handle
             
             if getappdata(h,'canceling')
                 fprintf('Training Cancelled');
+                delete(h);
             else
                 waitbar(1,h,'Training Complete!')
                 pause(0.2);
-                delete(h)
+                delete(h);
             end
             
             features3D(:,:,iSample+1:end) = [];
