@@ -759,7 +759,7 @@ int main(int argv, char* argc[]){
 				cleanup(1); 
 			}
 		}
-		printf("sanity check ok\n"); 	
+		printf("SST25 sanity check ok\n"); 	
 
 		eraseChip_SST25(); 
 		write_all2_SST25(buffer, file_size); 

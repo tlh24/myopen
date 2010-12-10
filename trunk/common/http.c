@@ -64,7 +64,7 @@ int httpResp( char* payload, int paylen ){
 			return 1; 
 		} 
 	}else if(paylen >= 18 && substr("POST",payload,paylen) ){
-		pos = substr("POST",payload,paylen);
+		int pos = substr("POST",payload,paylen);
 		payload += pos; paylen -= pos; 
 		char paramChanged = 0; 
 		if(substr("data_stream=",payload, paylen) ){
@@ -93,7 +93,6 @@ int httpResp( char* payload, int paylen ){
 		}
 		// --- look at the mouse channels. 
 		char* p; 
-		int pos ; 
 		pos = substr("xpos_chan=",payload,paylen); 
 		if(pos){
 			p = payload; p += pos; 

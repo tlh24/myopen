@@ -7,8 +7,15 @@
 #include "ethernet.h"
 #include "nordic_regs.h"
 
+typedef struct {
+	u32		destIP; 
+	u32		radioChan;
+	u32		destPort;
+} nv_data; 
+
 u8 g_streamEnabled; 
 u8 g_outpkt[32]; 
+nv_data g_nv; 
 
 void eth_listen(int etherr){
 	int r = 0; 
@@ -30,6 +37,121 @@ void eth_listen(int etherr){
 	}
 }
 
+u8 read_flash_u8(u32 address){
+	//tested, looks like it works.
+	*FIO_CLEAR = SPI_FLASH; 
+	asm volatile("ssync"); 
+	spi_write_byte(0x03); 
+	spi_write_byte((address >> 16)&0xff);
+	spi_write_byte((address >> 8)&0xff); 
+	spi_write_byte((address)&0xff); 
+	u8 r = spi_write_byte(0); 
+	*FIO_SET = SPI_FLASH; 
+	asm volatile("ssync"); 
+	return r; 
+}
+u32 read_flash_u32(u32 address){
+	//also tested, looks good.
+	*FIO_CLEAR = SPI_FLASH; 
+	asm volatile("ssync"); 
+	spi_write_byte(0x03); 
+	spi_write_byte((address >> 16)&0xff);
+	spi_write_byte((address >> 8)&0xff); 
+	spi_write_byte((address)&0xff); 
+	//ints are stored big-endian in flash. easier.
+	u32 r = 0; 
+	r += spi_write_byte(0); 
+	r <<= 8; 
+	r += spi_write_byte(0); 
+	r <<= 8; 
+	r += spi_write_byte(0); 
+	r <<= 8; 
+	r += spi_write_byte(0); 
+	*FIO_SET = SPI_FLASH; asm volatile("ssync"); 
+	return r; 
+}
+void write_enable_flash(){
+	//aslo clears the bank protection registers.
+	//first EWSR
+	*FIO_CLEAR = SPI_FLASH; asm volatile("ssync"); 
+	spi_write_byte(0x50); 
+	*FIO_SET = SPI_FLASH; asm volatile("ssync");
+	
+	*FIO_CLEAR = SPI_FLASH; asm volatile("ssync"); 
+	//write the status register
+	spi_write_byte(0x01); 
+	spi_write_byte(0x00); 
+	*FIO_SET = SPI_FLASH; asm volatile("ssync");
+	
+	//write enable command.
+	*FIO_CLEAR = SPI_FLASH; asm volatile("ssync"); 
+	spi_write_byte(0x06); 
+	*FIO_SET = SPI_FLASH; asm volatile("ssync");
+}
+void wait_flash(){
+	u8 stat = 1; 
+	while(stat & 1){
+		*FIO_CLEAR = SPI_FLASH; asm volatile("ssync"); 
+		spi_write_byte(0x05); 
+		stat = spi_write_byte(0); 
+		*FIO_SET = SPI_FLASH; asm volatile("ssync");
+		//printf_hex_byte("\nSST status: ",stat);
+	}
+}
+void write_flash(int len, u8* data){
+	//have to erase the page that the structure is on..
+	//let's use the last 4kB page for this.
+	//flash size is 4Mbit = 512kbyte, 0x3ffff; 
+	//last page at 0x3f000. (total 128 pages)
+	u32 page = 127;
+	u32 address = page * 4 * 1024; 
+	write_enable_flash(); 
+	
+	//erase page
+	*FIO_CLEAR = SPI_FLASH; asm volatile("ssync"); 
+	spi_write_byte(0x20);
+	spi_write_byte((address >> 16)&0xff);
+	spi_write_byte((address >> 8)&0xff); 
+	spi_write_byte((address)&0xff); 
+	*FIO_SET = SPI_FLASH; asm volatile("ssync");
+	
+	//now have to wait for the erase page to be complete. 
+	wait_flash(); 
+	//alright, write the bytes. (slow mode)
+	u32 i, a;
+	u8* p = data; 
+	for(i=0; i<len; i++){
+		//write enable command.
+		*FIO_CLEAR = SPI_FLASH; asm volatile("ssync"); 
+		spi_write_byte(0x06); 
+		*FIO_SET = SPI_FLASH; asm volatile("ssync");
+		a = address + i; 
+		*FIO_CLEAR = SPI_FLASH; asm volatile("ssync"); 
+		spi_write_byte(0x02);
+		spi_write_byte((a >> 16)&0xff);
+		spi_write_byte((a >> 8)&0xff); 
+		spi_write_byte((a)&0xff); 
+		spi_write_byte(*p);
+		*FIO_SET = SPI_FLASH; asm volatile("ssync");
+		p++; 
+		wait_flash(); 
+	}
+	//great, now verify. 
+	p = data; 
+	u8 r, good = 1; 
+	for(i=0; i<len; i++){
+		r = read_flash_u8(address + i); 
+		if(r != *p){
+			printf_hex_byte("\nverify: got ", r);
+			printf_hex_byte(" should be ", *p); 
+			good = 0; 
+		}
+		p++; 
+	}
+	if(!good){
+		printf_str("\nverify flash write failed!"); 
+	}
+}
 int main(void){
 	//the nordic chip has a SPI port rated up to 10Mhz.
 	*pPORTG_FER = 0xc19c; //UART, SPI, MDC
@@ -83,6 +205,16 @@ int main(void){
 		if(s!= 0xBABE) printf_hex("mem err @ ",i); 
 	}
 	printf_str("memory check done.\n"); 
+	printf_str("reading flash, starting from addr 0\n"); 
+	for(i=0;i<32;i++){
+		printf_hex(" ", read_flash_u32((u32)(i*4))); 
+		if((i & 7) == 7) printf_str("\n"); 
+	}
+	//write nonvolatile info to flash. 
+	g_nv.destIP = FormatIPAddress(152, 16, 229, 19); 
+	g_nv.radioChan = 124; 
+	g_nv.destPort = 4340; 
+	write_flash(sizeof(g_nv), (u8*)&g_nv); 
 	//start the milisecond timer. 
 	*pTIMER_DISABLE = 0xffff; 
 	asm volatile("ssync"); 
@@ -106,6 +238,10 @@ int main(void){
 	//and for the IRQ. 
 	*pPORTGIO_INEN |= SPI_IRQ; 
 	*pPORTGIO_DIR &= (0xffff ^ SPI_IRQ); 
+	//and reading / writing flash
+	*pPORTGIO_INEN &= (0xffff ^ SPI_FLASH); 
+	*pPORTGIO_DIR |= SPI_FLASH; 
+	*pPORTG_FER &= (0xffff ^ SPI_FLASH); 
 	
 	//write out data.
 	#define UDP_PACKET_SIZE 256
@@ -180,7 +316,7 @@ int main(void){
 				//copy the data from SDRAM.. (starting @ 0x0000 0000, looping 256k bytes)
 				//include a copy of the tptr, so that we can (possibly) reorder it. 
 				(*data++) = trptr; //this is the +4
-				memcpy_(0, data, UDP_PACKET_SIZE); 
+				memcpy_(0, (u8*)data, UDP_PACKET_SIZE); 
 				trptr ++ ; 
 				bfin_EMAC_send_nocopy(); 
 			} else {
