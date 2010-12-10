@@ -12,29 +12,11 @@ u32	g_httpRemainingLen;
 u32	g_httpRxed;  //number of bytes received in a multi-packet transfer.
 
 int httpCollate(char* payload, int paylen){
-	if( g_httpRxed ){
-		//then there is already data buffered -- merge it. 
-		u8* p = (u8*)HTTP_RX;
-		p += g_httpRxed; 
-		memcpy_((u8*)payload, p, paylen); 
-		g_httpRxed += paylen; 
-		//see if the new data is a complete request. 
-		if( httpResp((char*)HTTP_RX, g_httpRxed) ){
-			g_httpRxed = 0; //used the data.
-			return 1;
-		}
-	}else {
-		//see if this individual packet is a request. 
-		//if it is not, copy it over. 
-		if( httpResp(payload, paylen) ){
-			g_httpRxed = 0; //used the data.
-			return 1;
-		} else {
-			//copy the data to the buffer, multiple packets.  
-			memcpy_((u8*)payload, (u8*)HTTP_RX, paylen); 
-			g_httpRxed = paylen; 
-		}
-	}
+	u8* p = (u8*)HTTP_RX;
+	p += g_httpRxed; 
+	memcpy_((u8*)payload, p, paylen); 
+	g_httpRxed += paylen; 
+
 	return 0; 
 }
 
@@ -82,6 +64,8 @@ int httpResp( char* payload, int paylen ){
 			return 1; 
 		} 
 	}else if(paylen >= 18 && substr("POST",payload,paylen) ){
+		pos = substr("POST",payload,paylen);
+		payload += pos; paylen -= pos; 
 		char paramChanged = 0; 
 		if(substr("data_stream=",payload, paylen) ){
 			if(substr("=Enable",payload, paylen) ){
@@ -137,7 +121,8 @@ int httpResp( char* payload, int paylen ){
 		//set the destination IP
 		pos = substr("ip1=",payload,paylen); 
 		if(pos){
-			p = payload; p+= pos; 
+			payload += pos; paylen -= pos; //speed up the search..
+			p = payload; 
 			u32 tip = atoi(p,3) & 0xff; 
 			NetDataDestIP &= 0xffffff00 ; //big-endian order.
 			NetDataDestIP += tip; 
@@ -145,7 +130,8 @@ int httpResp( char* payload, int paylen ){
 		}
 		pos = substr("ip2=",payload,paylen); 
 		if(pos){
-			p = payload; p+= pos; 
+			payload += pos; paylen -= pos; //speed up the search..
+			p = payload; 
 			u32 tip = atoi(p,3) & 0xff; 
 			NetDataDestIP &= 0xffff00ff ; 
 			NetDataDestIP += tip << 8; 
@@ -153,7 +139,8 @@ int httpResp( char* payload, int paylen ){
 		}
 		pos = substr("ip3=",payload,paylen); 
 		if(pos){
-			p = payload; p+= pos; 
+			payload += pos; paylen -= pos; //speed up the search..
+			p = payload; 
 			u32 tip = atoi(p,3) & 0xff; 
 			NetDataDestIP &= 0xff00ffff ; 
 			NetDataDestIP += tip << 16; 
@@ -161,7 +148,8 @@ int httpResp( char* payload, int paylen ){
 		}
 		pos = substr("ip4=",payload,paylen); 
 		if(pos){
-			p = payload; p+= pos; 
+			payload += pos; paylen -= pos; //speed up the search..
+			p = payload; 
 			u32 tip = atoi(p,3) & 0xff; 
 			NetDataDestIP &= 0x00ffffff ; 
 			NetDataDestIP += tip << 24; 
