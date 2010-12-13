@@ -1,0 +1,294 @@
+EESchema Schematic File Version 2  date Wed 08 Dec 2010 04:40:13 PM EST
+LIBS:power
+LIBS:device
+LIBS:emg_sym
+LIBS:linear
+LIBS:stage7-cache
+EELAYER 24  0
+EELAYER END
+$Descr User 16000 12000
+Sheet 1 9
+Title "Stage 4 / Copyright 2010 Timothy L Hanson "
+Date "8 dec 2010"
+Rev ""
+Comp "This design is free: redistribute or modify under the GPL v. 3 or later"
+Comment1 ""
+Comment2 ""
+Comment3 ""
+Comment4 ""
+$EndDescr
+Text Label 3050 5100 0    60   ~ 0
+CA8
+Text Label 1750 5100 0    60   ~ 0
+CA7
+Text Label 3050 3950 0    60   ~ 0
+CA6
+Text Label 1750 3950 0    60   ~ 0
+CA5
+Text Label 3050 4900 0    60   ~ 0
+AN8
+Text Label 1750 4900 0    60   ~ 0
+AN7
+Text Label 3050 3750 0    60   ~ 0
+AN6
+Text Label 1750 3750 0    60   ~ 0
+AN5
+$Sheet
+S 900  3650 850  750 
+U 4CFFFAE1
+F0 "stim5" 60
+F1 "stim.sch" 60
+F2 "CATHO" I R 1750 3950 60 
+F3 "Iout" I R 1750 4200 60 
+F4 "ANO" I R 1750 3750 60 
+$EndSheet
+$Sheet
+S 2200 3650 850  750 
+U 4CFFFADE
+F0 "stim6" 60
+F1 "stim.sch" 60
+F2 "CATHO" I R 3050 3950 60 
+F3 "Iout" I R 3050 4200 60 
+F4 "ANO" I R 3050 3750 60 
+$EndSheet
+$Sheet
+S 2200 4800 850  750 
+U 4CFFFADB
+F0 "stim8" 60
+F1 "stim.sch" 60
+F2 "CATHO" I R 3050 5100 60 
+F3 "Iout" I R 3050 5350 60 
+F4 "ANO" I R 3050 4900 60 
+$EndSheet
+$Sheet
+S 900  4800 850  750 
+U 4CFFFAD8
+F0 "stim7" 60
+F1 "stim.sch" 60
+F2 "CATHO" I R 1750 5100 60 
+F3 "Iout" I R 1750 5350 60 
+F4 "ANO" I R 1750 4900 60 
+$EndSheet
+$Comp
+L R R?
+U 1 1 4CFFFAD5
+P 3450 4600
+F 0 "R?" V 3530 4600 50  0000 C CNN
+F 1 "3k" V 3450 4600 50  0000 C CNN
+	1    3450 4600
+	0    -1   -1   0   
+$EndComp
+$Comp
+L MCP4017 U?
+U 1 1 4CFFFAD4
+P 4100 4750
+F 0 "U?" H 4100 4500 60  0000 C CNN
+F 1 "MCP4017" H 4100 5000 60  0000 C CNN
+F 2 "SC-70-6" H 4040 4440 60  0000 C CNN
+	1    4100 4750
+	-1   0    0    -1  
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 4CFFFAD3
+P 3700 4750
+F 0 "#PWR?" H 3700 4750 30  0001 C CNN
+F 1 "GND" H 3700 4680 30  0001 C CNN
+	1    3700 4750
+	0    1    1    0   
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 4CFFFAD2
+P 4550 4750
+F 0 "#PWR?" H 4550 4750 30  0001 C CNN
+F 1 "GND" H 4550 4680 30  0001 C CNN
+	1    4550 4750
+	0    -1   -1   0   
+$EndComp
+$Comp
+L VDD #PWR?
+U 1 1 4CFFFAD1
+P 4550 4600
+F 0 "#PWR?" H 4550 4700 30  0001 C CNN
+F 1 "VDD" H 4550 4710 30  0000 C CNN
+	1    4550 4600
+	1    0    0    -1  
+$EndComp
+$Comp
+L C C?
+U 1 1 4CFFFAD0
+P 4750 4400
+F 0 "C?" H 4800 4500 50  0000 L CNN
+F 1 "0.1uf" H 4800 4300 50  0000 L CNN
+F 2 "0402" H 4850 4550 60  0000 C CNN
+	1    4750 4400
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 4CFFFACF
+P 4750 4150
+F 0 "#PWR?" H 4750 4150 30  0001 C CNN
+F 1 "GND" H 4750 4080 30  0001 C CNN
+	1    4750 4150
+	-1   0    0    1   
+$EndComp
+Wire Wire Line
+	4750 4150 4750 4200
+Connection ~ 3200 4600
+Wire Wire Line
+	3200 5350 3200 4200
+Wire Wire Line
+	3050 5350 3200 5350
+Wire Wire Line
+	1950 5350 1750 5350
+Wire Wire Line
+	1950 4200 1950 5350
+Wire Wire Line
+	1750 4200 1950 4200
+Connection ~ 1950 4600
+Wire Wire Line
+	3050 4200 3200 4200
+Wire Wire Line
+	4750 4600 4550 4600
+Wire Wire Line
+	1950 4600 3200 4600
+Wire Wire Line
+	1950 2300 3200 2300
+Wire Wire Line
+	4750 2300 4550 2300
+Wire Wire Line
+	3050 1900 3200 1900
+Connection ~ 1950 2300
+Wire Wire Line
+	1750 1900 1950 1900
+Wire Wire Line
+	1950 1900 1950 3050
+Wire Wire Line
+	1950 3050 1750 3050
+Wire Wire Line
+	3050 3050 3200 3050
+Wire Wire Line
+	3200 3050 3200 1900
+Connection ~ 3200 2300
+Wire Wire Line
+	4750 1850 4750 1900
+$Comp
+L GND #PWR?
+U 1 1 4CFFF68C
+P 4750 1850
+F 0 "#PWR?" H 4750 1850 30  0001 C CNN
+F 1 "GND" H 4750 1780 30  0001 C CNN
+	1    4750 1850
+	-1   0    0    1   
+$EndComp
+$Comp
+L C C?
+U 1 1 4CFFF66A
+P 4750 2100
+F 0 "C?" H 4800 2200 50  0000 L CNN
+F 1 "0.1uf" H 4800 2000 50  0000 L CNN
+F 2 "0402" H 4850 2250 60  0000 C CNN
+	1    4750 2100
+	1    0    0    -1  
+$EndComp
+$Comp
+L VDD #PWR?
+U 1 1 4CFFF65E
+P 4550 2300
+F 0 "#PWR?" H 4550 2400 30  0001 C CNN
+F 1 "VDD" H 4550 2410 30  0000 C CNN
+	1    4550 2300
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 4CFFF636
+P 4550 2450
+F 0 "#PWR?" H 4550 2450 30  0001 C CNN
+F 1 "GND" H 4550 2380 30  0001 C CNN
+	1    4550 2450
+	0    -1   -1   0   
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 4CFFF608
+P 3700 2450
+F 0 "#PWR?" H 3700 2450 30  0001 C CNN
+F 1 "GND" H 3700 2380 30  0001 C CNN
+	1    3700 2450
+	0    1    1    0   
+$EndComp
+$Comp
+L MCP4017 U?
+U 1 1 4CFFF5BF
+P 4100 2450
+F 0 "U?" H 4100 2200 60  0000 C CNN
+F 1 "MCP4017" H 4100 2700 60  0000 C CNN
+F 2 "SC-70-6" H 4040 2140 60  0000 C CNN
+	1    4100 2450
+	-1   0    0    -1  
+$EndComp
+$Comp
+L R R?
+U 1 1 4CFFF4A0
+P 3450 2300
+F 0 "R?" V 3530 2300 50  0000 C CNN
+F 1 "3k" V 3450 2300 50  0000 C CNN
+	1    3450 2300
+	0    -1   -1   0   
+$EndComp
+Text Label 3050 2800 0    60   ~ 0
+CA4
+Text Label 1750 2800 0    60   ~ 0
+CA3
+Text Label 3050 1650 0    60   ~ 0
+CA2
+Text Label 1750 1650 0    60   ~ 0
+CA1
+Text Label 3050 2600 0    60   ~ 0
+AN4
+Text Label 1750 2600 0    60   ~ 0
+AN3
+Text Label 3050 1450 0    60   ~ 0
+AN2
+Text Label 1750 1450 0    60   ~ 0
+AN1
+$Sheet
+S 900  2500 850  750 
+U 4CFFF124
+F0 "stim3" 60
+F1 "stim.sch" 60
+F2 "CATHO" I R 1750 2800 60 
+F3 "Iout" I R 1750 3050 60 
+F4 "ANO" I R 1750 2600 60 
+$EndSheet
+$Sheet
+S 2200 2500 850  750 
+U 4CFFF121
+F0 "stim4" 60
+F1 "stim.sch" 60
+F2 "CATHO" I R 3050 2800 60 
+F3 "Iout" I R 3050 3050 60 
+F4 "ANO" I R 3050 2600 60 
+$EndSheet
+$Sheet
+S 2200 1350 850  750 
+U 4CFFF11C
+F0 "stim2" 60
+F1 "stim.sch" 60
+F2 "CATHO" I R 3050 1650 60 
+F3 "Iout" I R 3050 1900 60 
+F4 "ANO" I R 3050 1450 60 
+$EndSheet
+$Sheet
+S 900  1350 850  750 
+U 4CFFE972
+F0 "stim1" 60
+F1 "stim.sch" 60
+F2 "CATHO" I R 1750 1650 60 
+F3 "Iout" I R 1750 1900 60 
+F4 "ANO" I R 1750 1450 60 
+$EndSheet
+$EndSCHEMATC
