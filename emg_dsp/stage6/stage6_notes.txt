@@ -9,6 +9,8 @@ Hardware Fixes:
 	* Need caps on nordic lines to quench ringing (47pf, SCK & MOSI)
 	* R61 & friends were not grounded (on the schematic) oops!
 		Can jumper to R12.
+	* The labels on the external power supply are SWAPPED! 
+		28 is 0.8V, 08 is 2.8V! (or more accurately, 2.65V, as measured)
 	
 
 November 8 2010
