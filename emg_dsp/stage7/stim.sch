@@ -1,0 +1,183 @@
+EESchema Schematic File Version 2  date Fri 10 Dec 2010 01:06:11 PM EST
+LIBS:power
+LIBS:device
+LIBS:emg_sym
+LIBS:linear
+LIBS:stage7-cache
+EELAYER 24  0
+EELAYER END
+$Descr A4 11700 8267
+Sheet 4 9
+Title ""
+Date "8 dec 2010"
+Rev ""
+Comp ""
+Comment1 ""
+Comment2 ""
+Comment3 ""
+Comment4 ""
+$EndDescr
+$Comp
+L VDD #PWR?
+U 1 1 4CFFF042
+P 4900 2600
+AR Path="/4CFFE972/4CFFF042" Ref="#PWR?"  Part="1" 
+AR Path="/4CFFF11C/4CFFF042" Ref="#PWR?"  Part="1" 
+F 0 "#PWR?" H 4900 2700 30  0001 C CNN
+F 1 "VDD" H 4900 2710 30  0000 C CNN
+	1    4900 2600
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	6850 2250 6900 2250
+Wire Wire Line
+	6900 2250 6900 2500
+Connection ~ 6900 3300
+Wire Wire Line
+	7250 3300 5800 3300
+Wire Wire Line
+	4450 3000 4450 3050
+Wire Wire Line
+	4900 2600 4900 3000
+Wire Wire Line
+	6300 2600 6400 2600
+Connection ~ 5800 2600
+Wire Wire Line
+	5800 3000 5800 2600
+Wire Wire Line
+	5650 2600 5900 2600
+Wire Wire Line
+	5800 3150 5900 3150
+Wire Wire Line
+	4450 2600 5050 2600
+Connection ~ 4900 2600
+Wire Wire Line
+	4900 3300 4200 3300
+Wire Wire Line
+	6400 2600 6400 2250
+Wire Wire Line
+	6400 2250 6450 2250
+$Comp
+L JUMP U?
+U 1 1 4CFFEE4D
+P 6650 2250
+AR Path="/4CFFE972/4CFFEE4D" Ref="U?"  Part="1" 
+AR Path="/4CFFF11C/4CFFEE4D" Ref="U?"  Part="1" 
+F 0 "U?" H 6650 2150 60  0000 C CNN
+F 1 "JUMP" H 6650 2350 60  0000 C CNN
+F 2 "2x100mil" H 6590 2090 60  0000 C CNN
+	1    6650 2250
+	1    0    0    -1  
+$EndComp
+$Comp
+L 2SK3539 U?
+U 1 1 4CFFEDFB
+P 6650 3000
+AR Path="/4CFFE972/4CFFEDFB" Ref="U?"  Part="1" 
+AR Path="/4CFFF11C/4CFFEDFB" Ref="U?"  Part="1" 
+F 0 "U?" H 6650 3100 60  0000 C CNN
+F 1 "SOT-23" H 6700 3150 60  0000 C CNN
+F 2 "S-MINI-3P" H 6650 3000 50  0000 C CNN
+	1    6650 3000
+	0    1    -1   0   
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 4CFFEA59
+P 4450 3050
+AR Path="/4CFFE972/4CFFEA59" Ref="#PWR?"  Part="1" 
+AR Path="/4CFFF11C/4CFFEA59" Ref="#PWR?"  Part="1" 
+F 0 "#PWR?" H 4450 3050 30  0001 C CNN
+F 1 "GND" H 4450 2980 30  0001 C CNN
+	1    4450 3050
+	1    0    0    -1  
+$EndComp
+$Comp
+L C C?
+U 1 1 4CFFEA48
+P 4450 2800
+AR Path="/4CFFE972/4CFFEA48" Ref="C?"  Part="1" 
+AR Path="/4CFFF11C/4CFFEA48" Ref="C?"  Part="1" 
+F 0 "C?" H 4500 2900 50  0000 L CNN
+F 1 "0.1uf" H 4500 2700 50  0000 L CNN
+F 2 "0402" H 4550 2950 60  0001 C CNN
+	1    4450 2800
+	1    0    0    -1  
+$EndComp
+$Comp
+L GND #PWR?
+U 1 1 4CFFEA2B
+P 6400 3000
+AR Path="/4CFFE972/4CFFEA2B" Ref="#PWR?"  Part="1" 
+AR Path="/4CFFF11C/4CFFEA2B" Ref="#PWR?"  Part="1" 
+F 0 "#PWR?" H 6400 3000 30  0001 C CNN
+F 1 "GND" H 6400 2930 30  0001 C CNN
+	1    6400 3000
+	1    0    0    -1  
+$EndComp
+$Comp
+L C C?
+U 1 1 4CFFEA24
+P 6400 2800
+AR Path="/4CFFE972/4CFFEA24" Ref="C?"  Part="1" 
+AR Path="/4CFFF11C/4CFFEA24" Ref="C?"  Part="1" 
+F 0 "C?" H 6450 2900 50  0000 L CNN
+F 1 "100pf" H 6450 2700 50  0000 L CNN
+F 2 "0402" H 6500 2950 60  0000 C CNN
+	1    6400 2800
+	1    0    0    -1  
+$EndComp
+Text HLabel 7250 3000 2    60   Input ~ 0
+CATHO
+Text HLabel 7250 3300 2    60   Input ~ 0
+Iout
+Text HLabel 4200 3300 0    60   Input ~ 0
+ANO
+$Comp
+L GND #PWR?
+U 1 1 4CFFE9BD
+P 5900 3150
+AR Path="/4CFFE972/4CFFE9BD" Ref="#PWR?"  Part="1" 
+AR Path="/4CFFF11C/4CFFE9BD" Ref="#PWR?"  Part="1" 
+F 0 "#PWR?" H 5900 3150 30  0001 C CNN
+F 1 "GND" H 5900 3080 30  0001 C CNN
+	1    5900 3150
+	0    -1   -1   0   
+$EndComp
+$Comp
+L D D?
+U 1 1 4CFFE9AE
+P 6100 2600
+AR Path="/4CFFE972/4CFFE9AE" Ref="D?"  Part="1" 
+AR Path="/4CFFF11C/4CFFE9AE" Ref="D?"  Part="1" 
+F 0 "D?" H 6100 2750 60  0000 C CNN
+F 1 "BAT54" H 6100 2450 60  0001 C CNN
+F 2 "SOT-23" H 6300 2500 50  0000 C CNN
+	1    6100 2600
+	-1   0    0    1   
+$EndComp
+$Comp
+L INDUCTOR L?
+U 1 1 4CFFE99A
+P 5350 2600
+AR Path="/4CFFE972/4CFFE99A" Ref="L?"  Part="1" 
+AR Path="/4CFFF11C/4CFFE99A" Ref="L?"  Part="1" 
+F 0 "L?" V 5300 2600 40  0000 C CNN
+F 1 "22uh" V 5450 2600 40  0000 C CNN
+F 2 "0603" V 5260 2560 60  0000 C CNN
+	1    5350 2600
+	0    -1   -1   0   
+$EndComp
+$Comp
+L LT1615 U?
+U 1 1 4CFFE988
+P 5350 3150
+AR Path="/4CFFE972/4CFFE988" Ref="U?"  Part="1" 
+AR Path="/4CFFF11C/4CFFE988" Ref="U?"  Part="1" 
+F 0 "U?" H 5350 2850 60  0000 C CNN
+F 1 "LT1615" H 5350 3400 60  0000 C CNN
+F 2 "SOT-23-5" H 5350 3150 60  0000 C CNN
+	1    5350 3150
+	-1   0    0    -1  
+$EndComp
+$EndSCHEMATC

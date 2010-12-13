@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Fri 08 Oct 2010 03:25:52 PM EDT
+EESchema Schematic File Version 2  date Fri 12 Nov 2010 04:27:43 PM EST
 LIBS:power
 LIBS:device
 LIBS:emg_sym
@@ -9,7 +9,7 @@ EELAYER END
 $Descr User 16000 12000
 Sheet 14 15
 Title "Stage 4 / Copyright 2010 Timothy L Hanson "
-Date "6 oct 2010"
+Date "12 nov 2010"
 Rev ""
 Comp "This design is free: redistribute or modify under the GPL v. 3 or later"
 Comment1 ""
@@ -17,6 +17,15 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
+$Comp
+L GND #PWR?
+U 1 1 4CDDB14A
+P 3100 5950
+F 0 "#PWR?" H 3100 5950 30  0001 C CNN
+F 1 "GND" H 3100 5880 30  0001 C CNN
+	1    3100 5950
+	0    -1   -1   0   
+$EndComp
 Wire Wire Line
 	3250 8300 3250 8400
 Wire Wire Line
