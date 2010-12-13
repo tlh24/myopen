@@ -55,6 +55,7 @@ unsigned int g_sendL; //the length of the buffer.
 bool g_die = false; 
 double g_pause = -1.0;
 double g_rasterZoom = 1.0; 
+bool	g_cycle = false;
 int g_channel = 0; 
 int g_headch = 0; 
 int g_oldheadch = 100; 
@@ -758,7 +759,15 @@ void* sock_thread(void* destIP){
 	free(g_sendbuf); 
 	return 0; 
 }
-
+static gboolean chanscan(gpointer){
+	if(g_cycle){
+		g_channel++; 
+		g_channel &= 31; 
+		gtk_adjustment_set_value(g_channelSpin, (double)g_channel); 
+		setChan(); 
+	}
+	return g_cycle; //if this is false, don't call again.
+}
 static void channelSpinCB( GtkAdjustment*, gpointer ){
 	int ch = (int)gtk_adjustment_get_value(g_channelSpin); 
 	printf("channelSpinCB: %d\n", ch); 
@@ -796,6 +805,13 @@ static void pauseButtonCB(GtkWidget *button, gpointer * ){
 		g_pause = gettime(); 
 	else
 		g_pause = -1.0;
+}
+static void cycleButtonCB(GtkWidget *button, gpointer * ){
+	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))){
+		g_cycle = true; 
+		g_timeout_add(2000, chanscan, (gpointer)0);
+	}else
+		g_cycle = false; 
 }
 static void zoomSpinCB( GtkAdjustment* , gpointer p){
 	g_rasterZoom = gtk_adjustment_get_value((GtkAdjustment*)p); 
@@ -866,7 +882,8 @@ int main (int argn, char **argc)
 	gtk_box_pack_start (GTK_BOX (bx), label, FALSE, FALSE, 0);
 	gtk_widget_show(label); 
 	GtkWidget *spinner;
-	g_channelSpin = (GtkAdjustment *)gtk_adjustment_new(0.0, 
+	g_channelSpin = (GtkAdjustment *)gtk_adjustment_new(
+		(double)g_channel, 
 		0.0, 31.0, 1.0, 5.0, 0.0);
 	spinner = gtk_spin_button_new (g_channelSpin, 0, 0);
 	gtk_spin_button_set_wrap (GTK_SPIN_BUTTON (spinner), TRUE);
@@ -959,10 +976,20 @@ int main (int argn, char **argc)
 		GTK_SIGNAL_FUNC (filterRadioCB), (gpointer) "o");
 		
 	//add a pause / go button.
+	bx = gtk_hbox_new (FALSE, 3);
 	button = gtk_check_button_new_with_label("pause");
 	g_signal_connect (button, "toggled",
 			G_CALLBACK (pauseButtonCB), (gpointer) "o");
-	gtk_box_pack_start (GTK_BOX (box1), button, TRUE, TRUE, 0);
+	gtk_box_pack_start (GTK_BOX (bx), button, TRUE, TRUE, 0);
+	gtk_widget_show(button);
+	
+	//add a automatic channel change button.
+	button = gtk_check_button_new_with_label("cycle channels");
+	g_signal_connect (button, "toggled",
+			G_CALLBACK (cycleButtonCB), (gpointer) "o");
+	gtk_box_pack_start (GTK_BOX (bx), button, TRUE, TRUE, 0);
+	gtk_widget_show(button);
+	gtk_box_pack_start (GTK_BOX (box1), bx, TRUE, TRUE, 0);
 	
 	//add in a zoom spinner.
 	GtkAdjustment* adj = (GtkAdjustment *)gtk_adjustment_new(1.0, 
@@ -1031,7 +1058,8 @@ int main (int argn, char **argc)
 	gtk_widget_show_all (window);
 
 	g_timeout_add (1000 / 30, rotate, da1);
-	//g_timeout_add (1000 / 60, rotate, da2);
+	//change the channel every 2 seconds. 
+	g_timeout_add(2000, chanscan, (gpointer)0);
 
 	gtk_main ();
 }

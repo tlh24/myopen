@@ -205,16 +205,18 @@ int main(void){
 		if(s!= 0xBABE) printf_hex("mem err @ ",i); 
 	}
 	printf_str("memory check done.\n"); 
-	printf_str("reading flash, starting from addr 0\n"); 
-	for(i=0;i<32;i++){
-		printf_hex(" ", read_flash_u32((u32)(i*4))); 
-		if((i & 7) == 7) printf_str("\n"); 
+	if(0){
+		printf_str("reading flash, starting from addr 0\n"); 
+		for(i=0;i<32;i++){
+			printf_hex(" ", read_flash_u32((u32)(i*4))); 
+			if((i & 7) == 7) printf_str("\n"); 
+		}
+		//write nonvolatile info to flash. 
+		g_nv.destIP = FormatIPAddress(152, 16, 229, 19); 
+		g_nv.radioChan = 124; 
+		g_nv.destPort = 4340; 
+		write_flash(sizeof(g_nv), (u8*)&g_nv); 
 	}
-	//write nonvolatile info to flash. 
-	g_nv.destIP = FormatIPAddress(152, 16, 229, 19); 
-	g_nv.radioChan = 124; 
-	g_nv.destPort = 4340; 
-	write_flash(sizeof(g_nv), (u8*)&g_nv); 
 	//start the milisecond timer. 
 	*pTIMER_DISABLE = 0xffff; 
 	asm volatile("ssync"); 
