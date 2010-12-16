@@ -95,6 +95,7 @@ void spi_delay();
 u8 spi_write_register(u8 reg, u8 val);
 u8 spi_write_register_ver(u8 reg, u8 val);
 u8 spi_read_register(u8 reg);
+u8 spi_read_register_status(u8 reg, u8* value);
 u8 spi_write_byte(u8 byte);
 void spi_write_packet(void* packet);
 void spi_write_packet_noDMA(void* packet);
