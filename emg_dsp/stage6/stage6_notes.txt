@@ -224,6 +224,8 @@ December 13 2010 -
 			proc stopped: 2.23ma
 			total power, excl intans: 52.29mw ; 69.59mw w/
 			Intans: 7mw from 3.0v supply, 17.3mw from battery
+			(operating from 2.8V supply will save 4mw -- not worth it --
+				only adds 3 hours to the optimized figure)
 		80Mhz (x5) - CCLK 40Mhz - must disable oversampling, every read
 			sample counts.  both ADCs run at 10Mhz / 500ksps.
 			2.800v ; 6.65ma ; 18.7mw
@@ -234,3 +236,7 @@ December 13 2010 -
 		consumed at 69.6mw, this will last 41 hours. (full x2 oversampling)
 		consumed at 54.2mw, this will last 54 hours.
 		of course, probably want to run multiple headstages.
+		Assuming we are running 4 headstages and we want them to last 30 hours, 
+		need a 6.5wh battery, or 1800mah.  This should be possible - cell batteries 
+		can be had in 2200mah size.
+		2200mah will run 6 headstages for a full day, about (excluding conversion efi)

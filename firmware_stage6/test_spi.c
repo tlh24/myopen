@@ -266,6 +266,8 @@ int main(void){
 	while(1){
 		//listen for packets? (both interfaces, respond on eth)
 		eth_listen(etherr); 
+		//u8 fifostatus; 
+		//u8 status = spi_read_register_status(NOR_FIFO_STATUS, &fifostatus); 
 		if((*pPORTGIO & SPI_IRQ) == 0){
 			spi_write_register(NOR_STATUS, 0x70); //clear IRQ.
 			asm volatile("ssync;"); 
@@ -313,6 +315,7 @@ int main(void){
 			}
 		}
 		if(gotx || wrptr >= UDP_PACKET_SIZE){
+			spi_write_byte(NOR_FLUSH_RX); //will this fix the problem of immediately syncing 
 			data = (u32*) ( udp_packet_setup(UDP_PACKET_SIZE + 4, &result )); 
 			if(result > 0){
 				//copy the data from SDRAM.. (starting @ 0x0000 0000, looping 256k bytes)

@@ -35,7 +35,7 @@
 #include "sock.h"
 
 #define NSAMP (4*1024)
-#define NDISPW 512
+#define NDISPW 1024
 #define u32 unsigned int
 
 static float	g_fbuf[NSAMP*3];
@@ -63,10 +63,17 @@ bool g_out = false;
 unsigned int g_exceeded = 0; 
 int g_thresh = 16000; 
 float g_gains[32]; //per-channel gains.
+/* //for s/r 62.5ksps per ch
 float lowpass_coefs[8] = {0.078146,0.156309,1.261974,-0.614587,
 								0.078146,0.156275,0.991706,-0.268803};
 float highpass_coefs[8] = {0.983715,-1.967430,1.980324,-0.980949,
 								0.983715,-1.967430,1.954002,-0.954619};
+*/
+// for 31.25ksps
+float lowpass_coefs[8] ={ 0.240833,0.481711,0.323083,-0.456505,
+					0.240833,0.481619,0.233390,-0.052153};
+float highpass_coefs[8] ={0.936405,-1.872810,1.916303,-0.926028,
+					0.936405,-1.872810,1.821050,-0.830291};
 double g_startTime = 0.0; 
 int g_totalPackets = 0; 
 
@@ -680,7 +687,7 @@ void* sock_thread(void* destIP){
 					//dither ^= samp; 
 					g_fbuf[(g_fbufW % NSAMP)*3 + 1] = 
 						(float)samp / 128.f + 
-						(float)dither/ 32768.f; 
+						(float)dither/ 16000.f; 
 						//the last bit is pseudo-random dithering (for display)
 					g_fbuf[(g_fbufW % NSAMP)*3 + 2] = z;
 					last2 = last; 
@@ -859,6 +866,7 @@ int main (int argn, char **argc)
 	box1 = gtk_vbox_new (FALSE, 0);
 	for(i=0; i<32; i++){
 		g_gainlabel[i] = gtk_label_new ("");
+		g_gains[i] = 4; //just to have something.
 		/* Align the label to the left side.  We'll discuss this function and 
 		 * others in the section on Widget Attributes. */
 		gtk_misc_set_alignment (GTK_MISC (g_gainlabel[i]), 0, 0);
