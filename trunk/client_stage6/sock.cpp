@@ -48,7 +48,7 @@ int setup_socket(int portno){
 	listen(sock, 5); 
 	return sock;
 }
-//sets up a udp client socket.
+ //sets up a udp client socket.
 int connect_socket(int portno, const char* server_name){
 	int sockfd;
 	struct sockaddr_in serv_addr;

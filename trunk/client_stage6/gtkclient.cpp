@@ -51,7 +51,7 @@ GLuint			g_wvbo[2];
 unsigned int*	g_sendbuf; 
 unsigned int g_sendW; //where to write to (in 32-byte increments)
 unsigned int g_sendR; //where to read from
-unsigned int g_sendL; //the length of the buffer.
+unsigned int g_sendL; //the length of the buffer (in 32-byte packets)
 bool g_die = false; 
 double g_pause = -1.0;
 double g_rasterZoom = 1.0; 
@@ -63,6 +63,9 @@ bool g_out = false;
 unsigned int g_exceeded = 0; 
 int g_thresh = 16000; 
 float g_gains[32]; //per-channel gains.
+FILE* g_saveFile = 0; 
+bool g_closeSaveFile = false; 
+unsigned int g_saveFileBytes; 
 /* //for s/r 62.5ksps per ch
 float lowpass_coefs[8] = {0.078146,0.156309,1.261974,-0.614587,
 								0.078146,0.156275,0.991706,-0.268803};
@@ -448,6 +451,7 @@ GtkAdjustment* g_channelSpin;
 GtkAdjustment* g_gainSpin; 
 GtkAdjustment* g_thresholdSpin; 
 GtkWidget* g_pktpsLabel;
+GtkWidget* g_fileSizeLabel;
 
 static gboolean
 rotate (gpointer user_data)
@@ -456,17 +460,18 @@ rotate (gpointer user_data)
 
 	gdk_window_invalidate_rect (da->window, &da->allocation, FALSE);
 	gdk_window_process_updates (da->window, FALSE);
-
+	char str[256]; 
 	if(g_headch != g_oldheadch){
-		char str[256]; 
 		printf("g_headch %d\n", g_headch); 
 		snprintf(str, 256, "headch: %d", g_headch); 
 		gtk_label_set_text(GTK_LABEL(g_headchLabel), str); //works!
 		g_oldheadch = g_headch; 
 		//update the packets/sec label too
-		snprintf(str, 256, "pkts/sec: %.2f", (double)g_totalPackets/gettime()); 
+		snprintf(str, 256, " pkts/sec: %.2f", (double)g_totalPackets/gettime()); 
 		gtk_label_set_text(GTK_LABEL(g_pktpsLabel), str); //works!
 	}
+	snprintf(str, 256, "%.2f MB", (double)g_saveFileBytes/1e6); 
+	gtk_label_set_text(GTK_LABEL(g_fileSizeLabel), str);
 	return TRUE;
 }
 
@@ -493,6 +498,7 @@ void updateGain(int chan){
 	chan = chan & 0xf; //map to the lower channels.
 	float gain1 = sqrt(g_gains[chan]);
 	float gain2 = sqrt(g_gains[chan+16]); 
+	float again1, again2; //the actual gains.
 	int indx [] = {0,1,4,5};
 	float b[8]; 
 	int i,j,k; 
@@ -507,12 +513,25 @@ void updateGain(int chan){
 		b[i] = b[i] < -32768.f ? -32768.f : b[i];
 		b[i] = b[i] > 32767.f ? 32767.f : b[i]; 
 	}
-	//now form the 32 bit uints to be written. 
+	//calculate the actual gain. 
+	again1 = 
+		((b[0]/(lowpass_coefs[0]*16384.f) +
+			b[2]/(lowpass_coefs[1]*16384.f))/2.f) * 
+		((b[4]/(lowpass_coefs[4]*16384.f) +
+			b[6]/(lowpass_coefs[5]*16384.f))/2.f); 
+	again2 = 
+		((b[1]/(lowpass_coefs[0]*16384.f) +
+			b[3]/(lowpass_coefs[1]*16384.f))/2.f) * 
+		((b[5]/(lowpass_coefs[4]*16384.f) +
+			b[7]/(lowpass_coefs[5]*16384.f))/2.f); 
+	printf("actual gain ch %d %f ; ch %d %f\n", 
+		   chan, again1, chan+16, again2); 
+	//now form the 4x 32 bit uints to be written. 
 	int indx2[] = {0,1,8,9};
 	unsigned int* ptr = g_sendbuf; 
 	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
 	for(i=0; i<4; i++){
-		ptr[i*2+0] = htonl(0xff904000 + chan*16*4 + indx2[i]*4);
+		ptr[i*2+0] = htonl(0xff904008 + chan*18*4 + indx2[i]*4);
 		j = (int)(b[i*2+0]);
 		k = (int)(b[i*2+1]);
 		u = (unsigned int)((j&0xffff) | ((k&0xffff)<<16)); 
@@ -532,7 +551,7 @@ void setOsc(int chan){
 	unsigned int* ptr = g_sendbuf; 
 	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
 	for(i=0; i<4; i++){
-		ptr[i*2+0] = htonl(0xff904000 + (chan*16 + 3*4 + i)*4);
+		ptr[i*2+0] = htonl(0xff904008 + (chan*18 + 3*4 + i)*4);
 		j = (int)(b[i]);
 		u = (unsigned int)((j&0xffff) | ((j&0xffff)<<16)); 
 		ptr[i*2+1] = htonl(u); 
@@ -552,11 +571,11 @@ void setChan(){
 void setThresh(){
 	int i; 
 	unsigned int* ptr = g_sendbuf; 
-	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
+	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt. (32 byte packets)
 	ptr[0] = htonl(0xff904500 - 24); //frame pointer
 	ptr[1] = htonl(g_thresh/2); //see r4 >>> 1 (v) in radio3.asm
 	for(i=2; i<8; i++){
-		ptr[i] = 0xa5a5a5a5; 
+		ptr[i] = 0xa5b4c3d1; 
 	}
 	g_sendW++; 	
 }
@@ -591,7 +610,7 @@ void setBiquad(int chan, float* biquad, int biquadNum){
 	unsigned int* ptr = g_sendbuf; 
 	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
 	for(i=0; i<4; i++){
-		ptr[i*2+0] = htonl(0xff904000 + (chan*16 + biquadNum*4 +i)*4);
+		ptr[i*2+0] = htonl(0xff904008 + (chan*18 + biquadNum*4 +i)*4);
 		j = (int)(b[i*2+0]);
 		k = (int)(b[i*2+1]);
 		u = (unsigned int)((j&0xffff) | ((k&0xffff)<<16)); 
@@ -628,7 +647,7 @@ void setFlat(int chan){
 }
 void* sock_thread(void* destIP){
 	g_sendL = 0x4000; 
-	g_sendbuf = (unsigned int*)malloc(g_sendL); 
+	g_sendbuf = (unsigned int*)malloc(g_sendL*32); 
 	if(!g_sendbuf){
 		fprintf(stderr, "could not allocate sendbuf\n");
 		return 0;
@@ -652,12 +671,33 @@ void* sock_thread(void* destIP){
 			double rxtime = gettime(); 
 			unsigned int trptr = *((unsigned int*)buf);
 			if(g_out) printf("%d\n", trptr); 
+			
+			if(g_closeSaveFile && g_saveFile){
+				fclose(g_saveFile); 
+				g_saveFile = 0; 
+				g_closeSaveFile = false; 
+				g_saveFileBytes = 0; 
+			}
+			if(g_saveFile){
+				//do the save -- the raw packets!
+				//will have to convert them to another prog later.
+				unsigned int tmp = 0xdecafbad; 
+				fwrite((void*)&tmp, 4, 1, g_saveFile);
+				tmp = 430; //SVN version.
+				tmp <<= 16; 
+				tmp += n; //size of the ensuing packet data. 
+				fwrite((void*)&tmp, 4, 1, g_saveFile);
+				fwrite((void*)&rxtime, 8, 1, g_saveFile); 
+				fwrite((void*)buf,n,1,g_saveFile);
+				g_saveFileBytes += 16 + n; 
+			}
 			char* ptr = buf; 
 			ptr += 4; 
 			n -= 4; 
 			packet* p = (packet*)ptr;
 			int npack = n / 32; 
 			g_totalPackets += npack; 
+			
 			for(int i=0; i<npack && g_pause <=0.0; i++){
 				//see if it exceeded threshold.
 				float z = 0; 
@@ -777,7 +817,7 @@ static gboolean chanscan(gpointer){
 }
 static void channelSpinCB( GtkAdjustment*, gpointer ){
 	int ch = (int)gtk_adjustment_get_value(g_channelSpin); 
-	printf("channelSpinCB: %d\n", ch); 
+	//printf("channelSpinCB: %d\n", ch); 
 	if(ch < 32 && ch >= 0 && ch != g_channel){
 		g_channel = ch; 
 		setChan(); 
@@ -792,6 +832,16 @@ static void gainSpinCB( GtkAdjustment*, gpointer ){
 	snprintf(str, 256, "%d gain: %.2f", g_channel, gain); 
 	gtk_label_set_text(GTK_LABEL(g_gainlabel[g_channel]), str);
 }
+static void gainSetAll(gpointer ){
+	float gain = gtk_adjustment_get_value(g_gainSpin); 
+	for(int i=0; i<32; i++){
+		g_gains[i] = gain;
+		updateGain(i);
+		char str[256]; 
+		snprintf(str, 256, "%d gain: %.2f", i, gain); 
+		gtk_label_set_text(GTK_LABEL(g_gainlabel[i]), str);
+	}
+}
 static void thresholdSpinCB( GtkAdjustment*, gpointer ){
 	g_thresh = gtk_adjustment_get_value(g_thresholdSpin); 
 	printf("thresholdSpinCB: %d\n", g_thresh); 
@@ -805,6 +855,7 @@ static void modeRadioCB(GtkWidget *, gpointer * data){
 static void filterRadioCB(GtkWidget *, gpointer * data){
 	char* ptr = (char*)data; 
 	if(*ptr == 'o') setOsc(g_channel); 
+	else if(*ptr == 'f') setFlat(g_channel); 
 	else resetBiquads(g_channel); 
 }
 static void pauseButtonCB(GtkWidget *button, gpointer * ){
@@ -824,19 +875,47 @@ static void zoomSpinCB( GtkAdjustment* , gpointer p){
 	g_rasterZoom = gtk_adjustment_get_value((GtkAdjustment*)p); 
 	printf("zoomSpinCB: %f\n", g_rasterZoom); 
 }
+static void openSaveFile(gpointer parent_window) {
+	GtkWidget *dialog;
+	dialog = gtk_file_chooser_dialog_new ("Save File",
+						(GtkWindow*)parent_window,
+						GTK_FILE_CHOOSER_ACTION_SAVE,
+						GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+						GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
+						NULL);
+	gtk_file_chooser_set_do_overwrite_confirmation(
+				GTK_FILE_CHOOSER (dialog), TRUE);
+	gtk_file_chooser_set_filename (GTK_FILE_CHOOSER (dialog),"data.bin");
+	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT){
+		char *filename;
+		filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
+		g_closeSaveFile = false; 
+		g_saveFileBytes = 0; 
+		g_saveFile = fopen(filename, "w");
+		g_free (filename);
+	}
+	gtk_widget_destroy (dialog);
+}
+static void closeSaveFile(gpointer) {
+	//have to signal to the other thread, let them close it.
+	g_closeSaveFile = true;
+}
+
 int main (int argn, char **argc)
 {
 	GtkWidget *window;
 	GtkWidget *da1;
 	GdkGLConfig *glconfig;
-	//GtkWidget *table; 
 	GtkWidget *box1, *bx, *label;
 	GtkWidget *modebox;
 	GtkWidget *paned;
+	GtkWidget *frame;
+	GtkWidget *button;
 	//GtkWidget *paned2;
 	int i; 
 	
 	char destIP[256]; 
+	for(i=0;i<256;i++) destIP[i] = 0; 
 	if(argn == 2){
 		strncpy(destIP, argc[1], 255); 
 		destIP[255] = 0; 
@@ -880,12 +959,20 @@ int main (int argn, char **argc)
 		gtk_widget_show (g_gainlabel[i]);
 	}
 	//add in a headstage channel # label
+	bx = gtk_hbox_new (FALSE, 2);
 	g_headchLabel = gtk_label_new ("headch: 0");
 	gtk_misc_set_alignment (GTK_MISC (g_headchLabel), 0, 0);
-	gtk_box_pack_start (GTK_BOX (box1), g_headchLabel, FALSE, FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (bx), g_headchLabel, FALSE, FALSE, 0);
 	gtk_widget_show(g_headchLabel); 
+	//add in a packets/second label
+	g_pktpsLabel = gtk_label_new ("packets/sec");
+	gtk_misc_set_alignment (GTK_MISC (g_pktpsLabel), 0, 0);
+	gtk_box_pack_start (GTK_BOX (bx), g_pktpsLabel, FALSE, FALSE, 0);
+	gtk_widget_show(g_pktpsLabel); 
+	gtk_box_pack_start (GTK_BOX (box1), bx, TRUE, TRUE, 0);
+	
 	//and a channel spinner.
-	bx = gtk_hbox_new (FALSE, 3);
+	bx = gtk_hbox_new (FALSE, 2);
 	label = gtk_label_new ("channel");
 	gtk_box_pack_start (GTK_BOX (bx), label, FALSE, FALSE, 0);
 	gtk_widget_show(label); 
@@ -914,6 +1001,10 @@ int main (int argn, char **argc)
 	g_signal_connect(spinner, "value-changed", 
 					G_CALLBACK(gainSpinCB), GINT_TO_POINTER (1));
 	gtk_widget_show(spinner); 
+	//add a set-all button.
+	button = gtk_button_new_with_label ("Set all");
+	g_signal_connect(button, "clicked", G_CALLBACK (gainSetAll),0);
+	gtk_box_pack_start (GTK_BOX (bx), button, FALSE, FALSE, 0);
 	gtk_box_pack_start (GTK_BOX (box1), bx, TRUE, TRUE, 0);
 	//update labels. 
 	/*for(i=0; i<32; i++){
@@ -935,14 +1026,8 @@ int main (int argn, char **argc)
 	gtk_widget_show(spinner); 
 	gtk_box_pack_start (GTK_BOX (box1), bx, TRUE, TRUE, 0);
 	
-	//add in a packets/second label
-	g_pktpsLabel = gtk_label_new ("packets/sec");
-	gtk_misc_set_alignment (GTK_MISC (g_pktpsLabel), 0, 0);
-	gtk_box_pack_start (GTK_BOX (box1), g_pktpsLabel, FALSE, FALSE, 0);
-	gtk_widget_show(g_pktpsLabel); 
 	
 	//add mode radio buttons
-	GtkWidget *button;
 	GSList *group;
 	modebox = gtk_hbox_new (FALSE, 10);
 	gtk_container_set_border_width (GTK_CONTAINER (modebox), 2);
@@ -964,24 +1049,34 @@ int main (int argn, char **argc)
 		GTK_SIGNAL_FUNC (modeRadioCB), (gpointer) "s");
 		
 	//add osc / reset radio buttons
-	modebox = gtk_hbox_new (FALSE, 10);
+	frame = gtk_frame_new ("filter");
+	gtk_box_pack_start (GTK_BOX (box1), frame, TRUE, TRUE, 0);
+	modebox = gtk_hbox_new (FALSE, 3);
+	gtk_container_add (GTK_CONTAINER (frame), modebox);
 	gtk_container_set_border_width (GTK_CONTAINER (modebox), 2);
-	gtk_box_pack_start (GTK_BOX (box1), modebox, TRUE, TRUE, 0);
 	gtk_widget_show (modebox);
 	
-	button = gtk_radio_button_new_with_label (NULL, "normal filter");
+	button = gtk_radio_button_new_with_label (NULL, "normal");
 	gtk_box_pack_start (GTK_BOX (modebox), button, TRUE, TRUE, 0);
 	gtk_widget_show (button);
 	gtk_signal_connect (GTK_OBJECT (button), "clicked",
 		GTK_SIGNAL_FUNC (filterRadioCB), (gpointer) "n");
 
 	group = gtk_radio_button_get_group (GTK_RADIO_BUTTON (button));
-	button = gtk_radio_button_new_with_label (group, "osc filter");
+	button = gtk_radio_button_new_with_label (group, "osc ");
 	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), FALSE);
 	gtk_box_pack_start (GTK_BOX (modebox), button, TRUE, TRUE, 0);
 	gtk_widget_show (button);
 	gtk_signal_connect (GTK_OBJECT (button), "clicked",
 		GTK_SIGNAL_FUNC (filterRadioCB), (gpointer) "o");
+		
+	 button = gtk_radio_button_new_with_label_from_widget(
+	 	GTK_RADIO_BUTTON (button), "flat");
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), FALSE);
+	gtk_box_pack_start (GTK_BOX (modebox), button, TRUE, TRUE, 0);
+	gtk_widget_show (button);
+	gtk_signal_connect (GTK_OBJECT (button), "clicked",
+		GTK_SIGNAL_FUNC (filterRadioCB), (gpointer) "f");
 		
 	//add a pause / go button.
 	bx = gtk_hbox_new (FALSE, 3);
@@ -1008,6 +1103,21 @@ int main (int argn, char **argc)
 	g_signal_connect(spinner, "value-changed", 
 					G_CALLBACK(zoomSpinCB), (gpointer)adj );
 	gtk_widget_show(spinner); 
+	
+	//and save / stop saving button
+	bx = gtk_hbox_new (FALSE, 3);
+	button = gtk_button_new_with_label ("Record");
+	g_signal_connect(button, "clicked", G_CALLBACK (openSaveFile),
+					 (gpointer*)window);
+	gtk_box_pack_start (GTK_BOX (bx), button, FALSE, FALSE, 0);
+		button = gtk_button_new_with_label ("Stop");
+	g_signal_connect(button, "clicked", G_CALLBACK (closeSaveFile),0);
+	gtk_box_pack_start (GTK_BOX (bx), button, FALSE, FALSE, 0);
+	g_fileSizeLabel = gtk_label_new ("KB");
+	gtk_misc_set_alignment (GTK_MISC (g_fileSizeLabel), 0, 0);
+	gtk_box_pack_start (GTK_BOX (bx), g_fileSizeLabel, FALSE, FALSE, 0);
+	gtk_widget_show(g_fileSizeLabel); 
+	gtk_box_pack_start (GTK_BOX (box1), bx, TRUE, TRUE, 0);
 	
 	//show all.
 	gtk_widget_set_size_request(GTK_WIDGET(box1), 200, 600);
