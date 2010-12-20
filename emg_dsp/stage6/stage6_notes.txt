@@ -240,3 +240,14 @@ December 13 2010 -
 		need a 6.5wh battery, or 1800mah.  This should be possible - cell batteries 
 		can be had in 2200mah size.
 		2200mah will run 6 headstages for a full day, about (excluding conversion efi)
+December 16 2010 -- got the headstage working (apparently) properly @ 80Mhz. 
+	Can save a bit of power at this rate (8mw proc, 6mw ADCs). 
+	So far as I can tell, we don't need the oversampling; the fidelity is
+	limited by the fidelity of the input from the electrodes. 
+	The problem was clocking the SPI port too low (5Mhz); this seems to have
+	cause alignment error when reading packets RXed from the bridge. 
+	Also changed the bridge to reset the RX fifo when sending packets over
+	ethernet. Appears to have made everything more reliable. 
+	* Need to indicate when the gain is saturated.  Seem to occur relatively soonish. 
+December 17 2010 -- The headstage has been separated!  It consumes:
+	15.0ma @ 4.18v = 62.7mw

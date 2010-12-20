@@ -23,5 +23,8 @@ client: $(OBJS)
 gtkclient: $(GOBJS)
 	g++ -o $@ $(GTKLD) $(LDFLAGS) $(GOBJS)
 	
+convert: convert.cpp
+	g++ -o $@ $(CFLAGS) -lmatio convert.cpp
+	
 clean:
-	rm -rf client gtkclient *.o
+	rm -rf client gtkclient convert *.o
