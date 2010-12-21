@@ -993,7 +993,7 @@ int main (int argn, char **argc)
 	label = gtk_label_new ("gain");
 	gtk_box_pack_start (GTK_BOX (bx), label, FALSE, FALSE, 0);
 	gtk_widget_show(label); 
-	g_gainSpin = (GtkAdjustment *)gtk_adjustment_new(100.0, 
+	g_gainSpin = (GtkAdjustment *)gtk_adjustment_new(30.0, 
 		0.0, 10000.0, 1.0, 100.0, 0.0);
 	spinner = gtk_spin_button_new (g_gainSpin, 0, 0);
 	gtk_spin_button_set_wrap (GTK_SPIN_BUTTON (spinner), FALSE);
