@@ -325,8 +325,8 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 	/*printf("allocation.width %d allocation_height %d\n", 
 		da->allocation.width, da->allocation.height); */
 	glOrtho (-1,1,-1,1,0,1);
-	glEnable (GL_BLEND);
-	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	//glScalef (10., 10., 10.); //this nixes glOrtho above.
 	if(!g_vbo1Init){ //start it up!
@@ -421,7 +421,7 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 				g_wbuf[k][(i*34+j)*3 + 1] = 0.f; //y
 				g_wbuf[k][(i*34+j)*3 + 2] = 0.f; //time!
 				for(j=1; j<33; j++){
-					g_wbuf[k][(i*34+j)*3 + 0] = (float)(j-1)/32.f; 
+					g_wbuf[k][(i*34+j)*3 + 0] = (float)(j-1)/31.f; 
 					g_wbuf[k][(i*34+j)*3 + 1] = 
 						sinf((float)j/2.f + (float)i/1.2345296); 
 					g_wbuf[k][(i*34+j)*3 + 2] = 0.f;

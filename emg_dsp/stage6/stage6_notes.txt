@@ -251,3 +251,32 @@ December 16 2010 -- got the headstage working (apparently) properly @ 80Mhz.
 	* Need to indicate when the gain is saturated.  Seem to occur relatively soonish. 
 December 17 2010 -- The headstage has been separated!  It consumes:
 	15.0ma @ 4.18v = 62.7mw
+December 21 2010 --tested the headstage in mango, RHA2.
+	It worked, but! :
+	* The splitter did not work, at least not obviously.  With the headstage
+		plugged directly into the short jumper, got spikes on the 
+		expected channel (4)
+		Nonetheless, need to verify channel correspondence. 
+	* The client has a tendency to quantize waveforms: that is, it holds 
+		samples so that you get flat plateus in the WF view.  
+		I've never seen this on the other computer; might be 
+		a hardware problem? 
+		Problem resolves after turning it off & restarting it. 
+	* Need to see threshold in waveform view. 
+	* PCB makes it difficult to insert directly.  Need a direct edge connector, 
+		with an appropriately thinner PCB. 
+	* Periodic noise on many channels. 
+		Tested in matlab: noise has many many harmonics at 145Hz, which 
+		is exactly the frequency of the radio.  
+		Hence, must be either the radio or the serial bus controlling it. 
+		(Last time it was, or appeared to be, the serial bus...hmm)
+	* Movement artifact still gets through, but this is unespected, since 
+		there are no ground loops!  Is this through the jumper wires? 
+		Some grounding / referencing issue?  hm. 
+	* Need to be able to negative-side thresholding.  
+		Just set a negative gain. 
+	* Possibly need antenna diversity, or circularly polarized antennas. 
+		In some head orientations, most packets were dropped. 
+	* Recorded 3-10MB for each channel, including the best channel (4). 
+		Was not able to compare against plexon in this case. 
+	* Power cable is weak, need something better, more robust. 
