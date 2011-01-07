@@ -280,3 +280,46 @@ December 21 2010 --tested the headstage in mango, RHA2.
 	* Recorded 3-10MB for each channel, including the best channel (4). 
 		Was not able to compare against plexon in this case. 
 	* Power cable is weak, need something better, more robust. 
+January 7 2011 
+	Looking at the noise issue - is it the radio, or is it the serial bus? 
+	Tried putting a 0.1uf cap on R138 - 7.5K bandwidth setting resistor. 
+	Did not seem to change much, or at least did not eliminate the problem.
+		(That said, the resistor still should be further away from SCK!)
+	Channel 17, in particular, seems quite bad. 
+	apparent channel mapping: (tester -> headstage 001)
+	1	0
+	2	off
+	3	14
+	4	off
+	5	12
+	6	11
+	7	10
+	8	9
+	9	8
+	10	7
+	11	6
+	12	5
+	13	4
+	14	3
+	15	2
+	16	1
+	17	off
+	18	18
+	19	19
+	... all between work.
+	31	31
+	32	16
+	* When I stuck a small antenna into Ch 27 on the tester board, the noise did
+		not appreciably increase, even if the antenna was pushed close to the 
+		TX antenna.  Hmm. Add this to the fact that ch17 - open circuit - is the 
+		worst, and I wonder if it's RF or something else. 
+		Short out input stage, and some of the normal noise goes away.
+		Perhaps the ADC is being influenced by the radio or serial bus? 
+	* Tested with Misha the wireless headstage next to the wired headstage
+		(plugged into the rest of plexon, of course)
+		it **does** induce frame-frequency (137Hz) noise!
+		but only if i am holding it - only if my body is part of the antenna.
+		If I plug it into a neighboring omnetics, there is a lot of induced 
+		noise -- but, when I release the wireless headstage, this too disappears. 
+		During this time I'm not grounded; hence must be acting as an antenna. 
+		Perhaps there is coupling through the ground planes? 
