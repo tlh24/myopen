@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Tue 11 Jan 2011 06:18:08 PM EST
+EESchema Schematic File Version 2  date Thu 13 Jan 2011 05:07:27 PM EST
 LIBS:power
 LIBS:device
 LIBS:emg_sym
@@ -9,7 +9,7 @@ EELAYER END
 $Descr User 16000 12000
 Sheet 1 5
 Title "Stage 4 / Copyright 2010 Timothy L Hanson "
-Date "11 jan 2011"
+Date "13 jan 2011"
 Rev ""
 Comp "This design is free: redistribute or modify under the GPL v. 3 or later"
 Comment1 ""
@@ -17,6 +17,8 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
+Connection ~ 3750 1650
+Connection ~ 3750 1500
 Text Notes 4750 4800 0    60   ~ 0
 high-speed serial output
 Wire Wire Line
