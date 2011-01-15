@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Thu 13 Jan 2011 05:07:27 PM EST
+EESchema Schematic File Version 2  date Fri 14 Jan 2011 08:05:08 PM EST
 LIBS:power
 LIBS:device
 LIBS:emg_sym
@@ -9,7 +9,7 @@ EELAYER END
 $Descr User 16000 12000
 Sheet 4 5
 Title "Stage 4 / Copyright 2010 Timothy L Hanson "
-Date "13 jan 2011"
+Date "15 jan 2011"
 Rev ""
 Comp "This design is free: redistribute or modify under the GPL v. 3 or later"
 Comment1 ""
@@ -28,53 +28,53 @@ reset-l
 Text Label 8600 3700 0    60   ~ 0
 step-l
 $Comp
-L GND #PWR?
+L GND #PWR0145
 U 1 1 4D2CECED
 P 8850 3000
-AR Path="/4D2BA3AC/4D2CECED" Ref="#PWR?"  Part="1" 
-AR Path="/4D2BA3F8/4D2CECED" Ref="#PWR?"  Part="1" 
-AR Path="/4D2BA404/4D2CECED" Ref="#PWR?"  Part="1" 
-AR Path="/4D2BA401/4D2CECED" Ref="#PWR?"  Part="1" 
-F 0 "#PWR?" H 8850 3000 30  0001 C CNN
+AR Path="/4D2BA3AC/4D2CECED" Ref="#PWR0145"  Part="1" 
+AR Path="/4D2BA3F8/4D2CECED" Ref="#PWR0120"  Part="1" 
+AR Path="/4D2BA404/4D2CECED" Ref="#PWR070"  Part="1" 
+AR Path="/4D2BA401/4D2CECED" Ref="#PWR095"  Part="1" 
+F 0 "#PWR0120" H 8850 3000 30  0001 C CNN
 F 1 "GND" H 8850 2930 30  0001 C CNN
 	1    8850 3000
 	0    -1   -1   0   
 $EndComp
 $Comp
-L GND #PWR?
+L GND #PWR0146
 U 1 1 4D2CECEC
 P 8850 3600
-AR Path="/4D2BA3AC/4D2CECEC" Ref="#PWR?"  Part="1" 
-AR Path="/4D2BA3F8/4D2CECEC" Ref="#PWR?"  Part="1" 
-AR Path="/4D2BA404/4D2CECEC" Ref="#PWR?"  Part="1" 
-AR Path="/4D2BA401/4D2CECEC" Ref="#PWR?"  Part="1" 
-F 0 "#PWR?" H 8850 3600 30  0001 C CNN
+AR Path="/4D2BA3AC/4D2CECEC" Ref="#PWR0146"  Part="1" 
+AR Path="/4D2BA3F8/4D2CECEC" Ref="#PWR0121"  Part="1" 
+AR Path="/4D2BA404/4D2CECEC" Ref="#PWR071"  Part="1" 
+AR Path="/4D2BA401/4D2CECEC" Ref="#PWR096"  Part="1" 
+F 0 "#PWR0121" H 8850 3600 30  0001 C CNN
 F 1 "GND" H 8850 3530 30  0001 C CNN
 	1    8850 3600
 	0    -1   -1   0   
 $EndComp
 $Comp
-L VEE #PWR?
+L VEE #PWR95
 U 1 1 4D2CECEB
 P 8600 2900
-AR Path="/4D2BA3AC/4D2CECEB" Ref="#PWR?"  Part="1" 
-AR Path="/4D2BA3F8/4D2CECEB" Ref="#PWR?"  Part="1" 
-AR Path="/4D2BA404/4D2CECEB" Ref="#PWR?"  Part="1" 
-AR Path="/4D2BA401/4D2CECEB" Ref="#PWR?"  Part="1" 
-F 0 "#PWR?" H 8600 3100 40  0001 C CNN
+AR Path="/4D2BA3AC/4D2CECEB" Ref="#PWR95"  Part="1" 
+AR Path="/4D2BA3F8/4D2CECEB" Ref="#PWR124"  Part="1" 
+AR Path="/4D2BA404/4D2CECEB" Ref="#PWR182"  Part="1" 
+AR Path="/4D2BA401/4D2CECEB" Ref="#PWR153"  Part="1" 
+F 0 "#PWR124" H 8600 3100 40  0001 C CNN
 F 1 "VEE" H 8600 3050 40  0000 C CNN
 	1    8600 2900
 	0    1    1    0   
 $EndComp
 $Comp
-L GND #PWR?
+L GND #PWR0147
 U 1 1 4D2CECEA
 P 8850 3300
-AR Path="/4D2BA3AC/4D2CECEA" Ref="#PWR?"  Part="1" 
-AR Path="/4D2BA3F8/4D2CECEA" Ref="#PWR?"  Part="1" 
-AR Path="/4D2BA404/4D2CECEA" Ref="#PWR?"  Part="1" 
-AR Path="/4D2BA401/4D2CECEA" Ref="#PWR?"  Part="1" 
-F 0 "#PWR?" H 8850 3300 30  0001 C CNN
+AR Path="/4D2BA3AC/4D2CECEA" Ref="#PWR0147"  Part="1" 
+AR Path="/4D2BA3F8/4D2CECEA" Ref="#PWR0122"  Part="1" 
+AR Path="/4D2BA404/4D2CECEA" Ref="#PWR072"  Part="1" 
+AR Path="/4D2BA401/4D2CECEA" Ref="#PWR097"  Part="1" 
+F 0 "#PWR0122" H 8850 3300 30  0001 C CNN
 F 1 "GND" H 8850 3230 30  0001 C CNN
 	1    8850 3300
 	0    -1   -1   0   
