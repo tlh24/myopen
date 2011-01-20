@@ -318,8 +318,51 @@ January 7 2011
 	* Tested with Misha the wireless headstage next to the wired headstage
 		(plugged into the rest of plexon, of course)
 		it **does** induce frame-frequency (137Hz) noise!
-		but only if i am holding it - only if my body is part of the antenna.
+			but only if i am holding it.  
 		If I plug it into a neighboring omnetics, there is a lot of induced 
-		noise -- but, when I release the wireless headstage, this too disappears. 
+		noise -- yet, when I release the wireless headstage, this too disappears. 
 		During this time I'm not grounded; hence must be acting as an antenna. 
 		Perhaps there is coupling through the ground planes? 
+	* If i were to do 64 ch / headstage, seperated -- need the following signals
+		GND, VEE, Vdd, reset, step, FS, CLK, Data[0..3]
+		so, 7 signals common, 2 data per 32 channels. edge flexi connectors? 
+		might be able to run the intan from 2.7V.. ? hm. probably not worth it. 
+		cannot run more - the blackfin has only 2 SPORTS, supporting 4 ADCs. 
+		If i use a BF-538, can do 128 channels. 
+January 10 2011
+	* (Continuing the thought above) -- a better paln is to have one blackfin + 
+		radio, BF532 known and loved, intan RHA2132, 1 ADC per 32 channels, 4 sports. 
+		Then need 8 wires per digitizing headstage, so can have 2 grounds with 9-pin
+		omnetics. put them on either side - good. 
+	* This would necessitate a different packet pattern - just threshold crossing
+		would consume 128 bits = 16 bytes, or half the packet. 
+		Currently running 32 channels at 31ksps works fine with a clock of 80Mhz; 
+		presumably would need 3-4x the power to process 128 channels. 
+		possibly more, if we need to check more condition registers; the asm 
+		will be more complicated. ugh, more debugging.
+		presumably would want to stream more than one channel then; more comparisons; 
+		possibility of selecting how many? with a bit field? 
+		but then we don't get packets at a regular rate. hm, bad.
+		Minimum: want threshold crossings every 1ms. 
+		Want to frame the packets into groups of 8, at whatever rate needed. 
+		If we were to transmit 4 continuous channels, would not need to transmit
+		threshold crossings every time, or not the whole threshold crossing. 
+		Possibly a simple way of doing it would be to make 1 packet per group of 32 
+		channels, and have the same channel active on all 4 digitizing headstages. 
+		The radio would be much more used then - currently in use for 1.5ms out of 
+		a 137Hz frame rate = 7.3ms.  Quadrupling the bandwidth means that we'd 
+		want to do frames of 16 packets - still within the nordic's spec - 
+		so 3ms frames in 3.65ms frames. should be sufficient rest. 
+		This will also be better use of wireless bandwidth -- good. 
+		Can put the switchmode converter by the proc - also good, the wires tend to break.
+		Seems like we need to put the proc at 320Mhz - presently using ~1.6us of 2us. 
+		Extrapolating, thats 800ns / 1us @ 160Mhz, 64 channels sampled at
+		1.066us / 1us @ 240Mhz, 128 channels. might - just might - be able to make it, 
+		provided data parallelism can be exploited.
+		320Mhz probably requries a core voltage of 0.9 or 1.0V - more power. 
+		The present proc uses 17mw - nothing! ; 
+		According to the analog devices data, a 300mhz BF532 consumes 63.5mA from 0.85V
+		supply; this is 54mw.  Assuming local linearity, that's about 57mw at 320Mhz.
+		+ about 7ma leak = 63mw ;; 17*4 = 68mw.  So, a wash.  
+		Less space consumed though.
+		Also, actual current consumption is less than the Analog Devices data suggests.

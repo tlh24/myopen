@@ -245,6 +245,42 @@ int main(void){
 	*pPORTGIO_DIR |= SPI_FLASH; 
 	*pPORTG_FER &= (0xffff ^ SPI_FLASH); 
 	
+	*pPORTFIO_DIR |= 0x3800; 
+	*pPORTFIO_INEN &= (0xffff ^ 0x3800);
+	*pPORTF_FER |= 0x3800; 
+	*pPORTF_MUX &= (0xffff & 0x03c0); 
+	*pPORTF_MUX |= 0x0140; 
+	*pSPORT1_TCLKDIV = 62 ; //125Mhz / 125 = 1M / 25 = 40k / 2 = 20 ksps/ch
+	*pSPORT1_TFSDIV = 24 ; //25 clocks between assertions of the frame sync
+	*pSPORT1_TCR2 = 23; //word length 24, secondary disabled. 
+	// TCR = 0100 0110 0000 0011
+	*pSPORT1_TCR1 = 0x4e03 ; 
+	int j, k, m; 
+	i = j = k = m = 0; 
+	int freqs[] = {240, 400, 300, 180};
+	while(1){
+		while(*pSPORT1_STAT & TXF){
+			asm volatile("nop; nop; nop; nop"); 
+		}
+		//channel 1 (stereo DAC)
+		*pSPORT1_TX = (i | (0x3 << 19) | (0x0 << 16));
+		while(*pSPORT1_STAT & TXF){
+			asm volatile("nop; nop; nop; nop"); 
+		}
+		//channel 2
+		*pSPORT1_TX = (j | (0x3 << 19) | (0x1 << 16));
+		i += freqs[m]; 
+		i &= 0xffff; 
+		j += freqs[m]+1; 
+		j &= 0xffff; 
+		k++; 
+		if( k > 50000){
+			k = 0; 
+			m ++; 
+			m &= 3; 
+		}
+	}
+	
 	//write out data.
 	#define UDP_PACKET_SIZE 256
 	int prevtime = 0;
