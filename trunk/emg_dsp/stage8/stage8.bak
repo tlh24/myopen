@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Mon 17 Jan 2011 04:11:16 PM EST
+EESchema Schematic File Version 2  date Mon 17 Jan 2011 04:11:49 PM EST
 LIBS:power
 LIBS:device
 LIBS:emg_sym
@@ -571,10 +571,10 @@ Wire Wire Line
 Wire Wire Line
 	6900 9300 6900 9250
 $Comp
-L VEE #PWR?
+L VEE #PWR9
 U 1 1 4D34B06F
 P 3650 8050
-F 0 "#PWR?" H 3650 8250 40  0001 C CNN
+F 0 "#PWR9" H 3650 8250 40  0001 C CNN
 F 1 "VEE" H 3650 8200 40  0000 C CNN
 	1    3650 8050
 	1    0    0    -1  
