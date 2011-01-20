@@ -152,15 +152,16 @@ int main() {
 	}
 	printf_str("memory check done.\n"); 
 	
-	//test out some floating point ... 
-	/*
-	float a = 1.3450693; 
-	for(i=0; i<120; i++){
-		a = a*a; 
-		if(a > 20.0) a /= 10.0; 
-	}
-	printf_hex("float, hex:", (int)a);
-	*/
+	//test out the audio out DAC.
+	//better to do this now before we spin another board!
+	*pSPORT1_TCLKDIV = 124 ; //125Mhz / 125 = 1M / 25clks = 40k 
+	*pSPORT1_TFSDIV = 24 ; //25 clocks between assertions of the frame sync
+	*pSPORT1_TCR2 = 23; //word length 24, secondary disabled. 
+	// TCR = 0010 1110 0000 0011
+	*pSPORT1_TCR1 = 0x4d03 ; 
+	i = 0; 
+	int j = 0; 
+	
 	usb_init(); 
 	int etherr = bfin_EMAC_init(); 
 	if(!etherr) DHCP_req();  //want to be able to turn this one off, if we need to operate with APL & XPC stuff.
