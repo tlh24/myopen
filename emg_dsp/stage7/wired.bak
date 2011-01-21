@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Thu 20 Jan 2011 03:39:09 PM EST
+EESchema Schematic File Version 2  date Fri 21 Jan 2011 04:03:16 PM EST
 LIBS:power
 LIBS:device
 LIBS:emg_sym
@@ -9,7 +9,7 @@ EELAYER END
 $Descr User 16000 12000
 Sheet 2 19
 Title "Stage 4 / Copyright 2010 Timothy L Hanson "
-Date "20 jan 2011"
+Date "21 jan 2011"
 Rev ""
 Comp "This design is free: redistribute or modify under the GPL v. 3 or later"
 Comment1 ""
@@ -76,7 +76,6 @@ Wire Wire Line
 	9050 5750 10000 5750
 Wire Wire Line
 	11600 3150 11600 2800
-Connection ~ 6650 3650
 Wire Wire Line
 	6650 3550 6650 4300
 Connection ~ 7050 3950
@@ -253,7 +252,7 @@ U 1 1 4D3895A0
 P 9000 4100
 F 0 "U?" H 9000 3600 60  0000 C CNN
 F 1 "LT1721" H 9000 4550 60  0000 C CNN
-F 2 "SSOP-16" H 8940 3540 60  0000 C CNN
+F 2 "SOIC-16" H 8940 3540 60  0000 C CNN
 	1    9000 4100
 	1    0    0    -1  
 $EndComp
