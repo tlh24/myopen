@@ -1,4 +1,4 @@
-# EESchema Netlist Version 1.1 created  Fri 21 Jan 2011 07:08:13 PM EST
+# EESchema Netlist Version 1.1 created  Mon 24 Jan 2011 02:27:57 PM EST
 (
  ( /4D389D28 0402  R49 130 {Lib=R}
   (    1 N-000161 )
@@ -6,7 +6,7 @@
  )
  ( /4D389D25 0402  R48 130 {Lib=R}
   (    1 N-000160 )
-  (    2 /wired/TFS0 )
+  (    2 /RFS0 )
  )
  ( /4D389D22 0402  R47 130 {Lib=R}
   (    1 N-000159 )
@@ -14,7 +14,7 @@
  )
  ( /4D389D1F 0402  R46 130 {Lib=R}
   (    1 N-000158 )
-  (    2 /DR0PRI )
+  (    2 /wired/DT0PRI )
  )
  ( /4D389CFC 0402  R45 130 {Lib=R}
   (    1 N-000139 )
@@ -564,8 +564,8 @@
   (   B1 /DR0SEC )
   (   C1 /NRF_IRQ1 )
   (   D1 /NRF_IRQ0 )
-  (   E1 /wired/TFS0 )
-  (   F1 /DR0PRI )
+  (   E1 /RFS0 )
+  (   F1 /wired/DT0PRI )
   (   G1 /PHYINT )
   (   H1 ? )
   (   J1 ? )
@@ -1238,38 +1238,38 @@
   (    4 GND )
  )
  ( /4D360BDA/4D3897A9 0402  C92 2.2uf {Lib=C}
-  (    1 N-000365 )
+  (    1 N-000358 )
   (    2 /wired/V0b )
  )
  ( /4D360BDA/4D38973E 0402  R87 94k {Lib=R}
-  (    1 N-000365 )
+  (    1 N-000358 )
   (    2 ? )
  )
  ( /4D360BDA/4D3896D7 0402  R86 22k {Lib=R}
   (    1 /wired/V0b )
-  (    2 N-000365 )
+  (    2 N-000358 )
  )
  ( /4D360BDA/4D3895B6 0402  C99 0.1uf {Lib=C}
   (    1 /wired/V0b )
   (    2 /wired/V3C )
  )
  ( /4D360BDA/4D3895A0 SOIC-16  U44 LT1721 {Lib=LT1721}
-  (    1 N-000365 )
-  (    2 N-000362 )
+  (    1 N-000358 )
+  (    2 N-000355 )
   (    3 /wired/V0b )
-  (    4 N-000359 )
-  (    5 N-000358 )
+  (    4 N-000352 )
+  (    5 N-000351 )
   (    6 /wired/V0b )
-  (    7 N-000361 )
-  (    8 N-000365 )
-  (    9 N-000365 )
-  (   10 N-000360 )
+  (    7 N-000354 )
+  (    8 N-000358 )
+  (    9 N-000358 )
+  (   10 N-000353 )
   (   11 /wired/V3C )
-  (   12 N-000357 )
-  (   13 N-000356 )
+  (   12 N-000350 )
+  (   13 N-000349 )
   (   14 /wired/V3C )
-  (   15 N-000364 )
-  (   16 N-000365 )
+  (   15 N-000357 )
+  (   16 N-000358 )
  )
  ( /4D360BDA/4D360B24 0603  C100 10uf {Lib=C}
   (    1 VEE )
@@ -1281,42 +1281,42 @@
  )
  ( /4D360BDA/4D360A45 0402  R82 200 {Lib=R}
   (    1 /wired/V0b )
-  (    2 N-000362 )
+  (    2 N-000355 )
  )
  ( /4D360BDA/4D360A27 0402  R83 200 {Lib=R}
   (    1 /wired/V0b )
-  (    2 N-000361 )
+  (    2 N-000354 )
  )
  ( /4D360BDA/4D360A22 0402  R84 200 {Lib=R}
   (    1 /wired/V0b )
-  (    2 N-000360 )
+  (    2 N-000353 )
  )
  ( /4D360BDA/4D360904 omnetics_9  U43 9X100 {Lib=9X100}
   (    1 /wired/V5b )
-  (    2 N-000364 )
+  (    2 N-000357 )
   (    3 /wired/V0b )
-  (    4 N-000360 )
+  (    4 N-000353 )
   (    5 /wired/V0b )
-  (    6 N-000361 )
+  (    6 N-000354 )
   (    7 /wired/V0b )
-  (    8 N-000362 )
+  (    8 N-000355 )
   (    9 /wired/V5b )
  )
  ( /4D360BDA/4C9B7F27 SOIC-16  U47 IL715-3 {Lib=ADUM2400}
   (    1 /wired/V3C )
   (    2 /wired/V0b )
-  (    3 N-000359 )
-  (    4 N-000358 )
-  (    5 N-000357 )
-  (    6 N-000356 )
+  (    3 N-000352 )
+  (    4 N-000351 )
+  (    5 N-000350 )
+  (    6 N-000349 )
   (    7 ? )
   (    8 /wired/V0b )
   (    9 GND )
   (   10 GND )
   (   11 /RSCLK0 )
-  (   12 /wired/TFS0 )
+  (   12 /RFS0 )
   (   13 /DR0SEC )
-  (   14 /DR0PRI )
+  (   14 /wired/DT0PRI )
   (   15 GND )
   (   16 VDD )
  )
@@ -1358,192 +1358,192 @@
  )
  ( /4D360BDA/4C9ACC87 0402  R85 200 {Lib=R}
   (    1 /wired/V0b )
-  (    2 N-000364 )
+  (    2 N-000357 )
  )
  ( /4D2F608C/4D3A0C8D 0402  R81 33 {Lib=R}
-  (    1 /stim15/VBAT )
-  (    2 N-000349 )
+  (    1 /stim_all/stim7/BATTERY )
+  (    2 N-000347 )
  )
  ( /4D2F608C/4D3A0B9D SOT-23  D19 D {Lib=D}
-  (    1 N-000348 )
-  (    3 N-000349 )
+  (    1 N-000338 )
+  (    3 N-000347 )
  )
  ( /4D2F608C/4D3A0B68 SOT-23  D18 D {Lib=D}
-  (    1 N-000345 )
-  (    3 N-000348 )
+  (    1 N-000340 )
+  (    3 N-000338 )
  )
  ( /4D2F608C/4D3A0B5C 0603  D17 LED {Lib=LED}
-  (    1 N-000346 )
-  (    2 N-000345 )
+  (    1 /stim_all/stim7/BATTERY )
+  (    2 N-000340 )
  )
  ( /4D2F608C/4D3A0AF2 2917  C73 200uf {Lib=C}
-  (    1 N-000346 )
-  (    2 /stim15/VBAT )
+  (    1 /stim_all/stim7/BATTERY )
+  (    2 /stim_all/stim7/BATTERY )
  )
  ( /4D2F608C/4D3A0AD0 GT12MABE  U34 GT12MABE {Lib=GT12MABE}
-  (    1 N-000346 )
+  (    1 /stim_all/stim7/BATTERY )
   (    2 ? )
-  (    3 N-000347 )
+  (    3 N-000339 )
   (    4 ? )
   (    5 ? )
  )
  ( /4D2F608C/4D3A0A60 18650-holder  BT1 BATTERY {Lib=BATTERY}
-  (    1 N-000347 )
-  (    2 /stim15/VBAT )
+  (    1 N-000339 )
+  (    2 /stim_all/stim7/BATTERY )
  )
  ( /4D2F608C/4CFFFAD4 SC-70-6  U32 MCP4017 {Lib=MCP4017}
-  (    1 /stim15/VBAT )
-  (    2 /stim15/VBAT )
-  (    3 /stim15/SCL )
-  (    4 /stim15/SDA )
-  (    5 /stim15/VBAT )
-  (    6 /stim15/Vfb )
+  (    1 /stim_all/stim7/BATTERY )
+  (    2 /stim_all/stim7/BATTERY )
+  (    3 /stim_all/SCL )
+  (    4 /stim_all/SDA )
+  (    5 /stim_all/stim7/BATTERY )
+  (    6 /stim_all/Vfb )
  )
  ( /4D2F608C/4D39EA40 0402  C83 33pf {Lib=C}
-  (    1 /stim15/c8 )
+  (    1 /stim_all/c8 )
   (    2 GND )
  )
  ( /4D2F608C/4D39EA0B 0402  C82 33pf {Lib=C}
-  (    1 /stim15/d8 )
+  (    1 /stim_all/d8 )
   (    2 GND )
  )
  ( /4D2F608C/4D07DFE0 SOIC-16  U39 IL715-3 {Lib=ADUM2400}
   (    1 VEE )
   (    2 GND )
-  (    3 /stim15/c1 )
-  (    4 /stim15/d1 )
-  (    5 /stim15/c2 )
-  (    6 /stim15/d2 )
+  (    3 /stim_all/c1 )
+  (    4 /stim_all/d1 )
+  (    5 /stim_all/c2 )
+  (    6 /stim_all/d2 )
   (    7 ? )
   (    8 GND )
-  (    9 N-000272 )
+  (    9 /stim_all/stim7/BATTERY )
   (   10 VDD )
-  (   11 /stim15/ca10 )
-  (   12 /stim15/an10 )
-  (   13 /stim15/stim9/CATHO )
-  (   14 /stim15/stim9/ANO )
-  (   15 N-000272 )
-  (   16 VDD )
+  (   11 /stim_all/stim10/CATHO )
+  (   12 /stim_all/stim10/ANO )
+  (   13 /stim_all/ca9 )
+  (   14 /stim_all/an9 )
+  (   15 /stim_all/stim7/BATTERY )
+  (   16 /stim_all/stim7/BATTERY )
  )
  ( /4D2F608C/4D07DFDF SOIC-16  U40 IL715-3 {Lib=ADUM2400}
   (    1 VEE )
   (    2 GND )
-  (    3 /stim15/c3 )
-  (    4 /stim15/d3 )
-  (    5 /stim15/c4 )
-  (    6 /stim15/d4 )
+  (    3 /stim_all/c3 )
+  (    4 /stim_all/d3 )
+  (    5 /stim_all/c4 )
+  (    6 /stim_all/d4 )
   (    7 ? )
   (    8 GND )
-  (    9 N-000328 )
+  (    9 /stim_all/stim7/BATTERY )
   (   10 VDD )
-  (   11 /stim15/stim12/CATHO )
-  (   12 /stim15/stim12/ANO )
-  (   13 /stim15/stim11/CATHO )
-  (   14 /stim15/an11 )
-  (   15 N-000328 )
-  (   16 VDD )
+  (   11 /stim_all/stim12/CATHO )
+  (   12 /stim_all/an12 )
+  (   13 /stim_all/stim11/CATHO )
+  (   14 /stim_all/an11 )
+  (   15 /stim_all/stim7/BATTERY )
+  (   16 /stim_all/stim7/BATTERY )
  )
  ( /4D2F608C/4D07DFDE SOIC-16  U42 IL715-3 {Lib=ADUM2400}
   (    1 VEE )
   (    2 GND )
-  (    3 /stim15/c7 )
-  (    4 /stim15/d7 )
-  (    5 /stim15/c8 )
-  (    6 /stim15/d8 )
+  (    3 /stim_all/c7 )
+  (    4 /stim_all/d7 )
+  (    5 /stim_all/c8 )
+  (    6 /stim_all/d8 )
   (    7 ? )
   (    8 GND )
-  (    9 N-000296 )
+  (    9 /stim_all/stim7/BATTERY )
   (   10 VDD )
-  (   11 /stim15/SCL )
-  (   12 /stim15/SDA )
-  (   13 /stim15/stim15/CATHO )
-  (   14 /stim15/stim15/ANO )
-  (   15 N-000296 )
-  (   16 VDD )
+  (   11 /stim_all/SCL )
+  (   12 /stim_all/SDA )
+  (   13 /stim_all/ca15 )
+  (   14 /stim_all/an15 )
+  (   15 /stim_all/stim7/BATTERY )
+  (   16 /stim_all/stim7/BATTERY )
  )
  ( /4D2F608C/4D07DFDD SOIC-16  U41 IL715-3 {Lib=ADUM2400}
   (    1 VEE )
   (    2 GND )
-  (    3 /stim15/c5 )
-  (    4 /stim15/d5 )
-  (    5 /stim15/c6 )
-  (    6 /stim15/d6 )
+  (    3 /stim_all/c5 )
+  (    4 /stim_all/d5 )
+  (    5 /stim_all/c6 )
+  (    6 /stim_all/d6 )
   (    7 ? )
   (    8 GND )
-  (    9 N-000330 )
+  (    9 /stim_all/stim7/BATTERY )
   (   10 VDD )
-  (   11 /stim15/stim14/CATHO )
-  (   12 /stim15/an14 )
-  (   13 /stim15/ca13 )
-  (   14 /stim15/an13 )
-  (   15 N-000330 )
-  (   16 VDD )
+  (   11 /stim_all/ca14 )
+  (   12 /stim_all/stim14/ANO )
+  (   13 /stim_all/stim13/CATHO )
+  (   14 /stim_all/stim13/ANO )
+  (   15 /stim_all/stim7/BATTERY )
+  (   16 /stim_all/stim7/BATTERY )
  )
  ( /4D2F608C/4D07DFD3 SOIC-16  U37 IL715-3 {Lib=ADUM2400}
   (    1 VEE )
   (    2 GND )
-  (    3 /stim15/a5 )
-  (    4 /stim15/b5 )
-  (    5 /stim15/a6 )
-  (    6 /stim15/b6 )
+  (    3 /stim_all/a5 )
+  (    4 /stim_all/b5 )
+  (    5 /stim_all/a6 )
+  (    6 /stim_all/b6 )
   (    7 ? )
   (    8 GND )
-  (    9 N-000286 )
+  (    9 /stim_all/stim7/BATTERY )
   (   10 VDD )
-  (   11 /stim15/stim6/CATHO )
-  (   12 /stim15/an6 )
-  (   13 /stim15/stim5/CATHO )
-  (   14 /stim15/an5 )
-  (   15 N-000286 )
-  (   16 VDD )
+  (   11 /stim_all/stim6/CATHO )
+  (   12 /stim_all/stim6/ANO )
+  (   13 /stim_all/ca5 )
+  (   14 /stim_all/an5 )
+  (   15 /stim_all/stim7/BATTERY )
+  (   16 /stim_all/stim7/BATTERY )
  )
  ( /4D2F608C/4D07DFD2 SOIC-16  U38 IL715-3 {Lib=ADUM2400}
   (    1 VEE )
   (    2 GND )
-  (    3 /stim15/a7 )
-  (    4 /stim15/b7 )
-  (    5 /stim15/a8 )
-  (    6 /stim15/b8 )
+  (    3 /stim_all/a7 )
+  (    4 /stim_all/b7 )
+  (    5 /stim_all/a8 )
+  (    6 /stim_all/b8 )
   (    7 ? )
   (    8 GND )
-  (    9 N-000331 )
+  (    9 /stim_all/stim7/BATTERY )
   (   10 VDD )
-  (   11 /stim15/stim8/CATHO )
-  (   12 /stim15/an8 )
-  (   13 /stim15/ca7 )
-  (   14 /stim15/an7 )
-  (   15 N-000331 )
-  (   16 VDD )
+  (   11 /stim_all/ca8 )
+  (   12 /stim_all/an8 )
+  (   13 /stim_all/ca7 )
+  (   14 /stim_all/an7 )
+  (   15 /stim_all/stim7/BATTERY )
+  (   16 /stim_all/stim7/BATTERY )
  )
  ( /4D2F608C/4D07DFC9 SOIC-16  U36 IL715-3 {Lib=ADUM2400}
   (    1 VEE )
   (    2 GND )
-  (    3 /stim15/a3 )
-  (    4 /stim15/b3 )
-  (    5 /stim15/a4 )
-  (    6 /stim15/b4 )
+  (    3 /stim_all/a3 )
+  (    4 /stim_all/b3 )
+  (    5 /stim_all/a4 )
+  (    6 /stim_all/b4 )
   (    7 ? )
   (    8 GND )
-  (    9 N-000261 )
+  (    9 /stim_all/stim7/BATTERY )
   (   10 VDD )
-  (   11 /stim15/ca4 )
-  (   12 /stim15/an4 )
-  (   13 /stim15/ca3 )
-  (   14 /stim15/stim3/ANO )
-  (   15 N-000261 )
-  (   16 VDD )
+  (   11 /stim_all/ca4 )
+  (   12 /stim_all/an4 )
+  (   13 /stim_all/stim3/CATHO )
+  (   14 /stim_all/an3 )
+  (   15 /stim_all/stim7/BATTERY )
+  (   16 /stim_all/stim7/BATTERY )
  )
  ( /4D2F608C/4D07DD48 0402  C88 0.1uf {Lib=C}
   (    1 VEE )
   (    2 GND )
  )
  ( /4D2F608C/4D07DD46 0402  C78 0.1uf {Lib=C}
-  (    1 VDD )
-  (    2 N-000272 )
+  (    1 /stim_all/stim7/BATTERY )
+  (    2 /stim_all/stim7/BATTERY )
  )
  ( /4D2F608C/4D07DD41 0402  C79 0.1uf {Lib=C}
-  (    1 VDD )
-  (    2 N-000328 )
+  (    1 /stim_all/stim7/BATTERY )
+  (    2 /stim_all/stim7/BATTERY )
  )
  ( /4D2F608C/4D07DD3F 0402  C89 0.1uf {Lib=C}
   (    1 VEE )
@@ -1554,12 +1554,12 @@
   (    2 GND )
  )
  ( /4D2F608C/4D07DD38 0402  C81 0.1uf {Lib=C}
-  (    1 VDD )
-  (    2 N-000296 )
+  (    1 /stim_all/stim7/BATTERY )
+  (    2 /stim_all/stim7/BATTERY )
  )
  ( /4D2F608C/4D07DD33 0402  C80 0.1uf {Lib=C}
-  (    1 VDD )
-  (    2 N-000330 )
+  (    1 /stim_all/stim7/BATTERY )
+  (    2 /stim_all/stim7/BATTERY )
  )
  ( /4D2F608C/4D07DD31 0402  C90 0.1uf {Lib=C}
   (    1 VEE )
@@ -1570,12 +1570,12 @@
   (    2 GND )
  )
  ( /4D2F608C/4D07DD2A 0402  C76 0.1uf {Lib=C}
-  (    1 VDD )
-  (    2 N-000286 )
+  (    1 /stim_all/stim7/BATTERY )
+  (    2 /stim_all/stim7/BATTERY )
  )
  ( /4D2F608C/4D07DD25 0402  C77 0.1uf {Lib=C}
-  (    1 VDD )
-  (    2 N-000331 )
+  (    1 /stim_all/stim7/BATTERY )
+  (    2 /stim_all/stim7/BATTERY )
  )
  ( /4D2F608C/4D07DD23 0402  C87 0.1uf {Lib=C}
   (    1 VEE )
@@ -1586,24 +1586,24 @@
   (    2 GND )
  )
  ( /4D2F608C/4D07DD1B 0402  C75 0.1uf {Lib=C}
-  (    1 VDD )
-  (    2 N-000261 )
+  (    1 /stim_all/stim7/BATTERY )
+  (    2 /stim_all/stim7/BATTERY )
  )
  ( /4D2F608C/4D07DB99 0402  R79 3k {Lib=R}
-  (    1 /stim15/stim10/Iout )
-  (    2 /stim15/Vfb )
+  (    1 /stim_all/stim9/Iout )
+  (    2 /stim_all/Vfb )
  )
  ( /4D2F608C/4D07DB8F 0402  R80 3k {Lib=R}
-  (    1 /stim15/stim14/Iout )
-  (    2 /stim15/Vfb )
+  (    1 /stim_all/stim13/Iout )
+  (    2 /stim_all/Vfb )
  )
  ( /4D2F608C/4D07DAA0 0402  R77 3k {Lib=R}
-  (    1 /stim15/stim4/Iout )
-  (    2 /stim15/Vfb )
+  (    1 /stim_all/stim2/Iout )
+  (    2 /stim_all/Vfb )
  )
  ( /4D2F608C/4D07CEA3 0402  C74 0.1uf {Lib=C}
-  (    1 VDD )
-  (    2 N-000329 )
+  (    1 /stim_all/stim7/BATTERY )
+  (    2 /stim_all/stim7/BATTERY )
  )
  ( /4D2F608C/4D07CE8E 0402  C84 0.1uf {Lib=C}
   (    1 VEE )
@@ -1612,69 +1612,69 @@
  ( /4D2F608C/4D07CDDF SOIC-16  U35 IL715-3 {Lib=ADUM2400}
   (    1 VEE )
   (    2 GND )
-  (    3 /stim15/a1 )
-  (    4 /stim15/b1 )
-  (    5 /stim15/a2 )
-  (    6 /stim15/b2 )
+  (    3 /stim_all/a1 )
+  (    4 /stim_all/b1 )
+  (    5 /stim_all/a2 )
+  (    6 /stim_all/b2 )
   (    7 ? )
   (    8 GND )
-  (    9 N-000329 )
+  (    9 /stim_all/stim7/BATTERY )
   (   10 VDD )
-  (   11 /stim15/stim2/CATHO )
-  (   12 /stim15/an2 )
-  (   13 /stim15/stim1/CATHO )
-  (   14 /stim15/an1 )
-  (   15 N-000329 )
-  (   16 VDD )
+  (   11 /stim_all/stim2/CATHO )
+  (   12 /stim_all/stim2/ANO )
+  (   13 /stim_all/stim1/CATHO )
+  (   14 /stim_all/stim1/ANO )
+  (   15 /stim_all/stim7/BATTERY )
+  (   16 /stim_all/stim7/BATTERY )
  )
  ( /4D2F608C/4D07C8E2 11x100mil  U31 10X100 {Lib=10X100}
   (    1 GND )
   (    2 VEE )
-  (    3 N-000318 )
-  (    4 N-000319 )
-  (    5 N-000320 )
-  (    6 N-000321 )
-  (    7 N-000322 )
-  (    8 N-000323 )
-  (    9 N-000324 )
-  (   10 N-000325 )
+  (    3 N-000326 )
+  (    4 N-000327 )
+  (    5 N-000328 )
+  (    6 N-000329 )
+  (    7 N-000330 )
+  (    8 N-000331 )
+  (    9 N-000315 )
+  (   10 N-000316 )
   (   11 GND )
  )
  ( /4D2F608C/4D07C8AB SCSI68  U33 6533-CONN {Lib=6533-CONN}
   (    1 VEE )
-  (    2 N-000318 )
-  (    3 N-000319 )
-  (    4 N-000320 )
-  (    5 N-000321 )
-  (    6 N-000322 )
-  (    7 N-000323 )
-  (    8 N-000324 )
-  (    9 N-000325 )
-  (   10 /stim15/a1 )
+  (    2 N-000326 )
+  (    3 N-000327 )
+  (    4 N-000328 )
+  (    5 N-000329 )
+  (    6 N-000330 )
+  (    7 N-000331 )
+  (    8 N-000315 )
+  (    9 N-000316 )
+  (   10 /stim_all/a1 )
   (   11 GND )
-  (   12 /stim15/b2 )
-  (   13 /stim15/a3 )
+  (   12 /stim_all/b2 )
+  (   13 /stim_all/a3 )
   (   14 GND )
-  (   15 /stim15/b4 )
-  (   16 /stim15/a5 )
-  (   17 /stim15/b5 )
+  (   15 /stim_all/b4 )
+  (   16 /stim_all/a5 )
+  (   17 /stim_all/b5 )
   (   18 GND )
   (   19 ? )
   (   20 GND )
-  (   21 /stim15/a8 )
-  (   22 /stim15/b8 )
-  (   23 /stim15/c1 )
+  (   21 /stim_all/a8 )
+  (   22 /stim_all/b8 )
+  (   23 /stim_all/c1 )
   (   24 GND )
-  (   25 /stim15/d2 )
-  (   26 /stim15/c3 )
+  (   25 /stim_all/d2 )
+  (   26 /stim_all/c3 )
   (   27 GND )
-  (   28 /stim15/d4 )
-  (   29 /stim15/c5 )
+  (   28 /stim_all/d4 )
+  (   29 /stim_all/c5 )
   (   30 GND )
-  (   31 /stim15/d6 )
-  (   32 /stim15/c7 )
+  (   31 /stim_all/d6 )
+  (   32 /stim_all/c7 )
   (   33 GND )
-  (   34 /stim15/d8 )
+  (   34 /stim_all/d8 )
   (   35 ? )
   (   36 GND )
   (   37 GND )
@@ -1684,626 +1684,626 @@
   (   41 GND )
   (   42 GND )
   (   43 ? )
-  (   44 /stim15/b1 )
-  (   45 /stim15/a2 )
+  (   44 /stim_all/b1 )
+  (   45 /stim_all/a2 )
   (   46 GND )
-  (   47 /stim15/b3 )
-  (   48 /stim15/a4 )
+  (   47 /stim_all/b3 )
+  (   48 /stim_all/a4 )
   (   49 GND )
   (   50 GND )
-  (   51 /stim15/a6 )
-  (   52 /stim15/b6 )
-  (   53 /stim15/a7 )
-  (   54 /stim15/b7 )
+  (   51 /stim_all/a6 )
+  (   52 /stim_all/b6 )
+  (   53 /stim_all/a7 )
+  (   54 /stim_all/b7 )
   (   55 GND )
   (   56 ? )
-  (   57 /stim15/d1 )
-  (   58 /stim15/c2 )
+  (   57 /stim_all/d1 )
+  (   58 /stim_all/c2 )
   (   59 GND )
-  (   60 /stim15/d3 )
-  (   61 /stim15/c4 )
+  (   60 /stim_all/d3 )
+  (   61 /stim_all/c4 )
   (   62 GND )
-  (   63 /stim15/d5 )
-  (   64 /stim15/c6 )
+  (   63 /stim_all/d5 )
+  (   64 /stim_all/c6 )
   (   65 GND )
-  (   66 /stim15/d7 )
-  (   67 /stim15/c8 )
+  (   66 /stim_all/d7 )
+  (   67 /stim_all/c8 )
   (   68 GND )
   (   69 GND )
   (   70 GND )
  )
  ( /4D2F608C/4CFFFAD5 0402  R78 3k {Lib=R}
-  (    1 /stim15/stim8/Iout )
-  (    2 /stim15/Vfb )
+  (    1 /stim_all/stim8/Iout )
+  (    2 /stim_all/Vfb )
  )
  ( /4D2F608C/4CFFFAD0 0402  C72 0.1uf {Lib=C}
-  (    1 /stim15/VBAT )
-  (    2 /stim15/VBAT )
+  (    1 /stim_all/stim7/BATTERY )
+  (    2 /stim_all/stim7/BATTERY )
  )
- ( /4D2F608C/4D07DC65/4D361954 0402  R102 1k {Lib=R}
-  (    1 /stim15/stim14/Iout )
-  (    2 N-000441 )
- )
- ( /4D2F608C/4D07DC65/4D36194B SOT-323  D49 D {Lib=D}
-  (    1 N-000441 )
-  (    3 N-000445 )
- )
- ( /4D2F608C/4D07DC65/4D361938 TP  TP37 TP {Lib=TP}
-  (    1 N-000445 )
- )
- ( /4D2F608C/4D07DC65/4D361921 S-MINI-3P  U77 SOT-23 {Lib=2SK3539}
-  (    1 /stim15/stim15/CATHO )
-  (    2 /stim15/stim14/Iout )
-  (    3 N-000445 )
- )
- ( /4D2F608C/4D07DC65/4D36190A 0402  C129 0.1uf {Lib=C}
-  (    1 /stim15/stim15/VBAT )
-  (    2 /stim15/stim15/IGND )
- )
- ( /4D2F608C/4D07DC65/4D3618E7 0402  C130 100pf {Lib=C}
-  (    1 N-000445 )
-  (    2 /stim15/stim15/IGND )
- )
- ( /4D2F608C/4D07DC65/4D3618C7 SOT-23  D48 BAT54 {Lib=D}
-  (    1 N-000442 )
-  (    3 N-000445 )
- )
- ( /4D2F608C/4D07DC65/4D3618C2 0603  L19 22uh {Lib=INDUCTOR}
-  (    1 /stim15/stim15/VBAT )
-  (    2 N-000442 )
- )
- ( /4D2F608C/4D07DC65/4CFFE988 SOT-23-5  U76 LT1615 {Lib=LT1615}
-  (    1 N-000442 )
-  (    2 /stim15/stim15/IGND )
-  (    3 N-000441 )
-  (    4 /stim15/stim15/ANO )
-  (    5 /stim15/stim15/VBAT )
- )
- ( /4D2F608C/4D07DBA5/4D361954 0402  R101 1k {Lib=R}
-  (    1 /stim15/stim10/Iout )
-  (    2 N-000439 )
- )
- ( /4D2F608C/4D07DBA5/4D36194B SOT-323  D47 D {Lib=D}
-  (    1 N-000439 )
-  (    3 N-000436 )
- )
- ( /4D2F608C/4D07DBA5/4D361938 TP  TP36 TP {Lib=TP}
-  (    1 N-000436 )
- )
- ( /4D2F608C/4D07DBA5/4D361921 S-MINI-3P  U75 SOT-23 {Lib=2SK3539}
-  (    1 /stim15/stim9/CATHO )
-  (    2 /stim15/stim10/Iout )
-  (    3 N-000436 )
- )
- ( /4D2F608C/4D07DBA5/4D36190A 0402  C127 0.1uf {Lib=C}
-  (    1 /stim15/stim9/VBAT )
-  (    2 /stim15/stim9/IGND )
- )
- ( /4D2F608C/4D07DBA5/4D3618E7 0402  C128 100pf {Lib=C}
-  (    1 N-000436 )
-  (    2 /stim15/stim9/IGND )
- )
- ( /4D2F608C/4D07DBA5/4D3618C7 SOT-23  D46 BAT54 {Lib=D}
-  (    1 N-000440 )
-  (    3 N-000436 )
- )
- ( /4D2F608C/4D07DBA5/4D3618C2 0603  L18 22uh {Lib=INDUCTOR}
-  (    1 /stim15/stim9/VBAT )
-  (    2 N-000440 )
- )
- ( /4D2F608C/4D07DBA5/4CFFE988 SOT-23-5  U74 LT1615 {Lib=LT1615}
-  (    1 N-000440 )
-  (    2 /stim15/stim9/IGND )
-  (    3 N-000439 )
-  (    4 /stim15/stim9/ANO )
-  (    5 /stim15/stim9/VBAT )
- )
- ( /4D2F608C/4D07DBA2/4D361954 0402  R100 1k {Lib=R}
-  (    1 /stim15/stim14/Iout )
-  (    2 N-000435 )
- )
- ( /4D2F608C/4D07DBA2/4D36194B SOT-323  D45 D {Lib=D}
-  (    1 N-000435 )
-  (    3 N-000432 )
- )
- ( /4D2F608C/4D07DBA2/4D361938 TP  TP35 TP {Lib=TP}
-  (    1 N-000432 )
- )
- ( /4D2F608C/4D07DBA2/4D361921 S-MINI-3P  U73 SOT-23 {Lib=2SK3539}
-  (    1 /stim15/ca13 )
-  (    2 /stim15/stim14/Iout )
-  (    3 N-000432 )
- )
- ( /4D2F608C/4D07DBA2/4D36190A 0402  C125 0.1uf {Lib=C}
-  (    1 /stim15/stim13/VBAT )
-  (    2 /stim15/stim13/IGND )
- )
- ( /4D2F608C/4D07DBA2/4D3618E7 0402  C126 100pf {Lib=C}
-  (    1 N-000432 )
-  (    2 /stim15/stim13/IGND )
- )
- ( /4D2F608C/4D07DBA2/4D3618C7 SOT-23  D44 BAT54 {Lib=D}
-  (    1 N-000431 )
-  (    3 N-000432 )
- )
- ( /4D2F608C/4D07DBA2/4D3618C2 0603  L17 22uh {Lib=INDUCTOR}
-  (    1 /stim15/stim13/VBAT )
-  (    2 N-000431 )
- )
- ( /4D2F608C/4D07DBA2/4CFFE988 SOT-23-5  U72 LT1615 {Lib=LT1615}
-  (    1 N-000431 )
-  (    2 /stim15/stim13/IGND )
-  (    3 N-000435 )
-  (    4 /stim15/an13 )
-  (    5 /stim15/stim13/VBAT )
- )
- ( /4D2F608C/4D07DB9F/4D361954 0402  R99 1k {Lib=R}
-  (    1 /stim15/stim14/Iout )
-  (    2 N-000427 )
- )
- ( /4D2F608C/4D07DB9F/4D36194B SOT-323  D43 D {Lib=D}
-  (    1 N-000427 )
-  (    3 N-000430 )
- )
- ( /4D2F608C/4D07DB9F/4D361938 TP  TP34 TP {Lib=TP}
-  (    1 N-000430 )
- )
- ( /4D2F608C/4D07DB9F/4D361921 S-MINI-3P  U71 SOT-23 {Lib=2SK3539}
-  (    1 /stim15/stim14/CATHO )
-  (    2 /stim15/stim14/Iout )
-  (    3 N-000430 )
- )
- ( /4D2F608C/4D07DB9F/4D36190A 0402  C123 0.1uf {Lib=C}
-  (    1 /stim15/stim14/VBAT )
-  (    2 /stim15/stim14/IGND )
- )
- ( /4D2F608C/4D07DB9F/4D3618E7 0402  C124 100pf {Lib=C}
-  (    1 N-000430 )
-  (    2 /stim15/stim14/IGND )
- )
- ( /4D2F608C/4D07DB9F/4D3618C7 SOT-23  D42 BAT54 {Lib=D}
-  (    1 N-000426 )
-  (    3 N-000430 )
- )
- ( /4D2F608C/4D07DB9F/4D3618C2 0603  L16 22uh {Lib=INDUCTOR}
-  (    1 /stim15/stim14/VBAT )
-  (    2 N-000426 )
- )
- ( /4D2F608C/4D07DB9F/4CFFE988 SOT-23-5  U70 LT1615 {Lib=LT1615}
-  (    1 N-000426 )
-  (    2 /stim15/stim14/IGND )
-  (    3 N-000427 )
-  (    4 /stim15/an14 )
-  (    5 /stim15/stim14/VBAT )
+ ( /4D2F608C/4D07DB9C/4D3DCC03 0402  C141 0.1uf {Lib=C}
+  (    1 /stim_all/stim7/BATTERY )
+  (    2 /stim_all/stim7/BATTERY )
  )
  ( /4D2F608C/4D07DB9C/4D361954 0402  R98 1k {Lib=R}
-  (    1 /stim15/stim10/Iout )
-  (    2 N-000422 )
+  (    1 /stim_all/stim9/Iout )
+  (    2 N-000394 )
  )
  ( /4D2F608C/4D07DB9C/4D36194B SOT-323  D41 D {Lib=D}
-  (    1 N-000422 )
-  (    3 N-000425 )
+  (    1 N-000394 )
+  (    3 N-000393 )
  )
  ( /4D2F608C/4D07DB9C/4D361938 TP  TP33 TP {Lib=TP}
-  (    1 N-000425 )
+  (    1 N-000393 )
  )
  ( /4D2F608C/4D07DB9C/4D361921 S-MINI-3P  U69 SOT-23 {Lib=2SK3539}
-  (    1 /stim15/ca10 )
-  (    2 /stim15/stim10/Iout )
-  (    3 N-000425 )
- )
- ( /4D2F608C/4D07DB9C/4D36190A 0402  C121 0.1uf {Lib=C}
-  (    1 /stim15/stim10/VBAT )
-  (    2 /stim15/stim10/IGND )
+  (    1 /stim_all/stim10/CATHO )
+  (    2 /stim_all/stim9/Iout )
+  (    3 N-000393 )
  )
  ( /4D2F608C/4D07DB9C/4D3618E7 0402  C122 100pf {Lib=C}
-  (    1 N-000425 )
-  (    2 /stim15/stim10/IGND )
+  (    1 N-000393 )
+  (    2 /stim_all/stim7/BATTERY )
  )
  ( /4D2F608C/4D07DB9C/4D3618C7 SOT-23  D40 BAT54 {Lib=D}
-  (    1 N-000421 )
-  (    3 N-000425 )
+  (    1 N-000395 )
+  (    3 N-000393 )
  )
  ( /4D2F608C/4D07DB9C/4D3618C2 0603  L15 22uh {Lib=INDUCTOR}
-  (    1 /stim15/stim10/VBAT )
-  (    2 N-000421 )
+  (    1 /stim_all/stim7/BATTERY )
+  (    2 N-000395 )
  )
  ( /4D2F608C/4D07DB9C/4CFFE988 SOT-23-5  U68 LT1615 {Lib=LT1615}
-  (    1 N-000421 )
-  (    2 /stim15/stim10/IGND )
-  (    3 N-000422 )
-  (    4 /stim15/an10 )
-  (    5 /stim15/stim10/VBAT )
+  (    1 N-000395 )
+  (    2 /stim_all/stim7/BATTERY )
+  (    3 N-000394 )
+  (    4 /stim_all/stim10/ANO )
+  (    5 /stim_all/stim7/BATTERY )
  )
- ( /4D2F608C/4D07DB98/4D361954 0402  R97 1k {Lib=R}
-  (    1 /stim15/stim10/Iout )
-  (    2 N-000417 )
- )
- ( /4D2F608C/4D07DB98/4D36194B SOT-323  D39 D {Lib=D}
-  (    1 N-000417 )
-  (    3 N-000420 )
- )
- ( /4D2F608C/4D07DB98/4D361938 TP  TP32 TP {Lib=TP}
-  (    1 N-000420 )
- )
- ( /4D2F608C/4D07DB98/4D361921 S-MINI-3P  U67 SOT-23 {Lib=2SK3539}
-  (    1 /stim15/stim12/CATHO )
-  (    2 /stim15/stim10/Iout )
-  (    3 N-000420 )
- )
- ( /4D2F608C/4D07DB98/4D36190A 0402  C119 0.1uf {Lib=C}
-  (    1 /stim15/stim12/VBAT )
-  (    2 /stim15/stim12/IGND )
- )
- ( /4D2F608C/4D07DB98/4D3618E7 0402  C120 100pf {Lib=C}
-  (    1 N-000420 )
-  (    2 /stim15/stim12/IGND )
- )
- ( /4D2F608C/4D07DB98/4D3618C7 SOT-23  D38 BAT54 {Lib=D}
-  (    1 N-000416 )
-  (    3 N-000420 )
- )
- ( /4D2F608C/4D07DB98/4D3618C2 0603  L14 22uh {Lib=INDUCTOR}
-  (    1 /stim15/stim12/VBAT )
-  (    2 N-000416 )
- )
- ( /4D2F608C/4D07DB98/4CFFE988 SOT-23-5  U66 LT1615 {Lib=LT1615}
-  (    1 N-000416 )
-  (    2 /stim15/stim12/IGND )
-  (    3 N-000417 )
-  (    4 /stim15/stim12/ANO )
-  (    5 /stim15/stim12/VBAT )
- )
- ( /4D2F608C/4D07DB92/4D361954 0402  R96 1k {Lib=R}
-  (    1 /stim15/stim10/Iout )
-  (    2 N-000412 )
- )
- ( /4D2F608C/4D07DB92/4D36194B SOT-323  D37 D {Lib=D}
-  (    1 N-000412 )
-  (    3 N-000415 )
- )
- ( /4D2F608C/4D07DB92/4D361938 TP  TP31 TP {Lib=TP}
-  (    1 N-000415 )
- )
- ( /4D2F608C/4D07DB92/4D361921 S-MINI-3P  U65 SOT-23 {Lib=2SK3539}
-  (    1 /stim15/stim11/CATHO )
-  (    2 /stim15/stim10/Iout )
-  (    3 N-000415 )
- )
- ( /4D2F608C/4D07DB92/4D36190A 0402  C117 0.1uf {Lib=C}
-  (    1 /stim15/stim11/VBAT )
-  (    2 /stim15/stim11/IGND )
- )
- ( /4D2F608C/4D07DB92/4D3618E7 0402  C118 100pf {Lib=C}
-  (    1 N-000415 )
-  (    2 /stim15/stim11/IGND )
- )
- ( /4D2F608C/4D07DB92/4D3618C7 SOT-23  D36 BAT54 {Lib=D}
-  (    1 N-000411 )
-  (    3 N-000415 )
- )
- ( /4D2F608C/4D07DB92/4D3618C2 0603  L13 22uh {Lib=INDUCTOR}
-  (    1 /stim15/stim11/VBAT )
-  (    2 N-000411 )
- )
- ( /4D2F608C/4D07DB92/4CFFE988 SOT-23-5  U64 LT1615 {Lib=LT1615}
-  (    1 N-000411 )
-  (    2 /stim15/stim11/IGND )
-  (    3 N-000412 )
-  (    4 /stim15/an11 )
-  (    5 /stim15/stim11/VBAT )
- )
- ( /4D2F608C/4CFFFADB/4D361954 0402  R93 1k {Lib=R}
-  (    1 /stim15/stim8/Iout )
-  (    2 N-000396 )
- )
- ( /4D2F608C/4CFFFADB/4D36194B SOT-323  D31 D {Lib=D}
-  (    1 N-000396 )
-  (    3 N-000400 )
- )
- ( /4D2F608C/4CFFFADB/4D361938 TP  TP28 TP {Lib=TP}
-  (    1 N-000400 )
- )
- ( /4D2F608C/4CFFFADB/4D361921 S-MINI-3P  U59 SOT-23 {Lib=2SK3539}
-  (    1 /stim15/stim8/CATHO )
-  (    2 /stim15/stim8/Iout )
-  (    3 N-000400 )
- )
- ( /4D2F608C/4CFFFADB/4D36190A 0402  C111 0.1uf {Lib=C}
-  (    1 /stim15/stim8/VBAT )
-  (    2 /stim15/stim8/IGND )
- )
- ( /4D2F608C/4CFFFADB/4D3618E7 0402  C112 100pf {Lib=C}
-  (    1 N-000400 )
-  (    2 /stim15/stim8/IGND )
- )
- ( /4D2F608C/4CFFFADB/4D3618C7 SOT-23  D30 BAT54 {Lib=D}
-  (    1 N-000397 )
-  (    3 N-000400 )
- )
- ( /4D2F608C/4CFFFADB/4D3618C2 0603  L10 22uh {Lib=INDUCTOR}
-  (    1 /stim15/stim8/VBAT )
-  (    2 N-000397 )
- )
- ( /4D2F608C/4CFFFADB/4CFFE988 SOT-23-5  U58 LT1615 {Lib=LT1615}
-  (    1 N-000397 )
-  (    2 /stim15/stim8/IGND )
-  (    3 N-000396 )
-  (    4 /stim15/an8 )
-  (    5 /stim15/stim8/VBAT )
- )
- ( /4D2F608C/4CFFFAE1/4D361954 0402  R95 1k {Lib=R}
-  (    1 /stim15/stim8/Iout )
-  (    2 N-000407 )
- )
- ( /4D2F608C/4CFFFAE1/4D36194B SOT-323  D35 D {Lib=D}
-  (    1 N-000407 )
-  (    3 N-000410 )
- )
- ( /4D2F608C/4CFFFAE1/4D361938 TP  TP30 TP {Lib=TP}
-  (    1 N-000410 )
- )
- ( /4D2F608C/4CFFFAE1/4D361921 S-MINI-3P  U63 SOT-23 {Lib=2SK3539}
-  (    1 /stim15/stim5/CATHO )
-  (    2 /stim15/stim8/Iout )
-  (    3 N-000410 )
- )
- ( /4D2F608C/4CFFFAE1/4D36190A 0402  C115 0.1uf {Lib=C}
-  (    1 /stim15/stim5/VBAT )
-  (    2 /stim15/stim5/IGND )
- )
- ( /4D2F608C/4CFFFAE1/4D3618E7 0402  C116 100pf {Lib=C}
-  (    1 N-000410 )
-  (    2 /stim15/stim5/IGND )
- )
- ( /4D2F608C/4CFFFAE1/4D3618C7 SOT-23  D34 BAT54 {Lib=D}
-  (    1 N-000406 )
-  (    3 N-000410 )
- )
- ( /4D2F608C/4CFFFAE1/4D3618C2 0603  L12 22uh {Lib=INDUCTOR}
-  (    1 /stim15/stim5/VBAT )
-  (    2 N-000406 )
- )
- ( /4D2F608C/4CFFFAE1/4CFFE988 SOT-23-5  U62 LT1615 {Lib=LT1615}
-  (    1 N-000406 )
-  (    2 /stim15/stim5/IGND )
-  (    3 N-000407 )
-  (    4 /stim15/an5 )
-  (    5 /stim15/stim5/VBAT )
+ ( /4D2F608C/4CFFFADE/4D3DCC03 0402  C137 0.1uf {Lib=C}
+  (    1 /stim_all/stim7/BATTERY )
+  (    2 /stim_all/stim7/BATTERY )
  )
  ( /4D2F608C/4CFFFADE/4D361954 0402  R94 1k {Lib=R}
-  (    1 /stim15/stim8/Iout )
-  (    2 N-000404 )
- )
- ( /4D2F608C/4CFFFADE/4D36194B SOT-323  D33 D {Lib=D}
-  (    1 N-000404 )
-  (    3 N-000401 )
- )
- ( /4D2F608C/4CFFFADE/4D361938 TP  TP29 TP {Lib=TP}
-  (    1 N-000401 )
- )
- ( /4D2F608C/4CFFFADE/4D361921 S-MINI-3P  U61 SOT-23 {Lib=2SK3539}
-  (    1 /stim15/stim6/CATHO )
-  (    2 /stim15/stim8/Iout )
-  (    3 N-000401 )
- )
- ( /4D2F608C/4CFFFADE/4D36190A 0402  C113 0.1uf {Lib=C}
-  (    1 /stim15/stim6/VBAT )
-  (    2 /stim15/stim6/IGND )
- )
- ( /4D2F608C/4CFFFADE/4D3618E7 0402  C114 100pf {Lib=C}
-  (    1 N-000401 )
-  (    2 /stim15/stim6/IGND )
- )
- ( /4D2F608C/4CFFFADE/4D3618C7 SOT-23  D32 BAT54 {Lib=D}
-  (    1 N-000405 )
-  (    3 N-000401 )
- )
- ( /4D2F608C/4CFFFADE/4D3618C2 0603  L11 22uh {Lib=INDUCTOR}
-  (    1 /stim15/stim6/VBAT )
-  (    2 N-000405 )
- )
- ( /4D2F608C/4CFFFADE/4CFFE988 SOT-23-5  U60 LT1615 {Lib=LT1615}
-  (    1 N-000405 )
-  (    2 /stim15/stim6/IGND )
-  (    3 N-000404 )
-  (    4 /stim15/an6 )
-  (    5 /stim15/stim6/VBAT )
- )
- ( /4D2F608C/4CFFFAD8/4D361954 0402  R92 1k {Lib=R}
-  (    1 /stim15/stim8/Iout )
-  (    2 N-000392 )
- )
- ( /4D2F608C/4CFFFAD8/4D36194B SOT-323  D29 D {Lib=D}
-  (    1 N-000392 )
-  (    3 N-000391 )
- )
- ( /4D2F608C/4CFFFAD8/4D361938 TP  TP27 TP {Lib=TP}
-  (    1 N-000391 )
- )
- ( /4D2F608C/4CFFFAD8/4D361921 S-MINI-3P  U57 SOT-23 {Lib=2SK3539}
-  (    1 /stim15/ca7 )
-  (    2 /stim15/stim8/Iout )
-  (    3 N-000391 )
- )
- ( /4D2F608C/4CFFFAD8/4D36190A 0402  C109 0.1uf {Lib=C}
-  (    1 /stim15/stim7/VBAT )
-  (    2 /stim15/stim7/IGND )
- )
- ( /4D2F608C/4CFFFAD8/4D3618E7 0402  C110 100pf {Lib=C}
-  (    1 N-000391 )
-  (    2 /stim15/stim7/IGND )
- )
- ( /4D2F608C/4CFFFAD8/4D3618C7 SOT-23  D28 BAT54 {Lib=D}
-  (    1 N-000393 )
-  (    3 N-000391 )
- )
- ( /4D2F608C/4CFFFAD8/4D3618C2 0603  L9 22uh {Lib=INDUCTOR}
-  (    1 /stim15/stim7/VBAT )
-  (    2 N-000393 )
- )
- ( /4D2F608C/4CFFFAD8/4CFFE988 SOT-23-5  U56 LT1615 {Lib=LT1615}
-  (    1 N-000393 )
-  (    2 /stim15/stim7/IGND )
-  (    3 N-000392 )
-  (    4 /stim15/an7 )
-  (    5 /stim15/stim7/VBAT )
- )
- ( /4D2F608C/4CFFF124/4D361954 0402  R91 1k {Lib=R}
-  (    1 /stim15/stim4/Iout )
-  (    2 N-000387 )
- )
- ( /4D2F608C/4CFFF124/4D36194B SOT-323  D27 D {Lib=D}
-  (    1 N-000387 )
-  (    3 N-000390 )
- )
- ( /4D2F608C/4CFFF124/4D361938 TP  TP26 TP {Lib=TP}
-  (    1 N-000390 )
- )
- ( /4D2F608C/4CFFF124/4D361921 S-MINI-3P  U55 SOT-23 {Lib=2SK3539}
-  (    1 /stim15/ca3 )
-  (    2 /stim15/stim4/Iout )
-  (    3 N-000390 )
- )
- ( /4D2F608C/4CFFF124/4D36190A 0402  C107 0.1uf {Lib=C}
-  (    1 /stim15/stim3/VBAT )
-  (    2 /stim15/stim3/IGND )
- )
- ( /4D2F608C/4CFFF124/4D3618E7 0402  C108 100pf {Lib=C}
-  (    1 N-000390 )
-  (    2 /stim15/stim3/IGND )
- )
- ( /4D2F608C/4CFFF124/4D3618C7 SOT-23  D26 BAT54 {Lib=D}
-  (    1 N-000386 )
-  (    3 N-000390 )
- )
- ( /4D2F608C/4CFFF124/4D3618C2 0603  L8 22uh {Lib=INDUCTOR}
-  (    1 /stim15/stim3/VBAT )
-  (    2 N-000386 )
- )
- ( /4D2F608C/4CFFF124/4CFFE988 SOT-23-5  U54 LT1615 {Lib=LT1615}
-  (    1 N-000386 )
-  (    2 /stim15/stim3/IGND )
-  (    3 N-000387 )
-  (    4 /stim15/stim3/ANO )
-  (    5 /stim15/stim3/VBAT )
- )
- ( /4D2F608C/4CFFF121/4D361954 0402  R90 1k {Lib=R}
-  (    1 /stim15/stim4/Iout )
+  (    1 /stim_all/stim8/Iout )
   (    2 N-000382 )
  )
- ( /4D2F608C/4CFFF121/4D36194B SOT-323  D25 D {Lib=D}
+ ( /4D2F608C/4CFFFADE/4D36194B SOT-323  D33 D {Lib=D}
   (    1 N-000382 )
-  (    3 N-000385 )
+  (    3 N-000383 )
  )
- ( /4D2F608C/4CFFF121/4D361938 TP  TP25 TP {Lib=TP}
-  (    1 N-000385 )
+ ( /4D2F608C/4CFFFADE/4D361938 TP  TP29 TP {Lib=TP}
+  (    1 N-000383 )
  )
- ( /4D2F608C/4CFFF121/4D361921 S-MINI-3P  U53 SOT-23 {Lib=2SK3539}
-  (    1 /stim15/ca4 )
-  (    2 /stim15/stim4/Iout )
-  (    3 N-000385 )
+ ( /4D2F608C/4CFFFADE/4D361921 S-MINI-3P  U61 SOT-23 {Lib=2SK3539}
+  (    1 /stim_all/stim6/CATHO )
+  (    2 /stim_all/stim8/Iout )
+  (    3 N-000383 )
  )
- ( /4D2F608C/4CFFF121/4D36190A 0402  C105 0.1uf {Lib=C}
-  (    1 /stim15/stim4/VBAT )
-  (    2 /stim15/stim4/IGND )
+ ( /4D2F608C/4CFFFADE/4D3618E7 0402  C114 100pf {Lib=C}
+  (    1 N-000383 )
+  (    2 /stim_all/stim7/BATTERY )
  )
- ( /4D2F608C/4CFFF121/4D3618E7 0402  C106 100pf {Lib=C}
-  (    1 N-000385 )
-  (    2 /stim15/stim4/IGND )
- )
- ( /4D2F608C/4CFFF121/4D3618C7 SOT-23  D24 BAT54 {Lib=D}
+ ( /4D2F608C/4CFFFADE/4D3618C7 SOT-23  D32 BAT54 {Lib=D}
   (    1 N-000381 )
-  (    3 N-000385 )
+  (    3 N-000383 )
  )
- ( /4D2F608C/4CFFF121/4D3618C2 0603  L7 22uh {Lib=INDUCTOR}
-  (    1 /stim15/stim4/VBAT )
+ ( /4D2F608C/4CFFFADE/4D3618C2 0603  L11 22uh {Lib=INDUCTOR}
+  (    1 /stim_all/stim7/BATTERY )
   (    2 N-000381 )
  )
- ( /4D2F608C/4CFFF121/4CFFE988 SOT-23-5  U52 LT1615 {Lib=LT1615}
+ ( /4D2F608C/4CFFFADE/4CFFE988 SOT-23-5  U60 LT1615 {Lib=LT1615}
   (    1 N-000381 )
-  (    2 /stim15/stim4/IGND )
+  (    2 /stim_all/stim7/BATTERY )
   (    3 N-000382 )
-  (    4 /stim15/an4 )
-  (    5 /stim15/stim4/VBAT )
+  (    4 /stim_all/stim6/ANO )
+  (    5 /stim_all/stim7/BATTERY )
+ )
+ ( /4D2F608C/4CFFF11C/4D3DCC03 0402  C132 0.1uf {Lib=C}
+  (    1 /stim_all/stim7/BATTERY )
+  (    2 /stim_all/stim7/BATTERY )
  )
  ( /4D2F608C/4CFFF11C/4D361954 0402  R89 1k {Lib=R}
-  (    1 /stim15/stim4/Iout )
-  (    2 N-000377 )
+  (    1 /stim_all/stim2/Iout )
+  (    2 N-000367 )
  )
  ( /4D2F608C/4CFFF11C/4D36194B SOT-323  D23 D {Lib=D}
-  (    1 N-000377 )
-  (    3 N-000380 )
+  (    1 N-000367 )
+  (    3 N-000368 )
  )
  ( /4D2F608C/4CFFF11C/4D361938 TP  TP24 TP {Lib=TP}
-  (    1 N-000380 )
+  (    1 N-000368 )
  )
  ( /4D2F608C/4CFFF11C/4D361921 S-MINI-3P  U51 SOT-23 {Lib=2SK3539}
-  (    1 /stim15/stim2/CATHO )
-  (    2 /stim15/stim4/Iout )
-  (    3 N-000380 )
- )
- ( /4D2F608C/4CFFF11C/4D36190A 0402  C103 0.1uf {Lib=C}
-  (    1 /stim15/stim2/VBAT )
-  (    2 /stim15/stim2/IGND )
+  (    1 /stim_all/stim2/CATHO )
+  (    2 /stim_all/stim2/Iout )
+  (    3 N-000368 )
  )
  ( /4D2F608C/4CFFF11C/4D3618E7 0402  C104 100pf {Lib=C}
-  (    1 N-000380 )
-  (    2 /stim15/stim2/IGND )
+  (    1 N-000368 )
+  (    2 /stim_all/stim7/BATTERY )
  )
  ( /4D2F608C/4CFFF11C/4D3618C7 SOT-23  D22 BAT54 {Lib=D}
-  (    1 N-000376 )
-  (    3 N-000380 )
+  (    1 N-000366 )
+  (    3 N-000368 )
  )
  ( /4D2F608C/4CFFF11C/4D3618C2 0603  L6 22uh {Lib=INDUCTOR}
-  (    1 /stim15/stim2/VBAT )
-  (    2 N-000376 )
+  (    1 /stim_all/stim7/BATTERY )
+  (    2 N-000366 )
  )
  ( /4D2F608C/4CFFF11C/4CFFE988 SOT-23-5  U50 LT1615 {Lib=LT1615}
-  (    1 N-000376 )
-  (    2 /stim15/stim2/IGND )
+  (    1 N-000366 )
+  (    2 /stim_all/stim7/BATTERY )
+  (    3 N-000367 )
+  (    4 /stim_all/stim2/ANO )
+  (    5 /stim_all/stim7/BATTERY )
+ )
+ ( /4D2F608C/4D3DCE95/4D3DCC03 0402  C131 0.1uf {Lib=C}
+  (    1 /stim_all/stim1/BATTERY )
+  (    2 /stim_all/stim1/GROUND )
+ )
+ ( /4D2F608C/4D3DCE95/4D361954 0402  R88 1k {Lib=R}
+  (    1 /stim_all/stim2/Iout )
+  (    2 N-000410 )
+ )
+ ( /4D2F608C/4D3DCE95/4D36194B SOT-323  D21 D {Lib=D}
+  (    1 N-000410 )
+  (    3 N-000409 )
+ )
+ ( /4D2F608C/4D3DCE95/4D361938 TP  TP23 TP {Lib=TP}
+  (    1 N-000409 )
+ )
+ ( /4D2F608C/4D3DCE95/4D361921 S-MINI-3P  U49 SOT-23 {Lib=2SK3539}
+  (    1 /stim_all/stim1/CATHO )
+  (    2 /stim_all/stim2/Iout )
+  (    3 N-000409 )
+ )
+ ( /4D2F608C/4D3DCE95/4D3618E7 0402  C102 100pf {Lib=C}
+  (    1 N-000409 )
+  (    2 /stim_all/stim1/GROUND )
+ )
+ ( /4D2F608C/4D3DCE95/4D3618C7 SOT-23  D20 BAT54 {Lib=D}
+  (    1 N-000408 )
+  (    3 N-000409 )
+ )
+ ( /4D2F608C/4D3DCE95/4D3618C2 0603  L5 22uh {Lib=INDUCTOR}
+  (    1 /stim_all/stim1/BATTERY )
+  (    2 N-000408 )
+ )
+ ( /4D2F608C/4D3DCE95/4CFFE988 SOT-23-5  U48 LT1615 {Lib=LT1615}
+  (    1 N-000408 )
+  (    2 /stim_all/stim1/GROUND )
+  (    3 N-000410 )
+  (    4 /stim_all/stim1/ANO )
+  (    5 /stim_all/stim1/BATTERY )
+ )
+ ( /4D2F608C/4D07DC65/4D3DCC03 0402  C145 0.1uf {Lib=C}
+  (    1 /stim_all/stim7/BATTERY )
+  (    2 /stim_all/stim7/BATTERY )
+ )
+ ( /4D2F608C/4D07DC65/4D361954 0402  R102 1k {Lib=R}
+  (    1 /stim_all/stim13/Iout )
+  (    2 N-000407 )
+ )
+ ( /4D2F608C/4D07DC65/4D36194B SOT-323  D49 D {Lib=D}
+  (    1 N-000407 )
+  (    3 N-000406 )
+ )
+ ( /4D2F608C/4D07DC65/4D361938 TP  TP37 TP {Lib=TP}
+  (    1 N-000406 )
+ )
+ ( /4D2F608C/4D07DC65/4D361921 S-MINI-3P  U77 SOT-23 {Lib=2SK3539}
+  (    1 /stim_all/ca15 )
+  (    2 /stim_all/stim13/Iout )
+  (    3 N-000406 )
+ )
+ ( /4D2F608C/4D07DC65/4D3618E7 0402  C130 100pf {Lib=C}
+  (    1 N-000406 )
+  (    2 /stim_all/stim7/BATTERY )
+ )
+ ( /4D2F608C/4D07DC65/4D3618C7 SOT-23  D48 BAT54 {Lib=D}
+  (    1 N-000405 )
+  (    3 N-000406 )
+ )
+ ( /4D2F608C/4D07DC65/4D3618C2 0603  L19 22uh {Lib=INDUCTOR}
+  (    1 /stim_all/stim7/BATTERY )
+  (    2 N-000405 )
+ )
+ ( /4D2F608C/4D07DC65/4CFFE988 SOT-23-5  U76 LT1615 {Lib=LT1615}
+  (    1 N-000405 )
+  (    2 /stim_all/stim7/BATTERY )
+  (    3 N-000407 )
+  (    4 /stim_all/an15 )
+  (    5 /stim_all/stim7/BATTERY )
+ )
+ ( /4D2F608C/4D07DBA5/4D3DCC03 0402  C144 0.1uf {Lib=C}
+  (    1 /stim_all/stim7/BATTERY )
+  (    2 /stim_all/stim7/BATTERY )
+ )
+ ( /4D2F608C/4D07DBA5/4D361954 0402  R101 1k {Lib=R}
+  (    1 /stim_all/stim9/Iout )
+  (    2 N-000404 )
+ )
+ ( /4D2F608C/4D07DBA5/4D36194B SOT-323  D47 D {Lib=D}
+  (    1 N-000404 )
+  (    3 N-000403 )
+ )
+ ( /4D2F608C/4D07DBA5/4D361938 TP  TP36 TP {Lib=TP}
+  (    1 N-000403 )
+ )
+ ( /4D2F608C/4D07DBA5/4D361921 S-MINI-3P  U75 SOT-23 {Lib=2SK3539}
+  (    1 /stim_all/ca9 )
+  (    2 /stim_all/stim9/Iout )
+  (    3 N-000403 )
+ )
+ ( /4D2F608C/4D07DBA5/4D3618E7 0402  C128 100pf {Lib=C}
+  (    1 N-000403 )
+  (    2 /stim_all/stim7/BATTERY )
+ )
+ ( /4D2F608C/4D07DBA5/4D3618C7 SOT-23  D46 BAT54 {Lib=D}
+  (    1 N-000402 )
+  (    3 N-000403 )
+ )
+ ( /4D2F608C/4D07DBA5/4D3618C2 0603  L18 22uh {Lib=INDUCTOR}
+  (    1 /stim_all/stim7/BATTERY )
+  (    2 N-000402 )
+ )
+ ( /4D2F608C/4D07DBA5/4CFFE988 SOT-23-5  U74 LT1615 {Lib=LT1615}
+  (    1 N-000402 )
+  (    2 /stim_all/stim7/BATTERY )
+  (    3 N-000404 )
+  (    4 /stim_all/an9 )
+  (    5 /stim_all/stim7/BATTERY )
+ )
+ ( /4D2F608C/4D07DBA2/4D3DCC03 0402  C143 0.1uf {Lib=C}
+  (    1 /stim_all/stim7/BATTERY )
+  (    2 /stim_all/stim7/BATTERY )
+ )
+ ( /4D2F608C/4D07DBA2/4D361954 0402  R100 1k {Lib=R}
+  (    1 /stim_all/stim13/Iout )
+  (    2 N-000400 )
+ )
+ ( /4D2F608C/4D07DBA2/4D36194B SOT-323  D45 D {Lib=D}
+  (    1 N-000400 )
+  (    3 N-000399 )
+ )
+ ( /4D2F608C/4D07DBA2/4D361938 TP  TP35 TP {Lib=TP}
+  (    1 N-000399 )
+ )
+ ( /4D2F608C/4D07DBA2/4D361921 S-MINI-3P  U73 SOT-23 {Lib=2SK3539}
+  (    1 /stim_all/stim13/CATHO )
+  (    2 /stim_all/stim13/Iout )
+  (    3 N-000399 )
+ )
+ ( /4D2F608C/4D07DBA2/4D3618E7 0402  C126 100pf {Lib=C}
+  (    1 N-000399 )
+  (    2 /stim_all/stim7/BATTERY )
+ )
+ ( /4D2F608C/4D07DBA2/4D3618C7 SOT-23  D44 BAT54 {Lib=D}
+  (    1 N-000401 )
+  (    3 N-000399 )
+ )
+ ( /4D2F608C/4D07DBA2/4D3618C2 0603  L17 22uh {Lib=INDUCTOR}
+  (    1 /stim_all/stim7/BATTERY )
+  (    2 N-000401 )
+ )
+ ( /4D2F608C/4D07DBA2/4CFFE988 SOT-23-5  U72 LT1615 {Lib=LT1615}
+  (    1 N-000401 )
+  (    2 /stim_all/stim7/BATTERY )
+  (    3 N-000400 )
+  (    4 /stim_all/stim13/ANO )
+  (    5 /stim_all/stim7/BATTERY )
+ )
+ ( /4D2F608C/4D07DB9F/4D3DCC03 0402  C142 0.1uf {Lib=C}
+  (    1 /stim_all/stim7/BATTERY )
+  (    2 /stim_all/stim7/BATTERY )
+ )
+ ( /4D2F608C/4D07DB9F/4D361954 0402  R99 1k {Lib=R}
+  (    1 /stim_all/stim13/Iout )
+  (    2 N-000397 )
+ )
+ ( /4D2F608C/4D07DB9F/4D36194B SOT-323  D43 D {Lib=D}
+  (    1 N-000397 )
+  (    3 N-000398 )
+ )
+ ( /4D2F608C/4D07DB9F/4D361938 TP  TP34 TP {Lib=TP}
+  (    1 N-000398 )
+ )
+ ( /4D2F608C/4D07DB9F/4D361921 S-MINI-3P  U71 SOT-23 {Lib=2SK3539}
+  (    1 /stim_all/ca14 )
+  (    2 /stim_all/stim13/Iout )
+  (    3 N-000398 )
+ )
+ ( /4D2F608C/4D07DB9F/4D3618E7 0402  C124 100pf {Lib=C}
+  (    1 N-000398 )
+  (    2 /stim_all/stim7/BATTERY )
+ )
+ ( /4D2F608C/4D07DB9F/4D3618C7 SOT-23  D42 BAT54 {Lib=D}
+  (    1 N-000396 )
+  (    3 N-000398 )
+ )
+ ( /4D2F608C/4D07DB9F/4D3618C2 0603  L16 22uh {Lib=INDUCTOR}
+  (    1 /stim_all/stim7/BATTERY )
+  (    2 N-000396 )
+ )
+ ( /4D2F608C/4D07DB9F/4CFFE988 SOT-23-5  U70 LT1615 {Lib=LT1615}
+  (    1 N-000396 )
+  (    2 /stim_all/stim7/BATTERY )
+  (    3 N-000397 )
+  (    4 /stim_all/stim14/ANO )
+  (    5 /stim_all/stim7/BATTERY )
+ )
+ ( /4D2F608C/4D07DB98/4D3DCC03 0402  C140 0.1uf {Lib=C}
+  (    1 /stim_all/stim7/BATTERY )
+  (    2 /stim_all/stim7/BATTERY )
+ )
+ ( /4D2F608C/4D07DB98/4D361954 0402  R97 1k {Lib=R}
+  (    1 /stim_all/stim9/Iout )
+  (    2 N-000390 )
+ )
+ ( /4D2F608C/4D07DB98/4D36194B SOT-323  D39 D {Lib=D}
+  (    1 N-000390 )
+  (    3 N-000392 )
+ )
+ ( /4D2F608C/4D07DB98/4D361938 TP  TP32 TP {Lib=TP}
+  (    1 N-000392 )
+ )
+ ( /4D2F608C/4D07DB98/4D361921 S-MINI-3P  U67 SOT-23 {Lib=2SK3539}
+  (    1 /stim_all/stim12/CATHO )
+  (    2 /stim_all/stim9/Iout )
+  (    3 N-000392 )
+ )
+ ( /4D2F608C/4D07DB98/4D3618E7 0402  C120 100pf {Lib=C}
+  (    1 N-000392 )
+  (    2 /stim_all/stim7/BATTERY )
+ )
+ ( /4D2F608C/4D07DB98/4D3618C7 SOT-23  D38 BAT54 {Lib=D}
+  (    1 N-000391 )
+  (    3 N-000392 )
+ )
+ ( /4D2F608C/4D07DB98/4D3618C2 0603  L14 22uh {Lib=INDUCTOR}
+  (    1 /stim_all/stim7/BATTERY )
+  (    2 N-000391 )
+ )
+ ( /4D2F608C/4D07DB98/4CFFE988 SOT-23-5  U66 LT1615 {Lib=LT1615}
+  (    1 N-000391 )
+  (    2 /stim_all/stim7/BATTERY )
+  (    3 N-000390 )
+  (    4 /stim_all/an12 )
+  (    5 /stim_all/stim7/BATTERY )
+ )
+ ( /4D2F608C/4D07DB92/4D3DCC03 0402  C139 0.1uf {Lib=C}
+  (    1 /stim_all/stim7/BATTERY )
+  (    2 /stim_all/stim7/BATTERY )
+ )
+ ( /4D2F608C/4D07DB92/4D361954 0402  R96 1k {Lib=R}
+  (    1 /stim_all/stim9/Iout )
+  (    2 N-000388 )
+ )
+ ( /4D2F608C/4D07DB92/4D36194B SOT-323  D37 D {Lib=D}
+  (    1 N-000388 )
+  (    3 N-000389 )
+ )
+ ( /4D2F608C/4D07DB92/4D361938 TP  TP31 TP {Lib=TP}
+  (    1 N-000389 )
+ )
+ ( /4D2F608C/4D07DB92/4D361921 S-MINI-3P  U65 SOT-23 {Lib=2SK3539}
+  (    1 /stim_all/stim11/CATHO )
+  (    2 /stim_all/stim9/Iout )
+  (    3 N-000389 )
+ )
+ ( /4D2F608C/4D07DB92/4D3618E7 0402  C118 100pf {Lib=C}
+  (    1 N-000389 )
+  (    2 /stim_all/stim7/BATTERY )
+ )
+ ( /4D2F608C/4D07DB92/4D3618C7 SOT-23  D36 BAT54 {Lib=D}
+  (    1 N-000387 )
+  (    3 N-000389 )
+ )
+ ( /4D2F608C/4D07DB92/4D3618C2 0603  L13 22uh {Lib=INDUCTOR}
+  (    1 /stim_all/stim7/BATTERY )
+  (    2 N-000387 )
+ )
+ ( /4D2F608C/4D07DB92/4CFFE988 SOT-23-5  U64 LT1615 {Lib=LT1615}
+  (    1 N-000387 )
+  (    2 /stim_all/stim7/BATTERY )
+  (    3 N-000388 )
+  (    4 /stim_all/an11 )
+  (    5 /stim_all/stim7/BATTERY )
+ )
+ ( /4D2F608C/4CFFFADB/4D3DCC03 0402  C136 0.1uf {Lib=C}
+  (    1 /stim_all/stim7/BATTERY )
+  (    2 /stim_all/stim7/BATTERY )
+ )
+ ( /4D2F608C/4CFFFADB/4D361954 0402  R93 1k {Lib=R}
+  (    1 /stim_all/stim8/Iout )
+  (    2 N-000378 )
+ )
+ ( /4D2F608C/4CFFFADB/4D36194B SOT-323  D31 D {Lib=D}
+  (    1 N-000378 )
+  (    3 N-000380 )
+ )
+ ( /4D2F608C/4CFFFADB/4D361938 TP  TP28 TP {Lib=TP}
+  (    1 N-000380 )
+ )
+ ( /4D2F608C/4CFFFADB/4D361921 S-MINI-3P  U59 SOT-23 {Lib=2SK3539}
+  (    1 /stim_all/ca8 )
+  (    2 /stim_all/stim8/Iout )
+  (    3 N-000380 )
+ )
+ ( /4D2F608C/4CFFFADB/4D3618E7 0402  C112 100pf {Lib=C}
+  (    1 N-000380 )
+  (    2 /stim_all/stim7/BATTERY )
+ )
+ ( /4D2F608C/4CFFFADB/4D3618C7 SOT-23  D30 BAT54 {Lib=D}
+  (    1 N-000379 )
+  (    3 N-000380 )
+ )
+ ( /4D2F608C/4CFFFADB/4D3618C2 0603  L10 22uh {Lib=INDUCTOR}
+  (    1 /stim_all/stim7/BATTERY )
+  (    2 N-000379 )
+ )
+ ( /4D2F608C/4CFFFADB/4CFFE988 SOT-23-5  U58 LT1615 {Lib=LT1615}
+  (    1 N-000379 )
+  (    2 /stim_all/stim7/BATTERY )
+  (    3 N-000378 )
+  (    4 /stim_all/an8 )
+  (    5 /stim_all/stim7/BATTERY )
+ )
+ ( /4D2F608C/4CFFFAE1/4D3DCC03 0402  C138 0.1uf {Lib=C}
+  (    1 /stim_all/stim7/BATTERY )
+  (    2 /stim_all/stim7/BATTERY )
+ )
+ ( /4D2F608C/4CFFFAE1/4D361954 0402  R95 1k {Lib=R}
+  (    1 /stim_all/stim8/Iout )
+  (    2 N-000385 )
+ )
+ ( /4D2F608C/4CFFFAE1/4D36194B SOT-323  D35 D {Lib=D}
+  (    1 N-000385 )
+  (    3 N-000384 )
+ )
+ ( /4D2F608C/4CFFFAE1/4D361938 TP  TP30 TP {Lib=TP}
+  (    1 N-000384 )
+ )
+ ( /4D2F608C/4CFFFAE1/4D361921 S-MINI-3P  U63 SOT-23 {Lib=2SK3539}
+  (    1 /stim_all/ca5 )
+  (    2 /stim_all/stim8/Iout )
+  (    3 N-000384 )
+ )
+ ( /4D2F608C/4CFFFAE1/4D3618E7 0402  C116 100pf {Lib=C}
+  (    1 N-000384 )
+  (    2 /stim_all/stim7/BATTERY )
+ )
+ ( /4D2F608C/4CFFFAE1/4D3618C7 SOT-23  D34 BAT54 {Lib=D}
+  (    1 N-000386 )
+  (    3 N-000384 )
+ )
+ ( /4D2F608C/4CFFFAE1/4D3618C2 0603  L12 22uh {Lib=INDUCTOR}
+  (    1 /stim_all/stim7/BATTERY )
+  (    2 N-000386 )
+ )
+ ( /4D2F608C/4CFFFAE1/4CFFE988 SOT-23-5  U62 LT1615 {Lib=LT1615}
+  (    1 N-000386 )
+  (    2 /stim_all/stim7/BATTERY )
+  (    3 N-000385 )
+  (    4 /stim_all/an5 )
+  (    5 /stim_all/stim7/BATTERY )
+ )
+ ( /4D2F608C/4CFFFAD8/4D3DCC03 0402  C135 0.1uf {Lib=C}
+  (    1 /stim_all/stim7/BATTERY )
+  (    2 /stim_all/stim7/BATTERY )
+ )
+ ( /4D2F608C/4CFFFAD8/4D361954 0402  R92 1k {Lib=R}
+  (    1 /stim_all/stim8/Iout )
+  (    2 N-000375 )
+ )
+ ( /4D2F608C/4CFFFAD8/4D36194B SOT-323  D29 D {Lib=D}
+  (    1 N-000375 )
   (    3 N-000377 )
-  (    4 /stim15/an2 )
-  (    5 /stim15/stim2/VBAT )
  )
- ( /4D2F608C/4CFFE972/4D361954 0402  R88 1k {Lib=R}
-  (    1 /stim15/stim4/Iout )
-  (    2 N-000374 )
+ ( /4D2F608C/4CFFFAD8/4D361938 TP  TP27 TP {Lib=TP}
+  (    1 N-000377 )
  )
- ( /4D2F608C/4CFFE972/4D36194B SOT-323  D21 D {Lib=D}
+ ( /4D2F608C/4CFFFAD8/4D361921 S-MINI-3P  U57 SOT-23 {Lib=2SK3539}
+  (    1 /stim_all/ca7 )
+  (    2 /stim_all/stim8/Iout )
+  (    3 N-000377 )
+ )
+ ( /4D2F608C/4CFFFAD8/4D3618E7 0402  C110 100pf {Lib=C}
+  (    1 N-000377 )
+  (    2 /stim_all/stim7/BATTERY )
+ )
+ ( /4D2F608C/4CFFFAD8/4D3618C7 SOT-23  D28 BAT54 {Lib=D}
+  (    1 N-000376 )
+  (    3 N-000377 )
+ )
+ ( /4D2F608C/4CFFFAD8/4D3618C2 0603  L9 22uh {Lib=INDUCTOR}
+  (    1 /stim_all/stim7/BATTERY )
+  (    2 N-000376 )
+ )
+ ( /4D2F608C/4CFFFAD8/4CFFE988 SOT-23-5  U56 LT1615 {Lib=LT1615}
+  (    1 N-000376 )
+  (    2 /stim_all/stim7/BATTERY )
+  (    3 N-000375 )
+  (    4 /stim_all/an7 )
+  (    5 /stim_all/stim7/BATTERY )
+ )
+ ( /4D2F608C/4CFFF124/4D3DCC03 0402  C134 0.1uf {Lib=C}
+  (    1 /stim_all/stim7/BATTERY )
+  (    2 /stim_all/stim7/BATTERY )
+ )
+ ( /4D2F608C/4CFFF124/4D361954 0402  R91 1k {Lib=R}
+  (    1 /stim_all/stim2/Iout )
+  (    2 N-000372 )
+ )
+ ( /4D2F608C/4CFFF124/4D36194B SOT-323  D27 D {Lib=D}
+  (    1 N-000372 )
+  (    3 N-000374 )
+ )
+ ( /4D2F608C/4CFFF124/4D361938 TP  TP26 TP {Lib=TP}
   (    1 N-000374 )
-  (    3 N-000375 )
  )
- ( /4D2F608C/4CFFE972/4D361938 TP  TP23 TP {Lib=TP}
-  (    1 N-000375 )
+ ( /4D2F608C/4CFFF124/4D361921 S-MINI-3P  U55 SOT-23 {Lib=2SK3539}
+  (    1 /stim_all/stim3/CATHO )
+  (    2 /stim_all/stim2/Iout )
+  (    3 N-000374 )
  )
- ( /4D2F608C/4CFFE972/4D361921 S-MINI-3P  U49 SOT-23 {Lib=2SK3539}
-  (    1 /stim15/stim1/CATHO )
-  (    2 /stim15/stim4/Iout )
-  (    3 N-000375 )
+ ( /4D2F608C/4CFFF124/4D3618E7 0402  C108 100pf {Lib=C}
+  (    1 N-000374 )
+  (    2 /stim_all/stim7/BATTERY )
  )
- ( /4D2F608C/4CFFE972/4D36190A 0402  C101 0.1uf {Lib=C}
-  (    1 /stim15/VBAT )
-  (    2 /stim15/VBAT )
- )
- ( /4D2F608C/4CFFE972/4D3618E7 0402  C102 100pf {Lib=C}
-  (    1 N-000375 )
-  (    2 /stim15/VBAT )
- )
- ( /4D2F608C/4CFFE972/4D3618C7 SOT-23  D20 BAT54 {Lib=D}
+ ( /4D2F608C/4CFFF124/4D3618C7 SOT-23  D26 BAT54 {Lib=D}
   (    1 N-000373 )
-  (    3 N-000375 )
+  (    3 N-000374 )
  )
- ( /4D2F608C/4CFFE972/4D3618C2 0603  L5 22uh {Lib=INDUCTOR}
-  (    1 /stim15/VBAT )
+ ( /4D2F608C/4CFFF124/4D3618C2 0603  L8 22uh {Lib=INDUCTOR}
+  (    1 /stim_all/stim7/BATTERY )
   (    2 N-000373 )
  )
- ( /4D2F608C/4CFFE972/4CFFE988 SOT-23-5  U48 LT1615 {Lib=LT1615}
+ ( /4D2F608C/4CFFF124/4CFFE988 SOT-23-5  U54 LT1615 {Lib=LT1615}
   (    1 N-000373 )
-  (    2 /stim15/VBAT )
-  (    3 N-000374 )
-  (    4 /stim15/an1 )
-  (    5 /stim15/VBAT )
+  (    2 /stim_all/stim7/BATTERY )
+  (    3 N-000372 )
+  (    4 /stim_all/an3 )
+  (    5 /stim_all/stim7/BATTERY )
+ )
+ ( /4D2F608C/4CFFF121/4D3DCC03 0402  C133 0.1uf {Lib=C}
+  (    1 /stim_all/stim7/BATTERY )
+  (    2 /stim_all/stim7/BATTERY )
+ )
+ ( /4D2F608C/4CFFF121/4D361954 0402  R90 1k {Lib=R}
+  (    1 /stim_all/stim2/Iout )
+  (    2 N-000369 )
+ )
+ ( /4D2F608C/4CFFF121/4D36194B SOT-323  D25 D {Lib=D}
+  (    1 N-000369 )
+  (    3 N-000371 )
+ )
+ ( /4D2F608C/4CFFF121/4D361938 TP  TP25 TP {Lib=TP}
+  (    1 N-000371 )
+ )
+ ( /4D2F608C/4CFFF121/4D361921 S-MINI-3P  U53 SOT-23 {Lib=2SK3539}
+  (    1 /stim_all/ca4 )
+  (    2 /stim_all/stim2/Iout )
+  (    3 N-000371 )
+ )
+ ( /4D2F608C/4CFFF121/4D3618E7 0402  C106 100pf {Lib=C}
+  (    1 N-000371 )
+  (    2 /stim_all/stim7/BATTERY )
+ )
+ ( /4D2F608C/4CFFF121/4D3618C7 SOT-23  D24 BAT54 {Lib=D}
+  (    1 N-000370 )
+  (    3 N-000371 )
+ )
+ ( /4D2F608C/4CFFF121/4D3618C2 0603  L7 22uh {Lib=INDUCTOR}
+  (    1 /stim_all/stim7/BATTERY )
+  (    2 N-000370 )
+ )
+ ( /4D2F608C/4CFFF121/4CFFE988 SOT-23-5  U52 LT1615 {Lib=LT1615}
+  (    1 N-000370 )
+  (    2 /stim_all/stim7/BATTERY )
+  (    3 N-000369 )
+  (    4 /stim_all/an4 )
+  (    5 /stim_all/stim7/BATTERY )
  )
  ( /4CA4D1A0/4CA4FCDA 0402  C63 0.1uf {Lib=C}
   (    1 VDD )
@@ -3503,66 +3503,7 @@ $component C72
  C?
  C1-1
 $endlist
-$component R102
- R?
- SM0603
- SM0805
- R?-*
-$endlist
-$component C129
- SM*
- C?
- C1-1
-$endlist
-$component C130
- SM*
- C?
- C1-1
-$endlist
-$component R101
- R?
- SM0603
- SM0805
- R?-*
-$endlist
-$component C127
- SM*
- C?
- C1-1
-$endlist
-$component C128
- SM*
- C?
- C1-1
-$endlist
-$component R100
- R?
- SM0603
- SM0805
- R?-*
-$endlist
-$component C125
- SM*
- C?
- C1-1
-$endlist
-$component C126
- SM*
- C?
- C1-1
-$endlist
-$component R99
- R?
- SM0603
- SM0805
- R?-*
-$endlist
-$component C123
- SM*
- C?
- C1-1
-$endlist
-$component C124
+$component C141
  SM*
  C?
  C1-1
@@ -3573,76 +3514,12 @@ $component R98
  SM0805
  R?-*
 $endlist
-$component C121
- SM*
- C?
- C1-1
-$endlist
 $component C122
  SM*
  C?
  C1-1
 $endlist
-$component R97
- R?
- SM0603
- SM0805
- R?-*
-$endlist
-$component C119
- SM*
- C?
- C1-1
-$endlist
-$component C120
- SM*
- C?
- C1-1
-$endlist
-$component R96
- R?
- SM0603
- SM0805
- R?-*
-$endlist
-$component C117
- SM*
- C?
- C1-1
-$endlist
-$component C118
- SM*
- C?
- C1-1
-$endlist
-$component R93
- R?
- SM0603
- SM0805
- R?-*
-$endlist
-$component C111
- SM*
- C?
- C1-1
-$endlist
-$component C112
- SM*
- C?
- C1-1
-$endlist
-$component R95
- R?
- SM0603
- SM0805
- R?-*
-$endlist
-$component C115
- SM*
- C?
- C1-1
-$endlist
-$component C116
+$component C137
  SM*
  C?
  C1-1
@@ -3653,60 +3530,12 @@ $component R94
  SM0805
  R?-*
 $endlist
-$component C113
- SM*
- C?
- C1-1
-$endlist
 $component C114
  SM*
  C?
  C1-1
 $endlist
-$component R92
- R?
- SM0603
- SM0805
- R?-*
-$endlist
-$component C109
- SM*
- C?
- C1-1
-$endlist
-$component C110
- SM*
- C?
- C1-1
-$endlist
-$component R91
- R?
- SM0603
- SM0805
- R?-*
-$endlist
-$component C107
- SM*
- C?
- C1-1
-$endlist
-$component C108
- SM*
- C?
- C1-1
-$endlist
-$component R90
- R?
- SM0603
- SM0805
- R?-*
-$endlist
-$component C105
- SM*
- C?
- C1-1
-$endlist
-$component C106
+$component C132
  SM*
  C?
  C1-1
@@ -3717,12 +3546,12 @@ $component R89
  SM0805
  R?-*
 $endlist
-$component C103
+$component C104
  SM*
  C?
  C1-1
 $endlist
-$component C104
+$component C131
  SM*
  C?
  C1-1
@@ -3733,12 +3562,183 @@ $component R88
  SM0805
  R?-*
 $endlist
-$component C101
+$component C102
  SM*
  C?
  C1-1
 $endlist
-$component C102
+$component C145
+ SM*
+ C?
+ C1-1
+$endlist
+$component R102
+ R?
+ SM0603
+ SM0805
+ R?-*
+$endlist
+$component C130
+ SM*
+ C?
+ C1-1
+$endlist
+$component C144
+ SM*
+ C?
+ C1-1
+$endlist
+$component R101
+ R?
+ SM0603
+ SM0805
+ R?-*
+$endlist
+$component C128
+ SM*
+ C?
+ C1-1
+$endlist
+$component C143
+ SM*
+ C?
+ C1-1
+$endlist
+$component R100
+ R?
+ SM0603
+ SM0805
+ R?-*
+$endlist
+$component C126
+ SM*
+ C?
+ C1-1
+$endlist
+$component C142
+ SM*
+ C?
+ C1-1
+$endlist
+$component R99
+ R?
+ SM0603
+ SM0805
+ R?-*
+$endlist
+$component C124
+ SM*
+ C?
+ C1-1
+$endlist
+$component C140
+ SM*
+ C?
+ C1-1
+$endlist
+$component R97
+ R?
+ SM0603
+ SM0805
+ R?-*
+$endlist
+$component C120
+ SM*
+ C?
+ C1-1
+$endlist
+$component C139
+ SM*
+ C?
+ C1-1
+$endlist
+$component R96
+ R?
+ SM0603
+ SM0805
+ R?-*
+$endlist
+$component C118
+ SM*
+ C?
+ C1-1
+$endlist
+$component C136
+ SM*
+ C?
+ C1-1
+$endlist
+$component R93
+ R?
+ SM0603
+ SM0805
+ R?-*
+$endlist
+$component C112
+ SM*
+ C?
+ C1-1
+$endlist
+$component C138
+ SM*
+ C?
+ C1-1
+$endlist
+$component R95
+ R?
+ SM0603
+ SM0805
+ R?-*
+$endlist
+$component C116
+ SM*
+ C?
+ C1-1
+$endlist
+$component C135
+ SM*
+ C?
+ C1-1
+$endlist
+$component R92
+ R?
+ SM0603
+ SM0805
+ R?-*
+$endlist
+$component C110
+ SM*
+ C?
+ C1-1
+$endlist
+$component C134
+ SM*
+ C?
+ C1-1
+$endlist
+$component R91
+ R?
+ SM0603
+ SM0805
+ R?-*
+$endlist
+$component C108
+ SM*
+ C?
+ C1-1
+$endlist
+$component C133
+ SM*
+ C?
+ C1-1
+$endlist
+$component R90
+ R?
+ SM0603
+ SM0805
+ R?-*
+$endlist
+$component C106
  SM*
  C?
  C1-1
@@ -3817,39 +3817,39 @@ $endfootprintlist
 { Pin List by Nets
 Net 2 "/RXD3" "RXD3"
  R24 2
- U17 8
  U13 B14
+ U17 8
 Net 5 "/TXD3" "TXD3"
  U13 B13
  U17 25
 Net 6 "/RXD2" "RXD2"
- R23 2
- U17 9
  U13 A13
+ U17 9
+ R23 2
 Net 9 "" ""
  U13 V19
  U7 E8
 Net 17 "/RXDV" "RXDV"
- U17 26
  U13 B16
+ U17 26
 Net 18 "/COL" "COL"
- R25 2
  U13 B17
  U17 15
+ R25 2
 Net 21 "" ""
  R9 2
  U13 Y10
 Net 22 "" ""
- R10 2
  U13 W10
+ R10 2
 Net 23 "/RXD0" "RXD0"
+ R21 2
  U17 11
  U13 B10
- R21 2
 Net 24 "" ""
  U13 A10
- C16 1
  U9 1
+ C16 1
 Net 25 "" ""
  R11 2
  U13 Y9
@@ -3857,292 +3857,292 @@ Net 26 "" ""
  R12 2
  U13 W9
 Net 27 "/TXD0" "TXD0"
- U17 22
  U13 B9
+ U17 22
 Net 28 "/TXD2" "TXD2"
  U13 B12
  U17 24
 Net 29 "/RXD1" "RXD1"
- U17 10
- U13 A12
  R22 2
+ U13 A12
+ U17 10
 Net 30 "" ""
- U13 Y11
  U7 G8
+ U13 Y11
 Net 31 "" ""
- U13 W11
  U7 G7
+ U13 W11
 Net 37 "/TXD1" "TXD1"
  U13 B11
  U17 23
 Net 38 "GND" "GND"
- C68 2
- U7 J1
- C67 1
- U22 19
- C91 2
- U7 A3
- U7 D7
+ R69 2
  U36 8
- U7 B7
- U36 2
- U38 8
- U7 C3
- U7 E3
- U6 4
- U6 s1
- U6 s2
- C1 1
- C56 2
- C55 2
- R76 1
+ R71 2
+ U24 8
+ U15 4
+ C53 1
+ C58 1
+ C68 2
  R66 2
- R75 2
+ C56 2
+ C1 1
+ U6 s2
+ U6 s1
+ U6 4
  R68 2
- C63 2
  R70 2
+ C57 1
+ C67 1
  R72 2
- C69 2
- U29 4
- U30 g3
- U30 g2
- U30 g1
- U30 1
- U27 2
- C66 2
+ C52 1
+ C55 2
  C50 2
- U28 4
- U28 3
- C65 2
- C64 2
- U18 6
- C62 1
+ C42 2
+ U4 2
+ U42 8
+ R3 1
+ C4 1
+ C2 1
+ R61 2
+ C49 2
+ C26 2
+ C28 2
+ R63 2
+ U22 1
+ C31 2
+ C44 2
+ R28 1
+ U4 11
+ C41 2
+ U4 8
  U21 2
  U21 2
  U21 1
  U18 9
  U18 10
- C83 2
- C52 1
- C57 1
- C4 1
- C2 1
- R6 2
- C20 1
- C19 1
- C42 2
- U18 8
- U18 7
- U20 1
- U42 2
- U42 8
- U41 2
- U35 8
- U35 2
- U3 15
- U33 20
- U41 8
  U12 2
  U12 4
  U16 1
- C59 1
  U16 4
  U16 7
  U16 9
  U16 11
  U16 13
- U37 2
- C54 1
- U37 8
- U38 2
- U39 2
- U24 8
- U39 8
- U5 4
- U5 5
- U40 2
- U40 8
- R57 2
- R59 2
- R61 2
- R63 2
- U22 1
- C90 2
- C88 2
- U22 10
- C89 2
- C82 2
- R65 2
+ R6 2
+ C20 1
+ C19 1
+ U18 8
+ U18 7
+ U18 6
+ C60 1
+ U7 B7
+ U7 D7
+ U27 2
+ C13 2
+ U22 19
+ TP1 1
+ U7 J1
+ C66 2
+ R50 1
+ U7 A3
+ U7 C3
+ U7 E3
  R67 2
- R3 1
- R28 1
- U4 11
- U4 8
- U4 2
- U14 2
- C34 2
- C24 2
- C39 2
- C47 2
- C49 2
- C26 2
- C28 2
- C31 2
- C44 2
- C41 2
- TP4 1
- TP3 1
- TP2 1
  C29 2
  C45 2
+ U5 4
+ U5 5
  C30 2
  C27 2
+ R57 2
  C25 2
+ R59 2
  C36 2
- R69 2
- U15 4
- R71 2
- TP1 1
- C13 2
- C60 1
- R50 1
- U13 H11
- U13 J11
- U13 K11
- U33 33
- U25 8
- U33 14
- U33 24
- U13 Y1
- U13 L11
- U13 M11
- U13 N11
+ C39 2
+ C47 2
+ C24 2
+ U22 10
+ C34 2
  C100 2
- U13 H12
- C22 1
- U9 2
- U9 4
- U13 Y20
+ U14 2
+ TP4 1
+ TP3 1
+ R65 2
+ TP2 1
+ C82 2
+ U39 2
+ C83 2
+ U33 55
+ U33 65
+ U33 36
+ U33 46
+ C90 2
+ U33 69
+ U33 24
+ U33 27
+ U33 37
+ U33 18
+ U33 68
+ C88 2
+ U39 8
+ U25 8
+ U37 8
+ C61 1
+ U38 8
+ U26 8
+ U38 2
  C51 2
- R24 1
- U13 M9
- R19 1
- U13 N9
- R20 1
- U13 H10
- U13 J10
- U13 K10
- U13 L10
+ C46 2
+ U33 59
+ U33 49
+ U33 39
+ C59 1
+ U33 14
+ C54 1
+ U33 33
+ U33 62
+ C91 2
+ C62 1
+ C89 2
+ U36 2
+ U30 g1
  U19 100
  U19 101
  U19 102
  U19 103
  R31 1
- U33 59
- U33 69
- U33 55
- U33 65
- U33 36
- U13 J12
- U33 46
- U33 27
- U13 K12
- U13 L12
- U33 37
- U33 18
- U33 68
- U33 39
- U13 H9
- U13 J9
- U33 49
- U13 K9
- U13 L9
- U7 A1
- C6 2
- C5 2
- C3 2
- C10 2
- C11 2
- U17 P4
- U17 P3
- U17 P2
+ U42 2
  U17 P1
- C32 2
- C37 2
- C33 2
- C8 2
- U11 2
- C16 2
- C23 2
+ C69 2
+ U29 4
+ U17 P2
+ U17 P3
+ U17 P4
+ U30 g3
+ U30 g2
+ R24 1
+ R19 1
+ R20 1
  R8 1
- C48 2
+ R60 2
+ R62 2
+ R64 2
+ U23 19
+ U40 2
+ U13 Y20
+ C87 2
+ U23 10
+ U37 2
+ U7 A1
+ C86 2
+ U40 8
+ U13 A1
+ R23 1
+ U30 1
+ C98 2
+ U33 30
+ U33 50
+ C3 2
+ C5 2
+ C6 2
+ U11 2
+ C8 2
+ C16 2
+ U35 8
  C21 2
+ C48 2
  R11 1
  R12 1
- U31 11
- U33 30
- U46 2
- U31 1
- U33 62
- U47 10
- U13 M12
- C35 2
- U13 N12
- R58 2
- U33 42
+ U33 20
+ C11 2
+ C10 2
+ U33 70
+ U33 11
+ C32 2
  U33 41
- C18 2
+ U33 42
+ U31 1
+ U28 4
+ U13 Y1
+ U28 3
+ C65 2
+ C64 2
+ C23 2
+ C22 1
+ C33 2
+ U9 2
+ C37 2
+ U9 4
+ U23 1
+ U47 10
+ U13 H9
+ U13 J9
+ U13 K9
+ U13 L9
+ U13 M9
+ U13 N9
+ U13 H10
+ U13 J10
+ U13 K10
+ U13 L10
+ U13 M10
+ U13 N10
+ U47 15
+ U13 A20
+ U13 B20
+ U13 L19
+ U20 1
+ U13 M12
+ U13 N12
  U13 H13
  U13 J13
  U13 K13
- U33 50
- U23 10
- C46 2
- C84 2
- U13 G19
- U13 L19
- C85 2
- C87 2
- C86 2
- C98 2
- U47 9
- U1 5
- C53 1
- U33 11
- C61 1
- U13 A14
- C7 1
- U33 70
- C43 2
  U13 L13
- C40 2
  U13 M13
- C38 2
- U47 15
- C12 2
  U13 N13
- U26 8
- U23 1
- C9 1
- U1 g2
- U1 g1
- U13 A1
- R23 1
- U3 10
- U3 9
- U13 M10
- U13 N10
- C58 1
- U13 A20
- U13 B20
- R62 2
- R64 2
+ U13 A14
+ C63 2
  U13 A17
- R60 2
- U23 19
+ U3 9
+ U3 10
+ R76 1
+ R75 2
+ U3 15
+ U41 2
+ U46 2
+ U13 G19
+ C18 2
+ C43 2
+ C40 2
+ U41 8
+ C38 2
+ U35 2
+ C12 2
+ C85 2
+ C84 2
+ U13 H11
+ U13 J11
+ C35 2
+ U13 K11
+ U13 L11
+ R58 2
+ U13 M11
+ U13 N11
+ C7 1
+ U47 9
+ U13 L12
+ U1 5
+ U13 K12
+ U13 J12
+ U31 11
+ U13 H12
+ U1 g1
+ U1 g2
+ C9 1
 Net 39 "/DATA8" "DATA8"
- U13 Y4
  U7 E1
+ U13 Y4
 Net 40 "/DATA10" "DATA10"
  U7 D1
  U13 Y3
@@ -4156,114 +4156,114 @@ Net 43 "/SCAS" "SCAS"
  U7 F7
  U13 U20
 Net 44 "/SWE" "SWE"
- U13 T20
  U7 F9
+ U13 T20
 Net 45 "/SMS" "SMS"
- U7 G9
  U13 R19
+ U7 G9
 Net 47 "/CLKBUF" "CLKBUF"
  R7 1
  U17 5
 Net 48 "" ""
- R7 2
  U13 C19
+ R7 2
 Net 49 "/CRS" "CRS"
  U17 14
  U13 A7
 Net 50 "/TXCLK" "TXCLK"
- U13 A9
  U17 20
+ U13 A9
 Net 51 "/MDC" "MDC"
- U13 H2
  U17 17
+ U13 H2
 Net 52 "/MDIO" "MDIO"
- U17 16
  U13 A8
+ U17 16
 Net 53 "" ""
  U13 E20
  U11 3
 Net 54 "/EVDD" "EVDD"
- C33 1
- U17 12
- C37 1
+ R32 1
+ R38 2
+ R39 2
+ L3 1
+ U19 3
+ C48 1
+ R34 1
+ U19 6
+ R33 1
  U17 27
  U17 1
- C29 1
+ U17 12
  C32 1
- R35 1
+ C37 1
+ C33 1
+ C29 1
  R30 1
- U19 6
- U19 3
- R39 2
  R29 1
- R38 2
- C48 1
- L3 1
- R32 1
- R33 1
- R34 1
+ R35 1
 Net 55 "" ""
  U17 29
  R32 2
  U19 1
 Net 56 "" ""
  U17 31
- R34 2
  U19 7
+ R34 2
 Net 57 "" ""
- U17 30
  R35 2
  U19 8
+ U17 30
 Net 58 "VCC" "VCC"
+ U8 1
+ L4 2
  U13 P14
- U13 P13
  U13 N14
  U13 M14
- U13 H14
  U13 L14
  U13 K14
  U13 J14
+ U13 H14
  U13 G14
- U13 P12
+ U13 P13
  U13 G13
- C25 1
- U13 G12
- C27 1
- C30 1
+ U13 P12
  C35 1
+ U13 G12
  C43 1
+ C30 1
  C40 1
- L4 2
- C38 1
+ C27 1
+ C25 1
  C46 1
- U8 1
+ C38 1
 Net 59 "/EVCC" "EVCC"
- C45 1
- C42 1
  L4 1
+ C45 1
  U17 6
+ C42 1
 Net 60 "" ""
+ U13 A18
  U12 1
  C21 1
- U13 A18
 Net 61 "/RESET" "RESET"
- U17 19
- U13 B18
  U20 2
+ U13 B18
+ U17 19
 Net 62 "" ""
- U13 F20
  U11 1
+ U13 F20
 Net 63 "" ""
- U13 A19
  U12 3
+ U13 A19
  C23 1
 Net 64 "" ""
- U13 A11
- U9 3
  C22 2
+ U9 3
+ U13 A11
 Net 65 "/audioout/TFS" "TFS"
- U28 6
  U13 A3
+ U28 6
 Net 66 "/TCK" "TCK"
  U13 V2
  U16 8
@@ -4271,25 +4271,25 @@ Net 67 "/TMS" "TMS"
  U13 U2
  U16 6
 Net 68 "/_emu" "_emu"
- U16 2
  U13 T2
  R27 2
+ U16 2
 Net 70 "" ""
  U13 P2
  R13 1
 Net 71 "" ""
- U13 N2
  R14 1
+ U13 N2
 Net 73 "/RX" "RX"
- R2 1
  U13 L2
+ R2 1
 Net 78 "/DATA15" "DATA15"
  U13 V1
  U7 A2
 Net 79 "/_trst" "_trst"
- R28 2
- U16 10
  U13 U1
+ U16 10
+ R28 2
 Net 80 "/TDO" "TDO"
  U16 14
  U13 T1
@@ -4310,97 +4310,97 @@ Net 85 "/RXER" "RXER"
  U13 B7
  R19 2
 Net 86 "/PHYINT" "PHYINT"
- U13 G1
  U17 18
  R18 2
+ U13 G1
 Net 87 "/RXCLK" "RXCLK"
- U13 B15
  U17 7
  R20 2
+ U13 B15
 Net 88 "" ""
+ U19 12
  U17 3
  R29 2
- U19 12
 Net 89 "" ""
- U19 9
  R38 1
+ U19 9
 Net 90 "" ""
- U19 10
- U17 2
  R30 2
+ U17 2
+ U19 10
 Net 91 "" ""
  R39 1
  U19 11
 Net 92 "" ""
- U17 32
  R31 2
+ U17 32
 Net 93 "/MISO" "MISO"
- R16 1
- R40 1
- R43 2
- R56 1
  U13 N1
- R52 1
+ R40 1
  R54 1
+ R43 2
+ R16 1
+ R56 1
+ R52 1
 Net 95 "/TX" "TX"
- R1 1
  U13 L1
+ R1 1
 Net 99 "/TXEN" "TXEN"
- U17 21
  U13 B8
+ U17 21
 Net 100 "" ""
- D2 2
  R58 1
+ D2 2
 Net 101 "" ""
  D4 2
  R60 1
 Net 102 "" ""
- U23 17
  D4 1
  TP16 1
+ U23 17
 Net 103 "" ""
- D6 2
  R62 1
+ D6 2
 Net 104 "" ""
- R64 1
  D8 2
+ R64 1
 Net 105 "" ""
- TP18 1
- U23 15
  D8 1
+ U23 15
+ TP18 1
 Net 106 "/NRF_CSN0" "NRF_CSN0"
- R51 2
- U24 3
  U13 D2
  U23 3
+ R51 2
+ U24 3
 Net 107 "" ""
- U3 2
  C12 1
+ U3 2
 Net 111 "" ""
- U1 6
- U1 4
  U1 1
+ U1 4
+ U1 6
 Net 112 "" ""
- C14 1
  U3 1
+ C14 1
 Net 113 "" ""
- U3 3
  C14 2
+ U3 3
 Net 114 "" ""
  C15 1
  U3 4
 Net 115 "" ""
- C15 2
  U3 5
+ C15 2
 Net 116 "" ""
- C9 2
  U3 6
+ C9 2
 Net 119 "" ""
  U3 11
  R1 2
 Net 120 "" ""
- R2 2
  U3 12
+ R2 2
 Net 121 "" ""
  U3 14
  U1 2
@@ -4414,67 +4414,67 @@ Net 129 "" ""
  U21 5
  U18 3
 Net 130 "" ""
- U18 1
  U21 7
- U20 3
- R41 2
+ U18 1
  U18 19
+ R41 2
+ U20 3
 Net 131 "" ""
  U21 3
  U18 2
 Net 132 "" ""
- U18 5
  R40 2
+ U18 5
 Net 133 "" ""
- R6 1
  R5 2
+ R6 1
  U4 5
 Net 134 "" ""
+ R4 1
  R3 2
  C17 2
- R4 1
  U4 1
 Net 135 "" ""
- U16 5
  R26 1
+ U16 5
 Net 136 "" ""
  U4 4
  R5 1
  C20 2
- L2 2
  U8 2
+ L2 2
 Net 137 "" ""
- L2 1
  U4 6
+ L2 1
 Net 138 "" ""
- U4 10
  L1 1
+ U4 10
 Net 139 "" ""
  U22 5
  R45 1
 Net 140 "" ""
- U22 4
  R44 1
+ U22 4
 Net 141 "" ""
  R43 1
  U22 3
 Net 142 "" ""
- U22 2
  R42 1
+ U22 2
 Net 143 "" ""
  D7 2
  R63 1
 Net 144 "" ""
- TP10 1
- U22 15
  D7 1
+ U22 15
+ TP10 1
 Net 145 "" ""
- R61 1
  D5 2
+ R61 1
 Net 146 "" ""
  TP9 1
- D5 1
  U22 16
+ D5 1
 Net 147 "" ""
  R59 1
  D3 2
@@ -4486,48 +4486,48 @@ Net 149 "" ""
  R57 1
  D1 2
 Net 150 "" ""
- TP7 1
  D1 1
+ TP7 1
  U22 18
 Net 152 "" ""
- R69 1
  D13 2
+ R69 1
 Net 153 "" ""
  TP13 1
- U22 12
  D13 1
+ U22 12
 Net 154 "" ""
  R67 1
  D11 2
 Net 155 "" ""
- D11 1
  U22 13
+ D11 1
  TP12 1
 Net 156 "" ""
- R65 1
  D9 2
+ R65 1
 Net 157 "" ""
- D9 1
  U22 14
+ D9 1
  TP11 1
 Net 158 "" ""
  U22 6
  R46 1
 Net 159 "" ""
- U22 7
  R47 1
+ U22 7
 Net 160 "" ""
  R48 1
  U22 8
 Net 161 "" ""
- R49 1
  U22 9
+ R49 1
 Net 162 "/DATA0" "DATA0"
  U13 Y8
  U7 A8
 Net 163 "" ""
- U13 W18
  U7 J7
+ U13 W18
 Net 164 "" ""
  U7 H7
  U13 W20
@@ -4535,146 +4535,130 @@ Net 165 "" ""
  U7 J3
  U13 Y18
 Net 166 "" ""
- U13 Y17
  U7 H3
+ U13 Y17
 Net 167 "" ""
- U13 W15
  U7 G3
+ U13 W15
 Net 168 "" ""
- U13 P20
  U7 F3
  R8 2
+ U13 P20
 Net 169 "VDD" "VDD"
- C63 1
- U15 3
- U15 7
- U13 L7
- C55 1
- U13 M7
- U13 P8
- U15 8
- U13 N8
- U13 M8
- C65 1
- C64 1
- U7 J9
- U29 8
- U13 K7
- R18 1
- R25 1
- U7 A9
- U28 9
- U13 G7
- U13 H7
- C56 1
- U13 J7
- R10 1
- C50 1
- U28 5
- R9 1
- U13 G8
- U13 N7
- R15 1
- R17 1
- U13 P7
- U37 16
- U37 10
- U13 G11
- R41 1
- U41 16
- C76 1
- U41 10
- U39 10
- U39 16
- C77 1
  R27 1
- R26 2
- U18 20
- U47 16
- U3 16
- U13 F19
- U13 A16
- C7 2
- U35 16
- U35 10
- U13 B19
- U13 D19
- U13 P10
- U40 10
- C75 1
- U10 1
- U40 16
- U20 4
- U13 G20
- U13 P11
- U42 10
- U13 G9
- U42 16
- U13 P9
- U13 G10
- U38 16
- U38 10
- U23 20
- R21 1
- R22 1
- C8 1
- C6 1
- L3 2
- U27 3
- U27 1
- C69 1
- C11 1
- U7 B3
- U7 D3
- C10 1
- C3 1
  C5 1
- U22 20
- C78 1
- C79 1
- C74 1
- U7 A7
- U7 C7
- U36 10
- U36 16
- U7 E7
- C81 1
- C80 1
+ C6 1
+ C8 1
  C41 1
+ U35 10
  C44 1
  C31 1
+ L3 2
+ C11 1
+ U42 10
+ C10 1
+ C3 1
+ R26 2
+ U13 G11
+ C36 1
+ U13 G20
+ U13 P11
+ U13 G9
+ U13 P9
+ U13 G10
+ U13 P10
+ U47 16
+ U13 D19
+ U13 B19
+ U13 A16
+ U13 F19
+ C63 1
  C28 1
  C26 1
  C49 1
  C39 1
- C36 1
+ C7 2
+ U40 10
+ R25 1
+ R18 1
+ U13 K7
+ U13 J7
+ U13 H7
+ U13 G7
+ U23 20
+ U39 10
+ R21 1
+ U41 10
+ U10 1
+ R22 1
  U13 H8
  U13 J8
- R53 1
- R55 1
  U13 K8
  U13 L8
- C13 1
+ U13 M8
+ U13 N8
+ U13 P8
+ U28 5
+ U18 20
+ R10 1
+ R9 1
+ U29 8
+ U13 L7
+ U28 9
+ U13 M7
+ C64 1
+ U13 N7
+ U3 16
+ U20 4
+ C65 1
+ U13 P7
+ R41 1
+ U13 G8
+ R17 1
+ R15 1
+ U37 10
+ U38 10
+ R55 1
+ R53 1
+ C55 1
+ U7 E7
+ C50 1
+ C69 1
+ U7 C7
+ U7 A7
+ U7 B3
  C47 1
+ U7 J9
+ U27 1
+ U7 D3
+ U15 3
+ U15 7
+ U15 8
+ U7 A9
+ U36 10
+ C13 1
+ U27 3
+ U22 20
+ C56 1
  R51 1
 Net 170 "" ""
- U13 W17
  U7 J2
+ U13 W17
 Net 171 "" ""
  U7 H2
  U13 W16
 Net 172 "" ""
- U13 W14
  U7 G2
+ U13 W14
 Net 174 "/DATA9" "DATA9"
- U13 W4
  U7 D2
+ U13 W4
 Net 175 "/DATA11" "DATA11"
- U7 C2
  U13 W3
+ U7 C2
 Net 176 "/DATA13" "DATA13"
- U13 W2
  U7 B2
+ U13 W2
 Net 177 "" ""
  U13 Y16
  U7 H1
@@ -4682,11 +4666,11 @@ Net 178 "" ""
  U7 G1
  U13 Y14
 Net 179 "" ""
- U13 V20
  U7 F1
+ U13 V20
 Net 180 "/DATA2" "DATA2"
- U7 B8
  U13 Y7
+ U7 B8
 Net 181 "/DATA4" "DATA4"
  U7 C8
  U13 Y6
@@ -4694,14 +4678,14 @@ Net 182 "/DATA6" "DATA6"
  U7 D8
  U13 Y5
 Net 183 "/SRAS" "SRAS"
- U13 T19
  U7 F8
+ U13 T19
 Net 184 "" ""
  U13 W19
  U7 H8
 Net 185 "" ""
- U7 J8
  U13 Y19
+ U7 J8
 Net 186 "/DATA1" "DATA1"
  U13 W8
  U7 B9
@@ -4709,8 +4693,8 @@ Net 187 "/DATA3" "DATA3"
  U13 W7
  U7 C9
 Net 188 "/DATA5" "DATA5"
- U7 D9
  U13 W6
+ U7 D9
 Net 189 "/DATA7" "DATA7"
  U13 W5
  U7 E9
@@ -4724,72 +4708,72 @@ Net 192 "" ""
  U6 3
  U11 4
 Net 193 "" ""
- U11 6
  U6 2
+ U11 6
 Net 194 "" ""
- U6 1
- U11 5
  U13 E19
  U5 3
  C18 1
+ U6 1
+ U11 5
 Net 195 "" ""
- TP22 1
  D16 1
+ TP22 1
  U23 11
 Net 196 "" ""
- R70 1
  D14 2
+ R70 1
 Net 197 "" ""
- R68 1
  D12 2
+ R68 1
 Net 198 "" ""
  U23 13
  TP20 1
  D12 1
 Net 199 "" ""
- D10 2
  R66 1
+ D10 2
 Net 200 "" ""
  U22 11
  D15 1
  TP14 1
 Net 201 "" ""
- R71 1
  D15 2
+ R71 1
 Net 202 "" ""
- U15 2
- R16 2
  R15 2
+ R16 2
+ U15 2
 Net 203 "/SPISS" "SPISS"
- U18 18
- U15 1
- R45 2
- U13 P1
  R17 2
+ U15 1
+ U18 18
+ U13 P1
+ R45 2
 Net 204 "" ""
- U3 13
  U1 3
+ U3 13
 Net 205 "" ""
- U18 15
  U21 4
+ U18 15
 Net 206 "" ""
  U10 2
- R4 2
- C17 1
- L1 2
  C19 2
+ C17 1
+ R4 2
+ L1 2
 Net 207 "" ""
  U2 2
- U4 9
- C1 2
+ C2 2
+ C4 2
  U4 3
  U4 7
- C4 2
- C2 2
+ U4 9
+ C1 2
 Net 208 "" ""
- D14 1
- TP21 1
  U23 12
+ TP21 1
+ D14 1
 Net 209 "" ""
  TP19 1
  D10 1
@@ -4799,12 +4783,12 @@ Net 210 "" ""
  TP17 1
  D6 1
 Net 211 "" ""
- D2 1
  U23 18
+ D2 1
  TP15 1
 Net 212 "" ""
- U19 2
  R33 2
+ U19 2
  U17 28
 Net 213 "/RSCLK0" "RSCLK0"
  U47 11
@@ -4814,46 +4798,46 @@ Net 214 "/audioout/DTPRI" "DTPRI"
  U28 8
  U13 B5
 Net 215 "/NRF_CE" "NRF_CE"
- R50 2
  U26 2
- U13 B3
+ R50 2
  U24 2
  U25 2
+ U13 B3
 Net 216 "VEE" "VEE"
- U46 1
- C90 1
- U41 1
- U31 2
- U24 1
  C91 1
- U5 1
- U39 1
- C89 1
- C84 1
- C62 2
- C98 1
- U26 1
- C88 1
- U35 1
- C85 1
- C86 1
- U37 1
- C87 1
- U2 1
- U38 1
  U33 1
- C60 2
- U25 1
+ U26 1
+ U31 2
  U42 1
- C100 1
+ C90 1
+ C62 2
+ C89 1
+ U35 1
  U36 1
  C61 2
+ U25 1
+ U38 1
+ U39 1
+ U5 1
+ U41 1
+ U2 1
+ C84 1
+ C85 1
+ U37 1
+ C86 1
+ C88 1
  U40 1
+ C87 1
+ C100 1
+ C60 2
+ U24 1
+ U46 1
+ C98 1
 Net 217 "/NRF_CSN2" "NRF_CSN2"
- R55 2
  U13 A2
- U23 7
  U26 3
+ U23 7
+ R55 2
 Net 219 "" ""
  R56 2
  U26 6
@@ -4862,53 +4846,53 @@ Net 220 "/NRF_IRQ2" "NRF_IRQ2"
  U13 B2
  U23 6
 Net 221 "/NRF_CSN1" "NRF_CSN1"
- U13 C2
  U23 5
  R53 2
  U25 3
+ U13 C2
 Net 222 "" ""
  R54 2
  U25 6
 Net 223 "/NRF_IRQ1" "NRF_IRQ1"
  U13 C1
- U25 7
  U23 4
+ U25 7
 Net 224 "/DR0SEC" "DR0SEC"
- R47 2
- U47 13
  U13 B1
+ U47 13
+ R47 2
 Net 225 "/PF15" "PF15"
  U23 9
  U13 A6
 Net 226 "" ""
- C51 1
  U18 4
  U21 6
+ C51 1
 Net 227 "/MOSI" "MOSI"
  C58 2
- R42 2
- U26 5
- U15 5
- U24 5
  U25 5
- C57 2
- R36 2
- C59 2
+ R42 2
  R14 2
+ C57 2
+ U15 5
+ C59 2
+ U24 5
+ U26 5
+ R36 2
 Net 228 "" ""
- TP5 1
  U13 A4
+ TP5 1
 Net 229 "/SCK" "SCK"
- R37 2
- U25 4
- C52 2
  C54 2
- U24 4
- C53 2
+ U25 4
  U26 4
+ R44 2
+ R37 2
+ U24 4
  R13 2
  U15 6
- R44 2
+ C53 2
+ C52 2
 Net 230 "" ""
  U24 6
  R52 2
@@ -4917,779 +4901,760 @@ Net 231 "" ""
  U14 5
  U13 R20
 Net 232 "" ""
+ U14 3
  C34 1
  U14 1
- U14 3
 Net 233 "" ""
  U13 K20
  U7 F2
-Net 234 "/DR0PRI" "DR0PRI"
+Net 234 "/wired/DT0PRI" "DT0PRI"
+ R46 2
  U47 14
  U13 F1
- R46 2
-Net 235 "/wired/TFS0" "TFS0"
+Net 235 "/RFS0" "RFS0"
  U47 12
  R48 2
  U13 E1
 Net 236 "/NRF_IRQ0" "NRF_IRQ0"
- U13 D1
  U23 2
  U24 7
+ U13 D1
 Net 237 "" ""
  C71 2
  U29 6
  U29 7
 Net 238 "" ""
- C68 1
  R74 1
+ C68 1
  U29 5
 Net 239 "" ""
- R74 2
  U28 2
+ R74 2
 Net 240 "" ""
  R75 1
- U30 2
  C70 1
+ U30 2
 Net 241 "" ""
  C71 1
  U30 3
  R76 2
 Net 242 "" ""
- U29 2
  U29 1
+ U29 2
  C70 2
 Net 243 "" ""
  U28 1
  R73 2
 Net 244 "" ""
  U29 3
- C67 2
  R73 1
+ C67 2
 Net 246 "" ""
  U27 5
- C66 1
  U28 10
-Net 247 "/stim15/b7" "b7"
- U38 4
- U33 54
-Net 248 "/stim15/b8" "b8"
- U38 6
- U33 22
-Net 250 "/stim15/stim8/CATHO" "CATHO"
- U38 11
- U59 1
-Net 251 "/stim15/an8" "an8"
- U38 12
- U58 4
-Net 252 "/stim15/ca7" "ca7"
- U57 1
- U38 13
-Net 253 "/stim15/an7" "an7"
- U38 14
- U56 4
-Net 254 "/stim15/a3" "a3"
- U36 3
- U33 13
-Net 255 "/stim15/b3" "b3"
- U33 47
+ C66 1
+Net 247 "/stim_all/b3" "b3"
  U36 4
-Net 256 "/stim15/a4" "a4"
- U33 48
+ U33 47
+Net 248 "/stim_all/a4" "a4"
  U36 5
-Net 257 "/stim15/b4" "b4"
+ U33 48
+Net 249 "/stim_all/b4" "b4"
  U33 15
  U36 6
-Net 259 "/stim15/ca4" "ca4"
+Net 251 "/stim_all/ca4" "ca4"
  U36 11
  U53 1
-Net 260 "/stim15/ca3" "ca3"
- U36 13
- U55 1
-Net 261 "" ""
- U36 9
- C75 2
- U36 15
-Net 264 "/stim15/an4" "an4"
- U36 12
- U52 4
-Net 265 "/stim15/stim3/ANO" "ANO"
- U54 4
- U36 14
-Net 268 "/stim15/ca10" "ca10"
- U69 1
- U39 11
-Net 269 "/stim15/an10" "an10"
- U68 4
- U39 12
-Net 270 "/stim15/stim9/CATHO" "CATHO"
- U39 13
- U75 1
-Net 271 "/stim15/stim9/ANO" "ANO"
- U39 14
- U74 4
-Net 272 "" ""
- U39 15
- C78 2
- U39 9
-Net 273 "/stim15/d8" "d8"
- U42 6
- U33 34
- C82 1
-Net 274 "/stim15/stim14/CATHO" "CATHO"
- U71 1
- U41 11
-Net 275 "/stim15/an14" "an14"
- U70 4
- U41 12
-Net 276 "/stim15/ca13" "ca13"
- U73 1
- U41 13
-Net 277 "/stim15/an13" "an13"
- U41 14
- U72 4
-Net 278 "/stim15/a5" "a5"
- U33 16
- U37 3
-Net 279 "/stim15/b5" "b5"
- U33 17
- U37 4
-Net 280 "/stim15/b6" "b6"
+Net 252 "/stim_all/b6" "b6"
  U37 6
  U33 52
-Net 282 "/stim15/stim6/CATHO" "CATHO"
+Net 254 "/stim_all/stim6/CATHO" "CATHO"
  U37 11
  U61 1
-Net 283 "/stim15/an6" "an6"
- U37 12
- U60 4
-Net 284 "/stim15/stim5/CATHO" "CATHO"
+Net 255 "/stim_all/ca5" "ca5"
  U63 1
  U37 13
-Net 285 "/stim15/an5" "an5"
- U37 14
- U62 4
-Net 286 "" ""
- C76 2
- U37 9
- U37 15
-Net 287 "/stim15/stim12/CATHO" "CATHO"
- U40 11
- U67 1
-Net 288 "/stim15/stim12/ANO" "ANO"
- U40 12
- U66 4
-Net 289 "/stim15/stim11/CATHO" "CATHO"
- U40 13
- U65 1
-Net 290 "/stim15/an11" "an11"
- U64 4
- U40 14
-Net 291 "/stim15/c8" "c8"
- C83 1
- U33 67
- U42 5
-Net 292 "/stim15/SCL" "SCL"
- U32 3
- U42 11
-Net 293 "/stim15/SDA" "SDA"
- U42 12
- U32 4
-Net 294 "/stim15/stim15/CATHO" "CATHO"
- U77 1
- U42 13
-Net 295 "/stim15/stim15/ANO" "ANO"
- U76 4
- U42 14
-Net 296 "" ""
- U42 15
- U42 9
- C81 2
-Net 298 "/stim15/stim2/CATHO" "CATHO"
- U51 1
- U35 11
-Net 299 "/stim15/an2" "an2"
- U35 12
- U50 4
-Net 300 "/stim15/stim1/CATHO" "CATHO"
- U35 13
- U49 1
-Net 301 "/stim15/an1" "an1"
- U48 4
- U35 14
-Net 302 "/stim15/a1" "a1"
- U33 10
- U35 3
-Net 303 "/stim15/b1" "b1"
- U35 4
- U33 44
-Net 304 "/stim15/a2" "a2"
- U35 5
- U33 45
-Net 305 "/stim15/b2" "b2"
- U35 6
- U33 12
-Net 307 "/stim15/d3" "d3"
- U33 60
- U40 4
-Net 308 "/stim15/a8" "a8"
+Net 256 "/stim_all/a7" "a7"
+ U33 53
+ U38 3
+Net 257 "/stim_all/b7" "b7"
+ U33 54
+ U38 4
+Net 258 "/stim_all/a8" "a8"
  U38 5
  U33 21
-Net 309 "/stim15/d6" "d6"
- U41 6
- U33 31
-Net 310 "/stim15/a6" "a6"
- U33 51
- U37 5
-Net 311 "/stim15/c4" "c4"
- U40 5
- U33 61
-Net 312 "/stim15/c7" "c7"
- U42 3
- U33 32
-Net 313 "/stim15/c1" "c1"
+Net 259 "/stim_all/b8" "b8"
+ U38 6
+ U33 22
+Net 261 "/stim_all/ca8" "ca8"
+ U59 1
+ U38 11
+Net 262 "/stim_all/ca7" "ca7"
+ U57 1
+ U38 13
+Net 263 "/stim_all/a3" "a3"
+ U36 3
+ U33 13
+Net 267 "/stim_all/stim3/CATHO" "CATHO"
+ U55 1
+ U36 13
+Net 268 "/stim_all/an8" "an8"
+ U38 12
+ U58 4
+Net 269 "/stim_all/an7" "an7"
+ U38 14
+ U56 4
+Net 270 "/stim_all/stim6/ANO" "ANO"
+ U60 4
+ U37 12
+Net 271 "/stim_all/an5" "an5"
+ U37 14
+ U62 4
+Net 272 "/stim_all/an4" "an4"
+ U36 12
+ U52 4
+Net 273 "/stim_all/an3" "an3"
+ U36 14
+ U54 4
+Net 275 "/stim_all/c8" "c8"
+ U33 67
+ U42 5
+ C83 1
+Net 276 "/stim_all/c1" "c1"
  U39 3
  U33 23
-Net 318 "" ""
- U31 3
- U33 2
-Net 319 "" ""
- U33 3
- U31 4
-Net 320 "" ""
- U31 5
- U33 4
-Net 321 "" ""
- U33 5
- U31 6
-Net 322 "" ""
- U33 6
- U31 7
-Net 323 "" ""
- U33 7
- U31 8
-Net 324 "" ""
+Net 277 "/stim_all/SCL" "SCL"
+ U42 11
+ U32 3
+Net 278 "/stim_all/SDA" "SDA"
+ U42 12
+ U32 4
+Net 279 "/stim_all/ca15" "ca15"
+ U77 1
+ U42 13
+Net 280 "/stim_all/an15" "an15"
+ U76 4
+ U42 14
+Net 281 "/stim_all/ca14" "ca14"
+ U71 1
+ U41 11
+Net 282 "/stim_all/stim14/ANO" "ANO"
+ U41 12
+ U70 4
+Net 283 "/stim_all/stim13/CATHO" "CATHO"
+ U73 1
+ U41 13
+Net 284 "/stim_all/stim13/ANO" "ANO"
+ U72 4
+ U41 14
+Net 285 "/stim_all/a5" "a5"
+ U33 16
+ U37 3
+Net 286 "/stim_all/b5" "b5"
+ U37 4
+ U33 17
+Net 287 "/stim_all/a6" "a6"
+ U37 5
+ U33 51
+Net 288 "/stim_all/stim10/CATHO" "CATHO"
+ U39 11
+ U69 1
+Net 289 "/stim_all/stim10/ANO" "ANO"
+ U39 12
+ U68 4
+Net 290 "/stim_all/ca9" "ca9"
+ U39 13
+ U75 1
+Net 291 "/stim_all/an9" "an9"
+ U74 4
+ U39 14
+Net 292 "/stim_all/stim12/CATHO" "CATHO"
+ U40 11
+ U67 1
+Net 293 "/stim_all/an12" "an12"
+ U40 12
+ U66 4
+Net 294 "/stim_all/stim11/CATHO" "CATHO"
+ U40 13
+ U65 1
+Net 295 "/stim_all/an11" "an11"
+ U40 14
+ U64 4
+Net 296 "/stim_all/d8" "d8"
+ U33 34
+ U42 6
+ C82 1
+Net 297 "/stim_all/a1" "a1"
+ U35 3
+ U33 10
+Net 298 "/stim_all/b1" "b1"
+ U35 4
+ U33 44
+Net 299 "/stim_all/a2" "a2"
+ U33 45
+ U35 5
+Net 300 "/stim_all/b2" "b2"
+ U33 12
+ U35 6
+Net 302 "/stim_all/stim2/CATHO" "CATHO"
+ U35 11
+ U51 1
+Net 303 "/stim_all/stim2/ANO" "ANO"
+ U50 4
+ U35 12
+Net 304 "/stim_all/stim1/CATHO" "CATHO"
+ U35 13
+ U49 1
+Net 305 "/stim_all/stim1/ANO" "ANO"
+ U35 14
+ U48 4
+Net 306 "/stim_all/d7" "d7"
+ U42 4
+ U33 66
+Net 307 "/stim_all/d5" "d5"
+ U33 63
+ U41 4
+Net 308 "/stim_all/d4" "d4"
+ U33 28
+ U40 6
+Net 309 "/stim_all/d2" "d2"
+ U39 6
+ U33 25
+Net 310 "/stim_all/d1" "d1"
+ U39 4
+ U33 57
+Net 311 "/stim_all/c6" "c6"
+ U41 5
+ U33 64
+Net 312 "/stim_all/c5" "c5"
+ U33 29
+ U41 3
+Net 313 "/stim_all/c3" "c3"
+ U40 3
+ U33 26
+Net 314 "/stim_all/c2" "c2"
+ U33 58
+ U39 5
+Net 315 "" ""
  U33 8
  U31 9
-Net 325 "" ""
- U33 9
+Net 316 "" ""
  U31 10
-Net 326 "/stim15/stim14/Iout" "Iout"
- R99 1
+ U33 9
+Net 318 "/stim_all/d3" "d3"
+ U33 60
+ U40 4
+Net 319 "/stim_all/d6" "d6"
+ U41 6
+ U33 31
+Net 320 "/stim_all/c4" "c4"
+ U40 5
+ U33 61
+Net 321 "/stim_all/c7" "c7"
+ U42 3
+ U33 32
+Net 326 "" ""
+ U33 2
+ U31 3
+Net 327 "" ""
+ U33 3
+ U31 4
+Net 328 "" ""
+ U33 4
+ U31 5
+Net 329 "" ""
+ U33 5
+ U31 6
+Net 330 "" ""
+ U33 6
+ U31 7
+Net 331 "" ""
+ U31 8
+ U33 7
+Net 332 "/stim_all/stim13/Iout" "Iout"
  R100 1
  U73 2
  U71 2
- R80 1
- R102 1
  U77 2
-Net 327 "/stim15/stim10/Iout" "Iout"
- R79 1
- R98 1
- U69 2
- U75 2
- R96 1
- R101 1
- U65 2
- R97 1
- U67 2
-Net 328 "" ""
- U40 9
- U40 15
- C79 2
-Net 329 "" ""
- U35 15
- U35 9
- C74 2
-Net 330 "" ""
- C80 2
- U41 9
- U41 15
-Net 331 "" ""
- U38 15
- C77 2
- U38 9
-Net 332 "/stim15/c5" "c5"
- U41 3
- U33 29
-Net 334 "/stim15/c2" "c2"
- U39 5
- U33 58
-Net 335 "/stim15/d4" "d4"
- U33 28
- U40 6
-Net 336 "/stim15/d1" "d1"
- U33 57
- U39 4
-Net 337 "/stim15/d7" "d7"
- U33 66
- U42 4
-Net 338 "/stim15/c3" "c3"
- U33 26
- U40 3
-Net 339 "/stim15/d2" "d2"
- U39 6
- U33 25
-Net 340 "/stim15/c6" "c6"
- U41 5
- U33 64
-Net 341 "/stim15/stim4/Iout" "Iout"
- U53 2
- R90 1
- R91 1
- U55 2
- R88 1
- U49 2
- R77 1
- U51 2
+ R99 1
+ R102 1
+ R80 1
+Net 333 "/stim_all/stim2/Iout" "Iout"
  R89 1
-Net 342 "/stim15/stim8/Iout" "Iout"
+ U53 2
+ R77 1
+ R90 1
+ R88 1
+ U55 2
+ U49 2
+ R91 1
+ U51 2
+Net 335 "/stim_all/stim8/Iout" "Iout"
  U61 2
- U59 2
- R93 1
  R94 1
  R92 1
- R95 1
- U63 2
  U57 2
+ U63 2
+ R95 1
+ R93 1
+ U59 2
  R78 1
-Net 343 "/stim15/d5" "d5"
- U41 4
- U33 63
-Net 344 "/stim15/a7" "a7"
- U38 3
- U33 53
-Net 345 "" ""
- D17 2
- D18 1
-Net 346 "" ""
- D17 1
- C73 1
- U34 1
-Net 347 "" ""
- U34 3
- BT1 1
-Net 348 "" ""
- D18 3
- D19 1
-Net 349 "" ""
- D19 3
- R81 2
-Net 350 "/stim15/VBAT" "VBAT"
- C101 1
- C101 2
- C72 2
- C72 1
- U48 5
- U48 2
- L5 1
- C102 2
- U32 2
- U32 5
- BT1 2
- C73 2
- R81 1
- U32 1
-Net 354 "/stim15/Vfb" "Vfb"
- R77 2
+Net 336 "/stim_all/Vfb" "Vfb"
  R78 2
  R79 2
- R80 2
  U32 6
-Net 355 "/wired/V3C" "V3C"
- U45 4
- C99 2
+ R77 2
+ R80 2
+Net 337 "/stim_all/stim7/BATTERY" "BATTERY"
+ U39 9
+ C108 2
+ C78 2
+ C78 1
+ C144 1
+ U54 5
+ U54 2
+ L8 1
+ U72 2
+ L17 1
+ U56 5
+ C126 2
+ U56 2
+ C143 1
+ L9 1
+ C143 2
+ C110 2
+ C135 1
+ C135 2
+ U72 5
+ C133 1
+ C133 2
+ C130 2
+ C81 2
+ L19 1
+ U76 2
+ C145 1
+ U50 5
+ U76 5
+ L6 1
+ C145 2
+ U50 2
+ C134 1
+ C134 2
+ C72 1
+ L18 1
+ U74 2
+ C72 2
+ U74 5
+ C144 2
+ C80 1
+ C80 2
+ U52 5
+ U52 2
+ C128 2
+ L7 1
+ C106 2
+ C141 1
+ C141 2
+ C77 2
+ C77 1
+ L14 1
+ U39 16
+ C76 2
+ C76 1
+ C120 2
+ U40 9
+ U62 5
+ U40 15
+ U62 2
+ U68 2
+ L15 1
+ C138 2
+ C138 1
+ C116 2
+ U41 15
+ U41 16
+ U39 15
+ C122 2
+ L12 1
+ U35 9
+ L13 1
+ U64 2
+ U35 15
+ U64 5
+ C118 2
+ U35 16
+ C139 2
+ C139 1
+ C140 2
+ C140 1
+ U66 2
+ U40 16
+ U66 5
+ C75 2
+ C75 1
+ U42 16
+ U58 5
+ U58 2
+ L10 1
+ C112 2
+ C136 1
+ C136 2
+ C124 2
+ U32 1
+ U32 2
+ U32 5
+ L16 1
+ C142 2
+ C142 1
+ U42 9
+ U42 15
+ U60 5
+ U41 9
+ U60 2
+ C74 2
+ L11 1
+ C74 1
+ C137 1
+ C137 2
+ U68 5
+ C114 2
+ U70 5
+ U70 2
+ U38 9
+ U37 16
+ U37 15
+ D17 1
+ U36 9
+ C73 1
+ C73 2
+ U34 1
+ U36 16
+ R81 1
+ U37 9
+ BT1 2
+ U36 15
+ C104 2
+ U38 15
+ U38 16
+ C81 1
+ C79 2
+ C79 1
+ C132 1
+ C132 2
+Net 338 "" ""
+ D19 1
+ D18 3
+Net 339 "" ""
+ U34 3
+ BT1 1
+Net 340 "" ""
+ D17 2
+ D18 1
+Net 344 "/stim_all/stim9/Iout" "Iout"
+ U75 2
+ R79 1
+ R96 1
+ U65 2
+ R101 1
+ R98 1
+ U69 2
+ U67 2
+ R97 1
+Net 345 "/stim_all/stim1/GROUND" "GROUND"
+ C102 2
+ C131 2
+ U48 2
+Net 346 "/stim_all/stim1/BATTERY" "BATTERY"
+ C131 1
+ L5 1
+ U48 5
+Net 347 "" ""
+ R81 2
+ D19 3
+Net 348 "/wired/V3C" "V3C"
  U44 14
- U44 11
- C96 1
  C97 2
+ C99 2
+ U45 4
+ U44 11
  U47 1
-Net 356 "" ""
- U44 13
+ C96 1
+Net 349 "" ""
  U47 6
-Net 357 "" ""
- U47 5
+ U44 13
+Net 350 "" ""
  U44 12
-Net 358 "" ""
- U44 5
+ U47 5
+Net 351 "" ""
  U47 4
-Net 359 "" ""
- U47 3
+ U44 5
+Net 352 "" ""
  U44 4
-Net 360 "" ""
+ U47 3
+Net 353 "" ""
  U43 4
- U44 10
  R84 2
-Net 361 "" ""
- U43 6
+ U44 10
+Net 354 "" ""
  U44 7
+ U43 6
  R83 2
-Net 362 "" ""
- R82 2
+Net 355 "" ""
  U44 2
  U43 8
-Net 364 "" ""
+ R82 2
+Net 357 "" ""
  U43 2
- R85 2
  U44 15
-Net 365 "" ""
+ R85 2
+Net 358 "" ""
+ U44 8
+ U44 9
  U44 16
  U44 1
  R86 2
- U44 9
  R87 1
- U44 8
  C92 1
-Net 371 "/wired/V5b" "V5b"
- C95 1
+Net 364 "/wired/V0b" "V0b"
+ C93 2
+ U44 6
+ C97 1
+ U44 3
+ U43 3
+ C94 2
+ R84 1
+ C92 2
+ U47 8
+ C96 2
+ R86 1
+ U46 5
+ C95 2
+ R83 1
+ U47 2
+ R85 1
+ U43 7
+ U45 3
+ C99 1
+ U43 5
+ R82 1
+Net 365 "/wired/V5b" "V5b"
+ U43 9
  U45 1
+ U45 5
  C94 1
  U46 6
- U43 1
- U45 5
- U43 9
+ C95 1
  C93 1
-Net 372 "/wired/V0b" "V0b"
- C99 1
- U44 3
- R83 1
- R82 1
- C93 2
- R84 1
- R86 1
- C92 2
- C95 2
- C96 2
- U45 3
- R85 1
- U46 5
- C94 2
- U43 7
- U43 5
- U43 3
- C97 1
- U47 2
- U44 6
- U47 8
-Net 373 "" ""
- D20 1
- L5 2
- U48 1
-Net 374 "" ""
- D21 1
- R88 2
- U48 3
-Net 375 "" ""
- C102 1
- U49 3
- D20 3
- D21 3
- TP23 1
-Net 376 "" ""
- D22 1
- L6 2
+ U43 1
+Net 366 "" ""
  U50 1
-Net 377 "" ""
+ L6 2
+ D22 1
+Net 367 "" ""
+ U50 3
  R89 2
  D23 1
- U50 3
-Net 378 "/stim15/stim2/VBAT" "VBAT"
- L6 1
- U50 5
- C103 1
-Net 379 "/stim15/stim2/IGND" "IGND"
- C104 2
- U50 2
- C103 2
-Net 380 "" ""
+Net 368 "" ""
+ D22 3
+ D23 3
+ TP24 1
  U51 3
  C104 1
- TP24 1
- D23 3
- D22 3
-Net 381 "" ""
- D24 1
- L7 2
- U52 1
-Net 382 "" ""
+Net 369 "" ""
+ U52 3
  R90 2
  D25 1
- U52 3
-Net 383 "/stim15/stim4/VBAT" "VBAT"
- L7 1
- C105 1
- U52 5
-Net 384 "/stim15/stim4/IGND" "IGND"
- U52 2
- C105 2
- C106 2
-Net 385 "" ""
+Net 370 "" ""
+ U52 1
+ L7 2
+ D24 1
+Net 371 "" ""
  C106 1
  U53 3
  TP25 1
- D24 3
  D25 3
-Net 386 "" ""
- U54 1
- D26 1
- L8 2
-Net 387 "" ""
+ D24 3
+Net 372 "" ""
  U54 3
  D27 1
  R91 2
-Net 388 "/stim15/stim3/VBAT" "VBAT"
- U54 5
- C107 1
- L8 1
-Net 389 "/stim15/stim3/IGND" "IGND"
- C107 2
- C108 2
- U54 2
-Net 390 "" ""
+Net 373 "" ""
+ U54 1
+ L8 2
+ D26 1
+Net 374 "" ""
+ C108 1
+ U55 3
  TP26 1
  D27 3
- U55 3
- C108 1
  D26 3
-Net 391 "" ""
- U57 3
- C110 1
- D28 3
- D29 3
- TP27 1
-Net 392 "" ""
+Net 375 "" ""
  R92 2
  D29 1
  U56 3
-Net 393 "" ""
+Net 376 "" ""
  U56 1
- D28 1
  L9 2
-Net 394 "/stim15/stim7/IGND" "IGND"
- U56 2
- C110 2
- C109 2
-Net 395 "/stim15/stim7/VBAT" "VBAT"
- L9 1
- U56 5
- C109 1
-Net 396 "" ""
- D31 1
+ D28 1
+Net 377 "" ""
+ C110 1
+ U57 3
+ TP27 1
+ D29 3
+ D28 3
+Net 378 "" ""
  R93 2
+ D31 1
  U58 3
-Net 397 "" ""
- D30 1
- L10 2
+Net 379 "" ""
  U58 1
-Net 398 "/stim15/stim8/VBAT" "VBAT"
- C111 1
- U58 5
- L10 1
-Net 399 "/stim15/stim8/IGND" "IGND"
- U58 2
- C112 2
- C111 2
-Net 400 "" ""
- U59 3
- TP28 1
+ L10 2
+ D30 1
+Net 380 "" ""
  D31 3
- C112 1
  D30 3
-Net 401 "" ""
- D32 3
- C114 1
- D33 3
- TP29 1
- U61 3
-Net 402 "/stim15/stim6/IGND" "IGND"
- U60 2
- C114 2
- C113 2
-Net 403 "/stim15/stim6/VBAT" "VBAT"
- U60 5
- L11 1
- C113 1
-Net 404 "" ""
- U60 3
- R94 2
- D33 1
-Net 405 "" ""
+ TP28 1
+ U59 3
+ C112 1
+Net 381 "" ""
  U60 1
  L11 2
  D32 1
-Net 406 "" ""
- D34 1
- L12 2
- U62 1
-Net 407 "" ""
+Net 382 "" ""
+ D33 1
+ R94 2
+ U60 3
+Net 383 "" ""
+ D33 3
+ D32 3
+ C114 1
+ U61 3
+ TP29 1
+Net 384 "" ""
+ TP30 1
+ U63 3
+ C116 1
+ D34 3
+ D35 3
+Net 385 "" ""
  D35 1
  R95 2
  U62 3
-Net 408 "/stim15/stim5/VBAT" "VBAT"
- U62 5
- L12 1
- C115 1
-Net 409 "/stim15/stim5/IGND" "IGND"
- C115 2
- U62 2
- C116 2
-Net 410 "" ""
- D35 3
- TP30 1
- U63 3
- D34 3
- C116 1
-Net 411 "" ""
- D36 1
- L13 2
+Net 386 "" ""
+ U62 1
+ L12 2
+ D34 1
+Net 387 "" ""
  U64 1
-Net 412 "" ""
+ L13 2
+ D36 1
+Net 388 "" ""
  U64 3
- D37 1
  R96 2
-Net 413 "/stim15/stim11/VBAT" "VBAT"
- U64 5
- L13 1
- C117 1
-Net 414 "/stim15/stim11/IGND" "IGND"
- C117 2
- U64 2
- C118 2
-Net 415 "" ""
- D36 3
- C118 1
- U65 3
- TP31 1
+ D37 1
+Net 389 "" ""
  D37 3
-Net 416 "" ""
+ D36 3
+ U65 3
+ C118 1
+ TP31 1
+Net 390 "" ""
+ U66 3
+ R97 2
+ D39 1
+Net 391 "" ""
  D38 1
  L14 2
  U66 1
-Net 417 "" ""
- R97 2
- D39 1
- U66 3
-Net 418 "/stim15/stim12/VBAT" "VBAT"
- L14 1
- C119 1
- U66 5
-Net 419 "/stim15/stim12/IGND" "IGND"
- C120 2
- C119 2
- U66 2
-Net 420 "" ""
- D38 3
+Net 392 "" ""
  C120 1
- U67 3
  D39 3
  TP32 1
-Net 421 "" ""
- D40 1
- L15 2
- U68 1
-Net 422 "" ""
- R98 2
+ D38 3
+ U67 3
+Net 393 "" ""
+ D41 3
+ TP33 1
+ D40 3
+ C122 1
+ U69 3
+Net 394 "" ""
  D41 1
  U68 3
-Net 423 "/stim15/stim10/VBAT" "VBAT"
- C121 1
- U68 5
- L15 1
-Net 424 "/stim15/stim10/IGND" "IGND"
- U68 2
- C122 2
- C121 2
-Net 425 "" ""
- C122 1
- D40 3
- U69 3
- TP33 1
- D41 3
-Net 426 "" ""
+ R98 2
+Net 395 "" ""
+ L15 2
+ U68 1
+ D40 1
+Net 396 "" ""
+ U70 1
  D42 1
  L16 2
- U70 1
-Net 427 "" ""
- R99 2
+Net 397 "" ""
  D43 1
+ R99 2
  U70 3
-Net 428 "/stim15/stim14/VBAT" "VBAT"
- C123 1
- U70 5
- L16 1
-Net 429 "/stim15/stim14/IGND" "IGND"
- U70 2
- C124 2
- C123 2
-Net 430 "" ""
+Net 398 "" ""
+ D43 3
+ D42 3
  C124 1
  U71 3
- D42 3
  TP34 1
- D43 3
-Net 431 "" ""
- D44 1
- L17 2
- U72 1
-Net 432 "" ""
- D45 3
- TP35 1
- U73 3
- D44 3
+Net 399 "" ""
  C126 1
-Net 433 "/stim15/stim13/IGND" "IGND"
- C126 2
- C125 2
- U72 2
-Net 434 "/stim15/stim13/VBAT" "VBAT"
- L17 1
- C125 1
- U72 5
-Net 435 "" ""
+ U73 3
+ TP35 1
+ D45 3
+ D44 3
+Net 400 "" ""
+ U72 3
  D45 1
  R100 2
- U72 3
-Net 436 "" ""
- U75 3
+Net 401 "" ""
+ L17 2
+ U72 1
+ D44 1
+Net 402 "" ""
+ U74 1
+ L18 2
+ D46 1
+Net 403 "" ""
+ D46 3
  C128 1
+ U75 3
  TP36 1
  D47 3
- D46 3
-Net 437 "/stim15/stim9/VBAT" "VBAT"
- C127 1
- U74 5
- L18 1
-Net 438 "/stim15/stim9/IGND" "IGND"
- C128 2
- C127 2
- U74 2
-Net 439 "" ""
+Net 404 "" ""
  D47 1
  U74 3
  R101 2
-Net 440 "" ""
- L18 2
- U74 1
- D46 1
-Net 441 "" ""
- D49 1
- R102 2
- U76 3
-Net 442 "" ""
+Net 405 "" ""
  D48 1
- U76 1
  L19 2
-Net 443 "/stim15/stim15/VBAT" "VBAT"
- C129 1
- U76 5
- L19 1
-Net 444 "/stim15/stim15/IGND" "IGND"
- U76 2
- C129 2
- C130 2
-Net 445 "" ""
- D48 3
+ U76 1
+Net 406 "" ""
  D49 3
  TP37 1
  U77 3
+ D48 3
  C130 1
+Net 407 "" ""
+ D49 1
+ R102 2
+ U76 3
+Net 408 "" ""
+ D20 1
+ L5 2
+ U48 1
+Net 409 "" ""
+ D20 3
+ C102 1
+ U49 3
+ TP23 1
+ D21 3
+Net 410 "" ""
+ R88 2
+ U48 3
+ D21 1
 }
 #End
