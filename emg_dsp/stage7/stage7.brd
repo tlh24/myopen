@@ -454,159 +454,11 @@ Na 0 "?"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 446 "N-000446"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 445 "N-000445"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 444 "N-000444"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 443 "N-000443"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 442 "N-000442"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 441 "/stim_all/stim15/VBAT"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 440 "/stim_all/stim15/IGND"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 439 "N-000439"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 438 "/stim_all/stim9/IGND"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 437 "/stim_all/stim9/VBAT"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 436 "N-000436"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 435 "N-000435"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 434 "N-000434"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 433 "N-000433"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 432 "/stim_all/stim13/IGND"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 431 "/stim_all/stim13/VBAT"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 430 "N-000430"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 429 "N-000429"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 428 "N-000428"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 427 "/stim_all/stim14/IGND"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 426 "/stim_all/stim14/VBAT"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 425 "N-000425"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 424 "N-000424"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 423 "N-000423"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 422 "/stim_all/stim10/IGND"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 421 "/stim_all/stim10/VBAT"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 420 "N-000420"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 419 "N-000419"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 418 "N-000418"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 417 "/stim_all/stim12/IGND"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 416 "/stim_all/stim12/VBAT"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 415 "N-000415"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 414 "N-000414"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 413 "N-000413"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 412 "/stim_all/stim11/IGND"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 411 "/stim_all/stim11/VBAT"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 410 "N-000410"
-St ~
-$EndEQUIPOT
-$EQUIPOT
 Na 409 "N-000409"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 408 "/stim_all/stim5/VBAT"
+Na 408 "N-000408"
 St ~
 $EndEQUIPOT
 $EQUIPOT
@@ -618,7 +470,7 @@ Na 406 "N-000406"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 405 "/stim_all/stim5/IGND"
+Na 405 "N-000405"
 St ~
 $EndEQUIPOT
 $EQUIPOT
@@ -626,11 +478,11 @@ Na 404 "N-000404"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 403 "/stim_all/stim6/VBAT"
+Na 403 "N-000403"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 402 "/stim_all/stim6/IGND"
+Na 402 "N-000402"
 St ~
 $EndEQUIPOT
 $EQUIPOT
@@ -650,7 +502,7 @@ Na 398 "N-000398"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 397 "/stim_all/stim8/VBAT"
+Na 397 "N-000397"
 St ~
 $EndEQUIPOT
 $EQUIPOT
@@ -662,7 +514,7 @@ Na 395 "N-000395"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 394 "/stim_all/stim8/IGND"
+Na 394 "N-000394"
 St ~
 $EndEQUIPOT
 $EQUIPOT
@@ -670,11 +522,11 @@ Na 393 "N-000393"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 392 "/stim_all/stim7/IGND"
+Na 392 "N-000392"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 391 "/stim_all/stim7/VBAT"
+Na 391 "N-000391"
 St ~
 $EndEQUIPOT
 $EQUIPOT
@@ -690,11 +542,11 @@ Na 388 "N-000388"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 387 "/stim_all/stim3/IGND"
+Na 387 "N-000387"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 386 "/stim_all/stim3/VBAT"
+Na 386 "N-000386"
 St ~
 $EndEQUIPOT
 $EQUIPOT
@@ -710,11 +562,11 @@ Na 383 "N-000383"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 382 "/stim_all/stim4/IGND"
+Na 382 "N-000382"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 381 "/stim_all/stim4/VBAT"
+Na 381 "N-000381"
 St ~
 $EndEQUIPOT
 $EQUIPOT
@@ -730,11 +582,11 @@ Na 378 "N-000378"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 377 "/stim_all/stim2/IGND"
+Na 377 "N-000377"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 376 "/stim_all/stim2/VBAT"
+Na 376 "N-000376"
 St ~
 $EndEQUIPOT
 $EQUIPOT
@@ -746,11 +598,31 @@ Na 374 "N-000374"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 373 "/wired/V0b"
+Na 373 "N-000373"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 372 "/wired/V5b"
+Na 372 "N-000372"
+St ~
+$EndEQUIPOT
+$EQUIPOT
+Na 371 "N-000371"
+St ~
+$EndEQUIPOT
+$EQUIPOT
+Na 370 "N-000370"
+St ~
+$EndEQUIPOT
+$EQUIPOT
+Na 369 "N-000369"
+St ~
+$EndEQUIPOT
+$EQUIPOT
+Na 368 "N-000368"
+St ~
+$EndEQUIPOT
+$EQUIPOT
+Na 367 "N-000367"
 St ~
 $EndEQUIPOT
 $EQUIPOT
@@ -762,27 +634,11 @@ Na 365 "N-000365"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 363 "N-000363"
+Na 364 "/wired/V5b"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 362 "N-000362"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 361 "N-000361"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 360 "N-000360"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 359 "N-000359"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 358 "N-000358"
+Na 363 "/wired/V0b"
 St ~
 $EndEQUIPOT
 $EQUIPOT
@@ -790,11 +646,19 @@ Na 357 "N-000357"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 356 "/wired/V3C"
+Na 356 "N-000356"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 355 "/stim_all/stim4/Iout"
+Na 354 "N-000354"
+St ~
+$EndEQUIPOT
+$EQUIPOT
+Na 353 "N-000353"
+St ~
+$EndEQUIPOT
+$EQUIPOT
+Na 352 "N-000352"
 St ~
 $EndEQUIPOT
 $EQUIPOT
@@ -814,51 +678,51 @@ Na 348 "N-000348"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 347 "/stim_all/stim1/VBAT"
+Na 347 "/wired/V3C"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 346 "/stim_all/stim1/IGND"
+Na 346 "/stim_all/stim9/Iout"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 345 "/stim_all/d5"
+Na 345 "/stim_all/stim14/Iout"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 344 "/stim_all/stim8/Iout"
+Na 343 "/stim_all/Vfb"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 342 "/stim_all/c5"
+Na 342 "/stim_all/stim7/BATTERY"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 341 "/stim_all/VBAT"
+Na 341 "/stim_all/c6"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 340 "/stim_all/c6"
+Na 340 "/stim_all/d2"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 339 "/stim_all/d2"
+Na 339 "/stim_all/d4"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 338 "/stim_all/c3"
+Na 338 "/stim_all/c2"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 337 "/stim_all/d7"
+Na 337 "/stim_all/stim8/Iout"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 336 "/stim_all/d1"
+Na 336 "/stim_all/stim2/Iout"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 335 "/stim_all/d4"
+Na 335 "N-000335"
 St ~
 $EndEQUIPOT
 $EQUIPOT
@@ -878,287 +742,275 @@ Na 331 "N-000331"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 330 "/stim_all/Vfb"
+Na 330 "N-000330"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 329 "/stim_all/stim14/Iout"
+Na 325 "/stim_all/c7"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 328 "/stim_all/stim9/Iout"
+Na 324 "/stim_all/c4"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 327 "N-000327"
+Na 323 "/stim_all/d6"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 326 "N-000326"
+Na 322 "/stim_all/d3"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 325 "N-000325"
+Na 320 "N-000320"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 324 "N-000324"
+Na 319 "N-000319"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 323 "N-000323"
+Na 318 "/stim_all/c3"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 318 "/stim_all/c7"
+Na 317 "/stim_all/c5"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 317 "/stim_all/c4"
+Na 316 "/stim_all/d1"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 316 "/stim_all/d6"
+Na 315 "/stim_all/d5"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 315 "/stim_all/d3"
+Na 314 "/stim_all/d7"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 313 "N-000313"
+Na 313 "/stim_all/an1"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 312 "N-000312"
+Na 312 "/stim_all/ca1"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 311 "N-000311"
+Na 311 "/stim_all/stim2/ANO"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 310 "/stim_all/an1"
+Na 310 "/stim_all/ca2"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 309 "/stim_all/stim1/CATHO"
+Na 308 "/stim_all/b2"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 308 "/stim_all/an2"
+Na 307 "/stim_all/a2"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 307 "/stim_all/stim2/CATHO"
+Na 306 "/stim_all/b1"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 305 "/stim_all/b2"
+Na 305 "/stim_all/a1"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 304 "/stim_all/a2"
+Na 304 "/stim_all/stim11/ANO"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 303 "/stim_all/b1"
+Na 303 "/stim_all/ca11"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 302 "/stim_all/a1"
+Na 302 "/stim_all/stim12/ANO"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 301 "N-000301"
+Na 301 "/stim_all/ca12"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 300 "/stim_all/stim15/ANO"
+Na 300 "/stim_all/stim9/ANO"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 299 "/stim_all/stim15/CATHO"
+Na 299 "/stim_all/ca9"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 298 "/stim_all/SDA"
+Na 298 "/stim_all/an10"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 297 "/stim_all/SCL"
+Na 297 "/stim_all/ca10"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 296 "/stim_all/c8"
+Na 296 "/stim_all/an13"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 295 "/stim_all/an11"
+Na 295 "/stim_all/ca13"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 294 "/stim_all/ca11"
+Na 294 "/stim_all/an14"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 293 "/stim_all/stim12/ANO"
+Na 293 "/stim_all/stim14/CATHO"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 292 "/stim_all/stim12/CATHO"
+Na 291 "/stim_all/stim15/ANO"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 291 "/stim_all/stim5/ANO"
+Na 290 "/stim_all/stim15/CATHO"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 290 "/stim_all/stim5/CATHO"
+Na 289 "/stim_all/SDA"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 289 "/stim_all/an6"
+Na 288 "/stim_all/SCL"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 288 "/stim_all/ca6"
+Na 287 "/stim_all/d8"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 286 "/stim_all/b6"
+Na 286 "N-000286"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 285 "/stim_all/a6"
+Na 282 "/stim_all/stim2/GROUND"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 284 "/stim_all/b5"
+Na 281 "N-000281"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 283 "/stim_all/a5"
+Na 280 "N-000280"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 282 "/stim_all/stim13/ANO"
+Na 279 "N-000279"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 281 "/stim_all/ca13"
+Na 278 "/stim_all/c1"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 280 "/stim_all/stim14/ANO"
+Na 277 "/stim_all/c8"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 279 "/stim_all/ca14"
+Na 275 "/stim_all/an3"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 277 "N-000277"
+Na 274 "/stim_all/stim4/ANO"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 276 "/stim_all/an9"
+Na 273 "/stim_all/an5"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 275 "/stim_all/stim9/CATHO"
+Na 272 "/stim_all/an6"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 274 "/stim_all/an10"
+Na 271 "/stim_all/stim7/ANO"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 273 "/stim_all/ca10"
+Na 270 "/stim_all/stim8/ANO"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 272 "/stim_all/c2"
+Na 269 "/stim_all/stim3/CATHO"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 271 "/stim_all/c1"
+Na 268 "/stim_all/ca4"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 270 "/stim_all/d8"
+Na 267 "/stim_all/stim5/CATHO"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 268 "/stim_all/stim3/ANO"
+Na 264 "/stim_all/ca7"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 267 "/stim_all/an4"
+Na 263 "/stim_all/ca8"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 266 "/stim_all/stim7/ANO"
+Na 261 "/stim_all/b8"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 265 "/stim_all/an8"
+Na 260 "/stim_all/a8"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 262 "/stim_all/stim4/CATHO"
+Na 259 "/stim_all/b7"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 260 "/stim_all/b4"
+Na 258 "/stim_all/a7"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 259 "/stim_all/a4"
+Na 257 "/stim_all/ca6"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 258 "/stim_all/b3"
+Na 255 "/stim_all/b6"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 257 "/stim_all/a3"
+Na 254 "/stim_all/a6"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 256 "/stim_all/ca7"
+Na 253 "/stim_all/b5"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 255 "/stim_all/stim8/CATHO"
+Na 252 "/stim_all/a5"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 253 "/stim_all/b8"
+Na 250 "/stim_all/b4"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 252 "/stim_all/a8"
+Na 249 "/stim_all/a4"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 251 "/stim_all/b7"
+Na 248 "/stim_all/b3"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 250 "/stim_all/a7"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 249 "N-000249"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 248 "/stim_all/ca3"
-St ~
-$EndEQUIPOT
-$EQUIPOT
-Na 247 "N-000247"
+Na 247 "/stim_all/a3"
 St ~
 $EndEQUIPOT
 $EQUIPOT
@@ -1202,11 +1054,11 @@ Na 236 "/NRF_IRQ0"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 235 "/RFS0"
+Na 235 "/wired/TFS0"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 234 "/wired/DT0PRI"
+Na 234 "/DR0PRI"
 St ~
 $EndEQUIPOT
 $EQUIPOT
@@ -1246,7 +1098,7 @@ Na 225 "/PF15"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 224 "/wired/DT0SEC"
+Na 224 "/DR0SEC"
 St ~
 $EndEQUIPOT
 $EQUIPOT
@@ -1286,7 +1138,7 @@ Na 214 "/audioout/DTPRI"
 St ~
 $EndEQUIPOT
 $EQUIPOT
-Na 213 "/wired/TSCLK0"
+Na 213 "/RSCLK0"
 St ~
 $EndEQUIPOT
 $EQUIPOT
@@ -2233,14 +2085,14 @@ $PAD
 Sh "2" R 197 236 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 377 "/stim_all/stim2/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 378 "N-000378"
+Ne 367 "N-000367"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -2258,14 +2110,14 @@ $PAD
 Sh "2" R 197 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 375 "N-000375"
+Ne 366 "N-000366"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 355 "/stim_all/stim4/Iout"
+Ne 336 "/stim_all/stim2/Iout"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -2283,14 +2135,14 @@ $PAD
 Sh "2" R 197 236 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 382 "/stim_all/stim4/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 383 "N-000383"
+Ne 370 "N-000370"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -2308,14 +2160,14 @@ $PAD
 Sh "2" R 197 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 380 "N-000380"
+Ne 368 "N-000368"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 355 "/stim_all/stim4/Iout"
+Ne 336 "/stim_all/stim2/Iout"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -2333,14 +2185,14 @@ $PAD
 Sh "2" R 197 236 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 387 "/stim_all/stim3/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 388 "N-000388"
+Ne 373 "N-000373"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -2358,14 +2210,14 @@ $PAD
 Sh "2" R 197 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 385 "N-000385"
+Ne 371 "N-000371"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 355 "/stim_all/stim4/Iout"
+Ne 336 "/stim_all/stim2/Iout"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -2383,14 +2235,14 @@ $PAD
 Sh "2" R 197 236 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 392 "/stim_all/stim7/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 393 "N-000393"
+Ne 376 "N-000376"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -2408,14 +2260,14 @@ $PAD
 Sh "2" R 197 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 390 "N-000390"
+Ne 374 "N-000374"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 344 "/stim_all/stim8/Iout"
+Ne 337 "/stim_all/stim8/Iout"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -2433,14 +2285,14 @@ $PAD
 Sh "2" R 197 236 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 402 "/stim_all/stim6/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 399 "N-000399"
+Ne 382 "N-000382"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -2458,14 +2310,14 @@ $PAD
 Sh "2" R 197 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 400 "N-000400"
+Ne 381 "N-000381"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 344 "/stim_all/stim8/Iout"
+Ne 337 "/stim_all/stim8/Iout"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -2483,14 +2335,14 @@ $PAD
 Sh "2" R 197 236 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 405 "/stim_all/stim5/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 404 "N-000404"
+Ne 383 "N-000383"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -2508,14 +2360,14 @@ $PAD
 Sh "2" R 197 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 406 "N-000406"
+Ne 384 "N-000384"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 344 "/stim_all/stim8/Iout"
+Ne 337 "/stim_all/stim8/Iout"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -2533,14 +2385,14 @@ $PAD
 Sh "2" R 197 236 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 394 "/stim_all/stim8/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 398 "N-000398"
+Ne 379 "N-000379"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -2558,14 +2410,14 @@ $PAD
 Sh "2" R 197 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 396 "N-000396"
+Ne 377 "N-000377"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 344 "/stim_all/stim8/Iout"
+Ne 337 "/stim_all/stim8/Iout"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -2583,14 +2435,14 @@ $PAD
 Sh "2" R 197 236 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 412 "/stim_all/stim11/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 413 "N-000413"
+Ne 388 "N-000388"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -2608,14 +2460,14 @@ $PAD
 Sh "2" R 197 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 410 "N-000410"
+Ne 387 "N-000387"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 328 "/stim_all/stim9/Iout"
+Ne 346 "/stim_all/stim9/Iout"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -2633,14 +2485,14 @@ $PAD
 Sh "2" R 197 236 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 417 "/stim_all/stim12/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 418 "N-000418"
+Ne 391 "N-000391"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -2658,14 +2510,14 @@ $PAD
 Sh "2" R 197 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 415 "N-000415"
+Ne 389 "N-000389"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 328 "/stim_all/stim9/Iout"
+Ne 346 "/stim_all/stim9/Iout"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -2683,14 +2535,14 @@ $PAD
 Sh "2" R 197 236 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 422 "/stim_all/stim10/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 423 "N-000423"
+Ne 392 "N-000392"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -2708,14 +2560,14 @@ $PAD
 Sh "2" R 197 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 420 "N-000420"
+Ne 393 "N-000393"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 328 "/stim_all/stim9/Iout"
+Ne 346 "/stim_all/stim9/Iout"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -2733,14 +2585,14 @@ $PAD
 Sh "2" R 197 236 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 427 "/stim_all/stim14/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 428 "N-000428"
+Ne 397 "N-000397"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -2758,14 +2610,14 @@ $PAD
 Sh "2" R 197 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 425 "N-000425"
+Ne 396 "N-000396"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 329 "/stim_all/stim14/Iout"
+Ne 345 "/stim_all/stim14/Iout"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -2783,14 +2635,14 @@ $PAD
 Sh "2" R 197 236 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 432 "/stim_all/stim13/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 433 "N-000433"
+Ne 398 "N-000398"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -2808,14 +2660,14 @@ $PAD
 Sh "2" R 197 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 430 "N-000430"
+Ne 399 "N-000399"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 329 "/stim_all/stim14/Iout"
+Ne 345 "/stim_all/stim14/Iout"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -2833,14 +2685,14 @@ $PAD
 Sh "2" R 197 236 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 438 "/stim_all/stim9/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 436 "N-000436"
+Ne 402 "N-000402"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -2858,14 +2710,14 @@ $PAD
 Sh "2" R 197 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 434 "N-000434"
+Ne 403 "N-000403"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 328 "/stim_all/stim9/Iout"
+Ne 346 "/stim_all/stim9/Iout"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -2883,14 +2735,14 @@ $PAD
 Sh "2" R 197 236 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 440 "/stim_all/stim15/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 439 "N-000439"
+Ne 405 "N-000405"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -2908,14 +2760,14 @@ $PAD
 Sh "2" R 197 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 442 "N-000442"
+Ne 406 "N-000406"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 329 "/stim_all/stim14/Iout"
+Ne 345 "/stim_all/stim14/Iout"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -2933,14 +2785,14 @@ $PAD
 Sh "2" R 197 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 341 "/stim_all/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 341 "/stim_all/VBAT"
+Ne 282 "/stim_all/stim2/GROUND"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -2958,14 +2810,14 @@ $PAD
 Sh "2" R 197 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 330 "/stim_all/Vfb"
+Ne 343 "/stim_all/Vfb"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 344 "/stim_all/stim8/Iout"
+Ne 337 "/stim_all/stim8/Iout"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -3008,14 +2860,14 @@ $PAD
 Sh "2" R 197 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 333 "N-000333"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 169 "VDD"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -3033,14 +2885,14 @@ $PAD
 Sh "2" R 197 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 330 "/stim_all/Vfb"
+Ne 343 "/stim_all/Vfb"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 355 "/stim_all/stim4/Iout"
+Ne 336 "/stim_all/stim2/Iout"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -3058,14 +2910,14 @@ $PAD
 Sh "2" R 197 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 330 "/stim_all/Vfb"
+Ne 343 "/stim_all/Vfb"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 329 "/stim_all/stim14/Iout"
+Ne 345 "/stim_all/stim14/Iout"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -3083,14 +2935,14 @@ $PAD
 Sh "2" R 197 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 330 "/stim_all/Vfb"
+Ne 343 "/stim_all/Vfb"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 328 "/stim_all/stim9/Iout"
+Ne 346 "/stim_all/stim9/Iout"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -3108,14 +2960,14 @@ $PAD
 Sh "2" R 197 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 247 "N-000247"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 169 "VDD"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -3183,14 +3035,14 @@ $PAD
 Sh "2" R 197 236 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 332 "N-000332"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 169 "VDD"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -3208,14 +3060,14 @@ $PAD
 Sh "2" R 197 236 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 249 "N-000249"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 169 "VDD"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -3283,14 +3135,14 @@ $PAD
 Sh "2" R 197 236 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 334 "N-000334"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 169 "VDD"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -3308,14 +3160,14 @@ $PAD
 Sh "2" R 197 236 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 301 "N-000301"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 169 "VDD"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -3383,14 +3235,14 @@ $PAD
 Sh "2" R 197 236 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 331 "N-000331"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 169 "VDD"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -3408,14 +3260,14 @@ $PAD
 Sh "2" R 197 236 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 277 "N-000277"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 169 "VDD"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -3465,7 +3317,7 @@ $PAD
 Sh "1" R 197 236 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 270 "/stim_all/d8"
+Ne 287 "/stim_all/d8"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -3490,7 +3342,7 @@ $PAD
 Sh "1" R 197 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 296 "/stim_all/c8"
+Ne 277 "/stim_all/c8"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -3508,14 +3360,14 @@ $PAD
 Sh "2" R 197 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 351 "N-000351"
+Ne 279 "N-000279"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 341 "/stim_all/VBAT"
+Ne 282 "/stim_all/stim2/GROUND"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -3533,14 +3385,14 @@ $PAD
 Sh "2" R 197 236 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 365 "N-000365"
+Ne 356 "N-000356"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 373 "/wired/V0b"
+Ne 363 "/wired/V0b"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -3558,14 +3410,14 @@ $PAD
 Sh "2" R 197 236 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 373 "/wired/V0b"
+Ne 363 "/wired/V0b"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 372 "/wired/V5b"
+Ne 364 "/wired/V5b"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -3583,14 +3435,14 @@ $PAD
 Sh "2" R 197 236 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 373 "/wired/V0b"
+Ne 363 "/wired/V0b"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 356 "/wired/V3C"
+Ne 347 "/wired/V3C"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -3608,14 +3460,14 @@ $PAD
 Sh "2" R 197 236 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 356 "/wired/V3C"
+Ne 347 "/wired/V3C"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 373 "/wired/V0b"
+Ne 363 "/wired/V0b"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -3658,14 +3510,14 @@ $PAD
 Sh "2" R 197 236 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 361 "N-000361"
+Ne 352 "N-000352"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 373 "/wired/V0b"
+Ne 363 "/wired/V0b"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -3683,14 +3535,14 @@ $PAD
 Sh "2" R 197 236 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 362 "N-000362"
+Ne 353 "N-000353"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 373 "/wired/V0b"
+Ne 363 "/wired/V0b"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -3708,14 +3560,14 @@ $PAD
 Sh "2" R 197 236 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 363 "N-000363"
+Ne 354 "N-000354"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 373 "/wired/V0b"
+Ne 363 "/wired/V0b"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -3733,14 +3585,14 @@ $PAD
 Sh "2" R 197 236 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 356 "/wired/V3C"
+Ne 347 "/wired/V3C"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 373 "/wired/V0b"
+Ne 363 "/wired/V0b"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -3758,14 +3610,14 @@ $PAD
 Sh "2" R 197 236 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 366 "N-000366"
+Ne 357 "N-000357"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 373 "/wired/V0b"
+Ne 363 "/wired/V0b"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -3790,7 +3642,7 @@ $PAD
 Sh "1" R 197 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 366 "N-000366"
+Ne 357 "N-000357"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -3808,14 +3660,14 @@ $PAD
 Sh "2" R 197 236 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 373 "/wired/V0b"
+Ne 363 "/wired/V0b"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 366 "N-000366"
+Ne 357 "N-000357"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -6933,7 +6785,7 @@ $PAD
 Sh "2" R 197 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 234 "/wired/DT0PRI"
+Ne 234 "/DR0PRI"
 Po 197 0
 $EndPAD
 $PAD
@@ -6958,7 +6810,7 @@ $PAD
 Sh "2" R 197 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 224 "/wired/DT0SEC"
+Ne 224 "/DR0SEC"
 Po 197 0
 $EndPAD
 $PAD
@@ -6983,7 +6835,7 @@ $PAD
 Sh "2" R 197 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 235 "/RFS0"
+Ne 235 "/wired/TFS0"
 Po 197 0
 $EndPAD
 $PAD
@@ -7008,7 +6860,7 @@ $PAD
 Sh "2" R 197 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 213 "/wired/TSCLK0"
+Ne 213 "/RSCLK0"
 Po 197 0
 $EndPAD
 $PAD
@@ -7068,14 +6920,14 @@ $PAD
 Sh "1" R 236 354 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 376 "/stim_all/stim2/VBAT"
+Ne 282 "/stim_all/stim2/GROUND"
 Po -295 0
 $EndPAD
 $PAD
 Sh "2" R 236 354 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 374 "N-000374"
+Ne 365 "N-000365"
 Po 295 0
 $EndPAD
 $EndMODULE  0603
@@ -7098,14 +6950,14 @@ $PAD
 Sh "1" R 236 354 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 381 "/stim_all/stim4/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -295 0
 $EndPAD
 $PAD
 Sh "2" R 236 354 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 379 "N-000379"
+Ne 369 "N-000369"
 Po 295 0
 $EndPAD
 $EndMODULE  0603
@@ -7128,14 +6980,14 @@ $PAD
 Sh "1" R 236 354 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 386 "/stim_all/stim3/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -295 0
 $EndPAD
 $PAD
 Sh "2" R 236 354 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 384 "N-000384"
+Ne 372 "N-000372"
 Po 295 0
 $EndPAD
 $EndMODULE  0603
@@ -7158,14 +7010,14 @@ $PAD
 Sh "1" R 236 354 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 391 "/stim_all/stim7/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -295 0
 $EndPAD
 $PAD
 Sh "2" R 236 354 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 389 "N-000389"
+Ne 375 "N-000375"
 Po 295 0
 $EndPAD
 $EndMODULE  0603
@@ -7188,14 +7040,14 @@ $PAD
 Sh "1" R 236 354 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 403 "/stim_all/stim6/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -295 0
 $EndPAD
 $PAD
 Sh "2" R 236 354 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 401 "N-000401"
+Ne 380 "N-000380"
 Po 295 0
 $EndPAD
 $EndMODULE  0603
@@ -7218,14 +7070,14 @@ $PAD
 Sh "1" R 236 354 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 408 "/stim_all/stim5/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -295 0
 $EndPAD
 $PAD
 Sh "2" R 236 354 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 407 "N-000407"
+Ne 385 "N-000385"
 Po 295 0
 $EndPAD
 $EndMODULE  0603
@@ -7248,14 +7100,14 @@ $PAD
 Sh "1" R 236 354 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 397 "/stim_all/stim8/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -295 0
 $EndPAD
 $PAD
 Sh "2" R 236 354 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 395 "N-000395"
+Ne 378 "N-000378"
 Po 295 0
 $EndPAD
 $EndMODULE  0603
@@ -7278,14 +7130,14 @@ $PAD
 Sh "1" R 236 354 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 411 "/stim_all/stim11/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -295 0
 $EndPAD
 $PAD
 Sh "2" R 236 354 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 409 "N-000409"
+Ne 386 "N-000386"
 Po 295 0
 $EndPAD
 $EndMODULE  0603
@@ -7308,14 +7160,14 @@ $PAD
 Sh "1" R 236 354 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 416 "/stim_all/stim12/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -295 0
 $EndPAD
 $PAD
 Sh "2" R 236 354 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 414 "N-000414"
+Ne 390 "N-000390"
 Po 295 0
 $EndPAD
 $EndMODULE  0603
@@ -7338,14 +7190,14 @@ $PAD
 Sh "1" R 236 354 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 421 "/stim_all/stim10/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -295 0
 $EndPAD
 $PAD
 Sh "2" R 236 354 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 419 "N-000419"
+Ne 394 "N-000394"
 Po 295 0
 $EndPAD
 $EndMODULE  0603
@@ -7368,14 +7220,14 @@ $PAD
 Sh "1" R 236 354 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 426 "/stim_all/stim14/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -295 0
 $EndPAD
 $PAD
 Sh "2" R 236 354 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 424 "N-000424"
+Ne 395 "N-000395"
 Po 295 0
 $EndPAD
 $EndMODULE  0603
@@ -7398,14 +7250,14 @@ $PAD
 Sh "1" R 236 354 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 431 "/stim_all/stim13/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -295 0
 $EndPAD
 $PAD
 Sh "2" R 236 354 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 429 "N-000429"
+Ne 400 "N-000400"
 Po 295 0
 $EndPAD
 $EndMODULE  0603
@@ -7428,14 +7280,14 @@ $PAD
 Sh "1" R 236 354 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 437 "/stim_all/stim9/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -295 0
 $EndPAD
 $PAD
 Sh "2" R 236 354 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 435 "N-000435"
+Ne 401 "N-000401"
 Po 295 0
 $EndPAD
 $EndMODULE  0603
@@ -7458,14 +7310,14 @@ $PAD
 Sh "1" R 236 354 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 441 "/stim_all/stim15/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -295 0
 $EndPAD
 $PAD
 Sh "2" R 236 354 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 443 "N-000443"
+Ne 404 "N-000404"
 Po 295 0
 $EndPAD
 $EndMODULE  0603
@@ -7488,14 +7340,14 @@ $PAD
 Sh "1" R 236 354 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 341 "/stim_all/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -295 0
 $EndPAD
 $PAD
 Sh "2" R 236 354 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 348 "N-000348"
+Ne 281 "N-000281"
 Po 295 0
 $EndPAD
 $EndMODULE  0603
@@ -7518,14 +7370,14 @@ $PAD
 Sh "1" R 236 354 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 372 "/wired/V5b"
+Ne 364 "/wired/V5b"
 Po -295 0
 $EndPAD
 $PAD
 Sh "2" R 236 354 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 373 "/wired/V0b"
+Ne 363 "/wired/V0b"
 Po 295 0
 $EndPAD
 $EndMODULE  0603
@@ -8275,56 +8127,56 @@ $PAD
 Sh "3" C 630 630 0 0 0
 Dr 394 0 0
 At STD N 00E0FFFF
-Ne 323 "N-000323"
+Ne 330 "N-000330"
 Po -500 -500
 $EndPAD
 $PAD
 Sh "4" C 630 630 0 0 0
 Dr 394 0 0
 At STD N 00E0FFFF
-Ne 324 "N-000324"
+Ne 331 "N-000331"
 Po 500 -500
 $EndPAD
 $PAD
 Sh "5" C 630 630 0 0 0
 Dr 394 0 0
 At STD N 00E0FFFF
-Ne 325 "N-000325"
+Ne 332 "N-000332"
 Po 1500 -500
 $EndPAD
 $PAD
 Sh "6" C 630 630 0 0 0
 Dr 394 0 0
 At STD N 00E0FFFF
-Ne 326 "N-000326"
+Ne 333 "N-000333"
 Po 2500 -500
 $EndPAD
 $PAD
 Sh "7" C 630 630 0 0 0
 Dr 394 0 0
 At STD N 00E0FFFF
-Ne 327 "N-000327"
+Ne 334 "N-000334"
 Po -2500 500
 $EndPAD
 $PAD
 Sh "8" C 630 630 0 0 0
 Dr 394 0 0
 At STD N 00E0FFFF
-Ne 311 "N-000311"
+Ne 335 "N-000335"
 Po -1500 500
 $EndPAD
 $PAD
 Sh "9" C 630 630 0 0 0
 Dr 394 0 0
 At STD N 00E0FFFF
-Ne 312 "N-000312"
+Ne 319 "N-000319"
 Po -500 500
 $EndPAD
 $PAD
 Sh "10" C 630 630 0 0 0
 Dr 394 0 0
 At STD N 00E0FFFF
-Ne 313 "N-000313"
+Ne 320 "N-000320"
 Po 500 500
 $EndPAD
 $PAD
@@ -8433,7 +8285,7 @@ $PAD
 Sh "2" C 1378 1378 0 0 0
 Dr 984 0 0
 At STD N 00E0FFFF
-Ne 341 "/stim_all/VBAT"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 14354 8
 $EndPAD
 $PAD
@@ -8447,7 +8299,7 @@ $PAD
 Sh "1" C 1378 1378 0 0 0
 Dr 984 0 0
 At STD N 00E0FFFF
-Ne 349 "N-000349"
+Ne 286 "N-000286"
 Po -14354 -16
 $EndPAD
 $EndMODULE  18650-holder
@@ -8579,14 +8431,14 @@ $PAD
 Sh "1" R 787 1181 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 341 "/stim_all/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -1181 0
 $EndPAD
 $PAD
 Sh "2" R 787 1181 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 341 "/stim_all/VBAT"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 1181 0
 $EndPAD
 $EndMODULE  2917
@@ -8604,14 +8456,14 @@ $PAD
 Sh "1" R 787 1181 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 372 "/wired/V5b"
+Ne 364 "/wired/V5b"
 Po -1181 0
 $EndPAD
 $PAD
 Sh "2" R 787 1181 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 373 "/wired/V0b"
+Ne 363 "/wired/V0b"
 Po 1181 0
 $EndPAD
 $EndMODULE  2917
@@ -9270,14 +9122,14 @@ $PAD
 Sh "5" C 709 709 0 0 1800
 Dr 394 0 0
 At STD N 00E0FFFF
-Ne 373 "/wired/V0b"
+Ne 363 "/wired/V0b"
 Po 4000 0
 $EndPAD
 $PAD
 Sh "6" C 709 709 0 0 1800
 Dr 394 0 0
 At STD N 00E0FFFF
-Ne 372 "/wired/V5b"
+Ne 364 "/wired/V5b"
 Po 5000 0
 $EndPAD
 $PAD
@@ -9369,7 +9221,7 @@ $PAD
 Sh "1" C 600 600 0 0 0
 Dr 350 0 0
 At STD N 00E0FFFF
-Ne 341 "/stim_all/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po 1000 1000
 $EndPAD
 $PAD
@@ -9383,7 +9235,7 @@ $PAD
 Sh "3" C 600 600 0 0 0
 Dr 350 0 0
 At STD N 00E0FFFF
-Ne 349 "N-000349"
+Ne 286 "N-000286"
 Po 1000 -1000
 $EndPAD
 $PAD
@@ -9602,7 +9454,7 @@ $PAD
 Sh "B1" C 157 157 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 224 "/wired/DT0SEC"
+Ne 224 "/DR0SEC"
 Po -2983 -2668
 $EndPAD
 $PAD
@@ -9798,14 +9650,14 @@ $PAD
 Sh "E1" C 157 157 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 235 "/RFS0"
+Ne 235 "/wired/TFS0"
 Po -2983 -1723
 $EndPAD
 $PAD
 Sh "E2" C 157 157 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 213 "/wired/TSCLK0"
+Ne 213 "/RSCLK0"
 Po -2668 -1723
 $EndPAD
 $PAD
@@ -9826,7 +9678,7 @@ $PAD
 Sh "F1" C 157 157 0 0 900
 Dr 0 0 0
 At SMD N 00888000
-Ne 234 "/wired/DT0PRI"
+Ne 234 "/DR0PRI"
 Po -2983 -1408
 $EndPAD
 $PAD
@@ -11012,63 +10864,63 @@ $PAD
 Sh "1" R 130 320 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 372 "/wired/V5b"
+Ne 364 "/wired/V5b"
 Po -1000 0
 $EndPAD
 $PAD
 Sh "2" R 130 320 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 365 "N-000365"
+Ne 356 "N-000356"
 Po -750 0
 $EndPAD
 $PAD
 Sh "3" R 130 320 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 373 "/wired/V0b"
+Ne 363 "/wired/V0b"
 Po -500 0
 $EndPAD
 $PAD
 Sh "4" R 130 320 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 361 "N-000361"
+Ne 352 "N-000352"
 Po -250 0
 $EndPAD
 $PAD
 Sh "5" R 130 320 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 373 "/wired/V0b"
+Ne 363 "/wired/V0b"
 Po 0 0
 $EndPAD
 $PAD
 Sh "6" R 130 320 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 362 "N-000362"
+Ne 353 "N-000353"
 Po 250 0
 $EndPAD
 $PAD
 Sh "7" R 130 320 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 373 "/wired/V0b"
+Ne 363 "/wired/V0b"
 Po 500 0
 $EndPAD
 $PAD
 Sh "8" R 130 320 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 363 "N-000363"
+Ne 354 "N-000354"
 Po 750 0
 $EndPAD
 $PAD
 Sh "9" R 130 320 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 372 "/wired/V5b"
+Ne 364 "/wired/V5b"
 Po 1000 0
 $EndPAD
 $EndMODULE  omnetics_9
@@ -11435,21 +11287,21 @@ $PAD
 Sh "1" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 307 "/stim_all/stim2/CATHO"
+Ne 310 "/stim_all/ca2"
 Po -256 331
 $EndPAD
 $PAD
 Sh "2" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 355 "/stim_all/stim4/Iout"
+Ne 336 "/stim_all/stim2/Iout"
 Po 256 331
 $EndPAD
 $PAD
 Sh "3" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 378 "N-000378"
+Ne 367 "N-000367"
 Po 0 -331
 $EndPAD
 $EndMODULE  S-MINI-3P
@@ -11469,21 +11321,21 @@ $PAD
 Sh "1" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 262 "/stim_all/stim4/CATHO"
+Ne 268 "/stim_all/ca4"
 Po -256 331
 $EndPAD
 $PAD
 Sh "2" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 355 "/stim_all/stim4/Iout"
+Ne 336 "/stim_all/stim2/Iout"
 Po 256 331
 $EndPAD
 $PAD
 Sh "3" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 383 "N-000383"
+Ne 370 "N-000370"
 Po 0 -331
 $EndPAD
 $EndMODULE  S-MINI-3P
@@ -11503,21 +11355,21 @@ $PAD
 Sh "1" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 248 "/stim_all/ca3"
+Ne 269 "/stim_all/stim3/CATHO"
 Po -256 331
 $EndPAD
 $PAD
 Sh "2" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 355 "/stim_all/stim4/Iout"
+Ne 336 "/stim_all/stim2/Iout"
 Po 256 331
 $EndPAD
 $PAD
 Sh "3" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 388 "N-000388"
+Ne 373 "N-000373"
 Po 0 -331
 $EndPAD
 $EndMODULE  S-MINI-3P
@@ -11537,21 +11389,21 @@ $PAD
 Sh "1" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 256 "/stim_all/ca7"
+Ne 264 "/stim_all/ca7"
 Po -256 331
 $EndPAD
 $PAD
 Sh "2" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 344 "/stim_all/stim8/Iout"
+Ne 337 "/stim_all/stim8/Iout"
 Po 256 331
 $EndPAD
 $PAD
 Sh "3" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 393 "N-000393"
+Ne 376 "N-000376"
 Po 0 -331
 $EndPAD
 $EndMODULE  S-MINI-3P
@@ -11571,21 +11423,21 @@ $PAD
 Sh "1" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 288 "/stim_all/ca6"
+Ne 257 "/stim_all/ca6"
 Po -256 331
 $EndPAD
 $PAD
 Sh "2" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 344 "/stim_all/stim8/Iout"
+Ne 337 "/stim_all/stim8/Iout"
 Po 256 331
 $EndPAD
 $PAD
 Sh "3" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 399 "N-000399"
+Ne 382 "N-000382"
 Po 0 -331
 $EndPAD
 $EndMODULE  S-MINI-3P
@@ -11605,21 +11457,21 @@ $PAD
 Sh "1" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 290 "/stim_all/stim5/CATHO"
+Ne 267 "/stim_all/stim5/CATHO"
 Po -256 331
 $EndPAD
 $PAD
 Sh "2" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 344 "/stim_all/stim8/Iout"
+Ne 337 "/stim_all/stim8/Iout"
 Po 256 331
 $EndPAD
 $PAD
 Sh "3" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 404 "N-000404"
+Ne 383 "N-000383"
 Po 0 -331
 $EndPAD
 $EndMODULE  S-MINI-3P
@@ -11639,21 +11491,21 @@ $PAD
 Sh "1" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 255 "/stim_all/stim8/CATHO"
+Ne 263 "/stim_all/ca8"
 Po -256 331
 $EndPAD
 $PAD
 Sh "2" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 344 "/stim_all/stim8/Iout"
+Ne 337 "/stim_all/stim8/Iout"
 Po 256 331
 $EndPAD
 $PAD
 Sh "3" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 398 "N-000398"
+Ne 379 "N-000379"
 Po 0 -331
 $EndPAD
 $EndMODULE  S-MINI-3P
@@ -11673,21 +11525,21 @@ $PAD
 Sh "1" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 294 "/stim_all/ca11"
+Ne 303 "/stim_all/ca11"
 Po -256 331
 $EndPAD
 $PAD
 Sh "2" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 328 "/stim_all/stim9/Iout"
+Ne 346 "/stim_all/stim9/Iout"
 Po 256 331
 $EndPAD
 $PAD
 Sh "3" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 413 "N-000413"
+Ne 388 "N-000388"
 Po 0 -331
 $EndPAD
 $EndMODULE  S-MINI-3P
@@ -11707,21 +11559,21 @@ $PAD
 Sh "1" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 292 "/stim_all/stim12/CATHO"
+Ne 301 "/stim_all/ca12"
 Po -256 331
 $EndPAD
 $PAD
 Sh "2" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 328 "/stim_all/stim9/Iout"
+Ne 346 "/stim_all/stim9/Iout"
 Po 256 331
 $EndPAD
 $PAD
 Sh "3" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 418 "N-000418"
+Ne 391 "N-000391"
 Po 0 -331
 $EndPAD
 $EndMODULE  S-MINI-3P
@@ -11741,21 +11593,21 @@ $PAD
 Sh "1" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 273 "/stim_all/ca10"
+Ne 297 "/stim_all/ca10"
 Po -256 331
 $EndPAD
 $PAD
 Sh "2" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 328 "/stim_all/stim9/Iout"
+Ne 346 "/stim_all/stim9/Iout"
 Po 256 331
 $EndPAD
 $PAD
 Sh "3" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 423 "N-000423"
+Ne 392 "N-000392"
 Po 0 -331
 $EndPAD
 $EndMODULE  S-MINI-3P
@@ -11775,21 +11627,21 @@ $PAD
 Sh "1" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 279 "/stim_all/ca14"
+Ne 293 "/stim_all/stim14/CATHO"
 Po -256 331
 $EndPAD
 $PAD
 Sh "2" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 329 "/stim_all/stim14/Iout"
+Ne 345 "/stim_all/stim14/Iout"
 Po 256 331
 $EndPAD
 $PAD
 Sh "3" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 428 "N-000428"
+Ne 397 "N-000397"
 Po 0 -331
 $EndPAD
 $EndMODULE  S-MINI-3P
@@ -11809,21 +11661,21 @@ $PAD
 Sh "1" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 281 "/stim_all/ca13"
+Ne 295 "/stim_all/ca13"
 Po -256 331
 $EndPAD
 $PAD
 Sh "2" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 329 "/stim_all/stim14/Iout"
+Ne 345 "/stim_all/stim14/Iout"
 Po 256 331
 $EndPAD
 $PAD
 Sh "3" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 433 "N-000433"
+Ne 398 "N-000398"
 Po 0 -331
 $EndPAD
 $EndMODULE  S-MINI-3P
@@ -11843,21 +11695,21 @@ $PAD
 Sh "1" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 275 "/stim_all/stim9/CATHO"
+Ne 299 "/stim_all/ca9"
 Po -256 331
 $EndPAD
 $PAD
 Sh "2" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 328 "/stim_all/stim9/Iout"
+Ne 346 "/stim_all/stim9/Iout"
 Po 256 331
 $EndPAD
 $PAD
 Sh "3" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 436 "N-000436"
+Ne 402 "N-000402"
 Po 0 -331
 $EndPAD
 $EndMODULE  S-MINI-3P
@@ -11877,21 +11729,21 @@ $PAD
 Sh "1" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 299 "/stim_all/stim15/CATHO"
+Ne 290 "/stim_all/stim15/CATHO"
 Po -256 331
 $EndPAD
 $PAD
 Sh "2" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 329 "/stim_all/stim14/Iout"
+Ne 345 "/stim_all/stim14/Iout"
 Po 256 331
 $EndPAD
 $PAD
 Sh "3" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 439 "N-000439"
+Ne 405 "N-000405"
 Po 0 -331
 $EndPAD
 $EndMODULE  S-MINI-3P
@@ -11988,7 +11840,7 @@ $PAD
 Sh "1" R 157 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 372 "/wired/V5b"
+Ne 364 "/wired/V5b"
 Po -256 374
 $EndPAD
 $PAD
@@ -12002,21 +11854,21 @@ $PAD
 Sh "3" R 157 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 373 "/wired/V0b"
+Ne 363 "/wired/V0b"
 Po 256 374
 $EndPAD
 $PAD
 Sh "4" R 157 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 356 "/wired/V3C"
+Ne 347 "/wired/V3C"
 Po 256 -374
 $EndPAD
 $PAD
 Sh "5" R 157 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 372 "/wired/V5b"
+Ne 364 "/wired/V5b"
 Po -256 -374
 $EndPAD
 $EndMODULE  SC-70-5
@@ -12076,42 +11928,42 @@ $PAD
 Sh "1" R 157 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 341 "/stim_all/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -256 374
 $EndPAD
 $PAD
 Sh "2" R 157 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 341 "/stim_all/VBAT"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 0 374
 $EndPAD
 $PAD
 Sh "3" R 157 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 297 "/stim_all/SCL"
+Ne 288 "/stim_all/SCL"
 Po 256 374
 $EndPAD
 $PAD
 Sh "4" R 157 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 298 "/stim_all/SDA"
+Ne 289 "/stim_all/SDA"
 Po 256 -374
 $EndPAD
 $PAD
 Sh "5" R 157 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 341 "/stim_all/VBAT"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 0 -374
 $EndPAD
 $PAD
 Sh "6" R 157 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 330 "/stim_all/Vfb"
+Ne 343 "/stim_all/Vfb"
 Po -256 -374
 $EndPAD
 $EndMODULE  SC-70-6
@@ -12136,63 +11988,63 @@ $PAD
 Sh "2" C 550 550 0 0 2700
 Dr 320 0 0
 At STD N 0000FFFF
-Ne 323 "N-000323"
+Ne 330 "N-000330"
 Po 500 -750
 $EndPAD
 $PAD
 Sh "3" C 550 550 0 0 2700
 Dr 320 0 0
 At STD N 0000FFFF
-Ne 324 "N-000324"
+Ne 331 "N-000331"
 Po 1000 -1500
 $EndPAD
 $PAD
 Sh "4" C 550 550 0 0 2700
 Dr 320 0 0
 At STD N 0000FFFF
-Ne 325 "N-000325"
+Ne 332 "N-000332"
 Po 1500 -750
 $EndPAD
 $PAD
 Sh "5" C 550 550 0 0 2700
 Dr 320 0 0
 At STD N 0000FFFF
-Ne 326 "N-000326"
+Ne 333 "N-000333"
 Po 2000 -1500
 $EndPAD
 $PAD
 Sh "6" C 550 550 0 0 2700
 Dr 320 0 0
 At STD N 0000FFFF
-Ne 327 "N-000327"
+Ne 334 "N-000334"
 Po 2500 -750
 $EndPAD
 $PAD
 Sh "7" C 550 550 0 0 2700
 Dr 320 0 0
 At STD N 0000FFFF
-Ne 311 "N-000311"
+Ne 335 "N-000335"
 Po 3000 -1500
 $EndPAD
 $PAD
 Sh "8" C 550 550 0 0 2700
 Dr 320 0 0
 At STD N 0000FFFF
-Ne 312 "N-000312"
+Ne 319 "N-000319"
 Po 3500 -750
 $EndPAD
 $PAD
 Sh "9" C 550 550 0 0 2700
 Dr 320 0 0
 At STD N 0000FFFF
-Ne 313 "N-000313"
+Ne 320 "N-000320"
 Po 4000 -1500
 $EndPAD
 $PAD
 Sh "10" C 550 550 0 0 2700
 Dr 320 0 0
 At STD N 0000FFFF
-Ne 302 "/stim_all/a1"
+Ne 305 "/stim_all/a1"
 Po 4500 -750
 $EndPAD
 $PAD
@@ -12206,14 +12058,14 @@ $PAD
 Sh "12" C 550 550 0 0 2700
 Dr 320 0 0
 At STD N 0000FFFF
-Ne 305 "/stim_all/b2"
+Ne 308 "/stim_all/b2"
 Po 5500 -750
 $EndPAD
 $PAD
 Sh "13" C 550 550 0 0 2700
 Dr 320 0 0
 At STD N 0000FFFF
-Ne 257 "/stim_all/a3"
+Ne 247 "/stim_all/a3"
 Po 6000 -1500
 $EndPAD
 $PAD
@@ -12227,21 +12079,21 @@ $PAD
 Sh "15" C 550 550 0 0 2700
 Dr 320 0 0
 At STD N 0000FFFF
-Ne 260 "/stim_all/b4"
+Ne 250 "/stim_all/b4"
 Po 7000 -1500
 $EndPAD
 $PAD
 Sh "16" C 550 550 0 0 2700
 Dr 320 0 0
 At STD N 0000FFFF
-Ne 283 "/stim_all/a5"
+Ne 252 "/stim_all/a5"
 Po 7500 -750
 $EndPAD
 $PAD
 Sh "17" C 550 550 0 0 2700
 Dr 320 0 0
 At STD N 0000FFFF
-Ne 284 "/stim_all/b5"
+Ne 253 "/stim_all/b5"
 Po 8000 -1500
 $EndPAD
 $PAD
@@ -12269,21 +12121,21 @@ $PAD
 Sh "21" C 550 550 0 0 2700
 Dr 320 0 0
 At STD N 0000FFFF
-Ne 252 "/stim_all/a8"
+Ne 260 "/stim_all/a8"
 Po 10000 -1500
 $EndPAD
 $PAD
 Sh "22" C 550 550 0 0 2700
 Dr 320 0 0
 At STD N 0000FFFF
-Ne 253 "/stim_all/b8"
+Ne 261 "/stim_all/b8"
 Po 10500 -750
 $EndPAD
 $PAD
 Sh "23" C 550 550 0 0 2700
 Dr 320 0 0
 At STD N 0000FFFF
-Ne 271 "/stim_all/c1"
+Ne 278 "/stim_all/c1"
 Po 11000 -1500
 $EndPAD
 $PAD
@@ -12297,14 +12149,14 @@ $PAD
 Sh "25" C 550 550 0 0 2700
 Dr 320 0 0
 At STD N 0000FFFF
-Ne 339 "/stim_all/d2"
+Ne 340 "/stim_all/d2"
 Po 12000 -1500
 $EndPAD
 $PAD
 Sh "26" C 550 550 0 0 2700
 Dr 320 0 0
 At STD N 0000FFFF
-Ne 338 "/stim_all/c3"
+Ne 318 "/stim_all/c3"
 Po 12500 -750
 $EndPAD
 $PAD
@@ -12318,14 +12170,14 @@ $PAD
 Sh "28" C 550 550 0 0 2700
 Dr 320 0 0
 At STD N 0000FFFF
-Ne 335 "/stim_all/d4"
+Ne 339 "/stim_all/d4"
 Po 13500 -750
 $EndPAD
 $PAD
 Sh "29" C 550 550 0 0 2700
 Dr 320 0 0
 At STD N 0000FFFF
-Ne 342 "/stim_all/c5"
+Ne 317 "/stim_all/c5"
 Po 14000 -1500
 $EndPAD
 $PAD
@@ -12339,14 +12191,14 @@ $PAD
 Sh "31" C 550 550 0 0 2700
 Dr 320 0 0
 At STD N 0000FFFF
-Ne 316 "/stim_all/d6"
+Ne 323 "/stim_all/d6"
 Po 15000 -1500
 $EndPAD
 $PAD
 Sh "32" C 550 550 0 0 2700
 Dr 320 0 0
 At STD N 0000FFFF
-Ne 318 "/stim_all/c7"
+Ne 325 "/stim_all/c7"
 Po 15500 -750
 $EndPAD
 $PAD
@@ -12360,7 +12212,7 @@ $PAD
 Sh "34" C 550 550 0 0 2700
 Dr 320 0 0
 At STD N 0000FFFF
-Ne 270 "/stim_all/d8"
+Ne 287 "/stim_all/d8"
 Po 16500 -750
 $EndPAD
 $PAD
@@ -12430,14 +12282,14 @@ $PAD
 Sh "44" C 550 550 0 0 2700
 Dr 320 0 0
 At STD N 0000FFFF
-Ne 303 "/stim_all/b1"
+Ne 306 "/stim_all/b1"
 Po 4500 750
 $EndPAD
 $PAD
 Sh "45" C 550 550 0 0 2700
 Dr 320 0 0
 At STD N 0000FFFF
-Ne 304 "/stim_all/a2"
+Ne 307 "/stim_all/a2"
 Po 5000 0
 $EndPAD
 $PAD
@@ -12451,14 +12303,14 @@ $PAD
 Sh "47" C 550 550 0 0 2700
 Dr 320 0 0
 At STD N 0000FFFF
-Ne 258 "/stim_all/b3"
+Ne 248 "/stim_all/b3"
 Po 6000 0
 $EndPAD
 $PAD
 Sh "48" C 550 550 0 0 2700
 Dr 320 0 0
 At STD N 0000FFFF
-Ne 259 "/stim_all/a4"
+Ne 249 "/stim_all/a4"
 Po 6500 750
 $EndPAD
 $PAD
@@ -12479,28 +12331,28 @@ $PAD
 Sh "51" C 550 550 0 0 2700
 Dr 320 0 0
 At STD N 0000FFFF
-Ne 285 "/stim_all/a6"
+Ne 254 "/stim_all/a6"
 Po 8000 0
 $EndPAD
 $PAD
 Sh "52" C 550 550 0 0 2700
 Dr 320 0 0
 At STD N 0000FFFF
-Ne 286 "/stim_all/b6"
+Ne 255 "/stim_all/b6"
 Po 8500 750
 $EndPAD
 $PAD
 Sh "53" C 550 550 0 0 2700
 Dr 320 0 0
 At STD N 0000FFFF
-Ne 250 "/stim_all/a7"
+Ne 258 "/stim_all/a7"
 Po 9000 0
 $EndPAD
 $PAD
 Sh "54" C 550 550 0 0 2700
 Dr 320 0 0
 At STD N 0000FFFF
-Ne 251 "/stim_all/b7"
+Ne 259 "/stim_all/b7"
 Po 9500 750
 $EndPAD
 $PAD
@@ -12521,14 +12373,14 @@ $PAD
 Sh "57" C 550 550 0 0 2700
 Dr 320 0 0
 At STD N 0000FFFF
-Ne 336 "/stim_all/d1"
+Ne 316 "/stim_all/d1"
 Po 11000 0
 $EndPAD
 $PAD
 Sh "58" C 550 550 0 0 2700
 Dr 320 0 0
 At STD N 0000FFFF
-Ne 272 "/stim_all/c2"
+Ne 338 "/stim_all/c2"
 Po 11500 750
 $EndPAD
 $PAD
@@ -12542,14 +12394,14 @@ $PAD
 Sh "60" C 550 550 0 0 2700
 Dr 320 0 0
 At STD N 0000FFFF
-Ne 315 "/stim_all/d3"
+Ne 322 "/stim_all/d3"
 Po 12500 750
 $EndPAD
 $PAD
 Sh "61" C 550 550 0 0 2700
 Dr 320 0 0
 At STD N 0000FFFF
-Ne 317 "/stim_all/c4"
+Ne 324 "/stim_all/c4"
 Po 13000 0
 $EndPAD
 $PAD
@@ -12563,14 +12415,14 @@ $PAD
 Sh "63" C 550 550 0 0 2700
 Dr 320 0 0
 At STD N 0000FFFF
-Ne 345 "/stim_all/d5"
+Ne 315 "/stim_all/d5"
 Po 14000 0
 $EndPAD
 $PAD
 Sh "64" C 550 550 0 0 2700
 Dr 320 0 0
 At STD N 0000FFFF
-Ne 340 "/stim_all/c6"
+Ne 341 "/stim_all/c6"
 Po 14500 750
 $EndPAD
 $PAD
@@ -12584,14 +12436,14 @@ $PAD
 Sh "66" C 550 550 0 0 2700
 Dr 320 0 0
 At STD N 0000FFFF
-Ne 337 "/stim_all/d7"
+Ne 314 "/stim_all/d7"
 Po 15500 750
 $EndPAD
 $PAD
 Sh "67" C 550 550 0 0 2700
 Dr 320 0 0
 At STD N 0000FFFF
-Ne 296 "/stim_all/c8"
+Ne 277 "/stim_all/c8"
 Po 16000 0
 $EndPAD
 $PAD
@@ -12829,28 +12681,28 @@ $PAD
 Sh "3" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 302 "/stim_all/a1"
+Ne 305 "/stim_all/a1"
 Po 1063 -1000
 $EndPAD
 $PAD
 Sh "4" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 303 "/stim_all/b1"
+Ne 306 "/stim_all/b1"
 Po 1063 -1500
 $EndPAD
 $PAD
 Sh "5" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 304 "/stim_all/a2"
+Ne 307 "/stim_all/a2"
 Po 1063 -2000
 $EndPAD
 $PAD
 Sh "6" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 305 "/stim_all/b2"
+Ne 308 "/stim_all/b2"
 Po 1063 -2500
 $EndPAD
 $PAD
@@ -12871,7 +12723,7 @@ $PAD
 Sh "9" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 333 "N-000333"
+Ne 282 "/stim_all/stim2/GROUND"
 Po -1063 -3500
 $EndPAD
 $PAD
@@ -12885,42 +12737,42 @@ $PAD
 Sh "11" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 307 "/stim_all/stim2/CATHO"
+Ne 310 "/stim_all/ca2"
 Po -1063 -2500
 $EndPAD
 $PAD
 Sh "12" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 308 "/stim_all/an2"
+Ne 311 "/stim_all/stim2/ANO"
 Po -1063 -2000
 $EndPAD
 $PAD
 Sh "13" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 309 "/stim_all/stim1/CATHO"
+Ne 312 "/stim_all/ca1"
 Po -1063 -1500
 $EndPAD
 $PAD
 Sh "14" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 310 "/stim_all/an1"
+Ne 313 "/stim_all/an1"
 Po -1063 -1000
 $EndPAD
 $PAD
 Sh "15" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 333 "N-000333"
+Ne 282 "/stim_all/stim2/GROUND"
 Po -1063 -500
 $EndPAD
 $PAD
 Sh "16" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 169 "VDD"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -1063 0
 $EndPAD
 $EndMODULE  SOIC-16
@@ -12950,28 +12802,28 @@ $PAD
 Sh "3" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 257 "/stim_all/a3"
+Ne 247 "/stim_all/a3"
 Po 1063 -1000
 $EndPAD
 $PAD
 Sh "4" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 258 "/stim_all/b3"
+Ne 248 "/stim_all/b3"
 Po 1063 -1500
 $EndPAD
 $PAD
 Sh "5" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 259 "/stim_all/a4"
+Ne 249 "/stim_all/a4"
 Po 1063 -2000
 $EndPAD
 $PAD
 Sh "6" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 260 "/stim_all/b4"
+Ne 250 "/stim_all/b4"
 Po 1063 -2500
 $EndPAD
 $PAD
@@ -12992,7 +12844,7 @@ $PAD
 Sh "9" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 247 "N-000247"
+Ne 282 "/stim_all/stim2/GROUND"
 Po -1063 -3500
 $EndPAD
 $PAD
@@ -13006,42 +12858,42 @@ $PAD
 Sh "11" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 262 "/stim_all/stim4/CATHO"
+Ne 268 "/stim_all/ca4"
 Po -1063 -2500
 $EndPAD
 $PAD
 Sh "12" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 267 "/stim_all/an4"
+Ne 274 "/stim_all/stim4/ANO"
 Po -1063 -2000
 $EndPAD
 $PAD
 Sh "13" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 248 "/stim_all/ca3"
+Ne 269 "/stim_all/stim3/CATHO"
 Po -1063 -1500
 $EndPAD
 $PAD
 Sh "14" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 268 "/stim_all/stim3/ANO"
+Ne 275 "/stim_all/an3"
 Po -1063 -1000
 $EndPAD
 $PAD
 Sh "15" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 247 "N-000247"
+Ne 282 "/stim_all/stim2/GROUND"
 Po -1063 -500
 $EndPAD
 $PAD
 Sh "16" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 169 "VDD"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -1063 0
 $EndPAD
 $EndMODULE  SOIC-16
@@ -13071,28 +12923,28 @@ $PAD
 Sh "3" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 250 "/stim_all/a7"
+Ne 258 "/stim_all/a7"
 Po 1063 -1000
 $EndPAD
 $PAD
 Sh "4" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 251 "/stim_all/b7"
+Ne 259 "/stim_all/b7"
 Po 1063 -1500
 $EndPAD
 $PAD
 Sh "5" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 252 "/stim_all/a8"
+Ne 260 "/stim_all/a8"
 Po 1063 -2000
 $EndPAD
 $PAD
 Sh "6" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 253 "/stim_all/b8"
+Ne 261 "/stim_all/b8"
 Po 1063 -2500
 $EndPAD
 $PAD
@@ -13113,7 +12965,7 @@ $PAD
 Sh "9" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 332 "N-000332"
+Ne 282 "/stim_all/stim2/GROUND"
 Po -1063 -3500
 $EndPAD
 $PAD
@@ -13127,42 +12979,42 @@ $PAD
 Sh "11" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 255 "/stim_all/stim8/CATHO"
+Ne 263 "/stim_all/ca8"
 Po -1063 -2500
 $EndPAD
 $PAD
 Sh "12" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 265 "/stim_all/an8"
+Ne 270 "/stim_all/stim8/ANO"
 Po -1063 -2000
 $EndPAD
 $PAD
 Sh "13" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 256 "/stim_all/ca7"
+Ne 264 "/stim_all/ca7"
 Po -1063 -1500
 $EndPAD
 $PAD
 Sh "14" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 266 "/stim_all/stim7/ANO"
+Ne 271 "/stim_all/stim7/ANO"
 Po -1063 -1000
 $EndPAD
 $PAD
 Sh "15" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 332 "N-000332"
+Ne 282 "/stim_all/stim2/GROUND"
 Po -1063 -500
 $EndPAD
 $PAD
 Sh "16" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 169 "VDD"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -1063 0
 $EndPAD
 $EndMODULE  SOIC-16
@@ -13192,28 +13044,28 @@ $PAD
 Sh "3" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 283 "/stim_all/a5"
+Ne 252 "/stim_all/a5"
 Po 1063 -1000
 $EndPAD
 $PAD
 Sh "4" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 284 "/stim_all/b5"
+Ne 253 "/stim_all/b5"
 Po 1063 -1500
 $EndPAD
 $PAD
 Sh "5" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 285 "/stim_all/a6"
+Ne 254 "/stim_all/a6"
 Po 1063 -2000
 $EndPAD
 $PAD
 Sh "6" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 286 "/stim_all/b6"
+Ne 255 "/stim_all/b6"
 Po 1063 -2500
 $EndPAD
 $PAD
@@ -13234,7 +13086,7 @@ $PAD
 Sh "9" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 249 "N-000249"
+Ne 282 "/stim_all/stim2/GROUND"
 Po -1063 -3500
 $EndPAD
 $PAD
@@ -13248,42 +13100,42 @@ $PAD
 Sh "11" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 288 "/stim_all/ca6"
+Ne 257 "/stim_all/ca6"
 Po -1063 -2500
 $EndPAD
 $PAD
 Sh "12" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 289 "/stim_all/an6"
+Ne 272 "/stim_all/an6"
 Po -1063 -2000
 $EndPAD
 $PAD
 Sh "13" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 290 "/stim_all/stim5/CATHO"
+Ne 267 "/stim_all/stim5/CATHO"
 Po -1063 -1500
 $EndPAD
 $PAD
 Sh "14" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 291 "/stim_all/stim5/ANO"
+Ne 273 "/stim_all/an5"
 Po -1063 -1000
 $EndPAD
 $PAD
 Sh "15" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 249 "N-000249"
+Ne 282 "/stim_all/stim2/GROUND"
 Po -1063 -500
 $EndPAD
 $PAD
 Sh "16" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 169 "VDD"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -1063 0
 $EndPAD
 $EndMODULE  SOIC-16
@@ -13313,28 +13165,28 @@ $PAD
 Sh "3" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 342 "/stim_all/c5"
+Ne 317 "/stim_all/c5"
 Po 1063 -1000
 $EndPAD
 $PAD
 Sh "4" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 345 "/stim_all/d5"
+Ne 315 "/stim_all/d5"
 Po 1063 -1500
 $EndPAD
 $PAD
 Sh "5" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 340 "/stim_all/c6"
+Ne 341 "/stim_all/c6"
 Po 1063 -2000
 $EndPAD
 $PAD
 Sh "6" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 316 "/stim_all/d6"
+Ne 323 "/stim_all/d6"
 Po 1063 -2500
 $EndPAD
 $PAD
@@ -13355,7 +13207,7 @@ $PAD
 Sh "9" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 334 "N-000334"
+Ne 282 "/stim_all/stim2/GROUND"
 Po -1063 -3500
 $EndPAD
 $PAD
@@ -13369,42 +13221,42 @@ $PAD
 Sh "11" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 279 "/stim_all/ca14"
+Ne 293 "/stim_all/stim14/CATHO"
 Po -1063 -2500
 $EndPAD
 $PAD
 Sh "12" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 280 "/stim_all/stim14/ANO"
+Ne 294 "/stim_all/an14"
 Po -1063 -2000
 $EndPAD
 $PAD
 Sh "13" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 281 "/stim_all/ca13"
+Ne 295 "/stim_all/ca13"
 Po -1063 -1500
 $EndPAD
 $PAD
 Sh "14" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 282 "/stim_all/stim13/ANO"
+Ne 296 "/stim_all/an13"
 Po -1063 -1000
 $EndPAD
 $PAD
 Sh "15" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 334 "N-000334"
+Ne 282 "/stim_all/stim2/GROUND"
 Po -1063 -500
 $EndPAD
 $PAD
 Sh "16" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 169 "VDD"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -1063 0
 $EndPAD
 $EndMODULE  SOIC-16
@@ -13434,28 +13286,28 @@ $PAD
 Sh "3" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 318 "/stim_all/c7"
+Ne 325 "/stim_all/c7"
 Po 1063 -1000
 $EndPAD
 $PAD
 Sh "4" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 337 "/stim_all/d7"
+Ne 314 "/stim_all/d7"
 Po 1063 -1500
 $EndPAD
 $PAD
 Sh "5" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 296 "/stim_all/c8"
+Ne 277 "/stim_all/c8"
 Po 1063 -2000
 $EndPAD
 $PAD
 Sh "6" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 270 "/stim_all/d8"
+Ne 287 "/stim_all/d8"
 Po 1063 -2500
 $EndPAD
 $PAD
@@ -13476,7 +13328,7 @@ $PAD
 Sh "9" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 301 "N-000301"
+Ne 282 "/stim_all/stim2/GROUND"
 Po -1063 -3500
 $EndPAD
 $PAD
@@ -13490,42 +13342,42 @@ $PAD
 Sh "11" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 297 "/stim_all/SCL"
+Ne 288 "/stim_all/SCL"
 Po -1063 -2500
 $EndPAD
 $PAD
 Sh "12" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 298 "/stim_all/SDA"
+Ne 289 "/stim_all/SDA"
 Po -1063 -2000
 $EndPAD
 $PAD
 Sh "13" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 299 "/stim_all/stim15/CATHO"
+Ne 290 "/stim_all/stim15/CATHO"
 Po -1063 -1500
 $EndPAD
 $PAD
 Sh "14" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 300 "/stim_all/stim15/ANO"
+Ne 291 "/stim_all/stim15/ANO"
 Po -1063 -1000
 $EndPAD
 $PAD
 Sh "15" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 301 "N-000301"
+Ne 282 "/stim_all/stim2/GROUND"
 Po -1063 -500
 $EndPAD
 $PAD
 Sh "16" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 169 "VDD"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -1063 0
 $EndPAD
 $EndMODULE  SOIC-16
@@ -13555,28 +13407,28 @@ $PAD
 Sh "3" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 338 "/stim_all/c3"
+Ne 318 "/stim_all/c3"
 Po 1063 -1000
 $EndPAD
 $PAD
 Sh "4" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 315 "/stim_all/d3"
+Ne 322 "/stim_all/d3"
 Po 1063 -1500
 $EndPAD
 $PAD
 Sh "5" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 317 "/stim_all/c4"
+Ne 324 "/stim_all/c4"
 Po 1063 -2000
 $EndPAD
 $PAD
 Sh "6" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 335 "/stim_all/d4"
+Ne 339 "/stim_all/d4"
 Po 1063 -2500
 $EndPAD
 $PAD
@@ -13597,7 +13449,7 @@ $PAD
 Sh "9" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 331 "N-000331"
+Ne 282 "/stim_all/stim2/GROUND"
 Po -1063 -3500
 $EndPAD
 $PAD
@@ -13611,42 +13463,42 @@ $PAD
 Sh "11" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 292 "/stim_all/stim12/CATHO"
+Ne 301 "/stim_all/ca12"
 Po -1063 -2500
 $EndPAD
 $PAD
 Sh "12" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 293 "/stim_all/stim12/ANO"
+Ne 302 "/stim_all/stim12/ANO"
 Po -1063 -2000
 $EndPAD
 $PAD
 Sh "13" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 294 "/stim_all/ca11"
+Ne 303 "/stim_all/ca11"
 Po -1063 -1500
 $EndPAD
 $PAD
 Sh "14" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 295 "/stim_all/an11"
+Ne 304 "/stim_all/stim11/ANO"
 Po -1063 -1000
 $EndPAD
 $PAD
 Sh "15" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 331 "N-000331"
+Ne 282 "/stim_all/stim2/GROUND"
 Po -1063 -500
 $EndPAD
 $PAD
 Sh "16" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 169 "VDD"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -1063 0
 $EndPAD
 $EndMODULE  SOIC-16
@@ -13676,28 +13528,28 @@ $PAD
 Sh "3" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 271 "/stim_all/c1"
+Ne 278 "/stim_all/c1"
 Po 1063 -1000
 $EndPAD
 $PAD
 Sh "4" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 336 "/stim_all/d1"
+Ne 316 "/stim_all/d1"
 Po 1063 -1500
 $EndPAD
 $PAD
 Sh "5" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 272 "/stim_all/c2"
+Ne 338 "/stim_all/c2"
 Po 1063 -2000
 $EndPAD
 $PAD
 Sh "6" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 339 "/stim_all/d2"
+Ne 340 "/stim_all/d2"
 Po 1063 -2500
 $EndPAD
 $PAD
@@ -13718,7 +13570,7 @@ $PAD
 Sh "9" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 277 "N-000277"
+Ne 282 "/stim_all/stim2/GROUND"
 Po -1063 -3500
 $EndPAD
 $PAD
@@ -13732,42 +13584,42 @@ $PAD
 Sh "11" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 273 "/stim_all/ca10"
+Ne 297 "/stim_all/ca10"
 Po -1063 -2500
 $EndPAD
 $PAD
 Sh "12" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 274 "/stim_all/an10"
+Ne 298 "/stim_all/an10"
 Po -1063 -2000
 $EndPAD
 $PAD
 Sh "13" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 275 "/stim_all/stim9/CATHO"
+Ne 299 "/stim_all/ca9"
 Po -1063 -1500
 $EndPAD
 $PAD
 Sh "14" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 276 "/stim_all/an9"
+Ne 300 "/stim_all/stim9/ANO"
 Po -1063 -1000
 $EndPAD
 $PAD
 Sh "15" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 277 "N-000277"
+Ne 282 "/stim_all/stim2/GROUND"
 Po -1063 -500
 $EndPAD
 $PAD
 Sh "16" R 551 197 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 169 "VDD"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -1063 0
 $EndPAD
 $EndMODULE  SOIC-16
@@ -13783,42 +13635,42 @@ $PAD
 Sh "1" R 551 197 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 356 "/wired/V3C"
+Ne 347 "/wired/V3C"
 Po 1063 0
 $EndPAD
 $PAD
 Sh "2" R 551 197 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 373 "/wired/V0b"
+Ne 363 "/wired/V0b"
 Po 1063 -500
 $EndPAD
 $PAD
 Sh "3" R 551 197 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 360 "N-000360"
+Ne 351 "N-000351"
 Po 1063 -1000
 $EndPAD
 $PAD
 Sh "4" R 551 197 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 359 "N-000359"
+Ne 350 "N-000350"
 Po 1063 -1500
 $EndPAD
 $PAD
 Sh "5" R 551 197 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 358 "N-000358"
+Ne 349 "N-000349"
 Po 1063 -2000
 $EndPAD
 $PAD
 Sh "6" R 551 197 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 357 "N-000357"
+Ne 348 "N-000348"
 Po 1063 -2500
 $EndPAD
 $PAD
@@ -13832,7 +13684,7 @@ $PAD
 Sh "8" R 551 197 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 373 "/wired/V0b"
+Ne 363 "/wired/V0b"
 Po 1063 -3500
 $EndPAD
 $PAD
@@ -13853,28 +13705,28 @@ $PAD
 Sh "11" R 551 197 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 213 "/wired/TSCLK0"
+Ne 213 "/RSCLK0"
 Po -1063 -2500
 $EndPAD
 $PAD
 Sh "12" R 551 197 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 235 "/RFS0"
+Ne 235 "/wired/TFS0"
 Po -1063 -2000
 $EndPAD
 $PAD
 Sh "13" R 551 197 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 224 "/wired/DT0SEC"
+Ne 224 "/DR0SEC"
 Po -1063 -1500
 $EndPAD
 $PAD
 Sh "14" R 551 197 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 234 "/wired/DT0PRI"
+Ne 234 "/DR0PRI"
 Po -1063 -1000
 $EndPAD
 $PAD
@@ -13904,112 +13756,112 @@ $PAD
 Sh "1" R 551 197 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 366 "N-000366"
+Ne 357 "N-000357"
 Po 1063 0
 $EndPAD
 $PAD
 Sh "2" R 551 197 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 363 "N-000363"
+Ne 354 "N-000354"
 Po 1063 -500
 $EndPAD
 $PAD
 Sh "3" R 551 197 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 373 "/wired/V0b"
+Ne 363 "/wired/V0b"
 Po 1063 -1000
 $EndPAD
 $PAD
 Sh "4" R 551 197 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 360 "N-000360"
+Ne 351 "N-000351"
 Po 1063 -1500
 $EndPAD
 $PAD
 Sh "5" R 551 197 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 359 "N-000359"
+Ne 350 "N-000350"
 Po 1063 -2000
 $EndPAD
 $PAD
 Sh "6" R 551 197 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 373 "/wired/V0b"
+Ne 363 "/wired/V0b"
 Po 1063 -2500
 $EndPAD
 $PAD
 Sh "7" R 551 197 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 362 "N-000362"
+Ne 353 "N-000353"
 Po 1063 -3000
 $EndPAD
 $PAD
 Sh "8" R 551 197 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 366 "N-000366"
+Ne 357 "N-000357"
 Po 1063 -3500
 $EndPAD
 $PAD
 Sh "9" R 551 197 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 366 "N-000366"
+Ne 357 "N-000357"
 Po -1063 -3500
 $EndPAD
 $PAD
 Sh "10" R 551 197 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 361 "N-000361"
+Ne 352 "N-000352"
 Po -1063 -3000
 $EndPAD
 $PAD
 Sh "11" R 551 197 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 356 "/wired/V3C"
+Ne 347 "/wired/V3C"
 Po -1063 -2500
 $EndPAD
 $PAD
 Sh "12" R 551 197 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 358 "N-000358"
+Ne 349 "N-000349"
 Po -1063 -2000
 $EndPAD
 $PAD
 Sh "13" R 551 197 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 357 "N-000357"
+Ne 348 "N-000348"
 Po -1063 -1500
 $EndPAD
 $PAD
 Sh "14" R 551 197 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 356 "/wired/V3C"
+Ne 347 "/wired/V3C"
 Po -1063 -1000
 $EndPAD
 $PAD
 Sh "15" R 551 197 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 365 "N-000365"
+Ne 356 "N-000356"
 Po -1063 -500
 $EndPAD
 $PAD
 Sh "16" R 551 197 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 366 "N-000366"
+Ne 357 "N-000357"
 Po -1063 0
 $EndPAD
 $EndMODULE  SOIC-16
@@ -14165,14 +14017,14 @@ $PAD
 Sh "3" R 335 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 378 "N-000378"
+Ne 367 "N-000367"
 Po -413 0
 $EndPAD
 $PAD
 Sh "1" R 335 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 374 "N-000374"
+Ne 365 "N-000365"
 Po 413 374
 $EndPAD
 $PAD
@@ -14201,14 +14053,14 @@ $PAD
 Sh "3" R 335 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 383 "N-000383"
+Ne 370 "N-000370"
 Po -413 0
 $EndPAD
 $PAD
 Sh "1" R 335 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 379 "N-000379"
+Ne 369 "N-000369"
 Po 413 374
 $EndPAD
 $PAD
@@ -14237,14 +14089,14 @@ $PAD
 Sh "3" R 335 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 388 "N-000388"
+Ne 373 "N-000373"
 Po -413 0
 $EndPAD
 $PAD
 Sh "1" R 335 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 384 "N-000384"
+Ne 372 "N-000372"
 Po 413 374
 $EndPAD
 $PAD
@@ -14273,14 +14125,14 @@ $PAD
 Sh "3" R 335 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 393 "N-000393"
+Ne 376 "N-000376"
 Po -413 0
 $EndPAD
 $PAD
 Sh "1" R 335 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 389 "N-000389"
+Ne 375 "N-000375"
 Po 413 374
 $EndPAD
 $PAD
@@ -14309,14 +14161,14 @@ $PAD
 Sh "3" R 335 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 399 "N-000399"
+Ne 382 "N-000382"
 Po -413 0
 $EndPAD
 $PAD
 Sh "1" R 335 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 401 "N-000401"
+Ne 380 "N-000380"
 Po 413 374
 $EndPAD
 $PAD
@@ -14345,14 +14197,14 @@ $PAD
 Sh "3" R 335 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 404 "N-000404"
+Ne 383 "N-000383"
 Po -413 0
 $EndPAD
 $PAD
 Sh "1" R 335 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 407 "N-000407"
+Ne 385 "N-000385"
 Po 413 374
 $EndPAD
 $PAD
@@ -14381,14 +14233,14 @@ $PAD
 Sh "3" R 335 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 398 "N-000398"
+Ne 379 "N-000379"
 Po -413 0
 $EndPAD
 $PAD
 Sh "1" R 335 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 395 "N-000395"
+Ne 378 "N-000378"
 Po 413 374
 $EndPAD
 $PAD
@@ -14417,14 +14269,14 @@ $PAD
 Sh "3" R 335 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 413 "N-000413"
+Ne 388 "N-000388"
 Po -413 0
 $EndPAD
 $PAD
 Sh "1" R 335 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 409 "N-000409"
+Ne 386 "N-000386"
 Po 413 374
 $EndPAD
 $PAD
@@ -14453,14 +14305,14 @@ $PAD
 Sh "3" R 335 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 418 "N-000418"
+Ne 391 "N-000391"
 Po -413 0
 $EndPAD
 $PAD
 Sh "1" R 335 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 414 "N-000414"
+Ne 390 "N-000390"
 Po 413 374
 $EndPAD
 $PAD
@@ -14489,14 +14341,14 @@ $PAD
 Sh "3" R 335 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 423 "N-000423"
+Ne 392 "N-000392"
 Po -413 0
 $EndPAD
 $PAD
 Sh "1" R 335 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 419 "N-000419"
+Ne 394 "N-000394"
 Po 413 374
 $EndPAD
 $PAD
@@ -14525,14 +14377,14 @@ $PAD
 Sh "3" R 335 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 428 "N-000428"
+Ne 397 "N-000397"
 Po -413 0
 $EndPAD
 $PAD
 Sh "1" R 335 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 424 "N-000424"
+Ne 395 "N-000395"
 Po 413 374
 $EndPAD
 $PAD
@@ -14561,14 +14413,14 @@ $PAD
 Sh "3" R 335 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 433 "N-000433"
+Ne 398 "N-000398"
 Po -413 0
 $EndPAD
 $PAD
 Sh "1" R 335 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 429 "N-000429"
+Ne 400 "N-000400"
 Po 413 374
 $EndPAD
 $PAD
@@ -14597,14 +14449,14 @@ $PAD
 Sh "3" R 335 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 436 "N-000436"
+Ne 402 "N-000402"
 Po -413 0
 $EndPAD
 $PAD
 Sh "1" R 335 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 435 "N-000435"
+Ne 401 "N-000401"
 Po 413 374
 $EndPAD
 $PAD
@@ -14633,14 +14485,14 @@ $PAD
 Sh "3" R 335 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 439 "N-000439"
+Ne 405 "N-000405"
 Po -413 0
 $EndPAD
 $PAD
 Sh "1" R 335 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 443 "N-000443"
+Ne 404 "N-000404"
 Po 413 374
 $EndPAD
 $PAD
@@ -14669,14 +14521,14 @@ $PAD
 Sh "3" R 335 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 350 "N-000350"
+Ne 280 "N-000280"
 Po -413 0
 $EndPAD
 $PAD
 Sh "1" R 335 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 348 "N-000348"
+Ne 281 "N-000281"
 Po 413 374
 $EndPAD
 $PAD
@@ -14705,14 +14557,14 @@ $PAD
 Sh "3" R 335 236 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 351 "N-000351"
+Ne 279 "N-000279"
 Po -413 0
 $EndPAD
 $PAD
 Sh "1" R 335 236 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 350 "N-000350"
+Ne 280 "N-000280"
 Po 413 374
 $EndPAD
 $PAD
@@ -14741,35 +14593,35 @@ $PAD
 Sh "1" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 374 "N-000374"
+Ne 365 "N-000365"
 Po -512 -374
 $EndPAD
 $PAD
 Sh "2" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 377 "/stim_all/stim2/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po -500 0
 $EndPAD
 $PAD
 Sh "3" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 375 "N-000375"
+Ne 366 "N-000366"
 Po -512 374
 $EndPAD
 $PAD
 Sh "4" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 308 "/stim_all/an2"
+Ne 311 "/stim_all/stim2/ANO"
 Po 512 374
 $EndPAD
 $PAD
 Sh "5" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 376 "/stim_all/stim2/VBAT"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 512 -374
 $EndPAD
 $EndMODULE  SOT-23-5
@@ -14791,35 +14643,35 @@ $PAD
 Sh "1" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 379 "N-000379"
+Ne 369 "N-000369"
 Po -512 -374
 $EndPAD
 $PAD
 Sh "2" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 382 "/stim_all/stim4/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po -500 0
 $EndPAD
 $PAD
 Sh "3" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 380 "N-000380"
+Ne 368 "N-000368"
 Po -512 374
 $EndPAD
 $PAD
 Sh "4" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 267 "/stim_all/an4"
+Ne 274 "/stim_all/stim4/ANO"
 Po 512 374
 $EndPAD
 $PAD
 Sh "5" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 381 "/stim_all/stim4/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po 512 -374
 $EndPAD
 $EndMODULE  SOT-23-5
@@ -14841,35 +14693,35 @@ $PAD
 Sh "1" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 384 "N-000384"
+Ne 372 "N-000372"
 Po -512 -374
 $EndPAD
 $PAD
 Sh "2" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 387 "/stim_all/stim3/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po -500 0
 $EndPAD
 $PAD
 Sh "3" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 385 "N-000385"
+Ne 371 "N-000371"
 Po -512 374
 $EndPAD
 $PAD
 Sh "4" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 268 "/stim_all/stim3/ANO"
+Ne 275 "/stim_all/an3"
 Po 512 374
 $EndPAD
 $PAD
 Sh "5" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 386 "/stim_all/stim3/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po 512 -374
 $EndPAD
 $EndMODULE  SOT-23-5
@@ -14891,35 +14743,35 @@ $PAD
 Sh "1" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 389 "N-000389"
+Ne 375 "N-000375"
 Po -512 -374
 $EndPAD
 $PAD
 Sh "2" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 392 "/stim_all/stim7/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po -500 0
 $EndPAD
 $PAD
 Sh "3" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 390 "N-000390"
+Ne 374 "N-000374"
 Po -512 374
 $EndPAD
 $PAD
 Sh "4" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 266 "/stim_all/stim7/ANO"
+Ne 271 "/stim_all/stim7/ANO"
 Po 512 374
 $EndPAD
 $PAD
 Sh "5" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 391 "/stim_all/stim7/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po 512 -374
 $EndPAD
 $EndMODULE  SOT-23-5
@@ -14941,35 +14793,35 @@ $PAD
 Sh "1" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 401 "N-000401"
+Ne 380 "N-000380"
 Po -512 -374
 $EndPAD
 $PAD
 Sh "2" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 402 "/stim_all/stim6/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po -500 0
 $EndPAD
 $PAD
 Sh "3" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 400 "N-000400"
+Ne 381 "N-000381"
 Po -512 374
 $EndPAD
 $PAD
 Sh "4" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 289 "/stim_all/an6"
+Ne 272 "/stim_all/an6"
 Po 512 374
 $EndPAD
 $PAD
 Sh "5" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 403 "/stim_all/stim6/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po 512 -374
 $EndPAD
 $EndMODULE  SOT-23-5
@@ -14991,35 +14843,35 @@ $PAD
 Sh "1" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 407 "N-000407"
+Ne 385 "N-000385"
 Po -512 -374
 $EndPAD
 $PAD
 Sh "2" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 405 "/stim_all/stim5/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po -500 0
 $EndPAD
 $PAD
 Sh "3" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 406 "N-000406"
+Ne 384 "N-000384"
 Po -512 374
 $EndPAD
 $PAD
 Sh "4" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 291 "/stim_all/stim5/ANO"
+Ne 273 "/stim_all/an5"
 Po 512 374
 $EndPAD
 $PAD
 Sh "5" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 408 "/stim_all/stim5/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po 512 -374
 $EndPAD
 $EndMODULE  SOT-23-5
@@ -15041,35 +14893,35 @@ $PAD
 Sh "1" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 395 "N-000395"
+Ne 378 "N-000378"
 Po -512 -374
 $EndPAD
 $PAD
 Sh "2" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 394 "/stim_all/stim8/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po -500 0
 $EndPAD
 $PAD
 Sh "3" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 396 "N-000396"
+Ne 377 "N-000377"
 Po -512 374
 $EndPAD
 $PAD
 Sh "4" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 265 "/stim_all/an8"
+Ne 270 "/stim_all/stim8/ANO"
 Po 512 374
 $EndPAD
 $PAD
 Sh "5" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 397 "/stim_all/stim8/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po 512 -374
 $EndPAD
 $EndMODULE  SOT-23-5
@@ -15091,35 +14943,35 @@ $PAD
 Sh "1" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 409 "N-000409"
+Ne 386 "N-000386"
 Po -512 -374
 $EndPAD
 $PAD
 Sh "2" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 412 "/stim_all/stim11/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po -500 0
 $EndPAD
 $PAD
 Sh "3" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 410 "N-000410"
+Ne 387 "N-000387"
 Po -512 374
 $EndPAD
 $PAD
 Sh "4" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 295 "/stim_all/an11"
+Ne 304 "/stim_all/stim11/ANO"
 Po 512 374
 $EndPAD
 $PAD
 Sh "5" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 411 "/stim_all/stim11/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po 512 -374
 $EndPAD
 $EndMODULE  SOT-23-5
@@ -15141,35 +14993,35 @@ $PAD
 Sh "1" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 414 "N-000414"
+Ne 390 "N-000390"
 Po -512 -374
 $EndPAD
 $PAD
 Sh "2" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 417 "/stim_all/stim12/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po -500 0
 $EndPAD
 $PAD
 Sh "3" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 415 "N-000415"
+Ne 389 "N-000389"
 Po -512 374
 $EndPAD
 $PAD
 Sh "4" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 293 "/stim_all/stim12/ANO"
+Ne 302 "/stim_all/stim12/ANO"
 Po 512 374
 $EndPAD
 $PAD
 Sh "5" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 416 "/stim_all/stim12/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po 512 -374
 $EndPAD
 $EndMODULE  SOT-23-5
@@ -15191,35 +15043,35 @@ $PAD
 Sh "1" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 419 "N-000419"
+Ne 394 "N-000394"
 Po -512 -374
 $EndPAD
 $PAD
 Sh "2" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 422 "/stim_all/stim10/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po -500 0
 $EndPAD
 $PAD
 Sh "3" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 420 "N-000420"
+Ne 393 "N-000393"
 Po -512 374
 $EndPAD
 $PAD
 Sh "4" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 274 "/stim_all/an10"
+Ne 298 "/stim_all/an10"
 Po 512 374
 $EndPAD
 $PAD
 Sh "5" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 421 "/stim_all/stim10/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po 512 -374
 $EndPAD
 $EndMODULE  SOT-23-5
@@ -15241,35 +15093,35 @@ $PAD
 Sh "1" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 424 "N-000424"
+Ne 395 "N-000395"
 Po -512 -374
 $EndPAD
 $PAD
 Sh "2" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 427 "/stim_all/stim14/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po -500 0
 $EndPAD
 $PAD
 Sh "3" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 425 "N-000425"
+Ne 396 "N-000396"
 Po -512 374
 $EndPAD
 $PAD
 Sh "4" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 280 "/stim_all/stim14/ANO"
+Ne 294 "/stim_all/an14"
 Po 512 374
 $EndPAD
 $PAD
 Sh "5" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 426 "/stim_all/stim14/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po 512 -374
 $EndPAD
 $EndMODULE  SOT-23-5
@@ -15291,35 +15143,35 @@ $PAD
 Sh "1" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 429 "N-000429"
+Ne 400 "N-000400"
 Po -512 -374
 $EndPAD
 $PAD
 Sh "2" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 432 "/stim_all/stim13/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po -500 0
 $EndPAD
 $PAD
 Sh "3" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 430 "N-000430"
+Ne 399 "N-000399"
 Po -512 374
 $EndPAD
 $PAD
 Sh "4" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 282 "/stim_all/stim13/ANO"
+Ne 296 "/stim_all/an13"
 Po 512 374
 $EndPAD
 $PAD
 Sh "5" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 431 "/stim_all/stim13/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po 512 -374
 $EndPAD
 $EndMODULE  SOT-23-5
@@ -15341,35 +15193,35 @@ $PAD
 Sh "1" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 435 "N-000435"
+Ne 401 "N-000401"
 Po -512 -374
 $EndPAD
 $PAD
 Sh "2" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 438 "/stim_all/stim9/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po -500 0
 $EndPAD
 $PAD
 Sh "3" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 434 "N-000434"
+Ne 403 "N-000403"
 Po -512 374
 $EndPAD
 $PAD
 Sh "4" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 276 "/stim_all/an9"
+Ne 300 "/stim_all/stim9/ANO"
 Po 512 374
 $EndPAD
 $PAD
 Sh "5" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 437 "/stim_all/stim9/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po 512 -374
 $EndPAD
 $EndMODULE  SOT-23-5
@@ -15391,35 +15243,35 @@ $PAD
 Sh "1" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 443 "N-000443"
+Ne 404 "N-000404"
 Po -512 -374
 $EndPAD
 $PAD
 Sh "2" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 440 "/stim_all/stim15/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po -500 0
 $EndPAD
 $PAD
 Sh "3" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 442 "N-000442"
+Ne 406 "N-000406"
 Po -512 374
 $EndPAD
 $PAD
 Sh "4" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 300 "/stim_all/stim15/ANO"
+Ne 291 "/stim_all/stim15/ANO"
 Po 512 374
 $EndPAD
 $PAD
 Sh "5" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 441 "/stim_all/stim15/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po 512 -374
 $EndPAD
 $EndMODULE  SOT-23-5
@@ -15492,7 +15344,7 @@ $PAD
 Sh "1" C 630 630 0 0 0
 Dr 394 0 0
 At STD N 00E0FFFF
-Ne 378 "N-000378"
+Ne 367 "N-000367"
 Po 0 0
 $EndPAD
 $EndMODULE  TP
@@ -15508,7 +15360,7 @@ $PAD
 Sh "1" C 630 630 0 0 0
 Dr 394 0 0
 At STD N 00E0FFFF
-Ne 383 "N-000383"
+Ne 370 "N-000370"
 Po 0 0
 $EndPAD
 $EndMODULE  TP
@@ -15524,7 +15376,7 @@ $PAD
 Sh "1" C 630 630 0 0 0
 Dr 394 0 0
 At STD N 00E0FFFF
-Ne 388 "N-000388"
+Ne 373 "N-000373"
 Po 0 0
 $EndPAD
 $EndMODULE  TP
@@ -15540,7 +15392,7 @@ $PAD
 Sh "1" C 630 630 0 0 0
 Dr 394 0 0
 At STD N 00E0FFFF
-Ne 393 "N-000393"
+Ne 376 "N-000376"
 Po 0 0
 $EndPAD
 $EndMODULE  TP
@@ -15556,7 +15408,7 @@ $PAD
 Sh "1" C 630 630 0 0 0
 Dr 394 0 0
 At STD N 00E0FFFF
-Ne 399 "N-000399"
+Ne 382 "N-000382"
 Po 0 0
 $EndPAD
 $EndMODULE  TP
@@ -15572,7 +15424,7 @@ $PAD
 Sh "1" C 630 630 0 0 0
 Dr 394 0 0
 At STD N 00E0FFFF
-Ne 404 "N-000404"
+Ne 383 "N-000383"
 Po 0 0
 $EndPAD
 $EndMODULE  TP
@@ -15588,7 +15440,7 @@ $PAD
 Sh "1" C 630 630 0 0 0
 Dr 394 0 0
 At STD N 00E0FFFF
-Ne 398 "N-000398"
+Ne 379 "N-000379"
 Po 0 0
 $EndPAD
 $EndMODULE  TP
@@ -15604,7 +15456,7 @@ $PAD
 Sh "1" C 630 630 0 0 0
 Dr 394 0 0
 At STD N 00E0FFFF
-Ne 413 "N-000413"
+Ne 388 "N-000388"
 Po 0 0
 $EndPAD
 $EndMODULE  TP
@@ -15620,7 +15472,7 @@ $PAD
 Sh "1" C 630 630 0 0 0
 Dr 394 0 0
 At STD N 00E0FFFF
-Ne 418 "N-000418"
+Ne 391 "N-000391"
 Po 0 0
 $EndPAD
 $EndMODULE  TP
@@ -15636,7 +15488,7 @@ $PAD
 Sh "1" C 630 630 0 0 0
 Dr 394 0 0
 At STD N 00E0FFFF
-Ne 423 "N-000423"
+Ne 392 "N-000392"
 Po 0 0
 $EndPAD
 $EndMODULE  TP
@@ -15652,7 +15504,7 @@ $PAD
 Sh "1" C 630 630 0 0 0
 Dr 394 0 0
 At STD N 00E0FFFF
-Ne 428 "N-000428"
+Ne 397 "N-000397"
 Po 0 0
 $EndPAD
 $EndMODULE  TP
@@ -15668,7 +15520,7 @@ $PAD
 Sh "1" C 630 630 0 0 0
 Dr 394 0 0
 At STD N 00E0FFFF
-Ne 433 "N-000433"
+Ne 398 "N-000398"
 Po 0 0
 $EndPAD
 $EndMODULE  TP
@@ -15684,7 +15536,7 @@ $PAD
 Sh "1" C 630 630 0 0 0
 Dr 394 0 0
 At STD N 00E0FFFF
-Ne 436 "N-000436"
+Ne 402 "N-000402"
 Po 0 0
 $EndPAD
 $EndMODULE  TP
@@ -15700,7 +15552,7 @@ $PAD
 Sh "1" C 630 630 0 0 0
 Dr 394 0 0
 At STD N 00E0FFFF
-Ne 439 "N-000439"
+Ne 405 "N-000405"
 Po 0 0
 $EndPAD
 $EndMODULE  TP
@@ -16964,7 +16816,7 @@ $PAD
 Sh "1" R 276 354 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 375 "N-000375"
+Ne 366 "N-000366"
 Po 0 0
 $EndPAD
 $PAD
@@ -16978,7 +16830,7 @@ $PAD
 Sh "3" R 276 354 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 378 "N-000378"
+Ne 367 "N-000367"
 Po 256 -748
 $EndPAD
 $EndMODULE  SOT-323
@@ -16994,7 +16846,127 @@ $PAD
 Sh "1" R 276 354 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 380 "N-000380"
+Ne 368 "N-000368"
+Po 0 0
+$EndPAD
+$PAD
+Sh "2" R 276 354 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po 512 0
+$EndPAD
+$PAD
+Sh "3" R 276 354 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 370 "N-000370"
+Po 256 -748
+$EndPAD
+$EndMODULE  SOT-323
+$MODULE SOT-323
+Po 16844 41674 3600 15 47F30CDB 4D3A2078 ~~
+Li SOT-323
+Sc 4D3A2078
+AR /4D2F608C/4CFFF124/4D36194B
+Op 0 0 0
+T0 256 -1122 79 79 3600 16 N I 21 N"D27"
+T1 -256 -374 118 118 3600 24 N V 21 N"D"
+$PAD
+Sh "1" R 276 354 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 371 "N-000371"
+Po 0 0
+$EndPAD
+$PAD
+Sh "2" R 276 354 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po 512 0
+$EndPAD
+$PAD
+Sh "3" R 276 354 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 373 "N-000373"
+Po 256 -748
+$EndPAD
+$EndMODULE  SOT-323
+$MODULE SOT-323
+Po 16844 53674 3600 15 47F30CDB 4D3A207A ~~
+Li SOT-323
+Sc 4D3A207A
+AR /4D2F608C/4CFFFAD8/4D36194B
+Op 0 0 0
+T0 256 -1122 79 79 3600 16 N I 21 N"D29"
+T1 -256 -374 118 118 3600 24 N V 21 N"D"
+$PAD
+Sh "1" R 276 354 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 374 "N-000374"
+Po 0 0
+$EndPAD
+$PAD
+Sh "2" R 276 354 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po 512 0
+$EndPAD
+$PAD
+Sh "3" R 276 354 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 376 "N-000376"
+Po 256 -748
+$EndPAD
+$EndMODULE  SOT-323
+$MODULE SOT-323
+Po 16844 50674 3600 15 47F30CDB 4D3A207C ~~
+Li SOT-323
+Sc 4D3A207C
+AR /4D2F608C/4CFFFADE/4D36194B
+Op 0 0 0
+T0 256 -1122 79 79 3600 16 N I 21 N"D33"
+T1 -256 -374 118 118 3600 24 N V 21 N"D"
+$PAD
+Sh "1" R 276 354 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 381 "N-000381"
+Po 0 0
+$EndPAD
+$PAD
+Sh "2" R 276 354 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po 512 0
+$EndPAD
+$PAD
+Sh "3" R 276 354 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 382 "N-000382"
+Po 256 -748
+$EndPAD
+$EndMODULE  SOT-323
+$MODULE SOT-323
+Po 16844 47674 3600 15 47F30CDB 4D3A207E ~~
+Li SOT-323
+Sc 4D3A207E
+AR /4D2F608C/4CFFFAE1/4D36194B
+Op 0 0 0
+T0 256 -1122 79 79 3600 16 N I 21 N"D35"
+T1 -256 -374 118 118 3600 24 N V 21 N"D"
+$PAD
+Sh "1" R 276 354 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 384 "N-000384"
 Po 0 0
 $EndPAD
 $PAD
@@ -17013,18 +16985,48 @@ Po 256 -748
 $EndPAD
 $EndMODULE  SOT-323
 $MODULE SOT-323
-Po 16844 41674 3600 15 47F30CDB 4D3A2078 ~~
+Po 16844 56674 3600 15 47F30CDB 4D3A2080 ~~
 Li SOT-323
-Sc 4D3A2078
-AR /4D2F608C/4CFFF124/4D36194B
+Sc 4D3A2080
+AR /4D2F608C/4CFFFADB/4D36194B
 Op 0 0 0
-T0 256 -1122 79 79 3600 16 N I 21 N"D27"
+T0 256 -1122 79 79 3600 16 N I 21 N"D31"
 T1 -256 -374 118 118 3600 24 N V 21 N"D"
 $PAD
 Sh "1" R 276 354 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 385 "N-000385"
+Ne 377 "N-000377"
+Po 0 0
+$EndPAD
+$PAD
+Sh "2" R 276 354 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 0 ""
+Po 512 0
+$EndPAD
+$PAD
+Sh "3" R 276 354 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 379 "N-000379"
+Po 256 -748
+$EndPAD
+$EndMODULE  SOT-323
+$MODULE SOT-323
+Po 16844 65674 3600 15 47F30CDB 4D3A2082 ~~
+Li SOT-323
+Sc 4D3A2082
+AR /4D2F608C/4D07DB92/4D36194B
+Op 0 0 0
+T0 256 -1122 79 79 3600 16 N I 21 N"D37"
+T1 -256 -374 118 118 3600 24 N V 21 N"D"
+$PAD
+Sh "1" R 276 354 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 387 "N-000387"
 Po 0 0
 $EndPAD
 $PAD
@@ -17043,18 +17045,18 @@ Po 256 -748
 $EndPAD
 $EndMODULE  SOT-323
 $MODULE SOT-323
-Po 16844 53674 3600 15 47F30CDB 4D3A207A ~~
+Po 16844 68674 3600 15 47F30CDB 4D3A2084 ~~
 Li SOT-323
-Sc 4D3A207A
-AR /4D2F608C/4CFFFAD8/4D36194B
+Sc 4D3A2084
+AR /4D2F608C/4D07DB98/4D36194B
 Op 0 0 0
-T0 256 -1122 79 79 3600 16 N I 21 N"D29"
+T0 256 -1122 79 79 3600 16 N I 21 N"D39"
 T1 -256 -374 118 118 3600 24 N V 21 N"D"
 $PAD
 Sh "1" R 276 354 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 390 "N-000390"
+Ne 389 "N-000389"
 Po 0 0
 $EndPAD
 $PAD
@@ -17066,25 +17068,25 @@ Po 512 0
 $EndPAD
 $PAD
 Sh "3" R 276 354 0 0 0
+Dr 0 0 0
+At SMD N 00888000
+Ne 391 "N-000391"
+Po 256 -748
+$EndPAD
+$EndMODULE  SOT-323
+$MODULE SOT-323
+Po 16844 62674 3600 15 47F30CDB 4D3A2086 ~~
+Li SOT-323
+Sc 4D3A2086
+AR /4D2F608C/4D07DB9C/4D36194B
+Op 0 0 0
+T0 256 -1122 79 79 3600 16 N I 21 N"D41"
+T1 -256 -374 118 118 3600 24 N V 21 N"D"
+$PAD
+Sh "1" R 276 354 0 0 0
 Dr 0 0 0
 At SMD N 00888000
 Ne 393 "N-000393"
-Po 256 -748
-$EndPAD
-$EndMODULE  SOT-323
-$MODULE SOT-323
-Po 16844 50674 3600 15 47F30CDB 4D3A207C ~~
-Li SOT-323
-Sc 4D3A207C
-AR /4D2F608C/4CFFFADE/4D36194B
-Op 0 0 0
-T0 256 -1122 79 79 3600 16 N I 21 N"D33"
-T1 -256 -374 118 118 3600 24 N V 21 N"D"
-$PAD
-Sh "1" R 276 354 0 0 0
-Dr 0 0 0
-At SMD N 00888000
-Ne 400 "N-000400"
 Po 0 0
 $EndPAD
 $PAD
@@ -17098,47 +17100,17 @@ $PAD
 Sh "3" R 276 354 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 399 "N-000399"
+Ne 392 "N-000392"
 Po 256 -748
 $EndPAD
 $EndMODULE  SOT-323
 $MODULE SOT-323
-Po 16844 47674 3600 15 47F30CDB 4D3A207E ~~
+Po 16844 74674 3600 15 47F30CDB 4D3A2088 ~~
 Li SOT-323
-Sc 4D3A207E
-AR /4D2F608C/4CFFFAE1/4D36194B
+Sc 4D3A2088
+AR /4D2F608C/4D07DB9F/4D36194B
 Op 0 0 0
-T0 256 -1122 79 79 3600 16 N I 21 N"D35"
-T1 -256 -374 118 118 3600 24 N V 21 N"D"
-$PAD
-Sh "1" R 276 354 0 0 0
-Dr 0 0 0
-At SMD N 00888000
-Ne 406 "N-000406"
-Po 0 0
-$EndPAD
-$PAD
-Sh "2" R 276 354 0 0 0
-Dr 0 0 0
-At SMD N 00888000
-Ne 0 ""
-Po 512 0
-$EndPAD
-$PAD
-Sh "3" R 276 354 0 0 0
-Dr 0 0 0
-At SMD N 00888000
-Ne 404 "N-000404"
-Po 256 -748
-$EndPAD
-$EndMODULE  SOT-323
-$MODULE SOT-323
-Po 16844 56674 3600 15 47F30CDB 4D3A2080 ~~
-Li SOT-323
-Sc 4D3A2080
-AR /4D2F608C/4CFFFADB/4D36194B
-Op 0 0 0
-T0 256 -1122 79 79 3600 16 N I 21 N"D31"
+T0 256 -1122 79 79 3600 16 N I 21 N"D43"
 T1 -256 -374 118 118 3600 24 N V 21 N"D"
 $PAD
 Sh "1" R 276 354 0 0 0
@@ -17158,127 +17130,7 @@ $PAD
 Sh "3" R 276 354 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 398 "N-000398"
-Po 256 -748
-$EndPAD
-$EndMODULE  SOT-323
-$MODULE SOT-323
-Po 16844 65674 3600 15 47F30CDB 4D3A2082 ~~
-Li SOT-323
-Sc 4D3A2082
-AR /4D2F608C/4D07DB92/4D36194B
-Op 0 0 0
-T0 256 -1122 79 79 3600 16 N I 21 N"D37"
-T1 -256 -374 118 118 3600 24 N V 21 N"D"
-$PAD
-Sh "1" R 276 354 0 0 0
-Dr 0 0 0
-At SMD N 00888000
-Ne 410 "N-000410"
-Po 0 0
-$EndPAD
-$PAD
-Sh "2" R 276 354 0 0 0
-Dr 0 0 0
-At SMD N 00888000
-Ne 0 ""
-Po 512 0
-$EndPAD
-$PAD
-Sh "3" R 276 354 0 0 0
-Dr 0 0 0
-At SMD N 00888000
-Ne 413 "N-000413"
-Po 256 -748
-$EndPAD
-$EndMODULE  SOT-323
-$MODULE SOT-323
-Po 16844 68674 3600 15 47F30CDB 4D3A2084 ~~
-Li SOT-323
-Sc 4D3A2084
-AR /4D2F608C/4D07DB98/4D36194B
-Op 0 0 0
-T0 256 -1122 79 79 3600 16 N I 21 N"D39"
-T1 -256 -374 118 118 3600 24 N V 21 N"D"
-$PAD
-Sh "1" R 276 354 0 0 0
-Dr 0 0 0
-At SMD N 00888000
-Ne 415 "N-000415"
-Po 0 0
-$EndPAD
-$PAD
-Sh "2" R 276 354 0 0 0
-Dr 0 0 0
-At SMD N 00888000
-Ne 0 ""
-Po 512 0
-$EndPAD
-$PAD
-Sh "3" R 276 354 0 0 0
-Dr 0 0 0
-At SMD N 00888000
-Ne 418 "N-000418"
-Po 256 -748
-$EndPAD
-$EndMODULE  SOT-323
-$MODULE SOT-323
-Po 16844 62674 3600 15 47F30CDB 4D3A2086 ~~
-Li SOT-323
-Sc 4D3A2086
-AR /4D2F608C/4D07DB9C/4D36194B
-Op 0 0 0
-T0 256 -1122 79 79 3600 16 N I 21 N"D41"
-T1 -256 -374 118 118 3600 24 N V 21 N"D"
-$PAD
-Sh "1" R 276 354 0 0 0
-Dr 0 0 0
-At SMD N 00888000
-Ne 420 "N-000420"
-Po 0 0
-$EndPAD
-$PAD
-Sh "2" R 276 354 0 0 0
-Dr 0 0 0
-At SMD N 00888000
-Ne 0 ""
-Po 512 0
-$EndPAD
-$PAD
-Sh "3" R 276 354 0 0 0
-Dr 0 0 0
-At SMD N 00888000
-Ne 423 "N-000423"
-Po 256 -748
-$EndPAD
-$EndMODULE  SOT-323
-$MODULE SOT-323
-Po 16844 74674 3600 15 47F30CDB 4D3A2088 ~~
-Li SOT-323
-Sc 4D3A2088
-AR /4D2F608C/4D07DB9F/4D36194B
-Op 0 0 0
-T0 256 -1122 79 79 3600 16 N I 21 N"D43"
-T1 -256 -374 118 118 3600 24 N V 21 N"D"
-$PAD
-Sh "1" R 276 354 0 0 0
-Dr 0 0 0
-At SMD N 00888000
-Ne 425 "N-000425"
-Po 0 0
-$EndPAD
-$PAD
-Sh "2" R 276 354 0 0 0
-Dr 0 0 0
-At SMD N 00888000
-Ne 0 ""
-Po 512 0
-$EndPAD
-$PAD
-Sh "3" R 276 354 0 0 0
-Dr 0 0 0
-At SMD N 00888000
-Ne 428 "N-000428"
+Ne 397 "N-000397"
 Po 256 -748
 $EndPAD
 $EndMODULE  SOT-323
@@ -17294,7 +17146,7 @@ $PAD
 Sh "1" R 276 354 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 430 "N-000430"
+Ne 399 "N-000399"
 Po 0 0
 $EndPAD
 $PAD
@@ -17308,7 +17160,7 @@ $PAD
 Sh "3" R 276 354 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 433 "N-000433"
+Ne 398 "N-000398"
 Po 256 -748
 $EndPAD
 $EndMODULE  SOT-323
@@ -17324,7 +17176,7 @@ $PAD
 Sh "1" R 276 354 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 434 "N-000434"
+Ne 403 "N-000403"
 Po 0 0
 $EndPAD
 $PAD
@@ -17338,7 +17190,7 @@ $PAD
 Sh "3" R 276 354 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 436 "N-000436"
+Ne 402 "N-000402"
 Po 256 -748
 $EndPAD
 $EndMODULE  SOT-323
@@ -17354,7 +17206,7 @@ $PAD
 Sh "1" R 276 354 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 442 "N-000442"
+Ne 406 "N-000406"
 Po 0 0
 $EndPAD
 $PAD
@@ -17368,7 +17220,7 @@ $PAD
 Sh "3" R 276 354 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 439 "N-000439"
+Ne 405 "N-000405"
 Po 256 -748
 $EndPAD
 $EndMODULE  SOT-323
@@ -17386,14 +17238,14 @@ $PAD
 Sh "2" R 197 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 377 "/stim_all/stim2/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 376 "/stim_all/stim2/VBAT"
+Ne 282 "/stim_all/stim2/GROUND"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -17411,14 +17263,14 @@ $PAD
 Sh "2" R 197 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 382 "/stim_all/stim4/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 381 "/stim_all/stim4/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -17436,14 +17288,14 @@ $PAD
 Sh "2" R 197 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 387 "/stim_all/stim3/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 386 "/stim_all/stim3/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -17461,14 +17313,14 @@ $PAD
 Sh "2" R 197 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 392 "/stim_all/stim7/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 391 "/stim_all/stim7/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -17486,14 +17338,14 @@ $PAD
 Sh "2" R 197 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 402 "/stim_all/stim6/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 403 "/stim_all/stim6/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -17511,14 +17363,14 @@ $PAD
 Sh "2" R 197 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 405 "/stim_all/stim5/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 408 "/stim_all/stim5/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -17536,14 +17388,14 @@ $PAD
 Sh "2" R 197 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 394 "/stim_all/stim8/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 397 "/stim_all/stim8/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -17561,14 +17413,14 @@ $PAD
 Sh "2" R 197 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 412 "/stim_all/stim11/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 411 "/stim_all/stim11/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -17586,14 +17438,14 @@ $PAD
 Sh "2" R 197 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 417 "/stim_all/stim12/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 416 "/stim_all/stim12/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -17611,14 +17463,14 @@ $PAD
 Sh "2" R 197 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 422 "/stim_all/stim10/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 421 "/stim_all/stim10/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -17636,14 +17488,14 @@ $PAD
 Sh "2" R 197 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 427 "/stim_all/stim14/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 426 "/stim_all/stim14/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -17661,14 +17513,14 @@ $PAD
 Sh "2" R 197 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 432 "/stim_all/stim13/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 431 "/stim_all/stim13/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -17686,14 +17538,14 @@ $PAD
 Sh "2" R 197 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 438 "/stim_all/stim9/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 437 "/stim_all/stim9/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -17711,14 +17563,14 @@ $PAD
 Sh "2" R 197 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 440 "/stim_all/stim15/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 441 "/stim_all/stim15/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -17740,35 +17592,35 @@ $PAD
 Sh "1" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 444 "N-000444"
+Ne 407 "N-000407"
 Po -512 -374
 $EndPAD
 $PAD
 Sh "2" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 346 "/stim_all/stim1/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po -500 0
 $EndPAD
 $PAD
 Sh "3" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 446 "N-000446"
+Ne 409 "N-000409"
 Po -512 374
 $EndPAD
 $PAD
 Sh "4" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 310 "/stim_all/an1"
+Ne 313 "/stim_all/an1"
 Po 512 374
 $EndPAD
 $PAD
 Sh "5" R 420 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 347 "/stim_all/stim1/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po 512 -374
 $EndPAD
 $EndMODULE  SOT-23-5
@@ -17791,14 +17643,14 @@ $PAD
 Sh "1" R 236 354 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 347 "/stim_all/stim1/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -295 0
 $EndPAD
 $PAD
 Sh "2" R 236 354 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 444 "N-000444"
+Ne 407 "N-000407"
 Po 295 0
 $EndPAD
 $EndMODULE  0603
@@ -17820,14 +17672,14 @@ $PAD
 Sh "3" R 335 236 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 445 "N-000445"
+Ne 408 "N-000408"
 Po -413 0
 $EndPAD
 $PAD
 Sh "1" R 335 236 0 0 2700
 Dr 0 0 0
 At SMD N 00888000
-Ne 444 "N-000444"
+Ne 407 "N-000407"
 Po 413 374
 $EndPAD
 $PAD
@@ -17852,14 +17704,14 @@ $PAD
 Sh "2" R 197 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 346 "/stim_all/stim1/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 445 "N-000445"
+Ne 408 "N-000408"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -17879,21 +17731,21 @@ $PAD
 Sh "1" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 309 "/stim_all/stim1/CATHO"
+Ne 312 "/stim_all/ca1"
 Po -256 331
 $EndPAD
 $PAD
 Sh "2" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 355 "/stim_all/stim4/Iout"
+Ne 336 "/stim_all/stim2/Iout"
 Po 256 331
 $EndPAD
 $PAD
 Sh "3" R 217 295 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 445 "N-000445"
+Ne 408 "N-000408"
 Po 0 -331
 $EndPAD
 $EndMODULE  S-MINI-3P
@@ -17909,7 +17761,7 @@ $PAD
 Sh "1" C 630 630 0 0 0
 Dr 394 0 0
 At STD N 00E0FFFF
-Ne 445 "N-000445"
+Ne 408 "N-000408"
 Po 0 0
 $EndPAD
 $EndMODULE  TP
@@ -17925,7 +17777,7 @@ $PAD
 Sh "1" R 276 354 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 446 "N-000446"
+Ne 409 "N-000409"
 Po 0 0
 $EndPAD
 $PAD
@@ -17939,7 +17791,7 @@ $PAD
 Sh "3" R 276 354 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 445 "N-000445"
+Ne 408 "N-000408"
 Po 256 -748
 $EndPAD
 $EndMODULE  SOT-323
@@ -17957,14 +17809,14 @@ $PAD
 Sh "2" R 197 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 446 "N-000446"
+Ne 409 "N-000409"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 1800
 Dr 0 0 0
 At SMD N 00888000
-Ne 355 "/stim_all/stim4/Iout"
+Ne 336 "/stim_all/stim2/Iout"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
@@ -17982,469 +17834,469 @@ $PAD
 Sh "2" R 197 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 346 "/stim_all/stim1/IGND"
+Ne 282 "/stim_all/stim2/GROUND"
 Po 197 0
 $EndPAD
 $PAD
 Sh "1" R 197 236 0 0 0
 Dr 0 0 0
 At SMD N 00888000
-Ne 347 "/stim_all/stim1/VBAT"
+Ne 342 "/stim_all/stim7/BATTERY"
 Po -197 0
 $EndPAD
 $EndMODULE  0402
 $TRACK
 Po 0 15300 62500 14928 62309 50 -1
-De 15 0 422 0 800
+De 15 0 282 0 800
 Po 0 16267 62187 16700 61597 50 -1
-De 15 0 421 0 400
+De 15 0 342 0 400
 Po 0 17955 59933 17197 60200 50 -1
-De 15 0 328 0 400
+De 15 0 346 0 400
 Po 0 18356 59631 17955 59933 50 -1
-De 15 0 328 0 800
+De 15 0 346 0 800
 Po 0 17955 62933 17197 63200 50 -1
-De 15 0 328 0 400
+De 15 0 346 0 400
 Po 0 18356 62631 17955 62933 50 -1
-De 15 0 328 0 800
+De 15 0 346 0 800
 Po 0 17955 65933 17197 66200 50 -1
-De 15 0 328 0 400
+De 15 0 346 0 400
 Po 0 18356 65631 17955 65933 50 -1
-De 15 0 328 0 800
+De 15 0 346 0 800
 Po 0 17955 68933 17197 69200 50 -1
-De 15 0 328 0 400
+De 15 0 346 0 400
 Po 0 18356 68631 17955 68933 50 -1
-De 15 0 328 0 800
+De 15 0 346 0 800
 Po 0 14700 61595 14539 62300 50 -1
-De 15 0 421 0 800
+De 15 0 342 0 800
 Po 0 14539 62300 14933 62300 50 -1
-De 15 0 421 0 0
+De 15 0 342 0 0
 Po 0 15281 62507 16312 62126 50 -1
-De 15 0 421 0 400
+De 15 0 342 0 400
 Po 0 15300 65500 14928 65309 50 -1
-De 15 0 412 0 800
+De 15 0 282 0 800
 Po 0 16267 65187 16700 64597 50 -1
-De 15 0 411 0 400
+De 15 0 342 0 400
 Po 0 14700 64595 14539 65300 50 -1
-De 15 0 411 0 800
+De 15 0 342 0 800
 Po 0 14539 65300 14933 65300 50 -1
-De 15 0 411 0 0
+De 15 0 342 0 0
 Po 0 15281 65507 16312 65126 50 -1
-De 15 0 411 0 400
+De 15 0 342 0 400
 Po 0 15300 68500 14928 68309 50 -1
-De 15 0 417 0 800
+De 15 0 282 0 800
 Po 0 16267 68187 16700 67597 50 -1
-De 15 0 416 0 400
+De 15 0 342 0 400
 Po 0 14700 67595 14539 68300 50 -1
-De 15 0 416 0 800
+De 15 0 342 0 800
 Po 0 14539 68300 14933 68300 50 -1
-De 15 0 416 0 0
+De 15 0 342 0 0
 Po 0 15281 68507 16312 68126 50 -1
-De 15 0 416 0 400
+De 15 0 342 0 400
 Po 0 15300 71500 14928 71309 50 -1
-De 15 0 432 0 800
+De 15 0 282 0 800
 Po 0 16267 71187 16700 70597 50 -1
-De 15 0 431 0 400
+De 15 0 342 0 400
 Po 0 14700 70595 14539 71300 50 -1
-De 15 0 431 0 800
+De 15 0 342 0 800
 Po 0 14539 71300 14933 71300 50 -1
-De 15 0 431 0 0
+De 15 0 342 0 0
 Po 0 15281 71507 16312 71126 50 -1
-De 15 0 431 0 400
+De 15 0 342 0 400
 Po 0 15300 74500 14928 74309 50 -1
-De 15 0 427 0 800
+De 15 0 282 0 800
 Po 0 16267 74187 16700 73597 50 -1
-De 15 0 426 0 400
+De 15 0 342 0 400
 Po 0 17955 71933 17197 72200 50 -1
-De 15 0 329 0 400
+De 15 0 345 0 400
 Po 0 18356 71631 17955 71933 50 -1
-De 15 0 329 0 800
+De 15 0 345 0 800
 Po 0 17955 74933 17197 75200 50 -1
-De 15 0 329 0 400
+De 15 0 345 0 400
 Po 0 18356 74631 17955 74933 50 -1
-De 15 0 329 0 800
+De 15 0 345 0 800
 Po 0 17955 77933 17197 78200 50 -1
-De 15 0 329 0 400
+De 15 0 345 0 400
 Po 0 18356 77631 17955 77933 50 -1
-De 15 0 329 0 800
+De 15 0 345 0 800
 Po 0 14700 73595 14539 74300 50 -1
-De 15 0 426 0 800
+De 15 0 342 0 800
 Po 0 14539 74300 14933 74300 50 -1
-De 15 0 426 0 0
+De 15 0 342 0 0
 Po 0 15281 74507 16312 74126 50 -1
-De 15 0 426 0 400
+De 15 0 342 0 400
 Po 0 15300 77500 14928 77309 50 -1
-De 15 0 440 0 800
+De 15 0 282 0 800
 Po 0 16267 77187 16700 76597 50 -1
-De 15 0 441 0 400
+De 15 0 342 0 400
 Po 0 14700 76595 14539 77300 50 -1
-De 15 0 441 0 800
+De 15 0 342 0 800
 Po 0 14539 77300 14933 77300 50 -1
-De 15 0 441 0 0
+De 15 0 342 0 0
 Po 0 15281 77507 16312 77126 50 -1
-De 15 0 441 0 400
+De 15 0 342 0 400
 Po 0 15300 38500 14928 38309 50 -1
-De 15 0 377 0 800
+De 15 0 282 0 800
 Po 0 16267 38187 16700 37597 50 -1
-De 15 0 376 0 400
+De 15 0 282 0 400
 Po 0 14700 37595 14539 38300 50 -1
-De 15 0 376 0 800
+De 15 0 282 0 800
 Po 0 14539 38300 14933 38300 50 -1
-De 15 0 376 0 0
+De 15 0 282 0 0
 Po 0 15281 38507 16312 38126 50 -1
-De 15 0 376 0 400
+De 15 0 282 0 400
 Po 0 15300 41500 14928 41309 50 -1
-De 15 0 387 0 800
+De 15 0 282 0 800
 Po 0 16267 41187 16700 40597 50 -1
-De 15 0 386 0 400
+De 15 0 342 0 400
 Po 0 14700 40595 14539 41300 50 -1
-De 15 0 386 0 800
+De 15 0 342 0 800
 Po 0 14539 41300 14933 41300 50 -1
-De 15 0 386 0 0
+De 15 0 342 0 0
 Po 0 15281 41507 16312 41126 50 -1
-De 15 0 386 0 400
+De 15 0 342 0 400
 Po 0 15300 44500 14928 44309 50 -1
-De 15 0 382 0 800
+De 15 0 282 0 800
 Po 0 16267 44187 16700 43597 50 -1
-De 15 0 381 0 400
+De 15 0 342 0 400
 Po 0 17955 38933 17197 39200 50 -1
-De 15 0 355 0 400
+De 15 0 336 0 400
 Po 0 18356 38631 17955 38933 50 -1
-De 15 0 355 0 800
+De 15 0 336 0 800
 Po 0 17955 41933 17197 42200 50 -1
-De 15 0 355 0 400
+De 15 0 336 0 400
 Po 0 18356 41631 17955 41933 50 -1
-De 15 0 355 0 800
+De 15 0 336 0 800
 Po 0 17955 44933 17197 45200 50 -1
-De 15 0 355 0 400
+De 15 0 336 0 400
 Po 0 18356 44631 17955 44933 50 -1
-De 15 0 355 0 800
+De 15 0 336 0 800
 Po 0 14700 43595 14539 44300 50 -1
-De 15 0 381 0 800
+De 15 0 342 0 800
 Po 0 14539 44300 14933 44300 50 -1
-De 15 0 381 0 0
+De 15 0 342 0 0
 Po 0 15281 44507 16312 44126 50 -1
-De 15 0 381 0 400
+De 15 0 342 0 400
 Po 0 15300 47500 14928 47309 50 -1
-De 15 0 405 0 800
+De 15 0 282 0 800
 Po 0 16267 47187 16700 46597 50 -1
-De 15 0 408 0 400
+De 15 0 342 0 400
 Po 0 14700 46595 14539 47300 50 -1
-De 15 0 408 0 800
+De 15 0 342 0 800
 Po 0 14539 47300 14933 47300 50 -1
-De 15 0 408 0 0
+De 15 0 342 0 0
 Po 0 15281 47507 16312 47126 50 -1
-De 15 0 408 0 400
+De 15 0 342 0 400
 Po 0 15300 50500 14928 50309 50 -1
-De 15 0 402 0 800
+De 15 0 282 0 800
 Po 0 16267 50187 16700 49597 50 -1
-De 15 0 403 0 400
+De 15 0 342 0 400
 Po 0 14700 49595 14539 50300 50 -1
-De 15 0 403 0 800
+De 15 0 342 0 800
 Po 0 14539 50300 14933 50300 50 -1
-De 15 0 403 0 0
+De 15 0 342 0 0
 Po 0 15281 50507 16312 50126 50 -1
-De 15 0 403 0 400
+De 15 0 342 0 400
 Po 0 15300 53500 14928 53309 50 -1
-De 15 0 392 0 800
+De 15 0 282 0 800
 Po 0 16267 53187 16700 52597 50 -1
-De 15 0 391 0 400
+De 15 0 342 0 400
 Po 0 14700 52595 14539 53300 50 -1
-De 15 0 391 0 800
+De 15 0 342 0 800
 Po 0 14539 53300 14933 53300 50 -1
-De 15 0 391 0 0
+De 15 0 342 0 0
 Po 0 15281 53507 16312 53126 50 -1
-De 15 0 391 0 400
+De 15 0 342 0 400
 Po 0 15300 56500 14928 56309 50 -1
-De 15 0 394 0 800
+De 15 0 282 0 800
 Po 0 16267 56187 16700 55597 50 -1
-De 15 0 397 0 400
+De 15 0 342 0 400
 Po 0 17955 47933 17197 48200 50 -1
-De 15 0 344 0 400
+De 15 0 337 0 400
 Po 0 18356 47631 17955 47933 50 -1
-De 15 0 344 0 800
+De 15 0 337 0 800
 Po 0 17955 50933 17197 51200 50 -1
-De 15 0 344 0 400
+De 15 0 337 0 400
 Po 0 18356 50631 17955 50933 50 -1
-De 15 0 344 0 800
+De 15 0 337 0 800
 Po 0 17955 53933 17197 54200 50 -1
-De 15 0 344 0 400
+De 15 0 337 0 400
 Po 0 18356 53631 17955 53933 50 -1
-De 15 0 344 0 800
+De 15 0 337 0 800
 Po 0 17955 56933 17197 57200 50 -1
-De 15 0 344 0 400
+De 15 0 337 0 400
 Po 0 18356 56631 17955 56933 50 -1
-De 15 0 344 0 800
+De 15 0 337 0 800
 Po 0 14700 55595 14539 56300 50 -1
-De 15 0 397 0 800
+De 15 0 342 0 800
 Po 0 14539 56300 14933 56300 50 -1
-De 15 0 397 0 0
+De 15 0 342 0 0
 Po 0 15281 56507 16312 56126 50 -1
-De 15 0 397 0 400
+De 15 0 342 0 400
 Po 0 15300 59500 14928 59309 50 -1
-De 15 0 438 0 800
+De 15 0 282 0 800
 Po 0 16267 59187 16700 58597 50 -1
-De 15 0 437 0 400
+De 15 0 342 0 400
 Po 0 14700 58595 14539 59300 50 -1
-De 15 0 437 0 800
+De 15 0 342 0 800
 Po 0 14539 59300 14933 59300 50 -1
-De 15 0 437 0 0
+De 15 0 342 0 0
 Po 0 15281 59507 16312 59126 50 -1
-De 15 0 437 0 400
+De 15 0 342 0 400
 Po 0 -9749 9591 -8408 10721 250 -1
 De 0 0 90 0 800
 Po 0 -7339 -3472 -7608 -4664 250 -1
 De 0 0 241 0 800
 Po 0 15287 36726 14700 37005 80 -1
-De 15 0 374 0 C00
+De 15 0 365 0 C00
 Po 0 15341 39225 15288 38874 50 -1
-De 15 0 375 0 400
+De 15 0 366 0 400
 Po 0 16803 39200 15341 39225 50 -1
-De 15 0 375 0 800
+De 15 0 366 0 800
 Po 0 16844 38674 16803 39200 50 -1
-De 15 0 375 0 C00
+De 15 0 366 0 C00
 Po 0 16700 37203 16113 37100 80 -1
-De 15 0 378 0 C00
+De 15 0 367 0 C00
 Po 0 18000 37100 18100 37969 50 -1
-De 15 0 378 0 C00
+De 15 0 367 0 C00
 Po 0 17100 37926 18100 37969 50 -1
-De 15 0 378 0 C00
+De 15 0 367 0 C00
 Po 0 17138 37639 17100 37926 50 -1
-De 15 0 378 0 400
+De 15 0 367 0 400
 Po 0 16700 37203 17138 37639 50 -1
-De 15 0 378 0 800
+De 15 0 367 0 800
 Po 0 15287 42726 14700 43005 80 -1
-De 15 0 379 0 C00
+De 15 0 369 0 C00
 Po 0 15341 45225 15288 44874 50 -1
-De 15 0 380 0 400
+De 15 0 368 0 400
 Po 0 16803 45200 15341 45225 50 -1
-De 15 0 380 0 800
+De 15 0 368 0 800
 Po 0 16844 44674 16803 45200 50 -1
-De 15 0 380 0 C00
+De 15 0 368 0 C00
 Po 0 16700 43203 16113 43100 80 -1
-De 15 0 383 0 C00
+De 15 0 370 0 C00
 Po 0 18000 43100 18100 43969 50 -1
-De 15 0 383 0 C00
+De 15 0 370 0 C00
 Po 0 17100 43926 18100 43969 50 -1
-De 15 0 383 0 C00
+De 15 0 370 0 C00
 Po 0 17138 43639 17100 43926 50 -1
-De 15 0 383 0 400
+De 15 0 370 0 400
 Po 0 16700 43203 17138 43639 50 -1
-De 15 0 383 0 800
+De 15 0 370 0 800
 Po 0 15287 39726 14700 40005 80 -1
-De 15 0 384 0 C00
+De 15 0 372 0 C00
 Po 0 15341 42225 15288 41874 50 -1
-De 15 0 385 0 400
+De 15 0 371 0 400
 Po 0 16803 42200 15341 42225 50 -1
-De 15 0 385 0 800
+De 15 0 371 0 800
 Po 0 16844 41674 16803 42200 50 -1
-De 15 0 385 0 C00
+De 15 0 371 0 C00
 Po 0 16700 40203 16113 40100 80 -1
-De 15 0 388 0 C00
+De 15 0 373 0 C00
 Po 0 18000 40100 18100 40969 50 -1
-De 15 0 388 0 C00
+De 15 0 373 0 C00
 Po 0 17100 40926 18100 40969 50 -1
-De 15 0 388 0 C00
+De 15 0 373 0 C00
 Po 0 17138 40639 17100 40926 50 -1
-De 15 0 388 0 400
+De 15 0 373 0 400
 Po 0 16700 40203 17138 40639 50 -1
-De 15 0 388 0 800
+De 15 0 373 0 800
 Po 0 16700 52203 16113 52100 80 -1
-De 15 0 393 0 C00
+De 15 0 376 0 C00
 Po 0 18000 52100 18100 52969 50 -1
-De 15 0 393 0 C00
+De 15 0 376 0 C00
 Po 0 17100 52926 18100 52969 50 -1
-De 15 0 393 0 C00
+De 15 0 376 0 C00
 Po 0 17138 52639 17100 52926 50 -1
-De 15 0 393 0 400
+De 15 0 376 0 400
 Po 0 16700 52203 17138 52639 50 -1
-De 15 0 393 0 800
+De 15 0 376 0 800
 Po 0 15341 54225 15288 53874 50 -1
-De 15 0 390 0 400
+De 15 0 374 0 400
 Po 0 16803 54200 15341 54225 50 -1
-De 15 0 390 0 800
+De 15 0 374 0 800
 Po 0 16844 53674 16803 54200 50 -1
-De 15 0 390 0 C00
+De 15 0 374 0 C00
 Po 0 15287 51726 14700 52005 80 -1
-De 15 0 389 0 C00
+De 15 0 375 0 C00
 Po 0 15341 57225 15288 56874 50 -1
-De 15 0 396 0 400
+De 15 0 377 0 400
 Po 0 16803 57200 15341 57225 50 -1
-De 15 0 396 0 800
+De 15 0 377 0 800
 Po 0 16844 56674 16803 57200 50 -1
-De 15 0 396 0 C00
+De 15 0 377 0 C00
 Po 0 15287 54726 14700 55005 80 -1
-De 15 0 395 0 C00
+De 15 0 378 0 C00
 Po 0 16700 55203 16113 55100 80 -1
-De 15 0 398 0 C00
+De 15 0 379 0 C00
 Po 0 18000 55100 18100 55969 50 -1
-De 15 0 398 0 C00
+De 15 0 379 0 C00
 Po 0 17100 55926 18100 55969 50 -1
-De 15 0 398 0 C00
+De 15 0 379 0 C00
 Po 0 17138 55639 17100 55926 50 -1
-De 15 0 398 0 400
+De 15 0 379 0 400
 Po 0 16700 55203 17138 55639 50 -1
-De 15 0 398 0 800
+De 15 0 379 0 800
 Po 0 16700 49203 16113 49100 80 -1
-De 15 0 399 0 C00
+De 15 0 382 0 C00
 Po 0 18000 49100 18100 49969 50 -1
-De 15 0 399 0 C00
+De 15 0 382 0 C00
 Po 0 17100 49926 18100 49969 50 -1
-De 15 0 399 0 C00
+De 15 0 382 0 C00
 Po 0 17138 49639 17100 49926 50 -1
-De 15 0 399 0 400
+De 15 0 382 0 400
 Po 0 16700 49203 17138 49639 50 -1
-De 15 0 399 0 800
+De 15 0 382 0 800
 Po 0 15341 51225 15288 50874 50 -1
-De 15 0 400 0 400
+De 15 0 381 0 400
 Po 0 16803 51200 15341 51225 50 -1
-De 15 0 400 0 800
+De 15 0 381 0 800
 Po 0 16844 50674 16803 51200 50 -1
-De 15 0 400 0 C00
+De 15 0 381 0 C00
 Po 0 15287 48726 14700 49005 80 -1
-De 15 0 401 0 C00
+De 15 0 380 0 C00
 Po 0 15287 45726 14700 46005 80 -1
-De 15 0 407 0 C00
+De 15 0 385 0 C00
 Po 0 15341 48225 15288 47874 50 -1
-De 15 0 406 0 400
+De 15 0 384 0 400
 Po 0 16803 48200 15341 48225 50 -1
-De 15 0 406 0 800
+De 15 0 384 0 800
 Po 0 16844 47674 16803 48200 50 -1
-De 15 0 406 0 C00
+De 15 0 384 0 C00
 Po 0 16700 46203 16113 46100 80 -1
-De 15 0 404 0 C00
+De 15 0 383 0 C00
 Po 0 18000 46100 18100 46969 50 -1
-De 15 0 404 0 C00
+De 15 0 383 0 C00
 Po 0 17100 46926 18100 46969 50 -1
-De 15 0 404 0 C00
+De 15 0 383 0 C00
 Po 0 17138 46639 17100 46926 50 -1
-De 15 0 404 0 400
+De 15 0 383 0 400
 Po 0 16700 46203 17138 46639 50 -1
-De 15 0 404 0 800
+De 15 0 383 0 800
 Po 0 15287 63726 14700 64005 80 -1
-De 15 0 409 0 C00
+De 15 0 386 0 C00
 Po 0 15341 66225 15288 65874 50 -1
-De 15 0 410 0 400
+De 15 0 387 0 400
 Po 0 16803 66200 15341 66225 50 -1
-De 15 0 410 0 800
+De 15 0 387 0 800
 Po 0 16844 65674 16803 66200 50 -1
-De 15 0 410 0 C00
+De 15 0 387 0 C00
 Po 0 16700 64203 16113 64100 80 -1
-De 15 0 413 0 C00
+De 15 0 388 0 C00
 Po 0 18000 64100 18100 64969 50 -1
-De 15 0 413 0 C00
+De 15 0 388 0 C00
 Po 0 17100 64926 18100 64969 50 -1
-De 15 0 413 0 C00
+De 15 0 388 0 C00
 Po 0 17138 64639 17100 64926 50 -1
-De 15 0 413 0 400
+De 15 0 388 0 400
 Po 0 16700 64203 17138 64639 50 -1
-De 15 0 413 0 800
+De 15 0 388 0 800
 Po 0 15287 66726 14700 67005 80 -1
-De 15 0 414 0 C00
+De 15 0 390 0 C00
 Po 0 15341 69225 15288 68874 50 -1
-De 15 0 415 0 400
+De 15 0 389 0 400
 Po 0 16803 69200 15341 69225 50 -1
-De 15 0 415 0 800
+De 15 0 389 0 800
 Po 0 16844 68674 16803 69200 50 -1
-De 15 0 415 0 C00
+De 15 0 389 0 C00
 Po 0 16700 67203 16113 67100 80 -1
-De 15 0 418 0 C00
+De 15 0 391 0 C00
 Po 0 18000 67100 18100 67969 50 -1
-De 15 0 418 0 C00
+De 15 0 391 0 C00
 Po 0 17100 67926 18100 67969 50 -1
-De 15 0 418 0 C00
+De 15 0 391 0 C00
 Po 0 17138 67639 17100 67926 50 -1
-De 15 0 418 0 400
+De 15 0 391 0 400
 Po 0 16700 67203 17138 67639 50 -1
-De 15 0 418 0 800
+De 15 0 391 0 800
 Po 0 15287 60726 14700 61005 80 -1
-De 15 0 419 0 C00
+De 15 0 394 0 C00
 Po 0 15341 63225 15288 62874 50 -1
-De 15 0 420 0 400
+De 15 0 393 0 400
 Po 0 16803 63200 15341 63225 50 -1
-De 15 0 420 0 800
+De 15 0 393 0 800
 Po 0 16844 62674 16803 63200 50 -1
-De 15 0 420 0 C00
+De 15 0 393 0 C00
 Po 0 16700 61203 16113 61100 80 -1
-De 15 0 423 0 C00
+De 15 0 392 0 C00
 Po 0 18000 61100 18100 61969 50 -1
-De 15 0 423 0 C00
+De 15 0 392 0 C00
 Po 0 17100 61926 18100 61969 50 -1
-De 15 0 423 0 C00
+De 15 0 392 0 C00
 Po 0 17138 61639 17100 61926 50 -1
-De 15 0 423 0 400
+De 15 0 392 0 400
 Po 0 16700 61203 17138 61639 50 -1
-De 15 0 423 0 800
+De 15 0 392 0 800
 Po 0 15287 72726 14700 73005 80 -1
-De 15 0 424 0 C00
+De 15 0 395 0 C00
 Po 0 15341 75225 15288 74874 50 -1
-De 15 0 425 0 400
+De 15 0 396 0 400
 Po 0 16803 75200 15341 75225 50 -1
-De 15 0 425 0 800
+De 15 0 396 0 800
 Po 0 16844 74674 16803 75200 50 -1
-De 15 0 425 0 C00
+De 15 0 396 0 C00
 Po 0 16700 73203 16113 73100 80 -1
-De 15 0 428 0 C00
+De 15 0 397 0 C00
 Po 0 18000 73100 18100 73969 50 -1
-De 15 0 428 0 C00
+De 15 0 397 0 C00
 Po 0 17100 73926 18100 73969 50 -1
-De 15 0 428 0 C00
+De 15 0 397 0 C00
 Po 0 17138 73639 17100 73926 50 -1
-De 15 0 428 0 400
+De 15 0 397 0 400
 Po 0 16700 73203 17138 73639 50 -1
-De 15 0 428 0 800
+De 15 0 397 0 800
 Po 0 15287 69726 14700 70005 80 -1
-De 15 0 429 0 C00
+De 15 0 400 0 C00
 Po 0 16700 70203 16113 70100 80 -1
-De 15 0 433 0 C00
+De 15 0 398 0 C00
 Po 0 18000 70100 18100 70969 50 -1
-De 15 0 433 0 C00
+De 15 0 398 0 C00
 Po 0 17100 70926 18100 70969 50 -1
-De 15 0 433 0 C00
+De 15 0 398 0 C00
 Po 0 17138 70639 17100 70926 50 -1
-De 15 0 433 0 400
+De 15 0 398 0 400
 Po 0 16700 70203 17138 70639 50 -1
-De 15 0 433 0 800
+De 15 0 398 0 800
 Po 0 15341 72225 15288 71874 50 -1
-De 15 0 430 0 400
+De 15 0 399 0 400
 Po 0 16803 72200 15341 72225 50 -1
-De 15 0 430 0 800
+De 15 0 399 0 800
 Po 0 16844 71674 16803 72200 50 -1
-De 15 0 430 0 C00
+De 15 0 399 0 C00
 Po 0 16700 58203 16113 58100 80 -1
-De 15 0 436 0 C00
+De 15 0 402 0 C00
 Po 0 18000 58100 18100 58969 50 -1
-De 15 0 436 0 C00
+De 15 0 402 0 C00
 Po 0 17100 58926 18100 58969 50 -1
-De 15 0 436 0 C00
+De 15 0 402 0 C00
 Po 0 17138 58639 17100 58926 50 -1
-De 15 0 436 0 400
+De 15 0 402 0 400
 Po 0 16700 58203 17138 58639 50 -1
-De 15 0 436 0 800
+De 15 0 402 0 800
 Po 0 15341 60225 15288 59874 50 -1
-De 15 0 434 0 400
+De 15 0 403 0 400
 Po 0 16803 60200 15341 60225 50 -1
-De 15 0 434 0 800
+De 15 0 403 0 800
 Po 0 16844 59674 16803 60200 50 -1
-De 15 0 434 0 C00
+De 15 0 403 0 C00
 Po 0 15287 57726 14700 58005 80 -1
-De 15 0 435 0 C00
+De 15 0 401 0 C00
 Po 0 15341 78225 15288 77874 50 -1
-De 15 0 442 0 400
+De 15 0 406 0 400
 Po 0 16803 78200 15341 78225 50 -1
-De 15 0 442 0 800
+De 15 0 406 0 800
 Po 0 16844 77674 16803 78200 50 -1
-De 15 0 442 0 C00
+De 15 0 406 0 C00
 Po 0 15287 75726 14700 76005 80 -1
-De 15 0 443 0 C00
+De 15 0 404 0 C00
 Po 0 16700 76203 16113 76100 80 -1
-De 15 0 439 0 C00
+De 15 0 405 0 C00
 Po 0 18000 76100 18100 76969 50 -1
-De 15 0 439 0 C00
+De 15 0 405 0 C00
 Po 0 17100 76926 18100 76969 50 -1
-De 15 0 439 0 C00
+De 15 0 405 0 C00
 Po 0 17138 76639 17100 76926 50 -1
-De 15 0 439 0 400
+De 15 0 405 0 400
 Po 0 16700 76203 17138 76639 50 -1
-De 15 0 439 0 800
+De 15 0 405 0 800
 $EndTRACK
 $EndBOARD
