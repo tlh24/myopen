@@ -11,7 +11,10 @@ classdef UiTools
             % hTimer.Period = 0.05;
             
             hExisting = timerfindall('Name',timerName);
-            delete(hExisting);
+            if ~isempty(hExisting)
+                stop(hExisting);
+                delete(hExisting);
+            end
             
             t = timer;
             t.Name = timerName;

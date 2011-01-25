@@ -21,23 +21,27 @@ classdef SignalInput < handle
         data = getData(obj);
         isReady = isReady(obj,numSamples); % Consider removing extra arg
         stop(obj);
+        close(obj);
     end %methods (Abstract)
     methods
         function numChannels = get.NumChannels(obj)
             numChannels = length(obj.ChannelIds);
         end %get.NumChannels
+        
         function previewFiltered(obj,channelIds)
             if nargin < 2
                 channelIds = 1:obj.NumChannels;
             end
             previewCommon(obj,@(obj)getFilteredData(obj),channelIds);
         end %previewFiltered
+        
         function preview(obj,channelIds)
             if nargin < 2
                 channelIds = 1:obj.NumChannels;
             end
             previewCommon(obj,@(obj)getData(obj),channelIds);
         end %preview
+        
         function previewFeatures(obj,channelIds)
             if nargin < 2
                 channelIds = 1:obj.NumChannels;
@@ -46,9 +50,10 @@ classdef SignalInput < handle
             hTimer = UiTools.create_timer(mfilename,@(src,evt)cb_timer);
             hTimer.Period = 0.05;
             
-            hFig = gcf;
+            hFig = UiTools.create_figure('Preview Features','Preview_Features');
+
             clf(hFig);
-            set(hFig,'CloseRequestFcn',@(src,evnt)previewCleanup);
+            set(hFig,'CloseRequestFcn',@(src,evnt)previewCleanup(hTimer,hFig));
 
             numFeatures = 4;
             hAx = zeros(1,numFeatures);
@@ -66,6 +71,7 @@ classdef SignalInput < handle
             featureBuffer = NaN(obj.NumChannels,numFeatures,numSamplesToDisplay);
             
             start(hTimer);
+            return;
             
             function cb_timer
                 drawnow
@@ -73,7 +79,7 @@ classdef SignalInput < handle
                 % channelData = getData(obj);
                 filteredData = getFilteredData(obj);
                 
-                if isempty(filteredData)
+                if isempty(filteredData) || ~ishandle(hFig)
                     return;
                 end
                 
@@ -88,15 +94,10 @@ classdef SignalInput < handle
                 
                 for iFeature = 1:numFeatures
                     for iChannel = channelIds
-                        set(hLines(iChannel,iFeature),'YData',featureBuffer(iChannel,iFeature,:),'XData',1:numSamplesToDisplay);
+                        set(hLines(iChannel,iFeature),'YData',featureBuffer(iChannel,iFeature,:));
                     end
                 end
-            end
-            function previewCleanup
-                stop(hTimer);
-                delete(hTimer)
-                delete(hFig);
-            end
+            end %cb_timer
             
         end %previewFeatures
         
@@ -162,6 +163,7 @@ classdef SignalInput < handle
         end %addfilter
     end %methods
 end
+
 function previewCommon(obj,previewFunction,channelIds)
 
 % Note that we can develop more elaborate Signal preview
@@ -174,7 +176,7 @@ hTimer.Period = 0.05;
 
 hFig = UiTools.create_figure('Preview Figure','Preview_Figure');
 clf(hFig);
-set(hFig,'CloseRequestFcn',@(src,evnt)previewCleanup)
+set(hFig,'CloseRequestFcn',@(src,evnt)previewCleanup(hTimer,hFig))
 
 hAx1 = axes('Parent',hFig);
 hLines = plot(hAx1,zeros(2,obj.NumChannels));
@@ -187,7 +189,7 @@ start(hTimer);
         drawnow
         channelData = previewFunction(obj);
         
-        if isempty(channelData)
+        if isempty(channelData) || ~ishandle(hFig)
             return;
         end
         for i = channelIds
@@ -195,10 +197,14 @@ start(hTimer);
         end
     end
 
-    function previewCleanup
-        stop(hTimer);
-        delete(hTimer)
-        delete(hFig);
-    end
-
 end %previewCommon
+
+
+function previewCleanup(hTimer,hFig)
+try
+    stop(hTimer);
+end
+delete(hTimer);
+delete(hFig);
+end
+            

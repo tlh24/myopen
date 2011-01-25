@@ -10,6 +10,10 @@ classdef SignalSimulator < Inputs.SignalInput
         SignalFrequency = 100; %Hz
         SignalAmplitude = 0.5;
     end
+    properties (SetAccess=private)
+        SignalBuffer;
+        hg; 
+    end
     methods
         function obj = SignalSimulator
             % Constructor
@@ -17,16 +21,22 @@ classdef SignalSimulator < Inputs.SignalInput
         end
         function initialize(obj)
             obj.ChannelIds = 0:15;
+            
+            MAX_SAMPLES = 2000;
+            
+            obj.SignalBuffer = zeros(MAX_SAMPLES,obj.NumChannels);
+            
         end
-        function data = getData(obj)
+        function bufferedData = getData(obj)
             
             % Note this returned data size conforms to the getdata methods
             % of the Data Acquisition Toolbox [numSamples numChannels]
-            data = zeros(obj.NumSamples,obj.NumChannels);
+            sampleBlock = 150;
+            newData = zeros(sampleBlock,obj.NumChannels);
             
             % create some noisy sine waves to return
-            tMax = obj.NumSamples/obj.SampleFrequency;
-            t = linspace(0,tMax,obj.NumSamples); %sec
+            tMax = sampleBlock/obj.SampleFrequency;
+            t = linspace(0,tMax,sampleBlock); %sec
             
             A = expand(obj.SignalAmplitude,obj.NumChannels);
             f = expand(obj.SignalFrequency,obj.NumChannels);
@@ -34,15 +44,24 @@ classdef SignalSimulator < Inputs.SignalInput
             for iChannel = 1:obj.NumChannels
                 p = 0.5*randn(1);
                 channelData = A(iChannel)*sin(2*pi*f(iChannel)*t + p) + obj.DcOffset;
-                channelData = channelData + obj.NoisePower.*randn(1,obj.NumSamples);
+                channelData = channelData + obj.NoisePower.*randn(1,sampleBlock);
                 
-                data(:,iChannel) = channelData;
+                newData(:,iChannel) = channelData;
             end
+            
+            
+            obj.SignalBuffer = circshift(obj.SignalBuffer,[-sampleBlock 0]);
+            obj.SignalBuffer(end-sampleBlock+1:end,:) = newData;
+            
+            bufferedData = obj.SignalBuffer(end-obj.NumSamples+1:end,:);
         end
         function isReady = isReady(obj,numSamples) %#ok<MANU>
             % Consider adding in a phony startup delay
             isReady = true;
             fprintf('Simulator Ready with %d samples\n',numSamples);
+        end
+        function close(obj)
+            delete(obj.hg.hFig)
         end
         function setPattern(obj,id)
             obj.NoisePower = 0.01;
@@ -72,11 +91,16 @@ classdef SignalSimulator < Inputs.SignalInput
             end
         end
         function uiControlPanel(obj)
-            hFig = UiTools.create_figure('EMG Simulator','EMG_Simulator_Figure');
+            obj.hg.hFig = UiTools.create_figure('EMG Simulator','EMG_Simulator_Figure');
             
-            set(hFig,'Position',[20 50 120 300]);
-            set(hFig,'WindowKeyPressFcn',@(src,evt)key_down(evt));
-            set(hFig,'WindowKeyReleaseFcn',@(src,evt)key_up(evt));
+            set(obj.hg.hFig,'Position',[20 50 200 70]);
+            set(obj.hg.hFig,'WindowKeyPressFcn',@(src,evt)key_down(evt));
+            set(obj.hg.hFig,'WindowKeyReleaseFcn',@(src,evt)key_up(evt));
+            
+            obj.hg.hTxtCurrentPattern = uicontrol(obj.hg.hFig,...
+                'Style','text',...
+                'String','Current Pattern: ',...
+                'Position', [20    20    120    20]);
             
             cellCurrentKeys = {};
             
@@ -86,40 +110,51 @@ classdef SignalSimulator < Inputs.SignalInput
                 
                 cellCurrentKeys = cellCurrentKeys(~isReleased);
                 
-                if ~isempty(cellCurrentKeys)
-                    % Multiple keys down
-                    return
-                else
+                if isempty(cellCurrentKeys)
+                    % No keys remain down
                     setPattern(obj,0);
+                    set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 0');
+                else
+                    % Some keys still remain down
+                    return
                 end
                 
-            end
+            end %key_up
             
             function key_down(evt)
 
                 switch evt.Key
                     case 'a'
                         setPattern(obj,1);
+                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern 1');
                     case 's'
                         setPattern(obj,2);
+                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern 2');
                     case 'd'
                         setPattern(obj,3);
+                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern 3');
                     case 'f'
                         setPattern(obj,4);
+                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern 4');
                 end
             
                 cellCurrentKeys = unique([cellCurrentKeys {evt.Key}]);
                 
-            end
+            end %key_down
             
         end
-        function stop(obj)
+    end %uiControlPanel
+    
+    methods (Static = true)
+        function stop()
             fprintf('Simulator Stopped\n');
         end
     end
 end
 
 function A = expand(a,N)
+% perform scalar expansion so properties for all elements can be set as a
+% single value
 if isscalar(a)
     A = repmat(a,1,N);
 else
