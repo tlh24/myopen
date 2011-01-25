@@ -12,12 +12,12 @@ classdef UsbDaq < Inputs.SignalInput
     %
     % 01-Sept-2010 Armiger: Created
     properties
+        DaqDeviceName = 'mcc';  % Default is Measurement Computing
+        DaqDeviceId = '0';
+    end
+    properties (SetAccess = private)
         AnalogInput = [];
         AnalogInputName = '';
-        
-        DaqDeviceName = 'mcc';
-        DaqDeviceId = '0';
-
     end
     methods
         function obj = UsbDaq(deviceName,deviceId,channelIds)
@@ -39,28 +39,59 @@ classdef UsbDaq < Inputs.SignalInput
             assert(ischar(obj.DaqDeviceName));
             assert(ischar(obj.DaqDeviceId));
             
+            % verify that adaptor family is installed
+            if obj.Verbose
+                fprintf('[%s] Getting data acquisition hardware information for "%s"...',mfilename,obj.DaqDeviceName);
+            end
+            
+            try
+                hw = daqhwinfo(obj.DaqDeviceName);  % will error if unknown device
+                fprintf('Done\n');
+            catch ME
+                fprintf('FAILED\n');
+                fprintf('[%s] Device "%s" is installed.\n',mfilename,obj.DaqDeviceName);
+                rethrow(ME);
+            end
+                   
+            % verify board id is valid
+            if ~strcmp(obj.DaqDeviceId,hw.InstalledBoardIds)
+                disp(hw)
+                error('[%s] Board Id: "%s" not found\n',mfilename,obj.DaqDeviceId);
+            end
+            
+            % AnalogInputName string is constructed here to support daqfind.
+            % Append "MX" to nidaq boards using the NI-DAQmx library.
             if strcmpi(obj.DaqDeviceName,'nidaq')
-                % Append MX to nidaq boards using the NI-DAQmx library
                 obj.AnalogInputName = [obj.DaqDeviceName 'mx' obj.DaqDeviceId '-AI'];
             else
                 obj.AnalogInputName = [obj.DaqDeviceName obj.DaqDeviceId '-AI'];
             end
             
+            % Begin device creation
             try
                 % Check for existing daq objects:
                 hExistingDaqs = daqfind('Name',obj.AnalogInputName);
                 numExisting = length(hExistingDaqs);
                 if ~isempty(hExistingDaqs)
-                    if (obj.Verbose >= 1),fprintf('Found %d Existing "%s" DAQ Objects. Clearing Objects.\n',numExisting,obj.AnalogInputName);end
+                    
+                    if obj.Verbose
+                        fprintf('[%s] Found %d Existing "%s" DAQ Objects. Clearing Objects.\n',mfilename,numExisting,obj.AnalogInputName);
+                    end
+                    
                     for iExisting = 1:numExisting
                         stop(hExistingDaqs{iExisting});
                         delete(hExistingDaqs{iExisting});
                     end
                 end
+                
+                % Call object constructor
                 obj.AnalogInput = analoginput(obj.DaqDeviceName,obj.DaqDeviceId);
-                if (obj.Verbose >= 1),fprintf('Created analoginput for device "%s"\n',obj.AnalogInputName);end
+                
+                if obj.Verbose
+                    fprintf('[%s] Created analoginput for device "%s"\n',mfilename ,obj.AnalogInputName);
+                end
             catch ME
-                fprintf(2,'Failed during setup of device "%s"\n',obj.AnalogInputName);
+                fprintf(2,'[%s] Failed during setup of device "%s"\n',mfilename,obj.AnalogInputName);
                 rethrow(ME);
             end
             
@@ -110,6 +141,10 @@ classdef UsbDaq < Inputs.SignalInput
         end
         function stop(obj)
             stop(obj.SignalSource.AnalogInput);
+        end
+        function close(obj)
+            stop(obj);
+            delete(obj.SignalSource.AnalogInput);
         end
     end
 end
