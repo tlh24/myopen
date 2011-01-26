@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Mon 24 Jan 2011 03:09:10 PM EST
+EESchema Schematic File Version 2  date Wed 26 Jan 2011 02:24:37 PM EST
 LIBS:power
 LIBS:device
 LIBS:emg_sym
@@ -9,7 +9,7 @@ EELAYER END
 $Descr User 16000 12000
 Sheet 1 19
 Title "Stage 4 / Copyright 2010 Timothy L Hanson "
-Date "24 jan 2011"
+Date "26 jan 2011"
 Rev ""
 Comp "This design is free: redistribute or modify under the GPL v. 3 or later"
 Comment1 ""
@@ -3924,7 +3924,7 @@ L AT25DF041-MHF U15
 U 1 1 4CA0ED8F
 P 10100 700
 F 0 "U15" H 10150 450 60  0000 C CNN
-F 1 "AT25DF041-MHF" H 10150 1000 60  0000 C CNN
+F 1 "SST25VF040B" H 10150 1000 60  0000 C CNN
 F 2 "SOIC-8" H 10210 390 60  0000 C CNN
 	1    10100 700 
 	1    0    0    -1  

@@ -1,4 +1,4 @@
-# EESchema Netlist Version 1.1 created  Wed 26 Jan 2011 10:48:06 AM EST
+# EESchema Netlist Version 1.1 created  Wed 26 Jan 2011 02:24:42 PM EST
 (
  ( /4D389D28 0402  R49 130 {Lib=R}
   (    1 N-000161 )
@@ -882,7 +882,7 @@
   (    1 VDD )
   (    2 N-000202 )
  )
- ( /4CA0ED8F SOIC-8  U15 AT25DF041-MHF {Lib=AT25DF041-MHF}
+ ( /4CA0ED8F SOIC-8  U15 SST25VF040B {Lib=AT25DF041-MHF}
   (    1 /SPISS )
   (    2 N-000202 )
   (    3 VDD )
