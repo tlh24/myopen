@@ -253,31 +253,39 @@ int main(void){
 	*pSPORT1_TCLKDIV = 62 ; //125Mhz / 125 = 1M / 25 = 40k / 2 = 20 ksps/ch
 	*pSPORT1_TFSDIV = 24 ; //25 clocks between assertions of the frame sync
 	*pSPORT1_TCR2 = 23; //word length 24, secondary disabled. 
-	// TCR = 0100 0110 0000 0011
 	*pSPORT1_TCR1 = 0x4e03 ; 
-	int j, k, m; 
-	i = j = k = m = 0; 
+	int j, k, m, n, x, y; 
+	i = j = k = m = n = x = y = 0; 
 	int freqs[] = {240, 400, 300, 180};
+	int freqs2[] = {540, 600, 360, 480, 266}; 
 	while(1){
 		while(*pSPORT1_STAT & TXF){
 			asm volatile("nop; nop; nop; nop"); 
 		}
 		//channel 1 (stereo DAC)
-		*pSPORT1_TX = (i | (0x3 << 19) | (0x0 << 16));
+		*pSPORT1_TX = (((i+x)>>1) | (0x3 << 19) | (0x0 << 16));
 		while(*pSPORT1_STAT & TXF){
 			asm volatile("nop; nop; nop; nop"); 
 		}
 		//channel 2
-		*pSPORT1_TX = (j | (0x3 << 19) | (0x1 << 16));
+		*pSPORT1_TX = (((j+y)>>1) | (0x3 << 19) | (0x1 << 16));
 		i += freqs[m]; 
 		i &= 0xffff; 
 		j += freqs[m]+1; 
 		j &= 0xffff; 
+		x += freqs2[n]; 
+		x &= 0x7fff; 
+		y += freqs2[n]+1; 
+		y &= 0x7fff; 
 		k++; 
 		if( k > 50000){
 			k = 0; 
 			m ++; 
 			m &= 3; 
+		}
+		if(k == 25000){
+			n ++; 
+			n = n % 5; 
 		}
 	}
 	
