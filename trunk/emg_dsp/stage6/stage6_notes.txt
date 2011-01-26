@@ -11,6 +11,8 @@ Hardware Fixes:
 		Can jumper to R12.
 	* The labels on the external power supply are SWAPPED! 
 		28 is 0.8V, 08 is 2.8V! (or more accurately, 2.65V, as measured)
+	* TSCLK0 & RSCLK0 need to be tied together - 
+		RSCLK0 must not be gated, as with the ADC. 
 	
 
 November 8 2010
@@ -366,3 +368,72 @@ January 10 2011
 		+ about 7ma leak = 63mw ;; 17*4 = 68mw.  So, a wash.  
 		Less space consumed though.
 		Also, actual current consumption is less than the Analog Devices data suggests.
+January 25 2011 - 
+	* Having problems getting RX SPORT0 working on the EMG board. 
+		Have tried *pSPORT0_RCR1 =
+		* 0x6603 - triggers IRQ, bus contention on both the RFS line and RCLK. 
+			So the pads are connected under the chip!
+		* 0x4003 - internal clock, external RFS, RFS not required.
+			triggers IRQ.
+		* 0x4403 - internal clock, external RFS, RFS required. 
+			triggers IRQ.
+			bus contention on RSCLK0.
+		* 0x4401 - external clock, external RFS, RFS required. 
+			Nothing. 
+			changing RCLKDIV seems to have no effect.
+		* 0x0401 - external clock, external RFS, RFS required, 
+			trigger on negative edge of clock.
+			Nothing, again.  
+			The issue is the clock! perhaps cannot work with gated clock?
+		* 0x2401 - external clock, external RFS, late FS, RFS required,
+			trigger on negative edge of clk. 
+			Nothing. 
+		* 0x2403 - internal clock, external RFS, late FS, RFS required, 
+			trigger on negative edge of clk
+			Triggers IRQ!  
+			It must be the clock... whaat? why?
+		* 0x6001 - rising edge, RFS not required, external FS, external clock.
+			Nothing.
+		* 0x6201 - same as above, internal frame syncs. 
+			does nothing - the frame sync signal kills the clock!
+		* 0x7201 - same. 
+	FIX!!!
+	MUST NOT GATE THE RSCLK signal -- it needs to be running all the time!
+	Using 0x7401 -- looks okay, but the first bit is not being latched. 
+	This means that everything is gained by 2 .. hmm. 
+	The surprising thing is that the ADC produces data the instant FS and 
+	CLK go low. 
+	Basically need to get the frame sync 1 clock sooner? 
+	or use the L/R clocking? That's worth a shot!
+	-- did not change much ; data is still shifted over by 1.
+	Let's put the ADC in ground-referenced mode.
+	Was bipolar: 0x2801
+	New: 0x3c01 -- still looks like 2s complement. 
+	Tried temperature sensor: 0x2c01 - works, can detect temp fine!
+		(used a pressurized duster to change the temp)
+		This implies that the input word is formatted and aligned properly.
+	Compared the oscilloscope with register contents - the SPORT is reading
+		in properly aligned data, at least the bits 0x364? match!
+	Let's try removing the external ref-generating circuitry.
+		I think that's introducing gain.
+		Nopers, it's necessary for the rest of the circuitry. back in there it goes.
+	** the first data bit (MSB) is clocked out on the falling edge of CNV
+	(TFS0 / RFS0) - not on the first clock edge. 
+	Hence, we are missing it! 
+	need to delay the transmit data, and have this update on the rising edges. 
+	and hope this does not violate setup/hold requriements.. 
+	Anyway: Converter latches on rising edges of clock, hence data 
+	(and frame sync) should be driven on the falling edge. 
+	output register latches on both the falling edge of CNV and clock, 
+	hence really need this hooked to an SPI bus..
+	If we drive the frame sync on the rising edge of the clock .. no that won't work.
+	Try driving RSCLK directly, keeping it synced.  
+	yea, that should work. two phase clock.
+	TSCLK0 output data latched on falling edge, as config register wants; 
+	RSCLK0 latches data in on rising edge, as the data register is latched
+		out on falling edge. 
+		This implies that rising edge of RSCLK0 must be a little after 
+		falling edge of TSCLK0.
+	That's not going to work either -- really need RSCLK0 to control
+		the DAC, and everything else to be on a phased TSCLK0. 
+		will have to change the wiring.
