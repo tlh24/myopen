@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Mon 24 Jan 2011 03:08:42 PM EST
+EESchema Schematic File Version 2  date Mon 24 Jan 2011 03:09:10 PM EST
 LIBS:power
 LIBS:device
 LIBS:emg_sym
@@ -17,6 +17,8 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
+Text Label 800  1100 0    60   ~ 0
+IGND
 Text Label 700  1000 0    60   ~ 0
 VBAT
 Connection ~ 2050 1500
