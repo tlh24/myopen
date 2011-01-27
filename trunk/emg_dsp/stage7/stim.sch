@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Thu 27 Jan 2011 02:09:10 PM EST
+EESchema Schematic File Version 2  date Thu 27 Jan 2011 05:22:18 PM EST
 LIBS:power
 LIBS:device
 LIBS:emg_sym
