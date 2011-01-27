@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Mon 24 Jan 2011 03:09:10 PM EST
+EESchema Schematic File Version 2  date Thu 27 Jan 2011 01:11:29 PM EST
 LIBS:power
 LIBS:device
 LIBS:emg_sym
@@ -9,7 +9,7 @@ EELAYER END
 $Descr User 16000 12000
 Sheet 2 19
 Title "Stage 4 / Copyright 2010 Timothy L Hanson "
-Date "24 jan 2011"
+Date "27 jan 2011"
 Rev ""
 Comp "This design is free: redistribute or modify under the GPL v. 3 or later"
 Comment1 ""
@@ -17,6 +17,11 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
+Connection ~ 12100 3150
+Wire Wire Line
+	12500 2800 12500 3150
+Wire Wire Line
+	12500 3150 9600 3150
 Connection ~ 7700 4800
 Wire Wire Line
 	7700 4700 7700 4800
@@ -66,9 +71,7 @@ Wire Wire Line
 	9950 3750 10650 3750
 Connection ~ 11600 3150
 Wire Wire Line
-	12100 2800 12100 3150
-Wire Wire Line
-	12100 3150 9600 3150
+	12100 3150 12100 2800
 Connection ~ 11650 5700
 Wire Wire Line
 	12150 5700 11450 5700
@@ -154,8 +157,6 @@ Wire Wire Line
 Wire Wire Line
 	11450 5300 12150 5300
 Connection ~ 11650 5300
-Wire Wire Line
-	12100 2400 10550 2400
 Connection ~ 11600 2400
 Wire Wire Line
 	10650 3650 9950 3650
@@ -198,6 +199,19 @@ Wire Wire Line
 Wire Wire Line
 	7700 4200 7700 4300
 Connection ~ 8050 4200
+Wire Wire Line
+	12500 2400 10550 2400
+Connection ~ 12100 2400
+$Comp
+L C C146
+U 1 1 4D41AD4D
+P 12500 2600
+F 0 "C146" H 12550 2700 50  0000 L CNN
+F 1 "0.1uf" H 12550 2500 50  0000 L CNN
+F 2 "0402" H 12600 2750 60  0000 C CNN
+	1    12500 2600
+	-1   0    0    1   
+$EndComp
 $Comp
 L C C92
 U 1 1 4D3897A9
@@ -455,10 +469,10 @@ F 1 "GND" H 11300 5530 30  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L VEE #PWR203
+L VEE #PWR195
 U 1 1 4C9B878C
 P 11250 5450
-F 0 "#PWR203" H 11250 5650 40  0001 C CNN
+F 0 "#PWR195" H 11250 5650 40  0001 C CNN
 F 1 "VEE" H 11250 5600 40  0000 C CNN
 	1    11250 5450
 	1    0    0    -1  
