@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Thu 27 Jan 2011 05:22:18 PM EST
+EESchema Schematic File Version 2  date Mon 31 Jan 2011 04:09:41 PM EST
 LIBS:power
 LIBS:device
 LIBS:emg_sym
@@ -9,7 +9,7 @@ EELAYER END
 $Descr A4 11700 8267
 Sheet 7 19
 Title ""
-Date "27 jan 2011"
+Date "31 jan 2011"
 Rev ""
 Comp ""
 Comment1 ""
@@ -59,8 +59,7 @@ Wire Wire Line
 	4900 2150 4900 3000
 Wire Wire Line
 	4450 3800 4450 3000
-Connection ~ 5850 3800
-Text HLabel 5850 3800 0    60   Input ~ 0
+Text HLabel 4450 3800 0    60   Input ~ 0
 GROUND
 Text HLabel 4850 2150 0    60   Input ~ 0
 BATTERY
