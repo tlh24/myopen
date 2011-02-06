@@ -1,28 +1,28 @@
-classdef SimpleTrainer < handle
+classdef SimpleTrainer < PatternRecognition.TrainingInterface
     % Simple training user interface that presents a waitbar to the user
     % and prompts for the appropriate class
     %
     % 01-Sept-2010 Armiger: Created
     properties
-        NumRepetitions = 2;
-        ContractionLengthSeconds = 5;
+        NumRepetitions = 1;
+        ContractionLengthSeconds = 2;
         DelayLengthSeconds = 2;
     end
-    properties (Constant = true)
-        MaxSamples = 5000;
-    end
     methods
-        function obj = SimpleTrainer
+        function obj = SimpleTrainer(hSignalSource,hSignalClassifier)
             % Constructor
+            obj.SignalSource = hSignalSource;
+            obj.SignalClassifier = hSignalClassifier;
+            
         end
-        function [features3D classLabelId] = collectdata(obj,hSignalSource,hClassifier)
+        function initialize(obj)
+            % Initialize buffers
+            obj.Features3D = NaN([obj.SignalSource.NumChannels obj.SignalClassifier.NumFeatures obj.MaxSamples]);
+            obj.ClassLabelId = NaN(1,obj.MaxSamples);
+        end
+        function collectdata(obj)
             % Collect some initial training data from a signal source
             % device
-            
-            % Initialize buffers
-            features3D = NaN([hSignalSource.NumChannels hClassifier.NumFeatures obj.MaxSamples]);
-            classLabelId = NaN(1,obj.MaxSamples);
-            
             
             % Create the waitbar 'gui'
             h = waitbar(0,'','Name',mfilename,...
@@ -31,25 +31,32 @@ classdef SimpleTrainer < handle
             setappdata(h,'canceling',0);
 
             % Ensure data is ready
-            ok = wait_for_device(hSignalSource,hClassifier.NumSamplesPerWindow);
+            ok = wait_for_device(obj.SignalSource,obj.SignalClassifier.NumSamplesPerWindow);
             if ~ok
                 error('Timed Out Waiting for Signal Source');
             end
             
             iSample = 0;
             
-            hSignalSource.NumSamples = hClassifier.NumSamplesPerWindow;
+            obj.SignalSource.NumSamples = obj.SignalClassifier.NumSamplesPerWindow;
+
+            
+            for i = 3:-1:1
+                str = sprintf('Get ready to train in %02d seconds',i);
+                waitbar(0,h,str);
+                pause(1);
+            end
             
             % Loop through each class, rep
             for iRepetition = 1:obj.NumRepetitions
-                for iClass = 1:hClassifier.NumClasses
+                for iClass = 1:obj.SignalClassifier.NumClasses
                     % Check for Cancel button press
                     if getappdata(h,'canceling')
                         break
                     end
                     
                     
-                    className = hClassifier.ClassNames{iClass};
+                    className = obj.SignalClassifier.ClassNames{iClass};
                     
                     msg = sprintf('Rep # %d of %d.  Next Class: %s',...
                         iRepetition,obj.NumRepetitions,className);
@@ -86,9 +93,9 @@ classdef SimpleTrainer < handle
                         end
                         
                         classLabelId(iSample) = iClass;
-                        windowData = hSignalSource.getFilteredData();
-                        features = feature_extract(windowData' ,hClassifier.NumSamplesPerWindow);
-                        features3D(:,:,iSample) = features;
+                        windowData = obj.SignalSource.getFilteredData();
+                        features = feature_extract(windowData' ,obj.SignalClassifier.NumSamplesPerWindow);
+                        obj.Features3D(:,:,iSample) = features;
                     end
                 end
             end
@@ -102,7 +109,7 @@ classdef SimpleTrainer < handle
                 delete(h);
             end
             
-            features3D(:,:,iSample+1:end) = [];
+            obj.Features3D(:,:,iSample+1:end) = [];
             classLabelId(iSample+1:end) = [];
             
         end
@@ -118,6 +125,32 @@ classdef SimpleTrainer < handle
             else
                 save(fullfile(PathName,FileName),'features3D','classLabelId');
             end
+        end
+        function run(hScenario)
+            % Temp -- this allows the VIE GUI to call the train routine
+            hScenario.TrainingInterface.NumRepetitions = 1;
+            hScenario.TrainingInterface.ContractionLengthSeconds = 1;
+            hScenario.TrainingInterface.DelayLengthSeconds = 1;
+            
+            hScenario.TrainingInterface.collectdata();
+            
+            hScenario.SignalClassifier.TrainingData = features3D;
+            hScenario.SignalClassifier.TrainingDataLabels = classLabelId;
+            hScenario.SignalClassifier.train();
+            hScenario.SignalClassifier.computeerror();
+
+        end
+        function obj = Default
+            
+            hSignalSource = Inputs.SignalSimulator;
+            hSignalSource.initialize;
+            hSignalClassifier = SignalAnalysis.Classifier;
+            hSignalClassifier.initialize;
+            
+            obj = PatternRecognition.SimpleTrainer(hSignalSource,hSignalClassifier);
+            obj.initialize();
+            obj.collectdata();
+            
         end
     end
 end

@@ -16,6 +16,7 @@ addpath('Utilities');
 %  Inputs.SignalInput base class.
 
 hSignalSource = Inputs.SignalSimulator();
+% hSignalSource = Inputs.UsbDaq();
 
 % The device must be initialized prior to use
 hSignalSource.initialize();
@@ -30,9 +31,25 @@ hSignalSource.preview(1:4)
 %% Add filters
 % You can also associate filters with the input source
 hSignalSource.addfilter(Inputs.HighPass);
-hSignalSource.addfilter(Inputs.MAV);
+hSignalSource.addfilter(Inputs.Notch);
+hSignalSource.addfilter(Inputs.LowPass);
+% hSignalSource.addfilter(Inputs.MAV);
 
 %% Preview Filterd Data
 % Verify this by previewing filtered channels 1 to 4.
 hSignalSource.previewFiltered(1:4)
+
+%%
+
+% Scenario will each have their own inputs which need to be mapped to
+% virtual channels.
+
+% E.g. JP app has Up Down Left Right, NM
+% AGH has I, M, R
+% Breakout has Left Right, NM
+
+
+
+
+
 
