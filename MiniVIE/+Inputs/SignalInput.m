@@ -150,8 +150,8 @@ classdef SignalInput < handle
         function filtered = applyAllFilters(obj,data)
             % If filter handles exist, loop through each one and apply to
             % the data
+            filtered = data;
             if ~isempty(obj.hFilter)
-                filtered = data;
                 for i = 1:length(obj.hFilter)
                     filtered = obj.hFilter{i}.apply(filtered);
                 end

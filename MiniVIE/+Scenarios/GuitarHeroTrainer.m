@@ -4,9 +4,7 @@ classdef GuitarHeroTrainer < handle
     %
     % 01-Sept-2010 Armiger: Created
     properties
-        SignalSource;
-        EmgClassifier;
-        TrainingInterface;
+        hScenario = [];  % parent should hold source, classifier objects
         
         DigitalOutput = [];
         
@@ -17,7 +15,7 @@ classdef GuitarHeroTrainer < handle
         TrainOnStartup = 0;
         EnableOnlineRetraining = 1;
         EnableRandomCueing = 0;
-        ResetClassifierOnInitialization = 1;
+        ResetClassifierOnInitialization = 0;
         
         NoMovementClassId = 1;
         
@@ -26,8 +24,8 @@ classdef GuitarHeroTrainer < handle
         hg;
     end
     methods
-        function obj = GuitarHeroTrainer
-            
+        function obj = GuitarHeroTrainer(hScenario)
+            obj.hScenario = hScenario;
         end
         function initialize(obj)
             
@@ -36,14 +34,12 @@ classdef GuitarHeroTrainer < handle
                 obj.DigitalOutput = digitalio('mcc',0);
                 addline(obj.DigitalOutput,1:4,'out');
             catch ME
+                fprintf(2,'Failed to create digital output\n');
                 fprintf(2,ME.message);
                 fprintf('\n');
                 obj.DigitalOutput = [];
             end
             
-            assert(~isempty(obj.SignalSource));
-            assert(~isempty(obj.EmgClassifier));
-
             setupDisplay(obj);
         end
         function setupDisplay(obj)
@@ -52,24 +48,24 @@ classdef GuitarHeroTrainer < handle
             
             % EMG Preview Plot
             obj.hg.AxesSignals = subplot(3,1,3);
-            obj.hg.hPreviewLines = plot(obj.hg.AxesSignals,zeros(2,length(obj.EmgClassifier.ActiveChannels)));
+            obj.hg.hPreviewLines = plot(obj.hg.AxesSignals,zeros(2,length(obj.hScenario.SignalClassifier.ActiveChannels)));
             ylim(obj.hg.AxesSignals,[-2 2]);
             
             % Streaming Cue Plot
             obj.hg.AxesCues = subplot(3,1,1:2);
             hold(obj.hg.AxesCues,'on')
-            plot(obj.hg.AxesCues,[0 obj.EmgClassifier.NumClasses],[0 0],'k--');
+            plot(obj.hg.AxesCues,[0 obj.hScenario.SignalClassifier.NumClasses],[0 0],'k--');
             
             % Create static class lines
             yRange = [-1 2];
-            hStaticLines = plot(obj.hg.AxesCues,repmat(yRange(:),1,obj.EmgClassifier.NumClasses));
+            hStaticLines = plot(obj.hg.AxesCues,repmat(yRange(:),1,obj.hScenario.SignalClassifier.NumClasses));
             
             % Create streaming cue lines
-            obj.hg.hCues = plot(obj.hg.AxesCues,zeros(2,obj.EmgClassifier.NumClasses),'LineWidth',6);
+            obj.hg.hCues = plot(obj.hg.AxesCues,zeros(2,obj.hScenario.SignalClassifier.NumClasses),'LineWidth',6);
             
             rgbOrange = [1.0000    0.6941    0.3922];
             aghColors = {'g' 'r' 'y' 'b' rgbOrange};  % Button Colors
-            for i = 1:min(obj.EmgClassifier.NumClasses - 1,length(aghColors))
+            for i = 1:min(obj.hScenario.SignalClassifier.NumClasses - 1,length(aghColors))
                 set([hStaticLines(i+1) obj.hg.hCues(i+1)],'Color',aghColors{i});
             end
             
@@ -85,25 +81,28 @@ classdef GuitarHeroTrainer < handle
             obj.hg.hClass = plot(obj.hg.AxesCues,0,0,'k*');
             ylim(obj.hg.AxesCues,yRange);
             
-            xlim(obj.hg.AxesCues,[1 obj.EmgClassifier.NumClasses + 1]);
+            xlim(obj.hg.AxesCues,[1 obj.hScenario.SignalClassifier.NumClasses + 1]);
             
             % Hide the no movement cue
             set([hStaticLines(1) obj.hg.hCues(1)],'Visible','off');
             
             
         end
-        function run(obj)
+        function run(obj,varargin) % temp
+            
+            obj.NoMovementClassId = find(strcmp('No Movement',obj.hScenario.SignalClassifier.ClassNames));
+            
             cueBufferX = linspace(-1,2,100);
-            cueBufferY = ones(obj.EmgClassifier.NumClasses,100) * obj.NoMovementClassId;
+            cueBufferY = ones(obj.hScenario.SignalClassifier.NumClasses,100) * obj.NoMovementClassId;
             classBufferX = linspace(-1,0,round(100/3));
             classBufferY = NaN(1,round(100/3));
             
             if obj.ResetClassifierOnInitialization
-                obj.EmgClassifier.initialize;
+                obj.hScenario.SignalClassifier.initialize;
             end
             
-            emgData = NaN([obj.SignalSource.NumChannels obj.EmgClassifier.NumSamplesPerWindow obj.MaxSamples]);
-            features3D = NaN([obj.SignalSource.NumChannels obj.EmgClassifier.NumFeatures obj.MaxSamples]);
+            emgData = NaN([obj.hScenario.SignalSource.NumChannels obj.hScenario.SignalClassifier.NumSamplesPerWindow obj.MaxSamples]);
+            features3D = NaN([obj.hScenario.SignalSource.NumChannels obj.hScenario.SignalClassifier.NumFeatures obj.MaxSamples]);
             classLabelId = NaN(1,obj.MaxSamples);
             
             sampleCounter = 0; % controls index into training data
@@ -124,27 +123,28 @@ classdef GuitarHeroTrainer < handle
                     cueCounter = 0;  % reset counter
                     % change cues
                     if obj.EnableRandomCueing
-                        newCue = ceil((obj.EmgClassifier.NumClasses)*rand);
+                        newCue = ceil((obj.hScenario.SignalClassifier.NumClasses)*rand);
                     else
-                        newCue = mod(newCue,obj.EmgClassifier.NumClasses)+1;
+                        newCue = mod(newCue,obj.hScenario.SignalClassifier.NumClasses)+1;
                     end
                 end
                 
                 cueBufferY = circshift(cueBufferY,[0 -1]);
                 cueBufferY(:,end) = newCue;
                 
-                obj.SignalSource.NumSamples = 1000;
+                obj.hScenario.SignalSource.NumSamples = 1000;
                 if obj.DisplayFilteredEmg
-                    channelData = obj.SignalSource.getFilteredData();
+                    channelData = obj.hScenario.SignalSource.getFilteredData();
                 else
-                    channelData = obj.SignalSource.getData();
+                    channelData = obj.hScenario.SignalSource.getData();
                 end
                 
-                for i = obj.EmgClassifier.ActiveChannels
-                    set(obj.hg.hPreviewLines(i),'YData',channelData(:,i),'XData',1:size(channelData,1))
+                for i = 1:length(obj.hScenario.SignalClassifier.ActiveChannels)
+                    iChannel = obj.hScenario.SignalClassifier.ActiveChannels(i);
+                    set(obj.hg.hPreviewLines(i),'YData',channelData(:,iChannel),'XData',1:size(channelData,1))
                 end
                 
-                for i = 1:obj.EmgClassifier.NumClasses
+                for i = 1:obj.hScenario.SignalClassifier.NumClasses
                     yData = NaN(size(cueBufferY(1,:)));
                     idxTrue = cueBufferY(1,:) == i;
                     yData(idxTrue) = cueBufferY(i,idxTrue);
@@ -154,15 +154,15 @@ classdef GuitarHeroTrainer < handle
                 set(obj.hg.hClass,'XData',classBufferY,'YData',classBufferX)
                 
                 % get a window of samples and classify them
-                obj.SignalSource.NumSamples = obj.EmgClassifier.NumSamplesPerWindow;
-                windowData = obj.SignalSource.getFilteredData();
+                obj.hScenario.SignalSource.NumSamples = obj.hScenario.SignalClassifier.NumSamplesPerWindow;
+                windowData = obj.hScenario.SignalSource.getFilteredData();
                 emgData(:,:,sampleCounter) = windowData';
-                features2D = obj.EmgClassifier.extractfeatures(windowData);
-                activeChannelFeatures = features2D(obj.EmgClassifier.ActiveChannels,:);
-                [classOut voteDecision] = obj.EmgClassifier.classify(reshape(activeChannelFeatures',[],1));
+                features2D = obj.hScenario.SignalClassifier.extractfeatures(windowData);
+                activeChannelFeatures = features2D(obj.hScenario.SignalClassifier.ActiveChannels,:);
+                [classOut voteDecision] = obj.hScenario.SignalClassifier.classify(reshape(activeChannelFeatures',[],1));
                 
                 classBufferY = circshift(classBufferY,[0 -1]);
-                if obj.EmgClassifier.NumMajorityVotes > 1
+                if obj.hScenario.SignalClassifier.NumMajorityVotes > 1
                     classBufferY(:,end) = voteDecision;
                 else
                     classBufferY(:,end) = classOut;
@@ -185,7 +185,7 @@ classdef GuitarHeroTrainer < handle
                     putvalue(obj.DigitalOutput,dec2binvec(classOut,4))
                 end
                 if lastCue ~= currentCue
-                    strCue = sprintf('Current Cue: %s\n',obj.EmgClassifier.ClassNames{currentCue});
+                    strCue = sprintf('Current Cue: %s\n',obj.hScenario.SignalClassifier.ClassNames{currentCue});
                     title(obj.hg.AxesSignals,strCue);
                     %                     KeyReleaseClassId = 1;
                     %classLabelId(sampleCounter-1:-1:sampleCounter-6) = KeyReleaseClassId;
@@ -194,16 +194,16 @@ classdef GuitarHeroTrainer < handle
                 if obj.EnableOnlineRetraining && retrainCounter > 300
                     retrainCounter = 0;
                     classesWithData = unique(classLabelId(1:sampleCounter));
-                    if length(classesWithData) < obj.EmgClassifier.NumClasses;
+                    if length(classesWithData) < obj.hScenario.SignalClassifier.NumClasses;
                         fprintf('[Classifier] Insufficient data\n');
                         continue
                     end
                     
-                    obj.EmgClassifier.TrainingEmg = emgData(:,:,1:sampleCounter);
-                    obj.EmgClassifier.TrainingData = features3D(:,:,1:sampleCounter);
-                    obj.EmgClassifier.TrainingDataLabels = classLabelId(1:sampleCounter);
-                    obj.EmgClassifier.train();
-                    obj.EmgClassifier.computeerror();
+                    obj.hScenario.SignalClassifier.TrainingEmg = emgData(:,:,1:sampleCounter);
+                    obj.hScenario.SignalClassifier.TrainingData = features3D(:,:,1:sampleCounter);
+                    obj.hScenario.SignalClassifier.TrainingDataLabels = classLabelId(1:sampleCounter);
+                    obj.hScenario.SignalClassifier.train();
+                    obj.hScenario.SignalClassifier.computeerror();
                 end
                 
                 if sampleCounter > 800
@@ -217,15 +217,18 @@ classdef GuitarHeroTrainer < handle
             
             obj = Scenarios.GuitarHeroTrainer();
             
-            obj.SignalSource = Inputs.UsbDaq('mcc',0);
-            obj.SignalSource.initialize();
-            obj.SignalSource.addfilter(Inputs.HighPass());
-            obj.SignalSource.addfilter(Inputs.LowPass());
-            obj.SignalSource.addfilter(Inputs.Notch());
+            obj.hScenario.SignalSource = Inputs.SignalSimulator;
+            obj.hScenario.SignalSource.initialize();
+            obj.hScenario.SignalSource.addfilter(Inputs.HighPass());
+            obj.hScenario.SignalSource.addfilter(Inputs.LowPass());
+            obj.hScenario.SignalSource.addfilter(Inputs.Notch());
             
-            obj.EmgClassifier = PatternRecognition.Classifier();
-            obj.EmgClassifier.ClassNames = {'No Movement' 'Index' 'Middle' 'Ring','Little'};
-            obj.EmgClassifier.initialize();
+            obj.hScenario.SignalClassifier = SignalAnalysis.Classifier();
+            obj.hScenario.SignalClassifier.ClassNames = {'No Movement' 'Index' 'Middle' 'Ring','Little'};
+            obj.hScenario.SignalClassifier.ActiveChannels = 1:4;
+            obj.hScenario.SignalClassifier.initialize();
+
+            obj.initialize();
             
         end
     end

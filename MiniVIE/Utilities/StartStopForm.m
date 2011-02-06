@@ -19,10 +19,11 @@ function isRunning = StartStopForm(manualState)
         % Create the GUI form.
         stopForm = figure('visible', 'on', 'Name', 'Running . . .', ...
             'MenuBar', 'none', 'IntegerHandle', 'off', 'NumberTitle', 'off', ...
+            'HandleVisibility','Callback',...
             'Position', [300, 300, 250, 100]);
 
         drawnow;
-        alwaysontop();  % Keep control box on top
+        alwaysontop(stopForm);  % Keep control box on top
         
         internalState = true;
 

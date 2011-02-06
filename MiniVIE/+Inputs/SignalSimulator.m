@@ -73,16 +73,32 @@ classdef SignalSimulator < Inputs.SignalInput
                 case 1
                     obj.SignalAmplitude = zeros(1,obj.NumChannels);
                     obj.SignalFrequency = 300;
-                    obj.SignalAmplitude(1:4) = [0.01 1 0.2 1.2];
+                    obj.SignalAmplitude(1:4) = [1.2 0 0 0];
                 case 2
                     obj.SignalAmplitude = zeros(1,obj.NumChannels);
-                    obj.SignalFrequency = 400;
-                    obj.SignalAmplitude(1:4) = [0.3 0.4 0.1 0.8];
+                    obj.SignalFrequency = 300;
+                    obj.SignalAmplitude(1:4) = [0.2 1.2 0.2 0.2];
                 case 3
                     obj.SignalAmplitude = zeros(1,obj.NumChannels);
                     obj.SignalFrequency = 300;
-                    obj.SignalAmplitude(1:4) = [1 0.2 1.2 0.01];
+                    obj.SignalAmplitude(1:4) = [0.2 0.2 1.2 0.2];
                 case 4
+                    obj.SignalAmplitude = zeros(1,obj.NumChannels);
+                    obj.SignalFrequency = 300;
+                    obj.SignalAmplitude(1:4) = [0.2 0.2 0.2 1.2];
+                case 5
+                    obj.SignalAmplitude = zeros(1,obj.NumChannels);
+                    obj.SignalFrequency = 300;
+                    obj.SignalAmplitude(1:4) = [0.01 1 0.2 1.2];
+                case 6
+                    obj.SignalAmplitude = zeros(1,obj.NumChannels);
+                    obj.SignalFrequency = 400;
+                    obj.SignalAmplitude(1:4) = [0.3 0.4 0.1 0.8];
+                case 7
+                    obj.SignalAmplitude = zeros(1,obj.NumChannels);
+                    obj.SignalFrequency = 300;
+                    obj.SignalAmplitude(1:4) = [1 0.2 1.2 0.01];
+                case 8
                     obj.NoisePower = 0.04;
                     obj.SignalAmplitude = zeros(1,obj.NumChannels);
                     obj.SignalFrequency = 350;
@@ -91,7 +107,17 @@ classdef SignalSimulator < Inputs.SignalInput
             end
         end
         function uiControlPanel(obj)
-            obj.hg.hFig = UiTools.create_figure('EMG Simulator','EMG_Simulator_Figure');
+            hFig = UiTools.create_figure('EMG Simulator','EMG_Simulator_Figure');
+            
+            if isempty(hFig)
+                error('Failed to create figure');
+            else
+                set(hFig,'Position',[1 1 1 1]);
+                drawnow
+                alwaysontop(hFig);
+            end
+            
+            obj.hg.hFig = hFig;
             
             set(obj.hg.hFig,'Position',[20 50 200 70]);
             set(obj.hg.hFig,'WindowKeyPressFcn',@(src,evt)key_down(evt));
@@ -102,6 +128,8 @@ classdef SignalSimulator < Inputs.SignalInput
                 'String','Current Pattern: ',...
                 'Position', [20    20    120    20]);
             
+            set(hFig,'Visible','on');
+
             cellCurrentKeys = {};
             
             function key_up(evt)
@@ -136,6 +164,18 @@ classdef SignalSimulator < Inputs.SignalInput
                     case 'f'
                         setPattern(obj,4);
                         set(obj.hg.hTxtCurrentPattern,'String','Current Pattern 4');
+                    case 'q'
+                        setPattern(obj,5);
+                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern 5');
+                    case 'w'
+                        setPattern(obj,6);
+                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern 6');
+                    case 'e'
+                        setPattern(obj,7);
+                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern 7');
+                    case 'r'
+                        setPattern(obj,8);
+                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern 8');
                 end
             
                 cellCurrentKeys = unique([cellCurrentKeys {evt.Key}]);
