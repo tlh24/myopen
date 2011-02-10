@@ -1,4 +1,4 @@
-classdef MiniVIE < handle
+classdef MiniVIE < Common.MiniVieObj
     properties
         SignalSource
         SignalClassifier
@@ -43,11 +43,21 @@ classdef MiniVIE < handle
             %             pos = get(obj.hg.Figure,'Position');
             %             pos(3) = 700;
             set(obj.hg.Figure,'Position',pos('fig'));
+            set(obj.hg.Figure,'CloseRequestFcn',@(src,evnt)closeFig(obj));
+            
+                function closeFig(obj)
+                    try
+                        close(obj);
+                    catch ME
+                        fprintf(2,'Error closing objects:\n"%s"\n',ME.message);
+                    end
+                    delete(obj.hg.Figure);
+                end
             
             
             header = {'Inputs:','Signal Analysis:','Training:','Plant:','Presentation:'};
             puCallbacks = {
-                @(src,evt)setInput(obj,get(src,'String'),get(src,'Value'))
+                @(src,evt)setInput(obj,src)
                 @(src,evt)setSignalAnalysis(obj,get(src,'String'),get(src,'Value'))
                 @(src,evt)setTrainer(obj,get(src,'String'),get(src,'Value'))
                 @(src,evt)setSignalAnalysis(obj,get(src,'String'),get(src,'Value'))
@@ -110,6 +120,14 @@ classdef MiniVIE < handle
             
             
         end
+        function close(obj)
+            
+            try obj.SignalSource.close();end
+            try obj.SignalClassifier.close();end
+            try obj.TrainingInterface.close();end
+            try obj.Presentation.close();end
+
+        end
         function setPresentation(obj,string,value)
             h = obj.Presentation;
             if ~isempty(h)
@@ -157,6 +175,14 @@ classdef MiniVIE < handle
             end
             
             if ~isempty(h)
+                if isempty(obj.SignalSource)
+                    errordlg('Select an Input Source');
+                    return;
+                elseif isempty(obj.SignalClassifier)
+                    errordlg('Select a Classifier');
+                    return;
+                end
+
                 h.initialize();
             end
             
@@ -190,36 +216,53 @@ classdef MiniVIE < handle
             obj.SignalClassifier = h;
             
         end
-        function setInput(obj,string,value)
-            h = obj.SignalSource;
+        function setInput(obj,src)
+            persistent lastValue
+            if isempty(lastValue)
+                lastValue = 1;
+            end
             
-            if ~isempty(h)
-                try
-                    close(h);
+            string = get(src,'String');
+            value = get(src,'Value');
+
+            try
+                
+                h = obj.SignalSource;
+                
+                if ~isempty(h)
+                    try
+                        close(h);
+                    end
                 end
-            end
-            
-            switch string{value}
-                case 'EMG Simulator'
-                    h = Inputs.SignalSimulator();
-                case 'UsbDaq'
-                    h = Inputs.UsbDaq('mcc','0');
-                otherwise
-                    % None
-                    h = [];
-            end
-            
-            if ~isempty(h)
-                obj.println('Adding Filters',1);
-                h.addfilter(Inputs.HighPass());
-                h.addfilter(Inputs.LowPass());
-                h.addfilter(Inputs.Notch());
-                % obj.SignalSource.addfilter(Inputs.MAV(150));
-                h.NumSamples = 2000;
-                h.initialize();
+                
+                switch string{value}
+                    case 'EMG Simulator'
+                        h = Inputs.SignalSimulator();
+                    case 'UsbDaq'
+                        h = Inputs.UsbDaq('mcc','0');
+                    otherwise
+                        % None
+                        h = [];
+                end
+                
+                if ~isempty(h)
+                    obj.println('Adding Filters',1);
+                    h.addfilter(Inputs.HighPass());
+                    h.addfilter(Inputs.LowPass());
+                    h.addfilter(Inputs.Notch());
+                    % obj.SignalSource.addfilter(Inputs.MAV(150));
+                    h.NumSamples = 2000;
+                    h.initialize();
+                end
+                
+            catch ME
+                errordlg({'Error Initializing Input Device.',ME.message});
+                set(src,'Value',lastValue);
+                return
             end
             
             obj.SignalSource = h;
+            lastValue = value;
             
         end
         function println(obj,str,verboseLevel)

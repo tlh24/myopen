@@ -28,6 +28,16 @@ classdef MiniGuitarHero < PatternRecognition.AdaptiveTrainingInterface
             obj.ClassLabelId = NaN(1,obj.MaxSamples);
                         
         end
+        function close(obj)
+            try
+                stop(obj.hTimer);
+            end
+            try
+                delete(obj.hTimer);
+            end
+            delete(obj.hg.hFigure);
+        end
+
         function setupDisplay(obj)
             numClasses = obj.SignalClassifier.NumClasses;
             
@@ -35,26 +45,17 @@ classdef MiniGuitarHero < PatternRecognition.AdaptiveTrainingInterface
             % cue
             obj.NumCueLines = numClasses - 1;
 
-            hFig = UiTools.create_figure('Mini Guitar Hero','MiniGuitarHero');
-            set(hFig,'CloseRequestFcn',@(src,evnt)closeFig(obj,hFig));
+            obj.hg.hFigure = UiTools.create_figure('Mini Guitar Hero','MiniGuitarHero');
+            set(obj.hg.hFigure,'CloseRequestFcn',@(src,evnt)close(obj));
             
-            function closeFig(obj,hFig)
-                try
-                    stop(obj.hTimer);
-                end
-                try
-                    delete(obj.hTimer);
-                end
-                delete(hFig);
-            end
             
             % EMG Preview Plot
-            obj.hg.AxesSignals = subplot(3,1,3,'Parent',hFig);
+            obj.hg.AxesSignals = subplot(3,1,3,'Parent',obj.hg.hFigure);
             obj.hg.hPreviewLines = plot(obj.hg.AxesSignals,zeros(2,obj.SignalClassifier.NumActiveChannels));
             ylim(obj.hg.AxesSignals,[-2 2]);
             
             % Streaming Cue Plot
-            obj.hg.AxesCues = subplot(3,1,1:2,'Parent',hFig);
+            obj.hg.AxesCues = subplot(3,1,1:2,'Parent',obj.hg.hFigure);
             hold(obj.hg.AxesCues,'on')
             plot(obj.hg.AxesCues,[0 numClasses],[0 0],'k--');
             
@@ -169,6 +170,8 @@ classdef MiniGuitarHero < PatternRecognition.AdaptiveTrainingInterface
                         retrainCounter = 0;
                         obj.perform_retrain();
                     end
+                    
+                    update_signal_preview();
                 catch ME
                     if strcmpi(obj.hTimer.Running,'on')
                         stop(obj.hTimer);
@@ -177,6 +180,15 @@ classdef MiniGuitarHero < PatternRecognition.AdaptiveTrainingInterface
                     rethrow(ME);
                     
                 end
+            end
+            function update_signal_preview()
+                %obj.hg.AxesSignals
+                windowData = obj.SignalSource.getFilteredData();
+                for i = 1:obj.SignalClassifier.NumActiveChannels
+                    iChannel = obj.SignalClassifier.ActiveChannels(i);
+                    set(obj.hg.hPreviewLines(i),'YData',windowData(:,iChannel));
+                end
+
             end
             function update_decision
                 set(obj.hg.hClass,'XData',classBufferY,'YData',classBufferX);

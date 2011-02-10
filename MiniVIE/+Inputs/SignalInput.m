@@ -1,4 +1,4 @@
-classdef SignalInput < handle
+classdef SignalInput < Common.MiniVieObj
     % Base class for Signal Sources
     % Abstracts hardware device
     % Can be associated with a filter object to return filtered data

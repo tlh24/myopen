@@ -15,6 +15,7 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
             obj.SignalClassifier = hSignalClassifier;
             
         end
+
         function initialize(obj)
             % Initialize buffers
             obj.Features3D = NaN([obj.SignalSource.NumChannels obj.SignalClassifier.NumFeatures obj.MaxSamples]);
