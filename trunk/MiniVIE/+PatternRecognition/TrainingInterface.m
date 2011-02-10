@@ -1,4 +1,4 @@
-classdef TrainingInterface < handle
+classdef TrainingInterface < Common.MiniVieObj
     % Basic Training interface presents cues to a user and
     %
     % 01-Feb-2011 Armiger: Created
@@ -15,6 +15,9 @@ classdef TrainingInterface < handle
         
     end
     methods
+        function close(obj)
+            %override
+        end
     end
     methods (Abstract=true)
         initialize(obj);

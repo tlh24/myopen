@@ -1,4 +1,4 @@
-classdef Classifier < handle
+classdef Classifier < Common.MiniVieObj
     % Classifier Base class
     % TODO Extract the LDA functionality and make that a seperate file
     % 
@@ -28,6 +28,9 @@ classdef Classifier < handle
     methods
         function obj = Classifier
             % Constructor
+        end
+        function close(obj)
+            
         end
         function numClasses = get.NumClasses(obj)
             numClasses = length(obj.ClassNames);
