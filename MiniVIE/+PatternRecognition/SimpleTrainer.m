@@ -28,6 +28,7 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
             h = waitbar(0,'','Name',mfilename,...
                 'CreateCancelBtn',...
                 'setappdata(gcbf,''canceling'',1)');
+            hPatch = findobj(h,'type','patch')
             setappdata(h,'canceling',0);
 
             % Ensure data is ready
@@ -62,6 +63,7 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
                         iRepetition,obj.NumRepetitions,className);
                     tic
                     t = 0;
+                    set(hPatch,'FaceColor','r');
                     while t < obj.DelayLengthSeconds
                         t = toc;
 
@@ -76,6 +78,7 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
                     msg = sprintf('Train Class: %s',className);
                     tic;
                     t = 0;
+                    set(hPatch,'FaceColor','g');
                     while t < obj.ContractionLengthSeconds
                         t = toc;
 
