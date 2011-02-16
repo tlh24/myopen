@@ -1,3 +1,4 @@
+addpath('Utilities')
 %%
 PatternRecognition.MiniGuitarHero.Default;
 
