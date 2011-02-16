@@ -1,4 +1,4 @@
-classdef MiniVDisplayScenario < handle
+classdef MiniVDisplayScenario < Common.MiniVieObj
     % Scenario for controlling a rendered 3d virtual hand/arm
     % Depends on UiTools
     % 
@@ -41,6 +41,14 @@ classdef MiniVDisplayScenario < handle
             %obj.hMPL = UdpSink('192.168.139.100',8085);
             
         end
+        function close(obj)
+            try
+                stop(obj.hTimer);
+                delete(obj.hTimer)
+            end
+            delete(obj.hFigure);
+        end
+
         function setup_display(obj)
             hFig = UiTools.create_figure('Mini VIE Display','MiniVIEDisplay');
 %             pos = get(hFigure,'Position');
@@ -50,7 +58,7 @@ classdef MiniVDisplayScenario < handle
             set(hFig,'Color',[ 0.8706    0.9216    0.9804]);
             %set(obj.hFigure,'ToolBar','none');
             %set(obj.hFigure,'MenuBar','none');
-            set(hFig,'CloseRequestFcn',@(src,evnt)closeRequestFcn(src,obj))
+            set(hFig,'CloseRequestFcn',@(src,evnt)close(obj))
             
             obj.hFigure = hFig;
             
@@ -100,42 +108,42 @@ end
 
 function cb_data_timer(src,evnt,obj) %#ok<*INUSL>
 
-hSource = obj.hScenario.SignalSource;
-hSignalAnalysis = obj.hScenario.SignalClassifier;
+hSignalSource = obj.hScenario.SignalSource;
+hSignalClassifier = obj.hScenario.SignalClassifier;
 
 
-if isempty(hSource)
+if isempty(hSignalSource)
     disp('No Input');
     return
 end
 
 try
     
-    hSource.NumSamples = hSignalAnalysis.NumSamplesPerWindow;
-    windowData = hSource.getFilteredData();
+    hSignalSource.NumSamples = hSignalClassifier.NumSamplesPerWindow;
+    windowData = hSignalSource.getFilteredData();
     
     
 %     mVals = mean(abs(windowData));
 %     mVals(1:4)
-    features2D = hSignalAnalysis.extractfeatures(windowData);
-    activeChannelFeatures = features2D(hSignalAnalysis.ActiveChannels,:);
-    [classOut voteDecision] = hSignalAnalysis.classify(reshape(activeChannelFeatures',[],1));
+    features2D = hSignalClassifier.extractfeatures(windowData);
+    activeChannelFeatures = features2D(hSignalClassifier.ActiveChannels,:);
+    [classOut voteDecision] = hSignalClassifier.classify(reshape(activeChannelFeatures',[],1));
 
-    if hSignalAnalysis.NumMajorityVotes > 1
+    if hSignalClassifier.NumMajorityVotes > 1
         cursorMoveClass = voteDecision;
     else
         cursorMoveClass = classOut;
     end
     
     fprintf('Class Decision: %3d; Vote Decision: %3d; Class = %10s\n',...
-        classOut,voteDecision,hSignalAnalysis.ClassNames{cursorMoveClass})
+        classOut,voteDecision,hSignalClassifier.ClassNames{cursorMoveClass})
         
-    virtualChannels = hSignalAnalysis.virtual_channels(features2D,cursorMoveClass);
+    virtualChannels = hSignalClassifier.virtual_channels(features2D,cursorMoveClass);
 
     speed = max(virtualChannels);
     gain = 40;
     obj.FingerCommand = zeros(1,4);
-    switch hSignalAnalysis.ClassNames{cursorMoveClass}
+    switch hSignalClassifier.ClassNames{cursorMoveClass}
         case 'No Movement'
         case 'Hand Open'
             obj.FingerCommand(1:4) = -0.7*speed;
@@ -149,10 +157,10 @@ try
             obj.FingerCommand(3) = speed;
         case 'Little'
             obj.FingerCommand(4) = speed;
-        case 'Pronate'
+        case {'Pronate' 'Wrist Rotate In'}
             obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) = ...
                 obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) - speed*gain;
-        case 'Supinate'
+        case {'Supinate' 'Wrist Rotate Out'}
             obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) = ...
                 obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) + speed*gain*2;
         case 'Up'
@@ -161,10 +169,10 @@ try
         case 'Down'
             obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) = ...
                 obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) + speed*gain;
-        case {'Left' 'Wrist Flex'}
+        case {'Left' 'Wrist Flex' 'Wrist Flex In'}
             obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) = ...
                 obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) + speed*gain;
-        case {'Right' 'Wrist Extend'}
+        case {'Right' 'Wrist Extend' 'Wrist Extend Out'}
             obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) = ...
                 obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) - speed*gain;
         otherwise
@@ -174,7 +182,7 @@ try
     
     obj.FingerCommand = obj.FingerCommand .* obj.CloseGain;
     
-    if ~strcmpi('Hand Open',hSignalAnalysis.ClassNames)
+    if ~strcmpi('Hand Open',hSignalClassifier.ClassNames)
         obj.FingerCommand(obj.FingerCommand == 0) = -obj.AutoOpenSpeed;
     end
     

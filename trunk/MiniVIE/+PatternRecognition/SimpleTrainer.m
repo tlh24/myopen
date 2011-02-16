@@ -13,7 +13,6 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
             % Constructor
             obj.SignalSource = hSignalSource;
             obj.SignalClassifier = hSignalClassifier;
-            
         end
 
         function initialize(obj)
@@ -32,7 +31,7 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
             setappdata(h,'canceling',0);
 
             % Ensure data is ready
-            ok = wait_for_device(obj.SignalSource,obj.SignalClassifier.NumSamplesPerWindow);
+            ok = wait_for_device(h,obj.SignalSource,obj.SignalClassifier.NumSamplesPerWindow);
             if ~ok
                 error('Timed Out Waiting for Signal Source');
             end
@@ -93,7 +92,7 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
                             warning('SimpleTrainer:exceededMaxSamples','Exceeded Preallocated Sample Buffer');
                         end
                         
-                        classLabelId(iSample) = iClass;
+                        obj.ClassLabelId(iSample) = iClass;
                         windowData = obj.SignalSource.getFilteredData();
                         features = feature_extract(windowData' ,obj.SignalClassifier.NumSamplesPerWindow);
                         obj.Features3D(:,:,iSample) = features;
@@ -111,8 +110,8 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
             end
             
             obj.Features3D(:,:,iSample+1:end) = [];
-            classLabelId(iSample+1:end) = [];
-            
+            obj.ClassLabelId(iSample+1:end) = [];
+            obj.SampleCount = iSample;
         end
     end
     methods (Static = true)
@@ -156,7 +155,7 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
     end
 end
 
-function ok = wait_for_device(hSignalSource,numSamples)
+function ok = wait_for_device(h,hSignalSource,numSamples)
 
 % ensure input device is ready with real data
 iWait = 0;

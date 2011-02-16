@@ -30,12 +30,12 @@ classdef MiniVIE < Common.MiniVieObj
             
             set(obj.hg.popups(MiniVIE.INPUT),'String',{'None','EMG Simulator','UsbDaq'});
             set(obj.hg.popups(MiniVIE.INPUT),'Value',1);
-            set(obj.hg.popups(MiniVIE.PRESENTATION),'String',{'None','MiniV'});
-            set(obj.hg.popups(MiniVIE.PRESENTATION),'Value',1);
             set(obj.hg.popups(MiniVIE.SA),'String',{'None','LDA Classifier'});
             set(obj.hg.popups(MiniVIE.SA),'Value',1);
             set(obj.hg.popups(MiniVIE.TRAINING),'String',{'None','Simple Trainer','Mini Guitar Hero'});
             set(obj.hg.popups(MiniVIE.TRAINING),'Value',1);
+            set(obj.hg.popups(MiniVIE.PRESENTATION),'String',{'None','MiniV','Breakout'});
+            set(obj.hg.popups(MiniVIE.PRESENTATION),'Value',1);
             
         end
         function setupFigure(obj)
@@ -145,6 +145,9 @@ classdef MiniVIE < Common.MiniVieObj
                     h.CloseGain = [80 80 80 80];
                     start(h.hTimer);
                     obj.println('Presentation setup complete',1);
+                case 'Breakout'
+                    h = Presentation.MiniBreakout(obj.SignalSource,obj.SignalClassifier);
+                    
                 otherwise
                     % None
                     h = [];
@@ -283,7 +286,13 @@ classdef MiniVIE < Common.MiniVieObj
             end
             
             obj.TrainingInterface.collectdata();
-            
+            if ~isa(obj.TrainingInterface,'PatternRecognition.AdaptiveTrainingInterface')
+                % If adaptive, no need to retrain
+                obj.SignalClassifier.TrainingData = obj.TrainingInterface.Features3D(:,:,1:obj.TrainingInterface.SampleCount);
+                obj.SignalClassifier.TrainingDataLabels = obj.TrainingInterface.ClassLabelId(1:obj.TrainingInterface.SampleCount);
+                obj.SignalClassifier.train();
+                obj.SignalClassifier.computeerror();
+            end
         end
     end
     methods (Static = true)
