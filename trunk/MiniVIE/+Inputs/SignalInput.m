@@ -51,10 +51,10 @@ classdef SignalInput < Common.MiniVieObj
             hTimer.Period = 0.05;
             
             hFig = UiTools.create_figure('Preview Features','Preview_Features');
-
+            
             clf(hFig);
             set(hFig,'CloseRequestFcn',@(src,evnt)previewCleanup(hTimer,hFig));
-
+            
             numFeatures = 4;
             hAx = zeros(1,numFeatures);
             hLines = zeros(obj.NumChannels,numFeatures);
@@ -207,4 +207,3 @@ end
 delete(hTimer);
 delete(hFig);
 end
-            

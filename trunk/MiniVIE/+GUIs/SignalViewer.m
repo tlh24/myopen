@@ -4,7 +4,7 @@ classdef SignalViewer < Common.MiniVieObj
     %
     % Use default configuration:
     %  obj = GUIs.SignalViewer.Default;
-    % 
+    %
     % Armiger - 2/15/2011: Created
     properties
         
@@ -12,9 +12,24 @@ classdef SignalViewer < Common.MiniVieObj
         
         SelectedChannels = 1:4;
         
+        ShowFilteredData = 1;
+        
         hg
         hTimer
         
+        ModeSelect = GUIs.SignalViewer.TimeDomain;
+    end
+    properties (SetAccess = private)
+        featureBuffer = [];
+    end
+    properties (Constant = true)
+        FFT = 1;
+        TimeDomain = 2;
+        Features = 3;
+
+        numFeatures = 4;
+        
+        FullAxesPosition = [80 250 750 300];
     end
     methods
         function obj = SignalViewer(hSignalSource)
@@ -26,6 +41,10 @@ classdef SignalViewer < Common.MiniVieObj
             obj.SignalSource = hSignalSource;
             obj.resetTimePlot();
             
+            numSamplesToDisplay = 200;
+            obj.featureBuffer = NaN(obj.SignalSource.NumChannels,obj.numFeatures,numSamplesToDisplay);
+            
+            
             start(obj.hTimer);
             
         end
@@ -33,49 +52,102 @@ classdef SignalViewer < Common.MiniVieObj
             obj.hg.Figure = UiTools.create_figure('Signal Viewer','Signal Viewer');
             set(obj.hg.Figure,'Position',[50 120 900 600]);
             set(obj.hg.Figure,'CloseRequestFcn',@(src,evnt)obj.close);
+
+            obj.hg.PanelAxes = uipanel(obj.hg.Figure,'Units','Pixels','Position',[80 200 750 400]);
             
-            obj.hg.Axes = axes('Parent',obj.hg.Figure,'Units','Pixels','Position',[80 250 750 300]);
+            obj.hg.Axes(4) = axes('Parent',obj.hg.PanelAxes,'Units','Normalized','Position',[0.05 0.05 0.9 0.9]);
+            obj.hg.Axes(3) = axes('Parent',obj.hg.PanelAxes,'Units','Normalized','Position',[0.05 0.05 0.9 0.9]);
+            obj.hg.Axes(2) = axes('Parent',obj.hg.PanelAxes,'Units','Normalized','Position',[0.05 0.05 0.9 0.9]);
+            obj.hg.Axes(1) = axes('Parent',obj.hg.PanelAxes,'Units','Normalized','Position',[0.05 0.05 0.9 0.9]);
             
-            obj.hg.PanelDomain = uibuttongroup(obj.hg.Figure,'Units','Pixels','Position',[80 50 200 150]);
+            obj.hg.PanelProps = uibuttongroup(obj.hg.Figure,'Units','Pixels','Position',[290 40 200 150]);
+            set(obj.hg.PanelProps ,'Title','Plot Properties');
+            
+            uicontrol('Style','checkbox','String','Apply Filters','Units','Normalized',...
+                'pos',[0.1 0.1 0.8 0.25],'parent',obj.hg.PanelProps,'HandleVisibility','off',...
+                'Callback',@(src,evt)showFilteredData(obj,get(src,'Value')));
+            
+            obj.hg.PanelDomain = uibuttongroup(obj.hg.Figure,'Units','Pixels','Position',[80 40 200 150]);
             set(obj.hg.PanelDomain,'Title','Plot Domain');
             % Create three radio buttons in the button group.
             obj.hg.ToggleFFT = uicontrol('Style','Togglebutton','String','FFT','Units','Normalized',...
-                'pos',[0.1 0.1 0.8 0.3],'parent',obj.hg.PanelDomain,'HandleVisibility','off');
+                'pos',[0.1 0.1 0.8 0.25],'parent',obj.hg.PanelDomain,'HandleVisibility','off');
+            obj.hg.ToggleFeatures = uicontrol('Style','Togglebutton','String','Features','Units','Normalized',...
+                'pos',[0.1 0.7 0.8 0.25],'parent',obj.hg.PanelDomain,'HandleVisibility','off');
             obj.hg.ToggleTimeHistory = uicontrol('Style','Togglebutton','String','Time','Units','Normalized',...
-                'pos',[0.1 0.5 0.8 0.3],'parent',obj.hg.PanelDomain,'HandleVisibility','off');
+                'pos',[0.1 0.4 0.8 0.25],'parent',obj.hg.PanelDomain,'HandleVisibility','off');
             % Initialize some button group properties.
-            set(obj.hg.PanelDomain,'SelectedObject',obj.hg.ToggleTimeHistory); 
+            set(obj.hg.PanelDomain,'SelectedObject',obj.hg.ToggleTimeHistory);
+            set(obj.hg.PanelDomain,'SelectionChangeFcn',@(src,evt)selcbk(src));
             set(obj.hg.PanelDomain,'Visible','on');
+            
+            function selcbk(source)
+                
+                hSelected = get(source,'SelectedObject');
+                
+                switch hSelected
+                    case obj.hg.ToggleTimeHistory
+                        obj.ModeSelect = GUIs.SignalViewer.TimeDomain;
+                    case obj.hg.ToggleFFT
+                        obj.ModeSelect = GUIs.SignalViewer.FFT;
+                    case obj.hg.ToggleFeatures
+                        obj.ModeSelect = GUIs.SignalViewer.Features;
+                end
+            end
             
         end
         function update(obj)
             
-            hSelected = get(obj.hg.PanelDomain,'SelectedObject');
-            
-            switch hSelected
-                case obj.hg.ToggleTimeHistory
-                    xlabel(obj.hg.Axes,'Time (s)');
-                    ylabel(obj.hg.Axes,'Volts');
-                    ylim(obj.hg.Axes,[-2 14]);
+            switch obj.ModeSelect
+                case GUIs.SignalViewer.Features
+                    setAxesVisible(obj.hg.Axes(1:4),'on');
+                    axis(obj.hg.Axes(1),'auto');
+                    
+                    set(obj.hg.Axes(1),'OuterPosition',[0.0 0.5 0.5 0.5]);
+                    set(obj.hg.Axes(2),'OuterPosition',[0.5 0.5 0.5 0.5]);
+                    set(obj.hg.Axes(3),'OuterPosition',[0.0 0.0 0.5 0.5]);
+                    set(obj.hg.Axes(4),'OuterPosition',[0.5 0.0 0.5 0.5]);
+                    xlabel(obj.hg.Axes(1),'Time (s)');
+                    ylabel(obj.hg.Axes(1),'MAV');
+                    ylabel(obj.hg.Axes(2),'LEN');
+                    ylabel(obj.hg.Axes(3),'SSC');
+                    ylabel(obj.hg.Axes(4),'ZC');
+                    obj.updateFeatures();
+                case GUIs.SignalViewer.TimeDomain
+                    setAxesVisible(obj.hg.Axes(1),'on');
+                    setAxesVisible(obj.hg.Axes(2:4),'off');
+                    set(obj.hg.Axes(1),'OuterPosition',[0 0 1 1]);
+                    xlabel(obj.hg.Axes(1),'Time (s)');
+                    ylabel(obj.hg.Axes(1),'Volts');
+                    ylim(obj.hg.Axes(1),[-2 14]);
                     obj.updateTimeDomain();
-                case obj.hg.ToggleFFT
-                    xlabel(obj.hg.Axes,'Frequency (Hz)');
-                    ylabel(obj.hg.Axes,'|Y(f)|');
-                    ylim(obj.hg.Axes,[0 1]);
+                case GUIs.SignalViewer.FFT
+                    setAxesVisible(obj.hg.Axes(1),'on');
+                    setAxesVisible(obj.hg.Axes(2:4),'off');
+                    set(obj.hg.Axes(1),'OuterPosition',[0 0 1 1]);
+                    xlabel(obj.hg.Axes(1),'Frequency (Hz)');
+                    ylabel(obj.hg.Axes(1),'|Y(f)|');
+                    ylim(obj.hg.Axes(1),[0 1]);
                     obj.updateFrequencyDomain();
                 otherwise
-                    disp('Invalid Selection');
+                    disp('Invalid Mode Selection');
             end
-
+            drawnow
+            
         end
         
         function updateFrequencyDomain(obj)
             
-            channelData = obj.SignalSource.getData();
+            if obj.ShowFilteredData
+                channelData = getFilteredData(obj.SignalSource);
+            else
+                channelData = getData(obj.SignalSource);
+            end
+            
             if isempty(channelData) || ~ishandle(obj.hg.Figure)
                 return;
             end
-
+            
             Fs = obj.SignalSource.SampleFrequency;
             L = obj.SignalSource.NumSamples;
             NFFT = 2^nextpow2(L); % Next power of 2 from length of y
@@ -85,38 +157,78 @@ classdef SignalViewer < Common.MiniVieObj
                 Y = fft(channelData(:,i),NFFT)/L;
                 
                 % Plot single-sided amplitude spectrum.
-                set(obj.hg.TimePlotLines(i),'YData',2*abs(Y(1:NFFT/2+1)),'XData',f);
+                set(obj.hg.PlotLines{1}(i),'YData',2*abs(Y(1:NFFT/2+1)),'XData',f);
                 
             end
             
         end
         function updateTimeDomain(obj)
-            drawnow
             
             offset = 1.5 * (1:obj.SignalSource.NumChannels);
             
-            channelData = obj.SignalSource.getData();
+            if obj.ShowFilteredData
+                channelData = getFilteredData(obj.SignalSource);
+            else
+                channelData = getData(obj.SignalSource);
+            end
             
             if isempty(channelData) || ~ishandle(obj.hg.Figure)
                 return;
             end
             for i = obj.SelectedChannels
-                set(obj.hg.TimePlotLines(i),'YData',channelData(:,i)+offset(i),'XData',1:size(channelData,1));
+                set(obj.hg.PlotLines{1}(i),'YData',channelData(:,i)+offset(i),'XData',1:size(channelData,1));
             end
+            
+        end
+        function updateFeatures(obj)
+                        
+            if obj.ShowFilteredData
+                channelData = getFilteredData(obj.SignalSource);
+            else
+                channelData = getData(obj.SignalSource);
+            end
+            
+            if isempty(channelData) || ~ishandle(obj.hg.Figure)
+                return;
+            end
+            
+            windowSize = 150;
+            %                 zc_thresh = 0.1;
+            %                 ssc_thresh = 0.1;
+            
+            features = feature_extract(channelData',windowSize);
+            
+            obj.featureBuffer = circshift(obj.featureBuffer,[0 0 1]);
+            obj.featureBuffer(:,:,1) = features;
+                        
+            for iFeature = 1:obj.numFeatures
+                for iChannel = obj.SelectedChannels
+                    set(obj.hg.PlotLines{iFeature}(iChannel),'YData',obj.featureBuffer(iChannel,iFeature,:),...
+                        'XData',1:size(obj.featureBuffer,3));
+                end
+            end
+            
             
         end
         function resetTimePlot(obj)
             % Create plot lines
-            obj.hg.TimePlotLines = plot(obj.hg.Axes,zeros(2,obj.SignalSource.NumChannels));
+            obj.hg.PlotLines{1} = plot(obj.hg.Axes(1),zeros(2,obj.SignalSource.NumChannels));
+            obj.hg.PlotLines{2} = plot(obj.hg.Axes(2),zeros(2,obj.SignalSource.NumChannels));
+            obj.hg.PlotLines{3} = plot(obj.hg.Axes(3),zeros(2,obj.SignalSource.NumChannels));
+            obj.hg.PlotLines{4} = plot(obj.hg.Axes(4),zeros(2,obj.SignalSource.NumChannels));
             
         end
+        function showFilteredData(obj,val)
+            obj.ShowFilteredData = val;
+        end
+        
         function close(obj)
             try
                 stop(obj.hTimer);
             end
             delete(obj.hTimer);
             delete(obj.hg.Figure);
-
+            
         end
     end
     methods (Static = true)
@@ -127,4 +239,13 @@ classdef SignalViewer < Common.MiniVieObj
             obj = GUIs.SignalViewer(hSignalSource);
         end
     end
+end
+
+function setAxesVisible(hAxes,onOff)
+
+    for i = 1:length(hAxes)
+        set(hAxes(i),'Visible',onOff);
+        set(allchild(hAxes(i)),'Visible',onOff);
+    end
+
 end
