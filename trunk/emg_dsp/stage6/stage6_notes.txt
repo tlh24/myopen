@@ -3,7 +3,7 @@ Hardware Fixes:
 	level.  Current LEDs Vf = 2.0V :: 26mA of current. 10ma better -> 
 	need 130 ohm resistors.
 	Total power dissipation of 16 LEDs: 1.3W..?
-	* Vdd_OTP NEEDS to be TIED TO 2.5V for the proc to boot.
+	* Vdd_OTP NEEDS to be tied to 2.5V for the proc to boot.
 	I guess I'll need a regulator here.
 	(I assume this is needed by the security code)
 	* Need caps on nordic lines to quench ringing (47pf, SCK & MOSI)
@@ -11,8 +11,10 @@ Hardware Fixes:
 		Can jumper to R12.
 	* The labels on the external power supply are SWAPPED! 
 		28 is 0.8V, 08 is 2.8V! (or more accurately, 2.65V, as measured)
-	* TSCLK0 & RSCLK0 need to be tied together - 
-		RSCLK0 must not be gated, as with the ADC. 
+	* On EMG section, input to OR gate must be RSCLK0, not TSCLK0. 
+		TSCLK0 is only used to generate TFS0.
+		Both clocks are output. 
+	* switching regulator needs to be further away from EMG input section.
 	
 
 November 8 2010
@@ -437,3 +439,36 @@ January 25 2011 -
 	That's not going to work either -- really need RSCLK0 to control
 		the DAC, and everything else to be on a phased TSCLK0. 
 		will have to change the wiring.
+		Done!
+	Ok, finally fixed everything. 
+	How? 
+	Let's review the operation of this chip. 
+	1. Configuration register is latched on rising clock edges. 
+	2. Sampling starts on rising edge of CNV. 
+	3. Clock and serial lines must be silent during conversion. 
+		During this time CNV high.
+	4. MSbit from ADC is clocked out on falling edge of CNV. 
+	5. All following bits are clocked out on falling edges of CLK. 
+	6. Hence, you need 14 + CLK edges for the config register, and 15
+		to read out contents of ADC. 
+	7. This is the simplest operating mode for the ADC - there are 2 others, 
+		but the specsheet sucks, and I couldn't decode how to set them up.
+		The operating mode corresponds to RAC on page 25 of spec sheet.
+	Now, the solution:
+	1. Config data latched out on falling edge of TSCLK0, along with TFS0.
+	2. TFS0 tied to CNV. 
+	3. RSCLK0 ORed with TFS0 to generate gated clock.
+	4. RSCLK falling edge slightly behind TSCLK falling edge by inserting 
+		SSYNC instruction between enabling the SPORTS. 
+	5. SPORT0 RX data latched in on falling edge of internally generated 
+		RSCLK0. 
+		Hence, first falling edge latches in MSB that was presented upon
+		falling TFS0 / CNV / RFS0. 
+		Because of the propagation delay through OR gate, 
+		this does not violate setup/hold violations. 
+	6. SPORT0 RX configured for late frame syncs; early frame syncs miss the 
+		first bit. 
+	7. Because SPORT0 RX is configured w/ bit 14=0 
+		(latch data on falling edge of clock), and TX is inverted
+		(latch out data/frame sync on falling edge of clock)
+		start RX /before/ TX!

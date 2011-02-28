@@ -461,12 +461,12 @@ int main()
 	
 	*pSPORT0_RCLKDIV = 39; 
 	*pSPORT0_RFSDIV = 17; 
-	*pSPORT0_RCR2 = 15 ;//| 0x200; 
+	*pSPORT0_RCR2 = 15 ;
 	
 	*pSPORT1_TCR1 = 0x0e03 ; 
-	*pSPORT0_TCR1 = 0x6603; //go! go!
+	*pSPORT0_RCR1 = 0x3403;
 	asm volatile("ssync"); //put a delay in here.
-	*pSPORT0_RCR1 = 0x5403;
+	*pSPORT0_TCR1 = 0x6603; //go! go!
 	
 	u16 a = 0; //signed.
 	u16 sample = 0; 
@@ -478,19 +478,18 @@ int main()
 			asm volatile("nop; nop; nop; nop");
 		}
 		*((volatile short*)SPORT0_TX) = 
-		(short)(0x3c01 <<2);  // 0x2801 orig
+		(short)(0x3f81 <<2);  // 0x3c01 = channel 0
 		a = *((volatile short*)SPORT0_STAT); 
 		if(a & RXNE){
 			a = *((volatile unsigned short*)SPORT0_RX);
 			sample = a;
-			
 			/*sample += dir; 
 			if(sample > 0xffff - 128) dir= -128;
 			if(sample < 128) dir= 128; 
 			sample &= 0xffff; */
 		}
 		if((*pSPORT1_STAT & TXF) == 0){
-			*pSPORT1_TX = ((sample & 0xffff) | (0x3 << 19) | (0x0 << 16));
+			*pSPORT1_TX = ((sample & 0xffff) | (0x3 << 19) | (0x7 << 16));
 		}
 	}
 	

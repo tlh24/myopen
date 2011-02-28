@@ -1,0 +1,40 @@
+Notes from debugging stage8
+February 25 2011
+* Most everything works properly on the board -- no hardware errors yet.
+* Digikey shipped some incorrect restors, which is annoying - they 
+	have not done this before, to the best of my knowlege - 
+	but a relatively easy fix. 
+* The new solder paste - ZeroLead no-clean solder paste - 
+	http://www.ameritronics.com
+	works well, better than previous.  Unfortunately they don't ship with caps. 
+* Issue: headstage seems to be transmitting data well (at least looking
+	at the control signals).  RX fails about 50% of the time.
+	only thing that has changed is the incoming data rate. 
+	Hence, let's try writing data more slowly - at original rate.
+		same issue.
+		probably is something in the radio code.. 
+	Perhaps it's a framing isue: SPI clock too slow, some bits get cut off?
+		changed rate to 13.3Mhz - no change. 
+		Strangely, we seem to get IRQs in the middle of where they should be.
+		Notable is we've changed the cycle time from 2us to 1us
+		natrually there will be issues.
+		Added some extra pipeline stalls, nothing..
+		Perhaps should try slowing down the sample clock for the same effect?
+		Halved the sample rate -- did not fix problem. 
+		Still unreliable packet transmission.
+		Must be the radio control code.
+		Try the C-version: seems broken! JTAG time.
+	C version working.  SPI clock running at 10Mhz, as per asm version.
+		primary difference seems to be that the packets are uploaded in bursts, 
+		not continuously like the other. try change.
+		continuous packet uploading does not break C version for radio controller.
+		Let's compare..
+		seems there's an extra clearfifo bizness... check if that makes it work.
+		radio_clearfifos makes the return packet arrive more reliably, yes.
+	Think the radio control routine is the same as the C version -- 
+		have not checked with JTAG yet -- 
+		but still does not work :-(
+		aggregate data rate appears to be about the same
+		data bus appears to be active at the right times..
+		where are the extra / skewed packets coming from? 
+		is this a data content issue? 
