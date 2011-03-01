@@ -212,10 +212,6 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 	
 	if(g_mode == MODE_RASTERS){
 		cgSetParameter1f(myCgVertexParam_xzoom, g_rasterZoom);
-		cgGLBindProgram(myCgVertexProgram[0]);
-		checkForCgError("binding vertex program");
-		cgGLEnableProfile(myCgVertexProfile);
-		checkForCgError("enabling vertex profile");
 		
 		glPushMatrix();
 		glScalef(1.f, 0.5f, 1.f); //don't think this does anythang.
@@ -224,15 +220,19 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		//continuous waveform drawing.. 
 		for(int k=0; k<4;k++){
 			cgSetParameter1f(myCgVertexParam_yoffset, (3-k)/4.f);
+			cgGLBindProgram(myCgVertexProgram[0]);
+			checkForCgError("binding vertex program");
+			cgGLEnableProfile(myCgVertexProfile);
+			checkForCgError("enabling vertex profile");
 			glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo1[k]);
 			glVertexPointer(3, GL_FLOAT, 0, 0);
 			glColor3f (1.-(k/3.f),(k/3.f), 1.);
 			glDrawArrays(GL_LINE_STRIP, 0, NSAMP); 
+			cgGLDisableProfile(myCgVertexProfile);
+			checkForCgError("disabling vertex profile");
 		}
 		//see glDrawElements for indexed arrays
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
-		cgGLDisableProfile(myCgVertexProfile);
-		checkForCgError("disabling vertex profile");
 		
 		//draw threshold. 
 		glBegin(GL_LINE_STRIP); 
