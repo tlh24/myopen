@@ -728,7 +728,7 @@ void* sock_thread(void* destIP){
 				unsigned int bit = 0; 
 				for(int j=0; j<7; j++){
 					for(int k=0; k<4; k++){
-						char samp = p->data[j*4+i]; 
+						char samp = p->data[j*4+k]; 
 						int ch = g_headch + k*32;
 						bit = (g_exceeded[ch/16]) >> (ch & 15); 
 						z = 0.f; if(bit) z = 1.f; 
