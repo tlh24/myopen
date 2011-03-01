@@ -38,3 +38,22 @@ February 25 2011
 		data bus appears to be active at the right times..
 		where are the extra / skewed packets coming from? 
 		is this a data content issue? 
+February 28 2011
+		YES
+		changing the data to 0xa5 for all samples fixed the error!  yay!
+	Proc seems to be waiting too long for the RX packet. 
+		usually the bridge can respond within 360us
+		presently we're waiting 780us
+		current serial RFS is 29 / was 19 -> equivalent wait of 511us
+		Should wait 180 samples; 190 ought to be enough.
+			(there are two calls to _get_asm in the loop of waitirq)
+	Perhaps I've overestimated the outgoing bandwidth. 
+		It takes 1.36ms to transmit 256 bytes (measured)
+		It takes 360us for the bridge to turn around and get a response.
+		Total is 1.72ms. 
+		Frame time, with 7 samples per packet, 56 samples per frame is 1.792ms
+		much too close, apparently! 
+		setting waitirq to 172 allows the 'stage to work.. not exactly sure why though.
+		anything below 160 misses out on TX sent IRQs.
+	Really need to fix the data bug - simplest, and best, way is to add AGC. 
+	
