@@ -1,0 +1,20 @@
+
+struct V_Output {
+  float4 position : POSITION;
+  float4 color    : COLOR;
+};
+
+V_Output fade(float3 position : POSITION, 
+				uniform float3 col, 
+				uniform float time)
+{	
+	V_Output OUT;
+	float alpha = (1 - (time - position.z)/3.f); 
+	OUT.position = float4((position.x*2.0-1.0), position.y,alpha,1);
+	alpha = clamp(alpha, 0.f, 1.f);
+	
+	//OUT.color = float4(1.f, 1.f, 1.f, 0.5f); 
+	OUT.color = float4(col.r,col.g,col.b,0.4*alpha);
+
+	return OUT;	
+}
