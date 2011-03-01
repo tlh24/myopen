@@ -56,4 +56,6 @@ February 28 2011
 		setting waitirq to 172 allows the 'stage to work.. not exactly sure why though.
 		anything below 160 misses out on TX sent IRQs.
 	Really need to fix the data bug - simplest, and best, way is to add AGC. 
-	
+		working on AGC: IS (integer signed) mode is
+		ESSENTIAL
+		when transferring accumulator to register.
