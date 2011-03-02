@@ -293,6 +293,8 @@ int radio_wait_irq(int time){
 
 u8 radio_init(u8 chan){
 	//first, setup the baud rate, etc. baud first..
+	*pSPI_CTL = 0; //to change the baud.
+	asm volatile("ssync"); 
 	*pSPI_BAUD = SPI_BAUDDIV; 
 	*pSPI_CTL = TDBR_CORE | SZ | EMISO | GM | MSTR | SPE; 
 	*pSPI_FLG = 0x0000; //we don't use this -- use portF. 

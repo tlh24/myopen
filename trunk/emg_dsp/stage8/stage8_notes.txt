@@ -59,3 +59,29 @@ February 28 2011
 		working on AGC: IS (integer signed) mode is
 		ESSENTIAL
 		when transferring accumulator to register.
+February 29 2011
+	Got AGC working properly.. finally. 
+		Turned out that i hadn't though of the magnitude of the components properly.
+	Next, most important issue: make radio transmission reliable. 
+		If we transmit 0xa5 for all bytes, all packets seem to get through.
+		If we transmit 0xcc, same.
+		0xc0, same.
+		0x80, same.
+		0x00?  same!!
+		0xff?  fail!! aha.  I guess.
+		0xfe? works..?
+		0x01, works.
+		XOR data with 0xa5 fails.
+		AND data with 0x7f fails.
+		AND data with 0xbf fails.
+		AND data with 0xdf fails.
+		AND data with 0xef fails.
+		AND data with 0xf7 fails.
+		AND data with 0xfb works.
+		AND data with 0xfd works.
+		AND data with 0xfe works.
+		
+		Slowing down the SPORT to half the speed - hence giving more time between 
+		SPI transfers - does not fix the issue.
+		whattt is it? perhaps contention - something else (nordic?)
+		is trying to drive bus?
