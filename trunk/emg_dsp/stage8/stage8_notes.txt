@@ -59,7 +59,7 @@ February 28 2011
 		working on AGC: IS (integer signed) mode is
 		ESSENTIAL
 		when transferring accumulator to register.
-February 29 2011
+March 1 2011
 	Got AGC working properly.. finally. 
 		Turned out that i hadn't though of the magnitude of the components properly.
 	Next, most important issue: make radio transmission reliable. 
@@ -85,3 +85,23 @@ February 29 2011
 		SPI transfers - does not fix the issue.
 		whattt is it? perhaps contention - something else (nordic?)
 		is trying to drive bus?
+		Doesn't look that way - the busses are separate. 
+		Which byte is it?  can possibly send 0xaa as the first byte, technically only need
+		31 bytes payload.
+March 2 2011
+	(Continuing above)
+		Tried sending 0xa8 as the first byte .. reception is still noisy. 
+		What if we change the radio channel? 
+		Why did this error not appear before?  Is it hardware-dependent?
+	trying stage5. 
+		it RXes every other packet,  more or less.
+		but program does not fit hardware well... hmm.
+	trying different radio channel (0) -- no change. 
+		same issue. dropped packets. 
+	trying to AND data with 0xfe - 8 bit TX to 7 bit - make difference?
+		yea.  that works.  WHYYYY?
+	Ok, I understand why - the bridge is getting confused by the new packet setup, 
+		and is spontanteously going into RX mode during a frame, thereby missing 
+		vital packets. 
+		What we need to do is re-write the bridge code to accomidate the higher b/w
+		and possibly to extend the frame to 16 packets. 

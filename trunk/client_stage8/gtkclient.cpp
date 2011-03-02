@@ -721,8 +721,8 @@ void* sock_thread(void* destIP){
 			for(int i=0; i<npack && g_pause <=0.0; i++){
 				//see if it exceeded threshold.
 				float z = 0; 
-				g_headch = (p->flag) >> 3 ; 
-				int exch = p->flag & 7; 
+				g_headch = (p->flag) >> 4 ; 
+				int exch = p->flag & 7; //transmit twice
 				g_exceeded[exch] = p->exceeded; 
 				// 7 samples / packet, 31.25ksps = 4464 pkts/sec, 0.224ms/pkt (558 frames/sec)
 				double time = rxtime - ((double)(npack-i)-0.5) * 0.000224; 
@@ -834,7 +834,7 @@ static gboolean chanscan(gpointer){
 static void channelSpinCB( GtkAdjustment*, gpointer ){
 	int ch = (int)gtk_adjustment_get_value(g_channelSpin); 
 	//printf("channelSpinCB: %d\n", ch); 
-	if(ch < 32 && ch >= 0 && ch != g_channel){
+	if(ch < 128 && ch >= 0 && ch != g_channel){
 		g_channel = ch; 
 		setChan(); 
 	}

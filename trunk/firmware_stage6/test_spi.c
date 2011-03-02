@@ -292,7 +292,7 @@ int main(void){
 		}
 	}
 	//write out data.
-	#define UDP_PACKET_SIZE 256
+	#define UDP_PACKET_SIZE 512
 	int prevtime = 0;
 	int secs; 
 	u32* data;
@@ -302,7 +302,7 @@ int main(void){
 	char gotx = 0; 
 	
 	//enable the radio.
-	radio_init(124); 
+	radio_init(0); 
 	printf_str("starting reception!\n"); 
 	radio_set_rx(); 
 	//you have to be ready to get packets immediately after RX mode is turned on --
@@ -334,8 +334,8 @@ int main(void){
 			char* c = (char*)(wrptr); 
 			wrptr += 32; 
 			wrptr &= 0xfff; 
-			c += 27; 
-			if(((*c)&0x7) == 7){
+			c += 28; 
+			if(((*c)&0xf) == 0xf){ //end of a frame.
 				radio_set_tx();
 				//send whatever is in the buffer from the host..
 				*FIO_CLEAR = SPI_CSN | SPI_CE; //clearing CE is essential here!
