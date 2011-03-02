@@ -18,7 +18,7 @@
 
 //SPI pins. 
 #define SPI_IRQ	 	0x0008
-#define SPI_CSN	0x0002
+#define SPI_CSN		0x0002
 #define SPI_CE		0x0001
 
 #ifdef __BRIDGE__

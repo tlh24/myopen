@@ -243,7 +243,7 @@ void radio_set_rx(){
 	//spi_write_byte(NOR_FLUSH_TX);
 	spi_write_byte(NOR_FLUSH_RX); 
 	/** by default CRC is not enabled for RX - we accept anything!! **/
-	spi_write_register(NOR_CONFIG, /*NOR_EN_CRC | NOR_CRC0 |*/
+	spi_write_register(NOR_CONFIG, NOR_EN_CRC | NOR_CRC0 |
 		NOR_MASK_MAX_RT | NOR_PWR_UP | NOR_PRIM_RX ); 
 	spi_write_register(NOR_STATUS, 0x70); 
 	
