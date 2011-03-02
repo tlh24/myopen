@@ -213,10 +213,21 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 	if(g_mode == MODE_RASTERS){
 		cgSetParameter1f(myCgVertexParam_xzoom, g_rasterZoom);
 		
-		glPushMatrix();
-		glScalef(1.f, 0.5f, 1.f); //don't think this does anythang.
-		glTranslatef(0.f,0.5f, 0.f); 
+		//glPushMatrix();
+		//glScalef(1.f, 0.5f, 1.f); //don't think this does anythang.
+		//glTranslatef(0.f,0.5f, 0.f); 
 		
+		//draw zero lines for the 4 continuous channels.
+		for(int k=0; k<4; k++){
+			glBegin(GL_LINES); 
+			glColor4f(0.f, 0.5, 1.f, 0.75);
+			glVertex3f( -1.f, (float)(k*2+1)/8.f, 0.f);
+			glVertex3f( 1.f, (float)(k*2+1)/8.f, 0.f); 
+			glColor4f(0.f, 1.f, 0.7f, 0.75);
+			glVertex3f( -1.f, (float)(k*2)/8.f, 0.f);
+			glVertex3f( 1.f, (float)(k*2)/8.f, 0.f); 
+			glEnd(); 
+		}
 		//continuous waveform drawing.. 
 		for(int k=0; k<4;k++){
 			cgSetParameter1f(myCgVertexParam_yoffset, (3-k)/4.f);
@@ -240,9 +251,8 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		glVertex3f( -1.f, 0.5f+g_thresh/(256.f*128.f), 0.f);
 		glVertex3f( 1.f, 0.5f+g_thresh/(256.f*128.f), 0.f); 
 		glEnd(); 
-		//end VBO
 
-		glPopMatrix ();
+		//glPopMatrix ();
 		
 		//rasters
 		glPushMatrix();
