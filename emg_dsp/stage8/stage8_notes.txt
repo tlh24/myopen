@@ -105,3 +105,12 @@ March 2 2011
 		vital packets. 
 		What we need to do is re-write the bridge code to accomidate the higher b/w
 		and possibly to extend the frame to 16 packets. 
+	Trying the processor at 400Mhz -
+		looks like the MAD does not work, or does not complete in time, at this frequency. 
+		really should increase the core voltage. 
+		At a core voltage of 1.0v (was 0.85v), the processor seems to run normally. 
+		current is 100ma. (about)
+		Stops working just at 0.85v.
+		That said, looks like @ 400Mhz we have plenty of time for adaptive noise
+		cancellation, if it's decided that will help! 
+		(at what place in the pathway should we do this - befroe AGC I guess?)
