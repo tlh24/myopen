@@ -1,7 +1,3 @@
-//goal: to write to the dataflash on the board, 
-// a atmel AT45DB081D
-// http://www.atmel.com/dyn/resources/prod_documents/doc3596.pdf
-// & read from it.  
 /*connections: (used to be aw-usb board, now use the parallel port, much faster! 
 pin2  D0 = _cs , chip select (active lo, pulled lo, set high to write.)
 			this is broken on the PCB - had to cut & jumper _wr & _cs together!
@@ -45,7 +41,6 @@ void write_byte(unsigned char byte){
 	//msb first. 
 	for( i=0; i < 8; i++ ){
 		clear_pin(SCLK); 
-		//clear_pin(LP_PIN06); 
 		if( (byte >> (7-i) ) & 0x1 ){
 			set_pin(SO); 
 		}else{
@@ -53,9 +48,7 @@ void write_byte(unsigned char byte){
 		}
 		//data is always clocked in on the rising edge of SCLK.
 		set_pin(SCLK); 
-		set_pin(LP_PIN06); // 50% duty cycle.
 	}
-	
 }
 unsigned char read_byte(){
 	unsigned char data = 0;
@@ -63,7 +56,7 @@ unsigned char read_byte(){
 	clear_pin(SO); 
 	
 	for(i=0; i<8; i++){
-		clear_pin(SCLK); 
+		clear_pin(SCLK);  
 		//data is latched out on the falling edge of SCLK. 
 		clear_pin(SO); //this works to delay the signal..
 		if(pin_is_set(SI))
@@ -71,13 +64,13 @@ unsigned char read_byte(){
 		if( i < 7)
 			data = data << 1; 
 		set_pin(SCLK); 
-		clear_pin(SO); //this works to delay the signal..
+		set_pin(SO); 
 	}
 	return data; 
 }
 unsigned char read_status_register(int doprint){
 	unsigned char stat; 
-	clear_pin(_CS | SCLK); 
+	//clear_pin(_CS | SCLK); 
 	write_byte(0xd7); 
 	stat= read_byte(); 
 	if(doprint) {
@@ -336,14 +329,13 @@ unsigned char read_stat_SST25(int doprint){
 	return stat; 
 }
 int sanityCheck_SST25(){
-	int good = 1; 
+	int good = 1, i; 
 	unsigned char r; 
 	//check the MFR id. 
-	clear_pin(_CS | SCLK); 
-	write_byte(0x90);
-	write_byte(0x00); 
-	write_byte(0x00);
-	write_byte(0x00);
+	clear_pin(SCLK); 
+	clear_pin(_CS); 
+	write_byte(0x90); //leaves SCLK set.
+	for(i = 0; i<3; i++) read_byte(); 
 	r = read_byte(); 
 	if(r!= 0xbf){
 		printf("sanity check: mfr id %x should be 0xbf\n", r); 
@@ -355,7 +347,7 @@ int sanityCheck_SST25(){
 		good = 0; 
 	}
 	set_pin(_CS); 
-	set_pin(SO); 
+	set_pin(SO);
 	write_enable_25(); 
 	int status = read_stat_SST25(0) & 0xcf; 
 	if(status != 0x02){ 
@@ -617,13 +609,15 @@ int main(int argv, char* argc[]){
 	clear_pin(SCLK); 
 	usleep(10000); 
 	//leave deep power down.
-	clear_pin(_CS | SCLK); 
+	clear_pin(SCLK); 
+	clear_pin(_CS); 
 	write_byte(0xBA); 
 	set_pin(_CS); 
 	set_pin(SO);
 	usleep(10000); 
-	//leave deep power down.
-	clear_pin(_CS | SCLK); 
+	//leave deep power down. (again?)
+	clear_pin(SCLK); 
+	clear_pin(_CS); 
 	write_byte(0xBA); 
 	set_pin(_CS); 
 	set_pin(SO);
@@ -638,7 +632,8 @@ int main(int argv, char* argc[]){
 		// the flash may need to be queried twice before it is ready. 
 		set_pin(_PROG); 
 		usleep(50); 
-		clear_pin(_CS | SCLK); 
+		clear_pin(SCLK); 
+		clear_pin(_CS); 
 		write_byte(0x9f); 
 		if(i == 0) disp = 1; 
 		else disp = 0; 
@@ -690,7 +685,7 @@ int main(int argv, char* argc[]){
 		}
 		i++; 
 		//this is a bit of overkill, but better not to write crap to flash! 
-		if(i > 999) printf("communication test: completed passes: %d\n",i); 
+		if(i > 999 && g_type !=3) printf("communication test: completed passes: %d\n",i); 
 		set_pin(_CS); 
 		usleep(50); 
 	}
@@ -760,26 +755,26 @@ int main(int argv, char* argc[]){
 			}
 		}
 		printf("SST25 sanity check ok\n"); 	
-
 		eraseChip_SST25(); 
 		write_all2_SST25(buffer, file_size); 
-	}
-	for(i=0; i< (file_size / page_size)+1; i++){
-		ps = file_size - i*page_size; 
-		ps = ps > page_size ? page_size : ps; 
-		if(g_type == 0){
-			printf("writing page %d size %d\n", i, ps); 
-			write_page(&(buffer[i*page_size]), ps, i);
-		}
-		if(g_type == 1 ){
-			printf("writing page %d size %d\n", i, ps); 
-			write_page_AT25(&(buffer[i*page_size]), ps, i); 
-			//while(1) verify_AT25(&(buffer[i*page_size]), ps, i); 
-			//verify_AT25(&(buffer[i*page_size]), ps, i); 
-			/*if(!verify_AT25(&(buffer[i*page_size]), ps, i)){
-				printf("page not verified, exiting.\n"); 	
-				cleanup(1); 
-			} --this is overkill, verify at the end.*/
+	} else {
+		for(i=0; i< (file_size / page_size)+1; i++){
+			ps = file_size - i*page_size; 
+			ps = ps > page_size ? page_size : ps; 
+			if(g_type == 0){
+				printf("writing page %d size %d\n", i, ps); 
+				write_page(&(buffer[i*page_size]), ps, i);
+			}
+			if(g_type == 1 ){
+				printf("writing page %d size %d\n", i, ps); 
+				write_page_AT25(&(buffer[i*page_size]), ps, i); 
+				//while(1) verify_AT25(&(buffer[i*page_size]), ps, i); 
+				//verify_AT25(&(buffer[i*page_size]), ps, i); 
+				/*if(!verify_AT25(&(buffer[i*page_size]), ps, i)){
+					printf("page not verified, exiting.\n"); 	
+					cleanup(1); 
+				} --this is overkill, verify at the end.*/
+			}
 		}
 	}
 	int ok = 1; 
