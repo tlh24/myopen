@@ -185,7 +185,7 @@ int bfin_EMAC_recv(u8** data){
 			break;
 		}
 		length -= 4; 
-		*pPORTFIO_SET = 0x10; 
+		//*pPORTFIO_SET = 0x4000; 
 		//printf_int("got a packet! length: ", length); 
 		//printf_str("\n"); 
 		*data = (u8*)(rxbuf[rxIdx]->FrmData); 
@@ -209,7 +209,7 @@ int bfin_EMAC_recv(u8** data){
 		    (volatile u8 *)(rxbuf[rxIdx]->FrmData->Dest);
 		NetReceive(NetRxPackets[rxIdx], length - 4);
 		*/
-		*pPORTFIO_CLEAR = 0x10; 
+		//*pPORTFIO_CLEAR = 0x4000; 
 		if(length > 0) return length; //otherwise we loop.  can handle other packets on next pass.
 	}
 	return length;

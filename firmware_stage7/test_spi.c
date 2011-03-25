@@ -163,7 +163,7 @@ void getRadioPacket(u16 csn, u16 irq, u8 write){
 	
 	spi_write_register(csn, NOR_STATUS, 0x70); //clear IRQ.
 	asm volatile("ssync;"); 
-	*pPORTGIO_CLEAR = csn; 
+	*FIO_CLEAR = csn; 
 	asm volatile("ssync;"); 
 	*pSPI_TDBR = 0x61; //command for reading the fifo
 	spi_delay(); //wait for this to finish. 
@@ -173,7 +173,7 @@ void getRadioPacket(u16 csn, u16 irq, u8 write){
 		spi_delay(); 
 		if(write) *ptr++ = (u8)(*pSPI_SHADOW); 
 	}
-	*pPORTGIO_SET = csn; 
+	*FIO_SET = csn; 
 	asm volatile("ssync;");
 	//need to check if the headstage wants a response.
 	if(write){
@@ -184,6 +184,7 @@ void getRadioPacket(u16 csn, u16 irq, u8 write){
 		if(((*c)&0xf) == 0xf){ //end of a frame.
 			radio_set_tx(csn, NRF_CE); //must clear CE here - essential!
 			asm volatile("ssync;"); 
+			*FIO_CLEAR = csn; 
 			*pSPI_TDBR = 0xa0; //command for writing the fifo
 			spi_delay(); //wait for this to finish. 
 			u8* ptr = g_outpkt;
@@ -193,10 +194,9 @@ void getRadioPacket(u16 csn, u16 irq, u8 write){
 			}
 			*FIO_SET = csn | NRF_CE; 
 			asm volatile("ssync;"); 
-			eth_listen(0); //this inserts a bit of (useful) delay
 			//wait for the resulting irq.
-			while(*pPORTGIO & irq){
-				asm volatile("nop;nop;"); 
+			while(*pPORTFIO & irq){
+				eth_listen(0); //this inserts a bit of (useful) delay
 			}
 			spi_write_register(csn, NOR_STATUS, 0x70); //clear IRQ.
 			radio_set_rx(csn, NRF_CE); 
@@ -204,6 +204,7 @@ void getRadioPacket(u16 csn, u16 irq, u8 write){
 		}
 	}
 	if(gotx || wrptr >= UDP_PACKET_SIZE){
+		*pPORTFIO_SET = 0x4000; 
 		spi_write_byte(csn,NOR_FLUSH_RX); //will this fix the problem of immediately syncing? 
 		data = (u32*) ( udp_packet_setup(UDP_PACKET_SIZE + 4, &result )); 
 		if(result > 0){
@@ -218,6 +219,7 @@ void getRadioPacket(u16 csn, u16 irq, u8 write){
 			// (possibly due to ARP). 
 			trptr ++; 
 		}
+		*pPORTFIO_CLEAR = 0x4000; 
 		gotx = 0; 
 		wrptr = 0; 
 	}
@@ -366,7 +368,8 @@ int main(void){
 	//enable the three radios.
 	printf_str("init radios!\n"); 
 	*FIO_CLEAR = NRF_CE; 
-	*FIO_SET = NRF_CSN0 | NRF_CSN1 | NRF_CSN2; 
+	*FIO_SET = NRF_CSN0 | NRF_CSN1 | NRF_CSN2;
+	*pPORTGIO_SET = SPI_FLASH; 
 	asm volatile("ssync;"); 
 	radio_init(NRF_CSN0, NRF_IRQ0, 0); 
 	radio_init(NRF_CSN1, NRF_IRQ1, 0); 
@@ -375,19 +378,18 @@ int main(void){
 	
 	radio_set_rx(NRF_CSN0, 0); 
 	radio_set_rx(NRF_CSN1, 0); 
-	radio_set_rx(NRF_CSN2, NRF_CE);
+	radio_set_rx(NRF_CSN2, NRF_CE); //enables RX. 
 	
 	//you have to be ready to get packets immediately after RX mode is turned on --
 	//otherwise the  fifo gets confused, and you could have 2-3 packets
 	//in the fifo but only read out one. 
 	
-	char write; 
+	char write = 1; 
 	while(1){
 		//listen for packets? (both interfaces, respond on eth)
 		eth_listen(etherr); 
 		//u8 fifostatus; 
 		//u8 status = spi_read_register_status(NOR_FIFO_STATUS, &fifostatus); 
-		write = 1; //fall-through: only write one RXed packet.
 		if((*pPORTFIO & NRF_IRQ0) == 0){
 			getRadioPacket(NRF_CSN0, NRF_IRQ0, write);
 			write = 0; 
@@ -400,9 +402,14 @@ int main(void){
 			getRadioPacket(NRF_CSN2, NRF_IRQ2, write);
 			write = 0; 
 		}
+		if((*pPORTFIO & (NRF_IRQ0 | NRF_IRQ1 | NRF_IRQ2)) == 
+			(NRF_IRQ0 | NRF_IRQ1 | NRF_IRQ2))
+			write = 1; //fall-through: only write one RXed packet.
+		
+		*FIO_SET = NRF_CSN0 | NRF_CSN1 | NRF_CSN2;
 		secs = (*pGTIME)/1000; // 0xff800800
 		if(secs != prevtime){
-			*pPORTFIO_TOGGLE = 0x8; 
+			*pPORTFIO_TOGGLE = 0x8000; 
 			//printf_int("time ", secs); //heartbeat.
 			prevtime = secs; 
 		}
