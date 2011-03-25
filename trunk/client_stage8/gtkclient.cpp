@@ -936,7 +936,7 @@ int main (int argn, char **argc)
 		strncpy(destIP, argc[1], 255); 
 		destIP[255] = 0; 
 	}else{
-		snprintf(destIP, 256, "152.16.229.37"); 
+		snprintf(destIP, 256, "152.16.229.50"); 
 	}
 	
 	pthread_t thread1;
