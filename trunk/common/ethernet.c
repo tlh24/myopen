@@ -277,7 +277,7 @@ int bfin_EMAC_init( ){
 	NetSubnetMask = 0; 
 	NetOurIP = FormatIPAddress(192, 168, 0, 9); //defaults, overwritten by dhcp
 	NetDestIP = FormatIPAddress(192, 168, 0, 1); 
-	NetDataDestIP = FormatIPAddress(152, 16, 229, 19); 
+	NetDataDestIP = FormatIPAddress(152, 16, 229, 54); 
 	TcpState = TCP_LISTEN; 
 	TcpSeqClient = 0; 
 	TcpSeqHost = 0x09da24b5; 
