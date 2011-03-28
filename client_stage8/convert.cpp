@@ -8,9 +8,9 @@
 #include <matio.h>
 
 typedef struct {
-	char data[27]; 
-	unsigned char flag; 
-	unsigned int exceeded; 
+	char data[28]; //7 samples of 4 different channels. 
+	unsigned short flag; // high nibble: present channel; low: packet # in frame.
+	unsigned short exceeded; //goes over twice per frame. 8*16 = 128.
 } packet; 
 
 int main (int argn, char **argc){

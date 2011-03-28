@@ -30,3 +30,16 @@ Software:
 		Therefore only set write to one when all radios are serviced? 
 		woohoo looks like antenna diversity is working! yay.
 		now need to check on the thresholding. 
+	thresholding: why no work? 
+		deal: need to test with *actual* signals, not just noise.
+		behavior: changing the channel works. 
+		setting the threshold makes the threshold crossings more realistic. 
+			changing the threshold seems to not change threshold crossing density.
+		changing the channel subsequently reverts threshold channel display.
+		aright, that's fixed - pointer wrap issue.
+		now the problem is that the display is fruitcaked. as in, caked in fruit.
+		spikes are not aligned with threshold crossings. 
+		breaking down the issue further, fixed the channel ordering problem; 
+		now it seems that the order of thresold crossings in the spike display 
+		is inverted per 32 channels. 
+		that would be because that's the way it is in the schematic! 
