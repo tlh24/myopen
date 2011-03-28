@@ -214,13 +214,13 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		cgSetParameter1f(myCgVertexParam_xzoom, g_rasterZoom);
 		
 		//glPushMatrix();
-		//glScalef(1.f, 0.5f, 1.f); //don't think this does anythang.
+		//glScalef(1.f, 0.5f, 1.f); //don't think this does anythaaang.
 		//glTranslatef(0.f,0.5f, 0.f); 
 		
 		//draw zero lines for the 4 continuous channels.
 		for(int k=0; k<4; k++){
 			glBegin(GL_LINES); 
-			glColor4f(0.f, 0.5, 1.f, 0.75);
+			glColor4f(0.f, 0.5, 1.f, 0.75); //blue
 			glVertex3f( -1.f, (float)(k*2+1)/8.f, 0.f);
 			glVertex3f( 1.f, (float)(k*2+1)/8.f, 0.f); 
 			glColor4f(0.f, 1.f, 0.7f, 0.75);
@@ -230,7 +230,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		}
 		//continuous waveform drawing.. 
 		for(int k=0; k<4;k++){
-			cgSetParameter1f(myCgVertexParam_yoffset, (3-k)/4.f);
+			cgSetParameter1f(myCgVertexParam_yoffset, (3+(k-3))/4.f);
 			cgGLBindProgram(myCgVertexProgram[0]);
 			checkForCgError("binding vertex program");
 			cgGLEnableProfile(myCgVertexProfile);
@@ -722,7 +722,7 @@ void* sock_thread(void* destIP){
 				//see if it exceeded threshold.
 				float z = 0; 
 				g_headch = (p->flag) >> 4 ; 
-				int exch = p->flag & 7; //transmit twice
+				int exch = p->flag & 7; //n.b. transmit twice
 				g_exceeded[exch] = p->exceeded; 
 				// 7 samples / packet, 31.25ksps = 4464 pkts/sec, 0.224ms/pkt (558 frames/sec)
 				double time = rxtime - ((double)(npack-i)-0.5) * 0.000224; 
