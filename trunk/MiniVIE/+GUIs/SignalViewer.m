@@ -111,8 +111,8 @@ classdef SignalViewer < Common.MiniVieObj
                     xlabel(obj.hg.Axes(1),'Time (s)');
                     ylabel(obj.hg.Axes(1),'MAV');
                     ylabel(obj.hg.Axes(2),'LEN');
-                    ylabel(obj.hg.Axes(3),'SSC');
-                    ylabel(obj.hg.Axes(4),'ZC');
+                    ylabel(obj.hg.Axes(3),'ZC');
+                    ylabel(obj.hg.Axes(4),'SSC');
                     obj.updateFeatures();
                 case GUIs.SignalViewer.TimeDomain
                     setAxesVisible(obj.hg.Axes(1),'on');
