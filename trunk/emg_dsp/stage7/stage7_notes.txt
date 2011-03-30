@@ -43,3 +43,4 @@ Software:
 		now it seems that the order of thresold crossings in the spike display 
 		is inverted per 32 channels. 
 		that would be because that's the way it is in the schematic! 
+	need to test by setting channels to oscillate (sinusoid)

@@ -61,7 +61,7 @@ int g_channel = 0;
 int g_headch = 0; 
 int g_oldheadch = 100; 
 bool g_out = false; 
-unsigned short g_exceeded[8] = {0,0,0,0,0,0,0,0}; 
+unsigned char g_exceeded[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}; 
 int g_thresh = 16000; 
 float g_gains[128]; //per-channel gains.
 FILE* g_saveFile = 0; 
@@ -78,8 +78,8 @@ int g_totalPackets = 0;
 
 typedef struct {
 	char data[28]; //in groups of 4 channels, e.g. 0,32,64,96
-	unsigned short flag; 
-	unsigned short exceeded; //this varies between frame.
+	unsigned char flag; 
+	unsigned char exceed[3]; //from a little-endian proc should be ok.
 } packet; 
 
 enum MODES {
@@ -507,6 +507,7 @@ void updateGain(int chan){
 		and the biquads are arranged as: 
 		low1 high1 low2 high2
 		only can adjust the B coefs of the lowpass filters, though.
+		(the highpass coefs are maxed out)
 		all emitted numbers are base 14.(s2rnd flag)
 	*/
 	chan = chan & (0xff ^ 32); //map to the lower channels. 
@@ -528,7 +529,7 @@ void updateGain(int chan){
 		b[i] = b[i] < -32768.f ? -32768.f : b[i];
 		b[i] = b[i] > 32767.f ? 32767.f : b[i]; 
 	}
-	//calculate the actual gain. 
+	//calculate the actual gain. assume static gain = 1
 	again1 = 
 		((b[0]/(lowpass_coefs[0]*16384.f) +
 			b[2]/(lowpass_coefs[1]*16384.f))/2.f) * 
@@ -546,10 +547,11 @@ void updateGain(int chan){
 	unsigned int* ptr = g_sendbuf; 
 	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
 	for(i=0; i<4; i++){
+		//remember, chan mapped to 0-31 & 64-95 (above)
 		unsigned int p = (chan & 63)*2; 
 		if(chan >= 64) p += 1; //chs 64-127 pocessed following 0-63.
-		ptr[i*2+0] = htonl(W1 + (p*19 + indx2[i] + 2)*4);
-			//+2 b/c have integrator coefs
+		ptr[i*2+0] = htonl(A1 + (p*20 + indx2[i] + 4)*4);
+			//+4 b/c have integrator, AGC coefs
 		j = (int)(b[i*2+0]);
 		k = (int)(b[i*2+1]);
 		u = (unsigned int)((j&0xffff) | ((k&0xffff)<<16)); 
@@ -558,18 +560,22 @@ void updateGain(int chan){
 	g_sendW++; 
 }
 void setOsc(int chan){
-	//turn two channels e.g. 0 and 16 into oscillators.
+	//turn two channels e.g. 0 and 32 into oscillators.
 	float b[4]; 
 	unsigned int u; 
 	int i,j; 
 	b[0] = 0.f; //assume there is already energy in the 
 	b[1] = 0.f; //delay line.
-	b[2] = 32768.f - 10; //should be about 250Hz @ fs = 62.5khz
+	b[2] = 32768.f - 10; //10 -> should be about 250Hz @ fs = 62.5khz
 	b[3] = -16384.f; 
 	unsigned int* ptr = g_sendbuf; 
 	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
+	chan = chan & (0xff ^ 32); //map to the lower channels. 
+		// e.g. 42 -> 10,42; 67 -> 67,99 ; 100 -> 68,100
 	for(i=0; i<4; i++){
-		ptr[i*2+0] = htonl(W1 + 8 + (chan*18 + 3*4 + i)*4);
+		unsigned int p = (chan & 63)*2; 
+		if(chan >= 64) p += 1; //chs 64-127 pocessed following 0-63.
+		ptr[i*2+0] = htonl(A1 + (p*20 + 12 + i + 4)*4);
 		j = (int)(b[i]);
 		u = (unsigned int)((j&0xffff) | ((j&0xffff)<<16)); 
 		ptr[i*2+1] = htonl(u); 
@@ -612,7 +618,7 @@ void setBiquad(int chan, float* biquad, int biquadNum){
 	}
 	for(i=0; i<2; i++){
 		b[i*2+0] = biquad[i]*gain1*16384.f; //B coefs
-		b[i*2+1] = biquad[i]*gain2*16384.f; //lo and hi
+		b[i*2+1] = biquad[i]*gain2*16384.f; //lo and hi, respectively
 	}
 	for(i=2; i<4; i++){
 		b[i*2+0] = biquad[i]*16384.f;
@@ -632,7 +638,7 @@ void setBiquad(int chan, float* biquad, int biquadNum){
 	for(i=0; i<4; i++){
 		unsigned int p = (chan & 63)*2; 
 		if(chan >= 64) p += 1; //chs 64-127 pocessed following 0-63.
-		ptr[i*2+0] = htonl(W1 + (p*19 + biquadNum*4 + i + 2)*4);
+		ptr[i*2+0] = htonl(A1 + (p*20 + biquadNum*4 + i + 4)*4);
 		j = (int)(b[i*2+0]);
 		k = (int)(b[i*2+1]);
 		u = (unsigned int)((j&0xffff) | ((k&0xffff)<<16)); 
@@ -722,25 +728,31 @@ void* sock_thread(void* destIP){
 				//see if it exceeded threshold.
 				float z = 0; 
 				g_headch = (p->flag) >> 4 ; 
-				int exch = p->flag & 7; //n.b. transmit twice
-				g_exceeded[exch] = p->exceeded; 
+				int exch = p->flag & 15;
+				//mapping: 0 -> 0,1,2 ; 1 -> 3,4,5 ; 2 -> 6,7,8 etc!
+				//total of 16 bytes. 
 				// 7 samples / packet, 31.25ksps = 4464 pkts/sec, 0.224ms/pkt (558 frames/sec)
 				double time = rxtime - ((double)(npack-i)-0.5) * 0.000224; 
-				for(int j=0; j<16; j++){
-					int ch = exch*16 + j; 
-					if(g_exceeded[exch] & (0x1 << j)){
-						int w = g_sbufW % (sizeof(g_sbuf)/8); 
-						g_sbuf[w*2+0] = (float)time; 
-						g_sbuf[w*2+1] = (float)ch; 
-						g_sbufW ++; 
+				//printf("flag %02x (%d) exceeded %02x %02x %02x\n", 
+				//	   p->flag, (exch*3)%16, p->exceed[0], p->exceed[1], p->exceed[2]); 
+				for(int j=0; j<3; j++){
+					g_exceeded[(exch*3+j)%16] = p->exceed[j]; 
+					for(int k=0; k<8; k++){
+						if(p->exceed[j] & (1 << k)){
+							int w = g_sbufW % (sizeof(g_sbuf)/8); 
+							int ch = ((exch*3+j)%16)*8 + k; 
+							g_sbuf[w*2+0] = (float)time; 
+							g_sbuf[w*2+1] = (float)ch; 
+							g_sbufW ++; 
+						}
 					}
 				}
 				unsigned int bit = 0; 
 				for(int j=0; j<7; j++){
 					for(int k=0; k<4; k++){
 						char samp = p->data[j*4+k]; 
-						int ch = g_headch + k*32;
-						bit = (g_exceeded[ch/16]) >> (ch & 15); 
+						int ch = (g_channel & 31) + k*32;
+						bit = (g_exceeded[ch/8]) & (0x1 << (ch & 7)) ; 
 						z = 0.f; if(bit) z = 1.f; 
 						g_fbuf[k][(g_fbufW % NSAMP)*3 + 1] = (float)samp / 128.f;
 						g_fbuf[k][(g_fbufW % NSAMP)*3 + 2] = z;
@@ -751,7 +763,7 @@ void* sock_thread(void* destIP){
 				}
 				p++; 
 				if(g_mode == MODE_SPIKES){
-					bit = (g_exceeded[g_channel/16]) >> (g_channel & 15); 
+					bit = (g_exceeded[g_channel/8]) >> (g_channel & 7); 
 					if(prevExceed){
 						//look back through the past 27 samples, select the largest.
 						float max = -100.f; 
@@ -839,23 +851,27 @@ static void channelSpinCB( GtkAdjustment*, gpointer ){
 		setChan(); 
 	}
 }
+void updateGainLabel(int ch){
+	char str[256]; 
+	ch = ch % 32; 
+	snprintf(str, 256, "%d g: %d,%d,%d,%d", ch, 
+			 (int)g_gains[ch],(int)g_gains[ch+32],
+			 (int)g_gains[ch+64],(int)g_gains[ch+96]); 
+	gtk_label_set_text(GTK_LABEL(g_gainlabel[ch]), str);
+}
 static void gainSpinCB( GtkAdjustment*, gpointer ){
 	float gain = gtk_adjustment_get_value(g_gainSpin); 
 	printf("gainSpinCB: %f\n", gain); 
 	g_gains[g_channel] = gain; 
 	updateGain(g_channel);  
-	char str[256]; 
-	snprintf(str, 256, "%d gain: %.2f", g_channel, gain); 
-	gtk_label_set_text(GTK_LABEL(g_gainlabel[g_channel]), str);
+	updateGainLabel(g_channel);  
 }
 static void gainSetAll(gpointer ){
 	float gain = gtk_adjustment_get_value(g_gainSpin); 
-	for(int i=0; i<32; i++){
+	for(int i=0; i<128; i++){
 		g_gains[i] = gain;
 		updateGain(i);
-		char str[256]; 
-		snprintf(str, 256, "%d gain: %.2f", i, gain); 
-		gtk_label_set_text(GTK_LABEL(g_gainlabel[i]), str);
+		updateGainLabel(i);  
 	}
 }
 static void thresholdSpinCB( GtkAdjustment*, gpointer ){
@@ -868,11 +884,13 @@ static void modeRadioCB(GtkWidget *, gpointer * data){
 	if(*ptr == 'r') g_mode = MODE_RASTERS;
 	else g_mode = MODE_SPIKES; 
 }
-static void filterRadioCB(GtkWidget *, gpointer * data){
-	char* ptr = (char*)data; 
-	if(*ptr == 'o') setOsc(g_channel); 
-	else if(*ptr == 'f') setFlat(g_channel); 
-	else resetBiquads(g_channel); 
+static void filterRadioCB(GtkWidget *button, gpointer * data){
+	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))){
+		char* ptr = (char*)data; 
+		if(*ptr == 'o') setOsc(g_channel); 
+		else if(*ptr == 'f') setFlat(g_channel); 
+		else resetBiquads(g_channel); 
+	}
 }
 static void pauseButtonCB(GtkWidget *button, gpointer * ){
 	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
