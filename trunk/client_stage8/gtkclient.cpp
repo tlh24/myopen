@@ -13,7 +13,10 @@
 
 #include <gtk/gtk.h>
 #include <gtk/gtkgl.h>
-#include <GL/gl.h>
+#include <GL/glut.h>    // Header File For The GLUT Library 
+#include <GL/gl.h>	// Header File For The OpenGL32 Library
+#include <GL/glu.h>	// Header File For The GLu32 Library
+#include <GL/glx.h>     // Header file fot the glx libraries.
 #include "glext.h"
 #include "glInfo.h"  
 
@@ -49,6 +52,7 @@ static float 	g_wbuf[2][3*34*NDISPW]; //32 samps / waveform + 2 endpoints
 unsigned int	g_wbufW[2]; 
 unsigned int	g_wbufR[2]; 
 GLuint			g_wvbo[2]; 
+GLuint 			base;            // base display list for the font set.
 unsigned int*	g_sendbuf; 
 unsigned int g_sendW; //where to write to (in 32-byte increments)
 unsigned int g_sendR; //where to read from
@@ -58,8 +62,9 @@ double g_pause = -1.0;
 double g_rasterZoom = 1.0; 
 bool g_cycle = false;
 int g_channel[4] = {0,32,64,96}; 
-int g_headch = 0; 
-int g_oldheadch = 100; 
+unsigned int g_echo = 0; 
+unsigned int g_headecho = 0; 
+unsigned int g_oldheadecho = 100; 
 bool g_out = false; 
 unsigned char g_exceeded[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}; 
 unsigned int g_bitdelay = 0;
@@ -146,6 +151,59 @@ void copyData(GLuint vbo, u32 sta, u32 fin, float* ptr, int stride){
 	glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, sta*4, (fin-sta)*4, (GLvoid*)ptr);
 }
 
+void BuildFont(void) {
+    Display *dpy;
+    XFontStruct *fontInfo;  // storage for our font.
+
+    base = glGenLists(96);                      // storage for 96 characters.
+    
+    // load the font.  what fonts any of you have is going
+    // to be system dependent, but on my system they are
+    // in /usr/X11R6/lib/X11/fonts/*, with fonts.alias and
+    // fonts.dir explaining what fonts the .pcf.gz files
+    // are.  in any case, one of these 2 fonts should be
+    // on your system...or you won't see any text.
+    
+    // get the current display.  This opens a second
+    // connection to the display in the DISPLAY environment
+    // value, and will be around only long enough to load 
+    // the font. 
+    dpy = XOpenDisplay(NULL); // default to DISPLAY env.   
+    fontInfo = XLoadQueryFont(dpy, "-adobe-helvetica-medium-r-normal--18-*-*-*-p-*-iso8859-1");
+    if (fontInfo == NULL) {
+		fontInfo = XLoadQueryFont(dpy, "fixed");
+		if (fontInfo == NULL) {
+			printf("no X font available?\n");
+		}
+    }
+    // after loading this font info, this would probably be the time
+    // to rotate, scale, or otherwise twink your fonts.  
+
+    // start at character 32 (space), get 96 characters (a few characters past z), and
+    // store them starting at base.
+    glXUseXFont(fontInfo->fid, 32, 96, base);
+
+    // free that font's info now that we've got the 
+    // display lists.
+    XFreeFont(dpy, fontInfo);
+
+    // close down the 2nd display connection.
+    XCloseDisplay(dpy);
+}
+void KillFont(void){
+    glDeleteLists(base, 96);                    // delete all 96 characters.
+}
+void glPrint(char *text){                    // custom gl print routine.
+    if (text == NULL) {                         // if there's no text, do nothing.
+		return;
+    }
+    glPushAttrib(GL_LIST_BIT);                  // alert that we're about to offset the display lists with glListBase
+    glListBase(base - 32);                      // sets the base character to 32.
+
+    glCallLists(strlen(text), GL_UNSIGNED_BYTE, text); // draws the display list text.
+    glPopAttrib();                              // undoes the glPushAttrib(GL_LIST_BIT);
+}
+
 static gboolean
 expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 {
@@ -211,7 +269,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 	
 	float t = (float)gettime(); 
 	if(g_pause > 0.0) t = g_pause; 
-	
+
 	if(g_mode == MODE_RASTERS){
 		cgSetParameter1f(myCgVertexParam_xzoom, g_rasterZoom);
 		
@@ -229,6 +287,14 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 			glVertex3f( -1.f, (float)(k*2)/8.f, 0.f);
 			glVertex3f( 1.f, (float)(k*2)/8.f, 0.f); 
 			glEnd(); 
+			//labels.
+			glColor4f (1., 1., 1., 0.5);
+			glTranslatef(0.0f, 0.0f, -0.5f);
+			glRasterPos2f(-0.99f, (float)(k*2)/8.f);
+			char buf[4] = {0,0,0,0}; 
+			buf[0] = 'A' + k; 
+			glPrint(buf);
+			glTranslatef(0.0f, 0.0f,0.5f);
 		}
 		//continuous waveform drawing.. 
 		for(int k=0; k<4;k++){
@@ -249,10 +315,16 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		
 		//draw threshold. 
 		glBegin(GL_LINE_STRIP); 
-		glColor4f (1., 0., 0., 0.5);
+		glColor4f (1., 1., 1., 0.5);
 		glVertex3f( -1.f, 0.5f+g_thresh/(256.f*128.f), 0.f);
 		glVertex3f( 1.f, 0.5f+g_thresh/(256.f*128.f), 0.f); 
 		glEnd(); 
+		
+		//label text? 
+		// Position The Text On The Screen
+		float z = (float)rand()/RAND_MAX; 
+		z -= 0.5; 
+		z *= 2; 
 
 		//glPopMatrix ();
 		
@@ -339,11 +411,14 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 	glViewport (0, 0, da->allocation.width, da->allocation.height);
 	/*printf("allocation.width %d allocation_height %d\n", 
 		da->allocation.width, da->allocation.height); */
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
 	glOrtho (-1,1,-1,1,0,1);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glMatrixMode(GL_MODELVIEW);
+  	glLoadIdentity();
 
-	//glScalef (10., 10., 10.); //this nixes glOrtho above.
 	if(!g_vbo1Init){ //start it up!
 		//start up Cg first.(glInfo seems to trample some structures)
 		myCgContext = cgCreateContext();
@@ -455,8 +530,9 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 			glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, 
 				0, sizeof(g_wbuf[k]), g_wbuf[k]);
 		}
-		
 	}
+	BuildFont(); //so we're in the right context? 
+	
 	gdk_gl_drawable_gl_end (gldrawable);
 
 	return TRUE;
@@ -464,7 +540,7 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 
 //global labels.. 
 GtkWidget* g_gainlabel[16];
-GtkWidget* g_headchLabel;
+GtkWidget* g_headechoLabel;
 GtkAdjustment* g_channelSpin[4];
 GtkAdjustment* g_gainSpin; 
 GtkAdjustment* g_thresholdSpin; 
@@ -477,13 +553,15 @@ static gboolean rotate (gpointer user_data){
 	gdk_window_invalidate_rect (da->window, &da->allocation, FALSE);
 	gdk_window_process_updates (da->window, FALSE);
 	char str[256]; 
-	if(g_headch != g_oldheadch){
-		printf("g_headch %d\n", g_headch); 
-		snprintf(str, 256, "headch: %d", g_headch); 
-		gtk_label_set_text(GTK_LABEL(g_headchLabel), str); //works!
-		g_oldheadch = g_headch; 
+	if(g_oldheadecho != g_headecho){
+		if(g_headecho != ((g_echo-1) & 0xf))
+			snprintf(str, 256, "headecho:%d (ASYNC)", g_headecho); 
+		else
+			snprintf(str, 256, "headecho:%d (sync)", g_headecho); 
+		gtk_label_set_text(GTK_LABEL(g_headechoLabel), str); //works!
+		g_oldheadecho = g_headecho; 
 		//update the packets/sec label too
-		snprintf(str, 256, " pkts/sec: %.2f", (double)g_totalPackets/gettime()); 
+		snprintf(str, 256, "pkts/sec: %.2f", (double)g_totalPackets/gettime()); 
 		gtk_label_set_text(GTK_LABEL(g_pktpsLabel), str); //works!
 	}
 	snprintf(str, 256, "%.2f MB", (double)g_saveFileBytes/1e6); 
@@ -505,7 +583,17 @@ void destroy(GtkWidget *, gpointer){
 	sleep(1); 
 	gtk_main_quit(); 
 }
-
+void sendEcho(){
+	//need some way of knowing that the headstage RXed the command.
+	unsigned int* ptr = g_sendbuf; 
+	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
+	for(int i=0; i<4; i++){
+		ptr[i*2+0] = htonl(FP_BASE - FP_ECHO);
+		ptr[i*2+1] = htonl((g_echo << 4) & 0xf0); 
+	}
+	g_sendW++; 
+	g_echo++; 
+}
 void updateGain(int chan){
 	/* remember, channels 0 and 32 are filtered at the same time. 
 		then 64 and 96
@@ -563,6 +651,7 @@ void updateGain(int chan){
 		ptr[i*2+1] = htonl(u); 
 	}
 	g_sendW++; 
+	sendEcho(); 
 }
 void setOsc(int chan){
 	//turn two channels e.g. 0 and 32 into oscillators.
@@ -586,6 +675,7 @@ void setOsc(int chan){
 		ptr[i*2+1] = htonl(u); 
 	}
 	g_sendW++; 
+	sendEcho(); 
 }
 void setChans(){
 	int i; 
@@ -602,6 +692,7 @@ void setChans(){
 		ptr[i*2+1] = htonl(W1 + o1 + o2 + o3 + 40 + 1); //1 is for little-endian.
 	}
 	g_sendW++; 	
+	sendEcho(); 
 }
 void setThresh(){
 	int i; 
@@ -609,10 +700,13 @@ void setThresh(){
 	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt. (32 byte packets)
 	ptr[0] = htonl(FP_BASE - FP_THRESH); //frame pointer
 	ptr[1] = htonl(g_thresh/2); //see r4 >>> 1 (v) in radio4.asm
-	for(i=2; i<8; i++){
-		ptr[i] = 0xa5b4c3d1; 
+	//also send the echo!
+	for(i=1; i<4; i++){
+		ptr[i*2+0] = htonl(FP_BASE - FP_ECHO);
+		ptr[i*2+1] = htonl((g_echo << 4) & 0xf0); 
 	}
-	g_sendW++; 	
+	g_sendW++;
+	g_echo++; 
 }
 void setBiquad(int chan, float* biquad, int biquadNum){
 	// biquad num 0 or 1
@@ -660,6 +754,7 @@ void setBiquad(int chan, float* biquad, int biquadNum){
 		ptr[i*2+1] = htonl(u); 
 	}
 	g_sendW++; 
+	sendEcho(); 
 }
 void resetBiquads(int chan){
 	//reset all coefs in two channels.
@@ -719,7 +814,7 @@ void* sock_thread(void* destIP){
 				//will have to convert them with another prog later.
 				unsigned int tmp = 0xdecafbad; 
 				fwrite((void*)&tmp, 4, 1, g_saveFile);
-				tmp = 434; //SVN version.
+				tmp = 498; //SVN version.
 				tmp <<= 16; 
 				tmp += n; //size of the ensuing packet data. 
 				fwrite((void*)&tmp, 4, 1, g_saveFile);
@@ -737,7 +832,7 @@ void* sock_thread(void* destIP){
 			for(int i=0; i<npack && g_pause <=0.0; i++){
 				//see if it exceeded threshold.
 				float z = 0; 
-				g_headch = (p->flag) >> 4 ; 
+				g_headecho = ((p->flag) >> 4) & 0xf ; 
 				int exch = p->flag & 15;
 				//mapping: 0 -> 0,1,2 ; 1 -> 3,4,5 ; 2 -> 6,7,8 etc!
 				//total of 16 bytes. 
@@ -824,10 +919,11 @@ void* sock_thread(void* destIP){
 		if(g_sendR < g_sendW && n > 0){
 			//send one command packet for every 3 RXed frame -- 
 			// this allows 3 duplicate transmits from bridge to headstage of 
-			// each command packet.  redundancy = safety. 
+			// each command packet.  redundancy = safety = good.
 			if( send_delay >= 2 ){
 				send_delay = 0; 
 				printf("sending message to bridge ..\n"); 
+				double txtime = gettime(); 
 				unsigned int* ptr = g_sendbuf; 
 				ptr += (g_sendR % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
 				n = sendto(g_txsock,ptr,32,0, 
@@ -836,6 +932,19 @@ void* sock_thread(void* destIP){
 					printf("failed to send a message to bridge.\n"); 
 				else
 					g_sendR++;
+				//save the command in the file, too, so we can reconstruct it later.
+				if(g_saveFile){
+					unsigned int tmp = 0xc0edfad0; 
+					fwrite((void*)&tmp, 4, 1, g_saveFile);
+					tmp = 498; //SVN version.
+					tmp <<= 16; 
+					n = 32; //bytes to send.
+					tmp += n; //size of the ensuing packet data. 
+					fwrite((void*)&tmp, 4, 1, g_saveFile);
+					fwrite((void*)&txtime, 8, 1, g_saveFile); 
+					fwrite((void*)ptr,n,1,g_saveFile);
+					g_saveFileBytes += 16 + n;
+				}
 			} else {
 				send_delay++; 
 			}
@@ -996,6 +1105,7 @@ int main (int argn, char **argc)
 	da1 = gtk_drawing_area_new ();
 	gtk_widget_set_size_request(GTK_WIDGET(da1), 640, 650);
 
+
 	/* Create a 2x2 table */
 	//table = gtk_table_new (2, 2, TRUE);
 	paned = gtk_hpaned_new(); 
@@ -1017,11 +1127,11 @@ int main (int argn, char **argc)
 	}
 
 	//add in a headstage channel # label
-	bx = gtk_hbox_new (FALSE, 2);
-	g_headchLabel = gtk_label_new ("headch: 0");
-	gtk_misc_set_alignment (GTK_MISC (g_headchLabel), 0, 0);
-	gtk_box_pack_start (GTK_BOX (bx), g_headchLabel, FALSE, FALSE, 0);
-	gtk_widget_show(g_headchLabel); 
+	bx = gtk_vbox_new (FALSE, 2);
+	g_headechoLabel = gtk_label_new ("headch: 0");
+	gtk_misc_set_alignment (GTK_MISC (g_headechoLabel), 0, 0);
+	gtk_box_pack_start (GTK_BOX (bx), g_headechoLabel, FALSE, FALSE, 0);
+	gtk_widget_show(g_headechoLabel); 
 	//add in a packets/second label
 	g_pktpsLabel = gtk_label_new ("packets/sec");
 	gtk_misc_set_alignment (GTK_MISC (g_pktpsLabel), 0, 0);
@@ -1266,4 +1376,5 @@ int main (int argn, char **argc)
 	g_timeout_add(2000, chanscan, (gpointer)0);
 
 	gtk_main ();
+	KillFont(); 
 }
