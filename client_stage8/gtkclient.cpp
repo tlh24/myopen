@@ -57,6 +57,7 @@ unsigned int*	g_sendbuf;
 unsigned int g_sendW; //where to write to (in 32-byte increments)
 unsigned int g_sendR; //where to read from
 unsigned int g_sendL; //the length of the buffer (in 32-byte packets)
+float		g_viewportSize[2] = {640, 480}; //width, height.
 bool g_die = false; 
 double g_pause = -1.0;
 double g_rasterZoom = 1.0; 
@@ -169,7 +170,7 @@ void BuildFont(void) {
     // value, and will be around only long enough to load 
     // the font. 
     dpy = XOpenDisplay(NULL); // default to DISPLAY env.   
-    fontInfo = XLoadQueryFont(dpy, "-adobe-helvetica-medium-r-normal--18-*-*-*-p-*-iso8859-1");
+    fontInfo = XLoadQueryFont(dpy, "-adobe-helvetica-medium-r-normal--14-*-*-*-p-*-iso8859-1");
     if (fontInfo == NULL) {
 		fontInfo = XLoadQueryFont(dpy, "fixed");
 		if (fontInfo == NULL) {
@@ -280,25 +281,30 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		//draw zero lines for the 4 continuous channels.
 		for(int k=0; k<4; k++){
 			glBegin(GL_LINES); 
-			glColor4f(0.f, 0.5, 1.f, 0.75); //blue
-			glVertex3f( -1.f, (float)(k*2+1)/8.f, 0.f);
-			glVertex3f( 1.f, (float)(k*2+1)/8.f, 0.f); 
-			glColor4f(0.f, 1.f, 0.7f, 0.75);
-			glVertex3f( -1.f, (float)(k*2)/8.f, 0.f);
-			glVertex3f( 1.f, (float)(k*2)/8.f, 0.f); 
+			glColor4f(0.f, 0.5, 1.f, 0.75); //blue, center line
+			glVertex3f( -1.f, (float)((3-k)*2+1)/8.f, 0.f);
+			glVertex3f( 1.f, (float)((3-k)*2+1)/8.f, 0.f); 
+			glColor4f(0.f, 0.8f, 0.75f, 0.5);//green, edge lines
+			glVertex3f( -1.f, (float)((3-k)*2)/8.f, 0.f);
+			glVertex3f( 1.f, (float)((3-k)*2)/8.f, 0.f); 
+				//draw threshold. 
+			glColor4f (1., 0.0f, 0.0f, 0.35);
+			float y = (float)((3-k)*2+1)/8.f + g_thresh/(256.f*128.f*8.f); 
+			glVertex3f(-1.f, y, 0.f);
+			glVertex3f( 1.f, y, 0.f);
 			glEnd(); 
 			//labels.
-			glColor4f (1., 1., 1., 0.5);
-			glTranslatef(0.0f, 0.0f, -0.5f);
-			glRasterPos2f(-0.99f, (float)(k*2)/8.f);
-			char buf[4] = {0,0,0,0}; 
-			buf[0] = 'A' + k; 
+			glColor4f(0.f, 0.8f, 0.75f, 0.5);
+			glRasterPos2f(-1.f, (float)((3-k)*2)/8.f + 
+				2.f*2.f/g_viewportSize[1]); //2 pixels vertical offset.
+				//kearning is from the lower right hand corner.
+			char buf[128] = {0,0,0,0}; 
+			snprintf(buf, 128, "%c %d", 'A'+k, g_channel[k]); 
 			glPrint(buf);
-			glTranslatef(0.0f, 0.0f,0.5f);
 		}
 		//continuous waveform drawing.. 
 		for(int k=0; k<4;k++){
-			cgSetParameter1f(myCgVertexParam_yoffset, (3+(k-3))/4.f);
+			cgSetParameter1f(myCgVertexParam_yoffset, (3-k)/4.f);
 			cgGLBindProgram(myCgVertexProgram[0]);
 			checkForCgError("binding vertex program");
 			cgGLEnableProfile(myCgVertexProfile);
@@ -312,27 +318,14 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		}
 		//see glDrawElements for indexed arrays
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
-		
-		//draw threshold. 
-		glBegin(GL_LINE_STRIP); 
-		glColor4f (1., 1., 1., 0.5);
-		glVertex3f( -1.f, 0.5f+g_thresh/(256.f*128.f), 0.f);
-		glVertex3f( 1.f, 0.5f+g_thresh/(256.f*128.f), 0.f); 
-		glEnd(); 
-		
-		//label text? 
-		// Position The Text On The Screen
-		float z = (float)rand()/RAND_MAX; 
-		z -= 0.5; 
-		z *= 2; 
 
 		//glPopMatrix ();
 		
 		//rasters
 		glPushMatrix();
-		float scl = 0.5*g_rasterZoom; 
-		glScalef(-1.f*scl, 1.f/128.f, 1.f); 
-		glTranslatef((1.f/scl - t), -128.f, 0.f); 
+		float scl = 0.5*g_rasterZoom;
+		glScalef(-1.f*scl, -1.f/130.f, 1.f); 
+		glTranslatef((1.f/scl - t), 1.f, 0.f); 
 
 		glShadeModel(GL_FLAT);
 		
@@ -346,12 +339,20 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		
 		glPopMatrix ();
 		//draw current channel
-		for(int i=0; i<4; i++){
+		for(int k=0; k<4; k++){
 			glBegin(GL_LINE_STRIP); 
 			glColor4f (1., 0., 0., 0.5);
-			glVertex3f( -1.f, (float)(128-g_channel[i])/-128.f, 0.f);
-			glVertex3f( 1.f, (float)(128-g_channel[i])/-128.f, 0.f); 
+			float y = (float)(1+g_channel[k])/-130.f; 
+			glVertex3f( -1.f, y, 0.f);
+			glVertex3f( 1.f, y, 0.f); 
 			glEnd(); 
+			//labels.
+			glRasterPos2f(1.f - 2.f*35.f/g_viewportSize[1], 
+						y+ 2.f*2.f/g_viewportSize[1]); //2 pixels vertical offset.
+				//kearning is from the lower right hand corner.
+			char buf[128] = {0,0,0,0}; 
+			snprintf(buf, 128, "%c %d", 'A'+k, g_channel[k]); 
+			glPrint(buf);
 		}
 		//end VBO
 	}
@@ -409,6 +410,8 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 
 	glLoadIdentity();
 	glViewport (0, 0, da->allocation.width, da->allocation.height);
+	g_viewportSize[0] = (float)da->allocation.width;
+	g_viewportSize[1] = (float)da->allocation.height; 
 	/*printf("allocation.width %d allocation_height %d\n", 
 		da->allocation.width, da->allocation.height); */
 	glMatrixMode(GL_PROJECTION);
@@ -922,7 +925,7 @@ void* sock_thread(void* destIP){
 			// each command packet.  redundancy = safety = good.
 			if( send_delay >= 2 ){
 				send_delay = 0; 
-				printf("sending message to bridge ..\n"); 
+				//printf("sending message to bridge ..\n"); 
 				double txtime = gettime(); 
 				unsigned int* ptr = g_sendbuf; 
 				ptr += (g_sendR % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
