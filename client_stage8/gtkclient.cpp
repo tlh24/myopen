@@ -57,6 +57,9 @@ unsigned int*	g_sendbuf;
 unsigned int g_sendW; //where to write to (in 32-byte increments)
 unsigned int g_sendR; //where to read from
 unsigned int g_sendL; //the length of the buffer (in 32-byte packets)
+char		g_messages[1024][128]; //save these, plaintext, in the file.
+unsigned int g_messW;
+unsigned int g_messR; 
 float		g_viewportSize[2] = {640, 480}; //width, height.
 bool g_die = false; 
 double g_pause = -1.0;
@@ -93,7 +96,7 @@ enum MODES {
 	MODE_RASTERS, 
 	MODE_SPIKES, 
 	MODE_NUM
-}; 
+};
 
 int g_rxsock = 0;//rx
 int g_txsock = 0; 
@@ -204,7 +207,32 @@ void glPrint(char *text){                    // custom gl print routine.
     glCallLists(strlen(text), GL_UNSIGNED_BYTE, text); // draws the display list text.
     glPopAttrib();                              // undoes the glPushAttrib(GL_LIST_BIT);
 }
-
+GLvoid printGLf(const char *fmt, ...)
+{
+    va_list ap;     /* our argument pointer */
+    char text[256];
+    if (fmt == NULL)    /* if there is no string to draw do nothing */
+        return;
+    va_start(ap, fmt);  /* make ap point to first unnamed arg */
+    /* FIXME: we *should* do boundschecking or something to prevent buffer
+     * overflows/segmentations faults
+     */
+    vsprintf(text, fmt, ap);
+    va_end(ap);
+    glPushAttrib(GL_LIST_BIT);
+    glListBase(base - 32);
+    glCallLists(strlen(text), GL_UNSIGNED_BYTE, text);
+    glPopAttrib();
+}
+void saveMessage(const char *fmt, ...){
+	va_list ap;     /* our argument pointer */
+    if (fmt == NULL)    /* if there is no string to draw do nothing */
+        return;
+    va_start(ap, fmt);  /* make ap point to first unnamed arg */
+    vsnprintf(g_messages[g_messW % 1024], 128, fmt, ap);
+    va_end(ap);
+	g_messW++; 
+}
 static gboolean
 expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 {
@@ -655,6 +683,7 @@ void updateGain(int chan){
 	}
 	g_sendW++; 
 	sendEcho(); 
+	saveMessage("gain %d %02f %d %02f", chan, again1, chan+32, again2); 
 }
 void setOsc(int chan){
 	//turn two channels e.g. 0 and 32 into oscillators.
@@ -679,6 +708,7 @@ void setOsc(int chan){
 	}
 	g_sendW++; 
 	sendEcho(); 
+	saveMessage("osc %d and %d", chan, chan+32); 
 }
 void setChans(){
 	int i; 
@@ -696,6 +726,9 @@ void setChans(){
 	}
 	g_sendW++; 	
 	sendEcho(); 
+	for(i=0; i<4; i++){
+		saveMessage("chan %c %d\n", 'A'+i, g_channel[0]); 
+	}
 }
 void setThresh(){
 	int i; 
@@ -710,11 +743,12 @@ void setThresh(){
 	}
 	g_sendW++;
 	g_echo++; 
+	saveMessage("theshold %d", g_thresh); 
 }
 void setBiquad(int chan, float* biquad, int biquadNum){
 	// biquad num 0 or 1
 	// biquad lo or hi (global)
-	chan = chan & (0xff ^ 32); //map to the lower channels. 
+	chan = chan & (0xff ^ 32); //map to the lower channels (0-31,64-95)
 	float gain1 = sqrt(g_gains[chan]);
 	float gain2 = sqrt(g_gains[chan+32]); 
 	float b[8]; 
@@ -758,6 +792,10 @@ void setBiquad(int chan, float* biquad, int biquadNum){
 	}
 	g_sendW++; 
 	sendEcho(); 
+	saveMessage("biquad %d ch %d: %d %d %d %d", 
+				biquadNum, chan, b[0],b[2],b[4],b[6]); 
+	saveMessage("biquad %d ch %d: %d %d %d %d", 
+				biquadNum, chan+32, b[1],b[3],b[5],b[7]); 
 }
 void resetBiquads(int chan){
 	//reset all coefs in two channels.
@@ -781,6 +819,8 @@ void setFlat(int chan){
 	setBiquad(chan, biquad, 3); 
 	g_gains[chan] = gainSave1;
 	g_gains[chan+32] = gainSave2; 
+	saveMessage("flat %d", chan); 
+	saveMessage("flat %d", chan+32); 
 }
 void* sock_thread(void* destIP){
 	g_sendL = 0x4000; 
@@ -824,6 +864,21 @@ void* sock_thread(void* destIP){
 				fwrite((void*)&rxtime, 8, 1, g_saveFile); 
 				fwrite((void*)buf,n,1,g_saveFile);
 				g_saveFileBytes += 16 + n; 
+				//if there are messages to be written, save them too. 
+				while(g_messW > g_messR){
+					unsigned int len = strnlen(g_messages[g_messR % 1024],128); 
+					tmp = 0xb00a5c11; //ascii
+					g_messR++; 
+					fwrite((void*)&tmp, 4, 1, g_saveFile);
+					tmp = 498; //SVN version.
+					tmp <<= 16; 
+					tmp += len; //size of the ensuing text data.
+					fwrite((void*)&tmp, 4, 1, g_saveFile);
+					fwrite((void*)&rxtime, 8, 1, g_saveFile); 
+					fwrite((void*)g_messages[g_messR % 1024], len, 1, g_saveFile); 
+					g_saveFileBytes += 16 + len; 
+					g_messR++; 
+				}
 			}
 			char* ptr = buf; 
 			ptr += 4; 
@@ -838,11 +893,8 @@ void* sock_thread(void* destIP){
 				g_headecho = ((p->flag) >> 4) & 0xf ; 
 				int exch = p->flag & 15;
 				//mapping: 0 -> 0,1,2 ; 1 -> 3,4,5 ; 2 -> 6,7,8 etc!
-				//total of 16 bytes. 
 				// 7 samples / packet, 31.25ksps = 4464 pkts/sec, 0.224ms/pkt (558 frames/sec)
 				double time = rxtime - ((double)(npack-i)-0.5) * 0.000224; 
-				//printf("flag %02x (%d) exceeded %02x %02x %02x\n", 
-				//	   p->flag, (exch*3)%16, p->exceed[0], p->exceed[1], p->exceed[2]); 
 				for(int j=0; j<3; j++){
 					g_exceeded[(exch*3+j)%16] = p->exceed[j]; 
 					for(int k=0; k<8; k++){
@@ -865,8 +917,6 @@ void* sock_thread(void* destIP){
 						g_fbuf[k][(g_fbufW % NSAMP)*3 + 1] = (float)samp / 128.f;
 						g_fbuf[k][(g_fbufW % NSAMP)*3 + 2] = z;
 					}
-					//g_fbufColor[(g_bufpos % NSAMP)*4 + 0] = r;
-					//g_fbufColor[(g_bufpos % NSAMP)*4 + 3] = 0.7f;
 					g_fbufW++; 
 				}
 				p++; 
@@ -883,7 +933,6 @@ void* sock_thread(void* destIP){
 								offset = j; 
 							}
 						}
-						bit = 0; //clear the exceeded signal -- should have found the peak.
 						int w = g_wbufW[0] % NDISPW; 
 						for(int j=0; j < 32; j++){
 							//x coord does not need updating.
@@ -1070,7 +1119,6 @@ static void closeSaveFile(gpointer) {
 	//have to signal to the other thread, let them close it.
 	g_closeSaveFile = true;
 }
-
 int main (int argn, char **argc)
 {
 	GtkWidget *window;
@@ -1108,7 +1156,6 @@ int main (int argn, char **argc)
 	da1 = gtk_drawing_area_new ();
 	gtk_widget_set_size_request(GTK_WIDGET(da1), 640, 650);
 
-
 	/* Create a 2x2 table */
 	//table = gtk_table_new (2, 2, TRUE);
 	paned = gtk_hpaned_new(); 
@@ -1145,7 +1192,9 @@ int main (int argn, char **argc)
 	//and a channel spinner.
 	for(i=0; i<4; i++){
 		bx = gtk_hbox_new (FALSE, 2);
-		label = gtk_label_new ("channel");
+		char buf[128]; 
+		snprintf(buf, 128, "channel %c", 'A'+i); 
+		label = gtk_label_new (buf);
 		gtk_box_pack_start (GTK_BOX (bx), label, FALSE, FALSE, 0);
 		gtk_widget_show(label); 
 		GtkWidget *spinner;
@@ -1202,10 +1251,12 @@ int main (int argn, char **argc)
 	gtk_widget_show(spinner); 
 	gtk_box_pack_start (GTK_BOX (box1), bx, TRUE, TRUE, 0);
 	
-	
 	//add mode radio buttons
+	frame = gtk_frame_new ("display");
+	gtk_box_pack_start (GTK_BOX (box1), frame, TRUE, TRUE, 0);
 	GSList *group;
 	modebox = gtk_hbox_new (FALSE, 2);
+	gtk_container_add (GTK_CONTAINER (frame), modebox);
 	gtk_container_set_border_width (GTK_CONTAINER (modebox), 2);
 	gtk_box_pack_start (GTK_BOX (box1), modebox, TRUE, TRUE, 0);
 	gtk_widget_show (modebox);
@@ -1322,24 +1373,11 @@ int main (int argn, char **argc)
 	gtk_widget_set_size_request(GTK_WIDGET(box1), 200, 600);
 	gtk_widget_show (box1);
 	
-	/*paned2 = gtk_vpaned_new(); 
-	gtk_paned_add1(GTK_PANED(paned2), da1);
-	gtk_paned_add2(GTK_PANED(paned2), da2); 
-	gtk_widget_show(paned2); */
-	
 	gtk_paned_add1(GTK_PANED(paned), box1);
 	gtk_paned_add2(GTK_PANED(paned), da1); 
 	//gtk_box_pack_start (GTK_BOX (box2), box1, FALSE, FALSE, 0);
 	//gtk_box_pack_start (GTK_BOX (box2), da, TRUE, TRUE, 0);
 	gtk_widget_show (paned);
-	//gtk_widget_show (da);
-
-	/* Create first button */
-	//button = gtk_button_new_with_label ("button 1");
-	/* Insert button 1 into the upper left quadrant of the table */
-	//gtk_table_attach_defaults (GTK_TABLE (table), button, 0, 1, 0, 1);
-
-	//gtk_table_attach_defaults (GTK_TABLE (table), da, 0, 2, 1, 2);
 
 	g_signal_connect_swapped (window, "destroy",
 			G_CALLBACK (destroy), NULL);
@@ -1367,10 +1405,6 @@ int main (int argn, char **argc)
 			G_CALLBACK (configure1), NULL);
 	g_signal_connect (da1, "expose-event",
 			G_CALLBACK (expose1), NULL);
-	/*g_signal_connect (da2, "configure-event",
-			G_CALLBACK (configure2), NULL);
-	g_signal_connect (da2, "expose-event",
-			G_CALLBACK (expose2), NULL);*/
 
 	gtk_widget_show_all (window);
 
