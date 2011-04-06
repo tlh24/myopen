@@ -683,7 +683,7 @@ void updateGain(int chan){
 	}
 	g_sendW++; 
 	sendEcho(); 
-	saveMessage("gain %d %02f %d %02f", chan, again1, chan+32, again2); 
+	saveMessage("gain %d %3.2f %d %3.2f", chan, again1, chan+32, again2); 
 }
 void setOsc(int chan){
 	//turn two channels e.g. 0 and 32 into oscillators.
