@@ -228,8 +228,13 @@ void saveMessage(const char *fmt, ...){
 	va_list ap;     /* our argument pointer */
     if (fmt == NULL)    /* if there is no string to draw do nothing */
         return;
-    va_start(ap, fmt);  /* make ap point to first unnamed arg */
-    vsnprintf(g_messages[g_messW % 1024], 128, fmt, ap);
+    va_start(ap, fmt);  //make ap point to first unnamed arg
+	//need to add in 'echo' in alphabet encoding - when the headstage has the same sync, 
+	//we know that it got the command preceding this.
+	int e = g_echo % 16; 
+	g_messages[g_messW % 1024][0] = 'A'+e;
+	g_messages[g_messW % 1024][1] = ' '; 
+    vsnprintf(g_messages[g_messW % 1024] + 2, 126, fmt, ap);
     va_end(ap);
 	g_messW++; 
 }
@@ -727,7 +732,7 @@ void setChans(){
 	g_sendW++; 	
 	sendEcho(); 
 	for(i=0; i<4; i++){
-		saveMessage("chan %c %d\n", 'A'+i, g_channel[0]); 
+		saveMessage("chan %c %d", 'A'+i, g_channel[0]); 
 	}
 }
 void setThresh(){
@@ -793,9 +798,9 @@ void setBiquad(int chan, float* biquad, int biquadNum){
 	g_sendW++; 
 	sendEcho(); 
 	saveMessage("biquad %d ch %d: %d %d %d %d", 
-				biquadNum, chan, b[0],b[2],b[4],b[6]); 
+				biquadNum, chan,(int)b[0],(int)b[2],(int)b[4],(int)b[6]); 
 	saveMessage("biquad %d ch %d: %d %d %d %d", 
-				biquadNum, chan+32, b[1],b[3],b[5],b[7]); 
+				biquadNum, chan+32,(int)b[1],(int)b[3],(int)b[5],(int)b[7]); 
 }
 void resetBiquads(int chan){
 	//reset all coefs in two channels.
@@ -868,7 +873,6 @@ void* sock_thread(void* destIP){
 				while(g_messW > g_messR){
 					unsigned int len = strnlen(g_messages[g_messR % 1024],128); 
 					tmp = 0xb00a5c11; //ascii
-					g_messR++; 
 					fwrite((void*)&tmp, 4, 1, g_saveFile);
 					tmp = 498; //SVN version.
 					tmp <<= 16; 

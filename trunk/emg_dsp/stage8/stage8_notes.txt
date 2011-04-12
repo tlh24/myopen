@@ -114,3 +114,30 @@ March 2 2011
 		That said, looks like @ 400Mhz we have plenty of time for adaptive noise
 		cancellation, if it's decided that will help! 
 		(at what place in the pathway should we do this - befroe AGC I guess?)
+April 8 2011
+	Current consumption: 
+	60mA, 4.12v, everything enabled, one LED on 5ma 2.85v -> 3.5ma@ src
+		should be 56.5ma w/o LED. 
+	47.5ma, 4.10v, two headstages connected, one LED -> 44.0ma @ src
+	41.8ma, 4.10v, one headstage connected, one LED -> 38.3ma @ src. 
+	----
+	each headstage consumes about 6ma from the source. 
+	The intans are listed at about 4.1ma each (supplied directly from bat, not switched)
+	The ADC is listed at 2mw -> 0.75mA, also supplied from the bat, 
+	so we have about 1.2ma unaccounted for --
+	probably attributable to computation? 
+	or the intans use more current than expected?
+	Well, anyway. let's say 60ma, want the thing to run for 24 hours. 
+	That's 1440maH.  can get that in a cell phone battery .. easy. yay! 
+	do i want to record more than 128 channels? nah. 
+	----
+	Other things to do: 
+	* audio out working on base station. constant rate sample consumption? 
+	 variable rate? hm.
+	* decorrelator in the spare cycles? 
+	* fractional gain
+	* flat response has inappropraite gain? 
+	* sample different parts of the signal chain. 
+	* longer waveform drawing -- should go to the end of the screen in zoom = 0.2
+	* be able to turn AGC off. 
+	* fix the draw bug on neuro-nico. 
