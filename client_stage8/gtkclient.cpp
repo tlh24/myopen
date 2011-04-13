@@ -66,6 +66,7 @@ double g_pause = -1.0;
 double g_rasterZoom = 1.0; 
 bool g_cycle = false;
 int g_channel[4] = {0,32,64,96}; 
+int	g_signalChain = 10; //what to sample in the headstage signal chain.
 unsigned int g_echo = 0; 
 unsigned int g_headecho = 0; 
 unsigned int g_oldheadecho = 100; 
@@ -726,8 +727,22 @@ void setChans(){
 		int o1 = (c & 31) * 24 * 4; //which MUX line. 
 		int o2 = ((c & 64)>>6) * 12 * 4; // primary/secondary SPORT
 		int o3 = ((c & 32)>>5) * 2; // primary/secondary RX chan. 
-		//4th offset is static: 10*4 - to get to the correct written delay.
-		ptr[i*2+1] = htonl(W1 + o1 + o2 + o3 + 40 + 1); //1 is for little-endian.
+		/* 4th offset is to get to the correct written delay.
+		0	mean from integrator
+		1	gain
+		2	x1(n-1)
+		3	x1(n-2)
+		4	x2(n-1) / y1(n-1)
+		5	x2(n-2) / y1(n-2)
+		6	x3(n-1) / y2(n-1)
+		7	x3(n-2) / y2(n-2)
+		8	x2(n-1) / y3(n-1)
+		9	x2(n-2) / y3(n-2)
+		10	y4(n-1)
+		11	y4(n-2)
+		 */
+		int o4 = g_signalChain * 4; 
+		ptr[i*2+1] = htonl(W1 + o1 + o2 + o3 + o4 + 1); //1 is for little-endian.
 	}
 	g_sendW++; 	
 	sendEcho(); 
@@ -1081,6 +1096,13 @@ static void filterRadioCB(GtkWidget *button, gpointer * data){
 		else resetBiquads(g_channel[0]); 
 	}
 }
+static void signalChainRadioCB(GtkWidget *button, gpointer * data){
+	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))){
+		int i = atoi((char*)data); 
+		if(i >=0 && i < 12) 
+			g_signalChain = i; 
+	}
+}
 static void pauseButtonCB(GtkWidget *button, gpointer * ){
 	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
 		g_pause = gettime(); 
@@ -1331,6 +1353,35 @@ int main (int argn, char **argc)
 	gtk_widget_show (button);
 	gtk_signal_connect (GTK_OBJECT (button), "clicked",
 		GTK_SIGNAL_FUNC (filterRadioCB), (gpointer) "f");
+		
+	//add signal chain samp radio buttons
+	frame = gtk_frame_new ("signal chain");
+	gtk_box_pack_start (GTK_BOX (box1), frame, TRUE, TRUE, 0);
+	modebox = gtk_vbox_new (FALSE, 2);
+	gtk_container_add (GTK_CONTAINER (frame), modebox);
+	gtk_container_set_border_width (GTK_CONTAINER (modebox), 2);
+	gtk_widget_show (modebox);
+	
+	const char* signalNames[12] = {
+		"0	mean from integrator",
+		"1	AGC gain",
+		"2	x1(n-1) (AGC out)",
+		"3	x1(n-2)",
+		"4	x2(n-1) / y1(n-1) (lo1 out)",
+		"5	x2(n-2) / y1(n-2)",
+		"6	x3(n-1) / y2(n-1) (hi1 out)",
+		"7	x3(n-2) / y2(n-2)",
+		"8	x2(n-1) / y3(n-1) (lo2 out)",
+		"9	x2(n-2) / y3(n-2)",
+		"10	y4(n-1) (hi2 out, final)",
+		"11	y4(n-2)" }; 
+	for(int k=0; k<12; k++){
+		button = gtk_radio_button_new_with_label (NULL, signalNames[k]);
+		gtk_box_pack_start (GTK_BOX (modebox), button, TRUE, TRUE, 0);
+		gtk_widget_show (button);
+		gtk_signal_connect (GTK_OBJECT (button), "clicked",
+			GTK_SIGNAL_FUNC (signalChainRadioCB), (gpointer)signalNames[k]);
+	}
 		
 	//add a pause / go button.
 	bx = gtk_hbox_new (FALSE, 3);
