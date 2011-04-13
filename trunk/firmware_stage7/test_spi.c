@@ -153,6 +153,12 @@ void write_flash(int len, u8* data){
 #define UDP_PACKET_SIZE 512
 u32 wrptr; 
 u32 trptr; 
+u8  g_samples[512]; //interleaved chs 1 & 2
+u32 g_sampW; 
+u32 g_sampR; 
+u32	g_sampInc; //increment by this every sample. base 31. (0x7ffffff); 
+u32 g_sampOff; //offset for interpolation.
+u8  g_sampCh; 
 void getRadioPacket(u16 csn, u16 irq, u8 write){
 	// write is to enable 'null' reads of the fifo.
 	// (clearing the fifo will not work)
@@ -171,8 +177,23 @@ void getRadioPacket(u16 csn, u16 irq, u8 write){
 	for(i=0; i<32; i++){
 		*pSPI_TDBR = 0;
 		spi_delay(); 
-		if(write) *ptr++ = (u8)(*pSPI_SHADOW); 
+		if(write){ 
+			u8 t = (u8)(*pSPI_SHADOW); 
+			*ptr++ = t; 
+			//copy over to the sample (audio out) buffer.
+			if(i < 28){
+				if((i & 0x3) == 0){
+					g_samples[g_sampW & 511] = t;
+					g_sampW++; 
+				}
+				if((i & 0x3) == 1){
+					g_samples[g_sampW & 511] = t; 
+					g_sampW++; 
+				}
+			}
+		}
 	}
+	
 	*FIO_SET = csn; 
 	asm volatile("ssync;");
 	//need to check if the headstage wants a response.
@@ -223,6 +244,40 @@ void getRadioPacket(u16 csn, u16 irq, u8 write){
 		gotx = 0; 
 		wrptr = 0; 
 	}
+}
+void __attribute__((interrupt_handler)) audio_out(void)
+{
+	*pSPORT1_STAT = 0x30;  //clear the sticky statuses
+		//basically need a PID controller to get rid of the clock skew. 
+		//has to be relatively high resolution.
+	u8 chan = g_sampCh; 
+	u8 s1 = g_samples[(g_sampR + chan) & 511]; //interpolate between 2 samples.
+	u8 s2 = g_samples[(g_sampR + chan + 2) & 511]; 
+	s1 ^= 0x80; //convert to unsigned.
+	s2 ^= 0x80; 
+	u16 samp = s1 * (0xff - (g_sampOff >> 23)) 
+			 + s2 * ((g_sampOff >> 23)); 
+	*pSPORT1_TX = samp | (0x3 << 19) | (chan << 16); //command, address
+	//adjust the rate.
+	if(chan == 1){ 
+		if(g_sampW < g_sampR){ g_sampR = g_sampW;} //wrap!
+		unsigned int d = g_sampW - g_sampR; 
+		if(d < 170 ) { //slow it down a bit. don't do this too frequently.
+			g_sampInc--; // -= (256 - d); //slow down the read (slightly!)
+		}
+		if(d > 340 ){ 
+			g_sampInc++; // (d - 256); //speed up the read (slightly!)
+		}
+		if(d > 500){
+			 g_sampR = g_sampW;
+		}
+		g_sampOff += g_sampInc; 
+		if(g_sampOff & 0x80000000){
+			g_sampR += 2; 
+		}
+		g_sampOff &= 0x7fffffff; 
+	}
+	g_sampCh ^= 1; 
 }
 
 int main(void){
@@ -285,7 +340,7 @@ int main(void){
 			if((i & 7) == 7) printf_str("\n"); 
 		}
 		//write nonvolatile info to flash. 
-		g_nv.destIP = FormatIPAddress(152, 16, 229, 19); 
+		g_nv.destIP = FormatIPAddress(152, 16, 229, 33); 
 		g_nv.radioChan = 124; 
 		g_nv.destPort = 4340; 
 		write_flash(sizeof(g_nv), (u8*)&g_nv); 
@@ -304,6 +359,7 @@ int main(void){
 	if(!etherr) DHCP_req();  
 	
 	/*setup portF - SPORT0 RX + NRF CSN, IRQ, CE, SPORT1 TX
+	MUX		0000 0001 0100 0000  0x0140
 	FER		0011 1000 1000 0111  0x3887
 	INPUT	0000 0001 1010 1001  0x01a9
 	!! this will have to change based on wether the headstage is wired or not
@@ -312,18 +368,33 @@ int main(void){
 	*pPORTF_FER = 0x3887;
 	*pPORTFIO_DIR = (0xffff ^ 0x01a9); 
 	*pPORTFIO_INEN = 0x01a9; 
-	*pPORTF_MUX = 0x0280; //support the DAC
+	*pPORTF_MUX = 0x0140; //support the DAC
 	//and reading / writing flash
 	*pPORTGIO_INEN &= (0xffff ^ SPI_FLASH); 
 	*pPORTGIO_DIR |= SPI_FLASH; 
 	*pPORTG_FER &= (0xffff ^ SPI_FLASH); 
 	
-	//this for audio output.  would be nice to get spikes on this.
-	if(0){
-		*pSPORT1_TCLKDIV = 62 ; //125Mhz / 125 = 1M / 25 = 40k / 2 = 20 ksps/ch
-		*pSPORT1_TFSDIV = 24 ; //25 clocks between assertions of the frame sync
+	/* this for audio output.  would be nice to get spikes on this.
+		the headstage samples at 1e6/32 = 31250 sps
+		have 2ch DAC, so should put out samples at 62500 sps
+		with 32 clocks between TFS, need 2Mhz clk -> divide by 30.
+	*/
+	if(1){
+		*pSPORT1_TCR1 = 0; //turn everything off before changing speed..(also clears errors)
+		asm volatile("ssync"); 
+		g_sampW = g_sampR = 0; //reset the counters.
+		g_sampOff = 0; 
+		g_sampInc = 0x80000000; //start by assuming they are synchonized.
+		g_sampCh = 0; 
+		//serial clock is CCLK / 2*(TCLKDIV+1) ; ho
+		*pSPORT1_TCLKDIV = 29 ; //120Mhz / 2*30 = 2M / 32 = 62.5k / 2 = 31.25 ksps/ch
+		*pSPORT1_TFSDIV = 31 ; //32 clocks between assertions of the frame sync
 		*pSPORT1_TCR2 = 23; //word length 24, secondary disabled. 
-		*pSPORT1_TCR1 = 0x4e03 ; 
+		*pSPORT1_TCR1 = 0x4e03 ;
+		//init the IRQ. first the event vector table.
+		*pEVT7 = audio_out; 
+		*pSIC_IMASK0 = 1 << 9; //page 170 of the hardware ref.
+	}/*
 		int j, k, m, n, x, y; 
 		i = j = k = m = n = x = y = 0; 
 		int freqs[] = {240, 400, 300, 180};
@@ -358,7 +429,7 @@ int main(void){
 				n = n % 5; 
 			}
 		}
-	}
+	}*/
 	//write out data.
 	int prevtime = 0;
 	int secs; 

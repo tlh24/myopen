@@ -22,7 +22,7 @@ start:
 	//PLL_DIV defaults to 4, which puts the system clock at 150MHz - 
 	// beyond spec. (max = 133MHz.)
 	r0 = (0x0 /*CSEL=0,CCLK=VCO*/ | 5 /* SCLK=VCO/5 */); 
-		//125MHz system clock, 600Mhz core clock.
+		//120MHz system clock, 600Mhz core clock.
 	p0.h = HI(PLL_DIV);
 	p0.l = LO(PLL_DIV);
 	w[p0] = r0.l;
@@ -124,7 +124,7 @@ check_again:
 	//need a sequence to enable interrupts? 
 	// IMASK : page 173 in the programming ref., (not hardware ref!)
 	//NOT THE SAME as SIC_IMASK (above) --both need to be set up correctly.
-	r0 = 0x901f(z); // enable 15, 12.
+	r0 = 0x909f(z); // enable 15, 12, 7.
 	sti r0;            // set mask
 	raise 15;          // raise sw interrupt
 	

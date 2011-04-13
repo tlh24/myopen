@@ -10,7 +10,7 @@ CFLAGS = $(INCLUDES) $(CPUDEFINES) -mcpu=bf527 -Wall -include memory.h
 #CFLAGS += -O3 -ffast-math -mfast-fp -funsafe-math-optimizations 
 
 ASMFLAGS += -g
-# CFLAGS += -g #-O2 #; -03 does not work!
+CFLAGS += -O2 #-O2 #; -03 does not work!
 
 # see http://blackfin.uclinux.org/gf/project/toolchain/forum/?action=ForumBrowse&forum_id=44&_forum_action=ForumMessageBrowse&thread_id=3023
 # the archive file must have the same organization (FLAT, FDPIC ..)
@@ -37,10 +37,10 @@ BIN = $(BFINROOT)/bfin-uclinux-objcopy
 	$(CC) $(ASMFLAGS) -c -o $@ $<
 	
 %.o: %.c
-	$(CC) $(CFLAGS) -O2 -c -o $@ $<
+	$(CC) $(CFLAGS) -c -o $@ $<
 	
 %.o: ../common/%.c
-	$(CC) $(CFLAGS) -O2 -c -o $@ $<
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 #svn version script runs at the /end/ of the build process, but this isn't such a problem as 
 #the version does not change frequently. 

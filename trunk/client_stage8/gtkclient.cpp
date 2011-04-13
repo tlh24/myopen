@@ -80,10 +80,15 @@ bool g_closeSaveFile = false;
 unsigned int g_saveFileBytes; 
 // for 31.25ksps -- see filter_butter.m
 // broken into 2 biquads, order b0 b1 a0 a1
+/** 500 - 6.7kHz **/
 float lowpass_coefs[8] ={ 0.240833,0.481711,0.323083,-0.456505,
 					0.240833,0.481619,0.233390,-0.052153};
 float highpass_coefs[8] ={0.936405,-1.872810,1.916303,-0.926028,
 					0.936405,-1.872810,1.821050,-0.830291};
+float lowpass_coefs2[8] = {0.453447,0.906993,-0.632535,-0.485595,
+	0.453447,0.906796,-0.463824,-0.089354};
+float highpass_coefs2[8] = {0.980489,-1.960979,1.976285,-0.977184,
+	0.980489,-1.960979,1.944907,-0.945792};
 double g_startTime = 0.0; 
 int g_totalPackets = 0; 
 
@@ -576,7 +581,7 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 }
 
 //global labels.. 
-GtkWidget* g_gainlabel[16];
+//GtkWidget* g_gainlabel[16];
 GtkWidget* g_headechoLabel;
 GtkAdjustment* g_channelSpin[4];
 GtkAdjustment* g_gainSpin; 
@@ -707,7 +712,7 @@ void setOsc(int chan){
 	for(i=0; i<4; i++){
 		unsigned int p = (chan & 63)*2; 
 		if(chan >= 64) p += 1; //chs 64-127 pocessed following 0-63.
-		ptr[i*2+0] = htonl(A1 + (p*20 + 12 + i + 4)*4);
+		ptr[i*2+0] = htonl(A1 + (p*20 + 0 + i + 4)*4);
 		j = (int)(b[i]);
 		u = (unsigned int)((j&0xffff) | ((j&0xffff)<<16)); 
 		ptr[i*2+1] = htonl(u); 
@@ -824,21 +829,29 @@ void resetBiquads(int chan){
 	setBiquad(chan, &(lowpass_coefs[4]), 2); 
 	setBiquad(chan, &(highpass_coefs[4]), 3); 
 }
+void setFilter2(int chan){
+	//reset all coefs in two channels.
+	setBiquad(chan, &(lowpass_coefs2[0]), 0);
+	setBiquad(chan, &(highpass_coefs2[0]), 1); 
+	setBiquad(chan, &(lowpass_coefs2[4]), 2); 
+	setBiquad(chan, &(highpass_coefs2[4]), 3); 
+}
 void setFlat(int chan){
 	//lets you look at the raw ADC samples.
 	chan = chan & (0xff ^ 32); //map to the lower channels. 
-	float gainSave1 = g_gains[chan]; 
-	float gainSave2 = g_gains[chan+32]; 
-	g_gains[chan] = 1.0;
-	g_gains[chan+32] = 1.0; // 0.5 ^ 0.25 = 0.84089
-	float biquad[] = {0.8409, 0.0, 0.0, 0.0}; 
+	//float gainSave1 = g_gains[chan]; 
+	//float gainSave2 = g_gains[chan+32]; 
+	//g_gains[chan] = 1.0;
+	//g_gains[chan+32] = 1.0; 
+	float biquad[] = {0.0, 1.0, 0.0, 0.0}; //NOTE B assumed to be symmetric.
+		//hence you need to set b[1] not b[0] (and b[2])
 	setBiquad(chan, biquad, 0);
 	setBiquad(chan, biquad, 1); 
 	setBiquad(chan, biquad, 2); 
 	//biquad[0] *= -1.f; 
 	setBiquad(chan, biquad, 3); 
-	g_gains[chan] = gainSave1;
-	g_gains[chan+32] = gainSave2; 
+	//g_gains[chan] = gainSave1;
+	//g_gains[chan+32] = gainSave2; 
 	saveMessage("flat %d", chan); 
 	saveMessage("flat %d", chan+32); 
 }
@@ -1048,7 +1061,7 @@ static void channelSpinCB( GtkAdjustment* , gpointer* adj){
 		}
 	}
 }
-void updateGainLabel(int ch){
+/*void updateGainLabel(int ch){
 	char str[256]; 
 	ch = ch % 16; 
 	snprintf(str, 256, "%d g: %d %d,%d %d,%d %d,%d %d", ch, 
@@ -1057,20 +1070,23 @@ void updateGainLabel(int ch){
 			 (int)g_gains[ch+64],(int)g_gains[ch+80],
 			 (int)g_gains[ch+96],(int)g_gains[ch+112]); 
 	gtk_label_set_text(GTK_LABEL(g_gainlabel[ch]), str);
-}
+}*/
 static void gainSpinCB( GtkAdjustment*, gpointer ){
 	float gain = gtk_adjustment_get_value(g_gainSpin); 
 	printf("gainSpinCB: %f\n", gain); 
 	g_gains[g_channel[0]] = gain; 
 	updateGain(g_channel[0]);  
-	updateGainLabel(g_channel[0]);  
+	//updateGainLabel(g_channel[0]);  
 }
 static void gainSetAll(gpointer ){
 	float gain = gtk_adjustment_get_value(g_gainSpin); 
 	for(int i=0; i<128; i++){
 		g_gains[i] = gain;
 		updateGain(i);
-		updateGainLabel(i);  
+		//updateGainLabel(i);  
+	}
+	for(int i=0; i<32; i++){
+		resetBiquads(i); 
 	}
 }
 static void thresholdSpinCB( GtkAdjustment*, gpointer ){
@@ -1092,15 +1108,18 @@ static void filterRadioCB(GtkWidget *button, gpointer * data){
 	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))){
 		char* ptr = (char*)data; 
 		if(*ptr == 'o') setOsc(g_channel[0]); 
-		else if(*ptr == 'f') setFlat(g_channel[0]); 
+		else if(*ptr == 'f') setFlat(g_channel[0]);
+		else if(*ptr == 'w') setFilter2(g_channel[0]); 
 		else resetBiquads(g_channel[0]); 
 	}
 }
 static void signalChainRadioCB(GtkWidget *button, gpointer * data){
 	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))){
 		int i = atoi((char*)data); 
-		if(i >=0 && i < 12) 
-			g_signalChain = i; 
+		if(i >=0 && i < 12){
+			g_signalChain = i;
+			setChans(); 
+		}
 	}
 }
 static void pauseButtonCB(GtkWidget *button, gpointer * ){
@@ -1187,20 +1206,12 @@ int main (int argn, char **argc)
 	paned = gtk_hpaned_new(); 
 	gtk_container_add (GTK_CONTAINER (window), paned);
 	box1 = gtk_vbox_new (FALSE, 0);
-	for(i=0; i<16; i++){
+	/*for(i=0; i<16; i++){
 		g_gainlabel[i] = gtk_label_new ("");
-		/* Align the label to the left side.  We'll discuss this function and 
-		 * others in the section on Widget Attributes. */
 		gtk_misc_set_alignment (GTK_MISC (g_gainlabel[i]), 0, 0);
-
-		/* Pack the label into the vertical box (vbox box1).  Remember that 
-		 * widgets added to a vbox will be packed one on top of the other in
-		 * order. */
 		gtk_box_pack_start (GTK_BOX (box1), g_gainlabel[i], FALSE, FALSE, 0);
-
-		/* Show the label */
 		gtk_widget_show (g_gainlabel[i]);
-	}
+	}*/
 
 	//add in a headstage channel # label
 	bx = gtk_vbox_new (FALSE, 2);
@@ -1242,10 +1253,10 @@ int main (int argn, char **argc)
 	label = gtk_label_new ("gain");
 	gtk_box_pack_start (GTK_BOX (bx), label, FALSE, FALSE, 0);
 	gtk_widget_show(label); 
-	g_gainSpin = (GtkAdjustment *)gtk_adjustment_new(4.0, 
-		0.0, 10000.0, 1.0, 100.0, 0.0);
+	g_gainSpin = (GtkAdjustment *)gtk_adjustment_new(1.0, 
+		0.0, 100.0, 0.1, 100.0, 1.0);
 	GtkWidget *spinner;
-	spinner = gtk_spin_button_new (g_gainSpin, 0, 0);
+	spinner = gtk_spin_button_new (g_gainSpin, 0.01, 2);
 	gtk_spin_button_set_wrap (GTK_SPIN_BUTTON (spinner), FALSE);
 	gtk_box_pack_start (GTK_BOX (bx), spinner, FALSE, FALSE, 0);
 	g_signal_connect(spinner, "value-changed", 
@@ -1332,11 +1343,18 @@ int main (int argn, char **argc)
 	gtk_container_set_border_width (GTK_CONTAINER (modebox), 2);
 	gtk_widget_show (modebox);
 	
-	button = gtk_radio_button_new_with_label (NULL, "normal");
+	button = gtk_radio_button_new_with_label (NULL, "500-6.7k");
 	gtk_box_pack_start (GTK_BOX (modebox), button, TRUE, TRUE, 0);
 	gtk_widget_show (button);
 	gtk_signal_connect (GTK_OBJECT (button), "clicked",
 		GTK_SIGNAL_FUNC (filterRadioCB), (gpointer) "n");
+		
+	group = gtk_radio_button_get_group (GTK_RADIO_BUTTON (button));
+	button = gtk_radio_button_new_with_label (group, "150-10k");
+	gtk_box_pack_start (GTK_BOX (modebox), button, TRUE, TRUE, 0);
+	gtk_widget_show (button);
+	gtk_signal_connect (GTK_OBJECT (button), "clicked",
+		GTK_SIGNAL_FUNC (filterRadioCB), (gpointer) "w");
 
 	group = gtk_radio_button_get_group (GTK_RADIO_BUTTON (button));
 	button = gtk_radio_button_new_with_label (group, "osc ");
@@ -1346,8 +1364,8 @@ int main (int argn, char **argc)
 	gtk_signal_connect (GTK_OBJECT (button), "clicked",
 		GTK_SIGNAL_FUNC (filterRadioCB), (gpointer) "o");
 		
-	 button = gtk_radio_button_new_with_label_from_widget(
-	 	GTK_RADIO_BUTTON (button), "flat");
+	group = gtk_radio_button_get_group (GTK_RADIO_BUTTON (button));
+	button = gtk_radio_button_new_with_label(group, "flat");
 	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), FALSE);
 	gtk_box_pack_start (GTK_BOX (modebox), button, TRUE, TRUE, 0);
 	gtk_widget_show (button);
@@ -1375,9 +1393,14 @@ int main (int argn, char **argc)
 		"9	x2(n-2) / y3(n-2)",
 		"10	y4(n-1) (hi2 out, final)",
 		"11	y4(n-2)" }; 
+	button = 0; 
+	group = 0; 
 	for(int k=0; k<12; k++){
-		button = gtk_radio_button_new_with_label (NULL, signalNames[k]);
+		button = gtk_radio_button_new_with_label(group, signalNames[k]);
+		group = gtk_radio_button_get_group (GTK_RADIO_BUTTON (button)); //this is confusing -- see documentation.
 		gtk_box_pack_start (GTK_BOX (modebox), button, TRUE, TRUE, 0);
+		if(k != 10)
+			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), FALSE);
 		gtk_widget_show (button);
 		gtk_signal_connect (GTK_OBJECT (button), "clicked",
 			GTK_SIGNAL_FUNC (signalChainRadioCB), (gpointer)signalNames[k]);
