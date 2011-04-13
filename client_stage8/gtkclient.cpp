@@ -410,7 +410,8 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 		cgGLDisableProfile(myCgVertexProfile);
 		checkForCgError("disabling vertex profile");
-		
+		//order doesn't seem to matter: the sorted spikes normally gets f-ed
+		//which implies that we are writing crap to the vbo.
 		cgSetParameter1f(myCgVertexParam_time, t);
 		cgSetParameter3f(myCgVertexParam_col, 1.f,1.f,0.f);
 		cgGLBindProgram(myCgVertexProgram[1]);
@@ -1267,7 +1268,7 @@ int main (int argn, char **argc)
 	g_signal_connect(button, "clicked", G_CALLBACK (gainSetAll),0);
 	gtk_box_pack_start (GTK_BOX (bx), button, FALSE, FALSE, 0);
 	gtk_box_pack_start (GTK_BOX (box1), bx, TRUE, TRUE, 0);
-	gainSetAll(0); 
+	//gainSetAll(0); 
 	//update labels. 
 	/*for(i=0; i<32; i++){
 		g_channel = i; 
