@@ -140,4 +140,10 @@ April 8 2011
 	* sample different parts of the signal chain. 
 	* longer waveform drawing -- should go to the end of the screen in zoom = 0.2
 	* be able to turn AGC off. 
-	* fix the draw bug on neuro-nico. 
+	* fix the draw bug on neuro-nico. seems to be pre-GPU, since if you switch 
+		the indicies of the VBOs, the yellow is then drawn correctly.
+	----
+April 9 2011
+	Tested radio + triple diversity RX -> works very well. 
+	Can position the transmitter by the window & not have too too many dropped packets.
+	add another filter option? 
