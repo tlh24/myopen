@@ -410,8 +410,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 		cgGLDisableProfile(myCgVertexProfile);
 		checkForCgError("disabling vertex profile");
-		//order doesn't seem to matter: the sorted spikes normally gets f-ed
-		//which implies that we are writing crap to the vbo.
+		
 		cgSetParameter1f(myCgVertexParam_time, t);
 		cgSetParameter3f(myCgVertexParam_col, 1.f,1.f,0.f);
 		cgGLBindProgram(myCgVertexProgram[1]);
@@ -587,6 +586,7 @@ GtkWidget* g_headechoLabel;
 GtkAdjustment* g_channelSpin[4];
 GtkAdjustment* g_gainSpin; 
 GtkAdjustment* g_thresholdSpin; 
+GtkAdjustment* g_agcSpin; 
 GtkWidget* g_pktpsLabel;
 GtkWidget* g_fileSizeLabel;
 
@@ -686,7 +686,7 @@ void updateGain(int chan){
 		//remember, chan mapped to 0-31 & 64-95 (above)
 		unsigned int p = (chan & 63)*2; 
 		if(chan >= 64) p += 1; //chs 64-127 pocessed following 0-63.
-		ptr[i*2+0] = htonl(A1 + (p*20 + indx2[i] + 4)*4);
+		ptr[i*2+0] = htonl(A1 + (p*27 + indx2[i] + 11)*4);
 			//+4 b/c have integrator, AGC coefs
 		j = (int)(b[i*2+0]);
 		k = (int)(b[i*2+1]);
@@ -713,7 +713,7 @@ void setOsc(int chan){
 	for(i=0; i<4; i++){
 		unsigned int p = (chan & 63)*2; 
 		if(chan >= 64) p += 1; //chs 64-127 pocessed following 0-63.
-		ptr[i*2+0] = htonl(A1 + (p*20 + 0 + i + 4)*4);
+		ptr[i*2+0] = htonl(A1 + (p*27 + 0 + i + 11)*4);
 		j = (int)(b[i]);
 		u = (unsigned int)((j&0xffff) | ((j&0xffff)<<16)); 
 		ptr[i*2+1] = htonl(u); 
@@ -756,6 +756,28 @@ void setChans(){
 		saveMessage("chan %c %d", 'A'+i, g_channel[0]); 
 	}
 }
+void setAGC(float target){
+	//sets AGC for g_channel[0], [1], [2]
+	unsigned int* ptr = g_sendbuf; 
+	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
+	for(int i=0; i<3; i++){
+		int chan = g_channel[i]; 
+		chan = chan & (0xff ^ 32); //map to the lower channels (0-31,64-95)
+		unsigned int p = (chan & 63)*2; 
+		if(chan >= 64) p += 1; //chs 64-127 pocessed following 0-63.
+		ptr[i*2+0] = htonl(A1 + (p*27 + 2)*4);
+		int j = (int)(sqrt(target * 128));
+		unsigned int u = (unsigned int)((j&0xffff) | ((j&0xffff)<<16)); 
+		ptr[i*2+1] = htonl(u); 
+	}
+	for(int i=3; i<4; i++){
+		ptr[i*2+0] = htonl(FP_BASE - FP_ECHO);
+		ptr[i*2+1] = htonl((g_echo << 4) & 0xf0); 
+	}
+	g_sendW++;
+	g_echo++; 
+	saveMessage("agc %d", (int)target);
+}
 void setThresh(){
 	int i; 
 	unsigned int* ptr = g_sendbuf; 
@@ -770,6 +792,20 @@ void setThresh(){
 	g_sendW++;
 	g_echo++; 
 	saveMessage("theshold %d", g_thresh); 
+}
+void setLMS(bool on){
+	//this applies to all channels.
+	unsigned int* ptr = g_sendbuf; 
+	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt. (32 byte packets)
+	ptr[0] = htonl(FP_BASE - FP_WEIGHTDECAY); //frame pointer
+	ptr[1] = htonl(on ? 0x7fff7fff : 0); //see r4 >>> 1 (v) in radio4.asm
+	for(int i=1; i<4; i++){
+		ptr[i*2+0] = htonl(FP_BASE - FP_ECHO);
+		ptr[i*2+1] = htonl((g_echo << 4) & 0xf0); 
+	}
+	g_sendW++;
+	g_echo++; 
+	saveMessage("theshold %d", (on ? 1 : 0));
 }
 void setBiquad(int chan, float* biquad, int biquadNum){
 	// biquad num 0 or 1
@@ -799,14 +835,13 @@ void setBiquad(int chan, float* biquad, int biquadNum){
 		b[i] = b[i] > 32767.f ? 32767.f : b[i]; 
 		//printf("%d %f\n", i, b[i]); 
 	}
-	
 	//now form the 32 bit uints to be written. 
 	unsigned int* ptr = g_sendbuf; 
 	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
 	for(i=0; i<4; i++){
 		unsigned int p = (chan & 63)*2; 
 		if(chan >= 64) p += 1; //chs 64-127 pocessed following 0-63.
-		ptr[i*2+0] = htonl(A1 + (p*20 + biquadNum*4 + i + 4)*4);
+		ptr[i*2+0] = htonl(A1 + (p*27 + biquadNum*4 + i + 11)*4);
 		j = (int)(b[i*2+0]);
 		k = (int)(b[i*2+1]);
 		u = (unsigned int)((j&0xffff) | ((k&0xffff)<<16)); 
@@ -1095,6 +1130,11 @@ static void thresholdSpinCB( GtkAdjustment*, gpointer ){
 	printf("thresholdSpinCB: %d\n", g_thresh); 
 	setThresh();
 }
+static void agcSpinCB( GtkAdjustment*, gpointer ){
+	float agc = gtk_adjustment_get_value(g_agcSpin); 
+	printf("agcSpinCB: %f\n", agc); 
+	setAGC(agc);
+}
 static void modeRadioCB(GtkWidget *, gpointer * data){
 	char* ptr = (char*)data; 
 	if(*ptr == 'r') g_mode = MODE_RASTERS;
@@ -1104,6 +1144,11 @@ static void drawRadioCB(GtkWidget *, gpointer * data){
 	char* ptr = (char*)data; 
 	if(*ptr == 'l') g_drawmode = GL_LINE_STRIP;
 	else g_drawmode = GL_POINTS; 
+}
+static void lmsRadioCB(GtkWidget *, gpointer * data){
+	char* ptr = (char*)data; 
+	if(*ptr == '1') setLMS(true);
+	else setLMS(false); 
 }
 static void filterRadioCB(GtkWidget *button, gpointer * data){
 	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))){
@@ -1268,7 +1313,7 @@ int main (int argn, char **argc)
 	g_signal_connect(button, "clicked", G_CALLBACK (gainSetAll),0);
 	gtk_box_pack_start (GTK_BOX (bx), button, FALSE, FALSE, 0);
 	gtk_box_pack_start (GTK_BOX (box1), bx, TRUE, TRUE, 0);
-	//gainSetAll(0); 
+	gainSetAll(0); 
 	//update labels. 
 	/*for(i=0; i<32; i++){
 		g_channel = i; 
@@ -1286,6 +1331,21 @@ int main (int argn, char **argc)
 	gtk_box_pack_start (GTK_BOX (bx), spinner, FALSE, FALSE, 0);
 	g_signal_connect(spinner, "value-changed", 
 					G_CALLBACK(thresholdSpinCB), GINT_TO_POINTER (1));
+	gtk_widget_show(spinner); 
+	gtk_box_pack_start (GTK_BOX (box1), bx, TRUE, TRUE, 0);
+	
+	//add in a AGC target spinner.
+	bx = gtk_hbox_new (FALSE, 3);
+	label = gtk_label_new ("AGC target");
+	gtk_box_pack_start (GTK_BOX (bx), label, FALSE, FALSE, 0);
+	gtk_widget_show(label); 
+	g_agcSpin = (GtkAdjustment *)gtk_adjustment_new(6000.0, 
+		0.0, 32000.0, 50.0, 1000.0, 0.0);
+	spinner = gtk_spin_button_new (g_agcSpin, 0, 0);
+	gtk_spin_button_set_wrap (GTK_SPIN_BUTTON (spinner), FALSE);
+	gtk_box_pack_start (GTK_BOX (bx), spinner, FALSE, FALSE, 0);
+	g_signal_connect(spinner, "value-changed", 
+					G_CALLBACK(agcSpinCB), GINT_TO_POINTER (1));
 	gtk_widget_show(spinner); 
 	gtk_box_pack_start (GTK_BOX (box1), bx, TRUE, TRUE, 0);
 	
@@ -1335,6 +1395,29 @@ int main (int argn, char **argc)
 	gtk_widget_show (button);
 	gtk_signal_connect (GTK_OBJECT (button), "clicked",
 		GTK_SIGNAL_FUNC (drawRadioCB), (gpointer) "p");
+		
+		//add LMS on/off.. 
+	frame = gtk_frame_new ("LMS");
+	gtk_box_pack_start (GTK_BOX (box1), frame, TRUE, TRUE, 0);
+	modebox = gtk_hbox_new (FALSE, 2);
+	gtk_container_add (GTK_CONTAINER (frame), modebox);
+	gtk_container_set_border_width (GTK_CONTAINER (modebox), 2);
+	gtk_box_pack_start (GTK_BOX (box1), modebox, TRUE, TRUE, 0);
+	gtk_widget_show (modebox);
+	
+	button = gtk_radio_button_new_with_label (NULL, "on");
+	gtk_box_pack_start (GTK_BOX (modebox), button, TRUE, TRUE, 0);
+	gtk_widget_show (button);
+	gtk_signal_connect (GTK_OBJECT (button), "clicked",
+		GTK_SIGNAL_FUNC (lmsRadioCB), (gpointer) "1");
+
+	group = gtk_radio_button_get_group (GTK_RADIO_BUTTON (button));
+	button = gtk_radio_button_new_with_label (group, "off");
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), FALSE);
+	gtk_box_pack_start (GTK_BOX (modebox), button, TRUE, TRUE, 0);
+	gtk_widget_show (button);
+	gtk_signal_connect (GTK_OBJECT (button), "clicked",
+		GTK_SIGNAL_FUNC (lmsRadioCB), (gpointer) "0");
 		
 	//add osc / reset radio buttons
 	frame = gtk_frame_new ("filter");
