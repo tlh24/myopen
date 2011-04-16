@@ -147,3 +147,9 @@ April 9 2011
 	Tested radio + triple diversity RX -> works very well. 
 	Can position the transmitter by the window & not have too too many dropped packets.
 	add another filter option? 
+April 14 2011
+	Implemented 3 versions of LMS: 
+	* simple, direct 7 tap filter, error computed via shift >>>
+	* pseudo-LMS style, error saturated to +- 1, signal saturated to +- 1
+	* summing pseudo-LMS style, sum 3 samples, 4 weights, sum saturated to +- 1, 
+		error saturated to +- 1.

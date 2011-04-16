@@ -686,7 +686,8 @@ void updateGain(int chan){
 		//remember, chan mapped to 0-31 & 64-95 (above)
 		unsigned int p = (chan & 63)*2; 
 		if(chan >= 64) p += 1; //chs 64-127 pocessed following 0-63.
-		ptr[i*2+0] = htonl(A1 + (p*27 + indx2[i] + 11)*4);
+		ptr[i*2+0] = htonl(A1 + 
+			(p*A1_STRIDE + indx2[i] + A1_IIRSTART)*4);
 			//+4 b/c have integrator, AGC coefs
 		j = (int)(b[i*2+0]);
 		k = (int)(b[i*2+1]);
@@ -713,7 +714,7 @@ void setOsc(int chan){
 	for(i=0; i<4; i++){
 		unsigned int p = (chan & 63)*2; 
 		if(chan >= 64) p += 1; //chs 64-127 pocessed following 0-63.
-		ptr[i*2+0] = htonl(A1 + (p*27 + 0 + i + 11)*4);
+		ptr[i*2+0] = htonl(A1 + (p*A1_STRIDE + 0 + i + A1_IIRSTART)*4);
 		j = (int)(b[i]);
 		u = (unsigned int)((j&0xffff) | ((j&0xffff)<<16)); 
 		ptr[i*2+1] = htonl(u); 
@@ -730,22 +731,24 @@ void setChans(){
 		ptr[i*2+0] = htonl(FP_BASE - FP_TXCHAN0 + 4*i); 
 		//ok, for the taps: have 4 offsets. 
 		int c = g_channel[i]; 
-		int o1 = (c & 31) * 24 * 4; //which MUX line. 
-		int o2 = ((c & 64)>>6) * 12 * 4; // primary/secondary SPORT
+		int o1 = (c & 31) * W1_STRIDE * 2 * 4; //which MUX line. 
+		int o2 = ((c & 64)>>6) * W1_STRIDE * 4; // primary/secondary SPORT
 		int o3 = ((c & 32)>>5) * 2; // primary/secondary RX chan. 
 		/* 4th offset is to get to the correct written delay.
 		0	mean from integrator
 		1	gain
-		2	x1(n-1)
-		3	x1(n-2)
-		4	x2(n-1) / y1(n-1)
-		5	x2(n-2) / y1(n-2)
-		6	x3(n-1) / y2(n-1)
-		7	x3(n-2) / y2(n-2)
-		8	x2(n-1) / y3(n-1)
-		9	x2(n-2) / y3(n-2)
-		10	y4(n-1)
-		11	y4(n-2)
+		2	saturated sample
+		3	AGC out / LMS save
+		4	x1(n-1) / LMS out
+		5	x1(n-2)
+		6	x2(n-1) / y1(n-1)
+		7	x2(n-2) / y1(n-2)
+		8	x3(n-1) / y2(n-1)
+		9	x3(n-2) / y2(n-2)
+		10	x2(n-1) / y3(n-1)
+		11	x2(n-2) / y3(n-2)
+		12	y4(n-1)
+		13	y4(n-2)
 		 */
 		int o4 = g_signalChain * 4; 
 		ptr[i*2+1] = htonl(W1 + o1 + o2 + o3 + o4 + 1); //1 is for little-endian.
@@ -756,16 +759,17 @@ void setChans(){
 		saveMessage("chan %c %d", 'A'+i, g_channel[0]); 
 	}
 }
-void setAGC(float target){
+void setAGC(int ch1, int ch2, int ch3, float target){
 	//sets AGC for g_channel[0], [1], [2]
 	unsigned int* ptr = g_sendbuf; 
 	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
+	int chs[3]; chs[0] = ch1&127; chs[1]= ch2&127; chs[2] = ch3&127; 
 	for(int i=0; i<3; i++){
-		int chan = g_channel[i]; 
+		int chan = chs[i]; 
 		chan = chan & (0xff ^ 32); //map to the lower channels (0-31,64-95)
 		unsigned int p = (chan & 63)*2; 
 		if(chan >= 64) p += 1; //chs 64-127 pocessed following 0-63.
-		ptr[i*2+0] = htonl(A1 + (p*27 + 2)*4);
+		ptr[i*2+0] = htonl(A1 + (p*A1_STRIDE + 2)*4);
 		int j = (int)(sqrt(target * 128));
 		unsigned int u = (unsigned int)((j&0xffff) | ((j&0xffff)<<16)); 
 		ptr[i*2+1] = htonl(u); 
@@ -798,7 +802,7 @@ void setLMS(bool on){
 	unsigned int* ptr = g_sendbuf; 
 	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt. (32 byte packets)
 	ptr[0] = htonl(FP_BASE - FP_WEIGHTDECAY); //frame pointer
-	ptr[1] = htonl(on ? 0x7fff7fff : 0); //see r4 >>> 1 (v) in radio4.asm
+	ptr[1] = htonl(on ? 0x7fff0003 : 0); //see r4 >>> 1 (v) in radio4.asm
 	for(int i=1; i<4; i++){
 		ptr[i*2+0] = htonl(FP_BASE - FP_ECHO);
 		ptr[i*2+1] = htonl((g_echo << 4) & 0xf0); 
@@ -841,7 +845,8 @@ void setBiquad(int chan, float* biquad, int biquadNum){
 	for(i=0; i<4; i++){
 		unsigned int p = (chan & 63)*2; 
 		if(chan >= 64) p += 1; //chs 64-127 pocessed following 0-63.
-		ptr[i*2+0] = htonl(A1 + (p*27 + biquadNum*4 + i + 11)*4);
+		ptr[i*2+0] = htonl(A1 + 
+			(p*A1_STRIDE + biquadNum*4 + i + A1_IIRSTART)*4);
 		j = (int)(b[i*2+0]);
 		k = (int)(b[i*2+1]);
 		u = (unsigned int)((j&0xffff) | ((k&0xffff)<<16)); 
@@ -1133,7 +1138,9 @@ static void thresholdSpinCB( GtkAdjustment*, gpointer ){
 static void agcSpinCB( GtkAdjustment*, gpointer ){
 	float agc = gtk_adjustment_get_value(g_agcSpin); 
 	printf("agcSpinCB: %f\n", agc); 
-	setAGC(agc);
+	for(int i=0; i<128; i+=3){
+		setAGC(i,i+1,i+2,agc);
+	}
 }
 static void modeRadioCB(GtkWidget *, gpointer * data){
 	char* ptr = (char*)data; 
@@ -1162,7 +1169,7 @@ static void filterRadioCB(GtkWidget *button, gpointer * data){
 static void signalChainRadioCB(GtkWidget *button, gpointer * data){
 	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))){
 		int i = atoi((char*)data); 
-		if(i >=0 && i < 12){
+		if(i >=0 && i < W1_STRIDE){
 			g_signalChain = i;
 			setChans(); 
 		}
@@ -1464,22 +1471,24 @@ int main (int argn, char **argc)
 	gtk_container_set_border_width (GTK_CONTAINER (modebox), 2);
 	gtk_widget_show (modebox);
 	
-	const char* signalNames[12] = {
+	const char* signalNames[W1_STRIDE] = {
 		"0	mean from integrator",
 		"1	AGC gain",
-		"2	x1(n-1) (AGC out)",
-		"3	x1(n-2)",
-		"4	x2(n-1) / y1(n-1) (lo1 out)",
-		"5	x2(n-2) / y1(n-2)",
-		"6	x3(n-1) / y2(n-1) (hi1 out)",
-		"7	x3(n-2) / y2(n-2)",
-		"8	x2(n-1) / y3(n-1) (lo2 out)",
-		"9	x2(n-2) / y3(n-2)",
-		"10	y4(n-1) (hi2 out, final)",
-		"11	y4(n-2)" }; 
+		"2	LMS saturated sample",
+		"3	AGC out / LMS save",
+		"4	x1(n-1) / LMS out",
+		"5	x1(n-2)",
+		"6	x2(n-1) / y1(n-1) (lo1 out)",
+		"7	x2(n-2) / y1(n-2)",
+		"8	x3(n-1) / y2(n-1) (hi1 out)",
+		"9	x3(n-2) / y2(n-2)",
+		"10	x2(n-1) / y3(n-1) (lo2 out)",
+		"11	x2(n-2) / y3(n-2)",
+		"12	y4(n-1) (hi2 out, final)",
+		"13	y4(n-2)" }; 
 	button = 0; 
 	group = 0; 
-	for(int k=0; k<12; k++){
+	for(int k=0; k<W1_STRIDE; k++){
 		button = gtk_radio_button_new_with_label(group, signalNames[k]);
 		group = gtk_radio_button_get_group (GTK_RADIO_BUTTON (button)); //this is confusing -- see documentation.
 		gtk_box_pack_start (GTK_BOX (modebox), button, TRUE, TRUE, 0);
