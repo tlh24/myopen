@@ -770,7 +770,7 @@ void setAGC(int ch1, int ch2, int ch3, float target){
 		unsigned int p = (chan & 63)*2; 
 		if(chan >= 64) p += 1; //chs 64-127 pocessed following 0-63.
 		ptr[i*2+0] = htonl(A1 + (p*A1_STRIDE + 2)*4);
-		int j = (int)(sqrt(target * 128));
+		int j = (int)(sqrt(32768 * target));
 		unsigned int u = (unsigned int)((j&0xffff) | ((j&0xffff)<<16)); 
 		ptr[i*2+1] = htonl(u); 
 	}
