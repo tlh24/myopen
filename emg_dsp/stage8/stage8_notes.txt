@@ -153,3 +153,54 @@ April 14 2011
 	* pseudo-LMS style, error saturated to +- 1, signal saturated to +- 1
 	* summing pseudo-LMS style, sum 3 samples, 4 weights, sum saturated to +- 1, 
 		error saturated to +- 1.
+April 18 2011
+	* Noted that audio output seems to contain pops and clicks; worried that 
+	this may be a result of 
+	(1) processor operating at a too high clock rate -> errors in math
+	(2) errors in transmit pipeline due to stalls. 
+	To test
+	(1) clocked proc slower. 288Mhz, 720kHz ADC. 
+		No change in pops as recorded to disc.  
+		the pops seem poisson - most likely the radio is at fault!
+		Can we detect these as false spikes? 
+	(2) clocked ADC slower. 800Khz -> more cycles to service radio.
+		No change in pops as recorded to disc.
+	Looking at the data, it is clear that sometimes the packets are *not*
+	being sent out on the wire in order - some packets are dropped, but 
+	the ones put in their place are not always those dropped. 
+	It almost looks like they were hanging around from some old buffer. 
+	And this appears poisson ..? Network noise?
+	Must be a bug in the stage7 firmware.
+	Observations: 
+	* Never messes up channel assignment - when channels have two different
+		sine wave amplitudes, the pops never exceed that amplitude.
+	* Errors are concomitant, generally - the occurr on a per-packet basis
+		The only time you only hear on one channel is when the error is less audible 
+		on the other channel.
+	* Error is alwas preceded by a dropped packet - less noticeable - and an 
+		addition of an unkown packet. 
+		Is this packet a reminant of an old transmission? 
+		Will have to erase after write-out to see! 
+	YES, if we clear the buffer to 0, all unkown packets are 0 packets. 
+		must be that 'gotx' or 'go tx' is being triggered before the buffer is
+		completely full (recall frame = 16 packets; UDP_PACKET_SIZE = 512 = 32*16)
+		This implies that packets are being dropped, which is not surprising, 
+		even though the radios are right next to eachother..?
+		What about antenna diversity? Could be that another antenna RXed the packet.
+		Really need to analyze antenna diversity & how the SW degrades. 
+		The only reason I have packet transmission tied to RX packet is that 
+		this seems like a good pause for servicing eth..
+	okay. now the packets are properly dropped rather than having bogus data inserted. 
+	Next: check antenna diversity.
+		Antenna diversity is working!  any of the three antennas is capable of picking
+		up signal. However, three together do not seem to reduce the error rate to zero. 
+		perhaps it is exogenous noise? 
+		or ethernet interupts? 
+		Kinda hard to test the eth theory -- we need to listen to packets!
+		Try disabling the audio out? 
+			No difference.
+			Maybe I should just sleep on it.
+	Ok, try to fix the audio out, which is emmiting wobbly shit.
+		putting it in only normal mode. lots of staticky noise, probably from having 
+		only 16-bit samples. 
+		bah, need an antialiasing filter here.

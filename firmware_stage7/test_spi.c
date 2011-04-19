@@ -151,6 +151,9 @@ void write_flash(int len, u8* data){
 }
 //global pointers.
 #define UDP_PACKET_SIZE 512
+#define M_NORMAL	1
+#define	M_SLOW	2
+#define M_FAST	4
 u32 wrptr; 
 u32 trptr; 
 u8  g_samples[512]; //interleaved chs 1 & 2
@@ -159,6 +162,7 @@ u32 g_sampR;
 u32	g_sampInc; //increment by this every sample. base 31. (0x7ffffff); 
 u32 g_sampOff; //offset for interpolation.
 u8  g_sampCh; 
+u8	g_sampMode; 
 void getRadioPacket(u16 csn, u16 irq, u8 write){
 	// write is to enable 'null' reads of the fifo.
 	// (clearing the fifo will not work)
@@ -217,6 +221,7 @@ void getRadioPacket(u16 csn, u16 irq, u8 write){
 			asm volatile("ssync;"); 
 			//wait for the resulting irq.
 			while(*pPORTFIO & irq){
+				//asm volatile("nop; nop; nop; nop;"); 
 				eth_listen(0); //this inserts a bit of (useful) delay
 			}
 			spi_write_register(csn, NOR_STATUS, 0x70); //clear IRQ.
@@ -227,14 +232,21 @@ void getRadioPacket(u16 csn, u16 irq, u8 write){
 	if(gotx || wrptr >= UDP_PACKET_SIZE){
 		*pPORTFIO_SET = 0x4000; 
 		spi_write_byte(csn,NOR_FLUSH_RX); //will this fix the problem of immediately syncing? 
-		data = (u32*) ( udp_packet_setup(UDP_PACKET_SIZE + 4, &result )); 
+		data = (u32*) ( udp_packet_setup(wrptr+4, &result )); 
 		if(result > 0){
 			//copy the data from SDRAM.. (starting @ 0x0000 0000, looping 256k bytes)
 			//include a copy of the tptr, so that we can (possibly) reorder it. 
 			(*data++) = trptr; //this is the +4 above
-			memcpy_(0, (u8*)data, UDP_PACKET_SIZE); 
+			unsigned int *ptr = 0; 
+			for(i=0; i<wrptr/4; i++){
+				*data++ = *ptr++;
+			}
 			trptr ++ ; 
 			bfin_EMAC_send_nocopy(); 
+			*ptr = 0; 
+			for(i=0; i<UDP_PACKET_SIZE/4; i++){
+				*ptr++ = 0; //clear the old data away!
+			}
 		} else {
 			//reset, since we were not able to send anything 
 			// (possibly due to ARP). 
@@ -255,27 +267,35 @@ void __attribute__((interrupt_handler)) audio_out(void)
 	u8 s2 = g_samples[(g_sampR + chan + 2) & 511]; 
 	s1 ^= 0x80; //convert to unsigned.
 	s2 ^= 0x80; 
-	u16 samp = s1 * (0xff - (g_sampOff >> 23)) 
-			 + s2 * ((g_sampOff >> 23)); 
+	//u16 samp = s1 << 8; 
+	u16 samp = s1 * (0xff - (g_sampOff >> 20)) 
+			 + s2 * ((g_sampOff >> 20)); 
 	*pSPORT1_TX = samp | (0x3 << 19) | (chan << 16); //command, address
 	//adjust the rate.
 	if(chan == 1){ 
 		if(g_sampW < g_sampR){ g_sampR = g_sampW;} //wrap!
 		unsigned int d = g_sampW - g_sampR; 
-		if(d < 170 ) { //slow it down a bit. don't do this too frequently.
-			g_sampInc--; // -= (256 - d); //slow down the read (slightly!)
+		if(d > 500 - 32){
+			if(g_sampMode == M_NORMAL) g_sampMode = M_FAST;
+			if(g_sampMode == M_SLOW){ g_sampMode = M_NORMAL;}
 		}
-		if(d > 340 ){ 
-			g_sampInc++; // (d - 256); //speed up the read (slightly!)
+		else if(d < 100){
+			if(g_sampMode == M_NORMAL) g_sampMode = M_SLOW;
+			if(g_sampMode == M_FAST){ g_sampMode = M_NORMAL;}
 		}
-		if(d > 500){
-			 g_sampR = g_sampW;
+		if(g_sampMode == M_FAST){
+			g_sampInc = 0x1013abcd; 
+		} else if (g_sampMode == M_SLOW){
+ 			g_sampInc = 0x0ff14321; 
+		} else {
+			g_sampInc = 0x10000000; // C 
 		}
 		g_sampOff += g_sampInc; 
-		if(g_sampOff & 0x80000000){
+		while(g_sampOff > 0x10000000){
 			g_sampR += 2; 
+			g_sampOff -= 0x10000000; 
 		}
-		g_sampOff &= 0x7fffffff; 
+		g_sampOff &= 0x0fffffff; 
 	}
 	g_sampCh ^= 1; 
 }
@@ -384,7 +404,8 @@ int main(void){
 		asm volatile("ssync"); 
 		g_sampW = g_sampR = 0; //reset the counters.
 		g_sampOff = 0; 
-		g_sampInc = 0x80000000; //start by assuming they are synchonized.
+		g_sampMode = M_NORMAL; 
+		g_sampInc = 0x8000000; //start by assuming they are synchonized.
 		g_sampCh = 0; 
 		//serial clock is CCLK / 2*(TCLKDIV+1) ; ho
 		*pSPORT1_TCLKDIV = 29 ; //120Mhz / 2*30 = 2M / 32 = 62.5k / 2 = 31.25 ksps/ch
@@ -475,7 +496,7 @@ int main(void){
 		}
 		if((*pPORTFIO & (NRF_IRQ0 | NRF_IRQ1 | NRF_IRQ2)) == 
 			(NRF_IRQ0 | NRF_IRQ1 | NRF_IRQ2))
-			write = 1; //fall-through: only write one RXed packet.
+			write = 1; //no-change fall-through: only write one RXed packet.
 		
 		*FIO_SET = NRF_CSN0 | NRF_CSN1 | NRF_CSN2;
 		secs = (*pGTIME)/1000; // 0xff800800
