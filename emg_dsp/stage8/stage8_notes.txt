@@ -133,15 +133,17 @@ April 8 2011
 	----
 	Other things to do: 
 	* audio out working on base station. constant rate sample consumption? 
-	 variable rate? hm.
-	* decorrelator in the spare cycles? 
-	* fractional gain
-	* flat response has inappropraite gain? 
-	* sample different parts of the signal chain. 
+	 variable rate? hm. (fixed)
+	* decorrelator in the spare cycles?  (done)
+	* fractional gain (done)
+	* flat response has inappropraite gain?  (fixed)
+	* sample different parts of the signal chain. (done)
 	* longer waveform drawing -- should go to the end of the screen in zoom = 0.2
+		(done)
 	* be able to turn AGC off. 
 	* fix the draw bug on neuro-nico. seems to be pre-GPU, since if you switch 
 		the indicies of the VBOs, the yellow is then drawn correctly.
+		methinks its a 64-bit issue. which is indeed an issue.
 	----
 April 9 2011
 	Tested radio + triple diversity RX -> works very well. 
@@ -208,7 +210,8 @@ April 19 2011
 	Testing headstage current: 
 	(everything running, full LMS 320Mhz / 80Mhz / 1Mhz ADC)
 	3.11V	75.1ma  (minimum voltage - below this signal is distorted - probably LDO drop-out)
-	3.30	71.0
+	3.20	73.2
+	3.30	71.6
 	3.41	69.4
 	3.56	67.3
 	3.71	65.9
