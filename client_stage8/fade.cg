@@ -14,7 +14,7 @@ V_Output fade(float3 position : POSITION,
 	alpha = clamp(alpha, 0.f, 1.f);
 	
 	//OUT.color = float4(1.f, 1.f, 1.f, 0.5f); 
-	OUT.color = float4(col.r,col.g,col.b,0.4*alpha);
+	OUT.color = float4(col.r,col.g,col.b,alpha);
 
 	return OUT;	
 }
