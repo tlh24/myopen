@@ -124,12 +124,13 @@ static CGparameter myCgVertexParam_xzoom;
 static CGparameter myCgVertexParam_yoffset;
 
 int mod2(int a, int b){
-	if(a >=0) return a % b;
+	return abs(a%b);
+	/*if(a >=0) return a % b;
 	else {
 		//map to the positive numbers: -1 -> b-1; -2 ->b-2 etc
 		int c = abs(a) / b+1; 
 		return (b*c+a)%b; 
-	}
+	}*/
 }
 
 static void checkForCgError(const char *situation)
@@ -1009,29 +1010,34 @@ void* sock_thread(void* destIP){
 						//look back through the past 42 samples, select the largest.
 						float max = -100.f; 
 						float offset = 0; 
-						int k = g_channel[0]/32; 
-						for(int j=-42-21; j < -21; j++){
-							float v = g_fbuf[k][mod2(g_fbufW +j, g_nsamp)*3+1]; 
+						int k = 0; 
+						for(int j=-42-20; j < -20; j++){
+							//select the largest group of 3 samples (simple noise removal)
+							float w = g_fbuf[k][mod2(g_fbufW +j-1, g_nsamp)*3+1];
+							float x = g_fbuf[k][mod2(g_fbufW +j+0, g_nsamp)*3+1];
+							float y = g_fbuf[k][mod2(g_fbufW +j+1, g_nsamp)*3+1]; 
+							float v = 0.5*w + x + 0.5*y; 
 							if(v > max){
 								max = v; 
 								offset = j; 
 							}
 						}
-						int w = g_wbufW[0] % NDISPW; 
+						int w = mod2(g_wbufW[0], NDISPW); 
 						for(int j=0; j < 32; j++){
 							//x coord does not need updating.
 							g_wbuf[0][w*34*3 + (j+1)*3 + 1] = 
-								g_fbuf[k][mod2(g_fbufW + j + offset -10, g_nsamp)*3+1]; 
+								g_fbuf[k][mod2(g_fbufW + j + offset -11, g_nsamp)*3+1]; 
 							g_wbuf[0][w*34*3 + (j+1)*3 + 2] = time; 
 						}
 						g_wbufW[0]++; 
+						//printf("%f\t%d\n", time, g_wbufW[0]); 
 					} else {
 						if((g_bitdelay & 0xffff) == 0){
 							//have to be aggressive with the masking - 
 							//to prevent the edge from intruding in the non-sorted wf
-							int k = g_channel[0]/32; 
 							int w = g_wbufW[1] % NDISPW; 
 							int offset = -70; 
+							int k = 0; 
 							for(int j=0; j < 32; j++){
 								//x coord does not need updating.
 								g_wbuf[1][w*34*3 + (j+1)*3 + 1] = 
@@ -1039,10 +1045,13 @@ void* sock_thread(void* destIP){
 								g_wbuf[1][w*34*3 + (j+1)*3 + 2] = time; 
 							}
 							g_wbufW[1]++; 
+							g_bitdelay |= 0x4; //will not trigger threshold, will block excess copies.
 						}
 					}
 					// need a delay line - at least 21 samples. so 3 packets.
 					bit = (g_exceeded[g_channel[0]/8]) >> (g_channel[0] & 7); 
+					//taken care of, so clear for following packets!
+					g_exceeded[g_channel[0]/8] &= 0xff ^ (1<<(g_channel[0] & 7)); 
 					g_bitdelay <<= 1; 
 					g_bitdelay += bit & 1; 
 				}
@@ -1220,7 +1229,7 @@ static void zoomSpinCB( GtkAdjustment* , gpointer p){
 	g_nsamp = g_nsamp > NSAMP ? NSAMP : g_nsamp; 
 	g_nsamp = g_nsamp < 512 ? 512 : g_nsamp; 
 	g_rasterZoom = 4096.0 / (float)g_nsamp; 
-	if(g_mode == MODE_SPIKES) g_nsamp = 4096; 
+	if(g_mode == MODE_SPIKES) g_nsamp = NSAMP; 
 	printf("g_nsamp: %d, actual zoom %f\n", g_nsamp, g_rasterZoom); 
 }
 static void openSaveFile(gpointer parent_window) {
@@ -1310,17 +1319,18 @@ int main (int argn, char **argc)
 	gtk_widget_show(g_pktpsLabel); 
 	gtk_box_pack_start (GTK_BOX (box1), bx, TRUE, TRUE, 0);
 	
-	//and a channel spinner.
+	//4-channel control blocks. 
 	for(i=0; i<4; i++){
 		char buf[128]; 
 		snprintf(buf, 128, "%c", 'A'+i); 
 		frame = gtk_frame_new (buf);
+		gtk_frame_set_shadow_type(GTK_FRAME(frame),  GTK_SHADOW_ETCHED_IN); 
 		gtk_box_pack_start (GTK_BOX (box1), frame, TRUE, TRUE, 2);
 		
-		bx2 = gtk_vbox_new (FALSE, 1);
+		bx2 = gtk_vbox_new (FALSE, 2);
 		gtk_container_add (GTK_CONTAINER (frame), bx2);
 		
-		bx = gtk_hbox_new (FALSE, 1);
+		bx = gtk_hbox_new (FALSE, 2);
 		
 		//channel spinner.
 		label = gtk_label_new ("ch");
@@ -1408,12 +1418,12 @@ int main (int argn, char **argc)
 	button = gtk_button_new_with_label ("Set all gains from A");
 	g_signal_connect(button, "clicked", G_CALLBACK (gainSetAll),0);
 	gtk_box_pack_start (GTK_BOX (bx), button, TRUE, TRUE, 0);
-	gainSetAll(0); 
+	//gainSetAll(0); 
 	//and a AGC set-all button.
 	button = gtk_button_new_with_label ("Set all AGC targets from A");
 	g_signal_connect(button, "clicked", G_CALLBACK (agcSetAll),0);
 	gtk_box_pack_start (GTK_BOX (bx), button, TRUE, TRUE, 0);
-	agcSetAll(0); 
+	//agcSetAll(0); 
 	gtk_box_pack_start (GTK_BOX (box1), bx, TRUE, TRUE, 0);
 
 	//add in a threshold spinner. (global -- adjust the gain and AGC targets.
