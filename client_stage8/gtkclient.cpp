@@ -1418,12 +1418,12 @@ int main (int argn, char **argc)
 	button = gtk_button_new_with_label ("Set all gains from A");
 	g_signal_connect(button, "clicked", G_CALLBACK (gainSetAll),0);
 	gtk_box_pack_start (GTK_BOX (bx), button, TRUE, TRUE, 0);
-	//gainSetAll(0); 
+	//gainSetAll(0);
 	//and a AGC set-all button.
 	button = gtk_button_new_with_label ("Set all AGC targets from A");
 	g_signal_connect(button, "clicked", G_CALLBACK (agcSetAll),0);
 	gtk_box_pack_start (GTK_BOX (bx), button, TRUE, TRUE, 0);
-	//agcSetAll(0); 
+	//agcSetAll(0);
 	gtk_box_pack_start (GTK_BOX (box1), bx, TRUE, TRUE, 0);
 
 	//add in a threshold spinner. (global -- adjust the gain and AGC targets.
