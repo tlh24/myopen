@@ -185,7 +185,7 @@ void getRadioPacket(u16 csn, u16 irq, u8 write){
 			u8 t = (u8)(*pSPI_SHADOW); 
 			*ptr++ = t; 
 			//copy over to the sample (audio out) buffer.
-			if(i < 28){
+			if(i < 24){
 				if((i & 0x3) == 0){
 					g_samples[g_sampW & 511] = t;
 					g_sampW++; 
@@ -201,12 +201,13 @@ void getRadioPacket(u16 csn, u16 irq, u8 write){
 	*FIO_SET = csn; 
 	asm volatile("ssync;");
 	//need to check if the headstage wants a response.
+	//have to check encoding.
 	if(write){
-		char* c = (char*)(wrptr); 
+		unsigned int* c = (unsigned int*)(wrptr); 
 		wrptr += 32; 
 		wrptr &= 0xfff; 
-		c += 28; 
-		if(((*c)&0xf) == 0xf){ //end of a frame.
+		c += 24/4; //offset to template match bytes (8, 2 uints) 
+		if(((*c)&0x80808080) == 0x80808080){ //end of a frame.
 			radio_set_tx(csn, NRF_CE); //must clear CE here - essential!
 			asm volatile("ssync;"); 
 			*FIO_CLEAR = csn; 
