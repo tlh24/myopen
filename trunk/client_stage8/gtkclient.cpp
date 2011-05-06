@@ -37,6 +37,7 @@
 #include <arpa/inet.h>
 #include "sock.h"
 #include "../../neurorecord/stage/memory.h"
+#include "../../neurorecord/stage/decoder.h"
 
 #define NSAMP (24*1024)
 #define NDISPW 1024
@@ -46,13 +47,13 @@ static float	g_fbuf[4][NSAMP*3]; //continuous waveform.
 unsigned int	g_fbufW; //where to write to (always increment) 
 unsigned int	g_fbufR; //display thread reads from here - copies to mem
 unsigned int 	g_nsamp = 4096; //given the current level of zoom (1 = 4096 samples), how many samples to update?
-static float 	g_sbuf[128*1024*2]; 
-unsigned int	g_sbufW; 
-unsigned int	g_sbufR; 
-static float 	g_wbuf[2][3*34*NDISPW]; //32 samps / waveform + 2 endpoints
-unsigned int	g_wbufW[2]; 
-unsigned int	g_wbufR[2]; 
-GLuint			g_wvbo[2]; 
+static float 	g_sbuf[2][128*1024*2]; 
+unsigned int	g_sbufW[2]; 
+unsigned int	g_sbufR[2]; 
+static float 	g_wbuf[3][3*34*NDISPW]; //32 samps / waveform + 2 endpoints
+unsigned int	g_wbufW[3]; 
+unsigned int	g_wbufR[3]; 
+GLuint			g_wvbo[3]; 
 GLuint 			base;            // base display list for the font set.
 unsigned int*	g_sendbuf; 
 unsigned int g_sendW; //where to write to (in 32-byte increments)
@@ -72,8 +73,9 @@ unsigned int g_echo = 0;
 unsigned int g_headecho = 0; 
 unsigned int g_oldheadecho = 100; 
 bool g_out = false; 
-unsigned char g_exceeded[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}; 
-unsigned int g_bitdelay = 0;
+bool g_templMatch[2][128]; //match a,b over all 128 channels.
+//unsigned char g_exceeded[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}; 
+unsigned int g_bitdelay[2] = {0,0};
 int g_thresh = 16000; 
 float g_gains[128]; //per-channel gains.
 float g_agcs[128]; //per-channel AGC target.
@@ -95,9 +97,8 @@ double g_startTime = 0.0;
 int g_totalPackets = 0; 
 
 typedef struct {
-	char data[28]; //in groups of 4 channels, e.g. 0,32,64,96
-	unsigned char flag; 
-	unsigned char exceed[3]; //from a little-endian proc should be ok.
+	char data[24]; //in groups of 4 channels, e.g. 0,32,64,96
+	unsigned int tmpl[2]; //template match!
 } packet; 
 
 enum MODES {
@@ -114,7 +115,7 @@ int	g_drawmode = GL_LINE_STRIP;
 
 bool	g_vbo1Init = false; 
 GLuint g_vbo1[4] = {0,0,0,0}; //for the waveform display
-GLuint g_vbo2 = 0; //for spikes.
+GLuint g_vbo2[2] = {0,0}; //for spikes.
 static CGcontext   myCgContext;
 static CGprofile   myCgVertexProfile;
 static CGprogram   myCgVertexProgram[2];
@@ -274,21 +275,23 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 			g_fbufR = w; 
 		}
 		//ditto for the spike buffers
-		if(g_sbufR < g_sbufW){
-			unsigned int len = sizeof(g_sbuf)/8; //total # of pts. 
-			unsigned int w = g_sbufW; //atomic
-			unsigned int sta = g_sbufR % len; 
-			unsigned int fin = w % len; 
-			if(fin < sta) { //wrap
-				copyData(g_vbo2, sta, len, g_sbuf, 2); 
-				copyData(g_vbo2, 0, fin, g_sbuf, 2); 
-			} else {
-				copyData(g_vbo2, sta, fin, g_sbuf, 2); 
+		for(int k=0; k<2; k++){
+			if(g_sbufR[k] < g_sbufW[k]){
+				unsigned int len = sizeof(g_sbuf)/8; //total # of pts. 
+				unsigned int w = g_sbufW[k]; //atomic
+				unsigned int sta = g_sbufR[k] % len; 
+				unsigned int fin = w % len; 
+				if(fin < sta) { //wrap
+					copyData(g_vbo2[k], sta, len, g_sbuf[k], 2); 
+					copyData(g_vbo2[k], 0, fin, g_sbuf[k], 2); 
+				} else {
+					copyData(g_vbo2[k], sta, fin, g_sbuf[k], 2); 
+				}
+				g_sbufR[k] = w; 
 			}
-			g_sbufR = w; 
 		}
 		//and the waveform buffers.
-		for(int k=0; k<2; k++){
+		for(int k=0; k<3; k++){
 			if(g_wbufR[k] < g_wbufW[k]){
 				unsigned int len = NDISPW; 
 				unsigned int w = g_wbufW[k]; //atomic
@@ -372,13 +375,15 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		glShadeModel(GL_FLAT);
 		
 		//VBO drawing.. 
-		glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo2);
-		glVertexPointer(2, GL_FLOAT, 0, 0);
-		glColor4f (1., 1., 1., 0.3f);
-		glPointSize(2.0);
-		glDrawArrays(GL_POINTS, 0, sizeof(g_sbuf)/8);
-		glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
-		
+		for(int k=0; k<2; k++){
+			glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo2[k]);
+			glVertexPointer(2, GL_FLOAT, 0, 0);
+			if(k == 0) glColor4f (1., 1., 0., 0.3f);
+			else glColor4f (0., 1., 1., 0.3f);
+			glPointSize(2.0);
+			glDrawArrays(GL_POINTS, 0, sizeof(g_sbuf[k])/8);
+			glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+		}
 		glPopMatrix ();
 		//draw current channel
 		for(int k=0; k<4; k++){
@@ -406,7 +411,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		cgGLEnableProfile(myCgVertexProfile);
 		checkForCgError("enabling vertex profile");
 		
-		glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_wvbo[1]);
+		glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_wvbo[0]);
 		glVertexPointer(3, GL_FLOAT, 0, 0);
 		glPointSize(4.0);
 		glDrawArrays(g_drawmode, 0, 34*NDISPW);
@@ -420,7 +425,20 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		cgGLEnableProfile(myCgVertexProfile);
 		checkForCgError("enabling vertex profile");
 		
-		glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_wvbo[0]);
+		glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_wvbo[1]);
+		glVertexPointer(3, GL_FLOAT, 0, 0);
+		glDrawArrays(g_drawmode, 0, 34*NDISPW);
+		glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+		cgGLDisableProfile(myCgVertexProfile);
+		checkForCgError("disabling vertex profile");
+		
+		cgSetParameter1f(myCgVertexParam_time, t);
+		cgSetParameter3f(myCgVertexParam_col, 0.f,1.f,1.f);
+		cgGLBindProgram(myCgVertexProgram[1]);
+		cgGLEnableProfile(myCgVertexProfile);
+		checkForCgError("enabling vertex profile");
+		
+		glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_wvbo[2]);
 		glVertexPointer(3, GL_FLOAT, 0, 0);
 		glDrawArrays(g_drawmode, 0, 34*NDISPW);
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
@@ -538,21 +556,23 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 			printf("Vertex Array in VBO:%d bytes\n", bufferSize);
 		}
 		//have one VBO that's filled with spike times & channels.
-		for(int i=0; i<128; i++){
-			for(int j=0; j<1024; j++){
-				g_sbuf[(i*1024+j)*2+0] = (float)j/50.f; 
-				g_sbuf[(i*1024+j)*2+1] = (float)i; 
+		for(int k=0; k<2; k++){
+			for(int i=0; i<128; i++){
+				for(int j=0; j<1024; j++){
+					g_sbuf[k][(i*1024+j)*2+0] = (float)j/50.f; 
+					g_sbuf[k][(i*1024+j)*2+1] = (float)i; 
+				}
 			}
+			glGenBuffersARB(1, &g_vbo2[k]);
+			glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo2[k]);
+			glBufferDataARB(GL_ARRAY_BUFFER_ARB, sizeof(g_sbuf[k]), 
+				0, GL_DYNAMIC_DRAW_ARB);
+			glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, 
+				0, sizeof(g_sbuf[k]), g_sbuf[k]);
 		}
-		glGenBuffersARB(1, &g_vbo2);
-		glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo2);
-		glBufferDataARB(GL_ARRAY_BUFFER_ARB, sizeof(g_sbuf), 
-			0, GL_DYNAMIC_DRAW_ARB);
-		glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, 
-			0, sizeof(g_sbuf), g_sbuf);
 			
 		//an another 2 VBOs that are filled with waveforms. 
-		for(int k=0; k<2; k++){
+		for(int k=0; k<3; k++){
 			for(int i=0; i < NDISPW; i++){
 				int j = 0; 
 				g_wbuf[k][(i*34+j)*3 + 0] = 0.f; //x
@@ -620,8 +640,8 @@ void destroy(GtkWidget *, gpointer){
 	if(g_vbo1Init){
 		for(int k=0; k<4; k++)
 			glDeleteBuffersARB(1, &g_vbo1[k]); 
-		glDeleteBuffersARB(1, &g_vbo2);
-		glDeleteBuffersARB(2, g_wvbo); 
+		glDeleteBuffersARB(2, g_vbo2);
+		glDeleteBuffersARB(3, g_wvbo); 
 	}
 	cgDestroyProgram(myCgVertexProgram[0]);
 	cgDestroyProgram(myCgVertexProgram[1]);
@@ -693,11 +713,12 @@ void updateGain(int chan){
 	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
 	for(i=0; i<4; i++){
 		//remember, chan mapped to 0-31 & 64-95 (above)
-		unsigned int p = (chan & 63)*2; 
+		unsigned int p = 0; 
 		if(chan >= 64) p += 1; //chs 64-127 pocessed following 0-63.
 		ptr[i*2+0] = htonl(A1 + 
-			(p*A1_STRIDE + indx2[i] + A1_IIRSTART)*4);
-			//+4 b/c have integrator, AGC coefs
+			(A1_STRIDE*(chan & 31) + 
+			A1_IIRSTARTA + p*A1_IIRSTARTB + indx2[i])*4); 
+			
 		j = (int)(b[i*2+0]);
 		k = (int)(b[i*2+1]);
 		u = (unsigned int)((j&0xffff) | ((k&0xffff)<<16)); 
@@ -721,9 +742,12 @@ void setOsc(int chan){
 	chan = chan & (0xff ^ 32); //map to the lower channels. 
 		// e.g. 42 -> 10,42; 67 -> 67,99 ; 100 -> 68,100
 	for(i=0; i<4; i++){
-		unsigned int p = (chan & 63)*2; 
+		unsigned int p = 0; 
 		if(chan >= 64) p += 1; //chs 64-127 pocessed following 0-63.
 		ptr[i*2+0] = htonl(A1 + (p*A1_STRIDE + 0 + i + A1_IIRSTART)*4);
+		ptr[i*2+0] = htonl(A1 + 
+			(A1_STRIDE*(chan & 31) + 
+			A1_IIRSTARTA + p*A1_IIRSTARTB + i)*4); 
 		j = (int)(b[i]);
 		u = (unsigned int)((j&0xffff) | ((j&0xffff)<<16)); 
 		ptr[i*2+1] = htonl(u); 
@@ -777,9 +801,12 @@ void setAGC(int ch1, int ch2, int ch3, float target){
 		int chan = chs[i];
 		g_agcs[chan] = target; 
 		chan = chan & (0xff ^ 32); //map to the lower channels (0-31,64-95)
-		unsigned int p = (chan & 63)*2; 
+		unsigned int p = 0; 
 		if(chan >= 64) p += 1; //chs 64-127 pocessed following 0-63.
 		ptr[i*2+0] = htonl(A1 + (p*A1_STRIDE + 2)*4);
+		ptr[i*2+0] = htonl(A1 + 
+			(A1_STRIDE*(chan & 31) + 
+			A1_IIRSTARTA + p*A1_IIRSTARTB + indx2[i])*4); 
 		int j = (int)(sqrt(32768 * g_agcs[chan]));
 		int k = (int)(sqrt(32768 * g_agcs[chan+32]));
 		unsigned int u = (unsigned int)((j&0xffff) | ((k&0xffff)<<16)); 
@@ -794,7 +821,7 @@ void setAGC(int ch1, int ch2, int ch3, float target){
 	saveMessage("agc %d", (int)target);
 }
 void setThresh(){
-	int i; 
+/*	int i; 
 	unsigned int* ptr = g_sendbuf; 
 	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt. (32 byte packets)
 	ptr[0] = htonl(FP_BASE - FP_THRESH); //frame pointer
@@ -806,7 +833,7 @@ void setThresh(){
 	}
 	g_sendW++;
 	g_echo++; 
-	saveMessage("theshold %d", g_thresh); 
+	saveMessage("theshold %d", g_thresh); */
 }
 void setLMS(bool on){
 	//this applies to all channels.
@@ -975,30 +1002,49 @@ void* sock_thread(void* destIP){
 			for(int i=0; i<npack && g_pause <=0.0; i++){
 				//see if it exceeded threshold.
 				float z = 0; 
-				g_headecho = ((p->flag) >> 4) & 0xf ; 
-				int exch = p->flag & 15;
-				//mapping: 0 -> 0,1,2 ; 1 -> 3,4,5 ; 2 -> 6,7,8 etc!
-				// 7 samples / packet, 31.25ksps = 4464 pkts/sec, 0.224ms/pkt (558 frames/sec)
-				double time = rxtime - ((double)(npack-i)-0.5) * 0.000224; 
-				for(int j=0; j<3; j++){
-					g_exceeded[(exch*3+j)%16] = p->exceed[j]; 
-					for(int k=0; k<8; k++){
-						if(p->exceed[j] & (1 << k)){
-							int w = g_sbufW % (sizeof(g_sbuf)/8); 
-							int ch = ((exch*3+j)%16)*8 + k; 
-							g_sbuf[w*2+0] = (float)time; 
-							g_sbuf[w*2+1] = (float)ch; 
-							g_sbufW ++; 
+				//g_headecho = ((p->flag) >> 4) & 0xf ; 
+				int exch = 0; 
+				exch += 0x8 & ((p->tmpl[0]) >> (32-4)); //0x80808080 format; convert to 0xf format.
+				exch += 0x4 & ((p->tmpl[0]) >> (24-3));
+				exch += 0x2 & ((p->tmpl[0]) >> (16-2));
+				exch += 0x1 & ((p->tmpl[0]) >> (8-1));
+				//mapping : 0 -> 0,32,64,96; 1->1,33,65,97. 
+				// much simpler than old mapping. 
+				// 6 samples / packet, 31.25ksps = 5208.33 pkts/sec, 0.192ms/pkt 
+				// 3.07 ms/frame, 325.5 frames/sec
+				double time = rxtime - ((double)(npack-i)-0.5) * 0.000192; 
+				for(int k=0; k<2; k++){ //32 bit words
+					for(int j=0; j<4; j++){ //bytes
+						int chan = (exch * 8)%32 + k*4 + j; 
+						unsigned char encoded = ((p->tmpl[k]) >> (8*j)) & 0x7f; 
+						unsigned short decoded = decoder[encoded]; 
+						if(decoded & 0x100) printf("error caught in template match!\n"); 
+						int bitoff[4] = {0,1,4,5};
+						for(int m = 0; m < 4; m++){
+							int adr = chan + m*32; 
+							g_templMatch[0][adr] = false;
+							g_templMatch[1][adr] = false; 
+							int b = bitoff[m]; 
+							for(int t=0; t<2; t++){
+								if((0x01<<(b+2*t)) & decoded){
+									g_templMatch[t][adr] = true;
+									int w = g_sbufW[t] % (sizeof(g_sbuf)/8); 
+									g_sbuf[t][w*2+0] = (float)time; 
+									g_sbuf[t][w*2+1] = (float)adr; 
+									g_sbufW[t] ++; 
+								}
+							}
 						}
 					}
 				}
 				unsigned int bit = 0; 
-				for(int j=0; j<7; j++){
+				for(int j=0; j<6; j++){
 					for(int k=0; k<4; k++){
 						char samp = p->data[j*4+k]; 
 						int ch = g_channel[k];
-						bit = (g_exceeded[ch/8]) & (0x1 << (ch & 7)) ; 
-						z = 0.f; if(bit) z = 1.f; 
+						z = 0.f; 
+						if(g_templMatch[0][ch]) z = 1.f; 
+						if(g_templMatch[1][ch]) z = 2.f; 
 						g_fbuf[k][(g_fbufW % g_nsamp)*3 + 1] = (float)samp / 128.f;
 						g_fbuf[k][(g_fbufW % g_nsamp)*3 + 2] = z;
 					}
@@ -1006,54 +1052,56 @@ void* sock_thread(void* destIP){
 				}
 				p++; 
 				if(g_mode == MODE_SPIKES){
-					if(g_bitdelay & (1 << 2)){
-						//look back through the past 42 samples, select the largest.
-						float max = -100.f; 
-						float offset = 0; 
-						int k = 0; 
-						for(int j=-42-20; j < -20; j++){
-							//select the largest group of 3 samples (simple noise removal)
-							float w = g_fbuf[k][mod2(g_fbufW +j-1, g_nsamp)*3+1];
-							float x = g_fbuf[k][mod2(g_fbufW +j+0, g_nsamp)*3+1];
-							float y = g_fbuf[k][mod2(g_fbufW +j+1, g_nsamp)*3+1]; 
-							float v = 0.5*w + x + 0.5*y; 
-							if(v > max){
-								max = v; 
-								offset = j; 
-							}
-						}
-						int w = mod2(g_wbufW[0], NDISPW); 
-						for(int j=0; j < 32; j++){
-							//x coord does not need updating.
-							g_wbuf[0][w*34*3 + (j+1)*3 + 1] = 
-								g_fbuf[k][mod2(g_fbufW + j + offset -11, g_nsamp)*3+1]; 
-							g_wbuf[0][w*34*3 + (j+1)*3 + 2] = time; 
-						}
-						g_wbufW[0]++; 
-						//printf("%f\t%d\n", time, g_wbufW[0]); 
-					} else {
-						if((g_bitdelay & 0xffff) == 0){
-							//have to be aggressive with the masking - 
-							//to prevent the edge from intruding in the non-sorted wf
-							int w = g_wbufW[1] % NDISPW; 
-							int offset = -70; 
+					for(int t = 0; t<2; t++){
+						if(g_bitdelay[t] & (1 << 3)){
+							float max = -100.f; 
+							float offset = 0; 
 							int k = 0; 
+							for(int j=-14-20; j < -20; j++){
+								//select the largest group of 3 samples (simple noise removal)
+								float w = g_fbuf[k][mod2(g_fbufW +j-1, g_nsamp)*3+1];
+								float x = g_fbuf[k][mod2(g_fbufW +j+0, g_nsamp)*3+1];
+								float y = g_fbuf[k][mod2(g_fbufW +j+1, g_nsamp)*3+1]; 
+								float v = 0.5*w + x + 0.5*y; 
+								if(v > max){
+									max = v; 
+									offset = j; 
+								}
+							}
+							int w = mod2(g_wbufW[t], NDISPW); 
 							for(int j=0; j < 32; j++){
 								//x coord does not need updating.
-								g_wbuf[1][w*34*3 + (j+1)*3 + 1] = 
-									g_fbuf[k][mod2(g_fbufW + j + offset, g_nsamp)*3+1]; 
-								g_wbuf[1][w*34*3 + (j+1)*3 + 2] = time; 
+								g_wbuf[t][w*34*3 + (j+1)*3 + 1] = 
+									g_fbuf[k][mod2(g_fbufW + j + offset -11, g_nsamp)*3+1]; 
+								g_wbuf[t][w*34*3 + (j+1)*3 + 2] = time; 
 							}
-							g_wbufW[1]++; 
-							g_bitdelay |= 0x4; //will not trigger threshold, will block excess copies.
+							g_wbufW[t]++; 
+							//printf("%f\t%d\n", time, g_wbufW[0]); 
+						} else {
+							if((g_bitdelay[t] & 0xffff) == 0){
+								//have to be aggressive with the masking - 
+								//to prevent the edge from intruding in the non-sorted wf
+								int w = g_wbufW[2] % NDISPW; 
+								int offset = -70; 
+								int k = 0; 
+								for(int j=0; j < 32; j++){
+									//x coord does not need updating.
+									g_wbuf[2][w*34*3 + (j+1)*3 + 1] = 
+										g_fbuf[k][mod2(g_fbufW + j + offset, g_nsamp)*3+1]; 
+									g_wbuf[2][w*34*3 + (j+1)*3 + 2] = time; 
+								}
+								g_wbufW[2]++; 
+								g_bitdelay[t] |= 0x4; //will not trigger threshold, will block excess copies.
+							}
 						}
+						// need a delay line - at least 21 samples. so 3 packets.
+						bit = 0;
+						if(g_templMatch[t][g_channel[0]]) bit++; 
+						//taken care of, so clear for following packets!
+						//g_exceeded[g_channel[0]/8] &= 0xff ^ (1<<(g_channel[0] & 7)); 
+						g_bitdelay[t] <<= 1; 
+						g_bitdelay[t] += bit & 1; 
 					}
-					// need a delay line - at least 21 samples. so 3 packets.
-					bit = (g_exceeded[g_channel[0]/8]) >> (g_channel[0] & 7); 
-					//taken care of, so clear for following packets!
-					g_exceeded[g_channel[0]/8] &= 0xff ^ (1<<(g_channel[0] & 7)); 
-					g_bitdelay <<= 1; 
-					g_bitdelay += bit & 1; 
 				}
 			}
 		}
