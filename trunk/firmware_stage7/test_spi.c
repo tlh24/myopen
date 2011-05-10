@@ -361,7 +361,7 @@ int main(void){
 			if((i & 7) == 7) printf_str("\n"); 
 		}
 		//write nonvolatile info to flash. 
-		g_nv.destIP = FormatIPAddress(152, 16, 229, 33); 
+		g_nv.destIP = FormatIPAddress(152, 16, 229, 54); 
 		g_nv.radioChan = 124; 
 		g_nv.destPort = 4340; 
 		write_flash(sizeof(g_nv), (u8*)&g_nv); 
