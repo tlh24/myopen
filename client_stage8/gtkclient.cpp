@@ -47,7 +47,7 @@ static float	g_fbuf[4][NSAMP*3]; //continuous waveform.
 unsigned int	g_fbufW; //where to write to (always increment) 
 unsigned int	g_fbufR; //display thread reads from here - copies to mem
 unsigned int 	g_nsamp = 4096; //given the current level of zoom (1 = 4096 samples), how many samples to update?
-static float 	g_sbuf[2][128*1024*2]; 
+static float 	g_sbuf[2][128*1024*2]; //spike buffers.
 unsigned int	g_sbufW[2]; 
 unsigned int	g_sbufR[2]; 
 static float 	g_wbuf[3][3*34*NDISPW]; //32 samps / waveform + 2 endpoints
@@ -73,12 +73,14 @@ unsigned int g_echo = 0;
 unsigned int g_headecho = 0; 
 unsigned int g_oldheadecho = 100; 
 bool g_out = false; 
-bool g_templMatch[2][128]; //match a,b over all 128 channels.
+bool g_templMatch[128][2]; //match a,b over all 128 channels.
 //unsigned char g_exceeded[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}; 
 unsigned int g_bitdelay[2] = {0,0};
 int g_thresh = 16000; 
 float g_gains[128]; //per-channel gains.
 float g_agcs[128]; //per-channel AGC target.
+int   g_aperture[128][2]; //for template matching. 
+unsigned char g_template[128][2][14]; //the per-channel templates. 
 FILE* g_saveFile = 0; 
 bool g_closeSaveFile = false; 
 unsigned int g_saveFileBytes; 
@@ -411,9 +413,8 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		cgGLEnableProfile(myCgVertexProfile);
 		checkForCgError("enabling vertex profile");
 		
-		glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_wvbo[0]);
+		glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_wvbo[2]);
 		glVertexPointer(3, GL_FLOAT, 0, 0);
-		glPointSize(4.0);
 		glDrawArrays(g_drawmode, 0, 34*NDISPW);
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 		cgGLDisableProfile(myCgVertexProfile);
@@ -425,8 +426,9 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		cgGLEnableProfile(myCgVertexProfile);
 		checkForCgError("enabling vertex profile");
 		
-		glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_wvbo[1]);
+		glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_wvbo[0]);
 		glVertexPointer(3, GL_FLOAT, 0, 0);
+		glPointSize(4.0);
 		glDrawArrays(g_drawmode, 0, 34*NDISPW);
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 		cgGLDisableProfile(myCgVertexProfile);
@@ -438,7 +440,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		cgGLEnableProfile(myCgVertexProfile);
 		checkForCgError("enabling vertex profile");
 		
-		glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_wvbo[2]);
+		glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_wvbo[1]);
 		glVertexPointer(3, GL_FLOAT, 0, 0);
 		glDrawArrays(g_drawmode, 0, 34*NDISPW);
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
@@ -571,7 +573,7 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 				0, sizeof(g_sbuf[k]), g_sbuf[k]);
 		}
 			
-		//an another 2 VBOs that are filled with waveforms. 
+		//an another 3 VBOs that are filled with waveforms. 
 		for(int k=0; k<3; k++){
 			for(int i=0; i < NDISPW; i++){
 				int j = 0; 
@@ -609,6 +611,7 @@ GtkWidget* g_headechoLabel;
 GtkAdjustment* g_channelSpin[4] = {0,0,0,0};
 GtkAdjustment* g_gainSpin[4] = {0,0,0,0}; 
 GtkAdjustment* g_agcSpin[4] = {0,0,0,0}; 
+GtkAdjustment* g_apertureSpin[8] = {0,0,0,0}; 
 GtkAdjustment* g_thresholdSpin; 
 GtkWidget* g_pktpsLabel;
 GtkWidget* g_fileSizeLabel;
@@ -717,7 +720,7 @@ void updateGain(int chan){
 		if(chan >= 64) p += 1; //chs 64-127 pocessed following 0-63.
 		ptr[i*2+0] = htonl(A1 + 
 			(A1_STRIDE*(chan & 31) + 
-			A1_IIRSTARTA + p*A1_IIRSTARTB + indx2[i])*4); 
+			A1_IIRSTARTA + p*(A1_IIRSTARTB-A1_IIRSTARTA) + indx2[i])*4); 
 			
 		j = (int)(b[i*2+0]);
 		k = (int)(b[i*2+1]);
@@ -744,10 +747,9 @@ void setOsc(int chan){
 	for(i=0; i<4; i++){
 		unsigned int p = 0; 
 		if(chan >= 64) p += 1; //chs 64-127 pocessed following 0-63.
-		ptr[i*2+0] = htonl(A1 + (p*A1_STRIDE + 0 + i + A1_IIRSTART)*4);
 		ptr[i*2+0] = htonl(A1 + 
 			(A1_STRIDE*(chan & 31) + 
-			A1_IIRSTARTA + p*A1_IIRSTARTB + i)*4); 
+			A1_IIRSTARTA + p*(A1_IIRSTARTB-A1_IIRSTARTA) + i)*4); 
 		j = (int)(b[i]);
 		u = (unsigned int)((j&0xffff) | ((j&0xffff)<<16)); 
 		ptr[i*2+1] = htonl(u); 
@@ -803,10 +805,9 @@ void setAGC(int ch1, int ch2, int ch3, float target){
 		chan = chan & (0xff ^ 32); //map to the lower channels (0-31,64-95)
 		unsigned int p = 0; 
 		if(chan >= 64) p += 1; //chs 64-127 pocessed following 0-63.
-		ptr[i*2+0] = htonl(A1 + (p*A1_STRIDE + 2)*4);
 		ptr[i*2+0] = htonl(A1 + 
 			(A1_STRIDE*(chan & 31) + 
-			A1_IIRSTARTA + p*A1_IIRSTARTB + indx2[i])*4); 
+			+ p*(A1_IIRSTARTA+A1_IIR) + 2)*4); // 2 is the offset to the AGC target. 
 		int j = (int)(sqrt(32768 * g_agcs[chan]));
 		int k = (int)(sqrt(32768 * g_agcs[chan+32]));
 		unsigned int u = (unsigned int)((j&0xffff) | ((k&0xffff)<<16)); 
@@ -819,6 +820,28 @@ void setAGC(int ch1, int ch2, int ch3, float target){
 	g_sendW++;
 	g_echo++; 
 	saveMessage("agc %d", (int)target);
+}
+void setAperture(int ch){
+	// offset is A1 + A1_STRIDE*(ch & 31)
+	// aperture order: ch0, ch64, ch32, ch96. (little-endian)
+	//might as well set both A & B apertures at same time. 
+	ch &= 31; 
+	unsigned int* ptr = g_sendbuf; 
+	ptr += (g_sendW % g_sendL) * 8;
+	for(int i=0; i<4; i++){
+		ptr[i*2+0] = htonl(A1 + 
+			(A1_STRIDE*ch + (A1_TEMPLATE+A1_APERTURE)*(i/2) + 
+			 A1_APERTUREA + (i&1))*4); 
+		unsigned int u = (g_aperture[ch+32*(i&1)][i/2] & 0xffff) | 
+						((g_aperture[ch+64+32*(i&1)][i/2] & 0xffff)<<16);
+		ptr[i*2+1] = htonl(u); 
+	}
+	g_sendW++;
+	g_echo++; 
+	for(int i=0; i<4; i++){
+		saveMessage("aperture %d %d,%d", ch + 32*i, 
+				g_aperture[ch + 32*i][0], g_aperture[ch + 32*i][1]);
+	}
 }
 void setThresh(){
 /*	int i; 
@@ -889,10 +912,10 @@ void setBiquad(int chan, float* biquad, int biquadNum){
 	unsigned int* ptr = g_sendbuf; 
 	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
 	for(i=0; i<4; i++){
-		unsigned int p = (chan & 63)*2; 
+		unsigned int p = 0; 
 		if(chan >= 64) p += 1; //chs 64-127 pocessed following 0-63.
-		ptr[i*2+0] = htonl(A1 + 
-			(p*A1_STRIDE + biquadNum*4 + i + A1_IIRSTART)*4);
+		ptr[i*2+0] = htonl(A1 + ((chan & 31)*A1_STRIDE +
+			 A1_IIRSTARTA + p*(A1_IIRSTARTB-A1_IIRSTARTA) + biquadNum*4 + i)*4);
 		j = (int)(b[i*2+0]);
 		k = (int)(b[i*2+1]);
 		u = (unsigned int)((j&0xffff) | ((k&0xffff)<<16)); 
@@ -948,12 +971,20 @@ void* sock_thread(void* destIP){
 	g_rxsock = setup_socket(4340); 
 	g_txsock = connect_socket(4342,(char*)destIP); 
 	if(!g_txsock) printf("failed to connect to bridge.\n"); 
+	//default txsockAddr
 	get_sockaddr(4342, (char*)destIP, &g_txsockAddr); 
 	char buf[1024];
 	int send_delay = 0; 
 	g_totalPackets = 0; 
+	sockaddr_in from; 
 	while(g_die == 0){
-		int n = recvfrom(g_rxsock, buf, sizeof(buf), 0,0,0); 
+		socklen_t fromlen = sizeof(from); 
+		int n = recvfrom(g_rxsock, buf, sizeof(buf),0, 
+						 (sockaddr*)&from, &fromlen); 
+		if(fromlen > 0 && n > 0){
+			g_txsockAddr.sin_addr = from.sin_addr; 
+			//keep the dest port (4342); don't copy that.
+		}
 		if(n > 0 && !g_die){
 			double rxtime = gettime(); 
 			unsigned int trptr = *((unsigned int*)buf);
@@ -1022,13 +1053,13 @@ void* sock_thread(void* destIP){
 						int bitoff[4] = {0,1,4,5};
 						for(int m = 0; m < 4; m++){
 							int adr = chan + m*32; 
-							g_templMatch[0][adr] = false;
-							g_templMatch[1][adr] = false; 
+							g_templMatch[adr][0] = false;
+							g_templMatch[adr][1] = false; 
 							int b = bitoff[m]; 
 							for(int t=0; t<2; t++){
 								if((0x01<<(b+2*t)) & decoded){
-									g_templMatch[t][adr] = true;
-									int w = g_sbufW[t] % (sizeof(g_sbuf)/8); 
+									g_templMatch[adr][t] = true;
+									int w = g_sbufW[t] % (sizeof(g_sbuf[t])/8); 
 									g_sbuf[t][w*2+0] = (float)time; 
 									g_sbuf[t][w*2+1] = (float)adr; 
 									g_sbufW[t] ++; 
@@ -1043,8 +1074,8 @@ void* sock_thread(void* destIP){
 						char samp = p->data[j*4+k]; 
 						int ch = g_channel[k];
 						z = 0.f; 
-						if(g_templMatch[0][ch]) z = 1.f; 
-						if(g_templMatch[1][ch]) z = 2.f; 
+						if(g_templMatch[ch][0]) z = 1.f; 
+						if(g_templMatch[ch][1]) z = 2.f; 
 						g_fbuf[k][(g_fbufW % g_nsamp)*3 + 1] = (float)samp / 128.f;
 						g_fbuf[k][(g_fbufW % g_nsamp)*3 + 2] = z;
 					}
@@ -1091,12 +1122,12 @@ void* sock_thread(void* destIP){
 									g_wbuf[2][w*34*3 + (j+1)*3 + 2] = time; 
 								}
 								g_wbufW[2]++; 
-								g_bitdelay[t] |= 0x4; //will not trigger threshold, will block excess copies.
+								g_bitdelay[t] |= 0x8; //will not trigger threshold, will block excess copies.
 							}
 						}
 						// need a delay line - at least 21 samples. so 3 packets.
 						bit = 0;
-						if(g_templMatch[t][g_channel[0]]) bit++; 
+						if(g_templMatch[g_channel[0]][t]) bit++; 
 						//taken care of, so clear for following packets!
 						//g_exceeded[g_channel[0]/8] &= 0xff ^ (1<<(g_channel[0] & 7)); 
 						g_bitdelay[t] <<= 1; 
@@ -1169,6 +1200,8 @@ static void channelSpinCB( GtkAdjustment* , gpointer p){
 			//update the UI too. 
 			gtk_adjustment_set_value(g_gainSpin[k], g_gains[ch]);
 			gtk_adjustment_set_value(g_agcSpin[k], g_agcs[ch]); 
+			gtk_adjustment_set_value(g_apertureSpin[k*2+0], g_aperture[ch][0]);
+			gtk_adjustment_set_value(g_apertureSpin[k*2+1], g_aperture[ch][1]);
 		}
 	}
 }
@@ -1208,6 +1241,18 @@ static void agcSpinCB( GtkAdjustment*, gpointer p){
 		if(j >= 0 && j < 128){
 			g_agcs[j] = agc; 
 			setAGC(j,j,j,agc);
+		}
+	}
+}
+static void apertureSpinCB( GtkAdjustment*, gpointer p){
+	int h = (int)p; 
+	if(h >= 0 && h < 8){
+		float a = gtk_adjustment_get_value(g_apertureSpin[h]); 
+		int j = g_channel[h/2]; 
+		printf("apertureSpinCB: %f ch %d\n", a, j); 
+		if(j >= 0 && j < 256*14){
+			g_aperture[j][h%2] = a; 
+			setAperture(j);
 		}
 	}
 }
@@ -1324,14 +1369,15 @@ int main (int argn, char **argc)
 		strncpy(destIP, argc[1], 255); 
 		destIP[255] = 0; 
 	}else{
-		snprintf(destIP, 256, "152.16.229.50"); 
+		snprintf(destIP, 256, "152.16.229.38"); 
 	}
-	
-	pthread_t thread1;
-	pthread_attr_t attr;
-	pthread_attr_init(&attr);
-	g_startTime = gettime(); 
-	pthread_create( &thread1, &attr, sock_thread, (void*)destIP ); 
+	//defaults. 
+	for(i=0; i<128; i++){
+		g_agcs[i] = 16000.f; 
+		g_gains[i] = 1.0f; 
+		g_aperture[i][0] = 140;
+		g_aperture[i][1] = 140; 
+	}
 
 	gtk_init (&argn, &argc);
 	gtk_gl_init (&argn, &argc);
@@ -1427,6 +1473,28 @@ int main (int argn, char **argc)
 		g_signal_connect(spinner, "value-changed", 
 						G_CALLBACK(agcSpinCB), GINT_TO_POINTER (i));
 		gtk_widget_show(spinner); 
+		
+		gtk_box_pack_start (GTK_BOX (bx2), bx, TRUE, TRUE, 1);
+		
+		//below that, A and B template match apertures.
+		bx = gtk_hbox_new (FALSE, 1);
+		
+		for(int j=0; j<2; j++){
+			buf[0] = 'A' + j; 
+			buf[1] = 0; 
+			label = gtk_label_new (buf);
+			gtk_box_pack_start (GTK_BOX (bx), label, TRUE, TRUE, 2);
+			gtk_widget_show(label); 
+			g_apertureSpin[i*2+j] = (GtkAdjustment *)gtk_adjustment_new(
+				12*14, 
+				0, 255*14, 1, 2, 0.0);
+			spinner = gtk_spin_button_new (g_apertureSpin[i*2+j], 0, 0);
+			gtk_spin_button_set_wrap (GTK_SPIN_BUTTON (spinner), FALSE);
+			gtk_box_pack_start (GTK_BOX (bx), spinner, TRUE, TRUE, 2);
+			g_signal_connect(spinner, "value-changed", 
+							G_CALLBACK(apertureSpinCB), GINT_TO_POINTER (i*2+j));
+			gtk_widget_show(spinner); 
+		}
 		
 		gtk_box_pack_start (GTK_BOX (bx2), bx, TRUE, TRUE, 1);
 		gtk_box_pack_start (GTK_BOX (frame), bx2, TRUE, TRUE, 1);
@@ -1661,9 +1729,7 @@ int main (int argn, char **argc)
 			GDK_GL_MODE_DOUBLE));
 			
 	if (!glconfig)
-	{
 		g_assert_not_reached ();
-	}
 
 	if (!gtk_widget_set_gl_capability (da1, glconfig, NULL, TRUE,
 				GDK_GL_RGBA_TYPE)){
@@ -1674,6 +1740,12 @@ int main (int argn, char **argc)
 			G_CALLBACK (configure1), NULL);
 	g_signal_connect (da1, "expose-event",
 			G_CALLBACK (expose1), NULL);
+			
+	pthread_t thread1;
+	pthread_attr_t attr;
+	pthread_attr_init(&attr);
+	g_startTime = gettime(); 
+	pthread_create( &thread1, &attr, sock_thread, (void*)destIP ); 
 
 	gtk_widget_show_all (window);
 

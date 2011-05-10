@@ -901,11 +901,23 @@ void DHCP_tx(int olen, u8* opt, u32 dest){
 	
 	bfin_EMAC_send_nocopy();
 }
+void DHCP_tx_discover(){
+	u8 options [4]; 
+	NetDHCPserv = 0xffffffff; //broadcast
+	options[0] = DHCP_MESSAGE; 
+	options[1] = 1; //length
+	options[2] = DHCPDISCOVER; 
+	options[3] = DHCP_END;
+	
+	printf_str("Send DHCPDISCOVER\n");
+	DHCP_tx(4, &options[0], NetDHCPserv); 
+}
 int DHCP_rx(){
 	int length;
 	dhcp_packet * p; 
 	u8* data;
 	int gotit = 0; 
+	int non_dhcp = 0; 
 	
 	while(gotit == 0){
 		//now, listen for a response. 
@@ -942,22 +954,19 @@ int DHCP_rx(){
 			}
 		}else{
 			printf_str("not an ip packet try again\n");
+			non_dhcp++; 
+		}
+		if(non_dhcp > 12){
+			non_dhcp = 0; 
+			DHCP_tx_discover(); 
 		}
 	}
 	return 0;
 }
-
 int DHCP_req(){
 	u8 options [10]; 
 	
-	NetDHCPserv = 0xffffffff; //broadcast
-	options[0] = DHCP_MESSAGE; 
-	options[1] = 1; //length
-	options[2] = DHCPDISCOVER; 
-	options[3] = DHCP_END;
-	
-	printf_str("Send DHCPDISCOVER\n");
-	DHCP_tx(4, &options[0], NetDHCPserv); 
+	DHCP_tx_discover(); 
 	
 	DHCP_rx(); 
 	
