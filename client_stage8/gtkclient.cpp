@@ -106,6 +106,7 @@ typedef struct {
 enum MODES {
 	MODE_RASTERS, 
 	MODE_SPIKES, 
+	MODE_TEMPLATES,
 	MODE_NUM
 };
 
@@ -405,7 +406,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		}
 		//end VBO
 	}
-	if(g_mode == MODE_SPIKES){
+	if(g_mode == MODE_SPIKES || g_mode == MODE_TEMPLATES){
 		//draw the spikes!! ya.
 		cgSetParameter1f(myCgVertexParam_time, t);
 		cgSetParameter3f(myCgVertexParam_col, 0.5f,0.5f,0.5f);
@@ -1081,8 +1082,37 @@ void* sock_thread(void* destIP){
 					}
 					g_fbufW++; 
 				}
-				p++; 
-				if(g_mode == MODE_SPIKES){
+				p++;
+				if(g_mode == MODE_TEMPLATES){
+					//threshold and extract templates. 
+					//just like plexon :-)
+					//need a threshold - capture anything that exceeds threshold, 
+					//align based on threshold crossing. 
+					//this loop is per packet; get 6 samples per pkt, but have to
+					//look in the past to fill out the 32-sample wf display.
+					float threshold = 0.75; 
+					int k = 0; //may want to do 4 eventually.
+					for(int m=0; m<6; m++){
+						float a = g_fbuf[k][mod2(g_fbufW - 26 + m, g_nsamp)*3+1]; 
+						float b = g_fbuf[k][mod2(g_fbufW - 25 + m, g_nsamp)*3+1]; 
+						int t = 2; //unsorted color.
+						if(a <= threshold && b > threshold && 
+							(g_bitdelay[0] & 0x1f) == 0){
+							int w = mod2(g_wbufW[t], NDISPW); 
+							for(int j=0; j < 32; j++){
+								//x coord does not need updating.
+								g_wbuf[t][w*34*3 + (j+1)*3 + 1] = 
+									g_fbuf[k][mod2(g_fbufW + j + m - 35, g_nsamp)*3+1]; 
+								g_wbuf[t][w*34*3 + (j+1)*3 + 2] = time; 
+							}
+							g_wbufW[t]++; 
+							g_bitdelay[0]++; 
+							break; 
+						}
+					}
+					g_bitdelay[0] <<= 1; 
+				}
+				else if(g_mode == MODE_SPIKES){
 					for(int t = 0; t<2; t++){
 						if(g_bitdelay[t] & (1 << 3)){
 							float max = -100.f; 
@@ -1270,6 +1300,7 @@ static void agcSetAll(gpointer ){
 static void modeRadioCB(GtkWidget *, gpointer * data){
 	char* ptr = (char*)data; 
 	if(*ptr == 'r') g_mode = MODE_RASTERS;
+	else if(*ptr == 't') g_mode = MODE_TEMPLATES; 
 	else g_mode = MODE_SPIKES; 
 }
 static void drawRadioCB(GtkWidget *, gpointer * data){
@@ -1322,7 +1353,7 @@ static void zoomSpinCB( GtkAdjustment* , gpointer p){
 	g_nsamp = g_nsamp > NSAMP ? NSAMP : g_nsamp; 
 	g_nsamp = g_nsamp < 512 ? 512 : g_nsamp; 
 	g_rasterZoom = 4096.0 / (float)g_nsamp; 
-	if(g_mode == MODE_SPIKES) g_nsamp = NSAMP; 
+	if(g_mode == MODE_SPIKES || g_mode == MODE_TEMPLATES) g_nsamp = NSAMP; 
 	printf("g_nsamp: %d, actual zoom %f\n", g_nsamp, g_rasterZoom); 
 }
 static void openSaveFile(gpointer parent_window) {
@@ -1581,6 +1612,14 @@ int main (int argn, char **argc)
 	gtk_widget_show (button);
 	gtk_signal_connect (GTK_OBJECT (button), "clicked",
 		GTK_SIGNAL_FUNC (modeRadioCB), (gpointer) "s");
+		
+	group = gtk_radio_button_get_group (GTK_RADIO_BUTTON (button));
+	button = gtk_radio_button_new_with_label (group, "sort");
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), FALSE);
+	gtk_box_pack_start (GTK_BOX (modebox), button, TRUE, TRUE, 0);
+	gtk_widget_show (button);
+	gtk_signal_connect (GTK_OBJECT (button), "clicked",
+		GTK_SIGNAL_FUNC (modeRadioCB), (gpointer) "t");
 		
 	//add draw mode. 
 	frame = gtk_frame_new ("draw mode");
