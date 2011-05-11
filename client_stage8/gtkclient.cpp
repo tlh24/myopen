@@ -49,6 +49,10 @@ static float 	g_wbuf[4*3][3*34*NDISPW]; //32 samps / waveform + 2 endpoints
 unsigned int	g_wbufW[4*3]; 
 unsigned int	g_wbufR[4*3]; 
 GLuint			g_wvbo[4*3]; 
+static float	g_pbuf[3*16*NDISPW]; //PCA points. z = time.
+unsigned int	g_pbufW; 
+unsigned int	g_pbufR; 
+GLuint			g_pvbo; 
 GLuint 			base;            // base display list for the font set.
 unsigned int*	g_sendbuf; 
 unsigned int g_sendW; //where to write to (in 32-byte increments)
@@ -1703,7 +1707,7 @@ int main (int argn, char **argc)
 		gtk_box_pack_start (GTK_BOX (frame), bx2, FALSE, FALSE, 1);
 		
 		for(int j=0; j<2; j++){
-			snprintf(buf, 128, "%s", (j < 1 ? "0 yelo" : "1 cyan"); 
+			snprintf(buf, 128, "%s", (j < 1 ? "0 yelo":"1 cyan")); 
 			g_apertureSpin[i*2+j] = mk_spinner((const char*)buf, bx2, 
 								  12*14, 0, 255*14, 2, 
 								  apertureSpinCB, i*2+j); 
