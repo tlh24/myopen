@@ -38,6 +38,188 @@
 #define NDISPW 1024
 #define u32 unsigned int
 
+//CG stuff. for the vertex shaders.
+static CGcontext   myCgContext;
+static CGprofile   myCgVertexProfile;
+static CGprogram   myCgVertexProgram[2];
+static CGparameter myCgVertexParam_time;
+static CGparameter myCgVertexParam_fade;
+static CGparameter myCgVertexParam_col;
+static CGparameter myCgVertexParam_off;
+static CGparameter myCgVertexParam_xzoom;
+static CGparameter myCgVertexParam_yoffset;
+
+void copyData(GLuint vbo, u32 sta, u32 fin, float* ptr, int stride){
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB, vbo);
+	sta *= stride; 
+	fin *= stride; 
+	ptr += sta; 
+	glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, sta*4, (fin-sta)*4, (GLvoid*)ptr);
+}
+static void checkForCgError(const char *situation)
+{
+  CGerror error;
+  const char *string = cgGetLastErrorString(&error);
+
+  if (error != CG_NO_ERROR) {
+    printf("%s: %s\n", situation, string);
+    if (error == CG_COMPILER_ERROR) {
+      printf("%s\n", cgGetLastListing(myCgContext));
+    }
+	exit(1);
+  }
+}
+class Vbo {
+public:
+	float* 	m_f; //local floating point memory. 
+	int		m_dim; // 2, 3, 4 dimensional. 
+	int		m_rows; // row-centric format
+	int		m_cols; // e.g. 34 for waveforms. 
+	int		m_w; //write pointer. 
+	int		m_r; //read pointer.  (for copying to graphics memory). 
+	float	m_loc[4]; //location on the screen - x, y, w, h. 
+	float	m_color[3]; 
+	float	m_fade; 
+	GLuint	m_vbo; 
+	
+	Vbo(int dim, int rows, int cols){
+		m_dim = dim; 
+		m_rows = rows; 
+		m_cols = cols; 
+		m_w = m_r = 0; 
+		m_loc = {0.f, 0.f, 1.f, 1.f}; 
+		m_color = {0.5f, 0.5f, 0.5f}; 
+		m_fade = 300.f; 
+		int siz = dim*rows*cols*sizeof(float); 
+		m_f = (float*)malloc(siz);
+		for(int i=0; i<dim*rows*cols; i++){
+			m_f[i] = 0.f; 
+		}
+		glGenBuffersARB(1, &m_vbo);
+		glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_vbo);
+		glBufferDataARB(GL_ARRAY_BUFFER_ARB, siz, 
+			0, GL_DYNAMIC_DRAW_ARB);
+		glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, 
+			0, siz, m_f);
+	}
+	~Vbo(){
+		free(m_f); 
+		glDeleteBuffersARB(1, &m_vbo);
+	}
+	void setLoc(float x, float y, float w, float h){
+		m_loc[0] = x; 
+		m_loc[1] = y; 
+		m_loc[2] = w; 
+		m_loc[3] = h; 
+	}
+	void setColor(float r, float g, float b){
+		m_color[0] = r;
+		m_color[0] = g; 
+		m_color[0] = b; 
+	}
+	void setFade(float f){ m_fade = f; }
+	virtual void copy(){
+		//copy the new stuff to the VBO. can be called from a different thread.
+		unsigned int sta = m_r % m_rows; 
+		unsigned int fin = m_w % m_rows; 
+		if(fin != sta){
+			if(fin < sta) { //wrap
+				copyData(m_vbo, sta, m_rows, m_f, m_dim * m_cols);
+				copyData(m_vbo, 0, fin, m_f, m_dim * m_cols); 
+			} else {
+				copyData(m_vbo, sta, fin, m_f, m_dim * m_cols); 
+			}
+		}
+		m_r = m_w; 
+	}
+	float* addRow(){
+		float * r = m_f; 
+		r += ((m_w % m_rows) * m_dim * m_cols); 
+		m_w++; 
+		return r; //write to this pointer. 
+	}
+	void drawReal(int drawmode, float time, bool &update, 
+				float x, float y, float w, float h){ //draws everything! things should be set up at this point..
+		if(update){
+			cgSetParameter1f(myCgVertexParam_time, time);
+			cgSetParameter1f(myCgVertexParam_fade, m_fade);
+			update = false; 
+		}
+		cgSetParameter3f(myCgVertexParam_col, 
+						 m_color[0],m_color[1],m_color[2]);
+		cgSetParameter4f(myCgVertexParam_off, x,y,w,h); 
+		cgGLBindProgram(myCgVertexProgram[1]);
+		cgGLEnableProfile(myCgVertexProfile);
+		checkForCgError("enabling vertex profile");
+		
+		glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_vbo);
+		glVertexPointer(m_dim, GL_FLOAT, 0, 0);
+		glDrawArrays(drawmode, 0, m_rows * m_cols);
+		glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+		cgGLDisableProfile(myCgVertexProfile);
+		checkForCgError("disabling vertex profile");
+	}
+	virtual void draw(int drawmode, float time, bool &update){
+		drawReal(drawmode, time, update, m_loc[0],m_loc[1],m_loc[2],m_loc[3]); 
+	}
+};
+class CenterVbo : public Vbo {
+public:
+	float*	m_mean; //center of the data (used for PCA)
+	float*	m_max; 
+	float* m_maxSmooth;
+	float* m_meanSmooth; 
+	CenterVbo(int dim, int rows, int cols):Vbo(dim, rows, cols){ 
+		m_mean = (float*)malloc(dim * sizeof(float));
+		m_max = (float*)malloc(dim * sizeof(float));
+		m_maxSmooth = (float*)malloc(dim * sizeof(float));
+		m_meanSmooth = (float*)malloc(dim * sizeof(float)); 
+		for(int i=0; i<dim; i++){
+			m_mean[i] = 0.f; 
+			m_max[i] = 1.f;
+			m_maxSmooth[i] = 1.f;
+			m_meanSmooth[i] = 0.f; 
+		}
+	}
+	~CenterVbo(){
+		free(m_mean); 
+		free(m_max); 
+		free(m_maxSmooth);
+		free(m_meanSmooth); 
+	}
+	void copy(bool updateScale){
+		//update the mean & max excursion. only makes sense for 2d data.
+		if(updateScale){
+			for(int i = m_r; i<m_w; i++){
+				int j = i % m_rows; 
+				for(int k=0; k<m_dim; k++){
+					float x = m_f[j*m_cols * m_dim + k];
+					m_mean[k] = m_mean[k] * 0.995 + x * 0.005; 
+					m_max[k] *= 0.999; 
+					float d = fabs(m_mean[k] - x);
+					if(d > m_max[k]) m_max[k] = d; 
+				}
+				//printf("updating, %d rows\n", m_w-m_r); 
+			}
+		}
+		Vbo::copy(); 
+	}
+	void draw(int drawmode, float time, bool &update){
+		//order: we scale before offset. pretty easy algebra.
+		float w = m_loc[2] / (2*m_maxSmooth[0]);
+		float h = m_loc[3] / (2*m_maxSmooth[1]);
+		float x = m_loc[0] - (m_meanSmooth[0] - m_maxSmooth[0])*w;
+		float y = m_loc[1] - (m_meanSmooth[1] - m_maxSmooth[1])*h; 
+		for(int i=0; i<m_dim; i++){
+			m_maxSmooth[i] = 0.995*m_maxSmooth[i] + 0.005*m_max[i]; 
+			m_meanSmooth[i] = 0.995*m_meanSmooth[i] + 0.005*m_mean[i]; 
+		}
+		//printf("mean %f %f max %f %f points %d\n", m_mean[0],m_mean[1], 
+		//	   m_maxSmooth[0], m_maxSmooth[1], m_w); 
+		drawReal(drawmode, time, update, x,y,w,h); 
+	}
+};
+
 static float	g_fbuf[4][NSAMP*3]; //continuous waveform.
 unsigned int	g_fbufW; //where to write to (always increment) 
 unsigned int	g_fbufR; //display thread reads from here - copies to mem
@@ -49,10 +231,7 @@ static float 	g_wbuf[4*3][3*34*NDISPW]; //32 samps / waveform + 2 endpoints
 unsigned int	g_wbufW[4*3]; 
 unsigned int	g_wbufR[4*3]; 
 GLuint			g_wvbo[4*3]; 
-static float	g_pbuf[3*16*NDISPW]; //PCA points. z = time.
-unsigned int	g_pbufW; 
-unsigned int	g_pbufR; 
-GLuint			g_pvbo; 
+CenterVbo*		g_pcaVbo[4][3]; //4 channels / 3 units per channel.
 GLuint 			base;            // base display list for the font set.
 unsigned int*	g_sendbuf; 
 unsigned int g_sendW; //where to write to (in 32-byte increments)
@@ -118,15 +297,6 @@ int	g_drawmode = GL_LINE_STRIP;
 bool	g_vbo1Init = false; 
 GLuint g_vbo1[4] = {0,0,0,0}; //for the waveform display
 GLuint g_vbo2[2] = {0,0}; //for spikes.
-static CGcontext   myCgContext;
-static CGprofile   myCgVertexProfile;
-static CGprogram   myCgVertexProgram[2];
-static CGparameter myCgVertexParam_time;
-static CGparameter myCgVertexParam_fade;
-static CGparameter myCgVertexParam_col;
-static CGparameter myCgVertexParam_off;
-static CGparameter myCgVertexParam_xzoom;
-static CGparameter myCgVertexParam_yoffset;
 
 int mod2(int a, int b){
 	return abs(a%b);
@@ -138,20 +308,6 @@ int mod2(int a, int b){
 	}*/
 }
 
-static void checkForCgError(const char *situation)
-{
-  CGerror error;
-  const char *string = cgGetLastErrorString(&error);
-
-  if (error != CG_NO_ERROR) {
-    printf("%s: %s\n", situation, string);
-    if (error == CG_COMPILER_ERROR) {
-      printf("%s\n", cgGetLastListing(myCgContext));
-    }
-	exit(1);
-  }
-}
-
 double gettime(){ //in seconds!
 	timespec pt ; 
 	clock_gettime(CLOCK_MONOTONIC, &pt); 
@@ -159,14 +315,6 @@ double gettime(){ //in seconds!
 	ret += (double)(pt.tv_nsec) / 1e9 ; 
 	return ret - g_startTime; 
 	//printf( "present time: %d s %d ns \n", pt.tv_sec, pt.tv_nsec ) ; 
-}
-
-void copyData(GLuint vbo, u32 sta, u32 fin, float* ptr, int stride){
-	glBindBufferARB(GL_ARRAY_BUFFER_ARB, vbo);
-	sta *= stride; 
-	fin *= stride; 
-	ptr += sta; 
-	glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, sta*4, (fin-sta)*4, (GLvoid*)ptr);
 }
 
 void BuildFont(void) {
@@ -331,6 +479,12 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 				g_wbufR[k] = w; 
 			}
 		}
+		//and the PCA VBOs. 
+		for(int k=0; k<4; k++){
+			for(int j=0; j<3; j++){
+				g_pcaVbo[k][j]->copy(true); 
+			}
+		}
 	}
 	/* draw in here */
 	glMatrixMode(GL_MODELVIEW); 
@@ -436,11 +590,11 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		for(int r=0; r<2; r++){
 			for(int c=0; c<2; c++){
 				int g = (r*2 + c)*3; 
-				drawWaveforms(r-1, c-1, 1.f, 1.f, 
+				drawWaveforms(r-1, c-0.5, 1.f, 0.5f, 
 							  0.5f, 0.5f, 0.5f, 3.0, t, g+0, update); 
-				drawWaveforms(r-1, c-1, 1.f, 1.f, 
+				drawWaveforms(r-1, c-0.5, 1.f, 0.5f, 
 							  1.0f, 1.0f, 0.0f, 3.0, t, g+1, update); 
-				drawWaveforms(r-1, c-1, 1.f, 1.f, 
+				drawWaveforms(r-1, c-0.5, 1.f, 0.5f, 
 							  0.0f, 1.0f, 1.0f, 3.0, t, g+2, update); 
 			}
 		}
@@ -450,8 +604,11 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		glEnableClientState(GL_VERTEX_ARRAY);
 		bool update = true; 
 		int g = 0; 
-		drawWaveforms(-1.f, -1.f, 1.f, 2.f, 
+		drawWaveforms(-1.f, 0.f, 1.f, 1.f, 
 					0.5f, 0.5f, 0.5f, 3.0, t, g+0, update); 
+		g_pcaVbo[0][0]->setLoc(0.25f, -0.25f, 0.5f, 0.5f); 
+		update = true; 
+		g_pcaVbo[0][0]->draw(GL_POINTS, t, update); 
 		glDisableClientState(GL_VERTEX_ARRAY);
 	}
 	if (gdk_gl_drawable_is_double_buffered (gldrawable))
@@ -606,6 +763,13 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 				0, sizeof(g_wbuf[k]), g_wbuf[k]);
 		}
 	}
+	//need to fix this -- do a copy.. 
+	for(int i=0; i<4; i++){
+		for(int j = 0; j<3; j++){
+			if(g_pcaVbo[i][j]) delete g_pcaVbo[i][j]; 
+			g_pcaVbo[i][j] = new CenterVbo(3, NSAMP, 1); 
+		}
+	}
 	BuildFont(); //so we're in the right context? 
 	
 	gdk_gl_drawable_gl_end (gldrawable);
@@ -654,6 +818,11 @@ void destroy(GtkWidget *, gpointer){
 			glDeleteBuffersARB(1, &g_vbo1[k]); 
 		glDeleteBuffersARB(2, g_vbo2);
 		glDeleteBuffersARB(3, g_wvbo); 
+	}
+	for(int k=0; k<4; k++){
+		for(int j=0; j<3; j++){
+			delete g_pcaVbo[k][j]; 
+		}
 	}
 	cgDestroyProgram(myCgVertexProgram[0]);
 	cgDestroyProgram(myCgVertexProgram[1]);
@@ -1106,13 +1275,20 @@ void* sock_thread(void* destIP){
 						int t = 0; //unsorted color.
 						if(a <= threshold && b > threshold && 
 							(g_bitdelay[0][0] & 0x1f) == 0){
-							int w = mod2(g_wbufW[t], NDISPW); 
+							int w = mod2(g_wbufW[t], NDISPW);
+							float* fp = g_pcaVbo[0][0]->addRow(); 
+							fp[0] = 0.f; 
+							fp[1] = 0.f; 
+							fp[2] = time; 
 							for(int j=0; j < 32; j++){
 								//x coord does not need updating.
-								g_wbuf[t][w*34*3 + (j+1)*3 + 1] = 
-									g_fbuf[k][mod2(g_fbufW + j + m - 35, g_nsamp)*3+1]; 
+								float f = g_fbuf[k][mod2(g_fbufW + j + m - 35, g_nsamp)*3+1];
+								fp[0] += g_pcaCoef[g_channel[0]][0][j] * f; 
+								fp[1] += g_pcaCoef[g_channel[0]][1][j] * f;
+								g_wbuf[t][w*34*3 + (j+1)*3 + 1] = f;
 								g_wbuf[t][w*34*3 + (j+1)*3 + 2] = time; 
 							}
+							//printf("pca %f %f\n", fp[0], fp[1]); 
 							g_wbufW[t]++; 
 							g_bitdelay[0][0]++; 
 							break; 
@@ -1138,11 +1314,16 @@ void* sock_thread(void* destIP){
 									}
 								}
 								int w = mod2(g_wbufW[3*k+1+t], NDISPW); 
+								float* fp = g_pcaVbo[k][t+1]->addRow(); 
+								fp[0] = fp[1] = 0.f; 
+								fp[2] = time; 
 								for(int j=0; j < 32; j++){
 									//x coord does not need updating.
-									g_wbuf[3*k+1+t][w*34*3 + (j+1)*3 + 1] = 
-										g_fbuf[k][mod2(g_fbufW + j + offset -11, g_nsamp)*3+1]; 
+									float f = g_fbuf[k][mod2(g_fbufW + j + offset -11, g_nsamp)*3+1]; 
+									g_wbuf[3*k+1+t][w*34*3 + (j+1)*3 + 1] = f; 
 									g_wbuf[3*k+1+t][w*34*3 + (j+1)*3 + 2] = time; 
+									fp[0] += g_pcaCoef[g_channel[0]][0][j] * f;
+									fp[1] += g_pcaCoef[g_channel[0]][1][j] * f; 
 								}
 								g_wbufW[3*k+1+t]++; 
 								//printf("%f\t%d\n", time, g_wbufW[0]); 
@@ -1152,11 +1333,16 @@ void* sock_thread(void* destIP){
 									//to prevent the edge from intruding in the non-sorted wf
 									int w = g_wbufW[3*k+0] % NDISPW; 
 									int offset = -70; 
+									float* fp = g_pcaVbo[k][0]->addRow(); 
+									fp[0] = fp[1] = 0.f; 
+									fp[2] = time; 
 									for(int j=0; j < 32; j++){
 										//x coord does not need updating.
-										g_wbuf[3*k+0][w*34*3 + (j+1)*3 + 1] = 
-											g_fbuf[k][mod2(g_fbufW + j + offset, g_nsamp)*3+1]; 
-										g_wbuf[3*k+0][w*34*3 + (j+1)*3 + 2] = time; 
+										float f = g_fbuf[k][mod2(g_fbufW + j + offset, g_nsamp)*3+1]; 
+										g_wbuf[3*k+0][w*34*3 + (j+1)*3 + 1] = f; 
+										g_wbuf[3*k+0][w*34*3 + (j+1)*3 + 2] = time;
+										fp[0] += g_pcaCoef[g_channel[0]][0][j] * f;
+										fp[1] += g_pcaCoef[g_channel[0]][1][j] * f; 
 									}
 									g_wbufW[3*k+0]++; 
 									g_bitdelay[k][t] |= 0x8; //will not trigger threshold, will block excess copies.
@@ -1474,7 +1660,7 @@ void* computePCA(void* params){
 	int nsamp = p[0]; 
 	int channel = p[1]; 
 	free(params); 
-	//use g_wbuf[2] to make a matrix. 
+	//use g_wbuf[0] to make a matrix. 
 	int w = g_wbufW[0]; //atomic, this may be on a separate thread.
 	if(nsamp > w) return 0; 
 	float mean[32]; 
@@ -1560,6 +1746,16 @@ int main (int argn, char **argc)
 		g_threshold[i] = 0.75; 
 		g_aperture[i][0] = 140;
 		g_aperture[i][1] = 140; 
+		//start pca with haar wavelets. 
+		for(int j=0; j<32; j++){
+			g_pcaCoef[i][0][j] = 1.f/32.f; 
+			g_pcaCoef[i][1][j] = (j > 15 ? 1.f/32.f : -1.f/32.f); 
+		}
+	}
+	for(int k=0; k<4; k++){
+		for(int j=0; j<3; j++){
+			g_pcaVbo[k][j] = 0;  
+		}
 	}
 
 	gtk_init (&argn, &argc);
