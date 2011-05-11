@@ -5,12 +5,15 @@ struct V_Output {
 };
 
 V_Output fade(float3 position : POSITION, 
-				uniform float3 col, 
-				uniform float time)
+				uniform float3 col,
+				uniform float4 off,
+				uniform float time, 
+				uniform float fade)
 {	
 	V_Output OUT;
-	float alpha = (1 - (time - position.z)/3.f); 
-	OUT.position = float4((position.x*2.0-1.0), position.y,alpha,1);
+	float alpha = (1 - (time - position.z)/fade); 
+	OUT.position = float4((position.x*off.z+off.x), 
+						  ((0.5*position.y+0.5)*off.w+off.y),alpha,1);
 	alpha = clamp(alpha, 0.f, 1.f);
 	
 	//OUT.color = float4(1.f, 1.f, 1.f, 0.5f); 
