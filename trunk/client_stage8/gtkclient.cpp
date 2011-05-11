@@ -1,12 +1,3 @@
-/*
- *
- * Cribbed from an example Written by Davyd Madeley <davyd@madeley.id.au> and made available under a
- * BSD license.
- *
- * This is purely an example, it may generate sentences like a cat walking on your keyboard. 
- *
- * to compile, see Makefile
- */
 // in order to get function prototypes from glext.h, 
 // define GL_GLEXT_PROTOTYPES before including glext.h
 #define GL_GLEXT_PROTOTYPES
@@ -39,6 +30,10 @@
 #include "../../neurorecord/stage/memory.h"
 #include "../../neurorecord/stage/decoder.h"
 
+#include <gsl/gsl_math.h>
+#include <gsl/gsl_linalg.h>
+
+
 #define NSAMP (24*1024)
 #define NDISPW 1024
 #define u32 unsigned int
@@ -50,10 +45,10 @@ unsigned int 	g_nsamp = 4096; //given the current level of zoom (1 = 4096 sample
 static float 	g_sbuf[2][128*1024*2]; //spike buffers.
 unsigned int	g_sbufW[2]; 
 unsigned int	g_sbufR[2]; 
-static float 	g_wbuf[3][3*34*NDISPW]; //32 samps / waveform + 2 endpoints
-unsigned int	g_wbufW[3]; 
-unsigned int	g_wbufR[3]; 
-GLuint			g_wvbo[3]; 
+static float 	g_wbuf[4*3][3*34*NDISPW]; //32 samps / waveform + 2 endpoints
+unsigned int	g_wbufW[4*3]; 
+unsigned int	g_wbufR[4*3]; 
+GLuint			g_wvbo[4*3]; 
 GLuint 			base;            // base display list for the font set.
 unsigned int*	g_sendbuf; 
 unsigned int g_sendW; //where to write to (in 32-byte increments)
@@ -74,9 +69,9 @@ unsigned int g_headecho = 0;
 unsigned int g_oldheadecho = 100; 
 bool g_out = false; 
 bool g_templMatch[128][2]; //match a,b over all 128 channels.
-//unsigned char g_exceeded[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}; 
-unsigned int g_bitdelay[2] = {0,0};
-int g_thresh = 16000; 
+float g_pcaCoef[128][2][32]; //PCA per channel.
+unsigned int g_bitdelay[4][2] = {{0,0},{0,0},{0,0},{0,0}};
+float g_threshold[128]; 
 float g_gains[128]; //per-channel gains.
 float g_agcs[128]; //per-channel AGC target.
 int   g_aperture[128][2]; //for template matching. 
@@ -106,7 +101,7 @@ typedef struct {
 enum MODES {
 	MODE_RASTERS, 
 	MODE_SPIKES, 
-	MODE_TEMPLATES,
+	MODE_SORT,
 	MODE_NUM
 };
 
@@ -123,7 +118,9 @@ static CGcontext   myCgContext;
 static CGprofile   myCgVertexProfile;
 static CGprogram   myCgVertexProgram[2];
 static CGparameter myCgVertexParam_time;
+static CGparameter myCgVertexParam_fade;
 static CGparameter myCgVertexParam_col;
+static CGparameter myCgVertexParam_off;
 static CGparameter myCgVertexParam_xzoom;
 static CGparameter myCgVertexParam_yoffset;
 
@@ -251,6 +248,27 @@ void saveMessage(const char *fmt, ...){
     va_end(ap);
 	g_messW++; 
 }
+void drawWaveforms(float x, float y, float w, float h, 
+				   float r, float g, float b, float fade, float time,
+				   int nvbo, bool &update){
+	if(update){
+		cgSetParameter1f(myCgVertexParam_time, time);
+		cgSetParameter1f(myCgVertexParam_fade, fade);
+		update = false; 
+	}
+	cgSetParameter3f(myCgVertexParam_col, r,g,b);
+	cgSetParameter4f(myCgVertexParam_off, x,y,w,h);
+	cgGLBindProgram(myCgVertexProgram[1]);
+	cgGLEnableProfile(myCgVertexProfile);
+	checkForCgError("enabling vertex profile");
+	
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_wvbo[nvbo]);
+	glVertexPointer(3, GL_FLOAT, 0, 0);
+	glDrawArrays(g_drawmode, 0, 34*NDISPW);
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+	cgGLDisableProfile(myCgVertexProfile);
+	checkForCgError("disabling vertex profile");
+}
 static gboolean
 expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 {
@@ -294,7 +312,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 			}
 		}
 		//and the waveform buffers.
-		for(int k=0; k<3; k++){
+		for(int k=0; k<3*4; k++){
 			if(g_wbufR[k] < g_wbufW[k]){
 				unsigned int len = NDISPW; 
 				unsigned int w = g_wbufW[k]; //atomic
@@ -337,7 +355,8 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 			glVertex3f( 1.f, (float)((3-k)*2)/8.f, 0.f); 
 				//draw threshold. 
 			glColor4f (1., 0.0f, 0.0f, 0.35);
-			float y = (float)((3-k)*2+1)/8.f + g_thresh/(256.f*128.f*8.f); 
+			float y = (float)((3-k)*2+1)/8.f + 
+				g_threshold[g_channel[k]]/(256.f*128.f*8.f); 
 			glVertex3f(-1.f, y, 0.f);
 			glVertex3f( 1.f, y, 0.f);
 			glEnd(); 
@@ -406,51 +425,31 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		}
 		//end VBO
 	}
-	if(g_mode == MODE_SPIKES || g_mode == MODE_TEMPLATES){
-		//draw the spikes!! ya.
-		cgSetParameter1f(myCgVertexParam_time, t);
-		cgSetParameter3f(myCgVertexParam_col, 0.5f,0.5f,0.5f);
-		cgGLBindProgram(myCgVertexProgram[1]);
-		cgGLEnableProfile(myCgVertexProfile);
-		checkForCgError("enabling vertex profile");
-		
-		glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_wvbo[2]);
-		glVertexPointer(3, GL_FLOAT, 0, 0);
-		glDrawArrays(g_drawmode, 0, 34*NDISPW);
-		glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
-		cgGLDisableProfile(myCgVertexProfile);
-		checkForCgError("disabling vertex profile");
-		
-		cgSetParameter1f(myCgVertexParam_time, t);
-		cgSetParameter3f(myCgVertexParam_col, 1.f,1.f,0.f);
-		cgGLBindProgram(myCgVertexProgram[1]);
-		cgGLEnableProfile(myCgVertexProfile);
-		checkForCgError("enabling vertex profile");
-		
-		glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_wvbo[0]);
-		glVertexPointer(3, GL_FLOAT, 0, 0);
-		glPointSize(4.0);
-		glDrawArrays(g_drawmode, 0, 34*NDISPW);
-		glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
-		cgGLDisableProfile(myCgVertexProfile);
-		checkForCgError("disabling vertex profile");
-		
-		cgSetParameter1f(myCgVertexParam_time, t);
-		cgSetParameter3f(myCgVertexParam_col, 0.f,1.f,1.f);
-		cgGLBindProgram(myCgVertexProgram[1]);
-		cgGLEnableProfile(myCgVertexProfile);
-		checkForCgError("enabling vertex profile");
-		
-		glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_wvbo[1]);
-		glVertexPointer(3, GL_FLOAT, 0, 0);
-		glDrawArrays(g_drawmode, 0, 34*NDISPW);
-		glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
-		cgGLDisableProfile(myCgVertexProfile);
-		checkForCgError("disabling vertex profile");
-
+	if(g_mode == MODE_SPIKES ){
+		//draw the spikes! 2x2 array.
+		glEnableClientState(GL_VERTEX_ARRAY);
+		bool update = true; 
+		for(int r=0; r<2; r++){
+			for(int c=0; c<2; c++){
+				int g = (r*2 + c)*3; 
+				drawWaveforms(r-1, c-1, 1.f, 1.f, 
+							  0.5f, 0.5f, 0.5f, 3.0, t, g+0, update); 
+				drawWaveforms(r-1, c-1, 1.f, 1.f, 
+							  1.0f, 1.0f, 0.0f, 3.0, t, g+1, update); 
+				drawWaveforms(r-1, c-1, 1.f, 1.f, 
+							  0.0f, 1.0f, 1.0f, 3.0, t, g+2, update); 
+			}
+		}
 		glDisableClientState(GL_VERTEX_ARRAY);
 	}
-	
+	if(g_mode == MODE_SORT){
+		glEnableClientState(GL_VERTEX_ARRAY);
+		bool update = true; 
+		int g = 0; 
+		drawWaveforms(-1.f, -1.f, 1.f, 2.f, 
+					0.5f, 0.5f, 0.5f, 3.0, t, g+0, update); 
+		glDisableClientState(GL_VERTEX_ARRAY);
+	}
 	if (gdk_gl_drawable_is_double_buffered (gldrawable))
 		gdk_gl_drawable_swap_buffers (gldrawable);
 	else
@@ -525,8 +524,12 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 		//need the time parameter --
 		myCgVertexParam_time =
 			cgGetNamedParameter(myCgVertexProgram[1], "time");
+		myCgVertexParam_fade =
+			cgGetNamedParameter(myCgVertexProgram[1], "fade");
 		myCgVertexParam_col =
 			cgGetNamedParameter(myCgVertexProgram[1], "col");
+		myCgVertexParam_off =
+			cgGetNamedParameter(myCgVertexProgram[1], "off");
 		checkForCgError("loading vertex program variables");
 		
 		//now the vertex buffers.
@@ -575,7 +578,7 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 		}
 			
 		//an another 3 VBOs that are filled with waveforms. 
-		for(int k=0; k<3; k++){
+		for(int k=0; k<3*4; k++){
 			for(int i=0; i < NDISPW; i++){
 				int j = 0; 
 				g_wbuf[k][(i*34+j)*3 + 0] = 0.f; //x
@@ -614,6 +617,7 @@ GtkAdjustment* g_gainSpin[4] = {0,0,0,0};
 GtkAdjustment* g_agcSpin[4] = {0,0,0,0}; 
 GtkAdjustment* g_apertureSpin[8] = {0,0,0,0}; 
 GtkAdjustment* g_thresholdSpin; 
+GtkAdjustment* g_zoomSpin; 
 GtkWidget* g_pktpsLabel;
 GtkWidget* g_fileSizeLabel;
 
@@ -1032,7 +1036,7 @@ void* sock_thread(void* destIP){
 			g_totalPackets += npack; 
 			
 			for(int i=0; i<npack && g_pause <=0.0; i++){
-				//see if it exceeded threshold.
+				//see if it matched a template.
 				float z = 0; 
 				//g_headecho = ((p->flag) >> 4) & 0xf ; 
 				int exch = 0; 
@@ -1083,21 +1087,21 @@ void* sock_thread(void* destIP){
 					g_fbufW++; 
 				}
 				p++;
-				if(g_mode == MODE_TEMPLATES){
+				if(g_mode == MODE_SORT){
 					//threshold and extract templates. 
 					//just like plexon :-)
 					//need a threshold - capture anything that exceeds threshold, 
 					//align based on threshold crossing. 
 					//this loop is per packet; get 6 samples per pkt, but have to
 					//look in the past to fill out the 32-sample wf display.
-					float threshold = 0.75; 
+					float threshold = g_threshold[g_channel[0]]; 
 					int k = 0; //may want to do 4 eventually.
 					for(int m=0; m<6; m++){
 						float a = g_fbuf[k][mod2(g_fbufW - 26 + m, g_nsamp)*3+1]; 
 						float b = g_fbuf[k][mod2(g_fbufW - 25 + m, g_nsamp)*3+1]; 
-						int t = 2; //unsorted color.
+						int t = 0; //unsorted color.
 						if(a <= threshold && b > threshold && 
-							(g_bitdelay[0] & 0x1f) == 0){
+							(g_bitdelay[0][0] & 0x1f) == 0){
 							int w = mod2(g_wbufW[t], NDISPW); 
 							for(int j=0; j < 32; j++){
 								//x coord does not need updating.
@@ -1106,62 +1110,62 @@ void* sock_thread(void* destIP){
 								g_wbuf[t][w*34*3 + (j+1)*3 + 2] = time; 
 							}
 							g_wbufW[t]++; 
-							g_bitdelay[0]++; 
+							g_bitdelay[0][0]++; 
 							break; 
 						}
 					}
-					g_bitdelay[0] <<= 1; 
+					g_bitdelay[0][0] <<= 1; 
 				}
 				else if(g_mode == MODE_SPIKES){
-					for(int t = 0; t<2; t++){
-						if(g_bitdelay[t] & (1 << 3)){
-							float max = -100.f; 
-							float offset = 0; 
-							int k = 0; 
-							for(int j=-14-20; j < -20; j++){
-								//select the largest group of 3 samples (simple noise removal)
-								float w = g_fbuf[k][mod2(g_fbufW +j-1, g_nsamp)*3+1];
-								float x = g_fbuf[k][mod2(g_fbufW +j+0, g_nsamp)*3+1];
-								float y = g_fbuf[k][mod2(g_fbufW +j+1, g_nsamp)*3+1]; 
-								float v = 0.5*w + x + 0.5*y; 
-								if(v > max){
-									max = v; 
-									offset = j; 
+					for(int k=0; k<4; k++){
+						for(int t = 0; t<2; t++){
+							if(g_bitdelay[k][t] & (1 << 3)){
+								float max = -100.f; 
+								float offset = 0; 
+								for(int j=-14-20; j < -20; j++){
+									//select the largest group of 3 samples (simple noise removal)
+									float w = g_fbuf[k][mod2(g_fbufW +j-1, g_nsamp)*3+1];
+									float x = g_fbuf[k][mod2(g_fbufW +j+0, g_nsamp)*3+1];
+									float y = g_fbuf[k][mod2(g_fbufW +j+1, g_nsamp)*3+1]; 
+									float v = 0.5*w + x + 0.5*y; 
+									if(v > max){
+										max = v; 
+										offset = j; 
+									}
 								}
-							}
-							int w = mod2(g_wbufW[t], NDISPW); 
-							for(int j=0; j < 32; j++){
-								//x coord does not need updating.
-								g_wbuf[t][w*34*3 + (j+1)*3 + 1] = 
-									g_fbuf[k][mod2(g_fbufW + j + offset -11, g_nsamp)*3+1]; 
-								g_wbuf[t][w*34*3 + (j+1)*3 + 2] = time; 
-							}
-							g_wbufW[t]++; 
-							//printf("%f\t%d\n", time, g_wbufW[0]); 
-						} else {
-							if((g_bitdelay[t] & 0xffff) == 0){
-								//have to be aggressive with the masking - 
-								//to prevent the edge from intruding in the non-sorted wf
-								int w = g_wbufW[2] % NDISPW; 
-								int offset = -70; 
-								int k = 0; 
+								int w = mod2(g_wbufW[3*k+1+t], NDISPW); 
 								for(int j=0; j < 32; j++){
 									//x coord does not need updating.
-									g_wbuf[2][w*34*3 + (j+1)*3 + 1] = 
-										g_fbuf[k][mod2(g_fbufW + j + offset, g_nsamp)*3+1]; 
-									g_wbuf[2][w*34*3 + (j+1)*3 + 2] = time; 
+									g_wbuf[3*k+1+t][w*34*3 + (j+1)*3 + 1] = 
+										g_fbuf[k][mod2(g_fbufW + j + offset -11, g_nsamp)*3+1]; 
+									g_wbuf[3*k+1+t][w*34*3 + (j+1)*3 + 2] = time; 
 								}
-								g_wbufW[2]++; 
-								g_bitdelay[t] |= 0x8; //will not trigger threshold, will block excess copies.
+								g_wbufW[3*k+1+t]++; 
+								//printf("%f\t%d\n", time, g_wbufW[0]); 
+							} else {
+								if((g_bitdelay[k][t] & 0xffff) == 0){
+									//have to be aggressive with the masking - 
+									//to prevent the edge from intruding in the non-sorted wf
+									int w = g_wbufW[3*k+0] % NDISPW; 
+									int offset = -70; 
+									for(int j=0; j < 32; j++){
+										//x coord does not need updating.
+										g_wbuf[3*k+0][w*34*3 + (j+1)*3 + 1] = 
+											g_fbuf[k][mod2(g_fbufW + j + offset, g_nsamp)*3+1]; 
+										g_wbuf[3*k+0][w*34*3 + (j+1)*3 + 2] = time; 
+									}
+									g_wbufW[3*k+0]++; 
+									g_bitdelay[k][t] |= 0x8; //will not trigger threshold, will block excess copies.
+								}
 							}
+							// need a delay line - at least 21 samples. so 3 packets.
+							bit = 0;
+							if(g_templMatch[g_channel[0]][t]) bit++; 
+							//taken care of, so clear for following packets!
+							//g_exceeded[g_channel[0]/8] &= 0xff ^ (1<<(g_channel[0] & 7)); 
+							g_bitdelay[k][t] <<= 1; 
+							g_bitdelay[k][t] += bit & 1; 
 						}
-						// need a delay line - at least 21 samples. so 3 packets.
-						bit = 0;
-						if(g_templMatch[g_channel[0]][t]) bit++; 
-						//taken care of, so clear for following packets!
-						//g_exceeded[g_channel[0]/8] &= 0xff ^ (1<<(g_channel[0] & 7)); 
-						g_bitdelay[t] <<= 1; 
-						g_bitdelay[t] += bit & 1; 
 					}
 				}
 			}
@@ -1219,7 +1223,7 @@ static gboolean chanscan(gpointer){
 	}
 	return g_cycle; //if this is false, don't call again.
 }
-static void channelSpinCB( GtkAdjustment* , gpointer p){
+static void channelSpinCB( GtkWidget*, gpointer p){
 	int k = (int)p; 
 	if(k >= 0 && k<4){
 		int ch = (int)gtk_adjustment_get_value(g_channelSpin[k]); 
@@ -1232,10 +1236,11 @@ static void channelSpinCB( GtkAdjustment* , gpointer p){
 			gtk_adjustment_set_value(g_agcSpin[k], g_agcs[ch]); 
 			gtk_adjustment_set_value(g_apertureSpin[k*2+0], g_aperture[ch][0]);
 			gtk_adjustment_set_value(g_apertureSpin[k*2+1], g_aperture[ch][1]);
+			gtk_adjustment_set_value(g_thresholdSpin, g_threshold[g_channel[0]]); 
 		}
 	}
 }
-static void gainSpinCB( GtkAdjustment*, gpointer p){
+static void gainSpinCB( GtkWidget*, gpointer p){
 	int h = (int)p; 
 	if(h >= 0 && h < 4){
 		float gain = gtk_adjustment_get_value(g_gainSpin[h]); 
@@ -1257,12 +1262,13 @@ static void gainSetAll(gpointer ){
 	for(int i=0; i<4; i++)
 		gtk_adjustment_set_value(g_gainSpin[i], gain); 
 }
-static void thresholdSpinCB( GtkAdjustment*, gpointer){
-	g_thresh = gtk_adjustment_get_value(g_thresholdSpin); 
-	printf("thresholdSpinCB: %d\n", g_thresh); 
+static void thresholdSpinCB( GtkWidget* , gpointer){
+	float thresh = gtk_adjustment_get_value(g_thresholdSpin); 
+	g_threshold[g_channel[0]] = thresh; 
+	printf("thresholdSpinCB: %f\n", thresh); 
 	setThresh();
 }
-static void agcSpinCB( GtkAdjustment*, gpointer p){
+static void agcSpinCB( GtkWidget*, gpointer p){
 	int h = (int)p; 
 	if(h >= 0 && h < 4){
 		float agc = gtk_adjustment_get_value(g_agcSpin[h]); 
@@ -1274,7 +1280,7 @@ static void agcSpinCB( GtkAdjustment*, gpointer p){
 		}
 	}
 }
-static void apertureSpinCB( GtkAdjustment*, gpointer p){
+static void apertureSpinCB( GtkWidget*, gpointer p){
 	int h = (int)p; 
 	if(h >= 0 && h < 8){
 		float a = gtk_adjustment_get_value(g_apertureSpin[h]); 
@@ -1297,28 +1303,26 @@ static void agcSetAll(gpointer ){
 	for(int i=0; i<4; i++)
 		gtk_adjustment_set_value(g_agcSpin[i], agc); 
 }
-static void modeRadioCB(GtkWidget *, gpointer * data){
-	char* ptr = (char*)data; 
-	if(*ptr == 'r') g_mode = MODE_RASTERS;
-	else if(*ptr == 't') g_mode = MODE_TEMPLATES; 
-	else g_mode = MODE_SPIKES; 
-}
-static void drawRadioCB(GtkWidget *, gpointer * data){
-	char* ptr = (char*)data; 
-	if(*ptr == 'l') g_drawmode = GL_LINE_STRIP;
-	else g_drawmode = GL_POINTS; 
-}
-static void lmsRadioCB(GtkWidget *, gpointer * data){
-	char* ptr = (char*)data; 
-	if(*ptr == '1') setLMS(true);
-	else setLMS(false); 
-}
-static void filterRadioCB(GtkWidget *button, gpointer * data){
+static void drawRadioCB(GtkWidget *button, gpointer data){
 	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))){
-		char* ptr = (char*)data; 
-		if(*ptr == 'o') setOsc(g_channel[0]); 
-		else if(*ptr == 'f') setFlat(g_channel[0]);
-		else if(*ptr == 'w') setFilter2(g_channel[0]); 
+		int i = (int)data; 
+		if(i == 0) g_drawmode = GL_LINE_STRIP;
+		else g_drawmode = GL_POINTS;
+	}
+}
+static void lmsRadioCB(GtkWidget *button, gpointer data){
+	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))){
+		int i = (int)data;
+		if(i == 0) setLMS(true);
+		else setLMS(false); 
+	}
+}
+static void filterRadioCB(GtkWidget *button, gpointer data){
+	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))){
+		int i = (int)data;
+		if(i == 2) setOsc(g_channel[0]); 
+		else if(i == 3) setFlat(g_channel[0]);
+		else if(i == 1) setFilter2(g_channel[0]); 
 		else resetBiquads(g_channel[0]); 
 	}
 }
@@ -1345,16 +1349,84 @@ static void cycleButtonCB(GtkWidget *button, gpointer * ){
 	}else
 		g_cycle = false; 
 }
-static void zoomSpinCB( GtkAdjustment* , gpointer p){
-	g_rasterZoom = gtk_adjustment_get_value((GtkAdjustment*)p); 
+static void zoomSpinCB( GtkWidget*, gpointer ){
+	g_rasterZoom = gtk_adjustment_get_value(g_zoomSpin); 
 	g_nsamp = (1/g_rasterZoom)*4096; 
 	//make it multiples of 1024. 
 	g_nsamp &= (0xffffffff ^ 255); 
 	g_nsamp = g_nsamp > NSAMP ? NSAMP : g_nsamp; 
 	g_nsamp = g_nsamp < 512 ? 512 : g_nsamp; 
 	g_rasterZoom = 4096.0 / (float)g_nsamp; 
-	if(g_mode == MODE_SPIKES || g_mode == MODE_TEMPLATES) g_nsamp = NSAMP; 
+	if(g_mode == MODE_SPIKES || g_mode == MODE_SORT) g_nsamp = NSAMP; 
 	printf("g_nsamp: %d, actual zoom %f\n", g_nsamp, g_rasterZoom); 
+}
+static void notebookPageChangedCB(GtkWidget *, 
+					gpointer, int page, gpointer){
+	if(page == 0) g_mode = MODE_RASTERS;
+	if(page == 1) g_mode = MODE_SPIKES; 
+	if(page == 2) g_mode = MODE_SORT; 
+}
+static GtkAdjustment* mk_spinner(const char* txt, GtkWidget* container, 
+							 float start, float min, float max, float step, 
+							 GtkCallback cb, int cb_val){
+	GtkWidget *spinner, *label; 
+	GtkAdjustment *adj; 
+	GtkWidget * bx = gtk_hbox_new (FALSE, 1);
+	
+	label = gtk_label_new (txt);
+	gtk_box_pack_start (GTK_BOX (bx), label, TRUE, TRUE, 2);
+	gtk_widget_show(label); 
+	adj = (GtkAdjustment *)gtk_adjustment_new(
+		start, min, max, step, step, 0.0);  
+	float climb = 0.0; int digits = 0; 
+	if(step <= 0.01){ climb = 0.001; digits = 3; }
+	else if(step <= 0.1){ climb = 0.01; digits = 2; }
+	else if(step <= 0.99){ climb = 0.1; digits = 1; }
+	spinner = gtk_spin_button_new (adj, climb, digits);
+	gtk_spin_button_set_wrap (GTK_SPIN_BUTTON (spinner), FALSE);
+	gtk_box_pack_start (GTK_BOX (bx), spinner, TRUE, TRUE, 2);
+	g_signal_connect(spinner, "value-changed", G_CALLBACK(cb), GINT_TO_POINTER (cb_val));
+	gtk_widget_show(spinner); 
+	
+	gtk_box_pack_start (GTK_BOX (container), bx, TRUE, TRUE, 2);
+	
+	return adj; 
+}
+static void mk_radio(const char* txt, int ntxt, 
+						   GtkWidget* container, bool vertical, 
+						   const char* frameTxt, GtkCallback cb){
+	GtkWidget *frame, *button, *modebox; 
+	GSList* group; 
+	
+	frame = gtk_frame_new (frameTxt);
+	gtk_box_pack_start (GTK_BOX (container), frame, TRUE, TRUE, 0);
+	if(vertical) modebox = gtk_vbox_new (FALSE, 2);
+	else modebox = gtk_hbox_new (FALSE, 2);
+	gtk_container_add (GTK_CONTAINER (frame), modebox);
+	gtk_container_set_border_width (GTK_CONTAINER (modebox), 2);
+	gtk_box_pack_start (GTK_BOX (container), modebox, TRUE, TRUE, 0);
+	gtk_widget_show (modebox);
+	
+	char buf[256]; 
+	strncpy(buf, txt, 256); 
+	char* a = strtok(buf, ","); 
+	
+	button = gtk_radio_button_new_with_label (NULL, (const char*)a );
+	gtk_box_pack_start (GTK_BOX (modebox), button, TRUE, TRUE, 0);
+	gtk_widget_show (button);
+	gtk_signal_connect (GTK_OBJECT (button), "clicked",
+		GTK_SIGNAL_FUNC (cb), GINT_TO_POINTER(0));
+
+	for(int i=1; i<ntxt; i++){
+		group = gtk_radio_button_get_group (GTK_RADIO_BUTTON (button));
+		a = strtok(0, ",");
+		button = gtk_radio_button_new_with_label (group, (const char*)a );
+		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), FALSE);
+		gtk_box_pack_start (GTK_BOX (modebox), button, TRUE, TRUE, 0);
+		gtk_widget_show (button);
+		gtk_signal_connect (GTK_OBJECT (button), "clicked",
+			GTK_SIGNAL_FUNC (cb), GINT_TO_POINTER(i));
+	}
 }
 static void openSaveFile(gpointer parent_window) {
 	GtkWidget *dialog;
@@ -1381,15 +1453,90 @@ static void closeSaveFile(gpointer) {
 	//have to signal to the other thread, let them close it.
 	g_closeSaveFile = true;
 }
+void saveMatrix(const char* fname, gsl_matrix* v){
+	FILE* fid = fopen(fname, "w"); 
+	int m = v->size1; 
+	int n = v->size2; 
+	for(int i=0; i<m; i++){
+		for(int j=0; j<n; j++){
+			fprintf(fid,"%f ", v->data[i*n + j]); 
+		}
+		fprintf(fid,"\n"); 
+	}
+	fclose(fid); 
+}
+void* computePCA(void* params){
+	int *p = (int*)params; 
+	int nsamp = p[0]; 
+	int channel = p[1]; 
+	free(params); 
+	//use g_wbuf[2] to make a matrix. 
+	int w = g_wbufW[0]; //atomic, this may be on a separate thread.
+	if(nsamp > w) return 0; 
+	float mean[32]; 
+	for(int i=0; i<nsamp; i++){
+		int r = (w - i) % NDISPW; 
+		for(int j=0; j<32; j++){
+			mean[j] += g_wbuf[0][r*34*3 + (j+1)*3 + 1]; 
+		}
+	}
+	for(int j=0; j<32; j++){
+		mean[j] /= (float)nsamp; 
+	}
+	//gsl is row major!
+	gsl_matrix *m = gsl_matrix_alloc(nsamp, 32); //rows, columns (like matlab)
+	for(int i=0; i<nsamp; i++){
+		int r = (w - i) % NDISPW; 
+		for(int j=0; j<32; j++){
+			m->data[i*32 + j] = g_wbuf[0][r*34*3 + (j+1)*3 + 1] - mean[j]; 
+		}
+	}
+	// I'm looking at matlab's princomp function. 
+	// they say S = X0' * X0 ./ (n-1), but computed using SVD. 
+	//columns of V seem to contain the principle components. 
+	gsl_matrix *x = gsl_matrix_alloc(32,32);
+	gsl_matrix *v = gsl_matrix_alloc(32,32); 
+	gsl_vector *s = gsl_vector_alloc(32);
+	gsl_vector *work = gsl_vector_alloc(32); 
+	
+	gsl_linalg_SV_decomp_mod(m, x, v, s, work); 
+	
+	//copy! v is untransposed and in row-major.  s should be sorted descending.
+	printf("pca coef!\n"); 
+	int offset = 0; 
+	while(s->data[offset] > 1000) offset++; 
+	for(int i=0; i<32; i++){
+		g_pcaCoef[channel][0][i] = v->data[i*32 + offset];
+		g_pcaCoef[channel][1][i] = v->data[i*32 + i + offset];
+		printf("%f %f\n", g_pcaCoef[channel][0][i], 
+			   			g_pcaCoef[channel][1][i]);
+	}
+	gsl_matrix_free(m);
+	gsl_matrix_free(x); 
+	gsl_matrix_free(v); 
+	gsl_vector_free(s); 
+	gsl_vector_free(work); 
+	return 0; 
+}
+static void calcPCACB(gpointer){
+	//lauch this on a seperate thread for speed. 
+	int* p = (int*)malloc(2*sizeof(int)); 
+	p[0] = MIN(NSAMP, g_wbufW[0]); 
+	p[1] = g_channel[0]; 
+	pthread_t thread1;
+	pthread_attr_t attr;
+	pthread_attr_init(&attr);
+	pthread_create( &thread1, &attr, computePCA, (void*)p ); 
+}
 int main (int argn, char **argc)
 {
 	GtkWidget *window;
 	GtkWidget *da1;
 	GdkGLConfig *glconfig;
-	GtkWidget *box1, *bx, *bx2, *label;
-	GtkWidget *modebox;
+	GtkWidget *box1, *bx, *v1, *label;
 	GtkWidget *paned;
 	GtkWidget *frame;
+	GtkWidget *notebook;
 	GtkWidget *button, *combo;
 	//GtkWidget *paned2;
 	int i; 
@@ -1406,6 +1553,7 @@ int main (int argn, char **argc)
 	for(i=0; i<128; i++){
 		g_agcs[i] = 16000.f; 
 		g_gains[i] = 1.0f; 
+		g_threshold[i] = 0.75; 
 		g_aperture[i][0] = 140;
 		g_aperture[i][1] = 140; 
 	}
@@ -1419,17 +1567,11 @@ int main (int argn, char **argc)
 	da1 = gtk_drawing_area_new ();
 	gtk_widget_set_size_request(GTK_WIDGET(da1), 640, 650);
 
-	/* Create a 2x2 table */
-	//table = gtk_table_new (2, 2, TRUE);
 	paned = gtk_hpaned_new(); 
 	gtk_container_add (GTK_CONTAINER (window), paned);
-	box1 = gtk_vbox_new (FALSE, 0);
-	/*for(i=0; i<16; i++){
-		g_gainlabel[i] = gtk_label_new ("");
-		gtk_misc_set_alignment (GTK_MISC (g_gainlabel[i]), 0, 0);
-		gtk_box_pack_start (GTK_BOX (box1), g_gainlabel[i], FALSE, FALSE, 0);
-		gtk_widget_show (g_gainlabel[i]);
-	}*/
+
+	v1 = gtk_vbox_new (FALSE, 0);
+	gtk_widget_set_size_request(GTK_WIDGET(v1), 200, 600);
 
 	//add in a headstage channel # label
 	bx = gtk_vbox_new (FALSE, 2);
@@ -1440,96 +1582,49 @@ int main (int argn, char **argc)
 	//add in a packets/second label
 	g_pktpsLabel = gtk_label_new ("packets/sec");
 	gtk_misc_set_alignment (GTK_MISC (g_pktpsLabel), 0, 0);
-	gtk_box_pack_start (GTK_BOX (bx), g_pktpsLabel, TRUE, TRUE, 0);
+	gtk_box_pack_start (GTK_BOX (bx), g_pktpsLabel, FALSE, FALSE, 0);
 	gtk_widget_show(g_pktpsLabel); 
-	gtk_box_pack_start (GTK_BOX (box1), bx, TRUE, TRUE, 0);
+	gtk_box_pack_start (GTK_BOX (v1), bx, FALSE, FALSE, 0);
 	
 	//4-channel control blocks. 
 	for(i=0; i<4; i++){
 		char buf[128]; 
 		snprintf(buf, 128, "%c", 'A'+i); 
 		frame = gtk_frame_new (buf);
-		gtk_frame_set_shadow_type(GTK_FRAME(frame),  GTK_SHADOW_ETCHED_IN); 
-		gtk_box_pack_start (GTK_BOX (box1), frame, TRUE, TRUE, 2);
+		//gtk_frame_set_shadow_type(GTK_FRAME(frame),  GTK_SHADOW_ETCHED_IN); 
+		gtk_box_pack_start (GTK_BOX (v1), frame, FALSE, FALSE, 0);
 		
-		bx2 = gtk_vbox_new (FALSE, 2);
+		GtkWidget* bx2 = gtk_vbox_new (FALSE, 1);
 		gtk_container_add (GTK_CONTAINER (frame), bx2);
-		
-		bx = gtk_hbox_new (FALSE, 2);
+		GtkWidget* bx3 = gtk_hbox_new (FALSE, 1);
+		gtk_box_pack_start (GTK_BOX (bx2), bx3, FALSE, FALSE, 0);
 		
 		//channel spinner.
-		label = gtk_label_new ("ch");
-		gtk_box_pack_start (GTK_BOX (bx), label, TRUE, TRUE, 2);
-		gtk_widget_show(label); 
-		GtkWidget *spinner;
-		g_channelSpin[i] = (GtkAdjustment *)gtk_adjustment_new(
-			(double)g_channel[i], 
-			0.0, 127.0, 1.0, 5.0, 0.0);
-		spinner = gtk_spin_button_new (g_channelSpin[i], 0, 0);
-		gtk_spin_button_set_wrap (GTK_SPIN_BUTTON (spinner), TRUE);
-		gtk_box_pack_start (GTK_BOX (bx), spinner, TRUE, TRUE, 0);
-		g_signal_connect(spinner, "value-changed", 
-						G_CALLBACK(channelSpinCB), 
-						 (gpointer)i);
-		gtk_widget_show(spinner); 
-		
+		g_channelSpin[i] = mk_spinner("ch", bx3, 
+									  g_channel[i], 0, 127, 1, 
+									  channelSpinCB, i); 
 		//right of that, a gain spinner. (need to update depending on ch)
-		label = gtk_label_new ("gain");
-		gtk_box_pack_start (GTK_BOX (bx), label, TRUE, TRUE, 2);
-		gtk_widget_show(label); 
-		g_gainSpin[i] = (GtkAdjustment *)gtk_adjustment_new(
-			1.0, 
-			-30.0, 30.0, 0.1, 30.0, 0.0);
-		spinner = gtk_spin_button_new (g_gainSpin[i], 0.01, 2);
-		gtk_spin_button_set_wrap (GTK_SPIN_BUTTON (spinner), FALSE);
-		gtk_box_pack_start (GTK_BOX (bx), spinner, TRUE, TRUE, 2);
-		g_signal_connect(spinner, "value-changed", 
-						G_CALLBACK(gainSpinCB), GINT_TO_POINTER (i));
-		gtk_widget_show(spinner); 
-		
-		gtk_box_pack_start (GTK_BOX (bx2), bx, TRUE, TRUE, 2);
-		
+		g_gainSpin[i] = mk_spinner("gain", bx3, 
+								  1.0, -30.0, 30.0, 0.1, 
+								  gainSpinCB, i); 
 		//below that, the AGC target. 
-		bx = gtk_hbox_new (FALSE, 1);
-		
-		label = gtk_label_new ("AGC target");
-		gtk_box_pack_start (GTK_BOX (bx), label, TRUE, TRUE, 2);
-		gtk_widget_show(label); 
-		g_agcSpin[i] = (GtkAdjustment *)gtk_adjustment_new(
-			16000, 
-			100, 32000, 1000, 2000, 0.0);
-		spinner = gtk_spin_button_new (g_agcSpin[i], 0, 0);
-		gtk_spin_button_set_wrap (GTK_SPIN_BUTTON (spinner), FALSE);
-		gtk_box_pack_start (GTK_BOX (bx), spinner, TRUE, TRUE, 2);
-		g_signal_connect(spinner, "value-changed", 
-						G_CALLBACK(agcSpinCB), GINT_TO_POINTER (i));
-		gtk_widget_show(spinner); 
-		
-		gtk_box_pack_start (GTK_BOX (bx2), bx, TRUE, TRUE, 1);
-		
-		//below that, A and B template match apertures.
-		bx = gtk_hbox_new (FALSE, 1);
-		
-		for(int j=0; j<2; j++){
-			buf[0] = 'A' + j; 
-			buf[1] = 0; 
-			label = gtk_label_new (buf);
-			gtk_box_pack_start (GTK_BOX (bx), label, TRUE, TRUE, 2);
-			gtk_widget_show(label); 
-			g_apertureSpin[i*2+j] = (GtkAdjustment *)gtk_adjustment_new(
-				12*14, 
-				0, 255*14, 1, 2, 0.0);
-			spinner = gtk_spin_button_new (g_apertureSpin[i*2+j], 0, 0);
-			gtk_spin_button_set_wrap (GTK_SPIN_BUTTON (spinner), FALSE);
-			gtk_box_pack_start (GTK_BOX (bx), spinner, TRUE, TRUE, 2);
-			g_signal_connect(spinner, "value-changed", 
-							G_CALLBACK(apertureSpinCB), GINT_TO_POINTER (i*2+j));
-			gtk_widget_show(spinner); 
-		}
-		
-		gtk_box_pack_start (GTK_BOX (bx2), bx, TRUE, TRUE, 1);
-		gtk_box_pack_start (GTK_BOX (frame), bx2, TRUE, TRUE, 1);
+		g_agcSpin[i] = mk_spinner("AGC target", bx2, 
+								  6000, 0, 32000, 1000, 
+								  agcSpinCB, i); 
+								  
+		gtk_box_pack_start (GTK_BOX (frame), bx2, FALSE, FALSE, 1);
 	}
+	//notebook region!
+	notebook = gtk_notebook_new(); 
+	gtk_notebook_set_tab_pos (GTK_NOTEBOOK (notebook), GTK_POS_LEFT);
+	g_signal_connect(notebook, "switch-page", 
+					 G_CALLBACK(notebookPageChangedCB), 0);
+	//g_signal_connect(notebook, "select-page", 
+	//				 G_CALLBACK(notebookPageChangedCB), 0); 
+	gtk_box_pack_start(GTK_BOX(v1), notebook, TRUE, TRUE, 1); 
+    gtk_widget_show(notebook);
+	
+	box1 = gtk_vbox_new(FALSE, 2); 
 	//add signal chain combo box.
 	frame = gtk_frame_new ("signal chain");
 	gtk_box_pack_start (GTK_BOX (box1), frame, TRUE, TRUE, 0);
@@ -1559,177 +1654,95 @@ int main (int argn, char **argc)
 	g_signal_connect( G_OBJECT( combo ), "changed",
                       G_CALLBACK( signalChainCB ), NULL );
 	
-	bx = gtk_vbox_new (FALSE, 3);
-
 	//add a gain set-all button.
 	button = gtk_button_new_with_label ("Set all gains from A");
 	g_signal_connect(button, "clicked", G_CALLBACK (gainSetAll),0);
-	gtk_box_pack_start (GTK_BOX (bx), button, TRUE, TRUE, 0);
-	//gainSetAll(0);
+	gtk_box_pack_start (GTK_BOX (box1), button, TRUE, TRUE, 0);
 	//and a AGC set-all button.
 	button = gtk_button_new_with_label ("Set all AGC targets from A");
 	g_signal_connect(button, "clicked", G_CALLBACK (agcSetAll),0);
-	gtk_box_pack_start (GTK_BOX (bx), button, TRUE, TRUE, 0);
-	//agcSetAll(0);
-	gtk_box_pack_start (GTK_BOX (box1), bx, TRUE, TRUE, 0);
-
-	//add in a threshold spinner. (global -- adjust the gain and AGC targets.
-	bx = gtk_hbox_new (FALSE, 3);
-	label = gtk_label_new ("threshold");
-	gtk_box_pack_start (GTK_BOX (bx), label, TRUE, TRUE, 0);
-	gtk_widget_show(label); 
-	g_thresholdSpin = (GtkAdjustment *)gtk_adjustment_new(16000.0, 
-		0.0, 32000.0, 50.0, 1000.0, 0.0);
-	GtkWidget *spinner;
-	spinner = gtk_spin_button_new (g_thresholdSpin, 0, 0);
-	gtk_spin_button_set_wrap (GTK_SPIN_BUTTON (spinner), FALSE);
-	gtk_box_pack_start (GTK_BOX (bx), spinner, TRUE, TRUE, 0);
-	g_signal_connect(spinner, "value-changed", 
-					G_CALLBACK(thresholdSpinCB), GINT_TO_POINTER (1));
-	gtk_widget_show(spinner); 
-	gtk_box_pack_start (GTK_BOX (box1), bx, TRUE, TRUE, 0);
+	gtk_box_pack_start (GTK_BOX (box1), button, TRUE, TRUE, 0);
 	
-	//add mode radio buttons
-	frame = gtk_frame_new ("display");
-	gtk_box_pack_start (GTK_BOX (box1), frame, TRUE, TRUE, 0);
-	GSList *group;
-	modebox = gtk_hbox_new (FALSE, 2);
-	gtk_container_add (GTK_CONTAINER (frame), modebox);
-	gtk_container_set_border_width (GTK_CONTAINER (modebox), 2);
-	gtk_box_pack_start (GTK_BOX (box1), modebox, TRUE, TRUE, 0);
-	gtk_widget_show (modebox);
-	
-	button = gtk_radio_button_new_with_label (NULL, "rasters");
-	gtk_box_pack_start (GTK_BOX (modebox), button, TRUE, TRUE, 0);
-	gtk_widget_show (button);
-	gtk_signal_connect (GTK_OBJECT (button), "clicked",
-		GTK_SIGNAL_FUNC (modeRadioCB), (gpointer) "r");
-
-	group = gtk_radio_button_get_group (GTK_RADIO_BUTTON (button));
-	button = gtk_radio_button_new_with_label (group, "spikes");
-	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), FALSE);
-	gtk_box_pack_start (GTK_BOX (modebox), button, TRUE, TRUE, 0);
-	gtk_widget_show (button);
-	gtk_signal_connect (GTK_OBJECT (button), "clicked",
-		GTK_SIGNAL_FUNC (modeRadioCB), (gpointer) "s");
-		
-	group = gtk_radio_button_get_group (GTK_RADIO_BUTTON (button));
-	button = gtk_radio_button_new_with_label (group, "sort");
-	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), FALSE);
-	gtk_box_pack_start (GTK_BOX (modebox), button, TRUE, TRUE, 0);
-	gtk_widget_show (button);
-	gtk_signal_connect (GTK_OBJECT (button), "clicked",
-		GTK_SIGNAL_FUNC (modeRadioCB), (gpointer) "t");
-		
-	//add draw mode. 
-	frame = gtk_frame_new ("draw mode");
-	gtk_box_pack_start (GTK_BOX (box1), frame, TRUE, TRUE, 0);
-	modebox = gtk_hbox_new (FALSE, 2);
-	gtk_container_add (GTK_CONTAINER (frame), modebox);
-	gtk_container_set_border_width (GTK_CONTAINER (modebox), 2);
-	gtk_box_pack_start (GTK_BOX (box1), modebox, TRUE, TRUE, 0);
-	gtk_widget_show (modebox);
-	
-	button = gtk_radio_button_new_with_label (NULL, "lines");
-	gtk_box_pack_start (GTK_BOX (modebox), button, TRUE, TRUE, 0);
-	gtk_widget_show (button);
-	gtk_signal_connect (GTK_OBJECT (button), "clicked",
-		GTK_SIGNAL_FUNC (drawRadioCB), (gpointer) "l");
-
-	group = gtk_radio_button_get_group (GTK_RADIO_BUTTON (button));
-	button = gtk_radio_button_new_with_label (group, "points");
-	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), FALSE);
-	gtk_box_pack_start (GTK_BOX (modebox), button, TRUE, TRUE, 0);
-	gtk_widget_show (button);
-	gtk_signal_connect (GTK_OBJECT (button), "clicked",
-		GTK_SIGNAL_FUNC (drawRadioCB), (gpointer) "p");
-		
 	//add LMS on/off.. (global .. for now)
-	frame = gtk_frame_new ("LMS");
-	gtk_box_pack_start (GTK_BOX (box1), frame, TRUE, TRUE, 0);
-	modebox = gtk_hbox_new (FALSE, 2);
-	gtk_container_add (GTK_CONTAINER (frame), modebox);
-	gtk_container_set_border_width (GTK_CONTAINER (modebox), 2);
-	gtk_box_pack_start (GTK_BOX (box1), modebox, TRUE, TRUE, 0);
-	gtk_widget_show (modebox);
+	mk_radio("on,off", 2, 
+			 box1, false, "LMS", lmsRadioCB); 
 	
-	button = gtk_radio_button_new_with_label (NULL, "on");
-	gtk_box_pack_start (GTK_BOX (modebox), button, TRUE, TRUE, 0);
-	gtk_widget_show (button);
-	gtk_signal_connect (GTK_OBJECT (button), "clicked",
-		GTK_SIGNAL_FUNC (lmsRadioCB), (gpointer) "1");
-
-	group = gtk_radio_button_get_group (GTK_RADIO_BUTTON (button));
-	button = gtk_radio_button_new_with_label (group, "off");
-	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), FALSE);
-	gtk_box_pack_start (GTK_BOX (modebox), button, TRUE, TRUE, 0);
-	gtk_widget_show (button);
-	gtk_signal_connect (GTK_OBJECT (button), "clicked",
-		GTK_SIGNAL_FUNC (lmsRadioCB), (gpointer) "0");
-		
 	//add osc / reset radio buttons
-	frame = gtk_frame_new ("filter");
-	gtk_box_pack_start (GTK_BOX (box1), frame, TRUE, TRUE, 0);
-	modebox = gtk_hbox_new (FALSE, 3);
-	gtk_container_add (GTK_CONTAINER (frame), modebox);
-	gtk_container_set_border_width (GTK_CONTAINER (modebox), 2);
-	gtk_widget_show (modebox);
-	
-	button = gtk_radio_button_new_with_label (NULL, "500-6.7k");
-	gtk_box_pack_start (GTK_BOX (modebox), button, TRUE, TRUE, 0);
-	gtk_widget_show (button);
-	gtk_signal_connect (GTK_OBJECT (button), "clicked",
-		GTK_SIGNAL_FUNC (filterRadioCB), (gpointer) "n");
-		
-	group = gtk_radio_button_get_group (GTK_RADIO_BUTTON (button));
-	button = gtk_radio_button_new_with_label (group, "150-10k");
-	gtk_box_pack_start (GTK_BOX (modebox), button, TRUE, TRUE, 0);
-	gtk_widget_show (button);
-	gtk_signal_connect (GTK_OBJECT (button), "clicked",
-		GTK_SIGNAL_FUNC (filterRadioCB), (gpointer) "w");
-
-	group = gtk_radio_button_get_group (GTK_RADIO_BUTTON (button));
-	button = gtk_radio_button_new_with_label (group, "osc ");
-	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), FALSE);
-	gtk_box_pack_start (GTK_BOX (modebox), button, TRUE, TRUE, 0);
-	gtk_widget_show (button);
-	gtk_signal_connect (GTK_OBJECT (button), "clicked",
-		GTK_SIGNAL_FUNC (filterRadioCB), (gpointer) "o");
-		
-	group = gtk_radio_button_get_group (GTK_RADIO_BUTTON (button));
-	button = gtk_radio_button_new_with_label(group, "flat");
-	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), FALSE);
-	gtk_box_pack_start (GTK_BOX (modebox), button, TRUE, TRUE, 0);
-	gtk_widget_show (button);
-	gtk_signal_connect (GTK_OBJECT (button), "clicked",
-		GTK_SIGNAL_FUNC (filterRadioCB), (gpointer) "f");
-	
-	//add a pause / go button.
-	bx = gtk_hbox_new (FALSE, 1);
-	button = gtk_check_button_new_with_label("pause");
-	g_signal_connect (button, "toggled",
-			G_CALLBACK (pauseButtonCB), (gpointer) "o");
-	gtk_box_pack_start (GTK_BOX (bx), button, TRUE, TRUE, 0);
-	gtk_widget_show(button);
-	
+	mk_radio("500-6.7k,150-10k,osc,flat", 4, 
+			 box1, true, "filter", filterRadioCB);
+			 
 	//add a automatic channel change button.
 	button = gtk_check_button_new_with_label("cycle channels");
 	g_signal_connect (button, "toggled",
 			G_CALLBACK (cycleButtonCB), (gpointer) "o");
-	gtk_box_pack_start (GTK_BOX (bx), button, TRUE, TRUE, 0);
+	gtk_box_pack_start (GTK_BOX (box1), button, TRUE, TRUE, 0);
 	gtk_widget_show(button);
-	gtk_box_pack_start (GTK_BOX (box1), bx, TRUE, TRUE, 0);
 	
 	//add in a zoom spinner.
-	GtkAdjustment* adj = (GtkAdjustment *)gtk_adjustment_new(1.0, 
-		0.15, 10.0, 0.05, 0.1, 0.0);
-	spinner = gtk_spin_button_new (adj, 1.0, 2);
-	gtk_spin_button_set_wrap (GTK_SPIN_BUTTON (spinner), FALSE);
-	gtk_box_pack_start (GTK_BOX (box1), spinner, FALSE, FALSE, 0);
-	g_signal_connect(spinner, "value-changed", 
-					G_CALLBACK(zoomSpinCB), (gpointer)adj );
-	gtk_widget_show(spinner); 
+	g_zoomSpin = mk_spinner("zoom", box1, 
+			   1.0, 0.15, 10.0, 0.05,
+			   zoomSpinCB, 0); 
+
+//this concludes the rasters page. 
+	gtk_widget_show (box1);
+	label = gtk_label_new("rasters"); 
+	gtk_label_set_angle(GTK_LABEL(label), 90); 
+	gtk_notebook_insert_page(GTK_NOTEBOOK(notebook), box1, label, 0); 
 	
+//add page for spikes.
+	box1 = gtk_vbox_new (FALSE, 0);
+		//4-channel control blocks. 
+	for(i=0; i<4; i++){
+		char buf[128]; 
+		snprintf(buf, 128, "%c template aperture", 'A'+i); 
+		frame = gtk_frame_new (buf);
+		gtk_box_pack_start (GTK_BOX (box1), frame, FALSE, FALSE, 1);
+		
+		GtkWidget* bx2 = gtk_vbox_new (FALSE, 2);
+		gtk_container_add (GTK_CONTAINER (frame), bx2);
+		gtk_box_pack_start (GTK_BOX (frame), bx2, FALSE, FALSE, 1);
+		
+		for(int j=0; j<2; j++){
+			snprintf(buf, 128, "%s", (j < 1 ? "0 yelo" : "1 cyan"); 
+			g_apertureSpin[i*2+j] = mk_spinner((const char*)buf, bx2, 
+								  12*14, 0, 255*14, 2, 
+								  apertureSpinCB, i*2+j); 
+		}
+	}
+//this concludes spike page. 
+	gtk_widget_show (box1);
+	label = gtk_label_new("spikes"); 
+	gtk_label_set_angle(GTK_LABEL(label), 90); 
+	gtk_notebook_insert_page(GTK_NOTEBOOK(notebook), box1, label, 1); 
+	
+//add a page for sorting.
+	box1 = gtk_vbox_new (FALSE, 0);
+
+	g_thresholdSpin = mk_spinner("threshold", box1, 
+			   g_threshold[g_channel[0]], 0.0, 1.0, 0.01, 
+			   thresholdSpinCB, 0);
+	
+	button = gtk_button_new_with_label ("calc PCA");
+	g_signal_connect(button, "clicked", G_CALLBACK (calcPCACB),
+					 (gpointer*)window);
+	gtk_box_pack_start (GTK_BOX (box1), button, FALSE, FALSE, 1);
+// end spike page.
+	gtk_widget_show (box1);
+	label = gtk_label_new("sort"); 
+	gtk_label_set_angle(GTK_LABEL(label), 90); 
+	gtk_notebook_insert_page(GTK_NOTEBOOK(notebook), box1, label, 2); 
+	
+	//add draw mode (applicable to all)
+	mk_radio("lines,points", 2, 
+			 v1, false, "draw mode", drawRadioCB); 
+	
+	//add a pause / go button (applicable to all)
+	button = gtk_check_button_new_with_label("pause");
+	g_signal_connect (button, "toggled",
+			G_CALLBACK (pauseButtonCB), (gpointer) "o");
+	gtk_box_pack_start (GTK_BOX (v1), button, TRUE, TRUE, 0);
+	gtk_widget_show(button);
+
 	//and save / stop saving button
 	bx = gtk_hbox_new (FALSE, 3);
 	button = gtk_button_new_with_label ("Record");
@@ -1743,16 +1756,12 @@ int main (int argn, char **argc)
 	gtk_misc_set_alignment (GTK_MISC (g_fileSizeLabel), 0, 0);
 	gtk_box_pack_start (GTK_BOX (bx), g_fileSizeLabel, FALSE, FALSE, 0);
 	gtk_widget_show(g_fileSizeLabel); 
-	gtk_box_pack_start (GTK_BOX (box1), bx, TRUE, TRUE, 0);
+	gtk_box_pack_start (GTK_BOX (v1), bx, TRUE, TRUE, 0);
 	
-	//show all.
-	gtk_widget_set_size_request(GTK_WIDGET(box1), 200, 600);
-	gtk_widget_show (box1);
 	
-	gtk_paned_add1(GTK_PANED(paned), box1);
+	gtk_paned_add1(GTK_PANED(paned), v1);
 	gtk_paned_add2(GTK_PANED(paned), da1); 
-	//gtk_box_pack_start (GTK_BOX (box2), box1, FALSE, FALSE, 0);
-	//gtk_box_pack_start (GTK_BOX (box2), da, TRUE, TRUE, 0);
+
 	gtk_widget_show (paned);
 
 	g_signal_connect_swapped (window, "destroy",
