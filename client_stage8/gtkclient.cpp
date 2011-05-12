@@ -35,7 +35,7 @@
 
 
 #define NSAMP (24*1024)
-#define NDISPW 1024
+#define NDISPW 512
 #define u32 unsigned int
 
 //CG stuff. for the vertex shaders.
@@ -48,6 +48,9 @@ static CGparameter myCgVertexParam_col;
 static CGparameter myCgVertexParam_off;
 static CGparameter myCgVertexParam_xzoom;
 static CGparameter myCgVertexParam_yoffset;
+
+float		g_cursPos[2]; 
+float		g_viewportSize[2] = {640, 480}; //width, height.
 
 void copyData(GLuint vbo, u32 sta, u32 fin, float* ptr, int stride){
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB, vbo);
@@ -80,6 +83,7 @@ public:
 	float	m_loc[4]; //location on the screen - x, y, w, h. 
 	float	m_color[3]; 
 	float	m_fade; 
+	bool	m_reset; //a request, possibly from another thread. 
 	GLuint	m_vbo; 
 	
 	Vbo(int dim, int rows, int cols){
@@ -95,16 +99,21 @@ public:
 		for(int i=0; i<dim*rows*cols; i++){
 			m_f[i] = 0.f; 
 		}
+		m_vbo = 0; //not configured yet.
+	}
+	~Vbo(){
+		free(m_f); 
+		if(m_vbo) glDeleteBuffersARB(1, &m_vbo);
+	}
+	void configure(){
+		if(m_vbo) glDeleteBuffersARB(1, &m_vbo);
+		int siz = m_dim*m_rows*m_cols*sizeof(float); 
 		glGenBuffersARB(1, &m_vbo);
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_vbo);
 		glBufferDataARB(GL_ARRAY_BUFFER_ARB, siz, 
 			0, GL_DYNAMIC_DRAW_ARB);
 		glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, 
 			0, siz, m_f);
-	}
-	~Vbo(){
-		free(m_f); 
-		glDeleteBuffersARB(1, &m_vbo);
 	}
 	void setLoc(float x, float y, float w, float h){
 		m_loc[0] = x; 
@@ -138,26 +147,33 @@ public:
 		m_w++; 
 		return r; //write to this pointer. 
 	}
+	void reset(){ m_reset = true; }
 	void drawReal(int drawmode, float time, bool &update, 
 				float x, float y, float w, float h){ //draws everything! things should be set up at this point..
+		if(m_reset){
+			m_w = m_r = 0; 
+			m_reset = false; 
+		}
 		if(update){
 			cgSetParameter1f(myCgVertexParam_time, time);
 			cgSetParameter1f(myCgVertexParam_fade, m_fade);
 			update = false; 
 		}
-		cgSetParameter3f(myCgVertexParam_col, 
-						 m_color[0],m_color[1],m_color[2]);
-		cgSetParameter4f(myCgVertexParam_off, x,y,w,h); 
-		cgGLBindProgram(myCgVertexProgram[1]);
-		cgGLEnableProfile(myCgVertexProfile);
-		checkForCgError("enabling vertex profile");
-		
-		glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_vbo);
-		glVertexPointer(m_dim, GL_FLOAT, 0, 0);
-		glDrawArrays(drawmode, 0, m_rows * m_cols);
-		glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
-		cgGLDisableProfile(myCgVertexProfile);
-		checkForCgError("disabling vertex profile");
+		if(m_r > 0){
+			cgSetParameter3f(myCgVertexParam_col, 
+							m_color[0],m_color[1],m_color[2]);
+			cgSetParameter4f(myCgVertexParam_off, x,y,w,h); 
+			cgGLBindProgram(myCgVertexProgram[1]);
+			cgGLEnableProfile(myCgVertexProfile);
+			checkForCgError("enabling vertex profile");
+			
+			glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_vbo);
+			glVertexPointer(m_dim, GL_FLOAT, 0, 0);
+			glDrawArrays(drawmode, 0, MIN(m_rows,m_r) * m_cols);
+			glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+			cgGLDisableProfile(myCgVertexProfile);
+			checkForCgError("disabling vertex profile");
+		}
 	}
 	virtual void draw(int drawmode, float time, bool &update){
 		drawReal(drawmode, time, update, m_loc[0],m_loc[1],m_loc[2],m_loc[3]); 
@@ -169,6 +185,9 @@ public:
 	float*	m_max; 
 	float* m_maxSmooth;
 	float* m_meanSmooth; 
+	float* m_wf; 
+	float* m_poly; 
+	int    m_polyW; 
 	CenterVbo(int dim, int rows, int cols):Vbo(dim, rows, cols){ 
 		m_mean = (float*)malloc(dim * sizeof(float));
 		m_max = (float*)malloc(dim * sizeof(float));
@@ -180,12 +199,40 @@ public:
 			m_maxSmooth[i] = 1.f;
 			m_meanSmooth[i] = 0.f; 
 		}
+		m_wf = (float*)malloc(rows * 32 * sizeof(float));
+		m_poly = (float*)malloc(1024 * 2 * sizeof(float)); //for sorting.
+		m_polyW = 0; 
 	}
 	~CenterVbo(){
 		free(m_mean); 
 		free(m_max); 
 		free(m_maxSmooth);
 		free(m_meanSmooth); 
+		free(m_wf); 
+		free(m_poly); 
+	}
+	float* addWf(){
+		//assumes that we will call add() immediately afterward.
+		float* r = m_wf; 
+		r += 32 * (m_w % m_rows); 
+		return r; 
+	}
+	void calcScale(float &x, float &y, float &w, float &h){
+		w = m_loc[2] / (2*m_maxSmooth[0]);
+		h = m_loc[3] / (2*m_maxSmooth[1]);
+		x = m_loc[0] - (m_meanSmooth[0] - m_maxSmooth[0])*w;
+		y = m_loc[1] - (m_meanSmooth[1] - m_maxSmooth[1])*h; 
+	}
+	void addPoly(float* curs){
+		//add it in local coordinates. 
+		float x,y,w,h; calcScale(x,y,w,h); 
+		int p = m_polyW % 1024; 
+		float cx = curs[0]; float cy = curs[1]; 
+		cx -= x; cy -= y; 
+		cx /= w; cy /= h;
+		m_poly[p*2 + 0] = cx;
+		m_poly[p*2 + 1] = cy; 
+		m_polyW++; 
 	}
 	void copy(bool updateScale){
 		//update the mean & max excursion. only makes sense for 2d data.
@@ -204,12 +251,9 @@ public:
 		}
 		Vbo::copy(); 
 	}
-	void draw(int drawmode, float time, bool &update){
+	void draw(int drawmode, float time, bool &update, float* curs){
 		//order: we scale before offset. pretty easy algebra.
-		float w = m_loc[2] / (2*m_maxSmooth[0]);
-		float h = m_loc[3] / (2*m_maxSmooth[1]);
-		float x = m_loc[0] - (m_meanSmooth[0] - m_maxSmooth[0])*w;
-		float y = m_loc[1] - (m_meanSmooth[1] - m_maxSmooth[1])*h; 
+		float x,y,w,h; calcScale(x,y,w,h); 
 		for(int i=0; i<m_dim; i++){
 			m_maxSmooth[i] = 0.995*m_maxSmooth[i] + 0.005*m_max[i]; 
 			m_meanSmooth[i] = 0.995*m_meanSmooth[i] + 0.005*m_mean[i]; 
@@ -217,6 +261,62 @@ public:
 		//printf("mean %f %f max %f %f points %d\n", m_mean[0],m_mean[1], 
 		//	   m_maxSmooth[0], m_maxSmooth[1], m_w); 
 		drawReal(drawmode, time, update, x,y,w,h); 
+		//also calculate cursor in local space. 
+		//cursor is normally in +-1 x & y space. 
+		float cx, cy; 
+		cx = curs[0]; cy = curs[1]; 
+		cx -= x; cy -= y; 
+		cx /= w; cy /= h;
+		//find the closest in our dataset.
+		float d = 1e9; int closest = 0; 
+		for(int i=0; i< MIN(m_w,m_rows); i++){
+			float xx = m_f[i*m_cols*m_dim + 0];
+			float yy = m_f[i*m_cols*m_dim + 1]; 
+			xx -= cx; yy -= cy; 
+			float dd = xx*xx + yy*yy; 
+			if(dd < d){ closest = i; d = dd;}
+		}
+		//draw an X on the closest. 
+		int i = closest; 
+		float xx = m_f[i*m_cols*m_dim + 0];
+		float yy = m_f[i*m_cols*m_dim + 1]; 
+		xx *= w; yy *= h; 
+		xx += x; yy += y; 
+		float ww = 5.f / g_viewportSize[0];
+		float hh = 5.f / g_viewportSize[1];
+		glBegin(GL_LINES); 
+		glColor4f(1.f, 0.f, 0.f, 0.75); 
+		glVertex3f( xx-ww, yy-hh, 0.f);
+		glVertex3f( xx+ww, yy+hh, 0.f);
+		glVertex3f( xx+ww, yy-hh, 0.f);
+		glVertex3f( xx-ww, yy+hh, 0.f);
+		//also draw the associated waveform.
+		float py = 0; float px = -1.f; 
+		for(int j=1; j<32; j++){
+			float ny = m_wf[i*32 + j]; 
+			float nx = (float)j/31.f -1.f; 
+			glVertex3f(px, py, 0.f);
+			glVertex3f(nx, ny, 0.f);
+			px = nx; py = ny; 
+		}
+		//finally, draw the poly (if there is one). 
+		px = m_poly[0]; py = m_poly[1]; 
+		px *= w; py *= h; 
+		px += x; py += y; 
+		float fx = px; float fy = py; 
+		glColor4f(1.f, 1.f, 0.f, 0.75); 
+		for(int j=1; j<MIN(m_polyW,1024); j++){
+			float nx = m_poly[j*2+0];
+			float ny = m_poly[j*2+1];
+			nx *= w; ny *= h; 
+			nx += x; ny += y; 
+			glVertex3f(px, py, 0.f);
+			glVertex3f(nx, ny, 0.f);
+			px = nx; py = ny; 
+		}
+		glVertex3f(px, py, 0.f);
+		glVertex3f(fx, fy, 0.f);
+		glEnd(); 
 	}
 };
 
@@ -240,7 +340,6 @@ unsigned int g_sendL; //the length of the buffer (in 32-byte packets)
 char		g_messages[1024][128]; //save these, plaintext, in the file.
 unsigned int g_messW;
 unsigned int g_messR; 
-float		g_viewportSize[2] = {640, 480}; //width, height.
 bool g_die = false; 
 double g_pause = -1.0;
 double g_rasterZoom = 1.0; 
@@ -421,6 +520,44 @@ void drawWaveforms(float x, float y, float w, float h,
 	cgGLDisableProfile(myCgVertexProfile);
 	checkForCgError("disabling vertex profile");
 }
+void updateCursPos(float x, float y){
+	g_cursPos[0] = x/g_viewportSize[0]; 
+	g_cursPos[1] = y/g_viewportSize[1]; 
+	//convert to -1 to +1
+	for(int i=0; i<2; i++){
+		g_cursPos[i] -= 0.5f; 
+		g_cursPos[i] *= 2.f;
+	}
+	g_cursPos[1] *= -1; //zero at the top for gtk; bottom for opengl. 
+}
+static gint motion_notify_event( GtkWidget *,
+                                 GdkEventMotion *event ){
+	float x, y; 
+	int ix, iy; 
+	GdkModifierType state;
+	if (event->is_hint){
+		gdk_window_get_pointer (event->window, &ix, &iy, &state);
+		x = ix; y = iy; 
+	}else{
+		x = event->x;
+		y = event->y;
+		state = (GdkModifierType)(event->state);
+	}
+	updateCursPos(x,y); 
+	if((state & GDK_BUTTON1_MASK) && (g_mode == MODE_SORT)){
+		g_pcaVbo[0][0]->addPoly(g_cursPos); 
+	}
+	return TRUE;
+}
+static gint button_press_event( GtkWidget      *,
+                                GdkEventButton *event ){
+	if (event->button == 1){
+		updateCursPos(event->x,event->y); 
+		g_pcaVbo[0][0]->m_polyW = 0; 
+		g_pcaVbo[0][0]->addPoly(g_cursPos); 
+	}
+	return TRUE;
+}
 static gboolean
 expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 {
@@ -491,6 +628,19 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glShadeModel(GL_FLAT);
 	glEnableClientState(GL_VERTEX_ARRAY);
+	
+	//draw the cursor no matter what? 
+	if(0){
+		float x = g_cursPos[0] + 1.f/g_viewportSize[0];
+		float y = g_cursPos[1] + 1.f/g_viewportSize[1]; 
+		glBegin(GL_LINES); 
+		glColor4f(1.f, 1.f, 1.f, 0.75); 
+		glVertex3f( x-0.1, y, 0.f);
+		glVertex3f( x+0.1, y, 0.f);
+		glVertex3f( x, y-0.1, 0.f);
+		glVertex3f( x, y+0.1, 0.f);
+		glEnd(); 
+	}
 	
 	float t = (float)gettime(); 
 	if(g_pause > 0.0) t = g_pause; 
@@ -606,9 +756,9 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		int g = 0; 
 		drawWaveforms(-1.f, 0.f, 1.f, 1.f, 
 					0.5f, 0.5f, 0.5f, 3.0, t, g+0, update); 
-		g_pcaVbo[0][0]->setLoc(0.25f, -0.25f, 0.5f, 0.5f); 
+		g_pcaVbo[0][0]->setLoc(0.1f, -0.4f, 0.8f, 0.8f); 
 		update = true; 
-		g_pcaVbo[0][0]->draw(GL_POINTS, t, update); 
+		g_pcaVbo[0][0]->draw(GL_POINTS, t, update, g_cursPos); 
 		glDisableClientState(GL_VERTEX_ARRAY);
 	}
 	if (gdk_gl_drawable_is_double_buffered (gldrawable))
@@ -763,11 +913,10 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 				0, sizeof(g_wbuf[k]), g_wbuf[k]);
 		}
 	}
-	//need to fix this -- do a copy.. 
+	//need to fix this -- do a copy, not a replace. 
 	for(int i=0; i<4; i++){
 		for(int j = 0; j<3; j++){
-			if(g_pcaVbo[i][j]) delete g_pcaVbo[i][j]; 
-			g_pcaVbo[i][j] = new CenterVbo(3, NSAMP, 1); 
+			g_pcaVbo[i][j]->configure(); 
 		}
 	}
 	BuildFont(); //so we're in the right context? 
@@ -1276,6 +1425,7 @@ void* sock_thread(void* destIP){
 						if(a <= threshold && b > threshold && 
 							(g_bitdelay[0][0] & 0x1f) == 0){
 							int w = mod2(g_wbufW[t], NDISPW);
+							float* wf = g_pcaVbo[0][0]->addWf(); 
 							float* fp = g_pcaVbo[0][0]->addRow(); 
 							fp[0] = 0.f; 
 							fp[1] = 0.f; 
@@ -1283,6 +1433,7 @@ void* sock_thread(void* destIP){
 							for(int j=0; j < 32; j++){
 								//x coord does not need updating.
 								float f = g_fbuf[k][mod2(g_fbufW + j + m - 35, g_nsamp)*3+1];
+								wf[j] = f; 
 								fp[0] += g_pcaCoef[g_channel[0]][0][j] * f; 
 								fp[1] += g_pcaCoef[g_channel[0]][1][j] * f;
 								g_wbuf[t][w*34*3 + (j+1)*3 + 1] = f;
@@ -1706,6 +1857,7 @@ void* computePCA(void* params){
 	gsl_matrix_free(v); 
 	gsl_vector_free(s); 
 	gsl_vector_free(work); 
+	g_pcaVbo[0][0]->reset();
 	return 0; 
 }
 static void calcPCACB(gpointer){
@@ -1729,10 +1881,9 @@ int main (int argn, char **argc)
 	GtkWidget *notebook;
 	GtkWidget *button, *combo;
 	//GtkWidget *paned2;
-	int i; 
 	
 	char destIP[256]; 
-	for(i=0;i<256;i++) destIP[i] = 0; 
+	for(int i=0;i<256;i++) destIP[i] = 0; 
 	if(argn == 2){
 		strncpy(destIP, argc[1], 255); 
 		destIP[255] = 0; 
@@ -1740,7 +1891,7 @@ int main (int argn, char **argc)
 		snprintf(destIP, 256, "152.16.229.38"); 
 	}
 	//defaults. 
-	for(i=0; i<128; i++){
+	for(int i=0; i<128; i++){
 		g_agcs[i] = 16000.f; 
 		g_gains[i] = 1.0f; 
 		g_threshold[i] = 0.75; 
@@ -1752,9 +1903,9 @@ int main (int argn, char **argc)
 			g_pcaCoef[i][1][j] = (j > 15 ? 1.f/32.f : -1.f/32.f); 
 		}
 	}
-	for(int k=0; k<4; k++){
-		for(int j=0; j<3; j++){
-			g_pcaVbo[k][j] = 0;  
+	for(int i=0; i<4; i++){
+		for(int j = 0; j<3; j++){
+			g_pcaVbo[i][j] = new CenterVbo(3, NSAMP, 1); 
 		}
 	}
 
@@ -1787,7 +1938,7 @@ int main (int argn, char **argc)
 	gtk_box_pack_start (GTK_BOX (v1), bx, FALSE, FALSE, 0);
 	
 	//4-channel control blocks. 
-	for(i=0; i<4; i++){
+	for(int i=0; i<4; i++){
 		char buf[128]; 
 		snprintf(buf, 128, "%c", 'A'+i); 
 		frame = gtk_frame_new (buf);
@@ -1892,7 +2043,7 @@ int main (int argn, char **argc)
 //add page for spikes.
 	box1 = gtk_vbox_new (FALSE, 0);
 		//4-channel control blocks. 
-	for(i=0; i<4; i++){
+	for(int i=0; i<4; i++){
 		char buf[128]; 
 		snprintf(buf, 128, "%c template aperture", 'A'+i); 
 		frame = gtk_frame_new (buf);
@@ -1988,6 +2139,16 @@ int main (int argn, char **argc)
 			G_CALLBACK (configure1), NULL);
 	g_signal_connect (da1, "expose-event",
 			G_CALLBACK (expose1), NULL);
+	g_signal_connect (G_OBJECT (da1), "motion_notify_event",
+		    G_CALLBACK (motion_notify_event), NULL);
+	 g_signal_connect (G_OBJECT (da1), "button_press_event",
+		    G_CALLBACK (button_press_event), NULL);
+			
+	gtk_widget_set_events (da1, GDK_EXPOSURE_MASK
+			 | GDK_LEAVE_NOTIFY_MASK
+			 | GDK_BUTTON_PRESS_MASK
+			 | GDK_POINTER_MOTION_MASK
+			 | GDK_POINTER_MOTION_HINT_MASK);
 			
 	pthread_t thread1;
 	pthread_attr_t attr;
