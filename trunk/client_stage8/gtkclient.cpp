@@ -93,7 +93,7 @@ public:
 		m_w = m_r = 0; 
 		m_loc = {0.f, 0.f, 1.f, 1.f}; 
 		m_color = {0.5f, 0.5f, 0.5f}; 
-		m_fade = 300.f; 
+		m_fade = 3.f; 
 		int siz = dim*rows*cols*sizeof(float); 
 		m_f = (float*)malloc(siz);
 		for(int i=0; i<dim*rows*cols; i++){
@@ -251,7 +251,7 @@ public:
 		}
 		Vbo::copy(); 
 	}
-	void draw(int drawmode, float time, bool &update, float* curs){
+	void draw(int drawmode, bool &update, float* curs){
 		//order: we scale before offset. pretty easy algebra.
 		float x,y,w,h; calcScale(x,y,w,h); 
 		for(int i=0; i<m_dim; i++){
@@ -260,7 +260,7 @@ public:
 		}
 		//printf("mean %f %f max %f %f points %d\n", m_mean[0],m_mean[1], 
 		//	   m_maxSmooth[0], m_maxSmooth[1], m_w); 
-		drawReal(drawmode, time, update, x,y,w,h); 
+		drawReal(drawmode, m_fade, update, x,y,w,h); 
 		//also calculate cursor in local space. 
 		//cursor is normally in +-1 x & y space. 
 		float cx, cy; 
@@ -317,6 +317,69 @@ public:
 		glVertex3f(px, py, 0.f);
 		glVertex3f(fx, fy, 0.f);
 		glEnd(); 
+	}
+	bool getTemplate(float* temp, float &aperture){
+		if(m_polyW < 3) return false; 
+		
+		for(int i=0; i<32; i++){
+			temp[i] = 0.f; 
+		}
+		int npts = 0; 
+		bool* inside = (bool*)malloc(m_rows * sizeof(bool)); 
+		for(int i=0; i<MIN(m_w,m_rows); i++){
+			//task 1 is to see if each pca point is within the poly region. 
+			//this is easy - count the number of lines crossed by a line 
+			//starting at this point heading to -inf. 
+			float x = m_f[m_dim*m_cols*i + 0];
+			float y = m_f[m_dim*m_cols*i + 1]; 
+			int k = MIN(m_polyW,1024); k--; 
+			float px = m_poly[k*2+0]; float py = m_poly[k*2+1]; 
+			int intersects = 0; 
+			for(int j=0; j<MIN(m_polyW,1024); j++){
+				float nx = m_poly[j*2+0];
+				float ny = m_poly[j*2+1];
+				//check possible intersects. 
+				if((py <= y && ny > y) || (py > y && ny <= y)){
+					if(px < x && nx < x) intersects++;
+					if((px <= x && nx > x) || (px > x && nx <= x)){
+						//two vectors -> cross product yeilds left/right. 
+						float vx = nx-px; 
+						float vy = ny-py; 
+						float wx = x-px; 
+						float wy = y-py; 
+						float cross = vx*wy - vy*wx; 
+						if(cross > 0.f) intersects++; 
+					}
+				}
+				px = nx; py = ny; 
+			}
+			if(intersects % 2 == 1){
+				//include this point! 
+				inside[i] = true; 
+				m_f[m_dim*m_cols*i + 2] = 3.f; 
+				for(int j=0; j<32; j++){
+					temp[j] += m_wf[i*32 + j]; //this is +- 1.
+				}
+				npts++; 
+			}else{
+				inside[i] = false; 
+				m_f[m_dim*m_cols*i + 2] = 1.0f;
+			}
+		}
+		for(int k=0; k<32; k++){
+			temp[k] /= (float)npts;
+		}
+		//loop again, calculate mean aperture.
+		aperture = 0; 
+		for(int i=0; i<MIN(m_w,m_rows); i++){
+			if(inside[i]){
+				for(int j=0; j<32; j++){
+					aperture += fabs(m_wf[i*32 + j] - temp[j]);
+				}
+			}
+		}
+		aperture /= (float)npts; 
+		return true; 
 	}
 };
 
@@ -740,11 +803,11 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		for(int r=0; r<2; r++){
 			for(int c=0; c<2; c++){
 				int g = (r*2 + c)*3; 
-				drawWaveforms(r-1, c-0.5, 1.f, 0.5f, 
+				drawWaveforms(r-1, 0.5-c, 1.f, 0.5f, 
 							  0.5f, 0.5f, 0.5f, 3.0, t, g+0, update); 
-				drawWaveforms(r-1, c-0.5, 1.f, 0.5f, 
+				drawWaveforms(r-1, 0.5-c, 1.f, 0.5f, 
 							  1.0f, 1.0f, 0.0f, 3.0, t, g+1, update); 
-				drawWaveforms(r-1, c-0.5, 1.f, 0.5f, 
+				drawWaveforms(r-1, 0.5-c, 1.f, 0.5f, 
 							  0.0f, 1.0f, 1.0f, 3.0, t, g+2, update); 
 			}
 		}
@@ -758,7 +821,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 					0.5f, 0.5f, 0.5f, 3.0, t, g+0, update); 
 		g_pcaVbo[0][0]->setLoc(0.1f, -0.4f, 0.8f, 0.8f); 
 		update = true; 
-		g_pcaVbo[0][0]->draw(GL_POINTS, t, update, g_cursPos); 
+		g_pcaVbo[0][0]->draw(GL_POINTS, update, g_cursPos); 
 		glDisableClientState(GL_VERTEX_ARRAY);
 	}
 	if (gdk_gl_drawable_is_double_buffered (gldrawable))
@@ -1429,7 +1492,7 @@ void* sock_thread(void* destIP){
 							float* fp = g_pcaVbo[0][0]->addRow(); 
 							fp[0] = 0.f; 
 							fp[1] = 0.f; 
-							fp[2] = time; 
+							fp[2] = 2.f; 
 							for(int j=0; j < 32; j++){
 								//x coord does not need updating.
 								float f = g_fbuf[k][mod2(g_fbufW + j + m - 35, g_nsamp)*3+1];
@@ -1465,16 +1528,16 @@ void* sock_thread(void* destIP){
 									}
 								}
 								int w = mod2(g_wbufW[3*k+1+t], NDISPW); 
-								float* fp = g_pcaVbo[k][t+1]->addRow(); 
-								fp[0] = fp[1] = 0.f; 
-								fp[2] = time; 
+								//float* fp = g_pcaVbo[k][t+1]->addRow(); 
+								//fp[0] = fp[1] = 0.f; 
+								//fp[2] = time; 
 								for(int j=0; j < 32; j++){
 									//x coord does not need updating.
 									float f = g_fbuf[k][mod2(g_fbufW + j + offset -11, g_nsamp)*3+1]; 
 									g_wbuf[3*k+1+t][w*34*3 + (j+1)*3 + 1] = f; 
 									g_wbuf[3*k+1+t][w*34*3 + (j+1)*3 + 2] = time; 
-									fp[0] += g_pcaCoef[g_channel[0]][0][j] * f;
-									fp[1] += g_pcaCoef[g_channel[0]][1][j] * f; 
+									//fp[0] += g_pcaCoef[g_channel[k]][0][j] * f;
+									//fp[1] += g_pcaCoef[g_channel[k]][1][j] * f; 
 								}
 								g_wbufW[3*k+1+t]++; 
 								//printf("%f\t%d\n", time, g_wbufW[0]); 
@@ -1484,16 +1547,16 @@ void* sock_thread(void* destIP){
 									//to prevent the edge from intruding in the non-sorted wf
 									int w = g_wbufW[3*k+0] % NDISPW; 
 									int offset = -70; 
-									float* fp = g_pcaVbo[k][0]->addRow(); 
-									fp[0] = fp[1] = 0.f; 
-									fp[2] = time; 
+									//float* fp = g_pcaVbo[k][0]->addRow(); 
+									//fp[0] = fp[1] = 0.f; 
+									//fp[2] = time; 
 									for(int j=0; j < 32; j++){
 										//x coord does not need updating.
 										float f = g_fbuf[k][mod2(g_fbufW + j + offset, g_nsamp)*3+1]; 
 										g_wbuf[3*k+0][w*34*3 + (j+1)*3 + 1] = f; 
 										g_wbuf[3*k+0][w*34*3 + (j+1)*3 + 2] = time;
-										fp[0] += g_pcaCoef[g_channel[0]][0][j] * f;
-										fp[1] += g_pcaCoef[g_channel[0]][1][j] * f; 
+										//fp[0] += g_pcaCoef[g_channel[k]][0][j] * f;
+										//fp[1] += g_pcaCoef[g_channel[k]][1][j] * f; 
 									}
 									g_wbufW[3*k+0]++; 
 									g_bitdelay[k][t] |= 0x8; //will not trigger threshold, will block excess copies.
@@ -1501,7 +1564,7 @@ void* sock_thread(void* destIP){
 							}
 							// need a delay line - at least 21 samples. so 3 packets.
 							bit = 0;
-							if(g_templMatch[g_channel[0]][t]) bit++; 
+							if(g_templMatch[g_channel[k]][t]) bit++; 
 							//taken care of, so clear for following packets!
 							//g_exceeded[g_channel[0]/8] &= 0xff ^ (1<<(g_channel[0] & 7)); 
 							g_bitdelay[k][t] <<= 1; 
@@ -1870,6 +1933,16 @@ static void calcPCACB(gpointer){
 	pthread_attr_init(&attr);
 	pthread_create( &thread1, &attr, computePCA, (void*)p ); 
 }
+static void getTemplateCB(gpointer){
+	float temp[32], aperture; 
+	g_pcaVbo[0][0]->getTemplate(temp, aperture); 
+	g_pcaVbo[0][0]->configure(); 
+	printf("template: \n"); 
+	for(int i=0; i<32; i++){
+		printf("%f\n", temp[i]); 
+	}
+	printf("aperture: %f (%f headstage scale)\n", aperture, aperture*128.f); 
+}
 int main (int argn, char **argc)
 {
 	GtkWidget *window;
@@ -2054,7 +2127,7 @@ int main (int argn, char **argc)
 		gtk_box_pack_start (GTK_BOX (frame), bx2, FALSE, FALSE, 1);
 		
 		for(int j=0; j<2; j++){
-			snprintf(buf, 128, "%s", (j < 1 ? "0 yelo":"1 cyan")); 
+			snprintf(buf, 128, "%s", (j < 1 ? "0 yellow":"1 cyan")); 
 			g_apertureSpin[i*2+j] = mk_spinner((const char*)buf, bx2, 
 								  12*14, 0, 255*14, 2, 
 								  apertureSpinCB, i*2+j); 
@@ -2075,6 +2148,11 @@ int main (int argn, char **argc)
 	
 	button = gtk_button_new_with_label ("calc PCA");
 	g_signal_connect(button, "clicked", G_CALLBACK (calcPCACB),
+					 (gpointer*)window);
+	gtk_box_pack_start (GTK_BOX (box1), button, FALSE, FALSE, 1);
+	
+	button = gtk_button_new_with_label ("getTemplate");
+	g_signal_connect(button, "clicked", G_CALLBACK (getTemplateCB),
 					 (gpointer*)window);
 	gtk_box_pack_start (GTK_BOX (box1), button, FALSE, FALSE, 1);
 // end spike page.
