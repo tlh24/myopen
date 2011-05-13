@@ -413,14 +413,15 @@ unsigned int g_echo = 0;
 unsigned int g_headecho = 0; 
 unsigned int g_oldheadecho = 100; 
 bool g_out = false; 
-bool g_templMatch[128][2]; //match a,b over all 128 channels.
+bool g_templMatch[128][2]; //the headstage matched a,b over all 128 channels.
+unsigned char g_template[128][2][14]; //actual templates per channel, 0 and 1. 
+									//comparison is done on unsigned 8 bit integers. 
 float g_pcaCoef[128][2][32]; //PCA per channel.
 unsigned int g_bitdelay[4][2] = {{0,0},{0,0},{0,0},{0,0}};
 float g_threshold[128]; 
 float g_gains[128]; //per-channel gains.
 float g_agcs[128]; //per-channel AGC target.
 int   g_aperture[128][2]; //for template matching. 
-unsigned char g_template[128][2][14]; //the per-channel templates. 
 FILE* g_saveFile = 0; 
 bool g_closeSaveFile = false; 
 unsigned int g_saveFileBytes; 
@@ -1128,7 +1129,7 @@ void setOsc(int chan){
 	int i,j; 
 	b[0] = 0.f; //assume there is already energy in the 
 	b[1] = 0.f; //delay line.
-	b[2] = 32768.f - 10; //10 -> should be about 250Hz @ fs = 62.5khz
+	b[2] = 32768.f - 45; //10 -> should be about 250Hz @ fs = 62.5khz
 	b[3] = -16384.f; 
 	unsigned int* ptr = g_sendbuf; 
 	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
@@ -1260,7 +1261,31 @@ void setLMS(bool on){
 	}
 	g_sendW++;
 	g_echo++; 
-	saveMessage("theshold %d", (on ? 1 : 0));
+	saveMessage("lms %d", (on ? 1 : 0));
+}
+void setTemplate(int ch, int aB){
+	ch &= 31; 
+	aB &= 1; 
+	//each template is 14 points; can write 4 at a time, so need 4 writes.
+	for(int p=0; p<4; p++){
+		unsigned int* ptr = g_sendbuf; 
+		ptr += (g_sendW % g_sendL) * 8;
+		for(int i=0; i<4; i++){
+			//template A starts with newest sample (rightmost) -- loop.
+			//template B is in normal order.
+			int n = (p*4+i+(1-aB)*13)%14; 
+			ptr[i*2+0] = htonl(A1 + 
+				(A1_STRIDE*ch + (A1_TEMPLATE+A1_APERTURE)*aB + 
+				A1_TEMPA + ((p*4+i)%14))*4); 
+			unsigned int u=(((g_template[ch+ 0][aB][n] << 0) & 0xff) | 
+							((g_template[ch+32][aB][n] << 8) & 0xff) | 
+							((g_template[ch+64][aB][n] <<16) & 0xff) | 
+							((g_template[ch+96][aB][n] <<24) & 0xff) ); 
+			ptr[i*2+1] = htonl(u); 
+		}
+		g_sendW++;
+	}
+	//really should save the templates somewhere else... 
 }
 void setBiquad(int chan, float* biquad, int biquadNum){
 	// biquad num 0 or 1
@@ -1933,15 +1958,26 @@ static void calcPCACB(gpointer){
 	pthread_attr_init(&attr);
 	pthread_create( &thread1, &attr, computePCA, (void*)p ); 
 }
-static void getTemplateCB(gpointer){
+static void getTemplateCB(gpointer p){
+	int aB = (int)p & 1; 
 	float temp[32], aperture; 
 	g_pcaVbo[0][0]->getTemplate(temp, aperture); 
-	g_pcaVbo[0][0]->configure(); 
+	g_pcaVbo[0][0]->configure(); //redraw! 
 	printf("template: \n"); 
 	for(int i=0; i<32; i++){
-		printf("%f\n", temp[i]); 
+		printf("%f\n", temp[i]); //this will range +-1; 
+		temp[i] = MIN(temp[i], 1.f);
+		temp[i] = MAX(temp[i], -1.f); 
 	}
-	printf("aperture: %f (%f headstage scale)\n", aperture, aperture*128.f); 
+	printf("aperture: %f (%f headstage scale)\n sent to headstage:\n", 
+		   aperture, aperture*128.f);
+	for(int i=0; i<14; i++){
+		unsigned char c = (unsigned char)(temp[i+6]*128 + 127); 
+		printf("%d ", c); 
+		g_template[g_channel[0]][aB][i] = c; 
+	}
+	printf("\n"); 
+	setTemplate(g_channel[0], aB); 
 }
 int main (int argn, char **argc)
 {
@@ -1964,6 +2000,8 @@ int main (int argn, char **argc)
 		snprintf(destIP, 256, "152.16.229.38"); 
 	}
 	//defaults. 
+	unsigned char tmplA[14]={127,113,102,111,132,155,195,235,250,224,187,160,142,127}; 
+	unsigned char tmplB[14]={122,134,150,160,139,90,60,42,35,52,87,112,130,135};
 	for(int i=0; i<128; i++){
 		g_agcs[i] = 16000.f; 
 		g_gains[i] = 1.0f; 
@@ -1974,6 +2012,11 @@ int main (int argn, char **argc)
 		for(int j=0; j<32; j++){
 			g_pcaCoef[i][0][j] = 1.f/32.f; 
 			g_pcaCoef[i][1][j] = (j > 15 ? 1.f/32.f : -1.f/32.f); 
+		}
+		//start templates with some reasonable stuff. 
+		for(int j=0; j<14; j++){
+			g_template[i][0][j] = tmplA[j];
+			g_template[i][1][j] = tmplB[j]; 
 		}
 	}
 	for(int i=0; i<4; i++){
@@ -2151,9 +2194,14 @@ int main (int argn, char **argc)
 					 (gpointer*)window);
 	gtk_box_pack_start (GTK_BOX (box1), button, FALSE, FALSE, 1);
 	
-	button = gtk_button_new_with_label ("getTemplate");
+	button = gtk_button_new_with_label ("set Template 0");
 	g_signal_connect(button, "clicked", G_CALLBACK (getTemplateCB),
-					 (gpointer*)window);
+					 (gpointer*)0);
+	gtk_box_pack_start (GTK_BOX (box1), button, FALSE, FALSE, 1);
+	
+	button = gtk_button_new_with_label ("set Template 1");
+	g_signal_connect(button, "clicked", G_CALLBACK (getTemplateCB),
+					 (gpointer*)1);
 	gtk_box_pack_start (GTK_BOX (box1), button, FALSE, FALSE, 1);
 // end spike page.
 	gtk_widget_show (box1);
