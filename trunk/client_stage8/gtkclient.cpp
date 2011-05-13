@@ -387,7 +387,7 @@ static float	g_fbuf[4][NSAMP*3]; //continuous waveform.
 unsigned int	g_fbufW; //where to write to (always increment) 
 unsigned int	g_fbufR; //display thread reads from here - copies to mem
 unsigned int 	g_nsamp = 4096; //given the current level of zoom (1 = 4096 samples), how many samples to update?
-static float 	g_sbuf[2][128*1024*2]; //spike buffers.
+static float 	g_sbuf[2][128*512*2]; //spike buffers.
 unsigned int	g_sbufW[2]; 
 unsigned int	g_sbufR[2]; 
 static float 	g_wbuf[4*3][3*34*NDISPW]; //32 samps / waveform + 2 endpoints
@@ -651,8 +651,8 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		//ditto for the spike buffers
 		for(int k=0; k<2; k++){
 			if(g_sbufR[k] < g_sbufW[k]){
-				unsigned int len = sizeof(g_sbuf)/8; //total # of pts. 
-				unsigned int w = g_sbufW[k]; //atomic
+				unsigned int len = sizeof(g_sbuf[k])/8; //total # of pts. 
+				unsigned int w = g_sbufW[k];
 				unsigned int sta = g_sbufR[k] % len; 
 				unsigned int fin = w % len; 
 				if(fin < sta) { //wrap
@@ -940,7 +940,7 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 		for(int k=0; k<2; k++){
 			for(int i=0; i<128; i++){
 				for(int j=0; j<1024; j++){
-					g_sbuf[k][(i*1024+j)*2+0] = (float)j/50.f; 
+					g_sbuf[k][(i*1024+j)*2+0] = (float)j/256.f; 
 					g_sbuf[k][(i*1024+j)*2+1] = (float)i; 
 				}
 			}
@@ -1214,7 +1214,7 @@ void setAGC(int ch1, int ch2, int ch3, float target){
 }
 void setAperture(int ch){
 	// offset is A1 + A1_STRIDE*(ch & 31)
-	// aperture order: ch0, ch64, ch32, ch96. (little-endian)
+	// aperture order: ch0, ch32, ch64, ch96. (little-endian)
 	//might as well set both A & B apertures at same time. 
 	ch &= 31; 
 	unsigned int* ptr = g_sendbuf; 
@@ -1223,8 +1223,8 @@ void setAperture(int ch){
 		ptr[i*2+0] = htonl(A1 + 
 			(A1_STRIDE*ch + (A1_TEMPLATE+A1_APERTURE)*(i/2) + 
 			 A1_APERTUREA + (i&1))*4); 
-		unsigned int u = (g_aperture[ch+32*(i&1)][i/2] & 0xffff) | 
-						((g_aperture[ch+64+32*(i&1)][i/2] & 0xffff)<<16);
+		unsigned int u = (g_aperture[ch+64*(i&1)][i/2] & 0xffff) | 
+						((g_aperture[ch+32+64*(i&1)][i/2] & 0xffff)<<16);
 		ptr[i*2+1] = htonl(u); 
 	}
 	g_sendW++;
@@ -1459,15 +1459,15 @@ void* sock_thread(void* destIP){
 				// 6 samples / packet, 31.25ksps = 5208.33 pkts/sec, 0.192ms/pkt 
 				// 3.07 ms/frame, 325.5 frames/sec
 				double time = rxtime - ((double)(npack-i)-0.5) * 0.000192; 
-				for(int k=0; k<2; k++){ //32 bit words
-					for(int j=0; j<4; j++){ //bytes
+				for(int k=0; k<2; k++){ //2 32 bit word template matches per packet
+					for(int j=0; j<4; j++){ //4 bytes per word
 						int chan = (exch * 8)%32 + k*4 + j; 
 						unsigned char encoded = ((p->tmpl[k]) >> (8*j)) & 0x7f; 
 						unsigned short decoded = decoder[encoded]; 
 						if(decoded & 0x100) printf("error caught in template match!\n"); 
-						int bitoff[4] = {0,1,4,5};
+						int bitoff[4] = {0,4,1,5}; //0,32,64,96.
 						for(int m = 0; m < 4; m++){
-							int adr = chan + m*32; 
+							int adr = chan + m*32;
 							g_templMatch[adr][0] = false;
 							g_templMatch[adr][1] = false; 
 							int b = bitoff[m]; 
@@ -1538,36 +1538,51 @@ void* sock_thread(void* destIP){
 				else if(g_mode == MODE_SPIKES){
 					for(int k=0; k<4; k++){
 						for(int t = 0; t<2; t++){
-							if(g_bitdelay[k][t] & (1 << 3)){
-								float max = -100.f; 
+							if(g_templMatch[g_channel[k]][t]
+								//don't forget g_wbufW[3*k+1+t] has been incremented at this point.
+								/*g_bitdelay[k][t] & (1 << (2))*/){
+								//there is variable latency here - could have just matched
+								// (in which case we need a delay to get more samples --
+								//	 delay 2 packets = 12 samples.)
+								// or it might have matched 4 packets ago; hence have to search
+								// further.
+								float min = 1e9f; 
 								float offset = 0; 
-								for(int j=-14-20; j < -20; j++){
-									//select the largest group of 3 samples (simple noise removal)
-									float w = g_fbuf[k][mod2(g_fbufW +j-1, g_nsamp)*3+1];
-									float x = g_fbuf[k][mod2(g_fbufW +j+0, g_nsamp)*3+1];
-									float y = g_fbuf[k][mod2(g_fbufW +j+1, g_nsamp)*3+1]; 
-									float v = 0.5*w + x + 0.5*y; 
-									if(v > max){
-										max = v; 
+								/*
+								for(int j=-12-30; j <= -11; j++){
+									//perform the same op as the headstage -- convolve.
+									float saa = 0; 
+									for(int g=0; g<14; g++){
+										float w = g_fbuf[k][mod2(g_fbufW +j+g-13, g_nsamp)*3+1];
+										w *= 127; w += 128; 
+										float tmp = g_template[g_channel[k]][t][g]; 
+										saa += fabs(w - tmp); 
+									}
+									if(saa < min){
+										min = saa; 
 										offset = j; 
 									}
-								}
+								}*/
+								/*if(min > g_aperture[g_channel[k]][t]){
+									printf("err headstage says match, we don't find! match %f target %d\n", 
+										   min, g_aperture[g_channel[k]][t]); 
+								}*/
 								int w = mod2(g_wbufW[3*k+1+t], NDISPW); 
 								//float* fp = g_pcaVbo[k][t+1]->addRow(); 
 								//fp[0] = fp[1] = 0.f; 
 								//fp[2] = time; 
-								for(int j=0; j < 32; j++){
+								for(int j=0; j < 64; j+=2){
 									//x coord does not need updating.
-									float f = g_fbuf[k][mod2(g_fbufW + j + offset -11, g_nsamp)*3+1]; 
-									g_wbuf[3*k+1+t][w*34*3 + (j+1)*3 + 1] = f; 
-									g_wbuf[3*k+1+t][w*34*3 + (j+1)*3 + 2] = time; 
+									float f = g_fbuf[k][mod2(g_fbufW + j + offset -64, g_nsamp)*3+1]; 
+									g_wbuf[3*k+1+t][w*34*3 + (j/2+1)*3 + 1] = f; 
+									g_wbuf[3*k+1+t][w*34*3 + (j/2+1)*3 + 2] = time; 
 									//fp[0] += g_pcaCoef[g_channel[k]][0][j] * f;
 									//fp[1] += g_pcaCoef[g_channel[k]][1][j] * f; 
 								}
 								g_wbufW[3*k+1+t]++; 
 								//printf("%f\t%d\n", time, g_wbufW[0]); 
 							} else {
-								if((g_bitdelay[k][t] & 0xffff) == 0){
+								if((g_bitdelay[k][t] & 0xffffffff) == 0){
 									//have to be aggressive with the masking - 
 									//to prevent the edge from intruding in the non-sorted wf
 									int w = g_wbufW[3*k+0] % NDISPW; 
@@ -1960,7 +1975,7 @@ static void calcPCACB(gpointer){
 }
 static void getTemplateCB(gpointer p){
 	int aB = (int)p & 1; 
-	float temp[32], aperture; 
+	float temp[32], aperture = 0; 
 	g_pcaVbo[0][0]->getTemplate(temp, aperture); 
 	g_pcaVbo[0][0]->configure(); //redraw! 
 	printf("template: \n"); 
@@ -2000,14 +2015,14 @@ int main (int argn, char **argc)
 		snprintf(destIP, 256, "152.16.229.38"); 
 	}
 	//defaults. 
-	unsigned char tmplA[14]={127,113,102,111,132,155,195,235,250,224,187,160,142,127}; 
+	unsigned char tmplA[14]={21,37,82,140,193,228,240,235,219,198,178,162,152,146};
 	unsigned char tmplB[14]={122,134,150,160,139,90,60,42,35,52,87,112,130,135};
 	for(int i=0; i<128; i++){
 		g_agcs[i] = 16000.f; 
 		g_gains[i] = 1.0f; 
 		g_threshold[i] = 0.75; 
-		g_aperture[i][0] = 140;
-		g_aperture[i][1] = 140; 
+		g_aperture[i][0] = 56;
+		g_aperture[i][1] = 56; 
 		//start pca with haar wavelets. 
 		for(int j=0; j<32; j++){
 			g_pcaCoef[i][0][j] = 1.f/32.f; 
