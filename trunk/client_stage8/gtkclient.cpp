@@ -29,25 +29,21 @@
 #include "sock.h"
 #include "../../neurorecord/stage/memory.h"
 #include "../../neurorecord/stage/decoder.h"
+#include "cgVertexShader.h"
 
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_linalg.h>
 
 
 #define NSAMP (24*1024)
-#define NDISPW 512
+#define NDISPW 256
 #define u32 unsigned int
 
 //CG stuff. for the vertex shaders.
-static CGcontext   myCgContext;
-static CGprofile   myCgVertexProfile;
-static CGprogram   myCgVertexProgram[2];
-static CGparameter myCgVertexParam_time;
-static CGparameter myCgVertexParam_fade;
-static CGparameter myCgVertexParam_col;
-static CGparameter myCgVertexParam_off;
-static CGparameter myCgVertexParam_xzoom;
-static CGparameter myCgVertexParam_yoffset;
+CGcontext   myCgContext;
+CGprofile   myCgVertexProfile;
+cgVertexShader*		g_vsFade; 
+cgVertexShader*		g_vsThreshold; 
 
 float		g_cursPos[2]; 
 float		g_viewportSize[2] = {640, 480}; //width, height.
@@ -58,19 +54,6 @@ void copyData(GLuint vbo, u32 sta, u32 fin, float* ptr, int stride){
 	fin *= stride; 
 	ptr += sta; 
 	glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, sta*4, (fin-sta)*4, (GLvoid*)ptr);
-}
-static void checkForCgError(const char *situation)
-{
-  CGerror error;
-  const char *string = cgGetLastErrorString(&error);
-
-  if (error != CG_NO_ERROR) {
-    printf("%s: %s\n", situation, string);
-    if (error == CG_COMPILER_ERROR) {
-      printf("%s\n", cgGetLastListing(myCgContext));
-    }
-	exit(1);
-  }
 }
 class Vbo {
 public:
@@ -155,15 +138,14 @@ public:
 			m_reset = false; 
 		}
 		if(update){
-			cgSetParameter1f(myCgVertexParam_time, time);
-			cgSetParameter1f(myCgVertexParam_fade, m_fade);
+			g_vsFade->setParam(2,"time",time); 
+			g_vsFade->setParam(2,"fade",m_fade); 
 			update = false; 
 		}
 		if(m_r > 0){
-			cgSetParameter3f(myCgVertexParam_col, 
-							m_color[0],m_color[1],m_color[2]);
-			cgSetParameter4f(myCgVertexParam_off, x,y,w,h); 
-			cgGLBindProgram(myCgVertexProgram[1]);
+			g_vsFade->setParam(4,"col",m_color[0],m_color[1],m_color[2]);
+			g_vsFade->setParam(5,"off", x,y,w,h); 
+			g_vsFade->bind(); 
 			cgGLEnableProfile(myCgVertexProfile);
 			checkForCgError("enabling vertex profile");
 			
@@ -212,7 +194,7 @@ public:
 		free(m_poly); 
 	}
 	float* addWf(){
-		//assumes that we will call add() immediately afterward.
+		//assumes that we will call add() immediately *afterward*.
 		float* r = m_wf; 
 		r += 32 * (m_w % m_rows); 
 		return r; 
@@ -382,6 +364,8 @@ public:
 		return true; 
 	}
 };
+
+//we really should have a class for encapsulating vertex shaders.
 
 static float	g_fbuf[4][NSAMP*3]; //continuous waveform.
 unsigned int	g_fbufW; //where to write to (always increment) 
@@ -567,13 +551,13 @@ void drawWaveforms(float x, float y, float w, float h,
 				   float r, float g, float b, float fade, float time,
 				   int nvbo, bool &update){
 	if(update){
-		cgSetParameter1f(myCgVertexParam_time, time);
-		cgSetParameter1f(myCgVertexParam_fade, fade);
+		g_vsFade->setParam(2,"time",time); 
+		g_vsFade->setParam(2,"fade",fade); 
 		update = false; 
 	}
-	cgSetParameter3f(myCgVertexParam_col, r,g,b);
-	cgSetParameter4f(myCgVertexParam_off, x,y,w,h);
-	cgGLBindProgram(myCgVertexProgram[1]);
+	g_vsFade->setParam(4,"col", r,g,b);
+	g_vsFade->setParam(5,"off", x,y,w,h);
+	g_vsFade->bind(); 
 	cgGLEnableProfile(myCgVertexProfile);
 	checkForCgError("enabling vertex profile");
 	
@@ -581,6 +565,7 @@ void drawWaveforms(float x, float y, float w, float h,
 	glVertexPointer(3, GL_FLOAT, 0, 0);
 	glDrawArrays(g_drawmode, 0, 34*NDISPW);
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+	
 	cgGLDisableProfile(myCgVertexProfile);
 	checkForCgError("disabling vertex profile");
 }
@@ -710,7 +695,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 	if(g_pause > 0.0) t = g_pause; 
 
 	if(g_mode == MODE_RASTERS){
-		cgSetParameter1f(myCgVertexParam_xzoom, g_rasterZoom);
+		g_vsThreshold->setParam(2,"xzoom",g_rasterZoom); 
 		
 		//glPushMatrix();
 		//glScalef(1.f, 0.5f, 1.f); //don't think this does anythaaang.
@@ -743,15 +728,16 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		}
 		//continuous waveform drawing.. 
 		for(int k=0; k<4;k++){
-			cgSetParameter1f(myCgVertexParam_yoffset, (3-k)/4.f);
-			cgGLBindProgram(myCgVertexProgram[0]);
-			checkForCgError("binding vertex program");
+			g_vsThreshold->setParam(2,"yoffset",(3-k)/4.f); 
+			g_vsThreshold->bind(); 
 			cgGLEnableProfile(myCgVertexProfile);
 			checkForCgError("enabling vertex profile");
+			
 			glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo1[k]);
 			glVertexPointer(3, GL_FLOAT, 0, 0);
 			glPointSize(1);
 			glDrawArrays(g_drawmode, 0, g_nsamp); 
+			
 			cgGLDisableProfile(myCgVertexProfile);
 			checkForCgError("disabling vertex profile");
 		}
@@ -870,42 +856,12 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 		myCgVertexProfile = cgGLGetLatestProfile(CG_GL_VERTEX);
 		cgGLSetOptimalOptions(myCgVertexProfile);
 		checkForCgError("selecting vertex profile");
-
-		myCgVertexProgram[0] = cgCreateProgramFromFile(
-			myCgContext,              /* Cg runtime context */
-			CG_SOURCE,                /* Program in human-readable form */
-			"threshold.cg",  /* Name of file containing program */
-			myCgVertexProfile,        /* Profile: OpenGL ARB vertex program */
-			"threshold",      /* Entry function name */
-			NULL);                    /* No extra compiler options */
-		checkForCgError("creating vertex program from file");
-		cgGLLoadProgram(myCgVertexProgram[0]);
-		checkForCgError("loading vertex program");
-		myCgVertexParam_xzoom =
-			cgGetNamedParameter(myCgVertexProgram[0], "xzoom");
-		myCgVertexParam_yoffset =
-			cgGetNamedParameter(myCgVertexProgram[0], "yoffset");
 		
-		myCgVertexProgram[1] = cgCreateProgramFromFile(
-			myCgContext,              /* Cg runtime context */
-			CG_SOURCE,                /* Program in human-readable form */
-			"fade.cg",  /* Name of file containing program */
-			myCgVertexProfile,        /* Profile: OpenGL ARB vertex program */
-			"fade",      /* Entry function name */
-			NULL);                    /* No extra compiler options */
-		checkForCgError("creating vertex program from file");
-		cgGLLoadProgram(myCgVertexProgram[1]);
-		checkForCgError("loading vertex program");
-		//need the time parameter --
-		myCgVertexParam_time =
-			cgGetNamedParameter(myCgVertexProgram[1], "time");
-		myCgVertexParam_fade =
-			cgGetNamedParameter(myCgVertexProgram[1], "fade");
-		myCgVertexParam_col =
-			cgGetNamedParameter(myCgVertexProgram[1], "col");
-		myCgVertexParam_off =
-			cgGetNamedParameter(myCgVertexProgram[1], "off");
-		checkForCgError("loading vertex program variables");
+		g_vsFade = new cgVertexShader("fade.cg","fade"); 
+		g_vsFade->addParams(4,"time","fade","col","off"); 
+		
+		g_vsThreshold = new cgVertexShader("threshold.cg","threshold"); 
+		g_vsThreshold->addParams(2,"xzoom","yoffset"); 
 		
 		//now the vertex buffers.
 		glInfo glInfo;
@@ -1037,8 +993,8 @@ void destroy(GtkWidget *, gpointer){
 			delete g_pcaVbo[k][j]; 
 		}
 	}
-	cgDestroyProgram(myCgVertexProgram[0]);
-	cgDestroyProgram(myCgVertexProgram[1]);
+	delete g_vsFade;
+	delete g_vsThreshold; 
 	cgDestroyContext(myCgContext);
 	sleep(1); 
 	gtk_main_quit(); 
@@ -1213,9 +1169,9 @@ void setAGC(int ch1, int ch2, int ch3, float target){
 	saveMessage("agc %d", (int)target);
 }
 void setAperture(int ch){
-	// offset is A1 + A1_STRIDE*(ch & 31)
 	// aperture order: ch0, ch32, ch64, ch96. (little-endian)
-	//might as well set both A & B apertures at same time. 
+	// each 16 bits. 
+	//might as well set both A & B apertures in same packet. 
 	ch &= 31; 
 	unsigned int* ptr = g_sendbuf; 
 	ptr += (g_sendW % g_sendL) * 8;
@@ -1278,14 +1234,14 @@ void setTemplate(int ch, int aB){
 				(A1_STRIDE*ch + (A1_TEMPLATE+A1_APERTURE)*aB + 
 				A1_TEMPA + ((p*4+i)%14))*4); 
 			unsigned int u=(((g_template[ch+ 0][aB][n] << 0) & 0xff) | 
-							((g_template[ch+32][aB][n] << 8) & 0xff) | 
-							((g_template[ch+64][aB][n] <<16) & 0xff) | 
-							((g_template[ch+96][aB][n] <<24) & 0xff) ); 
+							((g_template[ch+32][aB][n] << 8) & 0xff00) | 
+							((g_template[ch+64][aB][n] <<16) & 0xff0000) | 
+							((g_template[ch+96][aB][n] <<24) & 0xff000000) ); 
 			ptr[i*2+1] = htonl(u); 
 		}
 		g_sendW++;
 	}
-	//really should save the templates somewhere else... 
+	//really should save the templates somewhere else (another file)
 }
 void setBiquad(int chan, float* biquad, int biquadNum){
 	// biquad num 0 or 1
