@@ -1,6 +1,6 @@
 # the simplest makefile ever!
 CFLAGS=-I/usr/local/include
-CFLAGS+= -O2
+CFLAGS+= -g
 CFLAGS+= -Wall -Wcast-align -Wpointer-arith -Wshadow -Wsign-compare -Wformat=2 \
 -Wno-format-y2k -Wimplicit -Wmissing-braces -Wparentheses -Wtrigraphs \
 -Wextra -pedantic -std=c++0x
