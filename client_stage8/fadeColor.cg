@@ -11,14 +11,14 @@ V_Output fadeColor(float3 position : POSITION,
 				uniform float fade)
 {	
 	V_Output OUT;
-	float alpha = (1 - (time - position.z)/fade); 
+	float alpha = (1 - (time - position.z)*fade); 
 	OUT.position = float4((position.x*off.z+off.x), 
-						  (position.y*off.w+off.y),0.5f,1);
+						  (position.y*off.w+off.y),alpha,1.f);
 	alpha = clamp(alpha, 0.f, 1.f);
 	
 	//OUT.color = float4(1.f, 1.f, 1.f, 0.5f); 
-	OUT.color = float4(color.r + col.r,color.g + col.g,
-				color.b + col.b,1.f);
+	OUT.color = float4(color.r+col.r,color.g+col.g,
+				color.b+col.b,alpha);
 
 	return OUT;	
 }
