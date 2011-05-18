@@ -164,7 +164,7 @@ public:
 	}
 	void addWf(float* wf, int unit, float time, bool updatePCA){
 		//wf assumed to be 32 points long. 
-		//wf should be 0 - 255. (unsigned char)
+		//wf should be 0 - 1.
 		if(unit < 0){ //then we sort here.
 			float saa[2] = {0,0};  
 			for(int j=0; j<14; j++){
@@ -183,7 +183,7 @@ public:
 		//copy to m_wfVbo first. 
 		float* f = m_wfVbo->addRow(); 
 		for(int j=0; j<32; j++){
-			f[(j+1)*6 + 1] = wf[j] / 255.f;
+			f[(j+1)*6 + 1] = wf[j];
 			f[(j+1)*6 + 2] = time; 
 			for(int k=0; k<3; k++)
 				f[(j+1)*6 + 3 + k] = color[k]; 
@@ -192,13 +192,13 @@ public:
 			//add waveform to database.
 			float* nw = m_pcaVbo->addWf(); 
 			for(int j=0; j<32; j++){
-				nw[j] = (wf[j] - 128.f)/128.f;
+				nw[j] = wf[j] - 0.5f;
 			}
 			//compute PCA. just inner product.
 			float* pca = m_pcaVbo->addRow();  
 			for(int j=0; j<32; j++){
 				for(int i=0; i<2; i++)
-					pca[i] += m_pca[i][j] * (wf[j] - 128.f)/128.f;
+					pca[i] += m_pca[i][j] * (wf[j] - 0.5f);
 			}
 			pca[2] = time; 
 			for(int i=0; i<3; i++){
