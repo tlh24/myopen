@@ -15,13 +15,13 @@ GOBJS = gtkclient.o glInfo.o sock.o
 
 all: gtkclient
 
-%.o: %.cpp
+%.o: %.cpp vbo.h cgVertexShader.h
 	g++ -c -o $@ $(CFLAGS) $(GTKFLAGS) $<
 
 client: $(OBJS)
 	g++ $(LDFLAGS) $(OBJS) -o client
 	
-gtkclient: $(GOBJS)
+gtkclient: $(GOBJS) 
 	g++ -o $@ $(GTKLD) $(LDFLAGS) $(GOBJS)
 	
 convert: convert.cpp

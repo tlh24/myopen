@@ -29,7 +29,7 @@ public:
 		m_cols = cols; 
 		m_w = m_r = 0; 
 		m_loc = {0.f, 0.f, 1.f, 1.f}; 
-		m_color = {0.0f, 0.0f, 0.0f}; 
+		m_color = {0.5f, 0.5f, 0.5f}; 
 		m_fade = 3.f; 
 		int siz = dim*rows*cols*sizeof(float); 
 		m_f = (float*)malloc(siz);
@@ -110,7 +110,12 @@ public:
 			//checkForCgError("enabling vertex profile");
 			
 			glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_vbo);
-			glVertexPointer(m_dim, GL_FLOAT, 0, 0);
+			if(m_dim == 6){
+				glVertexPointer(3, GL_FLOAT, m_dim, (void*)0);
+				glColorPointer(3, GL_FLOAT, m_dim, (void*)(3*4));//byte offset.
+			}else{
+				glVertexPointer(m_dim, GL_FLOAT, m_dim, 0);
+			}
 			glDrawArrays(drawmode, 0, MIN(m_rows,m_r) * m_cols);
 			glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 			//cgGLDisableProfile(myCgVertexProfile);
