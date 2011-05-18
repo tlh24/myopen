@@ -29,8 +29,8 @@ public:
 		m_cols = cols; 
 		m_w = m_r = 0; 
 		m_loc = {0.f, 0.f, 1.f, 1.f}; 
-		m_color = {0.5f, 0.5f, 0.5f}; 
-		m_fade = 3.f; 
+		m_color = {0.05f, 0.05f, 0.05f}; 
+		m_fade = 0.3f; 
 		int siz = dim*rows*cols*sizeof(float); 
 		m_f = (float*)malloc(siz);
 		for(int i=0; i<dim*rows*cols; i++){
@@ -73,6 +73,7 @@ public:
 		//copy the new stuff to the VBO. can be called from a different thread.
 		unsigned int sta = m_r % m_rows; 
 		unsigned int fin = m_w % m_rows; 
+		if(m_w - m_r == m_rows){ sta = 0; fin = m_rows; }
 		if(fin != sta){
 			if(fin < sta) { //wrap
 				copyData(m_vbo, sta, m_rows, m_f, m_dim * m_cols);
@@ -90,7 +91,7 @@ public:
 		return r; //write to this pointer. 
 	}
 	void reset(){ m_reset = true; }
-	void drawReal(int drawmode, float time, bool &update, 
+	void drawReal(int drawmode, float time, bool update, 
 				float x, float y, float w, float h){ //draws everything! things should be set up at this point..
 		if(!m_vs){ printf("m_vs = NULL in Vbo::drawReal\n"); return; }
 		if(m_reset){
@@ -100,29 +101,28 @@ public:
 		if(update){
 			m_vs->setParam(2,"time",time); 
 			m_vs->setParam(2,"fade",m_fade); 
-			update = false; 
 		}
 		if(m_r > 0){
 			m_vs->setParam(4,"col",m_color[0],m_color[1],m_color[2]);
 			m_vs->setParam(5,"off", x,y,w,h); 
 			m_vs->bind(); 
-			//cgGLEnableProfile(myCgVertexProfile);
-			//checkForCgError("enabling vertex profile");
+			cgGLEnableProfile(myCgVertexProfile);
+			checkForCgError("enabling vertex profile");
 			
 			glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_vbo);
 			if(m_dim == 6){
-				glVertexPointer(3, GL_FLOAT, m_dim, (void*)0);
-				glColorPointer(3, GL_FLOAT, m_dim, (void*)(3*4));//byte offset.
+				glVertexPointer(3, GL_FLOAT, m_dim*4, (void*)0);
+				glColorPointer(3, GL_FLOAT, m_dim*4, (void*)(3*4));//byte offset.
 			}else{
 				glVertexPointer(m_dim, GL_FLOAT, m_dim, 0);
 			}
 			glDrawArrays(drawmode, 0, MIN(m_rows,m_r) * m_cols);
 			glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
-			//cgGLDisableProfile(myCgVertexProfile);
-			//checkForCgError("disabling vertex profile");
+			cgGLDisableProfile(myCgVertexProfile);
+			checkForCgError("disabling vertex profile");
 		}
 	}
-	virtual void draw(int drawmode, float time, bool &update){
+	virtual void draw(int drawmode, float time, bool update){
 		drawReal(drawmode, time, update, m_loc[0],m_loc[1],m_loc[2],m_loc[3]); 
 	}
 };
@@ -161,7 +161,7 @@ public:
 		free(m_poly); 
 	}
 	float* addWf(){
-		//assumes that we will call add() immediately *afterward*.
+		//assumes that we will call addRow() immediately *afterward*.
 		float* r = m_wf; 
 		r += 32 * (m_w % m_rows); 
 		return r; 
@@ -200,7 +200,7 @@ public:
 		}
 		Vbo::copy(); 
 	}
-	void draw(int drawmode, float* curs, bool &update){
+	void draw(int drawmode, float* curs, bool update){
 		//order: we scale before offset. pretty easy algebra.
 		float x,y,w,h; calcScale(x,y,w,h); 
 		for(int i=0; i<m_dim; i++){
@@ -225,54 +225,60 @@ public:
 			float dd = xx*xx + yy*yy; 
 			if(dd < d){ closest = i; d = dd;}
 		}
-		//draw an X on the closest. 
-		int i = closest; 
-		float xx = m_f[i*m_cols*m_dim + 0];
-		float yy = m_f[i*m_cols*m_dim + 1]; 
-		xx *= w; yy *= h; 
-		xx += x; yy += y; 
-		float ww = 5.f / g_viewportSize[0];
-		float hh = 5.f / g_viewportSize[1];
-		glBegin(GL_LINES); 
-		glColor4f(1.f, 0.f, 0.f, 0.75); 
-		glVertex3f( xx-ww, yy-hh, 0.f);
-		glVertex3f( xx+ww, yy+hh, 0.f);
-		glVertex3f( xx+ww, yy-hh, 0.f);
-		glVertex3f( xx-ww, yy+hh, 0.f);
-		//also draw the associated waveform.
-		float py = 0; float px = -1.f; 
-		for(int j=1; j<32; j++){
-			float ny = m_wf[i*32 + j]; 
-			float nx = (float)j/31.f -1.f; 
-			glVertex3f(px, py, 0.f);
-			glVertex3f(nx, ny, 0.f);
-			px = nx; py = ny; 
+		//offsets to the wafeform display.
+		float ow = m_loc[2]; 
+		float oh = m_loc[3]*2; 
+		float ox = m_loc[0] - m_loc[2]; 
+		float oy = m_loc[1] - m_loc[3]/2; 
+		//draw an X on the closest 
+		if(curs[0] >= m_loc[0] && curs[0] <= m_loc[0] + m_loc[2] &&
+		   curs[1] >= m_loc[1] && curs[1] <= m_loc[1] + m_loc[3]){
+			int i = closest; 
+			float xx = m_f[i*m_cols*m_dim + 0];
+			float yy = m_f[i*m_cols*m_dim + 1]; 
+			xx *= w; yy *= h; 
+			xx += x; yy += y; 
+			float ww = 5.f / g_viewportSize[0];
+			float hh = 5.f / g_viewportSize[1];
+			glBegin(GL_LINES); 
+			glColor4f(1.f, 0.f, 0.f, 0.75); 
+			glVertex3f( xx-ww, yy-hh, 0.f);
+			glVertex3f( xx+ww, yy+hh, 0.f);
+			glVertex3f( xx+ww, yy-hh, 0.f);
+			glVertex3f( xx-ww, yy+hh, 0.f);
+			//also draw the associated waveform.
+			float py = m_wf[i*32 + 0] + 0.5f; 
+			float px = 0; 
+			for(int j=1; j<32; j++){
+				float ny = m_wf[i*32 + j] + 0.5f; 
+				float nx = (float)j/31.f; 
+				glVertex3f(px*ow+ox, py*oh+oy, 0.f);
+				glVertex3f(nx*ow+ox, ny*oh+oy, 0.f);
+				px = nx; py = ny; 
+			}
+			glEnd(); 
 		}
 		//finally, draw the poly (if there is one). 
-		px = m_poly[0]; py = m_poly[1]; 
-		px *= w; py *= h; 
-		px += x; py += y; 
-		float fx = px; float fy = py; 
-		glColor4f(1.f, 1.f, 0.f, 0.75); 
-		for(int j=1; j<MIN(m_polyW,1024); j++){
+		float fx = m_poly[0]; float fy = m_poly[1]; 
+		fx *= w; fy *= h; 
+		fx += x; fy += y; 
+		glBegin(GL_LINE_STRIP);
+		glColor4f(1.f, 1.f, 1.f, 0.75); 
+		for(int j=0; j<MIN(m_polyW,1024); j++){
 			float nx = m_poly[j*2+0];
 			float ny = m_poly[j*2+1];
 			nx *= w; ny *= h; 
 			nx += x; ny += y; 
-			glVertex3f(px, py, 0.f);
 			glVertex3f(nx, ny, 0.f);
-			px = nx; py = ny; 
 		}
-		glVertex3f(px, py, 0.f);
 		glVertex3f(fx, fy, 0.f);
 		glEnd(); 
 	}
 	bool getTemplate(float* temp, float &aperture, float* color){
 		if(m_polyW < 3) return false; 
 		
-		for(int i=0; i<32; i++){
+		for(int i=0; i<32; i++)
 			temp[i] = 0.f; 
-		}
 		int npts = 0; 
 		bool* inside = (bool*)malloc(m_rows * sizeof(bool)); 
 		for(int i=0; i<MIN(m_w,m_rows); i++){
@@ -328,10 +334,9 @@ public:
 			if(intersects % 2 == 1){
 				//include this point! 
 				inside[i] = true; 
-				m_f[m_dim*m_cols*i + 2] = 3.f; //z.
-				//set the color too. 
-				for(int j=0; j<32; j++)
-					m_f[m_dim*m_cols*i + j + 3] = color[j]; //z.
+				//set the color.
+				for(int j=0; j<3; j++)
+					m_f[m_dim*m_cols*i + j + 3] = color[j];
 				for(int j=0; j<32; j++)
 					temp[j] += m_wf[i*32 + j]; //this is +- 1.
 				npts++; 
@@ -353,6 +358,7 @@ public:
 			}
 		}
 		aperture /= (float)npts; 
+		copyData(m_vbo, 0, m_rows, m_f, m_dim * m_cols); 
 		return true; 
 	}
 };
