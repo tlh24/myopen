@@ -17,7 +17,7 @@ public:
 	int		m_w; //write pointer. 
 	int		m_r; //read pointer.  (for copying to graphics memory). 
 	float	m_loc[4]; //location on the screen - x, y, w, h. 
-	float	m_color[3]; 
+	float	m_color[4]; 
 	float	m_fade; 
 	bool	m_reset; //a request, possibly from another thread. 
 	GLuint	m_vbo; 
@@ -29,7 +29,7 @@ public:
 		m_cols = cols; 
 		m_w = m_r = 0; 
 		m_loc = {0.f, 0.f, 1.f, 1.f}; 
-		m_color = {0.05f, 0.05f, 0.05f}; 
+		m_color = {0.05f, 0.05f, 0.05f, 0.05f}; //this is additive color.
 		m_fade = 0.3f; 
 		int siz = dim*rows*cols*sizeof(float); 
 		m_f = (float*)malloc(siz);
@@ -63,10 +63,11 @@ public:
 		m_loc[2] = w; 
 		m_loc[3] = h; 
 	}
-	void setColor(float r, float g, float b){
+	void setColor(float r, float g, float b, float a){
 		m_color[0] = r;
 		m_color[1] = g; 
-		m_color[2] = b; 
+		m_color[2] = b;
+		m_color[3] = a; 
 	}
 	void setFade(float f){ m_fade = f; }
 	virtual void copy(){
@@ -103,7 +104,7 @@ public:
 			m_vs->setParam(2,"fade",m_fade); 
 		}
 		if(m_r > 0){
-			m_vs->setParam(4,"col",m_color[0],m_color[1],m_color[2]);
+			m_vs->setParam(5,"col",m_color[0],m_color[1],m_color[2], m_color[3]);
 			m_vs->setParam(5,"off", x,y,w,h); 
 			m_vs->bind(); 
 			cgGLEnableProfile(myCgVertexProfile);
@@ -151,6 +152,7 @@ public:
 		m_wf = (float*)malloc(rows * 32 * sizeof(float));
 		m_poly = (float*)malloc(1024 * 2 * sizeof(float)); //for sorting.
 		m_polyW = 0; 
+		m_color[3] = -0.5; //additive alhpa. so make the points partially transparent.
 	}
 	~VboPca(){
 		free(m_mean); 

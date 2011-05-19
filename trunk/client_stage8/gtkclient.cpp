@@ -122,10 +122,10 @@ int	g_drawmode = GL_LINE_STRIP;
 //need some way of encapsulating per-channel information. 
 class Channel {
 public:
-	Vbo*	m_wfVbo; //34 points, with color, for drawing on the screen. 
+	Vbo*	m_wfVbo; //range 1 mean 0.5
 	VboPca*	m_pcaVbo; //1 point, with color. 
-	float	m_pca[2][32]; 
-	float	m_template[2][14]; 
+	float	m_pca[2][32]; //range 1 mean 0
+	float	m_template[2][16]; // range 1 mean 0.
 	float	m_aperture[2]; 
 	float	m_loc[4]; 
 	
@@ -138,13 +138,13 @@ public:
 			m_pca[0][j] = 1.f/8.f; 
 			m_pca[1][j] = (j > 15 ? 1.f/8.f : -1.f/8.f); 
 		}
-		unsigned char tmplA[14]={21,37,82,140,193,228,240,235,219,198,178,162,152,146};
-		unsigned char tmplB[14]={122,134,150,160,139,90,60,42,35,52,87,112,130,135};
-		for(int j=0; j<14; j++){
+		unsigned char tmplA[16]={21,37,82,140,193,228,240,235,219,198,178,162,152,146,140,135};
+		unsigned char tmplB[16]={122,134,150,160,139,90,60,42,35,52,87,112,130,135,142,150};
+		for(int j=0; j<16; j++){
 			m_template[0][j] = ((float)tmplA[j] / 255.f)-0.5f;
 			m_template[1][j] = ((float)tmplB[j] / 255.f)-0.5f; 
 		}
-		m_aperture[0] = m_aperture[1] = 28.f; 
+		m_aperture[0] = m_aperture[1] = 56.f; 
 		//init m_wfVbo.
 		for(int i=0; i<512; i++){
 			float* f = m_wfVbo->addRow(); 
@@ -174,12 +174,12 @@ public:
 	}
 	void addWf(float* wf, int unit, float time, bool updatePCA){
 		//wf assumed to be 32 points long. 
-		//wf should be 0 - 1.
+		//wf should range 1 mean 0.
 		if(unit < 0){ //then we sort here.
 			float saa[2] = {0,0};  
-			for(int j=0; j<14; j++){
-				saa[0] += fabs(wf[j+5]-0.5f - m_template[0][j]); 
-				saa[1] += fabs(wf[j+5]-0.5f - m_template[1][j]);
+			for(int j=0; j<16; j++){
+				saa[0] += fabs(wf[j+6] - m_template[0][j]); 
+				saa[1] += fabs(wf[j+6] - m_template[1][j]);
 			}
 			unit = 0; 
 			if(saa[0] < saa[1] && saa[0] < m_aperture[0]/255.f)
@@ -202,14 +202,14 @@ public:
 			//add waveform to database.
 			float* nw = m_pcaVbo->addWf(); 
 			for(int j=0; j<32; j++){
-				nw[j] = wf[j] - 0.5f;
+				nw[j] = wf[j];
 			}
 			//compute PCA. just inner product.
 			float* pca = m_pcaVbo->addRow();  
 			pca[0] = pca[1] = 0.f; 
 			for(int j=0; j<32; j++){
 				for(int i=0; i<2; i++)
-					pca[i] += m_pca[i][j] * (wf[j] - 0.5f);
+					pca[i] += m_pca[i][j] * wf[j];
 			}
 			pca[2] = time; 
 			for(int i=0; i<3; i++){
@@ -238,23 +238,25 @@ public:
 		if(n >= 0 && n <= 1) m_aperture[n] = a; 
 	}
 	void setLoc(float x, float y, float w, float h){
-		m_wfVbo->setLoc(x, y, w/2.f, h); 
+		m_wfVbo->setLoc(x, y+h/2, w/2.f, h); 
 		m_pcaVbo->setLoc(x+w/2.f, y+h/4, w/2.f, h/2.f); 
 		m_loc[0] = x; m_loc[1] = y; 
 		m_loc[2] = w; m_loc[3] = h; 
 	}
 	void draw(int drawmode, float time){
-		m_wfVbo->draw(drawmode, time, true);
 		m_pcaVbo->draw(GL_POINTS, g_cursPos, true); 
+		m_wfVbo->draw(drawmode, time, true);
 		//draw the templates. 
 		float ox = m_loc[0]; float oy = m_loc[1]; 
 		float ow = m_loc[2]/2; float oh = m_loc[3]; 
 		glBegin(GL_LINE_STRIP);
 		for(int k=0; k<2; k++){
-			for(int j=0; j<14; j++){
+			for(int j=0; j<16; j++){
 				float ny = m_template[k][j] + 0.5f;
-				float nx = (float)(j+5)/31.f; 
-				glColor4f(1.f-k, 1.f, k, 0.75f);
+				float nx = (float)(j+6)/31.f; 
+				// yellow -> purple; cyan -> orange (color wheel)
+				if(k == 0) glColor4f(0.6f, 0.f, 1.f, 0.75f);
+				else glColor4f(1.f, 0.5f, 0.f, 0.75f);
 				glVertex3f(nx*ow+ox, ny*oh+oy, 0.f);
 			}
 			glColor4f(0.f, 0.f, 0.f, 0.75f);
@@ -266,10 +268,10 @@ public:
 			for(int j=0; j<32; j++){
 				float ny = m_pca[k][j]+0.5; 
 				float nx = (float)(j)/31.f; 
-				glColor4f(1.f-k, k, 0.f, 0.75f);
+				glColor4f(1.f-k, k, 0.f, 0.5f);
 				glVertex3f(nx*ow+ox, ny*oh+oy, 0.f);
 			}
-			glColor4f(0.f, 0.f, 0.f, 0.75f);
+			glColor4f(0.f, 0.f, 0.f, 0.5f);
 			glVertex3f(1.f*ow+ox, 0.5f*oh+oy, 1.f);
 			glVertex3f(0.f*ow+ox, 0.5f*oh+oy, 1.f);
 		}
@@ -287,8 +289,8 @@ public:
 		float temp[32]; 
 		m_pcaVbo->getTemplate(temp, aperture, color); 
 		printf("template %d ", unit); 
-		for(int i=0; i<14; i++){
-			m_template[unit-1][i] = temp[i+5]; 
+		for(int i=0; i<16; i++){
+			m_template[unit-1][i] = temp[i+6]; 
 			printf("%d ", (int)((temp[i+5]+0.5f) * 255)); 
 		}
 		printf("\n"); 
@@ -727,6 +729,8 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 	glOrtho (-1,1,-1,1,0,1);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	//glEnable(GL_DEPTH_TEST);
+	//glDepthMask(GL_TRUE);
 	glMatrixMode(GL_MODELVIEW);
   	glLoadIdentity();
 
@@ -1066,17 +1070,17 @@ void setLMS(bool on){
 void setTemplate(int ch, int aB){
 	ch &= 31; 
 	aB &= 1; 
-	//each template is 14 points; can write 4 at a time, so need 4 writes.
+	//each template is 16 points; can write 4 at a time, so need 4 writes.
 	for(int p=0; p<4; p++){
 		unsigned int* ptr = g_sendbuf; 
 		ptr += (g_sendW % g_sendL) * 8;
 		for(int i=0; i<4; i++){
 			//template A starts with newest sample (rightmost) -- loop.
-			//template B is in normal order.
-			int n = (p*4+i+(1-aB)*13)%14; 
+			//template B is in normal order. (oldest first)
+			int n = (p*4+i+(1-aB)*15)%16; 
 			ptr[i*2+0] = htonl(A1 + 
 				(A1_STRIDE*ch + (A1_TEMPLATE+A1_APERTURE)*aB + 
-				A1_TEMPA + ((p*4+i)%14))*4); 
+				A1_TEMPA + (p*4+i))*4); 
 			unsigned char a,b,c,d; 
 			a = (unsigned char)((g_c[ch+ 0]->m_template[aB][n]+0.5f) * 255.f);
 			b = (unsigned char)((g_c[ch+32]->m_template[aB][n]+0.5f) * 255.f); 
@@ -1288,14 +1292,15 @@ void* sock_thread(void* destIP){
 						}
 					}
 				}
-				unsigned int bit = 0; 
 				for(int j=0; j<6; j++){
 					for(int k=0; k<4; k++){
 						char samp = p->data[j*4+k]; 
 						int ch = g_channel[k];
 						z = 0.f; 
-						if(g_templMatch[ch][0]) z = 1.f; 
-						if(g_templMatch[ch][1]) z = 2.f; 
+						if(g_templMatch[ch][0] || 
+							(g_bitdelay[k][0] & 0x7)) z = 1.f; 
+						if(g_templMatch[ch][1] || 
+							(g_bitdelay[k][1] & 0x7)) z = 2.f; 
 						g_fbuf[k][(g_fbufW % g_nsamp)*3 + 1] = (float)samp / 128.f;
 						g_fbuf[k][(g_fbufW % g_nsamp)*3 + 2] = z;
 					}
@@ -1315,79 +1320,79 @@ void* sock_thread(void* destIP){
 						float a = g_fbuf[k][mod2(g_fbufW - 26 + m, g_nsamp)*3+1]; 
 						float b = g_fbuf[k][mod2(g_fbufW - 25 + m, g_nsamp)*3+1]; 
 						if(a <= threshold && b > threshold && 
-							(g_bitdelay[0][0] & 0x1f) == 0){
+							(g_bitdelay[0][0] > 6)){
 							float wf[32]; 
 							for(int j=0; j < 32; j++){
 								//x coord does not need updating.
 								wf[j] = g_fbuf[k][mod2(g_fbufW + j + m - 35, g_nsamp)*3+1];
-								wf[j] = (wf[j] + 1.f) * 0.5f; 
+								wf[j] = wf[j] * 0.5f; 
 							}
 							g_c[g_channel[0]]->addWf(wf, -1, time, true); 
 							//printf("pca %f %f\n", fp[0], fp[1]); 
-							g_bitdelay[0][0]++; 
+							g_bitdelay[0][0] = 0; 
 							break; 
 						}
 					}
-					g_bitdelay[0][0] <<= 1; 
+					g_bitdelay[0][0]++; 
 				}
 				else if(g_mode == MODE_SPIKES){
 					for(int k=0; k<4; k++){
 						for(int t = 0; t<2; t++){
-							if(g_templMatch[g_channel[k]][t]){ 
-								/*g_bitdelay[k][t] & (1 << (2))*/
+							if(g_bitdelay[k][t] == 3){
 								//there is variable latency here - could have just matched
 								// (in which case we need a delay to get more samples --
 								//	 delay 2 packets = 12 samples.)
 								// or it might have matched 4 packets ago; hence have to search
 								// further.
-								//float min = 1e9f; 
+								float min = 1e9f; 
 								float offset = 0; 
-								/*
-								for(int j=-12-30; j <= -11; j++){
+								for(int j=-12-32-16; j <= -10-16; j++){
 									//perform the same op as the headstage -- convolve.
 									float saa = 0; 
-									for(int g=0; g<14; g++){
-										float w = g_fbuf[k][mod2(g_fbufW +j+g-13, g_nsamp)*3+1];
-										w *= 127; w += 128; 
-										float tmp = g_template[g_channel[k]][t][g]; 
-										saa += fabs(w - tmp); 
+									for(int g=0; g<16; g++){
+										float w = g_fbuf[k][mod2(g_fbufW +j+g, g_nsamp)*3+1];
+										float tmp = g_c[g_channel[k]]->m_template[t][g]; 
+										//w is mean 0 range 2; tmp is mean 0 range 1.
+										saa += fabs(w*0.5 - tmp); 
 									}
 									if(saa < min){
 										min = saa; 
 										offset = j; 
 									}
-								}*/
-								/*if(min > g_aperture[g_channel[k]][t]){
-									printf("err headstage says match, we don't find! match %f target %d\n", 
-										   min, g_aperture[g_channel[k]][t]); 
-								}*/
+								}
+								float a = g_c[g_channel[k]]->m_aperture[t]; 
+								if(min*254.f > a){
+									printf("err ch %d u %d headstage says match, we don't find! match %f target %f\n", 
+										   g_channel[k], t+1, min*255.f, a); 
+								}
 								float wf[32]; 
-								for(int j=0; j < 64; j+=2){
-									wf[j/2] = g_fbuf[k][mod2(g_fbufW + j + offset -64, g_nsamp)*3+1]; 
-									wf[j/2] = (wf[j/2] + 1.f) * 0.5f; 
+								for(int j=0; j < 32; j++){
+									wf[j] = g_fbuf[k][mod2(g_fbufW + j + offset -6, g_nsamp)*3+1]; 
+									wf[j] *= 0.5f; 
 								}
 								g_c[g_channel[k]]->addWf(wf, t+1, time, true); 
 							} else {
-								if((g_bitdelay[k][t] & (uint64_t)0xffffffffffff) == 0){
+								if(g_bitdelay[k][t] > 250){
 									//have to be aggressive with the masking - 
 									//to prevent the edge from intruding in the non-sorted wf
-									int offset = -70; 
+									int offset = -6*16; 
 									float wf[32];
 									for(int j=0; j < 32; j++){
 										wf[j] = g_fbuf[k][mod2(g_fbufW + j + offset, g_nsamp)*3+1]; 
-										wf[j] = (wf[j] + 1.f) * 0.5f; 
+										wf[j] = wf[j] * 0.5f; 
 									}
 									g_c[g_channel[k]]->addWf(wf, 0, time, true); 
-									g_bitdelay[k][t] |= 0x8; //will not trigger threshold, will block excess copies.
+									g_bitdelay[k][t] = 4; //will not trigger threshold, will block excess copies.
 								}
 							}
 							// need a delay line - at least 21 samples. so 3 packets.
-							bit = 0;
-							if(g_templMatch[g_channel[k]][t]) bit++; 
-							//taken care of, so clear for following packets!
+							if(g_templMatch[g_channel[k]][t]){ 
+								g_bitdelay[k][t]=0; 
+								g_templMatch[g_channel[k]][t] = false; 
+								//taken care of, so clear for following packets!
+							}
 							//g_exceeded[g_channel[0]/8] &= 0xff ^ (1<<(g_channel[0] & 7)); 
-							g_bitdelay[k][t] <<= 1; 
-							g_bitdelay[k][t] += bit & 1; 
+							g_bitdelay[k][t]++; 
 						}
 					}
 				}
@@ -1513,7 +1518,7 @@ static void apertureSpinCB( GtkWidget*, gpointer p){
 		float a = gtk_adjustment_get_value(g_apertureSpin[h]); 
 		int j = g_channel[h/2]; 
 		printf("apertureSpinCB: %f ch %d\n", a, j); 
-		if(a >= 0 && a < 256*14){
+		if(a >= 0 && a < 256*16){
 			g_c[j]->setAperture(a, h%2); 
 			setAperture(j);
 		}
@@ -1884,7 +1889,7 @@ int main(int argn, char **argc)
 		for(int j=0; j<2; j++){
 			snprintf(buf, 128, "%s", (j < 1 ? "0 yellow":"1 cyan")); 
 			g_apertureSpin[i*2+j] = mk_spinner((const char*)buf, bx2, 
-								  12*14, 0, 255*14, 2, 
+								  1*16, 0, 255*16, 2, 
 								  apertureSpinCB, i*2+j); 
 		}
 	}
