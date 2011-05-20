@@ -83,7 +83,9 @@ unsigned int g_headecho = 0;
 unsigned int g_oldheadecho = 100; 
 bool g_out = false; 
 bool g_templMatch[128][2]; //the headstage matched a,b over all 128 channels.
-uint64_t g_bitdelay[4][2] = {{0,0},{0,0},{0,0},{0,0}};
+unsigned int g_bitdelay[4][2] = {{0,0},{0,0},{0,0},{0,0}};
+unsigned int g_verDelay[2]; 
+float	g_verAper[2]; 
 float g_threshold[128]; 
 float g_gains[128]; //per-channel gains.
 float g_agcs[128]; //per-channel AGC target.
@@ -172,7 +174,7 @@ public:
 		delete m_wfVbo; 
 		delete m_pcaVbo; 
 	}
-	void addWf(float* wf, int unit, float time, bool updatePCA){
+	int addWf(float* wf, int unit, float time, bool updatePCA){
 		//wf assumed to be 32 points long. 
 		//wf should range 1 mean 0.
 		if(unit < 0){ //then we sort here.
@@ -216,6 +218,7 @@ public:
 				pca[3+i] = color[i]; 
 			}
 		}
+		return unit; 
 	}
 	void copy(){
 		m_wfVbo->copy(); 
@@ -246,6 +249,7 @@ public:
 	void draw(int drawmode, float time){
 		m_pcaVbo->draw(GL_POINTS, g_cursPos, true); 
 		m_wfVbo->draw(drawmode, time, true);
+		m_pcaVbo->drawClosestWf(g_cursPos); 
 		//draw the templates. 
 		float ox = m_loc[0]; float oy = m_loc[1]; 
 		float ow = m_loc[2]/2; float oh = m_loc[3]; 
@@ -728,6 +732,7 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 	glLoadIdentity();
 	glOrtho (-1,1,-1,1,0,1);
 	glEnable(GL_BLEND);
+	glEnable(GL_LINE_SMOOTH); 
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	//glEnable(GL_DEPTH_TEST);
 	//glDepthMask(GL_TRUE);
@@ -1298,9 +1303,9 @@ void* sock_thread(void* destIP){
 						int ch = g_channel[k];
 						z = 0.f; 
 						if(g_templMatch[ch][0] || 
-							(g_bitdelay[k][0] & 0x7)) z = 1.f; 
+							(g_bitdelay[k][0] < 5)) z = 1.f; 
 						if(g_templMatch[ch][1] || 
-							(g_bitdelay[k][1] & 0x7)) z = 2.f; 
+							(g_bitdelay[k][1] < 5)) z = 2.f; 
 						g_fbuf[k][(g_fbufW % g_nsamp)*3 + 1] = (float)samp / 128.f;
 						g_fbuf[k][(g_fbufW % g_nsamp)*3 + 2] = z;
 					}
@@ -1316,7 +1321,20 @@ void* sock_thread(void* destIP){
 					//look in the past to fill out the 32-sample wf display.
 					float threshold = g_threshold[g_channel[0]]; 
 					int k = 0; //may want to do 4 eventually.
+					int h = g_channel[k]; 
+					for(int j=0; j<2; j++){
+						if(g_templMatch[h][j]) g_verDelay[j] = 0;
+						if(g_verDelay[j] > 8){
+							float a = g_c[h]->m_aperture[j]; 
+							if(fabs(g_verAper[j] - a)/a > 0.05){
+								printf("err missed spike %d saa %f (aperture%f)\n",
+								   j,g_verAper[j],g_c[h]->m_aperture[j]); 
+							}
+							g_verDelay[j] = 0;
+						}
+					}
 					for(int m=0; m<6; m++){
+						//note: 25/26 can be a variable... doesn't matter.
 						float a = g_fbuf[k][mod2(g_fbufW - 26 + m, g_nsamp)*3+1]; 
 						float b = g_fbuf[k][mod2(g_fbufW - 25 + m, g_nsamp)*3+1]; 
 						if(a <= threshold && b > threshold && 
@@ -1332,8 +1350,26 @@ void* sock_thread(void* destIP){
 							g_bitdelay[0][0] = 0; 
 							break; 
 						}
+						//also check to see if it matches threshold. 
+						float saa[2] = {0,0}; 
+						for(int j=0; j<16; j++){
+							float w; 
+							w = g_fbuf[k][mod2(g_fbufW + j + m - 21, g_nsamp)*3+1];
+							w *= 0.5; 
+							saa[0] += fabs(w - g_c[h]->m_template[0][j]); 
+							saa[1] += fabs(w - g_c[h]->m_template[1][j]);
+						}
+						if(saa[0] < saa[1] && saa[0] < g_c[h]->m_aperture[0]/255.f){
+							g_verDelay[0] = 1; 
+							g_verAper[0] = saa[0]*255.f; 
+						}
+						if(saa[1] < saa[0] && saa[1] < g_c[h]->m_aperture[1]/255.f){
+							g_verDelay[1] = 1; 
+							g_verAper[1] = saa[1]*255.f; 
+						}
 					}
-					g_bitdelay[0][0]++; 
+					if(g_verDelay[0]) g_verDelay[0]++; 
+					if(g_verDelay[1]) g_verDelay[1]++; 
 				}
 				else if(g_mode == MODE_SPIKES){
 					for(int k=0; k<4; k++){
@@ -1346,7 +1382,7 @@ void* sock_thread(void* destIP){
 								// further.
 								float min = 1e9f; 
 								float offset = 0; 
-								for(int j=-12-32-16; j <= -10-16; j++){
+								for(int j=-12-36-16; j <= -10-16; j++){
 									//perform the same op as the headstage -- convolve.
 									float saa = 0; 
 									for(int g=0; g<16; g++){
@@ -1361,7 +1397,7 @@ void* sock_thread(void* destIP){
 									}
 								}
 								float a = g_c[g_channel[k]]->m_aperture[t]; 
-								if(min*254.f > a){
+								if(min*253.f > a){
 									printf("err ch %d u %d headstage says match, we don't find! match %f target %f\n", 
 										   g_channel[k], t+1, min*255.f, a); 
 								}
@@ -1391,12 +1427,16 @@ void* sock_thread(void* destIP){
 								g_templMatch[g_channel[k]][t] = false; 
 								//taken care of, so clear for following packets!
 							}
-							//g_exceeded[g_channel[0]/8] &= 0xff ^ (1<<(g_channel[0] & 7)); 
-							g_bitdelay[k][t]++; 
 						}
 					}
 				}
+				for(int k=0; k<4; k++){
+					for(int t=0; t<2; t++){
+						g_bitdelay[k][t]++; 
+					}
+				}
 			}
+				
 		}
 		//see if they want us to send something? 
 		// (this occurs after RX of a packet, so we should not overflow the 
@@ -1564,6 +1604,7 @@ static void signalChainCB( GtkComboBox *combo, gpointer){
  	int i = atoi((char*)string); 
 	if(i >=0 && i < W1_STRIDE){
 		g_signalChain = i;
+		printf("g_signalChain = %d\n", i); 
 		setChans(); 
 	}
     g_free( string );
@@ -1999,6 +2040,11 @@ int main(int argn, char **argc)
 	g_startTime = gettime(); 
 	pthread_create( &thread1, &attr, sock_thread, (void*)destIP ); 
 
+	while(g_sendbuf == 0){
+		usleep(10000); //wait for the other thread to come up. 
+	}
+	//set the initial sampling stage. 
+	gtk_combo_box_set_active(GTK_COMBO_BOX(combo), 12); 
 	gtk_widget_show_all (window);
 
 	g_timeout_add (1000 / 30, rotate, da1);
