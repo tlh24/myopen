@@ -136,6 +136,7 @@ public:
 	float* m_wf; 
 	float* m_poly; 
 	int    m_polyW;
+	int    m_drawWf; 
 	
 	VboPca(int dim, int rows, int cols):Vbo(dim, rows, cols){ 
 		if(dim != 6) printf("Error: dim != 6 in VboPca\n"); 
@@ -152,6 +153,7 @@ public:
 		m_wf = (float*)malloc(rows * 32 * sizeof(float));
 		m_poly = (float*)malloc(1024 * 2 * sizeof(float)); //for sorting.
 		m_polyW = 0; 
+		m_drawWf = 0; 
 		m_color[3] = -0.5; //additive alhpa. so make the points partially transparent.
 	}
 	~VboPca(){
@@ -169,7 +171,7 @@ public:
 		return r; 
 	}
 	void calcScale(float &x, float &y, float &w, float &h){
-		w = m_loc[2] / (2*m_maxSmooth[0]);
+		w = m_loc[2] / (2.5*m_maxSmooth[0]);
 		h = m_loc[3] / (2*m_maxSmooth[1]);
 		x = m_loc[0] - (m_meanSmooth[0] - m_maxSmooth[0])*w;
 		y = m_loc[1] - (m_meanSmooth[1] - m_maxSmooth[1])*h; 
@@ -227,11 +229,6 @@ public:
 			float dd = xx*xx + yy*yy; 
 			if(dd < d){ closest = i; d = dd;}
 		}
-		//offsets to the wafeform display.
-		float ow = m_loc[2]; 
-		float oh = m_loc[3]*2; 
-		float ox = m_loc[0] - m_loc[2]; 
-		float oy = m_loc[1] - m_loc[3]/2; 
 		//draw an X on the closest 
 		if(curs[0] >= m_loc[0] && curs[0] <= m_loc[0] + m_loc[2] &&
 		   curs[1] >= m_loc[1] && curs[1] <= m_loc[1] + m_loc[3]){
@@ -248,24 +245,16 @@ public:
 			glVertex3f( xx+ww, yy+hh, 0.f);
 			glVertex3f( xx+ww, yy-hh, 0.f);
 			glVertex3f( xx-ww, yy+hh, 0.f);
-			//also draw the associated waveform.
-			float py = m_wf[i*32 + 0] + 0.5f; 
-			float px = 0; 
-			for(int j=1; j<32; j++){
-				float ny = m_wf[i*32 + j] + 0.5f; 
-				float nx = (float)j/31.f; 
-				glVertex3f(px*ow+ox, py*oh+oy, 0.f);
-				glVertex3f(nx*ow+ox, ny*oh+oy, 0.f);
-				px = nx; py = ny; 
-			}
+			m_drawWf = closest; 
 			glEnd(); 
 		}
 		//finally, draw the poly (if there is one). 
 		float fx = m_poly[0]; float fy = m_poly[1]; 
 		fx *= w; fy *= h; 
 		fx += x; fy += y; 
+		glLineWidth(4.f); 
 		glBegin(GL_LINE_STRIP);
-		glColor4f(1.f, 1.f, 1.f, 0.75); 
+		glColor4f(1.f, 1.f, 1.f, 0.35); 
 		for(int j=0; j<MIN(m_polyW,1024); j++){
 			float nx = m_poly[j*2+0];
 			float ny = m_poly[j*2+1];
@@ -275,6 +264,25 @@ public:
 		}
 		glVertex3f(fx, fy, 0.f);
 		glEnd(); 
+	}
+	void drawClosestWf(float* curs){
+		if(curs[0] >= m_loc[0] && curs[0] <= m_loc[0] + m_loc[2] &&
+		   curs[1] >= m_loc[1] && curs[1] <= m_loc[1] + m_loc[3]){
+			//offsets to the wafeform display.
+			float ow = m_loc[2]; 
+			float oh = m_loc[3]*2; 
+			float ox = m_loc[0] - m_loc[2]; 
+			float oy = m_loc[1] - m_loc[3]/2; 
+			int i = m_drawWf; 
+			glColor4f(1.f, 1.f, 0.5f, 0.65); 
+			glBegin(GL_LINE_STRIP);
+			for(int j=0; j<32; j++){
+				float ny = m_wf[i*32 + j] + 0.5f; 
+				float nx = (float)j/31.f; 
+				glVertex3f(nx*ow+ox, ny*oh+oy, 0.f);
+			}
+			glEnd(); 
+		}
 	}
 	bool getTemplate(float* temp, float &aperture, float* color){
 		if(m_polyW < 3) return false; 
