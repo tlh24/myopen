@@ -34,14 +34,12 @@
 #define u32 unsigned int
 
 #include "../../neurorecord/stage/memory.h"
-#include "../../neurorecord/stage/decoder.h"
 #include "cgVertexShader.h"
 #include "vbo.h"
+#include "packet.h"
 
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_linalg.h>
-
-
 
 
 //CG stuff. for the vertex shaders.
@@ -110,11 +108,6 @@ double g_startTime = 0.0;
 int g_totalPackets = 0; 
 unsigned int g_dropped; //compare against the bridge.
 int g_totalDropped = 0;
-
-typedef struct {
-	char data[24]; //in groups of 4 channels, e.g. 0,32,64,96
-	unsigned int tmpl[2]; //template match!
-} packet; 
 
 enum MODES {
 	MODE_RASTERS, 
@@ -1276,41 +1269,24 @@ void* sock_thread(void* destIP){
 			int npack = n / 32; 
 			g_totalPackets += npack; 
 			
+			int channels[32]; char match[32]; 
 			for(int i=0; i<npack && g_pause <=0.0; i++){
 				//see if it matched a template.
 				float z = 0; 
 				//g_headecho = ((p->flag) >> 4) & 0xf ; 
-				int exch = 0; 
-				exch += 0x8 & ((p->tmpl[0]) >> (32-4)); //0x80808080 format; convert to 0xf format.
-				exch += 0x4 & ((p->tmpl[0]) >> (24-3));
-				exch += 0x2 & ((p->tmpl[0]) >> (16-2));
-				exch += 0x1 & ((p->tmpl[0]) >> (8-1));
-				//mapping : 0 -> 0,32,64,96; 1->1,33,65,97. 
-				// much simpler than old mapping. 
-				// 6 samples / packet, 31.25ksps = 5208.33 pkts/sec, 0.192ms/pkt 
-				// 3.07 ms/frame, 325.5 frames/sec
-				double time = rxtime - ((double)(npack-i)-0.5) * 0.000192; 
-				for(int k=0; k<2; k++){ //2 32 bit word template matches per packet
-					for(int j=0; j<4; j++){ //4 bytes per word
-						int chan = (exch * 8)%32 + k*4 + j; 
-						unsigned char encoded = ((p->tmpl[k]) >> (8*j)) & 0x7f; 
-						unsigned short decoded = decoder[encoded]; 
-						if(decoded & 0x100) printf("error caught in template match!\n"); 
-						int bitoff[4] = {0,4,1,5}; //0,32,64,96.
-						for(int m = 0; m < 4; m++){
-							int adr = chan + m*32;
-							g_templMatch[adr][0] = false;
-							g_templMatch[adr][1] = false; 
-							int b = bitoff[m]; 
-							for(int t=0; t<2; t++){
-								if((0x01<<(b+2*t)) & decoded){
-									g_templMatch[adr][t] = true;
-									int w = g_sbufW[t] % (sizeof(g_sbuf[t])/8); 
-									g_sbuf[t][w*2+0] = (float)time; 
-									g_sbuf[t][w*2+1] = (float)adr; 
-									g_sbufW[t] ++; 
-								}
-							}
+				double time = rxtime - ((double)(npack-i)-0.5) * 0.000192;
+				decodePacket(p, channels, match); 
+				for(int j=0; j<32; j++){
+					int adr = channels[j]; 
+					for(int t=0; t<2; t++){
+						g_templMatch[adr][t] = false; 
+						if(match[j] == t+1){
+							g_templMatch[adr][t] = true; 
+							//add to the spike raster list.
+							int w = g_sbufW[t] % (sizeof(g_sbuf[t])/8); 
+							g_sbuf[t][w*2+0] = (float)time; 
+							g_sbuf[t][w*2+1] = (float)adr; 
+							g_sbufW[t] ++; 
 						}
 					}
 				}
