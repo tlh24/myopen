@@ -11,7 +11,9 @@ GTKLD = `pkg-config --libs $(GLIBS) `
 
 OBJS = main.o sock.o
 
-GOBJS = gtkclient.o glInfo.o sock.o
+GOBJS = gtkclient.o glInfo.o sock.o decodePacket.o
+
+COBJS = convert.o decodePacket.o
 
 all: gtkclient
 
@@ -24,8 +26,8 @@ client: $(OBJS)
 gtkclient: $(GOBJS) 
 	g++ -o $@ $(GTKLD) $(LDFLAGS) $(GOBJS)
 	
-convert: convert.cpp
-	g++ -o $@ $(CFLAGS) -lmatio convert.cpp
+convert: $(COBJS)
+	g++ -o $@ $(CFLAGS) -lmatio $(COBJS)
 	
 clean:
 	rm -rf client gtkclient convert *.o

@@ -6,14 +6,9 @@
 #include <memory.h>
 #include <math.h>
 #include <matio.h>
+#include "packet.h"
 
-typedef struct {
-	char data[28]; //7 samples of 4 different channels. 
-	unsigned char flag; // high nibble: present channel; low: packet # in frame.
-	unsigned char exceed[3]; //goes over twice per frame. 8*16 = 128.
-} packet; 
-
-int main (int argn, char **argc){
+int main(int argn, char **argc){
 	if(argn != 3){
 		printf("usage: convert infile.bin outfile.mat\n"); 
 		exit(0); 
@@ -84,6 +79,7 @@ int main (int argn, char **argc){
 		mat_int8_t* channel;
 		mat_uint32_t* spike_ts; 
 		mat_int8_t* spike_ch; 
+		mat_int8_t* spike_unit;
 		// store timestamp (in samples), rx time (not necessarily accurate) - one per pkt
 		// store channel # and sample 
 		// store channel & timestamp for spikes.
@@ -92,16 +88,17 @@ int main (int argn, char **argc){
 		  if(!time){ printf("could not allocate time variable."); exit(0);}
 		frameseq = (mat_uint32_t*)malloc(rxpackets * sizeof(int) ); 
 		  if(!frameseq){ printf("could not allocate frameseq variable."); exit(0);}
-		analog = (mat_int8_t*)malloc(rxpackets * 28 ); 
+		analog = (mat_int8_t*)malloc(rxpackets * 24 ); 
 		  if(!analog){ printf("could not allocate analog variable."); exit(0);}
-		channel = (mat_int8_t*)malloc(rxpackets * 28 ); 
+		channel = (mat_int8_t*)malloc(rxpackets * 24 ); 
 		  if(!channel){ printf("could not allocate channel variable."); exit(0);}
 		
-		spike_ts = (mat_uint32_t*)malloc(rxpackets * sizeof(int)*24); 
+		spike_ts = (mat_uint32_t*)malloc(rxpackets * sizeof(int)*32); 
 		  if(!spike_ts){ printf("could not allocate spike_ts variable."); exit(0);}
-		spike_ch = (mat_int8_t*)malloc(rxpackets * 24); 
+		spike_ch = (mat_int8_t*)malloc(rxpackets * 32); 
 		  if(!spike_ch){ printf("could not allocate spike_ch variable."); exit(0);}
-		
+		spike_unit = (mat_int8_t*)malloc(rxpackets * 32); 
+		  if(!spike_unit){ printf("could not allocate spike_unit variable."); exit(0);}
 		//also need to inspect the messages, to see exactly when the channels changed.
 		rxpackets = 0;
 		int tp = 0; // packet position (index time, aka timestamp)
@@ -126,37 +123,35 @@ int main (int argn, char **argc){
 					fread((void*)&rxtime,8,1,in); //rx time in seconds. 
 					fread((void*)&fsq,4,1,in); 
 	
+					int channels[32]; char match[32]; 
 					for(int i=0;i<npak; i++){
 						packet p; 
 						fread((void*)&p,sizeof(p),1,in);
 						if(ferror(in) || feof(in)) done = true; 
 						else{
-							int headecho = ((p.flag) >> 4) & 0xf; 
+							/*int headecho = ((p.flag) >> 4) & 0xf; 
 							//check to see if we can apply the command that was echoed.
 							char m = msgs[headecho][0]; 
 							if(m >= 'A' && m <= 'A' + 15){
 								printf("applying %s\n", msgs[headecho]); 
 								msgs[headecho][0] = 0; 
-							}
-							int exch = p.flag & 15; 
-							time[tp] = rxtime + (double)tp * 7.0 / 31250.0; 
+							}*/
+							time[tp] = rxtime + (double)tp * 6.0 / 31250.0; 
 							frameseq[tp] = fsq; 
-							for(int j=0; j<7; j++){
+							for(int j=0; j<6; j++){
 								for(int k=0; k<4; k++){
 									char samp = p.data[j*4+k]; 
-									analog[tp*28+j*4+k] = samp; 
-									channel[tp*28+j*4+k] = chans[k]; 
+									analog[tp*24+j*4+k] = samp; 
+									channel[tp*24+j*4+k] = chans[k]; 
 								}
 							}
-							for(int j=0; j<3; j++){
-								unsigned char e = p.exceed[j]; 
-								for(int k=0; k<8; k++){
-									if(e & (1 << k)){
-										int ch = ((exch*3+j)%16)*8 + k; 
-										spike_ts[sp] = tp; 
-										spike_ch[sp] = ch; 
-										sp++; 
-									}
+							decodePacket(&p, channels, match);
+							for(int j=0; j<32; j++){
+								if(match[j]){
+									spike_ts[sp] = tp*6; 
+									spike_ch[sp] = channel[j]; 
+									spike_unit[sp] = match[j]; 
+									sp++;
 								}
 							}
 							tp++; 
@@ -180,7 +175,7 @@ int main (int argn, char **argc){
 					char buf[128]; 
 					fread((void*)buf,siz,1,in); 
 					buf[siz] = 0; 
-					printf("message: %s\n", buf); 
+					//printf("message: %s\n", buf); 
 					if(buf[0] >= 'A' && buf[0] <= 'A' + 15){
 						int indx = buf[0] - 'A'; 
 						strncpy(msgs[indx], buf, 128); 
@@ -208,7 +203,7 @@ int main (int argn, char **argc){
 		Mat_VarFree(matvar);
 		free(frameseq); 
 		
-		int m = tp * 28; 
+		int m = tp * 24; 
 		matvar = Mat_VarCreate("analog",MAT_C_INT8,MAT_T_INT8,
 							   1,&m,analog,0);
 		Mat_VarWrite( mat, matvar, 0 );
