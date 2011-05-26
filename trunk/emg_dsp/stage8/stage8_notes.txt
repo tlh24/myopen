@@ -237,3 +237,16 @@ April 19 2011
 	Capacity required with a mean Li-ion voltage of 3.56V - 24*67.3 = 1615maH
 	probably want at least 2000maH, or better. 
 	could reduce code complexity to reduce power .. but I hope all this stuff is useful.
+May 25 2011
+	Added template sorting to both headstage and client -- whew. 
+	Have to clock the processor at 0.95V, 400Mhz now; 
+		let's check the power consumpion.
+	3.31	84.2ma	278mw
+	3.50	80.5	281
+	3.70	77.9	288.23
+	Assuming average current consumption of 80ma (note - with LED), 
+	one RediLast 2900 battery should power one headstage for 36 hours. 
+		(if not more - see 
+		http://lygte-info.dk/info/Batteries18650-2011%20UK.html 
+		which shows 10.5Wh -> 37hours @ 282mw)
+	

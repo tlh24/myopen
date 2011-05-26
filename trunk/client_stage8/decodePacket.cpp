@@ -29,7 +29,7 @@ int decodePacket(packet* p, int* channel, char* match){
 				int b = bitoff[m]; 
 				for(int t=0; t<2; t++){
 					if((0x01<<(b+2*t)) & decoded){
-						match[indx] = t; 
+						match[indx] = t+1; 
 					}
 				}
 			}
