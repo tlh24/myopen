@@ -102,7 +102,7 @@ void radio_set_rx(u16 csn, u16 ce){
 	spi_write_register(csn, NOR_CONFIG, 0 ); // ?? needed seems to decrease reliability
 	//spi_write_byte(NOR_FLUSH_TX);
 	spi_write_byte(csn, NOR_FLUSH_RX); 
-	/** by default CRC is not enabled for RX - we accept anything!! **/
+	/** CRC should always be enabled -- dropped packets are better than wrong data. **/
 	spi_write_register(csn, NOR_CONFIG, NOR_EN_CRC | NOR_CRC0 |
 		NOR_MASK_MAX_RT | NOR_PWR_UP | NOR_PRIM_RX ); 
 	spi_write_register(csn, NOR_STATUS, 0x70); 

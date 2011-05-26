@@ -91,7 +91,7 @@ float g_gains[128]; //per-channel gains.
 float g_agcs[128]; //per-channel AGC target.
 FILE* g_saveFile = 0; 
 bool g_closeSaveFile = false; 
-unsigned int g_saveFileBytes; 
+unsigned int g_saveFileBytes;  
 
 // for 31.25ksps -- see filter_butter.m
 // broken into 2 biquads, order b0 b1 a0 a1
@@ -106,7 +106,10 @@ float lowpass_coefs2[8] = {0.453447,0.906993,-0.632535,-0.485595,
 float highpass_coefs2[8] = {0.980489,-1.960979,1.976285,-0.977184,
 	0.980489,-1.960979,1.944907,-0.945792};
 double g_startTime = 0.0; 
+
 int g_totalPackets = 0; 
+unsigned int g_dropped; //compare against the bridge.
+int g_totalDropped = 0;
 
 typedef struct {
 	char data[24]; //in groups of 4 channels, e.g. 0,32,64,96
@@ -253,14 +256,15 @@ public:
 		//draw the templates. 
 		float ox = m_loc[0]; float oy = m_loc[1]; 
 		float ow = m_loc[2]/2; float oh = m_loc[3]; 
+		glLineWidth(3.f); 
 		glBegin(GL_LINE_STRIP);
 		for(int k=0; k<2; k++){
 			for(int j=0; j<16; j++){
 				float ny = m_template[k][j] + 0.5f;
 				float nx = (float)(j+6)/31.f; 
 				// yellow -> purple; cyan -> orange (color wheel)
-				if(k == 0) glColor4f(0.6f, 0.f, 1.f, 0.75f);
-				else glColor4f(1.f, 0.5f, 0.f, 0.75f);
+				if(k == 0) glColor4f(0.6f, 0.f, 1.f, 0.5f);
+				else glColor4f(1.f, 0.5f, 0.f, 0.5f);
 				glVertex3f(nx*ow+ox, ny*oh+oy, 0.f);
 			}
 			glColor4f(0.f, 0.f, 0.f, 0.75f);
@@ -268,6 +272,7 @@ public:
 			glVertex3f(0.f*ow+ox, 0.5f*oh+oy, 1.f);
 		}
 		//and the PCA templates.
+		glLineWidth(2.f); 
 		for(int k=0; k<2; k++){
 			for(int j=0; j<32; j++){
 				float ny = m_pca[k][j]+0.5; 
@@ -599,6 +604,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		
 		//draw zero lines for the 4 continuous channels.
 		for(int k=0; k<4; k++){
+			glLineWidth(1.f); 
 			glBegin(GL_LINES); 
 			glColor4f(0.f, 0.5, 1.f, 0.75); //blue, center line
 			glVertex3f( -1.f, (float)((3-k)*2+1)/8.f, 0.f);
@@ -1253,6 +1259,17 @@ void* sock_thread(void* destIP){
 				}
 			}
 			char* ptr = buf; 
+			unsigned int drop = *(unsigned int*)ptr; 
+			if(drop > g_dropped){
+				printf("dropped %d radio packets. %d of %d, BER (est) = %f per 1e6 bits\n", 
+					   drop - g_dropped, 
+					   g_totalDropped, 
+					   g_totalPackets, 
+					   1e6*(double)g_totalDropped/((double)g_totalPackets*32*8)); 
+				if((drop - g_dropped) < 4)
+					g_totalDropped += drop - g_dropped; 
+				g_dropped = drop; 
+			}
 			ptr += 4; 
 			n -= 4; 
 			packet* p = (packet*)ptr;
@@ -1326,8 +1343,8 @@ void* sock_thread(void* destIP){
 						if(g_templMatch[h][j]) g_verDelay[j] = 0;
 						if(g_verDelay[j] > 8){
 							float a = g_c[h]->m_aperture[j]; 
-							if(fabs(g_verAper[j] - a)/a > 0.05){
-								printf("err missed spike %d saa %f (aperture%f)\n",
+							if(fabs(g_verAper[j] - a)/a > 0.01){
+								printf("err missed spike %d saa %f (aperture %f)\n",
 								   j,g_verAper[j],g_c[h]->m_aperture[j]); 
 							}
 							g_verDelay[j] = 0;
@@ -1335,14 +1352,17 @@ void* sock_thread(void* destIP){
 					}
 					for(int m=0; m<6; m++){
 						//note: 25/26 can be a variable... doesn't matter.
-						float a = g_fbuf[k][mod2(g_fbufW - 26 + m, g_nsamp)*3+1]; 
-						float b = g_fbuf[k][mod2(g_fbufW - 25 + m, g_nsamp)*3+1]; 
+						int centering = 26; 
+						float a = g_fbuf[k][mod2(g_fbufW - centering + m, g_nsamp)*3+1]; 
+						float b = g_fbuf[k][mod2(g_fbufW - centering+1 + m, g_nsamp)*3+1]; 
 						if(a <= threshold && b > threshold && 
 							(g_bitdelay[0][0] > 6)){
 							float wf[32]; 
 							for(int j=0; j < 32; j++){
 								//x coord does not need updating.
-								wf[j] = g_fbuf[k][mod2(g_fbufW + j + m - 35, g_nsamp)*3+1];
+								//remember, g_fbufW is incremented already. 
+								// m can go from 0 to 5. hence the 32 and the 5 below.
+								wf[j] = g_fbuf[k][mod2(g_fbufW + j + m - 32 - 5, g_nsamp)*3+1];
 								wf[j] = wf[j] * 0.5f; 
 							}
 							g_c[g_channel[0]]->addWf(wf, -1, time, true); 
@@ -1382,7 +1402,12 @@ void* sock_thread(void* destIP){
 								// further.
 								float min = 1e9f; 
 								float offset = 0; 
-								for(int j=-12-36-16; j <= -10-16; j++){
+								/* diagram of waveform: 
+								|<- 6 pre ->|<- 16 template ->|<- 10 post ->|
+								total 32 samples. 
+								*/
+								for(int j=-36-10-16; j <= -10-16; j++){ 
+									// j <= -10-16 b/c g_fbufW points to spot for new sample.
 									//perform the same op as the headstage -- convolve.
 									float saa = 0; 
 									for(int g=0; g<16; g++){
@@ -1397,7 +1422,7 @@ void* sock_thread(void* destIP){
 									}
 								}
 								float a = g_c[g_channel[k]]->m_aperture[t]; 
-								if(min*253.f > a){
+								if(min*251.f > a){
 									printf("err ch %d u %d headstage says match, we don't find! match %f target %f\n", 
 										   g_channel[k], t+1, min*255.f, a); 
 								}
@@ -1782,6 +1807,7 @@ int main(int argn, char **argc)
 		g_threshold[i] = 0.75; 
 		g_c[i] = new Channel(); 
 	}
+	g_dropped = 0; 
 
 	gtk_init (&argn, &argc);
 	gtk_gl_init (&argn, &argc);
