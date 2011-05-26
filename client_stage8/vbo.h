@@ -38,6 +38,7 @@ public:
 		}
 		m_vbo = 0; //not configured yet.
 		m_vs = 0; 
+		m_reset = false; 
 	}
 	~Vbo(){
 		free(m_f); 
@@ -112,15 +113,17 @@ public:
 			
 			glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_vbo);
 			if(m_dim == 6){
+				glEnableClientState(GL_COLOR_ARRAY); 
 				glVertexPointer(3, GL_FLOAT, m_dim*4, (void*)0);
 				glColorPointer(3, GL_FLOAT, m_dim*4, (void*)(3*4));//byte offset.
 			}else{
-				glVertexPointer(m_dim, GL_FLOAT, m_dim, 0);
+				glVertexPointer(m_dim, GL_FLOAT, m_dim*4, 0);
 			}
 			glDrawArrays(drawmode, 0, MIN(m_rows,m_r) * m_cols);
 			glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 			cgGLDisableProfile(myCgVertexProfile);
 			checkForCgError("disabling vertex profile");
+			glDisableClientState(GL_COLOR_ARRAY); 
 		}
 	}
 	virtual void draw(int drawmode, float time, bool update){

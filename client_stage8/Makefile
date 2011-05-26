@@ -1,4 +1,4 @@
-# the simplest makefile ever!
+# not a very smark makefile -- no deps -- but works.
 CFLAGS=-I/usr/local/include
 CFLAGS+= -g
 CFLAGS+= -Wall -Wcast-align -Wpointer-arith -Wshadow -Wsign-compare -Wformat=2 \
@@ -17,14 +17,14 @@ COBJS = convert.o decodePacket.o
 
 all: gtkclient
 
-%.o: %.cpp vbo.h cgVertexShader.h
+%.o: %.cpp vbo.h channel.h cgVertexShader.h
 	g++ -c -o $@ $(CFLAGS) $(GTKFLAGS) $<
 
 client: $(OBJS)
 	g++ $(LDFLAGS) $(OBJS) -o client
 	
 gtkclient: $(GOBJS) 
-	g++ -o $@ $(GTKLD) $(LDFLAGS) $(GOBJS)
+	g++ -o $@ $(GTKLD) $(LDFLAGS) -lmatio $(GOBJS)
 	
 convert: $(COBJS)
 	g++ -o $@ $(CFLAGS) -lmatio $(COBJS)
