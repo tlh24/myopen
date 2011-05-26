@@ -124,6 +124,7 @@ public:
 		}
 	}
 	virtual void draw(int drawmode, float time, bool update){
+		glLineWidth(1.f); 
 		drawReal(drawmode, time, update, m_loc[0],m_loc[1],m_loc[2],m_loc[3]); 
 	}
 };
@@ -213,6 +214,7 @@ public:
 		}
 		//printf("mean %f %f max %f %f points %d\n", m_mean[0],m_mean[1], 
 		//	   m_maxSmooth[0], m_maxSmooth[1], m_w); 
+		glLineWidth(1.f); 
 		drawReal(drawmode, m_fade, update, x,y,w,h); 
 		//also calculate cursor in local space. 
 		//cursor is normally in +-1 x & y space. 
@@ -252,7 +254,7 @@ public:
 		float fx = m_poly[0]; float fy = m_poly[1]; 
 		fx *= w; fy *= h; 
 		fx += x; fy += y; 
-		glLineWidth(4.f); 
+		glLineWidth(3.f); 
 		glBegin(GL_LINE_STRIP);
 		glColor4f(1.f, 1.f, 1.f, 0.35); 
 		for(int j=0; j<MIN(m_polyW,1024); j++){
@@ -275,6 +277,7 @@ public:
 			float oy = m_loc[1] - m_loc[3]/2; 
 			int i = m_drawWf; 
 			glColor4f(1.f, 1.f, 0.5f, 0.65); 
+			glLineWidth(3.f); 
 			glBegin(GL_LINE_STRIP);
 			for(int j=0; j<32; j++){
 				float ny = m_wf[i*32 + j] + 0.5f; 

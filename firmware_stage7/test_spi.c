@@ -15,6 +15,8 @@ typedef struct {
 
 u8 g_streamEnabled; 
 u8 g_outpkt[32]; 
+u32 g_nextFlag; 
+u32	g_dropped; 
 nv_data g_nv; 
 
 void eth_listen(int etherr){
@@ -207,7 +209,18 @@ void getRadioPacket(u16 csn, u16 irq, u8 write){
 		wrptr += 32; 
 		wrptr &= 0xfff; 
 		c += 24/4; //offset to template match bytes (8, 2 uints) 
-		if(((*c)&0x80808080) == 0x80808080){ //end of a frame.
+		unsigned int flag = *c; 
+		flag = ((flag >> 7) & 1) | ((flag >> 14) & 2)
+				| ((flag >> 21) & 4) | ((flag >> 28) & 8); 
+		if(g_nextFlag != flag){
+			if(g_nextFlag > flag) 
+				g_dropped += (16+flag) - g_nextFlag;
+			else
+				g_dropped += flag - g_nextFlag; 
+			*pPORTFIO_SET = 0x4;
+		}
+		g_nextFlag = (flag + 1) & 0xf; 
+		if(flag == 0xf){ //end of a frame.
 			radio_set_tx(csn, NRF_CE); //must clear CE here - essential!
 			asm volatile("ssync;"); 
 			*FIO_CLEAR = csn; 
@@ -231,13 +244,13 @@ void getRadioPacket(u16 csn, u16 irq, u8 write){
 		}
 	}
 	if(gotx || wrptr >= UDP_PACKET_SIZE){
-		*pPORTFIO_SET = 0x4000; 
+		*pPORTFIO_SET = 0x4000; //transmit UDP flag.
 		spi_write_byte(csn,NOR_FLUSH_RX); //will this fix the problem of immediately syncing? 
 		data = (u32*) ( udp_packet_setup(wrptr+4, &result )); 
 		if(result > 0){
 			//copy the data from SDRAM.. (starting @ 0x0000 0000, looping 256k bytes)
 			//include a copy of the tptr, so that we can (possibly) reorder it. 
-			(*data++) = trptr; //this is the +4 above
+			(*data++) = g_dropped; //this is the +4 above
 			unsigned int *ptr = 0; 
 			for(i=0; i<wrptr/4; i++){
 				*data++ = *ptr++;
@@ -253,7 +266,7 @@ void getRadioPacket(u16 csn, u16 irq, u8 write){
 			// (possibly due to ARP). 
 			trptr ++; 
 		}
-		*pPORTFIO_CLEAR = 0x4000; 
+		*pPORTFIO_CLEAR = 0x4004; 
 		gotx = 0; 
 		wrptr = 0; 
 	}
@@ -381,14 +394,14 @@ int main(void){
 	
 	/*setup portF - SPORT0 RX + NRF CSN, IRQ, CE, SPORT1 TX
 	MUX		0000 0001 0100 0000  0x0140
-	FER		0011 1000 1000 0111  0x3887
-	INPUT	0000 0001 1010 1001  0x01a9
+	FER		0011 1000 1000 0011  0x3883
+	INPUT	0000 0001 1010 1011  0x01ab
 	!! this will have to change based on wether the headstage is wired or not
 	!! the MUX configuration is too coarse to support both.
 	*/
-	*pPORTF_FER = 0x3887;
+	*pPORTF_FER = 0x3883;
 	*pPORTFIO_DIR = (0xffff ^ 0x01a9); 
-	*pPORTFIO_INEN = 0x01a9; 
+	*pPORTFIO_INEN = 0x01ab; 
 	*pPORTF_MUX = 0x0140; //support the DAC
 	//and reading / writing flash
 	*pPORTGIO_INEN &= (0xffff ^ SPI_FLASH); 
@@ -457,6 +470,8 @@ int main(void){
 	int secs; 
 	wrptr = 0; //write pointer - not actual address! (must wrap by hand)
 	trptr = 0;
+	g_dropped = 0; 
+	g_nextFlag = 0; 
 	
 	//enable the three radios.
 	printf_str("init radios!\n"); 
@@ -464,9 +479,9 @@ int main(void){
 	*FIO_SET = NRF_CSN0 | NRF_CSN1 | NRF_CSN2;
 	*pPORTGIO_SET = SPI_FLASH; 
 	asm volatile("ssync;"); 
-	radio_init(NRF_CSN0, NRF_IRQ0, 0); 
-	radio_init(NRF_CSN1, NRF_IRQ1, 0); 
-	radio_init(NRF_CSN2, NRF_IRQ2, 0); 
+	radio_init(NRF_CSN0, NRF_IRQ0, 124); 
+	radio_init(NRF_CSN1, NRF_IRQ1, 124); 
+	radio_init(NRF_CSN2, NRF_IRQ2, 124); 
 
 	
 	radio_set_rx(NRF_CSN0, 0); 
