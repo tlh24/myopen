@@ -369,7 +369,7 @@ public:
 		for(int k=0; k<32; k++){
 			temp[k] /= (float)npts;
 		}
-		//loop again, calculate mean aperture.
+		//loop again, calculate mean aperture. (don't do stdev -- the headstage uses abs, not x^2)
 		aperture = 0; 
 		for(int i=0; i<MIN(m_w,m_rows); i++){
 			if(inside[i]){
@@ -379,6 +379,7 @@ public:
 			}
 		}
 		aperture /= (float)npts; 
+		aperture *= 0.65; //empirical.
 		copyData(m_vbo, 0, m_rows, m_f, m_dim * m_cols); 
 		return true; 
 	}

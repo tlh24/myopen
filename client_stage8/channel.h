@@ -3,6 +3,8 @@
 
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_linalg.h>
+#include <sqlite3.h>
+#include "sql.h"
 
 void gsl_matrix_to_mat(gsl_matrix *x, const char* fname); 
 
@@ -16,12 +18,14 @@ public:
 	float	m_template[2][16]; // range 1 mean 0.
 	float	m_aperture[2]; 
 	float	m_loc[4]; 
+	int		m_ch; 
 	
-	Channel(){
+	Channel(int ch){
 		m_wfVbo = new Vbo(6, 512, 34); //sorted units, with color. 
 		m_usVbo = new Vbo(3, 256, 34); //unsorted units, all gray.
 		m_pcaVbo = new VboPca(6, 1024*8, 1); 
 		m_pcaVbo->m_fade = 0.f; 
+		m_ch = ch; 
 		//init PCA, template. 
 		for(int j=0; j<32; j++){
 			m_pca[0][j] = 1.f/8.f; 
@@ -33,7 +37,12 @@ public:
 			m_template[0][j] = ((float)tmplA[j] / 255.f)-0.5f;
 			m_template[1][j] = ((float)tmplB[j] / 255.f)-0.5f; 
 		}
-		m_aperture[0] = m_aperture[1] = 56.f; 
+		//read from sql if it's there..
+		for(int j=0; j<2; j++){
+			sqliteGetBlob(ch, j, "pca", &(m_pca[j][0]), 32);
+			sqliteGetBlob(ch, j, "template", &(m_template[j][0]), 16);
+			m_aperture[j] = sqliteGetValue2(ch, j, "aperture", 56.f); 
+		}
 		//init m_wfVbo.
 		for(int i=0; i<512; i++){
 			float* f = m_wfVbo->addRow(); 
@@ -76,6 +85,13 @@ public:
 		delete m_wfVbo;
 		delete m_usVbo; 
 		delete m_pcaVbo; 
+	}
+	void save(){
+		for(int j=0; j<2; j++){
+			sqliteSetBlob(m_ch, j, "pca", &(m_pca[j][0]), 32);
+			sqliteSetBlob(m_ch, j, "template", &(m_template[j][0]), 16);
+			sqliteSetValue2(m_ch, j, "aperture", m_aperture[j]); 
+		}
 	}
 	int addWf(float* wf, int unit, float time, bool updatePCA){
 		//wf assumed to be 32 points long. 
@@ -202,7 +218,7 @@ public:
 		}
 		glEnd(); 
 	}
-	bool updateTemplate(int unit){
+	int updateTemplate(int unit){
 		//called when the button is clicked.
 		if(unit < 1 || unit > 2){
 			printf("unit out of range in Channel::updateTemplate()\n"); 
@@ -216,9 +232,10 @@ public:
 		printf("template %d ", unit); 
 		for(int i=0; i<16; i++){
 			m_template[unit-1][i] = temp[i+6]; 
-			printf("%d ", (int)((temp[i+5]+0.5f) * 255)); 
+			printf("%d ", (int)((temp[i+6]+0.5f) * 255)); 
 		}
 		printf("\n"); 
+		m_aperture[unit-1] = aperture * 255; 
 		//caller is responsible for sending this to the headstage.
 		return true; 
 	}
@@ -293,6 +310,7 @@ public:
 				m_pcaVbo->m_f[i*6 + 3 + k] = 0.5f; 
 			m_pcaVbo->m_r = 0; 
 			m_pcaVbo->m_w = nsamp; //force a copy-over of the whole thing.
+			m_pcaVbo->copy(true); 
 		}
 	}
 };

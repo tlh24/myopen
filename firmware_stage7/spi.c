@@ -145,7 +145,7 @@ u8 radio_init(u16 csn, u16 irq, u8 chan){
 	spi_write_register_ver(csn,NOR_EN_RXADDR, 0x01); //enable pipe 0.
 	spi_write_register_ver(csn,NOR_SETUP_AW, 0x01); //rx/tx address width = 3 (smaller is better)
 	spi_write_register_ver(csn,NOR_SETUP_RETR, 0x00); //turn off retransmit & ARC (see page 44 - puts it in shockburst mode) 
-	spi_write_register_ver(csn,NOR_RF_CH, chan); //set the channel = 124 = 2.524 ghz. should not be anything in that band
+	spi_write_register_ver(csn,NOR_RF_CH, chan); //set the channel; 124 = 2.524 ghz. should not be anything in that band
 	spi_write_register_ver(csn,NOR_RF_SETUP, 0x0f); // rf_setup = 00001111 : pll lock off, 2mbps, 0dbm output, lna_hcurr.
 	spi_write_register_ver(csn,NOR_STATUS, 0x70); //clear the interrupts. should bitch about verification.
 	spi_write_register_ver(csn,NOR_RX_PW_P0, 32); //essential - tell the radio how big the packets are!

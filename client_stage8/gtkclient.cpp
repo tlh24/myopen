@@ -38,6 +38,8 @@
 #include "vbo.h"
 #include "channel.h"
 #include "packet.h"
+#include <sqlite3.h>
+#include "sql.h"
 #include <matio.h>
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_linalg.h>
@@ -88,13 +90,14 @@ unsigned int g_bitdelay[4][2] = {{0,0},{0,0},{0,0},{0,0}};
 unsigned int g_usdelay[4][2] = {{0,0},{0,0},{0,0},{0,0}};
 unsigned int g_verDelay[2]; 
 float	g_verAper[2]; 
-float g_threshold[128]; 
+float g_threshold[128];
+int   g_centering[128]; 
 float g_gains[128]; //per-channel gains.
 float g_agcs[128]; //per-channel AGC target.
 float g_unsortrate = 10.0; //the rate that unsorted WFs get through.
 FILE* g_saveFile = 0; 
 bool g_closeSaveFile = false; 
-unsigned int g_saveFileBytes;  
+unsigned int g_saveFileBytes;
 
 // for 31.25ksps -- see filter_butter.m
 // broken into 2 biquads, order b0 b1 a0 a1
@@ -483,9 +486,37 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 			}
 		}
 		if(g_mode == MODE_SORT){ 
+			//dark blue quad for the template ROI. 
+			cgGLDisableProfile(myCgVertexProfile);
+			
+			glColor4f(0.2f,0.1f,1.f,0.15f); 
+			glBegin(GL_QUADS); float z = 0.f; 
+			glVertex3f(6.0/31.0-1.f, -1.f, z);
+			glVertex3f(6.0/31.0-1.f,  1.f, z);
+			glVertex3f(21.0/31.0-1.f, 1.f, z);
+			glVertex3f(21.0/31.0-1.f, -1.f, z);
+			glEnd(); 
+			
+			cgGLEnableProfile(myCgVertexProfile);
 			g_c[g_channel[0]]->setLoc(-1.f, -1.f, 2.f, 2.f); 
 			g_c[g_channel[0]]->draw(g_drawmode, time, g_cursPos, 
-									g_showPca, g_rtMouseBtn); 
+									g_showPca, g_rtMouseBtn);
+			//draw the threshold & centering.
+			glDisableClientState(GL_VERTEX_ARRAY); 
+			glColor4f(1.f,1.f,1.f,0.35f); 
+			glLineWidth(1.f); 
+			glBegin(GL_LINE_STRIP); 
+			float t = g_threshold[g_channel[0]]; 
+			glVertex3f(-1.f, t, 0.f);
+			glVertex3f(0.f, t, 0.f); 
+			glEnd(); 
+			glColor4f(1.f,1.f,1.f,0.25f); 
+			glBegin(GL_LINE_STRIP); 
+			float c = (float)g_centering[g_channel[0]]; 
+			c -= 0.5f; c /= -31.f;
+			glVertex3f(c, t-0.4, 0.f);
+			glVertex3f(c, t+0.4, 0.f); 
+			glEnd(); 
 		}	
 		cgGLDisableProfile(myCgVertexProfile);
 		checkForCgError("disabling vertex profile");
@@ -614,6 +645,7 @@ GtkAdjustment* g_gainSpin[4] = {0,0,0,0};
 GtkAdjustment* g_agcSpin[4] = {0,0,0,0}; 
 GtkAdjustment* g_apertureSpin[8] = {0,0,0,0}; 
 GtkAdjustment* g_thresholdSpin; 
+GtkAdjustment* g_centeringSpin; 
 GtkAdjustment* g_unsortRateSpin; 
 GtkAdjustment* g_zoomSpin; 
 GtkWidget* g_pktpsLabel;
@@ -640,8 +672,23 @@ static gboolean rotate (gpointer user_data){
 	gtk_label_set_text(GTK_LABEL(g_fileSizeLabel), str);
 	return TRUE;
 }
-
+void saveState(){
+	sqlite3_exec(g_db, "BEGIN TRANSACTION;",0,0,0);
+	for(int i=0; i<128; i++){
+		sqliteSetValue(i, "agc", g_agcs[i]); 
+		sqliteSetValue(i, "gain", g_gains[i]); 
+		sqliteSetValue(i, "threshold", g_threshold[i]);
+		sqliteSetValue(i, "centering", g_centering[i]); //how many samples in the past to check for threshold crossing.
+		g_c[i]->save(); 
+	}
+	for(int i=0; i<4; i++){
+		sqliteSetValue(i, "channel", g_channel[i]); 
+	}
+	sqlite3_exec(g_db, "END TRANSACTION;",0,0,0);
+}
 void destroy(GtkWidget *, gpointer){
+	//save the old values..
+	saveState(); 
 	g_die = true; 
 	if(g_vbo1Init){
 		for(int k=0; k<4; k++)
@@ -655,7 +702,8 @@ void destroy(GtkWidget *, gpointer){
 	delete g_vsFadeColor;
 	delete g_vsThreshold; 
 	cgDestroyContext(myCgContext);
-	sleep(1); 
+	sqlite3_close(g_db);
+	 
 	gtk_main_quit(); 
 }
 void sendEcho(){
@@ -797,7 +845,9 @@ void setChans(){
 	g_sendW++; 	
 	sendEcho(); 
 	for(i=0; i<4; i++){
-		saveMessage("chan %c %d", 'A'+i, g_channel[0]); 
+		saveMessage("chan %c %d", 'A'+i, g_channel[i]); 
+		//save it in the sqlite db. 
+		//sqliteSetValue(i,"channel", (float)g_channel[i]); 
 	}
 }
 void setAGC(int ch1, int ch2, int ch3, float target){
@@ -1112,7 +1162,7 @@ void* sock_thread(void* destIP){
 						if(g_templMatch[h][j]) g_verDelay[j] = 0;
 						if(g_verDelay[j] > 8){
 							float a = g_c[h]->m_aperture[j]; 
-							if(fabs(g_verAper[j] - a)/a > 0.01){
+							if(fabs(g_verAper[j] - a)/a > 16.f/256.f){
 								printf("err missed spike %d saa %f (aperture %f)\n",
 								   j,g_verAper[j],g_c[h]->m_aperture[j]); 
 							}
@@ -1122,17 +1172,16 @@ void* sock_thread(void* destIP){
 					for(int m=0; m<6; m++){
 						//note: 25/26 can be a variable...
 						//would need a GUI element for this.
-						int centering = 26; 
-						float a = g_fbuf[k][mod2(g_fbufW - centering + m, g_nsamp)*3+1]; 
-						float b = g_fbuf[k][mod2(g_fbufW - centering+1 + m, g_nsamp)*3+1]; 
+						int centering = g_centering[g_channel[0]]; 
+						float a = g_fbuf[k][mod2(g_fbufW - centering + m-6, g_nsamp)*3+1]; 
+						float b = g_fbuf[k][mod2(g_fbufW - centering+1 + m-6, g_nsamp)*3+1]; 
 						if(a <= threshold && b > threshold && 
 							(g_bitdelay[0][0] > 6)){
 							float wf[32]; 
 							for(int j=0; j < 32; j++){
 								//x coord does not need updating.
 								//remember, g_fbufW is incremented already. 
-								// m can go from 0 to 5. hence the 32 and the 5 below.
-								wf[j] = g_fbuf[k][mod2(g_fbufW + j + m - 32 - 5, g_nsamp)*3+1];
+								wf[j] = g_fbuf[k][mod2(g_fbufW + j + m - 31 - 6, g_nsamp)*3+1];
 								wf[j] = wf[j] * 0.5f; 
 							}
 							g_c[g_channel[0]]->addWf(wf, -1, time, true); 
@@ -1302,6 +1351,7 @@ static void channelSpinCB( GtkWidget*, gpointer p){
 			gtk_adjustment_set_value(g_apertureSpin[k*2+0], g_c[ch]->getAperture(0));
 			gtk_adjustment_set_value(g_apertureSpin[k*2+1], g_c[ch]->getAperture(1));
 			gtk_adjustment_set_value(g_thresholdSpin, g_threshold[g_channel[0]]); 
+			gtk_adjustment_set_value(g_centeringSpin, g_centering[g_channel[0]]);
 		}
 	}
 }
@@ -1320,7 +1370,6 @@ static void gainSetAll(gpointer ){
 	for(int i=0; i<128; i++){
 		g_gains[i] = gain;
 		updateGain(i);
-		//updateGainLabel(i);  
 	}
 	for(int i=0; i<32; i++){
 		resetBiquads(i); 
@@ -1332,9 +1381,17 @@ static void gainSetAll(gpointer ){
 }
 static void thresholdSpinCB( GtkWidget* , gpointer){
 	float thresh = gtk_adjustment_get_value(g_thresholdSpin); 
+	if(thresh != g_threshold[g_channel[0]])
+		g_c[g_channel[0]]->resetPca(); 
 	g_threshold[g_channel[0]] = thresh; 
-	g_c[g_channel[0]]->resetPca(); 
 	printf("thresholdSpinCB: %f\n", thresh); 
+}
+static void centeringSpinCB( GtkWidget* , gpointer){
+	float t = gtk_adjustment_get_value(g_centeringSpin); 
+	if(t != g_centering[g_channel[0]])
+		g_c[g_channel[0]]->resetPca(); 
+	g_centering[g_channel[0]] = (int)t; 
+	printf("centeringSpinCB: %f\n", t); 
 }
 static void unsortRateSpinCB( GtkWidget* , gpointer){
 	float t = gtk_adjustment_get_value(g_unsortRateSpin); 
@@ -1359,10 +1416,14 @@ static void apertureSpinCB( GtkWidget*, gpointer p){
 	if(h >= 0 && h < 8){
 		float a = gtk_adjustment_get_value(g_apertureSpin[h]); 
 		int j = g_channel[h/2]; 
-		printf("apertureSpinCB: %f ch %d\n", a, j); 
-		if(a >= 0 && a < 256*16){
-			g_c[j]->setAperture(a, h%2); 
-			setAperture(j);
+		//gtk likes to call this frequently -- only update when
+		//the value has actually changed.
+		if(g_c[j]->m_aperture[h%2] != a){
+			if(a >= 0 && a < 256*16){
+				g_c[j]->setAperture(a, h%2); 
+				setAperture(j);
+			}
+			printf("apertureSpinCB: %f ch %d\n", a, j); 
 		}
 	}
 }
@@ -1562,6 +1623,9 @@ static void getTemplateCB( GtkWidget *, gpointer p){
 	int aB = (int)((long long)p & 0xf); 
 	g_c[g_channel[0]]->updateTemplate(aB+1); 
 	setTemplate(g_channel[0], aB); 
+	//setAperture(g_channel[0]); will be called below.
+	gtk_adjustment_set_value(g_apertureSpin[aB],
+							 g_c[g_channel[0]]->m_aperture[aB]);
 }
 int main(int argn, char **argc)
 {
@@ -1583,13 +1647,36 @@ int main(int argn, char **argc)
 	}else{
 		snprintf(destIP, 256, "152.16.229.38"); 
 	}
-	//defaults. 
-	for(int i=0; i<128; i++){
-		g_agcs[i] = 6000.f; 
-		g_gains[i] = 1.0f; 
-		g_threshold[i] = 0.6; 
-		g_c[i] = new Channel(); 
+	
+	//sqlite stuff. 
+	if (sqlite3_open("state.db", &g_db) != SQLITE_OK) {
+		fprintf(stderr, "Can't open database: \n");
+		sqlite3_close(g_db);
+		exit(1);
 	}
+	sqlite3_exec(g_db, "BEGIN TRANSACTION;",0,0,0);
+	//init the tables (if they are absent). 
+	sqliteCreateTableDouble("channel"); //present channel..
+	sqliteCreateTableDouble("gain"); 
+	sqliteCreateTableDouble("agc"); 
+	sqliteCreateTableDouble("threshold");
+	sqliteCreateTableDouble("centering"); 
+	sqliteCreateTableDouble2("aperture"); 
+	sqliteCreateTableBlob("template"); 
+	sqliteCreateTableBlob("pca"); 
+	
+	for(int i=0; i<4; i++){
+		g_channel[i] = sqliteGetValue(i, "channel", i*32); 
+	}
+	//defaults, to be read in from sqlite.
+	for(int i=0; i<128; i++){
+		g_agcs[i] = sqliteGetValue(i, "agc", 6000.f); 
+		g_gains[i] = sqliteGetValue(i, "gain", 1.f); 
+		g_threshold[i] = sqliteGetValue(i, "threshold", 0.6f);
+		g_centering[i] = sqliteGetValue(i, "centering", 25.f); //how many samples in the past to check for threshold crossing.
+		g_c[i] = new Channel(i); 
+	}
+	sqlite3_exec(g_db, "END TRANSACTION;",0,0,0);
 	g_dropped = 0; 
 
 	gtk_init (&argn, &argc);
@@ -1759,6 +1846,9 @@ int main(int argn, char **argc)
 	g_thresholdSpin = mk_spinner("threshold", box1, 
 			   g_threshold[g_channel[0]], 0.0, 1.0, 0.01, 
 			   thresholdSpinCB, 0);
+	g_centeringSpin = mk_spinner("centering", box1, 
+			   g_centering[g_channel[0]], 1.0, 30.0, 1.0, 
+			   centeringSpinCB, 0);
 			   
 	//show PCA button. 
 	button = gtk_check_button_new_with_label("show PCA");
@@ -1781,7 +1871,7 @@ int main(int argn, char **argc)
 	g_signal_connect(button, "clicked", G_CALLBACK (getTemplateCB),
 					 (gpointer*)1);
 	gtk_box_pack_start (GTK_BOX (box1), button, FALSE, FALSE, 1);
-// end spike page.
+// end sort page.
 	gtk_widget_show (box1);
 	label = gtk_label_new("sort"); 
 	gtk_label_set_angle(GTK_LABEL(label), 90); 
