@@ -160,12 +160,13 @@ public:
 		m_loc[0] = x; m_loc[1] = y; 
 		m_loc[2] = w; m_loc[3] = h; 
 	}
-	void draw(int drawmode, float time, float* cursPos){
+	void draw(int drawmode, float time, float* cursPos, bool showPca, bool closest){
 		glColor4f(0.5f, 0.5f, 0.5f, 0.5f);
 		m_usVbo->draw(drawmode, time, true);
-		m_pcaVbo->draw(GL_POINTS, cursPos, true); 
+		m_pcaVbo->draw(GL_POINTS, cursPos, true, closest); 
 		m_wfVbo->draw(drawmode, time, true);
-		m_pcaVbo->drawClosestWf(cursPos); 
+		if(closest)
+			m_pcaVbo->drawClosestWf(cursPos); 
 		//draw the templates. 
 		float ox = m_loc[0]; float oy = m_loc[1]; 
 		float ow = m_loc[2]/2; float oh = m_loc[3]; 
@@ -185,17 +186,19 @@ public:
 			glVertex3f(0.f*ow+ox, 0.5f*oh+oy, 1.f);
 		}
 		//and the PCA templates.
-		glLineWidth(2.f); 
-		for(int k=0; k<2; k++){
-			for(int j=0; j<32; j++){
-				float ny = m_pca[k][j]+0.5; 
-				float nx = (float)(j)/31.f; 
-				glColor4f(1.f-k, k, 0.f, 0.5f);
-				glVertex3f(nx*ow+ox, ny*oh+oy, 0.f);
+		if(showPca){
+			glLineWidth(4.f); 
+			for(int k=0; k<2; k++){
+				for(int j=0; j<32; j++){
+					float ny = m_pca[k][j]+0.5; 
+					float nx = (float)(j)/31.f; 
+					glColor4f(1.f-k, k, 0.f, 0.5f);
+					glVertex3f(nx*ow+ox, ny*oh+oy, 0.f);
+				}
+				glColor4f(0.f, 0.f, 0.f, 0.5f);
+				glVertex3f(1.f*ow+ox, 0.5f*oh+oy, 1.f);
+				glVertex3f(0.f*ow+ox, 0.5f*oh+oy, 1.f);
 			}
-			glColor4f(0.f, 0.f, 0.f, 0.5f);
-			glVertex3f(1.f*ow+ox, 0.5f*oh+oy, 1.f);
-			glVertex3f(0.f*ow+ox, 0.5f*oh+oy, 1.f);
 		}
 		glEnd(); 
 	}
@@ -232,6 +235,7 @@ public:
 			return; 
 		}
 		float mean[32]; 
+		for(int j=0; j<32; j++) mean[j] = 0.f; 
 		for(int i=0; i<nsamp; i++){
 			for(int j=0; j<32; j++)
 				mean[j] += m_pcaVbo->m_wf[i*32 + j]; 
@@ -243,9 +247,10 @@ public:
 		gsl_matrix *m = gsl_matrix_alloc(nsamp, 32); //rows, columns (like matlab)
 		for(int i=0; i<nsamp; i++){
 			for(int j=0; j<32; j++){
-				m->data[i*32 + j] = m_pcaVbo->m_wf[i*32 + j] - mean[j]; 
+				m->data[i*32 + j] = m_pcaVbo->m_wf[i*32 + j]; // - mean[j]; 
 			}
 		}
+		gsl_matrix_to_mat(m, "wavforms.mat"); 
 		// I'm looking at matlab's princomp function. 
 		// they say S = X0' * X0 ./ (n-1), but computed using SVD. 
 		//columns of V seem to contain the principle components. 
