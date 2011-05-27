@@ -208,7 +208,7 @@ public:
 		}
 		Vbo::copy(); 
 	}
-	void draw(int drawmode, float* curs, bool update){
+	void draw(int drawmode, float* curs, bool update, bool drawclose){
 		//order: we scale before offset. pretty easy algebra.
 		float x,y,w,h; calcScale(x,y,w,h); 
 		for(int i=0; i<m_dim; i++){
@@ -219,24 +219,23 @@ public:
 		//	   m_maxSmooth[0], m_maxSmooth[1], m_w); 
 		glLineWidth(1.f); 
 		drawReal(drawmode, m_fade, update, x,y,w,h); 
-		//also calculate cursor in local space. 
-		//cursor is normally in +-1 x & y space. 
-		float cx, cy; 
-		cx = curs[0]; cy = curs[1]; 
-		cx -= x; cy -= y; 
-		cx /= w; cy /= h;
-		//find the closest in our dataset.
-		float d = 1e9; int closest = 0; 
-		for(int i=0; i< MIN(m_w,m_rows); i++){
-			float xx = m_f[i*m_cols*m_dim + 0];
-			float yy = m_f[i*m_cols*m_dim + 1]; 
-			xx -= cx; yy -= cy; 
-			float dd = xx*xx + yy*yy; 
-			if(dd < d){ closest = i; d = dd;}
-		}
-		//draw an X on the closest 
-		if(curs[0] >= m_loc[0] && curs[0] <= m_loc[0] + m_loc[2] &&
-		   curs[1] >= m_loc[1] && curs[1] <= m_loc[1] + m_loc[3]){
+		if(drawclose){
+			//also calculate cursor in local space. 
+			//cursor is normally in +-1 x & y space. 
+			float cx, cy; 
+			cx = curs[0]; cy = curs[1]; 
+			cx -= x; cy -= y; 
+			cx /= w; cy /= h;
+			//find the closest in our dataset.
+			float d = 1e9; int closest = 0; 
+			for(int i=0; i< MIN(m_w,m_rows); i++){
+				float xx = m_f[i*m_cols*m_dim + 0];
+				float yy = m_f[i*m_cols*m_dim + 1]; 
+				xx -= cx; yy -= cy; 
+				float dd = xx*xx + yy*yy; 
+				if(dd < d){ closest = i; d = dd;}
+			}
+			//draw an X on the closest 
 			int i = closest; 
 			float xx = m_f[i*m_cols*m_dim + 0];
 			float yy = m_f[i*m_cols*m_dim + 1]; 
@@ -271,24 +270,30 @@ public:
 		glEnd(); 
 	}
 	void drawClosestWf(float* curs){
-		if(curs[0] >= m_loc[0] && curs[0] <= m_loc[0] + m_loc[2] &&
-		   curs[1] >= m_loc[1] && curs[1] <= m_loc[1] + m_loc[3]){
-			//offsets to the wafeform display.
-			float ow = m_loc[2]; 
-			float oh = m_loc[3]*2; 
-			float ox = m_loc[0] - m_loc[2]; 
-			float oy = m_loc[1] - m_loc[3]/2; 
-			int i = m_drawWf; 
-			glColor4f(1.f, 1.f, 0.5f, 0.65); 
-			glLineWidth(3.f); 
-			glBegin(GL_LINE_STRIP);
-			for(int j=0; j<32; j++){
-				float ny = m_wf[i*32 + j] + 0.5f; 
-				float nx = (float)j/31.f; 
-				glVertex3f(nx*ow+ox, ny*oh+oy, 0.f);
-			}
-			glEnd(); 
+		//offsets to the wafeform display.
+		float ow = m_loc[2]; 
+		float oh = m_loc[3]*2; 
+		float ox = m_loc[0] - m_loc[2]; 
+		float oy = m_loc[1] - m_loc[3]/2; 
+		int i = m_drawWf; 
+		glColor4f(1.f, 0.f, 0.4f, 1.f); 
+		glLineWidth(4.f); 
+		glBegin(GL_LINE_STRIP);
+		for(int j=0; j<32; j++){
+			float ny = m_wf[i*32 + j] + 0.5f; 
+			float nx = (float)j/31.f; 
+			glVertex3f(nx*ow+ox, ny*oh+oy, 0.f);
 		}
+		glEnd(); 
+		glColor4f(0.f, 0.f, 0.f, 1.f); 
+		glLineWidth(1.f); 
+		glBegin(GL_LINE_STRIP);
+		for(int j=0; j<32; j++){
+			float ny = m_wf[i*32 + j] + 0.5f; 
+			float nx = (float)j/31.f; 
+			glVertex3f(nx*ow+ox, ny*oh+oy, 0.f);
+		}
+		glEnd(); 
 	}
 	bool getTemplate(float* temp, float &aperture, float* color){
 		if(m_polyW < 3) return false; 
@@ -299,7 +304,7 @@ public:
 		bool* inside = (bool*)malloc(m_rows * sizeof(bool)); 
 		for(int i=0; i<MIN(m_w,m_rows); i++){
 			//task 1 is to see if each pca point is within the poly region. 
-			//this is easy - count the number of lines crossed by a line 
+			//this is easy - count the number of polylines crossed by a line 
 			//starting at this point heading to -inf. 
 			float x = m_f[m_dim*m_cols*i + 0];
 			float y = m_f[m_dim*m_cols*i + 1]; 
@@ -333,7 +338,7 @@ public:
 				float nx = m_poly[j*2+0];
 				float ny = m_poly[j*2+1];
 				//check possible intersects. 
-				if((py <= y && ny > y) || (py > y && ny <= y)){
+				if((py <= y && ny > y) || (py > y && ny <= y)){ //why are these uninit here?  confused, but could be why the buttons don't work at first.
 					if(px < x && nx < x) intersects++;
 					if((px <= x && nx > x) || (px > x && nx <= x)){
 						//two vectors -> cross product yeilds left/right. 

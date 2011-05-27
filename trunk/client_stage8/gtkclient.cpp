@@ -75,6 +75,8 @@ bool g_die = false;
 double g_pause = -1.0;
 double g_rasterZoom = 1.0; 
 bool g_cycle = false;
+bool g_showPca = false; 
+bool g_rtMouseBtn = false; 
 int g_channel[4] = {0,32,64,96}; 
 int	g_signalChain = 10; //what to sample in the headstage signal chain.
 unsigned int g_echo = 0; 
@@ -151,7 +153,6 @@ double gettime(){ //in seconds!
 void gsl_matrix_to_mat(gsl_matrix *x, const char* fname){
 	//write a gsl matrix to a .mat file.
 	// does not free the matrix. 
-	// assumes that the matrix is contiguous.
 	mat_t *mat;
 	mat = Mat_Create(fname,NULL);
 	if(!mat){
@@ -161,11 +162,25 @@ void gsl_matrix_to_mat(gsl_matrix *x, const char* fname){
 	int dims[2]; 
 	dims[0] = x->size1; 
 	dims[1] = x->size2; 
+	double* d = (double*)malloc(dims[0]*dims[1]*sizeof(double)); 
+	if(!d){
+		printf("could not allocate memory for copy \n");
+		return; 
+	}
+	//reformat and transpose.
+	//matio expects fortran style, column-major format. 
+	//gsl is row-major.
+	for(int i=0; i<dims[0]; i++){ //rows
+		for(int j=0; j<dims[1]; j++){ //columns
+			d[j*dims[0] + i] = x->data[i*x->tda + j]; 
+		}
+	}
 	matvar_t *matvar;
 	matvar = Mat_VarCreate("a",MAT_C_DOUBLE,MAT_T_DOUBLE,
-						2,dims,x->data,0);
+						2,dims,d,0);
 	Mat_VarWrite( mat, matvar, 0 );
 	Mat_VarFree(matvar);
+	free(d); 
 	Mat_Close(mat); 
 }
 
@@ -279,6 +294,10 @@ static gint motion_notify_event( GtkWidget *,
 	if((state & GDK_BUTTON1_MASK) && (g_mode == MODE_SORT)){
 		g_c[g_channel[0]]->addPoly(g_cursPos); 
 	}
+	if(state & GDK_BUTTON3_MASK)
+		g_rtMouseBtn = true;
+	else
+		g_rtMouseBtn = false; 
 	return TRUE;
 }
 static gint button_press_event( GtkWidget      *,
@@ -459,12 +478,14 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 			//draw the spikes! 2x2 array.
 			for(int r=0; r<4; r++){
 				g_c[g_channel[r]]->setLoc(-1.f + (r&1), 0.f - (r/2), 1.f, 1.f); 
-				g_c[g_channel[r]]->draw(g_drawmode, time, g_cursPos); 
+				g_c[g_channel[r]]->draw(g_drawmode, time, g_cursPos, 
+										false, g_rtMouseBtn); 
 			}
 		}
 		if(g_mode == MODE_SORT){ 
 			g_c[g_channel[0]]->setLoc(-1.f, -1.f, 2.f, 2.f); 
-			g_c[g_channel[0]]->draw(g_drawmode, time, g_cursPos); 
+			g_c[g_channel[0]]->draw(g_drawmode, time, g_cursPos, 
+									g_showPca, g_rtMouseBtn); 
 		}	
 		cgGLDisableProfile(myCgVertexProfile);
 		checkForCgError("disabling vertex profile");
@@ -1268,7 +1289,7 @@ static gboolean chanscan(gpointer){
 	return g_cycle; //if this is false, don't call again.
 }
 static void channelSpinCB( GtkWidget*, gpointer p){
-	int k = (int)p; 
+	int k = (int)((long long)p & 0xf); 
 	if(k >= 0 && k<4){
 		int ch = (int)gtk_adjustment_get_value(g_channelSpin[k]); 
 		//printf("channelSpinCB: %d\n", ch); 
@@ -1285,7 +1306,7 @@ static void channelSpinCB( GtkWidget*, gpointer p){
 	}
 }
 static void gainSpinCB( GtkWidget*, gpointer p){
-	int h = (int)p; 
+	int h = (int)((long long)p & 0xf); 
 	if(h >= 0 && h < 4){
 		float gain = gtk_adjustment_get_value(g_gainSpin[h]); 
 		printf("gainSpinCB: %f\n", gain); 
@@ -1321,7 +1342,7 @@ static void unsortRateSpinCB( GtkWidget* , gpointer){
 	printf("unsortRateSpinCB: %f\n", t); 
 }
 static void agcSpinCB( GtkWidget*, gpointer p){
-	int h = (int)p; 
+	int h = (int)((long long)p & 0xf); 
 	if(h >= 0 && h < 4){
 		float agc = gtk_adjustment_get_value(g_agcSpin[h]); 
 		printf("agcSpinCB: %f\n", agc); 
@@ -1334,7 +1355,7 @@ static void agcSpinCB( GtkWidget*, gpointer p){
 	}
 }
 static void apertureSpinCB( GtkWidget*, gpointer p){
-	int h = (int)p; 
+	int h = (int)((long long)p & 0xf); 
 	if(h >= 0 && h < 8){
 		float a = gtk_adjustment_get_value(g_apertureSpin[h]); 
 		int j = g_channel[h/2]; 
@@ -1356,23 +1377,23 @@ static void agcSetAll(gpointer ){
 	for(int i=0; i<4; i++)
 		gtk_adjustment_set_value(g_agcSpin[i], agc); 
 }
-static void drawRadioCB(GtkWidget *button, gpointer data){
+static void drawRadioCB(GtkWidget *button, gpointer p){
 	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))){
-		int i = (int)data; 
+		int i = (int)((long long)p & 0xf); 
 		if(i == 0) g_drawmode = GL_LINE_STRIP;
 		else g_drawmode = GL_POINTS;
 	}
 }
-static void lmsRadioCB(GtkWidget *button, gpointer data){
+static void lmsRadioCB(GtkWidget *button, gpointer p){
 	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))){
-		int i = (int)data;
+		int i = (int)((long long)p & 0xf);
 		if(i == 0) setLMS(true);
 		else setLMS(false); 
 	}
 }
-static void filterRadioCB(GtkWidget *button, gpointer data){
+static void filterRadioCB(GtkWidget *button, gpointer p){
 	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))){
-		int i = (int)data;
+		int i = (int)((long long)p & 0xf);
 		if(i == 2) setOsc(g_channel[0]); 
 		else if(i == 3) setFlat(g_channel[0]);
 		else if(i == 1) setFilter2(g_channel[0]); 
@@ -1389,6 +1410,12 @@ static void signalChainCB( GtkComboBox *combo, gpointer){
 		setChans(); 
 	}
     g_free( string );
+}
+static void showPcaButtonCB(GtkWidget *button, gpointer * ){
+	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
+		g_showPca = true; 
+	else
+		g_showPca = false; 
 }
 static void pauseButtonCB(GtkWidget *button, gpointer * ){
 	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
@@ -1532,7 +1559,7 @@ static void calcPCACB(gpointer){
 	pthread_create( &thread1, &attr, computePCA, (void*)p ); */
 }
 static void getTemplateCB( GtkWidget *, gpointer p){
-	int aB = (int)p; 
+	int aB = (int)((long long)p & 0xf); 
 	g_c[g_channel[0]]->updateTemplate(aB+1); 
 	setTemplate(g_channel[0], aB); 
 }
@@ -1560,7 +1587,7 @@ int main(int argn, char **argc)
 	for(int i=0; i<128; i++){
 		g_agcs[i] = 6000.f; 
 		g_gains[i] = 1.0f; 
-		g_threshold[i] = 0.75; 
+		g_threshold[i] = 0.6; 
 		g_c[i] = new Channel(); 
 	}
 	g_dropped = 0; 
@@ -1732,6 +1759,13 @@ int main(int argn, char **argc)
 	g_thresholdSpin = mk_spinner("threshold", box1, 
 			   g_threshold[g_channel[0]], 0.0, 1.0, 0.01, 
 			   thresholdSpinCB, 0);
+			   
+	//show PCA button. 
+	button = gtk_check_button_new_with_label("show PCA");
+	g_signal_connect (button, "toggled",
+			G_CALLBACK (showPcaButtonCB), (gpointer) "o");
+	gtk_box_pack_start (GTK_BOX (box1), button, TRUE, TRUE, 0);
+	gtk_widget_show(button);
 	
 	button = gtk_button_new_with_label ("calc PCA");
 	g_signal_connect(button, "clicked", G_CALLBACK (calcPCACB),
