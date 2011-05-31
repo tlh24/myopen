@@ -57,22 +57,24 @@ float		g_viewportSize[2] = {640, 480}; //width, height.
 
 class Channel; 
 
+#define i64 long long
+
 static float	g_fbuf[4][NSAMP*3]; //continuous waveform.
-unsigned int	g_fbufW; //where to write to (always increment) 
-unsigned int	g_fbufR; //display thread reads from here - copies to mem
+i64	g_fbufW; //where to write to (always increment) 
+i64	g_fbufR; //display thread reads from here - copies to mem
 unsigned int 	g_nsamp = 4096; //given the current level of zoom (1 = 4096 samples), how many samples to update?
 static float 	g_sbuf[2][128*512*2]; //spike buffers.
-unsigned int	g_sbufW[2]; 
-unsigned int	g_sbufR[2]; 
+i64	g_sbufW[2]; 
+i64	g_sbufR[2]; 
 Channel*		g_c[128]; 
 GLuint 			base;            // base display list for the font set.
 unsigned int*	g_sendbuf; 
-unsigned int g_sendW; //where to write to (in 32-byte increments)
-unsigned int g_sendR; //where to read from
-unsigned int g_sendL; //the length of the buffer (in 32-byte packets)
+i64	g_sendW; //where to write to (in 32-byte increments)
+i64 	g_sendR; //where to read from
+i64	g_sendL; //the length of the buffer (in 32-byte packets)
 char		g_messages[1024][128]; //save these, plaintext, in the file.
-unsigned int g_messW;
-unsigned int g_messR; 
+i64	g_messW;
+i64	g_messR; 
 bool g_die = false; 
 double g_pause = -1.0;
 double g_rasterZoom = 1.0; 
@@ -134,8 +136,9 @@ bool	g_vbo1Init = false;
 GLuint g_vbo1[4] = {0,0,0,0}; //for the waveform display
 GLuint g_vbo2[2] = {0,0}; //for spikes.
 
-int mod2(int a, int b){
-	return abs(a%b);
+i64 mod2(i64 a, i64 b){
+	i64 c = a % b; 
+	return c;
 	/*if(a >=0) return a % b;
 	else {
 		//map to the positive numbers: -1 -> b-1; -2 ->b-2 etc
@@ -325,9 +328,9 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 	//copy over any new data.
 	if(g_pause <= 0.0){
 		if(g_fbufR < g_fbufW){
-			unsigned int w = g_fbufW; //atomic
-			unsigned int sta = g_fbufR % g_nsamp; 
-			unsigned int fin = w % g_nsamp; 
+			i64 w = g_fbufW; //atomic
+			i64 sta = g_fbufR % g_nsamp; 
+			i64 fin = w % g_nsamp; 
 			for(int k=0; k<4; k++){
 				if(fin < sta) { //wrap
 					copyData(g_vbo1[k], sta, g_nsamp, g_fbuf[k], 3); 
@@ -341,10 +344,10 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		//ditto for the spike buffers
 		for(int k=0; k<2; k++){
 			if(g_sbufR[k] < g_sbufW[k]){
-				unsigned int len = sizeof(g_sbuf[k])/8; //total # of pts. 
-				unsigned int w = g_sbufW[k];
-				unsigned int sta = g_sbufR[k] % len; 
-				unsigned int fin = w % len; 
+				i64 len = sizeof(g_sbuf[k])/8; //total # of pts. 
+				i64 w = g_sbufW[k];
+				i64 sta = g_sbufR[k] % len; 
+				i64 fin = w % len; 
 				if(fin < sta) { //wrap
 					copyData(g_vbo2[k], sta, len, g_sbuf[k], 2); 
 					copyData(g_vbo2[k], 0, fin, g_sbuf[k], 2); 
@@ -1126,7 +1129,7 @@ void* sock_thread(void* destIP){
 						if(match[j] == t+1){
 							g_templMatch[adr][t] = true; 
 							//add to the spike raster list.
-							int w = g_sbufW[t] % (sizeof(g_sbuf[t])/8); 
+							i64 w = g_sbufW[t] % (i64)(sizeof(g_sbuf[t])/8); 
 							g_sbuf[t][w*2+0] = (float)time; 
 							g_sbuf[t][w*2+1] = (float)adr; 
 							g_sbufW[t] ++; 
@@ -1170,8 +1173,6 @@ void* sock_thread(void* destIP){
 						}
 					}
 					for(int m=0; m<6; m++){
-						//note: 25/26 can be a variable...
-						//would need a GUI element for this.
 						int centering = g_centering[g_channel[0]]; 
 						float a = g_fbuf[k][mod2(g_fbufW - centering + m-6, g_nsamp)*3+1]; 
 						float b = g_fbuf[k][mod2(g_fbufW - centering+1 + m-6, g_nsamp)*3+1]; 
@@ -1220,7 +1221,7 @@ void* sock_thread(void* destIP){
 								// or it might have matched 4 packets ago; hence have to search
 								// further.
 								float min = 1e9f; 
-								float offset = 0; 
+								i64 offset = 0; 
 								/* diagram of waveform: 
 								|<- 6 pre ->|<- 16 template ->|<- 10 post ->|
 								total 32 samples. 
@@ -1246,9 +1247,9 @@ void* sock_thread(void* destIP){
 										   g_channel[k], t+1, min*255.f, a); 
 								}
 								float wf[32]; 
-								for(int j=0; j < 32; j++){
-									wf[j] = g_fbuf[k][mod2(g_fbufW + j + offset -6, g_nsamp)*3+1]; 
-									wf[j] *= 0.5f; 
+								for(int q=0; q < 32; q++){
+									wf[q] = g_fbuf[k][mod2(g_fbufW + q + offset - 6, g_nsamp)*3+1]; 
+									wf[q] *= 0.5f; // target mean 0 range 1.
 								}
 								g_c[g_channel[k]]->addWf(wf, t+1, time, true); 
 							} else {
@@ -1826,7 +1827,7 @@ int main(int argn, char **argc)
 		for(int j=0; j<2; j++){
 			snprintf(buf, 128, "%s", (j < 1 ? "0 yellow":"1 cyan")); 
 			g_apertureSpin[i*2+j] = mk_spinner((const char*)buf, bx2, 
-								  1*16, 0, 255*16, 2, 
+								  g_c[g_channel[i]]->m_aperture[j], 0, 255*16, 2, 
 								  apertureSpinCB, i*2+j); 
 		}
 	}
