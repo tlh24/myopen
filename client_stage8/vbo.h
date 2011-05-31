@@ -274,7 +274,7 @@ public:
 		float ow = m_loc[2]; 
 		float oh = m_loc[3]*2; 
 		float ox = m_loc[0] - m_loc[2]; 
-		float oy = m_loc[1] - m_loc[3]/2; 
+		float oy = m_loc[1] - m_loc[3]/2;
 		int i = m_drawWf; 
 		glColor4f(1.f, 0.f, 0.4f, 1.f); 
 		glLineWidth(4.f); 
