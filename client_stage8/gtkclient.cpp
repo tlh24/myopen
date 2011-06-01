@@ -1494,9 +1494,9 @@ static void cycleButtonCB(GtkWidget *button, gpointer * ){
 }
 static void zoomSpinCB( GtkWidget*, gpointer ){
 	g_rasterZoom = gtk_adjustment_get_value(g_zoomSpin); 
-	g_nsamp = (1/g_rasterZoom)*4096; 
+	g_nsamp = 4096 / g_rasterZoom; 
 	//make it multiples of 1024. 
-	g_nsamp &= (0xffffffff ^ 255); 
+	g_nsamp &= (0xffffffff ^ 127); 
 	g_nsamp = g_nsamp > NSAMP ? NSAMP : g_nsamp; 
 	g_nsamp = g_nsamp < 512 ? 512 : g_nsamp; 
 	g_rasterZoom = 4096.0 / (float)g_nsamp; 
