@@ -10,13 +10,16 @@ void gsl_matrix_to_mat(gsl_matrix *x, const char* fname);
 
 //need some way of encapsulating per-channel information. 
 class Channel {
+private:
+	float	m_aperture[2]; 
+	float m_threshold; 
+	float	m_centering; //left/right centering. used to look for threshold crossing.
 public:
 	Vbo*	m_wfVbo; //range 1 mean 0
 	Vbo*	m_usVbo; 
 	VboPca*	m_pcaVbo; //2D points, with color. 
 	float	m_pca[2][32]; //range 1 mean 0
 	float	m_template[2][16]; // range 1 mean 0.
-	float	m_aperture[2]; 
 	float	m_loc[4]; 
 	int		m_ch; 
 	
@@ -42,6 +45,8 @@ public:
 			sqliteGetBlob(ch, j, "pca", &(m_pca[j][0]), 32);
 			sqliteGetBlob(ch, j, "template", &(m_template[j][0]), 16);
 			m_aperture[j] = sqliteGetValue2(ch, j, "aperture", 56.f); 
+			m_threshold = sqliteGetValue(ch, "threshold", 0.6f); 
+			m_centering = sqliteGetValue(ch, "centering", 25.f); 
 		}
 		//init m_wfVbo.
 		for(int i=0; i<512; i++){
@@ -92,6 +97,8 @@ public:
 			sqliteSetBlob(m_ch, j, "template", &(m_template[j][0]), 16);
 			sqliteSetValue2(m_ch, j, "aperture", m_aperture[j]); 
 		}
+		sqliteSetValue(m_ch, "threshold", m_threshold);
+		sqliteSetValue(m_ch, "centering", m_centering); 
 	}
 	int addWf(float* wf, int unit, float time, bool updatePCA){
 		//wf assumed to be 32 points long. 
@@ -163,11 +170,37 @@ public:
 		m_usVbo->configure(); 
 		setVertexShader(vs); 
 	}
+	bool mouse(float* f){
+		//possibly set the threshold and centering for this channel.
+		//incoming location will be in global coordinates (+-1)
+		float x = f[0]; float y = f[1]; 
+		x -= m_loc[0]; y -= m_loc[1]; 
+		x /= m_loc[2]; y /= m_loc[3]; 
+		if(x >= 1/62.f && x <= 31/62.f && y >= 0.5 && y <= 1.f){
+			m_threshold = (y-0.5f)*2.f; 
+			x *= 62.f; x -= 0.5f; x = 31.f-x; //inverse centering transform.
+			m_centering = x; 
+			resetPca(); 
+			return true; 
+		} else return false; 
+	}
 	void addPoly(float* f){ m_pcaVbo->addPoly(f); }
 	void resetPoly(){ m_pcaVbo->m_polyW = 0; }
 	unsigned int getAperture(int n) { return (unsigned int)(m_aperture[n]);}
 	void setAperture(unsigned int a, int n){
 		if(n >= 0 && n <= 1) m_aperture[n] = a; 
+	}
+	float getThreshold() { return m_threshold; }
+	void setThreshold(float thresh){
+		if(thresh != m_threshold)
+			resetPca(); 
+		m_threshold = thresh; 
+	}
+	int getCentering() { return (int)m_centering; }
+	void setCentering(float c){
+		if(c != m_centering)
+			resetPca(); 
+		m_centering = c; 
 	}
 	void setLoc(float x, float y, float w, float h){
 		m_wfVbo->setLoc(x, y+h/2, w/2.f, h); 
@@ -176,13 +209,14 @@ public:
 		m_loc[0] = x; m_loc[1] = y; 
 		m_loc[2] = w; m_loc[3] = h; 
 	}
-	void draw(int drawmode, float time, float* cursPos, bool showPca, bool closest){
+	void draw(int drawmode, float time, float* cursPos, 
+				 bool showPca, bool closest, bool showSort){
 		glColor4f(0.5f, 0.5f, 0.5f, 0.5f);
 		m_usVbo->draw(drawmode, time, true);
 		m_pcaVbo->draw(GL_POINTS, cursPos, true, closest); 
 		m_wfVbo->draw(drawmode, time, true);
 		if(closest)
-			m_pcaVbo->drawClosestWf(cursPos); 
+			m_pcaVbo->drawClosestWf(); 
 		//draw the templates. 
 		float ox = m_loc[0]; float oy = m_loc[1]; 
 		float ow = m_loc[2]/2; float oh = m_loc[3]; 
@@ -217,6 +251,34 @@ public:
 			}
 		}
 		glEnd(); 
+		//if we are in sort mode: 
+		if(showSort){
+			//draw a dark blue quad for the template ROI. 
+			glColor4f(0.2f,0.1f,1.f,0.15f); 
+			glBegin(GL_QUADS);
+			glVertex2f(ow*6.0/31.f + ox, oh*0.02f + oy);
+			glVertex2f(ow*6.0/31.f + ox, oh*0.98f + oy); 
+			glVertex2f(ow*21.0/31.f + ox,oh*0.98f + oy); 
+			glVertex2f(ow*21.0/31.f + ox,oh*0.02f + oy); 
+			glEnd(); 
+			//draw the threshold & centering.
+			//glDisableClientState(GL_VERTEX_ARRAY); 
+			glColor4f(1.f,1.f,1.f,0.4f); 
+			glLineWidth(1.f); 
+			glBegin(GL_LINE_STRIP); 
+			float t = m_threshold; 
+			t = oh*(t/2.f+0.5) + oy; 
+			glVertex2f(0.0f+ox, t);
+			glVertex2f(0.5f+ox, t); 
+			glEnd(); 
+			glColor4f(1.f,1.f,1.f,0.3f); 
+			glBegin(GL_LINE_STRIP); 
+			float c = (float)m_centering;
+			c = 31.f-c; c += 0.5f; c /= (31.f*2.f); //centering transform.
+			glVertex2f(c+ox, t-0.2*oh);
+			glVertex2f(c+ox, t+0.2*oh); 
+			glEnd(); 
+		}
 	}
 	int updateTemplate(int unit){
 		//called when the button is clicked.

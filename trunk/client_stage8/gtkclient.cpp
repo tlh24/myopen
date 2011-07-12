@@ -81,6 +81,8 @@ double g_rasterZoom = 1.0;
 bool g_cycle = false;
 bool g_showPca = false; 
 bool g_rtMouseBtn = false; 
+int g_polyChan = 0; 
+bool g_addPoly = false; 
 int g_channel[4] = {0,32,64,96}; 
 int	g_signalChain = 10; //what to sample in the headstage signal chain.
 unsigned int g_echo = 0; 
@@ -90,10 +92,8 @@ bool g_out = false;
 bool g_templMatch[128][2]; //the headstage matched a,b over all 128 channels.
 unsigned int g_bitdelay[4][2] = {{0,0},{0,0},{0,0},{0,0}};
 unsigned int g_usdelay[4][2] = {{0,0},{0,0},{0,0},{0,0}};
-unsigned int g_verDelay[2]; 
-float	g_verAper[2]; 
-float g_threshold[128];
-int   g_centering[128]; 
+unsigned int g_verDelay[4][2]; 
+float	g_verAper[4][2]; 
 float g_gains[128]; //per-channel gains.
 float g_agcs[128]; //per-channel AGC target.
 float g_unsortrate = 10.0; //the rate that unsorted WFs get through.
@@ -298,7 +298,10 @@ static gint motion_notify_event( GtkWidget *,
 	}
 	updateCursPos(x,y); 
 	if((state & GDK_BUTTON1_MASK) && (g_mode == MODE_SORT)){
-		g_c[g_channel[0]]->addPoly(g_cursPos); 
+		if(g_addPoly)
+			g_c[g_channel[g_polyChan]]->addPoly(g_cursPos); 
+		else
+			g_c[g_channel[g_polyChan]]->mouse(g_cursPos); 
 	}
 	if(state & GDK_BUTTON3_MASK)
 		g_rtMouseBtn = true;
@@ -310,8 +313,15 @@ static gint button_press_event( GtkWidget      *,
                                 GdkEventButton *event ){
 	if (event->button == 1){
 		updateCursPos(event->x,event->y); 
-		g_c[g_channel[0]]->resetPoly(); 
-		g_c[g_channel[0]]->addPoly(g_cursPos); 
+		int u = 0; 
+		if(g_cursPos[0] > 0.0f) u += 1; 
+		if(g_cursPos[1] < 0.0f) u += 2; 
+		g_polyChan = u; 
+		if(!g_c[g_channel[u]]->mouse(g_cursPos)){
+			g_c[g_channel[u]]->resetPoly(); 
+			g_c[g_channel[u]]->addPoly(g_cursPos); 
+			g_addPoly = true; 
+		}else g_addPoly = false; 
 	}
 	return TRUE;
 }
@@ -403,7 +413,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 				//draw threshold. 
 			glColor4f (1., 0.0f, 0.0f, 0.35);
 			float y = (float)((3-k)*2+1)/8.f + 
-				g_threshold[g_channel[k]]/(256.f*128.f*8.f); 
+				(g_c[g_channel[k]]->getThreshold())/(256.f*128.f*8.f); 
 			glVertex3f(-1.f, y, 0.f);
 			glVertex3f( 1.f, y, 0.f);
 			glEnd(); 
@@ -478,51 +488,17 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 	if(g_mode == MODE_SORT || g_mode == MODE_SPIKES){
 		glPushMatrix();
 		glEnableClientState(GL_VERTEX_ARRAY);
+		float xo, yo, xz, yz; 
 		cgGLEnableProfile(myCgVertexProfile);
-		checkForCgError("enabling vertex profile");
-		if(g_mode == MODE_SPIKES ){
-			//draw the spikes! 2x2 array.
-			for(int r=0; r<4; r++){
-				g_c[g_channel[r]]->setLoc(-1.f + (r&1), 0.f - (r/2), 1.f, 1.f); 
-				g_c[g_channel[r]]->draw(g_drawmode, time, g_cursPos, 
-										false, g_rtMouseBtn); 
-			}
+		for(int k=0; k<4; k++){
+			//2x2 array.
+			xo = (k%2)-1.f; yo = 0.f-(k/2); 
+			xz = 1.f; yz = 1.f; 
+			g_c[g_channel[k]]->setLoc(xo, yo, xz, yz); 
+			g_c[g_channel[k]]->draw(g_drawmode, time, g_cursPos, 
+									false, g_rtMouseBtn, g_mode==MODE_SORT);
 		}
-		if(g_mode == MODE_SORT){ 
-			//dark blue quad for the template ROI. 
-			cgGLDisableProfile(myCgVertexProfile);
-			
-			glColor4f(0.2f,0.1f,1.f,0.15f); 
-			glBegin(GL_QUADS); float z = 0.f; 
-			glVertex3f(6.0/31.0-1.f, -1.f, z);
-			glVertex3f(6.0/31.0-1.f,  1.f, z);
-			glVertex3f(21.0/31.0-1.f, 1.f, z);
-			glVertex3f(21.0/31.0-1.f, -1.f, z);
-			glEnd(); 
-			
-			cgGLEnableProfile(myCgVertexProfile);
-			g_c[g_channel[0]]->setLoc(-1.f, -1.f, 2.f, 2.f); 
-			g_c[g_channel[0]]->draw(g_drawmode, time, g_cursPos, 
-									g_showPca, g_rtMouseBtn);
-			//draw the threshold & centering.
-			glDisableClientState(GL_VERTEX_ARRAY); 
-			glColor4f(1.f,1.f,1.f,0.35f); 
-			glLineWidth(1.f); 
-			glBegin(GL_LINE_STRIP); 
-			float t = g_threshold[g_channel[0]]; 
-			glVertex3f(-1.f, t, 0.f);
-			glVertex3f(0.f, t, 0.f); 
-			glEnd(); 
-			glColor4f(1.f,1.f,1.f,0.25f); 
-			glBegin(GL_LINE_STRIP); 
-			float c = (float)g_centering[g_channel[0]]; 
-			c -= 0.5f; c /= -31.f;
-			glVertex3f(c, t-0.4, 0.f);
-			glVertex3f(c, t+0.4, 0.f); 
-			glEnd(); 
-		}	
 		cgGLDisableProfile(myCgVertexProfile);
-		checkForCgError("disabling vertex profile");
 		glPopMatrix();
 	}
 	glDisableClientState(GL_VERTEX_ARRAY);
@@ -647,8 +623,8 @@ GtkAdjustment* g_channelSpin[4] = {0,0,0,0};
 GtkAdjustment* g_gainSpin[4] = {0,0,0,0}; 
 GtkAdjustment* g_agcSpin[4] = {0,0,0,0}; 
 GtkAdjustment* g_apertureSpin[8] = {0,0,0,0}; 
-GtkAdjustment* g_thresholdSpin; 
-GtkAdjustment* g_centeringSpin; 
+GtkAdjustment* g_thresholdSpin[4]; 
+GtkAdjustment* g_centeringSpin[4]; 
 GtkAdjustment* g_unsortRateSpin; 
 GtkAdjustment* g_zoomSpin; 
 GtkWidget* g_pktpsLabel;
@@ -679,9 +655,7 @@ void saveState(){
 	sqlite3_exec(g_db, "BEGIN TRANSACTION;",0,0,0);
 	for(int i=0; i<128; i++){
 		sqliteSetValue(i, "agc", g_agcs[i]); 
-		sqliteSetValue(i, "gain", g_gains[i]); 
-		sqliteSetValue(i, "threshold", g_threshold[i]);
-		sqliteSetValue(i, "centering", g_centering[i]); //how many samples in the past to check for threshold crossing.
+		sqliteSetValue(i, "gain", g_gains[i]);
 		g_c[i]->save(); 
 	}
 	for(int i=0; i<4; i++){
@@ -1158,58 +1132,59 @@ void* sock_thread(void* destIP){
 					//align based on threshold crossing. 
 					//this loop is per packet; get 6 samples per pkt, but have to
 					//look in the past to fill out the 32-sample wf display.
-					float threshold = g_threshold[g_channel[0]]; 
-					int k = 0; //may want to do 4 eventually.
-					int h = g_channel[k]; 
-					for(int j=0; j<2; j++){
-						if(g_templMatch[h][j]) g_verDelay[j] = 0;
-						if(g_verDelay[j] > 8){
-							float a = g_c[h]->m_aperture[j]; 
-							if(fabs(g_verAper[j] - a)/a > 16.f/256.f){
-								printf("err missed spike %d saa %f (aperture %f)\n",
-								   j,g_verAper[j],g_c[h]->m_aperture[j]); 
+					for(int k=0; k<4; k++){
+						int h = g_channel[k]; 
+						float threshold = g_c[h]->getThreshold(); 
+						for(int j=0; j<2; j++){
+							if(g_templMatch[h][j]) g_verDelay[k][j] = 0;
+							if(g_verDelay[k][j] > 8){
+								float a = g_c[h]->getAperture(j); 
+								if(fabs(g_verAper[k][j] - a)/a > 16.f/256.f){
+									printf("err missed spike %d saa %f (aperture %d)\n",
+									j,g_verAper[k][j],g_c[h]->getAperture(j)); 
+								}
+								g_verDelay[k][j] = 0;
 							}
-							g_verDelay[j] = 0;
 						}
-					}
-					for(int m=0; m<6; m++){
-						int centering = g_centering[g_channel[0]]; 
-						float a = g_fbuf[k][mod2(g_fbufW - centering + m-6, g_nsamp)*3+1]; 
-						float b = g_fbuf[k][mod2(g_fbufW - centering+1 + m-6, g_nsamp)*3+1]; 
-						if(a <= threshold && b > threshold && 
-							(g_bitdelay[0][0] > 6)){
-							float wf[32]; 
-							for(int j=0; j < 32; j++){
-								//x coord does not need updating.
-								//remember, g_fbufW is incremented already. 
-								wf[j] = g_fbuf[k][mod2(g_fbufW + j + m - 31 - 6, g_nsamp)*3+1];
-								wf[j] = wf[j] * 0.5f; 
+						for(int m=0; m<6; m++){
+							int centering = g_c[h]->getCentering(); 
+							float a = g_fbuf[k][mod2(g_fbufW - centering + m-6, g_nsamp)*3+1]; 
+							float b = g_fbuf[k][mod2(g_fbufW - centering+1 + m-6, g_nsamp)*3+1]; 
+							if(a <= threshold && b > threshold && 
+									(g_bitdelay[k][0] > 6)){
+									float wf[32]; 
+									for(int j=0; j < 32; j++){
+										//x coord does not need updating.
+										//remember, g_fbufW is incremented already. 
+										wf[j] = g_fbuf[k][mod2(g_fbufW + j + m - 31 - 6, g_nsamp)*3+1];
+										wf[j] = wf[j] * 0.5f; 
+									}
+									g_c[g_channel[k]]->addWf(wf, -1, time, true); 
+									//printf("pca %f %f\n", fp[0], fp[1]); 
+									g_bitdelay[k][0] = 0; 
+									break; 
 							}
-							g_c[g_channel[0]]->addWf(wf, -1, time, true); 
-							//printf("pca %f %f\n", fp[0], fp[1]); 
-							g_bitdelay[0][0] = 0; 
-							break; 
+							//also check to see if it matches template. 
+							float saa[2] = {0,0}; 
+							for(int j=0; j<16; j++){
+									float w; 
+									w = g_fbuf[k][mod2(g_fbufW + j + m - 21, g_nsamp)*3+1];
+									w *= 0.5; 
+									saa[0] += fabs(w - g_c[h]->m_template[0][j]); 
+									saa[1] += fabs(w - g_c[h]->m_template[1][j]);
+							}
+							if(saa[0] < saa[1] && saa[0] < g_c[h]->getAperture(0)/255.f){
+									g_verDelay[k][0] = 1; 
+									g_verAper[k][0] = saa[0]*255.f; 
+							}
+							if(saa[1] < saa[0] && saa[1] < g_c[h]->getAperture(1)/255.f){
+									g_verDelay[k][1] = 1; 
+									g_verAper[k][1] = saa[1]*255.f; 
+							}
 						}
-						//also check to see if it matches threshold. 
-						float saa[2] = {0,0}; 
-						for(int j=0; j<16; j++){
-							float w; 
-							w = g_fbuf[k][mod2(g_fbufW + j + m - 21, g_nsamp)*3+1];
-							w *= 0.5; 
-							saa[0] += fabs(w - g_c[h]->m_template[0][j]); 
-							saa[1] += fabs(w - g_c[h]->m_template[1][j]);
-						}
-						if(saa[0] < saa[1] && saa[0] < g_c[h]->m_aperture[0]/255.f){
-							g_verDelay[0] = 1; 
-							g_verAper[0] = saa[0]*255.f; 
-						}
-						if(saa[1] < saa[0] && saa[1] < g_c[h]->m_aperture[1]/255.f){
-							g_verDelay[1] = 1; 
-							g_verAper[1] = saa[1]*255.f; 
-						}
+						if(g_verDelay[k][0]) g_verDelay[k][0]++; 
+						if(g_verDelay[k][1]) g_verDelay[k][1]++; 
 					}
-					if(g_verDelay[0]) g_verDelay[0]++; 
-					if(g_verDelay[1]) g_verDelay[1]++; 
 				}
 				else if(g_mode == MODE_SPIKES){
 					for(int k=0; k<4; k++){
@@ -1241,7 +1216,7 @@ void* sock_thread(void* destIP){
 										offset = j; 
 									}
 								}
-								float a = g_c[g_channel[k]]->m_aperture[t]; 
+								float a = g_c[k]->getAperture(t);
 								if(min*251.f > a){
 									printf("err ch %d u %d headstage says match, we don't find! match %f target %f\n", 
 										   g_channel[k], t+1, min*255.f, a); 
@@ -1351,8 +1326,8 @@ static void channelSpinCB( GtkWidget*, gpointer p){
 			gtk_adjustment_set_value(g_agcSpin[k], g_agcs[ch]); 
 			gtk_adjustment_set_value(g_apertureSpin[k*2+0], g_c[ch]->getAperture(0));
 			gtk_adjustment_set_value(g_apertureSpin[k*2+1], g_c[ch]->getAperture(1));
-			gtk_adjustment_set_value(g_thresholdSpin, g_threshold[g_channel[0]]); 
-			gtk_adjustment_set_value(g_centeringSpin, g_centering[g_channel[0]]);
+			gtk_adjustment_set_value(g_thresholdSpin[k], g_c[ch]->getThreshold()); 
+			gtk_adjustment_set_value(g_centeringSpin[k], g_c[ch]->getCentering());
 		}
 	}
 }
@@ -1380,19 +1355,23 @@ static void gainSetAll(gpointer ){
 	for(int i=0; i<128; i++)
 		g_c[i]->resetPca(); 
 }
-static void thresholdSpinCB( GtkWidget* , gpointer){
-	float thresh = gtk_adjustment_get_value(g_thresholdSpin); 
-	if(thresh != g_threshold[g_channel[0]])
-		g_c[g_channel[0]]->resetPca(); 
-	g_threshold[g_channel[0]] = thresh; 
-	printf("thresholdSpinCB: %f\n", thresh); 
+static void thresholdSpinCB( GtkWidget* , gpointer p){
+	int h = (int)((long long)p & 0xf); 
+	if(h >= 0 && h < 4){
+		int ch = g_channel[h]; 
+		float thresh = gtk_adjustment_get_value(g_thresholdSpin[h]); 
+		g_c[ch]->setThreshold(thresh); 
+		printf("thresholdSpinCB: %f\n", thresh); 
+	}
 }
-static void centeringSpinCB( GtkWidget* , gpointer){
-	float t = gtk_adjustment_get_value(g_centeringSpin); 
-	if(t != g_centering[g_channel[0]])
-		g_c[g_channel[0]]->resetPca(); 
-	g_centering[g_channel[0]] = (int)t; 
-	printf("centeringSpinCB: %f\n", t); 
+static void centeringSpinCB( GtkWidget* , gpointer p){
+	int h = (int)((long long)p & 0xf); 
+	if(h >= 0 && h < 4){
+		int ch = g_channel[h]; 
+		float t = gtk_adjustment_get_value(g_centeringSpin[h]); 
+		g_c[ch]->setCentering(t); 
+		printf("centeringSpinCB: %f\n", t); 
+	}
 }
 static void unsortRateSpinCB( GtkWidget* , gpointer){
 	float t = gtk_adjustment_get_value(g_unsortRateSpin); 
@@ -1419,7 +1398,7 @@ static void apertureSpinCB( GtkWidget*, gpointer p){
 		int j = g_channel[h/2]; 
 		//gtk likes to call this frequently -- only update when
 		//the value has actually changed.
-		if(g_c[j]->m_aperture[h%2] != a){
+		if(g_c[j]->getAperture(h%2) != a){
 			if(a >= 0 && a < 256*16){
 				g_c[j]->setAperture(a, h%2); 
 				setAperture(j);
@@ -1626,7 +1605,7 @@ static void getTemplateCB( GtkWidget *, gpointer p){
 	setTemplate(g_channel[0], aB); 
 	//setAperture(g_channel[0]); will be called below.
 	gtk_adjustment_set_value(g_apertureSpin[aB],
-							 g_c[g_channel[0]]->m_aperture[aB]);
+							 g_c[g_channel[0]]->getAperture(aB));
 }
 int main(int argn, char **argc)
 {
@@ -1673,8 +1652,6 @@ int main(int argn, char **argc)
 	for(int i=0; i<128; i++){
 		g_agcs[i] = sqliteGetValue(i, "agc", 6000.f); 
 		g_gains[i] = sqliteGetValue(i, "gain", 1.f); 
-		g_threshold[i] = sqliteGetValue(i, "threshold", 0.6f);
-		g_centering[i] = sqliteGetValue(i, "centering", 25.f); //how many samples in the past to check for threshold crossing.
 		g_c[i] = new Channel(i); 
 	}
 	sqlite3_exec(g_db, "END TRANSACTION;",0,0,0);
@@ -1827,7 +1804,7 @@ int main(int argn, char **argc)
 		for(int j=0; j<2; j++){
 			snprintf(buf, 128, "%s", (j < 1 ? "0 yellow":"1 cyan")); 
 			g_apertureSpin[i*2+j] = mk_spinner((const char*)buf, bx2, 
-								  g_c[g_channel[i]]->m_aperture[j], 0, 255*16, 2, 
+								  g_c[g_channel[i]]->getAperture(j), 0, 255*16, 2, 
 								  apertureSpinCB, i*2+j); 
 		}
 	}
@@ -1844,13 +1821,17 @@ int main(int argn, char **argc)
 //add a page for sorting.
 	box1 = gtk_vbox_new (FALSE, 0);
 
-	g_thresholdSpin = mk_spinner("threshold", box1, 
-			   g_threshold[g_channel[0]], 0.0, 1.0, 0.01, 
-			   thresholdSpinCB, 0);
-	g_centeringSpin = mk_spinner("centering", box1, 
-			   g_centering[g_channel[0]], 1.0, 30.0, 1.0, 
-			   centeringSpinCB, 0);
-			   
+	for(int h=0; h<4; h++){
+		char buf[128]; 
+		snprintf(buf, 128, "%c threshold", 'A'+h); 
+		g_thresholdSpin[h] = mk_spinner(buf, box1, 
+					g_c[g_channel[h]]->getThreshold(), 0.0, 1.0, 0.01, 
+					thresholdSpinCB, h);
+		snprintf(buf, 128, "%c centering", 'A'+h); 
+		g_centeringSpin[h] = mk_spinner(buf, box1, 
+					g_c[g_channel[h]]->getCentering(), 1.0, 30.0, 1.0, 
+					centeringSpinCB, h);
+	}
 	//show PCA button. 
 	button = gtk_check_button_new_with_label("show PCA");
 	g_signal_connect (button, "toggled",
