@@ -218,6 +218,7 @@ public:
 		//printf("mean %f %f max %f %f points %d\n", m_mean[0],m_mean[1], 
 		//	   m_maxSmooth[0], m_maxSmooth[1], m_w); 
 		glLineWidth(1.f); 
+		glPointSize(1.f);
 		drawReal(drawmode, m_fade, update, x,y,w,h); 
 		if(drawclose){
 			//also calculate cursor in local space. 
@@ -269,7 +270,7 @@ public:
 		glVertex3f(fx, fy, 0.f);
 		glEnd(); 
 	}
-	void drawClosestWf(float* curs){
+	void drawClosestWf(){
 		//offsets to the wafeform display.
 		float ow = m_loc[2]; 
 		float oh = m_loc[3]*2; 
