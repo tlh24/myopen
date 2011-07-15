@@ -33,11 +33,9 @@ TCPSegmenter::TCPSegmenter(int _fd, unsigned int bufsize) {
     wptr=0; //needs both a read and write buffer because the next* commands need to cleanup after the previous call of next*
     rptr=0;
     fd=_fd;
-
 }
 
 TCPSegmenter::~TCPSegmenter() {
-
     if (cmdbuf!=NULL) delete[] cmdbuf;
     if (cmdbuf2!=NULL) delete[] cmdbuf2;
 }
@@ -74,7 +72,7 @@ const unsigned char * TCPSegmenter::nextSegment(int &res) {
     rptr=0;
     
     unsigned short *s=(unsigned short*)cmdbuf;
-    unsigned int  end_pos=(*s)+2;
+    unsigned int  end_pos=(*s)+2; 
 
     //now grab stuff from the socket until there is a full segment
     while (wptr<sizeof(unsigned short) || end_pos > wptr) { //no full segment in buffer

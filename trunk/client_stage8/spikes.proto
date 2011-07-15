@@ -1,4 +1,4 @@
-message Spike_msg{
+message Spike_msg{ 
     required	uint64	ts = 1; //timestamp
     required	uint32	chan = 2; //channel identifier
     optional	uint32  unit = 3; //assigned unit, not exist=unsorted
