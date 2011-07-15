@@ -666,6 +666,7 @@ void* sock_thread(void* destIP){
 	g_rxsock = setup_socket(4340,0); //udp sock. 
 	g_txsock = connect_socket(4342,(char*)destIP,0); 
 	if(!g_txsock) printf("failed to connect to bridge.\n"); 
+	g_spikesock = setup_socket(4343,1); //tcp socket
 	//default txsockAddr
 	get_sockaddr(4342, (char*)destIP, &g_txsockAddr); 
 	char buf[1024];
@@ -686,8 +687,10 @@ void* sock_thread(void* destIP){
 		//check to see if a client is connected.
 		if(client <= 0){
 			client = accept_socket(g_spikesock); 
-			if(seg) delete seg; seg = 0; 
-			seg = new TCPSegmenter(client, 512); 
+			if(client >= 0){
+				if(seg) delete seg; seg = 0; 
+				seg = new TCPSegmenter(client, 512); 
+			}
 		}
 		if(n > 0 && !g_die){
 			double rxtime = gettime(); 
@@ -772,11 +775,12 @@ void* sock_thread(void* destIP){
 								smsg.set_chan(adr); 
 								smsg.set_unit(t); 
 								smsg.set_seq(seq++); 
-								if(!seg->send(client, smsg)){ //calls SerializeToFileDescriptor.
+								if(seg->send(client, smsg)<0){ //calls SerializeToFileDescriptor.
 								//i don't know what granularity this will be - have to test.
 									close(client); 
 									printf("sending message to client failed!\n"); 
 									client = 0; 
+									if(seg) delete seg; seg = 0; 
 								}
 							}
 						}

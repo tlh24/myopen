@@ -24,6 +24,7 @@ all: gtkclient
 	
 spikes.pb.cc : spikes.proto
 	protoc $< --cpp_out=. 
+	protoc $< --python_out=. 
 
 client: $(OBJS)
 	g++ $(LDFLAGS) $(OBJS) -o client
