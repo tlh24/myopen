@@ -6,15 +6,13 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h> 
-#include <netdb.h> 
 #include <fcntl.h> 
 #include "sock.h"
 
-void error(const char *msg, int sockfd)
-{
-    perror(msg);
+void error(const char *msg, int sockfd){
+	perror(msg);
 	close(sockfd); 
-    exit(0);
+	exit(0);
 }
 
 void close_socket(int &sock){
@@ -24,13 +22,12 @@ void close_socket(int &sock){
 	}
 	sock = 0;
 }
-//sets up a UDP server socket. 
-int setup_socket(int portno){
+//sets up a UDP/TCP server socket. 
+int setup_socket(int portno, int tcp){
 	int sock;
 	struct sockaddr_in serv_addr;
-	//these are both client sockets!! 
-	//first, the outbound socket.
-	sock = socket(AF_INET, SOCK_DGRAM, 0);
+
+	sock = socket(AF_INET, tcp?SOCK_STREAM:SOCK_DGRAM, 0);
 	if (sock < 0) {
 		fprintf(stderr, "ERROR opening socket\n");
 		return 0; 
@@ -48,18 +45,29 @@ int setup_socket(int portno){
 	listen(sock, 5); 
 	return sock;
 }
- //sets up a udp client socket.
-int connect_socket(int portno, const char* server_name){
+//accepts a TCP connection on a server socket if one is queued. 
+//returns the client socket file descriptor.
+int accept_socket(int sock){
+	struct sockaddr_in cli_addr;
+	socklen_t clilen = sizeof(cli_addr); 
+	int clientfd = accept(sock, (struct sockaddr *)&cli_addr, &clilen); 
+	
+	return clientfd;
+	//you'll want to read / write to clientfd. 
+}
+
+ //sets up a udp/tcp client socket.
+int connect_socket(int portno, const char* server_name, int tcp){
 	int sockfd;
 	struct sockaddr_in serv_addr;
 	
-	sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+	sockfd = socket(AF_INET, tcp?SOCK_STREAM:SOCK_DGRAM, 0);
 	if (sockfd < 0) {
 		error("ERROR opening socket", sockfd);
 		return 0; 
 	}
 	fcntl(sockfd, F_SETFL, O_NONBLOCK); //set the socket to non-blocking. 
-	
+	//with tcp, this will make accept() not block, too, so we can poll it.
 	//get the address - 
 	get_sockaddr(portno, server_name, &serv_addr); 
 	
@@ -71,6 +79,7 @@ int connect_socket(int portno, const char* server_name){
 	// n = read(sockfd,buffer,255);
 	return sockfd ; 
 }
+
 
 void get_sockaddr(int portno, const char* server_name, struct sockaddr_in *addr){
 	//return on addr
@@ -87,3 +96,4 @@ void get_sockaddr(int portno, const char* server_name, struct sockaddr_in *addr)
 		server->h_length);
 	addr->sin_port = htons(portno);
 }
+

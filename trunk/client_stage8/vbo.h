@@ -1,12 +1,6 @@
 #ifndef __VBO_H__
 #define __VBO_H__
-void copyData(GLuint vbo, u32 sta, u32 fin, float* ptr, int stride){
-	glBindBufferARB(GL_ARRAY_BUFFER_ARB, vbo);
-	sta *= stride; 
-	fin *= stride; 
-	ptr += sta; 
-	glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, sta*4, (fin-sta)*4, (GLvoid*)ptr);
-}
+void copyData(GLuint vbo, u32 sta, u32 fin, float* ptr, int stride); 
 extern float g_viewportSize[2]; 
 class Vbo {
 public:
@@ -191,7 +185,7 @@ public:
 		m_poly[p*2 + 1] = cy; 
 		m_polyW++; 
 	}
-	void copy(bool updateScale){
+	void copy(bool updateScale, bool updateAll){
 		//update the mean & max excursion. only makes sense for 2d data.
 		if(updateScale){
 			for(int i = m_r; i<m_w; i++){
@@ -204,6 +198,34 @@ public:
 					if(d > m_max[k]) m_max[k] = d; 
 				}
 				//printf("updating, %d rows\n", m_w-m_r); 
+			}
+		}
+		if(updateAll){
+			//two passes: mean and max. 
+			for(int k=0; k<m_dim; k++)
+				m_mean[k] = 0.f; 
+			for(int i = m_r; i<m_w; i++){
+				int j = i % m_rows; 
+				for(int k=0; k<m_dim; k++){
+					float x = m_f[j*m_cols*m_dim + k];
+					m_mean[k] += x; 
+				}
+			}
+			for(int k=0; k<m_dim; k++){
+				m_mean[k] /= m_w - m_r;
+				m_max[k] = 0.f; 
+			}
+			for(int i = m_r; i<m_w; i++){
+				int j = i % m_rows; 
+				for(int k=0; k<m_dim; k++){
+					float x = m_f[j*m_cols*m_dim + k];
+					float d = fabs(m_mean[k] - x); 
+					if(d > m_max[k]) m_max[k] = d; 
+				}
+			}
+			for(int k=0; k<m_dim; k++){
+				m_meanSmooth[k] = m_mean[k];
+				m_maxSmooth[k] = m_max[k];
 			}
 		}
 		Vbo::copy(); 

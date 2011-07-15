@@ -7,7 +7,7 @@
 #include <GL/glut.h>    // Header File For The GLUT Library 
 #include <GL/gl.h>	// Header File For The OpenGL32 Library
 #include <GL/glu.h>	// Header File For The GLu32 Library
-#include <GL/glx.h>     // Header file fot the glx libraries.
+#include <GL/glx.h>     // Header file for the glx libraries.
 #include "glext.h"
 #include "glInfo.h"  
 
@@ -31,9 +31,9 @@
 
 #define NSAMP (24*1024)
 #define NDISPW 256
-#define u32 unsigned int
 
 #include "../../neurorecord/stage/memory.h"
+#include "headstage.h"
 #include "cgVertexShader.h"
 #include "vbo.h"
 #include "channel.h"
@@ -43,6 +43,8 @@
 #include <matio.h>
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_linalg.h>
+#include "spikes.pb.h"
+#include "tcpsegmenter.h"
 
 
 //CG stuff. for the vertex shaders.
@@ -57,8 +59,6 @@ float		g_viewportSize[2] = {640, 480}; //width, height.
 
 class Channel; 
 
-#define i64 long long
-
 static float	g_fbuf[4][NSAMP*3]; //continuous waveform.
 i64	g_fbufW; //where to write to (always increment) 
 i64	g_fbufR; //display thread reads from here - copies to mem
@@ -68,13 +68,7 @@ i64	g_sbufW[2];
 i64	g_sbufR[2]; 
 Channel*		g_c[128]; 
 GLuint 			base;            // base display list for the font set.
-unsigned int*	g_sendbuf; 
-i64	g_sendW; //where to write to (in 32-byte increments)
-i64 	g_sendR; //where to read from
-i64	g_sendL; //the length of the buffer (in 32-byte packets)
-char		g_messages[1024][128]; //save these, plaintext, in the file.
-i64	g_messW;
-i64	g_messR; 
+
 bool g_die = false; 
 double g_pause = -1.0;
 double g_rasterZoom = 1.0; 
@@ -85,34 +79,18 @@ int g_polyChan = 0;
 bool g_addPoly = false; 
 int g_channel[4] = {0,32,64,96}; 
 int	g_signalChain = 10; //what to sample in the headstage signal chain.
-unsigned int g_echo = 0; 
-unsigned int g_headecho = 0; 
-unsigned int g_oldheadecho = 100; 
+
 bool g_out = false; 
 bool g_templMatch[128][2]; //the headstage matched a,b over all 128 channels.
 unsigned int g_bitdelay[4][2] = {{0,0},{0,0},{0,0},{0,0}};
 unsigned int g_usdelay[4][2] = {{0,0},{0,0},{0,0},{0,0}};
 unsigned int g_verDelay[4][2]; 
 float	g_verAper[4][2]; 
-float g_gains[128]; //per-channel gains.
-float g_agcs[128]; //per-channel AGC target.
 float g_unsortrate = 10.0; //the rate that unsorted WFs get through.
 FILE* g_saveFile = 0; 
 bool g_closeSaveFile = false; 
 unsigned int g_saveFileBytes;
 
-// for 31.25ksps -- see filter_butter.m
-// broken into 2 biquads, order b0 b1 a0 a1
-/** 500 - 6.7kHz **/
-float lowpass_coefs[8] ={ 0.240833,0.481711,0.323083,-0.456505,
-					0.240833,0.481619,0.233390,-0.052153};
-float highpass_coefs[8] ={0.936405,-1.872810,1.916303,-0.926028,
-					0.936405,-1.872810,1.821050,-0.830291};
-/** 150 - 10kHz **/
-float lowpass_coefs2[8] = {0.453447,0.906993,-0.632535,-0.485595,
-	0.453447,0.906796,-0.463824,-0.089354};
-float highpass_coefs2[8] = {0.980489,-1.960979,1.976285,-0.977184,
-	0.980489,-1.960979,1.944907,-0.945792};
 double g_startTime = 0.0; 
 
 int g_totalPackets = 0; 
@@ -128,8 +106,9 @@ enum MODES {
 int g_mode = MODE_RASTERS; 
 int	g_drawmode = GL_LINE_STRIP; 
 
-int g_rxsock = 0;//rx
-int g_txsock = 0; 
+int g_rxsock = 0;//rx from hardware. right now only support 1 headstage.
+int g_txsock = 0;//transmit back to hardware.  again, only one supported now.
+int g_spikesock = 0; //transmit spike times to client
 struct sockaddr_in g_txsockAddr; 
 
 bool	g_vbo1Init = false; 
@@ -189,7 +168,13 @@ void gsl_matrix_to_mat(gsl_matrix *x, const char* fname){
 	free(d); 
 	Mat_Close(mat); 
 }
-
+void copyData(GLuint vbo, u32 sta, u32 fin, float* ptr, int stride){
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB, vbo);
+	sta *= stride; 
+	fin *= stride; 
+	ptr += sta; 
+	glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, sta*4, (fin-sta)*4, (GLvoid*)ptr);
+}
 void BuildFont(void) {
     Display *dpy;
     XFontStruct *fontInfo;  // storage for our font.
@@ -258,20 +243,6 @@ GLvoid printGLf(const char *fmt, ...)
     glListBase(base - 32);
     glCallLists(strlen(text), GL_UNSIGNED_BYTE, text);
     glPopAttrib();
-}
-void saveMessage(const char *fmt, ...){
-	va_list ap;     /* our argument pointer */
-    if (fmt == NULL)    /* if there is no string to draw do nothing */
-        return;
-    va_start(ap, fmt);  //make ap point to first unnamed arg
-	//need to add in 'echo' in alphabet encoding - when the headstage has the same sync, 
-	//we know that it got the command preceding this.
-	int e = g_echo % 16; 
-	g_messages[g_messW % 1024][0] = 'A'+e;
-	g_messages[g_messW % 1024][1] = ' '; 
-    vsnprintf(g_messages[g_messW % 1024] + 2, 126, fmt, ap);
-    va_end(ap);
-	g_messW++; 
 }
 void updateCursPos(float x, float y){
 	g_cursPos[0] = x/g_viewportSize[0]; 
@@ -495,8 +466,9 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 			xo = (k%2)-1.f; yo = 0.f-(k/2); 
 			xz = 1.f; yz = 1.f; 
 			g_c[g_channel[k]]->setLoc(xo, yo, xz, yz); 
+			bool srt = g_mode==MODE_SORT;
 			g_c[g_channel[k]]->draw(g_drawmode, time, g_cursPos, 
-									false, g_rtMouseBtn, g_mode==MODE_SORT);
+									g_showPca&&srt, g_rtMouseBtn, srt);
 		}
 		cgGLDisableProfile(myCgVertexProfile);
 		glPopMatrix();
@@ -588,7 +560,7 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 			int bufferSize;
 			glGetBufferParameterivARB(GL_ARRAY_BUFFER_ARB, 
 				GL_BUFFER_SIZE_ARB, &bufferSize);
-			printf("Vertex Array in VBO:%d bytes\n", bufferSize);
+			//printf("Vertex Array in VBO:%d bytes\n", bufferSize);
 		}
 		//have one VBO that's filled with spike times & channels.
 		for(int k=0; k<2; k++){
@@ -654,8 +626,6 @@ static gboolean rotate (gpointer user_data){
 void saveState(){
 	sqlite3_exec(g_db, "BEGIN TRANSACTION;",0,0,0);
 	for(int i=0; i<128; i++){
-		sqliteSetValue(i, "agc", g_agcs[i]); 
-		sqliteSetValue(i, "gain", g_gains[i]);
 		g_c[i]->save(); 
 	}
 	for(int i=0; i<4; i++){
@@ -683,329 +653,6 @@ void destroy(GtkWidget *, gpointer){
 	 
 	gtk_main_quit(); 
 }
-void sendEcho(){
-	//need some way of knowing that the headstage RXed the command.
-	unsigned int* ptr = g_sendbuf; 
-	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
-	for(int i=0; i<4; i++){
-		ptr[i*2+0] = htonl(FP_BASE - FP_ECHO);
-		ptr[i*2+1] = htonl((g_echo << 4) & 0xf0); 
-	}
-	g_sendW++; 
-	g_echo++; 
-}
-void updateGain(int chan){
-	/* remember, channels 0 and 32 are filtered at the same time. 
-		then 64 and 96
-		and the biquads are arranged as: 
-		low1 high1 low2 high2
-		only can adjust the B coefs of the lowpass filters, though.
-		(the highpass coefs are maxed out)
-		all emitted numbers are base 14.(s2rnd flag)
-	*/
-	chan = chan & (0xff ^ 32); //map to the lower channels. 
-		// e.g. 42 -> 10,42; 67 -> 67,99 ; 100 -> 68,100
-	float gain1 = sqrt(fabs(g_gains[chan]));
-	float gain2 = sqrt(fabs(g_gains[chan+32])); 
-	float again1, again2; //the actual gains.
-	int indx [] = {0,1,4,5}; //index the B coefs.
-	float b[8]; 
-	int i,j,k; 
-	unsigned int u; 
-	for(i=0; i<4; i++){
-		j = indx[i];
-		b[i*2+0] = lowpass_coefs[j]*gain1*16384.f;
-		b[i*2+1] = lowpass_coefs[j]*gain2*16384.f;
-	}
-	//clamp to acceptable values.
-	for(i=0; i<8; i++){
-		b[i] = b[i] < -32768.f ? -32768.f : b[i];
-		b[i] = b[i] > 32767.f ? 32767.f : b[i]; 
-	}
-	if(g_gains[chan] < 0){
-		b[0] *= -1; b[2] *= -1; //change the sign of the first filter.
-	}
-	if(g_gains[chan+32] < 0){
-		b[1] *= -1; b[3] *= -1; 
-	}
-	//calculate the actual gain. assume static gain = 1
-	again1 = 
-		((b[0]/(lowpass_coefs[0]*16384.f) +
-			b[2]/(lowpass_coefs[1]*16384.f))/2.f) * 
-		((b[4]/(lowpass_coefs[4]*16384.f) +
-			b[6]/(lowpass_coefs[5]*16384.f))/2.f); 
-	again2 = 
-		((b[1]/(lowpass_coefs[0]*16384.f) +
-			b[3]/(lowpass_coefs[1]*16384.f))/2.f) * 
-		((b[5]/(lowpass_coefs[4]*16384.f) +
-			b[7]/(lowpass_coefs[5]*16384.f))/2.f); 
-	printf("actual gain ch %d %f ; ch %d %f\n", 
-		   chan, again1, chan+32, again2); 
-	//now form the 4x 32 bit uints to be written. 
-	int indx2[] = {0,1,8,9}; //don't write highpass Bs (4,5,12,13)
-	unsigned int* ptr = g_sendbuf; 
-	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
-	for(i=0; i<4; i++){
-		//remember, chan mapped to 0-31 & 64-95 (above)
-		unsigned int p = 0; 
-		if(chan >= 64) p += 1; //chs 64-127 pocessed following 0-63.
-		ptr[i*2+0] = htonl(A1 + 
-			(A1_STRIDE*(chan & 31) + 
-			A1_IIRSTARTA + p*(A1_IIRSTARTB-A1_IIRSTARTA) + indx2[i])*4); 
-			
-		j = (int)(b[i*2+0]);
-		k = (int)(b[i*2+1]);
-		u = (unsigned int)((j&0xffff) | ((k&0xffff)<<16)); 
-		ptr[i*2+1] = htonl(u); 
-	}
-	g_sendW++; 
-	sendEcho(); 
-	saveMessage("gain %d %3.2f %d %3.2f", chan, again1, chan+32, again2); 
-}
-void setOsc(int chan){
-	//turn two channels e.g. 0 and 32 into oscillators.
-	float b[4]; 
-	unsigned int u; 
-	int i,j; 
-	b[0] = 0.f; //assume there is already energy in the 
-	b[1] = 0.f; //delay line.
-	b[2] = 32768.f - 45; //10 -> should be about 250Hz @ fs = 62.5khz
-	b[3] = -16384.f; 
-	unsigned int* ptr = g_sendbuf; 
-	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
-	chan = chan & (0xff ^ 32); //map to the lower channels. 
-		// e.g. 42 -> 10,42; 67 -> 67,99 ; 100 -> 68,100
-	for(i=0; i<4; i++){
-		unsigned int p = 0; 
-		if(chan >= 64) p += 1; //chs 64-127 pocessed following 0-63.
-		ptr[i*2+0] = htonl(A1 + 
-			(A1_STRIDE*(chan & 31) + 
-			A1_IIRSTARTA + p*(A1_IIRSTARTB-A1_IIRSTARTA) + i)*4); 
-		j = (int)(b[i]);
-		u = (unsigned int)((j&0xffff) | ((j&0xffff)<<16)); 
-		ptr[i*2+1] = htonl(u); 
-	}
-	g_sendW++; 
-	sendEcho(); 
-	saveMessage("osc %d and %d", chan, chan+32); 
-}
-void setChans(){
-	int i; 
-	unsigned int* ptr = g_sendbuf; 
-	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
-	for(i=0; i<4;i++){
-		ptr[i*2+0] = htonl(FP_BASE - FP_TXCHAN0 + 4*i); 
-		//ok, for the taps: have 4 offsets. 
-		int c = g_channel[i]; 
-		int o1 = (c & 31) * W1_STRIDE * 2 * 4; //which MUX line. 
-		int o2 = ((c & 64)>>6) * W1_STRIDE * 4; // primary/secondary SPORT
-		int o3 = ((c & 32)>>5) * 2; // primary/secondary RX chan. 
-		/* 4th offset is to get to the correct written delay.
-		0	mean from integrator
-		1	gain
-		2	saturated sample
-		3	AGC out / LMS save
-		4	x1(n-1) / LMS out
-		5	x1(n-2)
-		6	x2(n-1) / y1(n-1)
-		7	x2(n-2) / y1(n-2)
-		8	x3(n-1) / y2(n-1)
-		9	x3(n-2) / y2(n-2)
-		10	x2(n-1) / y3(n-1)
-		11	x2(n-2) / y3(n-2)
-		12	y4(n-1)
-		13	y4(n-2)
-		 */
-		int o4 = g_signalChain * 4; 
-		ptr[i*2+1] = htonl(W1 + o1 + o2 + o3 + o4 + 1); //1 is for little-endian.
-	}
-	g_sendW++; 	
-	sendEcho(); 
-	for(i=0; i<4; i++){
-		saveMessage("chan %c %d", 'A'+i, g_channel[i]); 
-		//save it in the sqlite db. 
-		//sqliteSetValue(i,"channel", (float)g_channel[i]); 
-	}
-}
-void setAGC(int ch1, int ch2, int ch3, float target){
-	//sets AGC for (up to) three channels.
-	unsigned int* ptr = g_sendbuf; 
-	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
-	int chs[3]; chs[0] = ch1&127; chs[1]= ch2&127; chs[2] = ch3&127; 
-	for(int i=0; i<3; i++){
-		int chan = chs[i];
-		g_agcs[chan] = target; 
-		chan = chan & (0xff ^ 32); //map to the lower channels (0-31,64-95)
-		unsigned int p = 0; 
-		if(chan >= 64) p += 1; //chs 64-127 pocessed following 0-63.
-		ptr[i*2+0] = htonl(A1 + 
-			(A1_STRIDE*(chan & 31) + 
-			+ p*(A1_IIRSTARTA+A1_IIR) + 2)*4); // 2 is the offset to the AGC target. 
-		int j = (int)(sqrt(32768 * g_agcs[chan]));
-		int k = (int)(sqrt(32768 * g_agcs[chan+32]));
-		unsigned int u = (unsigned int)((j&0xffff) | ((k&0xffff)<<16)); 
-		ptr[i*2+1] = htonl(u); 
-	}
-	for(int i=3; i<4; i++){
-		ptr[i*2+0] = htonl(FP_BASE - FP_ECHO);
-		ptr[i*2+1] = htonl((g_echo << 4) & 0xf0); 
-	}
-	g_sendW++;
-	g_echo++; 
-	saveMessage("agc %d", (int)target);
-}
-void setAperture(int ch){
-	// aperture order: ch0, ch32, ch64, ch96. (little-endian)
-	// each 16 bits. 
-	//might as well set both A & B apertures in same packet. 
-	ch &= 31; 
-	unsigned int* ptr = g_sendbuf; 
-	ptr += (g_sendW % g_sendL) * 8;
-	for(int i=0; i<4; i++){
-		ptr[i*2+0] = htonl(A1 + 
-			(A1_STRIDE*ch + (A1_TEMPLATE+A1_APERTURE)*(i/2) + 
-			 A1_APERTUREA + (i&1))*4); 
-		unsigned int u = (g_c[ch+64*(i&1)]->getAperture(i/2) & 0xffff) | 
-						((g_c[ch+32+64*(i&1)]->getAperture(i/2) & 0xffff)<<16);
-		ptr[i*2+1] = htonl(u); 
-	}
-	g_sendW++;
-	g_echo++; 
-	for(int i=0; i<4; i++){
-		saveMessage("aperture %d %d,%d", ch + 32*i, 
-				g_c[ch + 32*i]->getAperture(0),
-				g_c[ch + 32*i]->getAperture(0)); 
-	}
-}
-void setLMS(bool on){
-	//this applies to all channels.
-	unsigned int* ptr = g_sendbuf; 
-	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt. (32 byte packets)
-	ptr[0] = htonl(FP_BASE - FP_WEIGHTDECAY); //frame pointer
-	ptr[1] = htonl(on ? 0x7fff0005 : 0); //see r4 >>> 1 (v) in radio4.asm
-	for(int i=1; i<4; i++){
-		ptr[i*2+0] = htonl(FP_BASE - FP_ECHO);
-		ptr[i*2+1] = htonl((g_echo << 4) & 0xf0); 
-	}
-	g_sendW++;
-	g_echo++; 
-	saveMessage("lms %d", (on ? 1 : 0));
-}
-void setTemplate(int ch, int aB){
-	ch &= 31; 
-	aB &= 1; 
-	//each template is 16 points; can write 4 at a time, so need 4 writes.
-	for(int p=0; p<4; p++){
-		unsigned int* ptr = g_sendbuf; 
-		ptr += (g_sendW % g_sendL) * 8;
-		for(int i=0; i<4; i++){
-			//template A starts with newest sample (rightmost) -- loop.
-			//template B is in normal order. (oldest first)
-			int n = (p*4+i+(1-aB)*15)%16; 
-			ptr[i*2+0] = htonl(A1 + 
-				(A1_STRIDE*ch + (A1_TEMPLATE+A1_APERTURE)*aB + 
-				A1_TEMPA + (p*4+i))*4); 
-			unsigned char a,b,c,d; 
-			a = (unsigned char)((g_c[ch+ 0]->m_template[aB][n]+0.5f) * 255.f);
-			b = (unsigned char)((g_c[ch+32]->m_template[aB][n]+0.5f) * 255.f); 
-			c = (unsigned char)((g_c[ch+64]->m_template[aB][n]+0.5f) * 255.f); 
-			d = (unsigned char)((g_c[ch+96]->m_template[aB][n]+0.5f) * 255.f); 
-			unsigned int u= ((a << 0) & 0xff) | 
-							((b << 8) & 0xff00) | 
-							((c <<16) & 0xff0000) | 
-							((d <<24) & 0xff000000); 
-			ptr[i*2+1] = htonl(u); 
-		}
-		g_sendW++;
-	}
-	//really should save the templates somewhere else (another file)
-}
-void setBiquad(int chan, float* biquad, int biquadNum){
-	// biquad num 0 or 1
-	// biquad lo or hi (global)
-	chan = chan & (0xff ^ 32); //map to the lower channels (0-31,64-95)
-	float gain1 = sqrt(fabs(g_gains[chan]));
-	float gain2 = sqrt(fabs(g_gains[chan+32])); 
-	float b[8]; 
-	int i,j,k; 
-	short s; 
-	unsigned int u; 
-	if(biquadNum & 1){
-		gain1 = gain2 = 1.f; //no gain on the hpf.	
-	}
-	for(i=0; i<2; i++){
-		b[i*2+0] = biquad[i]*gain1*16384.f; //B coefs
-		b[i*2+1] = biquad[i]*gain2*16384.f; //lo and hi, respectively
-	}
-	for(i=2; i<4; i++){
-		b[i*2+0] = biquad[i]*16384.f;
-		b[i*2+1] = biquad[i]*16384.f;
-	}
-	//clamp to acceptable values.
-	printf("coefs!\n"); 
-	for(i=0; i<8; i++){
-		b[i] = b[i] < -32768.f ? -32768.f : b[i];
-		b[i] = b[i] > 32767.f ? 32767.f : b[i]; 
-		//printf("%d %f\n", i, b[i]); 
-	}
-	if(biquadNum == 0){
-		if(g_gains[chan] < 0){
-			b[0] *= -1; b[2] *= -1; //change the sign of the first filter.
-		}
-		if(g_gains[chan+32] < 0){
-			b[1] *= -1; b[3] *= -1; 
-		}
-	}
-	//now form the 32 bit uints to be written. 
-	unsigned int* ptr = g_sendbuf; 
-	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
-	for(i=0; i<4; i++){
-		unsigned int p = 0; 
-		if(chan >= 64) p += 1; //chs 64-127 pocessed following 0-63.
-		ptr[i*2+0] = htonl(A1 + ((chan & 31)*A1_STRIDE +
-			 A1_IIRSTARTA + p*(A1_IIRSTARTB-A1_IIRSTARTA) + biquadNum*4 + i)*4);
-		j = (int)(b[i*2+0]);
-		k = (int)(b[i*2+1]);
-		u = (unsigned int)((j&0xffff) | ((k&0xffff)<<16)); 
-		s = (short)(u & 0xffff); 
-		printf("%d ", s); 
-		s = (short)((u>>16) & 0xffff); 
-		printf("%d\n", s); 
-		ptr[i*2+1] = htonl(u); 
-	}
-	g_sendW++; 
-	sendEcho(); 
-	saveMessage("biquad %d ch %d: %d %d %d %d", 
-				biquadNum, chan,(int)b[0],(int)b[2],(int)b[4],(int)b[6]); 
-	saveMessage("biquad %d ch %d: %d %d %d %d", 
-				biquadNum, chan+32,(int)b[1],(int)b[3],(int)b[5],(int)b[7]); 
-}
-void resetBiquads(int chan){
-	//reset all coefs in two channels.
-	setBiquad(chan, &(lowpass_coefs[0]), 0);
-	setBiquad(chan, &(highpass_coefs[0]), 1); 
-	setBiquad(chan, &(lowpass_coefs[4]), 2); 
-	setBiquad(chan, &(highpass_coefs[4]), 3); 
-}
-void setFilter2(int chan){
-	//reset all coefs in two channels.
-	setBiquad(chan, &(lowpass_coefs2[0]), 0);
-	setBiquad(chan, &(highpass_coefs2[0]), 1); 
-	setBiquad(chan, &(lowpass_coefs2[4]), 2); 
-	setBiquad(chan, &(highpass_coefs2[4]), 3); 
-}
-void setFlat(int chan){
-	//lets you look at the raw ADC samples.
-	chan = chan & (0xff ^ 32); //map to the lower channels. 
-	float biquad[] = {0.0, 1.0, 0.0, 0.0}; //NOTE B assumed to be symmetric.
-		//hence you need to set b[1] not b[0] (and b[2])
-	setBiquad(chan, biquad, 0);
-	setBiquad(chan, biquad, 1); 
-	setBiquad(chan, biquad, 2); 
-	setBiquad(chan, biquad, 3); 
-	saveMessage("flat %d", chan); 
-	saveMessage("flat %d", chan+32); 
-}
 void* sock_thread(void* destIP){
 	g_sendL = 0x4000; 
 	g_sendbuf = (unsigned int*)malloc(g_sendL*32); 
@@ -1016,8 +663,8 @@ void* sock_thread(void* destIP){
 	g_sendR = 0; 
 	g_sendW = 0; 
 	
-	g_rxsock = setup_socket(4340); 
-	g_txsock = connect_socket(4342,(char*)destIP); 
+	g_rxsock = setup_socket(4340,0); //udp sock. 
+	g_txsock = connect_socket(4342,(char*)destIP,0); 
 	if(!g_txsock) printf("failed to connect to bridge.\n"); 
 	//default txsockAddr
 	get_sockaddr(4342, (char*)destIP, &g_txsockAddr); 
@@ -1025,6 +672,9 @@ void* sock_thread(void* destIP){
 	int send_delay = 0; 
 	g_totalPackets = 0; 
 	sockaddr_in from; 
+	int	client = 0; 
+	TCPSegmenter * seg = 0; 
+	int seq = 0; 
 	while(g_die == 0){
 		socklen_t fromlen = sizeof(from); 
 		int n = recvfrom(g_rxsock, buf, sizeof(buf),0, 
@@ -1032,6 +682,12 @@ void* sock_thread(void* destIP){
 		if(fromlen > 0 && n > 0){
 			g_txsockAddr.sin_addr = from.sin_addr; 
 			//keep the dest port (4342); don't copy that.
+		}
+		//check to see if a client is connected.
+		if(client <= 0){
+			client = accept_socket(g_spikesock); 
+			if(seg) delete seg; seg = 0; 
+			seg = new TCPSegmenter(client, 512); 
 		}
 		if(n > 0 && !g_die){
 			double rxtime = gettime(); 
@@ -1074,12 +730,12 @@ void* sock_thread(void* destIP){
 			char* ptr = buf; 
 			unsigned int drop = *(unsigned int*)ptr; 
 			if(drop > g_dropped){
-				printf("dropped %d radio packets. %d of %d, BER (est) = %f per 1e6 bits\n", 
+				/*printf("dropped %d radio packets. %d of %d, BER (est) = %f per 1e6 bits\n", 
 					   drop - g_dropped, 
 					   g_totalDropped, 
 					   g_totalPackets, 
 					   1e6*(double)g_totalDropped/((double)g_totalPackets*32*8)); 
-				if((drop - g_dropped) < 4)
+				*/if((drop - g_dropped) < 4)
 					g_totalDropped += drop - g_dropped; 
 				g_dropped = drop; 
 			}
@@ -1090,6 +746,7 @@ void* sock_thread(void* destIP){
 			g_totalPackets += npack; 
 			
 			int channels[32]; char match[32]; 
+			Spike_msg smsg;
 			for(int i=0; i<npack && g_pause <=0.0; i++){
 				//see if it matched a template.
 				float z = 0; 
@@ -1107,6 +764,21 @@ void* sock_thread(void* destIP){
 							g_sbuf[t][w*2+0] = (float)time; 
 							g_sbuf[t][w*2+1] = (float)adr; 
 							g_sbufW[t] ++; 
+							if(client > 0){
+								//send client the data. 
+								//timestamps are at a resolution of 10us. 
+								smsg.Clear(); 
+								smsg.set_ts((long long)(time*1e5)); 
+								smsg.set_chan(adr); 
+								smsg.set_unit(t); 
+								smsg.set_seq(seq++); 
+								if(!seg->send(client, smsg)){ //calls SerializeToFileDescriptor.
+								//i don't know what granularity this will be - have to test.
+									close(client); 
+									printf("sending message to client failed!\n"); 
+									client = 0; 
+								}
+							}
 						}
 					}
 				}
@@ -1299,6 +971,8 @@ void* sock_thread(void* destIP){
 		}
 	}
 	close_socket(g_rxsock);
+	if(client) close_socket(client); 
+	close_socket(g_spikesock); 
 	free(g_sendbuf); 
 	return 0; 
 }
@@ -1322,8 +996,8 @@ static void channelSpinCB( GtkWidget*, gpointer p){
 			g_channel[k] = ch; 
 			setChans(); 
 			//update the UI too. 
-			gtk_adjustment_set_value(g_gainSpin[k], g_gains[ch]);
-			gtk_adjustment_set_value(g_agcSpin[k], g_agcs[ch]); 
+			gtk_adjustment_set_value(g_gainSpin[k], g_c[ch]->m_gain);
+			gtk_adjustment_set_value(g_agcSpin[k], g_c[ch]->m_agc); 
 			gtk_adjustment_set_value(g_apertureSpin[k*2+0], g_c[ch]->getAperture(0));
 			gtk_adjustment_set_value(g_apertureSpin[k*2+1], g_c[ch]->getAperture(1));
 			gtk_adjustment_set_value(g_thresholdSpin[k], g_c[ch]->getThreshold()); 
@@ -1336,7 +1010,7 @@ static void gainSpinCB( GtkWidget*, gpointer p){
 	if(h >= 0 && h < 4){
 		float gain = gtk_adjustment_get_value(g_gainSpin[h]); 
 		printf("gainSpinCB: %f\n", gain); 
-		g_gains[g_channel[h]] = gain; 
+		g_c[g_channel[h]]->m_gain = gain; 
 		updateGain(g_channel[h]);
 		g_c[g_channel[h]]->resetPca(); 
 	} 
@@ -1344,7 +1018,7 @@ static void gainSpinCB( GtkWidget*, gpointer p){
 static void gainSetAll(gpointer ){
 	float gain = gtk_adjustment_get_value(g_gainSpin[0]); 
 	for(int i=0; i<128; i++){
-		g_gains[i] = gain;
+		g_c[i]->m_gain = gain;
 		updateGain(i);
 	}
 	for(int i=0; i<32; i++){
@@ -1385,7 +1059,7 @@ static void agcSpinCB( GtkWidget*, gpointer p){
 		printf("agcSpinCB: %f\n", agc); 
 		int j = g_channel[h]; 
 		if(j >= 0 && j < 128){
-			g_agcs[j] = agc; 
+			g_c[j]->m_agc = agc; 
 			setAGC(j,j,j,agc);
 		}
 		g_c[j]->resetPca(); 
@@ -1410,9 +1084,9 @@ static void apertureSpinCB( GtkWidget*, gpointer p){
 static void agcSetAll(gpointer ){
 	float agc = gtk_adjustment_get_value(g_agcSpin[0]); 
 	for(int i=0; i<128-2; i+=3){
-		g_agcs[i+0] = agc;
-		g_agcs[i+1] = agc;
-		g_agcs[i+2] = agc;
+		g_c[i+0]->m_agc = agc;
+		g_c[i+1]->m_agc = agc;
+		g_c[i+2]->m_agc = agc;
 		setAGC(i,i+1,i+2,agc);
 	}
 	for(int i=0; i<4; i++)
@@ -1589,15 +1263,8 @@ void saveMatrix(const char* fname, gsl_matrix* v){
 }
 
 static void calcPCACB(gpointer){
-	g_c[g_channel[0]]->computePca(); 
-	//lauch this on a seperate thread for speed. 
-	/*int* p = (int*)malloc(2*sizeof(int)); 
-	p[0] = MIN(NSAMP, g_wbufW[0]); 
-	p[1] = g_channel[0]; 
-	pthread_t thread1;
-	pthread_attr_t attr;
-	pthread_attr_init(&attr);
-	pthread_create( &thread1, &attr, computePCA, (void*)p ); */
+	for(int h=0; h<4; h++)
+		g_c[g_channel[h]]->computePca();
 }
 static void getTemplateCB( GtkWidget *, gpointer p){
 	int aB = (int)((long long)p & 0xf); 
@@ -1634,7 +1301,7 @@ int main(int argn, char **argc)
 		sqlite3_close(g_db);
 		exit(1);
 	}
-	sqlite3_exec(g_db, "BEGIN TRANSACTION;",0,0,0);
+	sqlite3_exec(g_db, "BEGIN TRANSACTION;",0,0,0); //this speeds things up!
 	//init the tables (if they are absent). 
 	sqliteCreateTableDouble("channel"); //present channel..
 	sqliteCreateTableDouble("gain"); 
@@ -1643,19 +1310,23 @@ int main(int argn, char **argc)
 	sqliteCreateTableDouble("centering"); 
 	sqliteCreateTableDouble2("aperture"); 
 	sqliteCreateTableBlob("template"); 
-	sqliteCreateTableBlob("pca"); 
+	sqliteCreateTableBlob("pca");
+	sqliteCreateTableBlob("pcaScl"); 
 	
 	for(int i=0; i<4; i++){
 		g_channel[i] = sqliteGetValue(i, "channel", i*32); 
 	}
 	//defaults, to be read in from sqlite.
 	for(int i=0; i<128; i++){
-		g_agcs[i] = sqliteGetValue(i, "agc", 6000.f); 
-		g_gains[i] = sqliteGetValue(i, "gain", 1.f); 
 		g_c[i] = new Channel(i); 
 	}
 	sqlite3_exec(g_db, "END TRANSACTION;",0,0,0);
 	g_dropped = 0; 
+	
+	// Verify that the version of the library that we linked against is
+	// compatible with the version of the headers we compiled against.
+	GOOGLE_PROTOBUF_VERIFY_VERSION;
+
 
 	gtk_init (&argn, &argc);
 	gtk_gl_init (&argn, &argc);
