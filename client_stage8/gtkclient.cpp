@@ -690,6 +690,7 @@ void* sock_thread(void* destIP){
 			if(client >= 0){
 				if(seg) delete seg; seg = 0; 
 				seg = new TCPSegmenter(client, 512); 
+				printf("got new client connection!\n"); 
 			}
 		}
 		if(n > 0 && !g_die){
