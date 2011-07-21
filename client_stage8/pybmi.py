@@ -473,6 +473,12 @@ def sock_thread(fr,die):
 	s.connect((HOST, PORT))
 	seg = TCPSegmenter()
 	pb = spikes_pb2.Spike_msg()
+	# convolve with a kernel? 
+	# have to keep around a list of timestamps. 
+	# the python data structure deque seems perfect for this.
+	spike_dq = [[collections.deque([])]*2]*128
+	most_recent = 0
+	last_update = 0
 	while (not die.value):
 		data = seg.nextSegment(s)
 		print 'Segmented', repr(data)
@@ -481,9 +487,35 @@ def sock_thread(fr,die):
 		print pb.ts, pb.chan, pb.unit
 		if pb.unit >= 0 & pb.unit < 2:
 			if pb.chan >= 0 & pb.chan < 128:
-				fr[pb.unit][pb.chan] += 1; 
-				if fr[pb.unit][pb.chan] > 100:
-					fr[pb.unit][pb.chan] -= 100
+				if pb.ts > most_recent:
+					most_recent = pb.ts
+				spike_dq[pb.chan][pb.unit].appendleft(pb.ts); 
+		#update at 100Hz?  (timestamps 10us)
+		if(most_recent - last_update)*1e5 > 0.01:
+			last_update = most_recent
+			a = 1e-3; # sets the width. explore in matlab!
+			integral = math.pi/(4*math.sqrt(a))
+			for chan in range(0,128):
+				for unit in range(0,2):
+					d = spike_dq[chan][unit]
+					fr = 0; 
+					for e in d:
+						x = (most_recent - e)/1e5
+						#convolve with the function x/(x^4+a)
+						#which integrates to pi/(4*sqrt(a))
+						y = x/(x^4+0.001)
+						y /= integral
+						fr += y
+					# remove the old spikes.
+					if len(d) > 0:
+						e = d.pop()
+						while len(d) > 0 & (most_recent - e) > 1e5:
+							e = d.pop()
+						if (most_recent - e) < 1e5:
+							d.append(e) #oops should not have removed.
+					#update firing rate.
+					fr[chan][unit] = fr; 
+						
 	s.close()
 
 if __name__ == '__main__':
