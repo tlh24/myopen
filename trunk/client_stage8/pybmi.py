@@ -12,6 +12,7 @@ import socket
 import spikes_pb2
 import sys
 import array
+import collections
 
 class Child:
     widget = None
@@ -264,9 +265,11 @@ wind = None
 pixmap = None
 surface = [None]*2
 # firing rates need to be shared between threads.
-firing_rates = [None]*2
-firing_rates[0] = Array('d', [0]*128)
-firing_rates[1] = Array('d', [0]*128)
+# python likes to initialize by reference -- must follow the format below.
+#firing_rates = [[Value('d',0.0) for unit in range(0,2)] for chan in range(128)]
+firing_rates = [None, None]
+firing_rates[0] = Array('d', [0.0]*128)
+firing_rates[1] = Array('d', [0.0]*128)
 selected = (0,0)
 
 def configure_event(widget, event):
@@ -476,15 +479,16 @@ def sock_thread(fr,die):
 	# convolve with a kernel? 
 	# have to keep around a list of timestamps. 
 	# the python data structure deque seems perfect for this.
-	spike_dq = [[collections.deque([])]*2]*128
+	spike_dq = [[collections.deque() for unit in range(0,2)] for chan in range(128)]
+
 	most_recent = 0
 	last_update = 0
 	while (not die.value):
 		data = seg.nextSegment(s)
-		print 'Segmented', repr(data)
+		# print 'Segmented', repr(data)
 		# convert this to a protocol buffer object.
 		pb.ParseFromString(data) # so easy! uau!
-		print pb.ts, pb.chan, pb.unit
+		#print pb.ts, pb.chan, pb.unit
 		if pb.unit >= 0 & pb.unit < 2:
 			if pb.chan >= 0 & pb.chan < 128:
 				if pb.ts > most_recent:
@@ -498,14 +502,14 @@ def sock_thread(fr,die):
 			for chan in range(0,128):
 				for unit in range(0,2):
 					d = spike_dq[chan][unit]
-					fr = 0; 
+					f = 0; 
 					for e in d:
 						x = (most_recent - e)/1e5
 						#convolve with the function x/(x^4+a)
 						#which integrates to pi/(4*sqrt(a))
-						y = x/(x^4+0.001)
+						y = x/(math.pow(x,4)+0.001)
 						y /= integral
-						fr += y
+						f += y
 					# remove the old spikes.
 					if len(d) > 0:
 						e = d.pop()
@@ -514,7 +518,7 @@ def sock_thread(fr,die):
 						if (most_recent - e) < 1e5:
 							d.append(e) #oops should not have removed.
 					#update firing rate.
-					fr[chan][unit] = fr; 
+					fr[unit][chan] = f; 
 						
 	s.close()
 
