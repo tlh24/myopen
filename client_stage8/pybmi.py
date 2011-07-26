@@ -13,6 +13,8 @@ import spikes_pb2
 import sys
 import array
 import collections
+import time
+from tcpsegmenter import *
 
 class Child:
     widget = None
@@ -386,7 +388,7 @@ def motion_notify_event(widget, event):
 
 
 def main():
-	global firing_rates
+	global firing_rates,targV,cursV,juiceV,touchV
 	window = gtk.Window()
 	window.set_size_request(300, 300)
 	window.connect('delete-event', gtk.main_quit)
@@ -429,98 +431,120 @@ def main():
 	
 	gobject.timeout_add(100, update_display)
 	
-	#start another thread.
+	#start sock_thread.
 	g_die = Value('b',False)
 	p = Process(target = sock_thread, args=(firing_rates, g_die))
 	p.start()
+	
+	#start server_thread
+	targV = Array('d',[0.0]*2)
+	cursV = Array('d',[0.0]*2)
+	juiceV = Value('b',False)
+	touchV = Value('b',False)
+	p2 = Process(target=server_thread,args=(g_die,targV,cursV,juiceV,touchV))
+	p2.start()
 
 	window.show_all()
 	gtk.main()
 	g_die.value = True
 	p.join()
-
-class TCPSegmenter:
-	def __init__(self):
-		self.data = ""
-		self.length = 0
-	def nextSegment(self,s):
-		def toshort(ss):
-			ar = array.array('H'); 
-			ar.fromstring(ss[0:2])
-			return ar[0]
-		#returns a string representation of a data segment.
-		#print "length", self.length, "data", self.data, len(self.data)
-		while ((self.length == 0) | (self.length > len(self.data))):
-			d = s.recv(4096)
-			#print 'Received', repr(d), len(d)
-			if self.length == 0:
-				self.length = toshort(d)
-				#print '1 got segment length', self.length
-				d = d[2:]
-			self.data = "".join([self.data,d])
-			#print "data length", len(self.data)
-		out = self.data[0:self.length]
-		self.data = self.data[self.length:]
-		if len(self.data) > 1:
-			self.length = toshort(self.data)
-			self.data = self.data[2:]
-			#print '2 got segment length', self.length
-		else: 
-			self.length = 0
-		return out
+	p2.join()
 
 def sock_thread(fr,die):
-	HOST = 'localhost'    # The remote host
-	PORT = 4343              # The same port as used by the server
-	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	s.connect((HOST, PORT))
 	seg = TCPSegmenter()
 	pb = spikes_pb2.Spike_msg()
 	# convolve with a kernel? 
 	# have to keep around a list of timestamps. 
 	# the python data structure deque seems perfect for this.
 	spike_dq = [[collections.deque() for unit in range(0,2)] for chan in range(128)]
-
+	s = sock_connect('localhost',4343,die)
 	most_recent = 0
 	last_update = 0
 	while (not die.value):
 		data = seg.nextSegment(s)
-		# print 'Segmented', repr(data)
-		# convert this to a protocol buffer object.
-		pb.ParseFromString(data) # so easy! uau!
-		#print pb.ts, pb.chan, pb.unit
-		if pb.unit >= 0 & pb.unit < 2:
-			if pb.chan >= 0 & pb.chan < 128:
-				if pb.ts > most_recent:
-					most_recent = pb.ts
-				spike_dq[pb.chan][pb.unit].appendleft(pb.ts); 
-		#update at 100Hz?  (timestamps 10us)
-		if(most_recent - last_update)*1e5 > 0.01:
-			last_update = most_recent
-			a = 1e-3; # sets the width. explore in matlab!
-			integral = math.pi/(4*math.sqrt(a))
-			for chan in range(0,128):
-				for unit in range(0,2):
-					d = spike_dq[chan][unit]
-					f = 0; 
-					for e in d:
-						x = (most_recent - e)/1e5
-						#convolve with the function x/(x^4+a)
-						#which integrates to pi/(4*sqrt(a))
-						y = x/(math.pow(x,4)+0.001)
-						y /= integral
-						f += y
-					# remove the old spikes.
-					if len(d) > 0:
-						e = d.pop()
-						while len(d) > 0 & (most_recent - e) > 1e5:
+		if data:
+			# print 'Segmented', repr(data)
+			# convert this to a protocol buffer object.
+			pb.ParseFromString(data) # so easy! uau!
+			#print pb.ts, pb.chan, pb.unit
+			if pb.unit >= 0 & pb.unit < 2:
+				if pb.chan >= 0 & pb.chan < 128:
+					if pb.ts > most_recent:
+						most_recent = pb.ts
+					spike_dq[pb.chan][pb.unit].appendleft(pb.ts); 
+			#update at 100Hz?  (timestamps 10us)
+			if(most_recent - last_update)*1e5 > 0.01:
+				last_update = most_recent
+				a = 1e-3; # sets the width. explore in matlab!
+				integral = math.pi/(4*math.sqrt(a))
+				for chan in range(0,128):
+					for unit in range(0,2):
+						d = spike_dq[chan][unit]
+						f = 0; 
+						for e in d:
+							x = (most_recent - e)/1e5
+							#convolve with the function x/(x^4+a)
+							#which integrates to pi/(4*sqrt(a))
+							y = x/(math.pow(x,4)+0.001)
+							y /= integral
+							f += y
+						# remove the old spikes.
+						if len(d) > 0:
 							e = d.pop()
-						if (most_recent - e) < 1e5:
-							d.append(e) #oops should not have removed.
-					#update firing rate.
-					fr[unit][chan] = f; 
-						
+							while len(d) > 0 & (most_recent - e) > 1e5:
+								e = d.pop()
+							if (most_recent - e) < 1e5:
+								d.append(e) #oops should not have removed.
+						#update firing rate.
+						fr[unit][chan] = f; 
+		else:
+			s.close()
+			most_recent = 0
+			last_update = 0
+			s = sock_connect('localhost',4343,die)
 	s.close()
+	
+def server_thread(die,targV,cursV,juiceV,touchV):
+	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	s.bind(('localhost',4344))
+	s.listen(1)
+	s.settimeout(0.1)
+	while (not die.value):
+		try:
+			conn,addr = s.accept()
+		except:
+			conn = None
+		if conn:
+			sopen = True
+			conn.settimeout(0.1)
+			print "connected to by ", addr
+			seg = TCPSegmenter()
+			while (not die.value) & sopen:
+				#first write out commands (if any)
+				pb = spikes_pb2.Display_msg()
+				targV[0] = random.random()
+				targV[1] = random.random()
+				cursV[0] = random.random()
+				cursV[1] = random.random()
+				juiceV.value = False
+				map((lambda x: pb.cursor.append(x)),cursV)
+				map((lambda x: pb.target.append(x)),targV)
+				pb.juicer = juiceV.value
+				if seg.writeSegment(conn, pb.SerializeToString()) == 0:
+					sopen = False
+				else:
+					# get some feedback. 
+					pb = spikes_pb2.Display_msg()
+					data = seg.nextSegment(conn)
+					if data:
+						pb.ParseFromString(data)
+						if pb.HasFeild('touch'):
+							touchV.value = pb.touch
+						if pb.HasFeild('cursor'):
+							cursV[0] = pb.cursor[0]
+							cursV[1] = pb.cursor[1]
+			print "display connection closed"
+			close(conn)
 
 if __name__ == '__main__':
     main()

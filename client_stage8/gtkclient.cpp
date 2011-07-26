@@ -666,7 +666,7 @@ void* sock_thread(void* destIP){
 	g_rxsock = setup_socket(4340,0); //udp sock. 
 	g_txsock = connect_socket(4342,(char*)destIP,0); 
 	if(!g_txsock) printf("failed to connect to bridge.\n"); 
-	g_spikesock = setup_socket(4343,1); //tcp socket
+	g_spikesock = setup_socket(4343,1); //tcp socket, server.
 	//default txsockAddr
 	get_sockaddr(4342, (char*)destIP, &g_txsockAddr); 
 	char buf[1024];
@@ -977,7 +977,8 @@ void* sock_thread(void* destIP){
 	}
 	close_socket(g_rxsock);
 	if(client) close_socket(client); 
-	close_socket(g_spikesock); 
+	close_socket(client); 
+	close_socket(g_spikesock);
 	free(g_sendbuf); 
 	return 0; 
 }

@@ -6,3 +6,10 @@ message Spike_msg{
     optional	bytes	w = 6; //optional waveform
     optional	uint32	seq = 7;    //optional sequence number
 }
+message Display_msg{
+	repeated 	double	cursor = 1; //bidi!
+	repeated 	double	target = 2; //bmi to display.
+	optional		bool		touch = 3; 	//display to bmi. 
+	optional 	bool		juicer = 4; //bmi to display.
+	optional 	bool		manual = 5; //bmi to display
+}
