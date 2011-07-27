@@ -119,7 +119,7 @@ check_again:
 	r0 = [p0]; 
 	bitset(r0, 5); //check this
 	[p0] = r0; 
-	//the timer is setup in main.
+	//the timer is setup and started in main.
 	
 	//need a sequence to enable interrupts? 
 	// IMASK : page 173 in the programming ref., (not hardware ref!)
@@ -195,11 +195,11 @@ _isr_mstimer:
 	[--sp] = (r7:7,p5:5);
 	p5.l = LO(TIMER_STATUS);
 	p5.h = HI(TIMER_STATUS); 
-	r7.l = LO(TIMIL5); 
+	r7.l = LO(TIMIL5); //clear timer 5 status. 
 	r7.h = HI(TIMIL5); 
 	[p5] = r7; 
-	p5.l = LO(GTIME); 
-	p5.h = HI(GTIME); 
+	p5.l = LO(GTIME);
+	p5.h = HI(GTIME);
 	r7 = [p5]; 
 	r7 += 1; 
 	[p5] = r7; 

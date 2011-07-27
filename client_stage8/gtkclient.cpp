@@ -91,7 +91,8 @@ FILE* g_saveFile = 0;
 bool g_closeSaveFile = false; 
 unsigned int g_saveFileBytes;
 
-double g_startTime = 0.0; 
+double g_startTime = 0.0;
+double g_timeOffset = 0.0; //offset between local time and bridge time.
 
 int g_totalPackets = 0; 
 unsigned int g_dropped; //compare against the bridge.
@@ -669,7 +670,7 @@ void* sock_thread(void* destIP){
 	g_spikesock = setup_socket(4343,1); //tcp socket, server.
 	//default txsockAddr
 	get_sockaddr(4342, (char*)destIP, &g_txsockAddr); 
-	char buf[1024];
+	char buf[1024+128+4];
 	int send_delay = 0; 
 	g_totalPackets = 0; 
 	sockaddr_in from; 
@@ -680,6 +681,7 @@ void* sock_thread(void* destIP){
 		socklen_t fromlen = sizeof(from); 
 		int n = recvfrom(g_rxsock, buf, sizeof(buf),0, 
 						 (sockaddr*)&from, &fromlen); 
+		double rxtime = gettime(); 
 		if(fromlen > 0 && n > 0){
 			g_txsockAddr.sin_addr = from.sin_addr; 
 			//keep the dest port (4342); don't copy that.
@@ -694,9 +696,8 @@ void* sock_thread(void* destIP){
 			}
 		}
 		if(n > 0 && !g_die){
-			double rxtime = gettime(); 
-			unsigned int trptr = *((unsigned int*)buf);
-			if(g_out) printf("%d\n", trptr); 
+			unsigned int dropped = *((unsigned int*)buf);
+			if(g_out) printf("%d\n", dropped); 
 			
 			if(g_closeSaveFile && g_saveFile){
 				fclose(g_saveFile); 
@@ -709,7 +710,7 @@ void* sock_thread(void* destIP){
 				//will have to convert them with another prog later.
 				unsigned int tmp = 0xdecafbad; 
 				fwrite((void*)&tmp, 4, 1, g_saveFile);
-				tmp = 498; //SVN version.
+				tmp = 543; //SVN version.
 				tmp <<= 16; 
 				tmp += n; //size of the ensuing packet data. 
 				fwrite((void*)&tmp, 4, 1, g_saveFile);
@@ -746,7 +747,7 @@ void* sock_thread(void* destIP){
 			ptr += 4; 
 			n -= 4; 
 			packet* p = (packet*)ptr;
-			int npack = n / 32; 
+			int npack = n / sizeof(packet); 
 			g_totalPackets += npack; 
 			
 			int channels[32]; char match[32]; 
@@ -755,7 +756,35 @@ void* sock_thread(void* destIP){
 				//see if it matched a template.
 				float z = 0; 
 				//g_headecho = ((p->flag) >> 4) & 0xf ; 
-				double time = rxtime - ((double)(npack-i)-0.5) * 0.000192;
+/*
+ synchronization math: 
+ each packet has 6 samples (24 bytes) + 8 bytes template match. 
+ each d.headstage ADC runs at 1msps, so over 32 channels we have 31.25ksps.
+ each packet hence takes 0.000192 seconds, or packets at 5.208khz.  
+ in turn, each packet contains 32 channels of template match (a and b)
+ 	so all 128 channels are cycled through in 4 clocks, 
+ 	or every one updated at 1.302kHz.  Hence the ms timer is slightly undersampling it.
+ one frame consists of 16 packets, so we get a new frame at 325.52Hz.
+ there is likely variable latency in the ethernet switch
+ so we really should timestamp the packets on the bridge ... done!
+ 
+ Now, we need some accurate way of converting bridge time, in ms, to wall clock time. 
+ we know the instant that we get a packet on the line, wall time
+ and we know bridge timestamps of each of those packets, especially the last.
+ since there is no clear way of measuring latency, assume that the last packet's
+ time is synchronous with the wall clock at rx time -> can build up an offset.
+ if the offset is within a few seconds, update by smoothing.
+ if it is off by a lot, just replace.
+*/
+				if(i == npack-1){ //update the offset.
+					double off = rxtime - ((double)p->ms / 1000.0); 
+					if(abs(off - g_timeOffset) > 2.0) g_timeOffset = off; 
+					g_timeOffset *= 0.995; 
+					g_timeOffset += 0.005*off; 
+					printf("offset time: %f of %f\n", g_timeOffset, 
+							 ((double)p->ms / 1000.0)); 
+				}
+				double time = ((double)p->ms / 1000.0) + g_timeOffset;
 				decodePacket(p, channels, match); 
 				for(int j=0; j<32; j++){
 					int adr = channels[j]; 
@@ -801,7 +830,7 @@ void* sock_thread(void* destIP){
 					}
 					g_fbufW++; 
 				}
-				p++;
+				p++; //next packet!
 				if(g_mode == MODE_SORT){
 					//threshold and extract templates. 
 					//just like plexon :-)
