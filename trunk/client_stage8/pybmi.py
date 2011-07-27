@@ -465,12 +465,13 @@ def sock_thread(fr,die):
 		if data:
 			# print 'Segmented', repr(data)
 			# convert this to a protocol buffer object.
-			pb.ParseFromString(data) # so easy! uau!
-			#print pb.ts, pb.chan, pb.unit
+			# gtk client will also send a stream of timestamps -- ala MIDI
+			# which we can use for synchronization.
+			pb.ParseFromString(data)
+			if pb.ts > most_recent:
+				most_recent = pb.ts
 			if pb.unit >= 0 & pb.unit < 2:
 				if pb.chan >= 0 & pb.chan < 128:
-					if pb.ts > most_recent:
-						most_recent = pb.ts
 					spike_dq[pb.chan][pb.unit].appendleft(pb.ts); 
 			#update at 100Hz?  (timestamps 10us)
 			if(most_recent - last_update)*1e5 > 0.01:
@@ -506,6 +507,8 @@ def sock_thread(fr,die):
 	
 def server_thread(die,targV,cursV,juiceV,touchV):
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	# turn on socket re-use (in the case of rapid restarts)
+	s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1); 
 	s.bind(('localhost',4344))
 	s.listen(1)
 	s.settimeout(0.1)
@@ -530,21 +533,23 @@ def server_thread(die,targV,cursV,juiceV,touchV):
 				map((lambda x: pb.cursor.append(x)),cursV)
 				map((lambda x: pb.target.append(x)),targV)
 				pb.juicer = juiceV.value
-				if seg.writeSegment(conn, pb.SerializeToString()) == 0:
-					sopen = False
-				else:
+				try:
+					seg.writeSegment(conn, pb.SerializeToString())
+				except:
+						sopen = False
+				if sopen:
 					# get some feedback. 
 					pb = spikes_pb2.Display_msg()
 					data = seg.nextSegment(conn)
 					if data:
 						pb.ParseFromString(data)
-						if pb.HasFeild('touch'):
+						if pb.HasField('touch'):
 							touchV.value = pb.touch
-						if pb.HasFeild('cursor'):
-							cursV[0] = pb.cursor[0]
-							cursV[1] = pb.cursor[1]
+						if len(pb.cursor) > 0:
+							cursV = []
+							map((lambda x: cursV.append(x)),pb.cursor) 
 			print "display connection closed"
-			close(conn)
+			conn.close()
 
 if __name__ == '__main__':
     main()

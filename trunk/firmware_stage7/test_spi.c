@@ -152,7 +152,7 @@ void write_flash(int len, u8* data){
 	}
 }
 //global pointers.
-#define UDP_PACKET_SIZE 512
+#define UDP_PACKET_SIZE (512 + 16*4) //frame + 32 bits ms timestamp per packet.
 #define M_NORMAL	1
 #define	M_SLOW	2
 #define M_FAST	4
@@ -166,7 +166,7 @@ u32 g_sampOff; //offset for interpolation.
 u8  g_sampCh; 
 u8	g_sampMode; 
 void getRadioPacket(u16 csn, u16 irq, u8 write){
-	// write is to enable 'null' reads of the fifo.
+	// if !write, read the fifo but don't save the incoming data.
 	// (clearing the fifo will not work)
 	char gotx = 0; //read: 'go tx' not 'got x'
 	char result; 
@@ -179,6 +179,10 @@ void getRadioPacket(u16 csn, u16 irq, u8 write){
 	asm volatile("ssync;"); 
 	*pSPI_TDBR = 0x61; //command for reading the fifo
 	spi_delay(); //wait for this to finish. 
+	if(write){
+		*((u32*)(wrptr)) = *pGTIME; //milisecond hardware timer.
+		wrptr += 4; 
+	}
 	u8* ptr = (u8*)(wrptr); 
 	for(i=0; i<32; i++){
 		*pSPI_TDBR = 0;
@@ -205,10 +209,10 @@ void getRadioPacket(u16 csn, u16 irq, u8 write){
 	//need to check if the headstage wants a response.
 	//have to check encoding.
 	if(write){
-		unsigned int* c = (unsigned int*)(wrptr); 
+		unsigned int* c = (unsigned int*)(wrptr);//points to the start of the radio packet.
 		wrptr += 32; 
 		wrptr &= 0xfff; 
-		c += 24/4; //offset to template match bytes (8, 2 uints) 
+		c += 24/4; //offset to template match bytes (8 bytes, 2 uints) 
 		unsigned int flag = *c; 
 		flag = ((flag >> 7) & 1) | ((flag >> 14) & 2)
 				| ((flag >> 21) & 4) | ((flag >> 28) & 8); 
@@ -384,8 +388,8 @@ int main(void){
 	asm volatile("ssync"); 
 	*pGTIME = 0; 
 	*pTIMER5_CONFIG = IRQ_ENA | PERIOD_CNT | OUT_DIS | PWM_OUT; 
-	*pTIMER5_PERIOD = 125000; 
-	*pTIMER5_WIDTH = 62500; 
+	*pTIMER5_PERIOD = 240000; //SCLK @ 120Mhz
+	*pTIMER5_WIDTH =  120000; 
 	*pTIMER_ENABLE |= 0x20; //enable the timer.
 	
 	//startup the ethernet..
@@ -515,7 +519,7 @@ int main(void){
 			write = 1; //no-change fall-through: only write one RXed packet.
 		
 		*FIO_SET = NRF_CSN0 | NRF_CSN1 | NRF_CSN2;
-		secs = (*pGTIME)/1000; // 0xff800800
+		secs = (*pGTIME)/500; // 0xff800800
 		if(secs != prevtime){
 			*pPORTFIO_TOGGLE = 0x8000; 
 			//printf_int("time ", secs); //heartbeat.

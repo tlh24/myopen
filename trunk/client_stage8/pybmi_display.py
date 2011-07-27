@@ -77,7 +77,7 @@ class Shape:
 		glPopMatrix()
 
 def display(*args):
-	global target,cursor,du3,manual,touch,juice,sock,seg
+	global target,cursor,du3,manual,touch,juice,sock,seg,die
 	pb = spikes_pb2.Display_msg()
 	data = seg.nextSegment(sock)
 	if data:
@@ -101,11 +101,15 @@ def display(*args):
 	glClear(GL_COLOR_BUFFER_BIT)
 	target.draw()
 	cursor.draw()
-	# make a response. 
-	pb = spikes_pb2.Display_msg() # new message.
-	pb.cursor = cursV
-	pb.touch = touchV.value
-	seg.writeSegment(sock,pb.ToString())
+	if data:
+		# make a response. 
+		pb = spikes_pb2.Display_msg() # new message.
+		map((lambda x: pb.cursor.append(x)),cursor.get_loc())
+		pb.touch = touch
+		seg.writeSegment(sock,pb.SerializeToString())
+	else:
+		# try reconnecting. 
+		sock = sock_connect('localhost',4344,die)
 	#display
 	glFlush()
 	glutSwapBuffers()
@@ -114,6 +118,11 @@ def halt():
 	pass
 
 def keyboard(*args):
+	global die
+	die.value = True
+	sys.exit()
+	
+def winclose():
 	global die
 	die.value = True
 	sys.exit()
@@ -146,7 +155,7 @@ def reshape(w, h):
 	setup_viewport(w,h)
 
 def main():
-	global target,cursor,du3,manual,sock,seg
+	global target,cursor,du3,manual,sock,seg,die
 	glutInit(sys.argv)
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_ALPHA)
 	glutInitWindowSize(300, 300)
@@ -157,6 +166,7 @@ def main():
 	glutIdleFunc(display)
 	glutMouseFunc(mouse)
 	glutKeyboardFunc(keyboard)
+	glutCloseFunc(winclose)
 	#setup the vertex buffers.
 	target = Shape(1.0,1.0,1.0,0.7)
 	target.make_ring(0.3, 0.5, 25)
@@ -166,22 +176,12 @@ def main():
 	du3 = u3.U3()
 	du3.configIO(FIOAnalog=255,EIOAnalog=255); 
 	manual = True
-	#connect to the BMI server. 
-	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	discon = True
-	print "waiting..."
-	while(discon):
-		try:
-			sock.connect(('localhost', 4344))
-		except socket.error, msg:
-			print msg
-			time.sleep(1.0)
-			continue
-		discon = False
-	print "conneted."
-	sock.settimeout(0.1)
+	#connect to the BMI server.
+	die = Value('b',False)
+	sock = sock_connect('localhost',4344,die)
 	seg = TCPSegmenter()
 	glutMainLoop()
+	die = True
 
 main()
 
