@@ -311,6 +311,30 @@ def configure_event(widget, event):
 	return True
 	
 def update_display():
+	# get data from gtkclient.
+	global frsock, g_die
+	n = frsock.send('hello')
+	if(n==5):
+		# wait for response. 
+		data = ""
+		passes = 0
+		while((len(data) < 129*8) & (passes < 5)):
+			data = "".join([data,frsock.recv(4096)])
+			passes = passes + 1
+		if len(data) >= 129*8:
+			ar = array.array('d',[0.0]*(129*2));
+			ar.fromstring(data);
+			if((ar[0]!= 2.0) | (ar[1] != 128.0)):
+				print "wrong data size fr rx!"
+			# need to transpose..
+			for r in range(0,128):
+				firing_rates[0][r] = ar[r*2+0]
+				firing_rates[1][r] = ar[r*2+1]
+	else:
+		frsock.close()
+		most_recent = 0
+		last_update = 0
+		s = sock_connect('localhost',4343,g_die) # this will block.. oops.
 	wind.invalidate_rect(gtk.gdk.Rectangle(0,0,16*32,16*32), False)
 	return True
 
@@ -388,7 +412,7 @@ def motion_notify_event(widget, event):
 
 
 def main():
-	global firing_rates,targV,cursV,juiceV,touchV
+	global firing_rates,frsock,targV,cursV,juiceV,touchV
 	window = gtk.Window()
 	window.set_size_request(300, 300)
 	window.connect('delete-event', gtk.main_quit)
@@ -429,13 +453,11 @@ def main():
 	vbox.pack_start(b, True, True)
 	vpaned.add1(vbox); 
 	
-	gobject.timeout_add(100, update_display)
 	
 	#start sock_thread.
 	g_die = Value('b',False)
-	p = Process(target = sock_thread, args=(firing_rates, g_die))
-	p.start()
-	
+	frsock = sock_connect('localhost',4343,g_die)
+
 	#start server_thread
 	targV = Array('d',[0.0]*2)
 	cursV = Array('d',[0.0]*2)
@@ -443,67 +465,14 @@ def main():
 	touchV = Value('b',False)
 	p2 = Process(target=server_thread,args=(g_die,targV,cursV,juiceV,touchV))
 	p2.start()
+	
+	gobject.timeout_add(100, update_display)
 
 	window.show_all()
 	gtk.main()
 	g_die.value = True
 	p.join()
 	p2.join()
-
-def sock_thread(fr,die):
-	seg = TCPSegmenter()
-	pb = spikes_pb2.Spike_msg()
-	# convolve with a kernel? 
-	# have to keep around a list of timestamps. 
-	# the python data structure deque seems perfect for this.
-	spike_dq = [[collections.deque() for unit in range(0,2)] for chan in range(128)]
-	s = sock_connect('localhost',4343,die)
-	most_recent = 0
-	last_update = 0
-	while (not die.value):
-		data = seg.nextSegment(s)
-		if data:
-			# print 'Segmented', repr(data)
-			# convert this to a protocol buffer object.
-			# gtk client will also send a stream of timestamps -- ala MIDI
-			# which we can use for synchronization.
-			pb.ParseFromString(data)
-			if pb.ts > most_recent:
-				most_recent = pb.ts
-			if pb.unit >= 0 & pb.unit < 2:
-				if pb.chan >= 0 & pb.chan < 128:
-					spike_dq[pb.chan][pb.unit].appendleft(pb.ts); 
-			#update at 100Hz?  (timestamps 10us)
-			if(most_recent - last_update)*1e5 > 0.01:
-				last_update = most_recent
-				a = 1e-3; # sets the width. explore in matlab!
-				integral = math.pi/(4*math.sqrt(a))
-				for chan in range(0,128):
-					for unit in range(0,2):
-						d = spike_dq[chan][unit]
-						f = 0; 
-						for e in d:
-							x = (most_recent - e)/1e5
-							#convolve with the function x/(x^4+a)
-							#which integrates to pi/(4*sqrt(a))
-							y = x/(math.pow(x,4)+0.001)
-							y /= integral
-							f += y
-						# remove the old spikes.
-						if len(d) > 0:
-							e = d.pop()
-							while len(d) > 0 & (most_recent - e) > 1e5:
-								e = d.pop()
-							if (most_recent - e) < 1e5:
-								d.append(e) #oops should not have removed.
-						#update firing rate.
-						fr[unit][chan] = f; 
-		else:
-			s.close()
-			most_recent = 0
-			last_update = 0
-			s = sock_connect('localhost',4343,die)
-	s.close()
 	
 def server_thread(die,targV,cursV,juiceV,touchV):
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
