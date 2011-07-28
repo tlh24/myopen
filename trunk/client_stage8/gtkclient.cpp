@@ -45,6 +45,7 @@
 #include <gsl/gsl_linalg.h>
 #include "spikes.pb.h"
 #include "tcpsegmenter.h"
+#include "firingrate.h"
 
 
 //CG stuff. for the vertex shaders.
@@ -66,7 +67,8 @@ unsigned int 	g_nsamp = 4096; //given the current level of zoom (1 = 4096 sample
 static float 	g_sbuf[2][128*512*2]; //spike buffers.
 i64	g_sbufW[2]; 
 i64	g_sbufR[2]; 
-Channel*		g_c[128]; 
+Channel*		g_c[128];
+FiringRate	g_fr[128][2]; 
 GLuint 			base;            // base display list for the font set.
 
 bool g_die = false; 
@@ -667,16 +669,12 @@ void* sock_thread(void* destIP){
 	g_rxsock = setup_socket(4340,0); //udp sock. 
 	g_txsock = connect_socket(4342,(char*)destIP,0); 
 	if(!g_txsock) printf("failed to connect to bridge.\n"); 
-	g_spikesock = setup_socket(4343,1); //tcp socket, server.
 	//default txsockAddr
 	get_sockaddr(4342, (char*)destIP, &g_txsockAddr); 
 	char buf[1024+128+4];
 	int send_delay = 0; 
 	g_totalPackets = 0; 
 	sockaddr_in from; 
-	int	client = 0; 
-	TCPSegmenter * seg = 0; 
-	int seq = 0; 
 	while(g_die == 0){
 		socklen_t fromlen = sizeof(from); 
 		int n = recvfrom(g_rxsock, buf, sizeof(buf),0, 
@@ -685,15 +683,6 @@ void* sock_thread(void* destIP){
 		if(fromlen > 0 && n > 0){
 			g_txsockAddr.sin_addr = from.sin_addr; 
 			//keep the dest port (4342); don't copy that.
-		}
-		//check to see if a client is connected.
-		if(client <= 0){
-			client = accept_socket(g_spikesock); 
-			if(client >= 0){
-				if(seg) delete seg; seg = 0; 
-				seg = new TCPSegmenter(client, 512); 
-				printf("got new client connection!\n"); 
-			}
 		}
 		if(n > 0 && !g_die){
 			unsigned int dropped = *((unsigned int*)buf);
@@ -778,9 +767,16 @@ void* sock_thread(void* destIP){
 */
 				if(i == npack-1){ //update the offset.
 					double off = rxtime - ((double)p->ms / 1000.0); 
-					if(abs(off - g_timeOffset) > 2.0) g_timeOffset = off; 
-					g_timeOffset *= 0.995; 
-					g_timeOffset += 0.005*off; 
+					if(abs(off - g_timeOffset) > 1.0) g_timeOffset = off; 
+					//not sure what the correct level of smoothing is: 
+					//we want to reject noise, but we don't want to lag behind the 
+					//changing clock skew by too much. 
+					//actually, now that i think about it, provided clock skew is
+					//consistent the lag should be consistent so this will come out as
+					//another (slight) lag.
+					//perhaps we should also do outlier rejection? 
+					g_timeOffset *= 0.996; 
+					g_timeOffset += 0.004*off; 
 					printf("offset time: %f of %f\n", g_timeOffset, 
 							 ((double)p->ms / 1000.0)); 
 				}
@@ -797,22 +793,7 @@ void* sock_thread(void* destIP){
 							g_sbuf[t][w*2+0] = (float)time; 
 							g_sbuf[t][w*2+1] = (float)adr; 
 							g_sbufW[t] ++; 
-							if(client > 0){
-								//send client the data. 
-								//timestamps are at a resolution of 10us. 
-								smsg.Clear(); 
-								smsg.set_ts((long long)(time*1e5)); 
-								smsg.set_chan(adr); 
-								smsg.set_unit(t); 
-								smsg.set_seq(seq++); 
-								if(seg->send(client, smsg)<0){ //calls SerializeToFileDescriptor.
-								//i don't know what granularity this will be - have to test.
-									close(client); 
-									printf("sending message to client failed!\n"); 
-									client = 0; 
-									if(seg) delete seg; seg = 0; 
-								}
-							}
+							g_fr[adr][t].add(time); 
 						}
 					}
 				}
@@ -964,7 +945,6 @@ void* sock_thread(void* destIP){
 					}
 				}
 			}
-				
 		}
 		//see if they want us to send something? 
 		// (this occurs after RX of a packet, so we should not overflow the 
@@ -1005,10 +985,52 @@ void* sock_thread(void* destIP){
 		}
 	}
 	close_socket(g_rxsock);
-	if(client) close_socket(client); 
-	close_socket(client); 
-	close_socket(g_spikesock);
 	free(g_sendbuf); 
+	return 0; 
+}
+void* server_thread(void* ){
+	//kinda like a RPC service -- call to get the vector of firing rates.
+	// call whenever you want!
+	double rates[128+1][2]; //first two are the size of the array.
+	unsigned char buf[128]; 
+	int client = 0; 
+	g_spikesock = setup_socket(4343,1); //tcp socket, server.
+	//check to see if a client is connected.
+	while(g_die == 0){
+		if(client <= 0){
+			client = accept_socket(g_spikesock); 
+			if(client >= 0){
+				printf("got new client connection!\n"); 
+			}
+		}
+		if(client > 0){
+			//see if they have requested something. 
+			double reqtime = gettime(); 
+			int n = recv(client, buf, sizeof(buf), 0);
+			if(n > 0){
+				//doesn't matter at this point -- make a response. 
+				rates[0][0] = 2; //rows
+				rates[0][1] = 128; //columns. 
+				for(int i=0; i<128; i++){
+					for(int j=0; j<2; j++){
+						rates[i+1][j] = g_fr[i][j].get_rate(reqtime); 
+					}
+				}
+				n = send(client,(void*)rates, sizeof(rates), 0); 
+				if(n != sizeof(rates)){
+					close(client); 
+					printf("sending message to client failed!\n"); 
+					client = 0; 
+				}
+			}else{
+				sleep(1);
+			}
+		}else{
+			sleep(1);
+		}
+	}
+	if(client) close_socket(client); 
+	close_socket(g_spikesock);
 	return 0; 
 }
 static gboolean chanscan(gpointer){
@@ -1636,7 +1658,8 @@ int main(int argn, char **argc)
 	pthread_attr_t attr;
 	pthread_attr_init(&attr);
 	g_startTime = gettime(); 
-	pthread_create( &thread1, &attr, sock_thread, (void*)destIP ); 
+	pthread_create( &thread1, &attr, sock_thread, (void*)destIP );
+	pthread_create( &thread1, &attr, server_thread, 0 ); 
 
 	while(g_sendbuf == 0){
 		usleep(10000); //wait for the other thread to come up. 

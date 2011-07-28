@@ -388,8 +388,9 @@ int main(void){
 	asm volatile("ssync"); 
 	*pGTIME = 0; 
 	*pTIMER5_CONFIG = IRQ_ENA | PERIOD_CNT | OUT_DIS | PWM_OUT; 
-	*pTIMER5_PERIOD = 240000; //SCLK @ 120Mhz
-	*pTIMER5_WIDTH =  120000; 
+	*pTIMER5_PERIOD = 240000+10; //SCLK @ 120Mhz
+	*pTIMER5_WIDTH =  120000+10; //+ to compensate for the xtal precision. 
+	//this depends on the board, of course! 
 	*pTIMER_ENABLE |= 0x20; //enable the timer.
 	
 	//startup the ethernet..
