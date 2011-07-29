@@ -44,225 +44,6 @@ def new_adj():
     return gtk.Adjustment(0.0, 0.0, 0.0,
                           0.0, 0.0, 0.0)
 
-class Layout(gtk.Container):
-    __gsignals__ = dict(set_scroll_adjustments=
-                        (gobject.SIGNAL_RUN_LAST, None,
-                         (gtk.Adjustment, gtk.Adjustment)))
-    def __init__(self):
-        self._children = []
-        self._width = 100
-        self._height = 100
-        self._hadj = None
-        self._vadj = None
-        self._bin_window = None
-        self._hadj_changed_id = -1
-        self._vadj_changed_id = -1
-        gtk.Container.__init__(self)
-
-        if not self._hadj or not self._vadj:
-            self._set_adjustments(self._vadj or new_adj(),
-                                  self._hadj or new_adj())
-
-    # Public API
-
-    def put(self, widget, x=0, y=0):
-        child = Child()
-        child.widget = widget
-        child.x = x
-        child.y = y
-        self._children.append(child)
-
-        if self.flags() & gtk.REALIZED:
-            widget.set_parent_window(self._bin_window)
-
-        widget.set_parent(self)
-
-    def set_size(self, width, height):
-        if self._width != width:
-            self._width = width
-        if self._height != height:
-            self._height = height
-        if self._hadj:
-            set_adjustment_upper(self._hadj, self._width, False)
-        if self._vadj:
-            set_adjustment_upper(self._vadj, self._height, False)
-
-        if self.flags() & gtk.REALIZED:
-            self._bin_window.resize(max(width, self.allocation.width),
-                                    max(height, self.allocation.height))
-
-    # GtkWidget
-
-    def do_realize(self):
-        self.set_flags(gtk.REALIZED)
-
-        self.window = gdk.Window(
-            self.get_parent_window(),
-            window_type=gdk.WINDOW_CHILD,
-            x=self.allocation.x,
-            y=self.allocation.y,
-            width=self.allocation.width,
-            height=self.allocation.height,
-            wclass=gdk.INPUT_OUTPUT,
-            colormap=self.get_colormap(),
-            event_mask=gdk.VISIBILITY_NOTIFY_MASK)
-        self.window.set_user_data(self)
-
-        self._bin_window = gdk.Window(
-            self.window,
-            window_type=gdk.WINDOW_CHILD,
-            x=int(-self._hadj.value),
-            y=int(-self._vadj.value),
-            width=max(self._width, self.allocation.width),
-            height=max(self._height, self.allocation.height),
-            colormap=self.get_colormap(),
-            wclass=gdk.INPUT_OUTPUT,
-            event_mask=(self.get_events() | gdk.EXPOSURE_MASK |
-                        gdk.SCROLL_MASK))
-        self._bin_window.set_user_data(self)
-
-        self.set_style(self.style.attach(self.window))
-        self.style.set_background(self.window, gtk.STATE_NORMAL)
-        self.style.set_background(self._bin_window, gtk.STATE_NORMAL)
-
-        for child in self._children:
-            child.widget.set_parent_window(self._bin_window)
-        self.queue_resize()
-
-    def do_unrealize(self):
-        self._bin_window.set_user_data(None)
-        self._bin_window.destroy()
-        self._bin_window = None
-        gtk.Container.do_unrealize(self)
-
-    def _do_style_set(self, style):
-        gtk.Widget.do_style_set(self, style)
-
-        if self.flags() & gtk.REALIZED:
-            self.style.set_background(self._bin_window, gtk.STATE_NORMAL)
-
-    def do_expose_event(self, event):
-        if event.window != self._bin_window:
-            return False
-        gtk.Container.do_expose_event(self, event)
-        return False
-
-    def do_map(self):
-        self.set_flags(gtk.MAPPED)
-        for child in self._children:
-            flags = child.widget.flags()
-            if flags & gtk.VISIBLE:
-                if not (flags & gtk.MAPPED):
-                    child.widget.map()
-        self._bin_window.show()
-        self.window.show()
-
-    def do_size_request(self, req):
-        req.width = 0
-        req.height = 0
-        for child in self._children:
-            child.widget.size_request()
-
-    def do_size_allocate(self, allocation):
-        self.allocation = allocation
-        for child in self._children:
-            self._allocate_child(child)
-
-        if self.flags() & gtk.REALIZED:
-            self.window.move_resize(*allocation)
-            self._bin_window.resize(max(self._width, allocation.width),
-                                    max(self._height, allocation.height))
-
-        self._hadj.page_size = allocation.width
-        self._hadj.page_increment = allocation.width * 0.9
-        self._hadj.lower = 0
-        set_adjustment_upper(self._hadj,
-                             max(allocation.width, self._width), True)
-
-        self._vadj.page_size = allocation.height
-        self._vadj.page_increment = allocation.height * 0.9
-        self._vadj.lower = 0
-        self._vadj.upper = max(allocation.height, self._height)
-        set_adjustment_upper(self._vadj,
-                             max(allocation.height, self._height), True)
-
-    def do_set_scroll_adjustments(self, hadj, vadj):
-        self._set_adjustments(hadj, vadj)
-
-    # GtkContainer
-
-    def do_forall(self, include_internals, callback, data):
-        for child in self._children:
-            callback(child.widget, data)
-
-    def do_add(self, widget):
-        self.put(widget)
-
-    def do_remove(self, widget):
-        child = self._get_child_from_widget(widget)
-        self._children.remove(child)
-        widget.unparent()
-
-    # Private
-
-    def _set_adjustments(self, hadj, vadj):
-        if not hadj and self._hadj:
-            hadj = new_adj()
-
-        if not vadj and self._vadj:
-            vadj = new_adj()
-
-        if self._hadj and self._hadj != hadj:
-            self._hadj.disconnect(self._hadj_changed_id)
-
-        if self._vadj and self._vadj != vadj:
-            self._vadj.disconnect(self._vadj_changed_id)
-
-        need_adjust = False
-
-        if self._hadj != hadj:
-            self._hadj = hadj
-            set_adjustment_upper(hadj, self._width, False)
-            self._hadj_changed_id = hadj.connect(
-                "value-changed",
-                self._adjustment_changed)
-            need_adjust = True
-
-        if self._vadj != vadj:
-            self._vadj = vadj
-            set_adjustment_upper(vadj, self._height, False)
-            self._vadj_changed_id = vadj.connect(
-                "value-changed",
-                self._adjustment_changed)
-            need_adjust = True
-
-        if need_adjust and vadj and hadj:
-            self._adjustment_changed()
-
-    def _adjustment_changed(self, adj=None):
-        if self.flags() & gtk.REALIZED:
-            self._bin_window.move(int(-self._hadj.value),
-                                  int(-self._vadj.value))
-            self._bin_window.process_updates(True)
-
-    def _get_child_from_widget(self, widget):
-        for child in self._children:
-            if child.widget == widget:
-                return child
-        else:
-            raise AssertionError
-
-    def _allocate_child(self, child):
-        allocation = gdk.Rectangle()
-        allocation.x = child.x
-        allocation.y = child.y
-        req = child.widget.get_child_requisition()
-        allocation.width = req[0]
-        allocation.height = req[1]
-        child.widget.size_allocate(allocation)
-
-Layout.set_set_scroll_adjustments_signal('set-scroll-adjustments')
-
 wind = None
 pixmap = None
 surface = [None]*2
@@ -272,12 +53,14 @@ surface = [None]*2
 firing_rates = [None, None]
 firing_rates[0] = Array('d', [0.0]*128)
 firing_rates[1] = Array('d', [0.0]*128)
+neuron_group = [[0 for col in range(2)] for row in range(128)]
 selected = (0,0)
 
 def configure_event(widget, event):
 	global wind
 	global pixmap
 	global surface
+	global neuron_group
 	
 	wind = widget.window
 	width, height = wind.get_size()
@@ -287,7 +70,6 @@ def configure_event(widget, event):
 		for x in range(0,8):
 			for u in range(0,2):
 				firing_rates[u][y*8+x] = 0.0; 
-	update_display()
 		
 	# overlay the text.
 	surface[1] = cairo.ImageSurface(cairo.FORMAT_ARGB32, width, height)
@@ -296,45 +78,85 @@ def configure_event(widget, event):
 	cr.set_font_size(12)
 	cr.set_line_width(1)
 	cr.set_source_rgb(1,1,1)
+	group_labels = ["","x","y"]
 	for y in range(0,16):
 		for x in range(0,8):
 			cr.move_to(x*64+4,y*32+16)
-			cr.show_text(str(y*8+x)); 
+			cr.show_text(str(y*8+x))
 			for u in range(0,2):
 				cr.save()
 				cr.new_path()
+				ng = neuron_group[y*8+x][u]
+				if ng == 0:
+					cr.set_source_rgb(0.5,0.5,0.5)
+				if ng == 1:
+					cr.set_source_rgb(1,0,0)
+				if ng == 2:
+					cr.set_source_rgb(0,1,0)
 				cr.translate(x*64+16+32*u,y*32+16)
 				cr.arc(0,0, 16, 0,2*math.pi); 
 				cr.close_path()
 				cr.stroke(); 
+				cr.set_source_rgb(1,1,1)
 				cr.restore()
+				# cr.move_to(x*64+14+32*u,y*32+24)
+				# cr.show_text(group_labels[neuron_group[y*8+x][u]])
+	update_display()
 	return True
 	
 def update_display():
 	# get data from gtkclient.
-	global frsock, g_die
+	global frsock, g_die, bmi_sliders
+	if frsock == None:
+		frsock = sock_connect('localhost',4343,g_die)
+		s.settimeout(1)
 	n = frsock.send('hello')
 	if(n==5):
 		# wait for response. 
 		data = ""
 		passes = 0
-		while((len(data) < 129*8) & (passes < 5)):
-			data = "".join([data,frsock.recv(4096)])
-			passes = passes + 1
-		if len(data) >= 129*8:
-			ar = array.array('d',[0.0]*(129*2));
+		try:
+			while((len(data) < 129*8) & (passes < 5)):
+				data = "".join([data,frsock.recv(4096)])
+				# print 'data length', len(data)
+				passes = passes + 1
+		except socket.error, msg:
+			print msg
+			data = []
+			frsock.close()
+			frsock = None
+		if len(data) >= 129*2*8:
+			ar = array.array('d',[]);
 			ar.fromstring(data);
 			if((ar[0]!= 2.0) | (ar[1] != 128.0)):
-				print "wrong data size fr rx!"
+				print "wrong data size fr rx!", ar[0], ar[1]
 			# need to transpose..
 			for r in range(0,128):
-				firing_rates[0][r] = ar[r*2+0]
-				firing_rates[1][r] = ar[r*2+1]
+				firing_rates[0][r] = ar[(r+1)*2+0]
+				firing_rates[1][r] = ar[(r+1)*2+1]
+			#compute x and y position.
+			targV[0] = 0.0
+			targV[1] = 0.0
+			for ch in range(0,128):
+				for u in range(0,2):
+					if neuron_group[ch][u] == 1:
+						targV[0] += firing_rates[u][ch];
+					if neuron_group[ch][u] == 2:
+						targV[1] += firing_rates[u][ch];
+			scale = [1.0,1.0]
+			offset = [0.0,0.0]
+			scale[0] = bmi_sliders[0].value
+			scale[1] = bmi_sliders[2].value
+			offset[0] = bmi_sliders[1].value
+			offset[1] = bmi_sliders[3].value
+			for u in range(0,2):
+				targV[u] = targV[u] / scale[u] 
+				targV[u] = targV[u] + offset[u]
 	else:
 		frsock.close()
+		frsock = None
 		most_recent = 0
 		last_update = 0
-		s = sock_connect('localhost',4343,g_die) # this will block.. oops.
 	wind.invalidate_rect(gtk.gdk.Rectangle(0,0,16*32,16*32), False)
 	return True
 
@@ -342,30 +164,32 @@ def expose_event(widget, event):
 	global surface
 	global selected
 	global firing_rates
+	global neuron_group
 	cr = widget.window.cairo_create()
-	cr.set_source_rgb(0.10, 0.09, 0.33); 
+	cr.set_source_rgb(0.0, 0.09, 0.13); 
 	cr.rectangle(0,0,512,512)
 	cr.fill()
-	#draw the fifing rates.
-	cr.set_line_width(9)
-	cr.set_source_rgb(0.7, 0.8, 0.2); 
-	for y in range(0,16):
-		for x in range(0,8):
-			if firing_rates[0][y*8+x] > 0:
-				cr.save()
-				cr.move_to(x*64+16,y*32+16)
-				cr.arc(x*64+16,y*32+16,16,0,2*math.pi*firing_rates[0][y*8+x]/100)
-				cr.fill()
-				cr.restore()
-	cr.set_source_rgb(0.1, 0.8, 0.7); 
-	for y in range(0,16):
-		for x in range(0,8):
-			if firing_rates[1][y*8+x] > 0:
-				cr.save()
-				cr.move_to(x*64+48,y*32+16)
-				cr.arc(x*64+48,y*32+16,16,0,2*math.pi*firing_rates[1][y*8+x]/100)
-				cr.fill()
-				cr.restore()
+	#draw the firing rates.
+	if False:
+		cr.set_line_width(1)
+		cr.set_source_rgb(0.7, 0.8, 0.2); 
+		for y in range(0,16):
+			for x in range(0,8):
+				if firing_rates[0][y*8+x] > 0:
+					cr.save()
+					cr.move_to(x*64+16,y*32+16)
+					cr.arc(x*64+16,y*32+16,16,0,2*math.pi*firing_rates[0][y*8+x]/100)
+					cr.fill()
+					cr.restore()
+		cr.set_source_rgb(0.1, 0.8, 0.7); 
+		for y in range(0,16):
+			for x in range(0,8):
+				if firing_rates[1][y*8+x] > 0:
+					cr.save()
+					cr.move_to(x*64+48,y*32+16)
+					cr.arc(x*64+48,y*32+16,16,0,2*math.pi*firing_rates[1][y*8+x]/100)
+					cr.fill()
+					cr.restore()
 	#draw selected.
 	cr.save()
 	cr.set_line_width(4)
@@ -391,13 +215,31 @@ def draw_brush(widget, x, y):
 
 def button_press_event(widget, event):
 	# figure out which channel / unit is selected. 
-	global selected
+	global selected, neuron_group
 	x = int(event.x) / 32
 	y = int(event.y) / 32
 	ch = x/2 + y*8
 	un = x%2
 	selected = (ch,un)
+	gr = neuron_group[ch][un]
+	#group_radio_buttons[gr].set_active(True)
 	widget.queue_draw()
+	drawing_area.grab_focus() # this so we can get key presses.
+	return True
+	
+def key_press_event(widget, event):
+	global drawing_area
+	(ch,un) = selected
+	ng = neuron_group[ch][un]
+	if event.keyval == gtk.keysyms.BackSpace:
+		ng2 = 0
+	if event.keyval == gtk.keysyms.x:
+		ng2 = 1
+	if event.keyval == gtk.keysyms.y:
+		ng2 = 2
+	if ng != ng2:
+		neuron_group[ch][un] = ng2
+		configure_event(drawing_area,None);
 	return True
 
 def motion_notify_event(widget, event):
@@ -413,8 +255,9 @@ def motion_notify_event(widget, event):
 
 def main():
 	global firing_rates,frsock,targV,cursV,juiceV,touchV
+	global g_die, drawing_area, group_radio_buttons, bmi_sliders
 	window = gtk.Window()
-	window.set_size_request(300, 300)
+	window.set_size_request(800, 480)
 	window.connect('delete-event', gtk.main_quit)
 
 	vpaned = gtk.HPaned()
@@ -425,38 +268,73 @@ def main():
 	sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
 	vpaned.add2(sw)
 
-	layout = Layout()
-	layout.set_size(1000, 1000)
-	sw.add(layout)
+	#layout = Layout()
+	#layout.set_size(32*16, 32*16)
+	#sw.add(layout)
 
-	b = gtk.Button('foobar')
-	layout.put(b, 0, 240)
+	#b = gtk.Button('foobar')
+	#layout.put(b, 0, 240)
 	
 	drawing_area = gtk.DrawingArea()
-	drawing_area.set_size_request(1000, 1000)
-	layout.put(drawing_area)
+	drawing_area.set_size_request(16*32, 16*32)
+	sw.add_with_viewport(drawing_area)
 	drawing_area.show()
 	
 	drawing_area.connect("expose_event", expose_event)
 	drawing_area.connect("configure_event", configure_event)
 	drawing_area.connect("motion_notify_event", motion_notify_event)
 	drawing_area.connect("button_press_event", button_press_event)
+	drawing_area.connect("key_press_event", key_press_event)
 	drawing_area.set_events(gtk.gdk.EXPOSURE_MASK |
 		gtk.gdk.LEAVE_NOTIFY_MASK |
 		gtk.gdk.BUTTON_PRESS_MASK |
+		gtk.gdk.KEY_PRESS_MASK |
 		gtk.gdk.POINTER_MOTION_MASK |
 		gtk.gdk.POINTER_MOTION_HINT_MASK)
+	drawing_area.set_flags(gtk.CAN_FOCUS) 
 
-
+	vbox_p = gtk.VBox(False, 0); 
+	vpaned.add1(vbox_p); 
+	frame = gtk.Frame("grouping")
+	vbox_p.add(frame)
 	vbox = gtk.VBox(False, 0); 
-	b = gtk.Button('Leftbar'); 
-	vbox.pack_start(b, True, True)
-	vpaned.add1(vbox); 
+	frame.add(vbox)
+	group_radio_buttons=[]
+	labels = ["none","x","y"]
+	for a in range(0,3):
+		if len(group_radio_buttons) == 0:
+			#first button with none group
+			widget = None
+		else:
+			#additional buttons with belong to the group of the first button
+			widget = but
+		but = gtk.RadioButton(group=widget)
+		but.set_label(labels[a])
+		but.connect("clicked", radio_event, a)
+		vbox.pack_start(but, True, True)
+		group_radio_buttons.append(but)
+	group_radio_buttons[0].set_active(True)
+
+	def mk_scale(lbl,mn,mx):
+		frame = gtk.Frame(lbl)
+		vbox_p.add(frame)
+		widget = gtk.HScale()
+		widget.set_range(mn, mx)
+		widget.set_size_request(200, -1)
+		frame.add(widget)
+		return widget.get_adjustment()
+		
+	bmi_sliders = []
+	bmi_sliders.append(mk_scale("X scale",1,100))
+	bmi_sliders.append(mk_scale("X offset",-1,1))
+	bmi_sliders.append(mk_scale("Y scale",1,100))
+	bmi_sliders.append(mk_scale("Y offset",-1,1))
 	
 	
 	#start sock_thread.
 	g_die = Value('b',False)
 	frsock = sock_connect('localhost',4343,g_die)
+	frsock.settimeout(1)
 
 	#start server_thread
 	targV = Array('d',[0.0]*2)
@@ -471,9 +349,15 @@ def main():
 	window.show_all()
 	gtk.main()
 	g_die.value = True
-	p.join()
 	p2.join()
 	
+def radio_event(widget, btn_number):
+	global neuron_group,selected,drawing_area
+	if widget.get_active():
+		(ch,u) = selected
+		neuron_group[ch][u] = btn_number
+		configure_event(drawing_area,None); 
+            
 def server_thread(die,targV,cursV,juiceV,touchV):
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	# turn on socket re-use (in the case of rapid restarts)
@@ -494,8 +378,8 @@ def server_thread(die,targV,cursV,juiceV,touchV):
 			while (not die.value) & sopen:
 				#first write out commands (if any)
 				pb = spikes_pb2.Display_msg()
-				targV[0] = random.random()
-				targV[1] = random.random()
+				# targV[0] = cursV[0]
+				# targV[1] = cursV[1]
 				cursV[0] = random.random()
 				cursV[1] = random.random()
 				juiceV.value = False

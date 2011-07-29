@@ -775,10 +775,11 @@ void* sock_thread(void* destIP){
 					//consistent the lag should be consistent so this will come out as
 					//another (slight) lag.
 					//perhaps we should also do outlier rejection? 
-					g_timeOffset *= 0.996; 
-					g_timeOffset += 0.004*off; 
-					printf("offset time: %f of %f\n", g_timeOffset, 
-							 ((double)p->ms / 1000.0)); 
+					g_timeOffset *= 0.997; 
+					g_timeOffset += 0.003*off; 
+					//probably need a GIU element to display offset.
+					//printf("offset time: %f of %f\n", g_timeOffset, 
+					//		 ((double)p->ms / 1000.0)); 
 				}
 				double time = ((double)p->ms / 1000.0) + g_timeOffset;
 				decodePacket(p, channels, match); 
@@ -1005,9 +1006,11 @@ void* server_thread(void* ){
 		}
 		if(client > 0){
 			//see if they have requested something. 
-			double reqtime = gettime(); 
 			int n = recv(client, buf, sizeof(buf), 0);
+			double reqtime = gettime(); 
+			buf[n] = 0;
 			if(n > 0){
+				printf("got client request [%d]:%s\n",n,buf); 
 				//doesn't matter at this point -- make a response. 
 				rates[0][0] = 2; //rows
 				rates[0][1] = 128; //columns. 
@@ -1021,8 +1024,12 @@ void* server_thread(void* ){
 					close(client); 
 					printf("sending message to client failed!\n"); 
 					client = 0; 
+				}else{
+					printf("sent %d bytes to client.\n", n); 
 				}
 			}else{
+				if(client) close_socket(client); 
+				client = 0; 
 				sleep(1);
 			}
 		}else{

@@ -388,6 +388,8 @@ int main(void){
 	asm volatile("ssync"); 
 	*pGTIME = 0; 
 	*pTIMER5_CONFIG = IRQ_ENA | PERIOD_CNT | OUT_DIS | PWM_OUT; 
+	// probably should put the +10 in flash. 
+	//(presuming it doesn't change much with xtal aging)
 	*pTIMER5_PERIOD = 240000+10; //SCLK @ 120Mhz
 	*pTIMER5_WIDTH =  120000+10; //+ to compensate for the xtal precision. 
 	//this depends on the board, of course! 
