@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Mon 31 Jan 2011 04:09:41 PM EST
+EESchema Schematic File Version 2  date Wed 23 Mar 2011 11:22:57 PM EDT
 LIBS:power
 LIBS:device
 LIBS:emg_sym
@@ -17,6 +17,15 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
+$Comp
+L VDD #PWR?
+U 1 1 4D8AB90E
+P 10850 7500
+F 0 "#PWR?" H 10850 7600 30  0001 C CNN
+F 1 "VDD" H 10850 7610 30  0000 C CNN
+	1    10850 7500
+	1    0    0    -1  
+$EndComp
 $Comp
 L TP TP38
 U 1 1 4D471917
