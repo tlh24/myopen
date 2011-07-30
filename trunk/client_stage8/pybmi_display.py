@@ -179,6 +179,7 @@ def main():
 	#connect to the BMI server.
 	die = Value('b',False)
 	sock = sock_connect('localhost',4344,die)
+	sock.settimeout(1)
 	seg = TCPSegmenter()
 	glutMainLoop()
 	die = True

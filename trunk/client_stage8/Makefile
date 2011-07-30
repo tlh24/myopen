@@ -1,5 +1,6 @@
 # not a very smart makefile -- no deps -- but works.
 # depends on google protocol buffers -- not too hard to install, in debian.
+# you'll need to install libatlas-base-dev for linear algebra. 
 CFLAGS=-I/usr/local/include
 CFLAGS+= -g
 CFLAGS+= -Wall -Wcast-align -Wpointer-arith -Wshadow -Wsign-compare -Wformat=2 \
@@ -12,8 +13,8 @@ GTKLD = `pkg-config --libs $(GLIBS) `
 
 OBJS = main.o sock.o
 
-GOBJS = gtkclient.o glInfo.o sock.o decodePacket.o sql.o headstage.o\
- tcpsegmenter.o spikes.pb.o
+GOBJS = spikes.pb.o gtkclient.o glInfo.o sock.o decodePacket.o sql.o headstage.o\
+ tcpsegmenter.o
 
 COBJS = convert.o decodePacket.o
 

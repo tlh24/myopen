@@ -108,15 +108,16 @@ def update_display():
 	# get data from gtkclient.
 	global frsock, g_die, bmi_sliders
 	if frsock == None:
-		frsock = sock_connect('localhost',4343,g_die)
-		s.settimeout(1)
-	n = frsock.send('hello')
-	if(n==5):
+		frsock = sock_connect('rabbit',4343,g_die)
+		#frsock.settimeout(1)
+		frsock.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
+	n = frsock.send('hello\r\n')
+	if(n==7):
 		# wait for response. 
 		data = ""
 		passes = 0
 		try:
-			while((len(data) < 129*8) & (passes < 5)):
+			while((len(data) < 129*8*2) & (passes < 15)):
 				data = "".join([data,frsock.recv(4096)])
 				# print 'data length', len(data)
 				passes = passes + 1
@@ -129,20 +130,19 @@ def update_display():
 			ar = array.array('d',[]);
 			ar.fromstring(data);
 			if((ar[0]!= 2.0) | (ar[1] != 128.0)):
-				print "wrong data size fr rx!", ar[0], ar[1]
+				print "wrong data size fr rx!", ar[0], ar[1], passes
 			# need to transpose..
 			for r in range(0,128):
 				firing_rates[0][r] = ar[(r+1)*2+0]
 				firing_rates[1][r] = ar[(r+1)*2+1]
 			#compute x and y position.
-			targV[0] = 0.0
-			targV[1] = 0.0
+			targ = [0.0,0.0]
 			for ch in range(0,128):
 				for u in range(0,2):
 					if neuron_group[ch][u] == 1:
-						targV[0] += firing_rates[u][ch];
+						targ[0] += firing_rates[u][ch];
 					if neuron_group[ch][u] == 2:
-						targV[1] += firing_rates[u][ch];
+						targ[1] += firing_rates[u][ch];
 			scale = [1.0,1.0]
 			offset = [0.0,0.0]
 			scale[0] = bmi_sliders[0].value
@@ -150,8 +150,10 @@ def update_display():
 			offset[0] = bmi_sliders[1].value
 			offset[1] = bmi_sliders[3].value
 			for u in range(0,2):
-				targV[u] = targV[u] / scale[u] 
-				targV[u] = targV[u] + offset[u]
+				targ[u] = targ[u] / scale[u] 
+				targ[u] = targ[u] + offset[u]
+			targV[0] = targ[0] # slightly more atomic.
+			targV[1] = targ[1]
 	else:
 		frsock.close()
 		frsock = None
@@ -170,7 +172,7 @@ def expose_event(widget, event):
 	cr.rectangle(0,0,512,512)
 	cr.fill()
 	#draw the firing rates.
-	if False:
+	if True:
 		cr.set_line_width(1)
 		cr.set_source_rgb(0.7, 0.8, 0.2); 
 		for y in range(0,16):
@@ -194,7 +196,7 @@ def expose_event(widget, event):
 	cr.save()
 	cr.set_line_width(4)
 	(ch,u) = selected
-	cr.set_source_rgb(1,0,0); 
+	cr.set_source_rgb(0.3,0,1); 
 	cr.translate((2*(ch%8) + u)*32+16,(ch/8)*32+16); 
 	cr.arc(0,0,16,0,2*math.pi); 
 	cr.close_path()
@@ -333,8 +335,7 @@ def main():
 	
 	#start sock_thread.
 	g_die = Value('b',False)
-	frsock = sock_connect('localhost',4343,g_die)
-	frsock.settimeout(1)
+	frsock = None
 
 	#start server_thread
 	targV = Array('d',[0.0]*2)
@@ -344,7 +345,7 @@ def main():
 	p2 = Process(target=server_thread,args=(g_die,targV,cursV,juiceV,touchV))
 	p2.start()
 	
-	gobject.timeout_add(100, update_display)
+	gobject.timeout_add(10, update_display)
 
 	window.show_all()
 	gtk.main()
@@ -380,8 +381,8 @@ def server_thread(die,targV,cursV,juiceV,touchV):
 				pb = spikes_pb2.Display_msg()
 				# targV[0] = cursV[0]
 				# targV[1] = cursV[1]
-				cursV[0] = random.random()
-				cursV[1] = random.random()
+				#targV[0] = random.random()
+				#targV[1] = random.random()
 				juiceV.value = False
 				map((lambda x: pb.cursor.append(x)),cursV)
 				map((lambda x: pb.target.append(x)),targV)
