@@ -195,14 +195,14 @@ public:
 			m_threshold = (y-0.5f)*2.f; 
 			x *= 62.f; x -= 0.5f; x = 31.f-x; //inverse centering transform.
 			m_centering = x; 
-			resetPca(); 
+			resetPca();
 			return true; 
 		} else return false; 
 	}
 	void addPoly(float* f){ m_pcaVbo->addPoly(f); }
 	void resetPoly(){ m_pcaVbo->m_polyW = 0; }
 	unsigned int getAperture(int n) { return (unsigned int)(m_aperture[n]);}
-	void setAperture(unsigned int a, int n){
+	void setApertureLocal(unsigned int a, int n){
 		if(n >= 0 && n <= 1) m_aperture[n] = a; 
 	}
 	float getThreshold() { return m_threshold; }
@@ -313,13 +313,22 @@ public:
 		}
 		printf("\n"); 
 		m_aperture[unit-1] = aperture * 255; 
-		//caller is responsible for sending this to the headstage.
+		//store the equivalent of the unsigned bytes actually used on the headstage.
+		for(int i=0; i<16; i++){
+			float r = round((m_template[unit-1][i] + 0.5f)*255.f); 
+			m_template[unit-1][i] = r/255.f - 0.5f; 
+		}
+		//let's send the new data to the headstage. 
+		setTemplate(m_ch, unit-1); 
+		setAperture(m_ch); 
 		return true; 
 	}
 	void resetPca(){
 		//should be called if threshold, gain
-		//(or really anything else) is changed. 
+		//(or really anything else) is changed / invalidates current display. 
 		m_pcaVbo->reset(); 
+		m_wfVbo->setFade(1.7);//clear it a bit quicker.
+		m_usVbo->setFade(1.7); 
 	}
 	void computePca(){
 		//whatever ... this can be blocking. 
