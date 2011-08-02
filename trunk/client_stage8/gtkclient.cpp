@@ -65,6 +65,7 @@ i64	g_fbufW; //where to write to (always increment)
 i64	g_fbufR; //display thread reads from here - copies to mem
 unsigned int 	g_nsamp = 4096; //given the current level of zoom (1 = 4096 samples), how many samples to update?
 static float 	g_sbuf[2][128*512*2]; //spike buffers.
+static float	g_rasterSpan = 10.f; // %seconds.
 i64	g_sbufW[2]; 
 i64	g_sbufR[2]; 
 Channel*		g_c[128];
@@ -117,6 +118,21 @@ struct sockaddr_in g_txsockAddr;
 bool	g_vbo1Init = false; 
 GLuint g_vbo1[4] = {0,0,0,0}; //for the waveform display
 GLuint g_vbo2[2] = {0,0}; //for spikes.
+
+//global labels.. 
+//GtkWidget* g_gainlabel[16];
+GtkWidget* g_headechoLabel;
+GtkAdjustment* g_channelSpin[4] = {0,0,0,0};
+GtkAdjustment* g_gainSpin[4] = {0,0,0,0}; 
+GtkAdjustment* g_agcSpin[4] = {0,0,0,0}; 
+GtkAdjustment* g_apertureSpin[8] = {0,0,0,0}; 
+GtkAdjustment* g_thresholdSpin[4]; 
+GtkAdjustment* g_centeringSpin[4]; 
+GtkAdjustment* g_unsortRateSpin; 
+GtkAdjustment* g_zoomSpin; 
+GtkAdjustment* g_rasterSpanSpin; 
+GtkWidget* g_pktpsLabel;
+GtkWidget* g_fileSizeLabel;
 
 i64 mod2(i64 a, i64 b){
 	i64 c = a % b; 
@@ -272,10 +288,20 @@ static gint motion_notify_event( GtkWidget *,
 	}
 	updateCursPos(x,y); 
 	if((state & GDK_BUTTON1_MASK) && (g_mode == MODE_SORT)){
-		if(g_addPoly)
+		if(g_addPoly){
 			g_c[g_channel[g_polyChan]]->addPoly(g_cursPos); 
-		else
+			for(int i=1;i<4;i++)
+				g_c[g_channel[(g_polyChan+i)&3]]->resetPoly(); 
+		}else{
 			g_c[g_channel[g_polyChan]]->mouse(g_cursPos); 
+			//need to update g_thresholdSpin and g_centeringSpin
+			gtk_adjustment_set_value(
+				g_thresholdSpin[g_polyChan], 
+				g_c[g_channel[g_polyChan]]->getThreshold());
+			gtk_adjustment_set_value(
+				g_centeringSpin[g_polyChan], 
+				g_c[g_channel[g_polyChan]]->getCentering());
+		}
 	}
 	if(state & GDK_BUTTON3_MASK)
 		g_rtMouseBtn = true;
@@ -325,7 +351,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 			}
 			g_fbufR = w; 
 		}
-		//ditto for the spike buffers
+		//ditto for the spike buffers (these can be disordered ..they generally don't overlap.)
 		for(int k=0; k<2; k++){
 			if(g_sbufR[k] < g_sbufW[k]){
 				i64 len = sizeof(g_sbuf[k])/8; //total # of pts. 
@@ -422,12 +448,21 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		//glPopMatrix ();
 		
 		//rasters
-		glPushMatrix();
-		float scl = 0.5*g_rasterZoom;
-		glScalef(-1.f*scl, -1.f/130.f, 1.f); 
-		glTranslatef((1.f/scl - time), 1.f, 0.f); 
-
 		glShadeModel(GL_FLAT);
+		
+		glPushMatrix();
+		glScalef(1.f/g_rasterSpan, -1.f/130.f, 1.f); 
+		int lt = (int)time / (int)g_rasterSpan;
+		lt *= (int)g_rasterSpan;
+		float x = time - (float)lt; 
+		float adj = 0.f;
+		float movtime = 0.20 + log10(g_rasterSpan); 
+		if(x < movtime){
+			x /= movtime; 
+			adj = 2.f*x*x*x -3.f*x*x + 1; 
+			adj *= g_rasterSpan; 
+		}
+		glTranslatef((0 - (float)lt + adj), 1.f, 0.f); 
 		
 		//VBO drawing.. 
 		for(int k=0; k<2; k++){
@@ -440,6 +475,20 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 			glDrawArrays(GL_POINTS, 0, sizeof(g_sbuf[k])/8);
 			glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 		}
+		glDisable(GL_LINE_SMOOTH); 
+		//draw current time. 
+		glColor4f (1., 0., 0., 0.5);
+		glBegin(GL_LINES); 
+		glVertex3f( time, 0, 0.f);
+		glVertex3f( time, 130.f, 0.f); 
+		glColor4f (0.5, 0.5, 0.5, 0.5);
+		//draw old times, every second. 
+		for(int t=(int)time; t > time-g_rasterSpan*2; t--){
+			glVertex3f( (float)t, 0, 0.f);
+			glVertex3f( (float)t, 130.f, 0.f); 
+		}
+		glEnd(); 
+		glEnable(GL_LINE_SMOOTH); 
 		glPopMatrix ();
 		//draw current channel
 		for(int k=0; k<4; k++){
@@ -569,7 +618,7 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 		for(int k=0; k<2; k++){
 			for(int i=0; i<128; i++){
 				for(int j=0; j<512; j++){
-					g_sbuf[k][(i*512+j)*2+0] = (float)j/256.f; 
+					g_sbuf[k][(i*512+j)*2+0] = (float)i/256.0+(float)j/2048.0; 
 					g_sbuf[k][(i*512+j)*2+1] = (float)i; 
 				}
 			}
@@ -591,19 +640,6 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 	return TRUE;
 }
 
-//global labels.. 
-//GtkWidget* g_gainlabel[16];
-GtkWidget* g_headechoLabel;
-GtkAdjustment* g_channelSpin[4] = {0,0,0,0};
-GtkAdjustment* g_gainSpin[4] = {0,0,0,0}; 
-GtkAdjustment* g_agcSpin[4] = {0,0,0,0}; 
-GtkAdjustment* g_apertureSpin[8] = {0,0,0,0}; 
-GtkAdjustment* g_thresholdSpin[4]; 
-GtkAdjustment* g_centeringSpin[4]; 
-GtkAdjustment* g_unsortRateSpin; 
-GtkAdjustment* g_zoomSpin; 
-GtkWidget* g_pktpsLabel;
-GtkWidget* g_fileSizeLabel;
 
 static gboolean rotate (gpointer user_data){
 	GtkWidget *da = GTK_WIDGET (user_data);
@@ -790,24 +826,25 @@ void* sock_thread(void* destIP){
 						if(match[j] == t+1){
 							g_templMatch[adr][t] = true; 
 							//add to the spike raster list.
-							i64 w = g_sbufW[t] % (i64)(sizeof(g_sbuf[t])/8); 
-							g_sbuf[t][w*2+0] = (float)time; 
+							i64 w = g_sbufW[t] % (i64)(sizeof(g_sbuf[t])/8);
+							g_sbuf[t][w*2+0] = (float)(time); 
 							g_sbuf[t][w*2+1] = (float)adr; 
 							g_sbufW[t] ++; 
-							g_fr[adr][t].add(time); 
+							g_fr[adr][t].add(time);
 						}
 					}
 				}
 				for(int j=0; j<6; j++){
 					for(int k=0; k<4; k++){
-						char samp = p->data[j*4+k]; 
+						char samp = p->data[j*4+k]; //-128 -> 127.
 						int ch = g_channel[k];
 						z = 0.f; 
 						if(g_templMatch[ch][0] || 
 							(g_bitdelay[k][0] < 5)) z = 1.f; 
 						if(g_templMatch[ch][1] || 
 							(g_bitdelay[k][1] < 5)) z = 2.f; 
-						g_fbuf[k][(g_fbufW % g_nsamp)*3 + 1] = (float)samp / 128.f;
+						g_fbuf[k][(g_fbufW % g_nsamp)*3 + 1] = 
+							(((samp+128.f)/255.f)-0.5f)*2.f;
 						g_fbuf[k][(g_fbufW % g_nsamp)*3 + 2] = z;
 					}
 					g_fbufW++; 
@@ -828,8 +865,8 @@ void* sock_thread(void* destIP){
 							if(g_verDelay[k][j] > 8){
 								float a = g_c[h]->getAperture(j); 
 								if(fabs(g_verAper[k][j] - a)/a > 16.f/256.f){
-									printf("err missed spike %d saa %f (aperture %d)\n",
-									j,g_verAper[k][j],g_c[h]->getAperture(j)); 
+									printf("err missed spike %d saa %d (aperture %d)\n",
+									j,(int)(round(g_verAper[k][j])),g_c[h]->getAperture(j)); 
 								}
 								g_verDelay[k][j] = 0;
 							}
@@ -882,7 +919,7 @@ void* sock_thread(void* destIP){
 								// (in which case we need a delay to get more samples --
 								//	 delay 2 packets = 12 samples.)
 								// or it might have matched 4 packets ago; hence have to search
-								// further.
+								// furthe (6 packets altogether, or 36 samples)
 								float min = 1e9f; 
 								i64 offset = 0; 
 								/* diagram of waveform: 
@@ -895,9 +932,10 @@ void* sock_thread(void* destIP){
 									float saa = 0; 
 									for(int g=0; g<16; g++){
 										float w = g_fbuf[k][mod2(g_fbufW +j+g, g_nsamp)*3+1];
+										w /= 2.f; w += 0.5f; w *= 255.f; //range 0 to 255.
 										float tmp = g_c[g_channel[k]]->m_template[t][g]; 
-										//w is mean 0 range 2; tmp is mean 0 range 1.
-										saa += fabs(w*0.5 - tmp); 
+										tmp += 0.5; tmp *= 255; 
+										saa += fabs(w - tmp); 
 									}
 									if(saa < min){
 										min = saa; 
@@ -905,9 +943,9 @@ void* sock_thread(void* destIP){
 									}
 								}
 								float a = g_c[k]->getAperture(t);
-								if(min*251.f > a){
-									printf("err ch %d u %d headstage says match, we don't find! match %f target %f\n", 
-										   g_channel[k], t+1, min*255.f, a); 
+								if(min*0.95 > a){
+									printf("err ch %d u %d headstage says match, we don't find! match %d target %d\n", 
+										   g_channel[k], t+1, (int)(round(min)), (int)(round(a))); 
 								}
 								float wf[32]; 
 								for(int q=0; q < 32; q++){
@@ -1000,18 +1038,22 @@ void* server_thread(void* ){
 	while(g_die == 0){
 		if(client <= 0){
 			client = accept_socket(g_spikesock); 
-			if(client >= 0){
+			if(client > 0){
 				printf("got new client connection!\n"); 
 			}
 		}
 		if(client > 0){
 			//see if they have requested something. 
-			int n = recv(client, buf, sizeof(buf), 0);
 			double reqtime = gettime(); 
+			//double start = reqtime;
+			int n = recv(client, buf, sizeof(buf), 0);
+			//double end = gettime(); 
+			//printf("recv time: %f\n", end-start); 
 			buf[n] = 0;
 			if(n > 0){
-				printf("got client request [%d]:%s\n",n,buf); 
+				//printf("got client request [%d]:%s\n",n,buf); 
 				//doesn't matter at this point -- make a response. 
+				//start = gettime();
 				rates[0][0] = 2; //rows
 				rates[0][1] = 128; //columns. 
 				for(int i=0; i<128; i++){
@@ -1019,14 +1061,20 @@ void* server_thread(void* ){
 						rates[i+1][j] = g_fr[i][j].get_rate(reqtime); 
 					}
 				}
+				//end = gettime(); 
+				//printf("rate computation time: %f\n", end-start); 
+				//start = end; 
 				n = send(client,(void*)rates, sizeof(rates), 0); 
 				if(n != sizeof(rates)){
 					close(client); 
 					printf("sending message to client failed!\n"); 
 					client = 0; 
-				}else{
-					printf("sent %d bytes to client.\n", n); 
 				}
+				//end = gettime(); 
+				//printf("sending message time: %f\n", end-start); 
+				//else{
+				//	printf("sent %d bytes to client.\n", n); 
+				//}
 			}else{
 				if(client) close_socket(client); 
 				client = 0; 
@@ -1138,7 +1186,7 @@ static void apertureSpinCB( GtkWidget*, gpointer p){
 		//the value has actually changed.
 		if(g_c[j]->getAperture(h%2) != a){
 			if(a >= 0 && a < 256*16){
-				g_c[j]->setAperture(a, h%2); 
+				g_c[j]->setApertureLocal(a, h%2); 
 				setAperture(j);
 			}
 			printf("apertureSpinCB: %f ch %d\n", a, j); 
@@ -1219,6 +1267,10 @@ static void zoomSpinCB( GtkWidget*, gpointer ){
 	g_rasterZoom = 4096.0 / (float)g_nsamp; 
 	if(g_mode == MODE_SPIKES || g_mode == MODE_SORT) g_nsamp = NSAMP; 
 	printf("g_nsamp: %d, actual zoom %f\n", g_nsamp, g_rasterZoom); 
+}
+static void rasterSpanSpinCB( GtkWidget*, gpointer ){
+	g_rasterSpan = gtk_adjustment_get_value(g_rasterSpanSpin); 
+	//this is pretty simple.
 }
 static void notebookPageChangedCB(GtkWidget *, 
 					gpointer, int page, gpointer){
@@ -1332,11 +1384,10 @@ static void calcPCACB(gpointer){
 }
 static void getTemplateCB( GtkWidget *, gpointer p){
 	int aB = (int)((long long)p & 0xf); 
-	g_c[g_channel[0]]->updateTemplate(aB+1); 
-	setTemplate(g_channel[0], aB); 
-	//setAperture(g_channel[0]); will be called below.
+	g_c[g_channel[g_polyChan]]->updateTemplate(aB+1); 
+	//update the UI. 
 	gtk_adjustment_set_value(g_apertureSpin[aB],
-							 g_c[g_channel[0]]->getAperture(aB));
+							 g_c[g_channel[g_polyChan]]->getAperture(aB));
 }
 int main(int argn, char **argc)
 {
@@ -1391,7 +1442,6 @@ int main(int argn, char **argc)
 	// compatible with the version of the headers we compiled against.
 	GOOGLE_PROTOBUF_VERIFY_VERSION;
 
-
 	gtk_init (&argn, &argc);
 	gtk_gl_init (&argn, &argc);
 
@@ -1439,12 +1489,14 @@ int main(int argn, char **argc)
 									  channelSpinCB, i); 
 		//right of that, a gain spinner. (need to update depending on ch)
 		g_gainSpin[i] = mk_spinner("gain", bx3, 
-								  1.0, -30.0, 30.0, 0.1, 
-								  gainSpinCB, i); 
+								 	g_c[g_channel[i]]->m_gain, 
+									-30.0, 30.0, 0.1, 
+								  	gainSpinCB, i); 
 		//below that, the AGC target. 
 		g_agcSpin[i] = mk_spinner("AGC target", bx2, 
-								  6000, 0, 32000, 1000, 
-								  agcSpinCB, i); 
+								  	g_c[g_channel[i]]->m_agc,
+									0, 32000, 1000, 
+								  	agcSpinCB, i); 
 								  
 		gtk_box_pack_start (GTK_BOX (frame), bx2, FALSE, FALSE, 1);
 	}
@@ -1515,7 +1567,10 @@ int main(int argn, char **argc)
 	//add in a zoom spinner.
 	g_zoomSpin = mk_spinner("zoom", box1, 
 			   1.0, 0.15, 10.0, 0.05,
-			   zoomSpinCB, 0); 
+			   zoomSpinCB, 0);
+	g_rasterSpanSpin = mk_spinner("Raster span", box1, 
+			   g_rasterSpan, 1.0, 100.0, 1.0,
+			   rasterSpanSpinCB, 0); 
 
 //this concludes the rasters page. 
 	gtk_widget_show (box1);

@@ -6,7 +6,7 @@ class Vbo {
 public:
 	float* 	m_f; //local floating point memory. 
 	int		m_dim; // 2, 3, 4... dimensional. 
-	int		m_rows; // row-centric format
+	int		m_rows; // C style matrix
 	int		m_cols; // e.g. 34 for waveforms. 
 	int		m_w; //write pointer. 
 	int		m_r; //read pointer.  (for copying to graphics memory). 
@@ -96,24 +96,44 @@ public:
 		}
 		if(update){
 			m_vs->setParam(2,"time",time); 
-			m_vs->setParam(2,"fade",m_fade); 
 		}
 		if(m_r > 0){
 			m_vs->setParam(5,"col",m_color[0],m_color[1],m_color[2], m_color[3]);
 			m_vs->setParam(5,"off", x,y,w,h); 
+			if(m_fade > 0.3) m_fade -= 0.01; 
+			m_vs->setParam(2,"fade",m_fade); 
 			m_vs->bind(); 
 			cgGLEnableProfile(myCgVertexProfile);
 			checkForCgError("enabling vertex profile");
 			
 			glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_vbo);
-			if(m_dim == 6){
-				glEnableClientState(GL_COLOR_ARRAY); 
-				glVertexPointer(3, GL_FLOAT, m_dim*4, (void*)0);
-				glColorPointer(3, GL_FLOAT, m_dim*4, (void*)(3*4));//byte offset.
-			}else{
-				glVertexPointer(m_dim, GL_FLOAT, m_dim*4, 0);
+			//note: want to draw the newest data soonest; hence should 
+			// draw in two chunks: m_r % m_rows to m_rows-1
+			// and 0 to m_r % m_rows.
+			int r = m_r % m_rows; 
+			if(m_r > m_rows){
+				if(m_dim == 6){ //color and vertex location.
+					glEnableClientState(GL_COLOR_ARRAY); 
+					glVertexPointer(3, GL_FLOAT, m_dim*4, 
+										 (void*)(m_dim*m_cols*r*4));
+					glColorPointer(3, GL_FLOAT, m_dim*4, 
+										(void*)(m_dim*m_cols*r*4 + 3*4));//byte offset.
+				}else{
+					glVertexPointer(m_dim, GL_FLOAT, m_dim*4, 
+										 (void*)(m_dim*m_cols*r*4));
+				}
+				glDrawArrays(drawmode, 0, (m_rows-r) * m_cols);
 			}
-			glDrawArrays(drawmode, 0, MIN(m_rows,m_r) * m_cols);
+			if(r > 0){
+				if(m_dim == 6){ //color and vertex location.
+					glEnableClientState(GL_COLOR_ARRAY); 
+					glVertexPointer(3, GL_FLOAT, m_dim*4,(void*)0);
+					glColorPointer(3, GL_FLOAT, m_dim*4,(void*)(3*4));
+				}else{
+					glVertexPointer(m_dim, GL_FLOAT, m_dim*4, 0); 
+				}
+				glDrawArrays(drawmode, 0, r * m_cols);
+			}
 			glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 			cgGLDisableProfile(myCgVertexProfile);
 			checkForCgError("disabling vertex profile");
@@ -382,7 +402,7 @@ public:
 				for(int j=0; j<3; j++)
 					m_f[m_dim*m_cols*i + j + 3] = color[j];
 				for(int j=0; j<32; j++)
-					temp[j] += m_wf[i*32 + j]; //this is +- 1.
+					temp[j] += m_wf[i*32 + j]; // range 1 mean 0.
 				npts++; 
 			}else{
 				inside[i] = false; 
@@ -402,7 +422,7 @@ public:
 			}
 		}
 		aperture /= (float)npts; 
-		aperture *= 0.65; //empirical.
+		aperture *= 0.67; //empirical.
 		copyData(m_vbo, 0, m_rows, m_f, m_dim * m_cols); 
 		return true; 
 	}
