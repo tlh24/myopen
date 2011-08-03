@@ -15,34 +15,8 @@ import array
 import collections
 import time
 from tcpsegmenter import *
-
-class Child:
-    widget = None
-    x = 0
-    y = 0
-
-def set_adjustment_upper(adj, upper, always_emit):
-    changed = False
-    value_changed = False
-
-    min = max(0.0, upper - adj.page_size)
-
-    if upper != adj.upper:
-        adj.upper = upper
-        changed = True
-
-    if adj.value > min:
-        adj.value = min
-        value_changed = True
-
-    if changed or always_emit:
-        adj.changed()
-    if value_changed:
-        adj.value_changed()
-
-def new_adj():
-    return gtk.Adjustment(0.0, 0.0, 0.0,
-                          0.0, 0.0, 0.0)
+import pylab
+import time
 
 wind = None
 pixmap = None
@@ -55,6 +29,27 @@ firing_rates[0] = Array('d', [0.0]*128)
 firing_rates[1] = Array('d', [0.0]*128)
 neuron_group = [[0 for col in range(2)] for row in range(128)]
 selected = (0,0)
+pierad = 40
+g_mean = [10.0, 10.0] # mean firing rate.
+
+def plot_fr_smoothing(widget, unused):
+	global bmi_sliders, g_die
+	def plot_thread(g_die,a):
+		t = pylab.arange(0.0, 3.0, 0.01)
+		a = math.pow(2.0, -1.0*a); 
+		integral = math.pi/(4*math.sqrt(a))
+		s = t/((t*t*t*t + a)*integral)
+		pylab.plot(t,s)
+		pylab.ion()
+		pylab.xlabel('time (s)')
+		print "plotting..."
+		while(not g_die.value):
+			pylab.draw()
+			time.sleep(1)
+		print "done."
+	a = bmi_sliders['-log2(fr smoothing)'].value
+	p = Process(target=plot_thread,args=(g_die,a))
+	p.start()
 
 def configure_event(widget, event):
 	global wind
@@ -81,7 +76,7 @@ def configure_event(widget, event):
 	group_labels = ["","x","y"]
 	for y in range(0,16):
 		for x in range(0,8):
-			cr.move_to(x*64+4,y*32+16)
+			cr.move_to(x*pierad*2+4,y*pierad+pierad/2)
 			cr.show_text(str(y*8+x))
 			for u in range(0,2):
 				cr.save()
@@ -93,8 +88,8 @@ def configure_event(widget, event):
 					cr.set_source_rgb(1,0,0)
 				if ng == 2:
 					cr.set_source_rgb(0,1,0)
-				cr.translate(x*64+16+32*u,y*32+16)
-				cr.arc(0,0, 16, 0,2*math.pi); 
+				cr.translate(x*pierad*2+pierad/2+pierad*u,y*pierad+pierad/2)
+				cr.arc(0,0, pierad/2, 0,2*math.pi); 
 				cr.close_path()
 				cr.stroke(); 
 				cr.set_source_rgb(1,1,1)
@@ -111,13 +106,16 @@ def update_display():
 		frsock = sock_connect('rabbit',4343,g_die)
 		#frsock.settimeout(1)
 		frsock.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
-	n = frsock.send('hello\r\n')
+	try:
+		n = frsock.send('hello\r\n')
+	except:
+		n = 0
 	if(n==7):
 		# wait for response. 
 		data = ""
 		passes = 0
 		try:
-			while((len(data) < 129*8*2) & (passes < 15)):
+			while((len(data) < 129*2*2) & (passes < 15)):
 				data = "".join([data,frsock.recv(4096)])
 				# print 'data length', len(data)
 				passes = passes + 1
@@ -126,15 +124,15 @@ def update_display():
 			data = []
 			frsock.close()
 			frsock = None
-		if len(data) >= 129*2*8:
-			ar = array.array('d',[]);
+		if len(data) >= 129*2*2:
+			ar = array.array('H',[]);
 			ar.fromstring(data);
-			if((ar[0]!= 2.0) | (ar[1] != 128.0)):
+			if((ar[0]!= 2) | (ar[1] != 128)):
 				print "wrong data size fr rx!", ar[0], ar[1], passes
 			# need to transpose..
 			for r in range(0,128):
-				firing_rates[0][r] = ar[(r+1)*2+0]
-				firing_rates[1][r] = ar[(r+1)*2+1]
+				firing_rates[0][r] = ar[(r+1)*2+0] / 128.0
+				firing_rates[1][r] = ar[(r+1)*2+1] / 128.0
 			#compute x and y position.
 			targ = [0.0,0.0]
 			for ch in range(0,128):
@@ -143,23 +141,28 @@ def update_display():
 						targ[0] += firing_rates[u][ch];
 					if neuron_group[ch][u] == 2:
 						targ[1] += firing_rates[u][ch];
+			#remove mean, adaptively. 
+			sm = bmi_sliders["-log10(mean smoothing)"].value
+			sm = math.pow(10, -1*sm); 
+			for i in range(0,2):
+				g_mean[i] = (1-sm)*g_mean[i] + sm*targ[i]
 			scale = [1.0,1.0]
 			offset = [0.0,0.0]
-			scale[0] = bmi_sliders[0].value
-			scale[1] = bmi_sliders[2].value
-			offset[0] = bmi_sliders[1].value
-			offset[1] = bmi_sliders[3].value
+			scale[0] = bmi_sliders["X scale"].value
+			scale[1] = bmi_sliders["Y scale"].value
+			offset[0] = bmi_sliders["X offset"].value
+			offset[1] = bmi_sliders["Y offset"].value
 			for u in range(0,2):
-				targ[u] = targ[u] / scale[u] 
+				targ[u] = (targ[u] - g_mean[u]) / (g_mean[u] * scale[u])
 				targ[u] = targ[u] + offset[u]
 			targV[0] = targ[0] # slightly more atomic.
-			targV[1] = targ[1]
+			targV[1] = targ[1] # accessed from server thread.
 	else:
 		frsock.close()
 		frsock = None
 		most_recent = 0
 		last_update = 0
-	wind.invalidate_rect(gtk.gdk.Rectangle(0,0,16*32,16*32), False)
+	wind.invalidate_rect(gtk.gdk.Rectangle(0,0,pierad*16,pierad*16), False)
 	return True
 
 def expose_event(widget, event):
@@ -169,18 +172,19 @@ def expose_event(widget, event):
 	global neuron_group
 	cr = widget.window.cairo_create()
 	cr.set_source_rgb(0.0, 0.09, 0.13); 
-	cr.rectangle(0,0,512,512)
+	cr.rectangle(0,0,pierad*16,pierad*16)
 	cr.fill()
 	#draw the firing rates.
 	if True:
 		cr.set_line_width(1)
 		cr.set_source_rgb(0.7, 0.8, 0.2); 
+		pr = pierad
 		for y in range(0,16):
 			for x in range(0,8):
 				if firing_rates[0][y*8+x] > 0:
 					cr.save()
-					cr.move_to(x*64+16,y*32+16)
-					cr.arc(x*64+16,y*32+16,16,0,2*math.pi*firing_rates[0][y*8+x]/100)
+					cr.move_to(x*pr*2+pr/2,y*pr+pr/2)
+					cr.arc(x*pr*2+pr/2,y*pr+pr/2,pr/2,0,2*math.pi*firing_rates[0][y*8+x]/100)
 					cr.fill()
 					cr.restore()
 		cr.set_source_rgb(0.1, 0.8, 0.7); 
@@ -188,8 +192,8 @@ def expose_event(widget, event):
 			for x in range(0,8):
 				if firing_rates[1][y*8+x] > 0:
 					cr.save()
-					cr.move_to(x*64+48,y*32+16)
-					cr.arc(x*64+48,y*32+16,16,0,2*math.pi*firing_rates[1][y*8+x]/100)
+					cr.move_to(x*pr*2+pr+pr/2,y*pr+pr/2)
+					cr.arc(x*pr*2+pr+pr/2,y*pr+pr/2,pr/2,0,2*math.pi*firing_rates[1][y*8+x]/100)
 					cr.fill()
 					cr.restore()
 	#draw selected.
@@ -197,8 +201,8 @@ def expose_event(widget, event):
 	cr.set_line_width(4)
 	(ch,u) = selected
 	cr.set_source_rgb(0.3,0,1); 
-	cr.translate((2*(ch%8) + u)*32+16,(ch/8)*32+16); 
-	cr.arc(0,0,16,0,2*math.pi); 
+	cr.translate((2*(ch%8) + u)*pr+pr/2,(ch/8)*pr+pr/2); 
+	cr.arc(0,0,pr/2,0,2*math.pi); 
 	cr.close_path()
 	cr.stroke()
 	cr.restore()
@@ -209,17 +213,11 @@ def expose_event(widget, event):
 	cr.paint(); 
 	return False
 
-def draw_brush(widget, x, y):
-	x, y = int(x), int(y)
-	pixmap.draw_rectangle(widget.get_style().black_gc, True,
-							  x-5, y-5, 10, 10)
-	widget.queue_draw()
-
 def button_press_event(widget, event):
 	# figure out which channel / unit is selected. 
 	global selected, neuron_group
-	x = int(event.x) / 32
-	y = int(event.y) / 32
+	x = int(event.x) / pierad
+	y = int(event.y) / pierad
 	ch = x/2 + y*8
 	un = x%2
 	selected = (ch,un)
@@ -269,16 +267,9 @@ def main():
 	sw = gtk.ScrolledWindow()
 	sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
 	vpaned.add2(sw)
-
-	#layout = Layout()
-	#layout.set_size(32*16, 32*16)
-	#sw.add(layout)
-
-	#b = gtk.Button('foobar')
-	#layout.put(b, 0, 240)
 	
 	drawing_area = gtk.DrawingArea()
-	drawing_area.set_size_request(16*32, 16*32)
+	drawing_area.set_size_request(pierad*16, pierad*16)
 	sw.add_with_viewport(drawing_area)
 	drawing_area.show()
 	
@@ -317,21 +308,30 @@ def main():
 		group_radio_buttons.append(but)
 	group_radio_buttons[0].set_active(True)
 
-	def mk_scale(lbl,mn,mx):
+	def mk_scale(lbl,mn,mx,init):
 		frame = gtk.Frame(lbl)
 		vbox_p.add(frame)
+		vb = gtk.VBox(False,0)
+		frame.add(vb)
 		widget = gtk.HScale()
 		widget.set_range(mn, mx)
 		widget.set_size_request(200, -1)
-		frame.add(widget)
-		return widget.get_adjustment()
+		widget.set_digits(2); 
+		widget.set_value(init)
+		vb.add(widget)
+		bmi_sliders[lbl] = widget.get_adjustment()
+		return vb
 		
-	bmi_sliders = []
-	bmi_sliders.append(mk_scale("X scale",1,100))
-	bmi_sliders.append(mk_scale("X offset",-1,1))
-	bmi_sliders.append(mk_scale("Y scale",1,100))
-	bmi_sliders.append(mk_scale("Y offset",-1,1))
-	
+	bmi_sliders = {}
+	mk_scale("X scale",0.01,4,2.5)
+	mk_scale("X offset",-1,1,0)
+	mk_scale("Y scale",0.01,4,2)
+	mk_scale("Y offset",-1,1,0)
+	mk_scale("-log10(mean smoothing)",0,5,3)
+	frame = mk_scale("-log2(fr smoothing)",-2,3,3)
+	button = gtk.Button("plot!")
+	button.connect("clicked", plot_fr_smoothing, 0)
+	frame.add(button)
 	
 	#start sock_thread.
 	g_die = Value('b',False)
@@ -363,7 +363,7 @@ def server_thread(die,targV,cursV,juiceV,touchV):
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	# turn on socket re-use (in the case of rapid restarts)
 	s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1); 
-	s.bind(('localhost',4344))
+	s.bind(("",4344))
 	s.listen(1)
 	s.settimeout(0.1)
 	while (not die.value):
@@ -391,10 +391,14 @@ def server_thread(die,targV,cursV,juiceV,touchV):
 					seg.writeSegment(conn, pb.SerializeToString())
 				except:
 						sopen = False
+						print "could not write segment to client"
 				if sopen:
 					# get some feedback. 
 					pb = spikes_pb2.Display_msg()
-					data = seg.nextSegment(conn)
+					try:
+						data = seg.nextSegment(conn)
+					except:
+						data = None
 					if data:
 						pb.ParseFromString(data)
 						if pb.HasField('touch'):
@@ -402,6 +406,8 @@ def server_thread(die,targV,cursV,juiceV,touchV):
 						if len(pb.cursor) > 0:
 							cursV = []
 							map((lambda x: cursV.append(x)),pb.cursor) 
+					else:
+						print "no data from the display client."
 			print "display connection closed"
 			conn.close()
 
