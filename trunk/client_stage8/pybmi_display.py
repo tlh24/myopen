@@ -76,114 +76,121 @@ class Shape:
 		glDisableClientState(GL_VERTEX_ARRAY)
 		glPopMatrix()
 
-def display(*args):
-	global target,cursor,du3,manual,touch,juice,sock,seg,die
-	pb = spikes_pb2.Display_msg()
-	data = seg.nextSegment(sock)
-	if data:
-		pb.ParseFromString(data)
-		if len(pb.cursor) == 2:
-			cursor.translate(pb.cursor[0],pb.cursor[1])
-		if len(pb.target) == 2:
-			target.translate(pb.target[0],pb.target[1])
-		if pb.HasField('juicer'):
-			juice = pb.juicer
-		if pb.HasField('manual'):
-			manual = pb.manual
-	vx = du3.getAIN(0)
-	vy = du3.getAIN(1)
-	vt = du3.getAIN(3)
-	if manual:
-		cursor.translate((vx-1.25)/1.25, (vy-1.25)/1.25)
-		cursor.set_color(1.0,1.0,1.0, 0.5+vt/5.0)
-	touch = vt > 1.25
-	glClearColor(0.0, 0.0, 0.0, 0.0)
-	glClear(GL_COLOR_BUFFER_BIT)
-	target.draw()
-	cursor.draw()
-	if data:
-		# make a response. 
-		pb = spikes_pb2.Display_msg() # new message.
-		map((lambda x: pb.cursor.append(x)),cursor.get_loc())
-		pb.touch = touch
-		seg.writeSegment(sock,pb.SerializeToString())
-	else:
-		# try reconnecting. 
-		sock = sock_connect('loco',4344,die)
-	#display
-	glFlush()
-	glutSwapBuffers()
+class cupoje: 
+	def display(self,*args):
+		pb = spikes_pb2.Display_msg()
+		data = self.seg.nextSegment(self.sock)
+		if data:
+			pb.ParseFromString(data)
+			if len(pb.cursor) == 2:
+				self.cursor.translate(pb.cursor[0],pb.cursor[1])
+			if len(pb.target) == 2:
+				self.target.translate(pb.target[0],pb.target[1])
+			if pb.HasField('juicer'):
+				self.juice = pb.juicer
+			if pb.HasField('manual'):
+				self.manual = pb.manual
+			if pb.HasField('touch'):
+				self.touch = pb.touch
+		if self.du3:
+			vx = self.du3.getAIN(0)
+			vy = self.du3.getAIN(1)
+			vt = self.du3.getAIN(3)
+			self.touch = vt > 1.25
+			if self.manual:
+				self.cursor.translate((vx-1.25)/1.25, (vy-1.25)/1.25)
+		alpha = 0.5
+		if self.touch:
+			alpha = 1.0
+		self.cursor.set_color(1.0,1.0,1.0, alpha)
+		glClearColor(0.0, 0.0, 0.0, 0.0)
+		glClear(GL_COLOR_BUFFER_BIT)
+		self.target.draw()
+		self.cursor.draw()
+		if data:
+			# make a response. 
+			pb = spikes_pb2.Display_msg() # new message.
+			map((lambda x: pb.cursor.append(x)),self.cursor.get_loc())
+			pb.manual = self.manual
+			self.seg.writeSegment(self.sock,pb.SerializeToString())
+		else:
+			# try reconnecting. 
+			self.sock = sock_connect('localhost',port,self.die)
+		#display
+		glFlush()
+		glutSwapBuffers()
 
-def halt():
-	pass
+	def keyboard(self,*args):
+		self.die.value = True
+		sys.exit()
+		
+	def winclose(self):
+		self.die.value = True
+		sys.exit()
 
-def keyboard(*args):
-	global die
-	die.value = True
-	sys.exit()
-	
-def winclose():
-	global die
-	die.value = True
-	sys.exit()
+	def mouse(self,button, state, x, y):
+		global window_size
+		# window is always +-1 in height -- aspect ratio may vary.
+		w = window_size[0]/2.0
+		h = window_size[1]/2.0
+		xx = (x-w)/h
+		yy = (h-y)/h
+		if button == GLUT_LEFT_BUTTON:
+			self.cursor.translate(xx,yy)
+		elif button == GLUT_RIGHT_BUTTON:
+			self.target.translate(xx,yy)
 
-def mouse(button, state, x, y):
-	global cursor,target,window_size
-	# window is always +-1 in height -- aspect ratio may vary.
-	w = window_size[0]/2.0
-	h = window_size[1]/2.0
-	xx = (x-w)/h
-	yy = (h-y)/h
-	if button == GLUT_LEFT_BUTTON:
-		cursor.translate(xx,yy)
-	elif button == GLUT_RIGHT_BUTTON:
-		target.translate(xx,yy)
+	def setup_viewport(self,w,h):
+		glMatrixMode(GL_PROJECTION)
+		glLoadIdentity()
+		ww = (1.0*w)/h
+		glOrtho(-1.0*ww, 1.0*ww, -1.0, 1.0, 0.0, 1.0)
+		glBlendFunc(GL_SRC_ALPHA,  GL_ONE_MINUS_SRC_ALPHA);		
+		glEnable(GL_BLEND);
+		glEnable(GL_LINE_SMOOTH);
 
-def setup_viewport(w,h):
-	glMatrixMode(GL_PROJECTION)
-	glLoadIdentity()
-	ww = (1.0*w)/h
-	glOrtho(-1.0*ww, 1.0*ww, -1.0, 1.0, 0.0, 1.0)
-	glBlendFunc(GL_SRC_ALPHA,  GL_ONE_MINUS_SRC_ALPHA);		
-	glEnable(GL_BLEND);
-	glEnable(GL_LINE_SMOOTH);
+	def reshape(self,w, h):
+		self.window_size = [w,h]
+		glViewport(0, 0, w, h)
+		self.setup_viewport(w,h)
 
-def reshape(w, h):
-	global window_size
-	window_size = [w,h]
-	glViewport(0, 0, w, h)
-	setup_viewport(w,h)
+	def __init__(self):
+		glutInit(sys.argv)
+		glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_ALPHA)
+		glutInitWindowSize(300, 300)
+		glutCreateWindow('cupoje 2')
+		self.setup_viewport(300,300)
+		glutReshapeFunc(self.reshape)
+		glutDisplayFunc(self.display)
+		glutIdleFunc(self.display)
+		glutMouseFunc(self.mouse)
+		glutKeyboardFunc(self.keyboard)
+		glutCloseFunc(self.winclose)
+		#setup the vertex buffers.
+		self.target = Shape(1.0,1.0,1.0,0.7)
+		self.target.make_ring(0.3, 0.5, 25)
+		self.cursor = Shape(1.0, 1.0, 1.0, 0.8)
+		self.cursor.make_circle(0.2, 25)
+		# setup the labJack. 
+		try:
+			self.du3 = u3.U3()
+			self.du3.configIO(FIOAnalog=255,EIOAnalog=255); 
+			self.manual = True
+		except:
+			self.du3 = None
+			self.manual = False
+		self.touch = False
+		#connect to the BMI server.
+		print sys.argv
+		self.port = int(sys.argv[2])
+		self.die = Value('b',False)
+		self.sock = sock_connect(sys.argv[1],self.port,self.die)
+		self.sock.settimeout(1)
+		self.seg = TCPSegmenter()
+		glutMainLoop()
+		self.die = True
 
-def main():
-	global target,cursor,du3,manual,sock,seg,die
-	glutInit(sys.argv)
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_ALPHA)
-	glutInitWindowSize(300, 300)
-	glutCreateWindow('cupoje 2')
-	setup_viewport(300,300)
-	glutReshapeFunc(reshape)
-	glutDisplayFunc(display)
-	glutIdleFunc(display)
-	glutMouseFunc(mouse)
-	glutKeyboardFunc(keyboard)
-	glutCloseFunc(winclose)
-	#setup the vertex buffers.
-	target = Shape(1.0,1.0,1.0,0.7)
-	target.make_ring(0.3, 0.5, 25)
-	cursor = Shape(1.0, 1.0, 1.0, 0.8)
-	cursor.make_circle(0.2, 25)
-	# setup the labJack. 
-	du3 = u3.U3()
-	du3.configIO(FIOAnalog=255,EIOAnalog=255); 
-	manual = True
-	#connect to the BMI server.
-	die = Value('b',False)
-	sock = None
-	seg = TCPSegmenter()
-	glutMainLoop()
-	die = True
-
-main()
+c = cupoje()
 
 
 
