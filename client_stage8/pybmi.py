@@ -7,7 +7,7 @@ from gtk import gdk
 import math
 import cairo
 import random
-from multiprocessing import Process, Value, Array
+from multiprocessing import Process, Value, Array, Queue
 import socket
 import spikes_pb2
 import sys
@@ -31,25 +31,37 @@ neuron_group = [[0 for col in range(2)] for row in range(128)]
 selected = (0,0)
 pierad = 40
 g_mean = [10.0, 10.0] # mean firing rate.
+plot_thread = None
+plot_queue = Queue()
 
-def plot_fr_smoothing(widget, unused):
-	global bmi_sliders, g_die
-	def plot_thread(g_die,a):
-		t = pylab.arange(0.0, 3.0, 0.01)
-		a = math.pow(2.0, -1.0*a); 
-		integral = math.pi/(4*math.sqrt(a))
-		s = t/((t*t*t*t + a)*integral)
-		pylab.plot(t,s)
-		pylab.ion()
-		pylab.xlabel('time (s)')
-		print "plotting..."
-		while(not g_die.value):
-			pylab.draw()
-			time.sleep(1)
-		print "done."
+def plot_proc(g_die,cqueue):
+	la = -1; 
+	while(not g_die.value):
+		try:
+			la = cqueue.get(True, 1.0)
+		except:
+			la = None
+		if la:
+			t = pylab.arange(0.0, 3.0, 0.01)
+			a = math.pow(2.0, -1.0*la); 
+			integral = math.pi/(4*math.sqrt(a))
+			s = t/((t*t*t*t + a)*integral)
+			pylab.hold(False)
+			pylab.plot(t,s)
+			pylab.ion()
+			pylab.xlabel('time (s)')
+			print "plotting...", la, a
+		pylab.draw()
+	print "done."
+
+def plot_fr_smoothing(widget):
+	global bmi_sliders, g_die, plot_thread, plot_queue
 	a = bmi_sliders['-log2(fr smoothing)'].value
-	p = Process(target=plot_thread,args=(g_die,a))
-	p.start()
+	plot_queue.put(a)
+	print "thread_a_v", a
+	if (not plot_thread):
+		plot_thread = Process(target=plot_proc,args=(g_die,plot_queue))
+		plot_thread.start()
 
 def configure_event(widget, event):
 	global wind
@@ -107,10 +119,12 @@ def update_display():
 		#frsock.settimeout(1)
 		frsock.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
 	try:
-		n = frsock.send('hello\r\n')
+		a = bmi_sliders['-log2(fr smoothing)'].value
+		a = math.pow(2.0, -1.0*a); 
+		n = frsock.send(str(a))
 	except:
 		n = 0
-	if(n==7):
+	if(n>0):
 		# wait for response. 
 		data = ""
 		passes = 0
@@ -120,7 +134,7 @@ def update_display():
 				# print 'data length', len(data)
 				passes = passes + 1
 		except socket.error, msg:
-			print msg
+			print "error in rx of update_display:", msg
 			data = []
 			frsock.close()
 			frsock = None
@@ -328,7 +342,8 @@ def main():
 	mk_scale("Y scale",0.01,4,2)
 	mk_scale("Y offset",-1,1,0)
 	mk_scale("-log10(mean smoothing)",0,5,3)
-	frame = mk_scale("-log2(fr smoothing)",-2,3,3)
+	frame = mk_scale("-log2(fr smoothing)",-3,10,3)
+	bmi_sliders['-log2(fr smoothing)'].connect("value_changed", plot_fr_smoothing); 
 	button = gtk.Button("plot!")
 	button.connect("clicked", plot_fr_smoothing, 0)
 	frame.add(button)
@@ -337,13 +352,16 @@ def main():
 	g_die = Value('b',False)
 	frsock = None
 
-	#start server_thread
 	targV = Array('d',[0.0]*2)
 	cursV = Array('d',[0.0]*2)
 	juiceV = Value('b',False)
 	touchV = Value('b',False)
-	p2 = Process(target=server_thread,args=(g_die,targV,cursV,juiceV,touchV))
+	#start server_thread (remote head)
+	p2 = Process(target=server_thread,args=(g_die,4344,targV,cursV,juiceV,touchV))
 	p2.start()
+	#start server_thread (local head)
+	p3 = Process(target=server_thread,args=(g_die,4345,targV,cursV,juiceV,touchV))
+	p3.start()
 	
 	gobject.timeout_add(10, update_display)
 
@@ -351,6 +369,7 @@ def main():
 	gtk.main()
 	g_die.value = True
 	p2.join()
+	p3.join()
 	
 def radio_event(widget, btn_number):
 	global neuron_group,selected,drawing_area
@@ -359,11 +378,11 @@ def radio_event(widget, btn_number):
 		neuron_group[ch][u] = btn_number
 		configure_event(drawing_area,None); 
             
-def server_thread(die,targV,cursV,juiceV,touchV):
+def server_thread(die,port,targV,cursV,juiceV,touchV):
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	# turn on socket re-use (in the case of rapid restarts)
 	s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1); 
-	s.bind(("",4344))
+	s.bind(("",port))
 	s.listen(1)
 	s.settimeout(0.1)
 	while (not die.value):
@@ -374,24 +393,20 @@ def server_thread(die,targV,cursV,juiceV,touchV):
 		if conn:
 			sopen = True
 			conn.settimeout(0.1)
-			print "connected to by ", addr
+			print port, " connected to by ", addr
 			seg = TCPSegmenter()
 			while (not die.value) & sopen:
 				#first write out commands (if any)
 				pb = spikes_pb2.Display_msg()
-				# targV[0] = cursV[0]
-				# targV[1] = cursV[1]
-				#targV[0] = random.random()
-				#targV[1] = random.random()
-				juiceV.value = False
 				map((lambda x: pb.cursor.append(x)),cursV)
 				map((lambda x: pb.target.append(x)),targV)
 				pb.juicer = juiceV.value
+				pb.touch = touchV.value
 				try:
 					seg.writeSegment(conn, pb.SerializeToString())
 				except:
 						sopen = False
-						print "could not write segment to client"
+						print port, " could not write segment to client"
 				if sopen:
 					# get some feedback. 
 					pb = spikes_pb2.Display_msg()
@@ -401,14 +416,14 @@ def server_thread(die,targV,cursV,juiceV,touchV):
 						data = None
 					if data:
 						pb.ParseFromString(data)
-						if pb.HasField('touch'):
-							touchV.value = pb.touch
-						if len(pb.cursor) > 0:
-							cursV = []
-							map((lambda x: cursV.append(x)),pb.cursor) 
+						if pb.HasField('manual'):
+							if pb.manual:
+							if len(pb.cursor) > 0:
+								cursV = []
+								map((lambda x: cursV.append(x)),pb.cursor) 
 					else:
-						print "no data from the display client."
-			print "display connection closed"
+						print port, " no data from the display client."
+			print port," display connection closed"
 			conn.close()
 
 if __name__ == '__main__':
