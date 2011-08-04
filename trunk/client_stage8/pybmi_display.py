@@ -109,7 +109,7 @@ def display(*args):
 		seg.writeSegment(sock,pb.SerializeToString())
 	else:
 		# try reconnecting. 
-		sock = sock_connect('localhost',4344,die)
+		sock = sock_connect('loco',4344,die)
 	#display
 	glFlush()
 	glutSwapBuffers()
@@ -178,8 +178,7 @@ def main():
 	manual = True
 	#connect to the BMI server.
 	die = Value('b',False)
-	sock = sock_connect('localhost',4344,die)
-	sock.settimeout(1)
+	sock = None
 	seg = TCPSegmenter()
 	glutMainLoop()
 	die = True
