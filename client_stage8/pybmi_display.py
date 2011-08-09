@@ -20,7 +20,7 @@ import time
 
 class Shape:
 	def __init__(self,r,g,b,a):
-		self.color = (r,g,b,a)
+		self.color = [r,g,b,a]
 		self.v = []
 		self.loc = [0.0,0.0]
 	def translate(self,x,y):
@@ -28,6 +28,8 @@ class Shape:
 		self.loc[1] = y
 	def set_color(self,r,g,b,a):
 		self.color = [r,g,b,a]
+	def set_alpha(self,a):
+		self.color[3] = a
 	def get_loc(self):
 		return self.loc
 		
@@ -90,16 +92,24 @@ class cupoje:
 			if pb.HasField('juicer'):
 				self.juice = pb.juicer
 			if pb.HasField('manual'):
-				self.manual = pb.manual
+				self.manual = pb.manual and (self.du3 != None)
 			if pb.HasField('touch'):
 				self.touch = pb.touch
-		if self.du3:
+			if pb.HasField('cursorSize'):
+				self.cursor.make_circle(pb.cursorSize, 25)
+			if pb.HasField('targetSize'):
+				a = pb.targetSize
+				self.target.make_ring(a*0.6, a, 25)
+			if pb.HasField('cursorAlpha'):
+				self.cursor.set_alpha(pb.cursorAlpha)
+			if pb.HasField('targetAlpha'):
+				self.target.set_alpha(pb.targetAlpha)
+		if self.du3 and self.manual:
 			vx = self.du3.getAIN(0)
 			vy = self.du3.getAIN(1)
 			vt = self.du3.getAIN(3)
 			self.touch = vt > 1.25
-			if self.manual:
-				self.cursor.translate((vx-1.25)/1.25, (vy-1.25)/1.25)
+			self.cursor.translate((vx-1.25)/1.25, (vy-1.25)/1.25)
 		else:
 			time.sleep(0.008)
 		alpha = 0.5
@@ -114,7 +124,7 @@ class cupoje:
 			# make a response. 
 			pb = spikes_pb2.Display_msg() # new message.
 			pb.manual = self.manual
-			if self.manual: 
+			if self.du3: 
 				map((lambda x: pb.cursor.append(x)),self.cursor.get_loc())
 				pb.touch = self.touch
 			self.seg.writeSegment(self.sock,pb.SerializeToString())

@@ -18,6 +18,7 @@ from tcpsegmenter import *
 import pylab
 import time
 import jsonpickle # for saving state.
+import traceback
 
 wind = None
 pixmap = None
@@ -31,8 +32,6 @@ firing_rates[1] = Array('d', [0.0]*128)
 neuron_group = [[0 for col in range(2)] for row in range(128)]
 selected = (0,0)
 pierad = 40
-mean_smoothing = 3.0
-fr_smoothing = 6.0
 g_mean = [10.0, 10.0] # mean firing rate.
 plot_thread = None
 plot_queue = Queue()
@@ -59,9 +58,7 @@ def plot_proc(g_die,cqueue):
 
 def plot_fr_smoothing(widget):
 	global g_dict, g_die, plot_thread, plot_queue
-	global fr_smoothing
-	a = g_dict['-log2(fr_smoothing)']
-	fr_smoothing = a
+	a = g_dict['fr_smoothing']
 	plot_queue.put(a)
 	print "thread_a_v", a
 	if (not plot_thread):
@@ -111,22 +108,20 @@ def configure_event(widget, event):
 				cr.stroke(); 
 				cr.set_source_rgb(1,1,1)
 				cr.restore()
-				# cr.move_to(x*64+14+32*u,y*32+24)
-				# cr.show_text(group_labels[neuron_group[y*8+x][u]])
 	update_display()
 	return True
 	
 def update_display():
 	# get data from gtkclient.
-	global frsock, g_die, g_dict, fr_smoothing, mean_smoothing                                
+	global frsock, g_die, g_dict, mean_smoothing                                
 	if frsock == None:
 		frsock = sock_connect('rabbit',4343,g_die)
 		#frsock.settimeout(1)
 		frsock.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
 	try:
-		a = fr_smoothing
+		a = g_dict['fr_smoothing']
 		a = math.pow(2.0, -1.0*a); 
-		n = frsock.send(str(a))
+		n = frsock.send(str(a)) # this controls gtkclient.
 	except:
 		n = 0
 	if(n>0):
@@ -161,9 +156,8 @@ def update_display():
 					if neuron_group[ch][u] == 2:
 						targ[1] += firing_rates[u][ch];
 			#remove mean, adaptively. 
-			sm = g_dict["-log10(mean_smoothing)"]
-			mean_smoothing = sm
-			sm = math.pow(10, -1*sm); 
+			sm = g_dict["mean_smoothing"]
+			sm = math.pow(10, -1*(sm+0.01)); 
 			for i in range(0,2):
 				g_mean[i] = (1-sm)*g_mean[i] + sm*targ[i]
 			scale = [1.0,1.0]
@@ -173,19 +167,59 @@ def update_display():
 			offset[0] = g_dict["X offset"]
 			offset[1] = g_dict["Y offset"]
 			for u in range(0,2):
-				targ[u] = (targ[u] - g_mean[u]) / (g_mean[u] * scale[u])
+				targ[u] = scale[u] * (targ[u] - g_mean[u]) / (g_mean[u] + 0.01)
 				targ[u] = targ[u] + offset[u]
+				if targ[u] < -1.0:
+					targ[u] = -1.0
+				if targ[u] > 1.0:
+					targ[u] = 1.0
 			if g_dict['control'] == 'BMI':
 				cursV[0] = targ[0] # slightly more atomic.
 				cursV[1] = targ[1] # accessed from server thread.
 			#probably need to run the game here... 
+			d = cursV[0] - targV[0]
+			e = cursV[1] - targV[1]
+			d = math.sqrt(d*d + e*e)
+			inside = d < g_dict['targetSize']
 			if g_dict['task'] == 'random':
-				d = cursV[0] - targV[0]
-				e = cursV[1] - targV[1]
-				d = d*d + e*e
-				if d < 0.3:
+				if inside:
 					targV[0] = random.random()-0.5
 					targV[1] = random.random()-0.5
+			if g_dict['task'] == 'left/right': #start here.  move to 2d later.
+				# do the standard thing: switch statement based on state.
+				gs = g_dict['gs']
+				dt = time.time() - g_dict['gt']
+				if gs == 'default':
+					g_dict['targetAlpha'] = 0.5
+					if inside:
+						gs = 'hold'
+				elif gs == 'hold': 
+					g_dict['targetAlpha'] = 0.5 + 0.5*dt/g_dict['holdTime']
+					if dt > g_dict['holdTime']:
+						gs = 'reward'
+					if not inside:
+						gs = 'default'
+				elif gs == 'reward':
+					g_dict['targetAlpha'] = 1.0 - 0.5*dt/g_dict['rewardTime']
+					if dt > g_dict['rewardTime']:
+						gs = 'new target'
+				else: #make a new target and transisiton to wait.
+					if targV[0] < 0:
+						targV[0] = 0.7
+					else:
+						targV[0] = -0.7
+					targV[1] = 0.0
+					g_dict['targetAlpha'] = 0.5
+					gs = 'default'
+				#control the juicer.
+				if gs == 'reward':
+					g_dict['juicer'] = True
+				else:
+					g_dict['juicer'] = False
+				if g_dict['gs'] != gs: #update the state time
+					g_dict['gt'] = time.time()
+				g_dict['gs'] = gs
+			
 	else:
 		frsock.close()
 		frsock = None
@@ -284,11 +318,17 @@ def motion_notify_event(widget, event):
 
 
 def main():
-	global firing_rates, frsock, targV, cursV, juiceV, touchV
+	global firing_rates, frsock, targV, cursV, touchV
 	global g_die, drawing_area, group_radio_buttons
 	global g_dict # shared state.
-	global neuron_group, selected, pierad, mean_smoothing, fr_smoothing
+	global neuron_group, selected, pierad, mean_smoothing
 	
+	#manage the shared dictionary. 
+	manager = Manager()
+	g_dict = manager.dict()
+	inits = ['gt','targetAlpha','cursorAlpha','targetSize','cursorSize']
+	for v in inits:
+		g_dict[v] = 0.0
 	#first order of business is to read in state. 
 	fil = None
 	try:
@@ -297,20 +337,21 @@ def main():
 		neuron_group = p['neuron_group']
 		selected = p['selected']
 		pierad = p['pierad']
-		mean_smoothing = p['mean_smoothing']
-		fr_smoothing = p['fr_smoothing']
+		d = p['g_dict']
+		for k,v in d.iteritems():
+			g_dict[k] = v
 	except:
-		print "failed to read prefs!"
+		print "failed to read prefs!", sys.exc_info()[0]
+		traceback.print_exc(file=sys.stdout)
+		g_dict['mean_smoothing'] = 3.0
+		g_dict['fr_smoothing'] = 6.0
+		g_dict['gs'] = ''
 		if fil: 
 			fil.close()
-			
-	#manage the shared dictionary. 
-	manager = Manager()
-	g_dict = manager.dict()
 	
 	# next is to make the window. 
 	window = gtk.Window()
-	window.set_size_request(800, 480)
+	window.set_size_request(800, 900)
 	window.connect('delete-event', gtk.main_quit)
 
 	vpaned = gtk.HPaned()
@@ -341,10 +382,11 @@ def main():
 
 	vbox_p = gtk.VBox(False, 0); 
 	vpaned.add1(vbox_p); 
-	frame = make_radio('neuron_group', ['None','X','Y'], 0, radio_event)
+	frame = make_radio('set_neuron_group', ['None','X','Y'], radio_event)
 	vbox_p.add(frame)
 
 	def mk_scale(lbl,mn,mx,init,callback=lambda x:x):
+		global g_dict
 		frame = gtk.Frame(lbl)
 		vbox_p.add(frame)
 		vb = gtk.VBox(False,0)
@@ -352,33 +394,37 @@ def main():
 		widget = gtk.HScale()
 		widget.set_range(mn, mx)
 		widget.set_size_request(200, -1)
-		widget.set_digits(2); 
-		widget.set_value(init)
-		g_dict[lbl] = init
+		widget.set_digits(2);
+		if lbl in g_dict:
+			widget.set_value(g_dict[lbl])
+		else:
+			widget.set_value(init)
+			g_dict[lbl] = init
+			print lbl, "not in g_dict?"
 		vb.add(widget)
 		adj = widget.get_adjustment()
-		def read_value(widget):
-			g_dict[lbl] = widget.value #closure
-			callback(widget)
+		def read_value(widg):
+			g_dict[lbl] = widg.value
+			callback(widg)
 		adj.connect("value_changed", read_value); 
 		return vb
 		
-	mk_scale("X scale",0.01,4,2.5)
+	mk_scale("X scale",0.01,10,2.5)
 	mk_scale("X offset",-1,1,0)
-	mk_scale("Y scale",0.01,4,2)
+	mk_scale("Y scale",0.01,10,2)
 	mk_scale("Y offset",-1,1,0)
-	mk_scale("-log10(mean_smoothing)",0,5,mean_smoothing)
-	frame = mk_scale("-log2(fr_smoothing)",-3,10,fr_smoothing, plot_fr_smoothing)
-	# button = gtk.Button("plot!")
-	# button.connect("clicked", plot_fr_smoothing, 0)
-	# frame.add(button)
+	mk_scale("mean_smoothing",0,5,3)
+	frame = mk_scale("fr_smoothing",-3,10,6,plot_fr_smoothing)
 	
 	# add controls for the game. 
-	frame = make_radio('control', ['manual','BMI'], 0, lambda x,y:x)
+	frame = make_radio('control',['manual','BMI'], lambda x,y:x)
 	vbox_p.add(frame)
-	frame = make_radio('task',['left/right','4 target stereotyped','random'], 0, lambda x,y:x)
+	frame = make_radio('task',['left/right','4 target stereotyped','random'], lambda x,y:x)
 	vbox_p.add(frame)
-	
+	mk_scale("targetSize",0.0, 1.0, 0.5)
+	mk_scale("cursorSize",0.0, 1.0, 0.5)
+	mk_scale("holdTime",0.0, 1.0, 0.5)
+	mk_scale("rewardTime",0.0, 1.0, 0.5)
 	
 	#start sock_thread.
 	g_die = Value('b',False)
@@ -386,13 +432,12 @@ def main():
 
 	targV = Array('d',[0.0]*2)
 	cursV = Array('d',[0.0]*2)
-	juiceV = Value('b',False)
 	touchV = Value('b',False)
 	#start server_thread (remote head)
-	p2 = Process(target=server_thread,args=(g_die,4344,targV,cursV,juiceV,touchV,g_dict))
+	p2 = Process(target=server_thread,args=(g_die,4344,targV,cursV,touchV,g_dict))
 	p2.start()
 	#start server_thread (local head)
-	p3 = Process(target=server_thread,args=(g_die,4345,targV,cursV,juiceV,touchV,g_dict))
+	p3 = Process(target=server_thread,args=(g_die,4345,targV,cursV,touchV,g_dict))
 	p3.start()
 	
 	gobject.timeout_add(10, update_display)
@@ -408,11 +453,15 @@ def main():
 		p['neuron_group'] = neuron_group
 		p['selected'] = selected
 		p['pierad'] = pierad
-		p['mean_smoothing'] = mean_smoothing
-		p['fr_smoothing'] = fr_smoothing
+		d = {}
+		for k,v in g_dict.items():
+			print k,v
+			d[k] = v
+		p['g_dict'] = d
 		fil.write(jsonpickle.encode(p))
 	except:
-		print "failed to write prefs!"
+		print "failed to write prefs!", sys.exc_info()[0]
+		traceback.print_exc(file=sys.stdout)
 	fil.close()
 	
 def radio_event(widget, btn_number):
@@ -422,7 +471,7 @@ def radio_event(widget, btn_number):
 		neuron_group[ch][u] = btn_number
 		configure_event(drawing_area,None); 
 		
-def make_radio(name, labels, initialSelected, callback):
+def make_radio(name, labels, callback):
 	global g_dict
 	frame = gtk.Frame(name)
 	vbox = gtk.VBox(False, 0); 
@@ -443,18 +492,23 @@ def make_radio(name, labels, initialSelected, callback):
 		but.connect("clicked", radioEvent, a)
 		vbox.pack_start(but, True, True)
 		group_radio_buttons.append(but)
-	group_radio_buttons[initialSelected].set_active(True)
-	g_dict[name] = labels[initialSelected]
+	index = 0
+	if name in g_dict:
+		index = next((i for i in xrange(len(labels)) if labels[i] == g_dict[name]), 0)
+	else:
+		g_dict[name] = labels[index]
+	group_radio_buttons[index].set_active(True)
 	return frame
 	
             
-def server_thread(die,port,targV,cursV,juiceV,touchV,g_dict):
+def server_thread(die,port,targV,cursV,touchV,g_dict):
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	# turn on socket re-use (in the case of rapid restarts)
 	s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1); 
 	s.bind(("",port))
 	s.listen(1)
 	s.settimeout(0.1)
+	local_dict = {}
 	while (not die.value):
 		try:
 			conn,addr = s.accept()
@@ -471,13 +525,18 @@ def server_thread(die,port,targV,cursV,juiceV,touchV,g_dict):
 				map((lambda x: pb.cursor.append(x)),cursV)
 				# print cursV[0], cursV[1]
 				map((lambda x: pb.target.append(x)),targV)
-				pb.juicer = juiceV.value
 				pb.touch = touchV.value
+				check = ['cursorSize','targetSize','targetAlpha','juicer']
+				for k in check:
+					if (not (k in local_dict)) or (local_dict[k] != g_dict[k]):
+						exec ('pb.' + k + ' = g_dict[k]') in locals(), globals()
+						local_dict[k] = g_dict[k]
+				pb.manual = g_dict['control'] == 'manual'
 				try:
 					seg.writeSegment(conn, pb.SerializeToString())
 				except:
 						sopen = False
-						print port, " could not write segment to client"
+						print port, "could not write segment to client"
 				if sopen:
 					# get some feedback. 
 					pb = spikes_pb2.Display_msg()
@@ -487,18 +546,18 @@ def server_thread(die,port,targV,cursV,juiceV,touchV,g_dict):
 						data = None
 					if data:
 						pb.ParseFromString(data)
-						if pb.HasField('manual'):
-							if pb.manual and (g_dict['control'] == 'manual'):
-								if len(pb.cursor) > 0:
-									cursV[0] = pb.cursor[0]
-									cursV[1] = pb.cursor[1]
-						if pb.HasField('touch'):
-							touchV.value = pb.touch
+						if g_dict['control'] == 'manual':
+							if len(pb.cursor) > 0:
+								cursV[0] = pb.cursor[0]
+								cursV[1] = pb.cursor[1]
+							if pb.HasField('touch'):
+								touchV.value = pb.touch
 							#print port, "touch", touchV.value
 					else:
-						print port, " no data from the display client."
-			print port," display connection closed"
+						print port, "no data from the display client."
+			print port,"display connection closed"
 			conn.close()
+			local_dict = {}
 
 if __name__ == '__main__':
     main()
