@@ -865,8 +865,8 @@ void* sock_thread(void* destIP){
 							if(g_verDelay[k][j] > 8){
 								float a = g_c[h]->getAperture(j); 
 								if(fabs(g_verAper[k][j] - a)/a > 16.f/256.f){
-									printf("err missed spike %d saa %d (aperture %d)\n",
-									j,(int)(round(g_verAper[k][j])),g_c[h]->getAperture(j)); 
+									printf("err missed spike %d:%d saa %d (aperture %d)\n",
+									h,j,(int)(round(g_verAper[k][j])),g_c[h]->getAperture(j)); 
 								}
 								g_verDelay[k][j] = 0;
 							}
@@ -942,10 +942,10 @@ void* sock_thread(void* destIP){
 										offset = j; 
 									}
 								}
-								float a = g_c[k]->getAperture(t);
+								int a = g_c[g_channel[k]]->getAperture(t);
 								if(min*0.95 > a){
 									printf("err ch %d u %d headstage says match, we don't find! match %d target %d\n", 
-										   g_channel[k], t+1, (int)(round(min)), (int)(round(a))); 
+										   g_channel[k], t+1, (int)(round(min)), a); 
 								}
 								float wf[32]; 
 								for(int q=0; q < 32; q++){
@@ -1030,11 +1030,13 @@ void* sock_thread(void* destIP){
 void* server_thread(void* ){
 	//kinda like a RPC service -- call to get the vector of firing rates.
 	// call whenever you want!
-	double rates[128+1][2]; //first two are the size of the array.
+	unsigned short rates[128+1][2]; //first two are the size of the array.
+	//9 bits integer part, 7 bits fractinoal part. hence 0-511.99Hz.
 	unsigned char buf[128]; 
 	int client = 0; 
 	g_spikesock = setup_socket(4343,1); //tcp socket, server.
 	//check to see if a client is connected.
+	int passes = 0; 
 	while(g_die == 0){
 		if(client <= 0){
 			client = accept_socket(g_spikesock); 
@@ -1046,12 +1048,21 @@ void* server_thread(void* ){
 			//see if they have requested something. 
 			double reqtime = gettime(); 
 			//double start = reqtime;
-			int n = recv(client, buf, sizeof(buf), 0);
+			int n = recv(client, buf, sizeof(buf), 0); //this seems to block?
 			//double end = gettime(); 
 			//printf("recv time: %f\n", end-start); 
 			buf[n] = 0;
 			if(n > 0){
+				passes = 0; 
 				//printf("got client request [%d]:%s\n",n,buf); 
+				double a_req = atof((const char*)buf); 
+				if(a_req > 0 && a_req < 10.0){
+					for(int i=0; i<128; i++){
+						for(int j=0; j<2; j++){
+							g_fr[i][j].set_a(a_req); 
+						}
+					}
+				}
 				//doesn't matter at this point -- make a response. 
 				//start = gettime();
 				rates[0][0] = 2; //rows
@@ -1073,15 +1084,19 @@ void* server_thread(void* ){
 				//end = gettime(); 
 				//printf("sending message time: %f\n", end-start); 
 				//else{
-				//	printf("sent %d bytes to client.\n", n); 
+				//printf("sent %d bytes to client.\n", n); 
 				//}
 			}else{
-				if(client) close_socket(client); 
-				client = 0; 
-				sleep(1);
+				passes++; 
+				if(passes > 6){
+					printf("no response, closing client connection\n");
+					if(client) close_socket(client); 
+					client = 0; passes = 0;
+				}
+				usleep(200000);
 			}
 		}else{
-			sleep(1);
+			usleep(100000);
 		}
 	}
 	if(client) close_socket(client); 

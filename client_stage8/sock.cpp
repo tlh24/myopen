@@ -32,7 +32,7 @@ int setup_socket(int portno, int tcp){
 		fprintf(stderr, "ERROR opening socket\n");
 		return 0; 
 	}
-	if(tcp==0) fcntl(sock, F_SETFL, O_NONBLOCK); //set the socket to non-blocking. 
+	fcntl(sock, F_SETFL, O_NONBLOCK); //set the socket to non-blocking. 
 	int optval = 1; // turn on address reuse. 
 	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)); 
 	bzero((char *) &serv_addr, sizeof(serv_addr));
