@@ -7,7 +7,7 @@ from gtk import gdk
 import math
 import cairo
 import random
-from multiprocessing import Process, Value, Array, Queue
+from multiprocessing import Process, Value, Array, Queue, Manager
 import socket
 import spikes_pb2
 import sys
@@ -17,6 +17,7 @@ import time
 from tcpsegmenter import *
 import pylab
 import time
+import jsonpickle # for saving state.
 
 wind = None
 pixmap = None
@@ -30,6 +31,8 @@ firing_rates[1] = Array('d', [0.0]*128)
 neuron_group = [[0 for col in range(2)] for row in range(128)]
 selected = (0,0)
 pierad = 40
+mean_smoothing = 3.0
+fr_smoothing = 6.0
 g_mean = [10.0, 10.0] # mean firing rate.
 plot_thread = None
 plot_queue = Queue()
@@ -55,8 +58,10 @@ def plot_proc(g_die,cqueue):
 	print "done."
 
 def plot_fr_smoothing(widget):
-	global bmi_sliders, g_die, plot_thread, plot_queue
-	a = bmi_sliders['-log2(fr smoothing)'].value
+	global g_dict, g_die, plot_thread, plot_queue
+	global fr_smoothing
+	a = g_dict['-log2(fr_smoothing)']
+	fr_smoothing = a
 	plot_queue.put(a)
 	print "thread_a_v", a
 	if (not plot_thread):
@@ -113,13 +118,13 @@ def configure_event(widget, event):
 	
 def update_display():
 	# get data from gtkclient.
-	global frsock, g_die, bmi_sliders
+	global frsock, g_die, g_dict, fr_smoothing, mean_smoothing                                
 	if frsock == None:
 		frsock = sock_connect('rabbit',4343,g_die)
 		#frsock.settimeout(1)
 		frsock.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
 	try:
-		a = bmi_sliders['-log2(fr smoothing)'].value
+		a = fr_smoothing
 		a = math.pow(2.0, -1.0*a); 
 		n = frsock.send(str(a))
 	except:
@@ -156,21 +161,31 @@ def update_display():
 					if neuron_group[ch][u] == 2:
 						targ[1] += firing_rates[u][ch];
 			#remove mean, adaptively. 
-			sm = bmi_sliders["-log10(mean smoothing)"].value
+			sm = g_dict["-log10(mean_smoothing)"]
+			mean_smoothing = sm
 			sm = math.pow(10, -1*sm); 
 			for i in range(0,2):
 				g_mean[i] = (1-sm)*g_mean[i] + sm*targ[i]
 			scale = [1.0,1.0]
 			offset = [0.0,0.0]
-			scale[0] = bmi_sliders["X scale"].value
-			scale[1] = bmi_sliders["Y scale"].value
-			offset[0] = bmi_sliders["X offset"].value
-			offset[1] = bmi_sliders["Y offset"].value
+			scale[0] = g_dict["X scale"]
+			scale[1] = g_dict["Y scale"]
+			offset[0] = g_dict["X offset"]
+			offset[1] = g_dict["Y offset"]
 			for u in range(0,2):
 				targ[u] = (targ[u] - g_mean[u]) / (g_mean[u] * scale[u])
 				targ[u] = targ[u] + offset[u]
-			targV[0] = targ[0] # slightly more atomic.
-			targV[1] = targ[1] # accessed from server thread.
+			if g_dict['control'] == 'BMI':
+				cursV[0] = targ[0] # slightly more atomic.
+				cursV[1] = targ[1] # accessed from server thread.
+			#probably need to run the game here... 
+			if g_dict['task'] == 'random':
+				d = cursV[0] - targV[0]
+				e = cursV[1] - targV[1]
+				d = d*d + e*e
+				if d < 0.3:
+					targV[0] = random.random()-0.5
+					targV[1] = random.random()-0.5
 	else:
 		frsock.close()
 		frsock = None
@@ -245,6 +260,7 @@ def key_press_event(widget, event):
 	global drawing_area
 	(ch,un) = selected
 	ng = neuron_group[ch][un]
+	ng2 = 0
 	if event.keyval == gtk.keysyms.BackSpace:
 		ng2 = 0
 	if event.keyval == gtk.keysyms.x:
@@ -268,8 +284,31 @@ def motion_notify_event(widget, event):
 
 
 def main():
-	global firing_rates,frsock,targV,cursV,juiceV,touchV
-	global g_die, drawing_area, group_radio_buttons, bmi_sliders
+	global firing_rates, frsock, targV, cursV, juiceV, touchV
+	global g_die, drawing_area, group_radio_buttons
+	global g_dict # shared state.
+	global neuron_group, selected, pierad, mean_smoothing, fr_smoothing
+	
+	#first order of business is to read in state. 
+	fil = None
+	try:
+		fil = open('pybmi_state.json','r')
+		p = jsonpickle.decode(fil.read())
+		neuron_group = p['neuron_group']
+		selected = p['selected']
+		pierad = p['pierad']
+		mean_smoothing = p['mean_smoothing']
+		fr_smoothing = p['fr_smoothing']
+	except:
+		print "failed to read prefs!"
+		if fil: 
+			fil.close()
+			
+	#manage the shared dictionary. 
+	manager = Manager()
+	g_dict = manager.dict()
+	
+	# next is to make the window. 
 	window = gtk.Window()
 	window.set_size_request(800, 480)
 	window.connect('delete-event', gtk.main_quit)
@@ -302,27 +341,10 @@ def main():
 
 	vbox_p = gtk.VBox(False, 0); 
 	vpaned.add1(vbox_p); 
-	frame = gtk.Frame("grouping")
+	frame = make_radio('neuron_group', ['None','X','Y'], 0, radio_event)
 	vbox_p.add(frame)
-	vbox = gtk.VBox(False, 0); 
-	frame.add(vbox)
-	group_radio_buttons=[]
-	labels = ["none","x","y"]
-	for a in range(0,3):
-		if len(group_radio_buttons) == 0:
-			#first button with none group
-			widget = None
-		else:
-			#additional buttons with belong to the group of the first button
-			widget = but
-		but = gtk.RadioButton(group=widget)
-		but.set_label(labels[a])
-		but.connect("clicked", radio_event, a)
-		vbox.pack_start(but, True, True)
-		group_radio_buttons.append(but)
-	group_radio_buttons[0].set_active(True)
 
-	def mk_scale(lbl,mn,mx,init):
+	def mk_scale(lbl,mn,mx,init,callback=lambda x:x):
 		frame = gtk.Frame(lbl)
 		vbox_p.add(frame)
 		vb = gtk.VBox(False,0)
@@ -332,21 +354,31 @@ def main():
 		widget.set_size_request(200, -1)
 		widget.set_digits(2); 
 		widget.set_value(init)
+		g_dict[lbl] = init
 		vb.add(widget)
-		bmi_sliders[lbl] = widget.get_adjustment()
+		adj = widget.get_adjustment()
+		def read_value(widget):
+			g_dict[lbl] = widget.value #closure
+			callback(widget)
+		adj.connect("value_changed", read_value); 
 		return vb
 		
-	bmi_sliders = {}
 	mk_scale("X scale",0.01,4,2.5)
 	mk_scale("X offset",-1,1,0)
 	mk_scale("Y scale",0.01,4,2)
 	mk_scale("Y offset",-1,1,0)
-	mk_scale("-log10(mean smoothing)",0,5,3)
-	frame = mk_scale("-log2(fr smoothing)",-3,10,3)
-	bmi_sliders['-log2(fr smoothing)'].connect("value_changed", plot_fr_smoothing); 
-	button = gtk.Button("plot!")
-	button.connect("clicked", plot_fr_smoothing, 0)
-	frame.add(button)
+	mk_scale("-log10(mean_smoothing)",0,5,mean_smoothing)
+	frame = mk_scale("-log2(fr_smoothing)",-3,10,fr_smoothing, plot_fr_smoothing)
+	# button = gtk.Button("plot!")
+	# button.connect("clicked", plot_fr_smoothing, 0)
+	# frame.add(button)
+	
+	# add controls for the game. 
+	frame = make_radio('control', ['manual','BMI'], 0, lambda x,y:x)
+	vbox_p.add(frame)
+	frame = make_radio('task',['left/right','4 target stereotyped','random'], 0, lambda x,y:x)
+	vbox_p.add(frame)
+	
 	
 	#start sock_thread.
 	g_die = Value('b',False)
@@ -357,10 +389,10 @@ def main():
 	juiceV = Value('b',False)
 	touchV = Value('b',False)
 	#start server_thread (remote head)
-	p2 = Process(target=server_thread,args=(g_die,4344,targV,cursV,juiceV,touchV))
+	p2 = Process(target=server_thread,args=(g_die,4344,targV,cursV,juiceV,touchV,g_dict))
 	p2.start()
 	#start server_thread (local head)
-	p3 = Process(target=server_thread,args=(g_die,4345,targV,cursV,juiceV,touchV))
+	p3 = Process(target=server_thread,args=(g_die,4345,targV,cursV,juiceV,touchV,g_dict))
 	p3.start()
 	
 	gobject.timeout_add(10, update_display)
@@ -370,6 +402,18 @@ def main():
 	g_die.value = True
 	p2.join()
 	p3.join()
+	fil = open('pybmi_state.json','w')
+	try:
+		p = {}
+		p['neuron_group'] = neuron_group
+		p['selected'] = selected
+		p['pierad'] = pierad
+		p['mean_smoothing'] = mean_smoothing
+		p['fr_smoothing'] = fr_smoothing
+		fil.write(jsonpickle.encode(p))
+	except:
+		print "failed to write prefs!"
+	fil.close()
 	
 def radio_event(widget, btn_number):
 	global neuron_group,selected,drawing_area
@@ -377,8 +421,34 @@ def radio_event(widget, btn_number):
 		(ch,u) = selected
 		neuron_group[ch][u] = btn_number
 		configure_event(drawing_area,None); 
+		
+def make_radio(name, labels, initialSelected, callback):
+	global g_dict
+	frame = gtk.Frame(name)
+	vbox = gtk.VBox(False, 0); 
+	frame.add(vbox)
+	group_radio_buttons=[]
+	def radioEvent(widget, btn_number):
+		if widget.get_active():
+			g_dict[name] = labels[btn_number]
+			print name, btn_number
+			callback(widget,btn_number)
+	for a in range(0,len(labels)):
+		if len(group_radio_buttons) == 0:
+			widget = None #first button with none group
+		else:
+			widget = but #additional buttons with belong to the group of the first button
+		but = gtk.RadioButton(group=widget)
+		but.set_label(labels[a])
+		but.connect("clicked", radioEvent, a)
+		vbox.pack_start(but, True, True)
+		group_radio_buttons.append(but)
+	group_radio_buttons[initialSelected].set_active(True)
+	g_dict[name] = labels[initialSelected]
+	return frame
+	
             
-def server_thread(die,port,targV,cursV,juiceV,touchV):
+def server_thread(die,port,targV,cursV,juiceV,touchV,g_dict):
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	# turn on socket re-use (in the case of rapid restarts)
 	s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1); 
@@ -399,6 +469,7 @@ def server_thread(die,port,targV,cursV,juiceV,touchV):
 				#first write out commands (if any)
 				pb = spikes_pb2.Display_msg()
 				map((lambda x: pb.cursor.append(x)),cursV)
+				# print cursV[0], cursV[1]
 				map((lambda x: pb.target.append(x)),targV)
 				pb.juicer = juiceV.value
 				pb.touch = touchV.value
@@ -417,10 +488,13 @@ def server_thread(die,port,targV,cursV,juiceV,touchV):
 					if data:
 						pb.ParseFromString(data)
 						if pb.HasField('manual'):
-							if pb.manual:
-							if len(pb.cursor) > 0:
-								cursV = []
-								map((lambda x: cursV.append(x)),pb.cursor) 
+							if pb.manual and (g_dict['control'] == 'manual'):
+								if len(pb.cursor) > 0:
+									cursV[0] = pb.cursor[0]
+									cursV[1] = pb.cursor[1]
+						if pb.HasField('touch'):
+							touchV.value = pb.touch
+							#print port, "touch", touchV.value
 					else:
 						print port, " no data from the display client."
 			print port," display connection closed"
