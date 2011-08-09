@@ -37,4 +37,4 @@ convert: $(COBJS)
 	g++ -o $@ $(CFLAGS) -lmatio $(COBJS)
 	
 clean:
-	rm -rf client gtkclient convert *.o
+	rm -rf client gtkclient convert *.o spikes.pb.*

@@ -12,4 +12,8 @@ message Display_msg{
 	optional		bool		touch = 3; 	//display to bmi. 
 	optional 	bool		juicer = 4; //bmi to display.
 	optional 	bool		manual = 5; //bmi to display
+	optional		double	cursorSize = 6;
+	optional		double	targetSize = 7;
+	optional		double	cursorAlpha = 8;
+	optional		double	targetAlpha = 9;
 }
