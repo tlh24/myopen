@@ -16,6 +16,7 @@ from OpenGL.GL import *
 from OpenGL.GLUT import *
 from multiprocessing import Process, Value, Array
 from tcpsegmenter import *
+import time
 
 class Shape:
 	def __init__(self,r,g,b,a):
@@ -99,6 +100,8 @@ class cupoje:
 			self.touch = vt > 1.25
 			if self.manual:
 				self.cursor.translate((vx-1.25)/1.25, (vy-1.25)/1.25)
+		else:
+			time.sleep(0.008)
 		alpha = 0.5
 		if self.touch:
 			alpha = 1.0
@@ -110,12 +113,14 @@ class cupoje:
 		if data:
 			# make a response. 
 			pb = spikes_pb2.Display_msg() # new message.
-			map((lambda x: pb.cursor.append(x)),self.cursor.get_loc())
 			pb.manual = self.manual
+			if self.manual: 
+				map((lambda x: pb.cursor.append(x)),self.cursor.get_loc())
+				pb.touch = self.touch
 			self.seg.writeSegment(self.sock,pb.SerializeToString())
 		else:
 			# try reconnecting. 
-			self.sock = sock_connect('localhost',port,self.die)
+			self.sock = sock_connect(sys.argv[1],self.port,self.die)
 		#display
 		glFlush()
 		glutSwapBuffers()
@@ -129,10 +134,9 @@ class cupoje:
 		sys.exit()
 
 	def mouse(self,button, state, x, y):
-		global window_size
 		# window is always +-1 in height -- aspect ratio may vary.
-		w = window_size[0]/2.0
-		h = window_size[1]/2.0
+		w = self.window_size[0]/2.0
+		h = self.window_size[1]/2.0
 		xx = (x-w)/h
 		yy = (h-y)/h
 		if button == GLUT_LEFT_BUTTON:
