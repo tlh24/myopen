@@ -116,7 +116,7 @@ class cupoje:
 			self.du3.writeRegister(6000 + 3, j)
 		else:
 			time.sleep(0.008)
-		alpha = 0.5
+		alpha = 0.75
 		if self.touch:
 			alpha = 1.0
 		self.cursor.set_color(1.0,1.0,1.0, alpha)
