@@ -113,9 +113,9 @@ def configure_event(widget, event):
 	
 def update_display():
 	# get data from gtkclient.
-	global frsock, g_die, g_dict, mean_smoothing                                
+	global frsock, g_die, g_dict, mean_smoothing                            
 	if frsock == None:
-		frsock = sock_connect('rabbit',4343,g_die)
+		frsock = sock_connect('localhost',4343,g_die)
 		#frsock.settimeout(1)
 		frsock.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
 	try:
@@ -234,7 +234,7 @@ def expose_event(widget, event):
 	global firing_rates
 	global neuron_group
 	cr = widget.window.cairo_create()
-	cr.set_source_rgb(0.0, 0.09, 0.13); 
+	cr.set_source_rgb(0.0, 0.00, 0.01); 
 	cr.rectangle(0,0,pierad*16,pierad*16)
 	cr.fill()
 	#draw the firing rates.
@@ -351,7 +351,7 @@ def main():
 	
 	# next is to make the window. 
 	window = gtk.Window()
-	window.set_size_request(800, 900)
+	window.set_size_request(700, 750)
 	window.connect('delete-event', gtk.main_quit)
 
 	vpaned = gtk.HPaned()
@@ -440,7 +440,7 @@ def main():
 	p3 = Process(target=server_thread,args=(g_die,4345,targV,cursV,touchV,g_dict))
 	p3.start()
 	
-	gobject.timeout_add(10, update_display)
+	gobject.timeout_add(16, update_display)
 
 	window.show_all()
 	gtk.main()
