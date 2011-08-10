@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+hasU3 = True
+
 try:
 	import numpy 
 except ImportError, err:
@@ -11,12 +13,17 @@ except ImportError, err:
 		print "This program requires the numpy or Numeric extension, sorry"
 		import sys
 		sys.exit()
-import string, sys, u3, math, socket, spikes_pb2, time
+import string, sys, math, socket, spikes_pb2, time
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from multiprocessing import Process, Value, Array
 from tcpsegmenter import *
 import time
+try:
+	import u3
+except ImportError, err:
+	print "Warning: Labjack driver not installed."
+	hasU3 = False
 
 class Shape:
 	def __init__(self,r,g,b,a):
@@ -109,13 +116,13 @@ class cupoje:
 			vy = self.du3.getAIN(1)
 			vt = self.du3.getAIN(2)
 			self.touch = vt > 1.25
-			self.cursor.translate((vx-1.25)/1.25, (vy-1.25)/1.25)
+			self.cursor.translate((vx-1.25)/-1.25, (vy-1.25)/-1.25)
 			j = 0
 			if self.juice:
 				j = 1
 			self.du3.writeRegister(6000 + 3, j)
 		else:
-			time.sleep(0.008)
+			time.sleep(0.012)
 		alpha = 0.75
 		if self.touch:
 			alpha = 1.0
