@@ -33,6 +33,11 @@ classdef SignalViewer < Common.MiniVieObj
     end
     methods
         function obj = SignalViewer(hSignalSource)
+            
+            if isempty(hSignalSource)
+                return
+            end
+            
             obj.setupFigure();
             
             obj.hTimer = UiTools.create_timer(mfilename,@(src,evt)obj.update());

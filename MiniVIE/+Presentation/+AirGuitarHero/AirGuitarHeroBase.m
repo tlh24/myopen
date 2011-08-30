@@ -26,6 +26,7 @@ classdef AirGuitarHeroBase < hgsetget
         LastKey = '';
     end
     properties (Constant = true)
+        % These are the different modes of play
         Off             = 1;
         DisplayOnly     = 2;
         AutoPlay        = 3;
@@ -76,15 +77,29 @@ classdef AirGuitarHeroBase < hgsetget
                 end
                 sendButtonCommand(obj,~(zeros(1,8)));
                 
-                if ~strcmpi(obj.SignalSource.AnalogInput.Running,'off')
-                    stop(obj.SignalSource.AnalogInput);
-                end
+                % Can't make calls to Signal Source -- Doesn't exist in
+                % Autoplay mode
+                
+%                 if ~strcmpi(obj.SignalSource.AnalogInput.Running,'off')
+%                     stop(obj.SignalSource.AnalogInput);
+%                 end
             end
         end
         function refresh(obj)
             
             try
                 frame = getFrame(obj);
+%                 iRepeated = 0;
+%                 while 1
+%                     iRepeated = iRepeated + 1;
+%                     frame2 = getFrame(obj);
+%                     if ~all(frame(:) == frame2(:))
+%                         figure,subplot(2,1,1),imshow(frame),subplot(2,1,2),imshow(frame2)
+%                         keyboard
+%                         break
+%                     end
+%                 end
+                
                 annotatedFrame = obj.hNoteDetector.process_frame(frame);
                 drawFrame(obj,annotatedFrame);
                 
@@ -98,44 +113,46 @@ classdef AirGuitarHeroBase < hgsetget
                         % ensure output is off
                         sendButtonCommand(obj,~(zeros(1,8)));
                         
-                        % stop data acquisition
-                        if ~strcmpi(obj.SignalSource.AnalogInput.Running,'off')
-                            stop(obj.SignalSource.AnalogInput);
-                        end
+%                         % stop data acquisition
+%                         if ~strcmpi(obj.SignalSource.AnalogInput.Running,'off')
+%                             stop(obj.SignalSource.AnalogInput);
+%                         end
                         
                         return
                     case obj.DisplayOnly
                         % ensure output is off
                         sendButtonCommand(obj,~(zeros(1,8)));
                         
-                        % stop data acquisition
-                        if ~strcmpi(obj.SignalSource.AnalogInput.Running,'off')
-                            stop(obj.SignalSource.AnalogInput);
-                        end
+%                         % stop data acquisition
+%                         if ~strcmpi(obj.SignalSource.AnalogInput.Running,'off')
+%                             stop(obj.SignalSource.AnalogInput);
+%                         end
                         
-                        if ~isempty(obj.hInput)
-                            % Joystick Control
-                            obj.hInput.getdata();
-                            
-                            noteMask = obj.hInput.buttonVal(1:5);
-                            strumOn = any(noteMask);
-                            sendButtonCommand(obj,~([noteMask 0 0 strumOn]));
-                            
-                            
-                        end
+%                         if ~isempty(obj.hInput)
+%                             % Joystick Control
+%                             obj.hInput.getdata();
+%                             
+%                             noteMask = obj.hInput.buttonVal(1:5);
+%                             strumOn = any(noteMask);
+%                             sendButtonCommand(obj,~([noteMask 0 0 strumOn]));
+%                             
+%                             
+%                         end
                         
                         return
                     case obj.AutoPlay
                         % AutoPlay
                         % Note detection -> actuation delay here
-                        noteMask = obj.hNoteDetector.noteHistory(8,:);
+                        DELAY = 3;
+                        
+                        noteMask = obj.hNoteDetector.noteHistory(DELAY,:);
                         strumOn = any(noteMask);
                         sendButtonCommand(obj,~([noteMask 0 0 strumOn]));
 
-                        % stop emg acquisition
-                        if ~strcmpi(obj.SignalSource.AnalogInput.Running,'off')
-                            stop(obj.SignalSource.AnalogInput);
-                        end
+%                         % stop emg acquisition
+%                         if ~strcmpi(obj.SignalSource.AnalogInput.Running,'off')
+%                             stop(obj.SignalSource.AnalogInput);
+%                         end
                         
                         return
                 end
@@ -146,10 +163,10 @@ classdef AirGuitarHeroBase < hgsetget
                         % EMG on and Autoplay on to maintain cues
                         
                         
-                        % start emg acquisition
-                        if ~strcmpi(obj.SignalSource.AnalogInput.Running,'on')
-                            start(obj.SignalSource.AnalogInput);
-                        end
+%                         % start emg acquisition
+%                         if ~strcmpi(obj.SignalSource.AnalogInput.Running,'on')
+%                             start(obj.SignalSource.AnalogInput);
+%                         end
                         
                         % AutoPlay
                         % Note detection -> actuation delay here
