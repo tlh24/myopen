@@ -1,0 +1,8 @@
+Support Notes
+--------------
+
+Tested with Matlab 2010b on WindowsXPSP3 32-bit
+
+
+Requirements: 
+Data Acquisition Toolbox.  See http://www.mathworks.com/products/daq/requirements.html

@@ -15,6 +15,67 @@ classdef TrainingInterface < Common.MiniVieObj
         
     end
     methods
+        function featureData = getFeatureData(obj)
+            % returns valid data (since buffers initialized to larger size)
+            featureData = obj.Features3D(:,:,1:obj.SampleCount);
+        end
+        function classLabels = getClassLabels(obj)
+            classLabels = obj.ClassLabelId(1:obj.SampleCount);
+        end
+        function saveTrainingData(obj)
+            % Save Training Data
+            FilterSpec = '*.dat';
+            DialogTitle = 'Select File to Write';
+            DefaultName = sprintf('%04d%02d%02d_%02d%02d%02d_TrainingData.dat',fix(clock));
+            [FileName,PathName,FilterIndex] = uiputfile(FilterSpec,DialogTitle,DefaultName);
+            if FilterIndex == 0
+                % User Cancelled
+            else
+                features3D = obj.getFeatureData(); %#ok<NASGU>
+                classLabelId = obj.getClassLabels(); %#ok<NASGU>
+                classNames = obj.SignalClassifier.getClassNames; %#ok<NASGU>
+                save(fullfile(PathName,FileName),'features3D','classLabelId','classNames');
+            end
+        end
+        function loadTrainingData(obj)
+            % Save Training Data
+            
+            % Get filename
+            FilterSpec = '*.dat';
+            [FileName,PathName,FilterIndex] = uigetfile(FilterSpec);
+            if FilterIndex == 0
+                % User Cancelled
+                return
+            else
+                fullFile = fullfile(PathName,FileName);
+            end
+            
+            % Load data
+            try
+                S = load(fullFile,'-mat');
+            catch ME
+                msg = { 'Error loading file', fullFile , ...
+                    'Error was: ' ME.message};
+                errordlg(msg);
+                return
+            end
+            
+            if isfield(S,'features3D') && isfield(S,'classLabelId')
+                obj.Features3D = S.features3D;
+                obj.ClassLabelId = S.classLabelId;
+                obj.SampleCount = size(S.features3D,3);
+            else
+                msg = { 'Error loading file', fullFile , ...
+                    'Expected data fields: "features3D" and "classLabelId"'};
+                errordlg(msg);
+                return
+            end
+            
+            % TODO: restore class names
+            %if isfield(S,'classNames')
+            
+        end
+        
         function close(obj)
             %override
         end

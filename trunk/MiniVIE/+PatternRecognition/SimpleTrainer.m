@@ -28,7 +28,7 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
             h = waitbar(0,'','Name',mfilename,...
                 'CreateCancelBtn',...
                 'setappdata(gcbf,''canceling'',1)');
-            hPatch = findobj(h,'type','patch')
+            hPatch = findobj(h,'type','patch');
             setappdata(h,'canceling',0);
 
             % Ensure data is ready
@@ -118,21 +118,10 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
         end
     end
     methods (Static = true)
-        function saveTrainingData(features3D,classLabelId) %#ok<INUSD>
-            FilterSpec = '*.dat';
-            DialogTitle = 'Save As';
-            DefaultName = sprintf('%04d%02d%02d_%02d%02d%02d.dat',fix(clock));
-            [FileName,PathName,FilterIndex] = uiputfile(FilterSpec,DialogTitle,DefaultName);
-            if FilterIndex == 0
-                % User Cancelled
-            else
-                save(fullfile(PathName,FileName),'features3D','classLabelId');
-            end
-        end
         function run(hScenario)
             % Temp -- this allows the VIE GUI to call the train routine
-            hScenario.TrainingInterface.NumRepetitions = 1;
-            hScenario.TrainingInterface.ContractionLengthSeconds = 1;
+            hScenario.TrainingInterface.NumRepetitions = 3;
+            hScenario.TrainingInterface.ContractionLengthSeconds = 2;
             hScenario.TrainingInterface.DelayLengthSeconds = 1;
             
             hScenario.TrainingInterface.collectdata();

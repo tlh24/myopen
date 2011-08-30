@@ -90,6 +90,9 @@ classdef MiniVIE < Common.MiniVieObj
                 'Style','pushbutton',...
                 'String','SignalViewer',...
                 'Callback',@(src,evt)GUIs.SignalViewer(obj.SignalSource));
+            
+            % TODO: This callback will error if SignalSource not
+            % initialized
             uicontrol(obj.hg.Figure,...
                 'Position',pos('cntrl',MiniVIE.INPUT,4,1,1),...
                 'Style','pushbutton',...
@@ -232,7 +235,7 @@ classdef MiniVIE < Common.MiniVieObj
                     case 'EMG Simulator'
                         h = Inputs.SignalSimulator();
                     case 'UsbDaq'
-                        h = Inputs.UsbDaq('mcc','0');
+                        h = Inputs.UsbDaq('nidaq','Dev2');
                     otherwise
                         % None
                         h = [];
@@ -287,8 +290,9 @@ classdef MiniVIE < Common.MiniVieObj
     end
     methods (Static = true)
         function configurePath
-            addpath(pwd);
-            addpath('Utilities');
+            pathName = fileparts(which('MiniVIE'));
+            addpath(pathName);
+            addpath([pathName filesep 'Utilities']);
         end
         function obj = go
             

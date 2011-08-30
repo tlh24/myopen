@@ -45,7 +45,7 @@ classdef AGH < Presentation.AirGuitarHero.AirGuitarHeroBase
             set(hAutoPlay,'Position',[20+pxButtonWidth 20 pxButtonWidth 20]);
             set(hAutoPlay,'String','Autoplay');
             set(hAutoPlay,'Style','Togglebutton');
-            set(hAutoPlay,'Callback', @(src,evnt) set(obj,'AutoPlay',get(src,'Value')));
+            set(hAutoPlay,'Callback', @(src,evnt) set(obj,'DisplayState',(get(src,'Value')*obj.AutoPlay + ~get(src,'Value')*obj.DisplayOnly)));
 
             
             defaultVisibility = 1;

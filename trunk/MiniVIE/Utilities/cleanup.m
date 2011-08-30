@@ -4,8 +4,11 @@ try
     stop(timerfindall);
 end
 delete(timerfindall);
-delete(instrfindall);
-delete(daqfind);
+try
+    delete(imaqfind);
+    delete(instrfindall);
+    delete(daqfind);
+end
 close all force;
 clear classes;
 disp('cleanup');

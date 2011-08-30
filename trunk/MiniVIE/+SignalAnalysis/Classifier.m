@@ -11,8 +11,7 @@ classdef Classifier < Common.MiniVieObj
         NumMajorityVotes = 5;
         
         ActiveChannels = [1 3];
-        ClassNames = {'Index' 'Middle' 'Ring' 'No Movement'};
-        DefaultClassNames = SignalAnalysis.Classifier.getDefaultNames;
+        ClassNames = {'MotionA' 'MotionB' 'No Movement'};
         TrainingFeatures = {'MAV' 'LEN' 'SSC' 'ZC'};
         
         TrainingEmg = [];
@@ -57,62 +56,14 @@ classdef Classifier < Common.MiniVieObj
             obj.initialize();
         end
         
+        function classNames = getClassNames(obj)
+            classNames = obj.ClassNames;
+        end
+        
         function uiEnterClassNames(obj)
-            hFigure = UiTools.create_figure('Classifier Channels','ClassifierChannels');
-            pos = get(hFigure,'Position');
-            pos(3) = 700;
-            set(hFigure,'Position',pos);
-            
-            uicontrol(hFigure,'Style','text','String','Selected Classes:',...
-                'Position',[50 300 100 30],'HorizontalAlignment','Left');
-            hListboxSelected = uicontrol(hFigure,'Style','listbox','String',obj.ClassNames,...
-                'Position',[50 100 200 200],'Max',0);
-            
-            uicontrol(hFigure,'Style','text','String','All Classes:',...
-                'Position',[350 300 100 30],'HorizontalAlignment','Left');
-            hListboxAvailable = uicontrol(hFigure,'Style','listbox','String',obj.DefaultClassNames,...
-                'Position',[350 100 200 200],'Max',2);
-
-            uicontrol(hFigure,'Style','pushbutton','String','Clear All',...
-                'Position',[50 70 90 25],'Callback',@(src,evt)cbClearAll);
-
-            uicontrol(hFigure,'Style','pushbutton','String','<--',...
-                'Position',[275 200 50 30],'Callback',@(src,evt)cbAddClasses);
-            
-            function cbClearAll()
-                
-                reply = questdlg('Are you sure you want to clear the class list?','Confirm Clear','OK','Cancel','Cancel');
-                
-                if ~strcmpi(reply,'OK')
-                    return
-                end
-                
-                obj.ClassNames = {};
-                updateSelected();
-                set(hListboxSelected,'Value',1);
-
-            end
-            function cbAddClasses()
-                cellStrings = get(hListboxAvailable,'String');
-                vals = get(hListboxAvailable,'Value');
-                currentList = get(hListboxSelected,'String');
-                
-                newList = cat(1,currentList,cellStrings(vals));
-                
-                uniqueList = unique(newList);
-                if isequal(length(uniqueList),length(newList))
-                    obj.ClassNames = newList;
-                else
-                    obj.ClassNames = uniqueList;
-                end
-                
-                updateSelected();
-                
-            end
-            
-            function updateSelected
-                set(hListboxSelected,'String',obj.ClassNames);
-            end
+            hGui = SignalAnalysis.ClassifierChannels;
+            uiwait(hGui.hFigure)
+            obj.ClassNames = hGui.ClassNames;
         end
         
         function featureData = convertfeaturedata(obj)
@@ -327,39 +278,6 @@ classdef Classifier < Common.MiniVieObj
                     end
                 end
             end
-        end
-        function classNames = getDefaultNames
-            classNames{30}  = 'No Movement';
-            classNames{01}  = 'Shoulder Flexion';
-            classNames{02}  = 'Shoulder Extension';
-            classNames{03}  = 'Shoulder Abduction';
-            classNames{04}  = 'Shoulder Adduction';
-            classNames{05}  = 'Humeral External Rotation';
-            classNames{06}  = 'Humeral Internal Rotation';
-            classNames{07}  = 'Elbow Flexion';
-            classNames{08}  = 'Elbow Extension';
-            classNames{09}  = 'Wrist Rotate In';
-            classNames{10}  = 'Wrist Rotate Out';
-            classNames{11}  = 'Wrist Flex In';
-            classNames{12}  = 'Wrist Extend Out';
-            classNames{13}  = 'Hand Up';
-            classNames{14}  = 'Hand Down';
-            classNames{15}  = 'Hand Open';
-            classNames{16}  = 'Index';
-            classNames{17}  = 'Middle';
-            classNames{18}  = 'Ring';
-            classNames{19}  = 'Little';
-            classNames{20}  = 'Thumb';
-            classNames{21}  = 'All Ad/Abs';
-            classNames{22}  = 'Spider (Fist of Fury)';
-            classNames{23} = 'Lateral Grasp';      %% Grasp #1 per Action ICD RPP-600-ICD_-1401
-            classNames{24} = 'Cylindrical Grasp';  %% Grasp #2 per Action ICD RPP-600-ICD_-1401
-            classNames{25} = 'Tip Grasp';          %% Grasp #3 per Action ICD RPP-600-ICD_-1401
-            classNames{26} = 'Hook Grasp';         %% Grasp #4 per Action ICD RPP-600-ICD_-1401
-            classNames{27} = 'Palmar Grasp';       %% Grasp #5 per Action ICD RPP-600-ICD_-1401
-            classNames{28} = 'Spherical Grasp';    %% Grasp #6 per Action ICD RPP-600-ICD_-1401
-            classNames{29} = 'Pointer Grasp';      %% Grasp #7 per Action ICD RPP-600-ICD_-1401
-            
         end
     end
 end

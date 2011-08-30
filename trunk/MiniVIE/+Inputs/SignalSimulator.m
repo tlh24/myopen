@@ -118,6 +118,8 @@ classdef SignalSimulator < Inputs.SignalInput
             end
             
             obj.hg.hFig = hFig;
+
+            cellCurrentKeys = {};
             
             set(obj.hg.hFig,'Position',[20 50 200 70]);
             set(obj.hg.hFig,'WindowKeyPressFcn',@(src,evt)key_down(evt));
@@ -129,8 +131,6 @@ classdef SignalSimulator < Inputs.SignalInput
                 'Position', [20    20    120    20]);
             
             set(hFig,'Visible','on');
-
-            cellCurrentKeys = {};
             
             function key_up(evt)
                 % Remove the released key

@@ -9,7 +9,7 @@ The most interesting things you can do with this code base requires data acquisi
 hardware to get EMG or similar signals into the environment.  However, a basic signal
 simulator exists and can be used to test the functionality.
 
-Use the MiniVIE script as a tutorial guide to see how the modules are created and 
+Use the tutorial.m script as a guide to see how the modules are created and 
 interact with one another.
 
 Good Luck!

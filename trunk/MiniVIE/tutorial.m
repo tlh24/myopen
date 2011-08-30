@@ -21,7 +21,7 @@ hSignalSource = Inputs.SignalSimulator();
 % The device must be initialized prior to use
 hSignalSource.initialize();
 
-% If using the simulator, the box that open allows you to press keys to
+% If using the simulator, the box that opens up allows you to press keys to
 % change the output pattern.  'asdf' selects patterns '1234'
 
 %% Preview Raw Data
