@@ -18,8 +18,7 @@ classdef MiniVIE < Common.MiniVieObj
         PRESENTATION = 5;
     end
     properties (SetAccess = private)
-        InputChoiceLookup = {'UsbDaq' }
-        
+        InputChoiceLookup = {'DaqHwDevice' }
     end
     methods
         function obj = MiniVIE
@@ -28,13 +27,13 @@ classdef MiniVIE < Common.MiniVieObj
             
             % Set valid input options
             
-            set(obj.hg.popups(MiniVIE.INPUT),'String',{'None','EMG Simulator','UsbDaq'});
+            set(obj.hg.popups(MiniVIE.INPUT),'String',{'None','EMG Simulator','DaqHwDevice'});
             set(obj.hg.popups(MiniVIE.INPUT),'Value',1);
             set(obj.hg.popups(MiniVIE.SA),'String',{'None','LDA Classifier'});
             set(obj.hg.popups(MiniVIE.SA),'Value',1);
             set(obj.hg.popups(MiniVIE.TRAINING),'String',{'None','Simple Trainer','Mini Guitar Hero'});
             set(obj.hg.popups(MiniVIE.TRAINING),'Value',1);
-            set(obj.hg.popups(MiniVIE.PRESENTATION),'String',{'None','MiniV','Breakout'});
+            set(obj.hg.popups(MiniVIE.PRESENTATION),'String',{'None','MiniV','Breakout','AGH'});
             set(obj.hg.popups(MiniVIE.PRESENTATION),'Value',1);
             
         end
@@ -45,25 +44,25 @@ classdef MiniVIE < Common.MiniVieObj
             set(obj.hg.Figure,'Position',pos('fig'));
             set(obj.hg.Figure,'CloseRequestFcn',@(src,evnt)closeFig(obj));
             
-                function closeFig(obj)
-                    try
-                        close(obj);
-                    catch ME
-                        fprintf(2,'Error closing objects:\n"%s"\n',ME.message);
-                    end
-                    delete(obj.hg.Figure);
+            function closeFig(obj)
+                try
+                    close(obj);
+                catch ME
+                    fprintf(2,'Error closing objects:\n"%s"\n',ME.message);
                 end
+                delete(obj.hg.Figure);
+            end
             
             
             header = {'Inputs:','Signal Analysis:','Training:','Plant:','Presentation:'};
             puCallbacks = {
-                @(src,evt)setInput(obj,src)
+                @(src,evt)setSignalSource(obj,src)
                 @(src,evt)setSignalAnalysis(obj,get(src,'String'),get(src,'Value'))
                 @(src,evt)setTrainer(obj,get(src,'String'),get(src,'Value'))
                 @(src,evt)setSignalAnalysis(obj,get(src,'String'),get(src,'Value'))
                 @(src,evt)setPresentation(obj,get(src,'String'),get(src,'Value'))
                 };
-                        
+            
             for iColumn = 1:5
                 % title:
                 uicontrol(...
@@ -78,7 +77,7 @@ classdef MiniVIE < Common.MiniVieObj
                 obj.hg.popups(iColumn) = uicontrol(obj.hg.Figure,...
                     'Position',pos('cntrl',iColumn,2,1,1),...
                     'Style','popupmenu',...
-                    'String','Temp',...
+                    'String','None',...
                     'Callback',puCallbacks{iColumn},...
                     'Background','White');
                 
@@ -102,7 +101,7 @@ classdef MiniVIE < Common.MiniVieObj
             uicontrol(obj.hg.Figure,...
                 'Position',pos('cntrl',MiniVIE.SA,3,1,1),...
                 'Style','pushbutton',...
-                'String','Select Channels',...
+                'String','Select Classes',...
                 'Callback',@(src,evt)obj.SignalClassifier.uiEnterClassNames);
             
             uicontrol(obj.hg.Figure,...
@@ -119,37 +118,43 @@ classdef MiniVIE < Common.MiniVieObj
             try obj.SignalClassifier.close();end
             try obj.TrainingInterface.close();end
             try obj.Presentation.close();end
-
+            
         end
         function setPresentation(obj,string,value)
-            h = obj.Presentation;
-            if ~isempty(h)
-                try
-                    close(h);
+            try
+                h = obj.Presentation;
+                if ~isempty(h)
+                    try
+                        close(h);
+                    end
                 end
+                
+                switch string{value}
+                    case 'MiniV'
+                        obj.println('Setting up presentation...',1);
+                        h = Scenarios.MiniVDisplayScenario;
+                        h.setup_display;
+                        h.hScenario = obj;
+                        h.CloseGain = [80 80 80 80];
+                        start(h.hTimer);
+                        obj.println('Presentation setup complete',1);
+                    case 'Breakout'
+                        h = Presentation.MiniBreakout(obj.SignalSource,obj.SignalClassifier);
+                    case 'AGH'
+                        h = Presentation.AirGuitarHero.AirGuitarHeroEmg(obj.SignalSource,obj.SignalClassifier);
+                        
+                    otherwise
+                        % None
+                        h = [];
+                end
+                
+                if ~isempty(h)
+                end
+                
+                obj.Presentation = h;
+            catch ME
+                errordlg(ME.message);
             end
-            
-            switch string{value}
-                case 'MiniV'
-                    obj.println('Setting up presentation...',1);
-                    h = Scenarios.MiniVDisplayScenario;
-                    h.setup_display;
-                    h.hScenario = obj;
-                    h.CloseGain = [80 80 80 80];
-                    start(h.hTimer);
-                    obj.println('Presentation setup complete',1);
-                case 'Breakout'
-                    h = Presentation.MiniBreakout(obj.SignalSource,obj.SignalClassifier);
-                    
-                otherwise
-                    % None
-                    h = [];
-            end
-            
-            if ~isempty(h)
-            end
-            
-            obj.Presentation = h;
         end
         function setTrainer(obj,string,value)
             h = obj.TrainingInterface;
@@ -178,7 +183,7 @@ classdef MiniVIE < Common.MiniVieObj
                     errordlg('Select a Classifier');
                     return;
                 end
-
+                
                 h.initialize();
             end
             
@@ -204,7 +209,13 @@ classdef MiniVIE < Common.MiniVieObj
             end
             
             if ~isempty(h)
-                h.ActiveChannels = 1:4;
+                defaultChannels = GUIs.guiChannelSelect.getSavedDefaults();
+                fprintf('Setting Active Channels to: ');
+                fprintf('%d ',defaultChannels);
+                fprintf('\n');
+                h.ActiveChannels = defaultChannels;
+
+                h.ClassNames = SignalAnalysis.ClassifierChannels.getSavedDefaults();
                 h.NumMajorityVotes = 0;
                 h.initialize();
             end
@@ -212,7 +223,7 @@ classdef MiniVIE < Common.MiniVieObj
             obj.SignalClassifier = h;
             
         end
-        function setInput(obj,src)
+        function setSignalSource(obj,src)
             persistent lastValue
             if isempty(lastValue)
                 lastValue = 1;
@@ -220,7 +231,7 @@ classdef MiniVIE < Common.MiniVieObj
             
             string = get(src,'String');
             value = get(src,'Value');
-
+            
             try
                 
                 h = obj.SignalSource;
@@ -234,8 +245,9 @@ classdef MiniVIE < Common.MiniVieObj
                 switch string{value}
                     case 'EMG Simulator'
                         h = Inputs.SignalSimulator();
-                    case 'UsbDaq'
-                        h = Inputs.UsbDaq('nidaq','Dev2');
+                    case 'DaqHwDevice'
+                        % h = Inputs.DaqHwDevice('nidaq','Dev2');
+                        h = Inputs.DaqHwDevice('mcc','0');
                     otherwise
                         % None
                         h = [];
@@ -244,7 +256,7 @@ classdef MiniVIE < Common.MiniVieObj
                 if ~isempty(h)
                     obj.println('Adding Filters',1);
                     h.addfilter(Inputs.HighPass());
-                    h.addfilter(Inputs.LowPass());
+                    % h.addfilter(Inputs.LowPass());
                     h.addfilter(Inputs.Notch());
                     % obj.SignalSource.addfilter(Inputs.MAV(150));
                     h.NumSamples = 2000;
