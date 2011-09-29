@@ -206,7 +206,9 @@ class cupoje:
 			self.manual = False
 		self.touch = False
 		#connect to the BMI server.
-		print sys.argv
+		if len(sys.argv) < 3:
+			print "usage: pybmi_display.py <server> <port>"
+			print "example: python pybmi_display.py neuro-nico 4345"
 		self.port = int(sys.argv[2])
 		self.die = Value('b',False)
 		self.sock = sock_connect(sys.argv[1],self.port,self.die)
