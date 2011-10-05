@@ -17,7 +17,7 @@ classdef SignalViewer < Common.MiniVieObj
         
         hg
         hTimer
-        
+        hChannelSelect
     end
     properties (SetAccess = private)
         featureBuffer = [];
@@ -36,14 +36,20 @@ classdef SignalViewer < Common.MiniVieObj
             
             if isempty(hSignalSource)
                 return
+            else
+                obj.SignalSource = hSignalSource;
             end
             
             obj.setupFigure();
             
+            obj.hChannelSelect = GUIs.guiChannelSelect;
+            addlistener(obj.hChannelSelect,'ValueChange',@(src,evt)obj.updateChannels)
+            obj.hChannelSelect.setAvailableChannels(obj.SignalSource.NumChannels);
+            obj.SelectedChannels = obj.hChannelSelect.SelectedChannels;
+            
             obj.hTimer = UiTools.create_timer(mfilename,@(src,evt)obj.update());
             obj.hTimer.Period = 0.05;
             
-            obj.SignalSource = hSignalSource;
             obj.resetTimePlot();
             
             numSamplesToDisplay = 200;
@@ -52,6 +58,9 @@ classdef SignalViewer < Common.MiniVieObj
             obj.updateFigure();
             start(obj.hTimer);
             
+        end
+        function updateChannels(obj)
+            obj.SelectedChannels = obj.hChannelSelect.SelectedChannels;
         end
         function setupFigure(obj)
             obj.hg.Figure = UiTools.create_figure('Signal Viewer','Signal Viewer');
@@ -113,7 +122,7 @@ classdef SignalViewer < Common.MiniVieObj
                     set(obj.hg.Axes(2),'OuterPosition',[0.5 0.5 0.5 0.5]);
                     set(obj.hg.Axes(3),'OuterPosition',[0.0 0.0 0.5 0.5]);
                     set(obj.hg.Axes(4),'OuterPosition',[0.5 0.0 0.5 0.5]);
-                    xlabel(obj.hg.Axes(1),'Time (s)');
+                    xlabel(obj.hg.Axes(1),'');
                     ylabel(obj.hg.Axes(1),'MAV');
                     ylabel(obj.hg.Axes(2),'LEN');
                     ylabel(obj.hg.Axes(3),'ZC');
@@ -123,7 +132,7 @@ classdef SignalViewer < Common.MiniVieObj
                     setAxesVisible(obj.hg.Axes(1),'on');
                     setAxesVisible(obj.hg.Axes(2:4),'off');
                     set(obj.hg.Axes(1),'OuterPosition',[0 0 1 1]);
-                    xlabel(obj.hg.Axes(1),'Time (s)');
+                    xlabel(obj.hg.Axes(1),'Sample Number');
                     ylabel(obj.hg.Axes(1),'Volts');
                     ylim(obj.hg.Axes(1),[-2 14]);
                     obj.updateTimeDomain();
@@ -169,20 +178,20 @@ classdef SignalViewer < Common.MiniVieObj
             
         end
         function updateTimeDomain(obj)
-            
-            offset = 1.5 * (1:obj.SignalSource.NumChannels);
-            
-            tic
+                        
             if obj.ShowFilteredData
                 channelData = obj.SignalSource.getFilteredData();
             else
                 channelData = obj.SignalSource.getData();
             end
-            toc
             
             if isempty(channelData) || ~ishandle(obj.hg.Figure)
                 return;
             end
+            
+            set(obj.hg.PlotLines{1}(:),'YData',[],'XData',[]);
+            offset = zeros(1,size(channelData,2));
+            offset(obj.SelectedChannels) = 1.5 * ((1:length(obj.SelectedChannels)) -1);
             for i = obj.SelectedChannels
                 set(obj.hg.PlotLines{1}(i),'YData',channelData(:,i)+offset(i),'XData',1:size(channelData,1));
             end
@@ -233,6 +242,9 @@ classdef SignalViewer < Common.MiniVieObj
         function close(obj)
             try
                 stop(obj.hTimer);
+            end
+            try
+                close(obj.hChannelSelect)
             end
             delete(obj.hTimer);
             delete(obj.hg.Figure);

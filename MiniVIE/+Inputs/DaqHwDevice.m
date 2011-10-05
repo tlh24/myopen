@@ -1,8 +1,8 @@
-classdef UsbDaq < Inputs.SignalInput
+classdef DaqHwDevice < Inputs.SignalInput
     % Class for interfacing data acquisition hardware via the matlab data
     % acquisition toolbox.
     % Sample Usage:
-    %     hSignalSource = Inputs.UsbDaq('mcc','0');
+    %     hSignalSource = Inputs.DaqHwDevice('mcc','0');
     %     hSignalSource.addfilter(Inputs.HighPass());
     %     hSignalSource.addfilter(Inputs.LowPass());
     %     hSignalSource.addfilter(Inputs.Notch());
@@ -20,7 +20,7 @@ classdef UsbDaq < Inputs.SignalInput
         AnalogInputName = '';
     end
     methods
-        function obj = UsbDaq(deviceName,deviceId,channelIds)
+        function obj = DaqHwDevice(deviceName,deviceId,channelIds)
             % Constructor
             if nargin > 0
                 obj.DaqDeviceName = deviceName;
@@ -132,19 +132,26 @@ classdef UsbDaq < Inputs.SignalInput
         end
         function isReady = isReady(obj,numSamples)
             % ensure daq device is ready with the right number of samples
-            if ~strcmpi(get(obj.AnalogInput,'Running'),'On')
-                if (obj.Verbose >= 1),fprintf('Starting DAQ Object "%s"\n',obj.AnalogInputName);end
-                start(obj.AnalogInput);
-            end
+            obj.start();
             
             isReady = obj.AnalogInput.SamplesAvailable >= numSamples;
         end
+        function start(obj)
+            if ~strcmpi(get(obj.AnalogInput,'Running'),'On')
+                if (obj.Verbose >= 1)
+                    fprintf('Starting DAQ Object "%s"\n',obj.AnalogInputName);
+                end
+                start(obj.AnalogInput);
+            end
+        end
         function stop(obj)
-            stop(obj.SignalSource.AnalogInput);
+            if strcmpi(get(obj.AnalogInput,'Running'),'On')
+                stop(obj.AnalogInput);
+            end
         end
         function close(obj)
             stop(obj);
-            delete(obj.SignalSource.AnalogInput);
+            delete(obj.AnalogInput);
         end
     end
 end

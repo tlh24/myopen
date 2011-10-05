@@ -89,6 +89,11 @@ classdef Classifier < Common.MiniVieObj
                 fprintf('%d = %d; ',iClass,sum(obj.TrainingDataLabels == iClass))
             end
             fprintf(')\n');
+
+            fprintf('Active Channels are: ');
+            fprintf('%d ',obj.ActiveChannels);
+            fprintf('\n');
+            
             [obj.Wg,obj.Cg] = obj.lda(feats,obj.TrainingDataLabels);
         end
         function percentError = computeerror(obj)

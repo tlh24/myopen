@@ -37,17 +37,21 @@ classdef TrainingInterface < Common.MiniVieObj
                 save(fullfile(PathName,FileName),'features3D','classLabelId','classNames');
             end
         end
-        function loadTrainingData(obj)
-            % Save Training Data
+        function loadTrainingData(obj,fname)
+            % Load Training Data
             
-            % Get filename
-            FilterSpec = '*.dat';
-            [FileName,PathName,FilterIndex] = uigetfile(FilterSpec);
-            if FilterIndex == 0
-                % User Cancelled
-                return
+            if nargin < 2
+                % Get filename interactively
+                FilterSpec = '*.dat';
+                [FileName,PathName,FilterIndex] = uigetfile(FilterSpec);
+                if FilterIndex == 0
+                    % User Cancelled
+                    return
+                else
+                    fullFile = fullfile(PathName,FileName);
+                end
             else
-                fullFile = fullfile(PathName,FileName);
+                fullFile = fname;
             end
             
             % Load data

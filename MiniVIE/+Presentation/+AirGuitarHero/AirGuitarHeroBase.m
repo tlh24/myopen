@@ -1,5 +1,5 @@
 classdef AirGuitarHeroBase < hgsetget
-    % Base Class for Air Guitar Hero
+    % Base Class (Abstract) for Air Guitar Hero
     % Contains info for seetting up display
     % Classes to control the game via xpc or daq should
     % inherit from here
@@ -21,6 +21,8 @@ classdef AirGuitarHeroBase < hgsetget
         hFrame = [];
         
         DisplayState = 0;
+        
+        FrameDelay = 3;  % Integer number of frames between when notes graphically detected until note is played
     end
     properties (Access = private)
         LastKey = '';
@@ -56,13 +58,21 @@ classdef AirGuitarHeroBase < hgsetget
             axis(obj.hAxes,'equal')
             axis(obj.hAxes,'off')
             
-            set(obj.hFigure,'WindowKeyPressFcn',@(src,evt)cb_key_press(src,evt,obj));
-            set(obj.hFigure,'WindowKeyReleaseFcn',@(src,evt)cb_key_release(src,evt,obj));
             
-            obj.hFrame = imshow(zeros(obj.VideoSize,'uint8'),'Parent',obj.hAxes);
+            obj.hFrame = image(zeros(obj.VideoSize,'uint8'),'Parent',obj.hAxes);
+            set(obj.hFigure,'Position',[318 223 804 566]);
             hold(obj.hAxes,'on');
             
         end
+        function enableKeyboardCallbacks(obj)
+            set(obj.hFigure,'WindowKeyPressFcn',@(src,evt)cb_key_press(src,evt,obj));
+            set(obj.hFigure,'WindowKeyReleaseFcn',@(src,evt)cb_key_release(src,evt,obj));
+        end
+        function disableKeyboardCallbacks(obj)
+            set(obj.hFigure,'WindowKeyPressFcn','');
+            set(obj.hFigure,'WindowKeyReleaseFcn','');
+        end
+        
         function SetRunState(obj,state)
             if state
                 % Start
@@ -71,10 +81,12 @@ classdef AirGuitarHeroBase < hgsetget
                 end
             else
                 % Stop
-                
                 if ~strcmpi(obj.hTimer.Running,'off')
                     stop(obj.hTimer);
                 end
+                
+                % TODO: button control shouldn't be here is displaying only
+                % Ensure Buttons are up
                 sendButtonCommand(obj,~(zeros(1,8)));
                 
                 % Can't make calls to Signal Source -- Doesn't exist in
@@ -89,159 +101,22 @@ classdef AirGuitarHeroBase < hgsetget
             
             try
                 frame = getFrame(obj);
-%                 iRepeated = 0;
-%                 while 1
-%                     iRepeated = iRepeated + 1;
-%                     frame2 = getFrame(obj);
-%                     if ~all(frame(:) == frame2(:))
-%                         figure,subplot(2,1,1),imshow(frame),subplot(2,1,2),imshow(frame2)
-%                         keyboard
-%                         break
-%                     end
-%                 end
-                
                 annotatedFrame = obj.hNoteDetector.process_frame(frame);
                 drawFrame(obj,annotatedFrame);
                 
                 switch obj.DisplayState
                     case obj.Off
-                        % stop timer
-                        if ~strcmpi(obj.hTimer.Running,'off')
-                            stop(obj.hTimer);
-                        end
-                        
-                        % ensure output is off
-                        sendButtonCommand(obj,~(zeros(1,8)));
-                        
-%                         % stop data acquisition
-%                         if ~strcmpi(obj.SignalSource.AnalogInput.Running,'off')
-%                             stop(obj.SignalSource.AnalogInput);
-%                         end
-                        
-                        return
+                        SetRunState(obj,0);
                     case obj.DisplayOnly
                         % ensure output is off
                         sendButtonCommand(obj,~(zeros(1,8)));
-                        
-%                         % stop data acquisition
-%                         if ~strcmpi(obj.SignalSource.AnalogInput.Running,'off')
-%                             stop(obj.SignalSource.AnalogInput);
-%                         end
-                        
-%                         if ~isempty(obj.hInput)
-%                             % Joystick Control
-%                             obj.hInput.getdata();
-%                             
-%                             noteMask = obj.hInput.buttonVal(1:5);
-%                             strumOn = any(noteMask);
-%                             sendButtonCommand(obj,~([noteMask 0 0 strumOn]));
-%                             
-%                             
-%                         end
-                        
-                        return
                     case obj.AutoPlay
                         % AutoPlay
                         % Note detection -> actuation delay here
-                        DELAY = 3;
-                        
-                        noteMask = obj.hNoteDetector.noteHistory(DELAY,:);
+                        noteMask = obj.hNoteDetector.noteHistory(obj.FrameDelay,:);
                         strumOn = any(noteMask);
                         sendButtonCommand(obj,~([noteMask 0 0 strumOn]));
-
-%                         % stop emg acquisition
-%                         if ~strcmpi(obj.SignalSource.AnalogInput.Running,'off')
-%                             stop(obj.SignalSource.AnalogInput);
-%                         end
-                        
-                        return
                 end
-                
-
-                switch obj.DisplayState
-                    case obj.Training
-                        % EMG on and Autoplay on to maintain cues
-                        
-                        
-%                         % start emg acquisition
-%                         if ~strcmpi(obj.SignalSource.AnalogInput.Running,'on')
-%                             start(obj.SignalSource.AnalogInput);
-%                         end
-                        
-                        % AutoPlay
-                        % Note detection -> actuation delay here
-                        noteMask = obj.hNoteDetector.noteHistory(8,:);
-                        strumOn = any(noteMask);
-                        sendButtonCommand(obj,~([noteMask 0 0 strumOn]));
-                        
-                        
-                        return
-                end
-                
-                
-                return
-                % get a window of samples and classify them
-                obj.SampleCounter = obj.SampleCounter + 1;
-                obj.SignalSource.NumSamples = obj.EmgClassifier.NumSamplesPerWindow;
-                windowData = obj.SignalSource.getFilteredData();
-                features2D = obj.EmgClassifier.extractfeatures(windowData);
-                activeChannelFeatures = features2D(obj.EmgClassifier.ActiveChannels,:);
-                [classOut voteDecision] = obj.EmgClassifier.classify(reshape(activeChannelFeatures',[],1));
-                
-                if ~obj.EnableOnlineRetraining
-                    cmd = zeros(1,8);
-                    if classOut == 1 %No Movement
-                        sendButtonCommand(obj,~(zeros(1,8)));
-                    else
-                        cmd(classOut-1) = 1;
-                        cmd(8) = 1;
-                        sendButtonCommand(obj,~cmd)
-                    end
-                    return
-                end
-                
-                
-                if ~obj.AutoPlay
-                    % Ensure all buttons are up
-                    %sendButtonCommand(obj,~(zeros(1,8)));
-                end
-                if obj.AutoPlay
-                end
-                
-                
-                noteMask = find(obj.hNoteDetector.noteHistory(10,:),1,'first');
-                
-                if isempty(noteMask) || (noteMask > 3)
-                    currentCue = 1; % No movement
-                else
-                    currentCue = noteMask + 1;
-                end
-                
-                obj.EmgClassifier.ClassNames(currentCue);
-                
-                % use the current features and class label for training
-                obj.features3D(:,:,obj.SampleCounter) = features2D;
-                obj.classLabelId(obj.SampleCounter) = currentCue;
-                
-                obj.RetrainCounter = obj.RetrainCounter + 1;
-                if obj.EnableOnlineRetraining && obj.RetrainCounter > 30
-                    obj.RetrainCounter = 0;
-                    classesWithData = unique(obj.classLabelId(1:obj.SampleCounter));
-                    if length(classesWithData) < obj.EmgClassifier.NumClasses;
-                        fprintf('[Classifier] Insufficient data\n');
-                        fprintf('Classes with data: ');
-                        fprintf('%d ',classesWithData);
-                        fprintf('\n');
-                        
-                    else
-                        obj.EmgClassifier.TrainingData = obj.features3D(:,:,1:obj.SampleCounter);
-                        obj.EmgClassifier.TrainingDataLabels = obj.classLabelId(1:obj.SampleCounter);
-                        obj.EmgClassifier.train();
-                        obj.EmgClassifier.computeerror();
-                    end
-                end
-                
-                
                 drawnow
             catch ME
                 stop(obj.hTimer);
@@ -256,6 +131,12 @@ classdef AirGuitarHeroBase < hgsetget
             %                 frame = vcapg2;
             %             end
             frame = vcapg2;
+        end
+        function setFrameDelay(obj,numFrameDelay)
+            % Ensure numFrameDelay is a positive integer from 1 to 10;
+            numFrameDelay = max(min(round(numFrameDelay),10),1);
+            obj.FrameDelay = numFrameDelay;
+            fprintf('Frame Delay is: %d\n',numFrameDelay);
         end
         function drawFrame(obj,frame)
             set(obj.hFrame,'CData',frame);
@@ -319,17 +200,17 @@ end
 function id = keyMap(strKey)
 switch strKey
     case 'space'
-        id = double(Presentation.HwLinesEnum.Strum);
+        id = double(Presentation.AirGuitarHero.HwLinesEnum.Strum);
     case 'z'
-        id = double(Presentation.HwLinesEnum.GreenButton);
+        id = double(Presentation.AirGuitarHero.HwLinesEnum.GreenButton);
     case 'x'
-        id = double(Presentation.HwLinesEnum.RedButton);
+        id = double(Presentation.AirGuitarHero.HwLinesEnum.RedButton);
     case 'c'
-        id = double(Presentation.HwLinesEnum.YellowButton);
+        id = double(Presentation.AirGuitarHero.HwLinesEnum.YellowButton);
     case 'v'
-        id = double(Presentation.HwLinesEnum.BlueButton);
+        id = double(Presentation.AirGuitarHero.HwLinesEnum.BlueButton);
     case 'b'
-        id = double(Presentation.HwLinesEnum.OrangeButton);
+        id = double(Presentation.AirGuitarHero.HwLinesEnum.OrangeButton);
     otherwise
         id = [];
 end
