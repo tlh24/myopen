@@ -108,7 +108,7 @@ classdef EmgJacksonPollock < handle
             
             obj = Scenarios.EmgJacksonPollock();
             
-            obj.SignalSource = Inputs.UsbDaq('mcc',0);
+            obj.SignalSource = Inputs.DaqHwDevice('mcc',0);
             obj.SignalSource.initialize();
             obj.SignalSource.addfilter(Inputs.HighPass());
             obj.SignalSource.addfilter(Inputs.LowPass());

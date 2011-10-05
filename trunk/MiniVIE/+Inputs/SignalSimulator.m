@@ -12,7 +12,8 @@ classdef SignalSimulator < Inputs.SignalInput
     end
     properties (SetAccess=private)
         SignalBuffer;
-        hg; 
+        hg;
+        isRunning = false;
     end
     methods
         function obj = SignalSimulator
@@ -49,7 +50,6 @@ classdef SignalSimulator < Inputs.SignalInput
                 newData(:,iChannel) = channelData;
             end
             
-            
             obj.SignalBuffer = circshift(obj.SignalBuffer,[-sampleBlock 0]);
             obj.SignalBuffer(end-sampleBlock+1:end,:) = newData;
             
@@ -58,7 +58,7 @@ classdef SignalSimulator < Inputs.SignalInput
         function isReady = isReady(obj,numSamples) %#ok<MANU>
             % Consider adding in a phony startup delay
             isReady = true;
-            fprintf('Simulator Ready with %d samples\n',numSamples);
+            fprintf('[%s] Simulator Ready with %d samples\n',mfilename,numSamples);
         end
         function close(obj)
             delete(obj.hg.hFig)
@@ -182,12 +182,18 @@ classdef SignalSimulator < Inputs.SignalInput
                 
             end %key_down
             
+        end %uiControlPanel
+        function stop(obj)
+            if obj.isRunning
+                fprintf('[%s] Simulator Stopped\n',mfilename);
+                obj.isRunning = false;
+            end
         end
-    end %uiControlPanel
-    
-    methods (Static = true)
-        function stop()
-            fprintf('Simulator Stopped\n');
+        function start(obj)
+            if ~obj.isRunning
+                fprintf('[%s] Simulator Started\n',mfilename);
+                obj.isRunning = true;
+            end                
         end
     end
 end

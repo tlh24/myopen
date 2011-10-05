@@ -6,21 +6,23 @@ classdef ClassifierChannels < Common.MiniVieObj
     properties
         hFigure
         
-        ClassNames = {'Index' 'Middle' 'Ring' 'No Movement'};
+        ClassNames;
         DefaultClassNames = SignalAnalysis.ClassifierChannels.getDefaultNames;
     end
     properties (Dependent = true, SetAccess = private)
         NumClasses;
     end
     properties (Access = private)
-        defaultFile = 'miniVieDefaultClasses.mat';
         handles
+    end
+    properties (Constant = true)
+        defaultFile = 'miniVieDefaultClasses.mat';
     end
     methods
         function obj = ClassifierChannels
             obj.uiEnterClassNames();
-            obj.getDefaults();
-            
+            obj.ClassNames = obj.getSavedDefaults();
+            updateSelected(obj);
         end
         
         function close(obj)
@@ -31,46 +33,6 @@ classdef ClassifierChannels < Common.MiniVieObj
         end
         function numClasses = get.NumClasses(obj)
             numClasses = length(obj.ClassNames);
-        end
-        function setDefaults(obj)
-            % Create a mat file in the temp directory
-            
-            fullFile = fullfile(tempdir,obj.defaultFile);
-            classNames = obj.ClassNames; %#ok<NASGU>
-            
-            try
-                save(fullFile,'classNames','-mat');
-            catch ME
-                msg = { 'Error creating default file', fullFile , ...
-                    'Error was: ' ME.message};
-                errordlg(msg,'Error setting defaults')
-                return
-            end
-            
-        end
-        function getDefaults(obj)
-            % Load a mat file in the temp directory
-            
-            fullFile = fullfile(tempdir,obj.defaultFile);
-            if ~exist(fullFile,'file')
-                return
-            end
-            
-            try
-                S = load(fullFile);
-            catch ME
-                msg = { 'Error reading default file', fullFile , ...
-                    'Error was: ' ME.message};
-                errordlg(msg,'Error setting defaults');
-                return
-            end
-            
-            if isfield(S,'classNames')
-                obj.ClassNames = S.classNames;
-                updateSelected(obj);
-                set(obj.handles.hListboxSelected,'Value',1);
-            end
-            
         end
         function openFile(obj,fullFile)
             
@@ -127,7 +89,7 @@ classdef ClassifierChannels < Common.MiniVieObj
         end
         
         function uiEnterClassNames(obj)
-            obj.hFigure = UiTools.create_figure('Classifier Channels','ClassifierChannels');
+            obj.hFigure = UiTools.create_figure('Class Names','ClassifierChannels');
             pos = get(obj.hFigure,'Position');
             pos(3) = 700;
             set(obj.hFigure,'Position',pos);
@@ -144,7 +106,7 @@ classdef ClassifierChannels < Common.MiniVieObj
                 'Parent',obj.handles.menuFile);
             obj.handles.menuFileDefault = uimenu(...
                 'Label','Set &Defaults',...
-                'Callback',@(src,evt)setDefaults(obj),...
+                'Callback',@(src,evt)obj.setSavedDefaults(obj.ClassNames),...
                 'Parent',obj.handles.menuFile);
             obj.handles.menuFileDefault = uimenu(...
                 'Label','E&xit',...
@@ -165,7 +127,10 @@ classdef ClassifierChannels < Common.MiniVieObj
                 'Position',[50 70 90 25],'Callback',@(src,evt)cbClearAll(obj));
             
             uicontrol(obj.hFigure,'Style','pushbutton','String','< Add',...
-                'Position',[275 200 50 30],'Callback',@(src,evt)cbAddClasses(obj));
+                'Position',[270 200 60 30],'Callback',@(src,evt)cbAddClasses(obj));
+
+            uicontrol(obj.hFigure,'Style','pushbutton','String','Remove >',...
+                'Position',[270 160 60 30],'Callback',@(src,evt)cbRemoveClasses(obj));
             
         end
         function cbClearAll(obj)
@@ -198,12 +163,69 @@ classdef ClassifierChannels < Common.MiniVieObj
             obj.updateSelected();
             
         end
+        function cbRemoveClasses(obj)
+            % Eliminate class from selected classes
+
+            selectedList = get(obj.handles.hListboxSelected,'String');
+            vals = get(obj.handles.hListboxSelected,'Value');
+            
+            set(obj.handles.hListboxSelected,'Value',1);
+            selectedList(vals) = [];
+            
+            obj.ClassNames = selectedList;
+            
+            obj.updateSelected();
+            
+        end
         
         function updateSelected(obj)
             set(obj.handles.hListboxSelected,'String',obj.ClassNames);
         end
     end
     methods (Static = true)
+        function setSavedDefaults(classNames)
+            % Create a mat file in the temp directory
+            
+            if isempty(classNames) || ~iscell(classNames) || ~all(cellfun(@isstr,classNames))
+                error('Expected a cell array of strings');
+            end
+            
+            fullFile = fullfile(tempdir,SignalAnalysis.ClassifierChannels.defaultFile);
+            
+            try
+                save(fullFile,'classNames','-mat');
+            catch ME
+                msg = { 'Error creating default file', fullFile , ...
+                    'Error was: ' ME.message};
+                errordlg(msg,'Error setting defaults')
+                return
+            end
+            
+        end
+        
+        function classNames = getSavedDefaults()
+            % Load a mat file in the temp directory
+            
+            fullFile = fullfile(tempdir,SignalAnalysis.ClassifierChannels.defaultFile);
+            if ~exist(fullFile,'file')
+                return
+            end
+            
+            try
+                S = load(fullFile);
+            catch ME
+                msg = { 'Error reading default file', fullFile , ...
+                    'Error was: ' ME.message};
+                errordlg(msg,'Error setting defaults');
+                return
+            end
+            
+            if isfield(S,'classNames')
+                classNames = S.classNames;
+            end
+            
+        end
+        
         function classNames = getDefaultNames
             classNames{30}  = 'No Movement';
             classNames{01}  = 'Shoulder Flexion';

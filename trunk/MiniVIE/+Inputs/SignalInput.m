@@ -20,6 +20,7 @@ classdef SignalInput < Common.MiniVieObj
         initialize(obj);
         data = getData(obj);
         isReady = isReady(obj,numSamples); % Consider removing extra arg
+        start(obj);
         stop(obj);
         close(obj);
     end %methods (Abstract)

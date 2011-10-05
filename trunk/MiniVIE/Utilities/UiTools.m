@@ -27,6 +27,10 @@ classdef UiTools
         end
         function hFigure = create_figure(figureName,figureTag)
             
+            if nargin < 2
+                figureTag = strrep(figureName,' ','_');
+            end
+            
             % Consts
             figureColor = get(0,'defaultUicontrolBackgroundColor');
             

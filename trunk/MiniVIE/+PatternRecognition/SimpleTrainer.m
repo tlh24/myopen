@@ -115,6 +115,9 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
             obj.Features3D(:,:,iSample+1:end) = [];
             obj.ClassLabelId(iSample+1:end) = [];
             obj.SampleCount = iSample;
+            
+            obj.saveTrainingData();
+
         end
     end
     methods (Static = true)
