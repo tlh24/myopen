@@ -1546,7 +1546,7 @@ int main(int argn, char **argc)
 		"13	y4(n-2)" }; 
 	button = 0; 
 	combo = gtk_combo_box_new_text();
-    gtk_container_add( GTK_CONTAINER( frame ), combo );
+   gtk_container_add( GTK_CONTAINER( frame ), combo );
    
 	for(int k=0; k<W1_STRIDE; k++){
 		gtk_combo_box_append_text( GTK_COMBO_BOX( combo ), 
