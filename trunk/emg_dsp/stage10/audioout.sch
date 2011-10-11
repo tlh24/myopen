@@ -1,15 +1,15 @@
-EESchema Schematic File Version 2  date Wed 23 Mar 2011 11:22:57 PM EDT
+EESchema Schematic File Version 2  date Tue 11 Oct 2011 02:19:03 AM EDT
 LIBS:power
 LIBS:device
 LIBS:emg_sym
 LIBS:linear
-LIBS:stage7-cache
+LIBS:stage10-cache
 EELAYER 24  0
 EELAYER END
 $Descr A4 11700 8267
-Sheet 19 19
+Sheet 20 3
 Title ""
-Date "31 jan 2011"
+Date "11 oct 2011"
 Rev ""
 Comp ""
 Comment1 ""

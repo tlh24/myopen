@@ -33,6 +33,7 @@ neuron_group = [[0 for col in range(2)] for row in range(128)]
 selected = (0,0)
 pierad = 40
 g_mean = [10.0, 10.0] # mean firing rate.
+g_juiceOverride = False; 
 plot_thread = None
 plot_queue = Queue()
 
@@ -113,9 +114,11 @@ def configure_event(widget, event):
 	
 def update_display():
 	# get data from gtkclient.
-	global frsock, g_die, g_dict, mean_smoothing                            
+	global frsock, g_die, g_dict, mean_smoothing, g_juiceOverride                             
 	if frsock == None:
-		frsock = sock_connect('localhost',4343,g_die)
+		server = 'rabbit'
+		print "trying to connect to ", server, " for firing rate data."
+		frsock = sock_connect(server,4343,g_die)
 		#frsock.settimeout(1)
 		frsock.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
 	try:
@@ -189,6 +192,11 @@ def update_display():
 				# do the standard thing: switch statement based on state.
 				gs = g_dict['gs']
 				dt = time.time() - g_dict['gt']
+				if g_juiceOverride:
+					gs = 'reward'
+					dt = 0
+					g_juiceOverride = False
+					print "juice override"
 				if gs == 'default':
 					g_dict['targetAlpha'] = 0.5
 					if inside:
@@ -234,7 +242,7 @@ def expose_event(widget, event):
 	global firing_rates
 	global neuron_group
 	cr = widget.window.cairo_create()
-	cr.set_source_rgb(0.0, 0.00, 0.01); 
+	cr.set_source_rgb(0.0, 0.09, 0.13); 
 	cr.rectangle(0,0,pierad*16,pierad*16)
 	cr.fill()
 	#draw the firing rates.
@@ -321,7 +329,7 @@ def main():
 	global firing_rates, frsock, targV, cursV, touchV
 	global g_die, drawing_area, group_radio_buttons
 	global g_dict # shared state.
-	global neuron_group, selected, pierad, mean_smoothing
+	global neuron_group, selected, pierad, mean_smoothing, g_juiceOverride
 	
 	#manage the shared dictionary. 
 	manager = Manager()
@@ -351,7 +359,7 @@ def main():
 	
 	# next is to make the window. 
 	window = gtk.Window()
-	window.set_size_request(700, 750)
+	window.set_size_request(800, 900)
 	window.connect('delete-event', gtk.main_quit)
 
 	vpaned = gtk.HPaned()
@@ -380,8 +388,18 @@ def main():
 		gtk.gdk.POINTER_MOTION_HINT_MASK)
 	drawing_area.set_flags(gtk.CAN_FOCUS) 
 
+	
 	vbox_p = gtk.VBox(False, 0); 
 	vpaned.add1(vbox_p); 
+	
+	# button for manual juice. 
+	def juiceCB(widget, msg):
+		global g_juiceOverride
+		g_juiceOverride = True;
+	but = gtk.Button("Juice"); 
+	but.connect("clicked", juiceCB, "Juice"); 
+	vbox_p.add(but)
+	
 	frame = make_radio('set_neuron_group', ['None','X','Y'], radio_event)
 	vbox_p.add(frame)
 
@@ -440,7 +458,7 @@ def main():
 	p3 = Process(target=server_thread,args=(g_die,4345,targV,cursV,touchV,g_dict))
 	p3.start()
 	
-	gobject.timeout_add(16, update_display)
+	gobject.timeout_add(10, update_display)
 
 	window.show_all()
 	gtk.main()
@@ -531,6 +549,7 @@ def server_thread(die,port,targV,cursV,touchV,g_dict):
 					if (not (k in local_dict)) or (local_dict[k] != g_dict[k]):
 						exec ('pb.' + k + ' = g_dict[k]') in locals(), globals()
 						local_dict[k] = g_dict[k]
+						# print "wrote ", k, g_dict[k]
 				pb.manual = g_dict['control'] == 'manual'
 				try:
 					seg.writeSegment(conn, pb.SerializeToString())
