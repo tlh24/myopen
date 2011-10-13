@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Tue 11 Oct 2011 04:25:11 PM EDT
+EESchema Schematic File Version 2  date Wed 12 Oct 2011 11:50:05 PM EDT
 LIBS:power
 LIBS:device
 LIBS:emg_sym
@@ -9,7 +9,7 @@ EELAYER END
 $Descr User 16000 12000
 Sheet 1 5
 Title "Stage 4 / Copyright 2010 Timothy L Hanson "
-Date "11 oct 2011"
+Date "13 oct 2011"
 Rev ""
 Comp "This design is free: redistribute or modify under the GPL v. 3 or later"
 Comment1 ""
@@ -17,6 +17,15 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
+$Comp
+L LED D?
+U 1 1 4E965FEA
+P 13950 4350
+F 0 "D?" H 13950 4450 50  0000 C CNN
+F 1 "LED" H 13950 4250 50  0000 C CNN
+	1    13950 4350
+	1    0    0    -1  
+$EndComp
 Wire Wire Line
 	10750 2150 11250 2150
 Wire Wire Line
@@ -537,16 +546,6 @@ F 2 "0402" V 14300 4400 60  0000 C CNN
 	0    1    1    0   
 $EndComp
 $Comp
-L D D1
-U 1 1 4E8F745C
-P 13950 4350
-F 0 "D1" H 13950 4500 60  0000 C CNN
-F 1 "475-2558" H 13950 4150 60  0000 C CNN
-F 2 "0603" H 14150 4250 50  0000 C CNN
-	1    13950 4350
-	-1   0    0    1   
-$EndComp
-$Comp
 L R R79
 U 1 1 4E8F697C
 P 11600 3950
@@ -826,26 +825,6 @@ F 2 "0402" H 10800 1100 60  0000 C CNN
 $EndComp
 Text Notes 4650 8250 0    60   ~ 0
 TPS62420 also ok
-$Comp
-L TP TP9
-U 1 1 4C2A4FF1
-P 7050 7800
-F 0 "TP9" H 7150 7800 60  0000 C CNN
-F 1 "08" H 7300 7800 60  0000 C CNN
-F 2 "TP" H 7000 7900 60  0000 C CNN
-	1    7050 7800
-	1    0    0    -1  
-$EndComp
-$Comp
-L TP TP10
-U 1 1 4C2A4FCD
-P 7100 9300
-F 0 "TP10" H 7200 9300 60  0000 C CNN
-F 1 "28" H 7350 9300 60  0000 C CNN
-F 2 "TP" H 7050 9400 60  0000 C CNN
-	1    7100 9300
-	1    0    0    -1  
-$EndComp
 NoConn ~ 7750 3000
 Text Label 11350 3950 2    60   ~ 0
 MISO
@@ -1524,9 +1503,9 @@ F 2 "QFN-20" H 12150 6400 60  0000 C CNN
 $EndComp
 Text Label 9450 1700 2    60   ~ 0
 PF1
-Text Notes 7100 9250 0    60   ~ 0
+Text Notes 6950 9300 0    60   ~ 0
 0.95V
-Text Notes 7050 7650 0    60   ~ 0
+Text Notes 6900 7650 0    60   ~ 0
 2.8V
 $Comp
 L JUMP U1
