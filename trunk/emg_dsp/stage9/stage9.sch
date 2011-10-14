@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Wed 12 Oct 2011 11:50:05 PM EDT
+EESchema Schematic File Version 2  date Thu 13 Oct 2011 06:49:24 PM EDT
 LIBS:power
 LIBS:device
 LIBS:emg_sym
@@ -17,15 +17,9 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
-$Comp
-L LED D?
-U 1 1 4E965FEA
-P 13950 4350
-F 0 "D?" H 13950 4450 50  0000 C CNN
-F 1 "LED" H 13950 4250 50  0000 C CNN
-	1    13950 4350
-	1    0    0    -1  
-$EndComp
+Connection ~ 11100 1150
+Wire Wire Line
+	11450 1150 8000 1150
 Wire Wire Line
 	10750 2150 11250 2150
 Wire Wire Line
@@ -86,8 +80,6 @@ Wire Wire Line
 Wire Wire Line
 	11900 1950 11900 2050
 Connection ~ 10700 750 
-Wire Wire Line
-	11100 750  8000 750 
 Wire Wire Line
 	3950 8650 3950 9450
 Wire Wire Line
@@ -406,8 +398,6 @@ Wire Wire Line
 	12150 1850 12700 1850
 Wire Wire Line
 	10750 2050 11250 2050
-Wire Wire Line
-	11100 1150 8000 1150
 Connection ~ 10700 1150
 Wire Wire Line
 	6650 9300 6900 9300
@@ -444,6 +434,29 @@ Wire Wire Line
 	7900 6750 7500 6750
 Wire Wire Line
 	10750 1950 11400 1950
+Wire Wire Line
+	11450 750  8000 750 
+Connection ~ 11100 750 
+$Comp
+L C C68
+U 1 1 4E973E32
+P 11450 950
+F 0 "C68" H 11500 1050 50  0000 L CNN
+F 1 "0.1uf" H 11500 850 50  0000 L CNN
+F 2 "0402" H 11550 1100 60  0000 C CNN
+	1    11450 950 
+	1    0    0    -1  
+$EndComp
+$Comp
+L LED D1
+U 1 1 4E965FEA
+P 13950 4350
+F 0 "D1" H 13950 4450 50  0000 C CNN
+F 1 "LED" H 13950 4250 50  0000 C CNN
+F 2 "D0603" H 13900 4500 60  0001 C CNN
+	1    13950 4350
+	1    0    0    -1  
+$EndComp
 $Comp
 L GND #PWR01
 U 1 1 4E948111
