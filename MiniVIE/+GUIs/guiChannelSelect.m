@@ -20,6 +20,7 @@ classdef guiChannelSelect < handle
     end
     properties (Constant = true)
         defaultFile = 'miniVieDefaultChannels.mat';
+        defaultChannels = [1 2 3 4];
     end
     events
         ValueChange
@@ -206,6 +207,9 @@ classdef guiChannelSelect < handle
         end
         function selectedChannels = getSavedDefaults()
             % Load a mat file in the temp directory
+            
+            % Initialize output
+            selectedChannels = GUIs.guiChannelSelect.defaultChannels;
             
             fullFile = fullfile(tempdir,GUIs.guiChannelSelect.defaultFile);
             if ~exist(fullFile,'file')

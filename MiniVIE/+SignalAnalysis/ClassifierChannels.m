@@ -17,6 +17,7 @@ classdef ClassifierChannels < Common.MiniVieObj
     end
     properties (Constant = true)
         defaultFile = 'miniVieDefaultClasses.mat';
+        defaultSelectedClasses = {'No Movement'};
     end
     methods
         function obj = ClassifierChannels
@@ -205,6 +206,8 @@ classdef ClassifierChannels < Common.MiniVieObj
         
         function classNames = getSavedDefaults()
             % Load a mat file in the temp directory
+            
+            classNames = SignalAnalysis.ClassifierChannels.defaultSelectedClasses;
             
             fullFile = fullfile(tempdir,SignalAnalysis.ClassifierChannels.defaultFile);
             if ~exist(fullFile,'file')
