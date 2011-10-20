@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Wed 12 Oct 2011 06:08:50 PM EDT
+EESchema Schematic File Version 2  date Thu 20 Oct 2011 05:59:00 PM EDT
 LIBS:power
 LIBS:device
 LIBS:emg_sym
@@ -9,7 +9,7 @@ EELAYER END
 $Descr User 16000 12000
 Sheet 1 3
 Title "Stage 4 / Copyright 2010 Timothy L Hanson "
-Date "12 oct 2011"
+Date "20 oct 2011"
 Rev ""
 Comp "This design is free: redistribute or modify under the GPL v. 3 or later"
 Comment1 ""
@@ -2294,7 +2294,7 @@ L POE-JACK U36
 U 1 1 4E93D639
 P 14000 2500
 F 0 "U36" H 14050 2350 60  0000 C CNN
-F 1 "POE-JACK" H 14100 2600 60  0000 C CNN
+F 1 "A99645" H 14100 2600 60  0000 C CNN
 F 2 "POE-JACK" H 14000 2500 60  0000 C CNN
 	1    14000 2500
 	1    0    0    -1  

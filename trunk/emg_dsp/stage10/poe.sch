@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Wed 12 Oct 2011 06:08:50 PM EDT
+EESchema Schematic File Version 2  date Thu 20 Oct 2011 05:59:00 PM EDT
 LIBS:power
 LIBS:device
 LIBS:emg_sym
@@ -9,7 +9,7 @@ EELAYER END
 $Descr A4 11700 8267
 Sheet 2 3
 Title ""
-Date "12 oct 2011"
+Date "20 oct 2011"
 Rev ""
 Comp ""
 Comment1 ""
