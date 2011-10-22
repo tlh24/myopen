@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Thu 13 Oct 2011 06:49:24 PM EDT
+EESchema Schematic File Version 2  date Sat 22 Oct 2011 01:28:52 PM EDT
 LIBS:power
 LIBS:device
 LIBS:emg_sym
@@ -9,7 +9,7 @@ EELAYER END
 $Descr User 16000 12000
 Sheet 1 5
 Title "Stage 4 / Copyright 2010 Timothy L Hanson "
-Date "13 oct 2011"
+Date "22 oct 2011"
 Rev ""
 Comp "This design is free: redistribute or modify under the GPL v. 3 or later"
 Comment1 ""
@@ -1499,7 +1499,7 @@ L C C25
 U 1 1 4CA0ED10
 P 12050 5700
 F 0 "C25" H 12100 5800 50  0000 L CNN
-F 1 "33nF" H 12100 5600 50  0000 L CNN
+F 1 "47nf" H 12100 5600 50  0000 L CNN
 F 2 "0402" H 12150 5850 60  0000 C CNN
 	1    12050 5700
 	1    0    0    -1  

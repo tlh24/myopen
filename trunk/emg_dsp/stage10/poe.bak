@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Wed 12 Oct 2011 06:08:50 PM EDT
+EESchema Schematic File Version 2  date Sat 22 Oct 2011 01:44:06 PM EDT
 LIBS:power
 LIBS:device
 LIBS:emg_sym
@@ -9,7 +9,7 @@ EELAYER END
 $Descr A4 11700 8267
 Sheet 2 3
 Title ""
-Date "12 oct 2011"
+Date "22 oct 2011"
 Rev ""
 Comp ""
 Comment1 ""
@@ -401,7 +401,7 @@ L R R129
 U 1 1 4E93C7F3
 P 7400 5300
 F 0 "R129" V 7480 5300 50  0000 C CNN
-F 1 "7.15k" V 7400 5300 50  0000 C CNN
+F 1 "7k" V 7400 5300 50  0000 C CNN
 F 2 "0402" V 7530 5250 60  0001 C CNN
 	1    7400 5300
 	0    1    1    0   

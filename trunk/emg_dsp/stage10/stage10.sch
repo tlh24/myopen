@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Thu 20 Oct 2011 05:59:00 PM EDT
+EESchema Schematic File Version 2  date Sat 22 Oct 2011 02:30:34 PM EDT
 LIBS:power
 LIBS:device
 LIBS:emg_sym
@@ -9,7 +9,7 @@ EELAYER END
 $Descr User 16000 12000
 Sheet 1 3
 Title "Stage 4 / Copyright 2010 Timothy L Hanson "
-Date "20 oct 2011"
+Date "22 oct 2011"
 Rev ""
 Comp "This design is free: redistribute or modify under the GPL v. 3 or later"
 Comment1 ""
@@ -17,6 +17,8 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
+Text Notes 13350 5100 0    60   ~ 0
+this is for 2.5V, but has a timeout of 140ms,\nso should be ok.
 Wire Wire Line
 	8500 1750 9000 1750
 Wire Wire Line
@@ -2848,7 +2850,7 @@ L MIC5365 U14
 U 1 1 4D2F63AF
 P 10050 7600
 F 0 "U14" H 10050 7400 60  0000 C CNN
-F 1 "MIC5365" H 10050 7800 60  0000 C CNN
+F 1 "MIC5365-2.5" H 10050 7800 60  0000 C CNN
 F 2 "SC-70-5" H 10050 7350 60  0000 C CNN
 	1    10050 7600
 	-1   0    0    -1  
