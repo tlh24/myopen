@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Thu 13 Oct 2011 06:49:24 PM EDT
+EESchema Schematic File Version 2  date Sat 22 Oct 2011 01:28:52 PM EDT
 LIBS:power
 LIBS:device
 LIBS:emg_sym
@@ -9,7 +9,7 @@ EELAYER END
 $Descr User 16000 12000
 Sheet 4 5
 Title "Stage 4 / Copyright 2010 Timothy L Hanson "
-Date "13 oct 2011"
+Date "22 oct 2011"
 Rev ""
 Comp "This design is free: redistribute or modify under the GPL v. 3 or later"
 Comment1 ""
