@@ -1,7 +1,7 @@
 Notes from debugging stage8
 February 25 2011
 * Most everything works properly on the board -- no hardware errors yet.
-* Digikey shipped some incorrect restors, which is annoying - they 
+* Digikey shipped some incorrect resistors, which is annoying - they 
 	have not done this before, to the best of my knowlege - 
 	but a relatively easy fix. 
 * The new solder paste - ZeroLead no-clean solder paste - 

@@ -692,7 +692,7 @@ void destroy(GtkWidget *, gpointer){
 	 
 	gtk_main_quit(); 
 }
-void* sock_thread(void* destIP){
+void* sock_thread(void*){
 	g_sendL = 0x4000; 
 	g_sendbuf = (unsigned int*)malloc(g_sendL*32); 
 	if(!g_sendbuf){
@@ -702,15 +702,46 @@ void* sock_thread(void* destIP){
 	g_sendR = 0; 
 	g_sendW = 0; 
 	
+	char destName[256]; destName[0] = 0; 
+	char buf[1024+128+4];
+	sockaddr_in from; 
 	g_rxsock = setup_socket(4340,0); //udp sock. 
-	g_txsock = connect_socket(4342,(char*)destIP,0); 
+	//have to enable multicast reception on the socket.
+	printf("**make sure you've enabled allmulti for the ethernet iface**\n"); 
+	printf("sudo ifconfig eth0 allmulti\n"); 
+	printf("put it in your /etc/network/interfaces file.
+	struct ip_mreqn group;
+	group.imr_multiaddr.s_addr = inet_addr("239.0.200.0");
+	group.imr_address.s_addr = htonl(INADDR_ANY);
+	group.imr_ifindex = 0; 
+	if(setsockopt(g_rxsock, IPPROTO_IP, IP_ADD_MEMBERSHIP, 
+		(char *)&group, sizeof(group)) < 0)
+		printf("Error adding multicast group");
+
+	// this program needs to be seriously refactored to allow multiple bridges. 
+	while(!destName[0]){
+		socklen_t fromlen = sizeof(from); 
+		int n = recvfrom(g_rxsock, buf, sizeof(buf),0, 
+						 (sockaddr*)&from, &fromlen); 
+		if(fromlen > 0 && n > 0){
+			buf[n] = 0; 
+			printf("rxed buf: %s\n", buf); 
+			inet_ntop(AF_INET, (const void*)(&(from.sin_addr)), 
+						 destName, 256); 
+			printf("a bridge appears to be at %s\n",destName); 
+			//send a response.
+			buf[0] = 124; //radio channel.
+			buf[1] = 0; 
+			n = sendto(g_rxsock,buf,2,0,(sockaddr*)&from,sizeof(from)); 
+		}
+	}
+	g_txsock = connect_socket(4342,destName,0); 
 	if(!g_txsock) printf("failed to connect to bridge.\n"); 
 	//default txsockAddr
-	get_sockaddr(4342, (char*)destIP, &g_txsockAddr); 
-	char buf[1024+128+4];
+	get_sockaddr(4342, (char*)destName, &g_txsockAddr); 
 	int send_delay = 0; 
 	g_totalPackets = 0; 
-	sockaddr_in from; 
+	
 	while(g_die == 0){
 		socklen_t fromlen = sizeof(from); 
 		int n = recvfrom(g_rxsock, buf, sizeof(buf),0, 
@@ -1735,7 +1766,7 @@ int main(int argn, char **argc)
 	pthread_attr_t attr;
 	pthread_attr_init(&attr);
 	g_startTime = gettime(); 
-	pthread_create( &thread1, &attr, sock_thread, (void*)destIP );
+	pthread_create( &thread1, &attr, sock_thread, 0 );
 	pthread_create( &thread1, &attr, server_thread, 0 ); 
 
 	while(g_sendbuf == 0){
