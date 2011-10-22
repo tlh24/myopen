@@ -216,16 +216,16 @@ int bfin_EMAC_recv(u8** data){
 }
 int bfin_EMAC_recv_poll(u8** data){
 	int i, value, length; 
-	
+	value = 0; 
 	for (i = 0; i < 100; i++) {
-		udelay(10000);
+		udelay(1000);
 		if ((rxbuf[rxIdx]->StatusWord & RX_COMP) != 0) {
 			value = 1;
 			break;
 		}
 	}
 	if (value == 0) {
-		printf_str("EMAC can't receive any data\n");
+		printf_str("eth rxed nada\n");
 		//bfin_EMAC_halt();
 		//eth_halt();
 		return -1;
@@ -236,7 +236,7 @@ int bfin_EMAC_recv_poll(u8** data){
 	}
 	rxbuf[rxIdx]->StatusWord = 0;
 	length -= 4;
-	printf_int("got packet: length ", length); 
+	printf_int("eth rx len ", length); 
 	*data = (u8*)(rxbuf[rxIdx]->FrmData); 
 
 	//ARP fixme here!! 
@@ -594,11 +594,19 @@ u8* eth_header_setup(int* length, char* result, u32 destIP){
 	eth->length = (*length) - 2;//-2 for the length short.
 	*length -= sizeof(eth_header); //for passing to the next protocol layer.
 	//need to get the MAC address of this destination.. 
-	if(ARP_req(destIP, &(eth->dest[0])) == 0){
-		*result = -1; 
-		return 0; 
+	if((destIP & htonl(0xff)) == 0){ //is broadcast?
+		eth->dest[0] = 0x01; //multicast ethernet MAC.
+		eth->dest[1] = 0x00;
+		eth->dest[2] = 0x5e; 
+		eth->dest[3] = 0x00; 
+		eth->dest[4] = 0x0d; 
+		eth->dest[5] = 0xfb; 
+	}else{
+		if(ARP_req(destIP, &(eth->dest[0])) == 0){
+			*result = -1; 
+			return 0; 
+		}
 	}
-	
 	for(i=0; i<6; i++){
 		eth->src[i] = NetOurMAC[i];
 	}
@@ -623,7 +631,7 @@ u8* ip_header_setup(u8* data, int* length, u32 dest, u8 protocol){
 	*length -= sizeof(ip_header); 
 	ip->id = htons(NetIPID++);
 	ip->off   = htons(0x4000);	// no fragmentation
-	ip->ttl   = 64;
+	ip->ttl   = ((dest&0xff000000) == 0) ? 1 : 64; //bcast have short ttl.
 	ip->p    = protocol;
 	ip->sum   = 0;
 	ip->src = NetOurIP; 
@@ -841,7 +849,7 @@ void DHCP_tx(int olen, u8* opt, u32 dest){
 	int length, i; 
 	u8* data; 
 	
-	length = 	sizeof(dhcp_packet) - 2 + olen;//subtract 2 for the length field.
+	length = sizeof(dhcp_packet) - 2 + olen;//subtract 2 for the length field.
 	p = (dhcp_packet*)(txbuf[txIdx]->FrmData); 
 	p->eth.length = length; //also see NoBytes.
 	
@@ -1049,6 +1057,46 @@ void DHCP_parse(u8* ptr, int length){
 			printf_str("\n"); 
 			ptr += olen; 
 			i -= 1 + olen; 
+		}
+	}
+}
+
+u8 bridge_publish(){	
+	int length, i; 
+	char result = 1; 
+	u8* data; 
+	udp_packet* p;
+	
+	NetDataDestIP = FormatIPAddress(239,0,200,0); 
+	while(1){
+		length = sizeof(udp_packet) + 10; 
+		data = eth_header_setup(&length, &result, NetDataDestIP);
+		if(result < 0) return 0; 
+		data = ip_header_setup(data, &length, NetDataDestIP, IP_PROT_UDP); 
+		data = udp_header_setup(data, &length, 4341, 4340); 
+		memcpy_((u8*)"neurobrdg", data, 10); 
+		printf_str("send publish packet\n"); 
+		bfin_EMAC_send_nocopy();
+		for(i=0; i<10; i++){ //if there is no network data
+			length = bfin_EMAC_recv_poll( &data ); //this function falls through.
+			p = (udp_packet*)data; 
+			if( length > 0 && length >= sizeof(udp_packet) 
+				&& htons(p->eth.protLen) == ETH_PROTO_IP4){
+				if( p->udp.src == htons(4340) &&
+					p->udp.dest == htons(4341)){
+					NetDataDestIP = p->ip.src; 
+					printf_ip("got client ", NetDataDestIP); 
+					data += sizeof(udp_packet); 
+					printf_hex_byte("radio channel:", data[0]); 
+					printf_str("\n"); 
+					g_streamEnabled = 1; 
+					return data[0]; 
+				}
+			}
+		}
+		//sleep about 2 sec @ 600Mhz clock. don't be flooding the network.
+		for(i=0; i<0x2000000;i++){ 
+			asm volatile("nop; nop; nop; nop"); 
 		}
 	}
 }

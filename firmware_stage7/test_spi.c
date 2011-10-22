@@ -397,7 +397,9 @@ int main(void){
 	
 	//startup the ethernet..
 	int etherr = bfin_EMAC_init(); 
-	if(!etherr) DHCP_req();  
+	if(!etherr) DHCP_req();
+	//need something more robust than having to write the webpage to enable 
+	//destination -- something like SLP? mDNS or DNS-SC? or simpler? 
 	
 	/*setup portF - SPORT0 RX + NRF CSN, IRQ, CE, SPORT1 TX
 	MUX		0000 0001 0100 0000  0x0140
@@ -420,7 +422,7 @@ int main(void){
 		have 2ch DAC, so should put out samples at 62500 sps
 		with 32 clocks between TFS, need 2Mhz clk -> divide by 30.
 	*/
-	if(1){
+	if(0){
 		*pSPORT1_TCR1 = 0; //turn everything off before changing speed..(also clears errors)
 		asm volatile("ssync"); 
 		g_sampW = g_sampR = 0; //reset the counters.
@@ -436,7 +438,7 @@ int main(void){
 		//init the IRQ. first the event vector table.
 		*pEVT7 = audio_out; 
 		*pSIC_IMASK0 = 1 << 9; //page 170 of the hardware ref.
-	}/*
+	}/* MUSIC!
 		int j, k, m, n, x, y; 
 		i = j = k = m = n = x = y = 0; 
 		int freqs[] = {240, 400, 300, 180};
@@ -472,61 +474,68 @@ int main(void){
 			}
 		}
 	}*/
-	//write out data.
-	int prevtime = 0;
-	int secs; 
-	wrptr = 0; //write pointer - not actual address! (must wrap by hand)
-	trptr = 0;
-	g_dropped = 0; 
-	g_nextFlag = 0; 
-	
-	//enable the three radios.
-	printf_str("init radios!\n"); 
-	*FIO_CLEAR = NRF_CE; 
-	*FIO_SET = NRF_CSN0 | NRF_CSN1 | NRF_CSN2;
-	*pPORTGIO_SET = SPI_FLASH; 
-	asm volatile("ssync;"); 
-	radio_init(NRF_CSN0, NRF_IRQ0, 124); 
-	radio_init(NRF_CSN1, NRF_IRQ1, 124); 
-	radio_init(NRF_CSN2, NRF_IRQ2, 124); 
-
-	
-	radio_set_rx(NRF_CSN0, 0); 
-	radio_set_rx(NRF_CSN1, 0); 
-	radio_set_rx(NRF_CSN2, NRF_CE); //enables RX. 
-	
-	//you have to be ready to get packets immediately after RX mode is turned on --
-	//otherwise the  fifo gets confused, and you could have 2-3 packets
-	//in the fifo but only read out one. 
-	
-	char write = 1; 
 	while(1){
-		//listen for packets? (both interfaces, respond on eth)
-		eth_listen(etherr); 
-		//u8 fifostatus; 
-		//u8 status = spi_read_register_status(NOR_FIFO_STATUS, &fifostatus); 
-		if((*pPORTFIO & NRF_IRQ0) == 0){
-			getRadioPacket(NRF_CSN0, NRF_IRQ0, write);
-			write = 0; 
-		}
-		if((*pPORTFIO & NRF_IRQ1) == 0){
-			getRadioPacket(NRF_CSN1, NRF_IRQ1, write);
-			write = 0; 
-		}
-		if((*pPORTFIO & NRF_IRQ2) == 0){
-			getRadioPacket(NRF_CSN2, NRF_IRQ2, write);
-			write = 0; 
-		}
-		if((*pPORTFIO & (NRF_IRQ0 | NRF_IRQ1 | NRF_IRQ2)) == 
-			(NRF_IRQ0 | NRF_IRQ1 | NRF_IRQ2))
-			write = 1; //no-change fall-through: only write one RXed packet.
+		//first look for gtkclient. it has to tell us what radio channel
+		//to listen to. if it goes away we'll get an ICMP port closed
+		//packet, and will fall back to waiting patiently for it. 
+		printf_str("waiting for client.\n"); 
+		unsigned char radioChannel = bridge_publish(); 
 		
+		int prevtime = 0;
+		int secs; 
+		wrptr = 0; //write pointer - not actual address! (must wrap by hand)
+		trptr = 0;
+		g_dropped = 0; 
+		g_nextFlag = 0; 
+		
+		//enable the three radios.
+		printf_str("init radios!\n"); 
+		*FIO_CLEAR = NRF_CE; 
 		*FIO_SET = NRF_CSN0 | NRF_CSN1 | NRF_CSN2;
-		secs = (*pGTIME)/500; // 0xff800800
-		if(secs != prevtime){
-			*pPORTFIO_TOGGLE = 0x8000; 
-			//printf_int("time ", secs); //heartbeat.
-			prevtime = secs; 
+		*pPORTGIO_SET = SPI_FLASH; 
+		asm volatile("ssync;"); 
+		radio_init(NRF_CSN0, NRF_IRQ0, radioChannel); 
+		radio_init(NRF_CSN1, NRF_IRQ1, radioChannel); 
+		radio_init(NRF_CSN2, NRF_IRQ2, radioChannel); 
+
+		
+		radio_set_rx(NRF_CSN0, 0); 
+		radio_set_rx(NRF_CSN1, 0); 
+		radio_set_rx(NRF_CSN2, NRF_CE); //enables RX. 
+		
+		//you have to be ready to get packets immediately after RX mode is turned on --
+		//otherwise the  fifo gets confused, and you could have 2-3 packets
+		//in the fifo but only read out one. 
+		
+		char write = 1; 
+		while(g_streamEnabled){
+			//listen for packets? (both interfaces, respond on eth)
+			eth_listen(etherr); 
+			//u8 fifostatus; 
+			//u8 status = spi_read_register_status(NOR_FIFO_STATUS, &fifostatus); 
+			if((*pPORTFIO & NRF_IRQ0) == 0){
+				getRadioPacket(NRF_CSN0, NRF_IRQ0, write);
+				write = 0; 
+			}
+			if((*pPORTFIO & NRF_IRQ1) == 0){
+				getRadioPacket(NRF_CSN1, NRF_IRQ1, write);
+				write = 0; 
+			}
+			if((*pPORTFIO & NRF_IRQ2) == 0){
+				getRadioPacket(NRF_CSN2, NRF_IRQ2, write);
+				write = 0; 
+			}
+			if((*pPORTFIO & (NRF_IRQ0 | NRF_IRQ1 | NRF_IRQ2)) == 
+				(NRF_IRQ0 | NRF_IRQ1 | NRF_IRQ2))
+				write = 1; //no-change fall-through: only write one RXed packet.
+			
+			*FIO_SET = NRF_CSN0 | NRF_CSN1 | NRF_CSN2;
+			secs = (*pGTIME)/500; // 0xff800800
+			if(secs != prevtime){
+				*pPORTFIO_TOGGLE = 0x8000; 
+				//printf_int("time ", secs); //heartbeat.
+				prevtime = secs; 
+			}
 		}
 	}
 	return 0;

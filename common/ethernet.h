@@ -287,6 +287,7 @@ int DHCP_rx();
 int DHCP_req(); 
 void DHCP_parse(u8* ptr, int length);
 int ether_post_test();
+u8 bridge_publish(); 
 
 extern ADI_ETHER_BUFFER *txbuf[TX_BUF_CNT]; 
 extern ADI_ETHER_BUFFER *rxbuf[RX_BUF_CNT];
