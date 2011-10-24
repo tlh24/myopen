@@ -42,6 +42,8 @@ classdef SignalViewer < Common.MiniVieObj
             
             obj.setupFigure();
             
+            obj.SignalSource.NumSamples = 3000;
+            
             obj.hChannelSelect = GUIs.guiChannelSelect;
             addlistener(obj.hChannelSelect,'ValueChange',@(src,evt)obj.updateChannels)
             obj.hChannelSelect.setAvailableChannels(obj.SignalSource.NumChannels);
