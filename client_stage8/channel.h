@@ -301,7 +301,7 @@ public:
 			printf("unit out of range in Channel::updateTemplate()\n"); 
 			return false; 
 		}
-		float aperture; 
+		float aperture = 0; 
 		float color[3] = {1.f, 1.f, 0.f}; 
 		if(unit == 2){color[0] = 0.f; color[2] = 1.f; }
 		float temp[32]; 

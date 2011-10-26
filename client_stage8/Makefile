@@ -2,11 +2,11 @@
 # depends on google protocol buffers -- not too hard to install, in debian.
 # you'll need to install libatlas-base-dev for linear algebra. 
 CFLAGS=-I/usr/local/include
-CFLAGS+= -g
+CFLAGS+= -pg -O3
 CFLAGS+= -Wall -Wcast-align -Wpointer-arith -Wshadow -Wsign-compare -Wformat=2 \
 -Wno-format-y2k -Wimplicit -Wmissing-braces -Wparentheses -Wtrigraphs \
 -Wextra -pedantic -std=c++0x
-LDFLAGS = -lGL -lGLU -lpthread -lCgGL -lCg -lgsl -lcblas -latlas -lm -lsqlite3
+LDFLAGS = -pg -lGL -lGLU -lpthread -lCgGL -lCg -lgsl -lcblas -latlas -lm -lsqlite3
 GLIBS = gtk+-2.0 gtkglext-1.0 gtkglext-x11-1.0 protobuf
 GTKFLAGS = `pkg-config --cflags $(GLIBS) `
 GTKLD = `pkg-config --libs $(GLIBS) `

@@ -709,7 +709,7 @@ void* sock_thread(void*){
 	//have to enable multicast reception on the socket.
 	printf("**make sure you've enabled allmulti for the ethernet iface**\n"); 
 	printf("sudo ifconfig eth0 allmulti\n"); 
-	printf("put it in your /etc/network/interfaces file.
+	printf("put it in your /etc/network/interfaces file."); 
 	struct ip_mreqn group;
 	group.imr_multiaddr.s_addr = inet_addr("239.0.200.0");
 	group.imr_address.s_addr = htonl(INADDR_ANY);
