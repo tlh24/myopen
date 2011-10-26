@@ -340,7 +340,7 @@ int main(void){
 	*pUART0_GCTL = 0x0001; //enable the clock.
 	printf_temp = (char*)PRINTF_TEMP; //init the pointers. 
 	printf_out = (char*)PRINTF_OUT; 
-	printf_int("Myopen svn v.", /*SVN_VERSION{*/384/*}*/ ) ; 
+	printf_int("Myopen svn v.", /*SVN_VERSION{*/582/*}*/ ) ; 
 	printf_str("\n"); 
 	printf_str("checking SDRAM...\n"); 
 	//not the most sophisticated test here.. 
@@ -422,7 +422,7 @@ int main(void){
 		have 2ch DAC, so should put out samples at 62500 sps
 		with 32 clocks between TFS, need 2Mhz clk -> divide by 30.
 	*/
-	if(0){
+	if(1){
 		*pSPORT1_TCR1 = 0; //turn everything off before changing speed..(also clears errors)
 		asm volatile("ssync"); 
 		g_sampW = g_sampR = 0; //reset the counters.
