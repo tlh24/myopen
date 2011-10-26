@@ -117,7 +117,7 @@ def update_display():
 	# get data from gtkclient.
 	global frsock, g_die, g_dict, mean_smoothing, g_juiceOverride                             
 	if frsock == None:
-		server = 'rabbit'
+		server = 'localhost'
 		print "trying to connect to ", server, " for firing rate data."
 		frsock = sock_connect(server,4343,g_die)
 		#frsock.settimeout(1)
