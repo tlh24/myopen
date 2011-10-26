@@ -117,12 +117,12 @@ class cupoje:
 			vt = self.du3.getAIN(2)
 			self.touch = vt > 1.25
 			self.cursor.translate((vx-1.25)/-1.25, (vy-1.25)/-1.25)
-			j = 0
-			if self.juice:
-				j = 1
-			self.du3.writeRegister(6000 + 3, j)
 		else:
 			time.sleep(0.012)
+		j = 0
+		if self.juice:
+			j = 1
+		self.du3.writeRegister(6000 + 3, j)
 		alpha = 0.75
 		if self.touch:
 			alpha = 1.0
