@@ -3,6 +3,7 @@ Hardware fixes:
 	* MIC5365-2.5 supplying Votp for blackfin is not attached to Vdd. 
 		fixed in schematic.
 	* Labels on LEDs are incorrect. 
+	** Be very careful about LED orientation in robot! 
 	* Capacitors on audio out are mounted too close to the 1/8" jack body.
 		can fix with sensible placement prior reflow.
 		
