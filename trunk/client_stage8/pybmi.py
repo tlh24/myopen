@@ -34,6 +34,7 @@ selected = (0,0)
 pierad = 40
 g_mean = [10.0, 10.0] # mean firing rate.
 g_juiceOverride = False; 
+g_drain = False; 
 plot_thread = None
 plot_queue = Queue()
 
@@ -220,7 +221,7 @@ def update_display():
 					g_dict['targetAlpha'] = 0.5
 					gs = 'default'
 				#control the juicer.
-				if gs == 'reward':
+				if gs == 'reward' or g_drain:
 					g_dict['juicer'] = True
 				else:
 					g_dict['juicer'] = False
@@ -329,7 +330,8 @@ def main():
 	global firing_rates, frsock, targV, cursV, touchV
 	global g_die, drawing_area, group_radio_buttons
 	global g_dict # shared state.
-	global neuron_group, selected, pierad, mean_smoothing, g_juiceOverride
+	global neuron_group, selected, pierad, mean_smoothing
+	global g_juiceOverride, g_drain
 	
 	#manage the shared dictionary. 
 	manager = Manager()
@@ -398,6 +400,18 @@ def main():
 		g_juiceOverride = True;
 	but = gtk.Button("Juice"); 
 	but.connect("clicked", juiceCB, "Juice"); 
+	vbox_p.add(but)
+	#button for drain. 
+	g_drain= False
+	def drainCB(widget, msg):
+		global g_drain
+		if(widget.get_active()):
+			g_drain = True
+		else:
+			g_drain = False
+	but = gtk.CheckButton("Drain")
+	but.set_active(False)
+	but.connect("toggled", drainCB, "drain")
 	vbox_p.add(but)
 	
 	frame = make_radio('set_neuron_group', ['None','X','Y'], radio_event)
