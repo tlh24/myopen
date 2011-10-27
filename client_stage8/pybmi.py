@@ -34,7 +34,6 @@ selected = (0,0)
 pierad = 40
 g_mean = [10.0, 10.0] # mean firing rate.
 g_juiceOverride = False; 
-g_drain = False; 
 plot_thread = None
 plot_queue = Queue()
 
@@ -140,10 +139,7 @@ def update_display():
 			ar = array.array('H',[]);
 			ar.fromstring(data);
 			if((ar[0]!= 2) | (ar[1] != 128)):
-				print "wrong data size fr rx!", ar[0], ar[1], passes, len(ar)
-				for i in range(0,len(ar)):
-					if ar[i] != 0:
-						print "found ", ar[i]," at ", i
+				print "wrong data size fr rx!", ar[0], ar[1], passes
 			# need to transpose..
 			for r in range(0,128):
 				firing_rates[0][r] = ar[(r+1)*2+0] / 128.0
@@ -218,7 +214,7 @@ def update_display():
 					g_dict['targetAlpha'] = 0.5
 					gs = 'default'
 				#control the juicer.
-				if gs == 'reward' or g_drain:
+				if gs == 'reward':
 					g_dict['juicer'] = True
 				else:
 					g_dict['juicer'] = False
@@ -328,8 +324,7 @@ def main():
 	global firing_rates, frsock, targV, cursV, touchV
 	global g_die, drawing_area, group_radio_buttons
 	global g_dict # shared state.
-	global neuron_group, selected, pierad, mean_smoothing
-	global g_juiceOverride, g_drain
+	global neuron_group, selected, pierad, mean_smoothing, g_juiceOverride
 	
 	#manage the shared dictionary. 
 	manager = Manager()
@@ -359,7 +354,8 @@ def main():
 	
 	# next is to make the window. 
 	window = gtk.Window()
-	window.set_size_request(800, 900)
+	window.set_size_request(800, 800)
+	window.connect('delete-event', gtk.main_quit)
 
 	vpaned = gtk.HPaned()
 	vpaned.set_border_width(5)
@@ -392,7 +388,7 @@ def main():
 	#button for connect. 
 	def frsock_connect(widget, msg):
 		global frsock
-		if frsock == None:
+		if frsock == None and widget.get_active():
 			server = 'localhost'
 			print "trying to connect to ", server, " for firing rate data."
 			frsock = sock_connect(server,4343,g_die, True)
@@ -427,6 +423,7 @@ def main():
 	but.set_active(False)
 	but.connect("toggled", drainCB, "drain")
 	hbox_p.add(but)
+
 	
 	frame = make_radio('set_neuron_group', ['None','X','Y'], radio_event)
 	vbox_p.add(frame)
@@ -488,15 +485,6 @@ def main():
 	
 	gobject.timeout_add(10, update_display)
 
-	# add a delete handler. 
-	def delete_event(widget, event, data=None):
-		g_die.value = True
-		if frsock:
-			frsock.close()
-		gtk.main_quit()
-		return False
-	window.connect("delete_event",delete_event); 
-	#show the window and start the handlers.
 	window.show_all()
 	gtk.main()
 	g_die.value = True
@@ -614,6 +602,8 @@ def server_thread(die,port,targV,cursV,touchV,g_dict):
 			print port,"display connection closed"
 			conn.close()
 			local_dict = {}
+	print port, "closing socket"
+	s.close();
 
 if __name__ == '__main__':
     main()
