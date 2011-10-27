@@ -3,11 +3,14 @@ import array, socket, time
 from multiprocessing import Value
 
 #utility function for connecting to a server robustly.
-def sock_connect(host, port, die):
+def sock_connect(host, port, die, once):
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	discon = True
 	print "waiting..."
-	while(discon & (not die.value)):
+	n = 1; 
+	while(discon & (not die.value) & n > 0):
+		if once:
+			n = n-1
 		try:
 			s.connect((host, port))
 		except socket.error, msg:
@@ -15,9 +18,12 @@ def sock_connect(host, port, die):
 			time.sleep(1.0)
 			continue
 		discon = False
-	print "connected."
-	s.settimeout(0.1)
-	return s
+	if (not discon):
+		print "connected."
+		s.settimeout(0.1)
+		return s
+	else:
+		return None
 
 class TCPSegmenter:
 	def __init__(self):
