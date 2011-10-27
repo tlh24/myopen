@@ -355,7 +355,15 @@ def main():
 	# next is to make the window. 
 	window = gtk.Window()
 	window.set_size_request(800, 800)
+	def delete_event(widget, event):
+		print "delete_event"
+		global g_die
+		g_die.value = True
+		# gtk.main_quit
+		return False
+	window.connect('delete_event', delete_event)
 	window.connect('delete-event', gtk.main_quit)
+
 
 	vpaned = gtk.HPaned()
 	vpaned.set_border_width(5)
@@ -548,11 +556,16 @@ def server_thread(die,port,targV,cursV,touchV,g_dict):
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	# turn on socket re-use (in the case of rapid restarts)
 	s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1); 
-	s.bind(("",port))
-	s.listen(1)
-	s.settimeout(0.1)
+	try:
+		s.bind(("",port))
+		s.listen(1)
+		s.settimeout(0.1)
+	except:
+		print port "could not bind socket."
+		s.close()
+		s = None
 	local_dict = {}
-	while (not die.value):
+	while (not die.value) and s:
 		try:
 			conn,addr = s.accept()
 		except:
@@ -603,7 +616,8 @@ def server_thread(die,port,targV,cursV,touchV,g_dict):
 			conn.close()
 			local_dict = {}
 	print port, "closing socket"
-	s.close();
+	if s: 
+		s.close();
 
 if __name__ == '__main__':
     main()
