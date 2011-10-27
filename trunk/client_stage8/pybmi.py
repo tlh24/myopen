@@ -116,12 +116,6 @@ def configure_event(widget, event):
 def update_display():
 	# get data from gtkclient.
 	global frsock, g_die, g_dict, mean_smoothing, g_juiceOverride                             
-	if frsock == None:
-		server = 'localhost'
-		print "trying to connect to ", server, " for firing rate data."
-		frsock = sock_connect(server,4343,g_die)
-		#frsock.settimeout(1)
-		frsock.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
 	try:
 		a = g_dict['fr_smoothing']
 		a = math.pow(2.0, -1.0*a); 
@@ -146,7 +140,10 @@ def update_display():
 			ar = array.array('H',[]);
 			ar.fromstring(data);
 			if((ar[0]!= 2) | (ar[1] != 128)):
-				print "wrong data size fr rx!", ar[0], ar[1], passes
+				print "wrong data size fr rx!", ar[0], ar[1], passes, len(ar)
+				for i in range(0,len(ar)):
+					if ar[i] != 0:
+						print "found ", ar[i]," at ", i
 			# need to transpose..
 			for r in range(0,128):
 				firing_rates[0][r] = ar[(r+1)*2+0] / 128.0
@@ -230,7 +227,8 @@ def update_display():
 				g_dict['gs'] = gs
 			
 	else:
-		frsock.close()
+		if frsock:
+			frsock.close()
 		frsock = None
 		most_recent = 0
 		last_update = 0
@@ -362,7 +360,6 @@ def main():
 	# next is to make the window. 
 	window = gtk.Window()
 	window.set_size_request(800, 900)
-	window.connect('delete-event', gtk.main_quit)
 
 	vpaned = gtk.HPaned()
 	vpaned.set_border_width(5)
@@ -390,17 +387,34 @@ def main():
 		gtk.gdk.POINTER_MOTION_HINT_MASK)
 	drawing_area.set_flags(gtk.CAN_FOCUS) 
 
-	
 	vbox_p = gtk.VBox(False, 0); 
 	vpaned.add1(vbox_p); 
+	#button for connect. 
+	def frsock_connect(widget, msg):
+		global frsock
+		if frsock == None:
+			server = 'localhost'
+			print "trying to connect to ", server, " for firing rate data."
+			frsock = sock_connect(server,4343,g_die, True)
+			#frsock.settimeout(1)
+			if frsock:
+				frsock.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
+				widget.set_active(True)
+			else:
+				widget.set_active(False)
+	but = gtk.CheckButton("Connect to gtkclient"); 
+	but.connect("toggled", frsock_connect, "connect")
+	vbox_p.add(but)
 	
+	hbox_p = gtk.HBox(False, 0); 
+	vbox_p.add(hbox_p); 
 	# button for manual juice. 
 	def juiceCB(widget, msg):
 		global g_juiceOverride
 		g_juiceOverride = True;
 	but = gtk.Button("Juice"); 
 	but.connect("clicked", juiceCB, "Juice"); 
-	vbox_p.add(but)
+	hbox_p.add(but)
 	#button for drain. 
 	g_drain= False
 	def drainCB(widget, msg):
@@ -412,7 +426,7 @@ def main():
 	but = gtk.CheckButton("Drain")
 	but.set_active(False)
 	but.connect("toggled", drainCB, "drain")
-	vbox_p.add(but)
+	hbox_p.add(but)
 	
 	frame = make_radio('set_neuron_group', ['None','X','Y'], radio_event)
 	vbox_p.add(frame)
@@ -474,6 +488,15 @@ def main():
 	
 	gobject.timeout_add(10, update_display)
 
+	# add a delete handler. 
+	def delete_event(widget, event, data=None):
+		g_die.value = True
+		if frsock:
+			frsock.close()
+		gtk.main_quit()
+		return False
+	window.connect("delete_event",delete_event); 
+	#show the window and start the handlers.
 	window.show_all()
 	gtk.main()
 	g_die.value = True

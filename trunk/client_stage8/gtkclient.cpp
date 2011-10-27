@@ -709,7 +709,7 @@ void* sock_thread(void*){
 	//have to enable multicast reception on the socket.
 	printf("**make sure you've enabled allmulti for the ethernet iface**\n"); 
 	printf("sudo ifconfig eth0 allmulti\n"); 
-	printf("put it in your /etc/network/interfaces file."); 
+	printf("put it in your /etc/network/interfaces file.\n"); 
 	struct ip_mreqn group;
 	group.imr_multiaddr.s_addr = inet_addr("239.0.200.0");
 	group.imr_address.s_addr = htonl(INADDR_ANY);
@@ -1062,7 +1062,7 @@ void* server_thread(void* ){
 	//kinda like a RPC service -- call to get the vector of firing rates.
 	// call whenever you want!
 	unsigned short rates[128+1][2]; //first two are the size of the array.
-	//9 bits integer part, 7 bits fractinoal part. hence 0-511.99Hz.
+	//9 bits integer part, 7 bits fractional part. hence 0-511.99Hz.
 	unsigned char buf[128]; 
 	int client = 0; 
 	g_spikesock = setup_socket(4343,1); //tcp socket, server.
