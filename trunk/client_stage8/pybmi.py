@@ -356,13 +356,13 @@ def main():
 	window = gtk.Window()
 	window.set_size_request(800, 800)
 	def delete_event(widget, event):
-		print "delete_event"
+
 		global g_die
 		g_die.value = True
 		# gtk.main_quit
 		return False
 	window.connect('delete_event', delete_event)
-	window.connect('delete-event', gtk.main_quit)
+	window.connect('delete-event', gtk.main_quit) #why are these different? 
 
 
 	vpaned = gtk.HPaned()
@@ -506,7 +506,7 @@ def main():
 		p['pierad'] = pierad
 		d = {}
 		for k,v in g_dict.items():
-			print k,v
+			# print k,v
 			d[k] = v
 		p['g_dict'] = d
 		fil.write(jsonpickle.encode(p))
@@ -561,7 +561,7 @@ def server_thread(die,port,targV,cursV,touchV,g_dict):
 		s.listen(1)
 		s.settimeout(0.1)
 	except:
-		print port "could not bind socket."
+		print port, "could not bind socket."
 		s.close()
 		s = None
 	local_dict = {}
