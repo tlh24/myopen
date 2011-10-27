@@ -122,7 +122,8 @@ class cupoje:
 		j = 0
 		if self.juice:
 			j = 1
-		self.du3.writeRegister(6000 + 3, j)
+		if self.du3:
+			self.du3.writeRegister(6000 + 3, j)
 		alpha = 0.75
 		if self.touch:
 			alpha = 1.0
@@ -141,7 +142,7 @@ class cupoje:
 			self.seg.writeSegment(self.sock,pb.SerializeToString())
 		else:
 			# try reconnecting. 
-			self.sock = sock_connect(sys.argv[1],self.port,self.die)
+			self.sock = sock_connect(sys.argv[1],self.port,self.die,False)
 		#display
 		glFlush()
 		glutSwapBuffers()
@@ -211,7 +212,7 @@ class cupoje:
 			print "example: python pybmi_display.py neuro-nico 4345"
 		self.port = int(sys.argv[2])
 		self.die = Value('b',False)
-		self.sock = sock_connect(sys.argv[1],self.port,self.die)
+		self.sock = sock_connect(sys.argv[1],self.port,self.die,False)
 		self.sock.settimeout(1)
 		self.seg = TCPSegmenter()
 		glutMainLoop()
