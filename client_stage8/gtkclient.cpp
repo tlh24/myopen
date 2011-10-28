@@ -289,9 +289,17 @@ static gint motion_notify_event( GtkWidget *,
 	updateCursPos(x,y); 
 	if((state & GDK_BUTTON1_MASK) && (g_mode == MODE_SORT)){
 		if(g_addPoly){
+			printf("add poly, g_polyChan %d\n", g_polyChan);
 			g_c[g_channel[g_polyChan]]->addPoly(g_cursPos); 
-			for(int i=1;i<4;i++)
-				g_c[g_channel[(g_polyChan+i)&3]]->resetPoly(); 
+			for(int i=1;i<4;i++){
+				int sames = 0;
+				for(int j=1; j<4; j++){
+					if(g_channel[(g_polyChan+i)&3] == g_channel[(g_polyChan+i+j)&3])
+						sames = 1; 
+				}
+				if(!sames)
+					g_c[g_channel[(g_polyChan+i)&3]]->resetPoly(); 
+			}
 		}else{
 			g_c[g_channel[g_polyChan]]->mouse(g_cursPos); 
 			//need to update g_thresholdSpin and g_centeringSpin
@@ -896,8 +904,8 @@ void* sock_thread(void*){
 							if(g_verDelay[k][j] > 8){
 								float a = g_c[h]->getAperture(j); 
 								if(fabs(g_verAper[k][j] - a)/a > 16.f/256.f){
-									printf("err missed spike %d:%d saa %d (aperture %d)\n",
-									h,j,(int)(round(g_verAper[k][j])),g_c[h]->getAperture(j)); 
+									//printf("err missed spike %d:%d saa %d (aperture %d)\n",
+									//h,j,(int)(round(g_verAper[k][j])),g_c[h]->getAperture(j)); 
 								}
 								g_verDelay[k][j] = 0;
 							}
@@ -1235,7 +1243,7 @@ static void apertureSpinCB( GtkWidget*, gpointer p){
 				g_c[j]->setApertureLocal(a, h%2); 
 				setAperture(j);
 			}
-			printf("apertureSpinCB: %f ch %d\n", a, j); 
+			//printf("apertureSpinCB: %f ch %d\n", a, j); 
 		}
 	}
 }
@@ -1432,7 +1440,7 @@ static void getTemplateCB( GtkWidget *, gpointer p){
 	int aB = (int)((long long)p & 0xf); 
 	g_c[g_channel[g_polyChan]]->updateTemplate(aB+1); 
 	//update the UI. 
-	gtk_adjustment_set_value(g_apertureSpin[aB],
+	gtk_adjustment_set_value(g_apertureSpin[g_polyChan*2+aB],
 							 g_c[g_channel[g_polyChan]]->getAperture(aB));
 }
 int main(int argn, char **argc)

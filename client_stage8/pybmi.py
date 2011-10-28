@@ -354,7 +354,7 @@ def main():
 	
 	# next is to make the window. 
 	window = gtk.Window()
-	window.set_size_request(800, 800)
+	window.set_size_request(890, 660)
 	def delete_event(widget, event):
 
 		global g_die
@@ -433,8 +433,8 @@ def main():
 	hbox_p.add(but)
 
 	
-	frame = make_radio('set_neuron_group', ['None','X','Y'], radio_event)
-	vbox_p.add(frame)
+	#frame = make_radio('set_neuron_group', ['None','X','Y'], radio_event, True)
+	#vbox_p.add(frame)
 
 	def mk_scale(lbl,mn,mx,init,callback=lambda x:x):
 		global g_dict
@@ -468,9 +468,9 @@ def main():
 	frame = mk_scale("fr_smoothing",-3,10,6,plot_fr_smoothing)
 	
 	# add controls for the game. 
-	frame = make_radio('control',['manual','BMI'], lambda x,y:x)
+	frame = make_radio('control',['manual','BMI'], lambda x,y:x, False)
 	vbox_p.add(frame)
-	frame = make_radio('task',['left/right','4 target stereotyped','random'], lambda x,y:x)
+	frame = make_radio('task',['left/right','4 target stereotyped'], lambda x,y:x, True)
 	vbox_p.add(frame)
 	mk_scale("targetSize",0.0, 1.0, 0.5)
 	mk_scale("cursorSize",0.0, 1.0, 0.5)
@@ -522,10 +522,13 @@ def radio_event(widget, btn_number):
 		neuron_group[ch][u] = btn_number
 		configure_event(drawing_area,None); 
 		
-def make_radio(name, labels, callback):
+def make_radio(name, labels, callback, vert):
 	global g_dict
 	frame = gtk.Frame(name)
-	vbox = gtk.VBox(False, 0); 
+	if vert:
+		vbox = gtk.VBox(False, 0); 
+	else:
+		vbox = gtk.HBox(False, 0); 
 	frame.add(vbox)
 	group_radio_buttons=[]
 	def radioEvent(widget, btn_number):
