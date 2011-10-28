@@ -313,6 +313,7 @@ public:
 		}
 		printf("\n"); 
 		m_aperture[unit-1] = aperture * 255; 
+		printf("m_aperture[%d][%d] = %d\n", m_ch, unit-1, (int)m_aperture[unit-1]); 
 		//store the equivalent of the unsigned bytes actually used on the headstage.
 		for(int i=0; i<16; i++){
 			float r = round((m_template[unit-1][i] + 0.5f)*255.f); 

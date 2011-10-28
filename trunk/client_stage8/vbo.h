@@ -204,6 +204,7 @@ public:
 		m_poly[p*2 + 0] = cx;
 		m_poly[p*2 + 1] = cy; 
 		m_polyW++; 
+		printf("m_polyW %d\n", m_polyW); 
 	}
 	void copy(bool updateScale, bool updateAll){
 		//update the mean & max excursion. only makes sense for 2d data.
@@ -422,7 +423,7 @@ public:
 			}
 		}
 		aperture /= (float)npts; 
-		aperture *= 0.67; //empirical.
+		aperture *= 0.45; //empirical.
 		copyData(m_vbo, 0, m_rows, m_f, m_dim * m_cols); 
 		return true; 
 	}
