@@ -2,21 +2,21 @@ todo:
 October 27 2011
 Mango RHA1 RHA3 RHL2 RHL3. 
 
-make sorting so that you don't have to switch all the time. 
-spike sorting does not switch modes when needed ; continues to add poly when 
-should be moving threshold.
-a lot of errors seem to be when you have multiple of the same channel represented on the screen.
-apeture must be set when you define the template -- almost always it seems too big, and the gui element is not updated either. 
+gtkclient: 
+* make sorting so that you don't have to switch all the time. 
+* spike sorting does not switch modes when needed ; continues to add poly when should be moving threshold.
+* this and several other errors seem to be when you have multiple of the same channel represented on the screen.
+* aperture must be set when you define the template -- almost always it seems too big, and the gui element is not updated either. 
 	looks like, rather, it updates the wrong GUI spinner.
-IDEA: make the other channels correspond to the last 3 looked-at chans. 
-IDEA: switch the stereo output so 0 is mono. 
-IDEA: more nonlinear fading / faster or more adjustable fading / color fading. 
-Putting both the thresholded data and template match data on the same PCA axis is bad. 
+* IDEA: make the other channels correspond to the last 3 looked-at chans. 
+* IDEA: switch the stereo output so 0 is mono. 
+* IDEA: more nonlinear fading / faster or more adjustable fading / color fading. 
+* Putting both the thresholded data and template match data on the same PCA axis is bad. 
 * I had to adjust the aperture calculation; the client seems to be narrow, while the headstage is broad.  why the discrepancy? 
 * rather than printing out missed spikes, try labeling them in a different color on the display?
 * There is something wrong -- the headsdtage is not responding properly nor in time.  Why?
 ** I wonder if something is loose in there :-/  perhaps the MUX signal is missed? 
-** HAVE THE MUS RESET every pass through to avoid this. 
+** HAVE THE MUX RESET every pass through to avoid this. 
 * May be the audio out which is incorrect / delayed whatever.  really should check that. 
 ** Need to reset the audio buffer when a new client has been found by the bridge.
 * Really need some algorithm for setting the aperture, based on loss iteration or so.
@@ -25,7 +25,7 @@ Putting both the thresholded data and template match data on the same PCA axis i
 * First button press of CalcPCA resets the damn thing! WTF. 
 ** That said, there should be a reset PCA button ... 
 * I'm not even sure calcPCA works.  beh.
-* NEED to record cursor position, etc. 
+* NEED to record cursor position, target position, everything. 
 * Drain no longer works.  (???)
 * Need button for sending *all* parameters to the headstage, in the case of a reset (as we've seen)
 * The adaptive transform is not so good.  Need something fixed! 
@@ -39,4 +39,4 @@ Started at 3:30pm.
 Mango is not playing ... does not recognize the juicer yet, although it appears that he is thirsty. 
 @ 5:30 hea realized that there is a juicer in there. 
 training on Ch 32, both units a & b.  A is quite strong. 
-5:42 transitioned to channels 32 + 37. 
+5:42 transitioned to channels 32 + 37. Does not realize what he's supposed to do. 

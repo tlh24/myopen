@@ -249,4 +249,11 @@ May 25 2011
 		(if not more - see 
 		http://lygte-info.dk/info/Batteries18650-2011%20UK.html 
 		which shows 10.5Wh -> 37hours @ 282mw)
-	
+October 26 2011
+	Jesus!  Where did the time go? 
+	Still confused about the "headstage says match, we don't find" error. 
+	Is it bit-error noise? 
+	Have to make sure the aperture & template are being updated properly;
+		I have a suspicion that the GUI is not always being updated, esp. after sorting (?)
+		Seems to update after sorting, yes. 
+	Ok, juice!

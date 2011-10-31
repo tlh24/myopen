@@ -118,21 +118,15 @@ public:
 		if(!m_wfVbo) return 0; //being called from another thread, likely.
 		//wf assumed to be 32 points long. 
 		//wf should range 1 mean 0.
-		if(unit < 0){ //then we sort here.
-			float saa[2] = {0,0};  
-			for(int j=0; j<16; j++){
-				saa[0] += fabs(wf[j+6] - m_template[0][j]); 
-				saa[1] += fabs(wf[j+6] - m_template[1][j]);
-			}
-			unit = 0; 
-			if(saa[0] < saa[1] && saa[0] < m_aperture[0]/255.f)
-				unit = 1; 
-			if(saa[1] < saa[0] && saa[1] < m_aperture[1]/255.f)
-				unit = 2; 
-		}
-		float color[3] = {0.5, 0.5, 0.5}; 
-		if(unit == 1){ color[0] = 1.f; color[1] = 1.f; color[2] = 0.f; }
-		if(unit == 2){ color[0] = 0.f; color[1] = 1.f; color[2] = 1.f; }
+		float color[3] = {0.5, 0.5, 0.5}; //unsorted.
+		//error type 1 moves toward green-yellow; error type 2 moves to purple.
+		//see color wheel in gimp.
+		if(unit == 1){ color[0] = 0.f; color[1] = 1.f; color[2] = 1.f; } //cyan.
+		if(unit == 2){ color[0] = 1.f; color[1] = 0.f; color[2] = 0.f; } //red
+		if(unit == 3){ color[0] = 0.f; color[1] = 1.f; color[2] = 0.5f; } //cyan-green.
+		if(unit == 4){ color[0] = 1.f; color[1] = 0.5f; color[2] = 0.f; } //orange
+		if(unit == 5){ color[0] = 0.f; color[1] = 0.5f; color[2] = 1.f; } //blue-green
+		if(unit == 6){ color[0] = 1.f; color[1] = 0.0f; color[2] = 0.5f; } //magenta. 
 		//copy to m_wfVbo first. 
 		if(unit){
 			float* f = m_wfVbo->addRow(); 

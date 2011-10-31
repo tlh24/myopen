@@ -60,7 +60,7 @@ float		g_viewportSize[2] = {640, 480}; //width, height.
 
 class Channel; 
 
-static float	g_fbuf[4][NSAMP*3]; //continuous waveform.
+static float	g_fbuf[4][NSAMP*3]; //continuous waveform. range [-1 .. 1]
 i64	g_fbufW; //where to write to (always increment) 
 i64	g_fbufR; //display thread reads from here - copies to mem
 unsigned int 	g_nsamp = 4096; //given the current level of zoom (1 = 4096 samples), how many samples to update?
@@ -84,11 +84,15 @@ int g_channel[4] = {0,32,64,96};
 int	g_signalChain = 10; //what to sample in the headstage signal chain.
 
 bool g_out = false; 
-bool g_templMatch[128][2]; //the headstage matched a,b over all 128 channels.
-unsigned int g_bitdelay[4][2] = {{0,0},{0,0},{0,0},{0,0}};
-unsigned int g_usdelay[4][2] = {{0,0},{0,0},{0,0},{0,0}};
-unsigned int g_verDelay[4][2]; 
-float	g_verAper[4][2]; 
+bool g_templMatch[128][2]; //the headstage match a,b over all 128 channels.
+float        g_sortAperture[4][2][16]; //the quality of the match found, circular buffer.
+i64			 g_sortOffset[4][2][16]; //offset to the best match.
+unsigned int g_sortUnit[4][16]; 
+unsigned int g_sortI[4] = {0,0,0,0}; //index to the (short) circular buffer.
+i64			 g_sortWfOffset[4]; 
+int 			 g_sortWfUnit[4]; 
+i64			 g_unsortCount[4]; 
+
 float g_unsortrate = 10.0; //the rate that unsorted WFs get through.
 FILE* g_saveFile = 0; 
 bool g_closeSaveFile = false; 
@@ -103,7 +107,6 @@ int g_totalDropped = 0;
 
 enum MODES {
 	MODE_RASTERS, 
-	MODE_SPIKES, 
 	MODE_SORT,
 	MODE_NUM
 };
@@ -516,7 +519,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		}
 		//end VBO
 	}
-	if(g_mode == MODE_SORT || g_mode == MODE_SPIKES){
+	if(g_mode == MODE_SORT){
 		glPushMatrix();
 		glEnableClientState(GL_VERTEX_ARRAY);
 		float xo, yo, xz, yz; 
@@ -823,14 +826,15 @@ void* sock_thread(void*){
 /*
  synchronization math: 
  each packet has 6 samples (24 bytes) + 8 bytes template match. 
- each d.headstage ADC runs at 1msps, so over 32 channels we have 31.25ksps.
- each packet hence takes 0.000192 seconds, or packets at 5.208khz.  
+ each headstage ADC runs at 1msps, so over 32 channels we have 31.25ksps.
+ each packet hence takes 0.000192 seconds, or packets at 5.20833khz.  
  in turn, each packet contains 32 channels of template match (a and b)
- 	so all 128 channels are cycled through in 4 clocks, 
+ 	so all 128 channels are cycled through in 4 packets, 
  	or every one updated at 1.302kHz.  Hence the ms timer is slightly undersampling it.
  one frame consists of 16 packets, so we get a new frame at 325.52Hz.
  there is likely variable latency in the ethernet switch
- so we really should timestamp the packets on the bridge ... done!
+ so we really should timestamp the packets on the bridge ... 
+ 32 bit ms timer done!
  
  Now, we need some accurate way of converting bridge time, in ms, to wall clock time. 
  we know the instant that we get a packet on the line, wall time
@@ -845,14 +849,15 @@ void* sock_thread(void*){
 					if(abs(off - g_timeOffset) > 1.0) g_timeOffset = off; 
 					//not sure what the correct level of smoothing is: 
 					//we want to reject noise, but we don't want to lag behind the 
-					//changing clock skew by too much. 
+					//changing clock skew by too much (the xtal osc on the bridge is not 
+					// precisely trimmed). 
 					//actually, now that i think about it, provided clock skew is
 					//consistent the lag should be consistent so this will come out as
 					//another (slight) lag.
 					//perhaps we should also do outlier rejection? 
 					g_timeOffset *= 0.997; 
 					g_timeOffset += 0.003*off; 
-					//probably need a GIU element to display offset.
+					//probably need a GUI element to display offset.
 					//printf("offset time: %f of %f\n", g_timeOffset, 
 					//		 ((double)p->ms / 1000.0)); 
 				}
@@ -873,6 +878,8 @@ void* sock_thread(void*){
 						}
 					}
 				}
+				//color the rasters. really should color differently. 
+				// meh, in the vertex shader.
 				for(int j=0; j<6; j++){
 					for(int k=0; k<4; k++){
 						char samp = p->data[j*4+k]; //-128 -> 127.
@@ -883,7 +890,7 @@ void* sock_thread(void*){
 						if(g_templMatch[ch][1] || 
 							(g_bitdelay[k][1] < 5)) z = 2.f; 
 						g_fbuf[k][(g_fbufW % g_nsamp)*3 + 1] = 
-							(((samp+128.f)/255.f)-0.5f)*2.f;
+							(((samp+128.f)/255.f)-0.5f)*2.f; //range +-1.
 						g_fbuf[k][(g_fbufW % g_nsamp)*3 + 2] = z;
 					}
 					g_fbufW++; 
@@ -898,128 +905,109 @@ void* sock_thread(void*){
 					//look in the past to fill out the 32-sample wf display.
 					for(int k=0; k<4; k++){
 						int h = g_channel[k]; 
-						float threshold = g_c[h]->getThreshold(); 
-						for(int j=0; j<2; j++){
-							if(g_templMatch[h][j]) g_verDelay[k][j] = 0;
-							if(g_verDelay[k][j] > 8){
-								float a = g_c[h]->getAperture(j); 
-								if(fabs(g_verAper[k][j] - a)/a > 16.f/256.f){
-									//printf("err missed spike %d:%d saa %d (aperture %d)\n",
-									//h,j,(int)(round(g_verAper[k][j])),g_c[h]->getAperture(j)); 
-								}
-								g_verDelay[k][j] = 0;
-							}
-						}
+						g_sortUnit[k][g_sortI] = 0; 
+						g_sortAperture[k][0][g_sortI] = 2048;
+						g_sortAperture[k][1][g_sortI] = 2048; 
 						for(int m=0; m<6; m++){
-							int centering = g_c[h]->getCentering(); 
-							float a = g_fbuf[k][mod2(g_fbufW - centering + m-6, g_nsamp)*3+1]; 
-							float b = g_fbuf[k][mod2(g_fbufW - centering+1 + m-6, g_nsamp)*3+1]; 
-							if(a <= threshold && b > threshold && 
-									(g_bitdelay[k][0] > 6)){
-									float wf[32]; 
-									for(int j=0; j < 32; j++){
-										//x coord does not need updating.
-										//remember, g_fbufW is incremented already. 
-										wf[j] = g_fbuf[k][mod2(g_fbufW + j + m - 31 - 6, g_nsamp)*3+1];
-										wf[j] = wf[j] * 0.5f; 
-									}
-									g_c[g_channel[k]]->addWf(wf, -1, time, true); 
-									//printf("pca %f %f\n", fp[0], fp[1]); 
-									g_bitdelay[k][0] = 0; 
-									break; 
-							}
-							//also check to see if it matches template. 
+							//first check to see if it matches template here.
+							//template: might as well make it equal on both sides; no reason for bias.
+							//[8 pre][16 template][8 post]. 
+							//however, for parity with the headstage, convolve with the most
+							//recent 16 samples.
 							float saa[2] = {0,0}; 
+							i64 offset = g_fbufW - 16 + m-5; //absolute index to sample [0].
 							for(int j=0; j<16; j++){
-									float w; 
-									w = g_fbuf[k][mod2(g_fbufW + j + m - 21, g_nsamp)*3+1];
-									w *= 0.5; 
-									saa[0] += fabs(w - g_c[h]->m_template[0][j]); 
-									saa[1] += fabs(w - g_c[h]->m_template[1][j]);
+								float w; 
+								w = g_fbuf[k][mod2(offset + j, g_nsamp)*3+1];
+								w *= 0.5f; 
+								saa[0] += fabs(w - g_c[h]->m_template[0][j]); 
+								saa[1] += fabs(w - g_c[h]->m_template[1][j]);
 							}
-							if(saa[0] < saa[1] && saa[0] < g_c[h]->getAperture(0)/255.f){
-									g_verDelay[k][0] = 1; 
-									g_verAper[k][0] = saa[0]*255.f; 
-							}
-							if(saa[1] < saa[0] && saa[1] < g_c[h]->getAperture(1)/255.f){
-									g_verDelay[k][1] = 1; 
-									g_verAper[k][1] = saa[1]*255.f; 
+							//record the best match. 
+							for(int u=0; u<2; u++){
+								if(saa[u] < g_sortAperture[k][u][g_sortI]){
+									g_sortAperture[k][u][g_sortI] = saa[u]; 
+									g_sortOffset[k][u][g_sortI] = offset; 
+								}
 							}
 						}
-						if(g_verDelay[k][0]) g_verDelay[k][0]++; 
-						if(g_verDelay[k][1]) g_verDelay[k][1]++; 
-					}
-				}
-				else if(g_mode == MODE_SPIKES){
-					for(int k=0; k<4; k++){
-						for(int t = 0; t<2; t++){
-							if(g_bitdelay[k][t] == 3){
-								//there is variable latency here - could have just matched
-								// (in which case we need a delay to get more samples --
-								//	 delay 2 packets = 12 samples.)
-								// or it might have matched 4 packets ago; hence have to search
-								// furthe (6 packets altogether, or 36 samples)
-								float min = 1e9f; 
-								i64 offset = 0; 
-								/* diagram of waveform: 
-								|<- 6 pre ->|<- 16 template ->|<- 10 post ->|
-								total 32 samples. 
-								*/
-								for(int j=-36-10-16; j <= -10-16; j++){ 
-									// j <= -10-16 b/c g_fbufW points to spot for new sample.
-									//perform the same op as the headstage -- convolve.
-									float saa = 0; 
-									for(int g=0; g<16; g++){
-										float w = g_fbuf[k][mod2(g_fbufW +j+g, g_nsamp)*3+1];
-										w /= 2.f; w += 0.5f; w *= 255.f; //range 0 to 255.
-										float tmp = g_c[g_channel[k]]->m_template[t][g]; 
-										tmp += 0.5; tmp *= 255; 
-										saa += fabs(w - tmp); 
-									}
-									if(saa < min){
-										min = saa; 
-										offset = j; 
-									}
-								}
-								int a = g_c[g_channel[k]]->getAperture(t);
-								if(min*0.95 > a){
-									printf("err ch %d u %d headstage says match, we don't find! match %d target %d\n", 
-										   g_channel[k], t+1, (int)(round(min)), a); 
-								}
-								float wf[32]; 
-								for(int q=0; q < 32; q++){
-									wf[q] = g_fbuf[k][mod2(g_fbufW + q + offset - 6, g_nsamp)*3+1]; 
-									wf[q] *= 0.5f; // target mean 0 range 1.
-								}
-								g_c[g_channel[k]]->addWf(wf, t+1, time, true); 
-							} else {
-								u32 usthresh = (u32)((31.25e3/g_unsortrate)/6.f); 
-								if(g_bitdelay[k][t] > 25 && g_usdelay[k][t] > usthresh){
-									//have to be aggressive with the masking - 
-									//to prevent the edge from intruding in the non-sorted wf
-									int offset = -6*16; 
-									float wf[32];
-									for(int j=0; j < 32; j++){
-										wf[j] = g_fbuf[k][mod2(g_fbufW + j + offset, g_nsamp)*3+1]; 
-										wf[j] = wf[j] * 0.5f; 
-									}
-									g_c[g_channel[k]]->addWf(wf, 0, time, true); 
-									g_usdelay[k][t] = 0;
+						//if the headstage has sent a match, clear out our old matches.
+						for(int u=0; u<2; u++){
+							//find the best match over the last 4 packets. 
+							float saa = 16*256; 
+							i64 off = 0; 
+							for(int d=0; d<4; d++){
+								float f = g_sortAperture[k][u][(g_sortI-d)&0xf];
+								if(f < saa){
+									saa = f;
+									off = g_sortOffset[k][u][(g_sortI-d)&0xf]; 
 								}
 							}
-							// need a delay line - at least 21 samples. so 3 packets.
-							if(g_templMatch[g_channel[k]][t]){ 
-								g_bitdelay[k][t]=0; 
-								g_templMatch[g_channel[k]][t] = false; 
-								//taken care of, so clear for following packets!
+							if(saa < g_c[h]->getAperture(u)/255.f){
+								if(g_templMatch[h][u]){
+									g_sortWfUnit[k] = u+1; 
+									g_sortWfOffset[k] = off;
+									//the headstage and client are in agreement. 
+									//clear client's store of potential matches.
+									for(int d=0; d<4; d++){
+										g_sortAperture[k][u][(g_sortI-d)&0xf] = 2048; 
+									}
+								}else{
+									//the headstage may have missed a spike.
+									if(u == 1 && g_templMatch[h][0]){
+										printf("channel %d unit b occluded by unit a.\n",h); 
+									}else{
+										//did miss a spike. false negative.
+										g_sortWfUnit[k] = u+3; 
+										g_sortWfOffset[k] = off;
+									}
+								}
+							}else{ //client did not find any matches on this unit/channel.
+								if(g_templMatch[h][u]){
+									//headstage found a match. false positive.
+									g_sortWfUnit[k] = u+5; 
+									g_sortWfOffset[k] = off;
+								}else{
+									//normal,nothing. 
+									if(!g_sortWfUnit[k]){ //don't copy if we have something queued.
+										//check to see if we crossed threshold.
+										float threshold = g_c[h]->getThreshold(); 
+										int centering = g_c[h]->getCentering(); 
+										for(int m=0; m<6; m++){
+											i64 o = g_fbufW - centering + m-6; 
+											float a = g_fbuf[k][mod2(o, g_nsamp)*3+1]; 
+											float b = g_fbuf[k][mod2(o+1, g_nsamp)*3+1]; 
+											if(a <= threshold && b > threshold){
+												g_sortWfUnit[k] = -1; //unsorted.
+												g_sortWfOffset[k] = o; 
+											}
+										}
+									}
+									//if we still don't have anything queued, try adding
+									//an unsorted, unthresholded waveform, if so desired.
+									if(!gsortWfUnit[k] && g_unsortrate > 0.0){
+										if(g_unsortCount[k] > 31250.0/g_unsortrate){
+											g_sortWfUnit = -1; 
+											g_sortWfOffset = g_fbufW - 32; 
+										}
+									}
+								}
 							}
 						}
-					}
-				}
-				for(int k=0; k<4; k++){
-					for(int t=0; t<2; t++){
-						g_bitdelay[k][t]++;
-						g_usdelay[k][t]++; 
+						g_sortI++; 
+						g_sortI &= 0xf; 
+						//okay, copy over waveforms if there is enough data. 
+						unsigned int dist = g_fbufW - g_sortOffset[k]; 
+						if(dist >= 32 && g_sortUnit[k]){
+							float wf[32]; 
+							unsigned int o = g_sortOffset[k]; 
+							for(int m=0; m<32; m++){
+								wf[j] = g_fbuf[k][mod2(o + m, g_nsamp)*3+1];
+								wf[j] = wf[j] * 0.5f; 
+							}
+							g_c[g_channel[k]]->addWf(wf, g_sortUnit[k], time, true); 
+							g_sortUnit[k] = 0; 
+						}
 					}
 				}
 			}
@@ -1319,7 +1307,7 @@ static void zoomSpinCB( GtkWidget*, gpointer ){
 	g_nsamp = g_nsamp > NSAMP ? NSAMP : g_nsamp; 
 	g_nsamp = g_nsamp < 512 ? 512 : g_nsamp; 
 	g_rasterZoom = 4096.0 / (float)g_nsamp; 
-	if(g_mode == MODE_SPIKES || g_mode == MODE_SORT) g_nsamp = NSAMP; 
+	if(g_mode == MODE_SORT) g_nsamp = NSAMP; 
 	printf("g_nsamp: %d, actual zoom %f\n", g_nsamp, g_rasterZoom); 
 }
 static void rasterSpanSpinCB( GtkWidget*, gpointer ){
@@ -1329,7 +1317,7 @@ static void rasterSpanSpinCB( GtkWidget*, gpointer ){
 static void notebookPageChangedCB(GtkWidget *, 
 					gpointer, int page, gpointer){
 	if(page == 0) g_mode = MODE_RASTERS;
-	if(page == 1) g_mode = MODE_SPIKES; 
+	if(page == 1) g_mode = MODE_SORT; 
 	if(page == 2) g_mode = MODE_SORT; 
 }
 static GtkAdjustment* mk_spinner(const char* txt, GtkWidget* container, 
