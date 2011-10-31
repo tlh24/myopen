@@ -88,7 +88,7 @@ bool g_templMatch[128][2]; //the headstage match a,b over all 128 channels.
 float        g_sortAperture[4][2][16]; //the quality of the match found, circular buffer.
 i64			 g_sortOffset[4][2][16]; //offset to the best match.
 unsigned int g_sortUnit[4][16]; 
-unsigned int g_sortI[4] = {0,0,0,0}; //index to the (short) circular buffer.
+unsigned int g_sortI = 0; //index to the (short) circular buffer.
 i64			 g_sortWfOffset[4]; 
 int 			 g_sortWfUnit[4]; 
 i64			 g_unsortCount[4]; 
@@ -885,10 +885,8 @@ void* sock_thread(void*){
 						char samp = p->data[j*4+k]; //-128 -> 127.
 						int ch = g_channel[k];
 						z = 0.f; 
-						if(g_templMatch[ch][0] || 
-							(g_bitdelay[k][0] < 5)) z = 1.f; 
-						if(g_templMatch[ch][1] || 
-							(g_bitdelay[k][1] < 5)) z = 2.f; 
+						if(g_templMatch[ch][0]) z = 1.f; 
+						if(g_templMatch[ch][1]) z = 2.f; 
 						g_fbuf[k][(g_fbufW % g_nsamp)*3 + 1] = 
 							(((samp+128.f)/255.f)-0.5f)*2.f; //range +-1.
 						g_fbuf[k][(g_fbufW % g_nsamp)*3 + 2] = z;
@@ -985,10 +983,10 @@ void* sock_thread(void*){
 									}
 									//if we still don't have anything queued, try adding
 									//an unsorted, unthresholded waveform, if so desired.
-									if(!gsortWfUnit[k] && g_unsortrate > 0.0){
+									if(!g_sortWfUnit[k] && g_unsortrate > 0.0){
 										if(g_unsortCount[k] > 31250.0/g_unsortrate){
-											g_sortWfUnit = -1; 
-											g_sortWfOffset = g_fbufW - 32; 
+											g_sortWfUnit[k] = -1; 
+											g_sortWfOffset[k] = g_fbufW - 32; 
 										}
 									}
 								}
@@ -997,16 +995,16 @@ void* sock_thread(void*){
 						g_sortI++; 
 						g_sortI &= 0xf; 
 						//okay, copy over waveforms if there is enough data. 
-						unsigned int dist = g_fbufW - g_sortOffset[k]; 
+						unsigned int dist = g_fbufW - g_sortWfOffset[k]; 
 						if(dist >= 32 && g_sortUnit[k]){
 							float wf[32]; 
-							unsigned int o = g_sortOffset[k]; 
+							unsigned int o = g_sortWfOffset[k]; 
 							for(int m=0; m<32; m++){
-								wf[j] = g_fbuf[k][mod2(o + m, g_nsamp)*3+1];
-								wf[j] = wf[j] * 0.5f; 
+								wf[m] = g_fbuf[k][mod2(o + m, g_nsamp)*3+1];
+								wf[m] = wf[m] * 0.5f; 
 							}
-							g_c[g_channel[k]]->addWf(wf, g_sortUnit[k], time, true); 
-							g_sortUnit[k] = 0; 
+							g_c[g_channel[k]]->addWf(wf, g_sortWfUnit[k], time, true); 
+							g_sortWfUnit[k] = 0; 
 						}
 					}
 				}

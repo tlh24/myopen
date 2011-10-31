@@ -121,13 +121,14 @@ public:
 		float color[3] = {0.5, 0.5, 0.5}; //unsorted.
 		//error type 1 moves toward green-yellow; error type 2 moves to purple.
 		//see color wheel in gimp.
-		if(unit == 1){ color[0] = 0.f; color[1] = 1.f; color[2] = 1.f; } //cyan.
-		if(unit == 2){ color[0] = 1.f; color[1] = 0.f; color[2] = 0.f; } //red
-		if(unit == 3){ color[0] = 0.f; color[1] = 1.f; color[2] = 0.5f; } //cyan-green.
-		if(unit == 4){ color[0] = 1.f; color[1] = 0.5f; color[2] = 0.f; } //orange
-		if(unit == 5){ color[0] = 0.f; color[1] = 0.5f; color[2] = 1.f; } //blue-green
-		if(unit == 6){ color[0] = 1.f; color[1] = 0.0f; color[2] = 0.5f; } //magenta. 
-		//copy to m_wfVbo first. 
+		if(unit == 1){ color[0] = 0.0f; color[1] = 1.0f; color[2] = 1.0f; } //cyan.
+		if(unit == 3){ color[0] = 0.0f; color[1] = 1.0f; color[2] = 0.5f; } //cyan-green.
+		if(unit == 5){ color[0] = 0.0f; color[1] = 0.5f; color[2] = 1.0f; } //blue-green
+		
+		if(unit == 2){ color[0] = 1.0f; color[1] = 0.0f; color[2] = 0.0f; } //red
+		if(unit == 4){ color[0] = 1.0f; color[1] = 0.5f; color[2] = 0.0f; } //orange
+		if(unit == 6){ color[0] = 1.0f; color[1] = 0.0f; color[2] = 0.5f; } //magenta. 
+			//copy to m_wfVbo first. 
 		if(unit){
 			float* f = m_wfVbo->addRow(); 
 			for(int j=0; j<32; j++){
