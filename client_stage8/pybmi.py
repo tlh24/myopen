@@ -364,7 +364,6 @@ def main():
 	window.connect('delete_event', delete_event)
 	window.connect('delete-event', gtk.main_quit) #why are these different? 
 
-
 	vpaned = gtk.HPaned()
 	vpaned.set_border_width(5)
 	window.add(vpaned)

@@ -290,6 +290,7 @@ void setTemplate(int ch, int aB){
 	ch &= 31; 
 	aB &= 1; 
 	//each template is 16 points; can write 4 at a time, so need 4 writes.
+	//template range: [-0.5 .. 0.5]
 	for(int p=0; p<4; p++){
 		unsigned int* ptr = g_sendbuf; 
 		ptr += (g_sendW % g_sendL) * 8;
@@ -301,11 +302,11 @@ void setTemplate(int ch, int aB){
 				(A1_STRIDE*ch + (A1_TEMPLATE+A1_APERTURE)*aB + 
 				A1_TEMPA + (p*4+i))*4); 
 			unsigned char a,b,c,d; 
-			a = (unsigned char)((g_c[ch+ 0]->m_template[aB][n]+0.5f) * 255.f);
-			b = (unsigned char)((g_c[ch+32]->m_template[aB][n]+0.5f) * 255.f); 
-			c = (unsigned char)((g_c[ch+64]->m_template[aB][n]+0.5f) * 255.f); 
-			d = (unsigned char)((g_c[ch+96]->m_template[aB][n]+0.5f) * 255.f); 
-			unsigned int u= ((a << 0) & 0xff) | 
+			a = (unsigned char)round((g_c[ch+ 0]->m_template[aB][n]+0.5f) * 255.f);
+			b = (unsigned char)round((g_c[ch+32]->m_template[aB][n]+0.5f) * 255.f); 
+			c = (unsigned char)round((g_c[ch+64]->m_template[aB][n]+0.5f) * 255.f); 
+			d = (unsigned char)round((g_c[ch+96]->m_template[aB][n]+0.5f) * 255.f); 
+			unsigned int u = ((a << 0) & 0xff) |  //gcc will optimize this sillyness.
 							((b << 8) & 0xff00) | 
 							((c <<16) & 0xff0000) | 
 							((d <<24) & 0xff000000); 
