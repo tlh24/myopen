@@ -27,7 +27,7 @@ classdef MiniVIE < Common.MiniVieObj
             
             % Set valid input options
             
-            set(obj.hg.popups(MiniVIE.INPUT),'String',{'None','EMG Simulator','DaqHwDevice'});
+            set(obj.hg.popups(MiniVIE.INPUT),'String',{'None','EMG Simulator','DaqHwDevice','CpchSerial'});
             set(obj.hg.popups(MiniVIE.INPUT),'Value',1);
             set(obj.hg.popups(MiniVIE.SA),'String',{'None','LDA Classifier'});
             set(obj.hg.popups(MiniVIE.SA),'Value',1);
@@ -216,6 +216,11 @@ classdef MiniVIE < Common.MiniVieObj
                 h.ActiveChannels = defaultChannels;
 
                 h.ClassNames = SignalAnalysis.ClassifierChannels.getSavedDefaults();
+                
+                if (isempty(h.ClassNames))
+                    h.ClassNames = SignalAnalysis.ClassifierChannels.getDefaultNames;
+                end
+                
                 h.NumMajorityVotes = 0;
                 h.initialize();
             end
@@ -248,6 +253,10 @@ classdef MiniVIE < Common.MiniVieObj
                     case 'DaqHwDevice'
                         % h = Inputs.DaqHwDevice('nidaq','Dev2');
                         h = Inputs.DaqHwDevice('mcc','0');
+                    case 'CpchSerial'
+                        %h = Inputs.CpchSerial('COM3', uint16(hex2dec('FFFF')), uint16(hex2dec('4321')));
+                        h = Inputs.CpchSerial('COM5');
+                        
                     otherwise
                         % None
                         h = [];
