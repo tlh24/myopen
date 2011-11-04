@@ -1,0 +1,2 @@
+fixes to stage10: 
+ * need to short R118 pin to ground. 

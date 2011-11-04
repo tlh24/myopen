@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Sat 22 Oct 2011 02:30:34 PM EDT
+EESchema Schematic File Version 2  date Fri 04 Nov 2011 12:41:22 AM EDT
 LIBS:power
 LIBS:device
 LIBS:emg_sym
@@ -9,7 +9,7 @@ EELAYER END
 $Descr A4 11700 8267
 Sheet 2 3
 Title ""
-Date "22 oct 2011"
+Date "4 nov 2011"
 Rev ""
 Comp ""
 Comment1 ""
@@ -17,6 +17,7 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
+Connection ~ 2400 3000
 Connection ~ 2700 1550
 Wire Wire Line
 	2700 1650 2700 1550

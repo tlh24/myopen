@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Sat 22 Oct 2011 01:44:06 PM EDT
+EESchema Schematic File Version 2  date Sat 22 Oct 2011 02:30:34 PM EDT
 LIBS:power
 LIBS:device
 LIBS:emg_sym
@@ -237,8 +237,6 @@ F 1 "GND" H 7350 2530 30  0001 C CNN
 	1    7350 2600
 	1    0    0    -1  
 $EndComp
-Text Notes 3400 2300 0    60   ~ 0
-493-1665-ND
 $Comp
 L C C80
 U 1 1 4E93CF93
