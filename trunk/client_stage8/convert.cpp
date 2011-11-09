@@ -180,8 +180,10 @@ int main(int argn, char **argc){
 					//really need to wait for the echo here.
 					//bummish.
 					printf("message: %s\n", buf); 
-					if(strncmp(buf, "chan", 4) == 0){
-						char* pch = strtok(buf, " "); 
+					//first char: A-P (0-15, corresponds to echo); second space
+					char* b = buf; b+=2; 
+					if(strncmp(b, "chan", 4) == 0){
+						char* pch = strtok(b, " "); 
 						pch = strtok(NULL, " "); //chan
 						for(int i=0; i<4; i++){
 							pch = strtok(NULL, " "); //ABC or D
