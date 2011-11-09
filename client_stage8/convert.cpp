@@ -183,15 +183,12 @@ int main(int argn, char **argc){
 					//first char: A-P (0-15, corresponds to echo); second space
 					char* b = buf; b+=2; 
 					if(strncmp(b, "chan", 4) == 0){
-						char* pch = strtok(b, " "); 
-						pch = strtok(NULL, " "); //chan
-						for(int i=0; i<4; i++){
-							pch = strtok(NULL, " "); //ABC or D
-							pch = strtok(NULL, " "); //the actual channel.
-							chans[i] = atoi(pch); 
+						int ii = b[5] - 'A'; 
+						if(ii >= 0 && ii < 4){
+							b += 7;
+							chans[ii] = atoi(b); 
+							//printf(" chan %d changed to %d\n", ii, chans[ii]); 
 						}
-						printf("channels changed to %d %d %d %d\n",
-								 chans[0],chans[1],chans[2],chans[3]); 
 					}
 					pos += 16+siz; 
 				} else {
