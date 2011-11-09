@@ -150,6 +150,7 @@ classdef CpchSerial < Inputs.SignalInput
             offset = 1;
             len = numel(obj.SerialBuffer);
             while ((numAvailable <= numSamples) && (offset <= len))
+
                 [s, msg, indx] = Inputs.CpchSerial.ExtractMsg(obj.SerialBuffer(offset:end), obj.GPICnt+obj.BioampCnt);  % Find a valid message
                 
                 offset = offset + indx + numel(msg) - 1;
@@ -187,16 +188,16 @@ classdef CpchSerial < Inputs.SignalInput
             end
             
             obj.SerialBuffer = obj.SerialBuffer(offset : end);
-            fprintf('%2.4g, InputCnt=%1.0f, Excess=%1.0f:  numAvailable: %i\n', hat-obj.T, rcnt, numel(obj.SerialBuffer), numAvailable);
-            obj.T = hat;
+%             fprintf('%2.4g, InputCnt=%1.0f, Excess=%1.0f:  numAvailable: %i\n', hat-obj.T, rcnt, numel(obj.SerialBuffer), numAvailable);
+%             obj.T = hat;
             
             global dataSave;
             dataSave = obj.DataBuffer;
         end
         function isReady = isReady(obj,numSamples)
             obj.start();
-            
-            isReady = obj.DataBufferRow >= numSamples;
+            % TODO, check to verify that the requested samples are available (e.g. 150 previous samples)
+            isReady = 1;%obj.DataBuffer >= numSamples;
         end
         function start(obj)
             %profile on -history;
@@ -227,7 +228,7 @@ classdef CpchSerial < Inputs.SignalInput
             end
             
             %profile viewer;
-            obj.T = hat;
+%             obj.T = hat;
         end
         function close(obj)
             stop(obj);
@@ -306,8 +307,8 @@ classdef CpchSerial < Inputs.SignalInput
                         de = swapbytes(de);
                         se = swapbytes(se);
                     end
-                    
-                    frame.DiffData = double(de) ./ 512;
+                    % TODO, abstract hardwaare gain from here
+                    frame.DiffData = 5 *double(de) ./ 512;
                     frame.SEData = double(se) ./ 1024;
                     
                 case 129        % Async. Stop Sream Response
