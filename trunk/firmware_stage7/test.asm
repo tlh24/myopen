@@ -96,6 +96,14 @@ check_again:
 	r0.l = w[p2];  //read the 'null' pointer - works here!
 	nop ;
 	
+	//init the cycle counter.
+	r0 = 0; 
+	CYCLES = r0; 
+	CYCLES2 = r0;
+	r0 = 0x32; //page 778.  enable 64 bit cycle counter.
+	SYSCFG = r0;
+	SSYNC; 
+	
 	//need a ms timer for ethernet protocols. 
 	//this is basically copied from the hardware reference.
 	p0.l = LO(IMASK); 
@@ -103,15 +111,15 @@ check_again:
 	r0.l = _isr_mstimer;
 	r0.h = _isr_mstimer; 
 	[p0 + EVT12 - IMASK] = r0; 
-	//unmask IVG12 in CEC. 
+	//unmask IVG12 in CEC IMASK register. 
 	r0 = [p0]; 
 	bitset(r0, 12); 
 	[p0] = r0; 
 	// assign timer 5 IRQ to IVG12
 	p0.l = LO(SIC_IAR4); 
 	p0.h = HI(SIC_IAR4); 
-	r0.h = 0xff5f; //check this
-	r0.l = 0xffff; 
+	r0.h = 0x5555; //check this
+	r0.l = 0x5555; //this is the default to the best of my knowledge..
 	[p0] = r0; 
 	//enable timer 5 IRQ
 	p0.l = LO(SIC_IMASK1); 
@@ -203,6 +211,23 @@ _isr_mstimer:
 	r7 = [p5]; 
 	r7 += 1; 
 	[p5] = r7; 
+	ssync; // to prevent the ISR from being called twice.
+	// see page 447 of the BF52x hardware ref.
 	(r7:7,p5:5) = [sp++]; 
 	astat = [sp++]; 
 	rti; 
+	
+.global _ustimer;
+_ustimer:
+	//return cycle counter divided by 2^16.
+	//with a 600Mhz core clock, this equates to 
+	// 91552.734375 clocks / second. pretty close to 10,000 .. i guess.
+	//return on R0, touches R1, ok as per ABI.  
+	r0 = CYCLES; 
+	r1 = CYCLES2;
+	r1 = r1 << 16; 
+	r0 = r0 >> 16;
+	r0 = r0 + r1; 
+	r1 = SYSCFG; 
+	r0 = r0 + r1;
+	rts; 

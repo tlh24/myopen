@@ -1063,11 +1063,13 @@ void DHCP_parse(u8* ptr, int length){
 
 u8 bridge_publish(){	
 	int length, i; 
+	unsigned int secs, prevtime; 
 	char result = 1; 
 	u8* data; 
 	udp_packet* p;
 	
-	NetDataDestIP = FormatIPAddress(239,0,200,0); 
+	secs = prevtime = 0;
+	NetDataDestIP = FormatIPAddress(239,0,200,0); //multicast.
 	while(1){
 		length = sizeof(udp_packet) + 10; 
 		data = eth_header_setup(&length, &result, NetDataDestIP);
@@ -1094,9 +1096,9 @@ u8 bridge_publish(){
 				}
 			}
 		}
-		//sleep about 2 sec @ 600Mhz clock. don't be flooding the network.
-		for(i=0; i<0x2000000;i++){ 
-			asm volatile("nop; nop; nop; nop"); 
-		}
+		secs = ustimer() / 4578;
+		if(secs != prevtime)
+			*pPORTFIO_TOGGLE = 0x8000; 
+		prevtime = secs; 
 	}
 }
