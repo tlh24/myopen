@@ -15,8 +15,9 @@ extern u8 g_mouseYneg;
 extern u32 g_mouseShift; 
 extern u8   g_streamEnabled; 
 
-//in crt0.asm
+//in test.asm..
 void delay(int); 
+extern unsigned int ustimer(); 
 
 //in main.c
 int PhysicalToLogicalChan(int c); 

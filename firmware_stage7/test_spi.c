@@ -384,17 +384,19 @@ int main(void){
 		g_nv.destPort = 4340; 
 		write_flash(sizeof(g_nv), (u8*)&g_nv); 
 	}
-	//start the milisecond timer. 
-	*pTIMER_DISABLE = 0xffff; 
-	asm volatile("ssync"); 
-	*pGTIME = 0; 
-	*pTIMER5_CONFIG = IRQ_ENA | PERIOD_CNT | OUT_DIS | PWM_OUT; 
-	// probably should put the +10 in flash. 
-	//(presuming it doesn't change much with xtal aging)
-	*pTIMER5_PERIOD = 240000+10; //SCLK @ 120Mhz
-	*pTIMER5_WIDTH =  120000+10; //+ to compensate for the xtal precision. 
-	//this depends on the board, of course! 
-	*pTIMER_ENABLE |= 0x20; //enable the timer.
+	if(0){
+		//start the milisecond timer. 
+		*pTIMER_DISABLE = 0xff; //disable all timers.
+		asm volatile("ssync"); 
+		*pGTIME = 0; 
+		*pTIMER5_CONFIG = IRQ_ENA | PERIOD_CNT | OUT_DIS | PWM_OUT; 
+		// probably should put the +10 in flash. 
+		//(presuming it doesn't change much with xtal aging)
+		*pTIMER5_PERIOD = 120000+10; //SCLK @ 120Mhz
+		*pTIMER5_WIDTH =  120000+10; //+ to compensate for the xtal precision. 
+		//this depends on the board, of course! 
+		*pTIMER_ENABLE = 0x20; //enable  timer 5.
+	}
 	
 	//startup the ethernet..
 	int etherr = bfin_EMAC_init(); 
@@ -423,7 +425,7 @@ int main(void){
 		have 2ch DAC, so should put out samples at 62500 sps
 		with 32 clocks between TFS, need 2Mhz clk -> divide by 30.
 	*/
-	if(1){
+	if(0){
 		*pSPORT1_TCR1 = 0; //turn everything off before changing speed..(also clears errors)
 		asm volatile("ssync"); 
 		g_sampW = g_sampR = 0; //reset the counters.
@@ -438,7 +440,7 @@ int main(void){
 		*pSPORT1_TCR1 = 0x4e03 ;
 		//init the IRQ. first the event vector table.
 		*pEVT7 = audio_out; 
-		*pSIC_IMASK0 = 1 << 9; //page 170 of the hardware ref.
+		*pSIC_IMASK0 |= 1 << 9; //page 170 of the hardware ref.
 	}/* MUSIC!
 		int j, k, m, n, x, y; 
 		i = j = k = m = n = x = y = 0; 
@@ -482,8 +484,8 @@ int main(void){
 		printf_str("waiting for client.\n"); 
 		unsigned char radioChannel = bridge_publish(); 
 		
-		int prevtime = 0;
-		int secs; 
+		unsigned int prevtime = 0;
+		unsigned int secs; 
 		wrptr = 0; //write pointer - not actual address! (must wrap by hand)
 		trptr = 0;
 		g_dropped = 0; 
@@ -531,12 +533,10 @@ int main(void){
 				write = 1; //no-change fall-through: only write one RXed packet.
 			
 			*FIO_SET = NRF_CSN0 | NRF_CSN1 | NRF_CSN2;
-			secs = (*pGTIME)/500; // 0xff800800
-			if(secs != prevtime){
+			secs = ustimer() / 4578;
+			if(secs != prevtime)
 				*pPORTFIO_TOGGLE = 0x8000; 
-				//printf_int("time ", secs); //heartbeat.
-				prevtime = secs; 
-			}
+			prevtime = secs; 
 		}
 	}
 	return 0;

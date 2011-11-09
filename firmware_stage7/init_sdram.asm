@@ -9,6 +9,9 @@ start: //init_sdram.asm
 	[--sp] = (r7:0);
 	[--sp] = (p5:0);
 	
+	r0 = 0; 
+	CYCLES = r0; 
+	CYCLES2 = r0;
 	r0 = 0x32; //page 778.  enable 64 bit cycle counter.
 	SYSCFG = r0;
 	SSYNC; 
