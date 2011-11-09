@@ -42,7 +42,7 @@ int main(int argn, char **argc){
 					fread((void*)&u,4,1,in); 
 					unsigned int siz = u & 0xffff; 
 					//printf("u 0x%x\n",u); 
-					rxpackets += (siz-4)/32; 
+					rxpackets += (siz-4)/(32+4); 
 					fseek(in,siz+8, SEEK_CUR);
 					pos += 16+siz; 
 				}else if(u == 0xc0edfad0){
@@ -74,7 +74,7 @@ int main(int argn, char **argc){
 		// time (double), analog(i8), channel (i8), 
 		// spike_time (double), spikes(i32)
 		double* time; 
-		mat_uint32_t* frameseq; 
+		mat_uint32_t* mstimer; 
 		mat_int8_t* analog;
 		mat_int8_t* channel;
 		mat_uint32_t* spike_ts; 
@@ -86,8 +86,8 @@ int main(int argn, char **argc){
 		// just ignore dropped packets for now.
 		time = (double*)malloc(rxpackets * sizeof(double)); 
 		  if(!time){ printf("could not allocate time variable."); exit(0);}
-		frameseq = (mat_uint32_t*)malloc(rxpackets * sizeof(int) ); 
-		  if(!frameseq){ printf("could not allocate frameseq variable."); exit(0);}
+		mstimer = (mat_uint32_t*)malloc(rxpackets * sizeof(int) ); 
+		 if(!mstimer){ printf("could not allocate mstimer variable."); exit(0);}
 		analog = (mat_int8_t*)malloc(rxpackets * 24 ); 
 		  if(!analog){ printf("could not allocate analog variable."); exit(0);}
 		channel = (mat_int8_t*)malloc(rxpackets * 24 ); 
@@ -116,12 +116,14 @@ int main(int argn, char **argc){
 				if(u == 0xdecafbad){
 					fread((void*)&u,4,1,in); 
 					unsigned int siz = u & 0xffff; 
-					int npak = (siz-4)/32;
+					int npak = (siz-4)/(4+32);
+					//first 4 is for dropped packet count
+					//second 4 is for 4 byte bridge milisecond counter
 					//printf("npak %d siz %d\n",npak,siz); 
 					double rxtime = 0.0; 
-					unsigned int fsq; 
+					unsigned int dropped = 0; 
 					fread((void*)&rxtime,8,1,in); //rx time in seconds. 
-					fread((void*)&fsq,4,1,in); 
+					fread((void*)&dropped,4,1,in); 
 	
 					int channels[32]; char match[32]; 
 					for(int i=0;i<npak; i++){
@@ -136,8 +138,8 @@ int main(int argn, char **argc){
 								printf("applying %s\n", msgs[headecho]); 
 								msgs[headecho][0] = 0; 
 							}*/
-							time[tp] = rxtime + (double)tp * 6.0 / 31250.0; 
-							frameseq[tp] = fsq; 
+							time[tp] = rxtime + (double)i * 6.0 / 31250.0; 
+							mstimer[tp] = p.ms; 
 							for(int j=0; j<6; j++){
 								for(int k=0; k<4; k++){
 									char samp = p.data[j*4+k]; 
@@ -148,7 +150,7 @@ int main(int argn, char **argc){
 							decodePacket(&p, channels, match);
 							for(int j=0; j<32; j++){
 								if(match[j]){
-									spike_ts[sp] = tp*6; 
+									spike_ts[sp] = tp; 
 									spike_ch[sp] = channel[j]; 
 									spike_unit[sp] = match[j]; 
 									sp++;
@@ -175,10 +177,19 @@ int main(int argn, char **argc){
 					char buf[128]; 
 					fread((void*)buf,siz,1,in); 
 					buf[siz] = 0; 
-					//printf("message: %s\n", buf); 
-					if(buf[0] >= 'A' && buf[0] <= 'A' + 15){
-						int indx = buf[0] - 'A'; 
-						strncpy(msgs[indx], buf, 128); 
+					//really need to wait for the echo here.
+					//bummish.
+					printf("message: %s\n", buf); 
+					if(strncmp(buf, "chan", 4) == 0){
+						char* pch = strtok(buf, " "); 
+						pch = strtok(NULL, " "); //chan
+						for(int i=0; i<4; i++){
+							pch = strtok(NULL, " "); //ABC or D
+							pch = strtok(NULL, " "); //the actual channel.
+							chans[i] = atoi(pch); 
+						}
+						printf("channels changed to %d %d %d %d\n",
+								 chans[0],chans[1],chans[2],chans[3]); 
 					}
 					pos += 16+siz; 
 				} else {
@@ -197,11 +208,11 @@ int main(int argn, char **argc){
 		Mat_VarFree(matvar);
 		free(time); //I wish I had more. 
 		
-		matvar = Mat_VarCreate("frameseq",MAT_C_UINT32,MAT_T_UINT32,
-							   1,&tp,frameseq,0);
+		matvar = Mat_VarCreate("mstimer",MAT_C_UINT32,MAT_T_UINT32,
+							   1,&tp,mstimer,0);
 		Mat_VarWrite( mat, matvar, 0 );
 		Mat_VarFree(matvar);
-		free(frameseq); 
+		free(mstimer); 
 		
 		int m = tp * 24; 
 		matvar = Mat_VarCreate("analog",MAT_C_INT8,MAT_T_INT8,
@@ -227,6 +238,12 @@ int main(int argn, char **argc){
 		Mat_VarWrite( mat, matvar, 0 );
 		Mat_VarFree(matvar);
 		free(spike_ch); 
+		
+		matvar = Mat_VarCreate("spike_unit",MAT_C_UINT32,MAT_T_UINT32,
+							   1,&sp,spike_unit,0);
+		Mat_VarWrite( mat, matvar, 0 );
+		Mat_VarFree(matvar);
+		free(spike_unit); 
 		
 		Mat_Close(mat); 
 		fclose(in); 
