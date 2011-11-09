@@ -752,7 +752,31 @@ void* sock_thread(void*){
 	get_sockaddr(4342, (char*)destName, &g_txsockAddr); 
 	int send_delay = 0; 
 	g_totalPackets = 0; 
-	
+/* packet format from the headstage, UDP: 
+4 bytes uint dropped radio packet count
+16 radio packets
+	Each packet preceded by 4 byte bridge milisecond counter
+	Followed by 32 byte packet: 
+		24 bytes samples, 6 samples from each of 4 channels.
+		8 bytes template match, Huffman encoded with one bit
+			flag for every byte, or 8 total flags. 
+			As of SVN 605, this is just the packet # in frame repeated. 
+			Should eventually include both pack# and echo.
+
+packet format In the file, as saved here: 
+4 byte magic number
+2 bytes uint svn version
+2 bytes uint ensuing packet data size
+8 bytes double RX time
+	-- If magic number is 0xdecafbad, packet is exactly as what comes in on the
+	wire / over UDP. 
+	-- If magic number is 0xb00asc11, Data is ascii encoded messages, 
+	e.g. channel change, template, aperture whatever from the GUI. 
+	(Technically these can be reconstruced from the TX packet stream, 
+	but that's complicated.)
+	-- If magic number is 0xc0edfad0, packet is a TX packet, exactly as 
+	written out on the wire / UDP. 
+*/
 	while(g_die == 0){
 		socklen_t fromlen = sizeof(from); 
 		int n = recvfrom(g_rxsock, buf, sizeof(buf),0, 
@@ -777,7 +801,7 @@ void* sock_thread(void*){
 				//will have to convert them with another prog later.
 				unsigned int tmp = 0xdecafbad; 
 				fwrite((void*)&tmp, 4, 1, g_saveFile);
-				tmp = 543; //SVN version.
+				tmp = 605; //SVN version.
 				tmp <<= 16; 
 				tmp += n; //size of the ensuing packet data. 
 				fwrite((void*)&tmp, 4, 1, g_saveFile);
@@ -789,7 +813,7 @@ void* sock_thread(void*){
 					unsigned int len = strnlen(g_messages[g_messR % 1024],128); 
 					tmp = 0xb00a5c11; //ascii
 					fwrite((void*)&tmp, 4, 1, g_saveFile);
-					tmp = 498; //SVN version.
+					tmp = 605; //SVN version.
 					tmp <<= 16; 
 					tmp += len; //size of the ensuing text data.
 					fwrite((void*)&tmp, 4, 1, g_saveFile);
@@ -1034,7 +1058,7 @@ void* sock_thread(void*){
 				if(g_saveFile){
 					unsigned int tmp = 0xc0edfad0; 
 					fwrite((void*)&tmp, 4, 1, g_saveFile);
-					tmp = 498; //SVN version.
+					tmp = 605; //SVN version.
 					tmp <<= 16; 
 					n = 32; //bytes to send.
 					tmp += n; //size of the ensuing packet data. 

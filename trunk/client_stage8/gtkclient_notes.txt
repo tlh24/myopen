@@ -1,30 +1,29 @@
 todo: 
-October 27 2011
-Mango RHA1 RHA3 RHL2 RHL3. 
 
 gtkclient: 
-* make sorting so that you don't have to switch all the time. 
+* make sorting so that you don't have to switch all the time. (DONE)
 * spike sorting does not switch modes when needed ; continues to add poly when should be moving threshold.
-* this and several other errors seem to be when you have multiple of the same channel represented on the screen.
+* this and several other errors seem to be when you have multiple of the same channel represented on the screen. (priority queue / mutex fix.)
 * aperture must be set when you define the template -- almost always it seems too big, and the gui element is not updated either. 
 	looks like, rather, it updates the wrong GUI spinner.
-* IDEA: make the other channels correspond to the last 3 looked-at chans. 
-* IDEA: switch the stereo output so 0 is mono. 
+* IDEA: make the other channels correspond to the last 3 looked-at chans. (yea,can do with a queue)
+* IDEA: switch the stereo output so 0 is mono, or reverse order in hardware.
 * IDEA: more nonlinear fading / faster or more adjustable fading / color fading. 
 * Putting both the thresholded data and template match data on the same PCA axis is bad. 
 * I had to adjust the aperture calculation; the client seems to be narrow, while the headstage is broad.  why the discrepancy? 
-* rather than printing out missed spikes, try labeling them in a different color on the display?
+* rather than printing out missed spikes, try labeling them in a different color on the display? (DONE)
 * There is something wrong -- the headsdtage is not responding properly nor in time.  Why?
 ** I wonder if something is loose in there :-/  perhaps the MUX signal is missed? 
-** HAVE THE MUX RESET every pass through to avoid this. 
+** !!Have the mux *reset* every pass through to avoid this. 
 * May be the audio out which is incorrect / delayed whatever.  really should check that. 
 ** Need to reset the audio buffer when a new client has been found by the bridge.
-* Really need some algorithm for setting the aperture, based on loss iteration or so.
+* Really need some algorithm for setting the aperture, based on iteration or so.
 ** This so that, when looking back over the PCA buffer, there are equal number of false positives and false negatives (or so)
-** And the PCA sucks too. 
-* First button press of CalcPCA resets the damn thing! WTF. 
+** And the PCA sucks too. Must test with synthetic data.
+* First button press of CalcPCA resets the damn thing! WTF. This must be reliable.
 ** That said, there should be a reset PCA button ... 
 * I'm not even sure calcPCA works.  beh.
+* Build up distribution of samples, estimate probability of null hypothesis in sorting.
 * NEED to record cursor position, target position, everything. 
 * Drain no longer works.  (???)
 * Need button for sending *all* parameters to the headstage, in the case of a reset (as we've seen)
@@ -34,6 +33,8 @@ gtkclient:
 * Cupoje 2 does not close if the pybmi server has gone away. 
 --
 Notes: 
+October 27 2011
+Mango RHA1 RHA3 RHL2 RHL3. 
 Star neurons: 32, 37, 38, 39, 70.
 Started at 3:30pm.  
 Mango is not playing ... does not recognize the juicer yet, although it appears that he is thirsty. 

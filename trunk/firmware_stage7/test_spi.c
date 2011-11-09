@@ -166,8 +166,9 @@ u32 g_sampOff; //offset for interpolation.
 u8  g_sampCh; 
 u8	g_sampMode; 
 void getRadioPacket(u16 csn, u16 irq, u8 write){
+	// called when IRQ is asserted to indicate a recieved packet.
 	// if !write, read the fifo but don't save the incoming data.
-	// (clearing the fifo will not work)
+	// (clearing the fifo will not work. pesky radio.)
 	char gotx = 0; //read: 'go tx' not 'got x'
 	char result; 
 	u32* data; 
