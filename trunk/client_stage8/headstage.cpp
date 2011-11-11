@@ -50,6 +50,8 @@ i64		g_messR;
 unsigned int g_echo = 0; 
 unsigned int g_headecho = 0; 
 unsigned int g_oldheadecho = 100; 
+unsigned int g_echoMask = 0x0fffffff; //used to clear address bits
+	// 0xffffffff puts gtkclient in compatability mode. (before svn v 605)
 
 // for 31.25ksps -- see filter_butter.m
 // broken into 2 biquads, order b0 b1 a0 a1
@@ -64,16 +66,10 @@ float lowpass_coefs2[8] = {0.453447,0.906993,-0.632535,-0.485595,
 float highpass_coefs2[8] = {0.980489,-1.960979,1.976285,-0.977184,
 	0.980489,-1.960979,1.944907,-0.945792};
 
-void sendEcho(){
-	//need some way of knowing that the headstage RXed the command.
-	unsigned int* ptr = g_sendbuf; 
-	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
-	for(int i=0; i<4; i++){
-		ptr[i*2+0] = htonl(FP_BASE - FP_ECHO);
-		ptr[i*2+1] = htonl((g_echo << 4) & 0xf0); 
-	}
-	g_sendW++; 
-	g_echo++; 
+unsigned int echo(unsigned int address){
+	address &= g_echoMask; 
+	address |= (g_echo & 0xf) << 28; 
+	return address; 
 }
 void saveMessage(const char *fmt, ...){
 	va_list ap;     /* our argument pointer */
@@ -144,9 +140,9 @@ void updateGain(int chan){
 		//remember, chan mapped to 0-31 & 64-95 (above)
 		unsigned int p = 0; 
 		if(chan >= 64) p += 1; //chs 64-127 pocessed following 0-63.
-		ptr[i*2+0] = htonl(A1 + 
+		ptr[i*2+0] = htonl(echo(A1 + 
 			(A1_STRIDE*(chan & 31) + 
-			A1_IIRSTARTA + p*(A1_IIRSTARTB-A1_IIRSTARTA) + indx2[i])*4); 
+			A1_IIRSTARTA + p*(A1_IIRSTARTB-A1_IIRSTARTA) + indx2[i])*4)); 
 			
 		j = (int)(b[i*2+0]);
 		k = (int)(b[i*2+1]);
@@ -154,8 +150,8 @@ void updateGain(int chan){
 		ptr[i*2+1] = htonl(u); 
 	}
 	g_sendW++; 
-	sendEcho(); 
 	saveMessage("gain %d %3.2f %d %3.2f", chan, again1, chan+32, again2); 
+	g_echo++; 
 }
 void setOsc(int chan){
 	//turn two channels e.g. 0 and 32 into oscillators.
@@ -173,23 +169,23 @@ void setOsc(int chan){
 	for(i=0; i<4; i++){
 		unsigned int p = 0; 
 		if(chan >= 64) p += 1; //chs 64-127 pocessed following 0-63.
-		ptr[i*2+0] = htonl(A1 + 
+		ptr[i*2+0] = htonl(echo(A1 + 
 			(A1_STRIDE*(chan & 31) + 
-			A1_IIRSTARTA + p*(A1_IIRSTARTB-A1_IIRSTARTA) + i)*4); 
+			A1_IIRSTARTA + p*(A1_IIRSTARTB-A1_IIRSTARTA) + i)*4)); 
 		j = (int)(b[i]);
 		u = (unsigned int)((j&0xffff) | ((j&0xffff)<<16)); 
 		ptr[i*2+1] = htonl(u); 
 	}
 	g_sendW++; 
-	sendEcho(); 
 	saveMessage("osc %d and %d", chan, chan+32); 
+	g_echo++; 
 }
 void setChans(){
 	int i; 
 	unsigned int* ptr = g_sendbuf; 
 	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
 	for(i=0; i<4;i++){
-		ptr[i*2+0] = htonl(FP_BASE - FP_TXCHAN0 + 4*i); 
+		ptr[i*2+0] = htonl(echo((FP_BASE - FP_TXCHAN0 + 4*i))); 
 		//ok, for the taps: have 4 offsets. 
 		int c = g_channel[i]; 
 		int o1 = (c & 31) * W1_STRIDE * 2 * 4; //which MUX line. 
@@ -214,36 +210,33 @@ void setChans(){
 		int o4 = g_signalChain * 4; 
 		ptr[i*2+1] = htonl(W1 + o1 + o2 + o3 + o4 + 1); //1 is for little-endian.
 	}
-	g_sendW++; 	
-	sendEcho(); 
 	for(i=0; i<4; i++){
 		saveMessage("chan %c %d", 'A'+i, g_channel[i]); 
 		//save it in the sqlite db. 
 		//sqliteSetValue(i,"channel", (float)g_channel[i]); 
 	}
+	g_sendW++;
+	g_echo++; 
 }
-void setAGC(int ch1, int ch2, int ch3, float target){
-	//sets AGC for (up to) three channels.
+void setAGC(int ch1, int ch2, int ch3, int ch4, float target){
+	//sets AGC for (up to) four channels.
 	unsigned int* ptr = g_sendbuf; 
 	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
-	int chs[3]; chs[0] = ch1&127; chs[1]= ch2&127; chs[2] = ch3&127; 
-	for(int i=0; i<3; i++){
+	int chs[4]; chs[0] = ch1&127; chs[1]= ch2&127; 
+		chs[2] = ch3&127; chs[3] = ch4&127;
+	for(int i=0; i<4; i++){
 		int chan = chs[i];
 		g_c[chan]->m_agc = target; 
 		chan = chan & (0xff ^ 32); //map to the lower channels (0-31,64-95)
 		unsigned int p = 0; 
 		if(chan >= 64) p += 1; //chs 64-127 pocessed following 0-63.
-		ptr[i*2+0] = htonl(A1 + 
+		ptr[i*2+0] = htonl(echo(A1 + 
 			(A1_STRIDE*(chan & 31) + 
-			+ p*(A1_IIRSTARTA+A1_IIR) + 2)*4); // 2 is the offset to the AGC target. 
+			+ p*(A1_IIRSTARTA+A1_IIR) + 2)*4)); // 2 is the offset to the AGC target. 
 		int j = (int)(sqrt(32768 * g_c[chan]->m_agc));
 		int k = (int)(sqrt(32768 * g_c[chan+32]->m_agc));
 		unsigned int u = (unsigned int)((j&0xffff) | ((k&0xffff)<<16)); 
 		ptr[i*2+1] = htonl(u); 
-	}
-	for(int i=3; i<4; i++){
-		ptr[i*2+0] = htonl(FP_BASE - FP_ECHO);
-		ptr[i*2+1] = htonl((g_echo << 4) & 0xf0); 
 	}
 	g_sendW++;
 	g_echo++; 
@@ -257,9 +250,9 @@ void setAperture(int ch){
 	unsigned int* ptr = g_sendbuf; 
 	ptr += (g_sendW % g_sendL) * 8;
 	for(int i=0; i<4; i++){
-		ptr[i*2+0] = htonl(A1 + 
+		ptr[i*2+0] = htonl(echo(A1 + 
 			(A1_STRIDE*ch + (A1_TEMPLATE+A1_APERTURE)*(i/2) + 
-			 A1_APERTUREA + (i&1))*4); 
+			 A1_APERTUREA + (i&1))*4)); 
 		unsigned int u = (g_c[ch+64*(i&1)]->getAperture(i/2) & 0xffff) | 
 						((g_c[ch+32+64*(i&1)]->getAperture(i/2) & 0xffff)<<16);
 		ptr[i*2+1] = htonl(u); 
@@ -276,15 +269,13 @@ void setLMS(bool on){
 	//this applies to all channels.
 	unsigned int* ptr = g_sendbuf; 
 	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt. (32 byte packets)
-	ptr[0] = htonl(FP_BASE - FP_WEIGHTDECAY); //frame pointer
-	ptr[1] = htonl(on ? 0x7fff0005 : 0); //see r4 >>> 1 (v) in radio4.asm
-	for(int i=1; i<4; i++){
-		ptr[i*2+0] = htonl(FP_BASE - FP_ECHO);
-		ptr[i*2+1] = htonl((g_echo << 4) & 0xf0); 
+	for(int i=0; i<4; i++){
+		ptr[i*2+0] = htonl(echo(FP_BASE - FP_WEIGHTDECAY)); //frame pointer
+		ptr[i*2+1] = htonl(on ? 0x7fff0005 : 0); //see r4 >>> 1 (v) in radio4.asm
 	}
+	saveMessage("lms %d", (on ? 1 : 0));
 	g_sendW++;
 	g_echo++; 
-	saveMessage("lms %d", (on ? 1 : 0));
 }
 void setTemplate(int ch, int aB){
 	ch &= 31; 
@@ -298,9 +289,9 @@ void setTemplate(int ch, int aB){
 			//template A starts with newest sample (rightmost) -- loop.
 			//template B is in normal order. (oldest first)
 			int n = (p*4+i+(1-aB)*15)%16; 
-			ptr[i*2+0] = htonl(A1 + 
+			ptr[i*2+0] = htonl(echo(A1 + 
 				(A1_STRIDE*ch + (A1_TEMPLATE+A1_APERTURE)*aB + 
-				A1_TEMPA + (p*4+i))*4); 
+				A1_TEMPA + (p*4+i))*4)); 
 			unsigned char a,b,c,d; 
 			a = (unsigned char)round((g_c[ch+ 0]->m_template[aB][n]+0.5f) * 255.f);
 			b = (unsigned char)round((g_c[ch+32]->m_template[aB][n]+0.5f) * 255.f); 
@@ -358,8 +349,8 @@ void setBiquad(int chan, float* biquad, int biquadNum){
 	for(i=0; i<4; i++){
 		unsigned int p = 0; 
 		if(chan >= 64) p += 1; //chs 64-127 pocessed following 0-63.
-		ptr[i*2+0] = htonl(A1 + ((chan & 31)*A1_STRIDE +
-			 A1_IIRSTARTA + p*(A1_IIRSTARTB-A1_IIRSTARTA) + biquadNum*4 + i)*4);
+		ptr[i*2+0] = htonl(echo(A1 + ((chan & 31)*A1_STRIDE +
+			 A1_IIRSTARTA + p*(A1_IIRSTARTB-A1_IIRSTARTA) + biquadNum*4 + i)*4));
 		j = (int)(b[i*2+0]);
 		k = (int)(b[i*2+1]);
 		u = (unsigned int)((j&0xffff) | ((k&0xffff)<<16)); 
@@ -369,12 +360,12 @@ void setBiquad(int chan, float* biquad, int biquadNum){
 		printf("%d\n", s); 
 		ptr[i*2+1] = htonl(u); 
 	}
-	g_sendW++; 
-	sendEcho(); 
 	saveMessage("biquad %d ch %d: %d %d %d %d", 
 				biquadNum, chan,(int)b[0],(int)b[2],(int)b[4],(int)b[6]); 
 	saveMessage("biquad %d ch %d: %d %d %d %d", 
 				biquadNum, chan+32,(int)b[1],(int)b[3],(int)b[5],(int)b[7]); 
+	g_sendW++; 
+	g_echo++;
 }
 void resetBiquads(int chan){
 	//reset all coefs in two channels.

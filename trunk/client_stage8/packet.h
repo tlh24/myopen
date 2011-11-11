@@ -7,6 +7,6 @@ typedef struct {
 	unsigned int tmpl[2]; //template match!
 } packet; //size: 36 bytes.
 
-int decodePacket(packet* p, int* channel, char* match); 
+int decodePacket(packet* p, int* channel, char* match, unsigned int &echo); 
 
 #endif

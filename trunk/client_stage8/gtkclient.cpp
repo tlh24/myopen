@@ -105,6 +105,8 @@ int g_totalPackets = 0;
 unsigned int g_dropped; //compare against the bridge.
 int g_totalDropped = 0;
 
+#define BRIDGE_CLOCK = 9155.2734375 // Hz. 
+
 enum MODES {
 	MODE_RASTERS, 
 	MODE_SORT,
@@ -755,15 +757,15 @@ void* sock_thread(void*){
 /* packet format from the headstage, UDP: 
 4 bytes uint dropped radio packet count
 16 radio packets
-	Each packet preceded by 4 byte bridge milisecond counter
-	Followed by 32 byte packet: 
+	Each packet preceded by 4 byte bridge milisecond (ish) counter
+	Followed by 32 byte radio packet: 
 		24 bytes samples, 6 samples from each of 4 channels.
 		8 bytes template match, Huffman encoded with one bit
 			flag for every byte, or 8 total flags. 
 			As of SVN 605, this is just the packet # in frame repeated. 
 			Should eventually include both pack# and echo.
 
-packet format In the file, as saved here: 
+packet format in the file, as saved here: 
 4 byte magic number
 2 bytes uint svn version
 2 bytes uint ensuing packet data size
@@ -869,7 +871,7 @@ packet format In the file, as saved here:
  if it is off by a lot, just replace.
 */
 				if(i == npack-1){ //update the offset.
-					double off = rxtime - ((double)p->ms / 1000.0); 
+					double off = rxtime - ((double)p->ms / BRIDGE_CLOCK); 
 					if(abs(off - g_timeOffset) > 1.0) g_timeOffset = off; 
 					//not sure what the correct level of smoothing is: 
 					//we want to reject noise, but we don't want to lag behind the 
@@ -885,8 +887,8 @@ packet format In the file, as saved here:
 					//printf("offset time: %f of %f\n", g_timeOffset, 
 					//		 ((double)p->ms / 1000.0)); 
 				}
-				double time = ((double)p->ms / 1000.0) + g_timeOffset;
-				decodePacket(p, channels, match); 
+				double time = ((double)p->ms / BRIDGE_CLOCK) + g_timeOffset;
+				decodePacket(p, channels, match, g_headecho); 
 				for(int j=0; j<32; j++){
 					int adr = channels[j]; 
 					for(int t=0; t<2; t++){
@@ -1236,7 +1238,7 @@ static void agcSpinCB( GtkWidget*, gpointer p){
 		int j = g_channel[h]; 
 		if(j >= 0 && j < 128){
 			g_c[j]->m_agc = agc; 
-			setAGC(j,j,j,agc);
+			setAGC(j,j,j,j,agc);
 		}
 		g_c[j]->resetPca(); 
 	}
@@ -1259,11 +1261,11 @@ static void apertureSpinCB( GtkWidget*, gpointer p){
 }
 static void agcSetAll(gpointer ){
 	float agc = gtk_adjustment_get_value(g_agcSpin[0]); 
-	for(int i=0; i<128-2; i+=3){
+	for(int i=0; i<128; i+=4){
 		g_c[i+0]->m_agc = agc;
 		g_c[i+1]->m_agc = agc;
 		g_c[i+2]->m_agc = agc;
-		setAGC(i,i+1,i+2,agc);
+		setAGC(i,i+1,i+2,i+3,agc);
 	}
 	for(int i=0; i<4; i++)
 		gtk_adjustment_set_value(g_agcSpin[i], agc); 
