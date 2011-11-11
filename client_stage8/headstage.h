@@ -17,11 +17,10 @@ extern unsigned int g_headecho;
 extern unsigned int g_oldheadecho; 
 
 void saveMessage(const char *fmt, ...);
-void sendEcho();
 void updateGain(int chan);
 void setOsc(int chan);
 void setChans();
-void setAGC(int ch1, int ch2, int ch3, float target);
+void setAGC(int ch1, int ch2, int ch3, int ch4, float target);
 void setAperture(int ch);
 void setLMS(bool on);
 void setTemplate(int ch, int aB);

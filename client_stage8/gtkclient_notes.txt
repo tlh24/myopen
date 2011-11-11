@@ -7,16 +7,16 @@ gtkclient:
 * aperture must be set when you define the template -- almost always it seems too big, and the gui element is not updated either. 
 	looks like, rather, it updates the wrong GUI spinner.
 * IDEA: make the other channels correspond to the last 3 looked-at chans. (yea,can do with a queue)
-* IDEA: switch the stereo output so 0 is mono, or reverse order in hardware.
+* IDEA: switch the stereo output so 0 is mono, or reverse order in hardware. (DONE)
 * IDEA: more nonlinear fading / faster or more adjustable fading / color fading. 
 * Putting both the thresholded data and template match data on the same PCA axis is bad. 
 * I had to adjust the aperture calculation; the client seems to be narrow, while the headstage is broad.  why the discrepancy? 
 * rather than printing out missed spikes, try labeling them in a different color on the display? (DONE)
 * There is something wrong -- the headsdtage is not responding properly nor in time.  Why?
 ** I wonder if something is loose in there :-/  perhaps the MUX signal is missed? 
-** !!Have the mux *reset* every pass through to avoid this. 
-* May be the audio out which is incorrect / delayed whatever.  really should check that. 
-** Need to reset the audio buffer when a new client has been found by the bridge.
+** !!Have the mux *reset* every pass through to avoid this. (DONE)
+* May be the audio out which is incorrect / delayed whatever.  really should check that.  
+** Need to reset the audio buffer when a new client has been found by the bridge. (Done, needs to be checked)
 * Really need some algorithm for setting the aperture, based on iteration or so.
 ** This so that, when looking back over the PCA buffer, there are equal number of false positives and false negatives (or so)
 ** And the PCA sucks too. Must test with synthetic data.
@@ -27,6 +27,7 @@ gtkclient:
 * NEED to record cursor position, target position, everything. 
 * Drain no longer works.  (???)
 * Need button for sending *all* parameters to the headstage, in the case of a reset (as we've seen)
+** Need to have headstage echo, too, so we know it's gotten the parameters. Feedback is everything.
 * The adaptive transform is not so good.  Need something fixed! 
 ** When the monkey is running around, the firing rate is high, which decreases the scale factor; when he stops to drink, the firing rate changes, so the cursor is no longer well controlled. 
 * Unchecking connect to gtk client does not disconnect. 
