@@ -133,9 +133,9 @@ u8 radio_init(u16 csn, u16 irq, u8 chan){
 	*pSPI_CTL = TDBR_CORE | SZ | EMISO | GM | MSTR | SPE; 
 	*pSPI_FLG = 0x0000; //we don't use this -- use portF. 
 	*FIO_SET = csn; //active low signal. 
-	*FIO__INEN |= irq; 
-	*FIO__DIR &= 0xffff ^ irq; 
-	*FIO__DIR |= csn | NRF_CE; 
+	*FIO__INEN |= irq; //input
+	*FIO__DIR &= 0xffff ^ irq; //input = 0
+	*FIO__DIR |= csn | NRF_CE; //output = 1
 	if(chan > 124) chan = 124; 
 	printf_int("radio channel set to ", chan); 
 	uart_str("\n"); 
@@ -150,6 +150,7 @@ u8 radio_init(u16 csn, u16 irq, u8 chan){
 	spi_write_register_ver(csn,NOR_STATUS, 0x70); //clear the interrupts. should bitch about verification.
 	spi_write_register_ver(csn,NOR_RX_PW_P0, 32); //essential - tell the radio how big the packets are!
 	//for the addresses, leave the default 0xe7e7e7e7e7
+	//or does this vary with different chip revisions? 
 	
 	spi_write_byte(csn,0xe2); //clear the RX fifo. 
 	return spi_write_byte(csn,0xe1); //clear the TX fifo. 
