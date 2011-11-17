@@ -1174,21 +1174,37 @@ static gboolean chanscan(gpointer){
 	}
 	return g_cycle; //if this is false, don't call again.
 }
+void updateChannelUI(int k){
+	//called when a channel changes -- update the UI elements accordingly. 
+	int ch = g_channel[k]; 
+	gtk_adjustment_set_value(g_gainSpin[k], g_c[ch]->m_gain);
+	gtk_adjustment_set_value(g_agcSpin[k], g_c[ch]->m_agc); 
+	gtk_adjustment_set_value(g_apertureSpin[k*2+0], g_c[ch]->getAperture(0));
+	gtk_adjustment_set_value(g_apertureSpin[k*2+1], g_c[ch]->getAperture(1));
+	gtk_adjustment_set_value(g_thresholdSpin[k], g_c[ch]->getThreshold()); 
+	gtk_adjustment_set_value(g_centeringSpin[k], g_c[ch]->getCentering());
+}
 static void channelSpinCB( GtkWidget*, gpointer p){
 	int k = (int)((long long)p & 0xf); 
 	if(k >= 0 && k<4){
 		int ch = (int)gtk_adjustment_get_value(g_channelSpin[k]); 
-		//printf("channelSpinCB: %d\n", ch); 
+		printf("channelSpinCB: %d\n", ch); 
 		if(ch < 128 && ch >= 0 && ch != g_channel[k]){
 			g_channel[k] = ch; 
 			setChans(); 
 			//update the UI too. 
-			gtk_adjustment_set_value(g_gainSpin[k], g_c[ch]->m_gain);
-			gtk_adjustment_set_value(g_agcSpin[k], g_c[ch]->m_agc); 
-			gtk_adjustment_set_value(g_apertureSpin[k*2+0], g_c[ch]->getAperture(0));
-			gtk_adjustment_set_value(g_apertureSpin[k*2+1], g_c[ch]->getAperture(1));
-			gtk_adjustment_set_value(g_thresholdSpin[k], g_c[ch]->getThreshold()); 
-			gtk_adjustment_set_value(g_centeringSpin[k], g_c[ch]->getCentering());
+			updateChannelUI(k); 
+		}
+		//if we are in sort mode, and k == 0, move the other channels ahead of us.
+		//this allows more PCA points for sorting!
+		if(g_mode == MODE_SORT && k == 0){
+			for(int j=1; j<4; j++){
+				g_channel[j] = (g_channel[0] + j) & 127; 
+				//this does not recurse -- have to set the other stuff manually. 
+				gtk_adjustment_set_value(g_channelSpin[j], (double)g_channel[j]); 
+				updateChannelUI(j); 
+				
+			}
 		}
 	}
 }
