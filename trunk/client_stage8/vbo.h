@@ -22,8 +22,9 @@ public:
 		m_rows = rows; 
 		m_cols = cols; 
 		m_w = m_r = 0; 
-		m_loc = {0.f, 0.f, 1.f, 1.f}; 
-		m_color = {0.05f, 0.05f, 0.05f, 0.05f}; //this is additive color.
+		m_loc[0] = 0.f; m_loc[1] = 0.f; m_loc[2] = 1.f; m_loc[3] = 1.f; 
+		for(int i=0; i<4; i++)
+			m_color[i] = 0.05f; //this is additive color.
 		m_fade = 0.3f; 
 		int siz = dim*rows*cols*sizeof(float); 
 		m_f = (float*)malloc(siz);

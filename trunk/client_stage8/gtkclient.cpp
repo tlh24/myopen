@@ -84,7 +84,8 @@ int g_channel[4] = {0,32,64,96};
 int	g_signalChain = 10; //what to sample in the headstage signal chain.
 
 bool g_out = false; 
-bool g_templMatch[128][2]; //the headstage match a,b over all 128 channels.
+bool g_templMatch[128][2]; 
+//the headstage match a,b over all 128 channels. cleared after every packet!!
 float        g_sortAperture[4][2][16]; //the quality of the match found, circular buffer.
 i64			 g_sortOffset[4][2][16]; //offset to the best match.
 unsigned int g_sortUnit[4][16]; //have to remember to zero all of these.
@@ -653,24 +654,27 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 	return TRUE;
 }
 
-
 static gboolean rotate (gpointer user_data){
 	GtkWidget *da = GTK_WIDGET (user_data);
 
 	gdk_window_invalidate_rect (da->window, &da->allocation, FALSE);
 	gdk_window_process_updates (da->window, FALSE);
+	
 	char str[256]; 
-	if(g_oldheadecho != g_headecho){
-		if(g_headecho != ((g_echo-1) & 0xf))
-			snprintf(str, 256, "headecho:%d (ASYNC)", g_headecho); 
-		else
-			snprintf(str, 256, "headecho:%d (sync)", g_headecho); 
-		gtk_label_set_text(GTK_LABEL(g_headechoLabel), str); //works!
-		g_oldheadecho = g_headecho; 
-		//update the packets/sec label too
-		snprintf(str, 256, "pkts/sec: %.2f", (double)g_totalPackets/gettime()); 
-		gtk_label_set_text(GTK_LABEL(g_pktpsLabel), str); //works!
-	}
+	if(g_headecho != ((g_echo-1) & 0xf))
+		snprintf(str, 256, "headecho:%d (ASYNC)", g_headecho); 
+	else
+		snprintf(str, 256, "headecho:%d (sync)", g_headecho); 
+	gtk_label_set_text(GTK_LABEL(g_headechoLabel), str); //works!
+	g_oldheadecho = g_headecho; 
+	//update the packets/sec label too
+	snprintf(str, 256, "pkts/sec: %.2f\ndropped %d of %d \nBER %f per 1e6 bits", 
+			(double)g_totalPackets/gettime(), 
+			g_totalDropped, g_totalPackets, 
+			1e6*(double)g_totalDropped/((double)g_totalPackets*32*8)); 
+	gtk_label_set_text(GTK_LABEL(g_pktpsLabel), str); //works!
+		
+
 	snprintf(str, 256, "%.2f MB", (double)g_saveFileBytes/1e6); 
 	gtk_label_set_text(GTK_LABEL(g_fileSizeLabel), str);
 	return TRUE;
@@ -832,8 +836,8 @@ packet format in the file, as saved here:
 					   drop - g_dropped, 
 					   g_totalDropped, 
 					   g_totalPackets, 
-					   1e6*(double)g_totalDropped/((double)g_totalPackets*32*8)); 
-				*/if((drop - g_dropped) < 4)
+					   1e6*(double)g_totalDropped/((double)g_totalPackets*32*8));*/ 
+				if((drop - g_dropped) < 4)
 					g_totalDropped += drop - g_dropped; 
 				g_dropped = drop; 
 			}
@@ -887,12 +891,14 @@ packet format in the file, as saved here:
 					//printf("offset time: %f of %f\n", g_timeOffset, 
 					//		 ((double)p->ms / BRIDGE_CLOCK)); 
 				}
+				for(int j=0; j<128;j++){
+					g_templMatch[j][0] = g_templMatch[j][0] = false;
+				}
 				double time = ((double)p->ms / BRIDGE_CLOCK) + g_timeOffset;
 				decodePacket(p, channels, match, g_headecho); 
 				for(int j=0; j<32; j++){
 					int adr = channels[j]; 
 					for(int t=0; t<2; t++){
-						g_templMatch[adr][t] = false; 
 						if(match[j] == t+1){
 							g_templMatch[adr][t] = true; 
 							//add to the spike raster list.
@@ -947,8 +953,7 @@ packet format in the file, as saved here:
 							}
 							//record the best match. 
 							for(int u=0; u<2; u++){
-								float aper = g_c[h]->getAperture(u)/255.f;
-								if(saa[u] <= aper){
+								if(g_sortAperture[k][u][g_sortI] > saa[u]){
 									g_sortAperture[k][u][g_sortI] = saa[u]; 
 									g_sortOffset[k][u][g_sortI] = offset -8; // [8 pre] 
 								}
@@ -967,8 +972,8 @@ packet format in the file, as saved here:
 									off = g_sortOffset[k][u][(g_sortI-d)&0xf]; 
 								}
 							}
-							if(g_templMatch[h][u]){
-								if(saa <= g_c[h]->getAperture(u)/255.f){
+							if(g_templMatch[h][u]){ //problem is this persists over 4 packets.
+								if(saa <= aper){
 									g_sortWfUnit[k] = u+1; 
 									g_sortWfOffset[k] = off;
 									//the headstage and client are in agreement. 
@@ -1021,8 +1026,6 @@ packet format in the file, as saved here:
 								}
 							}
 						}
-						g_sortI++; 
-						g_sortI &= 0xf; 
 						g_unsortCount[k] += 6; 
 						//okay, copy over waveforms if there is enough data. 
 						unsigned int o = g_sortWfOffset[k]; 
@@ -1036,7 +1039,9 @@ packet format in the file, as saved here:
 							g_c[g_channel[k]]->addWf(wf, g_sortWfUnit[k], time, true); 
 							g_sortWfUnit[k] = 0; 
 						}
-					}
+					} // over k, the channels.
+					g_sortI++; 
+					g_sortI &= 0xf; 
 				}
 			}
 		}
