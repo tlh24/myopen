@@ -20,7 +20,7 @@ void saveMessage(const char *fmt, ...);
 void updateGain(int chan);
 void setOsc(int chan);
 void setChans();
-void setAGC(int ch1, int ch2, int ch3, int ch4, float target);
+void setAGC(int ch1, int ch2, int ch3, int ch4);
 void setAperture(int ch);
 void setLMS(bool on);
 void setTemplate(int ch, int aB);
@@ -28,4 +28,5 @@ void setBiquad(int chan, float* biquad, int biquadNum);
 void resetBiquads(int chan);
 void setFilter2(int chan);
 void setFlat(int chan);
+void setAll(); 
 #endif

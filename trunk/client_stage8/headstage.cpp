@@ -218,7 +218,7 @@ void setChans(){
 	g_sendW++;
 	g_echo++; 
 }
-void setAGC(int ch1, int ch2, int ch3, int ch4, float target){
+void setAGC(int ch1, int ch2, int ch3, int ch4){
 	//sets AGC for (up to) four channels.
 	unsigned int* ptr = g_sendbuf; 
 	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
@@ -226,7 +226,7 @@ void setAGC(int ch1, int ch2, int ch3, int ch4, float target){
 		chs[2] = ch3&127; chs[3] = ch4&127;
 	for(int i=0; i<4; i++){
 		int chan = chs[i];
-		g_c[chan]->m_agc = target; 
+		//g_c[chan]->m_agc = target; set ACG elsewhere.
 		chan = chan & (0xff ^ 32); //map to the lower channels (0-31,64-95)
 		unsigned int p = 0; 
 		if(chan >= 64) p += 1; //chs 64-127 pocessed following 0-63.
@@ -239,8 +239,8 @@ void setAGC(int ch1, int ch2, int ch3, int ch4, float target){
 		ptr[i*2+1] = htonl(u); 
 	}
 	g_sendW++;
+	saveMessage("agc %d", (int)g_c[ch1]->m_agc);
 	g_echo++; 
-	saveMessage("agc %d", (int)target);
 }
 void setAperture(int ch){
 	// aperture order: ch0, ch32, ch64, ch96. (little-endian)
@@ -258,12 +258,12 @@ void setAperture(int ch){
 		ptr[i*2+1] = htonl(u); 
 	}
 	g_sendW++;
-	g_echo++; 
 	for(int i=0; i<4; i++){
 		saveMessage("aperture %d %d,%d", ch + 32*i, 
 				g_c[ch + 32*i]->getAperture(0),
 				g_c[ch + 32*i]->getAperture(0)); 
 	}
+	g_echo++; 
 }
 void setLMS(bool on){
 	//this applies to all channels.
@@ -273,8 +273,8 @@ void setLMS(bool on){
 		ptr[i*2+0] = htonl(echo(FP_BASE - FP_WEIGHTDECAY)); //frame pointer
 		ptr[i*2+1] = htonl(on ? 0x7fff0005 : 0); //see r4 >>> 1 (v) in radio4.asm
 	}
-	saveMessage("lms %d", (on ? 1 : 0));
 	g_sendW++;
+	saveMessage("lms %d", (on ? 1 : 0));
 	g_echo++; 
 }
 void setTemplate(int ch, int aB){
@@ -304,6 +304,7 @@ void setTemplate(int ch, int aB){
 			ptr[i*2+1] = htonl(u); 
 		}
 		g_sendW++;
+		g_echo++; 
 	}
 	//really should save the templates somewhere else (another file)
 }
@@ -392,4 +393,27 @@ void setFlat(int chan){
 	setBiquad(chan, biquad, 3); 
 	saveMessage("flat %d", chan); 
 	saveMessage("flat %d", chan+32); 
+}
+
+void setAll(){
+	//update the channels.
+	setChans(); 
+	//the filters.. also updates the gains.  
+	for(int i=0; i<32; i++){
+		resetBiquads(i);
+		resetBiquads(i+64); 
+	}
+	for(int i=0; i<16; i++){
+		//can transmit 8 AGCs at a time. 
+		//will set i, i+32, i+16. i+48, i+64, i+96, i+80, i+112. 
+		setAGC(i, i+16, i+64, i+80); 
+	}
+	for(int i=0; i<32; i++){
+		setAperture(i); 
+	}
+	//finally, the templates. 
+	for(int i=0; i<32; i++){
+		setTemplate(i,0);
+		setTemplate(i,1); 
+	}
 }

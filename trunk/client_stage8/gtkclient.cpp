@@ -892,7 +892,7 @@ packet format in the file, as saved here:
 					//		 ((double)p->ms / BRIDGE_CLOCK)); 
 				}
 				for(int j=0; j<128;j++){
-					g_templMatch[j][0] = g_templMatch[j][0] = false;
+					g_templMatch[j][0] = g_templMatch[j][1] = false;
 				}
 				double time = ((double)p->ms / BRIDGE_CLOCK) + g_timeOffset;
 				decodePacket(p, channels, match, g_headecho); 
@@ -1053,7 +1053,7 @@ packet format in the file, as saved here:
 			//send one command packet for every 3 RXed frame -- 
 			// this allows 3 duplicate transmits from bridge to headstage of 
 			// each command packet.  redundancy = safety = good.
-			if( send_delay >= 2 ){
+			if( send_delay >= 3 ){
 				send_delay = 0; 
 				//printf("sending message to bridge ..\n"); 
 				double txtime = gettime(); 
@@ -1263,7 +1263,7 @@ static void agcSpinCB( GtkWidget*, gpointer p){
 		int j = g_channel[h]; 
 		if(j >= 0 && j < 128){
 			g_c[j]->m_agc = agc; 
-			setAGC(j,j,j,j,agc);
+			setAGC(j,j,j,j);
 		}
 		g_c[j]->resetPca(); 
 	}
@@ -1290,7 +1290,8 @@ static void agcSetAll(gpointer ){
 		g_c[i+0]->m_agc = agc;
 		g_c[i+1]->m_agc = agc;
 		g_c[i+2]->m_agc = agc;
-		setAGC(i,i+1,i+2,i+3,agc);
+		g_c[i+3]->m_agc = agc;
+		setAGC(i,i+1,i+2,i+3);
 	}
 	for(int i=0; i<4; i++)
 		gtk_adjustment_set_value(g_agcSpin[i], agc); 
@@ -1340,6 +1341,9 @@ static void pauseButtonCB(GtkWidget *button, gpointer * ){
 		g_pause = gettime(); 
 	else
 		g_pause = -1.0;
+}
+static void syncHeadstageCB(GtkWidget *button, gpointer * ){
+	setAll(); //see headstage.cpp
 }
 static void cycleButtonCB(GtkWidget *button, gpointer * ){
 	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))){
@@ -1744,12 +1748,20 @@ int main(int argn, char **argc)
 	mk_radio("lines,points", 2, 
 			 v1, false, "draw mode", drawRadioCB); 
 	
+	bx = gtk_hbox_new (FALSE, 3);
 	//add a pause / go button (applicable to all)
 	button = gtk_check_button_new_with_label("pause");
 	g_signal_connect (button, "toggled",
 			G_CALLBACK (pauseButtonCB), (gpointer) "o");
-	gtk_box_pack_start (GTK_BOX (v1), button, TRUE, TRUE, 0);
+	gtk_box_pack_start (GTK_BOX (bx), button, TRUE, TRUE, 0);
 	gtk_widget_show(button);
+	
+	//add a sync headstage button (useful in the case of a reset).
+	button = gtk_button_new_with_label ("sync headstage");
+	g_signal_connect(button, "clicked", G_CALLBACK (syncHeadstageCB),
+					 (gpointer*)window);
+	gtk_box_pack_start (GTK_BOX (bx), button, FALSE, FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (v1), bx, TRUE, TRUE, 0);
 
 	//and save / stop saving button
 	bx = gtk_hbox_new (FALSE, 3);
