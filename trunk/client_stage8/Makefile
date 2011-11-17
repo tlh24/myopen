@@ -38,3 +38,7 @@ convert: $(COBJS)
 	
 clean:
 	rm -rf client gtkclient convert *.o spikes.pb.*
+
+deps:
+	sudo apt-get install libprotobuf-dev protobuf-compiler libgtk2.0-dev libgtkgl2.0-dev \
+	libgtkglext1-dev freeglut3-dev nvidia-cg-toolkit libgsl0-dev libmatio-dev
