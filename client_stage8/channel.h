@@ -331,8 +331,10 @@ public:
 		double t; 
 		int nsamp = MIN(m_pcaVbo->m_w, m_pcaVbo->m_rows); 
 		if(nsamp < 32){
-			printf("Channel::computePca - not enough samples\n"); 
+			printf("Channel::computePca %d (%d) samples, not enough\n", nsamp, m_pcaVbo->m_w); 
 			return; 
+		}else{
+			printf("Channel::computePca  %d samples\n", nsamp); 
 		}
 		float mean[32]; 
 		for(int j=0; j<32; j++) mean[j] = 0.f; 
@@ -350,7 +352,7 @@ public:
 				m->data[i*32 + j] = m_pcaVbo->m_wf[i*32 + j]; // - mean[j]; 
 			}
 		}
-		gsl_matrix_to_mat(m, "wavforms.mat"); 
+		//gsl_matrix_to_mat(m, "wavforms.mat"); 
 		if(0){
 			//method 1 - SVD.  slow.
 			// I'm looking at matlab's princomp function. 
@@ -422,7 +424,7 @@ public:
 			}
 			m_pcaVbo->m_f[i*6 + 0] = pca[0];
 			m_pcaVbo->m_f[i*6 + 1] = pca[1]; 
-			m_pcaVbo->m_f[i*6 + 2] = 0.f; 
+			//m_pcaVbo->m_f[i*6 + 2] = 0.f; 
 			//leave whatever it used to be sorted as.
 			//for(int k=0; k<3; k++)
 			//	m_pcaVbo->m_f[i*6 + 3 + k] = 0.5f;
