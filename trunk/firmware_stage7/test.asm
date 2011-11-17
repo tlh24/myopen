@@ -1,6 +1,6 @@
 
 .global start
-.global _isr_mstimer
+//.global _isr_mstimer
 
 start: 
 	/* PLL_LOCKCNT - how many SCLK Cycles to delay while PLL becomes stable */
@@ -106,6 +106,7 @@ check_again:
 	
 	//need a ms timer for ethernet protocols. 
 	//this is basically copied from the hardware reference.
+	
 	p0.l = LO(IMASK); 
 	p0.h = HI(IMASK); 
 	r0.l = _isr_mstimer;
@@ -127,6 +128,7 @@ check_again:
 	r0 = [p0]; 
 	bitset(r0, 5); //check this
 	[p0] = r0; 
+	
 	//the timer is setup and started in main.
 	
 	//need a sequence to enable interrupts? 
@@ -206,11 +208,6 @@ _isr_mstimer:
 	r7.l = LO(TIMIL5); //clear timer 5 status. 
 	r7.h = HI(TIMIL5); 
 	[p5] = r7; 
-	p5.l = LO(GTIME);
-	p5.h = HI(GTIME);
-	r7 = [p5]; 
-	r7 += 1; 
-	[p5] = r7; 
 	ssync; // to prevent the ISR from being called twice.
 	// see page 447 of the BF52x hardware ref.
 	(r7:7,p5:5) = [sp++]; 
@@ -228,6 +225,4 @@ _ustimer:
 	r1 = r1 << 16; 
 	r0 = r0 >> 16;
 	r0 = r0 + r1; 
-	r1 = SYSCFG; 
-	r0 = r0 + r1;
 	rts; 

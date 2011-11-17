@@ -181,7 +181,7 @@ void getRadioPacket(u16 csn, u16 irq, u8 write){
 	*pSPI_TDBR = 0x61; //command for reading the fifo
 	spi_delay(); //wait for this to finish. 
 	if(write){
-		*((u32*)(wrptr)) = *pGTIME; //milisecond hardware timer.
+		*((u32*)(wrptr)) = ustimer(); //9.1khz hardware timer.
 		wrptr += 4; 
 	}
 	u8* ptr = (u8*)(wrptr); 
@@ -217,6 +217,10 @@ void getRadioPacket(u16 csn, u16 irq, u8 write){
 		unsigned int flag = *c; 
 		flag = ((flag >> 7) & 1) | ((flag >> 14) & 2)
 				| ((flag >> 21) & 4) | ((flag >> 28) & 8); 
+		c++;
+		/*unsigned int echo = *c; 
+		echo = ((echo >> 7) & 1) | ((echo >> 14) & 2)
+				| ((echo >> 21) & 4) | ((echo >> 28) & 8); */
 		if(g_nextFlag != flag){
 			if(g_nextFlag > flag) 
 				g_dropped += (16+flag) - g_nextFlag;
@@ -289,7 +293,7 @@ void __attribute__((interrupt_handler)) audio_out(void)
 	//u16 samp = s1 << 8; 
 	u16 samp = s1 * (0xff - (g_sampOff >> 20)) 
 			 + s2 * ((g_sampOff >> 20)); 
-	*pSPORT1_TX = samp | (0x3 << 19) | (chan << 16); //command, address
+	*pSPORT1_TX = samp | (0x3 << 19) | ((chan^1) << 16); //command, address
 	//adjust the rate.
 	if(chan == 1){ 
 		if(g_sampW < g_sampR){ g_sampR = g_sampW;} //wrap!
@@ -388,7 +392,6 @@ int main(void){
 		//start the milisecond timer. 
 		*pTIMER_DISABLE = 0xff; //disable all timers.
 		asm volatile("ssync"); 
-		*pGTIME = 0; 
 		*pTIMER5_CONFIG = IRQ_ENA | PERIOD_CNT | OUT_DIS | PWM_OUT; 
 		// probably should put the +10 in flash. 
 		//(presuming it doesn't change much with xtal aging)
@@ -501,6 +504,8 @@ int main(void){
 		radio_init(NRF_CSN1, NRF_IRQ1, radioChannel); 
 		radio_init(NRF_CSN2, NRF_IRQ2, radioChannel); 
 
+		//new connection, reset audioout pointers.
+		g_sampW = g_sampR = 0;
 		
 		radio_set_rx(NRF_CSN0, 0); 
 		radio_set_rx(NRF_CSN1, 0); 

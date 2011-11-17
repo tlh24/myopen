@@ -184,6 +184,7 @@ public:
 	}
 	float* addWf(){
 		//assumes that we will call addRow() immediately *afterward*.
+		//this is used for the internal cache / mouse selector.
 		float* r = m_wf; 
 		r += 32 * (m_w % m_rows); 
 		return r; 
@@ -251,7 +252,7 @@ public:
 		}
 		Vbo::copy(); 
 	}
-	void draw(int drawmode, float* curs, bool update, bool drawclose){
+	void draw(int drawmode, float time, bool update, float* curs, bool drawclose){
 		//order: we scale before offset. pretty easy algebra.
 		float x,y,w,h; calcScale(x,y,w,h); 
 		for(int i=0; i<m_dim; i++){
@@ -262,7 +263,7 @@ public:
 		//	   m_maxSmooth[0], m_maxSmooth[1], m_w); 
 		glLineWidth(1.f); 
 		glPointSize(1.f);
-		drawReal(drawmode, m_fade, update, x,y,w,h); 
+		drawReal(drawmode, time, update, x,y,w,h); 
 		if(drawclose){
 			//also calculate cursor in local space. 
 			//cursor is normally in +-1 x & y space. 

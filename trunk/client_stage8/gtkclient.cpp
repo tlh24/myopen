@@ -51,7 +51,7 @@
 //CG stuff. for the vertex shaders.
 CGcontext   myCgContext;
 CGprofile   myCgVertexProfile;
-cgVertexShader*		g_vsFade; 
+//cgVertexShader*		g_vsFade; 
 cgVertexShader*		g_vsFadeColor; 
 cgVertexShader*		g_vsThreshold; 
 
@@ -87,8 +87,8 @@ bool g_out = false;
 bool g_templMatch[128][2]; //the headstage match a,b over all 128 channels.
 float        g_sortAperture[4][2][16]; //the quality of the match found, circular buffer.
 i64			 g_sortOffset[4][2][16]; //offset to the best match.
-unsigned int g_sortUnit[4][16]; 
-unsigned int g_sortI = 0; //index to the (short) circular buffer.
+unsigned int g_sortUnit[4][16]; //have to remember to zero all of these.
+unsigned int g_sortI; //index to the (short) circular buffer.
 i64			 g_sortWfOffset[4]; 
 int 			 g_sortWfUnit[4]; 
 i64			 g_unsortCount[4]; 
@@ -105,7 +105,7 @@ int g_totalPackets = 0;
 unsigned int g_dropped; //compare against the bridge.
 int g_totalDropped = 0;
 
-#define BRIDGE_CLOCK = 9155.2734375 // Hz. 
+#define BRIDGE_CLOCK 9155.2734375 // Hz. 
 
 enum MODES {
 	MODE_RASTERS, 
@@ -589,8 +589,8 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 		cgGLSetOptimalOptions(myCgVertexProfile);
 		checkForCgError("selecting vertex profile");
 		
-		g_vsFade = new cgVertexShader("fade.cg","fade"); 
-		g_vsFade->addParams(4,"time","fade","col","off"); 
+		//g_vsFade = new cgVertexShader("fade.cg","fade"); 
+		//g_vsFade->addParams(4,"time","fade","col","off"); 
 		
 		g_vsFadeColor = new cgVertexShader("fadeColor.cg","fadeColor"); 
 		g_vsFadeColor->addParams(4,"time","fade","col","off"); 
@@ -697,7 +697,7 @@ void destroy(GtkWidget *, gpointer){
 	for(int i=0; i<128; i++){
 		delete g_c[i]; 
 	}
-	delete g_vsFade;
+	//delete g_vsFade;
 	delete g_vsFadeColor;
 	delete g_vsThreshold; 
 	cgDestroyContext(myCgContext);
@@ -763,7 +763,7 @@ void* sock_thread(void*){
 		8 bytes template match, Huffman encoded with one bit
 			flag for every byte, or 8 total flags. 
 			As of SVN 605, this is just the packet # in frame repeated. 
-			Should eventually include both pack# and echo.
+			SVN v 612 includes echo capability on the second 4 flag bits.
 
 packet format in the file, as saved here: 
 4 byte magic number
@@ -885,7 +885,7 @@ packet format in the file, as saved here:
 					g_timeOffset += 0.003*off; 
 					//probably need a GUI element to display offset.
 					//printf("offset time: %f of %f\n", g_timeOffset, 
-					//		 ((double)p->ms / 1000.0)); 
+					//		 ((double)p->ms / BRIDGE_CLOCK)); 
 				}
 				double time = ((double)p->ms / BRIDGE_CLOCK) + g_timeOffset;
 				decodePacket(p, channels, match, g_headecho); 
@@ -921,8 +921,6 @@ packet format in the file, as saved here:
 				}
 				p++; //next packet!
 				if(g_mode == MODE_SORT){
-					//threshold and extract templates. 
-					//just like plexon :-)
 					//need a threshold - capture anything that exceeds threshold, 
 					//align based on threshold crossing. 
 					//this loop is per packet; get 6 samples per pkt, but have to
@@ -949,15 +947,17 @@ packet format in the file, as saved here:
 							}
 							//record the best match. 
 							for(int u=0; u<2; u++){
-								if(saa[u] < g_sortAperture[k][u][g_sortI]){
+								float aper = g_c[h]->getAperture(u)/255.f;
+								if(saa[u] <= aper){
 									g_sortAperture[k][u][g_sortI] = saa[u]; 
-									g_sortOffset[k][u][g_sortI] = offset; 
+									g_sortOffset[k][u][g_sortI] = offset -8; // [8 pre] 
 								}
 							}
 						}
 						//if the headstage has sent a match, clear out our old matches.
 						for(int u=0; u<2; u++){
-							//find the best match over the last 4 packets. 
+							float aper = g_c[h]->getAperture(u)/255.f;
+							//see if there was a match in the past 4 packets. 
 							float saa = 16*256; 
 							i64 off = 0; 
 							for(int d=0; d<4; d++){
@@ -967,8 +967,8 @@ packet format in the file, as saved here:
 									off = g_sortOffset[k][u][(g_sortI-d)&0xf]; 
 								}
 							}
-							if(saa < g_c[h]->getAperture(u)/255.f){
-								if(g_templMatch[h][u]){
+							if(g_templMatch[h][u]){
+								if(saa <= g_c[h]->getAperture(u)/255.f){
 									g_sortWfUnit[k] = u+1; 
 									g_sortWfOffset[k] = off;
 									//the headstage and client are in agreement. 
@@ -977,54 +977,58 @@ packet format in the file, as saved here:
 										g_sortAperture[k][u][(g_sortI-d)&0xf] = 2048; 
 									}
 								}else{
-									//the headstage may have missed a spike.
-									if(u == 1 && g_templMatch[h][0]){
-										printf("channel %d unit b occluded by unit a.\n",h); 
-									}else{
-										//did miss a spike. false negative.
-										g_sortWfUnit[k] = u+3; 
-										g_sortWfOffset[k] = off;
-									}
-								}
-							}else{ //client did not find any matches on this unit/channel.
-								if(g_templMatch[h][u]){
 									//headstage found a match. false positive.
 									g_sortWfUnit[k] = u+5; 
 									g_sortWfOffset[k] = off;
+									printf("channel %d unit %d headstage false positive.\n",h,u);
+								}
+							}
+							//check to see if the headstage may have missed a spike.
+							if(g_sortAperture[k][u][(g_sortI-4)&0xf] < aper){
+								//the headstage may have missed a spike.
+								if(u == 1 && g_templMatch[h][0]){
+									printf("channel %d unit b occluded by unit a.\n",h); 
 								}else{
-									//normal,nothing. 
-									if(!g_sortWfUnit[k]){ //don't copy if we have something queued.
-										//check to see if we crossed threshold.
-										float threshold = g_c[h]->getThreshold(); 
-										int centering = g_c[h]->getCentering(); 
-										for(int m=0; m<6; m++){
-											i64 o = g_fbufW - centering + m-6; 
-											float a = g_fbuf[k][mod2(o, g_nsamp)*3+1]; 
-											float b = g_fbuf[k][mod2(o+1, g_nsamp)*3+1]; 
-											if(a <= threshold && b > threshold){
-												g_sortWfUnit[k] = -1; //unsorted.
-												g_sortWfOffset[k] = o; 
-											}
-										}
+									//did miss a spike. false negative.
+									printf("channel %d unit %d headstage missed spike.\n",h,u); 
+									g_sortWfUnit[k] = u+3; 
+									g_sortWfOffset[k] = off;
+								}
+							}
+							if(!g_templMatch[h][u] && !g_sortWfUnit[k]){
+								//normal,nothing. 
+								//don't copy if we have something queued.
+								//check to see if we crossed threshold.
+								float threshold = g_c[h]->getThreshold(); 
+								int centering = g_c[h]->getCentering(); 
+								for(int m=0; m<6; m++){
+									i64 o = g_fbufW - centering + m-6; 
+									float a = g_fbuf[k][mod2(o, g_nsamp)*3+1]; 
+									float b = g_fbuf[k][mod2(o+1, g_nsamp)*3+1]; 
+									if(a <= threshold && b > threshold){
+										g_sortWfUnit[k] = -1; //unsorted.
+										g_sortWfOffset[k] = g_fbufW + m-31-6; 
 									}
-									//if we still don't have anything queued, try adding
-									//an unsorted, unthresholded waveform, if so desired.
-									if(!g_sortWfUnit[k] && g_unsortrate > 0.0){
-										if(g_unsortCount[k] > 31250.0/g_unsortrate){
-											g_sortWfUnit[k] = -1; 
-											g_sortWfOffset[k] = g_fbufW - 32; 
-										}
-									}
+								}
+							}
+							//finally, if we still don't have anything queued, try adding
+							//an unsorted, unthresholded waveform, if so desired.
+							if(!g_sortWfUnit[k] && g_unsortrate > 0.0){
+								if(g_unsortCount[k] > 31250.0/g_unsortrate){
+									g_sortWfUnit[k] = -1; 
+									g_sortWfOffset[k] = g_fbufW - 32; 
+									g_unsortCount[k] = 0; 
 								}
 							}
 						}
 						g_sortI++; 
 						g_sortI &= 0xf; 
+						g_unsortCount[k] += 6; 
 						//okay, copy over waveforms if there is enough data. 
-						unsigned int dist = g_fbufW - g_sortWfOffset[k]; 
-						if(dist >= 32 && g_sortUnit[k]){
+						unsigned int o = g_sortWfOffset[k]; 
+						unsigned int dist = g_fbufW - o; 
+						if(dist >= 32 && g_sortWfUnit[k]){
 							float wf[32]; 
-							unsigned int o = g_sortWfOffset[k]; 
 							for(int m=0; m<32; m++){
 								wf[m] = g_fbuf[k][mod2(o + m, g_nsamp)*3+1];
 								wf[m] = wf[m] * 0.5f; 

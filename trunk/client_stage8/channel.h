@@ -129,7 +129,7 @@ public:
 		if(unit == 4){ color[0] = 1.0f; color[1] = 0.5f; color[2] = 0.0f; } //orange
 		if(unit == 6){ color[0] = 1.0f; color[1] = 0.0f; color[2] = 0.5f; } //magenta. 
 			//copy to m_wfVbo first. 
-		if(unit){
+		if(unit > 0){
 			float* f = m_wfVbo->addRow(); 
 			for(int j=0; j<32; j++){
 				f[(j+1)*6 + 1] = wf[j];
@@ -223,7 +223,7 @@ public:
 				 bool showPca, bool closest, bool showSort){
 		glColor4f(0.5f, 0.5f, 0.5f, 0.5f);
 		m_usVbo->draw(drawmode, time, true);
-		m_pcaVbo->draw(GL_POINTS, cursPos, true, closest); 
+		m_pcaVbo->draw(GL_POINTS, time, true, cursPos, closest); 
 		m_wfVbo->draw(drawmode, time, true);
 		if(closest)
 			m_pcaVbo->drawClosestWf(); 
@@ -235,7 +235,7 @@ public:
 		for(int k=0; k<2; k++){
 			for(int j=0; j<16; j++){
 				float ny = m_template[k][j] + 0.5f;
-				float nx = (float)(j+6)/31.f; 
+				float nx = (float)(j+8)/31.f; 
 				// yellow -> purple; cyan -> orange (color wheel)
 				if(k == 0) glColor4f(0.6f, 0.f, 1.f, 0.5f);
 				else glColor4f(1.f, 0.5f, 0.f, 0.5f);
@@ -266,10 +266,10 @@ public:
 			//draw a dark blue quad for the template ROI. 
 			glColor4f(0.2f,0.1f,1.f,0.15f); 
 			glBegin(GL_QUADS);
-			glVertex2f(ow*6.0/31.f + ox, oh*0.02f + oy);
-			glVertex2f(ow*6.0/31.f + ox, oh*0.98f + oy); 
-			glVertex2f(ow*21.0/31.f + ox,oh*0.98f + oy); 
-			glVertex2f(ow*21.0/31.f + ox,oh*0.02f + oy); 
+			glVertex2f(ow*8.0/31.f + ox, oh*0.02f + oy);
+			glVertex2f(ow*8.0/31.f + ox, oh*0.98f + oy); 
+			glVertex2f(ow*23.0/31.f + ox,oh*0.98f + oy); 
+			glVertex2f(ow*23.0/31.f + ox,oh*0.02f + oy); 
 			glEnd(); 
 			//draw the threshold & centering.
 			//glDisableClientState(GL_VERTEX_ARRAY); 
