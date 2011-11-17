@@ -10,13 +10,11 @@
 #define PRINTF_BUFFER_SIZE 0x0400 //1kbytes
 
 //global pointers!! 
-#define GTIME 0xff800800
-#define pGTIME ((u32*)GTIME)
-#define WR_PTR	(GTIME+4)
+#define WR_PTR	(0xff800800)
 #define pWR_PTR ((u32*)WR_PTR)
-#define TR_PTR	(GTIME+8)
+#define TR_PTR	(WR_PTR+4)
 #define pTR_PTR ((u32*)TR_PTR)
-#define RAW_ENAB (GTIME+12)
+#define RAW_ENAB (WR_PTR+8)
 #define pRAW_ENAB ((u8*)RAW_ENAB)
 
 
