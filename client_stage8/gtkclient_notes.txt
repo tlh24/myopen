@@ -42,3 +42,12 @@ Mango is not playing ... does not recognize the juicer yet, although it appears 
 @ 5:30 hea realized that there is a juicer in there. 
 training on Ch 32, both units a & b.  A is quite strong. 
 5:42 transitioned to channels 32 + 37. Does not realize what he's supposed to do. 
+
+November 17 2011
+todo: fix the alignment disparity between threshold / spikes. should not be hard. 
+Really, really, need to get rid of the borked calcPCA bug -- it should not reset!
+PCA points need to be larger, they are hard to see.
+getting microphonic noise on some channels.  I wonder if the headstages have fallen out? 
+	Should check tomorrow.
+Need to get rid of the mean removal / autoscale in the BMI - it is making the transform rather nonstationary. 
+Thought: add in a check for ethernet dropped packets? 
