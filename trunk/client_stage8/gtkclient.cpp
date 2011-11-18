@@ -1810,7 +1810,7 @@ int main(int argn, char **argc)
 			G_CALLBACK (expose1), NULL);
 	g_signal_connect (G_OBJECT (da1), "motion_notify_event",
 		    G_CALLBACK (motion_notify_event), NULL);
-	 g_signal_connect (G_OBJECT (da1), "button_press_event",
+	g_signal_connect (G_OBJECT (da1), "button_press_event",
 		    G_CALLBACK (button_press_event), NULL);
 			
 	gtk_widget_set_events (da1, GDK_EXPOSURE_MASK
@@ -1818,6 +1818,10 @@ int main(int argn, char **argc)
 			 | GDK_BUTTON_PRESS_MASK
 			 | GDK_POINTER_MOTION_MASK
 			 | GDK_POINTER_MOTION_HINT_MASK);
+			 
+	//in order to receive keypresses, must be focusable! 
+	// http://forums.fedoraforum.org/archive/index.php/t-242963.html
+	GTK_WIDGET_SET_FLAGS(da1, GTK_CAN_FOCUS );
 			
 	pthread_t thread1;
 	pthread_attr_t attr;
