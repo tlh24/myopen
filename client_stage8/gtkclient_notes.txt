@@ -15,7 +15,7 @@ gtkclient:
 * There is something wrong -- the headsdtage is not responding properly nor in time.  Why?
 ** I wonder if something is loose in there :-/  perhaps the MUX signal is missed? 
 ** !!Have the mux *reset* every pass through to avoid this. (DONE)
-* May be the audio out which is incorrect / delayed whatever.  really should check that.  
+* May be the audio out which is incorrect / delayed whatever.  really should check that. (FIXED?)
 ** Need to reset the audio buffer when a new client has been found by the bridge. (Done, needs to be checked)
 * Really need some algorithm for setting the aperture, based on iteration or so.
 ** This so that, when looking back over the PCA buffer, there are equal number of false positives and false negatives (or so)

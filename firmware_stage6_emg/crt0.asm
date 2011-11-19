@@ -40,13 +40,7 @@ setupPLL:
 	r1 = r1 | r0;
 	// PLL: page 339 or so in the hardware manual.
 	//oscillator is at 16mhz on stage2, stage4, and stage6 board.
-	r1.l = 10 << 9; // 160Mhz.
-	//r1.l = 0x2000; //256mhz
-	//r1.l = 0x1e00; //240mhz
-	//r1.l = 0x1400; //160Mhz
-	//r1.l = 0x1000; //128Mhz
-	//r1.l = 0x0a00; //80Mhz
-	//r1.l = 0x0100; //32Mhz (slowest possible)
+	r1.l = 16 << 9; // 256Mhz.
 	//the hardware guide says to look at the embedded processor data sheet for the 
 	//memory delays, but i couldn't find anything, so am leaving them off.
 	
@@ -71,12 +65,7 @@ setupPLL:
 
 
 	// SCLK = VCOCLK / SCLK_DIVIDER
-	//r0.l = 0x0002; //page 339.  CCLK = vco ; SCLK = VCO/2; 240-> 120mhz.
-	#ifdef __BRIDGE__
-	r0.l = 4; // CCLK = Vco; SCLK = VCO/4 = 100Mhz. (limit 133Mhz)
-	#else
-	r0.l = 2; //page 339.  CCLK = vco ; SCLK = VCO/2; 160-> 80mhz.
-	#endif
+	r0.l = 2; //page 339.  CCLK = vco ; SCLK = VCO/2; 256-> 128mhz.
 	w[p0] = r0; // set Core and system clock dividers
 	//note: this can be changed at any time to decrease power consumption!
 
@@ -156,7 +145,7 @@ setupPLL:
 	//SIC_IMASK: page 190.
 	p0.l = LO(SIC_IMASK); 
 	p0.h = HI(SIC_IMASK); 
-	r0.l = 0x2c00; //port1 RX & port0 TX & SPI
+	r0.l = 0x2800; // port0 TX & SPI
 	r0.h = 0x0000; 
 	[p0] = r0; 
 	
@@ -260,78 +249,27 @@ start.end:
 display_fail:
 	r0 = seqstat;
 	r1 = retx;
-	call _exception_report; //this should not return.
+	//call _exception_report; //this should not return.
+	idle;
+	ssync;
+	jump idle_loop;
 	rtx;
 
 _HWHANDLER:           // HW Error Handler 5
 rti;
 
 _NHANDLER: //non maskable interrrupt? 
-	call _nmi_report; //this should not return.
+	//call _nmi_report; //this should not return.
+	idle;
+	ssync;
+	jump idle_loop;
 	rtx;
 
 EXC_HANDLER:          // exception handler
-	//save registers to memory so we may print them out. 
-	[--sp] = p5; 
-	p5.l = _g_excregs ; 
-	p5.h = _g_excregs ; 
-	[p5++] = r0; 
-	[p5++] = r1; 
-	[p5++] = r2; 
-	[p5++] = r3; 
-	[p5++] = r4; 
-	[p5++] = r5; 
-	[p5++] = r6; 
-	[p5++] = r7; 
-	[p5++] = p0; 
-	[p5++] = p1; 
-	[p5++] = p2; 
-	[p5++] = p3; 
-	[p5++] = p4; 
-	p4 = p5; 
-	p5 = [sp++]; //pop back off the stack.
-	[p4++] = p5; 
-	
-	r0 = i0; 
-	[p4++] = r0; 
-	r0 = b0; 
-	[p4++] = r0; 
-	r0 = l0; 
-	[p4++] = r0; 
-	
-	r0 = i1; 
-	[p4++] = r0; 
-	r0 = b1; 
-	[p4++] = r0; 
-	r0 = l1; 
-	[p4++] = r0; 
-	
-	r0 = i2; 
-	[p4++] = r0; 
-	r0 = b2; 
-	[p4++] = r0; 
-	r0 = l2; 
-	[p4++] = r0; 
-	
-	r0 = i3; 
-	[p4++] = r0; 
-	r0 = b3; 
-	[p4++] = r0; 
-	r0 = l3; 
-	[p4++] = r0; 
-	
-	r0 = m0; 
-	[p4++] = r0; 
-	r0 = m1; 
-	[p4++] = r0; 
-	r0 = m2; 
-	[p4++] = r0; 
-	r0 = m3; 
-	[p4++] = r0; 
-	
-	r0 = seqstat;
-	r1 = retx;
-	call _exception_report; //this should not return.
+	// removed the old stuff. use JTAG.
+	idle;
+	ssync;
+	jump idle_loop;
 	rtx;
 
 _THANDLER:            // Timer Handler 6 (core timer)

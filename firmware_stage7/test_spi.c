@@ -17,6 +17,7 @@ u8 g_streamEnabled;
 u8 g_outpkt[32]; 
 u32 g_nextFlag; 
 u32	g_dropped; 
+u32	g_radioChan = 124; 
 nv_data g_nv; 
 
 void eth_listen(int etherr){
@@ -165,7 +166,7 @@ u32	g_sampInc; //increment by this every sample. base 31. (0x7ffffff);
 u32 g_sampOff; //offset for interpolation.
 u8  g_sampCh; 
 u8	g_sampMode; 
-void getRadioPacket(u16 csn, u16 irq, u8 write){
+void getRadioPacket(u16 csn, u16 irq, u8 write, u8 oktx){
 	// called when IRQ is asserted to indicate a recieved packet.
 	// if !write, read the fifo but don't save the incoming data.
 	// (clearing the fifo will not work. pesky radio.)
@@ -229,7 +230,7 @@ void getRadioPacket(u16 csn, u16 irq, u8 write){
 			*pPORTFIO_SET = 0x4;
 		}
 		g_nextFlag = (flag + 1) & 0xf; 
-		if(flag == 0xf){ //end of a frame.
+		if(flag == 0xf && oktx){ //end of a frame.
 			radio_set_tx(csn, NRF_CE); //must clear CE here - essential!
 			asm volatile("ssync;"); 
 			*FIO_CLEAR = csn; 
@@ -428,7 +429,7 @@ int main(void){
 		have 2ch DAC, so should put out samples at 62500 sps
 		with 32 clocks between TFS, need 2Mhz clk -> divide by 30.
 	*/
-	if(0){
+	if(1){
 		*pSPORT1_TCR1 = 0; //turn everything off before changing speed..(also clears errors)
 		asm volatile("ssync"); 
 		g_sampW = g_sampR = 0; //reset the counters.
@@ -485,7 +486,7 @@ int main(void){
 		//to listen to. if it goes away we'll get an ICMP port closed
 		//packet, and will fall back to waiting patiently for it. 
 		printf_str("waiting for client.\n"); 
-		unsigned char radioChannel = bridge_publish(); 
+		g_radioChan = bridge_publish(); 
 		
 		unsigned int prevtime = 0;
 		unsigned int secs; 
@@ -500,9 +501,9 @@ int main(void){
 		*FIO_SET = NRF_CSN0 | NRF_CSN1 | NRF_CSN2;
 		*pPORTGIO_SET = SPI_FLASH; 
 		asm volatile("ssync;"); 
-		radio_init(NRF_CSN0, NRF_IRQ0, radioChannel); 
-		radio_init(NRF_CSN1, NRF_IRQ1, radioChannel); 
-		radio_init(NRF_CSN2, NRF_IRQ2, radioChannel); 
+		radio_init(NRF_CSN0, NRF_IRQ0, g_radioChan & 127); 
+		radio_init(NRF_CSN1, NRF_IRQ1, g_radioChan & 127); 
+		radio_init(NRF_CSN2, NRF_IRQ2, g_radioChan & 127); 
 
 		//new connection, reset audioout pointers.
 		g_sampW = g_sampR = 0;
@@ -516,21 +517,22 @@ int main(void){
 		//in the fifo but only read out one. 
 		
 		char write = 1; 
+		u8 oktx = 1 ^ (g_radioChan >> 7); //to put in EMG mode, set chan to + 128.
 		while(g_streamEnabled){
 			//listen for packets? (both interfaces, respond on eth)
 			eth_listen(etherr); 
 			//u8 fifostatus; 
 			//u8 status = spi_read_register_status(NOR_FIFO_STATUS, &fifostatus); 
 			if((*pPORTFIO & NRF_IRQ0) == 0){
-				getRadioPacket(NRF_CSN0, NRF_IRQ0, write);
+				getRadioPacket(NRF_CSN0, NRF_IRQ0, write, oktx);
 				write = 0; 
 			}
 			if((*pPORTFIO & NRF_IRQ1) == 0){
-				getRadioPacket(NRF_CSN1, NRF_IRQ1, write);
+				getRadioPacket(NRF_CSN1, NRF_IRQ1, write, oktx);
 				write = 0; 
 			}
 			if((*pPORTFIO & NRF_IRQ2) == 0){
-				getRadioPacket(NRF_CSN2, NRF_IRQ2, write);
+				getRadioPacket(NRF_CSN2, NRF_IRQ2, write, oktx);
 				write = 0; 
 			}
 			if((*pPORTFIO & (NRF_IRQ0 | NRF_IRQ1 | NRF_IRQ2)) == 

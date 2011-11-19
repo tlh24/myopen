@@ -2,11 +2,11 @@
 #this actually could be much simpler.
 .SUFFIXES: .o .c .asm .bo
 
-ASMSRCS = crt0.o radio4.o
+ASMSRCS = crt0.o
 COMMON = print.o util.o spi.o
 CSRCS = main.o
 # note: the order of objects in the .ldr mirrors the order in this list!
-OPT = -g
+OPT = -O2
 CPUDEFINES = -D__ADSPBF532__ -D__BLACKFIN__
 bridge: CPUDEFINES += -D__BRIDGE__
 INCLUDES = -I. -I/opt/uClinux/bfin-elf/bfin-elf/include/ -I../../myopen/common/
