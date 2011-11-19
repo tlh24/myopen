@@ -31,6 +31,11 @@
 
 #define NSAMP (24*1024)
 #define NDISPW 256
+#ifdef EMG
+#define NFBUF 8 //for EMG
+#else
+#define NFBUF 4
+#endif
 
 #include "../../neurorecord/stage/memory.h"
 #include "headstage.h"
@@ -60,7 +65,7 @@ float		g_viewportSize[2] = {640, 480}; //width, height.
 
 class Channel; 
 
-static float	g_fbuf[4][NSAMP*3]; //continuous waveform. range [-1 .. 1]
+static float	g_fbuf[NFBUF][NSAMP*3]; //continuous waveform. range [-1 .. 1]
 i64	g_fbufW; //where to write to (always increment) 
 i64	g_fbufR; //display thread reads from here - copies to mem
 unsigned int 	g_nsamp = 4096; //given the current level of zoom (1 = 4096 samples), how many samples to update?
@@ -122,7 +127,7 @@ int g_spikesock = 0; //transmit spike times to client
 struct sockaddr_in g_txsockAddr; 
 
 bool	g_vbo1Init = false; 
-GLuint g_vbo1[4] = {0,0,0,0}; //for the waveform display
+GLuint g_vbo1[NFBUF]; //for the waveform display
 GLuint g_vbo2[2] = {0,0}; //for spikes.
 
 //global labels.. 
@@ -355,7 +360,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 			i64 w = g_fbufW; //atomic
 			i64 sta = g_fbufR % g_nsamp; 
 			i64 fin = w % g_nsamp; 
-			for(int k=0; k<4; k++){
+			for(int k=0; k<NFBUF; k++){
 				if(fin < sta) { //wrap
 					copyData(g_vbo1[k], sta, g_nsamp, g_fbuf[k], 3); 
 					copyData(g_vbo1[k], 0, fin, g_fbuf[k], 3); 
@@ -415,7 +420,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		//glTranslatef(0.f,0.5f, 0.f); 
 		
 		//draw zero lines for the 4 continuous channels.
-		for(int k=0; k<4; k++){
+		for(int k=0; k<NFBUF; k++){
 			glLineWidth(1.f); 
 			glBegin(GL_LINES); 
 			glColor4f(0.f, 0.5, 1.f, 0.75); //blue, center line
@@ -424,24 +429,26 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 			glColor4f(0.f, 0.8f, 0.75f, 0.5);//green, edge lines
 			glVertex3f( -1.f, (float)((3-k)*2)/8.f, 0.f);
 			glVertex3f( 1.f, (float)((3-k)*2)/8.f, 0.f); 
+#ifndef EMG
 				//draw threshold. 
 			glColor4f (1., 0.0f, 0.0f, 0.35);
 			float y = (float)((3-k)*2+1)/8.f + 
 				(g_c[g_channel[k]]->getThreshold())/(256.f*128.f*8.f); 
 			glVertex3f(-1.f, y, 0.f);
 			glVertex3f( 1.f, y, 0.f);
+#endif
 			glEnd(); 
 			//labels.
 			glColor4f(0.f, 0.8f, 0.75f, 0.5);
 			glRasterPos2f(-1.f, (float)((3-k)*2)/8.f + 
 				2.f*2.f/g_viewportSize[1]); //2 pixels vertical offset.
 				//kearning is from the lower right hand corner.
-			char buf[128] = {0,0,0,0}; 
+			char buf[128];
 			snprintf(buf, 128, "%c %d", 'A'+k, g_channel[k]); 
 			glPrint(buf);
 		}
 		//continuous waveform drawing.. 
-		for(int k=0; k<4;k++){
+		for(int k=0; k<NFBUF;k++){
 			glEnableClientState(GL_VERTEX_ARRAY);
 			g_vsThreshold->setParam(2,"yoffset",(3-k)/4.f); 
 			g_vsThreshold->bind(); 
@@ -462,6 +469,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		//glPopMatrix ();
 		
 		//rasters
+#ifndef EMG
 		glShadeModel(GL_FLAT);
 		
 		glPushMatrix();
@@ -520,6 +528,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 			snprintf(buf, 128, "%c %d", 'A'+k, g_channel[k]); 
 			glPrint(buf);
 		}
+#endif
 		//end VBO
 	}
 	if(g_mode == MODE_SORT){
@@ -611,7 +620,7 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 		g_vbo1Init = true;
 		//okay, want one vertex buffer (4now): draw the samples.
 		//fill the buffer with temp data. 
-		for(int k=0; k<4; k++){
+		for(int k=0; k<NFBUF; k++){
 			for(int i=0; i<NSAMP; i++){
 				g_fbuf[k][i*3+0] = (float)i / 4096.0;
 				g_fbuf[k][i*3+1] = sinf((float)i *0.02); 
@@ -694,7 +703,7 @@ void destroy(GtkWidget *, gpointer){
 	saveState(); 
 	g_die = true; 
 	if(g_vbo1Init){
-		for(int k=0; k<4; k++)
+		for(int k=0; k<NFBUF; k++)
 			glDeleteBuffersARB(1, &g_vbo1[k]); 
 		glDeleteBuffersARB(2, g_vbo2);
 	}
@@ -748,6 +757,9 @@ void* sock_thread(void*){
 			printf("a bridge appears to be at %s\n",destName); 
 			//send a response.
 			buf[0] = 124; //radio channel.
+#ifdef EMG
+			buf[0] += 128; 
+#endif
 			buf[1] = 0; 
 			n = sendto(g_rxsock,buf,2,0,(sockaddr*)&from,sizeof(from)); 
 		}
@@ -792,6 +804,7 @@ packet format in the file, as saved here:
 			g_txsockAddr.sin_addr = from.sin_addr; 
 			//keep the dest port (4342); don't copy that.
 		}
+#ifndef EMG
 		if(n > 0 && !g_die){
 			unsigned int dropped = *((unsigned int*)buf);
 			if(g_out) printf("%d\n", dropped); 
@@ -913,7 +926,7 @@ packet format in the file, as saved here:
 				//color the rasters. really should color differently. 
 				// meh, in the vertex shader.
 				for(int j=0; j<6; j++){
-					for(int k=0; k<4; k++){
+					for(int k=0; k<NFBUF; k++){
 						char samp = p->data[j*4+k]; //-128 -> 127.
 						int ch = g_channel[k];
 						z = 0.f; 
@@ -1082,6 +1095,24 @@ packet format in the file, as saved here:
 				send_delay++; 
 			}
 		}
+#else
+		//data is just samples, 2 by 8 per packet.
+		unsigned short *ptr = (unsigned short*)buf; 
+		ptr += 2; //dropped.
+		n -= 4; 
+		for(int i=0; i<n/36; i++){
+			ptr += 2; //skip milisecond timer.
+			for(int k=0; k<2; k++){
+				for(int j=0; j<8; j++){
+					unsigned short s = *ptr++; 
+					float f = (float)s/(32768.f) -1.f; 
+					g_fbuf[j][mod2(g_fbufW, g_nsamp)*3+1] = f;
+				}
+				g_fbufW++; 
+			}
+		}
+		g_totalPackets += n/36; 
+#endif
 	}
 	close_socket(g_rxsock);
 	free(g_sendbuf); 
@@ -1342,7 +1373,7 @@ static void pauseButtonCB(GtkWidget *button, gpointer * ){
 	else
 		g_pause = -1.0;
 }
-static void syncHeadstageCB(GtkWidget *button, gpointer * ){
+static void syncHeadstageCB(GtkWidget *, gpointer * ){
 	setAll(); //see headstage.cpp
 }
 static void cycleButtonCB(GtkWidget *button, gpointer * ){
