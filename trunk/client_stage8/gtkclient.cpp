@@ -744,7 +744,7 @@ void* sock_thread(void*){
 		(char *)&group, sizeof(group)) < 0)
 		printf("Error adding multicast group");
 
-	// this program needs to be seriously refactored to allow multiple bridges. 
+	// this code needs to be seriously refactored to allow multiple bridges. 
 	while(!destName[0]){
 		socklen_t fromlen = sizeof(from); 
 		int n = recvfrom(g_rxsock, buf, sizeof(buf),0, 
@@ -758,7 +758,7 @@ void* sock_thread(void*){
 			//send a response.
 			buf[0] = 124; //radio channel.
 #ifdef EMG
-			buf[0] += 128; 
+			buf[0] += 128; //put the bridge in EMG compat mode.
 #endif
 			buf[1] = 0; 
 			n = sendto(g_rxsock,buf,2,0,(sockaddr*)&from,sizeof(from)); 
