@@ -11,25 +11,31 @@ classdef UdpDevice < Inputs.SignalInput
         dd = zeros(8,1);
     end
     methods
-        function obj = UdpDevice(deviceName,deviceId,channelIds)
+        function obj = UdpDevice()
             % Constructor
-            if nargin > 0
-                obj.DaqDeviceName = deviceName;
-            end
-            if nargin > 1
-                obj.DaqDeviceId = deviceId;
-            end
-            if nargin > 2
-                obj.ChannelIds = channelIds;
-            else
-                obj.ChannelIds = 0:7;
-            end
             obj.SampleFrequency = 1000; % Hz TEMP FIX
         end
         function initialize(obj)
             obj.udp=pnet('udpsocket',4340);
-            pnet(obj.udp, 'setreadtimeout',0);
-            
+			disp('waiting for multicast from bridge')
+			len = 0;
+			while len ~= 10
+				len = pnet(obj.udp,'readpacket');
+				[ip,port]=pnet(obj.udp,'gethost');
+				host = [num2str(ip(1)) '.' num2str(ip(2)) '.' ...
+					num2str(ip(3)) '.'  num2str(ip(4))];
+				disp(['bridge appears to be at ' host ' ' num2str(port)]);
+				pnet(obj.udp, 'udpconnect',host,port);
+				% radio channel 124
+				msg = uint8([124+128 0]);
+				pnet(udp, 'write',char(msg));
+				pnet(udp, 'writepacket');
+			end
+			while len == 10
+				len = pnet(obj.udp,'readpacket');
+				stream = pnet(obj.udp,'read',10000,'UINT8');
+			end
+			pnet(obj.udp, 'setreadtimeout',0);
         end
         function data = getData(obj)
             % This function will always return the correct size for data
@@ -79,7 +85,7 @@ classdef UdpDevice < Inputs.SignalInput
         end
         function isReady = isReady(obj,numSamples)
             isReady = 1;
-        end
+        end stream = pnet(obj.udp,'read',10000,'UINT8');
         function start(obj)
             
         end
