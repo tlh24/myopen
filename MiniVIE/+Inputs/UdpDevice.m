@@ -18,10 +18,11 @@ classdef UdpDevice < Inputs.SignalInput
         end
         function initialize(obj)
             obj.udp=pnet('udpsocket',4340);
+			pnet(obj.udp, 'setreadtimeout',0);
 			disp('waiting for multicast from bridge')
 			len = 0;
 			while len ~= 10
-				len = pnet(obj.udp,'readpacket');
+				len = pnet(obj.udp,'readpacket','noblock');
 				[ip,port]=pnet(obj.udp,'gethost');
 				host = [num2str(ip(1)) '.' num2str(ip(2)) '.' ...
 					num2str(ip(3)) '.'  num2str(ip(4))];
@@ -33,10 +34,9 @@ classdef UdpDevice < Inputs.SignalInput
 				pnet(udp, 'writepacket');
 			end
 			while len == 10
-				len = pnet(obj.udp,'readpacket');
+				len = pnet(obj.udp,'readpacket','noblock');
 				stream = pnet(obj.udp,'read',10000,'UINT8');
 			end
-			pnet(obj.udp, 'setreadtimeout',0);
         end
         function data = getData(obj)
             % This function will always return the correct size for data
