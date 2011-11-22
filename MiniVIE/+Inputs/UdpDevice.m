@@ -14,6 +14,7 @@ classdef UdpDevice < Inputs.SignalInput
         function obj = UdpDevice()
             % Constructor
             obj.SampleFrequency = 1000; % Hz TEMP FIX
+			obj.ChannelIds = (1:8);
         end
         function initialize(obj)
             obj.udp=pnet('udpsocket',4340);
@@ -85,7 +86,7 @@ classdef UdpDevice < Inputs.SignalInput
         end
         function isReady = isReady(obj,numSamples)
             isReady = 1;
-        end stream = pnet(obj.udp,'read',10000,'UINT8');
+        end 
         function start(obj)
             
         end
