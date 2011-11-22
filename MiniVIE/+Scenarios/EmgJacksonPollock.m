@@ -121,6 +121,7 @@ classdef EmgJacksonPollock < handle
             obj.SignalClassifier.initialize();
 
             obj.TrainingInterface = PatternRecognition.SimpleTrainer;
+            obj.TrainingInterface.initialize(obj.SignalSource,obj.SignalClassifier);
             obj.TrainingInterface.NumRepetitions = 2;
             obj.TrainingInterface.ContractionLengthSeconds = 1;
             obj.TrainingInterface.DelayLengthSeconds = 2;
