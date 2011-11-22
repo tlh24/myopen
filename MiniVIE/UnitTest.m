@@ -6,5 +6,6 @@ PatternRecognition.MiniGuitarHero.Default;
 PatternRecognition.SimpleTrainer.Default;
 
 %%
+PatternRecognition.BarTrainer.Default;
 
 
