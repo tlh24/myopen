@@ -50,16 +50,15 @@ SignalClassifier.uiEnterClassNames
 % Breakout has Left Right, NM
 
 %% Step 4: Setup TrainingInterface
-TrainingInterface = PatternRecognition.SimpleTrainer(SignalSource,SignalClassifier);
+TrainingInterface = PatternRecognition.SimpleTrainer();
 
 %% Step 4a: Collect New Data
 TrainingInterface.NumRepetitions = 2;  % <-- Adjust (2 to 3 typical)
 TrainingInterface.ContractionLengthSeconds = 2; % <-- Time to hold contraction (avoid muscle fatigue)
 TrainingInterface.DelayLengthSeconds = 3; % <-- Recovery Time in seconds between contractions
 
-TrainingInterface.initialize();
-TrainingInterface.collectdata();
-TrainingInterface.saveTrainingData();
+TrainingInterface.initialize(SignalSource,SignalClassifier);
+TrainingInterface.collectdata(); % save prompt at end
 
 %% Step 4b: Load Saved Data
 TrainingInterface.loadTrainingData();
