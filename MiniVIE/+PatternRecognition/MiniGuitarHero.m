@@ -16,17 +16,19 @@ classdef MiniGuitarHero < PatternRecognition.AdaptiveTrainingInterface
         hg;
     end
     methods
-        function obj = MiniGuitarHero(hSignalSource,hSignalClassifier)
-            obj.SignalSource = hSignalSource;
-            obj.SignalClassifier = hSignalClassifier;
+        function obj = MiniGuitarHero()
+            % Creator
         end
-        function initialize(obj)
+        function initialize(obj,hSignalSource,hSignalClassifier)
+
+            % Call superclass method
+            initialize@PatternRecognition.TrainingInterface(obj,hSignalSource,hSignalClassifier); 
+            
+            % Extend the init method to create figure 
             setupDisplay(obj);
             
+            % Initialize variable to store raw EMG data
             obj.EmgData = NaN([obj.SignalSource.NumChannels obj.SignalClassifier.NumSamplesPerWindow obj.MaxSamples]);
-            obj.Features3D = NaN([obj.SignalSource.NumChannels obj.SignalClassifier.NumFeatures obj.MaxSamples]);
-            obj.ClassLabelId = NaN(1,obj.MaxSamples);
-                        
         end
         function close(obj)
             try
@@ -240,11 +242,13 @@ classdef MiniGuitarHero < PatternRecognition.AdaptiveTrainingInterface
             
             hSignalSource = Inputs.SignalSimulator;
             hSignalSource.initialize;
+            hSignalSource.addfilter(Inputs.HighPass());
+            
             hSignalClassifier = SignalAnalysis.Classifier;
             hSignalClassifier.initialize;
             
-            obj = PatternRecognition.MiniGuitarHero(hSignalSource,hSignalClassifier);
-            obj.initialize();
+            obj = PatternRecognition.MiniGuitarHero();
+            obj.initialize(hSignalSource,hSignalClassifier);
             obj.collectdata();
             
         end
