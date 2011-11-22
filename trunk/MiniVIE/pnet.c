@@ -105,7 +105,11 @@
 #define MSG_NOSIGNAL 0
 #endif
 
+
 /* Include header file for matlab mex file functionality */
+#include <Ws2tcpip.h>
+//#include <Ws2ipdef.h>
+
 #include "mex.h"
 
 /********** DEFINES related to pnet own functionality *****************/
@@ -949,8 +953,8 @@ int tcp_connect(const char *hostname,const int port)
 */
 int tcp_udp_socket(int port,int dgram_f)
 {
-    int sockfd;
-	 struct ip_mreqn group;
+    int sockfd, ret;
+	 struct ip_mreq group;
 	 
     struct sockaddr_in my_addr;    /* my address information */
     const int on=1;
@@ -974,13 +978,19 @@ int tcp_udp_socket(int port,int dgram_f)
     nonblockingsocket(sockfd);
 	 
 	 /* enable multicast. */
+  #ifdef WIN32
+      group.imr_multiaddr.s_addr = inet_addr("239.0.200.0"); /* group addr */ 
+      group.imr_interface.s_addr = INADDR_ANY; /* use default */ 
+      ret = setsockopt (sockfd, IPPROTO_IP, IP_ADD_MEMBERSHIP,
+              (char FAR *)&group, sizeof (struct ip_mreq));
+  #else
 	group.imr_multiaddr.s_addr = inet_addr("239.0.200.0");
 	group.imr_address.s_addr = htonl(INADDR_ANY);
 	group.imr_ifindex = 0; 
-	if(setsockopt(sockfd, IPPROTO_IP, IP_ADD_MEMBERSHIP, 
-	(char *)&group, sizeof(group)) < 0)
-	mexPrintf("Error adding multicast group");
-	 
+	ret = setsockopt(sockfd, IPPROTO_IP, IP_ADD_MEMBERSHIP, 
+	(char *)&group, sizeof(group));
+ #endif
+	if(ret < 0) mexPrintf("Error adding multicast group");
     return sockfd;
 }
 
