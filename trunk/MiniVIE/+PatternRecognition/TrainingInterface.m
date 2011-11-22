@@ -79,13 +79,36 @@ classdef TrainingInterface < Common.MiniVieObj
             %if isfield(S,'classNames')
             
         end
+        function initialize(obj,hSignalSource,hSignalClassifier)
+            if nargin < 3
+                error('SignalClassifier not passed to function: %s',mfilename);
+            end
+            if nargin < 2
+                error('SignalSource not passed to function: %s',mfilename);
+            end
+
+            if ~isempty(hSignalClassifier)
+                obj.SignalClassifier = hSignalClassifier;
+            else
+                error('Empty SignalClassifier passed to function: %s',mfilename);
+            end
+
+            if ~isempty(hSignalSource)
+                obj.SignalSource = hSignalSource;
+            else
+                error('Empty SignalSource passed to function: %s',mfilename);
+            end
+            
+            % Initialize buffers
+            obj.Features3D = NaN([obj.SignalSource.NumChannels obj.SignalClassifier.NumFeatures obj.MaxSamples]);
+            obj.ClassLabelId = NaN(1,obj.MaxSamples);
+        end
         
         function close(obj)
             %override
         end
     end
     methods (Abstract=true)
-        initialize(obj);
         collectdata(obj);
     end
 end

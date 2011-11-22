@@ -1,7 +1,8 @@
 classdef BarTrainer < PatternRecognition.TrainingInterface
     % Bar Chart interactive training user interface
     % Note Signal only grows when over activation threshold
-    % obj = BarTrainer(hSignalSource,hSignalClassifier)
+    % obj = BarTrainer()
+    % obj.initialize(hSignalSource,hSignalClassifier)
     %
     % 21-Nov-2011 Armiger: Created
     properties
@@ -10,30 +11,27 @@ classdef BarTrainer < PatternRecognition.TrainingInterface
         hAxes
         hTimer
         
+        keyOrder = 'asdfghjklzxcvbnm';  % controls the keyboard to class mapping
+        
         iClass
         iSample = 0;
         samplesToRound = 500;
+        activationThreshold = 0.2;
         Period = 0.02; %seconds
     end
     methods
-        function obj = BarTrainer(hSignalSource,hSignalClassifier)
+        function obj = BarTrainer()
             % Constructor
-            if ~isempty(hSignalSource)
-                obj.SignalSource = hSignalSource;
-            else
-                error('No Signal Source passed to function: %s',mfilename);
-            end
-            if ~isempty(hSignalClassifier)
-                obj.SignalClassifier = hSignalClassifier;
-            else
-                error('No Signal Classifier passed to function: %s',mfilename);
-            end
         end
-        function initialize(obj)
-            % Initialize buffers
-            obj.Features3D = NaN([obj.SignalSource.NumChannels obj.SignalClassifier.NumFeatures obj.MaxSamples]);
-            obj.ClassLabelId = NaN(1,obj.MaxSamples);
+        function initialize(obj,hSignalSource,hSignalClassifier)
             
+            % Call superclass method
+            initialize@PatternRecognition.TrainingInterface(obj,hSignalSource,hSignalClassifier); 
+            
+            % Extend the init method to create figure 
+            setupFigure(obj);
+        end
+        function setupFigure(obj)
             obj.hFigure = UiTools.create_figure('Interactive Trainer');
             set(obj.hFigure,'CloseRequestFcn',@(src,evnt)obj.close);
             obj.hAxes = axes('Parent',obj.hFigure);
@@ -41,8 +39,15 @@ classdef BarTrainer < PatternRecognition.TrainingInterface
             obj.hTimer = UiTools.create_timer('BarTrainerTimer',@(src,evt)update(obj));
             obj.hTimer.Period = obj.Period;
             
+            p = get(obj.hFigure,'Position');
+            p(1) = 0.5*p(1);
+            p(3) = 2*p(3);
+            set(obj.hFigure,'Position',p);
+            
             ylim(obj.hAxes,[0 obj.samplesToRound]);
             set(obj.hAxes,'XTickLabel',obj.SignalClassifier.ClassNames);
+            
+            % set(get(obj.hAxes,'XTickLabel'),'Rotation',45.0)
             
             obj.iClass = 1;
             set(obj.hFigure,'WindowKeyPressFcn',@(src,evt)key_down(src,evt,obj));
@@ -61,10 +66,10 @@ classdef BarTrainer < PatternRecognition.TrainingInterface
             windowData = obj.SignalSource.getFilteredData();
             features = feature_extract(windowData' ,obj.SignalClassifier.NumSamplesPerWindow);
             
-            activationThreshold = 0.5;
-            
-            if all(features(:,1) < activationThreshold) && ~strcmpi(className,'No Movement')
-                fprintf('Low Signal (< %f)\n',activationThreshold);
+            f = features(obj.SignalClassifier.ActiveChannels,1);
+            if all(f < obj.activationThreshold) && ~strcmpi(className,'No Movement')
+                fprintf('Low Signal (%f < %f)\n',max(f),obj.activationThreshold);
+                drawnow
                 return
             end
             
@@ -105,8 +110,8 @@ classdef BarTrainer < PatternRecognition.TrainingInterface
             hSignalClassifier = SignalAnalysis.Classifier;
             hSignalClassifier.initialize;
             
-            obj = PatternRecognition.BarTrainer(hSignalSource,hSignalClassifier);
-            obj.initialize();
+            obj = PatternRecognition.BarTrainer();
+            obj.initialize(hSignalSource,hSignalClassifier);
             obj.collectdata();
             
         end
@@ -134,9 +139,24 @@ end
 
 function key_down(src,evt,obj) %#ok<INUSL>
 
-keys = 'asdfghjklzxcvbnm';
+if strcmp(evt.Key,'space');
+    classLabels = obj.ClassLabelId(1:obj.iSample);
+    
+    classesWithData = unique(classLabels);
+    if length(classesWithData) < obj.SignalClassifier.NumClasses;
+        fprintf('[Classifier] Insufficient data\n');
+        return
+    end
+    
+    %obj.SignalClassifier.TrainingEmg = obj.EmgData(:,:,1:obj.iSample);
+    obj.SignalClassifier.TrainingData = obj.Features3D(:,:,1:obj.iSample);
+    obj.SignalClassifier.TrainingDataLabels = classLabels;
+    obj.SignalClassifier.train();
+    obj.SignalClassifier.computeerror();
 
-iKey = strfind(keys,evt.Key);
+end
+
+iKey = strfind(obj.keyOrder,evt.Key);
 if ~isempty(iKey) && (iKey <= obj.SignalClassifier.NumClasses)
    obj.iClass = iKey; 
 end

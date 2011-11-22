@@ -9,16 +9,8 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
         DelayLengthSeconds = 2;
     end
     methods
-        function obj = SimpleTrainer(hSignalSource,hSignalClassifier)
+        function obj = SimpleTrainer()
             % Constructor
-            obj.SignalSource = hSignalSource;
-            obj.SignalClassifier = hSignalClassifier;
-        end
-
-        function initialize(obj)
-            % Initialize buffers
-            obj.Features3D = NaN([obj.SignalSource.NumChannels obj.SignalClassifier.NumFeatures obj.MaxSamples]);
-            obj.ClassLabelId = NaN(1,obj.MaxSamples);
         end
         function collectdata(obj)
             % Collect some initial training data from a signal source
@@ -142,8 +134,8 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
             hSignalClassifier = SignalAnalysis.Classifier;
             hSignalClassifier.initialize;
             
-            obj = PatternRecognition.SimpleTrainer(hSignalSource,hSignalClassifier);
-            obj.initialize();
+            obj = PatternRecognition.SimpleTrainer();
+            obj.initialize(hSignalSource,hSignalClassifier);
             obj.collectdata();
             
         end
