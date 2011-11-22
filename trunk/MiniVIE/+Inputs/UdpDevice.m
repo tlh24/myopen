@@ -1,7 +1,8 @@
 classdef UdpDevice < Inputs.SignalInput
     % Class for interfacing to myopen via UDP.
     properties
-        DaqDeviceName = 'mcc';  
+        Host = '192.168.0.2';  
+        Port = 4341
         DaqDeviceId = '0';
     end
     properties (SetAccess = private)
@@ -19,24 +20,40 @@ classdef UdpDevice < Inputs.SignalInput
         function initialize(obj)
             obj.udp=pnet('udpsocket',4340);
 			pnet(obj.udp, 'setreadtimeout',0);
-			disp('waiting for multicast from bridge')
-			len = 0;
-			while len ~= 10
-				len = pnet(obj.udp,'readpacket','noblock');
-				[ip,port]=pnet(obj.udp,'gethost');
-				host = [num2str(ip(1)) '.' num2str(ip(2)) '.' ...
-					num2str(ip(3)) '.'  num2str(ip(4))];
-				disp(['bridge appears to be at ' host ' ' num2str(port)]);
-				pnet(obj.udp, 'udpconnect',host,port);
-				% radio channel 124
-				msg = uint8([124+128 0]);
-				pnet(udp, 'write',char(msg));
-				pnet(udp, 'writepacket');
-			end
-			while len == 10
-				len = pnet(obj.udp,'readpacket','noblock');
-				stream = pnet(obj.udp,'read',10000,'UINT8');
-			end
+            % on linux, we can locate the bridge automatically
+            % using broadcast packets -- 
+            % just be sure to sudo ifconfig ethX allmulti
+            if ispc ~= 1; 
+                disp('waiting for multicast from bridge')
+                len = 0;
+                while len ~= 10
+                    len = pnet(obj.udp,'readpacket','noblock');
+                    [ip,port]=pnet(obj.udp,'gethost');
+                    obj.Host = [num2str(ip(1)) '.' num2str(ip(2)) '.' ...
+                        num2str(ip(3)) '.'  num2str(ip(4))];
+                    disp(['bridge appears to be at ' host ' ' num2str(port)]);
+                    obj.Port = port; 
+                    pnet(obj.udp, 'udpconnect',obj.Host,obj.Port);
+                    % radio channel 124
+                    msg = uint8([124+128 0]);
+                    pnet(obj.udp, 'write',char(msg));
+                    pnet(obj.udp, 'writepacket');
+                end
+                while len == 10
+                    len = pnet(obj.udp,'readpacket','noblock');
+                    pnet(obj.udp,'read',10000,'UINT8');
+                end
+            else
+                % on windows, you must configure the host / port
+                % manually (for now)  (see above in this file)
+                % eventually need to update the firmware to support win32
+                % networking. 
+                pnet(obj.udp, 'udpconnect',obj.Host,obj.Port);
+                % radio channel 124
+                msg = uint8([124+128 0]);
+                pnet(obj.udp, 'write',char(msg));
+                pnet(obj.udp, 'writepacket');
+            end
         end
         function data = getData(obj)
             % This function will always return the correct size for data
