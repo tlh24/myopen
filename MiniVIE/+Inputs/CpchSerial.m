@@ -77,7 +77,7 @@ classdef CpchSerial < Inputs.SignalInput
                    'InputBufferSize', 190000);
                 fopen(obj.SerialObj);
                 
-                fprintf('CPCH Port Opened\n');
+                fprintf('CPCH Port Opened: %s\n',obj.SerialPort);
             catch ex
                 fprintf('CPCH Port FAILED\n');
                 rethrow(ex);
@@ -224,14 +224,15 @@ classdef CpchSerial < Inputs.SignalInput
             % call loss of data.
             obj.PrevDataFrameID = -1;
             
+            % TODO Check for buffer overrun
             obj.DataBuffer = circshift(obj.DataBuffer,[-numAvailable 0]);
             obj.DataBuffer(end-numAvailable+1:end,:) = newData(end-numAvailable+1:end,:);
             
             data = obj.DataBuffer(end-obj.NumSamples+1:end,:);
             
-            if max(data(:) > 5)
-                disp('Data Jump > 5');
-            end
+%             if max(data(:) > 5)
+%                 disp('Data Jump > 5');
+%             end
             
             % Limit data saving to the maximum packet size
             if ((numel(obj.SerialBuffer) - offsetLastByte) > 6+2*(obj.GPICnt+obj.BioampCnt))
