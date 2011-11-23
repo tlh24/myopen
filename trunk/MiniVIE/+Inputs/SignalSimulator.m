@@ -23,7 +23,7 @@ classdef SignalSimulator < Inputs.SignalInput
         function initialize(obj)
             obj.ChannelIds = 0:15;
             
-            MAX_SAMPLES = 2000;
+            MAX_SAMPLES = 4000;
             
             obj.SignalBuffer = zeros(MAX_SAMPLES,obj.NumChannels);
             
@@ -53,7 +53,14 @@ classdef SignalSimulator < Inputs.SignalInput
             obj.SignalBuffer = circshift(obj.SignalBuffer,[-sampleBlock 0]);
             obj.SignalBuffer(end-sampleBlock+1:end,:) = newData;
             
-            bufferedData = obj.SignalBuffer(end-obj.NumSamples+1:end,:);
+            % Check for buffer overrun
+            bufferSize = size(obj.SignalBuffer,1);
+            if (obj.NumSamples > bufferSize)
+                error('NumSamples requested [%d] is greater than SignalBuffer size',obj.NumSamples,bufferSize);
+            end
+
+            idxSamples = 1+bufferSize-obj.NumSamples : bufferSize;
+            bufferedData = obj.SignalBuffer(idxSamples,:);
         end
         function isReady = isReady(obj,numSamples) %#ok<MANU>
             % Consider adding in a phony startup delay
