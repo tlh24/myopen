@@ -98,6 +98,8 @@ class cupoje:
 				self.target.translate(pb.target[0],pb.target[1])
 			if pb.HasField('juicer'):
 				self.juice = pb.juicer
+			else:
+				self.juice = False
 			if pb.HasField('manual'):
 				self.manual = pb.manual and (self.du3 != None)
 			if pb.HasField('touch'):
@@ -210,13 +212,14 @@ class cupoje:
 		if len(sys.argv) < 3:
 			print "usage: pybmi_display.py <server> <port>"
 			print "example: python pybmi_display.py neuro-nico 4345"
-		self.port = int(sys.argv[2])
-		self.die = Value('b',False)
-		self.sock = sock_connect(sys.argv[1],self.port,self.die,False)
-		self.sock.settimeout(1)
-		self.seg = TCPSegmenter()
-		glutMainLoop()
-		self.die = True
+		else:
+			self.port = int(sys.argv[2])
+			self.die = Value('b',False)
+			self.sock = sock_connect(sys.argv[1],self.port,self.die,False)
+			self.sock.settimeout(1)
+			self.seg = TCPSegmenter()
+			glutMainLoop()
+			self.die = True
 
 c = cupoje()
 

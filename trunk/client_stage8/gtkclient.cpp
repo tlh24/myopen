@@ -1121,7 +1121,7 @@ packet format in the file, as saved here:
 void* server_thread(void* ){
 	//kinda like a RPC service -- call to get the vector of firing rates.
 	// call whenever you want!
-	unsigned short rates[128+1][2]; //first two are the size of the array.
+	unsigned short rates[128+2][2]; //first two are the size of the array, then the time.
 	//9 bits integer part, 7 bits fractional part. hence 0-511.99Hz.
 	unsigned char buf[128]; 
 	int client = 0; 
@@ -1158,9 +1158,11 @@ void* server_thread(void* ){
 				//start = gettime();
 				rates[0][0] = 2; //rows
 				rates[0][1] = 128; //columns. 
+				rates[0][2] = gettime(); 
+				rates[0][3] = rates[0][2]; 
 				for(int i=0; i<128; i++){
 					for(int j=0; j<2; j++){
-						rates[i+1][j] = g_fr[i][j].get_rate(reqtime); 
+						rates[i+2][j] = g_fr[i][j].get_rate(reqtime); 
 					}
 				}
 				//end = gettime(); 
