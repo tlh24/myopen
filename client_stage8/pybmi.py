@@ -114,7 +114,7 @@ def configure_event(widget, event):
 	
 def update_display():
 	# get data from gtkclient.
-	global frsock, g_die, g_dict, mean_smoothing, g_juiceOverride                             
+	global frsock, g_die, g_dict, fr_scale, g_juiceOverride                             
 	try:
 		a = g_dict['fr_smoothing']
 		a = math.pow(2.0, -1.0*a); 
@@ -146,17 +146,19 @@ def update_display():
 				firing_rates[1][r] = ar[(r+1)*2+1] / 128.0
 			#compute x and y position.
 			targ = [0.0,0.0]
+			ntarg = [0.0,0.0]
 			for ch in range(0,128):
 				for u in range(0,2):
 					if neuron_group[ch][u] == 1:
 						targ[0] += firing_rates[u][ch];
+						ntarg[0] += 1.0; 
 					if neuron_group[ch][u] == 2:
 						targ[1] += firing_rates[u][ch];
-			#remove mean, adaptively. 
-			sm = g_dict["mean_smoothing"]
-			sm = math.pow(10, -1*(sm+0.01)); 
-			for i in range(0,2):
-				g_mean[i] = (1-sm)*g_mean[i] + sm*targ[i]
+						ntarg[1] += 1.0; 
+			frs = g_dict["fr_scale"];
+			targ[0] /= ntarg[0] * frs; 
+			targ[1] /= ntarg[1] * frs; 
+			#individual scale and 
 			scale = [1.0,1.0]
 			offset = [0.0,0.0]
 			scale[0] = g_dict["X scale"]
@@ -164,7 +166,7 @@ def update_display():
 			offset[0] = g_dict["X offset"]
 			offset[1] = g_dict["Y offset"]
 			for u in range(0,2):
-				targ[u] = scale[u] * (targ[u] - g_mean[u]) / (g_mean[u] + 0.01)
+				targ[u] = scale[u] * (targ[u] - g_mean[u]) / (g_mean[u] + 0.01) # this is bad. nonstationary.
 				targ[u] = targ[u] + offset[u]
 				if targ[u] < -1.0:
 					targ[u] = -1.0
@@ -324,7 +326,7 @@ def main():
 	global firing_rates, frsock, targV, cursV, touchV
 	global g_die, drawing_area, group_radio_buttons
 	global g_dict # shared state.
-	global neuron_group, selected, pierad, mean_smoothing, g_juiceOverride
+	global neuron_group, selected, pierad, fr_scale, g_juiceOverride
 	
 	#manage the shared dictionary. 
 	manager = Manager()
@@ -346,7 +348,7 @@ def main():
 	except:
 		print "failed to read prefs!", sys.exc_info()[0]
 		traceback.print_exc(file=sys.stdout)
-		g_dict['mean_smoothing'] = 3.0
+		g_dict['fr_scale'] = 30.0
 		g_dict['fr_smoothing'] = 6.0
 		g_dict['gs'] = ''
 		if fil: 
@@ -463,7 +465,7 @@ def main():
 	mk_scale("X offset",-1,1,0)
 	mk_scale("Y scale",0.01,10,2)
 	mk_scale("Y offset",-1,1,0)
-	mk_scale("mean_smoothing",0,5,3)
+	mk_scale("fr_scale",0,100,30) #units: Hz.
 	frame = mk_scale("fr_smoothing",-3,10,6,plot_fr_smoothing)
 	
 	# add controls for the game. 
