@@ -32,7 +32,8 @@ firing_rates[1] = Array('d', [0.0]*128)
 neuron_group = [[0 for col in range(2)] for row in range(128)]
 selected = (0,0)
 pierad = 40
-g_mean = [10.0, 10.0] # mean firing rate.
+g_file = None
+g_time = 0.0
 g_juiceOverride = False; 
 plot_thread = None
 plot_queue = Queue()
@@ -114,7 +115,7 @@ def configure_event(widget, event):
 	
 def update_display():
 	# get data from gtkclient.
-	global frsock, g_die, g_dict, fr_scale, g_juiceOverride                             
+	global frsock, g_die, g_dict, fr_scale, g_juiceOverride, g_file                            
 	try:
 		a = g_dict['fr_smoothing']
 		a = math.pow(2.0, -1.0*a); 
@@ -140,10 +141,11 @@ def update_display():
 			ar.fromstring(data);
 			if((ar[0]!= 2) | (ar[1] != 128)):
 				print "wrong data size fr rx!", ar[0], ar[1], passes
+			g_time = ar[2]; 
 			# need to transpose..
 			for r in range(0,128):
-				firing_rates[0][r] = ar[(r+1)*2+0] / 128.0
-				firing_rates[1][r] = ar[(r+1)*2+1] / 128.0
+				firing_rates[0][r] = ar[(r+2)*2+0] / 128.0
+				firing_rates[1][r] = ar[(r+2)*2+1] / 128.0
 			#compute x and y position.
 			targ = [0.0,0.0]
 			ntarg = [0.0,0.0]
@@ -156,9 +158,11 @@ def update_display():
 						targ[1] += firing_rates[u][ch];
 						ntarg[1] += 1.0; 
 			frs = g_dict["fr_scale"];
-			targ[0] /= ntarg[0] * frs; 
-			targ[1] /= ntarg[1] * frs; 
-			#individual scale and 
+			if ntarg[0] > 0:
+				targ[0] /= ntarg[0] * frs; 
+			if ntarg[1] > 0:
+				targ[1] /= ntarg[1] * frs; 
+			#individual axis scale and offset.
 			scale = [1.0,1.0]
 			offset = [0.0,0.0]
 			scale[0] = g_dict["X scale"]
@@ -166,7 +170,7 @@ def update_display():
 			offset[0] = g_dict["X offset"]
 			offset[1] = g_dict["Y offset"]
 			for u in range(0,2):
-				targ[u] = scale[u] * (targ[u] - g_mean[u]) / (g_mean[u] + 0.01) # this is bad. nonstationary.
+				targ[u] = scale[u] * targ[u]
 				targ[u] = targ[u] + offset[u]
 				if targ[u] < -1.0:
 					targ[u] = -1.0
@@ -175,6 +179,19 @@ def update_display():
 			if g_dict['control'] == 'BMI':
 				cursV[0] = targ[0] # slightly more atomic.
 				cursV[1] = targ[1] # accessed from server thread.
+			if g_file != None:
+				# save data. 
+				g_file.write("%f curs %f %f targ %f %f scl %f %f off %f %f fr_scl %f\n" %
+					(g_time, cursV[0], cursV[1], targV[0], targV[1], 
+					scale[0], scale[1], offset[0], offset[1], frs)); 
+				for grp in range(1,3):
+					g_file.write("grp%d " % (grp))
+					for ch in range(0,128):
+						for u in range(0,2):
+							if neuron_group[ch][u] == grp:
+								g_file.write("%du%d " % (ch, u));
+					g_file.write("\n"); 
+					g_file.flush(); 
 			#probably need to run the game here... 
 			d = cursV[0] - targV[0]
 			e = cursV[1] - targV[1]
@@ -324,7 +341,7 @@ def motion_notify_event(widget, event):
 
 def main():
 	global firing_rates, frsock, targV, cursV, touchV
-	global g_die, drawing_area, group_radio_buttons
+	global g_die, drawing_area, group_radio_buttons, g_file
 	global g_dict # shared state.
 	global neuron_group, selected, pierad, fr_scale, g_juiceOverride
 	
@@ -358,7 +375,6 @@ def main():
 	window = gtk.Window()
 	window.set_size_request(890, 660)
 	def delete_event(widget, event):
-
 		global g_die
 		g_die.value = True
 		# gtk.main_quit
@@ -478,6 +494,20 @@ def main():
 	mk_scale("holdTime",0.0, 1.0, 0.5)
 	mk_scale("rewardTime",0.0, 1.0, 0.5)
 	
+	#add a button for saving data. 
+	def open_file (widget,msg):
+		global g_file
+		chooser = gtk.FileChooserDialog(title=None,action=gtk.FILE_CHOOSER_ACTION_SAVE,
+			buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_OPEN,gtk.RESPONSE_OK))
+		response = chooser.run()
+		if response == gtk.RESPONSE_OK:
+			print chooser.get_filename(), 'selected'
+			g_file = open(chooser.get_filename(), "w")
+		chooser.destroy()
+	but = gtk.Button("Save data"); 
+	but.connect("clicked", open_file, "connect")
+	vbox_p.add(but)
+	
 	#start sock_thread.
 	g_die = Value('b',False)
 	frsock = None
@@ -515,6 +545,8 @@ def main():
 		print "failed to write prefs!", sys.exc_info()[0]
 		traceback.print_exc(file=sys.stdout)
 	fil.close()
+	if g_file:
+		g_file.close()
 	
 def radio_event(widget, btn_number):
 	global neuron_group,selected,drawing_area
