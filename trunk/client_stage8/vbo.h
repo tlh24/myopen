@@ -263,7 +263,7 @@ public:
 		//printf("mean %f %f max %f %f points %d\n", m_mean[0],m_mean[1], 
 		//	   m_maxSmooth[0], m_maxSmooth[1], m_w); 
 		glLineWidth(1.f); 
-		glPointSize(1.f);
+		glPointSize(2.f);
 		drawReal(drawmode, time, update, x,y,w,h); 
 		if(drawclose){
 			//also calculate cursor in local space. 

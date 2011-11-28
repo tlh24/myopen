@@ -98,8 +98,6 @@ class cupoje:
 				self.target.translate(pb.target[0],pb.target[1])
 			if pb.HasField('juicer'):
 				self.juice = pb.juicer
-			else:
-				self.juice = False
 			if pb.HasField('manual'):
 				self.manual = pb.manual and (self.du3 != None)
 			if pb.HasField('touch'):
@@ -218,6 +216,7 @@ class cupoje:
 			self.sock = sock_connect(sys.argv[1],self.port,self.die,False)
 			self.sock.settimeout(1)
 			self.seg = TCPSegmenter()
+			self.juice = False
 			glutMainLoop()
 			self.die = True
 

@@ -51,3 +51,7 @@ getting microphonic noise on some channels.  I wonder if the headstages have fal
 	Should check tomorrow.
 Need to get rid of the mean removal / autoscale in the BMI - it is making the transform rather nonstationary. 
 Thought: add in a check for ethernet dropped packets? 
+
+November 28 2011
+* fixed up / changed the BMI / should be able to do recording now. 
+* lots of microphonic noise on all the channels. 
