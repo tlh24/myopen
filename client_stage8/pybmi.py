@@ -478,9 +478,9 @@ def main():
 		return vb
 		
 	mk_scale("X scale",0.01,10,2.5)
-	mk_scale("X offset",-1,1,0)
+	mk_scale("X offset",-3,3,0)
 	mk_scale("Y scale",0.01,10,2)
-	mk_scale("Y offset",-1,1,0)
+	mk_scale("Y offset",-3,3,0)
 	mk_scale("fr_scale",0,100,30) #units: Hz.
 	frame = mk_scale("fr_smoothing",-3,10,6,plot_fr_smoothing)
 	
