@@ -172,6 +172,7 @@ def update_display():
 			for u in range(0,2):
 				targ[u] = scale[u] * targ[u]
 				targ[u] = targ[u] + offset[u]
+				print "cursor" , u, targ[u]
 				if targ[u] < -1.0:
 					targ[u] = -1.0
 				if targ[u] > 1.0:
