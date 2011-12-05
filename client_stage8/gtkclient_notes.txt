@@ -58,3 +58,11 @@ November 28 2011
 ** Have to remember to secure the headstages in some way -- they were left on top of the battery, and can slide around.
 * Need separate scale and offset -- or need to offset by less than -1, so we can gain it up more.
 * Need to record cursor and target size. (0.22 and 0.58, respectively)
+
+December 3 2011
+* Need a 'save state' option in gtkclient. 
+* LHA1 dead.  Don't plug that one in again.
+* MUST FIX the Calc PCA issue.  WTH! 
+* Idea: stereo output puts sorted pulse on left and analog trace on right (?)
+* Need 'Stop' button on pybmi. 
+* Need wait in pybmi so it doesn't take all the CPU. Or need a faster computer. 

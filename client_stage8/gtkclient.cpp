@@ -1174,6 +1174,7 @@ void* server_thread(void* ){
 					printf("sending message to client failed!\n"); 
 					client = 0; 
 				}
+				usleep(5000); //5ms sleep. so the display does not lock up. 
 				//end = gettime(); 
 				//printf("sending message time: %f\n", end-start); 
 				//else{
