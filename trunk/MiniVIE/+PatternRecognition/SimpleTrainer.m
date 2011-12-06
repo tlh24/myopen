@@ -15,6 +15,9 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
         function collectdata(obj)
             % Collect some initial training data from a signal source
             % device
+            if ~isInitialized(obj)
+                error('%s not initialized',mfilename);
+            end
             
             % Create the waitbar 'gui'
             h = waitbar(0,'','Name',mfilename,...
