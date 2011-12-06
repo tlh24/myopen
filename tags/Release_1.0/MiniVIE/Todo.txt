@@ -1,0 +1,9 @@
+To do:
+
+- Add a signal source for the myopen board
+
+- Link the Live Acquisition interface in CEVEN to the signal inputs preview function
+
+- Create a main gui that will allow source selection, classifier, presentation, etc on the fly
+
+- Create additional visualizations for the arm / end effector

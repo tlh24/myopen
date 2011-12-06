@@ -1,0 +1,47 @@
+Hardware fixes: 
+	* Need filtering on the testcon _CS signal too! 47pf fixes issue. 
+	* MIC5365-2.5 supplying Votp for blackfin is not attached to Vdd. 
+		fixed in schematic.
+	* Labels on LEDs are incorrect. 
+	** Be very careful about LED orientation in robot! 
+	* Capacitors on audio out are mounted too close to the 1/8" jack body.
+		can fix with sensible placement prior reflow.
+		
+Software: 
+	March 25 2011 -- 
+	one radio seems to work well; interaction of all 3 radios, 
+		however, does not work. Looks like radio 0 tmies out at some point,
+		holding it's CSN line low. 
+		what would be doing this? 
+		(as an aside, reverse directon seems not to work - 
+			cannot modify headstage channel)
+		trying to enable 2 radios.
+		Ok, with two radios, looks like radio1 is not always after radio0,
+			and that twice as much data is coming out of the bridge.
+			(the 2 channel scope is a real liability here). 
+			(I really need to get my logic analyzer)
+	got three radios working .. seemingly. 
+		getting about 10530 packets/second in the client. 
+		for 128 channels, measured frame rate is 279.3 frames/sec, 
+		which equates to 4468 packets/second.  Observed rate is 2.35 times larger - 
+		clearly I need a better means of radio state control. 
+		I think what's going on is that the program is desynchronized with 
+		incoming radio packets: we are setting 'write' to 1 when
+		one radio still has a packet in the fifo.  
+		Therefore only set write to one when all radios are serviced? 
+		woohoo looks like antenna diversity is working! yay.
+		now need to check on the thresholding. 
+	thresholding: why no work? 
+		deal: need to test with *actual* signals, not just noise.
+		behavior: changing the channel works. 
+		setting the threshold makes the threshold crossings more realistic. 
+			changing the threshold seems to not change threshold crossing density.
+		changing the channel subsequently reverts threshold channel display.
+		aright, that's fixed - pointer wrap issue.
+		now the problem is that the display is fruitcaked. as in, caked in fruit.
+		spikes are not aligned with threshold crossings. 
+		breaking down the issue further, fixed the channel ordering problem; 
+		now it seems that the order of thresold crossings in the spike display 
+		is inverted per 32 channels. 
+		that would be because that's the way it is in the schematic! 
+	need to test by setting channels to oscillate (sinusoid)

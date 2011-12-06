@@ -1,0 +1,474 @@
+Hardware Fixes: 
+	* The LEDs are TOO bright!  decrease the current to a more reasonable 
+	level.  Current LEDs Vf = 2.0V :: 26mA of current. 10ma better -> 
+	need 130 ohm resistors.
+	Total power dissipation of 16 LEDs: 1.3W..?
+	* Vdd_OTP NEEDS to be tied to 2.5V for the proc to boot.
+	I guess I'll need a regulator here.
+	(I assume this is needed by the security code)
+	* Need caps on nordic lines to quench ringing (47pf, SCK & MOSI)
+	* R61 & friends were not grounded (on the schematic) oops!
+		Can jumper to R12.
+	* The labels on the external power supply are SWAPPED! 
+		28 is 0.8V, 08 is 2.8V! (or more accurately, 2.65V, as measured)
+	* On EMG section, input to OR gate must be RSCLK0, not TSCLK0. 
+		TSCLK0 is only used to generate TFS0.
+		Both clocks are output. 
+	* switching regulator needs to be further away from EMG input section.
+	
+
+November 8 2010
+	* Wrote a simplified .dxe - one that just toggles a few pins - 
+	and the BF527 seems to run. Next: see if we can get the SPI interface running. 
+	(this will show if the SPI pins are connected - the proc does not boot, 
+	but this is likely because the flash originally ordered was a 2V part)
+	* putting the SDRAM in self refresh works. 
+	* setting the core clock at 600Mhz and the system clock at 125Mhz 
+	seems to work as well. the toggle rate is 6.666Mhz now; was 1.5Mhz.
+	(I'm sure glad JTAG works!!!)
+	* looks like the SPI port is working! Not sure why it doesn't try to boot..
+	* Next task: get the UART working. soo useful. done.
+	* SDRAM: initalized.  works, checked!  yay!
+	* Ethernet: need to have a milisecond counter running first, in an interrupt.
+	* Ethernet: works.  DCHP and all!
+November 9 2010
+	* Next: get the radio working. Needs to be soldered there first! 
+November 12 2010
+	* okay, the bridge - at least in a debug build - seems to work. 
+	The radio is very sensitive to timing / sequencing: notably, NRF_CE
+	must be low while uploading the response (command) packet.  
+	so be it.  
+	* -O3 does not work, for whatever reason.  ??  just use -O or -O2.
+	* if you put the headstage in oscillate mode, it still appears that there
+	 are dropped packets. perhaps it is the client..?
+	 the trace from UDP packets indicates that nothing is being dropped, 
+	 and the o-scope similarly looks good. 
+November 15 2010
+	* I guess the next thing is to try out the new version of the headstage..
+	does not seem to transmit packets reliably. electrical issue?
+	tried hand-soldering all the pins again - from the outside, without removing
+	the chip, and no difference. 
+	perhaps in the future I should have protronics put both the RHA2116 and 
+	nRF24L01+ on the board?  Seems I'm not too good at it .. :-/
+November 16 2010
+	* Tried the same fimware with the first build of the headstage on stage6. 
+	Looks like exactly the same behavior... therefore, it's probably not 
+	a hardware issue (if it were, then the two different builds would 
+	probably have different behavior). 
+	Is it possible that the problem is bad data? e.g. sending 0x0000 for all
+	samples leads to corrupted packets? 
+	Perhaps one of the RF components is bad / the incorrect value? 
+		This would affect output power, presumably, and for the small distances
+		that i'm testing the radio at, there is no difference wrt orientation. 
+		If the power were iffy, then changing orientation would affect response.
+	Seems unlikely to be the SPI bus - both BF532s boot properly (so far as I can tell)
+	Power supply voltage?
+		Changing the supply voltage to 2.5V from 3.3V changes nothing. 
+		(below 2.5, the processor is in reset, properly so)
+		It's unlikely that changing the core voltage from 1.2 to 0.8 will change
+		anything but the proc power dissipation.  The BF532 is rated at that voltage.
+	Note the old version of the headstage - stage5 - works reliably. 
+	* I guess the appropriate thing to do now is to mess around with software, 
+	see if we can delve into why it's unreliable. 
+	Okay! radio_tst_bidi() transmits 8 packets reliably, but does not RX the resulting
+	command packet.  Hence, it is a software thing .. let's see if transition to RX 
+	is there ..?
+	Is putting the radio in off mode (NOR_CONFIG 0) needed? 
+		No. (prior RX mode .. but then again, it doesn't rx the packet.)
+		No. (prior TX mode). 
+	radio_tst_bidi() does not work on stage5!! IRQ is never asserted.
+Novemeber 19 2010
+	present version of neurorecord (262) works when compiled with -O
+	and uploaded using JTAG to headstage. 
+	serial port is somehow borked, which sucks -- speaking of which should
+	have ran some lines out so we can get the headstage serial on the bridge
+	port -- but not a serious issue. 
+	present version of the code flashed to stage6 headstage works fine, actually
+	**provided** that the USB endpoint is not connected. 
+	The instant you enable the USB endpoint, reception of the status packet
+	falters.  
+	Looks like it only sends full status packets when it says so...
+		and it does not seem to be claiming so.
+	Even after you disable the USB endpoint / kill the client, packet reception
+	is still flaky: not all command packets are recieved. (as indicated by the IRQ line)
+	Restarting the radio resets this behavior to default-good. 
+		(without resetting the bridge, which implies that it's the firmware on 
+		the stage6 headstage)
+	perhaps flush the fifos when switching states? 
+	if you try to debug the headstage without a hardware reset, it fails. .. why?
+	flushing the fifos when switching states does fix the behavior. 
+	rather, it appears that every other RX packet is dropped, and the proc
+	simply waits forever for it..
+	turning on and off the pc-side client does not affect this behavior. 
+	perhaps its a synchronization issue?  
+		No, as its a flag that tells the bridge to send a command packet.
+	** okay, with the mode switching, looks like all packets
+	get through ... with high reliability. perhaps the problem is the flag is
+	not being set.. ? 
+	it doesn't look like the bridge is even trying to send a command packet.
+	doesn't look like the packet format changed..
+	ugh, not sure bout this
+	if I put in a clear-fifo command before starting the transmit-only while 
+	loop, it's more reliable but not completely so: bridge only gets 7 packets
+	before deciding to transmit a status pkt. 
+	seems like there is a systematic offset somewhere.. ?
+	now looks like the first packet is not getting through. why?
+		adding a bit of delay between uploading the packets seems not to matter.
+		on the other hand, USB seems super reliable now.  huh.
+		clearing the fifo and re-writing the configuration also doesn't matter.
+	* okay, drastically simplified the data write - one packet at a time. 
+		it works fine. very consistent. 
+		of course, there is no memory writing going on. 
+	* let's use sample() instead of spi waits. 
+		YES that works.
+	* try no memory writes in real prog.
+		sorta works ... IRQ not getting cleared.
+		fixed, added a fifo clearing. 
+		now, data transmitted does not make sense!
+		It is ''definitely'' the memory read / write. perhaps to the wrong loc? 
+	* putting the RX mode back in there.  
+		Of course it does not work - need to send out the packet special byte. 
+		Now, bridge sees the special byte - and sends out a response - 
+		but the headscage does not hear it? 
+	* AHA!! the bridge does not have CRC ON!!! 
+		It occurs to me that CRC should be on bigtime when writing mem
+		but: not the other direction!! IMPORTANT
+	* turning back on memory writes. there seems to be some systematic offset.
+		wtf?
+	* It seems that this hardware is somehow more 'fragile' - the pointers are 
+	 more likely to go out of bounds or become desynchronized. 
+	 not really sure why.. 
+	 	Also: have a hard time programming the flash now.  more hardware gremlins?
+	* Anyway, now looks like we're not getting to RX mode fast enough.
+		Or, more accurately, still desyncronized. 
+November 22 2010 --
+	* Finally, got stage6 headstage werkin -- as the SVN log will attest, it *WAS*
+	setup / hold violations.  HAve no idea why the C version does not work reliably, 
+	but the ASM version does, and that is what matters. (neurorecord svn ver 265)
+	* Now: ethernet client does not switch channels properly.  hum hum. 
+		does switch with USB bridge, that packet dropping ho. 
+November 30 2010 - back to work after a wonderful thanksgiving holiday. 
+	Everything is basically working, as expected. 
+	* Issue: client needs to be told the IP address of the bridge. is this reasonable?
+		Yes, I guess.  In the future there will likely be more than one headstage, 
+		more than one bridge. 
+	* Issue: no Intan chips on the headstage.  I guess I should install them? 
+		Assuming that I can?  or gear up for producing more headstages?
+		Probably best to test this wireless headstage in a mk, asap.
+	* Omnetics connector FAIL.  Fell off while I was inserting the jumper to the 
+		headstage test board; these must be mounted properly the first time
+		(they tend to warp during reflow), then glued to the board.
+	* Thresholding is not working either. check the code. seems to be off by one bit:
+		Looks like seeting gain high on channel 0 yields threshold of 0x3 (0b0011)
+		setting gain high on channel 1 yields threshold of 0xc (0b1100)
+		channel 2, 0x30. 
+		This is the same on stage5, as expected. 
+		Everything seems multiplied by 2...?
+		Try channel 16, 0x2 
+		channel 17, 0x8
+		Perhaps this is a strange consequence of how VIT_MAX works? 
+		aha!  "The accumulator register must be cleared before issuing VIT_MAX"
+		Indeed, it does. 
+	* Issue: seems to detect both positive and negative excursions.  Is this desired?
+		(otherwise, seems to be working)
+Novemeber 31 2010 -
+	* Should have a disable-filter mode on the headstage, too. 
+		Done. Works as expected. 
+	* Using the flat-filter mode, threshold is definitely bidirectional - abs. 
+		Fixed.  VIT_MAX instruction only has 15 bits of dynamic range - so we simply 
+		divide both samples by 2 (>>> 1 (v) instruction). 
+		and divide the threshold by 2 prior transmission.
+	* Next up: work on the client program: 
+		+ need to save to disc and visualize spikes. (threshold crossings)
+		+ need to be able to invert gain. (that should be easy)
+		+ make the gui more reliable - raw x events is not cutting it! 
+December 2 2010 -
+	* Decided to move to gtk2.0 as a gui toolkit for the client. The simple X protocol
+		was not cutting it!   Now, have to migrate...
+December 13 2010 -
+	* gtk2 gui mostly done, functional though there is still a segfault bug somewhere..
+	* want to measure current consumption of the core, and try to optimize.
+		Headstage is by default running at 240Mhz @ 1.2V (same as BF527)
+		Step signal is on PF8 -- looks like max codepath is 528ns, so it is 
+		almost possible to knock the clock down to 120Mhz.
+		Is this long codepath dependent on RXing a packet? 
+		No, with the bridge off, still get it.
+		I could simplify the filtering perhaps... hm. 
+	* CLI/IDLE/STI seems to take about 180ns. 
+		make little sense to do this; might as well keep it in a software loop.
+	* Power figures, 
+		CCLK 160Mhz SCLK 80Mhz: 
+		Proc runs & boots at 0.7v.
+		static current at 1V about 7ma.
+		0.630v ; 19.42ma ; non-operating.
+		0.641v ; 28.49ma ; 18.26mw
+		0.668v ; 29.70ma ; 19.83mw
+		0.708v ; 31.98ma ; 22.64mw
+		0.739v ; 33.56ma ; 24.80mw
+		0.793v ; 36.78ma ; 29.17mw
+		0.806v ; 37.42ma ; 30.12mw
+		0.849v ; 40.08ma ; 34.03mw
+		0.944v ; 46.24ma ; 43.65mw
+		0.997v ; 49.39ma ; 49.24mw
+		1.087v ; 55.41ma ; 60.23mw
+		CCLK 80Mhz SCLK 40Mhz
+		0.622v ; 12.20ma ; non-operating
+		0.649v ; 16.17ma ; 10.49mw
+		0.705v ; 18.04ma ; 12.72mw
+		0.752v ; 19.60ma ; 14.74mw
+		0.804v ; 21.51ma ; 17.29mw
+		0.857v ; 23.51ma ; 20.16mw
+		0.908v ; 25.52ma ; 23.17mw
+		0.951v ; 27.28ma ; 25.94mw
+	* Possible clocking schemes. 
+		160Mhz (x10) - CCLK 80Mhz - cpu ultilization about 60%
+			2.830V ; 8.81ma ; 24.93mw
+			0.813v ; 33.66ma ; 27.36mw
+			proc operating at  at the same time.
+			proc stopped: 2.23ma
+			total power, excl intans: 52.29mw ; 69.59mw w/
+			Intans: 7mw from 3.0v supply, 17.3mw from battery
+			(operating from 2.8V supply will save 4mw -- not worth it --
+				only adds 3 hours to the optimized figure)
+		80Mhz (x5) - CCLK 40Mhz - must disable oversampling, every read
+			sample counts.  both ADCs run at 10Mhz / 500ksps.
+			2.800v ; 6.65ma ; 18.7mw
+			0.813v ; 21.09ma ; 17.14mw
+			have the extra cycles for this, at least..
+			total power, excl. intans: 35.85mw ; 53.15 w/
+	* Have: cell phone battery, rated 800mAH, 3.6v -> 2880mwH
+		consumed at 69.6mw, this will last 41 hours. (full x2 oversampling)
+		consumed at 54.2mw, this will last 54 hours.
+		of course, probably want to run multiple headstages.
+		Assuming we are running 4 headstages and we want them to last 30 hours, 
+		need a 6.5wh battery, or 1800mah.  This should be possible - cell batteries 
+		can be had in 2200mah size.
+		2200mah will run 6 headstages for a full day, about (excluding conversion efi)
+December 16 2010 -- got the headstage working (apparently) properly @ 80Mhz. 
+	Can save a bit of power at this rate (8mw proc, 6mw ADCs). 
+	So far as I can tell, we don't need the oversampling; the fidelity is
+	limited by the fidelity of the input from the electrodes. 
+	The problem was clocking the SPI port too low (5Mhz); this seems to have
+	cause alignment error when reading packets RXed from the bridge. 
+	Also changed the bridge to reset the RX fifo when sending packets over
+	ethernet. Appears to have made everything more reliable. 
+	* Need to indicate when the gain is saturated.  Seem to occur relatively soonish. 
+December 17 2010 -- The headstage has been separated!  It consumes:
+	15.0ma @ 4.18v = 62.7mw
+December 21 2010 --tested the headstage in mango, RHA2.
+	It worked, but! :
+	* The splitter did not work, at least not obviously.  With the headstage
+		plugged directly into the short jumper, got spikes on the 
+		expected channel (4)
+		Nonetheless, need to verify channel correspondence. 
+	* The client has a tendency to quantize waveforms: that is, it holds 
+		samples so that you get flat plateus in the WF view.  
+		I've never seen this on the other computer; might be 
+		a hardware problem? 
+		Problem resolves after turning it off & restarting it. 
+	* Need to see threshold in waveform view. 
+	* PCB makes it difficult to insert directly.  Need a direct edge connector, 
+		with an appropriately thinner PCB. 
+	* Periodic noise on many channels. 
+		Tested in matlab: noise has many many harmonics at 145Hz, which 
+		is exactly the frequency of the radio.  
+		Hence, must be either the radio or the serial bus controlling it. 
+		(Last time it was, or appeared to be, the serial bus...hmm)
+	* Movement artifact still gets through, but this is unespected, since 
+		there are no ground loops!  Is this through the jumper wires? 
+		Some grounding / referencing issue?  hm. 
+	* Need to be able to negative-side thresholding.  
+		Just set a negative gain. 
+	* Possibly need antenna diversity, or circularly polarized antennas. 
+		In some head orientations, most packets were dropped. 
+	* Recorded 3-10MB for each channel, including the best channel (4). 
+		Was not able to compare against plexon in this case. 
+	* Power cable is weak, need something better, more robust. 
+January 7 2011 
+	Looking at the noise issue - is it the radio, or is it the serial bus? 
+	Tried putting a 0.1uf cap on R138 - 7.5K bandwidth setting resistor. 
+	Did not seem to change much, or at least did not eliminate the problem.
+		(That said, the resistor still should be further away from SCK!)
+	Channel 17, in particular, seems quite bad. 
+	apparent channel mapping: (tester -> headstage 001)
+	1	0
+	2	off
+	3	14
+	4	off
+	5	12
+	6	11
+	7	10
+	8	9
+	9	8
+	10	7
+	11	6
+	12	5
+	13	4
+	14	3
+	15	2
+	16	1
+	17	off
+	18	18
+	19	19
+	... all between work.
+	31	31
+	32	16
+	* When I stuck a small antenna into Ch 27 on the tester board, the noise did
+		not appreciably increase, even if the antenna was pushed close to the 
+		TX antenna.  Hmm. Add this to the fact that ch17 - open circuit - is the 
+		worst, and I wonder if it's RF or something else. 
+		Short out input stage, and some of the normal noise goes away.
+		Perhaps the ADC is being influenced by the radio or serial bus? 
+	* Tested with Misha the wireless headstage next to the wired headstage
+		(plugged into the rest of plexon, of course)
+		it **does** induce frame-frequency (137Hz) noise!
+			but only if i am holding it.  
+		If I plug it into a neighboring omnetics, there is a lot of induced 
+		noise -- yet, when I release the wireless headstage, this too disappears. 
+		During this time I'm not grounded; hence must be acting as an antenna. 
+		Perhaps there is coupling through the ground planes? 
+	* If i were to do 64 ch / headstage, seperated -- need the following signals
+		GND, VEE, Vdd, reset, step, FS, CLK, Data[0..3]
+		so, 7 signals common, 2 data per 32 channels. edge flexi connectors? 
+		might be able to run the intan from 2.7V.. ? hm. probably not worth it. 
+		cannot run more - the blackfin has only 2 SPORTS, supporting 4 ADCs. 
+		If i use a BF-538, can do 128 channels. 
+January 10 2011
+	* (Continuing the thought above) -- a better paln is to have one blackfin + 
+		radio, BF532 known and loved, intan RHA2132, 1 ADC per 32 channels, 4 sports. 
+		Then need 8 wires per digitizing headstage, so can have 2 grounds with 9-pin
+		omnetics. put them on either side - good. 
+	* This would necessitate a different packet pattern - just threshold crossing
+		would consume 128 bits = 16 bytes, or half the packet. 
+		Currently running 32 channels at 31ksps works fine with a clock of 80Mhz; 
+		presumably would need 3-4x the power to process 128 channels. 
+		possibly more, if we need to check more condition registers; the asm 
+		will be more complicated. ugh, more debugging.
+		presumably would want to stream more than one channel then; more comparisons; 
+		possibility of selecting how many? with a bit field? 
+		but then we don't get packets at a regular rate. hm, bad.
+		Minimum: want threshold crossings every 1ms. 
+		Want to frame the packets into groups of 8, at whatever rate needed. 
+		If we were to transmit 4 continuous channels, would not need to transmit
+		threshold crossings every time, or not the whole threshold crossing. 
+		Possibly a simple way of doing it would be to make 1 packet per group of 32 
+		channels, and have the same channel active on all 4 digitizing headstages. 
+		The radio would be much more used then - currently in use for 1.5ms out of 
+		a 137Hz frame rate = 7.3ms.  Quadrupling the bandwidth means that we'd 
+		want to do frames of 16 packets - still within the nordic's spec - 
+		so 3ms frames in 3.65ms frames. should be sufficient rest. 
+		This will also be better use of wireless bandwidth -- good. 
+		Can put the switchmode converter by the proc - also good, the wires tend to break.
+		Seems like we need to put the proc at 320Mhz - presently using ~1.6us of 2us. 
+		Extrapolating, thats 800ns / 1us @ 160Mhz, 64 channels sampled at
+		1.066us / 1us @ 240Mhz, 128 channels. might - just might - be able to make it, 
+		provided data parallelism can be exploited.
+		320Mhz probably requries a core voltage of 0.9 or 1.0V - more power. 
+		The present proc uses 17mw - nothing! ; 
+		According to the analog devices data, a 300mhz BF532 consumes 63.5mA from 0.85V
+		supply; this is 54mw.  Assuming local linearity, that's about 57mw at 320Mhz.
+		+ about 7ma leak = 63mw ;; 17*4 = 68mw.  So, a wash.  
+		Less space consumed though.
+		Also, actual current consumption is less than the Analog Devices data suggests.
+January 25 2011 - 
+	* Having problems getting RX SPORT0 working on the EMG board. 
+		Have tried *pSPORT0_RCR1 =
+		* 0x6603 - triggers IRQ, bus contention on both the RFS line and RCLK. 
+			So the pads are connected under the chip!
+		* 0x4003 - internal clock, external RFS, RFS not required.
+			triggers IRQ.
+		* 0x4403 - internal clock, external RFS, RFS required. 
+			triggers IRQ.
+			bus contention on RSCLK0.
+		* 0x4401 - external clock, external RFS, RFS required. 
+			Nothing. 
+			changing RCLKDIV seems to have no effect.
+		* 0x0401 - external clock, external RFS, RFS required, 
+			trigger on negative edge of clock.
+			Nothing, again.  
+			The issue is the clock! perhaps cannot work with gated clock?
+		* 0x2401 - external clock, external RFS, late FS, RFS required,
+			trigger on negative edge of clk. 
+			Nothing. 
+		* 0x2403 - internal clock, external RFS, late FS, RFS required, 
+			trigger on negative edge of clk
+			Triggers IRQ!  
+			It must be the clock... whaat? why?
+		* 0x6001 - rising edge, RFS not required, external FS, external clock.
+			Nothing.
+		* 0x6201 - same as above, internal frame syncs. 
+			does nothing - the frame sync signal kills the clock!
+		* 0x7201 - same. 
+	FIX!!!
+	MUST NOT GATE THE RSCLK signal -- it needs to be running all the time!
+	Using 0x7401 -- looks okay, but the first bit is not being latched. 
+	This means that everything is gained by 2 .. hmm. 
+	The surprising thing is that the ADC produces data the instant FS and 
+	CLK go low. 
+	Basically need to get the frame sync 1 clock sooner? 
+	or use the L/R clocking? That's worth a shot!
+	-- did not change much ; data is still shifted over by 1.
+	Let's put the ADC in ground-referenced mode.
+	Was bipolar: 0x2801
+	New: 0x3c01 -- still looks like 2s complement. 
+	Tried temperature sensor: 0x2c01 - works, can detect temp fine!
+		(used a pressurized duster to change the temp)
+		This implies that the input word is formatted and aligned properly.
+	Compared the oscilloscope with register contents - the SPORT is reading
+		in properly aligned data, at least the bits 0x364? match!
+	Let's try removing the external ref-generating circuitry.
+		I think that's introducing gain.
+		Nopers, it's necessary for the rest of the circuitry. back in there it goes.
+	** the first data bit (MSB) is clocked out on the falling edge of CNV
+	(TFS0 / RFS0) - not on the first clock edge. 
+	Hence, we are missing it! 
+	need to delay the transmit data, and have this update on the rising edges. 
+	and hope this does not violate setup/hold requriements.. 
+	Anyway: Converter latches on rising edges of clock, hence data 
+	(and frame sync) should be driven on the falling edge. 
+	output register latches on both the falling edge of CNV and clock, 
+	hence really need this hooked to an SPI bus..
+	If we drive the frame sync on the rising edge of the clock .. no that won't work.
+	Try driving RSCLK directly, keeping it synced.  
+	yea, that should work. two phase clock.
+	TSCLK0 output data latched on falling edge, as config register wants; 
+	RSCLK0 latches data in on rising edge, as the data register is latched
+		out on falling edge. 
+		This implies that rising edge of RSCLK0 must be a little after 
+		falling edge of TSCLK0.
+	That's not going to work either -- really need RSCLK0 to control
+		the DAC, and everything else to be on a phased TSCLK0. 
+		will have to change the wiring.
+		Done!
+	Ok, finally fixed everything. 
+	How? 
+	Let's review the operation of this chip. 
+	1. Configuration register is latched on rising clock edges. 
+	2. Sampling starts on rising edge of CNV. 
+	3. Clock and serial lines must be silent during conversion. 
+		During this time CNV high.
+	4. MSbit from ADC is clocked out on falling edge of CNV. 
+	5. All following bits are clocked out on falling edges of CLK. 
+	6. Hence, you need 14 + CLK edges for the config register, and 15
+		to read out contents of ADC. 
+	7. This is the simplest operating mode for the ADC - there are 2 others, 
+		but the specsheet sucks, and I couldn't decode how to set them up.
+		The operating mode corresponds to RAC on page 25 of spec sheet.
+	Now, the solution:
+	1. Config data latched out on falling edge of TSCLK0, along with TFS0.
+	2. TFS0 tied to CNV. 
+	3. RSCLK0 ORed with TFS0 to generate gated clock.
+	4. RSCLK falling edge slightly behind TSCLK falling edge by inserting 
+		SSYNC instruction between enabling the SPORTS. 
+	5. SPORT0 RX data latched in on falling edge of internally generated 
+		RSCLK0. 
+		Hence, first falling edge latches in MSB that was presented upon
+		falling TFS0 / CNV / RFS0. 
+		Because of the propagation delay through OR gate, 
+		this does not violate setup/hold violations. 
+	6. SPORT0 RX configured for late frame syncs; early frame syncs miss the 
+		first bit. 
+	7. Because SPORT0 RX is configured w/ bit 14=0 
+		(latch data on falling edge of clock), and TX is inverted
+		(latch out data/frame sync on falling edge of clock)
+		start RX /before/ TX!

@@ -1,0 +1,6 @@
+fixes to stage10: 
+ * need to connect R118 to ground. This is the APD signal on the PoE chip.
+ 	(not absolutely needed for device function, but should be fixed.)
+ * regulated output of PoE converter is 2.5v -- off by a factor of 2? 
+ * Anode and cathode are reversed on the TLE431 (!)
+ * Really need to have a switch on the PoE input -- so we can turn off the switching there. 

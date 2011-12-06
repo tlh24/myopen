@@ -1,0 +1,358 @@
+EESchema Schematic File Version 2  date Wed 04 Mar 2009 10:58:46 AM EST
+LIBS:power,device,emg_sym,./emg_dsp.cache
+EELAYER 23  0
+EELAYER END
+$Descr A 11000 8500
+Sheet 3 14
+Title ""
+Date "21 may 2008"
+Rev ""
+Comp ""
+Comment1 "c. 2008 Timothy Hanson"
+Comment2 ""
+Comment3 ""
+Comment4 ""
+$EndDescr
+Wire Wire Line
+	2300 3550 1850 3550
+Wire Wire Line
+	2300 1900 2000 1900
+Wire Wire Line
+	1000 2750 1250 2750
+Wire Wire Line
+	1250 2750 1250 2600
+Wire Wire Line
+	1000 2600 1200 2600
+Wire Wire Line
+	1200 2600 1200 2500
+Wire Wire Line
+	1250 2300 1000 2300
+Wire Wire Line
+	1000 2000 1150 2000
+Wire Wire Line
+	1150 2000 1150 2100
+Wire Wire Line
+	1150 2100 1250 2100
+Wire Wire Line
+	1000 1700 1250 1700
+Wire Wire Line
+	1250 1700 1250 1900
+Wire Wire Line
+	2000 1900 2000 2000
+Wire Wire Line
+	2000 2000 1750 2000
+Wire Wire Line
+	2300 2350 1950 2350
+Wire Wire Line
+	1950 2350 1950 2200
+Wire Wire Line
+	1950 2200 1750 2200
+Wire Wire Line
+	1850 3550 1850 2400
+Wire Wire Line
+	1850 2400 1750 2400
+Wire Wire Line
+	1750 2600 1750 4000
+Wire Wire Line
+	1750 4000 2300 4000
+Connection ~ 6850 3050
+Wire Wire Line
+	7750 3050 5950 3050
+Connection ~ 6850 2350
+Wire Wire Line
+	7750 2350 5950 2350
+Wire Wire Line
+	5950 2950 6200 2950
+Wire Wire Line
+	6200 2950 6200 1950
+Wire Wire Line
+	6200 1950 7750 1950
+Wire Wire Line
+	5950 2650 6050 2650
+Wire Wire Line
+	6050 2650 6050 1750
+Wire Wire Line
+	6050 1750 7750 1750
+Connection ~ 4900 3050
+Wire Wire Line
+	6500 2450 6500 2500
+Wire Wire Line
+	6500 3050 6500 2900
+Connection ~ 3700 4200
+Connection ~ 6100 3050
+Wire Wire Line
+	6100 4200 6100 2550
+Wire Wire Line
+	6100 4200 3600 4200
+Connection ~ 3800 2650
+Wire Wire Line
+	3800 2650 5000 2650
+Connection ~ 4900 2850
+Wire Wire Line
+	5000 2850 4900 2850
+Wire Wire Line
+	3600 3600 4600 3600
+Wire Wire Line
+	4600 3600 4600 2950
+Wire Wire Line
+	4600 2950 5000 2950
+Wire Wire Line
+	3600 1950 4250 1950
+Wire Wire Line
+	4250 1950 4250 2550
+Wire Wire Line
+	4250 2550 5000 2550
+Wire Wire Line
+	3600 3900 3900 3900
+Wire Wire Line
+	3900 2250 3600 2250
+Wire Wire Line
+	3700 4200 3700 2550
+Wire Wire Line
+	3700 2550 3600 2550
+Wire Wire Line
+	3600 2400 3800 2400
+Wire Wire Line
+	3800 2400 3800 4050
+Wire Wire Line
+	3600 1750 4600 1750
+Wire Wire Line
+	4600 1750 4600 2350
+Wire Wire Line
+	4600 2350 5000 2350
+Wire Wire Line
+	5000 2750 4250 2750
+Wire Wire Line
+	4250 2750 4250 3400
+Wire Wire Line
+	4250 3400 3600 3400
+Wire Wire Line
+	5000 2450 4900 2450
+Wire Wire Line
+	4900 3050 5000 3050
+Connection ~ 4900 2650
+Wire Wire Line
+	6100 2550 5950 2550
+Wire Wire Line
+	3900 3900 3900 1500
+Wire Wire Line
+	3900 1500 6000 1500
+Wire Wire Line
+	6000 1500 6000 2350
+Connection ~ 3900 2250
+Wire Wire Line
+	6850 3050 6850 2900
+Connection ~ 6500 3050
+Wire Wire Line
+	6850 2350 6850 2500
+Connection ~ 6000 2350
+Wire Wire Line
+	3600 4050 4900 4050
+Wire Wire Line
+	4900 4050 4900 2450
+Connection ~ 4900 3450
+Connection ~ 3800 4050
+Wire Wire Line
+	7750 1850 6150 1850
+Wire Wire Line
+	6150 1850 6150 2850
+Wire Wire Line
+	6150 2850 5950 2850
+Wire Wire Line
+	7750 2050 6250 2050
+Wire Wire Line
+	6250 2050 6250 2750
+Wire Wire Line
+	6250 2750 5950 2750
+Wire Wire Line
+	7750 2450 5950 2450
+Connection ~ 6500 2450
+Wire Wire Line
+	7750 2850 7300 2850
+Wire Wire Line
+	7300 2850 7300 3450
+Wire Wire Line
+	7300 3450 4900 3450
+Connection ~ 6500 3450
+Wire Wire Line
+	1750 2500 1800 2500
+Wire Wire Line
+	1800 2500 1800 3850
+Wire Wire Line
+	1800 3850 2300 3850
+Wire Wire Line
+	1750 2300 1900 2300
+Wire Wire Line
+	1900 2300 1900 3400
+Wire Wire Line
+	1750 2100 2000 2100
+Wire Wire Line
+	2000 2100 2000 2200
+Wire Wire Line
+	2000 2200 2300 2200
+Wire Wire Line
+	1950 1900 1950 1750
+Wire Wire Line
+	1950 1900 1750 1900
+Wire Wire Line
+	1250 2000 1200 2000
+Wire Wire Line
+	1200 2000 1200 1850
+Wire Wire Line
+	1200 1850 1000 1850
+Wire Wire Line
+	1250 2200 1150 2200
+Wire Wire Line
+	1150 2200 1150 2150
+Wire Wire Line
+	1150 2150 1000 2150
+Wire Wire Line
+	1250 2400 1150 2400
+Wire Wire Line
+	1150 2400 1150 2450
+Wire Wire Line
+	1150 2450 1000 2450
+Wire Wire Line
+	1200 2500 1250 2500
+Wire Wire Line
+	1950 1750 2300 1750
+Wire Wire Line
+	1900 3400 2300 3400
+$Comp
+L MNR18 U?
+U 1 1 476B67B2
+P 1500 2250
+AR Path="/00000000/00000000/476B67B2" Ref="U?"  Part="1" 
+AR Path="/47A131D8/47A131DA/476B67B2" Ref="U50"  Part="1" 
+AR Path="/47A131D8/47A131DC/476B67B2" Ref="U52"  Part="1" 
+AR Path="/47A131D8/47A131DE/476B67B2" Ref="U54"  Part="1" 
+AR Path="/47A131D8/47A131E0/476B67B2" Ref="U56"  Part="1" 
+F 0 "U56" H 1650 2150 60  0000 C CNN
+F 1 "MNR18" H 1500 2750 60  0000 C CNN
+F 2 "0603x8" H 1500 1850 60  0000 C CNN
+	1    1500 2250
+	1    0    0    -1  
+$EndComp
+Text HLabel 1000 2750 0    60   BiDi ~ 0
+IN-3
+Text HLabel 1000 2600 0    60   BiDi ~ 0
+IN+3
+Text HLabel 1000 2450 0    60   BiDi ~ 0
+IN-2
+Text HLabel 1000 2300 0    60   BiDi ~ 0
+IN+2
+Text HLabel 1000 2150 0    60   BiDi ~ 0
+IN-1
+Text HLabel 1000 2000 0    60   BiDi ~ 0
+IN+1
+Text HLabel 1000 1850 0    60   BiDi ~ 0
+IN-0
+Text HLabel 1000 1700 0    60   BiDi ~ 0
+IN+0
+Text HLabel 7750 1950 2    60   BiDi ~ 0
+_cs
+Text HLabel 7750 1850 2    60   BiDi ~ 0
+Din
+Text HLabel 7750 2050 2    60   Output ~ 0
+Dout
+Text HLabel 7750 1750 2    60   BiDi ~ 0
+CLK
+Text HLabel 7750 2850 2    60   BiDi ~ 0
+Vdd/2
+Text HLabel 7750 2350 2    60   BiDi ~ 0
+Vdd
+Text HLabel 7750 2450 2    60   BiDi ~ 0
+Vref
+Text HLabel 7750 3050 2    60   BiDi ~ 0
+GND
+$Comp
+L C C?
+U 1 1 476738E9
+P 6500 3250
+AR Path="/00000000/00000000/476738E9" Ref="C?"  Part="1" 
+AR Path="/47A131D8/47A131DA/476738E9" Ref="C94"  Part="1" 
+AR Path="/47A131D8/47A131DC/476738E9" Ref="C97"  Part="1" 
+AR Path="/47A131D8/47A131DE/476738E9" Ref="C100"  Part="1" 
+AR Path="/47A131D8/47A131E0/476738E9" Ref="C103"  Part="1" 
+F 0 "C103" H 6550 3350 50  0000 L CNN
+F 1 "1uf" H 6550 3150 50  0000 L CNN
+F 2 "0402" H 6600 3400 60  0000 C CNN
+	1    6500 3250
+	1    0    0    -1  
+$EndComp
+$Comp
+L C C?
+U 1 1 47673645
+P 6850 2700
+AR Path="/00000000/00000000/47673645" Ref="C?"  Part="1" 
+AR Path="/47A131D8/47A131DA/47673645" Ref="C95"  Part="1" 
+AR Path="/47A131D8/47A131DC/47673645" Ref="C98"  Part="1" 
+AR Path="/47A131D8/47A131DE/47673645" Ref="C101"  Part="1" 
+AR Path="/47A131D8/47A131E0/47673645" Ref="C104"  Part="1" 
+F 0 "C104" H 6900 2800 50  0000 L CNN
+F 1 "1uf" H 6900 2600 50  0000 L CNN
+F 2 "0402" H 6950 2850 60  0000 C CNN
+	1    6850 2700
+	1    0    0    -1  
+$EndComp
+$Comp
+L C C?
+U 1 1 4767362C
+P 6500 2700
+AR Path="/00000000/00000000/4767362C" Ref="C?"  Part="1" 
+AR Path="/47A131D8/47A131DA/4767362C" Ref="C93"  Part="1" 
+AR Path="/47A131D8/47A131DC/4767362C" Ref="C96"  Part="1" 
+AR Path="/47A131D8/47A131DE/4767362C" Ref="C99"  Part="1" 
+AR Path="/47A131D8/47A131E0/4767362C" Ref="C102"  Part="1" 
+F 0 "C102" H 6550 2800 50  0000 L CNN
+F 1 "1uf" H 6550 2600 50  0000 L CNN
+F 2 "0402" H 6600 2850 60  0000 C CNN
+	1    6500 2700
+	1    0    0    -1  
+$EndComp
+$Comp
+L MCP3304 U?
+U 1 1 47672159
+P 5500 2700
+AR Path="/00000000/00000000/47672159" Ref="U?"  Part="1" 
+AR Path="/47A131D8/47A131DA/47672159" Ref="U51"  Part="1" 
+AR Path="/47A131D8/47A131DC/47672159" Ref="U53"  Part="1" 
+AR Path="/47A131D8/47A131DE/47672159" Ref="U55"  Part="1" 
+AR Path="/47A131D8/47A131E0/47672159" Ref="U57"  Part="1" 
+F 0 "U57" H 5650 2050 60  0000 C CNN
+F 1 "MCP3304" H 5550 3350 60  0000 C CNN
+F 2 "SOIC-16" H 5400 2200 60  0000 C CNN
+	1    5500 2700
+	1    0    0    -1  
+$EndComp
+$Sheet
+S 2300 3150 1300 1200
+U 47A131E2
+F0 "emg_4ch_2" 60
+F1 "emg_4ch.sch" 60
+F2 "Vdd/2" I R 3600 4050 60 
+F3 "Analog_GND" I R 3600 4200 60 
+F4 "Analog_Vdd" I R 3600 3900 60 
+F5 "OutB" I R 3600 3600 60 
+F6 "OutA" I R 3600 3400 60 
+F7 "IN+B" I L 2300 3850 60 
+F8 "IN-B" I L 2300 4000 60 
+F9 "IN+A" I L 2300 3550 60 
+F10 "IN-A" I L 2300 3400 60 
+$EndSheet
+$Sheet
+S 2300 1500 1300 1200
+U 47A131E4
+F0 "emg_4ch_1" 60
+F1 "emg_4ch.sch" 60
+F2 "Vdd/2" I R 3600 2400 60 
+F3 "Analog_GND" I R 3600 2550 60 
+F4 "Analog_Vdd" I R 3600 2250 60 
+F5 "OutB" I R 3600 1950 60 
+F6 "OutA" I R 3600 1750 60 
+F7 "IN+B" I L 2300 2200 60 
+F8 "IN-B" I L 2300 2350 60 
+F9 "IN+A" I L 2300 1900 60 
+F10 "IN-A" I L 2300 1750 60 
+$EndSheet
+$EndSCHEMATC
