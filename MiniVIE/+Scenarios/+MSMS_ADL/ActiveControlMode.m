@@ -20,39 +20,36 @@ SignalClassifier.uiEnterClassNames
 
 %% TrainingInterface
 TrainingInterface = PatternRecognition.SimpleTrainer();
-TrainingInterface.initialize(SignalSource,SignalClassifier);
 
 %% TrainingInterface: Collect Data
-% TrainingInterface.NumRepetitions = 1;
-% TrainingInterface.ContractionLengthSeconds = 1;
-% TrainingInterface.DelayLengthSeconds = 1;
-% 
-% TrainingInterface.initialize();
-% TrainingInterface.collectdata();
-% TrainingInterface.saveTrainingData();
+if 0
+%%
+TrainingInterface.NumRepetitions = 1;
+TrainingInterface.ContractionLengthSeconds = 1;
+TrainingInterface.DelayLengthSeconds = 1;
 
+TrainingInterface.initialize(SignalSource,SignalClassifier);
+TrainingInterface.collectdata();
+end
 %% TrainingInterface: Load Data
 TrainingInterface.loadTrainingData();
 
 %% Perform Training
-SignalClassifier.TrainingData = TrainingInterface.Features3D(:,:,1:TrainingInterface.SampleCount);
-SignalClassifier.TrainingDataLabels = TrainingInterface.ClassLabelId(1:TrainingInterface.SampleCount);
+SignalClassifier.TrainingData = TrainingInterface.getFeatureData;
+SignalClassifier.TrainingDataLabels = TrainingInterface.getClassLabels;
 SignalClassifier.train();
 SignalClassifier.computeerror();
 
 %%
-hMSMS = MsmsDisplayScenario(SignalSource,SignalClassifier);
-isLeftSide = 1;
+hMSMS = Scenarios.MSMS_ADL.MsmsDisplayScenario(SignalSource,SignalClassifier);
+isLeftSide = 0;
 hMSMS.initialize(isLeftSide);
-%%
 
-%%
 hMSMS.start
 %%
 return
 %%
 hMSMS.stop
-%%
 hMSMS.close
 
 
