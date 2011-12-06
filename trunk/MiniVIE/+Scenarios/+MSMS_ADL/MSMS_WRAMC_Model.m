@@ -131,13 +131,13 @@ classdef MSMS_WRAMC_Model < handle
                 % generate map.  These values were entered manually to
                 % match the order of the action bus definition
                 orderedNames = {
-                    'Gleno_Humeral_ABAD'
                     'Gleno_Humeral_FE'
+                    'Gleno_Humeral_ABAD'
                     'Gleno_Humeral_IER'
                     'Humero_Ulnar_FE'
                     'Radio_Ulnar_PS'
-                    'wrist_flex_l'
-                    'wrist_dev_l'
+                    'wrist_dev_l' %% 12/2/2011 RSA Noted in WRAMC_Model that joint labeled wrist_dev_l controls f/e
+                    'wrist_flex_l' %% 12/2/2011 RSA Noted in WRAMC_Model that joint labeled wrist_flex_l controls rad/dev
                     'MCP2_flex_l'
                     'PIP2_flex_l'
                     'DIP2_flex_l'
@@ -201,8 +201,10 @@ classdef MSMS_WRAMC_Model < handle
             end
                 actionBus = action_bus_definition;
                 length(orderedNames)
+                fprintf('Mapped: %16s --> %16s \n','MSMS Joint Name','JHU/APL Joint Name');
+                fprintf('------------------------------------------------\n');
                 for i = 1:length(orderedNames)
-                    isMatched = strcmp(orderedNames{i},MSMS_WRAMC_Model.modelJointOrder);
+                    isMatched = strcmp(orderedNames{i},Scenarios.MSMS_ADL.MSMS_WRAMC_Model.modelJointOrder);
                     if any(isMatched)
                         ids(i) = find(isMatched);
                         fprintf('Mapped: %16s --> %16s \n',orderedNames{i},actionBus{i});
@@ -232,7 +234,7 @@ classdef MSMS_WRAMC_Model < handle
             % needed.
             
             % Set message prototype;
-            obj.udpMessagePrototype = reshape(MotionFile.sampleMessage(),1,[]);
+            obj.udpMessagePrototype = reshape(Scenarios.MSMS_ADL.MotionFile.sampleMessage(),1,[]);
             
             % index to the joint variable array positions in MSMS
             obj.udpMessageJointIds = strfind(char(obj.udpMessagePrototype),fliplr('FIND'))';

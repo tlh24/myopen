@@ -46,7 +46,8 @@ classdef MsmsDisplayScenario < handle
             obj.hTimer = UiTools.create_timer(mfilename,@(src,evt)cb_data_timer(src,evt,obj));
             obj.hTimer.Period = 0.05;
             
-            obj.hOutput = MSMS_WRAMC_Model;
+            obj.hOutput = Scenarios.MSMS_ADL.MSMS_WRAMC_Model;
+            obj.isLeftSide = isLeftSide;
             obj.hOutput.isLeftSide = isLeftSide;
             obj.hOutput.initialize;
         end
@@ -246,8 +247,20 @@ try
 
     % applyOffsets
     msmsAngles = obj.JointAnglesDegrees;
-    msmsAngles(action_bus_enum.Wrist_Rot) = msmsAngles(action_bus_enum.Wrist_Rot) + 90;
 
+    % 12/6/2011 RSA: Determined these empirically with WRAMC_Model.  L/R
+    % confirmed
+    if obj.isLeftSide
+        msmsAngles(action_bus_enum.Shoulder_AbAd) = -msmsAngles(action_bus_enum.Shoulder_AbAd);
+        msmsAngles(action_bus_enum.Shoulder_FE) = -msmsAngles(action_bus_enum.Shoulder_FE);
+        msmsAngles(action_bus_enum.Humeral_Rot) = -msmsAngles(action_bus_enum.Humeral_Rot);
+        msmsAngles(action_bus_enum.Wrist_Dev) = -msmsAngles(action_bus_enum.Wrist_Dev);
+        msmsAngles(action_bus_enum.Wrist_Rot) = msmsAngles(action_bus_enum.Wrist_Rot) - 90;
+        msmsAngles(action_bus_enum.Wrist_FE) = -msmsAngles(action_bus_enum.Wrist_FE);
+    else
+        msmsAngles(action_bus_enum.Wrist_Rot) = -msmsAngles(action_bus_enum.Wrist_Rot) + 90;
+    end
+    
     % send Values
     obj.hOutput.putdata(msmsAngles);
     

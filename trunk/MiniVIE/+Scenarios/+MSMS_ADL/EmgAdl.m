@@ -118,11 +118,17 @@ classdef EmgAdl < handle
             fprintf('Setting up DAQ Hardware to Record for %.1f seconds at %.0f Hz...',...
                 numRecordSeconds,sampleRate);
             try
-                obj.hDaq = analoginput('nidaq','Dev1');
-                set(obj.hDaq,'InputType','SingleEnded');
-                addchannel(obj.hDaq, 0:15);
-                obj.hDaq.SampleRate = sampleRate;
-                
+                if 1
+                    obj.hDaq = analoginput('nidaq','Dev1');
+                    set(obj.hDaq,'InputType','SingleEnded');
+                    addchannel(obj.hDaq, 0:15);
+                    obj.hDaq.SampleRate = sampleRate;
+                else
+                    % For Debug
+                    obj.hDaq = analoginput('winsound');
+                    addchannel(obj.hDaq, 1:2);
+                    obj.hDaq.SampleRate = 5000;
+                end
                 obj.hDaq.SamplesPerTrigger = numRecordSeconds*obj.hDaq.SampleRate;
                 obj.hDaq.TriggerType = 'Immediate';
                 fprintf('OK \n');
