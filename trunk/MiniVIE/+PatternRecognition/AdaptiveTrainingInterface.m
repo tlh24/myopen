@@ -4,8 +4,29 @@ classdef AdaptiveTrainingInterface < PatternRecognition.TrainingInterface
     %
     % 01-Feb-2011 Armiger: Created
     methods (Abstract=true)
-        perform_retrain(obj);
         classify_signals(obj);
+    end
+    methods
+        function perform_retrain(obj)
+            classLabels = obj.ClassLabelId(1:obj.SampleCount);
+            
+            classesWithData = unique(classLabels);
+            if length(classesWithData) < obj.SignalClassifier.NumClasses;
+                fprintf('[Classifier] Insufficient data\n');
+                return
+            end
+            
+            if ~isempty(obj.EmgData)
+                % raw emg data storage is optional
+                obj.SignalClassifier.TrainingEmg = obj.EmgData(:,:,1:obj.SampleCount);
+            end
+            obj.SignalClassifier.TrainingData = obj.Features3D(:,:,1:obj.SampleCount);
+            obj.SignalClassifier.TrainingDataLabels = classLabels;
+            obj.SignalClassifier.train();
+            obj.SignalClassifier.computeerror();
+            
+        end
+        
     end
 end
 %         function obj = TrainingInterface(hScenario)

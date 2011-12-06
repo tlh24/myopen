@@ -34,7 +34,8 @@ classdef TrainingInterface < Common.MiniVieObj
                 features3D = obj.getFeatureData(); %#ok<NASGU>
                 classLabelId = obj.getClassLabels(); %#ok<NASGU>
                 classNames = obj.SignalClassifier.getClassNames; %#ok<NASGU>
-                save(fullfile(PathName,FileName),'features3D','classLabelId','classNames');
+                ActiveChannels = obj.SignalClassifier.ActiveChannels; %#ok<NASGU>
+                save(fullfile(PathName,FileName),'features3D','classLabelId','classNames','ActiveChannels');
             end
         end
         function loadTrainingData(obj,fname)
