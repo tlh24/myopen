@@ -98,22 +98,6 @@ classdef MiniGuitarHero < PatternRecognition.AdaptiveTrainingInterface
             
             
         end
-        function perform_retrain(obj)
-            classLabels = obj.ClassLabelId(1:obj.SampleCount);
-            
-            classesWithData = unique(classLabels);
-            if length(classesWithData) < obj.SignalClassifier.NumClasses;
-                fprintf('[Classifier] Insufficient data\n');
-                return
-            end
-            
-            obj.SignalClassifier.TrainingEmg = obj.EmgData(:,:,1:obj.SampleCount);
-            obj.SignalClassifier.TrainingData = obj.Features3D(:,:,1:obj.SampleCount);
-            obj.SignalClassifier.TrainingDataLabels = classLabels;
-            obj.SignalClassifier.train();
-            obj.SignalClassifier.computeerror();
-                        
-        end
         function classify_signals(obj)
             % get a window of samples and classify them
             obj.SignalSource.NumSamples = obj.SignalClassifier.NumSamplesPerWindow;

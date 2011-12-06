@@ -1,4 +1,4 @@
-classdef BarTrainer < PatternRecognition.TrainingInterface
+classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
     % Bar Chart interactive training user interface
     % Note Signal only grows when over activation threshold
     % obj = BarTrainer()
@@ -14,7 +14,6 @@ classdef BarTrainer < PatternRecognition.TrainingInterface
         keyOrder = 'asdfghjklzxcvbnm';  % controls the keyboard to class mapping
         
         iClass
-        iSample = 0;
         samplesToRound = 500;
         activationThreshold = 0.2;
         Period = 0.02; %seconds
@@ -73,9 +72,9 @@ classdef BarTrainer < PatternRecognition.TrainingInterface
                 return
             end
             
-            obj.iSample = obj.iSample + 1;
-            obj.ClassLabelId(obj.iSample) = obj.iClass;
-            obj.Features3D(:,:,obj.iSample) = features;
+            obj.SampleCount = obj.SampleCount + 1;
+            obj.ClassLabelId(obj.SampleCount) = obj.iClass;
+            obj.Features3D(:,:,obj.SampleCount) = features;
             
             y = get(obj.hGraph,'YData');
             y(obj.iClass) = sum(obj.ClassLabelId == obj.iClass);
@@ -89,7 +88,6 @@ classdef BarTrainer < PatternRecognition.TrainingInterface
         end
         function collectdata(obj)
             start(obj.hTimer);
-            
         end
         function close(obj)
             try
@@ -102,6 +100,9 @@ classdef BarTrainer < PatternRecognition.TrainingInterface
         end
     end
     methods (Static = true)
+        function classify_signals
+            % unused
+        end
         function obj = Default
             
             hSignalSource = Inputs.SignalSimulator;
@@ -140,20 +141,7 @@ end
 function key_down(src,evt,obj) %#ok<INUSL>
 
 if strcmp(evt.Key,'space');
-    classLabels = obj.ClassLabelId(1:obj.iSample);
-    
-    classesWithData = unique(classLabels);
-    if length(classesWithData) < obj.SignalClassifier.NumClasses;
-        fprintf('[Classifier] Insufficient data\n');
-        return
-    end
-    
-    %obj.SignalClassifier.TrainingEmg = obj.EmgData(:,:,1:obj.iSample);
-    obj.SignalClassifier.TrainingData = obj.Features3D(:,:,1:obj.iSample);
-    obj.SignalClassifier.TrainingDataLabels = classLabels;
-    obj.SignalClassifier.train();
-    obj.SignalClassifier.computeerror();
-
+    obj.perform_retrain();
 end
 
 iKey = strfind(obj.keyOrder,evt.Key);

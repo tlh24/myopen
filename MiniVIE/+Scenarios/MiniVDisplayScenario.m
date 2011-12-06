@@ -147,7 +147,7 @@ try
         case 'No Movement'
         case 'Hand Open'
             obj.FingerCommand(1:4) = -0.7*speed;
-        case 'Hand Close'
+        case {'Hand Close' 'Spherical Grasp'}
             obj.FingerCommand(1:4) = speed;
         case'Index'
             obj.FingerCommand(1) = speed;
@@ -163,10 +163,10 @@ try
         case {'Supinate' 'Wrist Rotate Out'}
             obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) = ...
                 obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) + speed*gain*2;
-        case 'Up'
+        case {'Up' 'Hand Up'}
             obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) = ...
                 obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) - speed*gain;
-        case 'Down'
+        case {'Down' 'Hand Down'}
             obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) = ...
                 obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) + speed*gain;
         case {'Left' 'Wrist Flex' 'Wrist Flex In'}

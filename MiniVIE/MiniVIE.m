@@ -31,9 +31,9 @@ classdef MiniVIE < Common.MiniVieObj
             set(obj.hg.popups(MiniVIE.INPUT),'Value',1);
             set(obj.hg.popups(MiniVIE.SA),'String',{'None','LDA Classifier'});
             set(obj.hg.popups(MiniVIE.SA),'Value',1);
-            set(obj.hg.popups(MiniVIE.TRAINING),'String',{'None','Simple Trainer','Mini Guitar Hero'});
+            set(obj.hg.popups(MiniVIE.TRAINING),'String',{'None','Simple Trainer','Mini Guitar Hero','Bar Trainer'});
             set(obj.hg.popups(MiniVIE.TRAINING),'Value',1);
-            set(obj.hg.popups(MiniVIE.PRESENTATION),'String',{'None','MiniV','Breakout','AGH'});
+            set(obj.hg.popups(MiniVIE.PRESENTATION),'String',{'None','MiniV','Breakout','AGH','MplScenarioMud'});
             set(obj.hg.popups(MiniVIE.PRESENTATION),'Value',1);
             
         end
@@ -84,24 +84,24 @@ classdef MiniVIE < Common.MiniVieObj
             end
             
             % pb
-            uicontrol(obj.hg.Figure,...
+            obj.hg.SignalSourceButtons(1) = uicontrol(obj.hg.Figure,...
                 'Position',pos('cntrl',MiniVIE.INPUT,3,1,1),...
                 'Style','pushbutton',...
+                'Enable','off',...
                 'String','SignalViewer',...
                 'Callback',@(src,evt)GUIs.SignalViewer(obj.SignalSource));
-            
-            % TODO: This callback will error if SignalSource not
-            % initialized
-            uicontrol(obj.hg.Figure,...
+            obj.hg.SignalSourceButtons(2) = uicontrol(obj.hg.Figure,...
                 'Position',pos('cntrl',MiniVIE.INPUT,4,1,1),...
                 'Style','pushbutton',...
+                'Enable','off',...
                 'String','Audio Preview',...
                 'Callback',@(src,evt)obj.SignalSource.audiopreview(1));
             
-            uicontrol(obj.hg.Figure,...
+            obj.hg.TrainingButtons(1) = uicontrol(obj.hg.Figure,...
                 'Position',pos('cntrl',MiniVIE.SA,3,1,1),...
                 'Style','pushbutton',...
                 'String','Select Classes',...
+                'Enable','off',...
                 'Callback',@(src,evt)obj.SignalClassifier.uiEnterClassNames);
             
             uicontrol(obj.hg.Figure,...
@@ -109,8 +109,6 @@ classdef MiniVIE < Common.MiniVieObj
                 'Style','pushbutton',...
                 'String','Begin Training',...
                 'Callback',@(src,evt)obj.pbTrain());
-            
-            
         end
         function close(obj)
             
@@ -136,6 +134,12 @@ classdef MiniVIE < Common.MiniVieObj
                         h.setup_display;
                         h.hScenario = obj;
                         h.CloseGain = [80 80 80 80];
+                        start(h.hTimer);
+                        obj.println('Presentation setup complete',1);
+                    case 'MplScenarioMud'
+                        obj.println('Setting up presentation...',1);
+                        h = Scenarios.MplScenarioMud;
+                        h.hScenario = obj;
                         start(h.hTimer);
                         obj.println('Presentation setup complete',1);
                     case 'Breakout'
@@ -167,9 +171,11 @@ classdef MiniVIE < Common.MiniVieObj
             
             switch string{value}
                 case 'Simple Trainer'
-                    h = PatternRecognition.SimpleTrainer(obj.SignalSource,obj.SignalClassifier);
+                    h = PatternRecognition.SimpleTrainer();
+                case 'Bar Trainer'
+                    h = PatternRecognition.BarTrainer();
                 case 'Mini Guitar Hero'
-                    h = PatternRecognition.MiniGuitarHero(obj.SignalSource,obj.SignalClassifier);
+                    h = PatternRecognition.MiniGuitarHero();
                 otherwise
                     % None
                     h = [];
@@ -184,7 +190,7 @@ classdef MiniVIE < Common.MiniVieObj
                     return;
                 end
                 
-                h.initialize();
+                h.initialize(obj.SignalSource,obj.SignalClassifier);
             end
             
             obj.TrainingInterface = h;
@@ -208,7 +214,11 @@ classdef MiniVIE < Common.MiniVieObj
                     h = [];
             end
             
-            if ~isempty(h)
+            if isempty(h)
+                set(obj.hg.TrainingButtons(:),'Enable','off');
+            else
+                set(obj.hg.TrainingButtons(:),'Enable','on');
+                
                 defaultChannels = GUIs.guiChannelSelect.getSavedDefaults();
                 fprintf('Setting Active Channels to: ');
                 fprintf('%d ',defaultChannels);
@@ -258,18 +268,22 @@ classdef MiniVIE < Common.MiniVieObj
                         h = Inputs.UdpDevice();
                     case 'CpchSerial'
                         %h = Inputs.CpchSerial('COM3', uint16(hex2dec('FFFF')), uint16(hex2dec('4321')));
-                        h = Inputs.CpchSerial('COM5');
+                        h = Inputs.CpchSerial('COM13');
                         
                     otherwise
                         % None
                         h = [];
                 end
                 
-                if ~isempty(h)
+                if isempty(h)
+                    set(obj.hg.SignalSourceButtons(:),'Enable','off');
+                else
+                    set(obj.hg.SignalSourceButtons(:),'Enable','on');
+                
                     obj.println('Adding Filters',1);
                     h.addfilter(Inputs.HighPass());
                     % h.addfilter(Inputs.LowPass());
-                    h.addfilter(Inputs.Notch());
+                    h.addfilter(Inputs.Notch(60.*(1:4),5,1000));
                     % obj.SignalSource.addfilter(Inputs.MAV(150));
                     h.NumSamples = 2000;
                     h.initialize();
