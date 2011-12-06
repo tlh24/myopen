@@ -103,7 +103,12 @@ classdef TrainingInterface < Common.MiniVieObj
             obj.Features3D = NaN([obj.SignalSource.NumChannels obj.SignalClassifier.NumFeatures obj.MaxSamples]);
             obj.ClassLabelId = NaN(1,obj.MaxSamples);
         end
-        
+        function ok = isInitialized(obj)
+            ok = ~isempty(obj.SignalSource) && ...
+                ~isempty(obj.SignalClassifier) && ...
+                ~isempty(obj.Features3D) && ...
+                ~isempty(obj.ClassLabelId);
+        end
         function close(obj)
             %override
         end
