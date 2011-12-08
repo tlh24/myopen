@@ -123,7 +123,7 @@ class cupoje:
 		if self.juice:
 			j = 1
 		if self.du3:
-			self.du3.writeRegister(6000 + 3, j)
+			self.du3.writeRegister(7200, 65535 - 5000*j)  
 		alpha = 0.75
 		if self.touch:
 			alpha = 1.0
@@ -200,7 +200,12 @@ class cupoje:
 		# setup the labJack. 
 		try:
 			self.du3 = u3.U3()
-			self.du3.configIO(FIOAnalog=7,EIOAnalog=7); 
+			baseValue = 65535
+			self.du3.configIO(FIOAnalog=7,EIOAnalog=7,TimerCounterPinOffset=4,NumberOfTimersEnabled=1)
+			self.du3.configTimerClock(TimerClockBase=5, TimerClockDivisor=2) # 12Mhz clock / 2
+			# this puts the output around 26Khz -- should be sufficiently far from our recording b/w.
+			self.du3.getFeedback( u3.Timer0Config(TimerMode = 1, Value = baseValue) )
+			self.du3.writeRegister(7200, baseValue)  
 			self.manual = True
 		except:
 			self.du3 = None
