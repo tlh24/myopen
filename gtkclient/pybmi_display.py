@@ -94,7 +94,7 @@ class cupoje:
 			pb.ParseFromString(data)
 			if len(pb.cursor) == 2:
 				self.cursor.translate(pb.cursor[0],pb.cursor[1])
-				print pb.cursor[0],pb.cursor[1]
+				#print pb.cursor[0],pb.cursor[1]
 			if len(pb.target) == 2:
 				self.target.translate(pb.target[0],pb.target[1])
 			if pb.HasField('juicer'):
@@ -117,14 +117,18 @@ class cupoje:
 			vy = self.du3.getAIN(1)
 			vt = self.du3.getAIN(2)
 			self.touch = vt > 1.25
+			print "manual control"
 			self.cursor.translate((vx-1.25)/-1.25, (vy-1.25)/-1.25)
 		else:
 			time.sleep(0.012)
-		j = 0
-		if self.juice:
-			j = 1
-		if self.du3:
-			self.du3.writeRegister(7200, 65535 - 5000*j)  
+		if self.du3: 
+			if self.juice:
+				self.du3.configIO(NumberOfTimersEnabled = 1)
+				self.du3.getFeedback( u3.Timer0Config(TimerMode = 1, Value = 65535 - 7000) )
+				#self.du3.writeRegister(7200, 65535 - 5000)  
+			else:
+				self.du3.configIO(NumberOfTimersEnabled = 0)
+				self.du3.writeRegister(6000 + 4, 0)  #disable juice
 		alpha = 0.75
 		if self.touch:
 			alpha = 1.0
