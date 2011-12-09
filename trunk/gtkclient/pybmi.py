@@ -1,3 +1,4 @@
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
 import pygtk
 pygtk.require('2.0')
@@ -115,7 +116,8 @@ def configure_event(widget, event):
 	
 def update_display():
 	# get data from gtkclient.
-	global frsock, g_die, g_dict, fr_scale, g_juiceOverride, g_file                            
+	global frsock, g_die, g_dict, fr_scale, g_juiceOverride, g_file 
+	global firing_rates
 	try:
 		a = g_dict['fr_smoothing']
 		a = math.pow(2.0, -1.0*a); 
@@ -146,108 +148,111 @@ def update_display():
 			for r in range(0,128):
 				firing_rates[0][r] = ar[(r+2)*2+0] / 128.0
 				firing_rates[1][r] = ar[(r+2)*2+1] / 128.0
-			#compute x and y position.
-			targ = [0.0,0.0]
-			ntarg = [0.0,0.0]
-			for ch in range(0,128):
-				for u in range(0,2):
-					if neuron_group[ch][u] == 1:
-						targ[0] += firing_rates[u][ch];
-						ntarg[0] += 1.0; 
-					if neuron_group[ch][u] == 2:
-						targ[1] += firing_rates[u][ch];
-						ntarg[1] += 1.0; 
-			frs = g_dict["fr_scale"];
-			if ntarg[0] > 0:
-				targ[0] /= ntarg[0] * frs; 
-			if ntarg[1] > 0:
-				targ[1] /= ntarg[1] * frs; 
-			#individual axis scale and offset.
-			scale = [1.0,1.0]
-			offset = [0.0,0.0]
-			scale[0] = g_dict["X scale"]
-			scale[1] = g_dict["Y scale"]
-			offset[0] = g_dict["X offset"]
-			offset[1] = g_dict["Y offset"]
-			for u in range(0,2):
-				targ[u] = scale[u] * targ[u]
-				targ[u] = targ[u] + offset[u]
-				print "cursor" , u, targ[u]
-				if targ[u] < -1.0:
-					targ[u] = -1.0
-				if targ[u] > 1.0:
-					targ[u] = 1.0
-			if g_dict['control'] == 'BMI':
-				cursV[0] = targ[0] # slightly more atomic.
-				cursV[1] = targ[1] # accessed from server thread.
-			if g_file != None:
-				# save data. 
-				g_file.write("%f curs %f %f targ %f %f scl %f %f off %f %f fr_scl %f\n" %
-					(g_time, cursV[0], cursV[1], targV[0], targV[1], 
-					scale[0], scale[1], offset[0], offset[1], frs)); 
-				for grp in range(1,3):
-					g_file.write("grp%d " % (grp))
-					for ch in range(0,128):
-						for u in range(0,2):
-							if neuron_group[ch][u] == grp:
-								g_file.write("%du%d " % (ch, u));
-					g_file.write("\n"); 
-					g_file.flush(); 
-			#probably need to run the game here... 
-			d = cursV[0] - targV[0]
-			e = cursV[1] - targV[1]
-			d = math.sqrt(d*d + e*e)
-			inside = d < g_dict['targetSize']
-			if g_dict['task'] == 'random':
-				if inside:
-					targV[0] = random.random()-0.5
-					targV[1] = random.random()-0.5
-			if g_dict['task'] == 'left/right': #start here.  move to 2d later.
-				# do the standard thing: switch statement based on state.
-				gs = g_dict['gs']
-				dt = time.time() - g_dict['gt']
-				if g_juiceOverride:
-					gs = 'reward'
-					dt = 0
-					g_juiceOverride = False
-					print "juice override"
-				if gs == 'default':
-					g_dict['targetAlpha'] = 0.5
-					if inside:
-						gs = 'hold'
-				elif gs == 'hold': 
-					g_dict['targetAlpha'] = 0.5 + 0.5*dt/g_dict['holdTime']
-					if dt > g_dict['holdTime']:
-						gs = 'reward'
-					if not inside:
-						gs = 'default'
-				elif gs == 'reward':
-					g_dict['targetAlpha'] = 1.0 - 0.5*dt/g_dict['rewardTime']
-					if dt > g_dict['rewardTime']:
-						gs = 'new target'
-				else: #make a new target and transisiton to wait.
-					if targV[0] < 0:
-						targV[0] = 0.7
-					else:
-						targV[0] = -0.7
-					targV[1] = 0.0
-					g_dict['targetAlpha'] = 0.5
-					gs = 'default'
-				#control the juicer.
-				if gs == 'reward':
-					g_dict['juicer'] = True
-				else:
-					g_dict['juicer'] = False
-				if g_dict['gs'] != gs: #update the state time
-					g_dict['gt'] = time.time()
-				g_dict['gs'] = gs
-			
+		else:
+			print "timeout waiting for firing rate data"
 	else:
+		# print "could not send req to gtkclient."
 		if frsock:
 			frsock.close()
 		frsock = None
 		most_recent = 0
 		last_update = 0
+	#compute x and y position.
+	pos = [0.0,0.0]
+	nn = [0.0,0.0]
+	for ch in range(0,128):
+		for u in range(0,2):
+			if neuron_group[ch][u] == 1:
+				pos[0] += firing_rates[u][ch];
+				nn[0] += 1.0; 
+			if neuron_group[ch][u] == 2:
+				pos[1] += firing_rates[u][ch];
+				nn[1] += 1.0; 
+	frs = g_dict["fr_scale"];
+	if pos[0] > 0:
+		pos[0] /= nn[0] * frs; 
+	if pos[1] > 0:
+		pos[1] /= nn[1] * frs; 
+	#individual axis scale and offset.
+	scale = [1.0,1.0]
+	offset = [0.0,0.0]
+	scale[0] = g_dict["X scale"]
+	scale[1] = g_dict["Y scale"]
+	offset[0] = g_dict["X offset"]
+	offset[1] = g_dict["Y offset"]
+	for u in range(0,2):
+		pos[u] = scale[u] * pos[u]
+		pos[u] = pos[u] + offset[u]
+		if pos[u] < -1.0:
+			pos[u] = -1.0
+		if pos[u] > 1.0:
+			pos[u] = 1.0
+	print "pos", pos
+	if g_dict['control'] == 'BMI':
+		cursV[0] = pos[0] # slightly more atomic.
+		cursV[1] = pos[1] # accessed from server thread.
+	if g_file != None:
+		# save data. 
+		g_file.write("%f curs %f %f targ %f %f scl %f %f off %f %f fr_scl %f\n" %
+			(g_time, cursV[0], cursV[1], targV[0], targV[1], 
+			scale[0], scale[1], offset[0], offset[1], frs)); 
+		for grp in range(1,3):
+			g_file.write("grp%d " % (grp))
+			for ch in range(0,128):
+				for u in range(0,2):
+					if neuron_group[ch][u] == grp:
+						g_file.write("%du%d " % (ch, u));
+			g_file.write("\n"); 
+			g_file.flush(); 
+	#probably need to run the game here... 
+	d = cursV[0] - targV[0]
+	e = cursV[1] - targV[1]
+	d = math.sqrt(d*d + e*e)
+	inside = d < g_dict['targetSize']
+	if g_dict['task'] == 'random':
+		if inside:
+			targV[0] = random.random()-0.5
+			targV[1] = random.random()-0.5
+	if g_dict['task'] == 'left/right': #start here.  move to 2d later.
+		# do the standard thing: switch statement based on state.
+		gs = g_dict['gs']
+		dt = time.time() - g_dict['gt']
+		if g_juiceOverride:
+			gs = 'reward'
+			dt = 0
+			g_juiceOverride = False
+			print "juice override"
+		if gs == 'default':
+			g_dict['targetAlpha'] = 0.5
+			if inside:
+				gs = 'hold'
+		elif gs == 'hold': 
+			g_dict['targetAlpha'] = 0.5 + 0.5*dt/g_dict['holdTime']
+			if dt > g_dict['holdTime']:
+				gs = 'reward'
+			if not inside:
+				gs = 'default'
+		elif gs == 'reward':
+			g_dict['targetAlpha'] = 1.0 - 0.5*dt/g_dict['rewardTime']
+			if dt > g_dict['rewardTime']:
+				gs = 'new target'
+		else: #make a new target and transisiton to wait.
+			if targV[0] < 0:
+				targV[0] = 0.7
+			else:
+				targV[0] = -0.7
+			targV[1] = 0.0
+			g_dict['targetAlpha'] = 0.5
+			gs = 'default'
+		#control the juicer.
+		if gs == 'reward':
+			g_dict['juicer'] = True
+		else:
+			g_dict['juicer'] = False
+		if g_dict['gs'] != gs: #update the state time
+			g_dict['gt'] = time.time()
+		g_dict['gs'] = gs
+			
 	wind.invalidate_rect(gtk.gdk.Rectangle(0,0,pierad*16,pierad*16), False)
 	return True
 
@@ -616,7 +621,7 @@ def server_thread(die,port,targV,cursV,touchV,g_dict):
 				#first write out commands (if any)
 				pb = spikes_pb2.Display_msg()
 				map((lambda x: pb.cursor.append(x)),cursV)
-				# print cursV[0], cursV[1]
+				#print cursV[0], cursV[1]
 				map((lambda x: pb.target.append(x)),targV)
 				pb.touch = touchV.value
 				check = ['cursorSize','targetSize','targetAlpha','juicer']
