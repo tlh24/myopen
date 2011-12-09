@@ -390,7 +390,7 @@ public:
 			//regularize.
 			for(int i=0; i<32;i++)
 				cov->data[i*32+i] += 0.001; 
-			gsl_matrix_to_mat(cov, "pca_cov.mat"); 
+			//gsl_matrix_to_mat(cov, "pca_cov.mat"); 
 			//eigen decomp.
 			t = gettime(); 
 			gsl_eigen_symmv_workspace *ws = gsl_eigen_symmv_alloc(32); 

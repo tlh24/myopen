@@ -187,7 +187,7 @@ def update_display():
 			pos[u] = -1.0
 		if pos[u] > 1.0:
 			pos[u] = 1.0
-	print "pos", pos
+	# print "pos", pos
 	if g_dict['control'] == 'BMI':
 		cursV[0] = pos[0] # slightly more atomic.
 		cursV[1] = pos[1] # accessed from server thread.
@@ -484,9 +484,9 @@ def main():
 		return vb
 		
 	mk_scale("X scale",0.01,10,2.5)
-	mk_scale("X offset",-3,3,0)
+	mk_scale("X offset",-9,9,0)
 	mk_scale("Y scale",0.01,10,2)
-	mk_scale("Y offset",-3,3,0)
+	mk_scale("Y offset",-9,9,0)
 	mk_scale("fr_scale",0,100,30) #units: Hz.
 	frame = mk_scale("fr_smoothing",-3,10,6,plot_fr_smoothing)
 	
