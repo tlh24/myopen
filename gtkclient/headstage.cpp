@@ -50,7 +50,7 @@ i64		g_messR;
 unsigned int g_echo = 0; 
 unsigned int g_headecho = 0; 
 unsigned int g_oldheadecho = 100; 
-unsigned int g_echoMask = 0x00ffffff; //used to clear address bits
+unsigned int g_echoMask = 0xffffffff; //used to clear address bits
 	// 0xffffffff puts gtkclient in compatability mode. (before svn v 605)
 	// 0x00ffffff puts gtkclient in echo mode. (after svn v. 605)
 
@@ -69,7 +69,7 @@ float highpass_coefs2[8] = {0.980489,-1.960979,1.976285,-0.977184,
 
 unsigned int echo(unsigned int address){
 	address &= g_echoMask; 
-	address |= (g_echo & 0xf) << 28; 
+	address |= (g_echo & 0xf) << 28; //top nibble is f normally.
 	return address; 
 }
 void saveMessage(const char *fmt, ...){
