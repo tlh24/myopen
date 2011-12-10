@@ -12,19 +12,39 @@ classdef AGH < Presentation.AirGuitarHero.AirGuitarHeroBase
         end
         function initialize(obj)
             
-            % setup video stream
-            try
-                clear('vcapg2');
-                avHandle = vcapg2;
-                if isequal(size(avHandle),[1 1])
-                    obj.hAudioVideoIn = avHandle;
-                end
-            catch ME
-                warning(ME.message);
-                warning('AGH_Trainer:NoCaptureDevice','No Capture device found using vcapg2!')
-                obj.hAudioVideoIn = [];
-            end
+            obj.isValidImageAcqToolbox = license('checkout','Image_Acquisition_Toolbox');
             
+            if obj.isValidImageAcqToolbox
+                dev = 'winvideo';
+                id = 1;
+                mode = 'YUY2_640x480';
+                vid = videoinput(dev,id,mode);
+                %src = getselectedsource(vid);
+                vid.ReturnedColorspace = 'rgb';
+                
+                % TriggerRepeat is zero based and is always one
+                % less than the number of triggers.
+                vid.TriggerRepeat = Inf;
+                vid.FramesPerTrigger = 1;
+                triggerconfig(vid, 'manual');
+                fprintf('Starting Image_Acquisition_Toolbox Video Device=%s Id=%d Mode=%s...',dev,id,mode);
+                start(vid);
+                fprintf('OK\n');
+                obj.hAudioVideoIn = vid;
+            else
+                % setup video stream
+                try
+                    clear('vcapg2');
+                    avHandle = vcapg2([],0);
+                    if isequal(size(avHandle),[1 1])
+                        obj.hAudioVideoIn = avHandle;
+                    end
+                catch ME
+                    warning(ME.message);
+                    warning('AGH_Trainer:NoCaptureDevice','No Capture device found using vcapg2!')
+                    obj.hAudioVideoIn = [];
+                end
+            end
             setupDisplay(obj);
             obj.hNoteDetector = Presentation.AirGuitarHero.NoteDetector(obj);
             
@@ -77,8 +97,13 @@ classdef AGH < Presentation.AirGuitarHero.AirGuitarHeroBase
             set(hDelayDecrease,'Callback', @(src,evnt) obj.setFrameDelay(obj.FrameDelay-1) );
             
             % TODO: Abstract hardware outputs
-            obj.hOutput = digitalio('mcc',0);
-            addline(obj.hOutput,0:7,'out');
+            try
+                obj.hOutput = digitalio('mcc',0);
+                addline(obj.hOutput,0:7,'out');
+            catch ME
+                errordlg({'Error setting up digital output device.  Error was:' ME.message});
+                rethrow(ME);
+            end
             vals = ones(8,1);
             putvalue(obj.hOutput,vals);
             

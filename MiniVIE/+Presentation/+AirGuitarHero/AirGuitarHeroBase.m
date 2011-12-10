@@ -23,6 +23,8 @@ classdef AirGuitarHeroBase < hgsetget
         DisplayState = 0;
         
         FrameDelay = 3;  % Integer number of frames between when notes graphically detected until note is played
+        
+        isValidImageAcqToolbox = 0;
     end
     properties (Access = private)
         LastKey = '';
@@ -130,7 +132,12 @@ classdef AirGuitarHeroBase < hgsetget
             %             else
             %                 frame = vcapg2;
             %             end
-            frame = vcapg2;
+            if obj.isValidImageAcqToolbox
+                trigger(obj.hAudioVideoIn);
+                frame = getdata(obj.hAudioVideoIn);
+            else
+                frame = vcapg2;
+            end
         end
         function setFrameDelay(obj,numFrameDelay)
             % Ensure numFrameDelay is a positive integer from 1 to 10;
