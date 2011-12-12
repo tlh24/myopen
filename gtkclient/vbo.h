@@ -1,5 +1,9 @@
 #ifndef __VBO_H__
 #define __VBO_H__
+
+#include <sqlite3.h>
+#include "sql.h"
+
 void copyData(GLuint vbo, u32 sta, u32 fin, float* ptr, int stride); 
 extern float g_viewportSize[2]; 
 class Vbo {
@@ -157,7 +161,7 @@ public:
 	int    m_polyW;
 	int    m_drawWf; 
 	
-	VboPca(int dim, int rows, int cols):Vbo(dim, rows, cols){ 
+	VboPca(int dim, int rows, int cols, int ch):Vbo(dim, rows, cols){ 
 		if(dim != 6) printf("Error: dim != 6 in VboPca\n"); 
 		m_mean = (float*)malloc(dim * sizeof(float));
 		m_max = (float*)malloc(dim * sizeof(float));
@@ -169,11 +173,13 @@ public:
 			m_maxSmooth[i] = 1.f;
 			m_meanSmooth[i] = 0.f; 
 		}
+		sqliteGetBlob(ch, 0, "vbopca_mean", m_mean, 6);
+		sqliteGetBlob(ch, 0, "vbopca_max", m_max, 6); 
 		m_wf = (float*)malloc(rows * 32 * sizeof(float));
 		m_poly = (float*)malloc(1024 * 2 * sizeof(float)); //for sorting.
 		m_polyW = 0; 
 		m_drawWf = 0; 
-		m_color[3] = -0.5; //additive alhpa. so make the points partially transparent.
+		m_color[3] = -0.5; //additive alpha. so make the points partially transparent.
 	}
 	~VboPca(){
 		free(m_mean); 
@@ -182,6 +188,10 @@ public:
 		free(m_meanSmooth); 
 		free(m_wf); 
 		free(m_poly); 
+	}
+	void save(int ch){
+		sqliteSetBlob(ch, 0, "vbopca_mean", m_mean, 6);
+		sqliteSetBlob(ch, 0, "vbopca_max", m_max, 6); 
 	}
 	float* addWf(){
 		//assumes that we will call addRow() immediately *afterward*.
@@ -322,7 +332,7 @@ public:
 		float ox = m_loc[0] - m_loc[2]; 
 		float oy = m_loc[1] - m_loc[3]/2;
 		int i = m_drawWf; 
-		glColor4f(1.f, 0.f, 0.4f, 1.f); 
+		glColor4f(0.3f, 1.f, 0.0f, 1.f); 
 		glLineWidth(4.f); 
 		glBegin(GL_LINE_STRIP);
 		for(int j=0; j<32; j++){
@@ -332,7 +342,7 @@ public:
 		}
 		glEnd(); 
 		glColor4f(0.f, 0.f, 0.f, 1.f); 
-		glLineWidth(1.f); 
+		glLineWidth(1.0f); 
 		glBegin(GL_LINE_STRIP);
 		for(int j=0; j<32; j++){
 			float ny = m_wf[i*32 + j] + 0.5f; 

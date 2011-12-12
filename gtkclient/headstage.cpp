@@ -213,6 +213,7 @@ void setChans(){
 	}
 	for(i=0; i<4; i++){
 		saveMessage("chan %c %d", 'A'+i, g_channel[i]); 
+		printf("chan %c %d", 'A'+i, g_channel[i]); 
 		//save it in the sqlite db. 
 		//sqliteSetValue(i,"channel", (float)g_channel[i]); 
 	}

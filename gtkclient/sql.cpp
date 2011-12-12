@@ -143,6 +143,7 @@ void sqliteSetValue2(int ch, int un, const char* name, float v){
 	}
 }
 void sqliteGetBlob(int ch, int un, const char* name, float* v, int siz){
+	//siz is in 4 byte increments -- sizeof float.
 	sqlite3_stmt *plineInfo = 0;
 	int rc; 
 	char buf[256]; 

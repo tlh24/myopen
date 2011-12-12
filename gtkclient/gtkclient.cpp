@@ -37,7 +37,7 @@
 #define NFBUF 4
 #endif
 
-#include "../../neurorecord/stage/memory.h"
+#include "../firmware_stage9/memory.h"
 #include "headstage.h"
 #include "cgVertexShader.h"
 #include "vbo.h"
@@ -99,7 +99,7 @@ i64			 g_sortWfOffset[4];
 int 			 g_sortWfUnit[4]; 
 i64			 g_unsortCount[4]; 
 
-float g_unsortrate = 10.0; //the rate that unsorted WFs get through.
+float g_unsortrate = 0.0; //the rate that unsorted WFs get through.
 FILE* g_saveFile = 0; 
 bool g_closeSaveFile = false; 
 unsigned int g_saveFileBytes;
@@ -144,6 +144,8 @@ GtkAdjustment* g_zoomSpin;
 GtkAdjustment* g_rasterSpanSpin; 
 GtkWidget* g_pktpsLabel;
 GtkWidget* g_fileSizeLabel;
+int			g_uiRecursion = 0; //prevents programmatic changes to the UI
+// from causing commands to be sent to the headstage. 
 
 i64 mod2(i64 a, i64 b){
 	i64 c = a % b; 
@@ -328,19 +330,32 @@ static gint motion_notify_event( GtkWidget *,
 		g_rtMouseBtn = false; 
 	return TRUE;
 }
+//forward declaration.
+static void templatePopupMenu (GdkEventButton *event, gpointer userdata);
 static gint button_press_event( GtkWidget      *,
                                 GdkEventButton *event ){
+	updateCursPos(event->x,event->y); 
+	int u = 0; 
+	if(g_cursPos[0] > 0.0f) u += 1; 
+	if(g_cursPos[1] < 0.0f) u += 2; 
 	if (event->button == 1){
-		updateCursPos(event->x,event->y); 
-		int u = 0; 
-		if(g_cursPos[0] > 0.0f) u += 1; 
-		if(g_cursPos[1] < 0.0f) u += 2; 
 		g_polyChan = u; 
-		if(!g_c[g_channel[u]]->mouse(g_cursPos)){
-			g_c[g_channel[u]]->resetPoly(); 
-			g_c[g_channel[u]]->addPoly(g_cursPos); 
-			g_addPoly = true; 
-		}else g_addPoly = false; 
+		g_addPoly = false; 
+		if(event->type==GDK_2BUTTON_PRESS){
+			g_c[g_channel[u]]->computePca(); 
+		}else if(event->type==GDK_3BUTTON_PRESS){ 
+			g_c[g_channel[u]]->resetPca(); 
+		}else{
+			if(!g_c[g_channel[u]]->mouse(g_cursPos)){
+				g_c[g_channel[u]]->resetPoly(); 
+				g_c[g_channel[u]]->addPoly(g_cursPos); 
+				g_addPoly = true; 
+			}
+		}
+	}
+	if(event->button == 3){
+		if(g_c[g_channel[u]]->m_pcaVbo->m_polyW > 10 && g_mode == MODE_SORT)
+			templatePopupMenu(event, (gpointer)u); 
 	}
 	return TRUE;
 }
@@ -543,7 +558,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 			g_c[g_channel[k]]->setLoc(xo, yo, xz, yz); 
 			bool srt = g_mode==MODE_SORT;
 			g_c[g_channel[k]]->draw(g_drawmode, time, g_cursPos, 
-									g_showPca&&srt, g_rtMouseBtn, srt);
+									g_showPca, g_rtMouseBtn, srt);
 		}
 		cgGLDisableProfile(myCgVertexProfile);
 		glPopMatrix();
@@ -1121,7 +1136,7 @@ packet format in the file, as saved here:
 void* server_thread(void* ){
 	//kinda like a RPC service -- call to get the vector of firing rates.
 	// call whenever you want!
-	unsigned short rates[128+2][2]; //first two are the size of the array, then the time.
+	unsigned short rates[128+3][2]; //first two are the size of the array, then the time.
 	//9 bits integer part, 7 bits fractional part. hence 0-511.99Hz.
 	unsigned char buf[128]; 
 	int client = 0; 
@@ -1156,13 +1171,19 @@ void* server_thread(void* ){
 				}
 				//doesn't matter at this point -- make a response. 
 				//start = gettime();
+				long long ltime = (long long)(reqtime * 1000.0); //put it in ms.
 				rates[0][0] = 2; //rows
 				rates[0][1] = 128; //columns. 
-				rates[0][2] = gettime(); 
-				rates[0][3] = rates[0][2]; 
+				rates[0][2] = (unsigned short)(ltime & 0xffff);
+				ltime >>= 16; 
+				rates[0][3] = (unsigned short)(ltime & 0xffff);
+				ltime >>= 16; 
+				rates[0][4] = (unsigned short)(ltime & 0xffff);
+				ltime >>= 16; 
+				rates[0][5] = (unsigned short)(ltime & 0xffff);
 				for(int i=0; i<128; i++){
 					for(int j=0; j<2; j++){
-						rates[i+2][j] = g_fr[i][j].get_rate(reqtime); 
+						rates[i+3][j] = g_fr[i][j].get_rate(reqtime); 
 					}
 				}
 				//end = gettime(); 
@@ -1199,17 +1220,20 @@ void* server_thread(void* ){
 }
 static gboolean chanscan(gpointer){
 	if(g_cycle){
+		g_uiRecursion++; 
 		for(int k=0; k<4; k++){
 			g_channel[k]++; 
 			g_channel[k] &= 127; 
 			gtk_adjustment_set_value(g_channelSpin[k], (double)g_channel[k]); 
 		}
+		g_uiRecursion--; 
 		setChans(); 
 	}
 	return g_cycle; //if this is false, don't call again.
 }
 void updateChannelUI(int k){
 	//called when a channel changes -- update the UI elements accordingly. 
+	g_uiRecursion++;
 	int ch = g_channel[k]; 
 	gtk_adjustment_set_value(g_gainSpin[k], g_c[ch]->m_gain);
 	gtk_adjustment_set_value(g_agcSpin[k], g_c[ch]->m_agc); 
@@ -1217,6 +1241,7 @@ void updateChannelUI(int k){
 	gtk_adjustment_set_value(g_apertureSpin[k*2+1], g_c[ch]->getAperture(1));
 	gtk_adjustment_set_value(g_thresholdSpin[k], g_c[ch]->getThreshold()); 
 	gtk_adjustment_set_value(g_centeringSpin[k], g_c[ch]->getCentering());
+	g_uiRecursion--; 
 }
 static void channelSpinCB( GtkWidget*, gpointer p){
 	int k = (int)((long long)p & 0xf); 
@@ -1225,7 +1250,6 @@ static void channelSpinCB( GtkWidget*, gpointer p){
 		printf("channelSpinCB: %d\n", ch); 
 		if(ch < 128 && ch >= 0 && ch != g_channel[k]){
 			g_channel[k] = ch; 
-			setChans(); 
 			//update the UI too. 
 			updateChannelUI(k); 
 		}
@@ -1235,16 +1259,21 @@ static void channelSpinCB( GtkWidget*, gpointer p){
 			for(int j=1; j<4; j++){
 				g_channel[j] = (g_channel[0] + j) & 127; 
 				//this does not recurse -- have to set the other stuff manually. 
+				g_uiRecursion++; 
 				gtk_adjustment_set_value(g_channelSpin[j], (double)g_channel[j]); 
-				updateChannelUI(j); 
-				
+				g_uiRecursion--; 
 			}
+			//loop over & update the UI afterward, so we don't have a race-case.
+			for(int j=1; j<4; j++)
+				updateChannelUI(j); 
 		}
+		if(!g_uiRecursion)
+			setChans();
 	}
 }
 static void gainSpinCB( GtkWidget*, gpointer p){
 	int h = (int)((long long)p & 0xf); 
-	if(h >= 0 && h < 4){
+	if(h >= 0 && h < 4 && !g_uiRecursion){
 		float gain = gtk_adjustment_get_value(g_gainSpin[h]); 
 		printf("gainSpinCB: %f\n", gain); 
 		g_c[g_channel[h]]->m_gain = gain; 
@@ -1268,7 +1297,7 @@ static void gainSetAll(gpointer ){
 }
 static void thresholdSpinCB( GtkWidget* , gpointer p){
 	int h = (int)((long long)p & 0xf); 
-	if(h >= 0 && h < 4){
+	if(h >= 0 && h < 4 && !g_uiRecursion){
 		int ch = g_channel[h]; 
 		float thresh = gtk_adjustment_get_value(g_thresholdSpin[h]); 
 		g_c[ch]->setThreshold(thresh); 
@@ -1277,7 +1306,7 @@ static void thresholdSpinCB( GtkWidget* , gpointer p){
 }
 static void centeringSpinCB( GtkWidget* , gpointer p){
 	int h = (int)((long long)p & 0xf); 
-	if(h >= 0 && h < 4){
+	if(h >= 0 && h < 4 && !g_uiRecursion){
 		int ch = g_channel[h]; 
 		float t = gtk_adjustment_get_value(g_centeringSpin[h]); 
 		g_c[ch]->setCentering(t); 
@@ -1291,7 +1320,7 @@ static void unsortRateSpinCB( GtkWidget* , gpointer){
 }
 static void agcSpinCB( GtkWidget*, gpointer p){
 	int h = (int)((long long)p & 0xf); 
-	if(h >= 0 && h < 4){
+	if(h >= 0 && h < 4 && !g_uiRecursion){
 		float agc = gtk_adjustment_get_value(g_agcSpin[h]); 
 		printf("agcSpinCB: %f\n", agc); 
 		int j = g_channel[h]; 
@@ -1304,7 +1333,7 @@ static void agcSpinCB( GtkWidget*, gpointer p){
 }
 static void apertureSpinCB( GtkWidget*, gpointer p){
 	int h = (int)((long long)p & 0xf); 
-	if(h >= 0 && h < 8){
+	if(h >= 0 && h < 8 && !g_uiRecursion){
 		float a = gtk_adjustment_get_value(g_apertureSpin[h]); 
 		int j = g_channel[h/2]; 
 		//gtk likes to call this frequently -- only update when
@@ -1318,7 +1347,17 @@ static void apertureSpinCB( GtkWidget*, gpointer p){
 		}
 	}
 }
+static void apertureOffCB( GtkWidget*, gpointer p){
+	int h = (int)((long long)p & 0xf); 
+	if(h >= 0 && h < 8 && !g_uiRecursion){
+		int j = g_channel[h/2]; 
+		gtk_adjustment_set_value(g_apertureSpin[h], 0);
+		g_c[j]->setApertureLocal(0, h%2); 
+		setAperture(j);
+	}
+}
 static void agcSetAll(gpointer ){
+	//sets *all 128* channels.
 	float agc = gtk_adjustment_get_value(g_agcSpin[0]); 
 	for(int i=0; i<128; i+=4){
 		g_c[i+0]->m_agc = agc;
@@ -1345,19 +1384,30 @@ static void lmsRadioCB(GtkWidget *button, gpointer p){
 	}
 }
 static void filterRadioCB(GtkWidget *button, gpointer p){
+	//only sets the currently viewed channels.
 	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))){
 		int i = (int)((long long)p & 0xf);
-		if(i == 2) setOsc(g_channel[0]); 
-		else if(i == 3) setFlat(g_channel[0]);
-		else if(i == 1) setFilter2(g_channel[0]); 
-		else resetBiquads(g_channel[0]); 
+		for(int j=0; j<4; j++){
+			int c = g_channel[j]; 
+			bool same = false; 
+			for(int k=j-1; k>=0; k--){
+				if(c == (g_channel[k] & (0 ^ 32)))
+					same = true;
+			}
+			if(!same){
+				if(i == 2) setOsc(c);
+				else if(i == 3) setFlat(c); 
+				else if(i == 1) setFilter2(c); 
+				else resetBiquads(c); 
+			}
+		}
 	}
 }
 static void signalChainCB( GtkComboBox *combo, gpointer){
     gchar *string = gtk_combo_box_get_active_text( combo );
     //printf( "signalChain: >> %s <<\n", ( string ? string : "NULL" ) );
  	int i = atoi((char*)string); 
-	if(i >=0 && i < W1_STRIDE){
+	if(i >=0 && i < W1_STRIDE && !g_uiRecursion){
 		g_signalChain = i;
 		printf("g_signalChain = %d\n", i); 
 		setChans(); 
@@ -1512,11 +1562,49 @@ static void calcPCACB(gpointer){
 		g_c[g_channel[h]]->computePca();
 }
 static void getTemplateCB( GtkWidget *, gpointer p){
-	int aB = (int)((long long)p & 0xf); 
-	g_c[g_channel[g_polyChan]]->updateTemplate(aB+1); 
-	//update the UI. 
-	gtk_adjustment_set_value(g_apertureSpin[g_polyChan*2+aB],
-							 g_c[g_channel[g_polyChan]]->getAperture(aB));
+	int aB = (int)((long long)p & 0x1); 
+	int j = (int)((long long)p >> 1);
+	if(j < 4){
+		g_c[g_channel[j]]->updateTemplate(aB+1); 
+		//update the UI. 
+		gtk_adjustment_set_value(g_apertureSpin[j*2+aB],
+								g_c[g_channel[j]]->getAperture(aB));
+		//remove the old poly, now that we've used it. 
+		g_c[g_channel[j]]->resetPoly(); 
+	}
+}
+static void setWidgetColor(GtkWidget* widget, unsigned char red, unsigned char green, unsigned char blue){
+	GdkColor color;
+	color.red = red*256;
+	color.green = green*256;
+	color.blue = blue*256;
+	gtk_widget_modify_bg(widget, GTK_STATE_NORMAL, &color); 
+}
+static void templatePopupMenu (GdkEventButton *event, gpointer p){
+    GtkWidget *menu, *menuitem;
+	 int s = (int)((long long)p & 0xff); 
+
+    menu = gtk_menu_new();
+
+    menuitem = gtk_menu_item_new_with_label("set template 1 (cyan)");
+	 setWidgetColor(menuitem, 128, 255, 255); 
+    g_signal_connect(menuitem, "activate",
+                     G_CALLBACK(getTemplateCB), (gpointer)(s*2+0));
+	 gtk_menu_shell_append(GTK_MENU_SHELL(menu), menuitem);
+	 
+	 menuitem = gtk_menu_item_new_with_label("set template 2 (red)");
+	 setWidgetColor(menuitem, 255, 130, 130); 
+	  g_signal_connect(menuitem, "activate",
+                     G_CALLBACK(getTemplateCB), (gpointer)(s*2+1));
+    gtk_menu_shell_append(GTK_MENU_SHELL(menu), menuitem);
+
+    gtk_widget_show_all(menu);
+
+    /* Note: event can be NULL here when called from view_onPopupMenu;
+     *  gdk_event_get_time() accepts a NULL argument */
+    gtk_menu_popup(GTK_MENU(menu), NULL, NULL, NULL, NULL,
+                   (event != NULL) ? event->button : 0,
+                   gdk_event_get_time((GdkEvent*)event));
 }
 int main(int argn, char **argc)
 {
@@ -1556,6 +1644,8 @@ int main(int argn, char **argc)
 	sqliteCreateTableBlob("template"); 
 	sqliteCreateTableBlob("pca");
 	sqliteCreateTableBlob("pcaScl"); 
+	sqliteCreateTableBlob("vbopca_mean"); 
+	sqliteCreateTableBlob("vbopca_max"); 
 	
 	for(int i=0; i<4; i++){
 		g_channel[i] = sqliteGetValue(i, "channel", i*32); 
@@ -1721,16 +1811,45 @@ int main(int argn, char **argc)
 		gtk_box_pack_start (GTK_BOX (frame), bx2, FALSE, FALSE, 1);
 		
 		for(int j=0; j<2; j++){
-			snprintf(buf, 128, "%s", (j < 1 ? "0 yellow":"1 cyan")); 
-			g_apertureSpin[i*2+j] = mk_spinner((const char*)buf, bx2, 
+			GtkWidget* bx3 = gtk_hbox_new (FALSE, 2);
+			gtk_container_add (GTK_CONTAINER (bx2), bx3);
+			g_apertureSpin[i*2+j] = mk_spinner("", bx3, 
 								  g_c[g_channel[i]]->getAperture(j), 0, 255*16, 2, 
 								  apertureSpinCB, i*2+j); 
+			//a button for disable.
+			button = gtk_button_new_with_label("off"); 
+			if(j == 0)
+				setWidgetColor(button, 160, 255, 255); 
+			else
+				setWidgetColor(button, 255, 155, 155); 
+			g_signal_connect(button, "clicked", G_CALLBACK (apertureOffCB), (gpointer)(i*2+j));
+			gtk_box_pack_start (GTK_BOX (bx3), button, TRUE, TRUE, 1);
+			//and a button for 'set'.
+			button = gtk_button_new_with_label("set"); 
+			if(j == 0)
+				setWidgetColor(button, 120, 255, 255); 
+			else
+				setWidgetColor(button, 255, 120, 120); 
+			g_signal_connect(button, "clicked", G_CALLBACK (getTemplateCB), (gpointer)(i*2+j));
+			gtk_box_pack_start (GTK_BOX (bx3), button,TRUE, TRUE, 1);
 		}
 	}
 	//add one for unsorted unit add rate. 
 	g_unsortRateSpin = mk_spinner("unsort rate", box1, 
-			   g_unsortrate, 0.1, 40.0, 0.1, 
+			   g_unsortrate, 0.0, 40.0, 0.1, 
 			   unsortRateSpinCB, 0);
+	//show PCA button. 
+	button = gtk_check_button_new_with_label("show PCA");
+	g_signal_connect (button, "toggled",
+			G_CALLBACK (showPcaButtonCB), (gpointer) "o");
+	gtk_box_pack_start (GTK_BOX (box1), button, TRUE, TRUE, 0);
+	gtk_widget_show(button);
+	
+	button = gtk_button_new_with_label ("calc PCA");
+	g_signal_connect(button, "clicked", G_CALLBACK (calcPCACB),
+					 (gpointer*)window);
+	gtk_box_pack_start (GTK_BOX (box1), button, FALSE, FALSE, 1);
+	
 //this concludes spike page. 
 	gtk_widget_show (box1);
 	label = gtk_label_new("spikes"); 
@@ -1751,27 +1870,7 @@ int main(int argn, char **argc)
 					g_c[g_channel[h]]->getCentering(), 1.0, 30.0, 1.0, 
 					centeringSpinCB, h);
 	}
-	//show PCA button. 
-	button = gtk_check_button_new_with_label("show PCA");
-	g_signal_connect (button, "toggled",
-			G_CALLBACK (showPcaButtonCB), (gpointer) "o");
-	gtk_box_pack_start (GTK_BOX (box1), button, TRUE, TRUE, 0);
-	gtk_widget_show(button);
 	
-	button = gtk_button_new_with_label ("calc PCA");
-	g_signal_connect(button, "clicked", G_CALLBACK (calcPCACB),
-					 (gpointer*)window);
-	gtk_box_pack_start (GTK_BOX (box1), button, FALSE, FALSE, 1);
-	
-	button = gtk_button_new_with_label ("set Template 0");
-	g_signal_connect(button, "clicked", G_CALLBACK (getTemplateCB),
-					 (gpointer*)0);
-	gtk_box_pack_start (GTK_BOX (box1), button, FALSE, FALSE, 1);
-	
-	button = gtk_button_new_with_label ("set Template 1");
-	g_signal_connect(button, "clicked", G_CALLBACK (getTemplateCB),
-					 (gpointer*)1);
-	gtk_box_pack_start (GTK_BOX (box1), button, FALSE, FALSE, 1);
 // end sort page.
 	gtk_widget_show (box1);
 	label = gtk_label_new("sort"); 
