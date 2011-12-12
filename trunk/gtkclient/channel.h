@@ -33,7 +33,7 @@ public:
 	Channel(int ch){
 		m_wfVbo = new Vbo(6, 512, 34); //sorted units, with color. 
 		m_usVbo = new Vbo(3, 256, 34); //unsorted units, all gray.
-		m_pcaVbo = new VboPca(6, 1024*8, 1); 
+		m_pcaVbo = new VboPca(6, 1024*8, 1, ch); 
 		m_pcaVbo->m_fade = 0.f; 
 		m_ch = ch; 
 		//init PCA, template. 
@@ -113,6 +113,7 @@ public:
 		sqliteSetValue(m_ch, "centering", m_centering); 
 		sqliteSetValue(m_ch, "agc", m_agc); 
 		sqliteSetValue(m_ch, "gain", m_gain);
+		m_pcaVbo->save(m_ch); 
 	}
 	int addWf(float* wf, int unit, float time, bool updatePCA){
 		if(!m_wfVbo) return 0; //being called from another thread, likely.
@@ -247,15 +248,15 @@ public:
 		}
 		//and the PCA templates.
 		if(showPca){
-			glLineWidth(4.f); 
+			glLineWidth(5.f); 
 			for(int k=0; k<2; k++){
 				for(int j=0; j<32; j++){
 					float ny = m_pca[k][j]*m_pcaScl[k]+0.5; 
 					float nx = (float)(j)/31.f; 
-					glColor4f(1.f-k, k, 0.f, 0.5f);
+					glColor4f(1.f-k, k, 0.f, 0.75f);
 					glVertex3f(nx*ow+ox, ny*oh+oy, 0.f);
 				}
-				glColor4f(0.f, 0.f, 0.f, 0.5f);
+				glColor4f(0.f, 0.f, 0.f, 0.75f);
 				glVertex3f(1.f*ow+ox, 0.5f*oh+oy, 1.f);
 				glVertex3f(0.f*ow+ox, 0.5f*oh+oy, 1.f);
 			}
@@ -297,14 +298,14 @@ public:
 			return false; 
 		}
 		float aperture = 0; 
-		float color[3] = {1.f, 1.f, 0.f}; 
-		if(unit == 2){color[0] = 0.f; color[2] = 1.f; }
+		float color[3] = {0.f, 1.f, 1.f}; 
+		if(unit == 2){color[0] = 1.f; color[1] = 0.f; color[2] = 0.f; }
 		float temp[32]; 
 		m_pcaVbo->getTemplate(temp, aperture, color); 
 		printf("template %d ", unit); 
 		for(int i=0; i<16; i++){
-			m_template[unit-1][i] = temp[i+6]; 
-			printf("%d ", (int)((temp[i+6]+0.5f) * 255)); 
+			m_template[unit-1][i] = temp[i+8]; 
+			printf("%d ", (int)((temp[i+8]+0.5f) * 255)); 
 		}
 		printf("\n"); 
 		m_aperture[unit-1] = aperture * 255; 
