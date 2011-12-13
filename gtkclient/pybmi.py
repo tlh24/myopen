@@ -138,16 +138,17 @@ def update_display():
 			data = []
 			frsock.close()
 			frsock = None
-		if len(data) >= 129*2*2:
+		if len(data) >= 130*2*2:
 			ar = array.array('H',[]);
 			ar.fromstring(data);
 			if((ar[0]!= 2) | (ar[1] != 128)):
 				print "wrong data size fr rx!", ar[0], ar[1], passes
-			g_time = ar[2]; 
+			g_time = ar[2] + ar[3]*math.pow(2,16) + ar[4]*math.pow(2,32) + ar[5]*math.pow(2,48);
+			g_time = g_time / 1000.0 # transmitted resolution = ms.
 			# need to transpose..
 			for r in range(0,128):
-				firing_rates[0][r] = ar[(r+2)*2+0] / 128.0
-				firing_rates[1][r] = ar[(r+2)*2+1] / 128.0
+				firing_rates[0][r] = ar[(r+3)*2+0] / 128.0
+				firing_rates[1][r] = ar[(r+3)*2+1] / 128.0
 		else:
 			print "timeout waiting for firing rate data"
 	else:
@@ -196,6 +197,8 @@ def update_display():
 		g_file.write("%f curs %f %f targ %f %f scl %f %f off %f %f fr_scl %f\n" %
 			(g_time, cursV[0], cursV[1], targV[0], targV[1], 
 			scale[0], scale[1], offset[0], offset[1], frs)); 
+		g_file.write("targ_sz %f curs_sz %f holdTime %f rewardTime %f\n" %
+			(g_dict['targetSize'],g_dict['cursorSize'],g_dict['holdTime'],g_dict['rewardTime']));
 		for grp in range(1,3):
 			g_file.write("grp%d " % (grp))
 			for ch in range(0,128):
@@ -349,7 +352,7 @@ def main():
 	global firing_rates, frsock, targV, cursV, touchV
 	global g_die, drawing_area, group_radio_buttons, g_file
 	global g_dict # shared state.
-	global neuron_group, selected, pierad, fr_scale, g_juiceOverride
+	global neuron_group, selected, pierad, g_juiceOverride
 	
 	#manage the shared dictionary. 
 	manager = Manager()
@@ -379,7 +382,7 @@ def main():
 	
 	# next is to make the window. 
 	window = gtk.Window()
-	window.set_size_request(890, 660)
+	window.set_size_request(890, 760)
 	def delete_event(widget, event):
 		global g_die
 		g_die.value = True
@@ -420,7 +423,11 @@ def main():
 	def frsock_connect(widget, msg):
 		global frsock
 		if frsock == None and widget.get_active():
-			server = 'localhost'
+			#can specify a server on the command line. 
+			if len(sys.argv) > 1:
+				server = sys.argv[1]
+			else:
+				server = 'localhost'
 			print "trying to connect to ", server, " for firing rate data."
 			frsock = sock_connect(server,4343,g_die, True)
 			#frsock.settimeout(1)
