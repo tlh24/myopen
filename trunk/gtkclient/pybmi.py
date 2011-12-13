@@ -194,9 +194,9 @@ def update_display():
 		cursV[1] = pos[1] # accessed from server thread.
 	if g_file != None:
 		# save data. 
-		g_file.write("%f curs %f %f targ %f %f scl %f %f off %f %f fr_scl %f\n" %
+		g_file.write("%f curs %f %f targ %f %f scl %f %f off %f %f fr_scl %f irDiff %f\n" %
 			(g_time, cursV[0], cursV[1], targV[0], targV[1], 
-			scale[0], scale[1], offset[0], offset[1], frs)); 
+			scale[0], scale[1], offset[0], offset[1], frs, g_dict['irDiff'])); 
 		g_file.write("targ_sz %f curs_sz %f holdTime %f rewardTime %f\n" %
 			(g_dict['targetSize'],g_dict['cursorSize'],g_dict['holdTime'],g_dict['rewardTime']));
 		for grp in range(1,3):
@@ -207,10 +207,18 @@ def update_display():
 						g_file.write("%du%d " % (ch, u));
 			g_file.write("\n"); 
 			g_file.flush(); 
+	#threshold irDiff. 
+	if g_dict['irDiff'] > 0.055:
+		g_dict['bgColor'] = [0.0, 0.0, 0.0, 0.0]
+		attention = 1
+	else:
+		g_dict['bgColor'] = [0.3, 0.2, 0.3, 0.5]
+		attention = 0
 	#probably need to run the game here... 
 	d = cursV[0] - targV[0]
 	e = cursV[1] - targV[1]
-	d = math.sqrt(d*d + e*e)
+	#if the monkey is not paying attention, disable game..
+	d = math.sqrt(d*d + e*e) + 10*(1-attention)
 	inside = d < g_dict['targetSize']
 	if g_dict['task'] == 'random':
 		if inside:
@@ -236,7 +244,7 @@ def update_display():
 			if not inside:
 				gs = 'default'
 		elif gs == 'reward':
-			g_dict['targetAlpha'] = 1.0 - 0.5*dt/g_dict['rewardTime']
+			g_dict['targetAlpha'] = 0.75 - 0.5*dt/g_dict['rewardTime']
 			if dt > g_dict['rewardTime']:
 				gs = 'new target'
 		else: #make a new target and transisiton to wait.
@@ -357,9 +365,10 @@ def main():
 	#manage the shared dictionary. 
 	manager = Manager()
 	g_dict = manager.dict()
-	inits = ['gt','targetAlpha','cursorAlpha','targetSize','cursorSize']
+	inits = ['gt','targetAlpha','cursorAlpha','targetSize','cursorSize','irDiff']
 	for v in inits:
 		g_dict[v] = 0.0
+	g_dict['bgColor'] = [0.0,0.0,0.0,0.0]
 	#first order of business is to read in state. 
 	fil = None
 	try:
@@ -630,6 +639,7 @@ def server_thread(die,port,targV,cursV,touchV,g_dict):
 				map((lambda x: pb.cursor.append(x)),cursV)
 				#print cursV[0], cursV[1]
 				map((lambda x: pb.target.append(x)),targV)
+				map((lambda x: pb.bgColor.append(x)),g_dict['bgColor'])
 				pb.touch = touchV.value
 				check = ['cursorSize','targetSize','targetAlpha','juicer']
 				for k in check:
@@ -659,6 +669,8 @@ def server_thread(die,port,targV,cursV,touchV,g_dict):
 							if pb.HasField('touch'):
 								touchV.value = pb.touch
 							#print port, "touch", touchV.value
+						if p.HasField('irDiff'):
+							g_dict['irDiff'] = p.irDiff
 					else:
 						print port, "no data from the display client."
 			print port,"display connection closed"

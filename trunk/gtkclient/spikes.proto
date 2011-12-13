@@ -12,9 +12,10 @@ message Display_msg{
 	optional		bool		touch = 3; 	//display to bmi. 
 	optional 	bool		juicer = 4; //bmi to display.
 	optional 	bool		manual = 5; //bmi to display
-	optional		double	cursorSize = 6;
-	optional		double	targetSize = 7;
-	optional		double	cursorAlpha = 8;
-	optional		double	targetAlpha = 9;
-	optional		double	irDiff = 10; //display to BMI. 
+	optional		float		cursorSize = 6;
+	optional		float		targetSize = 7;
+	optional		float		cursorAlpha = 8;
+	optional		float		targetAlpha = 9;
+	optional		float		irDiff = 10; //display to BMI. 
+	repeated		float		bgColor = 11; //rgba, as in glClearColor call.
 }

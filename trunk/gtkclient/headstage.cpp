@@ -33,7 +33,7 @@
 #include "cgVertexShader.h"
 #include "vbo.h"
 #include "channel.h"
-#include "../../neurorecord/stage/memory.h"
+#include "../firmware_stage9/memory.h"
 
 extern int g_channel[4]; //selected in the UI.
 extern int g_signalChain; 
