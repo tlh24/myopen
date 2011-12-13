@@ -224,6 +224,8 @@ class cupoje:
 		self.cursor = Shape(1.0, 1.0, 1.0, 0.8)
 		self.cursor.make_circle(0.2, 25)
 		self.bgColor = [0.0,0.0,0.0,0.0]; 
+		self.iron = 0.0
+		self.iroff = 0.0
 		# setup the labJack. 
 		try:
 			self.du3 = u3.U3()
