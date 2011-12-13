@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "../../neurorecord/stage/decoder.h"
+#include "../firmware_stage9/decoder.h"
 #include "packet.h"
 
 //decode the template-match part of a packet

@@ -112,6 +112,8 @@ class cupoje:
 				self.cursor.set_alpha(pb.cursorAlpha)
 			if pb.HasField('targetAlpha'):
 				self.target.set_alpha(pb.targetAlpha)
+			if len(pb.bgColor) == 4
+				self.bgColor = copy.deepcopy(pb.bgColor); 
 		if self.du3 and self.manual:
 			vx = self.du3.getAIN(0)
 			vy = self.du3.getAIN(1)
@@ -145,7 +147,7 @@ class cupoje:
 		if self.touch:
 			alpha = 1.0
 		self.cursor.set_color(1.0,1.0,1.0, alpha)
-		glClearColor(0.0, 0.0, 0.0, 0.0)
+		glClearColor(self.bgColor[0], self.bgColor[1], self.bgColor[2], self.bgColor[3])
 		glClear(GL_COLOR_BUFFER_BIT)
 		self.target.draw()
 		self.cursor.draw()
@@ -220,6 +222,7 @@ class cupoje:
 		self.target.make_ring(0.3, 0.5, 25)
 		self.cursor = Shape(1.0, 1.0, 1.0, 0.8)
 		self.cursor.make_circle(0.2, 25)
+		self.bgColor = [0.0,0.0,0.0,0.0]; 
 		# setup the labJack. 
 		try:
 			self.du3 = u3.U3()
