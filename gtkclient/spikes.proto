@@ -16,4 +16,5 @@ message Display_msg{
 	optional		double	targetSize = 7;
 	optional		double	cursorAlpha = 8;
 	optional		double	targetAlpha = 9;
+	optional		double	irDiff = 10; //display to BMI. 
 }

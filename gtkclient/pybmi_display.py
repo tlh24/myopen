@@ -129,6 +129,18 @@ class cupoje:
 			else:
 				self.du3.configIO(NumberOfTimersEnabled = 0)
 				self.du3.writeRegister(6000 + 4, 0)  #disable juice
+			#IR sensor on the juicer. 
+			if self.irstate == 0:
+				self.du3.writeRegister(6000 + 3, 1); 
+			if self.irstate == 1:
+				self.iron = self.du3.getAIN(6); 
+			if self.irstate == 2:
+				self.du3.writeRegister(6000 + 3, 0); 
+			if self.irstate == 3:
+				self.iroff = self.du3.getAIN(6); 
+				print "iron - iroff ", self.iron-self.iroff
+			self.irstate = self.irstate + 1; 
+			self.irstate = self.irstate & 0x3
 		alpha = 0.75
 		if self.touch:
 			alpha = 1.0
@@ -144,6 +156,7 @@ class cupoje:
 			if self.du3: 
 				map((lambda x: pb.cursor.append(x)),self.cursor.get_loc())
 				pb.touch = self.touch
+				pb.irDiff = self.iron-self.iroff
 			self.seg.writeSegment(self.sock,pb.SerializeToString())
 		else:
 			# try reconnecting. 
@@ -158,6 +171,10 @@ class cupoje:
 		
 	def winclose(self):
 		self.die.value = True
+		if self.du3:
+			self.du3.writeRegister(6000 + 3, 0);
+			self.du3.configIO(NumberOfTimersEnabled = 0)
+			self.du3.writeRegister(6000 + 4, 0)  #disable juice
 		sys.exit()
 
 	def mouse(self,button, state, x, y):
@@ -207,12 +224,13 @@ class cupoje:
 		try:
 			self.du3 = u3.U3()
 			baseValue = 65535
-			self.du3.configIO(FIOAnalog=7,EIOAnalog=7,TimerCounterPinOffset=4,NumberOfTimersEnabled=1)
+			self.du3.configIO(FIOAnalog=0x47,EIOAnalog=0x47,TimerCounterPinOffset=4,NumberOfTimersEnabled=1)
 			self.du3.configTimerClock(TimerClockBase=5, TimerClockDivisor=2) # 12Mhz clock / 2
 			# this puts the output around 26Khz -- should be sufficiently far from our recording b/w.
 			self.du3.getFeedback( u3.Timer0Config(TimerMode = 1, Value = baseValue) )
 			self.du3.writeRegister(7200, baseValue)  
 			self.manual = True
+			self.irstate = 0
 		except:
 			self.du3 = None
 			self.manual = False
