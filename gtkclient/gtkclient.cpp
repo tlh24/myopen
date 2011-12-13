@@ -79,7 +79,7 @@ GLuint 			base;            // base display list for the font set.
 
 bool g_die = false; 
 double g_pause = -1.0;
-double g_rasterZoom = 1.0; 
+double g_rasterZoom = 0.15; 
 bool g_cycle = false;
 bool g_showPca = false; 
 bool g_rtMouseBtn = false; 
@@ -1221,8 +1221,11 @@ void* server_thread(void* ){
 static gboolean chanscan(gpointer){
 	if(g_cycle){
 		g_uiRecursion++; 
+		int base = g_channel[0]; 
+		base ++; 
+		base &= 31;
 		for(int k=0; k<4; k++){
-			g_channel[k]++; 
+			g_channel[k] = base + k*32; 
 			g_channel[k] &= 127; 
 			gtk_adjustment_set_value(g_channelSpin[k], (double)g_channel[k]); 
 		}
@@ -1432,7 +1435,7 @@ static void syncHeadstageCB(GtkWidget *, gpointer * ){
 static void cycleButtonCB(GtkWidget *button, gpointer * ){
 	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))){
 		g_cycle = true; 
-		g_timeout_add(2000, chanscan, (gpointer)0);
+		g_timeout_add(3000, chanscan, (gpointer)0);
 	}else
 		g_cycle = false; 
 }
@@ -1785,7 +1788,7 @@ int main(int argn, char **argc)
 	
 	//add in a zoom spinner.
 	g_zoomSpin = mk_spinner("zoom", box1, 
-			   1.0, 0.15, 10.0, 0.05,
+			   0.15, 0.1, 10.0, 0.05,
 			   zoomSpinCB, 0);
 	g_rasterSpanSpin = mk_spinner("Raster span", box1, 
 			   g_rasterSpan, 1.0, 100.0, 1.0,
@@ -1972,7 +1975,7 @@ int main(int argn, char **argc)
 
 	g_timeout_add (1000 / 30, rotate, da1);
 	//change the channel every 2 seconds. 
-	g_timeout_add(2000, chanscan, (gpointer)0);
+	g_timeout_add(3000, chanscan, (gpointer)0);
 
 	gtk_main ();
 	KillFont(); 
