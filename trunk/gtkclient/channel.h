@@ -237,9 +237,9 @@ public:
 			for(int j=0; j<16; j++){
 				float ny = m_template[k][j] + 0.5f;
 				float nx = (float)(j+8)/31.f; 
-				// yellow -> purple; cyan -> orange (color wheel)
-				if(k == 0) glColor4f(0.6f, 0.f, 1.f, 0.5f);
-				else glColor4f(1.f, 0.5f, 0.f, 0.5f);
+				// cyan -> purple; red -> orange (color wheel)
+				if(k == 0) glColor4f(0.6f, 0.f, 1.f, 0.65f);
+				else glColor4f(1.f, 0.5f, 0.f, 0.65f);
 				glVertex3f(nx*ow+ox, ny*oh+oy, 0.f);
 			}
 			glColor4f(0.f, 0.f, 0.f, 0.75f);
