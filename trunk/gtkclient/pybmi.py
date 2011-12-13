@@ -212,7 +212,7 @@ def update_display():
 		g_dict['bgColor'] = [0.0, 0.0, 0.0, 0.0]
 		attention = 1
 	else:
-		g_dict['bgColor'] = [0.3, 0.2, 0.3, 0.5]
+		g_dict['bgColor'] = [0.7, 0.5, 0.7, 0.]
 		attention = 0
 	#probably need to run the game here... 
 	d = cursV[0] - targV[0]
@@ -669,7 +669,7 @@ def server_thread(die,port,targV,cursV,touchV,g_dict):
 							if pb.HasField('touch'):
 								touchV.value = pb.touch
 							#print port, "touch", touchV.value
-						if p.HasField('irDiff'):
+						if pb.HasField('irDiff'):
 							g_dict['irDiff'] = p.irDiff
 					else:
 						print port, "no data from the display client."

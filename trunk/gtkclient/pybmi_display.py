@@ -19,6 +19,7 @@ from OpenGL.GLUT import *
 from multiprocessing import Process, Value, Array
 from tcpsegmenter import *
 import time
+import copy
 try:
 	import u3
 except ImportError, err:
@@ -112,7 +113,7 @@ class cupoje:
 				self.cursor.set_alpha(pb.cursorAlpha)
 			if pb.HasField('targetAlpha'):
 				self.target.set_alpha(pb.targetAlpha)
-			if len(pb.bgColor) == 4
+			if len(pb.bgColor) == 4:
 				self.bgColor = copy.deepcopy(pb.bgColor); 
 		if self.du3 and self.manual:
 			vx = self.du3.getAIN(0)
