@@ -140,7 +140,7 @@ class cupoje:
 				self.du3.writeRegister(6000 + 3, 0); 
 			if self.irstate == 3:
 				self.iroff = self.du3.getAIN(6); 
-				print "iron - iroff ", self.iron-self.iroff
+				#print "iron - iroff ", self.iron-self.iroff
 			self.irstate = self.irstate + 1; 
 			self.irstate = self.irstate & 0x3
 		alpha = 0.75
