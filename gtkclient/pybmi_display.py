@@ -194,7 +194,7 @@ class cupoje:
 	def setup_viewport(self,w,h):
 		glMatrixMode(GL_PROJECTION)
 		glLoadIdentity()
-		hh = (1.0*h)/w
+		hh = 1.0 # (1.0*h)/w
 		ww = 1.0
 		glOrtho(-1.0*ww, 1.0*ww, -1.0*hh, 1.0*hh, 0.0, 1.0)
 		glBlendFunc(GL_SRC_ALPHA,  GL_ONE_MINUS_SRC_ALPHA);		
