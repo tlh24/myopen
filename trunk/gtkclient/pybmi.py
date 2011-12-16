@@ -208,7 +208,7 @@ def update_display():
 			g_file.write("\n"); 
 			g_file.flush(); 
 	#threshold irDiff. 
-	if g_dict['irDiff'] > 0.055:
+	if g_dict['irDiff'] > 0.5:
 		g_dict['bgColor'] = [0.0, 0.0, 0.0, 0.0]
 		attention = 1
 	else:
@@ -224,7 +224,7 @@ def update_display():
 		if inside:
 			targV[0] = random.random()-0.5
 			targV[1] = random.random()-0.5
-	if g_dict['task'] == 'left/right': #start here.  move to 2d later.
+	if g_dict['task'] == 'left/right' ||  g_dict['task'] == '4 target': #start here.  move to 2d later.
 		# do the standard thing: switch statement based on state.
 		gs = g_dict['gs']
 		dt = time.time() - g_dict['gt']
@@ -241,6 +241,7 @@ def update_display():
 			g_dict['targetAlpha'] = 0.5 + 0.5*dt/g_dict['holdTime']
 			if dt > g_dict['holdTime']:
 				gs = 'reward'
+				g_dict['nTrials'] = g_dict['nTrials']+1
 			if not inside:
 				gs = 'default'
 		elif gs == 'reward':
@@ -248,11 +249,23 @@ def update_display():
 			if dt > g_dict['rewardTime']:
 				gs = 'new target'
 		else: #make a new target and transisiton to wait.
-			if targV[0] < 0:
-				targV[0] = 0.7
-			else:
-				targV[0] = -0.7
-			targV[1] = 0.0
+			if g_dict['task'] == 'left/right':
+				if targV[0] < 0:
+					targV[0] = 0.7
+				else:
+					targV[0] = -0.7
+				targV[1] = 0.0
+			if g_dict['task'] == '4 target'
+				if targv[0] < 0:
+					if targv[1] < 0:
+						targv[0] = 0.7
+					else:
+						targv[1] = -0.7
+				else:
+					if targv[1] < 0:
+						targv[1] = 0.7
+					else:
+						targv[0] = -0.7
 			g_dict['targetAlpha'] = 0.5
 			gs = 'default'
 		#control the juicer.
@@ -264,7 +277,7 @@ def update_display():
 			g_dict['gt'] = time.time()
 		g_dict['gs'] = gs
 			
-	wind.invalidate_rect(gtk.gdk.Rectangle(0,0,pierad*16,pierad*16), False)
+	wind.invalidate_rect(gtk.gdk.Rectangle(0,0,pierad*16,pierad*16+18*3), False)
 	return True
 
 def expose_event(widget, event):
@@ -274,7 +287,7 @@ def expose_event(widget, event):
 	global neuron_group
 	cr = widget.window.cairo_create()
 	cr.set_source_rgb(0.0, 0.09, 0.13); 
-	cr.rectangle(0,0,pierad*16,pierad*16)
+	cr.rectangle(0,0,pierad*16,pierad*16 + 18*3)
 	cr.fill()
 	#draw the firing rates.
 	if True:
@@ -298,14 +311,26 @@ def expose_event(widget, event):
 					cr.arc(x*pr*2+pr+pr/2,y*pr+pr/2,pr/2,0,2*math.pi*firing_rates[1][y*8+x]/100)
 					cr.fill()
 					cr.restore()
+	#draw other interesting things -- number of trials, irdiff.
+	cr.select_font_face('sans-serif')
+	cr.set_font_size(12)
+	cr.set_line_width(0)
+	cr.set_source_rgb(1,1,1)
+	cr.move_to(10, pierad*16 + 18)
+	cr.show_text("irDiff %f" % g_dict['irDiff']); 
+	cr.move_to(10, pierad*16 + 36)
+	cr.show_text("nTrials %f" % g_dict['nTrials']); 
 	#draw selected.
 	cr.save()
-	cr.set_line_width(4)
 	(ch,u) = selected
 	cr.set_source_rgb(0.3,0,1); 
-	cr.translate((2*(ch%8) + u)*pr+pr/2,(ch/8)*pr+pr/2); 
+	scx = (2*(ch%8) + u)*pr+pr/2
+	scy = (ch/8)*pr+pr/2
+	cr.move_to(scx + pr/2, scy)
+	cr.translate(scx,scy); 
+	cr.set_line_width(4)
 	cr.arc(0,0,pr/2,0,2*math.pi); 
-	cr.close_path()
+	#cr.close_path()
 	cr.stroke()
 	cr.restore()
 	#copy the surfaces.
@@ -365,7 +390,7 @@ def main():
 	#manage the shared dictionary. 
 	manager = Manager()
 	g_dict = manager.dict()
-	inits = ['gt','targetAlpha','cursorAlpha','targetSize','cursorSize','irDiff']
+	inits = ['gt','targetAlpha','cursorAlpha','targetSize','cursorSize','irDiff','nTrials']
 	for v in inits:
 		g_dict[v] = 0.0
 	g_dict['bgColor'] = [0.0,0.0,0.0,0.0]
@@ -388,7 +413,7 @@ def main():
 		g_dict['gs'] = ''
 		if fil: 
 			fil.close()
-	
+	g_dict['nTrials'] = 0
 	# next is to make the window. 
 	window = gtk.Window()
 	window.set_size_request(890, 760)
@@ -409,7 +434,7 @@ def main():
 	vpaned.add2(sw)
 	
 	drawing_area = gtk.DrawingArea()
-	drawing_area.set_size_request(pierad*16, pierad*16)
+	drawing_area.set_size_request(pierad*16, pierad*16+18*3)
 	sw.add_with_viewport(drawing_area)
 	drawing_area.show()
 	
@@ -509,7 +534,7 @@ def main():
 	# add controls for the game. 
 	frame = make_radio('control',['manual','BMI'], lambda x,y:x, False)
 	vbox_p.add(frame)
-	frame = make_radio('task',['left/right','4 target stereotyped'], lambda x,y:x, True)
+	frame = make_radio('task',['left/right','4 target'], lambda x,y:x, True)
 	vbox_p.add(frame)
 	mk_scale("targetSize",0.0, 1.0, 0.5)
 	mk_scale("cursorSize",0.0, 1.0, 0.5)
@@ -518,13 +543,14 @@ def main():
 	
 	#add a button for saving data. 
 	def open_file (widget,msg):
-		global g_file
+		global g_file,g_dict
 		chooser = gtk.FileChooserDialog(title=None,action=gtk.FILE_CHOOSER_ACTION_SAVE,
 			buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_OPEN,gtk.RESPONSE_OK))
 		response = chooser.run()
 		if response == gtk.RESPONSE_OK:
 			print chooser.get_filename(), 'selected'
 			g_file = open(chooser.get_filename(), "w")
+			g_dict['nTrials'] = 0
 		chooser.destroy()
 	but = gtk.Button("Save data"); 
 	but.connect("clicked", open_file, "connect")
@@ -670,7 +696,8 @@ def server_thread(die,port,targV,cursV,touchV,g_dict):
 								touchV.value = pb.touch
 							#print port, "touch", touchV.value
 						if pb.HasField('irDiff'):
-							g_dict['irDiff'] = p.irDiff
+							g_dict['irDiff'] = pb.irDiff
+							# print "irDiff ", pb.irDiff
 					else:
 						print port, "no data from the display client."
 			print port,"display connection closed"
