@@ -224,7 +224,7 @@ def update_display():
 		if inside:
 			targV[0] = random.random()-0.5
 			targV[1] = random.random()-0.5
-	if g_dict['task'] == 'left/right' ||  g_dict['task'] == '4 target': #start here.  move to 2d later.
+	if ((g_dict['task'] == 'left/right') or (g_dict['task'] == '4 target')): #start here.  move to 2d later.
 		# do the standard thing: switch statement based on state.
 		gs = g_dict['gs']
 		dt = time.time() - g_dict['gt']
@@ -255,17 +255,17 @@ def update_display():
 				else:
 					targV[0] = -0.7
 				targV[1] = 0.0
-			if g_dict['task'] == '4 target'
-				if targv[0] < 0:
-					if targv[1] < 0:
-						targv[0] = 0.7
+			if g_dict['task'] == '4 target':
+				if targV[0] < 0:
+					if targV[1] < 0:
+						targV[0] = 0.7
 					else:
-						targv[1] = -0.7
+						targV[1] = -0.7
 				else:
-					if targv[1] < 0:
-						targv[1] = 0.7
+					if targV[1] < 0:
+						targV[1] = 0.7
 					else:
-						targv[0] = -0.7
+						targV[0] = -0.7
 			g_dict['targetAlpha'] = 0.5
 			gs = 'default'
 		#control the juicer.
