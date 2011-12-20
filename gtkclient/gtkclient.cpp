@@ -36,6 +36,7 @@
 #else
 #define NFBUF 4
 #endif
+#define NSBUF	1024 
 
 #include "../firmware_stage9/memory.h"
 #include "headstage.h"
@@ -69,13 +70,13 @@ static float	g_fbuf[NFBUF][NSAMP*3]; //continuous waveform. range [-1 .. 1]
 i64	g_fbufW; //where to write to (always increment) 
 i64	g_fbufR; //display thread reads from here - copies to mem
 unsigned int 	g_nsamp = 4096; //given the current level of zoom (1 = 4096 samples), how many samples to update?
-static float 	g_sbuf[2][128*512*2]; //spike buffers.
+static float 	g_sbuf[2][128*NSBUF*2]; //2 units, 128 channels, 1024 spikes, 2 floats / spike.
 static float	g_rasterSpan = 10.f; // %seconds.
 i64	g_sbufW[2]; 
 i64	g_sbufR[2]; 
 Channel*		g_c[128];
 FiringRate	g_fr[128][2]; 
-GLuint 			base;            // base display list for the font set.
+GLuint 		g_base;            // base display list for the font set.
 
 bool g_die = false; 
 double g_pause = -1.0;
@@ -102,7 +103,7 @@ i64			 g_unsortCount[4];
 float g_unsortrate = 0.0; //the rate that unsorted WFs get through.
 FILE* g_saveFile = 0; 
 bool g_closeSaveFile = false; 
-unsigned int g_saveFileBytes;
+i64 g_saveFileBytes;
 
 double g_startTime = 0.0;
 double g_timeOffset = 0.0; //offset between local time and bridge time.
@@ -211,7 +212,7 @@ void BuildFont(void) {
     Display *dpy;
     XFontStruct *fontInfo;  // storage for our font.
 
-    base = glGenLists(96);                      // storage for 96 characters.
+    g_base = glGenLists(96);                      // storage for 96 characters.
     
     // load the font.  what fonts any of you have is going
     // to be system dependent, but on my system they are
@@ -237,7 +238,7 @@ void BuildFont(void) {
 
     // start at character 32 (space), get 96 characters (a few characters past z), and
     // store them starting at base.
-    glXUseXFont(fontInfo->fid, 32, 96, base);
+    glXUseXFont(fontInfo->fid, 32, 96, g_base);
 
     // free that font's info now that we've got the 
     // display lists.
@@ -247,14 +248,14 @@ void BuildFont(void) {
     XCloseDisplay(dpy);
 }
 void KillFont(void){
-    glDeleteLists(base, 96);                    // delete all 96 characters.
+    glDeleteLists(g_base, 96);                    // delete all 96 characters.
 }
 void glPrint(char *text){                    // custom gl print routine.
     if (text == NULL) {                         // if there's no text, do nothing.
 		return;
     }
     glPushAttrib(GL_LIST_BIT);                  // alert that we're about to offset the display lists with glListBase
-    glListBase(base - 32);                      // sets the base character to 32.
+    glListBase(g_base - 32);                      // sets the base character to 32.
 
     glCallLists(strlen(text), GL_UNSIGNED_BYTE, text); // draws the display list text.
     glPopAttrib();                              // undoes the glPushAttrib(GL_LIST_BIT);
@@ -272,7 +273,7 @@ GLvoid printGLf(const char *fmt, ...)
     vsprintf(text, fmt, ap);
     va_end(ap);
     glPushAttrib(GL_LIST_BIT);
-    glListBase(base - 32);
+    glListBase(g_base - 32);
     glCallLists(strlen(text), GL_UNSIGNED_BYTE, text);
     glPopAttrib();
 }
@@ -655,9 +656,9 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 		//have one VBO that's filled with spike times & channels.
 		for(int k=0; k<2; k++){
 			for(int i=0; i<128; i++){
-				for(int j=0; j<512; j++){
-					g_sbuf[k][(i*512+j)*2+0] = (float)i/256.0+(float)j/2048.0; 
-					g_sbuf[k][(i*512+j)*2+1] = (float)i; 
+				for(int j=0; j<NSBUF; j++){
+					g_sbuf[k][(i*NSBUF+j)*2+0] = (float)i/256.0+(float)j/2048.0; 
+					g_sbuf[k][(i*NSBUF+j)*2+1] = (float)i; 
 				}
 			}
 			glGenBuffersARB(1, &g_vbo2[k]);
@@ -935,8 +936,14 @@ packet format in the file, as saved here:
 							g_sbuf[t][w*2+1] = (float)adr; 
 							g_sbufW[t] ++; 
 							g_fr[adr][t].add(time);
+							//calcISI. 
+							g_c[adr]->spike(t); 
 						}
 					}
+				}
+				//update ISI counts. 
+				for(int j=0; j<128; j++){
+					g_c[j]->isiIncr(); 
 				}
 				//color the rasters. really should color differently. 
 				// meh, in the vertex shader.
@@ -1174,13 +1181,13 @@ void* server_thread(void* ){
 				long long ltime = (long long)(reqtime * 1000.0); //put it in ms.
 				rates[0][0] = 2; //rows
 				rates[0][1] = 128; //columns. 
-				rates[0][2] = (unsigned short)(ltime & 0xffff);
+				rates[1][0] = (unsigned short)(ltime & 0xffff);
 				ltime >>= 16; 
-				rates[0][3] = (unsigned short)(ltime & 0xffff);
+				rates[1][1] = (unsigned short)(ltime & 0xffff);
 				ltime >>= 16; 
-				rates[0][4] = (unsigned short)(ltime & 0xffff);
+				rates[2][0] = (unsigned short)(ltime & 0xffff);
 				ltime >>= 16; 
-				rates[0][5] = (unsigned short)(ltime & 0xffff);
+				rates[2][1] = (unsigned short)(ltime & 0xffff);
 				for(int i=0; i<128; i++){
 					for(int j=0; j<2; j++){
 						rates[i+3][j] = g_fr[i][j].get_rate(reqtime); 
@@ -1778,18 +1785,13 @@ int main(int argn, char **argc)
 	//add osc / reset radio buttons
 	mk_radio("500-6.7k,150-10k,osc,flat", 4, 
 			 box1, true, "filter", filterRadioCB);
-			 
-	//add a automatic channel change button.
-	button = gtk_check_button_new_with_label("cycle channels");
-	g_signal_connect (button, "toggled",
-			G_CALLBACK (cycleButtonCB), (gpointer) "o");
-	gtk_box_pack_start (GTK_BOX (box1), button, TRUE, TRUE, 0);
-	gtk_widget_show(button);
 	
 	//add in a zoom spinner.
 	g_zoomSpin = mk_spinner("zoom", box1, 
 			   0.15, 0.1, 10.0, 0.05,
 			   zoomSpinCB, 0);
+	zoomSpinCB(GTK_WIDGET(NULL), NULL); //init the variables properly. 
+	
 	g_rasterSpanSpin = mk_spinner("Raster span", box1, 
 			   g_rasterSpan, 1.0, 100.0, 1.0,
 			   rasterSpanSpinCB, 0); 
@@ -1880,6 +1882,12 @@ int main(int argn, char **argc)
 	gtk_label_set_angle(GTK_LABEL(label), 90); 
 	gtk_notebook_insert_page(GTK_NOTEBOOK(notebook), box1, label, 2); 
 	
+	//add a automatic channel change button.
+	button = gtk_check_button_new_with_label("cycle channels");
+	g_signal_connect (button, "toggled",
+			G_CALLBACK (cycleButtonCB), (gpointer) "o");
+	gtk_box_pack_start (GTK_BOX (v1), button, TRUE, TRUE, 0);
+	gtk_widget_show(button);
 	//add draw mode (applicable to all)
 	mk_radio("lines,points", 2, 
 			 v1, false, "draw mode", drawRadioCB); 

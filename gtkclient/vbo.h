@@ -195,10 +195,11 @@ public:
 	}
 	float* addWf(){
 		//assumes that we will call addRow() immediately *afterward*.
-		//this is used for the internal cache / mouse selector.
+		//this is used for the internal cache / mouse selector / aperture recalculation.
 		float* r = m_wf; 
 		r += 32 * (m_w % m_rows); 
 		return r; 
+		//returns a pointer that caller can fill with the waveform. 
 	}
 	void calcScale(float &x, float &y, float &w, float &h){
 		w = m_loc[2] / (2.5*m_maxSmooth[0]);
@@ -438,6 +439,32 @@ public:
 		aperture *= 0.45; //empirical.
 		copyData(m_vbo, 0, m_rows, m_f, m_dim * m_cols); 
 		return true; 
+	}
+	void updateAperture(float* temp, float aperture, float* color){
+		//redisplays the sorting based on the SAA algorithm. 
+		// wf and template are range 1 mean 0. (+-0.5)
+		// aperture is 1/255 whats in the UI. 
+		//template is **length 16**
+		for(int i=0; i<MIN(m_w,m_rows); i++){
+			float saa = 0.f;
+			for(int j=0; j<16; j++){
+				saa += fabs(m_wf[i*32 + j + 8] - temp[j]); 
+			}
+			if(saa < aperture){
+				for(int j=0; j<3; j++)
+					m_f[m_dim*m_cols*i + j + 3] = color[j]; //6: x y z color.
+			} else {
+				// if it was sorted, but no longer meets criteria, change it to gray.
+				bool was = true; 
+				for(int j=0; j<3; j++)
+					was &= m_f[m_dim*m_cols*i + j + 3] == color[j]; 
+				if(was){
+					for(int j=0; j<3; j++)
+						m_f[m_dim*m_cols*i + j + 3] = 0.5; //6: x y z color.
+				}
+			}
+		}
+		copyData(m_vbo, 0, m_rows, m_f, m_dim * m_cols); 
 	}
 };
 #endif
