@@ -11,6 +11,7 @@
 
 void gsl_matrix_to_mat(gsl_matrix *x, const char* fname); 
 double gettime(); 
+void glPrint(char *text);
 
 //need some way of encapsulating per-channel information. 
 class Channel {
@@ -29,6 +30,8 @@ public:
 	int	m_ch; //channel number, obvi.
 	float m_gain; 
 	float m_agc; 
+	i64 m_isi[2][100]; //counts of the isi, in units of 4 packets -- 768us/packet.
+	int	m_lastSpike[2]; //zero when a spike occurs. 
 	
 	Channel(int ch){
 		m_wfVbo = new Vbo(6, 512, 34); //sorted units, with color. 
@@ -96,6 +99,12 @@ public:
 		}
 		m_loc[0] = m_loc[1] = 0.f; 
 		m_loc[2] = m_loc[3] = 1.f; 
+		for(int u=0; u<2; u++){
+			m_lastSpike[u] = 0; 
+			for(unsigned int i=0; i < sizeof(m_isi[0])/sizeof(m_isi[0][0]); i++){
+				m_isi[u][i] = 0; 
+			}
+		}
 	}
 	~Channel(){
 		delete m_wfVbo; m_wfVbo = 0; 
@@ -200,6 +209,10 @@ public:
 	unsigned int getAperture(int n) { return (unsigned int)(m_aperture[n]);}
 	void setApertureLocal(unsigned int a, int n){
 		if(n >= 0 && n <= 1) m_aperture[n] = a; 
+		float aperture = (float)a/255.f; 
+		float color[3] = {0.f, 1.f, 1.f}; 
+		if(n == 1){color[0] = 1.f; color[1] = 0.f; color[2] = 0.f; }
+		m_pcaVbo->updateAperture(m_template[n], aperture, color); 
 	}
 	float getThreshold() { return m_threshold; }
 	void setThreshold(float thresh){
@@ -290,6 +303,36 @@ public:
 			glVertex2f(c+ox, t+0.2*oh); 
 			glEnd(); 
 		}
+		if(1){
+			//draw shaded plots of the ISI. 
+			for(int u=0; u<2; u++){
+				int nisi = sizeof(m_isi[0])/sizeof(m_isi[0][0]);
+				i64 max = 1; 
+				for(int i=0; i < nisi; i++){
+					max = m_isi[u][i] > max ? m_isi[u][i] : max; 
+				}
+				float scl = (float)max; 
+				if(u == 0)
+					glColor4f(0.0f,1.f,1.f,0.2f); 
+				else
+					glColor4f(1.f,0.0f,0.f,0.25f); 
+				glBegin(GL_TRIANGLE_STRIP);
+				for(int i=0; i < nisi; i++){
+					float y1 = (float)m_isi[u][i]/scl;
+					float x1 = (float)i/((float)(nisi-1)); 
+					glVertex2f(x1*ow+ox+ow, y1*oh*0.5+oy);
+					glVertex2f(x1*ow+ox+ow, oy); 
+				}
+				glEnd();
+			}
+		}
+		//finally, the channel. upper left hand corner.
+		glColor4f(1.f, 1.f, 1.f, 0.5);
+		glRasterPos2f(ox, oy + oh - 13.f*2.f/g_viewportSize[1]); //13 pixels vertical offset.
+		//kearning is from the lower right hand corner.
+		char buf[64];
+		snprintf(buf, 64, "Ch %d", m_ch); 
+		glPrint(buf);
 	}
 	int updateTemplate(int unit){
 		//called when the button is clicked.
@@ -310,6 +353,8 @@ public:
 		printf("\n"); 
 		m_aperture[unit-1] = aperture * 255; 
 		printf("m_aperture[%d][%d] = %d\n", m_ch, unit-1, (int)m_aperture[unit-1]); 
+		//update sorting based on new aperture.
+		//m_pcaVbo->updateAperture(m_template[unit-1], aperture, color); 
 		//store the equivalent of the unsigned bytes actually used on the headstage.
 		for(int i=0; i<16; i++){
 			float r = round((m_template[unit-1][i] + 0.5f)*255.f); 
@@ -326,6 +371,12 @@ public:
 		m_pcaVbo->reset(); 
 		m_wfVbo->setFade(1.7);//clear it a bit quicker.
 		m_usVbo->setFade(1.7); 
+		for(int u=0; u<2; u++){
+			m_lastSpike[u] = 0; 
+			for(unsigned int i=0; i < sizeof(m_isi[0])/sizeof(m_isi[0][0]); i++){
+				m_isi[u][i] = 0; 
+			}
+		}
 	}
 	void computePca(){
 		//whatever ... this can be blocking. 
@@ -426,17 +477,31 @@ public:
 			m_pcaVbo->m_f[i*6 + 0] = pca[0];
 			m_pcaVbo->m_f[i*6 + 1] = pca[1]; 
 			//m_pcaVbo->m_f[i*6 + 2] = 0.f; 
-			//leave whatever it used to be sorted as.
+			//leave whatever it used to be sorted as (color).
 			//for(int k=0; k<3; k++)
 			//	m_pcaVbo->m_f[i*6 + 3 + k] = 0.5f;
 		}
-		//printf("naive reproject %f\n", gettime()-t); //it's fast.
+		//printf("naive reproject %f\n", gettime()-t); //it's fast (enough).
 		t = gettime(); 
 		m_pcaVbo->m_r = 0; 
 		m_pcaVbo->m_w = nsamp; //force a copy-over of the whole thing.
 		m_pcaVbo->copy(false,true); 
 		printf("copy %f\n", gettime()-t); 
 	}
+	void spike(int unit){
+		//this used for calculating ISI. 
+		if(unit >=0 && unit < 2){
+			unsigned int b = m_lastSpike[unit]/4; 
+			if(b > 0 && b < sizeof(m_isi[0])/sizeof(m_isi[0][0]))
+				m_isi[unit][b]++; 
+			m_lastSpike[unit] = 0; 
+		}
+	}
+	void isiIncr(){
+		m_lastSpike[0]++; 
+		m_lastSpike[1]++; 
+	}
+	
 };
 
 #endif
