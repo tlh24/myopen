@@ -20,6 +20,7 @@ import pylab
 import time
 import jsonpickle # for saving state.
 import traceback
+from collections import deque
 
 wind = None
 pixmap = None
@@ -111,6 +112,20 @@ def configure_event(widget, event):
 				cr.stroke(); 
 				cr.set_source_rgb(1,1,1)
 				cr.restore()
+	y = 16
+	labels = ['cursX','cursY','targX','targY']
+	for x in range(0,4):
+		cr.set_source_rgb(1,1,1)
+		cr.move_to(x*pierad+3,y*pierad+pierad/2+4)
+		cr.show_text(labels[x])
+		cr.save()
+		cr.set_source_rgb(0.5,0.5,0.5)
+		cr.new_path()
+		cr.translate(x*pierad+pierad/2,y*pierad+pierad/2)
+		cr.arc(0,0, pierad/2, 0,2*math.pi); 
+		cr.close_path()
+		cr.stroke(); 
+		cr.restore()
 	update_display()
 	return True
 	
@@ -118,6 +133,7 @@ def update_display():
 	# get data from gtkclient.
 	global frsock, g_die, g_dict, fr_scale, g_juiceOverride, g_file 
 	global firing_rates
+	global g_frhist, g_behavhist
 	try:
 		a = g_dict['fr_smoothing']
 		a = math.pow(2.0, -1.0*a); 
@@ -149,6 +165,7 @@ def update_display():
 			for r in range(0,128):
 				firing_rates[0][r] = ar[(r+3)*2+0] / 128.0
 				firing_rates[1][r] = ar[(r+3)*2+1] / 128.0
+			
 		else:
 			print "timeout waiting for firing rate data"
 	else:
@@ -258,14 +275,14 @@ def update_display():
 			if g_dict['task'] == '4 target':
 				if targV[0] < 0:
 					if targV[1] < 0:
-						targV[0] = 0.7
+						targV[0] = 0.6
 					else:
-						targV[1] = -0.7
+						targV[1] = -0.6
 				else:
 					if targV[1] < 0:
-						targV[1] = 0.7
+						targV[1] = 0.6
 					else:
-						targV[0] = -0.7
+						targV[0] = -0.6
 			g_dict['targetAlpha'] = 0.5
 			gs = 'default'
 		#control the juicer.
@@ -276,7 +293,25 @@ def update_display():
 		if g_dict['gs'] != gs: #update the state time
 			g_dict['gt'] = time.time()
 		g_dict['gs'] = gs
-			
+		
+	# anyway, save the slice if he's paying attention. 
+	fr = []
+	sum = 0
+	for i in range(0,128):
+		fr.append(firing_rates[0][i])
+		fr.append(firing_rates[1][i])
+		sum = sum + firing_rates[0][i] + firing_rates[1][i]
+	if sum > 10:
+		# last 4 are the behavioral correlates. select them to see correlation...
+		fr.append(cursV[0]); 
+		fr.append(cursV[1]);
+		fr.append(targV[0]);
+		fr.append(targV[1]);
+		g_frhist.append(fr); 
+		g_behavhist.append([cursV[0], cursV[1], targV[0], targV[1], attention]); 
+	if len(g_frhist) > 25000:
+		g_frhist.popleft()
+		g_behavhist.popleft()
 	wind.invalidate_rect(gtk.gdk.Rectangle(0,0,pierad*16,pierad*16+18*3), False)
 	return True
 
@@ -285,15 +320,17 @@ def expose_event(widget, event):
 	global selected
 	global firing_rates
 	global neuron_group
+	global g_corrcoef
 	cr = widget.window.cairo_create()
 	cr.set_source_rgb(0.0, 0.09, 0.13); 
 	cr.rectangle(0,0,pierad*16,pierad*16 + 18*3)
 	cr.fill()
+	(ch,u) = selected
+	pr = pierad
 	#draw the firing rates.
 	if True:
 		cr.set_line_width(1)
 		cr.set_source_rgb(0.7, 0.8, 0.2); 
-		pr = pierad
 		for y in range(0,16):
 			for x in range(0,8):
 				if firing_rates[0][y*8+x] > 0:
@@ -316,23 +353,43 @@ def expose_event(widget, event):
 	cr.set_font_size(12)
 	cr.set_line_width(0)
 	cr.set_source_rgb(1,1,1)
-	cr.move_to(10, pierad*16 + 18)
+	cr.move_to(pierad*4+10, pierad*16 + 18)
 	cr.show_text("irDiff %f" % g_dict['irDiff']); 
-	cr.move_to(10, pierad*16 + 36)
+	cr.move_to(pierad*4+10, pierad*16 + 36)
 	cr.show_text("nTrials %f" % g_dict['nTrials']); 
 	#draw selected.
 	cr.save()
-	(ch,u) = selected
 	cr.set_source_rgb(0.3,0,1); 
 	scx = (2*(ch%8) + u)*pr+pr/2
 	scy = (ch/8)*pr+pr/2
 	cr.move_to(scx + pr/2, scy)
 	cr.translate(scx,scy); 
-	cr.set_line_width(4)
+	cr.set_line_width(5)
 	cr.arc(0,0,pr/2,0,2*math.pi); 
 	#cr.close_path()
 	cr.stroke()
 	cr.restore()
+	#draw the correlations, if possible. 
+	if ch >= 0 and ch < 128+2 and u >= 0 and u < 2: 
+		if g_corrcoef != None : 
+			for i in range(0,256+4):
+				c = g_corrcoef[ch*2+u, i]; 
+				if (c > 0.1 or c < -0.1) and (i != ch*2+u):
+					red = 0; 
+					blue = 0; 
+					if c > 0: 
+						blue = 1.0
+					if c < 0:
+						red = 0.7
+					cr.set_source_rgb(red, 0.0, blue); # will clamp for us? 
+					x = i % 16
+					y = i / 16
+					cr.save()
+					cr.move_to(x*pr+pr/2,y*pr+pr/2)
+					radius = math.sqrt(abs(c) * pr * pr / 4.0)
+					cr.arc(x*pr+pr/2,y*pr+pr/2,radius,0,2*math.pi)
+					cr.fill()
+					cr.restore()
 	#copy the surfaces.
 	cr.set_source_surface(surface[0], 0, 0)
 	cr.paint(); 
@@ -348,7 +405,8 @@ def button_press_event(widget, event):
 	ch = x/2 + y*8
 	un = x%2
 	selected = (ch,un)
-	gr = neuron_group[ch][un]
+	if ch >= 0 and ch < 128 and un >= 0 and un < 2:
+		gr = neuron_group[ch][un]
 	#group_radio_buttons[gr].set_active(True)
 	widget.queue_draw()
 	drawing_area.grab_focus() # this so we can get key presses.
@@ -380,12 +438,40 @@ def motion_notify_event(widget, event):
 		draw_brush(widget, x, y)
 	return True
 
+def calcCorrcoef(widget, msg):
+	global g_frhist, g_behavhist, g_corrcoef
+	print("length of history %d\n" % len(g_frhist)); 
+	a = pylab.zeros((len(g_frhist),256+4))
+	i = 0
+	for v in g_frhist:
+		j=0
+		for u in v:
+			a[i,j] = u
+			j = j+1
+		i = i+1
+	g_corrcoef = pylab.corrcoef(pylab.transpose(a))
+
+def savehist(widget, msg):
+	global g_frhist, g_behavhist, g_corrcoef
+	fil = open('g_frhist','w'); 
+	for v in g_frhist:
+		for u in v:
+			fil.write("%d " % u)
+		fil.write("\n")
+	fil.close()
+	fil = open('g_behavhist','w')
+	for v in g_behavhist:
+		for u in v:
+			fil.write("%f " % u)
+		fil.write("\n")
+	fil.close(); 
 
 def main():
 	global firing_rates, frsock, targV, cursV, touchV
 	global g_die, drawing_area, group_radio_buttons, g_file
 	global g_dict # shared state.
 	global neuron_group, selected, pierad, g_juiceOverride
+	global g_frhist, g_behavhist, g_corrcoef
 	
 	#manage the shared dictionary. 
 	manager = Manager()
@@ -414,6 +500,10 @@ def main():
 		if fil: 
 			fil.close()
 	g_dict['nTrials'] = 0
+	# make the history queues. 
+	g_frhist = deque(); 
+	g_behavhist = deque(); 
+	g_corrcoef = None
 	# next is to make the window. 
 	window = gtk.Window()
 	window.set_size_request(890, 760)
@@ -555,6 +645,17 @@ def main():
 	but = gtk.Button("Save data"); 
 	but.connect("clicked", open_file, "connect")
 	vbox_p.add(but)
+	
+	# for immediate analysis.
+	hbox = gtk.HBox(False, 0); 
+	vbox_p.add(hbox); 
+	but = gtk.Button("export fr/behav"); 
+	but.connect("clicked", savehist, "connect")
+	hbox.add(but)
+	
+	but = gtk.Button("calc corr. mtx"); 
+	but.connect("clicked", calcCorrcoef, "connect")
+	hbox.add(but)
 	
 	#start sock_thread.
 	g_die = Value('b',False)
