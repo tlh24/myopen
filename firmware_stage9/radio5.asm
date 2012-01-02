@@ -44,7 +44,7 @@ wait_samples:
 	// falling edge of RFS 
 	//(CS to the ADCS7476, which samples on the falling edge)
 	//if the channel=31, assert reset instead
-	r5 = 31;
+	r5 = 30; //30 due to *two* pipeline delays (MUX, sample)
 	r4 = MUXRESET;
 	cc = r5 == r6; 
 	if cc r7 = r4; //toggle the reset or the step. to keep the mux in sync.
