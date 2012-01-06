@@ -12,4 +12,6 @@ Fixes to stage9:
 * LFP would be nice too. Expand the analog filtering? 
 * Might be nice to use something else to derive the MUX signals, and do block computation? 
 	Have to think about this .. issue is that we are wasting clocks sometimes waiting for samples.
-	Really need a much lower-power processor. commercializa
+	Really need a much lower-power processor. 
+* Add 2-4 channels microstim(?).  Must be careful about ground-loop: use a separate proc. 
+	or a separate battery; have to think about this. 
