@@ -153,7 +153,7 @@ try
     gain = 40;
     obj.FingerCommand = zeros(1,4);
     
-    graspGain = 0.1;
+    graspGain = 1;
     wristGain = 4;
     graspChangeThreshold = 1;
     switch hSignalClassifier.ClassNames{cursorMoveClass}
@@ -171,6 +171,7 @@ try
             if obj.graspValue < graspChangeThreshold
                 obj.graspId = 1;
             end
+            obj.graspId = 7;
             obj.graspValue = obj.graspValue + (graspGain*speed);
         case 'Pointer Grasp' 
             if obj.graspValue < graspChangeThreshold
@@ -199,7 +200,7 @@ try
             obj.FingerCommand(4) = speed;
         case {'Pronate' 'Wrist Rotate In'}
             obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) = ...
-                obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) + speed*wristGain*2;
+                obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) + speed*wristGain*4;
         case {'Supinate' 'Wrist Rotate Out'}
             obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) = ...
                 obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) - speed*wristGain*2;
