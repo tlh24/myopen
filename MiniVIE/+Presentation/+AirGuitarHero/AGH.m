@@ -102,6 +102,7 @@ classdef AGH < Presentation.AirGuitarHero.AirGuitarHeroBase
                 addline(obj.hOutput,0:7,'out');
             catch ME
                 errordlg({'Error setting up digital output device.  Error was:' ME.message});
+                return
                 rethrow(ME);
             end
             vals = ones(8,1);

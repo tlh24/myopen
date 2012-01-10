@@ -1,8 +1,9 @@
-%% active control
+%% Active Control
 
-%% Input:
-SignalSource = Inputs.SignalSimulator();
-%SignalSource = Inputs.UsbDaq('mcc','0');
+%% Step 1: Setup Input Device
+% SignalSource = Inputs.SignalSimulator();
+% SignalSource = Inputs.UsbDaq('mcc','0');
+SignalSource = Inputs.DaqHwDevice('nidaq','Dev2');
 
 SignalSource.addfilter(Inputs.HighPass());
 SignalSource.addfilter(Inputs.LowPass());
@@ -10,47 +11,51 @@ SignalSource.addfilter(Inputs.Notch());
 SignalSource.NumSamples = 2000;
 SignalSource.initialize();
 
-%% Classifier:
+%% Optional Step, preview signals. Close window when finished viewing
+GUIs.SignalViewer(SignalSource); % <-- Use this to visualize signals
+
+%% Step 3: Setup Classifier, Select Channels in use
 SignalClassifier = SignalAnalysis.Classifier();
-SignalClassifier.ActiveChannels = 1:4;
+SignalClassifier.ActiveChannels = 1:8;  % <-- Update active channels
 SignalClassifier.NumMajorityVotes = 0;
 SignalClassifier.initialize();
 
 SignalClassifier.uiEnterClassNames
 
-%% TrainingInterface
+%% Step 4: Setup TrainingInterface
 TrainingInterface = PatternRecognition.SimpleTrainer();
 
-%% TrainingInterface: Collect Data
-if 0
-%%
-TrainingInterface.NumRepetitions = 1;
-TrainingInterface.ContractionLengthSeconds = 1;
-TrainingInterface.DelayLengthSeconds = 1;
+%% Step 4a: Collect New Data
+TrainingInterface.NumRepetitions = 2;  % <-- Adjust (2 to 3 typical)
+TrainingInterface.ContractionLengthSeconds = 2; % <-- Time to hold contraction (avoid muscle fatigue)
+TrainingInterface.DelayLengthSeconds = 3; % <-- Recovery Time in seconds between contractions
 
 TrainingInterface.initialize(SignalSource,SignalClassifier);
 TrainingInterface.collectdata();
-end
-%% TrainingInterface: Load Data
+
+%% Step 4b: Load Saved Data
 TrainingInterface.loadTrainingData();
 
-%% Perform Training
+%% Step 5: Train the classifier
 SignalClassifier.TrainingData = TrainingInterface.getFeatureData;
 SignalClassifier.TrainingDataLabels = TrainingInterface.getClassLabels;
 SignalClassifier.train();
 SignalClassifier.computeerror();
 
-%%
+%% Step 6: Send data to MSMS for visualization
 hMSMS = Scenarios.MSMS_ADL.MsmsDisplayScenario(SignalSource,SignalClassifier);
-isLeftSide = 0;
+isLeftSide = 0;   % <---- Use this parameter to select Left=1/Right=0
 hMSMS.initialize(isLeftSide);
 
 hMSMS.start
 %%
 return
-%%
+%% Cleanup MSMS
 hMSMS.stop
 hMSMS.close
 
-
+%% Optional: Adjust the size of output filter (can be done during animation)
+SignalClassifier.NumMajorityVotes = 5; % <-- Adjust majority votes [0 15]
+%% Optional: Play Breakout (uses wrist flex and extend)
+Presentation.MiniBreakout(SignalSource,SignalClassifier)
 
