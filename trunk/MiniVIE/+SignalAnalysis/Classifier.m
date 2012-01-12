@@ -86,7 +86,7 @@ classdef Classifier < Common.MiniVieObj
             feats = convertfeaturedata(obj);
             fprintf('Training LDA with %d Samples (',size(feats,2));
             for iClass = 1:obj.NumClasses
-                fprintf('%d = %d; ',iClass,sum(obj.TrainingDataLabels == iClass))
+                fprintf('%d = %d; ',iClass,sum(obj.TrainingDataLabels == iClass));
             end
             fprintf(')\n');
 
