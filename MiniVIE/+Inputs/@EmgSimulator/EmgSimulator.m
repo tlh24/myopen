@@ -1,0 +1,226 @@
+classdef EmgSimulator < Inputs.SignalInput
+    % Loop pre-recorded EMG data;
+    % 
+    %
+    % 09-Oct-2011 Armiger: Created
+    properties
+        patternData = {};
+        CurrentPattern;
+        
+        lastAccess = clock;
+    end
+    properties (SetAccess=private)
+        patternPointer;
+        SignalBuffer;
+        hg;
+        isRunning = false;
+    end
+    properties (Constant = true)
+        DEFAULT_PATTERN = 9; % No Movement for data file
+    end
+    methods
+        function obj = EmgSimulator
+            % Constructor
+            obj.uiControlPanel();
+            obj.CurrentPattern = obj.DEFAULT_PATTERN;
+            
+            try
+                fname = 'emgPatternData.mat';
+                fprintf('[%s] Loading EMG File: %s...',mfilename,fname);
+                load('emgPatternData');
+                obj.patternData = emgPatternData;
+                fprintf('Done\n');
+            catch ME
+                error('Failed to load EMG data file %s\n',fname);
+            end
+            
+            obj.patternPointer = ones(1,length(obj.patternData));
+            
+            initialize(obj);
+        end
+        function initialize(obj)
+            obj.ChannelIds = 0:7;
+            
+            MAX_SAMPLES = 3000;
+            
+            obj.SignalBuffer = zeros(MAX_SAMPLES,obj.NumChannels);
+            
+        end
+        function bufferedData = getData(obj)
+            
+            bufferedData = [];
+            
+            t = clock;
+            tElapsed = etime(t,obj.lastAccess);
+            obj.lastAccess = t;
+            
+            [numSamplesInBuffer numChannels] = size(obj.SignalBuffer);
+            samplesElapsed = round(tElapsed*obj.SampleFrequency);
+            
+            samplesElapsed = min(samplesElapsed,numSamplesInBuffer);
+            samplesElapsed = max(samplesElapsed,1);
+
+            % shift buffer
+            obj.SignalBuffer = circshift(obj.SignalBuffer,[-samplesElapsed 0]);
+            newDataStart = obj.patternPointer(obj.CurrentPattern);
+            newDataEnd = obj.patternPointer(obj.CurrentPattern) + samplesElapsed -1;
+            
+            newDataIds = newDataStart:newDataEnd;
+            numPatternSamples = size(obj.patternData{obj.CurrentPattern},1);
+            while any(newDataIds > numPatternSamples)
+                newDataIds(newDataIds > numPatternSamples) = ...
+                    newDataIds(newDataIds > numPatternSamples) - numPatternSamples;
+            end
+            
+            newData = obj.patternData{obj.CurrentPattern}(newDataIds,:);
+            obj.SignalBuffer(end-samplesElapsed+1:end,:) = newData;
+            
+            try
+            obj.patternPointer(obj.CurrentPattern) = newDataIds(end);
+            catch
+                newDataIds
+            end
+            
+            numSamplesRequested = obj.NumSamples;
+            if numSamplesInBuffer < numSamplesRequested
+                error('More samples requested "%d" than buffered "%d" \n',numSamplesRequested,numSamplesInBuffer);
+            else
+                bufferedData = obj.SignalBuffer(end-obj.NumSamples+1:end,:);
+            end
+            
+            return
+            
+            % Note this returned data size conforms to the getdata methods
+            % of the Data Acquisition Toolbox [numSamples numChannels]
+            sampleBlock = 150;
+            newData = zeros(sampleBlock,obj.NumChannels);
+            
+            % create some noisy sine waves to return
+            tMax = sampleBlock/obj.SampleFrequency;
+            t = linspace(0,tMax,sampleBlock); %sec
+            
+            A = expand(obj.SignalAmplitude,obj.NumChannels);
+            f = expand(obj.SignalFrequency,obj.NumChannels);
+            
+            for iChannel = 1:obj.NumChannels
+                p = 0.5*randn(1);
+                channelData = A(iChannel)*sin(2*pi*f(iChannel)*t + p) + obj.DcOffset;
+                channelData = channelData + obj.NoisePower.*randn(1,sampleBlock);
+                
+                newData(:,iChannel) = channelData;
+            end
+            
+            obj.SignalBuffer = circshift(obj.SignalBuffer,[-sampleBlock 0]);
+            obj.SignalBuffer(end-sampleBlock+1:end,:) = newData;
+            
+            [numSamplesInBuffer numChannels] = size(obj.SignalBuffer);
+            numSamplesRequested = obj.NumSamples;
+            if numSamplesInBuffer < numSamplesRequested
+                error('More samples requested "%d" than buffered "%d" \n',numSamplesRequested,numSamplesInBuffer);
+            else
+                bufferedData = obj.SignalBuffer(end-obj.NumSamples+1:end,:);
+            end
+        end
+        function isReady = isReady(obj,numSamples) %#ok<MANU>
+            % Consider adding in a phony startup delay
+            isReady = true;
+            fprintf('[%s] Simulator Ready with %d samples\n',mfilename,numSamples);
+        end
+        function close(obj)
+            delete(obj.hg.hFig)
+        end
+        function setPattern(obj,id)
+            % TODO constrain value
+            obj.CurrentPattern = id;
+        end
+        function uiControlPanel(obj)
+            hFig = UiTools.create_figure('EMG Simulator','EMG_Simulator_Figure');
+            
+            if isempty(hFig)
+                error('Failed to create figure');
+            else
+                set(hFig,'Position',[1 1 1 1]);
+                drawnow
+                alwaysontop(hFig);
+            end
+            
+            obj.hg.hFig = hFig;
+
+            cellCurrentKeys = {};
+            
+            set(obj.hg.hFig,'Position',[20 50 200 70]);
+            set(obj.hg.hFig,'WindowKeyPressFcn',@(src,evt)key_down(evt));
+            set(obj.hg.hFig,'WindowKeyReleaseFcn',@(src,evt)key_up(evt));
+            
+            obj.hg.hTxtCurrentPattern = uicontrol(obj.hg.hFig,...
+                'Style','text',...
+                'String','Current Pattern: ',...
+                'Position', [20    20    120    20]);
+            
+            set(hFig,'Visible','on');
+            
+            function key_up(evt)
+                % Remove the released key
+                isReleased = strcmpi(evt.Key,cellCurrentKeys);
+                
+                cellCurrentKeys = cellCurrentKeys(~isReleased);
+                
+                if isempty(cellCurrentKeys)
+                    % No keys remain down
+                    obj.CurrentPattern = obj.DEFAULT_PATTERN;
+                    set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 0');
+                else
+                    % Some keys still remain down
+                    return
+                end
+                
+            end %key_up
+            
+            function key_down(evt)
+
+                switch evt.Key
+                    case 'a'
+                        setPattern(obj,1);
+                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 1');
+                    case 's'
+                        setPattern(obj,2);
+                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 2');
+                    case 'd'
+                        setPattern(obj,3);
+                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 3');
+                    case 'f'
+                        setPattern(obj,4);
+                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 4');
+                    case 'q'
+                        setPattern(obj,5);
+                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 5');
+                    case 'w'
+                        setPattern(obj,6);
+                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 6');
+                    case 'e'
+                        setPattern(obj,7);
+                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 7');
+                    case 'r'
+                        setPattern(obj,8);
+                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 8');
+                end
+            
+                cellCurrentKeys = unique([cellCurrentKeys {evt.Key}]);
+                
+            end %key_down
+            
+        end %uiControlPanel
+        function stop(obj)
+            if obj.isRunning
+                fprintf('[%s] Simulator Stopped\n',mfilename);
+                obj.isRunning = false;
+            end
+        end
+        function start(obj)
+            if ~obj.isRunning
+                fprintf('[%s] Simulator Started\n',mfilename);
+                obj.isRunning = true;
+            end                
+        end
+    end
+end
