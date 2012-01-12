@@ -120,9 +120,9 @@ classdef MiniV < hgsetget
             obj.handle(20).Joint_Param(3) = -jointAngles(22); %% *0; %% Little_DIP (+ Flexion)
             obj.handle(18).Joint_Param(1) =  jointAngles(23); %% *0; %% Little_AbAd (+ Toward Pinky)
             
-            obj.handle(6).Joint_Param(2) = jointAngles(24) %%-20; %% *0; %% Thumb_AbAd (+ Toward ???)
-            obj.handle(6).Joint_Param(3) = jointAngles(25) %%*0; %% Thumb_FE (+ Flexion)
-            obj.handle(6).Joint_Param(1) = jointAngles(26) %%*.5; %% *0; %% Thumb_Rot (+ Toward ???)
+            obj.handle(6).Joint_Param(2) = jointAngles(24); %%-20; %% *0; %% Thumb_AbAd (+ Toward ???)
+            obj.handle(6).Joint_Param(3) = jointAngles(25); %%*0; %% Thumb_FE (+ Flexion)
+            obj.handle(6).Joint_Param(1) = jointAngles(26); %%*.5; %% *0; %% Thumb_Rot (+ Toward ???)
             
             obj.handle(7).Joint_Param(3) = -jointAngles(27); %% *0; %% Thumb_MCP (+ Flexion)
             obj.handle(8).Joint_Param(3) = -jointAngles(28); %% *0; %% Thumb_IP (+ Flexion)

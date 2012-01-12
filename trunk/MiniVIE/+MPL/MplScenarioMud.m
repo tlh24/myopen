@@ -42,8 +42,8 @@ classdef MplScenarioMud < Common.MiniVieObj
         function obj = MplScenarioMud
             obj.hTimer = UiTools.create_timer(mfilename,@(src,evt)cb_data_timer(src,evt,obj));
             obj.hTimer.Period = 0.05;
-            obj.hSink = VulcanXSink('127.0.0.1',9027);
-            obj.hMud = MudCommandEncoder();
+            obj.hSink = MPL.VulcanXSink('127.0.0.1',9027);
+            obj.hMud = MPL.MudCommandEncoder();
         end
         function close(obj)
             try
@@ -153,7 +153,7 @@ try
     gain = 40;
     obj.FingerCommand = zeros(1,4);
     
-    graspGain = 1;
+    graspGain = .1;
     wristGain = 4;
     graspChangeThreshold = 1;
     switch hSignalClassifier.ClassNames{cursorMoveClass}
@@ -171,7 +171,7 @@ try
             if obj.graspValue < graspChangeThreshold
                 obj.graspId = 1;
             end
-            obj.graspId = 7;
+            obj.graspId = 3;
             obj.graspValue = obj.graspValue + (graspGain*speed);
         case 'Pointer Grasp' 
             if obj.graspValue < graspChangeThreshold
@@ -200,7 +200,7 @@ try
             obj.FingerCommand(4) = speed;
         case {'Pronate' 'Wrist Rotate In'}
             obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) = ...
-                obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) + speed*wristGain*4;
+                obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) + speed*wristGain*2;
         case {'Supinate' 'Wrist Rotate Out'}
             obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) = ...
                 obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) - speed*wristGain*2;
@@ -212,10 +212,10 @@ try
                 obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) + speed*gain*6;
         case {'Left' 'Wrist Flex' 'Wrist Flex In'}
             obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) = ...
-                obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) + speed*gain*2;
+                obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) + speed*gain*.1;
         case {'Right' 'Wrist Extend' 'Wrist Extend Out'}
             obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) = ...
-                obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) - speed*gain*2;
+                obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) - speed*gain*.1;
         otherwise
     end
     
