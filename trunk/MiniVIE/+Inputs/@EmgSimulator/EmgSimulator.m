@@ -76,7 +76,7 @@ classdef EmgSimulator < Inputs.SignalInput
             obj.SignalBuffer(end-samplesElapsed+1:end,:) = newData;
             
             try
-            obj.patternPointer(obj.CurrentPattern) = newDataIds(end);
+                obj.patternPointer(obj.CurrentPattern) = newDataIds(end);
             catch
                 newDataIds
             end
