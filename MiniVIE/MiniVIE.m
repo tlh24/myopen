@@ -138,7 +138,7 @@ classdef MiniVIE < Common.MiniVieObj
                         obj.println('Presentation setup complete',1);
                     case 'MplScenarioMud'
                         obj.println('Setting up presentation...',1);
-                        h = Scenarios.MplScenarioMud;
+                        h = MPL.MplScenarioMud;
                         h.hScenario = obj;
                         start(h.hTimer);
                         obj.println('Presentation setup complete',1);

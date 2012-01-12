@@ -1,3 +1,4 @@
+
 classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
     % Bar Chart interactive training user interface
     % Note Signal only grows when over activation threshold
@@ -19,6 +20,7 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
         Period = 0.02; %seconds
     end
     methods
+
         function obj = BarTrainer()
             % Constructor
         end
@@ -54,6 +56,11 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
             % TODO: wait for samples
             % ok = wait_for_device(h,hSignalSource,numSamples);
             
+        end
+        function setThreshold
+            
+            
+            hLivePlot = LivePlot(1,300,'ChannelData',98);
         end
         function update(obj)
             
@@ -140,8 +147,15 @@ end
 
 function key_down(src,evt,obj) %#ok<INUSL>
 
-if strcmp(evt.Key,'space');
+if strcmpi(evt.Key,'Space');
     obj.perform_retrain();
+    return
+elseif strcmpi(evt.Key,'LeftArrow') && obj.iClass > 1
+   obj.iClass = obj.iClass - 1;
+   return
+elseif strcmpi(evt.Key,'RightArrow') && obj.iClass < obj.SignalClassifier.NumClasses
+   obj.iClass = obj.iClass + 1;
+   return
 end
 
 iKey = strfind(obj.keyOrder,evt.Key);
