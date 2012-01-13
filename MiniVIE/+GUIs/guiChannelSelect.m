@@ -6,8 +6,8 @@ classdef guiChannelSelect < handle
     properties
         hFigure
         
-        numChannelsMax = 32;
-        numChannelsAvailable = 12;
+        numChannelsMax = 32;        % Max channels this gui can display
+        %numChannelsAvailable = 12;
         numChannelsPerRow = 8;
         
     end
@@ -20,7 +20,8 @@ classdef guiChannelSelect < handle
     end
     properties (Constant = true)
         defaultFile = 'miniVieDefaultChannels.mat';
-        defaultChannels = [1 2 3 4];
+        lastFile = 'miniVieLastChannels.mat';
+        defaultChannels = [];
     end
     events
         ValueChange
@@ -28,7 +29,7 @@ classdef guiChannelSelect < handle
     methods
         function obj = guiChannelSelect
             obj.setupFigure();
-            selectedChannels = obj.getSavedDefaults;
+            selectedChannels = obj.getLastChannels;
             obj.setActiveChannels(selectedChannels);
             
         end
@@ -42,15 +43,15 @@ classdef guiChannelSelect < handle
             selectedChannels = reshape(selectedChannels,1,[]);
         end
         function setActiveChannels(obj,activeChannelIds)
-            if any(activeChannelIds < 1) || any(activeChannelIds > obj.numChannelsAvailable)
-                msg = sprintf('Cannot set channels outside available range of 0 to %d\n',obj.numChannelsAvailable);
-                errordlg(msg);
-                return
-            end
-            
+            % if any(activeChannelIds < 1) || any(activeChannelIds > obj.numChannelsAvailable)
+            %     msg = sprintf('Cannot set channels outside available range of 0 to %d\n',obj.numChannelsAvailable);
+            %     errordlg(msg);
+            %     return
+            % end
+
+            validIds = activeChannelIds(activeChannelIds <= obj.numChannelsMax);
             set(obj.handles.pbChannels,'Value',0);
-            set(obj.handles.pbChannels(activeChannelIds),'Value',1);
-            
+            set(obj.handles.pbChannels(validIds),'Value',1);
         end
         function setAvailableChannels(obj,numAvailable)
             if (numAvailable < 1) || (numAvailable > obj.numChannelsMax)
@@ -59,7 +60,7 @@ classdef guiChannelSelect < handle
                 return
             end
             
-            obj.numChannelsAvailable = numAvailable;
+            %obj.numChannelsAvailable = numAvailable;
             
             set(obj.handles.pbChannels,'Visible','off');
             set(obj.handles.pbChannels(1:numAvailable),'Visible','on');
@@ -75,6 +76,7 @@ classdef guiChannelSelect < handle
             
         end
         function close(obj)
+            obj.setLastChannels(obj.SelectedChannels)
             try
                 delete(obj.hFigure)
             end
@@ -132,6 +134,7 @@ classdef guiChannelSelect < handle
         function setupFigure(obj)
             
             obj.hFigure = UiTools.create_figure('Select Channels');
+            % set(obj.hFigure,'CloseRequestFcn',@(src,evt)obj.close);
             
             if isempty(obj.hFigure)
                 error('Failed to create figure');
@@ -153,7 +156,7 @@ classdef guiChannelSelect < handle
                 'Parent',obj.handles.menuFile);
             obj.handles.menuFileDefault = uimenu(...
                 'Label','Set &Defaults',...
-                'Callback',@(src,evt)obj.setSavedDefaults(obj.SelectedChannels),...
+                'Callback',@(src,evt)obj.setDefaultChannels(obj.SelectedChannels),...
                 'Parent',obj.handles.menuFile);
             obj.handles.menuFileDefault = uimenu(...
                 'Label','E&xit',...
@@ -180,20 +183,27 @@ classdef guiChannelSelect < handle
                     'FontWeight','bold');
             end
             
-            setAvailableChannels(obj,obj.numChannelsAvailable);
+            % setAvailableChannels(obj,obj.numChannelsAvailable);
             
         end
     end
     methods (Static = true)
-        function setSavedDefaults(selectedChannels)
+        function setDefaultChannels(selectedChannels)
+            % Create a mat file in the temp directory
+            fullFile = fullfile(tempdir,GUIs.guiChannelSelect.defaultFile);
+            GUIs.guiChannelSelect.setChannels(fullFile,selectedChannels);
+        end
+        function setLastChannels(selectedChannels)
+            % Create a mat file in the temp directory
+            fullFile = fullfile(tempdir,GUIs.guiChannelSelect.lastFile);
+            GUIs.guiChannelSelect.setChannels(fullFile,selectedChannels);
+        end
+        function setChannels(fullFile,selectedChannels)
             % Create a mat file in the temp directory
             
             if isempty(selectedChannels) || any(selectedChannels < 1)
-                error('Expected an array selected channels');
+                error('Expected an array of selected channels');
             end
-            
-            % Create a mat file in the temp directory
-            fullFile = fullfile(tempdir,GUIs.guiChannelSelect.defaultFile);
             
             try
                 save(fullFile,'selectedChannels','-mat');
@@ -203,15 +213,21 @@ classdef guiChannelSelect < handle
                 errordlg(msg,'Error setting defaults')
                 return
             end
-            
         end
-        function selectedChannels = getSavedDefaults()
+        function selectedChannels = getDefaultChannels()
+            fullFile = fullfile(tempdir,GUIs.guiChannelSelect.defaultFile);
+            selectedChannels = GUIs.guiChannelSelect.getChannels(fullFile,GUIs.guiChannelSelect.defaultChannels);
+        end
+        function selectedChannels = getLastChannels()
+            fullFile = fullfile(tempdir,GUIs.guiChannelSelect.lastFile);
+            selectedChannels = GUIs.guiChannelSelect.getChannels(fullFile,GUIs.guiChannelSelect.defaultChannels);
+        end
+        function selectedChannels = getChannels(fullFile,defaultOutput)
             % Load a mat file in the temp directory
             
             % Initialize output
-            selectedChannels = GUIs.guiChannelSelect.defaultChannels;
+            selectedChannels = defaultOutput;
             
-            fullFile = fullfile(tempdir,GUIs.guiChannelSelect.defaultFile);
             if ~exist(fullFile,'file')
                 return
             end
@@ -222,7 +238,7 @@ classdef guiChannelSelect < handle
                 msg = { 'Error reading default file', fullFile , ...
                     'Error was: ' ME.message};
                 errordlg(msg,'Error setting defaults');
-                return
+                rethrow(ME);
             end
             
             if isfield(S,'selectedChannels')
@@ -230,9 +246,7 @@ classdef guiChannelSelect < handle
             else
                 selectedChannels = [];
             end
-            
         end
-        
     end
 end
 
