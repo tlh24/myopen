@@ -67,6 +67,33 @@ int main(int argn, char **argc){
 	if(argn != 3 && argn != 2){
 		printf("usage: veovert infile.bin outfile.mat\n");
 		printf(" or just: veovert infile.bin\n");
+		printf("\n For reference, there are 4 output files:\n");
+		printf("\t $.mat : contains \n");
+		printf("\t\t time, wall time within the client, synchronous to the BMI.\n");
+		printf("\t\t\t one time per rxpacket. \n");
+		printf("\t\t\t does not have sufficient precision for spikes -- \n");
+		printf("\t\t\t packets may come in out of order,\n");
+		printf("\t\t mstimer, hardware clock on bridge, runs at %f Hz\n", BRIDGE_CLOCK);
+		printf("\t\t\t one time per rxpacket. \n");
+		printf("\t\t\t timestamps for spikes should be pretty accurate. \n");
+		printf("\t\t spike_ts \n");
+		printf("\t\t\t spike times, indexes time or mstimer \n");
+		printf("\t\t\t these are sorted on the headstage but only  \n");
+		printf("\t\t\t timestamped on the bridge to conserve bandwidth \n");
+		printf("\t\t spike_ch \n");
+		printf("\t\t\t channel of the spike. same length as spike_ts.\n");
+		printf("\t\t spike_unit \n");
+		printf("\t\t\t unit of the spike. same length as spike_ts.\n");
+		printf("\t $.nlg \n");
+		printf("\t\t raw signed 8-bit integer matrix of analog traces. \n");
+		printf("\t\t matrix: 4 by (rxpackets * 6) \n");
+		printf("\t\t (each packet contains 6 samples from 4 packets) \n");
+		printf("\t $.chn.gz \n");
+		printf("\t\t gzipped unsigned 8-bit integer matrix of channel for analog. \n");
+		printf("\t\t matrix: 4 by rxpackets \n");
+		printf("\t\t (channel does not change between packets) \n");
+		printf("\t $.log.gz \n");
+		printf("\t\t gzipped text of messages within the file. \n");
 		exit(0);
 	} else {
 		FILE* in = fopen(argc[1], "r");
@@ -113,6 +140,8 @@ int main(int argn, char **argc){
 		u64 rxpackets = 0;
 		u64 txpackets = 0;
 		u64 msgpackets = 0;
+		u64 msglength = 0;
+		u64 spikes = 0;
 		bool done = false;
 		while(!done){
 			fread((void*)&u,4,1,in);
@@ -122,8 +151,23 @@ int main(int argn, char **argc){
 					fread((void*)&u,4,1,in);
 					unsigned int siz = u & 0xffff;
 					//printf("u 0x%x\n",u);
-					rxpackets += (siz-4)/(32+4);
-					fseeko(in,siz+8, SEEK_CUR);
+					unsigned int npak = (siz-4)/(4+32);
+					rxpackets += npak;
+					//read these in -- but don't use them.
+					double rxtime = 0.0;
+					unsigned int dropped = 0;
+					fread((void*)&rxtime,8,1,in); //rx time in seconds.
+					fread((void*)&dropped,4,1,in);
+					for(unsigned int i=0;i<npak; i++){
+						packet p;
+						fread((void*)&p,sizeof(p),1,in);
+						int channels[32]; char match[32];
+						unsigned int echo = 0;
+						decodePacket(&p, channels, match, echo);
+						for(unsigned int k=0; k<32; k++){
+							if(match[k]) spikes++;
+						}
+					}
 					pos += 16+siz;
 				}else if(u == 0xc0edfad0){
 					fread((void*)&u,4,1,in);
@@ -137,7 +181,8 @@ int main(int argn, char **argc){
 					unsigned int siz = u & 0xffff;
 					//printf("u 0x%x\n",u);
 					msgpackets += 1;
-					fseeko(in,siz+8, SEEK_CUR);
+					msglength += siz;
+					fseeko(in,siz+8, SEEK_CUR); //8 byte double timestamp.
 					pos += 16+siz;
 				} else {
 					printf("magic number seems off, is 0x%x, %lld bytes, %lld packets\n",
@@ -147,10 +192,10 @@ int main(int argn, char **argc){
 				if(ferror(in) || feof(in)) done = true;
 			}
 		}
-		printf("total %lld rxpackets, %lld txpackets, %lld messages\n",
-			   rxpackets, txpackets, msgpackets);
+		printf("total %lld rxpackets, %lld txpackets, %lld spikes, %lld messages\n",
+			   rxpackets, txpackets, spikes, msgpackets);
 		if(rxpackets > 0x7fffffff){
-			printf("you will not be able to save packet times.\n");
+			printf("you will not be able to save packet timestamps.\n");
 		}
 		fseeko(in,0, SEEK_SET);
 		//okay, allocate appropriate data structs:
@@ -172,17 +217,18 @@ int main(int argn, char **argc){
 		mstimer = (mat_uint32_t*)malloc(rxpackets * sizeof(int) );
 		 if(!mstimer){ printf("could not allocate mstimer variable."); exit(0);}
 
-		spike_ts = (mat_uint32_t*)malloc(rxpackets * sizeof(int)*32);
+		spike_ts = (mat_uint32_t*)malloc(spikes * sizeof(int));
 		  if(!spike_ts){ printf("could not allocate spike_ts variable."); exit(0);}
-		spike_ch = (mat_int8_t*)malloc(rxpackets * 32);
+		spike_ch = (mat_int8_t*)malloc(spikes * 32);
 		  if(!spike_ch){ printf("could not allocate spike_ch variable."); exit(0);}
-		spike_unit = (mat_int8_t*)malloc(rxpackets * 32);
+		spike_unit = (mat_int8_t*)malloc(spikes * 32);
 		  if(!spike_unit){ printf("could not allocate spike_unit variable."); exit(0);}
 
 		analog = (unsigned char*)malloc(rxpackets * 24 );
 		  if(!analog){ printf("could not allocate analog variable."); exit(0);}
 		channel = (unsigned char*)malloc(rxpackets * 4 ); //channel does not change within packets.
 		  if(!channel){ printf("could not allocate channel variable."); exit(0);}
+
 		//also need to inspect the messages, to see exactly when the channels changed.
 		u64 tp = 0; // packet position (index time, aka timestamp)
 		u64 sp = 0; // spike position (index spike variables)
@@ -238,9 +284,9 @@ int main(int argn, char **argc){
 									spike_ch[sp] = channels[j];
 									spike_unit[sp] = match[j];
 									sp++;
-									if(sp >= rxpackets * 32){
-										printf("error! spike position sp > rxpackets*32\n");
-										printf("%lld > %lld \n", sp, rxpackets*32);
+									if(sp > spikes){
+										printf("error! spike position sp > spikes\n");
+										printf("%lld > %lld \n", sp, spikes);
 										printf("file offset %ld\n", ftello(in));
 										exit(0);
 									}
@@ -351,5 +397,11 @@ int main(int argn, char **argc){
 		Mat_Close(mat);
 		fclose(in);
 		fclose(log);
+		strncpy(s, argc[1], 512);
+		n = strlen(argc[1]);
+		s[n-3] = 'l'; s[n-2] = 'o'; s[n-1] = 'g';
+		char s2[512];
+		snprintf(s2, 511, "gzip %s", s);
+		system(s2);
 	}
 }

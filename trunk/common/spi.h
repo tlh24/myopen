@@ -3,7 +3,9 @@
 
 #ifdef __ADSPBF532__
 //need to define the SPI pins, etc.
+#ifndef __ASM__
 #include <cdefBF532.h>
+#endif
 
 #define FIO_CLEAR		pFIO_FLAG_C
 #define FIO_SET		pFIO_FLAG_S
@@ -16,7 +18,7 @@
 #define USB_IRQ 		0x0010 //pin 4 on port F
 #define USB_RESET 	0x0800 //pin 11.
 
-//SPI pins. 
+//SPI pins.
 #define SPI_IRQ	 	0x0008
 #define SPI_CSN		0x0002
 #define SPI_CE		0x0001
@@ -40,7 +42,7 @@
 #define FIO__DIR		pPORTFIO_DIR
 
 #define USB_SS 0x4000 //on port F.
-#define USB_IRQ 0x0100 
+#define USB_IRQ 0x0100
 
 //SPI pins, needed by spi.c
 #define SPI_IRQ	0x4000 //port f pin 14
@@ -72,7 +74,7 @@
 
 #endif
 
-#ifndef u8 
+#ifndef u8
 #define u8 unsigned char
 #endif
 #ifndef u16
@@ -89,7 +91,7 @@
 	#endif
 #endif
 
-// SPI routines. 
+// SPI routines.
 #ifndef __ASM__
 void spi_delay();
 u8 spi_write_register(u8 reg, u8 val);
@@ -104,9 +106,9 @@ void spi_read_packet_nocheck(void* packet);
 void radio_set_rx();
 void radio_set_tx();
 int radio_wait_irq(int time);
-u8 radio_init(u8 chan); 
+u8 radio_init(u8 chan);
 
-void udelay(int us); 
-void printf_newline(); 
+void udelay(int us);
+void printf_newline();
 #endif
 #endif

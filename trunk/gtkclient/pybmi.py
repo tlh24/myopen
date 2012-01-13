@@ -36,12 +36,12 @@ selected = (0,0)
 pierad = 40
 g_file = None
 g_time = 0.0
-g_juiceOverride = False; 
+g_juiceOverride = False;
 plot_thread = None
 plot_queue = Queue()
 
 def plot_proc(g_die,cqueue):
-	la = -1; 
+	la = -1;
 	while(not g_die.value):
 		try:
 			la = cqueue.get(True, 1.0)
@@ -49,7 +49,7 @@ def plot_proc(g_die,cqueue):
 			la = None
 		if la:
 			t = pylab.arange(0.0, 3.0, 0.01)
-			a = math.pow(2.0, -1.0*la); 
+			a = math.pow(2.0, -1.0*la);
 			integral = math.pi/(4*math.sqrt(a))
 			s = t/((t*t*t*t + a)*integral)
 			pylab.hold(False)
@@ -74,7 +74,7 @@ def configure_event(widget, event):
 	global pixmap
 	global surface
 	global neuron_group
-	
+
 	wind = widget.window
 	width, height = wind.get_size()
 
@@ -82,8 +82,8 @@ def configure_event(widget, event):
 	for y in range(0,16):
 		for x in range(0,8):
 			for u in range(0,2):
-				firing_rates[u][y*8+x] = 0.0; 
-		
+				firing_rates[u][y*8+x] = 0.0;
+
 	# overlay the text.
 	surface[1] = cairo.ImageSurface(cairo.FORMAT_ARGB32, width, height)
 	cr = cairo.Context(surface[1])
@@ -107,9 +107,9 @@ def configure_event(widget, event):
 				if ng == 2:
 					cr.set_source_rgb(0,1,0)
 				cr.translate(x*pierad*2+pierad/2+pierad*u,y*pierad+pierad/2)
-				cr.arc(0,0, pierad/2, 0,2*math.pi); 
+				cr.arc(0,0, pierad/2, 0,2*math.pi);
 				cr.close_path()
-				cr.stroke(); 
+				cr.stroke();
 				cr.set_source_rgb(1,1,1)
 				cr.restore()
 	y = 16
@@ -122,26 +122,26 @@ def configure_event(widget, event):
 		cr.set_source_rgb(0.5,0.5,0.5)
 		cr.new_path()
 		cr.translate(x*pierad+pierad/2,y*pierad+pierad/2)
-		cr.arc(0,0, pierad/2, 0,2*math.pi); 
+		cr.arc(0,0, pierad/2, 0,2*math.pi);
 		cr.close_path()
-		cr.stroke(); 
+		cr.stroke();
 		cr.restore()
 	update_display()
 	return True
-	
+
 def update_display():
 	# get data from gtkclient.
-	global frsock, g_die, g_dict, fr_scale, g_juiceOverride, g_file 
+	global frsock, g_die, g_dict, fr_scale, g_juiceOverride, g_file
 	global firing_rates
 	global g_frhist, g_behavhist
 	try:
 		a = g_dict['fr_smoothing']
-		a = math.pow(2.0, -1.0*a); 
+		a = math.pow(2.0, -1.0*a);
 		n = frsock.send(str(a)) # this controls gtkclient.
 	except:
 		n = 0
 	if(n>0):
-		# wait for response. 
+		# wait for response.
 		data = ""
 		passes = 0
 		try:
@@ -165,7 +165,7 @@ def update_display():
 			for r in range(0,128):
 				firing_rates[0][r] = ar[(r+3)*2+0] / 128.0
 				firing_rates[1][r] = ar[(r+3)*2+1] / 128.0
-			
+
 		else:
 			print "timeout waiting for firing rate data"
 	else:
@@ -182,15 +182,15 @@ def update_display():
 		for u in range(0,2):
 			if neuron_group[ch][u] == 1:
 				pos[0] += firing_rates[u][ch];
-				nn[0] += 1.0; 
+				nn[0] += 1.0;
 			if neuron_group[ch][u] == 2:
 				pos[1] += firing_rates[u][ch];
-				nn[1] += 1.0; 
+				nn[1] += 1.0;
 	frs = g_dict["fr_scale"];
 	if pos[0] > 0:
-		pos[0] /= nn[0] * frs; 
+		pos[0] /= nn[0] * frs;
 	if pos[1] > 0:
-		pos[1] /= nn[1] * frs; 
+		pos[1] /= nn[1] * frs;
 	#individual axis scale and offset.
 	scale = [1.0,1.0]
 	offset = [0.0,0.0]
@@ -210,10 +210,10 @@ def update_display():
 		cursV[0] = pos[0] # slightly more atomic.
 		cursV[1] = pos[1] # accessed from server thread.
 	if g_file != None:
-		# save data. 
+		# save data.
 		g_file.write("%f curs %f %f targ %f %f scl %f %f off %f %f fr_scl %f irDiff %f\n" %
-			(g_time, cursV[0], cursV[1], targV[0], targV[1], 
-			scale[0], scale[1], offset[0], offset[1], frs, g_dict['irDiff'])); 
+			(g_time, cursV[0], cursV[1], targV[0], targV[1],
+			scale[0], scale[1], offset[0], offset[1], frs, g_dict['irDiff']));
 		g_file.write("targ_sz %f curs_sz %f holdTime %f rewardTime %f\n" %
 			(g_dict['targetSize'],g_dict['cursorSize'],g_dict['holdTime'],g_dict['rewardTime']));
 		for grp in range(1,3):
@@ -222,16 +222,16 @@ def update_display():
 				for u in range(0,2):
 					if neuron_group[ch][u] == grp:
 						g_file.write("%du%d " % (ch, u));
-			g_file.write("\n"); 
-			g_file.flush(); 
-	#threshold irDiff. 
+			g_file.write("\n");
+			g_file.flush();
+	#threshold irDiff.
 	if g_dict['irDiff'] > 0.5:
 		g_dict['bgColor'] = [0.0, 0.0, 0.0, 0.0]
 		attention = 1
 	else:
 		g_dict['bgColor'] = [0.7, 0.5, 0.7, 0.]
 		attention = 0
-	#probably need to run the game here... 
+	#probably need to run the game here...
 	d = cursV[0] - targV[0]
 	e = cursV[1] - targV[1]
 	#if the monkey is not paying attention, disable game..
@@ -244,7 +244,7 @@ def update_display():
 	if ((g_dict['task'] == 'left/right') or (g_dict['task'] == '4 target')): #start here.  move to 2d later.
 		# do the standard thing: switch statement based on state.
 		gs = g_dict['gs']
-		dt = time.time() - g_dict['gt']
+		dt = g_time - g_dict['gt']
 		if g_juiceOverride:
 			gs = 'reward'
 			dt = 0
@@ -254,7 +254,7 @@ def update_display():
 			g_dict['targetAlpha'] = 0.5
 			if inside:
 				gs = 'hold'
-		elif gs == 'hold': 
+		elif gs == 'hold':
 			g_dict['targetAlpha'] = 0.5 + 0.5*dt/g_dict['holdTime']
 			if dt > g_dict['holdTime']:
 				gs = 'reward'
@@ -291,10 +291,10 @@ def update_display():
 		else:
 			g_dict['juicer'] = False
 		if g_dict['gs'] != gs: #update the state time
-			g_dict['gt'] = time.time()
+			g_dict['gt'] = g_time
 		g_dict['gs'] = gs
-		
-	# anyway, save the slice if he's paying attention. 
+
+	# anyway, save the slice if he's paying attention.
 	fr = []
 	sum = 0
 	for i in range(0,128):
@@ -303,12 +303,12 @@ def update_display():
 		sum = sum + firing_rates[0][i] + firing_rates[1][i]
 	if sum > 10:
 		# last 4 are the behavioral correlates. select them to see correlation...
-		fr.append(cursV[0]); 
+		fr.append(cursV[0]);
 		fr.append(cursV[1]);
 		fr.append(targV[0]);
 		fr.append(targV[1]);
-		g_frhist.append(fr); 
-		g_behavhist.append([cursV[0], cursV[1], targV[0], targV[1], attention]); 
+		g_frhist.append(fr);
+		g_behavhist.append([cursV[0], cursV[1], targV[0], targV[1], attention]);
 	if len(g_frhist) > 25000:
 		g_frhist.popleft()
 		g_behavhist.popleft()
@@ -322,7 +322,7 @@ def expose_event(widget, event):
 	global neuron_group
 	global g_corrcoef
 	cr = widget.window.cairo_create()
-	cr.set_source_rgb(0.0, 0.09, 0.13); 
+	cr.set_source_rgb(0.0, 0.09, 0.13);
 	cr.rectangle(0,0,pierad*16,pierad*16 + 18*3)
 	cr.fill()
 	(ch,u) = selected
@@ -330,7 +330,7 @@ def expose_event(widget, event):
 	#draw the firing rates.
 	if True:
 		cr.set_line_width(1)
-		cr.set_source_rgb(0.7, 0.8, 0.2); 
+		cr.set_source_rgb(0.7, 0.8, 0.2);
 		for y in range(0,16):
 			for x in range(0,8):
 				if firing_rates[0][y*8+x] > 0:
@@ -339,7 +339,7 @@ def expose_event(widget, event):
 					cr.arc(x*pr*2+pr/2,y*pr+pr/2,pr/2,0,2*math.pi*firing_rates[0][y*8+x]/100)
 					cr.fill()
 					cr.restore()
-		cr.set_source_rgb(0.1, 0.8, 0.7); 
+		cr.set_source_rgb(0.1, 0.8, 0.7);
 		for y in range(0,16):
 			for x in range(0,8):
 				if firing_rates[1][y*8+x] > 0:
@@ -354,34 +354,34 @@ def expose_event(widget, event):
 	cr.set_line_width(0)
 	cr.set_source_rgb(1,1,1)
 	cr.move_to(pierad*4+10, pierad*16 + 18)
-	cr.show_text("irDiff %f" % g_dict['irDiff']); 
+	cr.show_text("irDiff %f" % g_dict['irDiff']);
 	cr.move_to(pierad*4+10, pierad*16 + 36)
-	cr.show_text("nTrials %f" % g_dict['nTrials']); 
+	cr.show_text("nTrials %f" % g_dict['nTrials']);
 	#draw selected.
 	cr.save()
-	cr.set_source_rgb(0.3,0,1); 
+	cr.set_source_rgb(0.3,0,1);
 	scx = (2*(ch%8) + u)*pr+pr/2
 	scy = (ch/8)*pr+pr/2
 	cr.move_to(scx + pr/2, scy)
-	cr.translate(scx,scy); 
+	cr.translate(scx,scy);
 	cr.set_line_width(5)
-	cr.arc(0,0,pr/2,0,2*math.pi); 
+	cr.arc(0,0,pr/2,0,2*math.pi);
 	#cr.close_path()
 	cr.stroke()
 	cr.restore()
-	#draw the correlations, if possible. 
-	if ch >= 0 and ch < 128+2 and u >= 0 and u < 2: 
-		if g_corrcoef != None : 
+	#draw the correlations, if possible.
+	if ch >= 0 and ch < 128+2 and u >= 0 and u < 2:
+		if g_corrcoef != None :
 			for i in range(0,256+4):
-				c = g_corrcoef[ch*2+u, i]; 
+				c = g_corrcoef[ch*2+u, i];
 				if (c > 0.1 or c < -0.1) and (i != ch*2+u):
-					red = 0; 
-					blue = 0; 
-					if c > 0: 
+					red = 0;
+					blue = 0;
+					if c > 0:
 						blue = 1.0
 					if c < 0:
 						red = 0.7
-					cr.set_source_rgb(red, 0.0, blue); # will clamp for us? 
+					cr.set_source_rgb(red, 0.0, blue); # will clamp for us?
 					x = i % 16
 					y = i / 16
 					cr.save()
@@ -392,13 +392,13 @@ def expose_event(widget, event):
 					cr.restore()
 	#copy the surfaces.
 	cr.set_source_surface(surface[0], 0, 0)
-	cr.paint(); 
+	cr.paint();
 	cr.set_source_surface(surface[1], 0, 0)
-	cr.paint(); 
+	cr.paint();
 	return False
 
 def button_press_event(widget, event):
-	# figure out which channel / unit is selected. 
+	# figure out which channel / unit is selected.
 	global selected, neuron_group
 	x = int(event.x) / pierad
 	y = int(event.y) / pierad
@@ -411,7 +411,7 @@ def button_press_event(widget, event):
 	widget.queue_draw()
 	drawing_area.grab_focus() # this so we can get key presses.
 	return True
-	
+
 def key_press_event(widget, event):
 	global drawing_area
 	(ch,un) = selected
@@ -440,7 +440,7 @@ def motion_notify_event(widget, event):
 
 def calcCorrcoef(widget, msg):
 	global g_frhist, g_behavhist, g_corrcoef
-	print("length of history %d\n" % len(g_frhist)); 
+	print("length of history %d\n" % len(g_frhist));
 	a = pylab.zeros((len(g_frhist),256+4))
 	i = 0
 	for v in g_frhist:
@@ -453,7 +453,7 @@ def calcCorrcoef(widget, msg):
 
 def savehist(widget, msg):
 	global g_frhist, g_behavhist, g_corrcoef
-	fil = open('g_frhist','w'); 
+	fil = open('g_frhist','w');
 	for v in g_frhist:
 		for u in v:
 			fil.write("%d " % u)
@@ -464,7 +464,7 @@ def savehist(widget, msg):
 		for u in v:
 			fil.write("%f " % u)
 		fil.write("\n")
-	fil.close(); 
+	fil.close();
 
 def main():
 	global firing_rates, frsock, targV, cursV, touchV
@@ -472,15 +472,15 @@ def main():
 	global g_dict # shared state.
 	global neuron_group, selected, pierad, g_juiceOverride
 	global g_frhist, g_behavhist, g_corrcoef
-	
-	#manage the shared dictionary. 
+
+	#manage the shared dictionary.
 	manager = Manager()
 	g_dict = manager.dict()
 	inits = ['gt','targetAlpha','cursorAlpha','targetSize','cursorSize','irDiff','nTrials']
 	for v in inits:
 		g_dict[v] = 0.0
 	g_dict['bgColor'] = [0.0,0.0,0.0,0.0]
-	#first order of business is to read in state. 
+	#first order of business is to read in state.
 	fil = None
 	try:
 		fil = open('pybmi_state.json','r')
@@ -497,14 +497,14 @@ def main():
 		g_dict['fr_scale'] = 30.0
 		g_dict['fr_smoothing'] = 6.0
 		g_dict['gs'] = ''
-		if fil: 
+		if fil:
 			fil.close()
 	g_dict['nTrials'] = 0
-	# make the history queues. 
-	g_frhist = deque(); 
-	g_behavhist = deque(); 
+	# make the history queues.
+	g_frhist = deque();
+	g_behavhist = deque();
 	g_corrcoef = None
-	# next is to make the window. 
+	# next is to make the window.
 	window = gtk.Window()
 	window.set_size_request(890, 760)
 	def delete_event(widget, event):
@@ -513,7 +513,7 @@ def main():
 		# gtk.main_quit
 		return False
 	window.connect('delete_event', delete_event)
-	window.connect('delete-event', gtk.main_quit) #why are these different? 
+	window.connect('delete-event', gtk.main_quit) #why are these different?
 
 	vpaned = gtk.HPaned()
 	vpaned.set_border_width(5)
@@ -522,12 +522,12 @@ def main():
 	sw = gtk.ScrolledWindow()
 	sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
 	vpaned.add2(sw)
-	
+
 	drawing_area = gtk.DrawingArea()
 	drawing_area.set_size_request(pierad*16, pierad*16+18*3)
 	sw.add_with_viewport(drawing_area)
 	drawing_area.show()
-	
+
 	drawing_area.connect("expose_event", expose_event)
 	drawing_area.connect("configure_event", configure_event)
 	drawing_area.connect("motion_notify_event", motion_notify_event)
@@ -539,15 +539,15 @@ def main():
 		gtk.gdk.KEY_PRESS_MASK |
 		gtk.gdk.POINTER_MOTION_MASK |
 		gtk.gdk.POINTER_MOTION_HINT_MASK)
-	drawing_area.set_flags(gtk.CAN_FOCUS) 
+	drawing_area.set_flags(gtk.CAN_FOCUS)
 
-	vbox_p = gtk.VBox(False, 0); 
-	vpaned.add1(vbox_p); 
-	#button for connect. 
+	vbox_p = gtk.VBox(False, 0);
+	vpaned.add1(vbox_p);
+	#button for connect.
 	def frsock_connect(widget, msg):
 		global frsock
 		if frsock == None and widget.get_active():
-			#can specify a server on the command line. 
+			#can specify a server on the command line.
 			if len(sys.argv) > 1:
 				server = sys.argv[1]
 			else:
@@ -560,20 +560,20 @@ def main():
 				widget.set_active(True)
 			else:
 				widget.set_active(False)
-	but = gtk.CheckButton("Connect to gtkclient"); 
+	but = gtk.CheckButton("Connect to gtkclient");
 	but.connect("toggled", frsock_connect, "connect")
 	vbox_p.add(but)
-	
-	hbox_p = gtk.HBox(False, 0); 
-	vbox_p.add(hbox_p); 
-	# button for manual juice. 
+
+	hbox_p = gtk.HBox(False, 0);
+	vbox_p.add(hbox_p);
+	# button for manual juice.
 	def juiceCB(widget, msg):
 		global g_juiceOverride
 		g_juiceOverride = True;
-	but = gtk.Button("Juice"); 
-	but.connect("clicked", juiceCB, "Juice"); 
+	but = gtk.Button("Juice");
+	but.connect("clicked", juiceCB, "Juice");
 	hbox_p.add(but)
-	#button for drain. 
+	#button for drain.
 	g_drain= False
 	def drainCB(widget, msg):
 		global g_drain
@@ -586,7 +586,7 @@ def main():
 	but.connect("toggled", drainCB, "drain")
 	hbox_p.add(but)
 
-	
+
 	#frame = make_radio('set_neuron_group', ['None','X','Y'], radio_event, True)
 	#vbox_p.add(frame)
 
@@ -611,17 +611,17 @@ def main():
 		def read_value(widg):
 			g_dict[lbl] = widg.value
 			callback(widg)
-		adj.connect("value_changed", read_value); 
+		adj.connect("value_changed", read_value);
 		return vb
-		
+
 	mk_scale("X scale",0.01,10,2.5)
 	mk_scale("X offset",-9,9,0)
 	mk_scale("Y scale",0.01,10,2)
 	mk_scale("Y offset",-9,9,0)
 	mk_scale("fr_scale",0,100,30) #units: Hz.
 	frame = mk_scale("fr_smoothing",-3,10,6,plot_fr_smoothing)
-	
-	# add controls for the game. 
+
+	# add controls for the game.
 	frame = make_radio('control',['manual','BMI'], lambda x,y:x, False)
 	vbox_p.add(frame)
 	frame = make_radio('task',['left/right','4 target'], lambda x,y:x, True)
@@ -630,8 +630,8 @@ def main():
 	mk_scale("cursorSize",0.0, 1.0, 0.5)
 	mk_scale("holdTime",0.0, 1.0, 0.5)
 	mk_scale("rewardTime",0.0, 1.0, 0.5)
-	
-	#add a button for saving data. 
+
+	#add a button for saving data.
 	def open_file (widget,msg):
 		global g_file,g_dict
 		chooser = gtk.FileChooserDialog(title=None,action=gtk.FILE_CHOOSER_ACTION_SAVE,
@@ -642,21 +642,21 @@ def main():
 			g_file = open(chooser.get_filename(), "w")
 			g_dict['nTrials'] = 0
 		chooser.destroy()
-	but = gtk.Button("Save data"); 
+	but = gtk.Button("Save data");
 	but.connect("clicked", open_file, "connect")
 	vbox_p.add(but)
-	
+
 	# for immediate analysis.
-	hbox = gtk.HBox(False, 0); 
-	vbox_p.add(hbox); 
-	but = gtk.Button("export fr/behav"); 
+	hbox = gtk.HBox(False, 0);
+	vbox_p.add(hbox);
+	but = gtk.Button("export fr/behav");
 	but.connect("clicked", savehist, "connect")
 	hbox.add(but)
-	
-	but = gtk.Button("calc corr. mtx"); 
+
+	but = gtk.Button("calc corr. mtx");
 	but.connect("clicked", calcCorrcoef, "connect")
 	hbox.add(but)
-	
+
 	#start sock_thread.
 	g_die = Value('b',False)
 	frsock = None
@@ -670,7 +670,7 @@ def main():
 	#start server_thread (local head)
 	p3 = Process(target=server_thread,args=(g_die,4345,targV,cursV,touchV,g_dict))
 	p3.start()
-	
+
 	gobject.timeout_add(10, update_display)
 
 	window.show_all()
@@ -696,21 +696,21 @@ def main():
 	fil.close()
 	if g_file:
 		g_file.close()
-	
+
 def radio_event(widget, btn_number):
 	global neuron_group,selected,drawing_area
 	if widget.get_active():
 		(ch,u) = selected
 		neuron_group[ch][u] = btn_number
-		configure_event(drawing_area,None); 
-		
+		configure_event(drawing_area,None);
+
 def make_radio(name, labels, callback, vert):
 	global g_dict
 	frame = gtk.Frame(name)
 	if vert:
-		vbox = gtk.VBox(False, 0); 
+		vbox = gtk.VBox(False, 0);
 	else:
-		vbox = gtk.HBox(False, 0); 
+		vbox = gtk.HBox(False, 0);
 	frame.add(vbox)
 	group_radio_buttons=[]
 	def radioEvent(widget, btn_number):
@@ -735,12 +735,12 @@ def make_radio(name, labels, callback, vert):
 		g_dict[name] = labels[index]
 	group_radio_buttons[index].set_active(True)
 	return frame
-	
-            
+
+
 def server_thread(die,port,targV,cursV,touchV,g_dict):
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	# turn on socket re-use (in the case of rapid restarts)
-	s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1); 
+	s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1);
 	try:
 		s.bind(("",port))
 		s.listen(1)
@@ -781,7 +781,7 @@ def server_thread(die,port,targV,cursV,touchV,g_dict):
 						sopen = False
 						print port, "could not write segment to client"
 				if sopen:
-					# get some feedback. 
+					# get some feedback.
 					pb = spikes_pb2.Display_msg()
 					try:
 						data = seg.nextSegment(conn)
@@ -805,7 +805,7 @@ def server_thread(die,port,targV,cursV,touchV,g_dict):
 			conn.close()
 			local_dict = {}
 	print port, "closing socket"
-	if s: 
+	if s:
 		s.close();
 
 if __name__ == '__main__':

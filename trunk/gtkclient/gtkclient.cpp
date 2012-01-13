@@ -112,8 +112,6 @@ int g_totalPackets = 0;
 unsigned int g_dropped; //compare against the bridge.
 int g_totalDropped = 0;
 
-#define BRIDGE_CLOCK 9155.2734375 // Hz.
-
 enum MODES {
 	MODE_RASTERS,
 	MODE_SORT,
@@ -804,10 +802,11 @@ packet format in the file, as saved here:
 8 bytes double RX time
 	-- If magic number is 0xdecafbad, packet is exactly as what comes in on the
 	wire / over UDP.
-	-- If magic number is 0xb00asc11, Data is ascii encoded messages,
+	-- If magic number is 0xb00a5c11, Data is ascii encoded messages,
 	e.g. channel change, template, aperture whatever from the GUI.
 	(Technically these can be reconstruced from the TX packet stream,
 	but that's complicated.)
+	see headstage.cpp.
 	-- If magic number is 0xc0edfad0, packet is a TX packet, exactly as
 	written out on the wire / UDP.
 */
