@@ -24,7 +24,7 @@ switch lower( action )
         FigWidth = nCol * CntrlWidth ...
             + (nCol-1)*CntrlGap ...
             + 2*CntrlMarg ;
-        p = [ 400, 200, FigWidth, FigHeight ];
+        p = [ 250, 350, FigWidth, FigHeight ];
 
     case {'cntrl'},
         if ( nargin == 5 ),
