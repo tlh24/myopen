@@ -17,17 +17,26 @@ classdef ClassifierChannels < Common.MiniVieObj
     end
     properties (Constant = true)
         defaultFile = 'miniVieDefaultClasses.mat';
-        defaultSelectedClasses = {'No Movement'};
+        defaultSelectedClasses = {'No Movement'};  % Will load if use has not preference files
     end
     methods
-        function obj = ClassifierChannels
-            obj.uiEnterClassNames();
-            obj.ClassNames = obj.getSavedDefaults();
+        function obj = ClassifierChannels(classNames)
+            
+            if (nargin > 0) 
+                if isempty(classNames) || ~iscell(classNames)
+                    error('Expected a cell array of input strings');
+                end
+                obj.ClassNames = classNames;
+            else
+                obj.ClassNames = obj.getSavedDefaults();
+            end
+            obj.setupFigure();
             updateSelected(obj);
         end
         
         function close(obj)
             try
+                setSavedDefaults(obj.ClassNames);
                 delete(obj.hFigure)
             end
             
@@ -89,8 +98,11 @@ classdef ClassifierChannels < Common.MiniVieObj
 
         end
         
-        function uiEnterClassNames(obj)
+        function setupFigure(obj)
             obj.hFigure = UiTools.create_figure('Class Names','ClassifierChannels');
+            % set(obj.hFigure,'CloseRequestFcn',@(src,evt)obj.close);
+
+            % Widen Figure
             pos = get(obj.hFigure,'Position');
             pos(3) = 700;
             set(obj.hFigure,'Position',pos);
@@ -186,6 +198,11 @@ classdef ClassifierChannels < Common.MiniVieObj
     methods (Static = true)
         function setSavedDefaults(classNames)
             % Create a mat file in the temp directory
+            
+            if isempty(classNames)
+                fprintf('[%s] Not saving empty class name list\n',mfilename);
+                return
+            end
             
             if isempty(classNames) || ~iscell(classNames) || ~all(cellfun(@isstr,classNames))
                 error('Expected a cell array of strings');
