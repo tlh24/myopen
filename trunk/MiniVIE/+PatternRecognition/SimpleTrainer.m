@@ -99,10 +99,10 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
             end
             
             if getappdata(h,'canceling')
-                fprintf('Training Cancelled');
+                fprintf('Training Cancelled\n');
                 delete(h);
             else
-                waitbar(1,h,'Training Complete!')
+                waitbar(1,h,'Training Complete')
                 pause(0.2);
                 delete(h);
             end
