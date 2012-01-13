@@ -64,6 +64,8 @@ classdef Classifier < Common.MiniVieObj
             hGui = SignalAnalysis.ClassifierChannels;
             uiwait(hGui.hFigure)
             obj.ClassNames = hGui.ClassNames;
+            % Save last selected classes
+            SignalAnalysis.ClassifierChannels.setSavedDefaults(obj.ClassNames);
         end
         
         function featureData = convertfeaturedata(obj)
