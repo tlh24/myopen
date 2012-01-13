@@ -1,4 +1,4 @@
-file = 'Mango_20111211_RHA123_RHL1'; 
+file = 'Mango_20111220_RHA123_RHL3'; 
 load([file '.mat']); 
 
 % convert spike_ts to real units (wall clock)
@@ -80,9 +80,6 @@ wanalog2(43:48, 1:end-4) = wanalog(:, 5:end);
 wf = wanalog2(:, ts); 
 plot(wf);
 
-
-
-
 % sorting based on the 'old' method: threshold and PCA. 
 for j = 1:4
 	trace = double(analog(j, :));
@@ -124,3 +121,6 @@ hold on
 ch6ts = spike_ts(spike_ch == 6);
 stem(ch6ts, -1*ones(size(ch6ts)))
 axis([0 1e5 -1.5 1.5])
+
+
+plot(histc(latency, (-10:0)));

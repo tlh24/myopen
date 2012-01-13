@@ -2,7 +2,7 @@
 # depends on google protocol buffers -- not too hard to install, in debian.
 # you'll need to install libatlas-base-dev for linear algebra.
 CFLAGS=-I/usr/local/include
-CFLAGS+=  -g #-O6
+CFLAGS+=  -O6
 CFLAGS+= -Wall -Wcast-align -Wpointer-arith -Wshadow -Wsign-compare -Wformat=2 \
 -Wno-format-y2k -Wmissing-braces -Wparentheses -Wtrigraphs \
 -Wextra -pedantic -std=c++0x
@@ -43,7 +43,7 @@ clean:
 	rm -rf client gtkclient convert *.o spikes.pb.*
 
 wf_plot: wf_plot.c
-	gcc -g -lSDL -lGL -lGLU -lglut -lpthread -lmatio -o $@ wf_plot.c
+	gcc -g -lSDL -lGL -lGLU -lglut -lpthread -lmatio -lpng -o $@ wf_plot.c
 
 deps:
 	sudo apt-get install libprotobuf-dev protobuf-compiler libgtk2.0-dev libgtkgl2.0-dev \
