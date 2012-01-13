@@ -17,9 +17,6 @@ classdef MiniVIE < Common.MiniVieObj
         PLANT = 4;
         PRESENTATION = 5;
     end
-    properties (SetAccess = private)
-        InputChoiceLookup = {'DaqHwDevice' }
-    end
     methods
         function obj = MiniVIE
             obj.configurePath;
@@ -94,14 +91,14 @@ classdef MiniVIE < Common.MiniVieObj
                 'String','Audio Preview',...
                 'Callback',@(src,evt)obj.SignalSource.audiopreview(1));
             
-            obj.hg.TrainingButtons(1) = uicontrol(obj.hg.Figure,...
+            obj.hg.SignalAnalysisButtons(1) = uicontrol(obj.hg.Figure,...
                 'Position',pos('cntrl',MiniVIE.SA,3,1,1),...
                 'Style','pushbutton',...
                 'String','Select Classes',...
                 'Enable','off',...
                 'Callback',@(src,evt)obj.SignalClassifier.uiEnterClassNames);
             
-            uicontrol(obj.hg.Figure,...
+            obj.hg.TrainingButtons(1) = uicontrol(obj.hg.Figure,...
                 'Position',pos('cntrl',MiniVIE.TRAINING,3,1,1),...
                 'Style','pushbutton',...
                 'String','Begin Training',...
@@ -169,13 +166,11 @@ classdef MiniVIE < Common.MiniVieObj
             switch string{value}
                 case 'Simple Trainer'
                     h = PatternRecognition.SimpleTrainer();
-                case 'Bar Trainer'
-                    h = PatternRecognition.BarTrainer();
-                    
                     h.NumRepetitions = 3;
                     h.ContractionLengthSeconds = 2;
                     h.DelayLengthSeconds = 1;
-                    
+                case 'Bar Trainer'
+                    h = PatternRecognition.BarTrainer();
                 case 'Mini Guitar Hero'
                     h = PatternRecognition.MiniGuitarHero();
                 otherwise
@@ -233,7 +228,11 @@ classdef MiniVIE < Common.MiniVieObj
                         h = [];
                 end
                 
-                if ~isempty(h)
+                if isempty(h)
+                    set(obj.hg.SignalAnalysisButtons(:),'Enable','off');
+                else
+                    set(obj.hg.SignalAnalysisButtons(:),'Enable','on');
+                
                     % TODO: Note signals only updated on classifier
                     % creation
                     defaultChannels = GUIs.guiChannelSelect.getLastChannels();
