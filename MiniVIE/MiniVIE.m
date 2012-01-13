@@ -26,16 +26,14 @@ classdef MiniVIE < Common.MiniVieObj
             setupFigure(obj);
             
             % Set valid input options
-            
-            set(obj.hg.popups(MiniVIE.INPUT),'String',{'None','EMG Simulator','DaqHwDevice','CpchSerial','UdpDevice'});
+            set(obj.hg.popups(MiniVIE.INPUT),'String',{'None','Signal Simulator','EMG Simulator','DaqHwDevice','CpchSerial','UdpDevice'});
             set(obj.hg.popups(MiniVIE.INPUT),'Value',1);
-            set(obj.hg.popups(MiniVIE.SA),'String',{'None','LDA Classifier'});
+            set(obj.hg.popups(MiniVIE.SA),'String',{'None','LDA Classifier','DiscriminantAnalysis'});
             set(obj.hg.popups(MiniVIE.SA),'Value',1);
             set(obj.hg.popups(MiniVIE.TRAINING),'String',{'None','Simple Trainer','Mini Guitar Hero','Bar Trainer'});
             set(obj.hg.popups(MiniVIE.TRAINING),'Value',1);
             set(obj.hg.popups(MiniVIE.PRESENTATION),'String',{'None','MiniV','Breakout','AGH','MplScenarioMud'});
             set(obj.hg.popups(MiniVIE.PRESENTATION),'Value',1);
-            
         end
         function setupFigure(obj)
             obj.hg.Figure = UiTools.create_figure('MiniVIE Configuration Utility','MiniVIE');
@@ -53,13 +51,12 @@ classdef MiniVIE < Common.MiniVieObj
                 delete(obj.hg.Figure);
             end
             
-            
             header = {'Inputs:','Signal Analysis:','Training:','Plant:','Presentation:'};
             puCallbacks = {
                 @(src,evt)setSignalSource(obj,src)
-                @(src,evt)setSignalAnalysis(obj,get(src,'String'),get(src,'Value'))
+                @(src,evt)setSignalAnalysis(obj,src)
                 @(src,evt)setTrainer(obj,get(src,'String'),get(src,'Value'))
-                @(src,evt)setSignalAnalysis(obj,get(src,'String'),get(src,'Value'))
+                []
                 @(src,evt)setPresentation(obj,get(src,'String'),get(src,'Value'))
                 };
             
@@ -174,6 +171,11 @@ classdef MiniVIE < Common.MiniVieObj
                     h = PatternRecognition.SimpleTrainer();
                 case 'Bar Trainer'
                     h = PatternRecognition.BarTrainer();
+                    
+                    h.NumRepetitions = 3;
+                    h.ContractionLengthSeconds = 2;
+                    h.DelayLengthSeconds = 1;
+                    
                 case 'Mini Guitar Hero'
                     h = PatternRecognition.MiniGuitarHero();
                 otherwise
@@ -197,45 +199,74 @@ classdef MiniVIE < Common.MiniVieObj
             
         end
         
-        function setSignalAnalysis(obj,string,value)
-            h = obj.SignalClassifier;
-            
-            if ~isempty(h)
-                try
-                    close(h);
-                end
+        function setSignalAnalysis(obj,src)
+            persistent lastValue
+            if isempty(lastValue)
+                lastValue = 1;
             end
-            
-            switch string{value}
-                case 'LDA Classifier'
-                    h = SignalAnalysis.Classifier();
-                otherwise
-                    % None
-                    h = [];
-            end
-            
-            if isempty(h)
-                set(obj.hg.TrainingButtons(:),'Enable','off');
-            else
-                set(obj.hg.TrainingButtons(:),'Enable','on');
-                
-                defaultChannels = GUIs.guiChannelSelect.getSavedDefaults();
-                fprintf('Setting Active Channels to: ');
-                fprintf('%d ',defaultChannels);
-                fprintf('\n');
-                h.ActiveChannels = defaultChannels;
 
-                h.ClassNames = SignalAnalysis.ClassifierChannels.getSavedDefaults();
+            string = get(src,'String');
+            value = get(src,'Value');
+            
+            try
+                h = obj.SignalClassifier;
                 
-                if (isempty(h.ClassNames))
-                    h.ClassNames = SignalAnalysis.ClassifierChannels.getDefaultNames;
+                if ~isempty(h)
+                    try
+                        close(h);
+                    end
                 end
                 
-                h.NumMajorityVotes = 0;
-                h.initialize();
+                if isempty(obj.SignalSource)
+                    errordlg('Select an Input Source');
+                    set(src,'Value',lastValue);
+                    return;
+                end
+                
+                switch string{value}
+                    case 'LDA Classifier'
+                        h = SignalAnalysis.Classifier();
+                    case 'DiscriminantAnalysis'
+                        h = SignalAnalysis.DiscriminantAnalysis();
+                    otherwise
+                        % None
+                        h = [];
+                end
+                
+                if ~isempty(h)
+                    % TODO: Note signals only updated on classifier
+                    % creation
+                    defaultChannels = GUIs.guiChannelSelect.getLastChannels();
+                    fprintf('Setting Active Channels to: [');
+                    fprintf(' %d',defaultChannels);
+                    fprintf(' ]\n');
+                    h.ActiveChannels = defaultChannels;
+                    
+                    h.ClassNames = SignalAnalysis.ClassifierChannels.getSavedDefaults();
+                    
+                    if (isempty(h.ClassNames))
+                        h.ClassNames = SignalAnalysis.ClassifierChannels.getDefaultNames;
+                    end
+                    
+                    h.NumMajorityVotes = 0;
+                    h.initialize();
+                    
+                    NumSamplesPerWindow = 250;
+                    fprintf('Setting Window Size to: %d\n',NumSamplesPerWindow);
+                    h.NumSamplesPerWindow = NumSamplesPerWindow;
+                end
+                
+                obj.SignalClassifier = h;
+                
+            catch ME
+                errordlg({'Error Initializing Signal Analysis.',ME.message});
+                set(src,'Value',lastValue);
+                rethrow(ME);
+                return
             end
             
             obj.SignalClassifier = h;
+            lastValue = value;
             
         end
         function setSignalSource(obj,src)
@@ -258,8 +289,10 @@ classdef MiniVIE < Common.MiniVieObj
                 end
                 
                 switch string{value}
-                    case 'EMG Simulator'
+                    case 'Signal Simulator'
                         h = Inputs.SignalSimulator();
+                    case 'EMG Simulator'
+                        h = Inputs.EmgSimulator();
                     case 'DaqHwDevice'
                         % h = Inputs.DaqHwDevice('nidaq','Dev2');
                         h = Inputs.DaqHwDevice('mcc','0');
@@ -267,9 +300,7 @@ classdef MiniVIE < Common.MiniVieObj
                         % h = Inputs.DaqHwDevice('nidaq','Dev2');
                         h = Inputs.UdpDevice();
                     case 'CpchSerial'
-                        %h = Inputs.CpchSerial('COM3', uint16(hex2dec('FFFF')), uint16(hex2dec('4321')));
                         h = Inputs.CpchSerial('COM13');
-                        
                     otherwise
                         % None
                         h = [];
@@ -313,6 +344,9 @@ classdef MiniVIE < Common.MiniVieObj
                 return;
             elseif isempty(obj.SignalClassifier)
                 errordlg('Select a Classifier');
+                return;
+            elseif isempty(obj.TrainingInterface)
+                errordlg('Select a Training Interface');
                 return;
             end
             
