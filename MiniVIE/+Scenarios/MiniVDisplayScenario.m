@@ -22,6 +22,8 @@ classdef MiniVDisplayScenario < Common.MiniVieObj
         CloseGain = [40 40 40 40];
         FingerCommand = [0 0 0 0];
         WristCommand = [0 0 0];
+        GraspValue = 0;
+        GraspId;
         
         JointAnglesDegrees = zeros(size(action_bus_definition));
         
@@ -135,20 +137,31 @@ try
         cursorMoveClass = classOut;
     end
     
-    fprintf('Class Decision: %3d; Vote Decision: %3d; Class = %10s\n',...
-        classOut,voteDecision,hSignalClassifier.ClassNames{cursorMoveClass})
-        
     virtualChannels = hSignalClassifier.virtual_channels(features2D,cursorMoveClass);
-
     speed = max(virtualChannels);
-    gain = 40;
+    
+    fprintf('Class Decision: %3d; Vote Decision: %3d; Class = %16s; V=%6.4f\n',...
+        classOut,voteDecision,hSignalClassifier.ClassNames{cursorMoveClass},speed);
+        
+    gain = 5;
+    graspGain = 0.1;
     obj.FingerCommand = zeros(1,4);
+
+    [enumGrasp cellGrasps] = enumeration('Controls.GraspTypes');
+
     switch hSignalClassifier.ClassNames{cursorMoveClass}
         case 'No Movement'
         case 'Hand Open'
+            obj.GraspValue = obj.GraspValue - speed*graspGain;
             obj.FingerCommand(1:4) = -0.7*speed;
         case {'Hand Close' 'Spherical Grasp'}
             obj.FingerCommand(1:4) = speed;
+        case cellGrasps
+            obj.GraspValue = obj.GraspValue + speed*graspGain;
+            obj.GraspId = enumGrasp( strncmp(hSignalClassifier.ClassNames{cursorMoveClass},cellGrasps,10) );
+        case {'Cylindrical Grasp'}
+            obj.GraspValue = obj.GraspValue + speed*graspGain;
+            obj.GraspId = Controls.GraspTypes.Power;
         case'Index'
             obj.FingerCommand(1) = speed;
         case 'Middle'
@@ -162,7 +175,7 @@ try
                 obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) - speed*gain;
         case {'Supinate' 'Wrist Rotate Out'}
             obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) = ...
-                obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) + speed*gain*2;
+                obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) + speed*gain;
         case {'Up' 'Hand Up'}
             obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) = ...
                 obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) - speed*gain;
@@ -179,27 +192,35 @@ try
     end
 
     
-    
-    obj.FingerCommand = obj.FingerCommand .* obj.CloseGain;
-    
-    if ~strcmpi('Hand Open',hSignalClassifier.ClassNames)
-        obj.FingerCommand(obj.FingerCommand == 0) = -obj.AutoOpenSpeed;
+    if isempty(obj.GraspId)
+        obj.FingerCommand = obj.FingerCommand .* obj.CloseGain;
+        
+        if ~strcmpi('Hand Open',hSignalClassifier.ClassNames)
+            obj.FingerCommand(obj.FingerCommand == 0) = -obj.AutoOpenSpeed;
+        end
+        
+        obj.handAngles = obj.handAngles + obj.FingerCommand;
+        
+        obj.handAngles = max(min(obj.handAngles,80),0);
+        
+        % Apply finger angles to each finger segment
+        id = [action_bus_enum.Index_MCP action_bus_enum.Index_DIP action_bus_enum.Index_PIP];
+        obj.JointAnglesDegrees(id) = obj.handAngles(1);
+        id = [action_bus_enum.Middle_MCP action_bus_enum.Middle_DIP action_bus_enum.Middle_PIP];
+        obj.JointAnglesDegrees(id) = obj.handAngles(2);
+        id = [action_bus_enum.Ring_MCP action_bus_enum.Ring_DIP action_bus_enum.Ring_PIP];
+        obj.JointAnglesDegrees(id) = obj.handAngles(3);
+        id = [action_bus_enum.Little_MCP action_bus_enum.Little_DIP action_bus_enum.Little_PIP];
+        obj.JointAnglesDegrees(id) = obj.handAngles(4);
+
+        obj.hOutput.set_hand_angles_degrees(obj.JointAnglesDegrees);
+    else
+        handAngles = Controls.graspInterpolation(obj.GraspValue, obj.GraspId);
+        obj.hOutput.set_hand_angles_degrees(handAngles);
     end
+
+    obj.GraspValue = max(min(obj.GraspValue,1),0);
     
-    obj.handAngles = obj.handAngles + obj.FingerCommand;
-        
-    obj.handAngles = max(min(obj.handAngles,80),0);
-    
-    % Apply finger angles to each finger segment
-    id = [action_bus_enum.Index_MCP action_bus_enum.Index_DIP action_bus_enum.Index_PIP];
-    obj.JointAnglesDegrees(id) = obj.handAngles(1);
-    id = [action_bus_enum.Middle_MCP action_bus_enum.Middle_DIP action_bus_enum.Middle_PIP];
-    obj.JointAnglesDegrees(id) = obj.handAngles(2);
-    id = [action_bus_enum.Ring_MCP action_bus_enum.Ring_DIP action_bus_enum.Ring_PIP];
-    obj.JointAnglesDegrees(id) = obj.handAngles(3);
-    id = [action_bus_enum.Little_MCP action_bus_enum.Little_DIP action_bus_enum.Little_PIP];
-    obj.JointAnglesDegrees(id) = obj.handAngles(4);
-        
     % Apply Wrist Limits
     obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) = max(min(...
         obj.JointAnglesDegrees(action_bus_enum.Wrist_FE),80),-80);
@@ -209,7 +230,6 @@ try
         obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot),90),-90);
     
     
-    obj.hOutput.set_hand_angles_degrees(obj.JointAnglesDegrees);
     obj.hOutput.set_upper_arm_angles_degrees(obj.JointAnglesDegrees);
     
     if obj.EnableLimb

@@ -114,7 +114,7 @@ classdef EmgJacksonPollock < handle
             obj.SignalSource.addfilter(Inputs.LowPass());
             obj.SignalSource.addfilter(Inputs.Notch());
             
-            obj.SignalClassifier = PatternRecognition.Classifier();
+            obj.SignalClassifier = PatternRecognition.Lda();
             obj.SignalClassifier.ClassNames = {'No Movement' 'Up' 'Down' 'Left' 'Right'};
             obj.SignalClassifier.ActiveChannels = 1:4;
             obj.SignalClassifier.NumMajorityVotes = 7;

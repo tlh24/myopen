@@ -37,7 +37,7 @@ SignalSource.NumSamples = 2000;
 GUIs.SignalViewer(SignalSource); % <-- Use this to visualize signals
 
 %% Step 3: Setup Classifier, Select Channels in use
-SignalClassifier = SignalAnalysis.Classifier();
+SignalClassifier = SignalAnalysis.Lda();
 SignalClassifier.ActiveChannels = 1:8;  % <-- Update active channels
 SignalClassifier.initialize();
 SignalClassifier.uiEnterClassNames

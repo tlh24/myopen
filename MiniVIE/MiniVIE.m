@@ -220,7 +220,7 @@ classdef MiniVIE < Common.MiniVieObj
                 
                 switch string{value}
                     case 'LDA Classifier'
-                        h = SignalAnalysis.Classifier();
+                        h = SignalAnalysis.Lda();
                     case 'DiscriminantAnalysis'
                         h = SignalAnalysis.DiscriminantAnalysis();
                     otherwise
@@ -356,6 +356,7 @@ classdef MiniVIE < Common.MiniVieObj
                 obj.SignalClassifier.TrainingDataLabels = obj.TrainingInterface.ClassLabelId(1:obj.TrainingInterface.SampleCount);
                 obj.SignalClassifier.train();
                 obj.SignalClassifier.computeerror();
+                obj.SignalClassifier.computeGains();
             end
         end
     end
