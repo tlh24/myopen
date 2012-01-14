@@ -15,7 +15,7 @@ classdef DiscriminantAnalysis < SignalAnalysis.Classifier
     end
     methods
         function obj = DiscriminantAnalysis
-            %Verify toolbox present
+            %Verify statistics toolbox present
             isValid = license('checkout','statistics_toolbox');
             
             if ~isValid
@@ -23,7 +23,6 @@ classdef DiscriminantAnalysis < SignalAnalysis.Classifier
                 errordlg(msg);
                 error(msg);
             end
-            
         end
         function train(obj)
             
@@ -43,7 +42,7 @@ classdef DiscriminantAnalysis < SignalAnalysis.Classifier
             fprintf('%d ',obj.ActiveChannels);
             fprintf('\n');
             
-            fprintf('Classnames: ');
+            fprintf('Classnames:\n');
             classNames = obj.getClassNames;
             disp(classNames);
             labels = classNames(obj.TrainingDataLabels);
@@ -54,13 +53,9 @@ classdef DiscriminantAnalysis < SignalAnalysis.Classifier
             bad = ~strcmp(C,labels);
             ldaResubErr = sum(bad) / N;
             [ldaResubCM,grpOrder] = confusionmat(labels,C);
-            fprintf('ConfusionMatrix: ');
+            fprintf('ConfusionMatrix:\n');
             disp(ldaResubCM);
         end
-        function percentError = computeerror(obj)
-            percentError = [];
-        end
-        
         function [classOut voteDecision] = classify(obj,featuresColumns)
             
             [classOut voteDecision] = deal([]);
@@ -81,9 +76,7 @@ classdef DiscriminantAnalysis < SignalAnalysis.Classifier
             classOut = find(strcmp(C,classNames));
             voteDecision = classOut;
         end
-        function features2D = extractfeatures(obj,filteredDataWindowAllChannels)
-            % features2D = feature_extract(filteredDataWindowAllChannels(:,obj.ActiveChannels)',obj.NumSamplesPerWindow);
-            features2D = feature_extract(filteredDataWindowAllChannels',obj.NumSamplesPerWindow);
+        function close(obj)
         end
     end
 end

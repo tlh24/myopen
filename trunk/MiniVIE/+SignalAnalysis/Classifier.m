@@ -13,6 +13,7 @@ classdef Classifier < Common.MiniVieObj
         ActiveChannels = [1 3];
         ClassNames = {'MotionA' 'MotionB' 'No Movement'};
         TrainingFeatures = {'MAV' 'LEN' 'SSC' 'ZC'};
+        VirtualChannelGain = 1;  % default.  Once initialized this should be [1 NumClasses]
         
         TrainingEmg = [];
         TrainingData = [];
@@ -25,12 +26,6 @@ classdef Classifier < Common.MiniVieObj
         NumFeatures;
     end
     methods
-        function obj = Classifier
-            % Constructor
-        end
-        function close(obj)
-            
-        end
         function numClasses = get.NumClasses(obj)
             numClasses = length(obj.ClassNames);
         end
@@ -79,30 +74,35 @@ classdef Classifier < Common.MiniVieObj
             activeData = sortedData2(:,obj.ActiveChannels,:);
             featureData = reshape(activeData,obj.NumFeatures*obj.NumActiveChannels,[]);
         end
-        function train(obj)
-            
-            if isempty(obj.TrainingData)
-                error('No Training Data Exists');
-            end
-            
+        function computeGains(obj)
+            % Classify Training data
             feats = convertfeaturedata(obj);
-            fprintf('Training LDA with %d Samples (',size(feats,2));
-            for iClass = 1:obj.NumClasses
-                fprintf('%d = %d; ',iClass,sum(obj.TrainingDataLabels == iClass));
-            end
-            fprintf(')\n');
-
-            fprintf('Active Channels are: ');
-            fprintf('%d ',obj.ActiveChannels);
-            fprintf('\n');
+            % Forward Classify
+            classOut = classify(obj,feats);
             
-            [obj.Wg,obj.Cg] = obj.lda(feats,obj.TrainingDataLabels);
-        end
+            % Compute virtual channel output here
+            MAV = mean(squeeze(obj.TrainingData(obj.ActiveChannels,1,:)));
+            
+            obj.VirtualChannelGain = zeros(1,obj.NumClasses);
+            for iClass = 1:obj.NumClasses
+                % get the magnitude value for each class
+                obj.VirtualChannelGain(iClass) = mean(MAV(classOut == iClass));
+            end
+            obj.VirtualChannelGain = 1./obj.VirtualChannelGain;
+            
+            obj.VirtualChannelGain = max(obj.VirtualChannelGain,0.1);
+            obj.VirtualChannelGain = min(obj.VirtualChannelGain,100);
+            obj.VirtualChannelGain(end) = 1;  % No Movement
+            fprintf('Virtual Channel Gains:\n [');
+            fprintf(' %6.2f',obj.VirtualChannelGain);
+            fprintf(']\n');
+        end        
         function percentError = computeerror(obj)
             % Classify Training data
             feats = convertfeaturedata(obj);
             % Forward Classify
             classOut = classify(obj,feats);
+            
             percent_error = @(outputClass,desiredClass) sum( ((outputClass(:)-desiredClass(:))~=0) /length(desiredClass));
             
             % Calculate Error
@@ -119,102 +119,31 @@ classdef Classifier < Common.MiniVieObj
                 fprintf('%12s Class accuracy:\t %6.1f %% \n',obj.ClassNames{iClass},(1-PeClass)*100);
             end
         end
-        
-        function [classOut voteDecision] = classify(obj,featuresColumns)
-            assert(size(featuresColumns,1) == obj.NumActiveChannels*obj.NumFeatures);
-            if isempty(obj.Wg)
-                error('Classifier not trained');
-            end
-            
-            
-            % Given lda parameters Wg,Cg, classify the featureData by multiplying and
-            % selecting the max output.  Additionally, create a majority vote buffer to
-            % filter outputs
+        function virtualChannels = virtual_channels(obj,features_3D,classOut)
+            % create an analog output, or 'virtual channels' based on the signal
+            % amplitude and classifier output
             %
             % R. Armiger 30-Nov-2009: Created
+                        
+            % Create virtual channels
+            virtualChannels = zeros(1,obj.NumClasses);
+            MAV = mean(squeeze(features_3D(obj.ActiveChannels,1,:)));
             
-            % Forward Classify
-            classVect = bsxfun(@plus,featuresColumns'*obj.Wg,obj.Cg);
-            [~, classOut] = max(classVect,[],2);
+            virtualChannels(classOut) = MAV;
+            virtualChannels = virtualChannels .* obj.VirtualChannelGain;
             
-            numDecisions = length(classOut);
-            
-            if nargout > 1
-                voteDecision = zeros(numDecisions,1);
-                if numDecisions > 50, tic,end
-                for i = 1:numDecisions
-                    voteDecision(i) = obj.majority_vote(classOut(i), obj.NumMajorityVotes, obj.NumClasses, 1, 1);
-                end
-                if numDecisions > 50, toc,end
-            end
         end
         function features2D = extractfeatures(obj,filteredDataWindowAllChannels)
             % features2D = feature_extract(filteredDataWindowAllChannels(:,obj.ActiveChannels)',obj.NumSamplesPerWindow);
             features2D = feature_extract(filteredDataWindowAllChannels',obj.NumSamplesPerWindow);
         end
     end
+    methods (Abstract)
+        train(obj);
+        [classOut voteDecision] = classify(obj,featuresColumns);
+        % classify(obj);
+    end
     methods (Static = true)
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        % LDA	Perform a linear discriminant analysis
-        %
-        %	Inputs: featureData,    - Train data arranged in columns
-        %			classId,        - vectors of class membership
-        %	Outputs: Wg,Cg          - LDA weights
-        % (c) Kevin Englehart,1997
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        
-        function [Wg,Cg] = lda(featureData,classId)
-            
-            N = size(featureData,1);
-            
-            % Following cannot be done with integer data:
-            % sc = std(featureData(:));
-            % featureData =  featureData + sc./1000.*randn(size(featureData));
-            
-            % cast data to double for matlab ops
-            featureData = double(featureData);
-            
-            classList = unique(classId);
-            numClasses = length(classList);
-            
-            %%-- Compute the means and the pooled covariance matrix --%%
-            C = zeros(N,N);
-            Mi = zeros(N,numClasses);
-            for iClass = 1:numClasses
-                myFeatures = featureData(:,classId==classList(iClass));
-                Mi(:,iClass) = mean(myFeatures,2);
-                normalizedFeatures = bsxfun(@minus,myFeatures,Mi(:,iClass));
-                C = C + cov(normalizedFeatures');
-            end
-            
-            C = C./numClasses;
-            Pphi = 1/numClasses;
-            
-            %%-- Compute the LDA weights --%%
-            Wg = zeros(N,numClasses);
-            Cg = zeros(1,numClasses);
-            for i = 1:numClasses
-                
-                CMi = C\Mi(:,i);
-                Wg(:,i) = CMi;
-                Cg(i) = -1/2*Mi(:,i)'*CMi + log(Pphi)';
-            end
-        end
-        function virtualChannels = virtual_channels(features_3D,classOut)
-            % create an analog output, or 'virtual channels' based on the signal
-            % amplitude and classifier output
-            %
-            % R. Armiger 30-Nov-2009: Created
-            
-            % Create virtual channels
-            numClasses = max(classOut);
-            
-            virtualChannels = zeros(length(classOut),numClasses);
-            MAV = mean(squeeze(features_3D(:,1,:)));
-            for i = 1:numClasses
-                virtualChannels(classOut == i,i) = MAV(classOut == i);
-            end
-        end
         function voteDecision = majority_vote(classDecision, numVotes, ...
                 numClasses, numClassifiers, currentClassifier)
             % perform majority voting

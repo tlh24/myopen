@@ -223,7 +223,7 @@ classdef GuitarHeroTrainer < handle
             obj.hScenario.SignalSource.addfilter(Inputs.LowPass());
             obj.hScenario.SignalSource.addfilter(Inputs.Notch());
             
-            obj.hScenario.SignalClassifier = SignalAnalysis.Classifier();
+            obj.hScenario.SignalClassifier = SignalAnalysis.Lda();
             obj.hScenario.SignalClassifier.ClassNames = {'No Movement' 'Index' 'Middle' 'Ring','Little'};
             obj.hScenario.SignalClassifier.ActiveChannels = 1:4;
             obj.hScenario.SignalClassifier.initialize();

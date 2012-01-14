@@ -147,7 +147,7 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
             hSignalSource = Inputs.SignalSimulator;
             hSignalSource.initialize;
             hSignalSource.addfilter(Inputs.HighPass());
-            hSignalClassifier = SignalAnalysis.Classifier;
+            hSignalClassifier = SignalAnalysis.Lda;
             hSignalClassifier.initialize;
             
             obj = PatternRecognition.BarTrainer();

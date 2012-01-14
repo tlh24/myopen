@@ -250,7 +250,7 @@ classdef AirGuitarHeroEmg < Presentation.AirGuitarHero.AirGuitarHeroBase
             obj.SignalSource.addfilter(Inputs.Notch());
             obj.SignalSource.initialize();
             
-            obj.SignalClassifier = PatternRecognition.Classifier();
+            obj.SignalClassifier = PatternRecognition.Lda();
             obj.SignalClassifier.ClassNames = {'No Movement' 'Index' 'Middle' 'Ring'};
             obj.SignalClassifier.ActiveChannels = 1:4;
             obj.SignalClassifier.NumMajorityVotes = 7;

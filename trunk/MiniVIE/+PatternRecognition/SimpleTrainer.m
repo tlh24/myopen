@@ -134,7 +134,7 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
             
             hSignalSource = Inputs.SignalSimulator;
             hSignalSource.initialize;
-            hSignalClassifier = SignalAnalysis.Classifier;
+            hSignalClassifier = SignalAnalysis.Lda;
             hSignalClassifier.initialize;
             
             obj = PatternRecognition.SimpleTrainer();

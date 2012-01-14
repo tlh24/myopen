@@ -10,7 +10,7 @@ SignalSource.addfilter(Inputs.HighPass());
 % SignalSource.addfilter(Inputs.Notch());
 SignalSource.NumSamples = 2000;
 
-SignalClassifier = SignalAnalysis.Classifier();
+SignalClassifier = SignalAnalysis.Lda();
 SignalClassifier.ActiveChannels = 1:4;  % <-- Update active channels
 SignalClassifier.initialize();
 SignalClassifier.ClassNames = SignalAnalysis.ClassifierChannels.getSavedDefaults();

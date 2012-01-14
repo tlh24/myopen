@@ -228,7 +228,7 @@ classdef MiniGuitarHero < PatternRecognition.AdaptiveTrainingInterface
             hSignalSource.initialize;
             hSignalSource.addfilter(Inputs.HighPass());
             
-            hSignalClassifier = SignalAnalysis.Classifier;
+            hSignalClassifier = SignalAnalysis.Lda;
             hSignalClassifier.initialize;
             
             obj = PatternRecognition.MiniGuitarHero();
