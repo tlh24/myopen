@@ -913,6 +913,7 @@ packet format in the file, as saved here:
 					//consistent the lag should be consistent so this will come out as
 					//another (slight) lag.
 					//perhaps we should also do outlier rejection?
+					//perhaps we sholud implement a PI controller?
 					g_timeOffset *= 0.997;
 					g_timeOffset += 0.003*off;
 					//probably need a GUI element to display offset.
