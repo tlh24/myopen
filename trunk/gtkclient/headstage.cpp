@@ -234,7 +234,7 @@ void setAGC(int ch1, int ch2, int ch3, int ch4){
 		if(chan >= 64) p += 1; //chs 64-127 pocessed following 0-63.
 		ptr[i*2+0] = htonl(echo(A1 +
 			(A1_STRIDE*(chan & 31) +
-			+ p*(A1_IIRSTARTA+A1_IIR) + 2)*4)); // 2 is the offset to the AGC target.
+			p*(A1_IIRSTARTA+A1_IIR) + 2)*4)); // 2 is the offset to the AGC target.
 		int j = (int)(sqrt(32768 * g_c[chan]->m_agc));
 		int k = (int)(sqrt(32768 * g_c[chan+32]->m_agc));
 		unsigned int u = (unsigned int)((j&0xffff) | ((k&0xffff)<<16));
@@ -243,6 +243,29 @@ void setAGC(int ch1, int ch2, int ch3, int ch4){
 	g_sendW++;
 	saveMessage("agc %d %d %d %d : %d %d %d %d ", ch1,ch2,ch3,ch4,
 		(int)g_c[ch1]->m_agc,(int)g_c[ch2]->m_agc,(int)g_c[ch3]->m_agc,(int)g_c[ch4]->m_agc);
+	g_echo++;
+}
+void enableAGC(int* chs, int en){
+	// you must enable / disable chs 0 and 32 at the same time.
+	// this routine accepts 4 chs -- and sets the complement within the bank at the same time.
+	// 8 channels altogether -- so for all, need to call 16 times.
+	unsigned int* ptr = g_sendbuf;
+	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
+	for(int i=0; i<4; i++){
+		int chan = chs[i];
+		//g_c[chan]->m_agc = target; set ACG elsewhere.
+		chan = chan & (0xff ^ 32); //map to the lower channels (0-31,64-95)
+		unsigned int p = 0;
+		if(chan >= 64) p += 1; //chs 64-127 pocessed following 0-63.
+		ptr[i*2+0] = htonl(echo(A1 +
+			(A1_STRIDE*(chan & 31) + p*A1_AGCB + 3)*4)); // 3 is the offset to the AGC target.
+		int j = 16384;
+		int k = en > 0 ? 1 : 0;
+		unsigned int u = (unsigned int)((j&0xffff) | ((k&0xffff)<<16));
+		ptr[i*2+1] = htonl(u);
+	}
+	g_sendW++;
+	saveMessage("agc_en %d %d %d %d : %d", chs[0], chs[1], chs[2], chs[3], en);
 	g_echo++;
 }
 void setAperture(int ch){
