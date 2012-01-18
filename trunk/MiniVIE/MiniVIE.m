@@ -125,16 +125,15 @@ classdef MiniVIE < Common.MiniVieObj
                     case 'MiniV'
                         obj.println('Setting up presentation...',1);
                         h = Scenarios.MiniVDisplayScenario;
-                        h.setup_display;
-                        h.hScenario = obj;
+                        h.initialize(obj.SignalSource,obj.SignalClassifier);
                         h.CloseGain = [80 80 80 80];
-                        start(h.hTimer);
+                        start(h.Timer);
                         obj.println('Presentation setup complete',1);
                     case 'MplScenarioMud'
                         obj.println('Setting up presentation...',1);
                         h = MPL.MplScenarioMud;
-                        h.hScenario = obj;
-                        start(h.hTimer);
+                        h.initialize(obj.SignalSource,obj.SignalClassifier);
+                        start(h.Timer);
                         obj.println('Presentation setup complete',1);
                     case 'Breakout'
                         h = Presentation.MiniBreakout(obj.SignalSource,obj.SignalClassifier);

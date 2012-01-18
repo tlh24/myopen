@@ -33,9 +33,14 @@ classdef TrainingInterface < Common.MiniVieObj
             else
                 features3D = obj.getFeatureData(); %#ok<NASGU>
                 classLabelId = obj.getClassLabels(); %#ok<NASGU>
-                classNames = obj.SignalClassifier.getClassNames; %#ok<NASGU>
-                ActiveChannels = obj.SignalClassifier.ActiveChannels; %#ok<NASGU>
-                save(fullfile(PathName,FileName),'features3D','classLabelId','classNames','ActiveChannels');
+                if ~isempty(obj.SignalClassifier)
+                    classNames = obj.SignalClassifier.getClassNames; %#ok<NASGU>
+                    activeChannels = obj.SignalClassifier.ActiveChannels; %#ok<NASGU>
+                else
+                    classNames = {};
+                    activeChannels = [];
+                end
+                save(fullfile(PathName,FileName),'features3D','classLabelId','classNames','activeChannels');
             end
         end
         function loadTrainingData(obj,fname)
@@ -76,8 +81,13 @@ classdef TrainingInterface < Common.MiniVieObj
                 return
             end
             
-            % TODO: restore class names
-            %if isfield(S,'classNames')
+            % Restore class names
+            if isfield(S,'classNames') && ~isempty(obj.SignalClassifier)
+                obj.SignalClassifier.ClassNames = S.classNames;
+            end
+            if isfield(S,'activeChannels') && ~isempty(obj.SignalClassifier)
+                obj.SignalClassifier.ActiveChannels = S.activeChannels;
+            end
             
         end
         function initialize(obj,hSignalSource,hSignalClassifier)

@@ -224,6 +224,14 @@ classdef CpchSerial < Inputs.SignalInput
                 deDataU8 = validData(6:6+2*diffCnt-1,:);
                 deDataInt16 = reshape(typecast(deDataU8(:),'int16'),diffCnt,numValidSamples);
                 
+                if any(deDataInt16(:) > 10000)
+                    fprintf(2,'Bad Data\n');
+                end
+                
+                idOK = ~any(deDataInt16 > 10000);
+                deDataInt16 = deDataInt16(:,idOK);
+                numValidSamples = size(deDataInt16,2);
+                
                 EMG_GAIN = 50;  %TODO abstract
                 deDataNormalized = EMG_GAIN .* double(deDataInt16) ./ 512;
 
