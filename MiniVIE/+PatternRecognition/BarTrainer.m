@@ -1,4 +1,3 @@
-
 classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
     % Bar Chart interactive training user interface
     % Note Signal only grows when over activation threshold
@@ -14,6 +13,8 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
         hTimer
         hStripChart
         hSlider
+        
+        hJoystick % Optional
         
         keyOrder = 'asdfghjklzxcvbnm';  % controls the keyboard to class mapping
         
@@ -31,6 +32,11 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
             
             % Call superclass method
             initialize@PatternRecognition.TrainingInterface(obj,hSignalSource,hSignalClassifier);
+            
+            % check for joysticks:
+            try
+                obj.hJoystick = JoyMexClass;
+            end
             
             % Extend the init method to create figure
             setupFigure(obj);
@@ -59,6 +65,7 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
 
             obj.hSlider = GUIs.widgetSlider('Parent',hAxes2,'Type','Vertical');
             obj.hSlider.AxesWidth = obj.hStripChart.NumSamples;
+            obj.hSlider.Range = [0 10];
             obj.hSlider.ArrowPct = 0;
             obj.hSlider.ButtonUpFcn = @(src,evt) setThreshold(obj,evt);
             obj.hSlider.Value = obj.activationThreshold;
@@ -81,6 +88,23 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
         end
         function update(obj)
             try
+                useJoystick = ~isempty(obj.hJoystick);
+                buttonDown = false;
+                if useJoystick
+                    obj.hJoystick.getdata();
+                    if obj.hJoystick.buttonVal(4)
+                        obj.CurrentClass = obj.CurrentClass + 1;
+                    end
+                    if obj.hJoystick.buttonVal(2)
+                        obj.CurrentClass = obj.CurrentClass - 1;
+                    end
+                    if obj.hJoystick.buttonVal(3)
+                        buttonDown = true;
+                    end
+                end
+                
+                obj.CurrentClass = max(min(obj.CurrentClass,obj.SignalClassifier.NumClasses),1);
+
                 className = obj.SignalClassifier.ClassNames{obj.CurrentClass};
                 %fprintf('CurrentClass = %s\n',className);
                 hLabel = title(obj.hAxes,sprintf('Current Class: %s',className));
@@ -91,8 +115,14 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
                 
                 f = features(obj.SignalClassifier.ActiveChannels,1);
                 obj.hStripChart.putdata(f);
-                if all(f < obj.activationThreshold) && ~strcmpi(className,'No Movement')
+                
+                if useJoystick
+                    collectData = buttonDown;
                 else
+                    collectData = any(f > obj.activationThreshold) || strcmpi(className,'No Movement');
+                end
+                
+                if collectData
                     obj.SampleCount = obj.SampleCount + 1;
                     obj.ClassLabelId(obj.SampleCount) = obj.CurrentClass;
                     % Note this could be tricky if data is loaded with the
@@ -112,9 +142,7 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
                 set(obj.hBarGraphHighlight,'YData',x.*(this));
                 
                 xlim(obj.hAxes,[0 max(ceil(max(x)/obj.samplesToRound)*obj.samplesToRound,obj.samplesToRound)]);
-                
-                
-                
+                                
                 drawnow
             catch ME
                 stop(obj.hTimer)

@@ -1,14 +1,10 @@
-classdef MiniVDisplayScenario < Common.MiniVieObj
+classdef MiniVDisplayScenario < Scenarios.ScenarioBase
     % Scenario for controlling a rendered 3d virtual hand/arm
     % Depends on UiTools
     % 
     % 01-Sept-2010 Armiger: Created
     properties
         % Handles
-        hTimer = [];
-        hInput = [];
-        hScenario = [];  % parent should hold source, classifier objects
-        
         hOutput = [];
         hAxes = [];
         hFigure = [];
@@ -16,39 +12,21 @@ classdef MiniVDisplayScenario < Common.MiniVieObj
         
         isLeftSide = 1;
         
-        handAngles = repmat(45,1,4);
-
-        AutoOpenSpeed = 5;
-        CloseGain = [40 40 40 40];
-        FingerCommand = [0 0 0 0];
-        WristCommand = [0 0 0];
-        GraspValue = 0;
-        GraspId;
-        
-        JointAnglesDegrees = zeros(size(action_bus_definition));
-        
-        hMPL = [];
-        
-        % Controllable inputs
-        hInputWristFlex = [];
-        hInputWristExtend = [];
-        
-        EnableLimb = 0;
     end
     methods
         function obj = MiniVDisplayScenario
-            obj.hTimer = UiTools.create_timer(mfilename,@(src,evt)cb_data_timer(src,evt,obj));
-            obj.hTimer.Period = 0.05;
-            
             %obj.hMPL = UdpSink('192.168.139.100',8085);
-            
         end
         function close(obj)
-            try
-                stop(obj.hTimer);
-                delete(obj.hTimer)
+            if strcmpi(obj.Timer.Running,'on')
+                try
+                    stop(obj.Timer);
+                    delete(obj.Timer);
+                end
             end
-            delete(obj.hFigure);
+            if ishandle(obj.hFigure)
+                delete(obj.hFigure);
+            end
         end
 
         function setup_display(obj)
@@ -64,7 +42,7 @@ classdef MiniVDisplayScenario < Common.MiniVieObj
             
             obj.hFigure = hFig;
             
-            obj.hAxes = gca;
+            obj.hAxes = axes('Parent',hFig);
             view(obj.hAxes,0,0);
             axis(obj.hAxes,'equal')
             axis(obj.hAxes,'off')
@@ -79,169 +57,41 @@ classdef MiniVDisplayScenario < Common.MiniVieObj
             set(obj.hAxes,'CameraUpVector',[0 0 -1]);
             if obj.isLeftSide
                 set(obj.hAxes,'CameraPosition',[-0.5 -1 0.5]);
-                camroll(-60);
+                camroll(obj.hAxes,-60);
             else
                 set(obj.hAxes,'CameraPosition',[0.5 -1 0.5]);
-                camroll(60);
+                camroll(obj.hAxes,60);
             end
             set(obj.hAxes,'CameraViewAngle',6);
-            camlight left
+            hLight = light('Parent',obj.hAxes);
+            camlight(hLight,'left');
             
             obj.hOutput = Presentation.MiniV(obj.hAxes,obj.isLeftSide);
             obj.hOutput.isWireframe = 0;
             obj.hOutput.isTriad= 0;
             
         end
-        function start(obj)
-            if ~strcmpi(obj.hTimer.Running,'on')
-                start(obj.hTimer);
+        function update(obj)
+            update@Scenarios.ScenarioBase(obj); % Call superclass update method
+            obj.hOutput.set_hand_angles_degrees(obj.JointAnglesDegrees);
+            obj.hOutput.set_upper_arm_angles_degrees(obj.JointAnglesDegrees);
+
+            if ishandle(obj.hAxes)
+                obj.hOutput.redraw();
             end
+        end
+        function initialize(obj,SignalSource,SignalClassifier)
+             % Call superclass initialize method
+            initialize@Scenarios.ScenarioBase(obj,SignalSource,SignalClassifier);
+            obj.setup_display;
         end
     end
 end
 
 %Private
 function closeRequestFcn(src,obj)
-    stop(obj.hTimer);
-    delete(obj.hTimer)
+    stop(obj.Timer);
+    delete(obj.Timer)
     delete(src);
 end
 
-
-function cb_data_timer(src,evnt,obj) %#ok<*INUSL>
-
-hSignalSource = obj.hScenario.SignalSource;
-hSignalClassifier = obj.hScenario.SignalClassifier;
-
-
-if isempty(hSignalSource)
-    disp('No Input');
-    return
-end
-
-try
-    
-    hSignalSource.NumSamples = hSignalClassifier.NumSamplesPerWindow;
-    windowData = hSignalSource.getFilteredData();
-    
-    
-%     mVals = mean(abs(windowData));
-%     mVals(1:4)
-    features2D = hSignalClassifier.extractfeatures(windowData);
-    activeChannelFeatures = features2D(hSignalClassifier.ActiveChannels,:);
-    [classOut voteDecision] = hSignalClassifier.classify(reshape(activeChannelFeatures',[],1));
-
-    if hSignalClassifier.NumMajorityVotes > 1
-        cursorMoveClass = voteDecision;
-    else
-        cursorMoveClass = classOut;
-    end
-    
-    virtualChannels = hSignalClassifier.virtual_channels(features2D,cursorMoveClass);
-    speed = max(virtualChannels);
-    
-    fprintf('Class Decision: %3d; Vote Decision: %3d; Class = %16s; V=%6.4f\n',...
-        classOut,voteDecision,hSignalClassifier.ClassNames{cursorMoveClass},speed);
-        
-    gain = 5;
-    graspGain = 0.1;
-    obj.FingerCommand = zeros(1,4);
-
-    [enumGrasp cellGrasps] = enumeration('Controls.GraspTypes');
-
-    switch hSignalClassifier.ClassNames{cursorMoveClass}
-        case 'No Movement'
-        case 'Hand Open'
-            obj.GraspValue = obj.GraspValue - speed*graspGain;
-            obj.FingerCommand(1:4) = -0.7*speed;
-        case {'Hand Close' 'Spherical Grasp'}
-            obj.FingerCommand(1:4) = speed;
-        case cellGrasps
-            obj.GraspValue = obj.GraspValue + speed*graspGain;
-            obj.GraspId = enumGrasp( strncmp(hSignalClassifier.ClassNames{cursorMoveClass},cellGrasps,10) );
-        case {'Cylindrical Grasp'}
-            obj.GraspValue = obj.GraspValue + speed*graspGain;
-            obj.GraspId = Controls.GraspTypes.Power;
-        case'Index'
-            obj.FingerCommand(1) = speed;
-        case 'Middle'
-            obj.FingerCommand(2) = speed;
-        case 'Ring'
-            obj.FingerCommand(3) = speed;
-        case 'Little'
-            obj.FingerCommand(4) = speed;
-        case {'Pronate' 'Wrist Rotate In'}
-            obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) = ...
-                obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) - speed*gain;
-        case {'Supinate' 'Wrist Rotate Out'}
-            obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) = ...
-                obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) + speed*gain;
-        case {'Up' 'Hand Up'}
-            obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) = ...
-                obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) - speed*gain;
-        case {'Down' 'Hand Down'}
-            obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) = ...
-                obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) + speed*gain;
-        case {'Left' 'Wrist Flex' 'Wrist Flex In'}
-            obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) = ...
-                obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) + speed*gain;
-        case {'Right' 'Wrist Extend' 'Wrist Extend Out'}
-            obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) = ...
-                obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) - speed*gain;
-        otherwise
-    end
-
-    
-    if isempty(obj.GraspId)
-        obj.FingerCommand = obj.FingerCommand .* obj.CloseGain;
-        
-        if ~strcmpi('Hand Open',hSignalClassifier.ClassNames)
-            obj.FingerCommand(obj.FingerCommand == 0) = -obj.AutoOpenSpeed;
-        end
-        
-        obj.handAngles = obj.handAngles + obj.FingerCommand;
-        
-        obj.handAngles = max(min(obj.handAngles,80),0);
-        
-        % Apply finger angles to each finger segment
-        id = [action_bus_enum.Index_MCP action_bus_enum.Index_DIP action_bus_enum.Index_PIP];
-        obj.JointAnglesDegrees(id) = obj.handAngles(1);
-        id = [action_bus_enum.Middle_MCP action_bus_enum.Middle_DIP action_bus_enum.Middle_PIP];
-        obj.JointAnglesDegrees(id) = obj.handAngles(2);
-        id = [action_bus_enum.Ring_MCP action_bus_enum.Ring_DIP action_bus_enum.Ring_PIP];
-        obj.JointAnglesDegrees(id) = obj.handAngles(3);
-        id = [action_bus_enum.Little_MCP action_bus_enum.Little_DIP action_bus_enum.Little_PIP];
-        obj.JointAnglesDegrees(id) = obj.handAngles(4);
-
-        obj.hOutput.set_hand_angles_degrees(obj.JointAnglesDegrees);
-    else
-        handAngles = Controls.graspInterpolation(obj.GraspValue, obj.GraspId);
-        obj.hOutput.set_hand_angles_degrees(handAngles);
-    end
-
-    obj.GraspValue = max(min(obj.GraspValue,1),0);
-    
-    % Apply Wrist Limits
-    obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) = max(min(...
-        obj.JointAnglesDegrees(action_bus_enum.Wrist_FE),80),-80);
-    obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) = max(min(...
-        obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev),45),-10);
-    obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) = max(min(...
-        obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot),90),-90);
-    
-    
-    obj.hOutput.set_upper_arm_angles_degrees(obj.JointAnglesDegrees);
-    
-    if obj.EnableLimb
-        mplAnglesRadians = obj.JointAnglesDegrees .* pi ./ 180;
-        mplAnglesRadians(action_bus_enum.Wrist_Rot) = -mplAnglesRadians(action_bus_enum.Wrist_Rot);
-        %obj.hMPL.putdata(mplAnglesRadians);
-    end
-    
-    obj.hOutput.redraw();
-        
-catch ME
-    stop(src)
-    rethrow(ME)
-end
-end

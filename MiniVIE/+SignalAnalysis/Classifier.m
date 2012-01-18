@@ -1,9 +1,9 @@
 classdef Classifier < Common.MiniVieObj
     % Classifier Base class
-    % TODO Extract the LDA functionality and make that a seperate file
     % 
     % 01-Sept-2010 Armiger: Created
     properties
+        %TODO these are specific to LDA
         Wg = [];
         Cg = [];
         
@@ -116,7 +116,7 @@ classdef Classifier < Common.MiniVieObj
             for iClass = 1:obj.NumClasses
                 idClass = (obj.TrainingDataLabels == iClass);
                 PeClass = percent_error(classOut(idClass),obj.TrainingDataLabels(idClass));
-                fprintf('%12s Class accuracy:\t %6.1f %% \n',obj.ClassNames{iClass},(1-PeClass)*100);
+                fprintf('%20s Class accuracy:\t %6.1f %% \n',obj.ClassNames{iClass},(1-PeClass)*100);
             end
         end
         function virtualChannels = virtual_channels(obj,features_3D,classOut)

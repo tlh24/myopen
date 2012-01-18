@@ -1,12 +1,9 @@
-classdef EmgJacksonPollock < handle
+classdef EmgJacksonPollock < Scenarios.ScenarioBase
     % Scenario that involves a user interface for painting with EMG
     %
     % 01-Sept-2010 Armiger: Created
     
     properties
-        SignalSource;
-        SignalClassifier;
-        TrainingInterface;
     end
     methods
         function obj = EmgJacksonPollock
