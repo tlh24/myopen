@@ -1,9 +1,9 @@
-classdef SignalViewer < Common.MiniVieObj
+classdef guiSignalViewer < Common.MiniVieObj
     % Simple Viewer that adds ability to show both time and frequency
     % response, inspired by LAQ.m from CEVEN
     %
     % Use default configuration:
-    %  obj = GUIs.SignalViewer.Default;
+    %  obj = GUIs.guiSignalViewer.Default;
     %
     % Armiger - 2/15/2011: Created
     properties
@@ -13,7 +13,7 @@ classdef SignalViewer < Common.MiniVieObj
         SelectedChannels = 1:4;
         
         ShowFilteredData = 1;
-        ModeSelect = GUIs.SignalViewer.TimeDomain;
+        ModeSelect = GUIs.guiSignalViewerState.TimeDomain;
         
         hg
         hTimer
@@ -23,16 +23,16 @@ classdef SignalViewer < Common.MiniVieObj
         featureBuffer = [];
     end
     properties (Constant = true)
-        FFT = 1;
-        TimeDomain = 2;
-        Features = 3;
+%         FFT = 1;
+%         TimeDomain = 2;
+%         Features = 3;
 
         numFeatures = 4;
         
         FullAxesPosition = [80 250 750 300];
     end
     methods
-        function obj = SignalViewer(hSignalSource)
+        function obj = guiSignalViewer(hSignalSource)
             
             if isempty(hSignalSource)
                 return
@@ -87,11 +87,11 @@ classdef SignalViewer < Common.MiniVieObj
             obj.hg.PanelDomain = uibuttongroup(obj.hg.Figure,'Units','Pixels','Position',[80 40 200 150]);
             set(obj.hg.PanelDomain,'Title','Plot Domain');
             % Create three radio buttons in the button group.
-            obj.hg.Toggle(obj.FFT) = uicontrol('Style','Togglebutton','String','FFT','Units','Normalized',...
+            obj.hg.ButtonFFT = uicontrol('Style','Togglebutton','String','FFT','Units','Normalized',...
                 'pos',[0.1 0.1 0.8 0.25],'parent',obj.hg.PanelDomain,'HandleVisibility','off');
-            obj.hg.Toggle(obj.Features) = uicontrol('Style','Togglebutton','String','Features','Units','Normalized',...
+            obj.hg.ButtonFeatures = uicontrol('Style','Togglebutton','String','Features','Units','Normalized',...
                 'pos',[0.1 0.7 0.8 0.25],'parent',obj.hg.PanelDomain,'HandleVisibility','off');
-            obj.hg.Toggle(obj.TimeDomain) = uicontrol('Style','Togglebutton','String','Time','Units','Normalized',...
+            obj.hg.ButtonTimeDomain = uicontrol('Style','Togglebutton','String','Time','Units','Normalized',...
                 'pos',[0.1 0.4 0.8 0.25],'parent',obj.hg.PanelDomain,'HandleVisibility','off');
             % Initialize some button group properties.
             set(obj.hg.PanelDomain,'SelectionChangeFcn',@(src,evt)selcbk(src));
@@ -99,12 +99,12 @@ classdef SignalViewer < Common.MiniVieObj
             
             function selcbk(source)
                 switch get(source,'SelectedObject')
-                    case obj.hg.Toggle(obj.TimeDomain)
-                        obj.ModeSelect = GUIs.SignalViewer.TimeDomain;
-                    case obj.hg.Toggle(obj.FFT)
-                        obj.ModeSelect = GUIs.SignalViewer.FFT;
-                    case obj.hg.Toggle(obj.Features)
-                        obj.ModeSelect = GUIs.SignalViewer.Features;
+                    case obj.hg.ButtonTimeDomain
+                        obj.ModeSelect = GUIs.guiSignalViewerState.TimeDomain;
+                    case obj.hg.ButtonFFT
+                        obj.ModeSelect = GUIs.guiSignalViewerState.FFT;
+                    case obj.hg.ButtonFeatures
+                        obj.ModeSelect = GUIs.guiSignalViewerState.Features;
                 end
             end
         end
@@ -112,12 +112,21 @@ classdef SignalViewer < Common.MiniVieObj
             % Synch Parameters and uiobjects
             %SelectedChannels = 1:4;
             set(obj.hg.cbFilter,'value',obj.ShowFilteredData);
-            set(obj.hg.PanelDomain,'SelectedObject',obj.hg.Toggle(obj.ModeSelect));            
+            
+            switch obj.ModeSelect
+                case GUIs.guiSignalViewerState.TimeDomain
+                    set(obj.hg.PanelDomain,'SelectedObject',obj.hg.ButtonTimeDomain);
+                case GUIs.guiSignalViewerState.FFT
+                    set(obj.hg.PanelDomain,'SelectedObject',obj.hg.ButtonFFT);
+                case GUIs.guiSignalViewerState.Features
+                    set(obj.hg.PanelDomain,'SelectedObject',obj.hg.ButtonFeatures);
+            end
+            
         end
         function update(obj)
             
             switch obj.ModeSelect
-                case GUIs.SignalViewer.Features
+                case GUIs.guiSignalViewerState.Features
                     setAxesVisible(obj.hg.Axes(1:4),'on');
                     axis(obj.hg.Axes(1),'auto');
                     
@@ -131,7 +140,7 @@ classdef SignalViewer < Common.MiniVieObj
                     ylabel(obj.hg.Axes(3),'ZC');
                     ylabel(obj.hg.Axes(4),'SSC');
                     obj.updateFeatures();
-                case GUIs.SignalViewer.TimeDomain
+                case GUIs.guiSignalViewerState.TimeDomain
                     setAxesVisible(obj.hg.Axes(1),'on');
                     setAxesVisible(obj.hg.Axes(2:4),'off');
                     set(obj.hg.Axes(1),'OuterPosition',[0 0 1 1]);
@@ -139,7 +148,7 @@ classdef SignalViewer < Common.MiniVieObj
                     ylabel(obj.hg.Axes(1),'Volts');
                     ylim(obj.hg.Axes(1),[-2 14]);
                     obj.updateTimeDomain();
-                case GUIs.SignalViewer.FFT
+                case GUIs.guiSignalViewerState.FFT
                     setAxesVisible(obj.hg.Axes(1),'on');
                     setAxesVisible(obj.hg.Axes(2:4),'off');
                     set(obj.hg.Axes(1),'OuterPosition',[0 0 1 1]);
@@ -259,7 +268,7 @@ classdef SignalViewer < Common.MiniVieObj
             
             hSignalSource = Inputs.SignalSimulator;
             hSignalSource.initialize();
-            obj = GUIs.SignalViewer(hSignalSource);
+            obj = GUIs.guiSignalViewer(hSignalSource);
         end
     end
 end

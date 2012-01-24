@@ -142,7 +142,7 @@ classdef guiChannelSelect < handle
                 set(obj.hFigure,'Position',[1 1 1 1]);
             end
             
-            set(obj.hFigure,'Position',[200 500 200 70]);
+            set(obj.hFigure,'Position',[200 500 200 70],'CloseRequestFcn',@(src,evt)close(obj));
             
             obj.handles.menuFile = uimenu(obj.hFigure, 'Label','&File');
             

@@ -12,7 +12,7 @@ SignalSource.NumSamples = 2000;
 SignalSource.initialize();
 
 %% Optional Step, preview signals. Close window when finished viewing
-GUIs.SignalViewer(SignalSource); % <-- Use this to visualize signals
+GUIs.guiSignalViewer(SignalSource); % <-- Use this to visualize signals
 
 %% Step 3: Setup Classifier, Select Channels in use
 SignalClassifier = SignalAnalysis.Lda();

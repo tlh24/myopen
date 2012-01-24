@@ -15,6 +15,7 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
         hSlider
         
         hJoystick % Optional
+        joyButtonDownLast = 0;
         
         keyOrder = 'asdfghjklzxcvbnm';  % controls the keyboard to class mapping
         
@@ -92,11 +93,16 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
                 buttonDown = false;
                 if useJoystick
                     obj.hJoystick.getdata();
-                    if obj.hJoystick.buttonVal(4)
-                        obj.CurrentClass = obj.CurrentClass + 1;
+                    if ~any(obj.hJoystick.buttonVal)
+                        obj.joyButtonDownLast = 0;
                     end
-                    if obj.hJoystick.buttonVal(2)
+                    if obj.hJoystick.buttonVal(4) && ~obj.joyButtonDownLast
+                        obj.CurrentClass = obj.CurrentClass + 1;
+                        obj.joyButtonDownLast = 1;
+                    end
+                    if obj.hJoystick.buttonVal(2) && ~obj.joyButtonDownLast
                         obj.CurrentClass = obj.CurrentClass - 1;
+                        obj.joyButtonDownLast = 1;
                     end
                     if obj.hJoystick.buttonVal(3)
                         buttonDown = true;
