@@ -14,10 +14,11 @@ classdef ScenarioBase < Common.MiniVieObj
         GraspId;
         
         % For individual finger control
+        AutoOpenSpeed = 1;
         CloseGain = [40 40 40 40];
         FingerCommand = [0 0 0 0];
         FingerAngles = [45 45 45 45];
-
+        
         JointAnglesDegrees = zeros(size(action_bus_definition));
         
     end
@@ -69,9 +70,9 @@ classdef ScenarioBase < Common.MiniVieObj
             fprintf('Class=%2d; Vote=%2d; Class = %16s; V=%6.4f',...
                 classOut,voteDecision,hSignalClassifier.ClassNames{cursorMoveClass},prSpeed);
             
-            gain = 5;
-            graspGain = 0.1;
-            graspChangeThreshold = 0.2;  % Normalized [0 1]
+            gain = .5;
+            graspGain = 0.08;
+            graspChangeThreshold = 0.15;  % Normalized [0 1]
             obj.FingerCommand = zeros(1,4);
             
             [enumGrasp cellGrasps] = enumeration('Controls.GraspTypes');
@@ -89,7 +90,7 @@ classdef ScenarioBase < Common.MiniVieObj
                     obj.GraspValue = obj.GraspValue - prSpeed*graspGain;
                 case cellGrasps
                     obj.GraspValue = obj.GraspValue + prSpeed*graspGain;
-                    if obj.GraspValue < graspChangeThreshold
+                    if isempty(obj.GraspId) || (obj.GraspValue < graspChangeThreshold)
                         obj.GraspId = enumGrasp( strcmp(strClass,cellGrasps) );
                     end
                 case 'Hand Close'
@@ -104,10 +105,10 @@ classdef ScenarioBase < Common.MiniVieObj
                     obj.FingerCommand(4) = prSpeed;
                 case {'Pronate' 'Wrist Rotate In'}
                     obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) = ...
-                        obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) - prSpeed*gain;
+                        obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) - prSpeed*gain*8;
                 case {'Supinate' 'Wrist Rotate Out'}
                     obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) = ...
-                        obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) + prSpeed*gain;
+                        obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) + prSpeed*gain*8;
                 case {'Up' 'Hand Up'}
                     obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) = ...
                         obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) - prSpeed*gain;
@@ -116,11 +117,13 @@ classdef ScenarioBase < Common.MiniVieObj
                         obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) + prSpeed*gain;
                 case {'Left' 'Wrist Flex' 'Wrist Flex In'}
                     obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) = ...
-                        obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) + prSpeed*gain;
+                        obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) + prSpeed*gain*10;
                 case {'Right' 'Wrist Extend' 'Wrist Extend Out'}
                     obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) = ...
-                        obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) - prSpeed*gain;
+                        obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) - prSpeed*gain*10;
                 otherwise
+                    fprintf('\tUnmatched Class: %s\n',strClass);
+                    return
             end
             
             if isempty(obj.GraspId)
@@ -146,6 +149,8 @@ classdef ScenarioBase < Common.MiniVieObj
                 
             else
                 % Grasp control
+                
+                % TODO: this is MiniV Specific
                 handAngles = Controls.graspInterpolation(obj.GraspValue, obj.GraspId);
                 obj.JointAnglesDegrees(8:end) = handAngles(8:end);
             end
@@ -166,8 +171,15 @@ classdef ScenarioBase < Common.MiniVieObj
                 fprintf('\tGrasp=%12s',char(obj.GraspId));
             end
             fprintf('\tGraspVal=%6.4f',obj.GraspValue);
-
+            
             fprintf('\tEND\n');
         end
+        function close(obj)
+            try
+                stop(obj.Timer);
+                delete(obj.Timer);
+            end
+        end
+        
     end
 end

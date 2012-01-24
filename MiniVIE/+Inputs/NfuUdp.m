@@ -4,6 +4,11 @@ classdef NfuUdp < Inputs.SignalInput
         Host = '10.3.1.11';
         UdpPort = 9027
         CmdPort = 6200;
+        
+        EnableDataLogging = 0;
+
+        hLogFile
+        
         hCmdSock
     end
     properties (SetAccess = private)
@@ -81,6 +86,24 @@ classdef NfuUdp < Inputs.SignalInput
                     % First 5 bytes per sample are header
                     databytes = data(5:end,:);
                     convertedFrame = reshape(typecast(databytes(:),'int16'),numChannelsPerFrame,numSamplesPerPacket);
+                    
+                    try
+                        if obj.EnableDataLogging
+                            if isempty(obj.hLogFile)
+                                fname = sprintf('%04d%02d%02d_%02d%02d%02d_NFU_Stream.log',fix(clock));
+                                obj.hLogFile = fopen(fname,'w+');
+                            end
+                            %fwrite(obj.hLogFile,now,'double');
+                            fwrite(obj.hLogFile,convertedFrame,'int16');
+                        else
+                            if ~isempty(obj.hLogFile)
+                                fclose(obj.hLogFile);
+                                obj.hLogFile = [];
+                            end
+                        end
+                    catch ME
+                       fprintf('[%s] Error Logging: %s\n',ME.message); 
+                    end
                     
                     % Check for error blips
                     if any(abs(convertedFrame(:)) > 20000)
