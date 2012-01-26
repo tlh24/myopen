@@ -14,10 +14,10 @@ classdef ScenarioBase < Common.MiniVieObj
         GraspId;
         
         % For individual finger control
-        AutoOpenSpeed = 1;
-        CloseGain = [40 40 40 40];
+        AutoOpenSpeed = 5;
+        CloseGain = 5*ones(1,4);
         FingerCommand = [0 0 0 0];
-        FingerAngles = [45 45 45 45];
+        FingerAngles = [45 45 45 45]; %degrees
         
         JointAnglesDegrees = zeros(size(action_bus_definition));
         
@@ -70,8 +70,8 @@ classdef ScenarioBase < Common.MiniVieObj
             fprintf('Class=%2d; Vote=%2d; Class = %16s; V=%6.4f',...
                 classOut,voteDecision,hSignalClassifier.ClassNames{cursorMoveClass},prSpeed);
             
-            gain = .5;
-            graspGain = 0.08;
+            gain = 3;
+            graspGain = 0.1;
             graspChangeThreshold = 0.15;  % Normalized [0 1]
             obj.FingerCommand = zeros(1,4);
             
@@ -105,22 +105,23 @@ classdef ScenarioBase < Common.MiniVieObj
                     obj.FingerCommand(4) = prSpeed;
                 case {'Pronate' 'Wrist Rotate In'}
                     obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) = ...
-                        obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) - prSpeed*gain*8;
+                        obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) - prSpeed*gain*2;
                 case {'Supinate' 'Wrist Rotate Out'}
                     obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) = ...
-                        obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) + prSpeed*gain*8;
+                        obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) + prSpeed*gain*2;
                 case {'Up' 'Hand Up'}
                     obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) = ...
-                        obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) - prSpeed*gain;
+                        obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) - prSpeed*gain*4;
                 case {'Down' 'Hand Down'}
                     obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) = ...
-                        obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) + prSpeed*gain;
+                        obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) + prSpeed*gain*4;
                 case {'Left' 'Wrist Flex' 'Wrist Flex In'}
                     obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) = ...
                         obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) + prSpeed*gain*10;
                 case {'Right' 'Wrist Extend' 'Wrist Extend Out'}
                     obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) = ...
                         obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) - prSpeed*gain*10;
+                    obj.GraspValue = obj.GraspValue - prSpeed*graspGain;
                 otherwise
                     fprintf('\tUnmatched Class: %s\n',strClass);
                     return
