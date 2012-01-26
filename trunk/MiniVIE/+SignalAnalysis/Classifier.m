@@ -81,7 +81,7 @@ classdef Classifier < Common.MiniVieObj
             classOut = classify(obj,feats);
             
             % Compute virtual channel output here
-            MAV = mean(squeeze(obj.TrainingData(obj.ActiveChannels,1,:)));
+            MAV = mean(squeeze(obj.TrainingData(obj.ActiveChannels,1,:)),2);
             
             obj.VirtualChannelGain = zeros(1,obj.NumClasses);
             for iClass = 1:obj.NumClasses
