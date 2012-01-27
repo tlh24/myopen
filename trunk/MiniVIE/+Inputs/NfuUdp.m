@@ -72,20 +72,22 @@ classdef NfuUdp < Inputs.SignalInput
                 if len > 0
                     stream = pnet(obj.udp,'read',len,'UINT8');
                     
-                    numHeaderBytes = 6;
+                    numPacketHeaderBytes = 6;
                     numSamplesPerPacket = 20;
-                    numChannelsPerFrame = 16;
-                    numBytesPerMsg = 36;
-                    packetSize = numHeaderBytes+numBytesPerMsg*numSamplesPerPacket;
+                    numSampleHeaderBytes = 4;
+                    numChannelsPerPacket = 8;
+                    numBytesPerChannel = 2;
+                    numBytesPerSample = numChannelsPerPacket*numBytesPerChannel + numSampleHeaderBytes;
+                    packetSize = numPacketHeaderBytes+numBytesPerSample*numSamplesPerPacket;
                     if len ~= packetSize
                         error('Unexpected Packet Size');
                     end
                     
                     % First 6 bytes are global header
-                    data = reshape(stream(numHeaderBytes+1:packetSize),numBytesPerMsg,numSamplesPerPacket);
+                    data = reshape(stream(numPacketHeaderBytes+1:packetSize),numBytesPerSample,numSamplesPerPacket);
                     % First 5 bytes per sample are header
                     databytes = data(5:end,:);
-                    convertedFrame = reshape(typecast(databytes(:),'int16'),numChannelsPerFrame,numSamplesPerPacket);
+                    convertedFrame = reshape(typecast(databytes(:),'int16'),numChannelsPerPacket,numSamplesPerPacket);
                     
                     try
                         if obj.EnableDataLogging
@@ -106,17 +108,18 @@ classdef NfuUdp < Inputs.SignalInput
                     end
                     
                     % Check for error blips
-                    if any(abs(convertedFrame(:)) > 20000)
+                    if any(abs(convertedFrame(:)) > 10000)
                         fprintf(2,'[%s] Bad Sample\n',mfilename);
                     end
                     
                     % Poor mans HPF where we subtract off the mean value
                     % over 20 samples from each sample
-                    convertedFrame = bsxfun(@minus,convertedFrame,mean(convertedFrame,1));
+                    convertedFrame = double(convertedFrame);
+                    convertedFrame = bsxfun(@minus,convertedFrame,mean(convertedFrame,2));
                     
                     obj.dataBuffer = circshift(obj.dataBuffer,[0 -numSamplesPerPacket]);
                     
-                    obj.dataBuffer(1:numChannelsPerFrame,end-numSamplesPerPacket+1:end) = convertedFrame;
+                    obj.dataBuffer(1:numChannelsPerPacket,end-numSamplesPerPacket+1:end) = convertedFrame;
                 end
             end
             

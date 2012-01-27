@@ -105,23 +105,23 @@ classdef ScenarioBase < Common.MiniVieObj
                     obj.FingerCommand(4) = prSpeed;
                 case {'Pronate' 'Wrist Rotate In'}
                     obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) = ...
-                        obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) - prSpeed*gain*2;
+                        obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) - prSpeed*gain*1;
                 case {'Supinate' 'Wrist Rotate Out'}
                     obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) = ...
-                        obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) + prSpeed*gain*2;
+                        obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) + prSpeed*gain*1;
                 case {'Up' 'Hand Up'}
                     obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) = ...
-                        obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) - prSpeed*gain*4;
+                        obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) - prSpeed*gain*1;
                 case {'Down' 'Hand Down'}
                     obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) = ...
-                        obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) + prSpeed*gain*4;
+                        obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) + prSpeed*gain*1;
                 case {'Left' 'Wrist Flex' 'Wrist Flex In'}
                     obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) = ...
-                        obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) + prSpeed*gain*10;
+                        obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) + prSpeed*gain*1;
                 case {'Right' 'Wrist Extend' 'Wrist Extend Out'}
                     obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) = ...
-                        obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) - prSpeed*gain*10;
-                    obj.GraspValue = obj.GraspValue - prSpeed*graspGain;
+                        obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) - prSpeed*gain*1;
+                    %obj.GraspValue = obj.GraspValue - prSpeed*graspGain;
                 otherwise
                     fprintf('\tUnmatched Class: %s\n',strClass);
                     return

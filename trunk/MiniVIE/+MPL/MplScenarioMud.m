@@ -10,7 +10,7 @@ classdef MplScenarioMud < Scenarios.ScenarioBase
     end
     methods
         function obj = MplScenarioMud
-            obj.hSink = MPL.VulcanXSink('127.0.0.1',9027);
+            obj.hSink = MPL.VulcanXSink('127.0.0.1',9035);
             obj.hMud = MPL.MudCommandEncoder();
             
             obj.GraspId

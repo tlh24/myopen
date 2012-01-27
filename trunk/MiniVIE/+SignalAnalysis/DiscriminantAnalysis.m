@@ -38,9 +38,9 @@ classdef DiscriminantAnalysis < SignalAnalysis.Classifier
             end
             fprintf(')\n');
             
-            fprintf('Active Channels are: ');
+            fprintf('Active Channels are: [ ');
             fprintf('%d ',obj.ActiveChannels);
-            fprintf('\n');
+            fprintf(']\n');
             
             fprintf('Classnames:\n');
             classNames = obj.getClassNames;

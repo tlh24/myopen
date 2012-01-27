@@ -25,9 +25,9 @@ classdef Lda < SignalAnalysis.Classifier
             end
             fprintf(')\n');
 
-            fprintf('Active Channels are: ');
+            fprintf('Active Channels are: [ ');
             fprintf('%d ',obj.ActiveChannels);
-            fprintf('\n');
+            fprintf(']\n');
             
             [obj.Wg,obj.Cg] = obj.lda(feats,obj.TrainingDataLabels);
         end

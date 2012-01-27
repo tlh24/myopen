@@ -80,10 +80,13 @@ classdef Classifier < Common.MiniVieObj
             % Forward Classify
             classOut = classify(obj,feats);
             
-            % Compute virtual channel output here
-            MAV = mean(squeeze(obj.TrainingData(obj.ActiveChannels,1,:)),2);
+            % Compute virtual channel output here:
+            % Get the MAV Feature
+            mavFeatures = obj.TrainingData(obj.ActiveChannels,1,:);
+            % Average across all active channels
+            MAV = squeeze(mean(mavFeatures,1));
             
-            obj.VirtualChannelGain = zeros(1,obj.NumClasses);
+            obj.VirtualChannelGain = ones(1,obj.NumClasses);
             for iClass = 1:obj.NumClasses
                 % get the magnitude value for each class
                 obj.VirtualChannelGain(iClass) = mean(MAV(classOut == iClass));
