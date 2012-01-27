@@ -5,4 +5,8 @@ Tested with Matlab 2010b on WindowsXPSP3 32-bit
 
 
 Requirements: 
+For use of the DaqHwDevice input object
 Data Acquisition Toolbox.  See http://www.mathworks.com/products/daq/requirements.html
+
+For use of the DiscriminantAnalysis SignalAnalysis Classifier modules
+Statistics Toolbox
