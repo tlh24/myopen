@@ -1,60 +1,29 @@
-classdef NfuUdp < Inputs.SignalInput
+classdef NfuInput < Inputs.SignalInput
     % Class for interfacing JHU/APL NFU to MiniVIE.
     properties
-        Host = '10.3.1.11';
-        UdpPort = 9027
-        CmdPort = 6200;
         
-        EnableDataLogging = 0;
-
+        hNfu = []; % Handle to NFU Comms Object
         hLogFile
         
-        hCmdSock
+        EnableDataLogging = 0;
+        
     end
     properties (SetAccess = private)
-        udp;
         dataBuffer;
     end
     methods
-        function obj = NfuUdp()
+        function obj = NfuInput()
             % Constructor
             obj.SampleFrequency = 1000; % Hz TEMP FIX
             obj.ChannelIds = (1:32);
             obj.dataBuffer = zeros(32,5000);
         end
         function initialize(obj)
-            obj.udp=pnet('udpsocket',obj.UdpPort);
-            pnet(obj.udp, 'setreadtimeout',0);
             
-            % open a CMD connection to the NFU
-            fprintf( 'create CMD tcp socket\n' );
-            obj.hCmdSock = pnet( 'tcpsocket', obj.CmdPort );
-            if (-1 ~= obj.hCmdSock)
-                fprintf( 'connect CMD tcp socket\n' );
-                pnet( obj.hCmdSock, 'setreadtimeout', 20 );
-                cmdCon = pnet( obj.hCmdSock, 'tcplisten' );
-                if (-1 ~= cmdCon)
-                    %fprintf( 'Sending NFU reset message\n' );
-                    %pnet( cmdCon, 'write', reset_Nfu ) %reset NFU
-                    %fprintf( 'Sending NFU write cfg message\n' );
-                    %pnet( cmdCon, 'write', write_cfg_Nfu ); %write cfg NFU
-                    %pnet( cmdCon, 'readline' );
-                else
-                    fprintf( 'connect CMD tcp socket FAILED!\n' );
-                end
-            else
-                fprintf( 'create CMD tcp socket FAILED\n' );
-            end
+            obj.hNfu = MPL.NfuUdp.getInstance;
+            obj.hNfu.initialize();
+            obj.hNfu.enableStreaming(1);
             
-            [ status ] = obj.disable_streaming( cmdCon, 1 );
-            if status
-                error('Failed to stop NFU streaming');
-            end
-            
-            [ status ] = obj.enable_streaming( cmdCon, 1 );
-            if status
-                error('Failed to start NFU streaming');
-            end
         end
         function data = getFilteredData(obj)
             % Temp = make the NFU agnostic to filter settings since this is
@@ -68,9 +37,9 @@ classdef NfuUdp < Inputs.SignalInput
             % for a deterministic result
             len = 1;
             while(len > 0)
-                len = pnet(obj.udp,'readpacket','noblock');
+                len = pnet(obj.hNfu.UdpSocket,'readpacket','noblock');
                 if len > 0
-                    stream = pnet(obj.udp,'read',len,'UINT8');
+                    stream = pnet(obj.hNfu.UdpSocket,'read',len,'UINT8');
                     
                     numPacketHeaderBytes = 6;
                     numSamplesPerPacket = 20;
@@ -80,7 +49,7 @@ classdef NfuUdp < Inputs.SignalInput
                     numBytesPerSample = numChannelsPerPacket*numBytesPerChannel + numSampleHeaderBytes;
                     packetSize = numPacketHeaderBytes+numBytesPerSample*numSamplesPerPacket;
                     if len ~= packetSize
-                        error('Unexpected Packet Size');
+                        error('Unexpected Packet Size: Expected %d, Received %d\n',packetSize,len);
                     end
                     
                     % First 6 bytes are global header
@@ -117,9 +86,12 @@ classdef NfuUdp < Inputs.SignalInput
                     convertedFrame = double(convertedFrame);
                     convertedFrame = bsxfun(@minus,convertedFrame,mean(convertedFrame,2));
                     
-                    obj.dataBuffer = circshift(obj.dataBuffer,[0 -numSamplesPerPacket]);
+                    % convertedFrame = mean(abs(convertedFrame));
                     
-                    obj.dataBuffer(1:numChannelsPerPacket,end-numSamplesPerPacket+1:end) = convertedFrame;
+                    [numChannels numSamples] = size(convertedFrame);
+                    obj.dataBuffer = circshift(obj.dataBuffer,[0 -numSamples]);
+                    
+                    obj.dataBuffer(1:numChannels,end-numSamples+1:end) = convertedFrame;
                 end
             end
             
@@ -136,42 +108,10 @@ classdef NfuUdp < Inputs.SignalInput
             
         end
         function stop(obj)
-            pnet(obj.udp,'close');
+
         end
         function close(obj)
             stop(obj);
-        end
-    end
-    methods (Static)
-        function [ status ] = enable_streaming( pnet_conn, type )
-            %update_param Summary of this function goes here
-            %   Detailed explanation goes here
-            
-            if type == 1
-                %CPC HS
-                enable_stream_Nfu = char( uint8(150), 38, 1, zeros(7,1));
-            elseif type == 2
-                %VULCANX
-                enable_stream_Nfu = char( uint8(150), 9, 8, zeros(7,1));
-            end
-            
-            pnet( pnet_conn, 'write', enable_stream_Nfu ); %write cfg NFU
-            status = 0;
-        end
-        function [ status ] = disable_streaming( pnet_conn, type )
-            %update_param Summary of this function goes here
-            %   Detailed explanation goes here
-            
-            if type == 1
-                %CPC HS
-                enable_stream_Nfu = char( uint8(150), 38, 0, zeros(7,1));
-            elseif type == 2
-                %VIE
-                enable_stream_Nfu = char( uint8(150), 9, 0, zeros(7,1));
-            end
-            
-            pnet( pnet_conn, 'write', enable_stream_Nfu ); %write cfg NFU
-            status = 0;
         end
     end
 end
