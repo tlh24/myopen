@@ -35,6 +35,7 @@ classdef ClassifierChannels < Common.MiniVieObj
         end
         
         function close(obj)
+            % TODO: Add check for Hand Open if Grasp selected
             try
                 setSavedDefaults(obj.ClassNames);
                 delete(obj.hFigure)
