@@ -28,7 +28,10 @@ classdef NfuInput < Inputs.SignalInput
         function data = getFilteredData(obj)
             % Temp = make the NFU agnostic to filter settings since this is
             % done in hardware
-            data = getData(obj);
+            %data = getData(obj);
+            
+            data = getFilteredData@Inputs.SignalInput(obj);
+            
         end
         function data = getData(obj)
             % This function will always return the correct size for data
