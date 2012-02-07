@@ -204,7 +204,7 @@ classdef CpchSerial < Inputs.SignalInput
                 
                 isValidData = isValidChecksum & isValidLength;
                 
-                if (sum(isValidData) / length(isValidData)) < 0.8
+                if (sum(isValidData) / length(isValidData)) < 0.4
                     fprintf('[%s] %d of %d samples have valid checksum.\r',mfilename,sum(isValidData),length(isValidData));
                 end
                 
