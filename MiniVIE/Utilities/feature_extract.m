@@ -1,4 +1,4 @@
-function features = feature_extract(windowData,windowSize,zc_thresh,ssc_thresh) %#eml
+function features = feature_extract(windowData,windowSize,zc_thresh,ssc_thresh) %#codegen
 % Extract time domain feature extraction function
 % Note that this is not an exact copy of the previous methodology,
 % but RSA tried and tested this code with minimal differences
@@ -16,10 +16,10 @@ function features = feature_extract(windowData,windowSize,zc_thresh,ssc_thresh) 
 %       and slope sign changes
 
 if nargin < 4
-    ssc_thresh = 0.3;
+    ssc_thresh = 0.2;
 end
 if nargin < 3
-    zc_thresh = 0.3;
+    zc_thresh = 0.2;
 end
 
 [nChannels nSamples] = size(windowData);

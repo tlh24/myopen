@@ -9,3 +9,42 @@ obj.SignalClassifier.TrainingDataLabels = obj.TrainingInterface.getClassLabels;
 obj.SignalClassifier.train();
 obj.SignalClassifier.computeerror();
 obj.SignalClassifier.computeGains();
+
+return
+
+%%
+e = [];
+c = [];
+for i = 7
+    ch = nchoosek(1:8,i)
+    for j = 1:size(ch,1)
+        obj.SignalClassifier.ActiveChannels = ch(j,:);
+        obj.SignalClassifier.train();
+        e = [e; obj.SignalClassifier.computeerror()];
+        c = [c; i];
+    end
+end
+
+
+return
+
+%%
+filePrefix = 'EmgDataAndLabels';
+defaultSaveName = [filePrefix '_' datestr(now,'yyyymmdd_HHMMSS') '.dataLog'];
+s = instrfind('Port','COM13')
+s.RecordName = defaultSaveName;
+s.RecordMode = 'index';
+s.RecordDetail = 'verbose';
+%%
+record(s)
+%%
+record(s,'off')
+s.RecordName
+%%
+load(uigetfile('*.dat'),'-mat');
+figure(99);
+for i = 1:size(emgData,3)
+    plot(emgData(:,:,i)');
+    drawnow
+end
+
