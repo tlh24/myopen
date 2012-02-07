@@ -15,6 +15,19 @@ classdef TrainingInterface < Common.MiniVieObj
         
     end
     methods
+        function emgData = getEmgData(obj)
+            % returns valid data (since buffers initialized to larger size)
+            emgData = [];
+
+            if all(isnan(obj.EmgData(:)))
+                fprintf('[%s] No Emg Data Recorded\n',mfilename);
+                return
+            end
+            
+            try
+                emgData = obj.EmgData(:,:,1:obj.SampleCount);
+            end
+        end
         function featureData = getFeatureData(obj)
             % returns valid data (since buffers initialized to larger size)
             featureData = obj.Features3D(:,:,1:obj.SampleCount);
@@ -31,6 +44,8 @@ classdef TrainingInterface < Common.MiniVieObj
             if FilterIndex == 0
                 % User Cancelled
             else
+                
+                emgData = getEmgData(obj); %#ok<NASGU>
                 features3D = obj.getFeatureData(); %#ok<NASGU>
                 classLabelId = obj.getClassLabels(); %#ok<NASGU>
                 if ~isempty(obj.SignalClassifier)
@@ -40,7 +55,7 @@ classdef TrainingInterface < Common.MiniVieObj
                     classNames = {};
                     activeChannels = [];
                 end
-                save(fullfile(PathName,FileName),'features3D','classLabelId','classNames','activeChannels');
+                save(fullfile(PathName,FileName),'features3D','classLabelId','classNames','activeChannels','emgData');
             end
         end
         function loadTrainingData(obj,fname)

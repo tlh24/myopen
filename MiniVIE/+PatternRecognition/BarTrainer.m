@@ -39,6 +39,15 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
                 obj.hJoystick = JoyMexClass;
             end
             
+            obj.SignalSource.NumSamples = obj.SignalClassifier.NumSamplesPerWindow;
+
+            % Initialize variable to store raw EMG data
+            try
+                obj.EmgData = NaN([obj.SignalSource.NumChannels obj.SignalClassifier.NumSamplesPerWindow obj.MaxSamples],'single');
+            catch ME
+                fprintf('[%s] Error initializing EMG storage: "%s"\n',mfilename,ME.message);
+            end
+            
             % Extend the init method to create figure
             setupFigure(obj);
         end
@@ -130,6 +139,9 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
                 
                 if collectData
                     obj.SampleCount = obj.SampleCount + 1;
+                    try
+                        obj.EmgData(:,:,obj.SampleCount) = windowData(1:obj.SignalClassifier.NumSamplesPerWindow,:)';
+                    end
                     obj.ClassLabelId(obj.SampleCount) = obj.CurrentClass;
                     % Note this could be tricky if data is loaded with the
                     % wrong number of channels compared to the current Signal
