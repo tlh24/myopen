@@ -12,9 +12,9 @@ classdef MplScenarioMud < Scenarios.ScenarioBase
     end
     methods
         function obj = MplScenarioMud
-            
-            obj.hNfu = MPL.NfuUdp.getInstance;
-            obj.hNfu.initialize();
+             % Uncomment below to enable NFU
+             %obj.hNfu = MPL.NfuUdp.getInstance;
+             %obj.hNfu.initialize();
             
             obj.hSink = MPL.VulcanXSink('127.0.0.1',9035);
             obj.hMud = MPL.MudCommandEncoder();
@@ -61,17 +61,8 @@ classdef MplScenarioMud < Scenarios.ScenarioBase
             if isempty(obj.hNfu)
                 obj.hSink.putbytes(msg);
             else
-                
-                msg1 = zeros(length(msg) + 1, 1, 'uint8');
-                msg1(1) = 59;
-                msg1(2:length(msg) + 1)= msg;
-                
-                msg2 = char(reshape(msg1, length(msg1),1));
-                %     length(msg2)
-                pnet( obj.hNfu.TcpConnection, 'write', msg2); %Upper arm and wrist DOM PV, ROC for hand
-                
+                obj.hNfu.send_msg(obj.hNfu.TcpConnection,char(59,msg));
             end
-            
         end
     end
 end
