@@ -19,9 +19,7 @@ classdef CpchSerial < Inputs.SignalInput
         ChannelMask = [];
         T = tic;
         IsRunning = false();
-        
     end
-    
     
     methods (Access = public)
         function obj = CpchSerial(comPort, bioampMask, gpiMask)
@@ -29,7 +27,7 @@ classdef CpchSerial < Inputs.SignalInput
             if nargin > 0
                 obj.SerialPort = comPort;
             end
-                
+            
             if nargin > 1
                 obj.BioampMask = uint16(bioampMask);
             end
@@ -67,14 +65,14 @@ classdef CpchSerial < Inputs.SignalInput
             
             try
                 set(obj.SerialObj, ...
-                   'BaudRate', 921600, ...
-                   'DataBits', 8, ...
-                   'StopBits', 1, ...
-                   'Parity', 'None', ...
-                   'FlowControl', 'None', ...
-                   'Timeout', 1, ...
-                   'ByteOrder', 'BigEndian', ...
-                   'InputBufferSize', 190000);
+                    'BaudRate', 921600, ...
+                    'DataBits', 8, ...
+                    'StopBits', 1, ...
+                    'Parity', 'None', ...
+                    'FlowControl', 'None', ...
+                    'Timeout', 1, ...
+                    'ByteOrder', 'BigEndian', ...
+                    'InputBufferSize', 190000);
                 fopen(obj.SerialObj);
                 
                 fprintf('CPCH Port Opened: %s\n',obj.SerialPort);
@@ -82,7 +80,7 @@ classdef CpchSerial < Inputs.SignalInput
                 fprintf('CPCH Port FAILED\n');
                 rethrow(ex);
             end
-
+            
             % Transmit STOP message in case data is flowing so the system
             % can sanely start
             msg = Inputs.CpchSerial.EncodeStopMsg();
@@ -92,23 +90,13 @@ classdef CpchSerial < Inputs.SignalInput
                 fread(obj.SerialObj, obj.SerialObj.BytesAvailable);
                 pause(0.1);  % delay here to ensure all bytes have time for receipt
             end
-            
-%             msg = Inputs.CpchSerial.EncodeStopMsg();
-%             fwrite(obj.SerialObj, msg, 'uint8');
-%             
-%             if(obj.SerialObj.BytesAvailable > 0)
-%                 fread(obj.SerialObj, obj.SerialObj.BytesAvailable);
-%             end
-%             
-%             fclose(obj.SerialObj);
-%             fopen(obj.SerialObj);
-            
+                        
             % Reconfigure the CPCH
             channel_config = bitshift(uint32(obj.GPIMask), 16) + uint32(obj.BioampMask);
             msg = Inputs.CpchSerial.EncodeConfigWriteMsg(2, channel_config);
             fwrite(obj.SerialObj, msg, 'uint8');
             [r, rcnt] = fread(obj.SerialObj, 3, 'uint8');
-            
+            r
             if (rcnt ~= 3)
                 fclose(obj.SerialObj);
                 error('CPCH did not properly respond to writing the channel configuration.')
@@ -128,33 +116,25 @@ classdef CpchSerial < Inputs.SignalInput
                 if (frameB.Mask ~= channel_config)
                     error('Defined channel mask does not match returned mask.\n');
                 end
-            
+                
                 obj.ChannelMask = dec2binvec(double(frameB.Mask), size(obj.DataBuffer,2));
                 fclose(obj.SerialObj);  % not clear why we are closing here (RSA)
             else
                 fclose(obj.SerialObj);
                 error('CPCH did not properly respond to reading the channel configuration.\n')
             end
-            
-            %obj.start();
         end
         
         
         function data = getData(obj)
-%             blockTime = toc(obj.T);    % seconds
-%             obj.T = tic;
             
-            newData = zeros(obj.NumSamples, obj.NumChannels);
-            
+            % Start device if not already running
             if (strcmpi(obj.SerialObj.Status, 'closed') || (obj.IsRunning == false))
                 fprintf('Starting CPCH...');
                 obj.start();
                 fprintf('OK\n');
             end
-            
-            numSamples = obj.NumSamples;
-            rcnt = 0;
-            
+                        
             % Read samples from serial buffer and place in internal buffer
             % (potentially with leftover remaining bytes)
             if (obj.SerialObj.BytesAvailable > 0)
@@ -166,195 +146,92 @@ classdef CpchSerial < Inputs.SignalInput
                 return;
             end
             
+            % Find all start chars ('128') and index the next 38 bytes
+            % off of these starts.  This could lead to overlapping data
+            % but valid data will be verified using the checksum
+            payloadSize = 2*(obj.BioampCnt+obj.GPICnt);
+            msgSize = payloadSize + 6;
+            idxStartBytes = find((obj.SerialBuffer == 128));
             
+            % Check if there are too few bytes between last start
+            % character and the end of the buffer
+            isInRange = idxStartBytes <= 1+length(obj.SerialBuffer)-msgSize;
+            idxStartBytes = idxStartBytes(isInRange);
+            remainderBytes = obj.SerialBuffer(idxStartBytes(end)+msgSize:end);
             
-            if 1
-
-                % Find all start chars ('128') and index the next 38 bytes
-                % off of these starts.  This could lead to overlapping data
-                % but valid data will be verified using the checksum
-                payloadSize = 2*(obj.BioampCnt+obj.GPICnt);
-                msgSize = payloadSize + 6;
-                idxStartBytes = find((obj.SerialBuffer == 128));
-                
-                % Check if there are too few bytes between last start
-                % character and the end of the buffer
-                isInRange = idxStartBytes <= 1+length(obj.SerialBuffer)-msgSize;
-                idxStartBytes = idxStartBytes(isInRange);
-                remainderBytes = obj.SerialBuffer(idxStartBytes(end)+msgSize:end);
-                
-                % Align the data based on the start characters
-                msgIndexTemplate = repmat((0:msgSize-1)',1,length(idxStartBytes));
-                msgIndex = bsxfun(@plus,msgIndexTemplate,idxStartBytes);
-                
-                dataAligned = obj.SerialBuffer(msgIndex);
-                [numBytes numAlignedSamples] = size(dataAligned);
-                
-                % Compute expected checksum
-                computedChecksum = 255*ones(1,numAlignedSamples,'uint8');
-                for i = 1:numBytes-1
-                    computedChecksum = bitxor(dataAligned(i,:),computedChecksum);
-                end
-                
-                % Received Checksum
-                receivedChecksum = dataAligned(end,:);
-                
-                isValidChecksum = (receivedChecksum == computedChecksum);
-                isValidLength = (dataAligned(5,:) == payloadSize);
-                
-                isValidData = isValidChecksum & isValidLength;
-                
-                if (sum(isValidData) / length(isValidData)) < 0.4
-                    fprintf('[%s] %d of %d samples have valid checksum.\r',mfilename,sum(isValidData),length(isValidData));
-                end
-                
-                validData = dataAligned(:,isValidData);
-                [numBytes numValidSamples] = size(validData);
-                
-                % Check sequence bytes in batch operation:
-                sequenceRow = double(validData(4,:));
-                sequenceExpected = mod(sequenceRow(1)+(0:size(validData,2)-1),256);
-                
-                if any(sequenceExpected - sequenceRow)
-                    fprintf('[%s] Out of sequence data received. numValidSamples=%d\r',mfilename,numValidSamples);
-                end
-                
-                % Convert the valid data to Int16
-                diffCnt = obj.BioampCnt;
-                deDataU8 = validData(6:6+2*diffCnt-1,:);
-                deDataInt16 = reshape(typecast(deDataU8(:),'int16'),diffCnt,numValidSamples);
-                
-                if any(deDataInt16(:) > 10000)
-                    fprintf(2,'Bad Data\n');
-                end
-                
-                idOK = ~any(deDataInt16 > 10000);
-                deDataInt16 = deDataInt16(:,idOK);
-                numValidSamples = size(deDataInt16,2);
-                
-                EMG_GAIN = 50;  %TODO abstract
-                deDataNormalized = EMG_GAIN .* double(deDataInt16) ./ 512;
-
-                seCnt = obj.GPICnt;
-                seDataU8 = validData(6+2*diffCnt:end-1,:);
-                seDataU16 = reshape(typecast(seDataU8(:),'uint16'),seCnt,numValidSamples);
-                
-                seDataNormalized = double(seDataU16) ./ 1024;
-                
-                %data = deDataInt16;
-                
-%                 fprintf('[%s] %d bytes remaining in buffer.\r',mfilename,length(remainderBytes));
-%                 fprintf('[ ');
-%                 fprintf('%d ',remainderBytes);
-%                 fprintf(']\r');
-
-                obj.SerialBuffer = remainderBytes;
-
-                if numValidSamples > size(obj.DataBuffer,1)
-                    % Replace entire buffer
-                    obj.DataBuffer(:,1:16) = deDataNormalized(:,end-size(obj.DataBuffer,1)+1:end)';
-                else
-                    % TODO Check for buffer overrun
-                    obj.DataBuffer = circshift(obj.DataBuffer,[-numValidSamples 0]);
-                    rowIdx = size(obj.DataBuffer,1)-numValidSamples+1:size(obj.DataBuffer,1);
-                    obj.DataBuffer(rowIdx,1:16) = deDataNormalized';
-                end
-                
-                % return the most recently requested data
-                data = obj.DataBuffer(end-obj.NumSamples+1:end,:);
-                
-                return
-                
+            % Align the data based on the start characters
+            msgIndexTemplate = repmat((0:msgSize-1)',1,length(idxStartBytes));
+            msgIndex = bsxfun(@plus,msgIndexTemplate,idxStartBytes);
+            
+            dataAligned = obj.SerialBuffer(msgIndex);
+            [numBytes numAlignedSamples] = size(dataAligned);
+            
+            % Compute expected checksum
+            computedChecksum = 255*ones(1,numAlignedSamples,'uint8');
+            for i = 1:numBytes-1
+                computedChecksum = bitxor(dataAligned(i,:),computedChecksum);
             end
             
+            % Received Checksum
+            receivedChecksum = dataAligned(end,:);
             
-            numAvailable = 0;
-            first = true();
-            offsetLastByte = 1;
+            isValidChecksum = (receivedChecksum == computedChecksum);
+            isValidLength = (dataAligned(5,:) == payloadSize);
             
-            % Find all the indices ahead of time so the buffer sent to the
-            % extract routine is small.
+            isValidData = isValidChecksum & isValidLength;
             
-            indxList = find(obj.SerialBuffer == 128);
-            %isStartOfFrame = (obj.SerialBuffer == 128);
-            if (~isempty(indxList))
-                offsetEnd = indxList(end);
-                
-                if (numel(indxList) > 2)
-                    indxStart = numel(indxList) - 1;
-                else
-                    indxStart = 1;
-                end
+            if (sum(isValidData) / length(isValidData)) < 0.4
+                fprintf('[%s] %d of %d samples have valid checksum.\r',mfilename,sum(isValidData),length(isValidData));
+            end
+            
+            validData = dataAligned(:,isValidData);
+            [numBytes numValidSamples] = size(validData);
+            
+            % Check sequence bytes in batch operation:
+            sequenceRow = double(validData(4,:));
+            sequenceExpected = mod(sequenceRow(1)+(0:size(validData,2)-1),256);
+            
+            if any(sequenceExpected - sequenceRow)
+                fprintf('[%s] Out of sequence data received. numValidSamples=%d\r',mfilename,numValidSamples);
+            end
+            
+            % Convert the valid data to Int16
+            diffCnt = obj.BioampCnt;
+            deDataU8 = validData(6:6+2*diffCnt-1,:);
+            deDataInt16 = reshape(typecast(deDataU8(:),'int16'),diffCnt,numValidSamples);
+            
+            if any(deDataInt16(:) > 10000)
+                fprintf(2,'Bad Data\n');
+            end
+            
+            idOK = ~any(deDataInt16 > 10000);
+            deDataInt16 = deDataInt16(:,idOK);
+            numValidSamples = size(deDataInt16,2);
+            
+            EMG_GAIN = 50;  %TODO abstract
+            deDataNormalized = EMG_GAIN .* double(deDataInt16) ./ 512;
+            
+            seCnt = obj.GPICnt;
+            seDataU8 = validData(6+2*diffCnt:end-1,:);
+            seDataU16 = reshape(typecast(seDataU8(:),'uint16'),seCnt,numValidSamples);
+            
+            seDataNormalized = double(seDataU16) ./ 1024;
+            
+            obj.SerialBuffer = remainderBytes;
+            
+            if numValidSamples > size(obj.DataBuffer,1)
+                % Replace entire buffer
+                obj.DataBuffer(:,1:16) = deDataNormalized(:,end-size(obj.DataBuffer,1)+1:end)';
             else
-                indxStart = 0;
-                offsetEnd = 0;
+                % TODO Check for buffer overrun
+                obj.DataBuffer = circshift(obj.DataBuffer,[-numValidSamples 0]);
+                rowIdx = size(obj.DataBuffer,1)-numValidSamples+1:size(obj.DataBuffer,1);
+                obj.DataBuffer(rowIdx,1:16) = deDataNormalized';
             end
             
-
-            % Work from newest data first.  Oldest data will be lost if this
-            % function is not called regularly enough.
-            while ((numAvailable < numSamples) && (indxStart > 0))
-                [s, msg, indx] = Inputs.CpchSerial.ExtractMsg(obj.SerialBuffer(indxList(indxStart):offsetEnd), obj.GPICnt+obj.BioampCnt);  % Find a valid message
-                
-                if (s)
-                    frame = Inputs.CpchSerial.DecodeMsg(msg, obj.BioampCnt, obj.GPICnt);    % Decode message
-                    
-                    switch msg(1) % Also frame.Type
-                        case 128
-                            newData(end-numAvailable,obj.ChannelMask) = [frame.DiffData, frame.SEData];
-                            offsetEnd = indxList(indxStart) - 1; % Exclude first byte of next message
-                            numAvailable = numAvailable + 1;
-                            
-                            if (obj.PrevDataFrameID ~= -1)
-                                if (mod(obj.PrevDataFrameID - (frame.Sequence + 1), 255) > 0)
-                                    fprintf('*** Data out of sequence. Missing %i frames\n', obj.PrevDataFrameID - frame.Sequence - 1)
-                                end
-                            end
-                                
-                            obj.PrevDataFrameID = frame.Sequence;
-                            
-                            if (first)
-                                offsetLastByte = indxList(indxStart) + numel(msg) + 1;
-                                first = false;
-                            end
-                            
-                            
-                        otherwise
-                            % Ignore data
-                    end
-                end
-                
-                indxStart = indxStart - 1;
-            end
-            
-            % Reset ID sequence check so errors are not thown during cross
-            % call loss of data.
-            obj.PrevDataFrameID = -1;
-            
-            % TODO Check for buffer overrun
-            obj.DataBuffer = circshift(obj.DataBuffer,[-numAvailable 0]);
-            obj.DataBuffer(end-numAvailable+1:end,:) = newData(end-numAvailable+1:end,:);
-            
+            % return the most recently requested data
             data = obj.DataBuffer(end-obj.NumSamples+1:end,:);
             
-%             if max(data(:) > 5)
-%                 disp('Data Jump > 5');
-%             end
-            
-            % Limit data saving to the maximum packet size
-            if ((numel(obj.SerialBuffer) - offsetLastByte) > 6+2*(obj.GPICnt+obj.BioampCnt))
-                offsetLastByte = numel(obj.SerialBuffer) - 6+2*(obj.GPICnt+obj.BioampCnt);
-            end
-            
-            if (offsetLastByte > numel(obj.SerialBuffer))
-                offsetLastByte = numel(obj.SerialBuffer);
-            end
-            
-            obj.SerialBuffer = obj.SerialBuffer(offsetLastByte : end);
-            %fprintf('CPCH.getData:  %2.4g, InputCnt=%1.0f, Excess=%1.0f, numAvailable=%i\n', blockTime, rcnt, numel(obj.SerialBuffer), numAvailable);
-
-            %global dataSave;
-            %dataSave = obj.DataBuffer;
         end
         function isReady = isReady(obj,numSamples)
             if (strcmpi(obj.SerialObj.Status, 'closed') || (obj.IsRunning == false))
@@ -424,7 +301,7 @@ classdef CpchSerial < Inputs.SignalInput
     end
     
     methods (Static, Access = private)
-        function [success, msg, indx] = ExtractMsg(arr, payloadCnt)                
+        function [success, msg, indx] = ExtractMsg(arr, payloadCnt)
             %indxList = find(arr >= uint8(128) & arr < uint8(133));
             indxList = find(ismember(arr, 128:132));
             len = numel(arr);
@@ -437,12 +314,12 @@ classdef CpchSerial < Inputs.SignalInput
                         if ((indx + (6+2*payloadCnt-1)) <= len)
                             msg = arr(indx + (0:(6+2*payloadCnt-1)));
                         end
-                    
+                        
                     case 129       % Async. Stop Stream Response
                         if (indx + 1 <= len);
                             msg = arr(indx + (0:1));
                         end
-                     
+                        
                     case 130       % Async. Status Response
                         if (indx + 3 <= len);
                             msg = arr(indx + (0:3));
@@ -453,7 +330,7 @@ classdef CpchSerial < Inputs.SignalInput
                             msg = arr(indx + (0:6));
                         end
                         
-                    case 132       % Async. Config Write Response  
+                    case 132       % Async. Config Write Response
                         if (indx + 2 <= len);
                             msg = arr(indx + (0:2));
                         end
@@ -502,15 +379,15 @@ classdef CpchSerial < Inputs.SignalInput
                     
                 case 129        % Async. Stop Sream Response
                     frame = []; % Contains no data, only ID & Chksum
-
-                case 130       % Async. Status Response  
+                    
+                case 130       % Async. Status Response
                     frame.Status.CommErrCnt = msgx(2);
                     frame.Status.MsgIDErr   = (bitget(msgx(3), 1)) ~= 0;
                     frame.Status.ChksumErr  = (bitget(msgx(3), 2)) ~= 0;
                     frame.Status.LengthErr  = (bitget(msgx(3), 3)) ~= 0;
                     frame.Status.ADCErr     = (bitget(msgx(3), 4)) ~= 0;
-
-                case 131       % Async. Config Read Response 
+                    
+                case 131       % Async. Config Read Response
                     frame.ID = msgx(2);
                     m = typecast(msgx(3:(end-1)), 'uint32');
                     
@@ -519,10 +396,10 @@ classdef CpchSerial < Inputs.SignalInput
                     end
                     
                     frame.Mask = m;
-
-                case 132       % Async. Config Write Response  
+                    
+                case 132       % Async. Config Write Response
                     frame.Success = (bitget(msgx(3), 1)) ~= 0;
-
+                    
                 otherwise
             end
             
@@ -568,7 +445,7 @@ classdef CpchSerial < Inputs.SignalInput
             msg(2) = uint8(indx);
             msg(end+1) = Inputs.CpchSerial.XorChksum(msg(1:end));
             return;
-        end 
+        end
         
         function cnt = BitCount(val)
             % Convert a scalar value to bits and return the sum of true
@@ -577,24 +454,24 @@ classdef CpchSerial < Inputs.SignalInput
                 case {'uint32', 'int32', 'single'}
                     cntmax = 32;
                     val = typecast(val, 'uint32');
-
+                    
                 case {'uint16', 'int16'}
                     cntmax = 16;
                     val = typecast(val, 'uint16');
-
+                    
                 case {'uint8', 'int8', 'char'}
                     cntmax = 8;
                     val = typecast(val, 'uint8');
-
+                    
                 case {'uint64', 'int64', 'double'}
                     cntmax = 64;
                     val = typecast(val, 'uint64');
-                
+                    
                 otherwise
                     error('Invalid type');
             end
-
-            % Compute total number of data entries to read            
+            
+            % Compute total number of data entries to read
             cnt = sum(bitget(val, 1:cntmax));
             
             return;
@@ -613,7 +490,7 @@ classdef CpchSerial < Inputs.SignalInput
                 if ((seed < 0) || (seed > 255))
                     error('Seed value is outside the valid range of 0 to 255');
                 end
-            
+                
                 r = uint8(seed);
             end
             
