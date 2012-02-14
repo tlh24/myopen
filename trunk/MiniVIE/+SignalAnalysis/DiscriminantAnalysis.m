@@ -24,7 +24,7 @@ classdef DiscriminantAnalysis < SignalAnalysis.Classifier
                 error(msg);
             end
         end
-        function train(obj)
+        function ldaResubCM = train(obj)
             
             if isempty(obj.TrainingData)
                 error('No Training Data Exists');
@@ -61,9 +61,9 @@ classdef DiscriminantAnalysis < SignalAnalysis.Classifier
             [classOut voteDecision] = deal([]);
             
             assert(size(featuresColumns,1) == obj.NumActiveChannels*obj.NumFeatures);
-            if isempty(obj.Wg)
-                error('Classifier not trained');
-            end
+%             if isempty(obj.Wg)
+%                 error('Classifier not trained');
+%             end
             
             feats = convertfeaturedata(obj);
             

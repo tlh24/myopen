@@ -1,5 +1,7 @@
 classdef HighPass < Inputs.Filter
     % High Pass Filter object, extends filter object
+    % Usage: hFilter = Inputs.HighPass(Fc,order,Fs);
+    % Example: hFilter = Inputs.HighPass(15,8,1000);
     %
     % 01-Sept-2010 Armiger: Created
     methods

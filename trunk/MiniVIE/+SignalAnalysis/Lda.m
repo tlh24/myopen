@@ -104,7 +104,7 @@ classdef Lda < SignalAnalysis.Classifier
             for i = 1:numClasses
                 
                 % CMi = C\Mi(:,i);
-                CMi = pinv(C) * Mi(:,i);  % RSA - reduces errors if poorly formed matrices
+                CMi = pinv(C) * Mi(:,i);  % RSA - pinv reduces errors if poorly formed matrices
                 Wg(:,i) = CMi;
                 Cg(i) = -1/2*Mi(:,i)'*CMi + log(Pphi)';
             end
