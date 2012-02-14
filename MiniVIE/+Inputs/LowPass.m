@@ -1,5 +1,7 @@
 classdef LowPass < Inputs.Filter
     % Low Pass Filter object, extends filter object
+    % Usage: hFilter = Inputs.LowPass(Fc,order,Fs);
+    % Example: hFilter = Inputs.LowPass(450,8,1000);
     %
     % 01-Sept-2010 Armiger: Created
     methods

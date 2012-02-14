@@ -1,6 +1,8 @@
 classdef Notch < Inputs.Filter
     % Notch Filter object, extends filter object
     % Note that an array of center frequencies are supported
+    % Usage: hFilter = Inputs.Notch(centerFrequency,frequencyWidth,Fs);
+    % Example: hFilter = Inputs.Notch([60 120 180],5,1000);
     %
     % 01-Sept-2010 Armiger: Created
     methods

@@ -1,5 +1,6 @@
 classdef Filter < handle
     % Filter object base class
+    % Filters, HighPass, LowPass, Notch should inherit from this class
     %
     % 01-Sept-2010 Armiger: Created
     properties
