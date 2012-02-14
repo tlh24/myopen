@@ -231,7 +231,9 @@ classdef guiSignalViewer < Common.MiniVieObj
             obj.featureBuffer(:,:,1) = features;
                         
             for iFeature = 1:obj.numFeatures
+                set(obj.hg.PlotLines{iFeature},'Visible','off');
                 for iChannel = obj.SelectedChannels
+                    set(obj.hg.PlotLines{iFeature}(iChannel),'Visible','on');
                     set(obj.hg.PlotLines{iFeature}(iChannel),'YData',obj.featureBuffer(iChannel,iFeature,:),...
                         'XData',1:size(obj.featureBuffer,3));
                 end
