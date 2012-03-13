@@ -298,7 +298,8 @@ classdef MiniVIE < Common.MiniVieObj
                         % h = Inputs.DaqHwDevice('nidaq','Dev2');
                         h = Inputs.UdpDevice();
                     case 'CpchSerial'
-                        h = Inputs.CpchSerial('COM13');
+                        h = Inputs.CpchSerial('COM13',...
+                            uint16(hex2dec('FFFF')),uint16(hex2dec('FFFF')));
                     case 'NfuInput'
                         h = Inputs.NfuInput();
                     otherwise

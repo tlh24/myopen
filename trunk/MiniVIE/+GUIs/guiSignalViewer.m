@@ -180,11 +180,15 @@ classdef guiSignalViewer < Common.MiniVieObj
             NFFT = 2^nextpow2(L); % Next power of 2 from length of y
             f = Fs/2*linspace(0,1,NFFT/2+1);
             
-            for i = obj.SelectedChannels
-                Y = fft(channelData(:,i),NFFT)/L;
+            %set(obj.hg.PlotLines,'Visible','off');
+            set(obj.hg.PlotLines{1}(:),'Visible','off');
+            for iChannel = obj.SelectedChannels
+                Y = fft(channelData(:,iChannel),NFFT)/L;
+
+                set(obj.hg.PlotLines{1}(iChannel),'Visible','on');
                 
                 % Plot single-sided amplitude spectrum.
-                set(obj.hg.PlotLines{1}(i),'YData',2*abs(Y(1:NFFT/2+1)),'XData',f);
+                set(obj.hg.PlotLines{1}(iChannel),'YData',2*abs(Y(1:NFFT/2+1)),'XData',f);
                 
             end
             

@@ -21,6 +21,19 @@ classdef CpchSerial < Inputs.SignalInput
         IsRunning = false();
     end
     
+    properties (Constant = true)
+        msgIdStartStreaming = 1;
+        msgIdStopStreaming  = 2;
+        msgIdStatusRequest  = 3;
+        msgIdConfigurationWrite = 4;
+        msgIdConfigurationRead = 5;
+        msgIdCpcData = 128;
+        msgIdStopStreamingResponse = 129;
+        msgIdStatusData = 130;
+        msgIdConfigurationReadResponse = 131;
+        msgIdConfigurationWriteResponse = 132;
+    end
+    
     methods (Access = public)
         function obj = CpchSerial(comPort, bioampMask, gpiMask)
             % Constructor
@@ -36,8 +49,6 @@ classdef CpchSerial < Inputs.SignalInput
                 obj.GPIMask = uint16(gpiMask);
             end
             
-            obj.BioampCnt = obj.BitCount(obj.BioampMask);
-            obj.GPICnt = obj.BitCount(obj.GPIMask);
             obj.ChannelIds = 0:31;
             obj.SampleFrequency = 1000;
         end
@@ -46,6 +57,9 @@ classdef CpchSerial < Inputs.SignalInput
             assert(isa(obj.SerialPort, 'char'));
             assert(isa(obj.BioampMask, 'uint16'));
             assert(isa(obj.GPIMask, 'uint16'));
+            
+            obj.BioampCnt = obj.BitCount(obj.BioampMask);
+            obj.GPICnt = obj.BitCount(obj.GPIMask);
             
             % Create the holding buffer for collected data
             rows = obj.NumSamples;
@@ -86,43 +100,53 @@ classdef CpchSerial < Inputs.SignalInput
             msg = Inputs.CpchSerial.EncodeStopMsg();
             fwrite(obj.SerialObj, msg, 'uint8');
             
-            while (obj.SerialObj.BytesAvailable > 0)
-                fread(obj.SerialObj, obj.SerialObj.BytesAvailable);
+            while 1
                 pause(0.1);  % delay here to ensure all bytes have time for receipt
+                bytesAvailable = obj.SerialObj.BytesAvailable;
+                if bytesAvailable
+                    fread(obj.SerialObj, obj.SerialObj.BytesAvailable);
+                else
+                    break;
+                end
             end
                         
             % Reconfigure the CPCH
+            % msg example: [ 4    2  255  255    0    0  249]
+            % 4 = write param
+            % 2 = param type 2 (active channels)
+            
+            % Send Request
             channel_config = bitshift(uint32(obj.GPIMask), 16) + uint32(obj.BioampMask);
             msg = Inputs.CpchSerial.EncodeConfigWriteMsg(2, channel_config);
             fwrite(obj.SerialObj, msg, 'uint8');
+
+            % Check response
             [r, rcnt] = fread(obj.SerialObj, 3, 'uint8');
-            r
-            if (rcnt ~= 3)
-                fclose(obj.SerialObj);
-                error('CPCH did not properly respond to writing the channel configuration.')
-            end
+            assert(rcnt > 0,'No response from CPCH. Check power, check connections');
+
+            msgId = Inputs.CpchSerial.msgIdConfigurationWriteResponse;
+            assert(rcnt == 3,'Wrong number of bytes returned');
+            assert(r(1) == msgId,'Bad response message id. Expected %d, got %d',msgId,r(1));
+            assert(bitget(r(2),1) == 1,'Configuration Write Failed');
             
-            % Check that the message was accepted.  Note that this must be
+            % Read param to verify the message.  Note that this must be
             % read back to ensure the message structure is correct since
             % not all channels can (or will) return data.  Unrequested channels
             % are unreturned by the system.
             msg = Inputs.CpchSerial.EncodeConfigReadMsg(2);
             fwrite(obj.SerialObj, msg, 'uint8');
+            % Check response
             [r, rcnt] = fread(obj.SerialObj, 7, 'uint8');
+            msgId = Inputs.CpchSerial.msgIdConfigurationReadResponse;
+            assert(rcnt == 7,'Wrong number of bytes returned');
+            assert(r(1) == msgId,'Bad response message id');
             
-            if (rcnt == 7)
-                frameB = Inputs.CpchSerial.DecodeMsg(r, obj.BioampCnt, obj.GPICnt);
-                
-                if (frameB.Mask ~= channel_config)
-                    error('Defined channel mask does not match returned mask.\n');
-                end
-                
-                obj.ChannelMask = dec2binvec(double(frameB.Mask), size(obj.DataBuffer,2));
-                fclose(obj.SerialObj);  % not clear why we are closing here (RSA)
-            else
-                fclose(obj.SerialObj);
-                error('CPCH did not properly respond to reading the channel configuration.\n')
-            end
+            frameB = Inputs.CpchSerial.DecodeMsg(r, obj.BioampCnt, obj.GPICnt);
+            
+            assert(frameB.Mask == channel_config,'Defined channel mask does not match returned mask.');
+            
+            obj.ChannelMask = dec2binvec(double(frameB.Mask), size(obj.DataBuffer,2));
+            fclose(obj.SerialObj);  % not clear why we are closing here (RSA)
         end
         
         
@@ -130,21 +154,20 @@ classdef CpchSerial < Inputs.SignalInput
             
             % Start device if not already running
             if (strcmpi(obj.SerialObj.Status, 'closed') || (obj.IsRunning == false))
-                fprintf('Starting CPCH...');
                 obj.start();
-                fprintf('OK\n');
             end
-                        
-            % Read samples from serial buffer and place in internal buffer
-            % (potentially with leftover remaining bytes)
-            if (obj.SerialObj.BytesAvailable > 0)
-                [r, rcnt] = fread(obj.SerialObj, obj.SerialObj.BytesAvailable, 'uint8');  % Read whole buffer
-                obj.SerialBuffer = [obj.SerialBuffer, uint8(r')];
-            else
+            
+            % Check for new data
+            if (obj.SerialObj.BytesAvailable == 0)
                 fprintf('[%s] No new data in serial buffer.\n',mfilename);
                 data = obj.DataBuffer(end-obj.NumSamples+1:end,:);
                 return;
             end
+            
+            % Read samples from serial buffer and place in internal buffer
+            % (potentially with leftover remaining bytes)
+            r = fread(obj.SerialObj, obj.SerialObj.BytesAvailable, 'uint8');  % Read whole buffer
+            obj.SerialBuffer = [obj.SerialBuffer, uint8(r')];
             
             % Find all start chars ('128') and index the next 38 bytes
             % off of these starts.  This could lead to overlapping data
@@ -175,6 +198,8 @@ classdef CpchSerial < Inputs.SignalInput
             % Received Checksum
             receivedChecksum = dataAligned(end,:);
             
+            % Find 'validated' data by ensuring it is the correct length
+            % and has the correct checksum
             isValidChecksum = (receivedChecksum == computedChecksum);
             isValidLength = (dataAligned(5,:) == payloadSize);
             
@@ -197,36 +222,60 @@ classdef CpchSerial < Inputs.SignalInput
             
             % Convert the valid data to Int16
             diffCnt = obj.BioampCnt;
-            deDataU8 = validData(6:6+2*diffCnt-1,:);
-            deDataInt16 = reshape(typecast(deDataU8(:),'int16'),diffCnt,numValidSamples);
-            
-            if any(deDataInt16(:) > 10000)
-                fprintf(2,'Bad Data\n');
+            payloadIdxStart = 6;
+            payloadIdxEnd = payloadIdxStart + 2*diffCnt - 1;  % diff data starts after header
+            deDataU8 = validData(payloadIdxStart:payloadIdxEnd,:);
+            try
+                deDataInt16 = reshape(typecast(deDataU8(:),'int16'),diffCnt,numValidSamples);
+            catch ME
+                disp('Error shifting differential data');
+                rethrow(ME);
             end
             
-            idOK = ~any(deDataInt16 > 10000);
-            deDataInt16 = deDataInt16(:,idOK);
-            numValidSamples = size(deDataInt16,2);
+            if any(deDataInt16(:) > 10000)
+                fprintf(2,'[%s] Bad Data\n',mfilename);
+                % TODO need better solution than returning
+                %return
+            end
+            
+            %idOK = ~any(deDataInt16 > 10000);
+            %deDataInt16 = deDataInt16(:,idOK);
+            %numValidSamples = size(deDataInt16,2);
             
             EMG_GAIN = 50;  %TODO abstract
             deDataNormalized = EMG_GAIN .* double(deDataInt16) ./ 512;
             
             seCnt = obj.GPICnt;
-            seDataU8 = validData(6+2*diffCnt:end-1,:);
-            seDataU16 = reshape(typecast(seDataU8(:),'uint16'),seCnt,numValidSamples);
-            
-            seDataNormalized = double(seDataU16) ./ 1024;
+            payloadIdxStart = 6+2*diffCnt;  % se data starts after diff data
+            payloadIdxEnd = payloadIdxStart + 2*seCnt -1;
+            seDataU8 = validData(payloadIdxStart:payloadIdxEnd,:);
+            try
+                seDataU16 = reshape(typecast(seDataU8(:),'uint16'),seCnt,numValidSamples);
+            catch ME
+                disp('Error shifting single ended data');
+                rethrow(ME);
+            end
+
+            %plot(seDataU16')
+             
+            seDataNormalized = double(seDataU16) ./ 1024 * 10;
             
             obj.SerialBuffer = remainderBytes;
             
+            % RSA:TODO these channel mappings should be updated based on the
+            % channel mask
+            deChannelIdx = logical([dec2binvec(double(obj.BioampMask),16) zeros(1,16)]);
+            seChannelIdx = logical([zeros(1,16) dec2binvec(double(obj.GPIMask),16)]);
             if numValidSamples > size(obj.DataBuffer,1)
                 % Replace entire buffer
-                obj.DataBuffer(:,1:16) = deDataNormalized(:,end-size(obj.DataBuffer,1)+1:end)';
+                obj.DataBuffer(:,deChannelIdx) = deDataNormalized(:,end-size(obj.DataBuffer,1)+1:end)';
+                obj.DataBuffer(:,seChannelIdx) = seDataNormalized(:,end-size(obj.DataBuffer,1)+1:end)';
             else
                 % TODO Check for buffer overrun
                 obj.DataBuffer = circshift(obj.DataBuffer,[-numValidSamples 0]);
                 rowIdx = size(obj.DataBuffer,1)-numValidSamples+1:size(obj.DataBuffer,1);
-                obj.DataBuffer(rowIdx,1:16) = deDataNormalized';
+                obj.DataBuffer(rowIdx,deChannelIdx) = deDataNormalized';
+                obj.DataBuffer(rowIdx,seChannelIdx) = seDataNormalized';
             end
             
             % return the most recently requested data
@@ -260,6 +309,7 @@ classdef CpchSerial < Inputs.SignalInput
         function start(obj)
             %profile on -history;
             obj.T = tic;
+            fprintf('[%s] Starting CPCH with %d Differential and %d singleEndedInputs...',mfilename,obj.BioampCnt,obj.GPICnt);
             
             if (strcmpi(obj.SerialObj.Status, 'closed'))
                 fopen(obj.SerialObj);
@@ -275,6 +325,8 @@ classdef CpchSerial < Inputs.SignalInput
                 fwrite(obj.SerialObj, msg, 'uint8');
                 obj.IsRunning = true();
             end
+            
+            fprintf('OK\n');
         end
         function stop(obj)
             if (strcmpi(obj.SerialObj.Status, 'closed'))
@@ -401,6 +453,7 @@ classdef CpchSerial < Inputs.SignalInput
                     frame.Success = (bitget(msgx(3), 1)) ~= 0;
                     
                 otherwise
+                    error('Unkonwn message id: %d',msg(1));
             end
             
             return;
