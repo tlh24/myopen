@@ -1,15 +1,36 @@
 % Setup Devices
-hSink = MPL.VulcanXSink('127.0.0.1',9027);
+hSink = MPL.VulcanXSink('127.0.0.1',9035);  % check port number against VulcanX config
 hMud = MPL.MudCommandEncoder();
 %% Send manual commands
-graspId = 4;
-graspVal = 0;
+graspId = 0;
+graspVal = 0/20;
 w(1) = 0; % Wrist Rotation
 w(2) = 0; % Wrist Deviation
 w(3) = 0; % Wrist Flexion
 msg = hMud.ArmPosVelHandRocGrasps([zeros(1,4) w],zeros(1,7),1,graspId,graspVal,1);
 hSink.putbytes(msg);
 
+%% Three move init to overcome wrist dev stiction
+graspId = 0;
+graspVal = 0;
+msg = hMud.ArmPosVelHandRocGrasps([zeros(1,4) pi/2 pi/2 0],zeros(1,7),1,graspId,graspVal,1);
+hSink.putbytes(msg);
+
+pause(0.7)
+
+msg = hMud.ArmPosVelHandRocGrasps([zeros(1,4) 0 -pi/2 0],zeros(1,7),1,graspId,graspVal,1);
+hSink.putbytes(msg);
+
+pause(0.7)
+
+
+msg = hMud.ArmPosVelHandRocGrasps([zeros(1,4) 0 0 0],zeros(1,7),1,graspId,graspVal,1);
+hSink.putbytes(msg);
+
+
+
+%%
+return
 
 %%
 hNfu = MPL.NfuUdp.getInstance;
