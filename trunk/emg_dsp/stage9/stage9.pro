@@ -78,4 +78,4 @@ UserGrU=1
 DivGrPc=1
 [pcbnew/libraries]
 LibDir=
-LibName1=/home/tlh24/svn/myopen/emg_dsp/lib/emg_foot
+LibName1=../lib/emg_foot
