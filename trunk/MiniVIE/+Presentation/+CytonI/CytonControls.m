@@ -1,0 +1,482 @@
+classdef CytonControls < hgsetget
+    properties
+    end
+    properties (Dependent = true)
+        DH_Params;
+    end
+    properties (SetAccess = private)
+        % Symbolically solved kinematic equations
+        symJacobian = @(a6,a7,d2,d3,d4,d5,d6,d7,th1,th2,th3,th4,th5,th6,th7)...
+            reshape([d4.*(cos(th1).*cos(th3)-cos(th2).*sin(th1).*sin(th3))-d6.*(sin(th5).*(cos(th4).*(cos(th1).*sin(th3)+cos(th2).*cos(th3).*sin(th1))-sin(th1).*sin(th2).*sin(th4))-cos(th5).*(cos(th1).*cos(th3)-cos(th2).*sin(th1).*sin(th3)))-d7.*(cos(pi.*(1.0./2.0)+th6).*(sin(th4).*(cos(th1).*sin(th3)+cos(th2).*cos(th3).*sin(th1))+cos(th4).*sin(th1).*sin(th2))+sin(pi.*(1.0./2.0)+th6).*(cos(th5).*(cos(th4).*(cos(th1).*sin(th3)+cos(th2).*cos(th3).*sin(th1))-sin(th1).*sin(th2).*sin(th4))+sin(th5).*(cos(th1).*cos(th3)-cos(th2).*sin(th1).*sin(th3))))+d2.*cos(th1)+d5.*(sin(th4).*(cos(th1).*sin(th3)+cos(th2).*cos(th3).*sin(th1))+cos(th4).*sin(th1).*sin(th2))-a6.*cos(pi.*(1.0./2.0)+th6).*(cos(th5).*(cos(th4).*(cos(th1).*sin(th3)+cos(th2).*cos(th3).*sin(th1))-sin(th1).*sin(th2).*sin(th4))+sin(th5).*(cos(th1).*cos(th3)-cos(th2).*sin(th1).*sin(th3)))-a7.*sin(th7).*(sin(th5).*(cos(th4).*(cos(th1).*sin(th3)+cos(th2).*cos(th3).*sin(th1))-sin(th1).*sin(th2).*sin(th4))-cos(th5).*(cos(th1).*cos(th3)-cos(th2).*sin(th1).*sin(th3)))+a7.*cos(th7).*(sin(pi.*(1.0./2.0)+th6).*(sin(th4).*(cos(th1).*sin(th3)+cos(th2).*cos(th3).*sin(th1))+cos(th4).*sin(th1).*sin(th2))-cos(pi.*(1.0./2.0)+th6).*(cos(th5).*(cos(th4).*(cos(th1).*sin(th3)+cos(th2).*cos(th3).*sin(th1))-sin(th1).*sin(th2).*sin(th4))+sin(th5).*(cos(th1).*cos(th3)-cos(th2).*sin(th1).*sin(th3))))+d3.*sin(th1).*sin(th2)+a6.*sin(pi.*(1.0./2.0)+th6).*(sin(th4).*(cos(th1).*sin(th3)+cos(th2).*cos(th3).*sin(th1))+cos(th4).*sin(th1).*sin(th2)),...
+            -d6.*(sin(th5).*(cos(th4).*(sin(th1).*sin(th3)-cos(th1).*cos(th2).*cos(th3))+cos(th1).*sin(th2).*sin(th4))-cos(th5).*(cos(th3).*sin(th1)+cos(th1).*cos(th2).*sin(th3)))+d4.*(cos(th3).*sin(th1)+cos(th1).*cos(th2).*sin(th3))-d7.*(cos(pi.*(1.0./2.0)+th6).*(sin(th4).*(sin(th1).*sin(th3)-cos(th1).*cos(th2).*cos(th3))-cos(th1).*cos(th4).*sin(th2))+sin(pi.*(1.0./2.0)+th6).*(cos(th5).*(cos(th4).*(sin(th1).*sin(th3)-cos(th1).*cos(th2).*cos(th3))+cos(th1).*sin(th2).*sin(th4))+sin(th5).*(cos(th3).*sin(th1)+cos(th1).*cos(th2).*sin(th3))))+d2.*sin(th1)+d5.*(sin(th4).*(sin(th1).*sin(th3)-cos(th1).*cos(th2).*cos(th3))-cos(th1).*cos(th4).*sin(th2))-a6.*cos(pi.*(1.0./2.0)+th6).*(cos(th5).*(cos(th4).*(sin(th1).*sin(th3)-cos(th1).*cos(th2).*cos(th3))+cos(th1).*sin(th2).*sin(th4))+sin(th5).*(cos(th3).*sin(th1)+cos(th1).*cos(th2).*sin(th3)))+a7.*cos(th7).*(sin(pi.*(1.0./2.0)+th6).*(sin(th4).*(sin(th1).*sin(th3)-cos(th1).*cos(th2).*cos(th3))-cos(th1).*cos(th4).*sin(th2))-cos(pi.*(1.0./2.0)+th6).*(cos(th5).*(cos(th4).*(sin(th1).*sin(th3)-cos(th1).*cos(th2).*cos(th3))+cos(th1).*sin(th2).*sin(th4))+sin(th5).*(cos(th3).*sin(th1)+cos(th1).*cos(th2).*sin(th3))))-a7.*sin(th7).*(sin(th5).*(cos(th4).*(sin(th1).*sin(th3)-cos(th1).*cos(th2).*cos(th3))+cos(th1).*sin(th2).*sin(th4))-cos(th5).*(cos(th3).*sin(th1)+cos(th1).*cos(th2).*sin(th3)))-d3.*cos(th1).*sin(th2)+a6.*sin(pi.*(1.0./2.0)+th6).*(sin(th4).*(sin(th1).*sin(th3)-cos(th1).*cos(th2).*cos(th3))-cos(th1).*cos(th4).*sin(th2)),0.0,-d5.*cos(th1).*(cos(th2).*cos(th4)-cos(th3).*sin(th2).*sin(th4))-d7.*cos(th1).*(sin(pi.*(1.0./2.0)+th6).*(cos(th5).*(cos(th2).*sin(th4)+cos(th3).*cos(th4).*sin(th2))-sin(th2).*sin(th3).*sin(th5))-cos(pi.*(1.0./2.0)+th6).*(cos(th2).*cos(th4)-cos(th3).*sin(th2).*sin(th4)))-d3.*cos(th1).*cos(th2)-d6.*cos(th1).*(sin(th5).*(cos(th2).*sin(th4)+cos(th3).*cos(th4).*sin(th2))+cos(th5).*sin(th2).*sin(th3))-a6.*cos(th1).*sin(pi.*(1.0./2.0)+th6).*(cos(th2).*cos(th4)-cos(th3).*sin(th2).*sin(th4))-a7.*cos(th1).*cos(th7).*(cos(pi.*(1.0./2.0)+th6).*(cos(th5).*(cos(th2).*sin(th4)+cos(th3).*cos(th4).*sin(th2))-sin(th2).*sin(th3).*sin(th5))+sin(pi.*(1.0./2.0)+th6).*(cos(th2).*cos(th4)-cos(th3).*sin(th2).*sin(th4)))-d4.*cos(th1).*sin(th2).*sin(th3)-a6.*cos(th1).*cos(pi.*(1.0./2.0)+th6).*(cos(th5).*(cos(th2).*sin(th4)+cos(th3).*cos(th4).*sin(th2))-sin(th2).*sin(th3).*sin(th5))-a7.*cos(th1).*sin(th7).*(sin(th5).*(cos(th2).*sin(th4)+cos(th3).*cos(th4).*sin(th2))+cos(th5).*sin(th2).*sin(th3)),...
+            -d5.*sin(th1).*(cos(th2).*cos(th4)-cos(th3).*sin(th2).*sin(th4))-d7.*sin(th1).*(sin(pi.*(1.0./2.0)+th6).*(cos(th5).*(cos(th2).*sin(th4)+cos(th3).*cos(th4).*sin(th2))-sin(th2).*sin(th3).*sin(th5))-cos(pi.*(1.0./2.0)+th6).*(cos(th2).*cos(th4)-cos(th3).*sin(th2).*sin(th4)))-d3.*cos(th2).*sin(th1)-d6.*sin(th1).*(sin(th5).*(cos(th2).*sin(th4)+cos(th3).*cos(th4).*sin(th2))+cos(th5).*sin(th2).*sin(th3))-a6.*sin(th1).*sin(pi.*(1.0./2.0)+th6).*(cos(th2).*cos(th4)-cos(th3).*sin(th2).*sin(th4))-a7.*cos(th7).*sin(th1).*(cos(pi.*(1.0./2.0)+th6).*(cos(th5).*(cos(th2).*sin(th4)+cos(th3).*cos(th4).*sin(th2))-sin(th2).*sin(th3).*sin(th5))+sin(pi.*(1.0./2.0)+th6).*(cos(th2).*cos(th4)-cos(th3).*sin(th2).*sin(th4)))-d4.*sin(th1).*sin(th2).*sin(th3)-a6.*cos(pi.*(1.0./2.0)+th6).*sin(th1).*(cos(th5).*(cos(th2).*sin(th4)+cos(th3).*cos(th4).*sin(th2))-sin(th2).*sin(th3).*sin(th5))-a7.*sin(th1).*sin(th7).*(sin(th5).*(cos(th2).*sin(th4)+cos(th3).*cos(th4).*sin(th2))+cos(th5).*sin(th2).*sin(th3)),...
+            -d3.*sin(th2)+d4.*cos(th2).*sin(th3)-d5.*cos(th4).*sin(th2)-a6.*cos(th4).*cos(th6).*sin(th2)-d5.*cos(th2).*cos(th3).*sin(th4)+d6.*cos(th2).*cos(th5).*sin(th3)-d7.*cos(th4).*sin(th2).*sin(th6)-d6.*sin(th2).*sin(th4).*sin(th5)-a6.*cos(th2).*cos(th3).*cos(th6).*sin(th4)-a7.*cos(th4).*cos(th6).*cos(th7).*sin(th2)+d6.*cos(th2).*cos(th3).*cos(th4).*sin(th5)+a7.*cos(th2).*cos(th5).*sin(th3).*sin(th7)-d7.*cos(th2).*cos(th3).*sin(th4).*sin(th6)-d7.*cos(th2).*cos(th6).*sin(th3).*sin(th5)-d7.*cos(th5).*cos(th6).*sin(th2).*sin(th4)+a6.*cos(th2).*sin(th3).*sin(th5).*sin(th6)+a6.*cos(th5).*sin(th2).*sin(th4).*sin(th6)-a7.*sin(th2).*sin(th4).*sin(th5).*sin(th7)-a6.*cos(th2).*cos(th3).*cos(th4).*cos(th5).*sin(th6)-a7.*cos(th2).*cos(th3).*cos(th6).*cos(th7).*sin(th4)+a7.*cos(th2).*cos(th3).*cos(th4).*sin(th5).*sin(th7)+a7.*cos(th2).*cos(th7).*sin(th3).*sin(th5).*sin(th6)+a7.*cos(th5).*cos(th7).*sin(th2).*sin(th4).*sin(th6)+d7.*cos(th2).*cos(th3).*cos(th4).*cos(th5).*cos(th6)-a7.*cos(th2).*cos(th3).*cos(th4).*cos(th5).*cos(th7).*sin(th6),...
+            -d4.*sin(th1).*sin(th3)+d4.*cos(th1).*cos(th2).*cos(th3)+d5.*cos(th3).*sin(th1).*sin(th4)-d6.*cos(th5).*sin(th1).*sin(th3)+d6.*cos(th1).*cos(th2).*cos(th3).*cos(th5)+a6.*cos(th3).*cos(th6).*sin(th1).*sin(th4)+d5.*cos(th1).*cos(th2).*sin(th3).*sin(th4)-d6.*cos(th3).*cos(th4).*sin(th1).*sin(th5)-a7.*cos(th5).*sin(th1).*sin(th3).*sin(th7)+d7.*cos(th3).*sin(th1).*sin(th4).*sin(th6)+d7.*cos(th6).*sin(th1).*sin(th3).*sin(th5)-a6.*sin(th1).*sin(th3).*sin(th5).*sin(th6)+a7.*cos(th1).*cos(th2).*cos(th3).*cos(th5).*sin(th7)-d7.*cos(th1).*cos(th2).*cos(th3).*cos(th6).*sin(th5)-d7.*cos(th3).*cos(th4).*cos(th5).*cos(th6).*sin(th1)+a6.*cos(th1).*cos(th2).*cos(th6).*sin(th3).*sin(th4)+a6.*cos(th1).*cos(th2).*cos(th3).*sin(th5).*sin(th6)+a6.*cos(th3).*cos(th4).*cos(th5).*sin(th1).*sin(th6)+a7.*cos(th3).*cos(th6).*cos(th7).*sin(th1).*sin(th4)-d6.*cos(th1).*cos(th2).*cos(th4).*sin(th3).*sin(th5)-a7.*cos(th3).*cos(th4).*sin(th1).*sin(th5).*sin(th7)+d7.*cos(th1).*cos(th2).*sin(th3).*sin(th4).*sin(th6)-a7.*cos(th7).*sin(th1).*sin(th3).*sin(th5).*sin(th6)-d7.*cos(th1).*cos(th2).*cos(th4).*cos(th5).*cos(th6).*sin(th3)+a6.*cos(th1).*cos(th2).*cos(th4).*cos(th5).*sin(th3).*sin(th6)+a7.*cos(th1).*cos(th2).*cos(th6).*cos(th7).*sin(th3).*sin(th4)+a7.*cos(th1).*cos(th2).*cos(th3).*cos(th7).*sin(th5).*sin(th6)+a7.*cos(th3).*cos(th4).*cos(th5).*cos(th7).*sin(th1).*sin(th6)-a7.*cos(th1).*cos(th2).*cos(th4).*sin(th3).*sin(th5).*sin(th7)+a7.*cos(th1).*cos(th2).*cos(th4).*cos(th5).*cos(th7).*sin(th3).*sin(th6),d4.*cos(th1).*sin(th3)+d4.*cos(th2).*cos(th3).*sin(th1)-d5.*cos(th1).*cos(th3).*sin(th4)+d6.*cos(th1).*cos(th5).*sin(th3)-a6.*cos(th1).*cos(th3).*cos(th6).*sin(th4)+d6.*cos(th2).*cos(th3).*cos(th5).*sin(th1)+d6.*cos(th1).*cos(th3).*cos(th4).*sin(th5)+a7.*cos(th1).*cos(th5).*sin(th3).*sin(th7)-d7.*cos(th1).*cos(th3).*sin(th4).*sin(th6)-d7.*cos(th1).*cos(th6).*sin(th3).*sin(th5)+a6.*cos(th1).*sin(th3).*sin(th5).*sin(th6)+d5.*cos(th2).*sin(th1).*sin(th3).*sin(th4)-a6.*cos(th1).*cos(th3).*cos(th4).*cos(th5).*sin(th6)-a7.*cos(th1).*cos(th3).*cos(th6).*cos(th7).*sin(th4)+a7.*cos(th2).*cos(th3).*cos(th5).*sin(th1).*sin(th7)+a7.*cos(th1).*cos(th3).*cos(th4).*sin(th5).*sin(th7)-d7.*cos(th2).*cos(th3).*cos(th6).*sin(th1).*sin(th5)+a6.*cos(th2).*cos(th6).*sin(th1).*sin(th3).*sin(th4)+a6.*cos(th2).*cos(th3).*sin(th1).*sin(th5).*sin(th6)+a7.*cos(th1).*cos(th7).*sin(th3).*sin(th5).*sin(th6)-d6.*cos(th2).*cos(th4).*sin(th1).*sin(th3).*sin(th5)+d7.*cos(th2).*sin(th1).*sin(th3).*sin(th4).*sin(th6)+d7.*cos(th1).*cos(th3).*cos(th4).*cos(th5).*cos(th6)-a7.*cos(th2).*cos(th4).*sin(th1).*sin(th3).*sin(th5).*sin(th7)-a7.*cos(th1).*cos(th3).*cos(th4).*cos(th5).*cos(th7).*sin(th6)-d7.*cos(th2).*cos(th4).*cos(th5).*cos(th6).*sin(th1).*sin(th3)+a6.*cos(th2).*cos(th4).*cos(th5).*sin(th1).*sin(th3).*sin(th6)+a7.*cos(th2).*cos(th6).*cos(th7).*sin(th1).*sin(th3).*sin(th4)+a7.*cos(th2).*cos(th3).*cos(th7).*sin(th1).*sin(th5).*sin(th6)+a7.*cos(th2).*cos(th4).*cos(th5).*cos(th7).*sin(th1).*sin(th3).*sin(th6),sin(th2).*(d4.*cos(th3)+d6.*cos(th3).*cos(th5)+d5.*sin(th3).*sin(th4)+a7.*cos(th3).*cos(th5).*sin(th7)-d7.*cos(th3).*cos(th6).*sin(th5)+a6.*cos(th6).*sin(th3).*sin(th4)+a6.*cos(th3).*sin(th5).*sin(th6)-d6.*cos(th4).*sin(th3).*sin(th5)+d7.*sin(th3).*sin(th4).*sin(th6)-d7.*cos(th4).*cos(th5).*cos(th6).*sin(th3)+a6.*cos(th4).*cos(th5).*sin(th3).*sin(th6)+a7.*cos(th6).*cos(th7).*sin(th3).*sin(th4)+a7.*cos(th3).*cos(th7).*sin(th5).*sin(th6)-a7.*cos(th4).*sin(th3).*sin(th5).*sin(th7)+a7.*cos(th4).*cos(th5).*cos(th7).*sin(th3).*sin(th6)),d5.*cos(th1).*sin(th2).*sin(th4)+d5.*cos(th4).*sin(th1).*sin(th3)-d5.*cos(th1).*cos(th2).*cos(th3).*cos(th4)+a6.*cos(th1).*cos(th6).*sin(th2).*sin(th4)+a6.*cos(th4).*cos(th6).*sin(th1).*sin(th3)-d6.*cos(th1).*cos(th4).*sin(th2).*sin(th5)+d7.*cos(th1).*sin(th2).*sin(th4).*sin(th6)+d7.*cos(th4).*sin(th1).*sin(th3).*sin(th6)+d6.*sin(th1).*sin(th3).*sin(th4).*sin(th5)-d7.*cos(th1).*cos(th2).*cos(th3).*cos(th4).*sin(th6)-d7.*cos(th1).*cos(th4).*cos(th5).*cos(th6).*sin(th2)+a6.*cos(th1).*cos(th4).*cos(th5).*sin(th2).*sin(th6)+a7.*cos(th1).*cos(th6).*cos(th7).*sin(th2).*sin(th4)+a7.*cos(th4).*cos(th6).*cos(th7).*sin(th1).*sin(th3)-d6.*cos(th1).*cos(th2).*cos(th3).*sin(th4).*sin(th5)-a7.*cos(th1).*cos(th4).*sin(th2).*sin(th5).*sin(th7)+d7.*cos(th5).*cos(th6).*sin(th1).*sin(th3).*sin(th4)-a6.*cos(th5).*sin(th1).*sin(th3).*sin(th4).*sin(th6)+a7.*sin(th1).*sin(th3).*sin(th4).*sin(th5).*sin(th7)-a6.*cos(th1).*cos(th2).*cos(th3).*cos(th4).*cos(th6)-a7.*cos(th5).*cos(th7).*sin(th1).*sin(th3).*sin(th4).*sin(th6)-a7.*cos(th1).*cos(th2).*cos(th3).*cos(th4).*cos(th6).*cos(th7)-d7.*cos(th1).*cos(th2).*cos(th3).*cos(th5).*cos(th6).*sin(th4)+a6.*cos(th1).*cos(th2).*cos(th3).*cos(th5).*sin(th4).*sin(th6)+a7.*cos(th1).*cos(th4).*cos(th5).*cos(th7).*sin(th2).*sin(th6)-a7.*cos(th1).*cos(th2).*cos(th3).*sin(th4).*sin(th5).*sin(th7)+a7.*cos(th1).*cos(th2).*cos(th3).*cos(th5).*cos(th7).*sin(th4).*sin(th6),...
+            -d5.*cos(th1).*cos(th4).*sin(th3)+d5.*sin(th1).*sin(th2).*sin(th4)-a6.*cos(th1).*cos(th4).*cos(th6).*sin(th3)-d5.*cos(th2).*cos(th3).*cos(th4).*sin(th1)-d7.*cos(th1).*cos(th4).*sin(th3).*sin(th6)+a6.*cos(th6).*sin(th1).*sin(th2).*sin(th4)-d6.*cos(th4).*sin(th1).*sin(th2).*sin(th5)-d6.*cos(th1).*sin(th3).*sin(th4).*sin(th5)+d7.*sin(th1).*sin(th2).*sin(th4).*sin(th6)-a6.*cos(th2).*cos(th3).*cos(th4).*cos(th6).*sin(th1)-a7.*cos(th1).*cos(th4).*cos(th6).*cos(th7).*sin(th3)-d7.*cos(th2).*cos(th3).*cos(th4).*sin(th1).*sin(th6)-d7.*cos(th4).*cos(th5).*cos(th6).*sin(th1).*sin(th2)-d7.*cos(th1).*cos(th5).*cos(th6).*sin(th3).*sin(th4)+a6.*cos(th4).*cos(th5).*sin(th1).*sin(th2).*sin(th6)+a6.*cos(th1).*cos(th5).*sin(th3).*sin(th4).*sin(th6)+a7.*cos(th6).*cos(th7).*sin(th1).*sin(th2).*sin(th4)-d6.*cos(th2).*cos(th3).*sin(th1).*sin(th4).*sin(th5)-a7.*cos(th4).*sin(th1).*sin(th2).*sin(th5).*sin(th7)-a7.*cos(th1).*sin(th3).*sin(th4).*sin(th5).*sin(th7)-a7.*cos(th2).*cos(th3).*sin(th1).*sin(th4).*sin(th5).*sin(th7)-a7.*cos(th2).*cos(th3).*cos(th4).*cos(th6).*cos(th7).*sin(th1)-d7.*cos(th2).*cos(th3).*cos(th5).*cos(th6).*sin(th1).*sin(th4)+a6.*cos(th2).*cos(th3).*cos(th5).*sin(th1).*sin(th4).*sin(th6)+a7.*cos(th4).*cos(th5).*cos(th7).*sin(th1).*sin(th2).*sin(th6)+a7.*cos(th1).*cos(th5).*cos(th7).*sin(th3).*sin(th4).*sin(th6)+a7.*cos(th2).*cos(th3).*cos(th5).*cos(th7).*sin(th1).*sin(th4).*sin(th6),...
+            -d5.*cos(th2).*sin(th4)-a6.*cos(th2).*cos(th6).*sin(th4)-d5.*cos(th3).*cos(th4).*sin(th2)+d6.*cos(th2).*cos(th4).*sin(th5)-d7.*cos(th2).*sin(th4).*sin(th6)+d7.*cos(th2).*cos(th4).*cos(th5).*cos(th6)-a6.*cos(th3).*cos(th4).*cos(th6).*sin(th2)-a6.*cos(th2).*cos(th4).*cos(th5).*sin(th6)-a7.*cos(th2).*cos(th6).*cos(th7).*sin(th4)+a7.*cos(th2).*cos(th4).*sin(th5).*sin(th7)-d7.*cos(th3).*cos(th4).*sin(th2).*sin(th6)-d6.*cos(th3).*sin(th2).*sin(th4).*sin(th5)-a7.*cos(th3).*cos(th4).*cos(th6).*cos(th7).*sin(th2)-a7.*cos(th2).*cos(th4).*cos(th5).*cos(th7).*sin(th6)-d7.*cos(th3).*cos(th5).*cos(th6).*sin(th2).*sin(th4)+a6.*cos(th3).*cos(th5).*sin(th2).*sin(th4).*sin(th6)-a7.*cos(th3).*sin(th2).*sin(th4).*sin(th5).*sin(th7)+a7.*cos(th3).*cos(th5).*cos(th7).*sin(th2).*sin(th4).*sin(th6),...
+            -d6.*cos(th3).*sin(th1).*sin(th5)-d7.*cos(th3).*cos(th5).*cos(th6).*sin(th1)+a6.*cos(th3).*cos(th5).*sin(th1).*sin(th6)-d6.*cos(th1).*cos(th2).*sin(th3).*sin(th5)-d6.*cos(th1).*cos(th5).*sin(th2).*sin(th4)-d6.*cos(th4).*cos(th5).*sin(th1).*sin(th3)-a7.*cos(th3).*sin(th1).*sin(th5).*sin(th7)-d7.*cos(th1).*cos(th2).*cos(th5).*cos(th6).*sin(th3)+a6.*cos(th1).*cos(th2).*cos(th5).*sin(th3).*sin(th6)+a7.*cos(th3).*cos(th5).*cos(th7).*sin(th1).*sin(th6)-a7.*cos(th1).*cos(th2).*sin(th3).*sin(th5).*sin(th7)-a7.*cos(th1).*cos(th5).*sin(th2).*sin(th4).*sin(th7)-a7.*cos(th4).*cos(th5).*sin(th1).*sin(th3).*sin(th7)+d7.*cos(th1).*cos(th6).*sin(th2).*sin(th4).*sin(th5)+d7.*cos(th4).*cos(th6).*sin(th1).*sin(th3).*sin(th5)-a6.*cos(th1).*sin(th2).*sin(th4).*sin(th5).*sin(th6)-a6.*cos(th4).*sin(th1).*sin(th3).*sin(th5).*sin(th6)+d6.*cos(th1).*cos(th2).*cos(th3).*cos(th4).*cos(th5)-a7.*cos(th1).*cos(th7).*sin(th2).*sin(th4).*sin(th5).*sin(th6)-a7.*cos(th4).*cos(th7).*sin(th1).*sin(th3).*sin(th5).*sin(th6)+a7.*cos(th1).*cos(th2).*cos(th3).*cos(th4).*cos(th5).*sin(th7)-d7.*cos(th1).*cos(th2).*cos(th3).*cos(th4).*cos(th6).*sin(th5)+a6.*cos(th1).*cos(th2).*cos(th3).*cos(th4).*sin(th5).*sin(th6)+a7.*cos(th1).*cos(th2).*cos(th5).*cos(th7).*sin(th3).*sin(th6)+a7.*cos(th1).*cos(th2).*cos(th3).*cos(th4).*cos(th7).*sin(th5).*sin(th6),d6.*cos(th1).*cos(th3).*sin(th5)+d7.*cos(th1).*cos(th3).*cos(th5).*cos(th6)-a6.*cos(th1).*cos(th3).*cos(th5).*sin(th6)+d6.*cos(th1).*cos(th4).*cos(th5).*sin(th3)+a7.*cos(th1).*cos(th3).*sin(th5).*sin(th7)-d6.*cos(th2).*sin(th1).*sin(th3).*sin(th5)-d6.*cos(th5).*sin(th1).*sin(th2).*sin(th4)-a7.*cos(th1).*cos(th3).*cos(th5).*cos(th7).*sin(th6)+d6.*cos(th2).*cos(th3).*cos(th4).*cos(th5).*sin(th1)+a7.*cos(th1).*cos(th4).*cos(th5).*sin(th3).*sin(th7)-d7.*cos(th2).*cos(th5).*cos(th6).*sin(th1).*sin(th3)-d7.*cos(th1).*cos(th4).*cos(th6).*sin(th3).*sin(th5)+a6.*cos(th2).*cos(th5).*sin(th1).*sin(th3).*sin(th6)+a6.*cos(th1).*cos(th4).*sin(th3).*sin(th5).*sin(th6)-a7.*cos(th2).*sin(th1).*sin(th3).*sin(th5).*sin(th7)-a7.*cos(th5).*sin(th1).*sin(th2).*sin(th4).*sin(th7)+d7.*cos(th6).*sin(th1).*sin(th2).*sin(th4).*sin(th5)-a6.*sin(th1).*sin(th2).*sin(th4).*sin(th5).*sin(th6)-a7.*cos(th7).*sin(th1).*sin(th2).*sin(th4).*sin(th5).*sin(th6)+a7.*cos(th2).*cos(th3).*cos(th4).*cos(th5).*sin(th1).*sin(th7)-d7.*cos(th2).*cos(th3).*cos(th4).*cos(th6).*sin(th1).*sin(th5)+a6.*cos(th2).*cos(th3).*cos(th4).*sin(th1).*sin(th5).*sin(th6)+a7.*cos(th2).*cos(th5).*cos(th7).*sin(th1).*sin(th3).*sin(th6)+a7.*cos(th1).*cos(th4).*cos(th7).*sin(th3).*sin(th5).*sin(th6)+a7.*cos(th2).*cos(th3).*cos(th4).*cos(th7).*sin(th1).*sin(th5).*sin(th6),d6.*cos(th2).*cos(th5).*sin(th4)-d6.*sin(th2).*sin(th3).*sin(th5)+d6.*cos(th3).*cos(th4).*cos(th5).*sin(th2)+a7.*cos(th2).*cos(th5).*sin(th4).*sin(th7)-d7.*cos(th5).*cos(th6).*sin(th2).*sin(th3)-d7.*cos(th2).*cos(th6).*sin(th4).*sin(th5)+a6.*cos(th5).*sin(th2).*sin(th3).*sin(th6)+a6.*cos(th2).*sin(th4).*sin(th5).*sin(th6)-a7.*sin(th2).*sin(th3).*sin(th5).*sin(th7)+a7.*cos(th3).*cos(th4).*cos(th5).*sin(th2).*sin(th7)-d7.*cos(th3).*cos(th4).*cos(th6).*sin(th2).*sin(th5)+a6.*cos(th3).*cos(th4).*sin(th2).*sin(th5).*sin(th6)+a7.*cos(th5).*cos(th7).*sin(th2).*sin(th3).*sin(th6)+a7.*cos(th2).*cos(th7).*sin(th4).*sin(th5).*sin(th6)+a7.*cos(th3).*cos(th4).*cos(th7).*sin(th2).*sin(th5).*sin(th6),...
+            -d7.*cos(th1).*cos(th4).*cos(th6).*sin(th2)+a6.*cos(th1).*cos(th4).*sin(th2).*sin(th6)+a6.*cos(th3).*cos(th6).*sin(th1).*sin(th5)+d7.*cos(th6).*sin(th1).*sin(th3).*sin(th4)+d7.*cos(th3).*sin(th1).*sin(th5).*sin(th6)-a6.*sin(th1).*sin(th3).*sin(th4).*sin(th6)-d7.*cos(th1).*cos(th2).*cos(th3).*cos(th6).*sin(th4)+a6.*cos(th1).*cos(th2).*cos(th3).*sin(th4).*sin(th6)+a6.*cos(th1).*cos(th2).*cos(th6).*sin(th3).*sin(th5)+a6.*cos(th1).*cos(th5).*cos(th6).*sin(th2).*sin(th4)+a6.*cos(th4).*cos(th5).*cos(th6).*sin(th1).*sin(th3)+a7.*cos(th1).*cos(th4).*cos(th7).*sin(th2).*sin(th6)+a7.*cos(th3).*cos(th6).*cos(th7).*sin(th1).*sin(th5)+d7.*cos(th1).*cos(th2).*sin(th3).*sin(th5).*sin(th6)+d7.*cos(th1).*cos(th5).*sin(th2).*sin(th4).*sin(th6)+d7.*cos(th4).*cos(th5).*sin(th1).*sin(th3).*sin(th6)-a7.*cos(th7).*sin(th1).*sin(th3).*sin(th4).*sin(th6)-a6.*cos(th1).*cos(th2).*cos(th3).*cos(th4).*cos(th5).*cos(th6)-d7.*cos(th1).*cos(th2).*cos(th3).*cos(th4).*cos(th5).*sin(th6)+a7.*cos(th1).*cos(th2).*cos(th3).*cos(th7).*sin(th4).*sin(th6)+a7.*cos(th1).*cos(th2).*cos(th6).*cos(th7).*sin(th3).*sin(th5)+a7.*cos(th1).*cos(th5).*cos(th6).*cos(th7).*sin(th2).*sin(th4)+a7.*cos(th4).*cos(th5).*cos(th6).*cos(th7).*sin(th1).*sin(th3)-a7.*cos(th1).*cos(th2).*cos(th3).*cos(th4).*cos(th5).*cos(th6).*cos(th7),...
+            -a6.*cos(th1).*cos(th3).*cos(th6).*sin(th5)-d7.*cos(th4).*cos(th6).*sin(th1).*sin(th2)-d7.*cos(th1).*cos(th6).*sin(th3).*sin(th4)-d7.*cos(th1).*cos(th3).*sin(th5).*sin(th6)+a6.*cos(th4).*sin(th1).*sin(th2).*sin(th6)+a6.*cos(th1).*sin(th3).*sin(th4).*sin(th6)-a6.*cos(th1).*cos(th4).*cos(th5).*cos(th6).*sin(th3)-a7.*cos(th1).*cos(th3).*cos(th6).*cos(th7).*sin(th5)-d7.*cos(th2).*cos(th3).*cos(th6).*sin(th1).*sin(th4)-d7.*cos(th1).*cos(th4).*cos(th5).*sin(th3).*sin(th6)+a6.*cos(th2).*cos(th3).*sin(th1).*sin(th4).*sin(th6)+a6.*cos(th2).*cos(th6).*sin(th1).*sin(th3).*sin(th5)+a6.*cos(th5).*cos(th6).*sin(th1).*sin(th2).*sin(th4)+a7.*cos(th4).*cos(th7).*sin(th1).*sin(th2).*sin(th6)+a7.*cos(th1).*cos(th7).*sin(th3).*sin(th4).*sin(th6)+d7.*cos(th2).*sin(th1).*sin(th3).*sin(th5).*sin(th6)+d7.*cos(th5).*sin(th1).*sin(th2).*sin(th4).*sin(th6)-a6.*cos(th2).*cos(th3).*cos(th4).*cos(th5).*cos(th6).*sin(th1)-a7.*cos(th1).*cos(th4).*cos(th5).*cos(th6).*cos(th7).*sin(th3)-d7.*cos(th2).*cos(th3).*cos(th4).*cos(th5).*sin(th1).*sin(th6)+a7.*cos(th2).*cos(th3).*cos(th7).*sin(th1).*sin(th4).*sin(th6)+a7.*cos(th2).*cos(th6).*cos(th7).*sin(th1).*sin(th3).*sin(th5)+a7.*cos(th5).*cos(th6).*cos(th7).*sin(th1).*sin(th2).*sin(th4)-a7.*cos(th2).*cos(th3).*cos(th4).*cos(th5).*cos(th6).*cos(th7).*sin(th1),d7.*cos(th2).*cos(th4).*cos(th6)-a6.*cos(th2).*cos(th4).*sin(th6)-a6.*cos(th2).*cos(th5).*cos(th6).*sin(th4)-a7.*cos(th2).*cos(th4).*cos(th7).*sin(th6)-d7.*cos(th3).*cos(th6).*sin(th2).*sin(th4)-d7.*cos(th2).*cos(th5).*sin(th4).*sin(th6)+a6.*cos(th3).*sin(th2).*sin(th4).*sin(th6)+a6.*cos(th6).*sin(th2).*sin(th3).*sin(th5)+d7.*sin(th2).*sin(th3).*sin(th5).*sin(th6)-a6.*cos(th3).*cos(th4).*cos(th5).*cos(th6).*sin(th2)-a7.*cos(th2).*cos(th5).*cos(th6).*cos(th7).*sin(th4)-d7.*cos(th3).*cos(th4).*cos(th5).*sin(th2).*sin(th6)+a7.*cos(th3).*cos(th7).*sin(th2).*sin(th4).*sin(th6)+a7.*cos(th6).*cos(th7).*sin(th2).*sin(th3).*sin(th5)-a7.*cos(th3).*cos(th4).*cos(th5).*cos(th6).*cos(th7).*sin(th2),a7.*cos(th3).*cos(th5).*cos(th7).*sin(th1)+a7.*cos(th1).*cos(th2).*cos(th5).*cos(th7).*sin(th3)+a7.*cos(th1).*cos(th4).*cos(th6).*sin(th2).*sin(th7)-a7.*cos(th1).*cos(th7).*sin(th2).*sin(th4).*sin(th5)-a7.*cos(th4).*cos(th7).*sin(th1).*sin(th3).*sin(th5)-a7.*cos(th6).*sin(th1).*sin(th3).*sin(th4).*sin(th7)-a7.*cos(th3).*sin(th1).*sin(th5).*sin(th6).*sin(th7)-a7.*cos(th1).*cos(th2).*sin(th3).*sin(th5).*sin(th6).*sin(th7)-a7.*cos(th1).*cos(th5).*sin(th2).*sin(th4).*sin(th6).*sin(th7)-a7.*cos(th4).*cos(th5).*sin(th1).*sin(th3).*sin(th6).*sin(th7)+a7.*cos(th1).*cos(th2).*cos(th3).*cos(th4).*cos(th7).*sin(th5)+a7.*cos(th1).*cos(th2).*cos(th3).*cos(th6).*sin(th4).*sin(th7)+a7.*cos(th1).*cos(th2).*cos(th3).*cos(th4).*cos(th5).*sin(th6).*sin(th7),...
+            -a7.*cos(th1).*cos(th3).*cos(th5).*cos(th7)+a7.*cos(th2).*cos(th5).*cos(th7).*sin(th1).*sin(th3)+a7.*cos(th1).*cos(th4).*cos(th7).*sin(th3).*sin(th5)+a7.*cos(th4).*cos(th6).*sin(th1).*sin(th2).*sin(th7)+a7.*cos(th1).*cos(th6).*sin(th3).*sin(th4).*sin(th7)+a7.*cos(th1).*cos(th3).*sin(th5).*sin(th6).*sin(th7)-a7.*cos(th7).*sin(th1).*sin(th2).*sin(th4).*sin(th5)-a7.*cos(th2).*sin(th1).*sin(th3).*sin(th5).*sin(th6).*sin(th7)-a7.*cos(th5).*sin(th1).*sin(th2).*sin(th4).*sin(th6).*sin(th7)+a7.*cos(th2).*cos(th3).*cos(th4).*cos(th7).*sin(th1).*sin(th5)+a7.*cos(th2).*cos(th3).*cos(th6).*sin(th1).*sin(th4).*sin(th7)+a7.*cos(th1).*cos(th4).*cos(th5).*sin(th3).*sin(th6).*sin(th7)+a7.*cos(th2).*cos(th3).*cos(th4).*cos(th5).*sin(th1).*sin(th6).*sin(th7),...
+            -a7.*cos(th2).*cos(th4).*cos(th6).*sin(th7)+a7.*cos(th5).*cos(th7).*sin(th2).*sin(th3)+a7.*cos(th2).*cos(th7).*sin(th4).*sin(th5)+a7.*cos(th3).*cos(th4).*cos(th7).*sin(th2).*sin(th5)+a7.*cos(th3).*cos(th6).*sin(th2).*sin(th4).*sin(th7)+a7.*cos(th2).*cos(th5).*sin(th4).*sin(th6).*sin(th7)-a7.*sin(th2).*sin(th3).*sin(th5).*sin(th6).*sin(th7)+a7.*cos(th3).*cos(th4).*cos(th5).*sin(th2).*sin(th6).*sin(th7)],...
+            [3,7]); 
+        symJacobianWrist = @(d2,d3,d4,d5,th1,th2,th3,th4)reshape([d4.*(cos(th1).*cos(th3)-cos(th2).*sin(th1).*sin(th3))+d2.*cos(th1)+d5.*(sin(th4).*(cos(th1).*sin(th3)+cos(th2).*cos(th3).*sin(th1))+cos(th4).*sin(th1).*sin(th2))+d3.*sin(th1).*sin(th2),d4.*(cos(th3).*sin(th1)+cos(th1).*cos(th2).*sin(th3))+d2.*sin(th1)+d5.*(sin(th4).*(sin(th1).*sin(th3)-cos(th1).*cos(th2).*cos(th3))-cos(th1).*cos(th4).*sin(th2))-d3.*cos(th1).*sin(th2),0.0,-cos(th1).*(d5.*(cos(th2).*cos(th4)-cos(th3).*sin(th2).*sin(th4))+d3.*cos(th2)+d4.*sin(th2).*sin(th3)),...
+            -sin(th1).*(d5.*(cos(th2).*cos(th4)-cos(th3).*sin(th2).*sin(th4))+d3.*cos(th2)+d4.*sin(th2).*sin(th3)),...
+            -d3.*sin(th2)+d4.*cos(th2).*sin(th3)-d5.*cos(th4).*sin(th2)-d5.*cos(th2).*cos(th3).*sin(th4),...
+            -d4.*sin(th1).*sin(th3)+d4.*cos(th1).*cos(th2).*cos(th3)+d5.*cos(th3).*sin(th1).*sin(th4)+d5.*cos(th1).*cos(th2).*sin(th3).*sin(th4),d4.*cos(th1).*sin(th3)+d4.*cos(th2).*cos(th3).*sin(th1)-d5.*cos(th1).*cos(th3).*sin(th4)+d5.*cos(th2).*sin(th1).*sin(th3).*sin(th4),sin(th2).*(d4.*cos(th3)+d5.*sin(th3).*sin(th4)),d5.*cos(th1).*sin(th2).*sin(th4)+d5.*cos(th4).*sin(th1).*sin(th3)-d5.*cos(th1).*cos(th2).*cos(th3).*cos(th4),...
+            -d5.*cos(th1).*cos(th4).*sin(th3)+d5.*sin(th1).*sin(th2).*sin(th4)-d5.*cos(th2).*cos(th3).*cos(th4).*sin(th1),...
+            -d5.*cos(th2).*sin(th4)-d5.*cos(th3).*cos(th4).*sin(th2),0.0,0.0,0.0],...
+            [3,5]);
+        
+        symT_0_n;
+    end
+    properties (Access = private)
+        hCyton;  % Handle to Parent Cyton Robot
+        a_;
+        d_;
+    end
+    properties (Constant = true)
+        JointPositionMode = 1;
+        EndpointPositionMode = 2;
+    end
+    methods
+        function obj = CytonControls(hCyton)
+            obj.hCyton = hCyton;
+        end
+        function Value = get.DH_Params(obj)
+            if isempty(obj.a_) || isempty(obj.d_)
+                % Compute the first time
+                [T, a d] = getDHParams(); %#ok<ASGLU>
+                obj.a_ = a;
+                obj.d_ = d;
+            end
+            Value.a = obj.a_;
+            Value.d = obj.d_;
+        end
+        function [A T_0_n] = getJointFrames(obj)
+            % This function contains all the kinematics of the Cyton I
+            import Presentation.CytonI.*
+            
+            %q = obj.JointParameters;
+            q = obj.hCyton.hPlant.CurrentPosition;
+            
+            % orients local coordinate system to D-H convention
+            [T_0_n a d]= CytonControls.getDHParams();
+            
+            % law of cosines
+            % LOC = @(r,l,theta) r*cos(theta) - sqrt(l.^2 - (r.^2 * sin(theta) .^2));
+            A(:,:,1) = Robot.DH_transformation(0,pi/2,d(1),q(1));
+            A(:,:,2) = Robot.DH_transformation(0,-pi/2,d(2),q(2));
+            A(:,:,3) = Robot.DH_transformation(0,pi/2,d(3),q(3));
+            A(:,:,4) = Robot.DH_transformation(0,-pi/2,d(4),q(4));
+            A(:,:,5) = Robot.DH_transformation(0,pi/2,d(5),q(5));
+            A(:,:,6) = Robot.DH_transformation(a(6),pi/2,d(6),q(6)+pi/2);
+            A(:,:,7) = Robot.DH_transformation(a(7),0,d(7),q(7));
+            
+            %d8 = sin(q(8)) * d(8);
+            d8 = -20*q(8);
+            d9 = -d8;
+            A8 = Robot.DH_transformation(a(8),0,d8,0);
+            %A8(3,4) = -20*q(8);
+            A(:,:,8) = A8;
+            A(:,:,9) = Robot.DH_transformation(a(9),0,d9,0);
+        end
+        function T_0_N = getT_0_N(obj,N)
+            % Get Joint transformations relative to base frame
+            % T_0_n = A_0_1*A_1_2*...*A_n-1_n
+            
+            A = obj.getJointFrames();
+            
+            if nargin < 2
+                % Get product of all frames
+                N = size(A,3);
+            end
+            
+            % Transform to end effector
+            T_0_N = eye(4);
+            for i = 1:N
+                T_0_N = T_0_N * A(:,:,i);
+            end
+        end
+        function setEndEffectorPose(obj,T_Target)
+            if nargin < 2
+                T_Target = makehgtform('translate',[50 150 300],...
+                    'xrotate',0.1,'yrotate',0.1,'zrotate',0.3);
+            end
+            pTarget = T_Target(1:3,4);
+            
+            obj.hDisplay.setTarget(T_Target);
+
+
+            [T_0_n a d] = CytonControls.getDHParams();
+            [pError phi] = deal(Inf);
+            
+            tJacobian = tic;
+            
+            while (norm(pError) > 1) || (phi > 1)
+                
+                q = obj.hPlant.CurrentPosition;
+                %J_ = obj.hControls.symJacobian(a(6),a(7),d(2),d(3),d(4),d(5),d(6),d(7),q(1),q(2),q(3),q(4),q(5),q(6),q(7));
+                J_ = symJacobian(a(6),d(2),d(3),d(4),d(5),d(6),q(1),q(2),q(3),q(4),q(5),q(6));
+                
+                N = 7;
+                T = obj.hControls.getT_0_N(N);
+                
+                % Compute position error
+                pEndEffector = T(1:3,4);
+                pError = pTarget - pEndEffector;
+                
+                % Compute orientation error
+                T_error = pinv(T)*T_Target;
+                [n,point,phi,t] = f_screw(T_error,1);
+                
+                % Compute velocity moves based on error
+                P = 0.1;
+                P2 = 0.005;
+                
+                vMove = pError * P;
+                wMove = phi*n*P2;
+                
+                invJ_ = pinv(J_);
+                p = norm(pError)/5;
+
+                invJ_(1:4,4:6) = invJ_(1:4,4:6)/max(1,p);
+                invJ_(5:7,1:3) = invJ_(5:7,1:3)/max(1,p);
+                
+                % disp(invJ_)
+                
+                q_dot = invJ_ * [vMove; wMove];
+                
+                % Apply joint speed limits
+                q_dot = min(abs(q_dot),1) .* sign(q_dot);
+                
+                % Apply Joint limits
+                q(2) = max(min(q(2),pi/2),-pi/2);
+                q(6) = max(min(q(6),pi/2),-pi/2);
+                q(7) = max(min(q(6),pi/2),-pi/2);
+                
+                q(1:7) = q(1:7) + q_dot;
+                
+                obj.setJointParameters(q);
+                obj.hDisplay.updateFigure();
+                drawnow
+            end
+            disp('setEndEffectorPose Complete');
+            toc(tJacobian);
+        end
+        
+        function goto(obj,pos)
+            %a.goto([-70 200 310])
+            
+            % Jacobian endpoint solution
+            pTarget = pos(:);
+            
+            % get DH params:
+            [T_0_n a d] = CytonControls.getDHParams();
+            
+            errorMag = 10;
+            dt = 0.05;
+            TIMEOUT = 5;
+            isTimeout = false;
+            isMoving = true;
+            t0 = clock;
+            while errorMag > 1 && ~isTimeout && isMoving
+                %%
+                q = obj.hPlant.CurrentPosition;
+                
+                J = obj.hControls.symJacobian(a(6),a(7),d(2),d(3),d(4),d(5),d(6),d(7),q(1),q(2),q(3),q(4),q(5),q(6),q(7));
+                %J = obj.hControls.symJacobianWrist(d(2),d(3),d(4),d(5),q(1),q(2),q(3),q(4));
+                
+                N = 7;
+                T_0_N = obj.hControls.getT_0_N(N);
+                pEE = T_0_N(1:3,4);
+                pError = pTarget - pEE;
+                
+                errorMag = norm(pError);
+                
+                P = 10; %GAIN
+                vMove = pError * P;
+                
+                q_dot = pinv(J) * vMove;
+                
+                % Apply joint speed limits
+                %q_dot = min(abs(q_dot),1) .* sign(q_dot);
+                if any(q_dot > 1)
+                    q_dot = q_dot./max(abs(q_dot));
+                end
+                
+                q_dot = min(abs(q_dot),1) .* sign(q_dot);
+                
+                isMoving = any(abs(q_dot) > 0.1) || ...
+                    any(~obj.hPlant.isMoveComplete);
+                %~all(abs(q_dot) > 0.1) || ~all(obj.hPlant.isMoveComplete);
+                
+                
+                % Apply Joint limits
+                q(1) = max(min(q(1),7*pi/8),-7*pi/8);
+                q(2) = max(min(q(2),pi/2),-pi/2);
+                q(4) = max(min(q(4),pi/2),-pi/2);
+                q(6) = max(min(q(6),pi/3),-pi/3);
+                
+                q(1:N) = q(1:N) + (q_dot*dt);
+                q_dot';
+                obj.setJointParameters(q);
+                
+                drawnow
+                
+                isTimeout = (etime(clock,t0) > TIMEOUT);
+            end
+            
+            if isTimeout
+                fprintf('Timed Out.  Error is: %6.2f\n',errorMag);
+            else
+                fprintf('Move Complete.  Error is: %6.2f\n',errorMag);
+            end
+            
+        end
+
+    end
+    methods (Static = true)
+        function [T_0_n a d] = getDHParams()
+            % This function contains all the kinematics of the Cyton I with respect to
+            % the global coordinate system
+            
+            nSegments = 10;
+            
+            % orients local coordinate system to D-H convention
+            T_0_n = repmat(eye(4),[1 1 nSegments]);
+            
+            % these are rotation matrices to align global coordinate system to segment
+            % local CS
+            R1 = [0  1 0; 0 0 1; 1 0 0];
+            R2 = [0 -1 0; 1 0 0; 0 0 1];
+            R3 = [0 0 -1; 0 1 0; 1 0 0];
+            
+            % These T_0_n- matrices give the absolute transform of the robot
+            % joints frames with respect to the GCS (in mm)
+            % This is analogous to starting with the DH "A-matrices" and
+            % then multiplying A_n-1*A_n to give the T matrices T_0_n
+            
+            % The values here were derived by manually reverse engineering
+            % the CytonI CAD Data
+            
+            T_0_n(:,:,1) = [R1 [-14.19; 49.46; -0.41]; 0 0 0 1];
+            T_0_n(:,:,2) = [R3 [-14.19; 87.39; -0.41]; 0 0 0 1];
+            T_0_n(:,:,3) = [R1 [-9.57;  87.39; -0.41]; 0 0 0 1];
+            T_0_n(:,:,4) = [R3 [-9.57; 232.39; -0.41]; 0 0 0 1];
+            T_0_n(:,:,5) = [R1 [-20.57; 232.39; -0.41]; 0 0 0 1];
+            T_0_n(:,:,6) = [R3 [-20.57; 407.39; -0.41]; 0 0 0 1];
+            T_0_n(:,:,7) = [R2 [-27.97; 475.09; -0.41]; 0 0 0 1];
+            T_0_n(:,:,8) = [R2 [-28.30; 528.24; -8.06]; 0 0 0 1];
+            T_0_n(:,:,9) = [R2 [-28.12; 536.24; -26.19]; 0 0 0 1];
+            T_0_n(:,:,10) = [R2 [-28.12; 536.24; 9.06]; 0 0 0 1];
+            
+            
+            % get DH params:
+            T_1_2 = pinv(T_0_n(:,:,1))*T_0_n(:,:,2);
+            T_2_3 = pinv(T_0_n(:,:,2))*T_0_n(:,:,3);
+            T_3_4 = pinv(T_0_n(:,:,3))*T_0_n(:,:,4);
+            T_4_5 = pinv(T_0_n(:,:,4))*T_0_n(:,:,5);
+            T_5_6 = pinv(T_0_n(:,:,5))*T_0_n(:,:,6);
+            T_6_7 = pinv(T_0_n(:,:,6))*T_0_n(:,:,7);
+            T_7_8 = pinv(T_0_n(:,:,7))*T_0_n(:,:,8);
+            % Note both grippers w.r.t Frame 8
+            T_8_9 = pinv(T_0_n(:,:,8))*T_0_n(:,:,9);
+            T_8_10 = pinv(T_0_n(:,:,8))*T_0_n(:,:,10);
+            
+            [a d] = deal(zeros(9,1));
+            
+            d(1) = T_1_2(3,4);
+            d(2) = T_2_3(3,4);
+            d(3) = T_3_4(3,4);
+            d(4) = T_4_5(3,4);
+            d(5) = T_5_6(3,4);
+            d(6) = T_6_7(3,4);
+            d(7) = T_7_8(3,4);
+            
+            a(6) = T_6_7(2,4);
+            a(7) = T_7_8(1,4);
+            a(8) = T_8_9(1,4);
+            a(9) = T_8_10(1,4);
+        end
+        function pElbow = solveElbowPositions(pWrist)
+            % Given a wrist position, this is acheivable via a circular
+            % locus of elbow positions
+            
+            [T a d] = CytonControls.getDHParams();
+
+            D1 = sqrt(d(2)^2 + d(3)^2);  % Effective length of the 'humerus'
+            D2 = sqrt(d(4)^2 + d(5)^2);  % Effective length of the 'forearm'
+
+            pShoulder = [0 0 d(1)]';
+            
+            [x n_hat a] = Utils.sphereIntersect(pShoulder,pWrist(:),D1,D2);
+            pElbow = Utils.disc(x,n_hat,a);
+            
+        end
+        function qAll = solveWristEndpoint(pWrist)
+            
+            pWrist = pWrist(:); % ensure column vector
+            
+            [T a d] = CytonControls.getDHParams();
+            pDisc = CytonControls.solveElbowPositions(pWrist);
+            
+            qAll = zeros(4,length(pDisc));
+            isLimit = zeros(1,length(pDisc));
+            
+            
+            T_0_2_f = @(d1,d2,th1,th2)reshape([cos(th1).*cos(th2),cos(th2).*sin(th1),...
+                sin(th2),0.0,-sin(th1),cos(th1),0.0,0.0,-cos(th1).*sin(th2),...
+                -sin(th1).*sin(th2),cos(th2),0.0,d2.*sin(th1),-d2.*cos(th1),d1,1.0],[4,4]);
+            
+            for i = 1:length(pDisc)
+                pElbow = pDisc(:,i);
+                
+                y = (pElbow(3) - d(1)) ./ d(3);
+                y = max(min(y,1),-1);
+                
+                if abs(y) == 1
+                    isLimit(i) = 1;
+                    %warning('Joint 2 is at limit');
+                end
+                %q(2) = acos( y );
+                
+                th2_p = +atan2(sqrt(1-y.^2),y);
+                th2_n = -atan2(sqrt(1-y.^2),y);
+                % TODO Choose Solutions
+                
+                q(2) = Utils.wrapToPi(th2_n);
+                
+                r = sqrt(d(2)^2 + (sin(q(2))*d(3)) ^2); %exact
+                q(1) = atan2( pElbow(2),pElbow(1) ) - atan2(-d(2),-sqrt(r^2 - d(2)^2)); %exact
+
+                q(1) = Utils.wrapToPi(q(1));
+                
+                % End closed form solution for elbow position
+                
+                % Begin closed form solution of elbow to wrist
+                T_0_2 = T_0_2_f(d(1),d(2),q(1),q(2));
+                pWrist_2 = pinv(T_0_2)*[pWrist; 1];
+                
+                h = (d(3) - pWrist_2(3)) ./ d(5);
+                h = max(min(h,1),-1);
+                if abs(h) == 1
+                    isLimit(i) = 1;
+                    %warning('Joint 4 is at limit');
+                end
+                %q(4) =  asin( h );
+                th4_p = atan2(h,+sqrt(1-h.^2));
+                th4_n = atan2(h,-sqrt(1-h.^2));
+                
+                q(4) = Utils.wrapToPi(th4_p + pi/2);
+                
+                r = sqrt(d(4)^2 + (sin(q(4))*d(5)) ^2);
+                q(3) = -atan2( pWrist_2(2), -pWrist_2(1) ) - ...
+                    atan2(d(4),sqrt(r^2 - d(4)^2));
+                q(3) = Utils.wrapToPi(q(3));
+                
+                qAll(:,i) = q;
+            end
+        end
+        
+        function debugKinematics
+            % For debug purposes, if you plot all these transformations, it
+            % will show the robot in a 'home' position.
+            %%
+            patchData = CytonDisplay.loadPatchData();
+            T_0_n = CytonControls.getDHParams();
+            clf
+            axis equal
+            rotate3d on
+            N = 10;
+            for i = 1:N
+                Utils.plot_triad(T_0_n(:,:,i),50);
+            end
+            %%
+            for i = 1:N
+                hT(i) = hgtransform();
+                patch(patchData(i),'FaceColor','b','FaceAlpha',0.1,'EdgeColor','none','Parent',hT(i));
+            end
+            %%
+            for i = 1:N
+                set(hT(i),'Matrix',T_0_n(:,:,i))
+            end
+            %%
+            for i = 1:N
+                set(hT(i),'Matrix',eye(4))
+            end
+        end
+        function symJacobian = computeJacobian()
+            % Ai = DH(linkLength,linkTwist,linkOffset,jointAngle); ref Eq. 3.10
+            DH = @(linkLength,linkTwist,linkOffset,jointAngle)...
+                [
+                cos(jointAngle) -sin(jointAngle)*cos(linkTwist)  sin(jointAngle)*sin(linkTwist)   linkLength*cos(jointAngle);
+                sin(jointAngle)  cos(jointAngle)*cos(linkTwist) -cos(jointAngle)*sin(linkTwist)   linkLength*sin(jointAngle);
+                0        sin(linkTwist)          cos(linkTwist)           linkOffset;
+                0        0                0                 1;];
+            
+            % DH for Elbow Manipulator robot
+            piOver2 = sym('pi/2');
+            A1 = DH(0,piOver2,sym('d1'),sym('th1'));
+            A2 = DH(0,-piOver2,sym('d2'),sym('th2'));
+            A3 = DH(0,piOver2,sym('d3'),sym('th3'));
+            A4 = DH(0,-piOver2,sym('d4'),sym('th4'));
+            A5 = DH(0,piOver2,sym('d5'),sym('th5'));
+            A6 = DH(sym('a6'),piOver2,sym('d6'),sym('th6')+piOver2);
+            A7 = DH(sym('a7'),0,sym('d7'),sym('th7'));
+            
+            T_0_1 = A1;
+            T_0_2 = A1*A2;
+            T_0_3 = A1*A2*A3;
+            T_0_4 = A1*A2*A3*A4;
+            T_0_5 = A1*A2*A3*A4*A5;
+            T_0_6 = A1*A2*A3*A4*A5*A6;
+            T_0_7 = A1*A2*A3*A4*A5*A6*A7;
+            
+            % Define components for Jacobian
+            z0 = [0 0 1]';
+            z1 = T_0_1(1:3,3);
+            z2 = T_0_2(1:3,3);
+            z3 = T_0_3(1:3,3);
+            z4 = T_0_4(1:3,3);
+            z5 = T_0_5(1:3,3);
+            z6 = T_0_6(1:3,3);
+            z7 = T_0_7(1:3,3);
+            
+            o0 = sym('[0;0;0]');
+            o1 = simplify(T_0_1(1:3,4,1));
+            o2 = simplify(T_0_2(1:3,4,1));
+            o3 = simplify(T_0_3(1:3,4,1));
+            o4 = simplify(T_0_4(1:3,4,1));
+            o5 = simplify(T_0_5(1:3,4,1));
+            o6 = simplify(T_0_6(1:3,4,1));
+            o7 = simplify(T_0_7(1:3,4,1));
+            
+            % Per Eq. 4.64, J is the Geometric Jacobian
+            oc = o5;
+            J1 = simplify(cross(z0,(oc-o0)));
+            J2 = simplify(cross(z1,(oc-o1)));
+            J3 = simplify(cross(z2,(oc-o2)));
+            J4 = simplify(cross(z3,(oc-o3)));
+            J5 = simplify(cross(z4,(oc-o4)));
+            %J6 = simplify(cross(z5,(oc-o5)));
+            %J7 = simplify(cross(z6,(oc-o6)));
+            
+            %J11 = [J1 J2 J3 J4 J5 J6 J7];
+            J11 = [J1 J2 J3 J4 J5];
+            
+            % J = [J11; z0 z1 z2];
+            
+            % matlabFunction converts symbolic functions to anonymous (faster)
+            % J_f = matlabFunction(J);
+            symJacobian = matlabFunction(J11);
+            
+            % Jinv = inv(J11);
+            % Jinv_f = matlabFunction(Jinv);
+            
+            disp('Done');
+            
+        end
+    end
+end
+
