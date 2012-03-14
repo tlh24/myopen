@@ -9,17 +9,21 @@ classdef MplScenarioMud < Scenarios.ScenarioBase
         hSink = [];
         hNfu = [];
         
+        enableNfu = 0;
     end
     methods
         function obj = MplScenarioMud
-             % Uncomment below to enable NFU
-             %obj.hNfu = MPL.NfuUdp.getInstance;
-             %obj.hNfu.initialize();
+            % Extend Scenario model to include communications with the 
+            % limb system via vulcanX or the NFU
             
-            obj.hSink = MPL.VulcanXSink('127.0.0.1',9035);
-            obj.hMud = MPL.MudCommandEncoder();
-            
-            obj.GraspId
+            if obj.enableNfu
+                obj.hNfu = MPL.NfuUdp.getInstance;
+                obj.hNfu.initialize();
+            else
+                obj.hSink = MPL.VulcanXSink('127.0.0.1',9035);
+                obj.hMud = MPL.MudCommandEncoder();
+            end
+            %obj.GraspId
         end
         function update(obj)
             update@Scenarios.ScenarioBase(obj); % Call superclass update method
@@ -27,11 +31,13 @@ classdef MplScenarioMud < Scenarios.ScenarioBase
             % TODO: Hand and wrist only implemented, not upper arm
             w = zeros(1,3);
             w(1) = -obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) * pi/180;
-            w(2) = obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) * pi/180;
-            w(3) = obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) * pi/180;
+            w(2) = +obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) * pi/180;
+            w(3) = +obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) * pi/180;
             if isempty(obj.GraspId)
                 graspId = 0;
             else
+                % Map the minivie grasp enumeration to the ROC ids on the
+                % Limb
                 switch char(obj.GraspId)
                     case 'Tip'
                         % graspId = 1;  % Pinch (British)
@@ -57,10 +63,12 @@ classdef MplScenarioMud < Scenarios.ScenarioBase
                 %graspId = find(obj.GraspId == enumeration('Controls.GraspTypes'))-1;
             end
             msg = obj.hMud.ArmPosVelHandRocGrasps([zeros(1,4) w],zeros(1,7),1,graspId,obj.GraspValue,1);
-
+            
             if isempty(obj.hNfu)
+                % Send to vulcanX
                 obj.hSink.putbytes(msg);
             else
+                % Send to NFU
                 obj.hNfu.send_msg(obj.hNfu.TcpConnection,char(59,msg));
             end
         end

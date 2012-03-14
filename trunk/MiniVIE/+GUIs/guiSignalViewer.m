@@ -124,7 +124,7 @@ classdef guiSignalViewer < Common.MiniVieObj
             
         end
         function update(obj)
-            
+            try
             switch obj.ModeSelect
                 case GUIs.guiSignalViewerState.Features
                     setAxesVisible(obj.hg.Axes(1:4),'on');
@@ -160,7 +160,15 @@ classdef guiSignalViewer < Common.MiniVieObj
                     disp('Invalid Mode Selection');
             end
             drawnow
-            
+            catch ME
+                disp('---------ERROR--------');
+                disp(ME.message);
+                for i = 1:length(ME.stack)
+                    disp(ME.stack(i));
+                end
+                keyboard
+            end
+                
         end
         
         function updateFrequencyDomain(obj)
@@ -208,8 +216,8 @@ classdef guiSignalViewer < Common.MiniVieObj
             set(obj.hg.PlotLines{1}(:),'YData',[],'XData',[]);
             offset = zeros(1,size(channelData,2));
             offset(obj.SelectedChannels) = 1.5 * ((1:length(obj.SelectedChannels)) -1);
-            for i = obj.SelectedChannels
-                set(obj.hg.PlotLines{1}(i),'YData',channelData(:,i)+offset(i),'XData',1:size(channelData,1));
+            for iChannel = obj.SelectedChannels
+                set(obj.hg.PlotLines{1}(iChannel),'YData',channelData(:,iChannel)+offset(iChannel),'XData',1:size(channelData,1));
             end
             
         end

@@ -1,6 +1,11 @@
 classdef ScenarioBase < Common.MiniVieObj
     %SCENARIOBASE Base class for scenario objects
-    %   Detailed explanation goes here
+    %   This class is basically a plant model that has a built in timer.
+    %   When executed, it will get data from the signal source, classify it
+    %   to extract intent, map the intent to the appropriate control
+    %   variables (and apply rate limiting and range limiting) and then
+    %   send the data to the appropriate sink
+    %
     % Created: 1/17/2012 Armiger
     
     properties
@@ -12,6 +17,7 @@ classdef ScenarioBase < Common.MiniVieObj
         % For Grasp Based control
         GraspValue = 0;
         GraspId;
+        GraspVelocity = 0;
         
         % For individual finger control
         AutoOpenSpeed = 5;
@@ -20,6 +26,7 @@ classdef ScenarioBase < Common.MiniVieObj
         FingerAngles = [45 45 45 45]; %degrees
         
         JointAnglesDegrees = zeros(size(action_bus_definition));
+        JointVelocity = zeros(size(action_bus_definition));
         
     end
     
@@ -30,6 +37,7 @@ classdef ScenarioBase < Common.MiniVieObj
             
             obj.Timer = UiTools.create_timer(mfilename,@(src,evt)update(obj));
             obj.Timer.Period = 0.05;
+            %obj.Timer.Period = 0.15;
         end
         function start(obj)
             if strcmpi(obj.Timer.Running,'off')
@@ -41,34 +49,159 @@ classdef ScenarioBase < Common.MiniVieObj
                 stop(obj.Timer);
             end
         end
+        function applyRangeLimits(obj)
+            % Apply Wrist Limits
+            obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) = max(min(...
+                obj.JointAnglesDegrees(action_bus_enum.Wrist_FE),60),-60);
+            obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) = max(min(...
+                obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev),45),-10);
+            obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) = max(min(...
+                obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot),90),-90);
+
+        end
+        function applyGlobalRateLimits(obj)
+            % Apply global velocity limits
+            constrain = @(X,minX,maxX) min(max(X,minX),maxX);
+            
+            globalVelocityMax = 5;
+            globalVelocityMin = 2;
+
+            velocity = obj.JointVelocity;
+
+            velocity = constrain(velocity,-globalVelocityMax,globalVelocityMax);
+            velocity = max(abs(velocity),globalVelocityMin) .* (velocity ~= 0) .* sign(velocity);
+            
+            obj.JointVelocity = velocity;
+            
+%             obj.JointAnglesDegrees = obj.JointAnglesDegrees + velocity;
+%             [velocity(velocity~=0) newVelocity(newVelocity~=0)]
+        end
         function update(obj)
             
             hSignalSource = obj.SignalSource;
             hSignalClassifier = obj.SignalClassifier;
-            
+
+            % Verify inputs
             if isempty(hSignalSource)
-                disp('No Input');
+                disp('No Signal Source');
+                return
+            elseif isempty(hSignalClassifier)
+                disp('No Signal Classifier');
                 return
             end
             
-            hSignalSource.NumSamples = hSignalClassifier.NumSamplesPerWindow;
-            windowData = hSignalSource.getFilteredData();
+            % Get intent from data stream
+            [classOut,voteDecision,className,prSpeed]= getIntent(hSignalSource,hSignalClassifier);
             
-            features2D = hSignalClassifier.extractfeatures(windowData);
-            activeChannelFeatures = features2D(hSignalClassifier.ActiveChannels,:);
-            [classOut voteDecision] = hSignalClassifier.classify(reshape(activeChannelFeatures',[],1));
+            fprintf('Class=%2d; Vote=%2d; Class = %16s; S=%6.4f',...
+                classOut,voteDecision,className,prSpeed);
+
+            lastVelocity = obj.JointVelocity;
+            desiredVelocity = zeros(size(obj.JointVelocity));
             
-            if hSignalClassifier.NumMajorityVotes > 1
-                cursorMoveClass = voteDecision;
-            else
-                cursorMoveClass = classOut;
+            switch className
+                case 'No Movement'
+                case {'Pronate' 'Wrist Rotate In'}
+                    desiredVelocity(action_bus_enum.Wrist_Rot) = -prSpeed;
+                case {'Supinate' 'Wrist Rotate Out'}
+                    desiredVelocity(action_bus_enum.Wrist_Rot) = +prSpeed;
+                case {'Up' 'Hand Up'}
+                    desiredVelocity(action_bus_enum.Wrist_Dev) = -prSpeed;
+                case {'Down' 'Hand Down'}
+                    desiredVelocity(action_bus_enum.Wrist_Dev) = +prSpeed;
+                case {'Left' 'Wrist Flex' 'Wrist Flex In'}
+                    desiredVelocity(action_bus_enum.Wrist_FE) = +prSpeed;
+                case {'Right' 'Wrist Extend' 'Wrist Extend Out'}
+                    desiredVelocity(action_bus_enum.Wrist_FE) = -prSpeed;
             end
             
-            virtualChannels = hSignalClassifier.virtual_channels(features2D,cursorMoveClass);
-            prSpeed = max(virtualChannels);
+            globalGain = 10;
+            desiredVelocity = desiredVelocity .* globalGain;
             
-            fprintf('Class=%2d; Vote=%2d; Class = %16s; V=%6.4f',...
-                classOut,voteDecision,hSignalClassifier.ClassNames{cursorMoveClass},prSpeed);
+            % Apply velocity change rate limiting
+            dt = obj.Timer.InstantPeriod;
+            maxDeltaV = 10*dt;  %max instantaneous velocity change
+            newVelocity = min(abs(lastVelocity) + (maxDeltaV),abs(desiredVelocity)) .* sign(desiredVelocity);
+            
+            obj.JointVelocity = newVelocity;
+            
+            % Apply global velocity limits
+            applyGlobalRateLimits(obj);
+            
+            obj.JointAnglesDegrees = obj.JointAnglesDegrees + obj.JointVelocity;
+            
+            applyRangeLimits(obj);
+            
+            %%%%%%%%%%%%%%%%%%%%%%%%
+            % Process grasps
+            %%%%%%%%%%%%%%%%%%%%%%%%
+            graspGain = 0.5;
+            graspChangeThreshold = 0.15;  % Normalized [0 1]
+            graspName = className;
+            lastGraspVelocity = obj.GraspVelocity;
+            if strfind(className,'Grasp')
+                graspName = strtrim(className(1:end-5));
+            end
+            [enumGrasp cellGrasps] = enumeration('Controls.GraspTypes');
+            switch graspName
+                case 'Hand Open'
+                    % Change the grasp Value in grasp mode
+                    desiredGraspVelocity = - prSpeed*graspGain;
+                case cellGrasps
+                    % Increment position along grasp trajectory
+                    desiredGraspVelocity = prSpeed*graspGain;
+                    if isempty(obj.GraspId) || (obj.GraspValue < graspChangeThreshold)
+                        % Note the isempty check handles the transient case
+                        % where a grasp is not yet selected on startup
+                        % otherwise the grasp state is preserved
+                        obj.GraspId = enumGrasp( strcmp(graspName,cellGrasps) );
+                    end
+                otherwise 
+                    desiredGraspVelocity = 0;
+            end
+            
+            maxGraspDeltaV = 0.1*dt;  %max instantaneous velocity change
+            newGraspVelocity = min(abs(lastGraspVelocity) + (maxGraspDeltaV),...
+                abs(desiredGraspVelocity)) .* sign(desiredGraspVelocity);
+            obj.GraspVelocity = newGraspVelocity;
+            
+
+            % Apply global velocity limits
+            constrain = @(X,minX,maxX) min(max(X,minX),maxX);
+            
+            globalGraspVelocityMax = 0.1;
+            globalGraspVelocityMin = 0.01;
+
+            velocity = obj.GraspVelocity;
+
+            velocity = constrain(velocity,-globalGraspVelocityMax,globalGraspVelocityMax);
+            velocity = max(abs(velocity),globalGraspVelocityMin) .* (velocity ~= 0) .* ...
+                sign(velocity);
+            
+            obj.GraspVelocity = velocity;
+            
+            
+            obj.GraspValue = obj.GraspValue + obj.GraspVelocity;
+            
+            obj.GraspValue = max(min(obj.GraspValue,1),0);
+
+            if isempty(obj.GraspId)
+                fprintf('\tGrasp=[]');
+            else
+                fprintf('\tGrasp=%12s',char(obj.GraspId));
+            end
+            fprintf('\tGraspVal=%6.4f',obj.GraspValue);
+            
+            %%%%%%%%%%%%%%%%%%%%%%%%
+            % END grasps
+            %%%%%%%%%%%%%%%%%%%%%%%%
+            
+            
+            fprintf('\tEND\n');
+            
+            return
+            
+            
             
             gain = 15;
             graspGain = 0.5;
@@ -81,6 +214,16 @@ classdef ScenarioBase < Common.MiniVieObj
             if strfind(strClass,'Grasp')
                 strClass = strtrim(strClass(1:end-5));
             end
+            
+            constrain = @(X,minX,maxX) min(max(X,minX),maxX);
+            
+            dt = obj.Timer.InstantPeriod;
+
+            lastVelocity = obj.JointVelocity;
+            newVelocity = zeros(size(obj.JointVelocity));
+            
+            jointAngles = obj.JointAnglesDegrees;
+            
             switch strClass
                 case 'No Movement'
                 case 'Hand Open'
@@ -104,11 +247,20 @@ classdef ScenarioBase < Common.MiniVieObj
                 case 'Little'
                     obj.FingerCommand(4) = prSpeed;
                 case {'Pronate' 'Wrist Rotate In'}
-                    obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) = ...
-                        obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) - prSpeed*gain*2;
+                    
+                    desiredVelocity = -prSpeed*gain*20;
+                    maxIncrement = -20*dt;  %max instantaneous velocity change
+                    % This allows immediate stop
+                    dv = min(lastVelocity(action_bus_enum.Wrist_Rot) + maxIncrement,0);
+                    
+                    V = max(desiredVelocity,dv);
+                    newVelocity(action_bus_enum.Wrist_Rot) = constrain(V,-10,10);
                 case {'Supinate' 'Wrist Rotate Out'}
-                    obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) = ...
-                        obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) + prSpeed*gain*5;
+                    maxIncrement = +0.8;
+                    dv = max(lastVelocity(action_bus_enum.Wrist_Rot) + maxIncrement,0);
+                    %dv = -200;
+                    dv = constrain(dv.^2.*sign(maxIncrement),-10,10);
+                    newVelocity(action_bus_enum.Wrist_Rot) = dv;
                 case {'Up' 'Hand Up'}
                     obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) = ...
                         obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) - prSpeed*gain*1;
@@ -158,6 +310,10 @@ classdef ScenarioBase < Common.MiniVieObj
             
             obj.GraspValue = max(min(obj.GraspValue,1),0);
             
+            obj.JointAnglesDegrees = jointAngles + newVelocity;
+            obj.JointVelocity = newVelocity;
+            fprintf('\tV=%12f',newVelocity(action_bus_enum.Wrist_Rot));
+            
             % Apply Wrist Limits
             obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) = max(min(...
                 obj.JointAnglesDegrees(action_bus_enum.Wrist_FE),80),-80);
@@ -166,12 +322,12 @@ classdef ScenarioBase < Common.MiniVieObj
             obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) = max(min(...
                 obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot),90),-90);
             
-            if isempty(obj.GraspId)
-                fprintf('\tGrasp=[]');
-            else
-                fprintf('\tGrasp=%12s',char(obj.GraspId));
-            end
-            fprintf('\tGraspVal=%6.4f',obj.GraspValue);
+%             if isempty(obj.GraspId)
+%                 fprintf('\tGrasp=[]');
+%             else
+%                 fprintf('\tGrasp=%12s',char(obj.GraspId));
+%             end
+%             fprintf('\tGraspVal=%6.4f',obj.GraspValue);
             
             fprintf('\tEND\n');
         end

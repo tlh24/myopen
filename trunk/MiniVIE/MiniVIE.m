@@ -198,7 +198,7 @@ classdef MiniVIE < Common.MiniVieObj
             if isempty(lastValue)
                 lastValue = 1;
             end
-
+            
             string = get(src,'String');
             value = get(src,'Value');
             
@@ -231,7 +231,7 @@ classdef MiniVIE < Common.MiniVieObj
                     set(obj.hg.SignalAnalysisButtons(:),'Enable','off');
                 else
                     set(obj.hg.SignalAnalysisButtons(:),'Enable','on');
-                
+                    
                     % TODO: Note signals only updated on classifier
                     % creation
                     defaultChannels = GUIs.guiChannelSelect.getLastChannels();
@@ -311,7 +311,7 @@ classdef MiniVIE < Common.MiniVieObj
                     set(obj.hg.SignalSourceButtons(:),'Enable','off');
                 else
                     set(obj.hg.SignalSourceButtons(:),'Enable','on');
-                
+                    
                     obj.println('Adding Filters',1);
                     h.addfilter(Inputs.HighPass());
                     % h.addfilter(Inputs.LowPass());
@@ -354,8 +354,8 @@ classdef MiniVIE < Common.MiniVieObj
             obj.TrainingInterface.collectdata();
             if ~isa(obj.TrainingInterface,'PatternRecognition.AdaptiveTrainingInterface')
                 % If adaptive, no need to retrain
-                obj.SignalClassifier.TrainingData = obj.TrainingInterface.Features3D(:,:,1:obj.TrainingInterface.SampleCount);
-                obj.SignalClassifier.TrainingDataLabels = obj.TrainingInterface.ClassLabelId(1:obj.TrainingInterface.SampleCount);
+                obj.SignalClassifier.TrainingData = obj.TrainingInterface.getFeatureData;
+                obj.SignalClassifier.TrainingDataLabels = obj.TrainingInterface.getClassLabels;
                 obj.SignalClassifier.train();
                 obj.SignalClassifier.computeerror();
                 obj.SignalClassifier.computeGains();
@@ -367,6 +367,41 @@ classdef MiniVIE < Common.MiniVieObj
             pathName = fileparts(which('MiniVIE'));
             addpath(pathName);
             addpath([pathName filesep 'Utilities']);
+        end
+        function obj = Default
+            obj.SignalSource = Inputs.SignalSimulator();
+            obj.SignalSource.addfilter(Inputs.HighPass());
+            obj.SignalSource.addfilter(Inputs.LowPass());
+            obj.SignalSource.addfilter(Inputs.Notch(60.*(1:4),5,1000));
+            obj.SignalSource.NumSamples = 2000;
+            obj.SignalSource.initialize();
+            
+            obj.SignalClassifier = SignalAnalysis.Lda();
+            defaultChannels = GUIs.guiChannelSelect.getLastChannels();
+            fprintf('Setting Active Channels to: [');
+            fprintf(' %d',defaultChannels);
+            fprintf(' ]\n');
+            obj.SignalClassifier.ActiveChannels = defaultChannels;
+            
+            obj.SignalClassifier.ClassNames = SignalAnalysis.ClassifierChannels.getSavedDefaults();
+            
+            if (isempty(obj.SignalClassifier.ClassNames))
+                obj.SignalClassifier.ClassNames = SignalAnalysis.ClassifierChannels.getDefaultNames;
+            end
+            
+            obj.SignalClassifier.NumMajorityVotes = 0;
+            obj.SignalClassifier.initialize();
+            
+            NumSamplesPerWindow = 250;
+            fprintf('Setting Window Size to: %d\n',NumSamplesPerWindow);
+            obj.SignalClassifier.NumSamplesPerWindow = NumSamplesPerWindow;
+            
+            obj.TrainingInterface = PatternRecognition.SimpleTrainer();
+            obj.TrainingInterface.NumRepetitions = 3;
+            obj.TrainingInterface.ContractionLengthSeconds = 2;
+            obj.TrainingInterface.DelayLengthSeconds = 1;
+            obj.TrainingInterface.initialize(obj.SignalSource,obj.SignalClassifier);
+            
         end
         function obj = go
             

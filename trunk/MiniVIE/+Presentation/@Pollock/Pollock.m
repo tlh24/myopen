@@ -24,13 +24,25 @@ classdef Pollock < handle
             obj.hRoot = get_root_obj(h1);
         end
         function move_random(obj)
-            % Use screen size to establish bounds (primary monitor)
-            screenSize = get(0, 'screensize');
+%%            
+            windowOrigin = get(obj.hRoot,'RestoredLocation');
             
+            hPane = get(obj.hRoot,'RootPane');
+            menuBarHeight = 46;
+            paneOffset = [get(hPane,'X') get(hPane,'Y')+menuBarHeight];
+            
+            upperLeft = windowOrigin+paneOffset;
+            lowerRight = windowOrigin + [get(hPane,'Width') get(hPane,'Height')];
+            
+            paneSize = lowerRight - upperLeft;
+            
+            obj.update_cursor(lowerRight(1),lowerRight(2))
+            
+
             % set initial position and velocity for cursor
-            setPos = screenSize([3 4]) .* rand(1,2);
+            setPos = upperLeft + (paneSize .* rand(1,2));
             
-            update_cursor(obj,setPos(1),setPos(2))
+            obj.update_cursor(setPos(1),setPos(2))
         end
         function minimize_window(obj)
             import java.awt.*

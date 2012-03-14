@@ -12,7 +12,7 @@ classdef EmgAdl < handle
         hMotionFile
         
         CurrentClass = ''
-        PauseClassId % Used to find 
+        PauseClassId % Used to find delay class
         
         udpIpRemoteAddress = '127.0.0.1';
         udpIpRemotePort = 11114;

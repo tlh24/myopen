@@ -7,7 +7,7 @@ classdef guiChannelSelect < handle
         hFigure
         
         numChannelsMax = 32;        % Max channels this gui can display
-        %numChannelsAvailable = 12;
+        numChannelsAvailable = 32;
         numChannelsPerRow = 8;
         
     end
@@ -38,8 +38,17 @@ classdef guiChannelSelect < handle
             % return indices of selected channels
             C = get(obj.handles.pbChannels,'Value');
             
-            maxChannels = cell2mat(C);
-            selectedChannels = find(maxChannels(1:obj.numChannelsMax));
+            isSelected = cell2mat(C);
+            
+            % RSA: Resolve issue here where selected channels may be saved
+            % with more channels enabled than available for the given input
+            % source
+            
+            %selectedChannels = find(maxChannels(1:obj.numChannelsMax));
+            selectedChannels = find(isSelected(1:obj.numChannelsAvailable));
+            
+            % Ensure that the selected channels are row vectors so that they 
+            % can be used as indexes in e.g. a for loop (for i = selectedChannels)
             selectedChannels = reshape(selectedChannels,1,[]);
         end
         function setActiveChannels(obj,activeChannelIds)
@@ -60,7 +69,7 @@ classdef guiChannelSelect < handle
                 return
             end
             
-            %obj.numChannelsAvailable = numAvailable;
+            obj.numChannelsAvailable = numAvailable;
             
             set(obj.handles.pbChannels,'Visible','off');
             set(obj.handles.pbChannels(1:numAvailable),'Visible','on');
@@ -201,7 +210,8 @@ classdef guiChannelSelect < handle
         function setChannels(fullFile,selectedChannels)
             % Create a mat file in the temp directory
             
-            if isempty(selectedChannels) || any(selectedChannels < 1)
+            %if isempty(selectedChannels) || any(selectedChannels < 1)
+            if any(selectedChannels < 1)
                 error('Expected an array of selected channels');
             end
             

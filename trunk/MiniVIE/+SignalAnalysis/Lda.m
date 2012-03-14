@@ -12,10 +12,12 @@ classdef Lda < SignalAnalysis.Classifier
         function obj = Lda
             % Constructor
         end
-        function train(obj)
+        function confuseMat = train(obj)
             
             if isempty(obj.TrainingData)
                 error('No Training Data Exists');
+            elseif isempty(obj.ActiveChannels)
+                error('No channels selected for training');
             end
             
             feats = convertfeaturedata(obj);
@@ -30,6 +32,21 @@ classdef Lda < SignalAnalysis.Classifier
             fprintf(']\n');
             
             [obj.Wg,obj.Cg] = obj.lda(feats,obj.TrainingDataLabels);
+            
+            if nargout > 0
+                % Compute confusion
+                
+                classVect = bsxfun(@plus,feats'*obj.Wg,obj.Cg);
+                [~, classOut] = max(classVect,[],2);
+                
+                confuseMat = zeros(obj.NumClasses);
+                for i = 1:obj.NumClasses
+                    id = (obj.TrainingDataLabels == i);
+                    actualClass = classOut(id);
+                    confuseMat(i,:) = accumarray(actualClass,1,[obj.NumClasses 1]);
+                end
+                
+            end
         end
         function [classOut voteDecision] = classify(obj,featuresColumns)
             assert(size(featuresColumns,1) == obj.NumActiveChannels*obj.NumFeatures);
@@ -82,8 +99,16 @@ classdef Lda < SignalAnalysis.Classifier
             % cast data to double for matlab ops
             featureData = double(featureData);
             
+            if isempty(featureData)
+                error('No signal feature data passed to classifier');
+            end
+            
             classList = unique(classId);
             numClasses = length(classList);
+            
+            if numClasses == 0
+                error('No Classes Selected');
+            end
             
             %%-- Compute the means and the pooled covariance matrix --%%
             C = zeros(N,N);

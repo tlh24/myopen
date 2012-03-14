@@ -14,6 +14,7 @@ classdef DaqHwDevice < Inputs.SignalInput
     properties
         DaqDeviceName = 'mcc';  % Default is Measurement Computing
         DaqDeviceId = '0';
+        ChannelInputRange = [-10 10]; % Volts
     end
     properties (SetAccess = private)
         AnalogInput = [];
@@ -115,6 +116,15 @@ classdef DaqHwDevice < Inputs.SignalInput
             set(obj.AnalogInput,'TriggerRepeat',Inf);
             
             addchannel(obj.AnalogInput,obj.ChannelIds);
+            
+            DesiredRange = obj.ChannelInputRange;
+            ActualRange = setverify(obj.AnalogInput.Channel,'InputRange',DesiredRange);
+            
+            if ~isequal(DesiredRange,ActualRange)
+                warning('DaqHwDevice:InputRange','Failed to set channel input range to [%f %f]. Range is [%f %f]',...
+                    DesiredRange(1),DesiredRange(2), ActualRange(1),ActualRange(2));
+            end
+            
         end
         function data = getData(obj)
             % This function will always return the correct size for data

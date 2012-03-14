@@ -39,7 +39,7 @@ classdef EmgSimulator < Inputs.SignalInput
             initialize(obj);
         end
         function initialize(obj)
-            obj.ChannelIds = 0:7;
+            obj.ChannelIds = 0:size(obj.patternData{1},2)-1;
             
             MAX_SAMPLES = 3000;
             
@@ -81,39 +81,6 @@ classdef EmgSimulator < Inputs.SignalInput
                 newDataIds
             end
             
-            numSamplesRequested = obj.NumSamples;
-            if numSamplesInBuffer < numSamplesRequested
-                error('More samples requested "%d" than buffered "%d" \n',numSamplesRequested,numSamplesInBuffer);
-            else
-                bufferedData = obj.SignalBuffer(end-obj.NumSamples+1:end,:);
-            end
-            
-            return
-            
-            % Note this returned data size conforms to the getdata methods
-            % of the Data Acquisition Toolbox [numSamples numChannels]
-            sampleBlock = 150;
-            newData = zeros(sampleBlock,obj.NumChannels);
-            
-            % create some noisy sine waves to return
-            tMax = sampleBlock/obj.SampleFrequency;
-            t = linspace(0,tMax,sampleBlock); %sec
-            
-            A = expand(obj.SignalAmplitude,obj.NumChannels);
-            f = expand(obj.SignalFrequency,obj.NumChannels);
-            
-            for iChannel = 1:obj.NumChannels
-                p = 0.5*randn(1);
-                channelData = A(iChannel)*sin(2*pi*f(iChannel)*t + p) + obj.DcOffset;
-                channelData = channelData + obj.NoisePower.*randn(1,sampleBlock);
-                
-                newData(:,iChannel) = channelData;
-            end
-            
-            obj.SignalBuffer = circshift(obj.SignalBuffer,[-sampleBlock 0]);
-            obj.SignalBuffer(end-sampleBlock+1:end,:) = newData;
-            
-            [numSamplesInBuffer numChannels] = size(obj.SignalBuffer);
             numSamplesRequested = obj.NumSamples;
             if numSamplesInBuffer < numSamplesRequested
                 error('More samples requested "%d" than buffered "%d" \n',numSamplesRequested,numSamplesInBuffer);
