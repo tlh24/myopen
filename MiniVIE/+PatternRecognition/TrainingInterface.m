@@ -7,12 +7,14 @@ classdef TrainingInterface < Common.MiniVieObj
         SignalClassifier;
         
         MaxSamples = 1e4;
-        EmgData = [];
-        Features3D = [];
-        ClassLabelId = [];
         
         SampleCount = 0;
         
+    end
+    properties (Access = protected)
+        EmgData = [];
+        Features3D = [];
+        ClassLabelId = [];
     end
     methods
         function emgData = getEmgData(obj)

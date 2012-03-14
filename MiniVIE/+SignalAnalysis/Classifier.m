@@ -66,6 +66,12 @@ classdef Classifier < Common.MiniVieObj
         function featureData = convertfeaturedata(obj)
             % expects an array of size [nChannels nFeatures numSamples]
             % creates an array of size [nFeatures nChannels numSamples]
+            [numChannels numFeatures numSamples] = size(obj.TrainingData);
+            
+            assert(numFeatures == obj.NumFeatures,...
+                'Training data set has %d features, expected %d\n',numFeatures,obj.NumFeatures);
+            assert(~any(obj.ActiveChannels > numChannels),...
+                'Active channels are greater than %d data channels\n',numChannels);
             sortedData2 = permute(obj.TrainingData,[2 1 3]);
             
             % Reshape data according to how the UNB algorithm wants to see it.  That is
