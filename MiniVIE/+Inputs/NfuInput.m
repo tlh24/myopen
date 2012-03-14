@@ -1,9 +1,9 @@
 classdef NfuInput < Inputs.SignalInput
     % Class for interfacing JHU/APL NFU to MiniVIE.
     properties
-        
-        hNfu = []; % Handle to NFU Comms Object
-        hLogFile
+        % TODO: Handles should be private
+        hNfu            % Handle to NFU Comms Object
+        hLogFile        % Handle to optional log file
         
         EnableDataLogging = 0;
         

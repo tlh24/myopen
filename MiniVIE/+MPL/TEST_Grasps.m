@@ -11,14 +11,14 @@ msg = hMud.ArmPosVelHandRocGrasps([zeros(1,4) w],zeros(1,7),1,graspId,graspVal,1
 hSink.putbytes(msg);
 
 %% Three move init to overcome wrist dev stiction
-graspId = 0;
-graspVal = 0;
-msg = hMud.ArmPosVelHandRocGrasps([zeros(1,4) pi/2 pi/2 0],zeros(1,7),1,graspId,graspVal,1);
+graspId = 1;
+graspVal = 0.2;
+msg = hMud.ArmPosVelHandRocGrasps([zeros(1,4) pi/2 pi/2 pi/2],zeros(1,7),1,graspId,graspVal,1);
 hSink.putbytes(msg);
 
 pause(0.7)
 
-msg = hMud.ArmPosVelHandRocGrasps([zeros(1,4) 0 -pi/2 0],zeros(1,7),1,graspId,graspVal,1);
+msg = hMud.ArmPosVelHandRocGrasps([zeros(1,4) pi/2 -pi/2 -pi/2],zeros(1,7),1,graspId,graspVal,1);
 hSink.putbytes(msg);
 
 pause(0.7)

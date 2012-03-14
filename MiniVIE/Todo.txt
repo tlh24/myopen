@@ -7,3 +7,7 @@ To do:
 - Create a main gui that will allow source selection, classifier, presentation, etc on the fly
 
 - Create additional visualizations for the arm / end effector
+
+-Exit button on class names not functioning
+
+- Save dialog comes up twice on bar trainer exit

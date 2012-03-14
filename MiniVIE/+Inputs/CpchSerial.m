@@ -6,10 +6,14 @@ classdef CpchSerial < Inputs.SignalInput
         SerialPort = 'COM1';                    % Port must be capable of 921600 baud
         BioampMask = uint16(hex2dec('FFFF'));
         GPIMask = uint16(hex2dec('0000'));
+        
+        
+        EnableDataLogging = 0;
     end
     
     
     properties (Access = private)
+        hLogFile        % Handle to optional log file
         SerialObj = [];
         DataBuffer = double([]);
         SerialBuffer = uint8([]);
@@ -257,8 +261,35 @@ classdef CpchSerial < Inputs.SignalInput
             end
 
             %plot(seDataU16')
-             
+            
             seDataNormalized = double(seDataU16) ./ 1024 * 10;
+            
+            % Store remaining bytes for next read
+            try
+                if obj.EnableDataLogging
+                    if isempty(obj.hLogFile)
+                        fname = sprintf('%04d%02d%02d_%02d%02d%02d_CPCH_Stream.log',fix(clock));
+                        fprintf('[%s] Creating Log File: "%s"\n',mfilename,fname);
+                        obj.hLogFile = fopen(fname,'w+');
+                    end
+                    %fwrite(obj.hLogFile,now,'double');
+%                     fwrite(obj.hLogFile,deDataInt16,'int16');
+%                     fwrite(obj.hLogFile,seDataU16,'int16');
+                    fwrite(obj.hLogFile,obj.SerialBuffer,'uint8');
+                    
+                else
+                    if ~isempty(obj.hLogFile)
+                        fprintf('[%s] Closing Log File\n',mfilename);
+                        fclose(obj.hLogFile);
+                        obj.hLogFile = [];
+                    end
+                end
+            catch ME
+                fprintf('[%s] Error Logging: %s\n',ME.message);
+            end
+            
+            
+            
             
             obj.SerialBuffer = remainderBytes;
             
