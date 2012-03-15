@@ -1,15 +1,13 @@
-classdef NfuInput < Inputs.SignalInput
+classdef NfuInput < Inputs.CpcHeadstage
     % Class for interfacing JHU/APL NFU to MiniVIE.
+    % 1Jan2012 Armiger: Created
     properties
-        % TODO: Handles should be private
-        hNfu            % Handle to NFU Comms Object
-        hLogFile        % Handle to optional log file
-        
         EnableDataLogging = 0;
-        
     end
     properties (SetAccess = private)
-        dataBuffer;
+        hNfu            % Handle to NFU Comms Object
+        hLogFile        % Handle to optional log file
+        dataBuffer      % internal data buffer
     end
     methods
         function obj = NfuInput()
