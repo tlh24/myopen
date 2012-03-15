@@ -16,7 +16,8 @@ classdef CpcHeadstage < Inputs.SignalInput
         msgIdConfigurationReadResponse = 131;
         msgIdConfigurationWriteResponse = 132;
     end
-    methods (Static, Access = protected)
+    %methods (Static, Access = protected)
+    methods (Static)
         function [diffDataInt16 seDataU16] = GetSignalData(validData,diffCnt,seCnt)
             % Typecast the data to the approprate data size
             % TODO: Endian is not accounted for here
@@ -44,6 +45,7 @@ classdef CpcHeadstage < Inputs.SignalInput
             end
             
         end
+        
         function [validData] = ValidateMessages(dataAligned,expectedLength)
             % Validate a matrix of messages using a criteria of checksum,
             % appropriate message length, and status bytes
@@ -90,7 +92,10 @@ classdef CpcHeadstage < Inputs.SignalInput
             end
 
         end
+        
         function [dataAligned remainderBytes] = AlignDataBytes(dataStream,msgSize)
+            
+            assert(size(dataStream,1) == 1,'Data Stream must be a [1 N] array');
             
             % Find all start chars ('128') and index the next set of bytes
             % off of these starts.  This could lead to overlapping data
