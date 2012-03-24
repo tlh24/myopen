@@ -33,7 +33,7 @@ memory map:
 	length b00
 	0xFF80 4b00	end of delay buffer.
 */
-#define A1 				0xFF904000  /** BANK B **/ //i0 accesses.
+#define A1 				0xFF904000  /** BANK B **/ //i0 accesses -- coefficients.
 #define A1_AGC			4			//units: 32bit words.
 #define A1_LMS			7
 #define A1_IIR			16			//4 coefs per 4 biquads.
@@ -58,7 +58,7 @@ memory map:
 
 #define W1 				0xFF804000  /** BANK A **/
 #define	W1_STRIDE		14 // (10 words per IIR, 1 mean, 1 gain, 2 lms).
-						  //total length = W1_STRIDE * 2 * 32 * 4 = 3584 = 0xE00
+						  //total length = W1_STRIDE * 2 * 32 * 4 = 3584 = 0xE00 bytes
 #define T1				0xFF805000 //accessed by i3, read/write delayed filtered signal
 #define T1_LENGTH		(16*32*4) // 16 delays, both templates matched to same delay,
 									//32 channels, 4 bytes each ch.
