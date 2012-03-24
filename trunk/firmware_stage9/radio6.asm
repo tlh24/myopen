@@ -51,131 +51,88 @@ wait_samples:
 	//the toggle statement should not get out of sync b/c there are set/clear statements above.
 	w[p1 + (FIO_FLAG_T - FIO_FLAG_D)] = r7;
 	//apply integrator highpass + gain (2, add twice)).
-	r5 = [i0++]; //r5 = 32000,-16384. (lo, high) (initial multiply by 4: 12 -> 14 bits, unsgined.
 .align 8
-	a0 = r2.l * r5.l, a1 = r2.h * r5.l || r1 = [i1++]; // r1 = integrated mean
-	a0 += r2.l * r5.l, a1 += r2.h * r5.l || r6 = [i0++]; //r6 = 16384 (1), 800 (mu)
-	r0.l = (a0 += r1.l * r5.h), r0.h = (a1 += r1.h * r5.h) (s2rnd); //subtract the mean.
-	a0 = r1.l * r6.l , a1 = r1.h * r6.l; //integrator
-	r2.l = (a0 += r0.l * r6.h), r2.h = (a1 += r0.h * r6.h) (s2rnd)
-	/*AGC*/	|| r5 = [i1++] || r7 = [i0++]; //r5 = gain, r7 AGC targets (sqrt)
-	a0 = r0.l * r5.l, a1 = r0.h * r5.h || [i2++] = r2; //save mean, above
- 	a0 = a0 << 8 ; // 14 bits in SRC (note *4 above), amp to 16 bits, which leaves 2 more bits for amplification (*4)
-	a1 = a1 << 8 ; //gain goes from 0-128 hence (don't forget about sign)
+	r2 = r2 << 1 (v) || r5 = [i0++]; //*2, r5 = 32000,-16384. (lo, high)
+			//(initial multiply by 2,2: 12 -> 13 -> 14 bits, unsgined.
+	a0 = r2.l * r5.l, a1 = r2.h * r5.l || r1 = [i1++] || r6 = [i0++]; // r1 = integral,
+			//r6 = 16384 (1), 800 (mu)
+	r0.l = (a0 += r1.l * r5.h), r0.h = (a1 += r1.h * r5.h) (s2rnd) || nop; //subtract the mean.
+	a0 = r1.l * r6.l , a1 = r1.h * r6.l //integrator
+		|| i1 += m2; //move to channel+2
+	r2.l = (a0 += r0.l * r6.h), r2.h = (a1 += r0.h * r6.h) (s2rnd) //update integral.
+		|| r1 = [i1++m2]; //load sample from channel+2, save integral.
+	r7 = r0 << 7 (v) || r2 = [i3++m3] || [i2++] = r2;
+			//saturate sample, load corresponding weight, save integral.
+	a0 = r1.l * r2.l, a1 = r1.h * r2.h || r1 = [i1++m2] || r2 = [i3++m3]; //1
+	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m2] || r2 = [i3++m3]; //2
+	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m2] || r2 = [i3++m3]; //3
+	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m2] || r2 = [i3++m3]; //4
+	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m2] || r2 = [i3++m3]; //5
+	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m2] || r2 = [i3++m3]; //6
+	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m2] || r2 = [i3++m3]; //7
+	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m2] || r2 = [i3++m3]; //8
+	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m2] || r2 = [i3++m3]; //9
+	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m2] || r2 = [i3++m3]; //10
+	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m2] || r2 = [i3++m3]; //11
+	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m2] || r2 = [i3++m3]; //12
+	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m2] || r2 = [i3++m3]; //13
+	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m2] || r2 = [i3++m3]; //14
+	r6.l=(a0+= r1.l * r2.l), r6.h=(a1+= r1.h * r2.h)  //15;
+		|| r1 = [i1++] || i3 += m1; //i1 to saturated sample, i3 to working weight.
+
+	//update one of the weights.
+	r0 = r0 -|- r6 (s) || [i2++] = r0 ; //compute error, save original
+	r6 = r0 << 10 (v,s) || i1 += m0 || [i2++] = r7; //move i1 to update channel, save saturated.
+	r6 = r6 >>> 15 (v,s) || r1 = [i1++] || r2 = [i3];//r6 = sign of error, r1 = saturated sample, r2 = w0, i0 @ 1
+	a0 = r1.l * r6.l, a1 = r1.h * r6.h) || r7 = [i0++]; //load delta w, r7 AGC targets (sqrt)
+r4.l = (a0+= r2.l * r7.l), r4.h = (a1+= r2.h * r7.h) || i1 -= m0 ; //load/decay weight, output on r5.
+	mnop || r5 = [i1++] || [i3++] = r4 ; //r5 = gain, save the new weight,
+													//move i3 to next channel
+	a0 = r0.l * r5.l, a1 = r0.h * r5.h //apply gain
+		|| [i2++] = r2 || i3 -= m1 ; // save mean, move i3 back from working weight
+ 	a0 = a0 << 8 ; // 14 bits in SRC, this makes 22 and
+	a1 = a1 << 8 ; // gain goes from 0-128 hence (don't forget about sign)
 	r0.l = a0, r0.h = a1 ;  //default mode should work (treat both as signed fractions)
 	a0 = abs a0, a1 = abs a1;
 	r4.l = (a0 -= r7.l * r7.l), r4.h = (a1 -= r7.h * r7.h) (is) //subtract target, saturate, store difference
 		|| r6 = [i0++]; //r6.l = 16384 (1), r6.h = 1 (mu)
 	a0 = r5.l * r6.l, a1 = r5.h * r6.l || nop; //load the gain again & scale.
 	r3.l = (a0 -= r4.l * r6.h), r3.h = (a1 -= r4.h * r6.h) (s2rnd) || nop; //r6.h = 1 (mu); within a certain range gain will not change.
+	r3 = abs r3 (v) //no negative gain -- unstable!
+													 || r5 = [i0++] || r1 = [i1++];  // r0 samp; r1 x1(n-1); r5 b0.0
+	[FP - FP_SAMPLE] = r0 || [i2++] = r3; //save the sample, save the gain.
 .align 8
-	r3 = abs r3 (v) || r7 = [FP - FP_WEIGHTDECAY]; //set weightdecay to zero to disable LMS.
-	r4.l = (a0 = r0.l * r7.l), r4.h = (a1 = r0.h * r7.l) (is) || i1 += m1 || [i2++] = r3;
-				//saturate the sample, save the gain (r3).
-// LMS! woo
-	mnop || r1 = [i1++] || [i2++] = r4; //move to x1(n-1), save the saturated sample.
-	mnop || r1 = [i1++m2] || r2 = [i0++]; //r1 = sample, r2 = weight.
-	a0 = r1.l * r2.l, a1 = r1.h * r2.h || r1 = [i1++m2] || r2 = [i0++];
-	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m2] || r2 = [i0++];
-	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m2] || r2 = [i0++];
-	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m2] || r2 = [i0++];
-	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m2] || r2 = [i0++];
-	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m2] || r2 = [i0++];
-	r6.l = (a0+= r1.l * r2.l), r6.h = (a1+= r1.h * r2.h) || r1 = [i1++m1] || r2 = [i0++m0];
+	a0  = r0.l * r5.l, a1  = r0.h * r5.h || r6 = [i0++] || r2 = [i1++] ;//r6 = b0.1; r2 = x1(n-2)
+	a0 += r1.l * r6.l, a1 += r1.h * r6.h || r7 = [i0++] || r3 = [i1++] ;//r7 = b0.2; r3 = y1(n-1) or x2(n-1)
+	a0 += r2.l * r7.l, a1 += r2.h * r7.h || r5 = [i0++] || r4 = [i1++] ;//r5 = a0.0; r4 = y1(n-2) or x2(n-1)
+	a0 += r3.l * r5.l, a1 += r3.h * r5.h || r6 = [i0++] || [i2++] = r0 ;//r6 = a0.1; save x1(n-1)
+r0.l=(a0 +=r4.l * r6.l), r0.h=(a1 +=r4.h * r6.h)(s2rnd)|| [i2++] = r1 ;//r0 = y1(n); save x1(n-2)
 
-	r0 = r0 -|- r6 (s) || [i2++] = r0 || r1 = [i1--] ; //compute error, save original, move i1 back to saturated samples.
-	r6 = r0 >>> 15 (v,s) || r1 = [i1++m2] || r2 = [i0++];//r1 = saturated sample, r2 = w0, i0 @ 1
-	//r6 = r6 << 1 (v,s);
-	//r6 = r6 +|+ r3;
-.align 8
-	a0 = r2.l * r7.h, a1 = r2.h * r7.h || nop || nop; //load / decay weight.
-r5.l = (a0 += r1.l * r6.l), r5.h = (a1 += r1.h * r6.h) || r1 = [i1++m2] || r2 = [i0--];//r2 = w1, i0 @ 0
-	a0 = r2.l * r7.h, a1 = r2.h * r7.h || [i0++m3] = r5; //write 0, i0 @ 2
-r5.l = (a0 += r1.l * r6.l), r5.h = (a1 += r1.h * r6.h) || r1 = [i1++m2] || r2 = [i0--];//r2 = w2, i0 @ 1
-	a0 = r2.l * r7.h, a1 = r2.h * r7.h || [i0++m3] = r5; //write 1, i0 @ 3
-r5.l = (a0 += r1.l * r6.l), r5.h = (a1 += r1.h * r6.h) || r1 = [i1++m2] || r2 = [i0--];//r2 = w3, i0 @ 2
-	a0 = r2.l * r7.h, a1 = r2.h * r7.h || [i0++m3] = r5; //write 2, i0 @ 4
-r5.l = (a0 += r1.l * r6.l), r5.h = (a1 += r1.h * r6.h) || r1 = [i1++m2] || r2 = [i0--];//r2 = w4, i0 @ 3
-	a0 = r2.l * r7.h, a1 = r2.h * r7.h || [i0++m3] = r5; //write 3, i0 @ 5
-r5.l = (a0 += r1.l * r6.l), r5.h = (a1 += r1.h * r6.h) || r1 = [i1++m2] || r2 = [i0--];//r2 = w5, i0 @ 4
-	a0 = r2.l * r7.h, a1 = r2.h * r7.h || [i0++m3] = r5; //write 4, i0 @ 6
-r5.l = (a0 += r1.l * r6.l), r5.h = (a1 += r1.h * r6.h) || r1 = [i1++m2] || r2 = [i0--];//r2 = w6, i0 @ 5
-	a0 = r2.l * r7.h, a1 = r2.h * r7.h || [i0++m3] = r5; //write 5, i0 @ 7
-r5.l = (a0 += r1.l * r6.l), r5.h = (a1 += r1.h * r6.h) || r1 = [i1++m3] || r2 = [i0--];// inc to x1(n-1) r2 = w1, i0 @ 6
-	mnop || [i0++] = r5; //write 6.
-/* LMS adaptive noise remover (above)
-	want to predict the current channel based on samples from the previous 8.
-	at this point i1 will point to x(n-1) of the present channel.
-		(i2 is not used, we do not need to write taps -- IIR will take care of this.)
-	24 32-bit samples are written each time through this loop,
-	so to go back 8 channels subtract m1 = -672
-	to move forward one channel add m2 = 96
-	for modifying i0, m3 = 8 (move +2 weights)
-		and m0 = -32 (move -8 weights)
-	i0, as usual, points to the filter taps!
-*/
-	/*
-	directform 1 biquad; form II saturates 1.15 format.
-	operate on the two samples in parallel (both in 1 32bit reg).
-	r0	x(n)				-- the input from the serial bus.
-	r1 	x(n-1) (yn-1)	-- ping-pong the delayed registers.
-	r2	x(n-2) (yn-2)	-- do this so save read cycles.
-	r3	y(n-1) (xn-1)
-	r4	y(n-2) (xn-2)
-	r5	b0  				-- (low  high)
-	r6	b1
-	r7 a0
-	r5 a1
+														 r5 = [i0++] || [i2++] = r0 ;//r5 = b1.0; save y1(n-1) / x2(n-1)
+	a0  = r0.l * r5.l, a1  = r0.h * r5.h || r6 = [i0++] || [i2++] = r3 ;//r6 = b1.1; save y1(n-2) / x2(n-2)
+	a0 += r3.l * r6.l, a1 += r3.h * r6.h || r7 = [i0++] || r1 = [i1++] ;//r7 = b1.2; r1 = y2(n-1) / x3(n-1)
+	a0 += r4.l * r7.l, a1 += r4.h * r7.h || r5 = [i0++] || r2 = [i1++] ;//r5 = a1.0; r2 = y2(n-2) / x3(n-2)
+	a0 += r1.l * r5.l, a1 += r1.h * r5.h || r6 = [i0++]; 					  //r6 = a1.1
+r0.l=(a0 +=r2.l * r6.l), r0.h=(a1 +=r2.h * r6.h)(s2rnd)|| r7 = [i0++] ;//r0 = y2(n); r7 = threshold.
+//this is the output of the matched filter; hope we don't need more biquads
+//now compare with threshold -- if its negative, we have a spike.
+	r0 = r0 +|+ r7;
+	r0 = r0 >>> 15 (v); //either -1 or 0.
+	r0 = -r0 (v); //now 1 or 0.
 
-	i0 reads the coeficients into the registers;
-		it loops every 32 bytes (16 coef, 4 biquads)
-	i1 reads the delays.
-		it loops every 640 bytes = 10 delays * 4 bytes/delay * 16 stereo channels.
-		only increments.
-	i2 writes the delays, loops every 640 bytes.
-		also only increments.
-		if i1 and i2 are dereferenced in the same cycle, the processor will stall --
-		each of the 1k SRAM memory banks has only one port.
-
-	format of delays in memory:
-	[x1(n-1) ,
-	 x1(n-2) ,
-	 x2(n-1) aka y1(n-1) ,
-	 x2(n-2) aka y1(n-2) ,
-	 x3(n-1) aka y2(n-1) ,
-	 x3(n-2) aka y2(n-2) ,
-	 x4(n-1) aka y3(n-1) ,
-	 x4(n-2) aka y3(n-2) ,
-	 y4(n-1) ,
-	 y4(n-2) ]
-	 --that's 10 delays, 4 bytes each.
-	*/
-	mnop || r5 = [i0++] || r1 = [i1++];  // r0 samp; r1 x1(n-1); r5 b0.0
-	a0  = r0.l * r5.l, a1  = r0.h * r5.h || r6 = [i0++] || r2 = [i1++] ; //r6 = b0.1; r2 = x1(n-2)
-	a0 += r1.l * r6.l, a1 += r1.h * r6.h || r7 = [i0++] || r3 = [i1++]; //r7 = a0.0; r3 = y1(n-1) / x2(n-1)
-	a0 += r2.l * r5.l, a1 += r2.h * r5.h || r5 = [i0++] || r4 = [i1++] ; //r5 = a0.1; r4 = y1(n-2) / x2(n-1)
-	a0 += r3.l * r7.l, a1 += r3.h * r7.h || [i2++] = r0 ; // save x1(n-1)
-	r0.l = (a0 += r4.l * r5.l), r0.h = (a1 += r4.h * r5.h) (s2rnd) || [i2++] = r1;//r0 = y1(n); save x1(n-2)
-
-	r5 = [i0++] || [i2++] = r0; //r5 b1.0; save y1(n-1) / x2(n-1)
-	a0  = r0.l * r5.l, a1  = r0.h * r5.h || r6 = [i0++] || [i2++] = r3; //r6 = b1.1; save y1(n-2) / x2(n-2)
-	a0 += r3.l * r6.l, a1 += r3.h * r6.h || r7 = [i0++] || r1 = [i1++]; //r7 = a1.0; r1 = y2(n-1) / x3(n-1)
-	a0 += r4.l * r5.l, a1 += r4.h * r5.h || r2 = [i1++]; //r2 = y2(n-2) / x3(n-2)
-	a0 += r1.l * r7.l, a1 += r1.h * r7.h || r5 = [i0++]; // r5 = a1.1
-	r0.l = (a0 += r2.l * r5.l), r0.h = (a1 += r2.h * r5.h) (s2rnd) || NOP; // r0 = y2(n)
 
 	r5 = [i0++] || [i2++] = r0; // r5 = b2.0; save y2(n-1) / x3(n-1)
 	a0  = r0.l * r5.l, a1  = r0.h * r5.h || r6 = [i0++] || [i2++] = r1; //r6 = b2.1; save y2(n-2) / x3(n-2)
 	a0 += r1.l * r6.l, a1 += r1.h * r6.h || r7 = [i0++] || r3 = [i1++]; //r7 = a2.0; r3 = y3(n-1) / x4(n-1)
-	a0 += r2.l * r5.l, a1 += r2.h * r5.h || r4 = [i1++]; //r4 = y3(n-2) / x4(n-2)
-	a0 += r3.l * r7.l, a1 += r3.h * r7.h || r5 = [i0++]; //r5 = a2.1
+	a0 += r2.l * r5.l, a1 += r2.h * r5.h || r5 = [i0++] || r4 = [i1++]; //r4 = y3(n-2) / x4(n-2)
+	a0 += r3.l * r7.l, a1 += r3.h * r7.h || r6 = [i0++]; //r5 = a2.1
 	r0.l = (a0 += r4.l * r5.l), r0.h = (a1 += r4.h * r5.h) (s2rnd) || NOP; //r0 = y3(n)
 
 	r5 = [i0++] || [i2++] = r0; // r5 = b3.0; save y3(n-1) / x4(n-1)
 	a0  = r0.l * r5.l, a1  = r0.h * r5.h || r6 = [i0++] || [i2++] = r3; //r6 = b3.1; save y3(n-2) / x4(n-2)
 	a0 += r3.l * r6.l, a1 += r3.h * r6.h || r7 = [i0++] || r1 = [i1++]; //r7 = a3.0; r1 = y4(n-1)
-	a0 += r4.l * r5.l, a1 += r4.h * r5.h || r2 = [i1++]; // r2 = y4(n-2)
-	a0 += r1.l * r7.l, a1 += r1.h * r7.h || r5 = [i0++]; // r5 = a3.1
+	a0 += r4.l * r5.l, a1 += r4.h * r5.h || r5 = [i0++] || r2 = [i1++]; // r2 = y4(n-2)
+	a0 += r1.l * r7.l, a1 += r1.h * r7.h || r6 = [i0++]; // r5 = a3.1
 	r0.l = (a0 += r2.l * r5.l), r0.h = (a1 += r2.h * r5.h) (s2rnd); // r0 = y4(n)
 
 	[i2++] = r0; // save y4(n-1)
@@ -609,27 +566,28 @@ _radio_bidi_asm:
 	i0.h = HI(A1);
 	l0 = A1_STRIDE*32*4; /* A1_STRIDE in 4 byte units.
 	   see memory.h - it's complicated now.*/
-	m0 = -7*4; //for moving back to start of LMS weights.
+	m0 = W1_STRIDE*2*4; //for moving forward to the LMS predictor.
 	b0 = i0; //or: 16 chan, 18 4-bytes reads.
 
 	// --this is for reading delays.
 	i1.l = LO(W1);
 	i1.h = HI(W1);
 	l1 = W1_STRIDE*2*32*4;//bytes: 26 32 bit words / channel by 32 channels
-	m1 = -7*W1_STRIDE*2*4;//for moving back 7 channels (in same bank)
+	m1 = LMS_STRIDE*2*4; // for moving forward to the LMS weight.
 	b1 = i1; 	//base address of the delay taps.
 
 	// i2 is for writing delays.
 	i2 = i1;
 	l2 = l1;
-	m2 = W1_STRIDE*2*4; //for moving forward one channel's delays in LMS.
+	m2 = W1_STRIDE*2*2*4; //for moving forward TWO channel delays in LMS. (this way LMS is 16 channels)
+	// 16*m2 = l1, so after 16 increments pointer will be back to start.
 	b2 = b1;
 
 	//i3 is for reading/writing template delays (post-filter)
-	i3.l = LO(T1);
-	i3.h = HI(T1);
-	l3 = T1_LENGTH;
-	m3 = 4*2; //2 32-bit words -- has to jump to the read point for LMS
+	i3.l = LO(LMSW);
+	i3.h = HI(LMSW);
+	l3 = LMSW_LENGTH;
+	m3 = LMS_STRIDE*2*4; //LMS weights are stored transposed.
 	b3 = i3;
 // butterworth (minium ripple) filters ! (look better in practice, less ringing)
 /*
