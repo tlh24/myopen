@@ -13,13 +13,13 @@ obj.SignalClassifier.computeGains();
 hSignalSource = obj.SignalSource;
 hSignalClassifier = obj.SignalClassifier;
 
-classToTest = 1:9;
+classToTest = 1:6;
 for iClass = 1:length(classToTest)
     trialLog = assessClass(hSignalSource,hSignalClassifier,classToTest(iClass));
     structTrialLog(iClass) = trialLog;
 end
 
-filePrefix = 'RSATest';
+filePrefix = 'WR_TR01_';
 defaultSaveName = [filePrefix '_' datestr(now,'yyyymmdd_HHMMSS') '.assessmentLog'];
 [FileName,PathName,FilterIndex] = ...
     uiputfile('*.assessmentLog','Select Log file to Save',defaultSaveName);

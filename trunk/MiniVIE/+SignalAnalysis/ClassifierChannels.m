@@ -248,7 +248,6 @@ classdef ClassifierChannels < Common.MiniVieObj
         end
         
         function classNames = getDefaultNames
-            classNames{30}  = 'No Movement';
             classNames{01}  = 'Shoulder Flexion';
             classNames{02}  = 'Shoulder Extension';
             classNames{03}  = 'Shoulder Abduction';
@@ -278,6 +277,17 @@ classdef ClassifierChannels < Common.MiniVieObj
             classNames{27} = 'Palmar Grasp';       %% Grasp #5 per Action ICD RPP-600-ICD_-1401
             classNames{28} = 'Spherical Grasp';    %% Grasp #6 per Action ICD RPP-600-ICD_-1401
             classNames{29} = 'Pointer Grasp';      %% Grasp #7 per Action ICD RPP-600-ICD_-1401
+            classNames{30} = 'No Movement';
+            classNames{31} = 'Wrist Rotate In (Raised)';
+            classNames{32} = 'Wrist Rotate Out (Raised)';
+            classNames{33} = 'Wrist Flex In (Raised)';
+            classNames{34} = 'Wrist Extend Out (Raised)';
+            classNames{35} = 'Hand Up (Raised)';
+            classNames{36} = 'Hand Down (Raised)';
+            classNames{37} = 'Hand Open (Raised)';
+            classNames{39} = 'Tip Grasp (Raised)';         
+            classNames{40} = 'Spherical Grasp (Raised)'; 
+            classNames{41} = 'No Movement (Raised)';
         end
     end
 end

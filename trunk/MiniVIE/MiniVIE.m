@@ -27,7 +27,7 @@ classdef MiniVIE < Common.MiniVieObj
             set(obj.hg.popups(MiniVIE.INPUT),'Value',1);
             set(obj.hg.popups(MiniVIE.SA),'String',{'None','LDA Classifier','DiscriminantAnalysis'});
             set(obj.hg.popups(MiniVIE.SA),'Value',1);
-            set(obj.hg.popups(MiniVIE.TRAINING),'String',{'None','Simple Trainer','Mini Guitar Hero','Bar Trainer'});
+            set(obj.hg.popups(MiniVIE.TRAINING),'String',{'None','Simple Trainer','Mini Guitar Hero','Bar Trainer','Motion Trainer'});
             set(obj.hg.popups(MiniVIE.TRAINING),'Value',1);
             set(obj.hg.popups(MiniVIE.PRESENTATION),'String',{'None','MiniV','Breakout','AGH','MplScenarioMud'});
             set(obj.hg.popups(MiniVIE.PRESENTATION),'Value',1);
@@ -172,6 +172,8 @@ classdef MiniVIE < Common.MiniVieObj
                     h = PatternRecognition.BarTrainer();
                 case 'Mini Guitar Hero'
                     h = PatternRecognition.MiniGuitarHero();
+                case 'Motion Trainer'
+                    h = PatternRecognition.MotionTrainer();
                 otherwise
                     % None
                     h = [];
@@ -354,6 +356,8 @@ classdef MiniVIE < Common.MiniVieObj
             obj.TrainingInterface.collectdata();
             if ~isa(obj.TrainingInterface,'PatternRecognition.AdaptiveTrainingInterface')
                 % If adaptive, no need to retrain
+                % else we need to train the classifier with the collected
+                % data
                 obj.SignalClassifier.TrainingData = obj.TrainingInterface.getFeatureData;
                 obj.SignalClassifier.TrainingDataLabels = obj.TrainingInterface.getClassLabels;
                 obj.SignalClassifier.train();

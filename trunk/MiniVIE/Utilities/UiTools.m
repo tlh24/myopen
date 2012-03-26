@@ -26,6 +26,7 @@ classdef UiTools
             hTimer = t;
         end
         function hFigure = create_figure(figureName,figureTag)
+            % Usage: hFigure = UiTools.create_figure(figureName,figureTag)
             
             if nargin < 2
                 figureTag = strrep(figureName,' ','_');

@@ -1,8 +1,8 @@
-classdef CytonPlant < hgsetget
-    % Class for maintaining simulated state of Cyton Robot
+classdef ViePlant < hgsetget
+    % Class for maintaining simulated state of VIE
     %
     % Example Usage:
-    %     obj = CytonPlant; 
+    %     obj = ViePlant; 
     %     start(obj);
     %     tic
     %     obj.setDesiredPosition(rand(8,1));
@@ -12,11 +12,10 @@ classdef CytonPlant < hgsetget
     %     toc
     % Move should take about 1 second
     
-    % 2011Feb07 Armiger: Created
-    % 2012Mar05 Armiger: Updated comments
+    % 2012Mar25 Armiger: Adapted CytonPlant to generic arm model
     %
     %
-    % TODO: make joint speeds on a per-joint basis
+    % Note: joint speeds support a per-joint array
     properties
         Verbose = 0;
         ApplyLimits = true;
@@ -24,14 +23,15 @@ classdef CytonPlant < hgsetget
     end
     properties (SetAccess = private)
         hTimer
-        hCytonSerial
+        hDevice
 
         CurrentPosition;    % radians
         DesiredPosition     % radians
         DesiredSpeed        % rad / s
         
-        JointLimits = [-pi/2 pi/2];
-        GripperLimits = [0 1];
+        %JointLimits = [-pi/2 pi/2];
+        GraspLimits = [0 1];
+        GraspId = 0;
     end
 
     properties (Constant = true)
@@ -40,30 +40,40 @@ classdef CytonPlant < hgsetget
         DefaultSpeed = 1;   %rad/s
     end
     methods
-        function obj = CytonPlant()
+        function obj = ViePlant()
             reset(obj);
         end
         function value = isRunning(obj)
             value = strcmpi(obj.hTimer.Running,'on');
         end
         function setDesiredSpeed(obj,Value)
-            obj.DesiredSpeed = max(min(Value(:),obj.MaxSpeed),0);
+            s = reshape(Value,1,[]); % force size [1 N]
+            obj.DesiredSpeed = max(min(s,obj.MaxSpeed),0);
+        end
+        function setGraspId(obj,Value)
+            % Grasp id should be a scalar integer >= 0
+            assert(isscalar(Value),'GraspId must be scalar');
+            assert(~mod(Value,1),'GraspId must be an integer');
+            assert(Value >= 0,'GraspId must be greater than or equal to zero');
+            obj.GraspId = Value;
         end
         function setDesiredPosition(obj,Value)
-            obj.DesiredPosition = Value(:);
+            p = reshape(Value,1,[]); % force size [1 N]
+            obj.DesiredPosition = p;  
             
             if obj.ApplyLimits
-                obj.DesiredPosition(1:7) = ...
-                    min(max(obj.DesiredPosition(1:7),obj.JointLimits(1)),obj.JointLimits(2));
+                %obj.DesiredPosition(1:7) = ...
+                %    min(max(obj.DesiredPosition(1:7),obj.JointLimits(1)),obj.JointLimits(2));
                 obj.DesiredPosition(8) = ...
-                    min(max(obj.DesiredPosition(8),obj.GripperLimits(1)),obj.GripperLimits(2));
+                    min(max(obj.DesiredPosition(8),obj.GraspLimits(1)),obj.GraspLimits(2));
             end
             
             update_state(obj);
         end
         
-        function connectToHardware(obj,strComPort)
-            obj.hCytonSerial = CytonSerial(strComPort);
+        function connectToHardware(obj,ipAddress,udpPort)
+            obj.hDevice.hSink = MPL.VulcanXSink(ipAddress,udpPort);
+            obj.hDevice.hMud = MPL.MudCommandEncoder();
         end
         
         function success = start(obj)
@@ -81,11 +91,11 @@ classdef CytonPlant < hgsetget
             success = true;
         end
         function reset(obj)
-            obj.DesiredSpeed = obj.DefaultSpeed*ones(obj.NumJoints,1);
-            obj.DesiredPosition = obj.DefaultPosition*ones(obj.NumJoints,1);
-            obj.CurrentPosition = obj.DefaultPosition*ones(obj.NumJoints,1);
+            obj.DesiredSpeed = obj.DefaultSpeed*ones(1,obj.NumJoints);
+            obj.DesiredPosition = obj.DefaultPosition*ones(1,obj.NumJoints);
+            obj.CurrentPosition = obj.DefaultPosition*ones(1,obj.NumJoints);
             
-            obj.hTimer = UiTools.create_timer('CytonPlant',@(src,evt)update_state(obj));
+            obj.hTimer = UiTools.create_timer('ViePlant',@(src,evt)update_state(obj));
             obj.hTimer.Period = 0.02;
         end
         function allComplete = allMovesComplete(obj)
@@ -102,14 +112,19 @@ classdef CytonPlant < hgsetget
                 fprintf(' %6.2f',obj.CurrentPosition);
                 fprintf('\n');
             end
-            
+
             % If timer is off, moves will be immediate
             if isempty(obj.hTimer) || strcmpi(obj.hTimer.Running,'off')
                 obj.CurrentPosition = obj.DesiredPosition;
                 return
             end
             
-            dt = obj.hTimer.Period;
+            % Get time step
+            dt = obj.hTimer.InstantPeriod;
+            if isnan(dt)
+                dt = obj.hTimer.Period;
+            end
+            
             err = obj.CurrentPosition - obj.DesiredPosition;
             
             maxMove = obj.DesiredSpeed * dt;
@@ -118,10 +133,16 @@ classdef CytonPlant < hgsetget
             obj.CurrentPosition = obj.CurrentPosition - ds;
             
             % Check for real hardware
-            isConnected = ~isempty(obj.hCytonSerial);
+            isConnected = ~isempty(obj.hDevice);
             
             if isConnected
-                obj.hCytonSerial.setPosition(obj.CurrentPosition);
+                armJoints = obj.CurrentPosition(1:7);
+                graspValue = obj.CurrentPosition(8);
+                
+                % Send to vulcanX
+                msg = obj.hDevice.hMud.ArmPosVelHandRocGrasps(armJoints,...
+                    zeros(1,7),1,obj.GraspId,graspValue,1);
+                obj.hDevice.hSink.putbytes(msg);
             end
         end
     end

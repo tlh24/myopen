@@ -49,7 +49,9 @@ classdef Lda < SignalAnalysis.Classifier
             end
         end
         function [classOut voteDecision] = classify(obj,featuresColumns)
-            assert(size(featuresColumns,1) == obj.NumActiveChannels*obj.NumFeatures);
+            assert(size(featuresColumns,1) == obj.NumActiveChannels*obj.NumFeatures,...
+                'Expected first dimension of featuredata [%d]to be equal to numActiveChannels*numFeatures [%d]',...
+                size(featuresColumns,1),obj.NumActiveChannels*obj.NumFeatures);
             if isempty(obj.Wg)
                 error('Classifier not trained');
             end
