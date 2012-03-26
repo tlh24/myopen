@@ -1,17 +1,18 @@
 classdef TrainingInterface < Common.MiniVieObj
-    % Basic Training interface presents cues to a user and
+    % Base class for Training interface to presents cues to a user
+    % (Abstract) collectdata
     %
     % 01-Feb-2011 Armiger: Created
     properties
-        SignalSource;
-        SignalClassifier;
-        
-        MaxSamples = 1e4;
-        
+        MaxSamples = 2e4;
+    end
+    properties (SetAccess = protected)
         SampleCount = 0;
-        
+        CurrentClass
     end
     properties (Access = protected)
+        SignalSource;
+        SignalClassifier;
         EmgData = [];
         Features3D = [];
         ClassLabelId = [];
@@ -28,6 +29,8 @@ classdef TrainingInterface < Common.MiniVieObj
             
             try
                 emgData = obj.EmgData(:,:,1:obj.SampleCount);
+            catch ME
+                warning('TrainingInterface:getEmgData','Failed to get Emg Data: %s',ME.message);
             end
         end
         function featureData = getFeatureData(obj)
@@ -36,6 +39,35 @@ classdef TrainingInterface < Common.MiniVieObj
         end
         function classLabels = getClassLabels(obj)
             classLabels = obj.ClassLabelId(1:obj.SampleCount);
+        end
+        function addData(obj)
+            % Add a new sample of data based on the CurrentClass property
+            
+            assert(~isempty(obj.CurrentClass),'No class is selected to tag new data');
+            
+            obj.SampleCount = obj.SampleCount + 1;
+            if obj.SampleCount == obj.MaxSamples + 1
+                % This should only display once
+                warning('TrainingInterface:ExceededMaxSamples','Exceeded Preallocated Sample Buffer');
+            end
+            
+            % TODO: consider getting raw data for the EMG log before
+            % filtering
+            windowData = obj.SignalSource.getFilteredData();
+            features = feature_extract(windowData',obj.SignalClassifier.NumSamplesPerWindow);
+            
+            idxChannel = 1:obj.SignalSource.NumChannels;
+            obj.ClassLabelId(obj.SampleCount) = obj.CurrentClass;
+            % Note this could be tricky if data is loaded with the
+            % wrong number of channels compared to the current Signal
+            % Source.  Below code works if the current channels are
+            % less than or equal to the prior data
+            obj.Features3D(idxChannel,:,obj.SampleCount) = features;
+            try
+                obj.EmgData(idxChannel,:,obj.SampleCount) = windowData(1:obj.SignalClassifier.NumSamplesPerWindow,:)';
+            catch ME
+                warning('TrainingInterface:EmgData','Failed to record Emg Data: "%s"',ME.message);
+            end
         end
         function saveTrainingData(obj)
             % Save Training Data
@@ -130,6 +162,14 @@ classdef TrainingInterface < Common.MiniVieObj
             % Initialize buffers
             obj.Features3D = NaN([obj.SignalSource.NumChannels obj.SignalClassifier.NumFeatures obj.MaxSamples]);
             obj.ClassLabelId = NaN(1,obj.MaxSamples);
+            
+            % Initialize variable to store raw EMG data
+            try
+                obj.EmgData = NaN([obj.SignalSource.NumChannels obj.SignalClassifier.NumSamplesPerWindow obj.MaxSamples],'single');
+            catch ME
+                fprintf('[%s] Error initializing EMG storage: "%s"\n',mfilename,ME.message);
+            end
+            
         end
         function ok = isInitialized(obj)
             ok = ~isempty(obj.SignalSource) && ...

@@ -19,7 +19,6 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
         
         keyOrder = 'asdfghjklzxcvbnm';  % controls the keyboard to class mapping
         
-        CurrentClass
         samplesToRound = 500;
         activationThreshold = 0.2;
         Period = 0.02; %seconds
@@ -41,13 +40,6 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
             
             obj.SignalSource.NumSamples = obj.SignalClassifier.NumSamplesPerWindow;
 
-            % Initialize variable to store raw EMG data
-            try
-                obj.EmgData = NaN([obj.SignalSource.NumChannels obj.SignalClassifier.NumSamplesPerWindow obj.MaxSamples],'single');
-            catch ME
-                fprintf('[%s] Error initializing EMG storage: "%s"\n',mfilename,ME.message);
-            end
-            
             % Extend the init method to create figure
             setupFigure(obj);
         end
@@ -138,16 +130,17 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
                 end
                 
                 if collectData
-                    obj.SampleCount = obj.SampleCount + 1;
-                    try
-                        obj.EmgData(:,:,obj.SampleCount) = windowData(1:obj.SignalClassifier.NumSamplesPerWindow,:)';
-                    end
-                    obj.ClassLabelId(obj.SampleCount) = obj.CurrentClass;
-                    % Note this could be tricky if data is loaded with the
-                    % wrong number of channels compared to the current Signal
-                    % Source.  Below code works if the current channels are
-                    % less than or equal to the prior data
-                    obj.Features3D(1:obj.SignalSource.NumChannels,:,obj.SampleCount) = features;
+                    obj.addData();
+%                     obj.SampleCount = obj.SampleCount + 1;
+%                     try
+%                         obj.EmgData(:,:,obj.SampleCount) = windowData(1:obj.SignalClassifier.NumSamplesPerWindow,:)';
+%                     end
+%                     obj.ClassLabelId(obj.SampleCount) = obj.CurrentClass;
+%                     % Note this could be tricky if data is loaded with the
+%                     % wrong number of channels compared to the current Signal
+%                     % Source.  Below code works if the current channels are
+%                     % less than or equal to the prior data
+%                     obj.Features3D(1:obj.SignalSource.NumChannels,:,obj.SampleCount) = features;
                 end
                 
                 x = ones(1,obj.SignalClassifier.NumClasses);
@@ -193,6 +186,7 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
             hSignalSource = Inputs.SignalSimulator;
             hSignalSource.initialize;
             hSignalSource.addfilter(Inputs.HighPass());
+            
             hSignalClassifier = SignalAnalysis.Lda;
             hSignalClassifier.initialize;
             
