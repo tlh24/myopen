@@ -47,10 +47,107 @@ wait_samples:
 	r5 = 30; //30 due to *two* pipeline delays (MUX, sample)
 	r4 = MUXRESET;
 	cc = r5 == r6;
-	if cc r7 = r4; //toggle the reset or the step. to keep the mux in sync.
+	if cc r7 = r4; //toggle the reset or the step (see r7 above). to keep the mux in sync.
 	//the toggle statement should not get out of sync b/c there are set/clear statements above.
 	w[p1 + (FIO_FLAG_T - FIO_FLAG_D)] = r7;
-	//apply integrator highpass + gain (2, add twice)).
+	//apply integrator highpass + gain (4, shift and *2)).
+.align 8
+	r2 = r2 << 1 (v) || r5 = [i0++]; //*2, r5 = 32000,-16384. (lo, high)
+			//(initial multiply by 2,2: 12 -> 13 -> 14 bits, unsgined.
+	a0 = r2.l * r5.l, a1 = r2.h * r5.l || r1 = [i1++] || r6 = [i0++]; // r1 = integral,
+			//r6 = 16384 (1), 800 (mu)
+	r0.l = (a0 += r1.l * r5.h), r0.h = (a1 += r1.h * r5.h) (s2rnd) || nop; //subtract the mean.
+	a0 = r1.l * r6.l , a1 = r1.h * r6.l //integrator
+		|| i1 += m0; //move to channel+2
+	r2.l = (a0 += r0.l * r6.h), r2.h = (a1 += r0.h * r6.h) (s2rnd) //update integral.
+		|| r1 = [i1++m0]; //load sample from channel+2,
+	r7 = r0 << 7 (v,s) || r2 = [i0++] || [i2++] = r2;
+			//saturate sample, load corresponding weight, save integral.
+	a0 = r1.l * r2.l, a1 = r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //1
+	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //2
+	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //3
+	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //4
+	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //5
+	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //6
+	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //7
+	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //8
+	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //9
+	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //10
+	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //11
+	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //12
+	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //13
+	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //14
+	r6.l=(a0+= r1.l * r2.l), r6.h=(a1+= r1.h * r2.h)  //15;
+		|| r1 = [i1++] || r5 = [i0++]; //i1 to saturated sample, r5 = weight decay.
+
+	//update one of the weights:
+	r0 = r0 -|- r6 (s) || i0 -= m1 || [i2++] = r0 ;
+		//compute error, move i0 to active weight, save original
+	r6 = r0 << 10 (v,s) || i1 += m2 || [i2++] = r7; //move i1 to update channel, save saturated.
+	r6 = r6 >>> 15 (v,s) || r1 = [i1++] || r2 = [i0];
+		//r6 = sign of error, r1 = saturated sample, r2 = w0, i1 @ gain + updatechan.
+	a0 = r1.l * r5.l, a1 = r1.h * r5.h) || nop; //load delta w, r6 weight decay.
+r4.l = (a0+= r2.l * r6.l), r4.h = (a1+= r2.h * r6.h) || i1 -= m2 ;
+			//load/decay weight, r6 AGC targets (sqrt), move i1 back to present channel.
+	mnop || r5 = [i1++] || [i0++m1] = r4 ; //r5 = gain, save the new weight, i0 back to AGC0
+	a0 = r0.l * r5.l, a1 = r0.h * r5.h ; //apply gain, r6 = 16384, 1 (mu)
+ 	a0 = a0 << 8 ; // 14 bits in SRC, this makes 22 and
+	a1 = a1 << 8 ; // gain goes from 0-128 hence (don't forget about sign)
+	r7.l = a0, r7.h = a1 ;  //r7 gained sample. default mode should work (treat both as signed fractions)
+	a0 = abs a0, a1 = abs a1 || r6 = [i0++]; //take abs, r6 = sqrt AGC targets.
+	r4.l = (a0 -= r6.l * r6.l), r4.h = (a1 -= r6.h * r6.h) (is) //subtract target, saturate, store difference
+		|| r6 = [i0++]; //r6.l = 16384 (1), r6.h = 1 (mu)
+	a0 = r5.l * r6.l, a1 = r5.h * r6.l || nop; //load the gain again & scale.
+	r3.l = (a0 -= r4.l * r6.h), r3.h = (a1 -= r4.h * r6.h) (s2rnd) || nop; //r6.h = 1 (mu); within a certain range gain will not change.
+	r3 = abs r3 (v) //no negative gain -- unstable!
+													 || r5 = [i0++] || r1 = [i1++];  // r0 samp; r1 x1(n-1); r5 b0.0
+	MNOP || [i2++] = r3; //save the sample, save the gain.
+.align 8
+	a0  = r7.l * r5.l, a1  = r7.h * r5.h || r5 = [i0++] || r2 = [i1++] ;//r6 = b0.1; r2 = x1(n-2)
+	a0 += r1.l * r5.l, a1 += r1.h * r5.h || r5 = [i0++] || r3 = [i1++] ;//r7 = b0.2; r3 = y1(n-1) or x2(n-1)
+	a0 += r2.l * r5.l, a1 += r2.h * r5.h || r5 = [i0++] || r4 = [i1++] ;//r5 = a0.0; r4 = y1(n-2) or x2(n-1)
+	a0 += r3.l * r5.l, a1 += r3.h * r5.h || r5 = [i0++] || [i2++] = r0 ;//r6 = a0.1; save x1(n-1)
+r0.l=(a0 +=r4.l * r5.l), r0.h=(a1 +=r4.h * r5.h)(s2rnd)|| [i2++] = r1 ;//r0 = y1(n); save x1(n-2)
+
+														 r5 = [i0++] || [i2++] = r0 ;//r5 = b1.0; save y1(n-1) / x2(n-1)
+	a0  = r0.l * r5.l, a1  = r0.h * r5.h || r5 = [i0++] || [i2++] = r3 ;//r6 = b1.1; save y1(n-2) / x2(n-2)
+	a0 += r3.l * r5.l, a1 += r3.h * r5.h || r5 = [i0++] || r1 = [i1++] ;//r7 = b1.2; r1 = y2(n-1) / x3(n-1)
+	a0 += r4.l * r5.l, a1 += r4.h * r5.h || r5 = [i0++] || r2 = [i1++] ;//r5 = a1.0; r2 = y2(n-2) / x3(n-2)
+	a0 += r1.l * r5.l, a1 += r1.h * r5.h || r5 = [i0++]; 					  //r6 = a1.1
+r0.l=(a0 +=r2.l * r5.l), r0.h=(a1 +=r2.h * r5.h)(s2rnd)|| r5 = [i0++] ;//r0 = y2(n); r5 = threshold.
+//this is the output of the matched filter; may need more biquads. compare with thresh.
+	r0 = r0 +|+ r5 || [i2++] = r0; // subtract threshold, save y2(n)`
+	r0 = r0 >>> 15 (v) || r5 = [i0++] || [i2++] = r1; //either -1 (0xffff) or 0; load mask (0x00080008), save y2(n-1)
+	r6 = r0 & r5 || r5 = [i0++] || r1 = [i1++]; // r6 match; r1 x1(n-1); r5 b0.0
+//second unit.
+	a0  = r7.l * r5.l, a1  = r7.h * r5.h || r5 = [i0++] || r2 = [i1++] ;//r6 = b0.1; r2 = x1(n-2)
+	a0 += r1.l * r5.l, a1 += r1.h * r5.h || r5 = [i0++] || r3 = [i1++] ;//r7 = b0.2; r3 = y1(n-1) or x2(n-1)
+	a0 += r2.l * r5.l, a1 += r2.h * r5.h || r5 = [i0++] || r4 = [i1++] ;//r5 = a0.0; r4 = y1(n-2) or x2(n-1)
+	a0 += r3.l * r5.l, a1 += r3.h * r5.h || r5 = [i0++] || [i2++] = r0 ;//r6 = a0.1; save x1(n-1)
+r0.l=(a0 +=r4.l * r5.l), r0.h=(a1 +=r4.h * r5.h)(s2rnd)|| [i2++] = r1 ;//r0 = y1(n); save x1(n-2)
+
+														 r5 = [i0++] || [i2++] = r0 ;//r5 = b1.0; save y1(n-1) / x2(n-1)
+	a0  = r0.l * r5.l, a1  = r0.h * r5.h || r5 = [i0++] || [i2++] = r3 ;//r6 = b1.1; save y1(n-2) / x2(n-2)
+	a0 += r3.l * r5.l, a1 += r3.h * r5.h || r5 = [i0++] || r1 = [i1++] ;//r7 = b1.2; r1 = y2(n-1) / x3(n-1)
+	a0 += r4.l * r5.l, a1 += r4.h * r5.h || r5 = [i0++] || r2 = [i1++] ;//r5 = a1.0; r2 = y2(n-2) / x3(n-2)
+	a0 += r1.l * r5.l, a1 += r1.h * r5.h || r5 = [i0++]; 					  //r6 = a1.1
+r0.l=(a0 +=r2.l * r5.l), r0.h=(a1 +=r2.h * r5.h)(s2rnd)|| r5 = [i0++] ;//r0 = y2(n); r5 = threshold.
+//this is the output of the matched filter; may need more biquads. compare with thresh.
+	r0 = r0 +|+ r5 || [i2++] = r0; // subtract threshold, save y2(n)`
+	r0 = r0 >>> 15 (v) || r5 = [i0++] || [i2++] = r1; //either -1 (0xffff) or 0; load mask (0x00040004), save y2(n-1)
+	r0 = r0 & r5 ; // r6 match; r1 x1(n-1); r5 b0.0
+	r6 = r6 | r0 ; // r6 match on 2 units, 2 channels now.
+	[fp - FP_MATCH] = r6;
+
+	//read in the samples -- SPORT1
+	r0 = w[p0 + (SPORT1_RX - SPORT0_RX)] (z);
+	r1 = w[p0 + (SPORT1_RX - SPORT0_RX)] (z);
+	r2.l = 0xfff;
+	r0 = r0 & r2;
+	r1 = r1 & r2;
+	r1 <<= 16; //secondary channel in upper word.
+	r2 = r0 + r1;
+	//apply integrator highpass + gain (4, shift and *2)).
 .align 8
 	r2 = r2 << 1 (v) || r5 = [i0++]; //*2, r5 = 32000,-16384. (lo, high)
 			//(initial multiply by 2,2: 12 -> 13 -> 14 bits, unsgined.
@@ -84,225 +181,60 @@ wait_samples:
 	r0 = r0 -|- r6 (s) || [i2++] = r0 ; //compute error, save original
 	r6 = r0 << 10 (v,s) || i1 += m0 || [i2++] = r7; //move i1 to update channel, save saturated.
 	r6 = r6 >>> 15 (v,s) || r1 = [i1++] || r2 = [i3];//r6 = sign of error, r1 = saturated sample, r2 = w0, i0 @ 1
-	a0 = r1.l * r6.l, a1 = r1.h * r6.h) || r7 = [i0++]; //load delta w, r7 AGC targets (sqrt)
-r4.l = (a0+= r2.l * r7.l), r4.h = (a1+= r2.h * r7.h) || i1 -= m0 ; //load/decay weight, output on r5.
+	a0 = r1.l * r6.l, a1 = r1.h * r6.h) || r6 = [i0++]; //load delta w, r6 weight decay.
+r4.l = (a0+= r2.l * r6.l), r4.h = (a1+= r2.h * r6.h) || r6 = [i0++] || i1 -= m0 ;
+			//load/decay weight, r6 AGC targets (sqrt), move i1 back to present channel.
 	mnop || r5 = [i1++] || [i3++] = r4 ; //r5 = gain, save the new weight,
 													//move i3 to next channel
 	a0 = r0.l * r5.l, a1 = r0.h * r5.h //apply gain
 		|| [i2++] = r2 || i3 -= m1 ; // save mean, move i3 back from working weight
  	a0 = a0 << 8 ; // 14 bits in SRC, this makes 22 and
 	a1 = a1 << 8 ; // gain goes from 0-128 hence (don't forget about sign)
-	r0.l = a0, r0.h = a1 ;  //default mode should work (treat both as signed fractions)
+	r7.l = a0, r7.h = a1 ;  //r7 gained sample. default mode should work (treat both as signed fractions)
 	a0 = abs a0, a1 = abs a1;
-	r4.l = (a0 -= r7.l * r7.l), r4.h = (a1 -= r7.h * r7.h) (is) //subtract target, saturate, store difference
+	r4.l = (a0 -= r6.l * r6.l), r4.h = (a1 -= r6.h * r6.h) (is) //subtract target, saturate, store difference
 		|| r6 = [i0++]; //r6.l = 16384 (1), r6.h = 1 (mu)
 	a0 = r5.l * r6.l, a1 = r5.h * r6.l || nop; //load the gain again & scale.
 	r3.l = (a0 -= r4.l * r6.h), r3.h = (a1 -= r4.h * r6.h) (s2rnd) || nop; //r6.h = 1 (mu); within a certain range gain will not change.
 	r3 = abs r3 (v) //no negative gain -- unstable!
 													 || r5 = [i0++] || r1 = [i1++];  // r0 samp; r1 x1(n-1); r5 b0.0
-	[FP - FP_SAMPLE] = r0 || [i2++] = r3; //save the sample, save the gain.
+	MNOP || [i2++] = r3; //save the sample, save the gain.
 .align 8
-	a0  = r0.l * r5.l, a1  = r0.h * r5.h || r6 = [i0++] || r2 = [i1++] ;//r6 = b0.1; r2 = x1(n-2)
-	a0 += r1.l * r6.l, a1 += r1.h * r6.h || r7 = [i0++] || r3 = [i1++] ;//r7 = b0.2; r3 = y1(n-1) or x2(n-1)
-	a0 += r2.l * r7.l, a1 += r2.h * r7.h || r5 = [i0++] || r4 = [i1++] ;//r5 = a0.0; r4 = y1(n-2) or x2(n-1)
-	a0 += r3.l * r5.l, a1 += r3.h * r5.h || r6 = [i0++] || [i2++] = r0 ;//r6 = a0.1; save x1(n-1)
-r0.l=(a0 +=r4.l * r6.l), r0.h=(a1 +=r4.h * r6.h)(s2rnd)|| [i2++] = r1 ;//r0 = y1(n); save x1(n-2)
+	a0  = r7.l * r5.l, a1  = r7.h * r5.h || r5 = [i0++] || r2 = [i1++] ;//r6 = b0.1; r2 = x1(n-2)
+	a0 += r1.l * r5.l, a1 += r1.h * r5.h || r5 = [i0++] || r3 = [i1++] ;//r7 = b0.2; r3 = y1(n-1) or x2(n-1)
+	a0 += r2.l * r5.l, a1 += r2.h * r5.h || r5 = [i0++] || r4 = [i1++] ;//r5 = a0.0; r4 = y1(n-2) or x2(n-1)
+	a0 += r3.l * r5.l, a1 += r3.h * r5.h || r5 = [i0++] || [i2++] = r0 ;//r6 = a0.1; save x1(n-1)
+r0.l=(a0 +=r4.l * r5.l), r0.h=(a1 +=r4.h * r5.h)(s2rnd)|| [i2++] = r1 ;//r0 = y1(n); save x1(n-2)
 
 														 r5 = [i0++] || [i2++] = r0 ;//r5 = b1.0; save y1(n-1) / x2(n-1)
-	a0  = r0.l * r5.l, a1  = r0.h * r5.h || r6 = [i0++] || [i2++] = r3 ;//r6 = b1.1; save y1(n-2) / x2(n-2)
-	a0 += r3.l * r6.l, a1 += r3.h * r6.h || r7 = [i0++] || r1 = [i1++] ;//r7 = b1.2; r1 = y2(n-1) / x3(n-1)
-	a0 += r4.l * r7.l, a1 += r4.h * r7.h || r5 = [i0++] || r2 = [i1++] ;//r5 = a1.0; r2 = y2(n-2) / x3(n-2)
-	a0 += r1.l * r5.l, a1 += r1.h * r5.h || r6 = [i0++]; 					  //r6 = a1.1
-r0.l=(a0 +=r2.l * r6.l), r0.h=(a1 +=r2.h * r6.h)(s2rnd)|| r7 = [i0++] ;//r0 = y2(n); r7 = threshold.
-//this is the output of the matched filter; hope we don't need more biquads
-//now compare with threshold -- if its negative, we have a spike.
-	r0 = r0 +|+ r7;
-	r0 = r0 >>> 15 (v); //either -1 or 0.
-	r0 = -r0 (v); //now 1 or 0.
+	a0  = r0.l * r5.l, a1  = r0.h * r5.h || r5 = [i0++] || [i2++] = r3 ;//r6 = b1.1; save y1(n-2) / x2(n-2)
+	a0 += r3.l * r5.l, a1 += r3.h * r5.h || r5 = [i0++] || r1 = [i1++] ;//r7 = b1.2; r1 = y2(n-1) / x3(n-1)
+	a0 += r4.l * r5.l, a1 += r4.h * r5.h || r5 = [i0++] || r2 = [i1++] ;//r5 = a1.0; r2 = y2(n-2) / x3(n-2)
+	a0 += r1.l * r5.l, a1 += r1.h * r5.h || r5 = [i0++]; 					  //r6 = a1.1
+r0.l=(a0 +=r2.l * r5.l), r0.h=(a1 +=r2.h * r5.h)(s2rnd)|| r5 = [i0++] ;//r0 = y2(n); r5 = threshold.
+//this is the output of the matched filter; may need more biquads. compare with thresh.
+	r0 = r0 +|+ r5 || [i2++] = r0; // subtract threshold, save y2(n)`
+	r0 = r0 >>> 15 (v) || r5 = [i0++] || [i2++] = r1; //either -1 (0xffff) or 0; load mask (0x00020002), save y2(n-1)
+	r6 = r0 & r5 || r5 = [i0++] || r1 = [i1++]; // r6 match; r1 x1(n-1); r5 b0.0
+//second unit.
+	a0  = r7.l * r5.l, a1  = r7.h * r5.h || r5 = [i0++] || r2 = [i1++] ;//r6 = b0.1; r2 = x1(n-2)
+	a0 += r1.l * r5.l, a1 += r1.h * r5.h || r5 = [i0++] || r3 = [i1++] ;//r7 = b0.2; r3 = y1(n-1) or x2(n-1)
+	a0 += r2.l * r5.l, a1 += r2.h * r5.h || r5 = [i0++] || r4 = [i1++] ;//r5 = a0.0; r4 = y1(n-2) or x2(n-1)
+	a0 += r3.l * r5.l, a1 += r3.h * r5.h || r5 = [i0++] || [i2++] = r0 ;//r6 = a0.1; save x1(n-1)
+r0.l=(a0 +=r4.l * r5.l), r0.h=(a1 +=r4.h * r5.h)(s2rnd)|| [i2++] = r1 ;//r0 = y1(n); save x1(n-2)
 
-
-	r5 = [i0++] || [i2++] = r0; // r5 = b2.0; save y2(n-1) / x3(n-1)
-	a0  = r0.l * r5.l, a1  = r0.h * r5.h || r6 = [i0++] || [i2++] = r1; //r6 = b2.1; save y2(n-2) / x3(n-2)
-	a0 += r1.l * r6.l, a1 += r1.h * r6.h || r7 = [i0++] || r3 = [i1++]; //r7 = a2.0; r3 = y3(n-1) / x4(n-1)
-	a0 += r2.l * r5.l, a1 += r2.h * r5.h || r5 = [i0++] || r4 = [i1++]; //r4 = y3(n-2) / x4(n-2)
-	a0 += r3.l * r7.l, a1 += r3.h * r7.h || r6 = [i0++]; //r5 = a2.1
-	r0.l = (a0 += r4.l * r5.l), r0.h = (a1 += r4.h * r5.h) (s2rnd) || NOP; //r0 = y3(n)
-
-	r5 = [i0++] || [i2++] = r0; // r5 = b3.0; save y3(n-1) / x4(n-1)
-	a0  = r0.l * r5.l, a1  = r0.h * r5.h || r6 = [i0++] || [i2++] = r3; //r6 = b3.1; save y3(n-2) / x4(n-2)
-	a0 += r3.l * r6.l, a1 += r3.h * r6.h || r7 = [i0++] || r1 = [i1++]; //r7 = a3.0; r1 = y4(n-1)
-	a0 += r4.l * r5.l, a1 += r4.h * r5.h || r5 = [i0++] || r2 = [i1++]; // r2 = y4(n-2)
-	a0 += r1.l * r7.l, a1 += r1.h * r7.h || r6 = [i0++]; // r5 = a3.1
-	r0.l = (a0 += r2.l * r5.l), r0.h = (a1 += r2.h * r5.h) (s2rnd); // r0 = y4(n)
-
-	[i2++] = r0; // save y4(n-1)
-	[i2++] = r1; // save y4(n-2) (normally pipelined)
-	[--sp] = r0; //store the samples on the stack.
-
-	//read in the samples -- SPORT1
-	r0 = w[p0 + (SPORT1_RX - SPORT0_RX)] (z);
-	r1 = w[p0 + (SPORT1_RX - SPORT0_RX)] (z);
-	r2.l = 0xfff;
-	r0 = r0 & r2;
-	r1 = r1 & r2;
-	r1 <<= 16; //secondary channel in upper word.
-	r2 = r0 + r1;
-	//apply integrator highpass + gain.
-	r5 = [i0++]; //r5 = 32000,-16384.
-.align 8
-	a0 = r2.l * r5.l, a1 = r2.h * r5.l || r1 = [i1++]; // r1 = integrated mean
-	a0 += r2.l * r5.l, a1 += r2.h * r5.l || r6 = [i0++]; //r6 = 16384 (1), 800 (mu)
-	r0.l = (a0 += r1.l * r5.h), r0.h = (a1 += r1.h * r5.h) (s2rnd);
-	a0 = r1.l * r6.l , a1 = r1.h * r6.l; //integrator
-	r2.l = (a0 += r0.l * r6.h), r2.h = (a1 += r0.h * r6.h) (s2rnd)
-/*AGC*/	|| r5 = [i1++] || r7 = [i0++]; //r5 = gain, coefs r7.l = 876, r7.h = 876
-	a0 = r0.l * r5.l, a1 = r0.h * r5.h || [i2++] = r2; //save mean, above
- 	a0 = a0 << 8 ; // 12 bits in SRC, amp to 16 bits, which leaves 4 more bits for amplification (*16)
-	a1 = a1 << 8 ; //gain goes from 0-128 hence (don't forget about sign)
-	r0.l = a0, r0.h = a1 ;  //default mode should work (treat both as signed fractions)
-	a0 = abs a0, a1 = abs a1;
-	r4.l = (a0 -= r7.l * r7.l), r4.h = (a1 -= r7.h * r7.h) (is) //subtract target, saturate, store difference
-		|| r6 = [i0++]; //r6.l = 16384 (1), r6.h = 1 (mu)
-	a0 = r5.l * r6.l, a1 = r5.h * r6.l || nop; //load the gain again & scale.
-	r3.l = (a0 -= r4.l * r6.h), r3.h = (a1 -= r4.h * r6.h) (s2rnd) || nop; //r6.h = 1 (mu); within a certain range gain will not change.
-.align 8
-	r3 = abs r3 (v) || r7 = [FP - FP_WEIGHTDECAY]; //set weightdecay to zero to disable LMS.
-	r4.l = (a0 = r0.l * r7.l), r4.h = (a1 = r0.h * r7.l) (iss2) || i1 += m1 || [i2++] = r3;
-				//saturate the sample, save the gain.
-// LMS! woo
-	mnop || r1 = [i1++] || [i2++] = r4; //move to x1(n-1), save the saturated sample.
-	mnop || r1 = [i1++m2] || r2 = [i0++]; //r1 = sample, r2 = weight.
-	a0 = r1.l * r2.l, a1 = r1.h * r2.h || r1 = [i1++m2] || r2 = [i0++];
-	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m2] || r2 = [i0++];
-	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m2] || r2 = [i0++];
-	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m2] || r2 = [i0++];
-	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m2] || r2 = [i0++];
-	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m2] || r2 = [i0++];
-	r6.l = (a0+= r1.l * r2.l), r6.h = (a1+= r1.h * r2.h) || r1 = [i1++m1] || r2 = [i0++m0];
-
-	r0 = r0 -|- r6 (s) || [i2++] = r0 || r1 = [i1--] ; //compute error, save original, move i1 back to saturated samples.
-	r6 = r0 >>> 15 (v,s) || r1 = [i1++m2] || r2 = [i0++];//r1 = saturated sample, r2 = w0, i0 @ 1
-	//r6 = r6 << 1 (v,s);
-	//r6 = r6 + r3;
-.align 8
-	a0 = r2.l * r7.h, a1 = r2.h * r7.h || nop || nop; //load / decay weight.
-r5.l = (a0 += r1.l * r6.l), r5.h = (a1 += r1.h * r6.h) || r1 = [i1++m2] || r2 = [i0--];//r2 = w1, i0 @ 0
-	a0 = r2.l * r7.h, a1 = r2.h * r7.h || [i0++m3] = r5; //write 0, i0 @ 2
-r5.l = (a0 += r1.l * r6.l), r5.h = (a1 += r1.h * r6.h) || r1 = [i1++m2] || r2 = [i0--];//r2 = w2, i0 @ 1
-	a0 = r2.l * r7.h, a1 = r2.h * r7.h || [i0++m3] = r5; //write 1, i0 @ 3
-r5.l = (a0 += r1.l * r6.l), r5.h = (a1 += r1.h * r6.h) || r1 = [i1++m2] || r2 = [i0--];//r2 = w3, i0 @ 2
-	a0 = r2.l * r7.h, a1 = r2.h * r7.h || [i0++m3] = r5; //write 2, i0 @ 4
-r5.l = (a0 += r1.l * r6.l), r5.h = (a1 += r1.h * r6.h) || r1 = [i1++m2] || r2 = [i0--];//r2 = w4, i0 @ 3
-	a0 = r2.l * r7.h, a1 = r2.h * r7.h || [i0++m3] = r5; //write 3, i0 @ 5
-r5.l = (a0 += r1.l * r6.l), r5.h = (a1 += r1.h * r6.h) || r1 = [i1++m2] || r2 = [i0--];//r2 = w5, i0 @ 4
-	a0 = r2.l * r7.h, a1 = r2.h * r7.h || [i0++m3] = r5; //write 4, i0 @ 6
-r5.l = (a0 += r1.l * r6.l), r5.h = (a1 += r1.h * r6.h) || r1 = [i1++m2] || r2 = [i0--];//r2 = w6, i0 @ 5
-	a0 = r2.l * r7.h, a1 = r2.h * r7.h || [i0++m3] = r5; //write 5, i0 @ 7
-r5.l = (a0 += r1.l * r6.l), r5.h = (a1 += r1.h * r6.h) || r1 = [i1++m3] || r2 = [i0--];// inc to x1(n-1) r2 = w1, i0 @ 6
-	mnop || [i0++] = r5; //write 6.
-
-// IIR !
-	mnop || r5 = [i0++] || r1 = [i1++];  // r0 samp; r1 x1(n-1); r5 b0.0
-	a0  = r0.l * r5.l, a1  = r0.h * r5.h || r6 = [i0++] || r2 = [i1++] ; //r6 = b0.1; r2 = x1(n-2)
-	a0 += r1.l * r6.l, a1 += r1.h * r6.h || r7 = [i0++] || r3 = [i1++]; //r7 = a0.0; r3 = y1(n-1) / x2(n-1)
-	a0 += r2.l * r5.l, a1 += r2.h * r5.h || r5 = [i0++] || r4 = [i1++] ; //r5 = a0.1; r4 = y1(n-2) / x2(n-1)
-	a0 += r3.l * r7.l, a1 += r3.h * r7.h || [i2++] = r0 ; // save x1(n-1)
-	r0.l = (a0 += r4.l * r5.l), r0.h = (a1 += r4.h * r5.h) (s2rnd) || [i2++] = r1;//r0 = y1(n); save x1(n-2)
-
-	r5 = [i0++] || [i2++] = r0; //r5 b1.0; save y1(n-1) / x2(n-1)
-	a0  = r0.l * r5.l, a1  = r0.h * r5.h || r6 = [i0++] || [i2++] = r3; //r6 = b1.1; save y1(n-2) / x2(n-2)
-	a0 += r3.l * r6.l, a1 += r3.h * r6.h || r7 = [i0++] || r1 = [i1++]; //r7 = a1.0; r1 = y2(n-1) / x3(n-1)
-	a0 += r4.l * r5.l, a1 += r4.h * r5.h || r2 = [i1++]; //r2 = y2(n-2) / x3(n-2)
-	a0 += r1.l * r7.l, a1 += r1.h * r7.h || r5 = [i0++]; // r5 = a1.1
-	r0.l = (a0 += r2.l * r5.l), r0.h = (a1 += r2.h * r5.h) (s2rnd) || NOP; // r0 = y2(n)
-
-	r5 = [i0++] || [i2++] = r0; // r5 = b2.0; save y2(n-1) / x3(n-1)
-	a0  = r0.l * r5.l, a1  = r0.h * r5.h || r6 = [i0++] || [i2++] = r1; //r6 = b2.1; save y2(n-2) / x3(n-2)
-	a0 += r1.l * r6.l, a1 += r1.h * r6.h || r7 = [i0++] || r3 = [i1++]; //r7 = a2.0; r3 = y3(n-1) / x4(n-1)
-	a0 += r2.l * r5.l, a1 += r2.h * r5.h || r4 = [i1++]; //r4 = y3(n-2) / x4(n-2)
-	a0 += r3.l * r7.l, a1 += r3.h * r7.h || r5 = [i0++]; //r5 = a2.1
-	r0.l = (a0 += r4.l * r5.l), r0.h = (a1 += r4.h * r5.h) (s2rnd) || NOP; //r0 = y3(n)
-
-	r5 = [i0++] || [i2++] = r0; // r5 = b3.0; save y3(n-1) / x4(n-1)
-	a0  = r0.l * r5.l, a1  = r0.h * r5.h || r6 = [i0++] || [i2++] = r3; //r6 = b3.1; save y3(n-2) / x4(n-2)
-	a0 += r3.l * r6.l, a1 += r3.h * r6.h || r7 = [i0++] || r1 = [i1++]; //r7 = a3.0; r1 = y4(n-1)
-	a0 += r4.l * r5.l, a1 += r4.h * r5.h || r2 = [i1++]; // r2 = y4(n-2)
-	a0 += r1.l * r7.l, a1 += r1.h * r7.h || r5 = [i0++]; // r5 = a3.1
-	r3.l = (a0 += r2.l * r5.l), r0.h = (a1 += r2.h * r5.h) (s2rnd); // r0 = y4(n)
-
-	nop || [i2++] = r3; // save y4(n-1),
-	r2 = [sp++] || [i2++] = r1; // save y4(n-2) (normally pipelined)
-
-	//template comparison. ala plexon, although sliding here  - no threshold.
-	//r2 and r3 are presently the read-in samples. pack them.
-	r2 = r2 >>> 8 (v); //vector shift. preserve sign.
-	r3 = r3 >>> 8 (v);
-	r4 = bytepack(r2, r3) //lo, hi //newest sample chs 96,64,32,0. (hi to lo)
-	r0 = [FP - FP_8080] ; //r0 = 80808080;
-	r4 = r4 ^ r0; //convert to unsigned. SAA works on unsigned numbers, to the best of my knowledge.
-	r0 = r4; //cannot be paralleled. need the copy for later.
-.align 8;
-	a0 = a1 = 0 || r2 = [i0++]; /**template A**/ //r2 template, r0 / r4 new samples.
-	saa( r1:0, r3:2 ) || r0 = [i3++] || r2 = [i0++]; //1 ; template A starts most recent
-	saa( r1:0, r3:2 ) || r0 = [i3++] || r2 = [i0++]; //2 ; then least recent, 2nd least..
-	saa( r1:0, r3:2 ) || r0 = [i3++] || r2 = [i0++]; //3
-	saa( r1:0, r3:2 ) || r0 = [i3++] || r2 = [i0++]; //4
-	saa( r1:0, r3:2 ) || r0 = [i3++] || r2 = [i0++]; //5
-	saa( r1:0, r3:2 ) || r0 = [i3++] || r2 = [i0++]; //6
-	saa( r1:0, r3:2 ) || r0 = [i3++] || r2 = [i0++]; //7
-	saa( r1:0, r3:2 ) || r0 = [i3++] || r2 = [i0++]; //8
-	saa( r1:0, r3:2 ) || r0 = [i3++] || r2 = [i0++]; //9
-	saa( r1:0, r3:2 ) || r0 = [i3++] || r2 = [i0++]; //10
-	saa( r1:0, r3:2 ) || r0 = [i3++] || r2 = [i0++]; //11
-	saa( r1:0, r3:2 ) || r0 = [i3++] || r2 = [i0++]; //12
-	saa( r1:0, r3:2 ) || r0 = [i3++] || r2 = [i0++]; //13
-	saa( r1:0, r3:2 ) || r0 = [i3++] || r2 = [i0++]; //14
-	saa( r1:0, r3:2 ) || r0 = [i3++] || r2 = [i0++]; //15 (read)
-	saa( r1:0, r3:2 ) || [i3++] = r4 ; //write new sample @ [15]
-	//now .. result is in a0.l, a0.h, a1.l, a1.h ; need to compare to aperture.
-	r0 = a0, r1 = a1 (fu) || r2 = [i0++] || i3 += m0; //move -7 delays.
-	//subtract - if the answer is negative, criteria satisfied.
-	r0 = r0 -|- r2 (s) || r3 = [i0++] || i3 -= m3; //r0 chs 32 0 (hi lo); move -2 delays.
-	r1 = r1 -|- r3 (s) || i3 += m0; //r1 chs 96 64; move -7 delays for total -16.
-	//shift to bit 0 -- have to shift anyway, as these are 16 bit packed.
-	r0 = r0 >>> 15 (v); //these will be -1 or 0.
-	r1 = r1 >>> 15 (v);
-	r0 = -r0 (v); //now 0 or 1, hi and low sections.
-	r1 = -r1 (v); //will save these for later packing into a nibble..
-	r1 <<= 1;
-	r6 = r0 + r1;// [ch 96 A][ch 32 A]...14 bits...[ch 64 A][ch 0 A]
-.align 8 /** template B **/
-	a0 = a1 = 0 || r0 = [i3++] || r2 = [i0++]; //read in first template, r0 / r4 new samples.
-	saa( r1:0, r3:2 ) || r0 = [i3++] || r2 = [i0++]; //1 ; template b is in order.
-	saa( r1:0, r3:2 ) || r0 = [i3++] || r2 = [i0++]; //2
-	saa( r1:0, r3:2 ) || r0 = [i3++] || r2 = [i0++]; //3
-	saa( r1:0, r3:2 ) || r0 = [i3++] || r2 = [i0++]; //4
-	saa( r1:0, r3:2 ) || r0 = [i3++] || r2 = [i0++]; //5
-	saa( r1:0, r3:2 ) || r0 = [i3++] || r2 = [i0++]; //6
-	saa( r1:0, r3:2 ) || r0 = [i3++] || r2 = [i0++]; //7
-	saa( r1:0, r3:2 ) || r0 = [i3++] || r2 = [i0++]; //8
-	saa( r1:0, r3:2 ) || r0 = [i3++] || r2 = [i0++]; //9
-	saa( r1:0, r3:2 ) || r0 = [i3++] || r2 = [i0++]; //10
-	saa( r1:0, r3:2 ) || r0 = [i3++] || r2 = [i0++]; //11
-	saa( r1:0, r3:2 ) || r0 = [i3++] || r2 = [i0++]; //12
-	saa( r1:0, r3:2 ) || r0 = [i3++] || r2 = [i0++]; //13
-	saa( r1:0, r3:2 ) || r0 = [i3++] || r2 = [i0++]; //14
-	saa( r1:0, r3:2 ) || r0 = [i3++] || r2 = [i0++]; //15 (read)
-	saa( r1:0, r3:2 ) || nop; //i3 should be moved 1 forward, ready for next set of 4 channels.
-	//now .. result is in a0.l, a0.h, a1.l, a1.h ; need to compare to aperture.
-	r0 = a0, r1 = a1 (fu) || r2 = [i0++] ; //load aperture.
-	//subtract - if the answer is negative, criteria satisfied.
-	r0 = r0 -|- r2 (s) || r3 = [i0++]; //chs 0 32 (lo hi), load aperture.
-	r1 = r1 -|- r3 (s) ; //chs 64 96
-	//shift to bit 0 -- have to shift anyway, as these are 16 bit packed.
-	r0 = r0 >>> 15 (v); //these will be -1 or 0.
-	r1 = r1 >>> 15 (v);
-	r0 = -r0 (v); //now 0 or 1, hi and low sections.
-	r1 = -r1 (v); //save these for later packing into a nibble..
-	r1 <<= 3;
-	r0 <<= 2;
-	r0 = r0 + r1;
-	r0 = r0 + r6; //templ. A match.
+														 r5 = [i0++] || [i2++] = r0 ;//r5 = b1.0; save y1(n-1) / x2(n-1)
+	a0  = r0.l * r5.l, a1  = r0.h * r5.h || r5 = [i0++] || [i2++] = r3 ;//r6 = b1.1; save y1(n-2) / x2(n-2)
+	a0 += r3.l * r5.l, a1 += r3.h * r5.h || r5 = [i0++] || r1 = [i1++] ;//r7 = b1.2; r1 = y2(n-1) / x3(n-1)
+	a0 += r4.l * r5.l, a1 += r4.h * r5.h || r5 = [i0++] || r2 = [i1++] ;//r5 = a1.0; r2 = y2(n-2) / x3(n-2)
+	a0 += r1.l * r5.l, a1 += r1.h * r5.h || r5 = [i0++]; 					  //r6 = a1.1
+r0.l=(a0 +=r2.l * r5.l), r0.h=(a1 +=r2.h * r5.h)(s2rnd)|| r5 = [i0++] ;//r0 = y2(n); r5 = threshold.
+//this is the output of the matched filter; may need more biquads. compare with thresh.
+	r0 = r0 +|+ r5 || [i2++] = r0; // subtract threshold, save y2(n)`
+	r0 = r0 >>> 15 (v) || r5 = [i0++] || [i2++] = r1; //either -1 (0xffff) or 0; load mask (0x00010001), save y2(n-1)
+	r0 = r0 & r5 || nop; // r0 match; r1 x1(n-1); r5 b0.0
+	r6 = r6 | r0 || r7 = [fp - FP_MATCH]; // r6 match on 2 units, 2 channels now.
+	r7 = r7 | r6;
 /* contents:
 	low nibble r0.l
 	[ch 64 B][ch 0 B][ch 64 A][ch 0 A]
@@ -338,10 +270,13 @@ r5.l = (a0 += r1.l * r6.l), r5.h = (a1 += r1.h * r6.h) || r1 = [i1++m3] || r2 = 
 	cc = r6 == r0
 	if !cc jump end_txchan (bp); //predict not taken -- most likely.
 		//pointers p0 and p5 are free; p1 and p3 are static and are reset below.
-		p0 = [FP - FP_TXCHAN0];
-		p1 = [FP - FP_TXCHAN1];
+.align 8
+		mnop || p0 = [FP - FP_TXCHAN0] || r0 = [i3++]; //for m1
+		mnop || p1 = [FP - FP_TXCHAN1] || r1 = [i3++]; //for m2
 		p3 = [FP - FP_TXCHAN2];
 		p5 = [FP - FP_TXCHAN3];
+		m1 = r0;
+		m2 = r1;
 		r0 = b[p0];
 		r1 = b[p1];
 		r2 = b[p3];
@@ -353,7 +288,6 @@ r5.l = (a0 += r1.l * r6.l), r5.h = (a1 += r1.h * r6.h) || r1 = [i1++m3] || r2 = 
 		r4 = [FP - FP_QS];
 		r7 = 6;
 		r4 += 1;
-		i3 += 4; //implement delay line - we're on the last ch.
 		cc = r4 == r7;
 		if !cc jump end_txchan_qs (bp); //finish a packet.
 			//hide latency by managing flag.
@@ -584,10 +518,10 @@ _radio_bidi_asm:
 	b2 = b1;
 
 	//i3 is for reading/writing template delays (post-filter)
-	i3.l = LO(LMSW);
-	i3.h = HI(LMSW);
-	l3 = LMSW_LENGTH;
-	m3 = LMS_STRIDE*2*4; //LMS weights are stored transposed.
+	i3.l = LO(LMS_M1M2);
+	i3.h = HI(LMS_M1M2);
+	l3 = 15*2*4; //15 LMS taps, 2 registers (m1 m2), 4 bytes each.
+	m3 = 0; //unused.
 	b3 = i3;
 // butterworth (minium ripple) filters ! (look better in practice, less ringing)
 /*
