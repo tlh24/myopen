@@ -21,37 +21,42 @@ memory map:
 	Filter coeficients:
 		0xFF90 4000
 		read with i0. (and write, in the case of LMS).
+		clear step | clear reset.
+		set step  | set reset (on the correct channel)
+		{
+			32000, -16384 		integrator, pre-scale.
+			16384, 800			integrator, mu
+			LMS 0					m0 increments 2 channels (below)
+			LMS 1					m1 jump back to update weight,
+			LMS 2						2 to 16 32b words.
+			LMS 3					m2 jump forward to update channel,
+			LMS 4						multiple of m0.
+			LMS 5					i3 indexes a table which loads m1, m2.
+			LMS 6
+			LMS 7
+			LMS 8
+			LMS 9
+			LMS 10
+			LMS 11
+			LMS 12
+			LMS 13
+			LMS 14
+			LMS weight decay (16384 = none, sneezle.).
+			AGC targets, sqrt.
+			AGC, 16384 & mu.
+			b00 b01 b02 a00 a01	-- unit 1.
+			b10 b11 b12 a10 a12
+			threshold unit 1
+			loadmask unit 1
+			b00 b01 b02 a00 a01	-- unit 2.
+			b10 b11 b12 a10 a12
+			threshold unit 2
+			loadmask unit 2
+		} X2
+		0x0fff0fff
+		channel, 0-31
 
-		32000, -16384 		integrator, pre-scale.
-		16384, 800			integrator, mu
-		LMS 0					m0 increments 2 channels (below)
-		LMS 1					m1 jump back to update weight,
-		LMS 2						2 to 16.
-		LMS 3					m2 jump forward to update channel,
-		LMS 4						multiple of m0.
-		LMS 5					i3 indexes a table which loads m1, m2.
-		LMS 6
-		LMS 7
-		LMS 8
-		LMS 9
-		LMS 10
-		LMS 11
-		LMS 12
-		LMS 13
-		LMS 14
-		LMS weight decay (16384 = none, sneezle.).
-		AGC targets, sqrt.
-		AGC, 16384 & mu.
-		b00 b01 b02 a00 a01	-- unit 1.
-		b10 b11 b12 a10 a12
-		threshold unit 1
-		loadmask unit 1
-		b00 b01 b02 a00 a01	-- unit 2.
-		b10 b11 b12 a10 a12
-		threshold unit 2
-		loadmask unit 2
-
-		Total (one sport): 44
+		Total (one sport): XXX
 		88 * 32 * 4 = 11264, 0x2C00.
 		end at 0xFF90 6C00
 
@@ -129,16 +134,16 @@ memory map:
 
 //use the frame pointer to store local variables for fast access.
 #define FP_CHAN			4
-#define FP_QS			8 //queue state -- how many samples have we written?
+#define FP_QS				8 //queue state -- how many samples have we written?
 #define FP_QPACKETS		12
 #define FP_ADDRESS		16  //for RX
-#define FP_VALUE		20  //for RX
+#define FP_VALUE			20  //for RX
 #define FP_TXCHAN3		24
 #define FP_TXCHAN2		28
 #define FP_TXCHAN1		32
 #define FP_TXCHAN0		36
-#define FP_TIMER		40
-#define FP_WEIGHTDECAY	44
+#define FP_TIMER			40
+#define FP_MATCH			44
 #define FP_8080			48
 #define FP_5555			52
 #define FP_AAAA			56

@@ -10,10 +10,8 @@ _get_asm:
 	//this is always a leaf, no need to save RTS.
 	//reset p0. (do it here to avoid latency.)
 	p0 = [FP - FP_SPORT0_RX];
-	r7 = MUXRESET (x); //always clear the reset of falling edge of step.
-	w[p1 + (FIO_FLAG_S - FIO_FLAG_D)] = r7;
-	r7 = STEP (x); //portF pin 8, step.
-	w[p1 + (FIO_FLAG_C - FIO_FLAG_D)] = r7;//clear before waiting.
+	r7 = [i0++]; //data here will clear step (0) and reset (1).
+	w[p1] = r7; // direct write data to FIO_FLAG_D.
 //rather than using a software wait loop, should enable wakeup and interupts in the
 // SIC_IWR register,and then issue the IDLE instruction to save further power.
 // will have to test this, as we are running in a SW loop, not interrupt driven processing.
@@ -26,36 +24,26 @@ wait_samples:
 	cc =! bittst(r3, 0);
 	if cc jump wait_samples; //not predicting this branch is faster!
 
-	//increment the channel here (best to only do it in one place..)
-	r6 = [FP - FP_CHAN]; //hence this variable need start at 30.
-	r6 += 1;
-	bitclr(r6, 5); // count 0 to 31
-	[FP - FP_CHAN] = r6;
-
+	//channel is stored implicitly in i0 -- don't need explicit update anymore.
 	//read in the samples -- SPORT0
 	r0 = w[p0] (z);
 	r1 = w[p0] (z);
-	r2.l = 0xfff;
-	r0 = r0 & r2;
-	r1 = r1 & r2;
+	r2 = [FP-FP_0FFF0FFF];
 	r1 <<= 16;  //secondary channel in the upper word.
-	r2 = r0 + r1;
-	//set STEP to move to the next channel - this should be slightly after the
+	r0 = r0 | r1;
+	r2 = r0 & r2;
+	// set STEP to move to the next channel - this should be slightly after the
 	// falling edge of RFS
-	//(CS to the ADCS7476, which samples on the falling edge)
-	//if the channel=31, assert reset instead
-	r5 = 30; //30 due to *two* pipeline delays (MUX, sample)
-	r4 = MUXRESET;
-	cc = r5 == r6;
-	if cc r7 = r4; //toggle the reset or the step (see r7 above). to keep the mux in sync.
-	//the toggle statement should not get out of sync b/c there are set/clear statements above.
-	w[p1 + (FIO_FLAG_T - FIO_FLAG_D)] = r7;
+	// (CS to the ADCS7476, which samples on the falling edge)
+	// if the channel=31, assert reset instead
+	r7 = [i0++];
+	w[p1] = r7;
 	//apply integrator highpass + gain (4, shift and *2)).
 .align 8
 	r2 = r2 << 1 (v) || r5 = [i0++]; //*2, r5 = 32000,-16384. (lo, high)
 			//(initial multiply by 2,2: 12 -> 13 -> 14 bits, unsgined.
-	a0 = r2.l * r5.l, a1 = r2.h * r5.l || r1 = [i1++] || r6 = [i0++]; // r1 = integral,
-			//r6 = 16384 (1), 800 (mu)
+	a0 = r2.l * r5.l, a1 = r2.h * r5.l || r1 = [i1++] || r6 = [i0++];
+			// r1 = integral, r6 = 16384 (1), 800 (mu)
 	r0.l = (a0 += r1.l * r5.h), r0.h = (a1 += r1.h * r5.h) (s2rnd) || nop; //subtract the mean.
 	a0 = r1.l * r6.l , a1 = r1.h * r6.l //integrator
 		|| i1 += m0; //move to channel+2
@@ -109,16 +97,16 @@ r4.l = (a0+= r2.l * r6.l), r4.h = (a1+= r2.h * r6.h) || i1 -= m2 ;
 	a0 += r3.l * r5.l, a1 += r3.h * r5.h || r5 = [i0++] || [i2++] = r0 ;//r6 = a0.1; save x1(n-1)
 r0.l=(a0 +=r4.l * r5.l), r0.h=(a1 +=r4.h * r5.h)(s2rnd)|| [i2++] = r1 ;//r0 = y1(n); save x1(n-2)
 
-														 r5 = [i0++] || [i2++] = r0 ;//r5 = b1.0; save y1(n-1) / x2(n-1)
+	MNOP ||											 r5 = [i0++] || [i2++] = r0 ;//r5 = b1.0; save y1(n-1) / x2(n-1)
 	a0  = r0.l * r5.l, a1  = r0.h * r5.h || r5 = [i0++] || [i2++] = r3 ;//r6 = b1.1; save y1(n-2) / x2(n-2)
 	a0 += r3.l * r5.l, a1 += r3.h * r5.h || r5 = [i0++] || r1 = [i1++] ;//r7 = b1.2; r1 = y2(n-1) / x3(n-1)
 	a0 += r4.l * r5.l, a1 += r4.h * r5.h || r5 = [i0++] || r2 = [i1++] ;//r5 = a1.0; r2 = y2(n-2) / x3(n-2)
 	a0 += r1.l * r5.l, a1 += r1.h * r5.h || r5 = [i0++]; 					  //r6 = a1.1
 r0.l=(a0 +=r2.l * r5.l), r0.h=(a1 +=r2.h * r5.h)(s2rnd)|| r5 = [i0++] ;//r0 = y2(n); r5 = threshold.
 //this is the output of the matched filter; may need more biquads. compare with thresh.
-	r0 = r0 +|+ r5 || [i2++] = r0; // subtract threshold, save y2(n)`
+	r0 = r0 +|+ r5 || [i2++] = r0; // add threshold, save y2(n)`
 	r0 = r0 >>> 15 (v) || r5 = [i0++] || [i2++] = r1; //either -1 (0xffff) or 0; load mask (0x00080008), save y2(n-1)
-	r6 = r0 & r5 || r5 = [i0++] || r1 = [i1++]; // r6 match; r1 x1(n-1); r5 b0.0
+	r6 = r0 +|+ r5 							 || r5 = [i0++] || r1 = [i1++] ;// r6 match; r1 x1(n-1); r5 b0.0
 //second unit.
 	a0  = r7.l * r5.l, a1  = r7.h * r5.h || r5 = [i0++] || r2 = [i1++] ;//r6 = b0.1; r2 = x1(n-2)
 	a0 += r1.l * r5.l, a1 += r1.h * r5.h || r5 = [i0++] || r3 = [i1++] ;//r7 = b0.2; r3 = y1(n-1) or x2(n-1)
@@ -140,13 +128,12 @@ r0.l=(a0 +=r2.l * r5.l), r0.h=(a1 +=r2.h * r5.h)(s2rnd)|| r5 = [i0++] ;//r0 = y2
 	[fp - FP_MATCH] = r6;
 
 	//read in the samples -- SPORT1
-	r0 = w[p0 + (SPORT1_RX - SPORT0_RX)] (z);
-	r1 = w[p0 + (SPORT1_RX - SPORT0_RX)] (z);
-	r2.l = 0xfff;
-	r0 = r0 & r2;
-	r1 = r1 & r2;
-	r1 <<= 16; //secondary channel in upper word.
-	r2 = r0 + r1;
+	r0 = w[p0] (z);
+	r1 = w[p0] (z);
+	r2 = [FP-FP_0FFF0FFF];
+	r1 <<= 16;  //secondary channel in the upper word.
+	r0 = r0 | r1;
+	r2 = r0 & r2;
 	//apply integrator highpass + gain (4, shift and *2)).
 .align 8
 	r2 = r2 << 1 (v) || r5 = [i0++]; //*2, r5 = 32000,-16384. (lo, high)
@@ -233,23 +220,24 @@ r0.l=(a0 +=r2.l * r5.l), r0.h=(a1 +=r2.h * r5.h)(s2rnd)|| r5 = [i0++] ;//r0 = y2
 	r0 = r0 +|+ r5 || [i2++] = r0; // subtract threshold, save y2(n)`
 	r0 = r0 >>> 15 (v) || r5 = [i0++] || [i2++] = r1; //either -1 (0xffff) or 0; load mask (0x00010001), save y2(n-1)
 	r0 = r0 & r5 || nop; // r0 match; r1 x1(n-1); r5 b0.0
-	r6 = r6 | r0 || r7 = [fp - FP_MATCH]; // r6 match on 2 units, 2 channels now.
-	r7 = r7 | r6;
-/* contents:
+	r6 = r6 +|+ r0 || r7 = [fp - FP_MATCH]; // r6 match on 2 units, 2 channels now.
+
+	r0 = r7 | r6;
+/* r0 contents:
 	low nibble r0.l
 	[ch 64 B][ch 0 B][ch 64 A][ch 0 A]
 	low nibble r0.h
 	[ch 96 B][ch 32 B][ch 96 A][ch 32 A]
 	must merge the two nibbles into a byte, which we can 'or' and write.
 */
-	p0 = [FP - FP_CHAN]; //byte addressing so we be okay.
+	r6 = [i0++];
+	p0 = r6; //byte addressing so we be okay.
 	p1 = [FP - FP_ENC_LUT_BASE]; //3 cycle latency before we can use p1.
 	p5 = [FP - FP_MATCH_BASE];
-	r0.h = r0.h << 4;
+	r0.h = r0.h << 4; //merge nibbles.
 	r0.l = r0.l + r0.h;
 	//[ch 96 B][ch 32 B][ch 96 A][ch 32 A][ch 64 B][ch 0 B][ch 64 A][ch 0 A]
 	r0 = r0.b (z); //this is necessay - otherwise we get 0x00010010 e.g. if ch 64 active.
-	r6 = p0; //r6 = chan
 	p5 = p5 + p0;
 	r1 = b[p5];
 	r1 = r1 | r0;
