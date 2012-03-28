@@ -211,8 +211,8 @@ void display(void){
 		writeImage("test.png", 500, 500, px, "waveform");
 		free(px);
 		//glutLeaveMainLoop();
-		sleep(1);
-		exit(0);
+		//sleep(1);
+		//exit(0);
 	}
 	g_frame ++;
 }
