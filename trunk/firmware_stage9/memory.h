@@ -18,13 +18,11 @@ we put them on separate banks completely. */
 /* Bank B */
 /*
 memory map:
-	Filter coeficients:
-		0xFF90 4000
-		read with i0. (and write, in the case of LMS).
-		clear step | clear reset.
-		set step  | set reset (on the correct channel)
+	Filter coeficients A1:
+	0xFF90 4000	-- read with i0. (and write, in the case of LMS).
+		toggle step  | toggle reset (on the correct channel)
 		{
-			32000, -16384 		integrator, pre-scale.
+			32000, -16384 		integrator, pre-scale (lo, hi)
 			16384, 800			integrator, mu
 			LMS 0					m0 increments 2 channels (below)
 			LMS 1					m1 jump back to update weight,
@@ -43,29 +41,28 @@ memory map:
 			LMS 14
 			LMS weight decay (16384 = none, sneezle.).
 			AGC targets, sqrt.
-			AGC, 16384 & mu.
+			AGC, 16384, 1 (mu).
 			b00 b01 b02 a00 a01	-- unit 1.
 			b10 b11 b12 a10 a12
 			threshold unit 1
-			loadmask unit 1
 			b00 b01 b02 a00 a01	-- unit 2.
 			b10 b11 b12 a10 a12
 			threshold unit 2
+			loadmask unit 1
 			loadmask unit 2
-		} X2
-		0x0fff0fff
+		} X2 (44 altogether, = A1_STRIDE)
 		channel, 0-31
 
-		Total (one sport): XXX
-		88 * 32 * 4 = 11264, 0x2C00.
-		end at 0xFF90 6C00
+		Total (both sports): 88 + 2 = 90
+		90 * 32 * 4 = 11520, 0x2D00.
+		end at 0xFF90 6D00
 
 
 	Taps/delays/data:
 			read with i1, write with i2.
 	0xFF80 4000
 				integral
-				sample, mean removed.
+				sample, mean removed, pre LMS.
 				saturated sample
 				gain
 				x1 n-1 	(unit 1)
@@ -82,15 +79,64 @@ memory map:
 				y2 n-2
 			-- and repeat for SPORT1.
 	Total: 16*2 * 32 ch * 32-bit words -- perfect!
-		m0 offset just (update channel+1) << (5+1+2)
-			5 for 32 words / loop,
-			1 for increment 2 channels (15 LMS taps, not 31),
-			2 for 4 bytes/word.
-			update channel goes from 0 14 hence.
-	total length: 4k, 0x1000
+	total length: 4kb, 0x1000
 	0xFF80 5000	end of delay buffer.
+
+	T1: stores state, indexed by i3.
+	0	m1[0]		16*4
+	1	m2[0]		m0*1
+	2	qs[0]		0
+	3	m1[1]		15*4
+	4	m2[1]		m0*2
+	5	qs[1]		1
+	6	m1[2]		14*4
+	7	m2[2]		m0*3
+	8	qs[2]		2
+	9	m1[3]		13*4
+	10	m2[3]		m0*4
+	11	qs[3]		3
+	12	m1[4]		12*4
+	13	m2[4]		m0*5
+	14	qs[4]		4
+	15	m1[5]		11*4
+	16	m2[5]		m0*6
+	17	qs[5]		5
+
+	18	sf[0]		0x0000 0000 --state flag. bits 31, 23, 15, 7 (mask 0x80808080)
+	19 mp[0]		(MATCH + 32 + 0*8) --32 for 7b region, 8 for # match bytes/pkt.
+
+	20	m1[0]		10*4
+	21	m2[0]		m0*7
+	22	qs[0]		0
+	23	m1[1]		9*4
+	24	m2[1]		m0*8
+	25	qs[1]		1
+	26	m1[2]		8*4
+	27	m2[2]		m0*9
+	28	qs[2]		2
+	29	m1[3]		7*4
+	30	m2[3]		m0*10
+	31	qs[3]		3
+	32	m1[4]		6*4
+	33	m2[4]		m0*11
+	34	qs[4]		4
+	35	m1[5]		5*4
+	36	m2[5]		m0*12
+	37	qs[5]		5
+
+	38	sf[1]		0x0000 0080 --state flag. bits 31, 23, 15, 7 (mask 0x80808080)
+	39 mp[1]		(MATCH + 32 + 1*8) -- '1' this varies from 0-3.
+
+	Total length of this buffer is determined by the three cycles it supports: 15, 6, and 4
+	(15 for LMS, 6 for packet samples, 4 for match write.)
+	-- LCM: 5*3*2*2 = 60.
+	After 2 packets, a total of 12 LMS taps have been written. (above)
+	after 10 packets, 60 LMS taps.
+	Each packet requires 20 32bit words,
+	So total length = 20*10*4 = 800 = 0x320
 */
 #define A1 				0xFF904000  /** BANK B **/ //i0 accesses -- coefficients.
+#define A1_STEP		2			//should *not* change this from the client. unless I make a mistake.
 #define A1_INT			2			//units: 32bit words.
 #define A1_LMS			16			//15 taps + weight decay.
 #define A1_AGC			2			//4 coefs per 4 biquads.
@@ -104,6 +150,7 @@ memory map:
 #define A1_IIRB		(A1_UNITA + A1_UNIT) //32
 #define A1_UNITB		(A1_IIRB + A1_IIR) //42
 #define A1_STRIDE 	(A1_UNITB + A1_UNIT) //total: 44.
+#define A1_PITCH		(A1_STRIDE*2 + 2)
 
 #define FP_BASE		0xFF906F00 //length: 0x200, 512 bytes.
 	// ** Frame pointer counts down! **
@@ -116,12 +163,12 @@ memory map:
 #define W1 				0xFF804000  /** BANK A **/
 #define W1_STRIDE	 	16 // see above.
 						  //total length = W1_STRIDE * 2 * 32 * 4 = 4k = 0x1000 bytes
-#define T1				0xFF805000 //accessed by i3, read/write delayed filtered signal
-#define T1_LENGTH		(16*32*4) // 16 delays, both templates matched to same delay,
-									//32 channels, 4 bytes each ch.
-									// 2048 = 0x800
+#define T1				0xFF805000 //accessed by i3, read/write LMS & state.
+#define T1_LENGTH		(10*20*4) //0x320
+
+
 #define MATCH			0xFF806000 //256 bits, 128 channels * 2 templates.
-#define MATCH_LENGTH	64    // 32 bytes. 8 words, TWICE -
+#define MATCH_LENGTH	64    // 32 bytes, or 8 4-byte words, TWICE -
 							//second half is 7-b encoded.
 
 #define ENC_LUT		0xff806100 //256 bytes, map 8 bits -> 7 bits.
