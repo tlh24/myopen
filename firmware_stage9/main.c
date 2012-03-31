@@ -3,9 +3,9 @@
 #include "memory.h"
 #include "headstage.h"
 #include "nordic_regs.h"
-#include "print.h"
 #include "spi.h"
-#include "usb.h"
+//#include "print.h"
+//#include "usb.h"
 
 u32 g_excregs[8+6+16] ; //the regular data registers + pointer registers.
 
@@ -15,7 +15,8 @@ void exception_report(unsigned long seqstat, unsigned long retx){
 	unsigned long mask, out;
 	int i;
 	*pFIO_FLAG_D = 0;
-	printf_str("Exception!!");
+	// v9-on headstages have no sport, so printf is unneeded.
+	/*printf_str("Exception!!");
 	printf_hex("hwerr:", (seqstat >> 14) & 0x1f);
 	printf_hex("excause:", seqstat & 0x3f);
 	printf_hex("retx:", retx);
@@ -56,7 +57,7 @@ void exception_report(unsigned long seqstat, unsigned long retx){
 	printf_hex("m0:", *p++);
 	printf_hex("m1:", *p++);
 	printf_hex("m2:", *p++);
-	printf_hex("m3:", *p++);
+	printf_hex("m3:", *p++); */
 	while(1){
 		//pulse pf 7 (MUX0) for trigger.
 		*pFIO_FLAG_T = 0x100;
@@ -111,8 +112,8 @@ void exception_report(unsigned long seqstat, unsigned long retx){
 }
 void nmi_report(void){
 	int i;
-	printf_str("nonmaskable exception!");
-	printf_str("this should not occur - hardware problems!");
+	//printf_str("nonmaskable exception!");
+	//printf_str("this should not occur - hardware problems!");
 	for(i=0; i<300; i++){
 		asm volatile("nop; nop;");
 	}

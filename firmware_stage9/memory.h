@@ -151,7 +151,7 @@ memory map:
 #define A1_IIRB		(A1_UNITA + 1) //31
 #define A1_UNITB		(A1_IIRB + A1_IIR) //41
 #define A1_STRIDE 	(A1_UNITB + 3) //total: 44.
-#define A1_PITCH		(A1_STRIDE*2 + 2) //step and channel afterward.
+#define A1_PITCH		(A1_STRIDE*2 + 2) //step and channel afterward; 90 total.
 
 #define FP_BASE		0xFF906F00 //length: 0x200, 512 bytes.
 	// ** Frame pointer counts down! **

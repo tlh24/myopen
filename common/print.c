@@ -11,10 +11,14 @@
 #ifdef __ADSPBF527__
 #include <cdefBF527.h>
 #endif
+u8 g_oled_line = 0; 
+u8 oled_write(u16); 
 
 int uart_str(char* str){
 	int i =0; 
+	char* strcpy = str; 
 	if(*pUART0_GCTL == 1){//if it is enabled. 
+		if(*str == '!') str++; //skip the oled command.
 		while(*str && i < PRINTF_BUFFER_SIZE){
 			char c = *str; 
 			if(c == '\n' ) {
@@ -28,6 +32,38 @@ int uart_str(char* str){
 				*pUART0_THR = c; 
 				while( (*pUART0_LSR & 0x0020) == 0 )
 					asm volatile("nop;"); 
+			}
+			str++; 
+			i++; 
+		}
+	}
+	str = strcpy; 
+	i = 0; 
+	//also output to the OLED? 
+	if(*str == '!'){
+		str++; 
+		while(*str && i < PRINTF_BUFFER_SIZE){
+			char c = *str; 
+			u16 out; 
+			if(c == '\n' ) {
+				//move to another line.
+				if(g_oled_line & 0x40) g_oled_line = 0; 
+				else g_oled_line = 0x40; 
+				oled_write(0x80 | g_oled_line); 
+			} else if(c == '\r'){
+				//move to the start of the line.
+				oled_write(0x80 | g_oled_line); 
+			} else {
+				out = 0x20; // space
+				if(c >= 'A' && c <= 'Z') out = c - 'A' + 0x41;
+				if(c >= 'a' && c <= 'z') out = c - 'a' + 0x61; 
+				if(c >= '0' && c <= '9') out = c - '0' + 0x30; 
+				if(c == ',') out = 0x2c; 
+				if(c == '!') out = 0x21; 
+				if(c == '?') out = 0x3f;
+				if(c == ':') out = 0x3a;
+				if(c == '.') out = 0x2e; 
+				oled_write(0x0200 + out); //write character data.
 			}
 			str++; 
 			i++; 

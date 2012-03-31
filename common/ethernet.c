@@ -1089,8 +1089,8 @@ u8 bridge_publish(){
 					NetDataDestIP = p->ip.src; 
 					printf_ip("got client ", NetDataDestIP); 
 					data += sizeof(udp_packet); 
-					printf_hex_byte("radio channel:", data[0]); 
-					printf_str("\n"); 
+					printf_hex_byte("!radio ch:", data[0]); 
+					printf_str("! \r"); 
 					g_streamEnabled = 1; 
 					return data[0]; 
 				}

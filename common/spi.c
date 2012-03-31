@@ -41,6 +41,7 @@ u8 spi_write_register_ver(u8 reg, u8 val){
 	u8 read; 
 	spi_write_register(reg, val);
 	read = spi_read_register(reg); 
+#ifndef __ADSPBF532__
 	if(read != val){
 		printf_int("nordic: wrote reg ", reg); 
 		uart_str(" "); 
@@ -49,6 +50,7 @@ u8 spi_write_register_ver(u8 reg, u8 val){
 		printf_hex_byte("recieved ", read); 
 		uart_str("\n"); 
 	}
+#endif
 	return read;
 }
 
@@ -303,8 +305,10 @@ u8 radio_init(u8 chan){
 	*FIO__DIR &= 0xffff ^ SPI_IRQ; 
 	*FIO__DIR |= SPI_CSN | SPI_CE; 
 	if(chan > 124) chan = 124; 
+#ifndef __ADSPBF532__ //headstage has no UART/display.
 	printf_int("radio channel set to ", chan); 
 	uart_str("\n"); 
+#endif
 	spi_write_register(NOR_CONFIG, 0); 
 	//you can only write registers in power-down mode. 
 	spi_write_register_ver(NOR_EN_AA, 0x00); //turn off auto-ack, as part of enhanced shock burst. 

@@ -9,10 +9,10 @@ _init6:
 	b0 = i0;
 	l0.l = LO(A1_PITCH*32*4);
 	l0.h = HI(A1_PITCH*32*4);
-	//set m0 correctly for LMS.
-	m0.l = LO(A1_PITCH*2*4);
-	m0.h = HI(A1_PITCH*2*4);
-	p0 = 32;
+	//set m0 correctly for LMS (used to increment i1, hence W1 pitch)
+	m0.l = LO(W1_STRIDE*2*2*4);
+	m0.h = HI(W1_STRIDE*2*2*4);
+	p5 = 32;
 	r1 = 0;
 	lsetup(lt_top,lt_bot) lc0 = p5;
 lt_top:
@@ -38,6 +38,7 @@ lt2_top:
 			[i0++] = r0; //13
 			[i0++] = r0; //14
 			[i0++] = r0; //15
+			r0.l = 0x7fff;		w[i0++] = r0.l; w[i0++] = r0.l; //LMS template.
 			r0.l = 9915; r0.h = 9915;  [i0++] = r0; // AGC target. sqrt(6000*16384);
 			r0.l = 16384; r0.h = 1  ;  [i0++] = r0; //AGC gain scaler / mu.
 			//init IIR matched filters with GP lowpass / highpass.
@@ -71,7 +72,15 @@ lt2_top:
 			r0 = 15342 (x);	w[i0++] = r0.l; w[i0++] = r0.l;
 			r0 = 29836 (x);	w[i0++] = r0.l; w[i0++] = r0.l;
 			r0 = -13603 (x);	w[i0++] = r0.l; w[i0++] = r0.l;
+			//threshold.
+			r0 = 10000 (x) ;	w[i0++] = r0.l; w[i0++] = r0.l;
+			r0.l = 0x1; 		w[i0++] = r0.l; w[i0++] = r0.l; 
+			r0.l = 0x2; 		w[i0++] = r0.l; w[i0++] = r0.l; 
 lt2_bot:
+		m3 = 8 ; //move back to rewrite masks.
+		i0 -= m3; 
+		r0.l = 0x4; 		w[i0++] = r0.l; w[i0++] = r0.l; 
+		r0.l = 0x8; 		w[i0++] = r0.l; w[i0++] = r0.l;
 		[i0++] = r1; //channel.
 		r0 = 1;
 		r1 = r1 + r0;
@@ -98,14 +107,21 @@ lt_bot:
 	b2 = i2;
 	l2 = l1;
 	// modify registers m1 and m2 written each loop, as part of LMS.
+	//set them here anyway (see memory.h for an explanation)
+	m1 = 16*4; 
+	m2 = m0; 
 	// now zero the taps.
+	p4.l = LO(W1); 
+	p4.h = HI(W1); 
 	p5.l = LO(W1_STRIDE*2*32);
 	p5.h = HI(W1_STRIDE*2*32);
+	r0 = 0; 
 	lsetup(lt3_top,lt3_bot) lc0 = p5;
 lt3_top:
-		[p5++] = r0;
+		nop;
+		[p4++] = r0;
 lt3_bot:
-
+	nop; 
 	//finally, i3, which stores LMS offset / packet states.
 	i3.l = LO(T1)
 	i3.h = HI(T1);
@@ -117,11 +133,13 @@ lt3_bot:
 	r0 = 0; // counter, 0-15.
 	r1 = m0;
 	r2 = 0; //state flag / match pointer counter; only high word, though.
+	r7 = 0; // packet state, 0-5. 
 	p5 = 48;
 	lsetup(lt4_top,lt4_bot) lc0 = p5;
 lt4_top:
+		nop; 
 		p5 = 6;
-		lsetup(lt5_top,lt5_bot) lc0 = p5;
+		lsetup(lt5_top,lt5_bot) lc1 = p5;
 lt5_top:
 			r4 = 16;
 			r3 = r4 - r0; //(16-n)
@@ -132,15 +150,23 @@ lt5_top:
 			r3 = r0 + r4; //(n+1)
 			r3 *= r1; //(n+1)*m0
 			[i3++] = r3;
-			[i3++] = r0; // n
+			[i3++] = r7; // n
 			r0 = r0 + r4;
+			r7 = r7 + r4; 
 			r4 = 15;
 			cc = r0 == r4
 			if !cc jump no_rollover
 				r0 = 0;
 no_rollover:
-			nop
+			nop;
+			r4 = 6;
+			cc = r7 == r4
+			if !cc jump no_rollover2
+				r7 = 0;
+no_rollover2:
+			nop;
 lt5_bot:
+		nop; 
 		//set state flag and match pointer.
 		r5 = 0;
 		r3 = r2 << (31 - 3);
@@ -149,15 +175,15 @@ lt5_bot:
 		r3 = r3 & r4;
 		r5 = r5 | r3;
 		r3 = r2 << (23 - 2);
-		r4 = r4 >> 4;
+		r4 = r4 >> 8;
 		r3 = r3 & r4;
 		r5 = r5 | r3;
 		r3 = r2 << (15 - 1);
-		r4 = r4 >> 4;
+		r4 = r4 >> 8;
 		r3 = r3 & r4;
 		r5 = r5 | r3;
 		r3 = r2 << (7 - 0);
-		r4 = r4 >> 4;
+		r4 = r4 >> 8;
 		r3 = r3 & r4;
 		r5 = r5 | r3;
 		[i3++] = r5;
@@ -165,13 +191,15 @@ lt5_bot:
 		r3.h = HI(MATCH+32);
 		r4 = 3;
 		r5 = r2 & r4; //loop 0-3.
-		r5 = r5 << 5; //sf*8
+		r5 = r5 << 3; //sf*8
 		r5 = r5 + r3;
-		[i3++] = r3;
+		[i3++] = r5;
 		r4 = 1;
 		r2 = r2 + r4;
 		r4 = 15; // 16 packets / frame.
-		r2 = r2 & r4; //loop 0-3.
+		r2 = r2 & r4; //loop 0-15.
 lt4_bot:
+	nop;
+	r0 = 0; //so that we have something to stop on.
 	//leaf subroutine. return.
 	RTS;
