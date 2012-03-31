@@ -1,9 +1,6 @@
 #include "spi.h"
 #include "nordic_regs.h"
 
-#define STEP 			0x0100
-#define MUXRESET 		0x0080  //active low; must keep it high.
-#define LED_BLINK		0x0010  //blink LED.
 .align 8 //call is a 5-cycle latency if target is aligned.
 _get_asm:
 	//reads in the data, filters, thresholds, clobbers most all registers :-)
@@ -11,9 +8,9 @@ _get_asm:
 	//reset p0. (do it here to avoid latency.)
 	p0 = [FP - FP_SPORT0_RX];
 	r7 = STEP;
-	w[p1 + (FIO_FLAG_C - FIO_FLAG_D)] = STEP; //clear step. (0)
+	w[p1 + (FIO_FLAG_C - FIO_FLAG_D)] = r7; //clear step. (0)
 	r7 = MUXRESET;
-	w[p1 + (FIO_FLAG_S - FIO_FLAG_D)] = STEP; //clear reset. (1)
+	w[p1 + (FIO_FLAG_S - FIO_FLAG_D)] = r7; //clear reset. (1)
 //rather than using a software wait loop, should enable wakeup and interupts in the
 // SIC_IWR register,and then issue the IDLE instruction to save further power.
 // will have to test this, as we are running in a SW loop, not interrupt driven processing.
@@ -30,7 +27,7 @@ wait_samples:
 	//read in the samples -- SPORT0
 	r0 = w[p0] (z);
 	r1 = w[p0] (z);
-	r2 = [FP-FP_0FFF0FFF];
+	r2 = [FP-FP_0FFF0FFF]; //hides MMR latency.
 	r1 <<= 16;  //secondary channel in the upper word.
 	r0 = r0 | r1;
 	r2 = r0 & r2;
@@ -74,7 +71,7 @@ wait_samples:
 	r6 = r0 << 7 (v,s) || i1 += m2 || [i2++] = r7; //move i1 to update channel, save saturated.
 	r6 = r6 >>> 15 (v,s) || r1 = [i1++] || r2 = [i0];
 		//r6 = sign of error, r1 = saturated sample, r2 = w0, i1 @ gain + updatechan.
-	a0 = r1.l * r6.l, a1 = r1.h * r6.h) || nop; //load delta w, r5 weight decay.
+	a0 = r1.l * r6.l, a1 = r1.h * r6.h || nop; //load delta w, r5 weight decay.
 r4.l = (a0+= r2.l * r5.l), r4.h = (a1+= r2.h * r5.h) || i1 -= m2 ;
 			//load/decay weight, r6 AGC targets (sqrt), move i1 back to present channel.
 	mnop || r5 = [i1++] || [i0++m1] = r4 ; //r5 = gain, save the new weight, i0 back to AGC0
@@ -136,8 +133,9 @@ r0.l=(a0 +=r2.l * r5.l), r0.h=(a1 +=r2.h * r5.h)(s2rnd)|| r5 = [i0++] ;//r0 = y2
 	r0 = r0 | r1;
 	r2 = r0 & r2;
 	// integrator highpass & gain.
+	r2 = r2 << 1 (v); //move these here to avoid unneccesary NOPS.
+	r5 = [i0++];  //*2, r5 = 32000,-16384. (lo, high)
 .align 8
-	r2 = r2 << 1 (v) || r5 = [i0++]; //*2, r5 = 32000,-16384. (lo, high)
 			//(initial multiply by 2,2: 12 -> 13 -> 14 bits, unsgined.
 	a0 = r2.l * r5.l, a1 = r2.h * r5.l || r1 = [i1++] || r6 = [i0++];
 			// r1 = integral, r6 = 16384 (1), 800 (mu)
@@ -172,7 +170,7 @@ r0.l=(a0 +=r2.l * r5.l), r0.h=(a1 +=r2.h * r5.h)(s2rnd)|| r5 = [i0++] ;//r0 = y2
 	r6 = r0 << 7 (v,s) || i1 += m2 || [i2++] = r7; //move i1 to update channel, save saturated.
 	r6 = r6 >>> 15 (v,s) || r1 = [i1++] || r2 = [i0];
 		//r6 = sign of error, r1 = saturated sample, r2 = w0, i1 @ gain + updatechan.
-	a0 = r1.l * r6.l, a1 = r1.h * r6.h) || nop; //load delta w, r5 weight decay.
+	a0 = r1.l * r6.l, a1 = r1.h * r6.h || nop; //load delta w, r5 weight decay.
 r4.l = (a0+= r2.l * r5.l), r4.h = (a1+= r2.h * r5.h) || i1 -= m2 ;
 			//load/decay weight, r6 AGC targets (sqrt), move i1 back to present channel.
 	mnop || r5 = [i1++] || [i0++m1] = r4 ; //r5 = gain, save the new weight, i0 back to AGC0
@@ -256,11 +254,11 @@ r0.l=(a0 +=r2.l * r5.l), r0.h=(a1 +=r2.h * r5.h)(s2rnd)|| r5 = [i0++] ;//r0 = y2
 	cc = r6 == r0
 	if !cc jump end_txchan (bp); //predict not taken -- most likely.
 		//pointers p0 and p5 are free; p1 and p3 are static and are reset below.
+		p0 = [FP - FP_TXCHAN0] ; //put here for better alignment.
 .align 8
-		mnop || p0 = [FP - FP_TXCHAN0] || r0 = [i3++]; //for m1
-		mnop || p1 = [FP - FP_TXCHAN1] || r1 = [i3++]; //for m2
-		mnop || p3 = [FP - FP_TXCHAN2] || r4 = [i3++]; //for QS. (queue-state)
-		p5 = [FP - FP_TXCHAN3];
+		mnop || p1 = [FP - FP_TXCHAN1] || r0 = [i3++]; //for m1
+		mnop || p3 = [FP - FP_TXCHAN2] || r1 = [i3++]; //for m2
+		mnop || p5 = [FP - FP_TXCHAN3] || r4 = [i3++]; //for QS. (queue-state)
 		m1 = r0;
 		m2 = r1;
 		r0 = b[p0];
@@ -299,14 +297,14 @@ r0.l=(a0 +=r2.l * r5.l), r0.h=(a1 +=r2.h * r5.h)(s2rnd)|| r5 = [i0++] ;//r0 = y2
 			[p5--] = r4; //reset template match, 8b region.
 			[p5--] = r4;
 end_txchan_qs:
+		p1 = [FP - FP_FIO_FLAG_D]; //reset the pointers.
+		p3 = [FP - FP_SPI_TDBR]; //saves clock relative to push/pop stack.
 		r7 = p4; //make p4 loop.
 		bitclr(r7, 10); //two 512-byte frames.
 		p4 = r7;
 		//thought: since the codepath is so long here, might want to jump directly to the head
 		//after resetting state.  o/w radio may take too long.
 end_txchan:
-	p1 = [FP - FP_FIO_FLAG_D]; //reset the pointers.
-	p3 = [FP - FP_SPI_TDBR]; //saves clock relative to push/pop stack.
 	RTS ; //used to be jump.
 
 
@@ -405,23 +403,10 @@ _radio_bidi_asm:
 	p4.l = LO(WFBUF);
 	p4.h = HI(WFBUF);
 
-	r0 = 30(z); //because we pre-increment, and the ADC/SPORT implies pipeline.
-	[FP - FP_CHAN] = r0;
 	r0 = 0;
-	[FP - FP_QS] = r0;
 	[FP - FP_QPACKETS] = r0;
-	r0.l = 0x8080;
-	r0.h = 0x8080;
-	[FP - FP_8080] = r0;
-	r0.l = 0x5555;
-	r0.h = 0x5555;
-	[FP - FP_5555] = r0;
-	r0.l = 0xaaaa;
-	r0.h = 0xaaaa;
-	[FP - FP_AAAA] = r0;
-	r0.l = 0x0003;
-	r0.h = 0x7fff;
-	[FP - FP_WEIGHTDECAY] = r0;
+	[FP - FP_ADDRESS] = r0;
+	[FP - FP_VALUE] = r0;
 	r0.l = LO(MATCH);
 	r0.h = HI(MATCH);
 	[FP - FP_MATCH_BASE] = r0;
@@ -438,22 +423,25 @@ _radio_bidi_asm:
 	r0.h = HI(STATE_LUT);
 	r0 = r0 >> 2; //because we use add with shift for 4-byte word alignment.
 	[FP - FP_STATE_LUT_BASE] = r0;
+	r0.l = 0x0fff;
+	r0.h = 0x0fff;
+	[FP - FP_0FFF0FFF] = r0;
 	//setup the pointers now; careful, this is tricky!
 	//channel 0.
-	r0.l = LO(W1 + 10*4 + 0 + 1); //little-endian
-	r0.h = HI(W1 + 10*4 + 0 + 1);
+	r0.l = LO(W1 + 5*4 + 0 + 1); //little-endian, hence +1.
+	r0.h = HI(W1 + 5*4 + 0 + 1);
 	[FP - FP_TXCHAN0] = r0;
 	//channel 32.
-	r0.l = LO(W1 + 10*4 + 2 + 1);
-	r0.h = HI(W1 + 10*4 + 2 + 1);
+	r0.l = LO(W1 + 5*4 + 2 + 1);
+	r0.h = HI(W1 + 5*4 + 2 + 1);
 	[FP - FP_TXCHAN1] = r0;
 	//channel 64.
-	r0.l = LO(W1 + 22*4 + 0 + 1);
-	r0.h = HI(W1 + 22*4 + 0 + 1);
+	r0.l = LO(W1 + 21*4 + 0 + 1); //W1 stride 16.
+	r0.h = HI(W1 + 21*4 + 0 + 1);
 	[FP - FP_TXCHAN2] = r0;
 	//channel 96.
-	r0.l = LO(W1 + 22*4 + 2 + 1);
-	r0.h = HI(W1 + 22*4 + 2 + 1);
+	r0.l = LO(W1 + 21*4 + 2 + 1);
+	r0.h = HI(W1 + 21*4 + 2 + 1);
 	[FP - FP_TXCHAN3] = r0;
 
 	//make sure we aren't driving anything that we needn't be.
@@ -470,174 +458,9 @@ _radio_bidi_asm:
 	w[p1 + (FIO_FLAG_C - FIO_FLAG_D)] = r7;
 	ssync;
 
-	// --coefficients.
-	i0.l = LO(A1);
-	i0.h = HI(A1);
-	l0 = A1_STRIDE*32*4; /* A1_STRIDE in 4 byte units.
-	   see memory.h - it's complicated now.*/
-	m0 = W1_STRIDE*2*4; //for moving forward to the LMS predictor.
-	b0 = i0; //or: 16 chan, 18 4-bytes reads.
+	call _init6; //this inits all the loop registers
+	// & the memory that they touch.
 
-	// --this is for reading delays.
-	i1.l = LO(W1);
-	i1.h = HI(W1);
-	l1 = W1_STRIDE*2*32*4;//bytes: 26 32 bit words / channel by 32 channels
-	m1 = LMS_STRIDE*2*4; // for moving forward to the LMS weight.
-	b1 = i1; 	//base address of the delay taps.
-
-	// i2 is for writing delays.
-	i2 = i1;
-	l2 = l1;
-	m2 = W1_STRIDE*2*2*4; //for moving forward TWO channel delays in LMS. (this way LMS is 16 channels)
-	// 16*m2 = l1, so after 16 increments pointer will be back to start.
-	b2 = b1;
-
-	//i3 is for reading/writing template delays (post-filter)
-	i3.l = LO(LMS_M1M2);
-	i3.h = HI(LMS_M1M2);
-	l3 = 15*2*4; //15 LMS taps, 2 registers (m1 m2), 4 bytes each.
-	m3 = 0; //unused.
-	b3 = i3;
-
-/*	leave i0 at channel 62 ( -2, remembering we do 2 cycles per STEP pulse)
-	this is to compensate for pipeline delays in the sample / SPORT controller
-		(FP_CHAN starts at 30 for this reason -- -2 here for pre-increment.)
-	and to make the filter taps be where expected in memory
-		(hence where expected from the client.)
-*/
-	p5 = 32+31 (x);
-	lsetup(lt_top,lt_bot) lc0 = p5;
-lt_top:
-	p5 = 2;
-	lsetup(lt2_top,lt2_bot) lc1 = p5;
-lt2_top:
-	//gain and integrator
-	r0.l = 32000; 	w[i0++] = r0.l;
-	r0.l = -16384;	w[i0++] = r0.l;
-	r0.l = 16384; 	w[i0++] = r0.l;
-	r0.l = 800; 	w[i0++] = r0.l;
-	//AGC
-	r0.l = 9915;	w[i0++] = r0.l; // AGC target. sqrt(6000*16384);
-	r0.l = 9915;	w[i0++] = r0.l; // offset 2 32 bit words.
-	r0.l = 16384; 	w[i0++] = r0.l; // AGC gain scaler = 1.
-	r0.l = 1; 		w[i0++] = r0.l; //make it sorta bang-bang. set this to zero to disable AGC.
-	//LMS coef. (7)
-	r0 = 0 (x);
-	[i0++] = r0;
-	[i0++] = r0;
-	[i0++] = r0;
-	[i0++] = r0;
-	[i0++] = r0;
-	[i0++] = r0;
-	[i0++] = r0;
-	//lowpass biquad.
-	r0 = 7892 (x);	w[i0++] = r0.l; w[i0++] = r0.l;
-	r0 = 15785 (x); w[i0++] = r0.l; w[i0++] = r0.l;
-	r0 = 5293 (x);	w[i0++] = r0.l; w[i0++] = r0.l;
-	r0 = -7479 (x); w[i0++] = r0.l; w[i0++] = r0.l; //4
-
-	//highpass biquad.
-	r0 = 15342 (x);	w[i0++] = r0.l; w[i0++] = r0.l;
-	r0 = -30687 (x);w[i0++] = r0.l; w[i0++] = r0.l;
-	r0 = 31397 (x);	w[i0++] = r0.l; w[i0++] = r0.l;
-	r0 = -15172 (x);w[i0++] = r0.l; w[i0++] = r0.l;
-
-	//lowpass biquad.
-	r0 = 7892 (x);	w[i0++] = r0.l; w[i0++] = r0.l;
-	r0 = 15782 (x);	w[i0++] = r0.l; w[i0++] = r0.l;
-	r0 = 3824 (x);	w[i0++] = r0.l; w[i0++] = r0.l;
-	r0 = -854 (x);	w[i0++] = r0.l; w[i0++] = r0.l;
-
-	//highpass biquad.
-	r0 = 15342 (x);	w[i0++] = r0.l; w[i0++] = r0.l;
-	r0 = -30681 (x);w[i0++] = r0.l; w[i0++] = r0.l;
-	r0 = 29836 (x);	w[i0++] = r0.l; w[i0++] = r0.l;
-	r0 = -13603 (x);w[i0++] = r0.l; w[i0++] = r0.l;
-lt2_bot: nop;
-	//templates.
-
-	// 127 113 102 111 132 155 195 235 250 224 187 160 142 126
-	r0 = 127; 	r1 = r0 << 8; r2 = r1 << 8; r3 = r2 << 8; //this is the 'new' sample.
-				r0 = r0 | r1; r0 = r0 | r2; r0 = r0 | r3; [i0++] = r0; //16 template b is in order.
-	r0 = 113; 	r1 = r0 << 8; r2 = r1 << 8; r3 = r2 << 8; //not efficient but whatever.
-				r0 = r0 | r1; r0 = r0 | r2; r0 = r0 | r3; [i0++] = r0; //1
-	r0 = 102; 	r1 = r0 << 8; r2 = r1 << 8; r3 = r2 << 8;
-				r0 = r0 | r1; r0 = r0 | r2; r0 = r0 | r3; [i0++] = r0; //2
-	r0 = 111; 	r1 = r0 << 8; r2 = r1 << 8; r3 = r2 << 8;
-				r0 = r0 | r1; r0 = r0 | r2; r0 = r0 | r3; [i0++] = r0; //3
-	r0 = 132; 	r1 = r0 << 8; r2 = r1 << 8; r3 = r2 << 8;
-				r0 = r0 | r1; r0 = r0 | r2; r0 = r0 | r3; [i0++] = r0; //4
-	r0 = 155; 	r1 = r0 << 8; r2 = r1 << 8; r3 = r2 << 8;
-				r0 = r0 | r1; r0 = r0 | r2; r0 = r0 | r3; [i0++] = r0; //5
-	r0 = 195; 	r1 = r0 << 8; r2 = r1 << 8; r3 = r2 << 8;
-				r0 = r0 | r1; r0 = r0 | r2; r0 = r0 | r3; [i0++] = r0; //6
-	r0 = 235; 	r1 = r0 << 8; r2 = r1 << 8; r3 = r2 << 8;
-				r0 = r0 | r1; r0 = r0 | r2; r0 = r0 | r3; [i0++] = r0; //7
-	r0 = 250; 	r1 = r0 << 8; r2 = r1 << 8; r3 = r2 << 8;
-				r0 = r0 | r1; r0 = r0 | r2; r0 = r0 | r3; [i0++] = r0; //8
-	r0 = 224; 	r1 = r0 << 8; r2 = r1 << 8; r3 = r2 << 8;
-				r0 = r0 | r1; r0 = r0 | r2; r0 = r0 | r3; [i0++] = r0; //9
-	r0 = 187; 	r1 = r0 << 8; r2 = r1 << 8; r3 = r2 << 8;
-				r0 = r0 | r1; r0 = r0 | r2; r0 = r0 | r3; [i0++] = r0; //10
-	r0 = 160; 	r1 = r0 << 8; r2 = r1 << 8; r3 = r2 << 8;
-				r0 = r0 | r1; r0 = r0 | r2; r0 = r0 | r3; [i0++] = r0; //11
-	r0 = 142; 	r1 = r0 << 8; r2 = r1 << 8; r3 = r2 << 8;
-				r0 = r0 | r1; r0 = r0 | r2; r0 = r0 | r3; [i0++] = r0; //12
-	r0 = 126; 	r1 = r0 << 8; r2 = r1 << 8; r3 = r2 << 8;
-				r0 = r0 | r1; r0 = r0 | r2; r0 = r0 | r3; [i0++] = r0; //13
-	r0 = 120; 	r1 = r0 << 8; r2 = r1 << 8; r3 = r2 << 8;
-				r0 = r0 | r1; r0 = r0 | r2; r0 = r0 | r3; [i0++] = r0; //14
-	r0 = 110; 	r1 = r0 << 8; r2 = r1 << 8; r3 = r2 << 8;
-				r0 = r0 | r1; r0 = r0 | r2; r0 = r0 | r3; [i0++] = r0; //15
-	//aperture: default small.
-	r0.l = 56; r0.h = 56; [i0++] = r0; [i0++] = r0;
-
-	// 127 113 102 111 132 155 195 235 250 224 187 160 142 127
-	r0 = 127; 	r1 = r0 << 8; r2 = r1 << 8; r3 = r2 << 8; //not efficient but whatever.
-				r0 = r0 | r1; r0 = r0 | r2; r0 = r0 | r3; [i0++] = r0; //1
-	r0 = 113; 	r1 = r0 << 8; r2 = r1 << 8; r3 = r2 << 8;
-				r0 = r0 | r1; r0 = r0 | r2; r0 = r0 | r3; [i0++] = r0; //2
-	r0 = 102; 	r1 = r0 << 8; r2 = r1 << 8; r3 = r2 << 8;
-				r0 = r0 | r1; r0 = r0 | r2; r0 = r0 | r3; [i0++] = r0; //3
-	r0 = 111; 	r1 = r0 << 8; r2 = r1 << 8; r3 = r2 << 8;
-				r0 = r0 | r1; r0 = r0 | r2; r0 = r0 | r3; [i0++] = r0; //4
-	r0 = 132; 	r1 = r0 << 8; r2 = r1 << 8; r3 = r2 << 8;
-				r0 = r0 | r1; r0 = r0 | r2; r0 = r0 | r3; [i0++] = r0; //5
-	r0 = 155; 	r1 = r0 << 8; r2 = r1 << 8; r3 = r2 << 8;
-				r0 = r0 | r1; r0 = r0 | r2; r0 = r0 | r3; [i0++] = r0; //6
-	r0 = 195; 	r1 = r0 << 8; r2 = r1 << 8; r3 = r2 << 8;
-				r0 = r0 | r1; r0 = r0 | r2; r0 = r0 | r3; [i0++] = r0; //7
-	r0 = 235; 	r1 = r0 << 8; r2 = r1 << 8; r3 = r2 << 8;
-				r0 = r0 | r1; r0 = r0 | r2; r0 = r0 | r3; [i0++] = r0; //8
-	r0 = 250; 	r1 = r0 << 8; r2 = r1 << 8; r3 = r2 << 8;
-				r0 = r0 | r1; r0 = r0 | r2; r0 = r0 | r3; [i0++] = r0; //9
-	r0 = 224; 	r1 = r0 << 8; r2 = r1 << 8; r3 = r2 << 8;
-				r0 = r0 | r1; r0 = r0 | r2; r0 = r0 | r3; [i0++] = r0; //10
-	r0 = 187; 	r1 = r0 << 8; r2 = r1 << 8; r3 = r2 << 8;
-				r0 = r0 | r1; r0 = r0 | r2; r0 = r0 | r3; [i0++] = r0; //11
-	r0 = 160; 	r1 = r0 << 8; r2 = r1 << 8; r3 = r2 << 8;
-				r0 = r0 | r1; r0 = r0 | r2; r0 = r0 | r3; [i0++] = r0; //12
-	r0 = 142; 	r1 = r0 << 8; r2 = r1 << 8; r3 = r2 << 8;
-				r0 = r0 | r1; r0 = r0 | r2; r0 = r0 | r3; [i0++] = r0; //13
-	r0 = 127; 	r1 = r0 << 8; r2 = r1 << 8; r3 = r2 << 8;
-				r0 = r0 | r1; r0 = r0 | r2; r0 = r0 | r3; [i0++] = r0; //14
-	r0 = 110; 	r1 = r0 << 8; r2 = r1 << 8; r3 = r2 << 8;
-				r0 = r0 | r1; r0 = r0 | r2; r0 = r0 | r3; [i0++] = r0; //15
-	r0 = 95; 	r1 = r0 << 8; r2 = r1 << 8; r3 = r2 << 8;
-				r0 = r0 | r1; r0 = r0 | r2; r0 = r0 | r3; [i0++] = r0; //16
-	//aperture: default small.
-	r0.l = 56; r0.h = 56; [i0++] = r0; [i0++] = r0;
-
-lt_bot: nop;
-
-	//now, zero the delays.
-	p5 = (32+31)*W1_STRIDE*2; //leave pointers on ch 31; see above.
-	r0 = 0;
-	lsetup(zer_top,zer_bot) lc0 = p5;
-zer_top:
-	[i1++] = r0; //zero delays.
-	r1 = [i2++]; //no effect other than keep pointers in sync.
-zer_bot:
 	//zero threshold exceeded (otherwise may trigger abnormal end-frame packet)
 	p5.l = LO(MATCH);
 	p5.h = HI(MATCH);
@@ -717,8 +540,8 @@ wait_16pkts:
 		cc = r7 == r6; //first iter, don't wait for IRQ. pipeline!
 		if cc jump wp_bot ;
 		//otherwise, wait for asserted IRQ.
-		call _waitirq_asm;
-		call _clearirq_asm;
+		call _waitirq_asm; //calls _get_asm
+		call _clearirq_asm; //calls _get_asm
 	wp_bot: nop;
 	//there is still one packet in the radio fifo - wait.
 	call _waitirq_asm;
@@ -765,7 +588,7 @@ wait_16pkts:
 	cc = bittst(r7, 3);
 	if cc jump no_rxpacket;
 	//oh, goody - we got something. first clear the irq.
-	call _clearirq_asm;
+	call _clearirq_asm; //many _get_asm calls.
 	r7 = SPI_CE; //disable the radio; turn off LNA as soon as possible.
 	w[p1 + (FIO_FLAG_C - FIO_FLAG_D)] = r7;
 	call _get_asm;
