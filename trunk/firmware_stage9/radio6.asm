@@ -69,7 +69,7 @@ wait_samples:
 	r0 = r0 -|- r6 (s) || i0 -= m1 || [i2++] = r0 ;
 		//compute error, move i0 to active weight, save original (pre-LMS)
 	r6 = r0 << 7 (v,s) || i1 += m2 || [i2++] = r7; //move i1 to update channel, save saturated.
-	r6 = r6 >>> 15 (v,s) || r1 = [i1++] || r2 = [i0];
+	r6 = r6 >>> 14 (v,s) || r1 = [i1++] || r2 = [i0];
 		//r6 = sign of error, r1 = saturated sample, r2 = w0, i1 @ gain + updatechan.
 	a0 = r1.l * r6.l, a1 = r1.h * r6.h || nop; //load delta w, r5 weight decay.
 r4.l = (a0+= r2.l * r5.l), r4.h = (a1+= r2.h * r5.h) || i1 -= m2 ;
@@ -102,7 +102,7 @@ r0.l=(a0 +=r4.l * r5.l), r0.h=(a1 +=r4.h * r5.h)(s2rnd)|| [i2++] = r1 ;//r0 = y1
 r0.l=(a0 +=r2.l * r5.l), r0.h=(a1 +=r2.h * r5.h)(s2rnd)|| r5 = [i0++] ;//r0 = y2(n); r5 = threshold.
 //this is the output of the matched filter; may need more biquads. compare with thresh.
 	r0 = r0 +|+ r5 (s) || [i2++] = r0; // add threshold, save y2(n)`
-	r6 = r0 >>> 15 (v) || r5 = [i0++] || [i2++] = r1; //either -1 (0xffff) or 0; load mask (0x00080008), save y2(n-1)
+	r6 = r0 >>> 15 (v) || [i2++] = r1; //either -1 (0xffff) or 0, save y2(n-1)
 	MNOP				 							 || r5 = [i0++] || r1 = [i1++] ;// r6 match; r1 x1(n-1); r5 b0.0
 //second unit.
 	a0  = r7.l * r5.l, a1  = r7.h * r5.h || r5 = [i0++] || r2 = [i1++] ;//r5 = b0.1; r2 = x1(n-2)
@@ -168,7 +168,7 @@ r0.l=(a0 +=r2.l * r5.l), r0.h=(a1 +=r2.h * r5.h)(s2rnd)|| r5 = [i0++] ;//r0 = y2
 	r0 = r0 -|- r6 (s) || i0 -= m1 || [i2++] = r0 ;
 		//compute error, move i0 to active weight, save original (pre-LMS)
 	r6 = r0 << 7 (v,s) || i1 += m2 || [i2++] = r7; //move i1 to update channel, save saturated.
-	r6 = r6 >>> 15 (v,s) || r1 = [i1++] || r2 = [i0];
+	r6 = r6 >>> 14 (v,s) || r1 = [i1++] || r2 = [i0];
 		//r6 = sign of error, r1 = saturated sample, r2 = w0, i1 @ gain + updatechan.
 	a0 = r1.l * r6.l, a1 = r1.h * r6.h || nop; //load delta w, r5 weight decay.
 r4.l = (a0+= r2.l * r5.l), r4.h = (a1+= r2.h * r5.h) || i1 -= m2 ;
@@ -201,7 +201,7 @@ r0.l=(a0 +=r4.l * r5.l), r0.h=(a1 +=r4.h * r5.h)(s2rnd)|| [i2++] = r1 ;//r0 = y1
 r0.l=(a0 +=r2.l * r5.l), r0.h=(a1 +=r2.h * r5.h)(s2rnd)|| r5 = [i0++] ;//r0 = y2(n); r5 = threshold.
 //this is the output of the matched filter; may need more biquads. compare with thresh.
 	r0 = r0 +|+ r5 (s) || [i2++] = r0; // add threshold, save y2(n)`
-	r6 = r0 >>> 15 (v) || r5 = [i0++] || [i2++] = r1; //either -1 (0xffff) or 0; load mask (0x00080008), save y2(n-1)
+	r6 = r0 >>> 15 (v) || [i2++] = r1; //either -1 (0xffff) or 0; load mask (0x00080008), save y2(n-1)
 	MNOP				 							 || r5 = [i0++] || r1 = [i1++] ;// r6 match; r1 x1(n-1); r5 b0.0
 //second unit.
 	a0  = r7.l * r5.l, a1  = r7.h * r5.h || r5 = [i0++] || r2 = [i1++] ;//r5 = b0.1; r2 = x1(n-2)
@@ -275,7 +275,7 @@ r0.l=(a0 +=r2.l * r5.l), r0.h=(a1 +=r2.h * r5.h)(s2rnd)|| r5 = [i0++] ;//r0 = y2
 			//hide latency by managing flags.
 			r7 = [i3++]; //load state flag, used as an OR mask for communicating with bridge.
 			r6 = [i3++]; //points to MATCH_PTR7; loops every 4 packets. cycles through 256bits.
-			p5 = r5;
+			p5 = r6;
 			r5 = [FP - FP_QPACKETS];
 			r5 += 1; //one more packet on the queue.
 			[FP - FP_QPACKETS] = r5; //save for other thread.
@@ -286,7 +286,6 @@ r0.l=(a0 +=r2.l * r5.l), r0.h=(a1 +=r2.h * r5.h)(s2rnd)|| r5 = [i0++] ;//r0 = y2
 			//flag upper bit in each byte with QS & echo.
 			r0 = r0 | r7;
 			r1 = r1 | r5;
-			r7 = p5; //make p5 loop.
 			p0 = -36; //because both increment and decrement are post!
 					// 32 8-bit words, ea 4 chan = 128 chan + 4 post-dec offset.
 			p5 = p5 + p0; //move to 8b encoding region; clear.
@@ -307,7 +306,7 @@ end_txchan_qs:
 end_txchan:
 	RTS ; //used to be jump.
 
-
+.align 8
 _clearirq_asm: //just write the status register via spi to clear.
 	[--sp] = rets;
 	r7 = SPI_CSN;
@@ -325,6 +324,7 @@ _clearirq_asm: //just write the status register via spi to clear.
 	rets = [sp++];
 	rts;
 
+.align 8
 _waitirq_asm:
 	[--sp] = rets;
 	r7 = 182; // should take max 360us = 178. min @ 1msps = 160
@@ -347,6 +347,7 @@ waitirq_end:
 	rets = [sp++];
 	rts;
 
+.align 8
 _clearfifos_asm:
 	[--sp] = rets;
 	// flush RX fifo (seems to improve reliability)
@@ -373,6 +374,7 @@ _clearfifos_asm:
 	rets = [sp++];
 	rts;
 
+.align 8
 .global _radio_bidi_asm
 _radio_bidi_asm:
 	//set the baud.
@@ -405,6 +407,7 @@ _radio_bidi_asm:
 
 	r0 = 0;
 	[FP - FP_QPACKETS] = r0;
+	[FP - FP_ECHO] = r0;
 	[FP - FP_ADDRESS] = r0;
 	[FP - FP_VALUE] = r0;
 	r0.l = LO(MATCH);

@@ -3,11 +3,11 @@
 .SUFFIXES: .o .c .asm .bo .asm
 
 ASMSRCS = crt0.o radio6.o init6.o enc.o divsi3.o
-COMMON = print.o util.o spi.o
+COMMON = util.o spi.o
 # CSRCS = main.o usb_write.o usb.o
 CSRCS = main.o
 # note: the order of objects in the .ldr mirrors the order in this list!
-OPT = -O2
+OPT = -g
 CPUDEFINES = -D__ADSPBF532__ -D__BLACKFIN__
 INCLUDES = -I. -I/opt/uClinux/bfin-elf/bfin-elf/include/ -I../common/
 ASMFLAGS = -x assembler-with-cpp $(INCLUDES) $(CPUDEFINES) -Wall

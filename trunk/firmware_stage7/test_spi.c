@@ -7,6 +7,12 @@
 #include "ethernet.h"
 #include "nordic_regs.h"
 
+//OLED
+#define OLED_SDI (0x1 << 9)
+#define OLED_CS (0x1 << 10)
+#define OLED_SDO (0x1 << 11)
+#define OLED_CLK (0x1 << 12)
+
 typedef struct {
 	u32		destIP; 
 	u32		radioChan;
@@ -323,12 +329,69 @@ void __attribute__((interrupt_handler)) audio_out(void)
 	}
 	g_sampCh ^= 1; 
 }
-
+void oled_delay(){
+	//assumese 600 Mhz operating clock.
+	int j; 
+	for(j=0; j<50; j++) //slightly below the max clock, period = 300ns.
+			asm volatile("nop"); 	
+}
+u8 oled_write(u16 data){
+	char k; 
+	u8 d, status; 
+	*pPORTGIO_CLEAR = OLED_CS; 
+	oled_delay();
+	//MSB (bit 9): 0 -> command read/write
+	// 1 -> ram read/write.
+	for(k = 9; k >= 0; k--){
+		d = data >> k & 0x1;
+		*pPORTGIO_CLEAR = OLED_CLK;
+		if(d){
+			*pPORTGIO_SET = OLED_SDI;
+		}else{
+			*pPORTGIO_CLEAR = OLED_SDI;
+		}
+		oled_delay();
+		*pPORTGIO_SET = OLED_CLK;
+		oled_delay();
+	}
+	//read in the status -- but not if we are sending a data command.
+	status = 0; 
+	if((data & 0x0200) == 0){
+		data = 0x0100; //read busy flag command.
+		*pPORTGIO_CLEAR = OLED_SDI;
+		for(k = 9; k >= 0; k--){
+			status <<= 1; 
+			d = data >> k & 0x1;
+			*pPORTGIO_CLEAR = OLED_CLK;
+			if(d){
+				*pPORTGIO_SET = OLED_SDI;
+			}else{
+				*pPORTGIO_CLEAR = OLED_SDI;
+			}
+			oled_delay();
+			*pPORTGIO_SET = OLED_CLK;
+			status |= (*pPORTGIO & OLED_SDO) >> 11; 
+			oled_delay();
+		}
+	}
+	*pPORTGIO_SET = OLED_CS; 
+	oled_delay();
+	return status;
+}
+void oled_waitbusy(){
+	u8 status = 0; 
+	u16 cnt = 0; 
+	status = oled_write(0x0101); 
+	while((status & 0x80) && cnt < 2000){
+		status = oled_write(0x0100); 
+		cnt ++;
+	}
+}
 int main(void){
 	//the nordic chip has a SPI port rated up to 10Mhz.
 	*pPORTG_FER = 0xc19c; //UART, SPI, MDC
 	*pPORTGIO_DIR = 0x3; 
-	*pPORTG_MUX = 0x0020; 
+	*pPORTG_MUX = 0x0020; //UART mux.
 	*pSPI_BAUD = 6; 
 	*pSPI_STAT = 0x56; //clear any errors.
 	*pSPI_CTL = TDBR_CORE | SZ | EMISO | GM | MSTR | SPE; //0b 0101 0100 0011 0001
@@ -346,9 +409,44 @@ int main(void){
 	*pUART0_GCTL = 0x0001; //enable the clock.
 	printf_temp = (char*)PRINTF_TEMP; //init the pointers. 
 	printf_out = (char*)PRINTF_OUT; 
-	printf_int("Myopen svn v.", /*SVN_VERSION{*/582/*}*/ ) ; 
-	printf_str("\n"); 
-	printf_str("checking SDRAM...\n"); 
+	//and controlling the OLED.
+	*pPORTGIO_INEN &= (0xffff ^ OLED_SDO); //display out.
+	*pPORTGIO_DIR |= OLED_CLK | OLED_SDI | OLED_CS; 
+	*pPORTGIO_DIR &= (0xffff ^ OLED_SDO); 
+	*pPORTG_FER &= (0xffff ^ (OLED_SDO | OLED_CLK | OLED_SDI | OLED_CS)); 
+	
+	// try initializing the OLED controller. (works!)
+	*pPORTGIO_SET = OLED_CS | OLED_CLK; 
+	udelay(1);
+	oled_write(0x0038); //function set, DL = 8bits, font table 0.
+	oled_waitbusy(); 
+	oled_write(0x0008); //display off.
+	oled_waitbusy(); 
+	oled_write(0x0001); //display clear.
+	oled_waitbusy(); 
+	oled_write(0x0006); //entry mode set, auto incr.
+	oled_waitbusy(); 
+	oled_write(0x0002); //home command
+	oled_waitbusy(); 
+	oled_write(0x000f); //display on, cursor on, blink on.
+	/*while(0){ //test screen.
+		oled_write(0x80 | 0x00); //move to DDRAM 0x00.
+		udelay(100000); 
+		for(s=0; s<16; s++){
+			udelay(100000); 
+			oled_write(0x0240 + s); //write character data. 
+		}
+		udelay(100000); 
+		oled_write(0x80 | 0x40); //move to DDRAM 0x40.
+		for(s=0; s<16; s++){
+			udelay(100000); 
+			oled_write(0x0230 + s); //write character data. 
+		}
+	}*/
+	
+	printf_int("!svn v.", /*SVN_VERSION{*/708/*}*/ ) ; 
+	printf_str("!\n"); 
+	printf_str("!checking SDRAM...\n"); 
 	//not the most sophisticated test here.. 
 	unsigned short* p; 
 	p = 0; 
@@ -376,7 +474,7 @@ int main(void){
 		s = *p++; 
 		if(s!= 0xBABE) printf_hex("mem err @ ",i); 
 	}
-	printf_str("memory check done.\n"); 
+	printf_str("!mem chk done.\n"); 
 	if(0){
 		printf_str("reading flash, starting from addr 0\n"); 
 		for(i=0;i<32;i++){
@@ -405,6 +503,11 @@ int main(void){
 	//startup the ethernet..
 	int etherr = bfin_EMAC_init(); 
 	if(!etherr) DHCP_req();
+	printf_int( "!", (NetOurIP)& 0xff); 
+	printf_int( "!.", (NetOurIP>>8)& 0xff); 
+	printf_int( "!.", (NetOurIP>>16)& 0xff); 
+	printf_int( "!.", (NetOurIP>>24)& 0xff); 
+	printf_str("! \n"); 
 	//need something more robust than having to write the webpage to enable 
 	//destination -- something like SLP? mDNS or DNS-SC? or simpler? 
 	
@@ -419,7 +522,7 @@ int main(void){
 	*pPORTFIO_DIR = (0xffff ^ 0x01a9); 
 	*pPORTFIO_INEN = 0x01ab; 
 	*pPORTF_MUX = 0x0140; //support the DAC
-	//and reading / writing flash
+	//and reading / writing flash 
 	*pPORTGIO_INEN &= (0xffff ^ SPI_FLASH); 
 	*pPORTGIO_DIR |= SPI_FLASH; 
 	*pPORTG_FER &= (0xffff ^ SPI_FLASH); 
@@ -485,7 +588,7 @@ int main(void){
 		//first look for gtkclient. it has to tell us what radio channel
 		//to listen to. if it goes away we'll get an ICMP port closed
 		//packet, and will fall back to waiting patiently for it. 
-		printf_str("waiting for client.\n"); 
+		printf_str("!waiting 4 client\r"); 
 		g_radioChan = bridge_publish(); 
 		
 		unsigned int prevtime = 0;
@@ -544,7 +647,7 @@ int main(void){
 			if(secs != prevtime)
 				*pPORTFIO_TOGGLE = 0x8000; 
 			prevtime = secs; 
-		}
+		}b
 	}
 	return 0;
 }
