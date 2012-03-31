@@ -2,7 +2,7 @@
 #this actually could be much simpler.
 .SUFFIXES: .o .c .asm .bo .asm
 
-ASMSRCS = crt0.o radio5.o enc.o divsi3.o
+ASMSRCS = crt0.o radio6.o init6.o enc.o divsi3.o
 COMMON = print.o util.o spi.o
 # CSRCS = main.o usb_write.o usb.o
 CSRCS = main.o

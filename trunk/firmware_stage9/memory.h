@@ -127,30 +127,31 @@ memory map:
 	38	sf[1]		0x0000 0080 --state flag. bits 31, 23, 15, 7 (mask 0x80808080)
 	39 mp[1]		(MATCH + 32 + 1*8) -- '1' this varies from 0-3.
 
-	Total length of this buffer is determined by the three cycles it supports: 15, 6, and 4
-	(15 for LMS, 6 for packet samples, 4 for match write.)
-	-- LCM: 5*3*2*2 = 60.
-	After 2 packets, a total of 12 LMS taps have been written. (above)
-	after 10 packets, 60 LMS taps.
-	Each packet requires 20 32bit words,
-	So total length = 20*10*4 = 800 = 0x320
+	Total length of this buffer is determined by the three cycles it supports: 15, 6, and 16
+	(15 for LMS, 6 for packet samples, 16 for state flag (and 4 for match write.)
+	-- LCM: 5*3*2^4 = 240.
+	This is too big; we have 0x1000 memory available.
+	Each packet consumes 20 words (above), or 80 bytes, so we have space for 51 packets.
+	Packets must come in multiple of 16 -- unlike LMS which can be skipped -- so
+	we have space for 48 packets.
+	This will go through 19.2 LMS updates -- most LMS weights will be updated 19 times,
+	and 1/5 will be updated 20 times.  Seems OK!
 */
 #define A1 				0xFF904000  /** BANK B **/ //i0 accesses -- coefficients.
-#define A1_STEP		2			//should *not* change this from the client. unless I make a mistake.
+#define A1_STEP		1			//should *not* change this from the client. unless I make a mistake.
 #define A1_INT			2			//units: 32bit words.
 #define A1_LMS			16			//15 taps + weight decay.
 #define A1_AGC			2			//4 coefs per 4 biquads.
 #define A1_IIR			10
-#define A1_UNIT		2
-#define A1_INTS		0
+#define A1_INTR		0
 #define A1_LMSA		(A1_INTR + A1_INT) //2
 #define A1_AGCS		(A1_LMSA + A1_LMS) //18
 #define A1_IIRA		(A1_AGCS + A1_AGC) //20
 #define A1_UNITA		(A1_IIRA + A1_IIR) //30
-#define A1_IIRB		(A1_UNITA + A1_UNIT) //32
-#define A1_UNITB		(A1_IIRB + A1_IIR) //42
-#define A1_STRIDE 	(A1_UNITB + A1_UNIT) //total: 44.
-#define A1_PITCH		(A1_STRIDE*2 + 2)
+#define A1_IIRB		(A1_UNITA + 1) //31
+#define A1_UNITB		(A1_IIRB + A1_IIR) //41
+#define A1_STRIDE 	(A1_UNITB + 3) //total: 44.
+#define A1_PITCH		(A1_STRIDE*2 + 2) //step and channel afterward.
 
 #define FP_BASE		0xFF906F00 //length: 0x200, 512 bytes.
 	// ** Frame pointer counts down! **
@@ -164,7 +165,7 @@ memory map:
 #define W1_STRIDE	 	16 // see above.
 						  //total length = W1_STRIDE * 2 * 32 * 4 = 4k = 0x1000 bytes
 #define T1				0xFF805000 //accessed by i3, read/write LMS & state.
-#define T1_LENGTH		(10*20*4) //0x320
+#define T1_LENGTH		(48*20*4) //3840, 0xF00
 
 
 #define MATCH			0xFF806000 //256 bits, 128 channels * 2 templates.
@@ -180,29 +181,25 @@ memory map:
 
 
 //use the frame pointer to store local variables for fast access.
-#define FP_CHAN			4
-#define FP_QS				8 //queue state -- how many samples have we written?
-#define FP_QPACKETS		12
-#define FP_ADDRESS		16  //for RX
-#define FP_VALUE			20  //for RX
-#define FP_TXCHAN3		24
-#define FP_TXCHAN2		28
-#define FP_TXCHAN1		32
-#define FP_TXCHAN0		36
-#define FP_TIMER			40
-#define FP_MATCH			44
-#define FP_8080			48
-#define FP_5555			52
-#define FP_AAAA			56
-#define FP_SPORT0_RX	60
-#define FP_SPI_TDBR		64
-#define FP_FIO_FLAG_D	68
-#define FP_MATCH_BASE	72 //= MATCH, defined above. write ptr= this + FP_CHAN
-#define FP_MATCH_PTR7	76
-#define FP_ENC_LUT_BASE	80
-#define FP_STATE_LUT_BASE 84
-#define FP_ECHO			88
-#define FP_BLINK			92
+#define FP_QPACKETS		4
+#define FP_ADDRESS		8  //for RX
+#define FP_VALUE			12  //for RX
+#define FP_TXCHAN3		16
+#define FP_TXCHAN2		20
+#define FP_TXCHAN1		24
+#define FP_TXCHAN0		28
+#define FP_TIMER			32
+#define FP_MATCH			36
+#define FP_SPORT0_RX		40
+#define FP_SPI_TDBR		44
+#define FP_FIO_FLAG_D	48
+#define FP_MATCH_BASE	52 //= MATCH, defined above. write ptr= this + FP_CHAN
+#define FP_MATCH_PTR7	56
+#define FP_ENC_LUT_BASE	60
+#define FP_STATE_LUT_BASE 64 //need this for echo flag.
+#define FP_ECHO			68
+#define FP_BLINK			72
+#define FP_0FFF0FFF		76
 
 #ifndef LO
 #define LO(con32) ((con32) & 0xFFFF)
@@ -210,5 +207,10 @@ memory map:
 #ifndef HI
 #define HI(con32) (((con32) >> 16) & 0xFFFF)
 #endif
+
+//pins.
+#define STEP 			0x0100
+#define MUXRESET 		0x0080  //active low; must keep it high.
+#define LED_BLINK		0x0010  //blink LED.
 
 #endif
