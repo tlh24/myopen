@@ -120,14 +120,14 @@ r0.l=(a0 +=r2.l * r5.l), r0.h=(a1 +=r2.h * r5.h)(s2rnd)|| r5 = [i0++] ;//r0 = y2
 //this is the output of the matched filter; may need more biquads. compare with thresh.
 	r0 = r0 +|+ r5 (s) || r7 = [i0++] || [i2++] = r0; // add threshold, save y2(n)`
 	r0 = r0 >>> 15 (v,s) || r5 = [i0++] || [i2++] = r1; //either -1 (0xffff) or 0; load mask (0x00040004), save y2(n-1)
-	r6 = r6 & r7 ; // r7 = 0x00010001
-	r0 = r0 & r5 ; // r5 = 0x00020002
+	r6 = r6 & r7 ; // r7 = 0x00100001 -- note upper nibble shifted.
+	r0 = r0 & r5 ; // r5 = 0x00200002 -- this saves a cycle later.
 	r6 = r6 | r0 ; // r6 match on 2 units, 2 channels now.
 	[fp - FP_MATCH] = r6;
 
 	//read in the samples -- SPORT1
-	r0 = w[p0] (z);
-	r1 = w[p0] (z);
+	r0 = w[p0 + (SPORT1_RX - SPORT0_RX)] (z);
+	r1 = w[p0 + (SPORT1_RX - SPORT0_RX)] (z);
 	r2 = [FP-FP_0FFF0FFF];
 	r1 <<= 16;  //secondary channel in the upper word.
 	r0 = r0 | r1;
@@ -219,8 +219,8 @@ r0.l=(a0 +=r2.l * r5.l), r0.h=(a1 +=r2.h * r5.h)(s2rnd)|| r5 = [i0++] ;//r0 = y2
 //this is the output of the matched filter; may need more biquads. compare with thresh.
 	r0 = r0 +|+ r5 (s) || r7 = [i0++] || [i2++] = r0; // subtract threshold, save y2(n)`
 	r0 = r0 >>> 15 (v,s) || r5 = [i0++] || [i2++] = r1; //either -1 (0xffff) or 0; load mask (0x00040004), save y2(n-1)
-	r6 = r6 & r7 ; // r7 = 0x00040004
-	r0 = r0 & r5 ; // r5 = 0x00080008
+	r6 = r6 & r7 ; // r7 = 0x00400004 --again, upper nibble shifted.
+	r0 = r0 & r5 ; // r5 = 0x00800008
 	r6 = r6 | r0 ; // r6 match on 2 units, 2 channels now.
 	r7 = [fp - FP_MATCH]; // r6 match on 2 units, 2 channels now.
 	r0 = r7 | r6;
@@ -235,8 +235,8 @@ r0.l=(a0 +=r2.l * r5.l), r0.h=(a1 +=r2.h * r5.h)(s2rnd)|| r5 = [i0++] ;//r0 = y2
 	p0 = r6; //byte addressing so we be okay.
 	p5 = [FP - FP_MATCH_BASE];
 	p1 = [FP - FP_ENC_LUT_BASE]; //3 cycle latency before we can use p1.
-	r0.h = r0.h << 4; //merge nibbles.
 	r0.l = r0.l + r0.h; // deposit instruction would save nothing -- we'd still have to load the mask.
+	r0 = r0.b; //mask!  needed from above, o/w get r0 = 0x0040 0040.
 	p5 = p5 + p0;
 	r1 = b[p5];
 	r1 = r1 | r0;
@@ -296,14 +296,14 @@ r0.l=(a0 +=r2.l * r5.l), r0.h=(a1 +=r2.h * r5.h)(s2rnd)|| r5 = [i0++] ;//r0 = y2
 			[p5--] = r4; //reset template match, 8b region.
 			[p5--] = r4;
 end_txchan_qs:
-		p1 = [FP - FP_FIO_FLAG_D]; //reset the pointers.
-		p3 = [FP - FP_SPI_TDBR]; //saves clock relative to push/pop stack.
 		r7 = p4; //make p4 loop.
 		bitclr(r7, 10); //two 512-byte frames.
 		p4 = r7;
 		//thought: since the codepath is so long here, might want to jump directly to the head
 		//after resetting state.  o/w radio may take too long.
 end_txchan:
+	p3 = [FP - FP_SPI_TDBR]; //saves clock relative to push/pop stack.
+	p1 = [FP - FP_FIO_FLAG_D]; //reset p1 pointer.
 	RTS ; //used to be jump.
 
 .align 8
@@ -481,6 +481,7 @@ _radio_bidi_asm:
 	call _enc_create;
 
 	//enable the watchdog timer.
+	// disable while debugging, so we can trap bad events. 
 	p5.l = LO(WDOG_CNT);
 	p5.h = HI(WDOG_CNT);
 	r0.h = 0x000c; //set the timer for 10ms = 8e5 clks
@@ -488,6 +489,7 @@ _radio_bidi_asm:
 	[p5--] = r0; //by writing anything to WDOG_STAT.
 	r0 = 0x0; //generate reset event, enable watchdog.
 	w[p5] = r0;
+	
 
 	//clear the MUX reset.
 	r7 = MUXRESET (x); //portF pin 7, reset, active low.
