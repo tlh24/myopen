@@ -38,7 +38,7 @@ lt2_top:
 			[i0++] = r0; //13
 			[i0++] = r0; //14
 			[i0++] = r0; //15
-			r0.l = 0x7fff;		w[i0++] = r0.l; w[i0++] = r0.l; //LMS template.
+			r0.l = 0x7fff;		w[i0++] = r0.l; w[i0++] = r0.l; //LMS weight decay.
 			r0.l = 9915; r0.h = 9915;  [i0++] = r0; // AGC target. sqrt(6000*16384);
 			r0.l = 16384; r0.h = 1  ;  [i0++] = r0; //AGC gain scaler / mu.
 			//init IIR matched filters with GP lowpass / highpass.
@@ -74,13 +74,17 @@ lt2_top:
 			r0 = -13603 (x);	w[i0++] = r0.l; w[i0++] = r0.l;
 			//threshold.
 			r0 = 10000 (x) ;	w[i0++] = r0.l; w[i0++] = r0.l;
-			r0.l = 0x1; 		w[i0++] = r0.l; w[i0++] = r0.l; 
-			r0.l = 0x2; 		w[i0++] = r0.l; w[i0++] = r0.l; 
+			r0.l = 0x1; 		w[i0++] = r0.l; 
+				r0.l = 0x10; 	w[i0++] = r0.l; //little-endian. check this.
+			r0.l = 0x2; 		w[i0++] = r0.l; 
+				r0.l = 0x20; 	w[i0++] = r0.l; 
 lt2_bot:
 		m3 = 8 ; //move back to rewrite masks.
 		i0 -= m3; 
-		r0.l = 0x4; 		w[i0++] = r0.l; w[i0++] = r0.l; 
-		r0.l = 0x8; 		w[i0++] = r0.l; w[i0++] = r0.l;
+		r0.l = 0x4; 		w[i0++] = r0.l; 
+			r0.l = 0x40; 	w[i0++] = r0.l; //little-endian. check this.
+		r0.l = 0x8; 		w[i0++] = r0.l; 
+			r0.l = 0x80; 	w[i0++] = r0.l; 
 		[i0++] = r1; //channel.
 		r0 = 1;
 		r1 = r1 + r0;
@@ -111,15 +115,15 @@ lt_bot:
 	m1 = 16*4; 
 	m2 = m0; 
 	// now zero the taps.
-	p4.l = LO(W1); 
-	p4.h = HI(W1); 
+	p0.l = LO(W1); //p0 is free -- don't use p2 or p4, they are fixed!
+	p0.h = HI(W1); 
 	p5.l = LO(W1_STRIDE*2*32);
 	p5.h = HI(W1_STRIDE*2*32);
 	r0 = 0; 
 	lsetup(lt3_top,lt3_bot) lc0 = p5;
 lt3_top:
 		nop;
-		[p4++] = r0;
+		[p0++] = r0;
 lt3_bot:
 	nop; 
 	//finally, i3, which stores LMS offset / packet states.

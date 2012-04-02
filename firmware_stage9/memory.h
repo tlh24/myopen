@@ -48,7 +48,7 @@ memory map:
 			b00 b01 b02 a00 a01	-- unit 2.
 			b10 b11 b12 a10 a12
 			threshold unit 2
-			loadmask unit 1
+			loadmask unit 1  (0x00100001, 0x00200002, 0x00400004, ...)
 			loadmask unit 2
 		} X2 (44 altogether, = A1_STRIDE)
 		channel, 0-31
@@ -176,7 +176,7 @@ memory map:
 #define STATE_LUT		0xff806200 // 16 32bit words, 64 bytes.
 
 #define WFBUF			0xFF807000  //really the transmit buffer.
-#define WFBUF_LEN		1024		// length 2 512 byte, 16-packet frames.
+#define WFBUF_LEN		1024		// length 2 512 byte, 16-packet frames. (0x400)
 
 
 

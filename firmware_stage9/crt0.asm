@@ -258,7 +258,10 @@ display_fail:
 	rtx;
 
 _HWHANDLER:           // HW Error Handler 5
-rti;
+	r0 = seqstat;
+	r1 = retx; 
+	jump _HWHANDLER; 
+	rti;
 
 _NHANDLER: //non maskable interrrupt? 
 	call _nmi_report; //this should not return.
@@ -266,7 +269,9 @@ _NHANDLER: //non maskable interrrupt?
 
 EXC_HANDLER:          // exception handler
 	//save registers to memory so we may print them out. 
-	r0 = seqstat;
+	nop; 
+	nop; 
+	nop;
 	r1 = retx; 
 	jump EXC_HANDLER; 
 	[--sp] = p5; 
