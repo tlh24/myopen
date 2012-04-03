@@ -1,323 +1,18 @@
 #include "spi.h"
 #include "nordic_regs.h"
 
-.align 8 //call is a 5-cycle latency if target is aligned.
-_get_asm:
-	//reads in the data, filters, thresholds, clobbers most all registers :-)
-	//this is always a leaf, no need to save RTS.
-	//reset p0. (do it here to avoid latency.)
-	p0 = [FP - FP_SPORT0_RX];
-	r7 = STEP;
-	w[p1 + (FIO_FLAG_C - FIO_FLAG_D)] = r7; //clear step. (0)
-	r7 = MUXRESET;
-	w[p1 + (FIO_FLAG_S - FIO_FLAG_D)] = r7; //clear reset. (1)
-//rather than using a software wait loop, should enable wakeup and interupts in the
-// SIC_IWR register,and then issue the IDLE instruction to save further power.
-// will have to test this, as we are running in a SW loop, not interrupt driven processing.
-// did test this - takes too long for processor to emerge from sleep.
-	//cli r0;
-	//idle; //wait for wake-up event.
-	//sti r0;
-wait_samples:
-	r3 = w[p0 + (SPORT0_STAT - SPORT0_RX)];
-	cc =! bittst(r3, 0);
-	if cc jump wait_samples; //not predicting this branch is faster!
-
-	//channel is stored implicitly in i0 -- don't need explicit update anymore.
-	//read in the samples -- SPORT0
-	r0 = w[p0] (z);
-	r1 = w[p0] (z);
-	r2 = [FP-FP_0FFF0FFF]; //hides MMR latency.
-	r1 <<= 16;  //secondary channel in the upper word.
-	r0 = r0 | r1;
-	r2 = r0 & r2;
-	//either toggle STEP or MUXRESET, depending on the channel.
-	r7 = [i0++];
-	w[p1 + (FIO_FLAG_T - FIO_FLAG_D)] = r7;
-	//apply integrator highpass + gain (4, shift and *2)).
-.align 8
-	r2 = r2 << 1 (v) || r5 = [i0++]; //*2, r5 = 32000,-16384. (lo, high)
-			//(initial multiply by 2,2: 12 -> 13 -> 14 bits, unsgined.
-	a0 = r2.l * r5.l, a1 = r2.h * r5.l || r1 = [i1++] || r6 = [i0++];
-			// r1 = integral, r6 = 16384 (1), 800 (mu)
-	r0.l = (a0 += r1.l * r5.h), r0.h = (a1 += r1.h * r5.h) (s2rnd) || nop;
-		//subtract the mean, r0 mean-removed sample.
-	a0 = r1.l * r6.l , a1 = r1.h * r6.l //integrator
-		|| i1 += m0; //move to channel+2
-	r2.l = (a0 += r0.l * r6.h), r2.h = (a1 += r0.h * r6.h) (s2rnd) //update integral.
-		|| r1 = [i1++m0]; //load sample from channel+2,
-	r7 = r0 << 7 (v,s) || r2 = [i0++] || [i2++] = r2;
-			//saturate sample, load corresponding weight, save integral.
-	a0 = r1.l * r2.l, a1 = r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //1
-	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //2
-	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //3
-	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //4
-	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //5
-	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //6
-	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //7
-	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //8
-	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //9
-	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //10
-	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //11
-	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //12
-	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //13
-	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //14
-	r6.l=(a0+= r1.l * r2.l), r6.h=(a1+= r1.h * r2.h)  //15; default signed rounding ok.
-		|| r1 = [i1++] || r5 = [i0++]; //i1 to saturated sample, r5 = weight decay.
-
-	//update one of the weights:
-	r0 = r0 -|- r6 (s) || i0 -= m1 || [i2++] = r0 ;
-		//compute error, move i0 to active weight, save original (pre-LMS)
-	r6 = r0 << 7 (v,s) || i1 += m2 || [i2++] = r7; //move i1 to update channel, save saturated.
-	r6 = r6 >>> 14 (v,s) || r1 = [i1++] || r2 = [i0];
-		//r6 = sign of error, r1 = saturated sample, r2 = w0, i1 @ gain + updatechan.
-	a0 = r1.l * r6.l, a1 = r1.h * r6.h || nop; //load delta w, r5 weight decay.
-r4.l = (a0+= r2.l * r5.l), r4.h = (a1+= r2.h * r5.h) || i1 -= m2 ;
-			//load/decay weight, r6 AGC targets (sqrt), move i1 back to present channel.
-	mnop || r5 = [i1++] || [i0++m1] = r4 ; //r5 = gain, save the new weight, i0 back to AGC0
-	a0 = r0.l * r5.l, a1 = r0.h * r5.h ; //apply gain, r6 = 16384, 1 (mu)
- 	a0 = a0 << 8 ; // 14 bits in SRC, this makes 22 bits and
-	a1 = a1 << 8 ; // gain goes from 0-128 hence (don't forget about sign)
-	r7.l = a0, r7.h = a1 ;  //r7 gained sample. default mode should work (treat both as signed fractions)
-	a0 = abs a0, a1 = abs a1 || r6 = [i0++]; //take abs, r6 = sqrt AGC targets.
-	r4.l = (a0 -= r6.l * r6.l), r4.h = (a1 -= r6.h * r6.h) (is) //subtract target, saturate, store difference
-		|| r6 = [i0++]; //r6.l = 16384 (1), r6.h = 1 (mu)
-	a0 = r5.l * r6.l, a1 = r5.h * r6.l || nop; //load the gain again & scale.
-	r3.l = (a0 -= r4.l * r6.h), r3.h = (a1 -= r4.h * r6.h) (s2rnd) || nop; //r6.h = 1 (mu); within a certain range gain will not change.
-	r3 = abs r3 (v) //no negative gain -- unstable!
-													 || r5 = [i0++] || r1 = [i1++];  // r0 samp; r1 x1(n-1); r5 b0.0
-	MNOP || [i2++] = r3; // save the gain.
-.align 8
-	a0  = r7.l * r5.l, a1  = r7.h * r5.h || r5 = [i0++] || r2 = [i1++] ;//r5 = b0.1; r2 = x1(n-2)
-	a0 += r1.l * r5.l, a1 += r1.h * r5.h || r5 = [i0++] || r3 = [i1++] ;//r5 = b0.2; r3 = y1(n-1) or x2(n-1)
-	a0 += r2.l * r5.l, a1 += r2.h * r5.h || r5 = [i0++] || r4 = [i1++] ;//r5 = a0.0; r4 = y1(n-2) or x2(n-1)
-	a0 += r3.l * r5.l, a1 += r3.h * r5.h || r5 = [i0++] || [i2++] = r7 ;//r5 = a0.1; save x1(n-1)
-r0.l=(a0 +=r4.l * r5.l), r0.h=(a1 +=r4.h * r5.h)(s2rnd)|| [i2++] = r1 ;//r0 = y1(n); save x1(n-2)
-
-	MNOP ||											 r5 = [i0++] || [i2++] = r0 ;//r5 = b1.0; save y1(n-1) / x2(n-1)
-	a0  = r0.l * r5.l, a1  = r0.h * r5.h || r5 = [i0++] || [i2++] = r3 ;//r5 = b1.1; save y1(n-2) / x2(n-2)
-	a0 += r3.l * r5.l, a1 += r3.h * r5.h || r5 = [i0++] || r1 = [i1++] ;//r5 = b1.2; r1 = y2(n-1) / x3(n-1)
-	a0 += r4.l * r5.l, a1 += r4.h * r5.h || r5 = [i0++] || r2 = [i1++] ;//r5 = a1.0; r2 = y2(n-2) / x3(n-2)
-	a0 += r1.l * r5.l, a1 += r1.h * r5.h || r5 = [i0++]; 					  //r5 = a1.1
-r0.l=(a0 +=r2.l * r5.l), r0.h=(a1 +=r2.h * r5.h)(s2rnd)|| r5 = [i0++] ;//r0 = y2(n); r5 = threshold.
-//this is the output of the matched filter; may need more biquads. compare with thresh.
-	r0 = r0 +|+ r5 (s) || [i2++] = r0; // add threshold, save y2(n)`
-	r6 = r0 >>> 15 (v) || [i2++] = r1; //either -1 (0xffff) or 0, save y2(n-1)
-	MNOP				 							 || r5 = [i0++] || r1 = [i1++] ;// r6 match; r1 x1(n-1); r5 b0.0
-//second unit.
-	a0  = r7.l * r5.l, a1  = r7.h * r5.h || r5 = [i0++] || r2 = [i1++] ;//r5 = b0.1; r2 = x1(n-2)
-	a0 += r1.l * r5.l, a1 += r1.h * r5.h || r5 = [i0++] || r3 = [i1++] ;//r5 = b0.2; r3 = y1(n-1) or x2(n-1)
-	a0 += r2.l * r5.l, a1 += r2.h * r5.h || r5 = [i0++] || r4 = [i1++] ;//r5 = a0.0; r4 = y1(n-2) or x2(n-1)
-	a0 += r3.l * r5.l, a1 += r3.h * r5.h || r5 = [i0++] || [i2++] = r7 ;//r5 = a0.1; save x1(n-1)
-r0.l=(a0 +=r4.l * r5.l), r0.h=(a1 +=r4.h * r5.h)(s2rnd)|| [i2++] = r1 ;//r0 = y1(n); save x1(n-2)
-
-														 r5 = [i0++] || [i2++] = r0 ;//r5 = b1.0; save y1(n-1) / x2(n-1)
-	a0  = r0.l * r5.l, a1  = r0.h * r5.h || r5 = [i0++] || [i2++] = r3 ;//r5 = b1.1; save y1(n-2) / x2(n-2)
-	a0 += r3.l * r5.l, a1 += r3.h * r5.h || r5 = [i0++] || r1 = [i1++] ;//r5 = b1.2; r1 = y2(n-1) / x3(n-1)
-	a0 += r4.l * r5.l, a1 += r4.h * r5.h || r5 = [i0++] || r2 = [i1++] ;//r5 = a1.0; r2 = y2(n-2) / x3(n-2)
-	a0 += r1.l * r5.l, a1 += r1.h * r5.h || r5 = [i0++]; 					  //r5 = a1.1
-r0.l=(a0 +=r2.l * r5.l), r0.h=(a1 +=r2.h * r5.h)(s2rnd)|| r5 = [i0++] ;//r0 = y2(n); r5 = threshold.
-//this is the output of the matched filter; may need more biquads. compare with thresh.
-	r0 = r0 +|+ r5 (s) || r7 = [i0++] || [i2++] = r0; // add threshold, save y2(n)`
-	r0 = r0 >>> 15 (v,s) || r5 = [i0++] || [i2++] = r1; //either -1 (0xffff) or 0; load mask (0x00040004), save y2(n-1)
-	r6 = r6 & r7 ; // r7 = 0x00100001 -- note upper nibble shifted.
-	r0 = r0 & r5 ; // r5 = 0x00200002 -- this saves a cycle later.
-	r6 = r6 | r0 ; // r6 match on 2 units, 2 channels now.
-	[fp - FP_MATCH] = r6;
-
-	//read in the samples -- SPORT1
-	r0 = w[p0 + (SPORT1_RX - SPORT0_RX)] (z);
-	r1 = w[p0 + (SPORT1_RX - SPORT0_RX)] (z);
-	r2 = [FP-FP_0FFF0FFF];
-	r1 <<= 16;  //secondary channel in the upper word.
-	r0 = r0 | r1;
-	r2 = r0 & r2;
-	// integrator highpass & gain.
-	r2 = r2 << 1 (v); //move these here to avoid unneccesary NOPS.
-	r5 = [i0++];  //*2, r5 = 32000,-16384. (lo, high)
-.align 8
-			//(initial multiply by 2,2: 12 -> 13 -> 14 bits, unsgined.
-	a0 = r2.l * r5.l, a1 = r2.h * r5.l || r1 = [i1++] || r6 = [i0++];
-			// r1 = integral, r6 = 16384 (1), 800 (mu)
-	r0.l = (a0 += r1.l * r5.h), r0.h = (a1 += r1.h * r5.h) (s2rnd) || nop;
-		//subtract the mean, r0 mean-removed sample.
-	a0 = r1.l * r6.l , a1 = r1.h * r6.l //integrator
-		|| i1 += m0; //move to channel+2
-	r2.l = (a0 += r0.l * r6.h), r2.h = (a1 += r0.h * r6.h) (s2rnd) //update integral.
-		|| r1 = [i1++m0]; //load sample from channel+2,
-	r7 = r0 << 7 (v,s) || r2 = [i0++] || [i2++] = r2;
-			//saturate sample, load corresponding weight, save integral.
-	a0 = r1.l * r2.l, a1 = r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //1
-	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //2
-	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //3
-	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //4
-	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //5
-	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //6
-	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //7
-	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //8
-	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //9
-	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //10
-	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //11
-	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //12
-	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //13
-	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //14
-	r6.l=(a0+= r1.l * r2.l), r6.h=(a1+= r1.h * r2.h)  //15; default signed rounding ok.
-		|| r1 = [i1++] || r5 = [i0++]; //i1 to saturated sample, r5 = weight decay.
-
-	//update one of the weights:
-	r0 = r0 -|- r6 (s) || i0 -= m1 || [i2++] = r0 ;
-		//compute error, move i0 to active weight, save original (pre-LMS)
-	r6 = r0 << 7 (v,s) || i1 += m2 || [i2++] = r7; //move i1 to update channel, save saturated.
-	r6 = r6 >>> 14 (v,s) || r1 = [i1++] || r2 = [i0];
-		//r6 = sign of error, r1 = saturated sample, r2 = w0, i1 @ gain + updatechan.
-	a0 = r1.l * r6.l, a1 = r1.h * r6.h || nop; //load delta w, r5 weight decay.
-r4.l = (a0+= r2.l * r5.l), r4.h = (a1+= r2.h * r5.h) || i1 -= m2 ;
-			//load/decay weight, r6 AGC targets (sqrt), move i1 back to present channel.
-	mnop || r5 = [i1++] || [i0++m1] = r4 ; //r5 = gain, save the new weight, i0 back to AGC0
-	a0 = r0.l * r5.l, a1 = r0.h * r5.h ; //apply gain, r6 = 16384, 1 (mu)
- 	a0 = a0 << 8 ; // 14 bits in SRC, this makes 22 bits and
-	a1 = a1 << 8 ; // gain goes from 0-128 hence (don't forget about sign)
-	r7.l = a0, r7.h = a1 ;  //r7 gained sample. default mode should work (treat both as signed fractions)
-	a0 = abs a0, a1 = abs a1 || r6 = [i0++]; //take abs, r6 = sqrt AGC targets.
-	r4.l = (a0 -= r6.l * r6.l), r4.h = (a1 -= r6.h * r6.h) (is) //subtract target, saturate, store difference
-		|| r6 = [i0++]; //r6.l = 16384 (1), r6.h = 1 (mu)
-	a0 = r5.l * r6.l, a1 = r5.h * r6.l || nop; //load the gain again & scale.
-	r3.l = (a0 -= r4.l * r6.h), r3.h = (a1 -= r4.h * r6.h) (s2rnd) || nop; //r6.h = 1 (mu); within a certain range gain will not change.
-	r3 = abs r3 (v) //no negative gain -- unstable!
-													 || r5 = [i0++] || r1 = [i1++];  // r0 samp; r1 x1(n-1); r5 b0.0
-	MNOP || [i2++] = r3; // save the gain.
-.align 8
-	a0  = r7.l * r5.l, a1  = r7.h * r5.h || r5 = [i0++] || r2 = [i1++] ;//r5 = b0.1; r2 = x1(n-2)
-	a0 += r1.l * r5.l, a1 += r1.h * r5.h || r5 = [i0++] || r3 = [i1++] ;//r5 = b0.2; r3 = y1(n-1) or x2(n-1)
-	a0 += r2.l * r5.l, a1 += r2.h * r5.h || r5 = [i0++] || r4 = [i1++] ;//r5 = a0.0; r4 = y1(n-2) or x2(n-1)
-	a0 += r3.l * r5.l, a1 += r3.h * r5.h || r5 = [i0++] || [i2++] = r7 ;//r5 = a0.1; save x1(n-1)
-r0.l=(a0 +=r4.l * r5.l), r0.h=(a1 +=r4.h * r5.h)(s2rnd)|| [i2++] = r1 ;//r0 = y1(n); save x1(n-2)
-
-	MNOP ||											 r5 = [i0++] || [i2++] = r0 ;//r5 = b1.0; save y1(n-1) / x2(n-1)
-	a0  = r0.l * r5.l, a1  = r0.h * r5.h || r5 = [i0++] || [i2++] = r3 ;//r5 = b1.1; save y1(n-2) / x2(n-2)
-	a0 += r3.l * r5.l, a1 += r3.h * r5.h || r5 = [i0++] || r1 = [i1++] ;//r5 = b1.2; r1 = y2(n-1) / x3(n-1)
-	a0 += r4.l * r5.l, a1 += r4.h * r5.h || r5 = [i0++] || r2 = [i1++] ;//r5 = a1.0; r2 = y2(n-2) / x3(n-2)
-	a0 += r1.l * r5.l, a1 += r1.h * r5.h || r5 = [i0++]; 					  //r5 = a1.1
-r0.l=(a0 +=r2.l * r5.l), r0.h=(a1 +=r2.h * r5.h)(s2rnd)|| r5 = [i0++] ;//r0 = y2(n); r5 = threshold.
-//this is the output of the matched filter; may need more biquads. compare with thresh.
-	r0 = r0 +|+ r5 (s) || [i2++] = r0; // add threshold, save y2(n)`
-	r6 = r0 >>> 15 (v) || [i2++] = r1; //either -1 (0xffff) or 0; load mask (0x00080008), save y2(n-1)
-	MNOP				 							 || r5 = [i0++] || r1 = [i1++] ;// r6 match; r1 x1(n-1); r5 b0.0
-//second unit.
-	a0  = r7.l * r5.l, a1  = r7.h * r5.h || r5 = [i0++] || r2 = [i1++] ;//r5 = b0.1; r2 = x1(n-2)
-	a0 += r1.l * r5.l, a1 += r1.h * r5.h || r5 = [i0++] || r3 = [i1++] ;//r5 = b0.2; r3 = y1(n-1) or x2(n-1)
-	a0 += r2.l * r5.l, a1 += r2.h * r5.h || r5 = [i0++] || r4 = [i1++] ;//r5 = a0.0; r4 = y1(n-2) or x2(n-1)
-	a0 += r3.l * r5.l, a1 += r3.h * r5.h || r5 = [i0++] || [i2++] = r7 ;//r5 = a0.1; save x1(n-1)
-r0.l=(a0 +=r4.l * r5.l), r0.h=(a1 +=r4.h * r5.h)(s2rnd)|| [i2++] = r1 ;//r0 = y1(n); save x1(n-2)
-
-														 r5 = [i0++] || [i2++] = r0 ;//r5 = b1.0; save y1(n-1) / x2(n-1)
-	a0  = r0.l * r5.l, a1  = r0.h * r5.h || r5 = [i0++] || [i2++] = r3 ;//r5 = b1.1; save y1(n-2) / x2(n-2)
-	a0 += r3.l * r5.l, a1 += r3.h * r5.h || r5 = [i0++] || r1 = [i1++] ;//r5 = b1.2; r1 = y2(n-1) / x3(n-1)
-	a0 += r4.l * r5.l, a1 += r4.h * r5.h || r5 = [i0++] || r2 = [i1++] ;//r5 = a1.0; r2 = y2(n-2) / x3(n-2)
-	a0 += r1.l * r5.l, a1 += r1.h * r5.h || r5 = [i0++]; 					  //r5 = a1.1
-r0.l=(a0 +=r2.l * r5.l), r0.h=(a1 +=r2.h * r5.h)(s2rnd)|| r5 = [i0++] ;//r0 = y2(n); r5 = threshold.
-//this is the output of the matched filter; may need more biquads. compare with thresh.
-	r0 = r0 +|+ r5 (s) || r7 = [i0++] || [i2++] = r0; // subtract threshold, save y2(n)`
-	r0 = r0 >>> 15 (v,s) || r5 = [i0++] || [i2++] = r1; //either -1 (0xffff) or 0; load mask (0x00040004), save y2(n-1)
-	r6 = r6 & r7 ; // r7 = 0x00400004 --again, upper nibble shifted.
-	r0 = r0 & r5 ; // r5 = 0x00800008
-	r6 = r6 | r0 ; // r6 match on 2 units, 2 channels now.
-	r7 = [fp - FP_MATCH]; // r6 match on 2 units, 2 channels now.
-	r0 = r7 | r6;
-/* r0 contents:
-	low nibble r0.l
-	[ch 64 B][ch 64 A][ch 0 B][ch 0 A]
-	low nibble r0.h
-	[ch 96 B][ch 96 A][ch 32 B][ch 32 A]
-	must merge the two nibbles into a byte, which we can 'or' and write.
-*/
-	r6 = [i0++]; //load channel into r6.
-	p0 = r6; //byte addressing so we be okay.
-	p5 = [FP - FP_MATCH_BASE];
-	p1 = [FP - FP_ENC_LUT_BASE]; //3 cycle latency before we can use p1.
-	r0.l = r0.l + r0.h; // deposit instruction would save nothing -- we'd still have to load the mask.
-	r0 = r0.b; //mask!  needed from above, o/w get r0 = 0x0040 0040.
-	p5 = p5 + p0;
-	r1 = b[p5];
-	r1 = r1 | r0;
-	p0 = r1; //p0 not channel, now offest to LUT.
-	b[p5] = r1; //save the ORed template match data, 8b area.
-	//also update the encoding, which the radio will write out.
-	p3 = 32;
-	p5 = p5 + p3; //move to 7b encoding region.
-	p1 = p1 + p0; //offset to LUT, 0-255. i hope.
-	r2 = b[p1]; //read LUT value
-	b[p5] = r2; //write to 7-bit area.
-
-	r0 = 31;
-	//check to see if it should be written to queue.
-	cc = r6 == r0
-	if !cc jump end_txchan (bp); //predict not taken -- most likely.
-		//pointers p0 and p5 are free; p1 and p3 are static and are reset below.
-		p0 = [FP - FP_TXCHAN0] ; //put here for better alignment.
-.align 8
-		mnop || p1 = [FP - FP_TXCHAN1] || r0 = [i3++]; //for m1
-		mnop || p3 = [FP - FP_TXCHAN2] || r1 = [i3++]; //for m2
-		mnop || p5 = [FP - FP_TXCHAN3] || r4 = [i3++]; //for QS. (queue-state)
-		m1 = r0;
-		m2 = r1;
-		r0 = b[p0];
-		r1 = b[p1];
-		r2 = b[p3];
-		r3 = b[p5];
-		b[p4++] = r0;
-		b[p4++] = r1;
-		b[p4++] = r2;
-		b[p4++] = r3;
-		r7 = 5;
-		cc = r4 == r7;
-		if !cc jump end_txchan_qs (bp); //finish a packet.
-			//hide latency by managing flags.
-			r7 = [i3++]; //load state flag, used as an OR mask for communicating with bridge.
-			r6 = [i3++]; //points to MATCH_PTR7; loops every 4 packets. cycles through 256bits.
-			p5 = r6;
-			r5 = [FP - FP_QPACKETS];
-			r5 += 1; //one more packet on the queue.
-			[FP - FP_QPACKETS] = r5; //save for other thread.
-			r5 = [FP - FP_ECHO]; //echo flag in bits 31, 23, 15, 7.
-			//read in template match.
-			r0 = [p5++];
-			r1 = [p5++];
-			//flag upper bit in each byte with QS & echo.
-			r0 = r0 | r7;
-			r1 = r1 | r5;
-			p0 = -36; //because both increment and decrement are post!
-					// 32 8-bit words, ea 4 chan = 128 chan + 4 post-dec offset.
-			p5 = p5 + p0; //move to 8b encoding region; clear.
-			//latency hidden, write template matches.
-			[p4++] = r0;
-			[p4++] = r1;
-			r4 = 0; //also clears sample count qs.
-			[p5--] = r4; //reset template match, 8b region.
-			[p5--] = r4;
-end_txchan_qs:
-		r7 = p4; //make p4 loop.
-		bitclr(r7, 10); //two 512-byte frames.
-		p4 = r7;
-		//thought: since the codepath is so long here, might want to jump directly to the head
-		//after resetting state.  o/w radio may take too long.
-end_txchan:
-	p3 = [FP - FP_SPI_TDBR]; //saves clock relative to push/pop stack.
-	p1 = [FP - FP_FIO_FLAG_D]; //reset p1 pointer.
-	RTS ; //used to be jump.
-
 .align 8
 _clearirq_asm: //just write the status register via spi to clear.
 	[--sp] = rets;
 	r7 = SPI_CSN;
 	w[p1 + (FIO_FLAG_C - FIO_FLAG_D)] = r7;
-	call _get_asm;
+	call _get_asm2;
 	r6 = NOR_STATUS + 0x20; //write to status register.
 	w[p3] = r6;
 	call _get_asm;
 	r6 = 0x70;
 	w[p3] = r6; //clear irq.
-	call _get_asm;
+	call _get_asm2;
 	r7 = SPI_CSN;
 	w[p1 + (FIO_FLAG_S - FIO_FLAG_D)] = r7;
 	call _get_asm;
@@ -340,7 +35,7 @@ waitirq_loop:
 	if cc jump waitirq_end;
 	r7 += -1;
 	[fp - FP_TIMER] = r7;
-	call _get_asm;
+	call _get_asm2;
 	jump waitirq_loop;
 waitirq_end:
 	call _get_asm;
@@ -353,20 +48,20 @@ _clearfifos_asm:
 	// flush RX fifo (seems to improve reliability)
 	r7 = SPI_CSN;
 	w[p1 + (FIO_FLAG_C - FIO_FLAG_D)] = r7;
-	call _get_asm;
+	call _get_asm2;
 	r6 = NOR_FLUSH_RX;
 	w[p3] = r6;
 	call _get_asm;
 	r7 = SPI_CSN;
 	w[p1 + (FIO_FLAG_S - FIO_FLAG_D)] = r7;
-	call _get_asm;
+	call _get_asm2;
 	// and flush TX fifo.
 	r7 = SPI_CSN;
 	w[p1 + (FIO_FLAG_C - FIO_FLAG_D)] = r7;
 	call _get_asm;
 	r6 = NOR_FLUSH_TX;
 	w[p3] = r6;
-	call _get_asm;
+	call _get_asm2;
 	r7 = SPI_CSN;
 	w[p1 + (FIO_FLAG_S - FIO_FLAG_D)] = r7;
 	call _get_asm;
@@ -512,7 +207,7 @@ wait_16pkts:
 	cc = bittst(r5, 4)
 	if !cc jump wait_16pkts;
 	//got 8 packets in the queue at this point.
-	call _get_asm;
+	call _get_asm2;
 	r5 = 0;
 	[FP - FP_QPACKETS] = r5;
 	call _clearfifos_asm; // both include
@@ -522,7 +217,7 @@ wait_16pkts:
 	wp_top:
 		r7 = SPI_CSN;
 		w[p1 + (FIO_FLAG_C - FIO_FLAG_D)] = r7;
-		call _get_asm;
+		call _get_asm2;
 		r6 = 0xa0;
 		w[p3] = r6;
 		call _get_asm;
@@ -536,7 +231,7 @@ wait_16pkts:
 		r7 = p2; //the pointer wrap used to be in the loop
 		bitclr(r7, 10); //but i trust the proc to keep it aligned.  (fingers crossed)
 		p2 = r7;
-		call _get_asm;
+		call _get_asm2;
 		r7 = SPI_CSN | SPI_CE;
 		w[p1 + (FIO_FLAG_S - FIO_FLAG_D)] = r7;
 		call _get_asm;
@@ -553,7 +248,7 @@ wait_16pkts:
 	call _clearirq_asm;
 	r7 = SPI_CE; //disable the radio.
 	w[p1 + (FIO_FLAG_C - FIO_FLAG_D)] = r7;
-	call _get_asm;
+	call _get_asm2;
 
 	//put the radio in RX mode now.
 	//first clear the config register (put in standby mode)
@@ -562,7 +257,7 @@ wait_16pkts:
 	call _get_asm;
 	r6 = NOR_FLUSH_RX;
 	w[p3] = r6;
-	call _get_asm;
+	call _get_asm2;
 	r7 = SPI_CSN;
 	w[p1 + (FIO_FLAG_S - FIO_FLAG_D)] = r7;
 	call _get_asm;
@@ -570,10 +265,10 @@ wait_16pkts:
 	//now write config register with valid values.
 	r7 = SPI_CSN;
 	w[p1 + (FIO_FLAG_C - FIO_FLAG_D)] = r7;
-	call _get_asm;
+	call _get_asm2;
 	r6 = NOR_CONFIG + 0x20;
 	w[p3] = r6;
-	call _get_asm;
+	call _get_asm2;
 	/** enable CRC for RX of critical values **/
 	r6 = NOR_EN_CRC | NOR_CRC0 |
 		NOR_MASK_MAX_RT | NOR_PWR_UP | NOR_PRIM_RX;
@@ -581,7 +276,7 @@ wait_16pkts:
 	call _get_asm;
 	r7 = SPI_CSN;
 	w[p1 + (FIO_FLAG_S - FIO_FLAG_D)] = r7;
-	call _get_asm;
+	call _get_asm2;
 	r7 = SPI_CE; //enable the radio
 	w[p1 + (FIO_FLAG_S - FIO_FLAG_D)] = r7;
 	call _get_asm;
@@ -596,20 +291,20 @@ wait_16pkts:
 	call _clearirq_asm; //many _get_asm calls.
 	r7 = SPI_CE; //disable the radio; turn off LNA as soon as possible.
 	w[p1 + (FIO_FLAG_C - FIO_FLAG_D)] = r7;
-	call _get_asm;
+	call _get_asm2;
 	r7 = SPI_CSN ;
 	w[p1 + (FIO_FLAG_C - FIO_FLAG_D)] = r7;
 	call _get_asm;
 	r6 = 0x61; //command for reading the fifo.
 	w[p3] = r6;
-	call _get_asm;
+	call _get_asm2;
 	p5 = 4;
 	LSETUP(rp_top,rp_bot) lc0 = p5;
 	rp_top:
 		r7 = 0;
 		[FP - FP_ADDRESS] = r7; //init the local variables.
 		[FP - FP_VALUE] = r7;
-		call _get_asm;
+		call _get_asm2;
 		p5 = 4;
 		LSETUP(a32_top,a32_bot) lc1 = p5;
 		a32_top:
@@ -624,12 +319,12 @@ wait_16pkts:
 			[FP - FP_ADDRESS] = r6;
 		a32_bot: nop;
 		//now get the value..
-		call _get_asm;
+		call _get_asm2;
 		p5 = 4;
 		LSETUP(v32_top,v32_bot) lc1 = p5;
 		v32_top:
 			w[p3] = r7; //dummy write.
-			call _get_asm;
+			call _get_asm2;
 			r7 = w[p3 + (SPI_SHADOW - SPI_TDBR)];
 			r6 = 0xff;
 			r7 = r7 & r6;
@@ -638,7 +333,7 @@ wait_16pkts:
 			r6 = r6 + r7;
 			[FP - FP_VALUE] = r6;
 		v32_bot: nop;
-		call _get_asm;
+		call _get_asm2;
 		//extract the echo flag.
 		r7 = [FP - FP_ADDRESS];
 		r6 = r7 >> 28; //shift upper nibble
@@ -651,7 +346,7 @@ wait_16pkts:
 		p5 = (p5 + p0) << 2; //4 byte align
 		r7 = [p5];
 		[FP - FP_ECHO] = r7;
-		call _get_asm;
+		call _get_asm2;
 		//verify the address.
 		r7 = [FP - FP_ADDRESS];
 		r6.h = 0xffef;
@@ -673,13 +368,13 @@ could still only cram 5 accesses into one packet.
 A much better idea is to put the echo into the upper nibble of the address
 (which is always 0xff anyway..and that way we have some confirmation that the
 headstage got the message). */
-		call _get_asm;
+		call _get_asm2;
 	rp_bot: nop;
 	//close out the RX frame.
 	call _get_asm;
 	r7 = SPI_CSN;
 	w[p1 + (FIO_FLAG_S - FIO_FLAG_D)] = r7;
-	call _get_asm;
+	call _get_asm2;
 no_rxpacket:
 	//put it back in TX mode.
 	r7 = SPI_CE; //clear CE.
@@ -688,13 +383,13 @@ no_rxpacket:
 	//flush the TX fifo.
 	r7 = SPI_CSN;
 	w[p1 + (FIO_FLAG_C - FIO_FLAG_D)] = r7;
-	call _get_asm;
+	call _get_asm2;
 	r6 = NOR_FLUSH_TX;
 	w[p3] = r6;
 	call _get_asm;
 	r7 = SPI_CSN;
 	w[p1 + (FIO_FLAG_S - FIO_FLAG_D)] = r7;
-	call _get_asm;
+	call _get_asm2;
 
 	//now write config register with valid values.
 	r7 = SPI_CSN;
@@ -702,7 +397,7 @@ no_rxpacket:
 	call _get_asm;
 	r6 = NOR_CONFIG + 0x20;
 	w[p3] = r6;
-	call _get_asm;
+	call _get_asm2;
 	/** CRC on bulk transmit too - have antenna diversity! **/
 	r6 = NOR_MASK_MAX_RT | NOR_EN_CRC |
 			NOR_CRC0 | NOR_PWR_UP | NOR_PRIM_TX;
@@ -710,7 +405,7 @@ no_rxpacket:
 	call _get_asm;
 	r7 = SPI_CSN;
 	w[p1 + (FIO_FLAG_S - FIO_FLAG_D)] = r7;
-	call _get_asm;
+	call _get_asm2;
 
 	//reload the watchdog timer -- we are alive!
 	p5.h = HI(WDOG_STAT);
@@ -721,7 +416,7 @@ no_rxpacket:
 	//blink. first clear LED.
 	r7 = LED_BLINK;
 	w[p1 + (FIO_FLAG_C - FIO_FLAG_D)] = r7;
-	call _get_asm;
+	call _get_asm2;
 
 	r7 = [FP - FP_BLINK];
 	r6 = 1 (z);
@@ -731,6 +426,6 @@ no_rxpacket:
 	w[p1 + (FIO_FLAG_S - FIO_FLAG_D)] = r6;
 	bitclr(r7, 8);
 	[FP - FP_BLINK] = r7;
-	call _get_asm;
+	call _get_asm2;
 
 	jump radio_loop;
