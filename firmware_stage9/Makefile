@@ -2,7 +2,7 @@
 #this actually could be much simpler.
 .SUFFIXES: .o .c .asm .bo .asm
 
-ASMSRCS = crt0.o radio6.o init6.o enc.o divsi3.o
+ASMSRCS = crt0.o radio6.o get.o get.o2 init6.o enc.o divsi3.o
 COMMON = util.o spi.o
 # CSRCS = main.o usb_write.o usb.o
 CSRCS = main.o
@@ -38,6 +38,9 @@ BIN = $(BFINROOT)/bfin-uclinux-objcopy
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 %.o: %.asm
+	$(CC) $(ASMFLAGS) -D_AGC_ -c -o $@ $<
+	
+%.o2: %.asm
 	$(CC) $(ASMFLAGS) -c -o $@ $<
 
 %.o: %.c

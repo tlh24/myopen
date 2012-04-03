@@ -75,16 +75,16 @@ lt2_top:
 			//threshold.
 			r0 = 10000 (x) ;	w[i0++] = r0.l; w[i0++] = r0.l;
 			r0.l = 0x1; 		w[i0++] = r0.l; 
-				r0.l = 0x10; 	w[i0++] = r0.l; //little-endian. check this.
+			r0.l = 0x10; 	w[i0++] = r0.l; //little-endian. check this.
 			r0.l = 0x2; 		w[i0++] = r0.l; 
-				r0.l = 0x20; 	w[i0++] = r0.l; 
+			r0.l = 0x20; 	w[i0++] = r0.l; 
 lt2_bot:
 		m3 = 8 ; //move back to rewrite masks.
 		i0 -= m3; 
 		r0.l = 0x4; 		w[i0++] = r0.l; 
-			r0.l = 0x40; 	w[i0++] = r0.l; //little-endian. check this.
+		r0.l = 0x40; 	w[i0++] = r0.l; //little-endian. check this.
 		r0.l = 0x8; 		w[i0++] = r0.l; 
-			r0.l = 0x80; 	w[i0++] = r0.l; 
+		r0.l = 0x80; 	w[i0++] = r0.l; 
 		[i0++] = r1; //channel.
 		r0 = 1;
 		r1 = r1 + r0;
@@ -94,8 +94,8 @@ lt_bot:
 	there are two pipeline delays: one in the intan MUX, and one in the SPORT.
 	without pipeline delays, reset should be asserted when ch = 31
 	with, when ch = 29. */
-	p0.l = LO(A1_PITCH*29*4);
-	p0.h = HI(A1_PITCH*29*4);
+	p0.l = LO(A1 + A1_PITCH*29*4);
+	p0.h = HI(A1 + A1_PITCH*29*4);
 	r0 = MUXRESET;
 	[p0] = r0;
 
@@ -132,6 +132,7 @@ lt3_bot:
 	l3.l = LO(T1_LENGTH);
 	l3.h = HI(T1_LENGTH);
 	b3 = i3;
+	m3 = 8; 
 
 
 	r0 = 0; // counter, 0-15.
