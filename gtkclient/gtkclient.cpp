@@ -87,7 +87,7 @@ bool g_rtMouseBtn = false;
 int g_polyChan = 0;
 bool g_addPoly = false;
 int g_channel[4] = {0,32,64,96};
-int	g_signalChain = 10; //what to sample in the headstage signal chain.
+int	g_signalChain = 4; //what to sample in the headstage signal chain.
 
 bool g_out = false;
 bool g_templMatch[128][2];
@@ -526,7 +526,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		glEnd();
 		glEnable(GL_LINE_SMOOTH);
 		glPopMatrix ();
-		//draw current channel
+		//draw current channel.
 		for(int k=0; k<4; k++){
 			glBegin(GL_LINE_STRIP);
 			glColor4f (1., 0., 0., 0.5);
@@ -1389,8 +1389,20 @@ static void drawRadioCB(GtkWidget *button, gpointer p){
 static void lmsRadioCB(GtkWidget *button, gpointer p){
 	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))){
 		int i = (int)((long long)p & 0xf);
-		if(i == 0) setLMS(true);
-		else setLMS(false);
+		int lms = i == 0 ? 1 : 0;
+		//this is not the right way to do it .. FIXME
+		g_c[g_channel[0]]->m_lms = lms;
+		setLMS(g_channel[0]);
+	}
+}
+static void agcRadioCB(GtkWidget *button, gpointer p){
+	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))){
+		int i = (int)((long long)p & 0xf);
+		int agc = i == 0 ? 1 : 0;
+		//this is not the right way to do it .. FIXME
+		for(int k=0; k<4; k++)
+			g_c[g_channel[k]]->m_agcEn = agc;
+		enableAGC(g_channel, agc);
 	}
 }
 static void filterRadioCB(GtkWidget *button, gpointer p){
@@ -1592,7 +1604,7 @@ static void setWidgetColor(GtkWidget* widget, unsigned char red, unsigned char g
 }
 static void templatePopupMenu (GdkEventButton *event, gpointer p){
     GtkWidget *menu, *menuitem;
-	 int s = (int)((long long)p & 0xff);
+	 size_t s = (size_t)p & 0xff;
 
     menu = gtk_menu_new();
 
@@ -1745,19 +1757,22 @@ int main(int argn, char **argc)
 	gtk_box_pack_start (GTK_BOX (box1), frame, TRUE, TRUE, 0);
 	const char* signalNames[W1_STRIDE] = {
 		"0	mean from integrator",
-		"1	AGC gain",
+		"1	integrator out",
 		"2	LMS saturated sample",
-		"3	AGC out / LMS save",
-		"4	x1(n-1) / LMS out",
-		"5	x1(n-2)",
-		"6	x2(n-1) / y1(n-1) (lo1 out)",
-		"7	x2(n-2) / y1(n-2)",
-		"8	x3(n-1) / y2(n-1) (hi1 out)",
-		"9	x3(n-2) / y2(n-2)",
-		"10	x2(n-1) / y3(n-1) (lo2 out)",
-		"11	x2(n-2) / y3(n-2)",
-		"12	y4(n-1) (hi2 out, final)",
-		"13	y4(n-2)" };
+		"3	AGC gain",
+		"4	u1 x1(n-1) / LMS out",
+		"5	u1 x1(n-2)",
+		"6	u1 x2(n-1) / y1(n-1)",
+		"7	u1 x2(n-2) / y1(n-2)",
+		"8 u1 y2(n-1) ",
+		"9 u1 y2(n-2) ",
+		"a u2 x1(n-1) / LMS out",
+		"b	u2 x1(n-2)",
+		"c	u2 x2(n-1) / y1(n-1)",
+		"d	u2 x2(n-2) / y1(n-2)",
+		"e	u2 y2(n-1) ",
+		"f	u2 y2(n-2) "
+		};
 	button = 0;
 	combo = gtk_combo_box_new_text();
    gtk_container_add( GTK_CONTAINER( frame ), combo );
@@ -1781,6 +1796,8 @@ int main(int argn, char **argc)
 	//add LMS on/off.. (global .. for now)
 	mk_radio("on,off", 2,
 			 box1, false, "LMS", lmsRadioCB);
+	mk_radio("on,off", 2,
+			 box1, false, "AGC", agcRadioCB);
 
 	//add osc / reset radio buttons
 	mk_radio("500-6.7k,150-10k,osc,flat", 4,
