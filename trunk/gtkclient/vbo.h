@@ -9,11 +9,11 @@ extern float g_viewportSize[2];
 class Vbo {
 public:
 	float* 	m_f; //local floating point memory.
-	int		m_dim; // 2, 3, 4... dimensional.
-	int		m_rows; // C style matrix
-	int		m_cols; // e.g. 34 for waveforms.
-	int		m_w; //write pointer.
-	int		m_r; //read pointer.  (for copying to graphics memory).
+	size_t	m_dim; // 2, 3, 4... dimensional.
+	size_t	m_rows; // C style matrix
+	size_t	m_cols; // e.g. 34 for waveforms.
+	size_t	m_w; //write pointer.
+	size_t	m_r; //read pointer.  (for copying to graphics memory).
 	float	m_loc[4]; //location on the screen - x, y, w, h.
 	float	m_color[4];
 	float	m_fade;
@@ -222,9 +222,9 @@ public:
 	void copy(bool updateScale, bool updateAll){
 		//update the mean & max excursion. only makes sense for 2d data.
 		if(updateScale){
-			for(int i = m_r; i<m_w; i++){
-				int j = i % m_rows;
-				for(int k=0; k<m_dim; k++){
+			for(size_t i = m_r; i<m_w; i++){
+				size_t j = i % m_rows;
+				for(size_t k=0; k<m_dim; k++){
 					float x = m_f[j*m_cols * m_dim + k];
 					m_mean[k] = m_mean[k] * 0.995 + x * 0.005;
 					m_max[k] *= 0.999;
@@ -236,20 +236,20 @@ public:
 		}
 		if(updateAll){
 			//two passes: mean and max.
-			for(int k=0; k<m_dim; k++)
+			for(size_t k=0; k<m_dim; k++)
 				m_mean[k] = 0.f;
-			for(int i = m_r; i<m_w; i++){
-				int j = i % m_rows;
-				for(int k=0; k<m_dim; k++){
+			for(size_t i = m_r; i<m_w; i++){
+				size_t j = i % m_rows;
+				for(size_t k=0; k<m_dim; k++){
 					float x = m_f[j*m_cols*m_dim + k];
 					m_mean[k] += x;
 				}
 			}
-			for(int k=0; k<m_dim; k++){
+			for(size_t k=0; k<m_dim; k++){
 				m_mean[k] /= m_w - m_r;
 				m_max[k] = 0.f;
 			}
-			for(int i = m_r; i<m_w; i++){
+			for(size_t i = m_r; i<m_w; i++){
 				int j = i % m_rows;
 				for(int k=0; k<m_dim; k++){
 					float x = m_f[j*m_cols*m_dim + k];
@@ -257,7 +257,7 @@ public:
 					if(d > m_max[k]) m_max[k] = d;
 				}
 			}
-			for(int k=0; k<m_dim; k++){
+			for(size_t k=0; k<m_dim; k++){
 				m_meanSmooth[k] = m_mean[k];
 				m_maxSmooth[k] = m_max[k];
 			}
@@ -267,7 +267,7 @@ public:
 	void draw(int drawmode, float time, bool update, float* curs, bool drawclose){
 		//order: we scale before offset. pretty easy algebra.
 		float x,y,w,h; calcScale(x,y,w,h);
-		for(int i=0; i<m_dim; i++){
+		for(size_t i=0; i<m_dim; i++){
 			m_maxSmooth[i] = 0.995*m_maxSmooth[i] + 0.005*m_max[i];
 			m_meanSmooth[i] = 0.995*m_meanSmooth[i] + 0.005*m_mean[i];
 		}
