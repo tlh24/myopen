@@ -4,7 +4,7 @@ obj.TrainingInterface.loadTrainingData();
 
 %% Step 5: Train the classifier
 obj.SignalClassifier.NumMajorityVotes = 5;
-% obj.SignalClassifier.ActiveChannelss = 1:8;
+obj.SignalClassifier.ActiveChannels = [1 2 3 4 7 8];
 obj.SignalClassifier.TrainingData = obj.TrainingInterface.getFeatureData;
 obj.SignalClassifier.TrainingDataLabels = obj.TrainingInterface.getClassLabels;
 obj.SignalClassifier.train();

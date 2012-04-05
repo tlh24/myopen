@@ -23,10 +23,6 @@ classdef guiSignalViewer < Common.MiniVieObj
         featureBuffer = [];
     end
     properties (Constant = true)
-%         FFT = 1;
-%         TimeDomain = 2;
-%         Features = 3;
-
         numFeatures = 4;
         
         FullAxesPosition = [80 250 750 300];
@@ -69,7 +65,7 @@ classdef guiSignalViewer < Common.MiniVieObj
             obj.hg.Figure = UiTools.create_figure('Signal Viewer','Signal Viewer');
             set(obj.hg.Figure,'Position',[50 120 900 600]);
             set(obj.hg.Figure,'CloseRequestFcn',@(src,evnt)obj.close);
-
+            
             obj.hg.PanelAxes = uipanel(obj.hg.Figure,'Units','Pixels','Position',[80 200 750 400]);
             
             obj.hg.Axes(4) = axes('Parent',obj.hg.PanelAxes,'Units','Normalized','Position',[0.05 0.05 0.9 0.9]);
@@ -125,41 +121,41 @@ classdef guiSignalViewer < Common.MiniVieObj
         end
         function update(obj)
             try
-            switch obj.ModeSelect
-                case GUIs.guiSignalViewerState.Features
-                    setAxesVisible(obj.hg.Axes(1:4),'on');
-                    axis(obj.hg.Axes(1),'auto');
-                    
-                    set(obj.hg.Axes(1),'OuterPosition',[0.0 0.5 0.5 0.5]);
-                    set(obj.hg.Axes(2),'OuterPosition',[0.5 0.5 0.5 0.5]);
-                    set(obj.hg.Axes(3),'OuterPosition',[0.0 0.0 0.5 0.5]);
-                    set(obj.hg.Axes(4),'OuterPosition',[0.5 0.0 0.5 0.5]);
-                    xlabel(obj.hg.Axes(1),'');
-                    ylabel(obj.hg.Axes(1),'MAV');
-                    ylabel(obj.hg.Axes(2),'LEN');
-                    ylabel(obj.hg.Axes(3),'ZC');
-                    ylabel(obj.hg.Axes(4),'SSC');
-                    obj.updateFeatures();
-                case GUIs.guiSignalViewerState.TimeDomain
-                    setAxesVisible(obj.hg.Axes(1),'on');
-                    setAxesVisible(obj.hg.Axes(2:4),'off');
-                    set(obj.hg.Axes(1),'OuterPosition',[0 0 1 1]);
-                    xlabel(obj.hg.Axes(1),'Sample Number');
-                    ylabel(obj.hg.Axes(1),'Volts');
-                    ylim(obj.hg.Axes(1),[-2 14]);
-                    obj.updateTimeDomain();
-                case GUIs.guiSignalViewerState.FFT
-                    setAxesVisible(obj.hg.Axes(1),'on');
-                    setAxesVisible(obj.hg.Axes(2:4),'off');
-                    set(obj.hg.Axes(1),'OuterPosition',[0 0 1 1]);
-                    xlabel(obj.hg.Axes(1),'Frequency (Hz)');
-                    ylabel(obj.hg.Axes(1),'|Y(f)|');
-                    ylim(obj.hg.Axes(1),[0 1]);
-                    obj.updateFrequencyDomain();
-                otherwise
-                    disp('Invalid Mode Selection');
-            end
-            drawnow
+                switch obj.ModeSelect
+                    case GUIs.guiSignalViewerState.Features
+                        setAxesVisible(obj.hg.Axes(1:4),'on');
+                        axis(obj.hg.Axes(1),'auto');
+                        
+                        set(obj.hg.Axes(1),'OuterPosition',[0.0 0.5 0.5 0.5]);
+                        set(obj.hg.Axes(2),'OuterPosition',[0.5 0.5 0.5 0.5]);
+                        set(obj.hg.Axes(3),'OuterPosition',[0.0 0.0 0.5 0.5]);
+                        set(obj.hg.Axes(4),'OuterPosition',[0.5 0.0 0.5 0.5]);
+                        xlabel(obj.hg.Axes(1),'');
+                        ylabel(obj.hg.Axes(1),'MAV');
+                        ylabel(obj.hg.Axes(2),'LEN');
+                        ylabel(obj.hg.Axes(3),'ZC');
+                        ylabel(obj.hg.Axes(4),'SSC');
+                        obj.updateFeatures();
+                    case GUIs.guiSignalViewerState.TimeDomain
+                        setAxesVisible(obj.hg.Axes(1),'on');
+                        setAxesVisible(obj.hg.Axes(2:4),'off');
+                        set(obj.hg.Axes(1),'OuterPosition',[0 0 1 1]);
+                        xlabel(obj.hg.Axes(1),'Sample Number');
+                        ylabel(obj.hg.Axes(1),'Volts');
+                        ylim(obj.hg.Axes(1),[-2 14]);
+                        obj.updateTimeDomain();
+                    case GUIs.guiSignalViewerState.FFT
+                        setAxesVisible(obj.hg.Axes(1),'on');
+                        setAxesVisible(obj.hg.Axes(2:4),'off');
+                        set(obj.hg.Axes(1),'OuterPosition',[0 0 1 1]);
+                        xlabel(obj.hg.Axes(1),'Frequency (Hz)');
+                        ylabel(obj.hg.Axes(1),'|Y(f)|');
+                        ylim(obj.hg.Axes(1),[0 1]);
+                        obj.updateFrequencyDomain();
+                    otherwise
+                        disp('Invalid Mode Selection');
+                end
+                drawnow
             catch ME
                 disp('---------ERROR--------');
                 disp(ME.message);
@@ -168,10 +164,12 @@ classdef guiSignalViewer < Common.MiniVieObj
                 end
                 keyboard
             end
-                
+            
         end
         
         function updateFrequencyDomain(obj)
+
+            obj.SignalSource.NumSamples = 400;
             
             if obj.ShowFilteredData
                 channelData = obj.SignalSource.getFilteredData();
@@ -192,7 +190,7 @@ classdef guiSignalViewer < Common.MiniVieObj
             set(obj.hg.PlotLines{1}(:),'Visible','off');
             for iChannel = obj.SelectedChannels
                 Y = fft(channelData(:,iChannel),NFFT)/L;
-
+                
                 set(obj.hg.PlotLines{1}(iChannel),'Visible','on');
                 
                 % Plot single-sided amplitude spectrum.
@@ -202,7 +200,8 @@ classdef guiSignalViewer < Common.MiniVieObj
             
         end
         function updateTimeDomain(obj)
-                        
+            
+            obj.SignalSource.NumSamples = 2000;
             if obj.ShowFilteredData
                 channelData = obj.SignalSource.getFilteredData();
             else
@@ -222,7 +221,7 @@ classdef guiSignalViewer < Common.MiniVieObj
             
         end
         function updateFeatures(obj)
-                        
+            
             if obj.ShowFilteredData
                 channelData = obj.SignalSource.getFilteredData();
             else
@@ -233,7 +232,7 @@ classdef guiSignalViewer < Common.MiniVieObj
                 return;
             end
             
-            windowSize = 150;
+            windowSize = 200;
             %                 zc_thresh = 0.1;
             %                 ssc_thresh = 0.1;
             
@@ -241,7 +240,7 @@ classdef guiSignalViewer < Common.MiniVieObj
             
             obj.featureBuffer = circshift(obj.featureBuffer,[0 0 1]);
             obj.featureBuffer(:,:,1) = features;
-                        
+            
             for iFeature = 1:obj.numFeatures
                 set(obj.hg.PlotLines{iFeature},'Visible','off');
                 for iChannel = obj.SelectedChannels
@@ -289,9 +288,9 @@ end
 
 function setAxesVisible(hAxes,onOff)
 
-    for i = 1:length(hAxes)
-        set(hAxes(i),'Visible',onOff);
-        set(allchild(hAxes(i)),'Visible',onOff);
-    end
+for i = 1:length(hAxes)
+    set(hAxes(i),'Visible',onOff);
+    set(allchild(hAxes(i)),'Visible',onOff);
+end
 
 end

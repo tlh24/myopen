@@ -251,7 +251,7 @@ classdef MiniVIE < Common.MiniVieObj
                     h.NumMajorityVotes = 0;
                     h.initialize();
                     
-                    NumSamplesPerWindow = 250;
+                    NumSamplesPerWindow = 200;
                     fprintf('Setting Window Size to: %d\n',NumSamplesPerWindow);
                     h.NumSamplesPerWindow = NumSamplesPerWindow;
                 end
@@ -396,7 +396,7 @@ classdef MiniVIE < Common.MiniVieObj
             obj.SignalClassifier.NumMajorityVotes = 0;
             obj.SignalClassifier.initialize();
             
-            NumSamplesPerWindow = 250;
+            NumSamplesPerWindow = 200;
             fprintf('Setting Window Size to: %d\n',NumSamplesPerWindow);
             obj.SignalClassifier.NumSamplesPerWindow = NumSamplesPerWindow;
             
