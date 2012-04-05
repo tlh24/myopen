@@ -25,7 +25,9 @@ end
 [nChannels nSamples] = size(windowData);
 myType = class(windowData);
 
-windowSize = uint16(windowSize);
+% RSA: Converting to type single to allow feature windowsize normalization
+% windowSize = uint16(windowSize);
+windowSize = single(windowSize);
 windowSize = max(windowSize,10);
 windowSize = min(windowSize,nSamples);
 
@@ -69,5 +71,8 @@ for iChannel = 1:nChannels
         end
     end
 end
+Fs = 1000;
+features = [MAV(:) LEN(:) ZC(:) SSC(:)]./(windowSize./Fs);
 
-features = [MAV(:) LEN(:) ZC(:) SSC(:)];
+features(:,[2 3 4]) = log(1+features(:,[2 3 4]));
+

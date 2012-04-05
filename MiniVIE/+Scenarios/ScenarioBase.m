@@ -115,7 +115,7 @@ classdef ScenarioBase < Common.MiniVieObj
                     desiredVelocity(action_bus_enum.Wrist_FE) = -prSpeed;
             end
             
-            globalGain = 20;
+            globalGain = 60;
             desiredVelocity = desiredVelocity .* globalGain;
             
             % Apply velocity change rate limiting
@@ -135,7 +135,7 @@ classdef ScenarioBase < Common.MiniVieObj
             %%%%%%%%%%%%%%%%%%%%%%%%
             % Process grasps
             %%%%%%%%%%%%%%%%%%%%%%%%
-            graspGain = 0.9;
+            graspGain = 0.3;
             graspChangeThreshold = 0.1;  % Normalized [0 1]
             graspName = className;
             lastGraspVelocity = obj.GraspVelocity;
@@ -146,7 +146,7 @@ classdef ScenarioBase < Common.MiniVieObj
             switch graspName
                 case 'Hand Open'
                     % Change the grasp Value in grasp mode
-                    desiredGraspVelocity = - prSpeed*graspGain*.5;
+                    desiredGraspVelocity = - prSpeed*graspGain*.3;
                 case cellGrasps
                     % Increment position along grasp trajectory
                     desiredGraspVelocity = prSpeed*graspGain;

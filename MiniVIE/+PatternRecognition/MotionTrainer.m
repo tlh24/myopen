@@ -7,7 +7,9 @@ classdef MotionTrainer < PatternRecognition.TrainingInterface
         DelayLengthSeconds = 2.5;
     end
     properties (Access = private)
+        hText
         hPlant
+        RestClass
     end
     methods
         function obj = MotionTrainer()
@@ -43,18 +45,18 @@ classdef MotionTrainer < PatternRecognition.TrainingInterface
             
             % Get the motions used during the training
             motionScript = obj.getMotionScript();
-            restClass = validateMotionScript(obj,motionScript);
+            validateMotionScript(obj,motionScript);
             
             numMovements = size(motionScript,1);
             
             % Create figure for displaying class
             hFigure = UiTools.create_figure('MotionTrainer');
             set(hFigure,'Position',[320 580 760 200]);
-            hText = uicontrol('Style','text','Parent',hFigure);
-            set(hText,'Units','Normalized');
-            set(hText,'Position',[0.1 0.1 0.8 0.6]);
-            set(hText,'FontSize',50)
-            set(hText,'String','Get Ready...');
+            obj.hText = uicontrol('Style','text','Parent',hFigure);
+            set(obj.hText,'Units','Normalized');
+            set(obj.hText,'Position',[0.1 0.1 0.8 0.6]);
+            set(obj.hText,'FontSize',50)
+            set(obj.hText,'String','Get Ready...');
 
             % Loop through each movement and drive system through the range
             % of motion
@@ -65,13 +67,7 @@ classdef MotionTrainer < PatternRecognition.TrainingInterface
                 
                 iClass = find(strcmpi(className,obj.SignalClassifier.ClassNames),1);
                 
-                tic
-                while toc < obj.DelayLengthSeconds
-                    % No movement, rest
-                    obj.CurrentClass = restClass;
-                    obj.addData();
-                    if ishandle(hText),set(hText,'String',obj.SignalClassifier.ClassNames{restClass});end
-                end
+                collectRestData(obj);
                 
                 p(jointId) = jointAngle;
                 obj.hPlant.setDesiredPosition(p);
@@ -87,9 +83,12 @@ classdef MotionTrainer < PatternRecognition.TrainingInterface
                     %obj.ContractionLengthSeconds
                     obj.CurrentClass = iClass;
                     obj.addData();
-                    if ishandle(hText),set(hText,'String',className);end
+                    if ishandle(obj.hText),set(obj.hText,'String',className);end
+                    pause(0.05);
                 end
             end
+
+            collectRestData(obj);
             
             obj.Features3D(:,:,obj.SampleCount+1:end) = [];
             obj.ClassLabelId(obj.SampleCount+1:end) = [];
@@ -99,12 +98,22 @@ classdef MotionTrainer < PatternRecognition.TrainingInterface
             obj.saveTrainingData
             obj.hPlant.stop();
         end
-        function restClass = validateMotionScript(obj,motionScript)
+        function collectRestData(obj)
+            tic
+            while toc < obj.DelayLengthSeconds
+                % No movement, rest
+                obj.CurrentClass = obj.RestClass;
+                obj.addData();
+                if ishandle(obj.hText),set(obj.hText,'String',obj.SignalClassifier.ClassNames{obj.RestClass});end
+                pause(0.05);
+            end
+        end
+        function validateMotionScript(obj,motionScript)
             % Verify all required classes are present
             % Check No Movement
             restClassName = 'No Movement';
-            restClass = find(strcmpi(restClassName,obj.SignalClassifier.ClassNames),1);
-            assert(~isempty(restClass),'Class "No Movement" class not found');
+            obj.RestClass = find(strcmpi(restClassName,obj.SignalClassifier.ClassNames),1);
+            assert(~isempty(obj.RestClass),'Class "No Movement" class not found');
             % Check Prescribed Motions
             for className = motionScript(:,1)
                 iClass = find(strcmpi(className{1},obj.SignalClassifier.ClassNames),1);
@@ -145,17 +154,19 @@ classdef MotionTrainer < PatternRecognition.TrainingInterface
                 TipGrasp
                 HandOpen
                 TipGrasp
+                HandOpen
                 ];
             
-            motionScript = [
-                WristFlexFull
-                WristExtendFull
-                WristFlexHalf
-                HandOpen
-                SphericalGrasp
-                HandOpen
-                TipGrasp
-                ];
+%             motionScript = [
+%                 WristFlexFull
+%                 WristExtendFull
+%                 WristFlexHalf
+%                 HandOpen
+%                 SphericalGrasp
+%                 HandOpen
+%                 TipGrasp
+%                 HandOpen
+%                 ];
             
         end
         
