@@ -9,7 +9,7 @@ _init6:
 	b0 = i0;
 	l0.l = LO(A1_PITCH*32*4);
 	l0.h = HI(A1_PITCH*32*4);
-	//set m0 correctly for LMS (used to increment i1, hence W1 pitch)
+	//set m0 correctly for LMS (used to increment i1, hence W1 stride)
 	m0.l = LO(W1_STRIDE*2*2*4);
 	m0.h = HI(W1_STRIDE*2*2*4);
 	p5 = 32;
@@ -20,8 +20,11 @@ lt_top:
 		p5 = 2;
 		lsetup(lt2_top,lt2_bot) lc1 = p5;
 lt2_top:
-			r0.l = 32000 ; r0.h = -16384 ;  [i0++] = r0;
-			r0.l = 16384 ; r0.h =  900   ;  [i0++] = r0;
+			r0.l = 16384 ; w[i0++] = r0.l; w[i0++] = r0.l;  //b0
+			r0.l = 0     ; w[i0++] = r0.l; w[i0++] = r0.l;  //b1
+			r0.l = -16384; w[i0++] = r0.l; w[i0++] = r0.l;  //b2
+			r0.l = 23815 ; w[i0++] = r0.l; w[i0++] = r0.l;  //a1
+			r0.l = -8917 ; w[i0++] = r0.l; w[i0++] = r0.l;  //a2
 			r0 = 0;  //LMS coef:
 			[i0++] = r0; //1
 			[i0++] = r0; //2
@@ -74,6 +77,7 @@ lt2_top:
 			r0 = -13603 (x);	w[i0++] = r0.l; w[i0++] = r0.l;
 			//threshold.
 			r0 = 10000 (x) ;	w[i0++] = r0.l; w[i0++] = r0.l;
+			//rewrite masks.
 			r0.l = 0x1; 		w[i0++] = r0.l; 
 			r0.l = 0x10; 	w[i0++] = r0.l; //little-endian. check this.
 			r0.l = 0x2; 		w[i0++] = r0.l; 

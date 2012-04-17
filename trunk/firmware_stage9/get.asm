@@ -21,9 +21,9 @@ _get_asm2:
 // SIC_IWR register,and then issue the IDLE instruction to save further power.
 // will have to test this, as we are running in a SW loop, not interrupt driven processing.
 // did test this - takes too long for processor to emerge from sleep.
-	//cli r0;
-	//idle; //wait for wake-up event.
-	//sti r0;
+//	cli r0;
+//	idle; //wait for wake-up event.
+//	sti r0;
 wait_samples:
 	r3 = w[p0 + (SPORT0_STAT - SPORT0_RX)];
 	cc =! bittst(r3, 0);
@@ -36,24 +36,26 @@ wait_samples:
 	r2 = [FP-FP_0FFF0FFF]; //hides MMR latency.
 	r1 <<= 16;  //secondary channel in the upper word.
 	r0 = r0 | r1;
-	r2 = r0 & r2;
+	r7 = r0 & r2;
 	//either toggle STEP or MUXRESET, depending on the channel.
-	r7 = [i0++];
-	w[p1 + (FIO_FLAG_T - FIO_FLAG_D)] = r7;
-	//apply integrator highpass + gain (4, shift and *2)).
+	r5 = [i0++];
+	w[p1 + (FIO_FLAG_T - FIO_FLAG_D)] = r5;
+	//new schema: apply bandpass biquad at beginning. 
+	// (design with ellip(1,6,40,[500/15e3, 5/15])
+	// get better / more flexible performance for the same number of ops. 
+	// & remove out-of-band noise prior LMS. 
+	/** prefilter **/
 .align 8
-	r2 = r2 << 2 (v) || r5 = [i0++]; //*2, r5 = 32000,-16384. (lo, high)
-			//(initial multiply by 2,2: 12 -> 13 -> 14 bits, unsgined.
-	a0 = r2.l * r5.l, a1 = r2.h * r5.l || r1 = [i1++] || r6 = [i0++];
-			// r1 = integral, r6 = 16384 (1), 800 (mu)
-	r0.l = (a0 += r1.l * r5.h), r0.h = (a1 += r1.h * r5.h) (s2rnd) || nop;
-		//subtract the mean, r0 mean-removed sample.
-	a0 = r1.l * r6.l , a1 = r1.h * r6.l //integrator
-		|| i1 += m0; //move to channel+2
-	r2.l = (a0 += r0.l * r6.h), r2.h = (a1 += r0.h * r6.h) (s2rnd) //update integral.
-		|| r1 = [i1++m0]; //load sample from channel+2,
-	r7 = r0 << 7 (v,s) || r2 = [i0++] || [i2++] = r2;
-			//saturate sample, load corresponding weight, save integral.
+	MNOP || r5 = [i0++] || r1 = [i1++]; //preload coef, r1 = x1(n-1)
+	a0  = r7.l * r5.l, a1  = r7.h * r5.h || r5 = [i0++] || r2 = [i1++] ;//r5 = b0.1; r2 = x1(n-2)
+	a0 += r1.l * r5.l, a1 += r1.h * r5.h || r5 = [i0++] || r4 = [i1++] ;//r5 = b0.2; r4 = y1(n-2) 
+	a0 += r2.l * r5.l, a1 += r2.h * r5.h || r5 = [i0++] || r3 = [i1++m0];//r5 = a0.0; r3 = y1(n-1)
+	a0 += r3.l * r5.l, a1 += r3.h * r5.h || r5 = [i0++] || [i2++] = r7 ;//r5 = a0.1; save x1(n-1)
+r0.l=(a0 +=r4.l * r5.l), r0.h=(a1 +=r4.h * r5.h)(s2rnd)|| [i2++] = r1 //r0 = y1(n); save x1(n-2)
+	                   || r2 = [i0++];
+		//load first LMS weight
+	r7 = r0 << 7 (v,s) || r1 = [i1++m0] || [i2++] = r3; 
+		//saturate sample, load channel+2 / move chan+4, load corresponding weight.
 	a0 = r1.l * r2.l, a1 = r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //1
 	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //2
 	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //3
@@ -89,8 +91,8 @@ r4.l = (a0+= r2.l * r5.l), r4.h = (a1+= r2.h * r5.h) || i1 -= m2 ;
 	a0 = abs a0, a1 = abs a1 || r6 = [i0++]; //take abs, r6 = sqrt AGC targets.
 	r4.l = (a0 -= r6.l * r6.l), r4.h = (a1 -= r6.h * r6.h) (is) //subtract target, saturate, store difference
 		|| r6 = [i0++]; //r6.l = 16384 (1), r6.h = 1 (mu)
-	a0 = r5.l * r6.l, a1 = r5.h * r6.l || nop; //load the gain again & scale.
-	r3.l = (a0 -= r4.l * r6.h), r3.h = (a1 -= r4.h * r6.h) (s2rnd) || nop; //r6.h = 1 (mu); within a certain range gain will not change.
+	a0 = r5.l * r6.l, a1 = r5.h * r6.l ; //load the gain again & scale.
+	r3.l = (a0 -= r4.l * r6.h), r3.h = (a1 -= r4.h * r6.h) (s2rnd) ; //r6.h = 1 (mu); within a certain range gain will not change.
 	r3 = abs r3 (v) //no negative gain -- unstable!
 													 || r5 = [i0++] || r1 = [i1++];  // r0 samp; r1 x1(n-1); r5 b0.0
 	MNOP || [i2++] = r3; // save the gain.
@@ -113,7 +115,7 @@ r0.l=(a0 +=r4.l * r5.l), r0.h=(a1 +=r4.h * r5.h)(s2rnd)|| [i2++] = r1 ;//r0 = y1
 r0.l=(a0 +=r2.l * r5.l), r0.h=(a1 +=r2.h * r5.h)(s2rnd)|| r5 = [i0++] ;//r0 = y2(n); r5 = threshold.
 //this is the output of the matched filter; may need more biquads. compare with thresh.
 	r0 = r0 +|+ r5 (s) || [i2++] = r0; // add threshold, save y2(n)`
-	r6 = r0 >>> 15 (v) || [i2++] = r1; //either -1 (0xffff) or 0, save y2(n-1)
+	r6 = r0 >>> 14 (v) || [i2++] = r1; //either -1 (0xffff) or 0, save y2(n-1)
 	MNOP				 							 || r5 = [i0++] || r1 = [i1++] ;// r6 match; r1 x1(n-1); r5 b0.0
 //second unit.
 	a0  = r7.l * r5.l, a1  = r7.h * r5.h || r5 = [i0++] || r2 = [i1++] ;//r5 = b0.1; r2 = x1(n-2)
@@ -143,21 +145,18 @@ r0.l=(a0 +=r2.l * r5.l), r0.h=(a1 +=r2.h * r5.h)(s2rnd)|| r5 = [i0++] ;//r0 = y2
 	r1 <<= 16;  //secondary channel in the upper word.
 	r0 = r0 | r1;
 	r2 = r0 & r2;
-	// integrator highpass & gain.
-	r2 = r2 << 2 (v); //move these here to avoid unneccesary NOPS.
-	r5 = [i0++];  //*2, r5 = 32000,-16384. (lo, high)
+	/** prefilter **/
 .align 8
-			//(initial multiply by 2,2: 12 -> 13 -> 14 bits, unsgined.
-	a0 = r2.l * r5.l, a1 = r2.h * r5.l || r1 = [i1++] || r6 = [i0++];
-			// r1 = integral, r6 = 16384 (1), 800 (mu)
-	r0.l = (a0 += r1.l * r5.h), r0.h = (a1 += r1.h * r5.h) (s2rnd) || nop;
-		//subtract the mean, r0 mean-removed sample.
-	a0 = r1.l * r6.l , a1 = r1.h * r6.l //integrator
-		|| i1 += m0; //move to channel+2
-	r2.l = (a0 += r0.l * r6.h), r2.h = (a1 += r0.h * r6.h) (s2rnd) //update integral.
-		|| r1 = [i1++m0]; //load sample from channel+2,
-	r7 = r0 << 7 (v,s) || r2 = [i0++] || [i2++] = r2;
-			//saturate sample, load corresponding weight, save integral.
+	MNOP || r5 = [i0++] || r1 = [i1++]; //preload coef, r1 = x1(n-1)
+	a0  = r7.l * r5.l, a1  = r7.h * r5.h || r5 = [i0++] || r2 = [i1++] ;//r5 = b0.1; r2 = x1(n-2)
+	a0 += r1.l * r5.l, a1 += r1.h * r5.h || r5 = [i0++] || r4 = [i1++] ;//r5 = b0.2; r4 = y1(n-2) 
+	a0 += r2.l * r5.l, a1 += r2.h * r5.h || r5 = [i0++] || r3 = [i1++m0];//r5 = a0.0; r3 = y1(n-1)
+	a0 += r3.l * r5.l, a1 += r3.h * r5.h || r5 = [i0++] || [i2++] = r7 ;//r5 = a0.1; save x1(n-1)
+r0.l=(a0 +=r4.l * r5.l), r0.h=(a1 +=r4.h * r5.h)(s2rnd)|| [i2++] = r1 //r0 = y1(n); save x1(n-2)
+	                   || r2 = [i0++];
+		//load first LMS weight
+	r7 = r0 << 7 (v,s) || r1 = [i1++m0] || [i2++] = r3; 
+		//saturate sample, load channel+2 / move chan+4, load corresponding weight.
 	a0 = r1.l * r2.l, a1 = r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //1
 	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //2
 	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //3
@@ -194,8 +193,8 @@ r4.l = (a0+= r2.l * r5.l), r4.h = (a1+= r2.h * r5.h) || i1 -= m2 ;
 	a0 = abs a0, a1 = abs a1 || r6 = [i0++]; //take abs, r6 = sqrt AGC targets.
 	r4.l = (a0 -= r6.l * r6.l), r4.h = (a1 -= r6.h * r6.h) (is) //subtract target, saturate, store difference
 		|| r6 = [i0++]; //r6.l = 16384 (1), r6.h = 1 (mu)
-	a0 = r5.l * r6.l, a1 = r5.h * r6.l || nop; //load the gain again & scale.
-	r3.l = (a0 -= r4.l * r6.h), r3.h = (a1 -= r4.h * r6.h) (s2rnd) || nop; //r6.h = 1 (mu); within a certain range gain will not change.
+	a0 = r5.l * r6.l, a1 = r5.h * r6.l ; //load the gain again & scale.
+	r3.l = (a0 -= r4.l * r6.h), r3.h = (a1 -= r4.h * r6.h) (s2rnd) ; //r6.h = 1 (mu); within a certain range gain will not change.
 	r3 = abs r3 (v) //no negative gain -- unstable!
 													 || r5 = [i0++] || r1 = [i1++];  // r0 samp; r1 x1(n-1); r5 b0.0
 	MNOP || [i2++] = r3; // save the gain.
@@ -272,6 +271,7 @@ r0.l=(a0 +=r2.l * r5.l), r0.h=(a1 +=r2.h * r5.h)(s2rnd)|| r5 = [i0++] ;//r0 = y2
 	if !cc jump end_txchan (bp); //predict not taken -- most likely.
 		//pointers p0 and p5 are free; p1 and p3 are static and are reset below.
 		p0 = [FP - FP_TXCHAN0] ; //put here for better alignment.
+		r7 = 5; //also hide latency.
 .align 8
 		mnop || p1 = [FP - FP_TXCHAN1] || r0 = [i3++]; //for m1
 		mnop || p3 = [FP - FP_TXCHAN2] || r1 = [i3++]; //for m2
@@ -286,7 +286,6 @@ r0.l=(a0 +=r2.l * r5.l), r0.h=(a1 +=r2.h * r5.h)(s2rnd)|| r5 = [i0++] ;//r0 = y2
 		b[p4++] = r1;
 		b[p4++] = r2;
 		b[p4++] = r3;
-		r7 = 5;
 		cc = r4 == r7;
 		if !cc jump end_txchan_qs (bp); //finish a packet.
 			//hide latency by managing flags.
