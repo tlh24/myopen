@@ -22,8 +22,7 @@ memory map:
 	0xFF90 4000	-- read with i0. (and write, in the case of LMS).
 		toggle step  | toggle reset (on the correct channel)
 		{
-			32000, -16384 		integrator, pre-scale (lo, hi)
-			16384, 800			integrator, mu
+			b0 b1 b2 a1 a2		bandpass biquad. may include gain up to 8.
 			LMS 0					m0 increments 2 channels (below)
 			LMS 1					m1 jump back to update weight,
 			LMS 2						2 to 16 32b words.
@@ -39,7 +38,7 @@ memory map:
 			LMS 12
 			LMS 13
 			LMS 14
-			LMS weight decay (16384 = none, sneezle.).
+			LMS weight decay (16384 = none, allows you to individually disable LMS.).
 			AGC targets, sqrt.
 			AGC, 16384, 1 (mu).
 			b00 b01 b02 a00 a01	-- unit 1.
@@ -50,19 +49,21 @@ memory map:
 			threshold unit 2
 			loadmask unit 1  (0x00100001, 0x00200002, 0x00400004, ...)
 			loadmask unit 2
-		} X2 (44 altogether, = A1_STRIDE)
+		} X2 (47 altogether, = A1_STRIDE)
 		channel, 0-31
 
-		Total (both sports): 88 + 2 = 90
-		90 * 32 * 4 = 11520, 0x2D00.
-		end at 0xFF90 6D00
+		Total (both sports): 94 + 2 = 96
+		96 * 32 * 4 = 12288, 0x3000.
+		end at 0xFF90 7000
 
 
 	Taps/delays/data:
 			read with i1, write with i2.
 	0xFF80 4000
-				integral
-				sample, mean removed, pre LMS.
+				x0 n-1
+				x0 n-2
+				y0 n-2	(note!! backwards)
+				y0 n-1	(prefilter output -- this so we can read chan+2 easily)
 				saturated sample
 				gain
 				x1 n-1 	(unit 1)
@@ -78,9 +79,9 @@ memory map:
 				y2 n-1
 				y2 n-2
 			-- and repeat for SPORT1.
-	Total: 16*2 * 32 ch * 32-bit words -- perfect!
-	total length: 4kb, 0x1000
-	0xFF80 5000	end of delay buffer.
+	Total: 18 * 2 * 32 ch * 32-bit words -- perfect!
+	total length: 4608, 0x1200
+	0xFF80 5200	end of delay buffer.
 
 	T1: stores state, indexed by i3.
 	0	m1[0]		16*4
@@ -135,45 +136,41 @@ memory map:
 	Packets must come in multiple of 16 -- unlike LMS which can be skipped -- so
 	we have space for 48 packets.
 	This will go through 19.2 LMS updates -- most LMS weights will be updated 19 times,
-	and 1/5 will be updated 20 times.  Seems OK!
+	and 1/5 will be updated 20 times.  biased, but probably ok!
 */
 #define A1 				0xFF904000  /** BANK B **/ //i0 accesses -- coefficients.
 #define A1_STEP		1			//should *not* change this from the client. unless I make a mistake.
-#define A1_INT			2			//units: 32bit words.
+#define A1_PREF		5			//units: 32bit words.
 #define A1_LMS			16			//15 taps + weight decay.
 #define A1_AGC			2			//4 coefs per 4 biquads.
 #define A1_IIR			10
 #define A1_INTR		0
-#define A1_LMSA		(A1_INTR + A1_INT) //2
-#define A1_AGCS		(A1_LMSA + A1_LMS) //18
-#define A1_IIRA		(A1_AGCS + A1_AGC) //20
-#define A1_UNITA		(A1_IIRA + A1_IIR) //30
-#define A1_IIRB		(A1_UNITA + 1) //31
-#define A1_UNITB		(A1_IIRB + A1_IIR) //41
-#define A1_STRIDE 	(A1_UNITB + 3) //total: 44.
-#define A1_PITCH		(A1_STRIDE*2 + 2) //step and channel afterward; 90 total.
+#define A1_LMSA		(A1_INTR + A1_PREF) //5
+#define A1_AGCS		(A1_LMSA + A1_LMS) //21
+#define A1_IIRA		(A1_AGCS + A1_AGC) //23
+#define A1_UNITA		(A1_IIRA + A1_IIR) //33
+#define A1_IIRB		(A1_UNITA + 1) //34
+#define A1_UNITB		(A1_IIRB + A1_IIR) //44
+#define A1_STRIDE 	(A1_UNITB + 3) //total: 47
+#define A1_PITCH		(A1_STRIDE*2 + 2) //step and channel afterward; 96 total.
 
-#define FP_BASE		0xFF906F00 //length: 0x200, 512 bytes.
+#define FP_BASE		0xFF907200 //length: 0x200, 512 bytes.
 	// ** Frame pointer counts down! **
-
-#define TEMP_BUFFER 		0xFF906F00 //128 bytes = 0x80;
-#define PRINTF_BUFFER_SIZE 128
-#define PRINTF_BUFFER 	0xFF906F80 //same size, 128.
-#define GCC_RESERVED 	0xFF907000 //above this GCC stomps around on.
+#define GCC_RESERVED 	0xFF907200 //above this GCC stomps around on.
 
 #define W1 				0xFF804000  /** BANK A **/
-#define W1_STRIDE	 	16 // see above.
-						  //total length = W1_STRIDE * 2 * 32 * 4 = 4k = 0x1000 bytes
-#define T1				0xFF805000 //accessed by i3, read/write LMS & state.
+#define W1_STRIDE	 	18 // see above.
+						  //total length = W1_STRIDE * 2 * 32 * 4 = 4608 = 0x1200 bytes
+#define T1				0xFF805200 //accessed by i3, read/write LMS & state.
 #define T1_LENGTH		(48*20*4) //3840, 0xF00
 
 
-#define MATCH			0xFF806000 //256 bits, 128 channels * 2 templates.
+#define MATCH			0xFF806100 //256 bits, 128 channels * 2 templates.
 #define MATCH_LENGTH	64    // 32 bytes, or 8 4-byte words, TWICE -
-							//second half is 7-b encoded.
+							//second half is 7-b encoded. (length: 0x40)
 
-#define ENC_LUT		0xff806100 //256 bytes, map 8 bits -> 7 bits.
-#define STATE_LUT		0xff806200 // 16 32bit words, 64 bytes.
+#define ENC_LUT		0xff806200 //256 bytes (0x100), map 8 bits -> 7 bits.
+#define STATE_LUT		0xff806300 //16 32bit words, 64 bytes.
 
 #define WFBUF			0xFF807000  //really the transmit buffer.
 #define WFBUF_LEN		1024		// length 2 512 byte, 16-packet frames. (0x400)

@@ -36,7 +36,7 @@ setupPLL:
 	
 	//oscillator is at 16mhz on stage2, stage4,stage8 board.
 
-	r1.l = 25 << 9; //base clk 16Mhz.
+	r1.l = 20 << 9; //base clk 16Mhz.
 	
 	//r1.l = 0x3200; //400mhz
 	//r1.l = 0x2800; //320mhz
@@ -63,14 +63,18 @@ setupPLL:
 	cli r0;
  	idle;	// wait for Loop_count expired wake up
 	sti r0;
+	
+	r0 = [p1];			
+	bitset(r0,0);	  
+	[p1] = r0;
 
 	// now, set clock dividers:
 	p0.l = LO(PLL_DIV);
 	p0.h = HI(PLL_DIV);
 
 	// SCLK = VCOCLK / SCLK_DIVIDER
-	r0.l = 5; //page 339.  CCLK = vco ; SCLK = VCO/4; 400-> 80mhz.
-
+	//r0.l = 5 | 0x10; //page 339.  CCLK = vco/2, 288MHz ; SCLK = VCO/5; 115.2.
+	r0.l = 4; 
 	w[p0] = r0; // set Core and system clock dividers
 	//note: this can be changed at any time to decrease power consumption!
 
