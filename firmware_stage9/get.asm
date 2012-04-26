@@ -46,13 +46,13 @@ wait_samples:
 	// & remove out-of-band noise prior LMS. 
 	/** prefilter **/
 .align 8
-	MNOP || r5 = [i0++] || r1 = [i1++]; //preload coef, r1 = x1(n-1)
+	MNOP || r5 = [i0++] || r1 = [i1++]; //r5 = b0.0, r1 = x1(n-1)
 	a0  = r7.l * r5.l, a1  = r7.h * r5.h || r5 = [i0++] || r2 = [i1++] ;//r5 = b0.1; r2 = x1(n-2)
 	a0 += r1.l * r5.l, a1 += r1.h * r5.h || r5 = [i0++] || r4 = [i1++] ;//r5 = b0.2; r4 = y1(n-2) 
 	a0 += r2.l * r5.l, a1 += r2.h * r5.h || r5 = [i0++] || r3 = [i1++m0];//r5 = a0.0; r3 = y1(n-1)
 	a0 += r3.l * r5.l, a1 += r3.h * r5.h || r5 = [i0++] || [i2++] = r7 ;//r5 = a0.1; save x1(n-1)
 r0.l=(a0 +=r4.l * r5.l), r0.h=(a1 +=r4.h * r5.h)(s2rnd)|| [i2++] = r1 //r0 = y1(n); save x1(n-2)
-	                   || r2 = [i0++];
+	                   || r2 = [i0++]; //load LMS 0 weight.
 		//load first LMS weight
 	r7 = r0 << 7 (v,s) || r1 = [i1++m0] || [i2++] = r3; 
 		//saturate sample, load channel+2 / move chan+4, load corresponding weight.
@@ -97,8 +97,8 @@ r4.l = (a0+= r2.l * r5.l), r4.h = (a1+= r2.h * r5.h) || i1 -= m2 ;
 													 || r5 = [i0++] || r1 = [i1++];  // r0 samp; r1 x1(n-1); r5 b0.0
 	MNOP || [i2++] = r3; // save the gain.
 #else
-	MNOP || i0 += m3 || r3 = [i2++]; //m3 = 8, dummy read to keep i2 in sync.
-	MNOP || r5 = [i0++] || r1 = [i1++]; //preload coef.
+	MNOP || i0 += m3 || r3 = [i2++]; //m3 = 8, dummy read to keep i2 in sync; ifndef _AGC_
+	MNOP || r5 = [i0++] || r1 = [i1++]; //r0 samp; r1 x1(n-1); ifndef _AGC_
 #endif
 .align 8
 	a0  = r7.l * r5.l, a1  = r7.h * r5.h || r5 = [i0++] || r2 = [i1++] ;//r5 = b0.1; r2 = x1(n-2)
@@ -147,7 +147,7 @@ r0.l=(a0 +=r2.l * r5.l), r0.h=(a1 +=r2.h * r5.h)(s2rnd)|| r5 = [i0++] ;//r0 = y2
 	r2 = r0 & r2;
 	/** prefilter **/
 .align 8
-	MNOP || r5 = [i0++] || r1 = [i1++]; //preload coef, r1 = x1(n-1)
+	MNOP || r5 = [i0++] || r1 = [i1++]; // prefilter preload coef, r1 = x1(n-1)
 	a0  = r7.l * r5.l, a1  = r7.h * r5.h || r5 = [i0++] || r2 = [i1++] ;//r5 = b0.1; r2 = x1(n-2)
 	a0 += r1.l * r5.l, a1 += r1.h * r5.h || r5 = [i0++] || r4 = [i1++] ;//r5 = b0.2; r4 = y1(n-2) 
 	a0 += r2.l * r5.l, a1 += r2.h * r5.h || r5 = [i0++] || r3 = [i1++m0];//r5 = a0.0; r3 = y1(n-1)
@@ -199,8 +199,8 @@ r4.l = (a0+= r2.l * r5.l), r4.h = (a1+= r2.h * r5.h) || i1 -= m2 ;
 													 || r5 = [i0++] || r1 = [i1++];  // r0 samp; r1 x1(n-1); r5 b0.0
 	MNOP || [i2++] = r3; // save the gain.
 #else
-	MNOP || i0 += m3 || r3 = [i2++]; //m3 = 8, dummy read to keep i2 in sync.
-	MNOP || r5 = [i0++] || r1 = [i1++]; //preload coef.
+	MNOP || i0 += m3 || r3 = [i2++]; //m3 = 8, dummy read to keep i2 in sync ifndef _AGC_
+	MNOP || r5 = [i0++] || r1 = [i1++]; //r0 samp; r1 x1(n-1); ifndef _AGC_
 #endif
 .align 8
 	a0  = r7.l * r5.l, a1  = r7.h * r5.h || r5 = [i0++] || r2 = [i1++] ;//r5 = b0.1; r2 = x1(n-2)

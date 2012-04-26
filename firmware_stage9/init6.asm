@@ -139,7 +139,7 @@ lt3_bot:
 	m3 = 8; 
 
 
-	r0 = 0; // counter, 0-15.
+	r0 = 0; // counter, 0-14.
 	r1 = m0;
 	r2 = 0; //state flag / match pointer counter; only high word, though.
 	r7 = 0; // packet state, 0-5. 
@@ -159,7 +159,7 @@ lt5_top:
 			r3 = r0 + r4; //(n+1)
 			r3 *= r1; //(n+1)*m0
 			[i3++] = r3;
-			[i3++] = r7; // n
+			[i3++] = r7; //n
 			r0 = r0 + r4;
 			r7 = r7 + r4; 
 			r4 = 15;
