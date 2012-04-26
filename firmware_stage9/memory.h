@@ -138,14 +138,16 @@ memory map:
 	This will go through 19.2 LMS updates -- most LMS weights will be updated 19 times,
 	and 1/5 will be updated 20 times.  biased, but probably ok!
 */
-#define A1 				0xFF904000  /** BANK B **/ //i0 accesses -- coefficients.
+/** BANK B **/ //i0 accesses -- coefficients.
+#define A1 				0xFF904000
+// -- sizes --
 #define A1_STEP		1			//should *not* change this from the client. unless I make a mistake.
 #define A1_PREF		5			//units: 32bit words.
 #define A1_LMS			16			//15 taps + weight decay.
 #define A1_AGC			2			//4 coefs per 4 biquads.
-#define A1_IIR			10
-#define A1_INTR		0
-#define A1_LMSA		(A1_INTR + A1_PREF) //5
+#define A1_IIR			10			//two biquads, 5 coefs each.
+// -- offsets --
+#define A1_LMSA		(A1_PREF) //5
 #define A1_AGCS		(A1_LMSA + A1_LMS) //21
 #define A1_IIRA		(A1_AGCS + A1_AGC) //23
 #define A1_UNITA		(A1_IIRA + A1_IIR) //33

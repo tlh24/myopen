@@ -17,16 +17,12 @@ extern unsigned int g_headecho;
 extern unsigned int g_oldheadecho;
 
 void saveMessage(const char *fmt, ...);
-void updateGain(int chan);
 void setOsc(int chan);
 void setChans();
 void setAGC(int ch1, int ch2, int ch3, int ch4);
 void enableAGC(int* chs, int en);
 void setLMS(int ch);
+void setMF(int chan);
 void setAperture(int ch);
-void setBiquad(int chan, float* biquad, int biquadNum);
-void resetBiquads(int chan);
-void setFilter2(int chan);
-void setFlat(int chan);
 void setAll();
 #endif

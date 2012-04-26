@@ -1756,22 +1756,24 @@ int main(int argn, char **argc)
 	frame = gtk_frame_new ("signal chain");
 	gtk_box_pack_start (GTK_BOX (box1), frame, TRUE, TRUE, 0);
 	const char* signalNames[W1_STRIDE] = {
-		"0	mean from integrator",
-		"1	integrator out",
-		"2	LMS saturated sample",
-		"3	AGC gain",
-		"4	u1 x1(n-1) / LMS out",
-		"5	u1 x1(n-2)",
-		"6	u1 x2(n-1) / y1(n-1)",
-		"7	u1 x2(n-2) / y1(n-2)",
-		"8 u1 y2(n-1) ",
-		"9 u1 y2(n-2) ",
-		"a u2 x1(n-1) / LMS out",
-		"b	u2 x1(n-2)",
-		"c	u2 x2(n-1) / y1(n-1)",
-		"d	u2 x2(n-2) / y1(n-2)",
-		"e	u2 y2(n-1) ",
-		"f	u2 y2(n-2) "
+		"0	BP x0(n-1)",
+		"1 BP x0(n-2)",
+		"2 BP y0(n-2)",
+		"3 BP y0(n-1)",
+		"4	saturated sample",
+		"5	AGC gain",
+		"6	u1 x1(n-1) / LMS out",
+		"7	u1 x1(n-2)",
+		"8	u1 x2(n-1) / y1(n-1)",
+		"9	u1 x2(n-2) / y1(n-2)",
+		"10	u1 y2(n-1) ",
+		"11	u1 y2(n-2) ",
+		"12	u2 x1(n-1) / LMS out",
+		"13	u2 x1(n-2)",
+		"14	u2 x2(n-1) / y1(n-1)",
+		"15	u2 x2(n-2) / y1(n-2)",
+		"16	u2 y2(n-1) ",
+		"17	u2 y2(n-2) "
 		};
 	button = 0;
 	combo = gtk_combo_box_new_text();

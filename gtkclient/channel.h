@@ -25,14 +25,14 @@ public:
 	VboPca*	m_pcaVbo; //2D points, with color.
 	float	m_pca[2][32]; //range 1 mean 0
 	float m_pcaScl[2]; //sqrt of the eigenvalues.
-	float	m_template[2][16]; // range 1 mean 0.
+	float	m_mf[2][10]; // same as matlab -- mply by 16384 for bfin. 2x 5 coef biquads.
 	float	m_loc[4];
 	int	m_ch; //channel number, obvi.
 	float m_gain;
 	float m_agc;
 	int	m_lms; // is LMS enabled for this channel?
 	int	m_agcEn; // is AGC enabled for this channel?
-	i64 m_isi[2][100]; //counts of the isi, in units of 4 packets -- 768us/packet.
+	i64	m_isi[2][100]; //counts of the isi, in units of 4 packets -- 768us/packet.
 	int	m_lastSpike[2]; //zero when a spike occurs.
 
 	Channel(int ch){
@@ -48,16 +48,16 @@ public:
 			m_pca[1][j] = (j > 15 ? 1.f/8.f : -1.f/8.f);
 			m_pcaScl[0] = m_pcaScl[1] = 1.f;
 		}
-		unsigned char tmplA[16]={21,37,82,140,193,228,240,235,219,198,178,162,152,146,140,135};
-		unsigned char tmplB[16]={122,134,150,160,139,90,60,42,35,52,87,112,130,135,142,150};
-		for(int j=0; j<16; j++){
-			m_template[0][j] = ((float)tmplA[j] / 255.f)-0.5f;
-			m_template[1][j] = ((float)tmplB[j] / 255.f)-0.5f;
+		float mfA[10]={1.f,0.f,0.f,0.1f,0.f,1.f,0.f,0.f,0.1f,0.f};
+		float mfB[10]={1.f,0.f,0.f,0.1f,0.f,1.f,0.f,0.f,0.1f,0.f};
+		for(int j=0; j<10; j++){
+			m_mf[0][j] = mfA[j];
+			m_mf[1][j] = mfB[j];
 		}
 		//read from sql if it's there..
 		for(int j=0; j<2; j++){
 			sqliteGetBlob(ch, j, "pca", &(m_pca[j][0]), 32);
-			sqliteGetBlob(ch, j, "template", &(m_template[j][0]), 16);
+			sqliteGetBlob(ch, j, "matchedfilter", &(m_mf[j][0]), 10);
 			m_aperture[j] = sqliteGetValue2(ch, j, "aperture", 56.f);
 		}
 		sqliteGetBlob(ch, 0, "pcaScl", m_pcaScl, 2);
