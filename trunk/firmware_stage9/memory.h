@@ -20,37 +20,37 @@ we put them on separate banks completely. */
 memory map:
 	Filter coeficients A1:
 	0xFF90 4000	-- read with i0. (and write, in the case of LMS).
-		toggle step  | toggle reset (on the correct channel)
+	0	toggle step  | toggle reset (on the correct channel)
 		{
-			b0 b1 b2 a1 a2		bandpass biquad. may include gain up to 8.
-			LMS 0					m0 increments 2 channels (below)
-			LMS 1					m1 jump back to update weight,
-			LMS 2						2 to 16 32b words.
-			LMS 3					m2 jump forward to update channel,
-			LMS 4						multiple of m0.
-			LMS 5					i3 indexes a table which loads m1, m2.
-			LMS 6
-			LMS 7
-			LMS 8
-			LMS 9
-			LMS 10
-			LMS 11
-			LMS 12
-			LMS 13
-			LMS 14
-			LMS weight decay (16384 = none, allows you to individually disable LMS.).
-			AGC targets, sqrt.
-			AGC, 16384, 1 (mu).
-			b00 b01 b02 a00 a01	-- unit 1.
-			b10 b11 b12 a10 a12
-			threshold unit 1
-			b00 b01 b02 a00 a01	-- unit 2.
-			b10 b11 b12 a10 a12
-			threshold unit 2
-			loadmask unit 1  (0x00100001, 0x00200002, 0x00400004, ...)
-			loadmask unit 2
+	1		48		b0 b1 b2 a1 a2		bandpass biquad. may include gain up to 8.
+	6		53		LMS 0					m0 increments 2 channels (below)
+	7		4		LMS 1					m1 jump back to update weight,
+	8		5		LMS 2						2 to 16 32b words.
+	9		6		LMS 3					m2 jump forward to update channel,
+	10		7		LMS 4						multiple of m0.
+	1		8		LMS 5					i3 indexes a table which loads m1, m2.
+	2		9		LMS 6
+	3		60		LMS 7
+	4		1		LMS 8
+	5		2		LMS 9
+	6		3		LMS 10
+	7		4		LMS 11
+	8		5		LMS 12
+	9		6		LMS 13
+	20		7		LMS 14
+	1		8		LMS weight decay (16384 = none, allows you to individually disable LMS.).
+	2		9		AGC targets, sqrt.
+	3		70		AGC, 16384, 1 (mu).
+	4		1		b00 b01 b02 a00 a01	-- unit 1.
+	9		6		b10 b11 b12 a10 a12
+	34		81		threshold unit 1
+	5		2		b00 b01 b02 a00 a01	-- unit 2.
+	40		7		b10 b11 b12 a10 a12
+	5		92		threshold unit 2
+	6		3		loadmask unit 1  (0x00100001, 0x00200002, 0x00400004, ...)
+	7		4		loadmask unit 2
 		} X2 (47 altogether, = A1_STRIDE)
-		channel, 0-31
+	95	channel, 0-31
 
 		Total (both sports): 94 + 2 = 96
 		96 * 32 * 4 = 12288, 0x3000.
@@ -60,24 +60,24 @@ memory map:
 	Taps/delays/data:
 			read with i1, write with i2.
 	0xFF80 4000
-				x0 n-1
-				x0 n-2
-				y0 n-2	(note!! backwards)
-				y0 n-1	(prefilter output -- this so we can read chan+2 easily)
-				saturated sample
-				gain
-				x1 n-1 	(unit 1)
-				x1 n-2
-				y1 n-1	x2 n-1
-				y1 n-2	x2 n-2
-				y2 n-1
-				y2 n-2
-				x1 n-1 	(unit 2)
-				x1 n-2
-				y1 n-1	x2 n-1
-				y1 n-2	x2 n-2
-				y2 n-1
-				y2 n-2
+			0		x0 n-1
+			1		x0 n-2
+			2		y0 n-2	(note!! backwards)
+			3		y0 n-1	(prefilter output -- this so we can read chan+2 easily)
+			4		saturated sample
+			5		gain
+			6		x1 n-1 	(unit 1)
+			7		x1 n-2
+			8		y1 n-1	x2 n-1
+			9		y1 n-2	x2 n-2
+		1	0		y2 n-1
+			1		y2 n-2
+			2		x1 n-1 	(unit 2)
+			3		x1 n-2
+			4		y1 n-1	x2 n-1
+			5		y1 n-2	x2 n-2
+			6		y2 n-1
+			7		y2 n-2
 			-- and repeat for SPORT1.
 	Total: 18 * 2 * 32 ch * 32-bit words -- perfect!
 	total length: 4608, 0x1200
@@ -134,7 +134,7 @@ memory map:
 	This is too big; we have 0x1000 memory available.
 	Each packet consumes 20 words (above), or 80 bytes, so we have space for 51 packets.
 	Packets must come in multiple of 16 -- unlike LMS which can be skipped -- so
-	we have space for 48 packets.
+	we have space for 48 packets (3 frames), 0xf00 bytes.
 	This will go through 19.2 LMS updates -- most LMS weights will be updated 19 times,
 	and 1/5 will be updated 20 times.  biased, but probably ok!
 */
