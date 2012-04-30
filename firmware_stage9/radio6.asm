@@ -124,6 +124,9 @@ _radio_bidi_asm:
 	r0.l = 0x0fff;
 	r0.h = 0x0fff;
 	[FP - FP_0FFF0FFF] = r0;
+	r0.l = 16384;
+	r0.h = 16384;
+	[FP - FP_16384] = r0;
 	//setup the pointers now; careful, this is tricky!
 	//channel 0.
 	r0.l = LO(W1 + 5*4 + 0 + 1); //little-endian, hence +1.

@@ -23,7 +23,9 @@ memory map:
 	0	toggle step  | toggle reset (on the correct channel)
 		{
 	1		48		b0 b1 b2 a1 a2		bandpass biquad. may include gain up to 8.
-	6		53		LMS 0					m0 increments 2 channels (below)
+	6		9		AGC targets, sqrt.
+	7		70		AGC enable (mu). 
+	8		53		LMS 0					m0 increments 2 channels (below)
 	7		4		LMS 1					m1 jump back to update weight,
 	8		5		LMS 2						2 to 16 32b words.
 	9		6		LMS 3					m2 jump forward to update channel,
@@ -39,8 +41,6 @@ memory map:
 	9		6		LMS 13
 	20		7		LMS 14
 	1		8		LMS weight decay (16384 = none, allows you to individually disable LMS.).
-	2		9		AGC targets, sqrt.
-	3		70		AGC, 16384, 1 (mu).
 	4		1		b00 b01 b02 a00 a01	-- unit 1.
 	9		6		b10 b11 b12 a10 a12
 	34		81		threshold unit 1
@@ -64,8 +64,8 @@ memory map:
 			1		x0 n-2
 			2		y0 n-2	(note!! backwards)
 			3		y0 n-1	(prefilter output -- this so we can read chan+2 easily)
-			4		saturated sample
-			5		gain
+			4		gain
+			5		saturated sample
 			6		x1 n-1 	(unit 1)
 			7		x1 n-2
 			8		y1 n-1	x2 n-1
@@ -146,10 +146,10 @@ memory map:
 #define A1_LMS			16			//15 taps + weight decay.
 #define A1_AGC			2			//4 coefs per 4 biquads.
 #define A1_IIR			10			//two biquads, 5 coefs each.
-// -- offsets --
-#define A1_LMSA		(A1_PREF) //5
-#define A1_AGCS		(A1_LMSA + A1_LMS) //21
-#define A1_IIRA		(A1_AGCS + A1_AGC) //23
+// -- offsets (within stride)
+#define A1_AGCS		(A1_PREF) //5
+#define A1_LMSA		(A1_AGCS + A1_AGC) //7
+#define A1_IIRA		(A1_LMSA + A1_LMS) //23
 #define A1_UNITA		(A1_IIRA + A1_IIR) //33
 #define A1_IIRB		(A1_UNITA + 1) //34
 #define A1_UNITB		(A1_IIRB + A1_IIR) //44
@@ -199,6 +199,7 @@ memory map:
 #define FP_ECHO			68
 #define FP_BLINK			72
 #define FP_0FFF0FFF		76
+#define FP_16384			80
 
 #ifndef LO
 #define LO(con32) ((con32) & 0xFFFF)

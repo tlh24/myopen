@@ -37,24 +37,42 @@ wait_samples:
 	r1 <<= 16;  //secondary channel in the upper word.
 	r0 = r0 | r1;
 	r7 = r0 & r2;
-	//either toggle STEP or MUXRESET, depending on the channel.
-	r5 = [i0++];
+	
+	r5 = [i0++];//either toggle STEP or MUXRESET, depending on the channel.
 	w[p1 + (FIO_FLAG_T - FIO_FLAG_D)] = r5;
 	//new schema: apply bandpass biquad at beginning. 
 	// (design with ellip(1,6,40,[500/15e3, 5/15])
 	// get better / more flexible performance for the same number of ops. 
 	// & remove out-of-band noise prior LMS. 
 	/** prefilter **/
+	r6 = [FP - FP_16384]; //FP relative loads cannot be paralelled :-(
 .align 8
 	MNOP || r5 = [i0++] || r1 = [i1++]; //r5 = b0.0, r1 = x1(n-1)
 	a0  = r7.l * r5.l, a1  = r7.h * r5.h || r5 = [i0++] || r2 = [i1++] ;//r5 = b0.1; r2 = x1(n-2)
 	a0 += r1.l * r5.l, a1 += r1.h * r5.h || r5 = [i0++] || r4 = [i1++] ;//r5 = b0.2; r4 = y1(n-2) 
-	a0 += r2.l * r5.l, a1 += r2.h * r5.h || r5 = [i0++] || r3 = [i1++m0];//r5 = a0.0; r3 = y1(n-1)
+	a0 += r2.l * r5.l, a1 += r2.h * r5.h || r5 = [i0++] || r3 = [i1++];//r5 = a0.0; r3 = y1(n-1)
 	a0 += r3.l * r5.l, a1 += r3.h * r5.h || r5 = [i0++] || [i2++] = r7 ;//r5 = a0.1; save x1(n-1)
-r0.l=(a0 +=r4.l * r5.l), r0.h=(a1 +=r4.h * r5.h)(s2rnd)|| [i2++] = r1 //r0 = y1(n); save x1(n-2)
-	                   || r2 = [i0++]; //load LMS 0 weight.
-		//load first LMS weight
-	r7 = r0 << 7 (v,s) || r1 = [i1++m0] || [i2++] = r3; 
+r0.l=(a0 +=r4.l * r5.l), r0.h=(a1 +=r4.h * r5.h)(s2rnd)|| r5 = [i1--] ;
+		//r0 = y1(n); r5 = gain & move back to y1(n-1)
+	/** AGC **/
+	a0 = r0.l * r5.l, a1 = r0.h * r5.h || [i2++] = r1; //apply gain,save x1(n-2)
+ 	a0 = a0 << 7 || [i2++] = r3; //save y1(n-2) ;14 bits in SRC, this makes 22 bits and
+	a1 = a1 << 7 || [i2++] = r0; //save y1(n-1) ;gain goes from 0-128 hence (don't forget about sign)
+	r7.l = a0, r7.h = a1 || i1 += m0;  
+		//r7 = gained sample, r2 = 16384, move y1(n-1) of chan+2; 
+		//for r7, default rounding mode should work (treat both as signed fractions)
+#ifdef _AGC_
+	a0 = abs a0, a1 = abs a1 || r1 = [i0++]; //take abs, r1 = sqrt AGC targets.
+	r4.l = (a0 -= r1.l * r1.l), r4.h = (a1 -= r1.h * r1.h) (is) //subtract target, saturate, store difference
+		|| r1 = [i0++]; //r1 = mu (1) for both channels. 
+	a0 = r5.l * r6.l, a1 = r5.h * r6.l ; //load the gain again & scale.
+	r3.l = (a0 -= r4.l * r1.l), r3.h = (a1 -= r4.h * r1.h) (s2rnd) ; //within a certain range gain will not change.
+	r3 = abs r3 (v) //no negative gain -- unstable!									 
+	MNOP || [i2++] = r3; // save the gain.
+#else
+	MNOP || i0 += m3 || r3 = [i2++]; //m3 = 8, dummy read to keep i2 in sync; ifndef _AGC_
+#endif
+	r0 = r7 << 13 (v,s) || r1 = [i1++m0] || r2 = [i0++]; // r2 = 0th LMS weight.
 		//saturate sample, load channel+2 / move chan+4, load corresponding weight.
 	a0 = r1.l * r2.l, a1 = r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //1
 	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //2
@@ -71,36 +89,20 @@ r0.l=(a0 +=r4.l * r5.l), r0.h=(a1 +=r4.h * r5.h)(s2rnd)|| [i2++] = r1 //r0 = y1(
 	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //13
 	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //14
 	r6.l=(a0+= r1.l * r2.l), r6.h=(a1+= r1.h * r2.h)  //15; default signed rounding ok.
-		|| r1 = [i1++] || r5 = [i0++]; //i1 to saturated sample, r5 = weight decay.
+		|| i1+= m3 || r5 = [i0++]; //i1 to saturated sample, r5 = weight decay.
 
 	//update one of the weights:
-	r0 = r0 -|- r6 (s) || i0 -= m1 || [i2++] = r0 ;
-		//compute error, move i0 to active weight, save original (pre-LMS)
-	r6 = r0 << 7 (v,s) || i1 += m2 || [i2++] = r7; //move i1 to update channel, save saturated.
-	r6 = r6 >>> 14 (v,s) || r1 = [i1++] || r2 = [i0];
-		//r6 = sign of error, r1 = saturated sample, r2 = w0, i1 @ gain + updatechan.
+	r7 = r7 -|- r6 (s) || i0 -= m1 || [i2++] = r0 ;
+		// error into r7, move i0 to active weight, save saturated.
+	r6 = r7 << 7 (v,s) || i1 += m2 || r2 = [i0]; //move i1 to update channel, r2 = w0.
+	r6 = r6 >>> 14 (v,s) || r1 = [i1++] ;
+		//r6 = sign of error, r1 = saturated sample, i1 @ x1(n-1)
 	a0 = r1.l * r6.l, a1 = r1.h * r6.h || nop; //load delta w, r5 weight decay.
 r4.l = (a0+= r2.l * r5.l), r4.h = (a1+= r2.h * r5.h) || i1 -= m2 ;
-			//load/decay weight, r6 AGC targets (sqrt), move i1 back to present channel.
-	mnop || r5 = [i1++] || [i0++m1] = r4 ; //r5 = gain, save the new weight, i0 back to AGC0
-	a0 = r0.l * r5.l, a1 = r0.h * r5.h ; //apply gain, r6 = 16384, 1 (mu)
- 	a0 = a0 << 7 ; // 14 bits in SRC, this makes 22 bits and
-	a1 = a1 << 7 ; // gain goes from 0-128 hence (don't forget about sign)
-	r7.l = a0, r7.h = a1 ;  //r7 gained sample. default mode should work (treat both as signed fractions)
-#ifdef _AGC_
-	a0 = abs a0, a1 = abs a1 || r6 = [i0++]; //take abs, r6 = sqrt AGC targets.
-	r4.l = (a0 -= r6.l * r6.l), r4.h = (a1 -= r6.h * r6.h) (is) //subtract target, saturate, store difference
-		|| r6 = [i0++]; //r6.l = 16384 (1), r6.h = 1 (mu)
-	a0 = r5.l * r6.l, a1 = r5.h * r6.l ; //load the gain again & scale.
-	r3.l = (a0 -= r4.l * r6.h), r3.h = (a1 -= r4.h * r6.h) (s2rnd) ; //r6.h = 1 (mu); within a certain range gain will not change.
-	r3 = abs r3 (v) //no negative gain -- unstable!
-													 || r5 = [i0++] || r1 = [i1++];  // r0 samp; r1 x1(n-1); r5 b0.0
-	MNOP || [i2++] = r3; // save the gain.
-#else
-	MNOP || i0 += m3 || r3 = [i2++]; //m3 = 8, dummy read to keep i2 in sync; ifndef _AGC_
-	MNOP || r5 = [i0++] || r1 = [i1++]; //r0 samp; r1 x1(n-1); ifndef _AGC_
-#endif
-.align 8
+			//load/decay weight, move i1 back to present channel.
+	MNOP || [i0++m1] = r4 ; // save the new weight, i0 back to b00 unit 1.
+	/** matched filters **/
+	MNOP || r5 = [i0++] || r1 = [i1++];  // r7 samp; r1 x1(n-1); r5 b0.0
 	a0  = r7.l * r5.l, a1  = r7.h * r5.h || r5 = [i0++] || r2 = [i1++] ;//r5 = b0.1; r2 = x1(n-2)
 	a0 += r1.l * r5.l, a1 += r1.h * r5.h || r5 = [i0++] || r3 = [i1++] ;//r5 = b0.2; r3 = y1(n-1) or x2(n-1)
 	a0 += r2.l * r5.l, a1 += r2.h * r5.h || r5 = [i0++] || r4 = [i1++] ;//r5 = a0.0; r4 = y1(n-2) or x2(n-1)
@@ -146,16 +148,34 @@ r0.l=(a0 +=r2.l * r5.l), r0.h=(a1 +=r2.h * r5.h)(s2rnd)|| r5 = [i0++] ;//r0 = y2
 	r0 = r0 | r1;
 	r2 = r0 & r2;
 	/** prefilter **/
+	r6 = [FP - FP_16384]; //FP relative loads cannot be paralelled :-(
 .align 8
-	MNOP || r5 = [i0++] || r1 = [i1++]; // prefilter preload coef, r1 = x1(n-1)
+	MNOP || r5 = [i0++] || r1 = [i1++]; //r5 = b0.0, r1 = x1(n-1)
 	a0  = r7.l * r5.l, a1  = r7.h * r5.h || r5 = [i0++] || r2 = [i1++] ;//r5 = b0.1; r2 = x1(n-2)
 	a0 += r1.l * r5.l, a1 += r1.h * r5.h || r5 = [i0++] || r4 = [i1++] ;//r5 = b0.2; r4 = y1(n-2) 
-	a0 += r2.l * r5.l, a1 += r2.h * r5.h || r5 = [i0++] || r3 = [i1++m0];//r5 = a0.0; r3 = y1(n-1)
+	a0 += r2.l * r5.l, a1 += r2.h * r5.h || r5 = [i0++] || r3 = [i1++];//r5 = a0.0; r3 = y1(n-1)
 	a0 += r3.l * r5.l, a1 += r3.h * r5.h || r5 = [i0++] || [i2++] = r7 ;//r5 = a0.1; save x1(n-1)
-r0.l=(a0 +=r4.l * r5.l), r0.h=(a1 +=r4.h * r5.h)(s2rnd)|| [i2++] = r1 //r0 = y1(n); save x1(n-2)
-	                   || r2 = [i0++];
-		//load first LMS weight
-	r7 = r0 << 7 (v,s) || r1 = [i1++m0] || [i2++] = r3; 
+r0.l=(a0 +=r4.l * r5.l), r0.h=(a1 +=r4.h * r5.h)(s2rnd)|| r5 = [i1--] ;
+		//r0 = y1(n); r5 = gain & move back to y1(n-1)
+	/** AGC **/
+	a0 = r0.l * r5.l, a1 = r0.h * r5.h || [i2++] = r1; //apply gain,save x1(n-2)
+ 	a0 = a0 << 7 || [i2++] = r3; //save y1(n-2) ;14 bits in SRC, this makes 22 bits and
+	a1 = a1 << 7 || [i2++] = r0; //save y1(n-1) ;gain goes from 0-128 hence (don't forget about sign)
+	r7.l = a0, r7.h = a1 || i1 += m0;  
+		//r7 = gained sample, r2 = 16384, move y1(n-1) of chan+2; 
+		//for r7, default rounding mode should work (treat both as signed fractions)
+#ifdef _AGC_
+	a0 = abs a0, a1 = abs a1 || r1 = [i0++]; //take abs, r1 = sqrt AGC targets.
+	r4.l = (a0 -= r1.l * r1.l), r4.h = (a1 -= r1.h * r1.h) (is) //subtract target, saturate, store difference
+		|| r1 = [i0++]; //r1 = mu (1) for both channels. 
+	a0 = r5.l * r6.l, a1 = r5.h * r6.l ; //load the gain again & scale.
+	r3.l = (a0 -= r4.l * r1.l), r3.h = (a1 -= r4.h * r1.h) (s2rnd) ; //within a certain range gain will not change.
+	r3 = abs r3 (v) //no negative gain -- unstable!									 
+	MNOP || [i2++] = r3; // save the gain.
+#else
+	MNOP || i0 += m3 || r3 = [i2++]; //m3 = 8, dummy read to keep i2 in sync; ifndef _AGC_
+#endif
+	r0 = r7 << 13 (v,s) || r1 = [i1++m0] || r2 = [i0++]; 
 		//saturate sample, load channel+2 / move chan+4, load corresponding weight.
 	a0 = r1.l * r2.l, a1 = r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //1
 	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //2
@@ -172,37 +192,20 @@ r0.l=(a0 +=r4.l * r5.l), r0.h=(a1 +=r4.h * r5.h)(s2rnd)|| [i2++] = r1 //r0 = y1(
 	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //13
 	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //14
 	r6.l=(a0+= r1.l * r2.l), r6.h=(a1+= r1.h * r2.h)  //15; default signed rounding ok.
-		|| r1 = [i1++] || r5 = [i0++]; //i1 to saturated sample, r5 = weight decay.
+		|| i1+= m3 || r5 = [i0++]; //i1 to saturated sample, r5 = weight decay.
 
 	//update one of the weights:
-	r0 = r0 -|- r6 (s) || i0 -= m1 || [i2++] = r0 ;
-		//compute error, move i0 to active weight, save original (pre-LMS)
-	r6 = r0 << 7 (v,s) || i1 += m2 || [i2++] = r7; //move i1 to update channel, save saturated.
-	r6 = r6 >>> 14 (v,s) || r1 = [i1++] || r2 = [i0];
-		//r6 = sign of error, r1 = saturated sample, r2 = w0, i1 @ gain + updatechan.
+	r7 = r7 -|- r6 (s) || i0 -= m1 || [i2++] = r0 ;
+		// error into r7, move i0 to active weight, save saturated.
+	r6 = r7 << 7 (v,s) || i1 += m2 || r2 = [i0]; //move i1 to update channel, r2 = w0.
+	r6 = r6 >>> 14 (v,s) || r1 = [i1++] ;
+		//r6 = sign of error, r1 = saturated sample, i1 @ x1(n-1)
 	a0 = r1.l * r6.l, a1 = r1.h * r6.h || nop; //load delta w, r5 weight decay.
 r4.l = (a0+= r2.l * r5.l), r4.h = (a1+= r2.h * r5.h) || i1 -= m2 ;
-			//load/decay weight, r6 AGC targets (sqrt), move i1 back to present channel.
-	mnop || r5 = [i1++] || [i0++m1] = r4 ; //r5 = gain, save the new weight, i0 back to AGC0
-	a0 = r0.l * r5.l, a1 = r0.h * r5.h ; //apply gain, r6 = 16384, 1 (mu)
- 	a0 = a0 << 7 ; // 14 bits in SRC, this makes 22 bits and
-	a1 = a1 << 7 ; // gain goes from 0-128 hence (don't forget about sign)
-	r7.l = a0, r7.h = a1 ;  //r7 gained sample. default mode should work (treat both as signed fractions)
-
-#ifdef _AGC_
-	a0 = abs a0, a1 = abs a1 || r6 = [i0++]; //take abs, r6 = sqrt AGC targets.
-	r4.l = (a0 -= r6.l * r6.l), r4.h = (a1 -= r6.h * r6.h) (is) //subtract target, saturate, store difference
-		|| r6 = [i0++]; //r6.l = 16384 (1), r6.h = 1 (mu)
-	a0 = r5.l * r6.l, a1 = r5.h * r6.l ; //load the gain again & scale.
-	r3.l = (a0 -= r4.l * r6.h), r3.h = (a1 -= r4.h * r6.h) (s2rnd) ; //r6.h = 1 (mu); within a certain range gain will not change.
-	r3 = abs r3 (v) //no negative gain -- unstable!
-													 || r5 = [i0++] || r1 = [i1++];  // r0 samp; r1 x1(n-1); r5 b0.0
-	MNOP || [i2++] = r3; // save the gain.
-#else
-	MNOP || i0 += m3 || r3 = [i2++]; //m3 = 8, dummy read to keep i2 in sync ifndef _AGC_
-	MNOP || r5 = [i0++] || r1 = [i1++]; //r0 samp; r1 x1(n-1); ifndef _AGC_
-#endif
-.align 8
+			//load/decay weight, move i1 back to present channel.
+	MNOP || [i0++m1] = r4 ; // save the new weight, i0 back to b00 unit 1.
+	/** matched filters **/
+	MNOP || r5 = [i0++] || r1 = [i1++];  // r7 samp; r1 x1(n-1); r5 b0.0
 	a0  = r7.l * r5.l, a1  = r7.h * r5.h || r5 = [i0++] || r2 = [i1++] ;//r5 = b0.1; r2 = x1(n-2)
 	a0 += r1.l * r5.l, a1 += r1.h * r5.h || r5 = [i0++] || r3 = [i1++] ;//r5 = b0.2; r3 = y1(n-1) or x2(n-1)
 	a0 += r2.l * r5.l, a1 += r2.h * r5.h || r5 = [i0++] || r4 = [i1++] ;//r5 = a0.0; r4 = y1(n-2) or x2(n-1)

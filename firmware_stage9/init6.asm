@@ -25,6 +25,8 @@ lt2_top:
 			r0.l = -16384; w[i0++] = r0.l; w[i0++] = r0.l;  //b2
 			r0.l = 23815 ; w[i0++] = r0.l; w[i0++] = r0.l;  //a1
 			r0.l = -8917 ; w[i0++] = r0.l; w[i0++] = r0.l;  //a2
+			r0.l = 9915; r0.h = 9915;  [i0++] = r0; // AGC target. sqrt(6000*16384);
+			r0.l = 1		 ; w[i0++] = r0.l; w[i0++] = r0.l;//AGC mu.
 			r0 = 0;  //LMS coef:
 			[i0++] = r0; //1
 			[i0++] = r0; //2
@@ -42,8 +44,6 @@ lt2_top:
 			[i0++] = r0; //14
 			[i0++] = r0; //15
 			r0.l = 0x7fff;		w[i0++] = r0.l; w[i0++] = r0.l; //LMS weight decay.
-			r0.l = 9915; r0.h = 9915;  [i0++] = r0; // AGC target. sqrt(6000*16384);
-			r0.l = 16384; r0.h = 1  ;  [i0++] = r0; //AGC gain scaler / mu.
 			//init IIR matched filters with GP lowpass / highpass.
 			//lowpass biquad.
 			r0 = 7892 (x);		w[i0++] = r0.l; w[i0++] = r0.l;
