@@ -74,8 +74,11 @@ classdef MiniVDisplayScenario < Scenarios.ScenarioBase
         function update(obj)
             update@Scenarios.ScenarioBase(obj); % Call superclass update method
             
+            if ~isempty(obj.GraspId)
+                handAngles = Controls.graspInterpolation(obj.GraspValue, obj.GraspId);
+                obj.hOutput.set_hand_angles_degrees(handAngles);
+            end
             
-            obj.hOutput.set_hand_angles_degrees(obj.JointAnglesDegrees);
             obj.hOutput.set_upper_arm_angles_degrees(obj.JointAnglesDegrees);
 
             if ishandle(obj.hAxes)
