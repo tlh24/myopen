@@ -18,12 +18,14 @@ classdef AdaptiveTrainingInterface < PatternRecognition.TrainingInterface
             
             if ~isempty(obj.EmgData)
                 % raw emg data storage is optional
-                obj.SignalClassifier.TrainingEmg = obj.EmgData(:,:,1:obj.SampleCount);
+                obj.SignalClassifier.TrainingEmg = obj.getEmgData();
             end
-            obj.SignalClassifier.TrainingData = obj.Features3D(:,:,1:obj.SampleCount);
-            obj.SignalClassifier.TrainingDataLabels = classLabels;
+            obj.SignalClassifier.TrainingData = obj.getFeatureData();
+            obj.SignalClassifier.TrainingDataLabels = obj.getClassLabels();
             obj.SignalClassifier.train();
             obj.SignalClassifier.computeerror();
+            obj.SignalClassifier.computeGains();
+            obj.SignalClassifier.computeConfusion();
             
         end
         

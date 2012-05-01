@@ -15,6 +15,8 @@ classdef guiSignalViewer < Common.MiniVieObj
         ShowFilteredData = 1;
         ModeSelect = GUIs.guiSignalViewerState.TimeDomain;
         
+        AxesLimTimeDomain = [-1 10];  % unused if axis 'auto'
+        
         hg
         hTimer
         hChannelSelect
@@ -29,12 +31,31 @@ classdef guiSignalViewer < Common.MiniVieObj
     end
     methods
         function obj = guiSignalViewer(hSignalSource)
+            % Object creator.  If called with no arguments, user must
+            % assign signal source and initialize.  When called with a
+            % signal source, the guis will display automatically
             
+            if nargin > 0
+                setSignalSource(obj,hSignalSource);
+                initialize(obj);
+            end
+            
+        end
+        function success = setSignalSource(obj,hSignalSource)
+
             if isempty(hSignalSource)
-                return
+                success = false;
             else
                 obj.SignalSource = hSignalSource;
+                success = true;
             end
+            
+        end
+        function initialize(obj)
+            
+            assert(~isempty(obj.SignalSource),'No Signal Source Assigned');
+            
+            fprintf('[%s] Initializing...',mfilename);
             
             obj.setupFigure();
             
@@ -42,7 +63,7 @@ classdef guiSignalViewer < Common.MiniVieObj
             %obj.SignalSource.NumSamples = 3000;
             
             obj.hChannelSelect = GUIs.guiChannelSelect;
-            addlistener(obj.hChannelSelect,'ValueChange',@(src,evt)obj.updateChannels)
+            addlistener(obj.hChannelSelect,'ValueChange',@(src,evt)obj.updateChannels);
             obj.hChannelSelect.setAvailableChannels(obj.SignalSource.NumChannels);
             obj.SelectedChannels = obj.hChannelSelect.SelectedChannels;
             
@@ -55,7 +76,10 @@ classdef guiSignalViewer < Common.MiniVieObj
             obj.featureBuffer = NaN(obj.SignalSource.NumChannels,obj.numFeatures,numSamplesToDisplay);
             
             obj.updateFigure();
+            fprintf('OK\n');
+
             start(obj.hTimer);
+
             
         end
         function updateChannels(obj)
@@ -142,7 +166,8 @@ classdef guiSignalViewer < Common.MiniVieObj
                         set(obj.hg.Axes(1),'OuterPosition',[0 0 1 1]);
                         xlabel(obj.hg.Axes(1),'Sample Number');
                         ylabel(obj.hg.Axes(1),'Volts');
-                        ylim(obj.hg.Axes(1),[-2 14]);
+                        %ylim(obj.hg.Axes(1),obj.AxesLimTimeDomain);
+                        axis(obj.hg.Axes(1),'auto');
                         obj.updateTimeDomain();
                     case GUIs.guiSignalViewerState.FFT
                         setAxesVisible(obj.hg.Axes(1),'on');
@@ -151,6 +176,7 @@ classdef guiSignalViewer < Common.MiniVieObj
                         xlabel(obj.hg.Axes(1),'Frequency (Hz)');
                         ylabel(obj.hg.Axes(1),'|Y(f)|');
                         ylim(obj.hg.Axes(1),[0 1]);
+                        %axis(obj.hg.Axes(1),'auto');
                         obj.updateFrequencyDomain();
                     otherwise
                         disp('Invalid Mode Selection');

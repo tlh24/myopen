@@ -73,6 +73,8 @@ classdef MiniVDisplayScenario < Scenarios.ScenarioBase
         end
         function update(obj)
             update@Scenarios.ScenarioBase(obj); % Call superclass update method
+            
+            
             obj.hOutput.set_hand_angles_degrees(obj.JointAnglesDegrees);
             obj.hOutput.set_upper_arm_angles_degrees(obj.JointAnglesDegrees);
 

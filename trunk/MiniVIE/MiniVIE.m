@@ -17,6 +17,9 @@ classdef MiniVIE < Common.MiniVieObj
         PLANT = 4;
         PRESENTATION = 5;
     end
+    properties (Access = private)
+        SignalViewer = [];
+    end
     methods
         function obj = MiniVIE
             obj.configurePath;
@@ -38,6 +41,14 @@ classdef MiniVIE < Common.MiniVieObj
             %             pos(3) = 700;
             set(obj.hg.Figure,'Position',pos('fig'));
             set(obj.hg.Figure,'CloseRequestFcn',@(src,evnt)closeFig(obj));
+
+            % Setup Menu
+            obj.hg.MenuFile = uimenu(obj.hg.Figure,...
+                'Label','File');
+            obj.hg.MenuFileLoad = uimenu(obj.hg.MenuFile,...
+                'Label','Load',...
+                'Callback',@(src,evt)obj.loadData());
+            
             
             function closeFig(obj)
                 try
@@ -83,7 +94,7 @@ classdef MiniVIE < Common.MiniVieObj
                 'Style','pushbutton',...
                 'Enable','off',...
                 'String','SignalViewer',...
-                'Callback',@(src,evt)GUIs.guiSignalViewer(obj.SignalSource));
+                'Callback',@(src,evt)obj.pbSignalView);
             obj.hg.SignalSourceButtons(2) = uicontrol(obj.hg.Figure,...
                 'Position',pos('cntrl',MiniVIE.INPUT,4,1,1),...
                 'Style','pushbutton',...
@@ -103,6 +114,32 @@ classdef MiniVIE < Common.MiniVieObj
                 'Style','pushbutton',...
                 'String','Begin Training',...
                 'Callback',@(src,evt)obj.pbTrain());
+        end
+        function loadData(obj)
+            if isempty(obj.SignalSource)
+                errordlg('Select an Input Source');
+                return;
+            elseif isempty(obj.SignalClassifier)
+                errordlg('Select a Classifier');
+                return;
+            elseif isempty(obj.TrainingInterface)
+                errordlg('Select a Training Interface');
+                return;
+            end
+
+            success = obj.TrainingInterface.loadTrainingData();
+            if ~success
+                return
+            end
+            
+            %obj.SignalClassifier.NumMajorityVotes = 7;
+            %obj.SignalClassifier.ActiveChannels = [1 2 3 4 5 6 7 8];
+            obj.SignalClassifier.TrainingData = obj.TrainingInterface.getFeatureData;
+            obj.SignalClassifier.TrainingDataLabels = obj.TrainingInterface.getClassLabels;
+            obj.SignalClassifier.train();
+            obj.SignalClassifier.computeerror();
+            obj.SignalClassifier.computeGains();
+
         end
         function close(obj)
             
@@ -315,9 +352,10 @@ classdef MiniVIE < Common.MiniVieObj
                     set(obj.hg.SignalSourceButtons(:),'Enable','on');
                     
                     obj.println('Adding Filters',1);
-                    h.addfilter(Inputs.HighPass());
-                    % h.addfilter(Inputs.LowPass());
-                    h.addfilter(Inputs.Notch(60.*(1:4),5,1000));
+                    Fs = 1000;
+                    h.addfilter(Inputs.HighPass(80,8,Fs));
+                    h.addfilter(Inputs.LowPass(350,8,Fs));
+                    h.addfilter(Inputs.Notch(60.*(1:4),5,Fs));
                     % obj.SignalSource.addfilter(Inputs.MAV(150));
                     h.NumSamples = 2000;
                     h.initialize();
@@ -338,8 +376,19 @@ classdef MiniVIE < Common.MiniVieObj
                 fprintf('%s\n',str);
             end
         end
+        function hViewer = getSignalViewer(obj)
+            if isempty(obj.SignalViewer) || ~isvalid(obj.SignalViewer)
+                obj.SignalViewer = [];
+            end
+            
+            hViewer = obj.SignalViewer;
+            
+        end
     end
     methods (Access = private)
+        function pbSignalView(obj)
+            obj.SignalViewer = GUIs.guiSignalViewer(obj.SignalSource);
+        end
         function pbTrain(obj)
             
             if isempty(obj.SignalSource)
@@ -354,14 +403,16 @@ classdef MiniVIE < Common.MiniVieObj
             end
             
             obj.TrainingInterface.collectdata();
-            if ~isa(obj.TrainingInterface,'PatternRecognition.AdaptiveTrainingInterface')
+            if isa(obj.TrainingInterface,'PatternRecognition.AdaptiveTrainingInterface')
                 % If adaptive, no need to retrain
+            else
                 % else we need to train the classifier with the collected
                 % data
                 obj.SignalClassifier.TrainingData = obj.TrainingInterface.getFeatureData;
                 obj.SignalClassifier.TrainingDataLabels = obj.TrainingInterface.getClassLabels;
                 obj.SignalClassifier.train();
                 obj.SignalClassifier.computeerror();
+                obj.SignalClassifier.computeConfusion();
                 obj.SignalClassifier.computeGains();
             end
         end
@@ -373,6 +424,8 @@ classdef MiniVIE < Common.MiniVieObj
             addpath([pathName filesep 'Utilities']);
         end
         function obj = Default
+            MiniVIE.configurePath
+            
             obj.SignalSource = Inputs.SignalSimulator();
             obj.SignalSource.addfilter(Inputs.HighPass());
             obj.SignalSource.addfilter(Inputs.LowPass());

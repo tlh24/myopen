@@ -34,6 +34,9 @@ classdef MplScenarioMud < Scenarios.ScenarioBase
             w(2) = +obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) * pi/180;
             w(3) = +obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) * pi/180;
             
+            %w(2) = 0.2;
+            %w(3) = -0.2;
+            
             % convert scalar grasp id to numerical mpl grasp value
             graspId = obj.graspLookup(obj.GraspId);
             msg = obj.hMud.ArmPosVelHandRocGrasps([zeros(1,4) w],zeros(1,7),1,graspId,obj.GraspValue,1);
@@ -57,8 +60,9 @@ classdef MplScenarioMud < Scenarios.ScenarioBase
                 % Limb
                 switch char(strGraspName)
                     case 'Tip'
-                        % graspId = 1;  % Pinch (British)
+                        graspId = 1;  % Pinch (British)
                         graspId = 2;  % Pinch (American)
+                        %graspId = 2;
                     case 'Lateral'
                         graspId = 9;  % Key
                     case 'Tripod'

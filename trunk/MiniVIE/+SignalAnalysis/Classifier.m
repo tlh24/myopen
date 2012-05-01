@@ -106,13 +106,38 @@ classdef Classifier < Common.MiniVieObj
             fprintf(' %6.2f',obj.VirtualChannelGain);
             fprintf(']\n');
         end        
+        function confuseMat = computeConfusion(obj)
+            % Classify Training data
+            feats = convertfeaturedata(obj);
+            % Forward Classify
+            classOut = classify(obj,feats);
+            
+            confuseMat = zeros(obj.NumClasses);
+            
+            for iClass = 1:obj.NumClasses
+
+                % Establish ground truth with the desired training labels
+                isThisClass = obj.TrainingDataLabels == iClass;
+                
+                % Locate all the actual class decisions for the desired
+                % class
+                actualClass = classOut(isThisClass);
+                
+                % Find all the actual class decisions and
+                % misclassifications
+                accumVal = accumarray(actualClass(:),1);
+                confuseMat(1:length(accumVal),iClass) = accumVal;
+            end
+            
+        end
         function percentError = computeerror(obj)
             % Classify Training data
             feats = convertfeaturedata(obj);
             % Forward Classify
             classOut = classify(obj,feats);
             
-            percent_error = @(outputClass,desiredClass) sum( ((outputClass(:)-desiredClass(:))~=0) /length(desiredClass));
+            percent_error = @(outputClass,desiredClass) ...
+                sum( ((outputClass(:)-desiredClass(:))~=0) /length(desiredClass));
             
             % Calculate Error
             PeTrain1 = percent_error(classOut,obj.TrainingDataLabels);
@@ -124,8 +149,15 @@ classdef Classifier < Common.MiniVieObj
             
             for iClass = 1:obj.NumClasses
                 idClass = (obj.TrainingDataLabels == iClass);
-                PeClass = percent_error(classOut(idClass),obj.TrainingDataLabels(idClass));
-                fprintf('%20s Class accuracy:\t %6.1f %% \n',obj.ClassNames{iClass},(1-PeClass)*100);
+                
+                targetClass = reshape(obj.TrainingDataLabels(idClass),1,[]);
+                actualClass = reshape(classOut(idClass),1,[]);
+                
+                PeClass = percent_error(actualClass,targetClass);
+                
+                fprintf('%20s Class accuracy:\t %6.1f %% \t',obj.ClassNames{iClass},(1-PeClass)*100);
+                
+                fprintf('(%d of %d)\n',sum(actualClass == targetClass),length(targetClass))
             end
         end
         function virtualChannels = virtual_channels(obj,features_3D,classOut)

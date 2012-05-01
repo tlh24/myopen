@@ -18,6 +18,43 @@ classdef CpcHeadstage < Inputs.SignalInput
     end
     %methods (Static, Access = protected)
     methods (Static)
+        function [diffDataAll seDataAll] = LoadLogData( fname, BioampCnt ,GPICnt )
+            % Load logged CPC data and return converted, unscaled values
+            % Usage:
+            %       [diffDataI16 seDataU16] = LoadLogData( fname, BioampCnt ,GPICnt )
+            %
+            
+            fp = fopen(fname,'r');
+            data = fread(fp,'uint8=>uint8');
+            fclose(fp);
+                        
+            payloadSize = 2*(BioampCnt+GPICnt);
+            msgSize = payloadSize + 6;
+            expectedLength = payloadSize;
+            
+            [diffDataAll seDataAll] = deal([]);
+            readStart = 1;
+            readMax = 10e6;
+            remainder = [];
+            while readStart < length(data)
+                readEnd = min(readStart+readMax-1,length(data));
+                %fprintf('Reading %d to %d.\n',readStart,readEnd);
+                bytesIn = [remainder data(readStart:readEnd)'];
+                [dataAligned remainder] = Inputs.CpcHeadstage.AlignDataBytes(bytesIn,msgSize);
+                validData = Inputs.CpcHeadstage.ValidateMessages(dataAligned,expectedLength);
+                [diffDataI16 seDataU16] = Inputs.CpcHeadstage.GetSignalData(validData,BioampCnt,GPICnt);
+                
+                diffDataAll = [diffDataAll diffDataI16];
+                
+                readStart = readEnd + 1;
+            end
+            
+            
+            
+            
+        end
+        
+        
         function [diffDataInt16 seDataU16] = GetSignalData(validData,diffCnt,seCnt)
             % Typecast the data to the approprate data size
             % TODO: Endian is not accounted for here
@@ -34,12 +71,12 @@ classdef CpcHeadstage < Inputs.SignalInput
             payloadIdxStart = 6+2*diffCnt;  % se data starts after diff data
             payloadIdxEnd = payloadIdxStart + 2*seCnt -1;
             seDataU8 = validData(payloadIdxStart:payloadIdxEnd,:);
-
+            
             seDataU16 = reshape(typecast(seDataU8(:),'uint16'),seCnt,numValidSamples);
-
+            
             if any(abs(diffDataInt16(:)) > 1024) || any(abs(seDataU16(:)) > 1024)
                 fprintf(2,'[%s] Out of Range Values\n',mfilename);
-                keyboard
+                %keyboard
                 % TODO need better solution than returning
                 %return
             end
@@ -49,7 +86,7 @@ classdef CpcHeadstage < Inputs.SignalInput
         function [validData] = ValidateMessages(dataAligned,expectedLength)
             % Validate a matrix of messages using a criteria of checksum,
             % appropriate message length, and status bytes
-            % 
+            %
             % 14Mar2012 Armiger: Created
             
             % Get data size
@@ -57,12 +94,12 @@ classdef CpcHeadstage < Inputs.SignalInput
             
             % Compute expected checksum
             computedChecksum = 255*ones(1,numMessages,'uint8');
-            % xor the entire message including the received checksum 
+            % xor the entire message including the received checksum
             % so that the result should be 0 if the checksum lines up
             for i = 1:numBytesPerMessage
                 computedChecksum = bitxor(dataAligned(i,:),computedChecksum);
             end
-
+            
             % Find 'validated' data by ensuring it is the correct length
             % and has the correct checksum
             isValidStatusByte = ~bitand(dataAligned(3,:),uint8(15));
@@ -90,7 +127,7 @@ classdef CpcHeadstage < Inputs.SignalInput
             if any(sequenceExpected - sequenceRow)
                 fprintf('[%s] Out of sequence data received. %d of %d samples validated\r',mfilename,sum(isValidData),numMessages);
             end
-
+            
         end
         
         function [dataAligned remainderBytes] = AlignDataBytes(dataStream,msgSize)
@@ -121,7 +158,7 @@ classdef CpcHeadstage < Inputs.SignalInput
                 
                 % while: (we're not going to overrun) && (the next
                 % startChar isn't further away than 1 message size
-                while (length(idxStartBytes) >= iStartChar+nextStartChar) &&... 
+                while (length(idxStartBytes) >= iStartChar+nextStartChar) &&...
                         (idxStartBytes(iStartChar+nextStartChar) < idxStartBytes(iStartChar)+msgSize)
                     % read ahead to next char
                     nextStartChar = nextStartChar + 1;
@@ -137,7 +174,7 @@ classdef CpcHeadstage < Inputs.SignalInput
             end
             % remove any data bytes labelled as start chars
             idxStartBytes(falseStartBytes) = [];
-
+            
             % Check if there are too few bytes between the last start
             % character and the end of the buffer
             isInRange = idxStartBytes <= 1+length(dataStream)-msgSize;

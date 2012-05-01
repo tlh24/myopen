@@ -71,12 +71,12 @@ classdef SignalSimulator < Inputs.SignalInput
             delete(obj.hg.hFig)
         end
         function setPattern(obj,id)
-            obj.NoisePower = 0.01;
+            obj.NoisePower = 0.04;
             switch id
                 case 0
                     % No movement
                     obj.SignalFrequency = 60;
-                    obj.SignalAmplitude = 0.01;
+                    obj.SignalAmplitude = 0.04;
                 case 1
                     obj.SignalAmplitude = zeros(1,obj.NumChannels);
                     obj.SignalFrequency = 300;
@@ -99,14 +99,13 @@ classdef SignalSimulator < Inputs.SignalInput
                     obj.SignalAmplitude(1:4) = [0.01 1 0.2 1.2];
                 case 6
                     obj.SignalAmplitude = zeros(1,obj.NumChannels);
-                    obj.SignalFrequency = 400;
+                    obj.SignalFrequency = 200;
                     obj.SignalAmplitude(1:4) = [0.3 0.4 0.1 0.8];
                 case 7
                     obj.SignalAmplitude = zeros(1,obj.NumChannels);
                     obj.SignalFrequency = 300;
                     obj.SignalAmplitude(1:4) = [1 0.2 1.2 0.01];
                 case 8
-                    obj.NoisePower = 0.04;
                     obj.SignalAmplitude = zeros(1,obj.NumChannels);
                     obj.SignalFrequency = 350;
                     obj.SignalAmplitude(1:4) = [0.5 1.2 0.3 1.6];

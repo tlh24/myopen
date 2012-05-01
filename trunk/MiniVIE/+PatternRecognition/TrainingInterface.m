@@ -17,6 +17,9 @@ classdef TrainingInterface < Common.MiniVieObj
         Features3D = [];
         ClassLabelId = [];
     end
+    methods (Abstract=true)
+        collectdata(obj);
+    end
     methods
         function emgData = getEmgData(obj)
             % returns valid data (since buffers initialized to larger size)
@@ -42,7 +45,6 @@ classdef TrainingInterface < Common.MiniVieObj
         end
         function addData(obj)
             % Add a new sample of data based on the CurrentClass property
-            
             assert(~isempty(obj.CurrentClass),'No class is selected to tag new data');
             
             obj.SampleCount = obj.SampleCount + 1;
@@ -50,10 +52,11 @@ classdef TrainingInterface < Common.MiniVieObj
                 % This should only display once
                 warning('TrainingInterface:ExceededMaxSamples','Exceeded Preallocated Sample Buffer');
             end
+
+            % Get new data (getting raw data and manually filtereing for logging)
+            rawEmg = obj.SignalSource.getData();
+            windowData = obj.SignalSource.applyAllFilters(rawEmg);
             
-            % TODO: consider getting raw data for the EMG log before
-            % filtering
-            windowData = obj.SignalSource.getFilteredData();
             features = feature_extract(windowData',obj.SignalClassifier.NumSamplesPerWindow);
             
             idxChannel = 1:obj.SignalSource.NumChannels;
@@ -64,7 +67,7 @@ classdef TrainingInterface < Common.MiniVieObj
             % less than or equal to the prior data
             obj.Features3D(idxChannel,:,obj.SampleCount) = features;
             try
-                obj.EmgData(idxChannel,:,obj.SampleCount) = windowData(1:obj.SignalClassifier.NumSamplesPerWindow,:)';
+                obj.EmgData(idxChannel,:,obj.SampleCount) = rawEmg(1:obj.SignalClassifier.NumSamplesPerWindow,:)';
             catch ME
                 warning('TrainingInterface:EmgData','Failed to record Emg Data: "%s"',ME.message);
             end
@@ -92,8 +95,9 @@ classdef TrainingInterface < Common.MiniVieObj
                 save(fullfile(PathName,FileName),'features3D','classLabelId','classNames','activeChannels','emgData');
             end
         end
-        function loadTrainingData(obj,fname)
+        function success = loadTrainingData(obj,fname)
             % Load Training Data
+            success = false;
             
             if nargin < 2
                 % Get filename interactively
@@ -106,6 +110,7 @@ classdef TrainingInterface < Common.MiniVieObj
                     fullFile = fullfile(PathName,FileName);
                 end
             else
+                % Get filename from function input
                 fullFile = fname;
             end
             
@@ -137,6 +142,8 @@ classdef TrainingInterface < Common.MiniVieObj
             if isfield(S,'activeChannels') && ~isempty(obj.SignalClassifier)
                 obj.SignalClassifier.ActiveChannels = S.activeChannels;
             end
+
+            success = true;
             
         end
         function initialize(obj,hSignalSource,hSignalClassifier)
@@ -180,8 +187,5 @@ classdef TrainingInterface < Common.MiniVieObj
         function close(obj)
             %override
         end
-    end
-    methods (Abstract=true)
-        collectdata(obj);
     end
 end

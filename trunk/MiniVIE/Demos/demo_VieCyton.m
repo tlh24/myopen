@@ -1,15 +1,19 @@
 obj = MiniVIE.Default();
-obj.TrainingInterface.loadTrainingData('Sim_20120202_110041_TrainingData.dat');
+obj.TrainingInterface.loadTrainingData('Sim_20120430_202658_TrainingData.dat');
 
 % Step 5: Train the classifier
 obj.SignalClassifier.TrainingData = obj.TrainingInterface.getFeatureData;
 obj.SignalClassifier.TrainingDataLabels = obj.TrainingInterface.getClassLabels;
+obj.SignalClassifier.ActiveChannels = 1:4;
+obj.SignalClassifier.NumSamplesPerWindow = 250;
 obj.SignalClassifier.train();
 obj.SignalClassifier.computeerror();
 obj.SignalClassifier.computeGains();
 
 hSignalSource = obj.SignalSource;
 hSignalClassifier = obj.SignalClassifier;
+
+import Presentation.CytonI.*
 hCyton = CytonI;
 %%
 hCyton.hDisplay.showTriads(1);
