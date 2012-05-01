@@ -26,21 +26,21 @@ memory map:
 	6		9		AGC targets, sqrt.
 	7		70		AGC enable (mu). 
 	8		53		LMS 0					m0 increments 2 channels (below)
-	7		4		LMS 1					m1 jump back to update weight,
-	8		5		LMS 2						2 to 16 32b words.
-	9		6		LMS 3					m2 jump forward to update channel,
-	10		7		LMS 4						multiple of m0.
-	1		8		LMS 5					i3 indexes a table which loads m1, m2.
-	2		9		LMS 6
-	3		60		LMS 7
-	4		1		LMS 8
-	5		2		LMS 9
-	6		3		LMS 10
-	7		4		LMS 11
-	8		5		LMS 12
-	9		6		LMS 13
-	20		7		LMS 14
-	1		8		LMS weight decay (16384 = none, allows you to individually disable LMS.).
+	9		4		LMS 1					m1 jump back to update weight,
+	10		5		LMS 2						2 to 16 32b words.
+	1		6		LMS 3					m2 jump forward to update channel,
+	2		7		LMS 4						multiple of m0.
+	3		8		LMS 5					i3 indexes a table which loads m1, m2.
+	4		9		LMS 6
+	5		60		LMS 7
+	6		1		LMS 8
+	7		2		LMS 9
+	8		3		LMS 10
+	9		4		LMS 11
+	20		5		LMS 12
+	1		6		LMS 13
+	2		7		LMS 14
+	3		8		LMS weight decay (16384 = none, allows you to individually disable LMS.).
 	4		1		b00 b01 b02 a00 a01	-- unit 1.
 	9		6		b10 b11 b12 a10 a12
 	34		81		threshold unit 1
