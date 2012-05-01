@@ -251,7 +251,7 @@ public:
 			}
 			for(size_t i = m_r; i<m_w; i++){
 				int j = i % m_rows;
-				for(int k=0; k<m_dim; k++){
+				for(unsigned int k=0; k<m_dim; k++){
 					float x = m_f[j*m_cols*m_dim + k];
 					float d = fabs(m_mean[k] - x);
 					if(d > m_max[k]) m_max[k] = d;

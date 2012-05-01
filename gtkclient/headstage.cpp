@@ -103,7 +103,7 @@ unsigned int calcA1Address(unsigned int ch, unsigned int offset){
 }
 void setPrefilter(int chan, float* b){
 	//sets the prefilter biquad -- 5 coefs, 2 packets.
-	int i, j, k, p, x;
+	int j, x;
 	unsigned int u;
 	chan &= (0xff ^ 32);
 	x = 0;
@@ -123,24 +123,45 @@ void setPrefilter(int chan, float* b){
 		g_echo++;
 	}
 }
-void setOsc(int chan){
-	//turn two channels e.g. 0 and 32 into oscillators.
-	float b[5];
-	b[0] = 0.f;
-	b[1] = 0.01f; //add a little energy?
-	b[2] = 0.f;
-	b[3] = (32768.f - 45)/16384.f; //10 -> should be about 250Hz @ fs = 62.5khz
-	b[4] = -1.f;
-	setPrefilter(int chan, b);
-}
-void resetPrefilter(int chan){
+void setPrefilter500_5k(int chan){
+	// ellip(1, 6, 40, [500/15e3, 5/15])
 	float b[5];
 	b[0] = 1.f;
 	b[1] = 0.f;
 	b[2] = -1.f;
-	b[3] = 23815.f/16384.f; //10 -> should be about 250Hz @ fs = 62.5khz
-	b[4] = 8917.f/16384.f;
-	setPrefilter(int chan, b);
+	b[3] = 1.4536;
+	b[4] = -0.5443;
+	setPrefilter(chan, b);
+}
+void setPrefilter150_10k(int chan){
+	//ellip(1, 6, 40, [150/15e3, 7.5/15])
+	float b[5];
+	b[0] = 1.f;
+	b[1] = 0.f;
+	b[2] = -1.f;
+	b[3] = 1.2414f;
+	b[4] = -0.2810f;
+	setPrefilter(chan, b);
+}
+void setPrefilter500(int chan){
+	//butter(2, 500/15e3, 'high')
+	float b[5];
+	b[0] = 0.9286f;
+	b[1] = -1.8572f;
+	b[2] = 0.9286f;
+	b[3] = 1.8521f;
+	b[4] = -0.8623f;
+	setPrefilter(chan, b);
+}
+void setPrefilterOsc(int chan){
+	//turn two channels e.g. 0 and 32 into oscillators.
+	float b[5];
+	b[0] = 0.f;
+	b[1] = 0.f; //add a little energy?
+	b[2] = 0.f;
+	b[3] = (32768.f - 45)/16384.f; //10 -> should be about 250Hz @ fs = 62.5khz
+	b[4] = -1.f;
+	setPrefilter(chan, b);
 }
 void setChans(){
 	int i;
@@ -170,11 +191,12 @@ void setChans(){
 }
 
 void setAGC(int ch1, int ch2, int ch3, int ch4){
-	//sets AGC for (up to) four (8) channels.
+	//sets AGC *target* for (up to) four (8 with +32) channels.
 	unsigned int* ptr = g_sendbuf;
 	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
-	int chs[4]; chs[0] = ch1&127; chs[1]= ch2&127;
-		chs[2] = ch3&127; chs[3] = ch4&127;
+	int mask = 127 ^ 32;
+	int chs[4]; chs[0] = ch1&mask; chs[1]= ch2&mask;
+		chs[2] = ch3&mask; chs[3] = ch4&mask;
 	for(int i=0; i<4; i++){
 		ptr[i*2+0] = calcA1Address(chs[i], A1_AGCS);
 		int j = (int)(sqrt(32768 * g_c[chs[i]]->m_agc));
@@ -187,22 +209,44 @@ void setAGC(int ch1, int ch2, int ch3, int ch4){
 		(int)g_c[ch1]->m_agc,(int)g_c[ch2]->m_agc,(int)g_c[ch3]->m_agc,(int)g_c[ch4]->m_agc);
 	g_echo++;
 }
-void enableAGC(int* chs, int en){
-	// you must enable / disable chs 0 and 32 at the same time.
+void enableAGC(int* chs){
+	// each channel has it's own enable and disable.
 	// this routine accepts 4 chs -- and sets the complement within the bank at the same time.
 	// 8 channels altogether -- so for all, need to call 16 times.
 	unsigned int* ptr = g_sendbuf;
 	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
 	for(int i=0; i<4; i++){
-		ptr[i*2+0] = calcA1Address(chs[i], A1_AGCS+1);
+		int c = chs[i] & (0xff ^ 32); //map down.
+		ptr[i*2+0] = calcA1Address(c, A1_AGCS+1);
 		// 1 is the offset to 16384 / mu. if mu=0, gain does not change.
-		int j = 16384;
-		int k = en > 0 ? 1 : 0;
+		int j = g_c[c]->m_agcEn > 0 ? 1 : 0;
+		int k = g_c[c + 32]->m_agcEn > 0 ? 1 : 0;
 		unsigned int u = (unsigned int)((j&0xffff) | ((k&0xffff)<<16));
 		ptr[i*2+1] = htonl(u);
+		saveMessage("agc_en %d : %d", c, g_c[c]->m_agcEn);
+		saveMessage("agc_en %d : %d", c+32, g_c[c+32]->m_agcEn);
 	}
 	g_sendW++;
-	saveMessage("agc_en %d %d %d %d : %d", chs[0], chs[1], chs[2], chs[3], en);
+	g_echo++;
+}
+void enableLMS(int* chs){
+	// each channel has it's own enable and disable.
+	// this routine accepts 4 chs -- and sets the complement within the bank at the same time.
+	// 8 channels altogether -- so for all, need to call 16 times.
+	unsigned int* ptr = g_sendbuf;
+	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
+	for(int i=0; i<4; i++){
+		int c = chs[i] & (0xff ^ 32); //map down.
+		ptr[i*2+0] = calcA1Address(c, A1_LMSA+15);
+		// 15 is the offset to the weight decay.
+		int j = g_c[c]->m_lmsEn > 0 ? 0x7fff : 0;
+		int k = g_c[c + 32]->m_lmsEn > 0 ? 0x7fff : 0;
+		unsigned int u = (unsigned int)((j&0xffff) | ((k&0xffff)<<16));
+		ptr[i*2+1] = htonl(u);
+		saveMessage("lms_en %d : %d", c, g_c[c]->m_lmsEn);
+		saveMessage("lms_en %d : %d", c+32, g_c[c+32]->m_lmsEn);
+	}
+	g_sendW++;
 	g_echo++;
 }
 void setAperture(int ch){
@@ -230,33 +274,17 @@ void setAperture(int ch){
 	g_sendW++;
 	g_echo++;
 }
-void setLMS(int ch){
-	//apply to 8 channels: ch, ch+1, ch+2, ch+3, and the complement (+32)
-	unsigned int* ptr = g_sendbuf;
-	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt. (32 byte packets)
-	for(int i=0; i<4; i++){
-		ptr[i*2+0] = calcA1Address(ch + i, A1_AGCS-1);
-		unsigned int u = 0;
-		if(g_c[ch]->m_lms) u += 0x00007fff;
-		if(g_c[ch+32]->m_lms) u += 0x7fff0000;
-		ptr[i*2+1] = htonl(u);
-		saveMessage("lms %d %d", ch, g_c[ch]->m_lms);
-		saveMessage("lms %d %d", ch+32, g_c[ch+32]->m_lms);
-	}
-	g_sendW++;
-	g_echo++;
-}
 
 void setMF(int chan){
 	// sets both the filter coeficients and thresholds for both units --
 	// this in 3 outgoing packets (12 32 bit ints, 24 with address).
 	// also sets chan+32 (of course)
 	int j, k;
-	unsigned int u, s;
+	unsigned int u;
 	chan &= (0xff ^ 32); //map to lower channels, 0-31, 64-95.
 	unsigned int* ptr = g_sendbuf;
 	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
-	for(i=0; i<4; i++){
+	for(int i=0; i<4; i++){
 		ptr[i*2+0] = calcA1Address(chan, A1_IIRA + i);
 		j = (int)((g_c[chan]->getMF(0))[i] * 16384.f);
 		k = (int)((g_c[chan+32]->getMF(0))[i] * 16384.f);
@@ -278,11 +306,11 @@ void setMF(int chan){
 
 	ptr[2] = calcA1Address(chan, A1_UNITA);
 	j = (int)((g_c[chan]->getAperture(0)) * 16384.f);
-	k = (int)((g_c[chan+32]->getaperture(0)) * 16384.f);
+	k = (int)((g_c[chan+32]->getAperture(0)) * 16384.f);
 	u = (unsigned int)((j&0xffff) | ((k&0xffff)<<16));
 	ptr[3] = htonl(u);
 
-	for(i=0; i<2; i++){
+	for(int i=0; i<2; i++){
 		ptr[i*2+4] = calcA1Address(chan, A1_IIRB + i);
 		j = (int)((g_c[chan]->getMF(1))[i] * 16384.f);
 		k = (int)((g_c[chan+32]->getMF(1))[i] * 16384.f);
@@ -295,7 +323,7 @@ void setMF(int chan){
 	//third packet, 3 unit 1 coefs, unit 1 aperture.
 	ptr = g_sendbuf;
 	ptr += (g_sendW % g_sendL) * 8;
-	for(i=0; i<3; i++){
+	for(int i=0; i<3; i++){
 		ptr[i*2+0] = calcA1Address(chan, A1_IIRB + i);
 		j = (int)((g_c[chan]->getMF(1))[i+2] * 16384.f);
 		k = (int)((g_c[chan+32]->getMF(1))[i+2] * 16384.f);
@@ -304,7 +332,7 @@ void setMF(int chan){
 	}
 	ptr[6] = calcA1Address(chan, A1_UNITB);
 	j = (int)((g_c[chan]->getAperture(1)) * 16384.f);
-	k = (int)((g_c[chan+32]->getaperture(1)) * 16384.f);
+	k = (int)((g_c[chan+32]->getAperture(1)) * 16384.f);
 	u = (unsigned int)((j&0xffff) | ((k&0xffff)<<16));
 	ptr[7] = htonl(u);
 
@@ -317,8 +345,8 @@ void setAll(){
 	setChans();
 	//the filters.. also updates the gains.
 	for(int i=0; i<32; i++){
-		resetBiquads(i);
-		resetBiquads(i+64);
+		setPrefilter500_5k(i);
+		setPrefilter500_5k(i+64);
 	}
 	for(int i=0; i<16; i++){
 		//can transmit 8 AGCs at a time.

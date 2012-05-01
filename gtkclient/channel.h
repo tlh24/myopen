@@ -26,11 +26,12 @@ public:
 	float	m_pca[2][32]; //range 1 mean 0
 	float m_pcaScl[2]; //sqrt of the eigenvalues.
 	float	m_mf[2][10]; // same as matlab -- mply by 16384 for bfin. 2x 5 coef biquads.
+	float m_template[2][16]; //range 1 mean 0.
 	float	m_loc[4];
 	int	m_ch; //channel number, obvi.
 	float m_gain;
 	float m_agc;
-	int	m_lms; // is LMS enabled for this channel?
+	int	m_lmsEn; // is LMS enabled for this channel?
 	int	m_agcEn; // is AGC enabled for this channel?
 	i64	m_isi[2][100]; //counts of the isi, in units of 4 packets -- 768us/packet.
 	int	m_lastSpike[2]; //zero when a spike occurs.
@@ -41,7 +42,8 @@ public:
 		m_pcaVbo = new VboPca(6, 1024*8, 1, ch);
 		m_pcaVbo->m_fade = 0.f;
 		m_ch = ch;
-		m_lms = 1;
+		m_lmsEn = 1; //should be read from the database. oops.
+		m_agcEn = 1;
 		//init PCA, template.
 		for(int j=0; j<32; j++){
 			m_pca[0][j] = 1.f/8.f;
@@ -54,10 +56,15 @@ public:
 			m_mf[0][j] = mfA[j];
 			m_mf[1][j] = mfB[j];
 		}
+		for(int j=0; j<16; j++){
+			m_mf[0][j] = 0.f;
+			m_mf[1][j] = 0.f;
+		}
 		//read from sql if it's there..
 		for(int j=0; j<2; j++){
 			sqliteGetBlob(ch, j, "pca", &(m_pca[j][0]), 32);
 			sqliteGetBlob(ch, j, "matchedfilter", &(m_mf[j][0]), 10);
+			sqliteGetBlob(ch, j, "template", &(m_template[j][0]), 16);
 			m_aperture[j] = sqliteGetValue2(ch, j, "aperture", 56.f);
 		}
 		sqliteGetBlob(ch, 0, "pcaScl", m_pcaScl, 2);
@@ -117,7 +124,7 @@ public:
 	void save(){
 		for(int j=0; j<2; j++){
 			sqliteSetBlob(m_ch, j, "pca", &(m_pca[j][0]), 32);
-			sqliteSetBlob(m_ch, j, "template", &(m_template[j][0]), 16);
+			sqliteSetBlob(m_ch, j, "matchedfilter", &(m_mf[j][0]), 10);
 			sqliteSetValue2(m_ch, j, "aperture", m_aperture[j]);
 		}
 		sqliteSetBlob(m_ch, 0, "pcaScl", m_pcaScl, 2);
@@ -216,6 +223,7 @@ public:
 		float color[3] = {0.f, 1.f, 1.f};
 		if(n == 1){color[0] = 1.f; color[1] = 0.f; color[2] = 0.f; }
 		m_pcaVbo->updateAperture(m_template[n], aperture, color);
+		//this really should be replaced with some sort of matched-filter sorting.
 	}
 	float getThreshold() { return m_threshold; }
 	void setThreshold(float thresh){
@@ -368,6 +376,9 @@ public:
 		setAperture(m_ch);
 		return true;
 	}
+	float* getMF(int unit){
+		return m_mf[unit & 1];
+	}
 	void resetPca(){
 		//should be called if threshold, gain
 		//(or really anything else) is changed / invalidates current display.
@@ -386,7 +397,7 @@ public:
 		double t;
 		int nsamp = MIN(m_pcaVbo->m_w, m_pcaVbo->m_rows);
 		if(nsamp < 32){
-			printf("Channel::computePca %d (%d) samples, not enough\n", nsamp, m_pcaVbo->m_w);
+			printf("Channel::computePca %d (%lx) samples, not enough\n", nsamp, m_pcaVbo->m_w);
 			return;
 		}else{
 			printf("Channel::computePca  %d samples\n", nsamp);
@@ -504,7 +515,6 @@ public:
 		m_lastSpike[0]++;
 		m_lastSpike[1]++;
 	}
-
 };
 
 #endif

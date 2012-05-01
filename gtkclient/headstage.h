@@ -17,10 +17,17 @@ extern unsigned int g_headecho;
 extern unsigned int g_oldheadecho;
 
 void saveMessage(const char *fmt, ...);
-void setOsc(int chan);
+
+void setPrefilter(int chan, float* b);
+void setPrefilter500_5k(int chan);
+void setPrefilter150_10k(int chan);
+void setPrefilter500(int chan);
+void setPrefilterOsc(int chan);
+
 void setChans();
 void setAGC(int ch1, int ch2, int ch3, int ch4);
-void enableAGC(int* chs, int en);
+void enableAGC(int* chs);
+void enableLMS(int* chs);
 void setLMS(int ch);
 void setMF(int chan);
 void setAperture(int ch);

@@ -100,7 +100,6 @@ i64			 g_sortWfOffset[4];
 int 			 g_sortWfUnit[4];
 i64			 g_unsortCount[4];
 
-float g_unsortrate = 0.0; //the rate that unsorted WFs get through.
 FILE* g_saveFile = 0;
 bool g_closeSaveFile = false;
 i64 g_saveFileBytes;
@@ -135,10 +134,11 @@ GtkWidget* g_headechoLabel;
 GtkAdjustment* g_channelSpin[4] = {0,0,0,0};
 GtkAdjustment* g_gainSpin[4] = {0,0,0,0};
 GtkAdjustment* g_agcSpin[4] = {0,0,0,0};
+GtkToggleButton* 		g_agcCheck[4] = {0,0,0,0};
+GtkToggleButton*		g_lmsCheck[4] = {0,0,0,0};
 GtkAdjustment* g_apertureSpin[8] = {0,0,0,0};
 GtkAdjustment* g_thresholdSpin[4];
 GtkAdjustment* g_centeringSpin[4];
-GtkAdjustment* g_unsortRateSpin;
 GtkAdjustment* g_zoomSpin;
 GtkAdjustment* g_rasterSpanSpin;
 GtkWidget* g_pktpsLabel;
@@ -1051,15 +1051,6 @@ packet format in the file, as saved here:
 									}
 								}
 							}
-							//finally, if we still don't have anything queued, try adding
-							//an unsorted, unthresholded waveform, if so desired.
-							if(!g_sortWfUnit[k] && g_unsortrate > 0.0){
-								if(g_unsortCount[k] > 31250.0/g_unsortrate){
-									g_sortWfUnit[k] = -1;
-									g_sortWfOffset[k] = g_fbufW - 32;
-									g_unsortCount[k] = 0;
-								}
-							}
 						}
 						g_unsortCount[k] += 6;
 						//okay, copy over waveforms if there is enough data.
@@ -1251,6 +1242,8 @@ void updateChannelUI(int k){
 	gtk_adjustment_set_value(g_apertureSpin[k*2+1], g_c[ch]->getAperture(1));
 	gtk_adjustment_set_value(g_thresholdSpin[k], g_c[ch]->getThreshold());
 	gtk_adjustment_set_value(g_centeringSpin[k], g_c[ch]->getCentering());
+	gtk_toggle_button_set_active(g_agcCheck[k], g_c[ch]->m_agcEn);
+	gtk_toggle_button_set_active(g_lmsCheck[k], g_c[ch]->m_lmsEn);
 	g_uiRecursion--;
 }
 static void channelSpinCB( GtkWidget*, gpointer p){
@@ -1281,13 +1274,14 @@ static void channelSpinCB( GtkWidget*, gpointer p){
 			setChans();
 	}
 }
+
 static void gainSpinCB( GtkWidget*, gpointer p){
 	int h = (int)((long long)p & 0xf);
 	if(h >= 0 && h < 4 && !g_uiRecursion){
 		float gain = gtk_adjustment_get_value(g_gainSpin[h]);
 		printf("gainSpinCB: %f\n", gain);
 		g_c[g_channel[h]]->m_gain = gain;
-		updateGain(g_channel[h]);
+		//updateGain(g_channel[h]);
 		g_c[g_channel[h]]->resetPca();
 	}
 }
@@ -1295,10 +1289,7 @@ static void gainSetAll(gpointer ){
 	float gain = gtk_adjustment_get_value(g_gainSpin[0]);
 	for(int i=0; i<128; i++){
 		g_c[i]->m_gain = gain;
-		updateGain(i);
-	}
-	for(int i=0; i<32; i++){
-		resetBiquads(i);
+		//updateGain(i);
 	}
 	for(int i=0; i<4; i++)
 		gtk_adjustment_set_value(g_gainSpin[i], gain);
@@ -1323,11 +1314,6 @@ static void centeringSpinCB( GtkWidget* , gpointer p){
 		printf("centeringSpinCB: %f\n", t);
 	}
 }
-static void unsortRateSpinCB( GtkWidget* , gpointer){
-	float t = gtk_adjustment_get_value(g_unsortRateSpin);
-	g_unsortrate = t;
-	printf("unsortRateSpinCB: %f\n", t);
-}
 static void agcSpinCB( GtkWidget*, gpointer p){
 	int h = (int)((long long)p & 0xf);
 	if(h >= 0 && h < 4 && !g_uiRecursion){
@@ -1339,6 +1325,28 @@ static void agcSpinCB( GtkWidget*, gpointer p){
 			setAGC(j,j,j,j);
 		}
 		g_c[j]->resetPca();
+	}
+}
+static void agcCheckCB(  GtkWidget*, gpointer p){
+	int h = (int)((long long)p & 0x3);
+	if(!g_uiRecursion){
+		if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(g_agcCheck[h])))
+			g_c[g_channel[h]]->m_agcEn = 1;
+		else
+			g_c[g_channel[h]]->m_agcEn = 0;
+		//send to headstage.
+		enableAGC(g_channel);
+	}
+}
+static void lmsCheckCB(  GtkWidget*, gpointer p){
+	int h = (int)((long long)p & 0x3);
+	if(!g_uiRecursion){
+		if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(g_lmsCheck[h])))
+			g_c[g_channel[h]]->m_lmsEn = 1;
+		else
+			g_c[g_channel[h]]->m_lmsEn = 0;
+		//send to headstage.
+		enableLMS(g_channel);
 	}
 }
 static void apertureSpinCB( GtkWidget*, gpointer p){
@@ -1386,25 +1394,6 @@ static void drawRadioCB(GtkWidget *button, gpointer p){
 		else g_drawmode = GL_POINTS;
 	}
 }
-static void lmsRadioCB(GtkWidget *button, gpointer p){
-	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))){
-		int i = (int)((long long)p & 0xf);
-		int lms = i == 0 ? 1 : 0;
-		//this is not the right way to do it .. FIXME
-		g_c[g_channel[0]]->m_lms = lms;
-		setLMS(g_channel[0]);
-	}
-}
-static void agcRadioCB(GtkWidget *button, gpointer p){
-	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))){
-		int i = (int)((long long)p & 0xf);
-		int agc = i == 0 ? 1 : 0;
-		//this is not the right way to do it .. FIXME
-		for(int k=0; k<4; k++)
-			g_c[g_channel[k]]->m_agcEn = agc;
-		enableAGC(g_channel, agc);
-	}
-}
 static void filterRadioCB(GtkWidget *button, gpointer p){
 	//only sets the currently viewed channels.
 	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))){
@@ -1417,10 +1406,10 @@ static void filterRadioCB(GtkWidget *button, gpointer p){
 					same = true;
 			}
 			if(!same){
-				if(i == 2) setOsc(c);
-				else if(i == 3) setFlat(c);
-				else if(i == 1) setFilter2(c);
-				else resetBiquads(c);
+				if(i == 1) setPrefilter150_10k(c);
+				else if(i == 2) setPrefilter500(c);
+				else if(i == 3) setPrefilterOsc(c);
+				else setPrefilter500_5k(c);
 			}
 		}
 	}
@@ -1540,6 +1529,20 @@ static void mk_radio(const char* txt, int ntxt,
 		gtk_signal_connect (GTK_OBJECT (button), "clicked",
 			GTK_SIGNAL_FUNC (cb), GINT_TO_POINTER(i));
 	}
+}
+static GtkToggleButton* mk_check(const char* txt, GtkWidget* container,
+							GtkCallback cb, int offset, bool initial){
+	GtkWidget *button;
+
+	button = gtk_check_button_new_with_label(txt);
+	gtk_box_pack_start (GTK_BOX (container), button, TRUE, TRUE, 0);
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON (button),
+											initial ? TRUE : FALSE);
+	gtk_widget_show (button);
+	gtk_signal_connect (GTK_OBJECT (button), "clicked",
+		GTK_SIGNAL_FUNC (cb), GINT_TO_POINTER(offset));
+
+	return (GtkToggleButton*)button;
 }
 static void openSaveFile(gpointer parent_window) {
 	GtkWidget *dialog;
@@ -1715,7 +1718,7 @@ int main(int argn, char **argc)
 	for(int i=0; i<4; i++){
 		char buf[128];
 		snprintf(buf, 128, "%c", 'A'+i);
-		frame = gtk_frame_new (buf);
+		frame = gtk_frame_new(buf);
 		//gtk_frame_set_shadow_type(GTK_FRAME(frame),  GTK_SHADOW_ETCHED_IN);
 		gtk_box_pack_start (GTK_BOX (v1), frame, FALSE, FALSE, 0);
 
@@ -1739,6 +1742,10 @@ int main(int argn, char **argc)
 									0, 32000, 1000,
 								  	agcSpinCB, i);
 
+		//add LMS & AGC checkboxes
+		g_agcCheck[i] = mk_check("AGC", bx2, agcCheckCB, i, g_c[g_channel[i]]->m_agcEn);
+		g_lmsCheck[i] = mk_check("LMS", bx2, lmsCheckCB, i, g_c[g_channel[i]]->m_lmsEn);
+
 		gtk_box_pack_start (GTK_BOX (frame), bx2, FALSE, FALSE, 1);
 	}
 	//notebook region!
@@ -1760,8 +1767,8 @@ int main(int argn, char **argc)
 		"1 BP x0(n-2)",
 		"2 BP y0(n-2)",
 		"3 BP y0(n-1)",
-		"4	saturated sample",
-		"5	AGC gain",
+		"4	AGC gain",
+		"5	saturated sample",
 		"6	u1 x1(n-1) / LMS out",
 		"7	u1 x1(n-2)",
 		"8	u1 x2(n-1) / y1(n-1)",
@@ -1795,14 +1802,8 @@ int main(int argn, char **argc)
 	g_signal_connect(button, "clicked", G_CALLBACK (agcSetAll),0);
 	gtk_box_pack_start (GTK_BOX (box1), button, TRUE, TRUE, 0);
 
-	//add LMS on/off.. (global .. for now)
-	mk_radio("on,off", 2,
-			 box1, false, "LMS", lmsRadioCB);
-	mk_radio("on,off", 2,
-			 box1, false, "AGC", agcRadioCB);
-
 	//add osc / reset radio buttons
-	mk_radio("500-6.7k,150-10k,osc,flat", 4,
+	mk_radio("BP 500-5k,BP 150-10k,HP 500,osc", 4,
 			 box1, true, "filter", filterRadioCB);
 
 	//add in a zoom spinner.
@@ -1858,10 +1859,6 @@ int main(int argn, char **argc)
 			gtk_box_pack_start (GTK_BOX (bx3), button,TRUE, TRUE, 1);
 		}
 	}
-	//add one for unsorted unit add rate.
-	g_unsortRateSpin = mk_spinner("unsort rate", box1,
-			   g_unsortrate, 0.0, 40.0, 0.1,
-			   unsortRateSpinCB, 0);
 	//show PCA button.
 	button = gtk_check_button_new_with_label("show PCA");
 	g_signal_connect (button, "toggled",
