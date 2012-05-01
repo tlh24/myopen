@@ -24,7 +24,7 @@ memory map:
 		{
 	1		48		b0 b1 b2 a1 a2		bandpass biquad. may include gain up to 8.
 	6		9		AGC targets, sqrt.
-	7		70		AGC enable (mu). 
+	7		70		AGC enable (mu).
 	8		53		LMS 0					m0 increments 2 channels (below)
 	9		4		LMS 1					m1 jump back to update weight,
 	10		5		LMS 2						2 to 16 32b words.
