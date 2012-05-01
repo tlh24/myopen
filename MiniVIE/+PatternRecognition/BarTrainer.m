@@ -36,6 +36,9 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
             % check for joysticks:
             try
                 obj.hJoystick = JoyMexClass;
+            catch ME
+                fprintf(2,'[%s] Error calling JoyMexClass. Joystick is disabled.\n',mfilename);
+                fprintf(2,'%s\n',ME.message);
             end
             
             obj.SignalSource.NumSamples = obj.SignalClassifier.NumSamplesPerWindow;

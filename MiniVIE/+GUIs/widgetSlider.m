@@ -5,7 +5,7 @@ classdef widgetSlider < hgsetget
     %   function do_something(src,evt)
     % on motion, the evt argument will get the currect axis value
     %
-    % Example:
+    % Example 1:
     %
     % close all, clear classes
     % mySliderHandle = widgetSlider(gca);
@@ -14,6 +14,22 @@ classdef widgetSlider < hgsetget
     % mySliderHandle.ButtonDownFcn = show_red;
     % mySliderHandle.ButtonUpFcn = show_red;
     % mySliderHandle.ButtonMotionFcn = show_black;
+    %
+    % Example 2: Create an array of vertical sliders
+    % close all
+    % f = figure;
+    % N = 9;
+    % s = zeros(1,N);
+    % h = cell(1,N);
+    % for i = 1:N
+    %     s(i) = subplot(1,N,i);
+    %     set(s(i),'YTick',[]);
+    %     set(s(i),'XTick',[]);
+    %     h{i} = GUIs.widgetSlider(s(i));
+    %     h{i}.Type = {'Vertical'};
+    %     h{i}.Value = 0.5;
+    %     
+    % end    
     %
     % Last Updated:
     %   2009-May-06 R. Armiger:  added button up/down event data

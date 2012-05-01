@@ -102,9 +102,9 @@ classdef ScenarioBase < Common.MiniVieObj
             switch className
                 case 'No Movement'
                 case {'Pronate' 'Wrist Rotate In'}
-                    desiredVelocity(action_bus_enum.Wrist_Rot) = -prSpeed;
+                    desiredVelocity(action_bus_enum.Wrist_Rot) = -prSpeed*3;
                 case {'Supinate' 'Wrist Rotate Out'}
-                    desiredVelocity(action_bus_enum.Wrist_Rot) = +prSpeed;
+                    desiredVelocity(action_bus_enum.Wrist_Rot) = +prSpeed*3;
                 case {'Up' 'Hand Up'}
                     desiredVelocity(action_bus_enum.Wrist_Dev) = -prSpeed;
                 case {'Down' 'Hand Down'}
@@ -115,12 +115,12 @@ classdef ScenarioBase < Common.MiniVieObj
                     desiredVelocity(action_bus_enum.Wrist_FE) = -prSpeed;
             end
             
-            globalGain = 60;
+            globalGain = 50;
             desiredVelocity = desiredVelocity .* globalGain;
             
             % Apply velocity change rate limiting
             dt = obj.Timer.InstantPeriod;
-            maxDeltaV = 5*dt;  %max instantaneous velocity change
+            maxDeltaV = 15*dt;  %max instantaneous velocity change
             newVelocity = min(abs(lastVelocity) + (maxDeltaV),abs(desiredVelocity)) .* sign(desiredVelocity);
             
             obj.JointVelocity = newVelocity;
@@ -146,7 +146,7 @@ classdef ScenarioBase < Common.MiniVieObj
             switch graspName
                 case 'Hand Open'
                     % Change the grasp Value in grasp mode
-                    desiredGraspVelocity = - prSpeed*graspGain*.3;
+                    desiredGraspVelocity = - prSpeed*graspGain*1;
                 case cellGrasps
                     % Increment position along grasp trajectory
                     desiredGraspVelocity = prSpeed*graspGain;

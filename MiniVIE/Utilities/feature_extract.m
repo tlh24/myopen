@@ -38,6 +38,8 @@ SSC = zeros(nChannels,1,myType);    % slope sign changes
 
 idStart = (1+nSamples-windowSize);
 
+t = 0.0;
+
 for iChannel = 1:nChannels
     y = windowData(iChannel,:);
     dy = diff( y );
@@ -50,9 +52,9 @@ for iChannel = 1:nChannels
     for iSample = idStart+1 : nSamples-1
         
         % Define criteria for crossing zero
-        zeroCross = (y(iSample) > 0 && y(iSample+1) < 0) || ...
-            (y(iSample) < 0 && y(iSample+1) > 0);
-        overThreshold = abs( y(iSample) - y(iSample+1) ) > zc_thresh;
+        zeroCross = (y(iSample)-t > 0 && y(iSample+1)-t < 0) || ...
+            (y(iSample)-t < 0 && y(iSample+1)-t > 0);
+        overThreshold = abs( y(iSample)-t - y(iSample+1)-t ) > zc_thresh;
         
         if zeroCross && overThreshold
             % Count a zero cross
@@ -70,9 +72,14 @@ for iChannel = 1:nChannels
             SSC(iChannel) = SSC(iChannel) + 1;
         end
     end
+    
+    %ZC(iChannel) = sum(y>zc_thresh);
+    
 end
+
 Fs = 1000;
 features = [MAV(:) LEN(:) ZC(:) SSC(:)]./(windowSize./Fs);
+% features = [MAV(:) LEN(:) ZC(:) SSC(:)];
 
-features(:,[2 3 4]) = log(1+features(:,[2 3 4]));
+% features(:,[2 3 4]) = log(1+features(:,[2 3 4]));
 
