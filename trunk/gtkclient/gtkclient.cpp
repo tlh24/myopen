@@ -1768,19 +1768,21 @@ int main(int argn, char **argc)
 		"2 BP y0(n-2)",
 		"3 BP y0(n-1)",
 		"4	AGC gain",
-		"5	saturated sample",
-		"6	u1 x1(n-1) / LMS out",
-		"7	u1 x1(n-2)",
-		"8	u1 x2(n-1) / y1(n-1)",
-		"9	u1 x2(n-2) / y1(n-2)",
-		"10	u1 y2(n-1) ",
-		"11	u1 y2(n-2) ",
-		"12	u2 x1(n-1) / LMS out",
-		"13	u2 x1(n-2)",
-		"14	u2 x2(n-1) / y1(n-1)",
-		"15	u2 x2(n-2) / y1(n-2)",
-		"16	u2 y2(n-1) ",
-		"17	u2 y2(n-2) "
+		"5 gained sample",
+		"6	saturated sample",
+		"7 LMS prediction",
+		"8	u1 x1(n-1) / LMS out",
+		"9	u1 x1(n-2)",
+		"10	u1 x2(n-1) / y1(n-1)",
+		"11	u1 x2(n-2) / y1(n-2)",
+		"12	u1 y2(n-1) ",
+		"13	u1 y2(n-2) ",
+		"14	u2 x1(n-1) / LMS out",
+		"15	u2 x1(n-2)",
+		"16	u2 x2(n-1) / y1(n-1)",
+		"17	u2 x2(n-2) / y1(n-2)",
+		"18	u2 y2(n-1) ",
+		"19	u2 y2(n-2) "
 		};
 	button = 0;
 	combo = gtk_combo_box_new_text();
@@ -1994,7 +1996,7 @@ int main(int argn, char **argc)
 		usleep(10000); //wait for the other thread to come up.
 	}
 	//set the initial sampling stage.
-	gtk_combo_box_set_active(GTK_COMBO_BOX(combo), 12);
+	//gtk_combo_box_set_active(GTK_COMBO_BOX(combo), 12);
 	gtk_widget_show_all (window);
 
 	g_timeout_add (1000 / 30, rotate, da1);
