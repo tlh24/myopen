@@ -65,23 +65,25 @@ memory map:
 			2		y0 n-2	(note!! backwards)
 			3		y0 n-1	(prefilter output -- this so we can read chan+2 easily)
 			4		gain
-			5		saturated sample
-			6		x1 n-1 	(unit 1)
-			7		x1 n-2
-			8		y1 n-1	x2 n-1
-			9		y1 n-2	x2 n-2
-		1	0		y2 n-1
-			1		y2 n-2
-			2		x1 n-1 	(unit 2)
-			3		x1 n-2
-			4		y1 n-1	x2 n-1
-			5		y1 n-2	x2 n-2
-			6		y2 n-1
-			7		y2 n-2
+			5 		gained sample
+			6		saturated sample
+			7		LMS prediction 	(write only)
+			8		x1 n-1 	(unit 1)
+			9		x1 n-2
+		1	0		y1 n-1	x2 n-1
+			1		y1 n-2	x2 n-2
+			2		y2 n-1
+			3		y2 n-2
+			4		x1 n-1 	(unit 2)
+			5		x1 n-2
+			6		y1 n-1	x2 n-1
+			7		y1 n-2	x2 n-2
+			8		y2 n-1
+			9		y2 n-2
 			-- and repeat for SPORT1.
-	Total: 18 * 2 * 32 ch * 32-bit words -- perfect!
-	total length: 4608, 0x1200
-	0xFF80 5200	end of delay buffer.
+	Total: 20 * 2 * 32 ch * 32-bit words. 
+	total length: 5120, 0x1400
+	0xFF80 5400	end of delay buffer.
 
 	T1: stores state, indexed by i3.
 	0	m1[0]		16*4
@@ -161,18 +163,18 @@ memory map:
 #define GCC_RESERVED 	0xFF907200 //above this GCC stomps around on.
 
 #define W1 				0xFF804000  /** BANK A **/
-#define W1_STRIDE	 	18 // see above.
-						  //total length = W1_STRIDE * 2 * 32 * 4 = 4608 = 0x1200 bytes
-#define T1				0xFF805200 //accessed by i3, read/write LMS & state.
-#define T1_LENGTH		(48*20*4) //3840, 0xF00
+#define W1_STRIDE	 	20 // see above.
+						  //total length = W1_STRIDE * 2 * 32 * 4 = 5120 = 0x1400 bytes
+#define T1				0xFF805400 //accessed by i3, read/write LMS & state.
+#define T1_LENGTH		(48*20*4) //3840, 0xF00 -- 48 packets, each needs 20 words.
 
 
-#define MATCH			0xFF806100 //256 bits, 128 channels * 2 templates.
+#define MATCH			0xFF806300 //256 bits, 128 channels * 2 templates.
 #define MATCH_LENGTH	64    // 32 bytes, or 8 4-byte words, TWICE -
 							//second half is 7-b encoded. (length: 0x40)
 
-#define ENC_LUT		0xff806200 //256 bytes (0x100), map 8 bits -> 7 bits.
-#define STATE_LUT		0xff806300 //16 32bit words, 64 bytes.
+#define ENC_LUT		0xff806400 //256 bytes (0x100), map 8 bits -> 7 bits.
+#define STATE_LUT		0xff806500 //16 32bit words, 64 bytes.
 
 #define WFBUF			0xFF807000  //really the transmit buffer.
 #define WFBUF_LEN		1024		// length 2 512 byte, 16-packet frames. (0x400)

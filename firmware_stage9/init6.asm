@@ -196,7 +196,7 @@ lt5_bot:
 		r3 = r3 & r4;
 		r5 = r5 | r3;
 		[i3++] = r5;
-		r3.l = LO(MATCH+32);
+		r3.l = LO(MATCH+32); //second half 7-b encoded.
 		r3.h = HI(MATCH+32);
 		r4 = 3;
 		r5 = r2 & r4; //loop 0-3.

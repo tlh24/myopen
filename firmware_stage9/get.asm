@@ -72,7 +72,7 @@ r0.l=(a0 +=r4.l * r5.l), r0.h=(a1 +=r4.h * r5.h)(s2rnd)|| r5 = [i1--] ;
 #else
 	MNOP || i0 += m3 || r3 = [i2++]; //m3 = 8, dummy read to keep i2 in sync; ifndef _AGC_
 #endif
-	r0 = r7 << 13 (v,s) || r1 = [i1++m0] || r2 = [i0++]; // r2 = 0th LMS weight.
+	r0 = r7 << 13 (v,s) || r1 = [i1++m0] || r2 = [i0++]; 
 		//saturate sample, load channel+2 / move chan+4, load corresponding weight.
 	a0 = r1.l * r2.l, a1 = r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //1
 	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //2
@@ -89,15 +89,15 @@ r0.l=(a0 +=r4.l * r5.l), r0.h=(a1 +=r4.h * r5.h)(s2rnd)|| r5 = [i1--] ;
 	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //13
 	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //14
 	r6.l=(a0+= r1.l * r2.l), r6.h=(a1+= r1.h * r2.h)  //15; default signed rounding ok.
-		|| i1+= m3 || r5 = [i0++]; //i1 to saturated sample, r5 = weight decay.
+		|| r1 = [i1++] || r5 = [i0++]; //i1 to saturated sample, r5 = weight decay.
 
 	//update one of the weights:
-	r7 = r7 -|- r6 (s) || i0 -= m1 || [i2++] = r0 ;
-		// error into r7, move i0 to active weight, save saturated.
-	r6 = r7 << 7 (v,s) || i1 += m2 || r2 = [i0]; //move i1 to update channel, r2 = w0.
-	r6 = r6 >>> 14 (v,s) || r1 = [i1++] ;
-		//r6 = sign of error, r1 = saturated sample, i1 @ x1(n-1)
-	a0 = r1.l * r6.l, a1 = r1.h * r6.h || nop; //load delta w, r5 weight decay.
+	r3 = r7 -|- r6 (s) || i0 -= m1 || [i2++] = r7 ;
+		// error into r3, move i0 to active weight, save gained sample.
+	r3 = r3 << 7 (v,s) || i1 += m2 || [i2++] = r0 ;  //move i1 to update channel, save saturated.
+	r3 = r3 >>> 14 (v,s) || r1 = [i1++m3] || r2 = [i0]; // r2 = w0.
+		//r3 = sign of error, r1 = saturated sample, i1 @ x1(n-1)
+	a0 = r1.l * r3.l, a1 = r1.h * r3.h || [i2++] = r6; //load delta w, save LMS prediction.
 r4.l = (a0+= r2.l * r5.l), r4.h = (a1+= r2.h * r5.h) || i1 -= m2 ;
 			//load/decay weight, move i1 back to present channel.
 	MNOP || [i0++m1] = r4 ; // save the new weight, i0 back to b00 unit 1.
@@ -155,8 +155,8 @@ r0.l=(a0 +=r2.l * r5.l), r0.h=(a1 +=r2.h * r5.h)(s2rnd)|| r5 = [i0++] ;//r0 = y2
 	a0 += r1.l * r5.l, a1 += r1.h * r5.h || r5 = [i0++] || r4 = [i1++] ;//r5 = b0.2; r4 = y1(n-2) 
 	a0 += r2.l * r5.l, a1 += r2.h * r5.h || r5 = [i0++] || r3 = [i1++];//r5 = a0.0; r3 = y1(n-1)
 	a0 += r3.l * r5.l, a1 += r3.h * r5.h || r5 = [i0++] || [i2++] = r7 ;//r5 = a0.1; save x1(n-1)
-r0.l=(a0 +=r4.l * r5.l), r0.h=(a1 +=r4.h * r5.h)(s2rnd)|| r5 = [i1--] ;
-		//r0 = y1(n); r5 = gain & move back to y1(n-1)
+r0.l=(a0 +=r4.l * r5.l), r0.h=(a1 +=r4.h * r5.h)(s2rnd)|| r5 = [i1++] ;
+		//r0 = y1(n); r5 = gain; i1 on gained sample.
 	/** AGC **/
 	a0 = r0.l * r5.l, a1 = r0.h * r5.h || [i2++] = r1; //apply gain,save x1(n-2)
  	a0 = a0 << 7 || [i2++] = r3; //save y1(n-2) ;14 bits in SRC, this makes 22 bits and
@@ -192,15 +192,15 @@ r0.l=(a0 +=r4.l * r5.l), r0.h=(a1 +=r4.h * r5.h)(s2rnd)|| r5 = [i1--] ;
 	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //13
 	a0+= r1.l * r2.l, a1+= r1.h * r2.h || r1 = [i1++m0] || r2 = [i0++]; //14
 	r6.l=(a0+= r1.l * r2.l), r6.h=(a1+= r1.h * r2.h)  //15; default signed rounding ok.
-		|| i1+= m3 || r5 = [i0++]; //i1 to saturated sample, r5 = weight decay.
+		|| r1 = [i1++] || r5 = [i0++]; //i1 to saturated sample, r5 = weight decay.
 
 	//update one of the weights:
-	r7 = r7 -|- r6 (s) || i0 -= m1 || [i2++] = r0 ;
-		// error into r7, move i0 to active weight, save saturated.
-	r6 = r7 << 7 (v,s) || i1 += m2 || r2 = [i0]; //move i1 to update channel, r2 = w0.
-	r6 = r6 >>> 14 (v,s) || r1 = [i1++] ;
-		//r6 = sign of error, r1 = saturated sample, i1 @ x1(n-1)
-	a0 = r1.l * r6.l, a1 = r1.h * r6.h || nop; //load delta w, r5 weight decay.
+	r3 = r7 -|- r6 (s) || i0 -= m1 || [i2++] = r7 ;
+		// error into r3, move i0 to active weight, save gained sample.
+	r3 = r3 << 7 (v,s) || i1 += m2 || [i2++] = r0 ;  //move i1 to update channel, save saturated.
+	r3 = r3 >>> 14 (v,s) || r1 = [i1++m3] || r2 = [i0]; // r2 = w0.
+		//r3 = sign of error, r1 = saturated sample, i1 @ x1(n-1)
+	a0 = r1.l * r3.l, a1 = r1.h * r3.h || [i2++] = r6; //load delta w, save LMS prediction.
 r4.l = (a0+= r2.l * r5.l), r4.h = (a1+= r2.h * r5.h) || i1 -= m2 ;
 			//load/decay weight, move i1 back to present channel.
 	MNOP || [i0++m1] = r4 ; // save the new weight, i0 back to b00 unit 1.
