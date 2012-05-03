@@ -667,8 +667,8 @@ ffa08650:	01 c8 15 c8 	A1 += R2.H * R5.H, A0 += R2.L * R5.L || R5 = [I0++] || R3
 ffa08654:	05 9c 0b 9c 
 ffa08658:	01 c8 1d c8 	A1 += R3.H * R5.H, A0 += R3.L * R5.L || R5 = [I0++] || [I2++] = R7;
 ffa0865c:	05 9c 17 9e 
-ffa08660:	25 c8 25 e8 	R0.H = (A1 += R4.H * R5.H), R0.L = (A0 += R4.L * R5.L) (S2RND) || R5 = [I1--] || NOP;
-ffa08664:	8d 9c 00 00 
+ffa08660:	25 c8 25 e8 	R0.H = (A1 += R4.H * R5.H), R0.L = (A0 += R4.L * R5.L) (S2RND) || R5 = [I1++] || NOP;
+ffa08664:	0d 9c 00 00 
 ffa08668:	00 c8 05 c0 	A1 = R0.H * R5.H, A0 = R0.L * R5.L || [I2++] = R1 || NOP;
 ffa0866c:	11 9e 00 00 
 ffa08670:	83 ce 38 00 	A0 = A0 << 0x7 || [I2++] = R3 || NOP;
@@ -718,9 +718,9 @@ ffa0871c:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] |
 ffa08720:	89 9d 02 9c 
 ffa08724:	05 c8 8a e9 	R6.H = (A1 += R1.H * R2.H), R6.L = (A0 += R1.L * R2.L) || R1 = [I1++] || R5 = [I0++];
 ffa08728:	09 9c 05 9c 
-ffa0872c:	00 cc 3e e6 	R3 = R7 -|- R6 (S) || I0 -= M1 || [I2++] = R7;
+ffa0872c:	00 cc 3e ee 	R7 = R7 -|- R6 (S) || I0 -= M1 || [I2++] = R7;
 ffa08730:	74 9e 17 9e 
-ffa08734:	81 ce 3b 46 	R3 = R3 << 0x7 (V, S) || I1 += M2 || [I2++] = R0;
+ffa08734:	81 ce 3f 46 	R3 = R7 << 0x7 (V, S) || I1 += M2 || [I2++] = R0;
 ffa08738:	69 9e 10 9e 
 ffa0873c:	81 ce 93 47 	R3 = R3 >>> 0xe (V) || R1 = [I1 ++ M3] || R2 = [I0];
 ffa08740:	e9 9d 02 9d 
@@ -859,9 +859,9 @@ ffa0893c:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] |
 ffa08940:	89 9d 02 9c 
 ffa08944:	05 c8 8a e9 	R6.H = (A1 += R1.H * R2.H), R6.L = (A0 += R1.L * R2.L) || R1 = [I1++] || R5 = [I0++];
 ffa08948:	09 9c 05 9c 
-ffa0894c:	00 cc 3e e6 	R3 = R7 -|- R6 (S) || I0 -= M1 || [I2++] = R7;
+ffa0894c:	00 cc 3e ee 	R7 = R7 -|- R6 (S) || I0 -= M1 || [I2++] = R7;
 ffa08950:	74 9e 17 9e 
-ffa08954:	81 ce 3b 46 	R3 = R3 << 0x7 (V, S) || I1 += M2 || [I2++] = R0;
+ffa08954:	81 ce 3f 46 	R3 = R7 << 0x7 (V, S) || I1 += M2 || [I2++] = R0;
 ffa08958:	69 9e 10 9e 
 ffa0895c:	81 ce 93 47 	R3 = R3 >>> 0xe (V) || R1 = [I1 ++ M3] || R2 = [I0];
 ffa08960:	e9 9d 02 9d 

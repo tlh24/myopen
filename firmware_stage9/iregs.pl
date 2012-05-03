@@ -2,14 +2,14 @@
 
 # this is kinda a blackfin simulator ..
 # really should read in decompile.asm for this. yea right.
-$m0 = 288; 
+$m0 = 320; 
 $m1 = 64; 
-$m2 = 16*4; 
+$m2 = $m0; 
 $m3 = 8; 
 
 $l0 = 12288; 
-$l1 = 4608; 
-$l2 = 4608; 
+$l1 = $m0*16; 
+$l2 = $m0*16; 
 $l3 = 3840; 
 
 sub ireg{
