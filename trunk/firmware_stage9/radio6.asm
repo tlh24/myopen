@@ -1,18 +1,21 @@
 #include "spi.h"
 #include "nordic_regs.h"
 
+//this has no calls to the faster no-agc get_asm.
+// too confusing to debug that stuff!
+
 .align 8
 _clearirq_asm: //just write the status register via spi to clear.
 	[--sp] = rets;
 	r7 = SPI_CSN;
 	w[p1 + (FIO_FLAG_C - FIO_FLAG_D)] = r7;
-	call _get_asm2;
+	call _get_asm;
 	r6 = NOR_STATUS + 0x20; //write to status register.
 	w[p3] = r6;
 	call _get_asm;
 	r6 = 0x70;
 	w[p3] = r6; //clear irq.
-	call _get_asm2;
+	call _get_asm;
 	r7 = SPI_CSN;
 	w[p1 + (FIO_FLAG_S - FIO_FLAG_D)] = r7;
 	call _get_asm;
@@ -35,7 +38,7 @@ waitirq_loop:
 	if cc jump waitirq_end;
 	r7 += -1;
 	[fp - FP_TIMER] = r7;
-	call _get_asm2;
+	call _get_asm;
 	jump waitirq_loop;
 waitirq_end:
 	call _get_asm;
@@ -48,20 +51,20 @@ _clearfifos_asm:
 	// flush RX fifo (seems to improve reliability)
 	r7 = SPI_CSN;
 	w[p1 + (FIO_FLAG_C - FIO_FLAG_D)] = r7;
-	call _get_asm2;
+	call _get_asm;
 	r6 = NOR_FLUSH_RX;
 	w[p3] = r6;
 	call _get_asm;
 	r7 = SPI_CSN;
 	w[p1 + (FIO_FLAG_S - FIO_FLAG_D)] = r7;
-	call _get_asm2;
+	call _get_asm;
 	// and flush TX fifo.
 	r7 = SPI_CSN;
 	w[p1 + (FIO_FLAG_C - FIO_FLAG_D)] = r7;
 	call _get_asm;
 	r6 = NOR_FLUSH_TX;
 	w[p3] = r6;
-	call _get_asm2;
+	call _get_asm;
 	r7 = SPI_CSN;
 	w[p1 + (FIO_FLAG_S - FIO_FLAG_D)] = r7;
 	call _get_asm;
@@ -210,7 +213,7 @@ wait_16pkts:
 	cc = bittst(r5, 4)
 	if !cc jump wait_16pkts;
 	//got 8 packets in the queue at this point.
-	call _get_asm2;
+	call _get_asm;
 	r5 = 0;
 	[FP - FP_QPACKETS] = r5;
 	call _clearfifos_asm; // both include
@@ -220,7 +223,7 @@ wait_16pkts:
 	wp_top:
 		r7 = SPI_CSN;
 		w[p1 + (FIO_FLAG_C - FIO_FLAG_D)] = r7;
-		call _get_asm2;
+		call _get_asm;
 		r6 = 0xa0;
 		w[p3] = r6;
 		call _get_asm;
@@ -234,7 +237,7 @@ wait_16pkts:
 		r7 = p2; //the pointer wrap used to be in the loop
 		bitclr(r7, 10); //but i trust the proc to keep it aligned.  (fingers crossed)
 		p2 = r7;
-		call _get_asm2;
+		call _get_asm;
 		r7 = SPI_CSN | SPI_CE;
 		w[p1 + (FIO_FLAG_S - FIO_FLAG_D)] = r7;
 		call _get_asm;
@@ -251,7 +254,7 @@ wait_16pkts:
 	call _clearirq_asm;
 	r7 = SPI_CE; //disable the radio.
 	w[p1 + (FIO_FLAG_C - FIO_FLAG_D)] = r7;
-	call _get_asm2;
+	call _get_asm;
 
 	//put the radio in RX mode now.
 	//first clear the config register (put in standby mode)
@@ -260,7 +263,7 @@ wait_16pkts:
 	call _get_asm;
 	r6 = NOR_FLUSH_RX;
 	w[p3] = r6;
-	call _get_asm2;
+	call _get_asm;
 	r7 = SPI_CSN;
 	w[p1 + (FIO_FLAG_S - FIO_FLAG_D)] = r7;
 	call _get_asm;
@@ -268,10 +271,10 @@ wait_16pkts:
 	//now write config register with valid values.
 	r7 = SPI_CSN;
 	w[p1 + (FIO_FLAG_C - FIO_FLAG_D)] = r7;
-	call _get_asm2;
+	call _get_asm;
 	r6 = NOR_CONFIG + 0x20;
 	w[p3] = r6;
-	call _get_asm2;
+	call _get_asm;
 	/** enable CRC for RX of critical values **/
 	r6 = NOR_EN_CRC | NOR_CRC0 |
 		NOR_MASK_MAX_RT | NOR_PWR_UP | NOR_PRIM_RX;
@@ -279,7 +282,7 @@ wait_16pkts:
 	call _get_asm;
 	r7 = SPI_CSN;
 	w[p1 + (FIO_FLAG_S - FIO_FLAG_D)] = r7;
-	call _get_asm2;
+	call _get_asm;
 	r7 = SPI_CE; //enable the radio
 	w[p1 + (FIO_FLAG_S - FIO_FLAG_D)] = r7;
 	call _get_asm;
@@ -294,20 +297,20 @@ wait_16pkts:
 	call _clearirq_asm; //many _get_asm calls.
 	r7 = SPI_CE; //disable the radio; turn off LNA as soon as possible.
 	w[p1 + (FIO_FLAG_C - FIO_FLAG_D)] = r7;
-	call _get_asm2;
+	call _get_asm;
 	r7 = SPI_CSN ;
 	w[p1 + (FIO_FLAG_C - FIO_FLAG_D)] = r7;
 	call _get_asm;
 	r6 = 0x61; //command for reading the fifo.
 	w[p3] = r6;
-	call _get_asm2;
+	call _get_asm;
 	p5 = 4;
 	LSETUP(rp_top,rp_bot) lc0 = p5;
 	rp_top:
 		r7 = 0;
 		[FP - FP_ADDRESS] = r7; //init the local variables.
 		[FP - FP_VALUE] = r7;
-		call _get_asm2;
+		call _get_asm;
 		p5 = 4;
 		LSETUP(a32_top,a32_bot) lc1 = p5;
 		a32_top:
@@ -322,12 +325,12 @@ wait_16pkts:
 			[FP - FP_ADDRESS] = r6;
 		a32_bot: nop;
 		//now get the value..
-		call _get_asm2;
+		call _get_asm;
 		p5 = 4;
 		LSETUP(v32_top,v32_bot) lc1 = p5;
 		v32_top:
 			w[p3] = r7; //dummy write.
-			call _get_asm2;
+			call _get_asm;
 			r7 = w[p3 + (SPI_SHADOW - SPI_TDBR)];
 			r6 = 0xff;
 			r7 = r7 & r6;
@@ -336,7 +339,7 @@ wait_16pkts:
 			r6 = r6 + r7;
 			[FP - FP_VALUE] = r6;
 		v32_bot: nop;
-		call _get_asm2;
+		call _get_asm;
 		//extract the echo flag.
 		r7 = [FP - FP_ADDRESS];
 		r6 = r7 >> 28; //shift upper nibble
@@ -349,7 +352,7 @@ wait_16pkts:
 		p5 = (p5 + p0) << 2; //4 byte align
 		r7 = [p5];
 		[FP - FP_ECHO] = r7;
-		call _get_asm2;
+		call _get_asm;
 		//verify the address.
 		r7 = [FP - FP_ADDRESS];
 		r6.h = 0xffef;
@@ -371,13 +374,13 @@ could still only cram 5 accesses into one packet.
 A much better idea is to put the echo into the upper nibble of the address
 (which is always 0xff anyway..and that way we have some confirmation that the
 headstage got the message). */
-		call _get_asm2;
+		call _get_asm;
 	rp_bot: nop;
 	//close out the RX frame.
 	call _get_asm;
 	r7 = SPI_CSN;
 	w[p1 + (FIO_FLAG_S - FIO_FLAG_D)] = r7;
-	call _get_asm2;
+	call _get_asm;
 no_rxpacket:
 	//put it back in TX mode.
 	r7 = SPI_CE; //clear CE.
@@ -386,13 +389,13 @@ no_rxpacket:
 	//flush the TX fifo.
 	r7 = SPI_CSN;
 	w[p1 + (FIO_FLAG_C - FIO_FLAG_D)] = r7;
-	call _get_asm2;
+	call _get_asm;
 	r6 = NOR_FLUSH_TX;
 	w[p3] = r6;
 	call _get_asm;
 	r7 = SPI_CSN;
 	w[p1 + (FIO_FLAG_S - FIO_FLAG_D)] = r7;
-	call _get_asm2;
+	call _get_asm;
 
 	//now write config register with valid values.
 	r7 = SPI_CSN;
@@ -400,7 +403,7 @@ no_rxpacket:
 	call _get_asm;
 	r6 = NOR_CONFIG + 0x20;
 	w[p3] = r6;
-	call _get_asm2;
+	call _get_asm;
 	/** CRC on bulk transmit too - have antenna diversity! **/
 	r6 = NOR_MASK_MAX_RT | NOR_EN_CRC |
 			NOR_CRC0 | NOR_PWR_UP | NOR_PRIM_TX;
@@ -408,7 +411,7 @@ no_rxpacket:
 	call _get_asm;
 	r7 = SPI_CSN;
 	w[p1 + (FIO_FLAG_S - FIO_FLAG_D)] = r7;
-	call _get_asm2;
+	call _get_asm;
 
 	//reload the watchdog timer -- we are alive!
 	p5.h = HI(WDOG_STAT);
@@ -419,7 +422,7 @@ no_rxpacket:
 	//blink. first clear LED.
 	r7 = LED_BLINK;
 	w[p1 + (FIO_FLAG_C - FIO_FLAG_D)] = r7;
-	call _get_asm2;
+	call _get_asm;
 
 	r7 = [FP - FP_BLINK];
 	r6 = 1 (z);
@@ -429,6 +432,6 @@ no_rxpacket:
 	w[p1 + (FIO_FLAG_S - FIO_FLAG_D)] = r6;
 	bitclr(r7, 8);
 	[FP - FP_BLINK] = r7;
-	call _get_asm2;
+	call _get_asm;
 
 	jump radio_loop;
