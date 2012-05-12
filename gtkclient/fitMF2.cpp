@@ -256,7 +256,7 @@ int main(void){
 			//shrink solutions.
 			if(nn > NSOL*5){
 				for(int j=0; j<11; j++){
-					std[j] *= (1 - (1.0/(8.0*NSOL))); //8.0 for N = 64 optimal.
+					std[j] *= (1 - (1.0/(16.0*NSOL))); //8.0 for N = 64 optimal.
 				}
 				//print.
 				if(1){
