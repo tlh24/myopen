@@ -36,7 +36,7 @@ classdef ScenarioBase < Common.MiniVieObj
             obj.SignalClassifier = SignalClassifier;
             
             obj.Timer = UiTools.create_timer(mfilename,@(src,evt)update(obj));
-            obj.Timer.Period = 0.05;
+            obj.Timer.Period = 0.06;
             %obj.Timer.Period = 0.15;
         end
         function start(obj)
@@ -50,6 +50,10 @@ classdef ScenarioBase < Common.MiniVieObj
             end
         end
         function applyRangeLimits(obj)
+
+            obj.JointAnglesDegrees(action_bus_enum.Elbow) = max(min(...
+                obj.JointAnglesDegrees(action_bus_enum.Elbow),120),5);
+            
             % Apply Wrist Limits
             obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) = max(min(...
                 obj.JointAnglesDegrees(action_bus_enum.Wrist_FE),60),-60);
@@ -63,7 +67,7 @@ classdef ScenarioBase < Common.MiniVieObj
             % Apply global velocity limits
             constrain = @(X,minX,maxX) min(max(X,minX),maxX);
             
-            globalVelocityMax = 5;
+            globalVelocityMax = 10;
             globalVelocityMin = 2;
 
             velocity = obj.JointVelocity;
@@ -101,10 +105,14 @@ classdef ScenarioBase < Common.MiniVieObj
             
             switch className
                 case 'No Movement'
+                case {'Elbow Flexion' 'Elbow Up'}
+                    desiredVelocity(action_bus_enum.Elbow) = prSpeed;
+                case {'Elbow Extension' 'Elbow Down'}
+                    desiredVelocity(action_bus_enum.Elbow) = -prSpeed;
                 case {'Pronate' 'Wrist Rotate In'}
-                    desiredVelocity(action_bus_enum.Wrist_Rot) = -prSpeed*3;
+                    desiredVelocity(action_bus_enum.Wrist_Rot) = -prSpeed;
                 case {'Supinate' 'Wrist Rotate Out'}
-                    desiredVelocity(action_bus_enum.Wrist_Rot) = +prSpeed*3;
+                    desiredVelocity(action_bus_enum.Wrist_Rot) = +prSpeed;
                 case {'Up' 'Hand Up'}
                     desiredVelocity(action_bus_enum.Wrist_Dev) = -prSpeed;
                 case {'Down' 'Hand Down'}
@@ -115,7 +123,7 @@ classdef ScenarioBase < Common.MiniVieObj
                     desiredVelocity(action_bus_enum.Wrist_FE) = -prSpeed;
             end
             
-            globalGain = 50;
+            globalGain = 10;
             desiredVelocity = desiredVelocity .* globalGain;
             
             % Apply velocity change rate limiting
@@ -135,8 +143,8 @@ classdef ScenarioBase < Common.MiniVieObj
             %%%%%%%%%%%%%%%%%%%%%%%%
             % Process grasps
             %%%%%%%%%%%%%%%%%%%%%%%%
-            graspGain = 0.3;
-            graspChangeThreshold = 0.1;  % Normalized [0 1]
+            graspGain = 0.1;
+            graspChangeThreshold = 0.2;  % Normalized [0 1]
             graspName = className;
             lastGraspVelocity = obj.GraspVelocity;
             if strfind(className,'Grasp')
@@ -158,6 +166,8 @@ classdef ScenarioBase < Common.MiniVieObj
                     end
                 otherwise 
                     desiredGraspVelocity = 0;
+                    % Auto-open
+%                     desiredGraspVelocity = - prSpeed*graspGain*1;
             end
             
             maxGraspDeltaV = 0.1*dt;  %max instantaneous velocity change

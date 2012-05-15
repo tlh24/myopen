@@ -120,9 +120,12 @@ classdef DaqHwDevice < Inputs.SignalInput
             DesiredRange = obj.ChannelInputRange;
             ActualRange = setverify(obj.AnalogInput.Channel,'InputRange',DesiredRange);
             
-            if ~isequal(DesiredRange,ActualRange)
+            if iscell(ActualRange)
+                ActualRange = cell2mat(ActualRange);
+            end
+            if ~isequal(DesiredRange,ActualRange(1,:))
                 warning('DaqHwDevice:InputRange','Failed to set channel input range to [%f %f]. Range is [%f %f]',...
-                    DesiredRange(1),DesiredRange(2), ActualRange(1),ActualRange(2));
+                    DesiredRange(1),DesiredRange(2), ActualRange(1,1),ActualRange(1,2));
             end
             
         end
