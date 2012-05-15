@@ -8,8 +8,22 @@ classdef MplScenarioMud < Scenarios.ScenarioBase
         hMud = [];
         hSink = [];
         hNfu = [];
+        hMicroStrainGX2 = [];
         
-        enableNfu = 0;
+        enableNfu = true;
+        enableMicroStrain = false;
+        
+        % MicroStrain config values
+        msComPortStr = 'COM18';
+        msNodeInt = 10;
+        msChannelInt = 14;
+        msLefty = true;
+        
+        % MicroStrain orientation data
+        T_WCS_HOME
+        F_RB1_HOME
+        % Compass heading when in home position
+        msDegreesFromNorth = 0;
     end
     methods
         function obj = MplScenarioMud
@@ -19,12 +33,51 @@ classdef MplScenarioMud < Scenarios.ScenarioBase
             if obj.enableNfu
                 obj.hNfu = MPL.NfuUdp.getInstance;
                 obj.hNfu.initialize();
+                obj.hMud = MPL.MudCommandEncoder();
             else
                 obj.hSink = MPL.VulcanXSink('127.0.0.1',9035);
                 obj.hMud = MPL.MudCommandEncoder();
+                
+                % Use MicroStrain for upper arm motion
+                if obj.enableMicroStrain
+                    obj.hMicroStrainGX2 = MicroStrain3DM_GX2( ...
+                        obj.msComPortStr, obj.msNodeInt, obj.msChannelInt);
+                    if ~obj.hMicroStrainGX2.connect()
+                        error('Could not connect to MicroStrain on %s, node %d, channel %d', ...
+                            obj.msComPortStr, obj.msNodeInt, obj.msChannelInt);
+                    end
+                    
+                    % Assume MicroStrain is in home position (attached to
+                    % user's tricep, antenna pointed toward user's 
+                    % shoulder, arm hanging loosely).
+                    obj.home();
+                end
             end
             %obj.GraspId
         end
+        
+        function home(obj)
+            if ~isempty(obj.hMicroStrainGX2)
+                response = questdlg('Ready to Home?', 'Home', 'OK', 'Cancel', 'OK');
+                if ~strcmpi(response, 'OK')
+                    return;
+                end
+                
+                bearing = inputdlg('Enter compass heading of the MicroStrain [0, 359]', 'Heading');
+                bearing = str2double(bearing);
+                if bearing < 0 || bearing > 359
+                    errordlg('Bad compass heading given.', 'Bad Heading');
+                    return
+                end
+                
+                obj.msDegreesFromNorth = bearing;
+                
+                F_WCS_RB1 = obj.hMicroStrainGX2.rotationMatrix;
+                obj.T_WCS_HOME = [f_make_R(0,90,-obj.msDegreesFromNorth) [0 0 0]'; 0 0 0 1];
+                obj.F_RB1_HOME = pinv(F_WCS_RB1) * obj.T_WCS_HOME;
+            end
+        end
+        
         function update(obj)
             update@Scenarios.ScenarioBase(obj); % Call superclass update method
             
@@ -34,12 +87,34 @@ classdef MplScenarioMud < Scenarios.ScenarioBase
             w(2) = +obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) * pi/180;
             w(3) = +obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) * pi/180;
             
-            %w(2) = 0.2;
+%             w(2) = 0.2;
             %w(3) = -0.2;
+
+            e = obj.JointAnglesDegrees(action_bus_enum.Elbow) * pi/180;
             
             % convert scalar grasp id to numerical mpl grasp value
             graspId = obj.graspLookup(obj.GraspId);
-            msg = obj.hMud.ArmPosVelHandRocGrasps([zeros(1,4) w],zeros(1,7),1,graspId,obj.GraspValue,1);
+            if isempty(obj.hMicroStrainGX2)
+                msg = obj.hMud.ArmPosVelHandRocGrasps([zeros(1,3) e w],zeros(1,7),1,graspId,obj.GraspValue,1);
+            else
+                F_WCS_RB1 = obj.hMicroStrainGX2.rotationMatrix;
+                F_WCS_RB1Offset = pinv(obj.T_WCS_HOME) * ...
+                    F_WCS_RB1 * obj.F_RB1_HOME;
+                ang = obj.R_to_EulerZYX(F_WCS_RB1Offset);
+                
+                shoulderFE = ang(3);
+                if ~obj.msLefty
+                    shoulderAA = ang(2);
+                    humeralRot = -ang(1);
+                else
+                    shoulderAA = -ang(2);
+                    humeralRot = ang(1);
+                end
+                
+                msg = obj.hMud.ArmPosVelHandRocGrasps( ...
+                    [shoulderFE shoulderAA humeralRot e w], ...
+                    zeros(1,7),1,graspId,obj.GraspValue,1);                
+            end
             
             if isempty(obj.hNfu)
                 % Send to vulcanX
@@ -62,7 +137,6 @@ classdef MplScenarioMud < Scenarios.ScenarioBase
                     case 'Tip'
                         graspId = 1;  % Pinch (British)
                         graspId = 2;  % Pinch (American)
-                        %graspId = 2;
                     case 'Lateral'
                         graspId = 9;  % Key
                     case 'Tripod'
@@ -76,13 +150,32 @@ classdef MplScenarioMud < Scenarios.ScenarioBase
                     case 'Hook'
                         graspId = 8;  % Hook
                     case 'Relaxed'
-                        graspId = 0;  % Rest
+                        graspId = 0;
+                    case 'Index'
+                        graspId = 9;
+                    case 'Middle'
+                        graspId = 10;
+                    case 'Ring'
+                        graspId = 11;
+                    case 'Little'
+                        graspId = 12;
+                    case 'Thumb'
+                        graspId = 13;
                     otherwise
                         graspId = 0;
                 end
                 % zero based index from the enumeration
                 %graspId = find(obj.GraspId == enumeration('Controls.GraspTypes'))-1;
             end
+        end % function graspLookup
+        
+        function anglesRadians = R_to_EulerZYX(R)
+            theta_y = atan2(-R(3,1),sqrt(R(1,1)^2+R(2,1)^2)); % beta
+            theta_z = atan2(R(2,1)/cos(theta_y),R(1,1)/cos(theta_y)); % alpha
+            theta_x = atan2(R(3,2)/cos(theta_y),R(3,3)/cos(theta_y)); % gamma
+
+            anglesRadians = [theta_x;theta_y;theta_z];
         end
-    end
+        
+    end % methods (Static)
 end

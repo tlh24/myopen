@@ -4,12 +4,15 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
     % obj = BarTrainer()
     % obj.initialize(hSignalSource,hSignalClassifier)
     %
+    % TODO: move image path from RP2009
+    %
     % 21-Nov-2011 Armiger: Created
     properties
         hBarGraph
         hBarGraphHighlight
         hFigure
         hAxes
+        hAxesImage
         hTimer
         hStripChart
         hSlider
@@ -19,9 +22,11 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
         
         keyOrder = 'asdfghjklzxcvbnm';  % controls the keyboard to class mapping
         
-        samplesToRound = 500;
+        samplesToRound = 250;
         activationThreshold = 0.2;
         Period = 0.02; %seconds
+        
+        LastClass = [];
     end
     methods
         
@@ -51,8 +56,12 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
             set(obj.hFigure,'CloseRequestFcn',@(src,evnt)obj.close);
             set(obj.hFigure,'Resize','on');
             set(obj.hFigure,'Position',[120 200 1000 600]);
-            %obj.hAxes = axes('Parent',obj.hFigure);
-            obj.hAxes = subplot(3,1,1:2);
+
+            % Setup Axes Containers
+            obj.hAxes = subplot(3,5,[1:3 6:8],'Parent',obj.hFigure);
+            hAxesStripChart = subplot(3,5,11:15,'Parent',obj.hFigure);
+            obj.hAxesImage = subplot(3,5,[4 5 9 10],'Parent',obj.hFigure);
+            
             obj.hBarGraph = barh(obj.hAxes,ones(obj.SignalClassifier.NumClasses,1));
             set(obj.hBarGraph,'FaceColor',[  0.7020    0.7804    1.0000]);
             hold(obj.hAxes,'on')
@@ -62,13 +71,12 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
             obj.hTimer = UiTools.create_timer('BarTrainerTimer',@(src,evt)update(obj));
             obj.hTimer.Period = obj.Period;
             
-            hAxes2 = subplot(3,1,3);
-            obj.hStripChart = GUIs.widgetStripChart(hAxes2);
+            obj.hStripChart = GUIs.widgetStripChart(hAxesStripChart);
             obj.hStripChart.initialize(length(obj.SignalClassifier.ActiveChannels),100)
             obj.hStripChart.YLim = [0 1];
             set(obj.hStripChart.hLegend,'Visible','off');
 
-            obj.hSlider = GUIs.widgetSlider('Parent',hAxes2,'Type','Vertical');
+            obj.hSlider = GUIs.widgetSlider('Parent',hAxesStripChart,'Type','Vertical');
             obj.hSlider.AxesWidth = obj.hStripChart.NumSamples;
             obj.hSlider.Range = [0 10];
             obj.hSlider.ArrowPct = 0;
@@ -93,6 +101,17 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
         end
         function update(obj)
             try
+                
+                % Check fr class change
+                if ~isequal(obj.LastClass,obj.CurrentClass)
+                    disp('Class Change');
+                    classChange = true;
+                else
+                    classChange = false;
+                end
+                obj.LastClass = obj.CurrentClass;
+                
+                % Check for Joystick Input
                 useJoystick = ~isempty(obj.hJoystick);
                 buttonDown = false;
                 if useJoystick
@@ -100,11 +119,11 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
                     if ~any(obj.hJoystick.buttonVal)
                         obj.joyButtonDownLast = 0;
                     end
-                    if obj.hJoystick.buttonVal(4) && ~obj.joyButtonDownLast
+                    if (obj.hJoystick.buttonVal(4) || obj.hJoystick.buttonVal(8)) && ~obj.joyButtonDownLast
                         obj.CurrentClass = obj.CurrentClass + 1;
                         obj.joyButtonDownLast = 1;
                     end
-                    if obj.hJoystick.buttonVal(2) && ~obj.joyButtonDownLast
+                    if (obj.hJoystick.buttonVal(2) || obj.hJoystick.buttonVal(6))&& ~obj.joyButtonDownLast
                         obj.CurrentClass = obj.CurrentClass - 1;
                         obj.joyButtonDownLast = 1;
                     end
@@ -156,7 +175,57 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
                 set(obj.hBarGraphHighlight,'YData',x.*(this));
                 
                 xlim(obj.hAxes,[0 max(ceil(max(x)/obj.samplesToRound)*obj.samplesToRound,obj.samplesToRound)]);
-                                
+                
+                
+                % update image
+                if classChange
+                    try
+                        pathImages = getImagePath;
+                        structFiles = dir(fullfile(pathImages,'*.jpg'));
+                        
+                        assert(~isempty(structFiles),'No jpg files found in "%s"\n',structFiles)
+                        
+                        
+                        switch className
+                            case {'Elbow Flexion', 'MotionA'}
+                                f = fullfile(pathImages,'elbow flexion.jpg');
+                            case {'Elbow Extension', 'MotionB'}
+                                f = fullfile(pathImages,'elbow extension.jpg');
+                            case {'Wrist Rotate In', 'Wrist Pronation'}
+                                f = fullfile(pathImages,'wrist pronation.jpg');
+                            case {'Wrist Rotate Out', 'Wrist Supination'}
+                                f = fullfile(pathImages,'wrist supination.jpg');
+                            case {'Wrist Flex In', 'Wrist Flexion'}
+                                f = fullfile(pathImages,'wrist flexion.jpg');
+                            case {'Wrist Extend Out', 'Wrist Extension'}
+                                f = fullfile(pathImages,'wrist extension.jpg');
+                            case {'Hand Up', 'Radial Deviation'}
+                                f = fullfile(pathImages,'wrist abduction.jpg');
+                            case {'Hand Down', 'Ulnar Deviation'}
+                                f = fullfile(pathImages,'wrist adduction.jpg');
+                            case {'Hand Open'}
+                                f = fullfile(pathImages,'hand open.jpg');
+                            case {'Spherical Grasp'}
+                                f = fullfile(pathImages,'cylindrical grip.jpg');
+                            case {'Tip Grasp'}
+                                f = fullfile(pathImages,'fine pinch grip.jpg');
+                            otherwise 
+                                f = [];
+                        end
+                        
+                        if ~isempty(f)
+                            img = imread(f);
+                        else
+                            img = [];
+                        end
+                        
+                        imshow(img,'Parent',obj.hAxesImage);
+                    catch ME
+                        warning(ME.message);
+                        imshow([],'Parent',obj.hAxesImage)
+                    end
+                end
+                
                 drawnow
             catch ME
                 stop(obj.hTimer)
@@ -199,6 +268,19 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
             
         end
     end
+end
+
+function pathImages = getImagePath()
+% Get the location to where the training images are stored
+
+% pathMiniVie = fileparts(which('MiniVIE'));
+% pathMyopen = fileparts(pathMiniVie);
+% pathCeven = fullfile(pathMyopen,'ceven');
+
+%TODO: Abstract this
+pathImages = 'C:\usr\RP2009\VRE\Common\ACE\Pics';
+
+
 end
 
 function ok = wait_for_device(h,hSignalSource,numSamples)

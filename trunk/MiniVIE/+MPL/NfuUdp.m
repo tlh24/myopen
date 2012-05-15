@@ -54,12 +54,12 @@ classdef (Sealed) NfuUdp < handle
             obj.TcpSocket = pnet( 'tcpsocket', obj.TcpPortNum );
             if (-1 ~= obj.TcpSocket)
                 fprintf('OK\n');
-                pnet( obj.TcpSocket, 'setreadtimeout', 5 );
+                pnet( obj.TcpSocket, 'setreadtimeout', 1 );
                 fprintf( '[%s] tcplisten on tcpsocket...',mfilename);
                 obj.TcpConnection = pnet( obj.TcpSocket, 'tcplisten' );
                 if (-1 ~= obj.TcpConnection)
                     fprintf('OK\n');
-                    pnet( obj.TcpConnection, 'setreadtimeout', 5 );
+                    pnet( obj.TcpConnection, 'setreadtimeout', 1 );
                     
                     %fprintf( 'Sending NFU reset message\n' );
                     %pnet( cmdCon, 'write', reset_Nfu ) %reset NFU
@@ -241,6 +241,9 @@ classdef (Sealed) NfuUdp < handle
             pnet( pnet_conn, 'write', msg );
             
             % Check for receipt
+            checkReceipt = false;
+            
+            if checkReceipt
             try
                 reply = pnet(pnet_conn,'read',1,'uint8');
             catch ME
@@ -251,6 +254,9 @@ classdef (Sealed) NfuUdp < handle
             else
                 status = -1;
                 msg = sprintf('Failed to receive ACK on parameter update. Reply = "%d"\n',reply);
+            end
+            else
+                status = 0;
             end
             
         end

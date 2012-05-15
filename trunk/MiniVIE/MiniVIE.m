@@ -353,9 +353,10 @@ classdef MiniVIE < Common.MiniVieObj
                     
                     obj.println('Adding Filters',1);
                     Fs = 1000;
-                    h.addfilter(Inputs.HighPass(80,8,Fs));
-                    h.addfilter(Inputs.LowPass(350,8,Fs));
-                    h.addfilter(Inputs.Notch(60.*(1:4),5,Fs));
+                    h.addfilter(Inputs.HighPass(10,8,Fs));
+                    %h.addfilter(Inputs.LowPass(350,8,Fs));
+                    %h.addfilter(Inputs.Notch(60.*(1:4),5,Fs));
+                    h.addfilter(Inputs.Notch(60.*1,5,Fs));
                     % obj.SignalSource.addfilter(Inputs.MAV(150));
                     h.NumSamples = 2000;
                     h.initialize();

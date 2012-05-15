@@ -4,7 +4,7 @@ classdef TrainingInterface < Common.MiniVieObj
     %
     % 01-Feb-2011 Armiger: Created
     properties
-        MaxSamples = 2e4;
+        MaxSamples = 1e4;
     end
     properties (SetAccess = protected)
         SampleCount = 0;
@@ -24,8 +24,8 @@ classdef TrainingInterface < Common.MiniVieObj
         function emgData = getEmgData(obj)
             % returns valid data (since buffers initialized to larger size)
             emgData = [];
-
-            if all(isnan(obj.EmgData(:)))
+            
+            if all(reshape(isnan(obj.EmgData(:,:,1)),1,[]))
                 fprintf('[%s] No Emg Data Recorded\n',mfilename);
                 return
             end
@@ -53,7 +53,7 @@ classdef TrainingInterface < Common.MiniVieObj
                 warning('TrainingInterface:ExceededMaxSamples','Exceeded Preallocated Sample Buffer');
             end
 
-            % Get new data (getting raw data and manually filtereing for logging)
+            % Get new data (getting raw data and manually filtering for logging)
             rawEmg = obj.SignalSource.getData();
             windowData = obj.SignalSource.applyAllFilters(rawEmg);
             
@@ -82,7 +82,12 @@ classdef TrainingInterface < Common.MiniVieObj
                 % User Cancelled
             else
                 
-                emgData = getEmgData(obj); %#ok<NASGU>
+                try
+                    emgData = getEmgData(obj); %#ok<NASGU>
+                catch
+                    emgData = [];
+                end
+                
                 features3D = obj.getFeatureData(); %#ok<NASGU>
                 classLabelId = obj.getClassLabels(); %#ok<NASGU>
                 if ~isempty(obj.SignalClassifier)
