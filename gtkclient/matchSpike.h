@@ -12,7 +12,6 @@
 
 class matchSpike{
 private:
-	int m_ss[48]; //spikeshape.
 	int m_f[64]; //filtered response.
 	float m_solutions[NSOL][12]; //keep around the top solutions found so far (?)
 							// last index is the MSE.
@@ -20,11 +19,13 @@ private:
 	float m_normal;
 	bool 	m_normal_ok;
 public:
-	float m_spikeShape[32];
+	int 	m_ss[48]; //spikeshape, local coordinates.
+	int	m_ssFit[32]; //fit spike shape (IIR impulse response)
 	int 	m_nn; // turn off annealing for the first pass.
 					// if < 0, then annealing is disabled.
 	int 	m_coefs[10]; //for external reading, in headstage order:
 		// b0 b1 b2 a0 a1 b3 b4 b5 a2 a3
+	int 	m_nsol;  //total # solutions arrived at so far..
 
 matchSpike(){
 	for(int i=0; i<48; i++){
@@ -33,8 +34,12 @@ matchSpike(){
 	for(int i=0; i<64; i++){
 		m_f[i] = 0;
 	}
-	m_nn = 0;
+	for(int i=0; i<32; i++){
+		m_ssFit[i] = 0;
+	}
+	m_nn = -1;
 	m_normal_ok = false;
+	m_nsol = 0;
 }
 ~matchSpike(){
 	//nothing allocated!
@@ -183,7 +188,7 @@ void init(float* ic, float* ss){
 	float spikeshape[32] = {1.5457,1.9232,2.1639,2.8021,5.2088,9.5837,8.3667,-15.2952,-65.9034,-110.7464,-123.2559,-102.1531,-41.9247,41.4448,108.6987,127.8526,122.7375,115.7513,103.3645,87.4556,68.8197,49.9576,33.1681,18.9129,6.3786,-4.967,-14.9929,-23.4813,-30.5448,-24.0000,-12.0000,0};
 	if(ss){
 		for(int i=0; i<32; i++){
-			m_ss[i] = (int)round(ss[i]*256*256);
+			m_ss[i] = (int)round(ss[i]*32768);
 		}
 	}else{
 		for(int i=0; i<32; i++){
@@ -192,7 +197,7 @@ void init(float* ic, float* ss){
 	}
 
 	for(int i=0; i<10; i++){
-		m_std[i] = 0.5;
+		m_std[i] = 1.f;
 	}
 	m_std[10] = 3;
 
@@ -228,8 +233,10 @@ void fit(int n){
 		// as we converge upon a good solution, this will come to dominate
 		// the 'best' database.
 		int indx = rand() % NSOL;
+		//modulate the std by a sinusoid, pop between local minima.
+		float scl = 0.001f + 0.499f*sinf(m_nn/25e4) + 0.5f;
 		for(int j=0; j<11; j++){
-			par[j] = m_solutions[indx][j] + normal()*m_std[j];
+			par[j] = m_solutions[indx][j] + 2.f*(uniform()-0.5f)*m_std[j]*scl;
 		}
 		par[10] = fabs(par[10]); //only positive shifts.
 		float mse = filterMSE(par);
@@ -240,10 +247,7 @@ void fit(int n){
 				m_solutions[wi][j] = par[j];
 			m_solutions[wi][11] = mse;
 			//shrink solutions.
-			if(m_nn > NSOL*5){
-				for(int j=0; j<11; j++){
-					m_std[j] *= (1 - (1.0/(16.0*NSOL))); //8.0 for N = 64 optimal.
-				}
+			if(m_nsol > NSOL*5){
 				//print.
 				if(1){
 					for(int j=0; j<11; j++){
@@ -260,9 +264,10 @@ void fit(int n){
 					}
 				}
 			}
-			m_nn++;
+			m_nsol++;
 		}
 	}
+	m_nn += n;
 	//update the best coefs cache.
 	//select the best, output the parameters.
 	// b[6], a[4], arranged in biquads.
@@ -282,6 +287,13 @@ void fit(int n){
 		m_coefs[2+i*5] = b[2+i*3];
 		m_coefs[3+i*5] = a[0+i*2];
 		m_coefs[4+i*5] = a[1+i*2];
+	}
+	//also update the filter reseponse.
+	filterMSE(m_solutions[best]); //this sets m_f.
+	//shift m_f as per offset.
+	int off = (int)m_solutions[best][10];
+	for(int m=0; m<32; m++){
+		m_ssFit[m] = m_f[m+off];
 	}
 }
 
@@ -307,7 +319,6 @@ int plotmatch (int* s, int * h, int n)
 						// can be set from the command-line:
 						// -dev devname        sets the output device to "devname"
 						// -o output_file      sets the output file name to output_file                // -h                  gives a list of all possible options
-
 
 	pls->init();           // start plplot object
 	pls->env(xmin, xmax, ymin, ymax, just, axis );
@@ -377,8 +388,8 @@ float getImpulse(int n, float* out){
 	filterMSE(m_solutions[n]); //this sets m_f.
 	//shift m_f as per offset.
 	int off = (int)m_solutions[n][10];
-	for(int m=0; m<31; m++){
-		out[m] = (float)(m_f[m+off]) / 16384.f;
+	for(int m=0; m<32; m++){
+		out[m] = (float)(m_f[m+off]) / 32768.f;
 	}
 	//return the scaled mse, 0 (best) 1 (worst).
 	float max, min;

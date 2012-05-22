@@ -136,7 +136,7 @@ GtkAdjustment* g_gainSpin[4] = {0,0,0,0};
 GtkAdjustment* g_agcSpin[4] = {0,0,0,0};
 GtkToggleButton* 		g_agcCheck[4] = {0,0,0,0};
 GtkToggleButton*		g_lmsCheck[4] = {0,0,0,0};
-GtkAdjustment* g_apertureSpin[8] = {0,0,0,0};
+GtkAdjustment* g_apertureSpin[8] = {0,0,0,0,0,0,0,0};
 GtkAdjustment* g_thresholdSpin[4];
 GtkAdjustment* g_centeringSpin[4];
 GtkAdjustment* g_zoomSpin;
@@ -355,6 +355,13 @@ static gint button_press_event( GtkWidget      *,
 	if(event->button == 3){
 		if(g_c[g_channel[u]]->m_pcaVbo->m_polyW > 10 && g_mode == MODE_SORT)
 			templatePopupMenu(event, (gpointer)u);
+		for(int i=0; i<2; i++){
+			if(g_c[g_channel[u]]->m_mspk[i].m_nn > 0){
+				printf("stopping the simulated annealing, setting the matched filter weights.\n");
+				g_c[g_channel[u]]->m_mspk[i].m_nn = -1;
+				setMF(g_channel[u]);
+			}
+		}
 	}
 	return TRUE;
 }
@@ -971,70 +978,9 @@ packet format in the file, as saved here:
 						g_sortUnit[k][g_sortI] = 0;
 						g_sortAperture[k][0][g_sortI] = 2048;
 						g_sortAperture[k][1][g_sortI] = 2048;
-						for(int m=0; m<6; m++){
-							//first check to see if it matches template here.
-							//template: might as well make it equal on both sides; no reason for bias.
-							//[8 pre][16 template][8 post].
-							//however, for parity with the headstage, convolve with the most
-							//recent 16 samples.
-							float saa[2] = {0,0};
-							i64 offset = g_fbufW - 16 + m-5; //absolute index to sample [0].
-							for(int j=0; j<16; j++){
-								float w;
-								w = g_fbuf[k][mod2(offset + j, g_nsamp)*3+1];
-								w *= 0.5f;
-								saa[0] += fabs(w - g_c[h]->m_template[0][j]);
-								saa[1] += fabs(w - g_c[h]->m_template[1][j]);
-							}
-							//record the best match.
-							for(int u=0; u<2; u++){
-								if(g_sortAperture[k][u][g_sortI] > saa[u]){
-									g_sortAperture[k][u][g_sortI] = saa[u];
-									g_sortOffset[k][u][g_sortI] = offset -8; // [8 pre]
-								}
-							}
-						}
+
 						//if the headstage has sent a match, clear out our old matches.
 						for(int u=0; u<2; u++){
-							float aper = g_c[h]->getAperture(u)/255.f;
-							//see if there was a match in the past 4 packets.
-							float saa = 16*256;
-							i64 off = 0;
-							for(int d=0; d<4; d++){
-								float f = g_sortAperture[k][u][(g_sortI-d)&0xf];
-								if(f < saa){
-									saa = f;
-									off = g_sortOffset[k][u][(g_sortI-d)&0xf];
-								}
-							}
-							if(g_templMatch[h][u]){ //problem is this persists over 4 packets.
-								if(saa <= aper){
-									g_sortWfUnit[k] = u+1;
-									g_sortWfOffset[k] = off;
-									//the headstage and client are in agreement.
-									//clear client's store of potential matches.
-									for(int d=0; d<4; d++){
-										g_sortAperture[k][u][(g_sortI-d)&0xf] = 2048;
-									}
-								}else{
-									//headstage found a match. false positive.
-									g_sortWfUnit[k] = u+5;
-									g_sortWfOffset[k] = off;
-									printf("channel %d unit %d headstage false positive.\n",h,u);
-								}
-							}
-							//check to see if the headstage may have missed a spike.
-							if(g_sortAperture[k][u][(g_sortI-4)&0xf] < aper){
-								//the headstage may have missed a spike.
-								if(u == 1 && g_templMatch[h][0]){
-									printf("channel %d unit b occluded by unit a.\n",h);
-								}else{
-									//did miss a spike. false negative.
-									printf("channel %d unit %d headstage missed spike.\n",h,u);
-									g_sortWfUnit[k] = u+3;
-									g_sortWfOffset[k] = off;
-								}
-							}
 							if(!g_templMatch[h][u] && !g_sortWfUnit[k]){
 								//normal,nothing.
 								//don't copy if we have something queued.
@@ -1045,7 +991,8 @@ packet format in the file, as saved here:
 									i64 o = g_fbufW - centering + m-6;
 									float a = g_fbuf[k][mod2(o, g_nsamp)*3+1];
 									float b = g_fbuf[k][mod2(o+1, g_nsamp)*3+1];
-									if(a <= threshold && b > threshold){
+									if((threshold > 0 && (a <= threshold && b > threshold))
+										|| (threshold < 0 && (a >= threshold && b < threshold))){
 										g_sortWfUnit[k] = -1; //unsorted.
 										g_sortWfOffset[k] = g_fbufW + m-31-6;
 									}
@@ -1357,7 +1304,7 @@ static void apertureSpinCB( GtkWidget*, gpointer p){
 		//gtk likes to call this frequently -- only update when
 		//the value has actually changed.
 		if(g_c[j]->getAperture(h%2) != a){
-			if(a >= 0 && a < 256*16){
+			if(a >= 0 && a < 16384){
 				g_c[j]->setApertureLocal(a, h%2);
 				setAperture(j);
 			}
@@ -1841,7 +1788,7 @@ int main(int argn, char **argc)
 			GtkWidget* bx3 = gtk_hbox_new (FALSE, 2);
 			gtk_container_add (GTK_CONTAINER (bx2), bx3);
 			g_apertureSpin[i*2+j] = mk_spinner("", bx3,
-								  g_c[g_channel[i]]->getAperture(j), 0, 255*16, 2,
+								  g_c[g_channel[i]]->getAperture(j), 0, 16384, 5,
 								  apertureSpinCB, i*2+j);
 			//a button for disable.
 			button = gtk_button_new_with_label("off");

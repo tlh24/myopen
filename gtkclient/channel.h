@@ -68,6 +68,7 @@ public:
 			sqliteGetBlob(ch, j, "matchedfilter", &(m_mf[j][0]), 10);
 			sqliteGetBlob(ch, j, "template", &(m_template[j][0]), 16);
 			m_aperture[j] = sqliteGetValue2(ch, j, "aperture", 56.f);
+			m_aperture[j] = 16000; // reset! FIXME
 		}
 		sqliteGetBlob(ch, 0, "pcaScl", m_pcaScl, 2);
 		m_threshold = sqliteGetValue(ch, "threshold", 0.6f);
@@ -208,7 +209,7 @@ public:
 		float x = f[0]; float y = f[1];
 		x -= m_loc[0]; y -= m_loc[1];
 		x /= m_loc[2]; y /= m_loc[3];
-		if(x >= 1/62.f && x <= 31/62.f && y >= 0.5 && y <= 1.f){
+		if(x >= 1/62.f && x <= 31/62.f && y >= 0.f && y <= 1.f){
 			m_threshold = (y-0.5f)*2.f;
 			x *= 62.f; x -= 0.5f; x = 31.f-x; //inverse centering transform.
 			m_centering = x;
@@ -254,12 +255,13 @@ public:
 		m_wfVbo->draw(drawmode, time, true);
 		if(closest)
 			m_pcaVbo->drawClosestWf();
-		//draw the templates.
+
 		float ox = m_loc[0]; float oy = m_loc[1];
 		float ow = m_loc[2]/2; float oh = m_loc[3];
+		//draw the templates.
 		glLineWidth(3.f);
 		glBegin(GL_LINE_STRIP);
-		for(int k=0; k<2; k++){
+		/*for(int k=0; k<2; k++){
 			for(int j=0; j<16; j++){
 				float ny = m_template[k][j] + 0.5f;
 				float nx = (float)(j+8)/31.f;
@@ -272,6 +274,7 @@ public:
 			glVertex3f(1.f*ow+ox, 0.5f*oh+oy, 1.f);
 			glVertex3f(0.f*ow+ox, 0.5f*oh+oy, 1.f);
 		}
+		*/
 		//and the PCA templates.
 		if(showPca){
 			glLineWidth(5.f);
@@ -292,22 +295,46 @@ public:
 		//can do approx 1e6 steps/second.
 		//want the GUI to run at 30 fps min -- so can do around 20e3 iterations/frame.
 		for(int u=0; u<2; u++){
-			if(m_mspk[u].m_nn > 0 && m_mspk[u].m_nn < 2e6){
+			if(m_mspk[u].m_nn >= 0){
 				m_mspk[u].fit(20000);
 				//and plot the output.
 				for(int k=0; k<NSOL; k++){
 					float tmp[32];
 					float q = m_mspk[u].getImpulse(k, tmp);
+					glLineWidth(1.f);
+					glColor4f(1.f, 0.f, 1.f, 0.5f-q*0.5);
 					glBegin(GL_LINE_STRIP);
 					for(int j=0; j<32; j++){
-						float ny = tmp[j];
+						float ny = tmp[j] + 0.5;
 						float nx = (float)(j)/31.f;
-						glColor4f(1.f, 0.f, 1.f, 1.f-q);
 						glVertex3f(nx*ow+ox, ny*oh+oy, 0.f);
 					}
 					glEnd();
 				}
 			}
+			//also draw what we are fitting to
+			glLineWidth(1.f);
+			if(u == 0) glColor4f(0.6f, 0.f, 1.f, 0.95f);
+			else glColor4f(1.f, 0.5f, 0.f, 0.95f);
+			glBegin(GL_LINE_STRIP);
+			for(int j=0; j<32; j++){
+				float ny = m_mspk[u].m_ss[j]/32768.f + 0.5;
+				float nx = (float)(j)/31.f;
+				glVertex3f(nx*ow+ox, ny*oh+oy, 0.f);
+			}
+			glEnd();
+			//and the current best.
+			// cyan -> purple; red -> orange (color wheel)
+			glLineWidth(3.f);
+			if(u == 0) glColor4f(0.6f, 0.f, 1.f, 0.55f);
+			else glColor4f(1.f, 0.5f, 0.f, 0.55f);
+			glBegin(GL_LINE_STRIP);
+			for(int j=0; j<32; j++){
+				float ny = m_mspk[u].m_ssFit[j]/32768.f + 0.5;
+				float nx = (float)(j)/31.f;
+				glVertex3f(nx*ow+ox, ny*oh+oy, 0.f);
+			}
+			glEnd();
 		}
 		//if we are in sort mode:
 		if(showSort){
