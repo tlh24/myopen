@@ -40,10 +40,13 @@ veovert: $(COBJS)
 	g++ -o $@ -g -Wall -lmatio -lz $(COBJS)
 
 clean:
-	rm -rf client gtkclient convert *.o spikes.pb.*
+	rm -rf client gtkclient convert *.o spikes.pb.* fitMF *.svg
 
 wf_plot: wf_plot.c
 	gcc -g -lSDL -lGL -lGLU -lglut -lpthread -lmatio -lpng -o $@ wf_plot.c
+
+mf: fitMF2.cpp # matched filter test!
+	gcc -O6 fitMF2.cpp -o fitMF -lgsl -lgslcblas `pkg-config --cflags --libs plplotd-c++`
 
 deps:
 	sudo apt-get install libprotobuf-dev protobuf-compiler libgtk2.0-dev libgtkgl2.0-dev \
