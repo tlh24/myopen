@@ -17,11 +17,14 @@ private:
 	float m_solutions[NSOL][12]; //keep around the top solutions found so far (?)
 							// last index is the MSE.
 	float m_std[11]; // for simulated annealing.
-	int 	m_nn; // turn off annealing for the first pass.
 	float m_normal;
-	bool m_normal_ok;
+	bool 	m_normal_ok;
 public:
 	float m_spikeShape[32];
+	int 	m_nn; // turn off annealing for the first pass.
+					// if < 0, then annealing is disabled.
+	int 	m_coefs[10]; //for external reading, in headstage order:
+		// b0 b1 b2 a0 a1 b3 b4 b5 a2 a3
 
 matchSpike(){
 	for(int i=0; i<48; i++){
@@ -203,7 +206,7 @@ void init(float* ic, float* ss){
 }
 
 
-void fit(int n, int* b, int* a){
+void fit(int n){
 	// match spikeShape using a two-biquad fixed-point IIR filter,
 	// based on (possibly continuing) information in the class.
 	// starting with par, iterating n times, with gstd standard deviation.
@@ -211,7 +214,6 @@ void fit(int n, int* b, int* a){
 	// to be written to the headstage.
 	// new pass, keep track of the worst (local variable is fine).
 	int wi = 0;
-	int nn = 0;
 	float worst = 0;
 	for(int j=0; j<NSOL; j++){
 		if(m_solutions[j][11] > worst){
@@ -261,7 +263,9 @@ void fit(int n, int* b, int* a){
 			m_nn++;
 		}
 	}
+	//update the best coefs cache.
 	//select the best, output the parameters.
+	// b[6], a[4], arranged in biquads.
 	int best = 0;
 	float wm = 1e12;
 	for(int i=0; i<NSOL; i++){
@@ -270,11 +274,20 @@ void fit(int n, int* b, int* a){
 			best = i;
 		}
 	}
+	int b[6], a[4];
 	filterCoefs(m_solutions[best], b, a);
+	for(int i=0; i<2; i++){
+		m_coefs[0+i*5] = b[0+i*3];
+		m_coefs[1+i*5] = b[1+i*3];
+		m_coefs[2+i*5] = b[2+i*3];
+		m_coefs[3+i*5] = a[0+i*2];
+		m_coefs[4+i*5] = a[1+i*2];
+	}
 }
 
 int plotmatch (int* s, int * h, int n)
 {
+	//this plots the output as SVG files in the CWD.
 	PLFLT xmin =0, ymin=-32768, xmax=47, ymax=32768;
 	PLINT just=0, axis=0;
 	plstream *pls;
@@ -357,6 +370,30 @@ void plotAll(){
 	}
 }
 
+float getImpulse(int n, float* out){
+	// get the impulse response of a given solution,
+	// e.g. for user feedback in the GUI.
+	// output is mean 0 range 1, length 32.
+	filterMSE(m_solutions[n]); //this sets m_f.
+	//shift m_f as per offset.
+	int off = (int)m_solutions[n][10];
+	for(int m=0; m<31; m++){
+		out[m] = (float)(m_f[m+off]) / 16384.f;
+	}
+	//return the scaled mse, 0 (best) 1 (worst).
+	float max, min;
+	max = min = m_solutions[0][11];
+	for(int i=0; i<NSOL; i++){
+		float mse = m_solutions[i][11];
+		if(mse < min) min = mse;
+		if(mse > max) max = mse;
+	}
+	float mse = m_solutions[n][11];
+	mse -= min;
+	if(max - min < 1) max = min + 1;
+	mse /= (max - min);
+	return mse;
+}
 
 };
 #endif

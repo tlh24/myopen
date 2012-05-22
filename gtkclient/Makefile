@@ -8,7 +8,7 @@ CFLAGS+= -Wall -Wcast-align -Wpointer-arith -Wshadow -Wsign-compare -Wformat=2 \
 -Wextra -pedantic -std=c++0x
 LDFLAGS = -pg -lGL -lGLU -lpthread -lCg -lCgGL -lgsl -lcblas -latlas -lm -lsqlite3
 # if
-GLIBS = gtk+-2.0 gtkglext-1.0 gtkglext-x11-1.0 protobuf
+GLIBS = gtk+-2.0 gtkglext-1.0 gtkglext-x11-1.0 protobuf plplotd-c++
 GTKFLAGS = `pkg-config --cflags $(GLIBS) `
 GTKLD = `pkg-config --libs $(GLIBS) `
 
@@ -46,7 +46,7 @@ wf_plot: wf_plot.c
 	gcc -g -lSDL -lGL -lGLU -lglut -lpthread -lmatio -lpng -o $@ wf_plot.c
 
 mf: fitMF2.cpp # matched filter test!
-	gcc -O6 fitMF2.cpp -o fitMF -lgsl -lgslcblas `pkg-config --cflags --libs plplotd-c++`
+	gcc -O6 fitMF2.cpp -o fitMF `pkg-config --cflags --libs plplotd-c++`
 
 deps:
 	sudo apt-get install libprotobuf-dev protobuf-compiler libgtk2.0-dev libgtkgl2.0-dev \

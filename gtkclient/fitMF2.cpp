@@ -12,8 +12,7 @@ int main(void){
 	matchSpike ms;
 
 	ms.init(0,0);
-	int a[4], b[6];
-	ms.fit(1e7, b, a);
+	ms.fit(1e7);
 	ms.plotAll();
 
 	return 0;

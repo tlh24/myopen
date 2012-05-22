@@ -286,8 +286,8 @@ void setMF(int chan){
 	ptr += (g_sendW % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
 	for(int i=0; i<4; i++){
 		ptr[i*2+0] = calcA1Address(chan, A1_IIRA + i);
-		j = (int)((g_c[chan]->getMF(0))[i] * 16384.f);
-		k = (int)((g_c[chan+32]->getMF(0))[i] * 16384.f);
+		j = (g_c[chan]->getMF(0))[i];
+		k = (g_c[chan+32]->getMF(0))[i];
 		u = (unsigned int)((j&0xffff) | ((k&0xffff)<<16));
 		ptr[i*2+1] = htonl(u);
 	}
@@ -299,21 +299,21 @@ void setMF(int chan){
 	ptr += (g_sendW % g_sendL) * 8;
 
 	ptr[0] = calcA1Address(chan, A1_IIRA + 4);
-	j = (int)((g_c[chan]->getMF(0))[4] * 16384.f);
-	k = (int)((g_c[chan+32]->getMF(0))[4] * 16384.f);
+	j = (g_c[chan]->getMF(0))[4] ;
+	k = (g_c[chan+32]->getMF(0))[4] ;
 	u = (unsigned int)((j&0xffff) | ((k&0xffff)<<16));
 	ptr[1] = htonl(u);
 
 	ptr[2] = calcA1Address(chan, A1_UNITA);
-	j = (int)((g_c[chan]->getAperture(0)) * 16384.f);
-	k = (int)((g_c[chan+32]->getAperture(0)) * 16384.f);
+	j = (g_c[chan]->getAperture(0)) ;
+	k = (g_c[chan+32]->getAperture(0)) ;
 	u = (unsigned int)((j&0xffff) | ((k&0xffff)<<16));
 	ptr[3] = htonl(u);
 
 	for(int i=0; i<2; i++){
 		ptr[i*2+4] = calcA1Address(chan, A1_IIRB + i);
-		j = (int)((g_c[chan]->getMF(1))[i] * 16384.f);
-		k = (int)((g_c[chan+32]->getMF(1))[i] * 16384.f);
+		j = (g_c[chan]->getMF(1))[i] ;
+		k = (g_c[chan+32]->getMF(1))[i] ;
 		u = (unsigned int)((j&0xffff) | ((k&0xffff)<<16));
 		ptr[i*2+5] = htonl(u);
 	}
@@ -325,14 +325,14 @@ void setMF(int chan){
 	ptr += (g_sendW % g_sendL) * 8;
 	for(int i=0; i<3; i++){
 		ptr[i*2+0] = calcA1Address(chan, A1_IIRB + i);
-		j = (int)((g_c[chan]->getMF(1))[i+2] * 16384.f);
-		k = (int)((g_c[chan+32]->getMF(1))[i+2] * 16384.f);
+		j = (g_c[chan]->getMF(1))[i+2] ;
+		k = (g_c[chan+32]->getMF(1))[i+2] ;
 		u = (unsigned int)((j&0xffff) | ((k&0xffff)<<16));
 		ptr[i*2+1] = htonl(u);
 	}
 	ptr[6] = calcA1Address(chan, A1_UNITB);
-	j = (int)((g_c[chan]->getAperture(1)) * 16384.f);
-	k = (int)((g_c[chan+32]->getAperture(1)) * 16384.f);
+	j = (g_c[chan]->getAperture(1)) ;
+	k = (g_c[chan+32]->getAperture(1)) ;
 	u = (unsigned int)((j&0xffff) | ((k&0xffff)<<16));
 	ptr[7] = htonl(u);
 
