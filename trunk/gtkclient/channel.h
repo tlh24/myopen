@@ -8,6 +8,7 @@
 #include <gsl/gsl_sort.h>
 #include <sqlite3.h>
 #include "sql.h"
+#include "matchSpike.h"
 
 void gsl_matrix_to_mat(gsl_matrix *x, const char* fname);
 double gettime();
@@ -25,6 +26,7 @@ public:
 	VboPca*	m_pcaVbo; //2D points, with color.
 	float	m_pca[2][32]; //range 1 mean 0
 	float m_pcaScl[2]; //sqrt of the eigenvalues.
+	matchSpike	m_mspk[2]; //IIR matched filter class -- also stores filter coef.
 	float	m_mf[2][10]; // same as matlab -- mply by 16384 for bfin. 2x 5 coef biquads.
 	float m_template[2][16]; //range 1 mean 0.
 	float	m_loc[4];
@@ -286,6 +288,27 @@ public:
 			}
 		}
 		glEnd();
+		//and if we are running the matched filter annealing.
+		//can do approx 1e6 steps/second.
+		//want the GUI to run at 30 fps min -- so can do around 20e3 iterations/frame.
+		for(int u=0; u<2; u++){
+			if(m_mspk[u].m_nn > 0 && m_mspk[u].m_nn < 2e6){
+				m_mspk[u].fit(20000);
+				//and plot the output.
+				for(int k=0; k<NSOL; k++){
+					float tmp[32];
+					float q = m_mspk[u].getImpulse(k, tmp);
+					glBegin(GL_LINE_STRIP);
+					for(int j=0; j<32; j++){
+						float ny = tmp[j];
+						float nx = (float)(j)/31.f;
+						glColor4f(1.f, 0.f, 1.f, 1.f-q);
+						glVertex3f(nx*ow+ox, ny*oh+oy, 0.f);
+					}
+					glEnd();
+				}
+			}
+		}
 		//if we are in sort mode:
 		if(showSort){
 			//draw a dark blue quad for the template ROI.
@@ -347,6 +370,8 @@ public:
 	}
 	int updateTemplate(int unit){
 		//called when the button is clicked.
+		//must also fit the matched filter. (have a stop button here?)
+		// also need to set the threshold aka aperture..  later!
 		if(unit < 1 || unit > 2){
 			printf("unit out of range in Channel::updateTemplate()\n");
 			return false;
@@ -362,22 +387,23 @@ public:
 			printf("%d ", (int)((temp[i+8]+0.5f) * 255));
 		}
 		printf("\n");
-		m_aperture[unit-1] = aperture * 255;
-		printf("m_aperture[%d][%d] = %d\n", m_ch, unit-1, (int)m_aperture[unit-1]);
+		m_mspk[unit-1].init(NULL, temp); //this will enable the annealing step.
+		//old code below.
+		//m_aperture[unit-1] = aperture * 255;
+		//printf("m_aperture[%d][%d] = %d\n", m_ch, unit-1, (int)m_aperture[unit-1]);
 		//update sorting based on new aperture.
 		//m_pcaVbo->updateAperture(m_template[unit-1], aperture, color);
 		//store the equivalent of the unsigned bytes actually used on the headstage.
+		/*
 		for(int i=0; i<16; i++){
 			float r = round((m_template[unit-1][i] + 0.5f)*255.f);
 			m_template[unit-1][i] = r/255.f - 0.5f;
 		}
+		*/
 		//let's send the new data to the headstage.
 		//setTemplate(m_ch, unit-1);
 		setAperture(m_ch);
 		return true;
-	}
-	float* getMF(int unit){
-		return m_mf[unit & 1];
 	}
 	void resetPca(){
 		//should be called if threshold, gain
@@ -514,6 +540,9 @@ public:
 	void isiIncr(){
 		m_lastSpike[0]++;
 		m_lastSpike[1]++;
+	}
+	int* getMF(int unit){
+		return m_mspk[unit & 1].m_coefs;
 	}
 };
 
