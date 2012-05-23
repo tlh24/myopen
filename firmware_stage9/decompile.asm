@@ -756,7 +756,7 @@ ffa087b4:	25 c8 15 e8 	R0.H = (A1 += R2.H * R5.H), R0.L = (A0 += R2.L * R5.L) (S
 ffa087b8:	05 9c 00 00 
 ffa087bc:	00 cc 05 20 	R0 = R0 +|+ R5 (S) || [I2++] = R0 || NOP;
 ffa087c0:	10 9e 00 00 
-ffa087c4:	81 ce 90 0d 	R6 = R0 >>> 0xe (V) || [I2++] = R1 || NOP;
+ffa087c4:	81 ce 88 0d 	R6 = R0 >>> 0xf (V) || [I2++] = R1 || NOP;
 ffa087c8:	11 9e 00 00 
 ffa087cc:	03 c8 00 18 	MNOP || R5 = [I0++] || R1 = [I1++];
 ffa087d0:	05 9c 09 9c 
@@ -784,7 +784,7 @@ ffa08824:	25 c8 15 e8 	R0.H = (A1 += R2.H * R5.H), R0.L = (A0 += R2.L * R5.L) (S
 ffa08828:	05 9c 00 00 
 ffa0882c:	00 cc 05 20 	R0 = R0 +|+ R5 (S) || R7 = [I0++] || [I2++] = R0;
 ffa08830:	07 9c 10 9e 
-ffa08834:	81 ce 90 41 	R0 = R0 >>> 0xe (V) || R5 = [I0++] || [I2++] = R1;
+ffa08834:	81 ce 88 41 	R0 = R0 >>> 0xf (V) || R5 = [I0++] || [I2++] = R1;
 ffa08838:	05 9c 11 9e 
 ffa0883c:	be 55       	R6 = R6 & R7;
 ffa0883e:	28 54       	R0 = R0 & R5;
@@ -1092,7 +1092,7 @@ ffa08bce:	20 9e       	W[I0++] = R0.L;
 ffa08bd0:	20 e1 bc c4 	R0 = -0x3b44 (X);		/*		R0=0xffffc4bc(-15172) */
 ffa08bd4:	20 9e       	W[I0++] = R0.L;
 ffa08bd6:	20 9e       	W[I0++] = R0.L;
-ffa08bd8:	20 e1 10 27 	R0 = 0x2710 (X);		/*		R0=0x2710(10000) */
+ffa08bd8:	20 e1 80 3e 	R0 = 0x3e80 (X);		/*		R0=0x3e80(16000) */
 ffa08bdc:	20 9e       	W[I0++] = R0.L;
 ffa08bde:	20 9e       	W[I0++] = R0.L;
 ffa08be0:	20 e1 d4 1e 	R0 = 0x1ed4 (X);		/*		R0=0x1ed4(7892) */
@@ -1125,7 +1125,7 @@ ffa08c26:	20 9e       	W[I0++] = R0.L;
 ffa08c28:	20 e1 dd ca 	R0 = -0x3523 (X);		/*		R0=0xffffcadd(-13603) */
 ffa08c2c:	20 9e       	W[I0++] = R0.L;
 ffa08c2e:	20 9e       	W[I0++] = R0.L;
-ffa08c30:	20 e1 10 27 	R0 = 0x2710 (X);		/*		R0=0x2710(10000) */
+ffa08c30:	20 e1 80 3e 	R0 = 0x3e80 (X);		/*		R0=0x3e80(16000) */
 ffa08c34:	20 9e       	W[I0++] = R0.L;
 ffa08c36:	20 9e       	W[I0++] = R0.L;
 ffa08c38:	00 e1 01 00 	R0.L = 0x1;		/* (  1)	R0=0x1(  1) */

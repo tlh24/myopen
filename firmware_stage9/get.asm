@@ -117,7 +117,7 @@ r0.l=(a0 +=r4.l * r5.l), r0.h=(a1 +=r4.h * r5.h)(s2rnd)|| [i2++] = r1 ;//r0 = y1
 r0.l=(a0 +=r2.l * r5.l), r0.h=(a1 +=r2.h * r5.h)(s2rnd)|| r5 = [i0++] ;//r0 = y2(n); r5 = threshold.
 //this is the output of the matched filter; may need more biquads. compare with thresh.
 	r0 = r0 +|+ r5 (s) || [i2++] = r0; // add threshold, save y2(n)`
-	r6 = r0 >>> 14 (v) || [i2++] = r1; //either -1 (0xffff) or 0, save y2(n-1)
+	r6 = r0 >>> 15 (v) || [i2++] = r1; //either -1 (0xffff) or 0, save y2(n-1)
 	MNOP				 							 || r5 = [i0++] || r1 = [i1++] ;// r6 match; r1 x1(n-1); r5 b0.0
 //second unit.
 	a0  = r7.l * r5.l, a1  = r7.h * r5.h || r5 = [i0++] || r2 = [i1++] ;//r5 = b0.1; r2 = x1(n-2)
@@ -134,7 +134,7 @@ r0.l=(a0 +=r4.l * r5.l), r0.h=(a1 +=r4.h * r5.h)(s2rnd)|| [i2++] = r1 ;//r0 = y1
 r0.l=(a0 +=r2.l * r5.l), r0.h=(a1 +=r2.h * r5.h)(s2rnd)|| r5 = [i0++] ;//r0 = y2(n); r5 = threshold.
 //this is the output of the matched filter; may need more biquads. compare with thresh.
 	r0 = r0 +|+ r5 (s) || r7 = [i0++] || [i2++] = r0; // add threshold, save y2(n)`
-	r0 = r0 >>> 14 (v,s) || r5 = [i0++] || [i2++] = r1; //either -1 (0xffff) or 0; load mask (0x00040004), save y2(n-1)
+	r0 = r0 >>> 15 (v,s) || r5 = [i0++] || [i2++] = r1; //either -1 (0xffff) or 0; load mask (0x00040004), save y2(n-1)
 	r6 = r6 & r7 ; // r7 = 0x00100001 -- note upper nibble shifted.
 	r0 = r0 & r5 ; // r5 = 0x00200002 -- this saves a cycle later.
 	r6 = r6 | r0 ; // r6 match on 2 units, 2 channels now.
@@ -236,7 +236,7 @@ r0.l=(a0 +=r4.l * r5.l), r0.h=(a1 +=r4.h * r5.h)(s2rnd)|| [i2++] = r1 ;//r0 = y1
 	a0 += r1.l * r5.l, a1 += r1.h * r5.h || r5 = [i0++]; 					  //r5 = a1.1
 r0.l=(a0 +=r2.l * r5.l), r0.h=(a1 +=r2.h * r5.h)(s2rnd)|| r5 = [i0++] ;//r0 = y2(n); r5 = threshold.
 //this is the output of the matched filter; may need more biquads. compare with thresh.
-	r0 = r0 +|+ r5 (s) || r7 = [i0++] || [i2++] = r0; // subtract threshold, save y2(n)`
+	r0 = r0 +|+ r5 (s) || r7 = [i0++] || [i2++] = r0; // add threshold, save y2(n)`
 	r0 = r0 >>> 14 (v,s) || r5 = [i0++] || [i2++] = r1; //either -1 (0xffff) or 0; load mask (0x00040004), save y2(n-1)
 	r6 = r6 & r7 ; // r7 = 0x00400004 --again, upper nibble shifted.
 	r0 = r0 & r5 ; // r5 = 0x00800008
