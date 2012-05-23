@@ -146,7 +146,7 @@ r0.l=(a0 +=r2.l * r5.l), r0.h=(a1 +=r2.h * r5.h)(s2rnd)|| r5 = [i0++] ;//r0 = y2
 	r2 = [FP-FP_0FFF0FFF];
 	r1 <<= 16;  //secondary channel in the upper word.
 	r0 = r0 | r1;
-	r2 = r0 & r2;
+	r7 = r0 & r2;
 	/** prefilter **/
 	r6 = [FP - FP_16384]; //FP relative loads cannot be paralelled :-(
 .align 8
