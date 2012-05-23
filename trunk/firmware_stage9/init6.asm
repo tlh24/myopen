@@ -59,7 +59,7 @@ lt2_top:
 			r0 = 31397 (x);	w[i0++] = r0.l; w[i0++] = r0.l;
 			r0 = -15172 (x);	w[i0++] = r0.l; w[i0++] = r0.l;
 			//threshold.
-			r0 = 10000 (x) ;	w[i0++] = r0.l; w[i0++] = r0.l;
+			r0 = 16000 (x) ;	w[i0++] = r0.l; w[i0++] = r0.l; //default is high threshold -- few get through.
 
 			//second unit.
 			//lowpass biquad.
@@ -76,7 +76,7 @@ lt2_top:
 			r0 = 29836 (x);	w[i0++] = r0.l; w[i0++] = r0.l;
 			r0 = -13603 (x);	w[i0++] = r0.l; w[i0++] = r0.l;
 			//threshold.
-			r0 = 10000 (x) ;	w[i0++] = r0.l; w[i0++] = r0.l;
+			r0 = 16000 (x) ;	w[i0++] = r0.l; w[i0++] = r0.l;
 			//rewrite masks.
 			r0.l = 0x1; 		w[i0++] = r0.l; 
 			r0.l = 0x10; 	w[i0++] = r0.l; //little-endian. check this.
