@@ -2,7 +2,7 @@
 # depends on google protocol buffers -- not too hard to install, in debian.
 # you'll need to install libatlas-base-dev for linear algebra.
 CFLAGS=-I/usr/local/include
-CFLAGS+=  -g
+CFLAGS+=  -O6
 CFLAGS+= -Wall -Wcast-align -Wpointer-arith -Wshadow -Wsign-compare -Wformat=2 \
 -Wno-format-y2k -Wmissing-braces -Wparentheses -Wtrigraphs \
 -Wextra -pedantic -std=c++0x
@@ -19,9 +19,8 @@ GOBJS = spikes.pb.o gtkclient.o glInfo.o sock.o decodePacket.o sql.o headstage.o
 
 COBJS = convert.o decodePacket.o
 
-all: veo
-convert: veovert
-client: veo
+all: gtkclient 
+
 
 %.o: %.cpp vbo.h channel.h cgVertexShader.h
 	g++ -c -o $@ $(CFLAGS) $(GTKFLAGS) $<
@@ -33,10 +32,10 @@ spikes.pb.cc : spikes.proto
 # client: $(OBJS)
 #	g++ $(LDFLAGS) $(OBJS) -o client
 
-veo: $(GOBJS)
+gtkclient: $(GOBJS)
 	g++ -o $@ $(GTKLD) $(LDFLAGS) -lmatio $(GOBJS)
 
-veovert: $(COBJS)
+convert: $(COBJS)
 	g++ -o $@ -g -Wall -lmatio -lz $(COBJS)
 
 clean:
