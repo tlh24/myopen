@@ -647,7 +647,7 @@ int main(void){
 			if(secs != prevtime)
 				*pPORTFIO_TOGGLE = 0x8000; 
 			prevtime = secs; 
-		}b
+		}
 	}
 	return 0;
 }
