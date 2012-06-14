@@ -27,6 +27,9 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
         Period = 0.02; %seconds
         
         LastClass = [];
+        
+        ShowImages;
+        
     end
     methods
         
@@ -50,6 +53,15 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
 
             % Extend the init method to create figure
             setupFigure(obj);
+            
+            pathImages = getImagePath;
+            
+            if isempty(pathImages)
+                obj.ShowImages = false;
+            else
+                obj.ShowImages = true;
+            end
+            
         end
         function setupFigure(obj)
             obj.hFigure = UiTools.create_figure('Interactive Trainer');
@@ -178,52 +190,50 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
                 
                 
                 % update image
-                if classChange
-                    try
-                        pathImages = getImagePath;
-                        structFiles = dir(fullfile(pathImages,'*.jpg'));
-                        
-                        assert(~isempty(structFiles),'No jpg files found in "%s"\n',structFiles)
-                        
-                        
-                        switch className
-                            case {'Elbow Flexion', 'MotionA'}
-                                f = fullfile(pathImages,'elbow flexion.jpg');
-                            case {'Elbow Extension', 'MotionB'}
-                                f = fullfile(pathImages,'elbow extension.jpg');
-                            case {'Wrist Rotate In', 'Wrist Pronation'}
-                                f = fullfile(pathImages,'wrist pronation.jpg');
-                            case {'Wrist Rotate Out', 'Wrist Supination'}
-                                f = fullfile(pathImages,'wrist supination.jpg');
-                            case {'Wrist Flex In', 'Wrist Flexion'}
-                                f = fullfile(pathImages,'wrist flexion.jpg');
-                            case {'Wrist Extend Out', 'Wrist Extension'}
-                                f = fullfile(pathImages,'wrist extension.jpg');
-                            case {'Hand Up', 'Radial Deviation'}
-                                f = fullfile(pathImages,'wrist abduction.jpg');
-                            case {'Hand Down', 'Ulnar Deviation'}
-                                f = fullfile(pathImages,'wrist adduction.jpg');
-                            case {'Hand Open'}
-                                f = fullfile(pathImages,'hand open.jpg');
-                            case {'Spherical Grasp'}
-                                f = fullfile(pathImages,'cylindrical grip.jpg');
-                            case {'Tip Grasp'}
-                                f = fullfile(pathImages,'fine pinch grip.jpg');
-                            otherwise 
-                                f = [];
-                        end
-                        
-                        if ~isempty(f)
-                            img = imread(f);
-                        else
-                            img = [];
-                        end
-                        
-                        imshow(img,'Parent',obj.hAxesImage);
-                    catch ME
-                        warning(ME.message);
-                        imshow([],'Parent',obj.hAxesImage)
+                if classChange && obj.ShowImages
+                    pathImages = getImagePath;
+                    
+                    structFiles = dir(fullfile(pathImages,'*.jpg'));
+                    
+                    assert(~isempty(structFiles),'No jpg files found in "%s"\n',structFiles)
+                    
+                    
+                    switch className
+                        case {'Elbow Flexion', 'MotionA'}
+                            f = fullfile(pathImages,'elbow flexion.jpg');
+                        case {'Elbow Extension', 'MotionB'}
+                            f = fullfile(pathImages,'elbow extension.jpg');
+                        case {'Wrist Rotate In', 'Wrist Pronation'}
+                            f = fullfile(pathImages,'wrist pronation.jpg');
+                        case {'Wrist Rotate Out', 'Wrist Supination'}
+                            f = fullfile(pathImages,'wrist supination.jpg');
+                        case {'Wrist Flex In', 'Wrist Flexion'}
+                            f = fullfile(pathImages,'wrist flexion.jpg');
+                        case {'Wrist Extend Out', 'Wrist Extension'}
+                            f = fullfile(pathImages,'wrist extension.jpg');
+                        case {'Hand Up', 'Radial Deviation'}
+                            f = fullfile(pathImages,'wrist abduction.jpg');
+                        case {'Hand Down', 'Ulnar Deviation'}
+                            f = fullfile(pathImages,'wrist adduction.jpg');
+                        case {'Hand Open'}
+                            f = fullfile(pathImages,'hand open.jpg');
+                        case {'Spherical Grasp'}
+                            f = fullfile(pathImages,'cylindrical grip.jpg');
+                        case {'Tip Grasp'}
+                            f = fullfile(pathImages,'fine pinch grip.jpg');
+                        otherwise
+                            f = [];
                     end
+                    
+                    if ~isempty(f)
+                        img = imread(f);
+                    else
+                        img = [];
+                    end
+                    
+                    imshow(img,'Parent',obj.hAxesImage);
+                else
+                    imshow([],'Parent',obj.hAxesImage)
                 end
                 
                 drawnow
@@ -271,7 +281,7 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
 end
 
 function pathImages = getImagePath()
-% Get the location to where the training images are stored
+% Get the location to where training images are stored
 
 % pathMiniVie = fileparts(which('MiniVIE'));
 % pathMyopen = fileparts(pathMiniVie);
@@ -279,6 +289,12 @@ function pathImages = getImagePath()
 
 %TODO: Abstract this
 pathImages = 'C:\usr\RP2009\VRE\Common\ACE\Pics';
+
+if ~exist(pathImages,'dir')
+    fprintf('Path "%s" not found. Images not displayed\n',pathImages);
+    pathImages = '';
+    return
+end
 
 
 end
