@@ -11,3 +11,4 @@ To do:
 -Exit button on class names not functioning
 
 - Save dialog comes up twice on bar trainer exit
+
