@@ -233,7 +233,7 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
                     
                     imshow(img,'Parent',obj.hAxesImage);
                 else
-                    imshow([],'Parent',obj.hAxesImage)
+                    %imshow([],'Parent',obj.hAxesImage)
                 end
                 
                 drawnow
@@ -288,7 +288,7 @@ function pathImages = getImagePath()
 % pathCeven = fullfile(pathMyopen,'ceven');
 
 %TODO: Abstract this
-pathImages = 'C:\usr\RP2009\VRE\Common\ACE\Pics';
+pathImages = 'C:\Users\armigrs1\Documents\usr\RP2009\VRE\Common\ACE\Pics';
 
 if ~exist(pathImages,'dir')
     fprintf('Path "%s" not found. Images not displayed\n',pathImages);
