@@ -9,9 +9,11 @@ classdef MplScenarioMud < Scenarios.ScenarioBase
         hSink = [];
         hNfu = [];
         hMicroStrainGX2 = [];
+        hTactors;
         
         enableNfu = true;
         enableMicroStrain = false;
+        
         
         % MicroStrain config values
         msComPortStr = 'COM18';
@@ -31,10 +33,17 @@ classdef MplScenarioMud < Scenarios.ScenarioBase
             % limb system via vulcanX or the NFU
             
             if obj.enableNfu
+                fprintf('[%s] Starting with NFU ENABLED\n',mfilename);
                 obj.hNfu = MPL.NfuUdp.getInstance;
                 obj.hNfu.initialize();
                 obj.hMud = MPL.MudCommandEncoder();
+                
+                % Note tactors currently only enabled on NFU pathway
+                obj.hTactors{1} = HapticAlgorithm(obj.hNfu,3);
+                obj.hTactors{2} = HapticAlgorithm(obj.hNfu,4);
+                
             else
+                fprintf('[%s] Starting with NFU DISABLED\n',mfilename);
                 obj.hSink = MPL.VulcanXSink('127.0.0.1',9035);
                 obj.hMud = MPL.MudCommandEncoder();
                 
@@ -87,11 +96,13 @@ classdef MplScenarioMud < Scenarios.ScenarioBase
             w(2) = +obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) * pi/180;
             w(3) = +obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) * pi/180;
             
-%             w(2) = 0.2;
-            %w(3) = -0.2;
+            % w(1) = -1.3;  % rotation
+            % w(2) = 0.2;   % dev
+            % w(3) = -0.5;  % fe
 
             e = obj.JointAnglesDegrees(action_bus_enum.Elbow) * pi/180;
-            
+            %e = 1.5;
+
             % convert scalar grasp id to numerical mpl grasp value
             graspId = obj.graspLookup(obj.GraspId);
             if isempty(obj.hMicroStrainGX2)
@@ -123,7 +134,36 @@ classdef MplScenarioMud < Scenarios.ScenarioBase
                 % Send to NFU
                 obj.hNfu.send_msg(obj.hNfu.TcpConnection,char(59,msg));
             end
+            
+            %% Send feedback
+            if isempty(obj.hNfu)
+                % No NFU, no Feedback
+                disp('Feedback Disabled');
+                return
+            end
+            
+            obj.hNfu.update; %called by getData
+            b = obj.hNfu.get_buffer(2);
+            if ~isempty(b) > 0
+                percepts = b{1}(1:70);
+                
+                sortedPercepts = reshape(percepts,7,10);
+                s16 = sortedPercepts(1:6,:);
+                convertedPercepts = double(reshape(typecast(s16(:),'int16'),3,10));
+                convertedPercepts(4,:) = sortedPercepts(7,:);
+                %disp(convertedPercepts);
+                
+                littleT = convertedPercepts(3,6);
+                obj.hTactors{1}.update(littleT);
+                
+                indexT = convertedPercepts(3,2);
+                obj.hTactors{2}.update(indexT);
+            end
         end
+        
+            
+            
+            
     end
     methods (Static)
         function graspId = graspLookup(strGraspName)
@@ -166,6 +206,9 @@ classdef MplScenarioMud < Scenarios.ScenarioBase
                 end
                 % zero based index from the enumeration
                 %graspId = find(obj.GraspId == enumeration('Controls.GraspTypes'))-1;
+                
+                %graspId = 1;  % Pinch (American)
+                
             end
         end % function graspLookup
         

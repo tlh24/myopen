@@ -3,13 +3,23 @@ hSink = MPL.VulcanXSink('127.0.0.1',9035);  % check port number against VulcanX 
 hMud = MPL.MudCommandEncoder();
 %% Send manual commands
 graspId = 7;
-graspVal = 0/20;
-e = 19*5*pi/180;
+graspVal = 11/20;
+e = 16*5*pi/180;
+
 w(1) = -4*5*pi/180; % Wrist Rotation
-w(2) = 0*5*pi/180; % Wrist Deviation
+w(2) = -1*5*pi/180; % Wrist Deviation
 w(3) = 1*5*pi/180; % Wrist Flexion
 msg = hMud.ArmPosVelHandRocGrasps([zeros(1,3) e w],zeros(1,7),1,graspId,graspVal,1);
 hSink.putbytes(msg);
+%% Test endpoint commands
+% +X Forward
+% +Y Up
+% +Z Right (Right Arm) (away from arm)
+tic
+while toc < 1
+    msg = hMud.EndpointVelocity6HandRocGrasps([0 0 .1],[0 0 0],1,graspId,graspVal,1);
+    hSink.putbytes(msg);
+end
 
 %% Three move init to overcome wrist dev stiction
 graspId = 1;
@@ -33,26 +43,33 @@ hSink.putbytes(msg);
 
 %%
 return
+% Startup notes:  0) run cc / go (create simulink variables)
+
 
 %%
 hNfu = MPL.NfuUdp.getInstance;
 hNfu.initialize();
 
-hNfu.setParam(NFU_run_algorithm,0)
-hNfu.setParam(NFU_output_to_MPL,2)
+hNfu.setParam(NFU_run_algorithm,0)  %% 0 implies algorithm runs on laptop
+hNfu.setParam(NFU_output_to_MPL,2)  %% 2 = NFU CAN to limb
+%%
+%Stream CPCH
+hNfu.enableStreaming(1);
+% Enlable Percepts
+hNfu.enableStreaming(4);
 
 %%
 pnet_conn = hNfu.TcpConnection;
 mud = MPL.MudCommandEncoder();
 %%
-w = [-20 6 10]*5*pi/180;
-rocPos = 0.9;
-rocID = 7;
+w = [-15 0 0]*5*pi/180;
+rocPos = 0/10;
+rocID = 5;
 elbow = 5*5*pi/180;
 
 msg = mud.ArmPosVelHandRocGrasps([zeros(1,3) elbow w],zeros(1,7),1,rocID,rocPos,1);
 % pnet( hNfu.TcpConnection, 'write', char(59,msg)); %Upper arm and wrist DOM PV, ROC for hand
-hNfu.send_msg(hNfu.TcpConnection,char(59,msg));
+hNfu.send_msg(hNfu.TcpConnection,char(59,msg));  % append nfu msg header
 
 %%
 tic
