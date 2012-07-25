@@ -6,7 +6,11 @@ classdef ScenarioBase < Common.MiniVieObj
     %   variables (and apply rate limiting and range limiting) and then
     %   send the data to the appropriate sink
     %
-    % Created: 1/17/2012 Armiger
+    % Note that the joint angles will be saved on closed and loaded on init
+    % in the user's tempdir directory
+    % 
+    % 17Jan2012 Armiger: Created
+    % 15Jul2012 Armiger: Added load/save from tempdir
     
     properties
         SignalSource;
@@ -25,9 +29,10 @@ classdef ScenarioBase < Common.MiniVieObj
         FingerCommand = [0 0 0 0];
         FingerAngles = [45 45 45 45]; %degrees
         
-        JointAnglesDegrees = zeros(size(action_bus_definition));
+        JointAnglesDegrees;
         JointVelocity = zeros(size(action_bus_definition));
         
+        TempFileName = 'jointAngles';
     end
     
     methods
@@ -36,8 +41,17 @@ classdef ScenarioBase < Common.MiniVieObj
             obj.SignalClassifier = SignalClassifier;
             
             obj.Timer = UiTools.create_timer(mfilename,@(src,evt)update(obj));
-            obj.Timer.Period = 0.06;
+            obj.Timer.Period = 0.05;
             %obj.Timer.Period = 0.15;
+            
+            jointAngles = UiTools.load_temp_file(obj.TempFileName);
+            
+            if isempty(jointAngles)
+                obj.JointAnglesDegrees = zeros(size(action_bus_definition));
+            else
+                obj.JointAnglesDegrees = jointAngles;
+            end
+            
         end
         function start(obj)
             if strcmpi(obj.Timer.Running,'off')
@@ -90,15 +104,18 @@ classdef ScenarioBase < Common.MiniVieObj
                 disp('No Signal Source');
                 return
             elseif isempty(hSignalClassifier)
-                disp('No Signal Classifier');
+                %disp('No Signal Classifier');
                 return
             end
             
             % Get intent from data stream
             [classOut,voteDecision,className,prSpeed]= getIntent(hSignalSource,hSignalClassifier);
             
+            verbose = 1;
+            if verbose
             fprintf('Class=%2d; Vote=%2d; Class = %16s; S=%6.4f',...
                 classOut,voteDecision,className,prSpeed);
+            end
 
             lastVelocity = obj.JointVelocity;
             desiredVelocity = zeros(size(obj.JointVelocity));
@@ -110,9 +127,9 @@ classdef ScenarioBase < Common.MiniVieObj
                 case {'Elbow Extension' 'Elbow Down'}
                     desiredVelocity(action_bus_enum.Elbow) = -prSpeed;
                 case {'Pronate' 'Wrist Rotate In'}
-                    desiredVelocity(action_bus_enum.Wrist_Rot) = -prSpeed;
+                    desiredVelocity(action_bus_enum.Wrist_Rot) = -prSpeed*2;
                 case {'Supinate' 'Wrist Rotate Out'}
-                    desiredVelocity(action_bus_enum.Wrist_Rot) = +prSpeed;
+                    desiredVelocity(action_bus_enum.Wrist_Rot) = +prSpeed*2;
                 case {'Up' 'Hand Up'}
                     desiredVelocity(action_bus_enum.Wrist_Dev) = -prSpeed;
                 case {'Down' 'Hand Down'}
@@ -123,7 +140,7 @@ classdef ScenarioBase < Common.MiniVieObj
                     desiredVelocity(action_bus_enum.Wrist_FE) = -prSpeed;
             end
             
-            globalGain = 10;
+            globalGain = 3;
             desiredVelocity = desiredVelocity .* globalGain;
             
             % Apply velocity change rate limiting
@@ -143,7 +160,7 @@ classdef ScenarioBase < Common.MiniVieObj
             %%%%%%%%%%%%%%%%%%%%%%%%
             % Process grasps
             %%%%%%%%%%%%%%%%%%%%%%%%
-            graspGain = 0.1;
+            graspGain = 0.05;
             graspChangeThreshold = 0.2;  % Normalized [0 1]
             graspName = className;
             lastGraspVelocity = obj.GraspVelocity;
@@ -167,7 +184,7 @@ classdef ScenarioBase < Common.MiniVieObj
                 otherwise 
                     desiredGraspVelocity = 0;
                     % Auto-open
-%                     desiredGraspVelocity = - prSpeed*graspGain*1;
+                    %desiredGraspVelocity = - prSpeed*graspGain*2;
             end
             
             maxGraspDeltaV = 0.1*dt;  %max instantaneous velocity change
@@ -195,25 +212,30 @@ classdef ScenarioBase < Common.MiniVieObj
             
             obj.GraspValue = max(min(obj.GraspValue,1),0);
 
+            if verbose
+            
             if isempty(obj.GraspId)
                 fprintf('\tGrasp=[]');
             else
                 fprintf('\tGrasp=%12s',char(obj.GraspId));
             end
             fprintf('\tGraspVal=%6.4f',obj.GraspValue);
-            
             %%%%%%%%%%%%%%%%%%%%%%%%
             % END grasps
             %%%%%%%%%%%%%%%%%%%%%%%%
             
             
             fprintf('\tEND\n');
+            end            
             
         end
         function close(obj)
             try
                 stop(obj.Timer);
                 delete(obj.Timer);
+                
+                UiTools.save_temp_file(obj.TempFileName,obj.JointAnglesDegrees);
+                
             end
         end
         

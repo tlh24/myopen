@@ -18,7 +18,9 @@ classdef MiniVDisplayScenario < Scenarios.ScenarioBase
             %obj.hMPL = UdpSink('192.168.139.100',8085);
         end
         function close(obj)
-            if strcmpi(obj.Timer.Running,'on')
+            close@Scenarios.ScenarioBase(obj); % Call superclass update method
+
+            if ishandle(obj.Timer) && strcmpi(obj.Timer.Running,'on')
                 try
                     stop(obj.Timer);
                     delete(obj.Timer);
@@ -95,6 +97,7 @@ end
 
 %Private
 function closeRequestFcn(src,obj)
+    fprintf('Closing %s', mfilename);
     stop(obj.Timer);
     delete(obj.Timer)
     delete(src);
