@@ -1,3 +1,17 @@
+// 01 Jul 2011 	Thomas Dautermann 	
+// 
+// I compiled pnet.c with the Matlab 2011a mex compiler using the visual studio 10 c++ compiler on Windows 7 / 64-bit using the command:
+// 
+// "mex pnet.c ws2_32.lib"
+// 
+// Seems to work fine so far. I also changed line 64 from
+// #IFDEF WIN32
+// to
+// #IFDEF _WIN64
+//
+// mex -O pnet.c ws2_32.lib
+
+
 /**********************************************************
 							  
   MEX file for the tcpip toolbox.
@@ -68,7 +82,7 @@
 #include <ctype.h>
 
 /******* WINDOWS ONLY DEFINES *********/
-#ifdef WIN32
+#ifdef _WIN64
 #define IFWINDOWS(dothis) dothis 
 #define IFUNIX(dothis)
 //#include <windows.h>
@@ -275,7 +289,7 @@ mxClassID classid2size(const mxClassID id)
 }
 
 /* Windows implementation of perror() function */
-#ifdef WIN32
+#ifdef _WIN64
 /********************************************************************/
 void perror(const char *context )
 {
@@ -1033,7 +1047,7 @@ void mexFunction(
     /* Initialization on first call to the mex file */
     if(mex_call_counter==0)
     {
-#ifdef WIN32
+#ifdef _WIN64
 	WORD wVersionRequested;
 	WSADATA wsaData;
 	int wsa_err;    

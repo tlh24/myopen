@@ -58,5 +58,53 @@ classdef UiTools
                 'Tag',figureTag,...
                 'Name',figureName);
         end
+        function save_temp_file(defaultFile,storedVariable)
+            % Create a temp file that will be stored in the tempdir
+            % directory (e.g. C:\Users\armigrs1\AppData\Local\Temp\)
+            %
+            % The input "defaultFile" is used as the filename
+            
+            fullFile = fullfile(tempdir,defaultFile);
+                        
+            try
+                fprintf('[%s] Saving temp file "%s"\n',mfilename,fullFile);
+                save(fullFile,'storedVariable','-mat');
+            catch ME
+                msg = { 'Error creating default file', fullFile , ...
+                    'Error was: ' ME.message};
+                errordlg(msg,'Error setting defaults');
+                disp('FAILED');
+                disp(storedVariable);
+                return
+            end
+        end
+        function storedVariable = load_temp_file(defaultFile)
+            % Load temp file from the tempdir
+            % directory (e.g. C:\Users\armigrs1\AppData\Local\Temp\)
+            %
+            % The input "defaultFile" is used as the filename
+
+            % Load a mat file in the temp directory
+            
+            storedVariable = [];
+            
+            fullFile = fullfile(tempdir,defaultFile);
+            if ~exist(fullFile,'file')
+                return
+            end
+            
+            try
+                S = load(fullFile,'-mat');
+            catch ME
+                msg = { 'Error reading default file', fullFile , ...
+                    'Error was: ' ME.message};
+                errordlg(msg,'Error setting defaults');
+                return
+            end
+            
+            if isfield(S,'storedVariable')
+                storedVariable = S.storedVariable;
+            end
+        end
     end
 end
