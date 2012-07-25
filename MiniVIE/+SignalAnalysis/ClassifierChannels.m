@@ -199,6 +199,8 @@ classdef ClassifierChannels < Common.MiniVieObj
     methods (Static = true)
         function setSavedDefaults(classNames)
             % Create a mat file in the temp directory
+            %
+            % see also UiTools
             
             if isempty(classNames)
                 fprintf('[%s] Not saving empty class name list\n',mfilename);
