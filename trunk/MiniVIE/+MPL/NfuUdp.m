@@ -59,6 +59,7 @@ classdef (Sealed) NfuUdp < handle
     methods (Access = private)
         function obj = NfuUdp
             % Creator is private to force singleton
+                        
             reset_buffers(obj);
         end
     end
@@ -127,11 +128,19 @@ classdef (Sealed) NfuUdp < handle
             
         end
         function enableRunMode(obj)
-            NFU_run_algorithm = evalin('base','NFU_run_algorithm');
+            
+            % get handle to database
+            db = MplDb.getInstance();
+            
+            %NFU_run_algorithm = evalin('base','NFU_run_algorithm');
+            NFU_run_algorithm = db.get_parameter('NFU_run_algorithm');
             obj.setParam(NFU_run_algorithm,0)  %% 0 implies algorithm runs on laptop
+            db.set_parameter(NFU_run_algorithm,single(0))  %% 0 implies algorithm runs on laptop
 
-            NFU_output_to_MPL = evalin('base','NFU_output_to_MPL');
+            %NFU_output_to_MPL = evalin('base','NFU_output_to_MPL');
+            NFU_output_to_MPL = db.get_parameter('NFU_output_to_MPL');
             obj.setParam(NFU_output_to_MPL,2)  %% 2 = NFU CAN to limb
+            db.set_parameter(NFU_output_to_MPL,single(2))  %% 2 = NFU CAN to limb
             
         end
         function enableStreaming(obj,type)
@@ -179,33 +188,33 @@ classdef (Sealed) NfuUdp < handle
             % workspace SimulinkParamter, otherwise, param should be the
             % actual paramter
             
-            if ischar(param)
-                % Input can be either the actual simulink parameter or a
-                % string corresponding to the parameter in the base
-                % workspace.
-                simulinkParam = evalin('base',param);
-            elseif isa(param,'Simulink.Parameter')
-                % input is the actual simulink parameter
-                simulinkParam = param;
-            else
-                error('Unknown data type passed into input parameter');
-            end
+%             if ischar(param)
+%                 % Input can be either the actual simulink parameter or a
+%                 % string corresponding to the parameter in the base
+%                 % workspace.
+%                 simulinkParam = evalin('base',param);
+%             elseif isa(param,'Simulink.Parameter')
+%                 % input is the actual simulink parameter
+%                 simulinkParam = param;
+%             else
+%                 error('Unknown data type passed into input parameter');
+%             end
             
             % If value not passed, update param with the .Value field
             if nargin > 2
-                if ~isequal(size(value),simulinkParam.Dimensions)
+                if ~isequal(size(value),param.Dimensions)
                     error('Bad Value Size');
                 end
                 
-                simulinkParam.Value = value;
+                param.Value = value;
             end
             
-            fprintf('[%s] Setting NFU parameter %s to %d\n',mfilename,simulinkParam.Description,value);
+            fprintf('[%s] Setting NFU parameter %s to %d\n',mfilename,param.Description,value);
             
-            [ status, msg ] = obj.update_param( obj.TcpConnection, simulinkParam );
+            [ status, msg ] = obj.update_param( obj.TcpConnection, param );
 
             if status
-                fprintf(2,'Failed to update parameter: %s',simulinkParam.Description);
+                fprintf(2,'Failed to update parameter: %s',param.Description);
             end
             
         end
