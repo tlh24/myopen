@@ -58,6 +58,9 @@ classdef NfuInput < Inputs.CpcHeadstage
             obj.hNfu.update();  % read available packets
             
             cellData = obj.hNfu.get_buffer(1);
+            if isempty(cellData)
+                fprintf('[%s] No Data\n',mfilename);
+            end
             
             % Loop through all available packets and find cpch data
             for i = 1:length(cellData)
