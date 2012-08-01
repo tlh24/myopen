@@ -33,6 +33,8 @@ classdef ScenarioBase < Common.MiniVieObj
         JointVelocity = zeros(size(action_bus_definition));
         
         TempFileName = 'jointAngles';
+        
+        Verbose = 1;
     end
     
     methods
@@ -101,7 +103,9 @@ classdef ScenarioBase < Common.MiniVieObj
 
             % Verify inputs
             if isempty(hSignalSource)
-                disp('No Signal Source');
+                if obj.Verbose > 0
+                    disp('No Signal Source');
+                end
                 return
             elseif isempty(hSignalClassifier)
                 %disp('No Signal Classifier');
@@ -111,10 +115,9 @@ classdef ScenarioBase < Common.MiniVieObj
             % Get intent from data stream
             [classOut,voteDecision,className,prSpeed]= getIntent(hSignalSource,hSignalClassifier);
             
-            verbose = 1;
-            if verbose
-            fprintf('Class=%2d; Vote=%2d; Class = %16s; S=%6.4f',...
-                classOut,voteDecision,className,prSpeed);
+            if obj.Verbose > 0
+                fprintf('Class=%2d; Vote=%2d; Class = %16s; S=%6.4f',...
+                    classOut,voteDecision,className,prSpeed);
             end
 
             lastVelocity = obj.JointVelocity;
@@ -212,21 +215,21 @@ classdef ScenarioBase < Common.MiniVieObj
             
             obj.GraspValue = max(min(obj.GraspValue,1),0);
 
-            if verbose
-            
-            if isempty(obj.GraspId)
-                fprintf('\tGrasp=[]');
-            else
-                fprintf('\tGrasp=%12s',char(obj.GraspId));
+            if obj.Verbose
+                
+                if isempty(obj.GraspId)
+                    fprintf('\tGrasp=[]');
+                else
+                    fprintf('\tGrasp=%12s',char(obj.GraspId));
+                end
+                fprintf('\tGraspVal=%6.4f',obj.GraspValue);
+                %%%%%%%%%%%%%%%%%%%%%%%%
+                % END grasps
+                %%%%%%%%%%%%%%%%%%%%%%%%
+                
+                
+                fprintf('\tEND\n');
             end
-            fprintf('\tGraspVal=%6.4f',obj.GraspValue);
-            %%%%%%%%%%%%%%%%%%%%%%%%
-            % END grasps
-            %%%%%%%%%%%%%%%%%%%%%%%%
-            
-            
-            fprintf('\tEND\n');
-            end            
             
         end
         function close(obj)

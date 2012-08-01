@@ -1,4 +1,27 @@
 classdef HapticAlgorithm < handle
+    % Class for converting sensor data into an actuation command
+    %
+    % Usage: HapticAlgorithm(obj.hNfu,idTactor)
+    %
+    % 
+    % Notes: 
+    % Parse percepts data
+    %1      PERCEPTID_INDEX_AB_AD,
+    %2      PERCEPTID_INDEX_MCP,
+    %3      PERCEPTID_MIDDLE_MCP,
+    %4      PERCEPTID_RING_MCP,
+    %5      PERCEPTID_LITTLE_AB_AD,
+    %6      PERCEPTID_LITTLE_MCP,
+    %7      PERCEPTID_THUMB_CMC_AD_AB,
+    %8      PERCEPTID_THUMB_CMC_FE,
+    %9      PERCEPTID_THUMB_MCP,
+    %0      PERCEPTID_THUMB_DIP,
+    %      PERCEPT_NUM_IDS
+    
+    % Read first 70 bytes (percepts) 16s 16s 16s 8u * 10
+    % unactuated percepts (16 bytes) 16s 16s * 8
+    % ftsn (45 bytes) 16s 16s 16s 16s Acel XYZ: 8s 8s 8s *5
+    
     properties
         SensorDynamicRange = [15 100];
         ActuatorDynamicRange = [40 127];

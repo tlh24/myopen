@@ -220,14 +220,6 @@ classdef (Sealed) MplDb < MiniVieDb
                 obj.define_tunable_parameter('SA_Action_GraspType',single(struct2array(GraspType)))
             end
             
-            %load('C:\usr\mpl\conventional_control\BusTypes.mat')
-            load('C:\usr\mpl\conventional_control\BusTypes.mat')
-            
-            % assignin('base','EndAction',EndAction);
-            % assignin('base','ExtrinsicModAction',ExtrinsicModAction);
-            % assignin('base','FingerTipForce',FingerTipForce);
-            %assignin('base','GraspAction',GraspAction);
-            
             obj.define_non_tunable_parameter('GraspAction',define_simulink_bus_grasp);
             
         end
@@ -265,7 +257,7 @@ end
 function GraspAction = define_simulink_bus_grasp
 
 % Bus object: GraspAction 
-clear elems;
+%clear elems;
 elems(1) = Simulink.BusElement;
 elems(1).Name = 'Enable';
 elems(1).Dimensions = 1;
