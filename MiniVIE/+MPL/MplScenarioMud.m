@@ -35,12 +35,22 @@ classdef MplScenarioMud < Scenarios.ScenarioBase
             if obj.enableNfu
                 fprintf('[%s] Starting with NFU ENABLED\n',mfilename);
                 obj.hNfu = MPL.NfuUdp.getInstance;
-                obj.hNfu.initialize();
+                status = obj.hNfu.initialize();
+                
+                if status < 0
+                    error('Failed to initialize MPL.NfuUdp\n');
+                end
+                
                 obj.hMud = MPL.MudCommandEncoder();
                 
                 % Note tactors currently only enabled on NFU pathway
-                obj.hTactors{1} = HapticAlgorithm(obj.hNfu,3);
-                obj.hTactors{2} = HapticAlgorithm(obj.hNfu,4);
+                
+                % TODO: abstract tactor ids
+                tactorIds = [5 6 7];
+                for iTactor = tactorIds
+                    fprintf('[%s] Setting up tactor id# %d\n',mfilename,iTactor);
+                    obj.hTactors = [obj.hTactors HapticAlgorithm(obj.hNfu,iTactor)];
+                end
                 
             else
                 fprintf('[%s] Starting with NFU DISABLED\n',mfilename);
@@ -57,14 +67,13 @@ classdef MplScenarioMud < Scenarios.ScenarioBase
                     end
                     
                     % Assume MicroStrain is in home position (attached to
-                    % user's tricep, antenna pointed toward user's 
+                    % user's tricep, antenna pointed toward user's
                     % shoulder, arm hanging loosely).
                     obj.home();
                 end
             end
             %obj.GraspId
         end
-        
         function home(obj)
             if ~isempty(obj.hMicroStrainGX2)
                 response = questdlg('Ready to Home?', 'Home', 'OK', 'Cancel', 'OK');
@@ -86,9 +95,54 @@ classdef MplScenarioMud < Scenarios.ScenarioBase
                 obj.F_RB1_HOME = pinv(F_WCS_RB1) * obj.T_WCS_HOME;
             end
         end
-        
         function update(obj)
             update@Scenarios.ScenarioBase(obj); % Call superclass update method
+            
+            if ~isempty(obj.SignalSource)
+                update_feedforward(obj);
+            end
+            
+            update_feedback(obj);
+            
+            
+        end
+        function update_feedback(obj)
+            % Send feedback
+            if isempty(obj.hNfu)
+                % No NFU, no percepts, no Feedback
+                disp('Feedback Disabled');
+                return
+            end
+            
+            obj.hNfu.update; %called by getData
+            b = obj.hNfu.get_buffer(2);
+            if ~isempty(b) > 0
+                percepts = b{1}(1:70);
+                
+                sortedPercepts = reshape(percepts,7,10);
+                s16 = sortedPercepts(1:6,:);
+                convertedPercepts = double(reshape(typecast(s16(:),'int16'),3,10));
+                convertedPercepts(4,:) = sortedPercepts(7,:);
+                %disp(convertedPercepts);
+                
+                %littleT = convertedPercepts(3,6);
+                %obj.hTactors(1).update(littleT);
+                middleT = convertedPercepts(3,3);
+                obj.hTactors(1).update(middleT);
+                
+                indexT = convertedPercepts(3,2);
+                obj.hTactors(2).update(indexT);
+                
+                thumbT = convertedPercepts(3,8);
+                obj.hTactors(3).update(thumbT);
+            end
+            
+            
+        end
+        function update_feedforward(obj)
+            % Get current joint angles and send commands to VulcanX or NFU
+            
+            
             
             % TODO: Hand and wrist only implemented, not upper arm
             w = zeros(1,3);
@@ -99,10 +153,10 @@ classdef MplScenarioMud < Scenarios.ScenarioBase
             % w(1) = -1.3;  % rotation
             % w(2) = 0.2;   % dev
             % w(3) = -0.5;  % fe
-
+            
             e = obj.JointAnglesDegrees(action_bus_enum.Elbow) * pi/180;
             %e = 1.5;
-
+            
             % convert scalar grasp id to numerical mpl grasp value
             graspId = obj.graspLookup(obj.GraspId);
             if isempty(obj.hMicroStrainGX2)
@@ -124,7 +178,7 @@ classdef MplScenarioMud < Scenarios.ScenarioBase
                 
                 msg = obj.hMud.ArmPosVelHandRocGrasps( ...
                     [shoulderFE shoulderAA humeralRot e w], ...
-                    zeros(1,7),1,graspId,obj.GraspValue,1);                
+                    zeros(1,7),1,graspId,obj.GraspValue,1);
             end
             
             if isempty(obj.hNfu)
@@ -135,35 +189,7 @@ classdef MplScenarioMud < Scenarios.ScenarioBase
                 obj.hNfu.send_msg(obj.hNfu.TcpConnection,char(59,msg));
             end
             
-            %% Send feedback
-            if isempty(obj.hNfu)
-                % No NFU, no Feedback
-                disp('Feedback Disabled');
-                return
-            end
-            
-            obj.hNfu.update; %called by getData
-            b = obj.hNfu.get_buffer(2);
-            if ~isempty(b) > 0
-                percepts = b{1}(1:70);
-                
-                sortedPercepts = reshape(percepts,7,10);
-                s16 = sortedPercepts(1:6,:);
-                convertedPercepts = double(reshape(typecast(s16(:),'int16'),3,10));
-                convertedPercepts(4,:) = sortedPercepts(7,:);
-                %disp(convertedPercepts);
-                
-                littleT = convertedPercepts(3,6);
-                obj.hTactors{1}.update(littleT);
-                
-                indexT = convertedPercepts(3,2);
-                obj.hTactors{2}.update(indexT);
-            end
         end
-        
-            
-            
-            
     end
     methods (Static)
         function graspId = graspLookup(strGraspName)
@@ -216,7 +242,7 @@ classdef MplScenarioMud < Scenarios.ScenarioBase
             theta_y = atan2(-R(3,1),sqrt(R(1,1)^2+R(2,1)^2)); % beta
             theta_z = atan2(R(2,1)/cos(theta_y),R(1,1)/cos(theta_y)); % alpha
             theta_x = atan2(R(3,2)/cos(theta_y),R(3,3)/cos(theta_y)); % gamma
-
+            
             anglesRadians = [theta_x;theta_y;theta_z];
         end
         

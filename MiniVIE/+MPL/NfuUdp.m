@@ -135,12 +135,12 @@ classdef (Sealed) NfuUdp < handle
             %NFU_run_algorithm = evalin('base','NFU_run_algorithm');
             NFU_run_algorithm = db.get_parameter('NFU_run_algorithm');
             obj.setParam(NFU_run_algorithm,0)  %% 0 implies algorithm runs on laptop
-            db.set_parameter(NFU_run_algorithm,single(0))  %% 0 implies algorithm runs on laptop
+            db.set_value('NFU_run_algorithm',single(0))  %% 0 implies algorithm runs on laptop
 
             %NFU_output_to_MPL = evalin('base','NFU_output_to_MPL');
             NFU_output_to_MPL = db.get_parameter('NFU_output_to_MPL');
             obj.setParam(NFU_output_to_MPL,2)  %% 2 = NFU CAN to limb
-            db.set_parameter(NFU_output_to_MPL,single(2))  %% 2 = NFU CAN to limb
+            db.set_value('NFU_output_to_MPL',single(2))  %% 2 = NFU CAN to limb
             
         end
         function enableStreaming(obj,type)
