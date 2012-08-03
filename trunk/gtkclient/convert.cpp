@@ -19,6 +19,7 @@
 #define _FILE_OFFSET_BITS 64
 
 #define CHUNK 16384
+
 int gzipp(unsigned char* data, u64 len, FILE *dest, int level)
 {
     int ret, flush;
@@ -152,6 +153,7 @@ int main(int argn, char **argc){
 				if(u == 0xdecafbad){
 					fread((void*)&u,4,1,in);
 					unsigned int siz = u & 0xffff;
+					int svn = (u >> 16) & 0x7fff; 
 					//printf("u 0x%x\n",u);
 					unsigned int npak = (siz-4)/(4+32);
 					rxpackets += npak;
@@ -165,7 +167,7 @@ int main(int argn, char **argc){
 						fread((void*)&p,sizeof(p),1,in);
 						int channels[32]; char match[32];
 						unsigned int echo = 0;
-						decodePacket(&p, channels, match, echo);
+						decodePacket(&p, channels, match, svn, echo);
 						for(unsigned int k=0; k<32; k++){
 							if(match[k]) spikes++;
 						}
@@ -270,6 +272,7 @@ int main(int argn, char **argc){
 				if(u == 0xdecafbad){
 					fread((void*)&u,4,1,in);
 					unsigned int siz = u & 0xffff;
+					int svn = (u >> 16) & 0x7fff; 
 					unsigned int npak = (siz-4)/(4+32);
 					//first 4 is for dropped packet count
 					//second 4 is for 4 byte bridge milisecond counter
@@ -285,7 +288,7 @@ int main(int argn, char **argc){
 						if(ferror(in) || feof(in)) done = true;
 						else{
 							int channels[32]; char match[32];
-							decodePacket(&p, channels, match, echo);
+							decodePacket(&p, channels, match, svn, echo);
 							//check to see if we can apply the command that was echoed.
 							char m = msgs[echo][0];
 							if(m >= 'A' && m <= 'A' + 15){
