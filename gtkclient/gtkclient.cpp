@@ -842,7 +842,7 @@ packet format in the file, as saved here:
 				//will have to convert them with another prog later.
 				unsigned int tmp = 0xdecafbad;
 				fwrite((void*)&tmp, 4, 1, g_saveFile);
-				tmp = 605; //SVN version.
+				tmp = SVN_VER; //SVN version.
 				tmp <<= 16;
 				tmp += n; //size of the ensuing packet data.
 				fwrite((void*)&tmp, 4, 1, g_saveFile);
@@ -931,7 +931,7 @@ packet format in the file, as saved here:
 					g_templMatch[j][0] = g_templMatch[j][1] = false;
 				}
 				double time = ((double)p->ms / BRIDGE_CLOCK) + g_timeOffset;
-				decodePacket(p, channels, match, g_headecho);
+				decodePacket(p, channels, match, SVN_VER, g_headecho);
 				for(int j=0; j<32; j++){
 					int adr = channels[j];
 					for(int t=0; t<2; t++){

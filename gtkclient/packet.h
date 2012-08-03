@@ -7,8 +7,11 @@ typedef struct {
 	unsigned int tmpl[2]; //template match!
 } packet; //size: 36 bytes.
 
-int decodePacket(packet* p, int* channel, char* match, unsigned int &echo);
+int decodePacket(packet* p, int* channel, char* match, 
+					  int svn, unsigned int &echo);
 
 #define BRIDGE_CLOCK 9155.2734375 // Hz.
+
+#define SVN_VER 773 // update me!
 
 #endif
