@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "../firmware_stage9/decoder.h"
+#include "../firmware_stage9_tmpl/decoder.h"
 #include "packet.h"
 
 //decode the template-match part of a packet

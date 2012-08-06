@@ -771,6 +771,7 @@ void* sock_thread(void*){
 			printf("a bridge appears to be at %s\n",destName);
 			//send a response.
 			buf[0] = 114; /** radio channel. **/
+			printf("radio channel set to %d\n", buf[0]); 
 #ifdef EMG
 			buf[0] += 128; //put the bridge in EMG compat mode.
 #endif
