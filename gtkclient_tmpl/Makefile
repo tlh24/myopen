@@ -19,9 +19,8 @@ GOBJS = spikes.pb.o gtkclient.o glInfo.o sock.o decodePacket.o sql.o headstage.o
 
 COBJS = convert.o decodePacket.o
 
-all: veo
-convert: veovert
-client: veo
+all: gtkclient
+convert: convert
 
 %.o: %.cpp vbo.h channel.h cgVertexShader.h
 	g++ -c -o $@ $(CFLAGS) $(GTKFLAGS) $<
@@ -30,17 +29,15 @@ spikes.pb.cc : spikes.proto
 	protoc $< --cpp_out=.
 	protoc $< --python_out=.
 
-# client: $(OBJS)
-#	g++ $(LDFLAGS) $(OBJS) -o client
 
-veo: $(GOBJS)
+gtkclient: $(GOBJS)
 	g++ -o $@ $(GTKLD) $(LDFLAGS) -lmatio $(GOBJS)
 
-veovert: $(COBJS)
+convert: $(COBJS)
 	g++ -o $@ -g -Wall -lmatio -lz $(COBJS)
 
 clean:
-	rm -rf client gtkclient convert *.o spikes.pb.*
+	rm -rf gtkclient convert *.o spikes.pb.*
 
 wf_plot: wf_plot.c
 	gcc -g -lSDL -lGL -lGLU -lglut -lpthread -lmatio -lpng -o $@ wf_plot.c

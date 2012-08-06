@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "../firmware_stage9/decoder.h" //this is for the most up-to-date enoding. 
+#include "../firmware_stage9_mf/decoder.h" //this is for the matched filter enoding. 
 #include "packet.h"
 
 unsigned short decoder_694 [128] = {
