@@ -356,7 +356,7 @@ void SetupMacAddr(u8 * MACaddr){
 	MACaddr[2] = 0x22; 
 	MACaddr[3] = 0xfe; 
 	MACaddr[4] = 0x51; 
-	MACaddr[5] = 0x08; 
+	MACaddr[5] = 0x0A; /** This MUST be different on each bridge! **/
 	*pEMAC_ADDRLO = MACaddr[0] | MACaddr[1] << 8 |
 		    MACaddr[2] << 16 | MACaddr[3] << 24;
 	*pEMAC_ADDRHI = MACaddr[4] | MACaddr[5] << 8;

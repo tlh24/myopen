@@ -10,9 +10,9 @@
 
 #ifdef __ADSPBF527__
 #include <cdefBF527.h>
-#endif
 u8 g_oled_line = 0; 
 u8 oled_write(u16); 
+#endif
 
 int uart_str(char* str){
 	int i =0; 
@@ -40,6 +40,7 @@ int uart_str(char* str){
 	str = strcpy; 
 	i = 0; 
 	//also output to the OLED? 
+#ifdef __ADSPBF527__
 	if(*str == '!'){
 		str++; 
 		while(*str && i < PRINTF_BUFFER_SIZE){
@@ -69,6 +70,7 @@ int uart_str(char* str){
 			i++; 
 		}
 	}
+#endif
 	return i; 
 }
 int printf_str(char* str){return uart_str(str); }
