@@ -65,6 +65,12 @@ classdef (Sealed) NfuUdp < handle
     end
     methods
         function [ status ] = initialize(obj)
+            % Initialize network interface to NFU.  
+            % [ status ] = initialize(obj)
+            %
+            % status = 0: no error
+            % status < 0: Failed
+            
             
             if obj.IsInitialized
                 fprintf('[%s] NFU Comms already initialized\n',mfilename);
@@ -72,7 +78,7 @@ classdef (Sealed) NfuUdp < handle
                 return
             end
             
-            obj.UdpSocket=pnet('udpsocket',obj.UdpPortNum);
+            obj.UdpSocket = pnet('udpsocket',obj.UdpPortNum);
             pnet(obj.UdpSocket, 'setreadtimeout',0);
             
             % open a CMD connection to the NFU

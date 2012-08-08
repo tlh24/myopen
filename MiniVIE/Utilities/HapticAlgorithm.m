@@ -23,18 +23,22 @@ classdef HapticAlgorithm < handle
     % ftsn (45 bytes) 16s 16s 16s 16s Acel XYZ: 8s 8s 8s *5
     
     properties
-        SensorDynamicRange = [15 100];
-        ActuatorDynamicRange = [40 127];
+        
+        SensorLowHigh = [15 100];
+        ActuatorLowHigh = [40 127];
         
         ActuationRepeatTimeout = 20;
         
         Verbose = 1;
         
         TactorId
+        
     end
     properties (Access = private)
         TactorState
-        
+        TactorCounter = 0;
+
+        tLast
         hNfu
     end
     
@@ -43,18 +47,21 @@ classdef HapticAlgorithm < handle
             % Creator
             obj.hNfu = hNfu;
             obj.TactorId = tactorId;
-            
         end
         function update(obj,inputSensor)
-            if inputSensor > obj.SensorDynamicRange(1)
+            %update_on_off(obj,inputSensor);
+            update_continuous(obj,inputSensor);
+        end
+        function update_on_off(obj,inputSensor)
+            if inputSensor > obj.SensorLowHigh(1)
                 % sensor over activation threshold, actuate until value
                 % drops or timeout
                 
                 if obj.TactorState == 0
                     % if not on , turn on
-                    val = interp1(obj.SensorDynamicRange,obj.ActuatorDynamicRange,inputSensor,'linear','extrap');
+                    val = interp1(obj.SensorLowHigh,obj.ActuatorLowHigh,inputSensor,'linear','extrap');
                     % enforce actuator range limit
-                    val = max(min(val,obj.ActuatorDynamicRange(2)),obj.ActuatorDynamicRange(1));
+                    val = min(max(val,obj.ActuatorLowHigh(1)),obj.ActuatorLowHigh(2));
                     
                     obj.hNfu.tactorControl(obj.TactorId, 100, val, 100, 100, 0);
                     
@@ -65,7 +72,7 @@ classdef HapticAlgorithm < handle
                     obj.TactorState = 1;
                 end
                 
-            elseif inputSensor <= 25
+            elseif inputSensor <= obj.SensorLowHigh(1)
                 % Signal dropped below activation threshold
                 
                 % if on, turn off
@@ -79,13 +86,59 @@ classdef HapticAlgorithm < handle
                 % continue to count number of times tactor is 'on'
                 obj.TactorState = obj.TactorState + 1;
                 
-                if obj.TactorState == 20
+                if obj.TactorState == obj.ActuationRepeatTimeout
                     % Timeout
                     fprintf('Tactor %d TIMEOUT\n',obj.TactorId);
                     obj.hNfu.tactorControl(obj.TactorId, 100, 0, 100, 100, 0);
                 end
             end
             
+        end
+        function update_continuous(obj,inputSensor)
+            
+            % Transient state on startup
+            if isempty(obj.tLast)
+                obj.tLast = clock;            
+            end
+            
+%             % Reduce transmission speeds
+%             elapsedTime = etime(clock,obj.tLast);
+%             if elapsedTime < 0.2
+%                 return
+%             else
+%                 obj.tLast = clock;
+%                 %'send'
+%             end
+            
+            val = 0;
+            % Check sensor range
+            if inputSensor < obj.SensorLowHigh(1)
+                obj.TactorState = 0;
+                val = 0;
+            elseif obj.SensorLowHigh(1) < inputSensor && inputSensor <= obj.SensorLowHigh(2)
+                obj.TactorState = 1;
+                val = obj.ActuatorLowHigh(1);
+            elseif obj.SensorLowHigh(2) < inputSensor
+                obj.TactorState = 2;
+                val = obj.ActuatorLowHigh(2);
+            end
+            
+            % Count duration when tactor is on
+            if obj.TactorState
+                obj.TactorCounter = obj.TactorCounter + 1;
+            else
+                obj.TactorCounter = 0;
+            end
+            
+            % Check timeout condition
+            if obj.TactorCounter > obj.ActuationRepeatTimeout
+                fprintf('Tactor %d TIMEOUT\n',obj.TactorId);
+                val = 0;
+            end
+            
+            % send command
+            obj.hNfu.tactorControl(obj.TactorId, 100, val, 100, 100, 0);
+                        
         end
     end
 end

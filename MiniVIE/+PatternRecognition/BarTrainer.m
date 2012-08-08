@@ -114,7 +114,7 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
         function update(obj)
             try
                 
-                % Check fr class change
+                % Check for class change
                 if ~isequal(obj.LastClass,obj.CurrentClass)
                     disp('Class Change');
                     classChange = true;

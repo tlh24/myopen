@@ -1,4 +1,4 @@
-classdef MplScenarioMud < Scenarios.ScenarioBase
+classdef MplScenarioMud < Scenarios.OnlineRetrainer
     % Scenario for controlling JHU/APL MPL
     % Depends on UiTools
     %
@@ -11,12 +11,11 @@ classdef MplScenarioMud < Scenarios.ScenarioBase
         hMicroStrainGX2 = [];
         hTactors;
         
-        enableNfu = true;
-        enableMicroStrain = false;
-        
+        enableNfu = 1; %true;
+        enableMicroStrain = 0; %true;
         
         % MicroStrain config values
-        msComPortStr = 'COM18';
+        msComPortStr = 'COM9';
         msNodeInt = 10;
         msChannelInt = 14;
         msLefty = true;
@@ -26,6 +25,9 @@ classdef MplScenarioMud < Scenarios.ScenarioBase
         F_RB1_HOME
         % Compass heading when in home position
         msDegreesFromNorth = 0;
+        
+        VulcanXAddress = '192.168.139.3'; %127.0.0.1
+        VulcanXPort = 9027; %9035
     end
     methods
         function obj = MplScenarioMud
@@ -38,7 +40,7 @@ classdef MplScenarioMud < Scenarios.ScenarioBase
                 status = obj.hNfu.initialize();
                 
                 if status < 0
-                    error('Failed to initialize MPL.NfuUdp\n');
+                    error('Failed to initialize MPL.NfuUdp');
                 end
                 
                 obj.hMud = MPL.MudCommandEncoder();
@@ -54,7 +56,7 @@ classdef MplScenarioMud < Scenarios.ScenarioBase
                 
             else
                 fprintf('[%s] Starting with NFU DISABLED\n',mfilename);
-                obj.hSink = MPL.VulcanXSink('127.0.0.1',9035);
+                obj.hSink = MPL.VulcanXSink(obj.VulcanXAddress,obj.VulcanXPort);
                 obj.hMud = MPL.MudCommandEncoder();
                 
                 % Use MicroStrain for upper arm motion
@@ -96,7 +98,7 @@ classdef MplScenarioMud < Scenarios.ScenarioBase
             end
         end
         function update(obj)
-            update@Scenarios.ScenarioBase(obj); % Call superclass update method
+            update@Scenarios.OnlineRetrainer(obj); % Call superclass update method
             
             if ~isempty(obj.SignalSource)
                 update_feedforward(obj);
@@ -151,7 +153,7 @@ classdef MplScenarioMud < Scenarios.ScenarioBase
             w(3) = +obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) * pi/180;
             
             % w(1) = -1.3;  % rotation
-            % w(2) = 0.2;   % dev
+            w(2) = 0.0;   % dev
             % w(3) = -0.5;  % fe
             
             e = obj.JointAnglesDegrees(action_bus_enum.Elbow) * pi/180;

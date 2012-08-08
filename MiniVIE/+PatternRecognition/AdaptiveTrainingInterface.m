@@ -8,13 +8,15 @@ classdef AdaptiveTrainingInterface < PatternRecognition.TrainingInterface
     end
     methods
         function perform_retrain(obj)
-            classLabels = obj.ClassLabelId(1:obj.SampleCount);
             
-            classesWithData = unique(classLabels);
-            if length(classesWithData) < obj.SignalClassifier.NumClasses;
-                fprintf('[Classifier] Insufficient data\n');
-                return
-            end
+            % 01Aug2012 Armiger: Updated so that classifier (lda) will
+            % train properly without data for all classes
+            %classLabels = obj.ClassLabelId(1:obj.SampleCount);
+            % classesWithData = unique(classLabels);
+            % if length(classesWithData) < obj.SignalClassifier.NumClasses;
+            %     fprintf('[Classifier] Insufficient data\n');
+            %     return
+            % end
             
             if ~isempty(obj.EmgData)
                 % raw emg data storage is optional

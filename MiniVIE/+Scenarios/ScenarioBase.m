@@ -130,9 +130,9 @@ classdef ScenarioBase < Common.MiniVieObj
                 case {'Elbow Extension' 'Elbow Down'}
                     desiredVelocity(action_bus_enum.Elbow) = -prSpeed;
                 case {'Pronate' 'Wrist Rotate In'}
-                    desiredVelocity(action_bus_enum.Wrist_Rot) = -prSpeed*2;
+                    desiredVelocity(action_bus_enum.Wrist_Rot) = -prSpeed*4;
                 case {'Supinate' 'Wrist Rotate Out'}
-                    desiredVelocity(action_bus_enum.Wrist_Rot) = +prSpeed*2;
+                    desiredVelocity(action_bus_enum.Wrist_Rot) = +prSpeed*4;
                 case {'Up' 'Hand Up'}
                     desiredVelocity(action_bus_enum.Wrist_Dev) = -prSpeed;
                 case {'Down' 'Hand Down'}

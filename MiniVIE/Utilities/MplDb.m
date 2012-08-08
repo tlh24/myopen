@@ -38,6 +38,11 @@ classdef (Sealed) MplDb < MiniVieDb
             fprintf('[%s] Defining Signal Analysis Parameters...',mfilename);
             setup_SA_parameters(obj);
             fprintf('Done\n');
+            fprintf('[%s] Defining Simulink Bus Parameters...',mfilename);
+            setup_Bus_parameters(obj);
+            fprintf('Done\n');
+            
+            
             
         end
     end
@@ -193,7 +198,8 @@ classdef (Sealed) MplDb < MiniVieDb
             % setup_grasp_parameters();
             obj.define_tunable_parameter('SA_graspOverride',single(0));
             obj.define_tunable_parameter('SA_graspType',single(1));  % Manual Grasp Action Bus Command when in graspOverride mode
-            
+        end
+        function setup_Bus_parameters(obj)
             % Create GraspType Var
             GraspType.Enable = 0;
             GraspType.ControlStrategy = 3;

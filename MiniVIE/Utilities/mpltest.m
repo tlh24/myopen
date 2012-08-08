@@ -9,7 +9,7 @@ fprintf('******************************\n');
 fprintf('Which Test?\n');
 fprintf('[1] Ping limb system using OS [ping 192.168.1.111]\n');
 fprintf('[2] Open telnet session [plink -telnet 192.168.1.111]\n');
-fprintf('[3] NFU Streaming\n');
+fprintf('[3] NFU Streaming [Inputs.NfuInput]\n');
 fprintf('[4] Test MPL wrist range of motion [MPL.NfuUdp.getInstance MPL.MudCommandEncoder]\n');
 fprintf('[5] Test MPL ROC grasps [MPL.NfuUdp.getInstance MPL.MudCommandEncoder]\n');
 fprintf('[6] HapticAlgorithm\t Runs HapticAlgorithm within  MPL.MplScenarioMud < Scenarios.ScenarioBase\n');
@@ -36,14 +36,20 @@ switch response
         %h.addfilter(Inputs.Notch(60.*(1:4),5,Fs));
         h.addfilter(Inputs.Notch(60.*1,5,Fs));
         h.NumSamples = 2000;
-        h.initialize();
+        s = h.initialize();
+        if s < 0
+            error('NFU Init failed');
+        end
         
         GUIs.guiSignalViewer(h);
         return
     case '4'
         %test mpl wrist ROM
         hNfu = MPL.NfuUdp.getInstance;
-        hNfu.initialize();
+        s = hNfu.initialize();
+        if s < 0
+            error('NFU Init failed');
+        end
         mud = MPL.MudCommandEncoder();
         
         % msg = mud.ArmPosVelHandRocGrasps([zeros(1,3) elbow w],zeros(1,7),1,rocID,rocPos,1)
@@ -76,7 +82,7 @@ switch response
         msg = mud.ArmPosVelHandRocGrasps([zeros(1,4) 0 0 0],zeros(1,7),1,0,0,1);
         hNfu.send_msg(hNfu.TcpConnection,char(59,msg));  % append nfu msg header
     case '6'
-        %% HapticAlgorithm: Runs HapticAlgorithm within  MPL.MplScenarioMud < Scenarios.ScenarioBase
+        % HapticAlgorithm: Runs HapticAlgorithm within  MPL.MplScenarioMud < Scenarios.ScenarioBase
         
         h = MPL.MplScenarioMud;
         h.initialize([],[]);

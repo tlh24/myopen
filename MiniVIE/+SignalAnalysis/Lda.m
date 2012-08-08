@@ -31,7 +31,7 @@ classdef Lda < SignalAnalysis.Classifier
             fprintf('%d ',obj.ActiveChannels);
             fprintf(']\n');
             
-            [obj.Wg,obj.Cg] = obj.lda(feats,obj.TrainingDataLabels);
+            [obj.Wg,obj.Cg] = obj.lda(feats,obj.TrainingDataLabels,obj.NumClasses);
             
             if nargout > 0
                 % Compute confusion
@@ -90,8 +90,8 @@ classdef Lda < SignalAnalysis.Classifier
         % (c) Kevin Englehart,1997
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
-        function [Wg,Cg] = lda(featureData,classId)
-            
+        function [Wg,Cg] = lda(featureData,classId,maxClasses)
+                        
             N = size(featureData,1);
             
             % Following cannot be done with integer data:
@@ -105,7 +105,7 @@ classdef Lda < SignalAnalysis.Classifier
                 error('No signal feature data passed to classifier');
             end
             
-            classList = unique(classId);
+            classList = unique(classId(:))';
             numClasses = length(classList);
             
             if numClasses == 0
@@ -115,8 +115,9 @@ classdef Lda < SignalAnalysis.Classifier
             %%-- Compute the means and the pooled covariance matrix --%%
             C = zeros(N,N);
             Mi = zeros(N,numClasses);
-            for iClass = 1:numClasses
-                myFeatures = featureData(:,classId==classList(iClass));
+            for iClass = classList
+                %myFeatures = featureData(:,classId==classList(iClass));
+                myFeatures = featureData(:,classId==iClass);
                 Mi(:,iClass) = mean(myFeatures,2);
                 normalizedFeatures = bsxfun(@minus,myFeatures,Mi(:,iClass));
                 C = C + cov(normalizedFeatures');
@@ -126,9 +127,15 @@ classdef Lda < SignalAnalysis.Classifier
             Pphi = 1/numClasses;
             
             %%-- Compute the LDA weights --%%
+%             Wg = zeros(N,numClasses);
+%             Cg = zeros(1,numClasses);
+            if nargin > 2
+                numClasses = maxClasses;
+            end
+
             Wg = zeros(N,numClasses);
             Cg = zeros(1,numClasses);
-            for i = 1:numClasses
+            for i = classList
                 
                 % CMi = C\Mi(:,i);
                 CMi = pinv(C) * Mi(:,i);  % RSA - pinv reduces errors if poorly formed matrices

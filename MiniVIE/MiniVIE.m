@@ -136,6 +136,7 @@ classdef MiniVIE < Common.MiniVieObj
             %obj.SignalClassifier.ActiveChannels = [1 2 3 4 5 6 7 8];
             obj.SignalClassifier.TrainingData = obj.TrainingInterface.getFeatureData;
             obj.SignalClassifier.TrainingDataLabels = obj.TrainingInterface.getClassLabels;
+            obj.SignalClassifier.TrainingEmg = obj.TrainingInterface.getEmgData;
             obj.SignalClassifier.train();
             obj.SignalClassifier.computeerror();
             obj.SignalClassifier.computeGains();
