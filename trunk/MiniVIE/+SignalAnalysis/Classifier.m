@@ -36,9 +36,13 @@ classdef Classifier < Common.MiniVieObj
             numFeatures = length(obj.TrainingFeatures);
         end
         function initialize(obj)
-            % initialize with junk
-            obj.Wg = rand(obj.NumActiveChannels*obj.NumFeatures,obj.NumClasses);
-            obj.Cg = rand(1,obj.NumClasses);
+            % initialize classifier parameters with zeros.  Add a 1 in the
+            % last column so that the classifier defaults to No Movement
+            % class
+            obj.Wg = zeros(obj.NumActiveChannels*obj.NumFeatures,obj.NumClasses);
+            obj.Wg(:,obj.NumClasses) = 1;
+            obj.Cg = zeros(1,obj.NumClasses);
+            obj.Cg(1,obj.NumClasses) = 1;
         end
         function reset(obj)
             obj.Wg = [];

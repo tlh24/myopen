@@ -16,10 +16,10 @@ function features = feature_extract(windowData,windowSize,zc_thresh,ssc_thresh) 
 %       and slope sign changes
 
 if nargin < 4
-    ssc_thresh = 0.15;
+    ssc_thresh = 0.25;
 end
 if nargin < 3
-    zc_thresh = 0.15;
+    zc_thresh = 0.25;
 end
 
 [nChannels nSamples] = size(windowData);

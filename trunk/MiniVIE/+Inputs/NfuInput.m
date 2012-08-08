@@ -25,10 +25,10 @@ classdef NfuInput < Inputs.CpcHeadstage
             obj.ChannelIds = (1:32);
             obj.dataBuffer = zeros(32,5000);
         end
-        function initialize(obj)
+        function [ status ] = initialize(obj)
             
             obj.hNfu = MPL.NfuUdp.getInstance;
-            obj.hNfu.initialize();  % streaming begins here
+            status = obj.hNfu.initialize();  % streaming begins here
 
         end
 % RSA: disabled this function.  superclass method will be called        

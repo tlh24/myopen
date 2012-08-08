@@ -1,4 +1,5 @@
-classdef MiniVDisplayScenario < Scenarios.ScenarioBase
+%classdef MiniVDisplayScenario < Scenarios.ScenarioBase
+classdef MiniVDisplayScenario < Scenarios.OnlineRetrainer
     % Scenario for controlling a rendered 3d virtual hand/arm
     % Depends on UiTools
     % 
@@ -18,7 +19,8 @@ classdef MiniVDisplayScenario < Scenarios.ScenarioBase
             %obj.hMPL = UdpSink('192.168.139.100',8085);
         end
         function close(obj)
-            close@Scenarios.ScenarioBase(obj); % Call superclass update method
+            %close@Scenarios.ScenarioBase(obj); % Call superclass update method
+            close@Scenarios.OnlineRetrainer(obj); % Call superclass update method
 
             if ishandle(obj.Timer) && strcmpi(obj.Timer.Running,'on')
                 try
@@ -74,7 +76,8 @@ classdef MiniVDisplayScenario < Scenarios.ScenarioBase
             
         end
         function update(obj)
-            update@Scenarios.ScenarioBase(obj); % Call superclass update method
+            %update@Scenarios.ScenarioBase(obj); % Call superclass update method
+            update@Scenarios.OnlineRetrainer(obj); % Call superclass update method
             
             if ~isempty(obj.GraspId)
                 handAngles = Controls.graspInterpolation(obj.GraspValue, obj.GraspId);
@@ -89,7 +92,9 @@ classdef MiniVDisplayScenario < Scenarios.ScenarioBase
         end
         function initialize(obj,SignalSource,SignalClassifier)
              % Call superclass initialize method
-            initialize@Scenarios.ScenarioBase(obj,SignalSource,SignalClassifier);
+
+            %initialize@Scenarios.ScenarioBase(obj,SignalSource,SignalClassifier);
+            initialize@Scenarios.OnlineRetrainer(obj,SignalSource,SignalClassifier);
             obj.setup_display;
         end
     end
