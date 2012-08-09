@@ -24,6 +24,8 @@ classdef Classifier < Common.MiniVieObj
         NumClasses;
         NumActiveChannels;
         NumFeatures;
+        
+        IsTrained;
     end
     methods
         function numClasses = get.NumClasses(obj)
@@ -34,6 +36,9 @@ classdef Classifier < Common.MiniVieObj
         end
         function numFeatures = get.NumFeatures(obj)
             numFeatures = length(obj.TrainingFeatures);
+        end
+        function isTrained = get.IsTrained(obj)
+            isTrained = (obj.Cg ~= 0);
         end
         function initialize(obj)
             % initialize classifier parameters with zeros.  Add a 1 in the

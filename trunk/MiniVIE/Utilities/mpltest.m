@@ -7,26 +7,42 @@ fprintf('******************************\n');
 fprintf('********MiniVIE Tests*********\n');
 fprintf('******************************\n');
 fprintf('Which Test?\n');
-fprintf('[1] Ping limb system using OS [ping 192.168.1.111]\n');
-fprintf('[2] Open telnet session [plink -telnet 192.168.1.111]\n');
-fprintf('[3] NFU Streaming [Inputs.NfuInput]\n');
-fprintf('[4] Test MPL wrist range of motion [MPL.NfuUdp.getInstance MPL.MudCommandEncoder]\n');
-fprintf('[5] Test MPL ROC grasps [MPL.NfuUdp.getInstance MPL.MudCommandEncoder]\n');
-fprintf('[6] HapticAlgorithm\t Runs HapticAlgorithm within  MPL.MplScenarioMud < Scenarios.ScenarioBase\n');
-fprintf('[7] Tactor manual control\n');
-fprintf('[8] Joystick\t Runs JoyMexClass preview for 15 seconds\n');
-fprintf('[9] edit mpltest.m\n');
 
-fprintf('[0] Exit\n');
+% cellTests = { [test identifier, test description, 
+cellTests = {
+    'Ping01',       '[1] Ping router using OS [ping 192.168.1.1]'
+    'Ping02',       '[2] Ping limb system using OS [ping 192.168.1.111]'     
+    'Telnet01',     '[3] Open telnet session via plink [plink -telnet 192.168.1.111]'
+    'Pnet01',       '[4] basic pnet tcpsocket and tcplisten on 6200'
+    'NfuStream01',  '[5] NFU Streaming [Inputs.NfuInput]'
+    'MplWrist',     '[6] Test MPL wrist range of motion [MPL.NfuUdp.getInstance MPL.MudCommandEncoder]'
+    'MplHand',      '[7] Test MPL ROC grasps [MPL.NfuUdp.getInstance MPL.MudCommandEncoder]'
+    'Haptics01',    '[8] Tactor manual control'
+    'Haptics02',    '[9] HapticAlgorithm\t Runs HapticAlgorithm within  MPL.MplScenarioMud < Scenarios.ScenarioBase'
+    'Joystick01',   '[10] Joystick\t Runs JoyMexClass preview for 15 seconds'
+    'Edit01',       '[11] edit mpltest.m'
+    'exit',         '[0] Exit'
+    };
 
-response = input('Select Test: ','s');
+for i = 1:size(cellTests,1)
+    fprintf('%s\n',cellTests{i,2});
+end
 
-switch response
-    case '1'
+response = str2double(input('Select Test: ','s'));
+
+if isnan(response) || (response == 0)
+    return
+end
+
+testId = cellTests{response,1};
+switch testId
+    case 'Ping01'
+        !ping 192.168.1.1
+    case 'Ping02'
         !ping 192.168.1.111
-    case '2'
+    case 'Telnet01'
         !plink -telnet 192.168.1.111
-    case '3'
+    case 'NfuStream01'
         
         h = Inputs.NfuInput();
         
@@ -43,7 +59,7 @@ switch response
         
         GUIs.guiSignalViewer(h);
         return
-    case '4'
+    case 'MplWrist'
         %test mpl wrist ROM
         hNfu = MPL.NfuUdp.getInstance;
         s = hNfu.initialize();
@@ -53,15 +69,15 @@ switch response
         mud = MPL.MudCommandEncoder();
         
         % msg = mud.ArmPosVelHandRocGrasps([zeros(1,3) elbow w],zeros(1,7),1,rocID,rocPos,1)
-        msg = mud.ArmPosVelHandRocGrasps([zeros(1,4) -0.5 -0.5 -0.5],zeros(1,7),1,0,0,1);
+        msg = mud.ArmPosVelHandRocGrasps([zeros(1,4) -0.7 -0.5 -0.5],zeros(1,7),1,0,0,1);
         hNfu.send_msg(hNfu.TcpConnection,char(59,msg));  % append nfu msg header
         pause(1)
-        msg = mud.ArmPosVelHandRocGrasps([zeros(1,4) 0.5 0.5 0.5],zeros(1,7),1,0,0,1);
+        msg = mud.ArmPosVelHandRocGrasps([zeros(1,4) 0.7 0.5 0.5],zeros(1,7),1,0,0,1);
         hNfu.send_msg(hNfu.TcpConnection,char(59,msg));  % append nfu msg header
         pause(1)
         msg = mud.ArmPosVelHandRocGrasps([zeros(1,4) 0 0 0],zeros(1,7),1,0,0,1);
         hNfu.send_msg(hNfu.TcpConnection,char(59,msg));  % append nfu msg header
-    case '5'
+    case 'MplHand'
         %test mpl hand Roc
         hNfu = MPL.NfuUdp.getInstance;
         hNfu.initialize();
@@ -81,7 +97,11 @@ switch response
         end
         msg = mud.ArmPosVelHandRocGrasps([zeros(1,4) 0 0 0],zeros(1,7),1,0,0,1);
         hNfu.send_msg(hNfu.TcpConnection,char(59,msg));  % append nfu msg header
-    case '6'
+    case 'Haptics01'
+        % Test tactors manually
+        test_tactor_nfu();
+        return
+    case 'Haptics02'
         % HapticAlgorithm: Runs HapticAlgorithm within  MPL.MplScenarioMud < Scenarios.ScenarioBase
         
         h = MPL.MplScenarioMud;
@@ -92,18 +112,27 @@ switch response
         fprintf('Feedback Algorithm is running\n');
         
         return
-    case '7'
-        % Test tactors manually
-        test_tactor_nfu();
-        
-        return
-    case '8'
+    case 'Joystick01'
         obj = JoyMexClass;
         obj.preview;
-    case '9'
+    case 'Edit01'
         edit(mfilename);
         return
+    case 'Pnet01'
+        pnet('closeall');
+        pause(0.1);
+        p = pnet('tcpsocket',6200);
+        pnet(p,'setreadtimeout',1);
+        t = pnet(p,'tcplisten');
+        if t < 0
+            error('tcplisten failed: %d\n',t);
+        else
+            fprintf('tcplisten success: %d\n',t);
+            pnet(t,'close');
+            pnet(p,'close');
+        end
     otherwise
+        fprintf('Unmatched test "%s"\n',testId);
         return
 end
 fprintf('***********END****************\n');
