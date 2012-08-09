@@ -15,6 +15,8 @@ classdef CpcHeadstage < Inputs.SignalInput
         msgIdStatusData = 130;
         msgIdConfigurationReadResponse = 131;
         msgIdConfigurationWriteResponse = 132;
+        
+        crcTable = Inputs.CpcHeadstage.CpchCrcGen;
     end
     %methods (Static, Access = protected)
     methods (Static)
@@ -27,7 +29,7 @@ classdef CpcHeadstage < Inputs.SignalInput
             fp = fopen(fname,'r');
             data = fread(fp,'uint8=>uint8');
             fclose(fp);
-                        
+            
             payloadSize = 2*(BioampCnt+GPICnt);
             msgSize = payloadSize + 6;
             expectedLength = payloadSize;
@@ -49,11 +51,7 @@ classdef CpcHeadstage < Inputs.SignalInput
                 readStart = readEnd + 1;
             end
             
-            
-            
-            
         end
-        
         
         function [diffDataInt16 seDataU16] = GetSignalData(validData,diffCnt,seCnt)
             % Typecast the data to the approprate data size
@@ -74,7 +72,7 @@ classdef CpcHeadstage < Inputs.SignalInput
             
             seDataU16 = reshape(typecast(seDataU8(:),'uint16'),seCnt,numValidSamples);
             
-            if any(abs(diffDataInt16(:)) > 1024) || any(abs(seDataU16(:)) > 1024)
+            if any(abs(diffDataInt16(:)) > 1024) %|| any(abs(seDataU16(:)) > 1024)
                 fprintf(2,'[%s] Out of Range Values\n',mfilename);
                 %keyboard
                 % TODO need better solution than returning
@@ -83,54 +81,102 @@ classdef CpcHeadstage < Inputs.SignalInput
             
         end
         
-        function [validData] = ValidateMessages(dataAligned,expectedLength)
+        function [validData sumBadStatus sumBadLength sumBadChecksum sumBadSequence sumAdcError] = ...
+                ValidateMessages(alignedData,expectedLength)
             % Validate a matrix of messages using a criteria of checksum,
             % appropriate message length, and status bytes
             %
+            % alignedData should size [numBytesPerMessage numMessages]
+            %
             % 14Mar2012 Armiger: Created
             
-            % Get data size
-            [numBytesPerMessage numMessages] = size(dataAligned);
-            
-            % Compute expected checksum
-            computedChecksum = 255*ones(1,numMessages,'uint8');
-            % xor the entire message including the received checksum
-            % so that the result should be 0 if the checksum lines up
-            for i = 1:numBytesPerMessage
-                computedChecksum = bitxor(dataAligned(i,:),computedChecksum);
-            end
+            % Compute CRC
+            computedChecksum = Inputs.CpcHeadstage.XorChksum(alignedData);
             
             % Find 'validated' data by ensuring it is the correct length
             % and has the correct checksum
-            isValidStatusByte = ~bitand(dataAligned(3,:),uint8(15));
-            isValidLength = (dataAligned(5,:) == expectedLength);
+            % status byte upper four bits are set 2 zero
+            isValidStatusByte = ~bitand(alignedData(3,:),uint8(240));
+            
+%             msgIdError = bitget(alignedData(3,:),1);
+%             cmdMsgChecksumError = bitget(alignedData(3,:),2);
+%             cmdMsgLengthError = bitget(alignedData(3,:),3);
+            sumAdcError = sum(bitget(alignedData(3,:),4));
+            
+            
+            isValidLength = (alignedData(5,:) == expectedLength);
             isValidChecksum = (computedChecksum == 0);
             isValidData = isValidChecksum & isValidLength & isValidStatusByte;
+
+            sumBadStatus = sum(~isValidStatusByte);
+            sumBadLength = sum(~isValidLength);
+            sumBadChecksum = sum(~isValidChecksum);
+            sumBadSequence = 0;
+
+%             if (sum(isValidData) / length(isValidData)) < 0.99
+%                 fprintf('[%s] %d of %d samples have valid checksum.\r',mfilename,sum(isValidData),length(isValidData));
+%             end
             
-            if (sum(isValidData) / length(isValidData)) < 0.99
-                fprintf('[%s] %d of %d samples have valid checksum.\r',mfilename,sum(isValidData),length(isValidData));
+            validData = alignedData(:,isValidData);
+            
+            % No valid data in packet
+            if isempty(validData)
+                return
             end
             
-            validData = dataAligned(:,isValidData);
-            
-            % Check for transmission errors in validated data
-            %isTransmitError = bitand(validData(3,:),uint8(240));
-            isTransmitError = validData(3,:);
-            if any(isTransmitError)
-                fprintf('[%s] Transmit Error.\r',mfilename);
-            end
-            
+%             % Check for transmission errors in validated data
+%             %isTransmitError = bitand(validData(3,:),uint8(240));
+%             isTransmitError = validData(3,:);
+%             if any(isTransmitError)
+%                 fprintf('[%s] Transmit Error.\r',mfilename);
+%             end
+                        
             % Check sequence bytes in batch operation:
             sequenceRow = double(validData(4,:));
             sequenceExpected = mod(sequenceRow(1)+(0:size(validData,2)-1),256);
             
-            if any(sequenceExpected - sequenceRow)
-                fprintf('[%s] Out of sequence data received. %d of %d samples validated\r',mfilename,sum(isValidData),numMessages);
-            end
+%             numMessages = length(isValidData);
+            isValidSequence = (sequenceExpected - sequenceRow) == 0;
+            
+            sumBadSequence = sum(~isValidSequence);
+%             if sumBadSequence > 0
+%                 fprintf('[%s] Out of sequence data received. %d of %d samples validated\r',mfilename,sum(isValidData),numMessages);
+%             end
+            
+            
+            
             
         end
         
         function [dataAligned remainderBytes] = AlignDataBytes(dataStream,msgSize)
+            [dataAligned remainderBytes] = Inputs.CpcHeadstage.ByteAlignSlow(dataStream,msgSize);
+            %[dataAligned remainderBytes] = Inputs.CpcHeadstage.ByteAlignFast(dataStream,msgSize);
+
+        end
+        function [dataAligned remainderBytes] = ByteAlignFast(dataStream,msgSize)
+            
+            assert(size(dataStream,1) == 1,'Data Stream must be a [1 N] array');
+            
+            % Find all start chars ('128') and index the next set of bytes
+            % off of these starts.  This could lead to overlapping data
+            % but valid data will be verified using the checksum
+            idxStartBytes = find((dataStream == 128));
+            
+            
+            % Check if there are too few bytes between the last start
+            % character and the end of the buffer
+            isInRange = idxStartBytes <= 1+length(dataStream)-msgSize;
+            idxStartBytesInRange = idxStartBytes(isInRange);
+            remainderBytes = dataStream(idxStartBytesInRange(end)+msgSize:end);
+            
+            % Align the data based on the validated start characters
+            msgIndexTemplate = repmat((0:msgSize-1)',1,length(idxStartBytesInRange));
+            msgIndex = bsxfun(@plus,msgIndexTemplate,idxStartBytesInRange);
+            
+            dataAligned = dataStream(msgIndex);
+            
+        end
+        function [dataAligned remainderBytes] = ByteAlignSlow(dataStream,msgSize)
             
             assert(size(dataStream,1) == 1,'Data Stream must be a [1 N] array');
             
@@ -365,32 +411,103 @@ classdef CpcHeadstage < Inputs.SignalInput
             return;
         end
         
-        function r = XorChksum(msg, seed)
+        function r = XorChksum(msg)
+            
+            % Updated for a matrix of inputs
+            % Size should be numBytes x numSample
+            % RSA 
+            
+            if size(msg,1) == 1 || size(msg,2) == 1
+                % array input
+                numMessages = 1;
+                msg = msg(:);
+                numBytes = length(msg);
+            else           
+                [numBytes numMessages] = size(msg);
+            end
+            
             if (~isa(msg, 'uint8'))
                 if (~all(msg < 256 & msg > -1))
                     error('Passed vector contains elements below 0 or above 255');
                 end
             end
             
-            if (nargin < 2)
-                r = uint8(255);
-            else
-                if ((seed < 0) || (seed > 255))
-                    error('Seed value is outside the valid range of 0 to 255');
-                end
+            r = zeros(1,numMessages,'uint8');
+            for k = 1:numBytes
+                msgRow = msg(k,:);
+                xorResult = double(bitxor(r, msgRow));
                 
-                r = uint8(seed);
+                r = Inputs.CpcHeadstage.crcTable(1 + xorResult);
+                %r = Inputs.CpcHeadstage.crcTable(1 + (bitxor(r, msgRow)));
+                assert(all(r <= 255 & r >= 0 ),'Out of range');
+                r = uint8(r);
             end
             
-            msgx = uint8(msg);
-            for m = 1:numel(msgx)
-                r = bitxor(msgx(m), r);
-            end
             
-            %for p = msgx
-            %    r = bitxor(p, r);
-            %end
+            
+            
+            
+            
+        end
+        
+        function t = CpchCrcGen()
+            
+            t = zeros(1,256);
+            for k=0:255
+                t(k+1) = p_cpch_crc_gen(k);
+            end
         end
     end
     
+end
+
+
+
+function r = p_cpch_crc_gen(package)
+
+if (~isempty(find(package > 255, 1)))
+    error('Passed vector contains elements above 255');
+end
+
+if (~isempty(find(package < 0, 1)))
+    error('Passed vector contains elements below 0');
+end
+
+
+%% Direct bit method
+p = [1 0 1 0 0 1 1 0 1];             % Poly = 0xA6, MSB is on the right
+x = (dec2bin(package, 8))';
+x = [double(x(:)' - '0'), ones(1, 8)];
+
+xr=x(1:9);
+
+for k=1:(length(x)-8)
+    if xr(1) == p(1)
+        xr = xor(xr,p);
+    end;
+    
+    xr(1:8)=xr(2:9);
+    
+    if (k < (length(x)-8))
+        xr(9)=x(k+9);
+    end
+end
+
+r = uint8(bin2dec(char(~xr(1:8)+'0')));
+end
+function r = p_cpch_crc_lut(msg)
+persistent t;
+
+if (isempty(t))
+    for k=0:255
+        t(k+1) = p_cpch_crc_gen(k);
+    end
+end
+
+r = 0;
+
+for k = msg(:)'
+    r = t(1 + (bitxor(r, k)));
+end
+
 end

@@ -17,6 +17,15 @@ classdef CpchSerial < Inputs.CpcHeadstage
         GainDifferential = 50;
     end
     
+    properties (SetAccess = private)
+        CountTotalMessages = 0;
+        CountBadLength = 0;
+        CountBadChecksum = 0;
+        CountBadStatus = 0;
+        CountBadSequence = 0;
+        
+    end
+    
     properties (Access = private)
         hLogFile        % Handle to optional log file
         SerialObj = [];
@@ -114,11 +123,11 @@ classdef CpchSerial < Inputs.CpcHeadstage
             fwrite(obj.SerialObj, msg, 'uint8');
             % Check response
             [r, rcnt] = fread(obj.SerialObj, 7, 'uint8');
-
+            
             % Do this after the first read so that we can establish if any
             % response was given
             assert(rcnt > 0,'No response from CPCH. Check power, check connections');
-
+            
             msgId = obj.msgIdConfigurationReadResponse;
             assert(rcnt == 7,'Wrong number of bytes returned');
             assert(r(1) == msgId,'Bad response message id');
@@ -136,7 +145,7 @@ classdef CpchSerial < Inputs.CpcHeadstage
             channel_config = bitshift(uint32(obj.GPIMask), 16) + uint32(obj.BioampMask);
             msg = obj.EncodeConfigWriteMsg(2, channel_config);
             fwrite(obj.SerialObj, msg, 'uint8');
-
+            
             % Check response
             [r, rcnt] = fread(obj.SerialObj, 3, 'uint8');
             msgId = obj.msgIdConfigurationWriteResponse;
@@ -152,7 +161,7 @@ classdef CpchSerial < Inputs.CpcHeadstage
             fwrite(obj.SerialObj, msg, 'uint8');
             % Check response
             [r, rcnt] = fread(obj.SerialObj, 7, 'uint8');
-
+            
             msgId = obj.msgIdConfigurationReadResponse;
             assert(rcnt == 7,'Wrong number of bytes returned');
             assert(r(1) == msgId,'Bad response message id');
@@ -173,8 +182,8 @@ classdef CpchSerial < Inputs.CpcHeadstage
             % frameB.Mask = circShiftMask;
             
             %Debug
-            reshape(dec2binvec(double(frameB.Mask),32),16,[])'
-            reshape(dec2binvec(double(channel_config),32),16,[])'
+            reshape(dec2binvec(double(frameB.Mask),32),16,[])';
+            reshape(dec2binvec(double(channel_config),32),16,[])';
             
             
             assert(frameB.Mask == channel_config,'Defined channel mask does not match returned mask. Expected: uint32[%d] Got:uint32[%d]',...
@@ -192,7 +201,7 @@ classdef CpchSerial < Inputs.CpcHeadstage
             
             % Check for new data
             if (obj.SerialObj.BytesAvailable == 0)
-                fprintf('[%s] No new data in serial buffer.\n',mfilename);
+                %fprintf('[%s] No new data in serial buffer.\n',mfilename);
                 data = obj.DataBuffer(end-obj.NumSamples+1:end,:);
                 return;
             end
@@ -209,18 +218,26 @@ classdef CpchSerial < Inputs.CpcHeadstage
             % remainder should be a start char which is saved for the next
             % time the buffer is read
             [alignedData remainderBytes] = obj.AlignDataBytes(rawBytes,msgSize);
-
+            
             % Store remaining bytes for next read
             obj.SerialBuffer = remainderBytes;
-
+            
             % Check validation parameters (chksum, etc)
-            validData = obj.ValidateMessages(alignedData,payloadSize);
+            [validData sumBadStatus sumBadLength sumBadChecksum sumBadSequence] = ...
+                obj.ValidateMessages(alignedData,payloadSize);
+            
+            obj.CountTotalMessages = obj.CountTotalMessages + size(alignedData,2);
+            obj.CountBadLength = obj.CountBadLength + sumBadLength;
+            obj.CountBadChecksum = obj.CountBadChecksum + sumBadChecksum;
+            obj.CountBadStatus = obj.CountBadStatus + sumBadStatus;
+            obj.CountBadSequence = obj.CountBadSequence + sumBadSequence;
+
             [numBytes numValidSamples] = size(validData);
             assert(msgSize == numBytes);
-
+            
             % Extract the signals
             [diffDataI16 seDataU16] = obj.GetSignalData(validData,obj.BioampCnt,obj.GPICnt);
-
+            
             % Perform Scaling
             deDataNormalized = double(diffDataI16) / 512 * obj.GainDifferential;
             seDataNormalized = double(seDataU16) ./ 1024 * obj.GainSingleEnded;
@@ -337,6 +354,25 @@ classdef CpchSerial < Inputs.CpcHeadstage
         end
         function close(obj)
             stop(obj);
+        end
+    end
+    methods (Static = true)
+        function obj = Test
+            
+            obj = Inputs.CpchSerial('COM11',...
+                uint16(hex2dec('FFFF')),uint16(hex2dec('FFFF')));
+            fprintf('Adding Filters\n');
+            Fs = 1000;
+            obj.addfilter(Inputs.HighPass(10,8,Fs));
+            %h.addfilter(Inputs.LowPass(350,8,Fs));
+            %h.addfilter(Inputs.Notch(60.*(1:4),5,Fs));
+            obj.addfilter(Inputs.Notch(60.*1,5,Fs));
+            % obj.SignalSource.addfilter(Inputs.MAV(150));
+            obj.NumSamples = 2000;
+            obj.initialize();
+            
+            GUIs.guiSignalViewer(obj);
+            
         end
     end
 end
