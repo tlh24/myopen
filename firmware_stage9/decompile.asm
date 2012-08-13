@@ -1,6 +1,7 @@
 
 stage.dxe:     file format elf32-bfin
 
+
 Disassembly of section .text:
 
 ffa08000 <start>:
@@ -115,8 +116,8 @@ ffa0814a:	00 20       	JUMP.S 0xffa0814a <wait>;
 
 ffa0814c <call_main>:
 ffa0814c:	7b 01       	[--SP] = RETI;
-ffa0814e:	08 e1 f8 95 	P0.L = 0x95f8;		/* (-27144)	P0=0xffa095f8 <_main> */
-ffa08152:	48 e1 a0 ff 	P0.H = 0xffa0;		/* (-96)	P0=0xffa095f8 <_main> */
+ffa0814e:	08 e1 1c 97 	P0.L = 0x971c;		/* (-26852)	P0=0xffa0971c <_main> */
+ffa08152:	48 e1 a0 ff 	P0.H = 0xffa0;		/* (-96)	P0=0xffa0971c <_main> */
 ffa08156:	00 e1 62 81 	R0.L = 0x8162;		/* (-32414)	R0=0x8162(33122) */
 ffa0815a:	40 e1 a0 ff 	R0.H = 0xffa0;		/* (-96)	R0=0xffa08162 <end>(-6258334) */
 ffa0815e:	38 38       	RETS = R0;
@@ -152,7 +153,7 @@ ffa08180:	fe 2f       	JUMP.S 0xffa0817c <idle_loop>;
 ffa08182 <display_fail>:
 ffa08182:	c1 31       	R0 = SEQSTAT;
 ffa08184:	cc 31       	R1 = RETX;
-ffa08186:	00 e3 67 09 	CALL 0xffa09454 <_exception_report>;
+ffa08186:	00 e3 f9 09 	CALL 0xffa09578 <_exception_report>;
 ffa0818a:	12 00       	RTX;
 
 ffa0818c <_HWHANDLER>:
@@ -162,7 +163,7 @@ ffa08190:	fe 2f       	JUMP.S 0xffa0818c <_HWHANDLER>;
 ffa08192:	11 00       	RTI;
 
 ffa08194 <_NHANDLER>:
-ffa08194:	00 e3 20 0a 	CALL 0xffa095d4 <_nmi_report>;
+ffa08194:	00 e3 b2 0a 	CALL 0xffa096f8 <_nmi_report>;
 ffa08198:	12 00       	RTX;
 
 ffa0819a <EXC_HANDLER>:
@@ -224,7 +225,7 @@ ffa0820a:	87 30       	R0 = M3;
 ffa0820c:	20 92       	[P4++] = R0;
 ffa0820e:	c1 31       	R0 = SEQSTAT;
 ffa08210:	cc 31       	R1 = RETX;
-ffa08212:	00 e3 21 09 	CALL 0xffa09454 <_exception_report>;
+ffa08212:	00 e3 b3 09 	CALL 0xffa09578 <_exception_report>;
 ffa08216:	12 00       	RTX;
 
 ffa08218 <_THANDLER>:
@@ -261,16 +262,16 @@ ffa08248 <_clearirq_asm>:
 ffa08248:	67 01       	[--SP] = RETS;
 ffa0824a:	17 60       	R7 = 0x2 (X);		/*		R7=0x2(  2) */
 ffa0824c:	8f b4       	W[P1 + 0x4] = R7;
-ffa0824e:	00 e3 e1 01 	CALL 0xffa08610 <_get_asm>;
+ffa0824e:	00 e3 1d 03 	CALL 0xffa08888 <_get_asm>;
 ffa08252:	3e 61       	R6 = 0x27 (X);		/*		R6=0x27( 39) */
 ffa08254:	1e 97       	W[P3] = R6;
-ffa08256:	00 e3 dd 01 	CALL 0xffa08610 <_get_asm>;
+ffa08256:	00 e3 19 03 	CALL 0xffa08888 <_get_asm>;
 ffa0825a:	26 e1 70 00 	R6 = 0x70 (X);		/*		R6=0x70(112) */
 ffa0825e:	1e 97       	W[P3] = R6;
-ffa08260:	00 e3 d8 01 	CALL 0xffa08610 <_get_asm>;
+ffa08260:	00 e3 14 03 	CALL 0xffa08888 <_get_asm>;
 ffa08264:	17 60       	R7 = 0x2 (X);		/*		R7=0x2(  2) */
 ffa08266:	0f b5       	W[P1 + 0x8] = R7;
-ffa08268:	00 e3 d4 01 	CALL 0xffa08610 <_get_asm>;
+ffa08268:	00 e3 10 03 	CALL 0xffa08888 <_get_asm>;
 ffa0826c:	27 01       	RETS = [SP++];
 ffa0826e:	10 00       	RTS;
 
@@ -283,18 +284,18 @@ ffa08278 <waitirq_loop>:
 ffa08278:	0e 95       	R6 = W[P1] (Z);
 ffa0827a:	1e 49       	CC = BITTST (R6, 0x3);		/* bit  3 */
 ffa0827c:	0c 10       	IF !CC JUMP 0xffa08294 <waitirq_end>;
-ffa0827e:	00 e3 c9 01 	CALL 0xffa08610 <_get_asm>;
+ffa0827e:	00 e3 05 03 	CALL 0xffa08888 <_get_asm>;
 ffa08282:	06 60       	R6 = 0x0 (X);		/*		R6=0x0(  0) */
 ffa08284:	87 b9       	R7 = [FP -0x20];
 ffa08286:	3e 08       	CC = R6 == R7;
 ffa08288:	06 18       	IF CC JUMP 0xffa08294 <waitirq_end>;
 ffa0828a:	ff 67       	R7 += -0x1;		/* ( -1) */
 ffa0828c:	87 bb       	[FP -0x20] = R7;
-ffa0828e:	00 e3 c1 01 	CALL 0xffa08610 <_get_asm>;
+ffa0828e:	00 e3 fd 02 	CALL 0xffa08888 <_get_asm>;
 ffa08292:	f3 2f       	JUMP.S 0xffa08278 <waitirq_loop>;
 
 ffa08294 <waitirq_end>:
-ffa08294:	00 e3 be 01 	CALL 0xffa08610 <_get_asm>;
+ffa08294:	00 e3 fa 02 	CALL 0xffa08888 <_get_asm>;
 ffa08298:	27 01       	RETS = [SP++];
 ffa0829a:	10 00       	RTS;
 ffa0829c:	00 00       	NOP;
@@ -304,22 +305,22 @@ ffa082a0 <_clearfifos_asm>:
 ffa082a0:	67 01       	[--SP] = RETS;
 ffa082a2:	17 60       	R7 = 0x2 (X);		/*		R7=0x2(  2) */
 ffa082a4:	8f b4       	W[P1 + 0x4] = R7;
-ffa082a6:	00 e3 b5 01 	CALL 0xffa08610 <_get_asm>;
+ffa082a6:	00 e3 f1 02 	CALL 0xffa08888 <_get_asm>;
 ffa082aa:	26 e1 e2 00 	R6 = 0xe2 (X);		/*		R6=0xe2(226) */
 ffa082ae:	1e 97       	W[P3] = R6;
-ffa082b0:	00 e3 b0 01 	CALL 0xffa08610 <_get_asm>;
+ffa082b0:	00 e3 ec 02 	CALL 0xffa08888 <_get_asm>;
 ffa082b4:	17 60       	R7 = 0x2 (X);		/*		R7=0x2(  2) */
 ffa082b6:	0f b5       	W[P1 + 0x8] = R7;
-ffa082b8:	00 e3 ac 01 	CALL 0xffa08610 <_get_asm>;
+ffa082b8:	00 e3 e8 02 	CALL 0xffa08888 <_get_asm>;
 ffa082bc:	17 60       	R7 = 0x2 (X);		/*		R7=0x2(  2) */
 ffa082be:	8f b4       	W[P1 + 0x4] = R7;
-ffa082c0:	00 e3 a8 01 	CALL 0xffa08610 <_get_asm>;
+ffa082c0:	00 e3 e4 02 	CALL 0xffa08888 <_get_asm>;
 ffa082c4:	26 e1 e1 00 	R6 = 0xe1 (X);		/*		R6=0xe1(225) */
 ffa082c8:	1e 97       	W[P3] = R6;
-ffa082ca:	00 e3 a3 01 	CALL 0xffa08610 <_get_asm>;
+ffa082ca:	00 e3 df 02 	CALL 0xffa08888 <_get_asm>;
 ffa082ce:	17 60       	R7 = 0x2 (X);		/*		R7=0x2(  2) */
 ffa082d0:	0f b5       	W[P1 + 0x8] = R7;
-ffa082d2:	00 e3 9f 01 	CALL 0xffa08610 <_get_asm>;
+ffa082d2:	00 e3 db 02 	CALL 0xffa08888 <_get_asm>;
 ffa082d6:	27 01       	RETS = [SP++];
 ffa082d8:	10 00       	RTS;
 ffa082da:	00 00       	NOP;
@@ -394,7 +395,7 @@ ffa083ae:	24 00       	SSYNC;
 ffa083b0:	27 e1 80 00 	R7 = 0x80 (X);		/*		R7=0x80(128) */
 ffa083b4:	8f b4       	W[P1 + 0x4] = R7;
 ffa083b6:	24 00       	SSYNC;
-ffa083b8:	00 e3 a0 03 	CALL 0xffa08af8 <_init6>;
+ffa083b8:	00 e3 2c 01 	CALL 0xffa08610 <_init6>;
 ffa083bc:	0d e1 00 63 	P5.L = 0x6300;		/* (25344)	P5=0xffc06300(-4168960) */
 ffa083c0:	4d e1 80 ff 	P5.H = 0xff80;		/* (-128)	P5=0xff806300 */
 ffa083c4:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
@@ -427,11 +428,11 @@ ffa0840e:	00 e1 03 06 	R0.L = 0x603;		/* (1539)	R0=0x603(1539) */
 ffa08412:	28 97       	W[P5] = R0;
 
 ffa08414 <radio_loop>:
-ffa08414:	00 e3 fe 00 	CALL 0xffa08610 <_get_asm>;
+ffa08414:	00 e3 3a 02 	CALL 0xffa08888 <_get_asm>;
 ffa08418:	f5 b9       	R5 = [FP -0x4];
 ffa0841a:	25 49       	CC = BITTST (R5, 0x4);		/* bit  4 */
 ffa0841c:	fc 13       	IF !CC JUMP 0xffa08414 <radio_loop>;
-ffa0841e:	00 e3 f9 00 	CALL 0xffa08610 <_get_asm>;
+ffa0841e:	00 e3 35 02 	CALL 0xffa08888 <_get_asm>;
 ffa08422:	05 60       	R5 = 0x0 (X);		/*		R5=0x0(  0) */
 ffa08424:	f5 bb       	[FP -0x4] = R5;
 ffa08426:	ff e3 3d ff 	CALL 0xffa082a0 <_clearfifos_asm>;
@@ -442,27 +443,27 @@ ffa08430:	a2 e0 24 50 	LSETUP(0xffa08434 <wp_top>, 0xffa08478 <wp_bot>) LC0 = P5
 ffa08434 <wp_top>:
 ffa08434:	17 60       	R7 = 0x2 (X);		/*		R7=0x2(  2) */
 ffa08436:	8f b4       	W[P1 + 0x4] = R7;
-ffa08438:	00 e3 ec 00 	CALL 0xffa08610 <_get_asm>;
+ffa08438:	00 e3 28 02 	CALL 0xffa08888 <_get_asm>;
 ffa0843c:	26 e1 a0 00 	R6 = 0xa0 (X);		/*		R6=0xa0(160) */
 ffa08440:	1e 97       	W[P3] = R6;
-ffa08442:	00 e3 e7 00 	CALL 0xffa08610 <_get_asm>;
+ffa08442:	00 e3 23 02 	CALL 0xffa08888 <_get_asm>;
 ffa08446:	05 69       	P5 = 0x20 (X);		/*		P5=0x20( 32) */
 ffa08448:	b2 e0 06 50 	LSETUP(0xffa0844c <pb_top>, 0xffa08454 <pb_bot>) LC1 = P5;
 
 ffa0844c <pb_top>:
 ffa0844c:	16 98       	R6 = B[P2++] (Z);
 ffa0844e:	1e 97       	W[P3] = R6;
-ffa08450:	00 e3 e0 00 	CALL 0xffa08610 <_get_asm>;
+ffa08450:	00 e3 1c 02 	CALL 0xffa08888 <_get_asm>;
 
 ffa08454 <pb_bot>:
 ffa08454:	00 00       	NOP;
 ffa08456:	7a 30       	R7 = P2;
 ffa08458:	57 4c       	BITCLR (R7, 0xa);		/* bit 10 */
 ffa0845a:	17 32       	P2 = R7;
-ffa0845c:	00 e3 da 00 	CALL 0xffa08610 <_get_asm>;
+ffa0845c:	00 e3 16 02 	CALL 0xffa08888 <_get_asm>;
 ffa08460:	1f 60       	R7 = 0x3 (X);		/*		R7=0x3(  3) */
 ffa08462:	0f b5       	W[P1 + 0x8] = R7;
-ffa08464:	00 e3 d6 00 	CALL 0xffa08610 <_get_asm>;
+ffa08464:	00 e3 12 02 	CALL 0xffa08888 <_get_asm>;
 ffa08468:	87 60       	R7 = 0x10 (X);		/*		R7=0x10( 16) */
 ffa0846a:	b0 31       	R6 = LC0;
 ffa0846c:	37 08       	CC = R7 == R6;
@@ -476,31 +477,31 @@ ffa0847a:	ff e3 fb fe 	CALL 0xffa08270 <_waitirq_asm>;
 ffa0847e:	ff e3 e5 fe 	CALL 0xffa08248 <_clearirq_asm>;
 ffa08482:	0f 60       	R7 = 0x1 (X);		/*		R7=0x1(  1) */
 ffa08484:	8f b4       	W[P1 + 0x4] = R7;
-ffa08486:	00 e3 c5 00 	CALL 0xffa08610 <_get_asm>;
+ffa08486:	00 e3 01 02 	CALL 0xffa08888 <_get_asm>;
 ffa0848a:	17 60       	R7 = 0x2 (X);		/*		R7=0x2(  2) */
 ffa0848c:	8f b4       	W[P1 + 0x4] = R7;
-ffa0848e:	00 e3 c1 00 	CALL 0xffa08610 <_get_asm>;
+ffa0848e:	00 e3 fd 01 	CALL 0xffa08888 <_get_asm>;
 ffa08492:	26 e1 e2 00 	R6 = 0xe2 (X);		/*		R6=0xe2(226) */
 ffa08496:	1e 97       	W[P3] = R6;
-ffa08498:	00 e3 bc 00 	CALL 0xffa08610 <_get_asm>;
+ffa08498:	00 e3 f8 01 	CALL 0xffa08888 <_get_asm>;
 ffa0849c:	17 60       	R7 = 0x2 (X);		/*		R7=0x2(  2) */
 ffa0849e:	0f b5       	W[P1 + 0x8] = R7;
-ffa084a0:	00 e3 b8 00 	CALL 0xffa08610 <_get_asm>;
+ffa084a0:	00 e3 f4 01 	CALL 0xffa08888 <_get_asm>;
 ffa084a4:	17 60       	R7 = 0x2 (X);		/*		R7=0x2(  2) */
 ffa084a6:	8f b4       	W[P1 + 0x4] = R7;
-ffa084a8:	00 e3 b4 00 	CALL 0xffa08610 <_get_asm>;
+ffa084a8:	00 e3 f0 01 	CALL 0xffa08888 <_get_asm>;
 ffa084ac:	06 61       	R6 = 0x20 (X);		/*		R6=0x20( 32) */
 ffa084ae:	1e 97       	W[P3] = R6;
-ffa084b0:	00 e3 b0 00 	CALL 0xffa08610 <_get_asm>;
+ffa084b0:	00 e3 ec 01 	CALL 0xffa08888 <_get_asm>;
 ffa084b4:	fe 60       	R6 = 0x1f (X);		/*		R6=0x1f( 31) */
 ffa084b6:	1e 97       	W[P3] = R6;
-ffa084b8:	00 e3 ac 00 	CALL 0xffa08610 <_get_asm>;
+ffa084b8:	00 e3 e8 01 	CALL 0xffa08888 <_get_asm>;
 ffa084bc:	17 60       	R7 = 0x2 (X);		/*		R7=0x2(  2) */
 ffa084be:	0f b5       	W[P1 + 0x8] = R7;
-ffa084c0:	00 e3 a8 00 	CALL 0xffa08610 <_get_asm>;
+ffa084c0:	00 e3 e4 01 	CALL 0xffa08888 <_get_asm>;
 ffa084c4:	0f 60       	R7 = 0x1 (X);		/*		R7=0x1(  1) */
 ffa084c6:	0f b5       	W[P1 + 0x8] = R7;
-ffa084c8:	00 e3 a4 00 	CALL 0xffa08610 <_get_asm>;
+ffa084c8:	00 e3 e0 01 	CALL 0xffa08888 <_get_asm>;
 ffa084cc:	ff e3 d2 fe 	CALL 0xffa08270 <_waitirq_asm>;
 ffa084d0:	0f 95       	R7 = W[P1] (Z);
 ffa084d2:	1f 49       	CC = BITTST (R7, 0x3);		/* bit  3 */
@@ -508,13 +509,13 @@ ffa084d4:	63 18       	IF CC JUMP 0xffa0859a <no_rxpacket>;
 ffa084d6:	ff e3 b9 fe 	CALL 0xffa08248 <_clearirq_asm>;
 ffa084da:	0f 60       	R7 = 0x1 (X);		/*		R7=0x1(  1) */
 ffa084dc:	8f b4       	W[P1 + 0x4] = R7;
-ffa084de:	00 e3 99 00 	CALL 0xffa08610 <_get_asm>;
+ffa084de:	00 e3 d5 01 	CALL 0xffa08888 <_get_asm>;
 ffa084e2:	17 60       	R7 = 0x2 (X);		/*		R7=0x2(  2) */
 ffa084e4:	8f b4       	W[P1 + 0x4] = R7;
-ffa084e6:	00 e3 95 00 	CALL 0xffa08610 <_get_asm>;
+ffa084e6:	00 e3 d1 01 	CALL 0xffa08888 <_get_asm>;
 ffa084ea:	26 e1 61 00 	R6 = 0x61 (X);		/*		R6=0x61( 97) */
 ffa084ee:	1e 97       	W[P3] = R6;
-ffa084f0:	00 e3 90 00 	CALL 0xffa08610 <_get_asm>;
+ffa084f0:	00 e3 cc 01 	CALL 0xffa08888 <_get_asm>;
 ffa084f4:	25 68       	P5 = 0x4 (X);		/*		P5=0x4(  4) */
 ffa084f6:	a2 e0 4b 50 	LSETUP(0xffa084fa <rp_top>, 0xffa0858c <rp_bot>) LC0 = P5;
 
@@ -522,13 +523,13 @@ ffa084fa <rp_top>:
 ffa084fa:	07 60       	R7 = 0x0 (X);		/*		R7=0x0(  0) */
 ffa084fc:	e7 bb       	[FP -0x8] = R7;
 ffa084fe:	d7 bb       	[FP -0xc] = R7;
-ffa08500:	00 e3 88 00 	CALL 0xffa08610 <_get_asm>;
+ffa08500:	00 e3 c4 01 	CALL 0xffa08888 <_get_asm>;
 ffa08504:	25 68       	P5 = 0x4 (X);		/*		P5=0x4(  4) */
 ffa08506:	b2 e0 0e 50 	LSETUP(0xffa0850a <a32_top>, 0xffa08522 <a32_bot>) LC1 = P5;
 
 ffa0850a <a32_top>:
 ffa0850a:	1f 97       	W[P3] = R7;
-ffa0850c:	00 e3 82 00 	CALL 0xffa08610 <_get_asm>;
+ffa0850c:	00 e3 be 01 	CALL 0xffa08888 <_get_asm>;
 ffa08510:	9f a5       	R7 = W[P3 + 0xc] (Z);
 ffa08512:	26 e1 ff 00 	R6 = 0xff (X);		/*		R6=0xff(255) */
 ffa08516:	f7 55       	R7 = R7 & R6;
@@ -539,13 +540,13 @@ ffa08520:	e6 bb       	[FP -0x8] = R6;
 
 ffa08522 <a32_bot>:
 ffa08522:	00 00       	NOP;
-ffa08524:	00 e3 76 00 	CALL 0xffa08610 <_get_asm>;
+ffa08524:	00 e3 b2 01 	CALL 0xffa08888 <_get_asm>;
 ffa08528:	25 68       	P5 = 0x4 (X);		/*		P5=0x4(  4) */
 ffa0852a:	b2 e0 0e 50 	LSETUP(0xffa0852e <v32_top>, 0xffa08546 <v32_bot>) LC1 = P5;
 
 ffa0852e <v32_top>:
 ffa0852e:	1f 97       	W[P3] = R7;
-ffa08530:	00 e3 70 00 	CALL 0xffa08610 <_get_asm>;
+ffa08530:	00 e3 ac 01 	CALL 0xffa08888 <_get_asm>;
 ffa08534:	9f a5       	R7 = W[P3 + 0xc] (Z);
 ffa08536:	26 e1 ff 00 	R6 = 0xff (X);		/*		R6=0xff(255) */
 ffa0853a:	f7 55       	R7 = R7 & R6;
@@ -556,7 +557,7 @@ ffa08544:	d6 bb       	[FP -0xc] = R6;
 
 ffa08546 <v32_bot>:
 ffa08546:	00 00       	NOP;
-ffa08548:	00 e3 64 00 	CALL 0xffa08610 <_get_asm>;
+ffa08548:	00 e3 a0 01 	CALL 0xffa08888 <_get_asm>;
 ffa0854c:	e7 b9       	R7 = [FP -0x8];
 ffa0854e:	82 c6 27 8d 	R6 = R7 >> 0x1c;
 ffa08552:	06 32       	P0 = R6;
@@ -568,7 +569,7 @@ ffa0855e:	e7 bb       	[FP -0x8] = R7;
 ffa08560:	c5 45       	P5 = (P5 + P0) << 0x2;
 ffa08562:	2f 91       	R7 = [P5];
 ffa08564:	f7 ba       	[FP -0x44] = R7;
-ffa08566:	00 e3 55 00 	CALL 0xffa08610 <_get_asm>;
+ffa08566:	00 e3 91 01 	CALL 0xffa08888 <_get_asm>;
 ffa0856a:	e7 b9       	R7 = [FP -0x8];
 ffa0856c:	46 e1 ef ff 	R6.H = 0xffef;		/* (-17)	R6=0xffef000f(-1114097) */
 ffa08570:	06 e1 03 c0 	R6.L = 0xc003;		/* (-16381)	R6=0xffefc003(-1064957) */
@@ -582,47 +583,47 @@ ffa08584:	d6 b9       	R6 = [FP -0xc];
 ffa08586:	2e 93       	[P5] = R6;
 
 ffa08588 <invalid>:
-ffa08588:	00 e3 44 00 	CALL 0xffa08610 <_get_asm>;
+ffa08588:	00 e3 80 01 	CALL 0xffa08888 <_get_asm>;
 
 ffa0858c <rp_bot>:
 ffa0858c:	00 00       	NOP;
-ffa0858e:	00 e3 41 00 	CALL 0xffa08610 <_get_asm>;
+ffa0858e:	00 e3 7d 01 	CALL 0xffa08888 <_get_asm>;
 ffa08592:	17 60       	R7 = 0x2 (X);		/*		R7=0x2(  2) */
 ffa08594:	0f b5       	W[P1 + 0x8] = R7;
-ffa08596:	00 e3 3d 00 	CALL 0xffa08610 <_get_asm>;
+ffa08596:	00 e3 79 01 	CALL 0xffa08888 <_get_asm>;
 
 ffa0859a <no_rxpacket>:
 ffa0859a:	0f 60       	R7 = 0x1 (X);		/*		R7=0x1(  1) */
 ffa0859c:	8f b4       	W[P1 + 0x4] = R7;
-ffa0859e:	00 e3 39 00 	CALL 0xffa08610 <_get_asm>;
+ffa0859e:	00 e3 75 01 	CALL 0xffa08888 <_get_asm>;
 ffa085a2:	17 60       	R7 = 0x2 (X);		/*		R7=0x2(  2) */
 ffa085a4:	8f b4       	W[P1 + 0x4] = R7;
-ffa085a6:	00 e3 35 00 	CALL 0xffa08610 <_get_asm>;
+ffa085a6:	00 e3 71 01 	CALL 0xffa08888 <_get_asm>;
 ffa085aa:	26 e1 e1 00 	R6 = 0xe1 (X);		/*		R6=0xe1(225) */
 ffa085ae:	1e 97       	W[P3] = R6;
-ffa085b0:	00 e3 30 00 	CALL 0xffa08610 <_get_asm>;
+ffa085b0:	00 e3 6c 01 	CALL 0xffa08888 <_get_asm>;
 ffa085b4:	17 60       	R7 = 0x2 (X);		/*		R7=0x2(  2) */
 ffa085b6:	0f b5       	W[P1 + 0x8] = R7;
-ffa085b8:	00 e3 2c 00 	CALL 0xffa08610 <_get_asm>;
+ffa085b8:	00 e3 68 01 	CALL 0xffa08888 <_get_asm>;
 ffa085bc:	17 60       	R7 = 0x2 (X);		/*		R7=0x2(  2) */
 ffa085be:	8f b4       	W[P1 + 0x4] = R7;
-ffa085c0:	00 e3 28 00 	CALL 0xffa08610 <_get_asm>;
+ffa085c0:	00 e3 64 01 	CALL 0xffa08888 <_get_asm>;
 ffa085c4:	06 61       	R6 = 0x20 (X);		/*		R6=0x20( 32) */
 ffa085c6:	1e 97       	W[P3] = R6;
-ffa085c8:	00 e3 24 00 	CALL 0xffa08610 <_get_asm>;
+ffa085c8:	00 e3 60 01 	CALL 0xffa08888 <_get_asm>;
 ffa085cc:	f6 60       	R6 = 0x1e (X);		/*		R6=0x1e( 30) */
 ffa085ce:	1e 97       	W[P3] = R6;
-ffa085d0:	00 e3 20 00 	CALL 0xffa08610 <_get_asm>;
+ffa085d0:	00 e3 5c 01 	CALL 0xffa08888 <_get_asm>;
 ffa085d4:	17 60       	R7 = 0x2 (X);		/*		R7=0x2(  2) */
 ffa085d6:	0f b5       	W[P1 + 0x8] = R7;
-ffa085d8:	00 e3 1c 00 	CALL 0xffa08610 <_get_asm>;
+ffa085d8:	00 e3 58 01 	CALL 0xffa08888 <_get_asm>;
 ffa085dc:	4d e1 c0 ff 	P5.H = 0xffc0;		/* (-64)	P5=0xffc00004(-4194300) */
 ffa085e0:	0d e1 08 02 	P5.L = 0x208;		/* (520)	P5=0xffc00208(-4193784) */
 ffa085e4:	2f 93       	[P5] = R7;
-ffa085e6:	00 e3 15 00 	CALL 0xffa08610 <_get_asm>;
+ffa085e6:	00 e3 51 01 	CALL 0xffa08888 <_get_asm>;
 ffa085ea:	87 60       	R7 = 0x10 (X);		/*		R7=0x10( 16) */
 ffa085ec:	8f b4       	W[P1 + 0x4] = R7;
-ffa085ee:	00 e3 11 00 	CALL 0xffa08610 <_get_asm>;
+ffa085ee:	00 e3 4d 01 	CALL 0xffa08888 <_get_asm>;
 ffa085f2:	e7 b8       	R7 = [FP -0x48];
 ffa085f4:	86 e1 01 00 	R6 = 0x1 (Z);		/*		R6=0x1(  1) */
 ffa085f8:	f7 51       	R7 = R7 + R6;
@@ -630,640 +631,640 @@ ffa085fa:	82 c6 e7 8d 	R6 = R7 >> 0x4;
 ffa085fe:	0e b5       	W[P1 + 0x8] = R6;
 ffa08600:	47 4c       	BITCLR (R7, 0x8);		/* bit  8 */
 ffa08602:	e7 ba       	[FP -0x48] = R7;
-ffa08604:	00 e3 06 00 	CALL 0xffa08610 <_get_asm>;
+ffa08604:	00 e3 42 01 	CALL 0xffa08888 <_get_asm>;
 ffa08608:	06 2f       	JUMP.S 0xffa08414 <radio_loop>;
 ffa0860a:	00 00       	NOP;
 ffa0860c:	00 00       	NOP;
 	...
 
-ffa08610 <_get_asm>:
-ffa08610:	68 b9       	P0 = [FP -0x28];
-ffa08612:	27 e1 00 01 	R7 = 0x100 (X);		/*		R7=0x100(256) */
-ffa08616:	8f b4       	W[P1 + 0x4] = R7;
-ffa08618:	27 e1 80 00 	R7 = 0x80 (X);		/*		R7=0x80(128) */
-ffa0861c:	0f b5       	W[P1 + 0x8] = R7;
+ffa08610 <_init6>:
+ffa08610:	10 e1 00 40 	I0.L = 0x4000;		/* (16384)	I0=0x4000(16384) */
+ffa08614:	50 e1 90 ff 	I0.H = 0xff90;		/* (-112)	I0=0xff904000(-7323648) */
+ffa08618:	80 36       	B0 = I0;
+ffa0861a:	1c e1 00 30 	L0.L = 0x3000;		/* (12288)	L0=0x3000(12288) */
+ffa0861e:	5c e1 00 00 	L0.H = 0x0;		/* (  0)	L0=0x3000(12288) */
+ffa08622:	14 e1 40 01 	M0.L = 0x140;		/* (320)	M0=0x140(320) */
+ffa08626:	54 e1 00 00 	M0.H = 0x0;		/* (  0)	M0=0x140(320) */
+ffa0862a:	05 69       	P5 = 0x20 (X);		/*		P5=0x20( 32) */
+ffa0862c:	01 60       	R1 = 0x0 (X);		/*		R1=0x0(  0) */
+ffa0862e:	a2 e0 af 50 	LSETUP(0xffa08632 <lt_top>, 0xffa0878c <lt_bot>) LC0 = P5;
 
-ffa0861e <wait_samples>:
-ffa0861e:	03 a7       	R3 = W[P0 + 0x18] (Z);
-ffa08620:	03 48       	CC = !BITTST (R3, 0x0);		/* bit  0 */
-ffa08622:	fe 1b       	IF CC JUMP 0xffa0861e <wait_samples>;
-ffa08624:	00 95       	R0 = W[P0] (Z);
-ffa08626:	01 95       	R1 = W[P0] (Z);
-ffa08628:	d2 b8       	R2 = [FP -0x4c];
-ffa0862a:	81 4f       	R1 <<= 0x10;
-ffa0862c:	08 56       	R0 = R0 | R1;
-ffa0862e:	d0 55       	R7 = R0 & R2;
-ffa08630:	05 9c       	R5 = [I0++];
-ffa08632:	8d b5       	W[P1 + 0xc] = R5;
-ffa08634:	c6 b8       	R6 = [FP -0x50];
-ffa08636:	00 00       	NOP;
-ffa08638:	03 c8 00 18 	MNOP || R5 = [I0++] || R1 = [I1++];
-ffa0863c:	05 9c 09 9c 
-ffa08640:	00 c8 3d c0 	A1 = R7.H * R5.H, A0 = R7.L * R5.L || R5 = [I0++] || R2 = [I1++];
-ffa08644:	05 9c 0a 9c 
-ffa08648:	01 c8 0d c8 	A1 += R1.H * R5.H, A0 += R1.L * R5.L || R5 = [I0++] || R4 = [I1++];
-ffa0864c:	05 9c 0c 9c 
-ffa08650:	01 c8 15 c8 	A1 += R2.H * R5.H, A0 += R2.L * R5.L || R5 = [I0++] || R3 = [I1++];
-ffa08654:	05 9c 0b 9c 
-ffa08658:	01 c8 1d c8 	A1 += R3.H * R5.H, A0 += R3.L * R5.L || R5 = [I0++] || [I2++] = R7;
-ffa0865c:	05 9c 17 9e 
-ffa08660:	25 c8 25 e8 	R0.H = (A1 += R4.H * R5.H), R0.L = (A0 += R4.L * R5.L) (S2RND) || R5 = [I1++] || NOP;
-ffa08664:	0d 9c 00 00 
-ffa08668:	00 c8 05 c0 	A1 = R0.H * R5.H, A0 = R0.L * R5.L || [I2++] = R1 || NOP;
-ffa0866c:	11 9e 00 00 
-ffa08670:	83 ce 38 00 	A0 = A0 << 0x7 || [I2++] = R3 || NOP;
-ffa08674:	13 9e 00 00 
-ffa08678:	83 ce 38 10 	A1 = A1 << 0x7 || [I2++] = R0 || NOP;
-ffa0867c:	10 9e 00 00 
-ffa08680:	07 c8 c0 39 	R7.H = A1, R7.L = A0 || I1 += M0 || NOP;
-ffa08684:	61 9e 00 00 
-ffa08688:	10 cc 00 c0 	A1 = ABS A0, A0 = ABS A0 || R1 = [I0++] || NOP;
-ffa0868c:	01 9c 00 00 
-ffa08690:	06 c9 09 f1 	R4.H = (A1 -= R1.H * R1.H), R4.L = (A0 -= R1.L * R1.L) (IS) || R1 = [I0++] || NOP;
-ffa08694:	01 9c 00 00 
-ffa08698:	00 c0 2e 80 	A1 = R5.H * R6.L, A0 = R5.L * R6.L;
-ffa0869c:	26 c0 e1 f0 	R3.H = (A1 -= R4.H * R1.H), R3.L = (A0 -= R4.L * R1.L) (S2RND);
-ffa086a0:	06 c4 18 86 	R3 = ABS R3 (V);
-ffa086a4:	03 c8 00 18 	MNOP || [I2++] = R3 || NOP;
-ffa086a8:	13 9e 00 00 
-ffa086ac:	81 ce 6f 40 	R0 = R7 << 0xd (V, S) || R1 = [I1 ++ M0] || R2 = [I0++];
-ffa086b0:	89 9d 02 9c 
-ffa086b4:	00 c8 0a c0 	A1 = R1.H * R2.H, A0 = R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
-ffa086b8:	89 9d 02 9c 
-ffa086bc:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
-ffa086c0:	89 9d 02 9c 
-ffa086c4:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
-ffa086c8:	89 9d 02 9c 
-ffa086cc:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
-ffa086d0:	89 9d 02 9c 
-ffa086d4:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
-ffa086d8:	89 9d 02 9c 
-ffa086dc:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
-ffa086e0:	89 9d 02 9c 
-ffa086e4:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
-ffa086e8:	89 9d 02 9c 
-ffa086ec:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
-ffa086f0:	89 9d 02 9c 
-ffa086f4:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
-ffa086f8:	89 9d 02 9c 
-ffa086fc:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
-ffa08700:	89 9d 02 9c 
-ffa08704:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
-ffa08708:	89 9d 02 9c 
-ffa0870c:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
-ffa08710:	89 9d 02 9c 
-ffa08714:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
-ffa08718:	89 9d 02 9c 
-ffa0871c:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
-ffa08720:	89 9d 02 9c 
-ffa08724:	05 c8 8a e9 	R6.H = (A1 += R1.H * R2.H), R6.L = (A0 += R1.L * R2.L) || R1 = [I1++] || R5 = [I0++];
-ffa08728:	09 9c 05 9c 
-ffa0872c:	00 cc 3e ee 	R7 = R7 -|- R6 (S) || I0 -= M1 || [I2++] = R7;
-ffa08730:	74 9e 17 9e 
-ffa08734:	81 ce 3f 46 	R3 = R7 << 0x7 (V, S) || I1 += M2 || [I2++] = R0;
-ffa08738:	69 9e 10 9e 
-ffa0873c:	81 ce 93 47 	R3 = R3 >>> 0xe (V) || R1 = [I1 ++ M3] || R2 = [I0];
-ffa08740:	e9 9d 02 9d 
-ffa08744:	00 c8 0b c0 	A1 = R1.H * R3.H, A0 = R1.L * R3.L || [I2++] = R6 || NOP;
-ffa08748:	16 9e 00 00 
-ffa0874c:	05 c8 15 e9 	R4.H = (A1 += R2.H * R5.H), R4.L = (A0 += R2.L * R5.L) || I1 -= M2 || NOP;
-ffa08750:	79 9e 00 00 
-ffa08754:	03 c8 00 18 	MNOP || [I0 ++ M1] = R4 || NOP;
-ffa08758:	a4 9f 00 00 
-ffa0875c:	03 c8 00 18 	MNOP || R5 = [I0++] || R1 = [I1++];
-ffa08760:	05 9c 09 9c 
-ffa08764:	00 c8 3d c0 	A1 = R7.H * R5.H, A0 = R7.L * R5.L || R5 = [I0++] || R2 = [I1++];
-ffa08768:	05 9c 0a 9c 
-ffa0876c:	01 c8 0d c8 	A1 += R1.H * R5.H, A0 += R1.L * R5.L || R5 = [I0++] || R3 = [I1++];
-ffa08770:	05 9c 0b 9c 
-ffa08774:	01 c8 15 c8 	A1 += R2.H * R5.H, A0 += R2.L * R5.L || R5 = [I0++] || R4 = [I1++];
-ffa08778:	05 9c 0c 9c 
-ffa0877c:	01 c8 1d c8 	A1 += R3.H * R5.H, A0 += R3.L * R5.L || R5 = [I0++] || [I2++] = R7;
-ffa08780:	05 9c 17 9e 
-ffa08784:	25 c8 25 e8 	R0.H = (A1 += R4.H * R5.H), R0.L = (A0 += R4.L * R5.L) (S2RND) || [I2++] = R1 || NOP;
-ffa08788:	11 9e 00 00 
-ffa0878c:	03 c8 00 18 	MNOP || R5 = [I0++] || [I2++] = R0;
-ffa08790:	05 9c 10 9e 
-ffa08794:	00 c8 05 c0 	A1 = R0.H * R5.H, A0 = R0.L * R5.L || R5 = [I0++] || [I2++] = R3;
-ffa08798:	05 9c 13 9e 
-ffa0879c:	01 c8 1d c8 	A1 += R3.H * R5.H, A0 += R3.L * R5.L || R5 = [I0++] || R1 = [I1++];
-ffa087a0:	05 9c 09 9c 
-ffa087a4:	01 c8 25 c8 	A1 += R4.H * R5.H, A0 += R4.L * R5.L || R5 = [I0++] || R2 = [I1++];
-ffa087a8:	05 9c 0a 9c 
-ffa087ac:	01 c8 0d c8 	A1 += R1.H * R5.H, A0 += R1.L * R5.L || R5 = [I0++] || NOP;
-ffa087b0:	05 9c 00 00 
-ffa087b4:	25 c8 15 e8 	R0.H = (A1 += R2.H * R5.H), R0.L = (A0 += R2.L * R5.L) (S2RND) || R5 = [I0++] || NOP;
-ffa087b8:	05 9c 00 00 
-ffa087bc:	00 cc 05 20 	R0 = R0 +|+ R5 (S) || [I2++] = R0 || NOP;
-ffa087c0:	10 9e 00 00 
-ffa087c4:	81 ce 88 0d 	R6 = R0 >>> 0xf (V) || [I2++] = R1 || NOP;
-ffa087c8:	11 9e 00 00 
-ffa087cc:	03 c8 00 18 	MNOP || R5 = [I0++] || R1 = [I1++];
-ffa087d0:	05 9c 09 9c 
-ffa087d4:	00 c8 3d c0 	A1 = R7.H * R5.H, A0 = R7.L * R5.L || R5 = [I0++] || R2 = [I1++];
-ffa087d8:	05 9c 0a 9c 
-ffa087dc:	01 c8 0d c8 	A1 += R1.H * R5.H, A0 += R1.L * R5.L || R5 = [I0++] || R3 = [I1++];
-ffa087e0:	05 9c 0b 9c 
-ffa087e4:	01 c8 15 c8 	A1 += R2.H * R5.H, A0 += R2.L * R5.L || R5 = [I0++] || R4 = [I1++];
-ffa087e8:	05 9c 0c 9c 
-ffa087ec:	01 c8 1d c8 	A1 += R3.H * R5.H, A0 += R3.L * R5.L || R5 = [I0++] || [I2++] = R7;
-ffa087f0:	05 9c 17 9e 
-ffa087f4:	25 c8 25 e8 	R0.H = (A1 += R4.H * R5.H), R0.L = (A0 += R4.L * R5.L) (S2RND) || [I2++] = R1 || NOP;
-ffa087f8:	11 9e 00 00 
-ffa087fc:	03 c8 00 18 	MNOP || R5 = [I0++] || [I2++] = R0;
-ffa08800:	05 9c 10 9e 
-ffa08804:	00 c8 05 c0 	A1 = R0.H * R5.H, A0 = R0.L * R5.L || R5 = [I0++] || [I2++] = R3;
-ffa08808:	05 9c 13 9e 
-ffa0880c:	01 c8 1d c8 	A1 += R3.H * R5.H, A0 += R3.L * R5.L || R5 = [I0++] || R1 = [I1++];
-ffa08810:	05 9c 09 9c 
-ffa08814:	01 c8 25 c8 	A1 += R4.H * R5.H, A0 += R4.L * R5.L || R5 = [I0++] || R2 = [I1++];
-ffa08818:	05 9c 0a 9c 
-ffa0881c:	01 c8 0d c8 	A1 += R1.H * R5.H, A0 += R1.L * R5.L || R5 = [I0++] || NOP;
-ffa08820:	05 9c 00 00 
-ffa08824:	25 c8 15 e8 	R0.H = (A1 += R2.H * R5.H), R0.L = (A0 += R2.L * R5.L) (S2RND) || R5 = [I0++] || NOP;
-ffa08828:	05 9c 00 00 
-ffa0882c:	00 cc 05 20 	R0 = R0 +|+ R5 (S) || R7 = [I0++] || [I2++] = R0;
-ffa08830:	07 9c 10 9e 
-ffa08834:	81 ce 88 41 	R0 = R0 >>> 0xf (V) || R5 = [I0++] || [I2++] = R1;
-ffa08838:	05 9c 11 9e 
-ffa0883c:	be 55       	R6 = R6 & R7;
-ffa0883e:	28 54       	R0 = R0 & R5;
-ffa08840:	86 57       	R6 = R6 | R0;
-ffa08842:	76 bb       	[FP -0x24] = R6;
-ffa08844:	40 e4 80 00 	R0 = W[P0 + 0x100] (Z);
-ffa08848:	41 e4 80 00 	R1 = W[P0 + 0x100] (Z);
-ffa0884c:	d2 b8       	R2 = [FP -0x4c];
-ffa0884e:	81 4f       	R1 <<= 0x10;
-ffa08850:	08 56       	R0 = R0 | R1;
-ffa08852:	d0 55       	R7 = R0 & R2;
-ffa08854:	c6 b8       	R6 = [FP -0x50];
-ffa08856:	00 00       	NOP;
-ffa08858:	03 c8 00 18 	MNOP || R5 = [I0++] || R1 = [I1++];
-ffa0885c:	05 9c 09 9c 
-ffa08860:	00 c8 3d c0 	A1 = R7.H * R5.H, A0 = R7.L * R5.L || R5 = [I0++] || R2 = [I1++];
-ffa08864:	05 9c 0a 9c 
-ffa08868:	01 c8 0d c8 	A1 += R1.H * R5.H, A0 += R1.L * R5.L || R5 = [I0++] || R4 = [I1++];
-ffa0886c:	05 9c 0c 9c 
-ffa08870:	01 c8 15 c8 	A1 += R2.H * R5.H, A0 += R2.L * R5.L || R5 = [I0++] || R3 = [I1++];
-ffa08874:	05 9c 0b 9c 
-ffa08878:	01 c8 1d c8 	A1 += R3.H * R5.H, A0 += R3.L * R5.L || R5 = [I0++] || [I2++] = R7;
-ffa0887c:	05 9c 17 9e 
-ffa08880:	25 c8 25 e8 	R0.H = (A1 += R4.H * R5.H), R0.L = (A0 += R4.L * R5.L) (S2RND) || R5 = [I1++] || NOP;
-ffa08884:	0d 9c 00 00 
-ffa08888:	00 c8 05 c0 	A1 = R0.H * R5.H, A0 = R0.L * R5.L || [I2++] = R1 || NOP;
-ffa0888c:	11 9e 00 00 
-ffa08890:	83 ce 38 00 	A0 = A0 << 0x7 || [I2++] = R3 || NOP;
-ffa08894:	13 9e 00 00 
-ffa08898:	83 ce 38 10 	A1 = A1 << 0x7 || [I2++] = R0 || NOP;
-ffa0889c:	10 9e 00 00 
-ffa088a0:	07 c8 c0 39 	R7.H = A1, R7.L = A0 || I1 += M0 || NOP;
-ffa088a4:	61 9e 00 00 
-ffa088a8:	10 cc 00 c0 	A1 = ABS A0, A0 = ABS A0 || R1 = [I0++] || NOP;
-ffa088ac:	01 9c 00 00 
-ffa088b0:	06 c9 09 f1 	R4.H = (A1 -= R1.H * R1.H), R4.L = (A0 -= R1.L * R1.L) (IS) || R1 = [I0++] || NOP;
-ffa088b4:	01 9c 00 00 
-ffa088b8:	00 c0 2e 80 	A1 = R5.H * R6.L, A0 = R5.L * R6.L;
-ffa088bc:	26 c0 e1 f0 	R3.H = (A1 -= R4.H * R1.H), R3.L = (A0 -= R4.L * R1.L) (S2RND);
-ffa088c0:	06 c4 18 86 	R3 = ABS R3 (V);
-ffa088c4:	03 c8 00 18 	MNOP || [I2++] = R3 || NOP;
-ffa088c8:	13 9e 00 00 
-ffa088cc:	81 ce 6f 40 	R0 = R7 << 0xd (V, S) || R1 = [I1 ++ M0] || R2 = [I0++];
-ffa088d0:	89 9d 02 9c 
-ffa088d4:	00 c8 0a c0 	A1 = R1.H * R2.H, A0 = R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
-ffa088d8:	89 9d 02 9c 
-ffa088dc:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
-ffa088e0:	89 9d 02 9c 
-ffa088e4:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
-ffa088e8:	89 9d 02 9c 
-ffa088ec:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
-ffa088f0:	89 9d 02 9c 
-ffa088f4:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
-ffa088f8:	89 9d 02 9c 
-ffa088fc:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
-ffa08900:	89 9d 02 9c 
-ffa08904:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
-ffa08908:	89 9d 02 9c 
-ffa0890c:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
-ffa08910:	89 9d 02 9c 
-ffa08914:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
-ffa08918:	89 9d 02 9c 
-ffa0891c:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
-ffa08920:	89 9d 02 9c 
-ffa08924:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
+ffa08632 <lt_top>:
+ffa08632:	20 e1 00 01 	R0 = 0x100 (X);		/*		R0=0x100(256) */
+ffa08636:	00 9e       	[I0++] = R0;
+ffa08638:	15 68       	P5 = 0x2 (X);		/*		P5=0x2(  2) */
+ffa0863a:	b2 e0 97 50 	LSETUP(0xffa0863e <lt2_top>, 0xffa08768 <lt2_bot>) LC1 = P5;
+
+ffa0863e <lt2_top>:
+ffa0863e:	00 e1 00 40 	R0.L = 0x4000;		/* (16384)	R0=0x4000(16384) */
+ffa08642:	20 9e       	W[I0++] = R0.L;
+ffa08644:	20 9e       	W[I0++] = R0.L;
+ffa08646:	00 e1 00 00 	R0.L = 0x0;		/* (  0)	R0=0x0(  0) */
+ffa0864a:	20 9e       	W[I0++] = R0.L;
+ffa0864c:	20 9e       	W[I0++] = R0.L;
+ffa0864e:	00 e1 00 c0 	R0.L = 0xc000;		/* (-16384)	R0=0xc000(49152) */
+ffa08652:	20 9e       	W[I0++] = R0.L;
+ffa08654:	20 9e       	W[I0++] = R0.L;
+ffa08656:	00 e1 07 5d 	R0.L = 0x5d07;		/* (23815)	R0=0x5d07(23815) */
+ffa0865a:	20 9e       	W[I0++] = R0.L;
+ffa0865c:	20 9e       	W[I0++] = R0.L;
+ffa0865e:	00 e1 2b dd 	R0.L = 0xdd2b;		/* (-8917)	R0=0xdd2b(56619) */
+ffa08662:	20 9e       	W[I0++] = R0.L;
+ffa08664:	20 9e       	W[I0++] = R0.L;
+ffa08666:	00 e1 bb 26 	R0.L = 0x26bb;		/* (9915)	R0=0x26bb(9915) */
+ffa0866a:	40 e1 bb 26 	R0.H = 0x26bb;		/* (9915)	R0=0x26bb26bb(649799355) */
+ffa0866e:	00 9e       	[I0++] = R0;
+ffa08670:	00 e1 01 00 	R0.L = 0x1;		/* (  1)	R0=0x26bb0001(649789441) */
+ffa08674:	20 9e       	W[I0++] = R0.L;
+ffa08676:	20 9e       	W[I0++] = R0.L;
+ffa08678:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa0867a:	00 9e       	[I0++] = R0;
+ffa0867c:	00 9e       	[I0++] = R0;
+ffa0867e:	00 9e       	[I0++] = R0;
+ffa08680:	00 9e       	[I0++] = R0;
+ffa08682:	00 9e       	[I0++] = R0;
+ffa08684:	00 9e       	[I0++] = R0;
+ffa08686:	00 9e       	[I0++] = R0;
+ffa08688:	00 9e       	[I0++] = R0;
+ffa0868a:	00 9e       	[I0++] = R0;
+ffa0868c:	00 9e       	[I0++] = R0;
+ffa0868e:	00 9e       	[I0++] = R0;
+ffa08690:	00 9e       	[I0++] = R0;
+ffa08692:	00 9e       	[I0++] = R0;
+ffa08694:	00 9e       	[I0++] = R0;
+ffa08696:	00 9e       	[I0++] = R0;
+ffa08698:	00 e1 ff 7f 	R0.L = 0x7fff;		/* (32767)	R0=0x7fff(32767) */
+ffa0869c:	20 9e       	W[I0++] = R0.L;
+ffa0869e:	20 9e       	W[I0++] = R0.L;
+ffa086a0:	20 e1 d4 1e 	R0 = 0x1ed4 (X);		/*		R0=0x1ed4(7892) */
+ffa086a4:	20 9e       	W[I0++] = R0.L;
+ffa086a6:	20 9e       	W[I0++] = R0.L;
+ffa086a8:	20 e1 a9 3d 	R0 = 0x3da9 (X);		/*		R0=0x3da9(15785) */
+ffa086ac:	20 9e       	W[I0++] = R0.L;
+ffa086ae:	20 9e       	W[I0++] = R0.L;
+ffa086b0:	20 e1 d4 1e 	R0 = 0x1ed4 (X);		/*		R0=0x1ed4(7892) */
+ffa086b4:	20 9e       	W[I0++] = R0.L;
+ffa086b6:	20 9e       	W[I0++] = R0.L;
+ffa086b8:	20 e1 ad 14 	R0 = 0x14ad (X);		/*		R0=0x14ad(5293) */
+ffa086bc:	20 9e       	W[I0++] = R0.L;
+ffa086be:	20 9e       	W[I0++] = R0.L;
+ffa086c0:	20 e1 c9 e2 	R0 = -0x1d37 (X);		/*		R0=0xffffe2c9(-7479) */
+ffa086c4:	20 9e       	W[I0++] = R0.L;
+ffa086c6:	20 9e       	W[I0++] = R0.L;
+ffa086c8:	20 e1 ee 3b 	R0 = 0x3bee (X);		/*		R0=0x3bee(15342) */
+ffa086cc:	20 9e       	W[I0++] = R0.L;
+ffa086ce:	20 9e       	W[I0++] = R0.L;
+ffa086d0:	20 e1 21 88 	R0 = -0x77df (X);		/*		R0=0xffff8821(-30687) */
+ffa086d4:	20 9e       	W[I0++] = R0.L;
+ffa086d6:	20 9e       	W[I0++] = R0.L;
+ffa086d8:	20 e1 ee 3b 	R0 = 0x3bee (X);		/*		R0=0x3bee(15342) */
+ffa086dc:	20 9e       	W[I0++] = R0.L;
+ffa086de:	20 9e       	W[I0++] = R0.L;
+ffa086e0:	20 e1 a5 7a 	R0 = 0x7aa5 (X);		/*		R0=0x7aa5(31397) */
+ffa086e4:	20 9e       	W[I0++] = R0.L;
+ffa086e6:	20 9e       	W[I0++] = R0.L;
+ffa086e8:	20 e1 bc c4 	R0 = -0x3b44 (X);		/*		R0=0xffffc4bc(-15172) */
+ffa086ec:	20 9e       	W[I0++] = R0.L;
+ffa086ee:	20 9e       	W[I0++] = R0.L;
+ffa086f0:	20 e1 80 3e 	R0 = 0x3e80 (X);		/*		R0=0x3e80(16000) */
+ffa086f4:	20 9e       	W[I0++] = R0.L;
+ffa086f6:	20 9e       	W[I0++] = R0.L;
+ffa086f8:	20 e1 d4 1e 	R0 = 0x1ed4 (X);		/*		R0=0x1ed4(7892) */
+ffa086fc:	20 9e       	W[I0++] = R0.L;
+ffa086fe:	20 9e       	W[I0++] = R0.L;
+ffa08700:	20 e1 a6 3d 	R0 = 0x3da6 (X);		/*		R0=0x3da6(15782) */
+ffa08704:	20 9e       	W[I0++] = R0.L;
+ffa08706:	20 9e       	W[I0++] = R0.L;
+ffa08708:	20 e1 d4 1e 	R0 = 0x1ed4 (X);		/*		R0=0x1ed4(7892) */
+ffa0870c:	20 9e       	W[I0++] = R0.L;
+ffa0870e:	20 9e       	W[I0++] = R0.L;
+ffa08710:	20 e1 f0 0e 	R0 = 0xef0 (X);		/*		R0=0xef0(3824) */
+ffa08714:	20 9e       	W[I0++] = R0.L;
+ffa08716:	20 9e       	W[I0++] = R0.L;
+ffa08718:	20 e1 aa fc 	R0 = -0x356 (X);		/*		R0=0xfffffcaa(-854) */
+ffa0871c:	20 9e       	W[I0++] = R0.L;
+ffa0871e:	20 9e       	W[I0++] = R0.L;
+ffa08720:	20 e1 ee 3b 	R0 = 0x3bee (X);		/*		R0=0x3bee(15342) */
+ffa08724:	20 9e       	W[I0++] = R0.L;
+ffa08726:	20 9e       	W[I0++] = R0.L;
+ffa08728:	20 e1 27 88 	R0 = -0x77d9 (X);		/*		R0=0xffff8827(-30681) */
+ffa0872c:	20 9e       	W[I0++] = R0.L;
+ffa0872e:	20 9e       	W[I0++] = R0.L;
+ffa08730:	20 e1 ee 3b 	R0 = 0x3bee (X);		/*		R0=0x3bee(15342) */
+ffa08734:	20 9e       	W[I0++] = R0.L;
+ffa08736:	20 9e       	W[I0++] = R0.L;
+ffa08738:	20 e1 8c 74 	R0 = 0x748c (X);		/*		R0=0x748c(29836) */
+ffa0873c:	20 9e       	W[I0++] = R0.L;
+ffa0873e:	20 9e       	W[I0++] = R0.L;
+ffa08740:	20 e1 dd ca 	R0 = -0x3523 (X);		/*		R0=0xffffcadd(-13603) */
+ffa08744:	20 9e       	W[I0++] = R0.L;
+ffa08746:	20 9e       	W[I0++] = R0.L;
+ffa08748:	20 e1 80 3e 	R0 = 0x3e80 (X);		/*		R0=0x3e80(16000) */
+ffa0874c:	20 9e       	W[I0++] = R0.L;
+ffa0874e:	20 9e       	W[I0++] = R0.L;
+ffa08750:	00 e1 01 00 	R0.L = 0x1;		/* (  1)	R0=0x1(  1) */
+ffa08754:	20 9e       	W[I0++] = R0.L;
+ffa08756:	00 e1 10 00 	R0.L = 0x10;		/* ( 16)	R0=0x10( 16) */
+ffa0875a:	20 9e       	W[I0++] = R0.L;
+ffa0875c:	00 e1 02 00 	R0.L = 0x2;		/* (  2)	R0=0x2(  2) */
+ffa08760:	20 9e       	W[I0++] = R0.L;
+ffa08762:	00 e1 20 00 	R0.L = 0x20;		/* ( 32)	R0=0x20( 32) */
+ffa08766:	20 9e       	W[I0++] = R0.L;
+
+ffa08768 <lt2_bot>:
+ffa08768:	37 e1 08 00 	M3 = 0x8 (X);		/*		M3=0x8(  8) */
+ffa0876c:	7c 9e       	I0 -= M3;
+ffa0876e:	00 e1 04 00 	R0.L = 0x4;		/* (  4)	R0=0x4(  4) */
+ffa08772:	20 9e       	W[I0++] = R0.L;
+ffa08774:	00 e1 40 00 	R0.L = 0x40;		/* ( 64)	R0=0x40( 64) */
+ffa08778:	20 9e       	W[I0++] = R0.L;
+ffa0877a:	00 e1 08 00 	R0.L = 0x8;		/* (  8)	R0=0x8(  8) */
+ffa0877e:	20 9e       	W[I0++] = R0.L;
+ffa08780:	00 e1 80 00 	R0.L = 0x80;		/* (128)	R0=0x80(128) */
+ffa08784:	20 9e       	W[I0++] = R0.L;
+ffa08786:	01 9e       	[I0++] = R1;
+ffa08788:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
+ffa0878a:	41 50       	R1 = R1 + R0;
+
+ffa0878c <lt_bot>:
+ffa0878c:	08 e1 80 6b 	P0.L = 0x6b80;		/* (27520)	P0=0xffc06b80(-4166784) */
+ffa08790:	48 e1 90 ff 	P0.H = 0xff90;		/* (-112)	P0=0xff906b80 */
+ffa08794:	20 e1 80 00 	R0 = 0x80 (X);		/*		R0=0x80(128) */
+ffa08798:	00 93       	[P0] = R0;
+ffa0879a:	11 e1 00 40 	I1.L = 0x4000;		/* (16384)	I1=0x4000(16384) */
+ffa0879e:	51 e1 80 ff 	I1.H = 0xff80;		/* (-128)	I1=0xff804000(-8372224) */
+ffa087a2:	1d e1 00 14 	L1.L = 0x1400;		/* (5120)	L1=0x1400(5120) */
+ffa087a6:	5d e1 00 00 	L1.H = 0x0;		/* (  0)	L1=0x1400(5120) */
+ffa087aa:	91 34       	I2 = I1;
+ffa087ac:	89 36       	B1 = I1;
+ffa087ae:	92 36       	B2 = I2;
+ffa087b0:	f5 36       	L2 = L1;
+ffa087b2:	35 e1 40 00 	M1 = 0x40 (X);		/*		M1=0x40( 64) */
+ffa087b6:	b4 34       	M2 = M0;
+ffa087b8:	08 e1 00 40 	P0.L = 0x4000;		/* (16384)	P0=0xff904000 */
+ffa087bc:	48 e1 80 ff 	P0.H = 0xff80;		/* (-128)	P0=0xff804000 */
+ffa087c0:	0d e1 00 05 	P5.L = 0x500;		/* (1280)	P5=0x500 */
+ffa087c4:	4d e1 00 00 	P5.H = 0x0;		/* (  0)	P5=0x500 */
+ffa087c8:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa087ca:	a2 e0 04 50 	LSETUP(0xffa087ce <lt3_top>, 0xffa087d2 <lt3_bot>) LC0 = P5;
+
+ffa087ce <lt3_top>:
+ffa087ce:	00 00       	NOP;
+ffa087d0:	00 92       	[P0++] = R0;
+
+ffa087d2 <lt3_bot>:
+ffa087d2:	00 00       	NOP;
+ffa087d4:	13 e1 00 54 	I3.L = 0x5400;		/* (21504)	I3=0x5400(21504) */
+ffa087d8:	53 e1 80 ff 	I3.H = 0xff80;		/* (-128)	I3=0xff805400(-8367104) */
+ffa087dc:	1f e1 00 0f 	L3.L = 0xf00;		/* (3840)	L3=0xf00(3840) */
+ffa087e0:	5f e1 00 00 	L3.H = 0x0;		/* (  0)	L3=0xf00(3840) */
+ffa087e4:	9b 36       	B3 = I3;
+ffa087e6:	37 e1 08 00 	M3 = 0x8 (X);		/*		M3=0x8(  8) */
+ffa087ea:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa087ec:	8c 30       	R1 = M0;
+ffa087ee:	02 60       	R2 = 0x0 (X);		/*		R2=0x0(  0) */
+ffa087f0:	07 60       	R7 = 0x0 (X);		/*		R7=0x0(  0) */
+ffa087f2:	85 69       	P5 = 0x30 (X);		/*		P5=0x30( 48) */
+ffa087f4:	a2 e0 46 50 	LSETUP(0xffa087f8 <lt4_top>, 0xffa08880 <lt4_bot>) LC0 = P5;
+
+ffa087f8 <lt4_top>:
+ffa087f8:	00 00       	NOP;
+ffa087fa:	35 68       	P5 = 0x6 (X);		/*		P5=0x6(  6) */
+ffa087fc:	b2 e0 18 50 	LSETUP(0xffa08800 <lt5_top>, 0xffa0882c <lt5_bot>) LC1 = P5;
+
+ffa08800 <lt5_top>:
+ffa08800:	84 60       	R4 = 0x10 (X);		/*		R4=0x10( 16) */
+ffa08802:	c4 52       	R3 = R4 - R0;
+ffa08804:	24 60       	R4 = 0x4 (X);		/*		R4=0x4(  4) */
+ffa08806:	e3 40       	R3 *= R4;
+ffa08808:	1b 9e       	[I3++] = R3;
+ffa0880a:	0c 60       	R4 = 0x1 (X);		/*		R4=0x1(  1) */
+ffa0880c:	e0 50       	R3 = R0 + R4;
+ffa0880e:	cb 40       	R3 *= R1;
+ffa08810:	1b 9e       	[I3++] = R3;
+ffa08812:	1f 9e       	[I3++] = R7;
+ffa08814:	20 50       	R0 = R0 + R4;
+ffa08816:	e7 51       	R7 = R7 + R4;
+ffa08818:	7c 60       	R4 = 0xf (X);		/*		R4=0xf( 15) */
+ffa0881a:	20 08       	CC = R0 == R4;
+ffa0881c:	02 10       	IF !CC JUMP 0xffa08820 <no_rollover>;
+ffa0881e:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+
+ffa08820 <no_rollover>:
+ffa08820:	00 00       	NOP;
+ffa08822:	34 60       	R4 = 0x6 (X);		/*		R4=0x6(  6) */
+ffa08824:	27 08       	CC = R7 == R4;
+ffa08826:	02 10       	IF !CC JUMP 0xffa0882a <no_rollover2>;
+ffa08828:	07 60       	R7 = 0x0 (X);		/*		R7=0x0(  0) */
+
+ffa0882a <no_rollover2>:
+	...
+
+ffa0882c <lt5_bot>:
+ffa0882c:	00 00       	NOP;
+ffa0882e:	05 60       	R5 = 0x0 (X);		/*		R5=0x0(  0) */
+ffa08830:	82 c6 e2 86 	R3 = R2 << 0x1c;
+ffa08834:	0c 60       	R4 = 0x1 (X);		/*		R4=0x1(  1) */
+ffa08836:	82 c6 fc 88 	R4 = R4 << 0x1f;
+ffa0883a:	e3 54       	R3 = R3 & R4;
+ffa0883c:	5d 57       	R5 = R5 | R3;
+ffa0883e:	82 c6 aa 86 	R3 = R2 << 0x15;
+ffa08842:	82 c6 c4 89 	R4 = R4 >> 0x8;
+ffa08846:	e3 54       	R3 = R3 & R4;
+ffa08848:	5d 57       	R5 = R5 | R3;
+ffa0884a:	82 c6 72 86 	R3 = R2 << 0xe;
+ffa0884e:	82 c6 c4 89 	R4 = R4 >> 0x8;
+ffa08852:	e3 54       	R3 = R3 & R4;
+ffa08854:	5d 57       	R5 = R5 | R3;
+ffa08856:	82 c6 3a 86 	R3 = R2 << 0x7;
+ffa0885a:	82 c6 c4 89 	R4 = R4 >> 0x8;
+ffa0885e:	e3 54       	R3 = R3 & R4;
+ffa08860:	5d 57       	R5 = R5 | R3;
+ffa08862:	1d 9e       	[I3++] = R5;
+ffa08864:	03 e1 20 63 	R3.L = 0x6320;		/* (25376)	R3=0x6320(25376) */
+ffa08868:	43 e1 80 ff 	R3.H = 0xff80;		/* (-128)	R3=0xff806320(-8363232) */
+ffa0886c:	1c 60       	R4 = 0x3 (X);		/*		R4=0x3(  3) */
+ffa0886e:	62 55       	R5 = R2 & R4;
+ffa08870:	82 c6 1d 8a 	R5 = R5 << 0x3;
+ffa08874:	5d 51       	R5 = R5 + R3;
+ffa08876:	1d 9e       	[I3++] = R5;
+ffa08878:	0c 60       	R4 = 0x1 (X);		/*		R4=0x1(  1) */
+ffa0887a:	a2 50       	R2 = R2 + R4;
+ffa0887c:	7c 60       	R4 = 0xf (X);		/*		R4=0xf( 15) */
+ffa0887e:	a2 54       	R2 = R2 & R4;
+
+ffa08880 <lt4_bot>:
+ffa08880:	00 00       	NOP;
+ffa08882:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa08884:	10 00       	RTS;
+	...
+
+ffa08888 <_get_asm>:
+ffa08888:	68 b9       	P0 = [FP -0x28];
+ffa0888a:	27 e1 00 01 	R7 = 0x100 (X);		/*		R7=0x100(256) */
+ffa0888e:	8f b4       	W[P1 + 0x4] = R7;
+ffa08890:	27 e1 80 00 	R7 = 0x80 (X);		/*		R7=0x80(128) */
+ffa08894:	0f b5       	W[P1 + 0x8] = R7;
+
+ffa08896 <wait_samples>:
+ffa08896:	03 a7       	R3 = W[P0 + 0x18] (Z);
+ffa08898:	03 48       	CC = !BITTST (R3, 0x0);		/* bit  0 */
+ffa0889a:	fe 1b       	IF CC JUMP 0xffa08896 <wait_samples>;
+ffa0889c:	00 95       	R0 = W[P0] (Z);
+ffa0889e:	01 95       	R1 = W[P0] (Z);
+ffa088a0:	d2 b8       	R2 = [FP -0x4c];
+ffa088a2:	81 4f       	R1 <<= 0x10;
+ffa088a4:	08 56       	R0 = R0 | R1;
+ffa088a6:	d0 55       	R7 = R0 & R2;
+ffa088a8:	05 9c       	R5 = [I0++];
+ffa088aa:	8d b5       	W[P1 + 0xc] = R5;
+ffa088ac:	c6 b8       	R6 = [FP -0x50];
+ffa088ae:	00 00       	NOP;
+ffa088b0:	03 c8 00 18 	MNOP || R5 = [I0++] || R1 = [I1++];
+ffa088b4:	05 9c 09 9c 
+ffa088b8:	00 c8 3d c0 	A1 = R7.H * R5.H, A0 = R7.L * R5.L || R5 = [I0++] || R2 = [I1++];
+ffa088bc:	05 9c 0a 9c 
+ffa088c0:	01 c8 0d c8 	A1 += R1.H * R5.H, A0 += R1.L * R5.L || R5 = [I0++] || R4 = [I1++];
+ffa088c4:	05 9c 0c 9c 
+ffa088c8:	01 c8 15 c8 	A1 += R2.H * R5.H, A0 += R2.L * R5.L || R5 = [I0++] || R3 = [I1++];
+ffa088cc:	05 9c 0b 9c 
+ffa088d0:	01 c8 1d c8 	A1 += R3.H * R5.H, A0 += R3.L * R5.L || R5 = [I0++] || [I2++] = R7;
+ffa088d4:	05 9c 17 9e 
+ffa088d8:	25 c8 25 e8 	R0.H = (A1 += R4.H * R5.H), R0.L = (A0 += R4.L * R5.L) (S2RND) || R5 = [I1++] || NOP;
+ffa088dc:	0d 9c 00 00 
+ffa088e0:	00 c8 05 c0 	A1 = R0.H * R5.H, A0 = R0.L * R5.L || [I2++] = R1 || NOP;
+ffa088e4:	11 9e 00 00 
+ffa088e8:	83 ce 38 00 	A0 = A0 << 0x7 || [I2++] = R3 || NOP;
+ffa088ec:	13 9e 00 00 
+ffa088f0:	83 ce 38 10 	A1 = A1 << 0x7 || [I2++] = R0 || NOP;
+ffa088f4:	10 9e 00 00 
+ffa088f8:	07 c8 c0 39 	R7.H = A1, R7.L = A0 || I1 += M0 || NOP;
+ffa088fc:	61 9e 00 00 
+ffa08900:	10 cc 00 c0 	A1 = ABS A1, A0 = ABS A0 || R1 = [I0++] || NOP;
+ffa08904:	01 9c 00 00 
+ffa08908:	06 c9 09 f1 	R4.H = (A1 -= R1.H * R1.H), R4.L = (A0 -= R1.L * R1.L) (IS) || R1 = [I0++] || NOP;
+ffa0890c:	01 9c 00 00 
+ffa08910:	00 c0 2e 80 	A1 = R5.H * R6.L, A0 = R5.L * R6.L;
+ffa08914:	26 c0 e1 f0 	R3.H = (A1 -= R4.H * R1.H), R3.L = (A0 -= R4.L * R1.L) (S2RND);
+ffa08918:	06 c4 18 86 	R3 = ABS R3 (V);
+ffa0891c:	03 c8 00 18 	MNOP || [I2++] = R3 || NOP;
+ffa08920:	13 9e 00 00 
+ffa08924:	81 ce 6f 40 	R0 = R7 << 0xd (V, S) || R1 = [I1 ++ M0] || R2 = [I0++];
 ffa08928:	89 9d 02 9c 
-ffa0892c:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
+ffa0892c:	00 c8 0a c0 	A1 = R1.H * R2.H, A0 = R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
 ffa08930:	89 9d 02 9c 
 ffa08934:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
 ffa08938:	89 9d 02 9c 
 ffa0893c:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
 ffa08940:	89 9d 02 9c 
-ffa08944:	05 c8 8a e9 	R6.H = (A1 += R1.H * R2.H), R6.L = (A0 += R1.L * R2.L) || R1 = [I1++] || R5 = [I0++];
-ffa08948:	09 9c 05 9c 
-ffa0894c:	00 cc 3e ee 	R7 = R7 -|- R6 (S) || I0 -= M1 || [I2++] = R7;
-ffa08950:	74 9e 17 9e 
-ffa08954:	81 ce 3f 46 	R3 = R7 << 0x7 (V, S) || I1 += M2 || [I2++] = R0;
-ffa08958:	69 9e 10 9e 
-ffa0895c:	81 ce 93 47 	R3 = R3 >>> 0xe (V) || R1 = [I1 ++ M3] || R2 = [I0];
-ffa08960:	e9 9d 02 9d 
-ffa08964:	00 c8 0b c0 	A1 = R1.H * R3.H, A0 = R1.L * R3.L || [I2++] = R6 || NOP;
-ffa08968:	16 9e 00 00 
-ffa0896c:	05 c8 15 e9 	R4.H = (A1 += R2.H * R5.H), R4.L = (A0 += R2.L * R5.L) || I1 -= M2 || NOP;
-ffa08970:	79 9e 00 00 
-ffa08974:	03 c8 00 18 	MNOP || [I0 ++ M1] = R4 || NOP;
-ffa08978:	a4 9f 00 00 
-ffa0897c:	03 c8 00 18 	MNOP || R5 = [I0++] || R1 = [I1++];
-ffa08980:	05 9c 09 9c 
-ffa08984:	00 c8 3d c0 	A1 = R7.H * R5.H, A0 = R7.L * R5.L || R5 = [I0++] || R2 = [I1++];
-ffa08988:	05 9c 0a 9c 
-ffa0898c:	01 c8 0d c8 	A1 += R1.H * R5.H, A0 += R1.L * R5.L || R5 = [I0++] || R3 = [I1++];
-ffa08990:	05 9c 0b 9c 
-ffa08994:	01 c8 15 c8 	A1 += R2.H * R5.H, A0 += R2.L * R5.L || R5 = [I0++] || R4 = [I1++];
-ffa08998:	05 9c 0c 9c 
-ffa0899c:	01 c8 1d c8 	A1 += R3.H * R5.H, A0 += R3.L * R5.L || R5 = [I0++] || [I2++] = R7;
-ffa089a0:	05 9c 17 9e 
-ffa089a4:	25 c8 25 e8 	R0.H = (A1 += R4.H * R5.H), R0.L = (A0 += R4.L * R5.L) (S2RND) || [I2++] = R1 || NOP;
-ffa089a8:	11 9e 00 00 
-ffa089ac:	03 c8 00 18 	MNOP || R5 = [I0++] || [I2++] = R0;
-ffa089b0:	05 9c 10 9e 
-ffa089b4:	00 c8 05 c0 	A1 = R0.H * R5.H, A0 = R0.L * R5.L || R5 = [I0++] || [I2++] = R3;
-ffa089b8:	05 9c 13 9e 
-ffa089bc:	01 c8 1d c8 	A1 += R3.H * R5.H, A0 += R3.L * R5.L || R5 = [I0++] || R1 = [I1++];
-ffa089c0:	05 9c 09 9c 
-ffa089c4:	01 c8 25 c8 	A1 += R4.H * R5.H, A0 += R4.L * R5.L || R5 = [I0++] || R2 = [I1++];
-ffa089c8:	05 9c 0a 9c 
-ffa089cc:	01 c8 0d c8 	A1 += R1.H * R5.H, A0 += R1.L * R5.L || R5 = [I0++] || NOP;
-ffa089d0:	05 9c 00 00 
-ffa089d4:	25 c8 15 e8 	R0.H = (A1 += R2.H * R5.H), R0.L = (A0 += R2.L * R5.L) (S2RND) || R5 = [I0++] || NOP;
-ffa089d8:	05 9c 00 00 
-ffa089dc:	00 cc 05 20 	R0 = R0 +|+ R5 (S) || [I2++] = R0 || NOP;
-ffa089e0:	10 9e 00 00 
-ffa089e4:	81 ce 88 0d 	R6 = R0 >>> 0xf (V) || [I2++] = R1 || NOP;
-ffa089e8:	11 9e 00 00 
-ffa089ec:	03 c8 00 18 	MNOP || R5 = [I0++] || R1 = [I1++];
-ffa089f0:	05 9c 09 9c 
-ffa089f4:	00 c8 3d c0 	A1 = R7.H * R5.H, A0 = R7.L * R5.L || R5 = [I0++] || R2 = [I1++];
-ffa089f8:	05 9c 0a 9c 
-ffa089fc:	01 c8 0d c8 	A1 += R1.H * R5.H, A0 += R1.L * R5.L || R5 = [I0++] || R3 = [I1++];
-ffa08a00:	05 9c 0b 9c 
-ffa08a04:	01 c8 15 c8 	A1 += R2.H * R5.H, A0 += R2.L * R5.L || R5 = [I0++] || R4 = [I1++];
-ffa08a08:	05 9c 0c 9c 
-ffa08a0c:	01 c8 1d c8 	A1 += R3.H * R5.H, A0 += R3.L * R5.L || R5 = [I0++] || [I2++] = R7;
-ffa08a10:	05 9c 17 9e 
-ffa08a14:	25 c8 25 e8 	R0.H = (A1 += R4.H * R5.H), R0.L = (A0 += R4.L * R5.L) (S2RND) || [I2++] = R1 || NOP;
-ffa08a18:	11 9e 00 00 
-ffa08a1c:	03 c8 00 18 	MNOP || R5 = [I0++] || [I2++] = R0;
-ffa08a20:	05 9c 10 9e 
-ffa08a24:	00 c8 05 c0 	A1 = R0.H * R5.H, A0 = R0.L * R5.L || R5 = [I0++] || [I2++] = R3;
-ffa08a28:	05 9c 13 9e 
-ffa08a2c:	01 c8 1d c8 	A1 += R3.H * R5.H, A0 += R3.L * R5.L || R5 = [I0++] || R1 = [I1++];
-ffa08a30:	05 9c 09 9c 
-ffa08a34:	01 c8 25 c8 	A1 += R4.H * R5.H, A0 += R4.L * R5.L || R5 = [I0++] || R2 = [I1++];
-ffa08a38:	05 9c 0a 9c 
-ffa08a3c:	01 c8 0d c8 	A1 += R1.H * R5.H, A0 += R1.L * R5.L || R5 = [I0++] || NOP;
-ffa08a40:	05 9c 00 00 
-ffa08a44:	25 c8 15 e8 	R0.H = (A1 += R2.H * R5.H), R0.L = (A0 += R2.L * R5.L) (S2RND) || R5 = [I0++] || NOP;
-ffa08a48:	05 9c 00 00 
-ffa08a4c:	00 cc 05 20 	R0 = R0 +|+ R5 (S) || R7 = [I0++] || [I2++] = R0;
-ffa08a50:	07 9c 10 9e 
-ffa08a54:	81 ce 90 41 	R0 = R0 >>> 0xe (V) || R5 = [I0++] || [I2++] = R1;
-ffa08a58:	05 9c 11 9e 
-ffa08a5c:	be 55       	R6 = R6 & R7;
-ffa08a5e:	28 54       	R0 = R0 & R5;
-ffa08a60:	86 57       	R6 = R6 | R0;
-ffa08a62:	77 b9       	R7 = [FP -0x24];
-ffa08a64:	37 56       	R0 = R7 | R6;
-ffa08a66:	06 9c       	R6 = [I0++];
-ffa08a68:	06 32       	P0 = R6;
-ffa08a6a:	3d b9       	P5 = [FP -0x34];
-ffa08a6c:	19 b9       	P1 = [FP -0x3c];
-ffa08a6e:	02 c4 00 40 	R0.L = R0.L + R0.H (NS);
-ffa08a72:	40 43       	R0 = R0.B (Z);
-ffa08a74:	45 5b       	P5 = P5 + P0;
-ffa08a76:	29 99       	R1 = B[P5] (Z);
-ffa08a78:	41 56       	R1 = R1 | R0;
-ffa08a7a:	01 32       	P0 = R1;
-ffa08a7c:	29 9b       	B[P5] = R1;
-ffa08a7e:	03 69       	P3 = 0x20 (X);		/*		P3=0x20( 32) */
-ffa08a80:	5d 5b       	P5 = P5 + P3;
-ffa08a82:	41 5a       	P1 = P1 + P0;
-ffa08a84:	0a 99       	R2 = B[P1] (Z);
-ffa08a86:	2a 9b       	B[P5] = R2;
-ffa08a88:	f8 60       	R0 = 0x1f (X);		/*		R0=0x1f( 31) */
-ffa08a8a:	06 08       	CC = R6 == R0;
-ffa08a8c:	33 14       	IF !CC JUMP 0xffa08af2 <end_txchan> (BP);
-ffa08a8e:	98 b9       	P0 = [FP -0x1c];
-ffa08a90:	2f 60       	R7 = 0x5 (X);		/*		R7=0x5(  5) */
-ffa08a92:	00 00       	NOP;
-ffa08a94:	00 00       	NOP;
-ffa08a96:	00 00       	NOP;
-ffa08a98:	03 c8 00 18 	MNOP || P1 = [FP -0x18] || R0 = [I3++];
-ffa08a9c:	a9 b9 18 9c 
-ffa08aa0:	03 c8 00 18 	MNOP || P3 = [FP -0x14] || R1 = [I3++];
-ffa08aa4:	bb b9 19 9c 
-ffa08aa8:	03 c8 00 18 	MNOP || P5 = [FP -0x10] || R4 = [I3++];
-ffa08aac:	cd b9 1c 9c 
-ffa08ab0:	28 34       	M1 = R0;
-ffa08ab2:	31 34       	M2 = R1;
-ffa08ab4:	00 99       	R0 = B[P0] (Z);
-ffa08ab6:	09 99       	R1 = B[P1] (Z);
-ffa08ab8:	1a 99       	R2 = B[P3] (Z);
-ffa08aba:	2b 99       	R3 = B[P5] (Z);
-ffa08abc:	20 9a       	B[P4++] = R0;
-ffa08abe:	21 9a       	B[P4++] = R1;
-ffa08ac0:	22 9a       	B[P4++] = R2;
-ffa08ac2:	23 9a       	B[P4++] = R3;
-ffa08ac4:	3c 08       	CC = R4 == R7;
-ffa08ac6:	13 14       	IF !CC JUMP 0xffa08aec <end_txchan_qs> (BP);
-ffa08ac8:	1f 9c       	R7 = [I3++];
-ffa08aca:	1e 9c       	R6 = [I3++];
-ffa08acc:	2e 32       	P5 = R6;
-ffa08ace:	f5 b9       	R5 = [FP -0x4];
-ffa08ad0:	0d 64       	R5 += 0x1;		/* (  1) */
-ffa08ad2:	f5 bb       	[FP -0x4] = R5;
-ffa08ad4:	f5 b8       	R5 = [FP -0x44];
-ffa08ad6:	28 90       	R0 = [P5++];
-ffa08ad8:	29 90       	R1 = [P5++];
-ffa08ada:	38 56       	R0 = R0 | R7;
-ffa08adc:	69 56       	R1 = R1 | R5;
-ffa08ade:	e0 6a       	P0 = -0x24 (X);		/*		P0=0xffffffdc(-36) */
-ffa08ae0:	45 5b       	P5 = P5 + P0;
-ffa08ae2:	20 92       	[P4++] = R0;
-ffa08ae4:	21 92       	[P4++] = R1;
-ffa08ae6:	04 60       	R4 = 0x0 (X);		/*		R4=0x0(  0) */
-ffa08ae8:	ac 92       	[P5--] = R4;
-ffa08aea:	ac 92       	[P5--] = R4;
+ffa08944:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
+ffa08948:	89 9d 02 9c 
+ffa0894c:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
+ffa08950:	89 9d 02 9c 
+ffa08954:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
+ffa08958:	89 9d 02 9c 
+ffa0895c:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
+ffa08960:	89 9d 02 9c 
+ffa08964:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
+ffa08968:	89 9d 02 9c 
+ffa0896c:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
+ffa08970:	89 9d 02 9c 
+ffa08974:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
+ffa08978:	89 9d 02 9c 
+ffa0897c:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
+ffa08980:	89 9d 02 9c 
+ffa08984:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
+ffa08988:	89 9d 02 9c 
+ffa0898c:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
+ffa08990:	89 9d 02 9c 
+ffa08994:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
+ffa08998:	89 9d 02 9c 
+ffa0899c:	05 c8 8a e9 	R6.H = (A1 += R1.H * R2.H), R6.L = (A0 += R1.L * R2.L) || R1 = [I1++] || R5 = [I0++];
+ffa089a0:	09 9c 05 9c 
+ffa089a4:	00 cc 3e ee 	R7 = R7 -|- R6 (S) || I0 -= M1 || [I2++] = R7;
+ffa089a8:	74 9e 17 9e 
+ffa089ac:	81 ce 3f 46 	R3 = R7 << 0x7 (V, S) || I1 += M2 || [I2++] = R0;
+ffa089b0:	69 9e 10 9e 
+ffa089b4:	81 ce 93 47 	R3 = R3 >>> 0xe (V, S) || R1 = [I1 ++ M3] || R2 = [I0];
+ffa089b8:	e9 9d 02 9d 
+ffa089bc:	00 c8 0b c0 	A1 = R1.H * R3.H, A0 = R1.L * R3.L || [I2++] = R6 || NOP;
+ffa089c0:	16 9e 00 00 
+ffa089c4:	05 c8 15 e9 	R4.H = (A1 += R2.H * R5.H), R4.L = (A0 += R2.L * R5.L) || I1 -= M2 || NOP;
+ffa089c8:	79 9e 00 00 
+ffa089cc:	03 c8 00 18 	MNOP || [I0 ++ M1] = R4 || NOP;
+ffa089d0:	a4 9f 00 00 
+ffa089d4:	03 c8 00 18 	MNOP || R5 = [I0++] || R1 = [I1++];
+ffa089d8:	05 9c 09 9c 
+ffa089dc:	00 c8 3d c0 	A1 = R7.H * R5.H, A0 = R7.L * R5.L || R5 = [I0++] || R2 = [I1++];
+ffa089e0:	05 9c 0a 9c 
+ffa089e4:	01 c8 0d c8 	A1 += R1.H * R5.H, A0 += R1.L * R5.L || R5 = [I0++] || R3 = [I1++];
+ffa089e8:	05 9c 0b 9c 
+ffa089ec:	01 c8 15 c8 	A1 += R2.H * R5.H, A0 += R2.L * R5.L || R5 = [I0++] || R4 = [I1++];
+ffa089f0:	05 9c 0c 9c 
+ffa089f4:	01 c8 1d c8 	A1 += R3.H * R5.H, A0 += R3.L * R5.L || R5 = [I0++] || [I2++] = R7;
+ffa089f8:	05 9c 17 9e 
+ffa089fc:	25 c8 25 e8 	R0.H = (A1 += R4.H * R5.H), R0.L = (A0 += R4.L * R5.L) (S2RND) || [I2++] = R1 || NOP;
+ffa08a00:	11 9e 00 00 
+ffa08a04:	03 c8 00 18 	MNOP || R5 = [I0++] || [I2++] = R0;
+ffa08a08:	05 9c 10 9e 
+ffa08a0c:	00 c8 05 c0 	A1 = R0.H * R5.H, A0 = R0.L * R5.L || R5 = [I0++] || [I2++] = R3;
+ffa08a10:	05 9c 13 9e 
+ffa08a14:	01 c8 1d c8 	A1 += R3.H * R5.H, A0 += R3.L * R5.L || R5 = [I0++] || R1 = [I1++];
+ffa08a18:	05 9c 09 9c 
+ffa08a1c:	01 c8 25 c8 	A1 += R4.H * R5.H, A0 += R4.L * R5.L || R5 = [I0++] || R2 = [I1++];
+ffa08a20:	05 9c 0a 9c 
+ffa08a24:	01 c8 0d c8 	A1 += R1.H * R5.H, A0 += R1.L * R5.L || R5 = [I0++] || NOP;
+ffa08a28:	05 9c 00 00 
+ffa08a2c:	25 c8 15 e8 	R0.H = (A1 += R2.H * R5.H), R0.L = (A0 += R2.L * R5.L) (S2RND) || R5 = [I0++] || NOP;
+ffa08a30:	05 9c 00 00 
+ffa08a34:	00 cc 05 20 	R0 = R0 +|+ R5 (S) || [I2++] = R0 || NOP;
+ffa08a38:	10 9e 00 00 
+ffa08a3c:	81 ce 88 0d 	R6 = R0 >>> 0xf (V) || [I2++] = R1 || NOP;
+ffa08a40:	11 9e 00 00 
+ffa08a44:	03 c8 00 18 	MNOP || R5 = [I0++] || R1 = [I1++];
+ffa08a48:	05 9c 09 9c 
+ffa08a4c:	00 c8 3d c0 	A1 = R7.H * R5.H, A0 = R7.L * R5.L || R5 = [I0++] || R2 = [I1++];
+ffa08a50:	05 9c 0a 9c 
+ffa08a54:	01 c8 0d c8 	A1 += R1.H * R5.H, A0 += R1.L * R5.L || R5 = [I0++] || R3 = [I1++];
+ffa08a58:	05 9c 0b 9c 
+ffa08a5c:	01 c8 15 c8 	A1 += R2.H * R5.H, A0 += R2.L * R5.L || R5 = [I0++] || R4 = [I1++];
+ffa08a60:	05 9c 0c 9c 
+ffa08a64:	01 c8 1d c8 	A1 += R3.H * R5.H, A0 += R3.L * R5.L || R5 = [I0++] || [I2++] = R7;
+ffa08a68:	05 9c 17 9e 
+ffa08a6c:	25 c8 25 e8 	R0.H = (A1 += R4.H * R5.H), R0.L = (A0 += R4.L * R5.L) (S2RND) || [I2++] = R1 || NOP;
+ffa08a70:	11 9e 00 00 
+ffa08a74:	03 c8 00 18 	MNOP || R5 = [I0++] || [I2++] = R0;
+ffa08a78:	05 9c 10 9e 
+ffa08a7c:	00 c8 05 c0 	A1 = R0.H * R5.H, A0 = R0.L * R5.L || R5 = [I0++] || [I2++] = R3;
+ffa08a80:	05 9c 13 9e 
+ffa08a84:	01 c8 1d c8 	A1 += R3.H * R5.H, A0 += R3.L * R5.L || R5 = [I0++] || R1 = [I1++];
+ffa08a88:	05 9c 09 9c 
+ffa08a8c:	01 c8 25 c8 	A1 += R4.H * R5.H, A0 += R4.L * R5.L || R5 = [I0++] || R2 = [I1++];
+ffa08a90:	05 9c 0a 9c 
+ffa08a94:	01 c8 0d c8 	A1 += R1.H * R5.H, A0 += R1.L * R5.L || R5 = [I0++] || NOP;
+ffa08a98:	05 9c 00 00 
+ffa08a9c:	25 c8 15 e8 	R0.H = (A1 += R2.H * R5.H), R0.L = (A0 += R2.L * R5.L) (S2RND) || R5 = [I0++] || NOP;
+ffa08aa0:	05 9c 00 00 
+ffa08aa4:	00 cc 05 20 	R0 = R0 +|+ R5 (S) || R7 = [I0++] || [I2++] = R0;
+ffa08aa8:	07 9c 10 9e 
+ffa08aac:	81 ce 88 41 	R0 = R0 >>> 0xf (V, S) || R5 = [I0++] || [I2++] = R1;
+ffa08ab0:	05 9c 11 9e 
+ffa08ab4:	be 55       	R6 = R6 & R7;
+ffa08ab6:	28 54       	R0 = R0 & R5;
+ffa08ab8:	86 57       	R6 = R6 | R0;
+ffa08aba:	76 bb       	[FP -0x24] = R6;
+ffa08abc:	40 e4 80 00 	R0 = W[P0 + 0x100] (Z);
+ffa08ac0:	41 e4 80 00 	R1 = W[P0 + 0x100] (Z);
+ffa08ac4:	d2 b8       	R2 = [FP -0x4c];
+ffa08ac6:	81 4f       	R1 <<= 0x10;
+ffa08ac8:	08 56       	R0 = R0 | R1;
+ffa08aca:	d0 55       	R7 = R0 & R2;
+ffa08acc:	c6 b8       	R6 = [FP -0x50];
+ffa08ace:	00 00       	NOP;
+ffa08ad0:	03 c8 00 18 	MNOP || R5 = [I0++] || R1 = [I1++];
+ffa08ad4:	05 9c 09 9c 
+ffa08ad8:	00 c8 3d c0 	A1 = R7.H * R5.H, A0 = R7.L * R5.L || R5 = [I0++] || R2 = [I1++];
+ffa08adc:	05 9c 0a 9c 
+ffa08ae0:	01 c8 0d c8 	A1 += R1.H * R5.H, A0 += R1.L * R5.L || R5 = [I0++] || R4 = [I1++];
+ffa08ae4:	05 9c 0c 9c 
+ffa08ae8:	01 c8 15 c8 	A1 += R2.H * R5.H, A0 += R2.L * R5.L || R5 = [I0++] || R3 = [I1++];
+ffa08aec:	05 9c 0b 9c 
+ffa08af0:	01 c8 1d c8 	A1 += R3.H * R5.H, A0 += R3.L * R5.L || R5 = [I0++] || [I2++] = R7;
+ffa08af4:	05 9c 17 9e 
+ffa08af8:	25 c8 25 e8 	R0.H = (A1 += R4.H * R5.H), R0.L = (A0 += R4.L * R5.L) (S2RND) || R5 = [I1++] || NOP;
+ffa08afc:	0d 9c 00 00 
+ffa08b00:	00 c8 05 c0 	A1 = R0.H * R5.H, A0 = R0.L * R5.L || [I2++] = R1 || NOP;
+ffa08b04:	11 9e 00 00 
+ffa08b08:	83 ce 38 00 	A0 = A0 << 0x7 || [I2++] = R3 || NOP;
+ffa08b0c:	13 9e 00 00 
+ffa08b10:	83 ce 38 10 	A1 = A1 << 0x7 || [I2++] = R0 || NOP;
+ffa08b14:	10 9e 00 00 
+ffa08b18:	07 c8 c0 39 	R7.H = A1, R7.L = A0 || I1 += M0 || NOP;
+ffa08b1c:	61 9e 00 00 
+ffa08b20:	10 cc 00 c0 	A1 = ABS A1, A0 = ABS A0 || R1 = [I0++] || NOP;
+ffa08b24:	01 9c 00 00 
+ffa08b28:	06 c9 09 f1 	R4.H = (A1 -= R1.H * R1.H), R4.L = (A0 -= R1.L * R1.L) (IS) || R1 = [I0++] || NOP;
+ffa08b2c:	01 9c 00 00 
+ffa08b30:	00 c0 2e 80 	A1 = R5.H * R6.L, A0 = R5.L * R6.L;
+ffa08b34:	26 c0 e1 f0 	R3.H = (A1 -= R4.H * R1.H), R3.L = (A0 -= R4.L * R1.L) (S2RND);
+ffa08b38:	06 c4 18 86 	R3 = ABS R3 (V);
+ffa08b3c:	03 c8 00 18 	MNOP || [I2++] = R3 || NOP;
+ffa08b40:	13 9e 00 00 
+ffa08b44:	81 ce 6f 40 	R0 = R7 << 0xd (V, S) || R1 = [I1 ++ M0] || R2 = [I0++];
+ffa08b48:	89 9d 02 9c 
+ffa08b4c:	00 c8 0a c0 	A1 = R1.H * R2.H, A0 = R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
+ffa08b50:	89 9d 02 9c 
+ffa08b54:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
+ffa08b58:	89 9d 02 9c 
+ffa08b5c:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
+ffa08b60:	89 9d 02 9c 
+ffa08b64:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
+ffa08b68:	89 9d 02 9c 
+ffa08b6c:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
+ffa08b70:	89 9d 02 9c 
+ffa08b74:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
+ffa08b78:	89 9d 02 9c 
+ffa08b7c:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
+ffa08b80:	89 9d 02 9c 
+ffa08b84:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
+ffa08b88:	89 9d 02 9c 
+ffa08b8c:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
+ffa08b90:	89 9d 02 9c 
+ffa08b94:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
+ffa08b98:	89 9d 02 9c 
+ffa08b9c:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
+ffa08ba0:	89 9d 02 9c 
+ffa08ba4:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
+ffa08ba8:	89 9d 02 9c 
+ffa08bac:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
+ffa08bb0:	89 9d 02 9c 
+ffa08bb4:	01 c8 0a c8 	A1 += R1.H * R2.H, A0 += R1.L * R2.L || R1 = [I1 ++ M0] || R2 = [I0++];
+ffa08bb8:	89 9d 02 9c 
+ffa08bbc:	05 c8 8a e9 	R6.H = (A1 += R1.H * R2.H), R6.L = (A0 += R1.L * R2.L) || R1 = [I1++] || R5 = [I0++];
+ffa08bc0:	09 9c 05 9c 
+ffa08bc4:	00 cc 3e ee 	R7 = R7 -|- R6 (S) || I0 -= M1 || [I2++] = R7;
+ffa08bc8:	74 9e 17 9e 
+ffa08bcc:	81 ce 3f 46 	R3 = R7 << 0x7 (V, S) || I1 += M2 || [I2++] = R0;
+ffa08bd0:	69 9e 10 9e 
+ffa08bd4:	81 ce 93 47 	R3 = R3 >>> 0xe (V, S) || R1 = [I1 ++ M3] || R2 = [I0];
+ffa08bd8:	e9 9d 02 9d 
+ffa08bdc:	00 c8 0b c0 	A1 = R1.H * R3.H, A0 = R1.L * R3.L || [I2++] = R6 || NOP;
+ffa08be0:	16 9e 00 00 
+ffa08be4:	05 c8 15 e9 	R4.H = (A1 += R2.H * R5.H), R4.L = (A0 += R2.L * R5.L) || I1 -= M2 || NOP;
+ffa08be8:	79 9e 00 00 
+ffa08bec:	03 c8 00 18 	MNOP || [I0 ++ M1] = R4 || NOP;
+ffa08bf0:	a4 9f 00 00 
+ffa08bf4:	03 c8 00 18 	MNOP || R5 = [I0++] || R1 = [I1++];
+ffa08bf8:	05 9c 09 9c 
+ffa08bfc:	00 c8 3d c0 	A1 = R7.H * R5.H, A0 = R7.L * R5.L || R5 = [I0++] || R2 = [I1++];
+ffa08c00:	05 9c 0a 9c 
+ffa08c04:	01 c8 0d c8 	A1 += R1.H * R5.H, A0 += R1.L * R5.L || R5 = [I0++] || R3 = [I1++];
+ffa08c08:	05 9c 0b 9c 
+ffa08c0c:	01 c8 15 c8 	A1 += R2.H * R5.H, A0 += R2.L * R5.L || R5 = [I0++] || R4 = [I1++];
+ffa08c10:	05 9c 0c 9c 
+ffa08c14:	01 c8 1d c8 	A1 += R3.H * R5.H, A0 += R3.L * R5.L || R5 = [I0++] || [I2++] = R7;
+ffa08c18:	05 9c 17 9e 
+ffa08c1c:	25 c8 25 e8 	R0.H = (A1 += R4.H * R5.H), R0.L = (A0 += R4.L * R5.L) (S2RND) || [I2++] = R1 || NOP;
+ffa08c20:	11 9e 00 00 
+ffa08c24:	03 c8 00 18 	MNOP || R5 = [I0++] || [I2++] = R0;
+ffa08c28:	05 9c 10 9e 
+ffa08c2c:	00 c8 05 c0 	A1 = R0.H * R5.H, A0 = R0.L * R5.L || R5 = [I0++] || [I2++] = R3;
+ffa08c30:	05 9c 13 9e 
+ffa08c34:	01 c8 1d c8 	A1 += R3.H * R5.H, A0 += R3.L * R5.L || R5 = [I0++] || R1 = [I1++];
+ffa08c38:	05 9c 09 9c 
+ffa08c3c:	01 c8 25 c8 	A1 += R4.H * R5.H, A0 += R4.L * R5.L || R5 = [I0++] || R2 = [I1++];
+ffa08c40:	05 9c 0a 9c 
+ffa08c44:	01 c8 0d c8 	A1 += R1.H * R5.H, A0 += R1.L * R5.L || R5 = [I0++] || NOP;
+ffa08c48:	05 9c 00 00 
+ffa08c4c:	25 c8 15 e8 	R0.H = (A1 += R2.H * R5.H), R0.L = (A0 += R2.L * R5.L) (S2RND) || R5 = [I0++] || NOP;
+ffa08c50:	05 9c 00 00 
+ffa08c54:	00 cc 05 20 	R0 = R0 +|+ R5 (S) || [I2++] = R0 || NOP;
+ffa08c58:	10 9e 00 00 
+ffa08c5c:	81 ce 88 0d 	R6 = R0 >>> 0xf (V) || [I2++] = R1 || NOP;
+ffa08c60:	11 9e 00 00 
+ffa08c64:	03 c8 00 18 	MNOP || R5 = [I0++] || R1 = [I1++];
+ffa08c68:	05 9c 09 9c 
+ffa08c6c:	00 c8 3d c0 	A1 = R7.H * R5.H, A0 = R7.L * R5.L || R5 = [I0++] || R2 = [I1++];
+ffa08c70:	05 9c 0a 9c 
+ffa08c74:	01 c8 0d c8 	A1 += R1.H * R5.H, A0 += R1.L * R5.L || R5 = [I0++] || R3 = [I1++];
+ffa08c78:	05 9c 0b 9c 
+ffa08c7c:	01 c8 15 c8 	A1 += R2.H * R5.H, A0 += R2.L * R5.L || R5 = [I0++] || R4 = [I1++];
+ffa08c80:	05 9c 0c 9c 
+ffa08c84:	01 c8 1d c8 	A1 += R3.H * R5.H, A0 += R3.L * R5.L || R5 = [I0++] || [I2++] = R7;
+ffa08c88:	05 9c 17 9e 
+ffa08c8c:	25 c8 25 e8 	R0.H = (A1 += R4.H * R5.H), R0.L = (A0 += R4.L * R5.L) (S2RND) || [I2++] = R1 || NOP;
+ffa08c90:	11 9e 00 00 
+ffa08c94:	03 c8 00 18 	MNOP || R5 = [I0++] || [I2++] = R0;
+ffa08c98:	05 9c 10 9e 
+ffa08c9c:	00 c8 05 c0 	A1 = R0.H * R5.H, A0 = R0.L * R5.L || R5 = [I0++] || [I2++] = R3;
+ffa08ca0:	05 9c 13 9e 
+ffa08ca4:	01 c8 1d c8 	A1 += R3.H * R5.H, A0 += R3.L * R5.L || R5 = [I0++] || R1 = [I1++];
+ffa08ca8:	05 9c 09 9c 
+ffa08cac:	01 c8 25 c8 	A1 += R4.H * R5.H, A0 += R4.L * R5.L || R5 = [I0++] || R2 = [I1++];
+ffa08cb0:	05 9c 0a 9c 
+ffa08cb4:	01 c8 0d c8 	A1 += R1.H * R5.H, A0 += R1.L * R5.L || R5 = [I0++] || NOP;
+ffa08cb8:	05 9c 00 00 
+ffa08cbc:	25 c8 15 e8 	R0.H = (A1 += R2.H * R5.H), R0.L = (A0 += R2.L * R5.L) (S2RND) || R5 = [I0++] || NOP;
+ffa08cc0:	05 9c 00 00 
+ffa08cc4:	00 cc 05 20 	R0 = R0 +|+ R5 (S) || R7 = [I0++] || [I2++] = R0;
+ffa08cc8:	07 9c 10 9e 
+ffa08ccc:	81 ce 90 41 	R0 = R0 >>> 0xe (V, S) || R5 = [I0++] || [I2++] = R1;
+ffa08cd0:	05 9c 11 9e 
+ffa08cd4:	be 55       	R6 = R6 & R7;
+ffa08cd6:	28 54       	R0 = R0 & R5;
+ffa08cd8:	86 57       	R6 = R6 | R0;
+ffa08cda:	77 b9       	R7 = [FP -0x24];
+ffa08cdc:	37 56       	R0 = R7 | R6;
+ffa08cde:	06 9c       	R6 = [I0++];
+ffa08ce0:	06 32       	P0 = R6;
+ffa08ce2:	3d b9       	P5 = [FP -0x34];
+ffa08ce4:	19 b9       	P1 = [FP -0x3c];
+ffa08ce6:	02 c4 00 40 	R0.L = R0.L + R0.H (NS);
+ffa08cea:	40 43       	R0 = R0.B (Z);
+ffa08cec:	45 5b       	P5 = P5 + P0;
+ffa08cee:	29 99       	R1 = B[P5] (Z);
+ffa08cf0:	41 56       	R1 = R1 | R0;
+ffa08cf2:	01 32       	P0 = R1;
+ffa08cf4:	29 9b       	B[P5] = R1;
+ffa08cf6:	03 69       	P3 = 0x20 (X);		/*		P3=0x20( 32) */
+ffa08cf8:	5d 5b       	P5 = P5 + P3;
+ffa08cfa:	41 5a       	P1 = P1 + P0;
+ffa08cfc:	0a 99       	R2 = B[P1] (Z);
+ffa08cfe:	2a 9b       	B[P5] = R2;
+ffa08d00:	f8 60       	R0 = 0x1f (X);		/*		R0=0x1f( 31) */
+ffa08d02:	06 08       	CC = R6 == R0;
+ffa08d04:	33 14       	IF !CC JUMP 0xffa08d6a <end_txchan> (BP);
+ffa08d06:	98 b9       	P0 = [FP -0x1c];
+ffa08d08:	2f 60       	R7 = 0x5 (X);		/*		R7=0x5(  5) */
+ffa08d0a:	00 00       	NOP;
+ffa08d0c:	00 00       	NOP;
+ffa08d0e:	00 00       	NOP;
+ffa08d10:	03 c8 00 18 	MNOP || P1 = [FP -0x18] || R0 = [I3++];
+ffa08d14:	a9 b9 18 9c 
+ffa08d18:	03 c8 00 18 	MNOP || P3 = [FP -0x14] || R1 = [I3++];
+ffa08d1c:	bb b9 19 9c 
+ffa08d20:	03 c8 00 18 	MNOP || P5 = [FP -0x10] || R4 = [I3++];
+ffa08d24:	cd b9 1c 9c 
+ffa08d28:	28 34       	M1 = R0;
+ffa08d2a:	31 34       	M2 = R1;
+ffa08d2c:	00 99       	R0 = B[P0] (Z);
+ffa08d2e:	09 99       	R1 = B[P1] (Z);
+ffa08d30:	1a 99       	R2 = B[P3] (Z);
+ffa08d32:	2b 99       	R3 = B[P5] (Z);
+ffa08d34:	20 9a       	B[P4++] = R0;
+ffa08d36:	21 9a       	B[P4++] = R1;
+ffa08d38:	22 9a       	B[P4++] = R2;
+ffa08d3a:	23 9a       	B[P4++] = R3;
+ffa08d3c:	3c 08       	CC = R4 == R7;
+ffa08d3e:	13 14       	IF !CC JUMP 0xffa08d64 <end_txchan_qs> (BP);
+ffa08d40:	1f 9c       	R7 = [I3++];
+ffa08d42:	1e 9c       	R6 = [I3++];
+ffa08d44:	2e 32       	P5 = R6;
+ffa08d46:	f5 b9       	R5 = [FP -0x4];
+ffa08d48:	0d 64       	R5 += 0x1;		/* (  1) */
+ffa08d4a:	f5 bb       	[FP -0x4] = R5;
+ffa08d4c:	f5 b8       	R5 = [FP -0x44];
+ffa08d4e:	28 90       	R0 = [P5++];
+ffa08d50:	29 90       	R1 = [P5++];
+ffa08d52:	38 56       	R0 = R0 | R7;
+ffa08d54:	69 56       	R1 = R1 | R5;
+ffa08d56:	e0 6a       	P0 = -0x24 (X);		/*		P0=0xffffffdc(-36) */
+ffa08d58:	45 5b       	P5 = P5 + P0;
+ffa08d5a:	20 92       	[P4++] = R0;
+ffa08d5c:	21 92       	[P4++] = R1;
+ffa08d5e:	04 60       	R4 = 0x0 (X);		/*		R4=0x0(  0) */
+ffa08d60:	ac 92       	[P5--] = R4;
+ffa08d62:	ac 92       	[P5--] = R4;
 
-ffa08aec <end_txchan_qs>:
-ffa08aec:	7c 30       	R7 = P4;
-ffa08aee:	57 4c       	BITCLR (R7, 0xa);		/* bit 10 */
-ffa08af0:	27 32       	P4 = R7;
+ffa08d64 <end_txchan_qs>:
+ffa08d64:	7c 30       	R7 = P4;
+ffa08d66:	57 4c       	BITCLR (R7, 0xa);		/* bit 10 */
+ffa08d68:	27 32       	P4 = R7;
 
-ffa08af2 <end_txchan>:
-ffa08af2:	5b b9       	P3 = [FP -0x2c];
-ffa08af4:	49 b9       	P1 = [FP -0x30];
-ffa08af6:	10 00       	RTS;
-
-ffa08af8 <_init6>:
-ffa08af8:	10 e1 00 40 	I0.L = 0x4000;		/* (16384)	I0=0x4000(16384) */
-ffa08afc:	50 e1 90 ff 	I0.H = 0xff90;		/* (-112)	I0=0xff904000(-7323648) */
-ffa08b00:	80 36       	B0 = I0;
-ffa08b02:	1c e1 00 30 	L0.L = 0x3000;		/* (12288)	L0=0x3000(12288) */
-ffa08b06:	5c e1 00 00 	L0.H = 0x0;		/* (  0)	L0=0x3000(12288) */
-ffa08b0a:	14 e1 40 01 	M0.L = 0x140;		/* (320)	M0=0x140(320) */
-ffa08b0e:	54 e1 00 00 	M0.H = 0x0;		/* (  0)	M0=0x140(320) */
-ffa08b12:	05 69       	P5 = 0x20 (X);		/*		P5=0x20( 32) */
-ffa08b14:	01 60       	R1 = 0x0 (X);		/*		R1=0x0(  0) */
-ffa08b16:	a2 e0 af 50 	LSETUP(0xffa08b1a <lt_top>, 0xffa08c74 <lt_bot>) LC0 = P5;
-
-ffa08b1a <lt_top>:
-ffa08b1a:	20 e1 00 01 	R0 = 0x100 (X);		/*		R0=0x100(256) */
-ffa08b1e:	00 9e       	[I0++] = R0;
-ffa08b20:	15 68       	P5 = 0x2 (X);		/*		P5=0x2(  2) */
-ffa08b22:	b2 e0 97 50 	LSETUP(0xffa08b26 <lt2_top>, 0xffa08c50 <lt2_bot>) LC1 = P5;
-
-ffa08b26 <lt2_top>:
-ffa08b26:	00 e1 00 40 	R0.L = 0x4000;		/* (16384)	R0=0x4000(16384) */
-ffa08b2a:	20 9e       	W[I0++] = R0.L;
-ffa08b2c:	20 9e       	W[I0++] = R0.L;
-ffa08b2e:	00 e1 00 00 	R0.L = 0x0;		/* (  0)	R0=0x0(  0) */
-ffa08b32:	20 9e       	W[I0++] = R0.L;
-ffa08b34:	20 9e       	W[I0++] = R0.L;
-ffa08b36:	00 e1 00 c0 	R0.L = 0xc000;		/* (-16384)	R0=0xc000(49152) */
-ffa08b3a:	20 9e       	W[I0++] = R0.L;
-ffa08b3c:	20 9e       	W[I0++] = R0.L;
-ffa08b3e:	00 e1 07 5d 	R0.L = 0x5d07;		/* (23815)	R0=0x5d07(23815) */
-ffa08b42:	20 9e       	W[I0++] = R0.L;
-ffa08b44:	20 9e       	W[I0++] = R0.L;
-ffa08b46:	00 e1 2b dd 	R0.L = 0xdd2b;		/* (-8917)	R0=0xdd2b(56619) */
-ffa08b4a:	20 9e       	W[I0++] = R0.L;
-ffa08b4c:	20 9e       	W[I0++] = R0.L;
-ffa08b4e:	00 e1 bb 26 	R0.L = 0x26bb;		/* (9915)	R0=0x26bb(9915) */
-ffa08b52:	40 e1 bb 26 	R0.H = 0x26bb;		/* (9915)	R0=0x26bb26bb(649799355) */
-ffa08b56:	00 9e       	[I0++] = R0;
-ffa08b58:	00 e1 01 00 	R0.L = 0x1;		/* (  1)	R0=0x26bb0001(649789441) */
-ffa08b5c:	20 9e       	W[I0++] = R0.L;
-ffa08b5e:	20 9e       	W[I0++] = R0.L;
-ffa08b60:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa08b62:	00 9e       	[I0++] = R0;
-ffa08b64:	00 9e       	[I0++] = R0;
-ffa08b66:	00 9e       	[I0++] = R0;
-ffa08b68:	00 9e       	[I0++] = R0;
-ffa08b6a:	00 9e       	[I0++] = R0;
-ffa08b6c:	00 9e       	[I0++] = R0;
-ffa08b6e:	00 9e       	[I0++] = R0;
-ffa08b70:	00 9e       	[I0++] = R0;
-ffa08b72:	00 9e       	[I0++] = R0;
-ffa08b74:	00 9e       	[I0++] = R0;
-ffa08b76:	00 9e       	[I0++] = R0;
-ffa08b78:	00 9e       	[I0++] = R0;
-ffa08b7a:	00 9e       	[I0++] = R0;
-ffa08b7c:	00 9e       	[I0++] = R0;
-ffa08b7e:	00 9e       	[I0++] = R0;
-ffa08b80:	00 e1 ff 7f 	R0.L = 0x7fff;		/* (32767)	R0=0x7fff(32767) */
-ffa08b84:	20 9e       	W[I0++] = R0.L;
-ffa08b86:	20 9e       	W[I0++] = R0.L;
-ffa08b88:	20 e1 d4 1e 	R0 = 0x1ed4 (X);		/*		R0=0x1ed4(7892) */
-ffa08b8c:	20 9e       	W[I0++] = R0.L;
-ffa08b8e:	20 9e       	W[I0++] = R0.L;
-ffa08b90:	20 e1 a9 3d 	R0 = 0x3da9 (X);		/*		R0=0x3da9(15785) */
-ffa08b94:	20 9e       	W[I0++] = R0.L;
-ffa08b96:	20 9e       	W[I0++] = R0.L;
-ffa08b98:	20 e1 d4 1e 	R0 = 0x1ed4 (X);		/*		R0=0x1ed4(7892) */
-ffa08b9c:	20 9e       	W[I0++] = R0.L;
-ffa08b9e:	20 9e       	W[I0++] = R0.L;
-ffa08ba0:	20 e1 ad 14 	R0 = 0x14ad (X);		/*		R0=0x14ad(5293) */
-ffa08ba4:	20 9e       	W[I0++] = R0.L;
-ffa08ba6:	20 9e       	W[I0++] = R0.L;
-ffa08ba8:	20 e1 c9 e2 	R0 = -0x1d37 (X);		/*		R0=0xffffe2c9(-7479) */
-ffa08bac:	20 9e       	W[I0++] = R0.L;
-ffa08bae:	20 9e       	W[I0++] = R0.L;
-ffa08bb0:	20 e1 ee 3b 	R0 = 0x3bee (X);		/*		R0=0x3bee(15342) */
-ffa08bb4:	20 9e       	W[I0++] = R0.L;
-ffa08bb6:	20 9e       	W[I0++] = R0.L;
-ffa08bb8:	20 e1 21 88 	R0 = -0x77df (X);		/*		R0=0xffff8821(-30687) */
-ffa08bbc:	20 9e       	W[I0++] = R0.L;
-ffa08bbe:	20 9e       	W[I0++] = R0.L;
-ffa08bc0:	20 e1 ee 3b 	R0 = 0x3bee (X);		/*		R0=0x3bee(15342) */
-ffa08bc4:	20 9e       	W[I0++] = R0.L;
-ffa08bc6:	20 9e       	W[I0++] = R0.L;
-ffa08bc8:	20 e1 a5 7a 	R0 = 0x7aa5 (X);		/*		R0=0x7aa5(31397) */
-ffa08bcc:	20 9e       	W[I0++] = R0.L;
-ffa08bce:	20 9e       	W[I0++] = R0.L;
-ffa08bd0:	20 e1 bc c4 	R0 = -0x3b44 (X);		/*		R0=0xffffc4bc(-15172) */
-ffa08bd4:	20 9e       	W[I0++] = R0.L;
-ffa08bd6:	20 9e       	W[I0++] = R0.L;
-ffa08bd8:	20 e1 80 3e 	R0 = 0x3e80 (X);		/*		R0=0x3e80(16000) */
-ffa08bdc:	20 9e       	W[I0++] = R0.L;
-ffa08bde:	20 9e       	W[I0++] = R0.L;
-ffa08be0:	20 e1 d4 1e 	R0 = 0x1ed4 (X);		/*		R0=0x1ed4(7892) */
-ffa08be4:	20 9e       	W[I0++] = R0.L;
-ffa08be6:	20 9e       	W[I0++] = R0.L;
-ffa08be8:	20 e1 a6 3d 	R0 = 0x3da6 (X);		/*		R0=0x3da6(15782) */
-ffa08bec:	20 9e       	W[I0++] = R0.L;
-ffa08bee:	20 9e       	W[I0++] = R0.L;
-ffa08bf0:	20 e1 d4 1e 	R0 = 0x1ed4 (X);		/*		R0=0x1ed4(7892) */
-ffa08bf4:	20 9e       	W[I0++] = R0.L;
-ffa08bf6:	20 9e       	W[I0++] = R0.L;
-ffa08bf8:	20 e1 f0 0e 	R0 = 0xef0 (X);		/*		R0=0xef0(3824) */
-ffa08bfc:	20 9e       	W[I0++] = R0.L;
-ffa08bfe:	20 9e       	W[I0++] = R0.L;
-ffa08c00:	20 e1 aa fc 	R0 = -0x356 (X);		/*		R0=0xfffffcaa(-854) */
-ffa08c04:	20 9e       	W[I0++] = R0.L;
-ffa08c06:	20 9e       	W[I0++] = R0.L;
-ffa08c08:	20 e1 ee 3b 	R0 = 0x3bee (X);		/*		R0=0x3bee(15342) */
-ffa08c0c:	20 9e       	W[I0++] = R0.L;
-ffa08c0e:	20 9e       	W[I0++] = R0.L;
-ffa08c10:	20 e1 27 88 	R0 = -0x77d9 (X);		/*		R0=0xffff8827(-30681) */
-ffa08c14:	20 9e       	W[I0++] = R0.L;
-ffa08c16:	20 9e       	W[I0++] = R0.L;
-ffa08c18:	20 e1 ee 3b 	R0 = 0x3bee (X);		/*		R0=0x3bee(15342) */
-ffa08c1c:	20 9e       	W[I0++] = R0.L;
-ffa08c1e:	20 9e       	W[I0++] = R0.L;
-ffa08c20:	20 e1 8c 74 	R0 = 0x748c (X);		/*		R0=0x748c(29836) */
-ffa08c24:	20 9e       	W[I0++] = R0.L;
-ffa08c26:	20 9e       	W[I0++] = R0.L;
-ffa08c28:	20 e1 dd ca 	R0 = -0x3523 (X);		/*		R0=0xffffcadd(-13603) */
-ffa08c2c:	20 9e       	W[I0++] = R0.L;
-ffa08c2e:	20 9e       	W[I0++] = R0.L;
-ffa08c30:	20 e1 80 3e 	R0 = 0x3e80 (X);		/*		R0=0x3e80(16000) */
-ffa08c34:	20 9e       	W[I0++] = R0.L;
-ffa08c36:	20 9e       	W[I0++] = R0.L;
-ffa08c38:	00 e1 01 00 	R0.L = 0x1;		/* (  1)	R0=0x1(  1) */
-ffa08c3c:	20 9e       	W[I0++] = R0.L;
-ffa08c3e:	00 e1 10 00 	R0.L = 0x10;		/* ( 16)	R0=0x10( 16) */
-ffa08c42:	20 9e       	W[I0++] = R0.L;
-ffa08c44:	00 e1 02 00 	R0.L = 0x2;		/* (  2)	R0=0x2(  2) */
-ffa08c48:	20 9e       	W[I0++] = R0.L;
-ffa08c4a:	00 e1 20 00 	R0.L = 0x20;		/* ( 32)	R0=0x20( 32) */
-ffa08c4e:	20 9e       	W[I0++] = R0.L;
-
-ffa08c50 <lt2_bot>:
-ffa08c50:	37 e1 08 00 	M3 = 0x8 (X);		/*		M3=0x8(  8) */
-ffa08c54:	7c 9e       	I0 -= M3;
-ffa08c56:	00 e1 04 00 	R0.L = 0x4;		/* (  4)	R0=0x4(  4) */
-ffa08c5a:	20 9e       	W[I0++] = R0.L;
-ffa08c5c:	00 e1 40 00 	R0.L = 0x40;		/* ( 64)	R0=0x40( 64) */
-ffa08c60:	20 9e       	W[I0++] = R0.L;
-ffa08c62:	00 e1 08 00 	R0.L = 0x8;		/* (  8)	R0=0x8(  8) */
-ffa08c66:	20 9e       	W[I0++] = R0.L;
-ffa08c68:	00 e1 80 00 	R0.L = 0x80;		/* (128)	R0=0x80(128) */
-ffa08c6c:	20 9e       	W[I0++] = R0.L;
-ffa08c6e:	01 9e       	[I0++] = R1;
-ffa08c70:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
-ffa08c72:	41 50       	R1 = R1 + R0;
-
-ffa08c74 <lt_bot>:
-ffa08c74:	08 e1 80 6b 	P0.L = 0x6b80;		/* (27520)	P0=0xffff6b80(-38016) */
-ffa08c78:	48 e1 90 ff 	P0.H = 0xff90;		/* (-112)	P0=0xff906b80 */
-ffa08c7c:	20 e1 80 00 	R0 = 0x80 (X);		/*		R0=0x80(128) */
-ffa08c80:	00 93       	[P0] = R0;
-ffa08c82:	11 e1 00 40 	I1.L = 0x4000;		/* (16384)	I1=0x4000(16384) */
-ffa08c86:	51 e1 80 ff 	I1.H = 0xff80;		/* (-128)	I1=0xff804000(-8372224) */
-ffa08c8a:	1d e1 00 14 	L1.L = 0x1400;		/* (5120)	L1=0x1400(5120) */
-ffa08c8e:	5d e1 00 00 	L1.H = 0x0;		/* (  0)	L1=0x1400(5120) */
-ffa08c92:	91 34       	I2 = I1;
-ffa08c94:	89 36       	B1 = I1;
-ffa08c96:	92 36       	B2 = I2;
-ffa08c98:	f5 36       	L2 = L1;
-ffa08c9a:	35 e1 40 00 	M1 = 0x40 (X);		/*		M1=0x40( 64) */
-ffa08c9e:	b4 34       	M2 = M0;
-ffa08ca0:	08 e1 00 40 	P0.L = 0x4000;		/* (16384)	P0=0xff904000 */
-ffa08ca4:	48 e1 80 ff 	P0.H = 0xff80;		/* (-128)	P0=0xff804000 */
-ffa08ca8:	0d e1 00 05 	P5.L = 0x500;		/* (1280)	P5=0x500 */
-ffa08cac:	4d e1 00 00 	P5.H = 0x0;		/* (  0)	P5=0x500 */
-ffa08cb0:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa08cb2:	a2 e0 04 50 	LSETUP(0xffa08cb6 <lt3_top>, 0xffa08cba <lt3_bot>) LC0 = P5;
-
-ffa08cb6 <lt3_top>:
-ffa08cb6:	00 00       	NOP;
-ffa08cb8:	00 92       	[P0++] = R0;
-
-ffa08cba <lt3_bot>:
-ffa08cba:	00 00       	NOP;
-ffa08cbc:	13 e1 00 54 	I3.L = 0x5400;		/* (21504)	I3=0x5400(21504) */
-ffa08cc0:	53 e1 80 ff 	I3.H = 0xff80;		/* (-128)	I3=0xff805400(-8367104) */
-ffa08cc4:	1f e1 00 0f 	L3.L = 0xf00;		/* (3840)	L3=0xf00(3840) */
-ffa08cc8:	5f e1 00 00 	L3.H = 0x0;		/* (  0)	L3=0xf00(3840) */
-ffa08ccc:	9b 36       	B3 = I3;
-ffa08cce:	37 e1 08 00 	M3 = 0x8 (X);		/*		M3=0x8(  8) */
-ffa08cd2:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa08cd4:	8c 30       	R1 = M0;
-ffa08cd6:	02 60       	R2 = 0x0 (X);		/*		R2=0x0(  0) */
-ffa08cd8:	07 60       	R7 = 0x0 (X);		/*		R7=0x0(  0) */
-ffa08cda:	85 69       	P5 = 0x30 (X);		/*		P5=0x30( 48) */
-ffa08cdc:	a2 e0 46 50 	LSETUP(0xffa08ce0 <lt4_top>, 0xffa08d68 <lt4_bot>) LC0 = P5;
-
-ffa08ce0 <lt4_top>:
-ffa08ce0:	00 00       	NOP;
-ffa08ce2:	35 68       	P5 = 0x6 (X);		/*		P5=0x6(  6) */
-ffa08ce4:	b2 e0 18 50 	LSETUP(0xffa08ce8 <lt5_top>, 0xffa08d14 <lt5_bot>) LC1 = P5;
-
-ffa08ce8 <lt5_top>:
-ffa08ce8:	84 60       	R4 = 0x10 (X);		/*		R4=0x10( 16) */
-ffa08cea:	c4 52       	R3 = R4 - R0;
-ffa08cec:	24 60       	R4 = 0x4 (X);		/*		R4=0x4(  4) */
-ffa08cee:	e3 40       	R3 *= R4;
-ffa08cf0:	1b 9e       	[I3++] = R3;
-ffa08cf2:	0c 60       	R4 = 0x1 (X);		/*		R4=0x1(  1) */
-ffa08cf4:	e0 50       	R3 = R0 + R4;
-ffa08cf6:	cb 40       	R3 *= R1;
-ffa08cf8:	1b 9e       	[I3++] = R3;
-ffa08cfa:	1f 9e       	[I3++] = R7;
-ffa08cfc:	20 50       	R0 = R0 + R4;
-ffa08cfe:	e7 51       	R7 = R7 + R4;
-ffa08d00:	7c 60       	R4 = 0xf (X);		/*		R4=0xf( 15) */
-ffa08d02:	20 08       	CC = R0 == R4;
-ffa08d04:	02 10       	IF !CC JUMP 0xffa08d08 <no_rollover>;
-ffa08d06:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-
-ffa08d08 <no_rollover>:
-ffa08d08:	00 00       	NOP;
-ffa08d0a:	34 60       	R4 = 0x6 (X);		/*		R4=0x6(  6) */
-ffa08d0c:	27 08       	CC = R7 == R4;
-ffa08d0e:	02 10       	IF !CC JUMP 0xffa08d12 <no_rollover2>;
-ffa08d10:	07 60       	R7 = 0x0 (X);		/*		R7=0x0(  0) */
-
-ffa08d12 <no_rollover2>:
-	...
-
-ffa08d14 <lt5_bot>:
-ffa08d14:	00 00       	NOP;
-ffa08d16:	05 60       	R5 = 0x0 (X);		/*		R5=0x0(  0) */
-ffa08d18:	82 c6 e2 86 	R3 = R2 << 0x1c;
-ffa08d1c:	0c 60       	R4 = 0x1 (X);		/*		R4=0x1(  1) */
-ffa08d1e:	82 c6 fc 88 	R4 = R4 << 0x1f;
-ffa08d22:	e3 54       	R3 = R3 & R4;
-ffa08d24:	5d 57       	R5 = R5 | R3;
-ffa08d26:	82 c6 aa 86 	R3 = R2 << 0x15;
-ffa08d2a:	82 c6 c4 89 	R4 = R4 >> 0x8;
-ffa08d2e:	e3 54       	R3 = R3 & R4;
-ffa08d30:	5d 57       	R5 = R5 | R3;
-ffa08d32:	82 c6 72 86 	R3 = R2 << 0xe;
-ffa08d36:	82 c6 c4 89 	R4 = R4 >> 0x8;
-ffa08d3a:	e3 54       	R3 = R3 & R4;
-ffa08d3c:	5d 57       	R5 = R5 | R3;
-ffa08d3e:	82 c6 3a 86 	R3 = R2 << 0x7;
-ffa08d42:	82 c6 c4 89 	R4 = R4 >> 0x8;
-ffa08d46:	e3 54       	R3 = R3 & R4;
-ffa08d48:	5d 57       	R5 = R5 | R3;
-ffa08d4a:	1d 9e       	[I3++] = R5;
-ffa08d4c:	03 e1 20 63 	R3.L = 0x6320;		/* (25376)	R3=0x6320(25376) */
-ffa08d50:	43 e1 80 ff 	R3.H = 0xff80;		/* (-128)	R3=0xff806320(-8363232) */
-ffa08d54:	1c 60       	R4 = 0x3 (X);		/*		R4=0x3(  3) */
-ffa08d56:	62 55       	R5 = R2 & R4;
-ffa08d58:	82 c6 1d 8a 	R5 = R5 << 0x3;
-ffa08d5c:	5d 51       	R5 = R5 + R3;
-ffa08d5e:	1d 9e       	[I3++] = R5;
-ffa08d60:	0c 60       	R4 = 0x1 (X);		/*		R4=0x1(  1) */
-ffa08d62:	a2 50       	R2 = R2 + R4;
-ffa08d64:	7c 60       	R4 = 0xf (X);		/*		R4=0xf( 15) */
-ffa08d66:	a2 54       	R2 = R2 & R4;
-
-ffa08d68 <lt4_bot>:
-ffa08d68:	00 00       	NOP;
-ffa08d6a:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa08d6c:	10 00       	RTS;
-	...
+ffa08d6a <end_txchan>:
+ffa08d6a:	5b b9       	P3 = [FP -0x2c];
+ffa08d6c:	49 b9       	P1 = [FP -0x30];
+ffa08d6e:	10 00       	RTS;
 
 ffa08d70 <_enc_create>:
 ffa08d70:	0d e1 00 64 	P5.L = 0x6400;		/* (25600)	P5=0x6400 */
@@ -1932,7 +1933,7 @@ ffa09432:	f8 1b       	IF CC JUMP 0xffa09422 <___divsi3+0xd2>;
 ffa09434:	05 c6 01 02 	R1.L = SIGNBITS R1;
 ffa09438:	c9 42       	R1 = R1.L (Z);
 ffa0943a:	11 67       	R1 += -0x1e;		/* (-30) */
-ffa0943c:	02 c6 08 80 	R0 = SHIFT R0 BY R1.L;
+ffa0943c:	02 c6 08 80 	R0 = LSHIFT R0 BY R1.L;
 ffa09440:	82 c6 0b 83 	R1 = R3 >> 0x1f;
 ffa09444:	08 50       	R0 = R0 + R1;
 ffa09446:	82 43       	R2 = -R0;
@@ -1943,1376 +1944,1461 @@ ffa0944e:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
 ffa09450:	10 00       	RTS;
 	...
 
-ffa09454 <_exception_report>:
-ffa09454:	00 e8 03 00 	LINK 0xc;		/* (12) */
-ffa09458:	b8 b0       	[FP + 0x8] = R0;
-ffa0945a:	f9 b0       	[FP + 0xc] = R1;
-ffa0945c:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc07000(-4165632) */
-ffa09460:	0a e1 00 07 	P2.L = 0x700;		/* (1792)	P2=0xffc00700(-4192512) */
-ffa09464:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa09466:	10 97       	W[P2] = R0;
-ffa09468:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00700(-4192512) */
-ffa0946c:	0a e1 0c 07 	P2.L = 0x70c;		/* (1804)	P2=0xffc0070c(-4192500) */
-ffa09470:	20 e1 00 01 	R0 = 0x100 (X);		/*		R0=0x100(256) */
-ffa09474:	10 97       	W[P2] = R0;
-ffa09476:	24 00       	SSYNC;
-ffa09478:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc0070c(-4192500) */
-ffa0947c:	0a e1 0c 07 	P2.L = 0x70c;		/* (1804)	P2=0xffc0070c(-4192500) */
-ffa09480:	20 e1 00 01 	R0 = 0x100 (X);		/*		R0=0x100(256) */
-ffa09484:	10 97       	W[P2] = R0;
-ffa09486:	24 00       	SSYNC;
-ffa09488:	00 61       	R0 = 0x20 (X);		/*		R0=0x20( 32) */
-ffa0948a:	d0 bb       	[FP -0xc] = R0;
-ffa0948c:	b8 a0       	R0 = [FP + 0x8];
-ffa0948e:	e0 bb       	[FP -0x8] = R0;
-ffa09490:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa09492:	f0 bb       	[FP -0x4] = R0;
-ffa09494:	27 20       	JUMP.S 0xffa094e2 <_exception_report+0x8e>;
-ffa09496:	d0 b9       	R0 = [FP -0xc];
-ffa09498:	e1 b9       	R1 = [FP -0x8];
-ffa0949a:	08 54       	R0 = R0 & R1;
-ffa0949c:	00 0c       	CC = R0 == 0x0;
-ffa0949e:	08 18       	IF CC JUMP 0xffa094ae <_exception_report+0x5a>;
-ffa094a0:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc0070c(-4192500) */
-ffa094a4:	0a e1 08 07 	P2.L = 0x708;		/* (1800)	P2=0xffc00708(-4192504) */
-ffa094a8:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
-ffa094aa:	10 97       	W[P2] = R0;
-ffa094ac:	07 20       	JUMP.S 0xffa094ba <_exception_report+0x66>;
-ffa094ae:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00708(-4192504) */
-ffa094b2:	0a e1 04 07 	P2.L = 0x704;		/* (1796)	P2=0xffc00704(-4192508) */
-ffa094b6:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
-ffa094b8:	10 97       	W[P2] = R0;
-ffa094ba:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00704(-4192508) */
-ffa094be:	0a e1 0c 07 	P2.L = 0x70c;		/* (1804)	P2=0xffc0070c(-4192500) */
-ffa094c2:	10 60       	R0 = 0x2 (X);		/*		R0=0x2(  2) */
-ffa094c4:	10 97       	W[P2] = R0;
-ffa094c6:	24 00       	SSYNC;
-ffa094c8:	d0 b9       	R0 = [FP -0xc];
-ffa094ca:	08 4e       	R0 >>= 0x1;
-ffa094cc:	d0 bb       	[FP -0xc] = R0;
-ffa094ce:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc0070c(-4192500) */
-ffa094d2:	0a e1 0c 07 	P2.L = 0x70c;		/* (1804)	P2=0xffc0070c(-4192500) */
-ffa094d6:	10 60       	R0 = 0x2 (X);		/*		R0=0x2(  2) */
-ffa094d8:	10 97       	W[P2] = R0;
-ffa094da:	24 00       	SSYNC;
-ffa094dc:	f0 b9       	R0 = [FP -0x4];
-ffa094de:	08 64       	R0 += 0x1;		/* (  1) */
+ffa09454 <_NOP>:
+ffa09454:	00 e8 00 00 	LINK 0x0;		/* (0) */
+ffa09458:	00 00       	NOP;
+ffa0945a:	01 e8 00 00 	UNLINK;
+ffa0945e:	10 00       	RTS;
+
+ffa09460 <_cli>:
+ffa09460:	00 e8 02 00 	LINK 0x8;		/* (8) */
+ffa09464:	30 00       	CLI R0;
+ffa09466:	f0 bb       	[FP -0x4] = R0;
+ffa09468:	f0 b9       	R0 = [FP -0x4];
+ffa0946a:	e0 bb       	[FP -0x8] = R0;
+ffa0946c:	e0 b9       	R0 = [FP -0x8];
+ffa0946e:	01 e8 00 00 	UNLINK;
+ffa09472:	10 00       	RTS;
+
+ffa09474 <_sti>:
+ffa09474:	00 e8 00 00 	LINK 0x0;		/* (0) */
+ffa09478:	b8 b0       	[FP + 0x8] = R0;
+ffa0947a:	b8 a0       	R0 = [FP + 0x8];
+ffa0947c:	40 00       	STI R0;
+ffa0947e:	01 e8 00 00 	UNLINK;
+ffa09482:	10 00       	RTS;
+
+ffa09484 <_idle>:
+ffa09484:	00 e8 00 00 	LINK 0x0;		/* (0) */
+ffa09488:	20 00       	IDLE;
+ffa0948a:	01 e8 00 00 	UNLINK;
+ffa0948e:	10 00       	RTS;
+
+ffa09490 <_prefetch>:
+ffa09490:	00 e8 00 00 	LINK 0x0;		/* (0) */
+ffa09494:	b8 b0       	[FP + 0x8] = R0;
+ffa09496:	ba ac       	P2 = [FP + 0x8];
+ffa09498:	42 02       	PREFETCH[P2];
+ffa0949a:	01 e8 00 00 	UNLINK;
+ffa0949e:	10 00       	RTS;
+
+ffa094a0 <_prefetchmodup>:
+ffa094a0:	00 e8 02 00 	LINK 0x8;		/* (8) */
+ffa094a4:	b8 b0       	[FP + 0x8] = R0;
+ffa094a6:	40 60       	R0 = 0x8 (X);		/*		R0=0x8(  8) */
+ffa094a8:	47 30       	R0 = FP;
+ffa094aa:	40 64       	R0 += 0x8;		/* (  8) */
+ffa094ac:	f0 bb       	[FP -0x4] = R0;
+ffa094ae:	f0 b9       	R0 = [FP -0x4];
+ffa094b0:	10 32       	P2 = R0;
+ffa094b2:	62 02       	PREFETCH[P2++];
+ffa094b4:	fa bb       	[FP -0x4] = P2;
+ffa094b6:	f0 b9       	R0 = [FP -0x4];
+ffa094b8:	e0 bb       	[FP -0x8] = R0;
+ffa094ba:	e0 b9       	R0 = [FP -0x8];
+ffa094bc:	01 e8 00 00 	UNLINK;
+ffa094c0:	10 00       	RTS;
+	...
+
+ffa094c4 <_flushinv>:
+ffa094c4:	00 e8 00 00 	LINK 0x0;		/* (0) */
+ffa094c8:	b8 b0       	[FP + 0x8] = R0;
+ffa094ca:	ba ac       	P2 = [FP + 0x8];
+ffa094cc:	4a 02       	FLUSHINV[P2];
+ffa094ce:	01 e8 00 00 	UNLINK;
+ffa094d2:	10 00       	RTS;
+
+ffa094d4 <_flushinvmodup>:
+ffa094d4:	00 e8 02 00 	LINK 0x8;		/* (8) */
+ffa094d8:	b8 b0       	[FP + 0x8] = R0;
+ffa094da:	40 60       	R0 = 0x8 (X);		/*		R0=0x8(  8) */
+ffa094dc:	47 30       	R0 = FP;
+ffa094de:	40 64       	R0 += 0x8;		/* (  8) */
 ffa094e0:	f0 bb       	[FP -0x4] = R0;
 ffa094e2:	f0 b9       	R0 = [FP -0x4];
-ffa094e4:	29 60       	R1 = 0x5 (X);		/*		R1=0x5(  5) */
-ffa094e6:	08 09       	CC = R0 <= R1;
-ffa094e8:	d7 1b       	IF CC JUMP 0xffa09496 <_exception_report+0x42>;
-ffa094ea:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc0070c(-4192500) */
-ffa094ee:	0a e1 04 07 	P2.L = 0x704;		/* (1796)	P2=0xffc00704(-4192508) */
-ffa094f2:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
-ffa094f4:	10 97       	W[P2] = R0;
-ffa094f6:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa094f8:	f0 bb       	[FP -0x4] = R0;
-ffa094fa:	06 20       	JUMP.S 0xffa09506 <_exception_report+0xb2>;
-ffa094fc:	00 00       	NOP;
-ffa094fe:	00 00       	NOP;
-ffa09500:	f0 b9       	R0 = [FP -0x4];
-ffa09502:	08 64       	R0 += 0x1;		/* (  1) */
-ffa09504:	f0 bb       	[FP -0x4] = R0;
-ffa09506:	f0 b9       	R0 = [FP -0x4];
-ffa09508:	e9 60       	R1 = 0x1d (X);		/*		R1=0x1d( 29) */
-ffa0950a:	08 09       	CC = R0 <= R1;
-ffa0950c:	f8 1b       	IF CC JUMP 0xffa094fc <_exception_report+0xa8>;
-ffa0950e:	80 e1 00 80 	R0 = 0x8000 (Z);		/*		R0=0x8000(32768) */
-ffa09512:	d0 bb       	[FP -0xc] = R0;
-ffa09514:	f8 a0       	R0 = [FP + 0xc];
-ffa09516:	e0 bb       	[FP -0x8] = R0;
-ffa09518:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa0951a:	f0 bb       	[FP -0x4] = R0;
-ffa0951c:	44 20       	JUMP.S 0xffa095a4 <_exception_report+0x150>;
-ffa0951e:	d0 b9       	R0 = [FP -0xc];
-ffa09520:	e1 b9       	R1 = [FP -0x8];
-ffa09522:	08 54       	R0 = R0 & R1;
-ffa09524:	00 0c       	CC = R0 == 0x0;
-ffa09526:	08 18       	IF CC JUMP 0xffa09536 <_exception_report+0xe2>;
-ffa09528:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00704(-4192508) */
-ffa0952c:	0a e1 08 07 	P2.L = 0x708;		/* (1800)	P2=0xffc00708(-4192504) */
-ffa09530:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
-ffa09532:	10 97       	W[P2] = R0;
-ffa09534:	07 20       	JUMP.S 0xffa09542 <_exception_report+0xee>;
-ffa09536:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00708(-4192504) */
-ffa0953a:	0a e1 04 07 	P2.L = 0x704;		/* (1796)	P2=0xffc00704(-4192508) */
-ffa0953e:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
-ffa09540:	10 97       	W[P2] = R0;
-ffa09542:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00704(-4192508) */
-ffa09546:	0a e1 0c 07 	P2.L = 0x70c;		/* (1804)	P2=0xffc0070c(-4192500) */
-ffa0954a:	10 60       	R0 = 0x2 (X);		/*		R0=0x2(  2) */
-ffa0954c:	10 97       	W[P2] = R0;
-ffa0954e:	24 00       	SSYNC;
-ffa09550:	d0 b9       	R0 = [FP -0xc];
-ffa09552:	08 4e       	R0 >>= 0x1;
-ffa09554:	d0 bb       	[FP -0xc] = R0;
-ffa09556:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc0070c(-4192500) */
-ffa0955a:	0a e1 0c 07 	P2.L = 0x70c;		/* (1804)	P2=0xffc0070c(-4192500) */
-ffa0955e:	10 60       	R0 = 0x2 (X);		/*		R0=0x2(  2) */
-ffa09560:	10 97       	W[P2] = R0;
-ffa09562:	24 00       	SSYNC;
-ffa09564:	f1 b9       	R1 = [FP -0x4];
-ffa09566:	18 60       	R0 = 0x3 (X);		/*		R0=0x3(  3) */
-ffa09568:	01 54       	R0 = R1 & R0;
-ffa0956a:	18 0c       	CC = R0 == 0x3;
-ffa0956c:	19 10       	IF !CC JUMP 0xffa0959e <_exception_report+0x14a>;
-	...
-ffa0959e:	f0 b9       	R0 = [FP -0x4];
-ffa095a0:	08 64       	R0 += 0x1;		/* (  1) */
-ffa095a2:	f0 bb       	[FP -0x4] = R0;
-ffa095a4:	f0 b9       	R0 = [FP -0x4];
-ffa095a6:	79 60       	R1 = 0xf (X);		/*		R1=0xf( 15) */
-ffa095a8:	08 09       	CC = R0 <= R1;
-ffa095aa:	ba 1b       	IF CC JUMP 0xffa0951e <_exception_report+0xca>;
-ffa095ac:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc0070c(-4192500) */
-ffa095b0:	0a e1 04 07 	P2.L = 0x704;		/* (1796)	P2=0xffc00704(-4192508) */
-ffa095b4:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
-ffa095b6:	10 97       	W[P2] = R0;
-ffa095b8:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa095ba:	f0 bb       	[FP -0x4] = R0;
-ffa095bc:	06 20       	JUMP.S 0xffa095c8 <_exception_report+0x174>;
-ffa095be:	00 00       	NOP;
-ffa095c0:	00 00       	NOP;
-ffa095c2:	f0 b9       	R0 = [FP -0x4];
-ffa095c4:	08 64       	R0 += 0x1;		/* (  1) */
-ffa095c6:	f0 bb       	[FP -0x4] = R0;
-ffa095c8:	f0 b9       	R0 = [FP -0x4];
-ffa095ca:	21 e1 2b 01 	R1 = 0x12b (X);		/*		R1=0x12b(299) */
-ffa095ce:	08 09       	CC = R0 <= R1;
-ffa095d0:	f7 1b       	IF CC JUMP 0xffa095be <_exception_report+0x16a>;
-ffa095d2:	4b 2f       	JUMP.S 0xffa09468 <_exception_report+0x14>;
-
-ffa095d4 <_nmi_report>:
-ffa095d4:	00 e8 01 00 	LINK 0x4;		/* (4) */
-ffa095d8:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa095da:	f0 bb       	[FP -0x4] = R0;
-ffa095dc:	06 20       	JUMP.S 0xffa095e8 <_nmi_report+0x14>;
-ffa095de:	00 00       	NOP;
-ffa095e0:	00 00       	NOP;
-ffa095e2:	f0 b9       	R0 = [FP -0x4];
-ffa095e4:	08 64       	R0 += 0x1;		/* (  1) */
-ffa095e6:	f0 bb       	[FP -0x4] = R0;
-ffa095e8:	f0 b9       	R0 = [FP -0x4];
-ffa095ea:	21 e1 2b 01 	R1 = 0x12b (X);		/*		R1=0x12b(299) */
-ffa095ee:	08 09       	CC = R0 <= R1;
-ffa095f0:	f7 1b       	IF CC JUMP 0xffa095de <_nmi_report+0xa>;
-ffa095f2:	01 e8 00 00 	UNLINK;
-ffa095f6:	10 00       	RTS;
-
-ffa095f8 <_main>:
-ffa095f8:	00 e8 04 00 	LINK 0x10;		/* (16) */
-ffa095fc:	4a e1 e0 ff 	P2.H = 0xffe0;		/* (-32)	P2=0xffe00704(-2095356) */
-ffa09600:	0a e1 04 10 	P2.L = 0x1004;		/* (4100)	P2=0xffe01004(-2093052) */
-ffa09604:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
-ffa09606:	10 93       	[P2] = R0;
-ffa09608:	23 00       	CSYNC;
-ffa0960a:	4a e1 e0 ff 	P2.H = 0xffe0;		/* (-32)	P2=0xffe01004(-2093052) */
-ffa0960e:	0a e1 04 00 	P2.L = 0x4;		/* (  4)	P2=0xffe00004(-2097148) */
-ffa09612:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
-ffa09614:	10 93       	[P2] = R0;
-ffa09616:	23 00       	CSYNC;
-ffa09618:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00004(-4194300) */
-ffa0961c:	0a e1 40 07 	P2.L = 0x740;		/* (1856)	P2=0xffc00740(-4192448) */
-ffa09620:	40 60       	R0 = 0x8 (X);		/*		R0=0x8(  8) */
-ffa09622:	10 97       	W[P2] = R0;
-ffa09624:	49 e1 c0 ff 	P1.H = 0xffc0;		/* (-64)	P1=0xffc0001f(-4194273) */
-ffa09628:	09 e1 30 07 	P1.L = 0x730;		/* (1840)	P1=0xffc00730(-4192464) */
-ffa0962c:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00740(-4192448) */
-ffa09630:	0a e1 40 07 	P2.L = 0x740;		/* (1856)	P2=0xffc00740(-4192448) */
-ffa09634:	50 95       	R0 = W[P2] (X);
-ffa09636:	c0 43       	R0 =~ R0;
-ffa09638:	08 97       	W[P1] = R0;
-ffa0963a:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00740(-4192448) */
-ffa0963e:	0a e1 00 07 	P2.L = 0x700;		/* (1792)	P2=0xffc00700(-4192512) */
-ffa09642:	20 e1 87 01 	R0 = 0x187 (X);		/*		R0=0x187(391) */
-ffa09646:	10 97       	W[P2] = R0;
-ffa09648:	20 e1 7c 00 	R0 = 0x7c (X);		/*		R0=0x7c(124) */
-ffa0964c:	00 e3 6a 06 	CALL 0xffa0a320 <_radio_init>;
-ffa09650:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00700(-4192512) */
-ffa09654:	0a e1 04 07 	P2.L = 0x704;		/* (1796)	P2=0xffc00704(-4192508) */
-ffa09658:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
-ffa0965a:	10 97       	W[P2] = R0;
-ffa0965c:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00704(-4192508) */
-ffa09660:	0a e1 04 07 	P2.L = 0x704;		/* (1796)	P2=0xffc00704(-4192508) */
-ffa09664:	20 e1 80 00 	R0 = 0x80 (X);		/*		R0=0x80(128) */
-ffa09668:	10 97       	W[P2] = R0;
-ffa0966a:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa0966c:	78 e6 fe ff 	W[FP + -0x4] = R0;
-ffa09670:	0a 20       	JUMP.S 0xffa09684 <_main+0x8c>;
-	...
-ffa0967a:	78 e5 fe ff 	R0 = W[FP + -0x4] (X);
-ffa0967e:	08 64       	R0 += 0x1;		/* (  1) */
-ffa09680:	78 e6 fe ff 	W[FP + -0x4] = R0;
-ffa09684:	78 e4 fe ff 	R0 = W[FP + -0x4] (Z);
-ffa09688:	21 e1 e7 03 	R1 = 0x3e7 (X);		/*		R1=0x3e7(999) */
-ffa0968c:	08 0a       	CC = R0 <= R1 (IU);
-ffa0968e:	f2 1b       	IF CC JUMP 0xffa09672 <_main+0x7a>;
-ffa09690:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00704(-4192508) */
-ffa09694:	0a e1 08 07 	P2.L = 0x708;		/* (1800)	P2=0xffc00708(-4192504) */
-ffa09698:	20 e1 80 00 	R0 = 0x80 (X);		/*		R0=0x80(128) */
-ffa0969c:	10 97       	W[P2] = R0;
-ffa0969e:	00 e3 f5 05 	CALL 0xffa0a288 <_radio_set_tx>;
-ffa096a2:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00708(-4192504) */
-ffa096a6:	0a e1 28 08 	P2.L = 0x828;		/* (2088)	P2=0xffc00828(-4192216) */
-ffa096aa:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
-ffa096ac:	10 97       	W[P2] = R0;
-ffa096ae:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00828(-4192216) */
-ffa096b2:	0a e1 2c 08 	P2.L = 0x82c;		/* (2092)	P2=0xffc0082c(-4192212) */
-ffa096b6:	98 60       	R0 = 0x13 (X);		/*		R0=0x13( 19) */
-ffa096b8:	10 97       	W[P2] = R0;
-ffa096ba:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc0082c(-4192212) */
-ffa096be:	0a e1 24 08 	P2.L = 0x824;		/* (2084)	P2=0xffc00824(-4192220) */
-ffa096c2:	20 e1 0f 01 	R0 = 0x10f (X);		/*		R0=0x10f(271) */
-ffa096c6:	10 97       	W[P2] = R0;
-ffa096c8:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00824(-4192220) */
-ffa096cc:	0a e1 28 09 	P2.L = 0x928;		/* (2344)	P2=0xffc00928(-4191960) */
-ffa096d0:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
-ffa096d2:	10 97       	W[P2] = R0;
-ffa096d4:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00928(-4191960) */
-ffa096d8:	0a e1 2c 09 	P2.L = 0x92c;		/* (2348)	P2=0xffc0092c(-4191956) */
-ffa096dc:	98 60       	R0 = 0x13 (X);		/*		R0=0x13( 19) */
-ffa096de:	10 97       	W[P2] = R0;
-ffa096e0:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc0092c(-4191956) */
-ffa096e4:	0a e1 24 09 	P2.L = 0x924;		/* (2340)	P2=0xffc00924(-4191964) */
-ffa096e8:	20 e1 0f 01 	R0 = 0x10f (X);		/*		R0=0x10f(271) */
-ffa096ec:	10 97       	W[P2] = R0;
-ffa096ee:	ff e3 f9 f5 	CALL 0xffa082e0 <_radio_bidi_asm>;
-ffa096f2:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa096f4:	01 e8 00 00 	UNLINK;
-ffa096f8:	10 00       	RTS;
+ffa094e4:	10 32       	P2 = R0;
+ffa094e6:	6a 02       	FLUSHINV[P2++];
+ffa094e8:	fa bb       	[FP -0x4] = P2;
+ffa094ea:	f0 b9       	R0 = [FP -0x4];
+ffa094ec:	e0 bb       	[FP -0x8] = R0;
+ffa094ee:	e0 b9       	R0 = [FP -0x8];
+ffa094f0:	01 e8 00 00 	UNLINK;
+ffa094f4:	10 00       	RTS;
 	...
 
-ffa096fc <_div>:
-ffa096fc:	00 e8 01 00 	LINK 0x4;		/* (4) */
-ffa09700:	b8 b0       	[FP + 0x8] = R0;
-ffa09702:	f9 b0       	[FP + 0xc] = R1;
-ffa09704:	b8 a0       	R0 = [FP + 0x8];
-ffa09706:	08 4f       	R0 <<= 0x1;
-ffa09708:	b8 b0       	[FP + 0x8] = R0;
-ffa0970a:	b9 a0       	R1 = [FP + 0x8];
-ffa0970c:	f8 a0       	R0 = [FP + 0xc];
-ffa0970e:	11 30       	R2 = R1;
-ffa09710:	18 30       	R3 = R0;
-ffa09712:	5a 42       	DIVS (R2, R3);
-ffa09714:	0b 30       	R1 = R3;
-ffa09716:	02 30       	R0 = R2;
-ffa09718:	b8 b0       	[FP + 0x8] = R0;
-ffa0971a:	f9 b0       	[FP + 0xc] = R1;
-ffa0971c:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa0971e:	f0 bb       	[FP -0x4] = R0;
-ffa09720:	0d 20       	JUMP.S 0xffa0973a <_div+0x3e>;
-ffa09722:	b9 a0       	R1 = [FP + 0x8];
-ffa09724:	f8 a0       	R0 = [FP + 0xc];
-ffa09726:	11 30       	R2 = R1;
-ffa09728:	18 30       	R3 = R0;
-ffa0972a:	1a 42       	DIVQ (R2, R3);
-ffa0972c:	0b 30       	R1 = R3;
-ffa0972e:	02 30       	R0 = R2;
-ffa09730:	b8 b0       	[FP + 0x8] = R0;
-ffa09732:	f9 b0       	[FP + 0xc] = R1;
-ffa09734:	f0 b9       	R0 = [FP -0x4];
-ffa09736:	08 64       	R0 += 0x1;		/* (  1) */
-ffa09738:	f0 bb       	[FP -0x4] = R0;
-ffa0973a:	f0 b9       	R0 = [FP -0x4];
-ffa0973c:	71 60       	R1 = 0xe (X);		/*		R1=0xe( 14) */
-ffa0973e:	08 09       	CC = R0 <= R1;
-ffa09740:	f1 1b       	IF CC JUMP 0xffa09722 <_div+0x26>;
-ffa09742:	b8 a0       	R0 = [FP + 0x8];
-ffa09744:	80 42       	R0 = R0.L (X);
-ffa09746:	b8 b0       	[FP + 0x8] = R0;
-ffa09748:	b8 a0       	R0 = [FP + 0x8];
-ffa0974a:	01 e8 00 00 	UNLINK;
-ffa0974e:	10 00       	RTS;
+ffa094f8 <_flush>:
+ffa094f8:	00 e8 00 00 	LINK 0x0;		/* (0) */
+ffa094fc:	b8 b0       	[FP + 0x8] = R0;
+ffa094fe:	ba ac       	P2 = [FP + 0x8];
+ffa09500:	52 02       	FLUSH[P2];
+ffa09502:	01 e8 00 00 	UNLINK;
+ffa09506:	10 00       	RTS;
 
-ffa09750 <_mod>:
-ffa09750:	00 e8 04 00 	LINK 0x10;		/* (16) */
-ffa09754:	b8 b0       	[FP + 0x8] = R0;
-ffa09756:	f9 b0       	[FP + 0xc] = R1;
-ffa09758:	f9 a0       	R1 = [FP + 0xc];
-ffa0975a:	b8 a0       	R0 = [FP + 0x8];
-ffa0975c:	ff e3 d0 ff 	CALL 0xffa096fc <_div>;
-ffa09760:	f0 bb       	[FP -0x4] = R0;
-ffa09762:	f1 b9       	R1 = [FP -0x4];
-ffa09764:	f8 a0       	R0 = [FP + 0xc];
-ffa09766:	c1 40       	R1 *= R0;
-ffa09768:	b8 a0       	R0 = [FP + 0x8];
-ffa0976a:	08 52       	R0 = R0 - R1;
-ffa0976c:	01 e8 00 00 	UNLINK;
-ffa09770:	10 00       	RTS;
+ffa09508 <_flushmodup>:
+ffa09508:	00 e8 02 00 	LINK 0x8;		/* (8) */
+ffa0950c:	b8 b0       	[FP + 0x8] = R0;
+ffa0950e:	40 60       	R0 = 0x8 (X);		/*		R0=0x8(  8) */
+ffa09510:	47 30       	R0 = FP;
+ffa09512:	40 64       	R0 += 0x8;		/* (  8) */
+ffa09514:	f0 bb       	[FP -0x4] = R0;
+ffa09516:	f0 b9       	R0 = [FP -0x4];
+ffa09518:	10 32       	P2 = R0;
+ffa0951a:	72 02       	FLUSH[P2++];
+ffa0951c:	fa bb       	[FP -0x4] = P2;
+ffa0951e:	f0 b9       	R0 = [FP -0x4];
+ffa09520:	e0 bb       	[FP -0x8] = R0;
+ffa09522:	e0 b9       	R0 = [FP -0x8];
+ffa09524:	01 e8 00 00 	UNLINK;
+ffa09528:	10 00       	RTS;
 	...
 
-ffa09774 <_memcpy_>:
-ffa09774:	00 e8 01 00 	LINK 0x4;		/* (4) */
-ffa09778:	b8 b0       	[FP + 0x8] = R0;
-ffa0977a:	f9 b0       	[FP + 0xc] = R1;
-ffa0977c:	3a b1       	[FP + 0x10] = R2;
-ffa0977e:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa09780:	f0 bb       	[FP -0x4] = R0;
-ffa09782:	0e 20       	JUMP.S 0xffa0979e <_memcpy_+0x2a>;
-ffa09784:	ba ac       	P2 = [FP + 0x8];
-ffa09786:	50 99       	R0 = B[P2] (X);
-ffa09788:	fa ac       	P2 = [FP + 0xc];
-ffa0978a:	10 9b       	B[P2] = R0;
-ffa0978c:	f8 a0       	R0 = [FP + 0xc];
-ffa0978e:	08 64       	R0 += 0x1;		/* (  1) */
-ffa09790:	f8 b0       	[FP + 0xc] = R0;
-ffa09792:	b8 a0       	R0 = [FP + 0x8];
-ffa09794:	08 64       	R0 += 0x1;		/* (  1) */
-ffa09796:	b8 b0       	[FP + 0x8] = R0;
-ffa09798:	f0 b9       	R0 = [FP -0x4];
-ffa0979a:	08 64       	R0 += 0x1;		/* (  1) */
-ffa0979c:	f0 bb       	[FP -0x4] = R0;
-ffa0979e:	f1 b9       	R1 = [FP -0x4];
-ffa097a0:	38 a1       	R0 = [FP + 0x10];
-ffa097a2:	81 08       	CC = R1 < R0;
-ffa097a4:	f0 1b       	IF CC JUMP 0xffa09784 <_memcpy_+0x10>;
-ffa097a6:	01 e8 00 00 	UNLINK;
-ffa097aa:	10 00       	RTS;
+ffa0952c <_iflush>:
+ffa0952c:	00 e8 00 00 	LINK 0x0;		/* (0) */
+ffa09530:	b8 b0       	[FP + 0x8] = R0;
+ffa09532:	ba ac       	P2 = [FP + 0x8];
+ffa09534:	5a 02       	IFLUSH[P2];
+ffa09536:	01 e8 00 00 	UNLINK;
+ffa0953a:	10 00       	RTS;
 
-ffa097ac <_memset_>:
-ffa097ac:	00 e8 01 00 	LINK 0x4;		/* (4) */
-ffa097b0:	b8 b0       	[FP + 0x8] = R0;
-ffa097b2:	3a b1       	[FP + 0x10] = R2;
-ffa097b4:	01 30       	R0 = R1;
-ffa097b6:	b8 e6 0c 00 	B[FP + 0xc] = R0;
-ffa097ba:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa097bc:	f0 bb       	[FP -0x4] = R0;
-ffa097be:	0b 20       	JUMP.S 0xffa097d4 <_memset_+0x28>;
-ffa097c0:	ba ac       	P2 = [FP + 0x8];
-ffa097c2:	b8 e5 0c 00 	R0 = B[FP + 0xc] (X);
-ffa097c6:	10 9b       	B[P2] = R0;
-ffa097c8:	b8 a0       	R0 = [FP + 0x8];
-ffa097ca:	08 64       	R0 += 0x1;		/* (  1) */
-ffa097cc:	b8 b0       	[FP + 0x8] = R0;
-ffa097ce:	f0 b9       	R0 = [FP -0x4];
-ffa097d0:	08 64       	R0 += 0x1;		/* (  1) */
-ffa097d2:	f0 bb       	[FP -0x4] = R0;
-ffa097d4:	f1 b9       	R1 = [FP -0x4];
-ffa097d6:	38 a1       	R0 = [FP + 0x10];
-ffa097d8:	81 08       	CC = R1 < R0;
-ffa097da:	f3 1b       	IF CC JUMP 0xffa097c0 <_memset_+0x14>;
-ffa097dc:	01 e8 00 00 	UNLINK;
-ffa097e0:	10 00       	RTS;
+ffa0953c <_iflushmodup>:
+ffa0953c:	00 e8 02 00 	LINK 0x8;		/* (8) */
+ffa09540:	b8 b0       	[FP + 0x8] = R0;
+ffa09542:	40 60       	R0 = 0x8 (X);		/*		R0=0x8(  8) */
+ffa09544:	47 30       	R0 = FP;
+ffa09546:	40 64       	R0 += 0x8;		/* (  8) */
+ffa09548:	f0 bb       	[FP -0x4] = R0;
+ffa0954a:	f0 b9       	R0 = [FP -0x4];
+ffa0954c:	10 32       	P2 = R0;
+ffa0954e:	7a 02       	IFLUSH[P2++];
+ffa09550:	fa bb       	[FP -0x4] = P2;
+ffa09552:	f0 b9       	R0 = [FP -0x4];
+ffa09554:	e0 bb       	[FP -0x8] = R0;
+ffa09556:	e0 b9       	R0 = [FP -0x8];
+ffa09558:	01 e8 00 00 	UNLINK;
+ffa0955c:	10 00       	RTS;
 	...
 
-ffa097e4 <_strlen_>:
-ffa097e4:	00 e8 02 00 	LINK 0x8;		/* (8) */
-ffa097e8:	b8 b0       	[FP + 0x8] = R0;
-ffa097ea:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa097ec:	f0 bb       	[FP -0x4] = R0;
-ffa097ee:	10 20       	JUMP.S 0xffa0980e <_strlen_+0x2a>;
-ffa097f0:	f0 b9       	R0 = [FP -0x4];
-ffa097f2:	08 30       	R1 = R0;
-ffa097f4:	b8 a0       	R0 = [FP + 0x8];
-ffa097f6:	41 50       	R1 = R1 + R0;
-ffa097f8:	11 32       	P2 = R1;
-ffa097fa:	50 99       	R0 = B[P2] (X);
-ffa097fc:	00 43       	R0 = R0.B (X);
-ffa097fe:	00 0c       	CC = R0 == 0x0;
-ffa09800:	04 10       	IF !CC JUMP 0xffa09808 <_strlen_+0x24>;
-ffa09802:	f0 b9       	R0 = [FP -0x4];
-ffa09804:	e0 bb       	[FP -0x8] = R0;
-ffa09806:	0b 20       	JUMP.S 0xffa0981c <_strlen_+0x38>;
-ffa09808:	f0 b9       	R0 = [FP -0x4];
-ffa0980a:	08 64       	R0 += 0x1;		/* (  1) */
-ffa0980c:	f0 bb       	[FP -0x4] = R0;
-ffa0980e:	f0 b9       	R0 = [FP -0x4];
-ffa09810:	21 e1 ff 04 	R1 = 0x4ff (X);		/*		R1=0x4ff(1279) */
-ffa09814:	08 09       	CC = R0 <= R1;
-ffa09816:	ed 1b       	IF CC JUMP 0xffa097f0 <_strlen_+0xc>;
-ffa09818:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa0981a:	e0 bb       	[FP -0x8] = R0;
-ffa0981c:	e0 b9       	R0 = [FP -0x8];
-ffa0981e:	01 e8 00 00 	UNLINK;
-ffa09822:	10 00       	RTS;
+ffa09560 <_csync>:
+ffa09560:	00 e8 00 00 	LINK 0x0;		/* (0) */
+ffa09564:	23 00       	CSYNC;
+ffa09566:	01 e8 00 00 	UNLINK;
+ffa0956a:	10 00       	RTS;
 
-ffa09824 <_strcpy_>:
-ffa09824:	00 e8 01 00 	LINK 0x4;		/* (4) */
-ffa09828:	b8 b0       	[FP + 0x8] = R0;
-ffa0982a:	f9 b0       	[FP + 0xc] = R1;
-ffa0982c:	3a b1       	[FP + 0x10] = R2;
-ffa0982e:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa09830:	f0 bb       	[FP -0x4] = R0;
-ffa09832:	0e 20       	JUMP.S 0xffa0984e <_strcpy_+0x2a>;
-ffa09834:	3a ad       	P2 = [FP + 0x10];
-ffa09836:	50 99       	R0 = B[P2] (X);
-ffa09838:	ba ac       	P2 = [FP + 0x8];
-ffa0983a:	10 9b       	B[P2] = R0;
-ffa0983c:	b8 a0       	R0 = [FP + 0x8];
-ffa0983e:	08 64       	R0 += 0x1;		/* (  1) */
-ffa09840:	b8 b0       	[FP + 0x8] = R0;
-ffa09842:	38 a1       	R0 = [FP + 0x10];
-ffa09844:	08 64       	R0 += 0x1;		/* (  1) */
-ffa09846:	38 b1       	[FP + 0x10] = R0;
+ffa0956c <_ssync>:
+ffa0956c:	00 e8 00 00 	LINK 0x0;		/* (0) */
+ffa09570:	24 00       	SSYNC;
+ffa09572:	01 e8 00 00 	UNLINK;
+ffa09576:	10 00       	RTS;
+
+ffa09578 <_exception_report>:
+ffa09578:	00 e8 03 00 	LINK 0xc;		/* (12) */
+ffa0957c:	b8 b0       	[FP + 0x8] = R0;
+ffa0957e:	f9 b0       	[FP + 0xc] = R1;
+ffa09580:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc07000(-4165632) */
+ffa09584:	0a e1 00 07 	P2.L = 0x700;		/* (1792)	P2=0xffc00700(-4192512) */
+ffa09588:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa0958a:	10 97       	W[P2] = R0;
+ffa0958c:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00700(-4192512) */
+ffa09590:	0a e1 0c 07 	P2.L = 0x70c;		/* (1804)	P2=0xffc0070c(-4192500) */
+ffa09594:	20 e1 00 01 	R0 = 0x100 (X);		/*		R0=0x100(256) */
+ffa09598:	10 97       	W[P2] = R0;
+ffa0959a:	24 00       	SSYNC;
+ffa0959c:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc0070c(-4192500) */
+ffa095a0:	0a e1 0c 07 	P2.L = 0x70c;		/* (1804)	P2=0xffc0070c(-4192500) */
+ffa095a4:	20 e1 00 01 	R0 = 0x100 (X);		/*		R0=0x100(256) */
+ffa095a8:	10 97       	W[P2] = R0;
+ffa095aa:	24 00       	SSYNC;
+ffa095ac:	00 61       	R0 = 0x20 (X);		/*		R0=0x20( 32) */
+ffa095ae:	d0 bb       	[FP -0xc] = R0;
+ffa095b0:	b8 a0       	R0 = [FP + 0x8];
+ffa095b2:	e0 bb       	[FP -0x8] = R0;
+ffa095b4:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa095b6:	f0 bb       	[FP -0x4] = R0;
+ffa095b8:	27 20       	JUMP.S 0xffa09606 <_exception_report+0x8e>;
+ffa095ba:	d0 b9       	R0 = [FP -0xc];
+ffa095bc:	e1 b9       	R1 = [FP -0x8];
+ffa095be:	08 54       	R0 = R0 & R1;
+ffa095c0:	00 0c       	CC = R0 == 0x0;
+ffa095c2:	08 18       	IF CC JUMP 0xffa095d2 <_exception_report+0x5a>;
+ffa095c4:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc0070c(-4192500) */
+ffa095c8:	0a e1 08 07 	P2.L = 0x708;		/* (1800)	P2=0xffc00708(-4192504) */
+ffa095cc:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
+ffa095ce:	10 97       	W[P2] = R0;
+ffa095d0:	07 20       	JUMP.S 0xffa095de <_exception_report+0x66>;
+ffa095d2:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00708(-4192504) */
+ffa095d6:	0a e1 04 07 	P2.L = 0x704;		/* (1796)	P2=0xffc00704(-4192508) */
+ffa095da:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
+ffa095dc:	10 97       	W[P2] = R0;
+ffa095de:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00704(-4192508) */
+ffa095e2:	0a e1 0c 07 	P2.L = 0x70c;		/* (1804)	P2=0xffc0070c(-4192500) */
+ffa095e6:	10 60       	R0 = 0x2 (X);		/*		R0=0x2(  2) */
+ffa095e8:	10 97       	W[P2] = R0;
+ffa095ea:	24 00       	SSYNC;
+ffa095ec:	d0 b9       	R0 = [FP -0xc];
+ffa095ee:	08 4e       	R0 >>= 0x1;
+ffa095f0:	d0 bb       	[FP -0xc] = R0;
+ffa095f2:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc0070c(-4192500) */
+ffa095f6:	0a e1 0c 07 	P2.L = 0x70c;		/* (1804)	P2=0xffc0070c(-4192500) */
+ffa095fa:	10 60       	R0 = 0x2 (X);		/*		R0=0x2(  2) */
+ffa095fc:	10 97       	W[P2] = R0;
+ffa095fe:	24 00       	SSYNC;
+ffa09600:	f0 b9       	R0 = [FP -0x4];
+ffa09602:	08 64       	R0 += 0x1;		/* (  1) */
+ffa09604:	f0 bb       	[FP -0x4] = R0;
+ffa09606:	f0 b9       	R0 = [FP -0x4];
+ffa09608:	29 60       	R1 = 0x5 (X);		/*		R1=0x5(  5) */
+ffa0960a:	08 09       	CC = R0 <= R1;
+ffa0960c:	d7 1b       	IF CC JUMP 0xffa095ba <_exception_report+0x42>;
+ffa0960e:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc0070c(-4192500) */
+ffa09612:	0a e1 04 07 	P2.L = 0x704;		/* (1796)	P2=0xffc00704(-4192508) */
+ffa09616:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
+ffa09618:	10 97       	W[P2] = R0;
+ffa0961a:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa0961c:	f0 bb       	[FP -0x4] = R0;
+ffa0961e:	06 20       	JUMP.S 0xffa0962a <_exception_report+0xb2>;
+ffa09620:	00 00       	NOP;
+ffa09622:	00 00       	NOP;
+ffa09624:	f0 b9       	R0 = [FP -0x4];
+ffa09626:	08 64       	R0 += 0x1;		/* (  1) */
+ffa09628:	f0 bb       	[FP -0x4] = R0;
+ffa0962a:	f0 b9       	R0 = [FP -0x4];
+ffa0962c:	e9 60       	R1 = 0x1d (X);		/*		R1=0x1d( 29) */
+ffa0962e:	08 09       	CC = R0 <= R1;
+ffa09630:	f8 1b       	IF CC JUMP 0xffa09620 <_exception_report+0xa8>;
+ffa09632:	80 e1 00 80 	R0 = 0x8000 (Z);		/*		R0=0x8000(32768) */
+ffa09636:	d0 bb       	[FP -0xc] = R0;
+ffa09638:	f8 a0       	R0 = [FP + 0xc];
+ffa0963a:	e0 bb       	[FP -0x8] = R0;
+ffa0963c:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa0963e:	f0 bb       	[FP -0x4] = R0;
+ffa09640:	44 20       	JUMP.S 0xffa096c8 <_exception_report+0x150>;
+ffa09642:	d0 b9       	R0 = [FP -0xc];
+ffa09644:	e1 b9       	R1 = [FP -0x8];
+ffa09646:	08 54       	R0 = R0 & R1;
+ffa09648:	00 0c       	CC = R0 == 0x0;
+ffa0964a:	08 18       	IF CC JUMP 0xffa0965a <_exception_report+0xe2>;
+ffa0964c:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00704(-4192508) */
+ffa09650:	0a e1 08 07 	P2.L = 0x708;		/* (1800)	P2=0xffc00708(-4192504) */
+ffa09654:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
+ffa09656:	10 97       	W[P2] = R0;
+ffa09658:	07 20       	JUMP.S 0xffa09666 <_exception_report+0xee>;
+ffa0965a:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00708(-4192504) */
+ffa0965e:	0a e1 04 07 	P2.L = 0x704;		/* (1796)	P2=0xffc00704(-4192508) */
+ffa09662:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
+ffa09664:	10 97       	W[P2] = R0;
+ffa09666:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00704(-4192508) */
+ffa0966a:	0a e1 0c 07 	P2.L = 0x70c;		/* (1804)	P2=0xffc0070c(-4192500) */
+ffa0966e:	10 60       	R0 = 0x2 (X);		/*		R0=0x2(  2) */
+ffa09670:	10 97       	W[P2] = R0;
+ffa09672:	24 00       	SSYNC;
+ffa09674:	d0 b9       	R0 = [FP -0xc];
+ffa09676:	08 4e       	R0 >>= 0x1;
+ffa09678:	d0 bb       	[FP -0xc] = R0;
+ffa0967a:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc0070c(-4192500) */
+ffa0967e:	0a e1 0c 07 	P2.L = 0x70c;		/* (1804)	P2=0xffc0070c(-4192500) */
+ffa09682:	10 60       	R0 = 0x2 (X);		/*		R0=0x2(  2) */
+ffa09684:	10 97       	W[P2] = R0;
+ffa09686:	24 00       	SSYNC;
+ffa09688:	f1 b9       	R1 = [FP -0x4];
+ffa0968a:	18 60       	R0 = 0x3 (X);		/*		R0=0x3(  3) */
+ffa0968c:	01 54       	R0 = R1 & R0;
+ffa0968e:	18 0c       	CC = R0 == 0x3;
+ffa09690:	19 10       	IF !CC JUMP 0xffa096c2 <_exception_report+0x14a>;
+	...
+ffa096c2:	f0 b9       	R0 = [FP -0x4];
+ffa096c4:	08 64       	R0 += 0x1;		/* (  1) */
+ffa096c6:	f0 bb       	[FP -0x4] = R0;
+ffa096c8:	f0 b9       	R0 = [FP -0x4];
+ffa096ca:	79 60       	R1 = 0xf (X);		/*		R1=0xf( 15) */
+ffa096cc:	08 09       	CC = R0 <= R1;
+ffa096ce:	ba 1b       	IF CC JUMP 0xffa09642 <_exception_report+0xca>;
+ffa096d0:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc0070c(-4192500) */
+ffa096d4:	0a e1 04 07 	P2.L = 0x704;		/* (1796)	P2=0xffc00704(-4192508) */
+ffa096d8:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
+ffa096da:	10 97       	W[P2] = R0;
+ffa096dc:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa096de:	f0 bb       	[FP -0x4] = R0;
+ffa096e0:	06 20       	JUMP.S 0xffa096ec <_exception_report+0x174>;
+ffa096e2:	00 00       	NOP;
+ffa096e4:	00 00       	NOP;
+ffa096e6:	f0 b9       	R0 = [FP -0x4];
+ffa096e8:	08 64       	R0 += 0x1;		/* (  1) */
+ffa096ea:	f0 bb       	[FP -0x4] = R0;
+ffa096ec:	f0 b9       	R0 = [FP -0x4];
+ffa096ee:	21 e1 2b 01 	R1 = 0x12b (X);		/*		R1=0x12b(299) */
+ffa096f2:	08 09       	CC = R0 <= R1;
+ffa096f4:	f7 1b       	IF CC JUMP 0xffa096e2 <_exception_report+0x16a>;
+ffa096f6:	4b 2f       	JUMP.S 0xffa0958c <_exception_report+0x14>;
+
+ffa096f8 <_nmi_report>:
+ffa096f8:	00 e8 01 00 	LINK 0x4;		/* (4) */
+ffa096fc:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa096fe:	f0 bb       	[FP -0x4] = R0;
+ffa09700:	06 20       	JUMP.S 0xffa0970c <_nmi_report+0x14>;
+ffa09702:	00 00       	NOP;
+ffa09704:	00 00       	NOP;
+ffa09706:	f0 b9       	R0 = [FP -0x4];
+ffa09708:	08 64       	R0 += 0x1;		/* (  1) */
+ffa0970a:	f0 bb       	[FP -0x4] = R0;
+ffa0970c:	f0 b9       	R0 = [FP -0x4];
+ffa0970e:	21 e1 2b 01 	R1 = 0x12b (X);		/*		R1=0x12b(299) */
+ffa09712:	08 09       	CC = R0 <= R1;
+ffa09714:	f7 1b       	IF CC JUMP 0xffa09702 <_nmi_report+0xa>;
+ffa09716:	01 e8 00 00 	UNLINK;
+ffa0971a:	10 00       	RTS;
+
+ffa0971c <_main>:
+ffa0971c:	00 e8 04 00 	LINK 0x10;		/* (16) */
+ffa09720:	4a e1 e0 ff 	P2.H = 0xffe0;		/* (-32)	P2=0xffe00704(-2095356) */
+ffa09724:	0a e1 04 10 	P2.L = 0x1004;		/* (4100)	P2=0xffe01004(-2093052) */
+ffa09728:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
+ffa0972a:	10 93       	[P2] = R0;
+ffa0972c:	23 00       	CSYNC;
+ffa0972e:	4a e1 e0 ff 	P2.H = 0xffe0;		/* (-32)	P2=0xffe01004(-2093052) */
+ffa09732:	0a e1 04 00 	P2.L = 0x4;		/* (  4)	P2=0xffe00004(-2097148) */
+ffa09736:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
+ffa09738:	10 93       	[P2] = R0;
+ffa0973a:	23 00       	CSYNC;
+ffa0973c:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00004(-4194300) */
+ffa09740:	0a e1 40 07 	P2.L = 0x740;		/* (1856)	P2=0xffc00740(-4192448) */
+ffa09744:	40 60       	R0 = 0x8 (X);		/*		R0=0x8(  8) */
+ffa09746:	10 97       	W[P2] = R0;
+ffa09748:	49 e1 c0 ff 	P1.H = 0xffc0;		/* (-64)	P1=0xffc0001f(-4194273) */
+ffa0974c:	09 e1 30 07 	P1.L = 0x730;		/* (1840)	P1=0xffc00730(-4192464) */
+ffa09750:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00740(-4192448) */
+ffa09754:	0a e1 40 07 	P2.L = 0x740;		/* (1856)	P2=0xffc00740(-4192448) */
+ffa09758:	10 95       	R0 = W[P2] (Z);
+ffa0975a:	c0 43       	R0 =~ R0;
+ffa0975c:	08 97       	W[P1] = R0;
+ffa0975e:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00740(-4192448) */
+ffa09762:	0a e1 00 07 	P2.L = 0x700;		/* (1792)	P2=0xffc00700(-4192512) */
+ffa09766:	20 e1 87 01 	R0 = 0x187 (X);		/*		R0=0x187(391) */
+ffa0976a:	10 97       	W[P2] = R0;
+ffa0976c:	20 e1 7c 00 	R0 = 0x7c (X);		/*		R0=0x7c(124) */
+ffa09770:	00 e3 ce 06 	CALL 0xffa0a50c <_radio_init>;
+ffa09774:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00700(-4192512) */
+ffa09778:	0a e1 04 07 	P2.L = 0x704;		/* (1796)	P2=0xffc00704(-4192508) */
+ffa0977c:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
+ffa0977e:	10 97       	W[P2] = R0;
+ffa09780:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00704(-4192508) */
+ffa09784:	0a e1 04 07 	P2.L = 0x704;		/* (1796)	P2=0xffc00704(-4192508) */
+ffa09788:	20 e1 80 00 	R0 = 0x80 (X);		/*		R0=0x80(128) */
+ffa0978c:	10 97       	W[P2] = R0;
+ffa0978e:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa09790:	78 e6 fe ff 	W[FP + -0x4] = R0;
+ffa09794:	0a 20       	JUMP.S 0xffa097a8 <_main+0x8c>;
+	...
+ffa0979e:	78 e5 fe ff 	R0 = W[FP + -0x4] (X);
+ffa097a2:	08 64       	R0 += 0x1;		/* (  1) */
+ffa097a4:	78 e6 fe ff 	W[FP + -0x4] = R0;
+ffa097a8:	78 e4 fe ff 	R0 = W[FP + -0x4] (Z);
+ffa097ac:	21 e1 e7 03 	R1 = 0x3e7 (X);		/*		R1=0x3e7(999) */
+ffa097b0:	08 0a       	CC = R0 <= R1 (IU);
+ffa097b2:	f2 1b       	IF CC JUMP 0xffa09796 <_main+0x7a>;
+ffa097b4:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00704(-4192508) */
+ffa097b8:	0a e1 08 07 	P2.L = 0x708;		/* (1800)	P2=0xffc00708(-4192504) */
+ffa097bc:	20 e1 80 00 	R0 = 0x80 (X);		/*		R0=0x80(128) */
+ffa097c0:	10 97       	W[P2] = R0;
+ffa097c2:	00 e3 59 06 	CALL 0xffa0a474 <_radio_set_tx>;
+ffa097c6:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00708(-4192504) */
+ffa097ca:	0a e1 28 08 	P2.L = 0x828;		/* (2088)	P2=0xffc00828(-4192216) */
+ffa097ce:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
+ffa097d0:	10 97       	W[P2] = R0;
+ffa097d2:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00828(-4192216) */
+ffa097d6:	0a e1 2c 08 	P2.L = 0x82c;		/* (2092)	P2=0xffc0082c(-4192212) */
+ffa097da:	98 60       	R0 = 0x13 (X);		/*		R0=0x13( 19) */
+ffa097dc:	10 97       	W[P2] = R0;
+ffa097de:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc0082c(-4192212) */
+ffa097e2:	0a e1 24 08 	P2.L = 0x824;		/* (2084)	P2=0xffc00824(-4192220) */
+ffa097e6:	20 e1 0f 01 	R0 = 0x10f (X);		/*		R0=0x10f(271) */
+ffa097ea:	10 97       	W[P2] = R0;
+ffa097ec:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00824(-4192220) */
+ffa097f0:	0a e1 28 09 	P2.L = 0x928;		/* (2344)	P2=0xffc00928(-4191960) */
+ffa097f4:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
+ffa097f6:	10 97       	W[P2] = R0;
+ffa097f8:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00928(-4191960) */
+ffa097fc:	0a e1 2c 09 	P2.L = 0x92c;		/* (2348)	P2=0xffc0092c(-4191956) */
+ffa09800:	98 60       	R0 = 0x13 (X);		/*		R0=0x13( 19) */
+ffa09802:	10 97       	W[P2] = R0;
+ffa09804:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc0092c(-4191956) */
+ffa09808:	0a e1 24 09 	P2.L = 0x924;		/* (2340)	P2=0xffc00924(-4191964) */
+ffa0980c:	20 e1 0f 01 	R0 = 0x10f (X);		/*		R0=0x10f(271) */
+ffa09810:	10 97       	W[P2] = R0;
+ffa09812:	ff e3 67 f5 	CALL 0xffa082e0 <_radio_bidi_asm>;
+ffa09816:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa09818:	01 e8 00 00 	UNLINK;
+ffa0981c:	10 00       	RTS;
+	...
+
+ffa09820 <_div>:
+ffa09820:	00 e8 01 00 	LINK 0x4;		/* (4) */
+ffa09824:	b8 b0       	[FP + 0x8] = R0;
+ffa09826:	f9 b0       	[FP + 0xc] = R1;
+ffa09828:	b8 a0       	R0 = [FP + 0x8];
+ffa0982a:	08 4f       	R0 <<= 0x1;
+ffa0982c:	b8 b0       	[FP + 0x8] = R0;
+ffa0982e:	b8 a0       	R0 = [FP + 0x8];
+ffa09830:	f9 a0       	R1 = [FP + 0xc];
+ffa09832:	48 42       	DIVS (R0, R1);
+ffa09834:	b8 b0       	[FP + 0x8] = R0;
+ffa09836:	f9 b0       	[FP + 0xc] = R1;
+ffa09838:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa0983a:	f0 bb       	[FP -0x4] = R0;
+ffa0983c:	09 20       	JUMP.S 0xffa0984e <_div+0x2e>;
+ffa0983e:	b8 a0       	R0 = [FP + 0x8];
+ffa09840:	f9 a0       	R1 = [FP + 0xc];
+ffa09842:	08 42       	DIVQ (R0, R1);
+ffa09844:	b8 b0       	[FP + 0x8] = R0;
+ffa09846:	f9 b0       	[FP + 0xc] = R1;
 ffa09848:	f0 b9       	R0 = [FP -0x4];
 ffa0984a:	08 64       	R0 += 0x1;		/* (  1) */
 ffa0984c:	f0 bb       	[FP -0x4] = R0;
-ffa0984e:	3a ad       	P2 = [FP + 0x10];
-ffa09850:	50 99       	R0 = B[P2] (X);
-ffa09852:	00 43       	R0 = R0.B (X);
-ffa09854:	00 0c       	CC = R0 == 0x0;
-ffa09856:	08 18       	IF CC JUMP 0xffa09866 <_strcpy_+0x42>;
-ffa09858:	f0 b9       	R0 = [FP -0x4];
-ffa0985a:	21 e1 ff 04 	R1 = 0x4ff (X);		/*		R1=0x4ff(1279) */
-ffa0985e:	08 09       	CC = R0 <= R1;
-ffa09860:	ea 1b       	IF CC JUMP 0xffa09834 <_strcpy_+0x10>;
-ffa09862:	00 00       	NOP;
-ffa09864:	00 00       	NOP;
-ffa09866:	fa ac       	P2 = [FP + 0xc];
-ffa09868:	11 91       	R1 = [P2];
-ffa0986a:	f0 b9       	R0 = [FP -0x4];
-ffa0986c:	01 50       	R0 = R1 + R0;
-ffa0986e:	fa ac       	P2 = [FP + 0xc];
-ffa09870:	10 93       	[P2] = R0;
-ffa09872:	b8 a0       	R0 = [FP + 0x8];
-ffa09874:	01 e8 00 00 	UNLINK;
-ffa09878:	10 00       	RTS;
+ffa0984e:	f0 b9       	R0 = [FP -0x4];
+ffa09850:	71 60       	R1 = 0xe (X);		/*		R1=0xe( 14) */
+ffa09852:	08 09       	CC = R0 <= R1;
+ffa09854:	f5 1b       	IF CC JUMP 0xffa0983e <_div+0x1e>;
+ffa09856:	b8 a0       	R0 = [FP + 0x8];
+ffa09858:	80 42       	R0 = R0.L (X);
+ffa0985a:	b8 b0       	[FP + 0x8] = R0;
+ffa0985c:	b8 a0       	R0 = [FP + 0x8];
+ffa0985e:	01 e8 00 00 	UNLINK;
+ffa09862:	10 00       	RTS;
+
+ffa09864 <_mod>:
+ffa09864:	00 e8 04 00 	LINK 0x10;		/* (16) */
+ffa09868:	b8 b0       	[FP + 0x8] = R0;
+ffa0986a:	f9 b0       	[FP + 0xc] = R1;
+ffa0986c:	f9 a0       	R1 = [FP + 0xc];
+ffa0986e:	b8 a0       	R0 = [FP + 0x8];
+ffa09870:	ff e3 d8 ff 	CALL 0xffa09820 <_div>;
+ffa09874:	f0 bb       	[FP -0x4] = R0;
+ffa09876:	f1 b9       	R1 = [FP -0x4];
+ffa09878:	f8 a0       	R0 = [FP + 0xc];
+ffa0987a:	c1 40       	R1 *= R0;
+ffa0987c:	b8 a0       	R0 = [FP + 0x8];
+ffa0987e:	08 52       	R0 = R0 - R1;
+ffa09880:	01 e8 00 00 	UNLINK;
+ffa09884:	10 00       	RTS;
 	...
 
-ffa0987c <_strprepend>:
-ffa0987c:	00 e8 06 00 	LINK 0x18;		/* (24) */
-ffa09880:	b8 b0       	[FP + 0x8] = R0;
-ffa09882:	f9 b0       	[FP + 0xc] = R1;
-ffa09884:	3a b1       	[FP + 0x10] = R2;
-ffa09886:	38 a1       	R0 = [FP + 0x10];
-ffa09888:	ff e3 ae ff 	CALL 0xffa097e4 <_strlen_>;
-ffa0988c:	d0 bb       	[FP -0xc] = R0;
-ffa0988e:	fa ac       	P2 = [FP + 0xc];
-ffa09890:	10 91       	R0 = [P2];
-ffa09892:	08 30       	R1 = R0;
-ffa09894:	b8 a0       	R0 = [FP + 0x8];
-ffa09896:	08 52       	R0 = R0 - R1;
-ffa09898:	e0 bb       	[FP -0x8] = R0;
-ffa0989a:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa0989c:	f0 bb       	[FP -0x4] = R0;
-ffa0989e:	0e 20       	JUMP.S 0xffa098ba <_strprepend+0x3e>;
-ffa098a0:	3a ad       	P2 = [FP + 0x10];
-ffa098a2:	50 99       	R0 = B[P2] (X);
-ffa098a4:	ea b9       	P2 = [FP -0x8];
-ffa098a6:	10 9b       	B[P2] = R0;
-ffa098a8:	e0 b9       	R0 = [FP -0x8];
-ffa098aa:	08 64       	R0 += 0x1;		/* (  1) */
-ffa098ac:	e0 bb       	[FP -0x8] = R0;
-ffa098ae:	38 a1       	R0 = [FP + 0x10];
-ffa098b0:	08 64       	R0 += 0x1;		/* (  1) */
-ffa098b2:	38 b1       	[FP + 0x10] = R0;
-ffa098b4:	f0 b9       	R0 = [FP -0x4];
-ffa098b6:	08 64       	R0 += 0x1;		/* (  1) */
-ffa098b8:	f0 bb       	[FP -0x4] = R0;
-ffa098ba:	f1 b9       	R1 = [FP -0x4];
-ffa098bc:	d0 b9       	R0 = [FP -0xc];
-ffa098be:	81 08       	CC = R1 < R0;
-ffa098c0:	f0 1b       	IF CC JUMP 0xffa098a0 <_strprepend+0x24>;
-ffa098c2:	00 00       	NOP;
-ffa098c4:	00 00       	NOP;
-ffa098c6:	fa ac       	P2 = [FP + 0xc];
-ffa098c8:	10 91       	R0 = [P2];
-ffa098ca:	08 30       	R1 = R0;
-ffa098cc:	b8 a0       	R0 = [FP + 0x8];
-ffa098ce:	08 52       	R0 = R0 - R1;
-ffa098d0:	01 e8 00 00 	UNLINK;
-ffa098d4:	10 00       	RTS;
+ffa09888 <_memcpy_>:
+ffa09888:	00 e8 01 00 	LINK 0x4;		/* (4) */
+ffa0988c:	b8 b0       	[FP + 0x8] = R0;
+ffa0988e:	f9 b0       	[FP + 0xc] = R1;
+ffa09890:	3a b1       	[FP + 0x10] = R2;
+ffa09892:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa09894:	f0 bb       	[FP -0x4] = R0;
+ffa09896:	0e 20       	JUMP.S 0xffa098b2 <_memcpy_+0x2a>;
+ffa09898:	ba ac       	P2 = [FP + 0x8];
+ffa0989a:	50 99       	R0 = B[P2] (X);
+ffa0989c:	fa ac       	P2 = [FP + 0xc];
+ffa0989e:	10 9b       	B[P2] = R0;
+ffa098a0:	f8 a0       	R0 = [FP + 0xc];
+ffa098a2:	08 64       	R0 += 0x1;		/* (  1) */
+ffa098a4:	f8 b0       	[FP + 0xc] = R0;
+ffa098a6:	b8 a0       	R0 = [FP + 0x8];
+ffa098a8:	08 64       	R0 += 0x1;		/* (  1) */
+ffa098aa:	b8 b0       	[FP + 0x8] = R0;
+ffa098ac:	f0 b9       	R0 = [FP -0x4];
+ffa098ae:	08 64       	R0 += 0x1;		/* (  1) */
+ffa098b0:	f0 bb       	[FP -0x4] = R0;
+ffa098b2:	f1 b9       	R1 = [FP -0x4];
+ffa098b4:	38 a1       	R0 = [FP + 0x10];
+ffa098b6:	81 08       	CC = R1 < R0;
+ffa098b8:	f0 1b       	IF CC JUMP 0xffa09898 <_memcpy_+0x10>;
+ffa098ba:	01 e8 00 00 	UNLINK;
+ffa098be:	10 00       	RTS;
+
+ffa098c0 <_memset_>:
+ffa098c0:	00 e8 01 00 	LINK 0x4;		/* (4) */
+ffa098c4:	b8 b0       	[FP + 0x8] = R0;
+ffa098c6:	3a b1       	[FP + 0x10] = R2;
+ffa098c8:	01 30       	R0 = R1;
+ffa098ca:	b8 e6 0c 00 	B[FP + 0xc] = R0;
+ffa098ce:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa098d0:	f0 bb       	[FP -0x4] = R0;
+ffa098d2:	0b 20       	JUMP.S 0xffa098e8 <_memset_+0x28>;
+ffa098d4:	ba ac       	P2 = [FP + 0x8];
+ffa098d6:	b8 e5 0c 00 	R0 = B[FP + 0xc] (X);
+ffa098da:	10 9b       	B[P2] = R0;
+ffa098dc:	b8 a0       	R0 = [FP + 0x8];
+ffa098de:	08 64       	R0 += 0x1;		/* (  1) */
+ffa098e0:	b8 b0       	[FP + 0x8] = R0;
+ffa098e2:	f0 b9       	R0 = [FP -0x4];
+ffa098e4:	08 64       	R0 += 0x1;		/* (  1) */
+ffa098e6:	f0 bb       	[FP -0x4] = R0;
+ffa098e8:	f1 b9       	R1 = [FP -0x4];
+ffa098ea:	38 a1       	R0 = [FP + 0x10];
+ffa098ec:	81 08       	CC = R1 < R0;
+ffa098ee:	f3 1b       	IF CC JUMP 0xffa098d4 <_memset_+0x14>;
+ffa098f0:	01 e8 00 00 	UNLINK;
+ffa098f4:	10 00       	RTS;
 	...
 
-ffa098d8 <_strcmp>:
-ffa098d8:	00 e8 02 00 	LINK 0x8;		/* (8) */
-ffa098dc:	b8 b0       	[FP + 0x8] = R0;
-ffa098de:	f9 b0       	[FP + 0xc] = R1;
-ffa098e0:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa098e2:	f0 bb       	[FP -0x4] = R0;
-ffa098e4:	1a 20       	JUMP.S 0xffa09918 <_strcmp+0x40>;
-ffa098e6:	ba ac       	P2 = [FP + 0x8];
-ffa098e8:	51 99       	R1 = B[P2] (X);
-ffa098ea:	fa ac       	P2 = [FP + 0xc];
-ffa098ec:	50 99       	R0 = B[P2] (X);
-ffa098ee:	09 43       	R1 = R1.B (X);
-ffa098f0:	00 43       	R0 = R0.B (X);
-ffa098f2:	01 08       	CC = R1 == R0;
-ffa098f4:	18 02       	CC = !CC;
-ffa098f6:	00 02       	R0 = CC;
-ffa098f8:	08 30       	R1 = R0;
-ffa098fa:	b8 a0       	R0 = [FP + 0x8];
-ffa098fc:	08 64       	R0 += 0x1;		/* (  1) */
-ffa098fe:	b8 b0       	[FP + 0x8] = R0;
-ffa09900:	f8 a0       	R0 = [FP + 0xc];
-ffa09902:	08 64       	R0 += 0x1;		/* (  1) */
-ffa09904:	f8 b0       	[FP + 0xc] = R0;
-ffa09906:	48 43       	R0 = R1.B (Z);
-ffa09908:	00 0c       	CC = R0 == 0x0;
-ffa0990a:	04 18       	IF CC JUMP 0xffa09912 <_strcmp+0x3a>;
-ffa0990c:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa0990e:	e0 bb       	[FP -0x8] = R0;
-ffa09910:	17 20       	JUMP.S 0xffa0993e <_strcmp+0x66>;
-ffa09912:	f0 b9       	R0 = [FP -0x4];
-ffa09914:	08 64       	R0 += 0x1;		/* (  1) */
-ffa09916:	f0 bb       	[FP -0x4] = R0;
-ffa09918:	ba ac       	P2 = [FP + 0x8];
-ffa0991a:	50 99       	R0 = B[P2] (X);
-ffa0991c:	00 43       	R0 = R0.B (X);
-ffa0991e:	00 0c       	CC = R0 == 0x0;
-ffa09920:	0d 18       	IF CC JUMP 0xffa0993a <_strcmp+0x62>;
-ffa09922:	00 00       	NOP;
-ffa09924:	00 00       	NOP;
-ffa09926:	fa ac       	P2 = [FP + 0xc];
-ffa09928:	50 99       	R0 = B[P2] (X);
-ffa0992a:	00 43       	R0 = R0.B (X);
-ffa0992c:	00 0c       	CC = R0 == 0x0;
-ffa0992e:	06 18       	IF CC JUMP 0xffa0993a <_strcmp+0x62>;
-ffa09930:	f0 b9       	R0 = [FP -0x4];
-ffa09932:	21 e1 ff 04 	R1 = 0x4ff (X);		/*		R1=0x4ff(1279) */
-ffa09936:	08 09       	CC = R0 <= R1;
-ffa09938:	d7 1b       	IF CC JUMP 0xffa098e6 <_strcmp+0xe>;
-ffa0993a:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
-ffa0993c:	e0 bb       	[FP -0x8] = R0;
-ffa0993e:	e0 b9       	R0 = [FP -0x8];
-ffa09940:	01 e8 00 00 	UNLINK;
-ffa09944:	10 00       	RTS;
+ffa098f8 <_strlen_>:
+ffa098f8:	00 e8 02 00 	LINK 0x8;		/* (8) */
+ffa098fc:	b8 b0       	[FP + 0x8] = R0;
+ffa098fe:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa09900:	f0 bb       	[FP -0x4] = R0;
+ffa09902:	0f 20       	JUMP.S 0xffa09920 <_strlen_+0x28>;
+ffa09904:	f1 b9       	R1 = [FP -0x4];
+ffa09906:	b8 a0       	R0 = [FP + 0x8];
+ffa09908:	08 50       	R0 = R0 + R1;
+ffa0990a:	10 32       	P2 = R0;
+ffa0990c:	50 99       	R0 = B[P2] (X);
+ffa0990e:	00 43       	R0 = R0.B (X);
+ffa09910:	00 0c       	CC = R0 == 0x0;
+ffa09912:	04 10       	IF !CC JUMP 0xffa0991a <_strlen_+0x22>;
+ffa09914:	f0 b9       	R0 = [FP -0x4];
+ffa09916:	e0 bb       	[FP -0x8] = R0;
+ffa09918:	0b 20       	JUMP.S 0xffa0992e <_strlen_+0x36>;
+ffa0991a:	f0 b9       	R0 = [FP -0x4];
+ffa0991c:	08 64       	R0 += 0x1;		/* (  1) */
+ffa0991e:	f0 bb       	[FP -0x4] = R0;
+ffa09920:	f0 b9       	R0 = [FP -0x4];
+ffa09922:	21 e1 ff 04 	R1 = 0x4ff (X);		/*		R1=0x4ff(1279) */
+ffa09926:	08 09       	CC = R0 <= R1;
+ffa09928:	ee 1b       	IF CC JUMP 0xffa09904 <_strlen_+0xc>;
+ffa0992a:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa0992c:	e0 bb       	[FP -0x8] = R0;
+ffa0992e:	e0 b9       	R0 = [FP -0x8];
+ffa09930:	01 e8 00 00 	UNLINK;
+ffa09934:	10 00       	RTS;
 	...
 
-ffa09948 <_substr>:
-ffa09948:	00 e8 05 00 	LINK 0x14;		/* (20) */
-ffa0994c:	b8 b0       	[FP + 0x8] = R0;
-ffa0994e:	f9 b0       	[FP + 0xc] = R1;
-ffa09950:	3a b1       	[FP + 0x10] = R2;
-ffa09952:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa09954:	e0 bb       	[FP -0x8] = R0;
-ffa09956:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa09958:	f0 bb       	[FP -0x4] = R0;
-ffa0995a:	39 20       	JUMP.S 0xffa099cc <_substr+0x84>;
-ffa0995c:	ba ac       	P2 = [FP + 0x8];
-ffa0995e:	51 99       	R1 = B[P2] (X);
-ffa09960:	fa ac       	P2 = [FP + 0xc];
-ffa09962:	50 99       	R0 = B[P2] (X);
-ffa09964:	09 43       	R1 = R1.B (X);
+ffa09938 <_strcpy_>:
+ffa09938:	00 e8 01 00 	LINK 0x4;		/* (4) */
+ffa0993c:	b8 b0       	[FP + 0x8] = R0;
+ffa0993e:	f9 b0       	[FP + 0xc] = R1;
+ffa09940:	3a b1       	[FP + 0x10] = R2;
+ffa09942:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa09944:	f0 bb       	[FP -0x4] = R0;
+ffa09946:	0e 20       	JUMP.S 0xffa09962 <_strcpy_+0x2a>;
+ffa09948:	3a ad       	P2 = [FP + 0x10];
+ffa0994a:	50 99       	R0 = B[P2] (X);
+ffa0994c:	ba ac       	P2 = [FP + 0x8];
+ffa0994e:	10 9b       	B[P2] = R0;
+ffa09950:	b8 a0       	R0 = [FP + 0x8];
+ffa09952:	08 64       	R0 += 0x1;		/* (  1) */
+ffa09954:	b8 b0       	[FP + 0x8] = R0;
+ffa09956:	38 a1       	R0 = [FP + 0x10];
+ffa09958:	08 64       	R0 += 0x1;		/* (  1) */
+ffa0995a:	38 b1       	[FP + 0x10] = R0;
+ffa0995c:	f0 b9       	R0 = [FP -0x4];
+ffa0995e:	08 64       	R0 += 0x1;		/* (  1) */
+ffa09960:	f0 bb       	[FP -0x4] = R0;
+ffa09962:	3a ad       	P2 = [FP + 0x10];
+ffa09964:	50 99       	R0 = B[P2] (X);
 ffa09966:	00 43       	R0 = R0.B (X);
-ffa09968:	01 08       	CC = R1 == R0;
-ffa0996a:	2b 10       	IF !CC JUMP 0xffa099c0 <_substr+0x78>;
-ffa0996c:	b8 a0       	R0 = [FP + 0x8];
-ffa0996e:	08 64       	R0 += 0x1;		/* (  1) */
-ffa09970:	c0 bb       	[FP -0x10] = R0;
-ffa09972:	f8 a0       	R0 = [FP + 0xc];
-ffa09974:	08 64       	R0 += 0x1;		/* (  1) */
-ffa09976:	d0 bb       	[FP -0xc] = R0;
-ffa09978:	e0 b9       	R0 = [FP -0x8];
-ffa0997a:	08 64       	R0 += 0x1;		/* (  1) */
-ffa0997c:	f0 bb       	[FP -0x4] = R0;
-ffa0997e:	12 20       	JUMP.S 0xffa099a2 <_substr+0x5a>;
-ffa09980:	c0 b9       	R0 = [FP -0x10];
-ffa09982:	08 64       	R0 += 0x1;		/* (  1) */
-ffa09984:	c0 bb       	[FP -0x10] = R0;
-ffa09986:	d0 b9       	R0 = [FP -0xc];
-ffa09988:	08 64       	R0 += 0x1;		/* (  1) */
-ffa0998a:	d0 bb       	[FP -0xc] = R0;
-ffa0998c:	f0 b9       	R0 = [FP -0x4];
-ffa0998e:	08 64       	R0 += 0x1;		/* (  1) */
-ffa09990:	f0 bb       	[FP -0x4] = R0;
-ffa09992:	ca b9       	P2 = [FP -0x10];
-ffa09994:	50 99       	R0 = B[P2] (X);
-ffa09996:	00 43       	R0 = R0.B (X);
-ffa09998:	00 0c       	CC = R0 == 0x0;
-ffa0999a:	04 10       	IF !CC JUMP 0xffa099a2 <_substr+0x5a>;
-ffa0999c:	f0 b9       	R0 = [FP -0x4];
-ffa0999e:	b0 bb       	[FP -0x14] = R0;
-ffa099a0:	28 20       	JUMP.S 0xffa099f0 <_substr+0xa8>;
-ffa099a2:	ca b9       	P2 = [FP -0x10];
-ffa099a4:	51 99       	R1 = B[P2] (X);
-ffa099a6:	da b9       	P2 = [FP -0xc];
-ffa099a8:	50 99       	R0 = B[P2] (X);
-ffa099aa:	09 43       	R1 = R1.B (X);
-ffa099ac:	00 43       	R0 = R0.B (X);
-ffa099ae:	01 08       	CC = R1 == R0;
-ffa099b0:	08 10       	IF !CC JUMP 0xffa099c0 <_substr+0x78>;
-ffa099b2:	00 00       	NOP;
-ffa099b4:	00 00       	NOP;
-ffa099b6:	da b9       	P2 = [FP -0xc];
-ffa099b8:	50 99       	R0 = B[P2] (X);
-ffa099ba:	00 43       	R0 = R0.B (X);
-ffa099bc:	00 0c       	CC = R0 == 0x0;
-ffa099be:	e1 13       	IF !CC JUMP 0xffa09980 <_substr+0x38>;
-ffa099c0:	f8 a0       	R0 = [FP + 0xc];
-ffa099c2:	08 64       	R0 += 0x1;		/* (  1) */
-ffa099c4:	f8 b0       	[FP + 0xc] = R0;
-ffa099c6:	e0 b9       	R0 = [FP -0x8];
-ffa099c8:	08 64       	R0 += 0x1;		/* (  1) */
-ffa099ca:	e0 bb       	[FP -0x8] = R0;
-ffa099cc:	ba ac       	P2 = [FP + 0x8];
-ffa099ce:	50 99       	R0 = B[P2] (X);
-ffa099d0:	00 43       	R0 = R0.B (X);
-ffa099d2:	00 0c       	CC = R0 == 0x0;
-ffa099d4:	0c 18       	IF CC JUMP 0xffa099ec <_substr+0xa4>;
+ffa09968:	00 0c       	CC = R0 == 0x0;
+ffa0996a:	08 18       	IF CC JUMP 0xffa0997a <_strcpy_+0x42>;
+ffa0996c:	f0 b9       	R0 = [FP -0x4];
+ffa0996e:	21 e1 ff 04 	R1 = 0x4ff (X);		/*		R1=0x4ff(1279) */
+ffa09972:	08 09       	CC = R0 <= R1;
+ffa09974:	ea 1b       	IF CC JUMP 0xffa09948 <_strcpy_+0x10>;
+ffa09976:	00 00       	NOP;
+ffa09978:	00 00       	NOP;
+ffa0997a:	fa ac       	P2 = [FP + 0xc];
+ffa0997c:	11 91       	R1 = [P2];
+ffa0997e:	f0 b9       	R0 = [FP -0x4];
+ffa09980:	01 50       	R0 = R1 + R0;
+ffa09982:	fa ac       	P2 = [FP + 0xc];
+ffa09984:	10 93       	[P2] = R0;
+ffa09986:	b8 a0       	R0 = [FP + 0x8];
+ffa09988:	01 e8 00 00 	UNLINK;
+ffa0998c:	10 00       	RTS;
+	...
+
+ffa09990 <_strprepend>:
+ffa09990:	00 e8 06 00 	LINK 0x18;		/* (24) */
+ffa09994:	b8 b0       	[FP + 0x8] = R0;
+ffa09996:	f9 b0       	[FP + 0xc] = R1;
+ffa09998:	3a b1       	[FP + 0x10] = R2;
+ffa0999a:	38 a1       	R0 = [FP + 0x10];
+ffa0999c:	ff e3 ae ff 	CALL 0xffa098f8 <_strlen_>;
+ffa099a0:	d0 bb       	[FP -0xc] = R0;
+ffa099a2:	fa ac       	P2 = [FP + 0xc];
+ffa099a4:	10 91       	R0 = [P2];
+ffa099a6:	81 43       	R1 = -R0;
+ffa099a8:	b8 a0       	R0 = [FP + 0x8];
+ffa099aa:	08 50       	R0 = R0 + R1;
+ffa099ac:	e0 bb       	[FP -0x8] = R0;
+ffa099ae:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa099b0:	f0 bb       	[FP -0x4] = R0;
+ffa099b2:	0e 20       	JUMP.S 0xffa099ce <_strprepend+0x3e>;
+ffa099b4:	3a ad       	P2 = [FP + 0x10];
+ffa099b6:	50 99       	R0 = B[P2] (X);
+ffa099b8:	ea b9       	P2 = [FP -0x8];
+ffa099ba:	10 9b       	B[P2] = R0;
+ffa099bc:	e0 b9       	R0 = [FP -0x8];
+ffa099be:	08 64       	R0 += 0x1;		/* (  1) */
+ffa099c0:	e0 bb       	[FP -0x8] = R0;
+ffa099c2:	38 a1       	R0 = [FP + 0x10];
+ffa099c4:	08 64       	R0 += 0x1;		/* (  1) */
+ffa099c6:	38 b1       	[FP + 0x10] = R0;
+ffa099c8:	f0 b9       	R0 = [FP -0x4];
+ffa099ca:	08 64       	R0 += 0x1;		/* (  1) */
+ffa099cc:	f0 bb       	[FP -0x4] = R0;
+ffa099ce:	f1 b9       	R1 = [FP -0x4];
+ffa099d0:	d0 b9       	R0 = [FP -0xc];
+ffa099d2:	81 08       	CC = R1 < R0;
+ffa099d4:	f0 1b       	IF CC JUMP 0xffa099b4 <_strprepend+0x24>;
 ffa099d6:	00 00       	NOP;
 ffa099d8:	00 00       	NOP;
 ffa099da:	fa ac       	P2 = [FP + 0xc];
-ffa099dc:	50 99       	R0 = B[P2] (X);
-ffa099de:	00 43       	R0 = R0.B (X);
-ffa099e0:	00 0c       	CC = R0 == 0x0;
-ffa099e2:	05 18       	IF CC JUMP 0xffa099ec <_substr+0xa4>;
-ffa099e4:	e1 b9       	R1 = [FP -0x8];
-ffa099e6:	38 a1       	R0 = [FP + 0x10];
-ffa099e8:	81 08       	CC = R1 < R0;
-ffa099ea:	b9 1b       	IF CC JUMP 0xffa0995c <_substr+0x14>;
-ffa099ec:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa099ee:	b0 bb       	[FP -0x14] = R0;
-ffa099f0:	b0 b9       	R0 = [FP -0x14];
-ffa099f2:	01 e8 00 00 	UNLINK;
-ffa099f6:	10 00       	RTS;
+ffa099dc:	10 91       	R0 = [P2];
+ffa099de:	81 43       	R1 = -R0;
+ffa099e0:	b8 a0       	R0 = [FP + 0x8];
+ffa099e2:	08 50       	R0 = R0 + R1;
+ffa099e4:	01 e8 00 00 	UNLINK;
+ffa099e8:	10 00       	RTS;
+	...
 
-ffa099f8 <_sprintf_int>:
-ffa099f8:	00 e8 04 00 	LINK 0x10;		/* (16) */
-ffa099fc:	b8 b0       	[FP + 0x8] = R0;
-ffa099fe:	f9 b0       	[FP + 0xc] = R1;
-ffa09a00:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa09a02:	c0 bb       	[FP -0x10] = R0;
-ffa09a04:	f8 a0       	R0 = [FP + 0xc];
-ffa09a06:	00 0c       	CC = R0 == 0x0;
-ffa09a08:	0b 10       	IF !CC JUMP 0xffa09a1e <_sprintf_int+0x26>;
-ffa09a0a:	4a e1 90 ff 	P2.H = 0xff90;		/* (-112)	P2=0xff900924 */
-ffa09a0e:	0a e1 80 70 	P2.L = 0x7080;		/* (28800)	P2=0xff907080 <_printf_temp> */
-ffa09a12:	52 91       	P2 = [P2];
-ffa09a14:	80 61       	R0 = 0x30 (X);		/*		R0=0x30( 48) */
-ffa09a16:	10 9b       	B[P2] = R0;
-ffa09a18:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
-ffa09a1a:	c0 bb       	[FP -0x10] = R0;
-ffa09a1c:	90 20       	JUMP.S 0xffa09b3c <_sprintf_int+0x144>;
-ffa09a1e:	f8 a0       	R0 = [FP + 0xc];
-ffa09a20:	00 0d       	CC = R0 <= 0x0;
-ffa09a22:	3c 18       	IF CC JUMP 0xffa09a9a <_sprintf_int+0xa2>;
-ffa09a24:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa09a26:	c0 bb       	[FP -0x10] = R0;
-ffa09a28:	31 20       	JUMP.S 0xffa09a8a <_sprintf_int+0x92>;
-ffa09a2a:	f9 a0       	R1 = [FP + 0xc];
-ffa09a2c:	40 e1 66 66 	R0.H = 0x6666;		/* (26214)	R0=0x66660000(1717960704) */
-ffa09a30:	00 e1 67 66 	R0.L = 0x6667;		/* (26215)	R0=0x66666667(1717986919) */
-ffa09a34:	80 c0 08 18 	A1 = R1.L * R0.L (FU);
-ffa09a38:	83 c6 80 51 	A1 = A1 >> 0x10;
-ffa09a3c:	11 c1 08 86 	A1 += R1.H * R0.L (M), A0 = R1.H * R0.H (IS);
-ffa09a40:	11 c1 01 98 	A1 += R0.H * R1.L (M, IS);
-ffa09a44:	83 c6 80 11 	A1 = A1 >>> 0x10;
-ffa09a48:	0b c4 00 00 	R0 = (A0 += A1);
-ffa09a4c:	82 c6 f0 05 	R2 = R0 >>> 0x2;
-ffa09a50:	82 c6 09 01 	R0 = R1 >>> 0x1f;
-ffa09a54:	02 52       	R0 = R2 - R0;
-ffa09a56:	f0 bb       	[FP -0x4] = R0;
-ffa09a58:	f1 b9       	R1 = [FP -0x4];
-ffa09a5a:	01 30       	R0 = R1;
-ffa09a5c:	10 4f       	R0 <<= 0x2;
-ffa09a5e:	08 50       	R0 = R0 + R1;
-ffa09a60:	08 4f       	R0 <<= 0x1;
-ffa09a62:	08 30       	R1 = R0;
-ffa09a64:	f8 a0       	R0 = [FP + 0xc];
-ffa09a66:	08 52       	R0 = R0 - R1;
-ffa09a68:	d0 bb       	[FP -0xc] = R0;
-ffa09a6a:	4a e1 90 ff 	P2.H = 0xff90;		/* (-112)	P2=0xff907080 <_printf_temp> */
-ffa09a6e:	0a e1 80 70 	P2.L = 0x7080;		/* (28800)	P2=0xff907080 <_printf_temp> */
-ffa09a72:	11 91       	R1 = [P2];
-ffa09a74:	c0 b9       	R0 = [FP -0x10];
-ffa09a76:	41 50       	R1 = R1 + R0;
-ffa09a78:	11 32       	P2 = R1;
-ffa09a7a:	d0 b9       	R0 = [FP -0xc];
-ffa09a7c:	80 65       	R0 += 0x30;		/* ( 48) */
-ffa09a7e:	10 9b       	B[P2] = R0;
-ffa09a80:	c0 b9       	R0 = [FP -0x10];
+ffa099ec <_strcmp>:
+ffa099ec:	00 e8 02 00 	LINK 0x8;		/* (8) */
+ffa099f0:	b8 b0       	[FP + 0x8] = R0;
+ffa099f2:	f9 b0       	[FP + 0xc] = R1;
+ffa099f4:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa099f6:	f0 bb       	[FP -0x4] = R0;
+ffa099f8:	1a 20       	JUMP.S 0xffa09a2c <_strcmp+0x40>;
+ffa099fa:	ba ac       	P2 = [FP + 0x8];
+ffa099fc:	51 99       	R1 = B[P2] (X);
+ffa099fe:	fa ac       	P2 = [FP + 0xc];
+ffa09a00:	50 99       	R0 = B[P2] (X);
+ffa09a02:	09 43       	R1 = R1.B (X);
+ffa09a04:	00 43       	R0 = R0.B (X);
+ffa09a06:	01 08       	CC = R1 == R0;
+ffa09a08:	18 02       	CC = !CC;
+ffa09a0a:	00 02       	R0 = CC;
+ffa09a0c:	08 30       	R1 = R0;
+ffa09a0e:	b8 a0       	R0 = [FP + 0x8];
+ffa09a10:	08 64       	R0 += 0x1;		/* (  1) */
+ffa09a12:	b8 b0       	[FP + 0x8] = R0;
+ffa09a14:	f8 a0       	R0 = [FP + 0xc];
+ffa09a16:	08 64       	R0 += 0x1;		/* (  1) */
+ffa09a18:	f8 b0       	[FP + 0xc] = R0;
+ffa09a1a:	48 43       	R0 = R1.B (Z);
+ffa09a1c:	00 0c       	CC = R0 == 0x0;
+ffa09a1e:	04 18       	IF CC JUMP 0xffa09a26 <_strcmp+0x3a>;
+ffa09a20:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa09a22:	e0 bb       	[FP -0x8] = R0;
+ffa09a24:	17 20       	JUMP.S 0xffa09a52 <_strcmp+0x66>;
+ffa09a26:	f0 b9       	R0 = [FP -0x4];
+ffa09a28:	08 64       	R0 += 0x1;		/* (  1) */
+ffa09a2a:	f0 bb       	[FP -0x4] = R0;
+ffa09a2c:	ba ac       	P2 = [FP + 0x8];
+ffa09a2e:	50 99       	R0 = B[P2] (X);
+ffa09a30:	00 43       	R0 = R0.B (X);
+ffa09a32:	00 0c       	CC = R0 == 0x0;
+ffa09a34:	0d 18       	IF CC JUMP 0xffa09a4e <_strcmp+0x62>;
+ffa09a36:	00 00       	NOP;
+ffa09a38:	00 00       	NOP;
+ffa09a3a:	fa ac       	P2 = [FP + 0xc];
+ffa09a3c:	50 99       	R0 = B[P2] (X);
+ffa09a3e:	00 43       	R0 = R0.B (X);
+ffa09a40:	00 0c       	CC = R0 == 0x0;
+ffa09a42:	06 18       	IF CC JUMP 0xffa09a4e <_strcmp+0x62>;
+ffa09a44:	f0 b9       	R0 = [FP -0x4];
+ffa09a46:	21 e1 ff 04 	R1 = 0x4ff (X);		/*		R1=0x4ff(1279) */
+ffa09a4a:	08 09       	CC = R0 <= R1;
+ffa09a4c:	d7 1b       	IF CC JUMP 0xffa099fa <_strcmp+0xe>;
+ffa09a4e:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
+ffa09a50:	e0 bb       	[FP -0x8] = R0;
+ffa09a52:	e0 b9       	R0 = [FP -0x8];
+ffa09a54:	01 e8 00 00 	UNLINK;
+ffa09a58:	10 00       	RTS;
+	...
+
+ffa09a5c <_substr>:
+ffa09a5c:	00 e8 05 00 	LINK 0x14;		/* (20) */
+ffa09a60:	b8 b0       	[FP + 0x8] = R0;
+ffa09a62:	f9 b0       	[FP + 0xc] = R1;
+ffa09a64:	3a b1       	[FP + 0x10] = R2;
+ffa09a66:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa09a68:	e0 bb       	[FP -0x8] = R0;
+ffa09a6a:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa09a6c:	f0 bb       	[FP -0x4] = R0;
+ffa09a6e:	39 20       	JUMP.S 0xffa09ae0 <_substr+0x84>;
+ffa09a70:	ba ac       	P2 = [FP + 0x8];
+ffa09a72:	51 99       	R1 = B[P2] (X);
+ffa09a74:	fa ac       	P2 = [FP + 0xc];
+ffa09a76:	50 99       	R0 = B[P2] (X);
+ffa09a78:	09 43       	R1 = R1.B (X);
+ffa09a7a:	00 43       	R0 = R0.B (X);
+ffa09a7c:	01 08       	CC = R1 == R0;
+ffa09a7e:	2b 10       	IF !CC JUMP 0xffa09ad4 <_substr+0x78>;
+ffa09a80:	b8 a0       	R0 = [FP + 0x8];
 ffa09a82:	08 64       	R0 += 0x1;		/* (  1) */
 ffa09a84:	c0 bb       	[FP -0x10] = R0;
-ffa09a86:	f0 b9       	R0 = [FP -0x4];
-ffa09a88:	f8 b0       	[FP + 0xc] = R0;
-ffa09a8a:	f8 a0       	R0 = [FP + 0xc];
-ffa09a8c:	00 0d       	CC = R0 <= 0x0;
-ffa09a8e:	57 18       	IF CC JUMP 0xffa09b3c <_sprintf_int+0x144>;
-ffa09a90:	c0 b9       	R0 = [FP -0x10];
-ffa09a92:	51 60       	R1 = 0xa (X);		/*		R1=0xa( 10) */
-ffa09a94:	08 09       	CC = R0 <= R1;
-ffa09a96:	ca 1b       	IF CC JUMP 0xffa09a2a <_sprintf_int+0x32>;
-ffa09a98:	52 20       	JUMP.S 0xffa09b3c <_sprintf_int+0x144>;
-ffa09a9a:	f8 a0       	R0 = [FP + 0xc];
-ffa09a9c:	80 0c       	CC = R0 < 0x0;
-ffa09a9e:	4f 10       	IF !CC JUMP 0xffa09b3c <_sprintf_int+0x144>;
-ffa09aa0:	f8 a0       	R0 = [FP + 0xc];
-ffa09aa2:	08 30       	R1 = R0;
-ffa09aa4:	f9 4c       	BITCLR (R1, 0x1f);		/* bit 31 */
-ffa09aa6:	f8 63       	R0 = -0x1 (X);		/*		R0=0xffffffff( -1) */
-ffa09aa8:	f8 4f       	R0 <<= 0x1f;
-ffa09aaa:	08 52       	R0 = R0 - R1;
-ffa09aac:	f8 b0       	[FP + 0xc] = R0;
-ffa09aae:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa09ab0:	c0 bb       	[FP -0x10] = R0;
-ffa09ab2:	31 20       	JUMP.S 0xffa09b14 <_sprintf_int+0x11c>;
-ffa09ab4:	f9 a0       	R1 = [FP + 0xc];
-ffa09ab6:	40 e1 66 66 	R0.H = 0x6666;		/* (26214)	R0=0x66660000(1717960704) */
-ffa09aba:	00 e1 67 66 	R0.L = 0x6667;		/* (26215)	R0=0x66666667(1717986919) */
-ffa09abe:	80 c0 08 18 	A1 = R1.L * R0.L (FU);
-ffa09ac2:	83 c6 80 51 	A1 = A1 >> 0x10;
-ffa09ac6:	11 c1 08 86 	A1 += R1.H * R0.L (M), A0 = R1.H * R0.H (IS);
-ffa09aca:	11 c1 01 98 	A1 += R0.H * R1.L (M, IS);
-ffa09ace:	83 c6 80 11 	A1 = A1 >>> 0x10;
-ffa09ad2:	0b c4 00 00 	R0 = (A0 += A1);
-ffa09ad6:	82 c6 f0 05 	R2 = R0 >>> 0x2;
-ffa09ada:	82 c6 09 01 	R0 = R1 >>> 0x1f;
-ffa09ade:	02 52       	R0 = R2 - R0;
-ffa09ae0:	f0 bb       	[FP -0x4] = R0;
-ffa09ae2:	f1 b9       	R1 = [FP -0x4];
-ffa09ae4:	01 30       	R0 = R1;
-ffa09ae6:	10 4f       	R0 <<= 0x2;
-ffa09ae8:	08 50       	R0 = R0 + R1;
-ffa09aea:	08 4f       	R0 <<= 0x1;
-ffa09aec:	08 30       	R1 = R0;
-ffa09aee:	f8 a0       	R0 = [FP + 0xc];
-ffa09af0:	08 52       	R0 = R0 - R1;
-ffa09af2:	d0 bb       	[FP -0xc] = R0;
-ffa09af4:	4a e1 90 ff 	P2.H = 0xff90;		/* (-112)	P2=0xff907080 <_printf_temp> */
-ffa09af8:	0a e1 80 70 	P2.L = 0x7080;		/* (28800)	P2=0xff907080 <_printf_temp> */
-ffa09afc:	11 91       	R1 = [P2];
-ffa09afe:	c0 b9       	R0 = [FP -0x10];
-ffa09b00:	41 50       	R1 = R1 + R0;
-ffa09b02:	11 32       	P2 = R1;
-ffa09b04:	d0 b9       	R0 = [FP -0xc];
-ffa09b06:	80 65       	R0 += 0x30;		/* ( 48) */
-ffa09b08:	10 9b       	B[P2] = R0;
-ffa09b0a:	c0 b9       	R0 = [FP -0x10];
-ffa09b0c:	08 64       	R0 += 0x1;		/* (  1) */
-ffa09b0e:	c0 bb       	[FP -0x10] = R0;
-ffa09b10:	f0 b9       	R0 = [FP -0x4];
-ffa09b12:	f8 b0       	[FP + 0xc] = R0;
-ffa09b14:	f8 a0       	R0 = [FP + 0xc];
-ffa09b16:	00 0d       	CC = R0 <= 0x0;
-ffa09b18:	05 18       	IF CC JUMP 0xffa09b22 <_sprintf_int+0x12a>;
-ffa09b1a:	c0 b9       	R0 = [FP -0x10];
-ffa09b1c:	51 60       	R1 = 0xa (X);		/*		R1=0xa( 10) */
-ffa09b1e:	08 09       	CC = R0 <= R1;
-ffa09b20:	ca 1b       	IF CC JUMP 0xffa09ab4 <_sprintf_int+0xbc>;
-ffa09b22:	4a e1 90 ff 	P2.H = 0xff90;		/* (-112)	P2=0xff907080 <_printf_temp> */
-ffa09b26:	0a e1 80 70 	P2.L = 0x7080;		/* (28800)	P2=0xff907080 <_printf_temp> */
-ffa09b2a:	11 91       	R1 = [P2];
-ffa09b2c:	c0 b9       	R0 = [FP -0x10];
-ffa09b2e:	41 50       	R1 = R1 + R0;
-ffa09b30:	11 32       	P2 = R1;
-ffa09b32:	68 61       	R0 = 0x2d (X);		/*		R0=0x2d( 45) */
-ffa09b34:	10 9b       	B[P2] = R0;
-ffa09b36:	c0 b9       	R0 = [FP -0x10];
-ffa09b38:	08 64       	R0 += 0x1;		/* (  1) */
+ffa09a86:	f8 a0       	R0 = [FP + 0xc];
+ffa09a88:	08 64       	R0 += 0x1;		/* (  1) */
+ffa09a8a:	d0 bb       	[FP -0xc] = R0;
+ffa09a8c:	e0 b9       	R0 = [FP -0x8];
+ffa09a8e:	08 64       	R0 += 0x1;		/* (  1) */
+ffa09a90:	f0 bb       	[FP -0x4] = R0;
+ffa09a92:	12 20       	JUMP.S 0xffa09ab6 <_substr+0x5a>;
+ffa09a94:	c0 b9       	R0 = [FP -0x10];
+ffa09a96:	08 64       	R0 += 0x1;		/* (  1) */
+ffa09a98:	c0 bb       	[FP -0x10] = R0;
+ffa09a9a:	d0 b9       	R0 = [FP -0xc];
+ffa09a9c:	08 64       	R0 += 0x1;		/* (  1) */
+ffa09a9e:	d0 bb       	[FP -0xc] = R0;
+ffa09aa0:	f0 b9       	R0 = [FP -0x4];
+ffa09aa2:	08 64       	R0 += 0x1;		/* (  1) */
+ffa09aa4:	f0 bb       	[FP -0x4] = R0;
+ffa09aa6:	ca b9       	P2 = [FP -0x10];
+ffa09aa8:	50 99       	R0 = B[P2] (X);
+ffa09aaa:	00 43       	R0 = R0.B (X);
+ffa09aac:	00 0c       	CC = R0 == 0x0;
+ffa09aae:	04 10       	IF !CC JUMP 0xffa09ab6 <_substr+0x5a>;
+ffa09ab0:	f0 b9       	R0 = [FP -0x4];
+ffa09ab2:	b0 bb       	[FP -0x14] = R0;
+ffa09ab4:	28 20       	JUMP.S 0xffa09b04 <_substr+0xa8>;
+ffa09ab6:	ca b9       	P2 = [FP -0x10];
+ffa09ab8:	51 99       	R1 = B[P2] (X);
+ffa09aba:	da b9       	P2 = [FP -0xc];
+ffa09abc:	50 99       	R0 = B[P2] (X);
+ffa09abe:	09 43       	R1 = R1.B (X);
+ffa09ac0:	00 43       	R0 = R0.B (X);
+ffa09ac2:	01 08       	CC = R1 == R0;
+ffa09ac4:	08 10       	IF !CC JUMP 0xffa09ad4 <_substr+0x78>;
+ffa09ac6:	00 00       	NOP;
+ffa09ac8:	00 00       	NOP;
+ffa09aca:	da b9       	P2 = [FP -0xc];
+ffa09acc:	50 99       	R0 = B[P2] (X);
+ffa09ace:	00 43       	R0 = R0.B (X);
+ffa09ad0:	00 0c       	CC = R0 == 0x0;
+ffa09ad2:	e1 13       	IF !CC JUMP 0xffa09a94 <_substr+0x38>;
+ffa09ad4:	f8 a0       	R0 = [FP + 0xc];
+ffa09ad6:	08 64       	R0 += 0x1;		/* (  1) */
+ffa09ad8:	f8 b0       	[FP + 0xc] = R0;
+ffa09ada:	e0 b9       	R0 = [FP -0x8];
+ffa09adc:	08 64       	R0 += 0x1;		/* (  1) */
+ffa09ade:	e0 bb       	[FP -0x8] = R0;
+ffa09ae0:	ba ac       	P2 = [FP + 0x8];
+ffa09ae2:	50 99       	R0 = B[P2] (X);
+ffa09ae4:	00 43       	R0 = R0.B (X);
+ffa09ae6:	00 0c       	CC = R0 == 0x0;
+ffa09ae8:	0c 18       	IF CC JUMP 0xffa09b00 <_substr+0xa4>;
+ffa09aea:	00 00       	NOP;
+ffa09aec:	00 00       	NOP;
+ffa09aee:	fa ac       	P2 = [FP + 0xc];
+ffa09af0:	50 99       	R0 = B[P2] (X);
+ffa09af2:	00 43       	R0 = R0.B (X);
+ffa09af4:	00 0c       	CC = R0 == 0x0;
+ffa09af6:	05 18       	IF CC JUMP 0xffa09b00 <_substr+0xa4>;
+ffa09af8:	e1 b9       	R1 = [FP -0x8];
+ffa09afa:	38 a1       	R0 = [FP + 0x10];
+ffa09afc:	81 08       	CC = R1 < R0;
+ffa09afe:	b9 1b       	IF CC JUMP 0xffa09a70 <_substr+0x14>;
+ffa09b00:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa09b02:	b0 bb       	[FP -0x14] = R0;
+ffa09b04:	b0 b9       	R0 = [FP -0x14];
+ffa09b06:	01 e8 00 00 	UNLINK;
+ffa09b0a:	10 00       	RTS;
+
+ffa09b0c <_sprintf_int>:
+ffa09b0c:	00 e8 07 00 	LINK 0x1c;		/* (28) */
+ffa09b10:	b8 b0       	[FP + 0x8] = R0;
+ffa09b12:	f9 b0       	[FP + 0xc] = R1;
+ffa09b14:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa09b16:	c0 bb       	[FP -0x10] = R0;
+ffa09b18:	f8 a0       	R0 = [FP + 0xc];
+ffa09b1a:	00 0c       	CC = R0 == 0x0;
+ffa09b1c:	0b 10       	IF !CC JUMP 0xffa09b32 <_sprintf_int+0x26>;
+ffa09b1e:	4a e1 90 ff 	P2.H = 0xff90;		/* (-112)	P2=0xff900924 */
+ffa09b22:	0a e1 80 70 	P2.L = 0x7080;		/* (28800)	P2=0xff907080 <_printf_temp> */
+ffa09b26:	52 91       	P2 = [P2];
+ffa09b28:	80 61       	R0 = 0x30 (X);		/*		R0=0x30( 48) */
+ffa09b2a:	10 9b       	B[P2] = R0;
+ffa09b2c:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
+ffa09b2e:	c0 bb       	[FP -0x10] = R0;
+ffa09b30:	70 20       	JUMP.S 0xffa09c10 <_sprintf_int+0x104>;
+ffa09b32:	f8 a0       	R0 = [FP + 0xc];
+ffa09b34:	00 0d       	CC = R0 <= 0x0;
+ffa09b36:	2c 18       	IF CC JUMP 0xffa09b8e <_sprintf_int+0x82>;
+ffa09b38:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
 ffa09b3a:	c0 bb       	[FP -0x10] = R0;
-ffa09b3c:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa09b3e:	e0 bb       	[FP -0x8] = R0;
-ffa09b40:	16 20       	JUMP.S 0xffa09b6c <_sprintf_int+0x174>;
-ffa09b42:	e0 b9       	R0 = [FP -0x8];
-ffa09b44:	08 30       	R1 = R0;
-ffa09b46:	b8 a0       	R0 = [FP + 0x8];
-ffa09b48:	41 50       	R1 = R1 + R0;
-ffa09b4a:	09 32       	P1 = R1;
-ffa09b4c:	4a e1 90 ff 	P2.H = 0xff90;		/* (-112)	P2=0xff907080 <_printf_temp> */
-ffa09b50:	0a e1 80 70 	P2.L = 0x7080;		/* (28800)	P2=0xff907080 <_printf_temp> */
-ffa09b54:	12 91       	R2 = [P2];
-ffa09b56:	c1 b9       	R1 = [FP -0x10];
-ffa09b58:	e0 b9       	R0 = [FP -0x8];
-ffa09b5a:	01 52       	R0 = R1 - R0;
-ffa09b5c:	02 50       	R0 = R2 + R0;
-ffa09b5e:	10 32       	P2 = R0;
-ffa09b60:	fa 6f       	P2 += -0x1;		/* ( -1) */
-ffa09b62:	50 99       	R0 = B[P2] (X);
-ffa09b64:	08 9b       	B[P1] = R0;
-ffa09b66:	e0 b9       	R0 = [FP -0x8];
-ffa09b68:	08 64       	R0 += 0x1;		/* (  1) */
-ffa09b6a:	e0 bb       	[FP -0x8] = R0;
-ffa09b6c:	e1 b9       	R1 = [FP -0x8];
-ffa09b6e:	c0 b9       	R0 = [FP -0x10];
-ffa09b70:	81 08       	CC = R1 < R0;
-ffa09b72:	e8 1b       	IF CC JUMP 0xffa09b42 <_sprintf_int+0x14a>;
+ffa09b3c:	21 20       	JUMP.S 0xffa09b7e <_sprintf_int+0x72>;
+ffa09b3e:	f8 a0       	R0 = [FP + 0xc];
+ffa09b40:	51 60       	R1 = 0xa (X);		/*		R1=0xa( 10) */
+ffa09b42:	ff e3 07 fc 	CALL 0xffa09350 <___divsi3>;
+ffa09b46:	f0 bb       	[FP -0x4] = R0;
+ffa09b48:	f1 b9       	R1 = [FP -0x4];
+ffa09b4a:	01 30       	R0 = R1;
+ffa09b4c:	e8 4f       	R0 <<= 0x1d;
+ffa09b4e:	08 52       	R0 = R0 - R1;
+ffa09b50:	10 4f       	R0 <<= 0x2;
+ffa09b52:	08 52       	R0 = R0 - R1;
+ffa09b54:	08 4f       	R0 <<= 0x1;
+ffa09b56:	08 30       	R1 = R0;
+ffa09b58:	f8 a0       	R0 = [FP + 0xc];
+ffa09b5a:	01 50       	R0 = R1 + R0;
+ffa09b5c:	d0 bb       	[FP -0xc] = R0;
+ffa09b5e:	4a e1 90 ff 	P2.H = 0xff90;		/* (-112)	P2=0xff907080 <_printf_temp> */
+ffa09b62:	0a e1 80 70 	P2.L = 0x7080;		/* (28800)	P2=0xff907080 <_printf_temp> */
+ffa09b66:	11 91       	R1 = [P2];
+ffa09b68:	c0 b9       	R0 = [FP -0x10];
+ffa09b6a:	41 50       	R1 = R1 + R0;
+ffa09b6c:	11 32       	P2 = R1;
+ffa09b6e:	d0 b9       	R0 = [FP -0xc];
+ffa09b70:	80 65       	R0 += 0x30;		/* ( 48) */
+ffa09b72:	10 9b       	B[P2] = R0;
 ffa09b74:	c0 b9       	R0 = [FP -0x10];
-ffa09b76:	01 e8 00 00 	UNLINK;
-ffa09b7a:	10 00       	RTS;
-
-ffa09b7c <_sprintf_hex>:
-ffa09b7c:	00 e8 04 00 	LINK 0x10;		/* (16) */
-ffa09b80:	b8 b0       	[FP + 0x8] = R0;
-ffa09b82:	f9 b0       	[FP + 0xc] = R1;
-ffa09b84:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa09b86:	d0 bb       	[FP -0xc] = R0;
-ffa09b88:	d0 b9       	R0 = [FP -0xc];
-ffa09b8a:	08 30       	R1 = R0;
-ffa09b8c:	b8 a0       	R0 = [FP + 0x8];
-ffa09b8e:	41 50       	R1 = R1 + R0;
-ffa09b90:	11 32       	P2 = R1;
-ffa09b92:	80 61       	R0 = 0x30 (X);		/*		R0=0x30( 48) */
-ffa09b94:	10 9b       	B[P2] = R0;
-ffa09b96:	d0 b9       	R0 = [FP -0xc];
-ffa09b98:	08 64       	R0 += 0x1;		/* (  1) */
-ffa09b9a:	d0 bb       	[FP -0xc] = R0;
-ffa09b9c:	d0 b9       	R0 = [FP -0xc];
-ffa09b9e:	08 30       	R1 = R0;
-ffa09ba0:	b8 a0       	R0 = [FP + 0x8];
-ffa09ba2:	41 50       	R1 = R1 + R0;
-ffa09ba4:	11 32       	P2 = R1;
-ffa09ba6:	20 e1 78 00 	R0 = 0x78 (X);		/*		R0=0x78(120) */
-ffa09baa:	10 9b       	B[P2] = R0;
-ffa09bac:	d0 b9       	R0 = [FP -0xc];
-ffa09bae:	08 64       	R0 += 0x1;		/* (  1) */
-ffa09bb0:	d0 bb       	[FP -0xc] = R0;
-ffa09bb2:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa09bb4:	c0 bb       	[FP -0x10] = R0;
-ffa09bb6:	2c 20       	JUMP.S 0xffa09c0e <_sprintf_hex+0x92>;
-ffa09bb8:	39 60       	R1 = 0x7 (X);		/*		R1=0x7(  7) */
-ffa09bba:	c0 b9       	R0 = [FP -0x10];
-ffa09bbc:	01 52       	R0 = R1 - R0;
-ffa09bbe:	82 c6 10 82 	R1 = R0 << 0x2;
+ffa09b76:	08 64       	R0 += 0x1;		/* (  1) */
+ffa09b78:	c0 bb       	[FP -0x10] = R0;
+ffa09b7a:	f0 b9       	R0 = [FP -0x4];
+ffa09b7c:	f8 b0       	[FP + 0xc] = R0;
+ffa09b7e:	f8 a0       	R0 = [FP + 0xc];
+ffa09b80:	00 0d       	CC = R0 <= 0x0;
+ffa09b82:	47 18       	IF CC JUMP 0xffa09c10 <_sprintf_int+0x104>;
+ffa09b84:	c0 b9       	R0 = [FP -0x10];
+ffa09b86:	51 60       	R1 = 0xa (X);		/*		R1=0xa( 10) */
+ffa09b88:	08 09       	CC = R0 <= R1;
+ffa09b8a:	da 1b       	IF CC JUMP 0xffa09b3e <_sprintf_int+0x32>;
+ffa09b8c:	42 20       	JUMP.S 0xffa09c10 <_sprintf_int+0x104>;
+ffa09b8e:	f8 a0       	R0 = [FP + 0xc];
+ffa09b90:	80 0c       	CC = R0 < 0x0;
+ffa09b92:	3f 10       	IF !CC JUMP 0xffa09c10 <_sprintf_int+0x104>;
+ffa09b94:	f8 a0       	R0 = [FP + 0xc];
+ffa09b96:	08 30       	R1 = R0;
+ffa09b98:	f9 4c       	BITCLR (R1, 0x1f);		/* bit 31 */
+ffa09b9a:	f8 63       	R0 = -0x1 (X);		/*		R0=0xffffffff( -1) */
+ffa09b9c:	f8 4f       	R0 <<= 0x1f;
+ffa09b9e:	08 52       	R0 = R0 - R1;
+ffa09ba0:	f8 b0       	[FP + 0xc] = R0;
+ffa09ba2:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa09ba4:	c0 bb       	[FP -0x10] = R0;
+ffa09ba6:	21 20       	JUMP.S 0xffa09be8 <_sprintf_int+0xdc>;
+ffa09ba8:	f8 a0       	R0 = [FP + 0xc];
+ffa09baa:	51 60       	R1 = 0xa (X);		/*		R1=0xa( 10) */
+ffa09bac:	ff e3 d2 fb 	CALL 0xffa09350 <___divsi3>;
+ffa09bb0:	f0 bb       	[FP -0x4] = R0;
+ffa09bb2:	f1 b9       	R1 = [FP -0x4];
+ffa09bb4:	01 30       	R0 = R1;
+ffa09bb6:	e8 4f       	R0 <<= 0x1d;
+ffa09bb8:	08 52       	R0 = R0 - R1;
+ffa09bba:	10 4f       	R0 <<= 0x2;
+ffa09bbc:	08 52       	R0 = R0 - R1;
+ffa09bbe:	08 4f       	R0 <<= 0x1;
+ffa09bc0:	08 30       	R1 = R0;
 ffa09bc2:	f8 a0       	R0 = [FP + 0xc];
-ffa09bc4:	08 40       	R0 >>>= R1;
-ffa09bc6:	e0 bb       	[FP -0x8] = R0;
-ffa09bc8:	e0 b9       	R0 = [FP -0x8];
-ffa09bca:	08 30       	R1 = R0;
-ffa09bcc:	78 60       	R0 = 0xf (X);		/*		R0=0xf( 15) */
-ffa09bce:	01 54       	R0 = R1 & R0;
-ffa09bd0:	78 e6 fe ff 	W[FP + -0x4] = R0;
-ffa09bd4:	78 e5 fe ff 	R0 = W[FP + -0x4] (X);
-ffa09bd8:	49 60       	R1 = 0x9 (X);		/*		R1=0x9(  9) */
-ffa09bda:	08 09       	CC = R0 <= R1;
-ffa09bdc:	07 18       	IF CC JUMP 0xffa09bea <_sprintf_hex+0x6e>;
-ffa09bde:	78 e5 fe ff 	R0 = W[FP + -0x4] (X);
-ffa09be2:	b8 65       	R0 += 0x37;		/* ( 55) */
-ffa09be4:	78 e6 fe ff 	W[FP + -0x4] = R0;
-ffa09be8:	06 20       	JUMP.S 0xffa09bf4 <_sprintf_hex+0x78>;
-ffa09bea:	78 e5 fe ff 	R0 = W[FP + -0x4] (X);
-ffa09bee:	80 65       	R0 += 0x30;		/* ( 48) */
-ffa09bf0:	78 e6 fe ff 	W[FP + -0x4] = R0;
-ffa09bf4:	d1 b9       	R1 = [FP -0xc];
-ffa09bf6:	c0 b9       	R0 = [FP -0x10];
-ffa09bf8:	01 50       	R0 = R1 + R0;
-ffa09bfa:	08 30       	R1 = R0;
-ffa09bfc:	b8 a0       	R0 = [FP + 0x8];
-ffa09bfe:	41 50       	R1 = R1 + R0;
-ffa09c00:	11 32       	P2 = R1;
-ffa09c02:	78 e5 fe ff 	R0 = W[FP + -0x4] (X);
-ffa09c06:	10 9b       	B[P2] = R0;
-ffa09c08:	c0 b9       	R0 = [FP -0x10];
-ffa09c0a:	08 64       	R0 += 0x1;		/* (  1) */
-ffa09c0c:	c0 bb       	[FP -0x10] = R0;
-ffa09c0e:	c0 b9       	R0 = [FP -0x10];
-ffa09c10:	39 60       	R1 = 0x7 (X);		/*		R1=0x7(  7) */
-ffa09c12:	08 09       	CC = R0 <= R1;
-ffa09c14:	d2 1b       	IF CC JUMP 0xffa09bb8 <_sprintf_hex+0x3c>;
-ffa09c16:	50 60       	R0 = 0xa (X);		/*		R0=0xa( 10) */
-ffa09c18:	01 e8 00 00 	UNLINK;
-ffa09c1c:	10 00       	RTS;
+ffa09bc4:	01 50       	R0 = R1 + R0;
+ffa09bc6:	d0 bb       	[FP -0xc] = R0;
+ffa09bc8:	4a e1 90 ff 	P2.H = 0xff90;		/* (-112)	P2=0xff907080 <_printf_temp> */
+ffa09bcc:	0a e1 80 70 	P2.L = 0x7080;		/* (28800)	P2=0xff907080 <_printf_temp> */
+ffa09bd0:	11 91       	R1 = [P2];
+ffa09bd2:	c0 b9       	R0 = [FP -0x10];
+ffa09bd4:	41 50       	R1 = R1 + R0;
+ffa09bd6:	11 32       	P2 = R1;
+ffa09bd8:	d0 b9       	R0 = [FP -0xc];
+ffa09bda:	80 65       	R0 += 0x30;		/* ( 48) */
+ffa09bdc:	10 9b       	B[P2] = R0;
+ffa09bde:	c0 b9       	R0 = [FP -0x10];
+ffa09be0:	08 64       	R0 += 0x1;		/* (  1) */
+ffa09be2:	c0 bb       	[FP -0x10] = R0;
+ffa09be4:	f0 b9       	R0 = [FP -0x4];
+ffa09be6:	f8 b0       	[FP + 0xc] = R0;
+ffa09be8:	f8 a0       	R0 = [FP + 0xc];
+ffa09bea:	00 0d       	CC = R0 <= 0x0;
+ffa09bec:	05 18       	IF CC JUMP 0xffa09bf6 <_sprintf_int+0xea>;
+ffa09bee:	c0 b9       	R0 = [FP -0x10];
+ffa09bf0:	51 60       	R1 = 0xa (X);		/*		R1=0xa( 10) */
+ffa09bf2:	08 09       	CC = R0 <= R1;
+ffa09bf4:	da 1b       	IF CC JUMP 0xffa09ba8 <_sprintf_int+0x9c>;
+ffa09bf6:	4a e1 90 ff 	P2.H = 0xff90;		/* (-112)	P2=0xff907080 <_printf_temp> */
+ffa09bfa:	0a e1 80 70 	P2.L = 0x7080;		/* (28800)	P2=0xff907080 <_printf_temp> */
+ffa09bfe:	11 91       	R1 = [P2];
+ffa09c00:	c0 b9       	R0 = [FP -0x10];
+ffa09c02:	41 50       	R1 = R1 + R0;
+ffa09c04:	11 32       	P2 = R1;
+ffa09c06:	68 61       	R0 = 0x2d (X);		/*		R0=0x2d( 45) */
+ffa09c08:	10 9b       	B[P2] = R0;
+ffa09c0a:	c0 b9       	R0 = [FP -0x10];
+ffa09c0c:	08 64       	R0 += 0x1;		/* (  1) */
+ffa09c0e:	c0 bb       	[FP -0x10] = R0;
+ffa09c10:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa09c12:	e0 bb       	[FP -0x8] = R0;
+ffa09c14:	15 20       	JUMP.S 0xffa09c3e <_sprintf_int+0x132>;
+ffa09c16:	e1 b9       	R1 = [FP -0x8];
+ffa09c18:	b8 a0       	R0 = [FP + 0x8];
+ffa09c1a:	08 50       	R0 = R0 + R1;
+ffa09c1c:	08 32       	P1 = R0;
+ffa09c1e:	4a e1 90 ff 	P2.H = 0xff90;		/* (-112)	P2=0xff907080 <_printf_temp> */
+ffa09c22:	0a e1 80 70 	P2.L = 0x7080;		/* (28800)	P2=0xff907080 <_printf_temp> */
+ffa09c26:	12 91       	R2 = [P2];
+ffa09c28:	c1 b9       	R1 = [FP -0x10];
+ffa09c2a:	e0 b9       	R0 = [FP -0x8];
+ffa09c2c:	01 52       	R0 = R1 - R0;
+ffa09c2e:	f8 67       	R0 += -0x1;		/* ( -1) */
+ffa09c30:	82 50       	R2 = R2 + R0;
+ffa09c32:	12 32       	P2 = R2;
+ffa09c34:	50 99       	R0 = B[P2] (X);
+ffa09c36:	08 9b       	B[P1] = R0;
+ffa09c38:	e0 b9       	R0 = [FP -0x8];
+ffa09c3a:	08 64       	R0 += 0x1;		/* (  1) */
+ffa09c3c:	e0 bb       	[FP -0x8] = R0;
+ffa09c3e:	e1 b9       	R1 = [FP -0x8];
+ffa09c40:	c0 b9       	R0 = [FP -0x10];
+ffa09c42:	81 08       	CC = R1 < R0;
+ffa09c44:	e9 1b       	IF CC JUMP 0xffa09c16 <_sprintf_int+0x10a>;
+ffa09c46:	c0 b9       	R0 = [FP -0x10];
+ffa09c48:	01 e8 00 00 	UNLINK;
+ffa09c4c:	10 00       	RTS;
 	...
 
-ffa09c20 <_strprintf_int>:
-ffa09c20:	00 e8 04 00 	LINK 0x10;		/* (16) */
-ffa09c24:	b8 b0       	[FP + 0x8] = R0;
-ffa09c26:	f9 b0       	[FP + 0xc] = R1;
-ffa09c28:	3a b1       	[FP + 0x10] = R2;
-ffa09c2a:	39 a1       	R1 = [FP + 0x10];
-ffa09c2c:	b8 a0       	R0 = [FP + 0x8];
-ffa09c2e:	ff e3 e5 fe 	CALL 0xffa099f8 <_sprintf_int>;
-ffa09c32:	f0 bb       	[FP -0x4] = R0;
-ffa09c34:	fa ac       	P2 = [FP + 0xc];
-ffa09c36:	11 91       	R1 = [P2];
-ffa09c38:	f0 b9       	R0 = [FP -0x4];
-ffa09c3a:	01 50       	R0 = R1 + R0;
-ffa09c3c:	fa ac       	P2 = [FP + 0xc];
-ffa09c3e:	10 93       	[P2] = R0;
-ffa09c40:	f0 b9       	R0 = [FP -0x4];
-ffa09c42:	08 30       	R1 = R0;
-ffa09c44:	b8 a0       	R0 = [FP + 0x8];
-ffa09c46:	08 50       	R0 = R0 + R1;
-ffa09c48:	b8 b0       	[FP + 0x8] = R0;
-ffa09c4a:	b8 a0       	R0 = [FP + 0x8];
-ffa09c4c:	01 e8 00 00 	UNLINK;
-ffa09c50:	10 00       	RTS;
-	...
-
-ffa09c54 <_strprintf_hex>:
-ffa09c54:	00 e8 04 00 	LINK 0x10;		/* (16) */
-ffa09c58:	b8 b0       	[FP + 0x8] = R0;
-ffa09c5a:	f9 b0       	[FP + 0xc] = R1;
-ffa09c5c:	3a b1       	[FP + 0x10] = R2;
-ffa09c5e:	39 a1       	R1 = [FP + 0x10];
-ffa09c60:	b8 a0       	R0 = [FP + 0x8];
-ffa09c62:	ff e3 8d ff 	CALL 0xffa09b7c <_sprintf_hex>;
-ffa09c66:	f0 bb       	[FP -0x4] = R0;
-ffa09c68:	fa ac       	P2 = [FP + 0xc];
-ffa09c6a:	11 91       	R1 = [P2];
-ffa09c6c:	f0 b9       	R0 = [FP -0x4];
-ffa09c6e:	01 50       	R0 = R1 + R0;
-ffa09c70:	fa ac       	P2 = [FP + 0xc];
-ffa09c72:	10 93       	[P2] = R0;
-ffa09c74:	f0 b9       	R0 = [FP -0x4];
-ffa09c76:	08 30       	R1 = R0;
-ffa09c78:	b8 a0       	R0 = [FP + 0x8];
-ffa09c7a:	08 50       	R0 = R0 + R1;
-ffa09c7c:	b8 b0       	[FP + 0x8] = R0;
-ffa09c7e:	b8 a0       	R0 = [FP + 0x8];
-ffa09c80:	01 e8 00 00 	UNLINK;
-ffa09c84:	10 00       	RTS;
-	...
-
-ffa09c88 <_atoi>:
-ffa09c88:	00 e8 03 00 	LINK 0xc;		/* (12) */
-ffa09c8c:	b8 b0       	[FP + 0x8] = R0;
-ffa09c8e:	f9 b0       	[FP + 0xc] = R1;
-ffa09c90:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa09c92:	d0 bb       	[FP -0xc] = R0;
-ffa09c94:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa09c50 <_sprintf_hex>:
+ffa09c50:	00 e8 04 00 	LINK 0x10;		/* (16) */
+ffa09c54:	b8 b0       	[FP + 0x8] = R0;
+ffa09c56:	f9 b0       	[FP + 0xc] = R1;
+ffa09c58:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa09c5a:	d0 bb       	[FP -0xc] = R0;
+ffa09c5c:	d1 b9       	R1 = [FP -0xc];
+ffa09c5e:	b8 a0       	R0 = [FP + 0x8];
+ffa09c60:	08 50       	R0 = R0 + R1;
+ffa09c62:	10 32       	P2 = R0;
+ffa09c64:	80 61       	R0 = 0x30 (X);		/*		R0=0x30( 48) */
+ffa09c66:	10 9b       	B[P2] = R0;
+ffa09c68:	d0 b9       	R0 = [FP -0xc];
+ffa09c6a:	08 64       	R0 += 0x1;		/* (  1) */
+ffa09c6c:	d0 bb       	[FP -0xc] = R0;
+ffa09c6e:	d1 b9       	R1 = [FP -0xc];
+ffa09c70:	b8 a0       	R0 = [FP + 0x8];
+ffa09c72:	08 50       	R0 = R0 + R1;
+ffa09c74:	10 32       	P2 = R0;
+ffa09c76:	20 e1 78 00 	R0 = 0x78 (X);		/*		R0=0x78(120) */
+ffa09c7a:	10 9b       	B[P2] = R0;
+ffa09c7c:	d0 b9       	R0 = [FP -0xc];
+ffa09c7e:	08 64       	R0 += 0x1;		/* (  1) */
+ffa09c80:	d0 bb       	[FP -0xc] = R0;
+ffa09c82:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa09c84:	c0 bb       	[FP -0x10] = R0;
+ffa09c86:	2c 20       	JUMP.S 0xffa09cde <_sprintf_hex+0x8e>;
+ffa09c88:	39 60       	R1 = 0x7 (X);		/*		R1=0x7(  7) */
+ffa09c8a:	c0 b9       	R0 = [FP -0x10];
+ffa09c8c:	01 52       	R0 = R1 - R0;
+ffa09c8e:	82 c6 10 82 	R1 = R0 << 0x2;
+ffa09c92:	f8 a0       	R0 = [FP + 0xc];
+ffa09c94:	08 40       	R0 >>>= R1;
 ffa09c96:	e0 bb       	[FP -0x8] = R0;
-ffa09c98:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
-ffa09c9a:	f0 bb       	[FP -0x4] = R0;
-ffa09c9c:	ba ac       	P2 = [FP + 0x8];
-ffa09c9e:	50 99       	R0 = B[P2] (X);
-ffa09ca0:	00 43       	R0 = R0.B (X);
-ffa09ca2:	69 61       	R1 = 0x2d (X);		/*		R1=0x2d( 45) */
-ffa09ca4:	08 08       	CC = R0 == R1;
-ffa09ca6:	2c 10       	IF !CC JUMP 0xffa09cfe <_atoi+0x76>;
-ffa09ca8:	f8 63       	R0 = -0x1 (X);		/*		R0=0xffffffff( -1) */
-ffa09caa:	f0 bb       	[FP -0x4] = R0;
-ffa09cac:	b8 a0       	R0 = [FP + 0x8];
-ffa09cae:	08 64       	R0 += 0x1;		/* (  1) */
-ffa09cb0:	b8 b0       	[FP + 0x8] = R0;
-ffa09cb2:	d0 b9       	R0 = [FP -0xc];
-ffa09cb4:	08 64       	R0 += 0x1;		/* (  1) */
-ffa09cb6:	d0 bb       	[FP -0xc] = R0;
-ffa09cb8:	23 20       	JUMP.S 0xffa09cfe <_atoi+0x76>;
-ffa09cba:	ba ac       	P2 = [FP + 0x8];
-ffa09cbc:	50 99       	R0 = B[P2] (X);
-ffa09cbe:	01 43       	R1 = R0.B (X);
-ffa09cc0:	e0 b9       	R0 = [FP -0x8];
-ffa09cc2:	01 50       	R0 = R1 + R0;
-ffa09cc4:	80 66       	R0 += -0x30;		/* (-48) */
-ffa09cc6:	e0 bb       	[FP -0x8] = R0;
-ffa09cc8:	b8 a0       	R0 = [FP + 0x8];
-ffa09cca:	08 64       	R0 += 0x1;		/* (  1) */
-ffa09ccc:	b8 b0       	[FP + 0x8] = R0;
-ffa09cce:	d0 b9       	R0 = [FP -0xc];
-ffa09cd0:	08 64       	R0 += 0x1;		/* (  1) */
-ffa09cd2:	d0 bb       	[FP -0xc] = R0;
-ffa09cd4:	ba ac       	P2 = [FP + 0x8];
-ffa09cd6:	50 99       	R0 = B[P2] (X);
-ffa09cd8:	00 43       	R0 = R0.B (X);
-ffa09cda:	79 61       	R1 = 0x2f (X);		/*		R1=0x2f( 47) */
-ffa09cdc:	08 09       	CC = R0 <= R1;
-ffa09cde:	10 18       	IF CC JUMP 0xffa09cfe <_atoi+0x76>;
-ffa09ce0:	00 00       	NOP;
-ffa09ce2:	00 00       	NOP;
-ffa09ce4:	ba ac       	P2 = [FP + 0x8];
-ffa09ce6:	50 99       	R0 = B[P2] (X);
-ffa09ce8:	00 43       	R0 = R0.B (X);
-ffa09cea:	c9 61       	R1 = 0x39 (X);		/*		R1=0x39( 57) */
-ffa09cec:	08 09       	CC = R0 <= R1;
-ffa09cee:	08 10       	IF !CC JUMP 0xffa09cfe <_atoi+0x76>;
-ffa09cf0:	e0 b9       	R0 = [FP -0x8];
-ffa09cf2:	08 30       	R1 = R0;
-ffa09cf4:	11 4f       	R1 <<= 0x2;
-ffa09cf6:	41 50       	R1 = R1 + R0;
-ffa09cf8:	82 c6 09 80 	R0 = R1 << 0x1;
-ffa09cfc:	e0 bb       	[FP -0x8] = R0;
-ffa09cfe:	ba ac       	P2 = [FP + 0x8];
-ffa09d00:	50 99       	R0 = B[P2] (X);
-ffa09d02:	00 43       	R0 = R0.B (X);
-ffa09d04:	79 61       	R1 = 0x2f (X);		/*		R1=0x2f( 47) */
-ffa09d06:	08 09       	CC = R0 <= R1;
-ffa09d08:	0d 18       	IF CC JUMP 0xffa09d22 <_atoi+0x9a>;
-ffa09d0a:	00 00       	NOP;
-ffa09d0c:	00 00       	NOP;
-ffa09d0e:	ba ac       	P2 = [FP + 0x8];
-ffa09d10:	50 99       	R0 = B[P2] (X);
-ffa09d12:	00 43       	R0 = R0.B (X);
-ffa09d14:	c9 61       	R1 = 0x39 (X);		/*		R1=0x39( 57) */
-ffa09d16:	08 09       	CC = R0 <= R1;
-ffa09d18:	05 10       	IF !CC JUMP 0xffa09d22 <_atoi+0x9a>;
-ffa09d1a:	d1 b9       	R1 = [FP -0xc];
-ffa09d1c:	f8 a0       	R0 = [FP + 0xc];
-ffa09d1e:	81 08       	CC = R1 < R0;
-ffa09d20:	cd 1b       	IF CC JUMP 0xffa09cba <_atoi+0x32>;
-ffa09d22:	e1 b9       	R1 = [FP -0x8];
-ffa09d24:	f0 b9       	R0 = [FP -0x4];
-ffa09d26:	c8 40       	R0 *= R1;
-ffa09d28:	01 e8 00 00 	UNLINK;
-ffa09d2c:	10 00       	RTS;
+ffa09c98:	e0 b9       	R0 = [FP -0x8];
+ffa09c9a:	08 30       	R1 = R0;
+ffa09c9c:	78 60       	R0 = 0xf (X);		/*		R0=0xf( 15) */
+ffa09c9e:	01 54       	R0 = R1 & R0;
+ffa09ca0:	78 e6 fe ff 	W[FP + -0x4] = R0;
+ffa09ca4:	78 e5 fe ff 	R0 = W[FP + -0x4] (X);
+ffa09ca8:	49 60       	R1 = 0x9 (X);		/*		R1=0x9(  9) */
+ffa09caa:	08 09       	CC = R0 <= R1;
+ffa09cac:	07 18       	IF CC JUMP 0xffa09cba <_sprintf_hex+0x6a>;
+ffa09cae:	78 e5 fe ff 	R0 = W[FP + -0x4] (X);
+ffa09cb2:	b8 65       	R0 += 0x37;		/* ( 55) */
+ffa09cb4:	78 e6 fe ff 	W[FP + -0x4] = R0;
+ffa09cb8:	06 20       	JUMP.S 0xffa09cc4 <_sprintf_hex+0x74>;
+ffa09cba:	78 e5 fe ff 	R0 = W[FP + -0x4] (X);
+ffa09cbe:	80 65       	R0 += 0x30;		/* ( 48) */
+ffa09cc0:	78 e6 fe ff 	W[FP + -0x4] = R0;
+ffa09cc4:	d1 b9       	R1 = [FP -0xc];
+ffa09cc6:	c0 b9       	R0 = [FP -0x10];
+ffa09cc8:	01 50       	R0 = R1 + R0;
+ffa09cca:	08 30       	R1 = R0;
+ffa09ccc:	b8 a0       	R0 = [FP + 0x8];
+ffa09cce:	08 50       	R0 = R0 + R1;
+ffa09cd0:	10 32       	P2 = R0;
+ffa09cd2:	78 e5 fe ff 	R0 = W[FP + -0x4] (X);
+ffa09cd6:	10 9b       	B[P2] = R0;
+ffa09cd8:	c0 b9       	R0 = [FP -0x10];
+ffa09cda:	08 64       	R0 += 0x1;		/* (  1) */
+ffa09cdc:	c0 bb       	[FP -0x10] = R0;
+ffa09cde:	c0 b9       	R0 = [FP -0x10];
+ffa09ce0:	39 60       	R1 = 0x7 (X);		/*		R1=0x7(  7) */
+ffa09ce2:	08 09       	CC = R0 <= R1;
+ffa09ce4:	d2 1b       	IF CC JUMP 0xffa09c88 <_sprintf_hex+0x38>;
+ffa09ce6:	50 60       	R0 = 0xa (X);		/*		R0=0xa( 10) */
+ffa09ce8:	01 e8 00 00 	UNLINK;
+ffa09cec:	10 00       	RTS;
 	...
 
-ffa09d30 <_udelay>:
-ffa09d30:	00 e8 02 00 	LINK 0x8;		/* (8) */
-ffa09d34:	b8 b0       	[FP + 0x8] = R0;
-ffa09d36:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa09d38:	e0 bb       	[FP -0x8] = R0;
-ffa09d3a:	10 20       	JUMP.S 0xffa09d5a <_udelay+0x2a>;
-ffa09d3c:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa09d3e:	f0 bb       	[FP -0x4] = R0;
-ffa09d40:	05 20       	JUMP.S 0xffa09d4a <_udelay+0x1a>;
-ffa09d42:	00 00       	NOP;
-ffa09d44:	f0 b9       	R0 = [FP -0x4];
-ffa09d46:	08 64       	R0 += 0x1;		/* (  1) */
-ffa09d48:	f0 bb       	[FP -0x4] = R0;
-ffa09d4a:	f0 b9       	R0 = [FP -0x4];
-ffa09d4c:	21 e1 9f 00 	R1 = 0x9f (X);		/*		R1=0x9f(159) */
-ffa09d50:	08 09       	CC = R0 <= R1;
-ffa09d52:	f8 1b       	IF CC JUMP 0xffa09d42 <_udelay+0x12>;
-ffa09d54:	e0 b9       	R0 = [FP -0x8];
-ffa09d56:	08 64       	R0 += 0x1;		/* (  1) */
-ffa09d58:	e0 bb       	[FP -0x8] = R0;
-ffa09d5a:	e1 b9       	R1 = [FP -0x8];
-ffa09d5c:	b8 a0       	R0 = [FP + 0x8];
-ffa09d5e:	81 08       	CC = R1 < R0;
-ffa09d60:	ee 1b       	IF CC JUMP 0xffa09d3c <_udelay+0xc>;
-ffa09d62:	01 e8 00 00 	UNLINK;
-ffa09d66:	10 00       	RTS;
+ffa09cf0 <_strprintf_int>:
+ffa09cf0:	00 e8 04 00 	LINK 0x10;		/* (16) */
+ffa09cf4:	b8 b0       	[FP + 0x8] = R0;
+ffa09cf6:	f9 b0       	[FP + 0xc] = R1;
+ffa09cf8:	3a b1       	[FP + 0x10] = R2;
+ffa09cfa:	39 a1       	R1 = [FP + 0x10];
+ffa09cfc:	b8 a0       	R0 = [FP + 0x8];
+ffa09cfe:	ff e3 07 ff 	CALL 0xffa09b0c <_sprintf_int>;
+ffa09d02:	f0 bb       	[FP -0x4] = R0;
+ffa09d04:	fa ac       	P2 = [FP + 0xc];
+ffa09d06:	11 91       	R1 = [P2];
+ffa09d08:	f0 b9       	R0 = [FP -0x4];
+ffa09d0a:	01 50       	R0 = R1 + R0;
+ffa09d0c:	fa ac       	P2 = [FP + 0xc];
+ffa09d0e:	10 93       	[P2] = R0;
+ffa09d10:	f1 b9       	R1 = [FP -0x4];
+ffa09d12:	b8 a0       	R0 = [FP + 0x8];
+ffa09d14:	08 50       	R0 = R0 + R1;
+ffa09d16:	b8 b0       	[FP + 0x8] = R0;
+ffa09d18:	b8 a0       	R0 = [FP + 0x8];
+ffa09d1a:	01 e8 00 00 	UNLINK;
+ffa09d1e:	10 00       	RTS;
 
-ffa09d68 <_spi_delay>:
-ffa09d68:	00 e8 01 00 	LINK 0x4;		/* (4) */
-ffa09d6c:	40 60       	R0 = 0x8 (X);		/*		R0=0x8(  8) */
-ffa09d6e:	78 e6 fe ff 	W[FP + -0x4] = R0;
-ffa09d72:	08 20       	JUMP.S 0xffa09d82 <_spi_delay+0x1a>;
-ffa09d74:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc07080(-4165504) */
-ffa09d78:	0a e1 08 05 	P2.L = 0x508;		/* (1288)	P2=0xffc00508(-4193016) */
-ffa09d7c:	50 95       	R0 = W[P2] (X);
-ffa09d7e:	78 e6 fe ff 	W[FP + -0x4] = R0;
-ffa09d82:	78 e4 fe ff 	R0 = W[FP + -0x4] (Z);
-ffa09d86:	41 60       	R1 = 0x8 (X);		/*		R1=0x8(  8) */
-ffa09d88:	08 54       	R0 = R0 & R1;
-ffa09d8a:	00 0c       	CC = R0 == 0x0;
-ffa09d8c:	f4 13       	IF !CC JUMP 0xffa09d74 <_spi_delay+0xc>;
-ffa09d8e:	08 20       	JUMP.S 0xffa09d9e <_spi_delay+0x36>;
-ffa09d90:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00508(-4193016) */
-ffa09d94:	0a e1 08 05 	P2.L = 0x508;		/* (1288)	P2=0xffc00508(-4193016) */
-ffa09d98:	50 95       	R0 = W[P2] (X);
-ffa09d9a:	78 e6 fe ff 	W[FP + -0x4] = R0;
-ffa09d9e:	78 e4 fe ff 	R0 = W[FP + -0x4] (Z);
-ffa09da2:	00 49       	CC = BITTST (R0, 0x0);		/* bit  0 */
-ffa09da4:	00 02       	R0 = CC;
-ffa09da6:	00 0c       	CC = R0 == 0x0;
-ffa09da8:	f4 1b       	IF CC JUMP 0xffa09d90 <_spi_delay+0x28>;
-ffa09daa:	01 e8 00 00 	UNLINK;
-ffa09dae:	10 00       	RTS;
+ffa09d20 <_strprintf_hex>:
+ffa09d20:	00 e8 04 00 	LINK 0x10;		/* (16) */
+ffa09d24:	b8 b0       	[FP + 0x8] = R0;
+ffa09d26:	f9 b0       	[FP + 0xc] = R1;
+ffa09d28:	3a b1       	[FP + 0x10] = R2;
+ffa09d2a:	39 a1       	R1 = [FP + 0x10];
+ffa09d2c:	b8 a0       	R0 = [FP + 0x8];
+ffa09d2e:	ff e3 91 ff 	CALL 0xffa09c50 <_sprintf_hex>;
+ffa09d32:	f0 bb       	[FP -0x4] = R0;
+ffa09d34:	fa ac       	P2 = [FP + 0xc];
+ffa09d36:	11 91       	R1 = [P2];
+ffa09d38:	f0 b9       	R0 = [FP -0x4];
+ffa09d3a:	01 50       	R0 = R1 + R0;
+ffa09d3c:	fa ac       	P2 = [FP + 0xc];
+ffa09d3e:	10 93       	[P2] = R0;
+ffa09d40:	f1 b9       	R1 = [FP -0x4];
+ffa09d42:	b8 a0       	R0 = [FP + 0x8];
+ffa09d44:	08 50       	R0 = R0 + R1;
+ffa09d46:	b8 b0       	[FP + 0x8] = R0;
+ffa09d48:	b8 a0       	R0 = [FP + 0x8];
+ffa09d4a:	01 e8 00 00 	UNLINK;
+ffa09d4e:	10 00       	RTS;
 
-ffa09db0 <_spi_write_register>:
-ffa09db0:	00 e8 03 00 	LINK 0xc;		/* (12) */
-ffa09db4:	b8 e6 08 00 	B[FP + 0x8] = R0;
-ffa09db8:	01 30       	R0 = R1;
-ffa09dba:	b8 e6 0c 00 	B[FP + 0xc] = R0;
-ffa09dbe:	b8 e5 08 00 	R0 = B[FP + 0x8] (X);
-ffa09dc2:	28 4a       	BITSET (R0, 0x5);		/* bit  5 */
-ffa09dc4:	b8 e6 08 00 	B[FP + 0x8] = R0;
-ffa09dc8:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00508(-4193016) */
-ffa09dcc:	0a e1 04 07 	P2.L = 0x704;		/* (1796)	P2=0xffc00704(-4192508) */
-ffa09dd0:	10 60       	R0 = 0x2 (X);		/*		R0=0x2(  2) */
-ffa09dd2:	10 97       	W[P2] = R0;
-ffa09dd4:	24 00       	SSYNC;
-ffa09dd6:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00704(-4192508) */
-ffa09dda:	0a e1 0c 05 	P2.L = 0x50c;		/* (1292)	P2=0xffc0050c(-4193012) */
-ffa09dde:	b8 e4 08 00 	R0 = B[FP + 0x8] (Z);
-ffa09de2:	10 97       	W[P2] = R0;
-ffa09de4:	ff e3 c2 ff 	CALL 0xffa09d68 <_spi_delay>;
-ffa09de8:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc0050c(-4193012) */
-ffa09dec:	0a e1 18 05 	P2.L = 0x518;		/* (1304)	P2=0xffc00518(-4193000) */
-ffa09df0:	50 95       	R0 = W[P2] (X);
-ffa09df2:	b8 e6 08 00 	B[FP + 0x8] = R0;
-ffa09df6:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00518(-4193000) */
-ffa09dfa:	0a e1 0c 05 	P2.L = 0x50c;		/* (1292)	P2=0xffc0050c(-4193012) */
-ffa09dfe:	b8 e4 0c 00 	R0 = B[FP + 0xc] (Z);
-ffa09e02:	10 97       	W[P2] = R0;
-ffa09e04:	ff e3 b2 ff 	CALL 0xffa09d68 <_spi_delay>;
-ffa09e08:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc0050c(-4193012) */
-ffa09e0c:	0a e1 08 07 	P2.L = 0x708;		/* (1800)	P2=0xffc00708(-4192504) */
-ffa09e10:	10 60       	R0 = 0x2 (X);		/*		R0=0x2(  2) */
-ffa09e12:	10 97       	W[P2] = R0;
-ffa09e14:	24 00       	SSYNC;
-ffa09e16:	b8 e4 08 00 	R0 = B[FP + 0x8] (Z);
-ffa09e1a:	01 e8 00 00 	UNLINK;
-ffa09e1e:	10 00       	RTS;
+ffa09d50 <_atoi>:
+ffa09d50:	00 e8 03 00 	LINK 0xc;		/* (12) */
+ffa09d54:	b8 b0       	[FP + 0x8] = R0;
+ffa09d56:	f9 b0       	[FP + 0xc] = R1;
+ffa09d58:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa09d5a:	d0 bb       	[FP -0xc] = R0;
+ffa09d5c:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa09d5e:	e0 bb       	[FP -0x8] = R0;
+ffa09d60:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
+ffa09d62:	f0 bb       	[FP -0x4] = R0;
+ffa09d64:	ba ac       	P2 = [FP + 0x8];
+ffa09d66:	50 99       	R0 = B[P2] (X);
+ffa09d68:	00 43       	R0 = R0.B (X);
+ffa09d6a:	69 61       	R1 = 0x2d (X);		/*		R1=0x2d( 45) */
+ffa09d6c:	08 08       	CC = R0 == R1;
+ffa09d6e:	2d 10       	IF !CC JUMP 0xffa09dc8 <_atoi+0x78>;
+ffa09d70:	f8 63       	R0 = -0x1 (X);		/*		R0=0xffffffff( -1) */
+ffa09d72:	f0 bb       	[FP -0x4] = R0;
+ffa09d74:	b8 a0       	R0 = [FP + 0x8];
+ffa09d76:	08 64       	R0 += 0x1;		/* (  1) */
+ffa09d78:	b8 b0       	[FP + 0x8] = R0;
+ffa09d7a:	d0 b9       	R0 = [FP -0xc];
+ffa09d7c:	08 64       	R0 += 0x1;		/* (  1) */
+ffa09d7e:	d0 bb       	[FP -0xc] = R0;
+ffa09d80:	24 20       	JUMP.S 0xffa09dc8 <_atoi+0x78>;
+ffa09d82:	ba ac       	P2 = [FP + 0x8];
+ffa09d84:	50 99       	R0 = B[P2] (X);
+ffa09d86:	00 43       	R0 = R0.B (X);
+ffa09d88:	08 30       	R1 = R0;
+ffa09d8a:	81 66       	R1 += -0x30;		/* (-48) */
+ffa09d8c:	e0 b9       	R0 = [FP -0x8];
+ffa09d8e:	08 50       	R0 = R0 + R1;
+ffa09d90:	e0 bb       	[FP -0x8] = R0;
+ffa09d92:	b8 a0       	R0 = [FP + 0x8];
+ffa09d94:	08 64       	R0 += 0x1;		/* (  1) */
+ffa09d96:	b8 b0       	[FP + 0x8] = R0;
+ffa09d98:	d0 b9       	R0 = [FP -0xc];
+ffa09d9a:	08 64       	R0 += 0x1;		/* (  1) */
+ffa09d9c:	d0 bb       	[FP -0xc] = R0;
+ffa09d9e:	ba ac       	P2 = [FP + 0x8];
+ffa09da0:	50 99       	R0 = B[P2] (X);
+ffa09da2:	00 43       	R0 = R0.B (X);
+ffa09da4:	79 61       	R1 = 0x2f (X);		/*		R1=0x2f( 47) */
+ffa09da6:	08 09       	CC = R0 <= R1;
+ffa09da8:	10 18       	IF CC JUMP 0xffa09dc8 <_atoi+0x78>;
+ffa09daa:	00 00       	NOP;
+ffa09dac:	00 00       	NOP;
+ffa09dae:	ba ac       	P2 = [FP + 0x8];
+ffa09db0:	50 99       	R0 = B[P2] (X);
+ffa09db2:	00 43       	R0 = R0.B (X);
+ffa09db4:	c9 61       	R1 = 0x39 (X);		/*		R1=0x39( 57) */
+ffa09db6:	08 09       	CC = R0 <= R1;
+ffa09db8:	08 10       	IF !CC JUMP 0xffa09dc8 <_atoi+0x78>;
+ffa09dba:	e0 b9       	R0 = [FP -0x8];
+ffa09dbc:	08 30       	R1 = R0;
+ffa09dbe:	11 4f       	R1 <<= 0x2;
+ffa09dc0:	41 50       	R1 = R1 + R0;
+ffa09dc2:	82 c6 09 80 	R0 = R1 << 0x1;
+ffa09dc6:	e0 bb       	[FP -0x8] = R0;
+ffa09dc8:	ba ac       	P2 = [FP + 0x8];
+ffa09dca:	50 99       	R0 = B[P2] (X);
+ffa09dcc:	00 43       	R0 = R0.B (X);
+ffa09dce:	79 61       	R1 = 0x2f (X);		/*		R1=0x2f( 47) */
+ffa09dd0:	08 09       	CC = R0 <= R1;
+ffa09dd2:	0d 18       	IF CC JUMP 0xffa09dec <_atoi+0x9c>;
+ffa09dd4:	00 00       	NOP;
+ffa09dd6:	00 00       	NOP;
+ffa09dd8:	ba ac       	P2 = [FP + 0x8];
+ffa09dda:	50 99       	R0 = B[P2] (X);
+ffa09ddc:	00 43       	R0 = R0.B (X);
+ffa09dde:	c9 61       	R1 = 0x39 (X);		/*		R1=0x39( 57) */
+ffa09de0:	08 09       	CC = R0 <= R1;
+ffa09de2:	05 10       	IF !CC JUMP 0xffa09dec <_atoi+0x9c>;
+ffa09de4:	d1 b9       	R1 = [FP -0xc];
+ffa09de6:	f8 a0       	R0 = [FP + 0xc];
+ffa09de8:	81 08       	CC = R1 < R0;
+ffa09dea:	cc 1b       	IF CC JUMP 0xffa09d82 <_atoi+0x32>;
+ffa09dec:	e1 b9       	R1 = [FP -0x8];
+ffa09dee:	f0 b9       	R0 = [FP -0x4];
+ffa09df0:	c8 40       	R0 *= R1;
+ffa09df2:	01 e8 00 00 	UNLINK;
+ffa09df6:	10 00       	RTS;
 
-ffa09e20 <_spi_write_register_ver>:
-ffa09e20:	00 e8 04 00 	LINK 0x10;		/* (16) */
-ffa09e24:	b8 e6 08 00 	B[FP + 0x8] = R0;
-ffa09e28:	01 30       	R0 = R1;
-ffa09e2a:	b8 e6 0c 00 	B[FP + 0xc] = R0;
-ffa09e2e:	b8 e4 08 00 	R0 = B[FP + 0x8] (Z);
-ffa09e32:	b9 e4 0c 00 	R1 = B[FP + 0xc] (Z);
-ffa09e36:	ff e3 bd ff 	CALL 0xffa09db0 <_spi_write_register>;
-ffa09e3a:	b8 e4 08 00 	R0 = B[FP + 0x8] (Z);
-ffa09e3e:	00 e3 09 00 	CALL 0xffa09e50 <_spi_read_register>;
-ffa09e42:	b8 e6 ff ff 	B[FP + -0x1] = R0;
-ffa09e46:	b8 e4 ff ff 	R0 = B[FP + -0x1] (Z);
+ffa09df8 <_udelay>:
+ffa09df8:	00 e8 02 00 	LINK 0x8;		/* (8) */
+ffa09dfc:	b8 b0       	[FP + 0x8] = R0;
+ffa09dfe:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa09e00:	e0 bb       	[FP -0x8] = R0;
+ffa09e02:	10 20       	JUMP.S 0xffa09e22 <_udelay+0x2a>;
+ffa09e04:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa09e06:	f0 bb       	[FP -0x4] = R0;
+ffa09e08:	05 20       	JUMP.S 0xffa09e12 <_udelay+0x1a>;
+ffa09e0a:	00 00       	NOP;
+ffa09e0c:	f0 b9       	R0 = [FP -0x4];
+ffa09e0e:	08 64       	R0 += 0x1;		/* (  1) */
+ffa09e10:	f0 bb       	[FP -0x4] = R0;
+ffa09e12:	f0 b9       	R0 = [FP -0x4];
+ffa09e14:	21 e1 9f 00 	R1 = 0x9f (X);		/*		R1=0x9f(159) */
+ffa09e18:	08 09       	CC = R0 <= R1;
+ffa09e1a:	f8 1b       	IF CC JUMP 0xffa09e0a <_udelay+0x12>;
+ffa09e1c:	e0 b9       	R0 = [FP -0x8];
+ffa09e1e:	08 64       	R0 += 0x1;		/* (  1) */
+ffa09e20:	e0 bb       	[FP -0x8] = R0;
+ffa09e22:	e1 b9       	R1 = [FP -0x8];
+ffa09e24:	b8 a0       	R0 = [FP + 0x8];
+ffa09e26:	81 08       	CC = R1 < R0;
+ffa09e28:	ee 1b       	IF CC JUMP 0xffa09e04 <_udelay+0xc>;
+ffa09e2a:	01 e8 00 00 	UNLINK;
+ffa09e2e:	10 00       	RTS;
+
+ffa09e30 <_NOP>:
+ffa09e30:	00 e8 00 00 	LINK 0x0;		/* (0) */
+ffa09e34:	00 00       	NOP;
+ffa09e36:	01 e8 00 00 	UNLINK;
+ffa09e3a:	10 00       	RTS;
+
+ffa09e3c <_cli>:
+ffa09e3c:	00 e8 02 00 	LINK 0x8;		/* (8) */
+ffa09e40:	30 00       	CLI R0;
+ffa09e42:	f0 bb       	[FP -0x4] = R0;
+ffa09e44:	f0 b9       	R0 = [FP -0x4];
+ffa09e46:	e0 bb       	[FP -0x8] = R0;
+ffa09e48:	e0 b9       	R0 = [FP -0x8];
 ffa09e4a:	01 e8 00 00 	UNLINK;
 ffa09e4e:	10 00       	RTS;
 
-ffa09e50 <_spi_read_register>:
-ffa09e50:	00 e8 03 00 	LINK 0xc;		/* (12) */
-ffa09e54:	b8 e6 08 00 	B[FP + 0x8] = R0;
-ffa09e58:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00708(-4192504) */
-ffa09e5c:	0a e1 04 07 	P2.L = 0x704;		/* (1796)	P2=0xffc00704(-4192508) */
-ffa09e60:	10 60       	R0 = 0x2 (X);		/*		R0=0x2(  2) */
-ffa09e62:	10 97       	W[P2] = R0;
-ffa09e64:	24 00       	SSYNC;
-ffa09e66:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00704(-4192508) */
-ffa09e6a:	0a e1 0c 05 	P2.L = 0x50c;		/* (1292)	P2=0xffc0050c(-4193012) */
-ffa09e6e:	b8 e4 08 00 	R0 = B[FP + 0x8] (Z);
-ffa09e72:	10 97       	W[P2] = R0;
-ffa09e74:	ff e3 7a ff 	CALL 0xffa09d68 <_spi_delay>;
-ffa09e78:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc0050c(-4193012) */
-ffa09e7c:	0a e1 18 05 	P2.L = 0x518;		/* (1304)	P2=0xffc00518(-4193000) */
-ffa09e80:	50 95       	R0 = W[P2] (X);
-ffa09e82:	b8 e6 08 00 	B[FP + 0x8] = R0;
-ffa09e86:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00518(-4193000) */
-ffa09e8a:	0a e1 0c 05 	P2.L = 0x50c;		/* (1292)	P2=0xffc0050c(-4193012) */
-ffa09e8e:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa09e90:	10 97       	W[P2] = R0;
-ffa09e92:	ff e3 6b ff 	CALL 0xffa09d68 <_spi_delay>;
-ffa09e96:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc0050c(-4193012) */
-ffa09e9a:	0a e1 18 05 	P2.L = 0x518;		/* (1304)	P2=0xffc00518(-4193000) */
-ffa09e9e:	50 95       	R0 = W[P2] (X);
-ffa09ea0:	b8 e6 08 00 	B[FP + 0x8] = R0;
-ffa09ea4:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00518(-4193000) */
-ffa09ea8:	0a e1 08 07 	P2.L = 0x708;		/* (1800)	P2=0xffc00708(-4192504) */
-ffa09eac:	10 60       	R0 = 0x2 (X);		/*		R0=0x2(  2) */
-ffa09eae:	10 97       	W[P2] = R0;
-ffa09eb0:	24 00       	SSYNC;
-ffa09eb2:	b8 e4 08 00 	R0 = B[FP + 0x8] (Z);
-ffa09eb6:	01 e8 00 00 	UNLINK;
-ffa09eba:	10 00       	RTS;
+ffa09e50 <_sti>:
+ffa09e50:	00 e8 00 00 	LINK 0x0;		/* (0) */
+ffa09e54:	b8 b0       	[FP + 0x8] = R0;
+ffa09e56:	b8 a0       	R0 = [FP + 0x8];
+ffa09e58:	40 00       	STI R0;
+ffa09e5a:	01 e8 00 00 	UNLINK;
+ffa09e5e:	10 00       	RTS;
 
-ffa09ebc <_spi_read_register_status>:
-ffa09ebc:	00 e8 03 00 	LINK 0xc;		/* (12) */
-ffa09ec0:	f9 b0       	[FP + 0xc] = R1;
-ffa09ec2:	b8 e6 08 00 	B[FP + 0x8] = R0;
-ffa09ec6:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00708(-4192504) */
-ffa09eca:	0a e1 04 07 	P2.L = 0x704;		/* (1796)	P2=0xffc00704(-4192508) */
-ffa09ece:	10 60       	R0 = 0x2 (X);		/*		R0=0x2(  2) */
-ffa09ed0:	10 97       	W[P2] = R0;
-ffa09ed2:	24 00       	SSYNC;
-ffa09ed4:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00704(-4192508) */
-ffa09ed8:	0a e1 0c 05 	P2.L = 0x50c;		/* (1292)	P2=0xffc0050c(-4193012) */
-ffa09edc:	b8 e4 08 00 	R0 = B[FP + 0x8] (Z);
-ffa09ee0:	10 97       	W[P2] = R0;
-ffa09ee2:	ff e3 43 ff 	CALL 0xffa09d68 <_spi_delay>;
-ffa09ee6:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc0050c(-4193012) */
-ffa09eea:	0a e1 18 05 	P2.L = 0x518;		/* (1304)	P2=0xffc00518(-4193000) */
-ffa09eee:	50 95       	R0 = W[P2] (X);
-ffa09ef0:	b8 e6 08 00 	B[FP + 0x8] = R0;
-ffa09ef4:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00518(-4193000) */
-ffa09ef8:	0a e1 0c 05 	P2.L = 0x50c;		/* (1292)	P2=0xffc0050c(-4193012) */
-ffa09efc:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa09efe:	10 97       	W[P2] = R0;
-ffa09f00:	ff e3 34 ff 	CALL 0xffa09d68 <_spi_delay>;
-ffa09f04:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc0050c(-4193012) */
-ffa09f08:	0a e1 18 05 	P2.L = 0x518;		/* (1304)	P2=0xffc00518(-4193000) */
-ffa09f0c:	50 95       	R0 = W[P2] (X);
-ffa09f0e:	fa ac       	P2 = [FP + 0xc];
-ffa09f10:	10 9b       	B[P2] = R0;
-ffa09f12:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00518(-4193000) */
-ffa09f16:	0a e1 08 07 	P2.L = 0x708;		/* (1800)	P2=0xffc00708(-4192504) */
-ffa09f1a:	10 60       	R0 = 0x2 (X);		/*		R0=0x2(  2) */
-ffa09f1c:	10 97       	W[P2] = R0;
-ffa09f1e:	24 00       	SSYNC;
-ffa09f20:	b8 e4 08 00 	R0 = B[FP + 0x8] (Z);
-ffa09f24:	01 e8 00 00 	UNLINK;
-ffa09f28:	10 00       	RTS;
+ffa09e60 <_idle>:
+ffa09e60:	00 e8 00 00 	LINK 0x0;		/* (0) */
+ffa09e64:	20 00       	IDLE;
+ffa09e66:	01 e8 00 00 	UNLINK;
+ffa09e6a:	10 00       	RTS;
+
+ffa09e6c <_prefetch>:
+ffa09e6c:	00 e8 00 00 	LINK 0x0;		/* (0) */
+ffa09e70:	b8 b0       	[FP + 0x8] = R0;
+ffa09e72:	ba ac       	P2 = [FP + 0x8];
+ffa09e74:	42 02       	PREFETCH[P2];
+ffa09e76:	01 e8 00 00 	UNLINK;
+ffa09e7a:	10 00       	RTS;
+
+ffa09e7c <_prefetchmodup>:
+ffa09e7c:	00 e8 02 00 	LINK 0x8;		/* (8) */
+ffa09e80:	b8 b0       	[FP + 0x8] = R0;
+ffa09e82:	40 60       	R0 = 0x8 (X);		/*		R0=0x8(  8) */
+ffa09e84:	47 30       	R0 = FP;
+ffa09e86:	40 64       	R0 += 0x8;		/* (  8) */
+ffa09e88:	f0 bb       	[FP -0x4] = R0;
+ffa09e8a:	f0 b9       	R0 = [FP -0x4];
+ffa09e8c:	10 32       	P2 = R0;
+ffa09e8e:	62 02       	PREFETCH[P2++];
+ffa09e90:	fa bb       	[FP -0x4] = P2;
+ffa09e92:	f0 b9       	R0 = [FP -0x4];
+ffa09e94:	e0 bb       	[FP -0x8] = R0;
+ffa09e96:	e0 b9       	R0 = [FP -0x8];
+ffa09e98:	01 e8 00 00 	UNLINK;
+ffa09e9c:	10 00       	RTS;
 	...
 
-ffa09f2c <_spi_write_byte>:
-ffa09f2c:	00 e8 03 00 	LINK 0xc;		/* (12) */
-ffa09f30:	b8 e6 08 00 	B[FP + 0x8] = R0;
-ffa09f34:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00708(-4192504) */
-ffa09f38:	0a e1 04 07 	P2.L = 0x704;		/* (1796)	P2=0xffc00704(-4192508) */
-ffa09f3c:	10 60       	R0 = 0x2 (X);		/*		R0=0x2(  2) */
-ffa09f3e:	10 97       	W[P2] = R0;
-ffa09f40:	24 00       	SSYNC;
-ffa09f42:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00704(-4192508) */
-ffa09f46:	0a e1 0c 05 	P2.L = 0x50c;		/* (1292)	P2=0xffc0050c(-4193012) */
-ffa09f4a:	b8 e4 08 00 	R0 = B[FP + 0x8] (Z);
-ffa09f4e:	10 97       	W[P2] = R0;
-ffa09f50:	ff e3 0c ff 	CALL 0xffa09d68 <_spi_delay>;
-ffa09f54:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc0050c(-4193012) */
-ffa09f58:	0a e1 18 05 	P2.L = 0x518;		/* (1304)	P2=0xffc00518(-4193000) */
-ffa09f5c:	50 95       	R0 = W[P2] (X);
-ffa09f5e:	b8 e6 08 00 	B[FP + 0x8] = R0;
-ffa09f62:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00518(-4193000) */
-ffa09f66:	0a e1 08 07 	P2.L = 0x708;		/* (1800)	P2=0xffc00708(-4192504) */
-ffa09f6a:	10 60       	R0 = 0x2 (X);		/*		R0=0x2(  2) */
-ffa09f6c:	10 97       	W[P2] = R0;
-ffa09f6e:	24 00       	SSYNC;
-ffa09f70:	b8 e4 08 00 	R0 = B[FP + 0x8] (Z);
-ffa09f74:	01 e8 00 00 	UNLINK;
-ffa09f78:	10 00       	RTS;
+ffa09ea0 <_flushinv>:
+ffa09ea0:	00 e8 00 00 	LINK 0x0;		/* (0) */
+ffa09ea4:	b8 b0       	[FP + 0x8] = R0;
+ffa09ea6:	ba ac       	P2 = [FP + 0x8];
+ffa09ea8:	4a 02       	FLUSHINV[P2];
+ffa09eaa:	01 e8 00 00 	UNLINK;
+ffa09eae:	10 00       	RTS;
+
+ffa09eb0 <_flushinvmodup>:
+ffa09eb0:	00 e8 02 00 	LINK 0x8;		/* (8) */
+ffa09eb4:	b8 b0       	[FP + 0x8] = R0;
+ffa09eb6:	40 60       	R0 = 0x8 (X);		/*		R0=0x8(  8) */
+ffa09eb8:	47 30       	R0 = FP;
+ffa09eba:	40 64       	R0 += 0x8;		/* (  8) */
+ffa09ebc:	f0 bb       	[FP -0x4] = R0;
+ffa09ebe:	f0 b9       	R0 = [FP -0x4];
+ffa09ec0:	10 32       	P2 = R0;
+ffa09ec2:	6a 02       	FLUSHINV[P2++];
+ffa09ec4:	fa bb       	[FP -0x4] = P2;
+ffa09ec6:	f0 b9       	R0 = [FP -0x4];
+ffa09ec8:	e0 bb       	[FP -0x8] = R0;
+ffa09eca:	e0 b9       	R0 = [FP -0x8];
+ffa09ecc:	01 e8 00 00 	UNLINK;
+ffa09ed0:	10 00       	RTS;
 	...
 
-ffa09f7c <_spi_write_packet>:
-ffa09f7c:	00 e8 03 00 	LINK 0xc;		/* (12) */
-ffa09f80:	b8 b0       	[FP + 0x8] = R0;
-ffa09f82:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00708(-4192504) */
-ffa09f86:	0a e1 04 07 	P2.L = 0x704;		/* (1796)	P2=0xffc00704(-4192508) */
-ffa09f8a:	10 60       	R0 = 0x2 (X);		/*		R0=0x2(  2) */
-ffa09f8c:	10 97       	W[P2] = R0;
-ffa09f8e:	24 00       	SSYNC;
-ffa09f90:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00704(-4192508) */
-ffa09f94:	0a e1 0c 05 	P2.L = 0x50c;		/* (1292)	P2=0xffc0050c(-4193012) */
-ffa09f98:	20 e1 a0 00 	R0 = 0xa0 (X);		/*		R0=0xa0(160) */
-ffa09f9c:	10 97       	W[P2] = R0;
-ffa09f9e:	ff e3 e5 fe 	CALL 0xffa09d68 <_spi_delay>;
-ffa09fa2:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc0050c(-4193012) */
-ffa09fa6:	0a e1 00 05 	P2.L = 0x500;		/* (1280)	P2=0xffc00500(-4193024) */
-ffa09faa:	20 e1 07 50 	R0 = 0x5007 (X);		/*		R0=0x5007(20487) */
-ffa09fae:	10 97       	W[P2] = R0;
-ffa09fb0:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00500(-4193024) */
-ffa09fb4:	0a e1 50 0d 	P2.L = 0xd50;		/* (3408)	P2=0xffc00d50(-4190896) */
-ffa09fb8:	00 61       	R0 = 0x20 (X);		/*		R0=0x20( 32) */
-ffa09fba:	10 97       	W[P2] = R0;
-ffa09fbc:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00d50(-4190896) */
-ffa09fc0:	0a e1 54 0d 	P2.L = 0xd54;		/* (3412)	P2=0xffc00d54(-4190892) */
-ffa09fc4:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
-ffa09fc6:	10 97       	W[P2] = R0;
-ffa09fc8:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00d54(-4190892) */
-ffa09fcc:	0a e1 44 0d 	P2.L = 0xd44;		/* (3396)	P2=0xffc00d44(-4190908) */
-ffa09fd0:	b8 a0       	R0 = [FP + 0x8];
-ffa09fd2:	10 93       	[P2] = R0;
-ffa09fd4:	24 00       	SSYNC;
-ffa09fd6:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00d44(-4190908) */
-ffa09fda:	0a e1 48 0d 	P2.L = 0xd48;		/* (3400)	P2=0xffc00d48(-4190904) */
-ffa09fde:	20 e1 81 00 	R0 = 0x81 (X);		/*		R0=0x81(129) */
-ffa09fe2:	10 97       	W[P2] = R0;
-ffa09fe4:	01 20       	JUMP.S 0xffa09fe6 <_spi_write_packet+0x6a>;
+ffa09ed4 <_flush>:
+ffa09ed4:	00 e8 00 00 	LINK 0x0;		/* (0) */
+ffa09ed8:	b8 b0       	[FP + 0x8] = R0;
+ffa09eda:	ba ac       	P2 = [FP + 0x8];
+ffa09edc:	52 02       	FLUSH[P2];
+ffa09ede:	01 e8 00 00 	UNLINK;
+ffa09ee2:	10 00       	RTS;
+
+ffa09ee4 <_flushmodup>:
+ffa09ee4:	00 e8 02 00 	LINK 0x8;		/* (8) */
+ffa09ee8:	b8 b0       	[FP + 0x8] = R0;
+ffa09eea:	40 60       	R0 = 0x8 (X);		/*		R0=0x8(  8) */
+ffa09eec:	47 30       	R0 = FP;
+ffa09eee:	40 64       	R0 += 0x8;		/* (  8) */
+ffa09ef0:	f0 bb       	[FP -0x4] = R0;
+ffa09ef2:	f0 b9       	R0 = [FP -0x4];
+ffa09ef4:	10 32       	P2 = R0;
+ffa09ef6:	72 02       	FLUSH[P2++];
+ffa09ef8:	fa bb       	[FP -0x4] = P2;
+ffa09efa:	f0 b9       	R0 = [FP -0x4];
+ffa09efc:	e0 bb       	[FP -0x8] = R0;
+ffa09efe:	e0 b9       	R0 = [FP -0x8];
+ffa09f00:	01 e8 00 00 	UNLINK;
+ffa09f04:	10 00       	RTS;
 	...
-ffa09fee:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00d48(-4190904) */
-ffa09ff2:	0a e1 68 0d 	P2.L = 0xd68;		/* (3432)	P2=0xffc00d68(-4190872) */
-ffa09ff6:	50 95       	R0 = W[P2] (X);
-ffa09ff8:	c0 42       	R0 = R0.L (Z);
-ffa09ffa:	00 49       	CC = BITTST (R0, 0x0);		/* bit  0 */
-ffa09ffc:	00 02       	R0 = CC;
-ffa09ffe:	00 0c       	CC = R0 == 0x0;
-ffa0a000:	f3 1b       	IF CC JUMP 0xffa09fe6 <_spi_write_packet+0x6a>;
-ffa0a002:	00 00       	NOP;
-ffa0a004:	00 00       	NOP;
-ffa0a006:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00d68(-4190872) */
-ffa0a00a:	0a e1 08 05 	P2.L = 0x508;		/* (1288)	P2=0xffc00508(-4193016) */
-ffa0a00e:	50 95       	R0 = W[P2] (X);
-ffa0a010:	c1 42       	R1 = R0.L (Z);
-ffa0a012:	40 60       	R0 = 0x8 (X);		/*		R0=0x8(  8) */
-ffa0a014:	01 54       	R0 = R1 & R0;
-ffa0a016:	00 0c       	CC = R0 == 0x0;
-ffa0a018:	e7 13       	IF !CC JUMP 0xffa09fe6 <_spi_write_packet+0x6a>;
-ffa0a01a:	00 00       	NOP;
-ffa0a01c:	00 00       	NOP;
-ffa0a01e:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00508(-4193016) */
-ffa0a022:	0a e1 68 0d 	P2.L = 0xd68;		/* (3432)	P2=0xffc00d68(-4190872) */
-ffa0a026:	50 95       	R0 = W[P2] (X);
-ffa0a028:	c1 42       	R1 = R0.L (Z);
-ffa0a02a:	40 60       	R0 = 0x8 (X);		/*		R0=0x8(  8) */
-ffa0a02c:	01 54       	R0 = R1 & R0;
-ffa0a02e:	00 0c       	CC = R0 == 0x0;
-ffa0a030:	db 13       	IF !CC JUMP 0xffa09fe6 <_spi_write_packet+0x6a>;
-ffa0a032:	ff e3 9b fe 	CALL 0xffa09d68 <_spi_delay>;
-ffa0a036:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00d68(-4190872) */
-ffa0a03a:	0a e1 68 0d 	P2.L = 0xd68;		/* (3432)	P2=0xffc00d68(-4190872) */
-ffa0a03e:	18 60       	R0 = 0x3 (X);		/*		R0=0x3(  3) */
-ffa0a040:	10 97       	W[P2] = R0;
-ffa0a042:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00d68(-4190872) */
-ffa0a046:	0a e1 00 05 	P2.L = 0x500;		/* (1280)	P2=0xffc00500(-4193024) */
-ffa0a04a:	20 e1 0d 50 	R0 = 0x500d (X);		/*		R0=0x500d(20493) */
+
+ffa09f08 <_iflush>:
+ffa09f08:	00 e8 00 00 	LINK 0x0;		/* (0) */
+ffa09f0c:	b8 b0       	[FP + 0x8] = R0;
+ffa09f0e:	ba ac       	P2 = [FP + 0x8];
+ffa09f10:	5a 02       	IFLUSH[P2];
+ffa09f12:	01 e8 00 00 	UNLINK;
+ffa09f16:	10 00       	RTS;
+
+ffa09f18 <_iflushmodup>:
+ffa09f18:	00 e8 02 00 	LINK 0x8;		/* (8) */
+ffa09f1c:	b8 b0       	[FP + 0x8] = R0;
+ffa09f1e:	40 60       	R0 = 0x8 (X);		/*		R0=0x8(  8) */
+ffa09f20:	47 30       	R0 = FP;
+ffa09f22:	40 64       	R0 += 0x8;		/* (  8) */
+ffa09f24:	f0 bb       	[FP -0x4] = R0;
+ffa09f26:	f0 b9       	R0 = [FP -0x4];
+ffa09f28:	10 32       	P2 = R0;
+ffa09f2a:	7a 02       	IFLUSH[P2++];
+ffa09f2c:	fa bb       	[FP -0x4] = P2;
+ffa09f2e:	f0 b9       	R0 = [FP -0x4];
+ffa09f30:	e0 bb       	[FP -0x8] = R0;
+ffa09f32:	e0 b9       	R0 = [FP -0x8];
+ffa09f34:	01 e8 00 00 	UNLINK;
+ffa09f38:	10 00       	RTS;
+	...
+
+ffa09f3c <_csync>:
+ffa09f3c:	00 e8 00 00 	LINK 0x0;		/* (0) */
+ffa09f40:	23 00       	CSYNC;
+ffa09f42:	01 e8 00 00 	UNLINK;
+ffa09f46:	10 00       	RTS;
+
+ffa09f48 <_ssync>:
+ffa09f48:	00 e8 00 00 	LINK 0x0;		/* (0) */
+ffa09f4c:	24 00       	SSYNC;
+ffa09f4e:	01 e8 00 00 	UNLINK;
+ffa09f52:	10 00       	RTS;
+
+ffa09f54 <_spi_delay>:
+ffa09f54:	00 e8 01 00 	LINK 0x4;		/* (4) */
+ffa09f58:	40 60       	R0 = 0x8 (X);		/*		R0=0x8(  8) */
+ffa09f5a:	78 e6 fe ff 	W[FP + -0x4] = R0;
+ffa09f5e:	08 20       	JUMP.S 0xffa09f6e <_spi_delay+0x1a>;
+ffa09f60:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc07080(-4165504) */
+ffa09f64:	0a e1 08 05 	P2.L = 0x508;		/* (1288)	P2=0xffc00508(-4193016) */
+ffa09f68:	10 95       	R0 = W[P2] (Z);
+ffa09f6a:	78 e6 fe ff 	W[FP + -0x4] = R0;
+ffa09f6e:	78 e4 fe ff 	R0 = W[FP + -0x4] (Z);
+ffa09f72:	41 60       	R1 = 0x8 (X);		/*		R1=0x8(  8) */
+ffa09f74:	08 54       	R0 = R0 & R1;
+ffa09f76:	00 0c       	CC = R0 == 0x0;
+ffa09f78:	f4 13       	IF !CC JUMP 0xffa09f60 <_spi_delay+0xc>;
+ffa09f7a:	08 20       	JUMP.S 0xffa09f8a <_spi_delay+0x36>;
+ffa09f7c:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00508(-4193016) */
+ffa09f80:	0a e1 08 05 	P2.L = 0x508;		/* (1288)	P2=0xffc00508(-4193016) */
+ffa09f84:	10 95       	R0 = W[P2] (Z);
+ffa09f86:	78 e6 fe ff 	W[FP + -0x4] = R0;
+ffa09f8a:	78 e4 fe ff 	R0 = W[FP + -0x4] (Z);
+ffa09f8e:	09 60       	R1 = 0x1 (X);		/*		R1=0x1(  1) */
+ffa09f90:	08 54       	R0 = R0 & R1;
+ffa09f92:	00 0c       	CC = R0 == 0x0;
+ffa09f94:	f4 1b       	IF CC JUMP 0xffa09f7c <_spi_delay+0x28>;
+ffa09f96:	01 e8 00 00 	UNLINK;
+ffa09f9a:	10 00       	RTS;
+
+ffa09f9c <_spi_write_register>:
+ffa09f9c:	00 e8 03 00 	LINK 0xc;		/* (12) */
+ffa09fa0:	b8 e6 08 00 	B[FP + 0x8] = R0;
+ffa09fa4:	01 30       	R0 = R1;
+ffa09fa6:	b8 e6 0c 00 	B[FP + 0xc] = R0;
+ffa09faa:	b8 e5 08 00 	R0 = B[FP + 0x8] (X);
+ffa09fae:	28 4a       	BITSET (R0, 0x5);		/* bit  5 */
+ffa09fb0:	b8 e6 08 00 	B[FP + 0x8] = R0;
+ffa09fb4:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00508(-4193016) */
+ffa09fb8:	0a e1 04 07 	P2.L = 0x704;		/* (1796)	P2=0xffc00704(-4192508) */
+ffa09fbc:	10 60       	R0 = 0x2 (X);		/*		R0=0x2(  2) */
+ffa09fbe:	10 97       	W[P2] = R0;
+ffa09fc0:	24 00       	SSYNC;
+ffa09fc2:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00704(-4192508) */
+ffa09fc6:	0a e1 0c 05 	P2.L = 0x50c;		/* (1292)	P2=0xffc0050c(-4193012) */
+ffa09fca:	b8 e4 08 00 	R0 = B[FP + 0x8] (Z);
+ffa09fce:	10 97       	W[P2] = R0;
+ffa09fd0:	ff e3 c2 ff 	CALL 0xffa09f54 <_spi_delay>;
+ffa09fd4:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc0050c(-4193012) */
+ffa09fd8:	0a e1 18 05 	P2.L = 0x518;		/* (1304)	P2=0xffc00518(-4193000) */
+ffa09fdc:	10 95       	R0 = W[P2] (Z);
+ffa09fde:	b8 e6 08 00 	B[FP + 0x8] = R0;
+ffa09fe2:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00518(-4193000) */
+ffa09fe6:	0a e1 0c 05 	P2.L = 0x50c;		/* (1292)	P2=0xffc0050c(-4193012) */
+ffa09fea:	b8 e4 0c 00 	R0 = B[FP + 0xc] (Z);
+ffa09fee:	10 97       	W[P2] = R0;
+ffa09ff0:	ff e3 b2 ff 	CALL 0xffa09f54 <_spi_delay>;
+ffa09ff4:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc0050c(-4193012) */
+ffa09ff8:	0a e1 08 07 	P2.L = 0x708;		/* (1800)	P2=0xffc00708(-4192504) */
+ffa09ffc:	10 60       	R0 = 0x2 (X);		/*		R0=0x2(  2) */
+ffa09ffe:	10 97       	W[P2] = R0;
+ffa0a000:	24 00       	SSYNC;
+ffa0a002:	b8 e5 08 00 	R0 = B[FP + 0x8] (X);
+ffa0a006:	01 e8 00 00 	UNLINK;
+ffa0a00a:	10 00       	RTS;
+
+ffa0a00c <_spi_write_register_ver>:
+ffa0a00c:	00 e8 04 00 	LINK 0x10;		/* (16) */
+ffa0a010:	b8 e6 08 00 	B[FP + 0x8] = R0;
+ffa0a014:	01 30       	R0 = R1;
+ffa0a016:	b8 e6 0c 00 	B[FP + 0xc] = R0;
+ffa0a01a:	b8 e4 08 00 	R0 = B[FP + 0x8] (Z);
+ffa0a01e:	b9 e4 0c 00 	R1 = B[FP + 0xc] (Z);
+ffa0a022:	ff e3 bd ff 	CALL 0xffa09f9c <_spi_write_register>;
+ffa0a026:	b8 e4 08 00 	R0 = B[FP + 0x8] (Z);
+ffa0a02a:	00 e3 09 00 	CALL 0xffa0a03c <_spi_read_register>;
+ffa0a02e:	b8 e6 ff ff 	B[FP + -0x1] = R0;
+ffa0a032:	b8 e5 ff ff 	R0 = B[FP + -0x1] (X);
+ffa0a036:	01 e8 00 00 	UNLINK;
+ffa0a03a:	10 00       	RTS;
+
+ffa0a03c <_spi_read_register>:
+ffa0a03c:	00 e8 03 00 	LINK 0xc;		/* (12) */
+ffa0a040:	b8 e6 08 00 	B[FP + 0x8] = R0;
+ffa0a044:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00708(-4192504) */
+ffa0a048:	0a e1 04 07 	P2.L = 0x704;		/* (1796)	P2=0xffc00704(-4192508) */
+ffa0a04c:	10 60       	R0 = 0x2 (X);		/*		R0=0x2(  2) */
 ffa0a04e:	10 97       	W[P2] = R0;
-ffa0a050:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00500(-4193024) */
-ffa0a054:	0a e1 48 0d 	P2.L = 0xd48;		/* (3400)	P2=0xffc00d48(-4190904) */
-ffa0a058:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa0a05a:	10 97       	W[P2] = R0;
-ffa0a05c:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00d48(-4190904) */
-ffa0a060:	0a e1 08 07 	P2.L = 0x708;		/* (1800)	P2=0xffc00708(-4192504) */
-ffa0a064:	10 60       	R0 = 0x2 (X);		/*		R0=0x2(  2) */
-ffa0a066:	10 97       	W[P2] = R0;
-ffa0a068:	24 00       	SSYNC;
-ffa0a06a:	01 e8 00 00 	UNLINK;
-ffa0a06e:	10 00       	RTS;
+ffa0a050:	24 00       	SSYNC;
+ffa0a052:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00704(-4192508) */
+ffa0a056:	0a e1 0c 05 	P2.L = 0x50c;		/* (1292)	P2=0xffc0050c(-4193012) */
+ffa0a05a:	b8 e4 08 00 	R0 = B[FP + 0x8] (Z);
+ffa0a05e:	10 97       	W[P2] = R0;
+ffa0a060:	ff e3 7a ff 	CALL 0xffa09f54 <_spi_delay>;
+ffa0a064:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc0050c(-4193012) */
+ffa0a068:	0a e1 18 05 	P2.L = 0x518;		/* (1304)	P2=0xffc00518(-4193000) */
+ffa0a06c:	10 95       	R0 = W[P2] (Z);
+ffa0a06e:	b8 e6 08 00 	B[FP + 0x8] = R0;
+ffa0a072:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00518(-4193000) */
+ffa0a076:	0a e1 0c 05 	P2.L = 0x50c;		/* (1292)	P2=0xffc0050c(-4193012) */
+ffa0a07a:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa0a07c:	10 97       	W[P2] = R0;
+ffa0a07e:	ff e3 6b ff 	CALL 0xffa09f54 <_spi_delay>;
+ffa0a082:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc0050c(-4193012) */
+ffa0a086:	0a e1 18 05 	P2.L = 0x518;		/* (1304)	P2=0xffc00518(-4193000) */
+ffa0a08a:	10 95       	R0 = W[P2] (Z);
+ffa0a08c:	b8 e6 08 00 	B[FP + 0x8] = R0;
+ffa0a090:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00518(-4193000) */
+ffa0a094:	0a e1 08 07 	P2.L = 0x708;		/* (1800)	P2=0xffc00708(-4192504) */
+ffa0a098:	10 60       	R0 = 0x2 (X);		/*		R0=0x2(  2) */
+ffa0a09a:	10 97       	W[P2] = R0;
+ffa0a09c:	24 00       	SSYNC;
+ffa0a09e:	b8 e5 08 00 	R0 = B[FP + 0x8] (X);
+ffa0a0a2:	01 e8 00 00 	UNLINK;
+ffa0a0a6:	10 00       	RTS;
 
-ffa0a070 <_spi_write_packet_noDMA>:
-ffa0a070:	00 e8 05 00 	LINK 0x14;		/* (20) */
-ffa0a074:	b8 b0       	[FP + 0x8] = R0;
-ffa0a076:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00708(-4192504) */
-ffa0a07a:	0a e1 04 07 	P2.L = 0x704;		/* (1796)	P2=0xffc00704(-4192508) */
-ffa0a07e:	10 60       	R0 = 0x2 (X);		/*		R0=0x2(  2) */
-ffa0a080:	10 97       	W[P2] = R0;
-ffa0a082:	24 00       	SSYNC;
-ffa0a084:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00704(-4192508) */
-ffa0a088:	0a e1 0c 05 	P2.L = 0x50c;		/* (1292)	P2=0xffc0050c(-4193012) */
-ffa0a08c:	20 e1 a0 00 	R0 = 0xa0 (X);		/*		R0=0xa0(160) */
-ffa0a090:	10 97       	W[P2] = R0;
-ffa0a092:	ff e3 6b fe 	CALL 0xffa09d68 <_spi_delay>;
-ffa0a096:	b8 a0       	R0 = [FP + 0x8];
-ffa0a098:	f0 bb       	[FP -0x4] = R0;
-ffa0a09a:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa0a09c:	e0 bb       	[FP -0x8] = R0;
-ffa0a09e:	11 20       	JUMP.S 0xffa0a0c0 <_spi_write_packet_noDMA+0x50>;
-ffa0a0a0:	49 e1 c0 ff 	P1.H = 0xffc0;		/* (-64)	P1=0xffc00730(-4192464) */
-ffa0a0a4:	09 e1 0c 05 	P1.L = 0x50c;		/* (1292)	P1=0xffc0050c(-4193012) */
-ffa0a0a8:	fa b9       	P2 = [FP -0x4];
-ffa0a0aa:	50 99       	R0 = B[P2] (X);
-ffa0a0ac:	00 43       	R0 = R0.B (X);
-ffa0a0ae:	08 97       	W[P1] = R0;
-ffa0a0b0:	f0 b9       	R0 = [FP -0x4];
-ffa0a0b2:	08 64       	R0 += 0x1;		/* (  1) */
-ffa0a0b4:	f0 bb       	[FP -0x4] = R0;
-ffa0a0b6:	ff e3 59 fe 	CALL 0xffa09d68 <_spi_delay>;
-ffa0a0ba:	e0 b9       	R0 = [FP -0x8];
-ffa0a0bc:	08 64       	R0 += 0x1;		/* (  1) */
-ffa0a0be:	e0 bb       	[FP -0x8] = R0;
-ffa0a0c0:	e0 b9       	R0 = [FP -0x8];
-ffa0a0c2:	f9 60       	R1 = 0x1f (X);		/*		R1=0x1f( 31) */
-ffa0a0c4:	08 09       	CC = R0 <= R1;
-ffa0a0c6:	ed 1b       	IF CC JUMP 0xffa0a0a0 <_spi_write_packet_noDMA+0x30>;
-ffa0a0c8:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc0050c(-4193012) */
-ffa0a0cc:	0a e1 08 07 	P2.L = 0x708;		/* (1800)	P2=0xffc00708(-4192504) */
-ffa0a0d0:	10 60       	R0 = 0x2 (X);		/*		R0=0x2(  2) */
-ffa0a0d2:	10 97       	W[P2] = R0;
-ffa0a0d4:	24 00       	SSYNC;
-ffa0a0d6:	01 e8 00 00 	UNLINK;
-ffa0a0da:	10 00       	RTS;
+ffa0a0a8 <_spi_read_register_status>:
+ffa0a0a8:	00 e8 03 00 	LINK 0xc;		/* (12) */
+ffa0a0ac:	f9 b0       	[FP + 0xc] = R1;
+ffa0a0ae:	b8 e6 08 00 	B[FP + 0x8] = R0;
+ffa0a0b2:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00708(-4192504) */
+ffa0a0b6:	0a e1 04 07 	P2.L = 0x704;		/* (1796)	P2=0xffc00704(-4192508) */
+ffa0a0ba:	10 60       	R0 = 0x2 (X);		/*		R0=0x2(  2) */
+ffa0a0bc:	10 97       	W[P2] = R0;
+ffa0a0be:	24 00       	SSYNC;
+ffa0a0c0:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00704(-4192508) */
+ffa0a0c4:	0a e1 0c 05 	P2.L = 0x50c;		/* (1292)	P2=0xffc0050c(-4193012) */
+ffa0a0c8:	b8 e4 08 00 	R0 = B[FP + 0x8] (Z);
+ffa0a0cc:	10 97       	W[P2] = R0;
+ffa0a0ce:	ff e3 43 ff 	CALL 0xffa09f54 <_spi_delay>;
+ffa0a0d2:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc0050c(-4193012) */
+ffa0a0d6:	0a e1 18 05 	P2.L = 0x518;		/* (1304)	P2=0xffc00518(-4193000) */
+ffa0a0da:	10 95       	R0 = W[P2] (Z);
+ffa0a0dc:	b8 e6 08 00 	B[FP + 0x8] = R0;
+ffa0a0e0:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00518(-4193000) */
+ffa0a0e4:	0a e1 0c 05 	P2.L = 0x50c;		/* (1292)	P2=0xffc0050c(-4193012) */
+ffa0a0e8:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa0a0ea:	10 97       	W[P2] = R0;
+ffa0a0ec:	ff e3 34 ff 	CALL 0xffa09f54 <_spi_delay>;
+ffa0a0f0:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc0050c(-4193012) */
+ffa0a0f4:	0a e1 18 05 	P2.L = 0x518;		/* (1304)	P2=0xffc00518(-4193000) */
+ffa0a0f8:	10 95       	R0 = W[P2] (Z);
+ffa0a0fa:	fa ac       	P2 = [FP + 0xc];
+ffa0a0fc:	10 9b       	B[P2] = R0;
+ffa0a0fe:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00518(-4193000) */
+ffa0a102:	0a e1 08 07 	P2.L = 0x708;		/* (1800)	P2=0xffc00708(-4192504) */
+ffa0a106:	10 60       	R0 = 0x2 (X);		/*		R0=0x2(  2) */
+ffa0a108:	10 97       	W[P2] = R0;
+ffa0a10a:	24 00       	SSYNC;
+ffa0a10c:	b8 e5 08 00 	R0 = B[FP + 0x8] (X);
+ffa0a110:	01 e8 00 00 	UNLINK;
+ffa0a114:	10 00       	RTS;
+	...
 
-ffa0a0dc <_spi_read_packet>:
-ffa0a0dc:	00 e8 05 00 	LINK 0x14;		/* (20) */
-ffa0a0e0:	b8 b0       	[FP + 0x8] = R0;
-ffa0a0e2:	b8 a0       	R0 = [FP + 0x8];
-ffa0a0e4:	f0 bb       	[FP -0x4] = R0;
-ffa0a0e6:	38 60       	R0 = 0x7 (X);		/*		R0=0x7(  7) */
-ffa0a0e8:	21 e1 70 00 	R1 = 0x70 (X);		/*		R1=0x70(112) */
-ffa0a0ec:	ff e3 62 fe 	CALL 0xffa09db0 <_spi_write_register>;
-ffa0a0f0:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00708(-4192504) */
-ffa0a0f4:	0a e1 04 07 	P2.L = 0x704;		/* (1796)	P2=0xffc00704(-4192508) */
-ffa0a0f8:	10 60       	R0 = 0x2 (X);		/*		R0=0x2(  2) */
-ffa0a0fa:	10 97       	W[P2] = R0;
-ffa0a0fc:	24 00       	SSYNC;
-ffa0a0fe:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00704(-4192508) */
-ffa0a102:	0a e1 0c 05 	P2.L = 0x50c;		/* (1292)	P2=0xffc0050c(-4193012) */
-ffa0a106:	20 e1 61 00 	R0 = 0x61 (X);		/*		R0=0x61( 97) */
-ffa0a10a:	10 97       	W[P2] = R0;
-ffa0a10c:	ff e3 2e fe 	CALL 0xffa09d68 <_spi_delay>;
-ffa0a110:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa0a112:	b8 e6 fb ff 	B[FP + -0x5] = R0;
-ffa0a116:	18 20       	JUMP.S 0xffa0a146 <_spi_read_packet+0x6a>;
-ffa0a118:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc0050c(-4193012) */
-ffa0a11c:	0a e1 0c 05 	P2.L = 0x50c;		/* (1292)	P2=0xffc0050c(-4193012) */
-ffa0a120:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa0a122:	10 97       	W[P2] = R0;
-ffa0a124:	ff e3 22 fe 	CALL 0xffa09d68 <_spi_delay>;
-ffa0a128:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc0050c(-4193012) */
-ffa0a12c:	0a e1 18 05 	P2.L = 0x518;		/* (1304)	P2=0xffc00518(-4193000) */
-ffa0a130:	50 95       	R0 = W[P2] (X);
-ffa0a132:	fa b9       	P2 = [FP -0x4];
-ffa0a134:	10 9b       	B[P2] = R0;
-ffa0a136:	f0 b9       	R0 = [FP -0x4];
-ffa0a138:	08 64       	R0 += 0x1;		/* (  1) */
-ffa0a13a:	f0 bb       	[FP -0x4] = R0;
-ffa0a13c:	b8 e5 fb ff 	R0 = B[FP + -0x5] (X);
-ffa0a140:	08 64       	R0 += 0x1;		/* (  1) */
-ffa0a142:	b8 e6 fb ff 	B[FP + -0x5] = R0;
-ffa0a146:	b8 e4 fb ff 	R0 = B[FP + -0x5] (Z);
-ffa0a14a:	f9 60       	R1 = 0x1f (X);		/*		R1=0x1f( 31) */
-ffa0a14c:	08 0a       	CC = R0 <= R1 (IU);
-ffa0a14e:	e5 1b       	IF CC JUMP 0xffa0a118 <_spi_read_packet+0x3c>;
-ffa0a150:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00518(-4193000) */
-ffa0a154:	0a e1 08 07 	P2.L = 0x708;		/* (1800)	P2=0xffc00708(-4192504) */
-ffa0a158:	10 60       	R0 = 0x2 (X);		/*		R0=0x2(  2) */
-ffa0a15a:	10 97       	W[P2] = R0;
-ffa0a15c:	24 00       	SSYNC;
-ffa0a15e:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
+ffa0a118 <_spi_write_byte>:
+ffa0a118:	00 e8 03 00 	LINK 0xc;		/* (12) */
+ffa0a11c:	b8 e6 08 00 	B[FP + 0x8] = R0;
+ffa0a120:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00708(-4192504) */
+ffa0a124:	0a e1 04 07 	P2.L = 0x704;		/* (1796)	P2=0xffc00704(-4192508) */
+ffa0a128:	10 60       	R0 = 0x2 (X);		/*		R0=0x2(  2) */
+ffa0a12a:	10 97       	W[P2] = R0;
+ffa0a12c:	24 00       	SSYNC;
+ffa0a12e:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00704(-4192508) */
+ffa0a132:	0a e1 0c 05 	P2.L = 0x50c;		/* (1292)	P2=0xffc0050c(-4193012) */
+ffa0a136:	b8 e4 08 00 	R0 = B[FP + 0x8] (Z);
+ffa0a13a:	10 97       	W[P2] = R0;
+ffa0a13c:	ff e3 0c ff 	CALL 0xffa09f54 <_spi_delay>;
+ffa0a140:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc0050c(-4193012) */
+ffa0a144:	0a e1 18 05 	P2.L = 0x518;		/* (1304)	P2=0xffc00518(-4193000) */
+ffa0a148:	10 95       	R0 = W[P2] (Z);
+ffa0a14a:	b8 e6 08 00 	B[FP + 0x8] = R0;
+ffa0a14e:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00518(-4193000) */
+ffa0a152:	0a e1 08 07 	P2.L = 0x708;		/* (1800)	P2=0xffc00708(-4192504) */
+ffa0a156:	10 60       	R0 = 0x2 (X);		/*		R0=0x2(  2) */
+ffa0a158:	10 97       	W[P2] = R0;
+ffa0a15a:	24 00       	SSYNC;
+ffa0a15c:	b8 e5 08 00 	R0 = B[FP + 0x8] (X);
 ffa0a160:	01 e8 00 00 	UNLINK;
 ffa0a164:	10 00       	RTS;
 	...
 
-ffa0a168 <_spi_read_packet_nocheck>:
+ffa0a168 <_spi_write_packet>:
 ffa0a168:	00 e8 03 00 	LINK 0xc;		/* (12) */
 ffa0a16c:	b8 b0       	[FP + 0x8] = R0;
 ffa0a16e:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00708(-4192504) */
@@ -3322,245 +3408,422 @@ ffa0a178:	10 97       	W[P2] = R0;
 ffa0a17a:	24 00       	SSYNC;
 ffa0a17c:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00704(-4192508) */
 ffa0a180:	0a e1 0c 05 	P2.L = 0x50c;		/* (1292)	P2=0xffc0050c(-4193012) */
-ffa0a184:	20 e1 61 00 	R0 = 0x61 (X);		/*		R0=0x61( 97) */
+ffa0a184:	20 e1 a0 00 	R0 = 0xa0 (X);		/*		R0=0xa0(160) */
 ffa0a188:	10 97       	W[P2] = R0;
-ffa0a18a:	ff e3 ef fd 	CALL 0xffa09d68 <_spi_delay>;
+ffa0a18a:	ff e3 e5 fe 	CALL 0xffa09f54 <_spi_delay>;
 ffa0a18e:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc0050c(-4193012) */
 ffa0a192:	0a e1 00 05 	P2.L = 0x500;		/* (1280)	P2=0xffc00500(-4193024) */
-ffa0a196:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa0a198:	10 97       	W[P2] = R0;
-ffa0a19a:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00500(-4193024) */
-ffa0a19e:	0a e1 50 0d 	P2.L = 0xd50;		/* (3408)	P2=0xffc00d50(-4190896) */
-ffa0a1a2:	00 61       	R0 = 0x20 (X);		/*		R0=0x20( 32) */
-ffa0a1a4:	10 97       	W[P2] = R0;
-ffa0a1a6:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00d50(-4190896) */
-ffa0a1aa:	0a e1 54 0d 	P2.L = 0xd54;		/* (3412)	P2=0xffc00d54(-4190892) */
-ffa0a1ae:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
-ffa0a1b0:	10 97       	W[P2] = R0;
-ffa0a1b2:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00d54(-4190892) */
-ffa0a1b6:	0a e1 44 0d 	P2.L = 0xd44;		/* (3396)	P2=0xffc00d44(-4190908) */
-ffa0a1ba:	b8 a0       	R0 = [FP + 0x8];
-ffa0a1bc:	10 93       	[P2] = R0;
-ffa0a1be:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00d44(-4190908) */
-ffa0a1c2:	0a e1 48 0d 	P2.L = 0xd48;		/* (3400)	P2=0xffc00d48(-4190904) */
-ffa0a1c6:	20 e1 83 00 	R0 = 0x83 (X);		/*		R0=0x83(131) */
-ffa0a1ca:	10 97       	W[P2] = R0;
-ffa0a1cc:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00d48(-4190904) */
-ffa0a1d0:	0a e1 00 05 	P2.L = 0x500;		/* (1280)	P2=0xffc00500(-4193024) */
-ffa0a1d4:	20 e1 06 50 	R0 = 0x5006 (X);		/*		R0=0x5006(20486) */
-ffa0a1d8:	10 97       	W[P2] = R0;
+ffa0a196:	20 e1 07 50 	R0 = 0x5007 (X);		/*		R0=0x5007(20487) */
+ffa0a19a:	10 97       	W[P2] = R0;
+ffa0a19c:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00500(-4193024) */
+ffa0a1a0:	0a e1 50 0d 	P2.L = 0xd50;		/* (3408)	P2=0xffc00d50(-4190896) */
+ffa0a1a4:	00 61       	R0 = 0x20 (X);		/*		R0=0x20( 32) */
+ffa0a1a6:	10 97       	W[P2] = R0;
+ffa0a1a8:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00d50(-4190896) */
+ffa0a1ac:	0a e1 54 0d 	P2.L = 0xd54;		/* (3412)	P2=0xffc00d54(-4190892) */
+ffa0a1b0:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
+ffa0a1b2:	10 97       	W[P2] = R0;
+ffa0a1b4:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00d54(-4190892) */
+ffa0a1b8:	0a e1 44 0d 	P2.L = 0xd44;		/* (3396)	P2=0xffc00d44(-4190908) */
+ffa0a1bc:	b8 a0       	R0 = [FP + 0x8];
+ffa0a1be:	10 93       	[P2] = R0;
+ffa0a1c0:	24 00       	SSYNC;
+ffa0a1c2:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00d44(-4190908) */
+ffa0a1c6:	0a e1 48 0d 	P2.L = 0xd48;		/* (3400)	P2=0xffc00d48(-4190904) */
+ffa0a1ca:	20 e1 81 00 	R0 = 0x81 (X);		/*		R0=0x81(129) */
+ffa0a1ce:	10 97       	W[P2] = R0;
 	...
-ffa0a1e2:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00500(-4193024) */
-ffa0a1e6:	0a e1 68 0d 	P2.L = 0xd68;		/* (3432)	P2=0xffc00d68(-4190872) */
-ffa0a1ea:	50 95       	R0 = W[P2] (X);
-ffa0a1ec:	c0 42       	R0 = R0.L (Z);
-ffa0a1ee:	00 49       	CC = BITTST (R0, 0x0);		/* bit  0 */
-ffa0a1f0:	00 02       	R0 = CC;
-ffa0a1f2:	00 0c       	CC = R0 == 0x0;
-ffa0a1f4:	f3 1b       	IF CC JUMP 0xffa0a1da <_spi_read_packet_nocheck+0x72>;
-ffa0a1f6:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00d68(-4190872) */
-ffa0a1fa:	0a e1 48 0d 	P2.L = 0xd48;		/* (3400)	P2=0xffc00d48(-4190904) */
-ffa0a1fe:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa0a200:	10 97       	W[P2] = R0;
-ffa0a202:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00d48(-4190904) */
-ffa0a206:	0a e1 68 0d 	P2.L = 0xd68;		/* (3432)	P2=0xffc00d68(-4190872) */
-ffa0a20a:	18 60       	R0 = 0x3 (X);		/*		R0=0x3(  3) */
-ffa0a20c:	10 97       	W[P2] = R0;
-ffa0a20e:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00d68(-4190872) */
-ffa0a212:	0a e1 00 05 	P2.L = 0x500;		/* (1280)	P2=0xffc00500(-4193024) */
-ffa0a216:	20 e1 0d 50 	R0 = 0x500d (X);		/*		R0=0x500d(20493) */
-ffa0a21a:	10 97       	W[P2] = R0;
-ffa0a21c:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00500(-4193024) */
-ffa0a220:	0a e1 08 07 	P2.L = 0x708;		/* (1800)	P2=0xffc00708(-4192504) */
-ffa0a224:	10 60       	R0 = 0x2 (X);		/*		R0=0x2(  2) */
-ffa0a226:	10 97       	W[P2] = R0;
-ffa0a228:	24 00       	SSYNC;
-ffa0a22a:	01 e8 00 00 	UNLINK;
-ffa0a22e:	10 00       	RTS;
-
-ffa0a230 <_radio_set_rx>:
-ffa0a230:	00 e8 03 00 	LINK 0xc;		/* (12) */
-ffa0a234:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00708(-4192504) */
-ffa0a238:	0a e1 04 07 	P2.L = 0x704;		/* (1796)	P2=0xffc00704(-4192508) */
-ffa0a23c:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
-ffa0a23e:	10 97       	W[P2] = R0;
-ffa0a240:	24 00       	SSYNC;
+ffa0a1d8:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00d48(-4190904) */
+ffa0a1dc:	0a e1 68 0d 	P2.L = 0xd68;		/* (3432)	P2=0xffc00d68(-4190872) */
+ffa0a1e0:	10 95       	R0 = W[P2] (Z);
+ffa0a1e2:	c1 42       	R1 = R0.L (Z);
+ffa0a1e4:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
+ffa0a1e6:	01 54       	R0 = R1 & R0;
+ffa0a1e8:	00 0c       	CC = R0 == 0x0;
+ffa0a1ea:	f3 1b       	IF CC JUMP 0xffa0a1d0 <_spi_write_packet+0x68>;
+ffa0a1ec:	00 00       	NOP;
+ffa0a1ee:	00 00       	NOP;
+ffa0a1f0:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00d68(-4190872) */
+ffa0a1f4:	0a e1 08 05 	P2.L = 0x508;		/* (1288)	P2=0xffc00508(-4193016) */
+ffa0a1f8:	10 95       	R0 = W[P2] (Z);
+ffa0a1fa:	c1 42       	R1 = R0.L (Z);
+ffa0a1fc:	40 60       	R0 = 0x8 (X);		/*		R0=0x8(  8) */
+ffa0a1fe:	01 54       	R0 = R1 & R0;
+ffa0a200:	00 0c       	CC = R0 == 0x0;
+ffa0a202:	e7 13       	IF !CC JUMP 0xffa0a1d0 <_spi_write_packet+0x68>;
+ffa0a204:	00 00       	NOP;
+ffa0a206:	00 00       	NOP;
+ffa0a208:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00508(-4193016) */
+ffa0a20c:	0a e1 68 0d 	P2.L = 0xd68;		/* (3432)	P2=0xffc00d68(-4190872) */
+ffa0a210:	10 95       	R0 = W[P2] (Z);
+ffa0a212:	c1 42       	R1 = R0.L (Z);
+ffa0a214:	40 60       	R0 = 0x8 (X);		/*		R0=0x8(  8) */
+ffa0a216:	01 54       	R0 = R1 & R0;
+ffa0a218:	00 0c       	CC = R0 == 0x0;
+ffa0a21a:	db 13       	IF !CC JUMP 0xffa0a1d0 <_spi_write_packet+0x68>;
+ffa0a21c:	ff e3 9c fe 	CALL 0xffa09f54 <_spi_delay>;
+ffa0a220:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00d68(-4190872) */
+ffa0a224:	0a e1 68 0d 	P2.L = 0xd68;		/* (3432)	P2=0xffc00d68(-4190872) */
+ffa0a228:	18 60       	R0 = 0x3 (X);		/*		R0=0x3(  3) */
+ffa0a22a:	10 97       	W[P2] = R0;
+ffa0a22c:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00d68(-4190872) */
+ffa0a230:	0a e1 00 05 	P2.L = 0x500;		/* (1280)	P2=0xffc00500(-4193024) */
+ffa0a234:	20 e1 0d 50 	R0 = 0x500d (X);		/*		R0=0x500d(20493) */
+ffa0a238:	10 97       	W[P2] = R0;
+ffa0a23a:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00500(-4193024) */
+ffa0a23e:	0a e1 48 0d 	P2.L = 0xd48;		/* (3400)	P2=0xffc00d48(-4190904) */
 ffa0a242:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa0a244:	01 60       	R1 = 0x0 (X);		/*		R1=0x0(  0) */
-ffa0a246:	ff e3 b5 fd 	CALL 0xffa09db0 <_spi_write_register>;
-ffa0a24a:	20 e1 e2 00 	R0 = 0xe2 (X);		/*		R0=0xe2(226) */
-ffa0a24e:	ff e3 6f fe 	CALL 0xffa09f2c <_spi_write_byte>;
-ffa0a252:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa0a254:	f9 60       	R1 = 0x1f (X);		/*		R1=0x1f( 31) */
-ffa0a256:	ff e3 ad fd 	CALL 0xffa09db0 <_spi_write_register>;
-ffa0a25a:	38 60       	R0 = 0x7 (X);		/*		R0=0x7(  7) */
-ffa0a25c:	21 e1 70 00 	R1 = 0x70 (X);		/*		R1=0x70(112) */
-ffa0a260:	ff e3 a8 fd 	CALL 0xffa09db0 <_spi_write_register>;
-ffa0a264:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00704(-4192508) */
-ffa0a268:	0a e1 68 0d 	P2.L = 0xd68;		/* (3432)	P2=0xffc00d68(-4190872) */
-ffa0a26c:	18 60       	R0 = 0x3 (X);		/*		R0=0x3(  3) */
-ffa0a26e:	10 97       	W[P2] = R0;
-ffa0a270:	24 00       	SSYNC;
-ffa0a272:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00d68(-4190872) */
-ffa0a276:	0a e1 08 07 	P2.L = 0x708;		/* (1800)	P2=0xffc00708(-4192504) */
-ffa0a27a:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
+ffa0a244:	10 97       	W[P2] = R0;
+ffa0a246:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00d48(-4190904) */
+ffa0a24a:	0a e1 08 07 	P2.L = 0x708;		/* (1800)	P2=0xffc00708(-4192504) */
+ffa0a24e:	10 60       	R0 = 0x2 (X);		/*		R0=0x2(  2) */
+ffa0a250:	10 97       	W[P2] = R0;
+ffa0a252:	24 00       	SSYNC;
+ffa0a254:	01 e8 00 00 	UNLINK;
+ffa0a258:	10 00       	RTS;
+	...
+
+ffa0a25c <_spi_write_packet_noDMA>:
+ffa0a25c:	00 e8 05 00 	LINK 0x14;		/* (20) */
+ffa0a260:	b8 b0       	[FP + 0x8] = R0;
+ffa0a262:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00708(-4192504) */
+ffa0a266:	0a e1 04 07 	P2.L = 0x704;		/* (1796)	P2=0xffc00704(-4192508) */
+ffa0a26a:	10 60       	R0 = 0x2 (X);		/*		R0=0x2(  2) */
+ffa0a26c:	10 97       	W[P2] = R0;
+ffa0a26e:	24 00       	SSYNC;
+ffa0a270:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00704(-4192508) */
+ffa0a274:	0a e1 0c 05 	P2.L = 0x50c;		/* (1292)	P2=0xffc0050c(-4193012) */
+ffa0a278:	20 e1 a0 00 	R0 = 0xa0 (X);		/*		R0=0xa0(160) */
 ffa0a27c:	10 97       	W[P2] = R0;
-ffa0a27e:	24 00       	SSYNC;
-ffa0a280:	01 e8 00 00 	UNLINK;
-ffa0a284:	10 00       	RTS;
+ffa0a27e:	ff e3 6b fe 	CALL 0xffa09f54 <_spi_delay>;
+ffa0a282:	b8 a0       	R0 = [FP + 0x8];
+ffa0a284:	f0 bb       	[FP -0x4] = R0;
+ffa0a286:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa0a288:	e0 bb       	[FP -0x8] = R0;
+ffa0a28a:	11 20       	JUMP.S 0xffa0a2ac <_spi_write_packet_noDMA+0x50>;
+ffa0a28c:	49 e1 c0 ff 	P1.H = 0xffc0;		/* (-64)	P1=0xffc00730(-4192464) */
+ffa0a290:	09 e1 0c 05 	P1.L = 0x50c;		/* (1292)	P1=0xffc0050c(-4193012) */
+ffa0a294:	fa b9       	P2 = [FP -0x4];
+ffa0a296:	50 99       	R0 = B[P2] (X);
+ffa0a298:	00 43       	R0 = R0.B (X);
+ffa0a29a:	08 97       	W[P1] = R0;
+ffa0a29c:	f0 b9       	R0 = [FP -0x4];
+ffa0a29e:	08 64       	R0 += 0x1;		/* (  1) */
+ffa0a2a0:	f0 bb       	[FP -0x4] = R0;
+ffa0a2a2:	ff e3 59 fe 	CALL 0xffa09f54 <_spi_delay>;
+ffa0a2a6:	e0 b9       	R0 = [FP -0x8];
+ffa0a2a8:	08 64       	R0 += 0x1;		/* (  1) */
+ffa0a2aa:	e0 bb       	[FP -0x8] = R0;
+ffa0a2ac:	e0 b9       	R0 = [FP -0x8];
+ffa0a2ae:	f9 60       	R1 = 0x1f (X);		/*		R1=0x1f( 31) */
+ffa0a2b0:	08 09       	CC = R0 <= R1;
+ffa0a2b2:	ed 1b       	IF CC JUMP 0xffa0a28c <_spi_write_packet_noDMA+0x30>;
+ffa0a2b4:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc0050c(-4193012) */
+ffa0a2b8:	0a e1 08 07 	P2.L = 0x708;		/* (1800)	P2=0xffc00708(-4192504) */
+ffa0a2bc:	10 60       	R0 = 0x2 (X);		/*		R0=0x2(  2) */
+ffa0a2be:	10 97       	W[P2] = R0;
+ffa0a2c0:	24 00       	SSYNC;
+ffa0a2c2:	01 e8 00 00 	UNLINK;
+ffa0a2c6:	10 00       	RTS;
+
+ffa0a2c8 <_spi_read_packet>:
+ffa0a2c8:	00 e8 05 00 	LINK 0x14;		/* (20) */
+ffa0a2cc:	b8 b0       	[FP + 0x8] = R0;
+ffa0a2ce:	b8 a0       	R0 = [FP + 0x8];
+ffa0a2d0:	f0 bb       	[FP -0x4] = R0;
+ffa0a2d2:	38 60       	R0 = 0x7 (X);		/*		R0=0x7(  7) */
+ffa0a2d4:	21 e1 70 00 	R1 = 0x70 (X);		/*		R1=0x70(112) */
+ffa0a2d8:	ff e3 62 fe 	CALL 0xffa09f9c <_spi_write_register>;
+ffa0a2dc:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00708(-4192504) */
+ffa0a2e0:	0a e1 04 07 	P2.L = 0x704;		/* (1796)	P2=0xffc00704(-4192508) */
+ffa0a2e4:	10 60       	R0 = 0x2 (X);		/*		R0=0x2(  2) */
+ffa0a2e6:	10 97       	W[P2] = R0;
+ffa0a2e8:	24 00       	SSYNC;
+ffa0a2ea:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00704(-4192508) */
+ffa0a2ee:	0a e1 0c 05 	P2.L = 0x50c;		/* (1292)	P2=0xffc0050c(-4193012) */
+ffa0a2f2:	20 e1 61 00 	R0 = 0x61 (X);		/*		R0=0x61( 97) */
+ffa0a2f6:	10 97       	W[P2] = R0;
+ffa0a2f8:	ff e3 2e fe 	CALL 0xffa09f54 <_spi_delay>;
+ffa0a2fc:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa0a2fe:	b8 e6 fb ff 	B[FP + -0x5] = R0;
+ffa0a302:	18 20       	JUMP.S 0xffa0a332 <_spi_read_packet+0x6a>;
+ffa0a304:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc0050c(-4193012) */
+ffa0a308:	0a e1 0c 05 	P2.L = 0x50c;		/* (1292)	P2=0xffc0050c(-4193012) */
+ffa0a30c:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa0a30e:	10 97       	W[P2] = R0;
+ffa0a310:	ff e3 22 fe 	CALL 0xffa09f54 <_spi_delay>;
+ffa0a314:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc0050c(-4193012) */
+ffa0a318:	0a e1 18 05 	P2.L = 0x518;		/* (1304)	P2=0xffc00518(-4193000) */
+ffa0a31c:	10 95       	R0 = W[P2] (Z);
+ffa0a31e:	fa b9       	P2 = [FP -0x4];
+ffa0a320:	10 9b       	B[P2] = R0;
+ffa0a322:	f0 b9       	R0 = [FP -0x4];
+ffa0a324:	08 64       	R0 += 0x1;		/* (  1) */
+ffa0a326:	f0 bb       	[FP -0x4] = R0;
+ffa0a328:	b8 e5 fb ff 	R0 = B[FP + -0x5] (X);
+ffa0a32c:	08 64       	R0 += 0x1;		/* (  1) */
+ffa0a32e:	b8 e6 fb ff 	B[FP + -0x5] = R0;
+ffa0a332:	b8 e4 fb ff 	R0 = B[FP + -0x5] (Z);
+ffa0a336:	f9 60       	R1 = 0x1f (X);		/*		R1=0x1f( 31) */
+ffa0a338:	08 0a       	CC = R0 <= R1 (IU);
+ffa0a33a:	e5 1b       	IF CC JUMP 0xffa0a304 <_spi_read_packet+0x3c>;
+ffa0a33c:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00518(-4193000) */
+ffa0a340:	0a e1 08 07 	P2.L = 0x708;		/* (1800)	P2=0xffc00708(-4192504) */
+ffa0a344:	10 60       	R0 = 0x2 (X);		/*		R0=0x2(  2) */
+ffa0a346:	10 97       	W[P2] = R0;
+ffa0a348:	24 00       	SSYNC;
+ffa0a34a:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
+ffa0a34c:	01 e8 00 00 	UNLINK;
+ffa0a350:	10 00       	RTS;
 	...
 
-ffa0a288 <_radio_set_tx>:
-ffa0a288:	00 e8 03 00 	LINK 0xc;		/* (12) */
-ffa0a28c:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00708(-4192504) */
-ffa0a290:	0a e1 04 07 	P2.L = 0x704;		/* (1796)	P2=0xffc00704(-4192508) */
-ffa0a294:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
-ffa0a296:	10 97       	W[P2] = R0;
-ffa0a298:	24 00       	SSYNC;
-ffa0a29a:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa0a29c:	01 60       	R1 = 0x0 (X);		/*		R1=0x0(  0) */
-ffa0a29e:	ff e3 89 fd 	CALL 0xffa09db0 <_spi_write_register>;
-ffa0a2a2:	20 e1 e1 00 	R0 = 0xe1 (X);		/*		R0=0xe1(225) */
-ffa0a2a6:	ff e3 43 fe 	CALL 0xffa09f2c <_spi_write_byte>;
-ffa0a2aa:	38 60       	R0 = 0x7 (X);		/*		R0=0x7(  7) */
-ffa0a2ac:	21 e1 70 00 	R1 = 0x70 (X);		/*		R1=0x70(112) */
-ffa0a2b0:	ff e3 80 fd 	CALL 0xffa09db0 <_spi_write_register>;
-ffa0a2b4:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa0a2b6:	f1 60       	R1 = 0x1e (X);		/*		R1=0x1e( 30) */
-ffa0a2b8:	ff e3 7c fd 	CALL 0xffa09db0 <_spi_write_register>;
-ffa0a2bc:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00704(-4192508) */
-ffa0a2c0:	0a e1 68 0d 	P2.L = 0xd68;		/* (3432)	P2=0xffc00d68(-4190872) */
-ffa0a2c4:	18 60       	R0 = 0x3 (X);		/*		R0=0x3(  3) */
-ffa0a2c6:	10 97       	W[P2] = R0;
-ffa0a2c8:	01 e8 00 00 	UNLINK;
-ffa0a2cc:	10 00       	RTS;
+ffa0a354 <_spi_read_packet_nocheck>:
+ffa0a354:	00 e8 03 00 	LINK 0xc;		/* (12) */
+ffa0a358:	b8 b0       	[FP + 0x8] = R0;
+ffa0a35a:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00708(-4192504) */
+ffa0a35e:	0a e1 04 07 	P2.L = 0x704;		/* (1796)	P2=0xffc00704(-4192508) */
+ffa0a362:	10 60       	R0 = 0x2 (X);		/*		R0=0x2(  2) */
+ffa0a364:	10 97       	W[P2] = R0;
+ffa0a366:	24 00       	SSYNC;
+ffa0a368:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00704(-4192508) */
+ffa0a36c:	0a e1 0c 05 	P2.L = 0x50c;		/* (1292)	P2=0xffc0050c(-4193012) */
+ffa0a370:	20 e1 61 00 	R0 = 0x61 (X);		/*		R0=0x61( 97) */
+ffa0a374:	10 97       	W[P2] = R0;
+ffa0a376:	ff e3 ef fd 	CALL 0xffa09f54 <_spi_delay>;
+ffa0a37a:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc0050c(-4193012) */
+ffa0a37e:	0a e1 00 05 	P2.L = 0x500;		/* (1280)	P2=0xffc00500(-4193024) */
+ffa0a382:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa0a384:	10 97       	W[P2] = R0;
+ffa0a386:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00500(-4193024) */
+ffa0a38a:	0a e1 50 0d 	P2.L = 0xd50;		/* (3408)	P2=0xffc00d50(-4190896) */
+ffa0a38e:	00 61       	R0 = 0x20 (X);		/*		R0=0x20( 32) */
+ffa0a390:	10 97       	W[P2] = R0;
+ffa0a392:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00d50(-4190896) */
+ffa0a396:	0a e1 54 0d 	P2.L = 0xd54;		/* (3412)	P2=0xffc00d54(-4190892) */
+ffa0a39a:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
+ffa0a39c:	10 97       	W[P2] = R0;
+ffa0a39e:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00d54(-4190892) */
+ffa0a3a2:	0a e1 44 0d 	P2.L = 0xd44;		/* (3396)	P2=0xffc00d44(-4190908) */
+ffa0a3a6:	b8 a0       	R0 = [FP + 0x8];
+ffa0a3a8:	10 93       	[P2] = R0;
+ffa0a3aa:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00d44(-4190908) */
+ffa0a3ae:	0a e1 48 0d 	P2.L = 0xd48;		/* (3400)	P2=0xffc00d48(-4190904) */
+ffa0a3b2:	20 e1 83 00 	R0 = 0x83 (X);		/*		R0=0x83(131) */
+ffa0a3b6:	10 97       	W[P2] = R0;
+ffa0a3b8:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00d48(-4190904) */
+ffa0a3bc:	0a e1 00 05 	P2.L = 0x500;		/* (1280)	P2=0xffc00500(-4193024) */
+ffa0a3c0:	20 e1 06 50 	R0 = 0x5006 (X);		/*		R0=0x5006(20486) */
+ffa0a3c4:	10 97       	W[P2] = R0;
+	...
+ffa0a3ce:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00500(-4193024) */
+ffa0a3d2:	0a e1 68 0d 	P2.L = 0xd68;		/* (3432)	P2=0xffc00d68(-4190872) */
+ffa0a3d6:	10 95       	R0 = W[P2] (Z);
+ffa0a3d8:	c1 42       	R1 = R0.L (Z);
+ffa0a3da:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
+ffa0a3dc:	01 54       	R0 = R1 & R0;
+ffa0a3de:	00 0c       	CC = R0 == 0x0;
+ffa0a3e0:	f3 1b       	IF CC JUMP 0xffa0a3c6 <_spi_read_packet_nocheck+0x72>;
+ffa0a3e2:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00d68(-4190872) */
+ffa0a3e6:	0a e1 48 0d 	P2.L = 0xd48;		/* (3400)	P2=0xffc00d48(-4190904) */
+ffa0a3ea:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa0a3ec:	10 97       	W[P2] = R0;
+ffa0a3ee:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00d48(-4190904) */
+ffa0a3f2:	0a e1 68 0d 	P2.L = 0xd68;		/* (3432)	P2=0xffc00d68(-4190872) */
+ffa0a3f6:	18 60       	R0 = 0x3 (X);		/*		R0=0x3(  3) */
+ffa0a3f8:	10 97       	W[P2] = R0;
+ffa0a3fa:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00d68(-4190872) */
+ffa0a3fe:	0a e1 00 05 	P2.L = 0x500;		/* (1280)	P2=0xffc00500(-4193024) */
+ffa0a402:	20 e1 0d 50 	R0 = 0x500d (X);		/*		R0=0x500d(20493) */
+ffa0a406:	10 97       	W[P2] = R0;
+ffa0a408:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00500(-4193024) */
+ffa0a40c:	0a e1 08 07 	P2.L = 0x708;		/* (1800)	P2=0xffc00708(-4192504) */
+ffa0a410:	10 60       	R0 = 0x2 (X);		/*		R0=0x2(  2) */
+ffa0a412:	10 97       	W[P2] = R0;
+ffa0a414:	24 00       	SSYNC;
+ffa0a416:	01 e8 00 00 	UNLINK;
+ffa0a41a:	10 00       	RTS;
+
+ffa0a41c <_radio_set_rx>:
+ffa0a41c:	00 e8 03 00 	LINK 0xc;		/* (12) */
+ffa0a420:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00708(-4192504) */
+ffa0a424:	0a e1 04 07 	P2.L = 0x704;		/* (1796)	P2=0xffc00704(-4192508) */
+ffa0a428:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
+ffa0a42a:	10 97       	W[P2] = R0;
+ffa0a42c:	24 00       	SSYNC;
+ffa0a42e:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa0a430:	01 60       	R1 = 0x0 (X);		/*		R1=0x0(  0) */
+ffa0a432:	ff e3 b5 fd 	CALL 0xffa09f9c <_spi_write_register>;
+ffa0a436:	20 e1 e2 00 	R0 = 0xe2 (X);		/*		R0=0xe2(226) */
+ffa0a43a:	ff e3 6f fe 	CALL 0xffa0a118 <_spi_write_byte>;
+ffa0a43e:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa0a440:	f9 60       	R1 = 0x1f (X);		/*		R1=0x1f( 31) */
+ffa0a442:	ff e3 ad fd 	CALL 0xffa09f9c <_spi_write_register>;
+ffa0a446:	38 60       	R0 = 0x7 (X);		/*		R0=0x7(  7) */
+ffa0a448:	21 e1 70 00 	R1 = 0x70 (X);		/*		R1=0x70(112) */
+ffa0a44c:	ff e3 a8 fd 	CALL 0xffa09f9c <_spi_write_register>;
+ffa0a450:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00704(-4192508) */
+ffa0a454:	0a e1 68 0d 	P2.L = 0xd68;		/* (3432)	P2=0xffc00d68(-4190872) */
+ffa0a458:	18 60       	R0 = 0x3 (X);		/*		R0=0x3(  3) */
+ffa0a45a:	10 97       	W[P2] = R0;
+ffa0a45c:	24 00       	SSYNC;
+ffa0a45e:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00d68(-4190872) */
+ffa0a462:	0a e1 08 07 	P2.L = 0x708;		/* (1800)	P2=0xffc00708(-4192504) */
+ffa0a466:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
+ffa0a468:	10 97       	W[P2] = R0;
+ffa0a46a:	24 00       	SSYNC;
+ffa0a46c:	01 e8 00 00 	UNLINK;
+ffa0a470:	10 00       	RTS;
 	...
 
-ffa0a2d0 <_radio_wait_irq>:
-ffa0a2d0:	00 e8 04 00 	LINK 0x10;		/* (16) */
-ffa0a2d4:	b8 b0       	[FP + 0x8] = R0;
-ffa0a2d6:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa0a2d8:	f0 bb       	[FP -0x4] = R0;
-ffa0a2da:	08 20       	JUMP.S 0xffa0a2ea <_radio_wait_irq+0x1a>;
+ffa0a474 <_radio_set_tx>:
+ffa0a474:	00 e8 03 00 	LINK 0xc;		/* (12) */
+ffa0a478:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00708(-4192504) */
+ffa0a47c:	0a e1 04 07 	P2.L = 0x704;		/* (1796)	P2=0xffc00704(-4192508) */
+ffa0a480:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
+ffa0a482:	10 97       	W[P2] = R0;
+ffa0a484:	24 00       	SSYNC;
+ffa0a486:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa0a488:	01 60       	R1 = 0x0 (X);		/*		R1=0x0(  0) */
+ffa0a48a:	ff e3 89 fd 	CALL 0xffa09f9c <_spi_write_register>;
+ffa0a48e:	20 e1 e1 00 	R0 = 0xe1 (X);		/*		R0=0xe1(225) */
+ffa0a492:	ff e3 43 fe 	CALL 0xffa0a118 <_spi_write_byte>;
+ffa0a496:	38 60       	R0 = 0x7 (X);		/*		R0=0x7(  7) */
+ffa0a498:	21 e1 70 00 	R1 = 0x70 (X);		/*		R1=0x70(112) */
+ffa0a49c:	ff e3 80 fd 	CALL 0xffa09f9c <_spi_write_register>;
+ffa0a4a0:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa0a4a2:	f1 60       	R1 = 0x1e (X);		/*		R1=0x1e( 30) */
+ffa0a4a4:	ff e3 7c fd 	CALL 0xffa09f9c <_spi_write_register>;
+ffa0a4a8:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00704(-4192508) */
+ffa0a4ac:	0a e1 68 0d 	P2.L = 0xd68;		/* (3432)	P2=0xffc00d68(-4190872) */
+ffa0a4b0:	18 60       	R0 = 0x3 (X);		/*		R0=0x3(  3) */
+ffa0a4b2:	10 97       	W[P2] = R0;
+ffa0a4b4:	01 e8 00 00 	UNLINK;
+ffa0a4b8:	10 00       	RTS;
 	...
-ffa0a2e4:	f0 b9       	R0 = [FP -0x4];
-ffa0a2e6:	08 64       	R0 += 0x1;		/* (  1) */
-ffa0a2e8:	f0 bb       	[FP -0x4] = R0;
-ffa0a2ea:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00d68(-4190872) */
-ffa0a2ee:	0a e1 00 07 	P2.L = 0x700;		/* (1792)	P2=0xffc00700(-4192512) */
-ffa0a2f2:	50 95       	R0 = W[P2] (X);
-ffa0a2f4:	c1 42       	R1 = R0.L (Z);
-ffa0a2f6:	40 60       	R0 = 0x8 (X);		/*		R0=0x8(  8) */
-ffa0a2f8:	01 54       	R0 = R1 & R0;
-ffa0a2fa:	00 0c       	CC = R0 == 0x0;
-ffa0a2fc:	05 18       	IF CC JUMP 0xffa0a306 <_radio_wait_irq+0x36>;
-ffa0a2fe:	f1 b9       	R1 = [FP -0x4];
-ffa0a300:	b8 a0       	R0 = [FP + 0x8];
-ffa0a302:	81 08       	CC = R1 < R0;
-ffa0a304:	ec 1b       	IF CC JUMP 0xffa0a2dc <_radio_wait_irq+0xc>;
-ffa0a306:	f1 b9       	R1 = [FP -0x4];
-ffa0a308:	b8 a0       	R0 = [FP + 0x8];
-ffa0a30a:	81 08       	CC = R1 < R0;
-ffa0a30c:	06 10       	IF !CC JUMP 0xffa0a318 <_radio_wait_irq+0x48>;
-ffa0a30e:	38 60       	R0 = 0x7 (X);		/*		R0=0x7(  7) */
-ffa0a310:	21 e1 70 00 	R1 = 0x70 (X);		/*		R1=0x70(112) */
-ffa0a314:	ff e3 4e fd 	CALL 0xffa09db0 <_spi_write_register>;
-ffa0a318:	f0 b9       	R0 = [FP -0x4];
-ffa0a31a:	01 e8 00 00 	UNLINK;
-ffa0a31e:	10 00       	RTS;
 
-ffa0a320 <_radio_init>:
-ffa0a320:	00 e8 03 00 	LINK 0xc;		/* (12) */
-ffa0a324:	b8 e6 08 00 	B[FP + 0x8] = R0;
-ffa0a328:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00700(-4192512) */
-ffa0a32c:	0a e1 00 05 	P2.L = 0x500;		/* (1280)	P2=0xffc00500(-4193024) */
-ffa0a330:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa0a332:	10 97       	W[P2] = R0;
-ffa0a334:	24 00       	SSYNC;
-ffa0a336:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00500(-4193024) */
-ffa0a33a:	0a e1 14 05 	P2.L = 0x514;		/* (1300)	P2=0xffc00514(-4193004) */
-ffa0a33e:	20 60       	R0 = 0x4 (X);		/*		R0=0x4(  4) */
-ffa0a340:	10 97       	W[P2] = R0;
-ffa0a342:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00514(-4193004) */
-ffa0a346:	0a e1 00 05 	P2.L = 0x500;		/* (1280)	P2=0xffc00500(-4193024) */
-ffa0a34a:	20 e1 2d 50 	R0 = 0x502d (X);		/*		R0=0x502d(20525) */
-ffa0a34e:	10 97       	W[P2] = R0;
-ffa0a350:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00500(-4193024) */
-ffa0a354:	0a e1 04 05 	P2.L = 0x504;		/* (1284)	P2=0xffc00504(-4193020) */
-ffa0a358:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa0a35a:	10 97       	W[P2] = R0;
-ffa0a35c:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00504(-4193020) */
-ffa0a360:	0a e1 08 07 	P2.L = 0x708;		/* (1800)	P2=0xffc00708(-4192504) */
-ffa0a364:	10 60       	R0 = 0x2 (X);		/*		R0=0x2(  2) */
-ffa0a366:	10 97       	W[P2] = R0;
-ffa0a368:	49 e1 c0 ff 	P1.H = 0xffc0;		/* (-64)	P1=0xffc0050c(-4193012) */
-ffa0a36c:	09 e1 40 07 	P1.L = 0x740;		/* (1856)	P1=0xffc00740(-4192448) */
-ffa0a370:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00708(-4192504) */
-ffa0a374:	0a e1 40 07 	P2.L = 0x740;		/* (1856)	P2=0xffc00740(-4192448) */
-ffa0a378:	50 95       	R0 = W[P2] (X);
-ffa0a37a:	18 4a       	BITSET (R0, 0x3);		/* bit  3 */
-ffa0a37c:	08 97       	W[P1] = R0;
-ffa0a37e:	49 e1 c0 ff 	P1.H = 0xffc0;		/* (-64)	P1=0xffc00740(-4192448) */
-ffa0a382:	09 e1 30 07 	P1.L = 0x730;		/* (1840)	P1=0xffc00730(-4192464) */
-ffa0a386:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00740(-4192448) */
-ffa0a38a:	0a e1 30 07 	P2.L = 0x730;		/* (1840)	P2=0xffc00730(-4192464) */
-ffa0a38e:	51 95       	R1 = W[P2] (X);
-ffa0a390:	b8 63       	R0 = -0x9 (X);		/*		R0=0xfffffff7( -9) */
-ffa0a392:	01 54       	R0 = R1 & R0;
-ffa0a394:	08 97       	W[P1] = R0;
-ffa0a396:	49 e1 c0 ff 	P1.H = 0xffc0;		/* (-64)	P1=0xffc00730(-4192464) */
-ffa0a39a:	09 e1 30 07 	P1.L = 0x730;		/* (1840)	P1=0xffc00730(-4192464) */
-ffa0a39e:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00730(-4192464) */
-ffa0a3a2:	0a e1 30 07 	P2.L = 0x730;		/* (1840)	P2=0xffc00730(-4192464) */
-ffa0a3a6:	51 95       	R1 = W[P2] (X);
-ffa0a3a8:	18 60       	R0 = 0x3 (X);		/*		R0=0x3(  3) */
-ffa0a3aa:	01 56       	R0 = R1 | R0;
-ffa0a3ac:	08 97       	W[P1] = R0;
-ffa0a3ae:	b8 e4 08 00 	R0 = B[FP + 0x8] (Z);
-ffa0a3b2:	21 e1 7c 00 	R1 = 0x7c (X);		/*		R1=0x7c(124) */
-ffa0a3b6:	08 0a       	CC = R0 <= R1 (IU);
-ffa0a3b8:	05 18       	IF CC JUMP 0xffa0a3c2 <_radio_init+0xa2>;
-ffa0a3ba:	20 e1 7c 00 	R0 = 0x7c (X);		/*		R0=0x7c(124) */
-ffa0a3be:	b8 e6 08 00 	B[FP + 0x8] = R0;
-ffa0a3c2:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
-ffa0a3c4:	01 60       	R1 = 0x0 (X);		/*		R1=0x0(  0) */
-ffa0a3c6:	ff e3 f5 fc 	CALL 0xffa09db0 <_spi_write_register>;
-ffa0a3ca:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
-ffa0a3cc:	01 60       	R1 = 0x0 (X);		/*		R1=0x0(  0) */
-ffa0a3ce:	ff e3 29 fd 	CALL 0xffa09e20 <_spi_write_register_ver>;
-ffa0a3d2:	10 60       	R0 = 0x2 (X);		/*		R0=0x2(  2) */
-ffa0a3d4:	09 60       	R1 = 0x1 (X);		/*		R1=0x1(  1) */
-ffa0a3d6:	ff e3 25 fd 	CALL 0xffa09e20 <_spi_write_register_ver>;
-ffa0a3da:	18 60       	R0 = 0x3 (X);		/*		R0=0x3(  3) */
-ffa0a3dc:	09 60       	R1 = 0x1 (X);		/*		R1=0x1(  1) */
-ffa0a3de:	ff e3 21 fd 	CALL 0xffa09e20 <_spi_write_register_ver>;
-ffa0a3e2:	20 60       	R0 = 0x4 (X);		/*		R0=0x4(  4) */
-ffa0a3e4:	01 60       	R1 = 0x0 (X);		/*		R1=0x0(  0) */
-ffa0a3e6:	ff e3 1d fd 	CALL 0xffa09e20 <_spi_write_register_ver>;
-ffa0a3ea:	b9 e4 08 00 	R1 = B[FP + 0x8] (Z);
-ffa0a3ee:	28 60       	R0 = 0x5 (X);		/*		R0=0x5(  5) */
-ffa0a3f0:	ff e3 18 fd 	CALL 0xffa09e20 <_spi_write_register_ver>;
-ffa0a3f4:	30 60       	R0 = 0x6 (X);		/*		R0=0x6(  6) */
-ffa0a3f6:	79 60       	R1 = 0xf (X);		/*		R1=0xf( 15) */
-ffa0a3f8:	ff e3 14 fd 	CALL 0xffa09e20 <_spi_write_register_ver>;
-ffa0a3fc:	38 60       	R0 = 0x7 (X);		/*		R0=0x7(  7) */
-ffa0a3fe:	21 e1 70 00 	R1 = 0x70 (X);		/*		R1=0x70(112) */
-ffa0a402:	ff e3 0f fd 	CALL 0xffa09e20 <_spi_write_register_ver>;
-ffa0a406:	88 60       	R0 = 0x11 (X);		/*		R0=0x11( 17) */
-ffa0a408:	01 61       	R1 = 0x20 (X);		/*		R1=0x20( 32) */
-ffa0a40a:	ff e3 0b fd 	CALL 0xffa09e20 <_spi_write_register_ver>;
-ffa0a40e:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00730(-4192464) */
-ffa0a412:	0a e1 6c 0d 	P2.L = 0xd6c;		/* (3436)	P2=0xffc00d6c(-4190868) */
-ffa0a416:	20 e1 00 50 	R0 = 0x5000 (X);		/*		R0=0x5000(20480) */
-ffa0a41a:	10 97       	W[P2] = R0;
-ffa0a41c:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00d6c(-4190868) */
-ffa0a420:	0a e1 68 0d 	P2.L = 0xd68;		/* (3432)	P2=0xffc00d68(-4190872) */
-ffa0a424:	18 60       	R0 = 0x3 (X);		/*		R0=0x3(  3) */
-ffa0a426:	10 97       	W[P2] = R0;
-ffa0a428:	20 e1 e2 00 	R0 = 0xe2 (X);		/*		R0=0xe2(226) */
-ffa0a42c:	ff e3 80 fd 	CALL 0xffa09f2c <_spi_write_byte>;
-ffa0a430:	20 e1 e1 00 	R0 = 0xe1 (X);		/*		R0=0xe1(225) */
-ffa0a434:	ff e3 7c fd 	CALL 0xffa09f2c <_spi_write_byte>;
-ffa0a438:	40 43       	R0 = R0.B (Z);
-ffa0a43a:	01 e8 00 00 	UNLINK;
-ffa0a43e:	10 00       	RTS;
+ffa0a4bc <_radio_wait_irq>:
+ffa0a4bc:	00 e8 04 00 	LINK 0x10;		/* (16) */
+ffa0a4c0:	b8 b0       	[FP + 0x8] = R0;
+ffa0a4c2:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa0a4c4:	f0 bb       	[FP -0x4] = R0;
+ffa0a4c6:	08 20       	JUMP.S 0xffa0a4d6 <_radio_wait_irq+0x1a>;
+	...
+ffa0a4d0:	f0 b9       	R0 = [FP -0x4];
+ffa0a4d2:	08 64       	R0 += 0x1;		/* (  1) */
+ffa0a4d4:	f0 bb       	[FP -0x4] = R0;
+ffa0a4d6:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00d68(-4190872) */
+ffa0a4da:	0a e1 00 07 	P2.L = 0x700;		/* (1792)	P2=0xffc00700(-4192512) */
+ffa0a4de:	10 95       	R0 = W[P2] (Z);
+ffa0a4e0:	c1 42       	R1 = R0.L (Z);
+ffa0a4e2:	40 60       	R0 = 0x8 (X);		/*		R0=0x8(  8) */
+ffa0a4e4:	01 54       	R0 = R1 & R0;
+ffa0a4e6:	00 0c       	CC = R0 == 0x0;
+ffa0a4e8:	05 18       	IF CC JUMP 0xffa0a4f2 <_radio_wait_irq+0x36>;
+ffa0a4ea:	f1 b9       	R1 = [FP -0x4];
+ffa0a4ec:	b8 a0       	R0 = [FP + 0x8];
+ffa0a4ee:	81 08       	CC = R1 < R0;
+ffa0a4f0:	ec 1b       	IF CC JUMP 0xffa0a4c8 <_radio_wait_irq+0xc>;
+ffa0a4f2:	f1 b9       	R1 = [FP -0x4];
+ffa0a4f4:	b8 a0       	R0 = [FP + 0x8];
+ffa0a4f6:	81 08       	CC = R1 < R0;
+ffa0a4f8:	06 10       	IF !CC JUMP 0xffa0a504 <_radio_wait_irq+0x48>;
+ffa0a4fa:	38 60       	R0 = 0x7 (X);		/*		R0=0x7(  7) */
+ffa0a4fc:	21 e1 70 00 	R1 = 0x70 (X);		/*		R1=0x70(112) */
+ffa0a500:	ff e3 4e fd 	CALL 0xffa09f9c <_spi_write_register>;
+ffa0a504:	f0 b9       	R0 = [FP -0x4];
+ffa0a506:	01 e8 00 00 	UNLINK;
+ffa0a50a:	10 00       	RTS;
+
+ffa0a50c <_radio_init>:
+ffa0a50c:	00 e8 03 00 	LINK 0xc;		/* (12) */
+ffa0a510:	b8 e6 08 00 	B[FP + 0x8] = R0;
+ffa0a514:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00700(-4192512) */
+ffa0a518:	0a e1 00 05 	P2.L = 0x500;		/* (1280)	P2=0xffc00500(-4193024) */
+ffa0a51c:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa0a51e:	10 97       	W[P2] = R0;
+ffa0a520:	24 00       	SSYNC;
+ffa0a522:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00500(-4193024) */
+ffa0a526:	0a e1 14 05 	P2.L = 0x514;		/* (1300)	P2=0xffc00514(-4193004) */
+ffa0a52a:	20 60       	R0 = 0x4 (X);		/*		R0=0x4(  4) */
+ffa0a52c:	10 97       	W[P2] = R0;
+ffa0a52e:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00514(-4193004) */
+ffa0a532:	0a e1 00 05 	P2.L = 0x500;		/* (1280)	P2=0xffc00500(-4193024) */
+ffa0a536:	20 e1 2d 50 	R0 = 0x502d (X);		/*		R0=0x502d(20525) */
+ffa0a53a:	10 97       	W[P2] = R0;
+ffa0a53c:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00500(-4193024) */
+ffa0a540:	0a e1 04 05 	P2.L = 0x504;		/* (1284)	P2=0xffc00504(-4193020) */
+ffa0a544:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa0a546:	10 97       	W[P2] = R0;
+ffa0a548:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00504(-4193020) */
+ffa0a54c:	0a e1 08 07 	P2.L = 0x708;		/* (1800)	P2=0xffc00708(-4192504) */
+ffa0a550:	10 60       	R0 = 0x2 (X);		/*		R0=0x2(  2) */
+ffa0a552:	10 97       	W[P2] = R0;
+ffa0a554:	49 e1 c0 ff 	P1.H = 0xffc0;		/* (-64)	P1=0xffc0050c(-4193012) */
+ffa0a558:	09 e1 40 07 	P1.L = 0x740;		/* (1856)	P1=0xffc00740(-4192448) */
+ffa0a55c:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00708(-4192504) */
+ffa0a560:	0a e1 40 07 	P2.L = 0x740;		/* (1856)	P2=0xffc00740(-4192448) */
+ffa0a564:	10 95       	R0 = W[P2] (Z);
+ffa0a566:	18 4a       	BITSET (R0, 0x3);		/* bit  3 */
+ffa0a568:	08 97       	W[P1] = R0;
+ffa0a56a:	49 e1 c0 ff 	P1.H = 0xffc0;		/* (-64)	P1=0xffc00740(-4192448) */
+ffa0a56e:	09 e1 30 07 	P1.L = 0x730;		/* (1840)	P1=0xffc00730(-4192464) */
+ffa0a572:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00740(-4192448) */
+ffa0a576:	0a e1 30 07 	P2.L = 0x730;		/* (1840)	P2=0xffc00730(-4192464) */
+ffa0a57a:	10 95       	R0 = W[P2] (Z);
+ffa0a57c:	18 4c       	BITCLR (R0, 0x3);		/* bit  3 */
+ffa0a57e:	08 97       	W[P1] = R0;
+ffa0a580:	49 e1 c0 ff 	P1.H = 0xffc0;		/* (-64)	P1=0xffc00730(-4192464) */
+ffa0a584:	09 e1 30 07 	P1.L = 0x730;		/* (1840)	P1=0xffc00730(-4192464) */
+ffa0a588:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00730(-4192464) */
+ffa0a58c:	0a e1 30 07 	P2.L = 0x730;		/* (1840)	P2=0xffc00730(-4192464) */
+ffa0a590:	11 95       	R1 = W[P2] (Z);
+ffa0a592:	18 60       	R0 = 0x3 (X);		/*		R0=0x3(  3) */
+ffa0a594:	01 56       	R0 = R1 | R0;
+ffa0a596:	08 97       	W[P1] = R0;
+ffa0a598:	b8 e4 08 00 	R0 = B[FP + 0x8] (Z);
+ffa0a59c:	21 e1 7c 00 	R1 = 0x7c (X);		/*		R1=0x7c(124) */
+ffa0a5a0:	08 0a       	CC = R0 <= R1 (IU);
+ffa0a5a2:	05 18       	IF CC JUMP 0xffa0a5ac <_radio_init+0xa0>;
+ffa0a5a4:	20 e1 7c 00 	R0 = 0x7c (X);		/*		R0=0x7c(124) */
+ffa0a5a8:	b8 e6 08 00 	B[FP + 0x8] = R0;
+ffa0a5ac:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
+ffa0a5ae:	01 60       	R1 = 0x0 (X);		/*		R1=0x0(  0) */
+ffa0a5b0:	ff e3 f6 fc 	CALL 0xffa09f9c <_spi_write_register>;
+ffa0a5b4:	08 60       	R0 = 0x1 (X);		/*		R0=0x1(  1) */
+ffa0a5b6:	01 60       	R1 = 0x0 (X);		/*		R1=0x0(  0) */
+ffa0a5b8:	ff e3 2a fd 	CALL 0xffa0a00c <_spi_write_register_ver>;
+ffa0a5bc:	10 60       	R0 = 0x2 (X);		/*		R0=0x2(  2) */
+ffa0a5be:	09 60       	R1 = 0x1 (X);		/*		R1=0x1(  1) */
+ffa0a5c0:	ff e3 26 fd 	CALL 0xffa0a00c <_spi_write_register_ver>;
+ffa0a5c4:	18 60       	R0 = 0x3 (X);		/*		R0=0x3(  3) */
+ffa0a5c6:	09 60       	R1 = 0x1 (X);		/*		R1=0x1(  1) */
+ffa0a5c8:	ff e3 22 fd 	CALL 0xffa0a00c <_spi_write_register_ver>;
+ffa0a5cc:	20 60       	R0 = 0x4 (X);		/*		R0=0x4(  4) */
+ffa0a5ce:	01 60       	R1 = 0x0 (X);		/*		R1=0x0(  0) */
+ffa0a5d0:	ff e3 1e fd 	CALL 0xffa0a00c <_spi_write_register_ver>;
+ffa0a5d4:	b9 e4 08 00 	R1 = B[FP + 0x8] (Z);
+ffa0a5d8:	28 60       	R0 = 0x5 (X);		/*		R0=0x5(  5) */
+ffa0a5da:	ff e3 19 fd 	CALL 0xffa0a00c <_spi_write_register_ver>;
+ffa0a5de:	30 60       	R0 = 0x6 (X);		/*		R0=0x6(  6) */
+ffa0a5e0:	79 60       	R1 = 0xf (X);		/*		R1=0xf( 15) */
+ffa0a5e2:	ff e3 15 fd 	CALL 0xffa0a00c <_spi_write_register_ver>;
+ffa0a5e6:	38 60       	R0 = 0x7 (X);		/*		R0=0x7(  7) */
+ffa0a5e8:	21 e1 70 00 	R1 = 0x70 (X);		/*		R1=0x70(112) */
+ffa0a5ec:	ff e3 10 fd 	CALL 0xffa0a00c <_spi_write_register_ver>;
+ffa0a5f0:	88 60       	R0 = 0x11 (X);		/*		R0=0x11( 17) */
+ffa0a5f2:	01 61       	R1 = 0x20 (X);		/*		R1=0x20( 32) */
+ffa0a5f4:	ff e3 0c fd 	CALL 0xffa0a00c <_spi_write_register_ver>;
+ffa0a5f8:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00730(-4192464) */
+ffa0a5fc:	0a e1 6c 0d 	P2.L = 0xd6c;		/* (3436)	P2=0xffc00d6c(-4190868) */
+ffa0a600:	20 e1 00 50 	R0 = 0x5000 (X);		/*		R0=0x5000(20480) */
+ffa0a604:	10 97       	W[P2] = R0;
+ffa0a606:	4a e1 c0 ff 	P2.H = 0xffc0;		/* (-64)	P2=0xffc00d6c(-4190868) */
+ffa0a60a:	0a e1 68 0d 	P2.L = 0xd68;		/* (3432)	P2=0xffc00d68(-4190872) */
+ffa0a60e:	18 60       	R0 = 0x3 (X);		/*		R0=0x3(  3) */
+ffa0a610:	10 97       	W[P2] = R0;
+ffa0a612:	20 e1 e2 00 	R0 = 0xe2 (X);		/*		R0=0xe2(226) */
+ffa0a616:	ff e3 81 fd 	CALL 0xffa0a118 <_spi_write_byte>;
+ffa0a61a:	20 e1 e1 00 	R0 = 0xe1 (X);		/*		R0=0xe1(225) */
+ffa0a61e:	ff e3 7d fd 	CALL 0xffa0a118 <_spi_write_byte>;
+ffa0a622:	01 e8 00 00 	UNLINK;
+ffa0a626:	10 00       	RTS;

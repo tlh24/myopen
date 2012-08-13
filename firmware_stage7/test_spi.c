@@ -172,6 +172,7 @@ u32	g_sampInc; //increment by this every sample. base 31. (0x7ffffff);
 u32 g_sampOff; //offset for interpolation.
 u8  g_sampCh; 
 u8	g_sampMode; 
+
 void getRadioPacket(u16 csn, u16 irq, u8 write, u8 oktx){
 	// called when IRQ is asserted to indicate a recieved packet.
 	// if !write, read the fifo but don't save the incoming data.
@@ -262,7 +263,7 @@ void getRadioPacket(u16 csn, u16 irq, u8 write, u8 oktx){
 	if(gotx || wrptr >= UDP_PACKET_SIZE){
 		*pPORTFIO_SET = 0x4000; //transmit UDP flag.
 		spi_write_byte(csn,NOR_FLUSH_RX); //will this fix the problem of immediately syncing? 
-		data = (u32*) ( udp_packet_setup(wrptr+4, &result )); 
+		data = (u32*) ( udp_packet_setup(wrptr+4, &result, (u16)(4340+g_radioChan))); 
 		if(result > 0){
 			//copy the data from SDRAM.. (starting @ 0x0000 0000, looping 256k bytes)
 			//include a copy of the tptr, so that we can (possibly) reorder it. 

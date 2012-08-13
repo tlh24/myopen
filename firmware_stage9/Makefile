@@ -2,7 +2,7 @@
 #this actually could be much simpler.
 .SUFFIXES: .o .c .asm .bo .asm
 
-ASMSRCS = crt0.o radio5.o get.o enc.o divsi3.o
+ASMSRCS = crt0.o radio6.o init6.o get.o enc.o divsi3.o
 COMMON = util.o spi.o
 # CSRCS = main.o usb_write.o usb.o
 CSRCS = main.o
@@ -24,12 +24,15 @@ LDFLAGS = -T bftiny.x
 OBJS = $(ASMSRCS) $(CSRCS) $(COMMON)
 BOBJS = $(B_ASMSRCS:%.asm=%.bo) $(CSRCS:%.c=%.bo)
 
-BFINROOT = /opt/uClinux/bfin-uclinux/bin
-AS = $(BFINROOT)/bfin-uclinux-as
-CC = $(BFINROOT)/bfin-uclinux-gcc
-LD = $(BFINROOT)/bfin-uclinux-ld
-OBDMP = $(BFINROOT)/bfin-uclinux-objdump
-BIN = $(BFINROOT)/bfin-uclinux-objcopy
+# you'll need to install the bfin-elf toolchain to make this work. 
+# see the blackfin Koop (URS may change, use google!)
+BFINROOT = /opt/uClinux/bfin-elf/bin
+AS = $(BFINROOT)/bfin-elf-as
+CC = $(BFINROOT)/bfin-elf-gcc
+LD = $(BFINROOT)/bfin-elf-ld
+LDR = $(BFINROOT)/bfin-elf-ldr
+OBDMP = $(BFINROOT)/bfin-elf-objdump
+BIN = $(BFINROOT)/bfin-elf-objcopy
 
 %.bo: %.asm
 	$(CC) $(ASMFLAGS) $(BRIDGE) -c -o $@ $<
@@ -46,7 +49,9 @@ BIN = $(BFINROOT)/bfin-uclinux-objcopy
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-
+%.o: ../common/%.asm
+	$(CC) $(ASMFLAGS) -c -o $@ $<
+	
 #note: delete spi.o each time, as it compiles different for the headstage.
 # -- and we don't want to screw anything up.
 #svn version script runs at the end of the build process, but this isn't such a problem as
