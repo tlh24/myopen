@@ -1,5 +1,5 @@
 COMMON = print.o util.o ethernet.o arp.o tcp.o http.o
-LOCAL = test.o spi.o test_spi.o 
+LOCAL = test.o spi.o test_spi.o divsi3.o
 # note: the order of objects in the .ldr mirrors the order in this list!
 
 CPUDEFINES = -D__ADSPBF527__  -D__BLACKFIN__
@@ -25,13 +25,20 @@ OBJS = $(ASMSRCS:%.asm=%.o) $(CSRCS:%.c=%.o)
 DBGOBJS = $(DBGASMSRCS:%.asm=%.o) $(CSRCS:%.c=%.do)
 INITOBJS = $(INITSRC:%.asm=%.o)
 
-BFINROOT = /opt/uClinux/bfin-uclinux/bin
-AS = $(BFINROOT)/bfin-uclinux-as
-CC = $(BFINROOT)/bfin-uclinux-gcc
-LD = $(BFINROOT)/bfin-uclinux-ld
-LDR = /opt/uClinux/bfin-uclinux/bin/bfin-uclinux-ldr
-OBDMP = $(BFINROOT)/bfin-uclinux-objdump
-BIN = $(BFINROOT)/bfin-uclinux-objcopy
+# you'll need to install the bfin-elf toolchain to make this work. 
+# see the blackfin Koop (URS may change, use google!)
+BFINROOT = /opt/uClinux/bfin-elf/bin
+AS = $(BFINROOT)/bfin-elf-as
+CC = $(BFINROOT)/bfin-elf-gcc
+LD = $(BFINROOT)/bfin-elf-ld
+LDR = $(BFINROOT)/bfin-elf-ldr
+OBDMP = $(BFINROOT)/bfin-elf-objdump
+BIN = $(BFINROOT)/bfin-elf-objcopy
+
+#svn version script runs at the /end/ of the build process, but this isn't such a problem as 
+#the version does not change frequently. 
+all: $(LOCAL) $(COMMON) test.dxe
+#	perl svn_version.pl
 
 %.o: %.asm
 	$(CC) $(ASMFLAGS) -c -o $@ $<
@@ -41,11 +48,9 @@ BIN = $(BFINROOT)/bfin-uclinux-objcopy
 	
 %.o: ../common/%.c
 	$(CC) $(CFLAGS) -c -o $@ $<
-
-#svn version script runs at the /end/ of the build process, but this isn't such a problem as 
-#the version does not change frequently. 
-all: $(LOCAL) $(COMMON) test.dxe
-#	perl svn_version.pl
+	
+%.o: ../common/%.asm
+	$(CC) $(ASMFLAGS) -c -o $@ $<
 	
 # this is for loading with the JTAG cable (icebear, from section5.ch)
 test.dxe: $(LOCAL) $(COMMON)

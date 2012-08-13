@@ -274,7 +274,7 @@ u8* udp_header_setup(u8* data, int* length, u16 sport, u16 dport);
 u8* tcp_header_setup(u8* data, int* length, u8 flags, u32 seq, u32 ack);
 
 u8* icmp_packet_setup(int len, char* result, u32 dest, u8 type, u16 id, u16 seq);
-u8* udp_packet_setup(int len, char* result);
+u8* udp_packet_setup(int len, char* result, u16 dport);
 u8* tcp_packet_setup(int len, char* result, u32 dest, u8 flags, u32 seq, u32 ack);
 u16 tcp_checksum_calc(u8* data, int length);
 void tcp_checksum_set(int length);

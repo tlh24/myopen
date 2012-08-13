@@ -766,7 +766,7 @@ int ether_testUDP(u32 destIP){
 	return 0; 
 }
 
-u8* udp_packet_setup(int len, char* result){
+u8* udp_packet_setup(int len, char* result, u16 dport){
 	//returns a pointer which the caller can fill. 
 	//len is the size of the data to be transmitted.
 	//after filling it with data, caller must call 
@@ -779,7 +779,7 @@ u8* udp_packet_setup(int len, char* result){
 	data = eth_header_setup(&length, result, NetDataDestIP);
 	if(*result < 0) return 0; 
 	data = ip_header_setup(data, &length, NetDataDestIP, IP_PROT_UDP); 
-	data = udp_header_setup(data, &length, 4341, 4340); 
+	data = udp_header_setup(data, &length, 4341, dport); 
 	
 	return data; 
 }
@@ -1075,7 +1075,7 @@ u8 bridge_publish(){
 		data = eth_header_setup(&length, &result, NetDataDestIP);
 		if(result < 0) return 0; 
 		data = ip_header_setup(data, &length, NetDataDestIP, IP_PROT_UDP); 
-		data = udp_header_setup(data, &length, 4341, 4340); 
+		data = udp_header_setup(data, &length, 4341, 4340); //sport, dport.
 		memcpy_((u8*)"neurobrdg", data, 10); 
 		printf_str("send publish packet\n"); 
 		bfin_EMAC_send_nocopy();

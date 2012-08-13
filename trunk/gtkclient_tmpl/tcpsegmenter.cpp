@@ -15,12 +15,12 @@
 	#include <winsock2.h>
 #else
 	#include <sys/socket.h>
+	#include <unistd.h>
 #endif
 
 #ifndef min
 	#define min(a,b) (((a)<(b))?(a):(b))
 #endif
-
 
 TCPSegmenter::TCPSegmenter(int _fd, unsigned int bufsize) {
     cmdbuf=0;

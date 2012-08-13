@@ -88,6 +88,7 @@ int g_polyChan = 0;
 bool g_addPoly = false;
 int g_channel[4] = {0,32,64,96};
 int	g_signalChain = 10; //what to sample in the headstage signal chain.
+int	g_radioChannel = 114; //the radio channel to use.
 
 bool g_out = false;
 bool g_templMatch[128][2];
@@ -745,7 +746,8 @@ void* sock_thread(void*){
 	char destName[256]; destName[0] = 0;
 	char buf[1024+128+4];
 	sockaddr_in from;
-	g_rxsock = setup_socket(4340,0); //udp sock.
+	g_rxsock = setup_socket(4340+g_radioChannel,0); //udp sock.
+	int bcastsock = setup_socket(4340,0); 
 	//have to enable multicast reception on the socket.
 	printf("**make sure you've enabled allmulti for the ethernet iface**\n");
 	printf("sudo ifconfig eth0 allmulti\n");
@@ -754,14 +756,15 @@ void* sock_thread(void*){
 	group.imr_multiaddr.s_addr = inet_addr("239.0.200.0");
 	group.imr_address.s_addr = htonl(INADDR_ANY);
 	group.imr_ifindex = 0;
-	if(setsockopt(g_rxsock, IPPROTO_IP, IP_ADD_MEMBERSHIP,
+	if(setsockopt(bcastsock, IPPROTO_IP, IP_ADD_MEMBERSHIP,
 		(char *)&group, sizeof(group)) < 0)
 		printf("Error adding multicast group");
 
 	// this code needs to be seriously refactored to allow multiple bridges.
+		// or does it? 
 	while(!destName[0]){
 		socklen_t fromlen = sizeof(from);
-		int n = recvfrom(g_rxsock, buf, sizeof(buf),0,
+		int n = recvfrom(bcastsock, buf, sizeof(buf),0,
 						 (sockaddr*)&from, &fromlen);
 		if(fromlen > 0 && n > 0){
 			buf[n] = 0;
@@ -770,16 +773,18 @@ void* sock_thread(void*){
 						 destName, 256);
 			printf("a bridge appears to be at %s\n",destName);
 			//send a response.
-			buf[0] = 114; /** radio channel. **/
+			buf[0] = g_radioChannel; /** radio channel. **/
 			printf("radio channel set to %d\n", buf[0]); 
 #ifdef EMG
 			buf[0] += 128; //put the bridge in EMG compat mode.
 #endif
 			buf[1] = 0;
-			n = sendto(g_rxsock,buf,2,0,(sockaddr*)&from,sizeof(from));
+			n = sendto(bcastsock,buf,2,0,(sockaddr*)&from,sizeof(from));
 		}
 	}
-	g_txsock = connect_socket(4342,destName,0);
+	//must close that socket so another client may use it. 
+	close_socket(bcastsock); 
+	g_txsock = connect_socket(4342,destName,0); //one port is Ok -- differentiate by IP at this point.
 	if(!g_txsock) printf("failed to connect to bridge.\n");
 	//default txsockAddr
 	get_sockaddr(4342, (char*)destName, &g_txsockAddr);
@@ -1686,9 +1691,19 @@ int main(int argn, char **argc)
 
 	v1 = gtk_vbox_new (FALSE, 0);
 	gtk_widget_set_size_request(GTK_WIDGET(v1), 200, 600);
-
-	//add in a headstage channel # label
+	
 	bx = gtk_vbox_new (FALSE, 2);
+	if(1){ //namespace reasons.
+		//add in a radio channel label
+		char buf[128]; 
+		snprintf(buf, 128, "radio Ch: %i", g_radioChannel);
+		GtkWidget* chanLabel = gtk_label_new (buf);;
+		gtk_misc_set_alignment (GTK_MISC (chanLabel), 0, 0);
+		gtk_box_pack_start (GTK_BOX (bx), chanLabel, TRUE, TRUE, 0);
+		gtk_widget_show(chanLabel);
+	}
+	
+	//add in a headstage channel # label
 	g_headechoLabel = gtk_label_new ("headch: 0");
 	gtk_misc_set_alignment (GTK_MISC (g_headechoLabel), 0, 0);
 	gtk_box_pack_start (GTK_BOX (bx), g_headechoLabel, TRUE, TRUE, 0);
