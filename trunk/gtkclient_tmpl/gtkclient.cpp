@@ -110,6 +110,7 @@ double g_startTime = 0.0;
 double g_timeOffset = 0.0; //offset between local time and bridge time.
 
 int g_totalPackets = 0;
+int g_strobePackets = 0;
 unsigned int g_dropped; //compare against the bridge.
 int g_totalDropped = 0;
 
@@ -124,6 +125,8 @@ int	g_drawmode = GL_LINE_STRIP;
 int g_rxsock = 0;//rx from hardware. right now only support 1 headstage.
 int g_txsock = 0;//transmit back to hardware.  again, only one supported now.
 int g_spikesock = 0; //transmit spike times to client
+int g_strobesock = 0; //socket for strobing client
+
 struct sockaddr_in g_txsockAddr;
 
 bool	g_vbo1Init = false;
@@ -143,6 +146,7 @@ GtkAdjustment* g_unsortRateSpin;
 GtkAdjustment* g_zoomSpin;
 GtkAdjustment* g_rasterSpanSpin;
 GtkWidget* g_pktpsLabel;
+GtkWidget* g_stbpsLabel; //strobe per second label, todo: put in raster
 GtkWidget* g_fileSizeLabel;
 int			g_uiRecursion = 0; //prevents programmatic changes to the UI
 // from causing commands to be sent to the headstage.
@@ -698,6 +702,9 @@ static gboolean rotate (gpointer user_data){
 			1e6*(double)g_totalDropped/((double)g_totalPackets*32*8));
 	gtk_label_set_text(GTK_LABEL(g_pktpsLabel), str); //works!
 
+		snprintf(str, 256, "strobe/sec: %.2f",
+			(double)g_strobePackets/gettime());
+	gtk_label_set_text(GTK_LABEL(g_stbpsLabel), str); //works!
 
 	snprintf(str, 256, "%.2f MB", (double)g_saveFileBytes/1e6);
 	gtk_label_set_text(GTK_LABEL(g_fileSizeLabel), str);
@@ -745,8 +752,10 @@ void* sock_thread(void*){
 
 	char destName[256]; destName[0] = 0;
 	char buf[1024+128+4];
+	char buf2[1024];
 	sockaddr_in from;
 	g_rxsock = setup_socket(4340+g_radioChannel,0); //udp sock.
+	g_strobesock = setup_socket(8845, 0);
 	int bcastsock = setup_socket(4340,0); 
 	//have to enable multicast reception on the socket.
 	printf("**make sure you've enabled allmulti for the ethernet iface**\n");
@@ -820,13 +829,15 @@ packet format in the file, as saved here:
 		socklen_t fromlen = sizeof(from);
 		int n = recvfrom(g_rxsock, buf, sizeof(buf),0,
 						 (sockaddr*)&from, &fromlen);
+		//check strobe
+		int sn = recvfrom(g_strobesock, buf2, sizeof(buf2),0, 0, 0);
 		double rxtime = gettime();
 		if(fromlen > 0 && n > 0){
 			g_txsockAddr.sin_addr = from.sin_addr;
 			//keep the dest port (4342); don't copy that.
-		}
+			}
 #ifndef EMG
-		if(n > 0 && !g_die){
+		if(n > 0 || sn > 0 && !g_die){
 			unsigned int dropped = *((unsigned int*)buf);
 			if(g_out) printf("%d\n", dropped);
 
@@ -837,23 +848,42 @@ packet format in the file, as saved here:
 				g_saveFileBytes = 0;
 			}
 			if(g_saveFile){
+				if (n > 0){
 				//do the save -- the raw packets!
 				//will have to convert them with another prog later.
 				unsigned int tmp = 0xdecafbad;
 				fwrite((void*)&tmp, 4, 1, g_saveFile);
-				tmp = 605; //SVN version.
+				tmp = 784; //SVN version.
 				tmp <<= 16;
 				tmp += n; //size of the ensuing packet data.
 				fwrite((void*)&tmp, 4, 1, g_saveFile);
 				fwrite((void*)&rxtime, 8, 1, g_saveFile);
 				fwrite((void*)buf,n,1,g_saveFile);
 				g_saveFileBytes += 16 + n;
+				}
+				if (sn > 0){
+						//will need to iterate through the buffer, to get at the data
+					//unsigned int tlen = ((unsigned int*)buf2)[0]; Uncomment if sending sizedelimited buffer
+					unsigned int tmp = 0x1eafbabe;
+					fwrite((void*)&tmp, 4, 1, g_saveFile);
+					tmp = 784; //SVN version
+					tmp <<= 16;
+					//tmp += tlen & 0xffff; //size of the ensuing packet data.
+					tmp += sn; //buffer size
+					fwrite((void*)&tmp, 4, 1, g_saveFile);
+					fwrite((void*)&rxtime, 8, 1, g_saveFile);
+					//fwrite((void*)(&(buf2[4])),tlen,1,g_saveFile); //sizedelimited buffer
+					fwrite((void*)buf2, sn, 1, g_saveFile); //write ALL the buffer
+					//g_saveFileBytes += 16 + tlen;
+					g_saveFileBytes += 16 + sn;
+				}
+
 				//if there are messages to be written, save them too.
 				while(g_messW > g_messR){
 					unsigned int len = strnlen(g_messages[g_messR % 1024],128);
-					tmp = 0xb00a5c11; //boo!  it's ascii
+					unsigned int tmp = 0xb00a5c11; //boo!  it's ascii
 					fwrite((void*)&tmp, 4, 1, g_saveFile);
-					tmp = 605; //SVN version.
+					tmp = 784; //SVN version.
 					tmp <<= 16;
 					tmp += len; //size of the ensuing text data.
 					fwrite((void*)&tmp, 4, 1, g_saveFile);
@@ -863,6 +893,11 @@ packet format in the file, as saved here:
 					g_messR++;
 				}
 			}
+		if(sn > 0){
+			g_strobePackets++;
+		}
+		if(n > 0){
+
 			char* ptr = buf;
 			unsigned int drop = *(unsigned int*)ptr;
 			if(drop > g_dropped){
@@ -1083,6 +1118,7 @@ packet format in the file, as saved here:
 					} // over k, the channels.
 					g_sortI++;
 					g_sortI &= 0xf;
+					}
 				}
 			}
 		}
@@ -1143,6 +1179,7 @@ packet format in the file, as saved here:
 #endif
 	}
 	close_socket(g_rxsock);
+	close_socket(g_strobesock);
 	free(g_sendbuf);
 	return 0;
 }
@@ -1713,6 +1750,14 @@ int main(int argn, char **argc)
 	gtk_misc_set_alignment (GTK_MISC (g_pktpsLabel), 0, 0);
 	gtk_box_pack_start (GTK_BOX (bx), g_pktpsLabel, FALSE, FALSE, 0);
 	gtk_widget_show(g_pktpsLabel);
+	
+	//add in a strobe frame/second label
+	g_stbpsLabel = gtk_label_new ("strobe/sec");
+	gtk_misc_set_alignment (GTK_MISC (g_stbpsLabel), 0, 0);
+	gtk_box_pack_start (GTK_BOX (bx), g_stbpsLabel, FALSE, FALSE, 0);
+	gtk_widget_show(g_stbpsLabel);
+
+	
 	gtk_box_pack_start (GTK_BOX (v1), bx, FALSE, FALSE, 0);
 
 	//4-channel control blocks.
