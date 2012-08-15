@@ -1,39 +1,88 @@
 classdef TrainingDataAnalysis
     % Tools for loading, viewing and manipulating training data
-    
+    %
+    %
+    % Usage:
+    %   TrainingDataAnalysis.plot_emg_unfiltered('WR_TR01_*.dat');
+    %   TrainingDataAnalysis.plot_emg_filtered('WR_TR01_*.dat');
     properties
     end
     
     methods (Static = true)
-        function plot_emg_unfiltered(filterSpec)
+        function plot_emg_unfiltered(filterSpec,channels)
             % Plot all the emg data in the training file - unfiltered
             %
             % Usage:
             % TrainingDataAnalysis.plot_emg_unfiltered('WR_TR01_*.dat');
             
-            if nargin < 1
-                filterSpec = '*.dat';
-            end
+            if nargin < 1, filterSpec = '*.dat'; end
+            if nargin < 2, channels = 1:8; end
+
+            % Load Data
+            [d fileName] = TrainingDataAnalysis.load_data(filterSpec);
+            chEmg = d.emgData(channels,:,:);
             
-            %[fileName pathName] = uigetfile('JH_TH01_*.dat');
-            [fileName pathName] = uigetfile(filterSpec);
-            load(fullfile(pathName,fileName),'-mat');
-            assert(~isempty(emgData),'No EMG Data Found');
-            
-            chEmg = emgData(1:8,:,:);
-            plot(reshape(chEmg,8,[])');
-            title(fileName, 'Interpreter','None');
+            % Plot result
+            clf
+            plot(reshape(chEmg,length(channels),[])');
             
             [p f e] = fileparts(fileName);
+            dataLabel = [f '_unfiltered'];
+            title(dataLabel, 'Interpreter','None');
             
-            saveas(gcf,[f '.tif']);
+            % Save output
+            outFile = [dataLabel '.tif'];
+            if ~exist(outFile,'file')
+                saveas(gcf,outFile);
+            else
+                fprintf('[%s] File "%s" already exists\n',mfilename,outFile);
+            end
+            
+        end
+        function plot_emg_filtered(filterSpec,channels)
+            % Plot all the emg data in the training file - unfiltered
+            %
+            % Usage:
+            % TrainingDataAnalysis.plot_emg_unfiltered('WR_TR01_*.dat');
+            
+            if nargin < 1, filterSpec = '*.dat'; end
+            if nargin < 2, channels = 1:8; end
+            
+            % Load Data
+            [d fileName] = TrainingDataAnalysis.load_data(filterSpec);
+            
+            % filter Data
+            HPF = Inputs.HighPass(10,8,1000);
+            numEmgSamples = size(d.emgData,3);
+            filteredData = zeros(size(d.emgData));
+            for i = 1:numEmgSamples
+                filteredData(:,:,i) = HPF.apply(double(d.emgData(:,:,i)'))';
+            end
+            
+            chEmg = filteredData(channels,:,:);
+            
+            % Plot result
+            clf
+            plot(reshape(chEmg,length(channels),[])');
+            [p f e] = fileparts(fileName);
+            dataLabel = [f '_filtered'];
+            title(dataLabel, 'Interpreter','None');
+            
+            % Save output
+            outFile = [dataLabel '.tif'];
+            if ~exist(outFile,'file')
+                saveas(gcf,outFile);
+            else
+                fprintf('[%s] File "%s" already exists\n',mfilename,outFile);
+            end
+            
         end
         function plot_emg_per_class(filterSpec,channels)
             % Plot all the emg data in the training file - unfiltered
             %
             % Usage:
             % TrainingDataAnalysis.plot_emg_per_class('WR_TR01_*.dat');
-
+            
             if nargin < 1
                 filterSpec = 'WR_TR01_*.dat';
                 %filterSpec = '*.dat';
@@ -42,29 +91,29 @@ classdef TrainingDataAnalysis
             if nargin < 2
                 channels = 1:8;
             end
-            %%
+            %
             % load Data
             [fileName pathName] = uigetfile(filterSpec);
-            load(fullfile(pathName,fileName),'-mat');
-            assert(~isempty(emgData),'No EMG Data Found');
-
+            d = load(fullfile(pathName,fileName),'-mat');
+            assert(~isempty(d.emgData),'No EMG Data Found');
+            
             % filter Data
             HPF = Inputs.HighPass(10,8,1000);
-            numEmgSamples = size(emgData,3);
+            numEmgSamples = size(d.emgData,3);
+            filteredData = zeros(size(d.emgData));
             for i = 1:numEmgSamples
-                filteredData(:,:,i) = HPF.apply(double(emgData(:,:,i)'))';
+                filteredData(:,:,i) = HPF.apply(double(d.emgData(:,:,i)'))';
             end
-            %% plot Data
+            % plot Data
             clf
-            ch = 1:8;
             ch = channels;
-            % ch = 6;
             c = get(gca, 'ColorOrder');
-            for iClass = 1:length(classNames)
-                thisClass = iClass == classLabelId;
-
-                h = subplot(length(classNames),1,iClass);
-                ylabel(classNames{iClass})
+            for iClass = 1:length(d.classNames)
+                thisClass = iClass == d.classLabelId;
+                
+                h = subplot(length(d.classNames),1,iClass);
+                hold on
+                ylabel(d.classNames{iClass})
                 set(h,'YTick',[]);
                 set(h,'XTick',[]);
                 ylim([-2 2]);
@@ -74,14 +123,14 @@ classdef TrainingDataAnalysis
                 end
                 classEmgFrames = filteredData(1:8,:,thisClass);
                 classEmg = reshape(classEmgFrames,8,[])';
-                h = subplot(length(classNames),1,iClass);
-                ylabel(classNames{iClass})
-                %classEmg = HPF.apply(double(classEmg));
-                %%
-                hLines = plot(classEmg);
-                hold on
                 
-                xBreaks = size(emgData,2):size(emgData,2):sum(thisClass)*size(emgData,2);
+                ylabel(d.classNames{iClass})
+                %classEmg = HPF.apply(double(classEmg));
+                %
+                hLines = plot(classEmg);
+                %hold on
+                
+                xBreaks = size(d.emgData,2):size(d.emgData,2):sum(thisClass)*size(d.emgData,2);
                 xBreaks = [xBreaks; xBreaks; nan(size(xBreaks))];
                 
                 yBreaks = repmat([-10; 10; NaN],1,size(xBreaks,2));
@@ -90,16 +139,25 @@ classdef TrainingDataAnalysis
                 %%
                 set(hLines,'Visible','off');
                 set(hLines(ch),'Visible','on');
-                ylabel(classNames{iClass})
+                ylabel(d.classNames{iClass})
                 %     xlim([0 size(emgData,2)]);
                 ylim([-2 2])
                 if iClass == 1
                     title(fileName,'Interpreter','None');
                 end
             end
+        end
+        function plot_one_class_emg(filterSpec,channels)
             
-            return
-            %%
+            if nargin < 1, filterSpec = '*.dat'; end
+            if nargin < 2, channels = 1:8; end
+            
+            % Load Data
+            [d fileName] = TrainingDataAnalysis.load_data(filterSpec);
+            classLabelId = d.classLabelId;
+            classNames = d.classNames;
+            % filter
+            filteredData = TrainingDataAnalysis.filter_data(d.emgData);
             
             % regenerate features (overwrite those loaded from the data file)
             thresh = 0.15;
@@ -109,10 +167,10 @@ classdef TrainingDataAnalysis
                     thresh,thresh);
             end
             
-            
+            %%
             clf
-            ch = 1:8;
-            % ch = 1;
+            ch = channels;
+
             c = [get(gca, 'ColorOrder');get(gca, 'ColorOrder')];
             for iClass = 1:6;
                 for iFeature = 3;
@@ -175,6 +233,21 @@ classdef TrainingDataAnalysis
             end
             
         end
-        
+        function [d fileName pathName] = load_data(filterSpec)
+            [fileName pathName] = uigetfile(filterSpec);
+            d = load(fullfile(pathName,fileName),'-mat');
+            assert(~isempty(d.emgData),'EMG Data Not Found');
+            
+        end
+        function filteredData = filter_data(dataIn)
+            % filter Data
+            HPF = Inputs.HighPass(10,8,1000);
+            numEmgSamples = size(dataIn,3);
+            filteredData = zeros(size(dataIn));
+            for i = 1:numEmgSamples
+                filteredData(:,:,i) = HPF.apply(double(dataIn(:,:,i)'))';
+            end
+
+        end
     end
 end
