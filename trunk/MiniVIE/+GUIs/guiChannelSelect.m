@@ -17,6 +17,8 @@ classdef guiChannelSelect < handle
     properties (Access = private)
         defaultFilterSpec = '*.channels';
         handles
+        
+        ColorOrder;
     end
     properties (Constant = true)
         defaultFile = 'miniVieDefaultChannels.mat';
@@ -61,6 +63,14 @@ classdef guiChannelSelect < handle
             validIds = activeChannelIds(activeChannelIds <= obj.numChannelsMax);
             set(obj.handles.pbChannels,'Value',0);
             set(obj.handles.pbChannels(validIds),'Value',1);
+            
+            
+            set(obj.handles.pbChannels,'ForegroundColor','k');
+            for i = validIds(:)'
+                set(obj.handles.pbChannels(i),'ForegroundColor',obj.ColorOrder(i,:));
+            end
+            
+            
         end
         function setAvailableChannels(obj,numAvailable)
             if (numAvailable < 1) || (numAvailable > obj.numChannelsMax)
@@ -79,6 +89,12 @@ classdef guiChannelSelect < handle
             
             if get(obj.handles.pbChannels(iChannel),'Value') ~= state
                 set(obj.handles.pbChannels(iChannel),'Value',state);
+            end
+
+            if get(obj.handles.pbChannels(iChannel),'Value')
+                set(obj.handles.pbChannels(iChannel),'ForegroundColor',obj.ColorOrder(iChannel,:));
+            else
+                set(obj.handles.pbChannels(iChannel),'ForegroundColor','k');
             end
             
             notify(obj,'ValueChange');
@@ -150,6 +166,9 @@ classdef guiChannelSelect < handle
             else
                 set(obj.hFigure,'Position',[1 1 1 1]);
             end
+            a = axes('Visible','off','Parent',obj.hFigure);
+            colorOrder = get(a, 'ColorOrder');
+            obj.ColorOrder = repmat(colorOrder,[obj.numChannelsMax 1]);
             
             set(obj.hFigure,'Position',[200 500 200 70],'CloseRequestFcn',@(src,evt)close(obj));
             
@@ -225,8 +244,7 @@ classdef guiChannelSelect < handle
             end
         end
         function selectedChannels = getDefaultChannels()
-            fullFile = fullfile(tempdir,GUIs.guiChannelSelect.defaultFile);
-            selectedChannels = GUIs.guiChannelSelect.getChannels(fullFile,GUIs.guiChannelSelect.defaultChannels);
+            fullFile = fullfile(tempdir,GUIs.guiChannelSelect.defaultFile);            selectedChannels = GUIs.guiChannelSelect.getChannels(fullFile,GUIs.guiChannelSelect.defaultChannels);
         end
         function selectedChannels = getLastChannels()
             fullFile = fullfile(tempdir,GUIs.guiChannelSelect.lastFile);
