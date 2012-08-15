@@ -23,7 +23,7 @@ classdef CpchSerial < Inputs.CpcHeadstage
         CountBadChecksum = 0;
         CountBadStatus = 0;
         CountBadSequence = 0;
-        
+        CountAdcError = 0;
     end
     
     properties (Access = private)
@@ -223,7 +223,7 @@ classdef CpchSerial < Inputs.CpcHeadstage
             obj.SerialBuffer = remainderBytes;
             
             % Check validation parameters (chksum, etc)
-            [validData sumBadStatus sumBadLength sumBadChecksum sumBadSequence] = ...
+            [validData sumBadStatus sumBadLength sumBadChecksum sumBadSequence sumAdcError] = ...
                 obj.ValidateMessages(alignedData,payloadSize);
             
             obj.CountTotalMessages = obj.CountTotalMessages + size(alignedData,2);
@@ -231,6 +231,7 @@ classdef CpchSerial < Inputs.CpcHeadstage
             obj.CountBadChecksum = obj.CountBadChecksum + sumBadChecksum;
             obj.CountBadStatus = obj.CountBadStatus + sumBadStatus;
             obj.CountBadSequence = obj.CountBadSequence + sumBadSequence;
+            obj.CountAdcError = obj.CountAdcError + sumAdcError;
 
             [numBytes numValidSamples] = size(validData);
             assert(msgSize == numBytes);
