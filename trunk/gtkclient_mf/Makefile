@@ -1,6 +1,7 @@
 # not a very smart makefile -- no deps -- but works.
 # depends on google protocol buffers -- not too hard to install, in debian.
 # you'll need to install libatlas-base-dev for linear algebra.
+CC = clang
 CFLAGS=-I/usr/local/include
 CFLAGS+=  -g
 CFLAGS+= -Wall -Wcast-align -Wpointer-arith -Wshadow -Wsign-compare -Wformat=2 \
@@ -23,7 +24,7 @@ all: gtkclient
 
 
 %.o: %.cpp vbo.h channel.h cgVertexShader.h
-	g++ -c -o $@ $(CFLAGS) $(GTKFLAGS) $<
+	$(CC) -c -o $@ $(CFLAGS) $(GTKFLAGS) $<
 
 spikes.pb.cc : spikes.proto
 	protoc $< --cpp_out=.
@@ -33,19 +34,19 @@ spikes.pb.cc : spikes.proto
 #	g++ $(LDFLAGS) $(OBJS) -o client
 
 gtkclient: $(GOBJS)
-	g++ -o $@ $(GTKLD) $(LDFLAGS) -lmatio $(GOBJS)
+	$(CC) -o $@ $(GTKLD) $(LDFLAGS) -lmatio $(GOBJS)
 
 convert: $(COBJS)
-	g++ -o $@ -g -Wall -lmatio -lz $(COBJS)
+	$(CC) -o $@ -g -Wall -lmatio -lz $(COBJS)
 
 clean:
 	rm -rf client gtkclient convert *.o spikes.pb.* fitMF *.svg
 
 wf_plot: wf_plot.c
-	gcc -g -lSDL -lGL -lGLU -lglut -lpthread -lmatio -lpng -o $@ wf_plot.c
+	$(CC) -g -lSDL -lGL -lGLU -lglut -lpthread -lmatio -lpng -o $@ wf_plot.c
 
 mf: fitMF2.cpp # matched filter test!
-	gcc -O6 fitMF2.cpp -o fitMF `pkg-config --cflags --libs plplotd-c++`
+	$(CC) -O6 fitMF2.cpp -o fitMF `pkg-config --cflags --libs plplotd-c++`
 
 deps:
 	sudo apt-get install libprotobuf-dev protobuf-compiler libgtk2.0-dev libgtkgl2.0-dev \
