@@ -90,6 +90,11 @@ classdef CpcHeadstage < Inputs.SignalInput
             %
             % 14Mar2012 Armiger: Created
             
+            if size(alignedData,1) == 1
+                % single sample case
+                alignedData = alignedData(:);
+            end
+            
             % Compute CRC
             computedChecksum = Inputs.CpcHeadstage.XorChksum(alignedData);
             
@@ -98,11 +103,10 @@ classdef CpcHeadstage < Inputs.SignalInput
             % status byte upper four bits are set 2 zero
             isValidStatusByte = ~bitand(alignedData(3,:),uint8(240));
             
-%             msgIdError = bitget(alignedData(3,:),1);
-%             cmdMsgChecksumError = bitget(alignedData(3,:),2);
-%             cmdMsgLengthError = bitget(alignedData(3,:),3);
+            % msgIdError = bitget(alignedData(3,:),1);
+            % cmdMsgChecksumError = bitget(alignedData(3,:),2);
+            % cmdMsgLengthError = bitget(alignedData(3,:),3);
             sumAdcError = sum(bitget(alignedData(3,:),4));
-            
             
             isValidLength = (alignedData(5,:) == expectedLength);
             isValidChecksum = (computedChecksum == 0);
@@ -179,6 +183,12 @@ classdef CpcHeadstage < Inputs.SignalInput
         function [dataAligned remainderBytes] = ByteAlignSlow(dataStream,msgSize)
             
             assert(size(dataStream,1) == 1,'Data Stream must be a [1 N] array');
+            
+            if length(dataStream) < msgSize
+                dataAligned = []
+                remainderBytes = dataStream;
+                return
+            end
             
             % Find all start chars ('128') and index the next set of bytes
             % off of these starts.  This could lead to overlapping data
