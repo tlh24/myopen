@@ -65,16 +65,16 @@ classdef Classifier < Common.MiniVieObj
         end
         
         function uiEnterClassNames(obj)
-            hGui = SignalAnalysis.ClassifierChannels;
+            hGui = GUIs.guiClassifierChannels;
             uiwait(hGui.hFigure)
             obj.ClassNames = hGui.ClassNames;
             % Save last selected classes
-            SignalAnalysis.ClassifierChannels.setSavedDefaults(obj.ClassNames);
+            GUIs.guiClassifierChannels.setSavedDefaults(obj.ClassNames);
         end
         
         function featureData = convertfeaturedata(obj)
             % expects an array of size [nChannels nFeatures numSamples]
-            % creates an array of size [nFeatures nChannels numSamples]
+            % creates an array of size [nFeatures*nChannels numSamples]
             [numChannels numFeatures numSamples] = size(obj.TrainingData);
             
             assert(numFeatures == obj.NumFeatures,...

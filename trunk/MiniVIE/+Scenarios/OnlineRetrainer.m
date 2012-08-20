@@ -88,7 +88,7 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
             currentClass = max(min(buttonId,obj.SignalClassifier.NumClasses),1);
             
             isTrained = obj.SignalClassifier.IsTrained;
-            isTrained(currentClass)
+            %isTrained(currentClass)
             
             className = obj.SignalClassifier.ClassNames{currentClass};
             

@@ -123,6 +123,8 @@ classdef ScenarioBase < Common.MiniVieObj
             lastVelocity = obj.JointVelocity;
             desiredVelocity = zeros(size(obj.JointVelocity));
             
+            % Note gains can/should be adjusted using guiAdjustGains
+            %TODO: gain values overwritten on classifier retrain
             switch className
                 case 'No Movement'
                 case {'Elbow Flexion' 'Elbow Up'}
@@ -130,9 +132,9 @@ classdef ScenarioBase < Common.MiniVieObj
                 case {'Elbow Extension' 'Elbow Down'}
                     desiredVelocity(action_bus_enum.Elbow) = -prSpeed;
                 case {'Pronate' 'Wrist Rotate In'}
-                    desiredVelocity(action_bus_enum.Wrist_Rot) = -prSpeed*4;
+                    desiredVelocity(action_bus_enum.Wrist_Rot) = -prSpeed*3;
                 case {'Supinate' 'Wrist Rotate Out'}
-                    desiredVelocity(action_bus_enum.Wrist_Rot) = +prSpeed*4;
+                    desiredVelocity(action_bus_enum.Wrist_Rot) = +prSpeed*3;
                 case {'Up' 'Hand Up'}
                     desiredVelocity(action_bus_enum.Wrist_Dev) = -prSpeed;
                 case {'Down' 'Hand Down'}

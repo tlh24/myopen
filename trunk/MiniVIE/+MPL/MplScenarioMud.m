@@ -1,6 +1,6 @@
 classdef MplScenarioMud < Scenarios.OnlineRetrainer
     % Scenario for controlling JHU/APL MPL
-    % Depends on UiTools
+    % Requires Utilities\UiTools
     %
     % 01-Sept-2010 Armiger: Created
     properties
@@ -26,7 +26,7 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
         % Compass heading when in home position
         msDegreesFromNorth = 0;
         
-        VulcanXAddress = '192.168.139.3'; %127.0.0.1
+        VulcanXAddress = '192.168.1.199'; %127.0.0.1
         VulcanXPort = 9027; %9035
     end
     methods
@@ -47,7 +47,7 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
                 
                 % Note tactors currently only enabled on NFU pathway
                 
-                % TODO: abstract tactor ids
+                % TODO: abstract tactor ids and mapping
                 tactorIds = [5 6 7];
                 for iTactor = tactorIds
                     fprintf('[%s] Setting up tactor id# %d\n',mfilename,iTactor);
@@ -112,7 +112,7 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
             % Send feedback
             if isempty(obj.hNfu)
                 % No NFU, no percepts, no Feedback
-                disp('Feedback Disabled');
+                %disp('Feedback Disabled');
                 return
             end
             
@@ -211,6 +211,7 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
                         graspId = 4;  % 3 Finger Pinch
                     case 'Spherical'
                         graspId = 7;  % Spherical
+                        %graspId = 4;
                     case 'Power'
                         graspId = 5;  % Cylindrical
                     case 'Extension'
