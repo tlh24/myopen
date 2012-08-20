@@ -1,3 +1,7 @@
+guiClassifierAssessment(obj.SignalSource,obj.SignalClassifier);
+return
+
+
 obj = MiniVIE.Default();
 obj.TrainingInterface.loadTrainingData('Sim_20120202_110041_TrainingData.dat');
 

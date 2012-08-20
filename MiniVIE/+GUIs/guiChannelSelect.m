@@ -1,4 +1,4 @@
-classdef guiChannelSelect < handle
+classdef guiChannelSelect < Common.MiniVieObj
     % GUI To get channels
     % TODO: Make blocking?
     %

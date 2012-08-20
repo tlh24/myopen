@@ -6,4 +6,5 @@ roc(1).angles = [
     0.0000,0.3491,0.3840,0.3142,0.0000,0.3491,0.3840,0.3142,0.0000,0.3491,0.3840,0.3142,0.0000,0.3491,0.3840,0.3142,0.0000,1.0472,0.2618,-0.3491;...
     0.0000,0.3491,0.3840,0.3142,0.0000,0.3491,0.3840,0.3142,0.0000,0.3491,0.3840,0.3142,0.0000,0.3491,0.3840,0.3142,0.0000,1.0472,0.2618,-0.3491];
 
-writeRocTable('C:\usr\MPL\VulcanX\roc_tables_clinical.xml',roc)
+%MPL.writeRocTable('C:\usr\MPL\VulcanX\roc_tables_clinical.xml',roc)
+MPL.RocTable.writeRocTable('roc_tables_clinical.xml',roc)

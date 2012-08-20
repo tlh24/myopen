@@ -13,7 +13,7 @@ SignalSource.NumSamples = 2000;
 SignalClassifier = SignalAnalysis.Lda();
 SignalClassifier.ActiveChannels = 1:4;  % <-- Update active channels
 SignalClassifier.initialize();
-SignalClassifier.ClassNames = SignalAnalysis.ClassifierChannels.getSavedDefaults();
+SignalClassifier.ClassNames = GUIs.guiClassifierChannels.getSavedDefaults();
 
 TrainingInterface = PatternRecognition.SimpleTrainer(SignalSource,SignalClassifier);
 if 0

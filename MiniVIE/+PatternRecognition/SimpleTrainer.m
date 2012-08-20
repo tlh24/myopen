@@ -7,6 +7,8 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
         NumRepetitions = 1;
         ContractionLengthSeconds = 2;
         DelayLengthSeconds = 2;
+        
+        EnablePictures = true;
     end
     methods
         function obj = SimpleTrainer()
@@ -43,6 +45,15 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
                 pause(1);
             end
             
+            if obj.EnablePictures
+            %f = figure(99);
+            f = UiTools.create_figure('Training...');
+            a = axes('Parent',f);
+            
+            % picture path
+            pathImages = 'C:\usr\RP2009\VRE\Common\ACE\Pics';
+            end
+            
             % Loop through each class, rep
             for iRepetition = 1:obj.NumRepetitions
                 for iClass = 1:obj.SignalClassifier.NumClasses
@@ -50,9 +61,64 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
                     if getappdata(h,'canceling')
                         break
                     end
-                    
-                    
+
                     className = obj.SignalClassifier.ClassNames{iClass};
+                    
+                    
+                    if obj.EnablePictures
+                        
+                        switch className
+                            case 'Elbow Flexion'
+                                imgName = 'elbow flexion.jpg';
+                            case 'Elbow Extension'
+                                imgName = 'elbow extension.jpg';
+                            case 'Wrist Rotate In'
+                                imgName = 'wrist pronation.jpg';
+                            case 'Wrist Rotate Out'
+                                imgName = 'wrist supination.jpg';
+                            case 'Wrist Flex In'
+                                imgName = 'wrist flexion.jpg';
+                            case 'Wrist Extend Out'
+                                imgName = 'wrist extension.jpg';
+                            case 'Hand Up'
+                                imgName = 'wrist abduction.jpg';
+                            case 'Hand Down'
+                                imgName = 'wrist adduction.jpg';
+                            case 'Hand Open'
+                                imgName = 'hand open.jpg';
+                            case 'Lateral Grasp'
+                                imgName = 'lateral grip.jpg';
+                            case 'Cylindrical Grasp'
+                                imgName = 'cylindrical grip.jpg';
+                            case 'Tip Grasp'
+                                imgName = 'fine pinch grip.jpg';
+                            case 'Hook Grasp'
+                                imgName = 'hook grip.jpg';
+                            case 'Spherical Grasp'
+                                imgName = 'power grip mode.jpg';
+                            case 'Pointer Grasp'
+                                imgName = 'point grip.jpg';
+                            case 'No Movement'
+                                imgName = 'no movement (rest).jpg';
+                            otherwise
+                                fprintf('Unmatched class: "%s"\n',className);
+                                imgName = '';
+                        end
+                        
+                        
+                        
+                        
+                        fileName = fullfile(pathImages,imgName);
+                        if ~exist(fileName,'file')
+                            set(a,'Visible','off')
+                            fprintf('Image failed: "%s\n"',fileName);
+                        else
+                            img = imread(fileName);
+                            set(a,'Visible','on')
+                            cla(a);
+                            imshow(img,'Parent',a);
+                        end
+                    end
                     
                     msg = sprintf('Rep # %d of %d.  Next Class: %s',...
                         iRepetition,obj.NumRepetitions,className);
