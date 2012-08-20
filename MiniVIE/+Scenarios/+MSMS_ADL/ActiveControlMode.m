@@ -1,5 +1,17 @@
 %% Active Control
 
+% One time setup of directories
+% restoredefaultpath
+clc
+% addpath('c:\usr\MiniVIE')
+% addpath('c:\usr\MiniVIE\Utilities\')
+addpath('c:\usr\myopen\MiniVIE')
+addpath('c:\usr\myopen\MiniVIE\Utilities\')
+% addpath('C:\usr\WRAMC VIE Code')
+%run('C:\usr\Common\addpath_Common.m');
+run('C:\usr\RP2009\VRE\Common\addpath_Common.m');
+disp('Setup Done');
+
 %% Step 1: Setup Input Device
 % SignalSource = Inputs.SignalSimulator();
 % SignalSource = Inputs.UsbDaq('mcc','0');
@@ -26,7 +38,7 @@ SignalClassifier.uiEnterClassNames
 TrainingInterface = PatternRecognition.SimpleTrainer();
 
 %% Step 4a: Collect New Data
-TrainingInterface.NumRepetitions = 2;  % <-- Adjust (2 to 3 typical)
+TrainingInterface.NumRepetitions = 4;  % <-- Adjust (2 to 3 typical)
 TrainingInterface.ContractionLengthSeconds = 2; % <-- Time to hold contraction (avoid muscle fatigue)
 TrainingInterface.DelayLengthSeconds = 3; % <-- Recovery Time in seconds between contractions
 
@@ -44,7 +56,7 @@ SignalClassifier.computeerror();
 
 %% Step 6: Send data to MSMS for visualization
 hMSMS = Scenarios.MSMS_ADL.MsmsDisplayScenario(SignalSource,SignalClassifier);
-isLeftSide = 0;   % <---- Use this parameter to select Left=1/Right=0
+isLeftSide = 1;   % <---- Use this parameter to select Left=1/Right=0
 hMSMS.initialize(isLeftSide);
 
 hMSMS.start

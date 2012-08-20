@@ -35,7 +35,7 @@ classdef MiniVIE < Common.MiniVieObj
             set(obj.hg.popups(MiniVIE.SA),'Value',1);
             set(obj.hg.popups(MiniVIE.TRAINING),'String',{'None','Simple Trainer','Mini Guitar Hero','Bar Trainer','Motion Trainer'});
             set(obj.hg.popups(MiniVIE.TRAINING),'Value',1);
-            set(obj.hg.popups(MiniVIE.PRESENTATION),'String',{'None','MiniV','Breakout','AGH','MplScenarioMud'});
+            set(obj.hg.popups(MiniVIE.PRESENTATION),'String',{'None','MiniV','Breakout','AGH','MplScenarioMud','MSMS_ADL'});
             set(obj.hg.popups(MiniVIE.PRESENTATION),'Value',1);
         end
         function setupFigure(obj)
@@ -202,8 +202,8 @@ classdef MiniVIE < Common.MiniVieObj
                     case 'EMG Simulator'
                         h = Inputs.EmgSimulator();
                     case 'DaqHwDevice'
-                        % h = Inputs.DaqHwDevice('nidaq','Dev2');
-                        h = Inputs.DaqHwDevice('mcc','0');
+                        h = Inputs.DaqHwDevice('nidaq','Dev2');
+                        % h = Inputs.DaqHwDevice('mcc','0');
                     case 'UdpDevice'
                         h = Inputs.UdpDevice();
                     case 'CpchSerial'
@@ -332,9 +332,22 @@ classdef MiniVIE < Common.MiniVieObj
             switch string{value}
                 case 'Simple Trainer'
                     h = PatternRecognition.SimpleTrainer();
-                    h.NumRepetitions = 3;
-                    h.ContractionLengthSeconds = 2;
-                    h.DelayLengthSeconds = 1;
+                    prompt={'Enter Number of Repetitions:',...
+                        'Enter Contraction Length (sec):',...
+                        'Enter Delay Length (sec):'...
+                        };
+                    name='Input for Training Interface';
+                    numlines=1;
+                    defaultanswer={'4','2','3'};
+                    answer=inputdlg(prompt,name,numlines,defaultanswer);
+                    assert(length(answer) == 3,'Expected 3 outputs');
+                    vals = str2double(answer);
+                    assert(~any(isnan(vals)),'Expected 3 numeric values');
+                    
+                    h.NumRepetitions = vals(1);
+                    h.ContractionLengthSeconds = vals(2);
+                    h.DelayLengthSeconds = vals(3);
+                    
                 case 'Bar Trainer'
                     h = PatternRecognition.BarTrainer();
                 case 'Mini Guitar Hero'
@@ -393,6 +406,24 @@ classdef MiniVIE < Common.MiniVieObj
                         h = Presentation.MiniBreakout(obj.SignalSource,obj.SignalClassifier);
                     case 'AGH'
                         h = Presentation.AirGuitarHero.AirGuitarHeroEmg(obj.SignalSource,obj.SignalClassifier);
+                    case 'MSMS_ADL'
+                        h = Scenarios.MSMS_ADL.MsmsDisplayScenario(obj.SignalSource,obj.SignalClassifier);
+                        
+                        response = questdlg('Which Side?','Select Side','Left','Right','Left');
+                        
+                        switch response
+                            case 'Left'
+                                h.isLeftSide = 1;
+                            case 'Right'
+                                h.isLeftSide = 0;
+                            otherwise
+                                % User Cancelled
+                                return
+                        end
+                        %isLeftSide = 1;   % <---- Use this parameter to select Left=1/Right=0
+                        h.initialize();
+                        
+                        h.start();
                         
                     otherwise
                         % None

@@ -42,13 +42,13 @@ classdef MsmsDisplayScenario < handle
             obj.SignalClassifier = SignalClassifier;
         end
         
-        function initialize(obj,isLeftSide)
+        function initialize(obj)
             obj.hTimer = UiTools.create_timer(mfilename,@(src,evt)cb_data_timer(src,evt,obj));
             obj.hTimer.Period = 0.05;
             
             obj.hOutput = Scenarios.MSMS_ADL.MSMS_WRAMC_Model;
-            obj.isLeftSide = isLeftSide;
-            obj.hOutput.isLeftSide = isLeftSide;
+            %obj.isLeftSide = isLeftSide;
+            obj.hOutput.isLeftSide = obj.isLeftSide;
             obj.hOutput.initialize;
         end
         function close(obj)

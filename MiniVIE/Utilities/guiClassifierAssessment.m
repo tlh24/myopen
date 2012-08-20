@@ -126,9 +126,10 @@ set(hObject,'String','Running...');
 hSignalSource = handles.SignalSource;
 hSignalClassifier = handles.SignalClassifier;
 
-classToTest = 1:7;
+classToTest = 1:(hSignalClassifier.NumClasses - 1);
+% Assume that No Movement is last class and don't evaluate it
 for iClass = 1:length(classToTest)
-    
+
     targetClass = hSignalClassifier.ClassNames{classToTest(iClass)};
     
     set(handles.txtTarget,'String',targetClass);

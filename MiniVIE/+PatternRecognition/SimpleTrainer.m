@@ -150,16 +150,19 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
                             waitbar(1-(t/obj.ContractionLengthSeconds),h,msg);
                         end
                         
-                        iSample = iSample + 1;
-                        if iSample == obj.MaxSamples + 1
-                            % This should only display once
-                            warning('SimpleTrainer:exceededMaxSamples','Exceeded Preallocated Sample Buffer');
-                        end
+                        obj.CurrentClass = iClass;
+                        obj.addData();
                         
-                        obj.ClassLabelId(iSample) = iClass;
-                        windowData = obj.SignalSource.getFilteredData();
-                        features = feature_extract(windowData' ,obj.SignalClassifier.NumSamplesPerWindow);
-                        obj.Features3D(:,:,iSample) = features;
+%                         iSample = iSample + 1;
+%                         if iSample == obj.MaxSamples + 1
+%                             % This should only display once
+%                             warning('SimpleTrainer:exceededMaxSamples','Exceeded Preallocated Sample Buffer');
+%                         end
+%                         
+%                         obj.ClassLabelId(iSample) = iClass;
+%                         windowData = obj.SignalSource.getFilteredData();
+%                         features = feature_extract(windowData' ,obj.SignalClassifier.NumSamplesPerWindow);
+%                         obj.Features3D(:,:,iSample) = features;
                     end
                 end
             end
@@ -173,9 +176,9 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
                 delete(h);
             end
             
-            obj.Features3D(:,:,iSample+1:end) = [];
-            obj.ClassLabelId(iSample+1:end) = [];
-            obj.SampleCount = iSample;
+%             obj.Features3D(:,:,iSample+1:end) = [];
+%             obj.ClassLabelId(iSample+1:end) = [];
+%             obj.SampleCount = iSample;
             
             obj.saveTrainingData();
 
