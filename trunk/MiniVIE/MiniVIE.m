@@ -40,9 +40,13 @@ classdef MiniVIE < Common.MiniVieObj
         end
         function setupFigure(obj)
             obj.hg.Figure = UiTools.create_figure('MiniVIE Configuration Utility','MiniVIE');
-            %             pos = get(obj.hg.Figure,'Position');
-            %             pos(3) = 700;
-            set(obj.hg.Figure,'Position',pos('fig'));
+            oldPos = get(obj.hg.Figure,'Position');
+            
+            newPos = pos('fig');
+            newPos(1) = oldPos(1);
+            newPos(2) = oldPos(2);
+            
+            set(obj.hg.Figure,'Position',newPos);
             set(obj.hg.Figure,'CloseRequestFcn',@(src,evnt)closeFig(obj));
             
             % Setup Menu
