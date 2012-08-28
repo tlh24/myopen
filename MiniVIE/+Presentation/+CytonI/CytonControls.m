@@ -1,11 +1,36 @@
 classdef CytonControls < hgsetget
+    % Class for holding kinematics of Cyton and methods for endpoint
+    % based control
+    %
+    % 
+    %     
+    %   
+    %   hControls.goto([-100 200 300]);
+    %
+    % 
+    % Log:
+    %   06Feb2012 Armiger: Created
     properties
     end
     properties (Dependent = true)
         DH_Params;
     end
-    properties (SetAccess = private)
+    properties (Constant = true) %(SetAccess = private)
         % Symbolically solved kinematic equations
+        symJacobianFull = @(a6,d2,d3,d4,d5,d6,th1,th2,th3,th4,th5,th6)...
+            reshape([d4.*(cos(th1).*cos(th3)-cos(th2).*sin(th1).*sin(th3))+d2.*cos(th1)+d5.*(sin(th4).*(cos(th1).*sin(th3)+cos(th2).*cos(th3).*sin(th1))+cos(th4).*sin(th1).*sin(th2))+d3.*sin(th1).*sin(th2),d4.*(cos(th3).*sin(th1)+cos(th1).*cos(th2).*sin(th3))+d2.*sin(th1)+d5.*(sin(th4).*(sin(th1).*sin(th3)-cos(th1).*cos(th2).*cos(th3))-cos(th1).*cos(th4).*sin(th2))-d3.*cos(th1).*sin(th2),0.0,0.0,0.0,1.0,-cos(th1).*(d5.*(cos(th2).*cos(th4)-cos(th3).*sin(th2).*sin(th4))+d3.*cos(th2)+d4.*sin(th2).*sin(th3)),...
+            -sin(th1).*(d5.*(cos(th2).*cos(th4)-cos(th3).*sin(th2).*sin(th4))+d3.*cos(th2)+d4.*sin(th2).*sin(th3)),...
+            -d3.*sin(th2)+d4.*cos(th2).*sin(th3)-d5.*cos(th4).*sin(th2)-d5.*cos(th2).*cos(th3).*sin(th4),sin(th1),...
+            -cos(th1),0.0,-d4.*sin(th1).*sin(th3)+d4.*cos(th1).*cos(th2).*cos(th3)+d5.*cos(th3).*sin(th1).*sin(th4)+d5.*cos(th1).*cos(th2).*sin(th3).*sin(th4),d4.*cos(th1).*sin(th3)+d4.*cos(th2).*cos(th3).*sin(th1)-d5.*cos(th1).*cos(th3).*sin(th4)+d5.*cos(th2).*sin(th1).*sin(th3).*sin(th4),sin(th2).*(d4.*cos(th3)+d5.*sin(th3).*sin(th4)),...
+            -cos(th1).*sin(th2),...
+            -sin(th1).*sin(th2),cos(th2),d5.*cos(th1).*sin(th2).*sin(th4)+d5.*cos(th4).*sin(th1).*sin(th3)-d5.*cos(th1).*cos(th2).*cos(th3).*cos(th4),...
+            -d5.*cos(th1).*cos(th4).*sin(th3)+d5.*sin(th1).*sin(th2).*sin(th4)-d5.*cos(th2).*cos(th3).*cos(th4).*sin(th1),...
+            -d5.*cos(th2).*sin(th4)-d5.*cos(th3).*cos(th4).*sin(th2),cos(th3).*sin(th1)+cos(th1).*cos(th2).*sin(th3),...
+            -cos(th1).*cos(th3)+cos(th2).*sin(th1).*sin(th3),sin(th2).*sin(th3),0.0,0.0,0.0,sin(th4).*(sin(th1).*sin(th3)-cos(th1).*cos(th2).*cos(th3))-cos(th1).*cos(th4).*sin(th2),...
+            -sin(th4).*(cos(th1).*sin(th3)+cos(th2).*cos(th3).*sin(th1))-cos(th4).*sin(th1).*sin(th2),cos(th2).*cos(th4)-cos(th3).*sin(th2).*sin(th4),0.0,0.0,0.0,-sin(th5).*(cos(th4).*(sin(th1).*sin(th3)-cos(th1).*cos(th2).*cos(th3))+cos(th1).*sin(th2).*sin(th4))+cos(th5).*(cos(th3).*sin(th1)+cos(th1).*cos(th2).*sin(th3)),sin(th5).*(cos(th4).*(cos(th1).*sin(th3)+cos(th2).*cos(th3).*sin(th1))-sin(th1).*sin(th2).*sin(th4))-cos(th5).*(cos(th1).*cos(th3)-cos(th2).*sin(th1).*sin(th3)),sin(th5).*(cos(th2).*sin(th4)+cos(th3).*cos(th4).*sin(th2))+cos(th5).*sin(th2).*sin(th3),...
+            -a6.*cos(th3).*cos(th5).*sin(th1)-a6.*cos(th1).*cos(th2).*cos(th5).*sin(th3)-d6.*cos(th1).*cos(th4).*cos(th6).*sin(th2)+a6.*cos(th1).*sin(th2).*sin(th4).*sin(th5)+a6.*cos(th4).*sin(th1).*sin(th3).*sin(th5)+d6.*cos(th6).*sin(th1).*sin(th3).*sin(th4)+d6.*cos(th3).*sin(th1).*sin(th5).*sin(th6)-a6.*cos(th1).*cos(th2).*cos(th3).*cos(th4).*sin(th5)-d6.*cos(th1).*cos(th2).*cos(th3).*cos(th6).*sin(th4)+d6.*cos(th1).*cos(th2).*sin(th3).*sin(th5).*sin(th6)+d6.*cos(th1).*cos(th5).*sin(th2).*sin(th4).*sin(th6)+d6.*cos(th4).*cos(th5).*sin(th1).*sin(th3).*sin(th6)-d6.*cos(th1).*cos(th2).*cos(th3).*cos(th4).*cos(th5).*sin(th6),a6.*cos(th1).*cos(th3).*cos(th5)-a6.*cos(th2).*cos(th5).*sin(th1).*sin(th3)-a6.*cos(th1).*cos(th4).*sin(th3).*sin(th5)-d6.*cos(th4).*cos(th6).*sin(th1).*sin(th2)-d6.*cos(th1).*cos(th6).*sin(th3).*sin(th4)-d6.*cos(th1).*cos(th3).*sin(th5).*sin(th6)+a6.*sin(th1).*sin(th2).*sin(th4).*sin(th5)-a6.*cos(th2).*cos(th3).*cos(th4).*sin(th1).*sin(th5)-d6.*cos(th2).*cos(th3).*cos(th6).*sin(th1).*sin(th4)-d6.*cos(th1).*cos(th4).*cos(th5).*sin(th3).*sin(th6)+d6.*cos(th2).*sin(th1).*sin(th3).*sin(th5).*sin(th6)+d6.*cos(th5).*sin(th1).*sin(th2).*sin(th4).*sin(th6)-d6.*cos(th2).*cos(th3).*cos(th4).*cos(th5).*sin(th1).*sin(th6),d6.*cos(th2).*cos(th4).*cos(th6)-a6.*cos(th5).*sin(th2).*sin(th3)-a6.*cos(th2).*sin(th4).*sin(th5)-a6.*cos(th3).*cos(th4).*sin(th2).*sin(th5)-d6.*cos(th3).*cos(th6).*sin(th2).*sin(th4)-d6.*cos(th2).*cos(th5).*sin(th4).*sin(th6)+d6.*sin(th2).*sin(th3).*sin(th5).*sin(th6)-d6.*cos(th3).*cos(th4).*cos(th5).*sin(th2).*sin(th6),...
+            -cos(pi.*(1.0./2.0)+th6).*(sin(th4).*(sin(th1).*sin(th3)-cos(th1).*cos(th2).*cos(th3))-cos(th1).*cos(th4).*sin(th2))-sin(pi.*(1.0./2.0)+th6).*(cos(th5).*(cos(th4).*(sin(th1).*sin(th3)-cos(th1).*cos(th2).*cos(th3))+cos(th1).*sin(th2).*sin(th4))+sin(th5).*(cos(th3).*sin(th1)+cos(th1).*cos(th2).*sin(th3))),cos(pi.*(1.0./2.0)+th6).*(sin(th4).*(cos(th1).*sin(th3)+cos(th2).*cos(th3).*sin(th1))+cos(th4).*sin(th1).*sin(th2))+sin(pi.*(1.0./2.0)+th6).*(cos(th5).*(cos(th4).*(cos(th1).*sin(th3)+cos(th2).*cos(th3).*sin(th1))-sin(th1).*sin(th2).*sin(th4))+sin(th5).*(cos(th1).*cos(th3)-cos(th2).*sin(th1).*sin(th3))),sin(pi.*(1.0./2.0)+th6).*(cos(th5).*(cos(th2).*sin(th4)+cos(th3).*cos(th4).*sin(th2))-sin(th2).*sin(th3).*sin(th5))-cos(pi.*(1.0./2.0)+th6).*(cos(th2).*cos(th4)-cos(th3).*sin(th2).*sin(th4))],...
+            [6,7])
         symJacobian = @(a6,a7,d2,d3,d4,d5,d6,d7,th1,th2,th3,th4,th5,th6,th7)...
             reshape([d4.*(cos(th1).*cos(th3)-cos(th2).*sin(th1).*sin(th3))-d6.*(sin(th5).*(cos(th4).*(cos(th1).*sin(th3)+cos(th2).*cos(th3).*sin(th1))-sin(th1).*sin(th2).*sin(th4))-cos(th5).*(cos(th1).*cos(th3)-cos(th2).*sin(th1).*sin(th3)))-d7.*(cos(pi.*(1.0./2.0)+th6).*(sin(th4).*(cos(th1).*sin(th3)+cos(th2).*cos(th3).*sin(th1))+cos(th4).*sin(th1).*sin(th2))+sin(pi.*(1.0./2.0)+th6).*(cos(th5).*(cos(th4).*(cos(th1).*sin(th3)+cos(th2).*cos(th3).*sin(th1))-sin(th1).*sin(th2).*sin(th4))+sin(th5).*(cos(th1).*cos(th3)-cos(th2).*sin(th1).*sin(th3))))+d2.*cos(th1)+d5.*(sin(th4).*(cos(th1).*sin(th3)+cos(th2).*cos(th3).*sin(th1))+cos(th4).*sin(th1).*sin(th2))-a6.*cos(pi.*(1.0./2.0)+th6).*(cos(th5).*(cos(th4).*(cos(th1).*sin(th3)+cos(th2).*cos(th3).*sin(th1))-sin(th1).*sin(th2).*sin(th4))+sin(th5).*(cos(th1).*cos(th3)-cos(th2).*sin(th1).*sin(th3)))-a7.*sin(th7).*(sin(th5).*(cos(th4).*(cos(th1).*sin(th3)+cos(th2).*cos(th3).*sin(th1))-sin(th1).*sin(th2).*sin(th4))-cos(th5).*(cos(th1).*cos(th3)-cos(th2).*sin(th1).*sin(th3)))+a7.*cos(th7).*(sin(pi.*(1.0./2.0)+th6).*(sin(th4).*(cos(th1).*sin(th3)+cos(th2).*cos(th3).*sin(th1))+cos(th4).*sin(th1).*sin(th2))-cos(pi.*(1.0./2.0)+th6).*(cos(th5).*(cos(th4).*(cos(th1).*sin(th3)+cos(th2).*cos(th3).*sin(th1))-sin(th1).*sin(th2).*sin(th4))+sin(th5).*(cos(th1).*cos(th3)-cos(th2).*sin(th1).*sin(th3))))+d3.*sin(th1).*sin(th2)+a6.*sin(pi.*(1.0./2.0)+th6).*(sin(th4).*(cos(th1).*sin(th3)+cos(th2).*cos(th3).*sin(th1))+cos(th4).*sin(th1).*sin(th2)),...
             -d6.*(sin(th5).*(cos(th4).*(sin(th1).*sin(th3)-cos(th1).*cos(th2).*cos(th3))+cos(th1).*sin(th2).*sin(th4))-cos(th5).*(cos(th3).*sin(th1)+cos(th1).*cos(th2).*sin(th3)))+d4.*(cos(th3).*sin(th1)+cos(th1).*cos(th2).*sin(th3))-d7.*(cos(pi.*(1.0./2.0)+th6).*(sin(th4).*(sin(th1).*sin(th3)-cos(th1).*cos(th2).*cos(th3))-cos(th1).*cos(th4).*sin(th2))+sin(pi.*(1.0./2.0)+th6).*(cos(th5).*(cos(th4).*(sin(th1).*sin(th3)-cos(th1).*cos(th2).*cos(th3))+cos(th1).*sin(th2).*sin(th4))+sin(th5).*(cos(th3).*sin(th1)+cos(th1).*cos(th2).*sin(th3))))+d2.*sin(th1)+d5.*(sin(th4).*(sin(th1).*sin(th3)-cos(th1).*cos(th2).*cos(th3))-cos(th1).*cos(th4).*sin(th2))-a6.*cos(pi.*(1.0./2.0)+th6).*(cos(th5).*(cos(th4).*(sin(th1).*sin(th3)-cos(th1).*cos(th2).*cos(th3))+cos(th1).*sin(th2).*sin(th4))+sin(th5).*(cos(th3).*sin(th1)+cos(th1).*cos(th2).*sin(th3)))+a7.*cos(th7).*(sin(pi.*(1.0./2.0)+th6).*(sin(th4).*(sin(th1).*sin(th3)-cos(th1).*cos(th2).*cos(th3))-cos(th1).*cos(th4).*sin(th2))-cos(pi.*(1.0./2.0)+th6).*(cos(th5).*(cos(th4).*(sin(th1).*sin(th3)-cos(th1).*cos(th2).*cos(th3))+cos(th1).*sin(th2).*sin(th4))+sin(th5).*(cos(th3).*sin(th1)+cos(th1).*cos(th2).*sin(th3))))-a7.*sin(th7).*(sin(th5).*(cos(th4).*(sin(th1).*sin(th3)-cos(th1).*cos(th2).*cos(th3))+cos(th1).*sin(th2).*sin(th4))-cos(th5).*(cos(th3).*sin(th1)+cos(th1).*cos(th2).*sin(th3)))-d3.*cos(th1).*sin(th2)+a6.*sin(pi.*(1.0./2.0)+th6).*(sin(th4).*(sin(th1).*sin(th3)-cos(th1).*cos(th2).*cos(th3))-cos(th1).*cos(th4).*sin(th2)),0.0,-d5.*cos(th1).*(cos(th2).*cos(th4)-cos(th3).*sin(th2).*sin(th4))-d7.*cos(th1).*(sin(pi.*(1.0./2.0)+th6).*(cos(th5).*(cos(th2).*sin(th4)+cos(th3).*cos(th4).*sin(th2))-sin(th2).*sin(th3).*sin(th5))-cos(pi.*(1.0./2.0)+th6).*(cos(th2).*cos(th4)-cos(th3).*sin(th2).*sin(th4)))-d3.*cos(th1).*cos(th2)-d6.*cos(th1).*(sin(th5).*(cos(th2).*sin(th4)+cos(th3).*cos(th4).*sin(th2))+cos(th5).*sin(th2).*sin(th3))-a6.*cos(th1).*sin(pi.*(1.0./2.0)+th6).*(cos(th2).*cos(th4)-cos(th3).*sin(th2).*sin(th4))-a7.*cos(th1).*cos(th7).*(cos(pi.*(1.0./2.0)+th6).*(cos(th5).*(cos(th2).*sin(th4)+cos(th3).*cos(th4).*sin(th2))-sin(th2).*sin(th3).*sin(th5))+sin(pi.*(1.0./2.0)+th6).*(cos(th2).*cos(th4)-cos(th3).*sin(th2).*sin(th4)))-d4.*cos(th1).*sin(th2).*sin(th3)-a6.*cos(th1).*cos(pi.*(1.0./2.0)+th6).*(cos(th5).*(cos(th2).*sin(th4)+cos(th3).*cos(th4).*sin(th2))-sin(th2).*sin(th3).*sin(th5))-a7.*cos(th1).*sin(th7).*(sin(th5).*(cos(th2).*sin(th4)+cos(th3).*cos(th4).*sin(th2))+cos(th5).*sin(th2).*sin(th3)),...
@@ -98,33 +123,48 @@ classdef CytonControls < hgsetget
                 T_0_N = T_0_N * A(:,:,i);
             end
         end
-        function setEndEffectorPose(obj,T_Target)
+        function q = setEndEffectorPose(obj,T_Target)
             if nargin < 2
-                T_Target = makehgtform('translate',[50 150 300],...
-                    'xrotate',0.1,'yrotate',0.1,'zrotate',0.3);
+                T_Target = makehgtform('translate',[50 180 300],...
+                    'xrotate',-1,'yrotate',0,'zrotate',0);
             end
             pTarget = T_Target(1:3,4);
             
-            obj.hDisplay.setTarget(T_Target);
+            obj.hCyton.hDisplay.setTarget(T_Target);
+            
+            drawnow;
 
 
-            [T_0_n a d] = CytonControls.getDHParams();
-            [pError phi] = deal(Inf);
+            [T_0_n a d] = obj.getDHParams();
+            [pError phi] = deal(100);
+            [pErrorLast phiLast] = deal(1000);
+
+            convergenceThreshold = 1e-3;
             
             tJacobian = tic;
             
-            while (norm(pError) > 1) || (phi > 1)
-                
-                q = obj.hPlant.CurrentPosition;
-                %J_ = obj.hControls.symJacobian(a(6),a(7),d(2),d(3),d(4),d(5),d(6),d(7),q(1),q(2),q(3),q(4),q(5),q(6),q(7));
-                J_ = symJacobian(a(6),d(2),d(3),d(4),d(5),d(6),q(1),q(2),q(3),q(4),q(5),q(6));
+            countMax = 5000;
+            count = 0;
+            isConverged = false;
+            while ((norm(pError) > 1) || (phi > 1)) && (count < countMax) && ~isConverged
+                count = count + 1;
+                q = obj.hCyton.hPlant.CurrentPosition;
+                %J_ = obj.symJacobian(a(6),a(7),d(2),d(3),d(4),d(5),d(6),d(7),q(1),q(2),q(3),q(4),q(5),q(6),q(7));
+                J_ = obj.symJacobianFull(a(6),d(2),d(3),d(4),d(5),d(6),q(1),q(2),q(3),q(4),q(5),q(6));
+                %J_ = obj.hCyton.hControls.symJacobian(a(6),d(2),d(3),d(4),d(5),d(6),q(1),q(2),q(3),q(4),q(5),q(6));
                 
                 N = 7;
-                T = obj.hControls.getT_0_N(N);
+                T = obj.getT_0_N(N);
                 
                 % Compute position error
                 pEndEffector = T(1:3,4);
                 pError = pTarget - pEndEffector;
+                
+                dE = norm(pError - pErrorLast);
+                pErrorLast = pError;
+                isConverged = (abs(dE) < convergenceThreshold);
+                
+                %fprintf('pError = [%6.2f %6.2f %6.2f]\tdE = %6.2f\n',pError,dE);
                 
                 % Compute orientation error
                 T_error = pinv(T)*T_Target;
@@ -157,17 +197,19 @@ classdef CytonControls < hgsetget
                 
                 q(1:7) = q(1:7) + q_dot;
                 
-                obj.setJointParameters(q);
-                obj.hDisplay.updateFigure();
-                drawnow
+                obj.hCyton.setJointParameters(q);
+                %obj.hCyton.hDisplay.updateFigure();
+                %drawnow
             end
             disp('setEndEffectorPose Complete');
             toc(tJacobian);
         end
         
         function goto(obj,pos)
-            %a.goto([-70 200 310])
-            
+            if nargin < 2
+                pos = [-70 200 310];
+            end
+            import Presentation.CytonI.*
             % Jacobian endpoint solution
             pTarget = pos(:);
             
@@ -182,13 +224,13 @@ classdef CytonControls < hgsetget
             t0 = clock;
             while errorMag > 1 && ~isTimeout && isMoving
                 %%
-                q = obj.hPlant.CurrentPosition;
+                q = obj.hCyton.hPlant.CurrentPosition;
                 
-                J = obj.hControls.symJacobian(a(6),a(7),d(2),d(3),d(4),d(5),d(6),d(7),q(1),q(2),q(3),q(4),q(5),q(6),q(7));
+                J = obj.hCyton.hControls.symJacobian(a(6),a(7),d(2),d(3),d(4),d(5),d(6),d(7),q(1),q(2),q(3),q(4),q(5),q(6),q(7));
                 %J = obj.hControls.symJacobianWrist(d(2),d(3),d(4),d(5),q(1),q(2),q(3),q(4));
                 
                 N = 7;
-                T_0_N = obj.hControls.getT_0_N(N);
+                T_0_N = obj.hCyton.hControls.getT_0_N(N);
                 pEE = T_0_N(1:3,4);
                 pError = pTarget - pEE;
                 
@@ -208,8 +250,8 @@ classdef CytonControls < hgsetget
                 q_dot = min(abs(q_dot),1) .* sign(q_dot);
                 
                 isMoving = any(abs(q_dot) > 0.1) || ...
-                    any(~obj.hPlant.isMoveComplete);
-                %~all(abs(q_dot) > 0.1) || ~all(obj.hPlant.isMoveComplete);
+                    any(~obj.hCyton.hPlant.isMoveComplete);
+                %~all(abs(q_dot) > 0.1) || ~all(obj.hCyton.hPlant.isMoveComplete);
                 
                 
                 % Apply Joint limits
@@ -220,7 +262,7 @@ classdef CytonControls < hgsetget
                 
                 q(1:N) = q(1:N) + (q_dot*dt);
                 q_dot';
-                obj.setJointParameters(q);
+                obj.hCyton.setJointParameters(q);
                 
                 drawnow
                 
@@ -383,7 +425,7 @@ classdef CytonControls < hgsetget
             % For debug purposes, if you plot all these transformations, it
             % will show the robot in a 'home' position.
             %%
-            patchData = CytonDisplay.loadPatchData();
+            patchData = CytonDisplay.quickLoadPatchData();
             T_0_n = CytonControls.getDHParams();
             clf
             axis equal
@@ -407,6 +449,7 @@ classdef CytonControls < hgsetget
             end
         end
         function symJacobian = computeJacobian()
+            %%
             % Ai = DH(linkLength,linkTwist,linkOffset,jointAngle); ref Eq. 3.10
             DH = @(linkLength,linkTwist,linkOffset,jointAngle)...
                 [
@@ -459,13 +502,13 @@ classdef CytonControls < hgsetget
             J3 = simplify(cross(z2,(oc-o2)));
             J4 = simplify(cross(z3,(oc-o3)));
             J5 = simplify(cross(z4,(oc-o4)));
-            %J6 = simplify(cross(z5,(oc-o5)));
-            %J7 = simplify(cross(z6,(oc-o6)));
+            J6 = simplify(cross(z5,(oc-o5)));
+            J7 = simplify(cross(z6,(oc-o6)));
             
-            %J11 = [J1 J2 J3 J4 J5 J6 J7];
-            J11 = [J1 J2 J3 J4 J5];
+            J11 = [J1 J2 J3 J4 J5 J6 J7];
+            %J11 = [J1 J2 J3 J4 J5];
             
-            % J = [J11; z0 z1 z2];
+            J = [J11; z0 z1 z2 z3 z4 z5 z6];
             
             % matlabFunction converts symbolic functions to anonymous (faster)
             % J_f = matlabFunction(J);
@@ -480,3 +523,68 @@ classdef CytonControls < hgsetget
     end
 end
 
+function [n,point,phi,t] = f_screw(T,intersect)
+% Calculation of the screw axis
+% function [n,point,phi,t]=screw(T)
+% Input:    T   matrix containing the rotation matrix and transl. vector
+%               [R;[t1,t2,t3]'; 0 0 0 1]
+%	    intersect	location of the screw axis where it intersects either the x=0 (intersect=1),
+%                       the y=0 (intersect=2), or the z=0 (intersect=3) plane.
+%			default: intersect=3
+% Output:   n       unit vector with direction of helical axis
+%           point   point on helical axis
+%           phi     rotation angle (in deg)
+%           t       amount of translation along screw axis
+%
+% Comments:     Note that phi is b/w 0 and 180 deg. Right handed screw
+%               axis system. The "sign" of phi can be checked with direction
+%               of the unit vector (n).
+% References:   (1) Spoor and Veldpaus (1980) Rigid body motion calculated
+%                   from spatial co-ordinates of markers.
+%                   J Biomech 13: 391-393
+%               (2) Berme, Cappozzo, and Meglan. Rigid body mechanics
+%                   as applied to human movement studies. In Berme and
+%                   Cappozzo: Biomechanics of human movement.
+%
+% Author:	 Christoph Reinschmidt, HPL, UofCalgary
+% Date:          Oct. 03, 1994
+% Last Changes:  Nov-20-96
+
+if nargin==1, intersect=[3]; end
+
+R=T(1:3,1:3);
+
+% tmp is matrix in equ. 31 (Spoor and Veldpaus, 1980)
+tmp=[R(3,2)-R(2,3);R(1,3)-R(3,1);R(2,1)-R(1,2)];
+
+%calculating n using equ. 31 and 32 (Spoor and Veldpaus, 1980)
+n=tmp/norm(tmp);
+
+% calculating phi either with equ. 32 or 34 (Spoor and Veldpaus, 1980)
+% depending if sin(phi) smaller of bigger than 0.5*SQRT(2)
+if norm(tmp) <= sqrt(2)
+    
+    phi=rad2deg(asin(0.5*norm(tmp)));
+else
+    phi=rad2deg(acos(0.5*(R(1,1)+R(2,2)+R(3,3)-1)));
+end
+
+%if phi approaches 180 deg it is better to use the following:
+%(see Spoor and Veldpaus Eq. 35,36)
+if phi>135;
+    b=[0.5*(R+R')-cos(deg2rad(phi)) * eye(3)];
+    b1=[b(:,1)]; b2=[b(:,2)]; b3=[b(:,3)];
+    btmp=[b1'*b1;b2'*b2;b3'*b3];
+    [bmax,i]=max(btmp);
+    n=b(:,i)/sqrt(bmax);
+    if sign(R(3,2)-R(2,3)) ~= sign(n(1,1));  n=n.*(-1); end;
+end
+
+t=n'*T(1:3,4);
+
+% calculate where the screw axis intersects the plane as defined in 'intersect'
+Q=R-eye(3);
+Q(:,intersect)=-n;
+point=Q\[T(1:3,4).*[-1]];
+point(intersect,1)=[0];
+end

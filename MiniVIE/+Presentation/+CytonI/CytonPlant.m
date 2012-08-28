@@ -59,7 +59,7 @@ classdef CytonPlant < hgsetget
                     min(max(obj.DesiredPosition(8),obj.GripperLimits(1)),obj.GripperLimits(2));
             end
             
-            update_state(obj);
+            update(obj);
         end
         
         function connectToHardware(obj,strComPort)
@@ -85,7 +85,7 @@ classdef CytonPlant < hgsetget
             obj.DesiredPosition = obj.DefaultPosition*ones(obj.NumJoints,1);
             obj.CurrentPosition = obj.DefaultPosition*ones(obj.NumJoints,1);
             
-            obj.hTimer = UiTools.create_timer('CytonPlant',@(src,evt)update_state(obj));
+            obj.hTimer = UiTools.create_timer('CytonPlant',@(src,evt)update(obj));
             obj.hTimer.Period = 0.02;
         end
         function allComplete = allMovesComplete(obj)
@@ -94,7 +94,7 @@ classdef CytonPlant < hgsetget
         function isComplete = isMoveComplete(obj)
             isComplete = (obj.CurrentPosition == obj.DesiredPosition);
         end
-        function update_state(obj)
+        function update(obj)
             % This function is called by the timer and incrementally
             % updates the current positions based on the current speed
             if obj.Verbose

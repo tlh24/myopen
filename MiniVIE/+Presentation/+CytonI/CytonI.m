@@ -23,6 +23,23 @@ classdef CytonI < Presentation.CytonI.Robot
     % run a demo via
     %   CytonI.Demo
     %
+    %
+    % The Display:
+    %   hDisplay = obj.hDisplay;
+    %
+    %   hDisplay.showSurfaces(0)
+    %   hDisplay.showTriads(1)
+    %   hDisplay.showTarget(1)
+    %   setTarget(hDisplay,makehgtform('translate',[100 100 100],'yrotate',randn))
+    %
+    %   hSphere = hDisplay.setTargetSphereRadius(50)
+    %   set(hSphere,'FaceAlpha',0.2)    
+    %
+    %
+    % The Control Module:
+    %   hControls = obj.hControls;  
+    %
+    %   hControls.
     % This is just a first cut and we can elaborate more as we go.  (e.g. TODO: add individual joint speeds).
     % I also incorporated the Cyton Serial functions into a single class file.  I did this by adding the
     % theta = cyton_serial_cmd2theta(cmd_str, oldTheta)
@@ -194,7 +211,7 @@ classdef CytonI < Presentation.CytonI.Robot
             
             % Home
             setJointParameters(obj,zeros(8,1));
-            while ~all(obj.hPlant.isMoveComplete)
+            while ~obj.hPlant.allMovesComplete()
                 disp('Going to home');
                 drawnow
             end
@@ -205,7 +222,7 @@ classdef CytonI < Presentation.CytonI.Robot
             p = [-100 150 280];
             M = makehgtform('translate',p);
             obj.hDisplay.setTarget(M)
-            obj.goto(p);
+            obj.hControls.goto(p);
             
         end
     end
