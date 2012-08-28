@@ -118,6 +118,13 @@ classdef CytonDisplay < hgsetget
             
         end
         function setTarget(obj,M)
+            % Create a target and triad at the specified location in the
+            % virtual environment
+            %
+            % Usage:
+            %   setTarget(obj,[-100 150 280]);
+            %   
+            %   setTarget(obj,makehgtform('yrotate',0.3,'translate',[100 100 100]))
             
             if isequal(size(M(:)),[3 1])
                 % convert vector to matrix
@@ -127,6 +134,24 @@ classdef CytonDisplay < hgsetget
             if ishandle(obj.hg.Figure)
                 set(obj.hg.hTarget,'Matrix',M);
             end
+        end
+        function hSphere = setTargetSphereRadius(obj,r)
+            if ~ishandle(obj.hg.Figure)
+                obj.hg.hSphere = [];
+                return
+            end
+            
+            assert(ishandle(obj.hg.hTarget),'Error target missing');
+            
+            if ishandle(obj.hg.hSphere)
+                delete(obj.hg.hSphere);
+                obj.hg.hSphere = [];
+            end
+            
+            sphereRadius = r;
+            obj.hg.hSphere = Presentation.CytonI.Utils.plotSphere([0 0 0]',sphereRadius,'Parent',obj.hg.hTarget);
+            hSphere = obj.hg.hSphere;
+
         end
         function updateFigure(obj)
             % Set the graphic hgtransform objects to reflect the kinematics
@@ -169,6 +194,8 @@ classdef CytonDisplay < hgsetget
             end
         end
         function patchData = loadPatchData()
+            error('Obsolete.  Use quickLoadPatchData()')
+            
             % Load Cyton Data
             % The struct patchData contains the faces and vertices of the patch data
             
