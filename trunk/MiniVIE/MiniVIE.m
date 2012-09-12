@@ -70,7 +70,7 @@ classdef MiniVIE < Common.MiniVieObj
             puCallbacks = {
                 @(src,evt)setSignalSource(obj,src)
                 @(src,evt)setSignalAnalysis(obj,src)
-                @(src,evt)setTrainer(obj,get(src,'String'),get(src,'Value'))
+                @(src,evt)setTrainer(obj,src)
                 []
                 @(src,evt)setPresentation(obj,get(src,'String'),get(src,'Value'))
                 };
@@ -186,7 +186,7 @@ classdef MiniVIE < Common.MiniVieObj
             if isempty(lastValue)
                 lastValue = 1;
             end
-
+            
             % Get callback properties
             string = get(src,'String');
             value = get(src,'Value');
@@ -324,63 +324,80 @@ classdef MiniVIE < Common.MiniVieObj
             lastValue = value;
             
         end
-        function setTrainer(obj,string,value)
-            h = obj.TrainingInterface;
-            
-            if ~isempty(h)
-                try
-                    close(h);
-                end
+        function setTrainer(obj,src)
+            persistent lastValue
+            if isempty(lastValue)
+                lastValue = 1;
             end
             
-            switch string{value}
-                case 'Simple Trainer'
-                    h = PatternRecognition.SimpleTrainer();
-                    prompt={'Enter Number of Repetitions:',...
-                        'Enter Contraction Length (sec):',...
-                        'Enter Delay Length (sec):'...
-                        };
-                    name='Input for Training Interface';
-                    numlines=1;
-                    defaultanswer={'4','2','3'};
-                    answer=inputdlg(prompt,name,numlines,defaultanswer);
-                    assert(length(answer) == 3,'Expected 3 outputs');
-                    vals = str2double(answer);
-                    assert(~any(isnan(vals)),'Expected 3 numeric values');
-                    
-                    h.NumRepetitions = vals(1);
-                    h.ContractionLengthSeconds = vals(2);
-                    h.DelayLengthSeconds = vals(3);
-                    
-                case 'Bar Trainer'
-                    h = PatternRecognition.BarTrainer();
-                case 'Mini Guitar Hero'
-                    h = PatternRecognition.MiniGuitarHero();
-                case 'Motion Trainer'
-                    h = PatternRecognition.MotionTrainer();
-                otherwise
-                    % None
-                    h = [];
-            end
+            % Get callback properties
+            string = get(src,'String');
+            value = get(src,'Value');
             
-            if isempty(h)
-                % Disable buttons
-                set(obj.hg.TrainingButtons(:),'Enable','off');
-            else
-                % Enable buttons
-                set(obj.hg.TrainingButtons(:),'Enable','on');
-                if isempty(obj.SignalSource)
-                    errordlg('Select an Input Source');
-                    return;
-                elseif isempty(obj.SignalClassifier)
-                    errordlg('Select a Classifier');
-                    return;
+            try
+                h = obj.TrainingInterface;
+                
+                if ~isempty(h)
+                    try
+                        close(h);
+                    end
                 end
                 
-                h.initialize(obj.SignalSource,obj.SignalClassifier);
+                switch string{value}
+                    case 'Simple Trainer'
+                        h = PatternRecognition.SimpleTrainer();
+                        prompt={'Enter Number of Repetitions:',...
+                            'Enter Contraction Length (sec):',...
+                            'Enter Delay Length (sec):'...
+                            };
+                        name='Input for Training Interface';
+                        numlines=1;
+                        defaultanswer={'4','2','3'};
+                        answer=inputdlg(prompt,name,numlines,defaultanswer);
+                        assert(length(answer) == 3,'Expected 3 outputs');
+                        vals = str2double(answer);
+                        assert(~any(isnan(vals)),'Expected 3 numeric values');
+                        
+                        h.NumRepetitions = vals(1);
+                        h.ContractionLengthSeconds = vals(2);
+                        h.DelayLengthSeconds = vals(3);
+                        
+                    case 'Bar Trainer'
+                        h = PatternRecognition.BarTrainer();
+                    case 'Mini Guitar Hero'
+                        h = PatternRecognition.MiniGuitarHero();
+                    case 'Motion Trainer'
+                        h = PatternRecognition.MotionTrainer();
+                    otherwise
+                        % None
+                        h = [];
+                end
+                
+                if isempty(h)
+                    % Disable buttons
+                    set(obj.hg.TrainingButtons(:),'Enable','off');
+                else
+                    % Enable buttons
+                    set(obj.hg.TrainingButtons(:),'Enable','on');
+                    if isempty(obj.SignalSource)
+                        errordlg('Select an Input Source');
+                        return;
+                    elseif isempty(obj.SignalClassifier)
+                        errordlg('Select a Classifier');
+                        return;
+                    end
+                    
+                    h.initialize(obj.SignalSource,obj.SignalClassifier);
+                end
+                
+            catch ME
+                errordlg({'Error Initializing Training Interface.',ME.message});
+                set(src,'Value',lastValue);
+                return
             end
             
             obj.TrainingInterface = h;
+            lastValue = value;
             
         end
         function setPresentation(obj,string,value)

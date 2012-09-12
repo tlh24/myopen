@@ -166,9 +166,10 @@ classdef guiChannelSelect < Common.MiniVieObj
             else
                 set(obj.hFigure,'Position',[1 1 1 1]);
             end
-            a = axes('Visible','off','Parent',obj.hFigure);
-            colorOrder = get(a, 'ColorOrder');
-            obj.ColorOrder = repmat(colorOrder,[obj.numChannelsMax 1]);
+            %a = axes('Visible','off','Parent',obj.hFigure);
+            %colorOrder = get(a, 'ColorOrder');
+            %obj.ColorOrder = repmat(colorOrder,[obj.numChannelsMax 1]);
+            obj.ColorOrder = [distinguishable_colors(16); distinguishable_colors(16)];
             
             set(obj.hFigure,'Position',[200 500 200 70],'CloseRequestFcn',@(src,evt)close(obj));
             

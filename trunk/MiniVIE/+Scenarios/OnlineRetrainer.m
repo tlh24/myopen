@@ -82,7 +82,7 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
                 obj.SignalClassifier.computeConfusion();
             end
             
-            
+            try
             % If button is down, add the current data as training data to
             % that class
             currentClass = max(min(buttonId,obj.SignalClassifier.NumClasses),1);
@@ -114,7 +114,10 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
             
             isTrained = obj.SignalClassifier.IsTrained;
             %isTrained(currentClass)
-            
+            catch ME
+                ME
+                rethrow(ME)
+            end
         end
         function close(obj)
             

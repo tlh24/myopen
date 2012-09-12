@@ -43,10 +43,13 @@ classdef ScenarioBase < Common.MiniVieObj
             obj.SignalClassifier = SignalClassifier;
             
             obj.Timer = UiTools.create_timer(mfilename,@(src,evt)update(obj));
-            obj.Timer.Period = 0.05;
+            period = 0.05;
+            fprintf('[%s] Setting timer refresh rate to %4.2f s\n',mfilename,period);
+            obj.Timer.Period = period;
             %obj.Timer.Period = 0.15;
             
-            jointAngles = UiTools.load_temp_file(obj.TempFileName);
+            %jointAngles = UiTools.load_temp_file(obj.TempFileName);
+            jointAngles = [];
             
             if isempty(jointAngles)
                 obj.JointAnglesDegrees = zeros(size(action_bus_definition));
@@ -73,6 +76,8 @@ classdef ScenarioBase < Common.MiniVieObj
             % Apply Wrist Limits
             obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) = max(min(...
                 obj.JointAnglesDegrees(action_bus_enum.Wrist_FE),60),-60);
+%             obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) = max(min(...
+%                 obj.JointAnglesDegrees(action_bus_enum.Wrist_FE),25),-25);
             obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) = max(min(...
                 obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev),45),-10);
             obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) = max(min(...
@@ -132,17 +137,17 @@ classdef ScenarioBase < Common.MiniVieObj
                 case {'Elbow Extension' 'Elbow Down'}
                     desiredVelocity(action_bus_enum.Elbow) = -prSpeed;
                 case {'Pronate' 'Wrist Rotate In'}
-                    desiredVelocity(action_bus_enum.Wrist_Rot) = -prSpeed*3;
+                    desiredVelocity(action_bus_enum.Wrist_Rot) = -prSpeed*1.5;
                 case {'Supinate' 'Wrist Rotate Out'}
-                    desiredVelocity(action_bus_enum.Wrist_Rot) = +prSpeed*3;
+                    desiredVelocity(action_bus_enum.Wrist_Rot) = +prSpeed*1.5;
                 case {'Up' 'Hand Up'}
                     desiredVelocity(action_bus_enum.Wrist_Dev) = -prSpeed;
                 case {'Down' 'Hand Down'}
                     desiredVelocity(action_bus_enum.Wrist_Dev) = +prSpeed;
                 case {'Left' 'Wrist Flex' 'Wrist Flex In'}
-                    desiredVelocity(action_bus_enum.Wrist_FE) = +prSpeed;
-                case {'Right' 'Wrist Extend' 'Wrist Extend Out'}
                     desiredVelocity(action_bus_enum.Wrist_FE) = -prSpeed;
+                case {'Right' 'Wrist Extend' 'Wrist Extend Out'}
+                    desiredVelocity(action_bus_enum.Wrist_FE) = +prSpeed;
             end
             
             globalGain = 3;

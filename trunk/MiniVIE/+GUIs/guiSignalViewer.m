@@ -285,6 +285,18 @@ classdef guiSignalViewer < Common.MiniVieObj
             obj.hg.PlotLines{3} = plot(obj.hg.Axes(3),zeros(2,obj.SignalSource.NumChannels));
             obj.hg.PlotLines{4} = plot(obj.hg.Axes(4),zeros(2,obj.SignalSource.NumChannels));
             
+            ColorOrder = [distinguishable_colors(16); distinguishable_colors(16)];
+            
+            assert(size(ColorOrder,1) >= obj.SignalSource.NumChannels,'Need more colors');
+            
+            for iLineSet = 1:length(obj.hg.PlotLines)
+                plotLines = obj.hg.PlotLines{iLineSet};
+                for iLine = 1:length(plotLines)
+                    set(plotLines(iLine),'Color',ColorOrder(iLine,:));
+                end
+            end
+
+            
         end
         function showFilteredData(obj,val)
             obj.ShowFilteredData = val;

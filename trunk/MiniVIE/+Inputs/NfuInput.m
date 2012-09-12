@@ -45,15 +45,7 @@ classdef NfuInput < Inputs.CpcHeadstage
             % (based on the number of samples) however results will be
             % padded with zeros.  User should check obj.AnalogInput.SamplesAvailable
             % for a deterministic result
-            
-            % Determine expected packet size
-            numPacketHeaderBytes = 6;
-            numSamplesPerPacket = 20;
-            numSampleHeaderBytes = 4;
-            numChannelsPerPacket = 8;
-            numBytesPerChannel = 2;
-            numBytesPerSample = numChannelsPerPacket*numBytesPerChannel + numSampleHeaderBytes;
-            cpchpacketSize = numPacketHeaderBytes+numBytesPerSample*numSamplesPerPacket;
+
 
             obj.hNfu.update();  % read available packets
             
@@ -61,6 +53,20 @@ classdef NfuInput < Inputs.CpcHeadstage
             if isempty(cellData)
                 fprintf('[%s] No Data\n',mfilename);
             end
+
+            % Determine expected packet size
+            numPacketHeaderBytes = 6;
+            numSamplesPerPacket = 20;
+            numSampleHeaderBytes = 4;
+%             if (length(cellData{1}) == 406)
+%                 numChannelsPerPacket = 8;
+%             else
+%                 numChannelsPerPacket = 16;
+%             end
+            numChannelsPerPacket = 16;
+            numBytesPerChannel = 2;
+            numBytesPerSample = numChannelsPerPacket*numBytesPerChannel + numSampleHeaderBytes;
+            cpchpacketSize = numPacketHeaderBytes+numBytesPerSample*numSamplesPerPacket;
             
             % Loop through all available packets and find cpch data
             for i = 1:length(cellData)

@@ -39,9 +39,9 @@ classdef (Sealed) MplDb < MiniVieDb
             setup_SA_parameters(obj);
             fprintf('Done\n');
             fprintf('[%s] Defining Simulink Bus Parameters...',mfilename);
-            setup_Bus_parameters(obj);
-            fprintf('Done\n');
-            
+            %setup_Bus_parameters(obj);
+            %fprintf('Done\n');
+            fprintf('DISABLED\n');
             
             
         end

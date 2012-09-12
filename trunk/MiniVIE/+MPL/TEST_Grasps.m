@@ -69,7 +69,7 @@ elbow = 5*5*pi/180;
 
 msg = mud.ArmPosVelHandRocGrasps([zeros(1,3) elbow w],zeros(1,7),1,rocID,rocPos,1);
 % pnet( hNfu.TcpConnection, 'write', char(59,msg)); %Upper arm and wrist DOM PV, ROC for hand
-hNfu.send_msg(hNfu.TcpConnection,char(59,msg));  % append nfu msg header
+hNfu.sendUdpCommand(char(59,msg));  % append nfu msg header
 
 %%
 tic
@@ -79,6 +79,6 @@ while StartStopForm
     rocID = 2;
     
     msg = mud.ArmPosVelHandRocGrasps([zeros(1,4) w],zeros(1,7),1,rocID,rocPos,1);
-    hNfu.send_msg(hNfu.TcpConnection,char(59,msg));
+    hNfu.sendUdpCommand(char(59,msg));
     drawnow
 end

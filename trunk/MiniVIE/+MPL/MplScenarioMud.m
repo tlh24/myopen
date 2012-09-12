@@ -28,6 +28,8 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
         
         VulcanXAddress = '192.168.1.199'; %127.0.0.1
         VulcanXPort = 9027; %9035
+        
+        localRoc = [];
     end
     methods
         function obj = MplScenarioMud
@@ -48,12 +50,14 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
                 % Note tactors currently only enabled on NFU pathway
                 
                 % TODO: abstract tactor ids and mapping
-                tactorIds = [5 6 7];
+                %tactorIds = [5 6 7];
+                tactorIds = [3 4];
                 for iTactor = tactorIds
                     fprintf('[%s] Setting up tactor id# %d\n',mfilename,iTactor);
                     obj.hTactors = [obj.hTactors HapticAlgorithm(obj.hNfu,iTactor)];
                 end
                 
+                readRocTable(obj);
             else
                 fprintf('[%s] Starting with NFU DISABLED\n',mfilename);
                 obj.hSink = MPL.VulcanXSink(obj.VulcanXAddress,obj.VulcanXPort);
@@ -75,6 +79,9 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
                 end
             end
             %obj.GraspId
+        end
+        function readRocTable(obj)
+            obj.localRoc = MPL.RocTable.createRocTables('test.xml');
         end
         function home(obj)
             if ~isempty(obj.hMicroStrainGX2)
@@ -104,8 +111,7 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
                 update_feedforward(obj);
             end
             
-            update_feedback(obj);
-            
+            %update_feedback(obj);
             
         end
         function update_feedback(obj)
@@ -127,16 +133,23 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
                 convertedPercepts(4,:) = sortedPercepts(7,:);
                 %disp(convertedPercepts);
                 
-                %littleT = convertedPercepts(3,6);
-                %obj.hTactors(1).update(littleT);
-                middleT = convertedPercepts(3,3);
-                obj.hTactors(1).update(middleT);
-                
+                pause(0.01)
+                littleT = convertedPercepts(3,6);
+                obj.hTactors(1).update(littleT);
+
+                pause(0.01)
                 indexT = convertedPercepts(3,2);
                 obj.hTactors(2).update(indexT);
                 
-                thumbT = convertedPercepts(3,8);
-                obj.hTactors(3).update(thumbT);
+                %disp([indexT littleT])  % SN4 noise +/-4, max ~100
+                %middleT = convertedPercepts(3,3);
+                %obj.hTactors(1).update(middleT);
+                
+                %indexT = convertedPercepts(3,2);
+                %obj.hTactors(2).update(indexT);
+                
+                %thumbT = convertedPercepts(3,8);
+                %obj.hTactors(3).update(thumbT);
             end
             
             
@@ -161,8 +174,22 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
             
             % convert scalar grasp id to numerical mpl grasp value
             graspId = obj.graspLookup(obj.GraspId);
+            useLocalRoc = 0;
             if isempty(obj.hMicroStrainGX2)
+                
+                if ~useLocalRoc
+                % use built in ROC's
                 msg = obj.hMud.ArmPosVelHandRocGrasps([zeros(1,3) e w],zeros(1,7),1,graspId,obj.GraspValue,1);
+                else
+                % use local ROC's
+                assert(obj.GraspValue >= 0,'GraspValue < 0');
+                assert(obj.GraspValue <= 1,'GraspValue > 1');
+                roc = obj.localRoc(graspId+1);
+                
+                handPos = interp1(roc.waypoint,roc.angles,obj.GraspValue);
+                msg = obj.hMud.AllJointsPosVelCmd([zeros(1,3) e w],zeros(1,7),handPos,zeros(1,20));
+                end
+                
             else
                 F_WCS_RB1 = obj.hMicroStrainGX2.rotationMatrix;
                 F_WCS_RB1Offset = pinv(obj.T_WCS_HOME) * ...
@@ -188,7 +215,11 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
                 obj.hSink.putbytes(msg);
             else
                 % Send to NFU
-                obj.hNfu.send_msg(obj.hNfu.TcpConnection,char(59,msg));
+                if ~useLocalRoc
+                    obj.hNfu.sendUdpCommand(char(59,msg));
+                else
+                    obj.hNfu.sendUdpCommand(char(61,msg));
+                end
             end
             
         end

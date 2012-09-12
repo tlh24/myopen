@@ -8,19 +8,21 @@ fprintf('********MiniVIE Tests*********\n');
 fprintf('******************************\n');
 fprintf('Which Test?\n');
 
-% cellTests = { [test identifier, test description, 
+% cellTests = { testIdentifier, test description }
 cellTests = {
-    'Ping01',       '[1] Ping router using OS [ping 192.168.1.1]'
-    'Ping02',       '[2] Ping limb system using OS [ping 192.168.1.111]'     
+    'Ping01',       '[1] Ping router using OS [ping 192.168.1.1 -t]'
+    'Ping02',       '[2] Ping limb system using OS [ping 192.168.1.111 -t]'     
     'Telnet01',     '[3] Open telnet session via plink [plink -telnet 192.168.1.111]'
     'Pnet01',       '[4] basic pnet tcpsocket and tcplisten on 6200'
     'NfuStream01',  '[5] NFU Streaming [Inputs.NfuInput]'
-    'MplWrist',     '[6] Test MPL wrist range of motion [MPL.NfuUdp.getInstance MPL.MudCommandEncoder]'
+    'MplWrist01',   '[6] Test MPL wrist range of motion [MPL.NfuUdp.getInstance MPL.MudCommandEncoder]'
     'MplHand',      '[7] Test MPL ROC grasps [MPL.NfuUdp.getInstance MPL.MudCommandEncoder]'
     'Haptics01',    '[8] Tactor manual control'
-    'Haptics02',    '[9] HapticAlgorithm\t Runs HapticAlgorithm within  MPL.MplScenarioMud < Scenarios.ScenarioBase'
-    'Joystick01',   '[10] Joystick\t Runs JoyMexClass preview for 15 seconds'
+    'Haptics02',    '[9] HapticAlgorithm Runs HapticAlgorithm within  MPL.MplScenarioMud < Scenarios.ScenarioBase'
+    'Joystick01',   '[10] Joystick Runs JoyMexClass preview for 15 seconds'
     'Edit01',       '[11] edit mpltest.m'
+    'MplWrist02',   '[12] Test MPL wrist range of motion [MPL.NfuUdp.getInstance MPL.MudCommandEncoder]'
+    'MplWrist03',   '[13] Test MPL wrist range of motion with tactor'
     'exit',         '[0] Exit'
     };
 
@@ -37,9 +39,9 @@ end
 testId = cellTests{response,1};
 switch testId
     case 'Ping01'
-        !ping 192.168.1.1
+        !ping 192.168.1.1 -t
     case 'Ping02'
-        !ping 192.168.1.111
+        !ping 192.168.1.111 -t
     case 'Telnet01'
         !plink -telnet 192.168.1.111
     case 'NfuStream01'
@@ -53,13 +55,11 @@ switch testId
         h.addfilter(Inputs.Notch(60.*1,5,Fs));
         h.NumSamples = 2000;
         s = h.initialize();
-        if s < 0
-            error('NFU Init failed');
-        end
+        assert(s >= 0,'NFU Init failed');
         
         GUIs.guiSignalViewer(h);
         return
-    case 'MplWrist'
+    case 'MplWrist01'
         %test mpl wrist ROM
         hNfu = MPL.NfuUdp.getInstance;
         s = hNfu.initialize();
@@ -70,13 +70,66 @@ switch testId
         
         % msg = mud.ArmPosVelHandRocGrasps([zeros(1,3) elbow w],zeros(1,7),1,rocID,rocPos,1)
         msg = mud.ArmPosVelHandRocGrasps([zeros(1,4) -0.7 -0.5 -0.5],zeros(1,7),1,0,0,1);
-        hNfu.send_msg(hNfu.TcpConnection,char(59,msg));  % append nfu msg header
+        hNfu.sendUdpCommand(char(59,msg));  % append nfu msg header
         pause(1)
         msg = mud.ArmPosVelHandRocGrasps([zeros(1,4) 0.7 0.5 0.5],zeros(1,7),1,0,0,1);
-        hNfu.send_msg(hNfu.TcpConnection,char(59,msg));  % append nfu msg header
+        hNfu.sendUdpCommand(char(59,msg));  % append nfu msg header
         pause(1)
         msg = mud.ArmPosVelHandRocGrasps([zeros(1,4) 0 0 0],zeros(1,7),1,0,0,1);
-        hNfu.send_msg(hNfu.TcpConnection,char(59,msg));  % append nfu msg header
+        hNfu.sendUdpCommand(char(59,msg));  % append nfu msg header
+    case 'MplWrist02'
+        %test mpl wrist ROM
+        hNfu = MPL.NfuUdp.getInstance;
+        s = hNfu.initialize();
+        if s < 0
+            error('NFU Init failed');
+        end
+        mud = MPL.MudCommandEncoder();
+        
+        tic;
+        while StartStopForm
+            drawnow
+            val = sin(toc);
+            fprintf('Wrist Angle: %f\n',val);
+            msg = mud.ArmPosVelHandRocGrasps([zeros(1,4) val val val],zeros(1,7),1,0,0,1);
+            hNfu.sendUdpCommand(char(59,msg));  % append nfu msg header
+            pause(0.02);
+        end
+    case 'MplWrist03'
+        % this test runs the wrist doms through a 1 Hz sine wave.
+        % It also activates the tators on/off at 1 Hz
+        
+        %test mpl wrist ROM
+        hNfu = MPL.NfuUdp.getInstance;
+        assert(hNfu.initialize() >=0 ,'NFU Init Failed');
+
+        mud = MPL.MudCommandEncoder();
+        
+        tic;
+        while StartStopForm
+            drawnow
+            
+            % Wrist
+            val = sin(toc);
+            fprintf('Wrist Angle: %f\n',val);
+            msg = mud.ArmPosVelHandRocGrasps([zeros(1,4) val val val],zeros(1,7),1,0,0,1);
+            hNfu.sendUdpCommand(char(59,msg));  % append nfu msg header
+            
+            % Tactors
+            isOdd = @(x)rem(x,2);
+            if isOdd(round(toc))
+                val = 100;
+            else
+                val = 0;
+            end
+            
+            tactorId = 3;
+            hNfu.tactorControl(tactorId, 100, val, 100, 100, 0);
+            tactorId = 4;
+            hNfu.tactorControl(tactorId, 100, 100-val, 100, 100, 0);
+            
+            pause(0.02);  % control rate here
+        end
     case 'MplHand'
         %test mpl hand Roc
         hNfu = MPL.NfuUdp.getInstance;
@@ -87,16 +140,16 @@ switch testId
             fprintf('ROC %d,open\n',rocID)
             % msg = mud.ArmPosVelHandRocGrasps([zeros(1,3) elbow w],zeros(1,7),1,rocID,rocPos,1)
             msg = mud.ArmPosVelHandRocGrasps([zeros(1,4) 0 0 0],zeros(1,7),1,rocID,0,1);
-            hNfu.send_msg(hNfu.TcpConnection,char(59,msg));  % append nfu msg header
+            hNfu.sendUdpCommand(char(59,msg));  % append nfu msg header
             disp('Press any key...');pause;
             fprintf('ROC %d,close\n',rocID)
             % msg = mud.ArmPosVelHandRocGrasps([zeros(1,3) elbow w],zeros(1,7),1,rocID,rocPos,1)
             msg = mud.ArmPosVelHandRocGrasps([zeros(1,4) 0 0 0],zeros(1,7),1,rocID,1,1);
-            hNfu.send_msg(hNfu.TcpConnection,char(59,msg));  % append nfu msg header
+            hNfu.sendUdpCommand(char(59,msg));  % append nfu msg header
             disp('Press any key...');pause;
         end
         msg = mud.ArmPosVelHandRocGrasps([zeros(1,4) 0 0 0],zeros(1,7),1,0,0,1);
-        hNfu.send_msg(hNfu.TcpConnection,char(59,msg));  % append nfu msg header
+        hNfu.sendUdpCommand(char(59,msg));  % append nfu msg header
     case 'Haptics01'
         % Test tactors manually
         test_tactor_nfu();

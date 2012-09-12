@@ -141,7 +141,8 @@ end
 set(hObject,'String','Complete');
 
 
-filePrefix = 'WR_TR01_';
+% filePrefix = 'WR_TR01_';
+filePrefix = 'JH_TH01_';
 defaultSaveName = [filePrefix datestr(now,'yyyymmdd_HHMMSS') '.assessmentLog'];
 [FileName,PathName,FilterIndex] = ...
     uiputfile('*.assessmentLog','Select Log file to Save',defaultSaveName);
