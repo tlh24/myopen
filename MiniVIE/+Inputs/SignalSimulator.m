@@ -109,6 +109,22 @@ classdef SignalSimulator < Inputs.SignalInput
                     obj.SignalAmplitude = zeros(1,obj.NumChannels);
                     obj.SignalFrequency = 350;
                     obj.SignalAmplitude(1:4) = [0.5 1.2 0.3 1.6];
+                case 9
+                    obj.SignalAmplitude = zeros(1,obj.NumChannels);
+                    obj.SignalFrequency = 375;
+                    obj.SignalAmplitude(1:4) = [1.5 1.2 0.3 1.6];
+                case 10
+                    obj.SignalAmplitude = zeros(1,obj.NumChannels);
+                    obj.SignalFrequency = 375;
+                    obj.SignalAmplitude(1:4) = [0.5 1.2 1.3 1.6];
+                case 11
+                    obj.SignalAmplitude = zeros(1,obj.NumChannels);
+                    obj.SignalFrequency = 325;
+                    obj.SignalAmplitude(1:4) = [0.5 1.2 0.3 1.6];
+                case 12
+                    obj.SignalAmplitude = zeros(1,obj.NumChannels);
+                    obj.SignalFrequency = 325;
+                    obj.SignalAmplitude(1:4) = [1.5 0.2 1.3 0.6];
                 otherwise
             end
         end
@@ -182,6 +198,18 @@ classdef SignalSimulator < Inputs.SignalInput
                     case 'r'
                         setPattern(obj,8);
                         set(obj.hg.hTxtCurrentPattern,'String','Current Pattern 8');
+                    case 'z'
+                        setPattern(obj,9);
+                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern 9');
+                    case 'x'
+                        setPattern(obj,10);
+                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern 10');
+                    case 'c'
+                        setPattern(obj,11);
+                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern 11');
+                    case 'v'
+                        setPattern(obj,12);
+                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern 12');
                 end
             
                 cellCurrentKeys = unique([cellCurrentKeys {evt.Key}]);

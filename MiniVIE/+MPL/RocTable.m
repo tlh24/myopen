@@ -9,7 +9,7 @@ classdef RocTable < handle
     properties
     end
     methods (Static=true)
-        function createRocTables(fname)
+        function roc = createRocTables(fname)
             % createRocTables.m
             % testWriteRocTable.m
             % writeRocTable
@@ -208,8 +208,8 @@ classdef RocTable < handle
             end
             
             xmlwrite(xmlFileName,docNode);
-            clc;
-            type(xmlFileName);
+            %clc;
+            %type(xmlFileName);
         end
         function writeRocTableEntry(docNode,id,name,jointIds,wayPts,jointAngles)
             % Function appends roc entries to the top-level xml document docNode

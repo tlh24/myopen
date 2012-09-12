@@ -82,7 +82,8 @@
 #include <ctype.h>
 
 /******* WINDOWS ONLY DEFINES *********/
-#ifdef _WIN64
+//#ifdef _WIN64
+#ifdef _WIN32
 #define IFWINDOWS(dothis) dothis 
 #define IFUNIX(dothis)
 //#include <windows.h>

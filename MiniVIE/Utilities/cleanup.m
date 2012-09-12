@@ -4,6 +4,9 @@ try
     dbquit('all');
 end
 try
+    pnet('closeall');
+end
+try
     stop(timerfindall);
 end
 delete(timerfindall);
