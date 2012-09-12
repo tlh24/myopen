@@ -64,12 +64,9 @@ classdef guiChannelSelect < Common.MiniVieObj
             set(obj.handles.pbChannels,'Value',0);
             set(obj.handles.pbChannels(validIds),'Value',1);
             
-            
-            set(obj.handles.pbChannels,'ForegroundColor','k');
-            for i = validIds(:)'
-                set(obj.handles.pbChannels(i),'ForegroundColor',obj.ColorOrder(i,:));
+            for i = 1:length(obj.handles.pbChannels)
+                obj.setChannelState(i,get(obj.handles.pbChannels(i),'Value'));
             end
-            
             
         end
         function setAvailableChannels(obj,numAvailable)
@@ -92,9 +89,12 @@ classdef guiChannelSelect < Common.MiniVieObj
             end
 
             if get(obj.handles.pbChannels(iChannel),'Value')
-                set(obj.handles.pbChannels(iChannel),'ForegroundColor',obj.ColorOrder(iChannel,:));
+                set(obj.handles.pbChannels(iChannel),'ForegroundColor','w');
+                set(obj.handles.pbChannels(iChannel),'BackgroundColor',obj.ColorOrder(iChannel,:));
             else
+                figureColor = get(0,'defaultUicontrolBackgroundColor');
                 set(obj.handles.pbChannels(iChannel),'ForegroundColor','k');
+                set(obj.handles.pbChannels(iChannel),'BackgroundColor',figureColor);
             end
             
             notify(obj,'ValueChange');
