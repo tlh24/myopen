@@ -38,7 +38,7 @@
 #endif
 #define NSBUF	1024
 
-#include "../firmware_stage9/memory.h"
+#include "../firmware_stage9_tmpl/memory.h"
 #include "headstage.h"
 #include "cgVertexShader.h"
 #include "vbo.h"
