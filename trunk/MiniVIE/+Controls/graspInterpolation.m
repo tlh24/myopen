@@ -30,6 +30,21 @@ switch graspID
     case {'Tip', Controls.GraspTypes.Tip}
         B = Controls.GraspAngles.Tip;
         
+    case {'Index', Controls.GraspTypes.Index}
+        B = Controls.GraspAngles.Index;
+        
+    case {'Middle', Controls.GraspTypes.Middle}
+        B = Controls.GraspAngles.Middle;
+        
+    case {'Ring', Controls.GraspTypes.Ring}
+        B = Controls.GraspAngles.Ring;
+        
+    case {'Little', Controls.GraspTypes.Little}
+        B = Controls.GraspAngles.Little;
+        
+    case {'Thumb', Controls.GraspTypes.Thumb}
+        B = Controls.GraspAngles.Thumb;
+        
     otherwise
         error ('Invalid graspID');
         
