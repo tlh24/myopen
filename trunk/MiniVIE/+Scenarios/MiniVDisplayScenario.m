@@ -2,7 +2,7 @@
 classdef MiniVDisplayScenario < Scenarios.OnlineRetrainer
     % Scenario for controlling a rendered 3d virtual hand/arm
     % Depends on UiTools
-    % 
+    %
     % 01-Sept-2010 Armiger: Created
     properties
         % Handles
@@ -21,7 +21,7 @@ classdef MiniVDisplayScenario < Scenarios.OnlineRetrainer
         function close(obj)
             %close@Scenarios.ScenarioBase(obj); % Call superclass update method
             close@Scenarios.OnlineRetrainer(obj); % Call superclass update method
-
+            
             if ishandle(obj.Timer) && strcmpi(obj.Timer.Running,'on')
                 try
                     stop(obj.Timer);
@@ -32,13 +32,13 @@ classdef MiniVDisplayScenario < Scenarios.OnlineRetrainer
                 delete(obj.hFigure);
             end
         end
-
+        
         function setup_display(obj)
             hFig = UiTools.create_figure('Mini VIE Display','MiniVIEDisplay');
-%             pos = get(hFigure,'Position');
-%             pos(3) = 700;
-%             set(hFigure,'Position',pos);
-
+            %             pos = get(hFigure,'Position');
+            %             pos(3) = 700;
+            %             set(hFigure,'Position',pos);
+            
             set(hFig,'Color',[ 0.8706    0.9216    0.9804]);
             %set(obj.hFigure,'ToolBar','none');
             %set(obj.hFigure,'MenuBar','none');
@@ -85,16 +85,15 @@ classdef MiniVDisplayScenario < Scenarios.OnlineRetrainer
             end
             
             obj.hOutput.set_upper_arm_angles_degrees(obj.JointAnglesDegrees);
-
+            
             if ishandle(obj.hAxes)
                 obj.hOutput.redraw();
             end
         end
-        function initialize(obj,SignalSource,SignalClassifier)
-             % Call superclass initialize method
-
+        function initialize(obj,SignalSource,SignalClassifier,TrainingData)
+            % Call superclass initialize method
             %initialize@Scenarios.ScenarioBase(obj,SignalSource,SignalClassifier);
-            initialize@Scenarios.OnlineRetrainer(obj,SignalSource,SignalClassifier);
+            initialize@Scenarios.OnlineRetrainer(obj,SignalSource,SignalClassifier,TrainingData);
             obj.setup_display;
         end
     end
@@ -102,9 +101,9 @@ end
 
 %Private
 function closeRequestFcn(src,obj)
-    fprintf('Closing %s', mfilename);
-    stop(obj.Timer);
-    delete(obj.Timer)
-    delete(src);
+fprintf('Closing %s', mfilename);
+stop(obj.Timer);
+delete(obj.Timer)
+delete(src);
 end
 

@@ -15,9 +15,9 @@ classdef Classifier < Common.MiniVieObj
         TrainingFeatures = {'MAV' 'LEN' 'SSC' 'ZC'};
         VirtualChannelGain = 1;  % default.  Once initialized this should be [1 NumClasses]
         
-        TrainingEmg = [];
-        TrainingData = [];
-        TrainingDataLabels = [];
+        TrainingData = [];  % Holds training data regardless of interface or classifier
+        ConfusionMatrix = [];        
+        IgnoreList = [];  % logical array to ignore certain training samples
         
     end
     properties (Dependent = true, SetAccess = private)
@@ -26,6 +26,11 @@ classdef Classifier < Common.MiniVieObj
         NumFeatures;
         
         IsTrained;
+    end
+    methods (Abstract)
+        train(obj);
+        [classOut voteDecision] = classify(obj,featuresColumns);
+        % classify(obj);
     end
     methods
         function numClasses = get.NumClasses(obj)
@@ -40,22 +45,28 @@ classdef Classifier < Common.MiniVieObj
         function isTrained = get.IsTrained(obj)
             isTrained = (obj.Cg ~= 0);
         end
-        function initialize(obj)
+        function initialize(obj,hTrainingData)
             % initialize classifier parameters with zeros.  Add a 1 in the
             % last column so that the classifier defaults to No Movement
             % class
-            obj.Wg = zeros(obj.NumActiveChannels*obj.NumFeatures,obj.NumClasses);
+            obj.Wg = 0*ones(obj.NumActiveChannels*obj.NumFeatures,obj.NumClasses);
             obj.Wg(:,obj.NumClasses) = 1;
             obj.Cg = zeros(1,obj.NumClasses);
             obj.Cg(1,obj.NumClasses) = 1;
+            
+            if (nargin > 1) && ~isempty(hTrainingData);
+                obj.TrainingData = hTrainingData;
+            else
+                obj.TrainingData = PatternRecognition.TrainingData();
+            end
         end
         function reset(obj)
             obj.Wg = [];
             obj.Cg = [];
             
-            obj.TrainingEmg = [];
-            obj.TrainingData = [];
-            obj.TrainingDataLabels = [];
+%             obj.TrainingEmg = [];
+%             obj.TrainingData = [];
+%             obj.TrainingDataLabels = [];
 
             obj.initialize();
         end
@@ -72,16 +83,18 @@ classdef Classifier < Common.MiniVieObj
             GUIs.guiClassifierChannels.setSavedDefaults(obj.ClassNames);
         end
         
-        function featureData = convertfeaturedata(obj)
+        function featureData = convertfeaturedata(obj,featureData3D)
             % expects an array of size [nChannels nFeatures numSamples]
             % creates an array of size [nFeatures*nChannels numSamples]
-            [numChannels numFeatures numSamples] = size(obj.TrainingData);
+            numChannels = size(featureData3D,1);
+            numFeatures = size(featureData3D,2);
             
             assert(numFeatures == obj.NumFeatures,...
                 'Training data set has %d features, expected %d\n',numFeatures,obj.NumFeatures);
             assert(~any(obj.ActiveChannels > numChannels),...
                 'Active channels are greater than %d data channels\n',numChannels);
-            sortedData2 = permute(obj.TrainingData,[2 1 3]);
+            % TODO: Can eliminate this step of reshaping twice
+            sortedData2 = permute(featureData3D,[2 1 3]);
             
             % Reshape data according to how the UNB algorithm wants to see it.  That is
             % [nFeatures*length(activeChannels) numSamples] with all the features_3D for
@@ -91,13 +104,15 @@ classdef Classifier < Common.MiniVieObj
         end
         function computeGains(obj)
             % Classify Training data
-            feats = convertfeaturedata(obj);
+            featureData3D = obj.TrainingData.getFeatureData();
+
+            feats = obj.convertfeaturedata(featureData3D);
             % Forward Classify
             classOut = classify(obj,feats);
             
             % Compute virtual channel output here:
             % Get the MAV Feature
-            mavFeatures = obj.TrainingData(obj.ActiveChannels,1,:);
+            mavFeatures = featureData3D(obj.ActiveChannels,1,:);
             % Average across all active channels
             MAV = squeeze(mean(mavFeatures,1));
             
@@ -117,7 +132,9 @@ classdef Classifier < Common.MiniVieObj
         end        
         function confuseMat = computeConfusion(obj)
             % Classify Training data
-            feats = convertfeaturedata(obj);
+            classLabels = obj.TrainingData.getClassLabels();
+            featureData3D = obj.TrainingData.getFeatureData();
+            feats = obj.convertfeaturedata(featureData3D);
             % Forward Classify
             classOut = classify(obj,feats);
             
@@ -126,7 +143,7 @@ classdef Classifier < Common.MiniVieObj
             for iClass = 1:obj.NumClasses
 
                 % Establish ground truth with the desired training labels
-                isThisClass = obj.TrainingDataLabels == iClass;
+                isThisClass =  classLabels == iClass;
                 
                 % Locate all the actual class decisions for the desired
                 % class
@@ -138,18 +155,23 @@ classdef Classifier < Common.MiniVieObj
                 confuseMat(1:length(accumVal),iClass) = accumVal;
             end
             
+            obj.ConfusionMatrix = confuseMat;
         end
         function percentError = computeerror(obj)
             % Classify Training data
-            feats = convertfeaturedata(obj);
+            classLabels = obj.TrainingData.getClassLabels();
+            features3D = obj.TrainingData.getFeatureData();
+            feats = obj.convertfeaturedata(features3D);
+            
             % Forward Classify
             classOut = classify(obj,feats);
+            %numSamplesClassified = length(classOut);
             
             percent_error = @(outputClass,desiredClass) ...
                 sum( ((outputClass(:)-desiredClass(:))~=0) /length(desiredClass));
             
             % Calculate Error
-            PeTrain1 = percent_error(classOut,obj.TrainingDataLabels);
+            PeTrain1 = percent_error(classOut,obj.TrainingData.getClassLabels);
             fprintf('Percent correctly classified: %6.1f %%\n',(1-PeTrain1)*100);
             %             PeTrain2 = percent_error(voteOut,obj.TrainingDataLabels);
             %             fprintf('Percent correctly classified after majority vote: %6.1f %%\n',(1-PeTrain2)*100);
@@ -157,9 +179,11 @@ classdef Classifier < Common.MiniVieObj
             percentError = PeTrain1;
             
             for iClass = 1:obj.NumClasses
-                idClass = (obj.TrainingDataLabels == iClass);
+                trainingLabels = classLabels;
                 
-                targetClass = reshape(obj.TrainingDataLabels(idClass),1,[]);
+                idClass = (trainingLabels == iClass);
+                
+                targetClass = reshape(trainingLabels(idClass),1,[]);
                 actualClass = reshape(classOut(idClass),1,[]);
                 
                 PeClass = percent_error(actualClass,targetClass);
@@ -180,18 +204,15 @@ classdef Classifier < Common.MiniVieObj
             MAV = mean(squeeze(features_3D(obj.ActiveChannels,1,:)));
             
             virtualChannels(classOut) = MAV;
-            virtualChannels = virtualChannels .* obj.VirtualChannelGain;
+            if length(obj.VirtualChannelGain) == length(virtualChannels)
+                virtualChannels = virtualChannels .* obj.VirtualChannelGain;
+            end
             
         end
         function features2D = extractfeatures(obj,filteredDataWindowAllChannels)
             % features2D = feature_extract(filteredDataWindowAllChannels(:,obj.ActiveChannels)',obj.NumSamplesPerWindow);
             features2D = feature_extract(filteredDataWindowAllChannels',obj.NumSamplesPerWindow);
         end
-    end
-    methods (Abstract)
-        train(obj);
-        [classOut voteDecision] = classify(obj,featuresColumns);
-        % classify(obj);
     end
     methods (Static = true)
         function voteDecision = majority_vote(classDecision, numVotes, ...
@@ -264,6 +285,17 @@ classdef Classifier < Common.MiniVieObj
                     end
                 end
             end
+            
+            % RSA: Add an immediate stop if 2 no movements are detected
+            % at the end of the majorty vote buffer
+            noMovementClass = numClasses;  % NM must be last class!
+            
+            if (numVotes > 1) && ...
+                    (decisionHistory(1) == noMovementClass) && ...
+                    (decisionHistory(1) == noMovementClass)
+                voteDecision = noMovementClass;
+            end
+                    
         end
     end
 end

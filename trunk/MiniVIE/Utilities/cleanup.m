@@ -1,6 +1,9 @@
 % cleanup
 % There's quite a lot to do to clean up the MATLAB workspace
 try
+    dbclear('all');
+end
+try
     dbquit('all');
 end
 try

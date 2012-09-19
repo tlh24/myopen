@@ -106,5 +106,24 @@ classdef UiTools
                 storedVariable = S.storedVariable;
             end
         end
+        function fullFilename = ui_select_data_file(extension)
+            % Provides a save dialog with the default file set as the
+            % current date and time with extention reflecting contents
+            % extension = '.assessmentLog'
+            
+            filePrefix = 'JH_TH01_';  %TODO, abstract this
+            filePrefix = 'AGH_';  %TODO, abstract this
+            
+            FilterSpec = ['*' extension];
+            DialogTitle = 'Select File to Write';
+            DefaultName = [filePrefix datestr(now,'yyyymmdd_HHMMSS') extension];            
+            [FileName,PathName,FilterIndex] = uiputfile(FilterSpec,DialogTitle,DefaultName);
+            
+            if FilterIndex == 0
+                fullFilename = [];
+            else
+                fullFilename = fullfile(PathName,FileName);
+            end
+        end
     end
 end

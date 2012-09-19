@@ -1,12 +1,14 @@
 classdef AGH < Presentation.AirGuitarHero.AirGuitarHeroBase
     % Extends Air Guitar Hero Class to add play (digital output)
     % capabilities
+    % This allows playing the game using the keyboard and using the
+    % autoplay configuration mode
     %
     % 01-Sept-2010 Armiger: Created
     methods
         function obj = AGH()
-            obj.hTimer = obj.createTimer('AGH_Display',@(src,evt)refresh(obj));
-            obj.hTimer.Period = 0.04;
+            obj.hTimer = UiTools.create_timer('AGH_Display',@(src,evt)refresh(obj));
+            obj.hTimer.Period = 0.03;
             
             initialize(obj);
         end
@@ -32,7 +34,7 @@ classdef AGH < Presentation.AirGuitarHero.AirGuitarHeroBase
                 fprintf('OK\n');
                 obj.hAudioVideoIn = vid;
             else
-                % setup video stream
+                % setup video stream using vcapg2
                 try
                     clear('vcapg2');
                     avHandle = vcapg2([],0);

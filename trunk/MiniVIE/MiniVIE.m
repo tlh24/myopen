@@ -3,6 +3,7 @@ classdef MiniVIE < Common.MiniVieObj
         SignalSource
         SignalClassifier
         TrainingInterface
+        TrainingData
         Presentation
         
         hg;  % handle graphics
@@ -31,7 +32,7 @@ classdef MiniVIE < Common.MiniVieObj
             % Set valid input options
             set(obj.hg.popups(MiniVIE.INPUT),'String',{'None','Signal Simulator','EMG Simulator','DaqHwDevice','CpchSerial','NfuInput','UdpDevice'});
             set(obj.hg.popups(MiniVIE.INPUT),'Value',1);
-            set(obj.hg.popups(MiniVIE.SA),'String',{'None','LDA Classifier','DiscriminantAnalysis'});
+            set(obj.hg.popups(MiniVIE.SA),'String',{'None','LDA Classifier','DiscriminantAnalysis','SupportVectorMachine'});
             set(obj.hg.popups(MiniVIE.SA),'Value',1);
             set(obj.hg.popups(MiniVIE.TRAINING),'String',{'None','Simple Trainer','Mini Guitar Hero','Bar Trainer','Motion Trainer'});
             set(obj.hg.popups(MiniVIE.TRAINING),'Value',1);
@@ -121,7 +122,7 @@ classdef MiniVIE < Common.MiniVieObj
                 'Style','pushbutton',...
                 'String','Begin Training',...
                 'Enable','off',...
-                'Callback',@(src,evt)obj.pbTrain());
+                'Callback',@(src,evt)obj.pbBeginTraining());
             
             obj.hg.PresentationButtons(1) = uicontrol(obj.hg.Figure,...
                 'Position',pos('cntrl',MiniVIE.PRESENTATION,3,1,1),...
@@ -150,21 +151,20 @@ classdef MiniVIE < Common.MiniVieObj
             elseif isempty(obj.SignalClassifier)
                 errordlg('Select a Classifier');
                 return;
-            elseif isempty(obj.TrainingInterface)
-                errordlg('Select a Training Interface');
-                return;
             end
             
-            success = obj.TrainingInterface.loadTrainingData();
+            success = obj.TrianingData.loadTrainingData;
             if ~success
                 return
             end
             
+            % TODO: restore majority votes and other classifier settings?
             %obj.SignalClassifier.NumMajorityVotes = 7;
             %obj.SignalClassifier.ActiveChannels = [1 2 3 4 5 6 7 8];
-            obj.SignalClassifier.TrainingData = obj.TrainingInterface.getFeatureData;
-            obj.SignalClassifier.TrainingDataLabels = obj.TrainingInterface.getClassLabels;
-            obj.SignalClassifier.TrainingEmg = obj.TrainingInterface.getEmgData;
+            
+            %obj.SignalClassifier.TrainingData = obj.TrainingInterface.getFeatureData;
+            %obj.SignalClassifier.TrainingDataLabels = obj.TrainingInterface.getClassLabels;
+            %obj.SignalClassifier.TrainingEmg = obj.TrainingInterface.getEmgData;
             obj.SignalClassifier.train();
             obj.SignalClassifier.computeerror();
             obj.SignalClassifier.computeGains();
@@ -206,8 +206,8 @@ classdef MiniVIE < Common.MiniVieObj
                     case 'EMG Simulator'
                         h = Inputs.EmgSimulator();
                     case 'DaqHwDevice'
-                        h = Inputs.DaqHwDevice('nidaq','Dev2');
-                        % h = Inputs.DaqHwDevice('mcc','0');
+                        %h = Inputs.DaqHwDevice('nidaq','Dev2');
+                        h = Inputs.DaqHwDevice('mcc','0');
                     case 'UdpDevice'
                         h = Inputs.UdpDevice();
                     case 'CpchSerial'
@@ -274,11 +274,15 @@ classdef MiniVIE < Common.MiniVieObj
                     return;
                 end
                 
+                
+                
                 switch string{value}
                     case 'LDA Classifier'
                         h = SignalAnalysis.Lda();
                     case 'DiscriminantAnalysis'
                         h = SignalAnalysis.DiscriminantAnalysis();
+                    case 'SupportVectorMachine'
+                        h = SignalAnalysis.Svm();
                     otherwise
                         % None
                         h = [];
@@ -304,11 +308,21 @@ classdef MiniVIE < Common.MiniVieObj
                     end
                     
                     h.NumMajorityVotes = 0;
-                    h.initialize();
-                    
+
                     NumSamplesPerWindow = 200;
                     fprintf('Setting Window Size to: %d\n',NumSamplesPerWindow);
                     h.NumSamplesPerWindow = NumSamplesPerWindow;
+                    
+                    if isempty(obj.TrainingData)
+                        obj.TrainingData = PatternRecognition.TrainingData();
+                        obj.TrainingData.initialize(...
+                            obj.SignalSource.NumChannels,...
+                            h.NumFeatures,...
+                            h.NumSamplesPerWindow);
+                    end
+                    
+                    h.initialize(obj.TrainingData);
+                    
                 end
                 
                 obj.SignalClassifier = h;
@@ -413,14 +427,17 @@ classdef MiniVIE < Common.MiniVieObj
                     case 'MiniV'
                         obj.println('Setting up presentation...',1);
                         h = Scenarios.MiniVDisplayScenario;
-                        h.initialize(obj.SignalSource,obj.SignalClassifier);
-                        h.CloseGain = [80 80 80 80];
+                        h.initialize(obj.SignalSource,obj.SignalClassifier,obj.TrainingData);
+                        h.update();
+                        h.Verbose = 0;
                         start(h.Timer);
                         obj.println('Presentation setup complete',1);
                     case 'MplScenarioMud'
                         obj.println('Setting up presentation...',1);
                         h = MPL.MplScenarioMud;
-                        h.initialize(obj.SignalSource,obj.SignalClassifier);
+                        h.initialize(obj.SignalSource,obj.SignalClassifier,obj.TrainingData);
+                        h.update();
+                        h.Verbose = 0;
                         start(h.Timer);
                         obj.println('Presentation setup complete',1);
                     case 'Breakout'
@@ -462,6 +479,7 @@ classdef MiniVIE < Common.MiniVieObj
                 obj.Presentation = h;
             catch ME
                 errordlg(ME.message);
+                rethrow(ME);
             end
         end
         
@@ -483,7 +501,7 @@ classdef MiniVIE < Common.MiniVieObj
         function pbSignalView(obj)
             obj.SignalViewer = GUIs.guiSignalViewer(obj.SignalSource);
         end
-        function pbTrain(obj)
+        function pbBeginTraining(obj)
             
             if isempty(obj.SignalSource)
                 errordlg('Select an Input Source');
@@ -502,8 +520,6 @@ classdef MiniVIE < Common.MiniVieObj
             else
                 % else we need to train the classifier with the collected
                 % data
-                obj.SignalClassifier.TrainingData = obj.TrainingInterface.getFeatureData;
-                obj.SignalClassifier.TrainingDataLabels = obj.TrainingInterface.getClassLabels;
                 obj.SignalClassifier.train();
                 obj.SignalClassifier.computeerror();
                 obj.SignalClassifier.computeConfusion();

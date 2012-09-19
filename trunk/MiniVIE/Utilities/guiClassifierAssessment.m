@@ -141,15 +141,10 @@ end
 set(hObject,'String','Complete');
 
 
-% filePrefix = 'WR_TR01_';
-filePrefix = 'JH_TH01_';
-defaultSaveName = [filePrefix datestr(now,'yyyymmdd_HHMMSS') '.assessmentLog'];
-[FileName,PathName,FilterIndex] = ...
-    uiputfile('*.assessmentLog','Select Log file to Save',defaultSaveName);
+fullFilename = UiTools.ui_select_data_file('.assessmentLog');
 
-if FilterIndex > 0
-    save(fullfile(PathName,FileName),...
-        'structTrialLog','-mat');
+if ~isempty(fullFilename)
+    save(fullFilename,'structTrialLog','-mat');
 end
 
 function structTrialLog = assessClass(hSignalSource,hSignalClassifier,classToTest,handles)

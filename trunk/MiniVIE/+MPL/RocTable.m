@@ -51,12 +51,36 @@ classdef RocTable < handle
             
             roc(2).id = 1;
             roc(2).name = 'FinePinch(British)';
-            roc(2).waypoint = [0 0.333 1];
+            roc(2).waypoint = [0 0.25 0.4 0.85 1];
             roc(2).joints = [8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27];
+            % roc(2).angles = [...
+            % basePosition;...
+            % 0.0000,0.5236,0.5760,0.4712,0.0000,-0.7854,0.0000,0.0000,0.0000,-0.7854,0.0000,0.0000,0.0000,-0.7854,0.0000,0.0000,1.3963,0.5236,0.5236,-0.3491;...
+            % 0.0000,0.8727,0.9774,0.7679,0.0000,-0.7854,0.0000,0.0000,0.0000,-0.7854,0.0000,0.0000,0.0000,-0.7854,0.0000,0.0000,1.3963,0.8727,0.5236,-0.3491;...
+            % ];
+            
+            basePosition(mce.THUMB_DIP) = 0.1;
+            pos1 = basePosition;
+            pos1(:,[mce.THUMB_CMC_AD_AB]) = 1.55;
+            pos1([mce.INDEX_MCP mce.INDEX_PIP mce.INDEX_DIP]) = 0.4;
+            pos1([mce.MIDDLE_MCP mce.MIDDLE_PIP mce.MIDDLE_DIP]) = 0.60;
+            pos1([mce.RING_MCP mce.RING_PIP mce.RING_DIP]) = -0.4;
+            pos1([mce.LITTLE_MCP mce.LITTLE_PIP mce.LITTLE_DIP]) = -0.4;
+            pos2 = pos1;
+
+            pos3 = pos1;
+            pos3([mce.INDEX_MCP mce.INDEX_PIP mce.INDEX_DIP]) = 0.8;
+            pos3([mce.MIDDLE_MCP mce.MIDDLE_PIP mce.MIDDLE_DIP]) = 0.9;
+
+            pos3([mce.THUMB_MCP]) = 0.65;
+            pos3([mce.THUMB_CMC]) = 0.85;
+            pos4 = pos3;
             roc(2).angles = [...
                 basePosition;...
-                0.0000,0.5236,0.5760,0.4712,0.0000,-0.7854,0.0000,0.0000,0.0000,-0.7854,0.0000,0.0000,0.0000,-0.7854,0.0000,0.0000,1.3963,0.5236,0.5236,-0.3491;...
-                0.0000,0.8727,0.9774,0.7679,0.0000,-0.7854,0.0000,0.0000,0.0000,-0.7854,0.0000,0.0000,0.0000,-0.7854,0.0000,0.0000,1.3963,0.8727,0.5236,-0.3491;...
+                pos1;...
+                pos2;...
+                pos3;...
+                pos4;...
                 ];
             
             roc(3).id = 2;
@@ -114,14 +138,26 @@ classdef RocTable < handle
             
             roc(8).id = 7;
             roc(8).name = 'Spherical';
-            roc(8).waypoint = [0 0.333 1];
+            roc(8).waypoint = [0 0.3 0.4 1];
             roc(8).joints = [8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27];
+            pos0 = basePosition;
+            pos0([mce.LITTLE_MCP mce.LITTLE_PIP mce.LITTLE_DIP]) = 0.4;
+            pos1 = [0.0000,0.2618,0.2967,0.2269,0.0000,0.2618,0.2967,0.2269,0.3491,0.2618,0.2967,0.2269,0.3491,0.2618,0.2967,0.2269,1.9199,0.0000,0.2618,-0.3491];
+            %pos1([mce.MIDDLE_MCP mce.MIDDLE_PIP mce.MIDDLE_DIP]) = 0.0;
+            pos1([mce.LITTLE_MCP mce.LITTLE_PIP mce.LITTLE_DIP]) = 0.5;
+            pos1([mce.THUMB_CMC_AD_AB]) = 1.9;
+            pos2 = pos1;
+            pos3 = [0.0000,0.9599,1.0647,0.8552,0.0000,0.7854,0.8727,0.6981,0.3491,0.8727,0.9774,0.7679,0.3491,1.0472,0.8694,0.6250,1.9199,0.5236,0.8727,-0.3491];
+            pos3([mce.MIDDLE_MCP mce.MIDDLE_PIP mce.MIDDLE_DIP]) = 1.2;
+            pos3([mce.RING_MCP mce.RING_PIP mce.RING_DIP]) = 1.1;
+            pos3([mce.THUMB_CMC_AD_AB]) = 1.7;
             roc(8).angles = [...
-                basePosition;...
-                0.0000,0.2618,0.2967,0.2269,0.0000,0.2618,0.2967,0.2269,0.3491,0.2618,0.2967,0.2269,0.3491,0.2618,0.2967,0.2269,1.9199,0.0000,0.2618,-0.3491;...
-                0.0000,0.9599,1.0647,0.8552,0.0000,0.7854,0.8727,0.6981,0.3491,0.8727,0.9774,0.7679,0.3491,1.0472,0.8694,0.6250,1.9199,0.5236,0.8727,-0.3491;...
+                pos0;...
+                pos1;...
+                pos2;...
+                pos3;...
                 ];
-            roc(8).angles(2:end,mce.THUMB_CMC_AD_AB) = 1.7;
+            %roc(8).angles(2:end,mce.THUMB_CMC_AD_AB) = 1.8;
             
             
             roc(9).id = 8;

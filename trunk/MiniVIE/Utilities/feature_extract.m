@@ -17,9 +17,11 @@ function features = feature_extract(windowData,windowSize,zc_thresh,ssc_thresh) 
 
 if nargin < 4
     ssc_thresh = 0.25;
+    ssc_thresh = 0.2;
 end
 if nargin < 3
     zc_thresh = 0.25;
+    zc_thresh = 0.2;
 end
 
 [nChannels nSamples] = size(windowData);
@@ -35,6 +37,7 @@ MAV = zeros(nChannels,1,myType);    % mean absolute value
 LEN = zeros(nChannels,1,myType);    % length
 ZC  = zeros(nChannels,1,myType);    % zero crossings
 SSC = zeros(nChannels,1,myType);    % slope sign changes
+VAR = zeros(nChannels,1,myType);    % variance
 
 idStart = (1+nSamples-windowSize);
 
@@ -48,6 +51,7 @@ for iChannel = 1:nChannels
     LEN(iChannel) = sum( abs( dy(idStart:end) ) );
     ZC(iChannel) = 0;
     SSC(iChannel) = 0;
+    VAR(iChannel) = var( y(idStart:end) );
     
     for iSample = idStart+1 : nSamples-1
         
@@ -78,8 +82,19 @@ for iChannel = 1:nChannels
 end
 
 Fs = 1000;
-features = [MAV(:) LEN(:) ZC(:) SSC(:)]./(windowSize./Fs);
+
+normMAV = MAV(:)./(windowSize./Fs);
+normLEN = LEN(:)./(windowSize./Fs);
+normZC = ZC(:)./(windowSize./Fs);
+normVAR = VAR(:)./(windowSize./Fs);
+
+normVAR = min(normVAR,50);
+normMAV = min(normMAV,50);
+
+features = [normMAV(:) normLEN(:) normZC(:) normVAR(:)];
 % features = [MAV(:) LEN(:) ZC(:) SSC(:)];
+
+
 
 % features(:,[2 3 4]) = log(1+features(:,[2 3 4]));
 
