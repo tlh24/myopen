@@ -221,12 +221,12 @@ int main(int argn, char **argc){
 		mat_uint32_t* spike_ts;
 		mat_int8_t* spike_ch;
 		mat_int8_t* spike_unit;
-		mat_uint32_t*  track_cam;
+		mat_uint32_t*  track_frame;
 		// store timestamp (in samples), rx time (not necessarily accurate) - one per pkt
 		// store channel # and sample
 		// store channel & timestamp for spikes.
 		// just ignore dropped packets for now.
-			// store camera & timestamp for tracking
+			// store frameera & timestamp for tracking
 		time = (double*)malloc(rxpackets * sizeof(double));
 		  if(!time){ printf("could not allocate time variable."); exit(0);}
 		mstimer = (mat_uint32_t*)malloc(rxpackets * sizeof(int) );
@@ -249,8 +249,8 @@ int main(int argn, char **argc){
 			if(!strobe_tx){ printf("could not allocate tracking variable."); /*exit(0) We don't want to exit!;*/}
 		strobe_rx = (double*)malloc(strobepackets * sizeof(double)); //server side timestamp
 			if(!strobe_rx){ printf("could not allocate tracking variable."); /*exit(0) We don't want to exit!;*/}
-		track_cam  = (mat_uint32_t* )malloc(strobepackets * sizeof(int));
-			if(!track_cam){ printf("could not allocate tracking variable."); /*exit(0) We don't want to exit!;*/}
+		track_frame  = (mat_uint32_t* )malloc(strobepackets * sizeof(int));
+			if(!track_frame){ printf("could not allocate tracking variable."); /*exit(0) We don't want to exit!;*/}
 			
 			
 		//also need to inspect the messages, to see exactly when the channels changed.
@@ -364,19 +364,20 @@ int main(int argn, char **argc){
 					double rxtime = 0.0;
 					fread((void*)&rxtime,8,1,in); //rx time in seconds.
 					
-					//read the buffer (format) "cam timstamp"
+					//read the buffer (format) "timestamp frame"
 					char buf[64];
 					//buf[siz] = 0;
 					fread((void*)&buf, siz, 1, in);
-					int cam;
+					int frame;
 					double txtime;
-					sscanf(buf, "%d %lg", &cam, &txtime);
+					
+					sscanf(buf, "%lg %d", &txtime, &frame);
 					strobe_tx[kp] = txtime;
 					strobe_rx[kp] = rxtime;
-					track_cam[kp] = cam;
+					track_frame[kp] = frame;
 					//fseeko(in,siz, SEEK_CUR);
 					pos += 16+siz;
-					
+					printf("%lg %d\n", txtime, frame);
 					kp++;
 					if(kp > strobepackets){
 						printf("error! time position kp > strobepackets\n");
@@ -458,12 +459,12 @@ int main(int argn, char **argc){
 		Mat_VarFree(matvar);
 		free(strobe_rx);
 		
-		//track cam
-		matvar = Mat_VarCreate("track_cam",MAT_C_UINT32,MAT_T_UINT32,
-							   1,&kpp,track_cam,0);
+		//track frame
+		matvar = Mat_VarCreate("track_frame",MAT_C_UINT32,MAT_T_UINT32,
+							   1,&kpp,track_frame,0);
 		Mat_VarWrite( mat, matvar, 0 );
 		Mat_VarFree(matvar);
-		free(track_cam);
+		free(track_frame);
 
 
 		//most analog traces do not fit into 2 gigs -- write them out RAW.
