@@ -18,40 +18,76 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
     end
     properties (SetAccess = private)
         hJoystick       %
-        SampleCount;    % Points to where teh next sample should be added
+        %         SampleCount;    % Points to where the next sample should be added
         ButtonDown = 0; % Counts how long the joystick button is down
+        hGui
+        CurrentClass = 1;
+        LastButton = 0;
+        
+        TrainingData; % Online retraininer defined by having access to and adding data to training data
     end
     
     methods
-        function initialize(obj,SignalSource,SignalClassifier)
+        function initialize(obj,SignalSource,SignalClassifier,hTrainingData)
+
+            assert(~isempty(hTrainingData),'Training Data Object Required');
+            obj.TrainingData = hTrainingData;
+            
             % check for joysticks:
             try
                 obj.hJoystick = JoyMexClass;
             catch ME
                 fprintf(2,'[%s] Error calling JoyMexClass. Joystick is disabled.\n',mfilename);
                 fprintf(2,'%s\n',ME.message);
+                obj.hJoystick = [];
             end
             
             initialize@Scenarios.ScenarioBase(obj,SignalSource,SignalClassifier);
             
-            if isempty(obj.SignalClassifier)
-                obj.SampleCount = 1;
-            else
-                obj.SampleCount = length(obj.SignalClassifier.TrainingDataLabels) + 1;
+            %             if isempty(obj.SignalClassifier)
+            %                 obj.SampleCount = 1;
+            %             else
+            %                 obj.SampleCount = length(obj.SignalClassifier.TrainingDataLabels) + 1;
+            if ~isempty(obj.hJoystick)
+                setupFigure(obj);
             end
+            
+            %             end
+            
         end
-        function update(obj)
+        function setupFigure(obj)
             
+            %obj.hGui = guiOnlineRetrain(SignalSource,SignalClassifier);
             
-            % Performs intent classification
-            update@Scenarios.ScenarioBase(obj);
+            f = UiTools.create_figure('Training Progress');
+            p = get(f,'Position');
+            p(1) = p(1)/3;
+            p(3) = 1100;
+            set(f,'Position',p);
             
+            classNames = obj.SignalClassifier.ClassNames;
             
-            % All subsequent commands rely on joystick for labelling
-            % correct class
-            if isempty(obj.hJoystick)
-                return
+            for i = 1:length(classNames)
+                spaces = strfind(classNames{i},' ');
+                if ~isempty(spaces)
+                    classNames{i}(spaces(1)) = '|';
+                end
             end
+            
+            n = obj.SignalClassifier.NumClasses;
+            dat = zeros(n,n+1);
+            t = uitable('parent',f,'data',dat,'columnname',[classNames(:); 'Total'],...
+                'rowname',classNames,'units','normalized',...
+                'position',[0.00 0.00 1.0 1.0],'fontsize',14);
+            
+            obj.hGui = t;
+            
+            set(obj.hGui,'ColumnWidth',repmat({65},1,n+1))
+        end
+        function [doTrain doAddData] = getCommand2(obj)
+            % Buttons map directly to classes
+            
+            
             
             % Check joystick for buttons, if any, add this to training data
             obj.hJoystick.getdata();
@@ -62,90 +98,187 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
             if isempty(buttonId)
                 % Button release
                 buttonWasDepressed = obj.ButtonDown > 0;
-                if buttonWasDepressed
-                    % retrain
-                    obj.SignalClassifier.train();
-                    obj.SignalClassifier.computeerror();
-                    obj.SignalClassifier.computeGains();
-                    obj.SignalClassifier.computeConfusion();
-                end
+                doAddData = false;
+                doTrain = buttonWasDepressed;
                 obj.ButtonDown = 0;
                 return
             end
             
             obj.ButtonDown = obj.ButtonDown + 1;
             
-            if ~mod(obj.ButtonDown,obj.RetrainCounts)
+            doAddData = true;
+            doTrain = ~mod(obj.ButtonDown,obj.RetrainCounts);
+            
+            % If button is down, add the current data as training data to
+            % that class
+            obj.CurrentClass = max(min(buttonId,obj.SignalClassifier.NumClasses),1);
+            
+        end
+        function [doTrain doAddData clearClass] = getCommand(obj)
+            % Joystick buttons change classes, another button trains data
+            
+            clearClass = 0;
+            
+            % Check joystick for buttons, if any, add this to training data
+            obj.hJoystick.getdata();
+            % Note only one button can be pressed at a time, lowest button
+            % number wins
+            buttonId = find(obj.hJoystick.buttonVal,1,'first');
+            if isempty(buttonId)
+                buttonId = 0;
+            end
+            
+            % change target Class
+            if ((buttonId == 2) || (buttonId == 8)) && (obj.LastButton == 0)
+                % move to next class, redraw, done
+                obj.CurrentClass = max(min(obj.CurrentClass+1,obj.SignalClassifier.NumClasses),1);
+                obj.LastButton = buttonId;
+                doTrain = false;
+                doAddData = false;
+                return
+            end
+            if ((buttonId == 4) || (buttonId == 6)) && (obj.LastButton == 0)
+                % move to previous class, redraw, done
+                obj.CurrentClass = max(min(obj.CurrentClass-1,obj.SignalClassifier.NumClasses),1);
+                obj.LastButton = buttonId;
+                doTrain = false;
+                doAddData = false;
+                return
+            end
+            
+            if (buttonId == 1)
+                clearClass = obj.CurrentClass;
+                fprintf('[%s] Ignoring class data for class: %d\n',mfilename,clearClass);
+                doTrain = true;
+                doAddData = false;
+                return
+            end
+            
+            trainingButtonPressed = (buttonId == 3);
+            if trainingButtonPressed
+                obj.ButtonDown = obj.ButtonDown + 1;
+            else
+                obj.ButtonDown = 0;
+            end
+            
+            trainingButtonReleased = (buttonId == 0) && (obj.LastButton == 3);
+            trainingButtonHeld = (obj.ButtonDown > obj.RetrainCounts);
+            obj.LastButton = buttonId;
+            
+            % Add data if training button is pressed
+            doAddData = trainingButtonPressed;
+            
+            % Train if button released or held too long
+            if (trainingButtonReleased || trainingButtonHeld)
+                doTrain = true;
+                obj.ButtonDown = 0; %reset counter
+            else
+                doTrain = false;
+            end
+            
+        end
+        function update(obj)
+            
+            % Performs intent classification
+            
+            % update@Scenarios.ScenarioBase(obj);
+            
+            % Step 1: Get Intent
+            [decodedClassName,prSpeed,rawEmg,windowData,features,...
+                voteDecision] = getIntentSignals(obj);
+            
+            % Step 2: Convert Intent to limb commands
+            obj.generateUpperArmCommand(decodedClassName,prSpeed);
+            obj.generateGraspCommand(decodedClassName,prSpeed);
+            
+            
+            % All subsequent commands rely on joystick for labelling
+            % correct class
+            if isempty(obj.hJoystick)
+                return
+            end
+            
+            [doTrain doAddData clearClass] = getCommand(obj);
+            
+            if doTrain
+                % retrain
                 obj.SignalClassifier.train();
                 obj.SignalClassifier.computeerror();
                 obj.SignalClassifier.computeGains();
                 obj.SignalClassifier.computeConfusion();
             end
             
-            try
             % If button is down, add the current data as training data to
             % that class
-            currentClass = max(min(buttonId,obj.SignalClassifier.NumClasses),1);
-            
-            isTrained = obj.SignalClassifier.IsTrained;
-            %isTrained(currentClass)
-            
-            className = obj.SignalClassifier.ClassNames{currentClass};
-            
-            %obj.addData();
-            
-            % Get new data (getting raw data and manually filtering for logging)
-            rawEmg = obj.SignalSource.getData();
-            windowData = obj.SignalSource.applyAllFilters(rawEmg);
-            
-            features = feature_extract(windowData',obj.SignalClassifier.NumSamplesPerWindow);
-            
-            idxChannel = 1:obj.SignalSource.NumChannels;
-            obj.SignalClassifier.TrainingDataLabels(obj.SampleCount) = currentClass;
-            % Note this could be tricky if data is loaded with the
-            % wrong number of channels compared to the current Signal
-            % Source.  Below code works if the current channels are
-            % less than or equal to the prior data
-            obj.SignalClassifier.TrainingData(idxChannel,:,obj.SampleCount) = features;
-            
-            obj.SignalClassifier.TrainingEmg(idxChannel,:,obj.SampleCount) = rawEmg(1:obj.SignalClassifier.NumSamplesPerWindow,:)';
-            
-            obj.SampleCount = obj.SampleCount + 1;
-            
-            isTrained = obj.SignalClassifier.IsTrained;
-            %isTrained(currentClass)
-            catch ME
-                ME
-                rethrow(ME)
+            if doAddData
+                
+                % Add a new sample of data based on the CurrentClass property
+                assert(~isempty(obj.CurrentClass),'No class is selected to tag new data');
+                
+                obj.TrainingData.addTrainingData(obj.CurrentClass, features, ...
+                    rawEmg(1:obj.SignalClassifier.NumSamplesPerWindow,:)')
+                
             end
+            
+            
+            %             if (clearClass > 0)
+            %
+            %                 % initialize ignore buffer
+            %                 if isempty(obj.SignalClassifier.IgnoreList)
+            %                     %obj.SignalClassifier.IgnoreList = false(1,obj.SampleCount);
+            %                 end
+            %
+            %                 ignoreMe = obj.SignalClassifier.TrainingDataLabels(1:obj.SampleCount-1) == clearClass;
+            %                 obj.SignalClassifier.IgnoreList(ignoreMe) = true;
+            %
+            %             end
+            
+            updateFigure(obj,voteDecision,obj.CurrentClass);
         end
-        function close(obj)
-            
-            close@Scenarios.ScenarioBase(obj); % Call superclass update method
-            
-            %function saveTrainingData(obj)
-            % Save Training Data
-            FilterSpec = '*.dat';
-            DialogTitle = 'Select File to Write';
-            DefaultName = sprintf('%04d%02d%02d_%02d%02d%02d_TrainingData.dat',fix(clock));
-            [FileName,PathName,FilterIndex] = uiputfile(FilterSpec,DialogTitle,DefaultName);
-            if FilterIndex == 0
-                % User Cancelled
+        function updateFigure(obj,decodedClassId,labeledClass)
+            % Update figure (optional)
+            if isempty(obj.hGui) || ~ishandle(obj.hGui)
                 return
             end
             
-            emgData = obj.SignalClassifier.TrainingEmg; %#ok<NASGU>
+            n = obj.SignalClassifier.NumClasses;
+            dat = zeros(n,n+1);
             
-            features3D = obj.SignalClassifier.TrainingData; %#ok<NASGU>
-            classLabelId = obj.SignalClassifier.TrainingDataLabels; %#ok<NASGU>
-            if ~isempty(obj.SignalClassifier)
-                classNames = obj.SignalClassifier.getClassNames; %#ok<NASGU>
-                activeChannels = obj.SignalClassifier.ActiveChannels; %#ok<NASGU>
-            else
-                classNames = {};
-                activeChannels = [];
+            % Compute the sum column
+            numClasses = obj.SignalClassifier.NumClasses;
+            classLabels = obj.TrainingData.getClassLabels;
+            for iClass = 1:numClasses
+                dat(iClass,numClasses+1) = sum(classLabels == iClass);
             end
-            save(fullfile(PathName,FileName),'features3D','classLabelId','classNames','activeChannels','emgData');
+            
+            try
+            if ~isempty(obj.SignalClassifier.ConfusionMatrix)
+                dat(1:numClasses,1:numClasses) = obj.SignalClassifier.ConfusionMatrix';
+            end
+            catch
+                disp('Confusion matrix error')
+            end
+            
+            
+            cellPtr = cell(numClasses,1);
+            if (labeledClass > 0)
+                cellPtr{labeledClass} = '   <<<';
+            end
+            set(obj.hGui,'Data',[num2cell(dat) cellPtr]);
+            
+            
+            classNames = obj.SignalClassifier.ClassNames;
+            paddedName = classNames;
+            for i = 1:length(classNames)
+                paddedName{i} = ['  ' paddedName{i} '  '];
+            end
+            paddedName{decodedClassId} = ['[ ' classNames{decodedClassId} ' ]'];
+            set(obj.hGui,'RowName',paddedName);
+            
+        end
+        function close(obj)
+            close@Scenarios.ScenarioBase(obj); % Call superclass update method
+            obj.TrainingData.saveTrainingData();
         end
     end
 end

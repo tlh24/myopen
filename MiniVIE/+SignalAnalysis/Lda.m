@@ -6,24 +6,40 @@ classdef Lda < SignalAnalysis.Classifier
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % 
     % 01-Sept-2010 Armiger: Created
-    properties
-    end
     methods
         function obj = Lda
             % Constructor
         end
         function confuseMat = train(obj)
             
-            if isempty(obj.TrainingData)
+            if isempty(obj.TrainingData) || ~obj.TrainingData.hasData()
+                disp('No Training Data Exists');
+                return
                 error('No Training Data Exists');
             elseif isempty(obj.ActiveChannels)
                 error('No channels selected for training');
             end
             
-            feats = convertfeaturedata(obj);
+            dataLabels = obj.TrainingData.getClassLabels();
+            features3D = obj.TrainingData.getFeatureData();
+            feats = obj.convertfeaturedata(features3D);
+
+            
+            % eliminate ignored samples
+            numIgnore = length(obj.IgnoreList);
+            fprintf('[%s] Ignoring %d samples\n',mfilename,sum(obj.IgnoreList));
+            if numIgnore
+                fprintf('[%s] #ignore = %d; # labels = %d; # feats = %d \n',mfilename,numIgnore,length(dataLabels),size(feats,2));
+                if (numIgnore == length(dataLabels) ) && (numIgnore == size(feats,2) )
+                    obj.IgnoreList = obj.IgnoreList(1:end) > 0;
+                    dataLabels(obj.IgnoreList) = [];
+                    feats(:,obj.IgnoreList) = [];
+                end
+            end
+            
             fprintf('Training LDA with %d Samples (',size(feats,2));
             for iClass = 1:obj.NumClasses
-                fprintf('%d = %d; ',iClass,sum(obj.TrainingDataLabels == iClass));
+                fprintf('%d = %d; ',iClass,sum(dataLabels == iClass));
             end
             fprintf(')\n');
 
@@ -31,7 +47,7 @@ classdef Lda < SignalAnalysis.Classifier
             fprintf('%d ',obj.ActiveChannels);
             fprintf(']\n');
             
-            [obj.Wg,obj.Cg] = obj.lda(feats,obj.TrainingDataLabels,obj.NumClasses);
+            [obj.Wg,obj.Cg] = obj.lda(feats,dataLabels,obj.NumClasses);
             
             if nargout > 0
                 % Compute confusion
@@ -41,7 +57,7 @@ classdef Lda < SignalAnalysis.Classifier
                 
                 confuseMat = zeros(obj.NumClasses);
                 for i = 1:obj.NumClasses
-                    id = (obj.TrainingDataLabels == i);
+                    id = (dataLabels == i);
                     actualClass = classOut(id);
                     confuseMat(i,:) = accumarray(actualClass,1,[obj.NumClasses 1]);
                 end
@@ -75,6 +91,9 @@ classdef Lda < SignalAnalysis.Classifier
                     voteDecision(i) = obj.majority_vote(classOut(i), obj.NumMajorityVotes, obj.NumClasses, 1, 1);
                 end
                 if numDecisions > 50, toc,end
+                
+                
+                
             end
         end
         function close(obj)

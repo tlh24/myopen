@@ -62,7 +62,7 @@ classdef AirGuitarHeroBase < hgsetget
             
             
             obj.hFrame = image(zeros(obj.VideoSize,'uint8'),'Parent',obj.hAxes);
-            set(obj.hFigure,'Position',[318 223 804 566]);
+            set(obj.hFigure,'Position',[320 220 800 600]);
             hold(obj.hAxes,'on');
             
         end
@@ -87,16 +87,16 @@ classdef AirGuitarHeroBase < hgsetget
                     stop(obj.hTimer);
                 end
                 
-                % TODO: button control shouldn't be here is displaying only
+                % TODO: button control shouldn't be here if displaying only
                 % Ensure Buttons are up
                 sendButtonCommand(obj,~(zeros(1,8)));
                 
                 % Can't make calls to Signal Source -- Doesn't exist in
                 % Autoplay mode
                 
-%                 if ~strcmpi(obj.SignalSource.AnalogInput.Running,'off')
-%                     stop(obj.SignalSource.AnalogInput);
-%                 end
+                %                 if ~strcmpi(obj.SignalSource.AnalogInput.Running,'off')
+                %                     stop(obj.SignalSource.AnalogInput);
+                %                 end
             end
         end
         function refresh(obj)
@@ -149,23 +149,6 @@ classdef AirGuitarHeroBase < hgsetget
             set(obj.hFrame,'CData',frame);
         end
     end
-    methods (Static = true)
-        function hTimer = createTimer(timerName,TimerFcn)
-            
-            hExisting = timerfindall('Name',timerName);
-            delete(hExisting);
-            
-            t = timer;
-            t.Name = timerName;
-            t.ExecutionMode = 'fixedRate';
-            t.TimerFcn = TimerFcn;
-            t.StartFcn = @(src,evt)fprintf('Started: %s\tPeriod: %f\n',timerName,t.Period);
-            t.StopFcn = @(src,evt)fprintf('Stopped: %s\tPeriod: %f\tAveragePeriod: %f\n',timerName,t.Period,t.AveragePeriod);
-            
-            hTimer = t;
-        end
-    end
-    
 end
 
 function cb_key_press(src,evnt,obj) %#ok<*INUSL>
@@ -205,6 +188,7 @@ delete(src);
 end
 
 function id = keyMap(strKey)
+
 switch strKey
     case 'space'
         id = double(Presentation.AirGuitarHero.HwLinesEnum.Strum);
@@ -221,4 +205,5 @@ switch strKey
     otherwise
         id = [];
 end
+
 end

@@ -66,17 +66,12 @@ switch testId
         if s < 0
             error('NFU Init failed');
         end
-        mud = MPL.MudCommandEncoder();
+        hNfu.sendUpperArmHandRoc([zeros(1,3) 0 -0.7 -0.5 -0.5],0,0);
+        pause(1)
+        hNfu.sendUpperArmHandRoc([zeros(1,3) 0.1 0.7 0.5 0.5],0,0);
+        pause(1)
+        hNfu.sendUpperArmHandRoc([zeros(1,3) 0 0 0 0],0,0);
         
-        % msg = mud.ArmPosVelHandRocGrasps([zeros(1,3) elbow w],zeros(1,7),1,rocID,rocPos,1)
-        msg = mud.ArmPosVelHandRocGrasps([zeros(1,4) -0.7 -0.5 -0.5],zeros(1,7),1,0,0,1);
-        hNfu.sendUdpCommand(char(59,msg));  % append nfu msg header
-        pause(1)
-        msg = mud.ArmPosVelHandRocGrasps([zeros(1,4) 0.7 0.5 0.5],zeros(1,7),1,0,0,1);
-        hNfu.sendUdpCommand(char(59,msg));  % append nfu msg header
-        pause(1)
-        msg = mud.ArmPosVelHandRocGrasps([zeros(1,4) 0 0 0],zeros(1,7),1,0,0,1);
-        hNfu.sendUdpCommand(char(59,msg));  % append nfu msg header
     case 'MplWrist02'
         %test mpl wrist ROM
         hNfu = MPL.NfuUdp.getInstance;
@@ -84,15 +79,13 @@ switch testId
         if s < 0
             error('NFU Init failed');
         end
-        mud = MPL.MudCommandEncoder();
         
         tic;
         while StartStopForm
             drawnow
             val = sin(toc);
             fprintf('Wrist Angle: %f\n',val);
-            msg = mud.ArmPosVelHandRocGrasps([zeros(1,4) val val val],zeros(1,7),1,0,0,1);
-            hNfu.sendUdpCommand(char(59,msg));  % append nfu msg header
+            hNfu.sendUpperArmHandRoc([zeros(1,4) val val val],0,0);
             pause(0.02);
         end
     case 'MplWrist03'
@@ -103,30 +96,28 @@ switch testId
         hNfu = MPL.NfuUdp.getInstance;
         assert(hNfu.initialize() >=0 ,'NFU Init Failed');
 
-        mud = MPL.MudCommandEncoder();
-        
         tic;
         while StartStopForm
             drawnow
             
             % Wrist
             val = sin(toc);
-            fprintf('Wrist Angle: %f\n',val);
-            msg = mud.ArmPosVelHandRocGrasps([zeros(1,4) val val val],zeros(1,7),1,0,0,1);
-            hNfu.sendUdpCommand(char(59,msg));  % append nfu msg header
+            hNfu.sendUpperArmHandRoc([zeros(1,4) val val val],0,0);
             
             % Tactors
             isOdd = @(x)rem(x,2);
             if isOdd(round(toc))
-                val = 100;
+                tVal = 100;
             else
-                val = 0;
+                tVal = 0;
             end
             
             tactorId = 3;
-            hNfu.tactorControl(tactorId, 100, val, 100, 100, 0);
+            hNfu.tactorControl(tactorId, 100, tVal, 100, 100, 0);
             tactorId = 4;
-            hNfu.tactorControl(tactorId, 100, 100-val, 100, 100, 0);
+            hNfu.tactorControl(tactorId, 100, 100-tVal, 100, 100, 0);
+
+            fprintf('Wrist Angle: %6.2f\t Tactor: %d\n',val,tVal);
             
             pause(0.02);  % control rate here
         end
@@ -134,22 +125,16 @@ switch testId
         %test mpl hand Roc
         hNfu = MPL.NfuUdp.getInstance;
         hNfu.initialize();
-        mud = MPL.MudCommandEncoder();
-        
+
         for rocID = [0 1 2 3 4 5 6 7 8 9 10 11 12 13]
             fprintf('ROC %d,open\n',rocID)
-            % msg = mud.ArmPosVelHandRocGrasps([zeros(1,3) elbow w],zeros(1,7),1,rocID,rocPos,1)
-            msg = mud.ArmPosVelHandRocGrasps([zeros(1,4) 0 0 0],zeros(1,7),1,rocID,0,1);
-            hNfu.sendUdpCommand(char(59,msg));  % append nfu msg header
+            hNfu.sendUpperArmHandRoc([zeros(1,4) 0 0 0],rocID,0);
             disp('Press any key...');pause;
             fprintf('ROC %d,close\n',rocID)
-            % msg = mud.ArmPosVelHandRocGrasps([zeros(1,3) elbow w],zeros(1,7),1,rocID,rocPos,1)
-            msg = mud.ArmPosVelHandRocGrasps([zeros(1,4) 0 0 0],zeros(1,7),1,rocID,1,1);
-            hNfu.sendUdpCommand(char(59,msg));  % append nfu msg header
+            hNfu.sendUpperArmHandRoc([zeros(1,4) 0 0 0],rocID,1);
             disp('Press any key...');pause;
         end
-        msg = mud.ArmPosVelHandRocGrasps([zeros(1,4) 0 0 0],zeros(1,7),1,0,0,1);
-        hNfu.sendUdpCommand(char(59,msg));  % append nfu msg header
+        hNfu.sendUpperArmHandRoc([zeros(1,4) 0 0 0],0,0);
     case 'Haptics01'
         % Test tactors manually
         test_tactor_nfu();

@@ -20,7 +20,14 @@ set(f,'WindowKeyReleaseFcn',@(src,evt)keyUp(evt.Key));
             case {'1' '2' '3' '4' '5' '6' '7' '8' '9'}
                 id = str2double(key);
                 val = 100;
-                hNfu.tactorControl(id, 100, val, 100, 100, 0);
+                if id < 3
+                    val = val*10;
+                    cLimit = 200;
+                else
+                    cLimit = 100;
+                end
+                hNfu.tactorControl(id, 100, val, 100, cLimit, 0);
+                disp('down')
         end
     end
 

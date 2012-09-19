@@ -38,7 +38,8 @@ classdef JoyMexClass < handle
             end
             
             try
-                JoyMEX('init',obj.id);
+                % Calling init twice will result in error
+                JoyMEX('init',obj.id); 
             catch ME
                 if strcmp(ME.identifier,'JoyMEX:NotFound')
                     error('Error Initializing Joystick Id = %d\n Error was: "%s"',obj.id,ME.message);

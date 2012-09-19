@@ -32,6 +32,7 @@ classdef (Sealed) NfuUdp < handle
         
     end
     properties (SetAccess = private)
+        hMud = MPL.MudCommandEncoder();
         IsInitialized = false;
         
         TcpConnection = [];
@@ -58,6 +59,7 @@ classdef (Sealed) NfuUdp < handle
         
         numPacketsReceived = 0;
         
+        localRoc
     end
     methods (Access = private)
         function obj = NfuUdp
@@ -75,6 +77,7 @@ classdef (Sealed) NfuUdp < handle
             % status < 0: Failed
             
             status = 0;
+            obj.readRocTable();
             
             if obj.IsInitialized
                 fprintf('[%s] NFU Comms already initialized\n',mfilename);
@@ -84,9 +87,11 @@ classdef (Sealed) NfuUdp < handle
             % Open a udp port to receive streaming data on
             obj.UdpStreamReceiveSocket = pnet('udpsocket',obj.UdpStreamReceivePortNumLocal);
             if obj.UdpStreamReceiveSocket < 0
-                fprintf(2,'Failed to create UDP Socket on local port #%d\n',obj.UdpStreamReceivePortNumLocal);
+                fprintf(2,'[%s] Failed to create UDP Socket on local port #%d\n',mfilename,obj.UdpStreamReceivePortNumLocal);
                 status = -1;
                 return
+            elseif (obj.UdpStreamReceiveSocket ~= 0)
+                fprintf(2,'[%s] Expected receive socket id == 0, got socket id == %d\n',mfilename,obj.UdpStreamReceiveSocket);
             end
             pnet(obj.UdpStreamReceiveSocket, 'setreadtimeout',0);
             
@@ -96,6 +101,8 @@ classdef (Sealed) NfuUdp < handle
                 fprintf(2,'Failed to create UDP Socket on local port #%d\n',obj.UdpCommandPortNumLocal);
                 status = -2;
                 return
+            elseif (obj.UdpCommandSocket ~= 1)
+                fprintf(2,'[%s] Expected receive socket id == 1, got socket id == %d\n',mfilename,obj.UdpCommandSocket);
             end
             pnet(obj.UdpCommandSocket, 'setreadtimeout',0);
             
@@ -193,6 +200,49 @@ classdef (Sealed) NfuUdp < handle
             db.set_value('NFU_output_to_MPL',single(val))  %% 2 = NFU CAN to limb
             
         end
+        function readRocTable(obj)
+            obj.localRoc = MPL.RocTable.createRocTables('test.xml');
+        end
+        function sendAllJoints(obj,jointAngles)
+
+            p = zeros(27,1);
+            if length(jointAngles) == 7
+                p(1:7) = jointAngles;
+                p(8:27) = 0;
+            elseif length(jointAngles) == 27
+                p = jointAngles(:);
+            else
+                error('Wrong size for Joint Angles');
+            end
+            
+            msg = obj.hMud.DOMPositionCmd(p);
+            obj.sendUdpCommand(char(61,msg));  % append nfu msg header
+            
+        end
+        function sendUpperArmHandLocalRoc(obj,upperJointAngles,RocId,RocVal)
+
+            % use local ROC's
+            assert(RocVal >= 0,'RocVal < 0');
+            assert(RocVal <= 1,'RocVal > 1');
+            assert(~isempty(obj.localRoc),'Roc Table Empty');
+            roc = obj.localRoc(RocId+1);
+            
+            handPos = interp1(roc.waypoint,roc.angles,RocVal);
+            p = [upperJointAngles(:); handPos(:)];
+            obj.sendAllJoints(p);
+            
+        end
+        function sendUpperArmHandRoc(obj,upperJointAngles,RocId,RocVal)
+            
+            % override remote ROC
+            sendUpperArmHandLocalRoc(obj,upperJointAngles,RocId,RocVal);
+            return
+
+            msg = obj.hMud.ArmPosVelHandRocGrasps(upperJointAngles,zeros(1,7),1,RocId,RocVal,1);
+            obj.sendUdpCommand(char(59,msg));  % append nfu msg header
+
+        end
+        
         function sendUdpCommand(obj,msg)
             %sendUdpCommand(obj,msg)
             % send a udp message to the command socket
@@ -354,7 +404,15 @@ classdef (Sealed) NfuUdp < handle
             %UdpBuffer
             len = 1;
             while(len > 0)
-                len = pnet(obj.UdpStreamReceiveSocket,'readpacket','noblock');
+                try
+                    % try block here is for cases where an output
+                    % argument is not returned by pnet (
+                    len = pnet(obj.UdpStreamReceiveSocket,'readpacket','noblock');
+                catch ME
+                    fprintf(2,'[%s] Caught a pnet error reading udp stream packets: "%s"\n',mfilename,ME.message);
+                    return
+                end
+                
                 if (len == 406) || (len == 726)
                     % advance packet counter
                     obj.numPacketsReceived = obj.numPacketsReceived + 1;
@@ -394,39 +452,27 @@ classdef (Sealed) NfuUdp < handle
             
             
         end
-        function mud = getMud(obj)
-            
-            mud = [];
-            len = 1;
-            
-            while len > 0
-                len = pnet(obj.UdpStreamReceiveSocket,'readpacket','noblock');
-                if len > 0
-                    stream = pnet(obj.UdpStreamReceiveSocket,'read',len,'UINT8');
-                    mud = typecast(uint8(stream(5:32)),'single');
-                    if ~isequal(mod(sum(stream(1:43)),256),stream(44))
-                        fprintf('[%s] Bad Checksum\n',mfilename);
-                    end
-                    fprintf('%8.3f ',mud);
-                    fprintf('\n');
-                end
-            end
-        end
-        function close(obj)
-            %             try
-            %                 pnet(obj.UdpStreamReceiveSocket,'close');
-            %             end
-            %             try
-            %             pnet(obj.TcpConnection,'close');
-            %             end
-            %             try
-            %             pnet(obj.TcpSocket,'close');
-            %             end
-        end
     end
     methods (Static)
-        function singleObj = getInstance
+        function singleObj = getInstance(cmd)
             persistent localObj
+            if nargin < 1
+                cmd = 0;
+            end
+            
+            if cmd < 0
+                fprintf('[%s] Deleting NfuUdp comms object\n',mfilename);
+                try
+                    pnet(obj.UdpStreamReceiveSocket,'close');
+                end
+                try
+                    pnet(obj.UdpCommandSocket,'close');
+                end
+                %IsInitialized
+                localObj = [];
+                return
+            end
+            
             if isempty(localObj) || ~isvalid(localObj)
                 fprintf('[%s] Calling constructor\n',mfilename);
                 localObj = MPL.NfuUdp;

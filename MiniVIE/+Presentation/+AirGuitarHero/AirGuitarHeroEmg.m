@@ -26,7 +26,7 @@ classdef AirGuitarHeroEmg < Presentation.AirGuitarHero.AirGuitarHeroBase
     end
     methods
         function obj = AirGuitarHeroEmg(signalSource,signalClassifier)
-
+            
             if isempty(signalSource)
                 error('SignalSource is empty\n');
             else
@@ -38,8 +38,8 @@ classdef AirGuitarHeroEmg < Presentation.AirGuitarHero.AirGuitarHeroBase
                 obj.SignalClassifier = signalClassifier;
             end
             
-            obj.hTimer = obj.createTimer('AGH_Display',@(src,evt)refresh(obj));
-            obj.hTimer.Period = 0.04;
+            obj.hTimer = UiTools.create_timer('AGH_Display',@(src,evt)refresh(obj));
+            obj.hTimer.Period = 0.03;
             
             obj.initialize();
         end
@@ -81,9 +81,12 @@ classdef AirGuitarHeroEmg < Presentation.AirGuitarHero.AirGuitarHeroBase
         function refresh(obj)
             
             try
-                frame = getFrame(obj);
-                annotatedFrame = obj.hNoteDetector.process_frame(frame);
-                drawFrame(obj,annotatedFrame);
+                if ~isempty(hAudioVideoIn)
+                    % get a frame and process it
+                    frame = getFrame(obj);
+                    annotatedFrame = obj.hNoteDetector.process_frame(frame);
+                    drawFrame(obj,annotatedFrame);
+                end
                 
                 switch obj.DisplayState
                     case obj.Off

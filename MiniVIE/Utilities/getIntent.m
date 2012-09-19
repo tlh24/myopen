@@ -1,4 +1,5 @@
-function [classOut,voteDecision,className,prSpeed]= getIntent(hSignalSource,hSignalClassifier)
+function [classOut,voteDecision,className,prSpeed,rawEmg,windowData,features2D] ...
+    = getIntent(hSignalSource,hSignalClassifier)
 % Given a signal source and a classifier, derive intent based on the
 % current signal state
 
@@ -17,7 +18,9 @@ end
 % Get the appropriate number of samples
 numSamples = hSignalClassifier.NumSamplesPerWindow;
 hSignalSource.NumSamples = numSamples;
-windowData = hSignalSource.getFilteredData();
+
+rawEmg = hSignalSource.getData();
+windowData = hSignalSource.applyAllFilters(rawEmg);
 
 % Extract features and classify
 features2D = hSignalClassifier.extractfeatures(windowData);

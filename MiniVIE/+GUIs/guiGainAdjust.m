@@ -4,6 +4,7 @@ f = UiTools.create_figure('Class Names','guiClassifierChannels');
 clf(f)
 
 % classNames = GUIs.guiClassifierChannels.getSavedDefaults();
+assert(~isempty(obj.SignalClassifier),'Classifier does not exist');
 classNames = obj.SignalClassifier.ClassNames;
 
 N = length(classNames);

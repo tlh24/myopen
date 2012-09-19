@@ -27,7 +27,7 @@ classdef HapticAlgorithm < handle
         SensorLowHigh = [15 100];
         ActuatorLowHigh = [40 127];
         
-        ActuationRepeatTimeout = 20;
+        ActuationRepeatTimeout = 30;
         
         Verbose = 1;
         
@@ -117,7 +117,7 @@ classdef HapticAlgorithm < handle
                 val = 0;
             elseif obj.SensorLowHigh(1) < inputSensor && inputSensor <= obj.SensorLowHigh(2)
                 obj.TactorState = 1;
-                val = obj.ActuatorLowHigh(1);
+                val = min(max(inputSensor,40),120);%obj.ActuatorLowHigh(1);
             elseif obj.SensorLowHigh(2) < inputSensor
                 obj.TactorState = 2;
                 val = obj.ActuatorLowHigh(2);
@@ -131,9 +131,16 @@ classdef HapticAlgorithm < handle
             end
             
             % Check timeout condition
-            if obj.TactorCounter > obj.ActuationRepeatTimeout
+            if obj.TactorCounter == obj.ActuationRepeatTimeout
                 fprintf('Tactor %d TIMEOUT\n',obj.TactorId);
+            end
+            if obj.TactorCounter >= obj.ActuationRepeatTimeout
                 val = 0;
+            end
+                            
+
+            if val > 0
+                fprintf('Tactor %d activated: %6d, Senorval = %d\n',obj.TactorId,val,inputSensor);
             end
             
             % send command

@@ -1,14 +1,10 @@
 To do:
 
-- Add a signal source for the myopen board
-
-- Link the Live Acquisition interface in CEVEN to the signal inputs preview function
-
-- Create a main gui that will allow source selection, classifier, presentation, etc on the fly
-
-- Create additional visualizations for the arm / end effector
-
--Exit button on class names not functioning
-
 - Save dialog comes up twice on bar trainer exit
+
+- Clicking add twice sorts class list
+
+- handle case where new classes are added to existing training data
+   - use enums to identify classes
+   - verify confusion matrix updated properly
 

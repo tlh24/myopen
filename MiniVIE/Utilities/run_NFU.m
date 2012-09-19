@@ -118,8 +118,8 @@ hNfu.setParam(WRISTFE_positiveOutputLimit,10000);
 
 
 %%
-hNfu.disableStreaming(1);
-hNfu.enableStreaming(2);
-t = timer;
-set(t,'Period',2,'ExecutionMode','fixedRate','TimerFcn',@(src,obj)disp(hNfu.getMud));
-start(t)
+% hNfu.disableStreaming(1);
+% hNfu.enableStreaming(2);
+% t = timer;
+% set(t,'Period',2,'ExecutionMode','fixedRate','TimerFcn',@(src,obj)disp(hNfu.getMud));
+% start(t)

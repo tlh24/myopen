@@ -7,9 +7,11 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
         NumRepetitions = 1;
         ContractionLengthSeconds = 2;
         DelayLengthSeconds = 2;
+        StartupWaitTimeSeconds = 3;
         
         EnablePictures = true;
     end
+    
     methods
         function obj = SimpleTrainer()
             % Constructor
@@ -34,12 +36,9 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
                 error('Timed Out Waiting for Signal Source');
             end
             
-            iSample = 0;
-            
             obj.SignalSource.NumSamples = obj.SignalClassifier.NumSamplesPerWindow;
-
             
-            for i = 3:-1:1
+            for i = obj.StartupWaitTimeSeconds:-1:1
                 str = sprintf('Get ready to train in %02d seconds',i);
                 waitbar(0,h,str);
                 pause(1);
@@ -109,7 +108,7 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
                         
                         
                         fileName = fullfile(pathImages,imgName);
-                        if ~exist(fileName,'file')
+                        if exist(fileName,'file') ~= 2
                             set(a,'Visible','off')
                             fprintf('Image failed: "%s\n"',fileName);
                         else
@@ -153,16 +152,6 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
                         obj.CurrentClass = iClass;
                         obj.addData();
                         
-%                         iSample = iSample + 1;
-%                         if iSample == obj.MaxSamples + 1
-%                             % This should only display once
-%                             warning('SimpleTrainer:exceededMaxSamples','Exceeded Preallocated Sample Buffer');
-%                         end
-%                         
-%                         obj.ClassLabelId(iSample) = iClass;
-%                         windowData = obj.SignalSource.getFilteredData();
-%                         features = feature_extract(windowData' ,obj.SignalClassifier.NumSamplesPerWindow);
-%                         obj.Features3D(:,:,iSample) = features;
                     end
                 end
             end
@@ -175,12 +164,8 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
                 pause(0.2);
                 delete(h);
             end
-            
-%             obj.Features3D(:,:,iSample+1:end) = [];
-%             obj.ClassLabelId(iSample+1:end) = [];
-%             obj.SampleCount = iSample;
-            
-            obj.saveTrainingData();
+                        
+            obj.TrainingData.saveTrainingData();
 
         end
     end
