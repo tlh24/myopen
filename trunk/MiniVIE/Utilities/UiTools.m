@@ -106,6 +106,19 @@ classdef UiTools
                 storedVariable = S.storedVariable;
             end
         end
+        function delete_temp_file(defaultFile)
+            % Delete temp file from the tempdir
+            % directory (e.g. C:\Users\armigrs1\AppData\Local\Temp\)
+            %
+            % The input "defaultFile" is used as the filename
+            % Load a mat file in the temp directory
+                        
+            fullFile = fullfile(tempdir,defaultFile);
+            if exist(fullFile,'file')
+                fprintf('[%s] Deleting file "%s"\n',mfilename,fullFile);
+                delete(fullFile);
+            end
+        end
         function fullFilename = ui_select_data_file(extension)
             % Provides a save dialog with the default file set as the
             % current date and time with extention reflecting contents

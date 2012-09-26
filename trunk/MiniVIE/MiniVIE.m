@@ -207,13 +207,12 @@ classdef MiniVIE < Common.MiniVieObj
                         h = Inputs.EmgSimulator();
                     case 'DaqHwDevice'
                         %h = Inputs.DaqHwDevice('nidaq','Dev2');
-                        h = Inputs.DaqHwDevice('mcc','0');
+                        %h = Inputs.DaqHwDevice('mcc','0');
+                        h = loadDaqHwDevice();
                     case 'UdpDevice'
                         h = Inputs.UdpDevice();
                     case 'CpchSerial'
-                        h = Inputs.CpchSerial('COM11',...
-                            uint16(hex2dec('FFFF')),uint16(hex2dec('FFFF')));
-                        %uint16(hex2dec('FFFF')),uint16(hex2dec('0000')));
+                        h = loadCpchSerial();
                     case 'NfuInput'
                         h = Inputs.NfuInput();
                     otherwise
@@ -308,7 +307,7 @@ classdef MiniVIE < Common.MiniVieObj
                     end
                     
                     h.NumMajorityVotes = 0;
-
+                    
                     NumSamplesPerWindow = 200;
                     fprintf('Setting Window Size to: %d\n',NumSamplesPerWindow);
                     h.NumSamplesPerWindow = NumSamplesPerWindow;
@@ -626,5 +625,76 @@ classdef MiniVIE < Common.MiniVieObj
             obj = Presentation.AirGuitarHero.AirGuitarHeroEmg;
         end
     end
+end
+
+function h = loadCpchSerial()
+% Load a CpchSerial with default prompts
+
+tempFileName = 'defaultCpchSerial';
+cpchParams = UiTools.load_temp_file(tempFileName);
+if isempty(cpchParams)
+    % Use these defaults
+    prompt={
+        'Enter Serial Port Name (e.g. COM1):',...
+        'Enter BioAmplifier Channel Mask (e.g. FFFF):',...
+        'Enter GPIO Channel Mask (e.g. 0000):',...
+        };
+    name='CPCH Parameters';
+    numlines=1;
+    defaultanswer={'COM14','FFFF','FFFF'};
+    answer=inputdlg(prompt,name,numlines,defaultanswer);
+    assert(length(answer) == 3,'Expected 3 outputs');
+    
+    cpchParams.SerialPort = answer{1};
+    cpchParams.BioampMask = uint16(hex2dec(answer{2}));
+    cpchParams.GPIMask = uint16(hex2dec(answer{3}));
+end
+
+h = Inputs.CpchSerial(cpchParams.SerialPort,cpchParams.BioampMask,cpchParams.GPIMask);
+
+try
+    h.initialize();
+catch ME
+    % clearing defaults
+    UiTools.delete_temp_file(tempFileName);
+    rethrow(ME);
+end
+UiTools.save_temp_file(tempFileName,cpchParams);
+
+end
+
+function h = loadDaqHwDevice()
+% Load a dawHwDevice with default prompts
+
+tempFileName = 'defaultDaqHwDevice';
+daqParams = UiTools.load_temp_file(tempFileName);
+if isempty(daqParams)
+    % Use these defaults
+    prompt={
+        'Enter DAQ Board Name (e.g. mcc):',...
+        'Enter DAQ Board Id (e.g. 0):',...
+        };
+    name='DAQ Parameters';
+    numlines=1;
+    defaultanswer={'nidaq','Dev2'};
+    answer=inputdlg(prompt,name,numlines,defaultanswer);
+    assert(length(answer) == 2,'Expected 2 outputs');
+    
+    daqParams.Name = answer{1};
+    daqParams.Id = answer{2};
+end
+
+h = Inputs.DaqHwDevice(daqParams.Name,daqParams.Id);
+
+try
+    h.initialize();
+catch ME
+    % clearing defaults
+    UiTools.delete_temp_file(tempFileName);
+    rethrow(ME);
+end
+
+UiTools.save_temp_file(tempFileName,daqParams);
+
 end
 

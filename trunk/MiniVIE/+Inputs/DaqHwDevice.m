@@ -50,14 +50,14 @@ classdef DaqHwDevice < Inputs.SignalInput
                 fprintf('Done\n');
             catch ME
                 fprintf('FAILED\n');
-                fprintf('[%s] Device "%s" is installed.\n',mfilename,obj.DaqDeviceName);
+                fprintf('[%s] Device "%s" is not installed.\n',mfilename,obj.DaqDeviceName);
                 rethrow(ME);
             end
                    
             % verify board id is valid
-            if ~strcmp(obj.DaqDeviceId,hw.InstalledBoardIds)
+            if isempty(hw.InstalledBoardIds) || ~strcmp(obj.DaqDeviceId,hw.InstalledBoardIds)
                 disp(hw)
-                error('[%s] Board Id: "%s" not found\n',mfilename,obj.DaqDeviceId);
+                error('[%s] Device: "%s" Id: "%s" not found\n',mfilename,obj.DaqDeviceName,obj.DaqDeviceId);
             end
             
             % AnalogInputName string is constructed here to support daqfind.
@@ -97,7 +97,12 @@ classdef DaqHwDevice < Inputs.SignalInput
             end
             
             % Channel Setup
-            set(obj.AnalogInput,'InputType','SingleEnded');
+            try
+                set(obj.AnalogInput,'InputType','SingleEnded');
+            catch ME
+                fprintf(2,'[%s] Failed to change Input Mode to "SingleEnded"\n',mfilename);
+                rethrow(ME);
+            end
             
             % Set-Verify sample rate since this depends on number of
             % channels
