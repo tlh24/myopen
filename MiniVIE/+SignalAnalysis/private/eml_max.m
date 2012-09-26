@@ -5,7 +5,7 @@ function [max_out, index_out] = eml_max(u,v)%#eml
     if nargin == 1
         arraylength = uint32(length(u));
         
-        assert(arraylength > 2);
+        assert(arraylength >= 2);
         
         % start with first element as max
         max_out = u(1);

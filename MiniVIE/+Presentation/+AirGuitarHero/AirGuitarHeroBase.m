@@ -132,6 +132,8 @@ classdef AirGuitarHeroBase < hgsetget
             %             else
             %                 frame = vcapg2;
             %             end
+                frame = vcapg2;
+                return
             if obj.isValidImageAcqToolbox
                 trigger(obj.hAudioVideoIn);
                 frame = getdata(obj.hAudioVideoIn);

@@ -1,8 +1,0 @@
-
-% Tweaks
-
-% Adjust refresh rate:
-
-obj.Presentation.hTactors(1).ActuationRepeatTimeout = 60
-
-obj.Presentation.Timer.Period = 0.02

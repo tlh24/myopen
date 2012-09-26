@@ -16,8 +16,9 @@ classdef Svm < SignalAnalysis.Classifier
                 error('No channels selected for training');
             end
             
-            feats = convertfeaturedata(obj);
-            dataLabels = obj.TrainingDataLabels;
+            
+            feats = convertfeaturedata(obj,obj.TrainingData.getFeatureData);
+            dataLabels = obj.TrainingData.getClassLabels;
             
             fprintf('Training SVM with %d Samples (',size(feats,2));
             for iClass = 1:obj.NumClasses
@@ -69,6 +70,9 @@ classdef Svm < SignalAnalysis.Classifier
                 end
                 
             end
+            
+            obj.IsTrained = true;
+
         end
         function [classOut voteDecision] = classify(obj,featuresColumns)
             assert(size(featuresColumns,1) == obj.NumActiveChannels*obj.NumFeatures,...

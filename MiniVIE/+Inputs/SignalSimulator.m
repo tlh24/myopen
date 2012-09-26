@@ -210,6 +210,9 @@ classdef SignalSimulator < Inputs.SignalInput
                     case 'v'
                         setPattern(obj,12);
                         set(obj.hg.hTxtCurrentPattern,'String','Current Pattern 12');
+                    case 'space'
+                        setPattern(obj,0);
+                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern 0');
                 end
             
                 cellCurrentKeys = unique([cellCurrentKeys {evt.Key}]);

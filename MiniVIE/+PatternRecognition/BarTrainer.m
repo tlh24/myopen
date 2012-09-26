@@ -23,7 +23,7 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
         keyOrder = 'asdfghjklzxcvbnm';  % controls the keyboard to class mapping
         
         samplesToRound = 250;
-        activationThreshold = 0.2;
+        activationThreshold = 0.5;
         Period = 0.02; %seconds
         
         LastClass = [];
@@ -179,7 +179,7 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
                 
                 x = ones(1,obj.SignalClassifier.NumClasses);
                 for iClass = 1:obj.SignalClassifier.NumClasses
-                    x(iClass) = sum(obj.ClassLabelId == iClass);
+                    x(iClass) = sum(obj.TrainingData.getClassLabels == iClass);
                     x = max(x,1);
                 end
                 this = (1:obj.SignalClassifier.NumClasses) == obj.CurrentClass;
@@ -253,7 +253,7 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
             try
                 stop(obj.hTimer);
             end
-            obj.saveTrainingData();
+            obj.TrainingData.saveTrainingData();
             
             delete(obj.hTimer);
             delete(obj.hFigure);
@@ -269,8 +269,10 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
             hSignalSource.initialize;
             hSignalSource.addfilter(Inputs.HighPass());
             
+            hTrainingData = PatternRecognition.TrainingData();
+
             hSignalClassifier = SignalAnalysis.Lda;
-            hSignalClassifier.initialize;
+            hSignalClassifier.initialize(hTrainingData);
             
             obj = PatternRecognition.BarTrainer();
             obj.initialize(hSignalSource,hSignalClassifier);

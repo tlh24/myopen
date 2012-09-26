@@ -67,12 +67,12 @@ classdef ScenarioBase < Common.MiniVieObj
             
         end
         function start(obj)
-            if strcmpi(obj.Timer.Running,'off')
+            if ~isempty(obj.Timer) && ishandle(obj.Timer) && strcmpi(obj.Timer.Running,'off')
                 start(obj.Timer);
             end
         end
         function stop(obj)
-            if strcmpi(obj.Timer.Running,'on')
+            if ~isempty(obj.Timer) && ishandle(obj.Timer) && strcmpi(obj.Timer.Running,'on')
                 stop(obj.Timer);
             end
         end
@@ -211,12 +211,15 @@ classdef ScenarioBase < Common.MiniVieObj
                         % otherwise the grasp state is preserved
                         obj.GraspId = enumGrasp( strcmp(graspName,cellGrasps) );
                     end
-                otherwise 
+                case {'No Movement','Rest'}
                     desiredGraspVelocity = 0;
                     % Auto-open
                     if obj.AutoOpenSpeed > 0
                         desiredGraspVelocity = - prSpeed*graspGain*2;
                     end
+                otherwise
+                    desiredGraspVelocity = 0;
+                    fprintf('Unmatched grasp: "%s"\n',graspName);
             end
             
             dt = obj.Timer.InstantPeriod;
