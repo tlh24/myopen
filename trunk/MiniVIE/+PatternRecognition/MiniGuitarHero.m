@@ -1,4 +1,4 @@
-classdef MiniGuitarHero < PatternRecognition.AdaptiveTrainingInterface
+classdef MiniGuitarHero < Scenarios.OnlineRetrainer%PatternRecognition.AdaptiveTrainingInterface
     % Scenario that allows EMG control of Wii Guitar Hero (via a custom
     % controller)
     % Example:
@@ -12,24 +12,30 @@ classdef MiniGuitarHero < PatternRecognition.AdaptiveTrainingInterface
     end
     properties (SetAccess = private)
         CurrentCue = [];
-        CurrentDecision = [];
         hg;
     end
     methods
         function obj = MiniGuitarHero()
             % Creator
         end
-        function initialize(obj,hSignalSource,hSignalClassifier)
-
-            % Call superclass method
-            initialize@PatternRecognition.TrainingInterface(obj,hSignalSource,hSignalClassifier); 
+        function initialize(obj,SignalSource,SignalClassifier,TrainingData)
+            % Call superclass initialize method
+            %initialize@Scenarios.ScenarioBase(obj,SignalSource,SignalClassifier);
+            initialize@Scenarios.OnlineRetrainer(obj,SignalSource,SignalClassifier,TrainingData);
+            obj.setupDisplay;
             
-            % Extend the init method to create figure 
-            setupDisplay(obj);
-            
-            % Initialize variable to store raw EMG data
-            obj.EmgData = NaN([obj.SignalSource.NumChannels obj.SignalClassifier.NumSamplesPerWindow obj.MaxSamples]);
         end
+        %         function initialize(obj,hSignalSource,hSignalClassifier)
+        %
+        %             % Call superclass method
+        %             initialize@PatternRecognition.TrainingInterface(obj,hSignalSource,hSignalClassifier);
+        %
+        %             % Extend the init method to create figure
+        %             setupDisplay(obj);
+        %
+        %             % Initialize variable to store raw EMG data
+        %             %obj.EmgData = NaN([obj.SignalSource.NumChannels obj.SignalClassifier.NumSamplesPerWindow obj.MaxSamples]);
+        %         end
         function close(obj)
             try
                 stop(obj.hTimer);
@@ -39,14 +45,16 @@ classdef MiniGuitarHero < PatternRecognition.AdaptiveTrainingInterface
             end
             delete(obj.hg.hFigure);
         end
-
+        
         function setupDisplay(obj)
+            % Overloads base class?
+            
             numClasses = obj.SignalClassifier.NumClasses;
             
             % excludes no movement since that class won't have a streaming
             % cue
             obj.NumCueLines = numClasses - 1;
-
+            
             obj.hg.hFigure = UiTools.create_figure('Mini Guitar Hero','MiniGuitarHero');
             set(obj.hg.hFigure,'CloseRequestFcn',@(src,evnt)close(obj));
             
@@ -73,7 +81,7 @@ classdef MiniGuitarHero < PatternRecognition.AdaptiveTrainingInterface
             %for i = 1:min(numClasses - 1,length(aghColors))
             %    set([hStaticLines(i+1) obj.hg.hCues(i+1)],'Color',aghColors{i});
             %end
-                        
+            
             for i = 1:min(obj.NumCueLines,length(aghColors))
                 set([hStaticLines(i) obj.hg.hCues(i)],'Color',aghColors{i});
             end
@@ -93,8 +101,8 @@ classdef MiniGuitarHero < PatternRecognition.AdaptiveTrainingInterface
             dx = 0.02;
             xlim(obj.hg.AxesCues,[dx numClasses-dx]);
             
-%             % Hide the no movement cue
-%             set([hStaticLines(1) obj.hg.hCues(1)],'Visible','off');
+            %             % Hide the no movement cue
+            %             set([hStaticLines(1) obj.hg.hCues(1)],'Visible','off');
             
             
         end
@@ -106,14 +114,14 @@ classdef MiniGuitarHero < PatternRecognition.AdaptiveTrainingInterface
             activeChannelFeatures = features2D(obj.SignalClassifier.ActiveChannels,:);
             [classOut voteDecision] = obj.SignalClassifier.classify(reshape(activeChannelFeatures',[],1));
             if obj.SignalClassifier.NumMajorityVotes > 1
-                obj.CurrentDecision = voteDecision;
+                obj.CurrentClass = voteDecision;
             else
-                obj.CurrentDecision = classOut;
+                obj.CurrentClass = classOut;
             end
             
-            obj.EmgData(:,:,obj.SampleCount) = windowData';
-            obj.Features3D(:,:,obj.SampleCount) = features2D;
-            obj.ClassLabelId(obj.SampleCount) = obj.CurrentCue;
+            %obj.EmgData(:,:,obj.SampleCount) = windowData';
+            %obj.Features3D(:,:,obj.SampleCount) = features2D;
+            %obj.ClassLabelId(obj.SampleCount) = obj.CurrentCue;
             
         end
         
@@ -142,20 +150,55 @@ classdef MiniGuitarHero < PatternRecognition.AdaptiveTrainingInterface
             
             function cb_timer
                 try
-                    obj.SampleCount = obj.SampleCount +1;
+                    %obj.SampleCount = obj.SampleCount +1;
                     
                     update_cueing();
-                    obj.classify_signals();
+                    %obj.classify_signals();
+                    
+                    % Step 1: Get Intent
+                    [decodedClassName,prSpeed,rawEmg,windowData,features,...
+                        voteDecision] = getIntentSignals(obj);
+                    
+                    obj.CurrentClass = voteDecision; % also CurrentClass
+                    
                     update_decision();
                     
-                    if obj.SampleCount > 800
+                    
+                    %             % Step 2: Convert Intent to limb commands
+                    %             obj.generateUpperArmCommand(decodedClassName,prSpeed);
+                    %             obj.generateGraspCommand(decodedClassName,prSpeed);
+                    
+                    
+                    
+                    % If button is down, add the current data as training data to
+                    % that class
+                    doAddData = 1;
+                    if doAddData
+                        
+                        % Add a new sample of data based on the CurrentClass property
+                        assert(~isempty(obj.CurrentClass),'No class is selected to tag new data');
+                        
+                        obj.TrainingData.addTrainingData(obj.CurrentCue, features, ...
+                            rawEmg(1:obj.SignalClassifier.NumSamplesPerWindow,:)')
+                        
+                    end
+                    
+                    
+                    if obj.TrainingData.SampleCount > 800
                         EnableRandomCueing = 1;
                     end
                     
                     if retrainCounter > 300
                         retrainCounter = 0;
-                        obj.perform_retrain();
+                        %obj.perform_retrain();
+                        % retrain
+                        obj.SignalClassifier.train();
+                        obj.SignalClassifier.computeerror();
+                        obj.SignalClassifier.computeGains();
+                        obj.SignalClassifier.computeConfusion();
                     end
+                    
+                    fprintf('\n');
                     
                     update_signal_preview();
                 catch ME
@@ -174,13 +217,13 @@ classdef MiniGuitarHero < PatternRecognition.AdaptiveTrainingInterface
                     iChannel = obj.SignalClassifier.ActiveChannels(i);
                     set(obj.hg.hPreviewLines(i),'YData',windowData(:,iChannel));
                 end
-
+                
             end
-            function update_decision
+            function update_decision()
                 set(obj.hg.hClass,'XData',classBufferY,'YData',classBufferX);
                 
                 classBufferY = circshift(classBufferY,[0 -1]);
-                classBufferY(:,end) = obj.CurrentDecision;
+                classBufferY(:,end) = obj.CurrentClass;
             end
             function update_cueing
                 cueCounter = cueCounter + 1;
@@ -224,15 +267,22 @@ classdef MiniGuitarHero < PatternRecognition.AdaptiveTrainingInterface
     methods (Static = true)
         function obj = Default
             
-            hSignalSource = Inputs.SignalSimulator;
-            hSignalSource.initialize;
-            hSignalSource.addfilter(Inputs.HighPass());
+            SignalSource = Inputs.SignalSimulator;
+            SignalSource.initialize;
+            SignalSource.addfilter(Inputs.HighPass());
+            SignalSource.addfilter(Inputs.LowPass());
+            SignalSource.addfilter(Inputs.Notch());
+
+            TrainingData = PatternRecognition.TrainingData();
             
-            hSignalClassifier = SignalAnalysis.Lda;
-            hSignalClassifier.initialize;
+            SignalClassifier = SignalAnalysis.Lda();
+            SignalClassifier.ClassNames = {'Index', 'Middle', 'Ring', 'Little', 'No Movement'};
+            SignalClassifier.ActiveChannels = 1:4;
+            SignalClassifier.initialize(TrainingData);
+            
             
             obj = PatternRecognition.MiniGuitarHero();
-            obj.initialize(hSignalSource,hSignalClassifier);
+            obj.initialize(SignalSource,SignalClassifier,TrainingData);
             obj.collectdata();
             
         end

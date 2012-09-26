@@ -49,6 +49,8 @@ classdef Lda < SignalAnalysis.Classifier
             
             [obj.Wg,obj.Cg] = obj.lda(feats,dataLabels,obj.NumClasses);
             
+            obj.IsTrained = true;
+            
             if nargout > 0
                 % Compute confusion
                 

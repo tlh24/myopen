@@ -18,6 +18,8 @@ classdef Classifier < Common.MiniVieObj
         TrainingData = [];  % Holds training data regardless of interface or classifier
         ConfusionMatrix = [];        
         IgnoreList = [];  % logical array to ignore certain training samples
+
+        IsTrained = false;
         
     end
     properties (Dependent = true, SetAccess = private)
@@ -25,7 +27,6 @@ classdef Classifier < Common.MiniVieObj
         NumActiveChannels;
         NumFeatures;
         
-        IsTrained;
     end
     methods (Abstract)
         train(obj);
@@ -42,10 +43,17 @@ classdef Classifier < Common.MiniVieObj
         function numFeatures = get.NumFeatures(obj)
             numFeatures = length(obj.TrainingFeatures);
         end
-        function isTrained = get.IsTrained(obj)
-            isTrained = (obj.Cg ~= 0);
-        end
+%         function isTrained = get.IsTrained(obj)
+%             isTrained = (obj.Cg ~= 0);
+%         end
         function initialize(obj,hTrainingData)
+            
+            % Usage: initialize(obj,hTrainingData)
+            
+            if nargin < 2
+                error('Classifier init requires a training data object: PatternRecognition.TrainingData()');
+            end
+            
             % initialize classifier parameters with zeros.  Add a 1 in the
             % last column so that the classifier defaults to No Movement
             % class
@@ -53,12 +61,17 @@ classdef Classifier < Common.MiniVieObj
             obj.Wg(:,obj.NumClasses) = 1;
             obj.Cg = zeros(1,obj.NumClasses);
             obj.Cg(1,obj.NumClasses) = 1;
+
+            % This can get confusing if classifier init is called without
+            % passing training data
             
-            if (nargin > 1) && ~isempty(hTrainingData);
-                obj.TrainingData = hTrainingData;
-            else
-                obj.TrainingData = PatternRecognition.TrainingData();
-            end
+            obj.TrainingData = hTrainingData;
+            
+%             if (nargin > 1) && ~isempty(hTrainingData);
+%                 obj.TrainingData = hTrainingData;
+%             else
+%                 obj.TrainingData = PatternRecognition.TrainingData();
+%             end
         end
         function reset(obj)
             obj.Wg = [];
@@ -68,7 +81,7 @@ classdef Classifier < Common.MiniVieObj
 %             obj.TrainingData = [];
 %             obj.TrainingDataLabels = [];
 
-            obj.initialize();
+%            obj.initialize();
         end
         
         function classNames = getClassNames(obj)
@@ -86,6 +99,11 @@ classdef Classifier < Common.MiniVieObj
         function featureData = convertfeaturedata(obj,featureData3D)
             % expects an array of size [nChannels nFeatures numSamples]
             % creates an array of size [nFeatures*nChannels numSamples]
+            
+            if nargin < 2
+                error('Three dimensional feature vector input required');
+            end
+            
             numChannels = size(featureData3D,1);
             numFeatures = size(featureData3D,2);
             
@@ -103,6 +121,11 @@ classdef Classifier < Common.MiniVieObj
             featureData = reshape(activeData,obj.NumFeatures*obj.NumActiveChannels,[]);
         end
         function computeGains(obj)
+            if ~obj.IsTrained
+                fprintf('[%s] Classifier untrained. Cannot compute gains.\n',mfilename);
+                return
+            end
+            
             % Classify Training data
             featureData3D = obj.TrainingData.getFeatureData();
 
@@ -131,6 +154,12 @@ classdef Classifier < Common.MiniVieObj
             fprintf(']\n');
         end        
         function confuseMat = computeConfusion(obj)
+            if ~obj.IsTrained
+                fprintf('[%s] Classifier untrained. Cannot compute confusion.\n',mfilename);
+                confuseMat = [];
+                return
+            end
+            
             % Classify Training data
             classLabels = obj.TrainingData.getClassLabels();
             featureData3D = obj.TrainingData.getFeatureData();
@@ -158,6 +187,13 @@ classdef Classifier < Common.MiniVieObj
             obj.ConfusionMatrix = confuseMat;
         end
         function percentError = computeerror(obj)
+            
+            if ~obj.IsTrained
+                fprintf('[%s] Classifier untrained. Cannot compute error.\n',mfilename);
+                percentError = [];
+                return
+            end
+            
             % Classify Training data
             classLabels = obj.TrainingData.getClassLabels();
             features3D = obj.TrainingData.getFeatureData();

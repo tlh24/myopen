@@ -10,7 +10,6 @@ classdef TrainingData < handle
     %
     % 2012May14 Armiger: Created
     properties
-        
         ClassNames = {};
         ActiveChannels = [];
         
@@ -50,13 +49,9 @@ classdef TrainingData < handle
                 % out of memory or max variable size
                 fprintf('[%s] Error initializing EMG storage: "%s"\n',mfilename,err.message);
             end
-            
-            
-            
         end
         function hasData = hasData(obj)
             % Return true if valid data exists
-            
             hasData = (obj.SampleCount > 0);
         end
         function featureData = getFeatureData(obj)
@@ -65,6 +60,9 @@ classdef TrainingData < handle
         end
         function classLabels = getClassLabels(obj)
             classLabels = obj.ClassLabelId(1:obj.SampleCount);
+            
+            assert(~any(isnan(classLabels)),'NaNs found in classLabels');
+            
         end
         function [filteredData dataBreaks] = getClassData(obj,iClass)
             

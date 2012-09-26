@@ -30,11 +30,13 @@ classdef DiscriminantAnalysis < SignalAnalysis.Classifier
                 error('No Training Data Exists');
             end
             
-            feats = convertfeaturedata(obj);
+            
+            feats = convertfeaturedata(obj,obj.TrainingData.getFeatureData);
+            dataLabels = obj.TrainingData.getClassLabels;
             
             fprintf('Training LDA with %d Samples (',size(feats,2));
             for iClass = 1:obj.NumClasses
-                fprintf('%d = %d; ',iClass,sum(obj.TrainingDataLabels == iClass));
+                fprintf('%d = %d; ',iClass,sum(dataLabels == iClass));
             end
             fprintf(')\n');
             
@@ -45,7 +47,7 @@ classdef DiscriminantAnalysis < SignalAnalysis.Classifier
             fprintf('Classnames:\n');
             classNames = obj.getClassNames;
             disp(classNames);
-            labels = classNames(obj.TrainingDataLabels);
+            labels = classNames(dataLabels);
             N = length(labels);
             sample = feats';
             training = feats';
@@ -55,6 +57,10 @@ classdef DiscriminantAnalysis < SignalAnalysis.Classifier
             [ldaResubCM,grpOrder] = confusionmat(labels,C);
             fprintf('ConfusionMatrix:\n');
             disp(ldaResubCM);
+            
+            
+            obj.IsTrained = true;
+
         end
         function [classOut voteDecision] = classify(obj,featuresColumns)
             
@@ -65,10 +71,12 @@ classdef DiscriminantAnalysis < SignalAnalysis.Classifier
 %                 error('Classifier not trained');
 %             end
             
-            feats = convertfeaturedata(obj);
+            %feats = convertfeaturedata(obj);
             
             classNames = obj.getClassNames;
-            labels = classNames(obj.TrainingDataLabels);
+            feats = convertfeaturedata(obj,obj.TrainingData.getFeatureData);
+            dataLabels = obj.TrainingData.getClassLabels;
+            labels = classNames(dataLabels);
             sample = featuresColumns';
             training = feats';
             C = classify(sample,training,labels,obj.Type);

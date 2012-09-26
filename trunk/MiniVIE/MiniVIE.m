@@ -153,7 +153,7 @@ classdef MiniVIE < Common.MiniVieObj
                 return;
             end
             
-            success = obj.TrianingData.loadTrainingData;
+            success = obj.TrainingData.loadTrainingData;
             if ~success
                 return
             end

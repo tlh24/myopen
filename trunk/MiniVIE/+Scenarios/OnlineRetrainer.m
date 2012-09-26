@@ -16,7 +16,7 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
     properties (Access = public)
         RetrainCounts = 15;  % Controls how many samples to wait before auto retrain
     end
-    properties (SetAccess = private)
+    properties (SetAccess = protected)
         hJoystick       %
         %         SampleCount;    % Points to where the next sample should be added
         ButtonDown = 0; % Counts how long the joystick button is down
@@ -28,10 +28,10 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
     end
     
     methods
-        function initialize(obj,SignalSource,SignalClassifier,hTrainingData)
+        function initialize(obj,SignalSource,SignalClassifier,TrainingData)
 
-            assert(~isempty(hTrainingData),'Training Data Object Required');
-            obj.TrainingData = hTrainingData;
+            assert(~isempty(TrainingData),'Training Data Object Required');
+            obj.TrainingData = TrainingData;
             
             % check for joysticks:
             try

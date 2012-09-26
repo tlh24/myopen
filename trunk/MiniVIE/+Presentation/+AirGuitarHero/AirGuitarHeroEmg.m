@@ -21,9 +21,6 @@ classdef AirGuitarHeroEmg < Presentation.AirGuitarHero.AirGuitarHeroBase
         hStateButtons
         
     end
-    properties (SetAccess = private)
-        
-    end
     methods
         function obj = AirGuitarHeroEmg(signalSource,signalClassifier)
             
@@ -81,7 +78,7 @@ classdef AirGuitarHeroEmg < Presentation.AirGuitarHero.AirGuitarHeroBase
         function refresh(obj)
             
             try
-                if ~isempty(hAudioVideoIn)
+                if ~isempty(obj.hAudioVideoIn)
                     % get a frame and process it
                     frame = getFrame(obj);
                     annotatedFrame = obj.hNoteDetector.process_frame(frame);
