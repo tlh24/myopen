@@ -183,14 +183,8 @@ classdef guiSignalViewer < Common.MiniVieObj
                 end
                 drawnow
             catch ME
-                disp('---------ERROR--------');
-                disp(ME.message);
-                for i = 1:length(ME.stack)
-                    disp(ME.stack(i));
-                end
-                keyboard
+                UiTools.display_error_stack(ME);
             end
-            
         end
         
         function updateFrequencyDomain(obj)

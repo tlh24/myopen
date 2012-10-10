@@ -65,6 +65,10 @@ classdef widgetStripChart < handle
                 return
             end
 
+            if ~ishandle(obj.hAxes)
+                fprintf('[%s] Failed to update, axes deleted\n',mfilename);
+                return
+            end
             dataRange = zeros(obj.NumLines,2);
 
             for iLine = 1:obj.NumLines
@@ -80,6 +84,7 @@ classdef widgetStripChart < handle
                 set(obj.hLines(iLine),'YData',yData);
             end
 
+            % Limit refresh rate
             if etime(clock,obj.tLast) > 0.1
                 drawnow
                 axLim(1) = min(min(dataRange(:)),obj.YLim(1));

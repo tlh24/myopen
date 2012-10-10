@@ -72,12 +72,12 @@ classdef CpcHeadstage < Inputs.SignalInput
             
             seDataU16 = reshape(typecast(seDataU8(:),'uint16'),seCnt,numValidSamples);
             
-            if any(abs(diffDataInt16(:)) > 1024) %|| any(abs(seDataU16(:)) > 1024)
-                fprintf(2,'[%s] Out of Range Values\n',mfilename);
-                %keyboard
-                % TODO need better solution than returning
-                %return
-            end
+%             if any(abs(diffDataInt16(:)) > 2000) %|| any(abs(seDataU16(:)) > 1024)
+%                 fprintf(2,'[%s] Out of Range Values\n',mfilename);
+%                 %keyboard
+%                 % TODO need better solution than returning
+%                 %return
+%             end
             
         end
         
@@ -106,12 +106,15 @@ classdef CpcHeadstage < Inputs.SignalInput
             % msgIdError = bitget(alignedData(3,:),1);
             % cmdMsgChecksumError = bitget(alignedData(3,:),2);
             % cmdMsgLengthError = bitget(alignedData(3,:),3);
-            sumAdcError = sum(bitget(alignedData(3,:),4));
+            isAdcError = bitget(alignedData(3,:),4);
+            sumAdcError = sum(isAdcError);
             
             isValidLength = (alignedData(5,:) == expectedLength);
             isValidChecksum = (computedChecksum == 0);
             isValidData = isValidChecksum & isValidLength & isValidStatusByte;
 
+            % TODO: if checksum is bad, data can't be trusted to accurately
+            % reflect length, status, or adc errors
             sumBadStatus = sum(~isValidStatusByte);
             sumBadLength = sum(~isValidLength);
             sumBadChecksum = sum(~isValidChecksum);
@@ -153,8 +156,13 @@ classdef CpcHeadstage < Inputs.SignalInput
         end
         
         function [dataAligned remainderBytes] = AlignDataBytes(dataStream,msgSize)
-            [dataAligned remainderBytes] = Inputs.CpcHeadstage.ByteAlignSlow(dataStream,msgSize);
-            %[dataAligned remainderBytes] = Inputs.CpcHeadstage.ByteAlignFast(dataStream,msgSize);
+            %             tic
+            %             [dataAligned remainderBytes] = Inputs.CpcHeadstage.ByteAlignSlow(dataStream,msgSize);
+            %             t1 = toc;
+            %             tic
+            [dataAligned remainderBytes] = Inputs.CpcHeadstage.ByteAlignFast(dataStream,msgSize);
+            %             t2 = toc;
+            %             [t1 t2 t1<t2]
 
         end
         function [dataAligned remainderBytes] = ByteAlignFast(dataStream,msgSize)
@@ -164,8 +172,14 @@ classdef CpcHeadstage < Inputs.SignalInput
             % Find all start chars ('128') and index the next set of bytes
             % off of these starts.  This could lead to overlapping data
             % but valid data will be verified using the checksum
-            idxStartBytes = find((dataStream == 128));
             
+            %idxStartBytes = find((dataStream == 128));
+            % TODO: this could be a problem if msg id, length, or checksum
+            % errors occur
+            bytePattern = [128 0 0];
+            idxStartBytes = strfind(dataStream,bytePattern);
+            assert(~isempty(idxStartBytes),...
+                'No start sequence [%d %d %d] found in data stream of length %d',bytePattern,length(dataStream));
             
             % Check if there are too few bytes between the last start
             % character and the end of the buffer

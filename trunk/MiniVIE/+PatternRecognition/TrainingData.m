@@ -12,7 +12,6 @@ classdef TrainingData < handle
     properties
         ClassNames = {};
         ActiveChannels = [];
-        
     end
     properties
         MaxSamples = 1e4;
@@ -47,12 +46,37 @@ classdef TrainingData < handle
                 obj.SignalDataRaw = NaN(dataSize,dataType);
             catch err
                 % out of memory or max variable size
-                fprintf('[%s] Error initializing EMG storage: "%s"\n',mfilename,err.message);
+                fprintf('[%s] Error initializing raw signal storage: "%s"\n',mfilename,err.message);
             end
         end
         function hasData = hasData(obj)
             % Return true if valid data exists
             hasData = (obj.SampleCount > 0);
+        end
+        function clearData(obj,promptForConfirmation)
+            
+            if nargin < 2
+                promptForConfirmation = true;
+            end
+            
+            if promptForConfirmation
+                reply = questdlg('Are you sure you want to clear training data?','Confirm Clear');
+                
+                switch reply
+                    case 'Yes'
+                        % continue on
+                    otherwise
+                        return
+                end
+                
+            end
+            
+            fprintf('[%s] Clearing %d samples. \n',mfilename,obj.SampleCount);
+            obj.SampleCount = 0;
+            obj.SignalFeatures3D(:) = NaN;
+            obj.ClassLabelId(:) = NaN;
+            obj.SignalDataRaw(:) = NaN;
+            
         end
         function featureData = getFeatureData(obj)
             % returns valid data (since buffers initialized to larger size)

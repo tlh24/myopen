@@ -36,17 +36,17 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
         function obj = BarTrainer()
             % Constructor
         end
-        function initialize(obj,hSignalSource,hSignalClassifier)
+        function initialize(obj,hSignalSource,hSignalClassifier,hTrainingData)
             
             % Call superclass method
-            initialize@PatternRecognition.TrainingInterface(obj,hSignalSource,hSignalClassifier);
+            initialize@PatternRecognition.TrainingInterface(obj,hSignalSource,hSignalClassifier,hTrainingData);
             
             % check for joysticks:
             try
                 obj.hJoystick = JoyMexClass;
             catch ME
-                fprintf(2,'[%s] Error calling JoyMexClass. Joystick is disabled.\n',mfilename);
-                fprintf(2,'%s\n',ME.message);
+                fprintf(2,'[%s] Warning: Joystick is disabled.\n',mfilename);
+                fprintf(1,'%s\n',ME.message);
             end
             
             obj.SignalSource.NumSamples = obj.SignalClassifier.NumSamplesPerWindow;
@@ -113,7 +113,10 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
         end
         function update(obj)
             try
-                
+                if ~ishandle(obj.hFigure) 
+                    fprintf('[%s] Figure Destroyed\n',mfilename);
+                    return
+                end
                 % Check for class change
                 if ~isequal(obj.LastClass,obj.CurrentClass)
                     disp('Class Change');
@@ -239,6 +242,7 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
                 drawnow
             catch ME
                 stop(obj.hTimer)
+                UiTools.display_error_stack(ME)
                 rethrow(ME)
             end
         end

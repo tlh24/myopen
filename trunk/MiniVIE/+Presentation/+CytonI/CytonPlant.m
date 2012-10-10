@@ -63,7 +63,7 @@ classdef CytonPlant < hgsetget
         end
         
         function connectToHardware(obj,strComPort)
-            obj.hCytonSerial = CytonSerial(strComPort);
+            obj.hCytonSerial = Presentation.CytonI.CytonSerial(strComPort);
         end
         
         function success = start(obj)

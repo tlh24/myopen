@@ -205,8 +205,8 @@ classdef MiniGuitarHero < Scenarios.OnlineRetrainer%PatternRecognition.AdaptiveT
                     if strcmpi(obj.hTimer.Running,'on')
                         stop(obj.hTimer);
                     end
-                    ME.stack
-                    rethrow(ME);
+                    
+                    UiTools.display_error_stack(ME)
                     
                 end
             end

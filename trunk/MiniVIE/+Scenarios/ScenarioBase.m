@@ -186,7 +186,12 @@ classdef ScenarioBase < Common.MiniVieObj
             if isempty(className)
                 return
             end
+            
+            % TODO: Override hand close speed
             prSpeed = 0.2;
+            
+            
+            
             %%%%%%%%%%%%%%%%%%%%%%%%
             % Process grasps
             %%%%%%%%%%%%%%%%%%%%%%%%
@@ -194,7 +199,9 @@ classdef ScenarioBase < Common.MiniVieObj
             graspChangeThreshold = 0.2;  % Normalized [0 1]
             graspName = className;
             lastGraspVelocity = obj.GraspVelocity;
-            if strfind(className,'Grasp')
+            
+            isGraspClass = strfind(className,'Grasp');
+            if isGraspClass
                 graspName = strtrim(className(1:end-5));
             end
             [enumGrasp cellGrasps] = enumeration('Controls.GraspTypes');
@@ -219,7 +226,9 @@ classdef ScenarioBase < Common.MiniVieObj
                     end
                 otherwise
                     desiredGraspVelocity = 0;
-                    fprintf('Unmatched grasp: "%s"\n',graspName);
+                    if isGraspClass
+                        fprintf('Unmatched grasp: "%s"\n',graspName);
+                    end
             end
             
             dt = obj.Timer.InstantPeriod;

@@ -24,43 +24,21 @@ classdef TrainingInterface < Common.MiniVieObj
         collectdata(obj);
     end
     methods
-        function initialize(obj,hSignalSource,hSignalClassifier)
-            if nargin < 3
-                error('SignalClassifier not passed to function: %s',mfilename);
-            end
-            if nargin < 2
-                error('SignalSource not passed to function: %s',mfilename);
-            end
+        function initialize(obj,hSignalSource,hSignalClassifier,hTrainingData)
+            %initialize(obj,hSignalSource,hSignalClassifier,hTrainingData)
+            % Training interface initialization funtion requires a source
+            % data object, a classifier (for properties), and a training
+            % data object for data storage
             
-            if ~isempty(hSignalClassifier)
-                obj.SignalClassifier = hSignalClassifier;
-            else
-                error('Empty SignalClassifier passed to function: %s',mfilename);
-            end
+            assert(nargin == 4,'SignalSource, SignalClassifier, and TrainingData required for function: %s',mfilename);
             
-            if ~isempty(hSignalSource)
-                obj.SignalSource = hSignalSource;
-            else
-                error('Empty SignalSource passed to function: %s',mfilename);
-            end
-            
-            % TODO remove training data obj form classifier
-            obj.TrainingData = obj.SignalClassifier.TrainingData;
-            obj.TrainingData.initialize(...
-                obj.SignalSource.NumChannels,...
-                obj.SignalClassifier.NumFeatures,...
-                obj.SignalClassifier.NumSamplesPerWindow);
-            
-            % Initialize buffers
-            %             obj.Features3D = NaN([obj.SignalSource.NumChannels obj.SignalClassifier.NumFeatures obj.MaxSamples]);
-            %             obj.ClassLabelId = NaN(1,obj.MaxSamples);
-            
-            % Initialize variable to store raw EMG data
-            %             try
-            %                 obj.EmgData = NaN([obj.SignalSource.NumChannels obj.SignalClassifier.NumSamplesPerWindow obj.MaxSamples],'single');
-            %             catch ME
-            %                 fprintf('[%s] Error initializing EMG storage: "%s"\n',mfilename,ME.message);
-            %             end
+            assert(~isempty(hTrainingData),'Empty TrainingData passed to function: %s',mfilename);
+            assert(~isempty(hSignalClassifier),'Empty SignalClassifier passed to function: %s',mfilename);
+            assert(~isempty(hSignalSource),'Empty SignalSource passed to function: %s',mfilename);
+
+            obj.TrainingData = hTrainingData;
+            obj.SignalClassifier = hSignalClassifier;
+            obj.SignalSource = hSignalSource;
             
         end
         function ok = isInitialized(obj)

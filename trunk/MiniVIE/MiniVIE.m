@@ -54,9 +54,8 @@ classdef MiniVIE < Common.MiniVieObj
             obj.hg.MenuFile = uimenu(obj.hg.Figure,...
                 'Label','File');
             obj.hg.MenuFileLoad = uimenu(obj.hg.MenuFile,...
-                'Label','Load',...
+                'Label','Load Training Data',...
                 'Callback',@(src,evt)obj.loadData());
-            
             
             function closeFig(obj)
                 try
@@ -123,6 +122,18 @@ classdef MiniVIE < Common.MiniVieObj
                 'String','Begin Training',...
                 'Enable','off',...
                 'Callback',@(src,evt)obj.pbBeginTraining());
+            obj.hg.TrainingButtons(2) = uicontrol(obj.hg.Figure,...
+                'Position',pos('cntrl',MiniVIE.TRAINING,4,1,1),...
+                'Style','pushbutton',...
+                'String','Clear Training Data',...
+                'Enable','off',...
+                'Callback',@(src,evt)obj.pbTrainClear());
+            obj.hg.TrainingButtons(3) = uicontrol(obj.hg.Figure,...
+                'Position',pos('cntrl',MiniVIE.TRAINING,5,1,1),...
+                'Style','pushbutton',...
+                'String','Train',...
+                'Enable','off',...
+                'Callback',@(src,evt)obj.pbTrain());
             
             obj.hg.PresentationButtons(1) = uicontrol(obj.hg.Figure,...
                 'Position',pos('cntrl',MiniVIE.PRESENTATION,3,1,1),...
@@ -152,6 +163,8 @@ classdef MiniVIE < Common.MiniVieObj
                 errordlg('Select a Classifier');
                 return;
             end
+            
+            assert(~isempty(obj.TrainingData),'Training Data module does not exist'); 
             
             success = obj.TrainingData.loadTrainingData;
             if ~success
@@ -362,18 +375,20 @@ classdef MiniVIE < Common.MiniVieObj
                         prompt={'Enter Number of Repetitions:',...
                             'Enter Contraction Length (sec):',...
                             'Enter Delay Length (sec):'...
+                            'Show images (y/n)?'
                             };
                         name='Input for Training Interface';
                         numlines=1;
-                        defaultanswer={'4','2','3'};
+                        defaultanswer={'4','2','3','Y'};
                         answer=inputdlg(prompt,name,numlines,defaultanswer);
-                        assert(length(answer) == 3,'Expected 3 outputs');
+                        assert(length(answer) == 4,'Expected 4 outputs');
                         vals = str2double(answer);
-                        assert(~any(isnan(vals)),'Expected 3 numeric values');
+                        assert(~any(isnan(vals(1:3))),'Expected 3 numeric values');
                         
                         h.NumRepetitions = vals(1);
                         h.ContractionLengthSeconds = vals(2);
                         h.DelayLengthSeconds = vals(3);
+                        h.EnablePictures = strcmpi(answer{4},'y');
                         
                     case 'Bar Trainer'
                         h = PatternRecognition.BarTrainer();
@@ -400,7 +415,7 @@ classdef MiniVIE < Common.MiniVieObj
                         return;
                     end
                     
-                    h.initialize(obj.SignalSource,obj.SignalClassifier);
+                    h.initialize(obj.SignalSource,obj.SignalClassifier,obj.TrainingData);
                 end
                 
             catch ME
@@ -524,6 +539,16 @@ classdef MiniVIE < Common.MiniVieObj
                 obj.SignalClassifier.computeConfusion();
                 obj.SignalClassifier.computeGains();
             end
+        end
+        
+        function pbTrainClear(obj)
+            obj.TrainingData.clearData();
+        end
+        function pbTrain(obj)
+            obj.SignalClassifier.train();
+            obj.SignalClassifier.computeerror();
+            obj.SignalClassifier.computeConfusion();
+            obj.SignalClassifier.computeGains();
         end
         function pbAdjustGains(obj)
             GUIs.guiGainAdjust(obj);
