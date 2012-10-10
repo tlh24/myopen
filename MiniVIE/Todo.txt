@@ -8,3 +8,10 @@ To do:
    - use enums to identify classes
    - verify confusion matrix updated properly
 
+
+% Training data mamangement
+
+Within MiniVIE
+Training Data is conditionally initialized when classifier selected (if isempty)
+(Load function not available until classifier selected)
+i.e. training data not reset on classifier change

@@ -19,7 +19,7 @@ classdef CytonDisplay < hgsetget
             end
         end
         function stop(obj)
-            if strcmpi(obj.hTimer.Running,'on')
+            if ~isempty(obj.hTimer) && strcmpi(obj.hTimer.Running,'on')
                 stop(obj.hTimer);
             end
         end

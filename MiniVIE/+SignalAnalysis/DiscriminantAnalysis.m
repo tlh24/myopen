@@ -27,12 +27,17 @@ classdef DiscriminantAnalysis < SignalAnalysis.Classifier
         function ldaResubCM = train(obj)
             
             if isempty(obj.TrainingData)
-                error('No Training Data Exists');
+                error('No Training Data Object Exists');
             end
             
             
             feats = convertfeaturedata(obj,obj.TrainingData.getFeatureData);
             dataLabels = obj.TrainingData.getClassLabels;
+            
+            if isempty(feats)
+                fprintf('[%s] Training features matrix is empty\n',mfilename);
+                return
+            end
             
             fprintf('Training LDA with %d Samples (',size(feats,2));
             for iClass = 1:obj.NumClasses

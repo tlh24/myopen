@@ -37,8 +37,7 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
             try
                 obj.hJoystick = JoyMexClass;
             catch ME
-                fprintf(2,'[%s] Error calling JoyMexClass. Joystick is disabled.\n',mfilename);
-                fprintf(2,'%s\n',ME.message);
+                fprintf('[%s] Warning: Joystick is disabled. \n %s \n',mfilename,ME.message);
                 obj.hJoystick = [];
             end
             

@@ -138,5 +138,17 @@ classdef UiTools
                 fullFilename = fullfile(PathName,FileName);
             end
         end
+        function display_error_stack(ME)
+            %display_error_stack(ME)
+            % Given a Matlab exception, show each individual message in
+            % stack and then rethrow error
+            disp('---------ERROR--------');
+            disp(ME.message);
+            for i = 1:length(ME.stack)
+                disp(ME.stack(i));
+            end
+            rethrow(ME);
+            
+        end
     end
 end
