@@ -41,6 +41,8 @@
 #define NSBUF	1024
 #define NSCALE 2
 
+//weird bug in svn?
+
 #include "../firmware_stage9/memory.h"
 #include "headstage.h"
 #include "cgVertexShader.h"
