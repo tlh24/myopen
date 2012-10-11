@@ -16,6 +16,7 @@
 
 #include <stdio.h>
 #include <sys/types.h>
+
 #include <inttypes.h>
 #include <sys/time.h>
 #include <pthread.h>
@@ -28,6 +29,7 @@
 #include <math.h>
 #include <arpa/inet.h>
 #include "sock.h"
+#include <vector.h>;
 
 #define NSAMP (24*1024)
 #define NDISPW 256
@@ -37,6 +39,7 @@
 #define NFBUF 4
 #endif
 #define NSBUF	1024
+#define NSCALE 2
 
 #include "../firmware_stage9_tmpl/memory.h"
 #include "headstage.h"
@@ -53,6 +56,11 @@
 #include "tcpsegmenter.h"
 #include "firingrate.h"
 
+//DS - attempting to refactor for multi headstage/bridge 
+//TODO: modify visual representation of channels (128*n)
+//TODO: socket processing for >1 bridge (1*n)
+//TODO: More than 1 radio channel
+//TODO; 
 
 //CG stuff. for the vertex shaders.
 CGcontext   myCgContext;
@@ -66,16 +74,19 @@ float		g_viewportSize[2] = {640, 480}; //width, height.
 
 class Channel;
 
+int	g_radioChannel[NSCALE] = {114, 124}; //the radio channel to use. scale factor, how many systems are being used (128*1, etc) Need to assign this programatically, but this will do for now.
+
 static float	g_fbuf[NFBUF][NSAMP*3]; //continuous waveform. range [-1 .. 1]
 i64	g_fbufW; //where to write to (always increment)
 i64	g_fbufR; //display thread reads from here - copies to mem
 unsigned int 	g_nsamp = 4096; //given the current level of zoom (1 = 4096 samples), how many samples to update?
-static float 	g_sbuf[2][128*NSBUF*2]; //2 units, 128 channels, 1024 spikes, 2 floats / spike.
+static float 	g_sbuf[NSCALE][2][128*NSBUF*2]; //n threads, 2 units, 128 channels, 1024 spikes, 2 floats / spike.
 static float	g_rasterSpan = 10.f; // %seconds.
 i64	g_sbufW[2];
 i64	g_sbufR[2];
-Channel*		g_c[128];
-FiringRate	g_fr[128][2];
+
+Channel*		g_c[128*NSCALE];
+FiringRate	g_fr[128*NSCALE][2];
 GLuint 		g_base;            // base display list for the font set.
 
 bool g_die = false;
@@ -86,13 +97,17 @@ bool g_showPca = false;
 bool g_rtMouseBtn = false;
 int g_polyChan = 0;
 bool g_addPoly = false;
-int g_channel[4] = {0,32,64,96};
+int g_channel[4]; 
+for (int i = 0; i < 4; i++)
+{
+	g_channel[i] = 32*i*NSCALE;
+}
+
 int	g_signalChain = 10; //what to sample in the headstage signal chain.
-int	g_radioChannel = 114; //the radio channel to use.
 
 bool g_out = false;
-bool g_templMatch[128][2];
-//the headstage match a,b over all 128 channels. cleared after every packet!!
+bool g_templMatch[128*NSCALE][2];
+//the headstage match a,b over all 128*n channels. cleared after every packet!!
 float        g_sortAperture[4][2][16]; //the quality of the match found, circular buffer.
 i64			 g_sortOffset[4][2][16]; //offset to the best match.
 unsigned int g_sortUnit[4][16]; //have to remember to zero all of these.
@@ -122,12 +137,15 @@ enum MODES {
 int g_mode = MODE_RASTERS;
 int	g_drawmode = GL_LINE_STRIP;
 
-int g_rxsock = 0;//rx from hardware. right now only support 1 headstage.
-int g_txsock = 0;//transmit back to hardware.  again, only one supported now.
-int g_spikesock = 0; //transmit spike times to client
-int g_strobesock = 0; //socket for strobing client
+
+std::vector<int> g_rxsock (NSCALE, 0);//rx from hardware. right now only support 1 headstage.
+std::vector<int> g_txsock (NSCALE, 0);//transmit back to hardware.  again, only one supported now.
+std::vector<int> g_spikesock (NSCALE, 0); //transmit spike times to client
+int g_strobesock = 0; //socket for strobing client (need only one)
 
 struct sockaddr_in g_txsockAddr;
+
+std::vector<sockaddr_in> g_txAddrArray;
 
 bool	g_vbo1Init = false;
 GLuint g_vbo1[NFBUF]; //for the waveform display
@@ -213,7 +231,8 @@ void copyData(GLuint vbo, u32 sta, u32 fin, float* ptr, int stride){
 }
 void BuildFont(void) {
     Display *dpy;
-    XFontStruct *fontInfo;  // storage for our font.
+    XFontStruct *fontInfo;  
+    // storage for our font.
 
     g_base = glGenLists(96);                      // storage for 96 characters.
 
@@ -406,7 +425,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 			}
 		}
 		//and the waveform buffers.
-		for(int i=0; i<128; i++){
+		for(int i=0; i<128*NSCALE; i++){
 			g_c[i]->copy();
 		}
 	}
@@ -658,7 +677,7 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 		}
 		//have one VBO that's filled with spike times & channels.
 		for(int k=0; k<2; k++){
-			for(int i=0; i<128; i++){
+			for(int i=0; i<128*NSCALE; i++){
 				for(int j=0; j<NSBUF; j++){
 					g_sbuf[k][(i*NSBUF+j)*2+0] = (float)i/256.0+(float)j/2048.0;
 					g_sbuf[k][(i*NSBUF+j)*2+1] = (float)i;
@@ -671,7 +690,7 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 			glBufferSubDataARB(GL_ARRAY_BUFFER_ARB,
 				0, sizeof(g_sbuf[k]), g_sbuf[k]);
 		}
-		for(int i=0; i<128; i++){
+		for(int i=0; i<128*NSCALE; i++){
 			g_c[i]->configure(g_vsFadeColor);
 		}
 	}
@@ -712,7 +731,7 @@ static gboolean rotate (gpointer user_data){
 }
 void saveState(){
 	sqlite3_exec(g_db, "BEGIN TRANSACTION;",0,0,0);
-	for(int i=0; i<128; i++){
+	for(int i=0; i<128*NSCALE; i++){
 		g_c[i]->save();
 	}
 	for(int i=0; i<4; i++){
@@ -729,7 +748,7 @@ void destroy(GtkWidget *, gpointer){
 			glDeleteBuffersARB(1, &g_vbo1[k]);
 		glDeleteBuffersARB(2, g_vbo2);
 	}
-	for(int i=0; i<128; i++){
+	for(int i=0; i<128*NSCALE; i++){
 		delete g_c[i];
 	}
 	//delete g_vsFade;
@@ -837,7 +856,7 @@ packet format in the file, as saved here:
 			//keep the dest port (4342); don't copy that.
 			}
 #ifndef EMG
-		if(n > 0 || sn > 0 && !g_die){
+		if((n > 0 || sn > 0) && !g_die){
 			unsigned int dropped = *((unsigned int*)buf);
 			if(g_out) printf("%d\n", dropped);
 
@@ -1301,7 +1320,7 @@ static void channelSpinCB( GtkWidget*, gpointer p){
 	if(k >= 0 && k<4){
 		int ch = (int)gtk_adjustment_get_value(g_channelSpin[k]);
 		printf("channelSpinCB: %d\n", ch);
-		if(ch < 128 && ch >= 0 && ch != g_channel[k]){
+		if(ch < 128*NSCALE && ch >= 0 && ch != g_channel[k]){
 			g_channel[k] = ch;
 			//update the UI too.
 			updateChannelUI(k);
@@ -1310,7 +1329,7 @@ static void channelSpinCB( GtkWidget*, gpointer p){
 		//this allows more PCA points for sorting!
 		if(g_mode == MODE_SORT && k == 0){
 			for(int j=1; j<4; j++){
-				g_channel[j] = (g_channel[0] + j) & 127;
+				g_channel[j] = (g_channel[0] + j) & (128*NSCALE - 1);
 				//this does not recurse -- have to set the other stuff manually.
 				g_uiRecursion++;
 				gtk_adjustment_set_value(g_channelSpin[j], (double)g_channel[j]);
@@ -1336,7 +1355,7 @@ static void gainSpinCB( GtkWidget*, gpointer p){
 }
 static void gainSetAll(gpointer ){
 	float gain = gtk_adjustment_get_value(g_gainSpin[0]);
-	for(int i=0; i<128; i++){
+	for(int i=0; i<128*NSCALE; i++){
 		g_c[i]->m_gain = gain;
 		updateGain(i);
 	}
@@ -1345,7 +1364,7 @@ static void gainSetAll(gpointer ){
 	}
 	for(int i=0; i<4; i++)
 		gtk_adjustment_set_value(g_gainSpin[i], gain);
-	for(int i=0; i<128; i++)
+	for(int i=0; i<128*NSCALE; i++)
 		g_c[i]->resetPca();
 }
 static void thresholdSpinCB( GtkWidget* , gpointer p){
@@ -1377,7 +1396,7 @@ static void agcSpinCB( GtkWidget*, gpointer p){
 		float agc = gtk_adjustment_get_value(g_agcSpin[h]);
 		printf("agcSpinCB: %f\n", agc);
 		int j = g_channel[h];
-		if(j >= 0 && j < 128){
+		if(j >= 0 && j < 128*NSCALE){
 			g_c[j]->m_agc = agc;
 			setAGC(j,j,j,j);
 		}
@@ -1412,7 +1431,7 @@ static void apertureOffCB( GtkWidget*, gpointer p){
 static void agcSetAll(gpointer ){
 	//sets *all 128* channels.
 	float agc = gtk_adjustment_get_value(g_agcSpin[0]);
-	for(int i=0; i<128; i+=4){
+	for(int i=0; i<128*NSCALE; i+=4){
 		g_c[i+0]->m_agc = agc;
 		g_c[i+1]->m_agc = agc;
 		g_c[i+2]->m_agc = agc;
@@ -1704,7 +1723,7 @@ int main(int argn, char **argc)
 		g_channel[i] = sqliteGetValue(i, "channel", i*32);
 	}
 	//defaults, to be read in from sqlite.
-	for(int i=0; i<128; i++){
+	for(int i=0; i<128*NSCALE; i++){
 		g_c[i] = new Channel(i);
 	}
 	sqlite3_exec(g_db, "END TRANSACTION;",0,0,0);
@@ -1775,7 +1794,7 @@ int main(int argn, char **argc)
 
 		//channel spinner.
 		g_channelSpin[i] = mk_spinner("ch", bx3,
-									  g_channel[i], 0, 127, 1,
+									  g_channel[i], 0, (128*NSCALE -1), 1,
 									  channelSpinCB, i);
 		//right of that, a gain spinner. (need to update depending on ch)
 		g_gainSpin[i] = mk_spinner("gain", bx3,
