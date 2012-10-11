@@ -29,7 +29,7 @@
 #include <math.h>
 #include <arpa/inet.h>
 #include "sock.h"
-#include <vector.h>;
+#include <stdio.h>
 
 #define NSAMP (24*1024)
 #define NDISPW 256
@@ -39,11 +39,11 @@
 #define NFBUF 4
 #endif
 #define NSBUF	1024
-#define NSCALE 2
+#define NSCALE  2
 
 //weird bug in svn?
 
-#include "../firmware_stage9/memory.h"
+#include "../firmware_stage9_tmpl/memory.h"
 #include "headstage.h"
 #include "cgVertexShader.h"
 #include "vbo.h"
@@ -82,12 +82,12 @@ static float	g_fbuf[NFBUF][NSAMP*3]; //continuous waveform. range [-1 .. 1]
 i64	g_fbufW; //where to write to (always increment)
 i64	g_fbufR; //display thread reads from here - copies to mem
 unsigned int 	g_nsamp = 4096; //given the current level of zoom (1 = 4096 samples), how many samples to update?
-static float 	g_sbuf[NSCALE][2][128*NSBUF*2]; //n threads, 2 units, 128 channels, 1024 spikes, 2 floats / spike.
+static float 	g_sbuf[2][NSCALE][128*NSBUF*2]; // 2 units, n radio units, 128 channels, 1024 spikes, 2 floats / spike.
 static float	g_rasterSpan = 10.f; // %seconds.
 i64	g_sbufW[2];
 i64	g_sbufR[2];
 
-Channel*		g_c[128*NSCALE];
+Channel*	g_c[128*NSCALE];
 FiringRate	g_fr[128*NSCALE][2];
 GLuint 		g_base;            // base display list for the font set.
 
@@ -99,11 +99,7 @@ bool g_showPca = false;
 bool g_rtMouseBtn = false;
 int g_polyChan = 0;
 bool g_addPoly = false;
-int g_channel[4]; 
-for (int i = 0; i < 4; i++)
-{
-	g_channel[i] = 32*i*NSCALE;
-}
+int g_channel[4] = {0, 32*NSCALE, 64*NSCALE, 96*NSCALE};
 
 int	g_signalChain = 10; //what to sample in the headstage signal chain.
 
@@ -140,14 +136,14 @@ int g_mode = MODE_RASTERS;
 int	g_drawmode = GL_LINE_STRIP;
 
 
-std::vector<int> g_rxsock (NSCALE, 0);//rx from hardware. right now only support 1 headstage.
-std::vector<int> g_txsock (NSCALE, 0);//transmit back to hardware.  again, only one supported now.
-std::vector<int> g_spikesock (NSCALE, 0); //transmit spike times to client
+int g_rxsock[NSCALE];//rx from hardware. right now only support 1 headstage.
+int g_txsock[NSCALE];//transmit back to hardware.  again, only one supported now.
+int g_spikesock; //transmit spike times to client (need only one)
 int g_strobesock = 0; //socket for strobing client (need only one)
 
 struct sockaddr_in g_txsockAddr;
 
-std::vector<sockaddr_in> g_txAddrArray;
+sockaddr_in g_txAddrArray[NSCALE];
 
 bool	g_vbo1Init = false;
 GLuint g_vbo1[NFBUF]; //for the waveform display
@@ -419,7 +415,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 				i64 fin = w % len;
 				if(fin < sta) { //wrap
 					copyData(g_vbo2[k], sta, len, g_sbuf[k], 2);
-					copyData(g_vbo2[k], 0, fin, g_sbuf[k], 2);
+					copyData(g_vbo2[k],   0, fin, g_sbuf[k], 2);
 				} else {
 					copyData(g_vbo2[k], sta, fin, g_sbuf[k], 2);
 				}
@@ -679,10 +675,12 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 		}
 		//have one VBO that's filled with spike times & channels.
 		for(int k=0; k<2; k++){
-			for(int i=0; i<128*NSCALE; i++){
-				for(int j=0; j<NSBUF; j++){
-					g_sbuf[k][(i*NSBUF+j)*2+0] = (float)i/256.0+(float)j/2048.0;
-					g_sbuf[k][(i*NSBUF+j)*2+1] = (float)i;
+			for(int t = 0; t < NSCALE; ){
+				for(int i=0; i<128; i++){
+					for(int j=0; j<NSBUF; j++){
+						g_sbuf[k][t][(i*NSBUF+j)*2+0] = (float)i/256.0+(float)j/2048.0;
+						g_sbuf[k][t][(i*NSBUF+j)*2+1] = (float)i;
+					}
 				}
 			}
 			glGenBuffersARB(1, &g_vbo2[k]);
@@ -761,7 +759,10 @@ void destroy(GtkWidget *, gpointer){
 
 	gtk_main_quit();
 }
-void* sock_thread(void*){
+void* sock_thread(void* thread){
+	int tid;
+	tid = *((int) thread); 
+  
 	g_sendL = 0x4000;
 	g_sendbuf = (unsigned int*)malloc(g_sendL*32);
 	if(!g_sendbuf){
@@ -775,7 +776,7 @@ void* sock_thread(void*){
 	char buf[1024+128+4];
 	char buf2[1024];
 	sockaddr_in from;
-	g_rxsock = setup_socket(4340+g_radioChannel,0); //udp sock.
+	g_rxsock = setup_socket(4340+g_radioChannel[tid],0); //udp sock.
 	g_strobesock = setup_socket(8845, 0);
 	int bcastsock = setup_socket(4340,0); 
 	//have to enable multicast reception on the socket.
@@ -803,7 +804,7 @@ void* sock_thread(void*){
 						 destName, 256);
 			printf("a bridge appears to be at %s\n",destName);
 			//send a response.
-			buf[0] = g_radioChannel; /** radio channel. **/
+			buf[0] = g_radioChannel[tid]; /** radio channel. **/
 			printf("radio channel set to %d\n", buf[0]); 
 #ifdef EMG
 			buf[0] += 128; //put the bridge in EMG compat mode.
@@ -858,7 +859,7 @@ packet format in the file, as saved here:
 			//keep the dest port (4342); don't copy that.
 			}
 #ifndef EMG
-		if((n > 0 || sn > 0) && !g_die){
+		if((n > 0 || sn > 0) && !g_die){[2][NSCALE][128*NSBUF*2]
 			unsigned int dropped = *((unsigned int*)buf);
 			if(g_out) printf("%d\n", dropped);
 
@@ -987,6 +988,7 @@ packet format in the file, as saved here:
 				}
 				double time = ((double)p->ms / BRIDGE_CLOCK) + g_timeOffset;
 				decodePacket(p, channels, match, g_headecho);
+				
 				for(int j=0; j<32; j++){
 					int adr = channels[j];
 					for(int t=0; t<2; t++){
@@ -994,8 +996,8 @@ packet format in the file, as saved here:
 							g_templMatch[adr][t] = true;
 							//add to the spike raster list.
 							i64 w = g_sbufW[t] % (i64)(sizeof(g_sbuf[t])/8);
-							g_sbuf[t][w*2+0] = (float)(time);
-							g_sbuf[t][w*2+1] = (float)adr;
+							g_sbuf[t][tid][w*2+0] = (float)(time);
+							g_sbuf[t][tid][w*2+1] = (float)adr;
 							g_sbufW[t] ++;
 							g_fr[adr][t].add(time);
 							//calcISI.
@@ -1234,7 +1236,7 @@ void* server_thread(void* ){
 				//printf("got client request [%d]:%s\n",n,buf);
 				double a_req = atof((const char*)buf);
 				if(a_req > 0 && a_req < 10.0){
-					for(int i=0; i<128; i++){
+					for(int i=0; i<128*NSCALE; i++){
 						for(int j=0; j<2; j++){
 							g_fr[i][j].set_a(a_req);
 						}
@@ -1753,9 +1755,17 @@ int main(int argn, char **argc)
 	bx = gtk_vbox_new (FALSE, 2);
 	if(1){ //namespace reasons.
 		//add in a radio channel label
-		char buf[128]; 
-		snprintf(buf, 128, "radio Ch: %i", g_radioChannel);
-		GtkWidget* chanLabel = gtk_label_new (buf);;
+		
+		std::stringstream oss
+		
+		oss << "radio Channel:";
+		for(int ch =0; ch < NSCALE; ch++){
+		  oss << " " << g_radioChannel[ch];
+		}
+		//char buf[128];
+		//snprintf(buf, 128, "radio Ch: %i", g_radioChannel); snprintf sucks
+		
+		GtkWidget* chanLabel = gtk_label_new (oss.str().c_str());;
 		gtk_misc_set_alignment (GTK_MISC (chanLabel), 0, 0);
 		gtk_box_pack_start (GTK_BOX (bx), chanLabel, TRUE, TRUE, 0);
 		gtk_widget_show(chanLabel);
@@ -2049,12 +2059,19 @@ int main(int argn, char **argc)
 	// http://forums.fedoraforum.org/archive/index.php/t-242963.html
 	GTK_WIDGET_SET_FLAGS(da1, GTK_CAN_FOCUS );
 
-	pthread_t thread1;
+	pthread_t sockthreads[NSCALE];
+	pthread_t serverthread;
 	pthread_attr_t attr;
 	pthread_attr_init(&attr);
 	g_startTime = gettime();
-	pthread_create( &thread1, &attr, sock_thread, 0 );
-	pthread_create( &thread1, &attr, server_thread, 0 );
+	int t;
+	
+	for (t = 0; t < NSCALE ; t++){
+	  std::cout<<"Creating thread"<<endl;
+	  pthread_create( &sockthreads[t], &attr, sock_thread, (void*) &t );
+	}
+	
+	pthread_create( &serverthread, &attr, server_thread, 0 );
 
 	while(g_sendbuf == 0){
 		usleep(10000); //wait for the other thread to come up.
