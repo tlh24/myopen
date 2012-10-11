@@ -38,7 +38,7 @@
 #endif
 #define NSBUF	1024
 
-#include "../firmware_stage9/memory.h"
+#include "../firmware_stage9_tmpl/memory.h"
 #include "headstage.h"
 #include "cgVertexShader.h"
 #include "vbo.h"
@@ -88,7 +88,7 @@ int g_polyChan = 0;
 bool g_addPoly = false;
 int g_channel[4] = {0,32,64,96};
 int	g_signalChain = 10; //what to sample in the headstage signal chain.
-int	g_radioChannel = 114; //the radio channel to use.
+int	g_radioChannel = 124; //the radio channel to use.
 
 bool g_out = false;
 bool g_templMatch[128][2];
@@ -754,7 +754,11 @@ void* sock_thread(void*){
 	char buf[1024+128+4];
 	char buf2[1024];
 	sockaddr_in from;
+#ifdef EMG
+	g_rxsock = setup_socket(4340,0); //udp sock.
+#else
 	g_rxsock = setup_socket(4340+g_radioChannel,0); //udp sock.
+#endif
 	g_strobesock = setup_socket(8845, 0);
 	int bcastsock = setup_socket(4340,0); 
 	//have to enable multicast reception on the socket.

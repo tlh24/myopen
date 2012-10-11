@@ -4,10 +4,10 @@
 
 #include <gtk/gtk.h>
 #include <gtk/gtkgl.h>
-#include <GL/glut.h>    // Header File For The GLUT Library
-#include <GL/gl.h>	// Header File For The OpenGL32 Library
-#include <GL/glu.h>	// Header File For The GLu32 Library
-#include <GL/glx.h>     // Header file for the glx libraries.
+#include <GL/glut.h>    
+#include <GL/gl.h>	
+#include <GL/glu.h>	
+#include <GL/glx.h>    
 #include "glext.h"
 #include "glInfo.h"
 
@@ -38,7 +38,7 @@
 #endif
 #define NSBUF	1024
 
-#include "../firmware_stage9/memory.h"
+#include "../firmware_stage9_mf/memory.h"
 #include "headstage.h"
 #include "cgVertexShader.h"
 #include "vbo.h"

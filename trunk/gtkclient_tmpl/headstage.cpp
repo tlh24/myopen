@@ -50,7 +50,7 @@ i64		g_messR;
 unsigned int g_echo = 0;
 unsigned int g_headecho = 0;
 unsigned int g_oldheadecho = 100;
-unsigned int g_echoMask = 0x0fffffff; //used to clear address bits
+unsigned int g_echoMask = 0xffffffff; //used to clear address bits
 	// 0xffffffff puts gtkclient in compatability mode. (before svn v 605)
 	// 0x0fffffff puts gtkclient in echo mode. (after svn v. 605)
 
