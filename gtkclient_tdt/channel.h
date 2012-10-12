@@ -10,7 +10,7 @@
 #include "sql.h"
 
 void gsl_matrix_to_mat(gsl_matrix *x, const char* fname); 
-double gettime(); 
+long double gettime(); 
 void glPrint(char *text);
 
 //need some way of encapsulating per-channel information. 
@@ -361,8 +361,8 @@ public:
 			m_template[unit-1][i] = r/255.f - 0.5f; 
 		}
 		//let's send the new data to the headstage. 
-		setTemplate(m_ch, unit-1); 
-		setAperture(m_ch); 
+		//setTemplate(m_ch, unit-1); 
+		//setAperture(m_ch); 
 		return true; 
 	}
 	void resetPca(){
@@ -380,7 +380,7 @@ public:
 	}
 	void computePca(){
 		//whatever ... this can be blocking. 
-		double t; 
+		long double t; 
 		int nsamp = MIN(m_pcaVbo->m_w, m_pcaVbo->m_rows); 
 		if(nsamp < 32){
 			printf("Channel::computePca %d (%d) samples, not enough\n", nsamp, m_pcaVbo->m_w); 
@@ -438,7 +438,7 @@ public:
 			gsl_matrix *cov = gsl_matrix_alloc(32,32); 
 			t = gettime(); 
 			gsl_blas_dgemm(CblasTrans,CblasNoTrans,1.0/nsamp,m,m,0.0,cov); 
-			printf("dgemm time %f siz %d\t", gettime()-t,nsamp); 
+			printf("dgemm time %Lf siz %d\t", gettime()-t,nsamp); 
 			//regularize.
 			for(int i=0; i<32;i++)
 				cov->data[i*32+i] += 0.001; 
@@ -459,7 +459,7 @@ public:
 					m_pcaScl[k] = sqrt(d->data[p[k]]);
 				}
 			}
-			printf("eig decomp time %f\t", gettime()-t);
+			printf("eig decomp time %Lf\t", gettime()-t);
 			gsl_matrix_free(v); 
 			gsl_vector_free(d); 
 			gsl_eigen_symmv_free(ws); 
@@ -486,7 +486,7 @@ public:
 		m_pcaVbo->m_r = 0; 
 		m_pcaVbo->m_w = nsamp; //force a copy-over of the whole thing.
 		m_pcaVbo->copy(false,true); 
-		printf("copy %f\n", gettime()-t); 
+		printf("copy %Lf\n", gettime()-t); 
 	}
 	void spike(int unit){
 		//this used for calculating ISI. 
