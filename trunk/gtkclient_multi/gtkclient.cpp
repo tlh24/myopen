@@ -16,7 +16,6 @@
 
 #include <stdio.h>
 #include <sys/types.h>
-
 #include <inttypes.h>
 #include <sys/time.h>
 #include <pthread.h>
@@ -30,6 +29,8 @@
 #include <arpa/inet.h>
 #include "sock.h"
 #include <stdio.h>
+#include <sstream>
+#include <stdint.h>
 
 #define NSAMP (24*1024)
 #define NDISPW 256
@@ -39,9 +40,8 @@
 #define NFBUF 4
 #endif
 #define NSBUF	1024
-#define NSCALE  2
 
-//weird bug in svn?
+#define NSCALE 1
 
 #include "../firmware_stage9_tmpl/memory.h"
 #include "headstage.h"
@@ -58,11 +58,6 @@
 #include "tcpsegmenter.h"
 #include "firingrate.h"
 
-//DS - attempting to refactor for multi headstage/bridge 
-//TODO: modify visual representation of channels (128*n)
-//TODO: socket processing for >1 bridge (1*n)
-//TODO: More than 1 radio channel
-//TODO; 
 
 //CG stuff. for the vertex shaders.
 CGcontext   myCgContext;
@@ -76,19 +71,19 @@ float		g_viewportSize[2] = {640, 480}; //width, height.
 
 class Channel;
 
-int	g_radioChannel[NSCALE] = {114, 124}; //the radio channel to use. scale factor, how many systems are being used (128*1, etc) Need to assign this programatically, but this will do for now.
+int g_radioChannel[NSCALE] = {114};
 
 static float	g_fbuf[NFBUF][NSAMP*3]; //continuous waveform. range [-1 .. 1]
 i64	g_fbufW; //where to write to (always increment)
 i64	g_fbufR; //display thread reads from here - copies to mem
 unsigned int 	g_nsamp = 4096; //given the current level of zoom (1 = 4096 samples), how many samples to update?
-static float 	g_sbuf[2][NSCALE][128*NSBUF*2]; // 2 units, n radio units, 128 channels, 1024 spikes, 2 floats / spike.
+static float 	g_sbuf[2][128*NSBUF*2]; //2 units, 128 channels, 1024 spikes, 2 floats / spike.
 static float	g_rasterSpan = 10.f; // %seconds.
 i64	g_sbufW[2];
 i64	g_sbufR[2];
 
-Channel*	g_c[128*NSCALE];
-FiringRate	g_fr[128*NSCALE][2];
+Channel*	g_c[128];
+FiringRate	g_fr[128][2];
 GLuint 		g_base;            // base display list for the font set.
 
 bool g_die = false;
@@ -99,13 +94,13 @@ bool g_showPca = false;
 bool g_rtMouseBtn = false;
 int g_polyChan = 0;
 bool g_addPoly = false;
-int g_channel[4] = {0, 32*NSCALE, 64*NSCALE, 96*NSCALE};
-
+int g_channel[4] = {0,32,64,96};
 int	g_signalChain = 10; //what to sample in the headstage signal chain.
+//int	g_radioChannel = 114; //the radio channel to use.
 
 bool g_out = false;
-bool g_templMatch[128*NSCALE][2];
-//the headstage match a,b over all 128*n channels. cleared after every packet!!
+bool g_templMatch[128][2];
+//the headstage match a,b over all 128 channels. cleared after every packet!!
 float        g_sortAperture[4][2][16]; //the quality of the match found, circular buffer.
 i64			 g_sortOffset[4][2][16]; //offset to the best match.
 unsigned int g_sortUnit[4][16]; //have to remember to zero all of these.
@@ -135,7 +130,6 @@ enum MODES {
 int g_mode = MODE_RASTERS;
 int	g_drawmode = GL_LINE_STRIP;
 
-
 int g_rxsock[NSCALE];//rx from hardware. right now only support 1 headstage.
 int g_txsock[NSCALE];//transmit back to hardware.  again, only one supported now.
 int g_spikesock; //transmit spike times to client (need only one)
@@ -143,7 +137,7 @@ int g_strobesock = 0; //socket for strobing client (need only one)
 
 struct sockaddr_in g_txsockAddr;
 
-sockaddr_in g_txAddrArray[NSCALE];
+sockaddr_in g_txsockAddrArr[NSCALE];
 
 bool	g_vbo1Init = false;
 GLuint g_vbo1[NFBUF]; //for the waveform display
@@ -229,8 +223,7 @@ void copyData(GLuint vbo, u32 sta, u32 fin, float* ptr, int stride){
 }
 void BuildFont(void) {
     Display *dpy;
-    XFontStruct *fontInfo;  
-    // storage for our font.
+    XFontStruct *fontInfo;  // storage for our font.
 
     g_base = glGenLists(96);                      // storage for 96 characters.
 
@@ -383,6 +376,7 @@ static gint button_press_event( GtkWidget      *,
 static gboolean
 expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 {
+	printf("did we hit this?\n");
 	GdkGLContext *glcontext = gtk_widget_get_gl_context (da);
 	GdkGLDrawable *gldrawable = gtk_widget_get_gl_drawable (da);
 
@@ -407,23 +401,27 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 			g_fbufR = w;
 		}
 		//ditto for the spike buffers (these can be disordered ..they generally don't overlap.)
+		printf("here first!heeeeeeeeeeeeeere!\n");
 		for(int k=0; k<2; k++){
-			if(g_sbufR[k] < g_sbufW[k]){
-				i64 len = sizeof(g_sbuf[k])/8; //total # of pts.
-				i64 w = g_sbufW[k];
-				i64 sta = g_sbufR[k] % len;
-				i64 fin = w % len;
-				if(fin < sta) { //wrap
-					copyData(g_vbo2[k], sta, len, g_sbuf[k], 2);
-					copyData(g_vbo2[k],   0, fin, g_sbuf[k], 2);
-				} else {
-					copyData(g_vbo2[k], sta, fin, g_sbuf[k], 2);
-				}
-				g_sbufR[k] = w;
-			}
+		    for (int t=0; t<NSCALE; k++){
+			  if(g_sbufR[k] < g_sbufW[k]){
+				  i64 len = sizeof(g_sbuf[k])/8; //total # of pts.
+				  i64 w = g_sbufW[k];
+				  i64 sta = g_sbufR[k] % len;
+				  i64 fin = w % len;
+				  if(fin < sta) { //wrap
+					  copyData(g_vbo2[k], sta, len, g_sbuf[k], 2);
+					  copyData(g_vbo2[k],   0, fin, g_sbuf[k], 2);
+				  } else {
+					  copyData(g_vbo2[k], sta, fin, g_sbuf[k], 2);
+				  }
+				  g_sbufR[k] = w;
+			    printf("here!heeeeeeeeeeeeeere!\n");
+			  }
+		    }
 		}
 		//and the waveform buffers.
-		for(int i=0; i<128*NSCALE; i++){
+		for(int i=0; i<128; i++){
 			g_c[i]->copy();
 		}
 	}
@@ -524,6 +522,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 
 		//VBO drawing..
 		for(int k=0; k<2; k++){
+			for(int t = 0; t < NSCALE; t++){
 			glEnableClientState(GL_VERTEX_ARRAY);
 			glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo2[k]);
 			glVertexPointer(2, GL_FLOAT, 0, 0);
@@ -532,6 +531,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 			glPointSize(2.0);
 			glDrawArrays(GL_POINTS, 0, sizeof(g_sbuf[k])/8);
 			glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+			}
 		}
 		glDisable(GL_LINE_SMOOTH);
 		//draw current time.
@@ -678,19 +678,20 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 			for(int t = 0; t < NSCALE; ){
 				for(int i=0; i<128; i++){
 					for(int j=0; j<NSBUF; j++){
-						g_sbuf[k][t][(i*NSBUF+j)*2+0] = (float)i/256.0+(float)j/2048.0;
-						g_sbuf[k][t][(i*NSBUF+j)*2+1] = (float)i;
+						g_sbuf[k][(i*NSBUF+j)*2+0] = (float)i/256.0+(float)j/2048.0;
+						g_sbuf[k][(i*NSBUF+j)*2+1] = (float)i;
 					}
 				}
-			}
+			
 			glGenBuffersARB(1, &g_vbo2[k]);
 			glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo2[k]);
 			glBufferDataARB(GL_ARRAY_BUFFER_ARB, sizeof(g_sbuf[k]),
 				0, GL_DYNAMIC_DRAW_ARB);
 			glBufferSubDataARB(GL_ARRAY_BUFFER_ARB,
 				0, sizeof(g_sbuf[k]), g_sbuf[k]);
+			}
 		}
-		for(int i=0; i<128*NSCALE; i++){
+		for(int i=0; i<128; i++){
 			g_c[i]->configure(g_vsFadeColor);
 		}
 	}
@@ -731,7 +732,7 @@ static gboolean rotate (gpointer user_data){
 }
 void saveState(){
 	sqlite3_exec(g_db, "BEGIN TRANSACTION;",0,0,0);
-	for(int i=0; i<128*NSCALE; i++){
+	for(int i=0; i<128; i++){
 		g_c[i]->save();
 	}
 	for(int i=0; i<4; i++){
@@ -748,7 +749,7 @@ void destroy(GtkWidget *, gpointer){
 			glDeleteBuffersARB(1, &g_vbo1[k]);
 		glDeleteBuffersARB(2, g_vbo2);
 	}
-	for(int i=0; i<128*NSCALE; i++){
+	for(int i=0; i<128; i++){
 		delete g_c[i];
 	}
 	//delete g_vsFade;
@@ -759,10 +760,10 @@ void destroy(GtkWidget *, gpointer){
 
 	gtk_main_quit();
 }
-void* sock_thread(void* thread){
-	int tid;
-	tid = *((int) thread); 
+void* sock_thread(void* param){
   
+	int tid = (intptr_t) param;
+	
 	g_sendL = 0x4000;
 	g_sendbuf = (unsigned int*)malloc(g_sendL*32);
 	if(!g_sendbuf){
@@ -776,7 +777,7 @@ void* sock_thread(void* thread){
 	char buf[1024+128+4];
 	char buf2[1024];
 	sockaddr_in from;
-	g_rxsock = setup_socket(4340+g_radioChannel[tid],0); //udp sock.
+	g_rxsock[tid] = setup_socket(4340+g_radioChannel[tid],0); //udp sock.
 	g_strobesock = setup_socket(8845, 0);
 	int bcastsock = setup_socket(4340,0); 
 	//have to enable multicast reception on the socket.
@@ -815,10 +816,10 @@ void* sock_thread(void* thread){
 	}
 	//must close that socket so another client may use it. 
 	close_socket(bcastsock); 
-	g_txsock = connect_socket(4342,destName,0); //one port is Ok -- differentiate by IP at this point.
-	if(!g_txsock) printf("failed to connect to bridge.\n");
+	g_txsock[tid] = connect_socket(4342+g_radioChannel[tid],destName,0); //one port is Ok -- differentiate by IP at this point.
+	if(!g_txsock[tid]) printf("failed to connect to bridge.\n");
 	//default txsockAddr
-	get_sockaddr(4342, (char*)destName, &g_txsockAddr);
+	get_sockaddr(4342, (char*)destName, &g_txsockAddrArr[tid]);
 	int send_delay = 0;
 	g_totalPackets = 0;
 /* packet format from the headstage, UDP:
@@ -849,17 +850,17 @@ packet format in the file, as saved here:
 */
 	while(g_die == 0){
 		socklen_t fromlen = sizeof(from);
-		int n = recvfrom(g_rxsock, buf, sizeof(buf),0,
+		int n = recvfrom(g_rxsock[tid], buf, sizeof(buf),0,
 						 (sockaddr*)&from, &fromlen);
 		//check strobe
 		int sn = recvfrom(g_strobesock, buf2, sizeof(buf2),0, 0, 0);
 		double rxtime = gettime();
 		if(fromlen > 0 && n > 0){
-			g_txsockAddr.sin_addr = from.sin_addr;
+			g_txsockAddrArr[tid].sin_addr = from.sin_addr;
 			//keep the dest port (4342); don't copy that.
 			}
 #ifndef EMG
-		if((n > 0 || sn > 0) && !g_die){[2][NSCALE][128*NSBUF*2]
+		if(n > 0 || sn > 0 && !g_die){
 			unsigned int dropped = *((unsigned int*)buf);
 			if(g_out) printf("%d\n", dropped);
 
@@ -988,20 +989,20 @@ packet format in the file, as saved here:
 				}
 				double time = ((double)p->ms / BRIDGE_CLOCK) + g_timeOffset;
 				decodePacket(p, channels, match, g_headecho);
-				
 				for(int j=0; j<32; j++){
 					int adr = channels[j];
-					for(int t=0; t<2; t++){
-						if(match[j] == t+1){
-							g_templMatch[adr][t] = true;
+					for(int k=0; k<2; k++){
+						if(match[j] == k+1){
+							g_templMatch[adr][k] = true;
 							//add to the spike raster list.
-							i64 w = g_sbufW[t] % (i64)(sizeof(g_sbuf[t])/8);
-							g_sbuf[t][tid][w*2+0] = (float)(time);
-							g_sbuf[t][tid][w*2+1] = (float)adr;
-							g_sbufW[t] ++;
-							g_fr[adr][t].add(time);
+							printf("about to hit this");
+							i64 w = g_sbufW[k] % (i64)(sizeof(g_sbuf[k])/8);
+							g_sbuf[k][w*2+0] = (float)(time);
+							g_sbuf[k][w*2+1] = (float)adr;
+							g_sbufW[k] ++;
+							g_fr[adr][k].add(time);
 							//calcISI.
-							g_c[adr]->spike(t);
+							g_c[adr+(128*tid)]->spike(k);
 						}
 					}
 				}
@@ -1159,8 +1160,8 @@ packet format in the file, as saved here:
 				double txtime = gettime();
 				unsigned int* ptr = g_sendbuf;
 				ptr += (g_sendR % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
-				n = sendto(g_txsock,ptr,32,0,
-					(struct sockaddr*)&g_txsockAddr, sizeof(g_txsockAddr));
+				n = sendto(g_txsock[tid],ptr,32,0,
+					(struct sockaddr*)&g_txsockAddrArr[tid], sizeof(g_txsockAddr));
 				if(n < 0)
 					printf("failed to send a message to bridge.\n");
 				else
@@ -1201,7 +1202,7 @@ packet format in the file, as saved here:
 		g_totalPackets += n/36;
 #endif
 	}
-	close_socket(g_rxsock);
+	close_socket(g_rxsock[tid]);
 	close_socket(g_strobesock);
 	free(g_sendbuf);
 	return 0;
@@ -1236,7 +1237,7 @@ void* server_thread(void* ){
 				//printf("got client request [%d]:%s\n",n,buf);
 				double a_req = atof((const char*)buf);
 				if(a_req > 0 && a_req < 10.0){
-					for(int i=0; i<128*NSCALE; i++){
+					for(int i=0; i<128; i++){
 						for(int j=0; j<2; j++){
 							g_fr[i][j].set_a(a_req);
 						}
@@ -1324,7 +1325,7 @@ static void channelSpinCB( GtkWidget*, gpointer p){
 	if(k >= 0 && k<4){
 		int ch = (int)gtk_adjustment_get_value(g_channelSpin[k]);
 		printf("channelSpinCB: %d\n", ch);
-		if(ch < 128*NSCALE && ch >= 0 && ch != g_channel[k]){
+		if(ch < 128 && ch >= 0 && ch != g_channel[k]){
 			g_channel[k] = ch;
 			//update the UI too.
 			updateChannelUI(k);
@@ -1333,7 +1334,7 @@ static void channelSpinCB( GtkWidget*, gpointer p){
 		//this allows more PCA points for sorting!
 		if(g_mode == MODE_SORT && k == 0){
 			for(int j=1; j<4; j++){
-				g_channel[j] = (g_channel[0] + j) & (128*NSCALE - 1);
+				g_channel[j] = (g_channel[0] + j) & 127;
 				//this does not recurse -- have to set the other stuff manually.
 				g_uiRecursion++;
 				gtk_adjustment_set_value(g_channelSpin[j], (double)g_channel[j]);
@@ -1359,7 +1360,7 @@ static void gainSpinCB( GtkWidget*, gpointer p){
 }
 static void gainSetAll(gpointer ){
 	float gain = gtk_adjustment_get_value(g_gainSpin[0]);
-	for(int i=0; i<128*NSCALE; i++){
+	for(int i=0; i<128; i++){
 		g_c[i]->m_gain = gain;
 		updateGain(i);
 	}
@@ -1368,7 +1369,7 @@ static void gainSetAll(gpointer ){
 	}
 	for(int i=0; i<4; i++)
 		gtk_adjustment_set_value(g_gainSpin[i], gain);
-	for(int i=0; i<128*NSCALE; i++)
+	for(int i=0; i<128; i++)
 		g_c[i]->resetPca();
 }
 static void thresholdSpinCB( GtkWidget* , gpointer p){
@@ -1400,7 +1401,7 @@ static void agcSpinCB( GtkWidget*, gpointer p){
 		float agc = gtk_adjustment_get_value(g_agcSpin[h]);
 		printf("agcSpinCB: %f\n", agc);
 		int j = g_channel[h];
-		if(j >= 0 && j < 128*NSCALE){
+		if(j >= 0 && j < 128){
 			g_c[j]->m_agc = agc;
 			setAGC(j,j,j,j);
 		}
@@ -1435,7 +1436,7 @@ static void apertureOffCB( GtkWidget*, gpointer p){
 static void agcSetAll(gpointer ){
 	//sets *all 128* channels.
 	float agc = gtk_adjustment_get_value(g_agcSpin[0]);
-	for(int i=0; i<128*NSCALE; i+=4){
+	for(int i=0; i<128; i+=4){
 		g_c[i+0]->m_agc = agc;
 		g_c[i+1]->m_agc = agc;
 		g_c[i+2]->m_agc = agc;
@@ -1727,7 +1728,7 @@ int main(int argn, char **argc)
 		g_channel[i] = sqliteGetValue(i, "channel", i*32);
 	}
 	//defaults, to be read in from sqlite.
-	for(int i=0; i<128*NSCALE; i++){
+	for(int i=0; i<128; i++){
 		g_c[i] = new Channel(i);
 	}
 	sqlite3_exec(g_db, "END TRANSACTION;",0,0,0);
@@ -1755,16 +1756,12 @@ int main(int argn, char **argc)
 	bx = gtk_vbox_new (FALSE, 2);
 	if(1){ //namespace reasons.
 		//add in a radio channel label
-		
-		std::stringstream oss
+		std::stringstream oss;
 		
 		oss << "radio Channel:";
 		for(int ch =0; ch < NSCALE; ch++){
 		  oss << " " << g_radioChannel[ch];
 		}
-		//char buf[128];
-		//snprintf(buf, 128, "radio Ch: %i", g_radioChannel); snprintf sucks
-		
 		GtkWidget* chanLabel = gtk_label_new (oss.str().c_str());;
 		gtk_misc_set_alignment (GTK_MISC (chanLabel), 0, 0);
 		gtk_box_pack_start (GTK_BOX (bx), chanLabel, TRUE, TRUE, 0);
@@ -1806,7 +1803,7 @@ int main(int argn, char **argc)
 
 		//channel spinner.
 		g_channelSpin[i] = mk_spinner("ch", bx3,
-									  g_channel[i], 0, (128*NSCALE -1), 1,
+									  g_channel[i], 0, 127, 1,
 									  channelSpinCB, i);
 		//right of that, a gain spinner. (need to update depending on ch)
 		g_gainSpin[i] = mk_spinner("gain", bx3,
@@ -2067,8 +2064,8 @@ int main(int argn, char **argc)
 	int t;
 	
 	for (t = 0; t < NSCALE ; t++){
-	  std::cout<<"Creating thread"<<endl;
-	  pthread_create( &sockthreads[t], &attr, sock_thread, (void*) &t );
+	  printf("Creating thread");
+	  pthread_create( &sockthreads[t], &attr, sock_thread, (void*) (intptr_t) t );
 	}
 	
 	pthread_create( &serverthread, &attr, server_thread, 0 );
