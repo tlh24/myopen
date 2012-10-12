@@ -4,6 +4,7 @@
 #define i64 long long
 #define u32 unsigned int
 //globals.  could make a class for these but .. eh
+/*
 extern unsigned int*	g_sendbuf;
 extern i64		g_sendW; //where to write to (in 32-byte increments)
 extern i64 		g_sendR; //where to read from
@@ -30,4 +31,5 @@ void resetBiquads(int chan);
 void setFilter2(int chan);
 void setFlat(int chan);
 void setAll();
+*/
 #endif
