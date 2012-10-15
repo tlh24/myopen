@@ -19,7 +19,7 @@ public:
 	float	m_fade; 
 	bool	m_reset; //a request, possibly from another thread. 
 	GLuint	m_vbo; 
-	cgVertexShader* m_vs; 
+	cgVertexShader* m_vs; //need to convert this to GLSL, not CG -- fewer deps.
 	
 	Vbo(int dim, int rows, int cols){
 		m_dim = dim; 
@@ -39,7 +39,7 @@ public:
 		m_vs = 0; 
 		m_reset = false; 
 	}
-	~Vbo(){
+	virtual ~Vbo(){
 		free(m_f); 
 		if(m_vbo) glDeleteBuffersARB(1, &m_vbo);
 	}
@@ -181,7 +181,7 @@ public:
 		m_drawWf = 0; 
 		m_color[3] = -0.5; //additive alpha. so make the points partially transparent.
 	}
-	~VboPca(){
+	virtual ~VboPca(){
 		free(m_mean); 
 		free(m_max); 
 		free(m_maxSmooth);
