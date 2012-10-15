@@ -30,7 +30,8 @@ public:
 	int	m_ch; //channel number, obvi.
 	float m_gain; 
 	float m_agc; 
-	i64 m_isi[2][100]; //counts of the isi, in units of 4 packets -- 768us/packet.
+	i64 	m_isi[2][100]; //counts of the isi, in units of 4 packets -- 768us/packet.
+	i64	m_isiViolations; 
 	int	m_lastSpike[2]; //zero when a spike occurs. 
 	
 	Channel(int ch){
@@ -38,6 +39,7 @@ public:
 		m_usVbo = new Vbo(3, 256, 34); //unsorted units, all gray.
 		m_pcaVbo = new VboPca(6, 1024*8, 1, ch); 
 		m_pcaVbo->m_fade = 0.f; 
+		m_isiViolations = 0; 
 		m_ch = ch; 
 		//init PCA, template. 
 		for(int j=0; j<32; j++){
@@ -234,56 +236,48 @@ public:
 		m_loc[2] = w; m_loc[3] = h; 
 	}
 	void draw(int drawmode, float time, float* cursPos, 
-				 bool showPca, bool closest, bool showSort){
+				 bool showPca, bool closest, bool sortMode){
 		glColor4f(0.5f, 0.5f, 0.5f, 0.5f);
+		//draw only the spikes in spike mode. 
 		m_usVbo->draw(drawmode, time, true);
-		m_pcaVbo->draw(GL_POINTS, time, true, cursPos, closest); 
 		m_wfVbo->draw(drawmode, time, true);
-		if(closest)
-			m_pcaVbo->drawClosestWf(); 
-		//draw the templates. 
 		float ox = m_loc[0]; float oy = m_loc[1]; 
 		float ow = m_loc[2]/2; float oh = m_loc[3]; 
-		glLineWidth(3.f); 
-		glBegin(GL_LINE_STRIP);
-		for(int k=0; k<2; k++){
-			for(int j=0; j<16; j++){
-				float ny = m_template[k][j] + 0.5f;
-				float nx = (float)(j+8)/31.f; 
-				// cyan -> purple; red -> orange (color wheel)
-				if(k == 0) glColor4f(0.6f, 0.f, 1.f, 0.65f);
-				else glColor4f(1.f, 0.5f, 0.f, 0.65f);
-				glVertex3f(nx*ow+ox, ny*oh+oy, 0.f);
-			}
-			glColor4f(0.f, 0.f, 0.f, 0.75f);
-			glVertex3f(1.f*ow+ox, 0.5f*oh+oy, 1.f);
-			glVertex3f(0.f*ow+ox, 0.5f*oh+oy, 1.f);
-		}
-		//and the PCA templates.
-		if(showPca){
-			glLineWidth(5.f); 
+		if(sortMode){ 
+			m_pcaVbo->draw(GL_POINTS, time, true, cursPos, closest); 
+			if(closest)
+				m_pcaVbo->drawClosestWf(); 
+			//draw the templates. 
+			glLineWidth(3.f); 
+			glBegin(GL_LINE_STRIP);
 			for(int k=0; k<2; k++){
-				for(int j=0; j<32; j++){
-					float ny = m_pca[k][j]*m_pcaScl[k]+0.5; 
-					float nx = (float)(j)/31.f; 
-					glColor4f(1.f-k, k, 0.f, 0.75f);
+				for(int j=0; j<16; j++){
+					float ny = m_template[k][j] + 0.5f;
+					float nx = (float)(j+8)/31.f; 
+					// cyan -> purple; red -> orange (color wheel)
+					if(k == 0) glColor4f(0.6f, 0.f, 1.f, 0.65f);
+					else glColor4f(1.f, 0.5f, 0.f, 0.65f);
 					glVertex3f(nx*ow+ox, ny*oh+oy, 0.f);
 				}
 				glColor4f(0.f, 0.f, 0.f, 0.75f);
 				glVertex3f(1.f*ow+ox, 0.5f*oh+oy, 1.f);
 				glVertex3f(0.f*ow+ox, 0.5f*oh+oy, 1.f);
 			}
-		}
-		glEnd(); 
-		//if we are in sort mode: 
-		if(showSort){
-			//draw a dark blue quad for the template ROI. 
-			glColor4f(0.2f,0.1f,1.f,0.15f); 
-			glBegin(GL_QUADS);
-			glVertex2f(ow*8.0/31.f + ox, oh*0.02f + oy);
-			glVertex2f(ow*8.0/31.f + ox, oh*0.98f + oy); 
-			glVertex2f(ow*23.0/31.f + ox,oh*0.98f + oy); 
-			glVertex2f(ow*23.0/31.f + ox,oh*0.02f + oy); 
+			//and the PCA templates.
+			if(showPca){
+				glLineWidth(5.f); 
+				for(int k=0; k<2; k++){
+					for(int j=0; j<32; j++){
+						float ny = m_pca[k][j]*m_pcaScl[k]+0.5; 
+						float nx = (float)(j)/31.f; 
+						glColor4f(1.f-k, k, 0.f, 0.75f);
+						glVertex3f(nx*ow+ox, ny*oh+oy, 0.f);
+					}
+					glColor4f(0.f, 0.f, 0.f, 0.75f);
+					glVertex3f(1.f*ow+ox, 0.5f*oh+oy, 1.f);
+					glVertex3f(0.f*ow+ox, 0.5f*oh+oy, 1.f);
+				}
+			}
 			glEnd(); 
 			//draw the threshold & centering.
 			//glDisableClientState(GL_VERTEX_ARRAY); 
@@ -302,28 +296,28 @@ public:
 			glVertex2f(c+ox, t-0.2*oh);
 			glVertex2f(c+ox, t+0.2*oh); 
 			glEnd(); 
-		}
-		if(1){
-			//draw shaded plots of the ISI. 
-			for(int u=0; u<2; u++){
-				int nisi = sizeof(m_isi[0])/sizeof(m_isi[0][0]);
-				i64 max = 1; 
-				for(int i=0; i < nisi; i++){
-					max = m_isi[u][i] > max ? m_isi[u][i] : max; 
+			if(1){
+				//draw shaded plots of the ISI. 
+				for(int u=0; u<2; u++){
+					int nisi = sizeof(m_isi[0])/sizeof(m_isi[0][0]);
+					i64 max = 1; 
+					for(int i=0; i < nisi; i++){
+						max = m_isi[u][i] > max ? m_isi[u][i] : max; 
+					}
+					float scl = (float)max; 
+					if(u == 0)
+						glColor4f(0.0f,1.f,1.f,0.2f); 
+					else
+						glColor4f(1.f,0.0f,0.f,0.25f); 
+					glBegin(GL_TRIANGLE_STRIP);
+					for(int i=0; i < nisi; i++){
+						float y1 = (float)m_isi[u][i]/scl;
+						float x1 = (float)i/((float)(nisi-1)); 
+						glVertex2f(x1*ow+ox+ow, y1*oh*0.5+oy);
+						glVertex2f(x1*ow+ox+ow, oy); 
+					}
+					glEnd();
 				}
-				float scl = (float)max; 
-				if(u == 0)
-					glColor4f(0.0f,1.f,1.f,0.2f); 
-				else
-					glColor4f(1.f,0.0f,0.f,0.25f); 
-				glBegin(GL_TRIANGLE_STRIP);
-				for(int i=0; i < nisi; i++){
-					float y1 = (float)m_isi[u][i]/scl;
-					float x1 = (float)i/((float)(nisi-1)); 
-					glVertex2f(x1*ow+ox+ow, y1*oh*0.5+oy);
-					glVertex2f(x1*ow+ox+ow, oy); 
-				}
-				glEnd();
 			}
 		}
 		//finally, the channel. upper left hand corner.

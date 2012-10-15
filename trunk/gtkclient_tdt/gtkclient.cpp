@@ -67,16 +67,19 @@ float		g_viewportSize[2] = {640, 480}; //width, height.
 
 class Channel;
 
-static float	g_fbuf[NFBUF][NSAMP*3]; //continuous waveform. range [-1 .. 1]
+static float	g_fbuf[NFBUF][NSAMP*3]; //continuous waveform. range [-1 .. 1]. For drawing. 
 i64	g_fbufW; //where to write to (always increment)
 i64	g_fbufR; //display thread reads from here - copies to mem
+static float	g_obuf[96][32]; //last 32 samples of the waveform.  for sorting. [-1 .. 1]
+i64	g_sample = 0; 
+i64				g_lastSpike[96][3]; 
 unsigned int 	g_nsamp = 4096; //given the current level of zoom (1 = 4096 samples), how many samples to update?
-static float 	g_sbuf[2][128*NSBUF*2]; //2 units, 128 channels, 1024 spikes, 2 floats / spike.
+static float 	g_sbuf[2][96*NSBUF*2]; //2 units, 96 channels, 1024 spikes, 2 floats / spike.
 static float	g_rasterSpan = 10.f; // %seconds.
 i64	g_sbufW[2];
 i64	g_sbufR[2];
-Channel*		g_c[128];
-FiringRate	g_fr[128][2];
+Channel*		g_c[96];
+FiringRate	g_fr[96][2];
 GLuint 		g_base;            // base display list for the font set.
 
 bool g_die = false;
@@ -87,13 +90,13 @@ bool g_showPca = false;
 bool g_rtMouseBtn = false;
 int g_polyChan = 0;
 bool g_addPoly = false;
-int g_channel[4] = {0,32,64,96};
+int g_channel[4] = {0,32,64,95};
 int	g_signalChain = 10; //what to sample in the headstage signal chain.
 int	g_radioChannel = 114; //the radio channel to use.
 
 bool g_out = false;
-bool g_templMatch[128][2];
-//the headstage match a,b over all 128 channels. cleared after every packet!!
+bool g_templMatch[96][2];
+//the headstage match a,b over all 96 channels. cleared after every packet!!
 float        g_sortAperture[4][2][16]; //the quality of the match found, circular buffer.
 i64			 g_sortOffset[4][2][16]; //offset to the best match.
 unsigned int g_sortUnit[4][16]; //have to remember to zero all of these.
@@ -101,6 +104,8 @@ unsigned int g_sortI; //index to the (short) circular buffer.
 i64			 g_sortWfOffset[4];
 int 			 g_sortWfUnit[4];
 i64			 g_unsortCount[4];
+double		 g_minISI = 1.3; //ms
+int		 	 g_spikesCols = 16; 
 
 float g_unsortrate = 0.0; //the rate that unsorted WFs get through.
 FILE* g_saveFile = 0;
@@ -117,9 +122,10 @@ int g_totalDropped = 0;
 enum MODES {
 	MODE_RASTERS,
 	MODE_SORT,
+	MODE_SPIKES,
 	MODE_NUM
 };
-int g_mode = MODE_RASTERS;
+int 	g_mode = MODE_RASTERS;
 int	g_drawmode = GL_LINE_STRIP;
 
 int g_rxsock = 0;//rx from hardware. right now only support 1 headstage.
@@ -143,11 +149,14 @@ GtkAdjustment* g_apertureSpin[8] = {0,0,0,0};
 GtkAdjustment* g_thresholdSpin[4];
 GtkAdjustment* g_centeringSpin[4];
 GtkAdjustment* g_unsortRateSpin;
+GtkAdjustment* g_minISISpin;
+GtkAdjustment* g_spikesColsSpin;
 GtkAdjustment* g_zoomSpin;
 GtkAdjustment* g_rasterSpanSpin;
 GtkWidget* g_pktpsLabel;
 GtkWidget* g_stbpsLabel; //strobe per second label, todo: put in raster
 GtkWidget* g_fileSizeLabel;
+GtkWidget* g_notebook; 
 int			g_uiRecursion = 0; //prevents programmatic changes to the UI
 // from causing commands to be sent to the headstage.
 
@@ -328,6 +337,9 @@ static gint motion_notify_event( GtkWidget *,
 				g_c[g_channel[g_polyChan]]->getCentering());
 		}
 	}
+	if((state & GDK_BUTTON1_MASK) && (g_mode == MODE_SPIKES)){
+		printf("TODO: interact with channel.\n"); 
+	}
 	if(state & GDK_BUTTON3_MASK)
 		g_rtMouseBtn = true;
 	else
@@ -339,27 +351,47 @@ static void templatePopupMenu (GdkEventButton *event, gpointer userdata);
 static gint button_press_event( GtkWidget      *,
                                 GdkEventButton *event ){
 	updateCursPos(event->x,event->y);
-	int u = 0;
-	if(g_cursPos[0] > 0.0f) u += 1;
-	if(g_cursPos[1] < 0.0f) u += 2;
-	if (event->button == 1){
-		g_polyChan = u;
-		g_addPoly = false;
-		if(event->type==GDK_2BUTTON_PRESS){
-			g_c[g_channel[u]]->computePca();
-		}else if(event->type==GDK_3BUTTON_PRESS){
-			g_c[g_channel[u]]->resetPca();
-		}else{
-			if(!g_c[g_channel[u]]->mouse(g_cursPos)){
-				g_c[g_channel[u]]->resetPoly();
-				g_c[g_channel[u]]->addPoly(g_cursPos);
-				g_addPoly = true;
+	if(g_mode == MODE_SORT){
+		int u = 0;
+		if(g_cursPos[0] > 0.0f) u += 1;
+		if(g_cursPos[1] < 0.0f) u += 2;
+		if (event->button == 1){
+			g_polyChan = u;
+			g_addPoly = false;
+			if(event->type==GDK_2BUTTON_PRESS){
+				g_c[g_channel[u]]->computePca();
+			}else if(event->type==GDK_3BUTTON_PRESS){
+				g_c[g_channel[u]]->resetPca();
+			}else{
+				if(!g_c[g_channel[u]]->mouse(g_cursPos)){
+					g_c[g_channel[u]]->resetPoly();
+					g_c[g_channel[u]]->addPoly(g_cursPos);
+					g_addPoly = true;
+				}
 			}
 		}
+		if(event->button == 3){
+			if(g_c[g_channel[u]]->m_pcaVbo->m_polyW > 10 && g_mode == MODE_SORT)
+				templatePopupMenu(event, (gpointer)u);
+		}
 	}
-	if(event->button == 3){
-		if(g_c[g_channel[u]]->m_pcaVbo->m_polyW > 10 && g_mode == MODE_SORT)
-			templatePopupMenu(event, (gpointer)u);
+	if(g_mode == MODE_SPIKES){
+		int spikesRows = 96 / g_spikesCols; 
+		if(96 % g_spikesCols) spikesRows++; 
+		float xf = g_spikesCols; float yf = spikesRows; 
+		float x = (g_cursPos[0] + 1.f)/ 2.f;
+		float y = (g_cursPos[1]*-1.f + 1.f)/2.f; //0,0 = upper left hand corner. 
+		int sc = (int)floor(x*xf); 
+		int sr = (int)floor(y*yf); 
+		if(event->type==GDK_2BUTTON_PRESS){
+			int h =  sr*g_spikesCols + sc; 
+			if(h >= 0 && h < 96){
+				g_channel[0] = h; 
+				printf("channel switched to %d\n", g_channel[0]); 
+				g_mode = MODE_SORT; 
+				gtk_notebook_set_current_page(GTK_NOTEBOOK(g_notebook), 1); 
+			}
+		}
 	}
 	return TRUE;
 }
@@ -390,7 +422,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 			g_fbufR = w;
 		}
 		//ditto for the spike buffers (these can be disordered ..they generally don't overlap.)
-		for(int k=0; k<2; k++){
+		for(int k=0; k<2; k++){ //will ultimately need more than 2, or have per-dot color.
 			if(g_sbufR[k] < g_sbufW[k]){
 				i64 len = sizeof(g_sbuf[k])/8; //total # of pts.
 				i64 w = g_sbufW[k];
@@ -406,7 +438,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 			}
 		}
 		//and the waveform buffers.
-		for(int i=0; i<128; i++){
+		for(int i=0; i<96; i++){
 			g_c[i]->copy();
 		}
 	}
@@ -560,11 +592,43 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 			xo = (k%2)-1.f; yo = 0.f-(k/2);
 			xz = 1.f; yz = 1.f;
 			g_c[g_channel[k]]->setLoc(xo, yo, xz, yz);
-			bool srt = g_mode==MODE_SORT;
 			g_c[g_channel[k]]->draw(g_drawmode, time, g_cursPos,
-									g_showPca, g_rtMouseBtn, srt);
+									g_showPca, g_rtMouseBtn, true);
 		}
 		cgGLDisableProfile(myCgVertexProfile);
+		glPopMatrix();
+	}
+	if(g_mode == MODE_SPIKES){
+		glPushMatrix();
+		glEnableClientState(GL_VERTEX_ARRAY);
+		float xo, yo, xz, yz;
+		cgGLEnableProfile(myCgVertexProfile);
+		int spikesRows = 96 / g_spikesCols; 
+		if(96 % g_spikesCols) spikesRows++; 
+		float xf = g_spikesCols; float yf = spikesRows; 
+		for(int k=0; k<96; k++){
+			xo = (k%g_spikesCols)/xf; 
+			yo = ((k/g_spikesCols)+1)/yf; 
+			xz = 2.f/xf; yz = 2.f/yf;
+			g_c[k]->setLoc(xo*2.f-1.f, 1.f-yo*2.f, xz, yz);
+			g_c[k]->draw(g_drawmode, time, g_cursPos,
+									g_showPca, g_rtMouseBtn, false);
+		}
+		cgGLDisableProfile(myCgVertexProfile);
+		//draw some lines. 
+		glBegin(GL_LINES); 
+		glColor4f(1.f, 1.f, 1.f, 0.5);
+		for(int c=1; c<g_spikesCols; c++){
+			float cf = (float)c / g_spikesCols; 
+			glVertex2f(cf*2.f-1.f, -1.f);
+			glVertex2f(cf*2.f-1.f, 1.f); 
+		}
+		for(int r=1; r<spikesRows; r++){
+			float rf = (float)r / spikesRows; 
+			glVertex2f(-1.f, rf*2.f-1.f);
+			glVertex2f( 1.f, rf*2.f-1.f); 
+		}
+		glEnd(); 
 		glPopMatrix();
 	}
 	glDisableClientState(GL_VERTEX_ARRAY);
@@ -658,7 +722,7 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 		}
 		//have one VBO that's filled with spike times & channels.
 		for(int k=0; k<2; k++){
-			for(int i=0; i<128; i++){
+			for(int i=0; i<96; i++){
 				for(int j=0; j<NSBUF; j++){
 					g_sbuf[k][(i*NSBUF+j)*2+0] = (float)i/256.0+(float)j/2048.0;
 					g_sbuf[k][(i*NSBUF+j)*2+1] = (float)i;
@@ -671,7 +735,7 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 			glBufferSubDataARB(GL_ARRAY_BUFFER_ARB,
 				0, sizeof(g_sbuf[k]), g_sbuf[k]);
 		}
-		for(int i=0; i<128; i++){
+		for(int i=0; i<96; i++){
 			g_c[i]->configure(g_vsFadeColor);
 		}
 	}
@@ -696,8 +760,8 @@ static gboolean rotate (gpointer user_data){
 	gtk_label_set_text(GTK_LABEL(g_headechoLabel), str); //works!
 	//g_oldheadecho = g_headecho;
 	//update the packets/sec label too
-	snprintf(str, 256, "pkts/sec: %.2Lf\ndropped %d of %d \nBER %Lf per 1e6 bits",
-			(double)g_totalPackets/gettime(),
+	snprintf(str, 256, "pkts/sec: %.2Lf\ndropped %d of %d \nBER %f per 1e6 bits",
+			(long double)g_totalPackets/gettime(),
 			g_totalDropped, g_totalPackets,
 			1e6*(double)g_totalDropped/((double)g_totalPackets*32*8));
 	gtk_label_set_text(GTK_LABEL(g_pktpsLabel), str); //works!
@@ -712,7 +776,7 @@ static gboolean rotate (gpointer user_data){
 }
 void saveState(){
 	sqlite3_exec(g_db, "BEGIN TRANSACTION;",0,0,0);
-	for(int i=0; i<128; i++){
+	for(int i=0; i<96; i++){
 		g_c[i]->save();
 	}
 	for(int i=0; i<4; i++){
@@ -729,7 +793,7 @@ void destroy(GtkWidget *, gpointer){
 			glDeleteBuffersARB(1, &g_vbo1[k]);
 		glDeleteBuffersARB(2, g_vbo2);
 	}
-	for(int i=0; i<128; i++){
+	for(int i=0; i<96; i++){
 		delete g_c[i];
 	}
 	//delete g_vsFade;
@@ -786,7 +850,7 @@ void* po8_thread(void*){
 		while(stoppedCount < count && !g_die){
 			//printf("waiting for data ready.\n"); --we move too fast for this.
 			if (count == 1 &&
-				! card->waitForDataReady())
+				!card->waitForDataReady())
 				break;
 		
 			int waitCount = 0;
@@ -794,48 +858,59 @@ void* po8_thread(void*){
 			bool stopped = false;
 			int numSamples = (int)card->samplesReady(&stopped);
 			if (stopped)
-					stoppedCount++;
+				stoppedCount++;
 			else if (numSamples > 0){
-					card->readBlock(temp, numSamples);
-					card->flushBufferedData(numSamples);
-					bytes += numSamples * nchan * bps; 
-					if(frame %10 == 0){
-					printf("%d samples at %d bps of %d chan: %Lf MB/sec\n", numSamples, bps, nchan,
-								((long double)bytes) / ((gettime() - starttime)*(1024.0*1024.0))); 
+				card->readBlock(temp, numSamples);
+				card->flushBufferedData(numSamples);
+				bytes += numSamples * nchan * bps; 
+				if(frame %10 == 0){
+				printf("%d samples at %d bps of %d chan: %Lf MB/sec\n", numSamples, bps, nchan,
+							((long double)bytes) / ((gettime() - starttime)*(1024.0*1024.0))); 
+				}
+				//copy the data over to g_fbuf. 
+				double time = (double)gettime(); 
+				for(int i=0; i<numSamples; i++){
+					for(int k=0; k<NFBUF; k++){
+						int h = g_channel[k];
+						short samp = temp[i + h*numSamples]; //strange ordering .. but eh.
+						g_fbuf[k][(g_fbufW % g_nsamp)*3 + 1] = (samp / 32768.f); 
+						//g_fbuf[k][(g_fbufW % g_nsamp)*3 + 1] = 0; --sets the color.
 					}
-					//copy the data over. 
-					double time = (double)gettime(); 
-					i64 oldfw = g_fbufW; 
-					for(int i=0; i<numSamples; i++){
-						for(int k=0; k<NFBUF; k++){
-							int h = g_channel[k];
-							short samp = temp[i + h*numSamples]; //strange ordering .. but eh.
-							g_fbuf[k][(g_fbufW % g_nsamp)*3 + 1] = (samp / 32768.f); 
-							//g_fbuf[k][(g_fbufW % g_nsamp)*3 + 1] = 0; --sets the color.
-						}
-						g_fbufW++; 
+					g_fbufW++; 
+				}
+				// copy to the sorting buffers, wrapped.
+				int oldo = g_sample & 31; 
+				for(int i=0; i<numSamples; i++){
+					for(int k=0; k<96; k++){
+						short samp = temp[i + k*numSamples]; //strange ordering .. but eh.
+						g_obuf[k][(oldo + i)&31] = (samp / 32768.f); 
 					}
-					//sort -- see if samples pass threshold.  if so, copy. 
-					if(g_mode == MODE_SORT){
-						for(int k=0; k<NFBUF; k++){
-							int h = g_channel[k];
-							float threshold = g_c[h]->getThreshold();
-							int centering = g_c[h]->getCentering();
-							for(int m=0; m<numSamples; m++){
-								i64 o = oldfw - centering + m - 1; //centering goes from 0 to 31.
-								float a = g_fbuf[k][mod2(o, g_nsamp)*3+1];
-								float b = g_fbuf[k][mod2(o+1, g_nsamp)*3+1];
-								if((threshold > 0 && (a <= threshold && b > threshold))
-									|| (threshold < 0 && (a >= threshold && b < threshold))){
-									float wf[32]; 
-									for(int g=0; g<32; g++){
-										wf[g] = g_fbuf[k][mod2(oldfw+g+m-32, g_nsamp)*3+1] * 0.5;
-									}
-									g_c[h]->addWf(wf, -1, time, true); //-1 = unsorted.
+				}
+				g_sample += numSamples; 
+				//sort -- see if samples pass threshold.  if so, copy. 
+				float wf[32]; 
+				for(int k=0; k<96; k++){
+					float threshold = g_c[k]->getThreshold();
+					int centering = g_c[k]->getCentering();
+					for(int m=0; m<numSamples; m++){
+						int o = oldo - centering + m - 1; o &= 31; 
+						float a = g_obuf[k][o];
+						float b = g_obuf[k][(o+1)&31];
+						if((threshold > 0 && (a <= threshold && b > threshold))
+							|| (threshold < 0 && (a >= threshold && b < threshold))){
+							//check if this exceeds minimum ISI. 
+							if(g_sample - g_lastSpike[k][0] > g_minISI*24.4140625){
+								for(int g=0; g<32; g++){
+									wf[g] = g_obuf[k][(oldo+g+m-32) & 31] * 0.5;
 								}
+								g_c[k]->addWf(wf, -1, time, true); //-1 = unsorted.
+								g_lastSpike[k][0] = g_sample; 
+							}else{
+								g_c[k]->m_isiViolations++; 
 							}
 						}
 					}
+				}
 			}
 			else{
 				//printf("wait count %d\n", waitCount); 
@@ -854,9 +929,9 @@ void* po8_thread(void*){
 void* server_thread(void* ){
 	//kinda like a RPC service -- call to get the vector of firing rates.
 	// call whenever you want!
-	unsigned short rates[128+3][2]; //first two are the size of the array, then the time.
+	unsigned short rates[96+3][2]; //first two are the size of the array, then the time.
 	//9 bits integer part, 7 bits fractional part. hence 0-511.99Hz.
-	unsigned char buf[128];
+	unsigned char buf[96];
 	int client = 0;
 	g_spikesock = setup_socket(4343,1); //tcp socket, server.
 	//check to see if a client is connected.
@@ -881,7 +956,7 @@ void* server_thread(void* ){
 				//printf("got client request [%d]:%s\n",n,buf);
 				double a_req = atof((const char*)buf);
 				if(a_req > 0 && a_req < 10.0){
-					for(int i=0; i<128; i++){
+					for(int i=0; i<96; i++){
 						for(int j=0; j<2; j++){
 							g_fr[i][j].set_a(a_req);
 						}
@@ -891,7 +966,7 @@ void* server_thread(void* ){
 				//start = gettime();
 				long long ltime = (long long)(reqtime * 1000.0); //put it in ms.
 				rates[0][0] = 2; //rows
-				rates[0][1] = 128; //columns.
+				rates[0][1] = 96; //columns.
 				rates[1][0] = (unsigned short)(ltime & 0xffff);
 				ltime >>= 16;
 				rates[1][1] = (unsigned short)(ltime & 0xffff);
@@ -899,7 +974,7 @@ void* server_thread(void* ){
 				rates[2][0] = (unsigned short)(ltime & 0xffff);
 				ltime >>= 16;
 				rates[2][1] = (unsigned short)(ltime & 0xffff);
-				for(int i=0; i<128; i++){
+				for(int i=0; i<96; i++){
 					for(int j=0; j<2; j++){
 						rates[i+3][j] = g_fr[i][j].get_rate(reqtime);
 					}
@@ -944,7 +1019,7 @@ static gboolean chanscan(gpointer){
 		base &= 31;
 		for(int k=0; k<4; k++){
 			g_channel[k] = base + k*32;
-			g_channel[k] &= 127;
+			g_channel[k] %= 96;
 			gtk_adjustment_set_value(g_channelSpin[k], (double)g_channel[k]);
 		}
 		g_uiRecursion--;
@@ -969,7 +1044,7 @@ static void channelSpinCB( GtkWidget*, gpointer p){
 	if(k >= 0 && k<4){
 		int ch = (int)gtk_adjustment_get_value(g_channelSpin[k]);
 		printf("channelSpinCB: %d\n", ch);
-		if(ch < 128 && ch >= 0 && ch != g_channel[k]){
+		if(ch < 96 && ch >= 0 && ch != g_channel[k]){
 			g_channel[k] = ch;
 			//update the UI too.
 			updateChannelUI(k);
@@ -978,7 +1053,7 @@ static void channelSpinCB( GtkWidget*, gpointer p){
 		//this allows more PCA points for sorting!
 		if(g_mode == MODE_SORT && k == 0){
 			for(int j=1; j<4; j++){
-				g_channel[j] = (g_channel[0] + j) & 127;
+				g_channel[j] = (g_channel[0] + j) % 96;
 				//this does not recurse -- have to set the other stuff manually.
 				g_uiRecursion++;
 				gtk_adjustment_set_value(g_channelSpin[j], (double)g_channel[j]);
@@ -1004,7 +1079,7 @@ static void gainSpinCB( GtkWidget*, gpointer p){
 }
 static void gainSetAll(gpointer ){
 	float gain = gtk_adjustment_get_value(g_gainSpin[0]);
-	for(int i=0; i<128; i++){
+	for(int i=0; i<96; i++){
 		g_c[i]->m_gain = gain;
 		//updateGain(i);
 	}
@@ -1013,7 +1088,7 @@ static void gainSetAll(gpointer ){
 	}
 	for(int i=0; i<4; i++)
 		gtk_adjustment_set_value(g_gainSpin[i], gain);
-	for(int i=0; i<128; i++)
+	for(int i=0; i<96; i++)
 		g_c[i]->resetPca();
 }
 static void thresholdSpinCB( GtkWidget* , gpointer p){
@@ -1045,7 +1120,7 @@ static void agcSpinCB( GtkWidget*, gpointer p){
 		float agc = gtk_adjustment_get_value(g_agcSpin[h]);
 		printf("agcSpinCB: %f\n", agc);
 		int j = g_channel[h];
-		if(j >= 0 && j < 128){
+		if(j >= 0 && j < 96){
 			g_c[j]->m_agc = agc;
 			//setAGC(j,j,j,j);
 		}
@@ -1078,9 +1153,9 @@ static void apertureOffCB( GtkWidget*, gpointer p){
 	}
 }
 static void agcSetAll(gpointer ){
-	//sets *all 128* channels.
+	//sets *all 96* channels.
 	float agc = gtk_adjustment_get_value(g_agcSpin[0]);
-	for(int i=0; i<128; i+=4){
+	for(int i=0; i<96; i+=4){
 		g_c[i+0]->m_agc = agc;
 		g_c[i+1]->m_agc = agc;
 		g_c[i+2]->m_agc = agc;
@@ -1156,6 +1231,12 @@ static void cycleButtonCB(GtkWidget *button, gpointer * ){
 	}else
 		g_cycle = false;
 }
+static void minISISpinCB( GtkWidget*, gpointer){
+	g_minISI = gtk_adjustment_get_value(g_minISISpin); 
+}
+static void spikesColsSpinCB( GtkWidget*, gpointer){
+	g_spikesCols = (int)gtk_adjustment_get_value(g_spikesColsSpin); 
+}
 static void zoomSpinCB( GtkWidget*, gpointer ){
 	g_rasterZoom = gtk_adjustment_get_value(g_zoomSpin);
 	g_nsamp = 4096 / g_rasterZoom;
@@ -1175,7 +1256,7 @@ static void notebookPageChangedCB(GtkWidget *,
 					gpointer, int page, gpointer){
 	if(page == 0) g_mode = MODE_RASTERS;
 	if(page == 1) g_mode = MODE_SORT;
-	if(page == 2) g_mode = MODE_SORT;
+	if(page == 2) g_mode = MODE_SPIKES;
 }
 static GtkAdjustment* mk_spinner(const char* txt, GtkWidget* container,
 							 float start, float min, float max, float step,
@@ -1368,10 +1449,12 @@ int main(int argn, char **argc)
 	sqliteCreateTableBlob("vbopca_max");
 
 	for(int i=0; i<4; i++){
-		g_channel[i] = sqliteGetValue(i, "channel", i*32);
+		g_channel[i] = sqliteGetValue(i, "channel", i*16);
+		if(g_channel[i] < 0) g_channel[i] = 0;
+		if(g_channel[i] >= 96) g_channel[i] = 95; 
 	}
 	//defaults, to be read in from sqlite.
-	for(int i=0; i<128; i++){
+	for(int i=0; i<96; i++){
 		g_c[i] = new Channel(i);
 	}
 	sqlite3_exec(g_db, "END TRANSACTION;",0,0,0);
@@ -1442,7 +1525,7 @@ int main(int argn, char **argc)
 
 		//channel spinner.
 		g_channelSpin[i] = mk_spinner("ch", bx3,
-									  g_channel[i], 0, 127, 1,
+									  g_channel[i], 0, 96, 1,
 									  channelSpinCB, i);
 		//right of that, a gain spinner. (need to update depending on ch)
 		g_gainSpin[i] = mk_spinner("gain", bx3,
@@ -1458,14 +1541,14 @@ int main(int argn, char **argc)
 		gtk_box_pack_start (GTK_BOX (frame), bx2, FALSE, FALSE, 1);
 	}
 	//notebook region!
-	notebook = gtk_notebook_new();
-	gtk_notebook_set_tab_pos (GTK_NOTEBOOK (notebook), GTK_POS_LEFT);
-	g_signal_connect(notebook, "switch-page",
+	g_notebook = gtk_notebook_new();
+	gtk_notebook_set_tab_pos (GTK_NOTEBOOK (g_notebook), GTK_POS_LEFT);
+	g_signal_connect(g_notebook, "switch-page",
 					 G_CALLBACK(notebookPageChangedCB), 0);
 	//g_signal_connect(notebook, "select-page",
 	//				 G_CALLBACK(notebookPageChangedCB), 0);
-	gtk_box_pack_start(GTK_BOX(v1), notebook, TRUE, TRUE, 1);
-    gtk_widget_show(notebook);
+	gtk_box_pack_start(GTK_BOX(v1), g_notebook, TRUE, TRUE, 1);
+    gtk_widget_show(g_notebook);
 
 	box1 = gtk_vbox_new(FALSE, 2);
 	//add signal chain combo box.
@@ -1528,9 +1611,9 @@ int main(int argn, char **argc)
 	gtk_widget_show (box1);
 	label = gtk_label_new("rasters");
 	gtk_label_set_angle(GTK_LABEL(label), 90);
-	gtk_notebook_insert_page(GTK_NOTEBOOK(notebook), box1, label, 0);
+	gtk_notebook_insert_page(GTK_NOTEBOOK(g_notebook), box1, label, 0);
 
-//add page for spikes.
+//add page for sorting. (4 units .. for now .. such is the legacy. )
 	box1 = gtk_vbox_new (FALSE, 0);
 		//4-channel control blocks.
 	for(int i=0; i<4; i++){
@@ -1583,32 +1666,27 @@ int main(int argn, char **argc)
 					 (gpointer*)window);
 	gtk_box_pack_start (GTK_BOX (box1), button, FALSE, FALSE, 1);
 
-//this concludes spike page.
-	gtk_widget_show (box1);
-	label = gtk_label_new("spikes");
-	gtk_label_set_angle(GTK_LABEL(label), 90);
-	gtk_notebook_insert_page(GTK_NOTEBOOK(notebook), box1, label, 1);
-
-//add a page for sorting.
-	box1 = gtk_vbox_new (FALSE, 0);
-
-	for(int h=0; h<4; h++){
-		char buf[128];
-		snprintf(buf, 128, "%c threshold", 'A'+h);
-		g_thresholdSpin[h] = mk_spinner(buf, box1,
-					g_c[g_channel[h]]->getThreshold(), 0.0, 1.0, 0.01,
-					thresholdSpinCB, h);
-		snprintf(buf, 128, "%c centering", 'A'+h);
-		g_centeringSpin[h] = mk_spinner(buf, box1,
-					g_c[g_channel[h]]->getCentering(), 1.0, 30.0, 1.0,
-					centeringSpinCB, h);
-	}
-
-// end sort page.
+//this concludes sort page.
 	gtk_widget_show (box1);
 	label = gtk_label_new("sort");
 	gtk_label_set_angle(GTK_LABEL(label), 90);
-	gtk_notebook_insert_page(GTK_NOTEBOOK(notebook), box1, label, 2);
+	gtk_notebook_insert_page(GTK_NOTEBOOK(g_notebook), box1, label, 1);
+
+//add a page for viewing all the spikes.
+	box1 = gtk_vbox_new (FALSE, 0);
+	// for the sorting, we show all waveforms (up to a point..)
+	//these should have a minimum enforced ISI. 
+	g_minISISpin = mk_spinner("min ISI", box1, g_minISI, 0.2, 3.0, 0.01, 
+						minISISpinCB, 0); 
+	g_spikesColsSpin = mk_spinner("Columns", box1, g_spikesCols, 3, 32, 1, 
+						spikesColsSpinCB, 0); 
+	
+
+// end sort page.
+	gtk_widget_show (box1);
+	label = gtk_label_new("spikes");
+	gtk_label_set_angle(GTK_LABEL(label), 90);
+	gtk_notebook_insert_page(GTK_NOTEBOOK(g_notebook), box1, label, 2);
 
 	//add a automatic channel change button.
 	button = gtk_check_button_new_with_label("cycle channels");
