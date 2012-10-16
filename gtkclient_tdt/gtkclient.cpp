@@ -843,7 +843,9 @@ void* po8_thread(void*){
 		}
 		// start the timer used to compute the speed and set the collected bytes to 0
 		long double starttime = gettime(); 
-		long double totalSamples = 0.0; 
+		long double totalSamples = 0.0; //for simulation.
+		long double slope = 24414.0625; 
+		long double offset = 0.0; 
 		long long bytes = 0; 
 		unsigned int frame = 0; 
 		unsigned int bps = 2; 
@@ -890,16 +892,22 @@ void* po8_thread(void*){
 						temp[k*numSamples +i] = temptemp[i]; 
 					}
 				}
+				//last part of the buffer is just TDT ticks (most recent -> least delay?)
+				for(int i=0; i<numSamples; i++){
+					int r = (int)(totalSamples +i); 
+					temp[96*numSamples +i] = r & 0xffff;
+					temp[97*numSamples +i] = (r>>16) & 0xffff; 
+				}
 				totalSamples += numSamples; 
 				usleep(70); 
 			}
 			if(numSamples > 0){
-				/*if(frame %10 == 0){
+				/*if(frame %200 == 0){ //need to move this to the UI.
 				printf("%d samples at %d bps of %d chan: %Lf MB/sec\n", numSamples, Bps, nchan,
 							((long double)bytes) / ((gettime() - starttime)*(1024.0*1024.0))); 
 				}*/
 				//copy the data over to g_fbuf. 
-				double time = (double)gettime(); 
+				long double time = gettime(); 
 				for(int i=0; i<numSamples; i++){
 					for(int k=0; k<NFBUF; k++){
 						int h = g_channel[k];
@@ -915,6 +923,18 @@ void* po8_thread(void*){
 					for(int k=0; k<96; k++){
 						short samp = temp[i + k*numSamples]; //strange ordering .. but eh.
 						g_obuf[k][(oldo + i)&255] = (samp / 32768.f); 
+					}
+				}
+				if(1){
+					//get the sync -- estimate TDT ticks from perf counter.
+					int ticks = (unsigned short)(temp[96*numSamples + numSamples -1]); 
+					ticks += (unsigned short)(temp[97*numSamples + numSamples -1]) << 16; 
+					long double pred = time * slope + offset; 
+					long double update = ticks - pred; 
+					offset += update * 1e-3; //kiss.
+					slope += update * 2e-6; 
+					if(frame % 200 == 50){
+						printf("sync offset %Lf slope %Lf ticks %d update %Lf\n", offset, slope, ticks, update); 	
 					}
 				}
 				g_sample += numSamples; 
