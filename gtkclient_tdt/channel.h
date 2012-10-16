@@ -12,6 +12,8 @@
 void gsl_matrix_to_mat(gsl_matrix *x, const char* fname); 
 long double gettime(); 
 void glPrint(char *text);
+#define NWFVBO 1024
+#define NUSVBO 512
 
 //need some way of encapsulating per-channel information. 
 class Channel {
@@ -35,8 +37,8 @@ public:
 	int	m_lastSpike[2]; //zero when a spike occurs. 
 	
 	Channel(int ch){
-		m_wfVbo = new Vbo(6, 512, 34); //sorted units, with color. 
-		m_usVbo = new Vbo(3, 256, 34); //unsorted units, all gray.
+		m_wfVbo = new Vbo(6, NWFVBO, 34); //sorted units, with color. 
+		m_usVbo = new Vbo(3, NUSVBO, 34); //unsorted units, all gray.
 		m_pcaVbo = new VboPca(6, 1024*8, 1, ch); 
 		m_pcaVbo->m_fade = 0.f; 
 		m_isiViolations = 0; 
@@ -65,7 +67,7 @@ public:
 		m_gain = sqliteGetValue(ch, "gain", 1.f);
 		m_agc = sqliteGetValue(ch, "agc", 6000.f);
 		//init m_wfVbo.
-		for(int i=0; i<512; i++){
+		for(int i=0; i<NWFVBO; i++){
 			float* f = m_wfVbo->addRow(); 
 			f[0] = 0.f; 
 			f[1] = 0.5f; 
@@ -85,7 +87,7 @@ public:
 				f[(33)*6 + 3 + k] = 0.5f; //all init gray.
 		}
 		//init unsorted Vbo, 
-		for(int i=0; i<256; i++){
+		for(int i=0; i<NUSVBO; i++){
 			float* f = m_usVbo->addRow(); 
 			f[0] = 0.f; 
 			f[1] = 0.5f; 
@@ -198,7 +200,7 @@ public:
 		float x = f[0]; float y = f[1]; 
 		x -= m_loc[0]; y -= m_loc[1]; 
 		x /= m_loc[2]; y /= m_loc[3]; 
-		if(x >= 1/62.f && x <= 31/62.f && y >= 0.5 && y <= 1.f){
+		if(x >= 1/62.f && x <= 31/62.f && y >= 0.0 && y <= 1.f){
 			m_threshold = (y-0.5f)*2.f; 
 			x *= 62.f; x -= 0.5f; x = 31.f-x; //inverse centering transform.
 			m_centering = x; 

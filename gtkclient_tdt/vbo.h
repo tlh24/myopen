@@ -49,7 +49,7 @@ public:
 		glGenBuffersARB(1, &m_vbo);
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_vbo);
 		glBufferDataARB(GL_ARRAY_BUFFER_ARB, siz, 
-			0, GL_DYNAMIC_DRAW_ARB);
+			0, GL_STATIC_DRAW_ARB);
 		glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, 
 			0, siz, m_f);
 	}
@@ -114,7 +114,7 @@ public:
 			glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_vbo);
 			//note: want to draw the newest data soonest; hence should 
 			// draw in two chunks: m_r % m_rows to m_rows-1
-			// and 0 to m_r % m_rows.
+			// then 0 to m_r % m_rows.
 			int r = m_r % m_rows; 
 			if(m_r > m_rows){
 				if(m_dim == 6){ //color and vertex location.
