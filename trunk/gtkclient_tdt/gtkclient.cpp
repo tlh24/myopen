@@ -70,7 +70,7 @@ class Channel;
 static float	g_fbuf[NFBUF][NSAMP*3]; //continuous waveform. range [-1 .. 1]. For drawing. 
 i64	g_fbufW; //where to write to (always increment)
 i64	g_fbufR; //display thread reads from here - copies to mem
-static float	g_obuf[96][32]; //last 32 samples of the waveform.  for sorting. [-1 .. 1]
+static float	g_obuf[96][256]; //looping samples of the waveform.  for sorting. [-1 .. 1]
 i64	g_sample = 0; 
 i64				g_lastSpike[96][3]; 
 unsigned int 	g_nsamp = 4096; //given the current level of zoom (1 = 4096 samples), how many samples to update?
@@ -561,7 +561,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 			glVertex3f( (float)t, 130.f, 0.f);
 		}
 		glEnd();
-		glEnable(GL_LINE_SMOOTH);
+		//glEnable(GL_LINE_SMOOTH);
 		glPopMatrix ();
 		//draw current channel
 		for(int k=0; k<4; k++){
@@ -663,7 +663,7 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 	glLoadIdentity();
 	glOrtho (-1,1,-1,1,0,1);
 	glEnable(GL_BLEND);
-	glEnable(GL_LINE_SMOOTH);
+	//glEnable(GL_LINE_SMOOTH);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	//glEnable(GL_DEPTH_TEST);
 	//glDepthMask(GL_TRUE);
@@ -807,64 +807,93 @@ void destroy(GtkWidget *, gpointer){
 void* po8_thread(void*){
 	int count = 0, total;
 	PO8e *card = NULL;
+	bool simulate = false; 
 
 	while(!g_die){
 		total = PO8e::cardCount();
 		printf("Found %d PO8e card(s) in the system.\n", total);
 		if (0 == total){
 			printf("  exiting\n");
-			return 0; 
+			simulate = true; 
 		}
-
-		printf(" Connecting to card 0\n");
-		card = PO8e::connectToCard(0);
-		if (card == NULL)
-			printf("  connection failed\n");
-		else{
-			printf("  established connection %p\n", (void*)card);
-	//TODO: have to expose the card ports MUCH better
-			if (! card->startCollecting()){
-					printf("  startCollecting() failed with: %d\n",
-							card->getLastError());
-					PO8e::releaseCard(card);
-			}
+		if(!simulate){
+			printf(" Connecting to card 0\n");
+			card = PO8e::connectToCard(0);
+			if (card == NULL)
+				printf("  connection failed\n");
 			else{
-					printf("  card is collecting incoming data.\n");
-					count++;
+				printf("  established connection %p\n", (void*)card);
+		//TODO: have to expose the card ports MUCH better
+				if (! card->startCollecting()){
+						printf("  startCollecting() failed with: %d\n",
+								card->getLastError());
+						PO8e::releaseCard(card);
+				}
+				else{
+						printf("  card is collecting incoming data.\n");
+						count++;
+				}
 			}
+			// wait for streaming to start on the first card
+			printf("Waiting for the stream to start on card 0\n");
+			while(card->samplesReady() == 0)
+				usleep(5000);
 		}
-
-		// wait for streaming to start on the first card
-		printf("Waiting for the stream to start on card 0\n");
-		while(card->samplesReady() == 0)
-			usleep(5000);
-
 		// start the timer used to compute the speed and set the collected bytes to 0
 		long double starttime = gettime(); 
+		long double totalSamples = 0.0; 
 		long long bytes = 0; 
 		unsigned int frame = 0; 
-		unsigned int bps = card->dataSampleSize(); 
-		unsigned int nchan = card->numChannels(); 
+		unsigned int bps = 2; 
+		unsigned int nchan = 96; 
+		if(!simulate){
+			bps = card->dataSampleSize(); 
+			nchan = card->numChannels(); 
+		}
 		int stoppedCount = 0;
-		short temp[8192*2]; //observed up to 128*48 32-bit samples -- ~12k shorts.
-		while(stoppedCount < count && !g_die){
+		short temp[8192*4]; //observed up to 128*48 32-bit samples -- ~12k shorts.
+		short temptemp[1024]; 
+		while((simulate || stoppedCount < count) && !g_die){
 			//printf("waiting for data ready.\n"); --we move too fast for this.
-			if (count == 1 &&
-				!card->waitForDataReady())
+			if (!simulate && count == 1 &&!card->waitForDataReady())
 				break;
 		
 			int waitCount = 0;
 			stoppedCount = 0;
 			bool stopped = false;
-			int numSamples = (int)card->samplesReady(&stopped);
-			if (stopped)
-				stoppedCount++;
-			else if (numSamples > 0){
-				card->readBlock(temp, numSamples);
-				card->flushBufferedData(numSamples);
-				bytes += numSamples * nchan * bps; 
+			int numSamples = 0; 
+			if(!simulate){
+				numSamples = (int)card->samplesReady(&stopped);
+				if (stopped)
+					stoppedCount++;
+				else if (numSamples > 0){
+					card->readBlock(temp, numSamples);
+					card->flushBufferedData(numSamples);
+					bytes += numSamples * nchan * bps; 
+				}
+			}else{
+				long double now = gettime(); 
+				numSamples = (int)((now - starttime)*24414.0625 - totalSamples); 
+				if(numSamples >= 250){ 
+					numSamples = 250; 
+					totalSamples = (now - starttime)*24414.0625;
+				}
+				float scale = sin(totalSamples/4e4); 
+				for(int i=0; i<numSamples; i++){
+					temptemp[i] =  (short)(sinf((float)
+							((totalSamples + i)/6.0))*32768.f*scale); 
+				}
+				for(int k=0; k<96; k++){
+					for(int i=0; i<numSamples; i++){
+						temp[k*numSamples +i] = temptemp[i]; 
+					}
+				}
+				totalSamples += numSamples; 
+				usleep(70); 
+			}
+			if(numSamples > 0){
 				/*if(frame %10 == 0){
-				printf("%d samples at %d bps of %d chan: %Lf MB/sec\n", numSamples, bps, nchan,
+				printf("%d samples at %d bps of %d chan: %Lf MB/sec\n", numSamples, Bps, nchan,
 							((long double)bytes) / ((gettime() - starttime)*(1024.0*1024.0))); 
 				}*/
 				//copy the data over to g_fbuf. 
@@ -879,11 +908,11 @@ void* po8_thread(void*){
 					g_fbufW++; 
 				}
 				// copy to the sorting buffers, wrapped.
-				int oldo = g_sample & 31; 
+				int oldo = g_sample & 255; 
 				for(int i=0; i<numSamples; i++){
 					for(int k=0; k<96; k++){
 						short samp = temp[i + k*numSamples]; //strange ordering .. but eh.
-						g_obuf[k][(oldo + i)&31] = (samp / 32768.f); 
+						g_obuf[k][(oldo + i)&255] = (samp / 32768.f); 
 					}
 				}
 				g_sample += numSamples; 
@@ -893,15 +922,15 @@ void* po8_thread(void*){
 					float threshold = g_c[k]->getThreshold();
 					int centering = g_c[k]->getCentering();
 					for(int m=0; m<numSamples; m++){
-						int o = oldo - centering + m - 1; o &= 31; 
+						int o = oldo - centering + m - 1; o &= 255; 
 						float a = g_obuf[k][o];
-						float b = g_obuf[k][(o+1)&31];
+						float b = g_obuf[k][(o+1)&255];
 						if((threshold > 0 && (a <= threshold && b > threshold))
 							|| (threshold < 0 && (a >= threshold && b < threshold))){
 							//check if this exceeds minimum ISI. 
 							if(g_sample - g_lastSpike[k][0] > g_minISI*24.4140625){
 								for(int g=0; g<32; g++){
-									wf[g] = g_obuf[k][(oldo+g+m-32) & 31] * 0.5;
+									wf[g] = g_obuf[k][(oldo+g+m-32) & 255] * 0.5;
 								}
 								g_c[k]->addWf(wf, -1, time, true); //-1 = unsorted.
 								g_lastSpike[k][0] = g_sample; 
@@ -918,9 +947,11 @@ void* po8_thread(void*){
 			}
 			frame++; 
 		}
-		printf("\n");
-		printf("Releasing card 0\n");
-		PO8e::releaseCard(card);
+		if(!simulate){
+			printf("\n");
+			printf("Releasing card 0\n");
+			PO8e::releaseCard(card);
+		}
 		//delete card; 
 		sleep(1); 
 	}
@@ -1468,7 +1499,7 @@ int main(int argn, char **argc)
 	gtk_gl_init (&argn, &argc);
 
 	window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-	gtk_window_set_title (GTK_WINDOW (window), "gtk headstage v8 client");
+	gtk_window_set_title (GTK_WINDOW (window), "gtk TDT v1 client");
 	gtk_window_set_default_size (GTK_WINDOW (window), 850, 650);
 	da1 = gtk_drawing_area_new ();
 	gtk_widget_set_size_request(GTK_WIDGET(da1), 640, 650);
