@@ -268,29 +268,6 @@ void enableAGC(int* chs, int en){
 	saveMessage("agc_en %d %d %d %d : %d", chs[0], chs[1], chs[2], chs[3], en);
 	g_echo++;
 }
-void setAperture(int ch){
-	// aperture order: ch0, ch32, ch64, ch96. (little-endian)
-	// each 16 bits.
-	//might as well set both A & B apertures in same packet.
-	ch &= 31;
-	unsigned int* ptr = g_sendbuf;
-	ptr += (g_sendW % g_sendL) * 8;
-	for(int i=0; i<4; i++){
-		ptr[i*2+0] = htonl(echo(A1 +
-			(A1_STRIDE*ch + (A1_TEMPLATE+A1_APERTURE)*(i/2) +
-			 A1_APERTUREA + (i&1))*4));
-		unsigned int u = (g_c[ch+64*(i&1)]->getAperture(i/2) & 0xffff) |
-						((g_c[ch+32+64*(i&1)]->getAperture(i/2) & 0xffff)<<16);
-		ptr[i*2+1] = htonl(u);
-	}
-	g_sendW++;
-	for(int i=0; i<4; i++){
-		saveMessage("aperture %d %d,%d", ch + 32*i,
-				g_c[ch + 32*i]->getAperture(0),
-				g_c[ch + 32*i]->getAperture(0));
-	}
-	g_echo++;
-}
 void setLMS(bool on){
 	//this applies to all channels.
 	unsigned int* ptr = g_sendbuf;
@@ -433,9 +410,6 @@ void setAll(){
 		//can transmit 8 AGCs at a time.
 		//will set i, i+32, i+16. i+48, i+64, i+96, i+80, i+112.
 		setAGC(i, i+16, i+64, i+80);
-	}
-	for(int i=0; i<32; i++){
-		setAperture(i);
 	}
 	//finally, the templates.
 	for(int i=0; i<32; i++){

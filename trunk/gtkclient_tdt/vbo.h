@@ -431,26 +431,30 @@ public:
 		for(int i=0; i<MIN(m_w,m_rows); i++){
 			if(inside[i]){
 				for(int j=0; j<32; j++){
-					aperture += fabs(m_wf[i*32 + j] - temp[j]);
+					float r = m_wf[i*32 + j] - temp[j]; 
+					aperture += r*r; 
 				}
 			}
 		}
+		aperture /= 32; 
 		aperture /= (float)npts; 
-		aperture *= 0.45; //empirical.
+		aperture *= 2.0; //empirical.
+		//really should iteratively assign this, moving until we get a set number of type 1/2 errors.
 		copyData(m_vbo, 0, m_rows, m_f, m_dim * m_cols); 
 		return true; 
 	}
 	void updateAperture(float* temp, float aperture, float* color){
-		//redisplays the sorting based on the SAA algorithm. 
+		//redisplays the sorting based on MSE. 
 		// wf and template are range 1 mean 0. (+-0.5)
-		// aperture is 1/255 whats in the UI. 
-		//template is **length 16**
+		// aperture just the MSE. 
 		for(int i=0; i<MIN(m_w,m_rows); i++){
-			float saa = 0.f;
-			for(int j=0; j<16; j++){
-				saa += fabs(m_wf[i*32 + j + 8] - temp[j]); 
+			float sum = 0.f;
+			for(int j=0; j<32; j++){
+				float r = m_wf[i*32 + j] - temp[j];
+				sum += r*r; 
 			}
-			if(saa < aperture){
+			sum /= 32.f; 
+			if(sum < aperture){
 				for(int j=0; j<3; j++)
 					m_f[m_dim*m_cols*i + j + 3] = color[j]; //6: x y z color.
 			} else {

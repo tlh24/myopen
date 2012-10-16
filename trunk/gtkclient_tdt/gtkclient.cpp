@@ -97,7 +97,6 @@ int	g_radioChannel = 114; //the radio channel to use.
 bool g_out = false;
 bool g_templMatch[96][2];
 //the headstage match a,b over all 96 channels. cleared after every packet!!
-float        g_sortAperture[4][2][16]; //the quality of the match found, circular buffer.
 i64			 g_sortOffset[4][2][16]; //offset to the best match.
 unsigned int g_sortUnit[4][16]; //have to remember to zero all of these.
 unsigned int g_sortI; //index to the (short) circular buffer.
@@ -127,6 +126,7 @@ enum MODES {
 };
 int 	g_mode = MODE_RASTERS;
 int	g_drawmode = GL_LINE_STRIP;
+int	g_blendmode = GL_ONE_MINUS_SRC_ALPHA;
 
 int g_rxsock = 0;//rx from hardware. right now only support 1 headstage.
 int g_txsock = 0;//transmit back to hardware.  again, only one supported now.
@@ -386,6 +386,9 @@ static gint button_press_event( GtkWidget      *,
 		if(event->type==GDK_2BUTTON_PRESS){
 			int h =  sr*g_spikesCols + sc; 
 			if(h >= 0 && h < 96){
+				//shift channels down, like a priority queue.
+				for(int i=3; i>0; i--)
+					g_channel[i] = g_channel[i-1]; 
 				g_channel[0] = h; 
 				printf("channel switched to %d\n", g_channel[0]); 
 				g_mode = MODE_SORT; 
@@ -446,7 +449,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 	glMatrixMode(GL_MODELVIEW);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glShadeModel(GL_FLAT);
-
+	glBlendFunc(GL_SRC_ALPHA, g_blendmode);
 	//draw the cursor no matter what?
 	if(0){
 		float x = g_cursPos[0] + 1.f/g_viewportSize[0];
@@ -548,7 +551,6 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 			glDrawArrays(GL_POINTS, 0, sizeof(g_sbuf[k])/8);
 			glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 		}
-		glDisable(GL_LINE_SMOOTH);
 		//draw current time.
 		glColor4f (1., 0., 0., 0.5);
 		glBegin(GL_LINES);
@@ -582,53 +584,54 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 #endif
 		//end VBO
 	}
-	if(g_mode == MODE_SORT){
+	if(g_mode == MODE_SORT || g_mode == MODE_SPIKES){
 		glPushMatrix();
 		glEnableClientState(GL_VERTEX_ARRAY);
 		float xo, yo, xz, yz;
 		cgGLEnableProfile(myCgVertexProfile);
-		for(int k=0; k<4; k++){
-			//2x2 array.
-			xo = (k%2)-1.f; yo = 0.f-(k/2);
-			xz = 1.f; yz = 1.f;
-			g_c[g_channel[k]]->setLoc(xo, yo, xz, yz);
-			g_c[g_channel[k]]->draw(g_drawmode, time, g_cursPos,
-									g_showPca, g_rtMouseBtn, true);
+		if(g_blendmode == GL_ONE)
+			g_vsFadeColor->setParam(2,"ascale", 0.2f); 
+		else
+			g_vsFadeColor->setParam(2,"ascale", 1.f); 
+		if(g_mode == MODE_SORT){
+			for(int k=0; k<4; k++){
+				//2x2 array.
+				xo = (k%2)-1.f; yo = 0.f-(k/2);
+				xz = 1.f; yz = 1.f;
+				g_c[g_channel[k]]->setLoc(xo, yo, xz, yz);
+				g_c[g_channel[k]]->draw(g_drawmode, time, g_cursPos,
+										g_showPca, g_rtMouseBtn, true);
+			}
+			cgGLDisableProfile(myCgVertexProfile);
 		}
-		cgGLDisableProfile(myCgVertexProfile);
-		glPopMatrix();
-	}
-	if(g_mode == MODE_SPIKES){
-		glPushMatrix();
-		glEnableClientState(GL_VERTEX_ARRAY);
-		float xo, yo, xz, yz;
-		cgGLEnableProfile(myCgVertexProfile);
-		int spikesRows = 96 / g_spikesCols; 
-		if(96 % g_spikesCols) spikesRows++; 
-		float xf = g_spikesCols; float yf = spikesRows; 
-		for(int k=0; k<96; k++){
-			xo = (k%g_spikesCols)/xf; 
-			yo = ((k/g_spikesCols)+1)/yf; 
-			xz = 2.f/xf; yz = 2.f/yf;
-			g_c[k]->setLoc(xo*2.f-1.f, 1.f-yo*2.f, xz, yz);
-			g_c[k]->draw(g_drawmode, time, g_cursPos,
-									g_showPca, g_rtMouseBtn, false);
+		if(g_mode == MODE_SPIKES){
+			int spikesRows = 96 / g_spikesCols; 
+			if(96 % g_spikesCols) spikesRows++; 
+			float xf = g_spikesCols; float yf = spikesRows; 
+			for(int k=0; k<96; k++){
+				xo = (k%g_spikesCols)/xf; 
+				yo = ((k/g_spikesCols)+1)/yf; 
+				xz = 2.f/xf; yz = 2.f/yf;
+				g_c[k]->setLoc(xo*2.f-1.f, 1.f-yo*2.f, xz*2.f, yz);
+				g_c[k]->draw(g_drawmode, time, g_cursPos,
+										g_showPca, g_rtMouseBtn, false);
+			}
+			cgGLDisableProfile(myCgVertexProfile);
+			//draw some lines. 
+			glBegin(GL_LINES); 
+			glColor4f(1.f, 1.f, 1.f, 0.5);
+			for(int c=1; c<g_spikesCols; c++){
+				float cf = (float)c / g_spikesCols; 
+				glVertex2f(cf*2.f-1.f, -1.f);
+				glVertex2f(cf*2.f-1.f, 1.f); 
+			}
+			for(int r=1; r<spikesRows; r++){
+				float rf = (float)r / spikesRows; 
+				glVertex2f(-1.f, rf*2.f-1.f);
+				glVertex2f( 1.f, rf*2.f-1.f); 
+			}
+			glEnd(); 
 		}
-		cgGLDisableProfile(myCgVertexProfile);
-		//draw some lines. 
-		glBegin(GL_LINES); 
-		glColor4f(1.f, 1.f, 1.f, 0.5);
-		for(int c=1; c<g_spikesCols; c++){
-			float cf = (float)c / g_spikesCols; 
-			glVertex2f(cf*2.f-1.f, -1.f);
-			glVertex2f(cf*2.f-1.f, 1.f); 
-		}
-		for(int r=1; r<spikesRows; r++){
-			float rf = (float)r / spikesRows; 
-			glVertex2f(-1.f, rf*2.f-1.f);
-			glVertex2f( 1.f, rf*2.f-1.f); 
-		}
-		glEnd(); 
 		glPopMatrix();
 	}
 	glDisableClientState(GL_VERTEX_ARRAY);
@@ -664,7 +667,6 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 	glOrtho (-1,1,-1,1,0,1);
 	glEnable(GL_BLEND);
 	//glEnable(GL_LINE_SMOOTH);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	//glEnable(GL_DEPTH_TEST);
 	//glDepthMask(GL_TRUE);
 	glMatrixMode(GL_MODELVIEW);
@@ -686,7 +688,7 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 		//g_vsFade->addParams(4,"time","fade","col","off");
 
 		g_vsFadeColor = new cgVertexShader("fadeColor.cg","fadeColor");
-		g_vsFadeColor->addParams(4,"time","fade","col","off");
+		g_vsFadeColor->addParams(5,"time","fade","col","off","ascale");
 
 		g_vsThreshold = new cgVertexShader("threshold.cg","threshold");
 		g_vsThreshold->addParams(2,"xzoom","yoffset");
@@ -925,15 +927,28 @@ void* po8_thread(void*){
 						int o = oldo - centering + m - 1; o &= 255; 
 						float a = g_obuf[k][o];
 						float b = g_obuf[k][(o+1)&255];
+						//normal template-threshold sorting for now. boring, but known.
 						if((threshold > 0 && (a <= threshold && b > threshold))
 							|| (threshold < 0 && (a >= threshold && b < threshold))){
-							//check if this exceeds minimum ISI. 
-							if(g_sample - g_lastSpike[k][0] > g_minISI*24.4140625){
-								for(int g=0; g<32; g++){
-									wf[g] = g_obuf[k][(oldo+g+m-32) & 255] * 0.5;
+							for(int g=0; g<32; g++){
+								wf[g] = g_obuf[k][(oldo+g+m-32) & 255] * 0.5;
+							}
+							int unit = 0; //unsorted.
+							//compare to template. 
+							for(int u=1; u>=0; u--){
+								float sum = 0; 
+								for(int j=0; j<32; j++){
+									float r = wf[j] - g_c[k]->m_template[u][j]; 
+									sum += r*r; 
 								}
-								g_c[k]->addWf(wf, -1, time, true); //-1 = unsorted.
-								g_lastSpike[k][0] = g_sample; 
+								sum /= 32; 
+								if(sum < g_c[k]->m_aperture[u])
+									unit = u+1; 
+							}
+							//check if this exceeds minimum ISI. 
+							if(g_sample - g_lastSpike[k][unit] > g_minISI*24.4140625){
+								g_c[k]->addWf(wf, unit, time, true);
+								g_lastSpike[k][unit] = g_sample; 
 							}else{
 								g_c[k]->m_isiViolations++; 
 							}
@@ -1064,8 +1079,8 @@ void updateChannelUI(int k){
 	int ch = g_channel[k];
 	gtk_adjustment_set_value(g_gainSpin[k], g_c[ch]->m_gain);
 	gtk_adjustment_set_value(g_agcSpin[k], g_c[ch]->m_agc);
-	gtk_adjustment_set_value(g_apertureSpin[k*2+0], g_c[ch]->getAperture(0));
-	gtk_adjustment_set_value(g_apertureSpin[k*2+1], g_c[ch]->getAperture(1));
+	gtk_adjustment_set_value(g_apertureSpin[k*2+0], g_c[ch]->m_aperture[0]);
+	gtk_adjustment_set_value(g_apertureSpin[k*2+1], g_c[ch]->m_aperture[1]);
 	gtk_adjustment_set_value(g_thresholdSpin[k], g_c[ch]->getThreshold());
 	gtk_adjustment_set_value(g_centeringSpin[k], g_c[ch]->getCentering());
 	g_uiRecursion--;
@@ -1165,7 +1180,7 @@ static void apertureSpinCB( GtkWidget*, gpointer p){
 		int j = g_channel[h/2];
 		//gtk likes to call this frequently -- only update when
 		//the value has actually changed.
-		if(g_c[j]->getAperture(h%2) != a){
+		if(g_c[j]->m_aperture[h%2] != a){
 			if(a >= 0 && a < 256*16){
 				g_c[j]->setApertureLocal(a, h%2);
 				//setAperture(j);
@@ -1201,6 +1216,13 @@ static void drawRadioCB(GtkWidget *button, gpointer p){
 		int i = (int)((long long)p & 0xf);
 		if(i == 0) g_drawmode = GL_LINE_STRIP;
 		else g_drawmode = GL_POINTS;
+	}
+}
+static void blendRadioCB(GtkWidget *button, gpointer p){
+	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))){
+		int i = (int)((long long)p & 0xf);
+		if(i == 0) g_blendmode = GL_ONE_MINUS_SRC_ALPHA;
+		else g_blendmode = GL_ONE;
 	}
 }
 static void lmsRadioCB(GtkWidget *button, gpointer ){
@@ -1302,7 +1324,8 @@ static GtkAdjustment* mk_spinner(const char* txt, GtkWidget* container,
 	adj = (GtkAdjustment *)gtk_adjustment_new(
 		start, min, max, step, step, 0.0);
 	float climb = 0.0; int digits = 0;
-	if(step <= 0.01){ climb = 0.001; digits = 3; }
+	if(step <= 0.001){ climb = 0.0001; digits = 4; }
+	else if(step <= 0.01){ climb = 0.001; digits = 3; }
 	else if(step <= 0.1){ climb = 0.01; digits = 2; }
 	else if(step <= 0.99){ climb = 0.1; digits = 1; }
 	spinner = gtk_spin_button_new (adj, climb, digits);
@@ -1400,7 +1423,7 @@ static void getTemplateCB( GtkWidget *, gpointer p){
 		g_c[g_channel[j]]->updateTemplate(aB+1);
 		//update the UI.
 		gtk_adjustment_set_value(g_apertureSpin[j*2+aB],
-								g_c[g_channel[j]]->getAperture(aB));
+								g_c[g_channel[j]]->m_aperture[aB]);
 		//remove the old poly, now that we've used it.
 		g_c[g_channel[j]]->resetPoly();
 	}
@@ -1661,7 +1684,7 @@ int main(int argn, char **argc)
 			GtkWidget* bx3 = gtk_hbox_new (FALSE, 2);
 			gtk_container_add (GTK_CONTAINER (bx2), bx3);
 			g_apertureSpin[i*2+j] = mk_spinner("", bx3,
-								  g_c[g_channel[i]]->getAperture(j), 0, 255*16, 2,
+								  g_c[g_channel[i]]->m_aperture[j], 0, 1, 0.0001,
 								  apertureSpinCB, i*2+j);
 			//a button for disable.
 			button = gtk_button_new_with_label("off");
@@ -1728,6 +1751,8 @@ int main(int argn, char **argc)
 	//add draw mode (applicable to all)
 	mk_radio("lines,points", 2,
 			 v1, false, "draw mode", drawRadioCB);
+	mk_radio("normal,accum", 2,
+			 v1, false, "blend mode", blendRadioCB);
 
 	bx = gtk_hbox_new (FALSE, 3);
 	//add a pause / go button (applicable to all)
