@@ -30,17 +30,8 @@
 #include "sock.h"
 #include "PO8e.h"
 
-#define NSAMP (24*1024)
-#define NDISPW 256
-#ifdef EMG
-#define NFBUF 8 //for EMG
-#else
-#define NFBUF 4
-#endif
-#define NSBUF	1024
-
 #include "../firmware_stage9_mf/memory.h"
-#include "headstage.h"
+#include "gtkclient.h"
 #include "cgVertexShader.h"
 #include "vbo.h"
 #include "channel.h"
@@ -67,15 +58,15 @@ float		g_viewportSize[2] = {640, 480}; //width, height.
 
 class Channel;
 
-static float	g_fbuf[NFBUF][NSAMP*3]; //continuous waveform. range [-1 .. 1]. For drawing. 
+float	g_fbuf[NFBUF][NSAMP*3]; //continuous waveform. range [-1 .. 1]. For drawing. 
 i64	g_fbufW; //where to write to (always increment)
 i64	g_fbufR; //display thread reads from here - copies to mem
-static float	g_obuf[96][256]; //looping samples of the waveform.  for sorting. [-1 .. 1]
+float	g_obuf[96][256]; //looping samples of the waveform.  for sorting. [-1 .. 1]
 i64	g_sample = 0; 
 i64				g_lastSpike[96][3]; 
 unsigned int 	g_nsamp = 4096; //given the current level of zoom (1 = 4096 samples), how many samples to update?
-static float 	g_sbuf[2][96*NSBUF*2]; //2 units, 96 channels, 1024 spikes, 2 floats / spike.
-static float	g_rasterSpan = 10.f; // %seconds.
+float 	g_sbuf[2][96*NSBUF*2]; //2 units, 96 channels, 1024 spikes, 2 floats / spike.
+float	g_rasterSpan = 10.f; // %seconds.
 i64	g_sbufW[2];
 i64	g_sbufR[2];
 Channel*		g_c[96];
@@ -110,6 +101,8 @@ float g_unsortrate = 0.0; //the rate that unsorted WFs get through.
 FILE* g_saveFile = 0;
 bool g_closeSaveFile = false;
 i64 g_saveFileBytes;
+
+extern void* po8_thread(void*); 
 
 double g_timeOffset = 0.0; //offset between local time and bridge time.
 
