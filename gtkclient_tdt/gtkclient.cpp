@@ -102,8 +102,6 @@ FILE* g_saveFile = 0;
 bool g_closeSaveFile = false;
 i64 g_saveFileBytes;
 
-extern void* po8_thread(void*); 
-
 double g_timeOffset = 0.0; //offset between local time and bridge time.
 
 int g_totalPackets = 0;
