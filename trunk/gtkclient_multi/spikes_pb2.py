@@ -7,6 +7,7 @@ from google.protobuf import descriptor_pb2
 # @@protoc_insertion_point(imports)
 
 
+
 DESCRIPTOR = descriptor.FileDescriptor(
   name='spikes.proto',
   package='',
@@ -168,7 +169,8 @@ _DISPLAY_MSG = descriptor.Descriptor(
   serialized_end=301,
 )
 
-
+DESCRIPTOR.message_types_by_name['Spike_msg'] = _SPIKE_MSG
+DESCRIPTOR.message_types_by_name['Display_msg'] = _DISPLAY_MSG
 
 class Spike_msg(message.Message):
   __metaclass__ = reflection.GeneratedProtocolMessageType
