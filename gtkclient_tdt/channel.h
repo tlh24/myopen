@@ -18,7 +18,6 @@ void glPrint(char *text);
 //need some way of encapsulating per-channel information. 
 class Channel {
 private:
-	float	m_aperture[2]; 
 	float m_threshold; 
 	float	m_centering; //left/right centering. used to look for threshold crossing.
 public:
@@ -27,7 +26,8 @@ public:
 	VboPca*	m_pcaVbo; //2D points, with color. 
 	float	m_pca[2][32]; //range 1 mean 0
 	float m_pcaScl[2]; //sqrt of the eigenvalues.
-	float	m_template[2][16]; // range 1 mean 0.
+	float	m_template[2][32]; // range 1 mean 0.
+	float	m_aperture[2]; //aka MSE. 
 	float	m_loc[4]; 
 	int	m_ch; //channel number, obvi.
 	float m_gain; 
@@ -49,17 +49,15 @@ public:
 			m_pca[1][j] = (j > 15 ? 1.f/8.f : -1.f/8.f); 
 			m_pcaScl[0] = m_pcaScl[1] = 1.f; 
 		}
-		unsigned char tmplA[16]={21,37,82,140,193,228,240,235,219,198,178,162,152,146,140,135};
-		unsigned char tmplB[16]={122,134,150,160,139,90,60,42,35,52,87,112,130,135,142,150};
-		for(int j=0; j<16; j++){
-			m_template[0][j] = ((float)tmplA[j] / 255.f)-0.5f;
-			m_template[1][j] = ((float)tmplB[j] / 255.f)-0.5f; 
+		for(int j=0; j<32; j++){
+			m_template[0][j] = 0.5*sinf(j/6.f); 
+			m_template[1][j] = 0.4*sinf((j+12)/8.f); 
 		}
 		//read from sql if it's there..
 		for(int j=0; j<2; j++){
 			sqliteGetBlob(ch, j, "pca", &(m_pca[j][0]), 32);
-			sqliteGetBlob(ch, j, "template", &(m_template[j][0]), 16);
-			m_aperture[j] = sqliteGetValue2(ch, j, "aperture", 56.f); 
+			sqliteGetBlob(ch, j, "template", &(m_template[j][0]), 32);
+			m_aperture[j] = sqliteGetValue2(ch, j, "aperture", 0.003f); 
 		}
 		sqliteGetBlob(ch, 0, "pcaScl", m_pcaScl, 2);
 		m_threshold = sqliteGetValue(ch, "threshold", 0.6f); 
@@ -118,7 +116,7 @@ public:
 	void save(){
 		for(int j=0; j<2; j++){
 			sqliteSetBlob(m_ch, j, "pca", &(m_pca[j][0]), 32);
-			sqliteSetBlob(m_ch, j, "template", &(m_template[j][0]), 16);
+			sqliteSetBlob(m_ch, j, "template", &(m_template[j][0]), 32);
 			sqliteSetValue2(m_ch, j, "aperture", m_aperture[j]); 
 		}
 		sqliteSetBlob(m_ch, 0, "pcaScl", m_pcaScl, 2);
@@ -210,10 +208,8 @@ public:
 	}
 	void addPoly(float* f){ m_pcaVbo->addPoly(f); }
 	void resetPoly(){ m_pcaVbo->m_polyW = 0; }
-	unsigned int getAperture(int n) { return (unsigned int)(m_aperture[n]);}
-	void setApertureLocal(unsigned int a, int n){
-		if(n >= 0 && n <= 1) m_aperture[n] = a; 
-		float aperture = (float)a/255.f; 
+	void setApertureLocal(float aperture, int n){
+		if(n >= 0 && n <= 1) m_aperture[n] = aperture; 
 		float color[3] = {0.f, 1.f, 1.f}; 
 		if(n == 1){color[0] = 1.f; color[1] = 0.f; color[2] = 0.f; }
 		m_pcaVbo->updateAperture(m_template[n], aperture, color); 
@@ -253,12 +249,12 @@ public:
 			glLineWidth(3.f); 
 			glBegin(GL_LINE_STRIP);
 			for(int k=0; k<2; k++){
-				for(int j=0; j<16; j++){
+				// cyan -> purple; red -> orange (color wheel)
+				if(k == 0) glColor4f(0.6f, 0.f, 1.f, 0.65f);
+				else glColor4f(1.f, 0.5f, 0.f, 0.65f);
+				for(int j=0; j<32; j++){
 					float ny = m_template[k][j] + 0.5f;
-					float nx = (float)(j+8)/31.f; 
-					// cyan -> purple; red -> orange (color wheel)
-					if(k == 0) glColor4f(0.6f, 0.f, 1.f, 0.65f);
-					else glColor4f(1.f, 0.5f, 0.f, 0.65f);
+					float nx = (float)(j)/31.f; 
 					glVertex3f(nx*ow+ox, ny*oh+oy, 0.f);
 				}
 				glColor4f(0.f, 0.f, 0.f, 0.75f);
@@ -342,23 +338,13 @@ public:
 		float temp[32]; 
 		m_pcaVbo->getTemplate(temp, aperture, color); 
 		printf("template %d ", unit); 
-		for(int i=0; i<16; i++){
-			m_template[unit-1][i] = temp[i+8]; 
-			printf("%d ", (int)((temp[i+8]+0.5f) * 255)); 
+		for(int i=0; i<32; i++){
+			m_template[unit-1][i] = temp[i]; 
+			printf("%d ", (int)((temp[i]+0.5f) * 255)); 
 		}
 		printf("\n"); 
-		m_aperture[unit-1] = aperture * 255; 
+		m_aperture[unit-1] = aperture; 
 		printf("m_aperture[%d][%d] = %d\n", m_ch, unit-1, (int)m_aperture[unit-1]); 
-		//update sorting based on new aperture.
-		//m_pcaVbo->updateAperture(m_template[unit-1], aperture, color); 
-		//store the equivalent of the unsigned bytes actually used on the headstage.
-		for(int i=0; i<16; i++){
-			float r = round((m_template[unit-1][i] + 0.5f)*255.f); 
-			m_template[unit-1][i] = r/255.f - 0.5f; 
-		}
-		//let's send the new data to the headstage. 
-		//setTemplate(m_ch, unit-1); 
-		//setAperture(m_ch); 
 		return true; 
 	}
 	void resetPca(){
