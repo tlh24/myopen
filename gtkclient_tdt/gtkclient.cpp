@@ -948,6 +948,7 @@ void* po8_thread(void*){
 							//check if this exceeds minimum ISI. 
 							if(g_sample - g_lastSpike[k][unit] > g_minISI*24.4140625){
 								g_c[k]->addWf(wf, unit, time, true);
+								g_c[k]->updateISI(unit, g_sample - numSamples + m); 
 								g_lastSpike[k][unit] = g_sample; 
 							}else{
 								g_c[k]->m_isiViolations++; 
@@ -1136,24 +1137,6 @@ static void gainSetAll(gpointer ){
 		gtk_adjustment_set_value(g_gainSpin[i], gain);
 	for(int i=0; i<96; i++)
 		g_c[i]->resetPca();
-}
-static void thresholdSpinCB( GtkWidget* , gpointer p){
-	int h = (int)((long long)p & 0xf);
-	if(h >= 0 && h < 4 && !g_uiRecursion){
-		int ch = g_channel[h];
-		float thresh = gtk_adjustment_get_value(g_thresholdSpin[h]);
-		g_c[ch]->setThreshold(thresh);
-		printf("thresholdSpinCB: %f\n", thresh);
-	}
-}
-static void centeringSpinCB( GtkWidget* , gpointer p){
-	int h = (int)((long long)p & 0xf);
-	if(h >= 0 && h < 4 && !g_uiRecursion){
-		int ch = g_channel[h];
-		float t = gtk_adjustment_get_value(g_centeringSpin[h]);
-		g_c[ch]->setCentering(t);
-		printf("centeringSpinCB: %f\n", t);
-	}
 }
 static void unsortRateSpinCB( GtkWidget* , gpointer){
 	float t = gtk_adjustment_get_value(g_unsortRateSpin);
@@ -1469,7 +1452,6 @@ int main(int argn, char **argc)
 	GtkWidget *box1, *bx, *v1, *label;
 	GtkWidget *paned;
 	GtkWidget *frame;
-	GtkWidget *notebook;
 	GtkWidget *button, *combo;
 	//GtkWidget *paned2;
 

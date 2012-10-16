@@ -32,9 +32,9 @@ public:
 	int	m_ch; //channel number, obvi.
 	float m_gain; 
 	float m_agc; 
-	i64 	m_isi[2][100]; //counts of the isi, in units of 4 packets -- 768us/packet.
+	i64 	m_isi[2][100]; //counts of the isi, in units of ms.
 	i64	m_isiViolations; 
-	int	m_lastSpike[2]; //zero when a spike occurs. 
+	i64	m_lastSpike[2]; //zero when a spike occurs. in samples.
 	
 	Channel(int ch){
 		m_wfVbo = new Vbo(6, NWFVBO, 34); //sorted units, with color. 
@@ -295,9 +295,9 @@ public:
 			glVertex2f(c+ox, t+0.2*oh); 
 			glEnd(); 
 			if(1){
+				int nisi = sizeof(m_isi[0])/sizeof(m_isi[0][0]);
 				//draw shaded plots of the ISI. 
 				for(int u=0; u<2; u++){
-					int nisi = sizeof(m_isi[0])/sizeof(m_isi[0][0]);
 					i64 max = 1; 
 					for(int i=0; i < nisi; i++){
 						max = m_isi[u][i] > max ? m_isi[u][i] : max; 
@@ -316,12 +316,31 @@ public:
 					}
 					glEnd();
 				}
+				//labels -- every 10ms.
+				glColor4f(1.f, 1.f, 1.f, 0.35);
+				for(int i=0; i<nisi/10; i++){
+					float x1 = (float)(i*10)/((float)(nisi-1)); 
+					float yof = 2.f/g_viewportSize[1]; //2 pixels vertical offset.
+					float xof = 2.f/g_viewportSize[0]; 
+					glRasterPos2f(x1*ow+ox+ow+xof, oy+yof); 
+					char buf[64];
+					snprintf(buf, 64, "%d", i*10); 
+					glPrint(buf);
+				}
+				glColor4f(1.f, 1.f, 1.f, 0.2);
+				glBegin(GL_LINES); 
+				for(int i=0; i<nisi/10; i++){
+					float x1 = (float)(i*10)/((float)(nisi-1)); 
+					glVertex2f(x1*ow+ox+ow, oy); 
+					glVertex2f(x1*ow+ox+ow, oy + 25.f*2.f/g_viewportSize[1]); 
+				}
+				glEnd(); 
 			}
 		}
 		//finally, the channel. upper left hand corner.
 		glColor4f(1.f, 1.f, 1.f, 0.5);
 		glRasterPos2f(ox, oy + oh - 13.f*2.f/g_viewportSize[1]); //13 pixels vertical offset.
-		//kearning is from the lower right hand corner.
+		//kearning is from the lower left hand corner.
 		char buf[64];
 		snprintf(buf, 64, "Ch %d", m_ch); 
 		glPrint(buf);
@@ -470,20 +489,16 @@ public:
 		m_pcaVbo->copy(false,true); 
 		printf("copy %Lf\n", gettime()-t); 
 	}
-	void spike(int unit){
+	void updateISI(int unit, int sample){
 		//this used for calculating ISI. 
 		if(unit >=0 && unit < 2){
-			unsigned int b = m_lastSpike[unit]/4; 
-			if(b > 0 && b < sizeof(m_isi[0])/sizeof(m_isi[0][0]))
+			int b = round((sample - m_lastSpike[unit])/24.4140625); 
+			int nisi = (int)(sizeof(m_isi[0])/sizeof(m_isi[0][0])); 
+			if(b > 0 && b < nisi)
 				m_isi[unit][b]++; 
-			m_lastSpike[unit] = 0; 
+			m_lastSpike[unit] = sample; 
 		}
 	}
-	void isiIncr(){
-		m_lastSpike[0]++; 
-		m_lastSpike[1]++; 
-	}
-	
 };
 
 #endif
