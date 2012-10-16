@@ -40,6 +40,9 @@ clean:
 
 wf_plot: wf_plot.c
 	gcc -g -lSDL -lGL -lGLU -lglut -lpthread -lmatio -lpng -o $@ wf_plot.c
+	
+po8e: po8e.cpp
+	gcc -g -lPO8eStreaming -o $@ $<
 
 deps:
 	sudo apt-get install libprotobuf-dev protobuf-compiler libgtk2.0-dev libgtkgl2.0-dev \
