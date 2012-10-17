@@ -41,6 +41,7 @@
 #endif
 #define NSBUF	1024
 
+//the magic number. should get from command line
 #define NSCALE 2
 
 #include "../firmware_stage9_tmpl/memory.h"
@@ -69,57 +70,63 @@ cgVertexShader*		g_vsThreshold;
 float		g_cursPos[2];
 float		g_viewportSize[2] = {640, 480}; //width, height.
 
-class Channel;
+int  g_radioChannel[NSCALE] = {114, 124};
+char g_bridgeIP[NSCALE][256]; //which thread has which bridge IP. Needs a mutex lock.
 
-int g_radioChannel[NSCALE] = {114, 124};
 
 static float	g_fbuf[NFBUF][NSAMP*3]; //continuous waveform. range [-1 .. 1]
-i64	g_fbufW; //where to write to (always increment)
+i64	g_fbufW; //where to write to (always increment), might not be thread safe
 i64	g_fbufR; //display thread reads from here - copies to mem
 unsigned int 	g_nsamp = 4096; //given the current level of zoom (1 = 4096 samples), how many samples to update?
 static float 	g_sbuf[NSCALE][2][128*NSBUF*2]; //2 units, 128 channels, 1024 spikes, 2 floats / spike.
 static float	g_rasterSpan = 10.f; // %seconds.
-i64	g_sbufW[2];
-i64	g_sbufR[2];
 
-Channel*	g_c[NSCALE*128];
+i64	g_sbufW[NSCALE][2];
+i64	g_sbufR[NSCALE][2];
+
+class Channel;
+Channel*	g_c[NSCALE*128]; //g_c is the only variable that holds absolute indexing for scale
+//remember to address properly  adr+(128*tid) and skip when used by other threads
+//all other variables are index per thread, although make sure to address whenever g_channel is used( g_channel is absolute
+//as well) to map correctly to bridge (adr-(128*tid) or adr&127) eg. channel 128 is channel 0 on a second bridge
 FiringRate	g_fr[NSCALE][128][2];
 GLuint 		g_base;            // base display list for the font set.
 
-bool g_die = false;
+bool   g_die = false;
 double g_pause = -1.0;
 double g_rasterZoom = 0.15;
-bool g_cycle = false;
-bool g_showPca = false;
-bool g_rtMouseBtn = false;
-int g_polyChan = 0;
-bool g_addPoly = false;
-int g_channel[4] = {0, 32*NSCALE, 64*NSCALE, 96*NSCALE};
-int	g_signalChain = 10; //what to sample in the headstage signal chain.
-//int	g_radioChannel = 114; //the radio channel to use.
+bool   g_cycle = false;
+bool   g_showPca = false;
+bool   g_rtMouseBtn = false;
+int    g_polyChan = 0;
+bool   g_addPoly = false;
+int    g_channel[4] = {0, 32*NSCALE, 64*NSCALE, 96*NSCALE};
+int	   g_signalChain = 10; //what to sample in the headstage signal chain.
 
 bool g_out = false;
 bool g_templMatch[NSCALE][128][2];
-//the headstage match a,b over all 128 channels. cleared after every packet!!
+//the headstage match a,b over all 128 channels, per thread. cleared after every packet!!
+
+//circular buffers selected channels. Threads access indexes only associated with channels currently in focus
 float        g_sortAperture[4][2][16]; //the quality of the match found, circular buffer.
-i64	     g_sortOffset[4][2][16]; //offset to the best match.
+i64	     	 g_sortOffset[4][2][16]; //offset to the best match.
 unsigned int g_sortUnit[4][16]; //have to remember to zero all of these.
-unsigned int g_sortI; //index to the (short) circular buffer.
+unsigned int g_sortI[NSCALE]; //index to the (short) circular buffer, needs to be per thread(better performing) or mutexed.
 i64			 g_sortWfOffset[4];
-int 			 g_sortWfUnit[4];
+int 		 g_sortWfUnit[4];
 i64			 g_unsortCount[4];
 
 float g_unsortrate = 0.0; //the rate that unsorted WFs get through.
 FILE* g_saveFile = 0;
-bool g_closeSaveFile = false;
-i64 g_saveFileBytes;
+bool  g_closeSaveFile = false;
+i64   g_saveFileBytes;
 
-double g_startTime = 0.0;
+double       g_startTime = 0.0;
 
-int g_totalPackets = 0;
-int g_strobePackets = 0;
+int          g_totalPackets = 0;
+int          g_strobePackets = 0;
 unsigned int g_dropped = 0; //compare against the bridge.
-int g_totalDropped = 0;
+int          g_totalDropped = 0;
 
 enum MODES {
 	MODE_RASTERS,
@@ -131,20 +138,19 @@ int g_drawmode = GL_LINE_STRIP;
 
 int g_rxsock[NSCALE];//rx from hardware. right now only support 1 headstage.
 int g_txsock[NSCALE];//transmit back to hardware.  again, only one supported now.
-int g_spikesock; //transmit spike times to client (need only one)
+
+int g_spikesock = 0; //transmit spike times to client (need only one)
 int g_strobesock = 0; //socket for strobing client (need only one)
 
-struct sockaddr_in g_txsockAddr;
-
-sockaddr_in g_txsockAddrArr[NSCALE];
+struct sockaddr_in g_txsockAddrArr[NSCALE];
 
 bool	g_vbo1Init = false;
-GLuint g_vbo1[NFBUF]; //for the waveform display
-GLuint g_vbo2[2] = {0,0}; //for spikes.
+GLuint  g_vbo1[NFBUF]; //for the waveform display
+GLuint  g_vbo2[2] = {0,0}; //for spikes. currently overwriting this.
 
 //global labels..
 //GtkWidget* g_gainlabel[16];
-GtkWidget* g_headechoLabel;
+GtkWidget*     g_headechoLabel;
 GtkAdjustment* g_channelSpin[4] = {0,0,0,0};
 GtkAdjustment* g_gainSpin[4] = {0,0,0,0};
 GtkAdjustment* g_agcSpin[4] = {0,0,0,0};
@@ -154,9 +160,9 @@ GtkAdjustment* g_centeringSpin[4];
 GtkAdjustment* g_unsortRateSpin;
 GtkAdjustment* g_zoomSpin;
 GtkAdjustment* g_rasterSpanSpin;
-GtkWidget* g_pktpsLabel;
-GtkWidget* g_stbpsLabel; //strobe per second label, todo: put in raster
-GtkWidget* g_fileSizeLabel;
+GtkWidget*     g_pktpsLabel;
+GtkWidget*     g_stbpsLabel; //strobe per second label, todo: put in raster
+GtkWidget*     g_fileSizeLabel;
 
 int g_uiRecursion = 0; //prevents programmatic changes to the UI from causing commands to be sent to the headstage.
 
@@ -166,11 +172,11 @@ pthread_t serverthread;
 pthread_t strobethread;
 pthread_attr_t attr;
 
+//add mutexes
 pthread_mutex_t mutex_totalPackets;
 pthread_mutex_t mutex_totalDropped;
 pthread_mutex_t mutex_saveFileBytes;
-
-//add mutexes
+pthread_mutex_t mutex_bridgeIP;
 
 i64 mod2(i64 a, i64 b){
 	i64 c = a % b;
@@ -415,19 +421,19 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		
 		for (int t=0; t<NSCALE; t++){
 		      for(int k=0; k<2; k++){
-			  if(g_sbufR[k] < g_sbufW[k]){
-				  i64 len = sizeof(g_sbuf[t][k])/8; //total # of pts.
-				  i64 w = g_sbufW[k];
-				  i64 sta = g_sbufR[k] % len;
-				  i64 fin = w % len;
-				  if(fin < sta) { //wrap
-					  copyData(g_vbo2[k], sta, len, g_sbuf[t][k], 2);
-					  copyData(g_vbo2[k],   0, fin, g_sbuf[t][k], 2);
-				  } else {
-					  copyData(g_vbo2[k], sta, fin, g_sbuf[t][k], 2);
+				  if(g_sbufR[k] < g_sbufW[t][k]){
+					  i64 len = sizeof(g_sbuf[t][k])/8; //total # of pts.
+					  i64 w = g_sbufW[t][k];
+					  i64 sta = g_sbufR[t][k] % len;
+					  i64 fin = w % len;
+					  if(fin < sta) { //wrap
+						  copyData(g_vbo2[k], sta, len, g_sbuf[t][k], 2);
+						  copyData(g_vbo2[k],   0, fin, g_sbuf[t][k], 2);
+					  } else {
+						  copyData(g_vbo2[k], sta, fin, g_sbuf[t][k], 2);
+					  }
+					  g_sbufR[t][k] = w;
 				  }
-				  g_sbufR[k] = w;
-			  }
 		   }
 		}
 		//and the waveform buffers.
@@ -719,12 +725,21 @@ static gboolean rotate (gpointer user_data){
 	gdk_window_process_updates (da->window, FALSE);
 
 	char str[256];
-	if(g_headecho != ((g_echo-1) & 0xf))
-		snprintf(str, 256, "headecho:%d (ASYNC)", g_headecho);
-	else
-		snprintf(str, 256, "headecho:%d (sync)", g_headecho);
-	gtk_label_set_text(GTK_LABEL(g_headechoLabel), str); //works!
-	g_oldheadecho = g_headecho;
+	
+	std::stringstream oss;
+	oss << "headecho:";
+	
+	for(int h =0; h < NSCALE; h++){
+			if(g_headecho[h] != ((g_echo[h]-1) & 0xf))
+				oss << g_radioChannel[h] <<": " << "(ASYNC) ";
+			else
+				oss << g_radioChannel[h]<< ": "  << "(SYNC) ";
+			
+				g_oldheadecho[h] = g_headecho[h];
+		}
+	
+	gtk_label_set_text(GTK_LABEL(g_headechoLabel), oss.str().c_str());
+
 	//update the packets/sec label too
 	snprintf(str, 256, "pkts/sec: %.2f\ndropped %d of %d \nBER %f per 1e6 bits",
 			(double)g_totalPackets/gettime(),
@@ -773,15 +788,17 @@ void destroy(GtkWidget *, gpointer){
 void* strobe_thread(void*){
   char buf2[1024];
   g_strobesock = setup_socket(8845, 0);
-  while(g_die == 0){
-	int sn = recvfrom(g_strobesock, buf2, sizeof(buf2),0, 0, 0);
-	double rxtime = gettime();
-      //check strobe
-      
-      	//have to enable multicast reception for the threads!
+  
+        	//have to enable multicast reception for the threads!
 	printf("**make sure you've enabled allmulti for the ethernet iface**\n");
 	printf("sudo ifconfig eth0 allmulti\n");
 	printf("put it in your /etc/network/interfaces file.\n");
+  
+  while(g_die == 0){
+	  
+	int sn = recvfrom(g_strobesock, buf2, sizeof(buf2),0, 0, 0);
+	double rxtime = gettime();
+      //check strobe
 	
 	if(sn > 0  && !g_die){
 		if(g_saveFile){
@@ -819,18 +836,21 @@ void* sock_thread(void* param){
   
 	int tid = (intptr_t) param;
 	
-	g_sendL = 0x4000;
-	g_sendbuf = (unsigned int*)malloc(g_sendL*32);
-	if(!g_sendbuf){
+	g_sendL[tid] = 0x4000;
+	g_sendbuf[tid] = (unsigned int*)malloc(g_sendL[tid]*32);
+	if(!g_sendbuf[tid]){
 		fprintf(stderr, "could not allocate sendbuf\n");
 		return 0;
 	}
-	g_sendR = 0;
-	g_sendW = 0;
+	g_sendR[tid] = 0;
+	g_sendW[tid] = 0;
 	double g_timeOffset = 0.0; //offset between local time and bridge time.
 
 	char destName[256]; destName[0] = 0;
 	char buf[1024+128+4];
+	bool isBridgeFound = false;
+	bool addressBound  = false;
+	
 	sockaddr_in from;
 	g_rxsock[tid] = setup_socket(4340+g_radioChannel[tid],0); //udp sock.
 	int bcastsock = setup_socket(4340,0); 
@@ -845,7 +865,7 @@ void* sock_thread(void* param){
 
 	// this code needs to be seriously refactored to allow multiple bridges.
 		// or does it? 
-	while(!destName[0]){
+	while(!isBridgeFound){
 		socklen_t fromlen = sizeof(from);
 		int n = recvfrom(bcastsock, buf, sizeof(buf),0,
 						 (sockaddr*)&from, &fromlen);
@@ -854,15 +874,31 @@ void* sock_thread(void* param){
 			printf("rxed buf: %s\n", buf);
 			inet_ntop(AF_INET, (const void*)(&(from.sin_addr)),
 						 destName, 256);
-			printf("a bridge appears to be at %s\n",destName);
+			printf("a wild bridge appears at %s\n",destName);
+			for(int t = 0; t < NSCALE; t++){
+					if(strcmp(g_bridgeIP[t], destName) == 0){
+						addressBound = true;
+					}
+			}
+			if(addressBound) {
+				printf("bridge already bound at %s\n",destName);
+				addressBound = false;
+				continue;
+			}
+			else
+			{
 			//send a response.
-			buf[0] = g_radioChannel[tid]; /** radio channel. **/
-			printf("radio channel set to %d\n", buf[0]); 
+				strcpy(g_bridgeIP[tid], destName);
+				isBridgeFound = true;
+				
+				buf[0] = g_radioChannel[tid]; /** radio channel. **/
+				printf("radio channel set to %d. It's super effective!\n", buf[0]); 
 #ifdef EMG
-			buf[0] += 128; //put the bridge in EMG compat mode.
+				buf[0] += 128; //put the bridge in EMG compat mode.
 #endif
-			buf[1] = 0;
-			n = sendto(bcastsock,buf,2,0,(sockaddr*)&from,sizeof(from));
+				buf[1] = 0;
+				n = sendto(bcastsock,buf,2,0,(sockaddr*)&from,sizeof(from));
+			}
 		}
 	}
 	//must close that socket so another client may use it. 
@@ -933,8 +969,8 @@ packet format in the file, as saved here:
 				}
 
 				//if there are messages to be written, save them too.
-				while(g_messW > g_messR){
-					unsigned int len = strnlen(g_messages[g_messR % 1024],128);
+				while(g_messW[tid] > g_messR[tid]){
+					unsigned int len = strnlen(g_messages[g_messR[tid] % 1024],128);
 					unsigned int tmp = 0xb00a5c11; //boo!  it's ascii
 					tmp +=tid;
 					fwrite((void*)&tmp, 4, 1, g_saveFile);
@@ -943,13 +979,14 @@ packet format in the file, as saved here:
 					tmp += len; //size of the ensuing text data.
 					fwrite((void*)&tmp, 4, 1, g_saveFile);
 					fwrite((void*)&rxtime, 8, 1, g_saveFile);
-					fwrite((void*)g_messages[g_messR % 1024], len, 1, g_saveFile);
+					fwrite((void*)g_messages[g_messR[tid] % 1024], len, 1, g_saveFile);
 					pthread_mutex_lock(&mutex_saveFileBytes);
 					g_saveFileBytes += 16 + len;
 					pthread_mutex_unlock(&mutex_saveFileBytes);
-					g_messR++;
+					g_messR[tid]++;
 				}
 			}
+		
 		if(n > 0){
 
 			char* ptr = buf;
@@ -1025,18 +1062,17 @@ packet format in the file, as saved here:
 					g_templMatch[tid][j][0] = g_templMatch[tid][j][1] = false;
 				}
 				double time = ((double)p->ms / BRIDGE_CLOCK) + g_timeOffset;
-				decodePacket(p, channels, match, g_headecho);
+				decodePacket(p, channels, match, g_headecho[tid]);
 				for(int j=0; j<32; j++){
 					int adr = channels[j];
 					for(int k=0; k<2; k++){
 						if(match[j] == k+1){
 							g_templMatch[tid][adr][k] = true;
 							//add to the spike raster list.
-							printf("about to hit this");
-							i64 w = g_sbufW[k] % (i64)(sizeof(g_sbuf[tid][k])/8);
+							i64 w = g_sbufW[t][k] % (i64)(sizeof(g_sbuf[tid][k])/8);
 							g_sbuf[tid][k][w*2+0] = (float)(time);
 							g_sbuf[tid][k][w*2+1] = (float)adr;
-							g_sbufW[k] ++;
+							g_sbufW[t][k] ++;
 							g_fr[tid][adr][k].add(time);
 							//calcISI.
 							g_c[adr+(128*tid)]->spike(k);
@@ -1050,11 +1086,15 @@ packet format in the file, as saved here:
 				//color the rasters. really should color differently.
 				for(int j=0; j<6; j++){
 					for(int k=0; k<NFBUF; k++){
-						char samp = p->data[j*4+k]; //-128 -> 127.
 						int ch = g_channel[k];
+						if(ch > (tid+1)*128){ //channel not in bridge, don't update
+						  continue;}
+						
+						char samp = p->data[j*4+k]; //-128 -> 127.
 						z = 0.f;
-						if(g_templMatch[tid][ch][0]) z = 1.f;
-						if(g_templMatch[tid][ch][1]) z = 2.f;
+						//>128 -> 0-127
+						if(g_templMatch[tid][ch&127][0]) z = 1.f;
+						if(g_templMatch[tid][ch&127][1]) z = 2.f;
 						g_fbuf[k][(g_fbufW % g_nsamp)*3 + 1] =
 							(((samp+128.f)/255.f)-0.5f)*2.f; //range +-1.
 						g_fbuf[k][(g_fbufW % g_nsamp)*3 + 2] = z;
@@ -1072,11 +1112,11 @@ packet format in the file, as saved here:
 						if(h > (tid+1)*128){
 						  continue; //this channel is not in this bridge?
 						  //should call this before?
-						}
+									}
 						
-						g_sortUnit[k][g_sortI] = 0;
-						g_sortAperture[k][0][g_sortI] = 2048;
-						g_sortAperture[k][1][g_sortI] = 2048;
+						g_sortUnit[k][g_sortI[tid]] = 0;
+						g_sortAperture[k][0][g_sortI[tid]] = 2048;
+						g_sortAperture[k][1][g_sortI[tid]] = 2048;
 						for(int m=0; m<6; m++){
 							//first check to see if it matches template here.
 							//template: might as well make it equal on both sides; no reason for bias.
@@ -1094,9 +1134,9 @@ packet format in the file, as saved here:
 							}
 							//record the best match.
 							for(int u=0; u<2; u++){
-								if(g_sortAperture[k][u][g_sortI] > saa[u]){
-									g_sortAperture[k][u][g_sortI] = saa[u];
-									g_sortOffset[k][u][g_sortI] = offset -8; // [8 pre]
+								if(g_sortAperture[k][u][g_sortI[tid]] > saa[u]){
+									g_sortAperture[k][u][g_sortI[tid]] = saa[u];
+									g_sortOffset[k][u][g_sortI[tid]] = offset -8; // [8 pre]
 								}
 							}
 						}
@@ -1107,20 +1147,20 @@ packet format in the file, as saved here:
 							float saa = 16*256;
 							i64 off = 0;
 							for(int d=0; d<4; d++){
-								float f = g_sortAperture[k][u][(g_sortI-d)&0xf];
+								float f = g_sortAperture[k][u][(g_sortI[tid]-d)&0xf];
 								if(f < saa){
 									saa = f;
-									off = g_sortOffset[k][u][(g_sortI-d)&0xf];
+									off = g_sortOffset[k][u][(g_sortI[tid]-d)&0xf];
 								}
 							}
-							if(g_templMatch[tid][h][u]){ //problem is this persists over 4 packets.
+							if(g_templMatch[tid][h&127][u]){ //problem is this persists over 4 packets.
 								if(saa <= aper){
 									g_sortWfUnit[k] = u+1;
 									g_sortWfOffset[k] = off;
 									//the headstage and client are in agreement.
 									//clear client's store of potential matches.
 									for(int d=0; d<4; d++){
-										g_sortAperture[k][u][(g_sortI-d)&0xf] = 2048;
+										g_sortAperture[k][u][(g_sortI[tid]-d)&0xf] = 2048;
 									}
 								}else{
 									//headstage found a match. false positive.
@@ -1130,7 +1170,7 @@ packet format in the file, as saved here:
 								}
 							}
 							//check to see if the headstage may have missed a spike.
-							if(g_sortAperture[k][u][(g_sortI-4)&0xf] < aper){
+							if(g_sortAperture[k][u][(g_sortI[tid]-4)&0xf] < aper){
 								//the headstage may have missed a spike.
 								if(u == 1 && g_templMatch[tid][h][0]){
 									printf("channel %d unit b occluded by unit a.\n",h);
@@ -1141,7 +1181,7 @@ packet format in the file, as saved here:
 									g_sortWfOffset[k] = off;
 								}
 							}
-							if(!g_templMatch[tid][h][u] && !g_sortWfUnit[k]){
+							if(!g_templMatch[tid][h&127][u] && !g_sortWfUnit[k]){
 								//normal,nothing.
 								//don't copy if we have something queued.
 								//check to see if we crossed threshold.
@@ -1177,12 +1217,12 @@ packet format in the file, as saved here:
 								wf[m] = g_fbuf[k][mod2(o + m, g_nsamp)*3+1];
 								wf[m] = wf[m] * 0.5f;
 							}
-							g_c[g_channel[k]]->addWf(wf, g_sortWfUnit[k], time, true);
+							g_c[h]->addWf(wf, g_sortWfUnit[k], time, true);
 							g_sortWfUnit[k] = 0;
 						}
 					} // over k, the channels.
-					g_sortI++;
-					g_sortI &= 0xf;
+					g_sortI[tid]++;
+					g_sortI[tid] &= 0xf;
 					}
 				}
 			}
@@ -1191,7 +1231,7 @@ packet format in the file, as saved here:
 		// (this occurs after RX of a packet, so we should not overflow the
 		// bridge -- bridge sends out packets of 256 + 4 bytes (one frame
 		// of 8 32-byte radio packets)
-		if(g_sendR < g_sendW && n > 0){
+		if(g_sendR[tid] < g_sendW[tid] && n > 0){
 			//send one command packet for every 3 RXed frame --
 			// this allows 3 duplicate transmits from bridge to headstage of
 			// each command packet.  redundancy = safety = good.
@@ -1199,14 +1239,14 @@ packet format in the file, as saved here:
 				send_delay = 0;
 				//printf("sending message to bridge ..\n");
 				double txtime = gettime();
-				unsigned int* ptr = g_sendbuf;
-				ptr += (g_sendR % g_sendL) * 8; //8 because we send 8 32-bit ints /pkt.
+				unsigned int* ptr = g_sendbuf[tid];
+				ptr += (g_sendR[tid] % g_sendL[tid]) * 8; //8 because we send 8 32-bit ints /pkt.
 				n = sendto(g_txsock[tid],ptr,32,0,
-					(struct sockaddr*)&g_txsockAddrArr[tid], sizeof(g_txsockAddr));
+					(struct sockaddr*)&g_txsockAddrArr[tid], sizeof(g_txsockAddrArr[tid]));
 				if(n < 0)
 					printf("failed to send a message to bridge.\n");
 				else
-					g_sendR++;
+					g_sendR[tid]++;
 				//save the command in the file, too, so we can reconstruct it later.
 				if(g_saveFile){
 					unsigned int tmp = 0xc0edfad0;
@@ -1249,7 +1289,7 @@ packet format in the file, as saved here:
 #endif
 	}
 	close_socket(g_rxsock[tid]);
-	free(g_sendbuf);
+	free(g_sendbuf[tid]);
 	return 0;
 }
 void* server_thread(void* ){
@@ -1351,7 +1391,7 @@ static gboolean chanscan(gpointer){
 		base &= 31;
 		for(int k=0; k<4; k++){
 			g_channel[k] = base + k*32*NSCALE;
-			g_channel[k] &= (128-1)*NSCALE;
+			g_channel[k] &= ((128*NSCALE)-1);
 			gtk_adjustment_set_value(g_channelSpin[k], (double)g_channel[k]);
 		}
 		g_uiRecursion--;
@@ -1385,7 +1425,7 @@ static void channelSpinCB( GtkWidget*, gpointer p){
 		//this allows more PCA points for sorting!
 		if(g_mode == MODE_SORT && k == 0){
 			for(int j=1; j<4; j++){
-				g_channel[j] = (g_channel[0] + j) & (128-1)*NSCALE;
+				g_channel[j] = (g_channel[0] + j) & ((128*NSCALE)-1);
 				//this does not recurse -- have to set the other stuff manually.
 				g_uiRecursion++;
 				gtk_adjustment_set_value(g_channelSpin[j], (double)g_channel[j]);
@@ -1830,7 +1870,7 @@ int main(int argn, char **argc)
 	}
 	
 	//add in a headstage channel # label
-	g_headechoLabel = gtk_label_new ("headch: 0");
+	g_headechoLabel = gtk_label_new ("headch:");
 	gtk_misc_set_alignment (GTK_MISC (g_headechoLabel), 0, 0);
 	gtk_box_pack_start (GTK_BOX (bx), g_headechoLabel, TRUE, TRUE, 0);
 	gtk_widget_show(g_headechoLabel);
@@ -1864,7 +1904,7 @@ int main(int argn, char **argc)
 
 		//channel spinner.
 		g_channelSpin[i] = mk_spinner("ch", bx3,
-									  g_channel[i], 0, (128-1)*NSCALE, 1,
+									  g_channel[i], 0, ((128*NSCALE)-1), 1,
 									  channelSpinCB, i);
 		//right of that, a gain spinner. (need to update depending on ch)
 		g_gainSpin[i] = mk_spinner("gain", bx3,
@@ -2117,9 +2157,11 @@ int main(int argn, char **argc)
 	// http://forums.fedoraforum.org/archive/index.php/t-242963.html
 	GTK_WIDGET_SET_FLAGS(da1, GTK_CAN_FOCUS );
 	
+	//mutex inits
 	pthread_mutex_init(&mutex_totalPackets, NULL);
 	pthread_mutex_init(&mutex_totalDropped, NULL);
 	pthread_mutex_init(&mutex_saveFileBytes, NULL);
+	pthread_mutex_init(&mutex_bridgeIP, NULL);
 	pthread_attr_init(&attr);
 	
 	
@@ -2135,9 +2177,9 @@ int main(int argn, char **argc)
 	pthread_create( &serverthread, &attr, server_thread, 0 );
 	pthread_create( &strobethread, &attr, strobe_thread, 0 );
 
-	while(g_sendbuf == 0){
+	//while(g_sendbuf == 0){
 		usleep(10000); //wait for the other thread to come up.
-	}
+	//}
 	//set the initial sampling stage.
 	gtk_combo_box_set_active(GTK_COMBO_BOX(combo), 12);
 	gtk_widget_show_all (window);
