@@ -1,20 +1,22 @@
 #ifndef __HEADSTAGE_H__
 #define __HEADSTAGE_H__
 
+#define NSCALE 2
+
 #define i64 long long
 #define u32 unsigned int
 //globals.  could make a class for these but .. eh
-extern unsigned int*	g_sendbuf;
-extern i64		g_sendW; //where to write to (in 32-byte increments)
-extern i64 		g_sendR; //where to read from
-extern i64		g_sendL; //the length of the buffer (in 32-byte packets)
+extern unsigned int*	g_sendbuf[NSCALE];
+extern i64		g_sendW[NSCALE]; //where to write to (in 32-byte increments)
+extern i64 		g_sendR[NSCALE]; //where to read from
+extern i64		g_sendL[NSCALE]; //the length of the buffer (in 32-byte packets)
 extern char		g_messages[1024][128]; //save these, plaintext, in the file.
-extern i64		g_messW;
-extern i64		g_messR;
+extern i64		g_messW[NSCALE];
+extern i64		g_messR[NSCALE];
 
-extern unsigned int g_echo;
-extern unsigned int g_headecho;
-extern unsigned int g_oldheadecho;
+extern unsigned int g_echo[NSCALE];
+extern unsigned int g_headecho[NSCALE];
+extern unsigned int g_oldheadecho[NSCALE];
 
 void saveMessage(const char *fmt, ...);
 void updateGain(int chan);
