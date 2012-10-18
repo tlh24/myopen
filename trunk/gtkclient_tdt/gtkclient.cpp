@@ -64,7 +64,7 @@ i64	g_fbufR; //display thread reads from here - copies to mem
 float	g_obuf[96][256]; //looping samples of the waveform.  for sorting. [-1 .. 1]
 i64	g_sample = 0; 
 i64				g_lastSpike[96][3]; 
-unsigned int 	g_nsamp = 4096; //given the current level of zoom (1 = 4096 samples), how many samples to update?
+unsigned int 	g_nsamp = 4096*6; //given the current level of zoom (1 = 4096 samples), how many samples to update?
 float 	g_sbuf[2][96*NSBUF*2]; //2 units, 96 channels, 1024 spikes, 2 floats / spike.
 float	g_rasterSpan = 10.f; // %seconds.
 i64	g_sbufW[2];
@@ -75,7 +75,6 @@ GLuint 		g_base;            // base display list for the font set.
 
 bool g_die = false;
 double g_pause = -1.0;
-double g_rasterZoom = 0.15;
 bool g_cycle = false;
 bool g_showPca = false;
 bool g_rtMouseBtn = false;
@@ -458,7 +457,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 	if(g_pause > 0.0) time = g_pause;
 
 	if(g_mode == MODE_RASTERS){
-		g_vsThreshold->setParam(2,"xzoom",g_rasterZoom);
+		g_vsThreshold->setParam(2,"xzoom",1.f/g_nsamp);
 
 		//glPushMatrix();
 		//glScalef(1.f, 0.5f, 1.f); //don't think this does anythaaang.
@@ -510,7 +509,23 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		}
 		//see glDrawElements for indexed arrays
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
-
+		//draw seconds / ms label here. 
+		for(int i=0; i<g_nsamp; i+=24414/5){
+			float x = 2.f*i/g_nsamp-1.f + 2.f/g_viewportSize[0]; 
+			float y = 1.f - 13.f*2.f/g_viewportSize[1]; 
+			glRasterPos2f(x,y); 
+			char buf[64];
+			snprintf(buf, 64, "%3.2f", i/24414.f); 
+			glPrint(buf);
+		}
+		glColor4f(0.f, 0.8f, 0.75f, 0.35);
+		glBegin(GL_LINES); 
+		for(int i=0; i<g_nsamp; i+=24414/10){
+			float x = 2.f*i/g_nsamp-1.f; 
+			glVertex2f(x, 0.f); 
+			glVertex2f(x, 1.f); 
+		}
+		glEnd(); 
 		//glPopMatrix ();
 
 		//rasters
@@ -698,7 +713,7 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 		//fill the buffer with temp data.
 		for(int k=0; k<NFBUF; k++){
 			for(int i=0; i<NSAMP; i++){
-				g_fbuf[k][i*3+0] = (float)i / 4096.0;
+				g_fbuf[k][i*3+0] = (float)i;
 				g_fbuf[k][i*3+1] = sinf((float)i *0.02);
 				g_fbuf[k][i*3+2] = 0.f;
 			}
@@ -899,24 +914,26 @@ void* po8_thread(void*){
 				}*/
 				//copy the data over to g_fbuf. 
 				long double time = gettime(); 
-				for(int i=0; i<numSamples; i++){
-					for(int k=0; k<NFBUF; k++){
-						int h = g_channel[k];
+				for(int k=0; k<NFBUF; k++){
+					int h = g_channel[k];
+					float gain = g_c[h]->m_gain; 
+					for(int i=0; i<numSamples; i++){
 						short samp = temp[i + h*numSamples]; //strange ordering .. but eh.
-						g_fbuf[k][(g_fbufW % g_nsamp)*3 + 1] = (samp / 32768.f); 
+						g_fbuf[k][((g_fbufW+i) % g_nsamp)*3 + 1] = (gain * samp / 32768.f); 
 						//g_fbuf[k][(g_fbufW % g_nsamp)*3 + 1] = 0; --sets the color.
 					}
-					g_fbufW++; 
 				}
+				g_fbufW += numSamples; 
 				// copy to the sorting buffers, wrapped.
 				int oldo = g_sample & 255; 
-				for(int i=0; i<numSamples; i++){
-					for(int k=0; k<96; k++){
+				for(int k=0; k<96; k++){
+					float gain = g_c[k]->m_gain; 
+					for(int i=0; i<numSamples; i++){
 						short samp = temp[i + k*numSamples]; //strange ordering .. but eh.
-						g_obuf[k][(oldo + i)&255] = (samp / 32768.f); 
+						g_obuf[k][(oldo + i)&255] = (gain * samp / 32768.f); 
 					}
 				}
-				if(1){
+				if(0){
 					//get the sync -- estimate TDT ticks from perf counter.
 					int ticks = (unsigned short)(temp[96*numSamples + numSamples -1]); 
 					ticks += (unsigned short)(temp[97*numSamples + numSamples -1]) << 16; 
@@ -1285,15 +1302,12 @@ static void spikesColsSpinCB( GtkWidget*, gpointer){
 	g_spikesCols = (int)gtk_adjustment_get_value(g_spikesColsSpin); 
 }
 static void zoomSpinCB( GtkWidget*, gpointer ){
-	g_rasterZoom = gtk_adjustment_get_value(g_zoomSpin);
-	g_nsamp = 4096 / g_rasterZoom;
-	//make it multiples of 1024.
+	float f = gtk_adjustment_get_value(g_zoomSpin); //should be in seconds. 
+	g_nsamp = f * 24414.0625; 
+	//make it multiples of 128.
 	g_nsamp &= (0xffffffff ^ 127);
 	g_nsamp = g_nsamp > NSAMP ? NSAMP : g_nsamp;
 	g_nsamp = g_nsamp < 512 ? 512 : g_nsamp;
-	g_rasterZoom = 4096.0 / (float)g_nsamp;
-	if(g_mode == MODE_SORT) g_nsamp = NSAMP;
-	printf("g_nsamp: %d, actual zoom %f\n", g_nsamp, g_rasterZoom);
 }
 static void rasterSpanSpinCB( GtkWidget*, gpointer ){
 	g_rasterSpan = gtk_adjustment_get_value(g_rasterSpanSpin);
@@ -1645,8 +1659,8 @@ int main(int argn, char **argc)
 			 box1, true, "filter", filterRadioCB);
 
 	//add in a zoom spinner.
-	g_zoomSpin = mk_spinner("zoom", box1,
-			   0.15, 0.1, 10.0, 0.05,
+	g_zoomSpin = mk_spinner("Waveform Span", box1,
+			   1.0, 0.1, 2.7, 0.05,
 			   zoomSpinCB, 0);
 	zoomSpinCB(GTK_WIDGET(NULL), NULL); //init the variables properly.
 

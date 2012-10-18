@@ -302,6 +302,7 @@ public:
 					for(int i=0; i < nisi; i++){
 						max = m_isi[u][i] > max ? m_isi[u][i] : max; 
 					}
+					max = max < 100 ? 100 : max; 
 					float scl = (float)max; 
 					if(u == 0)
 						glColor4f(0.0f,1.f,1.f,0.2f); 
@@ -320,7 +321,7 @@ public:
 				glColor4f(1.f, 1.f, 1.f, 0.35);
 				for(int i=0; i<nisi/10; i++){
 					float x1 = (float)(i*10)/((float)(nisi-1)); 
-					float yof = 2.f/g_viewportSize[1]; //2 pixels vertical offset.
+					float yof = 2.f/g_viewportSize[1]; //1 pixels vertical offset.
 					float xof = 2.f/g_viewportSize[0]; 
 					glRasterPos2f(x1*ow+ox+ow+xof, oy+yof); 
 					char buf[64];
@@ -491,9 +492,11 @@ public:
 	}
 	void updateISI(int unit, int sample){
 		//this used for calculating ISI. 
+		unit -= 1; //comes in 0 = uhnsorted. 
 		if(unit >=0 && unit < 2){
-			int b = round((sample - m_lastSpike[unit])/24.4140625); 
+			int b = floor((sample - m_lastSpike[unit])/24.4140625 - 0.5); 
 			int nisi = (int)(sizeof(m_isi[0])/sizeof(m_isi[0][0])); 
+			//printf("%d isi %d u %d\n", m_ch, b, unit); 
 			if(b > 0 && b < nisi)
 				m_isi[unit][b]++; 
 			m_lastSpike[unit] = sample; 
