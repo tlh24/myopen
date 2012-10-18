@@ -101,7 +101,7 @@ bool   g_rtMouseBtn = false;
 int    g_polyChan = 0;
 bool   g_addPoly = false;
 int    g_channel[4] = {0, 32*NSCALE, 64*NSCALE, 96*NSCALE};
-int	   g_signalChain = 10; //what to sample in the headstage signal chain.
+int	 g_signalChain = 10; //what to sample in the headstage signal chain.
 
 bool g_out = false;
 bool g_templMatch[NSCALE][128][2];
@@ -113,7 +113,7 @@ i64	     	 g_sortOffset[4][2][16]; //offset to the best match.
 unsigned int g_sortUnit[4][16]; //have to remember to zero all of these.
 unsigned int g_sortI[NSCALE]; //index to the (short) circular buffer, needs to be per thread(better performing) or mutexed.
 i64			 g_sortWfOffset[4];
-int 		 g_sortWfUnit[4];
+int 		 	 g_sortWfUnit[4];
 i64			 g_unsortCount[4];
 
 float g_unsortrate = 0.0; //the rate that unsorted WFs get through.
@@ -146,7 +146,7 @@ struct sockaddr_in g_txsockAddrArr[NSCALE];
 
 bool	g_vbo1Init = false;
 GLuint  g_vbo1[NFBUF]; //for the waveform display
-GLuint  g_vbo2[2] = {0,0}; //for spikes. currently overwriting this.
+GLuint  g_vbo2[NSCALE][2] = {{0}}; //for radio units, for spikes.
 
 //global labels..
 //GtkWidget* g_gainlabel[16];
@@ -175,7 +175,7 @@ pthread_attr_t attr;
 //add mutexes
 pthread_mutex_t mutex_totalPackets;
 pthread_mutex_t mutex_totalDropped;
-pthread_mutex_t mutex_saveFileBytes;
+pthread_mutex_t mutex_saveFile;
 pthread_mutex_t mutex_bridgeIP;
 
 i64 mod2(i64 a, i64 b){
@@ -421,16 +421,16 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		
 		for (int t=0; t<NSCALE; t++){
 		      for(int k=0; k<2; k++){
-				  if(g_sbufR[k] < g_sbufW[t][k]){
+				  if(g_sbufR[t][k] < g_sbufW[t][k]){
 					  i64 len = sizeof(g_sbuf[t][k])/8; //total # of pts.
 					  i64 w = g_sbufW[t][k];
 					  i64 sta = g_sbufR[t][k] % len;
 					  i64 fin = w % len;
 					  if(fin < sta) { //wrap
-						  copyData(g_vbo2[k], sta, len, g_sbuf[t][k], 2);
-						  copyData(g_vbo2[k],   0, fin, g_sbuf[t][k], 2);
+						  copyData(g_vbo2[t][k], sta, len, g_sbuf[t][k], 2);
+						  copyData(g_vbo2[t][k],   0, fin, g_sbuf[t][k], 2);
 					  } else {
-						  copyData(g_vbo2[k], sta, fin, g_sbuf[t][k], 2);
+						  copyData(g_vbo2[t][k], sta, fin, g_sbuf[t][k], 2);
 					  }
 					  g_sbufR[t][k] = w;
 				  }
@@ -540,7 +540,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		for(int t = 0; t < NSCALE; t++){
 			for(int k=0; k<2; k++){
 				glEnableClientState(GL_VERTEX_ARRAY);
-				glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo2[k]);
+				glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo2[t][k]);
 				glVertexPointer(2, GL_FLOAT, 0, 0);
 				if(k == 0) glColor4f (1., 1., 0., 0.3f);
 				else glColor4f (0., 1., 1., 0.3f);
@@ -699,8 +699,8 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 					}
 				}
 			
-			glGenBuffersARB(1, &g_vbo2[k]);
-			glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo2[k]);
+			glGenBuffersARB(1, &g_vbo2[t][k]);
+			glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo2[t][k]);
 			glBufferDataARB(GL_ARRAY_BUFFER_ARB, sizeof(g_sbuf[t][k]),
 				0, GL_DYNAMIC_DRAW_ARB);
 			glBufferSubDataARB(GL_ARRAY_BUFFER_ARB,
@@ -770,9 +770,12 @@ void destroy(GtkWidget *, gpointer){
 	saveState();
 	g_die = true;
 	if(g_vbo1Init){
-		for(int k=0; k<NFBUF; k++)
-			glDeleteBuffersARB(1, &g_vbo1[k]);
-		glDeleteBuffersARB(2, g_vbo2);
+		for(int k=0; k<NFBUF; k++){
+			glDeleteBuffersARB(1, &g_vbo1[k]);}
+		for(int t=0; t<NSCALE; t++){
+			for(int k = 0; k<2; k++){
+			glDeleteBuffersARB(2, &g_vbo2[t][k]);}
+		}
 	}
 	for(int i=0; i<128*NSCALE; i++){
 		delete g_c[i];
@@ -806,7 +809,9 @@ void* strobe_thread(void*){
 					//will need to iterate through the buffer, to get at the data
 				//unsigned int tlen = ((unsigned int*)buf2)[0]; Uncomment if sending sizedelimited buffer
 				unsigned int tmp = 0x1eafbabe;
-				fwrite((void*)&tmp, 4, 1, g_saveFile); //fwrite is atomic in POSIX systems
+				
+				pthread_mutex_lock(&mutex_saveFile);
+				fwrite((void*)&tmp, 4, 1, g_saveFile); //fwrite is atomic in POSIX systems, still, sync
 				tmp = 784; //SVN version
 				tmp <<= 16;
 				//tmp += tlen & 0xffff; //size of the ensuing packet data.
@@ -817,9 +822,9 @@ void* strobe_thread(void*){
 				fwrite((void*)buf2, sn, 1, g_saveFile); //write ALL the buffer
 				//g_saveFileBytes += 16 + tlen;
 				
-				pthread_mutex_lock(&mutex_saveFileBytes);
 				g_saveFileBytes += 16 + sn;
-				pthread_mutex_unlock(&mutex_saveFileBytes);
+				pthread_mutex_unlock(&mutex_saveFile);
+				
 			 }	
 			 
 		}
@@ -956,6 +961,8 @@ packet format in the file, as saved here:
 				//will have to convert them with another prog later.
 				unsigned int tmp = 0xdecafbad;
 				tmp += tid; //magic number keeps thread id (remember to add to convert.cpp logic)
+				
+				pthread_mutex_lock(&mutex_saveFile);
 				fwrite((void*)&tmp, 4, 1, g_saveFile);
 				tmp = 784; //SVN version.
 				tmp <<= 16;
@@ -963,9 +970,9 @@ packet format in the file, as saved here:
 				fwrite((void*)&tmp, 4, 1, g_saveFile);
 				fwrite((void*)&rxtime, 8, 1, g_saveFile);
 				fwrite((void*)buf,n,1,g_saveFile);
-				pthread_mutex_lock(&mutex_saveFileBytes);
+				
 				g_saveFileBytes += 16 + n;
-				pthread_mutex_unlock(&mutex_saveFileBytes);
+				pthread_mutex_unlock(&mutex_saveFile);
 				}
 
 				//if there are messages to be written, save them too.
@@ -973,6 +980,8 @@ packet format in the file, as saved here:
 					unsigned int len = strnlen(g_messages[g_messR[tid] % 1024],128);
 					unsigned int tmp = 0xb00a5c11; //boo!  it's ascii
 					tmp +=tid;
+					
+					pthread_mutex_lock(&mutex_saveFile);
 					fwrite((void*)&tmp, 4, 1, g_saveFile);
 					tmp = 784; //SVN version.
 					tmp <<= 16;
@@ -980,9 +989,10 @@ packet format in the file, as saved here:
 					fwrite((void*)&tmp, 4, 1, g_saveFile);
 					fwrite((void*)&rxtime, 8, 1, g_saveFile);
 					fwrite((void*)g_messages[g_messR[tid] % 1024], len, 1, g_saveFile);
-					pthread_mutex_lock(&mutex_saveFileBytes);
+					
 					g_saveFileBytes += 16 + len;
-					pthread_mutex_unlock(&mutex_saveFileBytes);
+					pthread_mutex_unlock(&mutex_saveFile);
+					
 					g_messR[tid]++;
 				}
 			}
@@ -1069,10 +1079,10 @@ packet format in the file, as saved here:
 						if(match[j] == k+1){
 							g_templMatch[tid][adr][k] = true;
 							//add to the spike raster list.
-							i64 w = g_sbufW[t][k] % (i64)(sizeof(g_sbuf[tid][k])/8);
+							i64 w = g_sbufW[tid][k] % (i64)(sizeof(g_sbuf[tid][k])/8);
 							g_sbuf[tid][k][w*2+0] = (float)(time);
 							g_sbuf[tid][k][w*2+1] = (float)adr;
-							g_sbufW[t][k] ++;
+							g_sbufW[tid][k] ++;
 							g_fr[tid][adr][k].add(time);
 							//calcISI.
 							g_c[adr+(128*tid)]->spike(k);
@@ -1251,6 +1261,8 @@ packet format in the file, as saved here:
 				if(g_saveFile){
 					unsigned int tmp = 0xc0edfad0;
 					tmp+= tid;
+					
+					pthread_mutex_lock(&mutex_saveFile);
 					fwrite((void*)&tmp, 4, 1, g_saveFile);
 					tmp = 605; //SVN version.
 					tmp <<= 16;
@@ -1259,9 +1271,9 @@ packet format in the file, as saved here:
 					fwrite((void*)&tmp, 4, 1, g_saveFile);
 					fwrite((void*)&txtime, 8, 1, g_saveFile);
 					fwrite((void*)ptr,n,1,g_saveFile);
-					pthread_mutex_lock(&mutex_saveFileBytes);
+					
 					g_saveFileBytes += 16 + n;
-					pthread_mutex_unlock(&mutex_saveFileBytes);
+					pthread_mutex_unlock(&mutex_saveFile);
 				}
 			} else {
 				send_delay++;
@@ -1701,6 +1713,18 @@ static void openSaveFile(gpointer parent_window) {
 	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT){
 		char *filename;
 		filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
+		
+		//check to see if file is already open(in the case of pressing record, then record again)
+		if(g_saveFile){
+			pthread_mutex_lock(&mutex_saveFile);
+				fclose(g_saveFile);
+				g_saveFile = 0;
+				g_closeSaveFile = false;
+				g_saveFileBytes = 0;
+			pthread_mutex_unlock(&mutex_saveFile);
+		}
+		
+	  //redundancy
 		g_closeSaveFile = false;
 		g_saveFileBytes = 0;
 		g_saveFile = fopen(filename, "w");
@@ -1709,17 +1733,16 @@ static void openSaveFile(gpointer parent_window) {
 	gtk_widget_destroy (dialog);
 }
 static void closeSaveFile(gpointer) {
-	//have to signal to the other thread, let them close it.
-	// More than one thread can't close it though! How do I do this?
+	//close it here, with lock. Mutex lock the other segments then
 	g_closeSaveFile = true;
 	
 	if(g_closeSaveFile && g_saveFile){
-	  pthread_mutex_lock(&mutex_saveFileBytes);
+	  pthread_mutex_lock(&mutex_saveFile);
 		  fclose(g_saveFile);
 		  g_saveFile = 0;
 		  g_closeSaveFile = false;
 		  g_saveFileBytes = 0;
-	  pthread_mutex_unlock(&mutex_saveFileBytes);
+	  pthread_mutex_unlock(&mutex_saveFile);
 	  }
 }
 void saveMatrix(const char* fname, gsl_matrix* v){
@@ -1832,9 +1855,8 @@ int main(int argn, char **argc)
 	for(int i=0; i<128*NSCALE; i++){
 		g_c[i] = new Channel(i);
 	}
-	sqlite3_exec(g_db, "END TRANSACTION;",0,0,0);
+	sqlite3_exec(g_db, "END TRANSACTION;",0,0,0);;
 	//g_dropped = 0;
-
 	// Verify that the version of the library that we linked against is
 	// compatible with the version of the headers we compiled against.
 	GOOGLE_PROTOBUF_VERIFY_VERSION;
@@ -1869,6 +1891,7 @@ int main(int argn, char **argc)
 		gtk_widget_show(chanLabel);
 	}
 	
+	
 	//add in a headstage channel # label
 	g_headechoLabel = gtk_label_new ("headch:");
 	gtk_misc_set_alignment (GTK_MISC (g_headechoLabel), 0, 0);
@@ -1890,6 +1913,8 @@ int main(int argn, char **argc)
 	gtk_box_pack_start (GTK_BOX (v1), bx, FALSE, FALSE, 0);
 
 	//4-channel control blocks.
+	//segfault occurs here if channel in state.db is higher than the max number of channels (if gtkclient*2 was
+	//run, then gtkclient*1 is run. Needs a check.
 	for(int i=0; i<4; i++){
 		char buf[128];
 		snprintf(buf, 128, "%c", 'A'+i);
@@ -1901,7 +1926,6 @@ int main(int argn, char **argc)
 		gtk_container_add (GTK_CONTAINER (frame), bx2);
 		GtkWidget* bx3 = gtk_hbox_new (FALSE, 1);
 		gtk_box_pack_start (GTK_BOX (bx2), bx3, FALSE, FALSE, 0);
-
 		//channel spinner.
 		g_channelSpin[i] = mk_spinner("ch", bx3,
 									  g_channel[i], 0, ((128*NSCALE)-1), 1,
@@ -2160,10 +2184,9 @@ int main(int argn, char **argc)
 	//mutex inits
 	pthread_mutex_init(&mutex_totalPackets, NULL);
 	pthread_mutex_init(&mutex_totalDropped, NULL);
-	pthread_mutex_init(&mutex_saveFileBytes, NULL);
+	pthread_mutex_init(&mutex_saveFile, NULL);
 	pthread_mutex_init(&mutex_bridgeIP, NULL);
 	pthread_attr_init(&attr);
-	
 	
 	g_startTime = gettime();
 	int t;

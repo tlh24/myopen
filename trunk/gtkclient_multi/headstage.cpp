@@ -202,14 +202,13 @@ void setOsc(int chan){
 }
 void setChans(){
 	int i;
-	
+
 	for(i=0; i<4;i++){
 		int c = g_channel[i];
 		int tid = c/128;
-		
-		//scope these here (could also make a thread safe ptr array?)
 		unsigned int* ptr = g_sendbuf[tid];
 		ptr += (g_sendW[tid] % g_sendL[tid]) * 8; //8 because we send 8 32-bit ints /pkt.
+		//scope these here (could also make a thread safe ptr array?)
 		
 		ptr[i*2+0] = htonl(echo(g_echo[tid], (FP_BASE - FP_TXCHAN0 + 4*i)));
 		//ok, for the taps: have 4 offsets.
