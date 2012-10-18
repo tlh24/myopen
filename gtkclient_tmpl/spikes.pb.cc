@@ -2,9 +2,6 @@
 
 #define INTERNAL_SUPPRESS_PROTOBUF_FIELD_DEPRECATION
 #include "spikes.pb.h"
-
-#include <algorithm>
-
 #include <google/protobuf/stubs/once.h>
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/wire_format_lite_inl.h>
@@ -136,6 +133,7 @@ struct StaticDescriptorInitializer_spikes_2eproto {
 
 // ===================================================================
 
+const ::std::string Spike_msg::_default_w_;
 #ifndef _MSC_VER
 const int Spike_msg::kTsFieldNumber;
 const int Spike_msg::kChanFieldNumber;
@@ -163,7 +161,7 @@ void Spike_msg::SharedCtor() {
   ts_ = GOOGLE_ULONGLONG(0);
   chan_ = 0u;
   unit_ = 0u;
-  w_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  w_ = const_cast< ::std::string*>(&_default_w_);
   seq_ = 0u;
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
@@ -173,7 +171,7 @@ Spike_msg::~Spike_msg() {
 }
 
 void Spike_msg::SharedDtor() {
-  if (w_ != &::google::protobuf::internal::kEmptyString) {
+  if (w_ != &_default_w_) {
     delete w_;
   }
   if (this != default_instance_) {
@@ -205,8 +203,8 @@ void Spike_msg::Clear() {
     ts_ = GOOGLE_ULONGLONG(0);
     chan_ = 0u;
     unit_ = 0u;
-    if (has_w()) {
-      if (w_ != &::google::protobuf::internal::kEmptyString) {
+    if (_has_bit(3)) {
+      if (w_ != &_default_w_) {
         w_->clear();
       }
     }
@@ -229,7 +227,7 @@ bool Spike_msg::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint64, ::google::protobuf::internal::WireFormatLite::TYPE_UINT64>(
                  input, &ts_)));
-          set_has_ts();
+          _set_bit(0);
         } else {
           goto handle_uninterpreted;
         }
@@ -245,7 +243,7 @@ bool Spike_msg::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_UINT32>(
                  input, &chan_)));
-          set_has_chan();
+          _set_bit(1);
         } else {
           goto handle_uninterpreted;
         }
@@ -261,7 +259,7 @@ bool Spike_msg::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_UINT32>(
                  input, &unit_)));
-          set_has_unit();
+          _set_bit(2);
         } else {
           goto handle_uninterpreted;
         }
@@ -291,7 +289,7 @@ bool Spike_msg::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_UINT32>(
                  input, &seq_)));
-          set_has_seq();
+          _set_bit(4);
         } else {
           goto handle_uninterpreted;
         }
@@ -318,28 +316,28 @@ bool Spike_msg::MergePartialFromCodedStream(
 void Spike_msg::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // required uint64 ts = 1;
-  if (has_ts()) {
+  if (_has_bit(0)) {
     ::google::protobuf::internal::WireFormatLite::WriteUInt64(1, this->ts(), output);
   }
   
   // required uint32 chan = 2;
-  if (has_chan()) {
+  if (_has_bit(1)) {
     ::google::protobuf::internal::WireFormatLite::WriteUInt32(2, this->chan(), output);
   }
   
   // optional uint32 unit = 3;
-  if (has_unit()) {
+  if (_has_bit(2)) {
     ::google::protobuf::internal::WireFormatLite::WriteUInt32(3, this->unit(), output);
   }
   
   // optional bytes w = 6;
-  if (has_w()) {
+  if (_has_bit(3)) {
     ::google::protobuf::internal::WireFormatLite::WriteBytes(
       6, this->w(), output);
   }
   
   // optional uint32 seq = 7;
-  if (has_seq()) {
+  if (_has_bit(4)) {
     ::google::protobuf::internal::WireFormatLite::WriteUInt32(7, this->seq(), output);
   }
   
@@ -352,29 +350,29 @@ void Spike_msg::SerializeWithCachedSizes(
 ::google::protobuf::uint8* Spike_msg::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // required uint64 ts = 1;
-  if (has_ts()) {
+  if (_has_bit(0)) {
     target = ::google::protobuf::internal::WireFormatLite::WriteUInt64ToArray(1, this->ts(), target);
   }
   
   // required uint32 chan = 2;
-  if (has_chan()) {
+  if (_has_bit(1)) {
     target = ::google::protobuf::internal::WireFormatLite::WriteUInt32ToArray(2, this->chan(), target);
   }
   
   // optional uint32 unit = 3;
-  if (has_unit()) {
+  if (_has_bit(2)) {
     target = ::google::protobuf::internal::WireFormatLite::WriteUInt32ToArray(3, this->unit(), target);
   }
   
   // optional bytes w = 6;
-  if (has_w()) {
+  if (_has_bit(3)) {
     target =
       ::google::protobuf::internal::WireFormatLite::WriteBytesToArray(
         6, this->w(), target);
   }
   
   // optional uint32 seq = 7;
-  if (has_seq()) {
+  if (_has_bit(4)) {
     target = ::google::protobuf::internal::WireFormatLite::WriteUInt32ToArray(7, this->seq(), target);
   }
   
@@ -451,19 +449,19 @@ void Spike_msg::MergeFrom(const ::google::protobuf::Message& from) {
 void Spike_msg::MergeFrom(const Spike_msg& from) {
   GOOGLE_CHECK_NE(&from, this);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    if (from.has_ts()) {
+    if (from._has_bit(0)) {
       set_ts(from.ts());
     }
-    if (from.has_chan()) {
+    if (from._has_bit(1)) {
       set_chan(from.chan());
     }
-    if (from.has_unit()) {
+    if (from._has_bit(2)) {
       set_unit(from.unit());
     }
-    if (from.has_w()) {
+    if (from._has_bit(3)) {
       set_w(from.w());
     }
-    if (from.has_seq()) {
+    if (from._has_bit(4)) {
       set_seq(from.seq());
     }
   }
@@ -660,7 +658,7 @@ bool Display_msg::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    bool, ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>(
                  input, &touch_)));
-          set_has_touch();
+          _set_bit(2);
         } else {
           goto handle_uninterpreted;
         }
@@ -676,7 +674,7 @@ bool Display_msg::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    bool, ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>(
                  input, &juicer_)));
-          set_has_juicer();
+          _set_bit(3);
         } else {
           goto handle_uninterpreted;
         }
@@ -692,7 +690,7 @@ bool Display_msg::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    bool, ::google::protobuf::internal::WireFormatLite::TYPE_BOOL>(
                  input, &manual_)));
-          set_has_manual();
+          _set_bit(4);
         } else {
           goto handle_uninterpreted;
         }
@@ -708,7 +706,7 @@ bool Display_msg::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    float, ::google::protobuf::internal::WireFormatLite::TYPE_FLOAT>(
                  input, &cursorsize_)));
-          set_has_cursorsize();
+          _set_bit(5);
         } else {
           goto handle_uninterpreted;
         }
@@ -724,7 +722,7 @@ bool Display_msg::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    float, ::google::protobuf::internal::WireFormatLite::TYPE_FLOAT>(
                  input, &targetsize_)));
-          set_has_targetsize();
+          _set_bit(6);
         } else {
           goto handle_uninterpreted;
         }
@@ -740,7 +738,7 @@ bool Display_msg::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    float, ::google::protobuf::internal::WireFormatLite::TYPE_FLOAT>(
                  input, &cursoralpha_)));
-          set_has_cursoralpha();
+          _set_bit(7);
         } else {
           goto handle_uninterpreted;
         }
@@ -756,7 +754,7 @@ bool Display_msg::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    float, ::google::protobuf::internal::WireFormatLite::TYPE_FLOAT>(
                  input, &targetalpha_)));
-          set_has_targetalpha();
+          _set_bit(8);
         } else {
           goto handle_uninterpreted;
         }
@@ -772,7 +770,7 @@ bool Display_msg::MergePartialFromCodedStream(
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    float, ::google::protobuf::internal::WireFormatLite::TYPE_FLOAT>(
                  input, &irdiff_)));
-          set_has_irdiff();
+          _set_bit(9);
         } else {
           goto handle_uninterpreted;
         }
@@ -833,42 +831,42 @@ void Display_msg::SerializeWithCachedSizes(
   }
   
   // optional bool touch = 3;
-  if (has_touch()) {
+  if (_has_bit(2)) {
     ::google::protobuf::internal::WireFormatLite::WriteBool(3, this->touch(), output);
   }
   
   // optional bool juicer = 4;
-  if (has_juicer()) {
+  if (_has_bit(3)) {
     ::google::protobuf::internal::WireFormatLite::WriteBool(4, this->juicer(), output);
   }
   
   // optional bool manual = 5;
-  if (has_manual()) {
+  if (_has_bit(4)) {
     ::google::protobuf::internal::WireFormatLite::WriteBool(5, this->manual(), output);
   }
   
   // optional float cursorSize = 6;
-  if (has_cursorsize()) {
+  if (_has_bit(5)) {
     ::google::protobuf::internal::WireFormatLite::WriteFloat(6, this->cursorsize(), output);
   }
   
   // optional float targetSize = 7;
-  if (has_targetsize()) {
+  if (_has_bit(6)) {
     ::google::protobuf::internal::WireFormatLite::WriteFloat(7, this->targetsize(), output);
   }
   
   // optional float cursorAlpha = 8;
-  if (has_cursoralpha()) {
+  if (_has_bit(7)) {
     ::google::protobuf::internal::WireFormatLite::WriteFloat(8, this->cursoralpha(), output);
   }
   
   // optional float targetAlpha = 9;
-  if (has_targetalpha()) {
+  if (_has_bit(8)) {
     ::google::protobuf::internal::WireFormatLite::WriteFloat(9, this->targetalpha(), output);
   }
   
   // optional float irDiff = 10;
-  if (has_irdiff()) {
+  if (_has_bit(9)) {
     ::google::protobuf::internal::WireFormatLite::WriteFloat(10, this->irdiff(), output);
   }
   
@@ -899,42 +897,42 @@ void Display_msg::SerializeWithCachedSizes(
   }
   
   // optional bool touch = 3;
-  if (has_touch()) {
+  if (_has_bit(2)) {
     target = ::google::protobuf::internal::WireFormatLite::WriteBoolToArray(3, this->touch(), target);
   }
   
   // optional bool juicer = 4;
-  if (has_juicer()) {
+  if (_has_bit(3)) {
     target = ::google::protobuf::internal::WireFormatLite::WriteBoolToArray(4, this->juicer(), target);
   }
   
   // optional bool manual = 5;
-  if (has_manual()) {
+  if (_has_bit(4)) {
     target = ::google::protobuf::internal::WireFormatLite::WriteBoolToArray(5, this->manual(), target);
   }
   
   // optional float cursorSize = 6;
-  if (has_cursorsize()) {
+  if (_has_bit(5)) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFloatToArray(6, this->cursorsize(), target);
   }
   
   // optional float targetSize = 7;
-  if (has_targetsize()) {
+  if (_has_bit(6)) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFloatToArray(7, this->targetsize(), target);
   }
   
   // optional float cursorAlpha = 8;
-  if (has_cursoralpha()) {
+  if (_has_bit(7)) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFloatToArray(8, this->cursoralpha(), target);
   }
   
   // optional float targetAlpha = 9;
-  if (has_targetalpha()) {
+  if (_has_bit(8)) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFloatToArray(9, this->targetalpha(), target);
   }
   
   // optional float irDiff = 10;
-  if (has_irdiff()) {
+  if (_has_bit(9)) {
     target = ::google::protobuf::internal::WireFormatLite::WriteFloatToArray(10, this->irdiff(), target);
   }
   
@@ -1048,30 +1046,30 @@ void Display_msg::MergeFrom(const Display_msg& from) {
   target_.MergeFrom(from.target_);
   bgcolor_.MergeFrom(from.bgcolor_);
   if (from._has_bits_[2 / 32] & (0xffu << (2 % 32))) {
-    if (from.has_touch()) {
+    if (from._has_bit(2)) {
       set_touch(from.touch());
     }
-    if (from.has_juicer()) {
+    if (from._has_bit(3)) {
       set_juicer(from.juicer());
     }
-    if (from.has_manual()) {
+    if (from._has_bit(4)) {
       set_manual(from.manual());
     }
-    if (from.has_cursorsize()) {
+    if (from._has_bit(5)) {
       set_cursorsize(from.cursorsize());
     }
-    if (from.has_targetsize()) {
+    if (from._has_bit(6)) {
       set_targetsize(from.targetsize());
     }
-    if (from.has_cursoralpha()) {
+    if (from._has_bit(7)) {
       set_cursoralpha(from.cursoralpha());
     }
   }
   if (from._has_bits_[8 / 32] & (0xffu << (8 % 32))) {
-    if (from.has_targetalpha()) {
+    if (from._has_bit(8)) {
       set_targetalpha(from.targetalpha());
     }
-    if (from.has_irdiff()) {
+    if (from._has_bit(9)) {
       set_irdiff(from.irdiff());
     }
   }
