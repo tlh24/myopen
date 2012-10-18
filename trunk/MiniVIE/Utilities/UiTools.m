@@ -125,7 +125,7 @@ classdef UiTools
             % extension = '.assessmentLog'
             
             filePrefix = 'JH_TH01_';  %TODO, abstract this
-            filePrefix = 'AGH_';  %TODO, abstract this
+            %filePrefix = 'AGH_';  %TODO, abstract this
             
             FilterSpec = ['*' extension];
             DialogTitle = 'Select File to Write';

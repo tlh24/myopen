@@ -2,6 +2,7 @@ Support Notes
 --------------
 
 Tested with Matlab 2010b on WindowsXPSP3 32-bit
+Tested with Matlab 2010b+ on Windows7 64-bit (all execpt DAQ toolbox)
 
 
 Requirements: 
