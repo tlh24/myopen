@@ -158,9 +158,9 @@ classdef ScenarioBase < Common.MiniVieObj
                 case {'Down' 'Hand Down'}
                     desiredVelocity(action_bus_enum.Wrist_Dev) = -prSpeed;
                 case {'Left' 'Wrist Flex' 'Wrist Flex In'}
-                    desiredVelocity(action_bus_enum.Wrist_FE) = -prSpeed;
-                case {'Right' 'Wrist Extend' 'Wrist Extend Out'}
                     desiredVelocity(action_bus_enum.Wrist_FE) = +prSpeed;
+                case {'Right' 'Wrist Extend' 'Wrist Extend Out'}
+                    desiredVelocity(action_bus_enum.Wrist_FE) = -prSpeed;
             end
             
             globalGain = 3;

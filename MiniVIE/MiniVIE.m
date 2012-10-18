@@ -115,6 +115,12 @@ classdef MiniVIE < Common.MiniVieObj
                 'String','Select Classes',...
                 'Enable','off',...
                 'Callback',@(src,evt)obj.SignalClassifier.uiEnterClassNames);
+            obj.hg.SignalAnalysisButtons(2) = uicontrol(obj.hg.Figure,...
+                'Position',pos('cntrl',MiniVIE.SA,4,1,1),...
+                'Style','pushbutton',...
+                'String','Classifier Parameters',...
+                'Enable','off',...
+                'Callback',@(src,evt)obj.pbClassifierProperties);
             
             obj.hg.TrainingButtons(1) = uicontrol(obj.hg.Figure,...
                 'Position',pos('cntrl',MiniVIE.TRAINING,3,1,1),...
@@ -540,7 +546,23 @@ classdef MiniVIE < Common.MiniVieObj
                 obj.SignalClassifier.computeGains();
             end
         end
-        
+        function pbClassifierProperties(obj)
+            
+            % Use these defaults
+            prompt={
+                'Enter Majority Votes (e.g. 7):',...
+                };
+            name='Classifier Parameters';
+            numlines=1;
+            defaultanswer={'7'};
+            answer=inputdlg(prompt,name,numlines,defaultanswer);
+            assert(length(answer) == 1,'Expected 1 output');
+            convertedVal = str2double(answer{1});
+            assert(~isnan(convertedVal),'Expected a number');
+            
+            obj.SignalClassifier.NumMajorityVotes = convertedVal;
+            
+        end
         function pbTrainClear(obj)
             obj.TrainingData.clearData();
         end
