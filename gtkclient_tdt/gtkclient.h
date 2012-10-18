@@ -4,7 +4,7 @@
 #define i64 long long
 #define u32 unsigned int
 
-#define NSAMP (24*1024)
+#define NSAMP (64*1024) //about 2.6 seconds.
 #define NDISPW 256
 #ifdef EMG
 #define NFBUF 8 //for EMG
