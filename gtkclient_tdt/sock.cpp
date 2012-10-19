@@ -23,7 +23,7 @@ void close_socket(int &sock){
 	sock = 0;
 }
 //sets up a UDP/TCP server socket. 
-int setup_socket(int portno, int tcp){
+int setup_socket(int portno, int tcp, bool block=false){
 	int sock;
 	struct sockaddr_in serv_addr;
 
@@ -32,7 +32,13 @@ int setup_socket(int portno, int tcp){
 		fprintf(stderr, "ERROR opening socket\n");
 		return 0; 
 	}
-	fcntl(sock, F_SETFL, O_NONBLOCK); //set the socket to non-blocking. 
+	if(!block)
+		fcntl(sock, F_SETFL, O_NONBLOCK); //set the socket to non-blocking. 
+	else{ //due to reuse.
+		int opts = fcntl(sock,F_GETFL);
+		opts ^= O_NONBLOCK;
+		fcntl(sock, F_SETFL, opts);
+	}
 	int optval = 1; // turn on address reuse. 
 	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)); 
 	bzero((char *) &serv_addr, sizeof(serv_addr));
@@ -79,7 +85,6 @@ int connect_socket(int portno, const char* server_name, int tcp){
 	return sock ; 
 }
 
-
 void get_sockaddr(int portno, const char* server_name, struct sockaddr_in *addr){
 	//return on addr
 	struct hostent *server;
@@ -96,3 +101,16 @@ void get_sockaddr(int portno, const char* server_name, struct sockaddr_in *addr)
 	addr->sin_port = htons(portno);
 }
 
+void socket_timeout(int sockfd, int sec){
+	struct timeval timeout;      
+	timeout.tv_sec = 10;
+	timeout.tv_usec = 0;
+
+	if (setsockopt (sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout,
+					sizeof(timeout)) < 0)
+		printf("setsockopt failed\n");
+
+	if (setsockopt (sockfd, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout,
+					sizeof(timeout)) < 0)
+		printf("setsockopt failed\n");
+}

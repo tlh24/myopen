@@ -16,7 +16,7 @@ private:
 	unsigned int	m_w; //write to here.
 	unsigned int	m_l; //last valid timestamp (within 1 second). 
 	double 	m_duration; 
-	unsigned int m_lags; 
+	int 		m_lags; 
 	double	m_xfade; 
 	double	m_a;
 	double	m_integral;

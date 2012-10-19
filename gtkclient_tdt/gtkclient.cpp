@@ -16,10 +16,14 @@
 
 #include <stdio.h>
 #include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <inttypes.h>
 #include <sys/time.h>
 #include <pthread.h>
 #include <sys/socket.h>
+#include <poll.h>
+#include <sys/mman.h>
 #include <netinet/in.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -510,7 +514,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		//see glDrawElements for indexed arrays
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 		//draw seconds / ms label here. 
-		for(int i=0; i<g_nsamp; i+=24414/5){
+		for(int i=0; i<(int)g_nsamp; i+=24414/5){
 			float x = 2.f*i/g_nsamp-1.f + 2.f/g_viewportSize[0]; 
 			float y = 1.f - 13.f*2.f/g_viewportSize[1]; 
 			glRasterPos2f(x,y); 
@@ -520,7 +524,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		}
 		glColor4f(0.f, 0.8f, 0.75f, 0.35);
 		glBegin(GL_LINES); 
-		for(int i=0; i<g_nsamp; i+=24414/10){
+		for(int i=0; i<(int)g_nsamp; i+=24414/10){
 			float x = 2.f*i/g_nsamp-1.f; 
 			glVertex2f(x, 0.f); 
 			glVertex2f(x, 1.f); 
@@ -794,22 +798,21 @@ void saveState(){
 }
 void destroy(GtkWidget *, gpointer){
 	//save the old values..
-	saveState();
 	g_die = true;
+	saveState();
 	if(g_vbo1Init){
 		for(int k=0; k<NFBUF; k++)
 			glDeleteBuffersARB(1, &g_vbo1[k]);
 		glDeleteBuffersARB(2, g_vbo2);
-	}
-	for(int i=0; i<96; i++){
-		delete g_c[i];
 	}
 	//delete g_vsFade;
 	delete g_vsFadeColor;
 	delete g_vsThreshold;
 	cgDestroyContext(myCgContext);
 	sqlite3_close(g_db);
-
+	for(int i=0; i<96; i++){
+		delete g_c[i];
+	}
 	gtk_main_quit();
 }
 void* po8_thread(void*){
@@ -948,7 +951,7 @@ void* po8_thread(void*){
 				g_sample += numSamples; 
 				//sort -- see if samples pass threshold.  if so, copy. 
 				float wf[32]; 
-				for(int k=0; k<96; k++){
+				for(int k=0; k<96 && !g_die; k++){
 					float threshold = g_c[k]->getThreshold();
 					int centering = g_c[k]->getCentering();
 					for(int m=0; m<numSamples; m++){
@@ -975,9 +978,17 @@ void* po8_thread(void*){
 							}
 							//check if this exceeds minimum ISI. 
 							if(g_sample - g_lastSpike[k][unit] > g_minISI*24.4140625){
+								//need to more precisely calulate spike time here.
 								g_c[k]->addWf(wf, unit, time, true);
 								g_c[k]->updateISI(unit, g_sample - numSamples + m); 
 								g_lastSpike[k][unit] = g_sample; 
+								if(unit > 0 && unit <=2){
+									int uu = unit-1; 
+									g_fr[k][uu].add(time); 
+									i64 w = g_sbufW[uu] % (i64)(sizeof(g_sbuf[0])/8);
+									g_sbuf[uu][w*2+0] = (float)(time);
+									g_sbuf[uu][w*2+1] = (float)k;
+								}
 							}else{
 								g_c[k]->m_isiViolations++; 
 							}
@@ -1001,82 +1012,138 @@ void* po8_thread(void*){
 	}
 	return 0;
 }
+struct binned_header{
+	double time; 
+	unsigned short nchan; 
+	unsigned short nunits; 
+	unsigned short nlags; 
+};
+void bswap_64(void* a){
+	long long b = *((long long*)a); 
+	unsigned int h = htonl((b>>32) & 0xffffffff);
+	unsigned int l = htonl(b & 0xffffffff); 
+	b = l; 
+	b <<= 32; 
+	b += h; 
+	*((long long*)a) = b; 
+}
+void* mmap_thread(void*){
+	// sockets are too slow -- we need to memmap a file(s). 
+	/* matlab can do this -- very well, too! 
+	 * m = memmapfile('/tmp/binned', 'Format', {'uint16' [194 10] 'x'})
+	 * A = m.Data(1).x; 
+	 * */
+	int fid = open("/tmp/binned", O_RDWR); 
+	size_t length = 97*2*10*2; 
+	int* s = (int*)malloc(length); 
+	write(fid, s, length); //not buffered, I think. fill the file out.
+	free(s); 
+	if(!fid){
+		perror("could not open /tmp/binned\n"); 
+		return NULL; 
+	}
+	void* addr = mmap(NULL, length, PROT_READ | PROT_WRITE, 
+							MAP_SHARED, fid, 0); 
+	if (addr == MAP_FAILED) {
+		close(fid);
+		perror("Error mmapping the file");
+		exit(EXIT_FAILURE);
+	}
+	unsigned short* bin = (unsigned short*)addr; 
+	bin[0] = 1; 
+	bin[1] = 2; 
+	bin[2] = 3; 
+	while(!g_die){
+		sleep(1); 
+		bin[0]++; 
+	}
+	munmap(addr, length); 
+	close(fid); 
+	return NULL; 
+}
 void* server_thread(void* ){
-	//kinda like a RPC service -- call to get the vector of firing rates.
+	//kinda like a RPC service -- call to get the vector of binned firing rates.
 	// call whenever you want!
-	unsigned short rates[96+3][2]; //first two are the size of the array, then the time.
+	unsigned short binned[97][2][10]; 
+	//first 40 bytes header: are the size of the array, then the time.
 	//9 bits integer part, 7 bits fractional part. hence 0-511.99Hz.
+	binned_header bh; 
+	bh.nchan = htons(96); //everything must be sent in netowrk order!
+	bh.nunits = htons(2); 
+	bh.nlags = htons(10); 
 	unsigned char buf[96];
 	int client = 0;
-	g_spikesock = setup_socket(4343,1); //tcp socket, server.
+	g_spikesock = setup_socket(4343,1,true); //tcp socket, server.
 	//check to see if a client is connected.
 	int passes = 0;
+	int rxbytes = 0; 
 	while(g_die == 0){
 		if(client <= 0){
 			client = accept_socket(g_spikesock);
 			if(client > 0){
 				printf("got new client connection!\n");
+				socket_timeout(client, 2); 
 			}
 		}
 		if(client > 0){
 			//see if they have requested something.
-			double reqtime = gettime();
+			double start = gettime();
 			//double start = reqtime;
-			int n = recv(client, buf, sizeof(buf), 0); //this seems to block?
-			//double end = gettime();
-			//printf("recv time: %f\n", end-start);
-			buf[n] = 0;
-			if(n > 0){
+			/*pollfd pfd; 
+			pfd.fd = client; 
+			pfd.events = POLLIN; 
+			pfd.revents = 0; 
+			int n = poll( &pfd, 1, 2000); 
+			printf("poll returned: %d revents %x\n", n, pfd.revents); */
+			int n = recv(client, &(buf[rxbytes]), sizeof(buf)-rxbytes, 0); //this seems to block?
+			if(n > 0)
+				rxbytes += n; 
+			double end = gettime();
+			printf("recv time: %f %d bytes\n", end-start, n);
+			if(rxbytes >= 5){
+				buf[rxbytes] = 0;
+				printf("rx message: %s\n", buf); 
+				rxbytes = 0; 
 				passes = 0;
-				//printf("got client request [%d]:%s\n",n,buf);
-				double a_req = atof((const char*)buf);
-				if(a_req > 0 && a_req < 10.0){
-					for(int i=0; i<96; i++){
-						for(int j=0; j<2; j++){
-							g_fr[i][j].set_a(a_req);
-						}
-					}
-				}
+				//double a_req = atof((const char*)buf);
+				//printf("got client request [%d]:%f\n",n,a_req);
 				//doesn't matter at this point -- make a response.
-				//start = gettime();
-				long long ltime = (long long)(reqtime * 1000.0); //put it in ms.
-				rates[0][0] = 2; //rows
-				rates[0][1] = 96; //columns.
-				rates[1][0] = (unsigned short)(ltime & 0xffff);
-				ltime >>= 16;
-				rates[1][1] = (unsigned short)(ltime & 0xffff);
-				ltime >>= 16;
-				rates[2][0] = (unsigned short)(ltime & 0xffff);
-				ltime >>= 16;
-				rates[2][1] = (unsigned short)(ltime & 0xffff);
+				bh.time = end; 
+				bswap_64((void*)&bh.time); 
+				memcpy((void*)binned, (void*)&bh, sizeof(bh)); 
 				for(int i=0; i<96; i++){
 					for(int j=0; j<2; j++){
-						rates[i+3][j] = g_fr[i][j].get_rate(reqtime);
+						g_fr[i][j].get_bins(end, &(binned[i+1][j][0])); 
+						//byte-swap everything. 
+						for(int k=0; k<10; k++)
+							binned[i+1][j][k] = htons(binned[i+1][j][k]); 
 					}
 				}
-				//end = gettime();
-				//printf("rate computation time: %f\n", end-start);
+				
+				double fin = gettime();
+				printf("rate computation time: %f\n", fin-end);
 				//start = end;
-				n = send(client,(void*)rates, sizeof(rates), 0);
-				if(n != sizeof(rates)){
+				n = send(client,(void*)binned, 40/*sizeof(binned)*/, 0);
+				if(n != 40/*sizeof(binned)*/){
 					close(client);
 					printf("sending message to client failed!\n");
 					client = 0;
 				}
-				usleep(5000); //5ms sleep. so the display does not lock up.
+				usleep(2000); //5ms sleep. so the display does not lock up.
 				//end = gettime();
 				//printf("sending message time: %f\n", end-start);
 				//else{
 				//printf("sent %d bytes to client.\n", n);
 				//}
-			}else{
+			}
+			if(n <= 0){
 				passes++;
 				if(passes > 6){
 					printf("no response, closing client connection\n");
 					if(client) close_socket(client);
 					client = 0; passes = 0;
 				}
-				usleep(200000);
+				usleep(2000);
 			}
 		}else{
 			usleep(100000);
@@ -1844,7 +1911,7 @@ int main(int argn, char **argc)
 	pthread_attr_init(&attr);
 	g_startTime = gettime();
 	pthread_create( &thread1, &attr, po8_thread, 0 );
-	pthread_create( &thread1, &attr, server_thread, 0 );
+	pthread_create( &thread1, &attr, mmap_thread, 0 );
 
 	//set the initial sampling stage.
 	gtk_combo_box_set_active(GTK_COMBO_BOX(combo), 12);
