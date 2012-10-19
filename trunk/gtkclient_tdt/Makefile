@@ -21,7 +21,7 @@ COBJS = convert.o decodePacket.o
 all: gtkclient
 convert: convert
 
-%.o: %.cpp vbo.h channel.h cgVertexShader.h
+%.o: %.cpp vbo.h channel.h cgVertexShader.h firingrate.h
 	g++ -c -o $@ $(CFLAGS) $(GTKFLAGS) $<
 
 spikes.pb.cc : spikes.proto
