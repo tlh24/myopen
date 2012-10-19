@@ -1479,6 +1479,9 @@ int main(int argn, char **argc)
 	GtkWidget *frame;
 	GtkWidget *button, *combo;
 	//GtkWidget *paned2;
+	
+	FiringRate fr; 
+	fr.get_bins_test(); 
 
 	char destIP[256];
 	for(int i=0;i<256;i++) destIP[i] = 0;
