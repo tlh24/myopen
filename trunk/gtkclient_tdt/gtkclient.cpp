@@ -1027,38 +1027,85 @@ void bswap_64(void* a){
 	b += h; 
 	*((long long*)a) = b; 
 }
+void flush_pipe(int fid){
+	fcntl(fid, F_SETFL, O_NONBLOCK);
+	char* d = (char*)malloc(1024*8); 
+	int r = read(fid, d, 1024*8); 
+	printf("flushed %d bytes\n", r); 
+	free(d); 
+	int opts = fcntl(fid,F_GETFL);
+	opts ^= O_NONBLOCK;
+	fcntl(fid, F_SETFL, opts);
+}
 void* mmap_thread(void*){
 	// sockets are too slow -- we need to memmap a file(s). 
 	/* matlab can do this -- very well, too! 
 	 * m = memmapfile('/tmp/binned', 'Format', {'uint16' [194 10] 'x'})
 	 * A = m.Data(1).x; 
 	 * */
-	int fid = open("/tmp/binned", O_RDWR); 
 	size_t length = 97*2*10*2; 
-	int* s = (int*)malloc(length); 
-	write(fid, s, length); //not buffered, I think. fill the file out.
-	free(s); 
-	if(!fid){
-		perror("could not open /tmp/binned\n"); 
-		return NULL; 
+	int fd = 0; 
+	if(0){
+		fd = shm_open("/bmi5_binned", O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
+		ftruncate(fd, length); 
+	}else{
+		fd = open("/tmp/binned", O_RDWR); 
+		if (fd == -1){
+			perror("could not open /tmp/binned\n"); 
+			return NULL; 
+		}
+		int* s = (int*)malloc(length); 
+		write(fd, s, length); //not buffered, I think. fill the file out.
+		free(s); 
 	}
-	void* addr = mmap(NULL, length, PROT_READ | PROT_WRITE, 
-							MAP_SHARED, fid, 0); 
-	if (addr == MAP_FAILED) {
-		close(fid);
+	void* addr = mmap(NULL, length, /*PROT_READ |*/ PROT_WRITE, 
+							MAP_SHARED, fd, 0); 
+	if (addr == MAP_FAILED){
+		close(fd);
 		perror("Error mmapping the file");
 		exit(EXIT_FAILURE);
 	}
-	unsigned short* bin = (unsigned short*)addr; 
+	int pipe_out = open("bmipipe_out", O_RDWR); 
+	if(!pipe_out){
+		perror("could not open ./bmipipe_out (make with mkfifo)\n"); 
+		return NULL; 
+	}
+	int pipe_in = open("bmipipe_in", O_RDWR); 
+	if(!pipe_in){
+		perror("could not open ./bmipipe_in (make with mkfifo)\n"); 
+		return NULL; 
+	}
+	volatile unsigned short* bin = (unsigned short*)addr; 
+	printf("mmap address: %lx\n", (long unsigned int)addr); 
+	int frame = 0; 
 	bin[0] = 1; 
-	bin[1] = 2; 
-	bin[2] = 3; 
+	bin[length/2-1] = 1; 
+	char buf[32]; int bufn = 0; 
+	flush_pipe(pipe_out); 
+
 	while(!g_die){
-		sleep(1); 
-		bin[0]++; 
+		printf("%d waiting for matlab...\n", frame); 
+		int r = read(pipe_in, &(buf[bufn]), 5);
+		if(r > 0) bufn += r; 
+		buf[bufn] = 0; 
+		printf("%d read %d %s\n", frame, r, buf); 
+		if(r >= 3){
+			for(int i=0; i<length/2; i++)
+				bin[i]++; //seems we need to touch all memory to update the first page. 
+			//msync(addr, length, MS_SYNC); 
+			//  if made with shm_open, this is ok -- no writes to disk.
+			usleep(100); //seems reliable with this in place.
+			write(pipe_out, "go\n", 3); 
+			printf("go\n"); 
+			bufn = 0; 
+		}else
+			usleep(200000); //does not seem to limit the frame rate, just the startup sync.
+		frame++; 
 	}
 	munmap(addr, length); 
-	close(fid); 
+	close(fd); 
+	close (pipe_in);
+	close (pipe_out); 
 	return NULL; 
 }
 void* server_thread(void* ){
@@ -1922,5 +1969,9 @@ int main(int argn, char **argc)
 	g_timeout_add(3000, chanscan, (gpointer)0);
 
 	gtk_main ();
+	//cancel the mmap thread -- probably waiting on a read(). 
+	if(pthread_cancel(thread1)){
+		perror("pthread_cancel mmap_thread"); 
+	}
 	KillFont();
 }
