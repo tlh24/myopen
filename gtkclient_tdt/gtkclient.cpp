@@ -883,6 +883,7 @@ void* po8_thread(void*){
 					card->readBlock(temp, numSamples);
 					card->flushBufferedData(numSamples);
 					bytes += numSamples * nchan * bps; 
+					totalSamples += numSamples; 
 				}
 			}else{
 				long double now = gettime(); 
@@ -936,16 +937,24 @@ void* po8_thread(void*){
 						g_obuf[k][(oldo + i)&255] = (gain * samp / 32768.f); 
 					}
 				}
-				if(0){
+				if(1){
 					//get the sync -- estimate TDT ticks from perf counter.
 					int ticks = (unsigned short)(temp[96*numSamples + numSamples -1]); 
 					ticks += (unsigned short)(temp[97*numSamples + numSamples -1]) << 16; 
 					long double pred = time * slope + offset; 
 					long double update = ticks - pred; 
-					offset += update * 1e-3; //kiss.
-					slope += update * 2e-6; 
+					offset += update * 3e-4; //kiss.
+					slope += update * 1e-5; //still, really need to refactor this for continual update.
+					// after some testing, it appears that updating the slope (clock rate difference)
+					// is not worthwhile -- better to just gradually adjust the offset. 
+					// still this code is relatively low-noise without being possibly numerically unstable. 
+					long double apr = 0.7; 
+					if(slope < 24414 - apr) slope = 24414.0-apr;
+					if(slope > 24414 + apr) slope = 24414.0+apr; 
 					if(frame % 200 == 50){
-						printf("sync offset %Lf slope %Lf ticks %d update %Lf\n", offset, slope, ticks, update); 	
+						printf("totalSamples %d ticks %d diff %d\n", 
+								 (int)totalSamples, ticks, (int)totalSamples - ticks); 
+						printf("sync offset %Lf slope %Lf update %Lf\n", offset, slope, update); 	
 					}
 				}
 				g_sample += numSamples; 
