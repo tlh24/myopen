@@ -108,13 +108,6 @@ bool g_templMatch[NSCALE][128][2];
 //the headstage match a,b over all 128 channels, per thread. cleared after every packet!!
 
 //circular buffers selected channels. Threads access indexes only associated with channels currently in focus
-float        g_sortAperture[4][2][16]; //the quality of the match found, circular buffer.
-i64	     	 g_sortOffset[4][2][16]; //offset to the best match.
-unsigned int g_sortUnit[4][16]; //have to remember to zero all of these.
-unsigned int g_sortI[NSCALE]; //index to the (short) circular buffer, needs to be per thread(better performing) or mutexed.
-i64			 g_sortWfOffset[4];
-int 		 	 g_sortWfUnit[4];
-i64			 g_unsortCount[4];
 
 float g_unsortrate = 0.0; //the rate that unsorted WFs get through.
 FILE* g_saveFile = 0;
@@ -856,6 +849,15 @@ void* sock_thread(void* param){
 	bool isBridgeFound = false;
 	bool addressBound  = false;
 	
+	float        g_sortAperture[4][2][16]; //the quality of the match found, circular buffer.
+	i64	     	 g_sortOffset[4][2][16]; //offset to the best match.
+	unsigned int g_sortUnit[4][16]; //have to remember to zero all of these.
+	unsigned int g_sortI = 0; //index to the (short) circular buffer, needs to be per thread(better performing) or mutexed.
+	i64			 g_sortWfOffset[4];
+	int 		 	 g_sortWfUnit[4];
+	i64			 g_unsortCount[4];
+	
+	
 	sockaddr_in from;
 	g_rxsock[tid] = setup_socket(4340+g_radioChannel[tid],0); //udp sock.
 	int bcastsock = setup_socket(4340,0); 
@@ -940,6 +942,7 @@ packet format in the file, as saved here:
 	-- If magic number is 0xc0edfad0, packet is a TX packet, exactly as
 	written out on the wire / UDP.
 */
+
 	while(g_die == 0){
 		socklen_t fromlen = sizeof(from);
 		int n = recvfrom(g_rxsock[tid], buf, sizeof(buf),0,
@@ -1097,8 +1100,8 @@ packet format in the file, as saved here:
 				for(int j=0; j<6; j++){
 					for(int k=0; k<NFBUF; k++){
 						int ch = g_channel[k];
-						if(ch > (tid+1)*128){ //channel not in bridge, don't update
-						  continue;}
+						if(ch > (tid+1)*128 || ch < (tid*128)){ continue;}//channel not in bridge, don't update
+						
 						
 						char samp = p->data[j*4+k]; //-128 -> 127.
 						z = 0.f;
@@ -1117,16 +1120,16 @@ packet format in the file, as saved here:
 					//align based on threshold crossing.
 					//this loop is per packet; get 6 samples per pkt, but have to
 					//look in the past to fill out the 32-sample wf display.
+					
 					for(int k=0; k<4; k++){
 						int h = g_channel[k];
-						if(h > (tid+1)*128){
-						  continue; //this channel is not in this bridge?
+						if(h > (tid+1)*128 || h < (tid*128)){ continue;} //this channel is not in this bridge?
 						  //should call this before?
-									}
+									
 						
-						g_sortUnit[k][g_sortI[tid]] = 0;
-						g_sortAperture[k][0][g_sortI[tid]] = 2048;
-						g_sortAperture[k][1][g_sortI[tid]] = 2048;
+						g_sortUnit[k][g_sortI] = 0;
+						g_sortAperture[k][0][g_sortI] = 2048;
+						g_sortAperture[k][1][g_sortI] = 2048;
 						for(int m=0; m<6; m++){
 							//first check to see if it matches template here.
 							//template: might as well make it equal on both sides; no reason for bias.
@@ -1144,9 +1147,9 @@ packet format in the file, as saved here:
 							}
 							//record the best match.
 							for(int u=0; u<2; u++){
-								if(g_sortAperture[k][u][g_sortI[tid]] > saa[u]){
-									g_sortAperture[k][u][g_sortI[tid]] = saa[u];
-									g_sortOffset[k][u][g_sortI[tid]] = offset -8; // [8 pre]
+								if(g_sortAperture[k][u][g_sortI] > saa[u]){
+									g_sortAperture[k][u][g_sortI] = saa[u];
+									g_sortOffset[k][u][g_sortI] = offset -8; // [8 pre]
 								}
 							}
 						}
@@ -1157,10 +1160,10 @@ packet format in the file, as saved here:
 							float saa = 16*256;
 							i64 off = 0;
 							for(int d=0; d<4; d++){
-								float f = g_sortAperture[k][u][(g_sortI[tid]-d)&0xf];
+								float f = g_sortAperture[k][u][(g_sortI-d)&0xf];
 								if(f < saa){
 									saa = f;
-									off = g_sortOffset[k][u][(g_sortI[tid]-d)&0xf];
+									off = g_sortOffset[k][u][(g_sortI-d)&0xf];
 								}
 							}
 							if(g_templMatch[tid][h&127][u]){ //problem is this persists over 4 packets.
@@ -1170,8 +1173,9 @@ packet format in the file, as saved here:
 									//the headstage and client are in agreement.
 									//clear client's store of potential matches.
 									for(int d=0; d<4; d++){
-										g_sortAperture[k][u][(g_sortI[tid]-d)&0xf] = 2048;
+										g_sortAperture[k][u][(g_sortI-d)&0xf] = 2048;
 									}
+									printf("channel %d unit %d headstage true positive.\n",h,u);
 								}else{
 									//headstage found a match. false positive.
 									g_sortWfUnit[k] = u+5;
@@ -1180,9 +1184,9 @@ packet format in the file, as saved here:
 								}
 							}
 							//check to see if the headstage may have missed a spike.
-							if(g_sortAperture[k][u][(g_sortI[tid]-4)&0xf] < aper){
+							if(g_sortAperture[k][u][(g_sortI-4)&0xf] < aper){
 								//the headstage may have missed a spike.
-								if(u == 1 && g_templMatch[tid][h][0]){
+								if(u == 1 && g_templMatch[tid][h&127][0]){
 									printf("channel %d unit b occluded by unit a.\n",h);
 								}else{
 									//did miss a spike. false negative.
@@ -1231,8 +1235,8 @@ packet format in the file, as saved here:
 							g_sortWfUnit[k] = 0;
 						}
 					} // over k, the channels.
-					g_sortI[tid]++;
-					g_sortI[tid] &= 0xf;
+					g_sortI++;
+					g_sortI &= 0xf;
 					}
 				}
 			}
