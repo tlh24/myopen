@@ -112,6 +112,7 @@ void updateGain(int chan){
 	float b[8];
 	int i,j,k;
 	unsigned int u;
+	
 	for(i=0; i<4; i++){
 		j = indx[i];
 		b[i*2+0] = lowpass_coefs[j]*gain1*16384.f;
@@ -183,6 +184,7 @@ void setOsc(int chan){
 	
 	chan = chan & (0xff ^ 32); //map to the lower channels.
 		// e.g. 42 -> 10,42; 67 -> 67,99 ; 100 -> 68,100
+		
 	int kchan = chan & 127; 
 	
 	for(i=0; i<4; i++){
@@ -361,9 +363,12 @@ void setTemplate(int ch, int aB){
 	aB &= 1;
 	//each template is 16 points; can write 4 at a time, so need 4 writes.
 	//template range: [-0.5 .. 0.5]
+	
+	
 	for(int p=0; p<4; p++){
 		unsigned int* ptr = g_sendbuf[tid];
 		ptr += (g_sendW[tid] % g_sendL[tid]) * 8;
+		
 		for(int i=0; i<4; i++){
 			//template A starts with newest sample (rightmost) -- loop.
 			//template B is in normal order. (oldest first)
@@ -372,10 +377,10 @@ void setTemplate(int ch, int aB){
 				(A1_STRIDE*ch + (A1_TEMPLATE+A1_APERTURE)*aB +
 				A1_TEMPA + (p*4+i))*4));
 			unsigned char a,b,c,d;
-			a = (unsigned char)round((g_c[ch+ 0 + 128*tid]->m_template[aB][n]+0.5f) * 255.f);
-			b = (unsigned char)round((g_c[ch+32 + 128*tid]->m_template[aB][n]+0.5f) * 255.f);
-			c = (unsigned char)round((g_c[ch+64 + 128*tid]->m_template[aB][n]+0.5f) * 255.f);
-			d = (unsigned char)round((g_c[ch+96 + 128*tid]->m_template[aB][n]+0.5f) * 255.f);
+			a = (unsigned char)round((g_c[ch +  0 + 128*tid]->m_template[aB][n]+0.5f) * 255.f);
+			b = (unsigned char)round((g_c[ch + 32 + 128*tid]->m_template[aB][n]+0.5f) * 255.f);
+			c = (unsigned char)round((g_c[ch + 64 + 128*tid]->m_template[aB][n]+0.5f) * 255.f);
+			d = (unsigned char)round((g_c[ch + 96 + 128*tid]->m_template[aB][n]+0.5f) * 255.f);
 			unsigned int u = ((a << 0) & 0xff) |  //gcc will optimize this sillyness.
 							((b << 8) & 0xff00) |     //I hate you so much Tim.
 							((c <<16) & 0xff0000) |
