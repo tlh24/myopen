@@ -75,8 +75,8 @@ char g_bridgeIP[NSCALE][256]; //which thread has which bridge IP. Needs a mutex 
 
 
 static float	g_fbuf[NFBUF][NSAMP*3]; //continuous waveform. range [-1 .. 1]
-i64	g_fbufW; //where to write to (always increment), might not be thread safe
-i64	g_fbufR; //display thread reads from here - copies to mem
+i64	g_fbufW[NFBUF]; //where to write to (always increment), might not be thread safe
+i64	g_fbufR[NFBUF]; //display thread reads from here - copies to mem
 unsigned int 	g_nsamp = 4096; //given the current level of zoom (1 = 4096 samples), how many samples to update?
 static float 	g_sbuf[NSCALE][2][128*NSBUF*2]; //2 units, 128 channels, 1024 spikes, 2 floats / spike.
 static float	g_rasterSpan = 10.f; // %seconds.
@@ -396,19 +396,21 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 
 	//copy over any new data.
 	if(g_pause <= 0.0){
-		if(g_fbufR < g_fbufW){
-			i64 w = g_fbufW; //atomic
-			i64 sta = g_fbufR % g_nsamp;
-			i64 fin = w % g_nsamp;
-			for(int k=0; k<NFBUF; k++){
-				if(fin < sta) { //wrap
-					copyData(g_vbo1[k], sta, g_nsamp, g_fbuf[k], 3);
-					copyData(g_vbo1[k], 0, fin, g_fbuf[k], 3);
-				} else {
-					copyData(g_vbo1[k], sta, fin, g_fbuf[k], 3);
+		for(int k=0; k<NFBUF; k++){
+			if(g_fbufR[k] < g_fbufW[k]){
+				i64 w = g_fbufW[k]; //atomic
+				i64 sta = g_fbufR[k] % g_nsamp;
+				i64 fin = w % g_nsamp;
+					if(fin < sta) { //wrap
+						copyData(g_vbo1[k], sta, g_nsamp, g_fbuf[k], 3);
+						copyData(g_vbo1[k], 0, fin, g_fbuf[k], 3);
+					} else {
+						copyData(g_vbo1[k], sta, fin, g_fbuf[k], 3);
+					}
+				
+					g_fbufR[k] = w;
 				}
 			}
-			g_fbufR = w;
 		}
 		//ditto for the spike buffers (these can be disordered ..they generally don't overlap.)
 		
@@ -854,7 +856,7 @@ void* sock_thread(void* param){
 	unsigned int g_sortUnit[4][16]; //have to remember to zero all of these.
 	unsigned int g_sortI = 0; //index to the (short) circular buffer, needs to be per thread(better performing) or mutexed.
 	i64			 g_sortWfOffset[4];
-	int 		 	 g_sortWfUnit[4];
+	int 		 g_sortWfUnit[4];
 	i64			 g_unsortCount[4];
 	
 	
@@ -1097,22 +1099,23 @@ packet format in the file, as saved here:
 					g_c[j+(128*tid)]->isiIncr();
 				}
 				//color the rasters. really should color differently.
-				for(int j=0; j<6; j++){
-					for(int k=0; k<NFBUF; k++){
+				for(int k=0; k<NFBUF; k++){
+					for(int j=0; j<6; j++){
 						int ch = g_channel[k];
 						if(ch > (tid+1)*128 || ch < (tid*128)){ continue;}//channel not in bridge, don't update
-						
 						
 						char samp = p->data[j*4+k]; //-128 -> 127.
 						z = 0.f;
 						//>128 -> 0-127
 						if(g_templMatch[tid][ch&127][0]) z = 1.f;
 						if(g_templMatch[tid][ch&127][1]) z = 2.f;
-						g_fbuf[k][(g_fbufW % g_nsamp)*3 + 1] =
+						g_fbuf[k][(g_fbufW[k] % g_nsamp)*3 + 1] =
 							(((samp+128.f)/255.f)-0.5f)*2.f; //range +-1.
-						g_fbuf[k][(g_fbufW % g_nsamp)*3 + 2] = z;
+						g_fbuf[k][(g_fbufW[k] % g_nsamp)*3 + 2] = z;
+						
+						g_fbufW[k]++;
 					}
-					g_fbufW++;
+					
 				}
 				p++; //next packet!
 				if(g_mode == MODE_SORT){
@@ -1121,7 +1124,7 @@ packet format in the file, as saved here:
 					//this loop is per packet; get 6 samples per pkt, but have to
 					//look in the past to fill out the 32-sample wf display.
 					
-					for(int k=0; k<4; k++){
+					for(int k=0; k<NFBUF; k++){
 						int h = g_channel[k];
 						if(h > (tid+1)*128 || h < (tid*128)){ continue;} //this channel is not in this bridge?
 						  //should call this before?
@@ -1137,7 +1140,7 @@ packet format in the file, as saved here:
 							//however, for parity with the headstage, convolve with the most
 							//recent 16 samples.
 							float saa[2] = {0,0};
-							i64 offset = g_fbufW - 16 + m-5; //absolute index to sample [0].
+							i64 offset = g_fbufW[k] - 16 + m-5; //absolute index to sample [0].
 							for(int j=0; j<16; j++){
 								float w;
 								w = g_fbuf[k][mod2(offset + j, g_nsamp)*3+1];
@@ -1202,12 +1205,12 @@ packet format in the file, as saved here:
 								float threshold = g_c[h]->getThreshold();
 								int centering = g_c[h]->getCentering();
 								for(int m=0; m<6; m++){
-									i64 o = g_fbufW - centering + m-6;
+									i64 o = g_fbufW[k] - centering + m-6;
 									float a = g_fbuf[k][mod2(o, g_nsamp)*3+1];
 									float b = g_fbuf[k][mod2(o+1, g_nsamp)*3+1];
 									if(a <= threshold && b > threshold){
 										g_sortWfUnit[k] = -1; //unsorted.
-										g_sortWfOffset[k] = g_fbufW + m-31-6;
+										g_sortWfOffset[k] = g_fbufW[k] + m-31-6;
 									}
 								}
 							}
@@ -1216,7 +1219,7 @@ packet format in the file, as saved here:
 							if(!g_sortWfUnit[k] && g_unsortrate > 0.0){
 								if(g_unsortCount[k] > 31250.0/g_unsortrate){
 									g_sortWfUnit[k] = -1;
-									g_sortWfOffset[k] = g_fbufW - 32;
+									g_sortWfOffset[k] = g_fbufW[k] - 32;
 									g_unsortCount[k] = 0;
 								}
 							}
@@ -1224,7 +1227,7 @@ packet format in the file, as saved here:
 						g_unsortCount[k] += 6;
 						//okay, copy over waveforms if there is enough data.
 						unsigned int o = g_sortWfOffset[k];
-						unsigned int dist = g_fbufW - o;
+						unsigned int dist = g_fbufW[k] - o;
 						if(dist >= 32 && g_sortWfUnit[k]){
 							float wf[32];
 							for(int m=0; m<32; m++){
@@ -1294,9 +1297,9 @@ packet format in the file, as saved here:
 				for(int j=0; j<8; j++){
 					unsigned short s = *ptr++;
 					float f = (float)s/(32768.f) -1.f;
-					g_fbuf[j][mod2(g_fbufW, g_nsamp)*3+1] = f;
+					g_fbuf[j][mod2(g_fbufW[j], g_nsamp)*3+1] = f;
 				}
-				g_fbufW++;
+				g_fbufW[j]++;
 			}
 		}
 		pthread_mutex_lock(&mutex_totalPackets);
