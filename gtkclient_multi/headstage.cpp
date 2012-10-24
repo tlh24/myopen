@@ -102,7 +102,6 @@ void updateGain(int chan){
 	*/
 	//thread handles channels in multiples of 128. If 
 	int tid = chan/128; //0 if lower than 128, etc. This should update to the pertinent thread index in the i64 buffers
-	
 	chan = chan & (0xff ^ 32); //map to the lower channels. Should still map properly to lower channels if > 128
 		// e.g. 42 -> 10,42; 67 -> 67,99 ; 100 -> 68,100. This should be usef if chan is indexing g_c
 	float gain1 = sqrt(fabs(g_c[chan]->m_gain));
