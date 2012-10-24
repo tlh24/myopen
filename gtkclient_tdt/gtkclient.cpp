@@ -815,6 +815,85 @@ void destroy(GtkWidget *, gpointer){
 	}
 	gtk_main_quit();
 }
+class GainController{
+public: 
+	long double m_avg; 
+	long double m_absavg; 
+	long double m_alpha; 
+	long double m_gain;
+	long double m_gainIncr;
+	long double m_gainDecr; 
+	
+	GainController(double initialGain){
+		m_alpha = 0.95; 
+		m_avg = 0.0; m_absavg = 1.0; 
+		m_gain = initialGain; 
+		m_gainIncr = initialGain / 1509.47;
+		m_gainDecr = initialGain / 2896.12; 
+	}
+	~GainController(){}
+ 	void update(long double u){
+		m_avg = m_alpha * m_avg + (1.0-m_alpha)*u;
+		m_absavg = m_alpha * m_absavg + (1.0-m_alpha)*fabs(u); 
+		if(m_absavg > 0.0){
+			if(fabs(m_avg) / m_absavg > 0.3) m_gain += m_gainIncr; 
+			else m_gain -= m_gainIncr; 
+			if(m_gain < 0.0) m_gain *= -1.0; 
+		}
+	}
+	void prinfo(){
+		printf("gain controller: ratio %.4Lf, gain %.7Lf avg %.4Lf absavg %.4Lf\n", 
+				fabs(m_avg) / m_absavg, m_gain, m_avg, m_absavg); 
+	}
+};
+class TimeSync{
+	//take performance counter time, produce ticks. 
+public:
+	long double m_slope; 
+	long double m_offset; 
+	long double m_timeOffset; 
+	long double m_update; 
+	//updated periodically to prevent precision issues.
+	
+	GainController* slopeGC; 
+	GainController* offsetGC; 
+	
+	TimeSync(){
+		m_slope = 24414.0625; 
+		m_offset = 0.0; 
+		m_timeOffset = 0.0; 
+		slopeGC = new GainController(1.2e-3); 
+		offsetGC = new GainController(3e-3); 
+	}
+	~TimeSync(){
+		delete slopeGC; 
+		delete offsetGC; 
+	}
+	void prinfo(){
+		printf("sync offset %Lf slope %.4Lf update %.4Lf\n", 
+					m_offset, m_slope, m_update); 	
+		printf("offset "); offsetGC->prinfo();
+		printf("slope "); slopeGC->prinfo(); 
+	}
+	void update(long double time, int ticks, int frame){
+		long double pred = (time-m_timeOffset) * m_slope + m_offset; 
+		m_update = ticks - pred; 
+		m_offset += m_update * offsetGC->m_gain;
+		offsetGC->update(m_update); 
+		if(frame > 2000){
+			m_slope += m_update * slopeGC->m_gain; 
+			slopeGC->update(m_update); 
+		}
+		if(time - m_timeOffset > 10){
+			m_offset += m_slope * (time - m_timeOffset); 
+			m_timeOffset = time; 
+		}
+	}
+	double getTicks(long double time){
+		return (time - m_timeOffset) * m_slope + m_offset;
+	}
+}; 
+TimeSync g_ts; 
 void* po8_thread(void*){
 	int count = 0, total;
 	PO8e *card = NULL;
@@ -853,8 +932,6 @@ void* po8_thread(void*){
 		// start the timer used to compute the speed and set the collected bytes to 0
 		long double starttime = gettime(); 
 		long double totalSamples = 0.0; //for simulation.
-		long double slope = 24414.0625; 
-		long double offset = 0.0; 
 		long long bytes = 0; 
 		unsigned int frame = 0; 
 		unsigned int bps = 2; 
@@ -941,20 +1018,11 @@ void* po8_thread(void*){
 					//get the sync -- estimate TDT ticks from perf counter.
 					int ticks = (unsigned short)(temp[96*numSamples + numSamples -1]); 
 					ticks += (unsigned short)(temp[97*numSamples + numSamples -1]) << 16; 
-					long double pred = time * slope + offset; 
-					long double update = ticks - pred; 
-					offset += update * 3e-4; //kiss.
-					slope += update * 1e-5; //still, really need to refactor this for continual update.
-					// after some testing, it appears that updating the slope (clock rate difference)
-					// is not worthwhile -- better to just gradually adjust the offset. 
-					// still this code is relatively low-noise without being possibly numerically unstable. 
-					long double apr = 0.7; 
-					if(slope < 24414 - apr) slope = 24414.0-apr;
-					if(slope > 24414 + apr) slope = 24414.0+apr; 
-					if(frame % 200 == 50){
+					g_ts.update(time, ticks, frame); 
+					if(frame % 500 == 50 && 1){
 						printf("totalSamples %d ticks %d diff %d\n", 
 								 (int)totalSamples, ticks, (int)totalSamples - ticks); 
-						printf("sync offset %Lf slope %Lf update %Lf\n", offset, slope, update); 	
+						g_ts.prinfo(); 
 					}
 				}
 				g_sample += numSamples; 
@@ -1102,10 +1170,10 @@ void* mmap_thread(void*){
 			for(int i=0; i<length/2; i++)
 				bin[i]++; //seems we need to touch all memory to update the first page. 
 			//msync(addr, length, MS_SYNC); 
-			//  if made with shm_open, this is ok -- no writes to disk.
+			//  if made with shm_open, msync is ok -- no writes to disk.
 			usleep(100); //seems reliable with this in place.
 			write(pipe_out, "go\n", 3); 
-			printf("go\n"); 
+			printf("sent pipe_out 'go'\n"); 
 			bufn = 0; 
 		}else
 			usleep(200000); //does not seem to limit the frame rate, just the startup sync.
