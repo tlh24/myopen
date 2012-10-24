@@ -449,10 +449,6 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 	if(g_mode == MODE_RASTERS){
 		g_vsThreshold->setParam(2,"xzoom",g_rasterZoom);
 
-		//glPushMatrix();
-		//glScalef(1.f, 0.5f, 1.f); //don't think this does anythaaang.
-		//glTranslatef(0.f,0.5f, 0.f);
-
 		//draw zero lines for the 4 continuous channels.
 		for(int k=0; k<NFBUF; k++){
 			glLineWidth(1.f);
