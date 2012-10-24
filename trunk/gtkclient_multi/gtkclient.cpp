@@ -32,17 +32,7 @@
 #include <sstream>
 #include <stdint.h>
 
-#define NSAMP (24*1024)
-#define NDISPW 256
-#ifdef EMG
-#define NFBUF 8 //for EMG
-#else
-#define NFBUF 4
-#endif
-#define NSBUF	1024
-
-//the magic number. should get from command line
-#define NSCALE 2
+#include "gtkglobals.h"
 
 #include "../firmware_stage9_tmpl/memory.h"
 #include "headstage.h"
@@ -70,9 +60,8 @@ cgVertexShader*		g_vsThreshold;
 float		g_cursPos[2];
 float		g_viewportSize[2] = {640, 480}; //width, height.
 
-int  g_radioChannel[NSCALE] = {114, 124};
 char g_bridgeIP[NSCALE][256]; //which thread has which bridge IP. Needs a mutex lock.
-
+int  g_radioChannel[NSCALE] = {114, 124};
 
 static float	g_fbuf[NFBUF][NSAMP*3]; //continuous waveform. range [-1 .. 1]
 i64	g_fbufW[NFBUF]; //where to write to (always increment), might not be thread safe
@@ -435,7 +424,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		for(int i=0; i<128*NSCALE; i++){
 			g_c[i]->copy();
 		}
-	}
+	
 	/* draw in here */
 	glMatrixMode(GL_MODELVIEW);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -518,7 +507,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		glShadeModel(GL_FLAT);
 
 		glPushMatrix();
-		glScalef(1.f/g_rasterSpan, -1.f/130.f, 1.f);
+		glScalef(1.f/g_rasterSpan, -1.f/(130.f*NSCALE), 1.f);
 		int lt = (int)time / (int)g_rasterSpan;
 		lt *= (int)g_rasterSpan;
 		float x = time - (float)lt;
@@ -549,12 +538,12 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		glColor4f (1., 0., 0., 0.5);
 		glBegin(GL_LINES);
 		glVertex3f( time, 0, 0.f);
-		glVertex3f( time, 130.f, 0.f);
+		glVertex3f( time, (130.f*NSCALE), 0.f);
 		glColor4f (0.5, 0.5, 0.5, 0.5);
 		//draw old times, every second.
 		for(int t=(int)time; t > time-g_rasterSpan*2; t--){
 			glVertex3f( (float)t, 0, 0.f);
-			glVertex3f( (float)t, 130.f, 0.f);
+			glVertex3f( (float)t, (130.f*NSCALE), 0.f);
 		}
 		glEnd();
 		glEnable(GL_LINE_SMOOTH);
@@ -563,7 +552,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		for(int k=0; k<4; k++){
 			glBegin(GL_LINE_STRIP);
 			glColor4f (1., 0., 0., 0.5);
-			float y = (float)(1+g_channel[k])/-130.f;
+			float y = (float)(1+g_channel[k])/(-130.f*NSCALE);
 			glVertex3f( -1.f, y, 0.f);
 			glVertex3f( 1.f, y, 0.f);
 			glEnd();

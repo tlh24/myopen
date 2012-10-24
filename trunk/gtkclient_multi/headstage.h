@@ -1,10 +1,8 @@
 #ifndef __HEADSTAGE_H__
 #define __HEADSTAGE_H__
 
-#define NSCALE 2
+#include "gtkglobals.h"
 
-#define i64 long long
-#define u32 unsigned int
 //globals.  could make a class for these but .. eh
 extern unsigned int*	g_sendbuf[NSCALE];
 extern i64		g_sendW[NSCALE]; //where to write to (in 32-byte increments)
