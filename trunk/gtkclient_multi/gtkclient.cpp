@@ -81,6 +81,7 @@ Channel*	g_c[NSCALE*128]; //g_c is the only variable that holds absolute indexin
 FiringRate	g_fr[NSCALE][128][2];
 GLuint 		g_base;            // base display list for the font set.
 
+unsigned int g_svn = 841; //the svn version
 bool   g_die = false;
 double g_pause = -1.0;
 double g_rasterZoom = 0.15;
@@ -792,11 +793,11 @@ void* strobe_thread(void*){
 				
 				pthread_mutex_lock(&mutex_saveFile);
 				fwrite((void*)&tmp, 4, 1, g_saveFile); //fwrite is atomic in POSIX systems, still, sync
-				tmp = 784; //SVN version
+				tmp = g_svn; //SVN version
 				tmp <<= 16;
 				//tmp += tlen & 0xffff; //size of the ensuing packet data.
-				tmp += sn; //buffer size
-				fwrite((void*)&tmp, 4, 1, g_saveFile);
+				unsigned int siz = tmp + sn; //size of the ensuing packet data. += sn; //buffer size
+				fwrite((void*)&siz, 4, 1, g_saveFile);
 				fwrite((void*)&rxtime, 8, 1, g_saveFile);
 				//fwrite((void*)(&(buf2[4])),tlen,1,g_saveFile); //sizedelimited buffer
 				fwrite((void*)buf2, sn, 1, g_saveFile); //write ALL the buffer
@@ -954,10 +955,10 @@ packet format in the file, as saved here:
 				
 				pthread_mutex_lock(&mutex_saveFile);
 				fwrite((void*)&tmp, 4, 1, g_saveFile);
-				tmp = 784; //SVN version.
+				tmp = g_svn; //SVN version.
 				tmp <<= 16;
-				tmp += n; //size of the ensuing packet data.
-				fwrite((void*)&tmp, 4, 1, g_saveFile);
+				unsigned int siz = tmp + n; //size of the ensuing packet data.
+				fwrite((void*)&siz, 4, 1, g_saveFile);
 				fwrite((void*)&rxtime, 8, 1, g_saveFile);
 				fwrite((void*)buf,n,1,g_saveFile);
 				
@@ -973,10 +974,10 @@ packet format in the file, as saved here:
 					
 					pthread_mutex_lock(&mutex_saveFile);
 					fwrite((void*)&tmp, 4, 1, g_saveFile);
-					tmp = 784; //SVN version.
+					tmp = g_svn; //SVN version.
 					tmp <<= 16;
-					tmp += len; //size of the ensuing text data.
-					fwrite((void*)&tmp, 4, 1, g_saveFile);
+					unsigned int siz = tmp + len; //size of the ensuing packet data.
+					fwrite((void*)&siz, 4, 1, g_saveFile);
 					fwrite((void*)&rxtime, 8, 1, g_saveFile);
 					fwrite((void*)g_messages[g_messR[tid] % 1024], len, 1, g_saveFile);
 					
@@ -1256,7 +1257,7 @@ packet format in the file, as saved here:
 					
 					pthread_mutex_lock(&mutex_saveFile);
 					fwrite((void*)&tmp, 4, 1, g_saveFile);
-					tmp = 605; //SVN version.
+					tmp = g_svn; //SVN version.
 					tmp <<= 16;
 					n = 32; //bytes to send.
 					tmp += n; //size of the ensuing packet data.

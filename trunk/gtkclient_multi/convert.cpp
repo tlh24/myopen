@@ -65,8 +65,8 @@ int gzipp(unsigned char* data, u64 len, FILE *dest, int level)
 
 int main(int argn, char **argc){
 	if(argn != 3 && argn != 2){
-		printf("usage: veovert infile.bin outfile.mat\n");
-		printf(" or just: veovert infile.bin\n");
+		printf("usage: convert infile.bin outfile.mat\n");
+		printf(" or just: convert infile.bin\n");
 		printf("\n For reference, there are 4 output files:\n");
 		printf("\t $.mat : contains \n");
 		printf("\t\t time, wall time within the client, synchronous to the BMI.\n");
@@ -184,7 +184,37 @@ int main(int argn, char **argc){
 					msglength += siz;
 					fseeko(in,siz+8, SEEK_CUR); //8 byte double timestamp.
 					pos += 16+siz;
-				} else {
+				}
+				else if( u == 0x1eafbabe){
+					fread((void*)&u,4,1,in);
+					unsigned int siz = u & 0xffff;
+					double rxtime = 0.0;
+					fread((void*)&rxtime,8,1,in); //rx time in seconds.
+					
+					//read the buffer (format) "timestamp frame"
+					char buf[64];
+					//buf[siz] = 0;
+					fread((void*)&buf, siz, 1, in);
+					int frame;
+					double txtime;
+					
+					sscanf(buf, "%lg %d", &txtime, &frame);
+					strobe_tx[kp] = txtime;
+					strobe_rx[kp] = rxtime;
+					track_frame[kp] = frame;
+					//fseeko(in,siz, SEEK_CUR);
+					pos += 16+siz;
+					printf("%lg %d\n", txtime, frame);
+					kp++;
+					if(kp > strobepackets){
+						printf("error! time position kp > strobepackets\n");
+						printf("%lld > %lld \n", kp, strobepackets);
+						printf("file offset %ld\n", ftello(in));
+						exit(0);
+					}
+
+					pos += 16+siz;
+				}else {
 					printf("magic number seems off, is 0x%x, %lld bytes, %lld packets\n",
 						   u,pos,rxpackets);
 					exit(0);
