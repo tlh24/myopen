@@ -55,12 +55,12 @@ public:
 		for(int j=0; j<2; j++){
 			sqliteGetBlob(ch, j, "pca", &(m_pca[j][0]), 32);
 			sqliteGetBlob(ch, j, "template", &(m_template[j][0]), 16);
-			m_aperture[j] = sqliteGetValue2(ch, j, "aperture", 56.f); 
+			m_aperture[j] = sqliteGetValue2(ch, j, "aperture", 0.f); 
 		}
 		sqliteGetBlob(ch, 0, "pcaScl", m_pcaScl, 2);
 		m_threshold = sqliteGetValue(ch, "threshold", 0.6f); 
 		m_centering = sqliteGetValue(ch, "centering", 25.f); 
-		m_gain = sqliteGetValue(ch, "gain", 1.f);
+		m_gain = sqliteGetValue(ch, "gain", 2.f);
 		m_agc = sqliteGetValue(ch, "agc", 6000.f);
 		//init m_wfVbo.
 		for(int i=0; i<512; i++){
