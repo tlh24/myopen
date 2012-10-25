@@ -14,6 +14,8 @@
 #define i64 long long
 #define u32 unsigned int
 
+#define HEADSTAGE 2
+
 //#define _LARGEFILE_SOURCE enabled by default.
 //#define _LARGEFILE64_SOURCE
 #define _FILE_OFFSET_BITS 64
@@ -140,52 +142,228 @@ int main(int argn, char **argc){
 		u64 rxpackets = 0;
 		u64 txpackets = 0;
 		u64 msgpackets = 0;
+		u64 strobepackets = 0;
 		u64 msglength = 0;
+		u64 strobelength = 0;
 		u64 spikes = 0;
 		bool done = false;
 		while(!done){
 			fread((void*)&u,4,1,in);
 			if(ferror(in) || feof(in)) done = true;
 			else {
-				if(u == 0xdecafbad){
-					fread((void*)&u,4,1,in);
-					unsigned int siz = u & 0xffff;
-					//printf("u 0x%x\n",u);
-					unsigned int npak = (siz-4)/(4+32);
-					rxpackets += npak;
-					//read these in -- but don't use them.
-					double rxtime = 0.0;
-					unsigned int dropped = 0;
-					fread((void*)&rxtime,8,1,in); //rx time in seconds.
-					fread((void*)&dropped,4,1,in);
-					for(unsigned int i=0;i<npak; i++){
-						packet p;
-						fread((void*)&p,sizeof(p),1,in);
-						int channels[32]; char match[32];
-						unsigned int echo = 0;
-						decodePacket(&p, channels, match, echo);
-						for(unsigned int k=0; k<32; k++){
-							if(match[k]) spikes++;
+				for(unsigned int c = 0; c < HEADSTAGE; c++){
+					if(u == 0xdecafbad + c){
+						fread((void*)&u,4,1,in);
+						unsigned int siz = u & 0xffff;
+						//printf("u 0x%x\n",u);
+						unsigned int npak = (siz-4)/(4+32);
+						rxpackets += npak;
+						//read these in -- but don't use them.
+						double rxtime = 0.0;
+						unsigned int dropped = 0;
+						fread((void*)&rxtime,8,1,in); //rx time in seconds.
+						fread((void*)&dropped,4,1,in);
+						for(unsigned int i=0;i<npak; i++){
+							packet p;
+							fread((void*)&p,sizeof(p),1,in);
+							int channels[32]; char match[32];
+							unsigned int echo = 0;
+							decodePacket(&p, channels, match, echo);
+							for(unsigned int k=0; k<32; k++){
+								if(match[k]) spikes++;
+							}
 						}
-					}
-					pos += 16+siz;
-				}else if(u == 0xc0edfad0){
+						pos += 16+siz;
+					}else if(u == 0xc0edfad0 + c){
+						fread((void*)&u,4,1,in);
+						unsigned int siz = u & 0xffff;
+						//printf("u 0x%x\n",u);
+						txpackets++;
+						fseeko(in,siz+8, SEEK_CUR);
+						pos += 16+siz;
+					}else if(u == 0xb00a5c11 + c){
+						fread((void*)&u,4,1,in);
+						unsigned int siz = u & 0xffff;
+						//printf("u 0x%x\n",u);
+						msgpackets += 1;
+						msglength += siz;
+						fseeko(in,siz+8, SEEK_CUR); //8 byte double timestamp.
+						pos += 16+siz;
+						
+					}else if(u == 0x1eafbabe + c){
+					//tracking info.
 					fread((void*)&u,4,1,in);
 					unsigned int siz = u & 0xffff;
 					//printf("u 0x%x\n",u);
-					txpackets++;
-					fseeko(in,siz+8, SEEK_CUR);
-					pos += 16+siz;
-				}else if(u == 0xb00a5c11){
-					fread((void*)&u,4,1,in);
-					unsigned int siz = u & 0xffff;
-					//printf("u 0x%x\n",u);
-					msgpackets += 1;
-					msglength += siz;
+					strobepackets += 1;
+					strobelength += siz + 8;
 					fseeko(in,siz+8, SEEK_CUR); //8 byte double timestamp.
 					pos += 16+siz;
+				}else {
+					printf("magic number seems off, is 0x%x, %lld bytes, %lld packets\n",
+						   u,pos,rxpackets);
+					exit(0);
 				}
-				else if( u == 0x1eafbabe){
+			}
+				if(ferror(in) || feof(in)) done = true;
+				
+			}
+		}
+		printf("total %lld rxpackets, %lld txpackets, %lld spikes, %lld messages\n",
+			   rxpackets, txpackets, spikes, msgpackets);
+		if(rxpackets > 0x7fffffff){
+			printf("you will not be able to save packet timestamps.\n");
+		}
+		fseeko(in,0, SEEK_SET);
+		//okay, allocate appropriate data structs:
+		// time (double), analog(i8), channel (i8),
+		// spike_time (double), spikes(i32)
+		double* time;
+		double* strobe_tx;
+		double* strobe_rx;
+		mat_uint32_t* mstimer;
+		unsigned char* analog;
+		unsigned char* channel;
+		mat_uint32_t* spike_ts;
+		mat_int8_t* spike_ch;
+		mat_int8_t* spike_unit;
+		mat_uint32_t*  track_frame;
+		// store timestamp (in samples), rx time (not necessarily accurate) - one per pkt
+		// store channel # and sample
+		// store channel & timestamp for spikes.
+		// just ignore dropped packets for now.
+		time = (double*)malloc(rxpackets * sizeof(double));
+		  if(!time){ printf("could not allocate time variable."); exit(0);}
+		mstimer = (mat_uint32_t*)malloc(rxpackets * sizeof(int) );
+		 if(!mstimer){ printf("could not allocate mstimer variable."); exit(0);}
+
+		spike_ts = (mat_uint32_t*)malloc(spikes * sizeof(int));
+		  if(!spike_ts){ printf("could not allocate spike_ts variable."); exit(0);}
+		spike_ch = (mat_int8_t*)malloc(spikes * 32);
+		  if(!spike_ch){ printf("could not allocate spike_ch variable."); exit(0);}
+		spike_unit = (mat_int8_t*)malloc(spikes * 32);
+		  if(!spike_unit){ printf("could not allocate spike_unit variable."); exit(0);}
+
+		analog = (unsigned char*)malloc(rxpackets * 24 );
+		  if(!analog){ printf("could not allocate analog variable."); exit(0);}
+		channel = (unsigned char*)malloc(rxpackets * 4 ); //channel does not change within packets.
+		  if(!channel){ printf("could not allocate channel variable."); exit(0);}
+
+		strobe_tx = (double*)malloc(strobepackets * sizeof(double)); //client side timestamp
+			if(!strobe_tx){ printf("could not allocate tracking variable."); /*exit(0) We don't want to exit!;*/}
+		strobe_rx = (double*)malloc(strobepackets * sizeof(double)); //server side timestamp
+			if(!strobe_rx){ printf("could not allocate tracking variable."); /*exit(0) We don't want to exit!;*/}
+		track_frame  = (mat_uint32_t* )malloc(strobepackets * sizeof(int));
+			if(!track_frame){ printf("could not allocate tracking variable."); /*exit(0) We don't want to exit!;*/}
+			
+		//also need to inspect the messages, to see exactly when the channels changed.
+		u64 tp = 0; // packet position (index time, aka timestamp)
+		u64 sp = 0; // spike position (index spike variables)
+		u64 kp = 0; // strobe packet position (index time, aka strobe timestamp)
+		
+		char msgs[16][128]; //use this to save messages ; appy them when their echo appears.
+		for(u64 i=0; i<16*128; i++){
+			msgs[0][i] = 0; //yes, you can do that in c!
+		}
+		int chans[4] = {0,32,64,96};
+		done = false;
+		while(!done){
+			unsigned int echo;
+			fread((void*)&u,4,1,in);
+			if(ferror(in) || feof(in)) done = true;
+			else {
+				for(unsigned int c = 0; c < HEADSTAGE; c++){
+					if(u == 0xdecafbad + c){
+						fread((void*)&u,4,1,in);
+						unsigned int siz = u & 0xffff;
+						unsigned int npak = (siz-4)/(4+32);
+						//first 4 is for dropped packet count
+						//second 4 is for 4 byte bridge milisecond counter
+						//printf("npak %d siz %d\n",npak,siz);
+						double rxtime = 0.0;
+						unsigned int dropped = 0;
+						fread((void*)&rxtime,8,1,in); //rx time in seconds.
+						fread((void*)&dropped,4,1,in);
+
+						for(unsigned int i=0;i<npak; i++){
+							packet p;
+							fread((void*)&p,sizeof(p),1,in);
+							if(ferror(in) || feof(in)) done = true;
+							else{
+								int channels[32]; char match[32];
+								decodePacket(&p, channels, match, echo);
+								//check to see if we can apply the command that was echoed.
+								char m = msgs[echo][0];
+								if(m >= 'A' && m <= 'A' + 15){
+									printf("applying %s\n", msgs[echo]);
+									msgs[echo][0] = 0;
+								}
+								time[tp] = rxtime + (double)i * 6.0 / 31250.0;
+								mstimer[tp] = p.ms;
+								for(int j=0; j<6; j++){
+									for(int k=0; k<4; k++){
+										char samp = p.data[j*4+k];
+										analog[tp*24+j*4+k] = samp;
+										if(j == 0)
+											channel[tp*4+k] = chans[k];
+									}
+								}
+								for(int j=0; j<32; j++){
+									if(match[j]){
+										spike_ts[sp] = tp;
+										spike_ch[sp] = channels[j]+(128*c); //shift channel numbering appropriately
+										spike_unit[sp] = match[j];
+										sp++;
+										if(sp > spikes){
+											printf("error! spike position sp > spikes\n");
+											printf("%lld > %lld \n", sp, spikes);
+											printf("file offset %ld\n", ftello(in));
+											exit(0);
+										}
+									}
+								}
+								tp++;
+								if(tp > rxpackets){
+									printf("error! time position tp > rxpackets\n");
+									printf("%lld > %lld \n", tp, rxpackets);
+									printf("file offset %ld\n", ftello(in));
+									exit(0);
+								}
+							}
+						}
+						pos += 16+siz;
+					} else if( u == 0xc0edfad0 + c){
+						//ignore tx packets (for now?)
+						fread((void*)&u,4,1,in);
+						unsigned int siz = u & 0xffff;
+						//printf("u 0x%x\n",u);
+						txpackets += (siz)/32;
+						fseeko(in,siz+8, SEEK_CUR);
+						pos += 16+siz;
+					} else if(u == 0xb00a5c11 + c){
+						fread((void*)&u,4,1,in);
+						unsigned int siz = u & 0xffff;
+						//printf("u 0x%x\n",u);
+						double rxtime = 0.0;
+						fread((void*)&rxtime,8,1,in);
+						char buf[128];
+						fread((void*)buf,siz,1,in);
+						buf[siz] = 0;
+						//really need to wait for the echo here.
+						//bummish.
+						fprintf(log, "%f : %s\n", rxtime, buf);
+						//first char: A-P (0-15, corresponds to echo); second space
+						char* b = buf; b+=2;
+						if(strncmp(b, "chan", 4) == 0){
+							int ii = b[5] - 'A';
+							if(ii >= 0 && ii < 4){
+								b += 7;
+								chans[ii] = atoi(b);
+								//printf(" chan %d changed to %d\n", ii, chans[ii]);
+							}
+						}
+						pos += 16+siz;
+					}else if( u == 0x1eafbabe + c){
 					fread((void*)&u,4,1,in);
 					unsigned int siz = u & 0xffff;
 					double rxtime = 0.0;
@@ -214,159 +392,11 @@ int main(int argn, char **argc){
 					}
 
 					pos += 16+siz;
-				}else {
-					printf("magic number seems off, is 0x%x, %lld bytes, %lld packets\n",
-						   u,pos,rxpackets);
-					exit(0);
-				}
-				if(ferror(in) || feof(in)) done = true;
-			}
-		}
-		printf("total %lld rxpackets, %lld txpackets, %lld spikes, %lld messages\n",
-			   rxpackets, txpackets, spikes, msgpackets);
-		if(rxpackets > 0x7fffffff){
-			printf("you will not be able to save packet timestamps.\n");
-		}
-		fseeko(in,0, SEEK_SET);
-		//okay, allocate appropriate data structs:
-		// time (double), analog(i8), channel (i8),
-		// spike_time (double), spikes(i32)
-		double* time;
-		mat_uint32_t* mstimer;
-		unsigned char* analog;
-		unsigned char* channel;
-		mat_uint32_t* spike_ts;
-		mat_int8_t* spike_ch;
-		mat_int8_t* spike_unit;
-		// store timestamp (in samples), rx time (not necessarily accurate) - one per pkt
-		// store channel # and sample
-		// store channel & timestamp for spikes.
-		// just ignore dropped packets for now.
-		time = (double*)malloc(rxpackets * sizeof(double));
-		  if(!time){ printf("could not allocate time variable."); exit(0);}
-		mstimer = (mat_uint32_t*)malloc(rxpackets * sizeof(int) );
-		 if(!mstimer){ printf("could not allocate mstimer variable."); exit(0);}
-
-		spike_ts = (mat_uint32_t*)malloc(spikes * sizeof(int));
-		  if(!spike_ts){ printf("could not allocate spike_ts variable."); exit(0);}
-		spike_ch = (mat_int8_t*)malloc(spikes * 32);
-		  if(!spike_ch){ printf("could not allocate spike_ch variable."); exit(0);}
-		spike_unit = (mat_int8_t*)malloc(spikes * 32);
-		  if(!spike_unit){ printf("could not allocate spike_unit variable."); exit(0);}
-
-		analog = (unsigned char*)malloc(rxpackets * 24 );
-		  if(!analog){ printf("could not allocate analog variable."); exit(0);}
-		channel = (unsigned char*)malloc(rxpackets * 4 ); //channel does not change within packets.
-		  if(!channel){ printf("could not allocate channel variable."); exit(0);}
-
-		//also need to inspect the messages, to see exactly when the channels changed.
-		u64 tp = 0; // packet position (index time, aka timestamp)
-		u64 sp = 0; // spike position (index spike variables)
-		char msgs[16][128]; //use this to save messages ; appy them when their echo appears.
-		for(u64 i=0; i<16*128; i++){
-			msgs[0][i] = 0; //yes, you can do that in c!
-		}
-		int chans[4] = {0,32,64,96};
-		done = false;
-		while(!done){
-			unsigned int echo;
-			fread((void*)&u,4,1,in);
-			if(ferror(in) || feof(in)) done = true;
-			else {
-				if(u == 0xdecafbad){
-					fread((void*)&u,4,1,in);
-					unsigned int siz = u & 0xffff;
-					unsigned int npak = (siz-4)/(4+32);
-					//first 4 is for dropped packet count
-					//second 4 is for 4 byte bridge milisecond counter
-					//printf("npak %d siz %d\n",npak,siz);
-					double rxtime = 0.0;
-					unsigned int dropped = 0;
-					fread((void*)&rxtime,8,1,in); //rx time in seconds.
-					fread((void*)&dropped,4,1,in);
-
-					for(unsigned int i=0;i<npak; i++){
-						packet p;
-						fread((void*)&p,sizeof(p),1,in);
-						if(ferror(in) || feof(in)) done = true;
-						else{
-							int channels[32]; char match[32];
-							decodePacket(&p, channels, match, echo);
-							//check to see if we can apply the command that was echoed.
-							char m = msgs[echo][0];
-							if(m >= 'A' && m <= 'A' + 15){
-								printf("applying %s\n", msgs[echo]);
-								msgs[echo][0] = 0;
-							}
-							time[tp] = rxtime + (double)i * 6.0 / 31250.0;
-							mstimer[tp] = p.ms;
-							for(int j=0; j<6; j++){
-								for(int k=0; k<4; k++){
-									char samp = p.data[j*4+k];
-									analog[tp*24+j*4+k] = samp;
-									if(j == 0)
-										channel[tp*4+k] = chans[k];
-								}
-							}
-							for(int j=0; j<32; j++){
-								if(match[j]){
-									spike_ts[sp] = tp;
-									spike_ch[sp] = channels[j];
-									spike_unit[sp] = match[j];
-									sp++;
-									if(sp > spikes){
-										printf("error! spike position sp > spikes\n");
-										printf("%lld > %lld \n", sp, spikes);
-										printf("file offset %ld\n", ftello(in));
-										exit(0);
-									}
-								}
-							}
-							tp++;
-							if(tp > rxpackets){
-								printf("error! time position tp > rxpackets\n");
-								printf("%lld > %lld \n", tp, rxpackets);
-								printf("file offset %ld\n", ftello(in));
-								exit(0);
-							}
-						}
-					}
-					pos += 16+siz;
-				} else if( u == 0xc0edfad0){
-					//ignore tx packets (for now?)
-					fread((void*)&u,4,1,in);
-					unsigned int siz = u & 0xffff;
-					//printf("u 0x%x\n",u);
-					txpackets += (siz)/32;
-					fseeko(in,siz+8, SEEK_CUR);
-					pos += 16+siz;
-				} else if(u == 0xb00a5c11){
-					fread((void*)&u,4,1,in);
-					unsigned int siz = u & 0xffff;
-					//printf("u 0x%x\n",u);
-					double rxtime = 0.0;
-					fread((void*)&rxtime,8,1,in);
-					char buf[128];
-					fread((void*)buf,siz,1,in);
-					buf[siz] = 0;
-					//really need to wait for the echo here.
-					//bummish.
-					fprintf(log, "%f : %s\n", rxtime, buf);
-					//first char: A-P (0-15, corresponds to echo); second space
-					char* b = buf; b+=2;
-					if(strncmp(b, "chan", 4) == 0){
-						int ii = b[5] - 'A';
-						if(ii >= 0 && ii < 4){
-							b += 7;
-							chans[ii] = atoi(b);
-							//printf(" chan %d changed to %d\n", ii, chans[ii]);
-						}
-					}
-					pos += 16+siz;
 				} else {
 					printf("magic number seems off, is 0x%x, %lld bytes\n",
 						u,pos);
 					exit(0);
+					}
 				}
 			}
 		}
@@ -379,9 +409,16 @@ int main(int argn, char **argc){
 			printf("error: sp %lld, too large for 32-bit integer, clipping data.\n", sp);
 			exit(0);
 		}
+		
+		if(kp > 0x7fffffff){
+			printf("error: kp %lld, too large for 32-bit integer, clipping data.\n", kp);
+			exit(0);
+		}
 		//wrap them anyway.
 		int tpp = (int)(tp & 0x7fffffff);
 		int spp = (int)(sp & 0x7fffffff);
+		int kpp = (int)(kp & 0x7fffffff);
+		
 		matvar_t *matvar;
 		matvar = Mat_VarCreate("time",MAT_C_DOUBLE,MAT_T_DOUBLE,
 							   1,&tpp,time,0);
@@ -412,6 +449,28 @@ int main(int argn, char **argc){
 		Mat_VarWrite( mat, matvar, 0 );
 		Mat_VarFree(matvar);
 		free(spike_unit);
+		
+				//put strobe sync in matlab
+		matvar = Mat_VarCreate("strobe_tx",MAT_C_DOUBLE,MAT_T_DOUBLE,
+							   1,&kpp,strobe_tx,0);
+		Mat_VarWrite( mat, matvar, 0 );
+		Mat_VarFree(matvar);
+		free(strobe_tx);
+		
+		//strobe reception timestamp
+		matvar = Mat_VarCreate("strobe_rx",MAT_C_DOUBLE,MAT_T_DOUBLE,
+							   1,&kpp,strobe_rx,0);
+		Mat_VarWrite( mat, matvar, 0 );
+		Mat_VarFree(matvar);
+		free(strobe_rx);
+		
+		//track frame
+		matvar = Mat_VarCreate("track_frame",MAT_C_UINT32,MAT_T_UINT32,
+							   1,&kpp,track_frame,0);
+		Mat_VarWrite( mat, matvar, 0 );
+		Mat_VarFree(matvar);
+		free(track_frame);
+		
 
 		//most analog traces do not fit into 2 gigs -- write them out RAW.
 		printf("writing raw analog traces\n");
