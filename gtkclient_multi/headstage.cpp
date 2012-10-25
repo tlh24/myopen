@@ -321,6 +321,7 @@ void setAperture(int ch){
 	int tid = ch/128;
 	
 	ch &= 31;
+	printf("ch aper %d\n", ch);
 	unsigned int* ptr = g_sendbuf[tid];
 	ptr += (g_sendW[tid] % g_sendL[tid]) * 8;
 	
@@ -333,6 +334,7 @@ void setAperture(int ch){
 		ptr[i*2+1] = htonl(u);
 	}
 	g_sendW[tid]++;
+	
 	for(int i=0; i<4; i++){
 		saveMessage("aperture %d %d,%d", ch + 32*i,
 				g_c[ch + 32*i + 128*tid]->getAperture(0),

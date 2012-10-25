@@ -15,6 +15,7 @@
 #include <Cg/cgGL.h>
 
 #include <stdio.h>
+#include <iostream>
 #include <sys/types.h>
 #include <inttypes.h>
 #include <sys/time.h>
@@ -514,7 +515,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 			adj = 2.f*x*x*x -3.f*x*x + 1;
 			adj *= g_rasterSpan;
 		}
-		glTranslatef((0 - (float)lt + adj), 1.f, 0.f);
+		glTranslatef((0 - (float)lt + adj), 0.f, 0.f);
 
 		//VBO drawing..
 		for(int t = 0; t < NSCALE; t++){
@@ -1118,7 +1119,6 @@ packet format in the file, as saved here:
 						int h = g_channel[k];
 						if(h > (tid+1)*128 || h < (tid*128)){ continue;} //this channel is not in this bridge?
 						  //should call this before?
-									
 						
 						g_sortUnit[k][g_sortI] = 0;
 						g_sortAperture[k][0][g_sortI] = 2048;
@@ -1178,6 +1178,8 @@ packet format in the file, as saved here:
 							}
 							//check to see if the headstage may have missed a spike.
 							if(g_sortAperture[k][u][(g_sortI-4)&0xf] < aper){
+								std::cout << "miss" << g_sortAperture[k][u][(g_sortI-4)&0xf] << std::endl;
+								std::cout << "aper" << aper << std::endl;
 								//the headstage may have missed a spike.
 								if(u == 1 && g_templMatch[tid][h&127][0]){
 									printf("channel %d unit b occluded by unit a.\n",h);

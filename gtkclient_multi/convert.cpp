@@ -149,15 +149,20 @@ int main(int argn, char **argc){
 		bool done = false;
 		while(!done){
 			fread((void*)&u,4,1,in);
-			if(ferror(in) || feof(in)) done = true;
+			if(ferror(in)){
+					printf("done. error.\n");
+					done = true;
+				}
+			else if(feof(in)){
+					printf("done. end of file.\n");
+					done = true;
+				}
 			else {
 					if(u == 0xdecafbad){
-						fseeko(in,4, SEEK_CUR); // don't use yet, radiochannel and id
-						
+						fseeko(in, 4, SEEK_CUR); // don't use yet, radiochannel and id
 						fread((void*)&u,4,1,in);
-						//unsigned int siz = u & 0xffff; not wrapping anymore
+						//unsigned int siz = u & 0xffff; //not wrapping anymore
 						unsigned int siz = u;
-						//printf("u 0x%x\n",u);
 						unsigned int npak = (siz-4)/(4+32);
 						rxpackets += npak;
 						//read these in -- but don't use them.
@@ -180,12 +185,14 @@ int main(int argn, char **argc){
 						fseeko(in,4, SEEK_CUR); // don't use yet, radiochannel and id
 						fread((void*)&u,4,1,in);
 						unsigned int siz = u;
+						//printf("u %d\n",u);
 						//printf("u 0x%x\n",u);
 						txpackets++;
 						fseeko(in,siz+8, SEEK_CUR);
 						pos += 20+siz;
 					}else if(u == 0xb00a5c11){
 						fseeko(in,4, SEEK_CUR); // don't use yet, radiochannel and id
+						fread((void*)&u,4,1,in);
 						unsigned int siz = u;
 						//printf("u 0x%x\n",u);
 						msgpackets += 1;
@@ -208,10 +215,14 @@ int main(int argn, char **argc){
 					exit(0);
 				}
 			
-				if(ferror(in) || feof(in)) done = true;
+				if(ferror(in) || feof(in)){
+					printf("done\n");
+					done = true;
+				}
 				
 			}
 		}
+		
 		printf("total %lld rxpackets, %lld txpackets, %lld spikes, %lld messages\n",
 			   rxpackets, txpackets, spikes, msgpackets);
 		if(rxpackets > 0x7fffffff){
@@ -282,7 +293,7 @@ int main(int argn, char **argc){
 						fread((void*)&tid,2,1,in); //tid 2byte integer
 						
 						fread((void*)&u,4,1,in);
-						unsigned int siz = u & 0xffff;
+						unsigned int siz = u;
 						unsigned int npak = (siz-4)/(4+32);
 						//first 4 is for dropped packet count
 						//second 4 is for 4 byte bridge milisecond counter
@@ -358,8 +369,8 @@ int main(int argn, char **argc){
 						unsigned int tid = 0;
 						fread((void*)&radioChannel,2,1,in); //radio channel 2byte integer
 						fread((void*)&tid,2,1,in); //tid 2byte integer
-						fread((void*)&u,4,1,in);
 						
+						fread((void*)&u,4,1,in);
 						unsigned int siz = u;
 						//printf("u 0x%x\n",u);
 						double rxtime = 0.0;
