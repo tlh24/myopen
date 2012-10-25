@@ -252,7 +252,8 @@ void setAGC(int ch1, int ch2, int ch3, int ch4){
 	//sets AGC for (up to) four channels.
 	
 	//hardcoded channel limits? -_- I'll take care of the limiting elsewhere
-	int chs[4]; chs[0] = ch1; chs[1]= ch2;
+	int chs[4]; 
+	chs[0] = ch1; chs[1]= ch2;
 		chs[2] = ch3; chs[3] = ch4;
 		
 	for(int i=0; i<4; i++){
@@ -334,8 +335,8 @@ void setAperture(int ch){
 	g_sendW[tid]++;
 	for(int i=0; i<4; i++){
 		saveMessage("aperture %d %d,%d", ch + 32*i,
-				g_c[ch + 32*i]->getAperture(0),
-				g_c[ch + 32*i]->getAperture(0));
+				g_c[ch + 32*i + 128*tid]->getAperture(0),
+				g_c[ch + 32*i + 128*tid]->getAperture(0));
 	}
 	g_echo[tid]++;
 }
@@ -358,11 +359,11 @@ void setLMS(bool on){
 void setTemplate(int ch, int aB){
 	
 	int tid = ch/128;
+	
 	ch &= 31;
 	aB &= 1;
 	//each template is 16 points; can write 4 at a time, so need 4 writes.
 	//template range: [-0.5 .. 0.5]
-	
 	
 	for(int p=0; p<4; p++){
 		unsigned int* ptr = g_sendbuf[tid];
@@ -395,7 +396,7 @@ void setBiquad(int chan, float* biquad, int biquadNum){
 	// biquad num 0 or 1
 	// biquad lo or hi (global)
 	
-	int tid = chan/128;
+	int tid = chan/128; //which thread id does the channel belong to
 	
 	chan = chan & (0xff ^ 32); //map to the lower channels (0-31,64-95)
 	float gain1 = sqrt(fabs(g_c[chan]->m_gain));

@@ -28,7 +28,6 @@
 #include <math.h>
 #include <arpa/inet.h>
 #include "sock.h"
-#include <stdio.h>
 #include <sstream>
 #include <stdint.h>
 
@@ -61,7 +60,7 @@ float		g_cursPos[2];
 float		g_viewportSize[2] = {640, 480}; //width, height.
 
 char g_bridgeIP[NSCALE][256]; //which thread has which bridge IP. Needs a mutex lock.
-int  g_radioChannel[NSCALE] = {114, 124};
+unsigned int  g_radioChannel[NSCALE] = {114, 124};
 
 static float	g_fbuf[NFBUF][NSAMP*3]; //continuous waveform. range [-1 .. 1]
 i64	g_fbufW[NFBUF]; //where to write to (always increment), might not be thread safe
@@ -81,6 +80,7 @@ Channel*	g_c[NSCALE*128]; //g_c is the only variable that holds absolute indexin
 FiringRate	g_fr[NSCALE][128][2];
 GLuint 		g_base;            // base display list for the font set.
 
+unsigned int g_svn = 846; //the svn version
 bool   g_die = false;
 double g_pause = -1.0;
 double g_rasterZoom = 0.15;
@@ -792,11 +792,11 @@ void* strobe_thread(void*){
 				
 				pthread_mutex_lock(&mutex_saveFile);
 				fwrite((void*)&tmp, 4, 1, g_saveFile); //fwrite is atomic in POSIX systems, still, sync
-				tmp = 784; //SVN version
+				tmp = g_svn; //SVN version
 				tmp <<= 16;
 				//tmp += tlen & 0xffff; //size of the ensuing packet data.
-				tmp += sn; //buffer size
-				fwrite((void*)&tmp, 4, 1, g_saveFile);
+				unsigned int siz = tmp + sn; //size of the ensuing packet data. += sn; //buffer size
+				fwrite((void*)&siz, 4, 1, g_saveFile);
 				fwrite((void*)&rxtime, 8, 1, g_saveFile);
 				//fwrite((void*)(&(buf2[4])),tlen,1,g_saveFile); //sizedelimited buffer
 				fwrite((void*)buf2, sn, 1, g_saveFile); //write ALL the buffer
@@ -947,40 +947,45 @@ packet format in the file, as saved here:
 
 			if(g_saveFile){
 				if (n > 0){
-				//do the save -- the raw packets!
+				//save the raw packets!
 				//will have to convert them with another prog later.
-				unsigned int tmp = 0xdecafbad;
-				tmp += tid; //magic number keeps thread id (remember to add to convert.cpp logic)
-				
 				pthread_mutex_lock(&mutex_saveFile);
+				unsigned int tmp = 0xdecafbad;
 				fwrite((void*)&tmp, 4, 1, g_saveFile);
-				tmp = 784; //SVN version.
-				tmp <<= 16;
-				tmp += n; //size of the ensuing packet data.
-				fwrite((void*)&tmp, 4, 1, g_saveFile);
+				//keep thread id (remember to add to convert.cpp logic)
+				
+				//2 bytes just in case hehe
+				fwrite((void*)&g_radioChannel[tid], 2, 1, g_saveFile);
+				fwrite((void*)&tid, 2, 1, g_saveFile);
+				
+				unsigned int siz = n; //size of the ensuing packet data.
+				fwrite((void*)&siz, 4, 1, g_saveFile);
 				fwrite((void*)&rxtime, 8, 1, g_saveFile);
 				fwrite((void*)buf,n,1,g_saveFile);
 				
-				g_saveFileBytes += 16 + n;
+				g_saveFileBytes += 20 + n;
 				pthread_mutex_unlock(&mutex_saveFile);
 				}
 
 				//if there are messages to be written, save them too.
 				while(g_messW[tid] > g_messR[tid]){
-					unsigned int len = strnlen(g_messages[g_messR[tid] % 1024],128);
-					unsigned int tmp = 0xb00a5c11; //boo!  it's ascii
-					tmp +=tid;
 					
 					pthread_mutex_lock(&mutex_saveFile);
+					unsigned int len = strnlen(g_messages[g_messR[tid] % 1024],128);
+					unsigned int tmp = 0xb00a5c11; //boo!  it's ascii
+					
 					fwrite((void*)&tmp, 4, 1, g_saveFile);
-					tmp = 784; //SVN version.
-					tmp <<= 16;
-					tmp += len; //size of the ensuing text data.
-					fwrite((void*)&tmp, 4, 1, g_saveFile);
+					
+								//2 bytes just in case hehe
+					fwrite((void*)&g_radioChannel[tid], 2, 1, g_saveFile);
+					fwrite((void*)&tid, 2, 1, g_saveFile);
+					
+					unsigned int siz = len; //size of the ensuing packet data.
+					fwrite((void*)&siz, 4, 1, g_saveFile);
 					fwrite((void*)&rxtime, 8, 1, g_saveFile);
 					fwrite((void*)g_messages[g_messR[tid] % 1024], len, 1, g_saveFile);
 					
-					g_saveFileBytes += 16 + len;
+					g_saveFileBytes += 20 + len;
 					pthread_mutex_unlock(&mutex_saveFile);
 					
 					g_messR[tid]++;
@@ -1251,20 +1256,22 @@ packet format in the file, as saved here:
 					g_sendR[tid]++;
 				//save the command in the file, too, so we can reconstruct it later.
 				if(g_saveFile){
-					unsigned int tmp = 0xc0edfad0;
-					tmp+= tid;
-					
+				
 					pthread_mutex_lock(&mutex_saveFile);
+					unsigned int tmp = 0xc0edfad0;
 					fwrite((void*)&tmp, 4, 1, g_saveFile);
-					tmp = 605; //SVN version.
-					tmp <<= 16;
+				
+									//2 bytes just in case hehe
+					fwrite((void*)&g_radioChannel[tid], 2, 1, g_saveFile);
+					fwrite((void*)&tid, 2, 1, g_saveFile);
+					
 					n = 32; //bytes to send.
-					tmp += n; //size of the ensuing packet data.
-					fwrite((void*)&tmp, 4, 1, g_saveFile);
+					//tmp += n; //size of the ensuing packet data.
+					fwrite((void*)&n, 4, 1, g_saveFile);
 					fwrite((void*)&txtime, 8, 1, g_saveFile);
 					fwrite((void*)ptr,n,1,g_saveFile);
 					
-					g_saveFileBytes += 16 + n;
+					g_saveFileBytes += 20 + n;
 					pthread_mutex_unlock(&mutex_saveFile);
 				}
 			} else {
@@ -1841,7 +1848,15 @@ int main(int argn, char **argc)
 	sqliteCreateTableBlob("vbopca_max");
 
 	for(int i=0; i<4; i++){
-		g_channel[i] = sqliteGetValue(i, "channel", i*32);
+		
+		int chan = sqliteGetValue(i, "channel", i*32);
+		//state.db can have values for channels higher than the current allowed limit 
+		//for example, if you load with dual bridges, and then with one bridge
+		if(chan > (128*NSCALE)){ 
+			chan = chan &127; //wrap to 128
+		}
+		g_channel[i] = chan;
+			
 	}
 	//defaults, to be read in from sqlite.
 	for(int i=0; i<128*NSCALE; i++){

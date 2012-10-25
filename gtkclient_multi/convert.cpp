@@ -151,10 +151,12 @@ int main(int argn, char **argc){
 			fread((void*)&u,4,1,in);
 			if(ferror(in) || feof(in)) done = true;
 			else {
-				for(unsigned int c = 0; c < HEADSTAGE; c++){
-					if(u == 0xdecafbad + c){
+					if(u == 0xdecafbad){
+						fseeko(in,4, SEEK_CUR); // don't use yet, radiochannel and id
+						
 						fread((void*)&u,4,1,in);
-						unsigned int siz = u & 0xffff;
+						//unsigned int siz = u & 0xffff; not wrapping anymore
+						unsigned int siz = u;
 						//printf("u 0x%x\n",u);
 						unsigned int npak = (siz-4)/(4+32);
 						rxpackets += npak;
@@ -173,27 +175,28 @@ int main(int argn, char **argc){
 								if(match[k]) spikes++;
 							}
 						}
-						pos += 16+siz;
-					}else if(u == 0xc0edfad0 + c){
+						pos += 20+siz;
+					}else if(u == 0xc0edfad0){
+						fseeko(in,4, SEEK_CUR); // don't use yet, radiochannel and id
 						fread((void*)&u,4,1,in);
-						unsigned int siz = u & 0xffff;
+						unsigned int siz = u;
 						//printf("u 0x%x\n",u);
 						txpackets++;
 						fseeko(in,siz+8, SEEK_CUR);
-						pos += 16+siz;
-					}else if(u == 0xb00a5c11 + c){
-						fread((void*)&u,4,1,in);
-						unsigned int siz = u & 0xffff;
+						pos += 20+siz;
+					}else if(u == 0xb00a5c11){
+						fseeko(in,4, SEEK_CUR); // don't use yet, radiochannel and id
+						unsigned int siz = u;
 						//printf("u 0x%x\n",u);
 						msgpackets += 1;
 						msglength += siz;
 						fseeko(in,siz+8, SEEK_CUR); //8 byte double timestamp.
-						pos += 16+siz;
+						pos += 20+siz;
 						
-					}else if(u == 0x1eafbabe + c){
+					}else if(u == 0x1eafbabe){
 					//tracking info.
 					fread((void*)&u,4,1,in);
-					unsigned int siz = u & 0xffff;
+					unsigned int siz = u & 0xffff; //still wrapping here with svn version (probably for strobe's SVN)
 					//printf("u 0x%x\n",u);
 					strobepackets += 1;
 					strobelength += siz + 8;
@@ -204,7 +207,7 @@ int main(int argn, char **argc){
 						   u,pos,rxpackets);
 					exit(0);
 				}
-			}
+			
 				if(ferror(in) || feof(in)) done = true;
 				
 			}
@@ -272,8 +275,12 @@ int main(int argn, char **argc){
 			fread((void*)&u,4,1,in);
 			if(ferror(in) || feof(in)) done = true;
 			else {
-				for(unsigned int c = 0; c < HEADSTAGE; c++){
-					if(u == 0xdecafbad + c){
+					if(u == 0xdecafbad){
+						unsigned int radioChannel = 0;
+						unsigned int tid = 0;
+						fread((void*)&radioChannel,2,1,in); //radio channel 2byte integer
+						fread((void*)&tid,2,1,in); //tid 2byte integer
+						
 						fread((void*)&u,4,1,in);
 						unsigned int siz = u & 0xffff;
 						unsigned int npak = (siz-4)/(4+32);
@@ -292,7 +299,7 @@ int main(int argn, char **argc){
 							else{
 								int channels[32]; char match[32];
 								decodePacket(&p, channels, match, echo);
-								//check to see if we can apply the command that was echoed.
+								//check to see if we can apply the command that was echoed
 								char m = msgs[echo][0];
 								if(m >= 'A' && m <= 'A' + 15){
 									printf("applying %s\n", msgs[echo]);
@@ -311,7 +318,7 @@ int main(int argn, char **argc){
 								for(int j=0; j<32; j++){
 									if(match[j]){
 										spike_ts[sp] = tp;
-										spike_ch[sp] = channels[j]+(128*c); //shift channel numbering appropriately
+										spike_ch[sp] = channels[j+(128*tid)]; //shift channel numbering appropriately
 										spike_unit[sp] = match[j];
 										sp++;
 										if(sp > spikes){
@@ -331,21 +338,33 @@ int main(int argn, char **argc){
 								}
 							}
 						}
-						pos += 16+siz;
-					} else if( u == 0xc0edfad0 + c){
+						pos += 20+siz;
+					} else if( u == 0xc0edfad0){
+						
 						//ignore tx packets (for now?)
+						unsigned int radioChannel = 0;
+						unsigned int tid = 0;
+						fread((void*)&radioChannel,2,1,in); //radio channel 2byte integer
+						fread((void*)&tid,2,1,in); //tid 2byte integer
+						
 						fread((void*)&u,4,1,in);
-						unsigned int siz = u & 0xffff;
+						unsigned int siz = u;
 						//printf("u 0x%x\n",u);
 						txpackets += (siz)/32;
 						fseeko(in,siz+8, SEEK_CUR);
-						pos += 16+siz;
-					} else if(u == 0xb00a5c11 + c){
+						pos += 20+siz;
+					} else if(u == 0xb00a5c11){
+						unsigned int radioChannel = 0;
+						unsigned int tid = 0;
+						fread((void*)&radioChannel,2,1,in); //radio channel 2byte integer
+						fread((void*)&tid,2,1,in); //tid 2byte integer
 						fread((void*)&u,4,1,in);
-						unsigned int siz = u & 0xffff;
+						
+						unsigned int siz = u;
 						//printf("u 0x%x\n",u);
 						double rxtime = 0.0;
 						fread((void*)&rxtime,8,1,in);
+						
 						char buf[128];
 						fread((void*)buf,siz,1,in);
 						buf[siz] = 0;
@@ -362,8 +381,8 @@ int main(int argn, char **argc){
 								//printf(" chan %d changed to %d\n", ii, chans[ii]);
 							}
 						}
-						pos += 16+siz;
-					}else if( u == 0x1eafbabe + c){
+						pos += 20+siz;
+					}else if( u == 0x1eafbabe){
 					fread((void*)&u,4,1,in);
 					unsigned int siz = u & 0xffff;
 					double rxtime = 0.0;
@@ -397,7 +416,6 @@ int main(int argn, char **argc){
 						u,pos);
 					exit(0);
 					}
-				}
 			}
 		}
 		printf("finished reading in data file, now writing matlab file.\n");
