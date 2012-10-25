@@ -556,8 +556,8 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 			glEnableClientState(GL_VERTEX_ARRAY);
 			glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo2[k]);
 			glVertexPointer(2, GL_FLOAT, 0, 0);
-			if(k == 0) glColor4f (1., 1., 0., 0.3f);
-			else glColor4f (0., 1., 1., 0.3f);
+			if(k == 0) glColor4f (0., 1., 1., 0.3f);
+			else glColor4f (1., 0., 0., 0.3f);
 			glPointSize(2.0);
 			glDrawArrays(GL_POINTS, 0, sizeof(g_sbuf[k])/8);
 			glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
@@ -941,7 +941,7 @@ void* po8_thread(void*){
 					int ticks = (unsigned short)(temp[96*numSamples + numSamples -1]); 
 					ticks += (unsigned short)(temp[97*numSamples + numSamples -1]) << 16; 
 					g_ts.update(time, ticks, frame); 
-					if(frame % 500 == 50 && 1){
+					if(frame % 500 == 50 && 0){
 						printf("totalSamples %d ticks %d diff %d\n", 
 								 (int)totalSamples, ticks, (int)totalSamples - ticks); 
 						g_ts.prinfo(); 
@@ -1078,25 +1078,31 @@ void* mmap_thread(void*){
 	volatile unsigned short* bin = (unsigned short*)addr; 
 	printf("mmap address: %lx\n", (long unsigned int)addr); 
 	int frame = 0; 
-	bin[0] = 1; 
-	bin[length/2-1] = 1; 
+	bin[96*2*10] = 0; 
+	bin[96*2*10+1] = 0; 
 	char buf[32]; int bufn = 0; 
 	flush_pipe(pipe_out); 
 
 	while(!g_die){
-		printf("%d waiting for matlab...\n", frame); 
+		//printf("%d waiting for matlab...\n", frame); 
 		int r = read(pipe_in, &(buf[bufn]), 5);
+		long double end = gettime(); 
 		if(r > 0) bufn += r; 
 		buf[bufn] = 0; 
-		printf("%d read %d %s\n", frame, r, buf); 
+		//printf("%d read %d %s\n", frame, r, buf); 
 		if(r >= 3){
-			for(int i=0; i<length/2; i++)
-				bin[i]++; //seems we need to touch all memory to update the first page. 
+			for(int i=0; i<96; i++){
+				for(int j=0; j<2; j++){
+					g_fr[i][j].get_bins(end, (unsigned short*)&(bin[(i*2+j)*10])); 
+				}
+			}
+			bin[96*2*10]++; 
+			// N.B. seems we need to touch all memory to update the first page. 
 			//msync(addr, length, MS_SYNC); 
 			//  if made with shm_open, msync is ok -- no writes to disk.
 			usleep(100); //seems reliable with this in place.
 			write(pipe_out, "go\n", 3); 
-			printf("sent pipe_out 'go'\n"); 
+			//printf("sent pipe_out 'go'\n"); 
 			bufn = 0; 
 		}else
 			usleep(200000); //does not seem to limit the frame rate, just the startup sync.
