@@ -1306,7 +1306,7 @@ packet format in the file, as saved here:
 void* server_thread(void* ){
 	//kinda like a RPC service -- call to get the vector of firing rates.
 	// call whenever you want!
-	unsigned short rates[NSCALE][128+3][2]; //first two are the size of the array, then the time.
+	unsigned short rates[128*NSCALE+3][2]; //first two are the size of the array, then the time.
 	//9 bits integer part, 7 bits fractional part. hence 0-511.99Hz.
 	unsigned char buf[128];
 	int client = 0;
@@ -1343,22 +1343,21 @@ void* server_thread(void* ){
 				}
 				//doesn't matter at this point -- make a response.
 				//start = gettime();
-				for(int t=0; t<NSCALE; t++){
-					long long ltime = (long long)(reqtime * 1000.0); //put it in ms.
-					rates[t][0][0] = 2; //rows
-					rates[t][0][1] = 128; //columns.
-					rates[t][1][0] = (unsigned short)(ltime & 0xffff);
-					ltime >>= 16;
-					rates[t][1][1] = (unsigned short)(ltime & 0xffff);
-					ltime >>= 16;
-					rates[t][2][0] = (unsigned short)(ltime & 0xffff);
-					ltime >>= 16;
-					rates[t][2][1] = (unsigned short)(ltime & 0xffff);
-				}
+
+				long long ltime = (long long)(reqtime * 1000.0); //put it in ms.
+				rates[0][0] = 2; //rows
+				rates[0][1] = 128*NSCALE; //columns.
+				rates[1][0] = (unsigned short)(ltime & 0xffff);
+				ltime >>= 16;
+				rates[1][1] = (unsigned short)(ltime & 0xffff);
+				ltime >>= 16;
+				rates[2][0] = (unsigned short)(ltime & 0xffff);
+				ltime >>= 16;
+				rates[2][1] = (unsigned short)(ltime & 0xffff);
 				for(int t=0; t<NSCALE; t++){
 				      for(int i=0; i<128; i++){
 					      for(int j=0; j<2; j++){
-						      rates[t][i+3][j] = g_fr[t][i][j].get_rate(reqtime);
+						      rates[i+3+t*128][j] = g_fr[t][i][j].get_rate(reqtime);
 					      }
 				      }
 				}
