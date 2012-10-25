@@ -1,7 +1,7 @@
 //code to calculate the firing rate at any given time using
 //convolution with a polynomial.
 
-#define FR_LEN 512 //must be a power of 2.
+#define FR_LEN 1024 //must be a power of 2.
 //with lags, need up to a second of firing times.
 class FiringRate{
 private:
