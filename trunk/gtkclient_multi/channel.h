@@ -45,6 +45,7 @@ public:
 			m_pca[1][j] = (j > 15 ? 1.f/8.f : -1.f/8.f); 
 			m_pcaScl[0] = m_pcaScl[1] = 1.f; 
 		}
+		//template defaults here
 		unsigned char tmplA[16]={21,37,82,140,193,228,240,235,219,198,178,162,152,146,140,135};
 		unsigned char tmplB[16]={122,134,150,160,139,90,60,42,35,52,87,112,130,135,142,150};
 		for(int j=0; j<16; j++){
@@ -58,7 +59,8 @@ public:
 			m_aperture[j] = sqliteGetValue2(ch, j, "aperture", 0.f); 
 		}
 		sqliteGetBlob(ch, 0, "pcaScl", m_pcaScl, 2);
-		m_threshold = sqliteGetValue(ch, "threshold", 0.6f); 
+		//m_threshold = sqliteGetValue(ch, "threshold", 0.6f); 
+		m_threshold = sqliteGetValue(ch, "threshold", 0.f); //default to zero
 		m_centering = sqliteGetValue(ch, "centering", 25.f); 
 		m_gain = sqliteGetValue(ch, "gain", 2.f);
 		m_agc = sqliteGetValue(ch, "agc", 6000.f);

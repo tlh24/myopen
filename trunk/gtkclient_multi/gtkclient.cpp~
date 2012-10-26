@@ -517,20 +517,6 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		}
 		glTranslatef((0 - (float)lt + adj), 0.f, 0.f);
 
-		//VBO drawing..
-		for(int t = 0; t < NSCALE; t++){
-			for(int k=0; k<2; k++){
-				glEnableClientState(GL_VERTEX_ARRAY);
-				glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo2[t][k]);
-				glVertexPointer(2, GL_FLOAT, 0, 0);
-				if(k == 0) glColor4f (1., 1., 0., 0.3f);
-				else glColor4f (0., 1., 1., 0.3f);
-				glPointSize(2.0);
-				glTranslatef(0.f, 100.f*t, 0.f);
-				glDrawArrays(GL_POINTS, 0, sizeof(g_sbuf[t][k])/8);
-				glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
-			}
-		}
 		glDisable(GL_LINE_SMOOTH);
 		//draw current time.
 		glColor4f (1., 0., 0., 0.5);
@@ -562,6 +548,25 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 			snprintf(buf, 128, "%c %d", 'A'+k, g_channel[k]);
 			glPrint(buf);
 		}
+		
+		glPushMatrix ();
+		glScalef(1.f/g_rasterSpan, -1.f/(130.f*NSCALE), 1.f);
+		glTranslatef((0 - (float)lt + adj), 0.f, 0.f);
+		
+		for(int t = 0; t < NSCALE; t++){
+			for(int k=0; k<2; k++){
+				glEnableClientState(GL_VERTEX_ARRAY);
+				glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo2[t][k]);
+				glVertexPointer(2, GL_FLOAT, 0, 0);
+				if(k == 0) glColor4f (1., 1., 0., 0.3f);
+				else glColor4f (0., 1., 1., 0.3f);
+				
+				glTranslatef(0.f, 130.f*t, 0.f); //translate correctly?
+				glPointSize(2.0);
+				glDrawArrays(GL_POINTS, 0, sizeof(g_sbuf[t][k])/8);
+			}
+		}
+		glPopMatrix ();
 #endif
 		//end VBO
 	}
