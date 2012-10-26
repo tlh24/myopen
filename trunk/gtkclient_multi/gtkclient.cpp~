@@ -526,6 +526,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 				if(k == 0) glColor4f (1., 1., 0., 0.3f);
 				else glColor4f (0., 1., 1., 0.3f);
 				glPointSize(2.0);
+				glTranslatef(0.f, 100.f*t, 0.f);
 				glDrawArrays(GL_POINTS, 0, sizeof(g_sbuf[t][k])/8);
 				glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 			}
