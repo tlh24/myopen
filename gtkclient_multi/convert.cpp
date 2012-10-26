@@ -289,9 +289,10 @@ int main(int argn, char **argc){
 					if(u == 0xdecafbad){
 						unsigned int radioChannel = 0;
 						unsigned int tid = 0;
+						
 						fread((void*)&radioChannel,2,1,in); //radio channel 2byte integer
 						fread((void*)&tid,2,1,in); //tid 2byte integer
-						
+
 						fread((void*)&u,4,1,in);
 						unsigned int siz = u;
 						unsigned int npak = (siz-4)/(4+32);
@@ -329,7 +330,7 @@ int main(int argn, char **argc){
 								for(int j=0; j<32; j++){
 									if(match[j]){
 										spike_ts[sp] = tp;
-										spike_ch[sp] = channels[j+(128*tid)]; //shift channel numbering appropriately
+										spike_ch[sp] = channels[j] + (128*tid); //shift channel numbering appropriately
 										spike_unit[sp] = match[j];
 										sp++;
 										if(sp > spikes){
