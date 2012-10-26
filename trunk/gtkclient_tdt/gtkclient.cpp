@@ -1049,7 +1049,7 @@ void* mmap_thread(void*){
 		fd = shm_open("/bmi5_binned", O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
 		ftruncate(fd, length); 
 	}else{
-		fd = open("/tmp/binned", O_RDWR); 
+		fd = open("/tmp/binned", O_RDWR | O_CREAT); 
 		if (fd == -1){
 			perror("could not open /tmp/binned\n"); 
 			return NULL; 
@@ -1065,14 +1065,14 @@ void* mmap_thread(void*){
 		perror("Error mmapping the file");
 		exit(EXIT_FAILURE);
 	}
-	int pipe_out = open("bmipipe_out", O_RDWR); 
+	int pipe_out = open("gtkclient_out", O_RDWR); 
 	if(!pipe_out){
-		perror("could not open ./bmipipe_out (make with mkfifo)\n"); 
+		perror("could not open ./gtkclient_out (make with mkfifo)\n"); 
 		return NULL; 
 	}
-	int pipe_in = open("bmipipe_in", O_RDWR); 
+	int pipe_in = open("gtkclient_in", O_RDWR); 
 	if(!pipe_in){
-		perror("could not open ./bmipipe_in (make with mkfifo)\n"); 
+		perror("could not open ./gtkclient_in (make with mkfifo)\n"); 
 		return NULL; 
 	}
 	volatile unsigned short* bin = (unsigned short*)addr; 
