@@ -14,7 +14,7 @@ GTKLD = `pkg-config --libs $(GLIBS) `
 
 OBJS = main.o sock.o
 
-GOBJS = spikes.pb.o gtkclient.o glInfo.o sock.o decodePacket.o sql.o tcpsegmenter.o
+GOBJS = spikes.pb.o gtkclient.o glInfo.o ../common/gettime.o sock.o decodePacket.o sql.o tcpsegmenter.o
 
 COBJS = convert.o decodePacket.o
 
