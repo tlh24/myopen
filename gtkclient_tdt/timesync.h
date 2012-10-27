@@ -32,6 +32,12 @@ public:
 				fabs(m_avg) / m_absavg, m_gain, m_avg, m_absavg); 
 	}
 };
+struct syncSharedData{
+	long double startTime; //subtract from CLOCK_MONOTONIC. sum of g_startTime and m_timeOffset.
+	long double slope; // e.g. 24414.0625
+	long double offset; // ticks offset.
+	bool valid; //here to preserve alignment.
+};
 class TimeSync{
 	//take performance counter time, produce ticks. 
 public:
@@ -39,6 +45,9 @@ public:
 	long double m_offset; 
 	long double m_timeOffset; 
 	long double m_update; 
+	mmapHelp*	mmh; 
+	syncSharedData* m_ssd; 
+	int			m_ssdn; 
 	//updated periodically to prevent precision issues.
 	
 	GainController* slopeGC; 
@@ -50,10 +59,18 @@ public:
 		m_timeOffset = 0.0; 
 		slopeGC = new GainController(1.2e-3); 
 		offsetGC = new GainController(3e-3); 
+		mmh = new mmapHelp(2*sizeof(syncSharedData), "/home/tlh24/timeSync.mmap"); //in cwd
+		m_ssd = (syncSharedData*)mmh->m_addr; 
+		if(m_ssd){
+			m_ssd[0].valid = false; 
+			m_ssd[1].valid = false; 
+		}
+		m_ssdn = 0; 
 	}
 	~TimeSync(){
 		delete slopeGC; 
 		delete offsetGC; 
+		delete mmh; 
 	}
 	void prinfo(){
 		printf("sync offset %Lf slope %.4Lf update %.4Lf\n", 
@@ -74,9 +91,40 @@ public:
 			m_offset += m_slope * (time - m_timeOffset); 
 			m_timeOffset = time; 
 		}
+		//also update the mmaped data.
+		if(m_ssd){
+			m_ssd[m_ssdn].valid = false; 
+			m_ssd[m_ssdn].startTime = g_startTime + m_timeOffset; 
+			m_ssd[m_ssdn].slope = m_slope; 
+			m_ssd[m_ssdn].offset = m_offset; 
+			m_ssd[m_ssdn].valid = true;
+			m_ssdn ^= 1; 
+		}
 	}
 	double getTicks(long double time){ //estimated ticks, of course.
 		return (time - m_timeOffset) * m_slope + m_offset;
+	}
+}; 
+class TimeSyncClient {
+public:
+	mmapHelp*	mmh; 
+	syncSharedData* m_ssd; 
+	
+	TimeSyncClient(){
+		mmh = new mmapHelp(2*sizeof(syncSharedData), "/home/tlh24/timeSync.mmap", false);
+		m_ssd = (syncSharedData*)mmh->m_addr; 
+	}
+	~TimeSyncClient(){
+		delete m_ssd; 
+	}
+	double getTicks(){
+		int n = 0; 
+		if(m_ssd[n].valid == false) n++; 
+		if(m_ssd[n].valid){
+			long double time = gettime(); 
+			return (time - m_ssd[n].startTime) * m_ssd[n].slope + m_ssd[n].offset; 
+		} else return 0.0; 
+		//time must be passed from gettime(); 
 	}
 }; 
 #endif

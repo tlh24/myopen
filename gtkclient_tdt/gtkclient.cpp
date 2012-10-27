@@ -34,6 +34,8 @@
 #include "sock.h"
 #include "PO8e.h"
 
+
+#include "../common/gettime.h"
 #include "../firmware_stage9_mf/memory.h"
 #include "gtkclient.h"
 #include "cgVertexShader.h"
@@ -48,6 +50,7 @@
 #include "spikes.pb.h"
 #include "tcpsegmenter.h"
 #include "firingrate.h"
+#include "../common/mmaphelp.h"
 #include "timesync.h"
 
 //CG stuff. for the vertex shaders.
@@ -106,7 +109,6 @@ FILE* g_saveFile = 0;
 bool g_closeSaveFile = false;
 i64 g_saveFileBytes;
 
-double g_timeOffset = 0.0; //offset between local time and bridge time.
 
 int g_totalPackets = 0;
 int g_strobePackets = 0;
@@ -164,15 +166,6 @@ i64 mod2(i64 a, i64 b){
 		int c = abs(a) / b+1;
 		return (b*c+a)%b;
 	}*/
-}
-
-long double 	g_startTime = 0.0;
-long double gettime(){ //in seconds!
-	timespec pt ;
-	clock_gettime(CLOCK_MONOTONIC, &pt);
-	long double ret = (long double)(pt.tv_sec) ;
-	ret += (long double)(pt.tv_nsec) / 1e9 ;
-	return ret - g_startTime;
 }
 
 void gsl_matrix_to_mat(gsl_matrix *x, const char* fname){
@@ -940,7 +933,7 @@ void* po8_thread(void*){
 					//get the sync -- estimate TDT ticks from perf counter.
 					int ticks = (unsigned short)(temp[96*numSamples + numSamples -1]); 
 					ticks += (unsigned short)(temp[97*numSamples + numSamples -1]) << 16; 
-					g_ts.update(time, ticks, frame); 
+					g_ts.update(time, ticks, frame); //also updates the mmap file.
 					if(frame % 500 == 50 && 0){
 						printf("totalSamples %d ticks %d diff %d\n", 
 								 (int)totalSamples, ticks, (int)totalSamples - ticks); 
@@ -1044,27 +1037,8 @@ void* mmap_thread(void*){
 	 * A = m.Data(1).x; 
 	 * */
 	size_t length = 97*2*10*2; 
-	int fd = 0; 
-	if(0){
-		fd = shm_open("/bmi5_binned", O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
-		ftruncate(fd, length); 
-	}else{
-		fd = open("/tmp/binned", O_RDWR | O_CREAT); 
-		if (fd == -1){
-			perror("could not open /tmp/binned\n"); 
-			return NULL; 
-		}
-		int* s = (int*)malloc(length); 
-		write(fd, s, length); //not buffered, I think. fill the file out.
-		free(s); 
-	}
-	void* addr = mmap(NULL, length, /*PROT_READ |*/ PROT_WRITE, 
-							MAP_SHARED, fd, 0); 
-	if (addr == MAP_FAILED){
-		close(fd);
-		perror("Error mmapping the file");
-		exit(EXIT_FAILURE);
-	}
+	mmapHelp* mmh = new mmapHelp(length, "/tmp/binned"); 
+	
 	int pipe_out = open("gtkclient_out", O_RDWR); 
 	if(!pipe_out){
 		perror("could not open ./gtkclient_out (make with mkfifo)\n"); 
@@ -1075,8 +1049,8 @@ void* mmap_thread(void*){
 		perror("could not open ./gtkclient_in (make with mkfifo)\n"); 
 		return NULL; 
 	}
-	volatile unsigned short* bin = (unsigned short*)addr; 
-	printf("mmap address: %lx\n", (long unsigned int)addr); 
+	volatile unsigned short* bin = (unsigned short*)mmh->m_addr; 
+	mmh->prinfo(); 
 	int frame = 0; 
 	bin[96*2*10] = 0; 
 	bin[96*2*10+1] = 0; 
@@ -1108,12 +1082,12 @@ void* mmap_thread(void*){
 			usleep(200000); //does not seem to limit the frame rate, just the startup sync.
 		frame++; 
 	}
-	munmap(addr, length); 
-	close(fd); 
+	delete mmh;  
 	close (pipe_in);
 	close (pipe_out); 
 	return NULL; 
 }
+
 void* server_thread(void* ){
 	//kinda like a RPC service -- call to get the vector of binned firing rates.
 	// call whenever you want!
