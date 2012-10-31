@@ -1318,6 +1318,9 @@ void* server_thread(void* ){
 	unsigned char buf[128];
 	int client = 0;
 	g_spikesock = setup_socket(4343,1); //tcp socket, server.
+	
+	double prevreqtime=0;
+	
 	//check to see if a client is connected.
 	int passes = 0;
 	while(g_die == 0){
@@ -1353,13 +1356,36 @@ void* server_thread(void* ){
 				rates[2][0] = (unsigned short)(ltime & 0xffff);
 				ltime >>= 16;
 				rates[2][1] = (unsigned short)(ltime & 0xffff);
-				for(int t=0; t<NSCALE; t++){
-				      for(int i=0; i<128; i++){
-					      for(int j=0; j<2; j++){
-						      rates[i+3+t*128][j] = g_fr[t][i][j].get_count(lasttime,reqtime); //send back count between requested time and current time
+				
+				if (lasttime > 0) {
+					if (lasttime-prevreqtime>1e-4) {//more than a tenth of a milisecond difference between the requested time and the previous report time
+						for(int t=0; t<NSCALE; t++){
+						      for(int i=0; i<128; i++){
+							      for(int j=0; j<2; j++){
+								      rates[i+3+t*128][j] = g_fr[t][i][j].get_count(lasttime,reqtime); //send back count in the last 10 ms
+							      }
+						      }
+						}		
+					} else {
+						for(int t=0; t<NSCALE; t++){
+						      for(int i=0; i<128; i++){
+							      for(int j=0; j<2; j++){
+								      rates[i+3+t*128][j] = g_fr[t][i][j].get_count_since();//send back counts since last time
+							      }
+						      }
+						}						
+					}
+				} else {//first request
+				
+					for(int t=0; t<NSCALE; t++){
+					      for(int i=0; i<128; i++){
+						      for(int j=0; j<2; j++){
+							      rates[i+3+t*128][j] = g_fr[t][i][j].get_count(reqtime-0.01,reqtime); //send back count in the last 10 ms
+						      }
 					      }
-				      }
+					}
 				}
+				prevreqtime=reqtime;
 				//end = gettime();
 				//printf("rate computation time: %f\n", end-start);
 				//start = end;
