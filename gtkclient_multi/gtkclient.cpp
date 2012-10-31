@@ -207,9 +207,8 @@ void gsl_matrix_to_mat(gsl_matrix *x, const char* fname){
 		}
 	}
 	matvar_t *matvar;
-	matvar = Mat_VarCreate("a",MAT_C_DOUBLE,MAT_T_DOUBLE,
-						2,dims,d,0);
-	Mat_VarWrite( mat, matvar, 0 );
+	matvar = Mat_VarCreate("a",MAT_C_DOUBLE,MAT_T_DOUBLE,2,(size_t*)dims,d,0);
+	Mat_VarWrite( mat, matvar, (matio_compression)0 );
 	Mat_VarFree(matvar);
 	free(d);
 	Mat_Close(mat);
