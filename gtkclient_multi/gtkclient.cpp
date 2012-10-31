@@ -1328,28 +1328,20 @@ void* server_thread(void* ){
 			}
 		}
 		if(client > 0){
-			//see if they have requested something.
-			double reqtime = gettime();
-			//double start = reqtime;
-			int n = recv(client, buf, sizeof(buf), 0); //this seems to block?
-			//double end = gettime();
+			//see if they have requested something.			
+			int n = recv(client, buf, sizeof(buf), 0); // blocking			
 			//printf("recv time: %f\n", end-start);
-			buf[n] = 0;
+			
 			if(n > 0){
-				passes = 0;
+				double reqtime = gettime(); //get current time
+				passes = 0; //reset our passes counter
+				
+				buf[n] = 0;	//terminate the buffer
+				
 				//printf("got client request [%d]:%s\n",n,buf);
-				double a_req = atof((const char*)buf);
-				if(a_req > 0 && a_req < 10.0){
-				  for(int t=0; t<NSCALE; t++){
-					for(int i=0; i<128; i++){
-						for(int j=0; j<2; j++){
-							g_fr[t][i][j].set_a(a_req);
-						}
-					}
-				  }
-				}
-				//doesn't matter at this point -- make a response.
-				//start = gettime();
+				//clinet request is the time of the last request (which is sent with the counts)
+				double lasttime = atof((const char*)buf) / 1000.0; //get back into seconds
+				
 
 				long long ltime = (long long)(reqtime * 1000.0); //put it in ms.
 				rates[0][0] = 2; //rows
@@ -1364,7 +1356,7 @@ void* server_thread(void* ){
 				for(int t=0; t<NSCALE; t++){
 				      for(int i=0; i<128; i++){
 					      for(int j=0; j<2; j++){
-						      rates[i+3+t*128][j] = g_fr[t][i][j].get_rate(reqtime);
+						      rates[i+3+t*128][j] = g_fr[t][i][j].get_count(lasttime,reqtime); //send back count between requested time and current time
 					      }
 				      }
 				}
