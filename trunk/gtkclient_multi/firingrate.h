@@ -20,6 +20,8 @@ public:
 	FiringRate(){
 		m_w = m_r = 0;
 		set_a(0.001);
+		for (int i=0;i<FR_LEN;i++)
+			m_ts[i]=0;//initialize to zeros
 	}
 	~FiringRate(){
 		//nothing allocated.
@@ -53,5 +55,16 @@ public:
 		//return a short as that's really all the resolution we need..
 		//and we don't need to burn so much bandwidth sending doubles or floats.
 		return s;
+	}
+	
+	
+	unsigned short get_count(double starttime, double endtime){		
+		//gets count of spikes in time range (starttime, endtime]
+		unsigned short count=0;
+		for(unsigned int i=0; i<FR_LEN; i++){
+			if (m_ts[i] > starttime && m_ts[i]<=endtime)
+				count++;
+		}
+		return count;
 	}
 };
