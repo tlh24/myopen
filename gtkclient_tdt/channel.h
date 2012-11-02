@@ -39,6 +39,7 @@ public:
 	Channel(int ch){
 		m_wfVbo = new Vbo(6, NWFVBO, 34); //sorted units, with color. 
 		m_usVbo = new Vbo(3, NUSVBO, 34); //unsorted units, all gray.
+		m_wfVbo->m_useSAA = m_usVbo->m_useSAA = false; 
 		m_pcaVbo = new VboPca(6, 1024*8, 1, ch); 
 		m_pcaVbo->m_fade = 0.f; 
 		m_isiViolations = 0; 

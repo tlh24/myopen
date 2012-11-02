@@ -9,8 +9,6 @@
 #include <GL/gl.h>	// Header File For The OpenGL32 Library
 #include <GL/glu.h>	// Header File For The GLu32 Library
 #include <GL/glx.h>     // Header file for the glx libraries.
-#include "glext.h"
-#include "glInfo.h"
 
 #include <Cg/cg.h>    /* included in Cg toolkit for nvidia */
 #include <Cg/cgGL.h>
@@ -28,10 +26,11 @@
 #include <memory.h>
 #include <math.h>
 #include <arpa/inet.h>
-#include "sock.h"
+#include "../common_host/gettime.h"
+#include "../common_host/sock.h"
 #include "headstage.h"
-#include "cgVertexShader.h"
-#include "vbo.h"
+#include "../common_host/cgVertexShader.h"
+#include "../common_host/vbo.h"
 #include "channel.h"
 #include "../firmware_stage9_tmpl/memory.h"
 

@@ -23,13 +23,12 @@ COBJS = convert.o decodePacket.o
 all: gtkclient
 convert: convert
 
-%.o: %.cpp vbo.h channel.h cgVertexShader.h ../common_host/firingrate.h
+%.o: %.cpp channel.h ../common_host/vbo.h ../common_host/cgVertexShader.h ../common_host/firingrate.h
 	g++ -c -o $@ $(CFLAGS) $(GTKFLAGS) $<
 
 spikes.pb.cc : spikes.proto
 	protoc $< --cpp_out=.
 	protoc $< --python_out=.
-
 
 gtkclient: $(GOBJS)
 	g++ -o $@ $(GTKLD) $(LDFLAGS) -lmatio -lhdf5 $(GOBJS)

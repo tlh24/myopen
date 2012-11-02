@@ -34,12 +34,14 @@
 #include "../common_host/sock.h"
 #include "PO8e.h"
 
-
-#include "../common_host/gettime.h"
 #include "../firmware_stage9_mf/memory.h"
 #include "gtkclient.h"
-#include "cgVertexShader.h"
-#include "vbo.h"
+#include "../common_host/gettime.h"
+#include "../common_host/cgVertexShader.h"
+#include "../common_host/vbo.h"
+#include "../common_host/tcpsegmenter.h"
+#include "../common_host/firingrate.h"
+#include "../common_host/mmaphelp.h"
 #include "channel.h"
 #include "packet.h"
 #include <sqlite3.h>
@@ -48,9 +50,6 @@
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_linalg.h>
 #include "spikes.pb.h"
-#include "../common_host/tcpsegmenter.h"
-#include "../common_host/firingrate.h"
-#include "../common_host/mmaphelp.h"
 #include "timesync.h"
 
 //CG stuff. for the vertex shaders.

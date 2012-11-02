@@ -14,7 +14,7 @@ private:
 	//circular buffers sounds better.
 	double	m_ts[FR_LEN]; //max firing rate 128 hz. before the estimate starts to degrade.
 	unsigned int	m_w; //write to here.
-	unsigned int	m_l; //last valid timestamp (within 1 second). 
+	unsigned int	m_l; //last valid timestamp; start reading from here.
 	double 	m_duration; 
 	int 		m_lags; 
 	double	m_xfade; 
@@ -22,7 +22,7 @@ private:
 	double	m_integral;
 public:
 	FiringRate(){
-		m_w = 0;
+		m_w = m_l = 0;
 		set_a(0.001);
 		m_duration = 1.0; 
 		m_lags = 10; 
@@ -67,7 +67,7 @@ public:
 	/** bmi3  / skunkape interface **/
 	unsigned short get_count(double starttime, double endtime){		
 		//gets count of spikes in time range (starttime, endtime]
-		m_r=m_w;//this will mark all spikes "read", this affects get_coutn_since
+		m_l=m_w;//this will mark all spikes "read", this affects get_coutn_since
 		unsigned short count=0;
 		for(unsigned int i=0; i<FR_LEN; i++){
 			if (m_ts[i] > starttime && m_ts[i]<=endtime)
@@ -77,16 +77,16 @@ public:
 	}
 	unsigned short get_count_since() {
 		//gets count of spikes since last check
-		//by doing math on m_w and m_r, which is fast
-		unsigned int local_mr=m_r;
+		//by doing math on m_w and m_l, which is fast
+		unsigned int local_ml=m_l;
 		unsigned int local_mw=m_w;			
-		m_r=m_w;
-		if (local_mr<=local_mw) return (local_mw-local_mr); //simple case
+		m_l=m_w;
+		if (local_ml<=local_mw) return (local_mw-local_ml); //simple case
 		//wrap around  case
 		// (local_mr>local_mw) 
-		return ((FR_LEN-local_mr ) + local_mw);
+		return ((FR_LEN-local_ml ) + local_mw);
 	}
-	/** bin interface (bmi5 & matlab) **/ 
+	/** lagged bin interface (bmi5 & matlab) **/ 
 	void get_bins(double time, unsigned short* out){
 		int w = m_w - 1; //atomic.
 		double lw = m_duration / (double)m_lags; 

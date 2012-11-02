@@ -7,10 +7,9 @@
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_sort.h>
 #include <sqlite3.h>
-#include "sql.h"
+#include "../common_host/sql.h"
 
 void gsl_matrix_to_mat(gsl_matrix *x, const char* fname); 
-double gettime(); 
 void glPrint(char *text);
 
 //need some way of encapsulating per-channel information. 
@@ -440,7 +439,7 @@ public:
 			gsl_matrix *cov = gsl_matrix_alloc(32,32); 
 			t = gettime(); 
 			gsl_blas_dgemm(CblasTrans,CblasNoTrans,1.0/nsamp,m,m,0.0,cov); 
-			printf("dgemm time %f siz %d\t", gettime()-t,nsamp); 
+			printf("dgemm time %f siz %d\t", (double)(gettime()-t),nsamp); 
 			//regularize.
 			for(int i=0; i<32;i++)
 				cov->data[i*32+i] += 0.001; 
@@ -461,7 +460,7 @@ public:
 					m_pcaScl[k] = sqrt(d->data[p[k]]);
 				}
 			}
-			printf("eig decomp time %f\t", gettime()-t);
+			printf("eig decomp time %f\t", (double)(gettime()-t));
 			gsl_matrix_free(v); 
 			gsl_vector_free(d); 
 			gsl_eigen_symmv_free(ws); 
@@ -488,7 +487,7 @@ public:
 		m_pcaVbo->m_r = 0; 
 		m_pcaVbo->m_w = nsamp; //force a copy-over of the whole thing.
 		m_pcaVbo->copy(false,true); 
-		printf("copy %f\n", gettime()-t); 
+		printf("copy %f\n", (double)(gettime()-t)); 
 	}
 	void spike(int unit){
 		//this used for calculating ISI. 
