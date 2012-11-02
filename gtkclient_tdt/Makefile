@@ -6,6 +6,7 @@ CFLAGS+= -g
 CFLAGS+= -Wall -Wcast-align -Wpointer-arith -Wshadow -Wsign-compare -Wformat=2 \
 -Wno-format-y2k -Wmissing-braces -Wparentheses -Wtrigraphs \
 -Wextra -pedantic -Wno-int-to-pointer-cast -std=c++0x
+CFLAGS += -I../common_host/
 LDFLAGS = -lGL -lGLU -lpthread -lCg -lCgGL -lgsl -lcblas -latlas -lm -lsqlite3 -lPO8eStreaming
 # if
 GLIBS = gtk+-2.0 gtkglext-1.0 gtkglext-x11-1.0 protobuf
@@ -15,15 +16,18 @@ GTKLD = `pkg-config --libs $(GLIBS) `
 OBJS = main.o sock.o
 
 GOBJS = spikes.pb.o gtkclient.o decodePacket.o \
-../common_host/gettime.o ../common_host/sock.o ../common_host/sql.o \
-../common_host/tcpsegmenter.o ../common_host/glInfo.o
+	gettime.o sock.o sql.o tcpsegmenter.o glInfo.o
 
 COBJS = convert.o decodePacket.o
+COM_HDR = channel.h ../common_host/vbo.h ../common_host/cgVertexShader.h ../common_host/firingrate.h
 
 all: gtkclient
 convert: convert
 
-%.o: %.cpp channel.h ../common_host/vbo.h ../common_host/cgVertexShader.h ../common_host/firingrate.h
+%.o: %.cpp $(COM_HDR)
+	g++ -c -o $@ $(CFLAGS) $(GTKFLAGS) $<
+
+%.o: ../common_host/%.cpp $(COM_HDR)
 	g++ -c -o $@ $(CFLAGS) $(GTKFLAGS) $<
 
 spikes.pb.cc : spikes.proto

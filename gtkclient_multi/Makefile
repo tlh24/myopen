@@ -1,7 +1,7 @@
 # not a very smart makefile -- no deps -- but works.
 # depends on google protocol buffers -- not too hard to install, in debian.
 # you'll need to install libatlas-base-dev for linear algebra.
-CFLAGS=-I/usr/local/include
+CFLAGS=-I/usr/local/include -I../common_host
 CFLAGS+=  -O6
 CFLAGS+= -Wall -Wcast-align -Wpointer-arith -Wshadow -Wsign-compare -Wformat=2 \
 -Wno-format-y2k -Wmissing-braces -Wparentheses -Wtrigraphs \

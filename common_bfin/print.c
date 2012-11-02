@@ -89,7 +89,7 @@ int printf_int(char* str, int d){
 			m = mod(d, 10); 
 			printf_temp[i] = (char)m + 48; 
 			i++; 
-			d = div(d, 10);  
+			d = div_(d, 10);  
 		}
 	}else if(d < 0){
 		//convert to positive.
@@ -99,7 +99,7 @@ int printf_int(char* str, int d){
 			m = mod(d, 10); 
 			printf_temp[i] = (char)m + 48; 
 			i++; 
-			d = div(d, 10);  
+			d = div_(d, 10);  
 		}
 		printf_temp[i] = '-'; 
 		i++; 

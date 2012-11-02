@@ -2330,7 +2330,7 @@ ffa09818:	01 e8 00 00 	UNLINK;
 ffa0981c:	10 00       	RTS;
 	...
 
-ffa09820 <_div>:
+ffa09820 <_div_>:
 ffa09820:	00 e8 01 00 	LINK 0x4;		/* (4) */
 ffa09824:	b8 b0       	[FP + 0x8] = R0;
 ffa09826:	f9 b0       	[FP + 0xc] = R1;
@@ -2344,7 +2344,7 @@ ffa09834:	b8 b0       	[FP + 0x8] = R0;
 ffa09836:	f9 b0       	[FP + 0xc] = R1;
 ffa09838:	00 60       	R0 = 0x0 (X);		/*		R0=0x0(  0) */
 ffa0983a:	f0 bb       	[FP -0x4] = R0;
-ffa0983c:	09 20       	JUMP.S 0xffa0984e <_div+0x2e>;
+ffa0983c:	09 20       	JUMP.S 0xffa0984e <_div_+0x2e>;
 ffa0983e:	b8 a0       	R0 = [FP + 0x8];
 ffa09840:	f9 a0       	R1 = [FP + 0xc];
 ffa09842:	08 42       	DIVQ (R0, R1);
@@ -2356,7 +2356,7 @@ ffa0984c:	f0 bb       	[FP -0x4] = R0;
 ffa0984e:	f0 b9       	R0 = [FP -0x4];
 ffa09850:	71 60       	R1 = 0xe (X);		/*		R1=0xe( 14) */
 ffa09852:	08 09       	CC = R0 <= R1;
-ffa09854:	f5 1b       	IF CC JUMP 0xffa0983e <_div+0x1e>;
+ffa09854:	f5 1b       	IF CC JUMP 0xffa0983e <_div_+0x1e>;
 ffa09856:	b8 a0       	R0 = [FP + 0x8];
 ffa09858:	80 42       	R0 = R0.L (X);
 ffa0985a:	b8 b0       	[FP + 0x8] = R0;
@@ -2370,7 +2370,7 @@ ffa09868:	b8 b0       	[FP + 0x8] = R0;
 ffa0986a:	f9 b0       	[FP + 0xc] = R1;
 ffa0986c:	f9 a0       	R1 = [FP + 0xc];
 ffa0986e:	b8 a0       	R0 = [FP + 0x8];
-ffa09870:	ff e3 d8 ff 	CALL 0xffa09820 <_div>;
+ffa09870:	ff e3 d8 ff 	CALL 0xffa09820 <_div_>;
 ffa09874:	f0 bb       	[FP -0x4] = R0;
 ffa09876:	f1 b9       	R1 = [FP -0x4];
 ffa09878:	f8 a0       	R0 = [FP + 0xc];
@@ -2964,7 +2964,7 @@ ffa09d48:	b8 a0       	R0 = [FP + 0x8];
 ffa09d4a:	01 e8 00 00 	UNLINK;
 ffa09d4e:	10 00       	RTS;
 
-ffa09d50 <_atoi>:
+ffa09d50 <_atoi_>:
 ffa09d50:	00 e8 03 00 	LINK 0xc;		/* (12) */
 ffa09d54:	b8 b0       	[FP + 0x8] = R0;
 ffa09d56:	f9 b0       	[FP + 0xc] = R1;
@@ -2979,7 +2979,7 @@ ffa09d66:	50 99       	R0 = B[P2] (X);
 ffa09d68:	00 43       	R0 = R0.B (X);
 ffa09d6a:	69 61       	R1 = 0x2d (X);		/*		R1=0x2d( 45) */
 ffa09d6c:	08 08       	CC = R0 == R1;
-ffa09d6e:	2d 10       	IF !CC JUMP 0xffa09dc8 <_atoi+0x78>;
+ffa09d6e:	2d 10       	IF !CC JUMP 0xffa09dc8 <_atoi_+0x78>;
 ffa09d70:	f8 63       	R0 = -0x1 (X);		/*		R0=0xffffffff( -1) */
 ffa09d72:	f0 bb       	[FP -0x4] = R0;
 ffa09d74:	b8 a0       	R0 = [FP + 0x8];
@@ -2988,7 +2988,7 @@ ffa09d78:	b8 b0       	[FP + 0x8] = R0;
 ffa09d7a:	d0 b9       	R0 = [FP -0xc];
 ffa09d7c:	08 64       	R0 += 0x1;		/* (  1) */
 ffa09d7e:	d0 bb       	[FP -0xc] = R0;
-ffa09d80:	24 20       	JUMP.S 0xffa09dc8 <_atoi+0x78>;
+ffa09d80:	24 20       	JUMP.S 0xffa09dc8 <_atoi_+0x78>;
 ffa09d82:	ba ac       	P2 = [FP + 0x8];
 ffa09d84:	50 99       	R0 = B[P2] (X);
 ffa09d86:	00 43       	R0 = R0.B (X);
@@ -3008,7 +3008,7 @@ ffa09da0:	50 99       	R0 = B[P2] (X);
 ffa09da2:	00 43       	R0 = R0.B (X);
 ffa09da4:	79 61       	R1 = 0x2f (X);		/*		R1=0x2f( 47) */
 ffa09da6:	08 09       	CC = R0 <= R1;
-ffa09da8:	10 18       	IF CC JUMP 0xffa09dc8 <_atoi+0x78>;
+ffa09da8:	10 18       	IF CC JUMP 0xffa09dc8 <_atoi_+0x78>;
 ffa09daa:	00 00       	NOP;
 ffa09dac:	00 00       	NOP;
 ffa09dae:	ba ac       	P2 = [FP + 0x8];
@@ -3016,7 +3016,7 @@ ffa09db0:	50 99       	R0 = B[P2] (X);
 ffa09db2:	00 43       	R0 = R0.B (X);
 ffa09db4:	c9 61       	R1 = 0x39 (X);		/*		R1=0x39( 57) */
 ffa09db6:	08 09       	CC = R0 <= R1;
-ffa09db8:	08 10       	IF !CC JUMP 0xffa09dc8 <_atoi+0x78>;
+ffa09db8:	08 10       	IF !CC JUMP 0xffa09dc8 <_atoi_+0x78>;
 ffa09dba:	e0 b9       	R0 = [FP -0x8];
 ffa09dbc:	08 30       	R1 = R0;
 ffa09dbe:	11 4f       	R1 <<= 0x2;
@@ -3028,7 +3028,7 @@ ffa09dca:	50 99       	R0 = B[P2] (X);
 ffa09dcc:	00 43       	R0 = R0.B (X);
 ffa09dce:	79 61       	R1 = 0x2f (X);		/*		R1=0x2f( 47) */
 ffa09dd0:	08 09       	CC = R0 <= R1;
-ffa09dd2:	0d 18       	IF CC JUMP 0xffa09dec <_atoi+0x9c>;
+ffa09dd2:	0d 18       	IF CC JUMP 0xffa09dec <_atoi_+0x9c>;
 ffa09dd4:	00 00       	NOP;
 ffa09dd6:	00 00       	NOP;
 ffa09dd8:	ba ac       	P2 = [FP + 0x8];
@@ -3036,11 +3036,11 @@ ffa09dda:	50 99       	R0 = B[P2] (X);
 ffa09ddc:	00 43       	R0 = R0.B (X);
 ffa09dde:	c9 61       	R1 = 0x39 (X);		/*		R1=0x39( 57) */
 ffa09de0:	08 09       	CC = R0 <= R1;
-ffa09de2:	05 10       	IF !CC JUMP 0xffa09dec <_atoi+0x9c>;
+ffa09de2:	05 10       	IF !CC JUMP 0xffa09dec <_atoi_+0x9c>;
 ffa09de4:	d1 b9       	R1 = [FP -0xc];
 ffa09de6:	f8 a0       	R0 = [FP + 0xc];
 ffa09de8:	81 08       	CC = R1 < R0;
-ffa09dea:	cc 1b       	IF CC JUMP 0xffa09d82 <_atoi+0x32>;
+ffa09dea:	cc 1b       	IF CC JUMP 0xffa09d82 <_atoi_+0x32>;
 ffa09dec:	e1 b9       	R1 = [FP -0x8];
 ffa09dee:	f0 b9       	R0 = [FP -0x4];
 ffa09df0:	c8 40       	R0 *= R1;

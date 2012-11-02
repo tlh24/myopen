@@ -9,7 +9,7 @@ CSRCS = main.o
 # note: the order of objects in the .ldr mirrors the order in this list!
 OPT = -g
 CPUDEFINES = -D__ADSPBF532__ -D__BLACKFIN__
-INCLUDES = -I. -I/opt/uClinux/bfin-elf/bfin-elf/include/ -I../common/
+INCLUDES = -I. -I/opt/uClinux/bfin-elf/bfin-elf/include/ -I../common_bfin/
 ASMFLAGS = -x assembler-with-cpp $(INCLUDES) $(CPUDEFINES) -Wall
 ASMFLAGS += -mcpu=bf532 $(OPT) -include memory.h -include defBF532.h -D__ASM__
 CFLAGS = $(INCLUDES) $(CPUDEFINES) -mcpu=bf532 $(OPT) -include memory.h -Wall
@@ -37,8 +37,11 @@ BIN = $(BFINROOT)/bfin-elf-objcopy
 %.bo: %.asm
 	$(CC) $(ASMFLAGS) $(BRIDGE) -c -o $@ $<
 
-%.o: ../common/%.c
+%.o: ../common_bfin/%.c
 	$(CC) $(CFLAGS) -c -o $@ $<
+	
+%.o: ../common_bfin/%.asm
+	$(CC) $(ASMFLAGS) -D_AGC_ -c -o $@ $<
 
 %.o: %.asm
 	$(CC) $(ASMFLAGS) -D_AGC_ -c -o $@ $<

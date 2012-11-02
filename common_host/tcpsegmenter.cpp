@@ -84,9 +84,7 @@ const unsigned char * TCPSegmenter::nextSegment(int &res) {
             //flush, this may cause problems
             memset(cmdbuf,0, size);
             wptr = 0;
-
             res=0;
-            
             return 0;
         }
 

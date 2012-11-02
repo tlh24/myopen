@@ -23,7 +23,7 @@ extern unsigned int ustimer();
 int PhysicalToLogicalChan(int c); 
 int LogicalToPhysicalChan(int c); 
 
-int div(int num, int denom); 
+int div_(int num, int denom); 
 int mod(int num, int denom); 
 void memcpy_(u8* src, u8* dest, int len);
 void memset_(u8* dest, u8 fill, int len); 
@@ -35,7 +35,7 @@ int sprintf_int(char* dest, int d);
 int sprintf_hex(char* dest, int d);
 char* strprintf_int(char* dest, int* len, int d); 
 char* strprintf_hex(char* dest, int* len, int d); 
-int atoi(char* c, int maxlen);
+int atoi_(char* c, int maxlen);
 void udelay(int us) ; 
 void spi_delay(); 
 #endif

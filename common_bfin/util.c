@@ -4,7 +4,7 @@
 char* printf_temp; 
 char* printf_out; 
 
-int div(int num, int denom){
+int div_(int num, int denom){
 	//see page 15-23 in the prog. ref. 
 	//the assembly this produces is much simpler than the c code :)
 	int i; 
@@ -18,7 +18,7 @@ int div(int num, int denom){
 }
 int mod(int num, int denom){
 	int b; 
-	b = div(num, denom); 
+	b = div_(num, denom); 
 	return num - b*denom;
 }
 void memcpy_(u8* src, u8* dest, int len){
@@ -171,7 +171,7 @@ char* strprintf_hex(char* dest, int* len, int d){
 	dest += n; 
 	return dest; 
 }
-int atoi(char* c, int maxlen){
+int atoi_(char* c, int maxlen){
 	int i = 0; 
 	int r = 0; 
 	int mply = 1; 
