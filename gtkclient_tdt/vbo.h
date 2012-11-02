@@ -2,7 +2,7 @@
 #define __VBO_H__
 
 #include <sqlite3.h>
-#include "sql.h"
+#include "../common_host/sql.h"
 
 void copyData(GLuint vbo, u32 sta, u32 fin, float* ptr, int stride); 
 extern float g_viewportSize[2]; 

@@ -7,7 +7,7 @@
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_sort.h>
 #include <sqlite3.h>
-#include "sql.h"
+#include "../common_host/sql.h"
 
 void gsl_matrix_to_mat(gsl_matrix *x, const char* fname); 
 long double gettime(); 
