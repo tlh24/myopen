@@ -2,7 +2,7 @@
 # depends on google protocol buffers -- not too hard to install, in debian.
 # you'll need to install libatlas-base-dev for linear algebra.
 CC = clang
-CFLAGS=-I/usr/local/include
+CFLAGS=-I/usr/local/include -I../common_host
 CFLAGS+=  -g -DEMG
 CFLAGS+= -Wall -Wcast-align -Wpointer-arith -Wshadow -Wsign-compare -Wformat=2 \
 -Wno-format-y2k -Wmissing-braces -Wparentheses -Wtrigraphs \
@@ -15,17 +15,19 @@ GTKLD = `pkg-config --libs $(GLIBS) `
 
 OBJS = main.o sock.o
 
-GOBJS = spikes.pb.o gtkclient.o decodePacket.o headstage.o\
-../common_host/gettime.o ../common_host/sock.o ../common_host/sql.o \
-../common_host/tcpsegmenter.o ../common_host/glInfo.o
+GOBJS = spikes.pb.o gtkclient.o decodePacket.o headstage.o \
+gettime.o sock.o sql.o tcpsegmenter.o glInfo.o
 
 COBJS = convert.o decodePacket.o
+COM_HDR = channel.h ../common_host/vbo.h ../common_host/cgVertexShader.h ../common_host/firingrate.h
 
 all: gtkclient 
 
+%.o: %.cpp $(COM_HDR)
+	g++ -c -o $@ $(CFLAGS) $(GTKFLAGS) $<
 
-%.o: %.cpp channel.h ../common_host/vbo.h ../common_host/cgVertexShader.h
-	$(CC) -c -o $@ $(CFLAGS) $(GTKFLAGS) $<
+%.o: ../common_host/%.cpp $(COM_HDR)
+	g++ -c -o $@ $(CFLAGS) $(GTKFLAGS) $<
 
 spikes.pb.cc : spikes.proto
 	protoc $< --cpp_out=.

@@ -26,11 +26,11 @@
 #include <memory.h>
 #include <math.h>
 #include <arpa/inet.h>
-#include "../common_host/gettime.h"
-#include "../common_host/sock.h"
+#include "gettime.h"
+#include "sock.h"
 #include "headstage.h"
-#include "../common_host/cgVertexShader.h"
-#include "../common_host/vbo.h"
+#include "cgVertexShader.h"
+#include "vbo.h"
 #include "channel.h"
 #include "../firmware_stage9_tmpl/memory.h"
 

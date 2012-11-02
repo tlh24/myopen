@@ -271,7 +271,7 @@ r5.l = (a0 += r1.l * r6.l), r5.h = (a1 += r1.h * r6.h) || r1 = [i1++m3] || r2 = 
 	a0 += r3.l * r6.l, a1 += r3.h * r6.h || r7 = [i0++] || r1 = [i1++]; //r7 = a3.0; r1 = y4(n-1)
 	a0 += r4.l * r5.l, a1 += r4.h * r5.h || r2 = [i1++]; // r2 = y4(n-2)
 	a0 += r1.l * r7.l, a1 += r1.h * r7.h || r5 = [i0++]; // r5 = a3.1
-	r3.l = (a0 += r2.l * r5.l), r0.h = (a1 += r2.h * r5.h) (s2rnd); // r0 = y4(n)
+	r3.l = (a0 += r2.l * r5.l), r3.h = (a1 += r2.h * r5.h) (s2rnd); // r0 = y4(n)
 
 	nop || [i2++] = r3; // save y4(n-1),
 	r2 = [sp++] || [i2++] = r1; // save y4(n-2) (normally pipelined)

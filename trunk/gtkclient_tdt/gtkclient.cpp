@@ -16,14 +16,10 @@
 
 #include <stdio.h>
 #include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include <inttypes.h>
 #include <sys/time.h>
 #include <pthread.h>
 #include <sys/socket.h>
-#include <poll.h>
-#include <sys/mman.h>
 #include <netinet/in.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -31,24 +27,25 @@
 #include <memory.h>
 #include <math.h>
 #include <arpa/inet.h>
-#include "../common_host/sock.h"
-#include "PO8e.h"
-
-#include "../firmware_stage9_mf/memory.h"
-#include "gtkclient.h"
-#include "../common_host/gettime.h"
-#include "../common_host/cgVertexShader.h"
-#include "../common_host/vbo.h"
-#include "../common_host/tcpsegmenter.h"
-#include "../common_host/firingrate.h"
-#include "../common_host/mmaphelp.h"
-#include "channel.h"
-#include "packet.h"
 #include <sqlite3.h>
-#include "../common_host/sql.h"
 #include <matio.h>
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_linalg.h>
+
+#include "PO8e.h"
+#include "../firmware_stage9_mf/memory.h"
+
+#include "gettime.h"
+#include "sock.h"
+#include "cgVertexShader.h"
+#include "sql.h"
+#include "vbo.h"
+#include "tcpsegmenter.h"
+#include "firingrate.h"
+#include "gtkclient.h"
+#include "mmaphelp.h"
+#include "channel.h"
+#include "packet.h"
 #include "spikes.pb.h"
 #include "timesync.h"
 
@@ -859,7 +856,7 @@ void* po8_thread(void*){
 		short temptemp[1024]; 
 		while((simulate || stoppedCount < count) && !g_die){
 			//printf("waiting for data ready.\n"); --we move too fast for this.
-			if (!simulate && count == 1 &&!card->waitForDataReady())
+			if (!simulate && count == 1 && !card->waitForDataReady())
 				break;
 		
 			int waitCount = 0;
