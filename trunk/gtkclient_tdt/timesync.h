@@ -115,7 +115,7 @@ public:
 		m_ssd = (syncSharedData*)mmh->m_addr; 
 	}
 	~TimeSyncClient(){
-		delete m_ssd; 
+		delete mmh; 
 	}
 	double getTicks(){
 		int n = 0; 
