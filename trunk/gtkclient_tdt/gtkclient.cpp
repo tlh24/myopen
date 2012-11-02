@@ -8,8 +8,8 @@
 #include <GL/gl.h>	// Header File For The OpenGL32 Library
 #include <GL/glu.h>	// Header File For The GLu32 Library
 #include <GL/glx.h>     // Header file for the glx libraries.
-#include "glext.h"
-#include "glInfo.h"
+#include "../common_host/glext.h"
+#include "../common_host/glInfo.h"
 
 #include <Cg/cg.h>    /* included in Cg toolkit for nvidia */
 #include <Cg/cgGL.h>
@@ -31,11 +31,11 @@
 #include <memory.h>
 #include <math.h>
 #include <arpa/inet.h>
-#include "sock.h"
+#include "../common_host/sock.h"
 #include "PO8e.h"
 
 
-#include "../common/gettime.h"
+#include "../common_host/gettime.h"
 #include "../firmware_stage9_mf/memory.h"
 #include "gtkclient.h"
 #include "cgVertexShader.h"
@@ -43,14 +43,14 @@
 #include "channel.h"
 #include "packet.h"
 #include <sqlite3.h>
-#include "sql.h"
+#include "../common_host/sql.h"
 #include <matio.h>
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_linalg.h>
 #include "spikes.pb.h"
-#include "tcpsegmenter.h"
-#include "firingrate.h"
-#include "../common/mmaphelp.h"
+#include "../common_host/tcpsegmenter.h"
+#include "../common_host/firingrate.h"
+#include "../common_host/mmaphelp.h"
 #include "timesync.h"
 
 //CG stuff. for the vertex shaders.
@@ -177,7 +177,7 @@ void gsl_matrix_to_mat(gsl_matrix *x, const char* fname){
 		printf("could not open %s for writing \n", fname);
 		return;
 	}
-	int dims[2];
+	size_t dims[2];
 	dims[0] = x->size1;
 	dims[1] = x->size2;
 	double* d = (double*)malloc(dims[0]*dims[1]*sizeof(double));
@@ -188,15 +188,15 @@ void gsl_matrix_to_mat(gsl_matrix *x, const char* fname){
 	//reformat and transpose.
 	//matio expects fortran style, column-major format.
 	//gsl is row-major.
-	for(int i=0; i<dims[0]; i++){ //rows
-		for(int j=0; j<dims[1]; j++){ //columns
+	for(unsigned int i=0; i<dims[0]; i++){ //rows
+		for(unsigned int j=0; j<dims[1]; j++){ //columns
 			d[j*dims[0] + i] = x->data[i*x->tda + j];
 		}
 	}
 	matvar_t *matvar;
 	matvar = Mat_VarCreate("a",MAT_C_DOUBLE,MAT_T_DOUBLE,
 						2,dims,d,0);
-	Mat_VarWrite( mat, matvar, 0 );
+	Mat_VarWrite( mat, matvar, MAT_COMPRESSION_NONE );
 	Mat_VarFree(matvar);
 	free(d);
 	Mat_Close(mat);
