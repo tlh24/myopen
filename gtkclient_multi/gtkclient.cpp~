@@ -717,13 +717,13 @@ static gboolean rotate (gpointer user_data){
 	oss << "headecho:";
 	
 	for(int h =0; h < NSCALE; h++){
-			if(g_headecho[h] != ((g_echo[h]-1) & 0xf))
-				oss << g_radioChannel[h] <<": " << "(ASYNC) ";
-			else
-				oss << g_radioChannel[h]<< ": "  << "(SYNC) ";
-			
-				g_oldheadecho[h] = g_headecho[h];
-		}
+		if(g_headecho[h] != ((g_echo[h]-1) & 0xf))
+			oss << g_radioChannel[h] <<": " << "(ASYNC) ";
+		else
+			oss << g_radioChannel[h]<< ": "  << "(SYNC) ";
+		
+			g_oldheadecho[h] = g_headecho[h];
+	}
 	
 	gtk_label_set_text(GTK_LABEL(g_headechoLabel), oss.str().c_str());
 

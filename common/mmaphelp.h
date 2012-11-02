@@ -2,6 +2,10 @@
 #ifndef __MMAPHELP_H__
 #define __MMAPHELP_H__
 
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <unistd.h>
+
 class mmapHelp{
 public:
 	int 	m_fd; 
