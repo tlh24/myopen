@@ -18,8 +18,9 @@ public:
 	float	m_color[4]; 
 	float	m_fade; 
 	bool	m_reset; //a request, possibly from another thread. 
+	bool	m_useSAA; //use sum absolute (L1 norm, headsdtage SAA instr.) as opposed to L2 norm.
 	GLuint	m_vbo; 
-	cgVertexShader* m_vs; 
+	cgVertexShader* m_vs; //need to convert this to GLSL, not CG -- fewer deps.
 	
 	Vbo(int dim, int rows, int cols){
 		m_dim = dim; 
@@ -38,8 +39,9 @@ public:
 		m_vbo = 0; //not configured yet.
 		m_vs = 0; 
 		m_reset = false; 
+		m_useSAA = true; //default to headstage SAA algorithm.
 	}
-	~Vbo(){
+	virtual ~Vbo(){
 		free(m_f); 
 		if(m_vbo) glDeleteBuffersARB(1, &m_vbo);
 	}
@@ -49,7 +51,7 @@ public:
 		glGenBuffersARB(1, &m_vbo);
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_vbo);
 		glBufferDataARB(GL_ARRAY_BUFFER_ARB, siz, 
-			0, GL_DYNAMIC_DRAW_ARB);
+			0, GL_STATIC_DRAW_ARB);
 		glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, 
 			0, siz, m_f);
 	}
@@ -114,7 +116,7 @@ public:
 			glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_vbo);
 			//note: want to draw the newest data soonest; hence should 
 			// draw in two chunks: m_r % m_rows to m_rows-1
-			// and 0 to m_r % m_rows.
+			// then 0 to m_r % m_rows.
 			int r = m_r % m_rows; 
 			if(m_r > m_rows){
 				if(m_dim == 6){ //color and vertex location.
@@ -181,7 +183,7 @@ public:
 		m_drawWf = 0; 
 		m_color[3] = -0.5; //additive alpha. so make the points partially transparent.
 	}
-	~VboPca(){
+	virtual ~VboPca(){
 		free(m_mean); 
 		free(m_max); 
 		free(m_maxSmooth);
@@ -219,7 +221,7 @@ public:
 		m_polyW++; 
 		printf("m_polyW %d\n", m_polyW); 
 	}
-	void copy(bool updateScale, bool updateAll){
+	virtual void copy(bool updateScale, bool updateAll){
 		//update the mean & max excursion. only makes sense for 2d data.
 		if(updateScale){
 			for(int i = m_r; i<m_w; i++){
@@ -264,7 +266,7 @@ public:
 		}
 		Vbo::copy(); 
 	}
-	void draw(int drawmode, float time, bool update, float* curs, bool drawclose){
+	virtual void draw(int drawmode, float time, bool update, float* curs, bool drawclose){
 		//order: we scale before offset. pretty easy algebra.
 		float x,y,w,h; calcScale(x,y,w,h); 
 		for(int i=0; i<m_dim; i++){
@@ -431,26 +433,42 @@ public:
 		for(int i=0; i<MIN(m_w,m_rows); i++){
 			if(inside[i]){
 				for(int j=0; j<32; j++){
-					aperture += fabs(m_wf[i*32 + j] - temp[j]);
+					float r = m_wf[i*32 + j] - temp[j]; 
+					if(m_useSAA) aperture += fabs(r); 
+					else aperture += r*r; 
 				}
 			}
 		}
 		aperture /= (float)npts; 
-		aperture *= 0.45; //empirical.
+		if(m_useSAA){
+			aperture *= 0.45; //empirical.
+		} else {
+			aperture /= 32; 
+			aperture *= 2.0; //also empirical.
+		}
+		//really should iteratively assign this, moving until we get a set number of type 1/2 errors.
 		copyData(m_vbo, 0, m_rows, m_f, m_dim * m_cols); 
 		return true; 
 	}
 	void updateAperture(float* temp, float aperture, float* color){
-		//redisplays the sorting based on the SAA algorithm. 
+		//redisplays the sorting based on MSE / SAA algorithm.
 		// wf and template are range 1 mean 0. (+-0.5)
-		// aperture is 1/255 whats in the UI. 
-		//template is **length 16**
+		// if m_useSAA aperture is 1/255 whats in the UI. 
+		// else aperture just the MSE.
 		for(int i=0; i<MIN(m_w,m_rows); i++){
-			float saa = 0.f;
-			for(int j=0; j<16; j++){
-				saa += fabs(m_wf[i*32 + j + 8] - temp[j]); 
+			float sum = 0.f;
+			if(m_useSAA){
+				for(int j=0; j<16; j++){
+					sum += fabs(m_wf[i*32 + j + 8] - temp[j]); 
+				}
+			}else{
+				for(int j=0; j<32; j++){
+					float r = m_wf[i*32 + j] - temp[j];
+					sum += r*r; 
+				}
+				sum /= 32.f; 
 			}
-			if(saa < aperture){
+			if(sum < aperture){
 				for(int j=0; j<3; j++)
 					m_f[m_dim*m_cols*i + j + 3] = color[j]; //6: x y z color.
 			} else {

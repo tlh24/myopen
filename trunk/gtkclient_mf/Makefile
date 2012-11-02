@@ -7,7 +7,7 @@ CFLAGS+=  -g -DEMG
 CFLAGS+= -Wall -Wcast-align -Wpointer-arith -Wshadow -Wsign-compare -Wformat=2 \
 -Wno-format-y2k -Wmissing-braces -Wparentheses -Wtrigraphs \
 -Wextra -pedantic -std=c++0x
-LDFLAGS = -pg -lGL -lGLU -lpthread -lCg -lCgGL -lgsl -lcblas -latlas -lm -lsqlite3
+LDFLAGS = -lGL -lGLU -lpthread -lCg -lCgGL -lgsl -lcblas -latlas -lm -lsqlite3
 
 GLIBS = gtk+-2.0 gtkglext-1.0 gtkglext-x11-1.0 protobuf plplotd-c++
 GTKFLAGS = `pkg-config --cflags $(GLIBS) `
@@ -15,15 +15,16 @@ GTKLD = `pkg-config --libs $(GLIBS) `
 
 OBJS = main.o sock.o
 
-GOBJS = spikes.pb.o gtkclient.o glInfo.o sock.o decodePacket.o sql.o headstage.o\
- tcpsegmenter.o
+GOBJS = spikes.pb.o gtkclient.o decodePacket.o headstage.o\
+../common_host/gettime.o ../common_host/sock.o ../common_host/sql.o \
+../common_host/tcpsegmenter.o ../common_host/glInfo.o
 
 COBJS = convert.o decodePacket.o
 
 all: gtkclient 
 
 
-%.o: %.cpp vbo.h channel.h cgVertexShader.h
+%.o: %.cpp channel.h ../common_host/vbo.h ../common_host/cgVertexShader.h
 	$(CC) -c -o $@ $(CFLAGS) $(GTKFLAGS) $<
 
 spikes.pb.cc : spikes.proto
@@ -34,7 +35,7 @@ spikes.pb.cc : spikes.proto
 #	g++ $(LDFLAGS) $(OBJS) -o client
 
 gtkclient: $(GOBJS)
-	$(CC) -o $@ $(GTKLD) $(LDFLAGS) -lmatio $(GOBJS)
+	$(CC) -o $@ $(GTKLD) $(LDFLAGS) -lmatio -lhdf5 $(GOBJS)
 
 convert: $(COBJS)
 	$(CC) -o $@ -g -Wall -lmatio -lz $(COBJS)

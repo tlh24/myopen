@@ -8,8 +8,8 @@
 #include <GL/gl.h>	// Header File For The OpenGL32 Library
 #include <GL/glu.h>	// Header File For The GLu32 Library
 #include <GL/glx.h>     // Header file for the glx libraries.
-#include "glext.h"
-#include "glInfo.h"
+#include "../common_host/glext.h"
+#include "../common_host/glInfo.h"
 
 #include <Cg/cg.h>    /* included in Cg toolkit for nvidia */
 #include <Cg/cgGL.h>
@@ -28,26 +28,28 @@
 #include <memory.h>
 #include <math.h>
 #include <arpa/inet.h>
-#include "sock.h"
 #include <sstream>
 #include <stdint.h>
-
-#include "gtkglobals.h"
-
-#include "../firmware_stage9_tmpl/memory.h"
-#include "headstage.h"
-#include "cgVertexShader.h"
-#include "vbo.h"
-#include "channel.h"
-#include "packet.h"
 #include <sqlite3.h>
-#include "sql.h"
 #include <matio.h>
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_linalg.h>
+
+#include "../firmware_stage9_tmpl/memory.h"
+
+#include "../common_host/gettime.h"
+#include "../common_host/sock.h"
+#include "../common_host/cgVertexShader.h"
+#include "../common_host/sql.h"
+#include "../common_host/vbo.h"
+#include "../common_host/tcpsegmenter.h"
+#include "../common_host/firingrate.h"
+
+#include "gtkglobals.h"
+#include "headstage.h"
+#include "channel.h"
+#include "packet.h"
 #include "spikes.pb.h"
-#include "tcpsegmenter.h"
-#include "firingrate.h"
 
 
 //CG stuff. for the vertex shaders.
@@ -103,8 +105,6 @@ float g_unsortrate = 0.0; //the rate that unsorted WFs get through.
 FILE* g_saveFile = 0;
 bool  g_closeSaveFile = false;
 i64   g_saveFileBytes;
-
-double       g_startTime = 0.0;
 
 int          g_totalPackets = 0;
 int          g_strobePackets = 0;
@@ -172,14 +172,6 @@ i64 mod2(i64 a, i64 b){
 	}*/
 }
 
-double gettime(){ //in seconds!
-	timespec pt ;
-	clock_gettime(CLOCK_MONOTONIC, &pt);
-	double ret = (double)(pt.tv_sec) ;
-	ret += (double)(pt.tv_nsec) / 1e9 ;
-	return ret - g_startTime;
-	//printf( "present time: %d s %d ns \n", pt.tv_sec, pt.tv_nsec ) ;
-}
 
 void gsl_matrix_to_mat(gsl_matrix *x, const char* fname){
 	//write a gsl matrix to a .mat file.
@@ -728,13 +720,13 @@ static gboolean rotate (gpointer user_data){
 
 	//update the packets/sec label too
 	snprintf(str, 256, "pkts/sec: %.2f\ndropped %d of %d \nBER %f per 1e6 bits",
-			(double)g_totalPackets/gettime(),
+			(double)g_totalPackets/(double)(gettime()),
 			g_totalDropped, g_totalPackets,
 			1e6*(double)g_totalDropped/((double)g_totalPackets*32*8));
 	gtk_label_set_text(GTK_LABEL(g_pktpsLabel), str); //works!
 
 		snprintf(str, 256, "strobe/sec: %.2f",
-			(double)g_strobePackets/gettime());
+			(double)g_strobePackets/(double)(gettime()));
 	gtk_label_set_text(GTK_LABEL(g_stbpsLabel), str); //works!
 
 	snprintf(str, 256, "%.2f MB", (double)g_saveFileBytes/1e6);
@@ -2223,7 +2215,7 @@ int main(int argn, char **argc)
 	int t;
 	//multibridge threads
 	for (t = 0; t < NSCALE ; t++){
-	  printf("Creating thread");
+	  printf("Creating thread %d\n", t);
 	  pthread_create( &sockthreads[t], &attr, sock_thread, (void*) (intptr_t) t );
 	}
 	

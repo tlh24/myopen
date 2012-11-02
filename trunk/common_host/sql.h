@@ -13,5 +13,4 @@ void sqliteSetValue2(int ch, int un, const char* name, float v);
 void sqliteGetBlob(int ch, int un, const char* name, float* v, int siz);
 void sqliteSetBlob(int ch, int un, const char* name, float* v, int siz);
 
-
 #endif

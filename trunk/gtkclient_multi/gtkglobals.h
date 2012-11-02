@@ -3,9 +3,6 @@
 
 #define NSCALE 2
 
-#define i64 long long
-#define u32 unsigned int
-
 #define NSAMP (24*1024)
 #define NDISPW 256
 #ifdef EMG

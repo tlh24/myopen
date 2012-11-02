@@ -8,8 +8,8 @@
 #include <GL/gl.h>	
 #include <GL/glu.h>	
 #include <GL/glx.h>    
-#include "glext.h"
-#include "glInfo.h"
+#include "../common_host/glext.h"
+#include "../common_host/glInfo.h"
 
 #include <Cg/cg.h>    /* included in Cg toolkit for nvidia */
 #include <Cg/cgGL.h>
@@ -27,7 +27,10 @@
 #include <memory.h>
 #include <math.h>
 #include <arpa/inet.h>
-#include "sock.h"
+#include <sqlite3.h>
+#include <matio.h>
+#include <gsl/gsl_math.h>
+#include <gsl/gsl_linalg.h>
 
 #define NSAMP (24*1024)
 #define NDISPW 256
@@ -39,19 +42,19 @@
 #define NSBUF	1024
 
 #include "../firmware_stage9_mf/memory.h"
+
+#include "../common_host/gettime.h"
+#include "../common_host/sock.h"
+#include "../common_host/cgVertexShader.h"
+#include "../common_host/sql.h"
+#include "../common_host/vbo.h"
+#include "../common_host/tcpsegmenter.h"
+#include "../common_host/firingrate.h"
+
 #include "headstage.h"
-#include "cgVertexShader.h"
-#include "vbo.h"
 #include "channel.h"
 #include "packet.h"
-#include <sqlite3.h>
-#include "sql.h"
-#include <matio.h>
-#include <gsl/gsl_math.h>
-#include <gsl/gsl_linalg.h>
 #include "spikes.pb.h"
-#include "tcpsegmenter.h"
-#include "firingrate.h"
 
 
 //CG stuff. for the vertex shaders.
@@ -104,7 +107,6 @@ FILE* g_saveFile = 0;
 bool g_closeSaveFile = false;
 i64 g_saveFileBytes;
 
-double g_startTime = 0.0;
 double g_timeOffset = 0.0; //offset between local time and bridge time.
 
 int g_totalPackets = 0;
@@ -157,15 +159,6 @@ i64 mod2(i64 a, i64 b){
 	}*/
 }
 
-double gettime(){ //in seconds!
-	timespec pt ;
-	clock_gettime(CLOCK_MONOTONIC, &pt);
-	double ret = (double)(pt.tv_sec) ;
-	ret += (double)(pt.tv_nsec) / 1e9 ;
-	return ret - g_startTime;
-	//printf( "present time: %d s %d ns \n", pt.tv_sec, pt.tv_nsec ) ;
-}
-
 void gsl_matrix_to_mat(gsl_matrix *x, const char* fname){
 	//write a gsl matrix to a .mat file.
 	// does not free the matrix.
@@ -175,7 +168,7 @@ void gsl_matrix_to_mat(gsl_matrix *x, const char* fname){
 		printf("could not open %s for writing \n", fname);
 		return;
 	}
-	int dims[2];
+	size_t dims[2];
 	dims[0] = x->size1;
 	dims[1] = x->size2;
 	double* d = (double*)malloc(dims[0]*dims[1]*sizeof(double));
@@ -186,15 +179,15 @@ void gsl_matrix_to_mat(gsl_matrix *x, const char* fname){
 	//reformat and transpose.
 	//matio expects fortran style, column-major format.
 	//gsl is row-major.
-	for(int i=0; i<dims[0]; i++){ //rows
-		for(int j=0; j<dims[1]; j++){ //columns
+	for(unsigned int i=0; i<dims[0]; i++){ //rows
+		for(unsigned int j=0; j<dims[1]; j++){ //columns
 			d[j*dims[0] + i] = x->data[i*x->tda + j];
 		}
 	}
 	matvar_t *matvar;
 	matvar = Mat_VarCreate("a",MAT_C_DOUBLE,MAT_T_DOUBLE,
 						2,dims,d,0);
-	Mat_VarWrite( mat, matvar, 0 );
+	Mat_VarWrite( mat, matvar, (matio_compression)0 );
 	Mat_VarFree(matvar);
 	free(d);
 	Mat_Close(mat);
@@ -699,7 +692,7 @@ static gboolean rotate (gpointer user_data){
 	g_oldheadecho = g_headecho;
 	//update the packets/sec label too
 	snprintf(str, 256, "pkts/sec: %.2f\ndropped %d of %d \nBER %f per 1e6 bits",
-			(double)g_totalPackets/gettime(),
+			(double)(g_totalPackets/gettime()),
 			g_totalDropped, g_totalPackets,
 			1e6*(double)g_totalDropped/((double)g_totalPackets*32*8));
 	gtk_label_set_text(GTK_LABEL(g_pktpsLabel), str); //works!
@@ -789,7 +782,6 @@ void* sock_thread(void*){
 	if(!g_txsock) printf("failed to connect to bridge.\n");
 	//default txsockAddr
 	get_sockaddr(4342, (char*)destName, &g_txsockAddr);
-	int send_delay = 0;
 	g_totalPackets = 0;
 /* packet format from the headstage, UDP:
 4 bytes uint dropped radio packet count
@@ -821,7 +813,6 @@ packet format in the file, as saved here:
 		socklen_t fromlen = sizeof(from);
 		int n = recvfrom(g_rxsock, buf, sizeof(buf),0,
 						 (sockaddr*)&from, &fromlen);
-		double rxtime = gettime();
 		if(fromlen > 0 && n > 0){
 			g_txsockAddr.sin_addr = from.sin_addr;
 			//keep the dest port (4342); don't copy that.

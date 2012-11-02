@@ -71,7 +71,7 @@ const unsigned char * TCPSegmenter::nextSegment(int &res) {
     }
     rptr=0;
     
-    unsigned short *s=(unsigned short*)cmdbuf;
+    unsigned short *s=(unsigned short*)cmdbuf; //alignment here? 
     unsigned int  end_pos=(*s)+2; 
 
     //now grab stuff from the socket until there is a full segment

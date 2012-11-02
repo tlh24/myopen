@@ -23,7 +23,7 @@ void close_socket(int &sock){
 	sock = 0;
 }
 //sets up a UDP/TCP server socket. 
-int setup_socket(int portno, int tcp, bool block=false){
+int setup_socket(int portno, int tcp, bool block){
 	int sock;
 	struct sockaddr_in serv_addr;
 
@@ -103,7 +103,7 @@ void get_sockaddr(int portno, const char* server_name, struct sockaddr_in *addr)
 
 void socket_timeout(int sockfd, int sec){
 	struct timeval timeout;      
-	timeout.tv_sec = 10;
+	timeout.tv_sec = sec;
 	timeout.tv_usec = 0;
 
 	if (setsockopt (sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout,
