@@ -64,6 +64,29 @@ public:
 		//and we don't need to burn so much bandwidth sending doubles or floats.
 		return s;
 	}
+	/** bmi3  / skunkape interface **/
+	unsigned short get_count(double starttime, double endtime){		
+		//gets count of spikes in time range (starttime, endtime]
+		m_r=m_w;//this will mark all spikes "read", this affects get_coutn_since
+		unsigned short count=0;
+		for(unsigned int i=0; i<FR_LEN; i++){
+			if (m_ts[i] > starttime && m_ts[i]<=endtime)
+				count++;
+		}
+		return count;
+	}
+	unsigned short get_count_since() {
+		//gets count of spikes since last check
+		//by doing math on m_w and m_r, which is fast
+		unsigned int local_mr=m_r;
+		unsigned int local_mw=m_w;			
+		m_r=m_w;
+		if (local_mr<=local_mw) return (local_mw-local_mr); //simple case
+		//wrap around  case
+		// (local_mr>local_mw) 
+		return ((FR_LEN-local_mr ) + local_mw);
+	}
+	/** bin interface (bmi5 & matlab) **/ 
 	void get_bins(double time, unsigned short* out){
 		int w = m_w - 1; //atomic.
 		double lw = m_duration / (double)m_lags; 
