@@ -9,20 +9,33 @@ classdef CytonSerial < handle
         PwmMin = 500;
         
         % See the calibration function below to tune
+        %         CalibrationPoints = {
+        %             [0 -pi/2] [1510 2300];
+        %             [0 -pi/2] [1420 2300];
+        %             [0  pi/2] [1460 620];
+        %             [0 -pi/2] [1640 2400];
+        %             [0 -pi/2] [1500 2400];
+        %             [0 -pi/2] [1320 2140];
+        %             [0  pi/2] [1400 2260];
+        %             [0 1] [600 1900];
+        %             }
+        
+        
+        % RSA 11/5/2012: Manually Calibrated CytonI RObot #1
         CalibrationPoints = {
-            [0 -pi/2] [1510 2300];
-            [0 -pi/2] [1420 2300];
-            [0  pi/2] [1460 620];
-            [0 -pi/2] [1640 2400];
-            [0 -pi/2] [1500 2400];
-            [0 -pi/2] [1320 2140];
-            [0  pi/2] [1400 2260];
+            [0 -pi/2] [1310 2160];
+            [0 -pi/2] [1440 2250];
+            [0  pi/2] [1530 620];
+            [0 -pi/2] [1590 2400];
+            [0 -pi/2] [1350 2400];
+            [0 -pi/2] [1190 2140];
+            [0  pi/2] [1500 2260];
             [0 1] [600 1900];
-            }
+            };
     end
     properties (SetAccess = private)
         hPort = [];     % port handle
-    end    
+    end
     methods
         function obj = CytonSerial(strComPort)
             % Creator method: Open Serial
@@ -185,7 +198,7 @@ classdef CytonSerial < handle
         function setPosition(obj,jointPosition)
             % Set the PWM of the servos based on the desired position in
             % radians (or mm)
-
+            
             numJoints = size(obj.CalibrationPoints,1);
             
             if ~isequal(length(jointPosition),numJoints)
@@ -219,17 +232,17 @@ classdef CytonSerial < handle
             obj.connectToHardware('COM15')
             %% Re-evaluate this cell to adjust the gain and offset of the PWM
             calibrationPoints = {
-                [0 -pi/2] [1510 2300];
-                [0 -pi/2] [1420 2300];
-                [0  pi/2] [1460 620];
-                [0 -pi/2] [1640 2400];
-                [0 -pi/2] [1500 2400];
-                [0 -pi/2] [1320 2140];
-                [0  pi/2] [1400 2260];
+                [0 -pi/2] [1310 2160];
+                [0 -pi/2] [1440 2250];
+                [0  pi/2] [1530 620];
+                [0 -pi/2] [1590 2400];
+                [0 -pi/2] [1350 2400];
+                [0 -pi/2] [1190 2140];
+                [0  pi/2] [1500 2260];
                 [0 1] [600 1900];
                 };
             obj.hPlant.hCytonSerial.CalibrationPoints = calibrationPoints;
-
+            
         end
         function theta = cyton_serial_cmd2theta(cmd_str, oldTheta)
             
