@@ -27,10 +27,13 @@
 #include <memory.h>
 #include <math.h>
 #include <arpa/inet.h>
-#include <sqlite3.h>
 #include <matio.h>
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_linalg.h>
+#include <boost/multi_array.hpp>
+#include <map>
+#include <string>
+#include <iostream>
 
 #include "PO8e.h"
 #include "../firmware_stage9_mf/memory.h"
@@ -38,7 +41,6 @@
 #include "gettime.h"
 #include "sock.h"
 #include "cgVertexShader.h"
-#include "sql.h"
 #include "vbo.h"
 #include "tcpsegmenter.h"
 #include "firingrate.h"
@@ -48,6 +50,7 @@
 #include "packet.h"
 #include "spikes.pb.h"
 #include "timesync.h"
+#include "matStor.h"
 
 //CG stuff. for the vertex shaders.
 CGcontext   myCgContext;
@@ -777,14 +780,14 @@ static gboolean rotate (gpointer user_data){
 	return TRUE;
 }
 void saveState(){
-	sqlite3_exec(g_db, "BEGIN TRANSACTION;",0,0,0);
-	for(int i=0; i<96; i++){
-		g_c[i]->save();
+	MatStor ms("preferences.mat"); 
+	for(int i=95; i>=0; i--){
+		g_c[i]->save(&ms);
 	}
 	for(int i=0; i<4; i++){
-		sqliteSetValue(i, "channel", g_channel[i]);
+		ms.setValue(i, "channel", g_channel[i]);
 	}
-	sqlite3_exec(g_db, "END TRANSACTION;",0,0,0);
+	ms.save(); 
 }
 void destroy(GtkWidget *, gpointer){
 	//save the old values..
@@ -799,7 +802,6 @@ void destroy(GtkWidget *, gpointer){
 	delete g_vsFadeColor;
 	delete g_vsThreshold;
 	cgDestroyContext(myCgContext);
-	sqlite3_close(g_db);
 	for(int i=0; i<96; i++){
 		delete g_c[i];
 	}
@@ -1583,35 +1585,16 @@ int main(int argn, char **argc)
 	}
 
 	//sqlite stuff.
-	if (sqlite3_open("state.db", &g_db) != SQLITE_OK) {
-		fprintf(stderr, "Can't open database: \n");
-		sqlite3_close(g_db);
-		exit(1);
-	}
-	sqlite3_exec(g_db, "BEGIN TRANSACTION;",0,0,0); //this speeds things up!
-	//init the tables (if they are absent).
-	sqliteCreateTableDouble("channel"); //present channel..
-	sqliteCreateTableDouble("gain");
-	sqliteCreateTableDouble("agc");
-	sqliteCreateTableDouble("threshold");
-	sqliteCreateTableDouble("centering");
-	sqliteCreateTableDouble2("aperture");
-	sqliteCreateTableBlob("template");
-	sqliteCreateTableBlob("pca");
-	sqliteCreateTableBlob("pcaScl");
-	sqliteCreateTableBlob("vbopca_mean");
-	sqliteCreateTableBlob("vbopca_max");
-
+	MatStor ms("preferences.mat"); 
+	
 	for(int i=0; i<4; i++){
-		g_channel[i] = sqliteGetValue(i, "channel", i*16);
+		g_channel[i] = ms.getValue(i, "channel", i*16); 
 		if(g_channel[i] < 0) g_channel[i] = 0;
 		if(g_channel[i] >= 96) g_channel[i] = 95; 
 	}
-	//defaults, to be read in from sqlite.
 	for(int i=0; i<96; i++){
-		g_c[i] = new Channel(i);
+		g_c[i] = new Channel(i, &ms);
 	}
-	sqlite3_exec(g_db, "END TRANSACTION;",0,0,0);
 	g_dropped = 0;
 
 	// Verify that the version of the library that we linked against is
