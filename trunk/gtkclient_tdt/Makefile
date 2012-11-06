@@ -5,7 +5,7 @@ CFLAGS=-I/usr/local/include -I../common_host
 CFLAGS+= -g -DUSEMATSTOR
 CFLAGS+= -Wall -Wcast-align -Wpointer-arith -Wshadow -Wsign-compare -Wformat=2 \
 -Wno-format-y2k -Wmissing-braces -Wparentheses -Wtrigraphs \
--Wextra -pedantic -Wno-int-to-pointer-cast -std=c++0x
+-Wextra -pedantic -Wno-int-to-pointer-cast -std=c++11
 LDFLAGS = -lGL -lGLU -lpthread -lCg -lCgGL -lgsl -lcblas -latlas -lm -lsqlite3 -lPO8eStreaming
 # if
 GLIBS = gtk+-2.0 gtkglext-1.0 gtkglext-x11-1.0 protobuf
@@ -53,7 +53,7 @@ mmap_test: mmap_test.cpp
 
 deps:
 	sudo apt-get install libprotobuf-dev protobuf-compiler libgtk2.0-dev libgtkgl2.0-dev \
-	libgtkglext1-dev freeglut3-dev nvidia-cg-toolkit libgsl0-dev libmatio-dev libsqlite3-dev \
+	libgtkglext1-dev freeglut3-dev nvidia-cg-toolkit libgsl0-dev \
 	libatlas-base-dev python-matplotlib python-jsonpickle python-opengl \
 	libboost1.49-all-dev
 	echo "make sure /usr/lib64 is in /etc/ld.so.conf.d/libc.conf"

@@ -58,7 +58,7 @@ public:
 				m_aperture[j] = ms->getValue2(ch, j, "aperture", 0.0f); 
 			}
 			ms->getValue3(ch, 0, "pcaScl", m_pcaScl, 2);
-			m_threshold = ms->getValue(ch, "threshold", 0.f);  //default to zero
+			m_threshold = ms->getValue(ch, "threshold", 1.f);  //default to zero
 			m_centering = ms->getValue(ch, "centering", 25.f); 
 			m_gain = ms->getValue(ch, "gain", 2.f);
 			m_agc = ms->getValue(ch, "agc", 6000.f);
