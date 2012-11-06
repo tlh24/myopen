@@ -26,6 +26,11 @@
 #include <memory.h>
 #include <math.h>
 #include <arpa/inet.h>
+#include <boost/multi_array.hpp>
+#include <map>
+#include <string>
+#include <iostream>
+
 #include "gettime.h"
 #include "sock.h"
 #include "headstage.h"

@@ -5,7 +5,7 @@ CFLAGS=-I/usr/local/include -I../common_host
 CFLAGS+=  -O6
 CFLAGS+= -Wall -Wcast-align -Wpointer-arith -Wshadow -Wsign-compare -Wformat=2 \
 -Wno-format-y2k -Wmissing-braces -Wparentheses -Wtrigraphs \
--Wextra -pedantic -std=c++11
+-Wextra -pedantic -Wno-int-to-pointer-cast -std=c++11
 LDFLAGS = -pg -lGL -lGLU -lpthread -lCg -lCgGL -lgsl -lcblas -latlas -lm -lsqlite3
 # if
 GLIBS = gtk+-2.0 gtkglext-1.0 gtkglext-x11-1.0 protobuf
@@ -15,15 +15,18 @@ GTKLD = `pkg-config --libs $(GLIBS) `
 OBJS = main.o sock.o
 
 GOBJS = spikes.pb.o gtkclient.o decodePacket.o headstage.o\
-../common_host/gettime.o ../common_host/sock.o ../common_host/sql.o \
-../common_host/tcpsegmenter.o ../common_host/glInfo.o
+	gettime.o sock.o sql.o tcpsegmenter.o glInfo.o matStor.o
 
 COBJS = convert.o decodePacket.o
+COM_HDR = channel.h ../common_host/vbo.h ../common_host/cgVertexShader.h ../common_host/firingrate.h
 
 all: gtkclient
 convert: convert
 
-%.o: %.cpp channel.h ../common_host/vbo.h ../common_host/cgVertexShader.h
+%.o: %.cpp $(COM_HDR)
+	g++ -c -o $@ $(CFLAGS) $(GTKFLAGS) $<
+
+%.o: ../common_host/%.cpp $(COM_HDR)
 	g++ -c -o $@ $(CFLAGS) $(GTKFLAGS) $<
 
 spikes.pb.cc : spikes.proto
@@ -45,7 +48,8 @@ wf_plot: wf_plot.c
 
 deps:
 	sudo apt-get install libprotobuf-dev protobuf-compiler libgtk2.0-dev libgtkgl2.0-dev \
-	libgtkglext1-dev freeglut3-dev nvidia-cg-toolkit libgsl0-dev libmatio-dev libsqlite3-dev \
-	libatlas-base-dev python-matplotlib python-jsonpickle python-opengl libhdf5-dev
+	libgtkglext1-dev freeglut3-dev nvidia-cg-toolkit libgsl0-dev \
+	libatlas-base-dev python-matplotlib python-jsonpickle python-opengl libhdf5-dev \
+	libboost1.49-all-dev
 	echo "make sure /usr/lib64 is in /etc/ld.so.conf.d/libc.conf"
 	echo "otherwise Cg may not be found. "

@@ -6,8 +6,7 @@
 #include <gsl/gsl_eigen.h>
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_sort.h>
-#include <sqlite3.h>
-#include "sql.h"
+#include "matStor.h"
 
 void gsl_matrix_to_mat(gsl_matrix *x, const char* fname); 
 void glPrint(char *text);
@@ -32,10 +31,10 @@ public:
 	i64 m_isi[2][100]; //counts of the isi, in units of 4 packets -- 768us/packet.
 	int	m_lastSpike[2]; //zero when a spike occurs. 
 	
-	Channel(int ch){
+	Channel(int ch, MatStor* ms){
 		m_wfVbo = new Vbo(6, 512, 34); //sorted units, with color. 
 		m_usVbo = new Vbo(3, 256, 34); //unsorted units, all gray.
-		m_pcaVbo = new VboPca(6, 1024*8, 1, ch); 
+		m_pcaVbo = new VboPca(6, 1024*8, 1, ch, ms); 
 		m_pcaVbo->m_fade = 0.f; 
 		m_ch = ch; 
 		//init PCA, template. 
@@ -51,18 +50,19 @@ public:
 			m_template[0][j] = ((float)tmplA[j] / 255.f)-0.5f;
 			m_template[1][j] = ((float)tmplB[j] / 255.f)-0.5f; 
 		}
-		//read from sql if it's there..
-		for(int j=0; j<2; j++){
-			sqliteGetBlob(ch, j, "pca", &(m_pca[j][0]), 32);
-			sqliteGetBlob(ch, j, "template", &(m_template[j][0]), 16);
-			m_aperture[j] = sqliteGetValue2(ch, j, "aperture", 0.f); 
+		//read from preferences if possible ...
+		if(ms){
+			for(int j=0; j<2; j++){
+				ms->getValue3(ch, j, "pca", &(m_pca[j][0]), 32);
+				ms->getValue3(ch, j, "template", &(m_template[j][0]), 32);
+				m_aperture[j] = ms->getValue2(ch, j, "aperture", 0.0f); 
+			}
+			ms->getValue3(ch, 0, "pcaScl", m_pcaScl, 2);
+			m_threshold = ms->getValue(ch, "threshold", 0.f);  //default to zero
+			m_centering = ms->getValue(ch, "centering", 25.f); 
+			m_gain = ms->getValue(ch, "gain", 2.f);
+			m_agc = ms->getValue(ch, "agc", 6000.f);
 		}
-		sqliteGetBlob(ch, 0, "pcaScl", m_pcaScl, 2);
-		//m_threshold = sqliteGetValue(ch, "threshold", 0.6f); 
-		m_threshold = sqliteGetValue(ch, "threshold", 0.f); //default to zero
-		m_centering = sqliteGetValue(ch, "centering", 25.f); 
-		m_gain = sqliteGetValue(ch, "gain", 2.f);
-		m_agc = sqliteGetValue(ch, "agc", 6000.f);
 		//init m_wfVbo.
 		for(int i=0; i<512; i++){
 			float* f = m_wfVbo->addRow(); 
@@ -112,18 +112,18 @@ public:
 		delete m_usVbo; m_usVbo = 0; 
 		delete m_pcaVbo; m_pcaVbo = 0; 
 	}
-	void save(){
+	void save(MatStor* ms){
 		for(int j=0; j<2; j++){
-			sqliteSetBlob(m_ch, j, "pca", &(m_pca[j][0]), 32);
-			sqliteSetBlob(m_ch, j, "template", &(m_template[j][0]), 16);
-			sqliteSetValue2(m_ch, j, "aperture", m_aperture[j]); 
+			ms->setValue3(m_ch, j, "pca", &(m_pca[j][0]), 32);
+			ms->setValue3(m_ch, j, "template", &(m_template[j][0]), 16);
+			ms->setValue2(m_ch, j, "aperture", m_aperture[j]); 
 		}
-		sqliteSetBlob(m_ch, 0, "pcaScl", m_pcaScl, 2);
-		sqliteSetValue(m_ch, "threshold", m_threshold);
-		sqliteSetValue(m_ch, "centering", m_centering); 
-		sqliteSetValue(m_ch, "agc", m_agc); 
-		sqliteSetValue(m_ch, "gain", m_gain);
-		m_pcaVbo->save(m_ch); 
+		ms->setValue3(m_ch, 0, "pcaScl", m_pcaScl, 2);
+		ms->setValue(m_ch, "threshold", m_threshold);
+		ms->setValue(m_ch, "centering", m_centering); 
+		ms->setValue(m_ch, "agc", m_agc); 
+		ms->setValue(m_ch, "gain", m_gain);
+		m_pcaVbo->save(m_ch, ms); 
 	}
 	int addWf(float* wf, int unit, float time, bool updatePCA){
 		if(!m_wfVbo) return 0; //being called from another thread, likely.
