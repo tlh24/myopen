@@ -1,8 +1,12 @@
 #ifndef __VBO_H__
 #define __VBO_H__
 
+#ifdef USEMATSTOR
+#include "matStor.h"
+#else
 #include <sqlite3.h>
 #include "sql.h"
+#endif
 
 void copyData(GLuint vbo, u32 sta, u32 fin, float* ptr, int stride); 
 extern float g_viewportSize[2]; 
@@ -162,8 +166,12 @@ public:
 	float* m_poly; 
 	int    m_polyW;
 	int    m_drawWf; 
-	
+
+#ifdef USEMATSTOR
+	VboPca(int dim, int rows, int cols, int ch, MatStor* ms):Vbo(dim, rows, cols){ 
+#else
 	VboPca(int dim, int rows, int cols, int ch):Vbo(dim, rows, cols){ 
+#endif
 		if(dim != 6) printf("Error: dim != 6 in VboPca\n"); 
 		m_mean = (float*)malloc(dim * sizeof(float));
 		m_max = (float*)malloc(dim * sizeof(float));
@@ -175,8 +183,13 @@ public:
 			m_maxSmooth[i] = 1.f;
 			m_meanSmooth[i] = 0.f; 
 		}
+#ifdef USEMATSTOR
+		ms->getValue3(ch, 0, "vbopca_mean", m_mean, 6); 
+		ms->getValue3(ch, 0, "vbopca_max", m_max, 6); 
+#else
 		sqliteGetBlob(ch, 0, "vbopca_mean", m_mean, 6);
 		sqliteGetBlob(ch, 0, "vbopca_max", m_max, 6); 
+#endif
 		m_wf = (float*)malloc(rows * 32 * sizeof(float));
 		m_poly = (float*)malloc(1024 * 2 * sizeof(float)); //for sorting.
 		m_polyW = 0; 
@@ -191,10 +204,17 @@ public:
 		free(m_wf); 
 		free(m_poly); 
 	}
+#ifdef USEMATSTOR
+	void save(int ch, MatStor* ms){
+		ms->setValue3(ch, 0, "vbopca_mean", m_mean, 6);
+		ms->setValue3(ch, 0, "vbopca_max", m_max, 6); 
+	}
+#else
 	void save(int ch){
 		sqliteSetBlob(ch, 0, "vbopca_mean", m_mean, 6);
 		sqliteSetBlob(ch, 0, "vbopca_max", m_max, 6); 
 	}
+#endif
 	float* addWf(){
 		//assumes that we will call addRow() immediately *afterward*.
 		//this is used for the internal cache / mouse selector / aperture recalculation.
@@ -451,7 +471,7 @@ public:
 		return true; 
 	}
 	void updateAperture(float* temp, float aperture, float* color){
-		//redisplays the sorting based on MSE / SAA algorithm.
+		// redisplays the sorting based on MSE / SAA algorithm.
 		// wf and template are range 1 mean 0. (+-0.5)
 		// if m_useSAA aperture is 1/255 whats in the UI. 
 		// else aperture just the MSE.

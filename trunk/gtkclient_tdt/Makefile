@@ -2,7 +2,7 @@
 # depends on google protocol buffers -- not too hard to install, in debian.
 # you'll need to install libatlas-base-dev for linear algebra.
 CFLAGS=-I/usr/local/include
-CFLAGS+= -g
+CFLAGS+= -g -DUSEMATSTOR
 CFLAGS+= -Wall -Wcast-align -Wpointer-arith -Wshadow -Wsign-compare -Wformat=2 \
 -Wno-format-y2k -Wmissing-braces -Wparentheses -Wtrigraphs \
 -Wextra -pedantic -Wno-int-to-pointer-cast -std=c++0x
@@ -16,7 +16,7 @@ GTKLD = `pkg-config --libs $(GLIBS) `
 OBJS = main.o sock.o
 
 GOBJS = spikes.pb.o gtkclient.o decodePacket.o \
-	gettime.o sock.o sql.o tcpsegmenter.o glInfo.o
+	gettime.o sock.o sql.o tcpsegmenter.o glInfo.o matStor.o
 
 COBJS = convert.o decodePacket.o
 COM_HDR = channel.h ../common_host/vbo.h ../common_host/cgVertexShader.h ../common_host/firingrate.h
