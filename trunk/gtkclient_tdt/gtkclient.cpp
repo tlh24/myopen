@@ -1584,9 +1584,7 @@ int main(int argn, char **argc)
 		snprintf(destIP, 256, "152.16.229.38");
 	}
 
-	//sqlite stuff.
 	MatStor ms("preferences.mat"); 
-	
 	for(int i=0; i<4; i++){
 		g_channel[i] = ms.getValue(i, "channel", i*16); 
 		if(g_channel[i] < 0) g_channel[i] = 0;

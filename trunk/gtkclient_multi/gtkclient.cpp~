@@ -30,17 +30,20 @@
 #include <arpa/inet.h>
 #include <sstream>
 #include <stdint.h>
-#include <sqlite3.h>
 #include <matio.h>
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_linalg.h>
+#include <boost/multi_array.hpp>
+#include <map>
+#include <string>
+#include <iostream>
 
 #include "../firmware_stage9_tmpl/memory.h"
 
 #include "gettime.h"
 #include "sock.h"
 #include "cgVertexShader.h"
-#include "sql.h"
+#include "matStor.h"
 #include "vbo.h"
 #include "tcpsegmenter.h"
 #include "firingrate.h"
@@ -734,14 +737,14 @@ static gboolean rotate (gpointer user_data){
 	return TRUE;
 }
 void saveState(){
-	sqlite3_exec(g_db, "BEGIN TRANSACTION;",0,0,0);
+	MatStor ms("preferences.mat"); //DS, change this as you prefer...
 	for(int i=0; i<128*NSCALE; i++){
-		g_c[i]->save();
+		g_c[i]->save(&ms);
 	}
 	for(int i=0; i<4; i++){
-		sqliteSetValue(i, "channel", g_channel[i]);
+		ms.setValue(i, "channel", g_channel[i]);
 	}
-	sqlite3_exec(g_db, "END TRANSACTION;",0,0,0);
+	ms.save(); 
 }
 void destroy(GtkWidget *, gpointer){
 	//save the old values..
@@ -762,7 +765,6 @@ void destroy(GtkWidget *, gpointer){
 	delete g_vsFadeColor;
 	delete g_vsThreshold;
 	cgDestroyContext(myCgContext);
-	sqlite3_close(g_db);
 
 	gtk_main_quit();
 }
@@ -836,7 +838,6 @@ void* sock_thread(void* param){
 	
 	float        g_sortAperture[4][2][16]; //the quality of the match found, circular buffer.
 	i64	     	 g_sortOffset[4][2][16]; //offset to the best match.
-	unsigned int g_sortUnit[4][16]; //have to remember to zero all of these.
 	unsigned int g_sortI = 0; //index to the (short) circular buffer, needs to be per thread(better performing) or mutexed.
 	i64			 g_sortWfOffset[4];
 	int 		 g_sortWfUnit[4];
@@ -1843,42 +1844,17 @@ int main(int argn, char **argc)
 		snprintf(destIP, 256, "152.16.229.38");
 	}
 
-	//sqlite stuff.
-	if (sqlite3_open("state.db", &g_db) != SQLITE_OK) {
-		fprintf(stderr, "Can't open database: \n");
-		sqlite3_close(g_db);
-		exit(1);
-	}
-	sqlite3_exec(g_db, "BEGIN TRANSACTION;",0,0,0); //this speeds things up!
-	//init the tables (if they are absent).
-	sqliteCreateTableDouble("channel"); //present channel..
-	sqliteCreateTableDouble("gain");
-	sqliteCreateTableDouble("agc");
-	sqliteCreateTableDouble("threshold");
-	sqliteCreateTableDouble("centering");
-	sqliteCreateTableDouble2("aperture");
-	sqliteCreateTableBlob("template");
-	sqliteCreateTableBlob("pca");
-	sqliteCreateTableBlob("pcaScl");
-	sqliteCreateTableBlob("vbopca_mean");
-	sqliteCreateTableBlob("vbopca_max");
-
+	//persistent state (preferences). 
+	MatStor ms("preferences.mat"); 
 	for(int i=0; i<4; i++){
-		
-		int chan = sqliteGetValue(i, "channel", i*32);
-		//state.db can have values for channels higher than the current allowed limit 
-		//for example, if you load with dual bridges, and then with one bridge
-		if(chan > (128*NSCALE)){ 
-			chan = chan &127; //wrap to 128
-		}
-		g_channel[i] = chan;
-			
+		int chan = ms.getValue(i, "channel", i*32); 
+		if(chan > (128*NSCALE))
+			chan = chan & (128*NSCALE-1); 
+		g_channel[i] = chan; 
 	}
-	//defaults, to be read in from sqlite.
 	for(int i=0; i<128*NSCALE; i++){
-		g_c[i] = new Channel(i);
+		g_c[i] = new Channel(i, &ms);
 	}
-	sqlite3_exec(g_db, "END TRANSACTION;",0,0,0);;
 	//g_dropped = 0;
 	// Verify that the version of the library that we linked against is
 	// compatible with the version of the headers we compiled against.
