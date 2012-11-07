@@ -302,7 +302,6 @@ static gint motion_notify_event( GtkWidget *,
 	updateCursPos(x,y);
 	if((state & GDK_BUTTON1_MASK) && (g_mode == MODE_SORT)){
 		if(g_addPoly){
-			printf("add poly, g_polyChan %d\n", g_polyChan);
 			g_c[g_channel[g_polyChan]]->addPoly(g_cursPos);
 			for(int i=1;i<4;i++){
 				int sames = 0;
@@ -816,7 +815,7 @@ void* po8_thread(void*){
 		total = PO8e::cardCount();
 		printf("Found %d PO8e card(s) in the system.\n", total);
 		if (0 == total){
-			printf("  exiting\n");
+			printf("  simulating data.\n");
 			simulate = true; 
 		}
 		if(!simulate){
@@ -1030,7 +1029,7 @@ void flush_pipe(int fid){
 }
 void* mmap_thread(void*){
 	// sockets are too slow -- we need to memmap a file(s). 
-	/* matlab can do this -- very well, too! 
+	/* matlab can do this -- very well, too! e.g:
 	 * m = memmapfile('/tmp/binned', 'Format', {'uint16' [194 10] 'x'})
 	 * A = m.Data(1).x; 
 	 * */
@@ -1038,13 +1037,17 @@ void* mmap_thread(void*){
 	mmapHelp* mmh = new mmapHelp(length, "/tmp/binned"); 
 	
 	int pipe_out = open("gtkclient_out", O_RDWR); 
-	if(!pipe_out){
-		perror("could not open ./gtkclient_out (make with mkfifo)\n"); 
+	if(pipe_out<=0){
+		perror("Error: could not open ./gtkclient_out (make with mkfifo)\n"); 
+		g_die = true; 
+		sleep(1); exit(1); 
 		return NULL; 
 	}
 	int pipe_in = open("gtkclient_in", O_RDWR); 
-	if(!pipe_in){
-		perror("could not open ./gtkclient_in (make with mkfifo)\n"); 
+	if(pipe_in<=0){
+		perror("Error: could not open ./gtkclient_in (make with mkfifo)\n"); 
+		g_die = true; 
+		sleep(1); exit(1); 
 		return NULL; 
 	}
 	volatile unsigned short* bin = (unsigned short*)mmh->m_addr; 
@@ -1102,7 +1105,7 @@ void* server_thread(void* ){
 	//check to see if a client is connected.
 	int passes = 0;
 	int rxbytes = 0; 
-	while(g_die == 0){
+	while(!g_die){
 		if(client <= 0){
 			client = accept_socket(g_spikesock);
 			if(client > 0){
