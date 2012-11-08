@@ -57,8 +57,8 @@ public:
 		m_slope = 24414.0625; 
 		m_offset = 0.0; 
 		m_timeOffset = 0.0; 
-		slopeGC = new GainController(1.2e-3); 
-		offsetGC = new GainController(3e-3); 
+		slopeGC = new GainController(3e-5); 
+		offsetGC = new GainController(1e-4); 
 		mmh = new mmapHelp(2*sizeof(syncSharedData), "/home/tlh24/timeSync.mmap"); 
 		m_ssd = (syncSharedData*)mmh->m_addr; 
 		if(m_ssd){
@@ -133,7 +133,7 @@ public:
 		if(m_ssd[n].valid == false) n++; 
 		if(m_ssd[n].valid){
 			long double time = gettime(); 
-			return (time - m_ssd[n].startTime) * m_ssd[n].slope + m_ssd[n].offset; 
+			return (time + g_startTime - m_ssd[n].startTime) * m_ssd[n].slope + m_ssd[n].offset; 
 		} else return 0.0; 
 		//time must be passed from gettime(); 
 	}
