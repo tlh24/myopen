@@ -112,7 +112,10 @@ public:
 	
 	TimeSyncClient(){
 		mmh = new mmapHelp(2*sizeof(syncSharedData), "/home/tlh24/timeSync.mmap", false);
-		m_ssd = (syncSharedData*)mmh->m_addr; 
+		if(mmh->m_fd > 0)
+			m_ssd = (syncSharedData*)mmh->m_addr; 
+		else
+			printf("Error: could not open /home/tlh24/timeSync.mmap\n"); 
 	}
 	~TimeSyncClient(){
 		delete mmh; 
