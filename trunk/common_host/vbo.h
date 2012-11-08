@@ -218,7 +218,6 @@ public:
 		m_poly[p*2 + 0] = cx;
 		m_poly[p*2 + 1] = cy; 
 		m_polyW++; 
-		printf("m_polyW %d\n", m_polyW); 
 	}
 	virtual void copy(bool updateScale, bool updateAll){
 		//update the mean & max excursion. only makes sense for 2d data.

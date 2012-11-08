@@ -18,7 +18,8 @@ GOBJS = spikes.pb.o gtkclient.o decodePacket.o \
 	gettime.o sock.o sql.o tcpsegmenter.o glInfo.o matStor.o
 
 COBJS = convert.o decodePacket.o
-COM_HDR = channel.h ../common_host/vbo.h ../common_host/cgVertexShader.h ../common_host/firingrate.h
+COM_HDR = channel.h ../common_host/vbo.h ../common_host/cgVertexShader.h \
+../common_host/firingrate.h ../common_host/timesync.h
 
 all: gtkclient
 convert: convert
