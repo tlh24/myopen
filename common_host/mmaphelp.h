@@ -29,8 +29,8 @@ public:
 			}
 			if(fill) ftruncate(m_fd, length); 
 		}else{
-			m_fd = open(fname, O_RDWR | O_CREAT); 
-			if (m_fd == -1){
+			m_fd = open(fname, O_RDWR | O_CREAT, S_IRWXU | S_IRWXG); //user and group permissions.
+			if (m_fd <= 0){
 				printf("%s : ", fname); 
 				perror("could not open"); 
 				return; 
@@ -41,7 +41,7 @@ public:
 				free(s); 
 			}
 		}
-		m_addr = mmap(NULL, length, /*PROT_READ |*/ PROT_WRITE, 
+		m_addr = mmap(NULL, length, PROT_READ | PROT_WRITE, 
 								MAP_SHARED, m_fd, 0); 
 		if (m_addr == MAP_FAILED){
 			close(m_fd);
