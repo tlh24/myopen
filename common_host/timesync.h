@@ -59,7 +59,7 @@ public:
 		m_timeOffset = 0.0; 
 		slopeGC = new GainController(1.2e-3); 
 		offsetGC = new GainController(3e-3); 
-		mmh = new mmapHelp(2*sizeof(syncSharedData), "/home/tlh24/timeSync.mmap"); //in cwd
+		mmh = new mmapHelp(2*sizeof(syncSharedData), "/home/tlh24/timeSync.mmap"); 
 		m_ssd = (syncSharedData*)mmh->m_addr; 
 		if(m_ssd){
 			m_ssd[0].valid = false; 
@@ -71,6 +71,14 @@ public:
 		delete slopeGC; 
 		delete offsetGC; 
 		delete mmh; 
+	}
+	std::string getInfo(){
+		std::stringstream oss; 
+		long double off = m_offset - m_slope * m_timeOffset; 
+		oss << "sync offset:"<< off << " (ticks)"<< std::endl; 
+		oss << " slope:"<< m_slope << " (ticks/s)"<< std::endl; 
+		oss << " update:"<< m_update;
+		return oss.str(); 
 	}
 	void prinfo(){
 		printf("sync offset %Lf slope %.4Lf update %.4Lf\n", 

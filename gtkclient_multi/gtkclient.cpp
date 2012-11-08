@@ -36,7 +36,6 @@
 #include <boost/multi_array.hpp>
 #include <map>
 #include <string>
-#include <iostream>
 
 #include "../firmware_stage9_tmpl/memory.h"
 
@@ -704,23 +703,18 @@ static gboolean rotate (gpointer user_data){
 
 	gdk_window_invalidate_rect (da->window, &da->allocation, FALSE);
 	gdk_window_process_updates (da->window, FALSE);
-
-	char str[256];
 	
 	std::stringstream oss;
 	oss << "headecho:";
-	
 	for(int h =0; h < NSCALE; h++){
 		if(g_headecho[h] != ((g_echo[h]-1) & 0xf))
 			oss << g_radioChannel[h] <<": " << "(ASYNC) ";
 		else
 			oss << g_radioChannel[h] << ": "  << "(SYNC) ";
-		
-			g_oldheadecho[h] = g_headecho[h];
+		g_oldheadecho[h] = g_headecho[h];
 	}
-	
 	gtk_label_set_text(GTK_LABEL(g_headechoLabel), oss.str().c_str());
-
+	char str[256];
 	//update the packets/sec label too
 	snprintf(str, 256, "pkts/sec: %.2f\ndropped %d of %d \nBER %f per 1e6 bits",
 			(double)g_totalPackets/(double)(gettime()),

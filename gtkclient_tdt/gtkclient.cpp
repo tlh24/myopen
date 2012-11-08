@@ -59,6 +59,8 @@ CGprofile   myCgVertexProfile;
 cgVertexShader*		g_vsFadeColor;
 cgVertexShader*		g_vsThreshold;
 
+using namespace std;
+
 float		g_cursPos[2];
 float		g_viewportSize[2] = {640, 480}; //width, height.
 
@@ -137,7 +139,7 @@ GLuint g_vbo2[2] = {0,0}; //for spikes.
 
 //global labels..
 //GtkWidget* g_gainlabel[16];
-GtkWidget* g_headechoLabel;
+GtkWidget* g_infoLabel;
 GtkAdjustment* g_channelSpin[4] = {0,0,0,0};
 GtkAdjustment* g_gainSpin[4] = {0,0,0,0};
 GtkAdjustment* g_agcSpin[4] = {0,0,0,0};
@@ -756,14 +758,10 @@ static gboolean rotate (gpointer user_data){
 	gdk_window_invalidate_rect (da->window, &da->allocation, FALSE);
 	gdk_window_process_updates (da->window, FALSE);
 
-	char str[256];
-	//if(g_headecho != ((g_echo-1) & 0xf))
-	//	snprintf(str, 256, "headecho:%d (ASYNC)", g_headecho);
-	//else
-	snprintf(str, 256, "headecho:%d (sync)", 0);
-	gtk_label_set_text(GTK_LABEL(g_headechoLabel), str); //works!
-	//g_oldheadecho = g_headecho;
+	string s = g_ts.getInfo(); 
+	gtk_label_set_text(GTK_LABEL(g_infoLabel), s.c_str());
 	//update the packets/sec label too
+	char str[256];
 	snprintf(str, 256, "pkts/sec: %.2Lf\ndropped %d of %d \nBER %f per 1e6 bits",
 			(long double)g_totalPackets/gettime(),
 			g_totalDropped, g_totalPackets,
@@ -1618,21 +1616,12 @@ int main(int argn, char **argc)
 	gtk_widget_set_size_request(GTK_WIDGET(v1), 200, 600);
 	
 	bx = gtk_vbox_new (FALSE, 2);
-	if(1){ //namespace reasons.
-		//add in a radio channel label
-		char buf[128]; 
-		snprintf(buf, 128, "radio Ch: %i", g_radioChannel);
-		GtkWidget* chanLabel = gtk_label_new (buf);;
-		gtk_misc_set_alignment (GTK_MISC (chanLabel), 0, 0);
-		gtk_box_pack_start (GTK_BOX (bx), chanLabel, TRUE, TRUE, 0);
-		gtk_widget_show(chanLabel);
-	}
 	
 	//add in a headstage channel # label
-	g_headechoLabel = gtk_label_new ("headch: 0");
-	gtk_misc_set_alignment (GTK_MISC (g_headechoLabel), 0, 0);
-	gtk_box_pack_start (GTK_BOX (bx), g_headechoLabel, TRUE, TRUE, 0);
-	gtk_widget_show(g_headechoLabel);
+	g_infoLabel = gtk_label_new ("info: 0");
+	gtk_misc_set_alignment (GTK_MISC (g_infoLabel), 0, 0);
+	gtk_box_pack_start (GTK_BOX (bx), g_infoLabel, TRUE, TRUE, 0);
+	gtk_widget_show(g_infoLabel);
 	//add in a packets/second label
 	g_pktpsLabel = gtk_label_new ("packets/sec");
 	gtk_misc_set_alignment (GTK_MISC (g_pktpsLabel), 0, 0);
