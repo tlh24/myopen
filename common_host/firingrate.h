@@ -26,7 +26,7 @@ public:
 		set_a(0.001);
 		m_duration = 1.0; 
 		m_lags = 10; 
-		m_xfade = 0.2; //fractional cross-fade between bins (trapezoidal bins). 
+		m_xfade = 0.3; //fractional cross-fade between bins (trapezoidal bins). 
 		for(int i=0; i<FR_LEN; i++)
 			m_ts[i] = 1e-10; 
 	}
