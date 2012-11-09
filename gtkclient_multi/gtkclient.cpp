@@ -798,14 +798,11 @@ void* strobe_thread(void*){
 				
 				g_saveFileBytes += 16 + sn;
 				pthread_mutex_unlock(&mutex_saveFile);
-				
-			 }	
-			 
+			}
 		}
 		if(sn > 0){
 			g_strobePackets++;
 		}
-	  
 	}
   }
   close_socket(g_strobesock);
@@ -1253,8 +1250,7 @@ packet format in the file, as saved here:
 					pthread_mutex_lock(&mutex_saveFile);
 					unsigned int tmp = 0xc0edfad0;
 					fwrite((void*)&tmp, 4, 1, g_saveFile);
-				
-									//2 bytes just in case hehe
+					//2 bytes just in case hehe
 					fwrite((void*)&g_radioChannel[tid], 2, 1, g_saveFile);
 					fwrite((void*)&tid, 2, 1, g_saveFile);
 					
