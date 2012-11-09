@@ -33,7 +33,8 @@ public:
 	}
 };
 struct syncSharedData{
-	long double startTime; //subtract from CLOCK_MONOTONIC. sum of g_startTime and m_timeOffset.
+	long double startTime; //subtract from CLOCK_MONOTONIC_RAW. 
+	long double timeOffset; 
 	long double slope; // e.g. 24414.0625
 	long double offset; // ticks offset.
 	bool valid; //here to preserve alignment.
@@ -48,6 +49,8 @@ public:
 	mmapHelp*	mmh; 
 	syncSharedData* m_ssd; 
 	int			m_ssdn; 
+	int 			m_ticks; 
+	int			m_dropped; 
 	//updated periodically to prevent precision issues.
 	
 	GainController* slopeGC; 
@@ -75,6 +78,14 @@ public:
 	std::string getInfo(){
 		std::stringstream oss; 
 		long double off = m_offset - m_slope * m_timeOffset; 
+		double t = (double)gettime(); 
+		double hours = floor(t / 3600.0); 
+		double minutes = floor((t - hours * 3600.0)/60.0); 
+		double seconds = t - hours*3600.0 - minutes*60.0; 
+		char buf[256]; 
+		snprintf(buf, 256, "%02d:%02d:%2.2f", (int)hours, (int)minutes, seconds); 
+		oss << "time "<< buf << std::endl; 
+		oss << "ticks "<< m_ticks <<" dropped "<< m_dropped << std::endl; 
 		oss << "sync offset:"<< off << " (ticks)"<< std::endl; 
 		oss << " slope:"<< m_slope << " (ticks/s)"<< std::endl; 
 		oss << " update:"<< m_update;
@@ -102,7 +113,8 @@ public:
 		//also update the mmaped data.
 		if(m_ssd){
 			m_ssd[m_ssdn].valid = false; 
-			m_ssd[m_ssdn].startTime = g_startTime + m_timeOffset; 
+			m_ssd[m_ssdn].startTime = g_startTime;
+			m_ssd[m_ssdn].timeOffset = m_timeOffset; 
 			m_ssd[m_ssdn].slope = m_slope; 
 			m_ssd[m_ssdn].offset = m_offset; 
 			m_ssd[m_ssdn].valid = true;
@@ -132,10 +144,22 @@ public:
 		int n = 0; 
 		if(m_ssd[n].valid == false) n++; 
 		if(m_ssd[n].valid){
+			g_startTime = m_ssd[n].startTime; //so the two programs are synced.
 			long double time = gettime(); 
-			return (time + g_startTime - m_ssd[n].startTime) * m_ssd[n].slope + m_ssd[n].offset; 
+			return (time - m_ssd[n].timeOffset) * m_ssd[n].slope + m_ssd[n].offset; 
 		} else return 0.0; 
 		//time must be passed from gettime(); 
+	}
+	std::string getInfo(){
+		std::stringstream oss; 
+		double t = (double)gettime(); 
+		double hours = floor(t / 3600.0); 
+		double minutes = floor((t - hours * 3600.0)/60.0); 
+		double seconds = t - hours*3600.0 - minutes*60.0; 
+		char buf[256]; 
+		snprintf(buf, 256, "%02d:%02d:%2.2f", (int)hours, (int)minutes, seconds); 
+		oss << "time "<< buf << std::endl; 
+		return oss.str(); 
 	}
 }; 
 #endif

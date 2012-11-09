@@ -36,7 +36,6 @@
 #include <boost/multi_array.hpp>
 #include <map>
 #include <string>
-#include <iostream>
 
 #include "../firmware_stage9_tmpl/memory.h"
 
@@ -799,14 +798,11 @@ void* strobe_thread(void*){
 				
 				g_saveFileBytes += 16 + sn;
 				pthread_mutex_unlock(&mutex_saveFile);
-				
-			 }	
-			 
+			}
 		}
 		if(sn > 0){
 			g_strobePackets++;
 		}
-	  
 	}
   }
   close_socket(g_strobesock);

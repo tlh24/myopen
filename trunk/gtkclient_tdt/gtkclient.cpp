@@ -872,7 +872,7 @@ void* po8_thread(void*){
 					bytes += numSamples * nchan * bps; 
 					totalSamples += numSamples; 
 				}
-			}else{
+			}else{ //simulate!
 				long double now = gettime(); 
 				numSamples = (int)((now - starttime)*24414.0625 - totalSamples); 
 				if(numSamples >= 250){ 
@@ -929,11 +929,8 @@ void* po8_thread(void*){
 					int ticks = (unsigned short)(temp[96*numSamples + numSamples -1]); 
 					ticks += (unsigned short)(temp[97*numSamples + numSamples -1]) << 16; 
 					g_ts.update(time, ticks, frame); //also updates the mmap file.
-					if(frame % 500 == 50 && 0){
-						printf("totalSamples %d ticks %d diff %d\n", 
-								 (int)totalSamples, ticks, (int)totalSamples - ticks); 
-						g_ts.prinfo(); 
-					}
+					g_ts.m_ticks = ticks; //for display.
+					g_ts.m_dropped = (int)totalSamples - ticks;
 				}
 				g_sample += numSamples; 
 				//sort -- see if samples pass threshold.  if so, copy. 

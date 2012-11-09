@@ -65,8 +65,8 @@ int gzipp(unsigned char* data, u64 len, FILE *dest, int level)
 
 int main(int argn, char **argc){
 	if(argn != 3 && argn != 2){
-		printf("usage: veovert infile.bin outfile.mat\n");
-		printf(" or just: veovert infile.bin\n");
+		printf("usage: convert infile.bin outfile.mat\n");
+		printf(" or just: convert infile.bin\n");
 		printf("\n For reference, there are 4 output files:\n");
 		printf("\t $.mat : contains \n");
 		printf("\t\t time, wall time within the client, synchronous to the BMI.\n");
