@@ -34,6 +34,7 @@
 #include <map>
 #include <string>
 #include <iostream>
+#include <atomic>
 
 #include "PO8e.h"
 #include "../firmware_stage9_mf/memory.h"
@@ -51,6 +52,7 @@
 #include "spikes.pb.h"
 #include "timesync.h"
 #include "matStor.h"
+#include "wfwriter.h"
 
 //CG stuff. for the vertex shaders.
 CGcontext   myCgContext;
@@ -80,6 +82,7 @@ i64	g_sbufR[2];
 Channel*		g_c[96];
 FiringRate	g_fr[96][2];
 TimeSync 	g_ts; //keeps track of ticks (TDT time)
+WfWriter		g_wfwriter; 
 GLuint 		g_base;            // base display list for the font set.
 
 bool g_die = false;
@@ -106,10 +109,6 @@ double		 g_minISI = 1.3; //ms
 int		 	 g_spikesCols = 16; 
 
 float g_unsortrate = 0.0; //the rate that unsorted WFs get through.
-FILE* g_saveFile = 0;
-bool g_closeSaveFile = false;
-i64 g_saveFileBytes;
-
 
 int g_totalPackets = 0;
 int g_strobePackets = 0;
@@ -772,7 +771,7 @@ static gboolean rotate (gpointer user_data){
 			(double)g_strobePackets/gettime());
 	gtk_label_set_text(GTK_LABEL(g_stbpsLabel), str); //works!
 
-	snprintf(str, 256, "%.2f MB", (double)g_saveFileBytes/1e6);
+	snprintf(str, 256, "%.2f MB", (double)g_wfwriter.bytes()/1e6);
 	gtk_label_set_text(GTK_LABEL(g_fileSizeLabel), str);
 	return TRUE;
 }
@@ -804,6 +803,15 @@ void destroy(GtkWidget *, gpointer){
 	}
 	gtk_main_quit();
 }
+void* wfwrite_thread(void*){
+	while(!g_die){
+		if(g_wfwriter.write()) //if it can write, it will.
+			usleep(1e4); //poll qicker.
+		else
+			usleep(1e5); 
+	}
+	return NULL; 
+}
 void* po8_thread(void*){
 	int count = 0, total;
 	PO8e *card = NULL;
@@ -823,7 +831,6 @@ void* po8_thread(void*){
 				printf("  connection failed\n");
 			else{
 				printf("  established connection %p\n", (void*)card);
-		//TODO: have to expose the card ports MUCH better
 				if (! card->startCollecting()){
 						printf("  startCollecting() failed with: %d\n",
 								card->getLastError());
@@ -918,10 +925,9 @@ void* po8_thread(void*){
 				// copy to the sorting buffers, wrapped.
 				int oldo = g_sample & 255; 
 				for(int k=0; k<96; k++){
-					float gain = g_c[k]->m_gain; 
 					for(int i=0; i<numSamples; i++){
 						short samp = temp[i + k*numSamples]; //strange ordering .. but eh.
-						g_obuf[k][(oldo + i)&255] = (gain * samp / 32768.f); 
+						g_obuf[k][(oldo + i)&255] = (samp / 32768.f); 
 					}
 				}
 				if(1){
@@ -934,19 +940,21 @@ void* po8_thread(void*){
 				}
 				g_sample += numSamples; 
 				//sort -- see if samples pass threshold.  if so, copy. 
+				wfpak pak; 
 				float wf[32]; 
 				for(int k=0; k<96 && !g_die; k++){
 					float threshold = g_c[k]->getThreshold();
 					int centering = g_c[k]->getCentering();
+					float gain = g_c[k]->m_gain; 
 					for(int m=0; m<numSamples; m++){
 						int o = oldo - centering + m - 1; o &= 255; 
-						float a = g_obuf[k][o];
-						float b = g_obuf[k][(o+1)&255];
+						float a = g_obuf[k][o] * gain;
+						float b = g_obuf[k][(o+1)&255] * gain;
 						//normal template-threshold sorting for now. boring, but known.
 						if((threshold > 0 && (a <= threshold && b > threshold))
 							|| (threshold < 0 && (a >= threshold && b < threshold))){
 							for(int g=0; g<32; g++){
-								wf[g] = g_obuf[k][(oldo+g+m-32) & 255] * 0.5;
+								wf[g] = g_obuf[k][(oldo+g+m-32) & 255] * 0.5 * gain;
 							}
 							int unit = 0; //unsorted.
 							//compare to template. 
@@ -966,6 +974,18 @@ void* po8_thread(void*){
 								g_c[k]->addWf(wf, unit, time, true);
 								g_c[k]->updateISI(unit, g_sample - numSamples + m); 
 								g_lastSpike[k][unit] = g_sample; 
+								if(g_wfwriter.m_enable){
+									pak.time = time; 
+									pak.ticks = g_sample - numSamples + m + g_ts.m_dropped; //indexed to the start of the wf.
+									pak.channel = k; 
+									pak.unit = unit; 
+									pak.len = 32; 
+									float gain2 = 2.f * 32768.f / gain ;
+									for(int g=0; g<32; g++){
+										pak.wf[g] = (short)(wf[g]*gain2); //should be in original units.
+									}
+									g_wfwriter.add(&pak);
+								}
 								if(unit > 0 && unit <=2){
 									int uu = unit-1; 
 									g_fr[k][uu].add(time); 
@@ -1486,16 +1506,14 @@ static void openSaveFile(gpointer parent_window) {
 	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT){
 		char *filename;
 		filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
-		g_closeSaveFile = false;
-		g_saveFileBytes = 0;
-		g_saveFile = fopen(filename, "w");
+		g_wfwriter.open(filename); 
 		g_free (filename);
 	}
 	gtk_widget_destroy (dialog);
 }
 static void closeSaveFile(gpointer) {
 	//have to signal to the other thread, let them close it.
-	g_closeSaveFile = true;
+	g_wfwriter.close(); 
 }
 void saveMatrix(const char* fname, gsl_matrix* v){
 	FILE* fid = fopen(fname, "w");
@@ -1904,6 +1922,7 @@ int main(int argn, char **argc)
 	pthread_attr_init(&attr);
 	g_startTime = gettime();
 	pthread_create( &thread1, &attr, po8_thread, 0 );
+	pthread_create( &thread1, &attr, wfwrite_thread, 0 );
 	pthread_create( &thread1, &attr, mmap_thread, 0 );
 
 	//set the initial sampling stage.
@@ -1915,6 +1934,7 @@ int main(int argn, char **argc)
 	g_timeout_add(3000, chanscan, (gpointer)0);
 
 	gtk_main ();
+	g_wfwriter.close(); //just in case. 
 	//cancel the mmap thread -- probably waiting on a read(). 
 	if(pthread_cancel(thread1)){
 		perror("pthread_cancel mmap_thread"); 
