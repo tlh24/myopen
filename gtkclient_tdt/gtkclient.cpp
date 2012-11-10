@@ -90,6 +90,7 @@ double g_pause = -1.0;
 bool g_cycle = false;
 bool g_showPca = false;
 bool g_rtMouseBtn = false;
+bool g_saveUnsorted = false; 
 int g_polyChan = 0;
 bool g_addPoly = false;
 int g_channel[4] = {0,32,64,95};
@@ -975,16 +976,18 @@ void* po8_thread(void*){
 								g_c[k]->updateISI(unit, g_sample - numSamples + m); 
 								g_lastSpike[k][unit] = g_sample; 
 								if(g_wfwriter.m_enable){
-									pak.time = time; 
-									pak.ticks = g_sample - numSamples + m + g_ts.m_dropped; //indexed to the start of the wf.
-									pak.channel = k; 
-									pak.unit = unit; 
-									pak.len = 32; 
-									float gain2 = 2.f * 32768.f / gain ;
-									for(int g=0; g<32; g++){
-										pak.wf[g] = (short)(wf[g]*gain2); //should be in original units.
+									if(unit > 0 || g_saveUnsorted){
+										pak.time = time; 
+										pak.ticks = g_sample - numSamples + m + g_ts.m_dropped; //indexed to the start of the wf.
+										pak.channel = k; 
+										pak.unit = unit; 
+										pak.len = 32; 
+										float gain2 = 2.f * 32768.f / gain ;
+										for(int g=0; g<32; g++){
+											pak.wf[g] = (short)(wf[g]*gain2); //should be in original units.
+										}
+										g_wfwriter.add(&pak);
 									}
-									g_wfwriter.add(&pak);
 								}
 								if(unit > 0 && unit <=2){
 									int uu = unit-1; 
@@ -1394,6 +1397,12 @@ static void pauseButtonCB(GtkWidget *button, gpointer * ){
 		g_pause = gettime();
 	else
 		g_pause = -1.0;
+}
+static void saveUnsortButtonCB(GtkWidget *button, gpointer * ){
+	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
+		g_saveUnsorted = true; 
+	else
+		g_saveUnsorted = false; 
 }
 static void syncHeadstageCB(GtkWidget *, gpointer * ){
 	//setAll(); //see headstage.cpp
@@ -1857,6 +1866,13 @@ int main(int argn, char **argc)
 	gtk_box_pack_start (GTK_BOX (bx), button, FALSE, FALSE, 0);
 	gtk_box_pack_start (GTK_BOX (v1), bx, TRUE, TRUE, 0);
 
+	//saving unsorted units? 
+	box1 = gtk_vbox_new (FALSE, 0);
+	button = gtk_check_button_new_with_label("Save unsorted");
+	g_signal_connect (button, "toggled",
+			G_CALLBACK (saveUnsortButtonCB), (gpointer) "o");
+	gtk_box_pack_start (GTK_BOX (box1), button, TRUE, TRUE, 0);
+	gtk_widget_show(button);
 	//and save / stop saving button
 	bx = gtk_hbox_new (FALSE, 3);
 	button = gtk_button_new_with_label ("Record");
@@ -1870,7 +1886,8 @@ int main(int argn, char **argc)
 	gtk_misc_set_alignment (GTK_MISC (g_fileSizeLabel), 0, 0);
 	gtk_box_pack_start (GTK_BOX (bx), g_fileSizeLabel, FALSE, FALSE, 0);
 	gtk_widget_show(g_fileSizeLabel);
-	gtk_box_pack_start (GTK_BOX (v1), bx, TRUE, TRUE, 0);
+	gtk_box_pack_start (GTK_BOX (box1), bx, TRUE, TRUE, 0);
+	gtk_box_pack_start (GTK_BOX (v1), box1, TRUE, TRUE, 0);
 
 
 	gtk_paned_add1(GTK_PANED(paned), v1);
