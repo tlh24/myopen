@@ -2,7 +2,7 @@
 # depends on google protocol buffers -- not too hard to install, in debian.
 # you'll need to install libatlas-base-dev for linear algebra.
 CFLAGS=-I/usr/local/include -I../common_host
-CFLAGS+= -g -DUSEMATSTOR
+CFLAGS+= -g
 CFLAGS+= -Wall -Wcast-align -Wpointer-arith -Wshadow -Wsign-compare -Wformat=2 \
 -Wno-format-y2k -Wmissing-braces -Wparentheses -Wtrigraphs \
 -Wextra -pedantic -Wno-int-to-pointer-cast -std=c++11
@@ -17,8 +17,8 @@ OBJS = main.o sock.o
 GOBJS = spikes.pb.o gtkclient.o decodePacket.o \
 	gettime.o sock.o sql.o tcpsegmenter.o glInfo.o matStor.o
 
-COBJS = convert.o decodePacket.o
-COM_HDR = channel.h ../common_host/vbo.h ../common_host/cgVertexShader.h \
+COBJS = convert2.o
+COM_HDR = channel.h wfwriter.h ../common_host/vbo.h ../common_host/cgVertexShader.h \
 ../common_host/firingrate.h ../common_host/timesync.h
 
 all: gtkclient
@@ -37,8 +37,8 @@ spikes.pb.cc : spikes.proto
 gtkclient: $(GOBJS)
 	g++ -o $@ $(GTKLD) $(LDFLAGS) -lmatio -lhdf5 $(GOBJS)
 
-convert: $(COBJS)
-	g++ -o $@ -g -Wall -lmatio -lz $(COBJS)
+convert: $(COBJS) wfwriter.h
+	g++ -o $@ -g -Wall -lmatio -lhdf5 -lz $(COBJS)
 
 clean:
 	rm -rf gtkclient convert mmap_test *.o spikes.pb.*
