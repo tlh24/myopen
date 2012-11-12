@@ -6,7 +6,7 @@ CFLAGS+= -g
 CFLAGS+= -Wall -Wcast-align -Wpointer-arith -Wshadow -Wsign-compare -Wformat=2 \
 -Wno-format-y2k -Wmissing-braces -Wparentheses -Wtrigraphs \
 -Wextra -pedantic -Wno-int-to-pointer-cast -std=c++11
-LDFLAGS = -lGL -lGLU -lpthread -lCg -lCgGL -lgsl -lcblas -latlas -lm -lsqlite3 -lPO8eStreaming
+LDFLAGS = -lGL -lGLU -lpthread -lCg -lCgGL -lgsl -lcblas -latlas -lm -lPO8eStreaming
 
 GLIBS = gtk+-2.0 gtkglext-1.0 gtkglext-x11-1.0 protobuf
 GTKFLAGS = `pkg-config --cflags $(GLIBS) `
@@ -15,11 +15,12 @@ GTKLD = `pkg-config --libs $(GLIBS) `
 OBJS = main.o sock.o
 
 GOBJS = spikes.pb.o gtkclient.o decodePacket.o \
-	gettime.o sock.o sql.o tcpsegmenter.o glInfo.o matStor.o
+	gettime.o sock.o tcpsegmenter.o glInfo.o matStor.o
 
 COBJS = convert2.o
 COM_HDR = channel.h wfwriter.h ../common_host/vbo.h ../common_host/cgVertexShader.h \
 ../common_host/firingrate.h ../common_host/timesync.h
+FIFOS = gtkclient_in gtkclient_out
 
 all: gtkclient
 convert: convert
@@ -34,7 +35,7 @@ spikes.pb.cc : spikes.proto
 	protoc $< --cpp_out=.
 	protoc $< --python_out=.
 
-gtkclient: $(GOBJS)
+gtkclient: $(GOBJS) $(FIFOS)
 	g++ -o $@ $(GTKLD) $(LDFLAGS) -lmatio -lhdf5 $(GOBJS)
 
 convert: $(COBJS) wfwriter.h
@@ -51,11 +52,17 @@ po8e: po8e.cpp
 	
 mmap_test: mmap_test.cpp
 	g++ -g -lrt -o $@ $<
+	
+gtkclient_in: 
+	mkfifo $@
+	
+gtkclient_out:
+	mkfifo $@
 
 deps:
 	sudo apt-get install libprotobuf-dev protobuf-compiler libgtk2.0-dev libgtkgl2.0-dev \
 	libgtkglext1-dev freeglut3-dev nvidia-cg-toolkit libgsl0-dev \
 	libatlas-base-dev python-matplotlib python-jsonpickle python-opengl \
-	libboost1.49-all-dev
+	libboost1.49-all-dev pkg-config libhdf5-dev
 	echo "make sure /usr/lib64 is in /etc/ld.so.conf.d/libc.conf"
 	echo "otherwise Cg may not be found. "
