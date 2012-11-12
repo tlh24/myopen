@@ -131,7 +131,7 @@ public:
 	syncSharedData* m_ssd; 
 	
 	TimeSyncClient(){
-		mmh = new mmapHelp(2*sizeof(syncSharedData), "/home/tlh24/timeSync.mmap", false);
+		mmh = new mmapHelp(2*sizeof(syncSharedData), "/home/tlh24/timeSync.mmap");
 		if(mmh->m_fd > 0)
 			m_ssd = (syncSharedData*)mmh->m_addr; 
 		else
