@@ -157,7 +157,7 @@ void updateGain(int chan){
 		//remember, chan mapped to 0-31 & 64-95 (above)
 		unsigned int p = 0;
 		if(kchan >= 64) p += 1; //chs 64-127 pocessed following 0-63, or 192-255 following 128 to 191
-		ptr[i*2+0] = htonl(echo(g_echo[tid], 1 +
+		ptr[i*2+0] = htonl(echo(g_echo[tid], A1 +
 			(A1_STRIDE*(kchan & 31) +
 			A1_IIRSTARTA + p*(A1_IIRSTARTB-A1_IIRSTARTA) + indx2[i])*4));
 
