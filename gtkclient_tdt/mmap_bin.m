@@ -50,10 +50,22 @@ m2 = memmapfile('/tmp/bmi5_control', 'Format', {...
         });
 m2.Writable = true; 
 
-bmi5_out = fopen('/bmi5_out', 'r'); 
-bmi5_in = fopen('bmi5_in', 'w'); 
+bmi5_out = fopen('/home/tlh24/sabes-exp-ctrl/bmi5/bmi5_out', 'r'); 
+bmi5_in = fopen('/home/tlh24/sabes-exp-ctrl/bmi5/bmi5_in', 'w'); 
 
-% initial settings. 
+% initial settings -- setup a cursor and a starfield.
+fwrite(bmi5_in, 'make circle cursor_');
+code = fread(bmi5_out, 1, 'int');
+msg = char(fread(bmi5_out, code, 'char')')
+
+fwrite(bmi5_in, 'make stars stars_');
+code = fread(bmi5_out, 1, 'int');
+msg = char(fread(bmi5_out, code, 'char')')
+
+fwrite(bmi5_in, 'make circle target_');
+code = fread(bmi5_out, 1, 'int');
+msg = char(fread(bmi5_out, code, 'char')')
+
 m2.Data(1).shape_scale = [0.1; 0.1]; 
 m2.Data(1).shape_color = [1; 0.7; 1; 1]; 
 % m2.Data(1).stars_awesome = 1; 
@@ -61,7 +73,7 @@ m2.Data(1).shape_color = [1; 0.7; 1; 1];
 % m2.Data(1).stars_size = 3.0; 
 m2.Data(1).stars_shape_coherence = 0.5; 
 fwrite(bmi5_in, 'go.'); 
-msg = fread(bmi5_out, 3, 'uchar');
+code = fread(bmi5_out, 1, 'int');
 
 n = 1000
 tic
