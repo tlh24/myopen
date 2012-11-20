@@ -66,6 +66,11 @@ fwrite(bmi5_in, 'make circle target_');
 code = fread(bmi5_out, 1, 'int');
 msg = char(fread(bmi5_out, code, 'char')')
 
+fwrite(bmi5_in, 'mmap structure');
+code = fread(bmi5_out, 1, 'int');
+msg = char(fread(bmi5_out, code, 'char')')
+eval(msg); 
+
 m2.Data(1).shape_scale = [0.1; 0.1]; 
 m2.Data(1).shape_color = [1; 0.7; 1; 1]; 
 % m2.Data(1).stars_awesome = 1; 
