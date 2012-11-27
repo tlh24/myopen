@@ -75,6 +75,10 @@ code = fread(bmi5_out, 1, 'int');
 msg = char(fread(bmi5_out, code, 'char')')
 eval(msg); 
 
+m2.Data(1).tone_freq = 440; 
+m2.Data(1).tone_pan = 0;
+m2.Data(1).tone_scale = 1;
+m2.Data(1).tone_duration = 1;
 
 m2.Data(1).cursor_scale = [0.1; 0.1]; 
 m2.Data(1).cursor_color = [1; 0.7; 1; 1]; 
