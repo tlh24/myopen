@@ -66,30 +66,35 @@ fwrite(bmi5_in, 'make circle target_');
 code = fread(bmi5_out, 1, 'int');
 msg = char(fread(bmi5_out, code, 'char')')
 
+fwrite(bmi5_in, 'tone');
+code = fread(bmi5_out, 1, 'int');
+msg = char(fread(bmi5_out, code, 'char')')
+
 fwrite(bmi5_in, 'mmap structure');
 code = fread(bmi5_out, 1, 'int');
 msg = char(fread(bmi5_out, code, 'char')')
 eval(msg); 
 
-m2.Data(1).shape_scale = [0.1; 0.1]; 
-m2.Data(1).shape_color = [1; 0.7; 1; 1]; 
-% m2.Data(1).stars_awesome = 1; 
-% m2.Data(1).stars_fade = 0; 
-% m2.Data(1).stars_size = 3.0; 
-m2.Data(1).stars_shape_coherence = 0.5; 
+
+m2.Data(1).cursor_scale = [0.1; 0.1]; 
+m2.Data(1).cursor_color = [1; 0.7; 1; 1]; 
+m2.Data(1).stars_coherence = 0.5; 
 fwrite(bmi5_in, 'go.'); 
 code = fread(bmi5_out, 1, 'int');
 
 n = 1000
 tic
 for i=1:n
-	m2.Data(1).shape_trans = sin(toc()/10)*[sin(toc()); cos(toc())]; 
-	m2.Data(1).stars_shape_vel = 0.1*[sin(toc()); cos(toc())]; 
+	m2.Data(1).cursor_trans = sin(toc()/10)*[sin(toc()); cos(toc())]; 
+	m2.Data(1).stars_vel = 0.1*[sin(toc()); cos(toc())]; 
 	% tell bmi5 to set these parameters -- it's read is blocking.
 	fwrite(bmi5_in, 'go.'); 
 	% if bmi5 has to do anything, it will block on this read. 
 	% could e.g. wait for vsync.
-	msg = fread(bmi5_out, 3, 'uchar');
+	code = fread(bmi5_out, 1, 'int');
+	if(code ~= 0)
+		disp('unexpected response from bmi5_out pipe'); 
+	end
 	disp(['frame ' num2str(m2.Data(1).frame)]); 
 	disp(['ticks ' num2str(m2.Data(1).ticks)]); 
 end
