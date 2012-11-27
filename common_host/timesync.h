@@ -33,6 +33,7 @@ public:
 	}
 };
 struct syncSharedData{
+	unsigned int magic; 
 	long double startTime; //subtract from CLOCK_MONOTONIC_RAW. 
 	long double timeOffset; 
 	long double slope; // e.g. 24414.0625
@@ -65,6 +66,7 @@ public:
 		mmh = new mmapHelp(2*sizeof(syncSharedData), "/home/tlh24/timeSync.mmap"); 
 		m_ssd = (syncSharedData*)mmh->m_addr; 
 		if(m_ssd){
+			m_ssd[0].magic = m_ssd[1].magic = 0x134fbab3; 
 			m_ssd[0].valid = false; 
 			m_ssd[1].valid = false; 
 		}
@@ -117,6 +119,7 @@ public:
 			m_ssd[m_ssdn].timeOffset = m_timeOffset; 
 			m_ssd[m_ssdn].slope = m_slope; 
 			m_ssd[m_ssdn].offset = m_offset; 
+			m_ssd[m_ssdn].magic = 0x134fbab3; 
 			m_ssd[m_ssdn].valid = true;
 			m_ssdn ^= 1; 
 		}
@@ -132,9 +135,10 @@ public:
 	
 	TimeSyncClient(){
 		mmh = new mmapHelp(2*sizeof(syncSharedData), "/home/tlh24/timeSync.mmap");
-		if(mmh->m_fd > 0)
+		if(mmh->m_fd > 0){
 			m_ssd = (syncSharedData*)mmh->m_addr; 
-		else
+			m_ssd[0].magic = m_ssd[1].magic = 0; 
+		} else
 			printf("Error: could not open /home/tlh24/timeSync.mmap\n"); 
 	}
 	~TimeSyncClient(){
@@ -143,7 +147,7 @@ public:
 	double getTicks(){
 		int n = 0; 
 		if(m_ssd[n].valid == false) n++; 
-		if(m_ssd[n].valid){
+		if(m_ssd[n].valid && m_ssd[n].magic == 0x134fbab3){
 			g_startTime = m_ssd[n].startTime; //so the two programs are synced.
 			long double time = gettime(); 
 			return (time - m_ssd[n].timeOffset) * m_ssd[n].slope + m_ssd[n].offset; 
