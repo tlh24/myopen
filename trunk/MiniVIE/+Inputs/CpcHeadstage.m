@@ -179,7 +179,8 @@ classdef CpcHeadstage < Inputs.SignalInput
             bytePattern = [128 0 0];
             idxStartBytes = strfind(dataStream,bytePattern);
             assert(~isempty(idxStartBytes),...
-                'No start sequence [%d %d %d] found in data stream of length %d',bytePattern,length(dataStream));
+                'No start sequence [%d %d %d] found in data stream of length %d.  Try resetting CPCH',...
+                bytePattern,length(dataStream));
             
             % Check if there are too few bytes between the last start
             % character and the end of the buffer

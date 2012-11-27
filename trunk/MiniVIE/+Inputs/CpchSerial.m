@@ -182,8 +182,8 @@ classdef CpchSerial < Inputs.CpcHeadstage
             % frameB.Mask = circShiftMask;
             
             %Debug
-            reshape(dec2binvec(double(frameB.Mask),32),16,[])';
-            reshape(dec2binvec(double(channel_config),32),16,[])';
+            %reshape(dec2binvec(double(frameB.Mask),32),16,[])';
+            %reshape(dec2binvec(double(channel_config),32),16,[])';
             
             
             assert(frameB.Mask == channel_config,'Defined channel mask does not match returned mask. Expected: uint32[%d] Got:uint32[%d]',...
