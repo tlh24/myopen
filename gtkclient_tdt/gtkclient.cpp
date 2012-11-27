@@ -529,9 +529,9 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		//rasters
 #ifndef EMG
 		glShadeModel(GL_FLAT);
-
+		float vscale = 97.f; 
 		glPushMatrix();
-		glScalef(1.f/g_rasterSpan, -1.f/130.f, 1.f);
+		glScalef(1.f/g_rasterSpan, -1.f/vscale, 1.f);
 		int lt = (int)time / (int)g_rasterSpan;
 		lt *= (int)g_rasterSpan;
 		float x = time - (float)lt;
@@ -549,8 +549,8 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 			glEnableClientState(GL_VERTEX_ARRAY);
 			glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo2[k]);
 			glVertexPointer(2, GL_FLOAT, 0, 0);
-			if(k == 0) glColor4f (0., 1., 1., 0.3f);
-			else glColor4f (1., 0., 0., 0.3f);
+			if(k == 0) glColor4f (0., 1., 1., 0.3f); //cyan
+			else glColor4f (1., 0., 0., 0.3f); //red
 			glPointSize(2.0);
 			glDrawArrays(GL_POINTS, 0, sizeof(g_sbuf[k])/8);
 			glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
@@ -559,21 +559,21 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		glColor4f (1., 0., 0., 0.5);
 		glBegin(GL_LINES);
 		glVertex3f( time, 0, 0.f);
-		glVertex3f( time, 130.f, 0.f);
+		glVertex3f( time, vscale, 0.f);
 		glColor4f (0.5, 0.5, 0.5, 0.5);
 		//draw old times, every second.
 		for(int t=(int)time; t > time-g_rasterSpan*2; t--){
 			glVertex3f( (float)t, 0, 0.f);
-			glVertex3f( (float)t, 130.f, 0.f);
+			glVertex3f( (float)t, vscale, 0.f);
 		}
 		glEnd();
 		//glEnable(GL_LINE_SMOOTH);
-		glPopMatrix ();
+		glPopMatrix (); //so we don't have to worry about time.
 		//draw current channel
 		for(int k=0; k<4; k++){
 			glBegin(GL_LINE_STRIP);
 			glColor4f (1., 0., 0., 0.5);
-			float y = (float)(1+g_channel[k])/-130.f;
+			float y = (float)(1.f+g_channel[k])/(-1.f*vscale);
 			glVertex3f( -1.f, y, 0.f);
 			glVertex3f( 1.f, y, 0.f);
 			glEnd();
