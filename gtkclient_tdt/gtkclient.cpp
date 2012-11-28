@@ -912,13 +912,14 @@ void* po8_thread(void*){
 							((long double)bytes) / ((gettime() - starttime)*(1024.0*1024.0))); 
 				}*/
 				//copy the data over to g_fbuf. 
+				//input data is scaled from TDT so that 32767 = 10mV.
 				long double time = gettime(); 
 				for(int k=0; k<NFBUF; k++){
 					int h = g_channel[k];
-					float gain = g_c[h]->m_gain; 
+					float gain = g_c[h]->getGain(); 
 					for(int i=0; i<numSamples; i++){
 						short samp = temp[i + h*numSamples]; //strange ordering .. but eh.
-						g_fbuf[k][((g_fbufW+i) % g_nsamp)*3 + 1] = (gain * samp / 32768.f); 
+						g_fbuf[k][((g_fbufW+i) % g_nsamp)*3 + 1] = (gain * samp / 32767.f); 
 						//g_fbuf[k][(g_fbufW % g_nsamp)*3 + 1] = 0; --sets the color.
 					}
 				}
@@ -928,7 +929,8 @@ void* po8_thread(void*){
 				for(int k=0; k<96; k++){
 					for(int i=0; i<numSamples; i++){
 						short samp = temp[i + k*numSamples]; //strange ordering .. but eh.
-						g_obuf[k][(oldo + i)&255] = (samp / 32768.f); 
+						g_obuf[k][(oldo + i)&255] = (samp / 32767.f); 
+						//1 = +10mV; range = [-1 1] here.
 					}
 				}
 				if(1){
@@ -944,18 +946,17 @@ void* po8_thread(void*){
 				wfpak pak; 
 				float wf[32]; 
 				for(int k=0; k<96 && !g_die; k++){
-					float threshold = g_c[k]->getThreshold();
+					float threshold = g_c[k]->getThreshold(); //1 -> 10mV.
 					int centering = g_c[k]->getCentering();
-					float gain = g_c[k]->m_gain; 
 					for(int m=0; m<numSamples; m++){
 						int o = oldo - centering + m - 1; o &= 255; 
-						float a = g_obuf[k][o] * gain;
-						float b = g_obuf[k][(o+1)&255] * gain;
+						float a = g_obuf[k][o];
+						float b = g_obuf[k][(o+1)&255];
 						//normal template-threshold sorting for now. boring, but known.
 						if((threshold > 0 && (a <= threshold && b > threshold))
 							|| (threshold < 0 && (a >= threshold && b < threshold))){
 							for(int g=0; g<32; g++){
-								wf[g] = g_obuf[k][(oldo+g+m-32) & 255] * 0.5 * gain;
+								wf[g] = g_obuf[k][(oldo+g+m-32) & 255] * 0.5; //range [-0.5 0.5]
 							}
 							int unit = 0; //unsorted.
 							//compare to template. 
@@ -982,7 +983,7 @@ void* po8_thread(void*){
 										pak.channel = k; 
 										pak.unit = unit; 
 										pak.len = 32; 
-										float gain2 = 2.f * 32768.f / gain ;
+										float gain2 = 2.f * 32767.f ;
 										for(int g=0; g<32; g++){
 											pak.wf[g] = (short)(wf[g]*gain2); //should be in original units.
 										}
@@ -1219,7 +1220,7 @@ void updateChannelUI(int k){
 	//called when a channel changes -- update the UI elements accordingly.
 	g_uiRecursion++;
 	int ch = g_channel[k];
-	gtk_adjustment_set_value(g_gainSpin[k], g_c[ch]->m_gain);
+	gtk_adjustment_set_value(g_gainSpin[k], g_c[ch]->getGain());
 	gtk_adjustment_set_value(g_agcSpin[k], g_c[ch]->m_agc);
 	gtk_adjustment_set_value(g_apertureSpin[k*2+0], g_c[ch]->m_aperture[0]);
 	gtk_adjustment_set_value(g_apertureSpin[k*2+1], g_c[ch]->m_aperture[1]);
@@ -1260,7 +1261,7 @@ static void gainSpinCB( GtkWidget*, gpointer p){
 	if(h >= 0 && h < 4 && !g_uiRecursion){
 		float gain = gtk_adjustment_get_value(g_gainSpin[h]);
 		printf("gainSpinCB: %f\n", gain);
-		g_c[g_channel[h]]->m_gain = gain;
+		g_c[g_channel[h]]->setGain(gain);
 		//updateGain(g_channel[h]);
 		g_c[g_channel[h]]->resetPca();
 	}
@@ -1268,7 +1269,7 @@ static void gainSpinCB( GtkWidget*, gpointer p){
 static void gainSetAll(gpointer ){
 	float gain = gtk_adjustment_get_value(g_gainSpin[0]);
 	for(int i=0; i<96; i++){
-		g_c[i]->m_gain = gain;
+		g_c[i]->setGain(gain);
 		//updateGain(i);
 	}
 	for(int i=0; i<32; i++){
@@ -1680,7 +1681,7 @@ int main(int argn, char **argc)
 									  channelSpinCB, i);
 		//right of that, a gain spinner. (need to update depending on ch)
 		g_gainSpin[i] = mk_spinner("gain", bx3,
-								 	g_c[g_channel[i]]->m_gain,
+								 	g_c[g_channel[i]]->getGain(),
 									-30.0, 30.0, 0.1,
 								  	gainSpinCB, i);
 		//below that, the AGC target.
