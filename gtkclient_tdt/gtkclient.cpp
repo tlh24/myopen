@@ -89,6 +89,7 @@ bool g_die = false;
 double g_pause = -1.0;
 bool g_cycle = false;
 bool g_showPca = false;
+bool g_showWFVgrid = true; 
 bool g_rtMouseBtn = false;
 bool g_saveUnsorted = false; 
 int g_polyChan = 0;
@@ -151,8 +152,6 @@ GtkAdjustment* g_minISISpin;
 GtkAdjustment* g_spikesColsSpin;
 GtkAdjustment* g_zoomSpin;
 GtkAdjustment* g_rasterSpanSpin;
-GtkWidget* g_pktpsLabel;
-GtkWidget* g_stbpsLabel; //strobe per second label, todo: put in raster
 GtkWidget* g_fileSizeLabel;
 GtkWidget* g_notebook; 
 int			g_uiRecursion = 0; //prevents programmatic changes to the UI
@@ -604,7 +603,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 				xz = 1.f; yz = 1.f;
 				g_c[g_channel[k]]->setLoc(xo, yo, xz, yz);
 				g_c[g_channel[k]]->draw(g_drawmode, time, g_cursPos,
-										g_showPca, g_rtMouseBtn, true);
+										g_showPca, g_rtMouseBtn, true, g_showWFVgrid);
 			}
 			cgGLDisableProfile(myCgVertexProfile);
 		}
@@ -618,7 +617,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 				xz = 2.f/xf; yz = 2.f/yf;
 				g_c[k]->setLoc(xo*2.f-1.f, 1.f-yo*2.f, xz*2.f, yz);
 				g_c[k]->draw(g_drawmode, time, g_cursPos,
-										g_showPca, g_rtMouseBtn, false);
+										g_showPca, g_rtMouseBtn, false, g_showWFVgrid);
 			}
 			cgGLDisableProfile(myCgVertexProfile);
 			//draw some lines. 
@@ -760,18 +759,7 @@ static gboolean rotate (gpointer user_data){
 
 	string s = g_ts.getInfo(); 
 	gtk_label_set_text(GTK_LABEL(g_infoLabel), s.c_str());
-	//update the packets/sec label too
-	char str[256];
-	snprintf(str, 256, "pkts/sec: %.2Lf\ndropped %d of %d \nBER %f per 1e6 bits",
-			(long double)g_totalPackets/gettime(),
-			g_totalDropped, g_totalPackets,
-			1e6*(double)g_totalDropped/((double)g_totalPackets*32*8));
-	gtk_label_set_text(GTK_LABEL(g_pktpsLabel), str); //works!
-
-		snprintf(str, 256, "strobe/sec: %.2Lf",
-			(double)g_strobePackets/gettime());
-	gtk_label_set_text(GTK_LABEL(g_stbpsLabel), str); //works!
-
+	char str[256]; 
 	snprintf(str, 256, "%.2f MB", (double)g_wfwriter.bytes()/1e6);
 	gtk_label_set_text(GTK_LABEL(g_fileSizeLabel), str);
 	return TRUE;
@@ -1393,6 +1381,12 @@ static void showPcaButtonCB(GtkWidget *button, gpointer * ){
 	else
 		g_showPca = false;
 }
+static void showWFVgridButtonCB(GtkWidget *button, gpointer * ){
+	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
+		g_showWFVgrid = true;
+	else
+		g_showWFVgrid = false;
+}
 static void pauseButtonCB(GtkWidget *button, gpointer * ){
 	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
 		g_pause = gettime();
@@ -1647,18 +1641,6 @@ int main(int argn, char **argc)
 	gtk_misc_set_alignment (GTK_MISC (g_infoLabel), 0, 0);
 	gtk_box_pack_start (GTK_BOX (bx), g_infoLabel, TRUE, TRUE, 0);
 	gtk_widget_show(g_infoLabel);
-	//add in a packets/second label
-	g_pktpsLabel = gtk_label_new ("packets/sec");
-	gtk_misc_set_alignment (GTK_MISC (g_pktpsLabel), 0, 0);
-	gtk_box_pack_start (GTK_BOX (bx), g_pktpsLabel, FALSE, FALSE, 0);
-	gtk_widget_show(g_pktpsLabel);
-	
-	//add in a strobe frame/second label
-	g_stbpsLabel = gtk_label_new ("strobe/sec");
-	gtk_misc_set_alignment (GTK_MISC (g_stbpsLabel), 0, 0);
-	gtk_box_pack_start (GTK_BOX (bx), g_stbpsLabel, FALSE, FALSE, 0);
-	gtk_widget_show(g_stbpsLabel);
-
 	
 	gtk_box_pack_start (GTK_BOX (v1), bx, FALSE, FALSE, 0);
 
@@ -1812,7 +1794,13 @@ int main(int argn, char **argc)
 			G_CALLBACK (showPcaButtonCB), (gpointer) "o");
 	gtk_box_pack_start (GTK_BOX (box1), button, TRUE, TRUE, 0);
 	gtk_widget_show(button);
-
+	//show wf voltage grid 
+	button = gtk_check_button_new_with_label("show voltage grid");
+	g_signal_connect (button, "toggled",
+			G_CALLBACK (showWFVgridButtonCB), (gpointer) "o");
+	gtk_box_pack_start (GTK_BOX (box1), button, TRUE, TRUE, 0);
+	gtk_widget_show(button);
+	
 	button = gtk_button_new_with_label ("calc PCA");
 	g_signal_connect(button, "clicked", G_CALLBACK (calcPCACB),
 					 (gpointer*)window);
