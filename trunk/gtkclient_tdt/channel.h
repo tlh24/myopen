@@ -245,7 +245,7 @@ public:
 	}
 	float getGain(){return m_gain;}
 	void draw(int drawmode, float time, float* cursPos, 
-				 bool showPca, bool closest, bool sortMode){
+				 bool showPca, bool closest, bool sortMode, bool showWFVgrid){
 		glColor4f(0.5f, 0.5f, 0.5f, 0.5f);
 		//draw only the spikes in spike mode. 
 		m_usVbo->draw(drawmode, time, true);
@@ -305,50 +305,52 @@ public:
 			glVertex2f(c+ox, t-0.2*oh);
 			glVertex2f(c+ox, t+0.2*oh); 
 			glEnd(); 
-			//draw vertical scale. 
-			double top = 10e3/m_gain; //10 mV
-			double tic = 1; //uV
-			int unit = 1; 
-			while(tic * 7 < 10e3/m_gain){
-				if(unit == 1){
-					unit = 2; tic *= 2.0; 
-				}else if(unit == 2){
-					unit = 5; tic *= 2.5; 
-				} else {
-					unit = 1; tic *= 2.0; 
+			if(showWFVgrid){
+				//draw vertical scale. 
+				double top = 10e3/m_gain; //10 mV
+				double tic = 1; //uV
+				int unit = 1; 
+				while(tic * 7 < 10e3/m_gain){
+					if(unit == 1){
+						unit = 2; tic *= 2.0; 
+					}else if(unit == 2){
+						unit = 5; tic *= 2.5; 
+					} else {
+						unit = 1; tic *= 2.0; 
+					}
 				}
-			}
-			std::string units = std::string("uV"); 
-			float div = 1.f; 
-			if(tic >= 1000){
-				div = 1000.f; 
-				units = std::string("mV");
-			}
-			char buf[64];
-			glColor4f(1.f,1.f,1.f,0.18f); 
-			for(double v = 0.0; v < top; v+= tic){
-				float y = m_gain*v/1e4; 
-				y /= 2.f; y += 0.5f; 
-				glBegin(GL_LINES); 
-				glVertex3f(0.f*ow+ox, y*oh+oy, 0.f); 
-				glVertex3f(1.f*ow+ox, y*oh+oy, 0.f);
-				glEnd(); 
-				snprintf(buf, 64, "%d%s", (int)floor(v/div), units.c_str()); 
-				float yof = 4.f/g_viewportSize[1]; //1 pixels vertical offset.
-				float xof = 2.f*(strlen(buf)*8)/g_viewportSize[0];
-				glRasterPos2f(1.f*ow+ox-xof, y*oh+oy+yof); 
-				glPrint(buf);
-				if(v > 0.0){
-					y = m_gain*v/-1e4; 
+				std::string units = std::string("uV"); 
+				float div = 1.f; 
+				if(tic >= 1000){
+					div = 1000.f; 
+					units = std::string("mV");
+				}
+				char buf[64];
+				glColor4f(1.f,1.f,1.f,0.18f); 
+				for(double v = 0.0; v < top; v+= tic){
+					float y = m_gain*v/1e4; 
 					y /= 2.f; y += 0.5f; 
 					glBegin(GL_LINES); 
 					glVertex3f(0.f*ow+ox, y*oh+oy, 0.f); 
 					glVertex3f(1.f*ow+ox, y*oh+oy, 0.f);
 					glEnd(); 
-					snprintf(buf, 64, "-%d%s", (int)floor(v/div), units.c_str()); 
-					xof = 2.f*(strlen(buf)*8)/g_viewportSize[0];
+					snprintf(buf, 64, "%d%s", (int)floor(v/div), units.c_str()); 
+					float yof = 4.f/g_viewportSize[1]; //1 pixels vertical offset.
+					float xof = 2.f*(strlen(buf)*8)/g_viewportSize[0];
 					glRasterPos2f(1.f*ow+ox-xof, y*oh+oy+yof); 
 					glPrint(buf);
+					if(v > 0.0){
+						y = m_gain*v/-1e4; 
+						y /= 2.f; y += 0.5f; 
+						glBegin(GL_LINES); 
+						glVertex3f(0.f*ow+ox, y*oh+oy, 0.f); 
+						glVertex3f(1.f*ow+ox, y*oh+oy, 0.f);
+						glEnd(); 
+						snprintf(buf, 64, "-%d%s", (int)floor(v/div), units.c_str()); 
+						xof = 2.f*(strlen(buf)*8)/g_viewportSize[0];
+						glRasterPos2f(1.f*ow+ox-xof, y*oh+oy+yof); 
+						glPrint(buf);
+					}
 				}
 			}
 			if(1){ //isi.
@@ -381,6 +383,7 @@ public:
 					float yof = 2.f/g_viewportSize[1]; //1 pixels vertical offset.
 					float xof = 2.f/g_viewportSize[0]; 
 					glRasterPos2f(x1*ow+ox+ow+xof, oy+yof); 
+					char buf[64]; 
 					snprintf(buf, 64, "%d", i*10); 
 					glPrint(buf);
 				}
