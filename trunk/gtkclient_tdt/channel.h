@@ -6,6 +6,7 @@
 #include <gsl/gsl_eigen.h>
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_sort.h>
+#include <string>
 #include "matStor.h"
 
 void gsl_matrix_to_mat(gsl_matrix *x, const char* fname); 
@@ -19,6 +20,7 @@ class Channel {
 private:
 	float m_threshold; 
 	float	m_centering; //left/right centering. used to look for threshold crossing.
+	float m_gain; 
 public:
 	Vbo*	m_wfVbo; //range 1 mean 0
 	Vbo*	m_usVbo; 
@@ -29,7 +31,6 @@ public:
 	float	m_aperture[2]; //aka MSE. 
 	float	m_loc[4]; 
 	int	m_ch; //channel number, obvi.
-	float m_gain; 
 	float m_agc; 
 	i64 	m_isi[2][100]; //counts of the isi, in units of ms.
 	i64	m_isiViolations; 
@@ -201,7 +202,7 @@ public:
 		x -= m_loc[0]; y -= m_loc[1]; 
 		x /= m_loc[2]; y /= m_loc[3]; 
 		if(x >= 1/62.f && x <= 31/62.f && y >= 0.0 && y <= 1.f){
-			m_threshold = (y-0.5f)*2.f; 
+			m_threshold = ((y-0.5f)*2.f)/m_gain; 
 			x *= 62.f; x -= 0.5f; x = 31.f-x; //inverse centering transform.
 			m_centering = x; 
 			resetPca();
@@ -229,12 +230,20 @@ public:
 		m_centering = c; 
 	}
 	void setLoc(float x, float y, float w, float h){
-		m_wfVbo->setLoc(x, y+h/2, w/2.f, h); 
-		m_usVbo->setLoc(x, y+h/2, w/2.f, h);
+		m_wfVbo->setLoc(x, y+h/2, w/2.f, h*m_gain); 
+		m_usVbo->setLoc(x, y+h/2, w/2.f, h*m_gain);
 		m_pcaVbo->setLoc(x+w/2.f, y+h/4, w/2.f, h/2.f); 
 		m_loc[0] = x; m_loc[1] = y; 
 		m_loc[2] = w; m_loc[3] = h; 
 	}
+	void setGain(float gain){
+		float x = m_loc[0]; float y = m_loc[1];
+		float w = m_loc[2]; float h = m_loc[3]; 
+		m_wfVbo->setLoc(x, y+h/2, w/2.f, h*gain); 
+		m_usVbo->setLoc(x, y+h/2, w/2.f, h*gain);
+		m_gain = gain; 
+	}
+	float getGain(){return m_gain;}
 	void draw(int drawmode, float time, float* cursPos, 
 				 bool showPca, bool closest, bool sortMode){
 		glColor4f(0.5f, 0.5f, 0.5f, 0.5f);
@@ -255,7 +264,7 @@ public:
 				if(k == 0) glColor4f(0.6f, 0.f, 1.f, 0.65f);
 				else glColor4f(1.f, 0.5f, 0.f, 0.65f);
 				for(int j=0; j<32; j++){
-					float ny = m_template[k][j] + 0.5f;
+					float ny = m_gain*m_template[k][j] + 0.5f;
 					float nx = (float)(j)/31.f; 
 					glVertex3f(nx*ow+ox, ny*oh+oy, 0.f);
 				}
@@ -268,7 +277,7 @@ public:
 				glLineWidth(5.f); 
 				for(int k=0; k<2; k++){
 					for(int j=0; j<32; j++){
-						float ny = m_pca[k][j]*m_pcaScl[k]+0.5; 
+						float ny = m_pca[k][j]*m_pcaScl[k]*m_gain+0.5; 
 						float nx = (float)(j)/31.f; 
 						glColor4f(1.f-k, k, 0.f, 0.75f);
 						glVertex3f(nx*ow+ox, ny*oh+oy, 0.f);
@@ -284,7 +293,7 @@ public:
 			glColor4f(1.f,1.f,1.f,0.4f); 
 			glLineWidth(1.f); 
 			glBegin(GL_LINE_STRIP); 
-			float t = m_threshold; 
+			float t = m_threshold*m_gain; 
 			t = oh*(t/2.f+0.5) + oy; 
 			glVertex2f(0.0f+ox, t);
 			glVertex2f(0.5f+ox, t); 
@@ -296,7 +305,53 @@ public:
 			glVertex2f(c+ox, t-0.2*oh);
 			glVertex2f(c+ox, t+0.2*oh); 
 			glEnd(); 
-			if(1){
+			//draw vertical scale. 
+			double top = 10e3/m_gain; //10 mV
+			double tic = 1; //uV
+			int unit = 1; 
+			while(tic * 7 < 10e3/m_gain){
+				if(unit == 1){
+					unit = 2; tic *= 2.0; 
+				}else if(unit == 2){
+					unit = 5; tic *= 2.5; 
+				} else {
+					unit = 1; tic *= 2.0; 
+				}
+			}
+			std::string units = std::string("uV"); 
+			float div = 1.f; 
+			if(tic >= 1000){
+				div = 1000.f; 
+				units = std::string("mV");
+			}
+			char buf[64];
+			glColor4f(1.f,1.f,1.f,0.18f); 
+			for(double v = 0.0; v < top; v+= tic){
+				float y = m_gain*v/1e4; 
+				y /= 2.f; y += 0.5f; 
+				glBegin(GL_LINES); 
+				glVertex3f(0.f*ow+ox, y*oh+oy, 0.f); 
+				glVertex3f(1.f*ow+ox, y*oh+oy, 0.f);
+				glEnd(); 
+				snprintf(buf, 64, "%d%s", (int)floor(v/div), units.c_str()); 
+				float yof = 4.f/g_viewportSize[1]; //1 pixels vertical offset.
+				float xof = 2.f*(strlen(buf)*8)/g_viewportSize[0];
+				glRasterPos2f(1.f*ow+ox-xof, y*oh+oy+yof); 
+				glPrint(buf);
+				if(v > 0.0){
+					y = m_gain*v/-1e4; 
+					y /= 2.f; y += 0.5f; 
+					glBegin(GL_LINES); 
+					glVertex3f(0.f*ow+ox, y*oh+oy, 0.f); 
+					glVertex3f(1.f*ow+ox, y*oh+oy, 0.f);
+					glEnd(); 
+					snprintf(buf, 64, "-%d%s", (int)floor(v/div), units.c_str()); 
+					xof = 2.f*(strlen(buf)*8)/g_viewportSize[0];
+					glRasterPos2f(1.f*ow+ox-xof, y*oh+oy+yof); 
+					glPrint(buf);
+				}
+			}
+			if(1){ //isi.
 				int nisi = sizeof(m_isi[0])/sizeof(m_isi[0][0]);
 				//draw shaded plots of the ISI. 
 				for(int u=0; u<2; u++){
@@ -326,7 +381,6 @@ public:
 					float yof = 2.f/g_viewportSize[1]; //1 pixels vertical offset.
 					float xof = 2.f/g_viewportSize[0]; 
 					glRasterPos2f(x1*ow+ox+ow+xof, oy+yof); 
-					char buf[64];
 					snprintf(buf, 64, "%d", i*10); 
 					glPrint(buf);
 				}
