@@ -21,6 +21,7 @@ private:
 	float m_threshold; 
 	float	m_centering; //left/right centering. used to look for threshold crossing.
 	float m_gain; 
+	float m_aperture[2]; //aka MSE per sample. (depends on input scaling)
 public:
 	Vbo*	m_wfVbo; //range 1 mean 0
 	Vbo*	m_usVbo; 
@@ -28,7 +29,6 @@ public:
 	float	m_pca[2][32]; //range 1 mean 0
 	float m_pcaScl[2]; //sqrt of the eigenvalues.
 	float	m_template[2][32]; // range 1 mean 0.
-	float	m_aperture[2]; //aka MSE. 
 	float	m_loc[4]; 
 	int	m_ch; //channel number, obvi.
 	float m_agc; 
@@ -559,6 +559,26 @@ public:
 			if(b > 0 && b < nisi)
 				m_isi[unit][b]++; 
 			m_lastSpike[unit] = sample; 
+		}
+	}
+	float getAperture(int unit){ 
+		if(unit >=0 && unit < 2){
+			return m_aperture[unit];
+		} else return 0.f; 
+	}
+	float getApertureUv(int unit){
+		//returns the aperture in uv. (uv^2 is less intuitive)
+		//input samples are 1 = 10mV. 
+		//so waveform misalignment of 0.1 (1mV) -> 0.01; should be represented as
+		//1000uv^2, hence have to multiply by 1e8. 
+		//sqrt(m_aperture * 1e8)
+		if(unit >=0 && unit < 2){
+			return sqrt(m_aperture[unit] * 1e8);
+		} else return 0.f; 
+	}
+	void setApertureUv(int unit, float aper){
+		if(unit >=0 && unit < 2){
+			m_aperture[unit] = aper*aper / 1e8; 
 		}
 	}
 };

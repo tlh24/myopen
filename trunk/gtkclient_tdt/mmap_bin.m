@@ -67,10 +67,17 @@ m2.Data(1).tone_duration = 5;
 
 m2.Data(1).cursor_scale = [0.1; 0.1]; 
 m2.Data(1).cursor_color = [1; 0.6; 1; 1]; 
+m2.Data(1).cursor_trans = [0.5; 0.5];
 m2.Data(1).target_scale = [0.1; 0.1]; 
 m2.Data(1).target_color = [1; 1; 0.6; 1]; 
+m2.Data(1).target_trans = [-0.5; -0.5];
+
+m2.Data(1).cursor_draw = 1; 
+m2.Data(1).target_draw = 1;  
+m2.Data(1).stars_draw = 1; 
 
 m2.Data(1).stars_coherence = 0.5; 
+m2.Data(1).stars_scale = [1; 1]; %necessary! -- defaults to 0.
 fwrite(bmi5_in, 'go.'); 
 code = fread(bmi5_out, 1, 'int');
 
