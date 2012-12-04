@@ -6,7 +6,7 @@ CFLAGS+= -g
 CFLAGS+= -Wall -Wcast-align -Wpointer-arith -Wshadow -Wsign-compare -Wformat=2 \
 -Wno-format-y2k -Wmissing-braces -Wparentheses -Wtrigraphs \
 -Wextra -pedantic -Wno-int-to-pointer-cast -std=c++11
-LDFLAGS = -lGL -lGLU -lpthread -lCg -lCgGL -lgsl -lcblas -latlas -lm -lPO8eStreaming
+LDFLAGS = -lGL -lGLU -lpthread -lCg -lCgGL -lgsl -lcblas -latlas -lm -lPO8eStreaming -ljack
 
 GLIBS = gtk+-2.0 gtkglext-1.0 gtkglext-x11-1.0 protobuf
 GTKFLAGS = `pkg-config --cflags $(GLIBS) `
@@ -15,11 +15,11 @@ GTKLD = `pkg-config --libs $(GLIBS) `
 OBJS = main.o sock.o
 
 GOBJS = spikes.pb.o gtkclient.o decodePacket.o \
-	gettime.o sock.o tcpsegmenter.o glInfo.o matStor.o
+	gettime.o sock.o tcpsegmenter.o glInfo.o matStor.o jacksnd.o
 
 COBJS = convert2.o
 COM_HDR = channel.h wfwriter.h ../common_host/vbo.h ../common_host/cgVertexShader.h \
-../common_host/firingrate.h ../common_host/timesync.h
+../common_host/firingrate.h ../common_host/timesync.h ../common_host/jacksnd.h
 FIFOS = gtkclient_in gtkclient_out
 
 all: gtkclient

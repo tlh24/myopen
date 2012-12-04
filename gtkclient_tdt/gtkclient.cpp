@@ -53,6 +53,7 @@
 #include "timesync.h"
 #include "matStor.h"
 #include "wfwriter.h"
+#include "jacksnd.h"
 
 //CG stuff. for the vertex shaders.
 CGcontext   myCgContext;
@@ -911,6 +912,16 @@ void* po8_thread(void*){
 						//g_fbuf[k][(g_fbufW % g_nsamp)*3 + 1] = 0; --sets the color.
 					}
 				}
+				if(1){ //copy to jack output buffer --
+					float g[256]; 
+					int h = g_channel[0]; 
+					float gain = g_c[g_channel[0]]->getGain(); 
+					for(int i=0; i<numSamples && i<256; i++){
+						short samp = temp[i + h*numSamples];
+						g[i] = gain * samp / 32767.f; 
+					}
+					jackAddSamples(&g[0], &g[0], numSamples); 
+				}
 				g_fbufW += numSamples; 
 				// copy to the sorting buffers, wrapped.
 				int oldo = g_sample & 255; 
@@ -955,7 +966,7 @@ void* po8_thread(void*){
 									sum += r*r; 
 								}
 								sum /= 32; 
-								if(sum < g_c[k]->m_aperture[u])
+								if(sum < g_c[k]->getAperture(u))
 									unit = u+1; 
 							}
 							//check if this exceeds minimum ISI. 
@@ -1210,8 +1221,8 @@ void updateChannelUI(int k){
 	int ch = g_channel[k];
 	gtk_adjustment_set_value(g_gainSpin[k], g_c[ch]->getGain());
 	gtk_adjustment_set_value(g_agcSpin[k], g_c[ch]->m_agc);
-	gtk_adjustment_set_value(g_apertureSpin[k*2+0], g_c[ch]->m_aperture[0]);
-	gtk_adjustment_set_value(g_apertureSpin[k*2+1], g_c[ch]->m_aperture[1]);
+	gtk_adjustment_set_value(g_apertureSpin[k*2+0], g_c[ch]->getApertureUv(0));
+	gtk_adjustment_set_value(g_apertureSpin[k*2+1], g_c[ch]->getApertureUv(1));
 	gtk_adjustment_set_value(g_thresholdSpin[k], g_c[ch]->getThreshold());
 	gtk_adjustment_set_value(g_centeringSpin[k], g_c[ch]->getCentering());
 	g_uiRecursion--;
@@ -1293,7 +1304,7 @@ static void apertureSpinCB( GtkWidget*, gpointer p){
 		int j = g_channel[h/2];
 		//gtk likes to call this frequently -- only update when
 		//the value has actually changed.
-		if(g_c[j]->m_aperture[h%2] != a){
+		if(g_c[j]->getApertureUv(h%2) != a){
 			if(a >= 0 && a < 256*16){
 				g_c[j]->setApertureLocal(a, h%2);
 				//setAperture(j);
@@ -1543,7 +1554,7 @@ static void getTemplateCB( GtkWidget *, gpointer p){
 		g_c[g_channel[j]]->updateTemplate(aB+1);
 		//update the UI.
 		gtk_adjustment_set_value(g_apertureSpin[j*2+aB],
-								g_c[g_channel[j]]->m_aperture[aB]);
+								g_c[g_channel[j]]->getApertureUv(aB));
 		//remove the old poly, now that we've used it.
 		g_c[g_channel[j]]->resetPoly();
 	}
@@ -1764,8 +1775,10 @@ int main(int argn, char **argc)
 			GtkWidget* bx3 = gtk_hbox_new (FALSE, 2);
 			gtk_container_add (GTK_CONTAINER (bx2), bx3);
 			g_apertureSpin[i*2+j] = mk_spinner("", bx3,
-								  g_c[g_channel[i]]->m_aperture[j], 0, 1, 0.0001,
+								  g_c[g_channel[i]]->getApertureUv(j), 0, 1000, 1,
 								  apertureSpinCB, i*2+j);
+			label = gtk_label_new("uV");
+			gtk_box_pack_start (GTK_BOX (bx3), label, TRUE, TRUE, 1);
 			//a button for disable.
 			button = gtk_button_new_with_label("off");
 			if(j == 0)
@@ -1775,13 +1788,13 @@ int main(int argn, char **argc)
 			g_signal_connect(button, "clicked", G_CALLBACK (apertureOffCB), (gpointer)(i*2+j));
 			gtk_box_pack_start (GTK_BOX (bx3), button, TRUE, TRUE, 1);
 			//and a button for 'set'.
-			button = gtk_button_new_with_label("set");
+			/*button = gtk_button_new_with_label("set");
 			if(j == 0)
 				setWidgetColor(button, 120, 255, 255);
 			else
 				setWidgetColor(button, 255, 120, 120);
 			g_signal_connect(button, "clicked", G_CALLBACK (getTemplateCB), (gpointer)(i*2+j));
-			gtk_box_pack_start (GTK_BOX (bx3), button,TRUE, TRUE, 1);
+			gtk_box_pack_start (GTK_BOX (bx3), button,TRUE, TRUE, 1);*/
 		}
 	}
 	//add one for unsorted unit add rate.
@@ -1796,6 +1809,7 @@ int main(int argn, char **argc)
 	gtk_widget_show(button);
 	//show wf voltage grid 
 	button = gtk_check_button_new_with_label("show voltage grid");
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), g_showWFVgrid);
 	g_signal_connect (button, "toggled",
 			G_CALLBACK (showWFVgridButtonCB), (gpointer) "o");
 	gtk_box_pack_start (GTK_BOX (box1), button, TRUE, TRUE, 0);
@@ -1938,8 +1952,14 @@ int main(int argn, char **argc)
 	g_timeout_add (1000 / 30, rotate, da1);
 	//change the channel every 2 seconds.
 	g_timeout_add(3000, chanscan, (gpointer)0);
+	
+	//jack. 
+	jackInit(JACKPROCESS_RESAMPLE); 
+	jackSetResample(24414.0625/SAMPFREQ); 
 
 	gtk_main ();
+	
+	jackClose(0); 
 	g_wfwriter.close(); //just in case. 
 	//cancel the mmap thread -- probably waiting on a read(). 
 	if(pthread_cancel(thread1)){
