@@ -21,7 +21,7 @@ private:
 	float m_threshold; 
 	float	m_centering; //left/right centering. used to look for threshold crossing.
 	float m_gain; 
-	float m_aperture[2]; //aka MSE per sample. (depends on input scaling)
+	float m_aperture[2]; //aka MSE per sample.
 public:
 	Vbo*	m_wfVbo; //range 1 mean 0
 	Vbo*	m_usVbo; 
@@ -211,7 +211,7 @@ public:
 	}
 	void addPoly(float* f){ m_pcaVbo->addPoly(f); }
 	void resetPoly(){ m_pcaVbo->m_polyW = 0; }
-	void setApertureLocal(float aperture, int n){
+	void setApertureLocal(int n, float aperture){
 		if(n >= 0 && n <= 1) m_aperture[n] = aperture; 
 		float color[3] = {0.f, 1.f, 1.f}; 
 		if(n == 1){color[0] = 1.f; color[1] = 0.f; color[2] = 0.f; }
@@ -423,7 +423,7 @@ public:
 		}
 		printf("\n"); 
 		m_aperture[unit-1] = aperture; 
-		printf("m_aperture[%d][%d] = %d\n", m_ch, unit-1, (int)m_aperture[unit-1]); 
+		printf("m_aperture[%d][%d] = %f\n", m_ch, unit-1, m_aperture[unit-1]); 
 		return true; 
 	}
 	void resetPca(){
@@ -578,7 +578,7 @@ public:
 	}
 	void setApertureUv(int unit, float aper){
 		if(unit >=0 && unit < 2){
-			m_aperture[unit] = aper*aper / 1e8; 
+			setApertureLocal( unit, aper*aper / 1e8); 
 		}
 	}
 };
