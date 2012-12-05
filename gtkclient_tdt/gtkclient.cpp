@@ -912,6 +912,7 @@ void* po8_thread(void*){
 						//g_fbuf[k][(g_fbufW % g_nsamp)*3 + 1] = 0; --sets the color.
 					}
 				}
+#ifdef JACK
 				if(1){ //copy to jack output buffer --
 					float g[256]; 
 					int h = g_channel[0]; 
@@ -922,6 +923,7 @@ void* po8_thread(void*){
 					}
 					jackAddSamples(&g[0], &g[0], numSamples); 
 				}
+#endif
 				g_fbufW += numSamples; 
 				// copy to the sorting buffers, wrapped.
 				int oldo = g_sample & 255; 
@@ -1305,8 +1307,8 @@ static void apertureSpinCB( GtkWidget*, gpointer p){
 		//gtk likes to call this frequently -- only update when
 		//the value has actually changed.
 		if(g_c[j]->getApertureUv(h%2) != a){
-			if(a >= 0 && a < 256*16){
-				g_c[j]->setApertureLocal(a, h%2);
+			if(a >= 0 && a < 2000){
+				g_c[j]->setApertureUv(h%2, a);
 				//setAperture(j);
 			}
 			//printf("apertureSpinCB: %f ch %d\n", a, j);
@@ -1954,12 +1956,16 @@ int main(int argn, char **argc)
 	g_timeout_add(3000, chanscan, (gpointer)0);
 	
 	//jack. 
+#ifdef JACK
 	jackInit(JACKPROCESS_RESAMPLE); 
 	jackSetResample(24414.0625/SAMPFREQ); 
-
+#endif
+	
 	gtk_main ();
 	
+#ifdef JACK
 	jackClose(0); 
+#endif
 	g_wfwriter.close(); //just in case. 
 	//cancel the mmap thread -- probably waiting on a read(). 
 	if(pthread_cancel(thread1)){
