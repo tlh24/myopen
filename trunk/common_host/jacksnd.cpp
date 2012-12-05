@@ -78,18 +78,18 @@ int process_resample(jack_nframes_t nframes, void* arg){
 	out2 = (jack_default_audio_sample_t*)jack_port_get_buffer (output_port2, nframes);
 	
 	for(unsigned int i=0; i<nframes; i++){
-		//bang-bang controller -- keep the lag within a certain range.
-		// same algorithm as the bridge. 
 		long dif = r->wrPtr - r->rdPtr; 
-		if(dif <= 0){
+		if(dif <= 0){ //probably pipe dried up.
+			//if(i==0)
+			//	printf("dif <= 0 dif %ld nframes %d rd %ld wr %ld\n", dif, nframes, r->rdPtr, r->wrPtr); 
 			out1[i] = 0.f; 
 			out2[i] = 0.f; 
-			printf("dif <= 0\n"); 
 		} else if(dif >= RESAMP_MASK){
-			r->rdPtr = r->wrPtr - 128; //this will keep zeros coming out.
+			if(i==0)
+				printf("dif >= %d dif %ld nframes %d rd %ld wr %ld\n", RESAMP_MASK, dif, nframes, r->rdPtr, r->wrPtr); 
+			r->rdPtr = r->wrPtr - (RESAMP_SIZ/2); //this will keep zeros coming out.
 			out1[i] = 0.f; 
 			out2[i] = 0.f; 
-			printf("dif > %d\n", RESAMP_MASK); 
 		} else {
 			float p = r->phase; 
 			float lerp = p - floor(p); 
@@ -219,8 +219,9 @@ int jackInit(int mode)
 	}
 	g_jackSample = 0; 
 	/* open a client connection to the JACK server */
-
-	client = jack_client_open ("bmi5", JackNullOption, &status, NULL);
+	char jackname[256]; 
+	snprintf(jackname, 256, "jacksnd_%d", mode); 
+	client = jack_client_open (jackname, JackNullOption, &status, NULL);
 	if (client == NULL) {
 		fprintf (stderr, "jack_client_open() failed, "
 			 "status = 0x%2.0x\n", status);
@@ -343,7 +344,7 @@ void jackSetResample(double rate){
 	g_resample.phaseIncr = rate; 
 	g_resample.phaseIncrNom = rate; 
 	// 8 cents ~= minimum detectable interval.
-	g_resample.phaseIncrDelta = rate * 0.004631674402 / 1500; 
+	g_resample.phaseIncrDelta = rate * 0.004631674402 / 500; 
 	g_resample.integral = 0; 
 	g_resample.delay = 0; 
 }
