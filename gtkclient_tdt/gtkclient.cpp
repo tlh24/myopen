@@ -895,7 +895,7 @@ void* po8_thread(void*){
 				totalSamples += numSamples; 
 				usleep(70); 
 			}
-			if(numSamples > 0){
+			if(numSamples > 0 && numSamples < 1024){
 				/*if(frame %200 == 0){ //need to move this to the UI.
 				printf("%d samples at %d bps of %d chan: %Lf MB/sec\n", numSamples, Bps, nchan,
 							((long double)bytes) / ((gettime() - starttime)*(1024.0*1024.0))); 
