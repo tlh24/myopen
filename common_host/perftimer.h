@@ -8,6 +8,7 @@ public:
 	int			m_ncalls; 
 	long double m_lastStart; 
 	long double	m_lastCallTime; 
+	long double	m_smoothedCallTime; 
 	
 	PerfTimer(){
 		m_total = 0.0; 
@@ -34,6 +35,39 @@ public:
 	double meanTime(){
 		return (m_total / (long double)m_ncalls); 
 	}
+	double smoothedCallTime(){
+		m_smoothedCallTime *= 0.9; 
+		m_smoothedCallTime += 0.1 * m_lastCallTime; 
+		return m_smoothedCallTime; 
+	}
 }; 
 
+//keeps track of when vsyncs occur in order to predict the next one. 
+class VsyncTimer{
+public:
+	long double		m_t[16]; //last 8 vsync times. 
+	int				m_ptr; 
+	
+	VsyncTimer(){
+		for(int i=0; i<16; i++)
+			m_t[i] = 0.0; 
+	}
+	~VsyncTimer(){}
+	long double add(long double time){
+		m_t[m_ptr&15] = time;
+		long double mean = time - m_t[(m_ptr+1)&15]; 
+		mean /= 15.0; //mean intercall.
+		//given this, average the expected time of the last 16 calls.
+		long double avg = 0.0; 
+		for(int i=0; i<16; i++){
+			avg += m_t[(m_ptr+i)&15] + i*mean; 
+		}
+		avg /= 16; //16 measurements.
+		m_ptr++; 
+		long double ret = avg + mean; 
+		if(ret - time > 0.019) ret = time + 0.019;
+		//printf("mean: %llf pred +%llf\n", mean, ret - time); 
+		return ret; 
+	}
+};
 #endif
