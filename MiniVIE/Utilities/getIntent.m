@@ -1,10 +1,10 @@
-function [classOut,voteDecision,className,prSpeed,rawEmg,windowData,features2D] ...
+function [classDecision,voteDecision,className,prSpeed,rawSignals,filteredSignals,features2D] ...
     = getIntent(hSignalSource,hSignalClassifier)
 % Given a signal source and a classifier, derive intent based on the
 % current signal state
 
 % Initialize output
-[classOut,voteDecision,className,prSpeed] = deal([]);
+[classDecision,voteDecision,className,prSpeed] = deal([]);
 
 % Verify inputs
 if isempty(hSignalSource)
@@ -19,18 +19,18 @@ end
 numSamples = hSignalClassifier.NumSamplesPerWindow;
 hSignalSource.NumSamples = numSamples;
 
-rawEmg = hSignalSource.getData();
-windowData = hSignalSource.applyAllFilters(rawEmg);
+rawSignals = hSignalSource.getData();
+filteredSignals = hSignalSource.applyAllFilters(rawSignals);
 
 % Extract features and classify
-features2D = hSignalClassifier.extractfeatures(windowData);
+features2D = hSignalClassifier.extractfeatures(filteredSignals);
 activeChannelFeatures = features2D(hSignalClassifier.ActiveChannels,:);
-[classOut voteDecision] = hSignalClassifier.classify(reshape(activeChannelFeatures',[],1));
+[classDecision voteDecision] = hSignalClassifier.classify(reshape(activeChannelFeatures',[],1));
 
 if hSignalClassifier.NumMajorityVotes > 1
     cursorMoveClass = voteDecision;
 else
-    cursorMoveClass = classOut;
+    cursorMoveClass = classDecision;
 end
 
 virtualChannels = hSignalClassifier.virtual_channels(features2D,cursorMoveClass);

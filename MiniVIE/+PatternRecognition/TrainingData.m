@@ -217,8 +217,10 @@ classdef TrainingData < handle
             
             
             success = false;
-            
-            if nargin == 1
+            % If no input given, raise new dialog
+            % If valid file given, open directly
+            % If partial file given, open dialog with that info 
+            if (nargin == 1) || isempty(fname)
                 % Get filename interactively
                 FilterSpec = '*.trainingData';
                 [FileName,PathName,FilterIndex] = uigetfile(FilterSpec);
@@ -228,7 +230,10 @@ classdef TrainingData < handle
                 else
                     fullFile = fullfile(PathName,FileName);
                 end
-            elseif any(strfind(fname,'*'))
+            elseif exist(fname, 'file') == 2
+                % Get filename from function input literally
+                fullFile = fname;
+            else                
                 FilterSpec = fname;
                 [FileName,PathName,FilterIndex] = uigetfile(FilterSpec);
                 if FilterIndex == 0
@@ -237,9 +242,6 @@ classdef TrainingData < handle
                 else
                     fullFile = fullfile(PathName,FileName);
                 end
-            else
-                % Get filename from function input literally
-                fullFile = fname;
             end
             
             % Load data
@@ -271,6 +273,9 @@ classdef TrainingData < handle
             end
             if isfield(S,'activeChannels')
                 obj.ActiveChannels = S.activeChannels;
+            end
+            if isfield(S,'ActiveChannels')
+                obj.ActiveChannels = S.ActiveChannels;
             end
             
             % Restore raw data

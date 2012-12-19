@@ -369,7 +369,8 @@ classdef TrainingDataAnalysis
         end
         function filteredData = filter_data(dataIn)
             % filter Data
-            HPF = Inputs.HighPass(10,8,1000);
+            % note that if filtfilt is used, the filter order is doubled
+            HPF = Inputs.HighPass(10,2,1000);
             numEmgSamples = size(dataIn,3);
             filteredData = zeros(size(dataIn));
             for i = 1:numEmgSamples

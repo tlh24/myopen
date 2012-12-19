@@ -163,12 +163,15 @@ targetClass = hSignalClassifier.ClassNames{classToTest};
 structTrialLog.targetClass = targetClass;
 structTrialLog.classDecision = [];
 structTrialLog.voteDecision = [];
+structTrialLog.emgFrames = [];
+
 
 while (moveComplete == 0) && (~timerStarted || (toc < timeout)) ...
         && ishandle(handles.toggleStart) && get(handles.toggleStart,'Value')
     fprintf('Testing Class: %s | ',targetClass);
     set(handles.txtTarget,'ForegroundColor','k');
-    [classDecision,voteDecision,className,prSpeed]= getIntent(hSignalSource,hSignalClassifier);
+    [classDecision,voteDecision,className,prSpeed,rawEmg,windowData,features2D] ...
+        = getIntent(hSignalSource,hSignalClassifier);
     %     fprintf('Class=%2d; Vote=%2d; Class = %16s; S=%6.4f',...
     %         classDecision,voteDecision,className,prSpeed);
     
@@ -182,6 +185,7 @@ while (moveComplete == 0) && (~timerStarted || (toc < timeout)) ...
     
     structTrialLog.classDecision = [structTrialLog.classDecision classDecision];
     structTrialLog.voteDecision = [structTrialLog.voteDecision voteDecision];
+    structTrialLog.emgFrames =  cat(3,structTrialLog.emgFrames,rawEmg);
     
     if classDecision == classToTest
         numCorrectClasses = numCorrectClasses + 1;

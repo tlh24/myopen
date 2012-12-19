@@ -67,12 +67,14 @@ classdef ScenarioBase < Common.MiniVieObj
             
         end
         function start(obj)
-            if ~isempty(obj.Timer) && ishandle(obj.Timer) && strcmpi(obj.Timer.Running,'off')
+            % && ishandle(obj.Timer) <-- this is always false
+            if ~isempty(obj.Timer) && strcmpi(obj.Timer.Running,'off')
                 start(obj.Timer);
             end
         end
         function stop(obj)
-            if ~isempty(obj.Timer) && ishandle(obj.Timer) && strcmpi(obj.Timer.Running,'on')
+            % && ishandle(obj.Timer) <-- this is always false
+            if ~isempty(obj.Timer) && strcmpi(obj.Timer.Running,'on')
                 stop(obj.Timer);
             end
         end
