@@ -186,11 +186,11 @@ classdef Classifier < Common.MiniVieObj
             
             obj.ConfusionMatrix = confuseMat;
         end
-        function percentError = computeerror(obj)
+        function [normalizedError classError] = computeerror(obj)
             
             if ~obj.IsTrained
                 fprintf('[%s] Classifier untrained. Cannot compute error.\n',mfilename);
-                percentError = [];
+                normalizedError = [];
                 return
             end
             
@@ -203,16 +203,17 @@ classdef Classifier < Common.MiniVieObj
             classOut = classify(obj,feats);
             %numSamplesClassified = length(classOut);
             
-            percent_error = @(outputClass,desiredClass) ...
+            errorRate = @(outputClass,desiredClass) ...
                 sum( ((outputClass(:)-desiredClass(:))~=0) /length(desiredClass));
             
             % Calculate Error
-            PeTrain1 = percent_error(classOut,obj.TrainingData.getClassLabels);
+            PeTrain1 = errorRate(classOut,obj.TrainingData.getClassLabels);
             fprintf('Percent correctly classified: %6.1f %%\n',(1-PeTrain1)*100);
             %             PeTrain2 = percent_error(voteOut,obj.TrainingDataLabels);
             %             fprintf('Percent correctly classified after majority vote: %6.1f %%\n',(1-PeTrain2)*100);
             %             percentError = [PeTrain1 PeTrain2];
-            percentError = PeTrain1;
+            normalizedError = PeTrain1;
+            classError = zeros(1,obj.NumClasses);
             
             for iClass = 1:obj.NumClasses
                 trainingLabels = classLabels;
@@ -222,9 +223,9 @@ classdef Classifier < Common.MiniVieObj
                 targetClass = reshape(trainingLabels(idClass),1,[]);
                 actualClass = reshape(classOut(idClass),1,[]);
                 
-                PeClass = percent_error(actualClass,targetClass);
+                classError(iClass) = errorRate(actualClass,targetClass);
                 
-                fprintf('%20s Class accuracy:\t %6.1f %% \t',obj.ClassNames{iClass},(1-PeClass)*100);
+                fprintf('%20s Class accuracy:\t %6.1f %% \t',obj.ClassNames{iClass},(1-classError(iClass))*100);
                 
                 fprintf('(%d of %d)\n',sum(actualClass == targetClass),length(targetClass))
             end
