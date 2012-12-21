@@ -124,8 +124,11 @@ classdef UiTools
             % current date and time with extention reflecting contents
             % extension = '.assessmentLog'
             
-            filePrefix = 'JH_TH01_';  %TODO, abstract this
-            %filePrefix = 'AGH_';  %TODO, abstract this
+            tempFileName = 'defaultFilePrefix';
+            filePrefix = UiTools.load_temp_file(tempFileName);
+            if isempty(filePrefix)
+                filePrefix = 'FILE_';  %TODO, abstract this
+            end
             
             FilterSpec = ['*' extension];
             DialogTitle = 'Select File to Write';

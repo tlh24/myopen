@@ -7,7 +7,7 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
         NumRepetitions = 1;
         ContractionLengthSeconds = 2;
         DelayLengthSeconds = 2;
-        StartupWaitTimeSeconds = 3;
+        StartupWaitTimeSeconds = 5;
         
         EnablePictures = true;
     end
