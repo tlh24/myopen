@@ -53,9 +53,15 @@ classdef MiniVIE < Common.MiniVieObj
             % Setup Menu
             obj.hg.MenuFile = uimenu(obj.hg.Figure,...
                 'Label','File');
+            obj.hg.MenuFilePrefix = uimenu(obj.hg.MenuFile,...
+                'Label','Set Filename Prefix...',...
+                'Callback',@(src,evt)obj.setFilePrefix());
             obj.hg.MenuFileLoad = uimenu(obj.hg.MenuFile,...
-                'Label','Load Training Data',...
+                'Label','Load Training Data...',...
                 'Callback',@(src,evt)obj.loadData());
+            obj.hg.MenuFileSave = uimenu(obj.hg.MenuFile,...
+                'Label','Save Training Data...',...
+                'Callback',@(src,evt)obj.saveTrainingData());
             
             function closeFig(obj)
                 try
@@ -161,6 +167,35 @@ classdef MiniVIE < Common.MiniVieObj
                 'Callback',@(src,evt)obj.pbAssessment());
             
         end
+        function setFilePrefix(obj)
+            
+            tempFileName = 'defaultFilePrefix';
+
+            filePrefix = UiTools.load_temp_file(tempFileName);
+            if isempty(filePrefix)
+                filePrefix = 'FILE_';
+            end
+            
+            % Use these defaults
+            prompt={
+                'Enter file prefix ( e.g. VIE_03_ ):',...
+                };
+            name='File Parameters';
+            numlines=1;
+            defaultanswer={filePrefix};
+            answer = inputdlg(prompt,name,numlines,defaultanswer);
+            
+            if isempty(answer)
+                return
+            end
+            
+            assert(length(answer) == 1,'Expected 1 output');
+            
+            filePrefix = answer{1};
+            
+            UiTools.save_temp_file(tempFileName,filePrefix);
+            
+        end
         function loadData(obj)
             if isempty(obj.SignalSource)
                 errordlg('Select an Input Source');
@@ -170,7 +205,7 @@ classdef MiniVIE < Common.MiniVieObj
                 return;
             end
             
-            assert(~isempty(obj.TrainingData),'Training Data module does not exist'); 
+            assert(~isempty(obj.TrainingData),'Training Data module does not exist');
             
             success = obj.TrainingData.loadTrainingData;
             if ~success
@@ -187,6 +222,20 @@ classdef MiniVIE < Common.MiniVieObj
             obj.SignalClassifier.train();
             obj.SignalClassifier.computeerror();
             obj.SignalClassifier.computeGains();
+            
+        end
+        function saveTrainingData(obj)
+            if isempty(obj.SignalSource)
+                errordlg('Select an Input Source');
+                return;
+            elseif isempty(obj.SignalClassifier)
+                errordlg('Select a Classifier');
+                return;
+            end
+            
+            assert(~isempty(obj.TrainingData),'Training Data module does not exist');
+            
+            obj.TrainingData.saveTrainingData;
             
         end
         function close(obj)
@@ -385,7 +434,7 @@ classdef MiniVIE < Common.MiniVieObj
                             };
                         name='Input for Training Interface';
                         numlines=1;
-                        defaultanswer={'4','2','3','Y'};
+                        defaultanswer={'2','4','3','Y'};
                         answer=inputdlg(prompt,name,numlines,defaultanswer);
                         assert(length(answer) == 4,'Expected 4 outputs');
                         vals = str2double(answer);

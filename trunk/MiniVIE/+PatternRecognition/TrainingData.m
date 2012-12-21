@@ -295,7 +295,7 @@ classdef TrainingData < handle
             
             success = true;
         end        
-        function saveTrainingData(obj)
+        function success = saveTrainingData(obj)
             % Save Training Data
             
             fullFilename = UiTools.ui_select_data_file('.trainingData');
@@ -314,6 +314,8 @@ classdef TrainingData < handle
             activeChannels = obj.ActiveChannels; %#ok<NASGU>
             
             save(fullFilename,'features3D','classLabelId','classNames','activeChannels','signalData');
+            
+            success = true;
             
         end
         function removeTrainingData(obj,iClass)
