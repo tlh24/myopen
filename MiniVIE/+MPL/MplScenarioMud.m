@@ -11,7 +11,7 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
         hMicroStrainGX2 = [];
         hTactors;
         
-        enableNfu = 1; %true;
+        enableNfu = 0; %true;
         enableMicroStrain = 0; %true;
         
         EnableFeedback = 0;
