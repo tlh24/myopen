@@ -1,5 +1,11 @@
 function demoPnet
 % Demo pnet usage
+% This demo creates a timer function to parse and receive udp traffic.
+% Once established the test script will begin transmitting data.  Data
+% messages are received asyncrouously and displayed
+%
+
+% may be needed for cleanup
 % pnet('closeall')
 
 % Step one: setup a port for receive UDP data
@@ -21,7 +27,7 @@ hTimer.Period = 0.02; % refresh rate (seconds)
 start(hTimer);
 
 % Step 3: create a seperate port from which we will send data
-sendPortNumber = 6006;
+sendPortNumber = 6066;
 udpCmdSocket = pnet('udpsocket',sendPortNumber);
 % check for validity
 assert(udpCmdSocket >= 0,'Failed to open send socket');
