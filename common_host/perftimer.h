@@ -45,7 +45,7 @@ public:
 //keeps track of when vsyncs occur in order to predict the next one. 
 class VsyncTimer{
 public:
-	long double		m_t[16]; //last 8 vsync times. 
+	long double		m_t[16]; //last 16 vsync times. 
 	int				m_ptr; 
 	
 	VsyncTimer(){
