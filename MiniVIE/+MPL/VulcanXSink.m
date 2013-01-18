@@ -2,7 +2,7 @@ classdef VulcanXSink < MPL.DataSink
     properties
         address
         port              % remote destination port
-        localport = 9099; % local transmit port
+        localport = 9098; % local transmit port
         id
         handle
     end
@@ -21,7 +21,7 @@ classdef VulcanXSink < MPL.DataSink
             
             obj.handle = pnet('udpsocket', obj.localport);
             if obj.handle == -1
-                error(['Unable to open port ' port '.'])
+                error('Unable to open local port: %d ',obj.localport);
             end
             pnet(obj.handle, 'udpconnect', obj.address, port);
         end

@@ -2,6 +2,9 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
     % Scenario for controlling JHU/APL MPL
     % Requires Utilities\UiTools
     %
+    % This scenario is used in two cases, either with VulcanX running
+    % locally to the CAN bus, or via a router directly to the NFU
+    %
     % 01-Sept-2010 Armiger: Created
     properties
         % Handles
@@ -31,10 +34,17 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
         VulcanXAddress = '192.168.1.199'; %127.0.0.1
         VulcanXPort = 9027; %9035
         
+        TactorIds = [3 4]
+        
         localRoc = [];
+        
     end
     methods
         function obj = MplScenarioMud
+            % Creator
+        end
+        function initialize(obj,SignalSource,SignalClassifier,TrainingData)
+
             % Extend Scenario model to include communications with the
             % limb system via vulcanX or the NFU
             
@@ -53,7 +63,7 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
                 
                 % TODO: abstract tactor ids and mapping
                 %tactorIds = [5 6 7];
-                tactorIds = [3 4];
+                tactorIds = obj.TactorIds;
                 for iTactor = tactorIds
                     fprintf('[%s] Setting up tactor id# %d\n',mfilename,iTactor);
                     obj.hTactors = [obj.hTactors HapticAlgorithm(obj.hNfu,iTactor)];
@@ -73,12 +83,16 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
                             obj.msComPortStr, obj.msNodeInt, obj.msChannelInt);
                     end
                     
-                    % Assume MicroStrain is in home position (attached to
-                    % user's tricep, antenna pointed toward user's
-                    % shoulder, arm hanging loosely).
+                    % Assume MicroStrain (upper arm) is in home position 
+                    % (attached to user's tricep, antenna pointed toward 
+                    % user's shoulder, arm hanging loosely).
                     obj.home();
                 end
             end
+
+            % Remaining superclass initialize methods
+            initialize@Scenarios.OnlineRetrainer(obj,SignalSource,SignalClassifier,TrainingData);
+
         end
         function home(obj)
             if ~isempty(obj.hMicroStrainGX2)
@@ -159,9 +173,7 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
         function update_feedforward(obj)
             % Get current joint angles and send commands to VulcanX or NFU
             
-            
-            
-            % TODO: Hand and wrist only implemented, not upper arm
+            % TODO: Hand and wrist and elbow only implemented, not upper arm
             w = zeros(1,3);
             w(1) = -obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) * pi/180;
             w(2) = +obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) * pi/180;
@@ -175,8 +187,16 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
             
             [w, e, graspValue, graspId] = manualOverRide(w,e, obj.GraspValue,graspId);
             
+            % 1/17/2013 RSA: Implemented switchout case for vulcan x or
+            % nfu.  Also nfu local roc tables are currently disabled
             
-            obj.hNfu.sendUpperArmHandRoc([zeros(1,3) e w],graspId,graspValue);
+            if obj.enableNfu
+                obj.hNfu.sendUpperArmHandRoc([zeros(1,3) e w],graspId,graspValue);
+            else
+                % Send to vulcanX
+                msg = obj.hMud.ArmPosVelHandRocGrasps([zeros(1,3) e w],zeros(1,7),1,graspId,graspValue,1);
+                obj.hSink.putbytes(msg);
+            end
             
             return
             
