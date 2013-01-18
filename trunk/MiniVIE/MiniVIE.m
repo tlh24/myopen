@@ -502,8 +502,41 @@ classdef MiniVIE < Common.MiniVieObj
                         start(h.Timer);
                         obj.println('Presentation setup complete',1);
                     case 'MplScenarioMud'
+%%                        
+                        QA = {
+                            'Enable NFU (y/n):'                     'y'
+                            'Destination IP (192.168.1.199):'       '127.0.0.1'
+                            'Destination Port (9027):'              '9027'
+                            'Enable Tactors (y/n)'                  'y'
+                            'Tactor Ids ([5 6 7]):'                 '[3 4]'
+                            'Enable Orientation Sensors (y/n):'     'n'
+                            };
+                        name = 'MPL Control Interface';
+                        numlines = 1;
+                        prompt = QA(:,1);
+                        defaultanswer = QA(:,2);
+                        answer = inputdlg(prompt,name,numlines,defaultanswer);
+                        if isempty(answer)
+                            % User Cancelled
+                        end
+                        
+                        assert(length(answer) == 6,'Expected 6 outputs');
+
                         obj.println('Setting up presentation...',1);
                         h = MPL.MplScenarioMud;
+                        h.enableNfu = strncmpi(answer{1},'y',1);
+                        h.VulcanXAddress = answer{2}; % TODO: Validate
+                        
+                        port = str2double(answer{3});
+                        assert(~isnan(port),'Invalid Port');
+                        h.VulcanXPort = port; 
+                        %h.VulcanXPort = answer{3}; 
+                        
+                        h.EnableFeedback = strncmpi(answer{4},'y',1);
+                        h.TactorIds = answer{5}; % TODO: Validate
+                        
+                        h.enableMicroStrain = strncmpi(answer{6},'y',1);
+                        
                         h.initialize(obj.SignalSource,obj.SignalClassifier,obj.TrainingData);
                         h.update();
                         h.Verbose = 0;
@@ -598,13 +631,19 @@ classdef MiniVIE < Common.MiniVieObj
         function pbClassifierProperties(obj)
             
             % Use these defaults
-            prompt={
-                'Enter Majority Votes (e.g. 7):',...
+            prompt = {
+                'Enter Majority Votes (e.g. 7):'
                 };
-            name='Classifier Parameters';
-            numlines=1;
-            defaultanswer={'7'};
-            answer=inputdlg(prompt,name,numlines,defaultanswer);
+            name = 'Classifier Parameters';
+            numlines = 1;
+            defaultanswer = {'7'};
+            answer = inputdlg(prompt,name,numlines,defaultanswer);
+            
+            if isempty(answer)
+                % user cancelled
+                return
+            end
+            
             assert(length(answer) == 1,'Expected 1 output');
             convertedVal = str2double(answer{1});
             assert(~isnan(convertedVal),'Expected a number');
