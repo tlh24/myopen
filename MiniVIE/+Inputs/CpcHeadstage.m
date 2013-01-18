@@ -3,6 +3,9 @@ classdef CpcHeadstage < Inputs.SignalInput
     % Contains methods for creating and parsing messages
     % as well as parsing streaming data
     % 14Mar2012 Armiger: Created
+    % 15Jan2013 Armiger: Updated signal parsing to search for only start
+    % characters ('128') since start sequence [128 0 0] cannot be relied
+    % upon if transmission errors occur
     
     properties (Constant = true)
         msgIdStartStreaming = 1;
@@ -86,7 +89,7 @@ classdef CpcHeadstage < Inputs.SignalInput
             % Validate a matrix of messages using a criteria of checksum,
             % appropriate message length, and status bytes
             %
-            % alignedData should size [numBytesPerMessage numMessages]
+            % alignedData should be size [numBytesPerMessage numMessages]
             %
             % 14Mar2012 Armiger: Created
             
@@ -172,16 +175,21 @@ classdef CpcHeadstage < Inputs.SignalInput
             % Find all start chars ('128') and index the next set of bytes
             % off of these starts.  This could lead to overlapping data
             % but valid data will be verified using the checksum
-            
-            %idxStartBytes = find((dataStream == 128));
-            % TODO: this could be a problem if msg id, length, or checksum
-            % errors occur
-            bytePattern = [128 0 0];
-            idxStartBytes = strfind(dataStream,bytePattern);
-            assert(~isempty(idxStartBytes),...
-                'No start sequence [%d %d %d] found in data stream of length %d.  Try resetting CPCH',...
+
+            searchMethod = 1;
+            if searchMethod == 1
+                idxStartBytes = find((dataStream == 128));
+            else
+                % TODO: this could be a problem if msg id, length, or checksum
+                % errors occur
+                bytePattern = [128 0 0];
+                idxStartBytes = strfind(dataStream,bytePattern);
+            end
+            if isempty(idxStartBytes)
+                disp(dataStream);
+                error('No start sequence [%d %d %d] found in data stream of length %d.  Try resetting CPCH',...
                 bytePattern,length(dataStream));
-            
+            end
             % Check if there are too few bytes between the last start
             % character and the end of the buffer
             isInRange = idxStartBytes <= 1+length(dataStream)-msgSize;
