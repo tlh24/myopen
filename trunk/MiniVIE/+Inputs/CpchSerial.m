@@ -1,6 +1,23 @@
 classdef CpchSerial < Inputs.CpcHeadstage
     % Class for interfacing CPCH via serial port
     %
+    % % Example Usage:
+    % obj = Inputs.CpchSerial('COM11',...
+    %     uint16(hex2dec('FFFF')),uint16(hex2dec('FFFF')));
+    % fprintf('Adding Filters\n');
+    % Fs = 1000;
+    % obj.addfilter(Inputs.HighPass(10,8,Fs));
+    % h.addfilter(Inputs.Notch(60.*(1:4),5,Fs));
+    % obj.NumSamples = 2000;
+    % obj.initialize();
+    %
+    % % Get raw data.  [numSamples x numChannels]
+    % data = obj.getData();
+    %
+    % % Get data with filters applied
+    % filteredData = obj.getFilteredData();
+    %
+    %
     % Oct-2011 Helder: Created
     % 13Mar2012 Armiger: Improved efficiancy of data processing from raw
     % bytes to data vals.  Added support for singleEnded data streaming
