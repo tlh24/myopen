@@ -229,7 +229,7 @@ classdef ScenarioBase < Common.MiniVieObj
                 otherwise
                     desiredGraspVelocity = 0;
                     if isGraspClass
-                        fprintf('Unmatched grasp: "%s"\n',graspName);
+                        fprintf('[%s.m] Unmatched grasp: "%s"\n',mfilename,graspName);
                     end
             end
             
