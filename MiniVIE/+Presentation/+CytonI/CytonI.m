@@ -33,13 +33,22 @@ classdef CytonI < Presentation.CytonI.Robot
     %   setTarget(hDisplay,makehgtform('translate',[100 100 100],'yrotate',randn))
     %
     %   hSphere = hDisplay.setTargetSphereRadius(50)
-    %   set(hSphere,'FaceAlpha',0.2)    
+    %   set(hSphere,'FaceAlpha',0.2)
     %
     %
     % The Control Module:
-    %   hControls = obj.hControls;  
+    %   hControls = obj.hControls;
     %
     %   hControls.
+    %
+    %
+    % Example with user inerface for sliders:
+    % 
+    %   import Presentation.CytonI.*
+    %   hCyton = CytonI;
+    %   hCyton.guiJointSliders;
+    %
+    %
     % This is just a first cut and we can elaborate more as we go.  (e.g. TODO: add individual joint speeds).
     % I also incorporated the Cyton Serial functions into a single class file.  I did this by adding the
     % theta = cyton_serial_cmd2theta(cmd_str, oldTheta)
@@ -49,10 +58,11 @@ classdef CytonI < Presentation.CytonI.Robot
     % "Plant Running" means that the commands to the robot will be limited
     % to actual movement velocities in approximately real time.  If the
     % plant is 'off' then position updates will happen instantaneously
-    % 
+    %
     % Revision History:
     % 2011Jan01 Armiger: Created
     % 2012Mar05 Armiger: Updated comments to reflect private plant properties
+    % 2013Jan25 Armiger: Added slider interface
     
     properties
         ControlMode = Presentation.CytonI.CytonControls.JointPositionMode;
@@ -79,7 +89,7 @@ classdef CytonI < Presentation.CytonI.Robot
             
             obj.hControls = CytonControls(obj);
             obj.hPlant = CytonPlant;
-
+            
             % Set Default Position
             setJointParameters(obj,zeros(obj.NumDof,1));
             
@@ -90,6 +100,82 @@ classdef CytonI < Presentation.CytonI.Robot
             start(obj.hPlant);
             start(obj.hDisplay);
         end
+        function guiJointSliders(obj)
+            % Launch a slider control window
+            %
+            % 1/25/2013 Armiger: Created
+            
+            % Cyton I
+            jointNames = {
+                'SHOULDER_ROLL'
+                'SHOULDER_PITCH'
+                'SHOULDER_YAW'
+                'ELBOW_PITCH'
+                'WRIST_ROLL'
+                'WRIST_PITCH'
+                'WRIST_YAW'
+                'GRIPPER'
+                };
+            % Cyton Gamma
+            % jointNames = {
+            %     'SHOULDER_ROLL'
+            %     'SHOULDER_PITCH'
+            %     'SHOULDER_YAW'
+            %     'ELBOW_PITCH'
+            %     'ELBOW_YAW'
+            %     'WRIST_PITCH'
+            %     'WRIST_ROLL'
+            %     'GRIPPER'
+            %     };
+            numJoints = length(jointNames);
+            
+            % Variable to store angles while updated
+            jointAngles = zeros(1,numJoints);
+            
+            % Create GUI
+            guiName = 'Cyton Sliders';
+            hFigure = UiTools.create_figure(guiName,'guiClassifierChannels');
+            clf(hFigure);
+            
+            hAxes = zeros(1,numJoints);
+            hSlider = cell(1,numJoints);
+            hText = zeros(1,numJoints);
+            for i = 1:numJoints
+                hAxes(i) = subplot(1,numJoints,i,'Parent',hFigure);
+                set(hAxes(i),'XTick',[]);
+                if i > 1
+                    set(hAxes(i),'YTick',[]);
+                end
+                ylim(hAxes(i),[-2 2]);
+                
+                hText(i) = text('Position',[0.5 1.9],'String',jointNames{i},...
+                    'Rotation',90,'Parent',hAxes(i),'Interpreter','None','HorizontalAlignment','Right');
+                
+                hSlider{i} = GUIs.widgetSlider('Parent',hAxes(i));
+                hSlider{i}.Range = [-2 2];
+                hSlider{i}.Type = {'Vertical'};
+                hSlider{i}.PatchWidth = 0.15;
+                hSlider{i}.Value = 0;
+                
+            end
+            
+            % Set GUI callbacks to update robot position
+            for i = 1:numJoints
+                % Send update on motion
+                hSlider{i}.ButtonMotionFcn = @(src,evt)updateAngles(i,evt);
+                % Send update on button up
+                hSlider{i}.ButtonUpFcn = @(src,evt)updateAngles(i,evt);
+            end
+            
+            % nested callback function to send updates joint angles
+            function updateAngles(classId,val)
+                jointAngles(classId) = val;
+                %cyton(0,jointAngles);
+                obj.setJointIdValue(classId,val);
+                fprintf('Angles = [ %6.2f %6.2f %6.2f %6.2f %6.2f %6.2f %6.2f %12.8f ]\n',jointAngles);
+            end
+        end
+        
         function connectToHardware(obj,strComPort)
             obj.hPlant.connectToHardware(strComPort);
         end
@@ -186,9 +272,9 @@ classdef CytonI < Presentation.CytonI.Robot
             end
         end
         function solutionLocus = testElbow(obj,endpointPosition)
-
+            
             solutionLocus = CytonControls.solveWristEndpoint(endpointPosition);
-
+            
             setJointParameters(obj,zeros(8,1))
             while ~all(obj.hPlant.isMoveComplete)
                 disp('Going to home');
@@ -200,7 +286,7 @@ classdef CytonI < Presentation.CytonI.Robot
                 q(2) = q(2) - pi/2;
                 obj.setJointParameters([q' 0 0 0 0]);
                 obj.hDisplay.updateFigure;
-
+                
                 drawnow
             end
         end
