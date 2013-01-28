@@ -9,7 +9,9 @@ classdef CytonI < Presentation.CytonI.Robot
     %   obj.setJointParameters(0.5*randn(8,1));
     %
     % %Note you can set the speed as
-    %   obj.hPlant.setDesiredSpeed(1); % rad/s
+    %   obj.hPlant.setDesiredSpeed(1); % rad/s (globally)
+    % % Or set speeds on a per joint basis
+    %   obj.hPlant.setDesiredSpeed([1 0.2 0.3 0.4 0.5 0.6 0.7 0.8]); % rad/s (globally)
     %
     % %Additionally you can check to see if all moves are complete by
     %   allComplete = obj.hPlant.allMovesComplete
