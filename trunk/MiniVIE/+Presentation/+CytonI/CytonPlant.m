@@ -11,16 +11,21 @@ classdef CytonPlant < hgsetget
     %     end
     %     toc
     % Move should take about 1 second
+    %
+    % Note the scalar property "GlobalMaxSpeed" applies to and limits the
+    % DesiredSpeed array. This prevents the plant from running at
+    % unrealistic speeds which the actual robot can't achieve.  In
+    % cases where instant move are required, the plant should simply be
+    % turned off
     
     % 2011Feb07 Armiger: Created
     % 2012Mar05 Armiger: Updated comments
     %
-    %
-    % TODO: make joint speeds on a per-joint basis
     properties
         Verbose = 0;
         ApplyLimits = true;
-        MaxSpeed = 2;       % rad/s
+        
+        GlobalMaxSpeed = 2;       % rad/s 
     end
     properties (SetAccess = private)
         hTimer
@@ -47,9 +52,15 @@ classdef CytonPlant < hgsetget
             value = strcmpi(obj.hTimer.Running,'on');
         end
         function setDesiredSpeed(obj,Value)
-            obj.DesiredSpeed = max(min(Value(:),obj.MaxSpeed),0);
+            obj.DesiredSpeed = max(min(Value(:),obj.GlobalMaxSpeed),0);
         end
         function setDesiredPosition(obj,Value)
+            % Sets the desired velocity of the cyton robot joints.  
+            % Usage: 
+            % % Set joint speed globally
+            %   obj.hPlant.setDesiredSpeed(1); % rad/s (globally)
+            % % Set speeds on a per joint basis
+            %   obj.hPlant.setDesiredSpeed([1 0.2 0.3 0.4 0.5 0.6 0.7 0.8]); % rad/s (globally)
             obj.DesiredPosition = Value(:);
             
             if obj.ApplyLimits
@@ -89,6 +100,8 @@ classdef CytonPlant < hgsetget
             obj.hTimer.Period = 0.02;
         end
         function allComplete = allMovesComplete(obj)
+            % Check to see if position commands have yet to complete (due
+            % to velocity limiting)
             allComplete = all(isMoveComplete(obj));
         end
         function isComplete = isMoveComplete(obj)
