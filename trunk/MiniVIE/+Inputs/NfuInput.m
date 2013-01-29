@@ -51,7 +51,7 @@ classdef NfuInput < Inputs.CpcHeadstage
             
             cellData = obj.hNfu.get_buffer(1);
             if isempty(cellData)
-                fprintf('[%s] No Data\n',mfilename);
+                %fprintf('[%s] %s No Data\n',mfilename, datestr(now));
             end
 
             % Determine expected packet size
@@ -72,7 +72,6 @@ classdef NfuInput < Inputs.CpcHeadstage
             for i = 1:length(cellData)
                 % TODO verify packet order
                 stream = cellData{i};
-                
                 
                 % First 6 bytes of messgae are global header
                 data = reshape(stream(numPacketHeaderBytes+1:cpchpacketSize),numBytesPerSample,numSamplesPerPacket);

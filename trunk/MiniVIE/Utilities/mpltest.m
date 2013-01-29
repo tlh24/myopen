@@ -12,7 +12,7 @@ fprintf('Which Test?\n');
 cellTests = {
     'Ping01',       '[1] Ping router using OS [ping 192.168.1.1 -t]'
     'Ping02',       '[2] Ping limb system using OS [ping 192.168.1.111 -t]'     
-    'Telnet01',     '[3] Open telnet session via plink [plink -telnet 192.168.1.111]'
+    'Telnet01',     '[3] Open telnet session (pkgmgr /iu:"TelnetClient") [telnet 192.168.1.111]'
     'Pnet01',       '[4] basic pnet tcpsocket and tcplisten on 6200'
     'NfuStream01',  '[5] NFU Streaming [Inputs.NfuInput]'
     'MplWrist01',   '[6] Test MPL wrist range of motion [MPL.NfuUdp.getInstance MPL.MudCommandEncoder]'
@@ -43,7 +43,7 @@ switch testId
     case 'Ping02'
         !ping 192.168.1.111 -t
     case 'Telnet01'
-        !plink -telnet 192.168.1.111
+        !telnet 192.168.1.111
     case 'NfuStream01'
         
         h = Inputs.NfuInput();

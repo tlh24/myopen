@@ -13,9 +13,13 @@ classdef (Sealed) NfuUdp < handle
     %
     % Note data streams start in the initialize function
     %
+    %
+    % Note: cellData = get_buffer(obj,id) currently uses two methods for
+    % percepts and for EMG data.  one with flipud and one without.  Needs
+    % to be investigated further
     properties
         
-        Hostname = '192.168.1.111';
+        Hostname = '192.168.1.111';  % Destination
         UdpStreamReceivePortNumLocal = 9027
         TcpPortNum = 6200;
         UdpCommandPortNumLocal = 52000;  % This is where udp commands originate locally
@@ -111,6 +115,9 @@ classdef (Sealed) NfuUdp < handle
             % Enable CPCH Data
             fprintf('[%s] Enabling CPCH Data Stream\n',mfilename);
             obj.enableStreaming(1);
+            % 1/28/2012 RSA, KDK observed cpc stream did not start without
+            % delay between messages
+            pause(0.1);
             
             % Enable Percepts
             fprintf('[%s] Enabling Percepts Data Stream\n',mfilename);
@@ -204,7 +211,7 @@ classdef (Sealed) NfuUdp < handle
             obj.localRoc = MPL.RocTable.createRocTables('test.xml');
         end
         function sendAllJoints(obj,jointAngles)
-
+            
             p = zeros(27,1);
             if length(jointAngles) == 7
                 p(1:7) = jointAngles;
@@ -220,7 +227,7 @@ classdef (Sealed) NfuUdp < handle
             
         end
         function sendUpperArmHandLocalRoc(obj,upperJointAngles,RocId,RocVal)
-
+            
             % use local ROC's
             assert(RocVal >= 0,'RocVal < 0');
             assert(RocVal <= 1,'RocVal > 1');
@@ -237,15 +244,16 @@ classdef (Sealed) NfuUdp < handle
             % override remote ROC
             sendUpperArmHandLocalRoc(obj,upperJointAngles,RocId,RocVal);
             return
-
+            
             msg = obj.hMud.ArmPosVelHandRocGrasps(upperJointAngles,zeros(1,7),1,RocId,RocVal,1);
             obj.sendUdpCommand(char(59,msg));  % append nfu msg header
-
+            
         end
         
         function sendUdpCommand(obj,msg)
             %sendUdpCommand(obj,msg)
             % send a udp message to the command socket
+            
             
             obj.send_udp( obj.UdpCommandSocket, msg,...
                 obj.Hostname, obj.UdpCommandPortNumRemote);
@@ -367,9 +375,9 @@ classdef (Sealed) NfuUdp < handle
                     
                     % return newest signals first
                     %idx = flipud(find(idOfInterest));
-                    idx = find(idOfInterest);
+                    %idx = find(idOfInterest);
                     
-                    cellData = obj.UdpBuffer1(idx);
+                    cellData = obj.UdpBuffer1(idOfInterest);
                     
                     obj.newData1(:) = false;
                     
@@ -396,7 +404,8 @@ classdef (Sealed) NfuUdp < handle
         end
         function update(obj)
             % Update function reads any buffered udp packets and stores
-            % them for later use
+            % them for later use.  Packets are routed based on size to the
+            % appropriate buffer
             
             assert(isequal(pnet(obj.UdpStreamReceiveSocket,'status'),6),...
                 'pnet socket is disconnected but not closed');
@@ -414,6 +423,8 @@ classdef (Sealed) NfuUdp < handle
                 end
                 
                 if (len == 406) || (len == 726)
+                    % Store EMG Data
+                    %
                     % advance packet counter
                     obj.numPacketsReceived = obj.numPacketsReceived + 1;
                     
@@ -429,6 +440,8 @@ classdef (Sealed) NfuUdp < handle
                     
                     obj.sum1 = obj.sum1 + 1;
                 elseif (len == 131) || (len == 143)
+                    % Store percept data
+                    
                     % advance packet counter
                     obj.numPacketsReceived = obj.numPacketsReceived + 1;
                     
@@ -444,13 +457,63 @@ classdef (Sealed) NfuUdp < handle
                     
                     obj.sum2 = obj.sum2 + 1;
                     
+                elseif (len == 32)
+                    % Store heartbeat message
+                    % typedef struct
+                    % {
+                    %      System_state_mode_type limb_state_mode; // should be 4 bytes
+                    %      Int32u number_of_cpchs_messages;
+                    % }Heartbeat_msg;
+                    %
+                    %
+                    % typedef enum System_state_mode_type
+                    % {
+                    %      SW_STATE_INIT                      = 0,
+                    %      SW_STATE_PRG                       = 1,
+                    %      SW_STATE_FS                        = 2,
+                    %      SW_STATE_NOS_CONTROL_STIMULATION   = 3,
+                    %      SW_STATE_NOS_IDLE                  = 4,
+                    %      SW_STATE_NOS_SLEEP                 = 5,
+                    %      SW_STATE_NOS_CONFIGURATION         = 6,
+                    %      SW_STATE_NOS_HOMING                = 7,
+                    %      SW_STATE_NOS_DATA_ACQUISITION      = 8,
+                    %      SW_STATE_NOS_DIAGNOSTICS           = 9,
+                    %      SW_STATE_NUM_STATES                = 10
+                    % } System_state_mode_type;
+                    
+                    cellStates = {
+                        'SW_STATE_INIT'
+                        'SW_STATE_PRG'
+                        'SW_STATE_FS'
+                        'SW_STATE_NOS_CONTROL_STIMULATION'
+                        'SW_STATE_NOS_IDLE'
+                        'SW_STATE_NOS_SLEEP'
+                        'SW_STATE_NOS_CONFIGURATION'
+                        'SW_STATE_NOS_HOMING'
+                        'SW_STATE_NOS_DATA_ACQUISITION'
+                        'SW_STATE_NOS_DIAGNOSTICS'
+                        'SW_STATE_NUM_STATES'
+                        };
+                    try
+                        newData = pnet(obj.UdpStreamReceiveSocket,'read',len,'UINT8');
+                        SW_STATE = typecast(newData(1:4),'uint32');
+                        numMsgs = typecast(newData(5:8),'uint32');
+                        nfuStreaming = typecast(newData(9:16),'uint64');
+                        lcStreaming = typecast(newData(17:24),'uint64');
+                        cpchStreaming = typecast(newData(25:32),'uint64');
+                        
+                        fprintf('[%s] NFU: State = "%s", CPC msgs = "%d", Streaming NFU = %d LC = %d CPCH = %d\n',...
+                            mfilename,cellStates{SW_STATE},numMsgs,nfuStreaming,lcStreaming,cpchStreaming);
+                    catch ME
+                        disp(newData)
+                        fprintf('[%s] Error parsing heartbeat.  Msg: %s \n',mfilename, ME.message);
+                        
+                    end
                 elseif len > 0
                     %len
-                    error('Unexpected Packet Size.');
+                    error('Unexpected Packet Size: %d bytes',len);
                 end
             end
-            
-            
         end
     end
     methods (Static)
@@ -488,7 +551,7 @@ classdef (Sealed) NfuUdp < handle
             pnet( sock, 'write', msg );
             pnet( sock, 'writepacket', hostname, port );
             
-        end        
+        end
         function [ msg ] = msg_enable_streaming( type )
             %enable_streaming Summary of this function goes here
             %   Detailed explanation goes here
