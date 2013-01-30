@@ -5,7 +5,7 @@ clf(f)
 
 % classNames = GUIs.guiClassifierChannels.getSavedDefaults();
 assert(~isempty(obj.SignalClassifier),'Classifier does not exist');
-classNames = obj.SignalClassifier.ClassNames;
+classNames = obj.SignalClassifier.getClassNames;
 
 N = length(classNames);
 s = zeros(1,N);

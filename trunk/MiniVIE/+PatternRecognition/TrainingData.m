@@ -1,26 +1,27 @@
-classdef TrainingData < handle
+classdef (Sealed) TrainingData < handle
     % Class to hold pattern recognition training data
     % Methods will include those to recompute features from data and to
     % extract data signals on a per-class basis
     % Also, add ability to remove data from certain classes
     %
-    % The class should operate in passive mode is just reading saved data,
+    % The class should operate in passive mode if just reading saved data,
     % but also has an active mode that would get data and add to the
     % archive
     %
+    % This class is required by classifier objects on initialization
+    %
+    %
     % 2012May14 Armiger: Created
     properties
-        ClassNames = {};
-        ActiveChannels = [];
-    end
-    properties
         MaxSamples = 1e4;
+        ActiveChannels = [1 3];
+        ClassNames = {'MotionA' 'MotionB' 'No Movement'};
     end
-    properties (SetAccess = protected)
+    properties (SetAccess = private)
         SampleCount = 0;
         SampleRate = [];
     end
-    properties (Access = protected)
+    properties (Access = private)
         SignalDataRaw = [];
         SignalFeatures3D = [];
         ClassLabelId = [];

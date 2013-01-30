@@ -21,7 +21,7 @@ hNfu.setParam(WRISTFE_manualOverride,0);
 %% Route input channels to pattern recognition
 %Note this isn't necessary since all channels can go to pattern rec
 % PR_channelMask.Value(:) = 1;
-% id = obj.SignalClassifier.ActiveChannels;
+% id = obj.SignalClassifier.getActiveChannels;
 % PR_channelMask.Value(id) = 1;
 % update_param(pnet_conn,PR_channelMask);
 %% Majority Vote
@@ -43,11 +43,12 @@ PR_graspGains.Value; % 1 is open, 2:17 are grasp gains
 %idClass = %% match the selected classes to the correct column
 numFeatures = obj.SignalClassifier.NumFeatures;
 numActiveChannels = obj.SignalClassifier.NumActiveChannels;
-activeChannels = obj.SignalClassifier.ActiveChannels;
+activeChannels = obj.SignalClassifier.getActiveChannels;
 
 PR_Wg.Value(:) = 0;
 for iClass = 1:size(obj.SignalClassifier.Wg,2)
-    className = obj.SignalClassifier.ClassNames{iClass};
+    classNames = obj.SignalClassifier.getClassNames;
+    className = classNames{iClass};
     if strcmpi(className,'Hand Open')
         targetClassId = 15;
     elseif ~isempty(strfind(className,'Grasp'))

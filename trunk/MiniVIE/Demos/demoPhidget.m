@@ -1,10 +1,8 @@
-addpath('C:\usr\Dropbox\Human Robotics Interaction Class Dorsey\Code\Phidget')
-addpath('C:\usr\Myopen\MiniVIE');
-addpath('C:\usr\Myopen\MiniVIE\Utilities');
-addpath('C:\usr\Dropbox\Human Robotics Interaction Class Dorsey\Code\CytonI');
-
-hPhidget = PhidgetAccel();
+% Demo phidget with cyton robot
+hPhidget = Inputs.PhidgetAccel();
 hPhidget.initialize
+
+import Presentation.CytonI.*
 hCyton = CytonI;
 
 %%

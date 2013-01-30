@@ -1,7 +1,7 @@
 % MinivVIE tutorial
 % 1/25/2011  - At present the MiniVIE is more of a software API, rather
-% than a turn-key application.  If you are not already familiar with object 
-% oriented programming in Matlab, please review the articles 
+% than a turn-key application.  If you are not already familiar with object
+% oriented programming in Matlab, please review the articles
 % "Object-Oriented Programming" in the Matlab User's Guide under Help
 
 %% Step 0: Setup VIE software
@@ -55,8 +55,10 @@ GUIs.guiSignalViewer(SignalSource); % <-- Use this to visualize signals
 
 %% Step 3: Setup Classifier, Select Channels in use
 SignalClassifier = SignalAnalysis.Lda();
-SignalClassifier.ActiveChannels = 1:4;  % <-- Update active channels
-SignalClassifier.initialize();
+TrainingData = PatternRecognition.TrainingData();
+SignalClassifier.initialize(TrainingData);
+
+SignalClassifier.setActiveChannels(1:4);  % <-- Update active channels
 SignalClassifier.uiEnterClassNames
 
 % Scenario will each have their own inputs which need to be mapped to
@@ -66,36 +68,35 @@ SignalClassifier.uiEnterClassNames
 % Air Guitar Hero has Index, Middle, Ring
 % Breakout has Left Right, No Movement
 
-%% Step 4: Setup TrainingInterface
+%% Step 4: Setup TrainingInterface and data store
 TrainingInterface = PatternRecognition.SimpleTrainer();
 
 %% Step 4a: Collect New Data
 TrainingInterface.NumRepetitions = 2;  % <-- Adjust (2 to 3 typical)
 TrainingInterface.ContractionLengthSeconds = 2; % <-- Time to hold contraction (avoid muscle fatigue)
 TrainingInterface.DelayLengthSeconds = 3; % <-- Recovery Time in seconds between contractions
+TrainingInterface.EnablePictures = 0;
 
-TrainingInterface.initialize(SignalSource,SignalClassifier);
+TrainingInterface.initialize(SignalSource,SignalClassifier,TrainingData);
 TrainingInterface.collectdata(); % save prompt at end
 
 %% Step 4b: Load Saved Data
-TrainingInterface.loadTrainingData();
+TrainingData.loadTrainingData();
 
 %% Step 5: Train the classifier
-SignalClassifier.TrainingData = TrainingInterface.getFeatureData;
-SignalClassifier.TrainingDataLabels = TrainingInterface.getClassLabels;
 SignalClassifier.train();
 SignalClassifier.computeerror();
 
-%% Step 6: Send data to MSMS for visualization
-hMSMS = MsmsDisplayScenario(SignalSource,SignalClassifier);
-hMSMS.start
+%% Step 6: Send data to MiniV for visualization
+h = Scenarios.MiniVDisplayScenario;
+h.initialize(SignalSource,SignalClassifier,TrainingData);
+h.AutoOpenSpeed = 10;
+h.update();
+h.Verbose = 0;
+start(h.Timer);
 
 %%
 return
-
-%% Cleanup MSMS
-hMSMS.stop
-hMSMS.close
 
 %% Optional: Adjust the size of output filter (can be done during animation)
 SignalClassifier.NumMajorityVotes = 5; % <-- Adjust majority votes [0 15]

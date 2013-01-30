@@ -24,7 +24,7 @@ filteredSignals = hSignalSource.applyAllFilters(rawSignals);
 
 % Extract features and classify
 features2D = hSignalClassifier.extractfeatures(filteredSignals);
-activeChannelFeatures = features2D(hSignalClassifier.ActiveChannels,:);
+activeChannelFeatures = features2D(hSignalClassifier.getActiveChannels,:);
 [classDecision voteDecision] = hSignalClassifier.classify(reshape(activeChannelFeatures',[],1));
 
 if hSignalClassifier.NumMajorityVotes > 1
@@ -38,4 +38,5 @@ prSpeed = max(virtualChannels);
 
 % fprintf('Class=%2d; Vote=%2d; Class = %16s; S=%6.4f',...
 %     classOut,voteDecision,hSignalClassifier.ClassNames{cursorMoveClass},prSpeed);
-className = hSignalClassifier.ClassNames{cursorMoveClass};
+classNames = hSignalClassifier.getClassNames;
+className = classNames{cursorMoveClass};

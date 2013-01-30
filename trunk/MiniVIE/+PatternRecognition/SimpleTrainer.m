@@ -53,6 +53,8 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
             pathImages = 'C:\usr\RP2009\VRE\Common\ACE\Pics';
             end
             
+            classNames = obj.SignalClassifier.getClassNames;
+            
             % Loop through each class, rep
             for iRepetition = 1:obj.NumRepetitions
                 for iClass = 1:obj.SignalClassifier.NumClasses
@@ -61,7 +63,7 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
                         break
                     end
 
-                    className = obj.SignalClassifier.ClassNames{iClass};
+                    className = classNames{iClass};
                     
                     
                     if obj.EnablePictures

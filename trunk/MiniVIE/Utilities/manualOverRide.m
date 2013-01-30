@@ -9,7 +9,7 @@ function [w,e,rocValue,rocId] = manualOverRide(w,e,rocValue,rocId)
 %rocValue = max(rocValue,0.2);
 % rocValue = 0;
 
-w(1) = -w(1); % flip wrist rot direction
+w(1) = w(1); % flip wrist rot direction
 %w(2) = -w(2); % flip dev direction
 
 % e = 55*pi/180;  % elbow

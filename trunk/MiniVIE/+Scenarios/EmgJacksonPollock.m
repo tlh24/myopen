@@ -47,7 +47,7 @@ classdef EmgJacksonPollock < Scenarios.ScenarioBase
                 drawnow
                 windowData = obj.SignalSource.getFilteredData();
                 features2D = obj.SignalClassifier.extractfeatures(windowData);
-                activeChannelFeatures = features2D(obj.SignalClassifier.ActiveChannels,:);
+                activeChannelFeatures = features2D(obj.SignalClassifier.getActiveChannels,:);
                 [classOut voteDecision] = obj.SignalClassifier.classify(reshape(activeChannelFeatures',[],1));
                 
                 if obj.SignalClassifier.NumMajorityVotes > 1
@@ -59,7 +59,10 @@ classdef EmgJacksonPollock < Scenarios.ScenarioBase
                 virtualChannels = obj.SignalClassifier.virtual_channels(features2D,cursorMoveClass);
                 
                 speed = max(virtualChannels);
-                switch obj.SignalClassifier.ClassNames{cursorMoveClass}
+                
+                classNames = obj.SignalClassifier.getClassNames;
+                
+                switch classNames{cursorMoveClass}
                     case 'No Movement'
                         dX = 0;
                         dY = 0;
@@ -112,8 +115,8 @@ classdef EmgJacksonPollock < Scenarios.ScenarioBase
             obj.SignalSource.addfilter(Inputs.Notch());
             
             obj.SignalClassifier = PatternRecognition.Lda();
-            obj.SignalClassifier.ClassNames = {'No Movement' 'Up' 'Down' 'Left' 'Right'};
-            obj.SignalClassifier.ActiveChannels = 1:4;
+            obj.SignalClassifier.setClassNames({'No Movement' 'Up' 'Down' 'Left' 'Right'});
+            obj.SignalClassifier.setActiveChannels(1:4);
             obj.SignalClassifier.NumMajorityVotes = 7;
             obj.SignalClassifier.initialize();
 
