@@ -138,7 +138,7 @@ try
     %     mVals = mean(abs(windowData));
     %     mVals(1:4)
     features2D = hSignalClassifier.extractfeatures(windowData);
-    activeChannelFeatures = features2D(hSignalClassifier.ActiveChannels,:);
+    activeChannelFeatures = features2D(hSignalClassifier.getActiveChannels,:);
     [classOut voteDecision] = hSignalClassifier.classify(reshape(activeChannelFeatures',[],1));
     
     if hSignalClassifier.NumMajorityVotes > 1

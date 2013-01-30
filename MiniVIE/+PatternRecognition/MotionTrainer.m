@@ -60,12 +60,13 @@ classdef MotionTrainer < PatternRecognition.TrainingInterface
 
             % Loop through each movement and drive system through the range
             % of motion
+            classNames = obj.SignalClassifier.getClassNames;
             for i = 1:numMovements
                 className = motionScript{i,1};
                 jointId = motionScript{i,2};
                 jointAngle = motionScript{i,3};
                 
-                iClass = find(strcmpi(className,obj.SignalClassifier.ClassNames),1);
+                iClass = find(strcmpi(className,classNames),1);
                 
                 collectRestData(obj);
                 
@@ -95,28 +96,34 @@ classdef MotionTrainer < PatternRecognition.TrainingInterface
             
         end
         function cleanup(obj)
-            obj.saveTrainingData
+            obj.TrainingData.saveTrainingData();
+
             obj.hPlant.stop();
         end
         function collectRestData(obj)
             tic
+            classNames = obj.SignalClassifier.getClassNames;
             while toc < obj.DelayLengthSeconds
                 % No movement, rest
                 obj.CurrentClass = obj.RestClass;
                 obj.addData();
-                if ishandle(obj.hText),set(obj.hText,'String',obj.SignalClassifier.ClassNames{obj.RestClass});end
+                if ishandle(obj.hText)
+                    set(obj.hText,'String',classNames{obj.RestClass});
+                end
                 pause(0.05);
             end
         end
         function validateMotionScript(obj,motionScript)
             % Verify all required classes are present
+            classNames = obj.SignalClassifier.getClassNames;
+            
             % Check No Movement
             restClassName = 'No Movement';
-            obj.RestClass = find(strcmpi(restClassName,obj.SignalClassifier.ClassNames),1);
+            obj.RestClass = find(strcmpi(restClassName,classNames),1);
             assert(~isempty(obj.RestClass),'Class "No Movement" class not found');
             % Check Prescribed Motions
             for className = motionScript(:,1)
-                iClass = find(strcmpi(className{1},obj.SignalClassifier.ClassNames),1);
+                iClass = find(strcmpi(className{1},classNames),1);
                 assert(~isempty(iClass),'Class "%s" not found',className{1});
             end
 

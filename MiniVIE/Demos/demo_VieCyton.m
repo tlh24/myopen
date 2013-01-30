@@ -1,11 +1,9 @@
 obj = MiniVIE.Default();
-obj.TrainingInterface.loadTrainingData('Sim_20120430_202658_TrainingData.dat');
+obj.TrainingData.loadTrainingData('Sim_20120430_202658_TrainingData.dat');
 
 % Step 5: Train the classifier
-obj.SignalClassifier.TrainingData = obj.TrainingInterface.getFeatureData;
-obj.SignalClassifier.TrainingDataLabels = obj.TrainingInterface.getClassLabels;
-obj.SignalClassifier.ActiveChannels = 1:4;
-obj.SignalClassifier.NumSamplesPerWindow = 250;
+obj.SignalClassifier.setActiveChannels(1:4);
+% obj.SignalClassifier.NumSamplesPerWindow = 250;
 obj.SignalClassifier.train();
 obj.SignalClassifier.computeerror();
 obj.SignalClassifier.computeGains();
@@ -25,23 +23,15 @@ while StartStopForm
     ang = hCyton.hPlant.CurrentPosition;
     
     % Classify data
-    hSignalSource.NumSamples = hSignalClassifier.NumSamplesPerWindow;
-    windowData = hSignalSource.getFilteredData();
-    
-    features2D = hSignalClassifier.extractfeatures(windowData);
-    activeChannelFeatures = features2D(hSignalClassifier.ActiveChannels,:);
-    [classOut voteDecision] = hSignalClassifier.classify(reshape(activeChannelFeatures',[],1));
-    
-    virtualChannels = hSignalClassifier.virtual_channels(features2D,classOut);
-    prSpeed = max(virtualChannels);
-    
+    [classDecision,voteDecision,className,prSpeed,rawSignals,filteredSignals,features2D] ...
+        = getIntent(hSignalSource,hSignalClassifier);
+
     fprintf('Class=%2d; Vote=%2d; Class = %16s; S=%6.4f',...
-        classOut,voteDecision,hSignalClassifier.ClassNames{classOut},prSpeed);
+        classOut,voteDecision,className,prSpeed);
     fprintf('\tEND\n');
 
     % Map the EMG data to angle movements of the robot
-    strClass = hSignalClassifier.ClassNames{voteDecision};
-    switch strClass
+    switch className
         case 'No Movement'
         case 'Hand Open'
             ang(8) = ang(8) + 0.1;
@@ -60,8 +50,5 @@ while StartStopForm
         case {'Right' 'Wrist Extend' 'Wrist Extend Out'}
             ang(6) = ang(6) - 0.1;
     end
-    hCyton.setJointParameters(ang);
-    
+    hCyton.setJointParameters(ang);    
 end
-
-

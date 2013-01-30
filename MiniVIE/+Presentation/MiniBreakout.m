@@ -39,7 +39,7 @@ classdef MiniBreakout < Common.MiniViePresentation
             windowData = obj.SignalSource.getFilteredData();
             
             features2D = obj.SignalClassifier.extractfeatures(windowData);
-            activeChannelFeatures = features2D(obj.SignalClassifier.ActiveChannels,:);
+            activeChannelFeatures = features2D(obj.SignalClassifier.getActiveChannels,:);
             [classOut voteDecision] = obj.SignalClassifier.classify(reshape(activeChannelFeatures',[],1));
             
             if obj.SignalClassifier.NumMajorityVotes > 1
@@ -48,8 +48,9 @@ classdef MiniBreakout < Common.MiniViePresentation
                 cursorMoveClass = classOut;
             end
             
+            classNames = obj.SignalClassifier.getClassNames;
             fprintf('Class Decision: %3d; Vote Decision: %3d; Class = %10s\n',...
-                classOut,voteDecision,obj.SignalClassifier.ClassNames{cursorMoveClass})
+                classOut,voteDecision,classNames{cursorMoveClass})
             
             virtualChannels = obj.SignalClassifier.virtual_channels(features2D,cursorMoveClass);
         end
@@ -62,7 +63,8 @@ classdef MiniBreakout < Common.MiniViePresentation
             
             try
                 [virtualChannels cursorMoveClass] = getdata(obj);
-                class = obj.SignalClassifier.ClassNames{cursorMoveClass};
+                classNames = obj.SignalClassifier.getClassNames;
+                class = classNames{cursorMoveClass};
                 
                 speed = max(virtualChannels);
                 gain = 0.2;

@@ -16,7 +16,7 @@ classdef Lda < SignalAnalysis.Classifier
                 disp('No Training Data Exists');
                 return
                 error('No Training Data Exists');
-            elseif isempty(obj.ActiveChannels)
+            elseif isempty(obj.getActiveChannels)
                 error('No channels selected for training');
             end
             
@@ -44,7 +44,7 @@ classdef Lda < SignalAnalysis.Classifier
             fprintf(')\n');
 
             fprintf('Active Channels are: [ ');
-            fprintf('%d ',obj.ActiveChannels);
+            fprintf('%d ',obj.getActiveChannels);
             fprintf(']\n');
             
             [obj.Wg,obj.Cg] = obj.lda(feats,dataLabels,obj.NumClasses);
@@ -71,7 +71,10 @@ classdef Lda < SignalAnalysis.Classifier
                 'Expected first dimension of featuredata [%d]to be equal to numActiveChannels*numFeatures [%d]',...
                 size(featuresColumns,1),obj.NumActiveChannels*obj.NumFeatures);
             if isempty(obj.Wg)
-                error('Classifier not trained');
+                %error('Classifier not trained');
+                
+                [classOut, voteDecision] = deal(length(obj.getClassNames));
+                return
             end
             
             % Given lda parameters Wg,Cg, classify the featureData by multiplying and

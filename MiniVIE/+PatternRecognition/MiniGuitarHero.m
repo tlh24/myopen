@@ -111,7 +111,7 @@ classdef MiniGuitarHero < Scenarios.OnlineRetrainer%PatternRecognition.AdaptiveT
             obj.SignalSource.NumSamples = obj.SignalClassifier.NumSamplesPerWindow;
             windowData = obj.SignalSource.getFilteredData();
             features2D = obj.SignalClassifier.extractfeatures(windowData);
-            activeChannelFeatures = features2D(obj.SignalClassifier.ActiveChannels,:);
+            activeChannelFeatures = features2D(obj.SignalClassifier.getActiveChannels,:);
             [classOut voteDecision] = obj.SignalClassifier.classify(reshape(activeChannelFeatures',[],1));
             if obj.SignalClassifier.NumMajorityVotes > 1
                 obj.CurrentClass = voteDecision;
@@ -144,7 +144,7 @@ classdef MiniGuitarHero < Scenarios.OnlineRetrainer%PatternRecognition.AdaptiveT
             newCueCount = 20;
             
             EnableRandomCueing = 0;
-            
+            cb_timer;
             start(obj.hTimer);
             return
             
@@ -212,9 +212,10 @@ classdef MiniGuitarHero < Scenarios.OnlineRetrainer%PatternRecognition.AdaptiveT
             end
             function update_signal_preview()
                 %obj.hg.AxesSignals
+                activeChannels = obj.SignalClassifier.getActiveChannels;
                 windowData = obj.SignalSource.getFilteredData();
                 for i = 1:obj.SignalClassifier.NumActiveChannels
-                    iChannel = obj.SignalClassifier.ActiveChannels(i);
+                    iChannel = activeChannels(i);
                     set(obj.hg.hPreviewLines(i),'YData',windowData(:,iChannel));
                 end
                 
@@ -258,7 +259,8 @@ classdef MiniGuitarHero < Scenarios.OnlineRetrainer%PatternRecognition.AdaptiveT
                 obj.CurrentCue = currentCue;
                 
                 if lastCue ~= currentCue
-                    strCue = sprintf('Current Cue: %s\n',obj.SignalClassifier.ClassNames{currentCue});
+                    classNames = obj.SignalClassifier.getClassNames;
+                    strCue = sprintf('Current Cue: %s\n',classNames{currentCue});
                     title(obj.hg.AxesSignals,strCue);
                 end
             end
@@ -276,8 +278,8 @@ classdef MiniGuitarHero < Scenarios.OnlineRetrainer%PatternRecognition.AdaptiveT
             TrainingData = PatternRecognition.TrainingData();
             
             SignalClassifier = SignalAnalysis.Lda();
-            SignalClassifier.ClassNames = {'Index', 'Middle', 'Ring', 'Little', 'No Movement'};
-            SignalClassifier.ActiveChannels = 1:4;
+            SignalClassifier.setClassNames({'Index', 'Middle', 'Ring', 'Little', 'No Movement'});
+            SignalClassifier.setActiveChannels(1:4);
             SignalClassifier.initialize(TrainingData);
             
             

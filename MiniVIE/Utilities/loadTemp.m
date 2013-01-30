@@ -4,7 +4,7 @@ obj.TrainingInterface.loadTrainingData();
 
 %% Step 5: Train the classifier
 obj.SignalClassifier.NumMajorityVotes = 11;
-obj.SignalClassifier.ActiveChannels = [1 2 3 4 5 6 7 8];
+obj.SignalClassifier.setActiveChannels([1 2 3 4 5 6 7 8]);
 obj.SignalClassifier.TrainingData = obj.TrainingInterface.getFeatureData;
 obj.SignalClassifier.TrainingDataLabels = obj.TrainingInterface.getClassLabels;
 obj.SignalClassifier.train();
@@ -19,7 +19,7 @@ c = [];
 for i = 7
     ch = nchoosek(1:8,i)
     for j = 1:size(ch,1)
-        obj.SignalClassifier.ActiveChannels = ch(j,:);
+        obj.SignalClassifier.setActiveChannels(ch(j,:));
         obj.SignalClassifier.train();
         e = [e; obj.SignalClassifier.computeerror()];
         c = [c; i];

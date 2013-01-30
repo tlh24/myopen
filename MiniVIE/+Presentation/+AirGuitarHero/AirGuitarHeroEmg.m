@@ -123,10 +123,11 @@ classdef AirGuitarHeroEmg < Presentation.AirGuitarHero.AirGuitarHeroBase
                         obj.SignalSource.start();
                         obj.disableKeyboardCallbacks();
                         
+                        % TODO: this is a function now:
                         obj.SignalSource.NumSamples = obj.SignalClassifier.NumSamplesPerWindow;
                         windowData = obj.SignalSource.getFilteredData();
                         features2D = obj.SignalClassifier.extractfeatures(windowData);
-                        activeChannelFeatures = features2D(obj.SignalClassifier.ActiveChannels,:);
+                        activeChannelFeatures = features2D(obj.SignalClassifier.getActiveChannels,:);
                         [classOut voteDecision] = obj.SignalClassifier.classify(reshape(activeChannelFeatures',[],1));
                         
                         useMajorityVote = 0;
@@ -135,9 +136,10 @@ classdef AirGuitarHeroEmg < Presentation.AirGuitarHero.AirGuitarHeroBase
                         else
                             output = classOut;
                         end
-                        fprintf('Class:  %s\n',obj.SignalClassifier.ClassNames{output});
+                        classNames = obj.SignalClassifier.getClassNames;
+                        fprintf('Class:  %s\n',classNames{output});
                         
-                        switch obj.SignalClassifier.ClassNames{output}
+                        switch classNames{output}
                             case 'Index'
                                 noteMask = [1 0 0 0 0];
                             case 'Middle'
@@ -153,72 +155,6 @@ classdef AirGuitarHeroEmg < Presentation.AirGuitarHero.AirGuitarHeroBase
                         sendButtonCommand(obj,~([noteMask 0 0 strumOn]));
 
                 end
-                
-                
-                return
-%                 % get a window of samples and classify them
-%                 obj.SampleCounter = obj.SampleCounter + 1;
-%                 obj.SignalSource.NumSamples = obj.SignalClassifier.NumSamplesPerWindow;
-%                 windowData = obj.SignalSource.getFilteredData();
-%                 features2D = obj.SignalClassifier.extractfeatures(windowData);
-%                 activeChannelFeatures = features2D(obj.SignalClassifier.ActiveChannels,:);
-%                 [classOut voteDecision] = obj.SignalClassifier.classify(reshape(activeChannelFeatures',[],1));
-% 
-%                 if ~obj.EnableOnlineRetraining
-%                     cmd = zeros(1,8);
-%                     if classOut == 1 %No Movement
-%                         sendButtonCommand(obj,~(zeros(1,8)));
-%                     else
-%                         cmd(classOut-1) = 1;
-%                         cmd(8) = 1;
-%                         sendButtonCommand(obj,~cmd)
-%                     end
-%                     return
-%                 end
-%                 
-%                 
-%                 if ~obj.AutoPlay
-%                     % Ensure all buttons are up
-%                     %sendButtonCommand(obj,~(zeros(1,8)));
-%                 end
-%                 if obj.AutoPlay
-%                 end
-%                 
-%                 
-%                 noteMask = find(obj.hNoteDetector.noteHistory(10,:),1,'first');
-%                 
-%                 if isempty(noteMask) || (noteMask > 3)
-%                     currentCue = 1; % No movement
-%                 else
-%                     currentCue = noteMask + 1;
-%                 end
-%                 
-%                 obj.SignalClassifier.ClassNames(currentCue);
-%                 
-%                 % use the current features and class label for training
-%                 obj.features3D(:,:,obj.SampleCounter) = features2D;
-%                 obj.classLabelId(obj.SampleCounter) = currentCue;
-%                 
-%                 obj.RetrainCounter = obj.RetrainCounter + 1;
-%                 if obj.EnableOnlineRetraining && obj.RetrainCounter > 30
-%                     obj.RetrainCounter = 0;
-%                     classesWithData = unique(obj.classLabelId(1:obj.SampleCounter));
-%                     if length(classesWithData) < obj.SignalClassifier.NumClasses;
-%                         fprintf('[Classifier] Insufficient data\n');
-%                         fprintf('Classes with data: ');
-%                         fprintf('%d ',classesWithData);
-%                         fprintf('\n');
-%                         
-%                     else
-%                         obj.SignalClassifier.TrainingData = obj.features3D(:,:,1:obj.SampleCounter);
-%                         obj.SignalClassifier.TrainingDataLabels = obj.classLabelId(1:obj.SampleCounter);
-%                         obj.SignalClassifier.train();
-%                         obj.SignalClassifier.computeerror();
-%                     end
-%                 end
-%                 
-%                 
-%                 drawnow
             catch ME
                 stop(obj.hTimer);
                 rethrow(ME);
@@ -251,8 +187,8 @@ classdef AirGuitarHeroEmg < Presentation.AirGuitarHero.AirGuitarHeroBase
             obj.SignalSource.initialize();
             
             obj.SignalClassifier = PatternRecognition.Lda();
-            obj.SignalClassifier.ClassNames = {'No Movement' 'Index' 'Middle' 'Ring'};
-            obj.SignalClassifier.ActiveChannels = 1:4;
+            obj.SignalClassifier.setClassNames({'No Movement' 'Index' 'Middle' 'Ring'});
+            obj.SignalClassifier.setActiveChannels(1:4);
             obj.SignalClassifier.NumMajorityVotes = 7;
             obj.SignalClassifier.initialize();
         end

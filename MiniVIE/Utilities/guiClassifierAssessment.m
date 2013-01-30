@@ -64,7 +64,7 @@ if debug
     obj.TrainingInterface.loadTrainingData('Sim_TrainingData.dat');
     
     obj.SignalClassifier.NumMajorityVotes = 1;
-    obj.SignalClassifier.ActiveChannels = [1 2 3 4 5 6 7 8];
+    obj.SignalClassifier.setActiveChannels([1 2 3 4 5 6 7 8]);
     obj.SignalClassifier.TrainingData = obj.TrainingInterface.getFeatureData;
     obj.SignalClassifier.TrainingDataLabels = obj.TrainingInterface.getClassLabels;
     obj.SignalClassifier.train();
@@ -130,7 +130,8 @@ classToTest = 1:(hSignalClassifier.NumClasses - 1);
 % Assume that No Movement is last class and don't evaluate it
 for iClass = 1:length(classToTest)
 
-    targetClass = hSignalClassifier.ClassNames{classToTest(iClass)};
+    classNames = hSignalClassifier.getClassNames;
+    targetClass = classNames{classToTest(iClass)};
     
     set(handles.txtTarget,'String',targetClass);
     
@@ -159,7 +160,8 @@ assert(~isnan(maxCorrectClasses) && maxCorrectClasses > 0,'Max Correct Classes m
 timerStarted = 0;
 numCorrectClasses = 0; % reset each loop
 moveComplete = 0;
-targetClass = hSignalClassifier.ClassNames{classToTest};
+classNames = hSignalClassifier.getClassNames;
+targetClass = classNames{classToTest};
 structTrialLog.targetClass = targetClass;
 structTrialLog.classDecision = [];
 structTrialLog.voteDecision = [];

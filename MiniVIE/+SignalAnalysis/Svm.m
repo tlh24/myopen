@@ -12,7 +12,7 @@ classdef Svm < SignalAnalysis.Classifier
             
             if isempty(obj.TrainingData)
                 error('No Training Data Exists');
-            elseif isempty(obj.ActiveChannels)
+            elseif isempty(obj.getActiveChannels)
                 error('No channels selected for training');
             end
             
@@ -27,7 +27,7 @@ classdef Svm < SignalAnalysis.Classifier
             fprintf(')\n');
 
             fprintf('Active Channels are: [ ');
-            fprintf('%d ',obj.ActiveChannels);
+            fprintf('%d ',obj.getActiveChannels);
             fprintf(']\n');
             
             %% Normalize features

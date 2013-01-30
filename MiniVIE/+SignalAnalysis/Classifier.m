@@ -10,8 +10,6 @@ classdef Classifier < Common.MiniVieObj
         NumSamplesPerWindow = 150;
         NumMajorityVotes = 5;
         
-        ActiveChannels = [1 3];
-        ClassNames = {'MotionA' 'MotionB' 'No Movement'};
         TrainingFeatures = {'MAV' 'LEN' 'SSC' 'ZC'};
         VirtualChannelGain = 1;  % default.  Once initialized this should be [1 NumClasses]
         
@@ -35,10 +33,10 @@ classdef Classifier < Common.MiniVieObj
     end
     methods
         function numClasses = get.NumClasses(obj)
-            numClasses = length(obj.ClassNames);
+            numClasses = length(obj.getClassNames);
         end
         function numChannels = get.NumActiveChannels(obj)
-            numChannels = length(obj.ActiveChannels);
+            numChannels = length(obj.getActiveChannels);
         end
         function numFeatures = get.NumFeatures(obj)
             numFeatures = length(obj.TrainingFeatures);
@@ -53,25 +51,19 @@ classdef Classifier < Common.MiniVieObj
             if nargin < 2
                 error('Classifier init requires a training data object: PatternRecognition.TrainingData()');
             end
-            
-            % initialize classifier parameters with zeros.  Add a 1 in the
-            % last column so that the classifier defaults to No Movement
-            % class
-            obj.Wg = 0*ones(obj.NumActiveChannels*obj.NumFeatures,obj.NumClasses);
-            obj.Wg(:,obj.NumClasses) = 1;
-            obj.Cg = zeros(1,obj.NumClasses);
-            obj.Cg(1,obj.NumClasses) = 1;
 
-            % This can get confusing if classifier init is called without
-            % passing training data
-            
+            % data init occurs before params, since these depend on
+            % TrainingData params
             obj.TrainingData = hTrainingData;
             
-%             if (nargin > 1) && ~isempty(hTrainingData);
-%                 obj.TrainingData = hTrainingData;
-%             else
-%                 obj.TrainingData = PatternRecognition.TrainingData();
-%             end
+%             % initialize classifier parameters with zeros.  Add a 1 in the
+%             % last column so that the classifier defaults to No Movement
+%             % class
+%             obj.Wg = 0*ones(obj.NumActiveChannels*obj.NumFeatures,obj.NumClasses);
+%             obj.Wg(:,obj.NumClasses) = 1;
+%             obj.Cg = zeros(1,obj.NumClasses);
+%             obj.Cg(1,obj.NumClasses) = 1;
+
         end
         function reset(obj)
             obj.Wg = [];
@@ -85,15 +77,28 @@ classdef Classifier < Common.MiniVieObj
         end
         
         function classNames = getClassNames(obj)
-            classNames = obj.ClassNames;
+            assert(~isempty(obj.TrainingData),'TrainingData not initialized');
+            classNames = obj.TrainingData.ClassNames;
+        end
+        function activeChannels = getActiveChannels(obj)
+            assert(~isempty(obj.TrainingData),'TrainingData not initialized');
+            activeChannels = obj.TrainingData.ActiveChannels;
+        end
+        function setClassNames(obj,classNames)
+            assert(~isempty(obj.TrainingData),'TrainingData not initialized');
+            obj.TrainingData.ClassNames = classNames;
+        end
+        function setActiveChannels(obj,activeChannels)
+            assert(~isempty(obj.TrainingData),'TrainingData not initialized');
+            obj.TrainingData.ActiveChannels = activeChannels;
         end
         
         function uiEnterClassNames(obj)
             hGui = GUIs.guiClassifierChannels;
             uiwait(hGui.hFigure)
-            obj.ClassNames = hGui.ClassNames;
+            obj.setClassNames(hGui.ClassNames);
             % Save last selected classes
-            GUIs.guiClassifierChannels.setSavedDefaults(obj.ClassNames);
+            GUIs.guiClassifierChannels.setSavedDefaults(obj.getClassNames);
         end
         
         function featureData = convertfeaturedata(obj,featureData3D)
@@ -109,7 +114,7 @@ classdef Classifier < Common.MiniVieObj
             
             assert(numFeatures == obj.NumFeatures,...
                 'Training data set has %d features, expected %d\n',numFeatures,obj.NumFeatures);
-            assert(~any(obj.ActiveChannels > numChannels),...
+            assert(~any(obj.getActiveChannels > numChannels),...
                 'Active channels are greater than %d data channels\n',numChannels);
             % TODO: Can eliminate this step of reshaping twice
             sortedData2 = permute(featureData3D,[2 1 3]);
@@ -117,7 +122,7 @@ classdef Classifier < Common.MiniVieObj
             % Reshape data according to how the UNB algorithm wants to see it.  That is
             % [nFeatures*length(activeChannels) numSamples] with all the features_3D for
             % the first channels then all the features_3D for the second channel,...
-            activeData = sortedData2(:,obj.ActiveChannels,:);
+            activeData = sortedData2(:,obj.getActiveChannels,:);
             featureData = reshape(activeData,obj.NumFeatures*obj.NumActiveChannels,[]);
         end
         function computeGains(obj)
@@ -135,7 +140,7 @@ classdef Classifier < Common.MiniVieObj
             
             % Compute virtual channel output here:
             % Get the MAV Feature
-            mavFeatures = featureData3D(obj.ActiveChannels,1,:);
+            mavFeatures = featureData3D(obj.getActiveChannels,1,:);
             % Average across all active channels
             MAV = squeeze(mean(mavFeatures,1));
             
@@ -225,7 +230,9 @@ classdef Classifier < Common.MiniVieObj
                 
                 classError(iClass) = errorRate(actualClass,targetClass);
                 
-                fprintf('%20s Class accuracy:\t %6.1f %% \t',obj.ClassNames{iClass},(1-classError(iClass))*100);
+                classNames = obj.getClassNames;
+                fprintf('%20s Class accuracy:\t %6.1f %% \t',...
+                    classNames{iClass},(1-classError(iClass))*100);
                 
                 fprintf('(%d of %d)\n',sum(actualClass == targetClass),length(targetClass))
             end
@@ -238,7 +245,7 @@ classdef Classifier < Common.MiniVieObj
                         
             % Create virtual channels
             virtualChannels = zeros(1,obj.NumClasses);
-            MAV = mean(squeeze(features_3D(obj.ActiveChannels,1,:)));
+            MAV = mean(squeeze(features_3D(obj.getActiveChannels,1,:)));
             
             virtualChannels(classOut) = MAV;
             if length(obj.VirtualChannelGain) == length(virtualChannels)
@@ -247,7 +254,7 @@ classdef Classifier < Common.MiniVieObj
             
         end
         function features2D = extractfeatures(obj,filteredDataWindowAllChannels)
-            % features2D = feature_extract(filteredDataWindowAllChannels(:,obj.ActiveChannels)',obj.NumSamplesPerWindow);
+            % features2D = feature_extract(filteredDataWindowAllChannels(:,obj.getActiveChannels)',obj.NumSamplesPerWindow);
             features2D = feature_extract(filteredDataWindowAllChannels',obj.NumSamplesPerWindow);
         end
     end

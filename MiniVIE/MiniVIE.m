@@ -10,7 +10,7 @@ classdef MiniVIE < Common.MiniVieObj
         
         Verbose = 1;
     end
-    properties (Constant = true)
+    properties (Access = private, Constant = true)
         %enum
         INPUT = 1;
         SA = 2;
@@ -234,7 +234,6 @@ classdef MiniVIE < Common.MiniVieObj
             end
             
             assert(~isempty(obj.TrainingData),'Training Data module does not exist');
-            
             obj.TrainingData.saveTrainingData;
             
         end
@@ -359,21 +358,7 @@ classdef MiniVIE < Common.MiniVieObj
                     set(obj.hg.SignalAnalysisButtons(:),'Enable','off');
                 else
                     set(obj.hg.SignalAnalysisButtons(:),'Enable','on');
-                    
-                    % TODO: Note signals only updated on classifier
-                    % creation
-                    defaultChannels = GUIs.guiChannelSelect.getLastChannels();
-                    fprintf('Setting Active Channels to: [');
-                    fprintf(' %d',defaultChannels);
-                    fprintf(' ]\n');
-                    h.ActiveChannels = defaultChannels;
-                    
-                    h.ClassNames = GUIs.guiClassifierChannels.getSavedDefaults();
-                    
-                    if (isempty(h.ClassNames))
-                        h.ClassNames = GUIs.guiClassifierChannels.getDefaultNames;
-                    end
-                    
+
                     h.NumMajorityVotes = 0;
                     
                     NumSamplesPerWindow = 200;
@@ -389,6 +374,21 @@ classdef MiniVIE < Common.MiniVieObj
                     end
                     
                     h.initialize(obj.TrainingData);
+                    
+                    % TODO: Note signals only updated on classifier
+                    % creation
+                    defaultChannels = GUIs.guiChannelSelect.getLastChannels();
+                    fprintf('Setting Active Channels to: [');
+                    fprintf(' %d',defaultChannels);
+                    fprintf(' ]\n');
+                    h.setActiveChannels(defaultChannels);
+                    
+                    classNames = GUIs.guiClassifierChannels.getSavedDefaults();
+                    if (isempty(classNames))
+                        classNames = GUIs.guiClassifierChannels.getDefaultNames;
+                    end
+                    h.setClassNames(classNames);
+                                        
                     
                 end
                 
@@ -501,8 +501,7 @@ classdef MiniVIE < Common.MiniVieObj
                         h.Verbose = 0;
                         start(h.Timer);
                         obj.println('Presentation setup complete',1);
-                    case 'MplScenarioMud'
-%%                        
+                    case 'MplScenarioMud'                        
                         QA = {
                             'Enable NFU (y/n):'                     'y'
                             'Destination IP (192.168.1.199):'       '127.0.0.1'
@@ -688,21 +687,23 @@ classdef MiniVIE < Common.MiniVieObj
             obj.SignalSource.NumSamples = 2000;
             obj.SignalSource.initialize();
             
+            obj.TrainingData = PatternRecognition.TrainingData;
             obj.SignalClassifier = SignalAnalysis.Lda();
+            obj.SignalClassifier.initialize(obj.TrainingData);
+            
+            classNames = GUIs.guiClassifierChannels.getSavedDefaults;
+            if isempty(classNames)
+                classNames = GUIs.guiClassifierChannels.getDefaultNames;
+            end
+            obj.SignalClassifier.setClassNames(classNames);
+
             defaultChannels = GUIs.guiChannelSelect.getLastChannels();
             fprintf('Setting Active Channels to: [');
             fprintf(' %d',defaultChannels);
             fprintf(' ]\n');
-            obj.SignalClassifier.ActiveChannels = defaultChannels;
-            
-            obj.SignalClassifier.ClassNames = GUIs.guiClassifierChannels.getSavedDefaults();
-            
-            if (isempty(obj.SignalClassifier.ClassNames))
-                obj.SignalClassifier.ClassNames = GUIs.guiClassifierChannels.getDefaultNames;
-            end
+            obj.SignalClassifier.setActiveChannels(defaultChannels);
             
             obj.SignalClassifier.NumMajorityVotes = 0;
-            obj.SignalClassifier.initialize();
             
             NumSamplesPerWindow = 200;
             fprintf('Setting Window Size to: %d\n',NumSamplesPerWindow);
@@ -712,7 +713,8 @@ classdef MiniVIE < Common.MiniVieObj
             obj.TrainingInterface.NumRepetitions = 3;
             obj.TrainingInterface.ContractionLengthSeconds = 2;
             obj.TrainingInterface.DelayLengthSeconds = 1;
-            obj.TrainingInterface.initialize(obj.SignalSource,obj.SignalClassifier);
+            obj.TrainingInterface.initialize(...
+                obj.SignalSource,obj.SignalClassifier,obj.TrainingData);
             
         end
         function obj = go
@@ -723,7 +725,8 @@ classdef MiniVIE < Common.MiniVieObj
             %% Combine pieces to make a scenario (EMG Painting)
             hPollock = Scenarios.EmgJacksonPollock;
             hPollock.SignalSource = obj.SignalSource;
-            obj.SignalClassifier.ClassNames = {'No Movement' 'Wrist Flex' 'Wrist Extend' 'Pronate' 'Supinate' 'Hand Open' 'Hand Close'};
+            classNames = {'No Movement' 'Wrist Flex' 'Wrist Extend' 'Pronate' 'Supinate' 'Hand Open' 'Hand Close'};
+            obj.SignalClassifier.setClassNames(classNames);
             obj.TrainingInterface = PatternRecognition.SimpleTrainer;
             
             hPollock.EmgClassifier = obj.SignalClassifier;
@@ -734,7 +737,7 @@ classdef MiniVIE < Common.MiniVieObj
             hPollock.run
             
             %% Combine pieces differently to create an interactive training module (periodically updates classifier)
-            obj.SignalClassifier.ClassNames = {'No Movement' 'Index' 'Middle' 'Ring' 'Little'};
+            obj.SignalClassifier.setClassNames({'No Movement' 'Index' 'Middle' 'Ring' 'Little'});
             obj.SignalClassifier.reset();
             
             hMiniAGH = Scenarios.GuitarHeroTrainer;

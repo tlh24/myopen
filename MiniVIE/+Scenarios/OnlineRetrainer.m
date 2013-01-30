@@ -64,7 +64,7 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
             p(3) = 1100;
             set(f,'Position',p);
             
-            classNames = obj.SignalClassifier.ClassNames;
+            classNames = obj.SignalClassifier.getClassNames;
             
             for i = 1:length(classNames)
                 spaces = strfind(classNames{i},' ');
@@ -266,7 +266,7 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
             set(obj.hGui,'Data',[num2cell(dat) cellPtr]);
             
             
-            classNames = obj.SignalClassifier.ClassNames;
+            classNames = obj.SignalClassifier.getClassNames;
             paddedName = classNames;
             for i = 1:length(classNames)
                 paddedName{i} = ['  ' paddedName{i} '  '];
@@ -277,7 +277,7 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
         end
         function close(obj)
             close@Scenarios.ScenarioBase(obj); % Call superclass update method
-            obj.TrainingData.saveTrainingData();
+            obj.TrainingData.saveTrainingData;
         end
     end
 end

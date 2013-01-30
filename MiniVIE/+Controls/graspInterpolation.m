@@ -9,10 +9,10 @@ if ~ischar(graspID)
     graspID = char(graspID);
 end
 
-if isfield(Controls.GraspAngles,graspID)
+try
     B = Controls.GraspAngles.(graspID);
-else
-    error ('Invalid graspID');
+catch ME
+    fprintf('[%s] ERROR: Invalid graspID. Error was: "%s"\n',mfilename,ME.message);
 end
 
 handAngles = A + ((B-A)*pctGrasp);

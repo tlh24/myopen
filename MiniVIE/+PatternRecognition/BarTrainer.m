@@ -84,7 +84,7 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
             obj.hTimer.Period = obj.Period;
             
             obj.hStripChart = GUIs.widgetStripChart(hAxesStripChart);
-            obj.hStripChart.initialize(length(obj.SignalClassifier.ActiveChannels),100)
+            obj.hStripChart.initialize(length(obj.SignalClassifier.getActiveChannels),100)
             obj.hStripChart.YLim = [0 1];
             set(obj.hStripChart.hLegend,'Visible','off');
 
@@ -97,7 +97,7 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
             
             
             xlim(obj.hAxes,[0 obj.samplesToRound]);
-            set(obj.hAxes,'YTickLabel',obj.SignalClassifier.ClassNames);
+            set(obj.hAxes,'YTickLabel',obj.SignalClassifier.getClassNames);
             
             % set(get(obj.hAxes,'XTickLabel'),'Rotation',45.0)
             
@@ -149,7 +149,8 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
                 
                 obj.CurrentClass = max(min(obj.CurrentClass,obj.SignalClassifier.NumClasses),1);
 
-                className = obj.SignalClassifier.ClassNames{obj.CurrentClass};
+                classNames = obj.SignalClassifier.getClassNames;
+                className = classNames{obj.CurrentClass};
                 %fprintf('CurrentClass = %s\n',className);
                 hLabel = title(obj.hAxes,sprintf('Current Class: %s',className));
                 set(hLabel,'FontWeight','Bold');
@@ -157,7 +158,7 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
                 windowData = obj.SignalSource.getFilteredData();
                 features = feature_extract(windowData' ,obj.SignalClassifier.NumSamplesPerWindow);
                 
-                f = features(obj.SignalClassifier.ActiveChannels,1);
+                f = features(obj.SignalClassifier.getActiveChannels,1);
                 obj.hStripChart.putdata(f);
                 
                 if useJoystick
