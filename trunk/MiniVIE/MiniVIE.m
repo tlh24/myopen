@@ -113,7 +113,7 @@ classdef MiniVIE < Common.MiniVieObj
                 'Style','pushbutton',...
                 'Enable','off',...
                 'String','Audio Preview',...
-                'Callback',@(src,evt)obj.SignalSource.audiopreview(1));
+                'Callback',@(src,evt)obj.pbSignalAudio);
             
             obj.hg.SignalAnalysisButtons(1) = uicontrol(obj.hg.Figure,...
                 'Position',pos('cntrl',MiniVIE.SA,3,1,1),...
@@ -504,7 +504,7 @@ classdef MiniVIE < Common.MiniVieObj
                     case 'MplScenarioMud'                        
                         QA = {
                             'Enable NFU (y/n):'                     'y'
-                            'Destination IP (192.168.1.199):'       '127.0.0.1'
+                            'Destination IP (192.168.1.199):'       '192.168.1.111'
                             'Destination Port (9027):'              '9027'
                             'Enable Tactors (y/n)'                  'y'
                             'Tactor Ids ([5 6 7]):'                 '[3 4]'
@@ -532,7 +532,7 @@ classdef MiniVIE < Common.MiniVieObj
                         %h.VulcanXPort = answer{3}; 
                         
                         h.EnableFeedback = strncmpi(answer{4},'y',1);
-                        h.TactorIds = answer{5}; % TODO: Validate
+                        h.TactorIds = str2num(answer{5}); % TODO: Validate
                         
                         h.enableMicroStrain = strncmpi(answer{6},'y',1);
                         
@@ -601,6 +601,9 @@ classdef MiniVIE < Common.MiniVieObj
     methods (Access = private)
         function pbSignalView(obj)
             obj.SignalViewer = GUIs.guiSignalViewer(obj.SignalSource);
+        end
+        function pbSignalAudio(obj)
+            obj.SignalSource.audiopreview(1,1,200);
         end
         function pbBeginTraining(obj)
             

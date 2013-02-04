@@ -121,6 +121,12 @@ switch testId
             
             pause(0.02);  % control rate here
         end
+        tactorId = 3;
+        hNfu.tactorControl(tactorId, 100, 0, 100, 100, 0);
+        tactorId = 4;
+        hNfu.tactorControl(tactorId, 100, 0, 100, 100, 0);
+        
+        
     case 'MplHand'
         %test mpl hand Roc
         hNfu = MPL.NfuUdp.getInstance;
@@ -141,9 +147,10 @@ switch testId
         return
     case 'Haptics02'
         % HapticAlgorithm: Runs HapticAlgorithm within  MPL.MplScenarioMud < Scenarios.ScenarioBase
+        tData = PatternRecognition.TrainingData;
         
         h = MPL.MplScenarioMud;
-        h.initialize([],[]);
+        h.initialize([],[],tData);
         h.Verbose = 0;
         start(h.Timer);
         

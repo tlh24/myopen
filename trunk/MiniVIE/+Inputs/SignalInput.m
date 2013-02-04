@@ -102,14 +102,17 @@ classdef SignalInput < Common.MiniVieObj
             
         end %previewFeatures
         
-        function audiopreview(obj,channelIds,range)
+        function audiopreview(obj,channelIds,range,numSamples)
             if nargin < 2
                 channelIds = 1:obj.NumChannels;
             end
             if nargin < 3
                 range = 1;
             end
-            hFig = gcf;
+            if nargin < 4
+                numSamples = 200;
+            end
+            hFig = figure;
             clf(hFig);
             hAx1 = gca;
             hLines = plot(hAx1,zeros(2,obj.NumChannels));
@@ -118,12 +121,11 @@ classdef SignalInput < Common.MiniVieObj
             offset = 2*1:obj.NumChannels;
             
             StartStopForm([]);
+            obj.NumSamples = numSamples;
             while StartStopForm
                 drawnow
-                
                 filteredData = getFilteredData(obj);
-                
-                filteredData(:,3) = filteredData(:,4);
+                %filteredData(:,3) = filteredData(:,4);
                 
                 if isempty(filteredData)
                     continue;
@@ -133,7 +135,9 @@ classdef SignalInput < Common.MiniVieObj
                 end
                 
                 numBits = 16;
-                soundsc(filteredData(end-50:end,channelIds(1)),obj.SampleFrequency,numBits,[-range range]);
+                tic
+                soundsc(filteredData(:,channelIds(1)),obj.SampleFrequency,numBits,[-range range]);
+                toc
             end
         end %audiopreview
         

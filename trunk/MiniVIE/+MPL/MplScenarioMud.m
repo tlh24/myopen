@@ -14,10 +14,10 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
         hMicroStrainGX2 = [];
         hTactors;
         
-        enableNfu = 0; %true;
+        enableNfu = 1; %true;
         enableMicroStrain = 0; %true;
         
-        EnableFeedback = 0;
+        EnableFeedback = 1;
         
         % MicroStrain config values
         msComPortStr = 'COM9';
@@ -64,6 +64,7 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
                 % TODO: abstract tactor ids and mapping
                 %tactorIds = [5 6 7];
                 tactorIds = obj.TactorIds;
+                assert(isnumeric(tactorIds),'Tactor Ids must be numeric');
                 for iTactor = tactorIds
                     fprintf('[%s] Setting up tactor id# %d\n',mfilename,iTactor);
                     obj.hTactors = [obj.hTactors HapticAlgorithm(obj.hNfu,iTactor)];
@@ -91,7 +92,7 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
             end
 
             % Remaining superclass initialize methods
-            initialize@Scenarios.OnlineRetrainer(obj,SignalSource,SignalClassifier,TrainingData);
+                initialize@Scenarios.OnlineRetrainer(obj,SignalSource,SignalClassifier,TrainingData);
 
         end
         function home(obj)
