@@ -140,7 +140,7 @@ classdef HapticAlgorithm < handle
                             
 
             if val > 0
-                fprintf('Tactor %d activated: %6d, Senorval = %d\n',obj.TactorId,val,inputSensor);
+                fprintf('Tactor %d activated: %6d, Sensorval = %d\n',obj.TactorId,val,inputSensor);
             end
             
             % send command
