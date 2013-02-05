@@ -374,9 +374,8 @@ classdef (Sealed) NfuUdp < handle
                     idOfInterest(idOfInterest > obj.BufferSize) = idOfInterest(idOfInterest > obj.BufferSize) - obj.BufferSize;
                     
                     % return newest signals first
-                    %idx = flipud(find(idOfInterest));
-                    %idx = find(idOfInterest);
-                    
+                    % 05Feb2013: Verified signal packet ordering is correct
+                    % using the nfuSimulator
                     cellData = obj.UdpBuffer1(idOfInterest);
                     
                     obj.newData1(:) = false;
@@ -390,11 +389,8 @@ classdef (Sealed) NfuUdp < handle
                     % wrap indices eg: 99 100 1 2 3
                     idOfInterest(idOfInterest > obj.BufferSize) = idOfInterest(idOfInterest > obj.BufferSize) - obj.BufferSize;
                     
-                    % return newest signals first
-                    idx = flipud(find(idOfInterest));
-                    %idx = find(idOfInterest);
-                    
-                    cellData = obj.UdpBuffer2(idx);
+                    % return newest signals first                    
+                    cellData = obj.UdpBuffer2(idOfInterest);
                     
                     obj.newData2(:) = false;
                     
@@ -429,7 +425,8 @@ classdef (Sealed) NfuUdp < handle
                     obj.numPacketsReceived = obj.numPacketsReceived + 1;
                     
                     % read data and mark as new
-                    obj.UdpBuffer1{obj.ptr1} = pnet(obj.UdpStreamReceiveSocket,'read',len,'UINT8');
+                    obj.UdpBuffer1{obj.ptr1} = ...
+                        pnet(obj.UdpStreamReceiveSocket,'read',len,'UINT8');
                     obj.newData1(obj.ptr1) = true;
                     
                     % advance ptr

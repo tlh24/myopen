@@ -9,12 +9,12 @@ function [w,e,rocValue,rocId] = manualOverRide(w,e,rocValue,rocId)
 %rocValue = max(rocValue,0.2);
 % rocValue = 0;
 
-w(1) = -w(1); % flip wrist rot direction
+% w(1) = -w(1); % flip wrist rot direction
 %w(2) = -w(2); % flip dev direction
 
 % Elbow
 %e = 55*pi/180;  % elbow
-elbowLimitsRadians = [0 45]*pi/180;
+elbowLimitsRadians = [0 140]*pi/180;
 assert(elbowLimitsRadians(2) >= elbowLimitsRadians(1),...
     'Upper limit must be greater than lower limit');
 if e > elbowLimitsRadians(2)
@@ -27,5 +27,5 @@ end
 
 % w(1) = -90*pi/180;  % rotation
 % w(2) = 0.0;   % dev
-%w(3) = 0.6;  % fe
+w(3) = -0.55;  % fe
 

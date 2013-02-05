@@ -94,7 +94,4 @@ normMAV = min(normMAV,50);
 features = [normMAV(:) normLEN(:) normZC(:) normVAR(:)];
 % features = [MAV(:) LEN(:) ZC(:) SSC(:)];
 
-
-
 % features(:,[2 3 4]) = log(1+features(:,[2 3 4]));
-

@@ -77,7 +77,7 @@ classdef NfuInput < Inputs.CpcHeadstage
                 data = reshape(stream(numPacketHeaderBytes+1:cpchpacketSize),numBytesPerSample,numSamplesPerPacket);
                 
                 % First 5 bytes per sample are header
-                databytes = data(5:end,:);
+                databytes = data(numSampleHeaderBytes+1:end,:);
                 convertedFrame = reshape(typecast(databytes(:),'int16'),numChannelsPerPacket,numSamplesPerPacket);
                 
                 try
