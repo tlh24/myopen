@@ -17,10 +17,10 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
         RetrainCounts = 15;  % Controls how many samples to wait before auto retrain
     end
     properties (SetAccess = protected)
-        hJoystick       %
-        %         SampleCount;    % Points to where the next sample should be added
+        hJoystick       % handle to joystick, used to add data to interface
+        hGui            % handle to the graphics object
+
         ButtonDown = 0; % Counts how long the joystick button is down
-        hGui
         CurrentClass = 1;
         LastButton = 0;
         
@@ -47,7 +47,7 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
             %                 obj.SampleCount = 1;
             %             else
             %                 obj.SampleCount = length(obj.SignalClassifier.TrainingDataLabels) + 1;
-            if ~isempty(obj.hJoystick)
+            if ~isempty(obj.hJoystick) && ~isempty(SignalClassifier)
                 setupFigure(obj);
             end
             
