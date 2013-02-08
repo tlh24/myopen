@@ -11,6 +11,8 @@
 // to store it in a matlab file. 
 // therefore the task is to emulate sql.h and sql.cpp
 
+#define MATIOTYP int
+
 using namespace std; 
 
 MatStor::MatStor(const char* fname){
@@ -28,18 +30,18 @@ MatStor::MatStor(const char* fname){
 				array3 r(boost::extents[var->dims[2]][var->dims[1]][var->dims[0]]); 
 				if(var->data_size == 4){
 					float* w = (float*)var->data; 
-					for(size_t a=0; a<var->dims[2]; a++){
-						for(size_t b=0; b<var->dims[1]; b++){
-							for(size_t c=0; c<var->dims[0]; c++){
+					for(MATIOTYP a=0; a<var->dims[2]; a++){
+						for(MATIOTYP b=0; b<var->dims[1]; b++){
+							for(MATIOTYP c=0; c<var->dims[0]; c++){
 								r[a][b][c] = *w++; 
 							}
 						}
 					}
 				} else if(var->data_size == 8){
 					double* w = (double*)var->data; 
-					for(size_t a=0; a<var->dims[2]; a++){
-						for(size_t b=0; b<var->dims[1]; b++){
-							for(size_t c=0; c<var->dims[0]; c++){
+					for(MATIOTYP a=0; a<var->dims[2]; a++){
+						for(MATIOTYP b=0; b<var->dims[1]; b++){
+							for(MATIOTYP c=0; c<var->dims[0]; c++){
 								r[a][b][c] = *w++; 
 							}
 						}
@@ -53,15 +55,15 @@ MatStor::MatStor(const char* fname){
 					array2 r(boost::extents[var->dims[1]][var->dims[0]]); 
 					if(var->data_size == 4){
 						float* w = (float*)var->data; 
-						for(size_t a=0; a<var->dims[1]; a++){
-							for(size_t b=0; b<var->dims[0]; b++){
+						for(MATIOTYP a=0; a<var->dims[1]; a++){
+							for(MATIOTYP b=0; b<var->dims[0]; b++){
 								r[a][b] = *w++; 
 							}
 						}
 					} else if(var->data_size == 8){
 						double* w = (double*)var->data; 
-						for(size_t a=0; a<var->dims[1]; a++){
-							for(size_t b=0; b<var->dims[0]; b++){
+						for(MATIOTYP a=0; a<var->dims[1]; a++){
+							for(MATIOTYP b=0; b<var->dims[0]; b++){
 								r[a][b] = *w++; 
 							}
 						}
@@ -73,12 +75,12 @@ MatStor::MatStor(const char* fname){
 					vector<float> r(var->dims[0]); 
 					if(var->data_size == 4){
 						float* w = (float*)var->data; 
-						for(size_t a=0; a<var->dims[0]; a++){
+						for(MATIOTYP a=0; a<var->dims[0]; a++){
 							r[a] = *w++; 
 						}
 					} else if(var->data_size == 8){
 						double* w = (double*)var->data; 
-						for(size_t a=0; a<var->dims[0]; a++){
+						for(MATIOTYP a=0; a<var->dims[0]; a++){
 							r[a] = *w++; 
 						}
 					} else {
@@ -94,19 +96,19 @@ MatStor::MatStor(const char* fname){
 }
 MatStor::~MatStor(){}
 void MatStor::save(){
-	mat_t *matfp = Mat_CreateVer(m_name.c_str(),NULL,MAT_FT_DEFAULT);
+	mat_t *matfp = Mat_Create(m_name.c_str(),NULL);
 	map<string, array3>::iterator it3; 
 	for(it3 = m_dat3.begin(); it3 != m_dat3.end(); it3++){
 		string nam = (*it3).first; 
 		array3 dat = (*it3).second; 
 		size_t* dims = (size_t*)dat.shape(); 
-		size_t matdims[3]; 
+		MATIOTYP matdims[3]; 
 		matdims[0] = dims[2]; 
 		matdims[1] = dims[1]; 
 		matdims[2] = dims[0]; 
 		matvar_t* var = Mat_VarCreate(nam.c_str(), MAT_C_SINGLE, MAT_T_SINGLE, 
 												3, matdims, dat.data(), 0); 
-		Mat_VarWrite(matfp, var, MAT_COMPRESSION_NONE); 
+		Mat_VarWrite(matfp, var, 0); 
 		Mat_VarFree(var); 
 	}
 	map<string, array2>::iterator it2; 
@@ -114,23 +116,23 @@ void MatStor::save(){
 		string nam = (*it2).first; 
 		array2 dat = (*it2).second; 
 		size_t* dims = (size_t*)dat.shape(); 
-		size_t matdims[2]; 
+		MATIOTYP matdims[2]; 
 		matdims[0] = dims[1]; 
 		matdims[1] = dims[0]; 
 		matvar_t* var = Mat_VarCreate(nam.c_str(), MAT_C_SINGLE, MAT_T_SINGLE, 
 												2, matdims, dat.data(), 0); 
-		Mat_VarWrite(matfp, var, MAT_COMPRESSION_NONE); 
+		Mat_VarWrite(matfp, var, 0); 
 		Mat_VarFree(var); 
 	}
 	map<string, vector<float>>::iterator it; 
 	for(it = m_dat1.begin(); it != m_dat1.end(); it++){
 		string nam = (*it).first; 
 		vector<float> dat = (*it).second; 
-		size_t dims[2] = {1,1}; 
+		MATIOTYP dims[2] = {1,1}; 
 		dims[0] = (size_t)dat.size(); 
 		matvar_t* var = Mat_VarCreate(nam.c_str(), MAT_C_SINGLE, MAT_T_SINGLE, 
 												2, dims, dat.data(), 0); 
-		Mat_VarWrite(matfp, var, MAT_COMPRESSION_NONE); 
+		Mat_VarWrite(matfp, var, 0); 
 		Mat_VarFree(var); 
 	}
 	Mat_Close(matfp); 
@@ -156,7 +158,7 @@ void MatStor::setValue2(int ch, int un, const char* name, float val){
 	it = m_dat2.find(string(name)); 
 	if(it != m_dat2.end()){
 		array2 *r = &((*it).second); 
-		size_t* dims = (size_t*)r->shape(); 
+		MATIOTYP* dims = (MATIOTYP*)r->shape(); 
 		if(ch+1 > (int)dims[0] || un+1 > (int)dims[1])
 			r->resize(boost::extents[max(ch+1,(int)dims[0])][max(un+1,(int)dims[1])]); 
 		(*r)[ch][un] = val; 
@@ -172,7 +174,7 @@ void MatStor::setValue3(int ch, int un, const char* name, float* val, int siz){
 	it = m_dat3.find(string(name)); 
 	if(it != m_dat3.end()){
 		array3 *r = &((*it).second); 
-		size_t* dims = (size_t*)r->shape(); 
+		MATIOTYP* dims = (MATIOTYP*)r->shape(); 
 		if(ch+1 > (int)dims[0] || un+1 > (int)dims[1] || siz > (int)dims[2])
 			r->resize(boost::extents[max(ch+1,(int)dims[0])][max(un+1,(int)dims[1])][max(siz,(int)dims[2])]); 
 		for(int i=0; i<siz; i++)
@@ -199,7 +201,7 @@ float MatStor::getValue2(int ch, int un, const char* name, float def){
 	it = m_dat2.find(string(name)); 
 	if(it != m_dat2.end()){
 		array2 *r = &((*it).second); 
-		size_t* dims = (size_t*)r->shape(); 
+		MATIOTYP* dims = (MATIOTYP*)r->shape(); 
 		if(ch < (int)dims[0] && un < (int)dims[1])
 			return (*it).second[ch][un]; 
 	}
@@ -210,7 +212,7 @@ void MatStor::getValue3(int ch, int un, const char* name, float* val, int siz){
 	it = m_dat3.find(string(name)); 
 	if(it != m_dat3.end()){
 		array3 *r = &((*it).second); 
-		size_t* dims = (size_t*)r->shape(); 
+		MATIOTYP* dims = (MATIOTYP*)r->shape(); 
 		if(ch < (int)dims[0] && un < (int)dims[1] && siz <= (int)dims[2]){
 			for(int i=0; i<siz; i++){
 				*val++ = (*r)[ch][un][i]; 
