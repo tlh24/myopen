@@ -44,7 +44,7 @@ classdef CytonI < Presentation.CytonI.Robot
     %   hControls.
     %
     %
-    % Example with user inerface for sliders:
+    % Example with user interface for sliders:
     % 
     %   import Presentation.CytonI.*
     %   hCyton = CytonI;

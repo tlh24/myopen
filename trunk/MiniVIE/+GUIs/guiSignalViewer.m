@@ -17,9 +17,13 @@ classdef guiSignalViewer < Common.MiniVieObj
         
         AxesLimTimeDomain = [-1 10];  % unused if axis 'auto'
         
+        DisplaySamples = 2000; % Use this parameter to control the number of 
+                               % samples shown in the signal viewer
+        
         hg
         hTimer
         hChannelSelect
+        
     end
     properties (SetAccess = private)
         featureBuffer = [];
@@ -221,7 +225,8 @@ classdef guiSignalViewer < Common.MiniVieObj
         end
         function updateTimeDomain(obj)
             
-            obj.SignalSource.NumSamples = 2000;
+            obj.SignalSource.NumSamples = obj.DisplaySamples;
+            
             if obj.ShowFilteredData
                 channelData = obj.SignalSource.getFilteredData();
             else
