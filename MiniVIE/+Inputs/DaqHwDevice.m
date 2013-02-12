@@ -134,11 +134,15 @@ classdef DaqHwDevice < Inputs.SignalInput
             end
             
         end
-        function data = getData(obj)
+        function data = getData(obj,numSamples)
             % This function will always return the correct size for data
             % (based on the number of samples) however results will be
             % padded with zeros.  User should check obj.AnalogInput.SamplesAvailable
             % for a deterministic result
+            
+            if nargin < 2
+                numSamples = obj.NumSamples;
+            end
             
             if isempty(obj.AnalogInput)
                 error('DAQ Object "%s" Not Initialized\n',obj.AnalogInputName);
@@ -149,7 +153,6 @@ classdef DaqHwDevice < Inputs.SignalInput
                 start(obj.AnalogInput);
             end
             
-            numSamples = obj.NumSamples;
             numAvailable = obj.AnalogInput.SamplesAvailable;
             if numAvailable < numSamples
                 % Not enough data, get whatever is there

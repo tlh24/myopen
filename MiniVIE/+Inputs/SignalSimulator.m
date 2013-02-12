@@ -28,11 +28,18 @@ classdef SignalSimulator < Inputs.SignalInput
             obj.SignalBuffer = zeros(MAX_SAMPLES,obj.NumChannels);
             
         end
-        function bufferedData = getData(obj)
+        function bufferedData = getData(obj,numSamples)
+            % This function will always return the correct size for data
+            % (based on the number of samples) however results will be
+            % padded with zeros.  
+            
+            if nargin < 2
+                numSamples = obj.NumSamples;
+            end
             
             % Note this returned data size conforms to the getdata methods
             % of the Data Acquisition Toolbox [numSamples numChannels]
-            sampleBlock = 150;
+            sampleBlock = 50;
             newData = zeros(sampleBlock,obj.NumChannels);
             
             % create some noisy sine waves to return
@@ -55,14 +62,14 @@ classdef SignalSimulator < Inputs.SignalInput
             
             % Check for buffer overrun
             bufferSize = size(obj.SignalBuffer,1);
-            if (obj.NumSamples > bufferSize)
-                error('NumSamples requested [%d] is greater than SignalBuffer size',obj.NumSamples,bufferSize);
+            if (numSamples > bufferSize)
+                error('NumSamples requested [%d] is greater than SignalBuffer size',numSamples,bufferSize);
             end
 
-            idxSamples = 1+bufferSize-obj.NumSamples : bufferSize;
+            idxSamples = 1+bufferSize-numSamples : bufferSize;
             bufferedData = obj.SignalBuffer(idxSamples,:);
         end
-        function isReady = isReady(obj,numSamples) %#ok<MANU>
+        function isReady = isReady(obj,numSamples)  %#ok<INUSL>
             % Consider adding in a phony startup delay
             isReady = true;
             fprintf('[%s] Simulator Ready with %d samples\n',mfilename,numSamples);

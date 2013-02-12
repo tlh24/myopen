@@ -87,6 +87,7 @@ classdef PhidgetAccel < handle
             
         end
         function accelValue = getData(obj)
+                        
             % get accel values
             accelValuePtr = libpointer('doublePtr',0);
             accelValue = zeros(1,obj.NumAxes);

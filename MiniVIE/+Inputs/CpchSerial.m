@@ -209,7 +209,11 @@ classdef CpchSerial < Inputs.CpcHeadstage
             obj.ChannelMask = dec2binvec(double(frameB.Mask), size(obj.DataBuffer,2));
             %fclose(obj.SerialObj);  % not clear why we are closing here (RSA)
         end
-        function data = getData(obj)
+        function data = getData(obj,numSamples)
+            
+            if nargin < 2
+                numSamples = obj.NumSamples;
+            end                
             
             % Start device if not already running
             if (strcmpi(obj.SerialObj.Status, 'closed') || (obj.IsRunning == false))
@@ -219,7 +223,7 @@ classdef CpchSerial < Inputs.CpcHeadstage
             % Check for new data
             if (obj.SerialObj.BytesAvailable == 0)
                 %fprintf('[%s] No new data in serial buffer.\n',mfilename);
-                data = obj.DataBuffer(end-obj.NumSamples+1:end,:);
+                data = obj.DataBuffer(end-numSamples+1:end,:);
                 return;
             end
             
@@ -302,7 +306,7 @@ classdef CpchSerial < Inputs.CpcHeadstage
             end
             
             % return the most recently requested data
-            data = obj.DataBuffer(end-obj.NumSamples+1:end,:);
+            data = obj.DataBuffer(end-numSamples+1:end,:);
             
         end
         function isReady = isReady(obj,numSamples)
