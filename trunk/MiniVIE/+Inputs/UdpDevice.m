@@ -55,7 +55,7 @@ classdef UdpDevice < Inputs.SignalInput
                 pnet(obj.udp, 'writepacket');
             end
         end
-        function data = getData(obj)
+        function data = getData(obj,numSamplesRequested)
             % This function will always return the correct size for data
             % (based on the number of samples) however results will be
             % padded with zeros.  User should check obj.AnalogInput.SamplesAvailable
@@ -90,7 +90,7 @@ classdef UdpDevice < Inputs.SignalInput
                     end
                 end
             end
-            numSamples = obj.NumSamples*5;
+            numSamples = numSamplesRequested*5;
             s = size(obj.dd, 2);
             if numSamples < s
                 data = obj.dd(:, s - numSamples + 1 : end);

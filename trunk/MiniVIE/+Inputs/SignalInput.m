@@ -6,19 +6,24 @@ classdef SignalInput < Common.MiniVieObj
     % 01-Sept-2010 Armiger: Created
     properties
         SampleFrequency = 1000; % Hz
-        ChannelIds = [];
-        NumSamples = 1000;
+        ChannelIds = []; % Id numbers for activated channels.  Can be zero 
+                         % based or one based, but the channels will always
+                         % be displayed as 1 to N in the GUIs etc.
+        NumSamples = 1000; % This is the number of samples that the input 
+                           % source will maintain in its buffer
         
         Verbose = 1;
-        hFilter = {};
+        hFilter = {};      % contains handles to filter objects that will 
+                           % be applied when the user calls the
+                           % getFilteredData method
         
     end
     properties (Dependent = true, SetAccess = private)
-        NumChannels;
+        NumChannels;       % this is the length of filter ids
     end
     methods (Abstract)
         initialize(obj);
-        data = getData(obj);
+        data = getData(obj,numSamples);
         isReady = isReady(obj,numSamples); % Consider removing extra arg
         start(obj);
         stop(obj);
@@ -141,14 +146,18 @@ classdef SignalInput < Common.MiniVieObj
             end
         end %audiopreview
         
-        function filtered = getFilteredData(obj)
+        function filtered = getFilteredData(obj,numSamples)
             % Simplified call to get data and apply filters
             
             % Note that in an xpc implmentation, since the filtering is
             % done locally this method might be overloaded to get the
             % filtered signals directly
             
-            data = getData(obj);
+            if nargin < 2
+                data = getData(obj);
+            else
+                data = getData(obj,numSamples);
+            end
             filtered = applyAllFilters(obj,data);
         end %getFilteredData
         

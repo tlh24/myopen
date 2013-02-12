@@ -17,8 +17,11 @@ classdef guiSignalViewer < Common.MiniVieObj
         
         AxesLimTimeDomain = [-1 10];  % unused if axis 'auto'
         
-        DisplaySamples = 2000; % Use this parameter to control the number of 
-                               % samples shown in the signal viewer
+        % Use this parameter to control the number of
+        % samples shown in the signal viewer
+        NumTimeDomainSamples = 2000;
+        NumFeatureSamples = 250;
+        NumFrequencySamples = 400;
         
         hg
         hTimer
@@ -46,7 +49,7 @@ classdef guiSignalViewer < Common.MiniVieObj
             
         end
         function success = setSignalSource(obj,hSignalSource)
-
+            
             if isempty(hSignalSource)
                 success = false;
             else
@@ -81,9 +84,9 @@ classdef guiSignalViewer < Common.MiniVieObj
             
             obj.updateFigure();
             fprintf('OK\n');
-
+            
             start(obj.hTimer);
-
+            
             
         end
         function updateChannels(obj)
@@ -101,13 +104,6 @@ classdef guiSignalViewer < Common.MiniVieObj
             obj.hg.Axes(2) = axes('Parent',obj.hg.PanelAxes,'Units','Normalized','Position',[0.05 0.05 0.9 0.9]);
             obj.hg.Axes(1) = axes('Parent',obj.hg.PanelAxes,'Units','Normalized','Position',[0.05 0.05 0.9 0.9]);
             
-            obj.hg.PanelProps = uibuttongroup(obj.hg.Figure,'Units','Pixels','Position',[290 40 200 150]);
-            set(obj.hg.PanelProps ,'Title','Plot Properties');
-            
-            obj.hg.cbFilter = uicontrol('Style','checkbox','String','Apply Filters','Units','Normalized',...
-                'pos',[0.1 0.1 0.8 0.25],'parent',obj.hg.PanelProps,'HandleVisibility','off',...
-                'Callback',@(src,evt)showFilteredData(obj,get(src,'Value')));
-            
             obj.hg.PanelDomain = uibuttongroup(obj.hg.Figure,'Units','Pixels','Position',[80 40 200 150]);
             set(obj.hg.PanelDomain,'Title','Plot Domain');
             % Create three radio buttons in the button group.
@@ -121,6 +117,50 @@ classdef guiSignalViewer < Common.MiniVieObj
             set(obj.hg.PanelDomain,'SelectionChangeFcn',@(src,evt)selcbk(src));
             set(obj.hg.PanelDomain,'Visible','on');
             
+            obj.hg.PanelProps = uibuttongroup(obj.hg.Figure,'Units','Pixels','Position',[290 40 200 150]);
+            set(obj.hg.PanelProps ,'Title','Plot Properties');
+            
+            obj.hg.cbFilter = uicontrol('Style','checkbox','String','Apply Filters','Units','Normalized',...
+                'pos',[0.1 0.1 0.8 0.25],'parent',obj.hg.PanelProps,'HandleVisibility','off',...
+                'Callback',@(src,evt)showFilteredData(obj,get(src,'Value')));
+            uicontrol('Style','text','String','NumSamples: ','Units','Normalized',...
+                'pos',[0.1 0.4 0.4 0.15],'parent',obj.hg.PanelProps,'HandleVisibility','off');
+            obj.hg.editSamples = uicontrol('Style','edit','String',' -- ','Units','Normalized',...
+                'pos',[0.5 0.4 0.4 0.15],'parent',obj.hg.PanelProps,'HandleVisibility','off',...
+                'Callback',@setSamplesCallback);
+            
+            function setSamplesCallback(src,~)
+                str = get(src,'String');
+                val = str2double(str);
+                if isnan(val)
+                    val = [];
+                end
+                
+                MAX_SAMPLES = 4000;
+                val = max(min(val,MAX_SAMPLES),1);
+                
+                switch obj.ModeSelect
+                    case GUIs.guiSignalViewerState.TimeDomain
+                        if isempty(val)
+                            val = obj.NumTimeDomainSamples;
+                        else
+                            obj.NumTimeDomainSamples = val;
+                        end
+                    case GUIs.guiSignalViewerState.FFT
+                        if isempty(val)
+                            val = obj.NumFrequencySamples;
+                        else
+                            obj.NumFrequencySamples = val;
+                        end
+                    case GUIs.guiSignalViewerState.Features
+                        if isempty(val)
+                            val = obj.NumFeatureSamples;
+                        else
+                            obj.NumFeatureSamples = val;
+                        end
+                end
+                set(src,'String',num2str(val));
+            end
             function selcbk(source)
                 switch get(source,'SelectedObject')
                     case obj.hg.ButtonTimeDomain
@@ -130,24 +170,31 @@ classdef guiSignalViewer < Common.MiniVieObj
                     case obj.hg.ButtonFeatures
                         obj.ModeSelect = GUIs.guiSignalViewerState.Features;
                 end
+                
+                obj.updateFigure();
+                
             end
         end
         function updateFigure(obj)
             % Synch Parameters and uiobjects
-            %SelectedChannels = 1:4;
+
             set(obj.hg.cbFilter,'value',obj.ShowFilteredData);
             
             switch obj.ModeSelect
                 case GUIs.guiSignalViewerState.TimeDomain
                     set(obj.hg.PanelDomain,'SelectedObject',obj.hg.ButtonTimeDomain);
+                    set(obj.hg.editSamples,'String',num2str(obj.NumTimeDomainSamples));
                 case GUIs.guiSignalViewerState.FFT
                     set(obj.hg.PanelDomain,'SelectedObject',obj.hg.ButtonFFT);
+                    set(obj.hg.editSamples,'String',num2str(obj.NumFrequencySamples));
                 case GUIs.guiSignalViewerState.Features
                     set(obj.hg.PanelDomain,'SelectedObject',obj.hg.ButtonFeatures);
+                    set(obj.hg.editSamples,'String',num2str(obj.NumFeatureSamples));
             end
             
         end
         function update(obj)
+            % This function called by timer object and updates the GUI
             try
                 switch obj.ModeSelect
                     case GUIs.guiSignalViewerState.Features
@@ -169,7 +216,7 @@ classdef guiSignalViewer < Common.MiniVieObj
                         setAxesVisible(obj.hg.Axes(2:4),'off');
                         set(obj.hg.Axes(1),'OuterPosition',[0 0 1 1]);
                         xlabel(obj.hg.Axes(1),'Sample Number');
-                        ylabel(obj.hg.Axes(1),'Volts');
+                        ylabel(obj.hg.Axes(1),'Source Units');
                         %ylim(obj.hg.Axes(1),obj.AxesLimTimeDomain);
                         axis(obj.hg.Axes(1),'auto');
                         obj.updateTimeDomain();
@@ -192,13 +239,13 @@ classdef guiSignalViewer < Common.MiniVieObj
         end
         
         function updateFrequencyDomain(obj)
-
-            obj.SignalSource.NumSamples = 400;
+            
+            numSamples = obj.NumFrequencySamples;
             
             if obj.ShowFilteredData
-                channelData = obj.SignalSource.getFilteredData();
+                channelData = obj.SignalSource.getFilteredData(numSamples);
             else
-                channelData = obj.SignalSource.getData();
+                channelData = obj.SignalSource.getData(numSamples);
             end
             
             if isempty(channelData) || ~ishandle(obj.hg.Figure)
@@ -206,7 +253,7 @@ classdef guiSignalViewer < Common.MiniVieObj
             end
             
             Fs = obj.SignalSource.SampleFrequency;
-            L = obj.SignalSource.NumSamples;
+            L = numSamples;
             NFFT = 2^nextpow2(L); % Next power of 2 from length of y
             f = Fs/2*linspace(0,1,NFFT/2+1);
             
@@ -225,12 +272,12 @@ classdef guiSignalViewer < Common.MiniVieObj
         end
         function updateTimeDomain(obj)
             
-            obj.SignalSource.NumSamples = obj.DisplaySamples;
+            numSamples = obj.NumTimeDomainSamples;
             
             if obj.ShowFilteredData
-                channelData = obj.SignalSource.getFilteredData();
+                channelData = obj.SignalSource.getFilteredData(numSamples);
             else
-                channelData = obj.SignalSource.getData();
+                channelData = obj.SignalSource.getData(numSamples);
             end
             
             if isempty(channelData) || ~ishandle(obj.hg.Figure)
@@ -247,17 +294,19 @@ classdef guiSignalViewer < Common.MiniVieObj
         end
         function updateFeatures(obj)
             
+            numSamples = obj.NumFeatureSamples;
+            
             if obj.ShowFilteredData
-                channelData = obj.SignalSource.getFilteredData();
+                channelData = obj.SignalSource.getFilteredData(numSamples);
             else
-                channelData = obj.SignalSource.getData();
+                channelData = obj.SignalSource.getData(numSamples);
             end
             
             if isempty(channelData) || ~ishandle(obj.hg.Figure)
                 return;
             end
             
-            windowSize = 200;
+            windowSize = numSamples;
             %                 zc_thresh = 0.1;
             %                 ssc_thresh = 0.1;
             
@@ -274,9 +323,7 @@ classdef guiSignalViewer < Common.MiniVieObj
                         'XData',1:size(obj.featureBuffer,3));
                 end
             end
-            
-            
-        end
+        end %updateFeatures
         function resetTimePlot(obj)
             % Create plot lines
             obj.hg.PlotLines{1} = plot(obj.hg.Axes(1),zeros(2,obj.SignalSource.NumChannels));
@@ -294,9 +341,9 @@ classdef guiSignalViewer < Common.MiniVieObj
                     set(plotLines(iLine),'Color',ColorOrder(iLine,:));
                 end
             end
-
             
-        end
+            
+        end %resetTimePlot
         function showFilteredData(obj,val)
             obj.ShowFilteredData = val;
         end
@@ -314,11 +361,11 @@ classdef guiSignalViewer < Common.MiniVieObj
         end
     end
     methods (Static = true)
-        function obj = Default
+        function [hViewer, hSignalSource] = Default
             
             hSignalSource = Inputs.SignalSimulator;
             hSignalSource.initialize();
-            obj = GUIs.guiSignalViewer(hSignalSource);
+            hViewer = GUIs.guiSignalViewer(hSignalSource);
         end
     end
 end

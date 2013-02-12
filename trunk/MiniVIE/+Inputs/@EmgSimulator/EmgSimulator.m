@@ -46,10 +46,12 @@ classdef EmgSimulator < Inputs.SignalInput
             obj.SignalBuffer = zeros(MAX_SAMPLES,obj.NumChannels);
             
         end
-        function bufferedData = getData(obj)
+        function bufferedData = getData(obj,numSamples)
             
-            bufferedData = [];
-            
+            if nargin < 2
+                numSamples = obj.NumSamples;
+            end                
+                        
             t = clock;
             tElapsed = etime(t,obj.lastAccess);
             obj.lastAccess = t;
@@ -81,11 +83,11 @@ classdef EmgSimulator < Inputs.SignalInput
                 newDataIds
             end
             
-            numSamplesRequested = obj.NumSamples;
+            numSamplesRequested = numSamples;
             if numSamplesInBuffer < numSamplesRequested
                 error('More samples requested "%d" than buffered "%d" \n',numSamplesRequested,numSamplesInBuffer);
             else
-                bufferedData = obj.SignalBuffer(end-obj.NumSamples+1:end,:);
+                bufferedData = obj.SignalBuffer(end-numSamples+1:end,:);
             end
         end
         function isReady = isReady(obj,numSamples) %#ok<MANU>

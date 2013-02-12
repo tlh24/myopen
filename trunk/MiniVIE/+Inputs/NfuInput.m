@@ -40,13 +40,15 @@ classdef NfuInput < Inputs.CpcHeadstage
 %             data = getFilteredData@Inputs.SignalInput(obj);
 %             
 %         end
-        function data = getData(obj)
+        function data = getData(obj,numSamples)
             % This function will always return the correct size for data
             % (based on the number of samples) however results will be
-            % padded with zeros.  User should check obj.AnalogInput.SamplesAvailable
-            % for a deterministic result
-
-
+            % padded with zeros. 
+            
+            if nargin < 2
+                numSamples = obj.NumSamples;
+            end                
+            
             obj.hNfu.update();  % read available packets
             
             cellData = obj.hNfu.get_buffer(1);
@@ -73,7 +75,7 @@ classdef NfuInput < Inputs.CpcHeadstage
                 % TODO verify packet order
                 stream = cellData{i};
                 
-                % First 6 bytes of messgae are global header
+                % First 6 bytes of message are global header
                 data = reshape(stream(numPacketHeaderBytes+1:cpchpacketSize),numBytesPerSample,numSamplesPerPacket);
                 
                 % First 5 bytes per sample are header
@@ -111,13 +113,15 @@ classdef NfuInput < Inputs.CpcHeadstage
                 % convertedFrame = mean(abs(convertedFrame));
                 end
                 
-                [numChannels numSamples] = size(convertedFrame);
-                obj.dataBuffer = circshift(obj.dataBuffer,[0 -numSamples]);
+                % Place new data in the buffer.  Note this won't overrun
+                % the buffer since there are only 10 samples per packet
+                [numChannels, numNewSamples] = size(convertedFrame);
+                obj.dataBuffer = circshift(obj.dataBuffer,[0 -numNewSamples]);
                 
-                obj.dataBuffer(1:numChannels,end-numSamples+1:end) = convertedFrame;
+                obj.dataBuffer(1:numChannels,end-numNewSamples+1:end) = convertedFrame;
             end
             
-            dataBuff = obj.dataBuffer(:,end-obj.NumSamples+1:end)';
+            dataBuff = obj.dataBuffer(:,end-numSamples+1:end)';
             
             EMG_GAIN = 50;  %TODO abstract
             data = EMG_GAIN .* double(dataBuff) ./ 512;
