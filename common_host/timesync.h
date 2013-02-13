@@ -1,6 +1,8 @@
 #ifndef __TIMESYNC_H__
 #define __TIMESYNC_H__
 
+#define TIMESYNC_MMAP	"/tmp/timesync.mmap"
+
 class GainController{
 public: 
 	long double m_avg; 
@@ -63,7 +65,7 @@ public:
 		m_timeOffset = 0.0; 
 		slopeGC = new GainController(3e-5); 
 		offsetGC = new GainController(1e-4); 
-		mmh = new mmapHelp(2*sizeof(syncSharedData), "/home/tlh24/timeSync.mmap"); 
+		mmh = new mmapHelp(2*sizeof(syncSharedData), TIMESYNC_MMAP); 
 		m_ssd = (syncSharedData*)mmh->m_addr; 
 		if(m_ssd){
 			m_ssd[0].magic = m_ssd[1].magic = 0x134fbab3; 
@@ -134,12 +136,12 @@ public:
 	syncSharedData* m_ssd; 
 	
 	TimeSyncClient(){
-		mmh = new mmapHelp(2*sizeof(syncSharedData), "/home/tlh24/timeSync.mmap");
+		mmh = new mmapHelp(2*sizeof(syncSharedData), TIMESYNC_MMAP);
 		if(mmh->m_fd > 0){
 			m_ssd = (syncSharedData*)mmh->m_addr; 
 			m_ssd[0].magic = m_ssd[1].magic = 0; 
 		} else
-			printf("Error: could not open /home/tlh24/timeSync.mmap\n"); 
+			printf("Error: could not open %s\n",TIMESYNC_MMAP); 
 	}
 	~TimeSyncClient(){
 		delete mmh; 
