@@ -20,7 +20,7 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
         EnableFeedback = 1;
         
         % MicroStrain config values
-        msComPortStr = 'COM9';
+        msComPortStr = 'COM6';
         msNodeInt = 10;
         msChannelInt = 14;
         msLefty = true;
@@ -190,11 +190,32 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
             % 1/17/2013 RSA: Implemented switchout case for vulcan x or
             % nfu.  Also nfu local roc tables are currently disabled
             
+            if isempty(obj.hMicroStrainGX2)
+                shoulderAngles = zeros(1,3);
+            else
+                F_WCS_RB1 = obj.hMicroStrainGX2.rotationMatrix;
+                F_WCS_RB1Offset = pinv(obj.T_WCS_HOME) * ...
+                    F_WCS_RB1 * obj.F_RB1_HOME;
+                ang = obj.R_to_EulerZYX(F_WCS_RB1Offset);
+                
+                shoulderFE = ang(3);
+                if 1%~obj.msLefty
+                    shoulderAA = ang(2);
+                    humeralRot = -ang(1);
+                else
+                    shoulderAA = -ang(2);
+                    humeralRot = ang(1);
+                end
+                
+                shoulderAngles = [shoulderFE shoulderAA humeralRot];
+            end
+            shoulderAngles(1) = 10;
+            shoulderAngles(3) = 0;
             if obj.enableNfu
-                obj.hNfu.sendUpperArmHandRoc([zeros(1,3) e w],graspId,graspValue);
+                obj.hNfu.sendUpperArmHandRoc([shoulderAngles e w],graspId,graspValue);
             else
                 % Send to vulcanX
-                msg = obj.hMud.ArmPosVelHandRocGrasps([zeros(1,3) e w],zeros(1,7),1,graspId,graspValue,1);
+                msg = obj.hMud.ArmPosVelHandRocGrasps([shoulderAngles e w],zeros(1,7),1,graspId,graspValue,1);
                 obj.hSink.putbytes(msg);
             end
             
