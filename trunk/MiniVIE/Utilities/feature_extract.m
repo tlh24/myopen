@@ -21,7 +21,7 @@ if nargin < 4
 end
 if nargin < 3
     zc_thresh = 0.25;
-    zc_thresh = 0.2;
+    zc_thresh = 0.1;
 end
 
 [nChannels nSamples] = size(windowData);

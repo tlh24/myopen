@@ -503,13 +503,21 @@ classdef MiniVIE < Common.MiniVieObj
                         obj.println('Presentation setup complete',1);
                     case 'MplScenarioMud'                        
                         QA = {
-                            'Enable NFU (y/n):'                     'y'
-                            'Destination IP (192.168.1.199):'       '192.168.1.111'
+                            'Enable NFU (y/n):'                     'n'
+                            'Destination IP (192.168.1.199):'       '127.0.0.1'
                             'Destination Port (9027):'              '9027'
-                            'Enable Tactors (y/n)'                  'y'
+                            'Enable Tactors (y/n)'                  'n'
                             'Tactor Ids ([5 6 7]):'                 '[3 4]'
                             'Enable Orientation Sensors (y/n):'     'n'
                             };
+%                         QA = {
+%                             'Enable NFU (y/n):'                     'y'
+%                             'Destination IP (192.168.1.199):'       '192.168.1.111'
+%                             'Destination Port (9027):'              '9027'
+%                             'Enable Tactors (y/n)'                  'y'
+%                             'Tactor Ids ([5 6 7]):'                 '[3 4]'
+%                             'Enable Orientation Sensors (y/n):'     'n'
+%                             };
                         name = 'MPL Control Interface';
                         numlines = 1;
                         prompt = QA(:,1);
