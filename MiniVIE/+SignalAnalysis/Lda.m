@@ -47,7 +47,20 @@ classdef Lda < SignalAnalysis.Classifier
             fprintf('%d ',obj.getActiveChannels);
             fprintf(']\n');
             
-            [obj.Wg,obj.Cg] = obj.lda(feats,dataLabels,obj.NumClasses);
+            [w,c] = obj.lda(feats,dataLabels,obj.NumClasses);
+            %[obj.Wg,obj.Cg] = obj.lda(feats,dataLabels,obj.NumClasses);
+            
+            % If classes have no data we can leave these as NaN.  When classifying
+            % max( feats * w + c , [], 2) will return the max real number
+            hasNoData = ~sum(abs(w));
+            if any(hasNoData)
+                fprintf(['[%s] Classes with no data [ ' repmat('%d ',1,sum(hasNoData)) '] \n'],mfilename,find(hasNoData));
+            end
+            
+            w(:,hasNoData) = NaN;
+            
+            obj.Wg = w;
+            obj.Cg = c;
             
             obj.IsTrained = true;
             
@@ -66,7 +79,7 @@ classdef Lda < SignalAnalysis.Classifier
                 
             end
         end
-        function [classOut voteDecision] = classify(obj,featuresColumns)
+        function [classOut voteDecision classVect] = classify(obj,featuresColumns)
             assert(size(featuresColumns,1) == obj.NumActiveChannels*obj.NumFeatures,...
                 'Expected first dimension of featuredata [%d]to be equal to numActiveChannels*numFeatures [%d]',...
                 size(featuresColumns,1),obj.NumActiveChannels*obj.NumFeatures);
@@ -79,12 +92,20 @@ classdef Lda < SignalAnalysis.Classifier
             
             % Given lda parameters Wg,Cg, classify the featureData by multiplying and
             % selecting the max output.  Additionally, create a majority vote buffer to
-            % filter outputs
+            % filter outputs.
+            %
+            % Note this funciton will take an array of feature columns and
+            % classify all of these in one step
             %
             % R. Armiger 30-Nov-2009: Created
             
             % Forward Classify
             classVect = bsxfun(@plus,featuresColumns'*obj.Wg,obj.Cg);
+            
+            % Check for w,c entries with no data, exclude these from
+            % classification
+            
+            
             [~, classOut] = max(classVect,[],2);
             
             numDecisions = length(classOut);

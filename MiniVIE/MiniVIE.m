@@ -220,7 +220,7 @@ classdef MiniVIE < Common.MiniVieObj
             %obj.SignalClassifier.TrainingDataLabels = obj.TrainingInterface.getClassLabels;
             %obj.SignalClassifier.TrainingEmg = obj.TrainingInterface.getEmgData;
             obj.SignalClassifier.train();
-            obj.SignalClassifier.computeerror();
+            obj.SignalClassifier.computeError();
             obj.SignalClassifier.computeGains();
             
         end
@@ -633,7 +633,7 @@ classdef MiniVIE < Common.MiniVieObj
                 % else we need to train the classifier with the collected
                 % data
                 obj.SignalClassifier.train();
-                obj.SignalClassifier.computeerror();
+                obj.SignalClassifier.computeError();
                 obj.SignalClassifier.computeConfusion();
                 obj.SignalClassifier.computeGains();
             end
@@ -666,7 +666,7 @@ classdef MiniVIE < Common.MiniVieObj
         end
         function pbTrain(obj)
             obj.SignalClassifier.train();
-            obj.SignalClassifier.computeerror();
+            obj.SignalClassifier.computeError();
             obj.SignalClassifier.computeConfusion();
             obj.SignalClassifier.computeGains();
         end

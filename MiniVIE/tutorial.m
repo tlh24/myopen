@@ -85,7 +85,7 @@ TrainingData.loadTrainingData();
 
 %% Step 5: Train the classifier
 SignalClassifier.train();
-SignalClassifier.computeerror();
+SignalClassifier.computeError();
 
 %% Step 6: Send data to MiniV for visualization
 h = Scenarios.MiniVDisplayScenario;

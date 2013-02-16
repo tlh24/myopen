@@ -59,29 +59,33 @@ handles.output = hObject;
 debug = length(varargin) ~= 2;
 
 if debug
+    
     % Load system for debug
     obj = MiniVIE.Default;
-    obj.TrainingInterface.loadTrainingData('Sim_TrainingData.dat');
+    
+    obj.TrainingData.loadTrainingData('Sim_TrainingData.trainingData');
     
     obj.SignalClassifier.NumMajorityVotes = 1;
     obj.SignalClassifier.setActiveChannels([1 2 3 4 5 6 7 8]);
-    obj.SignalClassifier.TrainingData = obj.TrainingInterface.getFeatureData;
-    obj.SignalClassifier.TrainingDataLabels = obj.TrainingInterface.getClassLabels;
+    obj.SignalClassifier.initialize(obj.TrainingData);
     obj.SignalClassifier.train();
-    obj.SignalClassifier.computeerror();
+    obj.SignalClassifier.computeError();
     obj.SignalClassifier.computeGains();
 
     handles.SignalSource = obj.SignalSource;
     handles.SignalClassifier = obj.SignalClassifier;
+    handles.TrainingData = obj.TrainingData;
     
 else
     
-    assert(length(varargin) == 2,'Expected two input arguments');
+    assert(length(varargin) == 3,'Expected three input arguments');
     assert(~isempty(varargin{1}),'SignalSource is empty');
     assert(~isempty(varargin{2}),'SignalClassifier is empty');
+    assert(~isempty(varargin{3}),'TrainingData is empty');
     
     handles.SignalSource = varargin {1};
     handles.SignalClassifier = varargin {2};
+    handles.TrainingData = varargin {3};
 end
 
 set(handles.toggleStart,'String','Begin');
@@ -125,19 +129,28 @@ set(hObject,'String','Running...');
 
 hSignalSource = handles.SignalSource;
 hSignalClassifier = handles.SignalClassifier;
+hTrainingData = handles.TrainingData;
 
-classToTest = 1:(hSignalClassifier.NumClasses - 1);
-% Assume that No Movement is last class and don't evaluate it
-for iClass = 1:length(classToTest)
+hasClassData = hTrainingData.getClassLabelCount > 0;
+allClassNames = hSignalClassifier.getClassNames;
+classIdToTest = find(hasClassData(:) & ~strcmpi(allClassNames(:),'No Movement'));
 
-    classNames = hSignalClassifier.getClassNames;
-    targetClass = classNames{classToTest(iClass)};
+testingClasses = allClassNames(classIdToTest);
+
+structTrialLog.AllClassNames = allClassNames;
+structTrialLog.ClassIdToTest = classIdToTest;
+
+for iClass = 1:length(classIdToTest)
+    
+    targetClass = allClassNames{classIdToTest(iClass)};
     
     set(handles.txtTarget,'String',targetClass);
     
-    trialLog = assessClass(hSignalSource,hSignalClassifier,classToTest(iClass),handles);
-    structTrialLog(iClass) = trialLog;
+    trialLog = assessClass(hSignalSource,hSignalClassifier,targetClass,classIdToTest(iClass),handles);
+    structTrialLog.Data(iClass) = trialLog;
 end
+
+
 
 set(hObject,'String','Complete');
 
@@ -148,7 +161,7 @@ if ~isempty(fullFilename)
     save(fullFilename,'structTrialLog','-mat');
 end
 
-function structTrialLog = assessClass(hSignalSource,hSignalClassifier,classToTest,handles)
+function structTrialLog = assessClass(hSignalSource,hSignalClassifier,strTargetClass,classIdToTest,handles)
 % Blocking function that begins trial of classifier testing "classToTest"
 
 %constants
@@ -160,9 +173,8 @@ assert(~isnan(maxCorrectClasses) && maxCorrectClasses > 0,'Max Correct Classes m
 timerStarted = 0;
 numCorrectClasses = 0; % reset each loop
 moveComplete = 0;
-classNames = hSignalClassifier.getClassNames;
-targetClass = classNames{classToTest};
-structTrialLog.targetClass = targetClass;
+
+structTrialLog.targetClass = strTargetClass;
 structTrialLog.classDecision = [];
 structTrialLog.voteDecision = [];
 structTrialLog.emgFrames = [];
@@ -170,7 +182,7 @@ structTrialLog.emgFrames = [];
 
 while (moveComplete == 0) && (~timerStarted || (toc < timeout)) ...
         && ishandle(handles.toggleStart) && get(handles.toggleStart,'Value')
-    fprintf('Testing Class: %s | ',targetClass);
+    fprintf('Testing Class: %s | ',strTargetClass);
     set(handles.txtTarget,'ForegroundColor','k');
     [classDecision,voteDecision,className,prSpeed,rawEmg,windowData,features2D] ...
         = getIntent(hSignalSource,hSignalClassifier);
@@ -189,7 +201,7 @@ while (moveComplete == 0) && (~timerStarted || (toc < timeout)) ...
     structTrialLog.voteDecision = [structTrialLog.voteDecision voteDecision];
     structTrialLog.emgFrames =  cat(3,structTrialLog.emgFrames,rawEmg);
     
-    if classDecision == classToTest
+    if classDecision == classIdToTest
         numCorrectClasses = numCorrectClasses + 1;
     end
     
@@ -205,10 +217,10 @@ while (moveComplete == 0) && (~timerStarted || (toc < timeout)) ...
 end
 
 if moveComplete
-    fprintf('Class "%s" completed successfully\n',targetClass);
+    fprintf('Class "%s" completed successfully\n',strTargetClass);
     set(handles.txtTarget,'ForegroundColor','g');
 else
-    fprintf('Class "%s" timed out\n',targetClass);
+    fprintf('Class "%s" timed out\n',strTargetClass);
     set(handles.txtTarget,'ForegroundColor','r');
 end
 

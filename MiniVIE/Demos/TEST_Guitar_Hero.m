@@ -29,7 +29,7 @@ end
 TrainingData.loadTrainingData('*.trainingData');
 
 SignalClassifier.train();
-SignalClassifier.computeerror();
+SignalClassifier.computeError();
 
 %%
 obj = Presentation.AirGuitarHero.AirGuitarHeroEmg(SignalSource,SignalClassifier);

@@ -25,7 +25,7 @@ classdef AdaptiveTrainingInterface < PatternRecognition.TrainingInterface
             obj.SignalClassifier.TrainingData = obj.getFeatureData();
             obj.SignalClassifier.TrainingDataLabels = obj.getClassLabels();
             obj.SignalClassifier.train();
-            obj.SignalClassifier.computeerror();
+            obj.SignalClassifier.computeError();
             obj.SignalClassifier.computeGains();
             obj.SignalClassifier.computeConfusion();
             

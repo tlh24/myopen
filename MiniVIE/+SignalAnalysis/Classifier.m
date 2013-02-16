@@ -159,6 +159,10 @@ classdef Classifier < Common.MiniVieObj
             fprintf(']\n');
         end        
         function confuseMat = computeConfusion(obj)
+            % Compute and return confusion matrix.  Note matrix is row
+            % dominant in the sense that each row is the desired decision
+            % and each column reports the actual decision.  
+            
             if ~obj.IsTrained
                 fprintf('[%s] Classifier untrained. Cannot compute confusion.\n',mfilename);
                 confuseMat = [];
@@ -186,12 +190,12 @@ classdef Classifier < Common.MiniVieObj
                 % Find all the actual class decisions and
                 % misclassifications
                 accumVal = accumarray(actualClass(:),1);
-                confuseMat(1:length(accumVal),iClass) = accumVal;
+                confuseMat(iClass,1:length(accumVal)) = accumVal;
             end
             
             obj.ConfusionMatrix = confuseMat;
         end
-        function [normalizedError classError] = computeerror(obj)
+        function [normalizedError classAccuracy] = computeError(obj)
             
             if ~obj.IsTrained
                 fprintf('[%s] Classifier untrained. Cannot compute error.\n',mfilename);
@@ -206,35 +210,36 @@ classdef Classifier < Common.MiniVieObj
             
             % Forward Classify
             classOut = classify(obj,feats);
-            %numSamplesClassified = length(classOut);
+            numSamplesClassified = length(classOut);
             
-            errorRate = @(outputClass,desiredClass) ...
-                sum( ((outputClass(:)-desiredClass(:))~=0) /length(desiredClass));
+            accuracyFunc = @(outputClass,desiredClass) ...
+                sum(outputClass(:) == desiredClass(:) ) ./ length(desiredClass);
             
             % Calculate Error
-            PeTrain1 = errorRate(classOut,obj.TrainingData.getClassLabels);
-            fprintf('Percent correctly classified: %6.1f %%\n',(1-PeTrain1)*100);
-            %             PeTrain2 = percent_error(voteOut,obj.TrainingDataLabels);
-            %             fprintf('Percent correctly classified after majority vote: %6.1f %%\n',(1-PeTrain2)*100);
-            %             percentError = [PeTrain1 PeTrain2];
-            normalizedError = PeTrain1;
-            classError = zeros(1,obj.NumClasses);
+            totalAccuracy = accuracyFunc(classOut,obj.TrainingData.getClassLabels);
+            fprintf('Percent correctly classified: %6.1f %%  (%d samples)\n',...
+                totalAccuracy*100,numSamplesClassified);
+
+            normalizedError = totalAccuracy;
+            classAccuracy = zeros(1,obj.NumClasses);
             
             for iClass = 1:obj.NumClasses
                 trainingLabels = classLabels;
                 
                 idClass = (trainingLabels == iClass);
-                
                 targetClass = reshape(trainingLabels(idClass),1,[]);
                 actualClass = reshape(classOut(idClass),1,[]);
-                
-                classError(iClass) = errorRate(actualClass,targetClass);
+                if any(idClass)
+                    classAccuracy(iClass) = accuracyFunc(actualClass,targetClass);
+                else
+                    classAccuracy(iClass) = 0;
+                end
                 
                 classNames = obj.getClassNames;
                 fprintf('%20s Class accuracy:\t %6.1f %% \t',...
-                    classNames{iClass},(1-classError(iClass))*100);
+                    classNames{iClass},classAccuracy(iClass)*100);
                 
-                fprintf('(%d of %d)\n',sum(actualClass == targetClass),length(targetClass))
+                fprintf('(%4d of %4d)\n',sum(actualClass == targetClass),length(targetClass))
             end
         end
         function virtualChannels = virtual_channels(obj,features_3D,classOut)

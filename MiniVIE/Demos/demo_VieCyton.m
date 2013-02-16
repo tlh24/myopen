@@ -5,7 +5,7 @@ obj.TrainingData.loadTrainingData('Sim_20120430_202658_TrainingData.dat');
 obj.SignalClassifier.setActiveChannels(1:4);
 % obj.SignalClassifier.NumSamplesPerWindow = 250;
 obj.SignalClassifier.train();
-obj.SignalClassifier.computeerror();
+obj.SignalClassifier.computeError();
 obj.SignalClassifier.computeGains();
 
 hSignalSource = obj.SignalSource;

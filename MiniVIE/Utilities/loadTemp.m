@@ -8,7 +8,7 @@ obj.SignalClassifier.setActiveChannels([1 2 3 4 5 6 7 8]);
 obj.SignalClassifier.TrainingData = obj.TrainingInterface.getFeatureData;
 obj.SignalClassifier.TrainingDataLabels = obj.TrainingInterface.getClassLabels;
 obj.SignalClassifier.train();
-obj.SignalClassifier.computeerror();
+obj.SignalClassifier.computeError();
 obj.SignalClassifier.computeGains();
 
 return
@@ -21,7 +21,7 @@ for i = 7
     for j = 1:size(ch,1)
         obj.SignalClassifier.setActiveChannels(ch(j,:));
         obj.SignalClassifier.train();
-        e = [e; obj.SignalClassifier.computeerror()];
+        e = [e; obj.SignalClassifier.computeError()];
         c = [c; i];
     end
 end

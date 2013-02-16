@@ -1,12 +1,36 @@
-classdef AssessmentEval
+classdef assessmentEval
     methods
-        function obj = assessmentEval
-            clc
-            %fname = uigetfile('*.assessmentLog');
-            files = dir('WR_TR01_*.assessmentLog');
+        function obj = assessmentEval(fileName)
+            %computes assessment statistics and displays in console
+            %
+            % Usage: 
+            % obj = assessmentEval(fileName)
+            %
+            % fileName can be local "*.assessmentLog'"
+            % fileName can be fullpath "c:\tmp\*.assessmentLog'"
+            % fileName can be exact "c:\tmp\myLog.assessmentLog'"
             
-            for iFile = 1:length(files)
-                fname = files(iFile).name;
+            % break down user input ot handle cases where full or partial
+            % paths are provided
+            [PathName, FileName, FileExtension] = fileparts(fileName);
+            FullFile = fullfile(PathName, [FileName FileExtension]);
+            %fileName = '\\dom1\REDD\Programs\RP3\SENSITIVE_RESTRICTED_Patient_Data\JHMI\JH_TH02\*.assessmentLog';
+            if exist(FullFile,'file') ~= 2
+                [FileName,PathName,FilterIndex] = uigetfile(FullFile,'MultiSelect','on');
+                if FilterIndex == 0
+                    % User Cancelled
+                    return
+                end
+            end
+            
+            if ~iscell(FileName)
+                FileName = {FileName};
+            end
+            
+            % scroll display
+            fprintf(repmat('\n',1,10));
+            for iFile = 1:length(FileName)
+                fname = fullfile(PathName,FileName{iFile});
                 load(fname,'-mat');
                 classNames = {structTrialLog(:).targetClass};
                 classNames{end+1} = 'No Movement';
@@ -66,7 +90,5 @@ classdef AssessmentEval
             overallAccuracy = mean(classAccuracyPct);
             
         end
-        
-        
     end
 end

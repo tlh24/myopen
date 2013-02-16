@@ -25,7 +25,7 @@ classdef EmgJacksonPollock < Scenarios.ScenarioBase
             obj.SignalClassifier.TrainingData = features3D;
             obj.SignalClassifier.TrainingDataLabels = classLabelId;
             obj.SignalClassifier.train();
-            obj.SignalClassifier.computeerror();
+            obj.SignalClassifier.computeError();
         end
         function run(obj)
             a = Presentation.Pollock;

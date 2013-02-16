@@ -1,4 +1,5 @@
-function [w,e,rocValue,rocId] = manualOverRide(w,e,rocValue,rocId)
+function [shoulderAngles,e,w,rocValue,rocId] = ...
+    manualOverRide(shoulderAngles,e,w,rocValue,rocId)
 % Units radians
 
 % Currently applies to MPL.MplScenarioMud.update
@@ -28,4 +29,8 @@ end
 % w(1) = -90*pi/180;  % rotation
 % w(2) = 0.0;   % dev
 % w(3) = -0.55;  % fe
+
+% Lock Shoulder
+shoulderAngles(1) = 10;
+shoulderAngles(3) = 0;
 

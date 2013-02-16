@@ -10,10 +10,14 @@ classdef (Sealed) TrainingData < handle
     %
     % This class is required by classifier objects on initialization
     %
+    % On initialization this class will fill a buffer with NaN to allow future data storage
+    % Note that on load, however, the buffer is filled by exactly the
+    % number of saved values.  Continuing a session with saved data may
+    % make data addition slower
     %
     % 2012May14 Armiger: Created
     properties
-        MaxSamples = 1e4;
+        MaxSamples = 1e5;
         ActiveChannels = [1 3];
         ClassNames = {'MotionA' 'MotionB' 'No Movement'};
     end
@@ -25,6 +29,8 @@ classdef (Sealed) TrainingData < handle
         SignalDataRaw = [];
         SignalFeatures3D = [];
         ClassLabelId = [];
+        EnableLabel = [];  % Use this to keep data in the structure, but don't use it in the algorithm
+        
     end
     
     methods
@@ -33,12 +39,13 @@ classdef (Sealed) TrainingData < handle
             fprintf('[%s] Creating Training Data Object\n',mfilename);
         end
         function initialize(obj,numChannels,numFeatures,numSamplesPerWindow)
-
+            % initialize(obj,numChannels,numFeatures,numSamplesPerWindow)
             fprintf('[%s] Initializing Training Data Object\n',mfilename);
             
             % Initialize buffers
             obj.SignalFeatures3D = NaN([numChannels numFeatures obj.MaxSamples]);
             obj.ClassLabelId = NaN(1,obj.MaxSamples);
+            obj.EnableLabel = true(1,obj.MaxSamples);
             
             % Initialize variable to store raw EMG data
             try
@@ -55,7 +62,7 @@ classdef (Sealed) TrainingData < handle
             hasData = (obj.SampleCount > 0);
         end
         function clearData(obj,promptForConfirmation)
-            
+            % clearData(obj,promptForConfirmation)
             if nargin < 2
                 promptForConfirmation = true;
             end
@@ -68,8 +75,7 @@ classdef (Sealed) TrainingData < handle
                         % continue on
                     otherwise
                         return
-                end
-                
+                end                
             end
             
             fprintf('[%s] Clearing %d samples. \n',mfilename,obj.SampleCount);
@@ -80,17 +86,58 @@ classdef (Sealed) TrainingData < handle
             
         end
         function featureData = getFeatureData(obj)
+            %featureData = getFeatureData(obj)
             % returns valid data (since buffers initialized to larger size)
-            featureData = obj.SignalFeatures3D(:,:,1:obj.SampleCount);
+            % that is also 'enabled'
+            
+            isEnabled = obj.EnableLabel(1:obj.SampleCount);
+            featureData = obj.SignalFeatures3D(:,:,isEnabled);
         end
         function classLabels = getClassLabels(obj)
+            % classLabels = getClassLabels(obj)
             classLabels = obj.ClassLabelId(1:obj.SampleCount);
-            
             assert(~any(isnan(classLabels)),'NaNs found in classLabels');
+
+            isEnabled = obj.EnableLabel(1:obj.SampleCount);
+            classLabels = classLabels(isEnabled);
+            
+        end
+        function labelCount = getClassLabelCount(obj)
+            % return the number of each label in an array
+            
+            labelCount = zeros(1,length(obj.ClassNames));
+            classLabels = obj.getClassLabels;
+            countedLabels = accumarray(classLabels(:),1);
+            
+            labelCount(1:length(countedLabels)) = countedLabels;
+            
+        end
+        function numDisabled = disableLabeledData(obj,classLabelId)
+            % numDisabled = disableLabeledData(obj,classLabelId)
+            
+            for iClass = classLabelId
+                % Get all class labels (not just the disabled ones)
+                %classLabels = obj.getClassLabels;
+                classLabels = obj.ClassLabelId;
+                
+                isClass = classLabels == iClass;
+                
+                numDisabled = sum(isClass);
+                if numDisabled > 0
+                    obj.EnableLabel(isClass) = false;
+                end
+            end
+            
+        end
+        function numSamples = enableAllLabeledData(obj)
+            % numSamples = enableAllLabeledData(obj)
+            
+            obj.EnableLabel(1:obj.SampleCount) = true;
+            numSamples = obj.SampleCount;
             
         end
         function [filteredData dataBreaks] = getClassData(obj,iClass)
-            
+            % [filteredData dataBreaks] = getClassData(obj,iClass)
             isThisClass = iClass == obj.ClassLabelId;
             
             assert( sum(isThisClass) > 0 ,...
@@ -123,17 +170,27 @@ classdef (Sealed) TrainingData < handle
             % yBreaks = repmat([-10; 10; NaN],1,size(xBreaks,2));
             
         end
-        function [signalData dataBreaks] = getContinuousData(obj)
+        function [signalData dataBreaks] = getContinuousData(obj,channels)
+            %getContinuousData return raw signal waveform 
+            %
+            % If no channels are specified, the returned data will include
+            % all the active channels.  
+            % 
+            % Usage:
+            %   [signalData dataBreaks] = getContinuousData(obj,channels)
             
             assert(~isempty(obj.SignalDataRaw),'No Raw Data Found');
             
+            if nargin < 2
+                channels = obj.ActiveChannels;
+            end
             
             [windowSize] = size(obj.SignalDataRaw,2);
             [numSamples] = size(obj.SignalDataRaw,3);
             
             dataBreaks = windowSize:windowSize:numSamples*windowSize;
             
-            signalData = reshape(obj.SignalDataRaw(obj.ActiveChannels,:,:),length(obj.ActiveChannels),[])';
+            signalData = reshape(obj.SignalDataRaw(channels,:,:),length(channels),[])';
             
         end        
         function signalData = getRawSignals(obj)
@@ -255,17 +312,35 @@ classdef (Sealed) TrainingData < handle
                 return
             end
             
-            if isfield(S,'features3D') && isfield(S,'classLabelId')
+            % load features
+            if isfield(S,'features3D')
                 obj.SignalFeatures3D = S.features3D;
-                obj.ClassLabelId = S.classLabelId;
-                
-                %RSA: 9/19/2012 -- This was commented out.  why?
-                obj.SampleCount = size(S.features3D,3);
             else
                 msg = { 'Error loading file', fullFile , ...
-                    'Expected data fields: "features3D" and "classLabelId"'};
+                    'Expected data fields: "features3D"'};
                 errordlg(msg);
                 return
+            end
+            
+            % load labels
+            if isfield(S,'classLabelId')
+                obj.ClassLabelId = S.classLabelId;
+            else
+                msg = { 'Error loading file', fullFile , ...
+                    'Expected data fields: "classLabelId"'};
+                errordlg(msg);
+                return
+            end
+            
+            %RSA: 9/19/2012 -- This was commented out.  why?
+            obj.SampleCount = size(S.features3D,3);
+            fprintf('[%s] Loading %d Samples\n',mfilename,obj.SampleCount);
+
+            
+            if isfield(S,'enableLabel')
+                obj.EnableLabel = S.enableLabel;
+            else
+                obj.EnableLabel = true(1,obj.SampleCount);
             end
             
             % Restore class names
@@ -289,8 +364,9 @@ classdef (Sealed) TrainingData < handle
             end
             if isfield(S,'sampleRateHz')
                 obj.SampleRate = S.sampleRateHz;
-            else
-                fprintf('[%s] No sample rate provided.  Assuming 1000Hz\n',mfilename);
+            end
+            if isempty(obj.SampleRate)
+                fprintf('[%s] Sample rate empty.  Assuming 1000Hz\n',mfilename);
                 obj.SampleRate = 1000;
             end
             
@@ -313,8 +389,9 @@ classdef (Sealed) TrainingData < handle
             % Get Parameters
             classNames = obj.ClassNames; %#ok<NASGU>
             activeChannels = obj.ActiveChannels; %#ok<NASGU>
+            sampleRateHz = obj.SampleRate; %#ok<NASGU>
             
-            save(fullFilename,'features3D','classLabelId','classNames','activeChannels','signalData');
+            save(fullFilename,'features3D','classLabelId','classNames','activeChannels','signalData','sampleRateHz');
             
             success = true;
             

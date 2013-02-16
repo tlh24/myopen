@@ -206,7 +206,7 @@
 %                     obj.SignalClassifier.TrainingData = features3D(:,:,1:sampleCounter);
 %                     obj.SignalClassifier.TrainingDataLabels = classLabelId(1:sampleCounter);
 %                     obj.SignalClassifier.train();
-%                     obj.SignalClassifier.computeerror();
+%                     obj.SignalClassifier.computeError();
 %                 end
 %                 
 %                 if sampleCounter > 800
