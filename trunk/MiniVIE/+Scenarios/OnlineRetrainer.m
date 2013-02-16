@@ -202,7 +202,7 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
             if doTrain
                 % retrain
                 obj.SignalClassifier.train();
-                obj.SignalClassifier.computeerror();
+                obj.SignalClassifier.computeError();
                 obj.SignalClassifier.computeGains();
                 obj.SignalClassifier.computeConfusion();
             end
@@ -252,7 +252,7 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
             
             try
             if ~isempty(obj.SignalClassifier.ConfusionMatrix)
-                dat(1:numClasses,1:numClasses) = obj.SignalClassifier.ConfusionMatrix';
+                dat(1:numClasses,1:numClasses) = obj.SignalClassifier.ConfusionMatrix;
             end
             catch
                 disp('Confusion matrix error')

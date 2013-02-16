@@ -45,6 +45,7 @@ classdef ScenarioBase < Common.MiniVieObj
     
     methods
         function initialize(obj,SignalSource,SignalClassifier)
+            % initialize(obj,SignalSource,SignalClassifier)
             obj.SignalSource = SignalSource;
             obj.SignalClassifier = SignalClassifier;
             
@@ -52,10 +53,8 @@ classdef ScenarioBase < Common.MiniVieObj
             period = 0.05;
             fprintf('[%s] Setting timer refresh rate to %4.2f s\n',mfilename,period);
             obj.Timer.Period = period;
-            %obj.Timer.Period = 0.15;
             
             jointAngles = UiTools.load_temp_file(obj.TempFileName);
-            %jointAngles = [];
             
             if isempty(jointAngles)
                 obj.JointAnglesDegrees = zeros(size(action_bus_definition));
@@ -63,7 +62,6 @@ classdef ScenarioBase < Common.MiniVieObj
                 obj.JointAnglesDegrees = jointAngles;
             end
             obj.JointVelocity = zeros(size(action_bus_definition));
-
             
         end
         function start(obj)
@@ -118,7 +116,8 @@ classdef ScenarioBase < Common.MiniVieObj
                     disp('No Signal Source');
                 end
                 return
-            elseif isempty(obj.SignalClassifier)
+            end
+            if isempty(obj.SignalClassifier)
                 if obj.Verbose > 0
                     disp('No Signal Classifier');
                 end

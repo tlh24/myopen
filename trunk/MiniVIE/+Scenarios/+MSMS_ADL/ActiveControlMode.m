@@ -52,7 +52,7 @@ TrainingInterface.loadTrainingData();
 SignalClassifier.TrainingData = TrainingInterface.getFeatureData;
 SignalClassifier.TrainingDataLabels = TrainingInterface.getClassLabels;
 SignalClassifier.train();
-SignalClassifier.computeerror();
+SignalClassifier.computeError();
 
 %% Step 6: Send data to MSMS for visualization
 hMSMS = Scenarios.MSMS_ADL.MsmsDisplayScenario(SignalSource,SignalClassifier);

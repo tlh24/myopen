@@ -183,7 +183,7 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
             hScenario.SignalClassifier.TrainingData = features3D;
             hScenario.SignalClassifier.TrainingDataLabels = classLabelId;
             hScenario.SignalClassifier.train();
-            hScenario.SignalClassifier.computeerror();
+            hScenario.SignalClassifier.computeError();
 
         end
         function obj = Default

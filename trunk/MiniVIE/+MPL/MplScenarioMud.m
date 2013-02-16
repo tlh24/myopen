@@ -111,8 +111,10 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
                 
                 obj.msDegreesFromNorth = bearing;
                 
+                obj.stream_rcv();
+                
                 F_WCS_RB1 = obj.hMicroStrainGX2.rotationMatrix;
-                obj.T_WCS_HOME = [f_make_R(0,90,-obj.msDegreesFromNorth) [0 0 0]'; 0 0 0 1];
+                obj.T_WCS_HOME = makehgtform('zrotate',-obj.msDegreesFromNorth*pi/180,'yrotate',pi/2);
                 obj.F_RB1_HOME = pinv(F_WCS_RB1) * obj.T_WCS_HOME;
             end
         end
@@ -120,15 +122,15 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
             update@Scenarios.OnlineRetrainer(obj); % Call superclass update method
             
             if ~isempty(obj.SignalSource)
-                update_feedforward(obj);
+                update_control(obj);
             end
             
             if obj.EnableFeedback
-                update_feedback(obj);
+                update_sensory(obj);
             end
             
         end
-        function update_feedback(obj)
+        function update_sensory(obj)
             % Send feedback
             if isempty(obj.hNfu)
                 % No NFU, no percepts, no Feedback
@@ -171,7 +173,7 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
             
             
         end
-        function update_feedforward(obj)
+        function update_control(obj)
             % Get current joint angles and send commands to VulcanX or NFU
             
             % TODO: Hand and wrist and elbow only implemented, not upper arm
@@ -185,7 +187,6 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
             % convert char grasp id to numerical mpl grasp value
             graspId = obj.graspLookup(obj.GraspId);
             
-            [w, e, graspValue, graspId] = manualOverRide(w,e, obj.GraspValue,graspId);
             
             % 1/17/2013 RSA: Implemented switchout case for vulcan x or
             % nfu.  Also nfu local roc tables are currently disabled
@@ -193,24 +194,27 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
             if isempty(obj.hMicroStrainGX2)
                 shoulderAngles = zeros(1,3);
             else
+                obj.stream_rcv();
+                
                 F_WCS_RB1 = obj.hMicroStrainGX2.rotationMatrix;
                 F_WCS_RB1Offset = pinv(obj.T_WCS_HOME) * ...
                     F_WCS_RB1 * obj.F_RB1_HOME;
                 ang = obj.R_to_EulerZYX(F_WCS_RB1Offset);
                 
                 shoulderFE = ang(3);
-                if 1%~obj.msLefty
-                    shoulderAA = ang(2);
-                    humeralRot = -ang(1);
-                else
+                if obj.msLefty
                     shoulderAA = -ang(2);
                     humeralRot = ang(1);
+                else
+                    shoulderAA = ang(2);
+                    humeralRot = -ang(1);
                 end
                 
                 shoulderAngles = [shoulderFE shoulderAA humeralRot];
             end
-            shoulderAngles(1) = 10;
-            shoulderAngles(3) = 0;
+            
+            [shoulderAngles, e, w, graspValue, graspId] = manualOverRide(shoulderAngles, e, w, obj.GraspValue,graspId);
+            
             if obj.enableNfu
                 obj.hNfu.sendUpperArmHandRoc([shoulderAngles e w],graspId,graspValue);
             else

@@ -193,7 +193,7 @@ classdef MiniGuitarHero < Scenarios.OnlineRetrainer%PatternRecognition.AdaptiveT
                         %obj.perform_retrain();
                         % retrain
                         obj.SignalClassifier.train();
-                        obj.SignalClassifier.computeerror();
+                        obj.SignalClassifier.computeError();
                         obj.SignalClassifier.computeGains();
                         obj.SignalClassifier.computeConfusion();
                     end

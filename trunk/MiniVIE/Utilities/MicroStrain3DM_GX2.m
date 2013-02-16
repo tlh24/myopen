@@ -14,6 +14,8 @@ classdef MicroStrain3DM_GX2 < hgsetget  % inherit from hgsetget so that returnin
     %  m.stop_streaming
     %  m.close
     %
+    % Note: the stream_rcv() method must be called before getting properties to update data if BytesAvailableFunc is disabled
+    %
     % Configure device (ensure streaming stopped first)
     % Enable auto-stream
     %   m.send_command(['e4';'C1';'29';'00';'FC';'A6';'80','CE']);
@@ -142,11 +144,11 @@ classdef MicroStrain3DM_GX2 < hgsetget  % inherit from hgsetget so that returnin
                 s.BaudRate = 115200;
                 s.Timeout = 2;
                 s.InputBufferSize = 4096;
-                s.BytesAvailableFcnMode = 'byte';
+                %s.BytesAvailableFcnMode = 'byte';
                 % Note the BytesAvailableFcnCount should be larger than the
                 % expected message size [13] so that a full message is
                 % guarenteed to be read.
-                s.BytesAvailableFcnCount = 30;  % was 30
+                %s.BytesAvailableFcnCount = 30;  % was 30
             else
                 s = hExisting(1);
                 delete(hExisting(2:end));
@@ -455,7 +457,7 @@ classdef MicroStrain3DM_GX2 < hgsetget  % inherit from hgsetget so that returnin
             if obj.Verbose
                 println('Enabling Bytes Available Function');
             end
-            obj.hPort.BytesAvailableFcn = @(src,evt)stream_rcv(obj);
+            %obj.hPort.BytesAvailableFcn = @(src,evt)stream_rcv(obj);
         end
         
         
@@ -612,6 +614,7 @@ classdef MicroStrain3DM_GX2 < hgsetget  % inherit from hgsetget so that returnin
             
             nBytes = obj.hPort.BytesAvailable;
             if nBytes == 0
+                disp('No Data');
                 return
             else
                 rawBytes = fread(obj.hPort,nBytes);
@@ -809,6 +812,7 @@ classdef MicroStrain3DM_GX2 < hgsetget  % inherit from hgsetget so that returnin
 
         function preview(obj)
             
+            obj.stream_rcv();
             if isempty(obj.angularPosition)
                 error('No data.  Try start_streaming');
             end
@@ -817,15 +821,17 @@ classdef MicroStrain3DM_GX2 < hgsetget  % inherit from hgsetget so that returnin
             
             figure(2);
             clf;
-            f_plot_triad(eye(3));
-            hTriad = f_plot_triad(eye(3));
+            PlotUtils.triad(eye(4));
+            hTriad = PlotUtils.triad(eye(4));
             axis([-2 2 -2 2 -2 2]);
             daspect([1 1 1]);
             
             
             while StartStopForm
+                obj.stream_rcv();
+
                 putdata(hPlot,[obj.angularPosition*180/pi obj.LQI obj.RSSI]);
-                f_update_triad(obj.rotationMatrix,hTriad);
+                set(hTriad,'Matrix',obj.rotationMatrix);
                 
                 drawnow
             end
