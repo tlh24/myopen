@@ -19,19 +19,22 @@ classdef EmgSimulator < Inputs.SignalInput
         DEFAULT_PATTERN = 9; % No Movement for data file
     end
     methods
-        function obj = EmgSimulator
+        function obj = EmgSimulator(patternFileName)
             % Constructor
             obj.uiControlPanel();
             obj.CurrentPattern = obj.DEFAULT_PATTERN;
             
+            if nargin < 1
+                patternFileName = 'emgPatternData.mat';
+            end
+            
             try
-                fname = 'emgPatternData.mat';
-                fprintf('[%s] Loading EMG File: %s...',mfilename,fname);
-                load('emgPatternData');
+                fprintf('[%s] Loading EMG File: %s...',mfilename,patternFileName);
+                load(patternFileName);
                 obj.patternData = emgPatternData;
                 fprintf('Done\n');
             catch ME
-                error('Failed to load EMG data file %s\n',fname);
+                error('Failed to load EMG data file %s\n',patternFileName);
             end
             
             obj.patternPointer = ones(1,length(obj.patternData));

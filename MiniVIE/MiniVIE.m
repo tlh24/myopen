@@ -271,7 +271,15 @@ classdef MiniVIE < Common.MiniVieObj
                     case 'Signal Simulator'
                         h = Inputs.SignalSimulator();
                     case 'EMG Simulator'
-                        h = Inputs.EmgSimulator();
+                        [FileName,PathName,FilterIndex] = uigetfile('emgPatternData.mat');
+                        if FilterIndex == 0
+                            % User Cancelled
+                            fname = 'emgPatternData.mat';
+                        else
+                            fname = fullfile(PathName,FileName);
+                        end
+                        
+                        h = Inputs.EmgSimulator(fname);
                     case 'DaqHwDevice'
                         %h = Inputs.DaqHwDevice('nidaq','Dev2');
                         %h = Inputs.DaqHwDevice('mcc','0');
