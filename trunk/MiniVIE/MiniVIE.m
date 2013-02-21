@@ -386,6 +386,11 @@ classdef MiniVIE < Common.MiniVieObj
                     % TODO: Note signals only updated on classifier
                     % creation
                     defaultChannels = GUIs.guiChannelSelect.getLastChannels();
+                    if isempty(defaultChannels)
+                        msg = 'No channels are active.  Enable channels in Signal Viewer';
+                        %errordlg(msg);
+                        error(msg);
+                    end
                     fprintf('Setting Active Channels to: [');
                     fprintf(' %d',defaultChannels);
                     fprintf(' ]\n');
@@ -435,23 +440,33 @@ classdef MiniVIE < Common.MiniVieObj
                 switch string{value}
                     case 'Simple Trainer'
                         h = PatternRecognition.SimpleTrainer();
-                        prompt={'Enter Number of Repetitions:',...
-                            'Enter Contraction Length (sec):',...
-                            'Enter Delay Length (sec):'...
-                            'Show images (y/n)?'
+                        
+                        QA = {
+                            'Number of Repetitions:'          '2'
+                            'Contraction Length (sec):'       '4'
+                            'Delay Length (sec):'             '3'
+                            'Startup Wait Time (sec)'         '5'
+                            'Show images (y/n)?'              'Y'
                             };
                         name='Input for Training Interface';
-                        numlines=1;
-                        defaultanswer={'2','4','3','Y'};
-                        answer=inputdlg(prompt,name,numlines,defaultanswer);
-                        assert(length(answer) == 4,'Expected 4 outputs');
+                        numLines = 1;
+                        numOutputs = size(QA,1);
+                        prompt = QA(:,1);
+                        defaultanswer = QA(:,2);
+                        answer = inputdlg(prompt,name,numLines,defaultanswer);
+                        if isempty(answer)
+                            % User Cancelled
+                        end
+                        
+                        assert(length(answer) == numOutputs,'Expected %d outputs',numOutputs);
                         vals = str2double(answer);
-                        assert(~any(isnan(vals(1:3))),'Expected 3 numeric values');
+                        assert(~any(isnan(vals(1:4))),'Expected 4 numeric values');
                         
                         h.NumRepetitions = vals(1);
                         h.ContractionLengthSeconds = vals(2);
                         h.DelayLengthSeconds = vals(3);
-                        h.EnablePictures = strcmpi(answer{4},'y');
+                        h.StartupWaitTimeSeconds = vals(4);
+                        h.EnablePictures = strcmpi(answer{5},'y');
                         
                     case 'Bar Trainer'
                         h = PatternRecognition.BarTrainer();
