@@ -50,7 +50,8 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
             a = axes('Parent',f);
             
             % picture path
-            pathImages = 'C:\usr\RP2009\VRE\Common\ACE\Pics';
+            pathstr = fileparts(which('PatternRecognition.SimpleTrainer'));
+            pathImages = fullfile(pathstr,'Images');
             end
             
             classNames = obj.SignalClassifier.getClassNames;
@@ -64,7 +65,6 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
                     end
 
                     className = classNames{iClass};
-                    
                     
                     if obj.EnablePictures
                         
@@ -101,13 +101,20 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
                                 imgName = 'point grip.jpg';
                             case 'No Movement'
                                 imgName = 'no movement (rest).jpg';
+                            case 'Index'
+                                imgName = 'IndexFinger.png';
+                            case 'Middle'
+                                imgName = 'MiddleFinger.png';
+                            case 'Ring'
+                                imgName = 'RingFinger.png';
+                            case 'Little'
+                                imgName = 'LittleFinger.png';
+                            case 'Thumb'
+                                imgName = 'ThumbFinger.png';
                             otherwise
                                 fprintf('Unmatched class: "%s"\n',className);
                                 imgName = '';
                         end
-                        
-                        
-                        
                         
                         fileName = fullfile(pathImages,imgName);
                         if exist(fileName,'file') ~= 2
