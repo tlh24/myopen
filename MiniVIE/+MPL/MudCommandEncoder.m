@@ -57,6 +57,7 @@ classdef MudCommandEncoder < handle
         ENDPOINT_P6_HAND_ROC_GRASPS = 4;
         ENDPOINT_V6_FINGERS_V = 5;
         ARM_PV_HAND_ROC_GRASPS = 6;
+        ENDPOINT_V7_HAND_ROC_GRASPS = 7;
 
         WRITE_MPL_CONFIGURATION_VALUES = 1;
         READ_MPL_CONFIGURATION_VALUES = 2;
@@ -350,6 +351,80 @@ classdef MudCommandEncoder < handle
             
         end
         
+        function msg = EndpointVelocity7HandRocGrasps( ...
+                                obj, ...
+                                endPtVelocities, ...
+                                endPtOrientationVelocities, ...
+                                swivelVelocity, ...
+                                rocMode, ...
+                                rocTableIDs, ...
+                                rocTableValues, ...
+                                rocWeights)
+            
+            assert( length(endPtVelocities) == obj.NUM_ENDPT_AXES );
+            assert( length(endPtOrientationVelocities) == obj.NUM_ENDPT_ORIENTATION_AXES );
+            assert( numel(rocMode) == numel(rocTableIDs) && numel(rocMode) == numel(rocTableValues) && numel(rocMode) == numel(rocWeights), ...
+                'rocMode, rocTableIDs, rocTableValues, and rocWeights must all be the same length');
+            assert( all(ismember(rocMode, [obj.ROC_MODE_NO_MOTION obj.ROC_MODE_POSITION obj.ROC_MODE_VELOCITY])), ...
+                'rocMode must be ROC_MODE_NO_MOTION, ROC_MODE_POSITION, or ROC_MODE_VELOCITY');
+            assert( min(rocTableIDs) >= 0 && max(rocTableIDs) <= 255 && all(rocTableIDs - mod(rocTableIDs,1) == rocTableIDs), ...
+                'rocTableIDs must be integers on the interval [0 255]');
+            assert( all(rocWeights >= 0) && all(rocWeights <= 1) && abs(sum(rocWeights) - 1) < 1e-6, ...
+                'rocWeights must be on the interval [0 1] and sum to 1');
+            PosInds = find( rocMode == obj.ROC_MODE_POSITION );
+            VelInds = find( rocMode == obj.ROC_MODE_VELOCITY );
+            if ~isempty(PosInds)
+                assert( min(rocTableValues(PosInds)) >= 0 && max(rocTableValues(PosInds)) <= 1, ...
+                    'rocTableValues for positions must be on the interval [0 1]');
+            end
+            if ~isempty(VelInds)
+                assert( min(rocTableValues(VelInds)) >= -1 && max(rocTableValues(VelInds)) <= 1, ...
+                    'rocTableValues for velocities must be on the interval [-1 1]');
+            end
+            
+            % preallocate the msg: msgId + EndPointVelocity6FingerPosVelCmdType
+            %
+            % 6 floats for endpoint, 2 floats for rocValues, 1 float for
+            % weight, one byte for rocMode, one byte for the msgId,
+            % and 2 bytes for rocTables
+            num_simultaneous_roc = uint8(numel(rocMode));
+            msg = zeros(6*4 + num_simultaneous_roc*10, 1, 'uint8'); 
+            
+            nextByte = 1;
+            
+            % msgId...
+            bytes = cast(obj.ENDPOINT_V7_HAND_ROC_GRASPS, 'uint8');
+            msg(nextByte : (nextByte-1) + length(bytes)) = bytes;
+            nextByte = nextByte + length(bytes);
+
+            % endpoint...
+            bytes = obj.SingleBytes(endPtVelocities);
+            msg(nextByte : (nextByte-1) + length(bytes)) = bytes;
+            nextByte = nextByte + length(bytes);
+            
+            bytes = obj.SingleBytes(endPtOrientationVelocities);
+            msg(nextByte : (nextByte-1) + length(bytes)) = bytes;
+            nextByte = nextByte + length(bytes);
+            
+            % swivelVelocity...
+            bytes = obj.SingleBytes(swivelVelocity);
+            msg(nextByte : (nextByte-1) + length(bytes)) = bytes;
+            nextByte = nextByte + length(bytes);
+
+            % ROC...                     
+            bytes = num_simultaneous_roc;
+            for ii = 1:num_simultaneous_roc
+                bytes = [bytes uint8(rocTableIDs(ii)) uint8(rocMode(ii)) ...
+                    obj.SingleBytes(rocTableValues(ii)) obj.SingleBytes(rocWeights(ii))];
+            end
+            msg(nextByte : (nextByte-1) + length(bytes)) = bytes;
+            nextByte = nextByte + length(bytes);
+            
+            msg = obj.CreateCmdMessage(obj.ACTUATE_MPL, msg);
+            assert(nextByte+4 == length(msg)+1); % 2 byte length, ACTUATE_MPL, Checksum
+            
+        end
+        
         function msg = EndpointPosition6HandRocGrasps( ...
                                 obj, ...
                                 endPtPositions, ...
@@ -493,13 +568,15 @@ classdef MudCommandEncoder < handle
                                 obj,...
                                 limbPerceptMapType, ...
                                 jointPerceptMapType, ...
+                                rocPerceptMapType, ...
                                 segmentPerceptMapType)
                             
             % preallocate the msg: msgId + AllJointsPosCmd
-            msg = zeros(3, 1, 'uint8');
+            msg = zeros(4, 1, 'uint8');
             msg(1) = limbPerceptMapType;
             msg(2) = jointPerceptMapType;
-            msg(3) = segmentPerceptMapType;
+            msg(3) = rocPerceptMapType;
+            msg(4) = segmentPerceptMapType;
             
             msg = obj.CreateCmdMessage(obj.CONFIGURE_PERCEPT_DATA, msg);
             
