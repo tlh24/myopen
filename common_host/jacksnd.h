@@ -135,4 +135,7 @@ void jackAddTone(Tone* t);
 void jackAddToneP(float freq, float pan, float scale, float duration); 
 void jackAddSamples(float* s1, float* s2, int num); 
 void jackSetResample(double rate); 
+void jackDisconnectAllPorts();
+void jackConnectFront();
+void jackConnectCenterSub();
 #endif

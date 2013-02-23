@@ -310,6 +310,83 @@ int jackInit(int mode)
 	addTones(&g_data, 20000); 
 	return 0; 
 }
+void jackDisconnectAllPorts() {
+	const char **ports;
+	int i;
+	
+	ports = jack_port_get_connections (output_port1);
+	if (ports != NULL) {
+		i = 0;
+		while (ports[i] != NULL) {
+			if (jack_disconnect (client, jack_port_name(output_port1), ports[i])) {
+				fprintf (stderr, "JACK: cannot disconnect output port %d\n",i);
+			}
+			i++;
+		}
+		jack_free(ports);
+	}
+
+	ports = jack_port_get_connections (output_port2);
+	if (ports != NULL) {
+		i = 0;
+		while (ports[i] != NULL) {
+			if (jack_disconnect (client, jack_port_name(output_port2), ports[i])) {
+				fprintf (stderr, "JACK: cannot disconnect output port %d\n",i);
+			}
+			i++;
+		}
+
+		jack_free(ports);
+	}
+}
+void jackConnectFront() {
+	const char **ports;
+	int i;
+
+	ports = jack_get_ports (client, NULL, NULL,
+				JackPortIsPhysical|JackPortIsInput);
+	if (ports == NULL) {
+		fprintf(stderr, "JACK: no physical playback ports\n");
+		exit (1);
+	}
+	while (ports[i] != NULL) {
+		i++;
+	}
+	if (i < 1) {
+		fprintf (stderr, "JACK: cannot connect front output port");
+	}
+	if (jack_connect (client, jack_port_name (output_port1), ports[0])) {
+		fprintf (stderr, "JACK: cannot connect output ports\n");
+	}
+	if (jack_connect (client, jack_port_name (output_port2), ports[1])) {
+		fprintf (stderr, "JACK: cannot connect output ports\n");
+	}
+	jack_free(ports);
+}
+void jackConnectCenterSub() {
+	const char **ports;
+	int i;
+
+	ports = jack_get_ports (client, NULL, NULL,
+				JackPortIsPhysical|JackPortIsInput);
+	if (ports == NULL) {
+		fprintf(stderr, "JACK: no physical playback ports\n");
+		exit (1);
+	}
+	while (ports[i] != NULL) {
+		i++;
+	}
+	if (i < 5) {
+		fprintf (stderr, "JACK: cannot connect center/sub ports");
+	}
+	if (jack_connect (client, jack_port_name (output_port1), ports[4])) {	// center
+		fprintf (stderr, "JACK: cannot connect output ports\n");
+	}
+	if (jack_connect (client, jack_port_name (output_port2), ports[5])) {	// sub
+		fprintf (stderr, "JACK: cannot connect output ports\n");
+	}
+	jack_free(ports);
+}
 void jackDemo(){
 	/* keep running until the Ctrl+C */
 	addTones(&g_data, 0); 
