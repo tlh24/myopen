@@ -1957,7 +1957,9 @@ int main(int argn, char **argc)
 	
 	//jack. 
 #ifdef JACK
-	jackInit(JACKPROCESS_RESAMPLE); 
+	jackInit(JACKPROCESS_RESAMPLE);
+	jackDisconnectAllPorts();
+	jackConnectFront();
 	jackSetResample(24414.0625/SAMPFREQ); 
 #endif
 	
