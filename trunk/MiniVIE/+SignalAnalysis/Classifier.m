@@ -76,12 +76,14 @@ classdef Classifier < Common.MiniVieObj
             activeChannels = obj.TrainingData.ActiveChannels;
         end
         function setClassNames(obj,classNames)
+            % Pass through function to Training Data
             assertInit(obj);
-            obj.TrainingData.ClassNames = classNames;
+            obj.TrainingData.setClassNames(classNames);
         end
         function setActiveChannels(obj,activeChannels)
+            % Pass through function to Training Data
             assertInit(obj);
-            obj.TrainingData.ActiveChannels = activeChannels;
+            obj.TrainingData.setActiveChannels(activeChannels);
         end
         
         function uiEnterClassNames(obj)
