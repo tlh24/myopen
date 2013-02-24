@@ -17,8 +17,10 @@ classdef (Sealed) TrainingData < handle
     % number of saved values.  Continuing a session with saved data may
     % make data addition slower
     %
+    % Also, once initialized then the number of features is locked
+    %
     % 2012May14 Armiger: Created
-
+    
     properties (SetAccess = private)
         SampleCount = 0;
         SampleRate = [];
@@ -28,7 +30,7 @@ classdef (Sealed) TrainingData < handle
     end
     properties (Access = private)
         MaxSamples = 1e5;
-
+        
         % These properties are hidden and should be accessed through the
         % various get[Property] methods.  This is due to the fact that some
         % samples are enabled / disabled internally
@@ -63,7 +65,7 @@ classdef (Sealed) TrainingData < handle
             % computed property from the size of FeatureNames
             numFeatures = length(obj.FeatureNames);
         end
-
+        
         function featureData = getFeatureData(obj)
             %featureData = getFeatureData(obj)
             % returns valid data (since buffers initialized to larger size)
@@ -76,7 +78,7 @@ classdef (Sealed) TrainingData < handle
             % classLabels = getClassLabels(obj)
             classLabels = obj.ClassLabelId(1:obj.SampleCount);
             assert(~any(isnan(classLabels)),'NaNs found in classLabels');
-
+            
             isEnabled = obj.EnableLabel(1:obj.SampleCount);
             classLabels = classLabels(isEnabled);
             
@@ -99,7 +101,7 @@ classdef (Sealed) TrainingData < handle
                 'Requested class label %d not found in data set',iClass);
             assert(~isempty(obj.SignalDataRaw),'No Raw Data Found');
             
-            [numChannels windowSize numSamples] = size(obj.SignalDataRaw);
+            %[numChannels windowSize numSamples] = size(obj.SignalDataRaw);
             
             
             % Extract data frames for requested class
@@ -126,11 +128,11 @@ classdef (Sealed) TrainingData < handle
             
         end
         function [signalData dataBreaks] = getContinuousData(obj,channels)
-            %getContinuousData return raw signal waveform 
+            %getContinuousData return raw signal waveform
             %
             % If no channels are specified, the returned data will include
-            % all the active channels.  
-            % 
+            % all the active channels.
+            %
             % Usage:
             %   [signalData dataBreaks] = getContinuousData(obj,channels)
             
@@ -147,7 +149,7 @@ classdef (Sealed) TrainingData < handle
             
             signalData = reshape(obj.SignalDataRaw(channels,:,:),length(channels),[])';
             
-        end        
+        end
         function signalData = getRawSignals(obj)
             % returns valid data (since buffers initialized to larger size)
             signalData = [];
@@ -162,27 +164,50 @@ classdef (Sealed) TrainingData < handle
             catch ME
                 warning('TrainingInterface:getEmgData','Failed to get Emg Data: %s',ME.message);
             end
-        end        
-
+        end
+        
+        function setClassNames(obj,classNames)
+            % setClassNames(obj,featureNames)
+            % Set class names as a cell array of strings
+            
+            assert(iscell(classNames),'Expected a cell array of strings');
+            
+            isValid = cellfun(@ischar,classNames);
+            assert(all(isValid),'Expected a cell array of strings');
+            
+            % Update the property
+            obj.ClassNames = classNames;
+            
+        end
         function setFeatureNames(obj,featureNames)
             % setFeatureNames(obj,featureNames)
             % Set feature names as a cell array of strings
             
             assert(iscell(featureNames),'Expected a cell array of strings');
-
+            
             isValid = cellfun(@ischar,featureNames);
             assert(all(isValid),'Expected a cell array of strings');
+            
+            
+            assert( length(featureNames) == size(obj.SignalFeatures3D,2),...
+                'Cannot change the number of features once the data object is initialized');
             
             % Update the property
             obj.FeatureNames = featureNames;
             
         end
-        function initialize(obj,numChannels,numFeatures,numSamplesPerWindow)
-            % initialize(obj,numChannels,numFeatures,numSamplesPerWindow)
+        function setActiveChannels(obj,activeChannels)
+            %setActiveChannels(obj,activeChannels)
+            
+            obj.ActiveChannels = activeChannels;
+            
+        end
+        function initialize(obj,numChannels,numSamplesPerWindow)
+            % initialize(obj,numChannels,numSamplesPerWindow)
             fprintf('[%s] Initializing Training Data Object\n',mfilename);
             
             % Initialize buffers
-            obj.SignalFeatures3D = NaN([numChannels numFeatures obj.MaxSamples]);
+            obj.SignalFeatures3D = NaN([numChannels obj.NumFeatures obj.MaxSamples]);
             obj.ClassLabelId = NaN(1,obj.MaxSamples);
             obj.EnableLabel = true(1,obj.MaxSamples);
             
@@ -219,7 +244,7 @@ classdef (Sealed) TrainingData < handle
             obj.SignalFeatures3D(:) = NaN;
             obj.ClassLabelId(:) = NaN;
             obj.SignalDataRaw(:) = NaN;
-
+            
             success = true;
         end
         
@@ -294,7 +319,7 @@ classdef (Sealed) TrainingData < handle
             fprintf('Done\n');
             
             % Feature extract
-            [numChannels windowSize numSamples] = size(obj.SignalDataRaw);
+            [numChannels, windowSize, numSamples] = size(obj.SignalDataRaw);
             numFeatures = 4;
             
             fprintf('[%s] Extracting Features...',mfilename);
@@ -318,7 +343,7 @@ classdef (Sealed) TrainingData < handle
             success = false;
             % If no input given, raise new dialog
             % If valid file given, open directly
-            % If partial file given, open dialog with that info 
+            % If partial file given, open dialog with that info
             if (nargin == 1) || isempty(fname)
                 % Get filename interactively
                 FilterSpec = '*.trainingData';
@@ -332,7 +357,7 @@ classdef (Sealed) TrainingData < handle
             elseif exist(fname, 'file') == 2
                 % Get filename from function input literally
                 fullFile = fname;
-            else                
+            else
                 FilterSpec = fname;
                 [FileName,PathName,FilterIndex] = uigetfile(FilterSpec);
                 if FilterIndex == 0
@@ -345,7 +370,7 @@ classdef (Sealed) TrainingData < handle
             
             % Load data
             try
-                fprintf('[%s] Loading file: "%s"\n',mfilename,fullFile);                
+                fprintf('[%s] Loading file: "%s"\n',mfilename,fullFile);
                 S = load(fullFile,'-mat');
             catch ME
                 msg = { 'Error loading file', fullFile , ...
@@ -391,7 +416,7 @@ classdef (Sealed) TrainingData < handle
             if isfield(S,'activeChannels')
                 obj.ActiveChannels = S.activeChannels;
             end
-
+            
             if isfield(S,'featureNames')
                 obj.FeatureNames = S.featureNames;
             else
@@ -415,22 +440,22 @@ classdef (Sealed) TrainingData < handle
             end
             
             success = true;
-        end        
+        end
         function success = saveTrainingData(obj)
             % Save Training Data
             % save(fullFilename,'features3D','classLabelId','classNames','featureNames','activeChannels','signalData','sampleRateHz');
-
+            
             fullFilename = UiTools.ui_select_data_file('.trainingData');
             if isempty(fullFilename)
                 % User Cancelled
-                return                
+                return
             end
-
+            
             % Get Data
             signalData = obj.getRawSignals(); %#ok<NASGU>
             features3D = obj.getFeatureData(); %#ok<NASGU>
             classLabelId = obj.getClassLabels(); %#ok<NASGU>
-
+            
             % Get Parameters
             classNames = obj.ClassNames; %#ok<NASGU>
             featureNames = obj.FeatureNames; %#ok<NASGU>
@@ -494,18 +519,18 @@ classdef (Sealed) TrainingData < handle
         end
         
         function addTrainingData(obj,classLabel, features, rawSignal)
-            % Add a single new sample of labeled data 
-
+            % Add a single new sample of labeled data
+            
             % Increment Sample Count
             obj.SampleCount = obj.SampleCount + 1;
             if obj.SampleCount == obj.MaxSamples + 1
                 % This should only display once
                 warning('TrainingData:ExceededMaxSamples','Exceeded Preallocated Sample Buffer');
             end
-
+            
             % Get new data (getting raw data instead of filtered for logging)
             [numChannels,numSamplesPerWindow]= size(rawSignal);
-
+            
             % Ensure new signal data matches existing signal data
             if ~isempty(obj.SignalDataRaw)
                 assert(isequal(size(obj.SignalDataRaw,1),numChannels),...
@@ -513,16 +538,16 @@ classdef (Sealed) TrainingData < handle
                 assert(isequal(size(obj.SignalDataRaw,2),numSamplesPerWindow),...
                     'New Data must match previous data number of samples');
             end
-
+            
             % Update class label history
             obj.ClassLabelId(obj.SampleCount) = classLabel;
             
-
+            
             % Note this could be tricky if data is loaded with the
             % wrong number of channels compared to the current Signal
             % Source.  Below code works if the current channels are
             % less than or equal to the prior data
-
+            
             % Update features history
             obj.SignalFeatures3D(1:numChannels,:,obj.SampleCount) = features;
             
