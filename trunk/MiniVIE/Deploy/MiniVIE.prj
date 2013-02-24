@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <deployment-project plugin="plugin.deploytool" plugin-version="1.0">
-  <configuration target="target.standalone.win" target-name="Windows Standalone Application" name="MiniVIE" location="C:\Users\armigrs1\Documents\Workspace\myopen\MiniVIE\Deploy" file="C:\Users\armigrs1\Documents\Workspace\myopen\MiniVIE\Deploy\MiniVIE.prj" build-checksum="3221653304">
-    <param.project.name>C:\Users\armigrs1\Documents\Workspace\myopen\MiniVIE\Deploy\MiniVIE.prj</param.project.name>
+  <configuration target="target.standalone.win" target-name="Windows Standalone Application" name="MiniVIE" location="C:\svn\myopen\MiniVIE\Deploy" file="C:\svn\myopen\MiniVIE\Deploy\MiniVIE.prj" build-checksum="3081775780">
+    <param.project.name>C:\svn\myopen\MiniVIE\Deploy\MiniVIE.prj</param.project.name>
     <param.target.type>Windows Standalone Application</param.target.type>
     <param.appname>MiniVIE</param.appname>
     <param.intermediate>${PROJECT_ROOT}\MiniVIE\src</param.intermediate>
@@ -58,20 +58,20 @@
       <param.user.defined.mcr.options />
     </unset>
     <fileset.main>
-      <file>C:\Users\armigrs1\Documents\Workspace\myopen\MiniVIE\MiniVIE.m</file>
+      <file>C:\svn\myopen\MiniVIE\MiniVIE.m</file>
     </fileset.main>
     <fileset.resources />
     <fileset.package />
     <build-deliverables>
-      <file name="readme.txt" location="${PROJECT_ROOT}\MiniVIE\distrib" optional="true">C:\Users\armigrs1\Documents\Workspace\myopen\MiniVIE\Deploy\MiniVIE\distrib\readme.txt</file>
-      <file name="MiniVIE.exe" location="${PROJECT_ROOT}\MiniVIE\distrib" optional="false">C:\Users\armigrs1\Documents\Workspace\myopen\MiniVIE\Deploy\MiniVIE\distrib\MiniVIE.exe</file>
+      <file name="readme.txt" location="${PROJECT_ROOT}\MiniVIE\distrib" optional="true">C:\svn\myopen\MiniVIE\Deploy\MiniVIE\distrib\readme.txt</file>
+      <file name="MiniVIE.exe" location="${PROJECT_ROOT}\MiniVIE\distrib" optional="false">C:\svn\myopen\MiniVIE\Deploy\MiniVIE\distrib\MiniVIE.exe</file>
     </build-deliverables>
     <workflow />
     <matlab>
       <root>C:\Program Files (x86)\MATLAB\R2012b</root>
       <path>
-        <directory>C:\Users\armigrs1\Documents\Workspace\myopen\MiniVIE\Utilities</directory>
-        <directory>C:\Users\armigrs1\Documents\Workspace\myopen\MiniVIE</directory>
+        <directory>C:\svn\myopen\MiniVIE\Utilities</directory>
+        <directory>C:\svn\myopen\MiniVIE</directory>
         <directory>C:\Users\armigrs1\Documents\MATLAB</directory>
         <directory>${MATLAB_ROOT}\toolbox\matlab\demos</directory>
         <directory>${MATLAB_ROOT}\toolbox\matlab\graph2d</directory>
