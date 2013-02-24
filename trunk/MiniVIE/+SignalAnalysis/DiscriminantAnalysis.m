@@ -86,7 +86,13 @@ classdef DiscriminantAnalysis < SignalAnalysis.Classifier
             training = feats';
             C = classify(sample,training,labels,obj.Type);
             
-            classOut = find(strcmp(C,classNames));
+            numClasses = length(classNames);
+            classOut = zeros(1,numClasses);
+            for iClass = 1:numClasses
+                id = strcmp(C,classNames{iClass});
+                classOut(id) = iClass;
+            end
+            %classOut = find(strcmp(C,classNames));
             voteDecision = classOut;
         end
         function close(obj)
