@@ -1,6 +1,6 @@
 classdef Classifier < Common.MiniVieObj
     % Classifier Base class
-    % 
+    %
     % 01-Sept-2010 Armiger: Created
     properties
         %TODO these are specific to LDA
@@ -10,13 +10,11 @@ classdef Classifier < Common.MiniVieObj
         NumSamplesPerWindow = 150;
         NumMajorityVotes = 5;
         
-        TrainingFeatures = {'MAV' 'LEN' 'SSC' 'ZC'};
         VirtualChannelGain = 1;  % default.  Once initialized this should be [1 NumClasses]
         
         TrainingData = [];  % Holds training data regardless of interface or classifier
-        ConfusionMatrix = [];        
-        IgnoreList = [];  % logical array to ignore certain training samples
-
+        ConfusionMatrix = [];
+        
         IsTrained = false;
         
     end
@@ -24,72 +22,65 @@ classdef Classifier < Common.MiniVieObj
         NumClasses;
         NumActiveChannels;
         NumFeatures;
-        
     end
     methods (Abstract)
         train(obj);
-        [classOut voteDecision] = classify(obj,featuresColumns);
-        % classify(obj);
+        [classOut voteDecision] = classify(obj,featureColumns);
     end
     methods
         function numClasses = get.NumClasses(obj)
-            numClasses = length(obj.getClassNames);
+            % This property moved to TrainingData object
+            assertInit(obj);
+            numClasses = obj.TrainingData.NumClasses;
         end
         function numChannels = get.NumActiveChannels(obj)
-            numChannels = length(obj.getActiveChannels);
+            % This property moved to TrainingData object
+            assertInit(obj);
+            numChannels = obj.TrainingData.NumActiveChannels;
         end
         function numFeatures = get.NumFeatures(obj)
-            numFeatures = length(obj.TrainingFeatures);
+            % This property moved to TrainingData object
+            assertInit(obj);
+            numFeatures = obj.TrainingData.NumFeatures;
         end
-%         function isTrained = get.IsTrained(obj)
-%             isTrained = (obj.Cg ~= 0);
-%         end
         function initialize(obj,hTrainingData)
-            
             % Usage: initialize(obj,hTrainingData)
+            % Initialize classifier and attach training data object
+            % (PatternRecognition.TrainingData)
             
             if nargin < 2
-                error('Classifier init requires a training data object: PatternRecognition.TrainingData()');
+                error('Classifier initialize requires a training data object: PatternRecognition.TrainingData()');
             end
-
+            
             % data init occurs before params, since these depend on
             % TrainingData params
             obj.TrainingData = hTrainingData;
             
-%             % initialize classifier parameters with zeros.  Add a 1 in the
-%             % last column so that the classifier defaults to No Movement
-%             % class
-%             obj.Wg = 0*ones(obj.NumActiveChannels*obj.NumFeatures,obj.NumClasses);
-%             obj.Wg(:,obj.NumClasses) = 1;
-%             obj.Cg = zeros(1,obj.NumClasses);
-%             obj.Cg(1,obj.NumClasses) = 1;
-
+        end
+        function assertInit(obj)
+            % Use to verify any methods that depend on training data
+            % (basically everything)
+            assert(~isempty(obj.TrainingData),'TrainingData not initialized');
         end
         function reset(obj)
             obj.Wg = [];
             obj.Cg = [];
-            
-%             obj.TrainingEmg = [];
-%             obj.TrainingData = [];
-%             obj.TrainingDataLabels = [];
-
-%            obj.initialize();
         end
         
         function classNames = getClassNames(obj)
-            assert(~isempty(obj.TrainingData),'TrainingData not initialized');
+            assertInit(obj);
             classNames = obj.TrainingData.ClassNames;
         end
         function activeChannels = getActiveChannels(obj)
-            assert(~isempty(obj.TrainingData),'TrainingData not initialized');
+            assertInit(obj);
             activeChannels = obj.TrainingData.ActiveChannels;
         end
         function setClassNames(obj,classNames)
-            assert(~isempty(obj.TrainingData),'TrainingData not initialized');
+            assertInit(obj);
             obj.TrainingData.ClassNames = classNames;
         end
         function setActiveChannels(obj,activeChannels)
-            assert(~isempty(obj.TrainingData),'TrainingData not initialized');
+            assertInit(obj);
             obj.TrainingData.ActiveChannels = activeChannels;
         end
         
@@ -133,7 +124,7 @@ classdef Classifier < Common.MiniVieObj
             
             % Classify Training data
             featureData3D = obj.TrainingData.getFeatureData();
-
+            
             feats = obj.convertfeaturedata(featureData3D);
             % Forward Classify
             classOut = classify(obj,feats);
@@ -157,11 +148,11 @@ classdef Classifier < Common.MiniVieObj
             fprintf('Virtual Channel Gains:\n [');
             fprintf(' %6.2f',obj.VirtualChannelGain);
             fprintf(']\n');
-        end        
+        end
         function confuseMat = computeConfusion(obj)
             % Compute and return confusion matrix.  Note matrix is row
             % dominant in the sense that each row is the desired decision
-            % and each column reports the actual decision.  
+            % and each column reports the actual decision.
             
             if ~obj.IsTrained
                 fprintf('[%s] Classifier untrained. Cannot compute confusion.\n',mfilename);
@@ -179,7 +170,7 @@ classdef Classifier < Common.MiniVieObj
             confuseMat = zeros(obj.NumClasses);
             
             for iClass = 1:obj.NumClasses
-
+                
                 % Establish ground truth with the desired training labels
                 isThisClass =  classLabels == iClass;
                 
@@ -195,21 +186,21 @@ classdef Classifier < Common.MiniVieObj
             
             obj.ConfusionMatrix = confuseMat;
         end
-        function [normalizedError classAccuracy] = computeError(obj)
+        function [normalizedError, classAccuracy] = computeError(obj)
             
             if ~obj.IsTrained
                 fprintf('[%s] Classifier untrained. Cannot compute error.\n',mfilename);
-                normalizedError = [];
+                [normalizedError, classAccuracy] = deal([]);
                 return
             end
             
             % Classify Training data
             classLabels = obj.TrainingData.getClassLabels();
             features3D = obj.TrainingData.getFeatureData();
-            feats = obj.convertfeaturedata(features3D);
+            featureColumns = obj.convertfeaturedata(features3D);
             
             % Forward Classify
-            classOut = classify(obj,feats);
+            classOut = classify(obj,featureColumns);
             numSamplesClassified = length(classOut);
             
             accuracyFunc = @(outputClass,desiredClass) ...
@@ -219,7 +210,7 @@ classdef Classifier < Common.MiniVieObj
             totalAccuracy = accuracyFunc(classOut,obj.TrainingData.getClassLabels);
             fprintf('Percent correctly classified: %6.1f %%  (%d samples)\n',...
                 totalAccuracy*100,numSamplesClassified);
-
+            
             normalizedError = totalAccuracy;
             classAccuracy = zeros(1,obj.NumClasses);
             
@@ -247,7 +238,7 @@ classdef Classifier < Common.MiniVieObj
             % amplitude and classifier output
             %
             % R. Armiger 30-Nov-2009: Created
-                        
+            
             % Create virtual channels
             virtualChannels = zeros(1,obj.NumClasses);
             MAV = mean(squeeze(features_3D(obj.getActiveChannels,1,:)));
@@ -273,6 +264,11 @@ classdef Classifier < Common.MiniVieObj
             %   uint8   numClasses[1];
             % Outputs:
             %   uint8   voteDecision[1];
+            %
+            % Note Code contains an internal buffer for determining winner.
+            % Also there is an assumption about the no movement class being
+            % the last class which causes an immediate stop if only two NM
+            % classes are detected.
             %
             % R. Armiger: Created
             
@@ -317,7 +313,7 @@ classdef Classifier < Common.MiniVieObj
             end
             
             % find winner
-            [maxTally maxTallyId] = eml_max(tally);
+            [maxTally, maxTallyId] = eml_max(tally);
             
             % check for ties
             isTie = sum((tally == maxTally)) > 1;
@@ -344,7 +340,7 @@ classdef Classifier < Common.MiniVieObj
                     (decisionHistory(1) == noMovementClass)
                 voteDecision = noMovementClass;
             end
-                    
+            
         end
     end
 end

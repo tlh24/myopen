@@ -15,29 +15,15 @@ classdef Lda < SignalAnalysis.Classifier
             if isempty(obj.TrainingData) || ~obj.TrainingData.hasData()
                 disp('No Training Data Exists');
                 return
-                error('No Training Data Exists');
             elseif isempty(obj.getActiveChannels)
                 error('No channels selected for training');
             end
             
             dataLabels = obj.TrainingData.getClassLabels();
             features3D = obj.TrainingData.getFeatureData();
-            feats = obj.convertfeaturedata(features3D);
+            featureColumns = obj.convertfeaturedata(features3D);
 
-            
-            % eliminate ignored samples
-            numIgnore = length(obj.IgnoreList);
-            fprintf('[%s] Ignoring %d samples\n',mfilename,sum(obj.IgnoreList));
-            if numIgnore
-                fprintf('[%s] #ignore = %d; # labels = %d; # feats = %d \n',mfilename,numIgnore,length(dataLabels),size(feats,2));
-                if (numIgnore == length(dataLabels) ) && (numIgnore == size(feats,2) )
-                    obj.IgnoreList = obj.IgnoreList(1:end) > 0;
-                    dataLabels(obj.IgnoreList) = [];
-                    feats(:,obj.IgnoreList) = [];
-                end
-            end
-            
-            fprintf('Training LDA with %d Samples (',size(feats,2));
+            fprintf('Training LDA with %d Samples (',size(featureColumns,2));
             for iClass = 1:obj.NumClasses
                 fprintf('%d = %d; ',iClass,sum(dataLabels == iClass));
             end
@@ -47,8 +33,7 @@ classdef Lda < SignalAnalysis.Classifier
             fprintf('%d ',obj.getActiveChannels);
             fprintf(']\n');
             
-            [w,c] = obj.lda(feats,dataLabels,obj.NumClasses);
-            %[obj.Wg,obj.Cg] = obj.lda(feats,dataLabels,obj.NumClasses);
+            [w,c] = obj.lda(featureColumns,dataLabels,obj.NumClasses);
             
             % If classes have no data we can leave these as NaN.  When classifying
             % max( feats * w + c , [], 2) will return the max real number
@@ -67,7 +52,7 @@ classdef Lda < SignalAnalysis.Classifier
             if nargout > 0
                 % Compute confusion
                 
-                classVect = bsxfun(@plus,feats'*obj.Wg,obj.Cg);
+                classVect = bsxfun(@plus,featureColumns'*obj.Wg,obj.Cg);
                 [~, classOut] = max(classVect,[],2);
                 
                 confuseMat = zeros(obj.NumClasses);

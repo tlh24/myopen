@@ -218,20 +218,7 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
                     rawEmg(1:obj.SignalClassifier.NumSamplesPerWindow,:)')
                 
             end
-            
-            
-            %             if (clearClass > 0)
-            %
-            %                 % initialize ignore buffer
-            %                 if isempty(obj.SignalClassifier.IgnoreList)
-            %                     %obj.SignalClassifier.IgnoreList = false(1,obj.SampleCount);
-            %                 end
-            %
-            %                 ignoreMe = obj.SignalClassifier.TrainingDataLabels(1:obj.SampleCount-1) == clearClass;
-            %                 obj.SignalClassifier.IgnoreList(ignoreMe) = true;
-            %
-            %             end
-            
+                        
             updateFigure(obj,voteDecision,obj.CurrentClass);
         end
         function updateFigure(obj,decodedClassId,labeledClass)

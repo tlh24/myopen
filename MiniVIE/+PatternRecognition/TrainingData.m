@@ -10,27 +10,37 @@ classdef (Sealed) TrainingData < handle
     %
     % This class is required by classifier objects on initialization
     %
+    %    features3D = zeros(numChannels,numFeatures,numSamples);
+    %
     % On initialization this class will fill a buffer with NaN to allow future data storage
     % Note that on load, however, the buffer is filled by exactly the
     % number of saved values.  Continuing a session with saved data may
     % make data addition slower
     %
     % 2012May14 Armiger: Created
-    properties
-        MaxSamples = 1e5;
-        ActiveChannels = [1 3];
-        ClassNames = {'MotionA' 'MotionB' 'No Movement'};
-    end
+
     properties (SetAccess = private)
         SampleCount = 0;
         SampleRate = [];
+        ActiveChannels = [1 3];
+        ClassNames = {'MotionA' 'MotionB' 'No Movement'};
+        FeatureNames = {'MAV' 'LEN' 'SSC' 'ZC'};
     end
     properties (Access = private)
+        MaxSamples = 1e5;
+
+        % These properties are hidden and should be accessed through the
+        % various get[Property] methods.  This is due to the fact that some
+        % samples are enabled / disabled internally
         SignalDataRaw = [];
         SignalFeatures3D = [];
         ClassLabelId = [];
-        EnableLabel = [];  % Use this to keep data in the structure, but don't use it in the algorithm
-        
+        EnableLabel = [];  % Use this to keep data in the structure, but don't use certain samples in the algorithm
+    end
+    properties (Dependent = true, SetAccess = private)
+        NumClasses;
+        NumActiveChannels;
+        NumFeatures;
     end
     
     methods
@@ -38,53 +48,22 @@ classdef (Sealed) TrainingData < handle
             % Creator
             fprintf('[%s] Creating Training Data Object\n',mfilename);
         end
-        function initialize(obj,numChannels,numFeatures,numSamplesPerWindow)
-            % initialize(obj,numChannels,numFeatures,numSamplesPerWindow)
-            fprintf('[%s] Initializing Training Data Object\n',mfilename);
-            
-            % Initialize buffers
-            obj.SignalFeatures3D = NaN([numChannels numFeatures obj.MaxSamples]);
-            obj.ClassLabelId = NaN(1,obj.MaxSamples);
-            obj.EnableLabel = true(1,obj.MaxSamples);
-            
-            % Initialize variable to store raw EMG data
-            try
-                dataSize = [numChannels numSamplesPerWindow obj.MaxSamples];
-                dataType = 'single';
-                obj.SignalDataRaw = NaN(dataSize,dataType);
-            catch err
-                % out of memory or max variable size
-                fprintf('[%s] Error initializing raw signal storage: "%s"\n',mfilename,err.message);
-            end
+        function numClasses = get.NumClasses(obj)
+            % Number of Classes
+            % computed property from the size of ClassNames
+            numClasses = length(obj.ClassNames);
         end
-        function hasData = hasData(obj)
-            % Return true if valid data exists
-            hasData = (obj.SampleCount > 0);
+        function numChannels = get.NumActiveChannels(obj)
+            % Number of Activated Channels
+            % computed property from the size of ActiveChannels
+            numChannels = length(obj.ActiveChannels);
         end
-        function clearData(obj,promptForConfirmation)
-            % clearData(obj,promptForConfirmation)
-            if nargin < 2
-                promptForConfirmation = true;
-            end
-            
-            if promptForConfirmation
-                reply = questdlg('Are you sure you want to clear training data?','Confirm Clear');
-                
-                switch reply
-                    case 'Yes'
-                        % continue on
-                    otherwise
-                        return
-                end                
-            end
-            
-            fprintf('[%s] Clearing %d samples. \n',mfilename,obj.SampleCount);
-            obj.SampleCount = 0;
-            obj.SignalFeatures3D(:) = NaN;
-            obj.ClassLabelId(:) = NaN;
-            obj.SignalDataRaw(:) = NaN;
-            
+        function numFeatures = get.NumFeatures(obj)
+            % Number of Features extracted from signal data
+            % computed property from the size of FeatureNames
+            numFeatures = length(obj.FeatureNames);
         end
+
         function featureData = getFeatureData(obj)
             %featureData = getFeatureData(obj)
             % returns valid data (since buffers initialized to larger size)
@@ -110,30 +89,6 @@ classdef (Sealed) TrainingData < handle
             countedLabels = accumarray(classLabels(:),1);
             
             labelCount(1:length(countedLabels)) = countedLabels;
-            
-        end
-        function numDisabled = disableLabeledData(obj,classLabelId)
-            % numDisabled = disableLabeledData(obj,classLabelId)
-            
-            for iClass = classLabelId
-                % Get all class labels (not just the disabled ones)
-                %classLabels = obj.getClassLabels;
-                classLabels = obj.ClassLabelId;
-                
-                isClass = classLabels == iClass;
-                
-                numDisabled = sum(isClass);
-                if numDisabled > 0
-                    obj.EnableLabel(isClass) = false;
-                end
-            end
-            
-        end
-        function numSamples = enableAllLabeledData(obj)
-            % numSamples = enableAllLabeledData(obj)
-            
-            obj.EnableLabel(1:obj.SampleCount) = true;
-            numSamples = obj.SampleCount;
             
         end
         function [filteredData dataBreaks] = getClassData(obj,iClass)
@@ -208,6 +163,91 @@ classdef (Sealed) TrainingData < handle
                 warning('TrainingInterface:getEmgData','Failed to get Emg Data: %s',ME.message);
             end
         end        
+
+        function setFeatureNames(obj,featureNames)
+            % setFeatureNames(obj,featureNames)
+            % Set feature names as a cell array of strings
+            
+            assert(iscell(featureNames),'Expected a cell array of strings');
+
+            isValid = cellfun(@ischar,featureNames);
+            assert(all(isValid),'Expected a cell array of strings');
+            
+            % Update the property
+            obj.FeatureNames = featureNames;
+            
+        end
+        function initialize(obj,numChannels,numFeatures,numSamplesPerWindow)
+            % initialize(obj,numChannels,numFeatures,numSamplesPerWindow)
+            fprintf('[%s] Initializing Training Data Object\n',mfilename);
+            
+            % Initialize buffers
+            obj.SignalFeatures3D = NaN([numChannels numFeatures obj.MaxSamples]);
+            obj.ClassLabelId = NaN(1,obj.MaxSamples);
+            obj.EnableLabel = true(1,obj.MaxSamples);
+            
+            % Initialize variable to store raw EMG data
+            try
+                dataSize = [numChannels numSamplesPerWindow obj.MaxSamples];
+                dataType = 'single';
+                obj.SignalDataRaw = NaN(dataSize,dataType);
+            catch err
+                % out of memory or max variable size
+                fprintf('[%s] Error initializing raw signal storage: "%s"\n',mfilename,err.message);
+            end
+        end
+        function hasData = hasData(obj)
+            % Return true if valid data exists
+            hasData = (obj.SampleCount > 0);
+        end
+        function success = clearData(obj,promptForConfirmation)
+            % success = clearData(obj,promptForConfirmation)
+            if nargin < 2
+                promptForConfirmation = true;
+            end
+            
+            success = false;
+            if promptForConfirmation
+                reply = questdlg('Are you sure you want to clear training data?','Confirm Clear');
+                if ~strcmpi(reply,'Yes')
+                    return
+                end
+            end
+            
+            fprintf('[%s] Clearing %d samples. \n',mfilename,obj.SampleCount);
+            obj.SampleCount = 0;
+            obj.SignalFeatures3D(:) = NaN;
+            obj.ClassLabelId(:) = NaN;
+            obj.SignalDataRaw(:) = NaN;
+
+            success = true;
+        end
+        
+        function numDisabled = disableLabeledData(obj,classLabelId)
+            % numDisabled = disableLabeledData(obj,classLabelId)
+            
+            for iClass = classLabelId
+                % Get all class labels (not just the disabled ones)
+                %classLabels = obj.getClassLabels;
+                classLabels = obj.ClassLabelId;
+                
+                isClass = classLabels == iClass;
+                
+                numDisabled = sum(isClass);
+                if numDisabled > 0
+                    obj.EnableLabel(isClass) = false;
+                end
+            end
+            
+        end
+        function numSamples = enableAllLabeledData(obj)
+            % numSamples = enableAllLabeledData(obj)
+            
+            obj.EnableLabel(1:obj.SampleCount) = true;
+            numSamples = obj.SampleCount;
+            
+        end
+        
         function [success str] = validate(obj)
             
             success = false;
@@ -268,11 +308,12 @@ classdef (Sealed) TrainingData < handle
             obj.SignalFeatures3D = features3D;
             
         end
+        
         function success = loadTrainingData(obj,fname)
             % Load Training Data
-            
-            % TODO: remove emg references form load / save
-            
+            % fields are:
+            % 'features3D','classLabelId','classNames','featureNames',
+            % 'activeChannels','signalData','sampleRateHz');
             
             success = false;
             % If no input given, raise new dialog
@@ -304,6 +345,7 @@ classdef (Sealed) TrainingData < handle
             
             % Load data
             try
+                fprintf('[%s] Loading file: "%s"\n',mfilename,fullFile);                
                 S = load(fullFile,'-mat');
             catch ME
                 msg = { 'Error loading file', fullFile , ...
@@ -335,7 +377,6 @@ classdef (Sealed) TrainingData < handle
             %RSA: 9/19/2012 -- This was commented out.  why?
             obj.SampleCount = size(S.features3D,3);
             fprintf('[%s] Loading %d Samples\n',mfilename,obj.SampleCount);
-
             
             if isfield(S,'enableLabel')
                 obj.EnableLabel = S.enableLabel;
@@ -350,8 +391,11 @@ classdef (Sealed) TrainingData < handle
             if isfield(S,'activeChannels')
                 obj.ActiveChannels = S.activeChannels;
             end
-            if isfield(S,'ActiveChannels')
-                obj.ActiveChannels = S.ActiveChannels;
+
+            if isfield(S,'featureNames')
+                obj.FeatureNames = S.featureNames;
+            else
+                fprintf('[%s] No feature names found in file.\n',mfilename);
             end
             
             % Restore raw data
@@ -374,7 +418,8 @@ classdef (Sealed) TrainingData < handle
         end        
         function success = saveTrainingData(obj)
             % Save Training Data
-            
+            % save(fullFilename,'features3D','classLabelId','classNames','featureNames','activeChannels','signalData','sampleRateHz');
+
             fullFilename = UiTools.ui_select_data_file('.trainingData');
             if isempty(fullFilename)
                 % User Cancelled
@@ -388,15 +433,18 @@ classdef (Sealed) TrainingData < handle
 
             % Get Parameters
             classNames = obj.ClassNames; %#ok<NASGU>
+            featureNames = obj.FeatureNames; %#ok<NASGU>
             activeChannels = obj.ActiveChannels; %#ok<NASGU>
             sampleRateHz = obj.SampleRate; %#ok<NASGU>
             
-            save(fullFilename,'features3D','classLabelId','classNames','activeChannels','signalData','sampleRateHz');
+            save(fullFilename,'features3D','classLabelId','classNames','featureNames','activeChannels','signalData','sampleRateHz');
             
             success = true;
             
         end
+        
         function removeTrainingData(obj,iClass)
+            % Interactively select and remove data
             
             % TODO: check class within bounds, check data exists
             
@@ -444,17 +492,11 @@ classdef (Sealed) TrainingData < handle
             plot(x);
             beep
         end
+        
         function addTrainingData(obj,classLabel, features, rawSignal)
-            % Add a new sample of data based on the CurrentClass property
-            
-            % could to this passively is inputs were:
-            % classLabel
-            % features
-            % rawSignal
-            
-            
-            %assert(~isempty(obj.CurrentClass),'No class is selected to tag new data');
-            
+            % Add a single new sample of labeled data 
+
+            % Increment Sample Count
             obj.SampleCount = obj.SampleCount + 1;
             if obj.SampleCount == obj.MaxSamples + 1
                 % This should only display once
@@ -462,9 +504,9 @@ classdef (Sealed) TrainingData < handle
             end
 
             % Get new data (getting raw data instead of filtered for logging)
-            numChannels = size(rawSignal,1);
-            numSamplesPerWindow = size(rawSignal,2);
+            [numChannels,numSamplesPerWindow]= size(rawSignal);
 
+            % Ensure new signal data matches existing signal data
             if ~isempty(obj.SignalDataRaw)
                 assert(isequal(size(obj.SignalDataRaw,1),numChannels),...
                     'New Data must match previous data number of channels');
@@ -472,19 +514,24 @@ classdef (Sealed) TrainingData < handle
                     'New Data must match previous data number of samples');
             end
 
-            
+            % Update class label history
             obj.ClassLabelId(obj.SampleCount) = classLabel;
+            
+
             % Note this could be tricky if data is loaded with the
             % wrong number of channels compared to the current Signal
             % Source.  Below code works if the current channels are
             % less than or equal to the prior data
+
+            % Update features history
             obj.SignalFeatures3D(1:numChannels,:,obj.SampleCount) = features;
             
+            % Update raw signal storage
             try
                 obj.SignalDataRaw(1:numChannels,1:numSamplesPerWindow,obj.SampleCount) = rawSignal;
             catch ME
-                warning('TrainingInterface:EmgData','Failed to record Emg Data: "%s"',ME.message);
+                warning('TrainingInterface:RawSignalData','Failed to record Raw Signal Data: "%s"',ME.message);
             end
-        end
-    end
+        end %addTrainingData
+    end %methods
 end
