@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <deployment-project plugin="plugin.deploytool" plugin-version="1.0">
-  <configuration target="target.standalone.win" target-name="Windows Standalone Application" name="MiniVIE" location="C:\svn\myopen\MiniVIE\Deploy" file="C:\svn\myopen\MiniVIE\Deploy\MiniVIE.prj" build-checksum="3081775780">
+  <configuration target="target.standalone" target-name="Console Application" name="MiniVIE" location="C:\svn\myopen\MiniVIE\Deploy" file="C:\svn\myopen\MiniVIE\Deploy\MiniVIE.prj" build-checksum="3402158086">
     <param.project.name>C:\svn\myopen\MiniVIE\Deploy\MiniVIE.prj</param.project.name>
-    <param.target.type>Windows Standalone Application</param.target.type>
+    <param.target.type>Console Application</param.target.type>
     <param.appname>MiniVIE</param.appname>
     <param.intermediate>${PROJECT_ROOT}\MiniVIE\src</param.intermediate>
     <param.output>${PROJECT_ROOT}\MiniVIE\distrib</param.output>
