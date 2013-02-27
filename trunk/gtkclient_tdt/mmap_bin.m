@@ -2,7 +2,7 @@
 m = memmapfile('/tmp/binned', 'Format', {'uint16' [10 194] 'x'}); 
 A = m.Data(1).x;
 
-cd('/home/tlh24/myopen/gtkclient_tdt');
+cd('/home/joeyo/sw/myopen/gtkclient_tdt');
 pipe_out = fopen('gtkclient_out', 'r'); 
 pipe_in = fopen('gtkclient_in', 'w'); 
 
@@ -18,9 +18,9 @@ for i=1:2000
 	end
 	prev = A(1,193); 
 	if 1
-		image(A(:,1:192)/300); 
-		xlabel('lag')
-		ylabel('neuron'); 
+		imagesc(A(:,1:192)/128); 
+		ylabel('lag')
+		xlabel('neuron'); 
 		colormap gray
 		drawnow
 	end
@@ -31,5 +31,3 @@ skip %skipped frames.
 
 fclose(pipe_in); 
 fclose(pipe_out); 
-
-ake 
