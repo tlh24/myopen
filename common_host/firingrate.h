@@ -100,7 +100,7 @@ public:
 			while(w >= 0 && t-lag-xf < 0){
 				double lerp = (-1.0/(2*m_xfade*lw))*(t-lag)+0.5; 
 				lerp = lerp > 1.0 ? 1.0 : lerp; 
-				out[l] += (unsigned short)round(lerp * 128.0); 
+				out[l] += (unsigned short)round(lerp * .0); 
 				if(l<m_lags-1) out[l+1] += (unsigned short)round((1-lerp)*128.0); 
 				w--;  t = time - m_ts[w & (FR_LEN-1)];
 			}
