@@ -1,6 +1,9 @@
 # not a very smart makefile -- no deps -- but works.
 # depends on google protocol buffers -- not too hard to install, in debian.
 # you'll need to install libatlas-base-dev for linear algebra.
+CC  = gcc
+CPP = g++
+
 CFLAGS=-I/usr/local/include -I../common_host
 CFLAGS+= -g
 CFLAGS+= -Wall -Wcast-align -Wpointer-arith -Wshadow -Wsign-compare -Wformat=2 \
@@ -27,32 +30,32 @@ all: gtkclient
 convert: convert
 
 %.o: %.cpp $(COM_HDR)
-	g++ -c -o $@ $(CFLAGS) $(GTKFLAGS) $<
+	$(CPP) -c -o $@ $(CFLAGS) $(GTKFLAGS) $<
 
 %.o: ../common_host/%.cpp $(COM_HDR)
-	g++ -c -o $@ $(CFLAGS) $(GTKFLAGS) $<
+	$(CPP) -c -o $@ $(CFLAGS) $(GTKFLAGS) $<
 
 spikes.pb.cc : spikes.proto
 	protoc $< --cpp_out=.
 	protoc $< --python_out=.
 
 gtkclient: $(GOBJS) $(FIFOS)
-	g++ -o $@ $(GTKLD) $(LDFLAGS) -lmatio -lhdf5 $(GOBJS)
+	$(CPP) -o $@ $(GTKLD) $(LDFLAGS) -lmatio -lhdf5 $(GOBJS)
 
 convert: $(COBJS) wfwriter.h
-	g++ -o $@ -g -Wall -lmatio -lhdf5 -lz $(COBJS)
+	$(CPP) -o $@ -g -Wall -lmatio -lhdf5 -lz $(COBJS)
 
 clean:
 	rm -rf gtkclient convert mmap_test *.o spikes.pb.*
 
 wf_plot: wf_plot.c
-	gcc -g -lSDL -lGL -lGLU -lglut -lpthread -lmatio -lpng -o $@ wf_plot.c
+	$(CC) -g -lSDL -lGL -lGLU -lglut -lpthread -lmatio -lpng -o $@ wf_plot.c
 	
 po8e: po8e.cpp
-	gcc -g -lPO8eStreaming -o $@ $<
+	$(CC) -g -lPO8eStreaming -o $@ $<
 	
 mmap_test: mmap_test.cpp
-	g++ -g -lrt -o $@ $<
+	$(CPP) -g -lrt -o $@ $<
 	
 gtkclient_in: 
 	mkfifo $@
