@@ -188,7 +188,13 @@ classdef Classifier < Common.MiniVieObj
             
             obj.ConfusionMatrix = confuseMat;
         end
-        function [normalizedError, classAccuracy] = computeError(obj)
+        function [normalizedError, classAccuracy] = computeError(obj,hData)
+            %[normalizedError, classAccuracy] = computeError(obj,hData)
+            %
+            % Compute error either using internal attached data set, or a
+            % data set provided by user
+            %
+            %
             
             if ~obj.IsTrained
                 fprintf('[%s] Classifier untrained. Cannot compute error.\n',mfilename);
@@ -196,10 +202,21 @@ classdef Classifier < Common.MiniVieObj
                 return
             end
             
-            % Classify Training data
-            classLabels = obj.TrainingData.getClassLabels();
-            features3D = obj.TrainingData.getFeatureData();
-            featureColumns = obj.convertfeaturedata(features3D);
+            if nargin < 2
+                % Classify Training data
+                classLabels = obj.TrainingData.getClassLabels();
+                features3D = obj.TrainingData.getFeatureData();
+                featureColumns = obj.convertfeaturedata(features3D);
+                classNames = obj.getClassNames;
+                numClasses = obj.NumClasses;
+            else
+                % classify testing data:
+                classLabels = hData.getClassLabels();
+                features3D = hData.getFeatureData;
+                featureColumns = obj.convertfeaturedata(features3D);
+                numClasses = hData.NumClasses;
+                classNames = hData.ClassNames;
+            end
             
             % Forward Classify
             classOut = classify(obj,featureColumns);
@@ -209,14 +226,14 @@ classdef Classifier < Common.MiniVieObj
                 sum(outputClass(:) == desiredClass(:) ) ./ length(desiredClass);
             
             % Calculate Error
-            totalAccuracy = accuracyFunc(classOut,obj.TrainingData.getClassLabels);
+            totalAccuracy = accuracyFunc(classOut,classLabels);
             fprintf('Percent correctly classified: %6.1f %%  (%d samples)\n',...
                 totalAccuracy*100,numSamplesClassified);
             
             normalizedError = totalAccuracy;
             classAccuracy = zeros(1,obj.NumClasses);
             
-            for iClass = 1:obj.NumClasses
+            for iClass = 1:numClasses
                 trainingLabels = classLabels;
                 
                 idClass = (trainingLabels == iClass);
@@ -228,7 +245,7 @@ classdef Classifier < Common.MiniVieObj
                     classAccuracy(iClass) = 0;
                 end
                 
-                classNames = obj.getClassNames;
+                
                 fprintf('%20s Class accuracy:\t %6.1f %% \t',...
                     classNames{iClass},classAccuracy(iClass)*100);
                 
