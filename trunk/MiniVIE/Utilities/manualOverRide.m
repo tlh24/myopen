@@ -15,7 +15,7 @@ function [shoulderAngles,e,w,rocValue,rocId] = ...
 
 % Elbow
 %e = 55*pi/180;  % elbow
-elbowLimitsRadians = [70 140]*pi/180;
+elbowLimitsRadians = [60 140]*pi/180;
 assert(elbowLimitsRadians(2) >= elbowLimitsRadians(1),...
     'Upper limit must be greater than lower limit');
 if e > elbowLimitsRadians(2)
@@ -28,7 +28,7 @@ end
 % disp(e);
 % w(1) = -90*pi/180;  % rotation
 % w(2) = 0.0;   % dev
-% w(3) = -0.55;  % fe
+% w(3) = -0.055;  % fe
 
 % Lock Shoulder
 shoulderAngles(1) = 10;
