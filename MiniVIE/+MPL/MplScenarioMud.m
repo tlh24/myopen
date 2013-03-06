@@ -75,6 +75,8 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
                 obj.hSink = MPL.VulcanXSink(obj.VulcanXAddress,obj.VulcanXPort);
                 obj.hMud = MPL.MudCommandEncoder();
                 
+                obj.localRoc = MPL.RocTable.createRocTables('test.xml');
+                
                 % Use MicroStrain for upper arm motion
                 if obj.enableMicroStrain
                     obj.hMicroStrainGX2 = MicroStrain3DM_GX2( ...
@@ -219,7 +221,14 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
                 obj.hNfu.sendUpperArmHandRoc([shoulderAngles e w],graspId,graspValue);
             else
                 % Send to vulcanX
-                msg = obj.hMud.ArmPosVelHandRocGrasps([shoulderAngles e w],zeros(1,7),1,graspId,graspValue,1);
+%                 msg = obj.hMud.ArmPosVelHandRocGrasps([shoulderAngles e w],zeros(1,7),1,graspId,graspValue,1);
+                    assert(obj.GraspValue >= 0,'GraspValue < 0');
+                    assert(obj.GraspValue <= 1,'GraspValue > 1');
+                    roc = obj.localRoc(graspId+1);
+                    
+                    handPos = interp1(roc.waypoint,roc.angles,obj.GraspValue);
+% handPos = zeros(1,20);
+                    msg = obj.hMud.AllJointsPosVelCmd([zeros(1,3) e w],zeros(1,7),handPos,zeros(1,20));
                 obj.hSink.putbytes(msg);
             end
             
