@@ -16,8 +16,9 @@ classdef Svm < SignalAnalysis.Classifier
                 error('No channels selected for training');
             end
             
+            f = obj.TrainingData.getFeatureData;
             
-            feats = convertfeaturedata(obj,obj.TrainingData.getFeatureData);
+            feats = convertfeaturedata(obj,f);
             dataLabels = obj.TrainingData.getClassLabels;
             
             fprintf('Training SVM with %d Samples (',size(feats,2));
@@ -32,31 +33,17 @@ classdef Svm < SignalAnalysis.Classifier
             
             %% Normalize features
             normFeats = feats;
-            fScale = max(max(feats,[],2),0.001);
+            fScale = max(max(abs(feats),[],2),0.001);
             obj.Cg = fScale;
             normFeats = bsxfun(@rdivide,normFeats,fScale);
             feats = normFeats;
-            %plot(normFeats')
-            %%
             
-            
-            
-%             labels = zeros(obj.NumClasses,length(dataLabels));
-%             idx = sub2ind(size(labels),dataLabels,1:length(dataLabels));
-%             labels(idx) = 1;
-            %f = features3D(activeChannels,:,:);
-            %f2 = reshape(f,36,1006);
-            model = svmtrain(dataLabels', feats', '-t 0');
-            %model = svmtrain(dataLabels', feats');
+            model = svmtrain(dataLabels(:), feats', '-t 0');
+
             obj.Wg = model;
             
-            
-            
-            
-            [predict_label, accuracy, dec_values] = svmpredict(dataLabels', feats', model);
+            [predict_label, accuracy, dec_values] = svmpredict(dataLabels(:), feats', model);
 
-%             [obj.Wg,obj.Cg] = obj.lda(feats,dataLabels,obj.NumClasses);
-            
             if nargout > 0
                 % Compute confusion
                 
@@ -68,9 +55,7 @@ classdef Svm < SignalAnalysis.Classifier
                     actualClass = classOut(id);
                     confuseMat(i,:) = accumarray(actualClass,1,[obj.NumClasses 1]);
                 end
-                
             end
-            
             obj.IsTrained = true;
 
         end
