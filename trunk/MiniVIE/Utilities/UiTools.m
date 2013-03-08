@@ -119,15 +119,19 @@ classdef UiTools
                 delete(fullFile);
             end
         end
-        function fullFilename = ui_select_data_file(extension)
+        function fullFilename = ui_select_data_file(extension,prefix)
             % Provides a save dialog with the default file set as the
             % current date and time with extention reflecting contents
             % extension = '.assessmentLog'
             
-            tempFileName = 'defaultFilePrefix';
-            filePrefix = UiTools.load_temp_file(tempFileName);
-            if isempty(filePrefix)
-                filePrefix = 'FILE_';  %TODO, abstract this
+            if nargin < 2
+                tempFileName = 'defaultFilePrefix';
+                filePrefix = UiTools.load_temp_file(tempFileName);
+                if isempty(filePrefix)
+                    filePrefix = 'FILE_';  %TODO, abstract this
+                end
+            else
+                filePrefix = prefix;
             end
             
             FilterSpec = ['*' extension];

@@ -14,8 +14,8 @@ function [shoulderAngles,e,w,rocValue,rocId] = ...
 %w(2) = -w(2); % flip dev direction
 
 % Elbow
-%e = 55*pi/180;  % elbow
-elbowLimitsRadians = [60 140]*pi/180;
+% e = 55*pi/180;  % elbow
+elbowLimitsRadians = [0 140]*pi/180;
 assert(elbowLimitsRadians(2) >= elbowLimitsRadians(1),...
     'Upper limit must be greater than lower limit');
 if e > elbowLimitsRadians(2)
@@ -31,6 +31,14 @@ end
 % w(3) = -0.055;  % fe
 
 % Lock Shoulder
-shoulderAngles(1) = 10;
-shoulderAngles(3) = 0;
+shoulderAngles(1) = 0*pi/180;
+shoulderAngles(2) = 0*pi/180;
+shoulderAngles(3) = 0*pi/180;
 
+AA_Lim = [-30 0]*pi/180;
+HR_Lim = [-30 30]*pi/180;
+shoulderAngles(2) = max(min(shoulderAngles(2),AA_Lim(2)),AA_Lim(1));
+shoulderAngles(3) = max(min(shoulderAngles(3),HR_Lim(2)),HR_Lim(1));
+
+fprintf('[%s] Upper Arm tracking: %4.1f %4.1f %4.1f|%4.1f\n',...
+    mfilename,shoulderAngles*180/pi,e*180/pi);

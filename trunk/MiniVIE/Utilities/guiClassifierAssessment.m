@@ -56,7 +56,7 @@ function guiClassifierAssessment_OpeningFcn(hObject, eventdata, handles, varargi
 % Choose default command line output for guiClassifierAssessment
 handles.output = hObject;
 
-debug = length(varargin) ~= 2;
+debug = length(varargin) ~= 4;
 
 if debug
     
@@ -75,17 +75,20 @@ if debug
     handles.SignalSource = obj.SignalSource;
     handles.SignalClassifier = obj.SignalClassifier;
     handles.TrainingData = obj.TrainingData;
-    
+    handles.SavePrefix = obj.FilePrefix;
 else
     
-    assert(length(varargin) == 3,'Expected three input arguments');
+    assert(length(varargin) == 4,'Expected three input arguments');
     assert(~isempty(varargin{1}),'SignalSource is empty');
     assert(~isempty(varargin{2}),'SignalClassifier is empty');
     assert(~isempty(varargin{3}),'TrainingData is empty');
+    assert(~isempty(varargin{4}),'FilePrefix is empty');
     
     handles.SignalSource = varargin {1};
     handles.SignalClassifier = varargin {2};
     handles.TrainingData = varargin {3};
+
+    handles.SavePrefix = varargin {4};
 end
 
 set(handles.toggleStart,'String','Begin');
@@ -155,7 +158,7 @@ end
 set(hObject,'String','Complete');
 
 
-fullFilename = UiTools.ui_select_data_file('.assessmentLog');
+fullFilename = UiTools.ui_select_data_file('.assessmentLog',handles.SavePrefix);
 
 if ~isempty(fullFilename)
     save(fullFilename,'structTrialLog','-mat');

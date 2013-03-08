@@ -17,7 +17,11 @@ classdef HighPass < Inputs.Filter
                 Fs = 1000;
             end
             F_Nyquist = Fs / 2;
-            [obj.Hb obj.Ha] = butter(order,Fc/F_Nyquist,'high');
+            
+            fprintf('[%s] Creating Highpass Butterworth IIR Filter with Order = %d; Fc = %d; Fs = %d;\n',...
+                mfilename,order,Fc,Fs);
+            
+            [obj.Hb, obj.Ha] = butter(order,Fc/F_Nyquist,'high');
         end
     end
 end

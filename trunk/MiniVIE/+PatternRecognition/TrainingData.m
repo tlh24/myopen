@@ -21,6 +21,9 @@ classdef (Sealed) TrainingData < handle
     %
     % 2012May14 Armiger: Created
     
+    properties
+        Verbose = 1;  % enables print statements
+    end
     properties (SetAccess = private)
         SampleCount = 0;
         SampleRate = [];
@@ -112,8 +115,8 @@ classdef (Sealed) TrainingData < handle
             filteredSignals = classRawFrames;
             
             Fs = obj.SampleRate;
-            HPF = Inputs.HighPass(10,8,Fs);
-            NF = Inputs.Notch(60.*1,5,Fs);
+            HPF = Inputs.HighPass();
+            NF = Inputs.Notch();
             
             for i = 1:sum(isThisClass)
                 filteredSignals(:,:,i) = HPF.apply(double(filteredSignals(:,:,i)'))';
@@ -198,6 +201,12 @@ classdef (Sealed) TrainingData < handle
         end
         function setActiveChannels(obj,activeChannels)
             %setActiveChannels(obj,activeChannels)
+            
+            if obj.Verbose
+                fprintf('[%s] Setting Active Channels to: [',mfilename);
+                fprintf(' %d',activeChannels);
+                fprintf(' ]\n');
+            end
             
             obj.ActiveChannels = activeChannels;
             
@@ -306,8 +315,8 @@ classdef (Sealed) TrainingData < handle
             
             % Apply filter
             Fs = obj.SampleRate;
-            HPF = Inputs.HighPass(10,8,Fs);
-            NF = Inputs.Notch(60,5,Fs);
+            HPF = Inputs.HighPass();
+            NF = Inputs.Notch();
             
             fprintf('[%s] Filtering Data...',mfilename);
             numEmgSamples = size(obj.SignalDataRaw,3);
@@ -441,14 +450,16 @@ classdef (Sealed) TrainingData < handle
             
             success = true;
         end
-        function success = saveTrainingData(obj)
+        function success = saveTrainingData(obj,fullFilename)
             % Save Training Data
             % save(fullFilename,'features3D','classLabelId','classNames','featureNames','activeChannels','signalData','sampleRateHz');
             
-            fullFilename = UiTools.ui_select_data_file('.trainingData');
-            if isempty(fullFilename)
-                % User Cancelled
-                return
+            if nargin < 2
+                fullFilename = UiTools.ui_select_data_file('.trainingData');
+                if isempty(fullFilename)
+                    % User Cancelled
+                    return
+                end
             end
             
             % Get Data

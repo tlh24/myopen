@@ -65,6 +65,7 @@ while len > 0
     len = pnet(udpReceiveSocket,'readpacket','noblock');
     if len > 0
         newPackets = newPackets + 1;
+        data = pnet(udpReceiveSocket,'read','noblock');
     end
 end
 

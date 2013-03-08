@@ -17,7 +17,9 @@ classdef LowPass < Inputs.Filter
                 Fs = 1000;
             end
             F_Nyquist = Fs / 2;
-            [obj.Hb obj.Ha] = butter(order,Fc / F_Nyquist,'low');
+            fprintf('[%s] Creating Lowpass Butterworth IIR Filter with Order = %d; Fc = %d; Fs = %d;\n',...
+                mfilename,order,Fc,Fs);
+            [obj.Hb, obj.Ha] = butter(order,Fc / F_Nyquist,'low');
         end
     end
 end

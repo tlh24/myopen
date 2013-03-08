@@ -16,6 +16,9 @@ classdef SignalInput < Common.MiniVieObj
         hFilter = {};      % contains handles to filter objects that will 
                            % be applied when the user calls the
                            % getFilteredData method
+        FilterPadding = 250; % Number of samples to pad data when getting filtered data to avoid edge effects
+                             % Note that there is still a possibility for a user to getData() and then applyAllFilters() 
+                             % manually, which may return data differently
         
     end
     properties (Dependent = true, SetAccess = private)
@@ -153,12 +156,22 @@ classdef SignalInput < Common.MiniVieObj
             % done locally this method might be overloaded to get the
             % filtered signals directly
             
+            % get extra samples before filtering to eliminate edge effects
+
             if nargin < 2
                 data = getData(obj);
             else
-                data = getData(obj,numSamples);
+                try
+                    data = getData(obj,numSamples+obj.FilterPadding);
+                catch
+                    % TODO: not ideal but inputs that buffer their data can
+                    % only allow getting a certain number of samples
+                    data = getData(obj,numSamples);
+                end
             end
             filtered = applyAllFilters(obj,data);
+            filtered = filtered(end-numSamples+1:end,:);
+            
         end %getFilteredData
         
         function filtered = applyAllFilters(obj,data)

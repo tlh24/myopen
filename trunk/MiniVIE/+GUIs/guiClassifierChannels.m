@@ -3,6 +3,7 @@ classdef guiClassifierChannels < Common.MiniVieObj
     % TODO: Make blocking?
     %
     % 01-Sept-2010 Armiger: Created
+    % 07-Mar-2013 Armiger: Updated default classes to get grasps from the GraspTypes Enumeration
     properties
         hFigure
         
@@ -310,6 +311,13 @@ classdef guiClassifierChannels < Common.MiniVieObj
             classNames{13}  = 'Hand Up';
             classNames{14}  = 'Hand Down';
             classNames{15}  = 'Hand Open';
+            
+            [enumGrasp, cellGrasps] = enumeration('Controls.GraspTypes'); %#ok<ASGLU>
+            cellGrasps = cellfun(@(s)strcat(s,' Grasp'),cellGrasps,'UniformOutput',false);
+            classNames = cat(2,classNames,cellGrasps(:)');
+            classNames = cat(2,classNames,'No Movement');
+            return
+            
             classNames{16}  = 'Index';
             classNames{17}  = 'Middle';
             classNames{18}  = 'Ring';
@@ -325,16 +333,16 @@ classdef guiClassifierChannels < Common.MiniVieObj
             classNames{28} = 'Spherical Grasp';    %% Grasp #6 per Action ICD RPP-600-ICD_-1401
             classNames{29} = 'Pointer Grasp';      %% Grasp #7 per Action ICD RPP-600-ICD_-1401
             classNames{30} = 'No Movement';
-            classNames{31} = 'Wrist Rotate In (Raised)';
-            classNames{32} = 'Wrist Rotate Out (Raised)';
-            classNames{33} = 'Wrist Flex In (Raised)';
-            classNames{34} = 'Wrist Extend Out (Raised)';
-            classNames{35} = 'Hand Up (Raised)';
-            classNames{36} = 'Hand Down (Raised)';
-            classNames{37} = 'Hand Open (Raised)';
-            classNames{39} = 'Tip Grasp (Raised)';         
-            classNames{40} = 'Spherical Grasp (Raised)'; 
-            classNames{41} = 'No Movement (Raised)';
+%             classNames{31} = 'Wrist Rotate In (Raised)';
+%             classNames{32} = 'Wrist Rotate Out (Raised)';
+%             classNames{33} = 'Wrist Flex In (Raised)';
+%             classNames{34} = 'Wrist Extend Out (Raised)';
+%             classNames{35} = 'Hand Up (Raised)';
+%             classNames{36} = 'Hand Down (Raised)';
+%             classNames{37} = 'Hand Open (Raised)';
+%             classNames{39} = 'Tip Grasp (Raised)';         
+%             classNames{40} = 'Spherical Grasp (Raised)'; 
+%             classNames{41} = 'No Movement (Raised)';
         end
     end
 end

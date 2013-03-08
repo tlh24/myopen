@@ -5,7 +5,8 @@ classdef guiSignalViewer < Common.MiniVieObj
     % Use default configuration:
     %  obj = GUIs.guiSignalViewer.Default;
     %
-    % Armiger - 2/15/2011: Created
+    % 15-Feb-2011 Armiger: Created
+    % 07-Mar-2013 Armiger: Added signal measurements for Vrms and Vpkpk
     properties
         
         SignalSource
@@ -13,6 +14,7 @@ classdef guiSignalViewer < Common.MiniVieObj
         SelectedChannels = 1:4;
         
         ShowFilteredData = 1;
+        ShowMeasurements = 0;
         ModeSelect = GUIs.guiSignalViewerState.TimeDomain;
         
         AxesLimTimeDomain = [-1 10];  % unused if axis 'auto'
@@ -120,6 +122,9 @@ classdef guiSignalViewer < Common.MiniVieObj
             obj.hg.PanelProps = uibuttongroup(obj.hg.Figure,'Units','Pixels','Position',[290 40 200 150]);
             set(obj.hg.PanelProps ,'Title','Plot Properties');
             
+            obj.hg.cbPlotMeasure = uicontrol('Style','checkbox','String','Measurements','Units','Normalized',...
+                'pos',[0.1 0.6 0.8 0.25],'parent',obj.hg.PanelProps,'HandleVisibility','off',...
+                'Callback',@(src,evt)showMeasurements(obj,get(src,'Value')));
             obj.hg.cbFilter = uicontrol('Style','checkbox','String','Apply Filters','Units','Normalized',...
                 'pos',[0.1 0.1 0.8 0.25],'parent',obj.hg.PanelProps,'HandleVisibility','off',...
                 'Callback',@(src,evt)showFilteredData(obj,get(src,'Value')));
@@ -178,8 +183,11 @@ classdef guiSignalViewer < Common.MiniVieObj
         function updateFigure(obj)
             % Synch Parameters and uiobjects
 
+            % set filter checkbox
             set(obj.hg.cbFilter,'value',obj.ShowFilteredData);
+            set(obj.hg.cbPlotMeasure,'value',obj.ShowMeasurements);
             
+            % set button group
             switch obj.ModeSelect
                 case GUIs.guiSignalViewerState.TimeDomain
                     set(obj.hg.PanelDomain,'SelectedObject',obj.hg.ButtonTimeDomain);
@@ -210,6 +218,10 @@ classdef guiSignalViewer < Common.MiniVieObj
                         ylabel(obj.hg.Axes(2),'LEN');
                         ylabel(obj.hg.Axes(3),'ZC');
                         ylabel(obj.hg.Axes(4),'SSC');
+                        
+                        set(obj.hg.MeasureLines,'Visible','off');
+                        set(obj.hg.DataLabels,'Visible','off');
+
                         obj.updateFeatures();
                     case GUIs.guiSignalViewerState.TimeDomain
                         setAxesVisible(obj.hg.Axes(1),'on');
@@ -219,6 +231,10 @@ classdef guiSignalViewer < Common.MiniVieObj
                         ylabel(obj.hg.Axes(1),'Source Units');
                         %ylim(obj.hg.Axes(1),obj.AxesLimTimeDomain);
                         axis(obj.hg.Axes(1),'auto');
+
+                        set(obj.hg.MeasureLines,'Visible','on');
+                        set(obj.hg.DataLabels,'Visible','on');
+
                         obj.updateTimeDomain();
                     case GUIs.guiSignalViewerState.FFT
                         setAxesVisible(obj.hg.Axes(1),'on');
@@ -228,6 +244,10 @@ classdef guiSignalViewer < Common.MiniVieObj
                         ylabel(obj.hg.Axes(1),'|Y(f)|');
                         ylim(obj.hg.Axes(1),[0 1]);
                         %axis(obj.hg.Axes(1),'auto');
+
+                        set(obj.hg.MeasureLines,'Visible','off');
+                        set(obj.hg.DataLabels,'Visible','off');
+                        
                         obj.updateFrequencyDomain();
                     otherwise
                         disp('Invalid Mode Selection');
@@ -274,21 +294,46 @@ classdef guiSignalViewer < Common.MiniVieObj
             
             numSamples = obj.NumTimeDomainSamples;
             
+            % Get the data
             if obj.ShowFilteredData
                 channelData = obj.SignalSource.getFilteredData(numSamples);
             else
                 channelData = obj.SignalSource.getData(numSamples);
             end
             
+            %return if empty
             if isempty(channelData) || ~ishandle(obj.hg.Figure)
                 return;
             end
             
+            % Update the lines
             set(obj.hg.PlotLines{1}(:),'YData',[],'XData',[]);
+            set(obj.hg.MeasureLines(:),'YData',[],'XData',[]);
+            set(obj.hg.DataLabels,'String','');
+            
             offset = zeros(1,size(channelData,2));
             offset(obj.SelectedChannels) = 1.5 * ((1:length(obj.SelectedChannels)) -1);
             for iChannel = obj.SelectedChannels
-                set(obj.hg.PlotLines{1}(iChannel),'YData',channelData(:,iChannel)+offset(iChannel),'XData',1:size(channelData,1));
+                set(obj.hg.PlotLines{1}(iChannel),...
+                    'YData',channelData(:,iChannel)+offset(iChannel),...
+                    'XData',1:size(channelData,1));
+                if ~obj.ShowMeasurements
+                    continue
+                end
+                maxY = max(channelData(:,iChannel));
+                minY = min(channelData(:,iChannel));
+                rmsY = rms(channelData(:,iChannel));
+                %rmsY = mean(abs(channelData(:,iChannel)));
+                pkpkY = maxY-minY;
+                X1 = 1;
+                X2 = size(channelData,1);
+                set(obj.hg.MeasureLines(iChannel),...
+                    'YData',[maxY maxY nan minY minY nan rmsY rmsY nan]+offset(iChannel),...
+                    'XData',[X1 X2 nan X1 X2 nan X1 X2 nan]);
+                set(obj.hg.DataLabels(iChannel),'Position',[(1.01*(X2-X1)) rmsY+offset(iChannel) 0]);
+                set(obj.hg.DataLabels(iChannel),'String',...
+                    {sprintf('RMS %4.2f',rmsY) sprintf('Pk-Pk %4.1f',pkpkY)});
+                
             end
             
         end
@@ -325,11 +370,20 @@ classdef guiSignalViewer < Common.MiniVieObj
             end
         end %updateFeatures
         function resetTimePlot(obj)
+            % Reset is the same as initialize
             % Create plot lines
             obj.hg.PlotLines{1} = plot(obj.hg.Axes(1),zeros(2,obj.SignalSource.NumChannels));
             obj.hg.PlotLines{2} = plot(obj.hg.Axes(2),zeros(2,obj.SignalSource.NumChannels));
             obj.hg.PlotLines{3} = plot(obj.hg.Axes(3),zeros(2,obj.SignalSource.NumChannels));
             obj.hg.PlotLines{4} = plot(obj.hg.Axes(4),zeros(2,obj.SignalSource.NumChannels));
+            hold(obj.hg.Axes(1),'on');
+            obj.hg.MeasureLines = plot(obj.hg.Axes(1),nan(2,obj.SignalSource.NumChannels));
+            obj.hg.DataLabels = nan(1,obj.SignalSource.NumChannels);
+            for i = 1:length(obj.hg.DataLabels)
+                obj.hg.DataLabels(i) = text(0,0,num2str(i),'Parent',obj.hg.Axes(1));
+            end
+            
+            hold(obj.hg.Axes(1),'off');
             
             ColorOrder = [distinguishable_colors(16); distinguishable_colors(16)];
             
@@ -339,6 +393,9 @@ classdef guiSignalViewer < Common.MiniVieObj
                 plotLines = obj.hg.PlotLines{iLineSet};
                 for iLine = 1:length(plotLines)
                     set(plotLines(iLine),'Color',ColorOrder(iLine,:));
+                    set(obj.hg.MeasureLines(iLine),'Color',ColorOrder(iLine,:));
+                    set(obj.hg.MeasureLines(iLine),'LineStyle','--');
+                    set(obj.hg.DataLabels(iLine),'Color',ColorOrder(iLine,:));
                 end
             end
             
@@ -347,7 +404,10 @@ classdef guiSignalViewer < Common.MiniVieObj
         function showFilteredData(obj,val)
             obj.ShowFilteredData = val;
         end
-        
+        function showMeasurements(obj,val)
+            obj.ShowMeasurements = val;
+        end
+
         function close(obj)
             try
                 stop(obj.hTimer);
@@ -365,7 +425,9 @@ classdef guiSignalViewer < Common.MiniVieObj
             
             hSignalSource = Inputs.SignalSimulator;
             hSignalSource.initialize();
+            hSignalSource.addfilter(Inputs.HighPass(15,3));
             hViewer = GUIs.guiSignalViewer(hSignalSource);
+            
         end
     end
 end
