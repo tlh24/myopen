@@ -23,7 +23,7 @@ hSignalSource.NumSamples = numSamples;
 numPad = 250;
 rawSignals = hSignalSource.getData(numSamples+numPad);
 filteredSignals = hSignalSource.applyAllFilters(rawSignals);
-filteredSignals = filteredSignals(end-numSanples+1:end,:);
+filteredSignals = filteredSignals(end-numSamples+1:end,:);
 
 
 % Extract features and classify

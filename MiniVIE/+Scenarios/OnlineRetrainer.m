@@ -55,8 +55,10 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
             
             f = UiTools.create_figure('Training Progress');
             p = get(f,'Position');
-            p(1) = p(1)/3;
-            p(3) = 1100;
+            p(1) = p(1)/5;
+            p(2) = p(2)/5;
+            p(4) = 600;
+            p(3) = 1300;
             set(f,'Position',p);
             
             classNames = obj.SignalClassifier.getClassNames;
