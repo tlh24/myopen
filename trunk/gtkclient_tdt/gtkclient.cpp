@@ -189,8 +189,8 @@ void gsl_matrix_to_mat(gsl_matrix *x, const char* fname){
 	//reformat and transpose.
 	//matio expects fortran style, column-major format.
 	//gsl is row-major.
-	for(unsigned int i=0; i<dims[0]; i++){ //rows
-		for(unsigned int j=0; j<dims[1]; j++){ //columns
+	for(int i=0; i<dims[0]; i++){ //rows
+		for(int j=0; j<dims[1]; j++){ //columns
 			d[j*dims[0] + i] = x->data[i*x->tda + j];
 		}
 	}
@@ -914,14 +914,16 @@ void* po8_thread(void*){
 				}
 #ifdef JACK
 					//copy to jack output buffer --
-					float g[256]; 
-					int h = g_channel[0]; 
-					float gain = g_c[g_channel[0]]->getGain(); 
-					for(int i=0; i<numSamples && i<256; i++){
-						short samp = temp[i + h*numSamples];
-						g[i] = gain * samp / 32767.f; 
+					{
+						float g[256]; 
+						int h = g_channel[0]; 
+						float gain = g_c[g_channel[0]]->getGain(); 
+						for(int i=0; i<numSamples && i<256; i++){
+							short samp = temp[i + h*numSamples];
+							g[i] = gain * samp / 32767.f; 
+						}
+						jackAddSamples(&g[0], &g[0], numSamples);
 					}
-					jackAddSamples(&g[0], &g[0], numSamples);
 #endif
 				g_fbufW += numSamples; 
 				// copy to the sorting buffers, wrapped.

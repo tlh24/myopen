@@ -341,7 +341,7 @@ void jackDisconnectAllPorts() {
 }
 void jackConnectFront() {
 	const char **ports;
-	int i;
+	int i = 0;
 
 	ports = jack_get_ports (client, NULL, NULL,
 				JackPortIsPhysical|JackPortIsInput);
@@ -365,7 +365,7 @@ void jackConnectFront() {
 }
 void jackConnectCenterSub() {
 	const char **ports;
-	int i;
+	int i = 0;
 
 	ports = jack_get_ports (client, NULL, NULL,
 				JackPortIsPhysical|JackPortIsInput);
