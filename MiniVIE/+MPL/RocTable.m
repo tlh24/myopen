@@ -214,7 +214,9 @@ classdef RocTable < handle
             roc(14).angles(2,mce.MIDDLE_MCP) = 1.6;
             roc(14).angles(2,mce.RING_MCP) = 1.6;
             
-            MPL.RocTable.writeRocTable(fname,roc)
+            if ~isempty(fname)
+                MPL.RocTable.writeRocTable(fname,roc);
+            end
             
         end
         function writeRocTable(xmlFileName,structRocTables)

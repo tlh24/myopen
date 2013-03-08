@@ -91,7 +91,7 @@ classdef  GraspAngles
             
             a = Presentation.MiniV;
             
-            [enumGrasp cellGrasps] = enumeration('Controls.GraspTypes');
+            [enumGrasp, cellGrasps] = enumeration('Controls.GraspTypes');
             for i = 1:length(cellGrasps)
                 grasp = cellGrasps{i};
                 

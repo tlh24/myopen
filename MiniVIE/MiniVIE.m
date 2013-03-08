@@ -6,6 +6,8 @@ classdef MiniVIE < Common.MiniVieObj
         TrainingData
         Presentation
         
+        FilePrefix
+        
         hg;  % handle graphics
         
         Verbose = 1;
@@ -24,6 +26,15 @@ classdef MiniVIE < Common.MiniVieObj
     methods
         function obj = MiniVIE
             obj.configurePath;
+            
+            % On startup, get file prefix from temp files
+            tempFileName = 'defaultFilePrefix';
+            filePrefix = UiTools.load_temp_file(tempFileName);
+            if isempty(filePrefix)
+                filePrefix = 'FILE_';
+            end
+            obj.FilePrefix = filePrefix;
+            
             obj.initialize();
         end
         function initialize(obj)
@@ -156,11 +167,17 @@ classdef MiniVIE < Common.MiniVieObj
             obj.hg.PresentationButtons(2) = uicontrol(obj.hg.Figure,...
                 'Position',pos('cntrl',MiniVIE.PRESENTATION,4,1,1),...
                 'Style','pushbutton',...
+                'String','Start',...
+                'Enable','off',...
+                'Callback',@(src,evt)obj.pbPresentationStart());
+            obj.hg.PresentationButtons(3) = uicontrol(obj.hg.Figure,...
+                'Position',pos('cntrl',MiniVIE.PRESENTATION,5,1,1),...
+                'Style','pushbutton',...
                 'String','Stop',...
                 'Enable','off',...
                 'Callback',@(src,evt)obj.pbPresentationStop());
-            obj.hg.PresentationButtons(3) = uicontrol(obj.hg.Figure,...
-                'Position',pos('cntrl',MiniVIE.PRESENTATION,5,1,1),...
+            obj.hg.PresentationButtons(4) = uicontrol(obj.hg.Figure,...
+                'Position',pos('cntrl',MiniVIE.PRESENTATION,6,1,1),...
                 'Style','pushbutton',...
                 'String','Assessment',...
                 'Enable','off',...
@@ -195,6 +212,7 @@ classdef MiniVIE < Common.MiniVieObj
             
             UiTools.save_temp_file(tempFileName,filePrefix);
             
+            obj.FilePrefix = filePrefix;
         end
         function loadData(obj)
             if isempty(obj.SignalSource)
@@ -234,7 +252,13 @@ classdef MiniVIE < Common.MiniVieObj
             end
             
             assert(~isempty(obj.TrainingData),'Training Data module does not exist');
-            obj.TrainingData.saveTrainingData;
+            
+            % Get filename
+            
+            fullFilename = obj.ui_select_data_file('.trainingData');
+            if ~isempty(fullFilename)
+                obj.TrainingData.saveTrainingData(fullFilename);
+            end
             
         end
         function close(obj)
@@ -248,7 +272,7 @@ classdef MiniVIE < Common.MiniVieObj
         function setSignalSource(obj,src)
             % Callback for selecting an input
             
-            % Hold teh last value in case of error, restore
+            % Hold the last value in case of error, restore
             persistent lastValue
             if isempty(lastValue)
                 lastValue = 1;
@@ -307,8 +331,8 @@ classdef MiniVIE < Common.MiniVieObj
                     Fs = h.SampleFrequency;
                     h.addfilter(Inputs.HighPass(10,8,Fs));
                     %h.addfilter(Inputs.LowPass(350,8,Fs));
-                    %h.addfilter(Inputs.Notch(60.*(1:4),5,Fs));
-                    h.addfilter(Inputs.Notch(60.*(1:4),5,Fs));
+                    %h.addfilter(Inputs.Notch(60.*(1:4),5,1,Fs));
+                    h.addfilter(Inputs.Notch(60.*(1:4),5,1,Fs));
                     % obj.SignalSource.addfilter(Inputs.MAV(150));
                     h.NumSamples = 2000;
                     h.initialize();
@@ -558,7 +582,7 @@ classdef MiniVIE < Common.MiniVieObj
                         
                         port = str2double(answer{3});
                         assert(~isnan(port),'Invalid Port');
-                        h.VulcanXPort = port; 
+                        h.VulcanXDestinationPort = port; 
                         %h.VulcanXPort = answer{3}; 
                         
                         h.EnableFeedback = strncmpi(answer{4},'y',1);
@@ -626,6 +650,24 @@ classdef MiniVIE < Common.MiniVieObj
             
             hViewer = obj.SignalViewer;
             
+        end
+        function fullFilename = ui_select_data_file(obj,extension)
+            % Provides a save dialog with the default file set as the
+            % current date and time with extention reflecting contents
+            % extension = '.assessmentLog'
+            
+            filePrefix = obj.FilePrefix;
+            
+            FilterSpec = ['*' extension];
+            DialogTitle = 'Select File to Write';
+            DefaultName = [filePrefix datestr(now,'yyyymmdd_HHMMSS') extension];            
+            [FileName,PathName,FilterIndex] = uiputfile(FilterSpec,DialogTitle,DefaultName);
+            
+            if FilterIndex == 0
+                fullFilename = [];
+            else
+                fullFilename = fullfile(PathName,FileName);
+            end
         end
     end
     methods (Access = private)
@@ -695,13 +737,19 @@ classdef MiniVIE < Common.MiniVieObj
         function pbAdjustGains(obj)
             GUIs.guiGainAdjust(obj);
         end
+        function pbPresentationStart(obj)
+            if ~isempty(obj.Presentation)
+                start(obj.Presentation);
+            end
+        end
         function pbPresentationStop(obj)
             if ~isempty(obj.Presentation)
                 stop(obj.Presentation);
             end
         end
         function pbAssessment(obj)
-            guiClassifierAssessment(obj.SignalSource,obj.SignalClassifier);
+            guiClassifierAssessment(obj.SignalSource,obj.SignalClassifier,...
+                obj.TrainingData,obj.FilePrefix);
         end
     end
     methods (Static = true)
@@ -716,7 +764,7 @@ classdef MiniVIE < Common.MiniVieObj
             obj.SignalSource = Inputs.SignalSimulator();
             obj.SignalSource.addfilter(Inputs.HighPass());
             obj.SignalSource.addfilter(Inputs.LowPass());
-            obj.SignalSource.addfilter(Inputs.Notch(60.*(1:4),5,1000));
+            %obj.SignalSource.addfilter();
             obj.SignalSource.NumSamples = 2000;
             obj.SignalSource.initialize();
             
@@ -804,22 +852,28 @@ function h = loadCpchSerial()
 tempFileName = 'defaultCpchSerial';
 cpchParams = UiTools.load_temp_file(tempFileName);
 if isempty(cpchParams)
-    % Use these defaults
-    prompt={
-        'Enter Serial Port Name (e.g. COM1):',...
-        'Enter BioAmplifier Channel Mask (e.g. FFFF):',...
-        'Enter GPIO Channel Mask (e.g. 0000):',...
-        };
-    name='CPCH Parameters';
-    numlines=1;
     defaultanswer={'COM14','FFFF','FFFF'};
-    answer=inputdlg(prompt,name,numlines,defaultanswer);
-    assert(length(answer) == 3,'Expected 3 outputs');
-    
-    cpchParams.SerialPort = answer{1};
-    cpchParams.BioampMask = uint16(hex2dec(answer{2}));
-    cpchParams.GPIMask = uint16(hex2dec(answer{3}));
+else
+    defaultanswer={
+        cpchParams.SerialPort 
+        dec2hex(cpchParams.BioampMask) 
+        dec2hex(cpchParams.GPIMask)};
 end
+% Use these defaults
+prompt={
+    'Enter Serial Port Name (e.g. COM1):',...
+    'Enter BioAmplifier Channel Mask (e.g. FFFF):',...
+    'Enter GPIO Channel Mask (e.g. 0000):',...
+    };
+name='CPCH Parameters';
+numlines=1;
+%defaultanswer={'COM14','FFFF','FFFF'};
+answer=inputdlg(prompt,name,numlines,defaultanswer);
+assert(length(answer) == 3,'Expected 3 outputs');
+
+cpchParams.SerialPort = answer{1};
+cpchParams.BioampMask = uint16(hex2dec(answer{2}));
+cpchParams.GPIMask = uint16(hex2dec(answer{3}));
 
 h = Inputs.CpchSerial(cpchParams.SerialPort,cpchParams.BioampMask,cpchParams.GPIMask);
 

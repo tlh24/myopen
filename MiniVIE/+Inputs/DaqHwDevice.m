@@ -55,9 +55,9 @@ classdef DaqHwDevice < Inputs.SignalInput
             end
                    
             % verify board id is valid
-            if isempty(hw.InstalledBoardIds) || ~strcmp(obj.DaqDeviceId,hw.InstalledBoardIds)
+            if isempty(hw.InstalledBoardIds) || ~any(strcmp(obj.DaqDeviceId,hw.InstalledBoardIds))
                 disp(hw)
-                error('[%s] Device: "%s" Id: "%s" not found\n',mfilename,obj.DaqDeviceName,obj.DaqDeviceId);
+                error('[%s] Device: "%s" Id: "%s" not found.\n',mfilename,obj.DaqDeviceName,obj.DaqDeviceId);
             end
             
             % AnalogInputName string is constructed here to support daqfind.

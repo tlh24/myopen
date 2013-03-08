@@ -13,9 +13,13 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
         hNfu = [];
         hMicroStrainGX2 = [];
         hTactors;
+        hUdpArmTracking; % pnet Handle for sending upper arm angles from remote system
+        % format is 7 singles (28 bytes) of 7 upper arm angles in degrees.
         
         enableNfu = 1; %true;
         enableMicroStrain = 0; %true;
+        
+        UdpArmTrackingPort = []; % Leasve empty unless streaming upper arm angles
         
         EnableFeedback = 1;
         
@@ -32,7 +36,8 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
         msDegreesFromNorth = 0;
         
         VulcanXAddress = '192.168.1.199'; %127.0.0.1
-        VulcanXPort = 9027; %9035
+        VulcanXDestinationPort = 9027; %9035
+        VulcanXLocalPort = 56000; %9035
         
         TactorIds = [3 4]
         
@@ -72,7 +77,8 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
                 
             else
                 fprintf('[%s] Starting with NFU DISABLED\n',mfilename);
-                obj.hSink = MPL.VulcanXSink(obj.VulcanXAddress,obj.VulcanXPort);
+                obj.hSink = MPL.VulcanXSink(...,
+                    obj.VulcanXAddress,obj.VulcanXDestinationPort,obj.VulcanXLocalPort);
                 obj.hMud = MPL.MudCommandEncoder();
                 
                 obj.localRoc = MPL.RocTable.createRocTables('test.xml');
@@ -91,10 +97,15 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
                     % user's shoulder, arm hanging loosely).
                     obj.home();
                 end
+                if ~isempty(obj.UdpArmTrackingPort)
+                    obj.hUdpArmTracking = PnetClass();
+                    obj.hUdpArmTracking.localPort = obj.UdpArmTrackingPort;
+                    obj.hUdpArmTracking.initialize();
+                end
             end
 
             % Remaining superclass initialize methods
-                initialize@Scenarios.OnlineRetrainer(obj,SignalSource,SignalClassifier,TrainingData);
+            initialize@Scenarios.OnlineRetrainer(obj,SignalSource,SignalClassifier,TrainingData);
 
         end
         function home(obj)
@@ -184,7 +195,8 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
             w(2) = +obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) * pi/180;
             w(3) = +obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) * pi/180;
             
-            e = obj.JointAnglesDegrees(action_bus_enum.Elbow) * pi/180;
+            %e = obj.JointAnglesDegrees(action_bus_enum.Elbow) * pi/180;
+            e = 90 * pi / 180;
 
             % convert char grasp id to numerical mpl grasp value
             graspId = obj.graspLookup(obj.GraspId);
@@ -193,9 +205,22 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
             % 1/17/2013 RSA: Implemented switchout case for vulcan x or
             % nfu.  Also nfu local roc tables are currently disabled
             
-            if isempty(obj.hMicroStrainGX2)
-                shoulderAngles = zeros(1,3);
-            else
+            shoulderAngles = zeros(1,3);
+
+            if ~isempty(obj.hUdpArmTracking)
+                dataBytes = obj.hUdpArmTracking.getData();
+                numBytes = length(dataBytes);
+                if numBytes == 7*4
+                    angles = typecast(uint8(dataBytes),'single');
+                    shoulderAngles(1:3) = angles(1:3);
+                    e = angles(4);
+                elseif numBytes > 0
+                    fprintf('[%s] Unexpected Packet Size: %d\n',mfilename,numBytes);
+                else
+                    %fprintf('[%s] No Udp Data on port: %d\n',mfilename,obj.hUdpArmTracking.localPort);
+                end
+            end
+            if ~isempty(obj.hMicroStrainGX2)
                 obj.stream_rcv();
                 
                 F_WCS_RB1 = obj.hMicroStrainGX2.rotationMatrix;
@@ -215,8 +240,13 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
                 shoulderAngles = [shoulderFE shoulderAA humeralRot];
             end
             
-            [shoulderAngles, e, w, graspValue, graspId] = manualOverRide(shoulderAngles, e, w, obj.GraspValue,graspId);
-            
+            % TODO: right / left arm should be determined by means other than udp port
+            isRight = (obj.UdpArmTrackingPort == 56701);
+            if isRight
+                [shoulderAngles, e, w, graspValue, graspId] = manualOverRideRight(shoulderAngles, e, w, obj.GraspValue,graspId);
+            else
+                [shoulderAngles, e, w, graspValue, graspId] = manualOverRideLeft(shoulderAngles, e, w, obj.GraspValue,graspId);
+            end
             if obj.enableNfu
                 obj.hNfu.sendUpperArmHandRoc([shoulderAngles e w],graspId,graspValue);
             else
@@ -228,7 +258,7 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
                     
                     handPos = interp1(roc.waypoint,roc.angles,obj.GraspValue);
 % handPos = zeros(1,20);
-                    msg = obj.hMud.AllJointsPosVelCmd([zeros(1,3) e w],zeros(1,7),handPos,zeros(1,20));
+                    msg = obj.hMud.AllJointsPosVelCmd([shoulderAngles e w],zeros(1,7),handPos,zeros(1,20));
                 obj.hSink.putbytes(msg);
             end
             
@@ -326,6 +356,8 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
                         graspId = 12;
                     case 'Thumb'
                         graspId = 13;
+                    case {'Point', 'Pointer', 'Trigger'}
+                        graspId = 6;
                     otherwise
                         graspId = 0;
                 end

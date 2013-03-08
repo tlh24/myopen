@@ -19,13 +19,17 @@ end
 numSamples = hSignalClassifier.NumSamplesPerWindow;
 hSignalSource.NumSamples = numSamples;
 
-rawSignals = hSignalSource.getData();
+
+numPad = 250;
+rawSignals = hSignalSource.getData(numSamples+numPad);
 filteredSignals = hSignalSource.applyAllFilters(rawSignals);
+filteredSignals = filteredSignals(end-numSanples+1:end,:);
+
 
 % Extract features and classify
 features2D = hSignalClassifier.extractfeatures(filteredSignals);
 activeChannelFeatures = features2D(hSignalClassifier.getActiveChannels,:);
-[classDecision voteDecision] = hSignalClassifier.classify(reshape(activeChannelFeatures',[],1));
+[classDecision, voteDecision] = hSignalClassifier.classify(reshape(activeChannelFeatures',[],1));
 
 if hSignalClassifier.NumMajorityVotes > 1
     cursorMoveClass = voteDecision;

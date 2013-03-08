@@ -17,6 +17,8 @@ classdef CpchSerial < Inputs.CpcHeadstage
     % % Get data with filters applied
     % filteredData = obj.getFilteredData();
     %
+    % DEBUG: Send sequence data as last single ended channel
+    % TODO: maintain sequence as an additional variable
     %
     % Oct-2011 Helder: Created
     % 13Mar2012 Armiger: Improved efficiancy of data processing from raw
@@ -146,9 +148,9 @@ classdef CpchSerial < Inputs.CpcHeadstage
             assert(rcnt > 0,'No response from CPCH. Check power, check connections');
             
             msgId = obj.msgIdConfigurationReadResponse;
-            assert(rcnt == 7,'Wrong number of bytes returned');
-            assert(r(1) == msgId,'Bad response message id');
-            assert(r(2) == 1,'Bad parameter id');
+            assert(rcnt == 7,'Wrong number of bytes returned. Expected [%d], received [%d]',rcnt,7);
+            assert(r(1) == msgId,'Bad response message id.  Expected [%d], received [%d]',r(1),msgId);
+            assert(r(2) == 1,'Bad parameter id. Expected [%d], received [%d]',r(2),1);
             assert(~obj.XorChksum(r),'Bad checksum');
             u32Parameter = typecast(uint8(r(3:6)),'uint32');
             fprintf('[%s] Device ID = %d\n',mfilename,u32Parameter);
@@ -238,31 +240,41 @@ classdef CpchSerial < Inputs.CpcHeadstage
             % Align the data bytes.  If all's well the first byte of the
             % remainder should be a start char which is saved for the next
             % time the buffer is read
-            [alignedData remainderBytes] = obj.AlignDataBytes(rawBytes,msgSize);
+            [alignedData, remainderBytes] = obj.AlignDataBytes(rawBytes,msgSize);
             
             % Store remaining bytes for next read
             obj.SerialBuffer = remainderBytes;
             
+            % 
+            if isempty(alignedData)
+                % No new data
+                %fprintf('[%s] No new data in serial buffer.\n',mfilename);
+                data = obj.DataBuffer(end-numSamples+1:end,:);
+                return;
+            end
+            
             % Check validation parameters (chksum, etc)
-            [validData sumBadStatus sumBadLength sumBadChecksum sumBadSequence sumAdcError] = ...
-                obj.ValidateMessages(alignedData,payloadSize);
+            [validData, errorStats] = obj.ValidateMessages(alignedData,payloadSize);
             
             obj.CountTotalMessages = obj.CountTotalMessages + size(alignedData,2);
-            obj.CountBadLength = obj.CountBadLength + sumBadLength;
-            obj.CountBadChecksum = obj.CountBadChecksum + sumBadChecksum;
-            obj.CountBadStatus = obj.CountBadStatus + sumBadStatus;
-            obj.CountBadSequence = obj.CountBadSequence + sumBadSequence;
-            obj.CountAdcError = obj.CountAdcError + sumAdcError;
+            obj.CountBadLength = obj.CountBadLength + errorStats.sumBadLength;
+            obj.CountBadChecksum = obj.CountBadChecksum + errorStats.sumBadChecksum;
+            obj.CountBadStatus = obj.CountBadStatus + errorStats.sumBadStatus;
+            obj.CountBadSequence = obj.CountBadSequence + errorStats.sumBadSequence;
+            obj.CountAdcError = obj.CountAdcError + errorStats.sumAdcError;
 
-            [numBytes numValidSamples] = size(validData);
+            [numBytes, numValidSamples] = size(validData);
             assert(msgSize == numBytes);
             
             % Extract the signals
-            [diffDataI16 seDataU16] = obj.GetSignalData(validData,obj.BioampCnt,obj.GPICnt);
+            [diffDataI16, seDataU16] = obj.GetSignalData(validData,obj.BioampCnt,obj.GPICnt);
             
             % Perform Scaling
             deDataNormalized = double(diffDataI16) / 512 * obj.GainDifferential;
             seDataNormalized = double(seDataU16) ./ 1024 * obj.GainSingleEnded;
+            
+            % DEBUG: Send sequence data as last singel ended channel
+            seDataNormalized(end,:) = int16(validData(4,:));
             
             % Log data
             try
@@ -388,7 +400,7 @@ classdef CpchSerial < Inputs.CpcHeadstage
             obj.addfilter(Inputs.HighPass(10,8,Fs));
             %h.addfilter(Inputs.LowPass(350,8,Fs));
             %h.addfilter(Inputs.Notch(60.*(1:4),5,Fs));
-            obj.addfilter(Inputs.Notch(60.*1,5,Fs));
+            %obj.addfilter(Inputs.Notch(60.*1,5,Fs));
             % obj.SignalSource.addfilter(Inputs.MAV(150));
             obj.NumSamples = 2000;
             obj.initialize();

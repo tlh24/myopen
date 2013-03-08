@@ -6,6 +6,7 @@ classdef CpcHeadstage < Inputs.SignalInput
     % 15Jan2013 Armiger: Updated signal parsing to search for only start
     % characters ('128') since start sequence [128 0 0] cannot be relied
     % upon if transmission errors occur
+    % 08Mar2013 Armiger: added check for returned bytes with no message (too small)
     
     properties (Constant = true)
         msgIdStartStreaming = 1;
@@ -84,8 +85,7 @@ classdef CpcHeadstage < Inputs.SignalInput
             
         end
         
-        function [validData sumBadStatus sumBadLength sumBadChecksum sumBadSequence sumAdcError] = ...
-                ValidateMessages(alignedData,expectedLength)
+        function [validData, errorStats] = ValidateMessages(alignedData,expectedLength)
             % Validate a matrix of messages using a criteria of checksum,
             % appropriate message length, and status bytes
             %
@@ -110,7 +110,7 @@ classdef CpcHeadstage < Inputs.SignalInput
             % cmdMsgChecksumError = bitget(alignedData(3,:),2);
             % cmdMsgLengthError = bitget(alignedData(3,:),3);
             isAdcError = bitget(alignedData(3,:),4);
-            sumAdcError = sum(isAdcError);
+            errorStats.sumAdcError = sum(isAdcError);
             
             isValidLength = (alignedData(5,:) == expectedLength);
             isValidChecksum = (computedChecksum == 0);
@@ -118,10 +118,10 @@ classdef CpcHeadstage < Inputs.SignalInput
 
             % TODO: if checksum is bad, data can't be trusted to accurately
             % reflect length, status, or adc errors
-            sumBadStatus = sum(~isValidStatusByte);
-            sumBadLength = sum(~isValidLength);
-            sumBadChecksum = sum(~isValidChecksum);
-            sumBadSequence = 0;
+            errorStats.sumBadStatus = sum(~isValidStatusByte);
+            errorStats.sumBadLength = sum(~isValidLength);
+            errorStats.sumBadChecksum = sum(~isValidChecksum);
+            errorStats.sumBadSequence = 0;
 
 %             if (sum(isValidData) / length(isValidData)) < 0.99
 %                 fprintf('[%s] %d of %d samples have valid checksum.\r',mfilename,sum(isValidData),length(isValidData));
@@ -148,14 +148,10 @@ classdef CpcHeadstage < Inputs.SignalInput
 %             numMessages = length(isValidData);
             isValidSequence = (sequenceExpected - sequenceRow) == 0;
             
-            sumBadSequence = sum(~isValidSequence);
+            errorStats.sumBadSequence = sum(~isValidSequence);
 %             if sumBadSequence > 0
 %                 fprintf('[%s] Out of sequence data received. %d of %d samples validated\r',mfilename,sum(isValidData),numMessages);
 %             end
-            
-            
-            
-            
         end
         
         function [dataAligned remainderBytes] = AlignDataBytes(dataStream,msgSize)
@@ -163,7 +159,7 @@ classdef CpcHeadstage < Inputs.SignalInput
             %             [dataAligned remainderBytes] = Inputs.CpcHeadstage.ByteAlignSlow(dataStream,msgSize);
             %             t1 = toc;
             %             tic
-            [dataAligned remainderBytes] = Inputs.CpcHeadstage.ByteAlignFast(dataStream,msgSize);
+            [dataAligned, remainderBytes] = Inputs.CpcHeadstage.ByteAlignFast(dataStream,msgSize);
             %             t2 = toc;
             %             [t1 t2 t1<t2]
 
@@ -193,6 +189,12 @@ classdef CpcHeadstage < Inputs.SignalInput
             % Check if there are too few bytes between the last start
             % character and the end of the buffer
             isInRange = idxStartBytes <= 1+length(dataStream)-msgSize;
+            if ~any(isInRange)
+                % no full messages found
+                dataAligned = [];
+                remainderBytes = dataStream;
+                return
+            end
             idxStartBytesInRange = idxStartBytes(isInRange);
             remainderBytes = dataStream(idxStartBytesInRange(end)+msgSize:end);
             

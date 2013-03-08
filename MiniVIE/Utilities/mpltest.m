@@ -50,9 +50,9 @@ switch testId
         
         fprintf('Adding Filters\n');
         Fs = 1000;
-        h.addfilter(Inputs.HighPass(10,8,Fs));
+        h.addfilter(Inputs.HighPass());
         %h.addfilter(Inputs.Notch(60.*(1:4),5,Fs));
-        h.addfilter(Inputs.Notch(60.*1,5,Fs));
+        h.addfilter(Inputs.Notch());
         h.NumSamples = 2000;
         s = h.initialize();
         assert(s >= 0,'NFU Init failed');

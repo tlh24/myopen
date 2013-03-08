@@ -205,7 +205,7 @@ classdef ScenarioBase < Common.MiniVieObj
             if isGraspClass
                 graspName = strtrim(className(1:end-5));
             end
-            [enumGrasp cellGrasps] = enumeration('Controls.GraspTypes');
+            [enumGrasp, cellGrasps] = enumeration('Controls.GraspTypes');
             switch graspName
                 case 'Hand Open'
                     % Change the grasp Value in grasp mode

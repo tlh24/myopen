@@ -15,6 +15,7 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
     % 30Jul2012 Armiger: Created
     properties (Access = public)
         RetrainCounts = 15;  % Controls how many samples to wait before auto retrain
+        JoystickId = 0  % Joystick Id (0,1,2,etc)
     end
     properties (SetAccess = protected)
         hJoystick       % handle to joystick, used to add data to interface
@@ -35,7 +36,7 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
             
             % check for joysticks:
             try
-                obj.hJoystick = JoyMexClass;
+                obj.hJoystick = JoyMexClass(obj.JoystickId);
             catch ME
                 fprintf('[%s] Warning: Joystick is disabled. \n %s \n',mfilename,ME.message);
                 obj.hJoystick = [];
@@ -43,15 +44,9 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
             
             initialize@Scenarios.ScenarioBase(obj,SignalSource,SignalClassifier);
             
-            %             if isempty(obj.SignalClassifier)
-            %                 obj.SampleCount = 1;
-            %             else
-            %                 obj.SampleCount = length(obj.SignalClassifier.TrainingDataLabels) + 1;
             if ~isempty(obj.hJoystick) && ~isempty(SignalClassifier)
                 setupFigure(obj);
             end
-            
-            %             end
             
         end
         function setupFigure(obj)

@@ -1,29 +1,36 @@
 classdef VulcanXSink < MPL.DataSink
+    % 3/8/2013 RSA: Added local port optional input argument
     properties
         address
         port              % remote destination port
-        localport = 9098; % local transmit port
+        localport         % local transmit port
         id
         handle
     end
     
     methods
-        function obj = VulcanXSink(address, port)
+        function obj = VulcanXSink(address, destinationPort, localPort)
             % UDPSINK
             %
-            % obj = MSMSSink(address, port)
+            % obj = VulcanXSink(address, destinationPort, localPort)
             %
             % Constructor.
             
             obj.address = address;
-            obj.port = port;
+            obj.port = destinationPort;
             obj.id = tempname;
+            
+            if nargin < 3
+                obj.localport = 9098;
+            else
+                obj.localport = localPort;
+            end
             
             obj.handle = pnet('udpsocket', obj.localport);
             if obj.handle == -1
                 error('Unable to open local port: %d ',obj.localport);
             end
-            pnet(obj.handle, 'udpconnect', obj.address, port);
+            pnet(obj.handle, 'udpconnect', obj.address, destinationPort);
         end
         function val = get(udp, name)
             switch(name)
