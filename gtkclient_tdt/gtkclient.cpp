@@ -913,7 +913,7 @@ void* po8_thread(void*){
 					}
 				}
 #ifdef JACK
-				if(1){ //copy to jack output buffer --
+					//copy to jack output buffer --
 					float g[256]; 
 					int h = g_channel[0]; 
 					float gain = g_c[g_channel[0]]->getGain(); 
@@ -921,8 +921,7 @@ void* po8_thread(void*){
 						short samp = temp[i + h*numSamples];
 						g[i] = gain * samp / 32767.f; 
 					}
-					jackAddSamples(&g[0], &g[0], numSamples); 
-				}
+					jackAddSamples(&g[0], &g[0], numSamples);
 #endif
 				g_fbufW += numSamples; 
 				// copy to the sorting buffers, wrapped.

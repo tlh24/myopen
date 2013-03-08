@@ -1,33 +1,47 @@
 # not a very smart makefile -- no deps -- but works.
 # depends on google protocol buffers -- not too hard to install, in debian.
 # you'll need to install libatlas-base-dev for linear algebra.
+
+# The following can be set at the command line
+# ie: make DBG=true JACK=false
+DBG = false
+JACK = true
+
 CC  = gcc
 CPP = g++
 
-CFLAGS=-I/usr/local/include -I../common_host
-CFLAGS+= -g
-CFLAGS+= -Wall -Wcast-align -Wpointer-arith -Wshadow -Wsign-compare -Wformat=2 \
--Wno-format-y2k -Wmissing-braces -Wparentheses -Wtrigraphs \
--Wextra -pedantic -Wno-int-to-pointer-cast -std=c++11
-CFLAGS+= -DJACK
-LDFLAGS = -lGL -lGLU -lpthread -lCg -lCgGL -lgsl -lcblas -latlas -lm -lPO8eStreaming -ljack
+CFLAGS := -I/usr/local/include -I../common_host
+CFLAGS += -Wall -Wcast-align -Wpointer-arith -Wshadow -Wsign-compare \
+-Wformat=2 -Wno-format-y2k -Wmissing-braces -Wparentheses -Wtrigraphs \
+-Wextra -pedantic -std=c++11 -Wno-int-to-pointer-cast 
+LDFLAGS := -lGL -lGLU -lpthread -lCg -lCgGL -lgsl -lcblas -latlas -lm -lPO8eStreaming
 
 GLIBS = gtk+-2.0 gtkglext-1.0 gtkglext-x11-1.0 protobuf
 GTKFLAGS = `pkg-config --cflags $(GLIBS) `
 GTKLD = `pkg-config --libs $(GLIBS) `
 
-OBJS = main.o sock.o
-
 GOBJS = spikes.pb.o gtkclient.o decodePacket.o \
-	gettime.o sock.o tcpsegmenter.o glInfo.o matStor.o jacksnd.o
-
+	gettime.o sock.o tcpsegmenter.o glInfo.o matStor.o
 COBJS = convert2.o
 COM_HDR = channel.h wfwriter.h ../common_host/vbo.h ../common_host/cgVertexShader.h \
 ../common_host/firingrate.h ../common_host/timesync.h ../common_host/jacksnd.h
 FIFOS = gtkclient_in gtkclient_out
 
-all: gtkclient
-convert: convert
+ifeq ($(strip $(DBG)),true)
+	CFLAGS  += -g -rdynamic -DDEBUG
+	LDFLAGS += -rdynamic
+else
+	CFLAGS += -O3
+endif
+
+ifeq ($(strip $(JACK)),true)
+	CFLAGS += -DJACK
+	LDFLAGS += -ljack
+	GOBJS += jacksnd.o
+endif
+
+all: gtkclient wf_plot po8e mmap_test
+#convert: convert
 
 %.o: %.cpp $(COM_HDR)
 	$(CPP) -c -o $@ $(CFLAGS) $(GTKFLAGS) $<
@@ -46,7 +60,7 @@ convert: $(COBJS) wfwriter.h
 	$(CPP) -o $@ -g -Wall -lmatio -lhdf5 -lz $(COBJS)
 
 clean:
-	rm -rf gtkclient convert mmap_test *.o spikes.pb.*
+	rm -rf gtkclient convert mmap_test po8e wf_plot *.o spikes.pb.*
 
 wf_plot: wf_plot.c
 	$(CC) -g -lSDL -lGL -lGLU -lglut -lpthread -lmatio -lpng -o $@ wf_plot.c
@@ -67,6 +81,6 @@ deps:
 	sudo apt-get install libprotobuf-dev protobuf-compiler libgtk2.0-dev libgtkgl2.0-dev \
 	libgtkglext1-dev freeglut3-dev nvidia-cg-toolkit libgsl0-dev \
 	libatlas-base-dev python-matplotlib python-jsonpickle python-opengl \
-	libboost1.49-all-dev pkg-config libhdf5-dev
+	libboost1.49-all-dev pkg-config libhdf5-dev libsdl1.2-dev
 	echo "make sure /usr/lib64 is in /etc/ld.so.conf.d/libc.conf"
 	echo "otherwise Cg may not be found. "
