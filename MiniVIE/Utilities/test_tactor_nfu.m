@@ -27,7 +27,7 @@ set(f,'WindowKeyReleaseFcn',@(src,evt)keyUp(evt.Key));
                     cLimit = 100;
                 end
                 hNfu.tactorControl(id, 100, val, 100, cLimit, 0);
-                disp('down')
+                fprintf('Activating Tactor #%s\n',key);
         end
     end
 

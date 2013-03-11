@@ -49,9 +49,7 @@ switch testId
         h = Inputs.NfuInput();
         
         fprintf('Adding Filters\n');
-        Fs = 1000;
         h.addfilter(Inputs.HighPass());
-        %h.addfilter(Inputs.Notch(60.*(1:4),5,Fs));
         h.addfilter(Inputs.Notch());
         h.NumSamples = 2000;
         s = h.initialize();
@@ -90,7 +88,7 @@ switch testId
         end
     case 'MplWrist03'
         % this test runs the wrist doms through a 1 Hz sine wave.
-        % It also activates the tators on/off at 1 Hz
+        % It also activates the tactors on/off at 1 Hz
         
         %test mpl wrist ROM
         hNfu = MPL.NfuUdp.getInstance;
@@ -152,6 +150,7 @@ switch testId
         h = MPL.MplScenarioMud;
         h.initialize([],[],tData);
         h.Verbose = 0;
+        h.EnableFeedback = 1;
         start(h.Timer);
         
         fprintf('Feedback Algorithm is running\n');

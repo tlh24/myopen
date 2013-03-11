@@ -16,6 +16,9 @@ classdef Notch < Inputs.Filter
                 frequencyWidth = 5;
             end
             if nargin < 3
+                order = 64;
+            end
+            if nargin < 4
                 Fs = 1000;
             end
             
