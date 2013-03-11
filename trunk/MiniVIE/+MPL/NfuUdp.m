@@ -508,7 +508,7 @@ classdef (Sealed) NfuUdp < handle
                     end
                 elseif len > 0
                     %len
-                    error('Unexpected Packet Size: %d bytes',len);
+                    fprintf('[%s] Unexpected Packet Size: %d bytes\n',mfilename,len);
                 end
             end
         end
