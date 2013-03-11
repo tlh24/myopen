@@ -8,8 +8,8 @@
 #include <GL/gl.h>	// Header File For The OpenGL32 Library
 #include <GL/glu.h>	// Header File For The GLu32 Library
 #include <GL/glx.h>     // Header file for the glx libraries.
-#include "glext.h"
-#include "glInfo.h"
+#include "../common_host/glext.h"
+#include "../common_host/glInfo.h"
 
 #include <Cg/cg.h>    /* included in Cg toolkit for nvidia */
 #include <Cg/cgGL.h>
@@ -43,6 +43,7 @@
 #include "sock.h"
 #include "cgVertexShader.h"
 #include "matStor.h"
+#include "jacksnd.h"
 #include "vbo.h"
 #include "tcpsegmenter.h"
 #include "firingrate.h"
@@ -73,6 +74,7 @@ i64	g_fbufR[NFBUF]; //display thread reads from here - copies to mem
 unsigned int 	g_nsamp = 4096; //given the current level of zoom (1 = 4096 samples), how many samples to update?
 static float 	g_sbuf[NSCALE][2][128*NSBUF*2]; //2 units, 128 channels, 1024 spikes, 2 floats / spike.
 static float	g_rasterSpan = 10.f; // %seconds.
+static int	g_rasterWindow = 0;
 
 i64	g_sbufW[NSCALE][2];
 i64	g_sbufR[NSCALE][2];
@@ -145,6 +147,7 @@ GtkAdjustment* g_centeringSpin[4];
 GtkAdjustment* g_unsortRateSpin;
 GtkAdjustment* g_zoomSpin;
 GtkAdjustment* g_rasterSpanSpin;
+GtkAdjustment* g_rasterWindowSpin;
 GtkWidget*     g_pktpsLabel;
 GtkWidget*     g_stbpsLabel; //strobe per second label, todo: put in raster
 GtkWidget*     g_fileSizeLabel;
@@ -201,7 +204,7 @@ void gsl_matrix_to_mat(gsl_matrix *x, const char* fname){
 		}
 	}
 	matvar_t *matvar;
-	matvar = Mat_VarCreate("a",MAT_C_DOUBLE,MAT_T_DOUBLE,2,(size_t*)dims,d,0);
+	matvar = Mat_VarCreate("a",MAT_C_DOUBLE,MAT_T_DOUBLE,2,dims,d,0);
 	Mat_VarWrite( mat, matvar, (matio_compression)0 );
 	Mat_VarFree(matvar);
 	free(d);
@@ -495,9 +498,9 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		//rasters
 #ifndef EMG
 		glShadeModel(GL_FLAT);
-
+		float vscale = 97.f;
 		glPushMatrix();
-		glScalef(1.f/g_rasterSpan, -1.f/(130.f*NSCALE), 1.f);
+		glScalef(1.f/g_rasterSpan, -1.f/vscale, 1.f);
 		int lt = (int)time / (int)g_rasterSpan;
 		lt *= (int)g_rasterSpan;
 		float x = time - (float)lt;
@@ -515,12 +518,12 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		glColor4f (1., 0., 0., 0.5);
 		glBegin(GL_LINES);
 		glVertex3f( time, 0, 0.f);
-		glVertex3f( time, (130.f*NSCALE), 0.f);
+		glVertex3f( time, vscale, 0.f);
 		glColor4f (0.5, 0.5, 0.5, 0.5);
 		//draw old times, every second.
 		for(int t=(int)time; t > time-g_rasterSpan*2; t--){
 			glVertex3f( (float)t, 0, 0.f);
-			glVertex3f( (float)t, (130.f*NSCALE), 0.f);
+			glVertex3f( (float)t, vscale, 0.f);
 		}
 		glEnd();
 		glEnable(GL_LINE_SMOOTH);
@@ -529,7 +532,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		for(int k=0; k<4; k++){
 			glBegin(GL_LINE_STRIP);
 			glColor4f (1., 0., 0., 0.5);
-			float y = (float)(1+g_channel[k])/(-130.f*NSCALE);
+			float y = (float)(1.f+g_channel[k])/(-1.f*vscale);
 			glVertex3f( -1.f, y, 0.f);
 			glVertex3f( 1.f, y, 0.f);
 			glEnd();
@@ -543,22 +546,23 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 		}
 		
 		glPushMatrix ();
-		glScalef(1.f/g_rasterSpan, -1.f/(130.f*NSCALE), 1.f);
+		glScalef(1.f/g_rasterSpan, -1.f/vscale, 1.f);
 		glTranslatef((0 - (float)lt + adj), 0.f, 0.f);
 		
-		for(int t = 0; t < NSCALE; t++){
-			for(int k=0; k<2; k++){
-				glEnableClientState(GL_VERTEX_ARRAY);
-				glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo2[t][k]);
-				glVertexPointer(2, GL_FLOAT, 0, 0);
-				if(k == 0) glColor4f (1., 1., 0., 0.3f);
-				else glColor4f (0., 1., 1., 0.3f);
-				
-				glTranslatef(0.f, 130.f*t, 0.f); //translate correctly?
-				glPointSize(2.0);
-				glDrawArrays(GL_POINTS, 0, sizeof(g_sbuf[t][k])/8);
-			}
+		int t = g_rasterWindow; //spin what part of the buffer to expose
+		if(t > NSCALE) t = 0;
+		for(int k=0; k<2; k++){
+			glEnableClientState(GL_VERTEX_ARRAY);
+			glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo2[t][k]);
+			glVertexPointer(2, GL_FLOAT, 0, 0);
+			if(k == 0) glColor4f (1., 1., 0., 0.3f);
+			else glColor4f (0., 1., 1., 0.3f);
+			
+			//glTranslatef(0.f, 130.f*t, 0.f); //translate correctly?
+			glPointSize(2.0);
+			glDrawArrays(GL_POINTS, 0, sizeof(g_sbuf[t][k])/8);
 		}
+		
 		glPopMatrix ();
 #endif
 		//end VBO
@@ -742,8 +746,8 @@ void saveState(){
 }
 void destroy(GtkWidget *, gpointer){
 	//save the old values..
-	saveState();
 	g_die = true;
+	saveState();
 	if(g_vbo1Init){
 		for(int k=0; k<NFBUF; k++){
 			glDeleteBuffersARB(1, &g_vbo1[k]);}
@@ -1636,11 +1640,16 @@ static void rasterSpanSpinCB( GtkWidget*, gpointer ){
 	g_rasterSpan = gtk_adjustment_get_value(g_rasterSpanSpin);
 	//this is pretty simple.
 }
+static void rasterWindowSpinCB( GtkWidget*, gpointer ){
+	g_rasterWindow = gtk_adjustment_get_value(g_rasterWindowSpin);
+	//this is pretty simple, too.
+}
 static void notebookPageChangedCB(GtkWidget *,
 					gpointer, int page, gpointer){
 	if(page == 0) g_mode = MODE_RASTERS;
 	if(page == 1) g_mode = MODE_SORT;
 	if(page == 2) g_mode = MODE_SORT;
+	if(page == 3) g_mode = MODE_RASTERS;
 }
 static GtkAdjustment* mk_spinner(const char* txt, GtkWidget* container,
 							 float start, float min, float max, float step,
@@ -1939,7 +1948,7 @@ int main(int argn, char **argc)
 	//g_signal_connect(notebook, "select-page",
 	//				 G_CALLBACK(notebookPageChangedCB), 0);
 	gtk_box_pack_start(GTK_BOX(v1), notebook, TRUE, TRUE, 1);
-    gtk_widget_show(notebook);
+    	gtk_widget_show(notebook);
 
 	box1 = gtk_vbox_new(FALSE, 2);
 	//add signal chain combo box.
@@ -1966,7 +1975,7 @@ int main(int argn, char **argc)
 
 	for(int k=0; k<W1_STRIDE; k++){
 		gtk_combo_box_append_text( GTK_COMBO_BOX( combo ),
-								   signalNames[k]);
+								signalNames[k]);
 	}
 	g_signal_connect( G_OBJECT( combo ), "changed",
                       G_CALLBACK( signalChainCB ), NULL );
@@ -1983,7 +1992,7 @@ int main(int argn, char **argc)
 	//add LMS on/off.. (global .. for now)
 	mk_radio("on,off", 2,
 			 box1, false, "LMS", lmsRadioCB);
-
+	
 	//add osc / reset radio buttons
 	mk_radio("500-6.7k,150-10k,osc,flat", 4,
 			 box1, true, "filter", filterRadioCB);
@@ -1993,6 +2002,9 @@ int main(int argn, char **argc)
 			   0.15, 0.1, 10.0, 0.05,
 			   zoomSpinCB, 0);
 	zoomSpinCB(GTK_WIDGET(NULL), NULL); //init the variables properly.
+	g_rasterWindowSpin = mk_spinner("Raster window", box1,
+			   g_rasterWindow, 0, NSCALE-1, 1,
+			   rasterWindowSpinCB, 0);
 
 	g_rasterSpanSpin = mk_spinner("Raster span", box1,
 			   g_rasterSpan, 1.0, 100.0, 1.0,
@@ -2084,15 +2096,18 @@ int main(int argn, char **argc)
 	gtk_label_set_angle(GTK_LABEL(label), 90);
 	gtk_notebook_insert_page(GTK_NOTEBOOK(notebook), box1, label, 2);
 
+//misc functions page
+	box1 = gtk_vbox_new (FALSE, 0);
+
 	//add a automatic channel change button.
 	button = gtk_check_button_new_with_label("cycle channels");
 	g_signal_connect (button, "toggled",
 			G_CALLBACK (cycleButtonCB), (gpointer) "o");
-	gtk_box_pack_start (GTK_BOX (v1), button, TRUE, TRUE, 0);
+	gtk_box_pack_start (GTK_BOX (box1), button, TRUE, TRUE, 0);
 	gtk_widget_show(button);
 	//add draw mode (applicable to all)
 	mk_radio("lines,points", 2,
-			 v1, false, "draw mode", drawRadioCB);
+			 box1, false, "draw mode", drawRadioCB);
 
 	bx = gtk_hbox_new (FALSE, 3);
 	//add a pause / go button (applicable to all)
@@ -2107,7 +2122,7 @@ int main(int argn, char **argc)
 	g_signal_connect(button, "clicked", G_CALLBACK (syncHeadstageCB),
 					 (gpointer*)window);
 	gtk_box_pack_start (GTK_BOX (bx), button, FALSE, FALSE, 0);
-	gtk_box_pack_start (GTK_BOX (v1), bx, TRUE, TRUE, 0);
+	gtk_box_pack_start (GTK_BOX (box1), bx, TRUE, TRUE, 0);
 
 	//and save / stop saving button
 	bx = gtk_hbox_new (FALSE, 3);
@@ -2122,9 +2137,13 @@ int main(int argn, char **argc)
 	gtk_misc_set_alignment (GTK_MISC (g_fileSizeLabel), 0, 0);
 	gtk_box_pack_start (GTK_BOX (bx), g_fileSizeLabel, FALSE, FALSE, 0);
 	gtk_widget_show(g_fileSizeLabel);
-	gtk_box_pack_start (GTK_BOX (v1), bx, TRUE, TRUE, 0);
-
-
+	gtk_box_pack_start (GTK_BOX (box1), bx, TRUE, TRUE, 0);
+//end misc functions page
+	gtk_widget_show (box1);
+	label = gtk_label_new("file");
+	gtk_label_set_angle(GTK_LABEL(label), 90);
+	gtk_notebook_insert_page(GTK_NOTEBOOK(notebook), box1, label, 3);
+//finish up
 	gtk_paned_add1(GTK_PANED(paned), v1);
 	gtk_paned_add2(GTK_PANED(paned), da1);
 
