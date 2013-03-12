@@ -1,6 +1,26 @@
 # not a very smart makefile -- no deps -- but works.
 # depends on google protocol buffers -- not too hard to install, in debian.
 # you'll need to install libatlas-base-dev for linear algebra.
+
+DBG = false
+JACK = true
+
+CC  = gcc
+CPP = g++
+
+ifeq ($(strip $(DBG)),true)
+	CFLAGS  += -g -rdynamic -DDEBUG
+	LDFLAGS += -rdynamic
+else
+	CFLAGS += -O3
+endif
+
+ifeq ($(strip $(JACK)),true)
+	CFLAGS += -DJACK
+	LDFLAGS += -ljack
+	GOBJS += jacksnd.o
+endif
+
 CFLAGS=-I/usr/local/include -I../common_host
 CFLAGS+=  -O6
 CFLAGS+= -Wall -Wcast-align -Wpointer-arith -Wshadow -Wsign-compare -Wformat=2 \
@@ -49,7 +69,7 @@ wf_plot: wf_plot.c
 deps:
 	sudo apt-get install libprotobuf-dev protobuf-compiler libgtk2.0-dev libgtkgl2.0-dev \
 	libgtkglext1-dev freeglut3-dev nvidia-cg-toolkit libgsl0-dev \
-	libatlas-base-dev libjack-dev python-matplotlib python-jsonpickle python-opengl libhdf5-dev \
+	libatlas-base-dev libjack-jackd2-dev python-matplotlib python-jsonpickle python-opengl libhdf5-dev \
 	libboost1.49-all-dev
 	echo "make sure /usr/lib64 is in /etc/ld.so.conf.d/libc.conf"
 	echo "otherwise Cg may not be found. "

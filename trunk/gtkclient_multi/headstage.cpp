@@ -214,10 +214,9 @@ void setChans(){
 		unsigned int* ptr = g_sendbuf[tid];
 		ptr += (g_sendW[tid] % g_sendL[tid]) * 8; //8 because we send 8 32-bit ints /pkt.
 		//scope these here (could also make a thread safe ptr array?)
-		
 		ptr[i*2+0] = htonl(echo(g_echo[tid], (FP_BASE - FP_TXCHAN0 + 4*i)));
 		//ok, for the taps: have 4 offsets.
-		
+		//printf("fuck");
 		int o1 = (c & 31) * W1_STRIDE * 2 * 4; //which MUX line.
 		int o2 = ((c & 64)>>6) * W1_STRIDE * 4; // primary/secondary SPORT
 		int o3 = ((c & 32)>>5) * 2; // primary/secondary RX chan.

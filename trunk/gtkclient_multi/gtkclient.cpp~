@@ -1101,6 +1101,18 @@ packet format in the file, as saved here:
 					}
 					
 				}
+				#ifdef JACK
+					//copy to jack output buffer --
+				if(tid==0)
+					{
+						float g[256]; 
+ 
+						for(int i=0; i<NSAMP*3 && i<256; i++){
+							g[i] = gain * g_fbuf[0][i];
+						}
+						jackAddSamples(&g[0], &g[0], NSAMP*3);
+					}
+				#endif
 				p++; //next packet!
 				if(g_mode == MODE_SORT){
 					//need a threshold - capture anything that exceeds threshold,
@@ -1974,12 +1986,12 @@ int main(int argn, char **argc)
    gtk_container_add( GTK_CONTAINER( frame ), combo );
 
 	for(int k=0; k<W1_STRIDE; k++){
-		gtk_combo_box_append_text( GTK_COMBO_BOX( combo ),
-								signalNames[k]);
+		gtk_combo_box_append_text( GTK_COMBO_BOX( combo ), signalNames[k]);
 	}
+	
 	g_signal_connect( G_OBJECT( combo ), "changed",
                       G_CALLBACK( signalChainCB ), NULL );
-
+	
 	//add a gain set-all button.
 	button = gtk_button_new_with_label ("Set all gains from A");
 	g_signal_connect(button, "clicked", G_CALLBACK (gainSetAll),0);
@@ -2002,6 +2014,7 @@ int main(int argn, char **argc)
 			   0.15, 0.1, 10.0, 0.05,
 			   zoomSpinCB, 0);
 	zoomSpinCB(GTK_WIDGET(NULL), NULL); //init the variables properly.
+	
 	g_rasterWindowSpin = mk_spinner("Raster window", box1,
 			   g_rasterWindow, 0, NSCALE-1, 1,
 			   rasterWindowSpinCB, 0);
@@ -2218,6 +2231,18 @@ int main(int argn, char **argc)
 	//change the channel every 2 seconds.
 	g_timeout_add(3000, chanscan, (gpointer)0);
 
+	//jack. 
+#ifdef JACK
+	jackInit(JACKPROCESS_RESAMPLE);
+	jackDisconnectAllPorts();
+	jackConnectFront();
+	jackSetResample(24414.0625/SAMPFREQ); 
+#endif
+	
 	gtk_main ();
+	
+#ifdef JACK
+	jackClose(0); 
+#endif
 	KillFont();
 }

@@ -1,5 +1,4 @@
-// in order to get function prototypes from glext.h,
-// define GL_GLEXT_PROTOTYPES before including glext.h
+// in order to get function prototypes from glext.h, // define GL_GLEXT_PROTOTYPES before including glext.h
 #define GL_GLEXT_PROTOTYPES
 
 #include <gtk/gtk.h>
@@ -978,7 +977,8 @@ void* po8_thread(void*){
 								g_c[k]->addWf(wf, unit, time, true);
 								g_c[k]->updateISI(unit, g_sample - numSamples + m); 
 								g_lastSpike[k][unit] = g_sample; 
-								if(g_wfwriter.m_enable){
+								if(g_
+								  writer.m_enable){
 									if(unit > 0 || g_saveUnsorted){
 										pak.time = time; 
 										pak.ticks = g_sample - numSamples + m + g_ts.m_dropped; //indexed to the start of the wf.
