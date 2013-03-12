@@ -11,7 +11,7 @@ function [shoulderAngles,e,w,rocValue,rocId] = ...
 % rocValue = 0;
 
 % w(1) = -w(1); % flip wrist rot direction
-%w(2) = -w(2); % flip dev direction
+w(2) = -w(2); % flip dev direction
 
 % Elbow
 % e = 55*pi/180;  % elbow
@@ -31,7 +31,7 @@ end
 % w(3) = -0.055;  % fe
 
 % Lock Shoulder
-% shoulderAngles(1) = 0*pi/180;
+% shoulderAngles(1) = -20*pi/180;
 % shoulderAngles(2) = 0*pi/180;
 % shoulderAngles(3) = 20*pi/180;
 

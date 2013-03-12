@@ -82,8 +82,8 @@
 #include <ctype.h>
 
 /******* WINDOWS ONLY DEFINES *********/
-//#ifdef _WIN64
-#ifdef _WIN32
+#ifdef _WIN64
+//#ifdef _WIN32
 #define IFWINDOWS(dothis) dothis 
 #define IFUNIX(dothis)
 //#include <windows.h>
@@ -197,6 +197,8 @@ unsigned long mex_call_counter=0;  /* Counter that counts how many calls that ha
 
 /***********************************************************************/
 void Print_Start_Message(){
+    mexPrintf("\nLoaded pnet " VERSION " Copyright (C) Peter Rydesäter, Sweden, et al., 1998 - 2003\n");
+    return;
     mexPrintf("\n===============================================================================\n"
 	      "Loaded pnet MEX-file for the tcp/udp/ip-toolbox Compiled @ "
 	      __DATE__ " " __TIME__  "\n"
