@@ -32,7 +32,7 @@ end
 
 % Lock Shoulder
 % shoulderAngles(1) = 0*pi/180;
-% shoulderAngles(2) = 0*pi/180;
+% shoulderAngles(2) = -0*pi/180;
 % shoulderAngles(3) = 20*pi/180;
 
 AA_Lim = [-30 0]*pi/180;

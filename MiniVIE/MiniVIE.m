@@ -328,12 +328,20 @@ classdef MiniVIE < Common.MiniVieObj
                     
                     % Setup filters and remaining properties
                     obj.println('Adding Filters',1);
+                    
+%                     Fs = h.SampleFrequency;
+%                     h.addfilter(Inputs.HighPass(10,8,Fs));
+%                     %h.addfilter(Inputs.LowPass(350,8,Fs));
+%                     %h.addfilter(Inputs.Notch(60.*(1:4),5,1,Fs));
+%                     h.addfilter(Inputs.Notch(60.*(1:4),5,1,Fs));
+%                     % obj.SignalSource.addfilter(Inputs.MAV(150));
+                    
                     Fs = h.SampleFrequency;
-                    h.addfilter(Inputs.HighPass(10,8,Fs));
-                    %h.addfilter(Inputs.LowPass(350,8,Fs));
-                    %h.addfilter(Inputs.Notch(60.*(1:4),5,1,Fs));
-                    h.addfilter(Inputs.Notch(60.*(1:4),5,1,Fs));
-                    % obj.SignalSource.addfilter(Inputs.MAV(150));
+                    h.addfilter(Inputs.HighPass(15,3,Fs));
+                    %h.addfilter(Inputs.RemoveOffset(10));
+                    %h.addfilter(Inputs.Notch([120 240 360],5,1,Fs));
+                    h.addfilter(Inputs.Notch([120 240 360],64,1,1000));
+                    
                     h.NumSamples = 2000;
                     h.initialize();
                 end
@@ -548,22 +556,22 @@ classdef MiniVIE < Common.MiniVieObj
                         start(h.Timer);
                         obj.println('Presentation setup complete',1);
                     case 'MplScenarioMud'                        
-                        QA = {
-                            'Enable NFU (y/n):'                     'n'
-                            'Destination IP (192.168.1.199):'       '127.0.0.1'
-                            'Destination Port (9027):'              '9027'
-                            'Enable Tactors (y/n)'                  'n'
-                            'Tactor Ids ([5 6 7]):'                 '[3 4]'
-                            'Enable Orientation Sensors (y/n):'     'n'
-                            };
 %                         QA = {
-%                             'Enable NFU (y/n):'                     'y'
-%                             'Destination IP (192.168.1.199):'       '192.168.1.111'
+%                             'Enable NFU (y/n):'                     'n'
+%                             'Destination IP (192.168.1.199):'       '127.0.0.1'
 %                             'Destination Port (9027):'              '9027'
-%                             'Enable Tactors (y/n)'                  'y'
+%                             'Enable Tactors (y/n)'                  'n'
 %                             'Tactor Ids ([5 6 7]):'                 '[3 4]'
 %                             'Enable Orientation Sensors (y/n):'     'n'
 %                             };
+                        QA = {
+                            'Enable NFU (y/n):'                     'y'
+                            'Destination IP (192.168.1.199):'       '192.168.1.111'
+                            'Destination Port (9027):'              '9027'
+                            'Enable Tactors (y/n)'                  'y'
+                            'Tactor Ids ([5 6 7]):'                 '[5 6 7]'
+                            'Enable Orientation Sensors (y/n):'     'n'
+                            };
                         name = 'MPL Control Interface';
                         numlines = 1;
                         prompt = QA(:,1);
