@@ -80,7 +80,7 @@ gtkclient_out:
 deps:
 	sudo apt-get install libprotobuf-dev protobuf-compiler libgtk2.0-dev libgtkgl2.0-dev \
 	libgtkglext1-dev freeglut3-dev nvidia-cg-toolkit libgsl0-dev \
-	libatlas-base-dev python-matplotlib python-jsonpickle python-opengl \
+	libatlas-base-dev libjack-jackd2-dev python-matplotlib python-jsonpickle python-opengl \
 	libboost1.49-all-dev pkg-config libhdf5-dev libsdl1.2-dev
 	echo "make sure /usr/lib64 is in /etc/ld.so.conf.d/libc.conf"
 	echo "otherwise Cg may not be found. "
