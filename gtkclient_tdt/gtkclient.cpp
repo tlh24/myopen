@@ -1327,6 +1327,7 @@ static void apertureOffCB( GtkWidget*, gpointer p){
 		//setAperture(j);
 	}
 }
+/*
 static void agcSetAll(gpointer ){
 	//sets *all 96* channels.
 	float agc = gtk_adjustment_get_value(g_agcSpin[0]);
@@ -1340,6 +1341,7 @@ static void agcSetAll(gpointer ){
 	for(int i=0; i<4; i++)
 		gtk_adjustment_set_value(g_agcSpin[i], agc);
 }
+*/
 static void drawRadioCB(GtkWidget *button, gpointer p){
 	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))){
 		int i = (int)((long long)p & 0xf);
@@ -1354,6 +1356,7 @@ static void blendRadioCB(GtkWidget *button, gpointer p){
 		else g_blendmode = GL_ONE;
 	}
 }
+/*
 static void lmsRadioCB(GtkWidget *button, gpointer ){
 	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))){
 		//int i = (int)((long long)p & 0xf);
@@ -1391,6 +1394,7 @@ static void signalChainCB( GtkComboBox *combo, gpointer){
 	}
     g_free( string );
 }
+*/
 static void showPcaButtonCB(GtkWidget *button, gpointer * ){
 	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
 		g_showPca = true;
@@ -1736,18 +1740,19 @@ int main(int argn, char **argc)
 	button = gtk_button_new_with_label ("Set all gains from A");
 	g_signal_connect(button, "clicked", G_CALLBACK (gainSetAll),0);
 	gtk_box_pack_start (GTK_BOX (box1), button, TRUE, TRUE, 0);
+
 	//and a AGC set-all button.
-	button = gtk_button_new_with_label ("Set all AGC targets from A");
-	g_signal_connect(button, "clicked", G_CALLBACK (agcSetAll),0);
-	gtk_box_pack_start (GTK_BOX (box1), button, TRUE, TRUE, 0);
+	//button = gtk_button_new_with_label ("Set all AGC targets from A");
+	//g_signal_connect(button, "clicked", G_CALLBACK (agcSetAll),0);
+	//gtk_box_pack_start (GTK_BOX (box1), button, TRUE, TRUE, 0);
 
 	//add LMS on/off.. (global .. for now)
-	mk_radio("on,off", 2,
-			 box1, false, "LMS", lmsRadioCB);
+	//mk_radio("on,off", 2,
+	//		 box1, false, "LMS", lmsRadioCB);
 
 	//add osc / reset radio buttons
-	mk_radio("500-6.7k,150-10k,osc,flat", 4,
-			 box1, true, "filter", filterRadioCB);
+	//mk_radio("500-6.7k,150-10k,osc,flat", 4,
+	//		 box1, true, "filter", filterRadioCB);
 
 	//add in a zoom spinner.
 	g_zoomSpin = mk_spinner("Waveform Span", box1,
