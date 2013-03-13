@@ -129,6 +129,9 @@ public:
 	double getTicks(long double time){ //estimated ticks, of course.
 		return (time - m_timeOffset) * m_slope + m_offset;
 	}
+	long double getTime(double ticks){ //estimated time, of course.
+		return (ticks - m_offset)/m_slope + m_timeOffset; 
+	}
 }; 
 class TimeSyncClient {
 public:

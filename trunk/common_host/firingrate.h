@@ -94,13 +94,15 @@ public:
 		double t = 0; 
 		double xf = lw*m_xfade; 
 		for(int l=0; l<m_lags; l++) out[l] = 0; 
+		t = time - m_ts[w & (FR_LEN-1)];
+		while(w >= 0 && t < 0) w--; //ignore spikes more recent than the request. 
 		for(int l=0; l<m_lags; l++){
 			double lag = (l+1) * lw; 
 			t = time - m_ts[w & (FR_LEN-1)];
 			while(w >= 0 && t-lag-xf < 0){
-				double lerp = (-1.0/(2*m_xfade*lw))*(t-lag)+0.5; 
+				double lerp = (-1.0/(2*xf))*(t-lag)+0.5; 
 				lerp = lerp > 1.0 ? 1.0 : lerp; 
-				out[l] += (unsigned short)round(lerp * .0); 
+				out[l] += (unsigned short)round(lerp * 128.0); 
 				if(l<m_lags-1) out[l+1] += (unsigned short)round((1-lerp)*128.0); 
 				w--;  t = time - m_ts[w & (FR_LEN-1)];
 			}
