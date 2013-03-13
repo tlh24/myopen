@@ -1287,6 +1287,7 @@ static void unsortRateSpinCB( GtkWidget* , gpointer){
 	g_unsortrate = t;
 	printf("unsortRateSpinCB: %f\n", t);
 }
+/*
 static void agcSpinCB( GtkWidget*, gpointer p){
 	int h = (int)((long long)p & 0xf);
 	if(h >= 0 && h < 4 && !g_uiRecursion){
@@ -1300,6 +1301,7 @@ static void agcSpinCB( GtkWidget*, gpointer p){
 		g_c[j]->resetPca();
 	}
 }
+*/
 static void apertureSpinCB( GtkWidget*, gpointer p){
 	int h = (int)((long long)p & 0xf);
 	if(h >= 0 && h < 8 && !g_uiRecursion){
@@ -1678,13 +1680,13 @@ int main(int argn, char **argc)
 		//right of that, a gain spinner. (need to update depending on ch)
 		g_gainSpin[i] = mk_spinner("gain", bx3,
 								 	g_c[g_channel[i]]->getGain(),
-									-30.0, 30.0, 0.1,
+									-64.0, 64.0, 0.1,
 								  	gainSpinCB, i);
 		//below that, the AGC target.
-		g_agcSpin[i] = mk_spinner("AGC target", bx2,
-								  	g_c[g_channel[i]]->m_agc,
-									0, 32000, 1000,
-								  	agcSpinCB, i);
+		//g_agcSpin[i] = mk_spinner("AGC target", bx2,
+		//						  	g_c[g_channel[i]]->m_agc,
+		//							0, 32000, 1000,
+		//						  	agcSpinCB, i);
 
 		gtk_box_pack_start (GTK_BOX (frame), bx2, FALSE, FALSE, 1);
 	}
@@ -1700,6 +1702,7 @@ int main(int argn, char **argc)
 
 	box1 = gtk_vbox_new(FALSE, 2);
 	//add signal chain combo box.
+	/*
 	frame = gtk_frame_new ("signal chain");
 	gtk_box_pack_start (GTK_BOX (box1), frame, TRUE, TRUE, 0);
 	const char* signalNames[W1_STRIDE] = {
@@ -1719,7 +1722,7 @@ int main(int argn, char **argc)
 		"13	y4(n-2)" };
 	button = 0;
 	combo = gtk_combo_box_new_text();
-   gtk_container_add( GTK_CONTAINER( frame ), combo );
+	gtk_container_add( GTK_CONTAINER( frame ), combo );
 
 	for(int k=0; k<W1_STRIDE; k++){
 		gtk_combo_box_append_text( GTK_COMBO_BOX( combo ),
@@ -1727,6 +1730,7 @@ int main(int argn, char **argc)
 	}
 	g_signal_connect( G_OBJECT( combo ), "changed",
                       G_CALLBACK( signalChainCB ), NULL );
+	*/
 
 	//add a gain set-all button.
 	button = gtk_button_new_with_label ("Set all gains from A");
