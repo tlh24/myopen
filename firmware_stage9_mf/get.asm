@@ -2,7 +2,7 @@
 #include "nordic_regs.h"
 
 .align 8 //call is a 5-cycle latency if target is aligned.
-#ifdef _AGC_ //enable EGC update.
+#ifdef _AGC_ //enable AGC update.
 .global _get_asm
 _get_asm: 
 #else 

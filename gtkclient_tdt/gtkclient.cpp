@@ -47,6 +47,7 @@
 #include "firingrate.h"
 #include "gtkclient.h"
 #include "mmaphelp.h"
+#include "fifohelp.h"
 #include "channel.h"
 #include "packet.h"
 #include "spikes.pb.h"
@@ -839,6 +840,7 @@ void* po8_thread(void*){
 		// start the timer used to compute the speed and set the collected bytes to 0
 		long double starttime = gettime(); 
 		long double totalSamples = 0.0; //for simulation.
+		long double simulateRestart = 0.0; 
 		long long bytes = 0; 
 		unsigned int frame = 0; 
 		unsigned int bps = 2; 
@@ -973,6 +975,8 @@ void* po8_thread(void*){
 									unit = u+1; 
 							}
 							//check if this exceeds minimum ISI. 
+							double ticks = g_sample - numSamples + m + g_ts.m_dropped;
+							// ticks is indexed to the start of the waveform.
 							if(g_sample - g_lastSpike[k][unit] > g_minISI*24.4140625){
 								//need to more precisely calulate spike time here.
 								g_c[k]->addWf(wf, unit, time, true);
@@ -981,7 +985,7 @@ void* po8_thread(void*){
 								if(g_wfwriter.m_enable){
 									if(unit > 0 || g_saveUnsorted){
 										pak.time = time; 
-										pak.ticks = g_sample - numSamples + m + g_ts.m_dropped; //indexed to the start of the wf.
+										pak.ticks = ticks; 
 										pak.channel = k; 
 										pak.unit = unit; 
 										pak.len = 32; 
@@ -994,7 +998,7 @@ void* po8_thread(void*){
 								}
 								if(unit > 0 && unit <=2){
 									int uu = unit-1; 
-									g_fr[k][uu].add(time); 
+									g_fr[k][uu].add(g_ts.getTime(ticks)); 
 									i64 w = g_sbufW[uu] % (i64)(sizeof(g_sbuf[0])/8);
 									g_sbuf[uu][w*2+0] = (float)(time);
 									g_sbuf[uu][w*2+1] = (float)k;
@@ -1056,57 +1060,41 @@ void* mmap_thread(void*){
 	 * */
 	size_t length = 97*2*10*2; 
 	mmapHelp* mmh = new mmapHelp(length, "/tmp/binned"); 
-	
-	int pipe_out = open("gtkclient_out", O_RDWR); 
-	if(pipe_out<=0){
-		perror("Error: could not open ./gtkclient_out (make with mkfifo)\n"); 
-		g_die = true; 
-		sleep(1); exit(1); 
-		return NULL; 
-	}
-	int pipe_in = open("gtkclient_in", O_RDWR); 
-	if(pipe_in<=0){
-		perror("Error: could not open ./gtkclient_in (make with mkfifo)\n"); 
-		g_die = true; 
-		sleep(1); exit(1); 
-		return NULL; 
-	}
 	volatile unsigned short* bin = (unsigned short*)mmh->m_addr; 
 	mmh->prinfo(); 
+	fifoHelp* pipe_out = new fifoHelp("/tmp/gtkclient_out.fifo");
+	fifoHelp* pipe_in = new fifoHelp("/tmp/gtkclient_in.fifo");
 	int frame = 0; 
 	bin[96*2*10] = 0; 
 	bin[96*2*10+1] = 0; 
-	char buf[32]; int bufn = 0; 
-	flush_pipe(pipe_out); 
+	flush_pipe(pipe_out->m_fd); 
 
 	while(!g_die){
 		//printf("%d waiting for matlab...\n", frame); 
-		int r = read(pipe_in, &(buf[bufn]), 5);
-		long double end = gettime(); 
-		if(r > 0) bufn += r; 
-		buf[bufn] = 0; 
-		//printf("%d read %d %s\n", frame, r, buf); 
+		double reqTime = 0.0; 
+		int r = read(pipe_in->m_fd, &reqTime, 8); // send it the time you want to sample,
+		double end = reqTime; 	// or < 0 to bin 'now'.
+		if(end < 0) end = (double)gettime(); 
 		if(r >= 3){
 			for(int i=0; i<96; i++){
 				for(int j=0; j<2; j++){
 					g_fr[i][j].get_bins(end, (unsigned short*)&(bin[(i*2+j)*10])); 
 				}
 			}
-			bin[96*2*10]++; 
+			bin[96*2*10]++; //counter.
 			// N.B. seems we need to touch all memory to update the first page. 
 			//msync(addr, length, MS_SYNC); 
 			//  if made with shm_open, msync is ok -- no writes to disk.
 			usleep(100); //seems reliable with this in place.
-			write(pipe_out, "go\n", 3); 
+			write(pipe_out->m_fd, "go\n", 3); 
 			//printf("sent pipe_out 'go'\n"); 
-			bufn = 0; 
 		}else
 			usleep(200000); //does not seem to limit the frame rate, just the startup sync.
 		frame++; 
 	}
 	delete mmh;  
-	close (pipe_in);
-	close (pipe_out); 
+	delete pipe_in;
+	delete pipe_out; 
 	return NULL; 
 }
 
