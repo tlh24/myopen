@@ -1419,9 +1419,9 @@ static void saveUnsortButtonCB(GtkWidget *button, gpointer * ){
 	else
 		g_saveUnsorted = false; 
 }
-static void syncHeadstageCB(GtkWidget *, gpointer * ){
+//static void syncHeadstageCB(GtkWidget *, gpointer * ){
 	//setAll(); //see headstage.cpp
-}
+//}
 static void cycleButtonCB(GtkWidget *button, gpointer * ){
 	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))){
 		g_cycle = true;
@@ -1875,9 +1875,9 @@ int main(int argn, char **argc)
 	gtk_widget_show(button);
 
 	//add a sync headstage button (useful in the case of a reset).
-	button = gtk_button_new_with_label ("sync headstage");
-	g_signal_connect(button, "clicked", G_CALLBACK (syncHeadstageCB),
-					 (gpointer*)window);
+	//button = gtk_button_new_with_label ("sync headstage");
+	//g_signal_connect(button, "clicked", G_CALLBACK (syncHeadstageCB),
+	//				 (gpointer*)window);
 	gtk_box_pack_start (GTK_BOX (bx), button, FALSE, FALSE, 0);
 	gtk_box_pack_start (GTK_BOX (v1), bx, TRUE, TRUE, 0);
 
