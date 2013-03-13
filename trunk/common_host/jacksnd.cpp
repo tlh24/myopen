@@ -85,8 +85,11 @@ int process_resample(jack_nframes_t nframes, void* arg){
 			out1[i] = 0.f; 
 			out2[i] = 0.f; 
 		} else if(dif >= RESAMP_MASK){
-			if(i==0)
-				printf("dif >= %d dif %ld nframes %d rd %ld wr %ld\n", RESAMP_MASK, dif, nframes, r->rdPtr, r->wrPtr); 
+			#ifdef DEBUG
+			if(i==0) {
+				printf("dif >= %d dif %ld nframes %d rd %ld wr %ld\n", RESAMP_MASK, dif, nframes, r->rdPtr, r->wrPtr);
+			}
+			#endif
 			r->rdPtr = r->wrPtr - (RESAMP_SIZ/2); //this will keep zeros coming out.
 			out1[i] = 0.f; 
 			out2[i] = 0.f; 
