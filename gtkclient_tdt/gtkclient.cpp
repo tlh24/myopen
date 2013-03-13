@@ -1597,12 +1597,14 @@ int main(int argn, char **argc)
 	GtkWidget *box1, *bx, *v1, *label;
 	GtkWidget *paned;
 	GtkWidget *frame;
-	GtkWidget *button, *combo;
+	GtkWidget *button;
+	//GtkWidget *combo;
 	//GtkWidget *paned2;
 	
 	FiringRate fr; 
 	fr.get_bins_test(); 
 
+	/*
 	char destIP[256];
 	for(int i=0;i<256;i++) destIP[i] = 0;
 	if(argn == 2){
@@ -1611,6 +1613,7 @@ int main(int argn, char **argc)
 	}else{
 		snprintf(destIP, 256, "152.16.229.38");
 	}
+	*/
 
 	MatStor ms("preferences.mat"); 
 	for(int i=0; i<4; i++){
@@ -1632,7 +1635,7 @@ int main(int argn, char **argc)
 
 	window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_title (GTK_WINDOW (window), "gtk TDT v1 client");
-	gtk_window_set_default_size (GTK_WINDOW (window), 850, 650);
+	gtk_window_set_default_size (GTK_WINDOW (window), 850, 800);
 	da1 = gtk_drawing_area_new ();
 	gtk_widget_set_size_request(GTK_WIDGET(da1), 640, 650);
 
@@ -1946,7 +1949,7 @@ int main(int argn, char **argc)
 	pthread_create( &thread1, &attr, mmap_thread, 0 );
 
 	//set the initial sampling stage.
-	gtk_combo_box_set_active(GTK_COMBO_BOX(combo), 12);
+	//gtk_combo_box_set_active(GTK_COMBO_BOX(combo), 12);
 	gtk_widget_show_all (window);
 
 	g_timeout_add (1000 / 30, rotate, da1);
