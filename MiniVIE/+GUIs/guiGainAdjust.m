@@ -1,5 +1,6 @@
 function guiGainAdjust(obj)
-
+obj.Presentation.stop;
+drawnow
 f = UiTools.create_figure('Class Names','guiClassifierChannels');
 clf(f)
 
@@ -45,6 +46,7 @@ end
     function updateGain(classId,val)
         obj.SignalClassifier.VirtualChannelGain(classId) = val;
     end
-
+drawnow
+obj.Presentation.start;
 
 end
