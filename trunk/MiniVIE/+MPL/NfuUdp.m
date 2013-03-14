@@ -89,27 +89,24 @@ classdef (Sealed) NfuUdp < handle
             end
             
             % Open a udp port to receive streaming data on
-            obj.UdpStreamReceiveSocket = pnet('udpsocket',obj.UdpStreamReceivePortNumLocal);
-            if obj.UdpStreamReceiveSocket < 0
-                fprintf(2,'[%s] Failed to create UDP Socket on local port #%d\n',mfilename,obj.UdpStreamReceivePortNumLocal);
+            obj.UdpStreamReceiveSocket = PnetClass(obj.UdpStreamReceivePortNumLocal);
+            if ~obj.UdpStreamReceiveSocket.initialize()
                 status = -1;
                 return
-            elseif (obj.UdpStreamReceiveSocket ~= 0)
+            elseif (obj.UdpStreamReceiveSocket.hSocket ~= 0)
                 fprintf(2,'[%s] Expected receive socket id == 0, got socket id == %d\n',mfilename,obj.UdpStreamReceiveSocket);
             end
-            pnet(obj.UdpStreamReceiveSocket, 'setreadtimeout',0);
             
             % Open a udp port to send commands
-            obj.UdpCommandSocket = pnet('udpsocket',obj.UdpCommandPortNumLocal);
-            if obj.UdpCommandSocket < 0
-                fprintf(2,'Failed to create UDP Socket on local port #%d\n',obj.UdpCommandPortNumLocal);
+            obj.UdpCommandSocket = PnetClass(obj.UdpCommandPortNumLocal);
+            
+            if ~obj.UdpCommandSocket.initialize
                 status = -2;
                 return
-            elseif (obj.UdpCommandSocket ~= 1)
+            elseif (obj.UdpCommandSocket.hSocket ~= 1)
                 fprintf(2,'[%s] Expected receive socket id == 1, got socket id == %d\n',mfilename,obj.UdpCommandSocket);
             end
-            pnet(obj.UdpCommandSocket, 'setreadtimeout',0);
-            
+
             % StartStreams
             
             % Enable CPCH Data
@@ -130,58 +127,6 @@ classdef (Sealed) NfuUdp < handle
             pause(0.1);
             obj.update();
             pause(0.1);
-            
-            obj.IsInitialized = true;
-            
-            obj.enableRunMode;
-            
-            return
-            % open a CMD connection to the NFU
-            fprintf( '[%s] Creating local tcpsocket on port %d...', mfilename,obj.TcpPortNum);
-            obj.TcpSocket = pnet( 'tcpsocket', obj.TcpPortNum );
-            socketSuccess = (-1 ~= obj.TcpSocket);
-            
-            if socketSuccess
-                fprintf('OK\n');
-                pnet( obj.TcpSocket, 'setreadtimeout', 1 );
-                
-                % Try to crate connection to NFU.  Only works if NFU is
-                % ready to receive commands
-                fprintf( '[%s] tcplisten on tcpsocket...',mfilename);
-                obj.TcpConnection = pnet( obj.TcpSocket, 'tcplisten' );
-                connectionSuccess = (-1 ~= obj.TcpConnection);
-                if connectionSuccess
-                    fprintf('OK\n');
-                    pnet( obj.TcpConnection, 'setreadtimeout', 1 );
-                    
-                    %fprintf( 'Sending NFU reset message\n' );
-                    %pnet( cmdCon, 'write', reset_Nfu ) %reset NFU
-                    %fprintf( 'Sending NFU write cfg message\n' );
-                    %pnet( cmdCon, 'write', write_cfg_Nfu ); %write cfg NFU
-                    %pnet( cmdCon, 'readline' );
-                else
-                    fprintf('FAILED\n' );
-                    fprintf( '[%s] Closing tcpsocket...\n',mfilename);
-                    pnet(obj.TcpSocket, 'close' )
-                    status = -1;
-                    return
-                end
-            else
-                fprintf('FAILED\n' );
-                status = -1;
-                return
-            end
-            status = 0;
-            
-            % StartStreams
-            
-            % Enable CPCH Data
-            fprintf('[%s] Enabling CPCH Data Stream\n',mfilename);
-            obj.enableStreaming(1);
-            
-            % Enable Percepts
-            fprintf('[%s] Enabling Percepts Data Stream\n',mfilename);
-            obj.enableStreaming(4);
             
             obj.IsInitialized = true;
             
@@ -255,7 +200,7 @@ classdef (Sealed) NfuUdp < handle
             % send a udp message to the command socket
             
             
-            obj.send_udp( obj.UdpCommandSocket, msg,...
+            obj.UdpCommandSocket.putData(uint8(msg),...
                 obj.Hostname, obj.UdpCommandPortNumRemote);
         end
         function enableStreaming(obj,type)
@@ -266,8 +211,7 @@ classdef (Sealed) NfuUdp < handle
             % With wireless, multiple streams are ok
             [ msg ] = obj.msg_enable_streaming( type );
             
-            obj.send_udp( obj.UdpCommandSocket, msg,...
-                obj.Hostname, obj.UdpCommandPortNumRemote);
+            sendUdpCommand(obj,msg);
             
         end
         function disableStreaming(obj,type)
@@ -277,8 +221,7 @@ classdef (Sealed) NfuUdp < handle
             
             [ msg ] = obj.msg_disable_streaming( type );
             
-            obj.send_udp( obj.UdpCommandSocket, msg,...
-                obj.Hostname, obj.UdpCommandPortNumRemote);
+            sendUdpCommand(obj,msg);
             
         end
         function resetNfu(obj)
@@ -324,8 +267,7 @@ classdef (Sealed) NfuUdp < handle
             
             [ msg ] = obj.msg_update_param( param );
             
-            obj.send_udp( obj.UdpCommandSocket, msg,...
-                obj.Hostname, obj.UdpCommandPortNumRemote);
+            sendUdpCommand(obj,msg);
             
         end
         function reset_buffers(obj)
@@ -356,8 +298,8 @@ classdef (Sealed) NfuUdp < handle
             % If value not passed, update param with the .Value field
             [ msg ] = obj.msg_tactor_control( nodeid, period, amplitude, duration, currentLimit, offset );
             
-            obj.send_udp( obj.UdpCommandSocket, msg,...
-                obj.Hostname, obj.UdpCommandPortNumRemote);
+            sendUdpCommand(obj,msg);
+            
         end
         
         function cellData = get_buffer(obj,id)
@@ -403,21 +345,15 @@ classdef (Sealed) NfuUdp < handle
             % them for later use.  Packets are routed based on size to the
             % appropriate buffer
             
-            assert(isequal(pnet(obj.UdpStreamReceiveSocket,'status'),6),...
-                'pnet socket is disconnected but not closed');
+            [cellDataBytes, numReads] = obj.UdpStreamReceiveSocket.getAllData();
             
-            %UdpBuffer
-            len = 1;
-            while(len > 0)
-                try
-                    % try block here is for cases where an output
-                    % argument is not returned by pnet (
-                    len = pnet(obj.UdpStreamReceiveSocket,'readpacket','noblock');
-                catch ME
-                    fprintf(2,'[%s] Caught a pnet error reading udp stream packets: "%s"\n',mfilename,ME.message);
-                    return
-                end
-                
+            %check how far back we read to get caught up with stream
+            if numReads > 20
+                numReads
+            end
+            for i = 1:numReads
+                dataBytes = cellDataBytes{i};
+                len = length(dataBytes);
                 if (len == 406) || (len == 726)
                     % Store EMG Data
                     %
@@ -425,8 +361,7 @@ classdef (Sealed) NfuUdp < handle
                     obj.numPacketsReceived = obj.numPacketsReceived + 1;
                     
                     % read data and mark as new
-                    obj.UdpBuffer1{obj.ptr1} = ...
-                        pnet(obj.UdpStreamReceiveSocket,'read',len,'UINT8');
+                    obj.UdpBuffer1{obj.ptr1} = dataBytes;
                     obj.newData1(obj.ptr1) = true;
                     
                     % advance ptr
@@ -443,7 +378,7 @@ classdef (Sealed) NfuUdp < handle
                     obj.numPacketsReceived = obj.numPacketsReceived + 1;
                     
                     % read data and mark as new
-                    obj.UdpBuffer2{obj.ptr2} = pnet(obj.UdpStreamReceiveSocket,'read',len,'UINT8');
+                    obj.UdpBuffer2{obj.ptr2} = dataBytes;
                     obj.newData2(obj.ptr2) = true;
                     
                     % advance ptr
@@ -492,18 +427,21 @@ classdef (Sealed) NfuUdp < handle
                         'SW_STATE_NUM_STATES'
                         };
                     try
-                        newData = pnet(obj.UdpStreamReceiveSocket,'read',len,'UINT8');
+                        newData = dataBytes;
+                        % offset zero based state with 1 based
                         SW_STATE = typecast(newData(1:4),'uint32');
+                        strState = cellStates{SW_STATE+1};
+                        
                         numMsgs = typecast(newData(5:8),'uint32');
                         nfuStreaming = typecast(newData(9:16),'uint64');
                         lcStreaming = typecast(newData(17:24),'uint64');
                         cpchStreaming = typecast(newData(25:32),'uint64');
                         
-                        fprintf('[%s] NFU: State = "%s", CPC msgs = "%d", Streaming NFU = %d LC = %d CPCH = %d\n',...
-                            mfilename,cellStates{SW_STATE},numMsgs,nfuStreaming,lcStreaming,cpchStreaming);
+                        fprintf('[%s.m %s] NFU: State = "%s", CPC msgs = "%d", Streaming NFU = %d LC = %d CPCH = %d\n',...
+                            mfilename,datestr(now),strState,numMsgs,nfuStreaming,lcStreaming,cpchStreaming);
                     catch ME
                         disp(newData)
-                        fprintf('[%s] Error parsing heartbeat.  Msg: %s \n',mfilename, ME.message);
+                        fprintf('[%s.m %s] Error parsing heartbeat.  Msg: %s \n',mfilename, datestr(now), ME.message);
                         
                     end
                 elseif len > 0
@@ -523,10 +461,10 @@ classdef (Sealed) NfuUdp < handle
             if cmd < 0
                 fprintf('[%s] Deleting NfuUdp comms object\n',mfilename);
                 try
-                    pnet(obj.UdpStreamReceiveSocket,'close');
+                    obj.UdpStreamReceiveSocket.close();
                 end
                 try
-                    pnet(obj.UdpCommandSocket,'close');
+                    obj.UdpCommandSocket.close();
                 end
                 %IsInitialized
                 localObj = [];
@@ -540,14 +478,6 @@ classdef (Sealed) NfuUdp < handle
                 fprintf('[%s] Returning existing object\n',mfilename);
             end
             singleObj = localObj;
-        end
-        function [ status ] = send_udp( sock, msg, hostname, port)
-            
-            status = pnet(sock,'status');
-            assert(isequal(status,6),'UDP Port %d not ready',port);
-            pnet( sock, 'write', msg );
-            pnet( sock, 'writepacket', hostname, port );
-            
         end
         function [ msg ] = msg_enable_streaming( type )
             %enable_streaming Summary of this function goes here

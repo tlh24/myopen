@@ -197,7 +197,7 @@ classdef ScenarioBase < Common.MiniVieObj
             % Process grasps
             %%%%%%%%%%%%%%%%%%%%%%%%
             graspGain = 0.2;
-            graspChangeThreshold = 0.2;  % Normalized [0 1]
+            graspChangeThreshold = 0.5;  % Normalized [0 1]
             graspName = className;
             lastGraspVelocity = obj.GraspVelocity;
             
@@ -209,10 +209,10 @@ classdef ScenarioBase < Common.MiniVieObj
             switch graspName
                 case 'Hand Open'
                     % Change the grasp Value in grasp mode
-                    desiredGraspVelocity = - prSpeed*graspGain*1;
+                    desiredGraspVelocity = - prSpeed*graspGain*4;
                 case cellGrasps
                     % Increment position along grasp trajectory
-                    desiredGraspVelocity = prSpeed*graspGain;
+                    desiredGraspVelocity = prSpeed*graspGain*4;
                     if isempty(obj.GraspId) || (obj.GraspValue < graspChangeThreshold)
                         % Note the isempty check handles the transient case
                         % where a grasp is not yet selected on startup
