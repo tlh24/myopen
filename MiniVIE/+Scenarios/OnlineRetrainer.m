@@ -264,7 +264,14 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
                 
                 [doTrain, doAddData] = getCommand(obj);
                 
-                if doTrain
+                
+                % if all the data is cleared out, then we can't retrain
+                % without error
+                
+                l = obj.TrainingData.getClassLabels;
+                
+                
+                if doTrain && ~isempty(l)
                     % retrain
                     obj.SignalClassifier.train();
                     obj.SignalClassifier.computeError();
