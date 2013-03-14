@@ -50,7 +50,7 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
             % Creator
         end
         function initialize(obj,SignalSource,SignalClassifier,TrainingData)
-
+            
             % Extend Scenario model to include communications with the
             % limb system via vulcanX or the NFU
             
@@ -93,8 +93,8 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
                             obj.msComPortStr, obj.msNodeInt, obj.msChannelInt);
                     end
                     
-                    % Assume MicroStrain (upper arm) is in home position 
-                    % (attached to user's tricep, antenna pointed toward 
+                    % Assume MicroStrain (upper arm) is in home position
+                    % (attached to user's tricep, antenna pointed toward
                     % user's shoulder, arm hanging loosely).
                     obj.home();
                 end
@@ -104,10 +104,10 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
                     obj.hUdpArmTracking.initialize();
                 end
             end
-
+            
             % Remaining superclass initialize methods
             initialize@Scenarios.OnlineRetrainer(obj,SignalSource,SignalClassifier,TrainingData);
-
+            
         end
         function home(obj)
             if ~isempty(obj.hMicroStrainGX2)
@@ -133,14 +133,20 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
             end
         end
         function update(obj)
-            update@Scenarios.OnlineRetrainer(obj); % Call superclass update method
             
-            if ~isempty(obj.SignalSource)
-                update_control(obj);
-            end
-            
-            if obj.EnableFeedback
-                update_sensory(obj);
+            try
+                
+                update@Scenarios.OnlineRetrainer(obj); % Call superclass update method
+                
+                if ~isempty(obj.SignalSource)
+                    update_control(obj);
+                end
+                
+                if obj.EnableFeedback
+                    update_sensory(obj);
+                end
+            catch ME
+                UiTools.display_error_stack(ME);
             end
             
         end
@@ -170,7 +176,7 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
                 % pause(0.01)
                 % littleT = convertedPercepts(3,6);
                 % obj.hTactors(1).update(littleT);
-                % 
+                %
                 % pause(0.01)
                 % indexT = convertedPercepts(3,2);
                 % obj.hTactors(2).update(indexT);
@@ -201,7 +207,7 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
             
             %e = obj.JointAnglesDegrees(action_bus_enum.Elbow) * pi/180;
             e = 90 * pi / 180;
-
+            
             % convert char grasp id to numerical mpl grasp value
             graspId = obj.graspLookup(obj.GraspId);
             
@@ -210,7 +216,7 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
             % nfu.  Also nfu local roc tables are currently disabled
             
             shoulderAngles = zeros(1,3);
-
+            
             if ~isempty(obj.hUdpArmTracking)
                 dataBytes = obj.hUdpArmTracking.getData();
                 numBytes = length(dataBytes);
@@ -255,14 +261,14 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
                 obj.hNfu.sendUpperArmHandRoc([shoulderAngles e w],graspId,graspValue);
             else
                 % Send to vulcanX
-%                 msg = obj.hMud.ArmPosVelHandRocGrasps([shoulderAngles e w],zeros(1,7),1,graspId,graspValue,1);
-                    assert(obj.GraspValue >= 0,'GraspValue < 0');
-                    assert(obj.GraspValue <= 1,'GraspValue > 1');
-                    roc = obj.localRoc(graspId+1);
-                    
-                    handPos = interp1(roc.waypoint,roc.angles,obj.GraspValue);
-% handPos = zeros(1,20);
-                    msg = obj.hMud.AllJointsPosVelCmd([shoulderAngles e w],zeros(1,7),handPos,zeros(1,20));
+                %                 msg = obj.hMud.ArmPosVelHandRocGrasps([shoulderAngles e w],zeros(1,7),1,graspId,graspValue,1);
+                assert(obj.GraspValue >= 0,'GraspValue < 0');
+                assert(obj.GraspValue <= 1,'GraspValue > 1');
+                roc = obj.localRoc(graspId+1);
+                
+                handPos = interp1(roc.waypoint,roc.angles,obj.GraspValue);
+                % handPos = zeros(1,20);
+                msg = obj.hMud.AllJointsPosVelCmd([shoulderAngles e w],zeros(1,7),handPos,zeros(1,20));
                 obj.hSink.putbytes(msg);
             end
             
@@ -272,54 +278,54 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
             
             
             
-%             useLocalRoc = 1;
-%             if isempty(obj.hMicroStrainGX2)
-%                 
-%                 
-%                 if ~useLocalRoc
-%                     % use built in ROC's
-%                     msg = obj.hMud.ArmPosVelHandRocGrasps([zeros(1,3) e w],zeros(1,7),1,graspId,obj.GraspValue,1);
-%                 else
-%                     % use local ROC's
-%                     assert(obj.GraspValue >= 0,'GraspValue < 0');
-%                     assert(obj.GraspValue <= 1,'GraspValue > 1');
-%                     roc = obj.localRoc(graspId+1);
-%                     
-%                     handPos = interp1(roc.waypoint,roc.angles,obj.GraspValue);
-%                     msg = obj.hMud.AllJointsPosVelCmd([zeros(1,3) e w],zeros(1,7),handPos,zeros(1,20));
-%                 end
-%                 
-%             else
-%                 F_WCS_RB1 = obj.hMicroStrainGX2.rotationMatrix;
-%                 F_WCS_RB1Offset = pinv(obj.T_WCS_HOME) * ...
-%                     F_WCS_RB1 * obj.F_RB1_HOME;
-%                 ang = obj.R_to_EulerZYX(F_WCS_RB1Offset);
-%                 
-%                 shoulderFE = ang(3);
-%                 if ~obj.msLefty
-%                     shoulderAA = ang(2);
-%                     humeralRot = -ang(1);
-%                 else
-%                     shoulderAA = -ang(2);
-%                     humeralRot = ang(1);
-%                 end
-%                 
-%                 msg = obj.hMud.ArmPosVelHandRocGrasps( ...
-%                     [shoulderFE shoulderAA humeralRot e w], ...
-%                     zeros(1,7),1,graspId,obj.GraspValue,1);
-%             end
-%             
-%             if isempty(obj.hNfu)
-%                 % Send to vulcanX
-%                 obj.hSink.putbytes(msg);
-%             else
-%                 % Send to NFU
-%                 if ~useLocalRoc
-%                     obj.hNfu.sendUdpCommand(char(59,msg));
-%                 else
-%                     obj.hNfu.sendUdpCommand(char(61,msg));
-%                 end
-%             end
+            %             useLocalRoc = 1;
+            %             if isempty(obj.hMicroStrainGX2)
+            %
+            %
+            %                 if ~useLocalRoc
+            %                     % use built in ROC's
+            %                     msg = obj.hMud.ArmPosVelHandRocGrasps([zeros(1,3) e w],zeros(1,7),1,graspId,obj.GraspValue,1);
+            %                 else
+            %                     % use local ROC's
+            %                     assert(obj.GraspValue >= 0,'GraspValue < 0');
+            %                     assert(obj.GraspValue <= 1,'GraspValue > 1');
+            %                     roc = obj.localRoc(graspId+1);
+            %
+            %                     handPos = interp1(roc.waypoint,roc.angles,obj.GraspValue);
+            %                     msg = obj.hMud.AllJointsPosVelCmd([zeros(1,3) e w],zeros(1,7),handPos,zeros(1,20));
+            %                 end
+            %
+            %             else
+            %                 F_WCS_RB1 = obj.hMicroStrainGX2.rotationMatrix;
+            %                 F_WCS_RB1Offset = pinv(obj.T_WCS_HOME) * ...
+            %                     F_WCS_RB1 * obj.F_RB1_HOME;
+            %                 ang = obj.R_to_EulerZYX(F_WCS_RB1Offset);
+            %
+            %                 shoulderFE = ang(3);
+            %                 if ~obj.msLefty
+            %                     shoulderAA = ang(2);
+            %                     humeralRot = -ang(1);
+            %                 else
+            %                     shoulderAA = -ang(2);
+            %                     humeralRot = ang(1);
+            %                 end
+            %
+            %                 msg = obj.hMud.ArmPosVelHandRocGrasps( ...
+            %                     [shoulderFE shoulderAA humeralRot e w], ...
+            %                     zeros(1,7),1,graspId,obj.GraspValue,1);
+            %             end
+            %
+            %             if isempty(obj.hNfu)
+            %                 % Send to vulcanX
+            %                 obj.hSink.putbytes(msg);
+            %             else
+            %                 % Send to NFU
+            %                 if ~useLocalRoc
+            %                     obj.hNfu.sendUdpCommand(char(59,msg));
+            %                 else
+            %                     obj.hNfu.sendUdpCommand(char(61,msg));
+            %                 end
+            %             end
             
         end
     end

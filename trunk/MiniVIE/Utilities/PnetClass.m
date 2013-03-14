@@ -98,7 +98,7 @@ classdef PnetClass < handle
             end
 
             if ~isequal(pnet(obj.hSocket,'status'),6)
-                fprintf('[%s] pnet socket is disconnected but not closed. Not ready to getData()',mfilename);
+                fprintf('[%s] pnet socket is disconnected but not closed. Not ready to getData()\n',mfilename);
             end
 
             

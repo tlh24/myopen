@@ -56,16 +56,31 @@ classdef JoyMexClass < handle
             obj.nPov = 0;
             
         end
-        function getdata(obj)
+        function [success, msg] = getdata(obj)
+            %[success, msg] = getdata(obj)
+            % Call JoyMex function to get latest button and axis values.
+            % Returns true on successful read
+            % If unsuccessful, error message is passed back
+
+            success = false;
+            msg = '';
             
-            % Call MEX Function
-            [obj.axisVal obj.buttonVal] = JoyMEX(obj.id);
+            try
+                % Call MEX Function
+                [obj.axisVal, obj.buttonVal] = JoyMEX(obj.id);
+            catch ME
+                msg = ME.message;
+                return
+            end
+            
             obj.povVal = -1;
             
             % Axis swapping
             if obj.doSwapAxes
                 swapaxes(obj);
             end
+            
+            success = true;
             
         end
         function swapaxes(obj)

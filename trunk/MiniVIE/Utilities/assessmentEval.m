@@ -1,50 +1,66 @@
 classdef assessmentEval
     methods
-        function obj = assessmentEval(fileName)
+    end
+    methods (Static = true)
+        function structLogOut = staticAssessmentEval(fileName)
             %computes assessment statistics and displays in console
             %
-            % Usage: 
+            % Usage:
             % obj = assessmentEval(fileName)
             %
             % fileName can be local "*.assessmentLog'"
             % fileName can be fullpath "c:\tmp\*.assessmentLog'"
             % fileName can be exact "c:\tmp\myLog.assessmentLog'"
             
-            % break down user input ot handle cases where full or partial
-            % paths are provided
-            [PathName, FileName, FileExtension] = fileparts(fileName);
-            FullFile = fullfile(PathName, [FileName FileExtension]);
-            %fileName = '\\dom1\REDD\Programs\RP3\SENSITIVE_RESTRICTED_Patient_Data\JHMI\JH_TH02\*.assessmentLog';
-            if exist(FullFile,'file') ~= 2
-                [FileName,PathName,FilterIndex] = uigetfile(FullFile,'MultiSelect','on');
-                if FilterIndex == 0
-                    % User Cancelled
-                    return
+            if nargin < 1
+                % break down user input ot handle cases where full or partial
+                % paths are provided
+                [PathName, FileName, FileExtension] = fileparts(fileName);
+                FullFile = fullfile(PathName, [FileName FileExtension]);
+                %fileName = '\\dom1\REDD\Programs\RP3\SENSITIVE_RESTRICTED_Patient_Data\JHMI\JH_TH02\*.assessmentLog';
+                if exist(FullFile,'file') ~= 2
+                    [FileName,PathName,FilterIndex] = uigetfile(FullFile,'MultiSelect','on');
+                    if FilterIndex == 0
+                        % User Cancelled
+                        return
+                    end
                 end
+                
+                if ~iscell(FileName)
+                    FileName = {FileName};
+                end
+            else
+                PathName = pwd;
+                FileName = {fileName};
             end
             
-            if ~iscell(FileName)
-                FileName = {FileName};
-            end
+            colors = distinguishable_colors(15);
             
             % scroll display
             fprintf(repmat('\n',1,10));
             for iFile = 1:length(FileName)
+                
+                figure();
+                hold on
+                
                 fname = fullfile(PathName,FileName{iFile});
                 load(fname,'-mat');
-                classNames = {structTrialLog(:).targetClass};
-                classNames{end+1} = 'No Movement';
+                classNames = structTrialLog(:).AllClassNames;
+                %classNames{end+1} = 'No Movement';
                 fprintf('-------------\n');
                 fprintf('%s\n',fname');
                 fprintf('-------------\n');
-                for i = 1:length(structTrialLog)
+                for i = 1:length(structTrialLog.ClassIdToTest)
+                    targetClassName =  structTrialLog.Data(i).targetClass;
+                    
+                    targetClassId = find(strcmpi(classNames,targetClassName));
                     
                     %d = structTrialLog(i).classDecision;
-                    d = structTrialLog(i).voteDecision;
+                    d = structTrialLog.Data(i).classDecision;
                     
-                    fprintf('%18s ',classNames{i});
+                    fprintf('%18s ',targetClassName);
                     
-                    idCorrect = find(d == i);
+                    idCorrect = find(d == targetClassId);
                     
                     if isempty(idCorrect)
                         fprintf(2,'class never started after %d tries. ',length(d));
@@ -64,11 +80,17 @@ classdef assessmentEval
                         fprintf('Mis-classes were: %s',strUnique);
                     end
                     fprintf('\n');
+                    
+                    plot(d,'Color',colors(i,:),'Marker','.');
+                    plot([1 60],[targetClassId targetClassId],'Color',colors(i,:));
+                    
                 end
+                
+                
+                
             end
+            structLogOut = structTrialLog;
         end
-    end
-    methods (Static = true)
         
         function [overallAccuracy classAccuracyPct classNames] = parseTrialLog(assessmentLogFile)
             % [overallAccuracy classAccuracyPct classNames] = AssessmentEval.parseTrialLog(assessmentLogFile)

@@ -20,7 +20,7 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
     properties (SetAccess = protected)
         hJoystick       % handle to joystick, used to add data to interface
         hGui            % handle to the graphics object
-
+        
         ButtonDown = 0; % Counts how long the joystick button is down
         CurrentClass = 1;
         LastButton = 0;
@@ -30,7 +30,7 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
     
     methods
         function initialize(obj,SignalSource,SignalClassifier,TrainingData)
-
+            
             assert(~isempty(TrainingData),'Training Data Object Required');
             obj.TrainingData = TrainingData;
             
@@ -50,6 +50,63 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
             
         end
         function setupFigure(obj)
+            
+            %obj.hGui = guiOnlineRetrain(SignalSource,SignalClassifier);
+            %%
+            classNames = obj.SignalClassifier.getClassNames;
+%             classNames = cell(1,25);
+            numClasses = length(classNames);
+
+            screenSz = get(0,'ScreenSize');
+            f = UiTools.create_figure('Training Progress');
+            set(f,'Resize','on');
+            set(f,'HandleVisibility','on');
+            p = get(f,'Position');
+            p(1) = p(1)/10;
+%             p(3) = p(3) * 1.4;
+            p(4) = numClasses*30 + 50;
+            p(2) = screenSz(4) - p(4) - 50;
+            set(f,'Position',p);
+            cmap = gray(256);
+            cmap = jet(256);
+            set(f,'Colormap',cmap)
+%             cmap = colormap(f,'gray');
+            
+            set(f,'HandleVisibility','callback');
+            hAxes = axes('Parent',f,'Units','Pixels','Position',[p(3)-90 5 100 100]);
+            
+            [X,Y] = meshgrid(1:numClasses+1,1:numClasses+1);
+            hSurf = surf(hAxes,X,Y);
+            patchData = surf2patch(hSurf);
+            delete(hSurf);
+            hPatch = patch(patchData,'Parent',hAxes,'FaceColor','flat','EdgeColor','None');
+            view(hAxes,2);
+            axis(hAxes,'off');
+            caxis(hAxes,[0 1]);
+            
+            topLeft = [0 p(4)-40];
+            boxSize = [p(3)-100 30];
+            hText = zeros(1,length(classNames));
+            
+            for i = 1:numClasses
+                offset = [10 -30*(i-1)];
+                hText(i) = uicontrol(...
+                    'Style','Text',...
+                    'String',classNames{i},...
+                    'FontName','Courier New',...
+                    'FontSize',18,...
+                    'Units','Pixels',...
+                    'HorizontalAlignment','left',...
+                    'Position',[topLeft+offset boxSize],...
+                    ...'BackgroundColor','r',...
+                    'Parent',f);
+            end
+            
+            
+            obj.hGui = {hText hPatch};
+            
+        end
+        function setupFigureUiTable(obj)
             
             %obj.hGui = guiOnlineRetrain(SignalSource,SignalClassifier);
             
@@ -83,8 +140,6 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
         function [doTrain doAddData] = getCommand2(obj)
             % Buttons map directly to classes
             
-            
-            
             % Check joystick for buttons, if any, add this to training data
             obj.hJoystick.getdata();
             % Note only one button can be pressed at a time, lowest button
@@ -110,13 +165,20 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
             obj.CurrentClass = max(min(buttonId,obj.SignalClassifier.NumClasses),1);
             
         end
-        function [doTrain doAddData clearClass] = getCommand(obj)
+        function [doTrain, doAddData, clearClass] = getCommand(obj)
             % Joystick buttons change classes, another button trains data
             
             clearClass = 0;
-            
+            doTrain = false;
+            doAddData = false;
+
             % Check joystick for buttons, if any, add this to training data
-            obj.hJoystick.getdata();
+            [success, msg] = obj.hJoystick.getdata();
+            if ~success
+                fprintf('[%s] Error getting Joystick command.  Is it still connected? Error="%s"\n',mfilename,msg);
+                return
+            end
+            
             % Note only one button can be pressed at a time, lowest button
             % number wins
             buttonId = find(obj.hJoystick.buttonVal,1,'first');
@@ -144,7 +206,8 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
             
             if (buttonId == 1)
                 clearClass = obj.CurrentClass;
-                fprintf('[%s] Ignoring class data for class: %d\n',mfilename,clearClass);
+                numDisabled = obj.TrainingData.disableLabeledData(clearClass);
+                fprintf('[%s] %d samples disabled for class: %d\n',mfilename,numDisabled,clearClass);
                 doTrain = true;
                 doAddData = false;
                 return
@@ -177,49 +240,109 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
             
             % Performs intent classification
             
-            % update@Scenarios.ScenarioBase(obj);
-            
-            % Step 1: Get Intent
-            [decodedClassName,prSpeed,rawEmg,windowData,features,...
-                voteDecision] = getIntentSignals(obj);
-            
-            % Step 2: Convert Intent to limb commands
-            obj.generateUpperArmCommand(decodedClassName,prSpeed);
-            obj.generateGraspCommand(decodedClassName,prSpeed);
+            % Do this locally so that the feature data can be stored
+            % directly
             
             
-            % All subsequent commands rely on joystick for labelling
-            % correct class
-            if isempty(obj.hJoystick)
-                return
-            end
-            
-            [doTrain doAddData clearClass] = getCommand(obj);
-            
-            if doTrain
-                % retrain
-                obj.SignalClassifier.train();
-                obj.SignalClassifier.computeError();
-                obj.SignalClassifier.computeGains();
-                obj.SignalClassifier.computeConfusion();
-            end
-            
-            % If button is down, add the current data as training data to
-            % that class
-            if doAddData
+            try
+                % update@Scenarios.ScenarioBase(obj);
                 
-                % Add a new sample of data based on the CurrentClass property
-                assert(~isempty(obj.CurrentClass),'No class is selected to tag new data');
+                % Step 1: Get Intent
+                [decodedClassName,prSpeed,rawEmg,windowData,features,...
+                    voteDecision] = getIntentSignals(obj);
                 
-                obj.TrainingData.addTrainingData(obj.CurrentClass, features, ...
-                    rawEmg(1:obj.SignalClassifier.NumSamplesPerWindow,:)')
+                % Step 2: Convert Intent to limb commands
+                obj.generateUpperArmCommand(decodedClassName,prSpeed);
+                obj.generateGraspCommand(decodedClassName,prSpeed);
                 
+                
+                % All subsequent commands rely on joystick for labelling
+                % correct class
+                if isempty(obj.hJoystick)
+                    return
+                end
+                
+                [doTrain, doAddData] = getCommand(obj);
+                
+                if doTrain
+                    % retrain
+                    obj.SignalClassifier.train();
+                    obj.SignalClassifier.computeError();
+                    obj.SignalClassifier.computeGains();
+                    obj.SignalClassifier.computeConfusion();
+                end
+                
+                % If button is down, add the current data as training data to
+                % that class
+                if doAddData
+                    
+                    % Add a new sample of data based on the CurrentClass property
+                    assert(~isempty(obj.CurrentClass),'No class is selected to tag new data');
+                    
+                    obj.TrainingData.addTrainingData(obj.CurrentClass, features, ...
+                        rawEmg(1:obj.SignalClassifier.NumSamplesPerWindow,:)')
+                    
+                end
+                
+                updateFigure(obj,voteDecision,obj.CurrentClass);
+            catch ME
+                UiTools.display_error_stack(ME);
             end
-                        
-            updateFigure(obj,voteDecision,obj.CurrentClass);
         end
         function updateFigure(obj,decodedClassId,labeledClass)
             % Update figure (optional)
+            if isempty(obj.hGui) || ~all(ishandle([obj.hGui{:}]))
+                return
+            end
+            
+            n = obj.SignalClassifier.NumClasses;
+            classSum = zeros(n,1);
+            
+            % Compute the sum column
+            numClasses = obj.SignalClassifier.NumClasses;
+            classLabels = obj.TrainingData.getClassLabels;
+            for iClass = 1:numClasses
+                classSum(iClass) = sum(classLabels == iClass);
+            end
+            
+            classNames = obj.SignalClassifier.getClassNames;
+            paddedName = classNames;
+            for i = 1:length(classNames)
+                paddedName{i} = ['  ' paddedName{i} '  '];
+            end
+            paddedName{decodedClassId} = ['[ ' classNames{decodedClassId} ' ]'];
+            
+            hText = obj.hGui{1};
+
+            for i = 1:length(hText)
+                if i == labeledClass
+                    str = sprintf('%20s %4d <<<',paddedName{i},classSum(i));
+                else
+                    str = sprintf('%20s %4d',paddedName{i},classSum(i));
+                end
+                set(hText(i),'String',str);
+            end
+            
+            hPatch = obj.hGui{2};
+            try
+                cmat = obj.SignalClassifier.ConfusionMatrix;
+                if ~isempty(cmat)
+                    
+                    classSum = sum(cmat,2);
+                    normMat = cmat ./ repmat(classSum,1,numClasses);
+                    normMat(isnan(normMat)) = 0;
+                    
+                    faceColor = flipud(normMat);
+                    set(hPatch,'FaceVertexCData',faceColor(:));
+                end
+            catch
+                disp('Confusion matrix error')
+            end
+            
+        end
+        function updateFigureUiTable(obj,decodedClassId,labeledClass)
+            % Update figure (optional)
+            error('deprecated 3/12/2013 since uitable is extremely slow when it gets large');
             if isempty(obj.hGui) || ~ishandle(obj.hGui)
                 return
             end
@@ -235,9 +358,9 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
             end
             
             try
-            if ~isempty(obj.SignalClassifier.ConfusionMatrix)
-                dat(1:numClasses,1:numClasses) = obj.SignalClassifier.ConfusionMatrix;
-            end
+                if ~isempty(obj.SignalClassifier.ConfusionMatrix)
+                    dat(1:numClasses,1:numClasses) = obj.SignalClassifier.ConfusionMatrix;
+                end
             catch
                 disp('Confusion matrix error')
             end
@@ -262,6 +385,21 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
         function close(obj)
             close@Scenarios.ScenarioBase(obj); % Call superclass update method
             obj.TrainingData.saveTrainingData;
+        end
+    end
+    methods (Static = true)
+        function obj = Test
+            obj = Scenarios.OnlineRetrainer;
+            hTrainingData = PatternRecognition.TrainingData();
+            %hTrainingData.initialize();
+            hSignalSource = Inputs.SignalSimulator;
+            hSignalSource.initialize();
+            hSignalClassifier = SignalAnalysis.Lda;
+            hSignalClassifier.initialize(hTrainingData);
+            
+            initialize(obj,hSignalSource,hSignalClassifier,hTrainingData);
+            obj.Verbose = 0;
+            obj.start();
         end
     end
 end

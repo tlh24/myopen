@@ -275,13 +275,20 @@ classdef ScenarioBase < Common.MiniVieObj
             
         end
         function update(obj)
+            %update(obj)
+            % Called by timer function, Get intent and update arm
             
-            % Step 1: Get Intent
-            [className,prSpeed] = getIntentSignals(obj);
-            
-            % Step 2: Convert Intent to limb commands
-            obj.generateUpperArmCommand(className,prSpeed);
-            obj.generateGraspCommand(className,prSpeed);
+            % Use a try block to display more info if an error occurs
+            try
+                % Step 1: Get Intent
+                [className,prSpeed] = getIntentSignals(obj);
+                
+                % Step 2: Convert Intent to limb commands
+                obj.generateUpperArmCommand(className,prSpeed);
+                obj.generateGraspCommand(className,prSpeed);
+            catch ME
+                UiTools.display_error_stack(ME);
+            end
             
         end
         function close(obj)

@@ -223,7 +223,8 @@ classdef CpchSerial < Inputs.CpcHeadstage
             end
             
             % Check for new data
-            if (obj.SerialObj.BytesAvailable == 0)
+            numAvailable = obj.SerialObj.BytesAvailable; % note read this only once since it could change with time
+            if (numAvailable == 0)
                 %fprintf('[%s] No new data in serial buffer.\n',mfilename);
                 data = obj.DataBuffer(end-numSamples+1:end,:);
                 return;
@@ -231,7 +232,7 @@ classdef CpchSerial < Inputs.CpcHeadstage
             
             % Read samples from serial buffer and place in internal buffer
             % (potentially with leftover remaining bytes)
-            r = fread(obj.SerialObj, obj.SerialObj.BytesAvailable, 'uint8');  % Read whole buffer
+            r = fread(obj.SerialObj, numAvailable, 'uint8');  % Read whole buffer
             rawBytes = [obj.SerialBuffer, uint8(r')];
             
             payloadSize = 2*(obj.BioampCnt+obj.GPICnt);

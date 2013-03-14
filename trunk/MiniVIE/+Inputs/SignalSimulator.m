@@ -20,10 +20,20 @@ classdef SignalSimulator < Inputs.SignalInput
             % Constructor
             obj.uiControlPanel();
         end
-        function initialize(obj)
-            obj.ChannelIds = 0:15;
+        function initialize(obj,channelIds,maxSamples)
             
-            MAX_SAMPLES = 4000;
+            if nargin < 2
+                obj.ChannelIds = 0:15;
+            else
+                obj.ChannelIds = channelIds;
+            end
+
+            if nargin < 3
+                MAX_SAMPLES = 4000;
+            else
+                MAX_SAMPLES = maxSamples;
+            end
+            
             
             obj.SignalBuffer = zeros(MAX_SAMPLES,obj.NumChannels);
             

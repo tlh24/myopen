@@ -30,6 +30,8 @@ classdef (Sealed) TrainingData < handle
         ActiveChannels = [1 3];
         ClassNames = {'MotionA' 'MotionB' 'No Movement'};
         FeatureNames = {'MAV' 'LEN' 'SSC' 'ZC'};
+        MaxChannels = 4;
+        WindowSize = 175; % number of samples per feature window
     end
     properties (Access = private)
         MaxSamples = 1e5;
@@ -40,7 +42,7 @@ classdef (Sealed) TrainingData < handle
         SignalDataRaw = [];
         SignalFeatures3D = [];
         ClassLabelId = [];
-        EnableLabel = [];  % Use this to keep data in the structure, but don't use certain samples in the algorithm
+        EnableLabel = logical([]);  % Use this to keep data in the structure, but don't use certain samples in the algorithm
     end
     properties (Dependent = true, SetAccess = private)
         NumClasses;
@@ -78,11 +80,31 @@ classdef (Sealed) TrainingData < handle
             featureData = obj.SignalFeatures3D(:,:,isEnabled);
         end
         function classLabels = getClassLabels(obj)
-            % classLabels = getClassLabels(obj)
+            % Return ONLY ENABLED class labels
+            classLabels = getEnabledClassLabels(obj);
+        end
+        function classLabels = getAllClassLabels(obj)
+            % Return ALL class labels, regardless of whether they are
+            % enabled or not
             classLabels = obj.ClassLabelId(1:obj.SampleCount);
-            assert(~any(isnan(classLabels)),'NaNs found in classLabels');
+        end
+        function classLabels = getEnabledClassLabels(obj)
+            % classLabels = getClassLabels(obj)
             
+            assert(obj.SampleCount <= length(obj.ClassLabelId),...
+                'Error getting class labels.  Sample Count [%d] is greater than class labels [%d]',...
+                obj.SampleCount,length(obj.ClassLabelId));
+            
+            classLabels = obj.ClassLabelId(1:obj.SampleCount);
+
+            assert(~any(isnan(classLabels)),'Error getting class labels. NaNs found in classLabels');
+            
+            assert(obj.SampleCount <= length(obj.EnableLabel),...
+                'Error getting class labels.  Sample Count [%d] is greater than enable labels [%d]',...
+                obj.SampleCount,length(obj.EnableLabel));
+
             isEnabled = obj.EnableLabel(1:obj.SampleCount);
+            
             classLabels = classLabels(isEnabled);
             
         end
@@ -96,7 +118,15 @@ classdef (Sealed) TrainingData < handle
             labelCount(1:length(countedLabels)) = countedLabels;
             
         end
-        function [filteredData dataBreaks] = getClassData(obj,iClass)
+        function metaLabel = getMetaLabels(obj)
+            % Return meta information about each class label.  Currently
+            % this is only 0 = disabled or 1 = enabled, but other
+            % information might be stored as well such as tagging samples
+            % as training, testing, or cross-validation data
+            
+            metaLabel = obj.EnableLabel(1:obj.SampleCount);
+        end
+        function [filteredData, dataBreaks] = getClassData(obj,iClass)
             % [filteredData dataBreaks] = getClassData(obj,iClass)
             isThisClass = iClass == obj.ClassLabelId;
             
@@ -213,22 +243,54 @@ classdef (Sealed) TrainingData < handle
         end
         function initialize(obj,numChannels,numSamplesPerWindow)
             % initialize(obj,numChannels,numSamplesPerWindow)
+            % 
             fprintf('[%s] Initializing Training Data Object\n',mfilename);
             
+            obj.MaxChannels = numChannels;
+            obj.WindowSize = numSamplesPerWindow;
+            
             % Initialize buffers
-            obj.SignalFeatures3D = NaN([numChannels obj.NumFeatures obj.MaxSamples]);
+            obj.SignalFeatures3D = NaN([obj.MaxChannels obj.NumFeatures obj.MaxSamples]);
             obj.ClassLabelId = NaN(1,obj.MaxSamples);
             obj.EnableLabel = true(1,obj.MaxSamples);
             
             % Initialize variable to store raw EMG data
             try
-                dataSize = [numChannels numSamplesPerWindow obj.MaxSamples];
+                dataSize = [obj.MaxChannels numSamplesPerWindow obj.MaxSamples];
                 dataType = 'single';
                 obj.SignalDataRaw = NaN(dataSize,dataType);
             catch err
                 % out of memory or max variable size
                 fprintf('[%s] Error initializing raw signal storage: "%s"\n',mfilename,err.message);
             end
+        end
+        function allocateMemory(obj,numTotal)
+            % allocateMemory(obj,numTotal)
+            % Allocate memory for additional samples.  This is useful when
+            % loading data from a file which will have a specific number of
+            % samples.  During live training though the memory would have
+            % to be added on each addition if memory is not allocated
+            
+            
+            numAdditional = numTotal - obj.SampleCount;
+            
+            if numAdditional <= 0
+                fprintf('[%s] No additional samples allocated. Sample Count = %d\n',mfilename,obj.SampleCount);
+            end
+            
+            fprintf('[%s] Allocating %d samples for training data\n',mfilename,numAdditional);
+            
+            % Initialize buffers
+            obj.SignalFeatures3D = cat(3,obj.SignalFeatures3D,...
+                NaN([obj.MaxChannels obj.NumFeatures numAdditional]));
+            obj.ClassLabelId = cat(2,obj.ClassLabelId,NaN(1,numAdditional));
+            obj.EnableLabel = cat(2,obj.EnableLabel,true(1,numAdditional));
+            
+            % Initialize variable to store raw EMG data
+            dataSize = [obj.MaxChannels obj.WindowSize numAdditional];
+            dataType = 'single';
+            obj.SignalDataRaw = cat(3,obj.SignalDataRaw,NaN(dataSize,dataType));
+            
         end
         function hasData = hasData(obj)
             % Return true if valid data exists
@@ -397,6 +459,7 @@ classdef (Sealed) TrainingData < handle
                 errordlg(msg);
                 return
             end
+            obj.MaxChannels = size(S.features3D,1);
             
             % load labels
             if isfield(S,'classLabelId')
@@ -435,6 +498,8 @@ classdef (Sealed) TrainingData < handle
             % Restore raw data
             if isfield(S,'signalData')
                 obj.SignalDataRaw = S.signalData;
+                obj.WindowSize = size(S.signalData,2);
+                fprintf('[%s] Setting window size to %d.\n',mfilename,obj.WindowSize);
             end
             % Backwards Compatability for EMG Data
             if isfield(S,'emgData')
@@ -462,10 +527,13 @@ classdef (Sealed) TrainingData < handle
                 end
             end
             
-            % Get Data
-            signalData = obj.getRawSignals(); %#ok<NASGU>
-            features3D = obj.getFeatureData(); %#ok<NASGU>
-            classLabelId = obj.getClassLabels(); %#ok<NASGU>
+            % Get Data.  Note we are getting the properties directly rather
+            % than the public get methods so that we can see all the data,
+            % enabled or not
+            signalData = obj.SignalDataRaw(:,:,1:obj.SampleCount); %#ok<NASGU>
+            features3D = obj.SignalFeatures3D(:,:,1:obj.SampleCount); %#ok<NASGU>
+            classLabelId = obj.ClassLabelId(1:obj.SampleCount); %#ok<NASGU>
+            enableLabel = obj.EnableLabel(1:obj.SampleCount); %#ok<NASGU>
             
             % Get Parameters
             classNames = obj.ClassNames; %#ok<NASGU>
@@ -473,7 +541,8 @@ classdef (Sealed) TrainingData < handle
             activeChannels = obj.ActiveChannels; %#ok<NASGU>
             sampleRateHz = obj.SampleRate; %#ok<NASGU>
             
-            save(fullFilename,'features3D','classLabelId','classNames','featureNames','activeChannels','signalData','sampleRateHz');
+            save(fullFilename,'features3D','classLabelId','classNames','featureNames',...
+                'activeChannels','signalData','sampleRateHz','enableLabel');
             
             success = true;
             
@@ -552,7 +621,7 @@ classdef (Sealed) TrainingData < handle
             
             % Update class label history
             obj.ClassLabelId(obj.SampleCount) = classLabel;
-            
+            obj.EnableLabel(obj.SampleCount) = true;
             
             % Note this could be tricky if data is loaded with the
             % wrong number of channels compared to the current Signal

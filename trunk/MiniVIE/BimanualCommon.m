@@ -8,7 +8,9 @@ obj.FilePrefix = bimanParams.filePrefix;
 %h = Inputs.CpchSerial(bimanParams.cpchComPort,hex2dec('FFFF'),hex2dec('FFFF'));
 h = bimanParams.hSource;
 h.NumSamples = 4000;
+pause(0.5);
 h.initialize();
+pause(0.5);
 
 % Enable buttons
 set(obj.hg.SignalSourceButtons(:),'Enable','on');
