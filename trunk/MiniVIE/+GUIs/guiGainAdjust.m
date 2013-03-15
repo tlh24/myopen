@@ -1,7 +1,7 @@
 function guiGainAdjust(obj)
 obj.Presentation.stop;
 drawnow
-f = UiTools.create_figure('Class Names','guiClassifierChannels');
+f = UiTools.create_figure('Output Gain','guiClassifierChannels');
 clf(f)
 
 % classNames = GUIs.guiClassifierChannels.getSavedDefaults();
@@ -31,20 +31,23 @@ for i = 1:N
 end
 
 %%
-obj.SignalClassifier.VirtualChannelGain
+if isequal(obj.SignalClassifier.OutputChannelGain,1)
+    % Init case
+    obj.SignalClassifier.OutputChannelGain = ones(1,N);
+end
 
 for i = 1:N
-    h{i}.Value = obj.SignalClassifier.VirtualChannelGain(i);
+    h{i}.Value = obj.SignalClassifier.OutputChannelGain(i);
 end
 
 
 for i = 1:N
-%     updateGain = @(src,evt) obj.SignalClassifier.VirtualChannelGain(i)
+%     updateGain = @(src,evt) obj.SignalClassifier.OutputChannelGain(i)
     h{i}.ButtonUpFcn = @(src,evt)updateGain(i,evt);
 end
 
     function updateGain(classId,val)
-        obj.SignalClassifier.VirtualChannelGain(classId) = val;
+        obj.SignalClassifier.OutputChannelGain(classId) = val;
     end
 drawnow
 obj.Presentation.start;
