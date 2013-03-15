@@ -11,6 +11,7 @@ classdef Classifier < Common.MiniVieObj
         NumMajorityVotes = 5;
         
         VirtualChannelGain = 1;  % default.  Once initialized this should be [1 NumClasses]
+        OutputChannelGain = 1;
         
         TrainingData = [];  % Holds training data regardless of interface or classifier
         ConfusionMatrix = [];
@@ -262,10 +263,24 @@ classdef Classifier < Common.MiniVieObj
             virtualChannels = zeros(1,obj.NumClasses);
             MAV = mean(squeeze(features_3D(obj.getActiveChannels,1,:)));
             
+            % Use Virtual Channel Gain to normalize the classifier outputs
             virtualChannels(classOut) = MAV;
-            if length(obj.VirtualChannelGain) == length(virtualChannels)
+            if ( length(obj.VirtualChannelGain) == length(virtualChannels) ) || ...
+                    (length(obj.VirtualChannelGain) == 1 )
                 virtualChannels = virtualChannels .* obj.VirtualChannelGain;
+            else
+                fprintf('[%s] Bad virtual channel gain\n',mfilename);
             end
+
+            % Use Output Channel Gain adjust user preferences:
+            if (length(obj.OutputChannelGain) == length(virtualChannels) ) ||...
+                    (length(obj.OutputChannelGain) == 1 )
+                virtualChannels = virtualChannels .* obj.OutputChannelGain;
+            else
+                fprintf('[%s] Bad output channel gain\n',mfilename);
+            end
+            
+            
             
         end
         function features2D = extractfeatures(obj,filteredDataWindowAllChannels)

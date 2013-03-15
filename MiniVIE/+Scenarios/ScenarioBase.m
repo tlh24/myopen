@@ -151,15 +151,15 @@ classdef ScenarioBase < Common.MiniVieObj
                 case {'Elbow Extension' 'Elbow Down'}
                     desiredVelocity(action_bus_enum.Elbow) = -prSpeed;
                 case {'Pronate' 'Wrist Rotate In'}
-                    desiredVelocity(action_bus_enum.Wrist_Rot) = prSpeed*1.5;
+                    desiredVelocity(action_bus_enum.Wrist_Rot) = prSpeed;
                 case {'Supinate' 'Wrist Rotate Out'}
-                    desiredVelocity(action_bus_enum.Wrist_Rot) = -prSpeed*1.5;
+                    desiredVelocity(action_bus_enum.Wrist_Rot) = -prSpeed;
                 case {'Up' 'Hand Up'}
                     desiredVelocity(action_bus_enum.Wrist_Dev) = prSpeed;
                 case {'Down' 'Hand Down'}
                     desiredVelocity(action_bus_enum.Wrist_Dev) = -prSpeed;
                 case {'Left' 'Wrist Flex' 'Wrist Flex In'}
-                    desiredVelocity(action_bus_enum.Wrist_FE) = +prSpeed;
+                    desiredVelocity(action_bus_enum.Wrist_FE) = prSpeed;
                 case {'Right' 'Wrist Extend' 'Wrist Extend Out'}
                     desiredVelocity(action_bus_enum.Wrist_FE) = -prSpeed;
             end
@@ -187,16 +187,11 @@ classdef ScenarioBase < Common.MiniVieObj
             if isempty(className)
                 return
             end
-            
-            % TODO: Override hand close speed
-            prSpeed = 0.2;
-            
-            
-            
+                        
             %%%%%%%%%%%%%%%%%%%%%%%%
             % Process grasps
             %%%%%%%%%%%%%%%%%%%%%%%%
-            graspGain = 0.2;
+            graspGain = 0.02;
             graspChangeThreshold = 0.5;  % Normalized [0 1]
             graspName = className;
             lastGraspVelocity = obj.GraspVelocity;

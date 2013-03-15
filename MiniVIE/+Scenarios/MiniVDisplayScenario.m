@@ -84,7 +84,15 @@ classdef MiniVDisplayScenario < Scenarios.OnlineRetrainer
                 obj.hOutput.set_hand_angles_degrees(handAngles);
             end
             
-            obj.hOutput.set_upper_arm_angles_degrees(obj.JointAnglesDegrees);
+            a = action_bus_enum;
+            ang = obj.JointAnglesDegrees;
+
+            if obj.isLeftSide
+                ang(a.Wrist_Rot) = -ang(a.Wrist_Rot);
+                ang(a.Wrist_Dev) = -ang(a.Wrist_Dev);
+            end
+            
+            obj.hOutput.set_upper_arm_angles_degrees(ang);
             
             if ishandle(obj.hAxes)
                 obj.hOutput.redraw();
