@@ -203,7 +203,7 @@ int main(int argn, char **argc){
 					}else if(u == 0x1eafbabe){
 					//tracking info.
 					fread((void*)&u,4,1,in);
-					unsigned int siz = u & 0xffff; //still wrapping here with svn version (probably for strobe's SVN)
+					unsigned int siz = u;
 					//printf("u 0x%x\n",u);
 					strobepackets += 1;
 					strobelength += siz + 8;
