@@ -36,6 +36,7 @@
 #include <boost/multi_array.hpp>
 #include <map>
 #include <string>
+#include <atomic>
 
 #include "../firmware_stage9_tmpl/memory.h"
 
@@ -108,9 +109,9 @@ bool g_templMatch[NSCALE][128][2];
 //circular buffers selected channels. Threads access indexes only associated with channels currently in focus
 
 float g_unsortrate = 0.0; //the rate that unsorted WFs get through.
-FILE* g_saveFile = 0;
+bool g_saveFile = true;
 bool  g_closeSaveFile = false;
-i64   g_saveFileBytes;
+
 
 int          g_totalPackets = 0;
 int          g_strobePackets = 0;
@@ -160,7 +161,6 @@ int g_uiRecursion = 0; //prevents programmatic changes to the UI from causing co
 //add mutexes
 pthread_mutex_t mutex_totalPackets;
 pthread_mutex_t mutex_totalDropped;
-pthread_mutex_t mutex_saveFile;
 pthread_mutex_t mutex_bridgeIP;
 
 i64 mod2(i64 a, i64 b){
@@ -784,7 +784,7 @@ void* strobe_thread(void*){
 				unsigned int tmp = 0x1eafbabe;
 				unsigned int sz = sn;
 				if(g_spkwriter.m_enable){
-					spkpak pak(tmp, sz, buf2, rxtime, 0, tid)
+					spkpak pak(tmp, sz, buf2, rxtime, 0, 0);
 					g_spkwriter.add(&pak);
 				}	
 			}
@@ -798,7 +798,7 @@ void* strobe_thread(void*){
   return 0;
 }
 
-void* write_thread(void*){
+void* writer_thread(void*){
 	while(!g_die){
 		if(g_spkwriter.write()) //if it can write, it will.
 			usleep(1e4); //poll qicker.
@@ -939,7 +939,7 @@ packet format in the file, as saved here:
 					unsigned int tmp = 0xdecafbad;
 					unsigned int sz = n;
 					if(g_spkwriter.m_enable){
-						spkpak pak(tmp, sz, buf, rxtime, 0, tid)
+						spkpak pak(tmp, sz, buf, rxtime, g_radioChannel[tid], tid);
 						g_spkwriter.add(&pak);
 					}		
 				}
@@ -950,7 +950,7 @@ packet format in the file, as saved here:
 					unsigned int tmp = 0xb00a5c11; //boo!  it's ascii
 					unsigned int sz = len; //size of the ensuing packet data.
 					if(g_spkwriter.m_enable){
-						spkpak pak(tmp, sz, g_messages[g_messR[tid] % 1024], rxtime, 0, tid)
+						spkpak pak(tmp, sz, g_messages[g_messR[tid] % 1024], rxtime, g_radioChannel[tid], tid);
 						g_spkwriter.add(&pak);
 					}		
 					g_messR[tid]++;
@@ -1236,10 +1236,10 @@ packet format in the file, as saved here:
 					unsigned int tmp = 0xc0edfad0;
 					unsigned int sz = 32;
 					
-					if(g_spkwriter.m_enable){
-						spkpak pak(tmp, sz, ptr, txtime, 0, tid)
-						g_spkwriter.add(&pak);
-					}
+					//if(g_spkwriter.m_enable){
+						//spkpak pak(tmp, sz, ptr, txtime, g_radioChannel[tid], tid);
+						//g_spkwriter.add(&pak);
+					//}
 					
 				}
 			} else {
@@ -1705,13 +1705,16 @@ static void openSaveFile(gpointer parent_window) {
 		
 		//check to see if file is already open(in the case of pressing record, then record again)
 		if(!g_closeSaveFile){
-				spkwriter.close();
+				g_spkwriter.close();
 				g_closeSaveFile = false;
+				g_saveFile = false;
+				
 
 		}
 	  //redundancy
-	  	spkwriter.open(filename);
+	  	g_spkwriter.open(filename);
 		g_closeSaveFile = false;
+		g_saveFile = true;
 		g_free (filename);
 	}
 	gtk_widget_destroy (dialog);
@@ -1721,8 +1724,9 @@ static void closeSaveFile(gpointer) {
 	g_closeSaveFile = true;
 	
 	if(g_closeSaveFile && g_saveFile){
-		spkwriter.close();
+		g_spkwriter.close();
 		g_closeSaveFile = false;
+		g_saveFile = false;
 
 	  }
 }
@@ -2159,9 +2163,8 @@ int main(int argn, char **argc)
 	//mutex inits
 	pthread_mutex_init(&mutex_totalPackets, NULL);
 	pthread_mutex_init(&mutex_totalDropped, NULL);
-	pthread_mutex_init(&mutex_saveFile, NULL);
 	pthread_mutex_init(&mutex_bridgeIP, NULL);
-	pthread_attr_init(&attr);
+	
 	
 	g_startTime = gettime();
 	int t;
@@ -2172,7 +2175,8 @@ int main(int argn, char **argc)
 	pthread_t writethread;
 
 	pthread_attr_t attr;
-	
+	pthread_attr_init(&attr);
+
 	//multibridge threads
 	for (t = 0; t < NSCALE ; t++){
 	  printf("Creating thread %d\n", t);
@@ -2182,7 +2186,7 @@ int main(int argn, char **argc)
 	//RPC server, strobe and writer threads
 	pthread_create( &serverthread, &attr, server_thread, 0 );
 	pthread_create( &strobethread, &attr, strobe_thread, 0 );
-	pthread_create( &writethread, &attr, writer_thread, 0 );
+	pthread_create( &writethread, &attr,  writer_thread, 0 );
 
 	//while(g_sendbuf == 0){
 		usleep(10000); //wait for the other threads to come up.

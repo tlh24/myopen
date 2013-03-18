@@ -7,14 +7,15 @@
 enum PACKET_TYPE{
 	STROBE,
 	DATA,
-	MESSAGE
+	MESSAGE,
+	SEND,
+	NONE
 	};
 	
 
 class spkpak{
 public:
 	//needs a bit more functionality than a struct
-	unsigned int magic;
 	unsigned int magic;
 	unsigned int size;
 	double rxtime;
@@ -23,7 +24,8 @@ public:
 	PACKET_TYPE packet_type;
 	char buffer[1024+128+4]; //fits strobe and sock
 	
-	
+	spkpak(){}
+
 	spkpak(unsigned int word, unsigned int sz, char* buf, double time, 
 			unsigned int chan, int tid = 0){
 		
@@ -52,7 +54,15 @@ public:
 		else if ( word == 0xb00a5c11){
 			magic = word;
 			packet_type = MESSAGE;
-		}	
+		}
+		else if ( word == 0xc0edfad0){
+			magic = word;
+			packet_type = SEND;
+			}
+		else {
+			magic = 0xfa11c0d3;
+			packet_type = NONE;
+			}
 	}
 	
 };
@@ -117,22 +127,24 @@ public:
 				else if(pak->packet_type == DATA){
 					//not sure if I can do fwrite(&m_d[m_r & WFBUFMASK], 24, 1, m_fid), then write the buffer to the appropriate size....
 					fwrite((void*)&pak->magic, 4, 1, m_fid); //fwrite is atomic in POSIX systems, still, sync
-					fwrite((void*)&pak->channel, 2, 1, g_saveFile);
-					fwrite((void*)&pak-tid, 2, 1, g_saveFile);
+					fwrite((void*)&pak->channel, 2, 1, m_fid);
+					fwrite((void*)&pak->thread, 2, 1, m_fid);
 					fwrite((void*)&pak->size, 4, 1, m_fid);
 					fwrite((void*)&pak->rxtime, 8, 1, m_fid);
 					
 					fwrite((void*)pak->buffer, pak->size, 1, m_fid); //write ALL the buffer
 				}
-				else if(pak-packet_type == MESSAGE){
+				else if(pak->packet_type == MESSAGE || pak->packet_type == SEND){
 					fwrite((void*)&pak->magic, 4, 1, m_fid); //fwrite is atomic in POSIX systems, still, sync
-					fwrite((void*)&pak->channel, 2, 1, g_saveFile);
-					fwrite((void*)&pak-tid, 2, 1, g_saveFile);
+					fwrite((void*)&pak->channel, 2, 1, m_fid);
+					fwrite((void*)&pak->thread, 2, 1, m_fid);
 					fwrite((void*)&pak->size, 4, 1, m_fid);
 					fwrite((void*)&pak->rxtime, 8, 1, m_fid);
 					
 					fwrite((void*)pak->buffer, pak->size, 1, m_fid); //write ALL the buffer
 				}
+				else if(pak->packet_type == NONE){
+					fwrite((void*)&pak->magic, 4, 1, m_fid);}
 				
 			}
 			return 1; 

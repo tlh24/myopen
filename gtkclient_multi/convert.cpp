@@ -158,6 +158,7 @@ int main(int argn, char **argc){
 					done = true;
 				}
 			else {
+				printf("magic number is 0x%x\n",u);
 					if(u == 0xdecafbad){
 						fseeko(in, 4, SEEK_CUR); // don't use yet, radiochannel and id
 						fread((void*)&u,4,1,in);
