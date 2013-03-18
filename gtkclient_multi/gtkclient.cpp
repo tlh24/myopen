@@ -44,6 +44,7 @@
 #include "cgVertexShader.h"
 #include "matStor.h"
 #include "jacksnd.h"
+#include "spkwriter.h"
 #include "vbo.h"
 #include "tcpsegmenter.h"
 #include "firingrate.h"
@@ -85,6 +86,7 @@ Channel*	g_c[NSCALE*128]; //g_c is the only variable that holds absolute indexin
 //all other variables are index per thread, although make sure to address whenever g_channel is used( g_channel is absolute
 //as well) to map correctly to bridge (adr-(128*tid) or adr&127) eg. channel 128 is channel 0 on a second bridge
 FiringRate	g_fr[NSCALE][128][2];
+SpkWriter	g_spkwriter; 
 GLuint 		g_base;            // base display list for the font set.
 
 unsigned int g_svn = 846; //the svn version
@@ -154,11 +156,6 @@ GtkWidget*     g_fileSizeLabel;
 
 int g_uiRecursion = 0; //prevents programmatic changes to the UI from causing commands to be sent to the headstage.
 
-//globally set threads
-pthread_t sockthreads[NSCALE];
-pthread_t serverthread;
-pthread_t strobethread;
-pthread_attr_t attr;
 
 //add mutexes
 pthread_mutex_t mutex_totalPackets;
@@ -730,7 +727,7 @@ static gboolean rotate (gpointer user_data){
 			(double)g_strobePackets/(double)(gettime()));
 	gtk_label_set_text(GTK_LABEL(g_stbpsLabel), str); //works!
 
-	snprintf(str, 256, "%.2f MB", (double)g_saveFileBytes/1e6);
+	snprintf(str, 256, "%.2f MB", (double)g_spkwriter.bytes()/1e6);
 	gtk_label_set_text(GTK_LABEL(g_fileSizeLabel), str);
 	return TRUE;
 }
@@ -784,24 +781,12 @@ void* strobe_thread(void*){
 	if(sn > 0  && !g_die){
 		if(g_saveFile){
 			if (sn > 0){
-					//will need to iterate through the buffer, to get at the data
-				//unsigned int tlen = ((unsigned int*)buf2)[0]; Uncomment if sending sizedelimited buffer
 				unsigned int tmp = 0x1eafbabe;
-				
-				pthread_mutex_lock(&mutex_saveFile);
-				fwrite((void*)&tmp, 4, 1, g_saveFile); //fwrite is atomic in POSIX systems, still, sync
-				tmp = g_svn; //SVN version
-				tmp <<= 16;
-				//tmp += tlen & 0xffff; //size of the ensuing packet data.
-				unsigned int siz = tmp + sn; //size of the ensuing packet data. += sn; //buffer size
-				fwrite((void*)&siz, 4, 1, g_saveFile);
-				fwrite((void*)&rxtime, 8, 1, g_saveFile);
-				//fwrite((void*)(&(buf2[4])),tlen,1,g_saveFile); //sizedelimited buffer
-				fwrite((void*)buf2, sn, 1, g_saveFile); //write ALL the buffer
-				//g_saveFileBytes += 16 + tlen;
-				
-				g_saveFileBytes += 16 + sn;
-				pthread_mutex_unlock(&mutex_saveFile);
+				unsigned int sz = sn;
+				if(g_spkwriter.m_enable){
+					spkpak pak(tmp, sz, buf2, rxtime, 0, tid)
+					g_spkwriter.add(&pak);
+				}	
 			}
 		}
 		if(sn > 0){
@@ -811,6 +796,16 @@ void* strobe_thread(void*){
   }
   close_socket(g_strobesock);
   return 0;
+}
+
+void* write_thread(void*){
+	while(!g_die){
+		if(g_spkwriter.write()) //if it can write, it will.
+			usleep(1e4); //poll qicker.
+		else
+			usleep(1e5); 
+	}
+	return NULL; 
 }
 void* sock_thread(void* param){
   
@@ -941,47 +936,23 @@ packet format in the file, as saved here:
 
 			if(g_saveFile){
 				if (n > 0){
-				//save the raw packets!
-				//will have to convert them with another prog later.
-				pthread_mutex_lock(&mutex_saveFile);
-				unsigned int tmp = 0xdecafbad;
-				fwrite((void*)&tmp, 4, 1, g_saveFile);
-				//keep thread id (remember to add to convert.cpp logic)
-				
-				//2 bytes just in case hehe
-				fwrite((void*)&g_radioChannel[tid], 2, 1, g_saveFile);
-				fwrite((void*)&tid, 2, 1, g_saveFile);
-				
-				unsigned int siz = n; //size of the ensuing packet data.
-				fwrite((void*)&siz, 4, 1, g_saveFile);
-				fwrite((void*)&rxtime, 8, 1, g_saveFile);
-				fwrite((void*)buf,n,1,g_saveFile);
-				
-				g_saveFileBytes += 20 + n;
-				pthread_mutex_unlock(&mutex_saveFile);
+					unsigned int tmp = 0xdecafbad;
+					unsigned int sz = n;
+					if(g_spkwriter.m_enable){
+						spkpak pak(tmp, sz, buf, rxtime, 0, tid)
+						g_spkwriter.add(&pak);
+					}		
 				}
 
 				//if there are messages to be written, save them too.
 				while(g_messW[tid] > g_messR[tid]){
-					
-					pthread_mutex_lock(&mutex_saveFile);
 					unsigned int len = strnlen(g_messages[g_messR[tid] % 1024],128);
 					unsigned int tmp = 0xb00a5c11; //boo!  it's ascii
-					
-					fwrite((void*)&tmp, 4, 1, g_saveFile);
-					
-								//2 bytes just in case hehe
-					fwrite((void*)&g_radioChannel[tid], 2, 1, g_saveFile);
-					fwrite((void*)&tid, 2, 1, g_saveFile);
-					
-					unsigned int siz = len; //size of the ensuing packet data.
-					fwrite((void*)&siz, 4, 1, g_saveFile);
-					fwrite((void*)&rxtime, 8, 1, g_saveFile);
-					fwrite((void*)g_messages[g_messR[tid] % 1024], len, 1, g_saveFile);
-					
-					g_saveFileBytes += 20 + len;
-					pthread_mutex_unlock(&mutex_saveFile);
-					
+					unsigned int sz = len; //size of the ensuing packet data.
+					if(g_spkwriter.m_enable){
+						spkpak pak(tmp, sz, g_messages[g_messR[tid] % 1024], rxtime, 0, tid)
+						g_spkwriter.add(&pak);
+					}		
 					g_messR[tid]++;
 				}
 			}
@@ -1262,22 +1233,14 @@ packet format in the file, as saved here:
 					g_sendR[tid]++;
 				//save the command in the file, too, so we can reconstruct it later.
 				if(g_saveFile){
-				
-					pthread_mutex_lock(&mutex_saveFile);
 					unsigned int tmp = 0xc0edfad0;
-					fwrite((void*)&tmp, 4, 1, g_saveFile);
-					//2 bytes just in case hehe
-					fwrite((void*)&g_radioChannel[tid], 2, 1, g_saveFile);
-					fwrite((void*)&tid, 2, 1, g_saveFile);
+					unsigned int sz = 32;
 					
-					n = 32; //bytes to send.
-					//tmp += n; //size of the ensuing packet data.
-					fwrite((void*)&n, 4, 1, g_saveFile);
-					fwrite((void*)&txtime, 8, 1, g_saveFile);
-					fwrite((void*)ptr,n,1,g_saveFile);
+					if(g_spkwriter.m_enable){
+						spkpak pak(tmp, sz, ptr, txtime, 0, tid)
+						g_spkwriter.add(&pak);
+					}
 					
-					g_saveFileBytes += 20 + n;
-					pthread_mutex_unlock(&mutex_saveFile);
 				}
 			} else {
 				send_delay++;
@@ -1741,19 +1704,14 @@ static void openSaveFile(gpointer parent_window) {
 		filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
 		
 		//check to see if file is already open(in the case of pressing record, then record again)
-		if(g_saveFile){
-			pthread_mutex_lock(&mutex_saveFile);
-				fclose(g_saveFile);
-				g_saveFile = 0;
+		if(!g_closeSaveFile){
+				spkwriter.close();
 				g_closeSaveFile = false;
-				g_saveFileBytes = 0;
-			pthread_mutex_unlock(&mutex_saveFile);
+
 		}
-		
 	  //redundancy
+	  	spkwriter.open(filename);
 		g_closeSaveFile = false;
-		g_saveFileBytes = 0;
-		g_saveFile = fopen(filename, "w");
 		g_free (filename);
 	}
 	gtk_widget_destroy (dialog);
@@ -1763,12 +1721,9 @@ static void closeSaveFile(gpointer) {
 	g_closeSaveFile = true;
 	
 	if(g_closeSaveFile && g_saveFile){
-	  pthread_mutex_lock(&mutex_saveFile);
-		  fclose(g_saveFile);
-		  g_saveFile = 0;
-		  g_closeSaveFile = false;
-		  g_saveFileBytes = 0;
-	  pthread_mutex_unlock(&mutex_saveFile);
+		spkwriter.close();
+		g_closeSaveFile = false;
+
 	  }
 }
 void saveMatrix(const char* fname, gsl_matrix* v){
@@ -2210,18 +2165,27 @@ int main(int argn, char **argc)
 	
 	g_startTime = gettime();
 	int t;
+	
+	pthread_t sockthreads[NSCALE];
+	pthread_t serverthread;
+	pthread_t strobethread;
+	pthread_t writethread;
+
+	pthread_attr_t attr;
+	
 	//multibridge threads
 	for (t = 0; t < NSCALE ; t++){
 	  printf("Creating thread %d\n", t);
 	  pthread_create( &sockthreads[t], &attr, sock_thread, (void*) (intptr_t) t );
 	}
 	
-	//RPC server and strobe threads
+	//RPC server, strobe and writer threads
 	pthread_create( &serverthread, &attr, server_thread, 0 );
 	pthread_create( &strobethread, &attr, strobe_thread, 0 );
+	pthread_create( &writethread, &attr, writer_thread, 0 );
 
 	//while(g_sendbuf == 0){
-		usleep(10000); //wait for the other thread to come up.
+		usleep(10000); //wait for the other threads to come up.
 	//}
 	//set the initial sampling stage.
 	gtk_combo_box_set_active(GTK_COMBO_BOX(combo), 12);
@@ -2240,7 +2204,7 @@ int main(int argn, char **argc)
 #endif
 	
 	gtk_main ();
-	
+	g_spkwriter.close(); //just in case
 #ifdef JACK
 	jackClose(0); 
 #endif
