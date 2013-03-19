@@ -6,7 +6,7 @@ if %name% == s (goto :static) else (goto :dynamic)
 
 :static
 echo Setting static IP 192.168.1.200 on Wireless Network Connection...
-netsh interface ip set address name="Wireless Network Connection" static 192.168.1.200 255.255.255.0 192.168.1.1 1
+netsh interface ip set address name="Wireless Network Connection" static 192.168.1.200 255.255.255.0
 goto :end
 
 :dynamic 
