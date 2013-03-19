@@ -19,7 +19,7 @@ MatStor::MatStor(const char* fname){
 	m_name = string(fname); 
 	mat_t* m_matfp = Mat_Open(fname, MAT_ACC_RDWR); 
 	if(m_matfp == 0){
-		printf("will have to create a new %s\n", fname); 
+		printf("MatStor will have to create a new %s\n", fname); 
 	} else {
 		//need to read the matrices in.
 		matvar_t* var = Mat_VarReadNext(m_matfp); 
@@ -101,7 +101,7 @@ void MatStor::save(){
 	for(it3 = m_dat3.begin(); it3 != m_dat3.end(); it3++){
 		string nam = (*it3).first; 
 		array3 dat = (*it3).second; 
-		size_t* dims = (size_t*)dat.shape(); 
+		const array3::size_type* dims = dat.shape(); 
 		MATIOTYP matdims[3]; 
 		matdims[0] = dims[2]; 
 		matdims[1] = dims[1]; 
@@ -115,7 +115,7 @@ void MatStor::save(){
 	for(it2 = m_dat2.begin(); it2 != m_dat2.end(); it2++){
 		string nam = (*it2).first; 
 		array2 dat = (*it2).second; 
-		size_t* dims = (size_t*)dat.shape(); 
+		const array2::size_type* dims = dat.shape(); 
 		MATIOTYP matdims[2]; 
 		matdims[0] = dims[1]; 
 		matdims[1] = dims[0]; 
@@ -158,7 +158,7 @@ void MatStor::setValue2(int ch, int un, const char* name, float val){
 	it = m_dat2.find(string(name)); 
 	if(it != m_dat2.end()){
 		array2 *r = &((*it).second); 
-		MATIOTYP* dims = (MATIOTYP*)r->shape(); 
+		const array2::size_type* dims = r->shape(); 
 		if(ch+1 > (int)dims[0] || un+1 > (int)dims[1])
 			r->resize(boost::extents[max(ch+1,(int)dims[0])][max(un+1,(int)dims[1])]); 
 		(*r)[ch][un] = val; 
@@ -174,7 +174,7 @@ void MatStor::setValue3(int ch, int un, const char* name, float* val, int siz){
 	it = m_dat3.find(string(name)); 
 	if(it != m_dat3.end()){
 		array3 *r = &((*it).second); 
-		MATIOTYP* dims = (MATIOTYP*)r->shape(); 
+		const array3::size_type* dims = r->shape(); 
 		if(ch+1 > (int)dims[0] || un+1 > (int)dims[1] || siz > (int)dims[2])
 			r->resize(boost::extents[max(ch+1,(int)dims[0])][max(un+1,(int)dims[1])][max(siz,(int)dims[2])]); 
 		for(int i=0; i<siz; i++)
@@ -201,7 +201,7 @@ float MatStor::getValue2(int ch, int un, const char* name, float def){
 	it = m_dat2.find(string(name)); 
 	if(it != m_dat2.end()){
 		array2 *r = &((*it).second); 
-		MATIOTYP* dims = (MATIOTYP*)r->shape(); 
+		const array2::size_type* dims = r->shape(); 
 		if(ch < (int)dims[0] && un < (int)dims[1])
 			return (*it).second[ch][un]; 
 	}
@@ -212,7 +212,7 @@ void MatStor::getValue3(int ch, int un, const char* name, float* val, int siz){
 	it = m_dat3.find(string(name)); 
 	if(it != m_dat3.end()){
 		array3 *r = &((*it).second); 
-		MATIOTYP* dims = (MATIOTYP*)r->shape(); 
+		const array3::size_type* dims = r->shape(); 
 		if(ch < (int)dims[0] && un < (int)dims[1] && siz <= (int)dims[2]){
 			for(int i=0; i<siz; i++){
 				*val++ = (*r)[ch][un][i]; 
