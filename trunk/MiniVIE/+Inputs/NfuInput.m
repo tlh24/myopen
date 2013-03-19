@@ -56,31 +56,11 @@ classdef NfuInput < Inputs.CpcHeadstage
                 %fprintf('[%s] %s No Data\n',mfilename, datestr(now));
             end
 
-            % Determine expected packet size
-            numPacketHeaderBytes = 6;
-            numSamplesPerPacket = 20;
-            numSampleHeaderBytes = 4;
-%             if (length(cellData{1}) == 406)
-%                 numChannelsPerPacket = 8;
-%             else
-%                 numChannelsPerPacket = 16;
-%             end
-            numChannelsPerPacket = 16;
-            numBytesPerChannel = 2;
-            numBytesPerSample = numChannelsPerPacket*numBytesPerChannel + numSampleHeaderBytes;
-            cpchpacketSize = numPacketHeaderBytes+numBytesPerSample*numSamplesPerPacket;
             
             % Loop through all available packets and find cpch data
             for i = 1:length(cellData)
-                % TODO verify packet order
-                stream = cellData{i};
-                
-                % First 6 bytes of message are global header
-                data = reshape(stream(numPacketHeaderBytes+1:cpchpacketSize),numBytesPerSample,numSamplesPerPacket);
-                
-                % First 5 bytes per sample are header
-                databytes = data(numSampleHeaderBytes+1:end,:);
-                convertedFrame = reshape(typecast(databytes(:),'int16'),numChannelsPerPacket,numSamplesPerPacket);
+
+                convertedFrame = cellData{i};
                 
                 try
                     if obj.EnableDataLogging

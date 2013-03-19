@@ -48,7 +48,7 @@ classdef JoyMexClass < handle
                 end
             end
             
-            [a b] = JoyMEX(obj.id);
+            [a, b] = JoyMEX(obj.id);
             
             obj.name = 'Unknown Joystick';
             obj.nAxes = length(a);

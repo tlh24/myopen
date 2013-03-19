@@ -3,11 +3,8 @@ classdef UdpDevice < Inputs.SignalInput
     properties
         Host = '192.168.0.2';  
         Port = 4341
-        DaqDeviceId = '0';
     end
     properties (SetAccess = private)
-        AnalogInput = [];
-        AnalogInputName = '';
         udp = [];
         dd = zeros(8,1);
     end
@@ -58,8 +55,7 @@ classdef UdpDevice < Inputs.SignalInput
         function data = getData(obj,numSamplesRequested)
             % This function will always return the correct size for data
             % (based on the number of samples) however results will be
-            % padded with zeros.  User should check obj.AnalogInput.SamplesAvailable
-            % for a deterministic result
+            % padded with zeros.  
             len = 1;
             while(len > 0)
                 len=pnet(obj.udp,'readpacket','noblock');
