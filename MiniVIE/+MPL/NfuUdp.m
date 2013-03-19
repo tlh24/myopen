@@ -65,6 +65,21 @@ classdef (Sealed) NfuUdp < handle
         
         localRoc
     end
+    properties (Constant = true)
+        nfuStates = {
+            'SW_STATE_INIT'                     %0  
+            'SW_STATE_PRG'                      %1
+            'SW_STATE_FS'                       %2
+            'SW_STATE_NOS_CONTROL_STIMULATION'  %3
+            'SW_STATE_NOS_IDLE'                 %4
+            'SW_STATE_NOS_SLEEP'                %5
+            'SW_STATE_NOS_CONFIGURATION'        %6
+            'SW_STATE_NOS_HOMING'               %7
+            'SW_STATE_NOS_DATA_ACQUISITION'     %8
+            'SW_STATE_NOS_DIAGNOSTICS'          %9
+            'SW_STATE_NUM_STATES'               %10
+            };
+    end
     methods (Access = private)
         function obj = NfuUdp
             % Creator is private to force singleton
@@ -94,7 +109,7 @@ classdef (Sealed) NfuUdp < handle
                 status = -1;
                 return
             elseif (obj.UdpStreamReceiveSocket.hSocket ~= 0)
-                fprintf(2,'[%s] Expected receive socket id == 0, got socket id == %d\n',mfilename,obj.UdpStreamReceiveSocket);
+                fprintf(2,'[%s] Expected receive socket id == 0, got socket id == %d\n',mfilename,obj.UdpStreamReceiveSocket.hSocket);
             end
             
             % Open a udp port to send commands
@@ -104,22 +119,26 @@ classdef (Sealed) NfuUdp < handle
                 status = -2;
                 return
             elseif (obj.UdpCommandSocket.hSocket ~= 1)
-                fprintf(2,'[%s] Expected receive socket id == 1, got socket id == %d\n',mfilename,obj.UdpCommandSocket);
+                fprintf(2,'[%s] Expected receive socket id == 1, got socket id == %d\n',mfilename,obj.UdpCommandSocket.hSocket);
             end
-
+            
             % StartStreams
             
-            % Enable CPCH Data
-            fprintf('[%s] Enabling CPCH Data Stream\n',mfilename);
-            obj.enableStreaming(1);
-            % 1/28/2012 RSA, KDK observed cpc stream did not start without
-            % delay between messages
-            pause(0.1);
+%             % Enable CPCH Data
+%             fprintf('[%s] Enabling CPCH Data Stream\n',mfilename);
+%             obj.enableStreaming(1);
+%             % 1/28/2012 RSA, KDK observed cpc stream did not start without
+%             % delay between messages
+%             pause(0.1);
+%             
+%             % Enable Percepts
+%             fprintf('[%s] Enabling Percepts Data Stream\n',mfilename);
+%             obj.enableStreaming(4);
             
             % Enable Percepts
-            fprintf('[%s] Enabling Percepts Data Stream\n',mfilename);
-            obj.enableStreaming(4);
-            
+            fprintf('[%s] Enabling NFU Percepts Data Stream\n',mfilename);
+            obj.enableStreaming(5);
+
             % Test a few updates since these have been problematic
             obj.update();
             pause(0.1);
@@ -168,7 +187,7 @@ classdef (Sealed) NfuUdp < handle
             end
             
             msg = obj.hMud.DOMPositionCmd(p);
-            obj.sendUdpCommand(char(61,msg));  % append nfu msg header
+            obj.sendUdpCommand([61;msg]);  % append nfu msg header
             
         end
         function sendUpperArmHandLocalRoc(obj,upperJointAngles,RocId,RocVal)
@@ -191,7 +210,7 @@ classdef (Sealed) NfuUdp < handle
             return
             
             msg = obj.hMud.ArmPosVelHandRocGrasps(upperJointAngles,zeros(1,7),1,RocId,RocVal,1);
-            obj.sendUdpCommand(char(59,msg));  % append nfu msg header
+            obj.sendUdpCommand([59;msg]);  % append nfu msg header
             
         end
         
@@ -228,10 +247,10 @@ classdef (Sealed) NfuUdp < handle
             disp('Incomplete');
             return
             %reset NFU message
-            reset_Nfu = char(70, 9);
+            reset_Nfu = uint8([70; 9]);
             %write cfg NFU message
             
-            write_cfg_Nfu = char( 4, reshape(char(szParam),length(szParam),1), zeros(128-length(szParam),1), 8, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 128, 63);
+            write_cfg_Nfu = uint8([ 4, reshape(char(szParam),length(szParam),1), zeros(128-length(szParam),1), 8, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 128, 63]);
             
         end
         function setParam(obj,param,value)
@@ -315,11 +334,12 @@ classdef (Sealed) NfuUdp < handle
                     % wrap indices eg: 99 100 1 2 3
                     idOfInterest(idOfInterest > obj.BufferSize) = idOfInterest(idOfInterest > obj.BufferSize) - obj.BufferSize;
                     
-                    % return newest signals first
+                    % return buffer
                     % 05Feb2013: Verified signal packet ordering is correct
                     % using the nfuSimulator
                     cellData = obj.UdpBuffer1(idOfInterest);
                     
+                    % mark all as read
                     obj.newData1(:) = false;
                     
                 case 2
@@ -329,13 +349,14 @@ classdef (Sealed) NfuUdp < handle
                     idOfInterest = idOfInterest(:) & obj.newData2(:);
                     
                     % wrap indices eg: 99 100 1 2 3
-                    idOfInterest(idOfInterest > obj.BufferSize) = idOfInterest(idOfInterest > obj.BufferSize) - obj.BufferSize;
+                    idOfInterest(idOfInterest > obj.BufferSize) = ...
+                        idOfInterest(idOfInterest > obj.BufferSize) - obj.BufferSize;
                     
-                    % return newest signals first                    
+                    % return buffer
                     cellData = obj.UdpBuffer2(idOfInterest);
                     
+                    % mark all as read
                     obj.newData2(:) = false;
-                    
                     
             end
             
@@ -371,6 +392,42 @@ classdef (Sealed) NfuUdp < handle
                     end
                     
                     obj.sum1 = obj.sum1 + 1;
+                elseif (len == 869)
+                    % Store CPC and percept data
+                    
+                    % cpch
+                    
+                    % advance packet counter
+                    obj.numPacketsReceived = obj.numPacketsReceived + 1;
+                    
+                    % read data and mark as new
+                    b1 = dataBytes(1:726);  %cpch bytes
+                    obj.UdpBuffer1{obj.ptr1} = cpch_bytes_to_signal(b1);
+                    obj.newData1(obj.ptr1) = true;
+                    
+                    % advance ptr
+                    obj.ptr1 = obj.ptr1 + 1;
+                    if obj.ptr1 > obj.BufferSize
+                        obj.ptr1 = 1;
+                    end
+                    
+                    obj.sum1 = obj.sum1 + 1;
+                    
+                    % percepts
+                    
+                    b2 = dataBytes(727:end);  %percept bytes
+                    obj.UdpBuffer2{obj.ptr2} = percept_bytes_to_signal(b2);
+                    obj.newData2(obj.ptr2) = true;
+                    
+                    % advance ptr
+                    obj.ptr2 = obj.ptr2 + 1;
+                    if obj.ptr2 > obj.BufferSize
+                        obj.ptr2 = 1;
+                    end
+                    
+                    obj.sum2 = obj.sum2 + 1;
+                    
+                    
                 elseif (len == 131) || (len == 143)
                     % Store percept data
                     
@@ -397,40 +454,11 @@ classdef (Sealed) NfuUdp < handle
                     %      Int32u number_of_cpchs_messages;
                     % }Heartbeat_msg;
                     %
-                    %
-                    % typedef enum System_state_mode_type
-                    % {
-                    %      SW_STATE_INIT                      = 0,
-                    %      SW_STATE_PRG                       = 1,
-                    %      SW_STATE_FS                        = 2,
-                    %      SW_STATE_NOS_CONTROL_STIMULATION   = 3,
-                    %      SW_STATE_NOS_IDLE                  = 4,
-                    %      SW_STATE_NOS_SLEEP                 = 5,
-                    %      SW_STATE_NOS_CONFIGURATION         = 6,
-                    %      SW_STATE_NOS_HOMING                = 7,
-                    %      SW_STATE_NOS_DATA_ACQUISITION      = 8,
-                    %      SW_STATE_NOS_DIAGNOSTICS           = 9,
-                    %      SW_STATE_NUM_STATES                = 10
-                    % } System_state_mode_type;
-                    
-                    cellStates = {
-                        'SW_STATE_INIT'
-                        'SW_STATE_PRG'
-                        'SW_STATE_FS'
-                        'SW_STATE_NOS_CONTROL_STIMULATION'
-                        'SW_STATE_NOS_IDLE'
-                        'SW_STATE_NOS_SLEEP'
-                        'SW_STATE_NOS_CONFIGURATION'
-                        'SW_STATE_NOS_HOMING'
-                        'SW_STATE_NOS_DATA_ACQUISITION'
-                        'SW_STATE_NOS_DIAGNOSTICS'
-                        'SW_STATE_NUM_STATES'
-                        };
                     try
                         newData = dataBytes;
                         % offset zero based state with 1 based
                         SW_STATE = typecast(newData(1:4),'uint32');
-                        strState = cellStates{SW_STATE+1};
+                        strState = obj.nfuStates{SW_STATE+1};
                         
                         numMsgs = typecast(newData(5:8),'uint32');
                         nfuStreaming = typecast(newData(9:16),'uint64');
@@ -485,16 +513,19 @@ classdef (Sealed) NfuUdp < handle
             
             if type == 1
                 %CPC HS
-                enable_stream_Nfu = char( uint8(150), 38, 1, zeros(7,1));
+                enable_stream_Nfu = uint8([ 150, 38, 1, zeros(1,7) ]);
             elseif type == 2
                 %VULCANX
-                enable_stream_Nfu = char( uint8(150), 9, 8, zeros(7,1));
+                enable_stream_Nfu = uint8([ 150, 9, 8, zeros(1,7) ]);
             elseif type == 3
                 %ALGORITHM
-                enable_stream_Nfu = char( uint8(150), 9, 4, zeros(7,1));
+                enable_stream_Nfu = uint8([ 150, 9, 4, zeros(1,7) ]);
             elseif type == 4
                 %LC PERCEPTS
-                enable_stream_Nfu = char( uint8(150), 10, 1, zeros(7,1));
+                enable_stream_Nfu = uint8([ 150, 10, 1, zeros(1,7) ]);
+            elseif type == 5
+                %NFU PERCEPTS
+                enable_stream_Nfu = uint8([ 150, 9, 1, zeros(1,7) ]);
             else
                 error('Unmatched Type');
             end
@@ -507,16 +538,16 @@ classdef (Sealed) NfuUdp < handle
             
             if type == 1
                 %CPC HS
-                enable_stream_Nfu = char( uint8(150), 38, 0, zeros(7,1));
+                enable_stream_Nfu = uint8([ 150, 38, 0, zeros(1,7) ]);
             elseif type == 2
                 %VIE
-                enable_stream_Nfu = char( uint8(150), 9, 0, zeros(7,1));
+                enable_stream_Nfu = uint8([ 150, 9, 0, zeros(1,7) ]);
             elseif type == 3
                 %ALGORITHM
-                enable_stream_Nfu = char( uint8(150), 9, 0, zeros(7,1));
+                enable_stream_Nfu = uint8( [150, 9, 0, zeros(1,7) ]);
             elseif type == 4
                 %LC PERCEPTS
-                enable_stream_Nfu = char( uint8(150), 10, 0, zeros(7,1));
+                enable_stream_Nfu = uint8( [150, 10, 0, zeros(1,7) ]);
             else
                 error('Unmatched Type');
             end
@@ -549,14 +580,14 @@ classdef (Sealed) NfuUdp < handle
             end
             
             msgId = 4;
-            write_cfg_Nfu = char( ...
+            write_cfg_Nfu = uint8([ ...
                 msgId, ...
-                reshape(char(param.Description),length(param.Description),1),...
-                zeros(128-length(param.Description),1),...
+                uint8(param.Description),...
+                zeros(1,128-length(param.Description)),...
                 8, 0, 0, 0, ...
-                reshape(dim_X, length(dim_X),1), ...
-                reshape(dim_Y, length(dim_Y),1), ...
-                reshape(bval, length(bval),1));
+                dim_X, ...
+                dim_Y, ...
+                bval(:)']);
             
             msg = write_cfg_Nfu;
             
@@ -571,10 +602,47 @@ classdef (Sealed) NfuUdp < handle
             off = typecast(int16(offset), 'uint8');
             
             
-            tactor_control_Nfu = char( 60, reshape(tactor_node, length(tactor_node),1), per, reshape(amp, length(amp),1), reshape(dur, length(dur),1), reshape(curr, length(curr),1), reshape(off, length(off),1));
+            tactor_control_Nfu = uint8([ 60, tactor_node, per, amp, dur, curr, off]);
             
             msg = tactor_control_Nfu;
             
         end
     end
+end
+
+function s = cpch_bytes_to_signal(b)
+
+% Determine expected packet size
+numPacketHeaderBytes = 6;
+numSamplesPerPacket = 20;
+numSampleHeaderBytes = 4;
+%             if (length(cellData{1}) == 406)
+%                 numChannelsPerPacket = 8;
+%             else
+%                 numChannelsPerPacket = 16;
+%             end
+numChannelsPerPacket = 16;
+numBytesPerChannel = 2;
+numBytesPerSample = numChannelsPerPacket*numBytesPerChannel + numSampleHeaderBytes;
+cpchpacketSize = numPacketHeaderBytes+numBytesPerSample*numSamplesPerPacket;
+
+% First 6 bytes of message are global header
+data = reshape(b(numPacketHeaderBytes+1:cpchpacketSize),...
+    numBytesPerSample,numSamplesPerPacket);
+
+% First 5 bytes per sample are header
+databytes = data(numSampleHeaderBytes+1:end,:);
+s = reshape(typecast(databytes(:),'int16'),...
+    numChannelsPerPacket,numSamplesPerPacket);
+
+end
+function s = percept_bytes_to_signal(b)
+
+percepts = b(1:70);
+
+sortedPercepts = reshape(percepts,7,10);
+s16 = sortedPercepts(1:6,:);
+s = double(reshape(typecast(s16(:),'int16'),3,10));
+s(4,:) = sortedPercepts(7,:);
+
 end

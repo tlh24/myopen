@@ -1,45 +1,47 @@
-classdef TrainingDataAnalysis
+classdef TrainingDataAnalysis < PatternRecognition.TrainingData
     % Tools for loading, viewing and manipulating training data
-    %
+    % Extends TrainingData to add analysis
     %
     % Usage:
-    %   TrainingDataAnalysis.plot_emg_unfiltered('WR_TR01_*.dat');
-    %   TrainingDataAnalysis.plot_emg_filtered('WR_TR01_*.dat');
+    %   s = dir('WR*.trainingData');
+    %   obj = TrainingDataAnalysis;
+    %   for i = 1:length(s)
+    %       obj.loadTrainingData(s(i).name);
+    %       obj.plot_emg_per_class()
+    %   end
     properties
+        fullFileName = '';
     end
-    
-    methods (Static = true)
-        function plot_emg_unfiltered(filterSpec,channels)
+    methods
+        function [success, fullFile] = loadTrainingData(obj,fname)
+            % Ovreload load method to store filename for use in plotting /
+            % analysis
+            [success, fullFile] = loadTrainingData@PatternRecognition.TrainingData(obj,fname);
+            obj.fullFileName = fullFile;
+        end
+        function plot_emg_unfiltered(obj,channels)
             % Plot all the emg data in the training file - unfiltered
             %
             % Usage:
-            % TrainingDataAnalysis.plot_emg_unfiltered('WR_TR01_*.dat');
+            % plot_emg_unfiltered(obj,channels);
             
-            if nargin < 1, filterSpec = '*.dat'; end
             if nargin < 2, channels = 1:8; end
             
-            % Load Data
-            [d fileName] = TrainingDataAnalysis.load_data(filterSpec);
-            
-            if any(d.activeChannels > 8)
-                channels = 1:16;
-            end
-            
-            chEmg = d.emgData(channels,:,:);
+            chEmg = obj.getContinuousData(channels);
             
             % Plot result
             clf
-            h = plot(reshape(chEmg,length(channels),[])');
-            
-            c = distinguishable_colors(16);
+            h = plot(chEmg);
+            numChannels = length(channels);
+            c = distinguishable_colors(numChannels);
             for i = 1:length(h)
                 set(h(i),'Color',c(i,:));
             end
             
-            C = textscan(num2str(channels),'%s');
-            legend(C{1});
+            C = num2cell(channels);
+            legend(cellfun(@(x)sprintf('%2d',x),C,'UniformOutput',false));
             
-            [p f e] = fileparts(fileName);
+            [p, f, e] = fileparts(obj.fullFileName);
             dataLabel = [f '_unfiltered'];
             title(dataLabel, 'Interpreter','None');
             
@@ -52,47 +54,27 @@ classdef TrainingDataAnalysis
             end
             
         end
-        function d = plot_emg_filtered(filterSpec,channels)
-            % Plot all the emg data in the training file - unfiltered
+        function d = plot_emg_filtered(obj,channels)
+            % Plot all the emg data in the training file - filtered
             %
-            % Usage:
-            % TrainingDataAnalysis.plot_emg_unfiltered('WR_TR01_*.dat');
-            
-            if nargin < 1, filterSpec = '*.dat'; end
             if nargin < 2, channels = 1:8; end
-            
-            % Load Data
-            [d fileName] = TrainingDataAnalysis.load_data(filterSpec);
-            
-            if any(d.activeChannels > 8)
-                channels = 1:16;
-            end
-            
-            filteredData = TrainingDataAnalysis.filter_data(d.emgData);
-            chEmg = filteredData(channels,:,:);
-            
+
+            chEmg = obj.getContinuousData(channels);
+            chEmg = TrainingDataAnalysis.filter_data(chEmg);
+                        
             % Plot result
             clf
-            dataColumns = reshape(chEmg,length(channels),[])';
-            for i = 1:size(dataColumns,2)
-                dataColumns(:,i) = dataColumns(:,i) + i;
-            end
-            h = plot(dataColumns);
-            hold on
-            numSamplesPerWindow = size(d.emgData,2);
-            windowLabels = repmat(d.classLabelId,numSamplesPerWindow,1);
-            plot(-windowLabels(:)*5);
-            
-            c = distinguishable_colors(16);
+            h = plot(chEmg);
+            numChannels = length(channels);
+            c = distinguishable_colors(numChannels);
             for i = 1:length(h)
                 set(h(i),'Color',c(i,:));
             end
             
-            C = textscan(num2str(channels),'%s');
-            legend(C{1});
+            C = num2cell(channels);
+            legend(cellfun(@(x)sprintf('%2d',x),C,'UniformOutput',false));
             
-            
-            [p f e] = fileparts(fileName);
+            [p, f, e] = fileparts(obj.fullFileName);
             dataLabel = [f '_filtered'];
             title(dataLabel, 'Interpreter','None');
             
@@ -105,77 +87,74 @@ classdef TrainingDataAnalysis
             end
             
         end
-        function plot_emg_per_class(filterSpec,channels)
-            % Plot all the emg data in the training file - unfiltered
+        function plot_emg_per_class(obj,channels)
+            % Plot numClasses x 1 subplots, with filtered EMG for each
+            % class
             %
             % Usage:
             % TrainingDataAnalysis.plot_emg_per_class('WR_TR01_*.dat');
             
-            if nargin < 1
-                filterSpec = '*.dat';
-            end
-            
-            % Load Data
-            [d fileName] = TrainingDataAnalysis.load_data(filterSpec);
-            
             if nargin < 2
-                channels = d.activeChannels;
+                channels = 1:8;
             end
             
-            filteredData = TrainingDataAnalysis.filter_data(d.emgData);
-            %%
-            % channels = 16
+            % get all the data and filter it
+            [chEmg, dataBreaks] = obj.getContinuousData(channels);
+            chEmg = TrainingDataAnalysis.filter_data(chEmg);
             
-            % plot Data
+            % get the labels
+            classNames = obj.ClassNames;
+            classLabels = obj.getClassLabels;
+            
+            % class labels label frames of data to label individual
+            % samples:
+            emgLabels = reshape(repmat(classLabels(:),[1 obj.WindowSize])',1,[]);
+            
             clf
             ch = channels;
-            c = get(gca, 'ColorOrder');
-            for iClass = 1:length(d.classNames)
-                thisClass = iClass == d.classLabelId;
-                
-                h = subplot(length(d.classNames),1,iClass);
+            c = distinguishable_colors(16);
+            activeClasses = unique(classLabels);
+            for i = 1:length(activeClasses)
+                iClass = activeClasses(i);
+                thisClass = iClass == emgLabels;
+                h = subplot(length(activeClasses),1,i);
                 hold on
-                ylabel(d.classNames{iClass})
+                
+                strClass = classNames{iClass};
+                acronymClass = upper(strClass(regexp(strClass, '\<.')));
+                ylabel(acronymClass)
                 set(h,'YTick',[]);
                 set(h,'XTick',[]);
-                ylim([-2 2]);
+
+                classEmg = chEmg(thisClass,:);
                 
-                if ~any(thisClass)
-                    continue
-                end
-                classEmgFrames = filteredData(1:16,:,thisClass);
-                classEmg = reshape(classEmgFrames,16,[])';
-                
-                ylabel(d.classNames{iClass})
-                
-                for i = 1:size(classEmg,2)
-                    classEmg(:,i) = classEmg(:,i) + (i*0.5);
-                end
+%                 for i = 1:size(classEmg,2)
+%                     classEmg(:,i) = classEmg(:,i) + (i*0.5);
+%                 end
                 hLines = plot(classEmg);
                 
-                c = distinguishable_colors(16);
-                for i = 1:length(hLines)
-                    set(hLines(i),'Color',c(i,:));
+                for iLine = 1:length(hLines)
+                    set(hLines(iLine),'Color',c(iLine,:));
                 end
-                
-                %                 xBreaks = size(d.emgData,2):size(d.emgData,2):sum(thisClass)*size(d.emgData,2);
-                %                 xBreaks = [xBreaks; xBreaks; nan(size(xBreaks))];
-                %                 yBreaks = repmat([-10; 10; NaN],1,size(xBreaks,2));
-                %plot(xBreaks(:),yBreaks(:),'k-');
+                w = obj.WindowSize;
+                xBreaks = w:w:sum(iClass == classLabels)*w;
+                xBreaks = [xBreaks; xBreaks; nan(size(xBreaks))];
+                yBreaks = repmat([-10; 10; NaN],1,size(xBreaks,2));
+                plot(xBreaks(:),yBreaks(:),'k-');
                 
                 %%
                 set(hLines,'Visible','off');
                 set(hLines(ch),'Visible','on');
-                ylabel(d.classNames{iClass})
                 %     xlim([0 size(emgData,2)]);
-                ylim([-1 9])
-                if iClass == 1
-                    title(fileName,'Interpreter','None');
+                ylim([-2 2]);
+                %ylim([-1 9])
+                if i == 1
+                    title(obj.fullFileName,'Interpreter','None');
                 end
             end
+            drawnow
             
-            
-            [p f e] = fileparts(fileName);
+            [p, f, e] = fileparts(obj.fullFileName);
             dataLabel = [f '_classEmg'];
             
             % Save output
@@ -187,6 +166,8 @@ classdef TrainingDataAnalysis
             end
             
         end
+    end
+    methods (Static = true)
         function plot_mav_per_class(filterSpec,channels)
             % Plot all the emg data in the training file - unfiltered
             %
@@ -362,7 +343,7 @@ classdef TrainingDataAnalysis
                 fileName = filterSpec;
                 [pathName] = fileparts(which(fileName));
             else
-                [fileName pathName] = uigetfile(filterSpec);
+                [fileName, pathName] = uigetfile(filterSpec);
             end
             d = load(fullfile(pathName,fileName),'-mat');
             assert(~isempty(d.emgData),'EMG Data Not Found');
@@ -370,12 +351,13 @@ classdef TrainingDataAnalysis
         function filteredData = filter_data(dataIn)
             % filter Data
             % note that if filtfilt is used, the filter order is doubled
-            HPF = Inputs.HighPass(10,2,1000);
-            numEmgSamples = size(dataIn,3);
-            filteredData = zeros(size(dataIn));
-            for i = 1:numEmgSamples
-                filteredData(:,:,i) = HPF.apply(double(dataIn(:,:,i)'))';
-            end
+            %HPF = Inputs.HighPass(10,2,1000);
+            Fs = 1000;
+            HPF = Inputs.HighPass(15,3,Fs);
+            NF = Inputs.Notch([120 240 360],64,1,Fs);
+            
+            filteredData = HPF.apply(double(dataIn));
+            filteredData = NF.apply(filteredData);
         end
     end
 end

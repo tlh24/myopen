@@ -1,4 +1,4 @@
-classdef (Sealed) TrainingData < handle
+classdef TrainingData < handle
     % Class to hold pattern recognition training data
     % Methods will include those to recompute features from data and to
     % extract data signals on a per-class basis
@@ -405,13 +405,16 @@ classdef (Sealed) TrainingData < handle
             
         end
         
-        function success = loadTrainingData(obj,fname)
-            % Load Training Data
+        function [success, fullFile] = loadTrainingData(obj,fname)
+            %[success, fullFile] = loadTrainingData(obj,fname)
+            % Load Training Data into object properties
             % fields are:
             % 'features3D','classLabelId','classNames','featureNames',
             % 'activeChannels','signalData','sampleRateHz');
             
             success = false;
+            fullFile = '';
+            
             % If no input given, raise new dialog
             % If valid file given, open directly
             % If partial file given, open dialog with that info

@@ -159,14 +159,11 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
             end
             
             obj.hNfu.update; %called by getData
-            b = obj.hNfu.get_buffer(2);
-            if ~isempty(b) > 0
-                percepts = b{1}(1:70);
-                
-                sortedPercepts = reshape(percepts,7,10);
-                s16 = sortedPercepts(1:6,:);
-                convertedPercepts = double(reshape(typecast(s16(:),'int16'),3,10));
-                convertedPercepts(4,:) = sortedPercepts(7,:);
+            convertedPercepts = obj.hNfu.get_buffer(2);
+            
+            if ~isempty(convertedPercepts)
+                convertedPercepts = convertedPercepts{end};
+
                 %disp(convertedPercepts);
                 
                 % 9/14/2012 RSA verified that these delays between udp
