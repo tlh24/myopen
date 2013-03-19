@@ -840,6 +840,7 @@ void* po8_thread(void*){
 		// start the timer used to compute the speed and set the collected bytes to 0
 		long double starttime = gettime(); 
 		long double totalSamples = 0.0; //for simulation.
+		double		sinSamples = 0.0; // for driving the sinusoids; resets every 4e4. 
 		long double simulateRestart = 0.0; 
 		long long bytes = 0; 
 		unsigned int frame = 0; 
@@ -878,10 +879,10 @@ void* po8_thread(void*){
 					numSamples = 250; 
 					totalSamples = (now - starttime)*24414.0625;
 				}
-				float scale = sin(totalSamples/4e4); 
+				float scale = sin(sinSamples/4e4); 
 				for(int i=0; i<numSamples; i++){
 					temptemp[i] =  (short)(sinf((float)
-							((totalSamples + i)/6.0))*32768.f*scale); 
+							((sinSamples + i)/6.0))*32768.f*scale); 
 				}
 				for(int k=0; k<96; k++){
 					for(int i=0; i<numSamples; i++){
@@ -890,11 +891,13 @@ void* po8_thread(void*){
 				}
 				//last part of the buffer is just TDT ticks (most recent -> least delay?)
 				for(int i=0; i<numSamples; i++){
-					int r = (int)(totalSamples +i); 
+					int r = (int)(sinSamples +i); 
 					temp[96*numSamples +i] = r & 0xffff;
 					temp[97*numSamples +i] = (r>>16) & 0xffff; 
 				}
 				totalSamples += numSamples; 
+				sinSamples += numSamples; 
+				if(sinSamples > 4e4) sinSamples -= 4e4; 
 				usleep(70); 
 			}
 			if(numSamples > 0 && numSamples < 1024){
