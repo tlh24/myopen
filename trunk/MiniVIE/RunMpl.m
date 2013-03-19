@@ -16,6 +16,20 @@ p.Scenario.EnableFeedback = 1;
 p.Scenario.TactorIds = [5 6 7];
 p.Scenario.enableMicroStrain = 0;
 
+ip = p.Scenario.VulcanXAddress;
+fprintf('Trying to connect to %s...\n',ip);
+pingOk = false;
+while ~pingOk
+    strPing = sprintf('!ping %s -n 1',ip);
+    strSuccess = sprintf('Reply from %s: bytes=32',ip);
+    response = evalc(strPing);
+    foundId = strfind(response,strSuccess);
+    pingOk = ~isempty(foundId);
+    
+    if ~pingOk
+        fprintf('Ping Failed\n')
+    end
+end
 
 obj = foo(p);
 
@@ -35,7 +49,7 @@ h.initialize();
 
 % Enable buttons
 set(obj.hg.SignalSourceButtons(:),'Enable','on');
-set(obj.hg.popups(1),'Value',5);
+set(obj.hg.popups(1),'Value',6);
 
 % Setup filters and remaining properties
 obj.println('Adding Filters',1);

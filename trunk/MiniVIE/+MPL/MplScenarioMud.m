@@ -268,62 +268,6 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
                 msg = obj.hMud.AllJointsPosVelCmd([shoulderAngles e w],zeros(1,7),handPos,zeros(1,20));
                 obj.hSink.putbytes(msg);
             end
-            
-            return
-            
-            % TODO: fix the vulcanX switchout
-            
-            
-            
-            %             useLocalRoc = 1;
-            %             if isempty(obj.hMicroStrainGX2)
-            %
-            %
-            %                 if ~useLocalRoc
-            %                     % use built in ROC's
-            %                     msg = obj.hMud.ArmPosVelHandRocGrasps([zeros(1,3) e w],zeros(1,7),1,graspId,obj.GraspValue,1);
-            %                 else
-            %                     % use local ROC's
-            %                     assert(obj.GraspValue >= 0,'GraspValue < 0');
-            %                     assert(obj.GraspValue <= 1,'GraspValue > 1');
-            %                     roc = obj.localRoc(graspId+1);
-            %
-            %                     handPos = interp1(roc.waypoint,roc.angles,obj.GraspValue);
-            %                     msg = obj.hMud.AllJointsPosVelCmd([zeros(1,3) e w],zeros(1,7),handPos,zeros(1,20));
-            %                 end
-            %
-            %             else
-            %                 F_WCS_RB1 = obj.hMicroStrainGX2.rotationMatrix;
-            %                 F_WCS_RB1Offset = pinv(obj.T_WCS_HOME) * ...
-            %                     F_WCS_RB1 * obj.F_RB1_HOME;
-            %                 ang = obj.R_to_EulerZYX(F_WCS_RB1Offset);
-            %
-            %                 shoulderFE = ang(3);
-            %                 if ~obj.msLefty
-            %                     shoulderAA = ang(2);
-            %                     humeralRot = -ang(1);
-            %                 else
-            %                     shoulderAA = -ang(2);
-            %                     humeralRot = ang(1);
-            %                 end
-            %
-            %                 msg = obj.hMud.ArmPosVelHandRocGrasps( ...
-            %                     [shoulderFE shoulderAA humeralRot e w], ...
-            %                     zeros(1,7),1,graspId,obj.GraspValue,1);
-            %             end
-            %
-            %             if isempty(obj.hNfu)
-            %                 % Send to vulcanX
-            %                 obj.hSink.putbytes(msg);
-            %             else
-            %                 % Send to NFU
-            %                 if ~useLocalRoc
-            %                     obj.hNfu.sendUdpCommand(char(59,msg));
-            %                 else
-            %                     obj.hNfu.sendUdpCommand(char(61,msg));
-            %                 end
-            %             end
-            
         end
     end
     methods (Static)
