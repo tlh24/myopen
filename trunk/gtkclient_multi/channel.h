@@ -7,6 +7,7 @@
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_sort.h>
 #include "matStor.h"
+#include "gtkclient.h"
 
 void gsl_matrix_to_mat(gsl_matrix *x, const char* fname); 
 void glPrint(char *text);
@@ -362,8 +363,8 @@ public:
 			m_template[unit-1][i] = r/255.f - 0.5f; 
 		}
 		//let's send the new data to the headstage. 
-		setTemplate(m_ch, unit-1); 
-		setAperture(m_ch); 
+		//headstage.setTemplate(m_ch, unit-1); 
+		//headstage.setAperture(m_ch); 
 		return true; 
 	}
 	void resetPca(){
@@ -502,6 +503,7 @@ public:
 		m_lastSpike[0]++; 
 		m_lastSpike[1]++; 
 	}
+
 	
 };
 
