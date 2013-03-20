@@ -42,15 +42,15 @@
 
 #include "gettime.h"
 #include "sock.h"
-#include "cgVertexShader.h"
+//#include "cgVertexShader.h"
 #include "matStor.h"
 #include "jacksnd.h"
 #include "spkwriter.h"
-#include "vbo.h"
+//#include "vbo.h"
 #include "tcpsegmenter.h"
 #include "firingrate.h"
 
-#include "gtkglobals.h"
+#include "gtkclient.h"
 #include "headstage.h"
 #include "channel.h"
 #include "packet.h"
@@ -81,15 +81,6 @@ static int	g_rasterWindow = 0;
 i64	g_sbufW[NSCALE][2];
 i64	g_sbufR[NSCALE][2];
 
-class Channel;
-Channel*	g_c[NSCALE*128]; //g_c is the only variable that holds absolute indexing for scale
-//remember to address properly  adr+(128*tid) and skip when used by other threads
-//all other variables are index per thread, although make sure to address whenever g_channel is used( g_channel is absolute
-//as well) to map correctly to bridge (adr-(128*tid) or adr&127) eg. channel 128 is channel 0 on a second bridge
-FiringRate	g_fr[NSCALE][128][2];
-SpkWriter	g_spkwriter; 
-GLuint 		g_base;            // base display list for the font set.
-
 unsigned int g_svn = 846; //the svn version
 bool   g_die = false;
 double g_pause = -1.0;
@@ -100,7 +91,7 @@ bool   g_rtMouseBtn = false;
 int    g_polyChan = 0;
 bool   g_addPoly = false;
 int    g_channel[4] = {0, 32*NSCALE, 64*NSCALE, 96*NSCALE};
-int	 g_signalChain = 10; //what to sample in the headstage signal chain.
+int	g_signalChain = 10; //what to sample in the headstage signal chain.
 
 bool g_out = false;
 bool g_templMatch[NSCALE][128][2];
@@ -117,6 +108,21 @@ int          g_totalPackets = 0;
 int          g_strobePackets = 0;
 unsigned int g_dropped = 0; //compare against the bridge.
 int          g_totalDropped = 0;
+
+
+class Channel;
+//Channel*	g_c[NSCALE*128];
+std::vector<Channel*> g_c(NSCALE*128);
+//g_c is one of two variables that holds absolute indexing for scale
+//remember to address properly  adr+(128*tid) and skip when used by other threads
+//all other variables are index per thread, although make sure to address whenever g_channel is used( g_channel is absolute
+//as well) to map correctly to bridge (adr-(128*tid) or adr&127) eg. channel 128 is channel 0 on a second bridge
+FiringRate	g_fr[NSCALE][128][2];
+SpkWriter	g_spkwriter; 
+GLuint 		g_base;            // base display list for the font set.
+
+Headstage*	g_headstage;
+
 
 enum MODES {
 	MODE_RASTERS,
@@ -173,7 +179,6 @@ i64 mod2(i64 a, i64 b){
 		return (b*c+a)%b;
 	}*/
 }
-
 
 void gsl_matrix_to_mat(gsl_matrix *x, const char* fname){
 	//write a gsl matrix to a .mat file.
@@ -708,11 +713,11 @@ static gboolean rotate (gpointer user_data){
 	std::stringstream oss;
 	oss << "headecho:";
 	for(int h =0; h < NSCALE; h++){
-		if(g_headecho[h] != ((g_echo[h]-1) & 0xf))
+		if(g_headstage->headecho[h] != ((g_headstage->echo[h]-1) & 0xf))
 			oss << g_radioChannel[h] <<": " << "(ASYNC) ";
 		else
 			oss << g_radioChannel[h] << ": "  << "(SYNC) ";
-		g_oldheadecho[h] = g_headecho[h];
+		g_headstage->oldheadecho[h] = g_headstage->headecho[h];
 	}
 	gtk_label_set_text(GTK_LABEL(g_headechoLabel), oss.str().c_str());
 	char str[256];
@@ -811,14 +816,14 @@ void* sock_thread(void* param){
   
 	int tid = (intptr_t) param;
 	
-	g_sendL[tid] = 0x4000;
-	g_sendbuf[tid] = (unsigned int*)malloc(g_sendL[tid]*32);
-	if(!g_sendbuf[tid]){
+	g_headstage->sendL[tid] = 0x4000;
+	g_headstage->sendbuf[tid] = (unsigned int*)malloc(g_headstage->sendL[tid]*32);
+	if(!g_headstage->sendbuf[tid]){
 		fprintf(stderr, "could not allocate sendbuf\n");
 		return 0;
 	}
-	g_sendR[tid] = 0;
-	g_sendW[tid] = 0;
+	g_headstage->sendR[tid] = 0;
+	g_headstage->sendW[tid] = 0;
 	double g_timeOffset = 0.0; //offset between local time and bridge time.
 
 	char destName[256]; destName[0] = 0;
@@ -945,15 +950,15 @@ packet format in the file, as saved here:
 				}
 
 				//if there are messages to be written, save them too.
-				while(g_messW[tid] > g_messR[tid]){
-					unsigned int len = strnlen(g_messages[g_messR[tid] % 1024],128);
+				while(g_headstage->messW[tid] > g_headstage->messR[tid]){
+					unsigned int len = strnlen(g_headstage->messages[g_headstage->messR[tid] % 1024],128);
 					unsigned int tmp = 0xb00a5c11; //boo!  it's ascii
 					unsigned int sz = len; //size of the ensuing packet data.
 					if(g_spkwriter.m_enable){
-						spkpak pak(tmp, sz, g_messages[g_messR[tid] % 1024], rxtime, g_radioChannel[tid], tid);
+						spkpak pak(tmp, sz, g_headstage->messages[g_headstage->messR[tid] % 1024], rxtime, g_radioChannel[tid], tid);
 						g_spkwriter.add(&pak);
 					}		
-					g_messR[tid]++;
+					g_headstage->messR[tid]++;
 				}
 			}
 		
@@ -988,7 +993,7 @@ packet format in the file, as saved here:
 			for(int i=0; i<npack && g_pause <=0.0; i++){
 				//see if it matched a template.
 				float z = 0;
-				//g_headecho = ((p->flag) >> 4) & 0xf ;
+				//g_headstage->headecho = ((p->flag) >> 4) & 0xf ;
 /*
  synchronization math:
  each packet has 6 samples (24 bytes) + 8 bytes template match.
@@ -1032,7 +1037,7 @@ packet format in the file, as saved here:
 					g_templMatch[tid][j][0] = g_templMatch[tid][j][1] = false;
 				}
 				double time = ((double)p->ms / BRIDGE_CLOCK) + g_timeOffset;
-				decodePacket(p, channels, match, g_headecho[tid]);
+				decodePacket(p, channels, match, g_headstage->headecho[tid]);
 				for(int j=0; j<32; j++){
 					int adr = channels[j];
 					for(int k=0; k<2; k++){
@@ -1215,7 +1220,7 @@ packet format in the file, as saved here:
 		// (this occurs after RX of a packet, so we should not overflow the
 		// bridge -- bridge sends out packets of 256 + 4 bytes (one frame
 		// of 8 32-byte radio packets)
-		if(g_sendR[tid] < g_sendW[tid] && n > 0){
+		if(g_headstage->sendR[tid] < g_headstage->sendW[tid] && n > 0){
 			//send one command packet for every 3 RXed frame --
 			// this allows 3 duplicate transmits from bridge to headstage of
 			// each command packet.  redundancy = safety = good.
@@ -1223,14 +1228,14 @@ packet format in the file, as saved here:
 				send_delay = 0;
 				//printf("sending message to bridge ..\n");
 				double txtime = gettime();
-				unsigned int* ptr = g_sendbuf[tid];
-				ptr += (g_sendR[tid] % g_sendL[tid]) * 8; //8 because we send 8 32-bit ints /pkt.
+				unsigned int* ptr = g_headstage->sendbuf[tid];
+				ptr += (g_headstage->sendR[tid] % g_headstage->sendL[tid]) * 8; //8 because we send 8 32-bit ints /pkt.
 				n = sendto(g_txsock[tid],ptr,32,0,
 					(struct sockaddr*)&g_txsockAddrArr[tid], sizeof(g_txsockAddrArr[tid]));
 				if(n < 0)
 					printf("failed to send a message to bridge.\n");
 				else
-					g_sendR[tid]++;
+					g_headstage->sendR[tid]++;
 				//save the command in the file, too, so we can reconstruct it later.
 				if(g_saveFile){
 					unsigned int tmp = 0xc0edfad0;
@@ -1268,7 +1273,7 @@ packet format in the file, as saved here:
 #endif
 	}
 	close_socket(g_rxsock[tid]);
-	free(g_sendbuf[tid]);
+	free(g_headstage->sendbuf[tid]);
 	return 0;
 }
 void* server_thread(void* ){
@@ -1391,7 +1396,7 @@ static gboolean chanscan(gpointer){
 			gtk_adjustment_set_value(g_channelSpin[k], (double)g_channel[k]);
 		}
 		g_uiRecursion--;
-		setChans();
+		g_headstage->setChans(g_signalChain);
 	}
 	return g_cycle; //if this is false, don't call again.
 }
@@ -1432,16 +1437,16 @@ static void channelSpinCB( GtkWidget*, gpointer p){
 				updateChannelUI(j);
 		}
 		if(!g_uiRecursion)
-			setChans();
+			g_headstage->setChans(g_signalChain);
 	}
 }
 static void gainSpinCB( GtkWidget*, gpointer p){
 	int h = (int)((long long)p & 0xf);
 	if(h >= 0 && h < 4 && !g_uiRecursion){
 		float gain = gtk_adjustment_get_value(g_gainSpin[h]);
-		printf("\ngainSpinCB: %f\n", gain);
 		g_c[g_channel[h]]->m_gain = gain;
-		updateGain(g_channel[h]);
+		printf("\ngainSpinCB: %f\n", gain);
+		g_headstage->updateGain(g_channel[h]);
 		g_c[g_channel[h]]->resetPca();
 	}
 }
@@ -1449,10 +1454,10 @@ static void gainSetAll(gpointer ){
 	float gain = gtk_adjustment_get_value(g_gainSpin[0]);
 	for(int i=0; i<128*NSCALE; i++){
 		g_c[i]->m_gain = gain;
-		updateGain(i);
+		g_headstage->updateGain(i);
 	}
 	for(int i=0; i<32; i++){
-		resetBiquads(i);
+		g_headstage->resetBiquads(i);
 	}
 	for(int i=0; i<4; i++)
 		gtk_adjustment_set_value(g_gainSpin[i], gain);
@@ -1490,7 +1495,7 @@ static void agcSpinCB( GtkWidget*, gpointer p){
 		int j = g_channel[h];
 		if(j >= 0 && j < 128*NSCALE){
 			g_c[j]->m_agc = agc;
-			setAGC(j,j,j,j);
+			g_headstage->setAGC(j,j,j,j);
 		}
 		g_c[j]->resetPca();
 	}
@@ -1505,7 +1510,7 @@ static void apertureSpinCB( GtkWidget*, gpointer p){
 		if(g_c[j]->getAperture(h%2) != a){
 			if(a >= 0 && a < 256*16){
 				g_c[j]->setApertureLocal(a, h%2);
-				setAperture(j);
+				g_headstage->setAperture(j);
 			}
 			//printf("apertureSpinCB: %f ch %d\n", a, j);
 		}
@@ -1517,7 +1522,7 @@ static void apertureOffCB( GtkWidget*, gpointer p){
 		int j = g_channel[h/2];
 		gtk_adjustment_set_value(g_apertureSpin[h], 0);
 		g_c[j]->setApertureLocal(0, h%2);
-		setAperture(j);
+		g_headstage->setAperture(j);
 	}
 }
 static void agcSetAll(gpointer ){
@@ -1528,7 +1533,7 @@ static void agcSetAll(gpointer ){
 		g_c[i+1]->m_agc = agc;
 		g_c[i+2]->m_agc = agc;
 		g_c[i+3]->m_agc = agc;
-		setAGC(i,i+1,i+2,i+3);
+		g_headstage->setAGC(i,i+1,i+2,i+3);
 	}
 	for(int i=0; i<4; i++)
 		gtk_adjustment_set_value(g_agcSpin[i], agc);
@@ -1543,8 +1548,8 @@ static void drawRadioCB(GtkWidget *button, gpointer p){
 static void lmsRadioCB(GtkWidget *button, gpointer p){
 	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))){
 		int i = (int)((long long)p & 0xf);
-		if(i == 0) setLMS(true);
-		else setLMS(false);
+		if(i == 0) g_headstage->setLMS(true);
+		else g_headstage->setLMS(false);
 	}
 }
 static void filterRadioCB(GtkWidget *button, gpointer p){
@@ -1559,10 +1564,10 @@ static void filterRadioCB(GtkWidget *button, gpointer p){
 					same = true;
 			}
 			if(!same){
-				if(i == 2) setOsc(c);
-				else if(i == 3) setFlat(c);
-				else if(i == 1) setFilter2(c);
-				else resetBiquads(c);
+				if(i == 2) g_headstage->setOsc(c);
+				else if(i == 3) g_headstage->setFlat(c);
+				else if(i == 1) g_headstage->setFilter2(c);
+				else g_headstage->resetBiquads(c);
 			}
 		}
 	}
@@ -1574,7 +1579,7 @@ static void signalChainCB( GtkComboBox *combo, gpointer){
 	if(i >=0 && i < W1_STRIDE && !g_uiRecursion){
 		g_signalChain = i;
 		printf("g_signalChain = %d\n", i);
-		setChans();
+		g_headstage->setChans(g_signalChain);
 	}
     g_free( string );
 }
@@ -1591,7 +1596,7 @@ static void pauseButtonCB(GtkWidget *button, gpointer * ){
 		g_pause = -1.0;
 }
 static void syncHeadstageCB(GtkWidget *, gpointer * ){
-	setAll(); //see headstage.cpp
+	g_headstage->setAll(g_signalChain); //see headstage.cpp
 }
 static void cycleButtonCB(GtkWidget *button, gpointer * ){
 	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))){
@@ -1601,7 +1606,7 @@ static void cycleButtonCB(GtkWidget *button, gpointer * ){
 		g_cycle = false;
 }
 static void zoomSpinCB( GtkWidget*, gpointer ){
-	g_rasterZoom = gtk_adjustment_get_value(g_zoomSpin);
+	  g_rasterZoom = gtk_adjustment_get_value(g_zoomSpin);
 	g_nsamp = 4096 / g_rasterZoom;
 	//make it multiples of 1024.
 	g_nsamp &= (0xffffffff ^ 127);
@@ -1753,6 +1758,9 @@ static void getTemplateCB( GtkWidget *, gpointer p){
 	if(j < 4){
 		g_c[g_channel[j]]->updateTemplate(aB+1);
 		//update the UI.
+		//let's send the new data to the headstage. 
+		g_headstage->setTemplate(g_channel[j], aB); 
+		g_headstage->setAperture(g_channel[j]); 
 		gtk_adjustment_set_value(g_apertureSpin[j*2+aB],
 								g_c[g_channel[j]]->getAperture(aB));
 		//remove the old poly, now that we've used it.
@@ -1824,6 +1832,7 @@ int main(int argn, char **argc)
 	for(int i=0; i<128*NSCALE; i++){
 		g_c[i] = new Channel(i, &ms);
 	}
+	g_headstage = new Headstage(g_channel, g_c);
 	//g_dropped = 0;
 	// Verify that the version of the library that we linked against is
 	// compatible with the version of the headers we compiled against.
@@ -2188,7 +2197,7 @@ int main(int argn, char **argc)
 	pthread_create( &strobethread, &attr, strobe_thread, 0 );
 	pthread_create( &writethread, &attr,  writer_thread, 0 );
 
-	//while(g_sendbuf == 0){
+	//while(g_headstage->sendbuf == 0){
 		usleep(10000); //wait for the other threads to come up.
 	//}
 	//set the initial sampling stage.
