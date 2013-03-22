@@ -12,23 +12,23 @@ public:
 	Headstage();
 	Headstage(int*, const std::vector<Channel*>&);	
 
-	unsigned int*	sendbuf[NSCALE];
-	i64		sendW[NSCALE]; //where to write to (in 32-byte increments)
-	i64 		sendR[NSCALE]; //where to read from
-	i64		sendL[NSCALE]; //the length of the buffer (in 32-byte packets)
-	char		messages[1024][128]; //save these, plaintext, in the file.
-	i64		messW[NSCALE];
-	i64		messR[NSCALE];
+	unsigned int*	m_sendbuf[NSCALE];
+	i64				m_sendW[NSCALE]; //where to write to (in 32-byte increments)
+	i64 			m_sendR[NSCALE]; //where to read from
+	i64				m_sendL[NSCALE]; //the length of the buffer (in 32-byte packets)
+	char			m_messages[1024][128]; //save these, plaintext, in the file.
+	i64				m_messW[NSCALE];
+	i64				m_messR[NSCALE];
 
-	unsigned int echo[NSCALE] = {0};
-	unsigned int headecho[NSCALE] = {0};
-	unsigned int oldheadecho[NSCALE] = {100};
-	unsigned int echoMask = 0x0fffffff; //used to clear address bits
+	unsigned int m_echo[NSCALE] = {0};
+	unsigned int m_headecho[NSCALE] = {0};
+	unsigned int m_oldheadecho[NSCALE] = {100};
+	unsigned int m_echoMask = 0x0fffffff; //used to clear address bits
 	  // 0xffffffff puts gtkclient in compatability mode. (before svn v 605)
 	  // 0x0fffffff puts gtkclient in echo mode. (after svn v. 605)
 	  
-	std::vector<Channel*> ptr_c;
-	int*	 ptr_channel;
+	std::vector<Channel*> m_c;
+	int*	 m_channel;
 
 	void saveMessage(const char *fmt, ...);
 	void updateGain(int chan);

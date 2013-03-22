@@ -368,7 +368,7 @@ static gint button_press_event( GtkWidget      *,
 		}
 	}
 	if(event->button == 3){
-		if(g_c[g_channel[u]]->m_pcaVbo->m_polyW > 10 && g_mode == MODE_SORT)
+		if(g_c[g_channel[u]]->get_pcaVbo()->m_polyW > 10 && g_mode == MODE_SORT)
 			templatePopupMenu(event, (gpointer)u);
 	}
 	return TRUE;
@@ -715,11 +715,11 @@ static gboolean rotate (gpointer user_data){
 	std::stringstream oss;
 	oss << "headecho:";
 	for(int h =0; h < NSCALE; h++){
-		if(g_headstage->headecho[h] != ((g_headstage->echo[h]-1) & 0xf))
+		if(g_headstage->m_headecho[h] != ((g_headstage->m_echo[h]-1) & 0xf))
 			oss << g_radioChannel[h] <<": " << "(ASYNC) ";
 		else
 			oss << g_radioChannel[h] << ": "  << "(SYNC) ";
-		g_headstage->oldheadecho[h] = g_headstage->headecho[h];
+		g_headstage->m_oldheadecho[h] = g_headstage->m_headecho[h];
 	}
 	gtk_label_set_text(GTK_LABEL(g_headechoLabel), oss.str().c_str());
 	char str[256];
@@ -811,7 +811,7 @@ void* strobe_thread(void*){
 			if (sn > 0){
 				unsigned int tmp = 0x1eafbabe;
 				unsigned int sz = sn;
-				if(g_spkwriter.m_enable){
+				if(g_spkwriter.enable()){
 					spkpak pak(tmp, sz, buf2, rxtime, 0, 0);
 					g_spkwriter.add(&pak);
 				}	
@@ -839,14 +839,14 @@ void* sock_thread(void* param){
   
 	int tid = (intptr_t) param;
 	
-	g_headstage->sendL[tid] = 0x4000;
-	g_headstage->sendbuf[tid] = (unsigned int*)malloc(g_headstage->sendL[tid]*32);
-	if(!g_headstage->sendbuf[tid]){
-		fprintf(stderr, "could not allocate sendbuf\n");
+	g_headstage->m_sendL[tid] = 0x4000;
+	g_headstage->m_sendbuf[tid] = (unsigned int*)malloc(g_headstage->m_sendL[tid]*32);
+	if(!g_headstage->m_sendbuf[tid]){
+		fprintf(stderr, "could not allocate m_sendbuf\n");
 		return 0;
 	}
-	g_headstage->sendR[tid] = 0;
-	g_headstage->sendW[tid] = 0;
+	g_headstage->m_sendR[tid] = 0;
+	g_headstage->m_sendW[tid] = 0;
 	double g_timeOffset = 0.0; //offset between local time and bridge time.
 
 	char destName[256]; destName[0] = 0;
@@ -966,22 +966,22 @@ packet format in the file, as saved here:
 				if (n > 0){
 					unsigned int tmp = 0xdecafbad;
 					unsigned int sz = n;
-					if(g_spkwriter.m_enable){
+					if(g_spkwriter.enable()){
 						spkpak pak(tmp, sz, buf, rxtime, g_radioChannel[tid], tid);
 						g_spkwriter.add(&pak);
 					}		
 				}
 
 				//if there are messages to be written, save them too.
-				while(g_headstage->messW[tid] > g_headstage->messR[tid]){
-					unsigned int len = strnlen(g_headstage->messages[g_headstage->messR[tid] % 1024],128);
+				while(g_headstage->m_messW[tid] > g_headstage->m_messR[tid]){
+					unsigned int len = strnlen(g_headstage->m_messages[g_headstage->m_messR[tid] % 1024],128);
 					unsigned int tmp = 0xb00a5c11; //boo!  it's ascii
 					unsigned int sz = len; //size of the ensuing packet data.
-					if(g_spkwriter.m_enable){
-						spkpak pak(tmp, sz, g_headstage->messages[g_headstage->messR[tid] % 1024], rxtime, g_radioChannel[tid], tid);
+					if(g_spkwriter.enable()){
+						spkpak pak(tmp, sz, g_headstage->m_messages[g_headstage->m_messR[tid] % 1024], rxtime, g_radioChannel[tid], tid);
 						g_spkwriter.add(&pak);
 					}		
-					g_headstage->messR[tid]++;
+					g_headstage->m_messR[tid]++;
 				}
 			}
 		
@@ -1060,7 +1060,7 @@ packet format in the file, as saved here:
 					g_templMatch[tid][j][0] = g_templMatch[tid][j][1] = false;
 				}
 				double time = ((double)p->ms / BRIDGE_CLOCK) + g_timeOffset;
-				decodePacket(p, channels, match, g_headstage->headecho[tid]);
+				decodePacket(p, channels, match, g_headstage->m_headecho[tid]);
 				for(int j=0; j<32; j++){
 					int adr = channels[j];
 					for(int k=0; k<2; k++){
@@ -1138,8 +1138,8 @@ packet format in the file, as saved here:
 								float w;
 								w = g_fbuf[k][mod2(offset + j, g_nsamp)*3+1];
 								w *= 0.5f;
-								saa[0] += fabs(w - g_c[h]->m_template[0][j]);
-								saa[1] += fabs(w - g_c[h]->m_template[1][j]);
+								saa[0] += fabs(w - g_c[h]->getTemplate(0, j);
+								saa[1] += fabs(w - g_c[h]->getTemplate(1, j);
 							}
 							//record the best match.
 							for(int u=0; u<2; u++){
@@ -1243,7 +1243,7 @@ packet format in the file, as saved here:
 		// (this occurs after RX of a packet, so we should not overflow the
 		// bridge -- bridge sends out packets of 256 + 4 bytes (one frame
 		// of 8 32-byte radio packets)
-		if(g_headstage->sendR[tid] < g_headstage->sendW[tid] && n > 0){
+		if(g_headstage->m_sendR[tid] < g_headstage->m_sendW[tid] && n > 0){
 			//send one command packet for every 3 RXed frame --
 			// this allows 3 duplicate transmits from bridge to headstage of
 			// each command packet.  redundancy = safety = good.
@@ -1251,14 +1251,14 @@ packet format in the file, as saved here:
 				send_delay = 0;
 				//printf("sending message to bridge ..\n");
 				double txtime = gettime();
-				unsigned int* ptr = g_headstage->sendbuf[tid];
-				ptr += (g_headstage->sendR[tid] % g_headstage->sendL[tid]) * 8; //8 because we send 8 32-bit ints /pkt.
+				unsigned int* ptr = g_headstage->m_sendbuf[tid];
+				ptr += (g_headstage->m_sendR[tid] % g_headstage->m_m_sendL[tid]) * 8; //8 because we send 8 32-bit ints /pkt.
 				n = sendto(g_txsock[tid],ptr,32,0,
 					(struct sockaddr*)&g_txsockAddrArr[tid], sizeof(g_txsockAddrArr[tid]));
 				if(n < 0)
 					printf("failed to send a message to bridge.\n");
 				else
-					g_headstage->sendR[tid]++;
+					g_headstage->m_sendR[tid]++;
 				//save the command in the file, too, so we can reconstruct it later.
 				if(g_saveFile){
 					unsigned int tmp = 0xc0edfad0;
@@ -1296,7 +1296,7 @@ packet format in the file, as saved here:
 #endif
 	}
 	close_socket(g_rxsock[tid]);
-	free(g_headstage->sendbuf[tid]);
+	free(g_headstage->m_sendbuf[tid]);
 	return 0;
 }
 void* server_thread(void* ){
@@ -1427,8 +1427,8 @@ void updateChannelUI(int k){
 	//called when a channel changes -- update the UI elements accordingly.
 	g_uiRecursion++;
 	int ch = g_channel[k];
-	gtk_adjustment_set_value(g_gainSpin[k], g_c[ch]->m_gain);
-	gtk_adjustment_set_value(g_agcSpin[k], g_c[ch]->m_agc);
+	gtk_adjustment_set_value(g_gainSpin[k], g_c[ch]->getGain());
+	gtk_adjustment_set_value(g_agcSpin[k], g_c[ch]->getAGC());
 	gtk_adjustment_set_value(g_apertureSpin[k*2+0], g_c[ch]->getAperture(0));
 	gtk_adjustment_set_value(g_apertureSpin[k*2+1], g_c[ch]->getAperture(1));
 	gtk_adjustment_set_value(g_thresholdSpin[k], g_c[ch]->getThreshold());
@@ -1467,7 +1467,7 @@ static void gainSpinCB( GtkWidget*, gpointer p){
 	int h = (int)((long long)p & 0xf);
 	if(h >= 0 && h < 4 && !g_uiRecursion){
 		float gain = gtk_adjustment_get_value(g_gainSpin[h]);
-		g_c[g_channel[h]]->m_gain = gain;
+		g_c[g_channel[h]]->setGain(gain);
 		printf("\ngainSpinCB: %f\n", gain);
 		g_headstage->updateGain(g_channel[h]);
 		g_c[g_channel[h]]->resetPca();
@@ -1476,7 +1476,7 @@ static void gainSpinCB( GtkWidget*, gpointer p){
 static void gainSetAll(gpointer ){
 	float gain = gtk_adjustment_get_value(g_gainSpin[0]);
 	for(int i=0; i<128*NSCALE; i++){
-		g_c[i]->m_gain = gain;
+		g_c[i]->setGain(gain);
 		g_headstage->updateGain(i);
 	}
 	for(int i=0; i<32; i++){
@@ -1517,7 +1517,7 @@ static void agcSpinCB( GtkWidget*, gpointer p){
 		printf("\nagcSpinCB: %f\n", agc);
 		int j = g_channel[h];
 		if(j >= 0 && j < 128*NSCALE){
-			g_c[j]->m_agc = agc;
+			g_c[j]->setAGC(agc);
 			g_headstage->setAGC(j,j,j,j);
 		}
 		g_c[j]->resetPca();
@@ -1552,10 +1552,10 @@ static void agcSetAll(gpointer ){
 	//sets *all 128* channels.
 	float agc = gtk_adjustment_get_value(g_agcSpin[0]);
 	for(int i=0; i<128*NSCALE; i+=4){
-		g_c[i+0]->m_agc = agc;
-		g_c[i+1]->m_agc = agc;
-		g_c[i+2]->m_agc = agc;
-		g_c[i+3]->m_agc = agc;
+		g_c[i+0]->setAGC(agc);
+		g_c[i+1]->setAGC(agc);
+		g_c[i+2]->setAGC(agc);
+		g_c[i+3]->setAGC(agc);
 		g_headstage->setAGC(i,i+1,i+2,i+3);
 	}
 	for(int i=0; i<4; i++)
@@ -1982,12 +1982,12 @@ int main(int argn, char **argc)
 									  channelSpinCB, i);
 		//right of that, a gain spinner. (need to update depending on ch)
 		g_gainSpin[i] = mk_spinner("gain", bx3,
-								 	g_c[g_channel[i]]->m_gain,
+								 	g_c[g_channel[i]]->getGain(),
 									-30.0, 30.0, 0.1,
 								  	gainSpinCB, i);
 		//below that, the AGC target.
 		g_agcSpin[i] = mk_spinner("AGC target", bx2,
-								  	g_c[g_channel[i]]->m_agc,
+								  	g_c[g_channel[i]]->getAGC(),
 									0, 32000, 1000,
 								  	agcSpinCB, i);
 
@@ -2288,7 +2288,7 @@ int main(int argn, char **argc)
 	pthread_create( &strobethread, &attr, strobe_thread, 0 );
 	pthread_create( &writethread, &attr,  writer_thread, 0 );
 
-	//while(g_headstage->sendbuf == 0){
+	//while(g_headstage->m_sendbuf == 0){
 		usleep(10000); //wait for the other threads to come up.
 	//}
 	//set the initial sampling stage.
