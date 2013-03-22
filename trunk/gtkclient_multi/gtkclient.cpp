@@ -120,9 +120,7 @@ std::vector<Channel*> g_c(NSCALE*128);
 FiringRate	g_fr[NSCALE][128][2];
 SpkWriter	g_spkwriter; 
 GLuint 		g_base;            // base display list for the font set.
-
 Headstage*	g_headstage;
-
 
 enum MODES {
 	MODE_RASTERS,
@@ -160,6 +158,10 @@ GtkAdjustment* g_rasterWindowSpin;
 GtkWidget*     g_pktpsLabel;
 GtkWidget*     g_stbpsLabel; //strobe per second label, todo: put in raster
 GtkWidget*     g_fileSizeLabel;
+GtkWidget*     g_confFileLabel;
+
+std::string g_configFile = "configuration.bin";
+std::string g_stateFile  = "state.bin";
 
 int g_uiRecursion = 0; //prevents programmatic changes to the UI from causing commands to be sent to the headstage.
 
@@ -734,12 +736,14 @@ static gboolean rotate (gpointer user_data){
 
 	snprintf(str, 256, "%.2f MB", (double)g_spkwriter.bytes()/1e6);
 	gtk_label_set_text(GTK_LABEL(g_fileSizeLabel), str);
+	
+	//snprintf(str, 256,  "%s", g_configFile.c_str());
+	gtk_label_set_text(GTK_LABEL(g_confFileLabel), g_configFile.c_str());
 	return TRUE;
 }
 void saveState(){
-	//MatStor ms("preferences.mat"); //DS, change this as you prefer...
-	
 	Configuration::parameters params;
+	Configuration::state state;
 	
 	for(int i=0; i<128*NSCALE; i++){
 		params.add_channel();
@@ -749,11 +753,18 @@ void saveState(){
 		params.add_selected(g_channel[i]);
 	}
 	params.set_signal_chain(g_signalChain);
-	std::fstream output("configuration.bin", std::ios::out | std::ios::trunc | std::ios::binary);
+	std::fstream output(g_configFile.c_str(), std::ios::out | std::ios::trunc | std::ios::binary);
     if (!params.SerializeToOstream(&output)) {
       printf( "Failed to write parameters.\n" );
     }
-
+    output.close();
+    
+    state.set_default_configuration(g_configFile); 
+    output.open(g_stateFile.c_str(), std::ios::out | std::ios::trunc | std::ios::binary);
+	if (!state.SerializeToOstream(&output)) {
+			printf("failed to write state file");
+	}
+	output.close();
 	///ms.save(); 
 }
 void destroy(GtkWidget *, gpointer){
@@ -1736,6 +1747,27 @@ static void openSaveFile(gpointer parent_window) {
 	}
 	gtk_widget_destroy (dialog);
 }
+
+static void setConfFile(gpointer parent_window) {
+	GtkWidget *dialog;
+	dialog = gtk_file_chooser_dialog_new ("Configuration File",
+						(GtkWindow*)parent_window,
+						GTK_FILE_CHOOSER_ACTION_SAVE,
+						GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+						GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
+						NULL);
+	//gtk_file_chooser_set_do_overwrite_confirmation(
+	//			GTK_FILE_CHOOSER (dialog), TRUE);
+	gtk_file_chooser_set_filename (GTK_FILE_CHOOSER (dialog),"configuration.bin");
+	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT){
+		char* filename;
+		filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
+		g_configFile = filename;
+	}
+		
+	gtk_widget_destroy (dialog);
+}
+
 static void closeSaveFile(gpointer) {
 	//close it here, with lock. Mutex lock the other segments then
 	g_closeSaveFile = true;
@@ -1834,10 +1866,25 @@ int main(int argn, char **argc)
 	}
 
 	//persistent state (preferences). 
-	MatStor ms("preferences.mat"); 
+	//MatStor ms("preferences.mat"); 
 	
 	Configuration::parameters params;
-	std::fstream input("configuration.bin", std::ios::in | std::ios::binary);
+	Configuration::state state;
+	
+	std::fstream input(g_stateFile.c_str(), std::ios::in | std::ios::binary);
+	
+	if (!state.ParseFromIstream(&input)){
+		state.set_default_configuration(g_configFile);
+		std::fstream output(g_stateFile.c_str(), std::ios::out | std::ios::trunc | std::ios::binary);
+		if (!state.SerializeToOstream(&output)) {
+			printf("failed to write state file");
+		}
+	}
+	else{
+		g_configFile = state.default_configuration();
+	}
+	input.close();
+	input.open(g_configFile.c_str(), std::ios::in | std::ios::binary);
 	
 	if (!params.ParseFromIstream(&input)){
 		//Failed to load from file, intialize as default
@@ -1857,6 +1904,7 @@ int main(int argn, char **argc)
 			g_c[i] = new Channel(i, &params); //default constructor
 		}
 	}
+	input.close();
 	g_headstage = new Headstage(g_channel, g_c);
 	//g_dropped = 0;
 	// Verify that the version of the library that we linked against is
@@ -1867,7 +1915,7 @@ int main(int argn, char **argc)
 	gtk_gl_init (&argn, &argc);
 
 	window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-	gtk_window_set_title (GTK_WINDOW (window), "gtk headstage v8 client");
+	gtk_window_set_title (GTK_WINDOW (window), "gtk multi headstage v8 client");
 	gtk_window_set_default_size (GTK_WINDOW (window), 850, 650);
 	da1 = gtk_drawing_area_new ();
 	gtk_widget_set_size_request(GTK_WIDGET(da1), 640, 650);
@@ -1876,7 +1924,7 @@ int main(int argn, char **argc)
 	gtk_container_add (GTK_CONTAINER (window), paned);
 
 	v1 = gtk_vbox_new (FALSE, 0);
-	gtk_widget_set_size_request(GTK_WIDGET(v1), 200, 600);
+	gtk_widget_set_size_request(GTK_WIDGET(v1), 250, 600);
 	
 	bx = gtk_vbox_new (FALSE, 2);
 	if(1){ //namespace reasons.
@@ -2114,6 +2162,24 @@ int main(int argn, char **argc)
 	//add draw mode (applicable to all)
 	mk_radio("lines,points", 2,
 			 box1, false, "draw mode", drawRadioCB);
+	
+	bx = gtk_hbox_new (FALSE, 3);
+	g_confFileLabel = gtk_label_new ("Conf");
+	gtk_label_set_line_wrap(GTK_LABEL(g_confFileLabel), TRUE);
+	gtk_misc_set_alignment (GTK_MISC (g_confFileLabel), 0, 0);
+	gtk_box_pack_start (GTK_BOX (bx), g_confFileLabel, FALSE, FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (box1), bx, TRUE, TRUE, 0);
+	gtk_widget_show(g_confFileLabel);
+	
+	bx = gtk_hbox_new (FALSE, 3);
+	button = gtk_button_new_with_label ("Set Configuration As");
+	g_signal_connect(button, "clicked", G_CALLBACK (setConfFile),
+					 (gpointer*)window);
+	gtk_box_pack_start (GTK_BOX (bx), button, FALSE, FALSE, 0);
+		//button = gtk_button_new_with_label ("Load Conf");
+	//g_signal_connect(button, "clicked", G_CALLBACK (closeSaveFile),0);
+	//gtk_box_pack_start (GTK_BOX (bx), button, FALSE, FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (box1), bx, TRUE, TRUE, 0);
 
 	bx = gtk_hbox_new (FALSE, 3);
 	//add a pause / go button (applicable to all)

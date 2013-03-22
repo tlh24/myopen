@@ -30,3 +30,8 @@ message parameters{
   repeated int32 selected = 3;
 
 }
+
+message state{
+
+	optional string default_configuration = 1;
+}

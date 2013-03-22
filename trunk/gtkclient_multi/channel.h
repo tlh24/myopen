@@ -57,7 +57,11 @@ public:
 			m_template[0][j] = ((float)tmplA[j] / 255.f)-0.5f;
 			m_template[1][j] = ((float)tmplB[j] / 255.f)-0.5f; 
 		}
-		//read from preferences if possible ...
+		//default values
+		m_gain = 2.f;
+		m_threshold = 1.f;
+		m_agc = 6000.f;
+		m_centering = 25.f;
 		//init m_wfVbo.
 		for(int i=0; i<512; i++){
 			float* f = m_wfVbo->addRow(); 
