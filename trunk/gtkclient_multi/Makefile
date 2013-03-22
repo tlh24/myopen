@@ -34,7 +34,7 @@ GTKLD = `pkg-config --libs $(GLIBS) `
 
 OBJS = main.o sock.o
 
-GOBJS = spikes.pb.o gtkclient.o decodePacket.o headstage.o\
+GOBJS = spikes.pb.o parameters.pb.o gtkclient.o decodePacket.o headstage.o\
 	gettime.o sock.o sql.o tcpsegmenter.o glInfo.o matStor.o
 
 COBJS = convert.o decodePacket.o
@@ -53,6 +53,9 @@ spikes.pb.cc : spikes.proto
 	protoc $< --cpp_out=.
 	protoc $< --python_out=.
 
+parameters.pb.cc : parameters.proto
+	protoc $< --cpp_out=.
+	protoc $< --python_out=.
 
 gtkclient: $(GOBJS)
 	g++ -o $@ $(GTKLD) $(LDFLAGS) -lmatio -lhdf5 $(GOBJS)
@@ -61,7 +64,7 @@ convert: $(COBJS)
 	g++ -o $@ -g -Wall -lmatio -lz $(COBJS)
 
 clean:
-	rm -rf gtkclient convert *.o spikes.pb.*
+	rm -rf gtkclient convert *.o spikes.pb.* parameters.pb.*
 
 wf_plot: wf_plot.c
 	gcc -g -lSDL -lGL -lGLU -lglut -lpthread -lmatio -lpng -o $@ wf_plot.c

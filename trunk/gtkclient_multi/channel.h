@@ -8,6 +8,7 @@
 #include <gsl/gsl_sort.h>
 #include "matStor.h"
 #include "gtkclient.h"
+#include "parameters.pb.h"
 
 void gsl_matrix_to_mat(gsl_matrix *x, const char* fname); 
 void glPrint(char *text);
@@ -23,7 +24,7 @@ public:
 	Vbo*	m_usVbo; 
 	VboPca*	m_pcaVbo; //2D points, with color. 
 	float	m_pca[2][32]; //range 1 mean 0
-	float m_pcaScl[2]; //sqrt of the eigenvalues.
+	float 	m_pcaScl[2]; //sqrt of the eigenvalues.
 	float	m_template[2][16]; // range 1 mean 0.
 	float	m_loc[4]; 
 	int	m_ch; //channel number, obvi.
@@ -32,10 +33,86 @@ public:
 	i64 m_isi[2][100]; //counts of the isi, in units of 4 packets -- 768us/packet.
 	int	m_lastSpike[2]; //zero when a spike occurs. 
 	
-	Channel(int ch, MatStor* ms){
+	Channel(int ch){
+		//default constructor
 		m_wfVbo = new Vbo(6, 512, 34); //sorted units, with color. 
 		m_usVbo = new Vbo(3, 256, 34); //unsorted units, all gray.
-		m_pcaVbo = new VboPca(6, 1024*8, 1, ch, ms); 
+		const int vbodims = 6;
+		float pca_mean[vbodims] = {0};
+		float pca_max[vbodims] = {0};
+
+		m_pcaVbo = new VboPca(6, 1024*8, 1, pca_mean, pca_max); 
+		m_pcaVbo->m_fade = 0.f; 
+		m_ch = ch; 
+		//init PCA, template. 
+		for(int j=0; j<32; j++){
+			m_pca[0][j] = 1.f/8.f; 
+			m_pca[1][j] = (j > 15 ? 1.f/8.f : -1.f/8.f); 
+			m_pcaScl[0] = m_pcaScl[1] = 1.f; 
+		}
+		//template defaults here
+		unsigned char tmplA[16]={21,37,82,140,193,228,240,235,219,198,178,162,152,146,140,135};
+		unsigned char tmplB[16]={122,134,150,160,139,90,60,42,35,52,87,112,130,135,142,150};
+		for(int j=0; j<16; j++){
+			m_template[0][j] = ((float)tmplA[j] / 255.f)-0.5f;
+			m_template[1][j] = ((float)tmplB[j] / 255.f)-0.5f; 
+		}
+		//read from preferences if possible ...
+		//init m_wfVbo.
+		for(int i=0; i<512; i++){
+			float* f = m_wfVbo->addRow(); 
+			f[0] = 0.f; 
+			f[1] = 0.5f; 
+			f[2] = 0.f;
+			f[3] = f[4] = f[5] = 0.f; 
+			for(int j=0; j<32; j++){
+				f[(j+1)*6 + 0] = (float)j/31.f;
+				f[(j+1)*6 + 1] = 0.5f;
+				f[(j+1)*6 + 2] = 0.0f; 
+				for(int k=0; k<3; k++)
+					f[(j+1)*6 + 3 + k] = 0.5f; //all init gray.
+			}
+			f[(33)*6 + 0] = 1.f;
+			f[(33)*6 + 1] = 0.5f;
+			f[(33)*6 + 2] = 0.0f; 
+			for(int k=0; k<3; k++)
+				f[(33)*6 + 3 + k] = 0.5f; //all init gray.
+		}
+		//init unsorted Vbo, 
+		for(int i=0; i<256; i++){
+			float* f = m_usVbo->addRow(); 
+			f[0] = 0.f; 
+			f[1] = 0.5f; 
+			f[2] = 0.f;
+			for(int j=0; j<32; j++){
+				f[(j+1)*3 + 0] = (float)j/31.f;
+				f[(j+1)*3 + 1] = (float)rand()/(float)RAND_MAX - 0.5f;
+				f[(j+1)*3 + 2] = 0.0f; 
+			}
+			f[(33)*3 + 0] = 1.f;
+			f[(33)*3 + 1] = 0.5f;
+			f[(33)*3 + 2] = 0.0f; 
+		}
+		m_loc[0] = m_loc[1] = 0.f; 
+		m_loc[2] = m_loc[3] = 1.f; 
+		for(int u=0; u<2; u++){
+			m_lastSpike[u] = 0; 
+			for(unsigned int i=0; i < sizeof(m_isi[0])/sizeof(m_isi[0][0]); i++){
+				m_isi[u][i] = 0; 
+			}
+		}
+	}
+	
+	Channel(int ch, MatStor* ms){
+		//old matlab constructor
+		m_wfVbo = new Vbo(6, 512, 34); //sorted units, with color. 
+		m_usVbo = new Vbo(3, 256, 34); //unsorted units, all gray.
+		const int vbodims = 6;
+		float pca_mean[vbodims] = {0};
+		float pca_max[vbodims] = {0};
+		ms->getValue3(ch, 0, "vbopca_mean", pca_mean, 6); 
+		ms->getValue3(ch, 0, "vbopca_max", pca_max, 6); 
+		m_pcaVbo = new VboPca(6, 1024*8, 1, pca_mean, pca_max); 
 		m_pcaVbo->m_fade = 0.f; 
 		m_ch = ch; 
 		//init PCA, template. 
@@ -108,6 +185,95 @@ public:
 			}
 		}
 	}
+	
+	Channel(int ch, Configuration::parameters* params){
+		//constructor using prot buffers
+		const Configuration::channels chan = params->channel(ch);
+		
+		//printf("ChannelID %d", chan.id());
+		
+		m_wfVbo = new Vbo(6, 512, 34); //sorted units, with color. 
+		m_usVbo = new Vbo(3, 256, 34); //unsorted units, all gray.
+		const int vbodims = 6;
+		float pca_mean[vbodims] = {0};
+		float pca_max[vbodims] = {0};
+		
+		if(params->channel_size() > ch){
+			for(int j = 0; j < vbodims; j++){
+				pca_mean[j] = chan.pca_mean(j);
+				pca_max[j]  = chan.pca_max(j);
+			}
+		}
+			
+		m_pcaVbo = new VboPca(6, 1024*8, 1, pca_mean, pca_max); 
+		m_pcaVbo->m_fade = 0.f; 
+		m_ch = ch; 
+		//init PCA, template. 
+		for(int j=0; j<32; j++){
+			m_pca[0][j] = chan.unit(0).pca(j);
+			m_pca[1][j] = chan.unit(1).pca(j); 
+		}
+		//template defaults here
+		for(int j=0; j<16; j++){
+			m_template[0][j] = chan.unit(0).templates(j);
+			m_template[1][j] = chan.unit(1).templates(j); 
+		}
+		//read from preferences if possible ...
+		for(int j=0; j<2; j++){
+			m_aperture[j] = chan.unit(j).aperture();
+			m_pcaScl[j]   = chan.unit(j).pca_scl();
+		}
+		m_threshold = chan.threshold();
+		m_centering = chan.centering();
+		m_gain      = chan.gain();
+		m_agc       = chan.agc();
+			
+			
+		//init m_wfVbo.
+		for(int i=0; i<512; i++){
+			float* f = m_wfVbo->addRow(); 
+			f[0] = 0.f; 
+			f[1] = 0.5f; 
+			f[2] = 0.f;
+			f[3] = f[4] = f[5] = 0.f; 
+			for(int j=0; j<32; j++){
+				f[(j+1)*6 + 0] = (float)j/31.f;
+				f[(j+1)*6 + 1] = 0.5f;
+				f[(j+1)*6 + 2] = 0.0f; 
+				for(int k=0; k<3; k++)
+					f[(j+1)*6 + 3 + k] = 0.5f; //all init gray.
+			}
+			f[(33)*6 + 0] = 1.f;
+			f[(33)*6 + 1] = 0.5f;
+			f[(33)*6 + 2] = 0.0f; 
+			for(int k=0; k<3; k++)
+				f[(33)*6 + 3 + k] = 0.5f; //all init gray.
+		}
+		//init unsorted Vbo, 
+		for(int i=0; i<256; i++){
+			float* f = m_usVbo->addRow(); 
+			f[0] = 0.f; 
+			f[1] = 0.5f; 
+			f[2] = 0.f;
+			for(int j=0; j<32; j++){
+				f[(j+1)*3 + 0] = (float)j/31.f;
+				f[(j+1)*3 + 1] = (float)rand()/(float)RAND_MAX - 0.5f;
+				f[(j+1)*3 + 2] = 0.0f; 
+			}
+			f[(33)*3 + 0] = 1.f;
+			f[(33)*3 + 1] = 0.5f;
+			f[(33)*3 + 2] = 0.0f; 
+		}
+		m_loc[0] = m_loc[1] = 0.f; 
+		m_loc[2] = m_loc[3] = 1.f; 
+		for(int u=0; u<2; u++){
+			m_lastSpike[u] = 0; 
+			for(unsigned int i=0; i < sizeof(m_isi[0])/sizeof(m_isi[0][0]); i++){
+				m_isi[u][i] = 0; 
+			}
+		}
+		
+	}
 	~Channel(){
 		delete m_wfVbo; m_wfVbo = 0; 
 		delete m_usVbo; m_usVbo = 0; 
@@ -124,7 +290,43 @@ public:
 		ms->setValue(m_ch, "centering", m_centering); 
 		ms->setValue(m_ch, "agc", m_agc); 
 		ms->setValue(m_ch, "gain", m_gain);
-		m_pcaVbo->save(m_ch, ms); 
+		
+		ms->setValue3(m_ch, 0, "vbopca_mean", m_pcaVbo->m_mean, 6);
+		ms->setValue3(m_ch, 0, "vbopca_max", m_pcaVbo->m_max, 6); 
+	}
+	void save(Configuration::parameters* params){
+		
+		if(params->channel_size() < m_ch){
+			params->add_channel();
+		}
+		
+		Configuration::channels* chan = params->mutable_channel(m_ch);
+		
+		chan->set_id(m_ch);
+		for(int i=0; i< 2; i++){
+				chan->add_unit();
+		}
+		
+		for(int j=0; j<2; j++){
+			for(int k=0; k<32; k++){
+				chan->mutable_unit(j)->add_pca(m_pca[j][k]);
+			}
+			for(int k=0; k<16; k++){
+				chan->mutable_unit(j)->add_templates(m_template[j][k]);
+			}
+			chan->mutable_unit(j)->set_aperture(m_aperture[j]);
+			chan->mutable_unit(j)->set_pca_scl(m_pcaScl[j]);
+		}
+		//printf("here");
+		chan->set_threshold(m_threshold);
+		chan->set_centering(m_centering);
+		chan->set_agc(m_agc);
+		chan->set_gain(m_gain);
+		
+		for(int j=0; j<6; j++){
+			chan->add_pca_mean(m_pcaVbo->m_mean[j]);
+			chan->add_pca_max(m_pcaVbo->m_max[j]);
+		}
 	}
 	int addWf(float* wf, int unit, float time, bool updatePCA){
 		if(!m_wfVbo) return 0; //being called from another thread, likely.
