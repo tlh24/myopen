@@ -72,9 +72,11 @@ public:
 #define WFBUFMASK (WFBUFSIZ-1)
 
 class SpkWriter {
+
+private: 
+	std::atomic<bool> m_enable; 
 public:
 	std::atomic<long> m_w; //this is great!
-	std::atomic<bool> m_enable; 
 	long m_r; 
 	spkpak m_d[WFBUFSIZ];
 	FILE* m_fid; 
@@ -154,6 +156,9 @@ public:
 	long bytes(){
 		return m_r * sizeof(spkpak); 
 	}
+	const std::atomic<bool> enable(){
+		return m_enable;
+		}
 	//convert the file to matlab.
 }; 
 #endif

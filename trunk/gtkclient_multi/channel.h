@@ -17,19 +17,21 @@ void glPrint(char *text);
 class Channel {
 private:
 	float	m_aperture[2]; 
-	float m_threshold; 
+	float   m_threshold; 
 	float	m_centering; //left/right centering. used to look for threshold crossing.
+	float 	m_gain; 
+	float 	m_agc; 
+	VboPca*	m_pcaVbo; //2D points, with color. 
+	float	m_template[2][16]; // range 1 mean 0.
+	
 public:
 	Vbo*	m_wfVbo; //range 1 mean 0
 	Vbo*	m_usVbo; 
 	VboPca*	m_pcaVbo; //2D points, with color. 
 	float	m_pca[2][32]; //range 1 mean 0
 	float 	m_pcaScl[2]; //sqrt of the eigenvalues.
-	float	m_template[2][16]; // range 1 mean 0.
 	float	m_loc[4]; 
-	int	m_ch; //channel number, obvi.
-	float m_gain; 
-	float m_agc; 
+	int	m_ch; //channel number, obvi
 	i64 m_isi[2][100]; //counts of the isi, in units of 4 packets -- 768us/packet.
 	int	m_lastSpike[2]; //zero when a spike occurs. 
 	
@@ -415,6 +417,7 @@ public:
 	void addPoly(float* f){ m_pcaVbo->addPoly(f); }
 	void resetPoly(){ m_pcaVbo->m_polyW = 0; }
 	unsigned int getAperture(int n) { return (unsigned int)(m_aperture[n]);}
+	
 	void setApertureLocal(unsigned int a, int n){
 		if(n >= 0 && n <= 1) m_aperture[n] = a; 
 		float aperture = (float)a/255.f; 
@@ -422,6 +425,54 @@ public:
 		if(n == 1){color[0] = 1.f; color[1] = 0.f; color[2] = 0.f; }
 		m_pcaVbo->updateAperture(m_template[n], aperture, color); 
 	}
+		void isiIncr(){
+		m_lastSpike[0]++; 
+		m_lastSpike[1]++; 
+	}
+	
+	const float getGain(){ return m_gain; }
+	void setGain(float value){ m_gain = value;}
+		
+	const float getAGC(){ return m_agc; }
+	void setAGC(float agc){ m_agc = value; }
+	
+	VboPca* get_pcaVbo(){ return m_pcaVbo; }
+		
+	const float getTemplate(int unit, int index){
+		return m_template[unit][index]; }
+		
+	int updateTemplate(int unit){
+		//called when the button is clicked.
+		if(unit < 1 || unit > 2){
+			printf("unit out of range in Channel::updateTemplate()\n"); 
+			return false; 
+		}
+		float aperture = 0; 
+		float color[3] = {0.f, 1.f, 1.f}; 
+		if(unit == 2){color[0] = 1.f; color[1] = 0.f; color[2] = 0.f; }
+		float temp[32]; 
+		m_pcaVbo->getTemplate(temp, aperture, color); 
+		printf("template %d ", unit); 
+		for(int i=0; i<16; i++){
+			m_template[unit-1][i] = temp[i+8]; 
+			printf("%d ", (int)((temp[i+8]+0.5f) * 255)); 
+		}
+		printf("\n"); 
+		m_aperture[unit-1] = aperture * 255; 
+		printf("m_aperture[%d][%d] = %d\n", m_ch, unit-1, (int)m_aperture[unit-1]); 
+		//update sorting based on new aperture.
+		//m_pcaVbo->updateAperture(m_template[unit-1], aperture, color); 
+		//store the equivalent of the unsigned bytes actually used on the headstage.
+		for(int i=0; i<16; i++){
+			float r = round((m_template[unit-1][i] + 0.5f)*255.f); 
+			m_template[unit-1][i] = r/255.f - 0.5f; 
+		}
+		//let's send the new data to the headstage. 
+		//headstage.setTemplate(m_ch, unit-1); 
+		//headstage.setAperture(m_ch); 
+		return true; 
+	}
+		
 	float getThreshold() { return m_threshold; }
 	void setThreshold(float thresh){
 		if(thresh != m_threshold)
@@ -541,37 +592,6 @@ public:
 		char buf[64];
 		snprintf(buf, 64, "Ch %d", m_ch); 
 		glPrint(buf);
-	}
-	int updateTemplate(int unit){
-		//called when the button is clicked.
-		if(unit < 1 || unit > 2){
-			printf("unit out of range in Channel::updateTemplate()\n"); 
-			return false; 
-		}
-		float aperture = 0; 
-		float color[3] = {0.f, 1.f, 1.f}; 
-		if(unit == 2){color[0] = 1.f; color[1] = 0.f; color[2] = 0.f; }
-		float temp[32]; 
-		m_pcaVbo->getTemplate(temp, aperture, color); 
-		printf("template %d ", unit); 
-		for(int i=0; i<16; i++){
-			m_template[unit-1][i] = temp[i+8]; 
-			printf("%d ", (int)((temp[i+8]+0.5f) * 255)); 
-		}
-		printf("\n"); 
-		m_aperture[unit-1] = aperture * 255; 
-		printf("m_aperture[%d][%d] = %d\n", m_ch, unit-1, (int)m_aperture[unit-1]); 
-		//update sorting based on new aperture.
-		//m_pcaVbo->updateAperture(m_template[unit-1], aperture, color); 
-		//store the equivalent of the unsigned bytes actually used on the headstage.
-		for(int i=0; i<16; i++){
-			float r = round((m_template[unit-1][i] + 0.5f)*255.f); 
-			m_template[unit-1][i] = r/255.f - 0.5f; 
-		}
-		//let's send the new data to the headstage. 
-		//headstage.setTemplate(m_ch, unit-1); 
-		//headstage.setAperture(m_ch); 
-		return true; 
 	}
 	void resetPca(){
 		//should be called if threshold, gain
@@ -704,10 +724,6 @@ public:
 				m_isi[unit][b]++; 
 			m_lastSpike[unit] = 0; 
 		}
-	}
-	void isiIncr(){
-		m_lastSpike[0]++; 
-		m_lastSpike[1]++; 
 	}
 
 	
