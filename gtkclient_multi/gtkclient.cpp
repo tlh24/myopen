@@ -29,6 +29,7 @@
 #include <math.h>
 #include <arpa/inet.h>
 #include <sstream>
+#include <fstream>
 #include <stdint.h>
 #include <matio.h>
 #include <gsl/gsl_math.h>
@@ -42,11 +43,9 @@
 
 #include "gettime.h"
 #include "sock.h"
-//#include "cgVertexShader.h"
 #include "matStor.h"
 #include "jacksnd.h"
 #include "spkwriter.h"
-//#include "vbo.h"
 #include "tcpsegmenter.h"
 #include "firingrate.h"
 
@@ -55,6 +54,7 @@
 #include "channel.h"
 #include "packet.h"
 #include "spikes.pb.h"
+#include "parameters.pb.h"
 
 
 //CG stuff. for the vertex shaders.
@@ -737,14 +737,24 @@ static gboolean rotate (gpointer user_data){
 	return TRUE;
 }
 void saveState(){
-	MatStor ms("preferences.mat"); //DS, change this as you prefer...
+	//MatStor ms("preferences.mat"); //DS, change this as you prefer...
+	
+	Configuration::parameters params;
+	
 	for(int i=0; i<128*NSCALE; i++){
-		g_c[i]->save(&ms);
+		params.add_channel();
+		g_c[i]->save(&params);
 	}
 	for(int i=0; i<4; i++){
-		ms.setValue(i, "channel", g_channel[i]);
+		params.add_selected(g_channel[i]);
 	}
-	ms.save(); 
+	params.set_signal_chain(g_signalChain);
+	std::fstream output("configuration.bin", std::ios::out | std::ios::trunc | std::ios::binary);
+    if (!params.SerializeToOstream(&output)) {
+      printf( "Failed to write parameters.\n" );
+    }
+
+	///ms.save(); 
 }
 void destroy(GtkWidget *, gpointer){
 	//save the old values..
@@ -761,11 +771,13 @@ void destroy(GtkWidget *, gpointer){
 	for(int i=0; i<128*NSCALE; i++){
 		delete g_c[i];
 	}
+	delete g_headstage;
 	//delete g_vsFade;
 	delete g_vsFadeColor;
 	delete g_vsThreshold;
 	cgDestroyContext(myCgContext);
-
+	
+	google::protobuf::ShutdownProtobufLibrary();
 	gtk_main_quit();
 }
 void* strobe_thread(void*){
@@ -1823,14 +1835,27 @@ int main(int argn, char **argc)
 
 	//persistent state (preferences). 
 	MatStor ms("preferences.mat"); 
-	for(int i=0; i<4; i++){
-		int chan = ms.getValue(i, "channel", i*32); 
-		if(chan > (128*NSCALE))
-			chan = chan & (128*NSCALE-1); 
-		g_channel[i] = chan; 
+	
+	Configuration::parameters params;
+	std::fstream input("configuration.bin", std::ios::in | std::ios::binary);
+	
+	if (!params.ParseFromIstream(&input)){
+		//Failed to load from file, intialize as default
+		for(int i=0; i<128*NSCALE; i++){
+			g_c[i] = new Channel(i); //default constructor
+		}
+		//also initialize parameters completely, and save to file
 	}
-	for(int i=0; i<128*NSCALE; i++){
-		g_c[i] = new Channel(i, &ms);
+	else{
+		for(int i=0; i<4; i++){
+			int chan = params.selected(i);
+			if(chan > (128*NSCALE))
+				chan = chan & (128*NSCALE-1); 
+			g_channel[i] = chan; 
+		}
+		for(int i=0; i<128*NSCALE; i++){
+			g_c[i] = new Channel(i, &params); //default constructor
+		}
 	}
 	g_headstage = new Headstage(g_channel, g_c);
 	//g_dropped = 0;

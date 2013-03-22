@@ -182,6 +182,27 @@ public:
 		m_drawWf = 0; 
 		m_color[3] = -0.5; //additive alpha. so make the points partially transparent.
 	}
+	VboPca(int dim, int rows, int cols, float* pca_mean, float* pca_max):Vbo(dim, rows, cols){ 
+	  //not dependent on matstor
+		if(dim != 6) printf("Error: dim != 6 in VboPca\n"); 
+		m_mean = (float*)malloc(dim * sizeof(float));
+		m_max = (float*)malloc(dim * sizeof(float));
+		m_maxSmooth = (float*)malloc(dim * sizeof(float));
+		m_meanSmooth = (float*)malloc(dim * sizeof(float)); 
+		for(int i=0; i<dim; i++){
+			m_mean[i] = 0.f; 
+			m_max[i] = 1.f;
+			m_maxSmooth[i] = 1.f;
+			m_meanSmooth[i] = 0.f; 
+		}
+		memcpy(m_mean, pca_mean, dim);
+		memcpy(m_max,  pca_max, dim);
+		m_wf = (float*)malloc(rows * 32 * sizeof(float));
+		m_poly = (float*)malloc(1024 * 2 * sizeof(float)); //for sorting.
+		m_polyW = 0; 
+		m_drawWf = 0; 
+		m_color[3] = -0.5; //additive alpha. so make the points partially transparent.
+	}
 	virtual ~VboPca(){
 		free(m_mean); 
 		free(m_max); 
