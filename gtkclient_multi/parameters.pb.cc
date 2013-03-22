@@ -26,6 +26,9 @@ const ::google::protobuf::internal::GeneratedMessageReflection*
 const ::google::protobuf::Descriptor* parameters_descriptor_ = NULL;
 const ::google::protobuf::internal::GeneratedMessageReflection*
   parameters_reflection_ = NULL;
+const ::google::protobuf::Descriptor* state_descriptor_ = NULL;
+const ::google::protobuf::internal::GeneratedMessageReflection*
+  state_reflection_ = NULL;
 
 }  // namespace
 
@@ -93,6 +96,21 @@ void protobuf_AssignDesc_parameters_2eproto() {
       ::google::protobuf::DescriptorPool::generated_pool(),
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(parameters));
+  state_descriptor_ = file->message_type(3);
+  static const int state_offsets_[1] = {
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(state, default_configuration_),
+  };
+  state_reflection_ =
+    new ::google::protobuf::internal::GeneratedMessageReflection(
+      state_descriptor_,
+      state::default_instance_,
+      state_offsets_,
+      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(state, _has_bits_[0]),
+      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(state, _unknown_fields_),
+      -1,
+      ::google::protobuf::DescriptorPool::generated_pool(),
+      ::google::protobuf::MessageFactory::generated_factory(),
+      sizeof(state));
 }
 
 namespace {
@@ -111,6 +129,8 @@ void protobuf_RegisterTypes(const ::std::string&) {
     channels_descriptor_, &channels::default_instance());
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
     parameters_descriptor_, &parameters::default_instance());
+  ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
+    state_descriptor_, &state::default_instance());
 }
 
 }  // namespace
@@ -122,6 +142,8 @@ void protobuf_ShutdownFile_parameters_2eproto() {
   delete channels_reflection_;
   delete parameters::default_instance_;
   delete parameters_reflection_;
+  delete state::default_instance_;
+  delete state_reflection_;
 }
 
 void protobuf_AddDesc_parameters_2eproto() {
@@ -140,15 +162,18 @@ void protobuf_AddDesc_parameters_2eproto() {
     "its\022\024\n\010pca_mean\030\007 \003(\002B\002\020\001\022\023\n\007pca_max\030\010 \003"
     "(\002B\002\020\001\"^\n\nparameters\022\024\n\014signal_chain\030\001 \002"
     "(\005\022(\n\007channel\030\002 \003(\0132\027.Configuration.chan"
-    "nels\022\020\n\010selected\030\003 \003(\005", 382);
+    "nels\022\020\n\010selected\030\003 \003(\005\"&\n\005state\022\035\n\025defau"
+    "lt_configuration\030\001 \001(\t", 422);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "parameters.proto", &protobuf_RegisterTypes);
   units::default_instance_ = new units();
   channels::default_instance_ = new channels();
   parameters::default_instance_ = new parameters();
+  state::default_instance_ = new state();
   units::default_instance_->InitAsDefaultInstance();
   channels::default_instance_->InitAsDefaultInstance();
   parameters::default_instance_->InitAsDefaultInstance();
+  state::default_instance_->InitAsDefaultInstance();
   ::google::protobuf::internal::OnShutdown(&protobuf_ShutdownFile_parameters_2eproto);
 }
 
@@ -1346,6 +1371,230 @@ void parameters::Swap(parameters* other) {
   ::google::protobuf::Metadata metadata;
   metadata.descriptor = parameters_descriptor_;
   metadata.reflection = parameters_reflection_;
+  return metadata;
+}
+
+
+// ===================================================================
+
+#ifndef _MSC_VER
+const int state::kDefaultConfigurationFieldNumber;
+#endif  // !_MSC_VER
+
+state::state()
+  : ::google::protobuf::Message() {
+  SharedCtor();
+}
+
+void state::InitAsDefaultInstance() {
+}
+
+state::state(const state& from)
+  : ::google::protobuf::Message() {
+  SharedCtor();
+  MergeFrom(from);
+}
+
+void state::SharedCtor() {
+  _cached_size_ = 0;
+  default_configuration_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+  ::memset(_has_bits_, 0, sizeof(_has_bits_));
+}
+
+state::~state() {
+  SharedDtor();
+}
+
+void state::SharedDtor() {
+  if (default_configuration_ != &::google::protobuf::internal::kEmptyString) {
+    delete default_configuration_;
+  }
+  if (this != default_instance_) {
+  }
+}
+
+void state::SetCachedSize(int size) const {
+  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+  _cached_size_ = size;
+  GOOGLE_SAFE_CONCURRENT_WRITES_END();
+}
+const ::google::protobuf::Descriptor* state::descriptor() {
+  protobuf_AssignDescriptorsOnce();
+  return state_descriptor_;
+}
+
+const state& state::default_instance() {
+  if (default_instance_ == NULL) protobuf_AddDesc_parameters_2eproto();  return *default_instance_;
+}
+
+state* state::default_instance_ = NULL;
+
+state* state::New() const {
+  return new state;
+}
+
+void state::Clear() {
+  if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+    if (has_default_configuration()) {
+      if (default_configuration_ != &::google::protobuf::internal::kEmptyString) {
+        default_configuration_->clear();
+      }
+    }
+  }
+  ::memset(_has_bits_, 0, sizeof(_has_bits_));
+  mutable_unknown_fields()->Clear();
+}
+
+bool state::MergePartialFromCodedStream(
+    ::google::protobuf::io::CodedInputStream* input) {
+#define DO_(EXPRESSION) if (!(EXPRESSION)) return false
+  ::google::protobuf::uint32 tag;
+  while ((tag = input->ReadTag()) != 0) {
+    switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
+      // optional string default_configuration = 1;
+      case 1: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
+          DO_(::google::protobuf::internal::WireFormatLite::ReadString(
+                input, this->mutable_default_configuration()));
+          ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+            this->default_configuration().data(), this->default_configuration().length(),
+            ::google::protobuf::internal::WireFormat::PARSE);
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectAtEnd()) return true;
+        break;
+      }
+      
+      default: {
+      handle_uninterpreted:
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_END_GROUP) {
+          return true;
+        }
+        DO_(::google::protobuf::internal::WireFormat::SkipField(
+              input, tag, mutable_unknown_fields()));
+        break;
+      }
+    }
+  }
+  return true;
+#undef DO_
+}
+
+void state::SerializeWithCachedSizes(
+    ::google::protobuf::io::CodedOutputStream* output) const {
+  // optional string default_configuration = 1;
+  if (has_default_configuration()) {
+    ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+      this->default_configuration().data(), this->default_configuration().length(),
+      ::google::protobuf::internal::WireFormat::SERIALIZE);
+    ::google::protobuf::internal::WireFormatLite::WriteString(
+      1, this->default_configuration(), output);
+  }
+  
+  if (!unknown_fields().empty()) {
+    ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
+        unknown_fields(), output);
+  }
+}
+
+::google::protobuf::uint8* state::SerializeWithCachedSizesToArray(
+    ::google::protobuf::uint8* target) const {
+  // optional string default_configuration = 1;
+  if (has_default_configuration()) {
+    ::google::protobuf::internal::WireFormat::VerifyUTF8String(
+      this->default_configuration().data(), this->default_configuration().length(),
+      ::google::protobuf::internal::WireFormat::SERIALIZE);
+    target =
+      ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
+        1, this->default_configuration(), target);
+  }
+  
+  if (!unknown_fields().empty()) {
+    target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
+        unknown_fields(), target);
+  }
+  return target;
+}
+
+int state::ByteSize() const {
+  int total_size = 0;
+  
+  if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+    // optional string default_configuration = 1;
+    if (has_default_configuration()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::StringSize(
+          this->default_configuration());
+    }
+    
+  }
+  if (!unknown_fields().empty()) {
+    total_size +=
+      ::google::protobuf::internal::WireFormat::ComputeUnknownFieldsSize(
+        unknown_fields());
+  }
+  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+  _cached_size_ = total_size;
+  GOOGLE_SAFE_CONCURRENT_WRITES_END();
+  return total_size;
+}
+
+void state::MergeFrom(const ::google::protobuf::Message& from) {
+  GOOGLE_CHECK_NE(&from, this);
+  const state* source =
+    ::google::protobuf::internal::dynamic_cast_if_available<const state*>(
+      &from);
+  if (source == NULL) {
+    ::google::protobuf::internal::ReflectionOps::Merge(from, this);
+  } else {
+    MergeFrom(*source);
+  }
+}
+
+void state::MergeFrom(const state& from) {
+  GOOGLE_CHECK_NE(&from, this);
+  if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+    if (from.has_default_configuration()) {
+      set_default_configuration(from.default_configuration());
+    }
+  }
+  mutable_unknown_fields()->MergeFrom(from.unknown_fields());
+}
+
+void state::CopyFrom(const ::google::protobuf::Message& from) {
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+void state::CopyFrom(const state& from) {
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool state::IsInitialized() const {
+  
+  return true;
+}
+
+void state::Swap(state* other) {
+  if (other != this) {
+    std::swap(default_configuration_, other->default_configuration_);
+    std::swap(_has_bits_[0], other->_has_bits_[0]);
+    _unknown_fields_.Swap(&other->_unknown_fields_);
+    std::swap(_cached_size_, other->_cached_size_);
+  }
+}
+
+::google::protobuf::Metadata state::GetMetadata() const {
+  protobuf_AssignDescriptorsOnce();
+  ::google::protobuf::Metadata metadata;
+  metadata.descriptor = state_descriptor_;
+  metadata.reflection = state_reflection_;
   return metadata;
 }
 

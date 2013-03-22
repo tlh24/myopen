@@ -35,6 +35,7 @@ void protobuf_ShutdownFile_parameters_2eproto();
 class units;
 class channels;
 class parameters;
+class state;
 
 // ===================================================================
 
@@ -427,6 +428,92 @@ class parameters : public ::google::protobuf::Message {
   void InitAsDefaultInstance();
   static parameters* default_instance_;
 };
+// -------------------------------------------------------------------
+
+class state : public ::google::protobuf::Message {
+ public:
+  state();
+  virtual ~state();
+  
+  state(const state& from);
+  
+  inline state& operator=(const state& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _unknown_fields_;
+  }
+  
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return &_unknown_fields_;
+  }
+  
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const state& default_instance();
+  
+  void Swap(state* other);
+  
+  // implements Message ----------------------------------------------
+  
+  state* New() const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const state& from);
+  void MergeFrom(const state& from);
+  void Clear();
+  bool IsInitialized() const;
+  
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  public:
+  
+  ::google::protobuf::Metadata GetMetadata() const;
+  
+  // nested types ----------------------------------------------------
+  
+  // accessors -------------------------------------------------------
+  
+  // optional string default_configuration = 1;
+  inline bool has_default_configuration() const;
+  inline void clear_default_configuration();
+  static const int kDefaultConfigurationFieldNumber = 1;
+  inline const ::std::string& default_configuration() const;
+  inline void set_default_configuration(const ::std::string& value);
+  inline void set_default_configuration(const char* value);
+  inline void set_default_configuration(const char* value, size_t size);
+  inline ::std::string* mutable_default_configuration();
+  inline ::std::string* release_default_configuration();
+  
+  // @@protoc_insertion_point(class_scope:Configuration.state)
+ private:
+  inline void set_has_default_configuration();
+  inline void clear_has_default_configuration();
+  
+  ::google::protobuf::UnknownFieldSet _unknown_fields_;
+  
+  ::std::string* default_configuration_;
+  
+  mutable int _cached_size_;
+  ::google::protobuf::uint32 _has_bits_[(1 + 31) / 32];
+  
+  friend void  protobuf_AddDesc_parameters_2eproto();
+  friend void protobuf_AssignDesc_parameters_2eproto();
+  friend void protobuf_ShutdownFile_parameters_2eproto();
+  
+  void InitAsDefaultInstance();
+  static state* default_instance_;
+};
 // ===================================================================
 
 
@@ -791,6 +878,68 @@ parameters::selected() const {
 inline ::google::protobuf::RepeatedField< ::google::protobuf::int32 >*
 parameters::mutable_selected() {
   return &selected_;
+}
+
+// -------------------------------------------------------------------
+
+// state
+
+// optional string default_configuration = 1;
+inline bool state::has_default_configuration() const {
+  return (_has_bits_[0] & 0x00000001u) != 0;
+}
+inline void state::set_has_default_configuration() {
+  _has_bits_[0] |= 0x00000001u;
+}
+inline void state::clear_has_default_configuration() {
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline void state::clear_default_configuration() {
+  if (default_configuration_ != &::google::protobuf::internal::kEmptyString) {
+    default_configuration_->clear();
+  }
+  clear_has_default_configuration();
+}
+inline const ::std::string& state::default_configuration() const {
+  return *default_configuration_;
+}
+inline void state::set_default_configuration(const ::std::string& value) {
+  set_has_default_configuration();
+  if (default_configuration_ == &::google::protobuf::internal::kEmptyString) {
+    default_configuration_ = new ::std::string;
+  }
+  default_configuration_->assign(value);
+}
+inline void state::set_default_configuration(const char* value) {
+  set_has_default_configuration();
+  if (default_configuration_ == &::google::protobuf::internal::kEmptyString) {
+    default_configuration_ = new ::std::string;
+  }
+  default_configuration_->assign(value);
+}
+inline void state::set_default_configuration(const char* value, size_t size) {
+  set_has_default_configuration();
+  if (default_configuration_ == &::google::protobuf::internal::kEmptyString) {
+    default_configuration_ = new ::std::string;
+  }
+  default_configuration_->assign(reinterpret_cast<const char*>(value), size);
+}
+inline ::std::string* state::mutable_default_configuration() {
+  set_has_default_configuration();
+  if (default_configuration_ == &::google::protobuf::internal::kEmptyString) {
+    default_configuration_ = new ::std::string;
+  }
+  return default_configuration_;
+}
+inline ::std::string* state::release_default_configuration() {
+  clear_has_default_configuration();
+  if (default_configuration_ == &::google::protobuf::internal::kEmptyString) {
+    return NULL;
+  } else {
+    ::std::string* temp = default_configuration_;
+    default_configuration_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+    return temp;
+  }
 }
 
 

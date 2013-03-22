@@ -1148,12 +1148,12 @@ packet format in the file, as saved here:
 									for(int d=0; d<4; d++){
 										g_sortAperture[k][u][(g_sortI-d)&0xf] = 2048;
 									}
-									printf("channel %d unit %d headstage true positive.\n",h,u);
+									//printf("channel %d unit %d headstage true positive.\n",h,u);
 								}else{
 									//headstage found a match. false positive.
 									g_sortWfUnit[k] = u+5;
 									g_sortWfOffset[k] = off;
-									printf("channel %d unit %d headstage false positive.\n",h,u);
+									//printf("channel %d unit %d headstage false positive.\n",h,u);
 								}
 							}
 							//check to see if the headstage may have missed a spike.
