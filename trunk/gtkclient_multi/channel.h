@@ -430,15 +430,15 @@ public:
 		m_lastSpike[1]++; 
 	}
 	
-	const float getGain(){ return m_gain; }
+	float getGain() const{ return m_gain; }
 	void setGain(float value){ m_gain = value;}
 		
-	const float getAGC(){ return m_agc; }
+	float getAGC() const{ return m_agc; }
 	void setAGC(float agc){ m_agc = value; }
 	
 	VboPca* get_pcaVbo(){ return m_pcaVbo; }
 		
-	const float getTemplate(int unit, int index){
+	float getTemplate const(int unit, int index){
 		return m_template[unit][index]; }
 		
 	int updateTemplate(int unit){
