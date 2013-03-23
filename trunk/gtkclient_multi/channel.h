@@ -23,15 +23,14 @@ private:
 	float 	m_agc; 
 	VboPca*	m_pcaVbo; //2D points, with color. 
 	float	m_template[2][16]; // range 1 mean 0.
+	int	m_ch; //channel number, obvi
+	float	m_pca[2][32]; //range 1 mean 0
+	float 	m_pcaScl[2]; //sqrt of the eigenvalues.
 	
 public:
 	Vbo*	m_wfVbo; //range 1 mean 0
 	Vbo*	m_usVbo; 
-	VboPca*	m_pcaVbo; //2D points, with color. 
-	float	m_pca[2][32]; //range 1 mean 0
-	float 	m_pcaScl[2]; //sqrt of the eigenvalues.
 	float	m_loc[4]; 
-	int	m_ch; //channel number, obvi
 	i64 m_isi[2][100]; //counts of the isi, in units of 4 packets -- 768us/packet.
 	int	m_lastSpike[2]; //zero when a spike occurs. 
 	

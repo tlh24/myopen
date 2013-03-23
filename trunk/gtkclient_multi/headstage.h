@@ -8,10 +8,7 @@
 
 class Headstage{
 
-public:
-	Headstage();
-	Headstage(int*, const std::vector<Channel*>&);	
-
+private:
 	unsigned int*	m_sendbuf[NSCALE];
 	i64				m_sendW[NSCALE]; //where to write to (in 32-byte increments)
 	i64 			m_sendR[NSCALE]; //where to read from
@@ -29,6 +26,9 @@ public:
 	  
 	std::vector<Channel*> m_c;
 	int*	 m_channel;
+public:
+	Headstage();
+	Headstage(int*, const std::vector<Channel*>&);	
 
 	void saveMessage(const char *fmt, ...);
 	void updateGain(int chan);
