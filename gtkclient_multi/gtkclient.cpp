@@ -71,8 +71,8 @@ char g_bridgeIP[NSCALE][256]; //which thread has which bridge IP. Needs a mutex 
 unsigned int  g_radioChannel[NSCALE] = {114, 124};
 
 static float	g_fbuf[NFBUF][NSAMP*3]; //continuous waveform. range [-1 .. 1]
-i64	g_fbufW[NFBUF]; //where to write to (always increment), might not be thread safe
-i64	g_fbufR[NFBUF]; //display thread reads from here - copies to mem
+i64				g_fbufW[NFBUF]; //where to write to (always increment), might not be thread safe
+i64				g_fbufR[NFBUF]; //display thread reads from here - copies to mem
 unsigned int 	g_nsamp = 4096; //given the current level of zoom (1 = 4096 samples), how many samples to update?
 static float 	g_sbuf[NSCALE][2][128*NSBUF*2]; //2 units, 128 channels, 1024 spikes, 2 floats / spike.
 static float	g_rasterSpan = 10.f; // %seconds.
@@ -94,7 +94,8 @@ int    g_channel[4] = {0, 32*NSCALE, 64*NSCALE, 96*NSCALE};
 int	g_signalChain = 10; //what to sample in the headstage signal chain.
 
 bool g_out = false;
-bool g_templMatch[NSCALE][128][2];
+bool g_templMatch[NSCALE][128][2];//should this be a global?
+
 //the headstage match a,b over all 128 channels, per thread. cleared after every packet!!
 
 //circular buffers selected channels. Threads access indexes only associated with channels currently in focus
@@ -164,7 +165,6 @@ std::string g_configFile = "configuration.bin";
 std::string g_stateFile  = "state.bin";
 
 int g_uiRecursion = 0; //prevents programmatic changes to the UI from causing commands to be sent to the headstage.
-
 
 //add mutexes
 pthread_mutex_t mutex_totalPackets;
@@ -715,11 +715,11 @@ static gboolean rotate (gpointer user_data){
 	std::stringstream oss;
 	oss << "headecho:";
 	for(int h =0; h < NSCALE; h++){
-		if(g_headstage->m_headecho[h] != ((g_headstage->m_echo[h]-1) & 0xf))
+		if(g_headstage->getHeadecho(h) != ((g_headstage->getEcho(h)-1) & 0xf))
 			oss << g_radioChannel[h] <<": " << "(ASYNC) ";
 		else
 			oss << g_radioChannel[h] << ": "  << "(SYNC) ";
-		g_headstage->m_oldheadecho[h] = g_headstage->m_headecho[h];
+		g_headstage-getOldHeadecho(h) = g_headstage->getHeadecho(h);
 	}
 	gtk_label_set_text(GTK_LABEL(g_headechoLabel), oss.str().c_str());
 	char str[256];
@@ -839,14 +839,6 @@ void* sock_thread(void* param){
   
 	int tid = (intptr_t) param;
 	
-	g_headstage->m_sendL[tid] = 0x4000;
-	g_headstage->m_sendbuf[tid] = (unsigned int*)malloc(g_headstage->m_sendL[tid]*32);
-	if(!g_headstage->m_sendbuf[tid]){
-		fprintf(stderr, "could not allocate m_sendbuf\n");
-		return 0;
-	}
-	g_headstage->m_sendR[tid] = 0;
-	g_headstage->m_sendW[tid] = 0;
 	double g_timeOffset = 0.0; //offset between local time and bridge time.
 
 	char destName[256]; destName[0] = 0;
@@ -973,15 +965,15 @@ packet format in the file, as saved here:
 				}
 
 				//if there are messages to be written, save them too.
-				while(g_headstage->m_messW[tid] > g_headstage->m_messR[tid]){
-					unsigned int len = strnlen(g_headstage->m_messages[g_headstage->m_messR[tid] % 1024],128);
+				while(g_headstage->getMessW(tid) > g_headstage->getMessR(tid)){
+					unsigned int len = strnlen(g_headstage->getMessages(tid, g_headstage->getMessR(tid) % 1024),128);
 					unsigned int tmp = 0xb00a5c11; //boo!  it's ascii
 					unsigned int sz = len; //size of the ensuing packet data.
 					if(g_spkwriter.enable()){
-						spkpak pak(tmp, sz, g_headstage->m_messages[g_headstage->m_messR[tid] % 1024], rxtime, g_radioChannel[tid], tid);
+						spkpak pak(tmp, sz, g_headstage->getMessages(tid, g_headstage->getMessR(tid) % 1024), rxtime, g_radioChannel[tid], tid);
 						g_spkwriter.add(&pak);
 					}		
-					g_headstage->m_messR[tid]++;
+					g_headstage->incrMessR(tid);
 				}
 			}
 		
@@ -1060,7 +1052,7 @@ packet format in the file, as saved here:
 					g_templMatch[tid][j][0] = g_templMatch[tid][j][1] = false;
 				}
 				double time = ((double)p->ms / BRIDGE_CLOCK) + g_timeOffset;
-				decodePacket(p, channels, match, g_headstage->m_headecho[tid]);
+				decodePacket(p, channels, match, g_headstage->getHeadecho(tid));
 				for(int j=0; j<32; j++){
 					int adr = channels[j];
 					for(int k=0; k<2; k++){
@@ -1243,7 +1235,7 @@ packet format in the file, as saved here:
 		// (this occurs after RX of a packet, so we should not overflow the
 		// bridge -- bridge sends out packets of 256 + 4 bytes (one frame
 		// of 8 32-byte radio packets)
-		if(g_headstage->m_sendR[tid] < g_headstage->m_sendW[tid] && n > 0){
+		if(g_headstage->getSendR(tid) < g_headstage->getSendW(tid) && n > 0){
 			//send one command packet for every 3 RXed frame --
 			// this allows 3 duplicate transmits from bridge to headstage of
 			// each command packet.  redundancy = safety = good.
@@ -1251,14 +1243,14 @@ packet format in the file, as saved here:
 				send_delay = 0;
 				//printf("sending message to bridge ..\n");
 				double txtime = gettime();
-				unsigned int* ptr = g_headstage->m_sendbuf[tid];
-				ptr += (g_headstage->m_sendR[tid] % g_headstage->m_m_sendL[tid]) * 8; //8 because we send 8 32-bit ints /pkt.
+				unsigned int* ptr = g_headstage->getSendbuf(tid);
+				ptr += (g_headstage->getSendR(tid) % g_headstage->getSendL(tid) * 8; //8 because we send 8 32-bit ints /pkt.
 				n = sendto(g_txsock[tid],ptr,32,0,
 					(struct sockaddr*)&g_txsockAddrArr[tid], sizeof(g_txsockAddrArr[tid]));
 				if(n < 0)
 					printf("failed to send a message to bridge.\n");
 				else
-					g_headstage->m_sendR[tid]++;
+					g_headstage->incrSendR(tid);
 				//save the command in the file, too, so we can reconstruct it later.
 				if(g_saveFile){
 					unsigned int tmp = 0xc0edfad0;
@@ -1296,7 +1288,7 @@ packet format in the file, as saved here:
 #endif
 	}
 	close_socket(g_rxsock[tid]);
-	free(g_headstage->m_sendbuf[tid]);
+	g_headstage->freeSendbuf(tid);
 	return 0;
 }
 void* server_thread(void* ){

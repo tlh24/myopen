@@ -38,7 +38,17 @@
 
 Headstage::Headstage(){
   
-  
+  for(int t = 0; t < NSCALE; t++){
+	//populate the variables
+	g_headstage->m_sendL[tid] = 0x4000;
+	g_headstage->m_sendbuf[tid] = (unsigned int*)malloc(g_headstage->m_sendL[tid]*32);
+	if(!g_headstage->m_sendbuf[tid]){
+		fprintf(stderr, "could not allocate m_sendbuf\n");
+		return 0;
+	}
+	g_headstage->m_sendR[tid] = 0;
+	g_headstage->m_sendW[tid] = 0;
+	}
   
   
   
@@ -51,15 +61,43 @@ Headstage::Headstage(int *g_channel,  const std::vector<Channel*> &g_c){
   m_c = g_c; //shallow copy because the containers are pointers
   m_channel = g_channel;
   
-	  
+  for(int t = 0; t < NSCALE; t++){
+	//populate the variables
+	m_sendL[tid] = 0x4000;
+	m_sendbuf[tid] = (unsigned int*)malloc(m_sendL[tid]*32);
+	if(!m_sendbuf[tid]){
+		fprintf(stderr, "could not allocate m_sendbuf\n");
+		return 0;
+	}
+	m_sendR[tid] = 0;
+	m_sendW[tid] = 0;
+	}
+  
+  
 }
 unsigned int Headstage::echoHeadstage(unsigned int echoID, unsigned int address){
 	address &= m_echoMask;
 	address |= (echoID & 0xf) << 28; //top nibble is f normally.
 	return address;
 }
+unsigned int Headstage::getOldHeadecho(int thread){ return m_oldheadecho[thread]; }
+unsigned int Headstage::getHeadecho(int thread){ return m_headecho[thread]; }
+unsigned int Headstage::getEcho(int thread){ return m_echo[thread]; }
+
+unsigned int* getSendbuf (int thread){ return m_sendbuf[thread]; }
+
+i64 getMessW const(int thread){ return m_messW[thread]; }
+i64 getMessR const(int thread){ return m_messR[thread]; }
+char* getMessages const(int thread, int index){ return m_message[thread][index]; }
+
+i64 getSendW const(int thread){ return m_sendW[thread]; }
+i64 getSendR const(int thread){ return m_sendR[thread]; }
+i64 getSendL const(int thread){ return m_sendL[thread]; }
 
 
+void incrMessR(int thread){ m_messR[thread]++;}
+void incrSendR(int thread){ m_sendR[thread]++;}
+void freeSendbuf(int thread) { free(m_sendbuf[thread];}
 
 void Headstage::saveMessage(const char *fmt, ...){
 	va_list ap;     /* our argument pointer */
@@ -131,8 +169,8 @@ void Headstage::updateGain(int chan){
 	//now form the 4x 32 bit uints to be written.
 	int indx2[] = {0,1,8,9}; //don't write highpass Bs (4,5,12,13)
 	
-	unsigned int* ptr = m_sendbuf[[tid];
-	ptr += (m_sendW[tid] % m_sendL[[tid]) * 8; //8 because we send 8 32-bit ints /pkt.
+	unsigned int* ptr = m_sendbuf[tid];
+	ptr += (m_sendW[tid] % m_sendL[tid]) * 8; //8 because we send 8 32-bit ints /pkt.
 	
 	int kchan = chan &127; //(to send in buf, needs to keep correct channel name) (0-127)
 	//use kchan when not indexing m_c, thus, bitwise AND for 127 maps channels > 128 to 0-127.
@@ -165,8 +203,8 @@ void Headstage::setOsc(int chan){
 	b[2] = 32768.f - 45; //10 -> should be about 250Hz @ fs = 62.5khz
 	b[3] = -16384.f;
 	
-	unsigned int* ptr = m_sendbuf[[tid];
-	ptr += (m_sendW[tid] % m_sendL[[tid]) * 8; //8 because we send 8 32-bit ints /pkt.
+	unsigned int* ptr = m_sendbuf[tid];
+	ptr += (m_sendW[tid] % m_sendL[tid]) * 8; //8 because we send 8 32-bit ints /pkt.
 	
 	chan = chan & (0xff ^ 32); //map to the lower channels.
 		// e.g. 42 -> 10,42; 67 -> 67,99 ; 100 -> 68,100
@@ -194,8 +232,8 @@ void Headstage::setChans(int signalChain){
 	for(i=0; i<4;i++){
 		int c = m_channel[i];
 		int tid = c/128;
-		unsigned int* ptr = m_sendbuf[[tid];
-		ptr += (m_sendW[tid] % m_sendL[[tid]) * 8; //8 because we send 8 32-bit ints /pkt.
+		unsigned int* ptr = m_sendbuf[tid];
+		ptr += (m_sendW[tid] % m_sendL[tid]) * 8; //8 because we send 8 32-bit ints /pkt.
 		//scope these here (could also make a thread safe ptr array?)
 		ptr[i*2+0] = htonl(echoHeadstage(m_echo[tid], (FP_BASE - FP_TXCHAN0 + 4*i)));
 		//ok, for the taps: have 4 offsets.
@@ -248,8 +286,8 @@ void Headstage::setAGC(int ch1, int ch2, int ch3, int ch4){
 		int tid = chan/128;
 		
 		//scop these variables here, otherwise it's a pain
-		unsigned int* ptr = m_sendbuf[[tid];
-		ptr += (m_sendW[tid] % m_sendL[[tid]) * 8; //8 because we send 8 32-bit ints /pkt.
+		unsigned int* ptr = m_sendbuf[tid];
+		ptr += (m_sendW[tid] % m_sendL[tid]) * 8; //8 because we send 8 32-bit ints /pkt.
 		
 		//m_c[chan]->getAGC() = target; set ACG elsewhere.
 		chan = chan & (0xff ^ 32); //map to the lower channels (0-31,64-95)
@@ -307,8 +345,8 @@ void Headstage::setAperture(int ch){
 	int tid = ch/128;
 	
 	ch &= 31;
-	unsigned int* ptr = m_sendbuf[[tid];
-	ptr += (m_sendW[tid] % m_sendL[[tid]) * 8;
+	unsigned int* ptr = m_sendbuf[tid];
+	ptr += (m_sendW[tid] % m_sendL[tid]) * 8;
 	
 	for(int i=0; i<4; i++){
 		ptr[i*2+0] = htonl(echoHeadstage(m_echo[tid], A1 +
@@ -331,8 +369,8 @@ void Headstage::setLMS(bool on){
 	//this applies to all channels.
 	for(int tid = 0; tid < NSCALE; tid++)
 	{
-		unsigned int* ptr = m_sendbuf[[tid];
-		ptr += (m_sendW[tid] % m_sendL[[tid]) * 8; //8 because we send 8 32-bit ints /pkt. (32 byte packets)
+		unsigned int* ptr = m_sendbuf[tid];
+		ptr += (m_sendW[tid] % m_sendL[tid]) * 8; //8 because we send 8 32-bit ints /pkt. (32 byte packets)
 		
 		for(int i=0; i<4; i++){
 			ptr[i*2+0] = htonl(echoHeadstage(m_echo[tid], FP_BASE - FP_WEIGHTDECAY)); //frame pointer
@@ -353,8 +391,8 @@ void Headstage::setTemplate(int ch, int aB){
 	//template range: [-0.5 .. 0.5]
 	
 	for(int p=0; p<4; p++){
-		unsigned int* ptr = m_sendbuf[[tid];
-		ptr += (m_sendW[tid] % m_sendL[[tid]) * 8;
+		unsigned int* ptr = m_sendbuf[tid];
+		ptr += (m_sendW[tid] % m_sendL[tid]) * 8;
 		
 		for(int i=0; i<4; i++){
 			//template A starts with newest sample (rightmost) -- loop.

@@ -16,7 +16,7 @@ public:
 	i64				m_sendW[NSCALE]; //where to write to (in 32-byte increments)
 	i64 			m_sendR[NSCALE]; //where to read from
 	i64				m_sendL[NSCALE]; //the length of the buffer (in 32-byte packets)
-	char			m_messages[1024][128]; //save these, plaintext, in the file.
+	char			m_messages[NSCALE][1024][128]; //save these, plaintext, in the file.
 	i64				m_messW[NSCALE];
 	i64				m_messR[NSCALE];
 
@@ -44,6 +44,22 @@ public:
 	void setFilter2(int chan);
 	void setFlat(int chan);
 	void setAll(int signalChain);
+	
+	i64 getMessW const(int threadID);
+	i64 getMessR const(int threadID);
+	i64 getMessages const(int thread, int index);
+	i64 getSendW const(int threadID);
+	i64 getSendR const(int threadID);
+	i64 getSendL const(int threadID);
+	
+	void incrMessR(int threadID);
+	void incrSendR(int threadID);
+	void freeSendbuf(int threadID);
+	
+	unsigned int getOldHeadecho const(int threadID);
+	unsigned int getHeadecho const(int threadID);
+	unsigned int getEcho const(int threadID);
+	
 	
 	unsigned int echoHeadstage(unsigned int echoID, unsigned int address);
 	
