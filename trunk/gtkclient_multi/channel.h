@@ -424,20 +424,20 @@ public:
 		if(n == 1){color[0] = 1.f; color[1] = 0.f; color[2] = 0.f; }
 		m_pcaVbo->updateAperture(m_template[n], aperture, color); 
 	}
-		void isiIncr(){
+	void isiIncr(){
 		m_lastSpike[0]++; 
 		m_lastSpike[1]++; 
 	}
 	
-	float getGain() const{ return m_gain; }
+	float getGain() { return m_gain; }
 	void setGain(float value){ m_gain = value;}
 		
-	float getAGC() const{ return m_agc; }
-	void setAGC(float agc){ m_agc = value; }
+	float getAGC() { return m_agc; }
+	void setAGC(float value){ m_agc = value; }
 	
 	VboPca* get_pcaVbo(){ return m_pcaVbo; }
 		
-	float getTemplate const(int unit, int index){
+	float getTemplate (int unit, int index){
 		return m_template[unit][index]; }
 		
 	int updateTemplate(int unit){

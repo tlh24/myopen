@@ -30,7 +30,8 @@ public:
 	Headstage();
 	Headstage(int*, const std::vector<Channel*>&);	
 
-	void saveMessage(const char *fmt, ...);
+	void saveMessage(const char *fmt, ...); //for all threads
+	void saveMessage(int threadID, const char *fmt, ...); //some messages are thread specific
 	void updateGain(int chan);
 	void setOsc(int chan);
 	void setChans(int signalChain);
@@ -45,20 +46,22 @@ public:
 	void setFlat(int chan);
 	void setAll(int signalChain);
 	
-	i64 getMessW const(int threadID);
-	i64 getMessR const(int threadID);
-	i64 getMessages const(int thread, int index);
-	i64 getSendW const(int threadID);
-	i64 getSendR const(int threadID);
-	i64 getSendL const(int threadID);
+	i64 getMessW (int threadID);
+	i64 getMessR (int threadID);
+	char* getMessages (int thread, int index);
+	i64 getSendW (int threadID);
+	i64 getSendR (int threadID);
+	i64 getSendL (int threadID);
 	
 	void incrMessR(int threadID);
 	void incrSendR(int threadID);
 	void freeSendbuf(int threadID);
+	unsigned int* getSendbuf(int threadID);
 	
-	unsigned int getOldHeadecho const(int threadID);
-	unsigned int getHeadecho const(int threadID);
-	unsigned int getEcho const(int threadID);
+	unsigned int getOldHeadecho (int threadID);
+	void setOldHeadecho (int threadID); //internal
+	unsigned int getHeadecho (int threadID);
+	unsigned int getEcho (int threadID);
 	
 	
 	unsigned int echoHeadstage(unsigned int echoID, unsigned int address);
