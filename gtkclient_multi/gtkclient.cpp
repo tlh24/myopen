@@ -719,7 +719,7 @@ static gboolean rotate (gpointer user_data){
 			oss << g_radioChannel[h] <<": " << "(ASYNC) ";
 		else
 			oss << g_radioChannel[h] << ": "  << "(SYNC) ";
-		g_headstage-getOldHeadecho(h) = g_headstage->getHeadecho(h);
+		g_headstage->setOldHeadecho(h);
 	}
 	gtk_label_set_text(GTK_LABEL(g_headechoLabel), oss.str().c_str());
 	char str[256];
@@ -1052,7 +1052,8 @@ packet format in the file, as saved here:
 					g_templMatch[tid][j][0] = g_templMatch[tid][j][1] = false;
 				}
 				double time = ((double)p->ms / BRIDGE_CLOCK) + g_timeOffset;
-				decodePacket(p, channels, match, g_headstage->getHeadecho(tid));
+				unsigned int headecho = g_headstage->getHeadecho(tid);
+				decodePacket(p, channels, match, headecho);
 				for(int j=0; j<32; j++){
 					int adr = channels[j];
 					for(int k=0; k<2; k++){
@@ -1130,8 +1131,8 @@ packet format in the file, as saved here:
 								float w;
 								w = g_fbuf[k][mod2(offset + j, g_nsamp)*3+1];
 								w *= 0.5f;
-								saa[0] += fabs(w - g_c[h]->getTemplate(0, j);
-								saa[1] += fabs(w - g_c[h]->getTemplate(1, j);
+								saa[0] += fabs(w - g_c[h]->getTemplate(0, j));
+								saa[1] += fabs(w - g_c[h]->getTemplate(1, j));
 							}
 							//record the best match.
 							for(int u=0; u<2; u++){
@@ -1244,7 +1245,7 @@ packet format in the file, as saved here:
 				//printf("sending message to bridge ..\n");
 				double txtime = gettime();
 				unsigned int* ptr = g_headstage->getSendbuf(tid);
-				ptr += (g_headstage->getSendR(tid) % g_headstage->getSendL(tid) * 8; //8 because we send 8 32-bit ints /pkt.
+				ptr += (g_headstage->getSendR(tid) % g_headstage->getSendL(tid)) * 8; //8 because we send 8 32-bit ints /pkt.
 				n = sendto(g_txsock[tid],ptr,32,0,
 					(struct sockaddr*)&g_txsockAddrArr[tid], sizeof(g_txsockAddrArr[tid]));
 				if(n < 0)

@@ -40,14 +40,13 @@ Headstage::Headstage(){
   
   for(int t = 0; t < NSCALE; t++){
 	//populate the variables
-	g_headstage->m_sendL[tid] = 0x4000;
-	g_headstage->m_sendbuf[tid] = (unsigned int*)malloc(g_headstage->m_sendL[tid]*32);
-	if(!g_headstage->m_sendbuf[tid]){
+	m_sendL[t] = 0x4000;
+	m_sendbuf[t] = (unsigned int*)malloc(m_sendL[t]*32);
+	if(!m_sendbuf[t]){
 		fprintf(stderr, "could not allocate m_sendbuf\n");
-		return 0;
 	}
-	g_headstage->m_sendR[tid] = 0;
-	g_headstage->m_sendW[tid] = 0;
+	m_sendR[t] = 0;
+	m_sendW[t] = 0;
 	}
   
   
@@ -63,14 +62,13 @@ Headstage::Headstage(int *g_channel,  const std::vector<Channel*> &g_c){
   
   for(int t = 0; t < NSCALE; t++){
 	//populate the variables
-	m_sendL[tid] = 0x4000;
-	m_sendbuf[tid] = (unsigned int*)malloc(m_sendL[tid]*32);
-	if(!m_sendbuf[tid]){
+	m_sendL[t] = 0x4000;
+	m_sendbuf[t] = (unsigned int*)malloc(m_sendL[t]*32);
+	if(!m_sendbuf[t]){
 		fprintf(stderr, "could not allocate m_sendbuf\n");
-		return 0;
 	}
-	m_sendR[tid] = 0;
-	m_sendW[tid] = 0;
+	m_sendR[t] = 0;
+	m_sendW[t] = 0;
 	}
   
   
@@ -81,23 +79,24 @@ unsigned int Headstage::echoHeadstage(unsigned int echoID, unsigned int address)
 	return address;
 }
 unsigned int Headstage::getOldHeadecho(int thread){ return m_oldheadecho[thread]; }
+void Headstage::setOldHeadecho(int thread){ m_oldheadecho[thread] = m_headecho[thread]; }
 unsigned int Headstage::getHeadecho(int thread){ return m_headecho[thread]; }
 unsigned int Headstage::getEcho(int thread){ return m_echo[thread]; }
 
-unsigned int* getSendbuf (int thread){ return m_sendbuf[thread]; }
+unsigned int* Headstage::getSendbuf (int thread){ return m_sendbuf[thread]; }
 
-i64 getMessW const(int thread){ return m_messW[thread]; }
-i64 getMessR const(int thread){ return m_messR[thread]; }
-char* getMessages const(int thread, int index){ return m_message[thread][index]; }
+i64 Headstage::getMessW (int thread){ return m_messW[thread]; }
+i64 Headstage::getMessR (int thread){ return m_messR[thread]; }
+char* Headstage::getMessages (int thread, int index){ return m_messages[thread][index]; }
 
-i64 getSendW const(int thread){ return m_sendW[thread]; }
-i64 getSendR const(int thread){ return m_sendR[thread]; }
-i64 getSendL const(int thread){ return m_sendL[thread]; }
+i64 Headstage::getSendW (int thread){ return m_sendW[thread]; }
+i64 Headstage::getSendR (int thread){ return m_sendR[thread]; }
+i64 Headstage::getSendL (int thread){ return m_sendL[thread]; }
 
 
-void incrMessR(int thread){ m_messR[thread]++;}
-void incrSendR(int thread){ m_sendR[thread]++;}
-void freeSendbuf(int thread) { free(m_sendbuf[thread];}
+void Headstage::incrMessR(int thread){ m_messR[thread]++;}
+void Headstage::incrSendR(int thread){ m_sendR[thread]++;}
+void Headstage::freeSendbuf(int thread) { free(m_sendbuf[thread]);}
 
 void Headstage::saveMessage(const char *fmt, ...){
 	va_list ap;     /* our argument pointer */
@@ -109,13 +108,30 @@ void Headstage::saveMessage(const char *fmt, ...){
 	
 	for(int tid = 0; tid < NSCALE; tid++){
 			int e = m_echo[tid] % 16;
-			m_messages[m_messW[[tid] % 1024][0] = 'A'+e;
-			m_messages[m_messW[[tid] % 1024][1] = ' ';
-			vsnprintf(m_messages[m_messW[[tid] % 1024] + 2, 126, fmt, ap);
+			m_messages[tid][m_messW[tid] % 1024][0] = 'A'+e;
+			m_messages[tid][m_messW[tid] % 1024][1] = ' ';
+			vsnprintf(m_messages[tid][m_messW[tid] % 1024] + 2, 126, fmt, ap);
 			va_end(ap);
-			m_messW[[tid]++;
+			m_messW[tid]++;
 	}
 }
+
+void Headstage::saveMessage(int tid, const char *fmt, ...){
+	va_list ap;     /* our argument pointer */
+    if (fmt == NULL)    /* if there is no string to draw do nothing */
+        return;
+    va_start(ap, fmt);  //make ap point to first unnamed arg
+	//need to add in 'echo' in alphabet encoding - when the headstage has the same sync,
+	//we know that it got the command preceding this.
+	
+	int e = m_echo[tid] % 16;
+	m_messages[tid][m_messW[tid] % 1024][0] = 'A'+e;
+	m_messages[tid][m_messW[tid] % 1024][1] = ' ';
+	vsnprintf(m_messages[tid][m_messW[tid] % 1024] + 2, 126, fmt, ap);
+	va_end(ap);
+	m_messW[tid]++;
+}
+
 void Headstage::updateGain(int chan){
 	/* remember, channels 0 and 32 are filtered at the same time.
 		then 64 and 96
@@ -188,7 +204,7 @@ void Headstage::updateGain(int chan){
 		ptr[i*2+1] = htonl(u);
 	}
 	m_sendW[tid]++;
-	saveMessage("gain %d %3.2f %d %3.2f", chan, again1, chan+32, again2);
+	saveMessage(tid, "gain %d %3.2f %d %3.2f thread %d", chan, again1, chan+32, again2, tid);
 	m_echo[tid]++;
 }
 void Headstage::setOsc(int chan){
@@ -223,7 +239,7 @@ void Headstage::setOsc(int chan){
 			ptr[i*2+1] = htonl(u);
 	}
 	m_sendW[tid]++;
-	saveMessage("osc %d and %d", chan, chan+32);
+	saveMessage(tid, "osc %d and %d thread %d", chan, chan+32, tid);
 	m_echo[tid]++;
 }
 void Headstage::setChans(int signalChain){
@@ -359,7 +375,7 @@ void Headstage::setAperture(int ch){
 	m_sendW[tid]++;
 	
 	for(int i=0; i<4; i++){
-		saveMessage("aperture %d %d,%d", ch + 32*i,
+		saveMessage(tid, "aperture %d %d,%d", ch + 32*i,
 				m_c[ch + 32*i + 128*tid]->getAperture(0),
 				m_c[ch + 32*i + 128*tid]->getAperture(0));
 	}
@@ -377,9 +393,9 @@ void Headstage::setLMS(bool on){
 			ptr[i*2+1] = htonl(on ? 0x7fff0005 : 0); //see r4 >>> 1 (v) in radio4.asm
 		}
 		m_sendW[tid]++;
-		saveMessage("lms %d", (on ? 1 : 0));
 		m_echo[tid]++;
 	}
+	saveMessage("lms %d", (on ? 1 : 0));
 }
 void Headstage::setTemplate(int ch, int aB){
 	
@@ -457,8 +473,8 @@ void Headstage::setBiquad(int chan, float* biquad, int biquadNum){
 		}
 	}
 	//now form the 32 bit uints to be written.
-	unsigned int* ptr = m_sendbuf[[tid];
-	ptr += (m_sendW[tid] % m_sendL[[tid]) * 8; //8 because we send 8 32-bit ints /pkt.
+	unsigned int* ptr = m_sendbuf[tid];
+	ptr += (m_sendW[tid] % m_sendL[tid]) * 8; //8 because we send 8 32-bit ints /pkt.
 	
 	int kchan = chan&127;
 	for(i=0; i<4; i++){
@@ -475,9 +491,9 @@ void Headstage::setBiquad(int chan, float* biquad, int biquadNum){
 		printf("%d\n", s);
 		ptr[i*2+1] = htonl(u);
 	}
-	saveMessage("biquad %d ch %d: %d %d %d %d",
+	saveMessage(tid, "biquad %d ch %d: %d %d %d %d",
 				biquadNum, chan,(int)b[0],(int)b[2],(int)b[4],(int)b[6]);
-	saveMessage("biquad %d ch %d: %d %d %d %d",
+	saveMessage(tid, "biquad %d ch %d: %d %d %d %d",
 				biquadNum, chan+32,(int)b[1],(int)b[3],(int)b[5],(int)b[7]);
 	m_sendW[tid]++;
 	m_echo[tid]++;
@@ -498,6 +514,7 @@ void Headstage::setFilter2(int chan){
 }
 void Headstage::setFlat(int chan){
 	//lets you look at the raw ADC samples.
+	int tid = chan/128;
 	chan = chan & (0xff ^ 32); //map to the lower channels.
 	float biquad[] = {0.0, 1.0, 0.0, 0.0}; //NOTE B assumed to be symmetric.
 		//hence you need to set b[1] not b[0] (and b[2])
@@ -505,8 +522,8 @@ void Headstage::setFlat(int chan){
 	setBiquad(chan, biquad, 1);
 	setBiquad(chan, biquad, 2);
 	setBiquad(chan, biquad, 3);
-	saveMessage("flat %d", chan);
-	saveMessage("flat %d", chan+32);
+	saveMessage(tid, "flat %d thread %d", chan, tid);
+	saveMessage(tid, "flat %d thread %d", chan+32, tid);
 }
 
 void Headstage::setAll(int signalChain){

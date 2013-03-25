@@ -156,8 +156,8 @@ public:
 	long bytes(){
 		return m_r * sizeof(spkpak); 
 	}
-	const std::atomic<bool> enable(){
-		return m_enable;
+	bool enable(){
+		return m_enable.load();
 		}
 	//convert the file to matlab.
 }; 
