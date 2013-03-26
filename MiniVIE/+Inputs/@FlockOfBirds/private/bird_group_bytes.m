@@ -23,13 +23,22 @@ fprintf(bird_port,'B'); % Point command
 % wait until bytes are availabe
 %while (get(bird_port,'BytesAvailable')<nbytes)
 %end
-
-while 1
+timeout = 0.2;
+tic
+success = false;
+while toc < timeout
     bytes_avail = get(bird_port,'BytesAvailable');
     if bytes_avail >= nbytes;
+        success = true;
         break
     end
 end
+
+if ~success
+    bird_bytes = [];
+    return
+end
+
 
 % read binary data
 bird_bytes = fread(bird_port,bird_port.BytesAvailable,'uint8');
