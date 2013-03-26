@@ -1,5 +1,5 @@
 classdef FlockOfBirds < handle
-    %FLOCKOFBIRDE Class based on bird_io_in_matlab interface for the
+    %FLOCKOFBIRD Class based on bird_io_in_matlab interface for the
     %Ascension Flock Of Birds System
     %   Detailed explanation goes here
     %   Armiger 3/5/2012: Created
@@ -32,14 +32,44 @@ classdef FlockOfBirds < handle
             
         end
         
-        function [pos ang] = getBirdGroup(obj)
+        function [pos, ang] = getBirdGroup(obj)
             
             bird = obj.Bird;
             
             [bird_bytes] = bird_group_bytes(bird);   % will read position of all birds in flock
-            [pos, ang] = bird_group_bytes_2_data(bird_bytes,bird);   % will convert bytes off all birds in flock
+            if isempty(bird_bytes);
+                fprintf('Read Failed\n');
+                [pos, ang] = deal([]);
+                return
+            end
+            try
+                [pos, ang] = bird_group_bytes_2_data(bird_bytes,bird);   % will convert bytes off all birds in flock
+            catch ME
+                fprintf('Caught Error: %s\n',ME.message);
+                [pos, ang] = deal([]);
+                return
+            end
         end
     end
-    
+    methods (Static = true)
+        function Demo
+            % Requires MiniVIE Utilities
+            obj = Inputs.FlockOfBirds;
+            obj.initialize;
+            hPlot = LivePlot(9,100);
+            StartStopForm([]);
+            while StartStopForm
+                [pos, ang] = obj.getBirdGroup;
+                if isempty(pos)
+                    continue;
+                end
+                hPlot.putdata(pos(:));
+                
+                for ibird=1:obj.Bird.nbird
+                    fprintf('Bird %i\t%+3.3f\t%+3.3f\t%+3.3f\t%+3.1f\t%+3.1f\t%+3.1f\n',ibird,pos(ibird,:),ang(ibird,:)*180/pi);
+                end
+                pause(0.05);
+            end
+        end
+    end
 end
-
