@@ -1255,12 +1255,13 @@ packet format in the file, as saved here:
 				//save the command in the file, too, so we can reconstruct it later.
 				if(g_saveFile){
 					unsigned int tmp = 0xc0edfad0;
-					unsigned int sz = 32;
-					
-					//if(g_spkwriter.m_enable){
-						//spkpak pak(tmp, sz, ptr, txtime, g_radioChannel[tid], tid);
-						//g_spkwriter.add(&pak);
-					//}
+					const unsigned int sz = 32*sizeof(unsigned int);
+					char buf2[sz];
+					memcpy(buf, (char*)&ptr, sz);//32 ints * size of ints
+					if(g_spkwriter.enable()){
+						spkpak pak(tmp, sz, buf2, txtime, g_radioChannel[tid], tid);
+						g_spkwriter.add(&pak);
+					}
 					
 				}
 			} else {

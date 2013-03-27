@@ -19,7 +19,7 @@ public:
 	unsigned int magic;
 	unsigned int size;
 	double rxtime;
-	unsigned int channel;
+	unsigned int radio; //radiochannel
 	int thread;
 	PACKET_TYPE packet_type;
 	char buffer[1024+128+4]; //fits strobe and sock
@@ -27,18 +27,18 @@ public:
 	spkpak(){}
 
 	spkpak(unsigned int word, unsigned int sz, char* buf, double time, 
-			unsigned int chan, int tid = 0){
+			unsigned int rchan, int tid = 0){
 		
-		channel = chan;
+		radio = rchan;
 		thread = tid;
 		
-		if( size <= 1024){
+		if( size <= 1024+128+4){
 			memcpy(buffer, buf, sz);
 			size = sz;
 			rxtime = time;
 		}
 		else{
-			size = 1024; //and hope it doesn't break
+			size = 1024+128+4; //and hope it doesn't break
 			memcpy(buffer, buf, size);
 			rxtime = time;
 		}
@@ -129,7 +129,7 @@ public:
 				else if(pak->packet_type == DATA){
 					//not sure if I can do fwrite(&m_d[m_r & WFBUFMASK], 24, 1, m_fid), then write the buffer to the appropriate size....
 					fwrite((void*)&pak->magic, 4, 1, m_fid); //fwrite is atomic in POSIX systems, still, sync
-					fwrite((void*)&pak->channel, 2, 1, m_fid);
+					fwrite((void*)&pak->radio, 2, 1, m_fid);
 					fwrite((void*)&pak->thread, 2, 1, m_fid);
 					fwrite((void*)&pak->size, 4, 1, m_fid);
 					fwrite((void*)&pak->rxtime, 8, 1, m_fid);
@@ -138,7 +138,7 @@ public:
 				}
 				else if(pak->packet_type == MESSAGE || pak->packet_type == SEND){
 					fwrite((void*)&pak->magic, 4, 1, m_fid); //fwrite is atomic in POSIX systems, still, sync
-					fwrite((void*)&pak->channel, 2, 1, m_fid);
+					fwrite((void*)&pak->radio, 2, 1, m_fid);
 					fwrite((void*)&pak->thread, 2, 1, m_fid);
 					fwrite((void*)&pak->size, 4, 1, m_fid);
 					fwrite((void*)&pak->rxtime, 8, 1, m_fid);
