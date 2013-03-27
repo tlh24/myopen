@@ -397,7 +397,8 @@ int main(int argn, char **argc){
 						pos += 20+siz;
 					}else if( u == 0x1eafbabe){
 					fread((void*)&u,4,1,in);
-					unsigned int siz = u & 0xffff;
+					//unsigned int siz = u & 0xffff;
+					unsigned int siz = u;
 					double rxtime = 0.0;
 					fread((void*)&rxtime,8,1,in); //rx time in seconds.
 					

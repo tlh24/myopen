@@ -49,7 +49,11 @@ public:
 		for(int j=0; j<32; j++){
 			m_pca[0][j] = 1.f/8.f; 
 			m_pca[1][j] = (j > 15 ? 1.f/8.f : -1.f/8.f); 
-			m_pcaScl[0] = m_pcaScl[1] = 1.f; 
+			
+		}
+		for(int j=0; j<2; j++){
+			m_pcaScl[j] = 1.f; 
+			m_aperture[j] = 0.0f;
 		}
 		//template defaults here
 		unsigned char tmplA[16]={21,37,82,140,193,228,240,235,219,198,178,162,152,146,140,135};
