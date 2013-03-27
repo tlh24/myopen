@@ -48,6 +48,9 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
                 setupFigure(obj);
             end
             
+            % Set default class to last class (typically No Movement)
+            obj.CurrentClass = obj.SignalClassifier.NumClasses;
+            
         end
         function setupFigure(obj)
             
@@ -186,18 +189,31 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
                 buttonId = 0;
             end
             
+            buttonJustPressed = obj.LastButton == 0;
+            buttonHeld = obj.ButtonDown > 15;
+            
             % change target Class
-            if ((buttonId == 2) || (buttonId == 8)) && (obj.LastButton == 0)
+            if ismember(buttonId,[2 8]) && ...
+                    (buttonJustPressed || buttonHeld)
                 % move to next class, redraw, done
-                obj.CurrentClass = max(min(obj.CurrentClass+1,obj.SignalClassifier.NumClasses),1);
+                obj.CurrentClass = obj.CurrentClass+1;
+                if obj.CurrentClass > obj.SignalClassifier.NumClasses
+                    % wrap to bottom
+                    obj.CurrentClass = 1;
+                end
                 obj.LastButton = buttonId;
                 doTrain = false;
                 doAddData = false;
                 return
             end
-            if ((buttonId == 4) || (buttonId == 6)) && (obj.LastButton == 0)
+            if ismember(buttonId,[4 6]) && ...
+                    (buttonJustPressed || buttonHeld)
                 % move to previous class, redraw, done
-                obj.CurrentClass = max(min(obj.CurrentClass-1,obj.SignalClassifier.NumClasses),1);
+                obj.CurrentClass = obj.CurrentClass-1;
+                if obj.CurrentClass < 1
+                    % wrap to top
+                    obj.CurrentClass = obj.SignalClassifier.NumClasses;
+                end
                 obj.LastButton = buttonId;
                 doTrain = false;
                 doAddData = false;
@@ -213,13 +229,13 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
                 return
             end
             
-            trainingButtonPressed = (buttonId == 3);
-            if trainingButtonPressed
+            if buttonId > 0
                 obj.ButtonDown = obj.ButtonDown + 1;
             else
                 obj.ButtonDown = 0;
             end
             
+            trainingButtonPressed = (buttonId == 3);
             trainingButtonReleased = (buttonId == 0) && (obj.LastButton == 3);
             trainingButtonHeld = (obj.ButtonDown > obj.RetrainCounts);
             obj.LastButton = buttonId;
@@ -228,7 +244,8 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
             doAddData = trainingButtonPressed;
             
             % Train if button released or held too long
-            if (trainingButtonReleased || trainingButtonHeld)
+            if trainingButtonReleased || ...
+                    (trainingButtonPressed && trainingButtonHeld)
                 doTrain = true;
                 obj.ButtonDown = 0; %reset counter
             else

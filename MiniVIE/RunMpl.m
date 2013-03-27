@@ -76,8 +76,9 @@ NumSamplesPerWindow = 200;
 fprintf('Setting Window Size to: %d\n',NumSamplesPerWindow);
 h.NumSamplesPerWindow = NumSamplesPerWindow;
 
-obj.TrainingData = PatternRecognition.TrainingData();
-ok = obj.TrainingData.loadTrainingData();
+%obj.TrainingData = PatternRecognition.TrainingData();
+obj.TrainingData = TrainingDataAnalysis();
+ok = obj.TrainingData.loadTrainingData([]);
 if ~ok
     obj.TrainingData.initialize(obj.SignalSource.NumChannels,h.NumSamplesPerWindow);
 end

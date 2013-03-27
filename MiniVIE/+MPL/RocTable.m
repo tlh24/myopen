@@ -61,19 +61,19 @@ classdef RocTable < handle
             
             basePosition(mce.THUMB_DIP) = 0.1;
             pos1 = basePosition;
-            pos1(:,[mce.THUMB_CMC_AD_AB]) = 1.55;
+            pos1(:,[mce.THUMB_CMC_AD_AB]) = 1.25;
             pos1([mce.INDEX_MCP mce.INDEX_PIP mce.INDEX_DIP]) = 0.4;
-            pos1([mce.MIDDLE_MCP mce.MIDDLE_PIP mce.MIDDLE_DIP]) = 0.60;
+            pos1([mce.MIDDLE_MCP mce.MIDDLE_PIP mce.MIDDLE_DIP]) = 0.4;
             pos1([mce.RING_MCP mce.RING_PIP mce.RING_DIP]) = -0.4;
             pos1([mce.LITTLE_MCP mce.LITTLE_PIP mce.LITTLE_DIP]) = -0.4;
             pos2 = pos1;
 
             pos3 = pos1;
-            pos3([mce.INDEX_MCP mce.INDEX_PIP mce.INDEX_DIP]) = 0.8;
-            pos3([mce.MIDDLE_MCP mce.MIDDLE_PIP mce.MIDDLE_DIP]) = 0.9;
+            pos3([mce.INDEX_MCP mce.INDEX_PIP mce.INDEX_DIP]) = 0.95;
+            pos3([mce.MIDDLE_MCP mce.MIDDLE_PIP mce.MIDDLE_DIP]) = 0.8;
 
-            pos3([mce.THUMB_MCP]) = 0.65;
-            pos3([mce.THUMB_CMC]) = 0.85;
+            pos3([mce.THUMB_MCP]) = 0.55;
+            pos3([mce.THUMB_CMC]) = 0.75;
             pos4 = pos3;
             roc(2).angles = [...
                 basePosition;...
@@ -135,23 +135,25 @@ classdef RocTable < handle
                 0.0000,0.0000,0.0000,0.0000,0.0000,1.3090,1.4486,1.1694,0.0000,1.3963,1.5533,1.2392,0.0000,1.3963,1.5533,1.2392,1.9199,0.5236,0.8727,0.3491;...
                 0.0000,1.3963,1.5533,1.2392,0.0000,1.3090,1.4486,1.1694,0.0000,1.3963,1.5533,1.2392,0.0000,1.3963,1.5533,1.2392,1.9199,0.5236,0.8727,0.3491;...
                 ];
+            roc(7).angles(5,[mce.INDEX_MCP mce.INDEX_PIP mce.INDEX_DIP]) = 0.1;
             
             roc(8).id = 7;
             roc(8).name = 'Spherical';
             roc(8).waypoint = [0 0.3 0.4 1];
             roc(8).joints = [8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27];
             pos0 = basePosition;
-            pos0([mce.LITTLE_MCP mce.LITTLE_PIP mce.LITTLE_DIP]) = 0.4;
+            pos0([mce.LITTLE_MCP mce.LITTLE_PIP mce.LITTLE_DIP]) = 0.0;
+            pos0([mce.MIDDLE_MCP mce.MIDDLE_PIP mce.MIDDLE_DIP]) = 0.0;
             pos1 = [0.0000,0.2618,0.2967,0.2269,0.0000,0.2618,0.2967,0.2269,0.3491,0.2618,0.2967,0.2269,0.3491,0.2618,0.2967,0.2269,1.9199,0.0000,0.2618,-0.3491];
             %pos1([mce.MIDDLE_MCP mce.MIDDLE_PIP mce.MIDDLE_DIP]) = 0.0;
             pos1([mce.LITTLE_MCP mce.LITTLE_PIP mce.LITTLE_DIP]) = 0.5;
             %pos1([mce.THUMB_CMC_AD_AB]) = 1.9;
-            pos1([mce.THUMB_CMC_AD_AB]) = 1.4;
+            pos1([mce.THUMB_CMC_AD_AB]) = 0.95;
             pos2 = pos1;
             pos3 = [0.0000,0.9599,1.0647,0.8552,0.0000,0.7854,0.8727,0.6981,0.3491,0.8727,0.9774,0.7679,0.3491,1.0472,0.8694,0.6250,1.9199,0.5236,0.8727,-0.3491];
             pos3([mce.MIDDLE_MCP mce.MIDDLE_PIP mce.MIDDLE_DIP]) = 1.2;
             pos3([mce.RING_MCP mce.RING_PIP mce.RING_DIP]) = 1.1;
-            %pos3([mce.THUMB_CMC_AD_AB]) = 1.7;
+            pos3([mce.THUMB_CMC_AD_AB]) = 0.95;
             roc(8).angles = [...
                 pos0;...
                 pos1;...
@@ -198,26 +200,41 @@ classdef RocTable < handle
             roc(13).name = 'Little Only';
             roc(13).waypoint = [0 1];
             roc(13).joints = [8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27];
-            roc(13).angles = repmat(basePosition,length(roc(12).waypoint),1);
+            roc(13).angles = repmat(basePosition,length(roc(13).waypoint),1);
             roc(13).angles(1,mce.LITTLE_MCP) = 0;
             roc(13).angles(2,mce.LITTLE_MCP) = 1;
             
             % 13
-            
-            roc(14).id = 14;
-            roc(14).name = 'Ring Middle';
+            roc(14).id = 13;
+            roc(14).name = 'Thumb Only';
             roc(14).waypoint = [0 1];
             roc(14).joints = [8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27];
             roc(14).angles = repmat(basePosition,length(roc(14).waypoint),1);
-            roc(14).angles(1,mce.MIDDLE_MCP) = 0;
-            roc(14).angles(1,mce.RING_MCP) = 0;
-            roc(14).angles(2,mce.MIDDLE_MCP) = 1.6;
-            roc(14).angles(2,mce.RING_MCP) = 1.6;
+            roc(14).angles(1,mce.THUMB_CMC_AD_AB) = 0;
+            roc(14).angles(2,mce.THUMB_CMC_AD_AB) = 1;
+            roc(14).angles(1,mce.THUMB_CMC) = 0;
+            roc(14).angles(2,mce.THUMB_CMC) = 1;
+            roc(14).angles(1,mce.THUMB_MCP) = 0;
+            roc(14).angles(2,mce.THUMB_MCP) = 1;
+            roc(14).angles(1,mce.THUMB_DIP) = 0;
+            roc(14).angles(2,mce.THUMB_DIP) = 1;
+            
+            roc(15).id = 14;
+            roc(15).name = 'Ring Middle';
+            roc(15).waypoint = [0 1];
+            roc(15).joints = [8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27];
+            roc(15).angles = repmat(basePosition,length(roc(15).waypoint),1);
+            roc(15).angles(1,mce.MIDDLE_MCP) = 0;
+            roc(15).angles(1,mce.RING_MCP) = 0;
+            roc(15).angles(2,mce.MIDDLE_MCP) = 1.6;
+            roc(15).angles(2,mce.RING_MCP) = 1.6;
             
             if ~isempty(fname)
                 MPL.RocTable.writeRocTable(fname,roc);
             end
-            
+            % To reload 
+            % obj.Presentation.hNfu.readRocTable
+
         end
         function writeRocTable(xmlFileName,structRocTables)
             % Create XML Roc table document based on the given filename.  Loop through

@@ -1,6 +1,16 @@
 classdef PnetClass < handle
     %PnetClass Class for interfacing pnet tcp-ip-udp library
     %   Wrapper for pnet udp functions
+    %
+    % Handles some of the non-intuitive cases with pnet to prevent timeouts
+    % and also to read down a fast filling buffer without delay
+    % 
+    % Usage:
+    %   obj = PnetClass(localPort,remotePort,remoteIP);         % create object
+    %   [success, msg] = initialize(obj);                       % open local port
+    %   [dataBytes, numReads] = getData(obj);                   % read down buffer and return only the latest packet
+    %
+    % 27-Feb-2013 Armiger: Created
     
     properties
         localPort = 45000;      %Port that originates data and also receives from another system
@@ -29,6 +39,8 @@ classdef PnetClass < handle
             
         end
         function [success, msg] = initialize(obj)
+            % [success, msg] = initialize(obj)
+            % Open udp port using pnet with no read delay
             
             msg = '';
             success = false;
@@ -88,8 +100,8 @@ classdef PnetClass < handle
             end
         end %getData
         function [cellDataBytes, numReads] = getAllData(obj,maxReads)
-            % [dataBytes, numReads] = getData(obj)
-            % read down buffer and return only the latest packet
+            % [cellDataBytes, numReads] = getAllData(obj,maxReads)
+            % read down buffer and return all packets as cell array
             
             assert(~isempty(obj.hSocket),'[%s] PnetClass not initialized\n');
             

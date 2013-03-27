@@ -21,8 +21,9 @@ classdef TrainingData < handle
     %
     % 2012May14 Armiger: Created
     
-    properties
-        Verbose = 1;  % enables print statements
+    properties (Transient)
+        Verbose = 1;            % enables print statements
+        SaveInOldFormat = 0;    % save mat file as struct
     end
     properties (SetAccess = private)
         SampleCount = 0;
@@ -96,13 +97,13 @@ classdef TrainingData < handle
                 obj.SampleCount,length(obj.ClassLabelId));
             
             classLabels = obj.ClassLabelId(1:obj.SampleCount);
-
+            
             assert(~any(isnan(classLabels)),'Error getting class labels. NaNs found in classLabels');
             
             assert(obj.SampleCount <= length(obj.EnableLabel),...
                 'Error getting class labels.  Sample Count [%d] is greater than enable labels [%d]',...
                 obj.SampleCount,length(obj.EnableLabel));
-
+            
             isEnabled = obj.EnableLabel(1:obj.SampleCount);
             
             classLabels = classLabels(isEnabled);
@@ -176,11 +177,12 @@ classdef TrainingData < handle
             end
             
             [windowSize] = size(obj.SignalDataRaw,2);
-            [numSamples] = size(obj.SignalDataRaw,3);
+            %[numSamples] = size(obj.SignalDataRaw,3);
+            [numSamples] = obj.SampleCount;
             
             dataBreaks = windowSize:windowSize:numSamples*windowSize;
             
-            signalData = reshape(obj.SignalDataRaw(channels,:,:),length(channels),[])';
+            signalData = reshape(obj.SignalDataRaw(channels,:,1:numSamples),length(channels),[])';
             
         end
         function signalData = getRawSignals(obj)
@@ -243,7 +245,7 @@ classdef TrainingData < handle
         end
         function initialize(obj,numChannels,numSamplesPerWindow)
             % initialize(obj,numChannels,numSamplesPerWindow)
-            % 
+            %
             fprintf('[%s] Initializing Training Data Object\n',mfilename);
             
             obj.MaxChannels = numChannels;
@@ -520,7 +522,8 @@ classdef TrainingData < handle
         end
         function success = saveTrainingData(obj,fullFilename)
             % Save Training Data
-            % save(fullFilename,'features3D','classLabelId','classNames','featureNames','activeChannels','signalData','sampleRateHz');
+            % save(fullFilename,'features3D','classLabelId','classNames','featureNames',...
+            %    'activeChannels','signalData','sampleRateHz','enableLabel');
             
             if nargin < 2
                 fullFilename = UiTools.ui_select_data_file('.trainingData');
@@ -641,5 +644,60 @@ classdef TrainingData < handle
                 warning('TrainingInterface:RawSignalData','Failed to record Raw Signal Data: "%s"',ME.message);
             end
         end %addTrainingData
+        
+        function obj = saveobj(obj)
+            disp('Calling saveobj method');
+            % If set to true, save as a struct
+            if obj.SaveInOldFormat
+                % save(fullFilename,'features3D','classLabelId','classNames','featureNames',...
+                %    'activeChannels','signalData','sampleRateHz','enableLabel');
+                s.sampleRateHz = obj.SampleRate;
+                s.activeChannels = obj.ActiveChannels;
+                s.classNames = obj.ClassNames;
+                s.featureNames = obj.FeatureNames;
+
+                % Get Data.  Note we are getting the properties directly rather
+                % than the public get methods so that we can see all the data,
+                % enabled or not
+                s.signalData = obj.SignalDataRaw(:,:,1:obj.SampleCount);
+                s.features3D = obj.SignalFeatures3D(:,:,1:obj.SampleCount);
+                s.classLabelId = obj.ClassLabelId(1:obj.SampleCount);
+                s.enableLabel = obj.EnableLabel(1:obj.SampleCount);
+
+                s.sampleCount = obj.SampleCount;
+                s.maxChannels = obj.MaxChannels;
+                s.windowSize = obj.WindowSize;
+                
+                obj = s;
+            else
+                % TODO: Don't save allocated memory (padded zeros)
+            end
+        end
+        
     end %methods
+    methods (Static)
+        function obj = loadobj(obj)
+            disp('Calling loadobj method');
+            if isstruct(obj)
+                % Call default constructor
+                newObj = PatternRecognition.TrainingData;
+                % Assign property values from struct
+                newObj.SampleRate = obj.sampleRateHz;
+                newObj.ActiveChannels = obj.activeChannels;
+                newObj.ClassNames = obj.ClassNames;
+                newObj.FeatureNames = obj.FeatureNames;
+
+                newObj.SignalDataRaw = obj.signalData;
+                newObj.SignalFeatures3D = obj.features3D;
+                newObj.ClassLabelId = obj.classLabelId;
+                newObj.EnableLabel = obj.enableLabel;
+
+                newObj.SampleCount = obj.SampleCount;
+                newObj.MaxChannels = obj.MaxChannels;
+                newObj.WindowSize = obj.WindowSize;
+
+                obj = newObj;
+            end
+        end
+    end
 end

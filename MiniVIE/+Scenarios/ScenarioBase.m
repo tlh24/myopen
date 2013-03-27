@@ -192,7 +192,7 @@ classdef ScenarioBase < Common.MiniVieObj
             % Process grasps
             %%%%%%%%%%%%%%%%%%%%%%%%
             graspGain = 0.02;
-            graspChangeThreshold = 0.5;  % Normalized [0 1]
+            graspChangeThreshold = 0.2;  % Normalized [0 1]
             graspName = className;
             lastGraspVelocity = obj.GraspVelocity;
             

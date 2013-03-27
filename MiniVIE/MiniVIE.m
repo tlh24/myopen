@@ -406,7 +406,8 @@ classdef MiniVIE < Common.MiniVieObj
                     h.NumSamplesPerWindow = NumSamplesPerWindow;
                     
                     if isempty(obj.TrainingData)
-                        obj.TrainingData = PatternRecognition.TrainingData();
+                        %obj.TrainingData = PatternRecognition.TrainingData();
+                        obj.TrainingData = TrainingDataAnalysis();
                         obj.TrainingData.initialize(...
                             obj.SignalSource.NumChannels,...
                             h.NumSamplesPerWindow);
