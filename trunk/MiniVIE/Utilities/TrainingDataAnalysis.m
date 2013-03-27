@@ -25,7 +25,9 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
             % Usage:
             % plot_emg_unfiltered(obj,channels);
             
-            if nargin < 2, channels = 1:8; end
+            if nargin < 2
+                channels = obj.ActiveChannels;
+            end
             
             chEmg = obj.getContinuousData(channels);
             
@@ -54,10 +56,13 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
             end
             
         end
-        function d = plot_emg_filtered(obj,channels)
+        function plot_emg_filtered(obj,channels)
             % Plot all the emg data in the training file - filtered
             %
-            if nargin < 2, channels = 1:8; end
+
+            if nargin < 2
+                channels = obj.ActiveChannels;
+            end
 
             chEmg = obj.getContinuousData(channels);
             chEmg = TrainingDataAnalysis.filter_data(chEmg);
@@ -95,7 +100,7 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
             % TrainingDataAnalysis.plot_emg_per_class('WR_TR01_*.dat');
             
             if nargin < 2
-                channels = 1:8;
+                channels = obj.ActiveChannels;
             end
             
             % get all the data and filter it
@@ -133,18 +138,21 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
 %                 end
                 hLines = plot(classEmg);
                 
-                for iLine = 1:length(hLines)
-                    set(hLines(iLine),'Color',c(iLine,:));
+                for iLine = 1:length(channels)
+                    rgb = c(channels(iLine),:);
+                    set(hLines(iLine),'Color',rgb,...
+                        'LineWidth',1);
                 end
                 w = obj.WindowSize;
                 xBreaks = w:w:sum(iClass == classLabels)*w;
                 xBreaks = [xBreaks; xBreaks; nan(size(xBreaks))];
                 yBreaks = repmat([-10; 10; NaN],1,size(xBreaks,2));
-                plot(xBreaks(:),yBreaks(:),'k-');
+                %plot(xBreaks(:),yBreaks(:),'k-');
                 
                 %%
-                set(hLines,'Visible','off');
-                set(hLines(ch),'Visible','on');
+%                 set(hLines,'Visible','off');
+%                 set(hLines(ch),'Visible','on');
+                %set(hLines([1 7]),'Visible','off');
                 %     xlim([0 size(emgData,2)]);
                 ylim([-2 2]);
                 %ylim([-1 9])

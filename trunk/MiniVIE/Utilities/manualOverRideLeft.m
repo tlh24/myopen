@@ -12,6 +12,7 @@ function [shoulderAngles,e,w,rocValue,rocId] = ...
 
 % w(1) = -w(1); % flip wrist rot direction
 w(2) = -w(2); % flip dev direction
+% w(3) = -w(3); % flip fe direction
 
 % Elbow
 % e = 55*pi/180;  % elbow
@@ -26,9 +27,9 @@ elseif e < elbowLimitsRadians(1)
     disp('Lower Elbow limit');
 end
 % disp(e);
-% w(1) = -90*pi/180;  % rotation
+% w(1) = 45*pi/180;  % rotation
 % w(2) = 0.0;   % dev
-% w(3) = -0.055;  % fe
+% w(3) = 0.4;  % fe
 
 % Lock Shoulder
 % shoulderAngles(1) = 0*pi/180;

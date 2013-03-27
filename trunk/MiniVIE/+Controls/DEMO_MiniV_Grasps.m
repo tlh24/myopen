@@ -4,7 +4,7 @@ hMiniV.redraw
 
 %%
 pctGrasp = 1.0;
-[enumGrasp strGrasps] = enumeration('Controls.GraspTypes');
+[enumGrasp, strGrasps] = enumeration('Controls.GraspTypes');
 id = enumGrasp(1);
 handAngles = Controls.graspInterpolation(pctGrasp, id);
 
