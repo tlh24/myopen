@@ -292,7 +292,7 @@ int main(int argn, char **argc){
 						unsigned int tid = 0;
 						
 						fread((void*)&radioChannel,2,1,in); //radio channel 2byte integer
-						fread((void*)&tid,2,1,in); //tid 2byte integer
+						fread((void*)&tid,2,1,in); //threadID 2byte integer
 
 						fread((void*)&u,4,1,in);
 						unsigned int siz = u;
@@ -325,7 +325,7 @@ int main(int argn, char **argc){
 										char samp = p.data[j*4+k];
 										analog[tp*24+j*4+k] = samp;
 										if(j == 0)
-											channel[tp*4+k] = chans[k];
+											channel[tp*4+k] = chans[k] + (128*tid);
 									}
 								}
 								for(int j=0; j<32; j++){
