@@ -32,7 +32,7 @@ public:
 		radio = rchan;
 		thread = tid;
 		
-		if( size <= 1024+128+4){
+		if( sz <= 1024+128+4){
 			memcpy(buffer, buf, sz);
 			size = sz;
 			rxtime = time;
@@ -58,10 +58,6 @@ public:
 		else if ( word == 0xc0edfad0){
 			magic = word;
 			packet_type = SEND;
-			}
-		else {
-			magic = 0xfa11c0d3;
-			packet_type = NONE;
 			}
 	}
 	
@@ -124,29 +120,20 @@ public:
 					fwrite((void*)&pak->size, 4, 1, m_fid);
 					fwrite((void*)&pak->rxtime, 8, 1, m_fid);
 					
-					fwrite((void*)pak->buffer, pak->size, 1, m_fid); //write ALL the buffer
+					fwrite((void*)pak->buffer, 1, pak->size, m_fid); //write ALL the buffer
 				}
-				else if(pak->packet_type == DATA){
-					//not sure if I can do fwrite(&m_d[m_r & WFBUFMASK], 24, 1, m_fid), then write the buffer to the appropriate size....
+				else if(pak->packet_type == DATA || pak->packet_type == MESSAGE || pak->packet_type == SEND){
 					fwrite((void*)&pak->magic, 4, 1, m_fid); //fwrite is atomic in POSIX systems, still, sync
 					fwrite((void*)&pak->radio, 2, 1, m_fid);
 					fwrite((void*)&pak->thread, 2, 1, m_fid);
 					fwrite((void*)&pak->size, 4, 1, m_fid);
 					fwrite((void*)&pak->rxtime, 8, 1, m_fid);
 					
-					fwrite((void*)pak->buffer, pak->size, 1, m_fid); //write ALL the buffer
+					fwrite((void*)pak->buffer, 1, pak->size, m_fid); //write ALL the buffer
 				}
-				else if(pak->packet_type == MESSAGE || pak->packet_type == SEND){
-					fwrite((void*)&pak->magic, 4, 1, m_fid); //fwrite is atomic in POSIX systems, still, sync
-					fwrite((void*)&pak->radio, 2, 1, m_fid);
-					fwrite((void*)&pak->thread, 2, 1, m_fid);
-					fwrite((void*)&pak->size, 4, 1, m_fid);
-					fwrite((void*)&pak->rxtime, 8, 1, m_fid);
-					
-					fwrite((void*)pak->buffer, pak->size, 1, m_fid); //write ALL the buffer
+				else{
+					//printf("unknown packet type\n");
 				}
-				else if(pak->packet_type == NONE){
-					fwrite((void*)&pak->magic, 4, 1, m_fid);}
 				
 			}
 			return 1; 
