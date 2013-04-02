@@ -16,30 +16,44 @@ end
 
 nbytes = bird.nbytes_point;  
 
+% empty buffer
+numAvailable = bird_port.BytesAvailable;
+if numAvailable > 0
+    junk = fread(bird_port,numAvailable,'uint8');
+end
 
 % request data to be sent 
 fprintf(bird_port,'B'); % Point command
 
-% wait until bytes are availabe
-%while (get(bird_port,'BytesAvailable')<nbytes)
-%end
-timeout = 0.2;
-tic
-success = false;
-while toc < timeout
-    bytes_avail = get(bird_port,'BytesAvailable');
-    if bytes_avail >= nbytes;
-        success = true;
-        break
-    end
-end
+% read with intrinsic serial timeout
+[bird_bytes, numRead] = fread(bird_port,nbytes,'uint8');
 
-if ~success
+if ~isequal(numRead,nbytes)
+    fprintf('[%s] Failed to read expected bytes. Expected = %d; Read = %d\n',...
+        mfilename, nbytes, numRead);
     bird_bytes = [];
     return
 end
 
-
-% read binary data
-bird_bytes = fread(bird_port,bird_port.BytesAvailable,'uint8');
-
+% wait until bytes are availabe
+% %while (get(bird_port,'BytesAvailable')<nbytes)
+% %end
+% timeout = 0.2;
+% tic
+% success = false;
+% while toc < timeout
+%     bytes_avail = get(bird_port,'BytesAvailable');
+%     if bytes_avail >= nbytes;
+%         success = true;
+%         break
+%     end
+% end
+% 
+% if ~success
+%     bird_bytes = [];
+%     return
+% end
+% 
+% 
+% % read binary data
+% bird_bytes = fread(bird_port,bird_port.BytesAvailable,'uint8');

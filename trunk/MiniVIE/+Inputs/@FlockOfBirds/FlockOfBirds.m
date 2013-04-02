@@ -1,21 +1,41 @@
 classdef FlockOfBirds < handle
     %FLOCKOFBIRD Class based on bird_io_in_matlab interface for the
     %Ascension Flock Of Birds System
-    %   Detailed explanation goes here
+    %   Class for interfacing Flock of Birds System.  This uses the
+    %   bird_io_in_matlab functions for basic communications.  A single
+    %   serial port interface to the bird master is used.
+    %
+    %   See: obj = Inputs.FlockOfBirds.Demo;
+    %
+    %   Usage:
+    %     obj = Inputs.FlockOfBirds;
+    %     obj.initialize('COM1');
+    %     [pos, ang] = obj.getBirdGroup;
+    %
     %   Armiger 3/5/2012: Created
     
     properties
-        Bird
+        Bird % handle to flock of birds object
+        
+        NumSensors = 3;
+        IsSimulator = false; %Controls whether real data or random output is returned (debugging)
     end
     
     methods
         function obj = FlockOfBirds
         end
-        function initialize(obj)
+        function initialize(obj,strComPort)
             
-            bird.nbird = 3;   % number of birds in flock (can be set to one)
-            bird_setting_default
-            
+            bird.nbird = obj.NumSensors;   % number of birds in flock (can be set to one)
+
+            bird_setting_default; % holds default bird settings
+
+            if nargin < 2
+                bird.com_port = 'COM1';
+            else
+                bird.com_port = strComPort;
+            end
+
             bird = bird_setup(bird);          % setups up serial port and bird settings (bird.bird_port is the serial port object which is returned)
             
             obj.Bird = bird;
@@ -34,6 +54,13 @@ classdef FlockOfBirds < handle
         
         function [pos, ang] = getBirdGroup(obj)
             
+            if obj.IsSimulator
+                pos = rand(3,obj.NumSensors);
+                ang = rand(3,obj.NumSensors);
+                %ang = makehgtform('xrotate',rand,'yrotate',rand,'zrotate',rand);
+                return
+            end
+            
             bird = obj.Bird;
             
             [bird_bytes] = bird_group_bytes(bird);   % will read position of all birds in flock
@@ -50,26 +77,123 @@ classdef FlockOfBirds < handle
                 return
             end
         end
+        
+        function F = getframes(obj)
+            %F = getframes(obj)
+            % returns 4x4xobj.NumSensors frame transforms for Flock of
+            % Birds
+            
+            [pos, ang] = getBirdGroup(obj);
+            
+            if isempty(pos)
+                F = [];
+                return
+            end
+            
+            F = repmat(eye(4),[1 1 obj.NumSensors]);
+            for i = 1:obj.NumSensors
+%                 [R] = birdR(ang(i,:));
+%                 F(1:3,1:3,i) = R;
+%                 F(1:3,4,i) = pos(i,:);
+                
+                F(:,:,i) = makehgtform('translate',pos(i,:),...
+                    'zrotate',ang(i,3),...
+                    'yrotate',ang(i,2),...
+                    'xrotate',ang(i,1));
+            end
+            
+        end
+        
+        function preview(obj)
+            
+            F_ERT = eye(4);%obj.F_WCS_TRNS;
+            
+            tmr = timer;
+            set(tmr,'Period',0.15); %% seconds
+            set(tmr,'TimerFcn',@cb_plot_data);
+            set(tmr,'ExecutionMode','fixedRate');
+            
+            % Setup plots
+            hTriad = setup_plot(obj.NumSensors,F_ERT);
+            fprintf('[%s] Starting Preview...\n',mfilename);
+            start(tmr);
+            
+            function cb_plot_data(src,evt) %#ok<INUSD>
+                drawnow
+                
+                F_GCS_RB = obj.getframes();
+                
+                if isempty(F_GCS_RB)
+                    return
+                end
+                
+                if all(ishandle(hTriad))
+                    for iSensor = 1:obj.NumSensors
+                        %f_update_triad(F_GCS_RB(:,:,iSensor),hTriad(iSensor));
+                        set(hTriad(iSensor),'Matrix',F_GCS_RB(:,:,iSensor));
+                    end
+                else
+                    fprintf('[%s] Preview Stopped.\n',mfilename);
+                    stop(src);
+                    delete(src);
+                end
+            end %% plot_data
+            
+        end %% preview
+        
     end
     methods (Static = true)
-        function Demo
+        function obj = Demo
             % Requires MiniVIE Utilities
             obj = Inputs.FlockOfBirds;
+            obj.NumSensors = 2;
             obj.initialize;
-            hPlot = LivePlot(9,100);
-            StartStopForm([]);
-            while StartStopForm
-                [pos, ang] = obj.getBirdGroup;
-                if isempty(pos)
-                    continue;
-                end
-                hPlot.putdata(pos(:));
-                
-                for ibird=1:obj.Bird.nbird
-                    fprintf('Bird %i\t%+3.3f\t%+3.3f\t%+3.3f\t%+3.1f\t%+3.1f\t%+3.1f\n',ibird,pos(ibird,:),ang(ibird,:)*180/pi);
-                end
-                pause(0.05);
-            end
+            obj.preview;
+            %obj.IsSimulator = true;
+            
+%             hPlot = LivePlot(9,100);
+%             StartStopForm([]);
+%             while StartStopForm
+%                 [pos, ang] = obj.getBirdGroup;
+%                 if isempty(pos)
+%                     continue;
+%                 end
+%                 hPlot.putdata(pos(:));
+%                 
+%                 for i = 1:obj.NumSensors
+%                     fprintf('Bird %i\t%+3.3f\t%+3.3f\t%+3.3f\t%+3.1f\t%+3.1f\t%+3.1f\n',i,pos(i,:),ang(i,:)*180/pi);
+%                 end
+%                 pause(0.05);
+%             end
         end
     end
 end
+
+function hTriad = setup_plot(nSensors,F_ERT)
+f = figure(9);
+%f_setWindowState(f,'maximize');
+clf(f)
+hold on
+hAxes = gca;
+hTriad = zeros(nSensors,1);
+for i = 1:nSensors
+    scale = 0.1;
+    % color = {'c-','m-','y-','k'}
+    % hTriad(i) = f_plot_triad(eye(4),scale,color{i});
+    %hTriad(i) = f_plot_triad(eye(4),scale);
+    hTriad(i) = PlotUtils.triad(eye(4),scale,hAxes);
+end
+
+PlotUtils.triad(eye(4),1.0);
+PlotUtils.triad(F_ERT,0.1);
+
+axis equal
+view(-75,20)
+set(gca,'Projection','perspective');
+
+xlabel('')
+ylabel('')
+zlabel('')
+
+drawnow
+end %% setup_plot

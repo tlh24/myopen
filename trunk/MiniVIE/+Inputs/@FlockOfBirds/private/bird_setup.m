@@ -58,7 +58,11 @@ bird_port = bird.bird_port;
 set(bird_port,'BaudRate',bird.baud_rate);
 set(bird_port,'RequestToSend','off');
 set(bird_port,'DataTerminalReady','on');
-set(bird.bird_port,'InputBufferSize',bird.InputBufferSize);
+set(bird_port,'InputBufferSize',bird.InputBufferSize);
+
+% Set timeout for serial read
+set(bird_port,'Timeout',0.5);
+
 fopen(bird_port);
 pause(.5)
 
