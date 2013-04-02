@@ -31,7 +31,7 @@ public:
 		
 		radio = rchan;
 		thread = tid;
-		
+		//printf("sz:%d\n", sz);
 		if( sz <= 1024+128+4){
 			memcpy(buffer, buf, sz);
 			size = sz;
@@ -64,16 +64,17 @@ public:
 };
 		
 	
-#define WFBUFSIZ (1024*512) //this is much larger than needed, but eh, insurance.
+#define WFBUFSIZ ((1024+128+4)*512) //this is much larger than needed, but eh, insurance.
 #define WFBUFMASK (WFBUFSIZ-1)
 
 class SpkWriter {
 
 private: 
 	std::atomic<bool> m_enable; 
-public:
 	std::atomic<long> m_w; //this is great!
-	long m_r; 
+public:
+	long m_r;
+	long m_bytes;
 	spkpak m_d[WFBUFSIZ];
 	FILE* m_fid; 
 	
@@ -99,6 +100,7 @@ public:
 			fclose(m_fid);
 			m_enable = false; 
 			m_w = m_r = 0; 
+			m_bytes = 0;
 		}
 	}
 	
@@ -121,6 +123,8 @@ public:
 					fwrite((void*)&pak->rxtime, 8, 1, m_fid);
 					
 					fwrite((void*)pak->buffer, 1, pak->size, m_fid); //write ALL the buffer
+					
+					m_bytes += 16 + pak->size;
 				}
 				else if(pak->packet_type == DATA || pak->packet_type == MESSAGE || pak->packet_type == SEND){
 					fwrite((void*)&pak->magic, 4, 1, m_fid); //fwrite is atomic in POSIX systems, still, sync
@@ -130,6 +134,7 @@ public:
 					fwrite((void*)&pak->rxtime, 8, 1, m_fid);
 					
 					fwrite((void*)pak->buffer, 1, pak->size, m_fid); //write ALL the buffer
+					m_bytes +=  20 + pak->size;
 				}
 				else{
 					//printf("unknown packet type\n");
@@ -141,7 +146,8 @@ public:
 		return 0; 
 	}
 	long bytes(){
-		return m_r * sizeof(spkpak); 
+		//return m_r * sizeof(spkpak);
+		return m_bytes;
 	}
 	bool enable(){
 		return m_enable.load();
