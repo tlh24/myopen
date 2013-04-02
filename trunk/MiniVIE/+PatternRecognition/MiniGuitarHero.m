@@ -213,7 +213,8 @@ classdef MiniGuitarHero < Scenarios.OnlineRetrainer%PatternRecognition.AdaptiveT
             function update_signal_preview()
                 %obj.hg.AxesSignals
                 activeChannels = obj.SignalClassifier.getActiveChannels;
-                windowData = obj.SignalSource.getFilteredData();
+                n = obj.SignalClassifier.NumSamplesPerWindow;
+                windowData = obj.SignalSource.getFilteredData(n);
                 for i = 1:obj.SignalClassifier.NumActiveChannels
                     iChannel = activeChannels(i);
                     set(obj.hg.hPreviewLines(i),'YData',windowData(:,iChannel));

@@ -1,4 +1,4 @@
-function [hTransforms hPatches hTriads] = drawCyton(hAxes,patchData)
+function [hTransforms, hPatches, hTriads] = drawCyton(hAxes,patchData)
 % Function to setup a cyton virtual robot
 % hTransforms   = handles to the transformations
 % hPatches      = patch handles
