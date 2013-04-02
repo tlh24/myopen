@@ -11,7 +11,9 @@ ON=1; OFF=0;  % "CONSTANTS" (note: one must only use UPPER case when using ON or
 bird.com_port = 'COM1';
 bird.baud_rate = 115200;
 bird.InputBufferSize = 512*10;  % default is 512, 512*100 allows capture of 5000 single points in 167 seconds
-% bird.nbird = 3;   % number of birds in flock (can be set to one)
+if ~isfield(bird,'nbird')
+    bird.nbird = 3;   % number of birds in flock (can be set to one)
+end
 bird.stream_bunch = 20;  % number of records to read in a bunch during the stream mode
 bird.base_add = 240;  % base address from dip switches, set to start at 1
 bird.button_mode = OFF;  % button mode
