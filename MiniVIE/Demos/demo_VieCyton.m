@@ -27,7 +27,7 @@ while StartStopForm
         = getIntent(hSignalSource,hSignalClassifier);
 
     fprintf('Class=%2d; Vote=%2d; Class = %16s; S=%6.4f',...
-        classOut,voteDecision,className,prSpeed);
+        classDecision,voteDecision,className,prSpeed);
     fprintf('\tEND\n');
 
     % Map the EMG data to angle movements of the robot

@@ -472,6 +472,34 @@ classdef (Sealed) NfuUdp < handle
                         fprintf('[%s.m %s] Error parsing heartbeat.  Msg: %s \n',mfilename, datestr(now), ME.message);
                         
                     end
+                elseif (len == 34)
+                    % Store heartbeat message
+                    % typedef struct
+                    % {
+                    %      System_state_mode_type limb_state_mode; // should be 4 bytes
+                    %      Int32u number_of_cpchs_messages;
+                    % }Heartbeat_msg;
+                    %
+                    try
+                        newData = dataBytes;
+                        % offset zero based state with 1 based
+                        SW_STATE = typecast(newData(1:4),'uint32');
+                        strState = obj.nfuStates{SW_STATE+1};
+                        
+                        numMsgs = typecast(newData(5:8),'uint32');
+                        nfuStreaming = typecast(newData(9:16),'uint64');
+                        lcStreaming = typecast(newData(17:24),'uint64');
+                        cpchStreaming = typecast(newData(25:32),'uint64');
+                        busVoltageCounts = typecast(newData(33:34),'uint16');
+                        busVoltage = double(busVoltageCounts) ./ 149.0;
+                        
+                        fprintf('[%s.m %s] NFU: V = %6.2f State = "%s", CPC msgs = "%d", Streaming NFU = %d LC = %d CPCH = %d\n',...
+                            mfilename,datestr(now),busVoltage,strState,numMsgs,nfuStreaming,lcStreaming,cpchStreaming);
+                    catch ME
+                        disp(newData)
+                        fprintf('[%s.m %s] Error parsing heartbeat.  Msg: %s \n',mfilename, datestr(now), ME.message);
+                        
+                    end
                 elseif len > 0
                     %len
                     fprintf('[%s] Unexpected Packet Size: %d bytes\n',mfilename,len);
