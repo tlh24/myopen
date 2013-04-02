@@ -214,7 +214,7 @@ classdef CytonControls < hgsetget
             pTarget = pos(:);
             
             % get DH params:
-            [T_0_n a d] = CytonControls.getDHParams();
+            [T_0_n, a, d] = CytonControls.getDHParams();
             
             errorMag = 10;
             dt = 0.05;
