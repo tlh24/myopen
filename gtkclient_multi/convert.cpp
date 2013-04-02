@@ -158,19 +158,20 @@ int main(int argn, char **argc){
 					done = true;
 				}
 			else {
-				printf("magic number is 0x%x\n",u);
+				//printf("magic number is 0x%x\n",u);
 					if(u == 0xdecafbad){
 						fseeko(in, 4, SEEK_CUR); // don't use yet, radiochannel and id
 						fread((void*)&u,4,1,in);
 						//unsigned int siz = u & 0xffff; //not wrapping anymore
 						unsigned int siz = u;
-						unsigned int npak = (siz-4)/(4+32);
-						rxpackets += npak;
 						//read these in -- but don't use them.
 						double rxtime = 0.0;
 						unsigned int dropped = 0;
 						fread((void*)&rxtime,8,1,in); //rx time in seconds.
 						fread((void*)&dropped,4,1,in);
+						
+						unsigned int npak = (siz-4)/(4+32);
+						rxpackets += npak;
 						for(unsigned int i=0;i<npak; i++){
 							packet p;
 							fread((void*)&p,sizeof(p),1,in);
@@ -213,6 +214,7 @@ int main(int argn, char **argc){
 				}else {
 					printf("magic number seems off, is 0x%x, %lld bytes, %lld packets\n",
 						   u,pos,rxpackets);
+						   
 					exit(0);
 				}
 			
@@ -296,7 +298,6 @@ int main(int argn, char **argc){
 
 						fread((void*)&u,4,1,in);
 						unsigned int siz = u;
-						unsigned int npak = (siz-4)/(4+32);
 						//first 4 is for dropped packet count
 						//second 4 is for 4 byte bridge milisecond counter
 						//printf("npak %d siz %d\n",npak,siz);
@@ -304,7 +305,9 @@ int main(int argn, char **argc){
 						unsigned int dropped = 0;
 						fread((void*)&rxtime,8,1,in); //rx time in seconds.
 						fread((void*)&dropped,4,1,in);
-
+						
+						unsigned int npak = (siz-4)/(4+32);
+						
 						for(unsigned int i=0;i<npak; i++){
 							packet p;
 							fread((void*)&p,sizeof(p),1,in);
