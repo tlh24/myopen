@@ -1,5 +1,13 @@
 classdef CytonI < Presentation.CytonI.Robot
     % Virtual Cyton Robot System Class Definition
+    % 
+    % This class is the main object for the CytonI robot.  Additional
+    % helper classes exist:
+    % 	CytonPlant - maintain state machine and rate limits
+    %   CytonControls - Jacobian parameters and endpoint algorithms
+    %   CytonDisplay - Virtual rendering of robot
+    %   CytonSerial - Handles serial connection to physical robot
+    %   CytonScenarions - Collection of use-case scenarios
     %
     % Cyton VIE has an internal state which means that issuing commands
     % will take 'real-time' to conclude.
@@ -22,9 +30,9 @@ classdef CytonI < Presentation.CytonI.Robot
     % Get the endpoint / end effector frame:
     %   obj.T_0_EndEffector
     %
-    % run a demo via
-    %   CytonI.Demo
-    %
+    % Connecting real hardware:
+    %   obj.connectToHardware('COM1'); % PC
+    %   obj.connectToHardware('/dev/tty.PL2303-00001004'); % MAC
     %
     % The Display:
     %   hDisplay = obj.hDisplay;
@@ -41,8 +49,17 @@ classdef CytonI < Presentation.CytonI.Robot
     % The Control Module:
     %   hControls = obj.hControls;
     %
-    %   hControls.
+    %     % Get dh param constants
+    %     [~, a, d] = hControls.getDHParams();
+    % 
+    %     % Get Jacobian at the current position
+    %     J_ = hControls.symJacobianFull(a(6),d(2),d(3),d(4),d(5),d(6),q(1),q(2),q(3),q(4),q(5),q(6));
+    %   
+    %     % Goto endpoint position
+    %     hControls.goto([-100 200 300]);
     %
+    % run a demo via
+    %   CytonI.Demo
     %
     % Example with user interface for sliders:
     % 
@@ -61,6 +78,9 @@ classdef CytonI < Presentation.CytonI.Robot
     % to actual movement velocities in approximately real time.  If the
     % plant is 'off' then position updates will happen instantaneously
     %
+    % See Also:
+    %   CytonScenarios
+    % 
     % Revision History:
     % 2011Jan01 Armiger: Created
     % 2012Mar05 Armiger: Updated comments to reflect private plant properties
@@ -75,10 +95,10 @@ classdef CytonI < Presentation.CytonI.Robot
         hPlant = []; % handle to plant state model
         hDisplay = []; % handle to display model
         hControls = []; % handle to kinematics contoller
-        JointParameters = zeros(Presentation.CytonI.CytonI.NumDof,1);
     end
     properties (Dependent = true)
         T_0_EndEffector;
+        JointParameters;
     end
     properties (Constant = true)
         NumDof = 8;
@@ -179,7 +199,12 @@ classdef CytonI < Presentation.CytonI.Robot
         end
         
         function connectToHardware(obj,strComPort)
+            % Synchronize motions of the real Cyton to the Cyton VIE
             obj.hPlant.connectToHardware(strComPort);
+        end
+        function jointParameters = get.JointParameters(obj)
+            % return the joint parameters stored in the Plant object
+            jointParameters = obj.hPlant.CurrentPosition;
         end
         function setJointParameters(obj,jointParameters)
             % Function to set joint parameters

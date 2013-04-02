@@ -1,5 +1,8 @@
 classdef CytonSerial < handle
     % Class definition for controlling the Cyton I robot via serial port
+    %
+    % 2-Apr-2013 Armiger: deprecated old cyton_cmd and moved to parse_lynxterm_cmd which
+    %             handles single or multiple joint string commands using regexp
     properties
         strComPort = '/dev/tty.PL2303-00001004';  % default port
         
@@ -245,7 +248,7 @@ classdef CytonSerial < handle
             
         end
         function theta = cyton_serial_cmd2theta(cmd_str, oldTheta)
-            
+            error('Deprecated. See "parse_lynxterm_cmd"');
             %Routine to convert a command string to the robot into angles for each
             %joint.  Result can be sent to VIE to draw robot position.
             %Cmd_str must have form "#0 Pnnnn Snnnn #1 Pnnnn Snnnn ... #7 Pnnnn Snnnn"
@@ -277,6 +280,46 @@ classdef CytonSerial < handle
             %theta(8)=(a(23))*0.0016 % Gripper is 0 to 90
             
             %speed(1)=a(3); speed(2)=a(6); speed(3)=a(9);
+            
+        end
+        function theta = parse_lynxterm_cmd(cmd_str)
+            %Parse a lynxterm message in the format #[ID] P[PWM] S[SPEED].
+            %Returns the updated joint angles and nan otherwise
+            % Example string:
+            %   cmd_str = '#0 P1000 #6 P1200';
+            %   newTheta = CytonSerial.parse_lynxterm_cmd(cmd_str);
+            %   %update only new values
+            %   theta = hCyton.JointParameters;
+            %   theta(~isnan(newTheta)) = newTheta(~isnan(newTheta))
+            %
+            % 2-Apr-2013 Armiger: Created; First rev doesn't change speed
+            
+            %parse commanded joints:
+            theta = nan(1,8);
+            
+            % look for a single digit /d behind (?<=) '#'
+            jointIds = regexp(cmd_str,'(?<=#)\d','match');
+
+            % look for multiple digits /d* behind (?<=) 'P'
+            jointPositions = regexp(cmd_str,'(?<=P)\d*','match');
+
+            % look for multiple digits /d* behind (?<=) 'S'
+            jointSpeeds = regexp(cmd_str,'(?<=S)\d*','match');
+            
+            if ~isempty(jointSpeeds)
+                disp('Speeds not yet implemented')
+            end
+            
+            assert(length(jointIds) == length(jointPositions));
+            
+            idx = 1 + cellfun(@str2num,jointIds); % 0 based input to 1 based
+            jointAngles = cellfun(@str2num,jointPositions);
+            theta(idx) = jointAngles;
+            
+            % convert to radians:
+            % TODO: this should be on a per joint basis and should be
+            % updated for gripper position
+            theta = (theta - 1500) * pi / 1000;
             
         end
     end

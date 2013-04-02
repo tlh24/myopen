@@ -2,10 +2,14 @@ classdef CytonControls < hgsetget
     % Class for holding kinematics of Cyton and methods for endpoint
     % based control
     %
+    %     % Get dh param constants
+    %     [~, a, d] = hControls.getDHParams();
     % 
-    %     
+    %     % Get Jacobian at the current position
+    %     J_ = hControls.symJacobianFull(a(6),d(2),d(3),d(4),d(5),d(6),q(1),q(2),q(3),q(4),q(5),q(6));
     %   
-    %   hControls.goto([-100 200 300]);
+    %     % Goto endpoint position
+    %     hControls.goto([-100 200 300]);
     %
     % 
     % Log:
@@ -86,7 +90,7 @@ classdef CytonControls < hgsetget
             q = obj.hCyton.hPlant.CurrentPosition;
             
             % orients local coordinate system to D-H convention
-            [T_0_n a d]= CytonControls.getDHParams();
+            [T_0_n, a, d]= CytonControls.getDHParams();
             
             % law of cosines
             % LOC = @(r,l,theta) r*cos(theta) - sqrt(l.^2 - (r.^2 * sin(theta) .^2));
