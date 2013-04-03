@@ -274,8 +274,10 @@ classdef CpchSerial < Inputs.CpcHeadstage
             deDataNormalized = double(diffDataI16) / 512 * obj.GainDifferential;
             seDataNormalized = double(seDataU16) ./ 1024 * obj.GainSingleEnded;
             
-            % DEBUG: Send sequence data as last singel ended channel
-            seDataNormalized(end,:) = int16(validData(4,:));
+            % DEBUG: Send sequence data as last single ended channel
+            if ~isempty(seDataNormalized)
+                seDataNormalized(end,:) = int16(validData(4,:));
+            end
             
             % Log data
             try
