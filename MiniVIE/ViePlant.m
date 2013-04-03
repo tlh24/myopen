@@ -72,7 +72,8 @@ classdef ViePlant < hgsetget
         end
         
         function connectToHardware(obj,ipAddress,udpPort)
-            obj.hDevice.hSink = MPL.VulcanXSink(ipAddress,udpPort);
+            local = 56789;
+            obj.hDevice.hSink = PnetClass(local,udpPort,ipAddress);
             obj.hDevice.hMud = MPL.MudCommandEncoder();
         end
         
@@ -142,7 +143,7 @@ classdef ViePlant < hgsetget
                 % Send to vulcanX
                 msg = obj.hDevice.hMud.ArmPosVelHandRocGrasps(armJoints,...
                     zeros(1,7),1,obj.GraspId,graspValue,1);
-                obj.hDevice.hSink.putbytes(msg);
+                obj.hDevice.hSink.putData(msg);
             end
         end
     end

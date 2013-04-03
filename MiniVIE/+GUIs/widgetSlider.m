@@ -8,7 +8,7 @@ classdef widgetSlider < hgsetget
     % Example 1:
     %
     % close all, clear classes
-    % mySliderHandle = widgetSlider(gca);
+    % mySliderHandle = GUIs.widgetSlider(gca);
     % show_red = @(src,evt) fprintf(2,'%f\n',evt);
     % show_black = @(src,evt) fprintf(1,'%f\n',evt);
     % mySliderHandle.ButtonDownFcn = show_red;
@@ -152,6 +152,7 @@ function move(src,evt,action,obj) %#ok<INUSL>
         case 'down'
             obj.hFigure = gcbf;
 
+            disp('down')
             set(obj.hFigure,'WindowButtonMotionFcn',{@move,'motion',obj});
             set(obj.hFigure,'WindowButtonDownFcn',{@move,'down',obj});
             set(obj.hFigure,'WindowButtonUpFcn',{@move,'up',obj});

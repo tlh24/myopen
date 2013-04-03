@@ -35,9 +35,9 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
         % Compass heading when in home position
         msDegreesFromNorth = 0;
         
-        VulcanXAddress = '192.168.1.199'; %127.0.0.1
-        VulcanXDestinationPort = 9027; %9035
-        VulcanXLocalPort = 56000; %9035
+        UdpAddress = '192.168.1.199'; %127.0.0.1
+        UdpDestinationPort = 9027; %9035
+        UdpLocalPort = 56000; %9035
         
         %TactorIds = [3 4]
         TactorIds = [5 6 7];
@@ -78,9 +78,11 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
                 
             else
                 fprintf('[%s] Starting with NFU DISABLED\n',mfilename);
-                obj.hSink = MPL.VulcanXSink(...,
-                    obj.VulcanXAddress,obj.VulcanXDestinationPort,obj.VulcanXLocalPort);
+                obj.hSink = PnetClass(...,
+                    obj.UdpAddress,obj.UdpDestinationPort,obj.UdpLocalPort);
                 obj.hMud = MPL.MudCommandEncoder();
+                
+                obj.hSink.initialize();
                 
                 obj.localRoc = MPL.RocTable.createRocTables('test.xml');
                 
@@ -266,7 +268,7 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
                 handPos = interp1(roc.waypoint,roc.angles,obj.GraspValue);
                 % handPos = zeros(1,20);
                 msg = obj.hMud.AllJointsPosVelCmd([shoulderAngles e w],zeros(1,7),handPos,zeros(1,20));
-                obj.hSink.putbytes(msg);
+                obj.hSink.putData(msg);
             end
         end
     end
