@@ -14,9 +14,15 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
     end
     methods
         function [success, fullFile] = loadTrainingData(obj,fname)
-            % Ovreload load method to store filename for use in plotting /
+            % Overload load method to store filename for use in plotting /
             % analysis
-            [success, fullFile] = loadTrainingData@PatternRecognition.TrainingData(obj,fname);
+            
+            if nargin < 2
+                [success, fullFile] = loadTrainingData@PatternRecognition.TrainingData(obj);
+            else
+                [success, fullFile] = loadTrainingData@PatternRecognition.TrainingData(obj,fname);
+            end
+            
             obj.fullFileName = fullFile;
         end
         function plot_emg_unfiltered(obj,channels)
