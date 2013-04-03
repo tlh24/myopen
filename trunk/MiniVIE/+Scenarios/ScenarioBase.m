@@ -218,7 +218,7 @@ classdef ScenarioBase < Common.MiniVieObj
                     desiredGraspVelocity = 0;
                     % Auto-open
                     if obj.AutoOpenSpeed > 0
-                        desiredGraspVelocity = - prSpeed*graspGain*2;
+                        desiredGraspVelocity = -obj.AutoOpenSpeed;
                     end
                 otherwise
                     desiredGraspVelocity = 0;

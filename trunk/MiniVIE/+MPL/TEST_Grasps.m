@@ -1,5 +1,7 @@
 % Setup Devices
-hSink = MPL.VulcanXSink('127.0.0.1',9035);  % check port number against VulcanX config
+hSink = PnetClass(56789,9027,'127.0.0.1');  % check port number against VulcanX config
+hSink.initialize();
+
 hMud = MPL.MudCommandEncoder();
 %% Send manual commands
 graspId = 7;
@@ -10,15 +12,15 @@ w(1) = -4*5*pi/180; % Wrist Rotation
 w(2) = -1*5*pi/180; % Wrist Deviation
 w(3) = 1*5*pi/180; % Wrist Flexion
 msg = hMud.ArmPosVelHandRocGrasps([zeros(1,3) e w],zeros(1,7),1,graspId,graspVal,1);
-hSink.putbytes(msg);
+hSink.putData(msg);
 %% Test endpoint commands
 % +X Forward
 % +Y Up
 % +Z Right (Right Arm) (away from arm)
 tic
 while toc < 1
-    msg = hMud.EndpointVelocity6HandRocGrasps([0 0 .1],[0 0 0],1,graspId,graspVal,1);
-    hSink.putbytes(msg);
+    msg = hMud.EndpointVelocity6HandRocGrasps([0 0 -.1],[0 0.1 0],1,graspId,graspVal,1);
+    hSink.putData(msg);
 end
 
 %% Three move init to overcome wrist dev stiction
@@ -26,18 +28,18 @@ graspId = 1;
 graspVal = 0.2;
 elbow = 0;
 msg = hMud.ArmPosVelHandRocGrasps([zeros(1,3) elbow pi/2 pi/2 pi/2],zeros(1,7),1,graspId,graspVal,1);
-hSink.putbytes(msg);
+hSink.putData(msg);
 
 pause(0.7)
 
 msg = hMud.ArmPosVelHandRocGrasps([zeros(1,3) pi/8 pi/2 -pi/2 -pi/2],zeros(1,7),1,graspId,graspVal,1);
-hSink.putbytes(msg);
+hSink.putData(msg);
 
 pause(0.7)
 
 
 msg = hMud.ArmPosVelHandRocGrasps([zeros(1,3) elbow 0 0 0],zeros(1,7),1,graspId,graspVal,1);
-hSink.putbytes(msg);
+hSink.putData(msg);
 
 
 

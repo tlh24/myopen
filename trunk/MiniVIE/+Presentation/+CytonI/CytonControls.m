@@ -8,12 +8,11 @@ classdef CytonControls < hgsetget
     %     % Get Jacobian at the current position
     %     J_ = hControls.symJacobianFull(a(6),d(2),d(3),d(4),d(5),d(6),q(1),q(2),q(3),q(4),q(5),q(6));
     %   
-    %     % Goto endpoint position
-    %     hControls.goto([-100 200 300]);
-    %
-    % 
     % Log:
     %   06Feb2012 Armiger: Created
+    %   03Apr2013 Armiger: Added not about incomplete endpoint position and
+    %   orientation functions.  The user should come up with their own
+    %   inverse kinematics using the Jacobian solution provided
     properties
     end
     properties (Dependent = true)
@@ -128,6 +127,10 @@ classdef CytonControls < hgsetget
             end
         end
         function q = setEndEffectorPose(obj,T_Target)
+            % RSA: 4/3/2013 Disabled this beta functions.
+            % TODO: Add cases in which joint limits are reached
+            error('Incomplete');
+            
             if nargin < 2
                 T_Target = makehgtform('translate',[50 180 300],...
                     'xrotate',-1,'yrotate',0,'zrotate',0);
@@ -210,6 +213,12 @@ classdef CytonControls < hgsetget
         end
         
         function goto(obj,pos)
+            
+            % RSA: 4/3/2013 Disabled this beta functions.
+            % TODO: Add cases in which joint limits are reached
+            error('Incomplete');
+            
+            
             if nargin < 2
                 pos = [-70 200 310];
             end

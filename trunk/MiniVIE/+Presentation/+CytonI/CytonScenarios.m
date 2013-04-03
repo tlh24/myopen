@@ -182,5 +182,9 @@ classdef CytonScenarios
                 
             end
         end
+        function endpointVelocitySliders
+            %Presentation.CytonI.CytonEndpointGui()
+            Presentation.CytonI.CytonEndpointGui()
+        end
     end
 end

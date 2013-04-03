@@ -145,11 +145,11 @@ classdef PnetClass < handle
             % Either send bytes to the location stored as parameters, or
             % provide additional input arguments for destination
 
-            assert(~isempty(obj.hSocket),'[%s] PnetClass not initialized\n');
+            assert(~isempty(obj.hSocket),'[%s] PnetClass not initialized');
 
             status = pnet(obj.hSocket,'status');
             if ~isequal(status,6)
-                fpritnf('[%s] UDP Port %d not ready',mfilename,obj.localPort);
+                fprintf('[%s] UDP Port %d not ready',mfilename,obj.localPort);
             end
             
             if nargin < 3
