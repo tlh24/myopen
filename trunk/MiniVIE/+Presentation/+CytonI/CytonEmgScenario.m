@@ -147,6 +147,7 @@ classdef CytonEmgScenario < Scenarios.OnlineRetrainer
             
             %p.hSource = Inputs.CpchSerial('COM1');
             p.hSource = Inputs.SignalSimulator;
+            %p.hSource = Inputs.DaqHwDevice('mcc','0');
             
             p.ClassNames = {'Hand Close' 'Hand Open' 'Pronate' 'Supinate' 'Wrist Flex' 'Wrist Extend' 'Up' 'Down' 'No Movement'};
             
@@ -236,7 +237,7 @@ obj.SignalClassifier = h;
 %% Setup Presentation
 h = p.hPresentation;
 h.initialize(obj.SignalSource,obj.SignalClassifier,obj.TrainingData);
-h.Verbose = 1;
+h.Verbose = 0;
 h.update();
 
 start(h.Timer);

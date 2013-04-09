@@ -1,6 +1,12 @@
 classdef CytonScenarios
     % Collection of scenarios for using cyton robot
     % 
+    % Presentation.CytonI.CytonScenarios.jointControlSerial()
+    % Presentation.CytonI.CytonScenarios.jointControlJoystick()
+    % Presentation.CytonI.CytonScenarios.jointControlEmg()
+    % Presentation.CytonI.CytonScenarios.endpointVelocityJoystickBasic()
+    % Presentation.CytonI.CytonScenarios.endpointVelocityJoystick()
+    % Presentation.CytonI.CytonEndpointGui()
     %
     % Armiger 1-Apr-2013: Created
     methods (Static = true)
@@ -117,7 +123,72 @@ classdef CytonScenarios
             Presentation.CytonI.CytonEmgScenario.Run;
             
         end
-        function endpointVelocityJoystick
+        function hCyton = endpointVelocityJoystickBasic
+            %Presentation.CytonI.CytonScenarios.endpointVelocityJoystickBasic
+            % Demonstrate endpoint velocity control with Cyton
+            %
+            % Example scenario in which Cyton is controlled by a joystick
+            % in an endpoint velocity mode.
+            % Left Analog Stick moves in XY plane, right analog stick moves
+            % in Z direction.  Buttons change orientation
+            %
+            % Armiger 2-Apr-2013: Created
+            
+            % Setup Cyton
+            import Presentation.CytonI.*
+            hCyton = CytonI;
+
+            hCyton.hPlant.ApplyLimits = true;
+            
+            hCyton.setJointParameters([0 0.1 0 -0.2 0 0.1 0 0])
+            
+            StartStopForm([]);
+            hJoystick = JoyMexClass(0);
+            
+            while StartStopForm
+                drawnow;
+                
+                hJoystick.getdata();
+                
+                % create endpoint velocity command from joystick
+                vMove = [hJoystick.axisVal(2); -hJoystick.axisVal(1); -hJoystick.axisVal(3);];
+                deadband = abs(vMove) < 0.1;
+                vMove(deadband) = 0;
+                % orientation uses buttons
+                wMove = 0.01 * [
+                    hJoystick.buttonVal(1) - hJoystick.buttonVal(2);
+                    hJoystick.buttonVal(3) - hJoystick.buttonVal(4);
+                    hJoystick.buttonVal(5) - hJoystick.buttonVal(6);
+                    ];
+                vGripper = hJoystick.buttonVal(7) - hJoystick.buttonVal(8);
+                
+                
+                % Get current position
+                q = hCyton.JointParameters;
+                
+                % Compute Jacobian at current position
+                J = hCyton.hControls.numericJacobian(q);
+
+                % invert jacobian
+                pinvJ = pinv(J);
+                
+                % create a joint angle velocity command based on endpoint
+                % velocity commmand
+                q_dot = pinvJ * [vMove; wMove];
+                q_dot(8) = 0.01 * vGripper;
+                
+                q = q + q_dot;
+                
+                hCyton.setJointParameters(q);
+                
+                % display position
+                p = hCyton.T_0_EndEffector(1:3,4);
+                fprintf('[%s] End Effector Position: %6.2f %6.2f %6.2f \n',...
+                    mfilename, p)
+                
+            end
+        end
+        function hCyton = endpointVelocityJoystick
             %Presentation.CytonI.CytonScenarios.endpointVelocityJoystick
             % Demonstrate endpoint velocity control with Cyton
             %
@@ -153,24 +224,15 @@ classdef CytonScenarios
                     ];
                 vGripper = hJoystick.buttonVal(7) - hJoystick.buttonVal(8);
                 
+                q_dot = hCyton.hControls.computeVelocity([vMove(:); wMove(:)]);
                 
-                % Get current position
-                q = hCyton.JointParameters;
-                
-                % Get dh param constants
-                [~, a, d] = hCyton.hControls.getDHParams();
-                
-                % Get Jacobian at the current position
-                J_ = hCyton.hControls.symJacobianFull(a(6),d(2),d(3),d(4),d(5),d(6),q(1),q(2),q(3),q(4),q(5),q(6));
-
-                % invert jacobian
-                invJ_ = pinv(J_);
-                
-                % create a joint angle velocity command based on endpoint
-                % velocity commmand
-                q_dot = invJ_ * [vMove; wMove];
+                if isempty(q_dot)
+                    continue
+                end
+                q_dot = min(abs(q_dot),0.1) .* sign(q_dot);
                 q_dot(8) = 0.01 * vGripper;
                 
+                q = hCyton.JointParameters;
                 q = q + q_dot;
                 
                 hCyton.setJointParameters(q);
