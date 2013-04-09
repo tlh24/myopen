@@ -4,7 +4,7 @@ classdef CytonEndpointGui
     %
     % 03-Apr-2013 Armiger: Created
     methods (Static = true)
-        function Run
+        function hCyton = Run
             % output
             import Presentation.CytonI.*
             hCyton = CytonI;
@@ -72,27 +72,20 @@ classdef CytonEndpointGui
                 graspVal = max(min(1,graspVal + cmd(7)),0);
                 %fprintf('Command: %6.2f %6.2f %6.2f; %6.2f %6.2f %6.2f; Grasp = %6.2f\n',cmd(1:6),graspVal);
                 
-                vMove = 5*cmd(1:3);
+                vMove = nan(1,3);
+                wMove = nan(1,3);
+                vMove = 15*cmd(1:3);
                 wMove = cmd(4:6);
-                
                 
                 % Get current position
                 q = hCyton.JointParameters;
+
+                [q_dot, J]= hCyton.hControls.computeVelocity([vMove(:); wMove(:)]);
                 
-                % Get dh param constants
-                [~, a, d] = hCyton.hControls.getDHParams();
-                
-                % Get Jacobian at the current position
-                J_ = hCyton.hControls.symJacobianFull(a(6),d(2),d(3),d(4),d(5),d(6),q(1),q(2),q(3),q(4),q(5),q(6));
-                
-                % invert jacobian
-                invJ_ = pinv(J_);
-                
-                % create a joint angle velocity command based on endpoint
-                % velocity commmand
-                q_dot = invJ_ * [vMove(:); wMove(:)];
-                q_dot(8) = 0;
-                
+                if isempty(q_dot)
+                    return
+                end
+                q_dot = min(abs(q_dot),0.1) .* sign(q_dot);
                 q = q + q_dot;
                 
                 q(8) = graspVal;
@@ -101,8 +94,10 @@ classdef CytonEndpointGui
                 
                 % display position
                 p = hCyton.T_0_EndEffector(1:3,4);
-                fprintf('[%s] End Effector Position: %6.2f %6.2f %6.2f \n',...
-                    mfilename, p)
+%                 fprintf('[%s] End Effector Position: %6.2f %6.2f %6.2f \n',...
+%                     mfilename, p)
+%                  fprintf('%d %6.2f %6.2f %6.2f %6.2f %6.2f %6.2f %6.2f %6.2f \n',...
+%                      rank(J),q_dot(1:7),graspVal);
                 
             end
             

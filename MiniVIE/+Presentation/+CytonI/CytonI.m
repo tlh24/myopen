@@ -194,7 +194,19 @@ classdef CytonI < Presentation.CytonI.Robot
                 jointAngles(classId) = val;
                 %cyton(0,jointAngles);
                 obj.setJointIdValue(classId,val);
-                fprintf('Angles = [ %6.2f %6.2f %6.2f %6.2f %6.2f %6.2f %6.2f %12.8f ]\n',jointAngles);
+                %fprintf('Angles = [ %6.2f %6.2f %6.2f %6.2f %6.2f %6.2f %6.2f %12.8f ]\n',jointAngles);
+                p = obj.T_0_EndEffector(1:3,4);
+                fprintf('[%s] End Effector Position: %6.2f %6.2f %6.2f \n',...
+                    mfilename, p)
+
+                T1 =  obj.hControls.getT_0_N(1);
+                T7 =  obj.hControls.getT_0_N(7);
+                
+                p1 = T1(1:3,4);
+                p7 = T7(1:3,4);
+                
+                norm(p7-p1);
+                
             end
         end
         
