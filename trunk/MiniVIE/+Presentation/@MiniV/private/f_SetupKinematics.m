@@ -82,6 +82,7 @@ f_KChain_List(KChain,1);
 %     KChain(i+1).elementData = Left_Arm(i).elementData;
 % end
 
+if 0
 %% Add Graphics Data by loading as functions (since these will compile)
 [KChain(2).nodeData,KChain(2).elementData] = ArmData01;     %% Collar
 [KChain(3).nodeData,KChain(3).elementData] = ArmData02;     %% Upper Arm
@@ -102,6 +103,16 @@ f_KChain_List(KChain,1);
 [KChain(18).nodeData,KChain(18).elementData] = ArmData17;   %% Pinky1
 [KChain(19).nodeData,KChain(19).elementData] = ArmData18;   %% Pinky2
 [KChain(20).nodeData,KChain(20).elementData] = ArmData19;   %% Pinky3
+
+else
+    load meshData;
+   for i = 1:20
+    KChain(i).nodeData = meshData(i).nodeData
+    KChain(i).elementData = meshData(i).elementData
+   end
+    
+end
+
 
 %% Mirror?
 if isLeftArm
