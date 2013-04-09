@@ -152,7 +152,6 @@ function move(src,evt,action,obj) %#ok<INUSL>
         case 'down'
             obj.hFigure = gcbf;
 
-            disp('down')
             set(obj.hFigure,'WindowButtonMotionFcn',{@move,'motion',obj});
             set(obj.hFigure,'WindowButtonDownFcn',{@move,'down',obj});
             set(obj.hFigure,'WindowButtonUpFcn',{@move,'up',obj});
