@@ -35,10 +35,23 @@ classdef CytonPlant < hgsetget
         DesiredPosition     % radians
         DesiredSpeed        % rad / s
         
-        JointLimits = [-pi/2 pi/2];
+        JointLimits = [
+            -pi pi
+            -pi/2 pi/2
+            -pi pi
+            -pi/2 pi/2
+            -pi pi
+            -pi/2 pi/2
+            -pi/2 pi/2
+             0 1
+            ];
+        
+        IsLimit = zeros(1,Presentation.CytonI.CytonPlant.NumJoints);
+        %GripperLimits = [0 1];
+    end
+    properties (Dependent = true)
         GripperLimits = [0 1];
     end
-
     properties (Constant = true)
         NumJoints = 8;
         DefaultPosition = 0;    %radians
@@ -47,6 +60,9 @@ classdef CytonPlant < hgsetget
     methods
         function obj = CytonPlant()
             reset(obj);
+        end
+        function val = get.GripperLimits(obj)
+            val = obj.JointLimits(8,:);
         end
         function value = isRunning(obj)
             value = strcmpi(obj.hTimer.Running,'on');
@@ -64,10 +80,22 @@ classdef CytonPlant < hgsetget
             obj.DesiredPosition = Value(:);
             
             if obj.ApplyLimits
-                obj.DesiredPosition(1:7) = ...
-                    min(max(obj.DesiredPosition(1:7),obj.JointLimits(1)),obj.JointLimits(2));
-                obj.DesiredPosition(8) = ...
-                    min(max(obj.DesiredPosition(8),obj.GripperLimits(1)),obj.GripperLimits(2));
+                
+                for iJoint = 1:obj.NumJoints
+                    
+                    limitVal = obj.JointLimits(iJoint,:);
+                    
+                    % Check each joint and set flag
+                    if obj.DesiredPosition(iJoint) >= limitVal(2)
+                        obj.DesiredPosition(iJoint) = limitVal(2);
+                        obj.IsLimit(iJoint) = 1;
+                    elseif obj.DesiredPosition(iJoint) <= limitVal(1)
+                        obj.DesiredPosition(iJoint) = limitVal(1);
+                        obj.IsLimit(iJoint) = -1;
+                    else
+                        obj.IsLimit(iJoint) = 0;
+                    end
+                end
             end
             
             update(obj);

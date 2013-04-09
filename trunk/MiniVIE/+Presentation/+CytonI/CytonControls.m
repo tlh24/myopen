@@ -4,10 +4,10 @@ classdef CytonControls < hgsetget
     %
     %     % Get dh param constants
     %     [~, a, d] = hControls.getDHParams();
-    % 
+    %
     %     % Get Jacobian at the current position
     %     J_ = hControls.symJacobianFull(a(6),d(2),d(3),d(4),d(5),d(6),q(1),q(2),q(3),q(4),q(5),q(6));
-    %   
+    %
     % Log:
     %   06Feb2012 Armiger: Created
     %   03Apr2013 Armiger: Added not about incomplete endpoint position and
@@ -47,7 +47,7 @@ classdef CytonControls < hgsetget
             -a6.*cos(th1).*cos(th3).*cos(th6).*sin(th5)-d7.*cos(th4).*cos(th6).*sin(th1).*sin(th2)-d7.*cos(th1).*cos(th6).*sin(th3).*sin(th4)-d7.*cos(th1).*cos(th3).*sin(th5).*sin(th6)+a6.*cos(th4).*sin(th1).*sin(th2).*sin(th6)+a6.*cos(th1).*sin(th3).*sin(th4).*sin(th6)-a6.*cos(th1).*cos(th4).*cos(th5).*cos(th6).*sin(th3)-a7.*cos(th1).*cos(th3).*cos(th6).*cos(th7).*sin(th5)-d7.*cos(th2).*cos(th3).*cos(th6).*sin(th1).*sin(th4)-d7.*cos(th1).*cos(th4).*cos(th5).*sin(th3).*sin(th6)+a6.*cos(th2).*cos(th3).*sin(th1).*sin(th4).*sin(th6)+a6.*cos(th2).*cos(th6).*sin(th1).*sin(th3).*sin(th5)+a6.*cos(th5).*cos(th6).*sin(th1).*sin(th2).*sin(th4)+a7.*cos(th4).*cos(th7).*sin(th1).*sin(th2).*sin(th6)+a7.*cos(th1).*cos(th7).*sin(th3).*sin(th4).*sin(th6)+d7.*cos(th2).*sin(th1).*sin(th3).*sin(th5).*sin(th6)+d7.*cos(th5).*sin(th1).*sin(th2).*sin(th4).*sin(th6)-a6.*cos(th2).*cos(th3).*cos(th4).*cos(th5).*cos(th6).*sin(th1)-a7.*cos(th1).*cos(th4).*cos(th5).*cos(th6).*cos(th7).*sin(th3)-d7.*cos(th2).*cos(th3).*cos(th4).*cos(th5).*sin(th1).*sin(th6)+a7.*cos(th2).*cos(th3).*cos(th7).*sin(th1).*sin(th4).*sin(th6)+a7.*cos(th2).*cos(th6).*cos(th7).*sin(th1).*sin(th3).*sin(th5)+a7.*cos(th5).*cos(th6).*cos(th7).*sin(th1).*sin(th2).*sin(th4)-a7.*cos(th2).*cos(th3).*cos(th4).*cos(th5).*cos(th6).*cos(th7).*sin(th1),d7.*cos(th2).*cos(th4).*cos(th6)-a6.*cos(th2).*cos(th4).*sin(th6)-a6.*cos(th2).*cos(th5).*cos(th6).*sin(th4)-a7.*cos(th2).*cos(th4).*cos(th7).*sin(th6)-d7.*cos(th3).*cos(th6).*sin(th2).*sin(th4)-d7.*cos(th2).*cos(th5).*sin(th4).*sin(th6)+a6.*cos(th3).*sin(th2).*sin(th4).*sin(th6)+a6.*cos(th6).*sin(th2).*sin(th3).*sin(th5)+d7.*sin(th2).*sin(th3).*sin(th5).*sin(th6)-a6.*cos(th3).*cos(th4).*cos(th5).*cos(th6).*sin(th2)-a7.*cos(th2).*cos(th5).*cos(th6).*cos(th7).*sin(th4)-d7.*cos(th3).*cos(th4).*cos(th5).*sin(th2).*sin(th6)+a7.*cos(th3).*cos(th7).*sin(th2).*sin(th4).*sin(th6)+a7.*cos(th6).*cos(th7).*sin(th2).*sin(th3).*sin(th5)-a7.*cos(th3).*cos(th4).*cos(th5).*cos(th6).*cos(th7).*sin(th2),a7.*cos(th3).*cos(th5).*cos(th7).*sin(th1)+a7.*cos(th1).*cos(th2).*cos(th5).*cos(th7).*sin(th3)+a7.*cos(th1).*cos(th4).*cos(th6).*sin(th2).*sin(th7)-a7.*cos(th1).*cos(th7).*sin(th2).*sin(th4).*sin(th5)-a7.*cos(th4).*cos(th7).*sin(th1).*sin(th3).*sin(th5)-a7.*cos(th6).*sin(th1).*sin(th3).*sin(th4).*sin(th7)-a7.*cos(th3).*sin(th1).*sin(th5).*sin(th6).*sin(th7)-a7.*cos(th1).*cos(th2).*sin(th3).*sin(th5).*sin(th6).*sin(th7)-a7.*cos(th1).*cos(th5).*sin(th2).*sin(th4).*sin(th6).*sin(th7)-a7.*cos(th4).*cos(th5).*sin(th1).*sin(th3).*sin(th6).*sin(th7)+a7.*cos(th1).*cos(th2).*cos(th3).*cos(th4).*cos(th7).*sin(th5)+a7.*cos(th1).*cos(th2).*cos(th3).*cos(th6).*sin(th4).*sin(th7)+a7.*cos(th1).*cos(th2).*cos(th3).*cos(th4).*cos(th5).*sin(th6).*sin(th7),...
             -a7.*cos(th1).*cos(th3).*cos(th5).*cos(th7)+a7.*cos(th2).*cos(th5).*cos(th7).*sin(th1).*sin(th3)+a7.*cos(th1).*cos(th4).*cos(th7).*sin(th3).*sin(th5)+a7.*cos(th4).*cos(th6).*sin(th1).*sin(th2).*sin(th7)+a7.*cos(th1).*cos(th6).*sin(th3).*sin(th4).*sin(th7)+a7.*cos(th1).*cos(th3).*sin(th5).*sin(th6).*sin(th7)-a7.*cos(th7).*sin(th1).*sin(th2).*sin(th4).*sin(th5)-a7.*cos(th2).*sin(th1).*sin(th3).*sin(th5).*sin(th6).*sin(th7)-a7.*cos(th5).*sin(th1).*sin(th2).*sin(th4).*sin(th6).*sin(th7)+a7.*cos(th2).*cos(th3).*cos(th4).*cos(th7).*sin(th1).*sin(th5)+a7.*cos(th2).*cos(th3).*cos(th6).*sin(th1).*sin(th4).*sin(th7)+a7.*cos(th1).*cos(th4).*cos(th5).*sin(th3).*sin(th6).*sin(th7)+a7.*cos(th2).*cos(th3).*cos(th4).*cos(th5).*sin(th1).*sin(th6).*sin(th7),...
             -a7.*cos(th2).*cos(th4).*cos(th6).*sin(th7)+a7.*cos(th5).*cos(th7).*sin(th2).*sin(th3)+a7.*cos(th2).*cos(th7).*sin(th4).*sin(th5)+a7.*cos(th3).*cos(th4).*cos(th7).*sin(th2).*sin(th5)+a7.*cos(th3).*cos(th6).*sin(th2).*sin(th4).*sin(th7)+a7.*cos(th2).*cos(th5).*sin(th4).*sin(th6).*sin(th7)-a7.*sin(th2).*sin(th3).*sin(th5).*sin(th6).*sin(th7)+a7.*cos(th3).*cos(th4).*cos(th5).*sin(th2).*sin(th6).*sin(th7)],...
-            [3,7]); 
+            [3,7]);
         symJacobianWrist = @(d2,d3,d4,d5,th1,th2,th3,th4)reshape([d4.*(cos(th1).*cos(th3)-cos(th2).*sin(th1).*sin(th3))+d2.*cos(th1)+d5.*(sin(th4).*(cos(th1).*sin(th3)+cos(th2).*cos(th3).*sin(th1))+cos(th4).*sin(th1).*sin(th2))+d3.*sin(th1).*sin(th2),d4.*(cos(th3).*sin(th1)+cos(th1).*cos(th2).*sin(th3))+d2.*sin(th1)+d5.*(sin(th4).*(sin(th1).*sin(th3)-cos(th1).*cos(th2).*cos(th3))-cos(th1).*cos(th4).*sin(th2))-d3.*cos(th1).*sin(th2),0.0,-cos(th1).*(d5.*(cos(th2).*cos(th4)-cos(th3).*sin(th2).*sin(th4))+d3.*cos(th2)+d4.*sin(th2).*sin(th3)),...
             -sin(th1).*(d5.*(cos(th2).*cos(th4)-cos(th3).*sin(th2).*sin(th4))+d3.*cos(th2)+d4.*sin(th2).*sin(th3)),...
             -d3.*sin(th2)+d4.*cos(th2).*sin(th3)-d5.*cos(th4).*sin(th2)-d5.*cos(th2).*cos(th3).*sin(th4),...
@@ -57,6 +57,7 @@ classdef CytonControls < hgsetget
             [3,5]);
         
         symT_0_n;
+        
     end
     properties (Access = private)
         hCyton;  % Handle to Parent Cyton Robot
@@ -140,12 +141,12 @@ classdef CytonControls < hgsetget
             obj.hCyton.hDisplay.setTarget(T_Target);
             
             drawnow;
-
-
+            
+            
             [T_0_n a d] = obj.getDHParams();
             [pError phi] = deal(100);
             [pErrorLast phiLast] = deal(1000);
-
+            
             convergenceThreshold = 1e-3;
             
             tJacobian = tic;
@@ -186,7 +187,7 @@ classdef CytonControls < hgsetget
                 
                 invJ_ = pinv(J_);
                 p = norm(pError)/5;
-
+                
                 invJ_(1:4,4:6) = invJ_(1:4,4:6)/max(1,p);
                 invJ_(5:7,1:3) = invJ_(5:7,1:3)/max(1,p);
                 
@@ -211,7 +212,111 @@ classdef CytonControls < hgsetget
             disp('setEndEffectorPose Complete');
             toc(tJacobian);
         end
-        
+        function [jointVelocity, J] = computeVelocity(obj,endpointVelocity)
+            % Notes on building an endpoint velocity controller
+            %
+            % Basic form:
+            % q_dot = pinvJ * x_dot
+            %
+            % This has issues when a joint limit is reached
+            %
+            %
+            % Joint Limit Avoidance:
+            % Null space can be used to delay contact with joint limits
+            %
+            % (Liegeois 1977)
+            % q_dot = pinvJ * x_dot + (I - pinvJ*J) * q0_dot
+            % where q0_dot is a velocity away from the joint limits
+            %
+            %
+            %
+            % Invalid Jacobian
+            %
+            %
+            % Workspace constraint:
+            % Avoid commanding beyond workspace
+            
+            
+            jointVelocity = [];
+            
+            maxTries = 10;
+            
+            isIgnoredDof = isnan(endpointVelocity);
+            endpointVelocity(isIgnoredDof) = 0;
+            
+            % Get current position
+            q = obj.hCyton.JointParameters;
+            
+            %             % Get dh param constants
+            %             [~, a, d] = obj.getDHParams();
+            %
+            %             % Get Jacobian at the current position
+            %             J_ = obj.symJacobianFull(a(6),d(2),d(3),d(4),d(5),d(6),q(1),q(2),q(3),q(4),q(5),q(6));
+            
+            J = obj.numericJacobian(q);
+            
+            lockedJoints = false(1,8);
+            while maxTries >= 0
+                maxTries = maxTries - 1;
+                
+                J(:,lockedJoints) = 0;
+                
+                J(isIgnoredDof,:) = 0;
+                
+                q0_dot = zeros(7,1);
+                applyNullSpace = 1;
+                if applyNullSpace
+                    
+                    distLowerLim = q(1:7) - obj.hCyton.hPlant.JointLimits(1:7,1);
+                    distUpperLim = q(1:7) - obj.hCyton.hPlant.JointLimits(1:7,2);
+                    
+                    %[distLowerLim distUpperLim]'
+                    
+                    limThresh = 0.25;
+                    isCloseLower = distLowerLim < limThresh;
+                    isCloseUpper = distUpperLim > -limThresh;
+                    
+                    q0_dot(isCloseLower) = -(distLowerLim(isCloseLower)-limThresh);
+                    q0_dot(isCloseUpper) = -(distUpperLim(isCloseUpper)+limThresh);
+                    if any(q0_dot)
+                        q0_dot'
+                    end
+                end
+                % invert jacobian
+                invJ_ = pinv(J);
+                
+                % create a joint angle velocity command based on endpoint
+                % velocity commmand
+                x_dot = endpointVelocity(:);
+                q_dot = invJ_ * x_dot + (eye(7) - pinv(J)*J) * q0_dot;
+                
+                q_dot(8) = 0;
+                
+                % check desired velocity against joint limits
+                recompute = false;
+                for iJoint = 1:7
+                    
+                    atLimitPos = obj.hCyton.hPlant.IsLimit(iJoint) > 0 && q_dot(iJoint) > 0;
+                    atLimitNeg = obj.hCyton.hPlant.IsLimit(iJoint) < 0 && q_dot(iJoint) < 0;
+                    if ~lockedJoints(iJoint) && atLimitPos
+                        fprintf('Joint %d commanded against + limit\n',iJoint)
+                        lockedJoints(iJoint) = true;
+                        recompute = true;
+                    elseif ~lockedJoints(iJoint) && atLimitNeg
+                        fprintf('Joint %d commanded against - limit\n',iJoint)
+                        lockedJoints(iJoint) = true;
+                        recompute = true;
+                    end
+                    
+                end
+                
+                if ~recompute
+                    jointVelocity = q_dot;
+                    break;
+                end
+            end
+            
+        end
         function goto(obj,pos)
             
             % RSA: 4/3/2013 Disabled this beta functions.
@@ -289,7 +394,7 @@ classdef CytonControls < hgsetget
             end
             
         end
-
+        
     end
     methods (Static = true)
         function [T_0_n a d] = getDHParams()
@@ -339,7 +444,7 @@ classdef CytonControls < hgsetget
             T_8_9 = pinv(T_0_n(:,:,8))*T_0_n(:,:,9);
             T_8_10 = pinv(T_0_n(:,:,8))*T_0_n(:,:,10);
             
-            [a d] = deal(zeros(9,1));
+            [a, d] = deal(zeros(9,1));
             
             d(1) = T_1_2(3,4);
             d(2) = T_2_3(3,4);
@@ -359,10 +464,10 @@ classdef CytonControls < hgsetget
             % locus of elbow positions
             
             [T a d] = CytonControls.getDHParams();
-
+            
             D1 = sqrt(d(2)^2 + d(3)^2);  % Effective length of the 'humerus'
             D2 = sqrt(d(4)^2 + d(5)^2);  % Effective length of the 'forearm'
-
+            
             pShoulder = [0 0 d(1)]';
             
             [x n_hat a] = Utils.sphereIntersect(pShoulder,pWrist(:),D1,D2);
@@ -404,7 +509,7 @@ classdef CytonControls < hgsetget
                 
                 r = sqrt(d(2)^2 + (sin(q(2))*d(3)) ^2); %exact
                 q(1) = atan2( pElbow(2),pElbow(1) ) - atan2(-d(2),-sqrt(r^2 - d(2)^2)); %exact
-
+                
                 q(1) = Utils.wrapToPi(q(1));
                 
                 % End closed form solution for elbow position
@@ -531,6 +636,83 @@ classdef CytonControls < hgsetget
             % Jinv_f = matlabFunction(Jinv);
             
             disp('Done');
+            
+        end
+        function J = numericJacobian(q)
+            
+            DH = @Presentation.CytonI.Robot.DH_transformation;
+            
+            % Computed statically from getDHParams
+            d = [
+                37.9300
+                -4.6200
+                145.0000
+                11.0000
+                175.0000
+                7.4000
+                -7.6500
+                0
+                0];
+            a = [
+                0
+                0
+                0
+                0
+                0
+                67.7000
+                53.1500
+                8.0000
+                8.0000];
+            
+            piOver2 = pi/2;
+            A1 = DH(a(1),  piOver2, d(1), q(1) );
+            A2 = DH(a(2), -piOver2, d(2), q(2) );
+            A3 = DH(a(3),  piOver2, d(3), q(3) );
+            A4 = DH(a(4), -piOver2, d(4), q(4) );
+            A5 = DH(a(5),  piOver2, d(5), q(5) );
+            A6 = DH(a(6),  piOver2, d(6), q(6) + piOver2 );
+            A7 = DH(a(7),  0, d(7), q(7) );
+            
+            T_0_1 = A1;
+            T_0_2 = A1*A2;
+            T_0_3 = A1*A2*A3;
+            T_0_4 = A1*A2*A3*A4;
+            T_0_5 = A1*A2*A3*A4*A5;
+            T_0_6 = A1*A2*A3*A4*A5*A6;
+            T_0_7 = A1*A2*A3*A4*A5*A6*A7;
+            
+            % Define components for Jacobian
+            z0 = [0 0 1]';
+            z1 = T_0_1(1:3,3);
+            z2 = T_0_2(1:3,3);
+            z3 = T_0_3(1:3,3);
+            z4 = T_0_4(1:3,3);
+            z5 = T_0_5(1:3,3);
+            z6 = T_0_6(1:3,3);
+            %z7 = T_0_7(1:3,3);
+            
+            o0 = [0 0 0]';
+            o1 = T_0_1(1:3,4,1);
+            o2 = T_0_2(1:3,4,1);
+            o3 = T_0_3(1:3,4,1);
+            o4 = T_0_4(1:3,4,1);
+            o5 = T_0_5(1:3,4,1);
+            o6 = T_0_6(1:3,4,1);
+            o7 = T_0_7(1:3,4,1);
+            
+            % Per Eq. 4.64, J is the Geometric Jacobian
+            oc = o7;
+            J1 = cross(z0,(oc-o0));
+            J2 = cross(z1,(oc-o1));
+            J3 = cross(z2,(oc-o2));
+            J4 = cross(z3,(oc-o3));
+            J5 = cross(z4,(oc-o4));
+            J6 = cross(z5,(oc-o5));
+            J7 = cross(z6,(oc-o6));
+            
+            J11 = [J1 J2 J3 J4 J5 J6 J7];
+            
+            J = [J11; z0 z1 z2 z3 z4 z5 z6];
             
         end
     end
