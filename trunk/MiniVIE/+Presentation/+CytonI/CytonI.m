@@ -7,7 +7,7 @@ classdef CytonI < Presentation.CytonI.Robot
     %   CytonControls - Jacobian parameters and endpoint algorithms
     %   CytonDisplay - Virtual rendering of robot
     %   CytonSerial - Handles serial connection to physical robot
-    %   CytonScenarions - Collection of use-case scenarios
+    %   CytonScenarios - Collection of use-case scenarios
     %
     % Cyton VIE has an internal state which means that issuing commands
     % will take 'real-time' to conclude.

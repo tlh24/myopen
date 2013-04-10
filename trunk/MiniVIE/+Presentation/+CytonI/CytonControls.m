@@ -247,14 +247,9 @@ classdef CytonControls < hgsetget
             % Get current position
             q = obj.hCyton.JointParameters;
             
-            %             % Get dh param constants
-            %             [~, a, d] = obj.getDHParams();
-            %
-            %             % Get Jacobian at the current position
-            %             J_ = obj.symJacobianFull(a(6),d(2),d(3),d(4),d(5),d(6),q(1),q(2),q(3),q(4),q(5),q(6));
-            
+            % Compute jacobian
             J = obj.numericJacobian(q);
-            
+
             lockedJoints = false(1,8);
             while maxTries >= 0
                 maxTries = maxTries - 1;
@@ -282,15 +277,27 @@ classdef CytonControls < hgsetget
                         q0_dot'
                     end
                 end
-                % invert jacobian
-                invJ_ = pinv(J);
                 
-                % create a joint angle velocity command based on endpoint
-                % velocity commmand
+                % Compute the joint velocities, q_dot
                 x_dot = endpointVelocity(:);
-                q_dot = invJ_ * x_dot + (eye(7) - pinv(J)*J) * q0_dot;
+                switch 3
+                    case 1
+                        % Transpose method
+                        pinvJ = J';
+                        q_dot = pinvJ * x_dot;
+                    case 2
+                        % pseudo-inverse
+                        pinvJ = pinv(J);
+                        q_dot = pinvJ * x_dot;
+                    case 3
+                        % Damped least squares:
+                        lambda = 1e-1;
+                        q_dot = (J'*J + lambda^2.*eye(7)) \ J' * x_dot;
+                end
                 
-                q_dot(8) = 0;
+                nullVelocity = (eye(7) - pinv(J)*J) * q0_dot;
+                q_dot = q_dot + nullVelocity;
+
                 
                 % check desired velocity against joint limits
                 recompute = false;
@@ -311,7 +318,7 @@ classdef CytonControls < hgsetget
                 end
                 
                 if ~recompute
-                    jointVelocity = q_dot;
+                    jointVelocity = [q_dot; 0];
                     break;
                 end
             end
