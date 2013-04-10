@@ -204,8 +204,7 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
             w(2) = +obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) * pi/180;
             w(3) = +obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) * pi/180;
             
-            %e = obj.JointAnglesDegrees(action_bus_enum.Elbow) * pi/180;
-            e = 90 * pi / 180;
+            e = obj.JointAnglesDegrees(action_bus_enum.Elbow) * pi/180;
             
             % convert char grasp id to numerical mpl grasp value
             graspId = obj.graspLookup(obj.GraspId);
