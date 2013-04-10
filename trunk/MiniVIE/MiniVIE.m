@@ -587,12 +587,12 @@ classdef MiniVIE < Common.MiniVieObj
                         obj.println('Setting up presentation...',1);
                         h = MPL.MplScenarioMud;
                         h.enableNfu = strncmpi(answer{1},'y',1);
-                        h.VulcanXAddress = answer{2}; % TODO: Validate
+                        h.UdpAddress = answer{2}; % TODO: Validate
                         
                         port = str2double(answer{3});
                         assert(~isnan(port),'Invalid Port');
-                        h.VulcanXDestinationPort = port; 
-                        %h.VulcanXPort = answer{3}; 
+                        h.UdpDestinationPort = port; 
+                        %h.UdpPort = answer{3}; 
                         
                         h.EnableFeedback = strncmpi(answer{4},'y',1);
                         h.TactorIds = str2num(answer{5}); % TODO: Validate
