@@ -3,9 +3,9 @@ classdef CyberGloveSerial < handle
     % Usage: h = CyberGloveSerial(comPortName,handleName);
     
     % $Log: CyberGloveSerial.m  $
-    % Revision 1.3 2010/09/24 17:19:05EDT Armiger, Robert S. (ArmigRS1-a) 
+    % Revision 1.3 2010/09/24 17:19:05EDT Armiger, Robert S. (ArmigRS1-a)
     % comments updated
-    % Revision 1.2 2010/07/14 15:24:12EDT armigrs1-a 
+    % Revision 1.2 2010/07/14 15:24:12EDT armigrs1-a
     % Created by Robert Armiger, JHUAPL
     properties
         hPort;
@@ -29,8 +29,13 @@ classdef CyberGloveSerial < handle
             obj.hPort = setup_serial(comPortName,handleName);
             
             obj.id = fix(2^16*rand);
-            
+        end
+        function initialize(obj)
             obj.nSensors = queryCmd(obj,'?S',4);
+            if isempty(obj.nSensors)
+                error('No response from device')
+            end
+            
             obj.isRightHanded = queryCmd(obj,'?R',4);
             obj.hardwareMask = getHardwareMask(obj);
         end
@@ -45,7 +50,7 @@ classdef CyberGloveSerial < handle
         function actionBusAngles = getdata(obj)
             
             degreesPerCount = 0.5; % ref CyberGlove Manual
-
+            
             gloveData = zeros(1,length(obj.hardwareMask));
             gloveData(obj.hardwareMask) = getRawData(obj);
             
@@ -59,7 +64,7 @@ classdef CyberGloveSerial < handle
             
             
             anglesDegrees = gloveData * degreesPerCount;
-                        
+            
             anglesRadians = anglesDegrees * pi / 180;
             
             % initialize angles with zero
@@ -133,7 +138,7 @@ classdef CyberGloveSerial < handle
                 fwrite(obj.hPort,'G');
                 [A count] = fread(obj.hPort,nBytes,'uint8');
             end
-
+            
             assert(count > 0)
             assert(A(1) == uint8('G'))
             assert(count == nBytes);
