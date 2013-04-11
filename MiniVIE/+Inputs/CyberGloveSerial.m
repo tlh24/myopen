@@ -1,6 +1,17 @@
 classdef CyberGloveSerial < handle
     % Class file for direct interface with Cyber Glove without Device manager
     % Usage: h = CyberGloveSerial(comPortName,handleName);
+    %
+    % h.initialize()
+    % h.getRawData()
+    %
+    %
+    %     raw = obj.hCyberGlove.getRawData()';
+    %     val = obj.mudFormat(raw);
+    %     q_arm = obj.hMicroStrain.getdata();
+    % 
+    %     q = obj.adjustForMPL(q_arm, val);
+    % 
     
     % $Log: CyberGloveSerial.m  $
     % Revision 1.3 2010/09/24 17:19:05EDT Armiger, Robert S. (ArmigRS1-a)
@@ -13,6 +24,10 @@ classdef CyberGloveSerial < handle
         nSensors;
         isRightHanded;
         hardwareMask;
+    end
+    properties (SetAccess = protected)
+        maxGlove = [  0   0   0   0   0 127 128 174 172 187 187   0 162 178 126  92 186 209 160  67 166 180 156 173 194 177 144 ];
+        minGlove = [  0   0   0   0   0  84  79 106  40  69  77   0  12  71  73 151  41  72  75 140  32  68  60  89 119  79 112 ];
     end
     methods
         function obj = CyberGloveSerial(comPortName,handleName)
@@ -131,12 +146,12 @@ classdef CyberGloveSerial < handle
         function rawData = getRawData(obj)
             fwrite(obj.hPort,'G');
             nBytes = obj.nSensors + 2;
-            [A count] = fread(obj.hPort,nBytes,'uint8');
+            [A, count] = fread(obj.hPort,nBytes,'uint8');
             
             if count == 0
                 %retry command
                 fwrite(obj.hPort,'G');
-                [A count] = fread(obj.hPort,nBytes,'uint8');
+                [A, count] = fread(obj.hPort,nBytes,'uint8');
             end
             
             assert(count > 0)
@@ -147,6 +162,69 @@ classdef CyberGloveSerial < handle
             
             clear_buffer(obj);
         end
+        function calibrateGlove(obj)
+            fprintf('extend Fingers\n');pause;
+            val = obj.mudFormat(obj.getRawData()');
+            obj.minGlove([9 10 11 13 14 15 17 18 19 21 22 23]) = val([9 10 11 13 14 15 17 18 19 21 22 23]);
+
+            fprintf('flex Fingers\n');pause;
+            val = obj.mudFormat(obj.getRawData()');
+            obj.maxGlove([9 10 11 13 14 15 17 18 19 21 22 23]) = val([9 10 11 13 14 15 17 18 19 21 22 23]);
+
+            fprintf('extend Finger AbAds and Thumb FE\n');pause;
+            val = obj.mudFormat(obj.getRawData()');
+            obj.maxGlove([16 20]) = val([16 20]);
+            obj.minGlove([8 25]) = val([8 25]);
+
+            fprintf('flex Finger AbAds and Thumb FE\n');pause;
+            val = obj.mudFormat(obj.getRawData()');
+            obj.minGlove([16 20]) = val([16 20]);
+            obj.maxGlove([8 25]) = val([8 25]);
+            
+            fprintf('extend distal Thumb\n');pause;
+            val = obj.mudFormat(obj.getRawData()');
+            obj.minGlove([26 27]) = val([26 27]);
+
+            fprintf('flex distal Thumb\n');pause;
+            val = obj.mudFormat(obj.getRawData()');
+            obj.maxGlove([26 27]) = val([26 27]);
+            
+            fprintf('extend Thumb AbAd\n');pause;
+            val = obj.mudFormat(obj.getRawData()');
+            obj.minGlove(24) = val(24);
+
+            fprintf('flex Thumb AbAd\n');pause;
+            val = obj.mudFormat(obj.getRawData()');
+            obj.maxGlove(24) = val(24);
+            
+            fprintf('extend Wrist Flexor\n');pause;
+            val = obj.mudFormat(obj.getRawData()');
+            obj.minGlove(7) = val(7);
+
+            fprintf('flex Wrist Flexor\n');pause;
+            val = obj.mudFormat(obj.getRawData()');
+            obj.maxGlove(7) = val(7);
+            
+            fprintf('extend Wrist Deviator\n');pause;
+            val = obj.mudFormat(obj.getRawData()');
+            obj.minGlove(6) = val(6);
+
+            fprintf('flex Wrist Deviator\n');pause;
+            val = obj.mudFormat(obj.getRawData()');
+            obj.maxGlove(6) = val(6);
+        end
+        function q = adjustForMPL(obj, q_arm, val)
+            q = obj.minLim + (obj.maxLim - obj.minLim) .* ( (val - obj.minGlove) ./ (obj.maxGlove - obj.minGlove) );
+            
+            q(20) = ( q(16) + q(20) ) / 2;      % unified Ring/Little AbAd
+            q(16) = q(20);                      % /
+            q(25) = q(25) + 0.9 * q(24) - 0.2;  % adjust for Thumb FE
+            q(1:5) = q_arm(1:5);                % upper arm Microstrain
+            q(5) = q(5) * 1.2;                  % increase scale for Wrist Rot
+            
+            q = max(obj.minLim, min(obj.maxLim,q));
+        end
+        
         function clear_buffer(obj)
             % read leftover bytes if there are any
             if obj.hPort.BytesAvailable > 0
@@ -250,6 +328,19 @@ classdef CyberGloveSerial < handle
         end
         
     end
+    methods (Static = true)
+        function val = mudFormat(raw)
+            val = zeros(1,27);
+            val([ 6  7]) = raw([22 21]);
+            val([ 8  9 10 11]) = raw([11 5 6 7]);      % index finger
+            val([13 14 15])    = raw([8 9 10]);      % middle finger
+            val([16 17 18 19]) = raw([15 12 13 14]);  % ring finger
+            val([20 21 22 23]) = raw([19 16 17 18]);  % little finger
+            val([24 25 26 27]) = raw([1 4 2 3]);      % thumb
+
+        end
+    end
+    
 end
 
 function hPort = setup_serial(comPortName,handleName)
