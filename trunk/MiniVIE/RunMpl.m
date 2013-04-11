@@ -1,22 +1,24 @@
 function [ obj ] = RunMpl
 
 p.guiName = 'MiniVIE-NFU-MPL';
-p.filePrefix = 'WR_TR01_L_';
+%p.filePrefix = 'WR_TR01_L_';
+p.filePrefix = 'JH_TH01_L_';
 
 p.hSource = Inputs.NfuInput;
 
 p.Scenario = MPL.MplScenarioMud;
 p.Scenario.enableNfu = 1;
-p.Scenario.VulcanXAddress = '192.168.1.111';
-p.Scenario.VulcanXDestinationPort = 9027;
-p.Scenario.VulcanXLocalPort = 56010;
+p.Scenario.UdpAddress = '192.168.1.111';
+p.Scenario.UdpDestinationPort = 9027;
+p.Scenario.UdpLocalPort = 56010;
 p.Scenario.JoystickId = 0;
 p.Scenario.UdpArmTrackingPort = [];
 p.Scenario.EnableFeedback = 1;
-p.Scenario.TactorIds = [5 6 7];
+% p.Scenario.TactorIds = [5 6 7];
+p.Scenario.TactorIds = [3 4];
 p.Scenario.enableMicroStrain = 0;
 
-ip = p.Scenario.VulcanXAddress;
+ip = p.Scenario.UdpAddress;
 fprintf('Trying to connect to %s...\n',ip);
 pingOk = false;
 while ~pingOk

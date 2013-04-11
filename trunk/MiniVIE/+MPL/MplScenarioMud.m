@@ -39,8 +39,8 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
         UdpDestinationPort = 9027; %9035
         UdpLocalPort = 56000; %9035
         
-        %TactorIds = [3 4]
-        TactorIds = [5 6 7];
+        TactorIds = [3 4]
+        %TactorIds = [5 6 7];
         
         localRoc = [];
         
@@ -165,31 +165,34 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
             
             if ~isempty(convertedPercepts)
                 convertedPercepts = convertedPercepts{end};
-
+                
                 %disp(convertedPercepts);
                 
                 % 9/14/2012 RSA verified that these delays between udp
                 % commands are necessary to avoid choppiness in the command
                 % stream
                 
-                % pause(0.01)
-                % littleT = convertedPercepts(3,6);
-                % obj.hTactors(1).update(littleT);
-                %
-                % pause(0.01)
-                % indexT = convertedPercepts(3,2);
-                % obj.hTactors(2).update(indexT);
-                
-                drawnow
-                middleT = convertedPercepts(3,3);
-                obj.hTactors(1).update(middleT);
-                drawnow
-                indexT = convertedPercepts(3,2);
-                obj.hTactors(2).update(indexT);
-                drawnow
-                thumbT = convertedPercepts(3,8);
-                obj.hTactors(3).update(thumbT);
-                
+                userMap = 1;
+                switch userMap
+                    case 1
+                        pause(0.01)
+                        littleT = convertedPercepts(3,6);
+                        obj.hTactors(1).update(littleT);
+                        
+                        pause(0.01)
+                        indexT = convertedPercepts(3,2);
+                        obj.hTactors(2).update(indexT);
+                    case 2
+                        drawnow
+                        middleT = convertedPercepts(3,3);
+                        obj.hTactors(1).update(middleT);
+                        drawnow
+                        indexT = convertedPercepts(3,2);
+                        obj.hTactors(2).update(indexT);
+                        drawnow
+                        thumbT = convertedPercepts(3,8);
+                        obj.hTactors(3).update(thumbT);
+                end
                 %disp([indexT littleT])  % SN4 noise +/-4, max ~100
             end
             
