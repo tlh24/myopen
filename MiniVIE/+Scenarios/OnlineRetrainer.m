@@ -49,7 +49,9 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
             end
             
             % Set default class to last class (typically No Movement)
-            obj.CurrentClass = obj.SignalClassifier.NumClasses;
+            if ~isempty(SignalClassifier)
+                obj.CurrentClass = obj.SignalClassifier.NumClasses;
+            end
             
         end
         function setupFigure(obj)

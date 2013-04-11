@@ -34,6 +34,7 @@ classdef (Sealed) NfuUdp < handle
         
         hLogFile
         
+        busVoltageWarn = 22; %V
     end
     properties (SetAccess = private)
         hMud = MPL.MudCommandEncoder();
@@ -67,7 +68,7 @@ classdef (Sealed) NfuUdp < handle
     end
     properties (Constant = true)
         nfuStates = {
-            'SW_STATE_INIT'                     %0  
+            'SW_STATE_INIT'                     %0
             'SW_STATE_PRG'                      %1
             'SW_STATE_FS'                       %2
             'SW_STATE_NOS_CONTROL_STIMULATION'  %3
@@ -106,6 +107,7 @@ classdef (Sealed) NfuUdp < handle
             % Open a udp port to receive streaming data on
             obj.UdpStreamReceiveSocket = PnetClass(obj.UdpStreamReceivePortNumLocal);
             if ~obj.UdpStreamReceiveSocket.initialize()
+                fprintf(2,'[%s] Failed to initialize udp socket\n',mfilename);
                 status = -1;
                 return
             elseif (obj.UdpStreamReceiveSocket.hSocket ~= 0)
@@ -124,21 +126,26 @@ classdef (Sealed) NfuUdp < handle
             
             % StartStreams
             
-%             % Enable CPCH Data
-%             fprintf('[%s] Enabling CPCH Data Stream\n',mfilename);
-%             obj.enableStreaming(1);
-%             % 1/28/2012 RSA, KDK observed cpc stream did not start without
-%             % delay between messages
-%             pause(0.1);
-%             
-%             % Enable Percepts
-%             fprintf('[%s] Enabling Percepts Data Stream\n',mfilename);
-%             obj.enableStreaming(4);
-            
-            % Enable Percepts
-            fprintf('[%s] Enabling NFU Percepts Data Stream\n',mfilename);
-            obj.enableStreaming(5);
-
+            % Switch out case for combined EMG + Percept streams (reduces
+            % NFU restarts)
+            multiStream = 0;
+            if multiStream
+                % Enable CPCH Data
+                fprintf('[%s] Enabling CPCH Data Stream\n',mfilename);
+                obj.enableStreaming(1);
+                % 1/28/2012 RSA, KDK observed cpc stream did not start without
+                % delay between messages
+                pause(0.1);
+                
+%                 % Enable Percepts
+%                 fprintf('[%s] Enabling Percepts Data Stream\n',mfilename);
+%                 obj.enableStreaming(4);
+            else
+                % Enable Percepts
+                fprintf('[%s] Enabling NFU Percepts Data Stream\n',mfilename);
+                obj.enableStreaming(5);
+                pause(0.1);
+            end
             % Test a few updates since these have been problematic
             obj.update();
             pause(0.1);
@@ -382,7 +389,7 @@ classdef (Sealed) NfuUdp < handle
                     obj.numPacketsReceived = obj.numPacketsReceived + 1;
                     
                     % read data and mark as new
-                    obj.UdpBuffer1{obj.ptr1} = dataBytes;
+                    obj.UdpBuffer1{obj.ptr1} = cpch_bytes_to_signal(dataBytes);
                     obj.newData1(obj.ptr1) = true;
                     
                     % advance ptr
@@ -472,7 +479,7 @@ classdef (Sealed) NfuUdp < handle
                         fprintf('[%s.m %s] Error parsing heartbeat.  Msg: %s \n',mfilename, datestr(now), ME.message);
                         
                     end
-                elseif (len == 34)
+                elseif (len == 36)
                     % Store heartbeat message
                     % typedef struct
                     % {
@@ -491,10 +498,14 @@ classdef (Sealed) NfuUdp < handle
                         lcStreaming = typecast(newData(17:24),'uint64');
                         cpchStreaming = typecast(newData(25:32),'uint64');
                         busVoltageCounts = typecast(newData(33:34),'uint16');
-                        busVoltage = double(busVoltageCounts) ./ 149.0;
-                        
-                        fprintf('[%s.m %s] NFU: V = %6.2f State = "%s", CPC msgs = "%d", Streaming NFU = %d LC = %d CPCH = %d\n',...
-                            mfilename,datestr(now),busVoltage,strState,numMsgs,nfuStreaming,lcStreaming,cpchStreaming);
+                        busVoltage = double(busVoltageCounts) ./ 148.95;
+                        if busVoltage < obj.busVoltageWarn
+                            fprintf(2,'[%s.m %s] NFU: V = %6.2f State = "%s", CPC msgs = "%d", Streaming NFU = %d LC = %d CPCH = %d\n',...
+                                mfilename,datestr(now),busVoltage,strState,numMsgs,nfuStreaming,lcStreaming,cpchStreaming);
+                        else
+                            fprintf('[%s.m %s] NFU: V = %6.2f State = "%s", CPC msgs = "%d", Streaming NFU = %d LC = %d CPCH = %d\n',...
+                                mfilename,datestr(now),busVoltage,strState,numMsgs,nfuStreaming,lcStreaming,cpchStreaming);
+                        end
                     catch ME
                         disp(newData)
                         fprintf('[%s.m %s] Error parsing heartbeat.  Msg: %s \n',mfilename, datestr(now), ME.message);
