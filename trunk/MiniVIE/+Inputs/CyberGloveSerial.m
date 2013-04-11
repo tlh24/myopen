@@ -26,8 +26,8 @@ classdef CyberGloveSerial < handle
         hardwareMask;
     end
     properties (SetAccess = protected)
-        maxGlove = [  0   0   0   0   0 127 128 174 172 187 187   0 162 178 126  92 186 209 160  67 166 180 156 173 194 177 144 ];
-        minGlove = [  0   0   0   0   0  84  79 106  40  69  77   0  12  71  73 151  41  72  75 140  32  68  60  89 119  79 112 ];
+        maxGlove = [  0     0     0     0     0   144   164   182   149   172   232     0   183   166   238   104   170   147   199    74   170   205   231   170   167   174   219 ];
+        minGlove = [  0     0     0     0     0    67     1   124    66    66    48     0    69    84    63   155    60    75    74   151    66    89    95   108    88    63    69 ];
     end
     methods
         function obj = CyberGloveSerial(comPortName,handleName)
