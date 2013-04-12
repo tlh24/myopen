@@ -6,9 +6,9 @@ classdef CyberGloveSerial < handle
     % h.getRawData()
     %
     %
-    %     raw = obj.hCyberGlove.getRawData()';
+    %     raw = obj.getRawData()';
     %     val = obj.mudFormat(raw);
-    %     q_arm = obj.hMicroStrain.getdata();
+    %     q_arm = [0 0 0 0 0];
     % 
     %     q = obj.adjustForMPL(q_arm, val);
     % 
