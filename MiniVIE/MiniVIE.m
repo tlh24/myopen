@@ -47,7 +47,7 @@ classdef MiniVIE < Common.MiniVieObj
             set(obj.hg.popups(MiniVIE.SA),'Value',1);
             set(obj.hg.popups(MiniVIE.TRAINING),'String',{'None','Simple Trainer','Mini Guitar Hero','Bar Trainer','Motion Trainer'});
             set(obj.hg.popups(MiniVIE.TRAINING),'Value',1);
-            set(obj.hg.popups(MiniVIE.PRESENTATION),'String',{'None','MiniV','Breakout','AGH','MplScenarioMud','MSMS_ADL'});
+            set(obj.hg.popups(MiniVIE.PRESENTATION),'String',{'None','MiniV','Breakout','AGH','MplScenarioMud','MSMS_ADL','MSMS Tasks'});
             set(obj.hg.popups(MiniVIE.PRESENTATION),'Value',1);
         end
         function setupFigure(obj)
@@ -626,7 +626,12 @@ classdef MiniVIE < Common.MiniVieObj
                         h.initialize();
                         
                         h.start();
-                        
+                    case 'MSMS Tasks'
+                        h = Scenarios.MsmsTasks;
+                        h.initialize(obj.SignalSource,obj.SignalClassifier,obj.TrainingData);
+                        h.update();
+                        h.Verbose = 0;
+                        start(h.Timer);
                     otherwise
                         % None
                         h = [];
