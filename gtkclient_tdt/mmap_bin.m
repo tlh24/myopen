@@ -29,6 +29,7 @@ for i=1:2000
 		ylabel('lag')
 		xlabel('neuron'); 
 		colormap gray
+        colorbar
 		drawnow
 	end
 	dat(:, i) = A(:, 76); 
