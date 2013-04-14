@@ -115,10 +115,11 @@ public:
 		add(1-0.2);  //0.5 bin[1] 0.5 bin[2]
 		add(1-0.05); //bin [0]
 		unsigned short bins[10]; 
-		get_bins(1.0, bins); 
+		get_bins(1.0, bins);
+		printf("test vals: ");
 		for(int i=0; i<10; i++)
-			printf("%f ", bins[i]/128.0); 
+			printf("%0.1f ", bins[i]/128.0); 
 		printf("\n"); 
-		printf("should be: 1 0.5 0.5 1.5 0.5 0 0 0 0 0]\n"); 
+		printf("should be: 1.0 0.5 0.5 1.5 0.5 0.0 0.0 0.0 0.0 0.0\n"); 
 	}
 };
