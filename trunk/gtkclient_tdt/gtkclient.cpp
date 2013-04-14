@@ -1605,7 +1605,8 @@ int main(int argn, char **argc)
 	//GtkWidget *paned2;
 	
 	FiringRate fr; 
-	fr.get_bins_test(); 
+	fr.set_bin_params(10, 1.0);
+	fr.get_bins_test();
 
 	/*
 	char destIP[256];
