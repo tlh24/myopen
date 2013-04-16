@@ -9,10 +9,12 @@ classdef PhidgetAccel < handle
     %   hPhidget = Inputs.PhidgetAccel();
     %   hPhidget.initialize();
     %
-    %   accelData = hPhidget.getdata;
+    %   accelData = hPhidget.getData;
     %   disp(accelData);
     %
-    %   % cleanup
+    %   % cleanup: Note it's important to close properly since the direct
+    %   % access to the dll can cause memory issues / crashes if not
+    %   % properly managed
     %   hPhidget.close();
     %
     % See Also: Inputs.PhidgetSource
