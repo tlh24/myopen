@@ -841,7 +841,6 @@ void* po8_thread(void*){
 		long double starttime = gettime(); 
 		long double totalSamples = 0.0; //for simulation.
 		double		sinSamples = 0.0; // for driving the sinusoids; resets every 4e4. 
-		long double simulateRestart = 0.0; 
 		long long bytes = 0; 
 		unsigned int frame = 0; 
 		unsigned int bps = 2; 
@@ -897,7 +896,7 @@ void* po8_thread(void*){
 				}
 				totalSamples += numSamples; 
 				sinSamples += numSamples; 
-				if(sinSamples > 4e4) sinSamples -= 4e4; 
+				if(sinSamples > 4e4*2*3.1415926) sinSamples -= 4e4*2*3.1415926; 
 				usleep(70); 
 			}
 			if(numSamples > 0 && numSamples < 1024){
@@ -987,7 +986,7 @@ void* po8_thread(void*){
 								g_lastSpike[k][unit] = g_sample; 
 								if(g_wfwriter.m_enable){
 									if(unit > 0 || g_saveUnsorted){
-										pak.time = time; 
+										pak.time = time + (double)m/24414.0625; 
 										pak.ticks = ticks; 
 										pak.channel = k; 
 										pak.unit = unit; 
@@ -1001,7 +1000,7 @@ void* po8_thread(void*){
 								}
 								if(unit > 0 && unit <=2){
 									int uu = unit-1; 
-									g_fr[k][uu].add(g_ts.getTime(ticks)); 
+									g_fr[k][uu].add(time + (double)m/24414.0625); 
 									i64 w = g_sbufW[uu] % (i64)(sizeof(g_sbuf[0])/8);
 									g_sbuf[uu][w*2+0] = (float)(time);
 									g_sbuf[uu][w*2+1] = (float)k;
