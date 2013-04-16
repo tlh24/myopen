@@ -1,7 +1,7 @@
 //code to calculate the firing rate at any given time using
 //convolution with a polynomial.
 
-#define FR_LEN 1024 //must be a power of 2.
+#define FR_LEN 2048 //must be a power of 2.
 //with lags, need up to a second of firing times.
 class FiringRate{
 private:
@@ -95,7 +95,9 @@ public:
 		double xf = lw*m_xfade; 
 		for(int l=0; l<m_lags; l++) out[l] = 0; 
 		t = time - m_ts[w & (FR_LEN-1)];
-		while(w >= 0 && t < 0) w--; //ignore spikes more recent than the request. 
+		while(w >= 0 && t < 0){ //ignore spikes more recent than the request.
+			w--; t = time - m_ts[w & (FR_LEN-1)];
+		}
 		for(int l=0; l<m_lags; l++){
 			double lag = (l+1) * lw; 
 			t = time - m_ts[w & (FR_LEN-1)];
