@@ -12,8 +12,8 @@ classdef assessmentEval
             % fileName can be fullpath "c:\tmp\*.assessmentLog'"
             % fileName can be exact "c:\tmp\myLog.assessmentLog'"
             
-            if nargin < 1
-                % break down user input ot handle cases where full or partial
+            if nargin == 1
+                % break down user input or handle cases where full or partial
                 % paths are provided
                 [PathName, FileName, FileExtension] = fileparts(fileName);
                 FullFile = fullfile(PathName, [FileName FileExtension]);
@@ -30,8 +30,27 @@ classdef assessmentEval
                     FileName = {FileName};
                 end
             else
-                PathName = pwd;
-                FileName = {fileName};
+
+                [FileName,PathName,FilterIndex] = uigetfile('*.assessmentLog','MultiSelect','on');
+                if FilterIndex == 0
+                    % User Cancelled
+                    return
+                end
+                
+%                 if exist(fileName,'file') == 2
+%                     
+%                     [p, f, e] = fileparts(fileName);
+%                     
+%                     if isempty(p)
+%                         PathName = pwd;
+%                     else
+%                         PathName = p;
+%                     end
+%                     
+%                     FileName = {[f e]};
+%                 end
+                
+                
             end
             
             colors = distinguishable_colors(15);
@@ -45,18 +64,45 @@ classdef assessmentEval
                 
                 fname = fullfile(PathName,FileName{iFile});
                 load(fname,'-mat');
-                classNames = structTrialLog(:).AllClassNames;
-                %classNames{end+1} = 'No Movement';
+                if isfield(structTrialLog,'AllClassNames')
+                    % structTrialLog = 
+                    %     AllClassNames: {15x1 cell}
+                    %     ClassIdToTest: [6x1 double]
+                    %              Data: [1x6 struct]                    
+                    classNames = structTrialLog(:).AllClassNames;
+                    classIdToTest = 1:length(structTrialLog.ClassIdToTest);
+                    version = 'V2';
+                else
+                    % structTrialLog = 
+                    % 1x6 struct array with fields:
+                    %     targetClass
+                    %     classDecision
+                    %     voteDecision                    
+                    classIdToTest = 1:length(structTrialLog);
+                    classNames = {structTrialLog(:).targetClass};
+                    if all(cellfun(@isempty,strfind(classNames,'No Movement')))
+                        % Append No Movement if it's not there
+                        classNames{end+1} = 'No Movement';
+                    end
+                    version = 'V1';
+                end
+                                
                 fprintf('-------------\n');
                 fprintf('%s\n',fname');
                 fprintf('-------------\n');
-                for i = 1:length(structTrialLog.ClassIdToTest)
-                    targetClassName =  structTrialLog.Data(i).targetClass;
+                for i = classIdToTest
                     
+                    if strcmpi(version,'V1')
+                        trialData = structTrialLog(i);
+                    else
+                        trialData = structTrialLog.Data(i);
+                    end
+                    
+                    targetClassName = trialData.targetClass;
                     targetClassId = find(strcmpi(classNames,targetClassName));
                     
                     %d = structTrialLog(i).classDecision;
-                    d = structTrialLog.Data(i).classDecision;
+                    d = trialData.classDecision;
                     
                     fprintf('%18s ',targetClassName);
                     
