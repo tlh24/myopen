@@ -17,7 +17,7 @@ prev = 0;
 tic();
 for i=1:n
 	b5 = bmi5_mmap(b5); 
-	fwrite(gtkclient_in, b5.time_o - 0.4, 'double'); % sample then.
+	fwrite(gtkclient_in, b5.time_o - 2, 'double');
 	msg = fread(gtkclient_out, 3, 'uchar');
 	if A(1,193) - prev ~= 1
 		skip = skip + 1; 
@@ -25,11 +25,11 @@ for i=1:n
 	prev = A(1,193); 
 	if 1
 		disp([num2str(i) ' ' num2str(A(1,193))]); 
-		imagesc(A(:,1:192)/128); % units: spikes / bin.
+		imagesc(A(:,1:192) ./ 128 .* 10); 
 		ylabel('lag')
 		xlabel('neuron'); 
 		colormap gray
-        colorbar
+        %colorbar
 		drawnow
 	end
 	dat(:, i) = A(:, 1); 
