@@ -1,4 +1,4 @@
-EESchema Schematic File Version 2  date Fri 09 Mar 2012 12:52:02 PM EST
+EESchema Schematic File Version 2  date Tue 02 Apr 2013 11:11:50 AM PDT
 LIBS:power
 LIBS:device
 LIBS:emg_sym
@@ -10,7 +10,7 @@ $Descr A4 11700 8267
 encoding utf-8
 Sheet 2 3
 Title ""
-Date "4 nov 2011"
+Date "2 apr 2013"
 Rev ""
 Comp ""
 Comment1 ""
@@ -18,6 +18,8 @@ Comment2 ""
 Comment3 ""
 Comment4 ""
 $EndDescr
+Text Notes 7300 5750 0    60   ~ 0
+needs to be rotated on the PCB
 Connection ~ 2400 3000
 Connection ~ 2700 1550
 Wire Wire Line

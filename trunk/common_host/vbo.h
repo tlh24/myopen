@@ -174,8 +174,10 @@ public:
 			m_maxSmooth[i] = 1.f;
 			m_meanSmooth[i] = 0.f; 
 		}
-		ms->getValue3(ch, 0, "vbopca_mean", m_mean, 6); 
-		ms->getValue3(ch, 0, "vbopca_max", m_max, 6); 
+		if(ms){
+			ms->getValue3(ch, 0, "vbopca_mean", m_mean, 6); 
+			ms->getValue3(ch, 0, "vbopca_max", m_max, 6); 
+		}
 		m_wf = (float*)malloc(rows * 32 * sizeof(float));
 		m_poly = (float*)malloc(1024 * 2 * sizeof(float)); //for sorting.
 		m_polyW = 0; 
