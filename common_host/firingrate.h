@@ -1,7 +1,7 @@
 //code to calculate the firing rate at any given time using
 //convolution with a polynomial.
 
-#define FR_LEN 2048 //must be a power of 2.
+#define FR_LEN 1024 //must be a power of 2.
 //with lags, need up to a second of firing times.
 class FiringRate{
 private:
@@ -12,7 +12,7 @@ private:
 	// in comparison, linked list of times / circular buffer of times
 	// would only do computation on say 100 spikes.
 	//circular buffers sounds better.
-	double	m_ts[FR_LEN]; //max firing rate 128 hz. before the estimate starts to degrade.
+	double	m_ts[FR_LEN]; 
 	unsigned int	m_w; //write to here.
 	unsigned int	m_l; //last valid timestamp; start reading from here.
 	double 	m_duration; 
@@ -28,7 +28,7 @@ public:
 		m_lags = 10; 
 		m_xfade = 0.3; //fractional cross-fade between bins (trapezoidal bins). 
 		for(int i=0; i<FR_LEN; i++)
-			m_ts[i] = 1e-10; 
+			m_ts[i] = -1e10; 
 	}
 	~FiringRate(){
 		//nothing allocated.
@@ -89,24 +89,26 @@ public:
 	/** lagged bin interface (bmi5 & matlab) **/ 
 	void get_bins(double time, unsigned short* out){
 		int w = m_w - 1; //atomic.
+		int i = 0; 
 		double lw = m_duration / (double)m_lags; 
 		//lags go from most recent to least recent.
 		double t = 0; 
 		double xf = lw*m_xfade; 
+		time -= xf/2; //delay everything by xf/2, so all bins are equal.
 		for(int l=0; l<m_lags; l++) out[l] = 0; 
-		t = time - m_ts[w & (FR_LEN-1)];
-		while(w >= 0 && t < 0){ //ignore spikes more recent than the request.
-			w--; t = time - m_ts[w & (FR_LEN-1)];
+		while(w > 0 && i < FR_LEN && t < xf/-2.0){
+			w--; i++; t = time - m_ts[w & (FR_LEN-1)];
 		}
-		for(int l=0; l<m_lags; l++){
-			double lag = (l+1) * lw; 
+		for(int l=0; l<m_lags+1; l++){
+			double lag = l * lw; 
 			t = time - m_ts[w & (FR_LEN-1)];
-			while(w >= 0 && t-lag-xf < 0){
-				double lerp = (-1.0/(2*xf))*(t-lag)+0.5; 
+			while(w >= 0 && i < FR_LEN && t < lag + lw - xf/2){
+				double lerp = 0.5 + (t-lag)/xf; 
 				lerp = lerp > 1.0 ? 1.0 : lerp; 
-				out[l] += (unsigned short)round(lerp * 128.0); 
-				if(l<m_lags-1) out[l+1] += (unsigned short)round((1-lerp)*128.0); 
-				w--;  t = time - m_ts[w & (FR_LEN-1)];
+				lerp = lerp < 0.0 ? 0.0 : lerp;
+				if(l>0) out[l-1] += (unsigned short)round((1-lerp) * 128.0); 
+				if(l<m_lags) out[l] += (unsigned short)round(lerp * 128.0); 
+				w--; i++; t = time - m_ts[w & (FR_LEN-1)];
 			}
 		}
 	}
