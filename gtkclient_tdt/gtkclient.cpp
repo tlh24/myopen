@@ -36,6 +36,8 @@
 #include <iostream>
 #include <atomic>
 
+#include <libgen.h>
+
 #include "PO8e.h"
 #include "../firmware_stage9_mf/memory.h"
 
@@ -689,13 +691,29 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 		cgGLSetOptimalOptions(myCgVertexProfile);
 		checkForCgError("selecting vertex profile");
 
+		char linkname[256];
+		char * dname;
+
+		// get directory of current exe
+ 		ssize_t r = readlink("/proc/self/exe", linkname, 256);
+   		if (r < 0) {
+        	perror("/proc/self/exe");
+        	exit(EXIT_FAILURE);
+    	}
+    	dname = dirname(linkname);
+		string d(dname);
+
 		//g_vsFade = new cgVertexShader("fade.cg","fade");
 		//g_vsFade->addParams(4,"time","fade","col","off");
 
-		g_vsFadeColor = new cgVertexShader("fadeColor.cg","fadeColor");
+    	string cgfile;
+
+		cgfile = d + "/" + "fadeColor.cg";
+		g_vsFadeColor = new cgVertexShader(cgfile.c_str(),"fadeColor");
 		g_vsFadeColor->addParams(5,"time","fade","col","off","ascale");
 
-		g_vsThreshold = new cgVertexShader("threshold.cg","threshold");
+		cgfile = d + "/" + "threshold.cg";
+		g_vsThreshold = new cgVertexShader(cgfile.c_str(),"threshold");
 		g_vsThreshold->addParams(2,"xzoom","yoffset");
 
 		//now the vertex buffers.
