@@ -67,6 +67,8 @@ cgVertexShader*		g_vsThreshold;
 
 using namespace std;
 
+char		g_prefstr[256];
+
 float		g_cursPos[2];
 float		g_viewportSize[2] = {640, 480}; //width, height.
 
@@ -785,7 +787,7 @@ static gboolean rotate (gpointer user_data){
 	return TRUE;
 }
 void saveState(){
-	MatStor ms("preferences.mat"); 
+	MatStor ms(g_prefstr); 
 	for(int i=95; i>=0; i--){
 		g_c[i]->save(&ms);
 	}
@@ -1609,7 +1611,7 @@ static void templatePopupMenu (GdkEventButton *event, gpointer p){
                    (event != NULL) ? event->button : 0,
                    gdk_event_get_time((GdkEvent*)event));
 }
-int main(int argn, char **argc)
+int main(int argc, char **argv)
 {
 	GtkWidget *window;
 	GtkWidget *da1;
@@ -1625,18 +1627,14 @@ int main(int argn, char **argc)
 	//fr.set_bin_params(10, 1.0);
 	//fr.get_bins_test();
 
-	/*
-	char destIP[256];
-	for(int i=0;i<256;i++) destIP[i] = 0;
-	if(argn == 2){
-		strncpy(destIP, argc[1], 255);
-		destIP[255] = 0;
-	}else{
-		snprintf(destIP, 256, "152.16.229.38");
+	if (argc > 1) {
+		strcpy(g_prefstr, argv[1]);
 	}
-	*/
+	else {
+		strcpy(g_prefstr, "preferences.mat");
+	}
 
-	MatStor ms("preferences.mat"); 
+	MatStor ms(g_prefstr); 
 	for(int i=0; i<4; i++){
 		g_channel[i] = ms.getValue(i, "channel", i*16); 
 		if(g_channel[i] < 0) g_channel[i] = 0;
@@ -1651,8 +1649,8 @@ int main(int argn, char **argc)
 	// compatible with the version of the headers we compiled against.
 	GOOGLE_PROTOBUF_VERIFY_VERSION;
 
-	gtk_init (&argn, &argc);
-	gtk_gl_init (&argn, &argc);
+	gtk_init (&argc, &argv);
+	gtk_gl_init (&argc, &argv);
 
 	window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_title (GTK_WINDOW (window), "gtk TDT v1 client");
