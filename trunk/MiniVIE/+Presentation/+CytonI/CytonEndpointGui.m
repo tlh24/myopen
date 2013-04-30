@@ -1,6 +1,6 @@
 classdef CytonEndpointGui
-    % Test gui for endpoint veocity control
-    % Usage: CytonEndpointGui()
+    % Test gui for endpoint velocity control
+    % Usage: CytonEndpointGui.Run()
     %
     % 03-Apr-2013 Armiger: Created
     methods (Static = true)
@@ -76,6 +76,7 @@ classdef CytonEndpointGui
                 wMove = nan(1,3);
                 vMove = 15*cmd(1:3);
                 wMove = cmd(4:6);
+                %wMove(3) = nan;
                 
                 % Get current position
                 q = hCyton.JointParameters;
