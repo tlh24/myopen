@@ -211,7 +211,10 @@ classdef CytonSerial < handle
             % force end effector to range 0-1
             jointPosition(8) = max(min(jointPosition(8),1),0);
             
-            jointIds = 0:numJoints-1;
+            % RSA Updated for rewired Cyton servos.  Servo id 3 was placed
+            % on a dedicated power bank
+            jointIds = [0 1 2 16 4 5 6 7];  % map joints to servo ids
+            
             pwmVals = 1500.*ones(numJoints,1);
             for i = 1:numJoints
                 % Map PWM based on Calibration PWM points
