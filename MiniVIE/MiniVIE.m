@@ -41,7 +41,7 @@ classdef MiniVIE < Common.MiniVieObj
             setupFigure(obj);
             
             % Set valid input options
-            set(obj.hg.popups(MiniVIE.INPUT),'String',{'None','Signal Simulator','EMG Simulator','DaqHwDevice','CpchSerial','NfuInput','UdpDevice'});
+            set(obj.hg.popups(MiniVIE.INPUT),'String',{'None','Signal Simulator','EMG Simulator','DaqHwDevice','CpchSerial','NfuInput','UdpDevice','IntanDevBoard'});
             set(obj.hg.popups(MiniVIE.INPUT),'Value',1);
             set(obj.hg.popups(MiniVIE.SA),'String',{'None','LDA Classifier','DiscriminantAnalysis','SupportVectorMachine'});
             set(obj.hg.popups(MiniVIE.SA),'Value',1);
@@ -314,6 +314,8 @@ classdef MiniVIE < Common.MiniVieObj
                         h = loadCpchSerial();
                     case 'NfuInput'
                         h = Inputs.NfuInput();
+                    case 'IntanDevBoard'
+                        h = Inputs.IntanUdp.getInstance;
                     otherwise
                         % None
                         h = [];
