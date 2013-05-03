@@ -120,7 +120,7 @@ classdef assessmentEval
                         uniqueClasses = unique(d(min(idCorrect):max(idCorrect)));
                     end
                     
-                    uniqueClasses(uniqueClasses == i) = [];
+                    uniqueClasses(uniqueClasses == targetClassId) = [];
                     if ~isempty(uniqueClasses)
                         strUnique = sprintf('"%s" ',classNames{uniqueClasses});
                         fprintf('Mis-classes were: %s',strUnique);
