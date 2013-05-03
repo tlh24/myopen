@@ -17,13 +17,15 @@ classdef guiSignalViewer < Common.MiniVieObj
         ShowMeasurements = 0;
         ModeSelect = GUIs.guiSignalViewerState.TimeDomain;
         
-        AxesLimTimeDomain = [-1 10];  % unused if axis 'auto'
+        AxesLimTimeDomain = 'auto';  % 'auto', [-1 1], etc
         
         % Use this parameter to control the number of
         % samples shown in the signal viewer
         NumTimeDomainSamples = 2000;
         NumFeatureSamples = 250;
         NumFrequencySamples = 400;
+        
+        OffsetTimeDomain = 1.5;
         
         hg
         hTimer
@@ -229,8 +231,8 @@ classdef guiSignalViewer < Common.MiniVieObj
                         set(obj.hg.Axes(1),'OuterPosition',[0 0 1 1]);
                         xlabel(obj.hg.Axes(1),'Sample Number');
                         ylabel(obj.hg.Axes(1),'Source Units');
-                        %ylim(obj.hg.Axes(1),obj.AxesLimTimeDomain);
-                        axis(obj.hg.Axes(1),'auto');
+                        ylim(obj.hg.Axes(1),obj.AxesLimTimeDomain);
+                        %axis(obj.hg.Axes(1),'auto');
 
                         set(obj.hg.MeasureLines,'Visible','on');
                         set(obj.hg.DataLabels,'Visible','on');
@@ -312,7 +314,7 @@ classdef guiSignalViewer < Common.MiniVieObj
             set(obj.hg.DataLabels,'String','');
             
             offset = zeros(1,size(channelData,2));
-            offset(obj.SelectedChannels) = 1.5 * ((1:length(obj.SelectedChannels)) -1);
+            offset(obj.SelectedChannels) = obj.OffsetTimeDomain * ((1:length(obj.SelectedChannels)) -1);
             for iChannel = obj.SelectedChannels
                 set(obj.hg.PlotLines{1}(iChannel),...
                     'YData',channelData(:,iChannel)+offset(iChannel),...
@@ -355,8 +357,10 @@ classdef guiSignalViewer < Common.MiniVieObj
             %                 zc_thresh = 0.1;
             %                 ssc_thresh = 0.1;
             
+            % [numChannels numFeatures]
             features = feature_extract(channelData',windowSize);
             
+            % [numChannels numFeatures 200]
             obj.featureBuffer = circshift(obj.featureBuffer,[0 0 1]);
             obj.featureBuffer(:,:,1) = features;
             

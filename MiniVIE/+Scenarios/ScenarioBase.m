@@ -77,6 +77,13 @@ classdef ScenarioBase < Common.MiniVieObj
             end
         end
         function applyRangeLimits(obj)
+            % Apply Shoulder Limits
+            obj.JointAnglesDegrees(action_bus_enum.Shoulder_FE) = max(min(...
+                obj.JointAnglesDegrees(action_bus_enum.Shoulder_FE),125),-30);
+            obj.JointAnglesDegrees(action_bus_enum.Shoulder_AbAd) = max(min(...
+                obj.JointAnglesDegrees(action_bus_enum.Shoulder_AbAd),15),-90);
+            obj.JointAnglesDegrees(action_bus_enum.Humeral_Rot) = max(min(...
+                obj.JointAnglesDegrees(action_bus_enum.Humeral_Rot),45),-45);
             % Apply Elbow Limits
             obj.JointAnglesDegrees(action_bus_enum.Elbow) = max(min(...
                 obj.JointAnglesDegrees(action_bus_enum.Elbow),125),5);

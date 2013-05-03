@@ -375,3 +375,98 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
         end
     end
 end
+
+
+
+
+function plot_each_emg_channel
+
+%%
+
+channels = obj.ActiveChannels;
+chEmg = obj.getContinuousData(channels);
+chEmg = TrainingDataAnalysis.filter_data(chEmg);
+
+numChannels = length(channels);
+c = distinguishable_colors(numChannels);
+clf
+for i = 1:numChannels
+   h = subplot(numChannels,1,i)
+   plot(chEmg(:,i),'Color',c(i,:))
+
+   set(h,'YTick',[]);
+   set(h,'XTick',[]);
+   ylabel(h,num2str(channels(i)))
+   rng = 0.7;
+   ylim([-rng rng]);
+
+end
+
+
+
+end
+function plot_each_emg_channel_with_breaks
+
+%%
+
+channels = obj.ActiveChannels;
+chEmg = obj.getContinuousData(channels);
+chEmg = TrainingDataAnalysis.filter_data(chEmg);
+
+c = distinguishable_colors(obj.NumActiveChannels);
+l = obj.getAllClassLabels;
+w = obj.WindowSize;
+classChange = [find(diff(l) ~= 0) length(l)];
+
+for i = 1:obj.NumClasses
+    strClass = obj.ClassNames{i};
+    acronymClass = upper(strClass(regexp(strClass, '\<.')));
+    acronymClassname{i} = acronymClass;
+end
+
+
+xTickLabels = acronymClassname(l(classChange));
+xTick = mean( [[0 classChange(1:end-1)*w]; classChange*w] );
+
+clf
+[p, f, e] = fileparts(obj.fullFileName);
+dataLabel = [f '_emgChannels'];
+
+for i = 1:obj.NumActiveChannels
+   h = subplot(obj.NumActiveChannels,1,i);
+   plot(chEmg(:,i),'Color',c(i,:))
+
+   hold on
+   xBreaks = classChange * w;
+   xBreaks = [xBreaks; xBreaks; nan(size(xBreaks))];
+   yBreaks = repmat([-10; 10; NaN],1,size(xBreaks,2));
+   
+   plot(xBreaks,yBreaks,'k')
+   
+   set(h,'YTick',[]);
+   if i == 1
+       title(dataLabel, 'Interpreter','None');
+   end
+   if i == obj.NumActiveChannels
+       set(h,'XTick',xTick)
+       set(h,'XTickLabel',xTickLabels)
+   else
+       set(h,'XTick',[]);
+   end
+   ylabel(h,num2str(channels(i)))
+   rng = 0.7;
+   ylim([-rng rng]);
+
+end
+
+% Save output
+outFile = [dataLabel '.png'];
+if ~exist(outFile,'file')
+    win = get(gcf,'Position');
+    pad = 50;
+    screencapture(gcf,[pad pad win(3)-(1*pad) win(4)-(1*pad)],outFile);
+else
+    fprintf('[%s] File "%s" already exists\n',mfilename,outFile);
+end
+
+end
