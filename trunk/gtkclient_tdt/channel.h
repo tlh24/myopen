@@ -214,7 +214,7 @@ public:
 	void setApertureLocal(int n, float aperture){
 		if(n >= 0 && n <= 1) m_aperture[n] = aperture; 
 		float color[3] = {0.f, 1.f, 1.f}; 
-		if(n == 1){color[0] = 1.f; color[1] = 0.f; color[2] = 0.f; }
+		if(n == 1){color[0] = 1.f; color[1] = 0.f; color[2] = 0.f; } //red
 		m_pcaVbo->updateAperture(m_template[n], aperture, color); 
 	}
 	float getThreshold() { return m_threshold; }
