@@ -118,7 +118,7 @@ double		 g_minISI = 1.3; //ms
 int		 	 g_spikesCols = 16; 
 
 float g_unsortrate = 0.0; //the rate that unsorted WFs get through.
-float	g_autoThreshold = 3.5; //standard deviations.
+float	g_autoThreshold = -3.5; //standard deviations.
 
 int g_totalPackets = 0;
 int g_strobePackets = 0;
@@ -1920,7 +1920,7 @@ int main(int argc, char **argv)
 						minISISpinCB, 0);
 	
 	g_autoThresholdSpin = mk_spinner("auto thresh, std", box1, g_autoThreshold, 
-						1.0, 10.0, 0.05, autoThresholdSpinCB, 0); 
+						-10.0, 10.0, 0.05, autoThresholdSpinCB, 0); 
 	GtkWidget* bx3 = gtk_hbox_new (FALSE, 1);
 	gtk_box_pack_start (GTK_BOX (box1), bx3, FALSE, FALSE, 0);
 	button = gtk_button_new_with_label ("set selected");
