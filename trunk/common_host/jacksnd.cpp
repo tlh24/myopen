@@ -80,26 +80,25 @@ int process_resample(jack_nframes_t nframes, void* arg){
 	for(unsigned int i=0; i<nframes; i++){
 		long dif = r->wrPtr - r->rdPtr; 
 		if(dif <= 0){ //probably pipe dried up.
-			//if(i==0)
-			//	printf("dif <= 0 dif %ld nframes %d rd %ld wr %ld\n", dif, nframes, r->rdPtr, r->wrPtr); 
+			if(i==0)
+				printf("ERROR: dif <= 0 dif %ld nframes %d rd %ld wr %ld\n", dif, nframes, r->rdPtr, r->wrPtr); 
 			out1[i] = 0.f; 
 			out2[i] = 0.f; 
 		} else if(dif >= RESAMP_MASK){
-			#ifdef DEBUG
+			//too much data too fast ..
 			if(i==0) {
-				printf("dif >= %d dif %ld nframes %d rd %ld wr %ld\n", RESAMP_MASK, dif, nframes, r->rdPtr, r->wrPtr);
+				printf("ERROR: dif >= %d dif %ld nframes %d rd %ld wr %ld\n", RESAMP_MASK, dif, nframes, r->rdPtr, r->wrPtr);
 			}
-			#endif
 			r->rdPtr = r->wrPtr - (RESAMP_SIZ/2); //this will keep zeros coming out.
 			out1[i] = 0.f; 
 			out2[i] = 0.f; 
 		} else {
 			float p = r->phase; 
 			float lerp = p - floor(p); 
-			float a1 = lerp*r->circBuf[0][r->rdPtr&RESAMP_MASK] +
-							(1-lerp)*r->circBuf[0][(r->rdPtr+1)&RESAMP_MASK]; 
-			float a2 = lerp*r->circBuf[1][r->rdPtr&RESAMP_MASK] + 
-							(1-lerp)*r->circBuf[1][(r->rdPtr+1)&RESAMP_MASK]; 
+			float a1 = (1-lerp)*r->circBuf[0][r->rdPtr&RESAMP_MASK] +
+							(lerp)*r->circBuf[0][(r->rdPtr+1)&RESAMP_MASK]; 
+			float a2 = (1-lerp)*r->circBuf[1][r->rdPtr&RESAMP_MASK] + 
+							(lerp)*r->circBuf[1][(r->rdPtr+1)&RESAMP_MASK]; 
 			out1[i] = a1; 
 			out2[i] = a2; 
 			//increment phase..
@@ -112,7 +111,7 @@ int process_resample(jack_nframes_t nframes, void* arg){
 			if(i == 0){
 				double q = (double)(dif - (RESAMP_SIZ/2)); 
 				r->phaseIncr = r->phaseIncrNom + q*r->phaseIncrDelta 
-					+ 0.00*r->integral*r->phaseIncrDelta;
+					+ 0.0 * r->integral*r->phaseIncrDelta / 200.0;
 				r->integral = r->integral * 0.9999 + q; 
 				if(r->delay < 0){
 					printf("phaseIncr %f q %f integral %f\n", r->phaseIncr, q, r->integral); 

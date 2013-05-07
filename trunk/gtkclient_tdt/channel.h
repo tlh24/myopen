@@ -18,27 +18,27 @@ void glPrint(char *text);
 //need some way of encapsulating per-channel information. 
 class Channel {
 private:
-	float m_threshold; 
-	float	m_centering; //left/right centering. used to look for threshold crossing.
-	float m_gain; 
-	float m_aperture[2]; //aka MSE per sample.
+	float 	m_threshold; 
+	float	m_centering; 	// left/right centering. used to look for threshold crossing.
+	float 	m_gain; 
+	float 	m_aperture[2]; 	// aka MSE per sample.
 public:
-	Vbo*	m_wfVbo; //range 1 mean 0
+	Vbo*	m_wfVbo; 		// range 1 mean 0
 	Vbo*	m_usVbo; 
-	VboPca*	m_pcaVbo; //2D points, with color. 
-	float	m_pca[2][32]; //range 1 mean 0
-	float m_pcaScl[2]; //sqrt of the eigenvalues.
+	VboPca*	m_pcaVbo; 		// 2D points, with color. 
+	float	m_pca[2][32]; 	// range 1 mean 0
+	float 	m_pcaScl[2]; 	// sqrt of the eigenvalues.
 	float	m_template[2][32]; // range 1 mean 0.
 	float	m_loc[4]; 
-	int	m_ch; //channel number, obvi.
-	float m_agc; 
-	i64 	m_isi[2][100]; //counts of the isi, in units of ms.
-	i64	m_isiViolations; 
-	i64	m_lastSpike[2]; //zero when a spike occurs. in samples.
+	int		m_ch; 			//channel number, obvi.
+	float 	m_agc; 
+	i64 	m_isi[2][100]; 	//counts of the isi, in units of ms.
+	i64		m_isiViolations; 
+	i64		m_lastSpike[2]; //zero when a spike occurs. in samples.
 	
 	Channel(int ch, MatStor* ms){
-		m_wfVbo = new Vbo(6, NWFVBO, 34); //sorted units, with color. 
-		m_usVbo = new Vbo(3, NUSVBO, 34); //unsorted units, all gray.
+		m_wfVbo = new Vbo(6, NWFVBO, 34); // sorted units, with color. 
+		m_usVbo = new Vbo(3, NUSVBO, 34); // unsorted units, all gray.
 		m_pcaVbo = new VboPca(6, 1024*8, 1, ch, ms); 
 		m_wfVbo->m_useSAA = m_usVbo->m_useSAA = m_pcaVbo->m_useSAA = false; 
 		m_pcaVbo->m_fade = 0.f; 
