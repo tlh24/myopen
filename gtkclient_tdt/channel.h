@@ -18,21 +18,23 @@ void glPrint(char *text);
 //need some way of encapsulating per-channel information. 
 class Channel {
 private:
-	float 	m_threshold; 
-	float	m_centering; 	// left/right centering. used to look for threshold crossing.
+	float 	m_threshold; 	// 1 = + 10mV.
+	float		m_centering; 	// left/right centering. used to look for threshold crossing.
 	float 	m_gain; 
 	float 	m_aperture[2]; 	// aka MSE per sample.
 public:
-	Vbo*	m_wfVbo; 		// range 1 mean 0
-	Vbo*	m_usVbo; 
+	Vbo*		m_wfVbo; 		// range 1 mean 0
+	Vbo*		m_usVbo; 
 	VboPca*	m_pcaVbo; 		// 2D points, with color. 
-	float	m_pca[2][32]; 	// range 1 mean 0
+	float		m_pca[2][32]; 	// range 1 mean 0
 	float 	m_pcaScl[2]; 	// sqrt of the eigenvalues.
-	float	m_template[2][32]; // range 1 mean 0.
-	float	m_loc[4]; 
+	float		m_template[2][32]; // range 1 mean 0.
+	float		m_loc[4]; 
 	int		m_ch; 			//channel number, obvi.
 	float 	m_agc; 
-	i64 	m_isi[2][100]; 	//counts of the isi, in units of ms.
+	double	m_var; 			//variance of the continuous waveform, 1 = 10mV^2. 
+	double	m_mean; 			//mean of the continuous waveform. 
+	i64 		m_isi[2][100]; 	//counts of the isi, in units of ms.
 	i64		m_isiViolations; 
 	i64		m_lastSpike[2]; //zero when a spike occurs. in samples.
 	
@@ -44,6 +46,8 @@ public:
 		m_pcaVbo->m_fade = 0.f; 
 		m_isiViolations = 0; 
 		m_ch = ch; 
+		m_var = 0.0; 
+		m_mean = 0.0; 
 		//init PCA, template. 
 		for(int j=0; j<32; j++){
 			m_pca[0][j] = 1.f/8.f; 
@@ -223,6 +227,9 @@ public:
 			resetPca(); 
 		m_threshold = thresh; 
 	}
+	void autoThreshold(double s){
+		m_threshold = m_mean + sqrt(m_var) * s; 
+	}
 	int getCentering() { return (int)m_centering; }
 	void setCentering(float c){
 		if(c != m_centering)
@@ -246,12 +253,47 @@ public:
 	float getGain(){return m_gain;}
 	void draw(int drawmode, float time, float* cursPos, 
 				 bool showPca, bool closest, bool sortMode, bool showWFVgrid){
+		float ox = m_loc[0]; float oy = m_loc[1]; 
+		float ow = m_loc[2]/2; float oh = m_loc[3]; 
+		//draw the distribution in the background
+		if(1){
+			glColor4f(0.2f,0.f,1.f,0.4f); 
+			glBegin(GL_TRIANGLE_STRIP);
+			for(int i=0; i<128; i++){
+				double x = (double)i / 127.0 - 0.5; 
+				x *= 2.0; 
+				x /= m_gain; 
+				double f = 0.5; // 1.0 / (sqrt(m_var) * 2.50662827); leave the normalization const out. 
+				double e = (x - m_mean)*(x - m_mean) / (-2.0 * m_var); 
+				f *= exp(e); 
+				float g = (float)i / 127.f; 
+				glVertex2f(ox     , g*oh+oy);
+				glVertex2f(f*ow+ox, g*oh+oy); 
+			}
+			glEnd(); 
+		}
 		glColor4f(0.5f, 0.5f, 0.5f, 0.5f);
 		//draw only the spikes in spike mode. 
 		m_usVbo->draw(drawmode, time, true);
 		m_wfVbo->draw(drawmode, time, true);
-		float ox = m_loc[0]; float oy = m_loc[1]; 
-		float ow = m_loc[2]/2; float oh = m_loc[3]; 
+		if(1){
+			//draw the threshold & centering.
+			glColor4f(1.f,1.f,1.f,0.4f); 
+			glLineWidth(1.f); 
+			glBegin(GL_LINE_STRIP); 
+			float t = m_threshold*m_gain; 
+			t = oh*(t/2.f+0.5) + oy; 
+			glVertex2f(ox, t);
+			glVertex2f(ow+ox, t); 
+			glEnd(); 
+			glColor4f(1.f,1.f,1.f,0.3f); 
+			glBegin(GL_LINE_STRIP); 
+			float c = (float)m_centering;
+			c = 31.f-c; c += 0.5f; c /= (31.f); //centering transform.
+			glVertex2f(ow*c+ox, t-0.2*oh);
+			glVertex2f(ow*c+ox, t+0.2*oh); 
+			glEnd(); 
+		}
 		if(sortMode){ 
 			m_pcaVbo->draw(GL_POINTS, time, true, cursPos, closest); 
 			if(closest)
@@ -287,23 +329,6 @@ public:
 					glVertex3f(0.f*ow+ox, 0.5f*oh+oy, 1.f);
 				}
 			}
-			glEnd(); 
-			//draw the threshold & centering.
-			//glDisableClientState(GL_VERTEX_ARRAY); 
-			glColor4f(1.f,1.f,1.f,0.4f); 
-			glLineWidth(1.f); 
-			glBegin(GL_LINE_STRIP); 
-			float t = m_threshold*m_gain; 
-			t = oh*(t/2.f+0.5) + oy; 
-			glVertex2f(0.0f+ox, t);
-			glVertex2f(0.5f+ox, t); 
-			glEnd(); 
-			glColor4f(1.f,1.f,1.f,0.3f); 
-			glBegin(GL_LINE_STRIP); 
-			float c = (float)m_centering;
-			c = 31.f-c; c += 0.5f; c /= (31.f*2.f); //centering transform.
-			glVertex2f(c+ox, t-0.2*oh);
-			glVertex2f(c+ox, t+0.2*oh); 
 			glEnd(); 
 			if(showWFVgrid){
 				//draw vertical scale. 
