@@ -1333,7 +1333,7 @@ static void apertureOffCB( GtkWidget*, gpointer p){
 	if(h >= 0 && h < 8 && !g_uiRecursion){
 		int j = g_channel[h/2];
 		gtk_adjustment_set_value(g_apertureSpin[h], 0);
-		g_c[j]->setApertureLocal(0, h%2);
+		g_c[j]->setApertureLocal(h%2, 0);
 		//setAperture(j);
 	}
 }
