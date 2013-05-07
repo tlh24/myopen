@@ -118,6 +118,7 @@ double		 g_minISI = 1.3; //ms
 int		 	 g_spikesCols = 16; 
 
 float g_unsortrate = 0.0; //the rate that unsorted WFs get through.
+float	g_autoThreshold = 3.5; //standard deviations.
 
 int g_totalPackets = 0;
 int g_strobePackets = 0;
@@ -156,6 +157,7 @@ GtkAdjustment* g_thresholdSpin[4];
 GtkAdjustment* g_centeringSpin[4];
 GtkAdjustment* g_unsortRateSpin;
 GtkAdjustment* g_minISISpin;
+GtkAdjustment* g_autoThresholdSpin;
 GtkAdjustment* g_spikesColsSpin;
 GtkAdjustment* g_zoomSpin;
 GtkAdjustment* g_rasterSpanSpin;
@@ -610,6 +612,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 			g_vsFadeColor->setParam(2,"ascale", 0.2f); 
 		else
 			g_vsFadeColor->setParam(2,"ascale", 1.f); 
+		cgGLDisableProfile(myCgVertexProfile);
 		if(g_mode == MODE_SORT){
 			for(int k=0; k<4; k++){
 				//2x2 array.
@@ -619,7 +622,6 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 				g_c[g_channel[k]]->draw(g_drawmode, time, g_cursPos,
 										g_showPca, g_rtMouseBtn, true, g_showWFVgrid);
 			}
-			cgGLDisableProfile(myCgVertexProfile);
 		}
 		if(g_mode == MODE_SPIKES){
 			int spikesRows = 96 / g_spikesCols; 
@@ -633,7 +635,6 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 				g_c[k]->draw(g_drawmode, time, g_cursPos,
 										g_showPca, g_rtMouseBtn, false, g_showWFVgrid);
 			}
-			cgGLDisableProfile(myCgVertexProfile);
 			//draw some lines. 
 			glBegin(GL_LINES); 
 			glColor4f(1.f, 1.f, 1.f, 0.4);
@@ -980,8 +981,16 @@ void* po8_thread(void*){
 				for(int k=0; k<96; k++){
 					for(int i=0; i<numSamples; i++){
 						short samp = temp[i + k*numSamples]; //strange ordering .. but eh.
-						g_obuf[k][(oldo + i)&255] = (samp / 32767.f); 
+						float f = samp / 32767.f; 
+						g_obuf[k][(oldo + i)&255] = f; 
 						//1 = +10mV; range = [-1 1] here.
+						//update the channel standard deviations, too. 
+						double m = g_c[k]->m_mean; 
+						g_c[k]->m_var *= 0.999998; 
+						g_c[k]->m_var += 0.000002*(f-m)*(f-m); 
+						m *= 0.999997; 
+						m += 0.000003 * f; 
+						g_c[k]->m_mean = m; 
 					}
 				}
 				if(1){
@@ -1322,6 +1331,11 @@ static void unsortRateSpinCB( GtkWidget* , gpointer){
 	g_unsortrate = t;
 	printf("unsortRateSpinCB: %f\n", t);
 }
+static void autoThresholdSpinCB( GtkWidget* , gpointer){
+	float t = gtk_adjustment_get_value(g_autoThresholdSpin);
+	g_autoThreshold = t;
+	printf("autoThresholdSpinCB: %f\n", t);
+}
 /*
 static void agcSpinCB( GtkWidget*, gpointer p){
 	int h = (int)((long long)p & 0xf);
@@ -1360,6 +1374,17 @@ static void apertureOffCB( GtkWidget*, gpointer p){
 		gtk_adjustment_set_value(g_apertureSpin[h], 0);
 		g_c[j]->setApertureLocal(h%2, 0);
 		//setAperture(j);
+	}
+}
+static void autoThresholdCB( GtkWidget*, gpointer p){
+	int h = (int)((long long)p & 0xf);
+	if(h == 1){
+		g_c[g_channel[0]]->autoThreshold(g_autoThreshold); 
+	}
+	if(h == 2){
+		for(int i=0; i<96; i++){
+			g_c[i]->autoThreshold(g_autoThreshold); 
+		}
 	}
 }
 /*
@@ -1892,7 +1917,21 @@ int main(int argc, char **argv)
 	// for the sorting, we show all waveforms (up to a point..)
 	//these should have a minimum enforced ISI. 
 	g_minISISpin = mk_spinner("min ISI", box1, g_minISI, 0.2, 3.0, 0.01, 
-						minISISpinCB, 0); 
+						minISISpinCB, 0);
+	
+	g_autoThresholdSpin = mk_spinner("auto thresh, std", box1, g_autoThreshold, 
+						1.0, 10.0, 0.05, autoThresholdSpinCB, 0); 
+	GtkWidget* bx3 = gtk_hbox_new (FALSE, 1);
+	gtk_box_pack_start (GTK_BOX (box1), bx3, FALSE, FALSE, 0);
+	button = gtk_button_new_with_label ("set selected");
+	g_signal_connect(button, "clicked", G_CALLBACK (autoThresholdCB),
+					 (gpointer*)1);
+	gtk_box_pack_start (GTK_BOX (bx3), button, FALSE, FALSE, 1);
+	button = gtk_button_new_with_label ("set all");
+	g_signal_connect(button, "clicked", G_CALLBACK (autoThresholdCB),
+					 (gpointer*)2);
+	gtk_box_pack_start (GTK_BOX (bx3), button, FALSE, FALSE, 1);
+	
 	g_spikesColsSpin = mk_spinner("Columns", box1, g_spikesCols, 3, 32, 1, 
 						spikesColsSpinCB, 0); 
 	
