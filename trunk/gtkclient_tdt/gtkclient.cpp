@@ -118,7 +118,7 @@ double		 g_minISI = 1.3; //ms
 int		 	 g_spikesCols = 16; 
 
 float g_unsortrate = 0.0; //the rate that unsorted WFs get through.
-float	g_autoThreshold = -3.5; //standard deviations.
+float	g_autoThreshold = -3.5; //standard deviations. default negative, w/e.
 
 int g_totalPackets = 0;
 int g_strobePackets = 0;
@@ -896,7 +896,7 @@ void* po8_thread(void*){
 			nchan = card->numChannels(); 
 		}
 		int stoppedCount = 0;
-		short temp[8192*4]; //observed up to 128*48 32-bit samples -- ~12k shorts.
+		short temp[8192*8]; //observed up to 128*48 32-bit samples -- ~12k shorts.
 		short temptemp[1024]; 
 		while((simulate || stoppedCount < count) && !g_die){
 			//printf("waiting for data ready.\n"); --we move too fast for this.
