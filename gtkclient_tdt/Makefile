@@ -4,8 +4,8 @@
 
 # The following can be set at the command line
 # ie: make DBG=true JACK=false
-DBG = true
-JACK = false
+DBG = false
+JACK = true
 
 CC  = gcc
 CPP = g++
@@ -28,7 +28,7 @@ COM_HDR = channel.h wfwriter.h ../common_host/vbo.h ../common_host/cgVertexShade
 FIFOS = gtkclient_in gtkclient_out
 
 ifeq ($(strip $(DBG)),true)
-	CFLAGS  += -g -rdynamic -DDEBUG
+	CFLAGS  += -g -O0 -rdynamic -DDEBUG
 	LDFLAGS += -rdynamic
 else
 	CFLAGS += -O3

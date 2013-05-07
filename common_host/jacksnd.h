@@ -20,7 +20,7 @@ enum JACKPROCESS_TYPE {
 	JACKPROCESS_RESAMPLE,
 	JACKPROCESS_NUM
 }; 
-#define RESAMP_SIZ 512
+#define RESAMP_SIZ 1024
 #define RESAMP_MASK (RESAMP_SIZ-1)
 typedef struct{
 	float		circBuf[2][RESAMP_SIZ];
