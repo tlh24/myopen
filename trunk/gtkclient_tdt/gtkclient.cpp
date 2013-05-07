@@ -95,6 +95,7 @@ bool g_die = false;
 double g_pause = -1.0;
 bool g_cycle = false;
 bool g_showPca = false;
+bool g_autoChOffset = false; 
 bool g_showWFVgrid = true; 
 bool g_rtMouseBtn = false;
 bool g_saveUnsorted = false; 
@@ -341,6 +342,8 @@ static gint motion_notify_event( GtkWidget *,
 }
 //forward declaration.
 static void templatePopupMenu (GdkEventButton *event, gpointer userdata);
+void updateChannelUI(int k); 
+
 static gint button_press_event( GtkWidget      *,
                                 GdkEventButton *event ){
 	updateCursPos(event->x,event->y);
@@ -376,7 +379,7 @@ static gint button_press_event( GtkWidget      *,
 		float y = (g_cursPos[1]*-1.f + 1.f)/2.f; //0,0 = upper left hand corner. 
 		int sc = (int)floor(x*xf); 
 		int sr = (int)floor(y*yf); 
-		if(event->type==GDK_2BUTTON_PRESS){
+		if(event->type==GDK_2BUTTON_PRESS){ //double click.
 			int h =  sr*g_spikesCols + sc; 
 			if(h >= 0 && h < 96){
 				//shift channels down, like a priority queue.
@@ -386,6 +389,11 @@ static gint button_press_event( GtkWidget      *,
 				printf("channel switched to %d\n", g_channel[0]); 
 				g_mode = MODE_SORT; 
 				gtk_notebook_set_current_page(GTK_NOTEBOOK(g_notebook), 1); 
+			}
+			//update the UI elements.
+			for(int i=0; i<4; i++){
+				gtk_adjustment_set_value(g_channelSpin[i], (double)g_channel[i]);
+				updateChannelUI(i); 
 			}
 		}
 	}
@@ -617,10 +625,10 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 			int spikesRows = 96 / g_spikesCols; 
 			if(96 % g_spikesCols) spikesRows++; 
 			float xf = g_spikesCols; float yf = spikesRows; 
+			xz = 2.f/xf; yz = 2.f/yf;
 			for(int k=0; k<96; k++){
 				xo = (k%g_spikesCols)/xf; 
 				yo = ((k/g_spikesCols)+1)/yf; 
-				xz = 2.f/xf; yz = 2.f/yf;
 				g_c[k]->setLoc(xo*2.f-1.f, 1.f-yo*2.f, xz*2.f, yz);
 				g_c[k]->draw(g_drawmode, time, g_cursPos,
 										g_showPca, g_rtMouseBtn, false, g_showWFVgrid);
@@ -628,7 +636,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 			cgGLDisableProfile(myCgVertexProfile);
 			//draw some lines. 
 			glBegin(GL_LINES); 
-			glColor4f(1.f, 1.f, 1.f, 0.5);
+			glColor4f(1.f, 1.f, 1.f, 0.4);
 			for(int c=1; c<g_spikesCols; c++){
 				float cf = (float)c / g_spikesCols; 
 				glVertex2f(cf*2.f-1.f, -1.f);
@@ -639,6 +647,23 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 				glVertex2f(-1.f, rf*2.f-1.f);
 				glVertex2f( 1.f, rf*2.f-1.f); 
 			}
+			glEnd(); 
+			glBegin(GL_LINE_STRIP); 
+			//label the current audio channel ('A') 
+			glColor4f(1.f, 1.f, 0.f, 1.f);
+			int h = g_channel[0]; 
+			xo = (h%g_spikesCols)/xf; 
+			xo *= 2.f; xo -= 1.f; 
+			yo = ((h/g_spikesCols)+1)/yf; 
+			yo *= -2.f; yo += 1.f; 
+			float xa, ya; xa = ya = 0.f; 
+			if(xo <= -1.f) xa = 2.0/g_viewportSize[0]; //one pixel.
+			if(yo <= -1.f) ya = 2.0/g_viewportSize[1]; 
+			glVertex2f(xo+xa, yo+ya); 
+			glVertex2f(xo+xa, yo+yz); 
+			glVertex2f(xo+xz, yo+yz); 
+			glVertex2f(xo+xz, yo+ya); 
+			glVertex2f(xo+xa, yo+ya); 
 			glEnd(); 
 		}
 		glPopMatrix();
@@ -1252,7 +1277,7 @@ static void channelSpinCB( GtkWidget*, gpointer p){
 		}
 		//if we are in sort mode, and k == 0, move the other channels ahead of us.
 		//this allows more PCA points for sorting!
-		if(g_mode == MODE_SORT && k == 0){
+		if(g_mode == MODE_SORT && k == 0 && g_autoChOffset){
 			for(int j=1; j<4; j++){
 				g_channel[j] = (g_channel[0] + j) % 96;
 				//this does not recurse -- have to set the other stuff manually.
@@ -1410,6 +1435,12 @@ static void showPcaButtonCB(GtkWidget *button, gpointer * ){
 		g_showPca = true;
 	else
 		g_showPca = false;
+}
+static void autoChOffsetButtonCB(GtkWidget *button, gpointer * ){
+	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
+		g_autoChOffset = true;
+	else
+		g_autoChOffset = false;
 }
 static void showWFVgridButtonCB(GtkWidget *button, gpointer * ){
 	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
@@ -1696,6 +1727,14 @@ int main(int argc, char **argv)
 								 	g_c[g_channel[i]]->getGain(),
 									-64.0, 64.0, 0.1,
 								  	gainSpinCB, i);
+		if(i==0){
+			//show PCA button.
+			button = gtk_check_button_new_with_label("auto offset of B,C,D");
+			g_signal_connect (button, "toggled",
+					G_CALLBACK (autoChOffsetButtonCB), (gpointer) "o");
+			gtk_box_pack_start (GTK_BOX (bx2), button, TRUE, TRUE, 0);
+			gtk_widget_show(button);
+		}
 		//below that, the AGC target.
 		//g_agcSpin[i] = mk_spinner("AGC target", bx2,
 		//						  	g_c[g_channel[i]]->m_agc,
