@@ -897,7 +897,7 @@ void* po8_thread(void*){
 			nchan = card->numChannels(); 
 		}
 		int stoppedCount = 0;
-		short temp[bufmax*bps*nchan]; // 10000 samples * 2 bytes/sample * 96 Channels 
+		short * temp = new short[bufmax*bps*nchan]; // 10000 samples * 2 bytes/sample * 96 Channels 
 		short temptemp[1024]; 
 		while((simulate || stoppedCount < count) && !g_die){
 			//printf("waiting for data ready.\n"); --we move too fast for this.
@@ -1080,6 +1080,9 @@ void* po8_thread(void*){
 			PO8e::releaseCard(card);
 		}
 		//delete card; 
+		
+		delete[] temp; // since we've dynamically allocated
+
 		sleep(1); 
 	}
 	return 0;
