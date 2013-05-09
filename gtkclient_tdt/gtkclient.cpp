@@ -888,7 +888,8 @@ void* po8_thread(void*){
 		long double totalSamples = 0.0; //for simulation.
 		double		sinSamples = 0.0; // for driving the sinusoids; resets every 4e4. 
 		long long bytes = 0; 
-		unsigned int frame = 0; 
+		unsigned int frame = 0;
+		unsigned int bufmax = 10000;
 		unsigned int bps = 2; 
 		unsigned int nchan = 96; 
 		if(!simulate){
@@ -896,7 +897,7 @@ void* po8_thread(void*){
 			nchan = card->numChannels(); 
 		}
 		int stoppedCount = 0;
-		short temp[8192*8]; //observed up to 128*48 32-bit samples -- ~12k shorts.
+		short temp[bufmax*bps*nchan]; // 10000 samples * 2 bytes/sample * 96 Channels 
 		short temptemp[1024]; 
 		while((simulate || stoppedCount < count) && !g_die){
 			//printf("waiting for data ready.\n"); --we move too fast for this.
