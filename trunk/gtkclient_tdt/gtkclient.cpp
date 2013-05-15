@@ -1115,11 +1115,11 @@ void flush_pipe(int fid){
 void* mmap_thread(void*){
 	// sockets are too slow -- we need to memmap a file(s). 
 	/* matlab can do this -- very well, too! e.g:
-	 * m = memmapfile('/tmp/binned', 'Format', {'uint16' [194 10] 'x'})
+	 * m = memmapfile('/tmp/binned.mmap', 'Format', {'uint16' [194 10] 'x'})
 	 * A = m.Data(1).x; 
 	 * */
 	size_t length = 97*2*10*2; 
-	mmapHelp* mmh = new mmapHelp(length, "/tmp/binned"); 
+	mmapHelp* mmh = new mmapHelp(length, "/tmp/binned.mmap"); 
 	volatile unsigned short* bin = (unsigned short*)mmh->m_addr; 
 	mmh->prinfo(); 
 	fifoHelp* pipe_out = new fifoHelp("/tmp/gtkclient_out.fifo");
@@ -1684,7 +1684,10 @@ int main(int argc, char **argv)
 	//GtkWidget *paned2;
 	
 	//FiringRate fr; 
-	//fr.set_bin_params(10, 1.0);
+	//for (int i=0;i<96;i++) {
+	//	g_fr[i][0].set_bin_params(20, 1.0);	// nlags, duration (sec)
+	//	g_fr[i][1].set_bin_params(20, 1.0);	// nlags, duration (sec)
+	//}
 	//fr.get_bins_test();
 
 	if (argc > 1) {

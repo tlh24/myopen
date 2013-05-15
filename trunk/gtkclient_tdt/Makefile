@@ -6,9 +6,12 @@
 # ie: make DBG=true JACK=false
 DBG = false
 JACK = true
+MUDFLAP = false
+STACKPROTECTOR = false
 
 CC  = gcc
 CPP = g++
+TARGET = /usr/local/bin
 
 CFLAGS := -I/usr/local/include -I../common_host
 CFLAGS += -Wall -Wcast-align -Wpointer-arith -Wshadow -Wsign-compare \
@@ -28,8 +31,7 @@ COM_HDR = channel.h wfwriter.h ../common_host/vbo.h ../common_host/cgVertexShade
 FIFOS = gtkclient_in gtkclient_out
 
 ifeq ($(strip $(DBG)),true)
-	CFLAGS  += -g -O0 -rdynamic -DDEBUG
-	LDFLAGS += -rdynamic
+	CFLAGS  += -g -O0 -DDEBUG
 else
 	CFLAGS += -O3
 endif
@@ -38,6 +40,15 @@ ifeq ($(strip $(JACK)),true)
 	CFLAGS += -DJACK
 	LDFLAGS += -ljack
 	GOBJS += jacksnd.o
+endif
+
+ifeq ($(strip $(MUDFLAP)),true)
+        CFLAGS  += -fmudflap -fmudflapth -funwind-tables
+        LDFLAGS += -lmudflap -fmudflapth -rdynamic
+endif
+
+ifeq ($(strip $(STACKPROTECTOR)),true)
+	CFLAGS  += -fstack-protector-all
 endif
 
 all: gtkclient wf_plot po8e mmap_test
@@ -84,3 +95,9 @@ deps:
 	libboost1.49-all-dev pkg-config libhdf5-dev libsdl1.2-dev
 	echo "make sure /usr/lib64 is in /etc/ld.so.conf.d/libc.conf"
 	echo "otherwise Cg may not be found. "
+
+install:
+	install gtkclient $(TARGET)
+	install fade.cg $(TARGET)
+	install fadeColor.cg $(TARGET)
+	install threshold.cg $(TARGET)
