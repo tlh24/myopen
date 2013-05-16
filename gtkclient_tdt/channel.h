@@ -264,6 +264,7 @@ public:
 				x *= 2.0; 
 				x /= m_gain; 
 				double f = 0.5; // 1.0 / (sqrt(m_var) * 2.50662827); leave the normalization const out. 
+				if (m_var <= 0) { m_var = 1e-6; }	// protect against divide by zero
 				double e = (x - m_mean)*(x - m_mean) / (-2.0 * m_var); 
 				f *= exp(e); 
 				float g = (float)i / 127.f; 

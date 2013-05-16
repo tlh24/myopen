@@ -58,6 +58,8 @@
 #include "wfwriter.h"
 #include "jacksnd.h"
 
+#include "fenv.h" // for debugging nan problems
+
 //CG stuff. for the vertex shaders.
 CGcontext   myCgContext;
 CGprofile   myCgVertexProfile;
@@ -1673,6 +1675,11 @@ static void templatePopupMenu (GdkEventButton *event, gpointer p){
 }
 int main(int argc, char **argv)
 {
+
+#ifdef DEBUG
+   feenableexcept(FE_DIVBYZERO|FE_INVALID|FE_OVERFLOW);  // Enable (some) floating point exceptions
+#endif
+
 	GtkWidget *window;
 	GtkWidget *da1;
 	GdkGLConfig *glconfig;
@@ -1868,7 +1875,7 @@ int main(int argc, char **argv)
 			GtkWidget* bx3 = gtk_hbox_new (FALSE, 2);
 			gtk_container_add (GTK_CONTAINER (bx2), bx3);
 			g_apertureSpin[i*2+j] = mk_spinner("", bx3,
-								  g_c[g_channel[i]]->getApertureUv(j), 0, 1000, 1,
+								  g_c[g_channel[i]]->getApertureUv(j), 0, 100, 0.1,
 								  apertureSpinCB, i*2+j);
 			label = gtk_label_new("uV");
 			gtk_box_pack_start (GTK_BOX (bx3), label, TRUE, TRUE, 1);
