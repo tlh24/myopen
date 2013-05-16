@@ -382,37 +382,35 @@ public:
 			temp[i] = 0.f; 
 		int npts = 0; 
 		bool* inside = (bool*)malloc(m_rows * sizeof(bool)); 
-		for(int i=0; i<MIN(m_w,m_rows); i++){
+		int len = MIN(m_polyW, 1024); 
+		for(int i=0; i<MIN(m_w,m_rows) && len > 3; i++){
 			//task 1 is to see if each pca point is within the poly region. 
 			//this is easy - count the number of polylines crossed by a line 
 			//starting at this point heading to -inf. 
 			float x = m_f[m_dim*m_cols*i + 0];
 			float y = m_f[m_dim*m_cols*i + 1]; 
-			int len = MIN(m_polyW, 1024); 
 			int k = len; k--; 
 			//first determine if the polygon is CW or CCW. 
-			float mean[2] = {0,0}; 
-			for(int j=0; j<len; j++){
-				mean[0] += m_poly[j*2+0];
-				mean[1] += m_poly[j*2+1]; 
-			}
-			mean[0] /= (float)len; 
-			mean[1] /= (float)len; 
-			float px = m_poly[k*2+0]; float py = m_poly[k*2+1]; 
+			float x0 = m_poly[0]; float y0 = m_poly[1]; 
+			float x1 = m_poly[2]; float y1 = m_poly[3]; 
+			float x2 = m_poly[4]; float y2 = m_poly[5]; 
 			int crossPos = 0; 
+			int crossNeg = 0; 
 			for(int j=0; j<len; j++){
-				float nx = m_poly[j*2+0];
-				float ny = m_poly[j*2+1];
-				float vx = nx-px; 
-				float vy = ny-py; 
-				float wx = mean[0]-px; 
-				float wy = mean[1]-py; 
-				float cross = vx*wy - vy*wx; 
+				float nx = x0 - x1;
+				float ny = y0 - y1; 
+				float px = x1 - x2; 
+				float py = y1 - y2; 
+				float cross = nx*py - ny*px; 
 				if(cross > 0) crossPos++; 
+				if(cross < 0) crossNeg++; 
+				x0 = x1; y0 = y1; x1 = x2; y1 = y2; 
+				x2 = m_poly[((j+3)%len)*2+0]; 
+				y2 = m_poly[((j+3)%len)*2+1]; 
 			}
-			px = m_poly[k*2+0]; py = m_poly[k*2+1]; 
+			float px = m_poly[k*2+0]; float py = m_poly[k*2+1]; 
 			float scl = 1.f; 
-			if(crossPos < (len / 2)) scl = -1.f; 
+			if(crossPos < crossNeg) scl = -1.f; 
 			int intersects = 0; 
 			for(int j=0; j<len; j++){
 				float nx = m_poly[j*2+0];
@@ -445,6 +443,9 @@ public:
 				inside[i] = false; 
 				m_f[m_dim*m_cols*i + 2] = 1.0f;
 			}
+		}
+		if (npts <= 0) {
+			return false;
 		}
 		for(int k=0; k<32; k++){
 			temp[k] /= (float)npts;
