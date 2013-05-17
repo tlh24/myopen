@@ -4,6 +4,10 @@ classdef RocTable < handle
     % MPL.RocTable.createRocTables
     % MPL.RocTable.Test
     %
+    %
+    % To reload from MiniVIE GUI:
+    % obj.Presentation.hNfu.readRocTable
+    %
     % Log:
     %   17Aug2012 Armiger: Created
     properties
@@ -74,6 +78,7 @@ classdef RocTable < handle
 
             pos3([mce.THUMB_MCP]) = 0.55;
             pos3([mce.THUMB_CMC]) = 0.75;
+            pos3([mce.THUMB_CMC]) = 0.95;
             pos4 = pos3;
             roc(2).angles = [...
                 basePosition;...

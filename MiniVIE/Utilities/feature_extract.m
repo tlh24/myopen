@@ -24,7 +24,7 @@ if nargin < 3
 %     zc_thresh = 0.15; % JHMI_SD_01_LR
 end
 
-[nChannels nSamples] = size(windowData);
+[nChannels, nSamples] = size(windowData);
 myType = class(windowData);
 
 % RSA: Converting to type single to allow feature windowsize normalization
