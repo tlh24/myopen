@@ -723,7 +723,6 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 
 		char linkname[256];
 		char * dname;
-
 		// get directory of current exe
  		ssize_t r = readlink("/proc/self/exe", linkname, 256);
    		if (r < 0) {
@@ -738,11 +737,11 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 
     	string cgfile;
 
-		cgfile = d + "/" + "fadeColor.cg";
+		cgfile = d + "/cg/" + "fadeColor.cg";
 		g_vsFadeColor = new cgVertexShader(cgfile.c_str(),"fadeColor");
 		g_vsFadeColor->addParams(5,"time","fade","col","off","ascale");
 
-		cgfile = d + "/" + "threshold.cg";
+		cgfile = d + "/cg/" + "threshold.cg";
 		g_vsThreshold = new cgVertexShader(cgfile.c_str(),"threshold");
 		g_vsThreshold->addParams(2,"xzoom","yoffset");
 
@@ -1723,7 +1722,11 @@ int main(int argc, char **argv)
 	gtk_gl_init (&argc, &argv);
 
 	window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-	gtk_window_set_title (GTK_WINDOW (window), "gtk TDT v1 client");
+	#ifndef DEBUG
+	gtk_window_set_title (GTK_WINDOW (window), "gtk TDT client v1");
+	#else
+	gtk_window_set_title (GTK_WINDOW (window), "gtk TDT client v1 *** DEBUG ***");
+	#endif
 	gtk_window_set_default_size (GTK_WINDOW (window), 850, 800);
 	da1 = gtk_drawing_area_new ();
 	gtk_widget_set_size_request(GTK_WIDGET(da1), 640, 650);
