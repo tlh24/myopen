@@ -35,7 +35,7 @@ classdef TrainingData < handle
         WindowSize = 175; % number of samples per feature window
     end
     properties (Access = private)
-        MaxSamples = 1e5;
+        MaxSamples = 5e3;
         
         % These properties are hidden and should be accessed through the
         % various get[Property] methods.  This is due to the fact that some

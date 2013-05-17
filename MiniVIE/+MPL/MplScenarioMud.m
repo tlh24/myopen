@@ -11,6 +11,7 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
         hMud = [];
         hSink = [];
         hNfu = [];
+        hPercepts;
         hMicroStrainGX2 = [];
         hTactors;
         hUdpArmTracking; % pnet Handle for sending upper arm angles from remote system
@@ -19,7 +20,7 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
         enableNfu = 1; %true;
         enableMicroStrain = 0; %true;
         
-        UdpArmTrackingPort = []; % Leasve empty unless streaming upper arm angles
+        UdpArmTrackingPort = []; % Leave empty unless streaming upper arm angles
         
         EnableFeedback = 1;
         
@@ -69,20 +70,49 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
                 
                 % TODO: abstract tactor ids and mapping
                 %tactorIds = [5 6 7];
+                if 1
                 tactorIds = obj.TactorIds;
                 assert(isnumeric(tactorIds),'Tactor Ids must be numeric');
                 for iTactor = tactorIds
                     fprintf('[%s] Setting up tactor id# %d\n',mfilename,iTactor);
                     obj.hTactors = [obj.hTactors HapticAlgorithm(obj.hNfu,iTactor)];
                 end
+                else
+                    % Setup for finger tactors
+                    
+                    hSerial = instrfindall('name','tactors');
+                    if ~isempty(hSerial)
+                        hPort = serial('COM9');
+                        set(hPort,'Name','tactors');
+                        set(hPort,'BaudRate',57600);
+                        % set(hPort,'Timeout',0.2);
+                    end
+                    
+                    if ~strcmpi(hSerial.Status,'open')
+                        fopen(hPort);
+                    end
+                    
+                    obj.hTactors = hPort;
+                end
                 
             else
                 fprintf('[%s] Starting with NFU DISABLED\n',mfilename);
+                obj.UdpLocalPort = 56789;
+                % PnetClass(localPort,remotePort,remoteIP)
                 obj.hSink = PnetClass(...,
-                    obj.UdpAddress,obj.UdpDestinationPort,obj.UdpLocalPort);
+                    obj.UdpLocalPort,obj.UdpDestinationPort,obj.UdpAddress);
                 obj.hMud = MPL.MudCommandEncoder();
                 
                 obj.hSink.initialize();
+
+                % Setup Vulcan X Percepts.  TODO: hardcoded port
+                obj.hPercepts = PnetClass(25001);
+                obj.hPercepts.initialize();
+                
+                % obj.hSink = PnetClass(56790,9027,'127.0.0.1');  % check port number against VulcanX config
+                % obj.hSink.initialize();
+                
+                obj.hMud = MPL.MudCommandEncoder();
                 
                 obj.localRoc = MPL.RocTable.createRocTables('test.xml');
                 
@@ -157,6 +187,20 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
             if isempty(obj.hNfu)
                 % No NFU, no percepts, no Feedback
                 %disp('Feedback Disabled');
+                
+                
+                if isempty(obj.hTactors)
+                    return
+                end
+                
+                
+                % Run finger tactors
+                
+%                 pause(0.01)
+%                 littleT = convertedPercepts(3,6);
+%                 obj.hTactors(1).update(littleT);
+                
+                
                 return
             end
             
@@ -192,6 +236,50 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
                         drawnow
                         thumbT = convertedPercepts(3,8);
                         obj.hTactors(3).update(thumbT);
+                    case 3 % JHMI TH03 Congen
+                        if isempty(obj.hTactors)
+                            return
+                        else
+                            hPort = obj.hTactors;
+                        end
+                        
+
+                        adjustVal = @(x)max(min(round(x),30),0);
+                        indexT = adjustVal(convertedPercepts(3,2));
+                        middleT = adjustVal(convertedPercepts(3,3));
+                        thumbT = adjustVal(convertedPercepts(3,8));
+
+                        % === Message 1: Vibration command =========================
+                        % Byte 1: (101) % Begin vibration command
+                        % Byte 2: Thumb vibration frequency
+                        % Byte 3: Index finger vibration frequency
+                        % Byte 4: Middle finger vibration frequency
+                        % Byte 5: (102) % End command
+                        
+                        fwrite(hPort,uint8([101 indexT middleT thumbT 102]));
+                        drawnow
+                        
+                        % === Message 2: Amplitude command =========================
+                        % Byte 1: (111) % Begin amplitude command
+                        % Byte 2: Thumb vibration amplitude
+                        % Byte 3: Index finger vibration amplitude
+                        % Byte 4: Middle finger vibration amplitude
+                        % Byte 5: (112) % End command
+                        
+                        
+                        
+                        
+                        % === Message 3: Static PWM command ========================
+                        % Byte 1: (201) % Begin static PWM command
+                        % Byte 2: Thumb static PWM
+                        % Byte 3: Index finger static PWM
+                        % Byte 4: Middle finger static PWM
+                        % Byte 5: (202) % End command
+                        
+                        %fwrite(hPort,uint8([201 val val val 202]));
+
+                
+
                 end
                 %disp([indexT littleT])  % SN4 noise +/-4, max ~100
             end
@@ -216,7 +304,10 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
             % 1/17/2013 RSA: Implemented switchout case for vulcan x or
             % nfu.  Also nfu local roc tables are currently disabled
             
-            shoulderAngles = zeros(1,3);
+            %shoulderAngles = zeros(1,3);
+            shoulderAngles(1) = +obj.JointAnglesDegrees(action_bus_enum.Shoulder_FE) * pi/180;
+            shoulderAngles(2) = +obj.JointAnglesDegrees(action_bus_enum.Shoulder_AbAd) * pi/180;
+            shoulderAngles(3) = +obj.JointAnglesDegrees(action_bus_enum.Humeral_Rot) * pi/180;
             
             if ~isempty(obj.hUdpArmTracking)
                 dataBytes = obj.hUdpArmTracking.getData();
@@ -270,6 +361,11 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
                 handPos = interp1(roc.waypoint,roc.angles,obj.GraspValue);
                 % handPos = zeros(1,20);
                 msg = obj.hMud.AllJointsPosVelCmd([shoulderAngles e w],zeros(1,7),handPos,zeros(1,20));
+                %graspVal = obj.GraspValue;
+                %shoulderAngles(1) = 0;
+                %[shoulderAngles e w]
+                %msg = obj.hMud.ArmPosVelHandRocGrasps([shoulderAngles e w],zeros(1,7),1,graspId,graspVal,1);
+
                 obj.hSink.putData(msg);
             end
         end
@@ -284,8 +380,8 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
                 % Limb
                 switch char(strGraspName)
                     case 'Tip'
-                        graspId = 1;  % Pinch (British)
-                        %graspId = 2;  % Pinch (American)
+                        %graspId = 1;  % Pinch (British)
+                        graspId = 2;  % Pinch (American)
                     case 'Lateral'
                         graspId = 9;  % Key
                     case 'Tripod'

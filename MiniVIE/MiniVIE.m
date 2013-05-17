@@ -47,7 +47,7 @@ classdef MiniVIE < Common.MiniVieObj
             set(obj.hg.popups(MiniVIE.SA),'Value',1);
             set(obj.hg.popups(MiniVIE.TRAINING),'String',{'None','Simple Trainer','Mini Guitar Hero','Bar Trainer','Motion Trainer'});
             set(obj.hg.popups(MiniVIE.TRAINING),'Value',1);
-            set(obj.hg.popups(MiniVIE.PRESENTATION),'String',{'None','MiniV','Breakout','AGH','MplScenarioMud','MSMS_ADL','MSMS Tasks'});
+            set(obj.hg.popups(MiniVIE.PRESENTATION),'String',{'None','MiniV','Breakout','AGH','MplVulcanX','MplScenarioMud','MSMS_ADL','MSMS Tasks'});
             set(obj.hg.popups(MiniVIE.PRESENTATION),'Value',1);
         end
         function setupFigure(obj)
@@ -559,22 +559,36 @@ classdef MiniVIE < Common.MiniVieObj
                         start(h.Timer);
                         obj.println('Presentation setup complete',1);
                     case 'MplScenarioMud'                        
-%                         QA = {
-%                             'Enable NFU (y/n):'                     'n'
-%                             'Destination IP (192.168.1.199):'       '127.0.0.1'
-%                             'Destination Port (9027):'              '9027'
-%                             'Enable Tactors (y/n)'                  'n'
-%                             'Tactor Ids ([5 6 7]):'                 '[3 4]'
-%                             'Enable Orientation Sensors (y/n):'     'n'
-%                             };
-                        QA = {
-                            'Enable NFU (y/n):'                     'y'
-                            'Destination IP (192.168.1.199):'       '192.168.1.111'
-                            'Destination Port (9027):'              '9027'
-                            'Enable Tactors (y/n)'                  'y'
-                            'Tactor Ids ([5 6 7]):'                 '[5 6 7]'
-                            'Enable Orientation Sensors (y/n):'     'n'
-                            };
+                        switch 'MPL_WD'
+                            case 'VulcanX'
+                            QA = {
+                                'Enable NFU (y/n):'                     'n'
+                                'Destination IP (192.168.1.199):'       '127.0.0.1'
+                                'Destination Port (9027):'              '9027'
+                                'Enable Tactors (y/n)'                  'n'
+                                'Tactor Ids ([5 6 7]):'                 '[3 4]'
+                                'Enable Orientation Sensors (y/n):'     'n'
+                                };
+                            case 'MPL_TR'
+                            QA = {
+                                'Enable NFU (y/n):'                     'y'
+                                'Destination IP (192.168.1.199):'       '192.168.1.111'
+                                'Destination Port (9027):'              '9027'
+                                'Enable Tactors (y/n)'                  'y'
+                                'Tactor Ids ([5 6 7]):'                 '[3 4]'
+                                'Enable Orientation Sensors (y/n):'     'n'
+                                };
+                            case 'MPL_WD'
+                            QA = {
+                                'Enable NFU (y/n):'                     'y'
+                                'Destination IP (192.168.1.199):'       '192.168.1.111'
+                                'Destination Port (9027):'              '9027'
+                                'Enable Tactors (y/n)'                  'n'
+                                'Tactor Ids ([5 6 7]):'                 '[3 4]'
+                                'Enable Orientation Sensors (y/n):'     'n'
+                                };
+                                
+                        end
                         name = 'MPL Control Interface';
                         numlines = 1;
                         prompt = QA(:,1);
@@ -606,6 +620,46 @@ classdef MiniVIE < Common.MiniVieObj
                         h.Verbose = 0;
                         start(h.Timer);
                         obj.println('Presentation setup complete',1);
+                    case 'MplVulcanX'
+                        
+                        % Prompt user for VulcanX inputs
+                        
+                        QA = {
+                            'VulcanX IP (127.0.0.1):'            '127.0.0.1'
+                            'MUD Port (L=9024 R=9027):'          '9027'
+                            'Percept Port (L=25101 R=25001):'    '25001'
+                            };
+                        name = 'MplVulcanX';
+                        numlines = 1;
+                        prompt = QA(:,1);
+                        defaultanswer = QA(:,2);
+                        answer = inputdlg(prompt,name,numlines,defaultanswer);
+                        if isempty(answer)
+                            % User Cancelled
+                            return
+                        end
+                        
+                        assert(length(answer) == 3,'Expected 3 outputs');
+
+                        obj.println('Setting up presentation...',1);
+                        h = MPL.MplVulcanX;
+                        h.VulcanXAddress = answer{1}; % TODO: Validate
+                        
+                        port = str2double(answer{2});
+                        assert(~isnan(port),'Invalid Port');
+                        h.VulcanXCmdPort = port; 
+                        
+                        port = str2double(answer{3});
+                        assert(~isnan(port),'Invalid Port');
+                        h.VulcanXLocalPort = port; 
+                        
+                        h.initialize(obj.SignalSource,obj.SignalClassifier,obj.TrainingData);
+                        h.update();
+                        h.Verbose = 0;
+                        start(h.Timer);
+                        obj.println('Presentation setup complete',1);
+                        
+                        
                     case 'Breakout'
                         h = Presentation.MiniBreakout(obj.SignalSource,obj.SignalClassifier);
                     case 'AGH'

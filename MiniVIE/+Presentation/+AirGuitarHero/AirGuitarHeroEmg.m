@@ -125,7 +125,7 @@ classdef AirGuitarHeroEmg < Presentation.AirGuitarHero.AirGuitarHeroBase
                         
                         % TODO: this is a function now:
                         obj.SignalSource.NumSamples = obj.SignalClassifier.NumSamplesPerWindow;
-                        windowData = obj.SignalSource.getFilteredData();
+                        windowData = obj.SignalSource.getFilteredData(obj.SignalSource.NumSamples);
                         features2D = obj.SignalClassifier.extractfeatures(windowData);
                         activeChannelFeatures = features2D(obj.SignalClassifier.getActiveChannels,:);
                         [classOut voteDecision] = obj.SignalClassifier.classify(reshape(activeChannelFeatures',[],1));
@@ -140,13 +140,13 @@ classdef AirGuitarHeroEmg < Presentation.AirGuitarHero.AirGuitarHeroBase
                         fprintf('Class:  %s\n',classNames{output});
                         
                         switch classNames{output}
-                            case 'Index'
+                            case {'Index' 'Index Grasp'}
                                 noteMask = [1 0 0 0 0];
-                            case 'Middle'
+                            case {'Middle' 'Middle Grasp'}
                                 noteMask = [0 1 0 0 0];
-                            case 'Ring'
+                            case {'Ring' 'Ring Grasp'}
                                 noteMask = [0 0 1 0 0];
-                            case 'Little'
+                            case {'Little' 'Little Grasp'}
                                 noteMask = [0 0 0 1 0];
                             otherwise
                                 noteMask = [0 0 0 0 0];
@@ -179,18 +179,25 @@ classdef AirGuitarHeroEmg < Presentation.AirGuitarHero.AirGuitarHeroBase
         end
     end
     methods (Static = true)
-        function obj = Default
-            obj.SignalSource = Inputs.DaqHwDevice('mcc',0);
+        function out = Default
+            obj.SignalSource = Inputs.DaqHwDevice('mcc','0');
             obj.SignalSource.addfilter(Inputs.HighPass());
-            obj.SignalSource.addfilter(Inputs.LowPass());
+            %obj.SignalSource.addfilter(Inputs.LowPass());
             obj.SignalSource.addfilter(Inputs.Notch());
             obj.SignalSource.initialize();
-            
-            obj.SignalClassifier = PatternRecognition.Lda();
+
+            NumSamplesPerWindow = 200;
+            hTrainingData = TrainingDataAnalysis();
+            hTrainingData.initialize(obj.SignalSource.NumChannels,NumSamplesPerWindow)
+
+            obj.SignalClassifier = SignalAnalysis.Lda();
+            obj.SignalClassifier.initialize(hTrainingData);
             obj.SignalClassifier.setClassNames({'No Movement' 'Index' 'Middle' 'Ring'});
             obj.SignalClassifier.setActiveChannels(1:4);
             obj.SignalClassifier.NumMajorityVotes = 7;
-            obj.SignalClassifier.initialize();
+            
+
+            out = Presentation.AirGuitarHero.AirGuitarHeroEmg(obj.SignalSource,obj.SignalClassifier);
         end
     end
 end

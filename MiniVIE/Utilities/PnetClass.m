@@ -69,16 +69,18 @@ classdef PnetClass < handle
             % read down buffer and return only the latest packet
             
             assert(~isempty(obj.hSocket),'[%s] PnetClass not initialized\n');
-            
-            
-            if ~isequal(pnet(obj.hSocket,'status'),6)
-                fprintf('[%s] pnet socket is disconnected but not closed. Not ready to getData()',mfilename);
-            end
 
-            
-            len = 1;
+            % initialize return arguments
             dataBytes = [];
             numReads = 0;
+            
+            if ~isequal(pnet(obj.hSocket,'status'),6)
+                fprintf(['[%s] pnet socket is disconnected but not closed. '...
+                    'Not ready to getData() on port %d \n'],mfilename,obj.localPort);
+                return
+            end
+
+            len = 1;
             while len > 0
                 try
                     % If system is busy, this call to pnet can error out:
@@ -109,14 +111,19 @@ classdef PnetClass < handle
                 maxReads = 500;
             end
 
+            % initialize return arguments
+            cellDataBytes = cell(1,maxReads);
+            numReads = 0;
+            
+
             if ~isequal(pnet(obj.hSocket,'status'),6)
-                fprintf('[%s] pnet socket is disconnected but not closed. Not ready to getData()\n',mfilename);
+                fprintf(['[%s] pnet socket is disconnected but not closed. '...
+                    'Not ready to getData() on port %d \n'],mfilename,obj.localPort);
+                return
             end
 
             
             len = 1;
-            cellDataBytes = cell(1,maxReads);
-            numReads = 0;
             while (len > 0) && (numReads < maxReads)
                 try
                     % If system is busy, this call to pnet can error out:
@@ -149,7 +156,8 @@ classdef PnetClass < handle
 
             status = pnet(obj.hSocket,'status');
             if ~isequal(status,6)
-                fprintf('[%s] UDP Port %d not ready',mfilename,obj.localPort);
+                fprintf('[%s] UDP Port %d not ready. Unable to write data.\n',mfilename,obj.localPort);
+                return
             end
             
             if nargin < 3
