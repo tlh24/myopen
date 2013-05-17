@@ -97,7 +97,9 @@ deps:
 	echo "otherwise Cg may not be found. "
 
 install:
-	install gtkclient $(TARGET)
-	install fade.cg $(TARGET)
-	install fadeColor.cg $(TARGET)
-	install threshold.cg $(TARGET)
+	install -d $(TARGET)
+	install gtkclient -t $(TARGET)
+	install -d $(TARGET)/cg
+	install cg/fade.cg -t $(TARGET)/cg
+	install cg/fadeColor.cg -t $(TARGET)/cg
+	install cg/threshold.cg -t $(TARGET)/cg
