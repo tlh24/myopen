@@ -721,10 +721,10 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 		cgGLSetOptimalOptions(myCgVertexProfile);
 		checkForCgError("selecting vertex profile");
 
-		char linkname[256];
+		char linkname[4096];
 		char * dname;
 		// get directory of current exe
- 		ssize_t r = readlink("/proc/self/exe", linkname, 256);
+ 		ssize_t r = readlink("/proc/self/exe", linkname, 4096);
    		if (r < 0) {
         	perror("/proc/self/exe");
         	exit(EXIT_FAILURE);
