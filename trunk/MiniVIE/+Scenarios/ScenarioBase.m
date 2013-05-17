@@ -88,8 +88,11 @@ classdef ScenarioBase < Common.MiniVieObj
             obj.JointAnglesDegrees(action_bus_enum.Elbow) = max(min(...
                 obj.JointAnglesDegrees(action_bus_enum.Elbow),125),5);
             % Apply Wrist Limits
+%             obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) = max(min(...
+%                 obj.JointAnglesDegrees(action_bus_enum.Wrist_FE),60),-60);
+            FE_Lim = 45;
             obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) = max(min(...
-                obj.JointAnglesDegrees(action_bus_enum.Wrist_FE),60),-60);
+                obj.JointAnglesDegrees(action_bus_enum.Wrist_FE),FE_Lim),-FE_Lim);
             obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) = max(min(...
                 obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev),45),-45);
             obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) = max(min(...
@@ -153,6 +156,14 @@ classdef ScenarioBase < Common.MiniVieObj
             %TODO: gain values overwritten on classifier retrain
             switch className
                 case 'No Movement'
+                case {'Shoulder Flexion'}
+                    desiredVelocity(action_bus_enum.Shoulder_FE) = prSpeed;
+                case {'Shoulder Extension'}
+                    desiredVelocity(action_bus_enum.Shoulder_FE) = -prSpeed;
+                case {'Shoulder Abduction'}
+                    desiredVelocity(action_bus_enum.Shoulder_AbAd) = prSpeed;
+                case {'Shoulder Adduction'}
+                    desiredVelocity(action_bus_enum.Shoulder_AbAd) = -prSpeed;
                 case {'Elbow Flexion' 'Elbow Up'}
                     desiredVelocity(action_bus_enum.Elbow) = prSpeed;
                 case {'Elbow Extension' 'Elbow Down'}
@@ -199,7 +210,7 @@ classdef ScenarioBase < Common.MiniVieObj
             % Process grasps
             %%%%%%%%%%%%%%%%%%%%%%%%
             graspGain = 0.02;
-            graspChangeThreshold = 0.2;  % Normalized [0 1]
+            graspChangeThreshold = 0.4;  % Normalized [0 1]
             graspName = className;
             lastGraspVelocity = obj.GraspVelocity;
             

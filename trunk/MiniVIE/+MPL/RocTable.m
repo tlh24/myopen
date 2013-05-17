@@ -143,7 +143,8 @@ classdef RocTable < handle
             roc(8).joints = [8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27];
             pos0 = basePosition;
             pos0([mce.LITTLE_MCP mce.LITTLE_PIP mce.LITTLE_DIP]) = 0.0;
-            pos0([mce.MIDDLE_MCP mce.MIDDLE_PIP mce.MIDDLE_DIP]) = 0.0;
+            pos0([mce.MIDDLE_MCP mce.MIDDLE_PIP mce.MIDDLE_DIP]) = -0.0;
+            pos0([mce.RING_MCP mce.RING_PIP mce.RING_DIP]) = -.1;
             pos1 = [0.0000,0.2618,0.2967,0.2269,0.0000,0.2618,0.2967,0.2269,0.3491,0.2618,0.2967,0.2269,0.3491,0.2618,0.2967,0.2269,1.9199,0.0000,0.2618,-0.3491];
             %pos1([mce.MIDDLE_MCP mce.MIDDLE_PIP mce.MIDDLE_DIP]) = 0.0;
             pos1([mce.LITTLE_MCP mce.LITTLE_PIP mce.LITTLE_DIP]) = 0.5;
@@ -151,9 +152,10 @@ classdef RocTable < handle
             pos1([mce.THUMB_CMC_AD_AB]) = 0.95;
             pos2 = pos1;
             pos3 = [0.0000,0.9599,1.0647,0.8552,0.0000,0.7854,0.8727,0.6981,0.3491,0.8727,0.9774,0.7679,0.3491,1.0472,0.8694,0.6250,1.9199,0.5236,0.8727,-0.3491];
-            pos3([mce.MIDDLE_MCP mce.MIDDLE_PIP mce.MIDDLE_DIP]) = 1.2;
+            pos3([mce.MIDDLE_MCP mce.MIDDLE_PIP mce.MIDDLE_DIP]) = 1.0;
             pos3([mce.RING_MCP mce.RING_PIP mce.RING_DIP]) = 1.1;
-            pos3([mce.THUMB_CMC_AD_AB]) = 0.95;
+            pos3([mce.LITTLE_MCP mce.LITTLE_PIP mce.LITTLE_DIP]) = 1.0;
+            pos3([mce.THUMB_CMC_AD_AB]) = 1.8;
             roc(8).angles = [...
                 pos0;...
                 pos1;...

@@ -1,45 +1,13 @@
-function [shoulderAngles,e,w,rocValue,rocId] = ...
-    manualOverRideLeft(shoulderAngles,e,w,rocValue,rocId)
+function [armAngles,rocValue,rocId] = ...
+    manualOverRideLeft(armAngles,rocValue,rocId)
 % Units radians
 
 % Currently applies to MPL.MplScenarioMud.update
-
-% rocId = 7;
-% rocValue = min(rocValue,0.8);
-
-%rocValue = max(rocValue,0.2);
-% rocValue = 0;
-
-% w(1) = -w(1); % flip wrist rot direction
-w(2) = -w(2); % flip dev direction
-% w(3) = -w(3); % flip fe direction
-
-% Elbow
-% e = 55*pi/180;  % elbow
-elbowLimitsRadians = [0 140]*pi/180;
-assert(elbowLimitsRadians(2) >= elbowLimitsRadians(1),...
-    'Upper limit must be greater than lower limit');
-if e > elbowLimitsRadians(2)
-    disp('Upper Elbow limit.');
-    e = elbowLimitsRadians(2);
-elseif e < elbowLimitsRadians(1)
-    e = elbowLimitsRadians(1);
-    disp('Lower Elbow limit');
-end
-% disp(e);
-% w(1) = 45*pi/180;  % rotation
-% w(2) = 0.0;   % dev
-% w(3) = 0.4;  % fe
-
-% Lock Shoulder
-% shoulderAngles(1) = 0*pi/180;
-% shoulderAngles(2) = -0*pi/180;
-% shoulderAngles(3) = 20*pi/180;
-
+FE_Lim = [-30 90]*pi/180;
 AA_Lim = [-30 0]*pi/180;
 HR_Lim = [-30 30]*pi/180;
-shoulderAngles(2) = max(min(shoulderAngles(2),AA_Lim(2)),AA_Lim(1));
-shoulderAngles(3) = max(min(shoulderAngles(3),HR_Lim(2)),HR_Lim(1));
-
-% fprintf('[%s] Left Arm tracking: %4.1f %4.1f %4.1f|%4.1f\n',...
-%     mfilename,shoulderAngles*180/pi,e*180/pi);
+EL_Lim = [  0 120]*pi/180;
+armAngles(1) = max(min(armAngles(1),FE_Lim(2)),FE_Lim(1));
+armAngles(2) = max(min(armAngles(2),AA_Lim(2)),AA_Lim(1));
+armAngles(3) = max(min(armAngles(3),HR_Lim(2)),HR_Lim(1));
+armAngles(4) = max(min(armAngles(4),EL_Lim(2)),EL_Lim(1));

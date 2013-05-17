@@ -1,17 +1,17 @@
 % Setup Devices
-hSink = PnetClass(56789,9027,'127.0.0.1');  % check port number against VulcanX config
+hSink = PnetClass(56791,9027,'127.0.0.1');  % check port number against VulcanX config
 hSink.initialize();
 
 hMud = MPL.MudCommandEncoder();
 %% Send manual commands
-graspId = 7;
-graspVal = 11/20;
-e = 16*5*pi/180;
-
+graspId = 0;
+graspVal = 20/20;
+e = 60*pi/180;
+s = [0 0 0];
 w(1) = -4*5*pi/180; % Wrist Rotation
 w(2) = -1*5*pi/180; % Wrist Deviation
 w(3) = 1*5*pi/180; % Wrist Flexion
-msg = hMud.ArmPosVelHandRocGrasps([zeros(1,3) e w],zeros(1,7),1,graspId,graspVal,1);
+msg = hMud.ArmPosVelHandRocGrasps([s e w],zeros(1,7),1,graspId,graspVal,1);
 hSink.putData(msg);
 %% Test endpoint commands
 % +X Forward
