@@ -33,7 +33,8 @@ public:
 		return m_lastCallTime; 
 	}
 	double meanTime(){
-		return (m_total / (long double)m_ncalls); 
+		if(m_ncalls) return (m_total / (long double)m_ncalls); 
+		else return 0;
 	}
 	double smoothedCallTime(){
 		m_smoothedCallTime *= 0.9; 
