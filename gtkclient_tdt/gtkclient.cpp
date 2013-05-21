@@ -101,11 +101,11 @@ bool g_autoChOffset = false;
 bool g_showWFVgrid = true; 
 bool g_rtMouseBtn = false;
 bool g_saveUnsorted = false; 
-int g_polyChan = 0;
-bool g_addPoly = false;
-int g_channel[4] = {0,32,64,95};
-int	g_signalChain = 10; //what to sample in the headstage signal chain.
-int	g_radioChannel = 114; //the radio channel to use.
+int 	g_polyChan = 0;
+bool 	g_addPoly = false;
+int 	g_channel[4] = {0,32,64,95};
+long double g_lastPo8eTime = 0.0; 
+
 
 bool g_out = false;
 bool g_templMatch[96][2];
@@ -807,8 +807,10 @@ static gboolean rotate (gpointer user_data){
 	gdk_window_process_updates (da->window, FALSE);
 
 	string s = g_ts.getInfo(); 
-	gtk_label_set_text(GTK_LABEL(g_infoLabel), s.c_str());
 	char str[256]; 
+	snprintf(str, 256, "po8e interval: %f\n", (double)(gettime() - g_lastPo8eTime)); 
+	s += string(str); 
+	gtk_label_set_text(GTK_LABEL(g_infoLabel), s.c_str());
 	snprintf(str, 256, "%.2f MB", (double)g_wfwriter.bytes()/1e6);
 	gtk_label_set_text(GTK_LABEL(g_fileSizeLabel), str);
 	return TRUE;
@@ -890,7 +892,7 @@ void* po8_thread(void*){
 		double		sinSamples = 0.0; // for driving the sinusoids; resets every 4e4. 
 		long long bytes = 0; 
 		unsigned int frame = 0;
-		unsigned int bufmax = 10000;
+		int bufmax = 16384;
 		unsigned int bps = 2; 
 		unsigned int nchan = 96; 
 		if(!simulate){
@@ -898,11 +900,11 @@ void* po8_thread(void*){
 			nchan = card->numChannels(); 
 		}
 		int stoppedCount = 0;
-		short * temp = new short[bufmax*bps*nchan]; // 10000 samples * 2 bytes/sample * 96 Channels 
-		short temptemp[1024]; 
+		short * temp = new short[bufmax*nchan]; // >10000 samples * 2 bytes/sample * 96 Channels 
+		short * temptemp = new short[bufmax]; 
 		while((simulate || stoppedCount < count) && !g_die){
 			//printf("waiting for data ready.\n"); --we move too fast for this.
-			if (!simulate && count == 1 && !card->waitForDataReady())
+			if ((!simulate) && (count == 1) && (!card->waitForDataReady()))
 				break;
 		
 			int waitCount = 0;
@@ -947,7 +949,7 @@ void* po8_thread(void*){
 				if(sinSamples > 4e4*2*3.1415926) sinSamples -= 4e4*2*3.1415926; 
 				usleep(70); 
 			}
-			if(numSamples > 0 && numSamples < 1024){
+			if(numSamples > 0 && numSamples < bufmax){
 				/*if(frame %200 == 0){ //need to move this to the UI.
 				printf("%d samples at %d bps of %d chan: %Lf MB/sec\n", numSamples, Bps, nchan,
 							((long double)bytes) / ((gettime() - starttime)*(1024.0*1024.0))); 
@@ -955,6 +957,7 @@ void* po8_thread(void*){
 				//copy the data over to g_fbuf. 
 				//input data is scaled from TDT so that 32767 = 10mV.
 				long double time = gettime(); 
+				g_lastPo8eTime = time; 
 				for(int k=0; k<NFBUF; k++){
 					int h = g_channel[k];
 					float gain = g_c[h]->getGain(); 
@@ -1081,9 +1084,8 @@ void* po8_thread(void*){
 			PO8e::releaseCard(card);
 		}
 		//delete card; 
-		
 		delete[] temp; // since we've dynamically allocated
-
+		delete[] temptemp; 
 		sleep(1); 
 	}
 	return 0;

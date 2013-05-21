@@ -111,7 +111,7 @@ public:
 			m_vs->bind(); 
 			cgGLEnableProfile(myCgVertexProfile);
 			checkForCgError("enabling vertex profile");
-			
+			glEnableClientState(GL_VERTEX_ARRAY); //clean residual state.
 			glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_vbo);
 			//note: want to draw the newest data soonest; hence should 
 			// draw in two chunks: m_r % m_rows to m_rows-1
@@ -143,6 +143,7 @@ public:
 			glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 			cgGLDisableProfile(myCgVertexProfile);
 			checkForCgError("disabling vertex profile");
+			glDisableClientState(GL_VERTEX_ARRAY); //clean residual state.
 			glDisableClientState(GL_COLOR_ARRAY); 
 		}
 	}
