@@ -19,22 +19,22 @@ void glPrint(char *text);
 class Channel {
 private:
 	float 	m_threshold; 	// 1 = + 10mV.
-	float		m_centering; 	// left/right centering. used to look for threshold crossing.
+	float	m_centering; 	// left/right centering. used to look for threshold crossing.
 	float 	m_gain; 
 	float 	m_aperture[2]; 	// aka MSE per sample.
 public:
-	Vbo*		m_wfVbo; 		// range 1 mean 0
-	Vbo*		m_usVbo; 
+	Vbo*	m_wfVbo; 		// range 1 mean 0
+	Vbo*	m_usVbo; 
 	VboPca*	m_pcaVbo; 		// 2D points, with color. 
-	float		m_pca[2][32]; 	// range 1 mean 0
+	float	m_pca[2][32]; 	// range 1 mean 0
 	float 	m_pcaScl[2]; 	// sqrt of the eigenvalues.
-	float		m_template[2][32]; // range 1 mean 0.
-	float		m_loc[4]; 
+	float	m_template[2][32]; // range 1 mean 0.
+	float	m_loc[4]; 
 	int		m_ch; 			//channel number, obvi.
 	float 	m_agc; 
 	double	m_var; 			//variance of the continuous waveform, 1 = 10mV^2. 
-	double	m_mean; 			//mean of the continuous waveform. 
-	i64 		m_isi[2][100]; 	//counts of the isi, in units of ms.
+	double	m_mean; 		//mean of the continuous waveform. 
+	i64 	m_isi[2][100]; 	//counts of the isi, in units of ms.
 	i64		m_isiViolations; 
 	i64		m_lastSpike[2]; //zero when a spike occurs. in samples.
 	
@@ -47,7 +47,7 @@ public:
 		m_isiViolations = 0; 
 		m_ch = ch; 
 		m_var = 0.0; 
-		m_mean = 0.0; 
+		m_mean = 0.0;
 		//init PCA, template. 
 		for(int j=0; j<32; j++){
 			m_pca[0][j] = 1.f/8.f; 
@@ -55,15 +55,15 @@ public:
 			m_pcaScl[0] = m_pcaScl[1] = 1.f; 
 		}
 		for(int j=0; j<32; j++){
-			m_template[0][j] = 0.5*sinf(j/6.f); 
-			m_template[1][j] = 0.4*sinf((j+12)/8.f); 
+			m_template[0][j] = 0.5*sinf(j/6.f) / 1e2; 		// sinusoids
+			m_template[1][j] = 0.4*sinf((j+12)/8.f) / 1e2;	// scaled to ~ 100 microvolts
 		}
 		//read from matlab if it's there..
 		if(ms){
 			for(int j=0; j<2; j++){
 				ms->getValue3(ch, j, "pca", &(m_pca[j][0]), 32);
 				ms->getValue3(ch, j, "template", &(m_template[j][0]), 32);
-				m_aperture[j] = ms->getValue2(ch, j, "aperture", 0.003f); 
+				m_aperture[j] = ms->getValue2(ch, j, "aperture", 0.f); // old default: 0.003f
 			}
 			ms->getValue3(ch, 0, "pcaScl", m_pcaScl, 2);
 			m_threshold = ms->getValue(ch, "threshold", 0.6f); 
