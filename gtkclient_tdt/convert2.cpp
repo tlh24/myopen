@@ -40,9 +40,9 @@ int main(int argn, char **argc){
 		strncpy(s, argc[1], 512);
 		s[nn-3] = 'm'; s[nn-2] = 'a'; s[nn-1] = 't';
 		if(argn == 2){
-			mat = Mat_CreateVer(s, NULL, MAT_FT_DEFAULT);
+			mat = Mat_Create(s, NULL);
 		}else{
-			mat = Mat_CreateVer(argc[2], NULL, MAT_FT_DEFAULT);
+			mat = Mat_Create(argc[2], NULL);
 		}
 		if(!mat){
 			printf("could not open for writing %s\n", argc[2]);
@@ -137,7 +137,7 @@ int main(int argn, char **argc){
 		}
 		maxch++;  //zero-indexed. 
 		maxunit++; 
-		size_t dims[2], dims2[2]; 
+		int dims[2], dims2[2]; 
 		dims[0] = maxunit;
 		dims[1] = maxch; 
 		//do it this way to minimize memory footprint.
@@ -150,7 +150,7 @@ int main(int argn, char **argc){
 			return m; 
 		}; 
 		int index = 0; 
-		matvar_t* wf_cell = Mat_VarCreate("wf", MAT_C_CELL, MAT_T_CELL, 2, dims, NULL, 0);
+		matvar_t** wf_cell = (matvar_t**)malloc(dims[0]*dims[1]*sizeof(matvar_t*)); 
 		for(int c=0; c<maxch; c++){
 			for(int u=0; u<maxunit; u++){
 				i64 m = unitCount(c, u); 
@@ -166,16 +166,18 @@ int main(int argn, char **argc){
 				}
 				dims2[0] = 32; 
 				dims2[1] = m; 
-				matvar_t* elem = Mat_VarCreate(NULL, MAT_C_INT16, MAT_T_INT16, 2, dims2, w, 0); 
-				Mat_VarSetCell(wf_cell, index, elem); 
+				wf_cell[index] = Mat_VarCreate(NULL, MAT_C_INT16, MAT_T_INT16, 2, dims2, w, 0); 
 				free(w); 
 				index++; 
 			}
 		}
-		Mat_VarWrite(mat, wf_cell, MAT_COMPRESSION_NONE);
-		Mat_VarFree(wf_cell); 
+		matvar_t* cell_matvar = Mat_VarCreate("wf", MAT_C_CELL, MAT_T_CELL, 2, dims, wf_cell, 0);
+		Mat_VarWrite(mat, cell_matvar, 0);
+		Mat_VarFree(cell_matvar); 
+		free(wf_cell); 
+		
 		index = 0; 
-		matvar_t* time_cell = Mat_VarCreate("time", MAT_C_CELL, MAT_T_CELL, 2, dims, NULL, 0);
+		matvar_t** time_cell = (matvar_t**)malloc(dims[0]*dims[1]*sizeof(matvar_t*)); 
 		for(int c=0; c<maxch; c++){
 			for(int u=0; u<maxunit; u++){
 				i64 m = unitCount(c, u); 
@@ -188,16 +190,18 @@ int main(int argn, char **argc){
 				}
 				dims2[0] = m; 
 				dims2[1] = 1; 
-				matvar_t* elem = Mat_VarCreate(NULL, MAT_C_DOUBLE, MAT_T_DOUBLE, 2, dims2, w, 0); 
-				Mat_VarSetCell(time_cell, index, elem); 
+				time_cell[index] = Mat_VarCreate(NULL, MAT_C_DOUBLE, MAT_T_DOUBLE, 2, dims2, w, 0); 
 				free(w); 
 				index++; 
 			}
 		}
-		Mat_VarWrite(mat, time_cell, MAT_COMPRESSION_NONE);
-		Mat_VarFree(time_cell); 
+		cell_matvar = Mat_VarCreate("time", MAT_C_CELL, MAT_T_CELL, 2, dims, time_cell, 0);
+		Mat_VarWrite(mat, cell_matvar, 0);
+		Mat_VarFree(cell_matvar); 
+		free(time_cell); 
+		
 		index = 0; 
-		matvar_t* ticks_cell = Mat_VarCreate("ticks", MAT_C_CELL, MAT_T_CELL, 2, dims, NULL, 0);
+		matvar_t** ticks_cell = (matvar_t**)malloc(dims[0]*dims[1]*sizeof(matvar_t*)); 
 		for(int c=0; c<maxch; c++){
 			for(int u=0; u<maxunit; u++){
 				i64 m = unitCount(c, u); 
@@ -210,14 +214,15 @@ int main(int argn, char **argc){
 				}
 				dims2[0] = m; 
 				dims2[1] = 1; 
-				matvar_t* elem = Mat_VarCreate(NULL, MAT_C_INT64, MAT_T_INT64, 2, dims2, w, 0); 
-				Mat_VarSetCell(time_cell, index, elem); 
+				ticks_cell[index] = Mat_VarCreate(NULL, MAT_C_INT64, MAT_T_INT64, 2, dims2, w, 0); 
 				free(w); 
 				index++; 
 			}
 		}
-		Mat_VarWrite(mat, ticks_cell, MAT_COMPRESSION_NONE);
-		Mat_VarFree(ticks_cell); 
+		cell_matvar = Mat_VarCreate("ticks", MAT_C_CELL, MAT_T_CELL, 2, dims, ticks_cell, 0);
+		Mat_VarWrite(mat, cell_matvar, 0);
+		Mat_VarFree(cell_matvar); 
+		free(ticks_cell); 
 		
 		Mat_Close(mat); 
 	}
