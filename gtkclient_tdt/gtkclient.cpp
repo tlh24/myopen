@@ -808,7 +808,7 @@ static gboolean rotate (gpointer user_data){
 
 	string s = g_ts.getInfo(); 
 	char str[256]; 
-	snprintf(str, 256, "po8e interval: %f\n", (double)(gettime() - g_lastPo8eTime)); 
+	snprintf(str, 256, "\npo8e interval: %f\n", (double)(gettime() - g_lastPo8eTime)); 
 	s += string(str); 
 	gtk_label_set_text(GTK_LABEL(g_infoLabel), s.c_str());
 	snprintf(str, 256, "%.2f MB", (double)g_wfwriter.bytes()/1e6);
