@@ -187,11 +187,15 @@ while (moveComplete == 0) && (~timerStarted || (toc < timeout)) ...
         && ishandle(handles.toggleStart) && get(handles.toggleStart,'Value')
     fprintf('Testing Class: %s | ',strTargetClass);
     set(handles.txtTarget,'ForegroundColor','k');
+    
+    
     [classDecision,voteDecision,className,prSpeed,rawEmg,windowData,features2D] ...
         = getIntent(hSignalSource,hSignalClassifier);
     %     fprintf('Class=%2d; Vote=%2d; Class = %16s; S=%6.4f',...
     %         classDecision,voteDecision,className,prSpeed);
-    
+
+    classNames = hSignalClassifier.getClassNames;
+    className = classNames{classDecision};
     set(handles.txtActual,'String',className);
     if ~timerStarted && ~strcmp(className,'No Movement')
         % start timer
