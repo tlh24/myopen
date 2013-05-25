@@ -104,9 +104,9 @@ int main(int argn, char **argc){
 				if(v == 0xc0edfad0){
 					fread((void*)&pak, sizeof(pak), 1, in); 
 					time[n] = pak.time; 
-					ticks[n] = pak.ticks; 
-					channel[n] = pak.channel; 
-					unit[n] = pak.unit; 
+					ticks[n] = pak.ticks;
+					channel[n] = pak.channel;
+					unit[n] = pak.unit;
 					for(int g=0; g<32; g++){
 						wf[n*32+g] = pak.wf[g]; 
 					}
