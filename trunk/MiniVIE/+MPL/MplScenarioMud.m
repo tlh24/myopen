@@ -342,15 +342,17 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
                 shoulderAngles = [shoulderFE shoulderAA humeralRot];
             end
             
+            armAngles = [shoulderAngles e w];
             % TODO: right / left arm should be determined by means other than udp port
             isRight = (obj.UdpArmTrackingPort == 56701);
             if isRight
                 [shoulderAngles, e, w, graspValue, graspId] = manualOverRideRight(shoulderAngles, e, w, obj.GraspValue,graspId);
+                armAngles = [shoulderAngles e w];
             else
-                [shoulderAngles, e, w, graspValue, graspId] = manualOverRideLeft(shoulderAngles, e, w, obj.GraspValue,graspId);
+                [armAngles, graspValue, graspId] = manualOverRideLeft(armAngles, obj.GraspValue,graspId);
             end
             if obj.enableNfu
-                obj.hNfu.sendUpperArmHandRoc([shoulderAngles e w],graspId,graspValue);
+                obj.hNfu.sendUpperArmHandRoc(armAngles,graspId,graspValue);
             else
                 % Send to vulcanX
                 %                 msg = obj.hMud.ArmPosVelHandRocGrasps([shoulderAngles e w],zeros(1,7),1,graspId,graspValue,1);
@@ -360,7 +362,7 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
                 
                 handPos = interp1(roc.waypoint,roc.angles,obj.GraspValue);
                 % handPos = zeros(1,20);
-                msg = obj.hMud.AllJointsPosVelCmd([shoulderAngles e w],zeros(1,7),handPos,zeros(1,20));
+                msg = obj.hMud.AllJointsPosVelCmd(armAngles,zeros(1,7),handPos,zeros(1,20));
                 %graspVal = obj.GraspValue;
                 %shoulderAngles(1) = 0;
                 %[shoulderAngles e w]
