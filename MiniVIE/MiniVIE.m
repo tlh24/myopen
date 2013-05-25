@@ -623,7 +623,6 @@ classdef MiniVIE < Common.MiniVieObj
                     case 'MplVulcanX'
                         
                         % Prompt user for VulcanX inputs
-                        
                         QA = {
                             'VulcanX IP (127.0.0.1):'            '127.0.0.1'
                             'MUD Port (L=9024 R=9027):'          '9027'
@@ -658,12 +657,27 @@ classdef MiniVIE < Common.MiniVieObj
                         h.Verbose = 0;
                         start(h.Timer);
                         obj.println('Presentation setup complete',1);
-                        
-                        
                     case 'Breakout'
                         h = Presentation.MiniBreakout(obj.SignalSource,obj.SignalClassifier);
                     case 'AGH'
+                        QA = {
+                            'Output Device (mcc, nidaq, COM4):' 'mcc'
+                            };
+                        name = 'Air Guitar Hero';
+                        numlines = 1;
+                        prompt = QA(:,1);
+                        defaultanswer = QA(:,2);
+                        answer = inputdlg(prompt,name,numlines,defaultanswer);
+                        if isempty(answer)
+                            % User Cancelled
+                            return
+                        end
+                        
+                        obj.println('Setting up presentation...',1);
                         h = Presentation.AirGuitarHero.AirGuitarHeroEmg(obj.SignalSource,obj.SignalClassifier);
+                                                
+                        h.initialize(answer{1});
+
                     case 'MSMS_ADL'
                         h = Scenarios.MSMS_ADL.MsmsDisplayScenario(obj.SignalSource,obj.SignalClassifier);
                         
