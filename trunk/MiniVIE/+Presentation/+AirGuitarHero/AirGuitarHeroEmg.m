@@ -38,9 +38,13 @@ classdef AirGuitarHeroEmg < Presentation.AirGuitarHero.AirGuitarHeroBase
             obj.hTimer = UiTools.create_timer('AGH_Display',@(src,evt)refresh(obj));
             obj.hTimer.Period = 0.03;
             
-            obj.initialize();
+            %obj.initialize();
         end
-        function initialize(obj)
+        function initialize(obj,outputDevice)
+            % initialize air guitar hero.  output device is a string the
+            % defines the manner of sending commands to the guitar.  Can be
+            % either mcc or nidaq daq systems or a COM port.
+            
             
             % setup video stream
             try
@@ -61,10 +65,19 @@ classdef AirGuitarHeroEmg < Presentation.AirGuitarHero.AirGuitarHeroBase
             setupButtons(obj);
             %resetClassifier(obj);
             
-            obj.hOutput = digitalio('mcc',0);
-            addline(obj.hOutput,0:7,'out');
-            vals = ones(8,1);putvalue(obj.hOutput,vals);
-            
+            useSerial = ~isempty(strfind(outputDevice,'COM'));
+            if useSerial
+                obj.hOutput = serial(outputDevice);
+                fopen(obj.hOutput);
+                fwrite(obj.hOutput,uint8(0));
+            else
+                % TODO: change output device id
+                %obj.hOutput = digitalio('mcc',0);
+                obj.hOutput = digitalio(outputDevice,0);
+                addline(obj.hOutput,0:7,'out');
+                vals = ones(8,1);
+                putvalue(obj.hOutput,vals);
+            end
         end
         function resetClassifier(obj)
             disp('Resetting Classifier and Stored Data');
@@ -153,7 +166,6 @@ classdef AirGuitarHeroEmg < Presentation.AirGuitarHero.AirGuitarHeroBase
                         end
                         strumOn = any(noteMask);
                         sendButtonCommand(obj,~([noteMask 0 0 strumOn]));
-
                 end
             catch ME
                 stop(obj.hTimer);
@@ -162,20 +174,46 @@ classdef AirGuitarHeroEmg < Presentation.AirGuitarHero.AirGuitarHeroBase
         end
         
         function sendButtonDownCommand(obj,id)
+            if isa(obj.hOutput,'serial')
+                fprintf('[%s] sendButtonDownCommand not implemented for serial output\n',mfilename);
+                return
+            else
             v = getvalue(obj.hOutput);
             v(id) = 0;
             putvalue(obj.hOutput,v);
-        end
-        function sendButtonCommand(obj,cmd)
-            v = getvalue(obj.hOutput);
-            if ~isequal(cmd,v)
-                putvalue(obj.hOutput,cmd);
             end
         end
+        function sendButtonCommand(obj,cmd)
+            
+            % Switch out the physical command send depending on
+            % if the guitar is direct digital or arduino based
+            %
+            % Armiger 5/25/2013
+            if isa(obj.hOutput,'serial')
+                % Serial command is a single byte with bit's
+                % set for
+                val = uint8(binvec2dec(~cmd));
+                fwrite(obj.hOutput,val);
+            else
+                % send digital command to daq hw
+                %sendButtonCommand(obj,~([noteMask 0 0 strumOn]));
+                v = getvalue(obj.hOutput);
+                if ~isequal(cmd,v)
+                    putvalue(obj.hOutput,cmd);
+                end
+            end
+
+            
+        end
         function sendButtonUpCommand(obj,id)
-            v = getvalue(obj.hOutput);
-            v(id) = 1;
-            putvalue(obj.hOutput,v);
+            if isa(obj.hOutput,'serial')
+                fprintf('[%s] sendButtonUpCommand not implemented for serial output\n',mfilename);
+                return
+            else
+                v = getvalue(obj.hOutput);
+                v(id) = 1;
+                putvalue(obj.hOutput,v);
+            end
         end
     end
     methods (Static = true)
