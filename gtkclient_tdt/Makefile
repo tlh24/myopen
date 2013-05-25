@@ -51,7 +51,7 @@ ifeq ($(strip $(STACKPROTECTOR)),true)
 	CFLAGS  += -fstack-protector-all
 endif
 
-all: gtkclient wf_plot po8e mmap_test convert2
+all: gtkclient wf_plot po8e mmap_test convert
 #convert: convert
 
 %.o: %.cpp $(COM_HDR)
