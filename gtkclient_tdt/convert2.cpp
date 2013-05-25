@@ -78,8 +78,6 @@ int main(int argn, char **argc){
 		}
 		fseeko(in, 0, SEEK_SET);
 		//okay, allocate appropriate data structs:
-		// time (double), analog(i8), channel (i8),
-		// spike_time (double), spikes(i32)
 		double* time;
 		i64* ticks; 
 		short* channel; 
@@ -166,12 +164,14 @@ int main(int argn, char **argc){
 				}
 				dims2[0] = 32; 
 				dims2[1] = m; 
-				wf_cell[index] = Mat_VarCreate(NULL, MAT_C_INT16, MAT_T_INT16, 2, dims2, w, 0); 
+				wf_cell[index] = Mat_VarCreate
+					(NULL, MAT_C_INT16, MAT_T_INT16, 2, dims2, w, 0); 
 				free(w); 
 				index++; 
 			}
 		}
-		matvar_t* cell_matvar = Mat_VarCreate("wf", MAT_C_CELL, MAT_T_CELL, 2, dims, wf_cell, 0);
+		matvar_t* cell_matvar = Mat_VarCreate
+			("wf", MAT_C_CELL, MAT_T_CELL, 2, dims, wf_cell, 0);
 		Mat_VarWrite(mat, cell_matvar, 0);
 		Mat_VarFree(cell_matvar); 
 		free(wf_cell); 
@@ -185,12 +185,13 @@ int main(int argn, char **argc){
 				i64 m2 = 0; 
 				for(i64 i=0; i<n; i++){
 					if(channel[i] == c && unit[i] == u){
-						w[m2] = time[i]; 
+						w[m2] = time[i]; m2++; 
 					}
 				}
 				dims2[0] = m; 
 				dims2[1] = 1; 
-				time_cell[index] = Mat_VarCreate(NULL, MAT_C_DOUBLE, MAT_T_DOUBLE, 2, dims2, w, 0); 
+				time_cell[index] = Mat_VarCreate
+					(NULL, MAT_C_DOUBLE, MAT_T_DOUBLE, 2, dims2, w, 0); 
 				free(w); 
 				index++; 
 			}
@@ -209,7 +210,7 @@ int main(int argn, char **argc){
 				i64 m2 = 0; 
 				for(i64 i=0; i<n; i++){
 					if(channel[i] == c && unit[i] == u){
-						w[m2] = ticks[i]; 
+						w[m2] = ticks[i]; m2++; 
 					}
 				}
 				dims2[0] = m; 

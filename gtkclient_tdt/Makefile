@@ -51,7 +51,7 @@ ifeq ($(strip $(STACKPROTECTOR)),true)
 	CFLAGS  += -fstack-protector-all
 endif
 
-all: gtkclient wf_plot po8e mmap_test
+all: gtkclient wf_plot po8e mmap_test convert2
 #convert: convert
 
 %.o: %.cpp $(COM_HDR)
@@ -71,7 +71,7 @@ convert: $(COBJS) wfwriter.h
 	$(CPP) -o $@ -g -Wall -lmatio -lhdf5 -lz $(COBJS)
 
 clean:
-	rm -rf gtkclient convert mmap_test po8e wf_plot *.o spikes.pb.*
+	rm -rf gtkclient convert2 mmap_test po8e wf_plot *.o spikes.pb.*
 
 wf_plot: wf_plot.c
 	$(CC) -g -lSDL -lGL -lGLU -lglut -lpthread -lmatio -lpng -o $@ wf_plot.c
@@ -99,6 +99,7 @@ deps:
 install:
 	install -d $(TARGET)
 	install gtkclient -t $(TARGET)
+	install convert2 -t $(TARGET)
 	install -d $(TARGET)/cg
 	install cg/fade.cg -t $(TARGET)/cg
 	install cg/fadeColor.cg -t $(TARGET)/cg

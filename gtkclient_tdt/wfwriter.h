@@ -6,7 +6,7 @@
 
 struct wfpak{
 	double time; //wall clock time of spike, aligned to beginning. 
-	long	ticks; //tdt ticks of spike. 
+	long	ticks; //tdt ticks of spike. 8 bytes.
 	short	channel; 
 	short	unit;
 	short len; 
