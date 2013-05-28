@@ -123,7 +123,9 @@ classdef AirGuitarHeroEmg < Presentation.AirGuitarHero.AirGuitarHeroBase
                         
                     case obj.Training
                         % EMG on and Autoplay on to maintain cues
-                        obj.SignalSource.start();
+                        if isa(obj.SignalSource,'Inputs.DaqHwDevice')
+                            obj.SignalSource.start();
+                        end
                         
                         % AutoPlay
                         % Note detection -> actuation delay here
@@ -133,7 +135,10 @@ classdef AirGuitarHeroEmg < Presentation.AirGuitarHero.AirGuitarHeroBase
                         
                     case obj.Playing
                         % EMG on and Autoplay on to maintain cues
-                        obj.SignalSource.start();
+                        
+                        if isa(obj.SignalSource,'Inputs.DaqHwDevice')
+                            obj.SignalSource.start();
+                        end
                         obj.disableKeyboardCallbacks();
                         
                         % TODO: this is a function now:
@@ -141,9 +146,9 @@ classdef AirGuitarHeroEmg < Presentation.AirGuitarHero.AirGuitarHeroBase
                         windowData = obj.SignalSource.getFilteredData(obj.SignalSource.NumSamples);
                         features2D = obj.SignalClassifier.extractfeatures(windowData);
                         activeChannelFeatures = features2D(obj.SignalClassifier.getActiveChannels,:);
-                        [classOut voteDecision] = obj.SignalClassifier.classify(reshape(activeChannelFeatures',[],1));
+                        [classOut, voteDecision] = obj.SignalClassifier.classify(reshape(activeChannelFeatures',[],1));
                         
-                        useMajorityVote = 0;
+                        useMajorityVote = 1;
                         if useMajorityVote
                             output = voteDecision;
                         else
@@ -213,6 +218,15 @@ classdef AirGuitarHeroEmg < Presentation.AirGuitarHero.AirGuitarHeroBase
                 v = getvalue(obj.hOutput);
                 v(id) = 1;
                 putvalue(obj.hOutput,v);
+            end
+        end
+        function close(obj)
+            if ~isempty(obj.hOutput) && isa(obj.hOutput,'serial')
+                if strcmpi(obj.hOutput.status,'closed')
+                    fclose(obj.hOutput);
+                end
+                delete(obj.hOutput);
+                obj.hOutput = [];
             end
         end
     end
