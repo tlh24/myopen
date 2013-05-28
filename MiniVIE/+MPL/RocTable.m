@@ -128,6 +128,20 @@ classdef RocTable < handle
                 0.0000,0.8727,0.9774,0.7679,0.0000,0.8727,0.9774,0.7679,0.0000,0.8727,0.9774,0.7679,0.0000,0.8727,0.9774,0.7679,1.9199,0.0000,0.0000,-0.3491;...
                 0.0000,1.3963,1.5533,1.2392,0.0000,1.3090,1.4486,1.1694,0.0000,1.3963,1.5533,1.2392,0.0000,1.3963,1.5533,1.2392,1.9199,0.5236,0.8727,0.3491;...
                 ];
+            roc(6).angles(2:4,[mce.RING_AB_AD mce.LITTLE_AB_AD]) = -1;
+            
+%             roc(16).joints = [8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27];
+%             % replicate the base angles
+%             roc(16).angles = repmat(basePosition,length(roc(16).waypoint),1);
+%             roc(16).angles(2:3,[mce.INDEX_MCP mce.INDEX_PIP mce.INDEX_DIP]) = 1.2;
+%             roc(16).angles(2:3,[mce.MIDDLE_MCP mce.MIDDLE_PIP mce.MIDDLE_DIP]) = 1;
+%             roc(16).angles(2:3,mce.RING_MCP) = 1.6;
+%             roc(16).angles(2:3,[mce.LITTLE_MCP mce.LITTLE_PIP mce.LITTLE_DIP]) = 1;
+%             
+%             roc(16).angles(3,mce.THUMB_CMC_AD_AB) = .5;
+%             roc(16).angles(3,mce.THUMB_CMC) = .5;
+%             roc(16).angles(3,mce.THUMB_MCP) = 1.2;
+            
             
             roc(7).id = 6;
             roc(7).name = 'Trigger(Drill)';
@@ -168,6 +182,8 @@ classdef RocTable < handle
                 pos3;...
                 ];
             %roc(8).angles(2:end,mce.THUMB_CMC_AD_AB) = 1.8;
+            roc(8).angles(2:4,[mce.RING_AB_AD mce.LITTLE_AB_AD]) = 2;
+            roc(8).angles(2:4,mce.INDEX_AB_AD) = -1;
             
             
             roc(9).id = 8;
@@ -185,7 +201,7 @@ classdef RocTable < handle
             roc(10).joints = [8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27];
             roc(10).angles = repmat(basePosition,length(roc(10).waypoint),1);
             roc(10).angles(1,mce.INDEX_MCP) = 0;
-            roc(10).angles(2,mce.INDEX_MCP) = 1;
+            roc(10).angles(2,[mce.INDEX_MCP mce.INDEX_PIP mce.INDEX_DIP]) = 1.2;
             
             roc(11).id = 10;
             roc(11).name = 'Middle Only';
@@ -193,7 +209,7 @@ classdef RocTable < handle
             roc(11).joints = [8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27];
             roc(11).angles = repmat(basePosition,length(roc(11).waypoint),1);
             roc(11).angles(1,mce.MIDDLE_MCP) = 0;
-            roc(11).angles(2,mce.MIDDLE_MCP) = 1;
+            roc(11).angles(2,[mce.MIDDLE_MCP mce.MIDDLE_PIP mce.MIDDLE_DIP]) = 1.2;
             
             roc(12).id = 11;
             roc(12).name = 'Ring Only';
@@ -201,7 +217,7 @@ classdef RocTable < handle
             roc(12).joints = [8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27];
             roc(12).angles = repmat(basePosition,length(roc(12).waypoint),1);
             roc(12).angles(1,mce.RING_MCP) = 0;
-            roc(12).angles(2,mce.RING_MCP) = 1;
+            roc(12).angles(2,[mce.RING_MCP mce.RING_PIP mce.RING_DIP]) = 1.2;
             
             roc(13).id = 12;
             roc(13).name = 'Little Only';
@@ -209,7 +225,7 @@ classdef RocTable < handle
             roc(13).joints = [8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27];
             roc(13).angles = repmat(basePosition,length(roc(13).waypoint),1);
             roc(13).angles(1,mce.LITTLE_MCP) = 0;
-            roc(13).angles(2,mce.LITTLE_MCP) = 1;
+            roc(13).angles(2,[mce.LITTLE_MCP mce.LITTLE_PIP mce.LITTLE_DIP]) = 1.2;
             
             % 13
             roc(14).id = 13;
@@ -235,6 +251,24 @@ classdef RocTable < handle
             roc(15).angles(1,mce.RING_MCP) = 0;
             roc(15).angles(2,mce.MIDDLE_MCP) = 1.6;
             roc(15).angles(2,mce.RING_MCP) = 1.6;
+
+            
+            roc(16).id = 15;
+            roc(16).name = 'Lateral';
+            roc(16).waypoint = [0 .6 1];
+            roc(16).joints = [8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27];
+            % replicate the base angles
+            roc(16).angles = repmat(basePosition,length(roc(16).waypoint),1);
+            roc(16).angles(2:3,[mce.INDEX_MCP mce.INDEX_PIP mce.INDEX_DIP]) = 1.2;
+            roc(16).angles(2:3,[mce.MIDDLE_MCP mce.MIDDLE_PIP mce.MIDDLE_DIP]) = 1;
+            roc(16).angles(2:3,mce.RING_MCP) = 1.6;
+            roc(16).angles(2:3,[mce.LITTLE_MCP mce.LITTLE_PIP mce.LITTLE_DIP]) = 1;
+            
+            roc(16).angles(3,mce.THUMB_CMC_AD_AB) = .5;
+            roc(16).angles(3,mce.THUMB_CMC) = .5;
+            roc(16).angles(3,mce.THUMB_MCP) = 1.2;
+            
+
             
             if ~isempty(fname)
                 MPL.RocTable.writeRocTable(fname,roc);
