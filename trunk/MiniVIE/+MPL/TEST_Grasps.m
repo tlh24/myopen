@@ -6,8 +6,8 @@ hMud = MPL.MudCommandEncoder();
 %% Send manual commands
 graspId = 0;
 graspVal = 20/20;
-e = 60*pi/180;
-s = [0 0 0];
+e = 130*pi/180;
+s = [0 0 0]*pi/180;
 w(1) = -4*5*pi/180; % Wrist Rotation
 w(2) = -1*5*pi/180; % Wrist Deviation
 w(3) = 1*5*pi/180; % Wrist Flexion

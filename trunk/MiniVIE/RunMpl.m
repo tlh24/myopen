@@ -4,6 +4,11 @@ p.guiName = 'MiniVIE-NFU-MPL';
 p.filePrefix = 'WR_TR02_L_';
 % p.filePrefix = 'JH_TH01_L_';
 
+UiTools.save_temp_file('defaultFilePrefix',p.filePrefix)
+
+diaryFile = [datestr(now,'yyyymmdd_HHMMSS') '_dairy.txt'];
+diary(diaryFile);
+
 p.hSource = Inputs.NfuInput;
 
 p.Scenario = MPL.MplScenarioMud;
