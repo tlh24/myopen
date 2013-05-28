@@ -191,11 +191,16 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
                 buttonId = 0;
             end
             
+            %obj.hJoystick
             buttonJustPressed = obj.LastButton == 0;
             buttonHeld = obj.ButtonDown > 15;
             
             % change target Class
-            if ismember(buttonId,[2 8]) && ...
+            buttonPrevious = ismember(buttonId,[2 6]) || ...
+                obj.hJoystick.axisVal(1) > 0.5;
+            buttonNext = ismember(buttonId,[4 8]) || ...
+                obj.hJoystick.axisVal(1) < -0.5;
+            if buttonPrevious && ...
                     (buttonJustPressed || buttonHeld)
                 % move to next class, redraw, done
                 obj.CurrentClass = obj.CurrentClass+1;
@@ -208,7 +213,7 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
                 doAddData = false;
                 return
             end
-            if ismember(buttonId,[4 6]) && ...
+            if buttonNext && ...
                     (buttonJustPressed || buttonHeld)
                 % move to previous class, redraw, done
                 obj.CurrentClass = obj.CurrentClass-1;
