@@ -85,7 +85,8 @@ classdef CpchSerial < Inputs.CpcHeadstage
             obj.GPICnt = obj.BitCount(obj.GPIMask);
             
             % Create the holding buffer for collected data
-            rows = obj.NumSamples;
+            % TODO: Max buffered samples in CPCH is locked to 3000 == 3 secs of data
+            rows = 3000;%obj.NumSamples;
             cols = 32;
             obj.DataBuffer = zeros(rows, cols, 'double');
             

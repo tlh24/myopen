@@ -39,7 +39,7 @@
 % 
 
 %%
-hUdp = PnetClass(12345,4432,'127.0.0.1');
+hUdp = PnetClass(34521,4432,'127.0.0.1');
 hUdp.initialize()
 
 %%
@@ -105,8 +105,11 @@ tic
 while StartStopForm% toc < 0.5
     drawnow
 accel = int32(0*[rand rand rand]*1024*1024)
-buttons = uint32(15);
-ir = int32(1000*[rand rand]*1024*1024)
+% 4 == A, 5, 6
+% 8 == B
+
+buttons = uint32(8);
+ir = int32(0*[rand rand]*1024*1024)
 
 msg = [
 uint8(hex2dec('de')) ...uint8(hex2dec('00')) ...
