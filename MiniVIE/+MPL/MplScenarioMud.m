@@ -368,6 +368,11 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
                 %[shoulderAngles e w]
                 %msg = obj.hMud.ArmPosVelHandRocGrasps([shoulderAngles e w],zeros(1,7),1,graspId,graspVal,1);
 
+                %graspVal = obj.GraspValue;
+                %shoulderAngles(1) = 0;
+                %[shoulderAngles e w]
+                %msg = obj.hMud.ArmPosVelHandRocGrasps([shoulderAngles e w],zeros(1,7),1,graspId,graspVal,1);
+
                 obj.hSink.putData(msg);
             end
         end
@@ -385,7 +390,9 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
                         %graspId = 1;  % Pinch (British)
                         graspId = 2;  % Pinch (American)
                     case 'Lateral'
-                        graspId = 9;  % Key
+                        graspId = 15;  % Key
+                    case 'Cylindrical'
+                        graspId = 5; 
                     case 'Tripod'
                         graspId = 4;  % 3 Finger Pinch
                     case 'Spherical'
