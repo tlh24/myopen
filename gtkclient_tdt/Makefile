@@ -51,7 +51,7 @@ ifeq ($(strip $(STACKPROTECTOR)),true)
 	CFLAGS  += -fstack-protector-all
 endif
 
-all: gtkclient wf_plot po8e mmap_test convert
+all: gtkclient wf_plot po8e mmap_test convert2
 #convert: convert
 
 %.o: %.cpp $(COM_HDR)
@@ -67,7 +67,7 @@ spikes.pb.cc : spikes.proto
 gtkclient: $(GOBJS) $(FIFOS)
 	$(CPP) -o $@ $(GTKLD) $(LDFLAGS) -lmatio -lhdf5 $(GOBJS)
 
-convert: $(COBJS) wfwriter.h
+convert2: $(COBJS) wfwriter.h
 	$(CPP) -o $@ -g -Wall -lmatio -lhdf5 -lz $(COBJS)
 
 clean:
