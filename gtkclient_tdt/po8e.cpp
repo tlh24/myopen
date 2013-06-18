@@ -17,6 +17,7 @@ void* po8_thread(void*){
 	int count = 0, total;
 	PO8e *card = NULL;
 	bool simulate = false; 
+	int bufmax = 16384;
 
 	while(!g_die){
 		total = PO8e::cardCount();
@@ -62,8 +63,8 @@ void* po8_thread(void*){
 			nchan = card->numChannels(); 
 		}
 		int stoppedCount = 0;
-		short temp[8192*4]; //observed up to 128*48 32-bit samples -- ~12k shorts.
-		short temptemp[1024]; 
+		short temp[bufmax*nchan]; //observed up to 128*48 32-bit samples -- ~12k shorts.
+		short temptemp[bufmax]; 
 		while((simulate || stoppedCount < count) && !g_die){
 			//printf("waiting for data ready.\n"); --we move too fast for this.
 			if (!simulate && count == 1 &&!card->waitForDataReady())
