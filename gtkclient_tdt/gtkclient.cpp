@@ -45,14 +45,14 @@
 #include "sock.h"
 #include "cgVertexShader.h"
 #include "vbo.h"
-#include "tcpsegmenter.h"
+//#include "tcpsegmenter.h"
 #include "firingrate.h"
 #include "gtkclient.h"
 #include "mmaphelp.h"
 #include "fifohelp.h"
 #include "channel.h"
 #include "packet.h"
-#include "spikes.pb.h"
+//#include "spikes.pb.h"
 #include "timesync.h"
 #include "matStor.h"
 #include "wfwriter.h"
@@ -853,11 +853,13 @@ void* wfwrite_thread(void*){
 	return NULL; 
 }
 void* po8_thread(void*){
-	int count = 0, total;
+	int ncards, total;
 	PO8e *card = NULL;
 	bool simulate = false; 
+	int bufmax = 16384;
 
 	while(!g_die){
+		ncards = 0; 
 		total = PO8e::cardCount();
 		printf("Found %d PO8e card(s) in the system.\n", total);
 		if (0 == total){
@@ -878,7 +880,10 @@ void* po8_thread(void*){
 				}
 				else{
 						printf("  card is collecting incoming data.\n");
-						count++;
+						bool stopped = false; 
+						int numSamples = (int)card->samplesReady(&stopped);
+						card->flushBufferedData(numSamples);
+						ncards++;
 				}
 			}
 			// wait for streaming to start on the first card
@@ -892,7 +897,6 @@ void* po8_thread(void*){
 		double		sinSamples = 0.0; // for driving the sinusoids; resets every 4e4. 
 		long long bytes = 0; 
 		unsigned int frame = 0;
-		int bufmax = 16384;
 		unsigned int bps = 2; 
 		unsigned int nchan = 96; 
 		if(!simulate){
@@ -902,20 +906,23 @@ void* po8_thread(void*){
 		int stoppedCount = 0;
 		short * temp = new short[bufmax*nchan]; // >10000 samples * 2 bytes/sample * 96 Channels 
 		short * temptemp = new short[bufmax]; 
-		while((simulate || stoppedCount < count) && !g_die){
+		stoppedCount = 0;
+		while((simulate || ncards == 1 ) && !g_die){
 			//printf("waiting for data ready.\n"); --we move too fast for this.
-			if ((!simulate) && (count == 1) && (!card->waitForDataReady()))
-				break;
-		
+			if ((!simulate) && (ncards == 1) && (!card->waitForDataReady()))
+				break; //this occurs when the rpvdsex circuit is idled. 
+						//and potentially when the glitch happens. 
 			int waitCount = 0;
-			stoppedCount = 0;
 			bool stopped = false;
 			int numSamples = 0; 
 			if(!simulate){
 				numSamples = (int)card->samplesReady(&stopped);
-				if (stopped)
+				if (stopped){
 					stoppedCount++;
-				else if (numSamples > 0){
+					printf("ERROR: card has stopped! %d (%d samples)\n", stoppedCount, numSamples); 
+					usleep(500); 
+				}
+				if (numSamples > 0){
 					card->readBlock(temp, numSamples);
 					card->flushBufferedData(numSamples);
 					bytes += numSamples * nchan * bps; 
@@ -1080,7 +1087,7 @@ void* po8_thread(void*){
 		}
 		if(!simulate){
 			printf("\n");
-			printf("Releasing card 0\n");
+			printf("Releasing card 0, ncards %d\n", ncards);
 			PO8e::releaseCard(card);
 		}
 		//delete card; 
@@ -1159,99 +1166,6 @@ void* mmap_thread(void*){
 	delete pipe_in;
 	delete pipe_out; 
 	return NULL; 
-}
-
-void* server_thread(void* ){
-	//kinda like a RPC service -- call to get the vector of binned firing rates.
-	// call whenever you want!
-	unsigned short binned[97][2][10]; 
-	//first 40 bytes header: are the size of the array, then the time.
-	//9 bits integer part, 7 bits fractional part. hence 0-511.99Hz.
-	binned_header bh; 
-	bh.nchan = htons(96); //everything must be sent in netowrk order!
-	bh.nunits = htons(2); 
-	bh.nlags = htons(10); 
-	unsigned char buf[96];
-	int client = 0;
-	g_spikesock = setup_socket(4343,1,true); //tcp socket, server.
-	//check to see if a client is connected.
-	int passes = 0;
-	int rxbytes = 0; 
-	while(!g_die){
-		if(client <= 0){
-			client = accept_socket(g_spikesock);
-			if(client > 0){
-				printf("got new client connection!\n");
-				socket_timeout(client, 2); 
-			}
-		}
-		if(client > 0){
-			//see if they have requested something.
-			double start = gettime();
-			//double start = reqtime;
-			/*pollfd pfd; 
-			pfd.fd = client; 
-			pfd.events = POLLIN; 
-			pfd.revents = 0; 
-			int n = poll( &pfd, 1, 2000); 
-			printf("poll returned: %d revents %x\n", n, pfd.revents); */
-			int n = recv(client, &(buf[rxbytes]), sizeof(buf)-rxbytes, 0); //this seems to block?
-			if(n > 0)
-				rxbytes += n; 
-			double end = gettime();
-			printf("recv time: %f %d bytes\n", end-start, n);
-			if(rxbytes >= 5){
-				buf[rxbytes] = 0;
-				printf("rx message: %s\n", buf); 
-				rxbytes = 0; 
-				passes = 0;
-				//double a_req = atof((const char*)buf);
-				//printf("got client request [%d]:%f\n",n,a_req);
-				//doesn't matter at this point -- make a response.
-				bh.time = end; 
-				bswap_64((void*)&bh.time); 
-				memcpy((void*)binned, (void*)&bh, sizeof(bh)); 
-				for(int i=0; i<96; i++){
-					for(int j=0; j<2; j++){
-						g_fr[i][j].get_bins(end, &(binned[i+1][j][0])); 
-						//byte-swap everything. 
-						for(int k=0; k<10; k++)
-							binned[i+1][j][k] = htons(binned[i+1][j][k]); 
-					}
-				}
-				
-				double fin = gettime();
-				printf("rate computation time: %f\n", fin-end);
-				//start = end;
-				n = send(client,(void*)binned, 40/*sizeof(binned)*/, 0);
-				if(n != 40/*sizeof(binned)*/){
-					close(client);
-					printf("sending message to client failed!\n");
-					client = 0;
-				}
-				usleep(2000); //5ms sleep. so the display does not lock up.
-				//end = gettime();
-				//printf("sending message time: %f\n", end-start);
-				//else{
-				//printf("sent %d bytes to client.\n", n);
-				//}
-			}
-			if(n <= 0){
-				passes++;
-				if(passes > 6){
-					printf("no response, closing client connection\n");
-					if(client) close_socket(client);
-					client = 0; passes = 0;
-				}
-				usleep(2000);
-			}
-		}else{
-			usleep(100000);
-		}
-	}
-	if(client) close_socket(client);
-	close_socket(g_spikesock);
-	return 0;
 }
 static gboolean chanscan(gpointer){
 	if(g_cycle){
@@ -1718,7 +1632,7 @@ int main(int argc, char **argv)
 
 	// Verify that the version of the library that we linked against is
 	// compatible with the version of the headers we compiled against.
-	GOOGLE_PROTOBUF_VERIFY_VERSION;
+	//GOOGLE_PROTOBUF_VERIFY_VERSION;
 
 	gtk_init (&argc, &argv);
 	gtk_gl_init (&argc, &argv);

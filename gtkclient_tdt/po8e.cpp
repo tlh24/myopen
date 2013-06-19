@@ -52,8 +52,6 @@ void* po8_thread(void*){
 		// start the timer used to compute the speed and set the collected bytes to 0
 		long double starttime = gettime(); 
 		long double totalSamples = 0.0; //for simulation.
-		long double slope = 24414.0625; 
-		long double offset = 0.0; 
 		long long bytes = 0; 
 		unsigned int frame = 0; 
 		unsigned int bps = 2; 
@@ -62,12 +60,12 @@ void* po8_thread(void*){
 			bps = card->dataSampleSize(); 
 			nchan = card->numChannels(); 
 		}
+		short * temp = new short[bufmax*nchan]; // >10000 samples * 2 bytes/sample * 96 Channels 
+		short * temptemp = new short[bufmax];
 		int stoppedCount = 0;
-		short temp[bufmax*nchan]; //observed up to 128*48 32-bit samples -- ~12k shorts.
-		short temptemp[bufmax]; 
 		while((simulate || stoppedCount < count) && !g_die){
 			//printf("waiting for data ready.\n"); --we move too fast for this.
-			if (!simulate && count == 1 &&!card->waitForDataReady())
+			if (!simulate && count == 1 && !card->waitForDataReady())
 				break;
 		
 			int waitCount = 0;
@@ -141,7 +139,7 @@ int main(void){
 	pthread_attr_t attr;
 	pthread_attr_init(&attr);
 	pthread_create( &thread1, &attr, po8_thread, 0 );
-	char c = getchar(); 
+	getchar(); // wait for enter
 	g_die = true; 
 	usleep(4e5); 
 }
