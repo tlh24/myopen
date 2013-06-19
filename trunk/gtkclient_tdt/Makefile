@@ -11,7 +11,7 @@ CC  = gcc
 CPP = g++
 TARGET = /usr/local/bin
 
-CPPFLAGS := -I/usr/local/include -I../common_host
+CPPFLAGS := -Iinclude -I/usr/local/include -I../common_host
 CPPFLAGS += -Wall -Wcast-align -Wpointer-arith -Wshadow -Wsign-compare \
 -Wformat=2 -Wno-format-y2k -Wmissing-braces -Wparentheses -Wtrigraphs \
 -Wextra -pedantic -std=c++11 -Wno-int-to-pointer-cast 
@@ -27,8 +27,9 @@ GLIBS := gtk+-2.0 gtkglext-1.0 gtkglext-x11-1.0
 GTKFLAGS = `pkg-config --cflags $(GLIBS) `
 GTKLD = `pkg-config --libs $(GLIBS) `
 
-GOBJS = gtkclient.o decodePacket.o gettime.o glInfo.o matStor.o
-COM_HDR = channel.h wfwriter.h \
+GOBJS = src/gtkclient.o src/decodePacket.o src/gettime.o src/glInfo.o \
+src/matStor.o
+COM_HDR = include/channel.h include/wfwriter.h \
 ../common_host/vbo.h \
 ../common_host/cgVertexShader.h \
 ../common_host/firingrate.h \
@@ -46,7 +47,7 @@ endif
 ifeq ($(strip $(JACK)),true)
 	CPPFLAGS += -DJACK
 	LDFLAGS  += -ljack
-	GOBJS    += jacksnd.o
+	GOBJS    += src/jacksnd.o
 endif
 
 ifeq ($(strip $(MUDFLAP)),true)
@@ -62,32 +63,32 @@ endif
 
 all: gtkclient convert2 mmap_test po8e wf_plot   
 
-%.o: %.cpp $(COM_HDR)
+src/%.o: src/%.cpp $(COM_HDR)
 	$(CPP) -c $(CPPFLAGS) $(GTKFLAGS) $< -o $@
 
-%.o: ../common_host/%.cpp $(COM_HDR)
+src/%.o: ../common_host/%.cpp $(COM_HDR)
 	$(CPP) -c $(CPPFLAGS) $(GTKFLAGS) $< -o $@
 
-%.o: %.c
+src/%.o: src/%.c
 	$(CC) -c $(CFLAGS) $< -o $@
 
 gtkclient: $(GOBJS)
 	$(CPP) -o $@ $(GTKLD) $(LDFLAGS) $^
 
-convert2: convert2.o
+convert2: src/convert2.o
 	$(CPP) -o $@ -lmatio -lhdf5 -lz $<
 
-mmap_test: mmap_test.cpp
+mmap_test: src/mmap_test.o
 	$(CPP) -o $@ -lrt $^
 
-po8e: po8e.o
+po8e: src/po8e.o
 	$(CPP) -o $@ -lPO8eStreaming $^
 
-wf_plot: wf_plot.o
+wf_plot: src/wf_plot.o
 	$(CC) -o $@ -lSDL -lGL -lGLU -lglut -lpthread -lmatio -lpng $^
 
 clean:
-	rm -rf gtkclient convert2 mmap_test po8e wf_plot *.o 
+	rm -rf gtkclient convert2 mmap_test po8e wf_plot src/*.o 
 
 deps:
 	sudo apt-get install libgtk2.0-dev \
