@@ -90,7 +90,7 @@ int main(){
 	double elapsed = gettime(); 
 	printf("took %f s (%f Hz)\n", elapsed, total/elapsed); 
 	printf("skipped: %d/%d\n", skipped, total); 
-	printf("mmap address: %x\n", addr); 
+	printf("mmap address: %p\n", addr); 
 	munmap(addr, length); 
 	close(fid); 
 	close (pipe_in);
