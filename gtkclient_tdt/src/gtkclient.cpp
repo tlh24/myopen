@@ -853,80 +853,88 @@ void* wfwrite_thread(void*){
 	return NULL; 
 }
 void* po8_thread(void*){
-	int ncards, total;
 	PO8e *card = NULL;
 	bool simulate = false; 
-	int bufmax = 16384;
+	int bufmax = 16384;	// 2^14 > 10000
 
 	while(!g_die){
-		ncards = 0; 
-		total = PO8e::cardCount();
-		printf("Found %d PO8e card(s) in the system.\n", total);
-		if (0 == total){
-			printf("  simulating data.\n");
+		int totalcards = PO8e::cardCount();
+		int conn_cards = 0;
+		printf("Found %d PO8e card(s) in the system.\n", totalcards);
+		if (totalcards < 1){
+			printf("  simulating instead.\n");
 			simulate = true; 
 		}
 		if(!simulate){
-			printf(" Connecting to card 0\n");
+			printf("Connecting to card 0\n");
 			card = PO8e::connectToCard(0);
-			if (card == NULL)
-				printf("  connection failed\n");
+			if(card == NULL)
+				printf("  connection failed to card0 \n");
 			else{
-				printf("  established connection %p\n", (void*)card);
-				if (! card->startCollecting()){
+				// todo: connect to multiple cards
+				printf("  connection established to card0 at %p\n", (void*)card);
+				if (!card->startCollecting()){
 						printf("  startCollecting() failed with: %d\n",
 								card->getLastError());
+						card->stopCollecting();
+						printf("  releasing card0\n");
 						PO8e::releaseCard(card);
+						card = NULL;
 				}
 				else{
 						printf("  card is collecting incoming data.\n");
-						bool stopped = false; 
-						int numSamples = (int)card->samplesReady(&stopped);
-						card->flushBufferedData(numSamples);
-						ncards++;
+						conn_cards++;
+						printf("Waiting for the stream to start on card0 ... ");
+						card->waitForDataReady(); // waits ~ 1200 hours ;-)
+						printf("started\n");
 				}
 			}
-			// wait for streaming to start on the first card
-			printf("Waiting for the stream to start on card 0\n");
-			while(card->samplesReady() == 0)
-				usleep(5000);
 		}
 		// start the timer used to compute the speed and set the collected bytes to 0
 		long double starttime = gettime(); 
 		long double totalSamples = 0.0; //for simulation.
 		double		sinSamples = 0.0; // for driving the sinusoids; resets every 4e4. 
 		long long bytes = 0; 
-		unsigned int frame = 0;
-		unsigned int bps = 2; 
-		unsigned int nchan = 96; 
+		unsigned int frame = 0; 
+		unsigned int nchan = 96;
+		unsigned int bps = 2; //bytes/sample
 		if(!simulate){
-			bps = card->dataSampleSize(); 
 			nchan = card->numChannels(); 
+			bps = card->dataSampleSize();
 		}
-		int stoppedCount = 0;
-		short * temp = new short[bufmax*nchan]; // >10000 samples * 2 bytes/sample * 96 Channels 
-		short * temptemp = new short[bufmax]; 
-		stoppedCount = 0;
-		while((simulate || ncards == 1 ) && !g_die){
-			//printf("waiting for data ready.\n"); --we move too fast for this.
-			if ((!simulate) && (ncards == 1) && (!card->waitForDataReady()))
-				break; //this occurs when the rpvdsex circuit is idled. 
-						//and potentially when the glitch happens. 
+		short * temp = new short[bufmax*nchan]; // >10000 samples * 2 bytes/sample * nChannels 
+		short * temptemp = new short[bufmax];
+		while((simulate || conn_cards > 0) && !g_die){
+			if (!card->waitForDataReady()) { // waits ~ 1200 hours ;-)
+				// this occurs when the rpvdsex circuit is idled.
+				// and potentially when a glitch happens
+				printf("  waitForDataReady() failed with: %d\n",
+				card->getLastError());
+				card->stopCollecting();
+				conn_cards--;
+				printf("  releasing card0\n");
+				PO8e::releaseCard(card);
+				card = NULL;
+				break;
+			}
 			int waitCount = 0;
 			bool stopped = false;
-			int numSamples = 0; 
+			int numSamples = 0;
 			if(!simulate){
 				numSamples = (int)card->samplesReady(&stopped);
-				if (stopped){
-					stoppedCount++;
-					printf("ERROR: card has stopped! %d (%d samples)\n", stoppedCount, numSamples); 
-					usleep(500); 
+				if (stopped) {
+					printf("  stopped collecting data\n");
+					card->stopCollecting();
+					conn_cards--;
+					printf("  releasing card0\n");
+					PO8e::releaseCard(card);
+					card = NULL;
+					break;
 				}
-				if (numSamples > 0){
+				if (numSamples > 0) {
 					card->readBlock(temp, numSamples);
 					card->flushBufferedData(numSamples);
-					bytes += numSamples * nchan * bps; 
-					totalSamples += numSamples; 
+					totalSamples += numSamples;
 				}
 			}else{ //simulate!
 				long double now = gettime(); 
@@ -951,16 +959,19 @@ void* po8_thread(void*){
 					temp[96*numSamples +i] = r & 0xffff;
 					temp[97*numSamples +i] = (r>>16) & 0xffff; 
 				}
-				totalSamples += numSamples; 
+				totalSamples += numSamples;
 				sinSamples += numSamples; 
 				if(sinSamples > 4e4*2*3.1415926) sinSamples -= 4e4*2*3.1415926; 
 				usleep(70); 
 			}
 			if(numSamples > 0 && numSamples < bufmax){
-				/*if(frame %200 == 0){ //need to move this to the UI.
-				printf("%d samples at %d bps of %d chan: %Lf MB/sec\n", numSamples, Bps, nchan,
+				bytes += numSamples * nchan * bps; 
+				/*
+				if(frame %200 == 0){
+				printf("%d samples at %d Bps of %d chan: %Lf MB/sec\n", numSamples, bps, nchan,
 							((long double)bytes) / ((gettime() - starttime)*(1024.0*1024.0))); 
-				}*/
+				}
+				*/
 				//copy the data over to g_fbuf. 
 				//input data is scaled from TDT so that 32767 = 10mV.
 				long double time = gettime(); 
@@ -1081,19 +1092,15 @@ void* po8_thread(void*){
 			}
 			else{
 				//printf("wait count %d\n", waitCount); 
-					waitCount++;
+				waitCount++;
 			}
 			frame++; 
 		}
-		if(!simulate){
-			printf("\n");
-			printf("Releasing card 0, ncards %d\n", ncards);
-			PO8e::releaseCard(card);
-		}
-		//delete card; 
-		delete[] temp; // since we've dynamically allocated
-		delete[] temptemp; 
-		sleep(1); 
+		//delete buffers since we have dynamically allocated;
+		delete[] temp;
+		delete[] temptemp;
+		printf("\n");
+		sleep(1);
 	}
 	return 0;
 }
@@ -1117,7 +1124,7 @@ void flush_pipe(int fid){
 	char* d = (char*)malloc(1024*8); 
 	int r = read(fid, d, 1024*8); 
 	printf("flushed %d bytes\n", r); 
-	free(d); 
+	free(d);
 	int opts = fcntl(fid,F_GETFL);
 	opts ^= O_NONBLOCK;
 	fcntl(fid, F_SETFL, opts);

@@ -3,7 +3,6 @@
 #include <pthread.h>
 #include "PO8e.h"
 bool			g_die = false; 
-long long 	g_sample = 0; 
 long double g_startTime = 0.0;
 long double gettime(){ //in seconds!
 	timespec pt ;
@@ -14,84 +13,100 @@ long double gettime(){ //in seconds!
 }
 
 void* po8_thread(void*){
-	int count = 0, total;
 	PO8e *card = NULL;
 	bool simulate = false; 
-	int bufmax = 16384;
+	int bufmax = 16384;	// 2^14 > 10000
 
 	while(!g_die){
-		total = PO8e::cardCount();
-		printf("Found %d PO8e card(s) in the system.\n", total);
-		if (0 == total){
+		int totalcards = PO8e::cardCount();
+		int conn_cards = 0;
+		printf("Found %d PO8e card(s) in the system.\n", totalcards);
+		if (totalcards < 1){
 			printf("  simulating instead.\n");
 			simulate = true; 
 		}
 		if(!simulate){
-			printf(" Connecting to card 0\n");
+			printf("Connecting to card 0\n");
 			card = PO8e::connectToCard(0);
-			if (card == NULL)
-				printf("  connection failed\n");
+			if(card == NULL)
+				printf("  connection failed to card0 \n");
 			else{
-				printf("  established connection %p\n", (void*)card);
-		//TODO: have to expose the card ports MUCH better
-				if (! card->startCollecting()){
+				// todo: connect to multiple cards
+				printf("  connection established to card0 at %p\n", (void*)card);
+				if (!card->startCollecting()){
 						printf("  startCollecting() failed with: %d\n",
 								card->getLastError());
+						card->stopCollecting();
+						printf("  releasing card0\n");
 						PO8e::releaseCard(card);
+						card = NULL;
 				}
 				else{
 						printf("  card is collecting incoming data.\n");
-						count++;
+						conn_cards++;
+						printf("Waiting for the stream to start on card0 ... ");
+						card->waitForDataReady(); // waits ~ 1200 hours ;-)
+						printf("started\n");
 				}
 			}
-			// wait for streaming to start on the first card
-			printf("Waiting for the stream to start on card 0\n");
-			while(card->samplesReady() == 0)
-				usleep(5000);
 		}
 		// start the timer used to compute the speed and set the collected bytes to 0
 		long double starttime = gettime(); 
 		long double totalSamples = 0.0; //for simulation.
+		double		sinSamples = 0.0; // for driving the sinusoids; resets every 4e4. 
 		long long bytes = 0; 
 		unsigned int frame = 0; 
-		unsigned int bps = 2; 
-		unsigned int nchan = 96; 
+		unsigned int nchan = 96;
+		unsigned int bps = 2; //bytes/sample
 		if(!simulate){
-			bps = card->dataSampleSize(); 
 			nchan = card->numChannels(); 
+			bps = card->dataSampleSize();
 		}
-		short * temp = new short[bufmax*nchan]; // >10000 samples * 2 bytes/sample * 96 Channels 
+		short * temp = new short[bufmax*nchan]; // >10000 samples * 2 bytes/sample * nChannels 
 		short * temptemp = new short[bufmax];
-		int stoppedCount = 0;
-		while((simulate || stoppedCount < count) && !g_die){
-			//printf("waiting for data ready.\n"); --we move too fast for this.
-			if (!simulate && count == 1 && !card->waitForDataReady())
+		while((simulate || conn_cards > 0) && !g_die){
+			if (!card->waitForDataReady()) { // waits ~ 1200 hours ;-)
+				// this occurs when the rpvdsex circuit is idled.
+				// and potentially when a glitch happens
+				printf("  waitForDataReady() failed with: %d\n",
+				card->getLastError());
+				card->stopCollecting();
+				conn_cards--;
+				printf("  releasing card0\n");
+				PO8e::releaseCard(card);
+				card = NULL;
 				break;
-		
+			}
 			int waitCount = 0;
-			stoppedCount = 0;
 			bool stopped = false;
-			int numSamples = 0; 
+			int numSamples = 0;
 			if(!simulate){
 				numSamples = (int)card->samplesReady(&stopped);
-				if (stopped)
-					stoppedCount++;
-				else if (numSamples > 0){
+				if (stopped) {
+					printf("  stopped collecting data\n");
+					card->stopCollecting();
+					conn_cards--;
+					printf("  releasing card0\n");
+					PO8e::releaseCard(card);
+					card = NULL;
+					break;
+				}
+				if (numSamples > 0) {
 					card->readBlock(temp, numSamples);
 					card->flushBufferedData(numSamples);
-					bytes += numSamples * nchan * bps; 
+					totalSamples += numSamples;
 				}
-			}else{
+			}else{ //simulate!
 				long double now = gettime(); 
 				numSamples = (int)((now - starttime)*24414.0625 - totalSamples); 
 				if(numSamples >= 250){ 
 					numSamples = 250; 
 					totalSamples = (now - starttime)*24414.0625;
 				}
-				float scale = sin(totalSamples/4e4); 
+				float scale = sin(sinSamples/4e4); 
 				for(int i=0; i<numSamples; i++){
 					temptemp[i] =  (short)(sinf((float)
-							((totalSamples + i)/6.0))*32768.f*scale); 
+							((sinSamples + i)/6.0))*32768.f*scale); 
 				}
 				for(int k=0; k<96; k++){
 					for(int i=0; i<numSamples; i++){
@@ -100,20 +115,21 @@ void* po8_thread(void*){
 				}
 				//last part of the buffer is just TDT ticks (most recent -> least delay?)
 				for(int i=0; i<numSamples; i++){
-					int r = (int)(totalSamples +i); 
+					int r = (int)(sinSamples +i); 
 					temp[96*numSamples +i] = r & 0xffff;
 					temp[97*numSamples +i] = (r>>16) & 0xffff; 
 				}
-				totalSamples += numSamples; 
+				totalSamples += numSamples;
+				sinSamples += numSamples; 
+				if(sinSamples > 4e4*2*3.1415926) sinSamples -= 4e4*2*3.1415926; 
 				usleep(70); 
 			}
-			if(numSamples > 0){
+			if(numSamples > 0 && numSamples < bufmax){
+				bytes += numSamples * nchan * bps;
 				if(frame %200 == 0){ //need to move this to the UI.
-				fprintf(stderr, "%d samples at %d bps of %d chan: %Lf MB/sec\n", numSamples, bps, nchan,
+				fprintf(stderr, "%d samples at %d Bps of %d chan: %Lf MB/sec\n", numSamples, bps, nchan,
 							((long double)bytes) / ((gettime() - starttime)*(1024.0*1024.0))); 
 				}
-				g_sample += numSamples; 
-				bytes += numSamples * bps * nchan; 
 			}
 			else{
 				//printf("wait count %d\n", waitCount); 
@@ -121,13 +137,11 @@ void* po8_thread(void*){
 			}
 			frame++; 
 		}
-		if(!simulate){
-			printf("\n");
-			printf("Releasing card 0\n");
-			PO8e::releaseCard(card);
-		}
-		//delete card; 
-		sleep(1); 
+		//delete buffers since we have dynamically allocated;
+		delete[] temp;
+		delete[] temptemp;
+		printf("\n");
+		sleep(1);
 	}
 	return 0;
 }
