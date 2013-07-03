@@ -24,7 +24,7 @@ classdef MotionFile < handle
         end
         
         function uiGetMotionFiles(obj,pathToStart)
-            
+                        
             if nargin < 2
                 % Use default path
                 pathToStart = pwd;
@@ -69,11 +69,15 @@ classdef MotionFile < handle
             
         end
         
-        function success = parse(obj)
+        function success = parse(obj,isBimanual)
             % This script is used to read MSMS Motion files (.asf and .msm) and convert
             % them.  
             %
             % created 6/16/2009 Armiger
+            
+            if nargin < 2
+                isBimanual = false;
+            end
             
             if isempty(obj.FilePath) || isempty(obj.FileName)
                 error('No filename or path specified')
@@ -83,7 +87,83 @@ classdef MotionFile < handle
             [obj.time obj.jointNames jointAngle slideNumber motionName] = ...
                 Scenarios.MSMS_ADL.MotionFile.read_motion_files(obj.FilePath, obj.FileName); %#ok<ASGLU>
             
+            
+            % Assume a left handed file is loaded for bimanual
+            if isBimanual
+                % Copy left to right:
+                jointAngle(strcmpi(obj.jointNames,'elbow_flex_r'),:) = ...
+                    jointAngle(strcmpi(obj.jointNames,'Humero_Ulnar_FE'),:);
+
+                jointAngle(strcmpi(obj.jointNames,'elbow_rot_r'),:) = ...
+                    -jointAngle(strcmpi(obj.jointNames,'Radio_Ulnar_PS'),:);
+                
+                jointAngle(strcmpi(obj.jointNames,'wrist_flex_r'),:) = ...
+                    -jointAngle(strcmpi(obj.jointNames,'wrist_dev_l'),:);
+                %                 leftNames = {
+                %                     'thumb_abd_l'
+                %                     'thumb_flex_l'
+                %                     'PP1_flex_l'
+                %                     'DP1_flex_l'
+                %                     'MCP2_lateral_l'
+                %                     'MCP2_flex_l'
+                %                     'PIP2_flex_l'
+                %                     'DIP2_flex_l'
+                %                     'MCP3_lateral_l'
+                %                     'MCP3_flex_l'
+                %                     'PIP3_flex_l'
+                %                     'DIP3_flex_l'
+                %                     'MCP4_lateral_l'
+                %                     'MCP4_flex_l'
+                %                     'PIP4_flex_l'
+                %                     'DIP4_flex_l'
+                %                     'MCP5_lateral_l'
+                %                     'MCP5_flex_l'
+                %                     'PIP5_flex_l'
+                %                     'DIP5_flex_l'};
+                %                 rightNames = {
+                %                     'MCP5_lateral_r'
+                %                     'MCP5_flex_r'
+                %                     'PIP5_flex_r'
+                %                     'DIP5_flex_r'
+                %                     'MCP4_lateral_r'
+                %                     'MCP4_flex_r'
+                %                     'PIP4_flex_r'
+                %                     'DIP4_flex_r'
+                %                     'MCP3_lateral_r'
+                %                     'MCP3_flex_r'
+                %                     'PIP3_flex_r'
+                %                     'DIP3_flex_r'
+                %                     'MCP2_lateral_r'
+                %                     'MCP2_flex_r'
+                %                     'PIP2_flex_r'
+                %                     'DIP2_flex_r'
+                %                     'thumb_abd_r'
+                %                     'thumb_flex_r'
+                %                     'PP1_flex_r'
+                %                     'DP1_flex_r'
+                %                     };
+                
+                % Loop thorugh each hand angle and replace with
+                % corresponding name changing suffix _r _l
+                for i = 19:38 % id of hand angles
+                    
+                    className = obj.jointNames{i}(1:end-1);
+                    idLeft = strcmpi(obj.jointNames,[className 'l']);
+                    assert(sum(idLeft) == 1,'Failed on class %s\n',[className 'l']);
+
+                    idRight = strcmpi(obj.jointNames,[className 'r']);
+                    assert(sum(idRight) == 1,'Failed on class %s\n',[className 'r']);
+                    
+                    jointAngle(idRight,:) = ...
+                        jointAngle(idLeft,:);
+
+                    
+                end
+                
+            end
+            
             obj.angleData = jointAngle;
+                
             
             
             % get 'classnames' based on unique motions
