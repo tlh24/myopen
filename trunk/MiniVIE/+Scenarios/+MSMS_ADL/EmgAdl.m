@@ -5,7 +5,7 @@ classdef EmgAdl < handle
     % setMotionFile(obj,'C:\MSMS\MSMS Beta 0.9.1\Sample Models\WRAMC_Model\Data','LeftArmRun1'); %(exclude file extensions)
     % initialize(obj)
     % start(obj.hDaq);
-
+    
     properties
         hUdp
         hDaq
@@ -31,7 +31,7 @@ classdef EmgAdl < handle
     methods
         function obj = EmgAdl()
         end
-        function setMotionFile(obj,pathstr,filename)
+        function setMotionFile(obj,pathstr,filename,isBimanual)
             obj.hMotionFile = Scenarios.MSMS_ADL.MotionFile();
             
             if nargin == 1
@@ -43,11 +43,16 @@ classdef EmgAdl < handle
             elseif nargin == 3
                 % User provided path and files
                 obj.hMotionFile.setFileNames(pathstr,filename);
-            else
-                error('Incorrect number of input arguments to %s\n',mfilename);
+            elseif nargin == 4
+                % User provided path and files
+                obj.hMotionFile.setFileNames(pathstr,filename);
             end
             
-            success = obj.hMotionFile.parse();
+            if nargin < 4
+                isBimanual = false;
+            end
+            
+            success = obj.hMotionFile.parse(isBimanual);
             
             if ~success
                 disp('Parse Failed')
@@ -55,7 +60,7 @@ classdef EmgAdl < handle
             end
             
             obj.PauseClassId = find(strcmp('PAUSE',obj.hMotionFile.classNames));
-
+            
         end
         
         function initialize(obj)
@@ -66,7 +71,7 @@ classdef EmgAdl < handle
             
             % Initialize UDP
             initializeUdp(obj);
-
+            
             % Initialize Daq
             initializeDaq(obj);
             
@@ -136,7 +141,7 @@ classdef EmgAdl < handle
                 fprintf(2,'FAILED \n');
                 rethrow(ME);
             end
-
+            
         end
         function timerstart(obj)
             fprintf('Started DAQ: %s \t TimerPeriod: %f\n',...
@@ -144,7 +149,7 @@ classdef EmgAdl < handle
             
             % Reset Data Log
             obj.BroadcastLog = struct('BroadcastTime',[],...
-            'BroadcastAngles',[],'BroadcastTag',[]);
+                'BroadcastAngles',[],'BroadcastTag',[]);
             
         end
         function timerstop(obj)
@@ -178,7 +183,7 @@ classdef EmgAdl < handle
             defaultSaveName = [filePrefix '_' datestr(now,'yyyymmdd_HHMMSS') '.dataLog'];
             [FileName,PathName,FilterIndex] = ...
                 uiputfile('*.dataLog','Select Log file to Save',defaultSaveName);
-
+            
             if FilterIndex > 0
                 save(fullfile(PathName,FileName),...
                     'emgData','emgTime','classTime','classLabels',...
@@ -216,7 +221,7 @@ classdef EmgAdl < handle
                     tElapsed > tHistory(lineNo)
                 newTag = obj.PauseClassId;
             end
-
+            
             % Send UDP for the appropriate file
             sendJointParameters(obj,angleData);
             
@@ -227,7 +232,7 @@ classdef EmgAdl < handle
                 [obj.BroadcastLog.BroadcastAngles; angleData(:)'];
             obj.BroadcastLog.BroadcastTag = ...
                 [obj.BroadcastLog.BroadcastTag; newTag];
-
+            
             % Display Output
             if ~strcmpi(obj.CurrentClass,obj.hMotionFile.classNames{newTag})
                 fprintf('t=%6.2f \t %24s\n',tElapsed,...
@@ -235,7 +240,7 @@ classdef EmgAdl < handle
             end
             
             obj.CurrentClass = obj.hMotionFile.classNames{newTag};
-                
+            
         end
         function preview(obj)
             
@@ -246,7 +251,7 @@ classdef EmgAdl < handle
             f = figure(99);
             clf(f)
             ax = gca;
-
+            
             % Disable callbacks
             obj.hDaq.TimerFcn = [];
             obj.hDaq.StartFcn = [];
@@ -255,7 +260,7 @@ classdef EmgAdl < handle
             if strcmpi(obj.hDaq.Running,'on')
                 stop(obj.hDaq);
             end
-                
+            
             start(obj.hDaq);
             
             while StartStopForm
