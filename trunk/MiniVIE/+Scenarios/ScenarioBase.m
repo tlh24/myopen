@@ -25,6 +25,12 @@ classdef ScenarioBase < Common.MiniVieObj
         GraspId;
         GraspValue = 0;     % normalized position
         GraspVelocity = 0;
+        GraspLocked = 0;
+        
+        % Counter for opening hand the remaining to full rest position
+        GraspChangeCounter = 0;
+        GraspChangeCount = 40;
+        
         
         % For opening hand without Hand Open class:
         AutoOpenSpeed = 0;
@@ -201,6 +207,9 @@ classdef ScenarioBase < Common.MiniVieObj
             
         end
         function generateGraspCommand(obj,className,prSpeed)
+            generateGraspCommandTwoState(obj,className,prSpeed);
+        end
+        function generateGraspCommandTwoState(obj,className,prSpeed)
             
             if isempty(className)
                 return
@@ -209,35 +218,64 @@ classdef ScenarioBase < Common.MiniVieObj
             %%%%%%%%%%%%%%%%%%%%%%%%
             % Process grasps
             %%%%%%%%%%%%%%%%%%%%%%%%
-            graspGain = 0.02;
-            graspChangeThreshold = 0.4;  % Normalized [0 1]
-            graspName = className;
-            lastGraspVelocity = obj.GraspVelocity;
             
-            isGraspClass = strfind(className,'Grasp');
+            % Implement a new grasp control paradign in which a barrier is
+            % created between the grasp shaping portion (rest to
+            % prehension) and then prehensino to fully closed.  Nominally
+            % the threshold will be 20%
+            %
+            %
+            % Starting from rest, decode grasps in real-time allowing
+            % switching from the grasp type.  The max movement will be up
+            % to 20% until a rest is received.  The grasp will then be
+            % 'locked' in the current grasp state.  The next grasp decoded
+            % after no movement will close the hand in the locked grasp
+            % conformation.  Any hand close command will result in the hand
+            % closing in the locked grasp type, allowing for
+            % misclassificaiton.  Hand open and close commands will then
+            % only move the hand along the prescribed grasp trajectory
+            % (from 20% to 100%).  
+            %
+            % To return to the rest position, the hand must start at or
+            % close to 20% (or 25%), and then a sustained hand open command
+            % must be issued.  
+            
+
+            
+            % Get the decoded grasp name.  This is equivelant to the class
+            % name, but if it is a 'Grasp' then a flag will be set that
+            % this class can be used for 'hand close'
+            isGraspClass = strfind(lower(className),'grasp');
             if isGraspClass
+                % Strip off the 'Grasp' string and leave only the type
                 graspName = strtrim(className(1:end-5));
+            else
+                graspName = className;
             end
+            
+            % Get a list of valid grasp types
             [enumGrasp, cellGrasps] = enumeration('Controls.GraspTypes');
+
+            
+            % Handle special case for grasp auto open.  In this paradigm,
+            % only hand close patterns are trained.  The hand opens only
+            % during no movement classes
+            % TODO: Implement
+            %                         % Auto-open
+            %                         if obj.AutoOpenSpeed > 0
+            %                             desiredGraspVelocity = -obj.AutoOpenSpeed;
+            %                         end
+            
+            
+            
             switch graspName
                 case 'Hand Open'
-                    % Change the grasp Value in grasp mode
-                    desiredGraspVelocity = - prSpeed*graspGain*4;
+                    desiredGraspVelocity = -prSpeed*0.5;
                 case cellGrasps
-                    % Increment position along grasp trajectory
-                    desiredGraspVelocity = prSpeed*graspGain*4;
-                    if isempty(obj.GraspId) || (obj.GraspValue < graspChangeThreshold)
-                        % Note the isempty check handles the transient case
-                        % where a grasp is not yet selected on startup
-                        % otherwise the grasp state is preserved
-                        obj.GraspId = enumGrasp( strcmp(graspName,cellGrasps) );
-                    end
+                    % Any valid grasp == Hand Close
+                    desiredGraspVelocity = +prSpeed*0.5;
                 case {'No Movement','Rest'}
                     desiredGraspVelocity = 0;
-                    % Auto-open
-                    if obj.AutoOpenSpeed > 0
-                        desiredGraspVelocity = -obj.AutoOpenSpeed;
-                    end
                 otherwise
                     desiredGraspVelocity = 0;
                     if isGraspClass
@@ -245,46 +283,74 @@ classdef ScenarioBase < Common.MiniVieObj
                     end
             end
             
-            dt = obj.Timer.InstantPeriod;
-            maxGraspDeltaV = 2*dt;  %max instantaneous velocity change
-            newGraspVelocity = min(abs(lastGraspVelocity) + (maxGraspDeltaV),...
-                abs(desiredGraspVelocity)) .* sign(desiredGraspVelocity);
-            obj.GraspVelocity = newGraspVelocity;
-            
 
-            % Apply global velocity limits
-            constrain = @(X,minX,maxX) min(max(X,minX),maxX);
-            
-            globalGraspVelocityMax = 0.1;
-            globalGraspVelocityMin = 0.0001;
+            fprintf('[%s] Grasp Locked==%d; Counter==%2d; Value==%4.1f\n',...
+                mfilename,obj.GraspLocked,obj.GraspChangeCounter,obj.GraspValue);
+            if obj.GraspLocked
+                % Range is 20% to 100%, no grasp changes allowed
 
-            velocity = obj.GraspVelocity;
-
-            velocity = constrain(velocity,-globalGraspVelocityMax,globalGraspVelocityMax);
-            velocity = max(abs(velocity),globalGraspVelocityMin) .* (velocity ~= 0) .* ...
-                sign(velocity);
-            
-            obj.GraspVelocity = velocity;
-            
-            obj.GraspValue = obj.GraspValue + obj.GraspVelocity;
-            
-            obj.GraspValue = max(min(obj.GraspValue,1),0);
-
-            if obj.Verbose
-                
-                if isempty(obj.GraspId)
-                    fprintf('\tGrasp=[]');
+                if strcmpi(graspName,{'Hand Open'})
+                    obj.GraspChangeCounter = obj.GraspChangeCounter + 1;
                 else
-                    fprintf('\tGrasp=%12s',char(obj.GraspId));
+                    obj.GraspChangeCounter = 0;
                 end
-                fprintf('\tGraspVal=%6.4f',obj.GraspValue);
-                %%%%%%%%%%%%%%%%%%%%%%%%
-                % END grasps
-                %%%%%%%%%%%%%%%%%%%%%%%%
                 
-                fprintf('\tEND\n');
+                if obj.GraspChangeCounter > obj.GraspChangeCount
+                    % unlock hand
+                    obj.GraspLocked = 0;
+                    obj.GraspValue = 0.2;
+                    obj.GraspVelocity = 0;
+                    obj.GraspChangeCounter = 0;
+                    return
+                else
+                    % keep hand locked and move within confined trajectory
+                    obj.GraspLocked = 1;
+
+                    % Limit the max velocity
+                    obj.GraspVelocity = obj.constrain(desiredGraspVelocity,-0.1,0.1);
+                    v = obj.GraspVelocity
+                    % Limit the grasp range
+                    obj.GraspValue = obj.constrain(obj.GraspValue + obj.GraspVelocity, 0.2, 1.0);
+                end
+                
+            else
+                % Grasp is unlocked, range limited to 0% to 20%, grasp
+                % changes allowed
+                
+                switch graspName
+                    case cellGrasps
+                        % Increment position along grasp trajectory
+                        obj.GraspId = enumGrasp( strcmp(graspName,cellGrasps) );
+                        % Limit the max velocity
+                        obj.GraspVelocity = obj.constrain(desiredGraspVelocity,-0.1,0.1);
+                        % Limit the grasp range
+                        obj.GraspValue = obj.constrain(obj.GraspValue + obj.GraspVelocity, 0.0, 0.2);
+                end
+                
+                % Count how long a grasp close is given
+                if isGraspClass
+                    obj.GraspChangeCounter = obj.GraspChangeCounter + 1;
+                else
+                    obj.GraspChangeCounter = 0;
+                end
+                
+                if obj.GraspChangeCounter > obj.GraspChangeCount
+                    % lock hand
+                    obj.GraspLocked = 1;
+                    obj.GraspValue = 0.2;
+                    obj.GraspVelocity = 0;
+                    obj.GraspChangeCounter = 0;
+                    return
+                else
+                    % keep hand unlocked and move within prehension trajectory
+                    obj.GraspLocked = 0;
+
+                    % Limit the max velocity
+                    obj.GraspVelocity = obj.constrain(desiredGraspVelocity,-0.1,0.1);
+                    % Limit the grasp range
+                    obj.GraspValue = obj.constrain(obj.GraspValue + obj.GraspVelocity, 0.0, 0.2);
+                end
             end
-            
             
         end
         function update(obj)
