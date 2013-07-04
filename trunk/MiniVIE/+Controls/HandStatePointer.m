@@ -1,4 +1,6 @@
 classdef HandStatePointer < Controls.HandState
+    % Hand state controller in which the point grasp is the main state out
+    % of rest
     methods
         function obj = HandStatePointer
             obj.initialize();
@@ -9,7 +11,7 @@ classdef HandStatePointer < Controls.HandState
             switch obj.CurrentState
                 
                 case Controls.HandStateEnum.Platform
-                    if obj.Actuators.MiddleRingLittle.Position > 0.6
+                    if obj.Actuators.MiddleRingLittle.Position > 0.45
                         obj.setState(Controls.HandStateEnum.Point);
                     end
                     
@@ -23,14 +25,14 @@ classdef HandStatePointer < Controls.HandState
                     end
                     
                 case Controls.HandStateEnum.Hook
-                    if obj.Actuators.ThumbFE.Position > (10/16)
+                    if obj.Actuators.ThumbFE.Position > 0.3
                         obj.setState(Controls.HandStateEnum.Key);
                     elseif obj.Actuators.Index.Position < (6/30)
                         obj.setState(Controls.HandStateEnum.Point);
                     end
                     
                 case Controls.HandStateEnum.Key
-                    if obj.Actuators.ThumbFE.Position < (5/16)
+                    if obj.Actuators.ThumbFE.Position < 0.1
                         obj.setState(Controls.HandStateEnum.Hook)
                     end
                     
@@ -68,9 +70,10 @@ classdef HandStatePointer < Controls.HandState
                     obj.Actuators.Index.InputSrc = obj.Input.UP_DOWN;
                     obj.Actuators.ThumbFE.InputSrc = obj.Input.LEFT_RIGHT;
                     obj.ActiveJoints = {'Index', 'ThumbFE'};
+                    obj.Actuators.ThumbFE.Max = 0.35;
                 case Controls.HandStateEnum.Key
                     obj.Actuators.ThumbFE.InputSrc = obj.Input.LEFT_RIGHT;
-                    obj.Actuators.ThumbFE.Max = 0.7;
+                    obj.Actuators.ThumbFE.Max = 0.35;
                     obj.ActiveJoints = {'ThumbFE'};
                 case Controls.HandStateEnum.Opposition
                     obj.Actuators.Index.InputSrc        = obj.Input.LEFT_RIGHT;
