@@ -117,10 +117,13 @@ classdef HandState < handle
                 85*obj.Actuators.MiddleRingLittle.Position;
             
             jointAnglesDegrees(obj.IdxThumbFE) = ...
-                60*obj.Actuators.ThumbFE.Position - 10;
+                50*obj.Actuators.ThumbFE.Position - 10;
             
             jointAnglesDegrees(obj.IdxThumbAbAd) = ...
-                -35*obj.Actuators.ThumbAdAb.Position;
+                -65*obj.Actuators.ThumbAdAb.Position;
+
+            jointAnglesDegrees(action_bus_enum.Thumb_Rot) = ...
+                -40*obj.Actuators.ThumbAdAb.Position;
         end
     end
     
