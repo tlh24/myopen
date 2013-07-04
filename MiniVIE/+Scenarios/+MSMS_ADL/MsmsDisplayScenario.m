@@ -124,6 +124,7 @@ function cb_data_timer(src,evnt,obj) %#ok<*INUSL>
 hSignalSource = obj.SignalSource;
 hSignalClassifier = obj.SignalClassifier;
 
+classNames = hSignalClassifier.TrainingData.ClassNames;
 
 if isempty(hSignalSource)
     disp('No Input');
@@ -133,7 +134,7 @@ end
 try
     
     hSignalSource.NumSamples = hSignalClassifier.NumSamplesPerWindow;
-    windowData = hSignalSource.getFilteredData();
+    windowData = hSignalSource.getFilteredData(hSignalSource.NumSamples);
     
     %     mVals = mean(abs(windowData));
     %     mVals(1:4)
@@ -148,14 +149,14 @@ try
     end
     
     fprintf('Class Decision: %3d; Vote Decision: %3d; Class = %10s\n',...
-        classOut,voteDecision,hSignalClassifier.ClassNames{cursorMoveClass})
+        classOut,voteDecision,classNames{cursorMoveClass})
     
     virtualChannels = hSignalClassifier.virtual_channels(features2D,cursorMoveClass);
     
     speed = max(virtualChannels);
     gain = 40;
     obj.FingerCommand = zeros(1,4);
-    switch hSignalClassifier.ClassNames{cursorMoveClass}
+    switch classNames{cursorMoveClass}
         case 'No Movement'
         case 'Hand Open'
             obj.FingerCommand(1:4) = -0.7*speed;
@@ -218,7 +219,7 @@ try
     
     obj.FingerCommand = obj.FingerCommand .* obj.CloseGain;
     
-    if ~strcmpi('Hand Open',hSignalClassifier.ClassNames)
+    if ~strcmpi('Hand Open',classNames)
         obj.FingerCommand(obj.FingerCommand == 0) = -obj.AutoOpenSpeed;
     end
 
