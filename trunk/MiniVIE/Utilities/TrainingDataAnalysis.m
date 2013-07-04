@@ -25,7 +25,7 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
             
             obj.fullFileName = fullFile;
         end
-        function plot_emg_unfiltered(obj,channels)
+        function plot_emg_unfiltered(obj,channels,prefix)
             % Plot all the emg data in the training file - unfiltered
             %
             % Usage:
@@ -34,6 +34,10 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
             if nargin < 2
                 channels = obj.ActiveChannels;
             end
+            if nargin < 3
+                % set output file prefix
+                prefix = '';
+            end
             
             chEmg = obj.getContinuousData(channels);
             
@@ -41,9 +45,10 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
             clf
             h = plot(chEmg);
             numChannels = length(channels);
-            c = distinguishable_colors(numChannels);
+            %c = distinguishable_colors(numChannels);
+            c = distinguishable_colors(16);
             for i = 1:length(h)
-                set(h(i),'Color',c(i,:));
+                set(h(i),'Color',c(channels(i),:));
             end
             
             C = num2cell(channels);
@@ -54,7 +59,7 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
             title(dataLabel, 'Interpreter','None');
             
             % Save output
-            outFile = [dataLabel '.tif'];
+            outFile = [prefix dataLabel '.tif'];
             if ~exist(outFile,'file')
                 saveas(gcf,outFile);
             else
@@ -62,13 +67,18 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
             end
             
         end
-        function plot_emg_filtered(obj,channels)
+        function plot_emg_filtered(obj,channels,prefix)
             % Plot all the emg data in the training file - filtered
             %
 
             if nargin < 2
                 channels = obj.ActiveChannels;
             end
+            if nargin < 3
+                % set output file prefix
+                prefix = '';
+            end
+            
 
             chEmg = obj.getContinuousData(channels);
             chEmg = TrainingDataAnalysis.filter_data(chEmg);
@@ -76,10 +86,14 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
             % Plot result
             clf
             h = plot(chEmg);
+            %ylim([-20 20]);
+            %ylim([-15 15]);
+            
             numChannels = length(channels);
-            c = distinguishable_colors(numChannels);
+            %c = distinguishable_colors(numChannels);
+            c = distinguishable_colors(16);
             for i = 1:length(h)
-                set(h(i),'Color',c(i,:));
+                set(h(i),'Color',c(channels(i),:));
             end
             
             C = num2cell(channels);
@@ -90,7 +104,7 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
             title(dataLabel, 'Interpreter','None');
             
             % Save output
-            outFile = [dataLabel '.tif'];
+            outFile = [prefix dataLabel '.tif'];
             if ~exist(outFile,'file')
                 saveas(gcf,outFile);
             else
@@ -98,7 +112,7 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
             end
             
         end
-        function plot_emg_per_class(obj,channels)
+        function plot_emg_per_class(obj,channels,activeClasses)
             % Plot numClasses x 1 subplots, with filtered EMG for each
             % class
             %
@@ -109,13 +123,16 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
                 channels = obj.ActiveChannels;
             end
             
-            % get all the data and filter it
-            [chEmg, dataBreaks] = obj.getContinuousData(channels);
-            chEmg = TrainingDataAnalysis.filter_data(chEmg);
-            
             % get the labels
             classNames = obj.ClassNames;
             classLabels = obj.getClassLabels;
+            if nargin < 3
+                activeClasses = unique(classLabels);
+            end
+            
+            % get all the data and filter it
+            [chEmgRaw, dataBreaks] = obj.getContinuousData(channels);
+            chEmg = TrainingDataAnalysis.filter_data(chEmgRaw);
             
             % class labels label frames of data to label individual
             % samples:
@@ -124,7 +141,7 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
             clf
             ch = channels;
             c = distinguishable_colors(16);
-            activeClasses = unique(classLabels);
+            
             for i = 1:length(activeClasses)
                 iClass = activeClasses(i);
                 thisClass = iClass == emgLabels;
@@ -135,20 +152,37 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
                 acronymClass = upper(strClass(regexp(strClass, '\<.')));
                 ylabel(acronymClass)
                 set(h,'YTick',[]);
-                set(h,'XTick',[]);
+                if i < length(activeClasses)
+                    set(h,'XTick',[]);
+                else
+                    xlabel('Time t, sec');
+                end
 
                 classEmg = chEmg(thisClass,:);
                 
+                %xlim([0 5]);
 %                 for i = 1:size(classEmg,2)
 %                     classEmg(:,i) = classEmg(:,i) + (i*0.5);
 %                 end
-                hLines = plot(classEmg);
+                x = repmat((1:size(classEmg,1))',1,size(classEmg,2));
+                y = classEmg;
+                xFactor = 1/1000*50/200; % samples per second * refresh rate / windowsize
                 
-                for iLine = 1:length(channels)
-                    rgb = c(channels(iLine),:);
-                    set(hLines(iLine),'Color',rgb,...
-                        'LineWidth',1);
+                hLines = plot(x*xFactor,y);
+                
+                c = distinguishable_colors(16);
+                for iLine = 1:length(hLines)
+                    set(hLines(iLine),'Color',c(channels(iLine),:));
                 end
+
+                
+%                 for iLine = 1:length(channels)
+%                     rgb = c(channels(iLine),:);
+%                     set(hLines(iLine),'Color',rgb,...
+%                         'LineWidth',1);
+%                 end
+                
+                
                 w = obj.WindowSize;
                 xBreaks = w:w:sum(iClass == classLabels)*w;
                 xBreaks = [xBreaks; xBreaks; nan(size(xBreaks))];
@@ -160,7 +194,7 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
 %                 set(hLines(ch),'Visible','on');
                 %set(hLines([1 7]),'Visible','off');
                 %     xlim([0 size(emgData,2)]);
-                ylim([-2 2]);
+                ylim([-1.2 1.2]);
                 %ylim([-1 9])
                 if i == 1
                     title(obj.fullFileName,'Interpreter','None');

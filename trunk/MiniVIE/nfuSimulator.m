@@ -5,23 +5,19 @@ function nfuSimulator
 % pnet('closeall')
 
 % Test streaming:
-%%
-% Step 3: create a seperate port from which we will send data
-localSendPortNumber = 60664;
-udpCmdSocket = pnet('udpsocket',localSendPortNumber);
-% check for validity
-assert(udpCmdSocket >= 0,'Failed to open send socket');
 
-destinationHostname = '127.0.0.1';
-destinationPortNumber = 9027;
-%%
-% Step 4: send a couple packets from our source to our destintion
+hUdp = PnetClass(60664,9027,'127.0.0.1');
+hUdp.initialize();
+
+%% Run data transmit loop
 tic
 l = 0;
 
-while toc < 20
+while StartStopForm
+    pause(.1);
+    
     % select destination
-    %% put data in buffer
+    % put data in buffer
     payLoad = zeros(36,20,'uint8');
     v = int16(l + (1:20));
     v8 = reshape(typecast(v,'uint8'),2,[]);
@@ -29,17 +25,15 @@ while toc < 20
     payLoad(5:6,:) = v8;
     someData = uint8(payLoad);
     hdr = uint8([8 6 7 5 3 0]);
-    pnet( udpCmdSocket, 'write', [hdr(:); someData(:)] );
-    % send to destination
-    pnet( udpCmdSocket, 'writepacket', destinationHostname, destinationPortNumber );
-    pause(.1);
+
+    hUdp.putData([hdr(:); someData(:)]);
+        
+    % increment counter
     l = l + 20;
     if l > 50000
-        l
         l = 0;
     end
-    %%
 end
 
+hUdp.close();
 
-pnet(udpCmdSocket,'close');

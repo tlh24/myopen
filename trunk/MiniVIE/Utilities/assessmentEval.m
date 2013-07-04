@@ -1,4 +1,5 @@
 classdef assessmentEval
+    % assessmentEval.staticAssessmentEval
     methods
     end
     methods (Static = true)
@@ -37,20 +38,10 @@ classdef assessmentEval
                     return
                 end
                 
-%                 if exist(fileName,'file') == 2
-%                     
-%                     [p, f, e] = fileparts(fileName);
-%                     
-%                     if isempty(p)
-%                         PathName = pwd;
-%                     else
-%                         PathName = p;
-%                     end
-%                     
-%                     FileName = {[f e]};
-%                 end
-                
-                
+                if ~iscell(FileName)
+                    FileName = {FileName};
+                end
+                                
             end
             
             colors = distinguishable_colors(15);
