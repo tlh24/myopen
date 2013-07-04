@@ -173,8 +173,7 @@ classdef GraspAssist < Scenarios.OnlineRetrainer
 
                 
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                
-                fprintf('\n')
+                if obj.Verbose > 1, fprintf('\n'); end
             catch ME
                 UiTools.display_error_stack(ME);
             end
@@ -182,13 +181,26 @@ classdef GraspAssist < Scenarios.OnlineRetrainer
         end
     end
     methods (Static = true)
-        function obj = Run
+        function obj = Run(mode)
+            %  Scenarios.GraspAssist.Run
+            
+            if nargin < 1
+                mode = 1;
+            end
             
             p.guiName = 'MiniVIE Grasp Assist';
             p.filePrefix = 'GraspAssist_';
 
             %p.hSource = Inputs.CpchSerial('COM1');
-            p.hSource = Inputs.SignalSimulator;
+            if mode == 1
+                p.hSource = Inputs.SignalSimulator;
+            else
+                p.hSource = Inputs.IntanUdp.getInstance;
+                p.hSource.addfilter(Inputs.Notch([120 180 240 300 360],64,1,1000));
+                Fs = p.hSource.SampleFrequency;
+                %p.hSource.addfilter(Inputs.HighPass(10,8,Fs));
+                p.hSource.addfilter(Inputs.LowPass(400,8,Fs));
+            end
             
             p.ClassNames = {...
                 'Up' 'Down' 'Left' 'Right' ...

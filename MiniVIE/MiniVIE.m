@@ -316,6 +316,10 @@ classdef MiniVIE < Common.MiniVieObj
                         h = Inputs.NfuInput();
                     case 'IntanDevBoard'
                         h = Inputs.IntanUdp.getInstance;
+                        h.addfilter(Inputs.Notch([120 180 240 300 360],64,1,1000));
+                        Fs = h.SampleFrequency;
+                        %h.addfilter(Inputs.HighPass(10,8,Fs));
+                        h.addfilter(Inputs.LowPass(400,8,Fs));
                     otherwise
                         % None
                         h = [];
@@ -338,11 +342,11 @@ classdef MiniVIE < Common.MiniVieObj
 %                     h.addfilter(Inputs.Notch(60.*(1:4),5,1,Fs));
 %                     % obj.SignalSource.addfilter(Inputs.MAV(150));
                     
-                    Fs = h.SampleFrequency;
-                    h.addfilter(Inputs.HighPass(15,3,Fs));
-                    %h.addfilter(Inputs.RemoveOffset(10));
-                    %h.addfilter(Inputs.Notch([120 240 360],5,1,Fs));
-                    h.addfilter(Inputs.Notch([120 240 360],64,1,1000));
+%                     Fs = h.SampleFrequency;
+%                     h.addfilter(Inputs.HighPass(15,3,Fs));
+%                     %h.addfilter(Inputs.RemoveOffset(10));
+%                     %h.addfilter(Inputs.Notch([120 240 360],5,1,Fs));
+%                     h.addfilter(Inputs.Notch([120 240 360],64,1,1000));
                     
                     h.NumSamples = 2000;
                     h.initialize();

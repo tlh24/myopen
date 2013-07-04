@@ -195,7 +195,8 @@ classdef TrainingData < handle
             end
             
             try
-                signalData = obj.SignalDataRaw(:,:,1:obj.SampleCount);
+                isEnabled = obj.EnableLabel(1:obj.SampleCount);
+                signalData = obj.SignalDataRaw(:,:,isEnabled);
             catch ME
                 warning('TrainingInterface:getEmgData','Failed to get Emg Data: %s',ME.message);
             end
@@ -321,6 +322,26 @@ classdef TrainingData < handle
             success = true;
         end
         
+        function numDisabled = disableDataBySample(obj,sampleId)
+            % numDisabled = disableDataBySample(obj,sampleId)
+            %
+            % This methods allows disabling/masking training data by
+            % specifying index numbers.  Indices must be less than the max
+            % number of samples
+            % 
+            % numDisabled is the number of sample disabled by this
+            % function, not necessarily the total number of disabled data
+            % labels
+            
+            % check bounds on label ids
+            sampleId(sampleId > obj.SampleCount) = [];
+            sampleId(sampleId < 1) = [];
+            
+            % set the enable flag
+            numDisabled = length(sampleId);
+            obj.EnableLabel(sampleId) = false;
+            
+        end
         function numDisabled = disableLabeledData(obj,classLabelId)
             % numDisabled = disableLabeledData(obj,classLabelId)
             
@@ -509,6 +530,8 @@ classdef TrainingData < handle
             % Backwards Compatability for EMG Data
             if isfield(S,'emgData')
                 obj.SignalDataRaw = S.emgData;
+                obj.WindowSize = size(obj.SignalDataRaw,2);
+                fprintf('[%s] Setting window size to %d.\n',mfilename,obj.WindowSize);
             end
             if isfield(S,'sampleRateHz')
                 obj.SampleRate = S.sampleRateHz;

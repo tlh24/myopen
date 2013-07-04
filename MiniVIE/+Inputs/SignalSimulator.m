@@ -18,7 +18,6 @@ classdef SignalSimulator < Inputs.SignalInput
     methods
         function obj = SignalSimulator
             % Constructor
-            obj.uiControlPanel();
         end
         function initialize(obj,channelIds,maxSamples)
             
@@ -36,6 +35,9 @@ classdef SignalSimulator < Inputs.SignalInput
             
             
             obj.SignalBuffer = zeros(MAX_SAMPLES,obj.NumChannels);
+            
+            % Raise control panel figure
+            obj.uiControlPanel();
             
         end
         function bufferedData = getData(obj,numSamples)

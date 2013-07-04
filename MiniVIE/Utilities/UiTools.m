@@ -65,7 +65,7 @@ classdef UiTools
             % The input "defaultFile" is used as the filename
             
             fullFile = fullfile(tempdir,defaultFile);
-                        
+            
             try
                 fprintf('[%s] Saving temp file "%s"\n',mfilename,fullFile);
                 save(fullFile,'storedVariable','-mat');
@@ -83,7 +83,7 @@ classdef UiTools
             % directory (e.g. C:\Users\armigrs1\AppData\Local\Temp\)
             %
             % The input "defaultFile" is used as the filename
-
+            
             % Load a mat file in the temp directory
             
             storedVariable = [];
@@ -112,7 +112,7 @@ classdef UiTools
             %
             % The input "defaultFile" is used as the filename
             % Load a mat file in the temp directory
-                        
+            
             fullFile = fullfile(tempdir,defaultFile);
             if exist(fullFile,'file')
                 fprintf('[%s] Deleting file "%s"\n',mfilename,fullFile);
@@ -136,7 +136,7 @@ classdef UiTools
             
             FilterSpec = ['*' extension];
             DialogTitle = 'Select File to Write';
-            DefaultName = [filePrefix datestr(now,'yyyymmdd_HHMMSS') extension];            
+            DefaultName = [filePrefix datestr(now,'yyyymmdd_HHMMSS') extension];
             [FileName,PathName,FilterIndex] = uiputfile(FilterSpec,DialogTitle,DefaultName);
             
             if FilterIndex == 0
@@ -157,5 +157,23 @@ classdef UiTools
             rethrow(ME);
             
         end
+        function sortedDirContents = dir_time_sorted(dirName)
+            %sortedDirContents = UiTools.dirTimeSorted(dirName)
+            % get directory but reorder by datenum field.  Useful for
+            % pulling acquired data in the order acquired
+            %
+            % 11/2/2012 RSA: Created
+            
+            % get directory contents from wildcard source
+            structDirContents = dir(dirName);
+            assert(~isempty(structDirContents),'Input files not found');
+            
+            % Sort by date
+            [~, id] = sort([structDirContents(:).datenum]);
+            
+            sortedDirContents = structDirContents(id);
+            
+        end
+        
     end
 end

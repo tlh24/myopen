@@ -12,7 +12,7 @@ function features = feature_extract(windowData,windowSize,zc_thresh,ssc_thresh) 
 %                  Signal magnitude will be extracted on a per classifier
 %                  basis.  Also set to inherit class type and made
 %                  windowSize tunable
-% R. Armiger 30-Nov-2009: Updated to include thesholding on zero-crossing
+% R. Armiger 30-Nov-2009: Updated to include thresholding on zero-crossing
 %       and slope sign changes
 
 if nargin < 4
