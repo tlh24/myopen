@@ -131,11 +131,12 @@ switch testId
         hNfu.initialize();
 
         for rocID = [0 1 2 3 4 5 6 7 8 9 10 11 12 13]
-            fprintf('ROC %d,open\n',rocID)
-            hNfu.sendUpperArmHandRoc([zeros(1,4) 0 0 0],rocID,0);
-            disp('Press any key...');pause;
-            fprintf('ROC %d,close\n',rocID)
-            hNfu.sendUpperArmHandRoc([zeros(1,4) 0 0 0],rocID,1);
+            graspVal = [linspace(0,1,30) ones(1,10) linspace(1,0,30)];
+            for i = 1:length(graspVal)
+                fprintf('ROC %d, %6.2f Pct\n',rocID,graspVal(i)*100);
+                hNfu.sendUpperArmHandRoc([zeros(1,4) 0 0 0],rocID,graspVal(i));
+                pause(0.02);
+            end
             disp('Press any key...');pause;
         end
         hNfu.sendUpperArmHandRoc([zeros(1,4) 0 0 0],0,0);
