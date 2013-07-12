@@ -898,7 +898,7 @@ void* po8_thread(void*){
 		unsigned int frame = 0; 
 		unsigned int nchan = 96;
 		unsigned int bps = 2; //bytes/sample
-		if(!simulate){
+		if(!simulate && card){
 			nchan = card->numChannels(); 
 			bps = card->dataSampleSize();
 		}
