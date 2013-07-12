@@ -19,7 +19,7 @@
 #include <inttypes.h>
 #include <sys/time.h>
 #include <pthread.h>
-#include <sys/socket.h>
+//#include <sys/socket.h>
 #include <netinet/in.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -42,7 +42,7 @@
 #include "../firmware_stage9_mf/memory.h"
 
 #include "gettime.h"
-#include "sock.h"
+//#include "sock.h"
 #include "cgVertexShader.h"
 #include "vbo.h"
 //#include "tcpsegmenter.h"
@@ -51,7 +51,7 @@
 #include "mmaphelp.h"
 #include "fifohelp.h"
 #include "channel.h"
-#include "packet.h"
+//#include "packet.h"
 //#include "spikes.pb.h"
 #include "timesync.h"
 #include "matStor.h"
@@ -100,7 +100,7 @@ bool g_showPca = false;
 bool g_autoChOffset = false; 
 bool g_showWFVgrid = true; 
 bool g_rtMouseBtn = false;
-bool g_saveUnsorted = false; 
+bool g_saveUnsorted = true; 
 int 	g_polyChan = 0;
 bool 	g_addPoly = false;
 int 	g_channel[4] = {0,32,64,95};
@@ -122,10 +122,10 @@ int		 	 g_spikesCols = 16;
 float g_unsortrate = 0.0; //the rate that unsorted WFs get through.
 float	g_autoThreshold = -3.5; //standard deviations. default negative, w/e.
 
-int g_totalPackets = 0;
-int g_strobePackets = 0;
-unsigned int g_dropped; //compare against the bridge.
-int g_totalDropped = 0;
+//int g_totalPackets = 0;
+//int g_strobePackets = 0;
+//unsigned int g_dropped; //compare against the bridge.
+//int g_totalDropped = 0;
 
 enum MODES {
 	MODE_RASTERS,
@@ -137,12 +137,12 @@ int 	g_mode = MODE_RASTERS;
 int	g_drawmode = GL_LINE_STRIP;
 int	g_blendmode = GL_ONE_MINUS_SRC_ALPHA;
 
-int g_rxsock = 0;//rx from hardware. right now only support 1 headstage.
-int g_txsock = 0;//transmit back to hardware.  again, only one supported now.
-int g_spikesock = 0; //transmit spike times to client
-int g_strobesock = 0; //socket for strobing client
+//int g_rxsock = 0;//rx from hardware. right now only support 1 headstage.
+//int g_txsock = 0;//transmit back to hardware.  again, only one supported now.
+//int g_spikesock = 0; //transmit spike times to client
+//int g_strobesock = 0; //socket for strobing client
 
-struct sockaddr_in g_txsockAddr;
+//struct sockaddr_in g_txsockAddr;
 
 bool	g_vbo1Init = false;
 GLuint g_vbo1[NFBUF]; //for the waveform display
@@ -178,7 +178,6 @@ i64 mod2(i64 a, i64 b){
 		return (b*c+a)%b;
 	}*/
 }
-
 void gsl_matrix_to_mat(gsl_matrix *x, const char* fname){
 	//write a gsl matrix to a .mat file.
 	// does not free the matrix.
@@ -1077,7 +1076,7 @@ void* po8_thread(void*){
 								}
 								if(unit > 0 && unit <=2){
 									int uu = unit-1; 
-									g_fr[k][uu].add(time + (double)m/24414.0625); 
+									g_fr[k][uu].add(time + (double)m/24414.0625);
 									i64 w = g_sbufW[uu] % (i64)(sizeof(g_sbuf[0])/8);
 									g_sbuf[uu][w*2+0] = (float)(time);
 									g_sbuf[uu][w*2+1] = (float)k;
@@ -1635,7 +1634,7 @@ int main(int argc, char **argv)
 	for(int i=0; i<96; i++){
 		g_c[i] = new Channel(i, &ms);
 	}
-	g_dropped = 0;
+	//g_dropped = 0;
 
 	// Verify that the version of the library that we linked against is
 	// compatible with the version of the headers we compiled against.
@@ -1718,55 +1717,13 @@ int main(int argc, char **argv)
 	gtk_box_pack_start(GTK_BOX(v1), g_notebook, TRUE, TRUE, 1);
     gtk_widget_show(g_notebook);
 
+// add a page for rasters
 	box1 = gtk_vbox_new(FALSE, 2);
-	//add signal chain combo box.
-	/*
-	frame = gtk_frame_new ("signal chain");
-	gtk_box_pack_start (GTK_BOX (box1), frame, TRUE, TRUE, 0);
-	const char* signalNames[W1_STRIDE] = {
-		"0	mean from integrator",
-		"1	AGC gain",
-		"2	LMS saturated sample",
-		"3	AGC out / LMS save",
-		"4	x1(n-1) / LMS out",
-		"5	x1(n-2)",
-		"6	x2(n-1) / y1(n-1) (lo1 out)",
-		"7	x2(n-2) / y1(n-2)",
-		"8	x3(n-1) / y2(n-1) (hi1 out)",
-		"9	x3(n-2) / y2(n-2)",
-		"10	x2(n-1) / y3(n-1) (lo2 out)",
-		"11	x2(n-2) / y3(n-2)",
-		"12	y4(n-1) (hi2 out, final)",
-		"13	y4(n-2)" };
-	button = 0;
-	combo = gtk_combo_box_new_text();
-	gtk_container_add( GTK_CONTAINER( frame ), combo );
-
-	for(int k=0; k<W1_STRIDE; k++){
-		gtk_combo_box_append_text( GTK_COMBO_BOX( combo ),
-								   signalNames[k]);
-	}
-	g_signal_connect( G_OBJECT( combo ), "changed",
-                      G_CALLBACK( signalChainCB ), NULL );
-	*/
 
 	//add a gain set-all button.
 	button = gtk_button_new_with_label ("Set all gains from A");
 	g_signal_connect(button, "clicked", G_CALLBACK (gainSetAll),0);
 	gtk_box_pack_start (GTK_BOX (box1), button, TRUE, TRUE, 0);
-
-	//and a AGC set-all button.
-	//button = gtk_button_new_with_label ("Set all AGC targets from A");
-	//g_signal_connect(button, "clicked", G_CALLBACK (agcSetAll),0);
-	//gtk_box_pack_start (GTK_BOX (box1), button, TRUE, TRUE, 0);
-
-	//add LMS on/off.. (global .. for now)
-	//mk_radio("on,off", 2,
-	//		 box1, false, "LMS", lmsRadioCB);
-
-	//add osc / reset radio buttons
-	//mk_radio("500-6.7k,150-10k,osc,flat", 4,
-	//		 box1, true, "filter", filterRadioCB);
 
 	//add in a zoom spinner.
 	g_zoomSpin = mk_spinner("Waveform Span", box1,
@@ -1813,14 +1770,6 @@ int main(int argc, char **argv)
 				setWidgetColor(button, 255, 155, 155);
 			g_signal_connect(button, "clicked", G_CALLBACK (apertureOffCB), (gpointer)(i*2+j));
 			gtk_box_pack_start (GTK_BOX (bx3), button, TRUE, TRUE, 1);
-			//and a button for 'set'.
-			/*button = gtk_button_new_with_label("set");
-			if(j == 0)
-				setWidgetColor(button, 120, 255, 255);
-			else
-				setWidgetColor(button, 255, 120, 120);
-			g_signal_connect(button, "clicked", G_CALLBACK (getTemplateCB), (gpointer)(i*2+j));
-			gtk_box_pack_start (GTK_BOX (bx3), button,TRUE, TRUE, 1);*/
 		}
 	}
 	//add one for unsorted unit add rate.
@@ -1851,6 +1800,10 @@ int main(int argc, char **argv)
 	label = gtk_label_new("sort");
 	gtk_label_set_angle(GTK_LABEL(label), 90);
 	gtk_notebook_insert_page(GTK_NOTEBOOK(g_notebook), box1, label, 1);
+
+//add page for sorting a single unit.
+	//box1 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
+
 
 //add a page for viewing all the spikes.
 	box1 = gtk_vbox_new (FALSE, 0);
@@ -1912,10 +1865,12 @@ int main(int argc, char **argv)
 	//saving unsorted units? 
 	box1 = gtk_vbox_new (FALSE, 0);
 	button = gtk_check_button_new_with_label("Save unsorted");
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), g_saveUnsorted);
 	g_signal_connect (button, "toggled",
 			G_CALLBACK (saveUnsortButtonCB), (gpointer) "o");
 	gtk_box_pack_start (GTK_BOX (box1), button, TRUE, TRUE, 0);
 	gtk_widget_show(button);
+
 	//and save / stop saving button
 	bx = gtk_hbox_new (FALSE, 3);
 	button = gtk_button_new_with_label ("Record");
