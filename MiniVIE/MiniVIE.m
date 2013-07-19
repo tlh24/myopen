@@ -61,7 +61,7 @@ classdef MiniVIE < Common.MiniVieObj
             set(obj.hg.Figure,'Position',newPos);
             set(obj.hg.Figure,'CloseRequestFcn',@(src,evnt)closeFig(obj));
             
-            % Setup Menu
+            % Setup File Menu
             obj.hg.MenuFile = uimenu(obj.hg.Figure,...
                 'Label','File');
             obj.hg.MenuFilePrefix = uimenu(obj.hg.MenuFile,...
@@ -83,7 +83,11 @@ classdef MiniVIE < Common.MiniVieObj
                 delete(obj.hg.Figure);
             end
             
+            % Draw the body of the figure.  Create the following column
+            % headers:
             header = {'Inputs:','Signal Analysis:','Training:','Plant:','Presentation:'};
+            
+            % These are the callbacks for the pop-up menus:
             puCallbacks = {
                 @(src,evt)setSignalSource(obj,src)
                 @(src,evt)setSignalAnalysis(obj,src)
@@ -92,7 +96,8 @@ classdef MiniVIE < Common.MiniVieObj
                 @(src,evt)setPresentation(obj,get(src,'String'),get(src,'Value'))
                 };
             
-            for iColumn = 1:5
+            
+            for iColumn = 1:length(header)
                 % title:
                 uicontrol(...
                     'Parent',obj.hg.Figure,...
@@ -112,7 +117,10 @@ classdef MiniVIE < Common.MiniVieObj
                 
             end
             
-            % pb
+            % Create some pushbuttons for configuring each VIE object:
+            
+            
+            % SignalSourceButtons
             obj.hg.SignalSourceButtons(1) = uicontrol(obj.hg.Figure,...
                 'Position',pos('cntrl',MiniVIE.INPUT,3,1,1),...
                 'Style','pushbutton',...
@@ -126,6 +134,7 @@ classdef MiniVIE < Common.MiniVieObj
                 'String','Audio Preview',...
                 'Callback',@(src,evt)obj.pbSignalAudio);
             
+            % SignalAnalysisButtons
             obj.hg.SignalAnalysisButtons(1) = uicontrol(obj.hg.Figure,...
                 'Position',pos('cntrl',MiniVIE.SA,3,1,1),...
                 'Style','pushbutton',...
@@ -139,6 +148,7 @@ classdef MiniVIE < Common.MiniVieObj
                 'Enable','off',...
                 'Callback',@(src,evt)obj.pbClassifierProperties);
             
+            % TrainingButtons
             obj.hg.TrainingButtons(1) = uicontrol(obj.hg.Figure,...
                 'Position',pos('cntrl',MiniVIE.TRAINING,3,1,1),...
                 'Style','pushbutton',...
@@ -157,7 +167,14 @@ classdef MiniVIE < Common.MiniVieObj
                 'String','Train',...
                 'Enable','off',...
                 'Callback',@(src,evt)obj.pbTrain());
+            obj.hg.TrainingButtons(4) = uicontrol(obj.hg.Figure,...
+                'Position',pos('cntrl',MiniVIE.TRAINING,6,1,1),...
+                'Style','pushbutton',...
+                'String','Plot PCA',...
+                'Enable','off',...
+                'Callback',@(src,evt)obj.pbPlotPca());
             
+            % PresentationButtons
             obj.hg.PresentationButtons(1) = uicontrol(obj.hg.Figure,...
                 'Position',pos('cntrl',MiniVIE.PRESENTATION,3,1,1),...
                 'Style','pushbutton',...
@@ -187,7 +204,7 @@ classdef MiniVIE < Common.MiniVieObj
         function setFilePrefix(obj)
             
             tempFileName = 'defaultFilePrefix';
-
+            
             filePrefix = UiTools.load_temp_file(tempFileName);
             if isempty(filePrefix)
                 filePrefix = 'FILE_';
@@ -335,18 +352,18 @@ classdef MiniVIE < Common.MiniVieObj
                     % Setup filters and remaining properties
                     obj.println('Adding Filters',1);
                     
-%                     Fs = h.SampleFrequency;
-%                     h.addfilter(Inputs.HighPass(10,8,Fs));
-%                     %h.addfilter(Inputs.LowPass(350,8,Fs));
-%                     %h.addfilter(Inputs.Notch(60.*(1:4),5,1,Fs));
-%                     h.addfilter(Inputs.Notch(60.*(1:4),5,1,Fs));
-%                     % obj.SignalSource.addfilter(Inputs.MAV(150));
+                    Fs = h.SampleFrequency;
+                    %                     h.addfilter(Inputs.HighPass(10,8,Fs));
+                    %                     %h.addfilter(Inputs.LowPass(350,8,Fs));
+                    %                     %h.addfilter(Inputs.Notch(60.*(1:4),5,1,Fs));
+                    %                     h.addfilter(Inputs.Notch(60.*(1:4),5,1,Fs));
+                    %                     % obj.SignalSource.addfilter(Inputs.MAV(150));
                     
-%                     Fs = h.SampleFrequency;
-%                     h.addfilter(Inputs.HighPass(15,3,Fs));
-%                     %h.addfilter(Inputs.RemoveOffset(10));
-%                     %h.addfilter(Inputs.Notch([120 240 360],5,1,Fs));
-%                     h.addfilter(Inputs.Notch([120 240 360],64,1,1000));
+                    %                     Fs = h.SampleFrequency;
+                    h.addfilter(Inputs.HighPass(15,3,Fs));
+                    %                     %h.addfilter(Inputs.RemoveOffset(10));
+                    %                     %h.addfilter(Inputs.Notch([120 240 360],5,1,Fs));
+                    %                     h.addfilter(Inputs.Notch([120 240 360],64,1,1000));
                     
                     h.NumSamples = 2000;
                     h.initialize();
@@ -404,7 +421,7 @@ classdef MiniVIE < Common.MiniVieObj
                     set(obj.hg.SignalAnalysisButtons(:),'Enable','off');
                 else
                     set(obj.hg.SignalAnalysisButtons(:),'Enable','on');
-
+                    
                     h.NumMajorityVotes = 0;
                     
                     NumSamplesPerWindow = 200;
@@ -439,7 +456,7 @@ classdef MiniVIE < Common.MiniVieObj
                         classNames = GUIs.guiClassifierChannels.getDefaultNames;
                     end
                     h.setClassNames(classNames);
-                                        
+                    
                     
                 end
                 
@@ -562,35 +579,35 @@ classdef MiniVIE < Common.MiniVieObj
                         h.Verbose = 0;
                         start(h.Timer);
                         obj.println('Presentation setup complete',1);
-                    case 'MplScenarioMud'                        
+                    case 'MplScenarioMud'
                         switch 'MPL_WD'
                             case 'VulcanX'
-                            QA = {
-                                'Enable NFU (y/n):'                     'n'
-                                'Destination IP (192.168.1.199):'       '127.0.0.1'
-                                'Destination Port (9027):'              '9027'
-                                'Enable Tactors (y/n)'                  'n'
-                                'Tactor Ids ([5 6 7]):'                 '[3 4]'
-                                'Enable Orientation Sensors (y/n):'     'n'
-                                };
+                                QA = {
+                                    'Enable NFU (y/n):'                     'n'
+                                    'Destination IP (192.168.1.199):'       '127.0.0.1'
+                                    'Destination Port (9027):'              '9027'
+                                    'Enable Tactors (y/n)'                  'n'
+                                    'Tactor Ids ([5 6 7]):'                 '[3 4]'
+                                    'Enable Orientation Sensors (y/n):'     'n'
+                                    };
                             case 'MPL_TR'
-                            QA = {
-                                'Enable NFU (y/n):'                     'y'
-                                'Destination IP (192.168.1.199):'       '192.168.1.111'
-                                'Destination Port (9027):'              '9027'
-                                'Enable Tactors (y/n)'                  'y'
-                                'Tactor Ids ([5 6 7]):'                 '[3 4]'
-                                'Enable Orientation Sensors (y/n):'     'n'
-                                };
+                                QA = {
+                                    'Enable NFU (y/n):'                     'y'
+                                    'Destination IP (192.168.1.199):'       '192.168.1.111'
+                                    'Destination Port (9027):'              '9027'
+                                    'Enable Tactors (y/n)'                  'y'
+                                    'Tactor Ids ([5 6 7]):'                 '[3 4]'
+                                    'Enable Orientation Sensors (y/n):'     'n'
+                                    };
                             case 'MPL_WD'
-                            QA = {
-                                'Enable NFU (y/n):'                     'y'
-                                'Destination IP (192.168.1.199):'       '192.168.1.111'
-                                'Destination Port (9027):'              '9027'
-                                'Enable Tactors (y/n)'                  'n'
-                                'Tactor Ids ([5 6 7]):'                 '[3 4]'
-                                'Enable Orientation Sensors (y/n):'     'n'
-                                };
+                                QA = {
+                                    'Enable NFU (y/n):'                     'y'
+                                    'Destination IP (192.168.1.199):'       '192.168.1.111'
+                                    'Destination Port (9027):'              '9027'
+                                    'Enable Tactors (y/n)'                  'n'
+                                    'Tactor Ids ([5 6 7]):'                 '[3 4]'
+                                    'Enable Orientation Sensors (y/n):'     'n'
+                                    };
                                 
                         end
                         name = 'MPL Control Interface';
@@ -603,7 +620,7 @@ classdef MiniVIE < Common.MiniVieObj
                         end
                         
                         assert(length(answer) == 6,'Expected 6 outputs');
-
+                        
                         obj.println('Setting up presentation...',1);
                         h = MPL.MplScenarioMud;
                         h.enableNfu = strncmpi(answer{1},'y',1);
@@ -611,8 +628,8 @@ classdef MiniVIE < Common.MiniVieObj
                         
                         port = str2double(answer{3});
                         assert(~isnan(port),'Invalid Port');
-                        h.UdpDestinationPort = port; 
-                        %h.UdpPort = answer{3}; 
+                        h.UdpDestinationPort = port;
+                        %h.UdpPort = answer{3};
                         
                         h.EnableFeedback = strncmpi(answer{4},'y',1);
                         h.TactorIds = str2num(answer{5}); % TODO: Validate
@@ -643,18 +660,18 @@ classdef MiniVIE < Common.MiniVieObj
                         end
                         
                         assert(length(answer) == 3,'Expected 3 outputs');
-
+                        
                         obj.println('Setting up presentation...',1);
                         h = MPL.MplVulcanX;
                         h.VulcanXAddress = answer{1}; % TODO: Validate
                         
                         port = str2double(answer{2});
                         assert(~isnan(port),'Invalid Port');
-                        h.VulcanXCmdPort = port; 
+                        h.VulcanXCmdPort = port;
                         
                         port = str2double(answer{3});
                         assert(~isnan(port),'Invalid Port');
-                        h.VulcanXLocalPort = port; 
+                        h.VulcanXLocalPort = port;
                         
                         h.initialize(obj.SignalSource,obj.SignalClassifier,obj.TrainingData);
                         h.update();
@@ -679,9 +696,9 @@ classdef MiniVIE < Common.MiniVieObj
                         
                         obj.println('Setting up presentation...',1);
                         h = Presentation.AirGuitarHero.AirGuitarHeroEmg(obj.SignalSource,obj.SignalClassifier);
-                                                
+                        
                         h.initialize(answer{1});
-
+                        
                     case 'MSMS_ADL'
                         h = Scenarios.MSMS_ADL.MsmsDisplayScenario(obj.SignalSource,obj.SignalClassifier);
                         
@@ -748,7 +765,7 @@ classdef MiniVIE < Common.MiniVieObj
             
             FilterSpec = ['*' extension];
             DialogTitle = 'Select File to Write';
-            DefaultName = [filePrefix datestr(now,'yyyymmdd_HHMMSS') extension];            
+            DefaultName = [filePrefix datestr(now,'yyyymmdd_HHMMSS') extension];
             [FileName,PathName,FilterIndex] = uiputfile(FilterSpec,DialogTitle,DefaultName);
             
             if FilterIndex == 0
@@ -822,6 +839,93 @@ classdef MiniVIE < Common.MiniVieObj
             obj.SignalClassifier.computeConfusion();
             obj.SignalClassifier.computeGains();
         end
+        function pbPlotPca(obj)
+            % plot the principle components of the current training data
+            
+            
+            hData = obj.TrainingData;
+                        
+            features3D = hData.getFeatureData;
+            s = obj.SignalClassifier;
+            featureColumns = s.convertfeaturedata(features3D);
+            
+            
+            numSamples = size(featureColumns,2);
+            
+            if numSamples == 0
+                errordlg('No Training Data')
+                return
+            end
+            
+            
+            meanFeats = mean(featureColumns,2);        % find mean of each TD feature on a per channel basis
+            stdFeats = std(featureColumns,0,2);        % find standard dev. of TD features
+            minStd = 0.001;                            % Prevents std dev from being zero thus causing div by zero below
+            stdFeats = max(stdFeats,minStd);           % Prevents std dev from being zero thus causing div by zero below
+            
+            normFeats = featureColumns;                         % copy data
+            normFeats = bsxfun(@minus,normFeats,meanFeats);     % subtract mean
+            normFeats = bsxfun(@rdivide,normFeats,stdFeats);    % divide by std dev
+            
+            [Evec,~,~] = svd(normFeats);       % Only compute Eigenvectors using training data
+            allPC = (normFeats'*Evec)';     % full array of PC Training Coefficients
+            
+
+            classLabelId = hData.getClassLabels;
+            uniqueLabels = unique(classLabelId);
+            numClasses = length(uniqueLabels);
+            
+            
+            % Sub-sample PC Inputs:
+            targetNum = 500;
+            subSample = ceil(length(allPC)./targetNum);
+            allPC = allPC(:,1:subSample:end);
+            classLabelId = classLabelId(:,1:subSample:end);
+            
+            f = figure(99);
+            drawnow;
+            clf(f)
+            
+            
+            pcIds = {[1 2] [3 4] [5 6]}; % nPrincipleComponents
+            for i = 1:3%length(pcIds)
+                if i == 3
+                    hAxes = subplot(2,2,[3 4],'Parent',f);
+                else
+                    hAxes = subplot(2,2,i,'Parent',f);
+                end
+                
+                PC = allPC(pcIds{i},:);        % array of PC Training Coefficients trimmed to NPC to keep
+                [X,Y,G] = computePcaContour(PC,classLabelId);
+                
+                % plot result
+                c = distinguishable_colors(length(uniqueLabels));
+                
+                hold(hAxes,'on');
+                hScatter = zeros(1,numClasses);
+                hContour = zeros(1,numClasses);
+                for iClass = 1:numClasses
+                    % create contour outlines
+                    contourLevel = [2 3];
+                    [~, hContour(iClass)] = contour(hAxes,X,Y,G(:,:,iClass),contourLevel);
+                    set(hContour(iClass),'Color',c(iClass,:));
+                
+                    % plot data samples
+                    thisClass = classLabelId == uniqueLabels(iClass);
+                    hScatter(iClass) = plot(hAxes,PC(1,thisClass),PC(2,thisClass),'.');
+                    set(hScatter(iClass),'Color',c(iClass,:));
+                end
+                axis(hAxes,[min(PC(:)) max(PC(:)) min(PC(:)) max(PC(:))]);
+                xlabel(hAxes,''); ylabel(hAxes,''); title(hAxes,'');
+
+            end
+            hLegend = legend(hContour,hData.ClassNames(uniqueLabels));
+            set(hLegend,'Location','NorthEastOutside');
+            
+        end % pbPlotPca
+        
+        
+        
         function pbAdjustGains(obj)
             GUIs.guiGainAdjust(obj);
         end
@@ -864,11 +968,11 @@ classdef MiniVIE < Common.MiniVieObj
             cb = sprintf('cd(''%s'') \nMiniVIE.configurePath();',...
                 fileparts(which('MiniVIE')));
             shortcutUtils.addShortcutToBottom('goto MiniVIE',cb,'','Shortcuts', 'true');
-
+            
             % MiniVIE
             % cd('C:\svn\myopen\MiniVIE');
             % MiniVIE.configurePath;
-            % obj = MiniVIE;            
+            % obj = MiniVIE;
             cb = sprintf('cd(''%s'') \nMiniVIE.configurePath \nobj = MiniVIE;',...
                 fileparts(which('MiniVIE')));
             shortcutUtils.addShortcutToBottom('MiniVIE',cb,'','Shortcuts', 'true');
@@ -883,12 +987,12 @@ classdef MiniVIE < Common.MiniVieObj
             % mpltest();
             cb = 'mpltest()';
             shortcutUtils.addShortcutToBottom('mpltest',cb,'','Shortcuts', 'true');
-
+            
             %RunMpl
             % RunMpl();
             cb = 'obj = RunMpl()';
             shortcutUtils.addShortcutToBottom('RunMpl',cb,'','Shortcuts', 'true');
-
+            
             
         end
         function configurePath
@@ -915,7 +1019,7 @@ classdef MiniVIE < Common.MiniVieObj
                 classNames = GUIs.guiClassifierChannels.getDefaultNames;
             end
             obj.SignalClassifier.setClassNames(classNames);
-
+            
             defaultChannels = GUIs.guiChannelSelect.getLastChannels();
             fprintf('Setting Active Channels to: [');
             fprintf(' %d',defaultChannels);
@@ -993,8 +1097,8 @@ if isempty(cpchParams)
     defaultanswer={'COM14','FFFF','FFFF'};
 else
     defaultanswer={
-        cpchParams.SerialPort 
-        dec2hex(cpchParams.BioampMask) 
+        cpchParams.SerialPort
+        dec2hex(cpchParams.BioampMask)
         dec2hex(cpchParams.GPIMask)};
 end
 % Use these defaults

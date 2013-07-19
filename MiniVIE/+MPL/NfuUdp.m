@@ -107,10 +107,12 @@ classdef (Sealed) NfuUdp < handle
             % Open a udp port to receive streaming data on
             obj.UdpStreamReceiveSocket = PnetClass(obj.UdpStreamReceivePortNumLocal);
             if ~obj.UdpStreamReceiveSocket.initialize()
+                % Error case
                 fprintf(2,'[%s] Failed to initialize udp socket\n',mfilename);
                 status = -1;
                 return
             elseif (obj.UdpStreamReceiveSocket.hSocket ~= 0)
+                % Warning / unexpected case
                 fprintf(2,'[%s] Expected receive socket id == 0, got socket id == %d\n',mfilename,obj.UdpStreamReceiveSocket.hSocket);
             end
             
