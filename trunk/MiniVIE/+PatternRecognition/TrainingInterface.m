@@ -35,7 +35,7 @@ classdef TrainingInterface < Common.MiniVieObj
             assert(~isempty(hTrainingData),'Empty TrainingData passed to function: %s',mfilename);
             assert(~isempty(hSignalClassifier),'Empty SignalClassifier passed to function: %s',mfilename);
             assert(~isempty(hSignalSource),'Empty SignalSource passed to function: %s',mfilename);
-
+            
             obj.TrainingData = hTrainingData;
             obj.SignalClassifier = hSignalClassifier;
             obj.SignalSource = hSignalSource;
@@ -55,8 +55,17 @@ classdef TrainingInterface < Common.MiniVieObj
             assert(~isempty(obj.CurrentClass),'No class is selected to tag new data');
             
             % Get new data (getting raw data and manually filtering for logging)
-            rawEmg = obj.SignalSource.getData();
+            
+            %rawEmg = obj.SignalSource.getData(200);
+            %windowData = obj.SignalSource.applyAllFilters(rawEmg);
+            
+            % Get more data than actually used so that when filters are
+            % applied edge effects can be cropped off
+            numSamples = obj.SignalClassifier.NumSamplesPerWindow;
+            numPad = numSamples;
+            rawEmg = obj.SignalSource.getData(numSamples+numPad);
             windowData = obj.SignalSource.applyAllFilters(rawEmg);
+            windowData = windowData(end-numSamples+1:end,:);
             
             features = feature_extract(windowData',obj.SignalClassifier.NumSamplesPerWindow);
             

@@ -1,4 +1,4 @@
-classdef (Sealed) MplDb < MiniVieDb
+classdef (Sealed) MplDb < Db.MiniVieDb
     % Singleton instance of database of MPL parameters.  This class may not
     % be sub-classed.
     %
@@ -22,7 +22,7 @@ classdef (Sealed) MplDb < MiniVieDb
         function initialize(obj)
             % initialize the database and create parameters
             
-            initialize@MiniVieDb(obj);
+            initialize@Db.MiniVieDb(obj);
             
             obj.add_parameter('CPC_data_gain',single(20/512));
             obj.add_parameter('CPC_invalid_data_threshold',single(10000));
@@ -99,7 +99,7 @@ classdef (Sealed) MplDb < MiniVieDb
                 paramNames = cellfun(@(suffix) strcat(aName,suffix),ccDefaults(:,1),'UniformOutput',false);
                 
                 % define a cell array of parameters
-                obj.define_tunable_parameter(paramNames,ccDefaults(:,2));
+                obj.add_tunable_parameter(paramNames,ccDefaults(:,2));
                 
             end
             
@@ -121,44 +121,44 @@ classdef (Sealed) MplDb < MiniVieDb
             sysConsts.PR_GRASP_OPEN = 15; % This virtual channel is the generic open class
             
             % setup group 'signalProcessingGlobalConfigType'
-            obj.define_tunable_parameter('PR_ecgRemovalGain',0);
-            obj.define_tunable_parameter('PR_ecgRemovalWindowSize',150);
-            obj.define_non_tunable_parameter('PR_binSize',20);
-            obj.define_non_tunable_parameter('PR_windowSize',150);
-            obj.define_tunable_parameter('PR_nVotes',single(1));
+            obj.add_tunable_parameter('PR_ecgRemovalGain',0);
+            obj.add_tunable_parameter('PR_ecgRemovalWindowSize',150);
+            obj.add_non_tunable_parameter('PR_binSize',20);
+            obj.add_non_tunable_parameter('PR_windowSize',150);
+            obj.add_tunable_parameter('PR_nVotes',single(1));
             
             % setup group 'patternRecognitionParams'
             defaultPR_W = zeros(sysConsts.NUM_PR_FEATURES*numChannels,sysConsts.NUM_VIRTUAL_CHANNELS);
             defaultPR_C = zeros(1,sysConsts.NUM_VIRTUAL_CHANNELS);
             defaultPR_nVotes = 1;
             
-            obj.define_tunable_parameter({'PR_Wg'; 'PR_W2'; 'PR_W3'; 'PR_W4'; 'PR_W5'; 'PR_W6'},single(defaultPR_W));
-            obj.define_tunable_parameter({'PR_Cg'; 'PR_C2'; 'PR_C3'; 'PR_C4'; 'PR_C5'; 'PR_C6'},single(defaultPR_C));
-            obj.define_tunable_parameter({'PR_nVotes'; 'PR_nVotes2'; 'PR_nVotes3'; 'PR_nVotes4'; 'PR_nVotes5'; 'PR_nVotes6'},single(defaultPR_nVotes));
+            obj.add_tunable_parameter({'PR_Wg'; 'PR_W2'; 'PR_W3'; 'PR_W4'; 'PR_W5'; 'PR_W6'},single(defaultPR_W));
+            obj.add_tunable_parameter({'PR_Cg'; 'PR_C2'; 'PR_C3'; 'PR_C4'; 'PR_C5'; 'PR_C6'},single(defaultPR_C));
+            obj.add_tunable_parameter({'PR_nVotes'; 'PR_nVotes2'; 'PR_nVotes3'; 'PR_nVotes4'; 'PR_nVotes5'; 'PR_nVotes6'},single(defaultPR_nVotes));
             
             % These params are bit masks for decoding which channels are allocated to
             % which Classifier
             paramSize = ones(1,numChannels);
-            obj.define_tunable_parameter('PR_channelMask',single(1*paramSize)); % enabled
-            obj.define_tunable_parameter({'PR_channelMask2'; 'PR_channelMask3'; 'PR_channelMask4'; 'PR_channelMask5'; 'PR_channelMask6'},single(0*paramSize)); % disabled
+            obj.add_tunable_parameter('PR_channelMask',single(1*paramSize)); % enabled
+            obj.add_tunable_parameter({'PR_channelMask2'; 'PR_channelMask3'; 'PR_channelMask4'; 'PR_channelMask5'; 'PR_channelMask6'},single(0*paramSize)); % disabled
             
             % setup group 'patternRecognitionMisc'
             
-            obj.define_non_tunable_parameter('PR_nChannels',         numChannels);
-            obj.define_non_tunable_parameter('PR_sampleFrequency',   1000);
-            obj.define_non_tunable_parameter('PR_nClasses',          sysConsts.NUM_VIRTUAL_CHANNELS);
-            obj.define_non_tunable_parameter('PR_graspChannels',     sysConsts.PR_GRASP_CHANNELS);
-            obj.define_non_tunable_parameter('PR_graspOpen',         sysConsts.PR_GRASP_OPEN);
-            obj.define_non_tunable_parameter('PR_nFeatures',         sysConsts.NUM_PR_FEATURES);
+            obj.add_non_tunable_parameter('PR_nChannels',         numChannels);
+            obj.add_non_tunable_parameter('PR_sampleFrequency',   1000);
+            obj.add_non_tunable_parameter('PR_nClasses',          sysConsts.NUM_VIRTUAL_CHANNELS);
+            obj.add_non_tunable_parameter('PR_graspChannels',     sysConsts.PR_GRASP_CHANNELS);
+            obj.add_non_tunable_parameter('PR_graspOpen',         sysConsts.PR_GRASP_OPEN);
+            obj.add_non_tunable_parameter('PR_nFeatures',         sysConsts.NUM_PR_FEATURES);
             
-            obj.define_tunable_parameter('PR_classEnum',            (1:sysConsts.NUM_VIRTUAL_CHANNELS)');
-            obj.define_tunable_parameter('PR_nTrainSeconds',        3);
-            obj.define_tunable_parameter('PR_scalingFactor',        repmat([0 0 8 0],sysConsts.NUM_VIRTUAL_CHANNELS,1));
-            obj.define_tunable_parameter('PR_isNewFeatExtract',     1);
+            obj.add_tunable_parameter('PR_classEnum',            (1:sysConsts.NUM_VIRTUAL_CHANNELS)');
+            obj.add_tunable_parameter('PR_nTrainSeconds',        3);
+            obj.add_tunable_parameter('PR_scalingFactor',        repmat([0 0 8 0],sysConsts.NUM_VIRTUAL_CHANNELS,1));
+            obj.add_tunable_parameter('PR_isNewFeatExtract',     1);
             
             % Note PR_graspGains allows tuning of speeds for each 'close' grasp and a single
             % 'open' speed
-            obj.define_tunable_parameter('PR_graspGains',           single(ones(length(sysConsts.PR_GRASP_OPEN)+length(sysConsts.PR_GRASP_CHANNELS),1)));
+            obj.add_tunable_parameter('PR_graspGains',           single(ones(length(sysConsts.PR_GRASP_OPEN)+length(sysConsts.PR_GRASP_CHANNELS),1)));
         end
         function setup_SA_parameters(obj)
             % Define tunable Signal Analysis Parameters for the VIE
@@ -190,14 +190,14 @@ classdef (Sealed) MplDb < MiniVieDb
             PR_binSize = obj.get_value('PR_binSize');
             
             % Signal Analysis Parameters
-            obj.define_tunable_parameter('SA_signalBiasValue',single(1.2*ones(sysConsts.NUM_ANALOG_CHANNELS,PR_binSize)));
-            obj.define_tunable_parameter('SA_smoothingWindowSize',single(25*ones(1,sysConsts.NUM_ANALOG_CHANNELS)));
-            obj.define_tunable_parameter('SA_signalRouting',single(zeros(1,3*length(sysConsts.ACTUATOR_NAMES))));
+            obj.add_tunable_parameter('SA_signalBiasValue',single(1.2*ones(sysConsts.NUM_ANALOG_CHANNELS,PR_binSize)));
+            obj.add_tunable_parameter('SA_smoothingWindowSize',single(25*ones(1,sysConsts.NUM_ANALOG_CHANNELS)));
+            obj.add_tunable_parameter('SA_signalRouting',single(zeros(1,3*length(sysConsts.ACTUATOR_NAMES))));
             
             % define grasp parameters-- a subset of SA params
             % setup_grasp_parameters();
-            obj.define_tunable_parameter('SA_graspOverride',single(0));
-            obj.define_tunable_parameter('SA_graspType',single(1));  % Manual Grasp Action Bus Command when in graspOverride mode
+            obj.add_tunable_parameter('SA_graspOverride',single(0));
+            obj.add_tunable_parameter('SA_graspType',single(1));  % Manual Grasp Action Bus Command when in graspOverride mode
         end
         function setup_Bus_parameters(obj)
             % Create GraspType Var
@@ -223,10 +223,10 @@ classdef (Sealed) MplDb < MiniVieDb
                 error('Bad Field Structure for SA_Action_GraspType');
             else
                 GraspType.Enable = 1;   % Grasps should be enabled by default for use with pattern rec
-                obj.define_tunable_parameter('SA_Action_GraspType',single(struct2array(GraspType)))
+                obj.add_tunable_parameter('SA_Action_GraspType',single(struct2array(GraspType)))
             end
             
-            obj.define_non_tunable_parameter('GraspAction',define_simulink_bus_grasp);
+            obj.add_non_tunable_parameter('GraspAction',define_simulink_bus_grasp);
             
         end
     end
@@ -240,7 +240,7 @@ classdef (Sealed) MplDb < MiniVieDb
             persistent localObj
             if isempty(localObj) || ~isvalid(localObj)
                 fprintf('[%s] Calling constructor\n',mfilename);
-                localObj = MplDb;
+                localObj = Db.MplDb;
                 localObj.initialize();  % object initializes on startup
             else
                 fprintf('[%s] Returning existing object\n',mfilename);
@@ -249,7 +249,7 @@ classdef (Sealed) MplDb < MiniVieDb
         end
         function obj = Default
             
-            obj = MplDb.getInstance;
+            obj = Db.MplDb.getInstance;
             %obj.initialize
             
             val = obj.get_value('CPC_data_gain');

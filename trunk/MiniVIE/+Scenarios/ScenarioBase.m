@@ -283,6 +283,14 @@ classdef ScenarioBase < Common.MiniVieObj
                     end
             end
             
+            
+            % Traditional grasp movement
+            obj.GraspVelocity = obj.constrain(desiredGraspVelocity,-0.1,0.1);
+            % Limit the grasp range
+            obj.GraspValue = obj.constrain(obj.GraspValue + obj.GraspVelocity, 0.0, 1.0);
+            return
+            
+            
 
             fprintf('[%s] Grasp Locked==%d; Counter==%2d; Value==%4.1f\n',...
                 mfilename,obj.GraspLocked,obj.GraspChangeCounter,obj.GraspValue);
@@ -308,7 +316,7 @@ classdef ScenarioBase < Common.MiniVieObj
 
                     % Limit the max velocity
                     obj.GraspVelocity = obj.constrain(desiredGraspVelocity,-0.1,0.1);
-                    v = obj.GraspVelocity
+                    v = obj.GraspVelocity;
                     % Limit the grasp range
                     obj.GraspValue = obj.constrain(obj.GraspValue + obj.GraspVelocity, 0.2, 1.0);
                 end
