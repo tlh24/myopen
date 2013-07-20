@@ -243,8 +243,11 @@ int main(int argc, char** argv){
 		exit(0);
 	}
 	mat_t* mfid = Mat_Open(argv[1], MAT_ACC_RDONLY);
+	if (mfid == NULL) {
+		fprintf(stderr,"Error opening MAT file \"%s\"!\n",argv[1]);
+	}
 	g_wf = Mat_VarReadNext(mfid);
-	printf(" incoming matrix %d by %d\n", g_wf->dims[0],g_wf->dims[1]);
+	printf(" incoming matrix %zu by %zu\n", g_wf->dims[0],g_wf->dims[1]);
 	Mat_Close(mfid);
 	/* Initialize mode and open a window in upper left corner of screen */
 	/* Window title is name of program (arg[0]) */
