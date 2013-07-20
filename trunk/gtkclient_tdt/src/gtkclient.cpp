@@ -182,12 +182,12 @@ void gsl_matrix_to_mat(gsl_matrix *x, const char* fname){
 	//write a gsl matrix to a .mat file.
 	// does not free the matrix.
 	mat_t *mat;
-	mat = Mat_Create(fname,NULL);
+	mat = Mat_CreateVer(fname,NULL,MAT_FT_MAT73);
 	if(!mat){
 		printf("could not open %s for writing \n", fname);
 		return;
 	}
-	int dims[2];
+	size_t dims[2];
 	dims[0] = x->size1;
 	dims[1] = x->size2;
 	double* d = (double*)malloc(dims[0]*dims[1]*sizeof(double));
@@ -198,15 +198,15 @@ void gsl_matrix_to_mat(gsl_matrix *x, const char* fname){
 	//reformat and transpose.
 	//matio expects fortran style, column-major format.
 	//gsl is row-major.
-	for(int i=0; i<dims[0]; i++){ //rows
-		for(int j=0; j<dims[1]; j++){ //columns
+	for(size_t i=0; i<dims[0]; i++){ //rows
+		for(size_t j=0; j<dims[1]; j++){ //columns
 			d[j*dims[0] + i] = x->data[i*x->tda + j];
 		}
 	}
 	matvar_t *matvar;
 	matvar = Mat_VarCreate("a",MAT_C_DOUBLE,MAT_T_DOUBLE,
 						2,dims,d,0);
-	Mat_VarWrite( mat, matvar, 0 );
+	Mat_VarWrite( mat, matvar, MAT_COMPRESSION_NONE );
 	Mat_VarFree(matvar);
 	free(d);
 	Mat_Close(mat);

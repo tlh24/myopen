@@ -40,9 +40,9 @@ int main(int argn, char **argc){
 		strncpy(s, argc[1], 512);
 		s[nn-3] = 'm'; s[nn-2] = 'a'; s[nn-1] = 't';
 		if(argn == 2){
-			mat = Mat_Create(s, NULL);
+			mat = Mat_CreateVer(s, NULL,MAT_FT_MAT73);
 		}else{
-			mat = Mat_Create(argc[2], NULL);
+			mat = Mat_CreateVer(argc[2], NULL,MAT_FT_MAT73);
 		}
 		if(!mat){
 			printf("could not open for writing %s\n", argc[2]);
@@ -126,7 +126,7 @@ int main(int argn, char **argc){
 		int maxunit = 0; 
 		for(i64 i=0; i<n; i++){
 			maxch = channel[i] > maxch ? channel[i] : maxch;
-			maxunit = unit[i] > maxunit ? unit[i] : maxunit; 
+			maxunit = unit[i] > maxunit ? unit[i] : maxunit;
 		}
 		printf("max channel %d max unit %d\n", maxch, maxunit); 
 		if(maxch > 1024 || maxunit > 100){
@@ -135,7 +135,7 @@ int main(int argn, char **argc){
 		}
 		maxch++;  //zero-indexed. 
 		maxunit++; 
-		int dims[2], dims2[2]; 
+		size_t dims[2], dims2[2]; 
 		dims[0] = maxunit;
 		dims[1] = maxch; 
 		//do it this way to minimize memory footprint.
@@ -172,7 +172,7 @@ int main(int argn, char **argc){
 		}
 		matvar_t* cell_matvar = Mat_VarCreate
 			("wf", MAT_C_CELL, MAT_T_CELL, 2, dims, wf_cell, 0);
-		Mat_VarWrite(mat, cell_matvar, 0);
+		Mat_VarWrite(mat, cell_matvar, MAT_COMPRESSION_NONE);
 		Mat_VarFree(cell_matvar); 
 		free(wf_cell); 
 		
@@ -197,7 +197,7 @@ int main(int argn, char **argc){
 			}
 		}
 		cell_matvar = Mat_VarCreate("time", MAT_C_CELL, MAT_T_CELL, 2, dims, time_cell, 0);
-		Mat_VarWrite(mat, cell_matvar, 0);
+		Mat_VarWrite(mat, cell_matvar, MAT_COMPRESSION_NONE);
 		Mat_VarFree(cell_matvar); 
 		free(time_cell); 
 		
@@ -221,7 +221,7 @@ int main(int argn, char **argc){
 			}
 		}
 		cell_matvar = Mat_VarCreate("ticks", MAT_C_CELL, MAT_T_CELL, 2, dims, ticks_cell, 0);
-		Mat_VarWrite(mat, cell_matvar, 0);
+		Mat_VarWrite(mat, cell_matvar, MAT_COMPRESSION_NONE);
 		Mat_VarFree(cell_matvar); 
 		free(ticks_cell); 
 		

@@ -85,7 +85,7 @@ po8e: src/po8e.o
 	$(CPP) -o $@ -lPO8eStreaming $^
 
 wf_plot: src/wf_plot.o
-	$(CC) -o $@ -lSDL -lGL -lGLU -lglut -lpthread -lmatio -lpng $^
+	$(CC) -o $@ -lSDL -lGL -lGLU -lglut -lpthread -lmatio -lhdf5 -lpng $^
 
 clean:
 	rm -rf gtkclient convert2 mmap_test po8e wf_plot src/*.o 
