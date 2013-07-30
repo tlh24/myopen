@@ -23,7 +23,10 @@ classdef AGH < Presentation.AirGuitarHero.AirGuitarHeroBase
                 error('Usage: initialize(obj,''COM4''); ');
             end
             
-            obj.isValidImageAcqToolbox = license('checkout','Image_Acquisition_Toolbox');
+            % Disabled auto check for image acquisition toolbox.  User can
+            % still re-enable manually after creating object, but before
+            % initializing
+            %obj.isValidImageAcqToolbox = license('checkout','Image_Acquisition_Toolbox');
             
             if obj.isValidImageAcqToolbox
                 dev = 'winvideo';
