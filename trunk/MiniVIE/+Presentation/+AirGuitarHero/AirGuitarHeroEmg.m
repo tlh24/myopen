@@ -41,7 +41,7 @@ classdef AirGuitarHeroEmg < Presentation.AirGuitarHero.AirGuitarHeroBase
             %obj.initialize();
         end
         function initialize(obj,outputDevice)
-            % initialize air guitar hero.  output device is a string the
+            % initialize air guitar hero.  output device is a string that
             % defines the manner of sending commands to the guitar.  Can be
             % either mcc or nidaq daq systems or a COM port.
             
@@ -65,19 +65,26 @@ classdef AirGuitarHeroEmg < Presentation.AirGuitarHero.AirGuitarHeroBase
             setupButtons(obj);
             %resetClassifier(obj);
             
-            useSerial = ~isempty(strfind(outputDevice,'COM'));
-            if useSerial
-                obj.hOutput = serial(outputDevice);
-                fopen(obj.hOutput);
-                fwrite(obj.hOutput,uint8(0));
-            else
-                % TODO: change output device id
-                %obj.hOutput = digitalio('mcc',0);
-                obj.hOutput = digitalio(outputDevice,0);
-                addline(obj.hOutput,0:7,'out');
-                vals = ones(8,1);
-                putvalue(obj.hOutput,vals);
+            try
+                useSerial = ~isempty(strfind(upper(outputDevice),'COM'));
+                if useSerial
+                    obj.hOutput = serial(outputDevice);
+                    fopen(obj.hOutput);
+                    fwrite(obj.hOutput,uint8(0));
+                else
+                    % TODO: change output device id
+                    %obj.hOutput = digitalio('mcc',0);
+                    obj.hOutput = digitalio(outputDevice,0);
+                    addline(obj.hOutput,0:7,'out');
+                    vals = ones(8,1);
+                    putvalue(obj.hOutput,vals);
+                end
+            catch ME
+                errordlg({'Error setting up output device.  Error was:' ME.message});
+                return
+                rethrow(ME);
             end
+            
         end
         function resetClassifier(obj)
             disp('Resetting Classifier and Stored Data');
@@ -178,48 +185,6 @@ classdef AirGuitarHeroEmg < Presentation.AirGuitarHero.AirGuitarHeroBase
             end
         end
         
-        function sendButtonDownCommand(obj,id)
-            if isa(obj.hOutput,'serial')
-                fprintf('[%s] sendButtonDownCommand not implemented for serial output\n',mfilename);
-                return
-            else
-            v = getvalue(obj.hOutput);
-            v(id) = 0;
-            putvalue(obj.hOutput,v);
-            end
-        end
-        function sendButtonCommand(obj,cmd)
-            
-            % Switch out the physical command send depending on
-            % if the guitar is direct digital or arduino based
-            %
-            % Armiger 5/25/2013
-            if isa(obj.hOutput,'serial')
-                % Serial command is a single byte with bit's
-                % set for
-                val = uint8(binvec2dec(~cmd));
-                fwrite(obj.hOutput,val);
-            else
-                % send digital command to daq hw
-                %sendButtonCommand(obj,~([noteMask 0 0 strumOn]));
-                v = getvalue(obj.hOutput);
-                if ~isequal(cmd,v)
-                    putvalue(obj.hOutput,cmd);
-                end
-            end
-
-            
-        end
-        function sendButtonUpCommand(obj,id)
-            if isa(obj.hOutput,'serial')
-                fprintf('[%s] sendButtonUpCommand not implemented for serial output\n',mfilename);
-                return
-            else
-                v = getvalue(obj.hOutput);
-                v(id) = 1;
-                putvalue(obj.hOutput,v);
-            end
-        end
         function close(obj)
             if ~isempty(obj.hOutput) && isa(obj.hOutput,'serial')
                 if strcmpi(obj.hOutput.status,'closed')
@@ -237,18 +202,18 @@ classdef AirGuitarHeroEmg < Presentation.AirGuitarHero.AirGuitarHeroBase
             %obj.SignalSource.addfilter(Inputs.LowPass());
             obj.SignalSource.addfilter(Inputs.Notch());
             obj.SignalSource.initialize();
-
+            
             NumSamplesPerWindow = 200;
             hTrainingData = TrainingDataAnalysis();
             hTrainingData.initialize(obj.SignalSource.NumChannels,NumSamplesPerWindow)
-
+            
             obj.SignalClassifier = SignalAnalysis.Lda();
             obj.SignalClassifier.initialize(hTrainingData);
             obj.SignalClassifier.setClassNames({'No Movement' 'Index' 'Middle' 'Ring'});
             obj.SignalClassifier.setActiveChannels(1:4);
             obj.SignalClassifier.NumMajorityVotes = 7;
             
-
+            
             out = Presentation.AirGuitarHero.AirGuitarHeroEmg(obj.SignalSource,obj.SignalClassifier);
         end
     end
