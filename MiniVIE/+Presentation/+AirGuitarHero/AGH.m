@@ -10,9 +10,18 @@ classdef AGH < Presentation.AirGuitarHero.AirGuitarHeroBase
             obj.hTimer = UiTools.create_timer('AGH_Display',@(src,evt)refresh(obj));
             obj.hTimer.Period = 0.03;
             
-            initialize(obj);
+            %initialize(obj);
         end
-        function initialize(obj)
+        function initialize(obj,outputDevice)
+            % initialize object with a string input describing output
+            % device.
+            % Examples:
+            %   initialize(obj,'COM4')
+            %   initialize(obj,'mcc')
+            
+            if nargin < 2
+                error('Usage: initialize(obj,''COM4''); ');
+            end
             
             obj.isValidImageAcqToolbox = license('checkout','Image_Acquisition_Toolbox');
             
@@ -100,32 +109,51 @@ classdef AGH < Presentation.AirGuitarHero.AirGuitarHeroBase
             
             % TODO: Abstract hardware outputs
             try
-                obj.hOutput = digitalio('mcc',0);
-                addline(obj.hOutput,0:7,'out');
+                %obj.hOutput = digitalio('mcc',0);
+                %addline(obj.hOutput,0:7,'out');
+
+                useSerial = ~isempty(strfind(upper(outputDevice),'COM'));
+                if useSerial
+                    obj.hOutput = serial(outputDevice);
+                    fopen(obj.hOutput);
+                    fwrite(obj.hOutput,uint8(0));
+                else
+                    % TODO: change output device id
+                    %obj.hOutput = digitalio('mcc',0);
+                    obj.hOutput = digitalio(outputDevice,0);
+                    addline(obj.hOutput,0:7,'out');
+                    vals = ones(8,1);
+                    putvalue(obj.hOutput,vals);
+                end
+            
+            
             catch ME
-                errordlg({'Error setting up digital output device.  Error was:' ME.message});
+                errordlg({'Error setting up output device.  Error was:' ME.message});
                 return
                 rethrow(ME);
             end
-            vals = ones(8,1);
-            putvalue(obj.hOutput,vals);
+%             vals = ones(8,1);
+%             putvalue(obj.hOutput,vals);
             
+
+            % Enable key presses for 'zxcvb' and space for strum
+            enableKeyboardCallbacks(obj);
         end
-        function sendButtonDownCommand(obj,id)
-            v = getvalue(obj.hOutput);
-            v(id) = 0;
-            putvalue(obj.hOutput,v);
-        end
-        function sendButtonCommand(obj,cmd)
-            v = getvalue(obj.hOutput);
-            if ~isequal(cmd,v)
-                putvalue(obj.hOutput,cmd);
-            end
-        end
-        function sendButtonUpCommand(obj,id)
-            v = getvalue(obj.hOutput);
-            v(id) = 1;
-            putvalue(obj.hOutput,v);
-        end
+%         function sendButtonDownCommand(obj,id)
+%             v = getvalue(obj.hOutput);
+%             v(id) = 0;
+%             putvalue(obj.hOutput,v);
+%         end
+%         function sendButtonCommand(obj,cmd)
+%             v = getvalue(obj.hOutput);
+%             if ~isequal(cmd,v)
+%                 putvalue(obj.hOutput,cmd);
+%             end
+%         end
+%         function sendButtonUpCommand(obj,id)
+%             v = getvalue(obj.hOutput);
+%             v(id) = 1;
+%             putvalue(obj.hOutput,v);
+%         end
     end
 end

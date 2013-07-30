@@ -39,8 +39,8 @@ classdef AirGuitarHeroBase < hgsetget
     end
     methods (Abstract)
         initialize(obj);
-        sendButtonDownCommand(obj,id);
-        sendButtonUpCommand(obj,id);
+        %sendButtonDownCommand(obj,id);
+        %sendButtonUpCommand(obj,id);
     end
     methods
         function setupDisplay(obj)
@@ -103,8 +103,10 @@ classdef AirGuitarHeroBase < hgsetget
             
             try
                 frame = getFrame(obj);
-                annotatedFrame = obj.hNoteDetector.process_frame(frame);
-                drawFrame(obj,annotatedFrame);
+                if ~isempty(frame)
+                    annotatedFrame = obj.hNoteDetector.process_frame(frame);
+                    drawFrame(obj,annotatedFrame);
+                end
                 
                 switch obj.DisplayState
                     case obj.Off
@@ -132,7 +134,11 @@ classdef AirGuitarHeroBase < hgsetget
             %             else
             %                 frame = vcapg2;
             %             end
+            try
                 frame = vcapg2;
+            catch
+                frame = [];
+            end
                 return
             if obj.isValidImageAcqToolbox
                 trigger(obj.hAudioVideoIn);
@@ -150,6 +156,54 @@ classdef AirGuitarHeroBase < hgsetget
         function drawFrame(obj,frame)
             set(obj.hFrame,'CData',frame);
         end
+        
+        
+        
+        % Common output functions
+        function sendButtonDownCommand(obj,id)
+            if isa(obj.hOutput,'serial')
+                fprintf('[%s] sendButtonDownCommand not implemented for serial output\n',mfilename);
+                return
+            else
+            v = getvalue(obj.hOutput);
+            v(id) = 0;
+            putvalue(obj.hOutput,v);
+            end
+        end
+        function sendButtonCommand(obj,cmd)
+            
+            % Switch out the physical command send depending on
+            % if the guitar is direct digital or arduino based
+            %
+            % Armiger 5/25/2013
+            if isa(obj.hOutput,'serial')
+                % Serial command is a single byte with bit's
+                % set for
+                val = uint8(binvec2dec(~cmd));
+                fwrite(obj.hOutput,val);
+            else
+                % send digital command to daq hw
+                %sendButtonCommand(obj,~([noteMask 0 0 strumOn]));
+                v = getvalue(obj.hOutput);
+                if ~isequal(cmd,v)
+                    putvalue(obj.hOutput,cmd);
+                end
+            end
+
+            
+        end
+        function sendButtonUpCommand(obj,id)
+            if isa(obj.hOutput,'serial')
+                fprintf('[%s] sendButtonUpCommand not implemented for serial output\n',mfilename);
+                return
+            else
+                v = getvalue(obj.hOutput);
+                v(id) = 1;
+                putvalue(obj.hOutput,v);
+            end
+        end
+        
+        
     end
 end
 
