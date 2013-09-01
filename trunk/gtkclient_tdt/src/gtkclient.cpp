@@ -904,7 +904,7 @@ void* po8_thread(void*){
 		short * temp = new short[bufmax*nchan]; // >10000 samples * 2 bytes/sample * nChannels 
 		short * temptemp = new short[bufmax];
 		while((simulate || conn_cards > 0) && !g_die){
-			if (!card->waitForDataReady()) { // waits ~ 1200 hours ;-)
+			if (!simulate && !card->waitForDataReady()) { // waits ~ 1200 hours ;-)
 				// this occurs when the rpvdsex circuit is idled.
 				// and potentially when a glitch happens
 				printf("  waitForDataReady() failed with: %d\n",
