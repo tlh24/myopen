@@ -22,26 +22,26 @@ public:
 	unsigned int radio; //radiochannel
 	int thread;
 	PACKET_TYPE packet_type;
-	char buffer[1024+128+4]; //fits strobe and sock
+	char* buffer; //fits strobe and sock
 	
-	spkpak(){}
-
+	spkpak(){	  
+	}
+	
+	~spkpak(){
+	  delete [] buffer;
+	}
+	
 	spkpak(unsigned int word, unsigned int sz, char* buf, double time, 
 			unsigned int rchan, int tid = 0){
 		
 		radio = rchan;
 		thread = tid;
+		buffer = new char[sz];
 		//printf("sz:%d\n", sz);
-		if( sz <= 1024+128+4){
-			memcpy(buffer, buf, sz);
-			size = sz;
-			rxtime = time;
-		}
-		else{
-			size = 1024+128+4; //and hope it doesn't break
-			memcpy(buffer, buf, size);
-			rxtime = time;
-		}
+		
+		memcpy(buffer, buf, sz);
+		size = sz;
+		rxtime = time;
 		
 		if( word == 0x1eafbabe ){
 			magic = word;

@@ -184,7 +184,7 @@ void protobuf_AddDesc_parameters_2eproto() {
     "in\030\003 \002(\002\022\013\n\003agc\030\004 \002(\002\022\021\n\tcentering\030\005 \002(\002"
     "\022\021\n\tthreshold\030\006 \002(\002\022\"\n\004unit\030\007 \003(\0132\024.Conf"
     "iguration.units\022\024\n\010pca_mean\030\010 \003(\002B\002\020\001\022\023\n"
-    "\007pca_max\030\t \003(\002B\002\020\001\">\n\006radios\022\n\n\002id\030\001 \002(\005"
+    "\007pca_max\030\t \003(\002B\002\020\001\">\n\006radios\022\n\n\002id\030\001 \002(\r"
     "\022(\n\007channel\030\002 \003(\0132\027.Configuration.channe"
     "ls\"Z\n\nparameters\022\024\n\014signal_chain\030\001 \002(\005\022$"
     "\n\005radio\030\002 \003(\0132\025.Configuration.radios\022\020\n\010"
@@ -1167,7 +1167,7 @@ radios::radios(const radios& from)
 
 void radios::SharedCtor() {
   _cached_size_ = 0;
-  id_ = 0;
+  id_ = 0u;
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -1202,7 +1202,7 @@ radios* radios::New() const {
 
 void radios::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    id_ = 0;
+    id_ = 0u;
   }
   channel_.Clear();
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
@@ -1215,12 +1215,12 @@ bool radios::MergePartialFromCodedStream(
   ::google::protobuf::uint32 tag;
   while ((tag = input->ReadTag()) != 0) {
     switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // required int32 id = 1;
+      // required uint32 id = 1;
       case 1: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
-                   ::google::protobuf::int32, ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
+                   ::google::protobuf::uint32, ::google::protobuf::internal::WireFormatLite::TYPE_UINT32>(
                  input, &id_)));
           set_has_id();
         } else {
@@ -1263,9 +1263,9 @@ bool radios::MergePartialFromCodedStream(
 
 void radios::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
-  // required int32 id = 1;
+  // required uint32 id = 1;
   if (has_id()) {
-    ::google::protobuf::internal::WireFormatLite::WriteInt32(1, this->id(), output);
+    ::google::protobuf::internal::WireFormatLite::WriteUInt32(1, this->id(), output);
   }
   
   // repeated .Configuration.channels channel = 2;
@@ -1282,9 +1282,9 @@ void radios::SerializeWithCachedSizes(
 
 ::google::protobuf::uint8* radios::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
-  // required int32 id = 1;
+  // required uint32 id = 1;
   if (has_id()) {
-    target = ::google::protobuf::internal::WireFormatLite::WriteInt32ToArray(1, this->id(), target);
+    target = ::google::protobuf::internal::WireFormatLite::WriteUInt32ToArray(1, this->id(), target);
   }
   
   // repeated .Configuration.channels channel = 2;
@@ -1305,10 +1305,10 @@ int radios::ByteSize() const {
   int total_size = 0;
   
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
-    // required int32 id = 1;
+    // required uint32 id = 1;
     if (has_id()) {
       total_size += 1 +
-        ::google::protobuf::internal::WireFormatLite::Int32Size(
+        ::google::protobuf::internal::WireFormatLite::UInt32Size(
           this->id());
     }
     

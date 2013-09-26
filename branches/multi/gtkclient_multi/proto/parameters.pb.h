@@ -387,12 +387,12 @@ class radios : public ::google::protobuf::Message {
   
   // accessors -------------------------------------------------------
   
-  // required int32 id = 1;
+  // required uint32 id = 1;
   inline bool has_id() const;
   inline void clear_id();
   static const int kIdFieldNumber = 1;
-  inline ::google::protobuf::int32 id() const;
-  inline void set_id(::google::protobuf::int32 value);
+  inline ::google::protobuf::uint32 id() const;
+  inline void set_id(::google::protobuf::uint32 value);
   
   // repeated .Configuration.channels channel = 2;
   inline int channel_size() const;
@@ -414,7 +414,7 @@ class radios : public ::google::protobuf::Message {
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
   
   ::google::protobuf::RepeatedPtrField< ::Configuration::channels > channel_;
-  ::google::protobuf::int32 id_;
+  ::google::protobuf::uint32 id_;
   
   mutable int _cached_size_;
   ::google::protobuf::uint32 _has_bits_[(2 + 31) / 32];
@@ -936,7 +936,7 @@ channels::mutable_pca_max() {
 
 // radios
 
-// required int32 id = 1;
+// required uint32 id = 1;
 inline bool radios::has_id() const {
   return (_has_bits_[0] & 0x00000001u) != 0;
 }
@@ -947,13 +947,13 @@ inline void radios::clear_has_id() {
   _has_bits_[0] &= ~0x00000001u;
 }
 inline void radios::clear_id() {
-  id_ = 0;
+  id_ = 0u;
   clear_has_id();
 }
-inline ::google::protobuf::int32 radios::id() const {
+inline ::google::protobuf::uint32 radios::id() const {
   return id_;
 }
-inline void radios::set_id(::google::protobuf::int32 value) {
+inline void radios::set_id(::google::protobuf::uint32 value) {
   set_has_id();
   id_ = value;
 }
