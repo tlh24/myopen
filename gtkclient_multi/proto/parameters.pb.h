@@ -34,6 +34,7 @@ void protobuf_ShutdownFile_parameters_2eproto();
 
 class units;
 class channels;
+class radios;
 class parameters;
 class state;
 
@@ -220,38 +221,45 @@ class channels : public ::google::protobuf::Message {
   inline ::google::protobuf::int32 id() const;
   inline void set_id(::google::protobuf::int32 value);
   
-  // required float gain = 2;
+  // required int32 ch = 2;
+  inline bool has_ch() const;
+  inline void clear_ch();
+  static const int kChFieldNumber = 2;
+  inline ::google::protobuf::int32 ch() const;
+  inline void set_ch(::google::protobuf::int32 value);
+  
+  // required float gain = 3;
   inline bool has_gain() const;
   inline void clear_gain();
-  static const int kGainFieldNumber = 2;
+  static const int kGainFieldNumber = 3;
   inline float gain() const;
   inline void set_gain(float value);
   
-  // required float agc = 3;
+  // required float agc = 4;
   inline bool has_agc() const;
   inline void clear_agc();
-  static const int kAgcFieldNumber = 3;
+  static const int kAgcFieldNumber = 4;
   inline float agc() const;
   inline void set_agc(float value);
   
-  // required float centering = 4;
+  // required float centering = 5;
   inline bool has_centering() const;
   inline void clear_centering();
-  static const int kCenteringFieldNumber = 4;
+  static const int kCenteringFieldNumber = 5;
   inline float centering() const;
   inline void set_centering(float value);
   
-  // required float threshold = 5;
+  // required float threshold = 6;
   inline bool has_threshold() const;
   inline void clear_threshold();
-  static const int kThresholdFieldNumber = 5;
+  static const int kThresholdFieldNumber = 6;
   inline float threshold() const;
   inline void set_threshold(float value);
   
-  // repeated .Configuration.units unit = 6;
+  // repeated .Configuration.units unit = 7;
   inline int unit_size() const;
   inline void clear_unit();
-  static const int kUnitFieldNumber = 6;
+  static const int kUnitFieldNumber = 7;
   inline const ::Configuration::units& unit(int index) const;
   inline ::Configuration::units* mutable_unit(int index);
   inline ::Configuration::units* add_unit();
@@ -260,10 +268,10 @@ class channels : public ::google::protobuf::Message {
   inline ::google::protobuf::RepeatedPtrField< ::Configuration::units >*
       mutable_unit();
   
-  // repeated float pca_mean = 7 [packed = true];
+  // repeated float pca_mean = 8 [packed = true];
   inline int pca_mean_size() const;
   inline void clear_pca_mean();
-  static const int kPcaMeanFieldNumber = 7;
+  static const int kPcaMeanFieldNumber = 8;
   inline float pca_mean(int index) const;
   inline void set_pca_mean(int index, float value);
   inline void add_pca_mean(float value);
@@ -272,10 +280,10 @@ class channels : public ::google::protobuf::Message {
   inline ::google::protobuf::RepeatedField< float >*
       mutable_pca_mean();
   
-  // repeated float pca_max = 8 [packed = true];
+  // repeated float pca_max = 9 [packed = true];
   inline int pca_max_size() const;
   inline void clear_pca_max();
-  static const int kPcaMaxFieldNumber = 8;
+  static const int kPcaMaxFieldNumber = 9;
   inline float pca_max(int index) const;
   inline void set_pca_max(int index, float value);
   inline void add_pca_max(float value);
@@ -288,6 +296,8 @@ class channels : public ::google::protobuf::Message {
  private:
   inline void set_has_id();
   inline void clear_has_id();
+  inline void set_has_ch();
+  inline void clear_has_ch();
   inline void set_has_gain();
   inline void clear_has_gain();
   inline void set_has_agc();
@@ -300,18 +310,19 @@ class channels : public ::google::protobuf::Message {
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
   
   ::google::protobuf::int32 id_;
+  ::google::protobuf::int32 ch_;
   float gain_;
   float agc_;
   float centering_;
+  float threshold_;
   ::google::protobuf::RepeatedPtrField< ::Configuration::units > unit_;
   ::google::protobuf::RepeatedField< float > pca_mean_;
   mutable int _pca_mean_cached_byte_size_;
   ::google::protobuf::RepeatedField< float > pca_max_;
   mutable int _pca_max_cached_byte_size_;
-  float threshold_;
   
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(8 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(9 + 31) / 32];
   
   friend void  protobuf_AddDesc_parameters_2eproto();
   friend void protobuf_AssignDesc_parameters_2eproto();
@@ -319,6 +330,101 @@ class channels : public ::google::protobuf::Message {
   
   void InitAsDefaultInstance();
   static channels* default_instance_;
+};
+// -------------------------------------------------------------------
+
+class radios : public ::google::protobuf::Message {
+ public:
+  radios();
+  virtual ~radios();
+  
+  radios(const radios& from);
+  
+  inline radios& operator=(const radios& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _unknown_fields_;
+  }
+  
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return &_unknown_fields_;
+  }
+  
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const radios& default_instance();
+  
+  void Swap(radios* other);
+  
+  // implements Message ----------------------------------------------
+  
+  radios* New() const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const radios& from);
+  void MergeFrom(const radios& from);
+  void Clear();
+  bool IsInitialized() const;
+  
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  public:
+  
+  ::google::protobuf::Metadata GetMetadata() const;
+  
+  // nested types ----------------------------------------------------
+  
+  // accessors -------------------------------------------------------
+  
+  // required int32 id = 1;
+  inline bool has_id() const;
+  inline void clear_id();
+  static const int kIdFieldNumber = 1;
+  inline ::google::protobuf::int32 id() const;
+  inline void set_id(::google::protobuf::int32 value);
+  
+  // repeated .Configuration.channels channel = 2;
+  inline int channel_size() const;
+  inline void clear_channel();
+  static const int kChannelFieldNumber = 2;
+  inline const ::Configuration::channels& channel(int index) const;
+  inline ::Configuration::channels* mutable_channel(int index);
+  inline ::Configuration::channels* add_channel();
+  inline const ::google::protobuf::RepeatedPtrField< ::Configuration::channels >&
+      channel() const;
+  inline ::google::protobuf::RepeatedPtrField< ::Configuration::channels >*
+      mutable_channel();
+  
+  // @@protoc_insertion_point(class_scope:Configuration.radios)
+ private:
+  inline void set_has_id();
+  inline void clear_has_id();
+  
+  ::google::protobuf::UnknownFieldSet _unknown_fields_;
+  
+  ::google::protobuf::RepeatedPtrField< ::Configuration::channels > channel_;
+  ::google::protobuf::int32 id_;
+  
+  mutable int _cached_size_;
+  ::google::protobuf::uint32 _has_bits_[(2 + 31) / 32];
+  
+  friend void  protobuf_AddDesc_parameters_2eproto();
+  friend void protobuf_AssignDesc_parameters_2eproto();
+  friend void protobuf_ShutdownFile_parameters_2eproto();
+  
+  void InitAsDefaultInstance();
+  static radios* default_instance_;
 };
 // -------------------------------------------------------------------
 
@@ -383,17 +489,17 @@ class parameters : public ::google::protobuf::Message {
   inline ::google::protobuf::int32 signal_chain() const;
   inline void set_signal_chain(::google::protobuf::int32 value);
   
-  // repeated .Configuration.channels channel = 2;
-  inline int channel_size() const;
-  inline void clear_channel();
-  static const int kChannelFieldNumber = 2;
-  inline const ::Configuration::channels& channel(int index) const;
-  inline ::Configuration::channels* mutable_channel(int index);
-  inline ::Configuration::channels* add_channel();
-  inline const ::google::protobuf::RepeatedPtrField< ::Configuration::channels >&
-      channel() const;
-  inline ::google::protobuf::RepeatedPtrField< ::Configuration::channels >*
-      mutable_channel();
+  // repeated .Configuration.radios radio = 2;
+  inline int radio_size() const;
+  inline void clear_radio();
+  static const int kRadioFieldNumber = 2;
+  inline const ::Configuration::radios& radio(int index) const;
+  inline ::Configuration::radios* mutable_radio(int index);
+  inline ::Configuration::radios* add_radio();
+  inline const ::google::protobuf::RepeatedPtrField< ::Configuration::radios >&
+      radio() const;
+  inline ::google::protobuf::RepeatedPtrField< ::Configuration::radios >*
+      mutable_radio();
   
   // repeated int32 selected = 3;
   inline int selected_size() const;
@@ -414,7 +520,7 @@ class parameters : public ::google::protobuf::Message {
   
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
   
-  ::google::protobuf::RepeatedPtrField< ::Configuration::channels > channel_;
+  ::google::protobuf::RepeatedPtrField< ::Configuration::radios > radio_;
   ::google::protobuf::RepeatedField< ::google::protobuf::int32 > selected_;
   ::google::protobuf::int32 signal_chain_;
   
@@ -641,15 +747,37 @@ inline void channels::set_id(::google::protobuf::int32 value) {
   id_ = value;
 }
 
-// required float gain = 2;
-inline bool channels::has_gain() const {
+// required int32 ch = 2;
+inline bool channels::has_ch() const {
   return (_has_bits_[0] & 0x00000002u) != 0;
 }
-inline void channels::set_has_gain() {
+inline void channels::set_has_ch() {
   _has_bits_[0] |= 0x00000002u;
 }
-inline void channels::clear_has_gain() {
+inline void channels::clear_has_ch() {
   _has_bits_[0] &= ~0x00000002u;
+}
+inline void channels::clear_ch() {
+  ch_ = 0;
+  clear_has_ch();
+}
+inline ::google::protobuf::int32 channels::ch() const {
+  return ch_;
+}
+inline void channels::set_ch(::google::protobuf::int32 value) {
+  set_has_ch();
+  ch_ = value;
+}
+
+// required float gain = 3;
+inline bool channels::has_gain() const {
+  return (_has_bits_[0] & 0x00000004u) != 0;
+}
+inline void channels::set_has_gain() {
+  _has_bits_[0] |= 0x00000004u;
+}
+inline void channels::clear_has_gain() {
+  _has_bits_[0] &= ~0x00000004u;
 }
 inline void channels::clear_gain() {
   gain_ = 0;
@@ -663,15 +791,15 @@ inline void channels::set_gain(float value) {
   gain_ = value;
 }
 
-// required float agc = 3;
+// required float agc = 4;
 inline bool channels::has_agc() const {
-  return (_has_bits_[0] & 0x00000004u) != 0;
+  return (_has_bits_[0] & 0x00000008u) != 0;
 }
 inline void channels::set_has_agc() {
-  _has_bits_[0] |= 0x00000004u;
+  _has_bits_[0] |= 0x00000008u;
 }
 inline void channels::clear_has_agc() {
-  _has_bits_[0] &= ~0x00000004u;
+  _has_bits_[0] &= ~0x00000008u;
 }
 inline void channels::clear_agc() {
   agc_ = 0;
@@ -685,15 +813,15 @@ inline void channels::set_agc(float value) {
   agc_ = value;
 }
 
-// required float centering = 4;
+// required float centering = 5;
 inline bool channels::has_centering() const {
-  return (_has_bits_[0] & 0x00000008u) != 0;
+  return (_has_bits_[0] & 0x00000010u) != 0;
 }
 inline void channels::set_has_centering() {
-  _has_bits_[0] |= 0x00000008u;
+  _has_bits_[0] |= 0x00000010u;
 }
 inline void channels::clear_has_centering() {
-  _has_bits_[0] &= ~0x00000008u;
+  _has_bits_[0] &= ~0x00000010u;
 }
 inline void channels::clear_centering() {
   centering_ = 0;
@@ -707,15 +835,15 @@ inline void channels::set_centering(float value) {
   centering_ = value;
 }
 
-// required float threshold = 5;
+// required float threshold = 6;
 inline bool channels::has_threshold() const {
-  return (_has_bits_[0] & 0x00000010u) != 0;
+  return (_has_bits_[0] & 0x00000020u) != 0;
 }
 inline void channels::set_has_threshold() {
-  _has_bits_[0] |= 0x00000010u;
+  _has_bits_[0] |= 0x00000020u;
 }
 inline void channels::clear_has_threshold() {
-  _has_bits_[0] &= ~0x00000010u;
+  _has_bits_[0] &= ~0x00000020u;
 }
 inline void channels::clear_threshold() {
   threshold_ = 0;
@@ -729,7 +857,7 @@ inline void channels::set_threshold(float value) {
   threshold_ = value;
 }
 
-// repeated .Configuration.units unit = 6;
+// repeated .Configuration.units unit = 7;
 inline int channels::unit_size() const {
   return unit_.size();
 }
@@ -754,7 +882,7 @@ channels::mutable_unit() {
   return &unit_;
 }
 
-// repeated float pca_mean = 7 [packed = true];
+// repeated float pca_mean = 8 [packed = true];
 inline int channels::pca_mean_size() const {
   return pca_mean_.size();
 }
@@ -779,7 +907,7 @@ channels::mutable_pca_mean() {
   return &pca_mean_;
 }
 
-// repeated float pca_max = 8 [packed = true];
+// repeated float pca_max = 9 [packed = true];
 inline int channels::pca_max_size() const {
   return pca_max_.size();
 }
@@ -802,6 +930,57 @@ channels::pca_max() const {
 inline ::google::protobuf::RepeatedField< float >*
 channels::mutable_pca_max() {
   return &pca_max_;
+}
+
+// -------------------------------------------------------------------
+
+// radios
+
+// required int32 id = 1;
+inline bool radios::has_id() const {
+  return (_has_bits_[0] & 0x00000001u) != 0;
+}
+inline void radios::set_has_id() {
+  _has_bits_[0] |= 0x00000001u;
+}
+inline void radios::clear_has_id() {
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline void radios::clear_id() {
+  id_ = 0;
+  clear_has_id();
+}
+inline ::google::protobuf::int32 radios::id() const {
+  return id_;
+}
+inline void radios::set_id(::google::protobuf::int32 value) {
+  set_has_id();
+  id_ = value;
+}
+
+// repeated .Configuration.channels channel = 2;
+inline int radios::channel_size() const {
+  return channel_.size();
+}
+inline void radios::clear_channel() {
+  channel_.Clear();
+}
+inline const ::Configuration::channels& radios::channel(int index) const {
+  return channel_.Get(index);
+}
+inline ::Configuration::channels* radios::mutable_channel(int index) {
+  return channel_.Mutable(index);
+}
+inline ::Configuration::channels* radios::add_channel() {
+  return channel_.Add();
+}
+inline const ::google::protobuf::RepeatedPtrField< ::Configuration::channels >&
+radios::channel() const {
+  return channel_;
+}
+inline ::google::protobuf::RepeatedPtrField< ::Configuration::channels >*
+radios::mutable_channel() {
+  return &channel_;
 }
 
 // -------------------------------------------------------------------
@@ -830,29 +1009,29 @@ inline void parameters::set_signal_chain(::google::protobuf::int32 value) {
   signal_chain_ = value;
 }
 
-// repeated .Configuration.channels channel = 2;
-inline int parameters::channel_size() const {
-  return channel_.size();
+// repeated .Configuration.radios radio = 2;
+inline int parameters::radio_size() const {
+  return radio_.size();
 }
-inline void parameters::clear_channel() {
-  channel_.Clear();
+inline void parameters::clear_radio() {
+  radio_.Clear();
 }
-inline const ::Configuration::channels& parameters::channel(int index) const {
-  return channel_.Get(index);
+inline const ::Configuration::radios& parameters::radio(int index) const {
+  return radio_.Get(index);
 }
-inline ::Configuration::channels* parameters::mutable_channel(int index) {
-  return channel_.Mutable(index);
+inline ::Configuration::radios* parameters::mutable_radio(int index) {
+  return radio_.Mutable(index);
 }
-inline ::Configuration::channels* parameters::add_channel() {
-  return channel_.Add();
+inline ::Configuration::radios* parameters::add_radio() {
+  return radio_.Add();
 }
-inline const ::google::protobuf::RepeatedPtrField< ::Configuration::channels >&
-parameters::channel() const {
-  return channel_;
+inline const ::google::protobuf::RepeatedPtrField< ::Configuration::radios >&
+parameters::radio() const {
+  return radio_;
 }
-inline ::google::protobuf::RepeatedPtrField< ::Configuration::channels >*
-parameters::mutable_channel() {
-  return &channel_;
+inline ::google::protobuf::RepeatedPtrField< ::Configuration::radios >*
+parameters::mutable_radio() {
+  return &radio_;
 }
 
 // repeated int32 selected = 3;

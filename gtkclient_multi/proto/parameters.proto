@@ -11,22 +11,29 @@ repeated float templates = 4 [packed=true];
 
 message channels{
   
-  required int32 id = 1;
-  required float gain = 2;
-  required float agc = 3;
-  required float centering = 4;
-  required float threshold = 5;
-  repeated units unit = 6;
+  required int32 id = 1; //system wide ID
+  required int32 ch = 2; //local channel number
+  required float gain = 3;
+  required float agc = 4;
+  required float centering = 5;
+  required float threshold = 6;
+  repeated units unit = 7;
   
-  repeated float pca_mean = 7 [packed=true];
-  repeated float pca_max = 8 [packed=true];
+  repeated float pca_mean = 8[packed=true];
+  repeated float pca_max = 9 [packed=true];
   
  }
+ 
+message radios{
+
+  required int32 id = 1; //radio ID
+  repeated channels channel = 2;
+}
   
 message parameters{
 
   required int32 signal_chain = 1;
-  repeated channels channel = 2;
+  repeated radios radio = 2;
   repeated int32 selected = 3;
 
 }

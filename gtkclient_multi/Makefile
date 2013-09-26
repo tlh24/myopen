@@ -65,6 +65,12 @@ endif
 all: gtkclient wf_plot
 convert: convert
 
+spikes.pb.cc : proto/spikes.proto
+	protoc $< --cpp_out=.
+
+parameters.pb.cc : proto/parameters.proto
+	protoc $< --cpp_out=.
+
 src/%.o: src/%.cpp $(COM_HDR)
 	$(CPP) -c $(CPPFLAGS) $(GTKFLAGS) $< -o $@
 
@@ -73,14 +79,6 @@ src/%.o: ../common_host/%.cpp $(COM_HDR)
 
 src/%.o: src/%.c
 	$(CC) -c $(CFLAGS) $< -o $@
-
-spikes.pb.cc : spikes.proto
-	protoc $< --cpp_out=.
-	protoc $< --python_out=.
-
-parameters.pb.cc : parameters.proto
-	protoc $< --cpp_out=.
-	protoc $< --python_out=.
 
 gtkclient: $(GOBJS)
 	$(CPP) -o $@ $(GTKLD) $(LDFLAGS) $^
@@ -93,7 +91,7 @@ wf_plot: src/wf_plot.o
 	$(CC) -o $@ -lGL -lGLU -lglut -lpthread -lmatio -lhdf5 -lpng $^
 
 clean:
-	rm -rf gtkclient convert wf_plot src/*.o 
+	rm -rf gtkclient convert wf_plot src/*.o proto/*.o
 
 deps:
 	sudo apt-get install libgtk2.0-dev \

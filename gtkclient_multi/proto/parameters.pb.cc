@@ -23,6 +23,9 @@ const ::google::protobuf::internal::GeneratedMessageReflection*
 const ::google::protobuf::Descriptor* channels_descriptor_ = NULL;
 const ::google::protobuf::internal::GeneratedMessageReflection*
   channels_reflection_ = NULL;
+const ::google::protobuf::Descriptor* radios_descriptor_ = NULL;
+const ::google::protobuf::internal::GeneratedMessageReflection*
+  radios_reflection_ = NULL;
 const ::google::protobuf::Descriptor* parameters_descriptor_ = NULL;
 const ::google::protobuf::internal::GeneratedMessageReflection*
   parameters_reflection_ = NULL;
@@ -58,8 +61,9 @@ void protobuf_AssignDesc_parameters_2eproto() {
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(units));
   channels_descriptor_ = file->message_type(1);
-  static const int channels_offsets_[8] = {
+  static const int channels_offsets_[9] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(channels, id_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(channels, ch_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(channels, gain_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(channels, agc_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(channels, centering_),
@@ -79,10 +83,26 @@ void protobuf_AssignDesc_parameters_2eproto() {
       ::google::protobuf::DescriptorPool::generated_pool(),
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(channels));
-  parameters_descriptor_ = file->message_type(2);
+  radios_descriptor_ = file->message_type(2);
+  static const int radios_offsets_[2] = {
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(radios, id_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(radios, channel_),
+  };
+  radios_reflection_ =
+    new ::google::protobuf::internal::GeneratedMessageReflection(
+      radios_descriptor_,
+      radios::default_instance_,
+      radios_offsets_,
+      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(radios, _has_bits_[0]),
+      GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(radios, _unknown_fields_),
+      -1,
+      ::google::protobuf::DescriptorPool::generated_pool(),
+      ::google::protobuf::MessageFactory::generated_factory(),
+      sizeof(radios));
+  parameters_descriptor_ = file->message_type(3);
   static const int parameters_offsets_[3] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(parameters, signal_chain_),
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(parameters, channel_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(parameters, radio_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(parameters, selected_),
   };
   parameters_reflection_ =
@@ -96,7 +116,7 @@ void protobuf_AssignDesc_parameters_2eproto() {
       ::google::protobuf::DescriptorPool::generated_pool(),
       ::google::protobuf::MessageFactory::generated_factory(),
       sizeof(parameters));
-  state_descriptor_ = file->message_type(3);
+  state_descriptor_ = file->message_type(4);
   static const int state_offsets_[1] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(state, default_configuration_),
   };
@@ -128,6 +148,8 @@ void protobuf_RegisterTypes(const ::std::string&) {
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
     channels_descriptor_, &channels::default_instance());
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
+    radios_descriptor_, &radios::default_instance());
+  ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
     parameters_descriptor_, &parameters::default_instance());
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedMessage(
     state_descriptor_, &state::default_instance());
@@ -140,6 +162,8 @@ void protobuf_ShutdownFile_parameters_2eproto() {
   delete units_reflection_;
   delete channels::default_instance_;
   delete channels_reflection_;
+  delete radios::default_instance_;
+  delete radios_reflection_;
   delete parameters::default_instance_;
   delete parameters_reflection_;
   delete state::default_instance_;
@@ -155,23 +179,27 @@ void protobuf_AddDesc_parameters_2eproto() {
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
     "\n\020parameters.proto\022\rConfiguration\"R\n\005uni"
     "ts\022\020\n\010aperture\030\001 \002(\002\022\017\n\007pca_scl\030\002 \002(\002\022\017\n"
-    "\003pca\030\003 \003(\002B\002\020\001\022\025\n\ttemplates\030\004 \003(\002B\002\020\001\"\246\001"
-    "\n\010channels\022\n\n\002id\030\001 \002(\005\022\014\n\004gain\030\002 \002(\002\022\013\n\003"
-    "agc\030\003 \002(\002\022\021\n\tcentering\030\004 \002(\002\022\021\n\tthreshol"
-    "d\030\005 \002(\002\022\"\n\004unit\030\006 \003(\0132\024.Configuration.un"
-    "its\022\024\n\010pca_mean\030\007 \003(\002B\002\020\001\022\023\n\007pca_max\030\010 \003"
-    "(\002B\002\020\001\"^\n\nparameters\022\024\n\014signal_chain\030\001 \002"
-    "(\005\022(\n\007channel\030\002 \003(\0132\027.Configuration.chan"
-    "nels\022\020\n\010selected\030\003 \003(\005\"&\n\005state\022\035\n\025defau"
-    "lt_configuration\030\001 \001(\t", 422);
+    "\003pca\030\003 \003(\002B\002\020\001\022\025\n\ttemplates\030\004 \003(\002B\002\020\001\"\262\001"
+    "\n\010channels\022\n\n\002id\030\001 \002(\005\022\n\n\002ch\030\002 \002(\005\022\014\n\004ga"
+    "in\030\003 \002(\002\022\013\n\003agc\030\004 \002(\002\022\021\n\tcentering\030\005 \002(\002"
+    "\022\021\n\tthreshold\030\006 \002(\002\022\"\n\004unit\030\007 \003(\0132\024.Conf"
+    "iguration.units\022\024\n\010pca_mean\030\010 \003(\002B\002\020\001\022\023\n"
+    "\007pca_max\030\t \003(\002B\002\020\001\">\n\006radios\022\n\n\002id\030\001 \002(\005"
+    "\022(\n\007channel\030\002 \003(\0132\027.Configuration.channe"
+    "ls\"Z\n\nparameters\022\024\n\014signal_chain\030\001 \002(\005\022$"
+    "\n\005radio\030\002 \003(\0132\025.Configuration.radios\022\020\n\010"
+    "selected\030\003 \003(\005\"&\n\005state\022\035\n\025default_confi"
+    "guration\030\001 \001(\t", 494);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "parameters.proto", &protobuf_RegisterTypes);
   units::default_instance_ = new units();
   channels::default_instance_ = new channels();
+  radios::default_instance_ = new radios();
   parameters::default_instance_ = new parameters();
   state::default_instance_ = new state();
   units::default_instance_->InitAsDefaultInstance();
   channels::default_instance_->InitAsDefaultInstance();
+  radios::default_instance_->InitAsDefaultInstance();
   parameters::default_instance_->InitAsDefaultInstance();
   state::default_instance_->InitAsDefaultInstance();
   ::google::protobuf::internal::OnShutdown(&protobuf_ShutdownFile_parameters_2eproto);
@@ -555,6 +583,7 @@ void units::Swap(units* other) {
 
 #ifndef _MSC_VER
 const int channels::kIdFieldNumber;
+const int channels::kChFieldNumber;
 const int channels::kGainFieldNumber;
 const int channels::kAgcFieldNumber;
 const int channels::kCenteringFieldNumber;
@@ -581,6 +610,7 @@ channels::channels(const channels& from)
 void channels::SharedCtor() {
   _cached_size_ = 0;
   id_ = 0;
+  ch_ = 0;
   gain_ = 0;
   agc_ = 0;
   centering_ = 0;
@@ -620,6 +650,7 @@ channels* channels::New() const {
 void channels::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
     id_ = 0;
+    ch_ = 0;
     gain_ = 0;
     agc_ = 0;
     centering_ = 0;
@@ -649,12 +680,28 @@ bool channels::MergePartialFromCodedStream(
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(21)) goto parse_gain;
+        if (input->ExpectTag(16)) goto parse_ch;
         break;
       }
       
-      // required float gain = 2;
+      // required int32 ch = 2;
       case 2: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
+         parse_ch:
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   ::google::protobuf::int32, ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
+                 input, &ch_)));
+          set_has_ch();
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(29)) goto parse_gain;
+        break;
+      }
+      
+      // required float gain = 3;
+      case 3: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_FIXED32) {
          parse_gain:
@@ -665,12 +712,12 @@ bool channels::MergePartialFromCodedStream(
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(29)) goto parse_agc;
+        if (input->ExpectTag(37)) goto parse_agc;
         break;
       }
       
-      // required float agc = 3;
-      case 3: {
+      // required float agc = 4;
+      case 4: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_FIXED32) {
          parse_agc:
@@ -681,12 +728,12 @@ bool channels::MergePartialFromCodedStream(
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(37)) goto parse_centering;
+        if (input->ExpectTag(45)) goto parse_centering;
         break;
       }
       
-      // required float centering = 4;
-      case 4: {
+      // required float centering = 5;
+      case 5: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_FIXED32) {
          parse_centering:
@@ -697,12 +744,12 @@ bool channels::MergePartialFromCodedStream(
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(45)) goto parse_threshold;
+        if (input->ExpectTag(53)) goto parse_threshold;
         break;
       }
       
-      // required float threshold = 5;
-      case 5: {
+      // required float threshold = 6;
+      case 6: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_FIXED32) {
          parse_threshold:
@@ -713,12 +760,12 @@ bool channels::MergePartialFromCodedStream(
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(50)) goto parse_unit;
+        if (input->ExpectTag(58)) goto parse_unit;
         break;
       }
       
-      // repeated .Configuration.units unit = 6;
-      case 6: {
+      // repeated .Configuration.units unit = 7;
+      case 7: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
          parse_unit:
@@ -727,13 +774,13 @@ bool channels::MergePartialFromCodedStream(
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(50)) goto parse_unit;
-        if (input->ExpectTag(58)) goto parse_pca_mean;
+        if (input->ExpectTag(58)) goto parse_unit;
+        if (input->ExpectTag(66)) goto parse_pca_mean;
         break;
       }
       
-      // repeated float pca_mean = 7 [packed = true];
-      case 7: {
+      // repeated float pca_mean = 8 [packed = true];
+      case 8: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
          parse_pca_mean:
@@ -745,16 +792,16 @@ bool channels::MergePartialFromCodedStream(
                       WIRETYPE_FIXED32) {
           DO_((::google::protobuf::internal::WireFormatLite::ReadRepeatedPrimitiveNoInline<
                    float, ::google::protobuf::internal::WireFormatLite::TYPE_FLOAT>(
-                 1, 58, input, this->mutable_pca_mean())));
+                 1, 66, input, this->mutable_pca_mean())));
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(66)) goto parse_pca_max;
+        if (input->ExpectTag(74)) goto parse_pca_max;
         break;
       }
       
-      // repeated float pca_max = 8 [packed = true];
-      case 8: {
+      // repeated float pca_max = 9 [packed = true];
+      case 9: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
          parse_pca_max:
@@ -766,7 +813,7 @@ bool channels::MergePartialFromCodedStream(
                       WIRETYPE_FIXED32) {
           DO_((::google::protobuf::internal::WireFormatLite::ReadRepeatedPrimitiveNoInline<
                    float, ::google::protobuf::internal::WireFormatLite::TYPE_FLOAT>(
-                 1, 66, input, this->mutable_pca_max())));
+                 1, 74, input, this->mutable_pca_max())));
         } else {
           goto handle_uninterpreted;
         }
@@ -797,35 +844,40 @@ void channels::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormatLite::WriteInt32(1, this->id(), output);
   }
   
-  // required float gain = 2;
+  // required int32 ch = 2;
+  if (has_ch()) {
+    ::google::protobuf::internal::WireFormatLite::WriteInt32(2, this->ch(), output);
+  }
+  
+  // required float gain = 3;
   if (has_gain()) {
-    ::google::protobuf::internal::WireFormatLite::WriteFloat(2, this->gain(), output);
+    ::google::protobuf::internal::WireFormatLite::WriteFloat(3, this->gain(), output);
   }
   
-  // required float agc = 3;
+  // required float agc = 4;
   if (has_agc()) {
-    ::google::protobuf::internal::WireFormatLite::WriteFloat(3, this->agc(), output);
+    ::google::protobuf::internal::WireFormatLite::WriteFloat(4, this->agc(), output);
   }
   
-  // required float centering = 4;
+  // required float centering = 5;
   if (has_centering()) {
-    ::google::protobuf::internal::WireFormatLite::WriteFloat(4, this->centering(), output);
+    ::google::protobuf::internal::WireFormatLite::WriteFloat(5, this->centering(), output);
   }
   
-  // required float threshold = 5;
+  // required float threshold = 6;
   if (has_threshold()) {
-    ::google::protobuf::internal::WireFormatLite::WriteFloat(5, this->threshold(), output);
+    ::google::protobuf::internal::WireFormatLite::WriteFloat(6, this->threshold(), output);
   }
   
-  // repeated .Configuration.units unit = 6;
+  // repeated .Configuration.units unit = 7;
   for (int i = 0; i < this->unit_size(); i++) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
-      6, this->unit(i), output);
+      7, this->unit(i), output);
   }
   
-  // repeated float pca_mean = 7 [packed = true];
+  // repeated float pca_mean = 8 [packed = true];
   if (this->pca_mean_size() > 0) {
-    ::google::protobuf::internal::WireFormatLite::WriteTag(7, ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED, output);
+    ::google::protobuf::internal::WireFormatLite::WriteTag(8, ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED, output);
     output->WriteVarint32(_pca_mean_cached_byte_size_);
   }
   for (int i = 0; i < this->pca_mean_size(); i++) {
@@ -833,9 +885,9 @@ void channels::SerializeWithCachedSizes(
       this->pca_mean(i), output);
   }
   
-  // repeated float pca_max = 8 [packed = true];
+  // repeated float pca_max = 9 [packed = true];
   if (this->pca_max_size() > 0) {
-    ::google::protobuf::internal::WireFormatLite::WriteTag(8, ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED, output);
+    ::google::protobuf::internal::WireFormatLite::WriteTag(9, ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED, output);
     output->WriteVarint32(_pca_max_cached_byte_size_);
   }
   for (int i = 0; i < this->pca_max_size(); i++) {
@@ -856,37 +908,42 @@ void channels::SerializeWithCachedSizes(
     target = ::google::protobuf::internal::WireFormatLite::WriteInt32ToArray(1, this->id(), target);
   }
   
-  // required float gain = 2;
+  // required int32 ch = 2;
+  if (has_ch()) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteInt32ToArray(2, this->ch(), target);
+  }
+  
+  // required float gain = 3;
   if (has_gain()) {
-    target = ::google::protobuf::internal::WireFormatLite::WriteFloatToArray(2, this->gain(), target);
+    target = ::google::protobuf::internal::WireFormatLite::WriteFloatToArray(3, this->gain(), target);
   }
   
-  // required float agc = 3;
+  // required float agc = 4;
   if (has_agc()) {
-    target = ::google::protobuf::internal::WireFormatLite::WriteFloatToArray(3, this->agc(), target);
+    target = ::google::protobuf::internal::WireFormatLite::WriteFloatToArray(4, this->agc(), target);
   }
   
-  // required float centering = 4;
+  // required float centering = 5;
   if (has_centering()) {
-    target = ::google::protobuf::internal::WireFormatLite::WriteFloatToArray(4, this->centering(), target);
+    target = ::google::protobuf::internal::WireFormatLite::WriteFloatToArray(5, this->centering(), target);
   }
   
-  // required float threshold = 5;
+  // required float threshold = 6;
   if (has_threshold()) {
-    target = ::google::protobuf::internal::WireFormatLite::WriteFloatToArray(5, this->threshold(), target);
+    target = ::google::protobuf::internal::WireFormatLite::WriteFloatToArray(6, this->threshold(), target);
   }
   
-  // repeated .Configuration.units unit = 6;
+  // repeated .Configuration.units unit = 7;
   for (int i = 0; i < this->unit_size(); i++) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
-        6, this->unit(i), target);
+        7, this->unit(i), target);
   }
   
-  // repeated float pca_mean = 7 [packed = true];
+  // repeated float pca_mean = 8 [packed = true];
   if (this->pca_mean_size() > 0) {
     target = ::google::protobuf::internal::WireFormatLite::WriteTagToArray(
-      7,
+      8,
       ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED,
       target);
     target = ::google::protobuf::io::CodedOutputStream::WriteVarint32ToArray(
@@ -897,10 +954,10 @@ void channels::SerializeWithCachedSizes(
       WriteFloatNoTagToArray(this->pca_mean(i), target);
   }
   
-  // repeated float pca_max = 8 [packed = true];
+  // repeated float pca_max = 9 [packed = true];
   if (this->pca_max_size() > 0) {
     target = ::google::protobuf::internal::WireFormatLite::WriteTagToArray(
-      8,
+      9,
       ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED,
       target);
     target = ::google::protobuf::io::CodedOutputStream::WriteVarint32ToArray(
@@ -929,28 +986,35 @@ int channels::ByteSize() const {
           this->id());
     }
     
-    // required float gain = 2;
+    // required int32 ch = 2;
+    if (has_ch()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::Int32Size(
+          this->ch());
+    }
+    
+    // required float gain = 3;
     if (has_gain()) {
       total_size += 1 + 4;
     }
     
-    // required float agc = 3;
+    // required float agc = 4;
     if (has_agc()) {
       total_size += 1 + 4;
     }
     
-    // required float centering = 4;
+    // required float centering = 5;
     if (has_centering()) {
       total_size += 1 + 4;
     }
     
-    // required float threshold = 5;
+    // required float threshold = 6;
     if (has_threshold()) {
       total_size += 1 + 4;
     }
     
   }
-  // repeated .Configuration.units unit = 6;
+  // repeated .Configuration.units unit = 7;
   total_size += 1 * this->unit_size();
   for (int i = 0; i < this->unit_size(); i++) {
     total_size +=
@@ -958,7 +1022,7 @@ int channels::ByteSize() const {
         this->unit(i));
   }
   
-  // repeated float pca_mean = 7 [packed = true];
+  // repeated float pca_mean = 8 [packed = true];
   {
     int data_size = 0;
     data_size = 4 * this->pca_mean_size();
@@ -970,7 +1034,7 @@ int channels::ByteSize() const {
     total_size += data_size;
   }
   
-  // repeated float pca_max = 8 [packed = true];
+  // repeated float pca_max = 9 [packed = true];
   {
     int data_size = 0;
     data_size = 4 * this->pca_max_size();
@@ -1014,6 +1078,9 @@ void channels::MergeFrom(const channels& from) {
     if (from.has_id()) {
       set_id(from.id());
     }
+    if (from.has_ch()) {
+      set_ch(from.ch());
+    }
     if (from.has_gain()) {
       set_gain(from.gain());
     }
@@ -1043,7 +1110,7 @@ void channels::CopyFrom(const channels& from) {
 }
 
 bool channels::IsInitialized() const {
-  if ((_has_bits_[0] & 0x0000001f) != 0x0000001f) return false;
+  if ((_has_bits_[0] & 0x0000003f) != 0x0000003f) return false;
   
   for (int i = 0; i < unit_size(); i++) {
     if (!this->unit(i).IsInitialized()) return false;
@@ -1054,6 +1121,7 @@ bool channels::IsInitialized() const {
 void channels::Swap(channels* other) {
   if (other != this) {
     std::swap(id_, other->id_);
+    std::swap(ch_, other->ch_);
     std::swap(gain_, other->gain_);
     std::swap(agc_, other->agc_);
     std::swap(centering_, other->centering_);
@@ -1079,8 +1147,259 @@ void channels::Swap(channels* other) {
 // ===================================================================
 
 #ifndef _MSC_VER
+const int radios::kIdFieldNumber;
+const int radios::kChannelFieldNumber;
+#endif  // !_MSC_VER
+
+radios::radios()
+  : ::google::protobuf::Message() {
+  SharedCtor();
+}
+
+void radios::InitAsDefaultInstance() {
+}
+
+radios::radios(const radios& from)
+  : ::google::protobuf::Message() {
+  SharedCtor();
+  MergeFrom(from);
+}
+
+void radios::SharedCtor() {
+  _cached_size_ = 0;
+  id_ = 0;
+  ::memset(_has_bits_, 0, sizeof(_has_bits_));
+}
+
+radios::~radios() {
+  SharedDtor();
+}
+
+void radios::SharedDtor() {
+  if (this != default_instance_) {
+  }
+}
+
+void radios::SetCachedSize(int size) const {
+  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+  _cached_size_ = size;
+  GOOGLE_SAFE_CONCURRENT_WRITES_END();
+}
+const ::google::protobuf::Descriptor* radios::descriptor() {
+  protobuf_AssignDescriptorsOnce();
+  return radios_descriptor_;
+}
+
+const radios& radios::default_instance() {
+  if (default_instance_ == NULL) protobuf_AddDesc_parameters_2eproto();  return *default_instance_;
+}
+
+radios* radios::default_instance_ = NULL;
+
+radios* radios::New() const {
+  return new radios;
+}
+
+void radios::Clear() {
+  if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+    id_ = 0;
+  }
+  channel_.Clear();
+  ::memset(_has_bits_, 0, sizeof(_has_bits_));
+  mutable_unknown_fields()->Clear();
+}
+
+bool radios::MergePartialFromCodedStream(
+    ::google::protobuf::io::CodedInputStream* input) {
+#define DO_(EXPRESSION) if (!(EXPRESSION)) return false
+  ::google::protobuf::uint32 tag;
+  while ((tag = input->ReadTag()) != 0) {
+    switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
+      // required int32 id = 1;
+      case 1: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   ::google::protobuf::int32, ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
+                 input, &id_)));
+          set_has_id();
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(18)) goto parse_channel;
+        break;
+      }
+      
+      // repeated .Configuration.channels channel = 2;
+      case 2: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
+         parse_channel:
+          DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
+                input, add_channel()));
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(18)) goto parse_channel;
+        if (input->ExpectAtEnd()) return true;
+        break;
+      }
+      
+      default: {
+      handle_uninterpreted:
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_END_GROUP) {
+          return true;
+        }
+        DO_(::google::protobuf::internal::WireFormat::SkipField(
+              input, tag, mutable_unknown_fields()));
+        break;
+      }
+    }
+  }
+  return true;
+#undef DO_
+}
+
+void radios::SerializeWithCachedSizes(
+    ::google::protobuf::io::CodedOutputStream* output) const {
+  // required int32 id = 1;
+  if (has_id()) {
+    ::google::protobuf::internal::WireFormatLite::WriteInt32(1, this->id(), output);
+  }
+  
+  // repeated .Configuration.channels channel = 2;
+  for (int i = 0; i < this->channel_size(); i++) {
+    ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
+      2, this->channel(i), output);
+  }
+  
+  if (!unknown_fields().empty()) {
+    ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
+        unknown_fields(), output);
+  }
+}
+
+::google::protobuf::uint8* radios::SerializeWithCachedSizesToArray(
+    ::google::protobuf::uint8* target) const {
+  // required int32 id = 1;
+  if (has_id()) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteInt32ToArray(1, this->id(), target);
+  }
+  
+  // repeated .Configuration.channels channel = 2;
+  for (int i = 0; i < this->channel_size(); i++) {
+    target = ::google::protobuf::internal::WireFormatLite::
+      WriteMessageNoVirtualToArray(
+        2, this->channel(i), target);
+  }
+  
+  if (!unknown_fields().empty()) {
+    target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
+        unknown_fields(), target);
+  }
+  return target;
+}
+
+int radios::ByteSize() const {
+  int total_size = 0;
+  
+  if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+    // required int32 id = 1;
+    if (has_id()) {
+      total_size += 1 +
+        ::google::protobuf::internal::WireFormatLite::Int32Size(
+          this->id());
+    }
+    
+  }
+  // repeated .Configuration.channels channel = 2;
+  total_size += 1 * this->channel_size();
+  for (int i = 0; i < this->channel_size(); i++) {
+    total_size +=
+      ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
+        this->channel(i));
+  }
+  
+  if (!unknown_fields().empty()) {
+    total_size +=
+      ::google::protobuf::internal::WireFormat::ComputeUnknownFieldsSize(
+        unknown_fields());
+  }
+  GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
+  _cached_size_ = total_size;
+  GOOGLE_SAFE_CONCURRENT_WRITES_END();
+  return total_size;
+}
+
+void radios::MergeFrom(const ::google::protobuf::Message& from) {
+  GOOGLE_CHECK_NE(&from, this);
+  const radios* source =
+    ::google::protobuf::internal::dynamic_cast_if_available<const radios*>(
+      &from);
+  if (source == NULL) {
+    ::google::protobuf::internal::ReflectionOps::Merge(from, this);
+  } else {
+    MergeFrom(*source);
+  }
+}
+
+void radios::MergeFrom(const radios& from) {
+  GOOGLE_CHECK_NE(&from, this);
+  channel_.MergeFrom(from.channel_);
+  if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+    if (from.has_id()) {
+      set_id(from.id());
+    }
+  }
+  mutable_unknown_fields()->MergeFrom(from.unknown_fields());
+}
+
+void radios::CopyFrom(const ::google::protobuf::Message& from) {
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+void radios::CopyFrom(const radios& from) {
+  if (&from == this) return;
+  Clear();
+  MergeFrom(from);
+}
+
+bool radios::IsInitialized() const {
+  if ((_has_bits_[0] & 0x00000001) != 0x00000001) return false;
+  
+  for (int i = 0; i < channel_size(); i++) {
+    if (!this->channel(i).IsInitialized()) return false;
+  }
+  return true;
+}
+
+void radios::Swap(radios* other) {
+  if (other != this) {
+    std::swap(id_, other->id_);
+    channel_.Swap(&other->channel_);
+    std::swap(_has_bits_[0], other->_has_bits_[0]);
+    _unknown_fields_.Swap(&other->_unknown_fields_);
+    std::swap(_cached_size_, other->_cached_size_);
+  }
+}
+
+::google::protobuf::Metadata radios::GetMetadata() const {
+  protobuf_AssignDescriptorsOnce();
+  ::google::protobuf::Metadata metadata;
+  metadata.descriptor = radios_descriptor_;
+  metadata.reflection = radios_reflection_;
+  return metadata;
+}
+
+
+// ===================================================================
+
+#ifndef _MSC_VER
 const int parameters::kSignalChainFieldNumber;
-const int parameters::kChannelFieldNumber;
+const int parameters::kRadioFieldNumber;
 const int parameters::kSelectedFieldNumber;
 #endif  // !_MSC_VER
 
@@ -1137,7 +1456,7 @@ void parameters::Clear() {
   if (_has_bits_[0 / 32] & (0xffu << (0 % 32))) {
     signal_chain_ = 0;
   }
-  channel_.Clear();
+  radio_.Clear();
   selected_.Clear();
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
   mutable_unknown_fields()->Clear();
@@ -1160,21 +1479,21 @@ bool parameters::MergePartialFromCodedStream(
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(18)) goto parse_channel;
+        if (input->ExpectTag(18)) goto parse_radio;
         break;
       }
       
-      // repeated .Configuration.channels channel = 2;
+      // repeated .Configuration.radios radio = 2;
       case 2: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
-         parse_channel:
+         parse_radio:
           DO_(::google::protobuf::internal::WireFormatLite::ReadMessageNoVirtual(
-                input, add_channel()));
+                input, add_radio()));
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(18)) goto parse_channel;
+        if (input->ExpectTag(18)) goto parse_radio;
         if (input->ExpectTag(24)) goto parse_selected;
         break;
       }
@@ -1224,10 +1543,10 @@ void parameters::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormatLite::WriteInt32(1, this->signal_chain(), output);
   }
   
-  // repeated .Configuration.channels channel = 2;
-  for (int i = 0; i < this->channel_size(); i++) {
+  // repeated .Configuration.radios radio = 2;
+  for (int i = 0; i < this->radio_size(); i++) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
-      2, this->channel(i), output);
+      2, this->radio(i), output);
   }
   
   // repeated int32 selected = 3;
@@ -1249,11 +1568,11 @@ void parameters::SerializeWithCachedSizes(
     target = ::google::protobuf::internal::WireFormatLite::WriteInt32ToArray(1, this->signal_chain(), target);
   }
   
-  // repeated .Configuration.channels channel = 2;
-  for (int i = 0; i < this->channel_size(); i++) {
+  // repeated .Configuration.radios radio = 2;
+  for (int i = 0; i < this->radio_size(); i++) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
-        2, this->channel(i), target);
+        2, this->radio(i), target);
   }
   
   // repeated int32 selected = 3;
@@ -1281,12 +1600,12 @@ int parameters::ByteSize() const {
     }
     
   }
-  // repeated .Configuration.channels channel = 2;
-  total_size += 1 * this->channel_size();
-  for (int i = 0; i < this->channel_size(); i++) {
+  // repeated .Configuration.radios radio = 2;
+  total_size += 1 * this->radio_size();
+  for (int i = 0; i < this->radio_size(); i++) {
     total_size +=
       ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
-        this->channel(i));
+        this->radio(i));
   }
   
   // repeated int32 selected = 3;
@@ -1324,7 +1643,7 @@ void parameters::MergeFrom(const ::google::protobuf::Message& from) {
 
 void parameters::MergeFrom(const parameters& from) {
   GOOGLE_CHECK_NE(&from, this);
-  channel_.MergeFrom(from.channel_);
+  radio_.MergeFrom(from.radio_);
   selected_.MergeFrom(from.selected_);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
     if (from.has_signal_chain()) {
@@ -1349,8 +1668,8 @@ void parameters::CopyFrom(const parameters& from) {
 bool parameters::IsInitialized() const {
   if ((_has_bits_[0] & 0x00000001) != 0x00000001) return false;
   
-  for (int i = 0; i < channel_size(); i++) {
-    if (!this->channel(i).IsInitialized()) return false;
+  for (int i = 0; i < radio_size(); i++) {
+    if (!this->radio(i).IsInitialized()) return false;
   }
   return true;
 }
@@ -1358,7 +1677,7 @@ bool parameters::IsInitialized() const {
 void parameters::Swap(parameters* other) {
   if (other != this) {
     std::swap(signal_chain_, other->signal_chain_);
-    channel_.Swap(&other->channel_);
+    radio_.Swap(&other->radio_);
     selected_.Swap(&other->selected_);
     std::swap(_has_bits_[0], other->_has_bits_[0]);
     _unknown_fields_.Swap(&other->_unknown_fields_);

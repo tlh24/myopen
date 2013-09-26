@@ -760,9 +760,21 @@ void saveState(){
 	Configuration::parameters params;
 	Configuration::state state;
 	
-	for(int i=0; i<128*NSCALE; i++){
-		params.add_channel();
-		g_c[i]->save(&params);
+	for(int r=0; r<NSCALE; r++)
+	{
+	  params.add_radio();
+	}
+	
+	for(int r=0; r<NSCALE; r++)
+	{
+	  Configuration::radios* radio = params.mutable_radio(r);
+	  radio->set_id(g_radioChannel[r]);
+	  
+	    for(int i=0; i<128; i++){
+		    radio->add_channel();
+		    g_c[i+(128*r)]->save(radio);
+	    }
+	    
 	}
 	for(int i=0; i<4; i++){
 		params.add_selected(g_channel[i]);
@@ -1897,8 +1909,11 @@ int main(int argn, char **argc)
 	
 	if (!params.ParseFromIstream(&input)){
 		//Failed to load from file, intialize as default
-		for(int i=0; i<128*NSCALE; i++){
-			g_c[i] = new Channel(i); //default constructor
+		for(int i=0; i<NSCALE; i++){
+		  for(int c=0; c<128; c++){
+			int id = c+(128*i); 
+			g_c[id] = new Channel(id, c); //default constructor
+		  }
 		}
 		//also initialize parameters completely, and save to file
 	}
@@ -1909,9 +1924,24 @@ int main(int argn, char **argc)
 				chan = chan & (128*NSCALE-1); 
 			g_channel[i] = chan; 
 		}
-		for(int i=0; i<128*NSCALE; i++){
-			g_c[i] = new Channel(i, &params); //default constructor
-		}
+		for(int r=0; r<NSCALE; r++){
+			for( int i = 0; i < params.radio_size(); i++){
+				const Configuration::radios radio = params.radio(i);
+				if (radio.has_id() && radio.id() == g_radioChannel[r]){
+					for(int c=0; c<128; c++){
+						int id = c+(128*r); 
+						g_c[id] = new Channel(id, c, radio); //default constructor
+					}
+				break; //found it, no need to search more
+				}
+			}
+			//Did not exit the iteration, did not find a suitable match
+			for(int c=0; c<128; c++){
+					int id = c+(128*r); 
+					 g_c[id] = new Channel(id, c); //default constructor
+				}
+			}
+		  
 	}
 	input.close();
 	g_headstage = new Headstage(g_channel, g_c);
