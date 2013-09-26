@@ -23,7 +23,8 @@ private:
 	float 	m_agc; 
 	VboPca*	m_pcaVbo; //2D points, with color. 
 	float	m_template[2][16]; // range 1 mean 0.
-	int	m_ch; //channel number, obvi
+	int	m_id; //unique channel ID from radio
+	int	m_ch; //channel number
 	float	m_pca[2][32]; //range 1 mean 0
 	float 	m_pcaScl[2]; //sqrt of the eigenvalues.
 	
@@ -34,7 +35,7 @@ public:
 	i64 m_isi[2][100]; //counts of the isi, in units of 4 packets -- 768us/packet.
 	int	m_lastSpike[2]; //zero when a spike occurs. 
 	
-	Channel(int ch){
+	Channel(int id, int ch){
 		//default constructor
 		m_wfVbo = new Vbo(6, 512, 34); //sorted units, with color. 
 		m_usVbo = new Vbo(3, 256, 34); //unsorted units, all gray.
@@ -45,6 +46,7 @@ public:
 		m_pcaVbo = new VboPca(6, 1024*8, 1, pca_mean, pca_max); 
 		m_pcaVbo->m_fade = 0.f; 
 		m_ch = ch; 
+		m_id = id;
 		//init PCA, template. 
 		for(int j=0; j<32; j++){
 			m_pca[0][j] = 1.f/8.f; 
@@ -112,92 +114,11 @@ public:
 		}
 	}
 	
-	Channel(int ch, MatStor* ms){
-		//old matlab constructor
-		m_wfVbo = new Vbo(6, 512, 34); //sorted units, with color. 
-		m_usVbo = new Vbo(3, 256, 34); //unsorted units, all gray.
-		const int vbodims = 6;
-		float pca_mean[vbodims] = {0};
-		float pca_max[vbodims] = {0};
-		ms->getValue3(ch, 0, "vbopca_mean", pca_mean, 6); 
-		ms->getValue3(ch, 0, "vbopca_max", pca_max, 6); 
-		m_pcaVbo = new VboPca(6, 1024*8, 1, pca_mean, pca_max); 
-		m_pcaVbo->m_fade = 0.f; 
-		m_ch = ch; 
-		//init PCA, template. 
-		for(int j=0; j<32; j++){
-			m_pca[0][j] = 1.f/8.f; 
-			m_pca[1][j] = (j > 15 ? 1.f/8.f : -1.f/8.f); 
-			m_pcaScl[0] = m_pcaScl[1] = 1.f; 
-		}
-		//template defaults here
-		unsigned char tmplA[16]={21,37,82,140,193,228,240,235,219,198,178,162,152,146,140,135};
-		unsigned char tmplB[16]={122,134,150,160,139,90,60,42,35,52,87,112,130,135,142,150};
-		for(int j=0; j<16; j++){
-			m_template[0][j] = ((float)tmplA[j] / 255.f)-0.5f;
-			m_template[1][j] = ((float)tmplB[j] / 255.f)-0.5f; 
-		}
-		//read from preferences if possible ...
-		if(ms){
-			for(int j=0; j<2; j++){
-				ms->getValue3(ch, j, "pca", &(m_pca[j][0]), 32);
-				ms->getValue3(ch, j, "template", &(m_template[j][0]), 32);
-				m_aperture[j] = ms->getValue2(ch, j, "aperture", 0.0f); 
-			}
-			ms->getValue3(ch, 0, "pcaScl", m_pcaScl, 2);
-			m_threshold = ms->getValue(ch, "threshold", 1.f);  //default to zero
-			m_centering = ms->getValue(ch, "centering", 25.f); 
-			m_gain = ms->getValue(ch, "gain", 2.f);
-			m_agc = ms->getValue(ch, "agc", 6000.f);
-		}
-		//init m_wfVbo.
-		for(int i=0; i<512; i++){
-			float* f = m_wfVbo->addRow(); 
-			f[0] = 0.f; 
-			f[1] = 0.5f; 
-			f[2] = 0.f;
-			f[3] = f[4] = f[5] = 0.f; 
-			for(int j=0; j<32; j++){
-				f[(j+1)*6 + 0] = (float)j/31.f;
-				f[(j+1)*6 + 1] = 0.5f;
-				f[(j+1)*6 + 2] = 0.0f; 
-				for(int k=0; k<3; k++)
-					f[(j+1)*6 + 3 + k] = 0.5f; //all init gray.
-			}
-			f[(33)*6 + 0] = 1.f;
-			f[(33)*6 + 1] = 0.5f;
-			f[(33)*6 + 2] = 0.0f; 
-			for(int k=0; k<3; k++)
-				f[(33)*6 + 3 + k] = 0.5f; //all init gray.
-		}
-		//init unsorted Vbo, 
-		for(int i=0; i<256; i++){
-			float* f = m_usVbo->addRow(); 
-			f[0] = 0.f; 
-			f[1] = 0.5f; 
-			f[2] = 0.f;
-			for(int j=0; j<32; j++){
-				f[(j+1)*3 + 0] = (float)j/31.f;
-				f[(j+1)*3 + 1] = (float)rand()/(float)RAND_MAX - 0.5f;
-				f[(j+1)*3 + 2] = 0.0f; 
-			}
-			f[(33)*3 + 0] = 1.f;
-			f[(33)*3 + 1] = 0.5f;
-			f[(33)*3 + 2] = 0.0f; 
-		}
-		m_loc[0] = m_loc[1] = 0.f; 
-		m_loc[2] = m_loc[3] = 1.f; 
-		for(int u=0; u<2; u++){
-			m_lastSpike[u] = 0; 
-			for(unsigned int i=0; i < sizeof(m_isi[0])/sizeof(m_isi[0][0]); i++){
-				m_isi[u][i] = 0; 
-			}
-		}
-	}
 	
-	Channel(int ch, Configuration::parameters* params){
+	Channel(int id, int ch, const Configuration::radios& radio){
 		//constructor using prot buffers
-		const Configuration::channels chan = params->channel(ch);
+		
+		const Configuration::channels chan = radio.channel(ch);
 		
 		//printf("ChannelID %d", chan.id());
 		
@@ -207,7 +128,7 @@ public:
 		float pca_mean[vbodims] = {0};
 		float pca_max[vbodims] = {0};
 		
-		if(params->channel_size() > ch){
+		if(radio.channel_size() > ch){
 			for(int j = 0; j < vbodims; j++){
 				pca_mean[j] = chan.pca_mean(j);
 				pca_max[j]  = chan.pca_max(j);
@@ -217,6 +138,7 @@ public:
 		m_pcaVbo = new VboPca(6, 1024*8, 1, pca_mean, pca_max); 
 		m_pcaVbo->m_fade = 0.f; 
 		m_ch = ch; 
+		m_id = id;
 		//init PCA, template. 
 		for(int j=0; j<32; j++){
 			m_pca[0][j] = chan.unit(0).pca(j);
@@ -288,30 +210,17 @@ public:
 		delete m_usVbo; m_usVbo = 0; 
 		delete m_pcaVbo; m_pcaVbo = 0; 
 	}
-	void save(MatStor* ms){
-		for(int j=0; j<2; j++){
-			ms->setValue3(m_ch, j, "pca", &(m_pca[j][0]), 32);
-			ms->setValue3(m_ch, j, "template", &(m_template[j][0]), 16);
-			ms->setValue2(m_ch, j, "aperture", m_aperture[j]); 
-		}
-		ms->setValue3(m_ch, 0, "pcaScl", m_pcaScl, 2);
-		ms->setValue(m_ch, "threshold", m_threshold);
-		ms->setValue(m_ch, "centering", m_centering); 
-		ms->setValue(m_ch, "agc", m_agc); 
-		ms->setValue(m_ch, "gain", m_gain);
+
+	void save(Configuration::radios* radio){
 		
-		ms->setValue3(m_ch, 0, "vbopca_mean", m_pcaVbo->m_mean, 6);
-		ms->setValue3(m_ch, 0, "vbopca_max", m_pcaVbo->m_max, 6); 
-	}
-	void save(Configuration::parameters* params){
-		
-		if(params->channel_size() < m_ch){
-			params->add_channel();
+		if(radio->channel_size() < m_ch){
+			radio->add_channel();
 		}
 		
-		Configuration::channels* chan = params->mutable_channel(m_ch);
+		Configuration::channels* chan = radio->mutable_channel(m_ch);
 		
-		chan->set_id(m_ch);
+		chan->set_id(m_id);
+		chan->set_ch(m_ch);
 		for(int i=0; i< 2; i++){
 				chan->add_unit();
 		}
@@ -462,7 +371,7 @@ public:
 		}
 		printf("\n"); 
 		m_aperture[unit-1] = aperture * 255; 
-		printf("m_aperture[%d][%d] = %d\n", m_ch, unit-1, (int)m_aperture[unit-1]); 
+		printf("m_aperture[%d][%d] = %d\n", m_id, unit-1, (int)m_aperture[unit-1]); 
 		//update sorting based on new aperture.
 		//m_pcaVbo->updateAperture(m_template[unit-1], aperture, color); 
 		//store the equivalent of the unsigned bytes actually used on the headstage.
@@ -593,7 +502,7 @@ public:
 		glRasterPos2f(ox, oy + oh - 13.f*2.f/g_viewportSize[1]); //13 pixels vertical offset.
 		//kearning is from the lower right hand corner.
 		char buf[64];
-		snprintf(buf, 64, "Ch %d", m_ch); 
+		snprintf(buf, 64, "Ch %d", m_id); 
 		glPrint(buf);
 	}
 	void resetPca(){
