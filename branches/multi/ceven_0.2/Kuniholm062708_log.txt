@@ -1,0 +1,56 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                                                                                            %
+% Automatic Logfile from data acquisition session                                            %
+%                                                                                            %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ 
+ 
+%%%%%%%%%%%%%%%%%%          SESSION         %%%%%%%%%%%%%%%%%%
+Date:                    28-Jun-2008
+Session start time:      11:37:30 PM
+Session finish time:     11:42:57 PM
+Run time:                5.4578 minutes
+ 
+ 
+%%%%%%%%%%%%%%%%%%     INPUT PARAMETERS     %%%%%%%%%%%%%%%%%%
+A/D Device:              National Instruments
+Desired sample rate:     1024 Hz
+Actual sample rate:      1024.0218 Hz
+Record length:           256 samples
+Selected channels:       2 4 5 7 
+ 
+ 
+%%%%%%%%%%%%%%%%%%   PROCEDURE PARAMETERS   %%%%%%%%%%%%%%%%%%
+Number of trials:        2
+Number of contractions:  9
+Reps per contraction:    2
+Contraction duration:    5 seconds
+Contraction delay:       3 seconds
+Randomized:              No
+Included contractions:   
+   Forearm Pronation
+   Forearm Supination
+   Wrist Flexion
+   Wrist Extension
+   Gently Move Fingers - No Movement
+   Chuck Gripping
+   Key Gripping
+   Spread Fingers Open
+   Retract Fingers from Spread
+ 
+ 
+%%%%%%%%%%%%%%%%%%   RECORDING PARAMETERS   %%%%%%%%%%%%%%%%%%
+Root dierctory:          C:\Documents and Settings\Virgo\My Documents\myopen\trunk\ceven_0.2\
+Subject ID:              Kuniholm062708
+Save session parameters: Yes
+  Parameters filename:   Kuniholm062708_params.mat
+Save raw data:           Yes
+  Full data filename:    Kuniholm062708_Fulldata.mat
+Separate trial data:     No
+  Trial data filename(s):
+  Kuniholm062708_Trial_1_data.mat
+  Kuniholm062708_Trial_2_data.mat
+ 
+ 

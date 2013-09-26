@@ -1,0 +1,5 @@
+December 1 2011
+	Thoughts: really should put the LMS *after* filtering -- it just serves to 
+	get rid of the 60Hz, which the filters can deal with effectively already. 
+	If it's after the IIR fitlers, it will 'concentrate' more on in-band common-mode
+	noise. 

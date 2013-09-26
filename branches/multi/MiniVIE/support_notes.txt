@@ -1,0 +1,32 @@
+Support Notes
+--------------
+
+Tested with Matlab 2010b on WindowsXPSP3 32-bit
+Tested with Matlab 2010b+ on Windows7 64-bit (all execpt DAQ toolbox)
+
+
+Requirements: 
+
+For use of the DiscriminantAnalysis SignalAnalysis Classifier modules
+Statistics Toolbox
+
+
+For use of the DaqHwDevice input object
+Data Acquisition Toolbox.  See http://www.mathworks.com/products/daq/requirements.html
+
+Data acquisition toolbox notes:
+* For external DAQ devices, these typically require third party driver software.  
+
+* Measurement Computing products need the InstaCal driver software installed.  
+  Channel modes (e.g. differential versus single ended) should be configured with that tool
+
+* National Instruments board require the nidaqMX driver suite, available from the NI website
+  The complete install package is ~1.5GB, however you can alternatively download and install
+  the nidaqmx_core library which is only ~150 MB
+
+* Important: Please follow the instructions for registering the install DAQ device with the 
+  MATLAB environment.  This typically takes the form:
+  >> daqregister('nidaq')  % RUN AFTER LAUNCHING MATLAB IN ADMINISTRATOR MODE
+
+
+

@@ -1,0 +1,213 @@
+<html>
+<head>
+<title>myopen</title>
+<script type="text/javascript" src="gmm_test.js"></script>
+<script type="text/javascript" src="gmm_plot.js"></script>
+<script type="text/javascript" src="gmm_features.js"></script>
+<script type="text/javascript" src="gmm_display.js"></script>
+<script type="text/javascript" src="sylvester.src.js"></script>
+<script type="text/javascript" src="cholesky.js"></script>
+<script type="text/javascript" src="mvgaussian.js"></script>
+<script type="text/javascript" src="Lda.js"></script>
+<script type="text/javascript" src="bin_test.js"></script>
+</head>
+<body>
+<font face = "Times" color = "#470e78">
+<h1>Myopen configuration</h1>
+</font>
+<div style="background:#dedeee" align="center">
+<form action="test.pl" method="post">
+	Data Stream (port 4340, UDP)
+	<input type="submit" name="data_stream" value="Enable"/>
+	<input type="submit" name="data_stream" value="Disable"/>
+</form></div>
+<div style="background:#dedeee" align="center">
+<form action="test.pl" method="post">
+	Destination IP: 
+	<input type="text" name="ip1" size="2" value="191"/>
+	<input type="text" name="ip2" size="2" value="120">
+	<input type="text" name="ip3" size="2" value="122">
+	<input type="text" name="ip4" size="2" value="56">
+	<input type="submit" value="Set"/>
+</form>
+</div>
+<div style="background:#d8eeee" align="center">
+<form action="test.pl" method="post">
+	Cursor control channels: 
+	<table>
+	<tr><td>Mouse x+: </td>
+	<td><select name="xpos_chan">
+		<option value="0">0</option>
+		<option value="1">1</option>
+		<option value="2">2</option>
+		<option value="3">3</option>
+		<option value="4">4</option>
+		<option value="5">5</option>
+		<option value="6">6</option>
+		<option value="7">7</option>
+		<option value="8">8</option>
+		<option value="9">9</option>
+		<option value="10">10</option>
+		<option value="11">11</option>
+		<option value="12">12</option>
+		<option value="13">13</option>
+		<option value="14">14</option>
+		<option value="15">15</option>
+	</select></td></tr>
+	<tr><td>Mouse x-: </td>
+	<td><select name="xneg_chan">
+		<option value="0">0</option>
+		<option value="1">1</option>
+		<option value="2" selected="selected">2</option>
+		<option value="3">3</option>
+		<option value="4">4</option>
+		<option value="5">5</option>
+		<option value="6">6</option>
+		<option value="7">7</option>
+		<option value="8">8</option>
+		<option value="9">9</option>
+		<option value="10">10</option>
+		<option value="11">11</option>
+		<option value="12">12</option>
+		<option value="13">13</option>
+		<option value="14">14</option>
+		<option value="15">15</option>
+	</select></td></tr>
+	<tr><td>Mouse y+: </td>
+	<td><select name="ypos_chan">
+		<option value="0">0</option>
+		<option value="1">1</option>
+		<option value="2">2</option>
+		<option value="3" selected="selected">3</option>
+		<option value="4">4</option>
+		<option value="5">5</option>
+		<option value="6">6</option>
+		<option value="7">7</option>
+		<option value="8">8</option>
+		<option value="9">9</option>
+		<option value="10">10</option>
+		<option value="11">11</option>
+		<option value="12">12</option>
+		<option value="13">13</option>
+		<option value="14">14</option>
+		<option value="15">15</option>
+	</select></td></tr>
+	<tr><td>Mouse y-: </td>
+	<td><select name="yneg_chan"> 
+		<option value="0">0</option>
+		<option value="1">1</option>
+		<option value="2">2</option>
+		<option value="3">3</option>
+		<option value="4" selected="selected">4</option>
+		<option value="5">5</option>
+		<option value="6">6</option>
+		<option value="7">7</option>
+		<option value="8">8</option>
+		<option value="9">9</option>
+		<option value="10">10</option>
+		<option value="11">11</option>
+		<option value="12">12</option>
+		<option value="13">13</option>
+		<option value="14">14</option>
+		<option value="15">15</option>
+	</select></td></tr>
+	</table>
+	<input type="submit" value="Save"/>
+</form>
+</div>
+<div style="background:#dedeee" align="center">
+<form action="test.pl" method="post">
+	<input type="submit" name="calibrate" value="Calibrate Thresholds"/>
+</form>
+</div>
+<div style="background:#d8eeee" align="center">
+<form action="javascript:retrieveDataBlock(10000)" method="post">
+	<p>Plot Features:</p>
+	<table>
+	<tr><td>Feature X: </td>
+	<td><select name ="featone" id="featone" >
+		<option value ="0">Mean Absolute values</option>
+		<option value ="1">Wavelength Feature 1</option>
+		<option value ="2">Wavelength Feature 2</option>
+		<option value ="3">Zero Crossings</option>
+		<option value ="4">Slope Changes</option>
+		<option value ="5">Root Mean Square Values</option>
+	</select></td></tr>
+	<tr><td>Channel X: </td>
+	<td><select name ="chanone" id="chanone">
+		<option value ="0">1</option>
+		<option value ="1">2</option>
+		<option value ="2">3</option>
+		<option value ="3">4</option>
+		<option value ="4">5</option>
+	</select></td></tr>
+	</table>
+	<table>
+	<tr><td>Feature Y: </td>
+	<td><select name ="feattwo" id="feattwo" >
+		<option value ="0">Mean Absolute values</option>
+		<option value ="1">Wavelength Feature 1</option>
+		<option value ="2">Wavelength Feature 2</option>
+		<option value ="3">Zero Crossings</option>
+		<option value ="4">Slope Changes</option>
+		<option value ="5">Root Mean Square Values</option>
+	</select></td></tr>
+	<tr><td>Channel Y: </td>
+	<td><select name ="chantwo" id="chantwo" >
+		<option value ="0">1</option>
+		<option value ="1">2</option>
+		<option value ="2">3</option>
+		<option value ="3">4</option>
+		<option value ="4">5</option>
+	</select></td></tr>
+	</table>
+	<p></p>
+	<input type= "Submit" value = "Plot"/>
+</form>
+</div>
+<div align="center"  style="background:#0a0e35">
+<p><font color="red"></font></p>
+<canvas id="canvas" width="400" height="400"></canvas>
+</div>
+<div id="-2">
+	<p>no results yet!</p>
+</div>
+<div style="background:#dedeee" align="center">
+<form>
+	<P> Plot</P>
+	<table>
+	<tr><td> Feature:</td>
+	<td><select name ="Lfeat" id="Lfeat" >
+		<option value ="0">Mean Absolute values</option>
+		<option value ="1">Wavelength Feature 1</option>
+		<option value ="2">Wavelength Feature 2</option>
+		<option value ="3">Zero Crossings</option>
+		<option value ="4">Slope Changes</option>
+		<option value ="5">Root Mean Square Values</option>
+	</select></td></tr>
+	<tr><td>Channel Y: </td>
+	<td><select name ="Lchan" id="Lchan" >
+		<option value ="0">1</option>
+		<option value ="1">2</option>
+		<option value ="2">3</option>
+		<option value ="3">4</option>
+		<option value ="4">5</option>
+	</select></td></tr>
+	</table>
+	<input type= "Button" value="Start Graph" OnClick="startPlot()"/>
+	<input type= "Button" value="Stop Graph" OnClick="stopPlot()"/>
+</form>
+</div>
+<div align= "center" style= "background: #0a0e35">
+<p><font color= "red"></font></p>
+<canvas id = "canvas2" width="400" height="400"></canvas>
+</div>
+<div style = "background:#dedeee" align="center">
+<form action="binRequest(databin)" method="post">
+<form>
+	<p> Binary Conversion <p>
+	<input type = "Button" value = "Convert"/>
+</form>
+</div>
+</body>
+</html>

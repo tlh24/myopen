@@ -1,0 +1,28 @@
+Things that we want to fix for next time: 
+* put a little dot on the silkscreen to incicate component orientation. 
+	(done in footprints for SMD 2-terminal devices)
+* FCI USB-B connector has the wrong PCB footprint (digikey 609-1039-ND)
+** need: 609-1045-ND !!! (that is, a type-A connector)
+* Get correct size for 33uh inductor.  (L5) suggestion: 495-1761-1-ND 
+(1812 case, not great DC resistance but ehwell, it is narrow enough.
+* dot between pads of 0402s (or box around them)
+* dot by diode (or line!)
+
+Fixes to the board:
+* Dout3 should go to DR1SEC not DR0SEC !!! (fixable on the board with a jumper)
+* label "MISO" was deleted from U4 (74LCX541) pin 7 (a6).  should be connected to nordic
+	pin #6 (after the 25 ohm resistor). 
+* pin 6 on the CAT32TDI (backlight current control) is not connected to Vbat. 
+	should not be connected to Vdd - too much current (50ma @ 7v )
+	for the switching regulator to start! 
+* use SN74LV595A, not 594A. (this is the shift register)
+* SN74LV595A is mislabeled -- OE should be tied to the inverse of reset, so that it 
+	is normally enabled. Or, OE should be tied to ground. 
+* bring the LCD signals out for probing... 
+* use TFS0 to control the LCD _cs signal
+* use larger holes around the perimeter, e.g. 7/64 for 4-40 screws.
+* use female DB9-connector, and bring it out to the board edge. 
+* put LEDs on the output of the MAX3421 in case someone wants to use them.
+* the EN signal on the ADUM2400 is active HIGH and must be tied to VCC!  
+	(ok on stage2)
+* all enable signals on the instrumentation amplifiers must be brought high. 

@@ -1,0 +1,13 @@
+-----------------------------------
+05-01-2008  Tim Hanson sideskate@gmail.com
+* Initial import (and open-sourcing) of the emg-dsp design. 
+* design is mostly done, just needs some (a lot!) of checking. 
+* need to reflow the zones, test DRC.  kicadocaml came up with a few 
+	 bits of wire that were not connected (net 0), need to remove. 
+* need to add the annotation text to the gerber files to describe how it should
+	be manufactured. 
+** need to generate & check the drill files, esp. given the two different via sizes. 
+* decided to keep the hardware designs in a seperate folder, as I imagine we'll 
+	have some software to run on the thing in short time :)
+* more later ...
+
