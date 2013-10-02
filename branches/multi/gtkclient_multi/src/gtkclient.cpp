@@ -68,8 +68,8 @@ cgVertexShader*		g_vsThreshold;
 float		g_cursPos[2];
 float		g_viewportSize[2] = {640, 480}; //width, height.
 
-char g_bridgeIP[NSCALE][256]; //which thread has which bridge IP. Needs a mutex lock.
-unsigned int  g_radioChannel[NSCALE] = {114, 124};
+char g_bridgeIP[NSCALE][256]; //which thread has which bridge IP. threadsafe
+unsigned int  g_radioChannel[NSCALE] = {124, 114};
 
 static float	g_fbuf[NFBUF][NSAMP*3]; //continuous waveform. range [-1 .. 1]
 i64				g_fbufW[NFBUF]; //where to write to (always increment), might not be thread safe
@@ -92,7 +92,7 @@ bool   g_rtMouseBtn = false;
 int    g_polyChan = 0;
 bool   g_addPoly = false;
 int    g_channel[4] = {0, 32*NSCALE, 64*NSCALE, 96*NSCALE};
-int	g_signalChain = 10; //what to sample in the headstage signal chain.
+int    g_signalChain = 10; //what to sample in the headstage signal chain.
 
 bool g_out = false;
 bool g_templMatch[NSCALE][128][2];//should this be a global?
@@ -106,10 +106,11 @@ bool g_saveFile = true;
 bool  g_closeSaveFile = false;
 
 
-int          g_totalPackets = 0;
+std::atomic<int> g_totalPackets(0);
+std::atomic<int> g_totalDropped(0);
 int          g_strobePackets = 0;
-unsigned int g_dropped = 0; //compare against the bridge.
-int          g_totalDropped = 0;
+unsigned int g_dropped[NSCALE] = {0}; //compare against the bridge.
+
 
 
 class Channel;
@@ -168,9 +169,6 @@ std::string g_stateFile  = "state.bin";
 int g_uiRecursion = 0; //prevents programmatic changes to the UI from causing commands to be sent to the headstage.
 
 //add mutexes
-pthread_mutex_t mutex_totalPackets;
-pthread_mutex_t mutex_totalDropped;
-pthread_mutex_t mutex_bridgeIP;
 
 i64 mod2(i64 a, i64 b){
 	i64 c = a % b;
@@ -731,18 +729,18 @@ static gboolean rotate (gpointer user_data){
 	oss << "headecho:";
 	for(int h =0; h < NSCALE; h++){
 		if(g_headstage->getHeadecho(h) != ((g_headstage->getEcho(h)-1) & 0xf))
-			oss << g_radioChannel[h] <<": " << "(ASYNC) ";
+			oss << g_radioChannel[h] <<": " << "(ASYNC) \n";
 		else
-			oss << g_radioChannel[h] << ": "  << "(SYNC) ";
+			oss << g_radioChannel[h] << ": "  << "(SYNC) \n";
 		g_headstage->setOldHeadecho(h);
 	}
 	gtk_label_set_text(GTK_LABEL(g_headechoLabel), oss.str().c_str());
 	char str[256];
 	//update the packets/sec label too
 	snprintf(str, 256, "pkts/sec: %.2f\ndropped %d of %d \nBER %f per 1e6 bits",
-			(double)g_totalPackets/(double)(gettime()),
-			g_totalDropped, g_totalPackets,
-			1e6*(double)g_totalDropped/((double)g_totalPackets*32*8));
+			(double)g_totalPackets.load()/(double)(gettime()),
+			g_totalDropped.load(), g_totalPackets.load(),
+			1e6*(double)g_totalDropped.load()/((double)g_totalPackets.load()*32*8));
 	gtk_label_set_text(GTK_LABEL(g_pktpsLabel), str); //works!
 
 		snprintf(str, 256, "strobe/sec: %.2f",
@@ -938,7 +936,6 @@ void* sock_thread(void* param){
 	//default txsockAddr
 	get_sockaddr(4342, (char*)destName, &g_txsockAddrArr[tid]);
 	int send_delay = 0;
-	g_totalPackets = 0;
 /* packet format from the headstage, UDP:
 4 bytes uint dropped radio packet count
 16 radio packets
@@ -1008,27 +1005,23 @@ packet format in the file, as saved here:
 
 			char* ptr = buf;
 			unsigned int drop = *(unsigned int*)ptr;
-			if(drop > g_dropped){
+			if(drop > g_dropped[tid]){
 				/*printf("dropped %d radio packets. %d of %d, BER (est) = %f per 1e6 bits\n",
 					   drop - g_dropped,
 					   g_totalDropped,
 					   g_totalPackets,
 					   1e6*(double)g_totalDropped/((double)g_totalPackets*32*8));*/
-				if((drop - g_dropped) < 4){
-					pthread_mutex_lock(&mutex_totalDropped);
-					g_totalDropped += drop - g_dropped;
-					pthread_mutex_unlock(&mutex_totalDropped);
+				if((drop - g_dropped[tid]) < 4){
+					g_totalDropped.fetch_add(drop - g_dropped[tid]);
 				}
-				g_dropped = drop;
+				g_dropped[tid] = drop;
 			}
 			ptr += 4;
 			n -= 4;
 			packet* p = (packet*)ptr;
 			int npack = n / sizeof(packet);
 			
-			pthread_mutex_lock(&mutex_totalPackets);
-			g_totalPackets += npack;
-			pthread_mutex_unlock(&mutex_totalPackets);
+			g_totalPackets.fetch_add(npack);
 
 			int channels[32]; char match[32];
 			Spike_msg smsg;
@@ -1311,9 +1304,7 @@ packet format in the file, as saved here:
 				g_fbufW[j]++;
 			}
 		}
-		pthread_mutex_lock(&mutex_totalPackets);
-		g_totalPackets += n/36;
-		pthread_mutex_unlock(&mutex_totalPackets);
+		g_totalPackets.fetch_add(n/36);
 #endif
 	}
 	close_socket(g_rxsock[tid]);
@@ -2300,10 +2291,6 @@ int main(int argn, char **argc)
 	GTK_WIDGET_SET_FLAGS(da1, GTK_CAN_FOCUS );
 	
 	//mutex inits
-	pthread_mutex_init(&mutex_totalPackets, NULL);
-	pthread_mutex_init(&mutex_totalDropped, NULL);
-	pthread_mutex_init(&mutex_bridgeIP, NULL);
-	
 	
 	g_startTime = gettime();
 	int t;
