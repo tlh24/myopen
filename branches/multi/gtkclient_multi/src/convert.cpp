@@ -113,9 +113,9 @@ int main(int argn, char **argc){
 		strncpy(s, argc[1], 512);
 		s[n-3] = 'm'; s[n-2] = 'a'; s[n-1] = 't';
 		if(argn == 2){
-			mat = Mat_Create(s,NULL);
+			mat = Mat_CreateVer(s,NULL,MAT_FT_MAT73);
 		}else{
-			mat = Mat_Create(argc[2],NULL);
+			mat = Mat_CreateVer(argc[2],NULL,MAT_FT_MAT73);
 		}
 		if(!mat){
 			printf("could not open for writing %s\n", argc[2]);
@@ -457,52 +457,52 @@ int main(int argn, char **argc){
 		matvar_t *matvar;
 		matvar = Mat_VarCreate("time",MAT_C_DOUBLE,MAT_T_DOUBLE,
 							   1,&tpp,time,0);
-		Mat_VarWrite( mat, matvar, 0 );
+		Mat_VarWrite( mat, matvar, MAT_COMPRESSION_NONE );
 		Mat_VarFree(matvar);
 		free(time); //I wish I had more.
 
 		matvar = Mat_VarCreate("mstimer",MAT_C_UINT32,MAT_T_UINT32,
 							   1,&tpp,mstimer,0);
-		Mat_VarWrite( mat, matvar, 0 );
+		Mat_VarWrite( mat, matvar, MAT_COMPRESSION_NONE );
 		Mat_VarFree(matvar);
 		free(mstimer);
 
 		matvar = Mat_VarCreate("spike_ts",MAT_C_UINT32,MAT_T_UINT32,
 							   1,&spp,spike_ts,0);
-		Mat_VarWrite( mat, matvar, 0 );
+		Mat_VarWrite( mat, matvar, MAT_COMPRESSION_NONE );
 		Mat_VarFree(matvar);
 		free(spike_ts);
 
 		matvar = Mat_VarCreate("spike_ch",MAT_C_UINT8,MAT_T_UINT8,
 							   1,&spp,spike_ch,0);
-		Mat_VarWrite( mat, matvar, 0 );
+		Mat_VarWrite( mat, matvar, MAT_COMPRESSION_NONE );
 		Mat_VarFree(matvar);
 		free(spike_ch);
 
 		matvar = Mat_VarCreate("spike_unit",MAT_C_UINT8,MAT_T_UINT8,
 							   1,&spp,spike_unit,0);
-		Mat_VarWrite( mat, matvar, 0 );
+		Mat_VarWrite( mat, matvar, MAT_COMPRESSION_NONE );
 		Mat_VarFree(matvar);
 		free(spike_unit);
 		
 				//put strobe sync in matlab
 		matvar = Mat_VarCreate("strobe_tx",MAT_C_DOUBLE,MAT_T_DOUBLE,
 							   1,&kpp,strobe_tx,0);
-		Mat_VarWrite( mat, matvar, 0 );
+		Mat_VarWrite( mat, matvar, MAT_COMPRESSION_NONE );
 		Mat_VarFree(matvar);
 		free(strobe_tx);
 		
 		//strobe reception timestamp
 		matvar = Mat_VarCreate("strobe_rx",MAT_C_DOUBLE,MAT_T_DOUBLE,
 							   1,&kpp,strobe_rx,0);
-		Mat_VarWrite( mat, matvar, 0 );
+		Mat_VarWrite( mat, matvar, MAT_COMPRESSION_NONE );
 		Mat_VarFree(matvar);
 		free(strobe_rx);
 		
 		//track frame
 		matvar = Mat_VarCreate("track_frame",MAT_C_UINT32,MAT_T_UINT32,
 							   1,&kpp,track_frame,0);
-		Mat_VarWrite( mat, matvar, 0 );
+		Mat_VarWrite( mat, matvar, MAT_COMPRESSION_NONE );
 		Mat_VarFree(matvar);
 		free(track_frame);
 		
