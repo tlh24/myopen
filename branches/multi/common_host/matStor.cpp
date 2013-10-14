@@ -11,7 +11,7 @@
 // to store it in a matlab file. 
 // therefore the task is to emulate sql.h and sql.cpp
 
-#define MATIOTYP int
+#define MATIOTYP size_t
 
 using namespace std; 
 
@@ -108,7 +108,7 @@ void MatStor::save(){
 		matdims[2] = dims[0]; 
 		matvar_t* var = Mat_VarCreate(nam.c_str(), MAT_C_SINGLE, MAT_T_SINGLE, 
 												3, matdims, dat.data(), 0); 
-		Mat_VarWrite(matfp, var, 0); 
+		Mat_VarWrite(matfp, var, MAT_COMPRESSION_NONE); 
 		Mat_VarFree(var); 
 	}
 	map<string, array2>::iterator it2; 
@@ -121,7 +121,7 @@ void MatStor::save(){
 		matdims[1] = dims[0]; 
 		matvar_t* var = Mat_VarCreate(nam.c_str(), MAT_C_SINGLE, MAT_T_SINGLE, 
 												2, matdims, dat.data(), 0); 
-		Mat_VarWrite(matfp, var, 0); 
+		Mat_VarWrite(matfp, var, MAT_COMPRESSION_NONE); 
 		Mat_VarFree(var); 
 	}
 	map<string, vector<float>>::iterator it; 
@@ -132,7 +132,7 @@ void MatStor::save(){
 		dims[0] = (size_t)dat.size(); 
 		matvar_t* var = Mat_VarCreate(nam.c_str(), MAT_C_SINGLE, MAT_T_SINGLE, 
 												2, dims, dat.data(), 0); 
-		Mat_VarWrite(matfp, var, 0); 
+		Mat_VarWrite(matfp, var, MAT_COMPRESSION_NONE); 
 		Mat_VarFree(var); 
 	}
 	Mat_Close(matfp); 
