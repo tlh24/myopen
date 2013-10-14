@@ -44,7 +44,6 @@
 
 #include "gettime.h"
 #include "sock.h"
-#include "matStor.h"
 #include "jacksnd.h"
 #include "spkwriter.h"
 #include "tcpsegmenter.h"
@@ -190,7 +189,7 @@ void gsl_matrix_to_mat(gsl_matrix *x, const char* fname){
 		printf("could not open %s for writing \n", fname);
 		return;
 	}
-	int dims[2];
+	size_t dims[2];
 	dims[0] = x->size1;
 	dims[1] = x->size2;
 	double* d = (double*)malloc(dims[0]*dims[1]*sizeof(double));
@@ -208,11 +207,12 @@ void gsl_matrix_to_mat(gsl_matrix *x, const char* fname){
 	}
 	matvar_t *matvar;
 	matvar = Mat_VarCreate("a",MAT_C_DOUBLE,MAT_T_DOUBLE,2,dims,d,0);
-	Mat_VarWrite( mat, matvar, (matio_compression)0 );
+	Mat_VarWrite( mat, matvar, MAT_COMPRESSION_NONE );
 	Mat_VarFree(matvar);
 	free(d);
 	Mat_Close(mat);
 }
+
 void copyData(GLuint vbo, u32 sta, u32 fin, float* ptr, int stride){
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB, vbo);
 	sta *= stride;

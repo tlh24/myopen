@@ -28,7 +28,7 @@ GTKFLAGS = `pkg-config --cflags $(GLIBS) `
 GTKLD = `pkg-config --libs $(GLIBS) `
 
 GOBJS = src/gtkclient.o src/headstage.o src/decodePacket.o src/gettime.o src/glInfo.o \
-src/matStor.o proto/parameters.pb.o proto/spikes.pb.o src/sock.o
+proto/parameters.pb.o proto/spikes.pb.o src/sock.o
 
 COM_HDR = include/channel.h include/headstage.h include/spkwriter.h \
 ../common_host/vbo.h \
