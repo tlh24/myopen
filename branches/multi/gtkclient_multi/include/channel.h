@@ -120,7 +120,6 @@ public:
 		
 		const Configuration::channels chan = radio.channel(ch);
 		
-		//printf("ChannelID %d", chan.id());
 		
 		m_wfVbo = new Vbo(6, 512, 34); //sorted units, with color. 
 		m_usVbo = new Vbo(3, 256, 34); //unsorted units, all gray.
@@ -235,7 +234,6 @@ public:
 			chan->mutable_unit(j)->set_aperture(m_aperture[j]);
 			chan->mutable_unit(j)->set_pca_scl(m_pcaScl[j]);
 		}
-		//printf("here");
 		chan->set_threshold(m_threshold);
 		chan->set_centering(m_centering);
 		chan->set_agc(m_agc);
