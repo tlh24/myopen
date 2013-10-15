@@ -48,7 +48,7 @@
 #include "spkwriter.h"
 #include "tcpsegmenter.h"
 #include "firingrate.h"
-
+#include "matStor.h"
 #include "gtkclient.h"
 #include "headstage.h"
 #include "channel.h"
@@ -68,7 +68,7 @@ float		g_cursPos[2];
 float		g_viewportSize[2] = {640, 480}; //width, height.
 
 char g_bridgeIP[NSCALE][256]; //which thread has which bridge IP. threadsafe
-unsigned int  g_radioChannel[NSCALE] = {124, 114};
+unsigned int  g_radioChannel[NSCALE] = {124, 84};
 
 static float	g_fbuf[NFBUF][NSAMP*3]; //continuous waveform. range [-1 .. 1]
 i64				g_fbufW[NFBUF]; //where to write to (always increment), might not be thread safe
@@ -184,7 +184,7 @@ void gsl_matrix_to_mat(gsl_matrix *x, const char* fname){
 	//write a gsl matrix to a .mat file.
 	// does not free the matrix.
 	mat_t *mat;
-	mat = Mat_Create(fname,NULL);
+	mat = Mat_Create(fname, NULL);
 	if(!mat){
 		printf("could not open %s for writing \n", fname);
 		return;
@@ -1876,9 +1876,6 @@ int main(int argn, char **argc)
 	}else{
 		snprintf(destIP, 256, "152.16.229.38");
 	}
-
-	//persistent state (preferences). 
-	//MatStor ms("preferences.mat"); 
 	
 	Configuration::parameters params;
 	Configuration::state state;
@@ -1899,7 +1896,7 @@ int main(int argn, char **argc)
 	input.open(g_configFile.c_str(), std::ios::in | std::ios::binary);
 	
 	if (!params.ParseFromIstream(&input)){
-		//Failed to load from file, intialize as default
+		printf("Failed to load from file, intialize as default\n");
 		for(int i=0; i<NSCALE; i++){
 		  for(int c=0; c<128; c++){
 			int id = c+(128*i); 
@@ -1916,20 +1913,28 @@ int main(int argn, char **argc)
 			g_channel[i] = chan; 
 		}
 		for(int r=0; r<NSCALE; r++){
+			bool radioExists = false;
+		  //loop through number of requested radio units
 			for( int i = 0; i < params.radio_size(); i++){
+			  //loop through all known, saved radios
 				const Configuration::radios radio = params.radio(i);
 				if (radio.has_id() && radio.id() == g_radioChannel[r]){
+					radioExists = true; //found it, no need to search more
+					printf("Found configuration for radio %d\n", radio.id());
 					for(int c=0; c<128; c++){
 						int id = c+(128*r); 
 						g_c[id] = new Channel(id, c, radio); //default constructor
+						}
 					}
-				break; //found it, no need to search more
 				}
-			}
-			//Did not exit the iteration, did not find a suitable match
-			for(int c=0; c<128; c++){
+			
+			if(!radioExists){
+				//Did not find a radio, did not find a suitable match
+				printf("Default configuration for radio %d\n", g_radioChannel[r]);
+				for(int c=0; c<128; c++){
 					int id = c+(128*r); 
-					 g_c[id] = new Channel(id, c); //default constructor
+					g_c[id] = new Channel(id, c); //default constructor
+					}
 				}
 			}
 		  
@@ -2332,7 +2337,6 @@ int main(int argn, char **argc)
 	jackConnectFront();
 	jackSetResample(24414.0625/SAMPFREQ); 
 #endif
-	
 	gtk_main ();
 	g_spkwriter.close(); //just in case
 #ifdef JACK

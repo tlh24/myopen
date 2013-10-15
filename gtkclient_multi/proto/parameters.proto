@@ -19,7 +19,7 @@ message channels{
   required float threshold = 6;
   repeated units unit = 7;
   
-  repeated float pca_mean = 8[packed=true];
+  repeated float pca_mean = 8 [packed=true];
   repeated float pca_max = 9 [packed=true];
   
  }
