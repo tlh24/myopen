@@ -170,6 +170,10 @@ classdef ScenarioBase < Common.MiniVieObj
                     desiredVelocity(action_bus_enum.Shoulder_AbAd) = prSpeed;
                 case {'Shoulder Adduction'}
                     desiredVelocity(action_bus_enum.Shoulder_AbAd) = -prSpeed;
+                case {'Humeral External Rotation'}
+                    desiredVelocity(action_bus_enum.Humeral_Rot) = prSpeed;
+                case {'Humeral Internal Rotation'}
+                    desiredVelocity(action_bus_enum.Humeral_Rot) = -prSpeed;
                 case {'Elbow Flexion' 'Elbow Up'}
                     desiredVelocity(action_bus_enum.Elbow) = prSpeed;
                 case {'Elbow Extension' 'Elbow Down'}
@@ -274,6 +278,12 @@ classdef ScenarioBase < Common.MiniVieObj
                 case cellGrasps
                     % Any valid grasp == Hand Close
                     desiredGraspVelocity = +prSpeed*0.5;
+                    
+                    if obj.GraspValue < 0.2
+                        % only change grasp Ids if the hand is mostly open
+                        obj.GraspId = enumGrasp( strcmp(graspName,cellGrasps) );
+                    end
+                    
                 case {'No Movement','Rest'}
                     desiredGraspVelocity = 0;
                 otherwise
@@ -282,6 +292,15 @@ classdef ScenarioBase < Common.MiniVieObj
                         fprintf('[%s.m] Unmatched grasp: "%s"\n',mfilename,graspName);
                     end
             end
+
+            % override
+
+            % Limit the max velocity
+            graspGain = 0.05;
+            obj.GraspVelocity = obj.constrain(desiredGraspVelocity*graspGain,-0.1,0.1);
+
+            % Limit the grasp range
+            obj.GraspValue = obj.constrain(obj.GraspValue + obj.GraspVelocity, 0.0, 1.0);
             
             
             % Traditional grasp movement
@@ -291,9 +310,14 @@ classdef ScenarioBase < Common.MiniVieObj
             return
             
             
+            return
 
-            fprintf('[%s] Grasp Locked==%d; Counter==%2d; Value==%4.1f\n',...
-                mfilename,obj.GraspLocked,obj.GraspChangeCounter,obj.GraspValue);
+            %obj.GraspValue = max(obj.GraspValue,.21);
+            obj.GraspLocked = 1;
+
+%             fprintf('[%s] Grasp Locked==%d; Counter==%2d; Value==%4.1f\n',...
+%                 mfilename,obj.GraspLocked,obj.GraspChangeCounter,obj.GraspValue);
+
             if obj.GraspLocked
                 % Range is 20% to 100%, no grasp changes allowed
 
