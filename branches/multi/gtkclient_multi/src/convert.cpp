@@ -14,7 +14,7 @@
 #define i64 long long
 #define u32 unsigned int
 
-#define HEADSTAGE 2
+#define HEADSTAGE 4 //Not using yet 
 
 //#define _LARGEFILE_SOURCE enabled by default.
 //#define _LARGEFILE64_SOURCE
@@ -450,9 +450,9 @@ int main(int argn, char **argc){
 			exit(0);
 		}
 		//wrap them anyway.
-		int tpp = (int)(tp & 0x7fffffff);
-		int spp = (int)(sp & 0x7fffffff);
-		int kpp = (int)(kp & 0x7fffffff);
+		size_t tpp = (size_t)(tp & 0x7fffffff);
+		size_t spp = (size_t)(sp & 0x7fffffff);
+		size_t kpp = (size_t)(kp & 0x7fffffff);
 		
 		matvar_t *matvar;
 		matvar = Mat_VarCreate("time",MAT_C_DOUBLE,MAT_T_DOUBLE,

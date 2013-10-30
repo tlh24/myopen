@@ -30,6 +30,8 @@ GTKLD = `pkg-config --libs $(GLIBS) `
 GOBJS = src/gtkclient.o src/headstage.o src/decodePacket.o src/gettime.o src/glInfo.o \
 proto/parameters.pb.o proto/spikes.pb.o src/sock.o
 
+COBJS = src/convert.o src/decodePacket.o
+
 COM_HDR = include/channel.h include/headstage.h include/spkwriter.h \
 ../common_host/vbo.h \
 ../common_host/cgVertexShader.h \
@@ -83,8 +85,8 @@ src/%.o: src/%.c
 gtkclient: $(GOBJS)
 	$(CPP) -o $@ $(GTKLD) $(LDFLAGS) $^
 
-convert: src/convert.o
-	$(CPP) -o $@ -lmatio -lhdf5 -lz $<
+convert: $(COBJS)
+	$(CPP) -o $@ -lmatio -lhdf5 -lz $^
 
 
 wf_plot: src/wf_plot.o
@@ -102,6 +104,8 @@ deps:
 
 	echo "make sure /usr/lib64 is in /etc/ld.so.conf.d/libc.conf"
 	echo "otherwise Cg may not be found. "
+	echo "Also make sure to install libmatio1.5 from source"
+	echo "Dependency is not in debian rep."
 
 install:
 	install -d $(TARGET)
