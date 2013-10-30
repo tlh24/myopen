@@ -164,7 +164,7 @@ classdef (Sealed) NfuUdp < handle
         function enableRunMode(obj)
             
             % get handle to database
-            db = MplDb.getInstance();
+            db = Db.MplDb.getInstance();
             
             %NFU_run_algorithm = evalin('base','NFU_run_algorithm');
             NFU_run_algorithm = db.get_parameter('NFU_run_algorithm');
@@ -411,7 +411,8 @@ classdef (Sealed) NfuUdp < handle
                     
                     % read data and mark as new
                     b1 = dataBytes(1:726);  %cpch bytes
-                    obj.UdpBuffer1{obj.ptr1} = cpch_bytes_to_signal(b1);
+                    [dataValues, sequenceNumber] = cpch_bytes_to_signal(b1);
+                    obj.UdpBuffer1{obj.ptr1} = dataValues;
                     obj.newData1(obj.ptr1) = true;
                     
                     % advance ptr
@@ -651,7 +652,7 @@ classdef (Sealed) NfuUdp < handle
     end
 end
 
-function s = cpch_bytes_to_signal(b)
+function [s, sequenceNumber] = cpch_bytes_to_signal(b)
 
 % Determine expected packet size
 numPacketHeaderBytes = 6;
@@ -675,6 +676,11 @@ data = reshape(b(numPacketHeaderBytes+1:cpchpacketSize),...
 databytes = data(numSampleHeaderBytes+1:end,:);
 s = reshape(typecast(databytes(:),'int16'),...
     numChannelsPerPacket,numSamplesPerPacket);
+
+sequenceNumber = data(3,:);
+
+% DEBUG!!!!! added this to check sequece numbers
+s(16,:) = int16(sequenceNumber);
 
 end
 function s = percept_bytes_to_signal(b)

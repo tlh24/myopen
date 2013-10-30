@@ -216,25 +216,33 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
                 % commands are necessary to avoid choppiness in the command
                 % stream
                 
+                % TODO: Expose user map
                 userMap = 1;
                 switch userMap
-                    case 1
+                    case 1 % JH_TH_01
                         pause(0.01)
                         littleT = convertedPercepts(3,6);
+                        obj.hTactors(1).SensorLowHigh = [40 60];
+                        obj.hTactors(1).ActuatorLowHigh = [40 127];
                         obj.hTactors(1).update(littleT);
                         
                         pause(0.01)
                         indexT = convertedPercepts(3,2);
+                        obj.hTactors(2).SensorLowHigh = [40 60];
+                        obj.hTactors(2).ActuatorLowHigh = [40 127];
                         obj.hTactors(2).update(indexT);
-                    case 2
+                    case 2 % WR_TR_01
                         drawnow
                         middleT = convertedPercepts(3,3);
                         obj.hTactors(1).update(middleT);
                         drawnow
                         indexT = convertedPercepts(3,2);
                         obj.hTactors(2).update(indexT);
+                        obj.hTactors(2).SensorLowHigh(1) = 40;
+                        obj.hTactors(2).update(indexT);
                         drawnow
                         thumbT = convertedPercepts(3,8);
+                        obj.hTactors(3).SensorLowHigh(1) = 40;
                         obj.hTactors(3).update(thumbT);
                     case 3 % JHMI TH03 Congen
                         if isempty(obj.hTactors)

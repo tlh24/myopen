@@ -65,16 +65,16 @@ classdef RocTable < handle
             
             basePosition(mce.THUMB_DIP) = 0.1;
             pos1 = basePosition;
-            pos1(:,[mce.THUMB_CMC_AD_AB]) = 1.25;
+            pos1(:,[mce.THUMB_CMC_AD_AB]) = 1.65;
             pos1([mce.INDEX_MCP mce.INDEX_PIP mce.INDEX_DIP]) = 0.4;
-            pos1([mce.MIDDLE_MCP mce.MIDDLE_PIP mce.MIDDLE_DIP]) = 0.4;
+            pos1([mce.MIDDLE_MCP mce.MIDDLE_PIP mce.MIDDLE_DIP]) = 0.5;
             pos1([mce.RING_MCP mce.RING_PIP mce.RING_DIP]) = -0.4;
             pos1([mce.LITTLE_MCP mce.LITTLE_PIP mce.LITTLE_DIP]) = -0.4;
             pos2 = pos1;
 
             pos3 = pos1;
-            pos3([mce.INDEX_MCP mce.INDEX_PIP mce.INDEX_DIP]) = 0.95;
-            pos3([mce.MIDDLE_MCP mce.MIDDLE_PIP mce.MIDDLE_DIP]) = 0.8;
+            pos3([mce.INDEX_MCP mce.INDEX_PIP mce.INDEX_DIP]) = 0.75;
+            pos3([mce.MIDDLE_MCP mce.MIDDLE_PIP mce.MIDDLE_DIP]) = 0.9;
 
             pos3([mce.THUMB_MCP]) = 0.55;
             pos3([mce.THUMB_CMC]) = 0.75;
@@ -88,6 +88,7 @@ classdef RocTable < handle
                 pos4;...
                 ];
             
+            % 2 finger fine pinch
             roc(3).id = 2;
             roc(3).name = 'FinePinch(American)';
             roc(3).waypoint = [0 0.333 1];
