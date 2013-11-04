@@ -1134,15 +1134,18 @@ void* mmap_thread(void*){
 	 * m = memmapfile('/tmp/binned.mmap', 'Format', {'uint16' [194 10] 'x'})
 	 * A = m.Data(1).x; 
 	 * */
-	size_t length = 97*2*10*2; 
+	 // XXX we make an assumption here that the number of lags is
+	 // the same for all neurons.
+	int nlags = g_fr[0][0].get_lags(); 
+	size_t length = 97*2*nlags*2; // (96chans+time)*(2 units)*lags*sizeof(short)
 	mmapHelp* mmh = new mmapHelp(length, "/tmp/binned.mmap"); 
 	volatile unsigned short* bin = (unsigned short*)mmh->m_addr; 
 	mmh->prinfo(); 
 	fifoHelp* pipe_out = new fifoHelp("/tmp/gtkclient_out.fifo");
 	fifoHelp* pipe_in = new fifoHelp("/tmp/gtkclient_in.fifo");
 	int frame = 0; 
-	bin[96*2*10] = 0; 
-	bin[96*2*10+1] = 0; 
+	bin[96*2*nlags] = 0; 
+	bin[96*2*nlags+1] = 0; 
 	flush_pipe(pipe_out->m_fd); 
 
 	while(!g_die){
@@ -1154,10 +1157,10 @@ void* mmap_thread(void*){
 		if(r >= 3){
 			for(int i=0; i<96; i++){
 				for(int j=0; j<2; j++){
-					g_fr[i][j].get_bins(end, (unsigned short*)&(bin[(i*2+j)*10])); 
+					g_fr[i][j].get_bins(end, (unsigned short*)&(bin[(i*2+j)*nlags])); 
 				}
 			}
-			bin[96*2*10]++; //counter.
+			bin[96*2*nlags]++; //counter.
 			// N.B. seems we need to touch all memory to update the first page. 
 			//msync(addr, length, MS_SYNC); 
 			//  if made with shm_open, msync is ok -- no writes to disk.
@@ -1611,12 +1614,14 @@ int main(int argc, char **argv)
 	//GtkWidget *combo;
 	//GtkWidget *paned2;
 	
-	//FiringRate fr; 
-	//for (int i=0;i<96;i++) {
-	//	g_fr[i][0].set_bin_params(20, 1.0);	// nlags, duration (sec)
-	//	g_fr[i][1].set_bin_params(20, 1.0);	// nlags, duration (sec)
-	//}
-	//fr.get_bins_test();
+	for (int i=0;i<96;i++) {
+		g_fr[i][0].set_bin_params(20, 1.0);	// nlags, duration (sec)
+		g_fr[i][1].set_bin_params(20, 1.0);	// nlags, duration (sec)
+	}
+
+	FiringRate test_fr;
+	test_fr.set_bin_params(20,1.0);
+	test_fr.get_bins_test();
 
 	if (argc > 1) {
 		strcpy(g_prefstr, argv[1]);

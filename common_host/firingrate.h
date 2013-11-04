@@ -1,7 +1,7 @@
 //code to calculate the firing rate at any given time using
 //convolution with a polynomial.
 
-#define FR_LEN 1024 //must be a power of 2.
+#define FR_LEN 2048 //must be a power of 2.
 //with lags, need up to a second of firing times.
 class FiringRate{
 private:
@@ -39,6 +39,12 @@ public:
 	}
 	void set_bin_params(unsigned int lags, double duration){
 		m_lags = lags; m_duration = duration; 
+	}
+	int get_lags(){
+		return m_lags;
+	}
+	double get_duration(){
+		return m_duration;
 	}
 	void add(double time){ //time is in seconds.
 		m_ts[m_w & (FR_LEN-1)] = time;
@@ -118,12 +124,16 @@ public:
 		add(1-0.35); //bin[3]
 		add(1-0.2);  //0.5 bin[1] 0.5 bin[2]
 		add(1-0.05); //bin [0]
-		unsigned short bins[10]; 
-		get_bins(1.0, bins);
+		unsigned short * bins; 
+		bins = (unsigned short *)malloc(m_lags * sizeof(unsigned short));
+		//adjust start to compensate for trapezoidal first bin.
+		double xfdelay = (m_duration * m_xfade) / (2.0 * m_lags); 
+		get_bins(1.0 + xfdelay, bins);
 		printf("test vals: ");
-		for(int i=0; i<10; i++)
+		for(int i=0; i<m_lags; i++)
 			printf("%0.1f ", bins[i]/128.0); 
 		printf("\n"); 
-		printf("should be: 1.0 0.5 0.5 1.5 0.5 0.0 0.0 0.0 0.0 0.0\n"); 
+		printf("should be: 1.0 0.5 0.5 1.5 0.5 0.0 0.0 0.0 0.0 0.0\n");
+		free(bins);
 	}
 };
