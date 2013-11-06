@@ -642,10 +642,17 @@ classdef TrainingData < handle
             
             % Ensure new signal data matches existing signal data
             if ~isempty(obj.SignalDataRaw)
-                assert(isequal(size(obj.SignalDataRaw,1),numChannels),...
-                    'New Data must match previous data number of channels');
-                assert(isequal(size(obj.SignalDataRaw,2),numSamplesPerWindow),...
-                    'New Data must match previous data number of samples');
+                % RSA: TEMP reduce the signal size to only first 16 channels to
+                % reuse historical data set
+                %rawSignal = rawSignal(1:16,:);
+                %features = features(1:16,:);
+                
+                %[numChannels,numSamplesPerWindow]= size(rawSignal);
+
+                 assert(isequal(size(obj.SignalDataRaw,1),numChannels),...
+                     'New Data must match previous data number of channels');
+                 assert(isequal(size(obj.SignalDataRaw,2),numSamplesPerWindow),...
+                     'New Data must match previous data number of samples');
             end
             
             % Update class label history
