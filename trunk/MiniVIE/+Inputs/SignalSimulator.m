@@ -61,6 +61,7 @@ classdef SignalSimulator < Inputs.SignalInput
             A = expand(obj.SignalAmplitude,obj.NumChannels);
             f = expand(obj.SignalFrequency,obj.NumChannels);
             
+            
             for iChannel = 1:obj.NumChannels
                 p = 0.5*randn(1);
                 channelData = A(iChannel)*sin(2*pi*f(iChannel)*t + p) + obj.DcOffset;
@@ -68,6 +69,10 @@ classdef SignalSimulator < Inputs.SignalInput
                 
                 newData(:,iChannel) = channelData;
             end
+            % Following two lines were added but unsure what they were intended to do.  Disabling on check-in
+            %lastVal = obj.SignalBuffer(end,end);
+            
+            %newData(:,end) = (1:size(newData,1)) + lastVal;
             
             obj.SignalBuffer = circshift(obj.SignalBuffer,[-sampleBlock 0]);
             obj.SignalBuffer(end-sampleBlock+1:end,:) = newData;
