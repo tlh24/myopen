@@ -351,6 +351,9 @@ classdef MiniVIE < Common.MiniVieObj
                     
                     % Setup filters and remaining properties
                     obj.println('Adding Filters',1);
+
+                    Fs = h.SampleFrequency;
+                    h.addfilter(Inputs.HighPass(15,3,Fs));
                     
                     Fs = h.SampleFrequency;
                     %                     h.addfilter(Inputs.HighPass(10,8,Fs));
@@ -580,7 +583,7 @@ classdef MiniVIE < Common.MiniVieObj
                         start(h.Timer);
                         obj.println('Presentation setup complete',1);
                     case 'MplScenarioMud'
-                        switch 'MPL_WD'
+                        switch 'MPL_TR'
                             case 'VulcanX'
                                 QA = {
                                     'Enable NFU (y/n):'                     'n'
