@@ -1,8 +1,9 @@
 function [ obj ] = RunMpl
 
 p.guiName = 'MiniVIE-NFU-MPL';
-p.filePrefix = 'WR_TR02_L_';
+% p.filePrefix = 'WR_TR02_L_';
 % p.filePrefix = 'JH_TH01_L_';
+p.filePrefix = 'WR_TR01_L_';
 
 UiTools.save_temp_file('defaultFilePrefix',p.filePrefix)
 
@@ -18,14 +19,18 @@ p.Scenario.UdpDestinationPort = 9027;
 p.Scenario.UdpLocalPort = 56010;
 p.Scenario.JoystickId = 0;
 p.Scenario.UdpArmTrackingPort = [];
-p.Scenario.EnableFeedback = 0;
-% p.Scenario.TactorIds = [5 6 7];
-p.Scenario.TactorIds = [3 4];
+
+% Haptics need to be configured here, and in 
+% p.Scenario.EnableFeedback = 0;
+p.Scenario.EnableFeedback = 1;
+p.Scenario.TactorIds = [5 6 7];
+% p.Scenario.TactorIds = [3 4];  % JH_TH_01
 p.Scenario.enableMicroStrain = 0;
 
 ip = p.Scenario.UdpAddress;
 fprintf('Trying to connect to %s...\n',ip);
 pingOk = false;
+% pingOk = true;
 while ~pingOk
     strPing = sprintf('!ping %s -n 1',ip);
     strSuccess = sprintf('Reply from %s: bytes=32',ip);
