@@ -161,6 +161,9 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
                         obj.CurrentClass = iClass;
                         obj.addData();
                         
+                        % Attempt 50 Hz update rate during training
+                        pause(0.01);
+                        %drawnow
                     end
                 end
             end
