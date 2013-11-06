@@ -11,5 +11,13 @@ armAngles(1) = max(min(armAngles(1),FE_Lim(2)),FE_Lim(1));
 armAngles(2) = max(min(armAngles(2),AA_Lim(2)),AA_Lim(1));
 armAngles(3) = max(min(armAngles(3),HR_Lim(2)),HR_Lim(1));
 armAngles(4) = max(min(armAngles(4),EL_Lim(2)),EL_Lim(1));
+
 % Wrist
-armAngles(7) = -armAngles(7);  % Flip wrist FE
+
+% Right Hand = not flipped
+armAngles(7) = armAngles(7);  % Flip wrist FE
+
+armAngles(6) = -armAngles(6);  % Flip wrist RU Dev
+
+armAngles(7) = -.8;
+armAngles(6) = -20*pi/180;
