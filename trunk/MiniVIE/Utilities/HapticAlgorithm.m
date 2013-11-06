@@ -117,7 +117,7 @@ classdef HapticAlgorithm < handle
                 val = 0;
             elseif obj.SensorLowHigh(1) < inputSensor && inputSensor <= obj.SensorLowHigh(2)
                 obj.TactorState = 1;
-                val = min(max(inputSensor,40),120);%obj.ActuatorLowHigh(1);
+                val = min(max(inputSensor,obj.ActuatorLowHigh(1)),obj.ActuatorLowHigh(2));
             elseif obj.SensorLowHigh(2) < inputSensor
                 obj.TactorState = 2;
                 val = obj.ActuatorLowHigh(2);
