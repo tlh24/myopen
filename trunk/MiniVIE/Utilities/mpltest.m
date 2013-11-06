@@ -134,12 +134,14 @@ switch testId
             graspVal = [linspace(0,1,30) ones(1,10) linspace(1,0,30)];
             for i = 1:length(graspVal)
                 fprintf('ROC %d, %6.2f Pct\n',rocID,graspVal(i)*100);
-                hNfu.sendUpperArmHandRoc([zeros(1,4) 0 0 0],rocID,graspVal(i));
+                %hNfu.sendUpperArmHandRoc([zeros(1,4) 0 0 0],rocID,graspVal(i));
+                hNfu.sendUpperArmHandLocalRoc([zeros(1,4) 0 0 0],rocID,graspVal(i));
                 pause(0.02);
             end
             disp('Press any key...');pause;
         end
-        hNfu.sendUpperArmHandRoc([zeros(1,4) 0 0 0],0,0);
+        %hNfu.sendUpperArmHandRoc([zeros(1,4) 0 0 0],0,0);
+        hNfu.sendUpperArmHandLocalRoc([zeros(1,4) 0 0 0],0,0);
     case 'Haptics01'
         % Test tactors manually
         test_tactor_nfu();
