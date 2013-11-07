@@ -5,10 +5,10 @@
 #define u32 unsigned int
 
 enum MODES {
-        MODE_RASTERS,
-        MODE_SORT,
-        MODE_SPIKES,
-        MODE_NUM
+	MODE_RASTERS,
+	MODE_SORT,
+	MODE_SPIKES,
+	MODE_NUM
 };
 
 #define NSAMP (64*1024) //about 2.6 seconds.

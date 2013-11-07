@@ -95,10 +95,15 @@ deps:
 	libgtkgl2.0-dev libgtkglext1-dev freeglut3-dev nvidia-cg-toolkit \
 	libgsl0-dev libatlas-base-dev libjack-jackd2-dev python-matplotlib \
 	python-jsonpickle python-opengl libboost1.49-all-dev pkg-config \
-	libhdf5-dev libsdl1.2-dev
+	libhdf5-dev libsdl1.2-dev astyle
 
-	echo "make sure /usr/lib64 is in /etc/ld.so.conf.d/libc.conf"
-	echo "otherwise Cg may not be found. "
+	@echo ""
+	@echo "make sure /usr/lib64 is in /etc/ld.so.conf.d/libc.conf"
+	@echo "otherwise Cg may not be found. "
+
+format:
+	astyle -A8 --indent=tab -H -k3 include/*.h
+	astyle -A8 --indent=tab -H -k3 src/*.cpp
 
 install:
 	install -d $(TARGET)
