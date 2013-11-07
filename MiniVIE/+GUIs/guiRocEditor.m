@@ -29,6 +29,7 @@ classdef guiRocEditor < handle
         hRocSpinBox;
         hRocWaypoints;
         hRocDescription;        
+        jSpinnerModel;
 
         hSink;
         hMud = MPL.MudCommandEncoder;
@@ -123,14 +124,15 @@ classdef guiRocEditor < handle
             % Add menus
             set(hParent,'Menubar','None');
             menuFile = uimenu(hParent,'Label','&File');
+            menuFileOpen = uimenu(menuFile,'Label','Open...','Callback',@(src,evt)uiOpen(obj));
             menuFileSave = uimenu(menuFile,'Label','Save As...','Callback',@(src,evt)uiSaveAs(obj));
             
             
             % Add a Spinner
-            numRocs = 14;  % needs to be updated when new roc added
+            numRocs = 1;  % needs to be updated when new roc added
             % ref: http://undocumentedmatlab.com/blog/using-spinners-in-matlab-gui/
-            jModel = javax.swing.SpinnerNumberModel(0,0,14,1);
-            jSpinner = javax.swing.JSpinner(jModel);
+            obj.jSpinnerModel = javax.swing.SpinnerNumberModel(0,0,numRocs,1);
+            jSpinner = javax.swing.JSpinner(obj.jSpinnerModel);
             jhSpinner = javacomponent(jSpinner, [10,600,40,20], hParent);
             jhSpinner.StateChangedCallback = @(src,evt)cbSpinner(src);
             
@@ -176,11 +178,25 @@ classdef guiRocEditor < handle
             set(obj.hRocWaypoints,...
                 'String',cellfun(@num2str,num2cell(roc.waypoint),'UniformOutput',false),...
                 'Value',waypointId);
+            % set spinner
+            set(obj.jSpinnerModel,'Maximum',length(obj.structRoc)-1); %zero based
             
             transmit(obj);
             
         end
         
+        function uiOpen(obj)
+            [fileName, pathName, filterIndex] = uigetfile('*.xml');
+            if filterIndex == 0
+                %User Cancelled
+                return
+            end
+            
+            xmlFileName = fullfile(pathName,fileName);
+            
+            obj.structRoc = MPL.RocTable.readRocTable(xmlFileName);
+            obj.updateFigure();
+        end
         function uiSaveAs(obj)
             
             [fileName, pathName, filterIndex] = uiputfile('*.xml');
