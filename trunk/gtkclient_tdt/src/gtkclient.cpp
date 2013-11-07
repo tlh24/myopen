@@ -1463,12 +1463,11 @@ static void mk_radio(const char *txt, int ntxt,
 
 	frame = gtk_frame_new (frameTxt);
 	gtk_box_pack_start (GTK_BOX (container), frame, TRUE, TRUE, 0);
-	if (vertical) modebox = gtk_vbox_new (FALSE, 2);
-	else modebox = gtk_hbox_new (FALSE, 2);
+	modebox = vertical ? gtk_vbox_new(FALSE, 2) : gtk_hbox_new(FALSE, 2);
 	gtk_container_add (GTK_CONTAINER (frame), modebox);
 	gtk_container_set_border_width (GTK_CONTAINER (modebox), 2);
 	gtk_box_pack_start (GTK_BOX (container), modebox, TRUE, TRUE, 0);
-	gtk_widget_show (modebox);
+	gtk_widget_show(modebox);
 
 	char buf[256];
 	strncpy(buf, txt, 256);
@@ -1703,18 +1702,12 @@ int main(int argc, char **argv)
 		                           -64.0, 64.0, 0.1,
 		                           gainSpinCB, i);
 		if (i==0) {
-			//show PCA button.
 			button = gtk_check_button_new_with_label("auto offset of B,C,D");
 			g_signal_connect (button, "toggled",
 			                  G_CALLBACK (autoChOffsetButtonCB), (gpointer) "o");
 			gtk_box_pack_start (GTK_BOX (bx2), button, TRUE, TRUE, 0);
 			gtk_widget_show(button);
 		}
-		//below that, the AGC target.
-		//g_agcSpin[i] = mk_spinner("AGC target", bx2,
-		//						  	g_c[g_channel[i]]->m_agc,
-		//							0, 32000, 1000,
-		//						  	agcSpinCB, i);
 
 		gtk_box_pack_start (GTK_BOX (frame), bx2, FALSE, FALSE, 1);
 	}
@@ -1765,7 +1758,7 @@ int main(int argc, char **argv)
 		gtk_container_add (GTK_CONTAINER (frame), bx2);
 		gtk_box_pack_start (GTK_BOX (frame), bx2, FALSE, FALSE, 1);
 
-		for (int j=0; j<2; j++) {
+		for (int j=0; j<NSORT; j++) {
 			GtkWidget *bx3 = gtk_hbox_new (FALSE, 2);
 			gtk_container_add (GTK_CONTAINER (bx2), bx3);
 			g_apertureSpin[i*2+j] = mk_spinner("", bx3,
@@ -1787,19 +1780,26 @@ int main(int argc, char **argv)
 	g_unsortRateSpin = mk_spinner("unsort rate", box1,
 	                              g_unsortrate, 0.0, 40.0, 0.1,
 	                              unsortRateSpinCB, 0);
+
+	GtkWidget *box2 = gtk_hbox_new (FALSE, 0);
+
 	//show PCA button.
 	button = gtk_check_button_new_with_label("show PCA");
 	g_signal_connect (button, "toggled",
 	                  G_CALLBACK (showPcaButtonCB), (gpointer) "o");
-	gtk_box_pack_start (GTK_BOX (box1), button, TRUE, TRUE, 0);
+	gtk_box_pack_start (GTK_BOX (box2), button, TRUE, TRUE, 0);
 	gtk_widget_show(button);
+
 	//show wf voltage grid
-	button = gtk_check_button_new_with_label("show voltage grid");
+	button = gtk_check_button_new_with_label("show grid");
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), g_showWFVgrid);
 	g_signal_connect (button, "toggled",
 	                  G_CALLBACK (showWFVgridButtonCB), (gpointer) "o");
-	gtk_box_pack_start (GTK_BOX (box1), button, TRUE, TRUE, 0);
+	gtk_box_pack_start (GTK_BOX (box2), button, TRUE, TRUE, 0);
 	gtk_widget_show(button);
+
+	gtk_widget_show(box2);
+	gtk_box_pack_start (GTK_BOX (box1), box2, TRUE, TRUE, 0);
 
 	button = gtk_button_new_with_label ("calc PCA");
 	g_signal_connect(button, "clicked", G_CALLBACK (calcPCACB),
@@ -1864,10 +1864,14 @@ int main(int argc, char **argv)
 	gtk_box_pack_start (GTK_BOX (v1), button, TRUE, TRUE, 0);
 	gtk_widget_show(button);
 	//add draw mode (applicable to all)
+
+	bx = gtk_hbox_new(FALSE, 0);
 	mk_radio("lines,points", 2,
-	         v1, false, "draw mode", drawRadioCB);
+	         bx, true, "draw mode", drawRadioCB);
 	mk_radio("normal,accum", 2,
-	         v1, false, "blend mode", blendRadioCB);
+	         bx, true, "blend mode", blendRadioCB);
+	gtk_box_pack_start (GTK_BOX (v1), bx, TRUE, TRUE, 0);
+
 
 	bx = gtk_hbox_new (FALSE, 3);
 
