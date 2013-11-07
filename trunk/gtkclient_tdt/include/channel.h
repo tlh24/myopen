@@ -15,28 +15,30 @@ void glPrint(char *text);
 #define NWFVBO 1024
 #define NUSVBO 512
 
+//#define NSORT	2
+
 //need some way of encapsulating per-channel information. 
 class Channel {
 private:
 	float 	m_threshold; 	// 1 = + 10mV.
 	float	m_centering; 	// left/right centering. used to look for threshold crossing.
 	float 	m_gain; 
-	float 	m_aperture[2]; 	// aka MSE per sample.
+	float 	m_aperture[NSORT]; 	// aka MSE per sample.
 public:
 	Vbo*	m_wfVbo; 		// range 1 mean 0
 	Vbo*	m_usVbo; 
 	VboPca*	m_pcaVbo; 		// 2D points, with color. 
-	float	m_pca[2][32]; 	// range 1 mean 0
-	float 	m_pcaScl[2]; 	// sqrt of the eigenvalues.
-	float	m_template[2][32]; // range 1 mean 0.
+	float	m_pca[NSORT][32]; 	// range 1 mean 0
+	float 	m_pcaScl[NSORT]; 	// sqrt of the eigenvalues.
+	float	m_template[NSORT][32]; // range 1 mean 0.
 	float	m_loc[4]; 
 	int		m_ch; 			//channel number, obvi.
-	float 	m_agc; 
+	//float 	m_agc;
 	double	m_var; 			//variance of the continuous waveform, 1 = 10mV^2. 
 	double	m_mean; 		//mean of the continuous waveform. 
-	i64 	m_isi[2][100]; 	//counts of the isi, in units of ms.
+	i64 	m_isi[NSORT][100]; 	//counts of the isi, in units of ms.
 	i64		m_isiViolations; 
-	i64		m_lastSpike[2]; //zero when a spike occurs. in samples.
+	i64		m_lastSpike[NSORT]; //zero when a spike occurs. in samples.
 	
 	Channel(int ch, MatStor* ms){
 		m_wfVbo = new Vbo(6, NWFVBO, 34); // sorted units, with color. 
@@ -50,17 +52,21 @@ public:
 		m_mean = 0.0;
 		//init PCA, template. 
 		for(int j=0; j<32; j++){
-			m_pca[0][j] = 1.f/8.f; 
-			m_pca[1][j] = (j > 15 ? 1.f/8.f : -1.f/8.f); 
-			m_pcaScl[0] = m_pcaScl[1] = 1.f; 
+			for (int k=0; k<NSORT; k++){
+				m_pca[k][j] = 1.f/8.f;
+				m_pcaScl[k] = 1.f;
+			}
+			//m_pca[1][j] = (j > 15 ? 1.f/8.f : -1.f/8.f); 
 		}
 		for(int j=0; j<32; j++){
-			m_template[0][j] = 0.5*sinf(j/6.f) / 1e2; 		// sinusoids
-			m_template[1][j] = 0.4*sinf((j+12)/8.f) / 1e2;	// scaled to ~ 100 microvolts
+			for (int k=0; k<NSORT; k++){
+				m_template[k][j] = 0.5*sinf(j/6.f) / 1e2;	// sinusoids scaled to ~100 uV
+			}
+			//m_template[1][j] = 0.4*sinf((j+12)/8.f) / 1e2;	// scaled to ~ 100 microvolts
 		}
 		//read from matlab if it's there..
 		if(ms){
-			for(int j=0; j<2; j++){
+			for(int j=0; j<NSORT; j++){
 				ms->getValue3(ch, j, "pca", &(m_pca[j][0]), 32);
 				ms->getValue3(ch, j, "template", &(m_template[j][0]), 32);
 				m_aperture[j] = ms->getValue2(ch, j, "aperture", 0.f); // old default: 0.003f
@@ -69,7 +75,7 @@ public:
 			m_threshold = ms->getValue(ch, "threshold", 0.6f); 
 			m_centering = ms->getValue(ch, "centering", 25.f); 
 			m_gain = ms->getValue(ch, "gain", 1.f);
-			m_agc = ms->getValue(ch, "agc", 6000.f);
+			//m_agc = ms->getValue(ch, "agc", 6000.f);
 		}
 		//init m_wfVbo.
 		for(int i=0; i<NWFVBO; i++){
@@ -82,13 +88,13 @@ public:
 				f[(j+1)*6 + 0] = (float)j/31.f;
 				f[(j+1)*6 + 1] = 0.5f;
 				f[(j+1)*6 + 2] = 0.0f; 
-				for(int k=0; k<3; k++)
+				for(int k=0; k<NUNIT; k++)
 					f[(j+1)*6 + 3 + k] = 0.5f; //all init gray.
 			}
 			f[(33)*6 + 0] = 1.f;
 			f[(33)*6 + 1] = 0.5f;
 			f[(33)*6 + 2] = 0.0f; 
-			for(int k=0; k<3; k++)
+			for(int k=0; k<NUNIT; k++)
 				f[(33)*6 + 3 + k] = 0.5f; //all init gray.
 		}
 		//init unsorted Vbo, 
@@ -108,7 +114,7 @@ public:
 		}
 		m_loc[0] = m_loc[1] = 0.f; 
 		m_loc[2] = m_loc[3] = 1.f; 
-		for(int u=0; u<2; u++){
+		for(int u=0; u<NSORT; u++){
 			m_lastSpike[u] = 0; 
 			for(unsigned int i=0; i < sizeof(m_isi[0])/sizeof(m_isi[0][0]); i++){
 				m_isi[u][i] = 0; 
@@ -121,7 +127,7 @@ public:
 		delete m_pcaVbo; m_pcaVbo = 0; 
 	}
 	void save(MatStor* ms){
-		for(int j=0; j<2; j++){
+		for(int j=0; j<NSORT; j++){
 			ms->setValue3(m_ch, j, "pca", &(m_pca[j][0]), 32);
 			ms->setValue3(m_ch, j, "template", &(m_template[j][0]), 32);
 			ms->setValue2(m_ch, j, "aperture", m_aperture[j]); 
@@ -129,7 +135,7 @@ public:
 		ms->setValue3(m_ch, 0, "pcaScl", m_pcaScl, 2);
 		ms->setValue(m_ch, "threshold", m_threshold);
 		ms->setValue(m_ch, "centering", m_centering); 
-		ms->setValue(m_ch, "agc", m_agc); 
+		//ms->setValue(m_ch, "agc", m_agc); 
 		ms->setValue(m_ch, "gain", m_gain);
 		m_pcaVbo->save(m_ch, ms); 
 	}
@@ -153,7 +159,7 @@ public:
 			for(int j=0; j<32; j++){
 				f[(j+1)*6 + 1] = wf[j];
 				f[(j+1)*6 + 2] = time; 
-				for(int k=0; k<3; k++)
+				for(int k=0; k<NUNIT; k++)
 					f[(j+1)*6 + 3 + k] = color[k]; 
 			}
 		}else{
@@ -173,11 +179,11 @@ public:
 			float* pca = m_pcaVbo->addRow();  
 			pca[0] = pca[1] = 0.f; 
 			for(int j=0; j<32; j++){
-				for(int i=0; i<2; i++)
+				for(int i=0; i<NSORT; i++)
 					pca[i] += m_pca[i][j] * wf[j];
 			}
 			pca[2] = time; 
-			for(int i=0; i<3; i++){
+			for(int i=0; i<NUNIT; i++){
 				pca[3+i] = color[i]; 
 			}
 		}
@@ -302,7 +308,7 @@ public:
 			//draw the templates. 
 			glLineWidth(3.f); 
 			glBegin(GL_LINE_STRIP);
-			for(int k=0; k<2; k++){
+			for(int k=0; k<NSORT; k++){
 				// cyan -> purple; red -> orange (color wheel)
 				if(k == 0) glColor4f(0.6f, 0.f, 1.f, 0.65f);
 				else glColor4f(1.f, 0.5f, 0.f, 0.65f);
@@ -318,7 +324,7 @@ public:
 			//and the PCA templates.
 			if(showPca){
 				glLineWidth(5.f); 
-				for(int k=0; k<2; k++){
+				for(int k=0; k<NSORT; k++){
 					for(int j=0; j<32; j++){
 						float ny = m_pca[k][j]*m_pcaScl[k]*m_gain+0.5; 
 						float nx = (float)(j)/31.f; 
@@ -382,7 +388,7 @@ public:
 			if(1){ //isi.
 				int nisi = sizeof(m_isi[0])/sizeof(m_isi[0][0]);
 				//draw shaded plots of the ISI. 
-				for(int u=0; u<2; u++){
+				for(int u=0; u<NSORT; u++){
 					i64 max = 1; 
 					for(int i=0; i < nisi; i++){
 						max = m_isi[u][i] > max ? m_isi[u][i] : max; 
@@ -433,7 +439,7 @@ public:
 	}
 	int updateTemplate(int unit){
 		//called when the button is clicked.
-		if(unit < 1 || unit > 2){
+		if(unit < 1 || unit > NSORT){
 			printf("unit out of range in Channel::updateTemplate()\n"); 
 			return false; 
 		}
@@ -458,7 +464,7 @@ public:
 		m_pcaVbo->reset(); 
 		m_wfVbo->setFade(1.7);//clear it a bit quicker.
 		m_usVbo->setFade(1.7); 
-		for(int u=0; u<2; u++){
+		for(int u=0; u<NSORT; u++){
 			m_lastSpike[u] = 0; 
 			for(unsigned int i=0; i < sizeof(m_isi[0])/sizeof(m_isi[0][0]); i++){
 				m_isi[u][i] = 0; 
@@ -578,7 +584,7 @@ public:
 	void updateISI(int unit, int sample){
 		//this used for calculating ISI. 
 		unit -= 1; //comes in 0 = uhnsorted. 
-		if(unit >=0 && unit < 2){
+		if(unit >=0 && unit < NSORT){
 			int b = floor((sample - m_lastSpike[unit])/24.4140625 - 0.5); 
 			int nisi = (int)(sizeof(m_isi[0])/sizeof(m_isi[0][0])); 
 			//printf("%d isi %d u %d\n", m_ch, b, unit); 
@@ -588,7 +594,7 @@ public:
 		}
 	}
 	float getAperture(int unit){ 
-		if(unit >=0 && unit < 2){
+		if(unit >=0 && unit < NSORT){
 			return m_aperture[unit];
 		} else return 0.f; 
 	}
@@ -598,12 +604,12 @@ public:
 		//so waveform misalignment of 0.1 (1mV) -> 0.01; should be represented as
 		//1000uv^2, hence have to multiply by 1e8. 
 		//sqrt(m_aperture * 1e8)
-		if(unit >=0 && unit < 2){
+		if(unit >=0 && unit < NSORT){
 			return sqrt(m_aperture[unit] * 1e8);
 		} else return 0.f; 
 	}
 	void setApertureUv(int unit, float aper){
-		if(unit >=0 && unit < 2){
+		if(unit >=0 && unit < NSORT){
 			setApertureLocal( unit, aper*aper / 1e8); 
 		}
 	}

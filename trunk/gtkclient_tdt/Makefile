@@ -27,7 +27,7 @@ GLIBS := gtk+-2.0 gtkglext-1.0 gtkglext-x11-1.0
 GTKFLAGS = `pkg-config --cflags $(GLIBS) `
 GTKLD = `pkg-config --libs $(GLIBS) `
 
-GOBJS = src/gtkclient.o src/decodePacket.o src/gettime.o src/glInfo.o \
+GOBJS = src/gtkclient.o src/gettime.o src/glInfo.o \
 src/matStor.o
 COM_HDR = include/channel.h include/wfwriter.h \
 ../common_host/vbo.h \

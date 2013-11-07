@@ -51,6 +51,7 @@
 #include "mmaphelp.h"
 #include "fifohelp.h"
 #include "channel.h"
+#include "artifact.h"
 //#include "packet.h"
 //#include "spikes.pb.h"
 #include "timesync.h"
@@ -75,23 +76,26 @@ float		g_cursPos[2];
 float		g_viewportSize[2] = {640, 480}; //width, height.
 
 class Channel;
+class Artifact;
 
 float	g_fbuf[NFBUF][NSAMP*3]; //continuous waveform. range [-1 .. 1]. For drawing. 
-i64	g_fbufW; //where to write to (always increment)
-i64	g_fbufR; //display thread reads from here - copies to mem
-float	g_obuf[96][256]; //looping samples of the waveform.  for sorting. [-1 .. 1]
-i64	g_sample = 0; 
-i64				g_lastSpike[96][3]; 
+i64		g_fbufW; //where to write to (always increment)
+i64		g_fbufR; //display thread reads from here - copies to mem
+float	g_obuf[NCHAN][256]; //looping samples of the waveform.  for sorting. [-1 .. 1]
+i64		g_sample = 0; 
+i64		g_lastSpike[NCHAN][NUNIT]; 
 unsigned int 	g_nsamp = 4096*6; //given the current level of zoom (1 = 4096 samples), how many samples to update?
-float 	g_sbuf[2][96*NSBUF*2]; //2 units, 96 channels, 1024 spikes, 2 floats / spike.
+float 	g_sbuf[NSORT][NCHAN*NSBUF*2]; //2 units, 96 channels, 1024 spikes, 2 floats / spike.
 float	g_rasterSpan = 10.f; // %seconds.
-i64	g_sbufW[2];
-i64	g_sbufR[2];
-Channel*		g_c[96];
-FiringRate	g_fr[96][2];
+i64	g_sbufW[NSORT];
+i64	g_sbufR[NSORT];
+Channel*		g_c[NCHAN];
+FiringRate	g_fr[NCHAN][NSORT];
 TimeSync 	g_ts; //keeps track of ticks (TDT time)
 WfWriter		g_wfwriter; 
 GLuint 		g_base;            // base display list for the font set.
+
+Artifact * 	g_artifact[STIMCHAN][RECCHAN];
 
 bool g_die = false;
 double g_pause = -1.0;
@@ -107,15 +111,15 @@ int 	g_channel[4] = {0,32,64,95};
 long double g_lastPo8eTime = 0.0; 
 
 
-bool g_out = false;
-bool g_templMatch[96][2];
+//bool g_out = false;
+//bool g_templMatch[NCHAN][2];
 //the headstage match a,b over all 96 channels. cleared after every packet!!
-i64			 g_sortOffset[4][2][16]; //offset to the best match.
-unsigned int g_sortUnit[4][16]; //have to remember to zero all of these.
-unsigned int g_sortI; //index to the (short) circular buffer.
-i64			 g_sortWfOffset[4];
-int 			 g_sortWfUnit[4];
-i64			 g_unsortCount[4];
+//i64			 g_sortOffset[4][2][16]; //offset to the best match.
+//unsigned int g_sortUnit[4][16]; //have to remember to zero all of these.
+//unsigned int g_sortI; //index to the (short) circular buffer.
+//i64			 g_sortWfOffset[4];
+//int 			 g_sortWfUnit[4];
+//i64			 g_unsortCount[4];
 double		 g_minISI = 1.3; //ms
 int		 	 g_spikesCols = 16; 
 
@@ -153,7 +157,7 @@ GLuint g_vbo2[2] = {0,0}; //for spikes.
 GtkWidget* g_infoLabel;
 GtkAdjustment* g_channelSpin[4] = {0,0,0,0};
 GtkAdjustment* g_gainSpin[4] = {0,0,0,0};
-GtkAdjustment* g_agcSpin[4] = {0,0,0,0};
+//GtkAdjustment* g_agcSpin[4] = {0,0,0,0};
 GtkAdjustment* g_apertureSpin[8] = {0,0,0,0};
 GtkAdjustment* g_thresholdSpin[4];
 GtkAdjustment* g_centeringSpin[4];
@@ -375,8 +379,8 @@ static gint button_press_event( GtkWidget      *,
 		}
 	}
 	if(g_mode == MODE_SPIKES){
-		int spikesRows = 96 / g_spikesCols; 
-		if(96 % g_spikesCols) spikesRows++; 
+		int spikesRows = NCHAN / g_spikesCols; 
+		if(NCHAN % g_spikesCols) spikesRows++; 
 		float xf = g_spikesCols; float yf = spikesRows; 
 		float x = (g_cursPos[0] + 1.f)/ 2.f;
 		float y = (g_cursPos[1]*-1.f + 1.f)/2.f; //0,0 = upper left hand corner. 
@@ -384,7 +388,7 @@ static gint button_press_event( GtkWidget      *,
 		int sr = (int)floor(y*yf); 
 		if(event->type==GDK_2BUTTON_PRESS){ //double click.
 			int h =  sr*g_spikesCols + sc; 
-			if(h >= 0 && h < 96){
+			if(h >= 0 && h < NCHAN){
 				//shift channels down, like a priority queue.
 				for(int i=3; i>0; i--)
 					g_channel[i] = g_channel[i-1]; 
@@ -445,7 +449,7 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 			}
 		}
 		//and the waveform buffers.
-		for(int i=0; i<96; i++){
+		for(int i=0; i<NCHAN; i++){
 			g_c[i]->copy();
 		}
 	}
@@ -625,11 +629,11 @@ expose1 (GtkWidget *da, GdkEventExpose*, gpointer )
 			}
 		}
 		if(g_mode == MODE_SPIKES){
-			int spikesRows = 96 / g_spikesCols; 
-			if(96 % g_spikesCols) spikesRows++; 
+			int spikesRows = NCHAN / g_spikesCols; 
+			if(NCHAN % g_spikesCols) spikesRows++; 
 			float xf = g_spikesCols; float yf = spikesRows; 
 			xz = 2.f/xf; yz = 2.f/yf;
-			for(int k=0; k<96; k++){
+			for(int k=0; k<NCHAN; k++){
 				xo = (k%g_spikesCols)/xf; 
 				yo = ((k/g_spikesCols)+1)/yf; 
 				g_c[k]->setLoc(xo*2.f-1.f, 1.f-yo*2.f, xz*2.f, yz);
@@ -775,7 +779,7 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 		}
 		//have one VBO that's filled with spike times & channels.
 		for(int k=0; k<2; k++){
-			for(int i=0; i<96; i++){
+			for(int i=0; i<NCHAN; i++){
 				for(int j=0; j<NSBUF; j++){
 					g_sbuf[k][(i*NSBUF+j)*2+0] = (float)i/256.0+(float)j/2048.0;
 					g_sbuf[k][(i*NSBUF+j)*2+1] = (float)i;
@@ -788,7 +792,7 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 			glBufferSubDataARB(GL_ARRAY_BUFFER_ARB,
 				0, sizeof(g_sbuf[k]), g_sbuf[k]);
 		}
-		for(int i=0; i<96; i++){
+		for(int i=0; i<NCHAN; i++){
 			g_c[i]->configure(g_vsFadeColor);
 		}
 	}
@@ -807,7 +811,7 @@ static gboolean rotate (gpointer user_data){
 
 	string s = g_ts.getInfo(); 
 	char str[256]; 
-	snprintf(str, 256, "\npo8e interval: %f\n", (double)(gettime() - g_lastPo8eTime)); 
+	snprintf(str, 256, "\npo8e interval: %f (ms)\n", (double)(gettime() - g_lastPo8eTime)*1000.0); 
 	s += string(str); 
 	gtk_label_set_text(GTK_LABEL(g_infoLabel), s.c_str());
 	snprintf(str, 256, "%.2f MB", (double)g_wfwriter.bytes()/1e6);
@@ -816,7 +820,7 @@ static gboolean rotate (gpointer user_data){
 }
 void saveState(){
 	MatStor ms(g_prefstr); 
-	for(int i=95; i>=0; i--){
+	for(int i=0; i<NCHAN; i++){
 		g_c[i]->save(&ms);
 	}
 	for(int i=0; i<4; i++){
@@ -837,7 +841,7 @@ void destroy(GtkWidget *, gpointer){
 	delete g_vsFadeColor;
 	delete g_vsThreshold;
 	cgDestroyContext(myCgContext);
-	for(int i=0; i<96; i++){
+	for(int i=0; i<NCHAN; i++){
 		delete g_c[i];
 	}
 	gtk_main_quit();
@@ -895,13 +899,13 @@ void* po8_thread(void*){
 		double		sinSamples = 0.0; // for driving the sinusoids; resets every 4e4. 
 		long long bytes = 0; 
 		unsigned int frame = 0; 
-		unsigned int nchan = 96;
+		unsigned int nchan = NCHAN;
 		unsigned int bps = 2; //bytes/sample
 		if(!simulate && card){
 			nchan = card->numChannels(); 
 			bps = card->dataSampleSize();
 		}
-		short * temp = new short[bufmax*nchan]; // >10000 samples * 2 bytes/sample * nChannels 
+		short * temp = new short[bufmax*(nchan+4)]; // 2^14 samples * 2 bytes/sample * (nChannels+time+stim) 
 		short * temptemp = new short[bufmax];
 		while((simulate || conn_cards > 0) && !g_die){
 			if (!simulate && !card->waitForDataReady()) { // waits ~ 1200 hours ;-)
@@ -947,7 +951,7 @@ void* po8_thread(void*){
 					temptemp[i] =  (short)(sinf((float)
 							((sinSamples + i)/6.0))*32768.f*scale); 
 				}
-				for(int k=0; k<96; k++){
+				for(int k=0; k<NCHAN; k++){
 					for(int i=0; i<numSamples; i++){
 						temp[k*numSamples +i] = temptemp[i]; 
 					}
@@ -955,8 +959,8 @@ void* po8_thread(void*){
 				//last part of the buffer is just TDT ticks (most recent -> least delay?)
 				for(int i=0; i<numSamples; i++){
 					int r = (int)(sinSamples +i); 
-					temp[96*numSamples +i] = r & 0xffff;
-					temp[97*numSamples +i] = (r>>16) & 0xffff; 
+					temp[NCHAN*numSamples     +i] = r       & 0xffff;
+					temp[(NCHAN+1)*numSamples +i] = (r>>16) & 0xffff; 
 				}
 				totalSamples += numSamples;
 				sinSamples += numSamples; 
@@ -971,38 +975,55 @@ void* po8_thread(void*){
 							((long double)bytes) / ((gettime() - starttime)*(1024.0*1024.0))); 
 				}
 				*/
-				//copy the data over to g_fbuf. 
-				//input data is scaled from TDT so that 32767 = 10mV.
+
 				long double time = gettime(); 
-				g_lastPo8eTime = time; 
-				for(int k=0; k<NFBUF; k++){
+				g_lastPo8eTime = time;
+
+				// copy the data over to g_fbuf for display (broadband trace)
+				// input data is scaled from TDT so that 32767 = 10mV.
+				// send the data for one channel to jack
+
+				float audio[256]; // audio
+				for (int k=0; k<NFBUF; k++) {
 					int h = g_channel[k];
-					float gain = g_c[h]->getGain(); 
-					for(int i=0; i<numSamples; i++){
-						short samp = temp[i + h*numSamples]; //strange ordering .. but eh.
-						g_fbuf[k][((g_fbufW+i) % g_nsamp)*3 + 1] = (gain * samp / 32767.f); 
+					float gain = g_c[h]->getGain();
+					for (int i=0; i<numSamples; i++) {
+						short samp  = temp[h*numSamples + i];
+						float sampf = gain * samp / 32767.f;
+						g_fbuf[k][((g_fbufW+i) % g_nsamp)*3 + 1] = sampf;
 						//g_fbuf[k][(g_fbufW % g_nsamp)*3 + 1] = 0; --sets the color.
+
+						if (k==0 && i<256) {
+							audio[i] = sampf;
+						}
 					}
 				}
-#ifdef JACK
-					//copy to jack output buffer --
-					{
-						float g[256]; 
-						int h = g_channel[0]; 
-						float gain = g_c[g_channel[0]]->getGain(); 
-						for(int i=0; i<numSamples && i<256; i++){
-							short samp = temp[i + h*numSamples];
-							g[i] = gain * samp / 32767.f; 
-						}
-						jackAddSamples(&g[0], &g[0], numSamples);
+				#ifdef JACK
+				jackAddSamples(&audio[0], &audio[0], numSamples);
+				#endif
+
+/*
+				#ifdef JACK
+				//copy to jack output buffer --
+				{
+					float g[256]; 
+					int h = g_channel[0]; 
+					float gain = g_c[g_channel[0]]->getGain(); 
+					for(int i=0; i<numSamples && i<256; i++){
+						short samp = temp[i + h*numSamples];
+						g[i] = gain * samp / 32767.f; 
 					}
-#endif
-				g_fbufW += numSamples; 
+					jackAddSamples(&g[0], &g[0], numSamples);
+				}
+				#endif
+*/
+
+				g_fbufW += numSamples;  
 				// copy to the sorting buffers, wrapped.
-				int oldo = g_sample & 255; 
-				for(int k=0; k<96; k++){
-					for(int i=0; i<numSamples; i++){
-						short samp = temp[i + k*numSamples]; //strange ordering .. but eh.
+				int oldo = g_sample & 255;  
+				for(int k=0; k<NCHAN; k++){ 
+					for(int i=0; i<numSamples; i++){ 
+						short samp = temp[k*numSamples + i]; //strange ordering .. but eh.
 						float f = samp / 32767.f; 
 						g_obuf[k][(oldo + i)&255] = f; 
 						//1 = +10mV; range = [-1 1] here.
@@ -1015,19 +1036,31 @@ void* po8_thread(void*){
 						g_c[k]->m_mean = m; 
 					}
 				}
-				if(1){
+
+				if (1) {
 					//get the sync -- estimate TDT ticks from perf counter.
-					int ticks = (unsigned short)(temp[96*numSamples + numSamples -1]); 
-					ticks += (unsigned short)(temp[97*numSamples + numSamples -1]) << 16; 
+					int ticks = (unsigned short)(temp[NCHAN*numSamples + numSamples -1]); 
+					ticks += (unsigned short)(temp[(NCHAN+1)*numSamples + numSamples -1]) << 16; 
 					g_ts.update(time, ticks, frame); //also updates the mmap file.
 					g_ts.m_ticks = ticks; //for display.
 					g_ts.m_dropped = (int)totalSamples - ticks;
+
+					int icmsbits = 0;
+					for (int k=0; k<numSamples; k++) {
+						int tmp = (unsigned short)(temp[(NCHAN+2)*numSamples + k]);
+						tmp    += (unsigned short)(temp[(NCHAN+3)*numSamples + k]) << 16;
+						icmsbits += tmp;
+					}
+					if (icmsbits != 0) {
+						printf("icmsbits: %d\n", icmsbits);
+					}
 				}
+
 				g_sample += numSamples; 
 				//sort -- see if samples pass threshold.  if so, copy. 
 				wfpak pak; 
 				float wf[32]; 
-				for(int k=0; k<96 && !g_die; k++){
+				for(int k=0; k<NCHAN && !g_die; k++){
 					float threshold = g_c[k]->getThreshold(); //1 -> 10mV.
 					int centering = g_c[k]->getCentering();
 					for(int m=0; m<numSamples; m++){
@@ -1137,15 +1170,15 @@ void* mmap_thread(void*){
 	 // XXX we make an assumption here that the number of lags is
 	 // the same for all neurons.
 	int nlags = g_fr[0][0].get_lags(); 
-	size_t length = 97*2*nlags*2; // (96chans+time)*(2 units)*lags*sizeof(short)
+	size_t length = (NCHAN+1)*NSORT*nlags*2; // (chans+time)*(2 units)*lags*sizeof(short)
 	mmapHelp* mmh = new mmapHelp(length, "/tmp/binned.mmap"); 
 	volatile unsigned short* bin = (unsigned short*)mmh->m_addr; 
 	mmh->prinfo(); 
 	fifoHelp* pipe_out = new fifoHelp("/tmp/gtkclient_out.fifo");
 	fifoHelp* pipe_in = new fifoHelp("/tmp/gtkclient_in.fifo");
 	int frame = 0; 
-	bin[96*2*nlags] = 0; 
-	bin[96*2*nlags+1] = 0; 
+	bin[NCHAN*2*nlags] = 0; 
+	bin[NCHAN*2*nlags+1] = 0; 
 	flush_pipe(pipe_out->m_fd); 
 
 	while(!g_die){
@@ -1155,12 +1188,12 @@ void* mmap_thread(void*){
 		double end = reqTime; 	// or < 0 to bin 'now'.
 		if(end < 0) end = (double)gettime(); 
 		if(r >= 3){
-			for(int i=0; i<96; i++){
+			for(int i=0; i<NCHAN; i++){
 				for(int j=0; j<2; j++){
 					g_fr[i][j].get_bins(end, (unsigned short*)&(bin[(i*2+j)*nlags])); 
 				}
 			}
-			bin[96*2*nlags]++; //counter.
+			bin[NCHAN*2*nlags]++; //counter.
 			// N.B. seems we need to touch all memory to update the first page. 
 			//msync(addr, length, MS_SYNC); 
 			//  if made with shm_open, msync is ok -- no writes to disk.
@@ -1184,7 +1217,7 @@ static gboolean chanscan(gpointer){
 		base &= 31;
 		for(int k=0; k<4; k++){
 			g_channel[k] = base + k*32;
-			g_channel[k] %= 96;
+			g_channel[k] %= NCHAN;
 			gtk_adjustment_set_value(g_channelSpin[k], (double)g_channel[k]);
 		}
 		g_uiRecursion--;
@@ -1197,7 +1230,7 @@ void updateChannelUI(int k){
 	g_uiRecursion++;
 	int ch = g_channel[k];
 	gtk_adjustment_set_value(g_gainSpin[k], g_c[ch]->getGain());
-	gtk_adjustment_set_value(g_agcSpin[k], g_c[ch]->m_agc);
+	//gtk_adjustment_set_value(g_agcSpin[k], g_c[ch]->m_agc);
 	gtk_adjustment_set_value(g_apertureSpin[k*2+0], g_c[ch]->getApertureUv(0));
 	gtk_adjustment_set_value(g_apertureSpin[k*2+1], g_c[ch]->getApertureUv(1));
 	gtk_adjustment_set_value(g_thresholdSpin[k], g_c[ch]->getThreshold());
@@ -1209,7 +1242,7 @@ static void channelSpinCB( GtkWidget*, gpointer p){
 	if(k >= 0 && k<4){
 		int ch = (int)gtk_adjustment_get_value(g_channelSpin[k]);
 		printf("channelSpinCB: %d\n", ch);
-		if(ch < 96 && ch >= 0 && ch != g_channel[k]){
+		if(ch < NCHAN && ch >= 0 && ch != g_channel[k]){
 			g_channel[k] = ch;
 			//update the UI too.
 			updateChannelUI(k);
@@ -1218,7 +1251,7 @@ static void channelSpinCB( GtkWidget*, gpointer p){
 		//this allows more PCA points for sorting!
 		if(g_mode == MODE_SORT && k == 0 && g_autoChOffset){
 			for(int j=1; j<4; j++){
-				g_channel[j] = (g_channel[0] + j) % 96;
+				g_channel[j] = (g_channel[0] + j) % NCHAN;
 				//this does not recurse -- have to set the other stuff manually.
 				g_uiRecursion++;
 				gtk_adjustment_set_value(g_channelSpin[j], (double)g_channel[j]);
@@ -1244,16 +1277,16 @@ static void gainSpinCB( GtkWidget*, gpointer p){
 }
 static void gainSetAll(gpointer ){
 	float gain = gtk_adjustment_get_value(g_gainSpin[0]);
-	for(int i=0; i<96; i++){
+	for(int i=0; i<NCHAN; i++){
 		g_c[i]->setGain(gain);
 		//updateGain(i);
 	}
-	for(int i=0; i<32; i++){
-		//resetBiquads(i);
-	}
+	//for(int i=0; i<32; i++){
+	//	resetBiquads(i);
+	//}
 	for(int i=0; i<4; i++)
 		gtk_adjustment_set_value(g_gainSpin[i], gain);
-	for(int i=0; i<96; i++)
+	for(int i=0; i<NCHAN; i++)
 		g_c[i]->resetPca();
 }
 static void unsortRateSpinCB( GtkWidget* , gpointer){
@@ -1312,7 +1345,7 @@ static void autoThresholdCB( GtkWidget*, gpointer p){
 		g_c[g_channel[0]]->autoThreshold(g_autoThreshold); 
 	}
 	if(h == 2){
-		for(int i=0; i<96; i++){
+		for(int i=0; i<NCHAN; i++){
 			g_c[i]->autoThreshold(g_autoThreshold); 
 		}
 	}
@@ -1614,13 +1647,13 @@ int main(int argc, char **argv)
 	//GtkWidget *combo;
 	//GtkWidget *paned2;
 	
-	for (int i=0;i<96;i++) {
-		g_fr[i][0].set_bin_params(20, 1.0);	// nlags, duration (sec)
-		g_fr[i][1].set_bin_params(20, 1.0);	// nlags, duration (sec)
+	for (int i=0;i<NCHAN;i++) {
+		g_fr[i][0].set_bin_params(40, 1.0);	// nlags, duration (sec)
+		g_fr[i][1].set_bin_params(40, 1.0);	// nlags, duration (sec)
 	}
 
 	FiringRate test_fr;
-	test_fr.set_bin_params(20,1.0);
+	test_fr.set_bin_params(40,1.0);
 	test_fr.get_bins_test();
 
 	if (argc > 1) {
@@ -1634,9 +1667,9 @@ int main(int argc, char **argv)
 	for(int i=0; i<4; i++){
 		g_channel[i] = ms.getValue(i, "channel", i*16); 
 		if(g_channel[i] < 0) g_channel[i] = 0;
-		if(g_channel[i] >= 96) g_channel[i] = 95; 
+		if(g_channel[i] >= NCHAN) g_channel[i] = NCHAN-1; 
 	}
-	for(int i=0; i<96; i++){
+	for(int i=0; i<NCHAN; i++){
 		g_c[i] = new Channel(i, &ms);
 	}
 	//g_dropped = 0;
@@ -1689,7 +1722,7 @@ int main(int argc, char **argv)
 
 		//channel spinner.
 		g_channelSpin[i] = mk_spinner("ch", bx3,
-									  g_channel[i], 0, 96, 1,
+									  g_channel[i], 0, NCHAN, 1,
 									  channelSpinCB, i);
 		//right of that, a gain spinner. (need to update depending on ch)
 		g_gainSpin[i] = mk_spinner("gain", bx3,
