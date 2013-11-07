@@ -57,6 +57,7 @@
 #include "timesync.h"
 #include "matStor.h"
 #include "wfwriter.h"
+#include "icmswriter.h"
 #include "jacksnd.h"
 
 #include "fenv.h" // for debugging nan problems
@@ -96,6 +97,8 @@ WfWriter		g_wfwriter;
 GLuint 		g_base;            // base display list for the font set.
 
 Artifact * 	g_artifact[STIMCHAN][RECCHAN];
+
+ICMSWriter	g_icmswriter;
 
 bool g_die = false;
 double g_pause = -1.0;
@@ -814,7 +817,9 @@ static gboolean rotate (gpointer user_data){
 	snprintf(str, 256, "\npo8e interval: %f (ms)\n", (double)(gettime() - g_lastPo8eTime)*1000.0); 
 	s += string(str); 
 	gtk_label_set_text(GTK_LABEL(g_infoLabel), s.c_str());
-	snprintf(str, 256, "%.2f MB", (double)g_wfwriter.bytes()/1e6);
+	snprintf(str, 256, "spikes: %.2f MB\ticms: %.2f MB", 
+		(double)g_wfwriter.bytes()/1e6,
+		(double)g_icmswriter.bytes()/1e6);
 	gtk_label_set_text(GTK_LABEL(g_fileSizeLabel), str);
 	return TRUE;
 }
@@ -849,6 +854,15 @@ void destroy(GtkWidget *, gpointer){
 void* wfwrite_thread(void*){
 	while(!g_die){
 		if(g_wfwriter.write()) //if it can write, it will.
+			usleep(1e4); //poll qicker.
+		else
+			usleep(1e5); 
+	}
+	return NULL; 
+}
+void* icmswrite_thread(void*){
+	while(!g_die){
+		if(g_icmswriter.write()) //if it can write, it will.
 			usleep(1e4); //poll qicker.
 		else
 			usleep(1e5); 
@@ -979,53 +993,56 @@ void* po8_thread(void*){
 				long double time = gettime(); 
 				g_lastPo8eTime = time;
 
+				// estimate TDT ticks from perf counter
+				// ticks are distributed across two shorts
+				int ticks = (unsigned short)(temp[NCHAN*numSamples + numSamples -1]); 
+				ticks += (unsigned short)(temp[(NCHAN+1)*numSamples + numSamples -1]) << 16; 
+				g_ts.update(time, ticks, frame); //also updates the mmap file.
+				//g_ts.m_ticks = ticks; //for display.
+				g_ts.m_dropped = (int)totalSamples - ticks;
+
+				// get icms times
+				int icmsbits = 0;
+				for (int k=0; k<numSamples; k++) {
+					int tmp = (unsigned short)(temp[(NCHAN+2)*numSamples + k]);
+					tmp    += (unsigned short)(temp[(NCHAN+3)*numSamples + k]) << 16;
+					icmsbits += tmp;
+				}
+				if (icmsbits != 0) {
+					printf("icmsbits: %d\n", icmsbits);
+				}
+
+				// xxx filling artifact buffers and subtracting artifact has to happen here!
+
 				// copy the data over to g_fbuf for display (broadband trace)
 				// input data is scaled from TDT so that 32767 = 10mV.
 				// send the data for one channel to jack
-
-				float audio[256]; // audio
+				float audio[256];
 				for (int k=0; k<NFBUF; k++) {
 					int h = g_channel[k];
 					float gain = g_c[h]->getGain();
 					for (int i=0; i<numSamples; i++) {
-						short samp  = temp[h*numSamples + i];
-						float sampf = gain * samp / 32767.f;
-						g_fbuf[k][((g_fbufW+i) % g_nsamp)*3 + 1] = sampf;
+						short samp = temp[h*numSamples + i];
+						float f = gain * samp / 32767.f;
+						g_fbuf[k][((g_fbufW+i) % g_nsamp)*3 + 1] = f;
 						//g_fbuf[k][(g_fbufW % g_nsamp)*3 + 1] = 0; --sets the color.
-
 						if (k==0 && i<256) {
-							audio[i] = sampf;
+							audio[i] = f;
 						}
 					}
 				}
 				#ifdef JACK
 				jackAddSamples(&audio[0], &audio[0], numSamples);
 				#endif
+				g_fbufW += numSamples;
 
-/*
-				#ifdef JACK
-				//copy to jack output buffer --
-				{
-					float g[256]; 
-					int h = g_channel[0]; 
-					float gain = g_c[g_channel[0]]->getGain(); 
-					for(int i=0; i<numSamples && i<256; i++){
-						short samp = temp[i + h*numSamples];
-						g[i] = gain * samp / 32767.f; 
-					}
-					jackAddSamples(&g[0], &g[0], numSamples);
-				}
-				#endif
-*/
-
-				g_fbufW += numSamples;  
 				// copy to the sorting buffers, wrapped.
 				int oldo = g_sample & 255;  
-				for(int k=0; k<NCHAN; k++){ 
-					for(int i=0; i<numSamples; i++){ 
-						short samp = temp[k*numSamples + i]; //strange ordering .. but eh.
-						float f = samp / 32767.f; 
-						g_obuf[k][(oldo + i)&255] = f; 
+				for (int k=0; k<NCHAN; k++) { 
+					for( int i=0; i<numSamples; i++) { 
+						short samp = temp[k*numSamples + i];
+						float f = samp / 32767.f; 	// no gain?
+						g_obuf[k][(oldo+i) & 255] = f; 
 						//1 = +10mV; range = [-1 1] here.
 						//update the channel standard deviations, too. 
 						double m = g_c[k]->m_mean; 
@@ -1036,31 +1053,12 @@ void* po8_thread(void*){
 						g_c[k]->m_mean = m; 
 					}
 				}
+				g_sample += numSamples;
 
-				if (1) {
-					//get the sync -- estimate TDT ticks from perf counter.
-					int ticks = (unsigned short)(temp[NCHAN*numSamples + numSamples -1]); 
-					ticks += (unsigned short)(temp[(NCHAN+1)*numSamples + numSamples -1]) << 16; 
-					g_ts.update(time, ticks, frame); //also updates the mmap file.
-					g_ts.m_ticks = ticks; //for display.
-					g_ts.m_dropped = (int)totalSamples - ticks;
-
-					int icmsbits = 0;
-					for (int k=0; k<numSamples; k++) {
-						int tmp = (unsigned short)(temp[(NCHAN+2)*numSamples + k]);
-						tmp    += (unsigned short)(temp[(NCHAN+3)*numSamples + k]) << 16;
-						icmsbits += tmp;
-					}
-					if (icmsbits != 0) {
-						printf("icmsbits: %d\n", icmsbits);
-					}
-				}
-
-				g_sample += numSamples; 
 				//sort -- see if samples pass threshold.  if so, copy. 
 				wfpak pak; 
 				float wf[32]; 
-				for(int k=0; k<NCHAN && !g_die; k++){
+				for (int k=0; k<NCHAN && !g_die; k++) {
 					float threshold = g_c[k]->getThreshold(); //1 -> 10mV.
 					int centering = g_c[k]->getCentering();
 					for(int m=0; m<numSamples; m++){
@@ -1086,21 +1084,21 @@ void* po8_thread(void*){
 									unit = u+1; 
 							}
 							//check if this exceeds minimum ISI. 
-							double ticks = g_sample - numSamples + m + g_ts.m_dropped;
-							// ticks is indexed to the start of the waveform.
+							double wfticks = g_sample - numSamples + m + g_ts.m_dropped;
+							// wfticks is indexed to the start of the waveform.
 							if(g_sample - g_lastSpike[k][unit] > g_minISI*24.4140625){
 								//need to more precisely calulate spike time here.
 								g_c[k]->addWf(wf, unit, time, true);
 								g_c[k]->updateISI(unit, g_sample - numSamples + m); 
 								g_lastSpike[k][unit] = g_sample; 
 								if(g_wfwriter.m_enable){
-									if(unit > 0 || g_saveUnsorted){
+									if(unit > 0 || g_saveUnsorted) {
 										pak.time = time + (double)m/24414.0625; 
-										pak.ticks = ticks; 
+										pak.ticks = wfticks;
 										pak.channel = k; 
 										pak.unit = unit; 
 										pak.len = 32; 
-										float gain2 = 2.f * 32767.f ;
+										float gain2 = 2.f * 32767.f;
 										for(int g=0; g<32; g++){
 											pak.wf[g] = (short)(wf[g]*gain2); //should be in original units.
 										}
@@ -1545,9 +1543,9 @@ static void mk_radio(const char* txt, int ntxt,
 			GTK_SIGNAL_FUNC (cb), GINT_TO_POINTER(i));
 	}
 }
-static void openSaveFile(gpointer parent_window) {
+static void openSaveSpikesFile(gpointer parent_window) {
 	GtkWidget *dialog;
-	dialog = gtk_file_chooser_dialog_new ("Save File",
+	dialog = gtk_file_chooser_dialog_new ("Save Spikes File",
 						(GtkWindow*)parent_window,
 						GTK_FILE_CHOOSER_ACTION_SAVE,
 						GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
@@ -1555,7 +1553,7 @@ static void openSaveFile(gpointer parent_window) {
 						NULL);
 	gtk_file_chooser_set_do_overwrite_confirmation(
 				GTK_FILE_CHOOSER (dialog), TRUE);
-	gtk_file_chooser_set_filename (GTK_FILE_CHOOSER (dialog),"data.bin");
+	gtk_file_chooser_set_filename (GTK_FILE_CHOOSER (dialog),"spikes.bin");
 	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT){
 		char *filename;
 		filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
@@ -1564,9 +1562,29 @@ static void openSaveFile(gpointer parent_window) {
 	}
 	gtk_widget_destroy (dialog);
 }
-static void closeSaveFile(gpointer) {
+static void openSaveICMSFile(gpointer parent_window) {
+	GtkWidget *dialog;
+	dialog = gtk_file_chooser_dialog_new ("Save ICMS File",
+						(GtkWindow*)parent_window,
+						GTK_FILE_CHOOSER_ACTION_SAVE,
+						GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+						GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
+						NULL);
+	gtk_file_chooser_set_do_overwrite_confirmation(
+				GTK_FILE_CHOOSER (dialog), TRUE);
+	gtk_file_chooser_set_filename (GTK_FILE_CHOOSER (dialog),"icms.bin");
+	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT){
+		char *filename;
+		filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
+		g_icmswriter.open(filename); 
+		g_free (filename);
+	}
+	gtk_widget_destroy (dialog);
+}
+static void closeSaveFiles(gpointer) {
 	//have to signal to the other thread, let them close it.
-	g_wfwriter.close(); 
+	g_wfwriter.close();
+	g_icmswriter.close();
 }
 void saveMatrix(const char* fname, gsl_matrix* v){
 	FILE* fid = fopen(fname, "w");
@@ -1683,9 +1701,9 @@ int main(int argc, char **argv)
 
 	window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 	#ifndef DEBUG
-	gtk_window_set_title (GTK_WINDOW (window), "gtk TDT client v1");
+	gtk_window_set_title (GTK_WINDOW (window), "gtk TDT client v1.1");
 	#else
-	gtk_window_set_title (GTK_WINDOW (window), "gtk TDT client v1 *** DEBUG ***");
+	gtk_window_set_title (GTK_WINDOW (window), "gtk TDT client v1.1 *** DEBUG ***");
 	#endif
 	gtk_window_set_default_size (GTK_WINDOW (window), 850, 800);
 	da1 = gtk_drawing_area_new ();
@@ -1695,7 +1713,7 @@ int main(int argc, char **argv)
 	gtk_container_add (GTK_CONTAINER (window), paned);
 
 	v1 = gtk_vbox_new (FALSE, 0);
-	gtk_widget_set_size_request(GTK_WIDGET(v1), 200, 600);
+	gtk_widget_set_size_request(GTK_WIDGET(v1), 220, 650);
 	
 	bx = gtk_vbox_new (FALSE, 2);
 	
@@ -1886,6 +1904,7 @@ int main(int argc, char **argv)
 			 v1, false, "blend mode", blendRadioCB);
 
 	bx = gtk_hbox_new (FALSE, 3);
+
 	//add a pause / go button (applicable to all)
 	button = gtk_check_button_new_with_label("pause");
 	g_signal_connect (button, "toggled",
@@ -1893,38 +1912,40 @@ int main(int argc, char **argv)
 	gtk_box_pack_start (GTK_BOX (bx), button, TRUE, TRUE, 0);
 	gtk_widget_show(button);
 
-	//add a sync headstage button (useful in the case of a reset).
-	//button = gtk_button_new_with_label ("sync headstage");
-	//g_signal_connect(button, "clicked", G_CALLBACK (syncHeadstageCB),
-	//				 (gpointer*)window);
-	gtk_box_pack_start (GTK_BOX (bx), button, FALSE, FALSE, 0);
-	gtk_box_pack_start (GTK_BOX (v1), bx, TRUE, TRUE, 0);
-
 	//saving unsorted units? 
-	box1 = gtk_vbox_new (FALSE, 0);
 	button = gtk_check_button_new_with_label("Save unsorted");
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), g_saveUnsorted);
 	g_signal_connect (button, "toggled",
 			G_CALLBACK (saveUnsortButtonCB), (gpointer) "o");
-	gtk_box_pack_start (GTK_BOX (box1), button, TRUE, TRUE, 0);
+	gtk_box_pack_start (GTK_BOX (bx), button, TRUE, TRUE, 0);
 	gtk_widget_show(button);
 
-	//and save / stop saving button
+	gtk_box_pack_start (GTK_BOX (v1), bx, TRUE, TRUE, 0);
+
+	//and save / stop saving buttons
 	bx = gtk_hbox_new (FALSE, 3);
-	button = gtk_button_new_with_label ("Record");
-	g_signal_connect(button, "clicked", G_CALLBACK (openSaveFile),
+	button = gtk_button_new_with_label ("Rec Spikes");
+	g_signal_connect(button, "clicked", G_CALLBACK (openSaveSpikesFile),
 					 (gpointer*)window);
 	gtk_box_pack_start (GTK_BOX (bx), button, FALSE, FALSE, 0);
-		button = gtk_button_new_with_label ("Stop");
-	g_signal_connect(button, "clicked", G_CALLBACK (closeSaveFile),0);
+
+	button = gtk_button_new_with_label ("Rec ICMS");
+	g_signal_connect(button, "clicked", G_CALLBACK (openSaveICMSFile),
+					 (gpointer*)window);
 	gtk_box_pack_start (GTK_BOX (bx), button, FALSE, FALSE, 0);
+
+	button = gtk_button_new_with_label ("Stop All");
+	g_signal_connect(button, "clicked", G_CALLBACK (closeSaveFiles),0);
+	gtk_box_pack_start (GTK_BOX (bx), button, FALSE, FALSE, 0);
+	
+	gtk_box_pack_start (GTK_BOX (v1), bx, TRUE, TRUE, 0);
+
+	bx = gtk_hbox_new (FALSE, 3);
 	g_fileSizeLabel = gtk_label_new ("KB");
 	gtk_misc_set_alignment (GTK_MISC (g_fileSizeLabel), 0, 0);
 	gtk_box_pack_start (GTK_BOX (bx), g_fileSizeLabel, FALSE, FALSE, 0);
 	gtk_widget_show(g_fileSizeLabel);
-	gtk_box_pack_start (GTK_BOX (box1), bx, TRUE, TRUE, 0);
-	gtk_box_pack_start (GTK_BOX (v1), box1, TRUE, TRUE, 0);
-
+	gtk_box_pack_start (GTK_BOX (v1), bx, TRUE, TRUE, 0);
 
 	gtk_paned_add1(GTK_PANED(paned), v1);
 	gtk_paned_add2(GTK_PANED(paned), da1);
@@ -1974,9 +1995,10 @@ int main(int argc, char **argv)
 	pthread_attr_t attr;
 	pthread_attr_init(&attr);
 	g_startTime = gettime();
-	pthread_create( &thread1, &attr, po8_thread, 0 );
-	pthread_create( &thread1, &attr, wfwrite_thread, 0 );
-	pthread_create( &thread1, &attr, mmap_thread, 0 );
+	pthread_create( &thread1, &attr, po8_thread,		0 );
+	pthread_create( &thread1, &attr, wfwrite_thread, 	0 );
+	pthread_create( &thread1, &attr, icmswrite_thread, 	0 );
+	pthread_create( &thread1, &attr, mmap_thread, 		0 );
 
 	//set the initial sampling stage.
 	//gtk_combo_box_set_active(GTK_COMBO_BOX(combo), 12);
