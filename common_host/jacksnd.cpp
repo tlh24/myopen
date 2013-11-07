@@ -80,8 +80,10 @@ int process_resample(jack_nframes_t nframes, void* arg){
 	for(unsigned int i=0; i<nframes; i++){
 		long dif = r->wrPtr - r->rdPtr; 
 		if(dif <= 0){ //probably pipe dried up.
-			if(i==0)
-				printf("ERROR: dif <= 0 dif %ld nframes %d rd %ld wr %ld\n", dif, nframes, r->rdPtr, r->wrPtr); 
+			if(i==0) {
+				// for the moment, let's comment this out to debug other problems
+				//printf("ERROR: dif <= 0 dif %ld nframes %d rd %ld wr %ld\n", dif, nframes, r->rdPtr, r->wrPtr); 
+			}
 			out1[i] = 0.f; 
 			out2[i] = 0.f; 
 		} else if(dif >= RESAMP_MASK){
