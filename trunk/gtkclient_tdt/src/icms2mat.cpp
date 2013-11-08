@@ -1,5 +1,3 @@
-//program to convert gtkclient's stream-saved output to matlab files.
-
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
@@ -8,7 +6,7 @@
 #include <matio.h>
 #include <atomic>
 #include <iostream>
-#include "wfwriter.h"
+#include "icmswriter.h"
 #include <assert.h>
 #include <zlib.h>
 
@@ -22,8 +20,8 @@
 int main(int argn, char **argc)
 {
 	if (argn != 3 && argn != 2) {
-		printf("usage: convert infile.bin outfile.mat\n");
-		printf(" or just: convert infile.bin\n");
+		printf("usage: icms2mat infile.dat outfile.mat\n");
+		printf(" or just: icms2mat infile.dat\n");
 		exit(0);
 	} else {
 		FILE *in = fopen(argc[1], "r");
@@ -63,10 +61,10 @@ int main(int argn, char **argc)
 			fread((void *)&v,4,1,in);
 			if (ferror(in) || feof(in)) done = true;
 			else {
-				if (v == 0xc0edfad0) {
+				if (v == 0xdeadbabe) {
 					packets++;
-					fseek(in, sizeof(wfpak), SEEK_CUR);
-					pos += 4 + sizeof(wfpak);
+					fseek(in, sizeof(icmspak), SEEK_CUR);
+					pos += 4 + sizeof(icmspak);
 				} else {
 					printf("magic number seems off, is 0x%x, %lld bytes, %lld packets\n",
 					       v,pos,packets);
@@ -83,38 +81,30 @@ int main(int argn, char **argc)
 		//okay, allocate appropriate data structs:
 		double *time;
 		i64 *ticks;
-		short *channel;
-		short *unit;
-		short *wf;
+		short *id;
 
 		time = (double *)malloc(packets * sizeof(double));
 		ticks = (i64 *)malloc(packets * sizeof(i64));
-		channel = (short *)malloc(packets * sizeof(short));
-		unit = (short *)malloc(packets * sizeof(short));
-		wf = (short *)malloc(32 * packets * sizeof(short));
+		id = (short *)malloc(packets * sizeof(short));
 
-		if (time == 0 || ticks == 0 || channel == 0 || unit == 0 || wf == 0) {
+		if (time == 0 || ticks == 0 || id == 0) {
 			printf("not enough memory to convert in-place. bummer.");
 			exit(0);
 		}
 		i64 n = 0;
-		wfpak pak;
+		icmspak pak;
 		done = false;
 		while (!done) {
 			fread((void *)&v,4,1,in);
 			if (ferror(in) || feof(in)) done = true;
 			else {
-				if (v == 0xc0edfad0) {
+				if (v == 0xdeadbabe) {
 					fread((void *)&pak, sizeof(pak), 1, in);
 					time[n] = pak.time;
 					ticks[n] = pak.ticks;
-					channel[n] = pak.channel;
-					unit[n] = pak.unit;
-					for (int g=0; g<32; g++) {
-						wf[n*32+g] = pak.wf[g];
-					}
+					id[n] = pak.id;
 					n++;
-					pos += 4 + sizeof(wfpak);
+					pos += 4 + sizeof(icmspak);
 				} else {
 					printf("second pass, magic number seems off, is 0x%x, %lld bytes, %lld packets\n",
 					       v,pos,n);
@@ -125,106 +115,62 @@ int main(int argn, char **argc)
 		}
 		//write out to matlab.
 		//might as well coalesce here, since it's all in memory.
-		int maxch = 0;
-		int maxunit = 0;
+		int maxid = 0;
 		for (i64 i=0; i<n; i++) {
-			maxch = channel[i] > maxch ? channel[i] : maxch;
-			maxunit = unit[i] > maxunit ? unit[i] : maxunit;
+			maxid = id[i] > maxid ? id[i] : maxid;
 		}
-		printf("max channel %d max unit %d\n", maxch, maxunit);
-		if (maxch > 1024 || maxunit > 100) {
+		printf("max id %d\n", maxid);
+		if (maxid > 100) {
 			printf("these numbers seem crazy.  quitting. \n");
 			exit(0);
 		}
-		maxch++;  //zero-indexed.
-		maxunit++;
+		//maxid++;  //zero-indexed.
+
 		size_t dims[2], dims2[2];
-		dims[0] = maxunit;
-		dims[1] = maxch;
+		dims[0] = maxid;
+		dims[1] = 1;
+
 		//do it this way to minimize memory footprint.
-		auto unitCount = [&](int ch, int un) -> i64 {
+		auto idCount = [&](int thisid) -> i64 {
 			i64 m = 0;
 			for (i64 i=0; i<n; i++) {
-				if (channel[i] == ch && unit[i] == un)
+				if (id[i] == thisid)
 					m++;
 			}
 			return m;
 		};
-		int index = 0;
-		matvar_t **wf_cell = (matvar_t **)malloc(dims[0]*dims[1]*sizeof(matvar_t *));
-		for (int c=0; c<maxch; c++) {
-			for (int u=0; u<maxunit; u++) {
-				i64 m = unitCount(c, u);
-				short *w = (short *)malloc(32 * m * sizeof(short));
-				i64 m2 = 0;
-				for (i64 i=0; i<n; i++) {
-					if (channel[i] == c && unit[i] == u) {
-						for (i64 g=0; g<32; g++) {
-							w[m2*32 + g] = wf[i*32+g];
-						}
-						m2++;
-					}
-				}
-				dims2[0] = 32;
-				dims2[1] = m;
-				wf_cell[index] = Mat_VarCreate
-				                 (NULL, MAT_C_INT16, MAT_T_INT16, 2, dims2, w, 0);
-				free(w);
-				index++;
-			}
-		}
-		matvar_t *cell_matvar = Mat_VarCreate
-		                        ("wf", MAT_C_CELL, MAT_T_CELL, 2, dims, wf_cell, 0);
-		Mat_VarWrite(mat, cell_matvar, MAT_COMPRESSION_NONE);
-		Mat_VarFree(cell_matvar);
-		free(wf_cell);
 
-		index = 0;
 		matvar_t **time_cell = (matvar_t **)malloc(dims[0]*dims[1]*sizeof(matvar_t *));
-		for (int c=0; c<maxch; c++) {
-			for (int u=0; u<maxunit; u++) {
-				i64 m = unitCount(c, u);
-				double *w = (double *)malloc(m * sizeof(double));
-				i64 m2 = 0;
-				for (i64 i=0; i<n; i++) {
-					if (channel[i] == c && unit[i] == u) {
-						w[m2] = time[i];
-						m2++;
-					}
+		matvar_t **ticks_cell = (matvar_t **)malloc(dims[0]*dims[1]*sizeof(matvar_t *));
+		for (int i=0; i<maxid; i++) {
+			i64 m = idCount(i+1); // 1-indexed
+			double *w = (double *)malloc(m*sizeof(double));
+			i64 *x = (i64 *)malloc(m*sizeof(i64));
+			i64 m2 = 0;
+			for (i64 j=0; j<n; j++) {
+				if (id[j] == i+1) {	// 1-indexed
+					w[m2] = time[j];
+					x[m2] = ticks[j];
+					m2++;
 				}
-				dims2[0] = m;
-				dims2[1] = 1;
-				time_cell[index] = Mat_VarCreate
-				                   (NULL, MAT_C_DOUBLE, MAT_T_DOUBLE, 2, dims2, w, 0);
-				free(w);
-				index++;
 			}
+			dims2[0] = m;
+			dims2[1] = 1;
+			time_cell[i] = Mat_VarCreate
+			               (NULL, MAT_C_DOUBLE, MAT_T_DOUBLE, 2, dims2, w, 0);
+			ticks_cell[i] = Mat_VarCreate
+			                (NULL, MAT_C_INT64, MAT_T_INT64, 2, dims2, x, 0);
+			free(w);
+			free(x);
 		}
+
+		matvar_t *cell_matvar;
+
 		cell_matvar = Mat_VarCreate("time", MAT_C_CELL, MAT_T_CELL, 2, dims, time_cell, 0);
 		Mat_VarWrite(mat, cell_matvar, MAT_COMPRESSION_NONE);
 		Mat_VarFree(cell_matvar);
 		free(time_cell);
 
-		index = 0;
-		matvar_t **ticks_cell = (matvar_t **)malloc(dims[0]*dims[1]*sizeof(matvar_t *));
-		for (int c=0; c<maxch; c++) {
-			for (int u=0; u<maxunit; u++) {
-				i64 m = unitCount(c, u);
-				i64 *w = (i64 *)malloc(m * sizeof(i64));
-				i64 m2 = 0;
-				for (i64 i=0; i<n; i++) {
-					if (channel[i] == c && unit[i] == u) {
-						w[m2] = ticks[i];
-						m2++;
-					}
-				}
-				dims2[0] = m;
-				dims2[1] = 1;
-				ticks_cell[index] = Mat_VarCreate(NULL, MAT_C_INT64, MAT_T_INT64, 2, dims2, w, 0);
-				free(w);
-				index++;
-			}
-		}
 		cell_matvar = Mat_VarCreate("ticks", MAT_C_CELL, MAT_T_CELL, 2, dims, ticks_cell, 0);
 		Mat_VarWrite(mat, cell_matvar, MAT_COMPRESSION_NONE);
 		Mat_VarFree(cell_matvar);
