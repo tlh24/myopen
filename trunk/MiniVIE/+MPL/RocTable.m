@@ -71,11 +71,11 @@ classdef RocTable < handle
             pos1([mce.RING_MCP mce.RING_PIP mce.RING_DIP]) = -0.4;
             pos1([mce.LITTLE_MCP mce.LITTLE_PIP mce.LITTLE_DIP]) = -0.4;
             pos2 = pos1;
-
+            
             pos3 = pos1;
             pos3([mce.INDEX_MCP mce.INDEX_PIP mce.INDEX_DIP]) = 0.75;
             pos3([mce.MIDDLE_MCP mce.MIDDLE_PIP mce.MIDDLE_DIP]) = 0.9;
-
+            
             pos3([mce.THUMB_MCP]) = 0.55;
             pos3([mce.THUMB_CMC]) = 0.75;
             pos3([mce.THUMB_CMC]) = 0.95;
@@ -131,17 +131,17 @@ classdef RocTable < handle
                 ];
             roc(6).angles(2:4,[mce.RING_AB_AD mce.LITTLE_AB_AD]) = -1;
             
-%             roc(16).joints = [8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27];
-%             % replicate the base angles
-%             roc(16).angles = repmat(basePosition,length(roc(16).waypoint),1);
-%             roc(16).angles(2:3,[mce.INDEX_MCP mce.INDEX_PIP mce.INDEX_DIP]) = 1.2;
-%             roc(16).angles(2:3,[mce.MIDDLE_MCP mce.MIDDLE_PIP mce.MIDDLE_DIP]) = 1;
-%             roc(16).angles(2:3,mce.RING_MCP) = 1.6;
-%             roc(16).angles(2:3,[mce.LITTLE_MCP mce.LITTLE_PIP mce.LITTLE_DIP]) = 1;
-%             
-%             roc(16).angles(3,mce.THUMB_CMC_AD_AB) = .5;
-%             roc(16).angles(3,mce.THUMB_CMC) = .5;
-%             roc(16).angles(3,mce.THUMB_MCP) = 1.2;
+            %             roc(16).joints = [8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27];
+            %             % replicate the base angles
+            %             roc(16).angles = repmat(basePosition,length(roc(16).waypoint),1);
+            %             roc(16).angles(2:3,[mce.INDEX_MCP mce.INDEX_PIP mce.INDEX_DIP]) = 1.2;
+            %             roc(16).angles(2:3,[mce.MIDDLE_MCP mce.MIDDLE_PIP mce.MIDDLE_DIP]) = 1;
+            %             roc(16).angles(2:3,mce.RING_MCP) = 1.6;
+            %             roc(16).angles(2:3,[mce.LITTLE_MCP mce.LITTLE_PIP mce.LITTLE_DIP]) = 1;
+            %
+            %             roc(16).angles(3,mce.THUMB_CMC_AD_AB) = .5;
+            %             roc(16).angles(3,mce.THUMB_CMC) = .5;
+            %             roc(16).angles(3,mce.THUMB_MCP) = 1.2;
             
             
             roc(7).id = 6;
@@ -252,7 +252,7 @@ classdef RocTable < handle
             roc(15).angles(1,mce.RING_MCP) = 0;
             roc(15).angles(2,mce.MIDDLE_MCP) = 1.6;
             roc(15).angles(2,mce.RING_MCP) = 1.6;
-
+            
             
             roc(16).id = 15;
             roc(16).name = 'Lateral';
@@ -269,14 +269,59 @@ classdef RocTable < handle
             roc(16).angles(3,mce.THUMB_CMC) = .5;
             roc(16).angles(3,mce.THUMB_MCP) = 1.2;
             
-
+            
             
             if ~isempty(fname)
                 MPL.RocTable.writeRocTable(fname,roc);
             end
-            % To reload 
+            % To reload
             % obj.Presentation.hNfu.readRocTable
-
+            
+        end
+        function structRoc = readRocTable(xmlFileName)
+            % structRoc = readRocTable(xmlFileName)
+            %
+            % Read a roc table in xml and store it as a matlab structure with the format
+            % structRoc:
+            % roc(1).id = 0;
+            % roc(1).name = 'rest';
+            % roc(1).waypoint = [0 1];
+            % roc(1).joints = [8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27];
+            % roc(1).angles = [2x20]
+            
+            xDoc = xmlread(xmlFileName);
+            xRoot = xDoc.getDocumentElement;
+            xTables = xRoot.getElementsByTagName('table');
+            
+            numRocs = xTables.getLength;
+            structRoc = repmat(struct('id',[],'name',[],'waypoint',[],'joints',[],'angles',[]),1,numRocs);
+            
+            for iTable = 1:numRocs
+                thisTable = xTables.item(iTable-1);
+                
+                newStr = char(thisTable.getElementsByTagName('id').item(0).getFirstChild.getData);
+                structRoc(iTable).id = str2double(newStr);
+                
+                newStr = char(thisTable.getElementsByTagName('name').item(0).getFirstChild.getData);
+                structRoc(iTable).name = newStr;
+                
+                newStr = char(thisTable.getElementsByTagName('joints').item(0).getFirstChild.getData);
+                structRoc(iTable).joints = str2num(newStr); %#ok<ST2NM>
+                
+                % Search for multiple waypoints
+                waypoints = thisTable.getElementsByTagName('waypoint');
+                numWaypoints = waypoints.getLength;
+                structRoc(iTable).waypoint = zeros(1,numWaypoints);
+                structRoc(iTable).angles = zeros(numWaypoints,length(structRoc(iTable).joints));
+                
+                for iWaypoint = 1:numWaypoints
+                    structRoc(iTable).waypoint(iWaypoint) = str2double(waypoints.item(iWaypoint-1).getAttribute('index'));
+                    newStr = waypoints.item(iWaypoint-1).getElementsByTagName('angles').item(0).getFirstChild.getData;
+                    structRoc(iTable).angles(iWaypoint,:) = str2num(newStr); %#ok<ST2NM>
+                end
+                
+            end
+            
         end
         function writeRocTable(xmlFileName,structRocTables)
             % Create XML Roc table document based on the given filename.  Loop through
@@ -323,7 +368,7 @@ classdef RocTable < handle
             
             % Validate inputs
             numWayPts = length(wayPts);
-            [numJointAngleRows numJointAngleColumns]= size(jointAngles);
+            [numJointAngleRows, numJointAngleColumns]= size(jointAngles);
             assert(numWayPts == ...
                 numJointAngleRows,'Number of waypoints (%d) must match number of joint rows (%d) for roc id: %d',...
                 numWayPts,numJointAngleRows,id);
