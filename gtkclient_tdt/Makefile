@@ -27,8 +27,7 @@ GLIBS := gtk+-2.0 gtkglext-1.0 gtkglext-x11-1.0
 GTKFLAGS = `pkg-config --cflags $(GLIBS) `
 GTKLD = `pkg-config --libs $(GLIBS) `
 
-GOBJS = src/gtkclient.o src/gettime.o src/glInfo.o \
-src/matStor.o
+GOBJS = src/gtkclient.o src/gettime.o src/glInfo.o src/matStor.o
 COM_HDR = include/channel.h include/wfwriter.h \
 ../common_host/vbo.h \
 ../common_host/cgVertexShader.h \
@@ -61,7 +60,7 @@ ifeq ($(strip $(STACKPROTECTOR)),true)
 	CFLAGS   += -fstack-protector-all
 endif
 
-all: gtkclient convert2 convert2icms mmap_test po8e wf_plot   
+all: gtkclient spikes2mat icms2mat mmap_test po8e wf_plot   
 
 src/%.o: src/%.cpp $(COM_HDR)
 	$(CPP) -c $(CPPFLAGS) $(GTKFLAGS) $< -o $@
@@ -75,10 +74,10 @@ src/%.o: src/%.c
 gtkclient: $(GOBJS)
 	$(CPP) -o $@ $(GTKLD) $(LDFLAGS) $^
 
-convert2: src/convert2.o
+spikes2mat: src/spikes2mat.o
 	$(CPP) -o $@ -lmatio -lhdf5 -lz $<
 
-convert2icms: src/convert2icms.o
+icms2mat: src/icms2mat.o
 	$(CPP) -o $@ -lmatio -lhdf5 -lz $<
 
 mmap_test: src/mmap_test.o
@@ -91,7 +90,7 @@ wf_plot: src/wf_plot.o
 	$(CC) -o $@ -lSDL -lGL -lGLU -lglut -lpthread -lmatio -lhdf5 -lpng $^
 
 clean:
-	rm -rf gtkclient convert2 convert2icms mmap_test po8e wf_plot src/*.o 
+	rm -rf gtkclient spikes2mat icms2mat mmap_test po8e wf_plot src/*.o 
 
 deps:
 	sudo apt-get install libgtk2.0-dev \
@@ -113,7 +112,8 @@ pretty:
 install:
 	install -d $(TARGET)
 	install gtkclient -t $(TARGET)
-	install convert2 -t $(TARGET)
+	install spikes2mat -t $(TARGET)
+	install icms2mat -t $(TARGET)
 	install -d $(TARGET)/cg
 	install cg/fade.cg -t $(TARGET)/cg
 	install cg/fadeColor.cg -t $(TARGET)/cg
