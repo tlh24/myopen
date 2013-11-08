@@ -68,14 +68,12 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
             set(f,'HandleVisibility','on');
             p = get(f,'Position');
             p(1) = p(1)/10;
-%             p(3) = p(3) * 1.4;
+            p(3) = p(3) * 1.3;
             p(4) = numClasses*30 + 50;
             p(2) = screenSz(4) - p(4) - 50;
             set(f,'Position',p);
-            cmap = gray(256);
-            cmap = jet(256);
+            cmap = hot(256);
             set(f,'Colormap',cmap)
-%             cmap = colormap(f,'gray');
             
             set(f,'HandleVisibility','callback');
             hAxes = axes('Parent',f,'Units','Pixels','Position',[p(3)-90 5 100 100]);
@@ -90,7 +88,7 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
             caxis(hAxes,[0 1]);
             
             topLeft = [0 p(4)-40];
-            boxSize = [p(3)-100 30];
+            boxSize = [p(3)-150 30];
             hText = zeros(1,length(classNames));
             
             for i = 1:numClasses
@@ -142,7 +140,7 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
             
             set(obj.hGui,'ColumnWidth',repmat({65},1,n+1))
         end
-        function [doTrain doAddData] = getCommand2(obj)
+        function [doTrain, doAddData] = getCommand2(obj)
             % Buttons map directly to classes
             
             % Check joystick for buttons, if any, add this to training data
@@ -347,9 +345,9 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
 
             for i = 1:length(hText)
                 if i == labeledClass
-                    str = sprintf('%20s %4d <<<',paddedName{i},classSum(i));
+                    str = sprintf('%30s %4d <<<',paddedName{i},classSum(i));
                 else
-                    str = sprintf('%20s %4d',paddedName{i},classSum(i));
+                    str = sprintf('%30s %4d',paddedName{i},classSum(i));
                 end
                 set(hText(i),'String',str);
             end
