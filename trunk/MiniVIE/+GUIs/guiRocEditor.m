@@ -16,21 +16,8 @@ classdef guiRocEditor < handle
     % guiRocEditor
     % 
     %
-    % Armiger - Created
-    %
-    % $Log: JointSliderSrc.m  $
-    % Revision 1.3 2010/12/29 13:04:44EST Armiger, Robert S. (ArmigRS1-a)
+    % 07NOV2013 Armiger: Created
     properties
-        hParent;
-        hAxes;
-
-        % roc related gui handles
-        hJointSliders;
-        hRocSpinBox;
-        hRocWaypoints;
-        hRocDescription;        
-        jSpinnerModel;
-
         hSink;
         hMud = MPL.MudCommandEncoder;
 
@@ -42,6 +29,18 @@ classdef guiRocEditor < handle
     end
     properties  (SetObservable)
         jointAngles = zeros(1,27);
+    end
+    properties (Access = 'protected')
+        hParent;
+        hAxes;
+
+        % roc related gui handles
+        hJointSliders;
+        hRocSpinBox;
+        hRocWaypoints;
+        hRocDescription;        
+        jSpinnerModel;
+        
     end
     methods
         function obj = guiRocEditor
@@ -79,11 +78,9 @@ classdef guiRocEditor < handle
             axesRange = repmat([-pi pi],nSliders,1);
             sliderRange = axesRange;
             
-            f = fieldnames(MPL.MudCommandEncoder);
-            
-            sliderTitle = [{'SH_FE' 'SH_AA' 'HUM_ROT' 'ELBOW' 'WR_ROT' 'WR_AA' 'WR_FE'}'; f(10:29)];
+            sliderTitle = [fieldnames(mpl_upper_arm_enum); fieldnames(mpl_hand_enum)];
             hAx = zeros(nSliders,1);
-            hJointSliders = zeros(nSliders,1);
+
             patchWidth = (axesRange(:,2) - axesRange(:,1))/15;
             
             
@@ -115,6 +112,7 @@ classdef guiRocEditor < handle
                     'Position',[0.5 0],...
                     'String',sliderTitle{i},...
                     'Rotation',90,...
+                    'FontWeight','Bold',...
                     'Interpreter','None',...
                     'HorizontalAlignment','center');
             end
@@ -221,8 +219,8 @@ classdef guiRocEditor < handle
             end
         end
         function transmit(obj)
-            fprintf('Sending Joint Command:');
-            fprintf(' %6.4f',obj.jointAngles);
+            fprintf('Joint Command:');
+            fprintf(' %6.3f',obj.jointAngles);
             fprintf('\n');
             
             upperArmAngles = obj.jointAngles(1:7);
