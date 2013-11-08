@@ -90,8 +90,7 @@ TimeSync 	g_ts; //keeps track of ticks (TDT time)
 WfWriter	g_wfwriter;
 GLuint 		g_base;            // base display list for the font set.
 
-Artifact 	*g_artifact[STIMCHAN][RECCHAN];
-
+Artifact 	*g_artifact[STIMCHAN];
 ICMSWriter	g_icmswriter;
 
 bool g_die = false;
@@ -826,9 +825,10 @@ void destroy(GtkWidget *, gpointer)
 	delete g_vsFadeColor;
 	delete g_vsThreshold;
 	cgDestroyContext(myCgContext);
-	for (int i=0; i<NCHAN; i++) {
+	for (int i=0; i<NCHAN; i++)
 		delete g_c[i];
-	}
+	for (int i=0; i<STIMCHAN; i++)
+		delete g_artifact[i];
 	gtk_main_quit();
 }
 void *wfwrite_thread(void *)
@@ -984,14 +984,53 @@ void *po8_thread(void *)
 				g_ts.m_dropped = (int)totalSamples - ticks;
 
 				// get icms times
-				int icmsbits = 0;
+				icmspak icms;
 				for (int k=0; k<numSamples; k++) {
-					int tmp = (unsigned short)(temp[(NCHAN+2)*numSamples + k]);
-					tmp    += (unsigned short)(temp[(NCHAN+3)*numSamples + k]) << 16;
-					icmsbits += tmp;
-				}
-				if (icmsbits != 0) {
-					printf("icmsbits: %d\n", icmsbits);
+					unsigned int tmp = (unsigned short)(temp[(NCHAN+2)*numSamples+k]);
+					tmp += (unsigned short)(temp[(NCHAN+3)*numSamples+k]) << 16;
+
+					unsigned int tk = (unsigned short)(temp[NCHAN*numSamples+k]);
+					tk += (unsigned short)(temp[(NCHAN+1)*numSamples+k]) << 16;
+
+					// stim pulse?
+					for (int j=0; j<32; j++) {  // int is 32 bits
+						unsigned int id = pow(2,j);
+						if (tmp & id) {
+							if (g_icmswriter.m_enable) {
+								icms.ticks = tk;
+								icms.time = g_ts.getTime(tk);
+								icms.id = (short)j+1; // one-indexed
+								g_icmswriter.add(&icms);
+							}
+							if (g_artifact[j]->m_index == -1)
+								g_artifact[j]->m_index++;
+							else
+								printf("ERR: STIM ARTIFACTS OVERLAP!\n");
+						}
+					}
+
+					// fill artifact-subtraction buffers
+					for (int j=0; j<STIMCHAN; j++) {
+						i64 idx = g_artifact[j]->m_index;
+						if (idx != -1) {
+							for (int ch=0; ch<RECCHAN; ch++) {
+								float gain = g_c[ch]->getGain();
+								short samp = temp[ch*numSamples + k];
+								float f = gain * samp / 32767.f;
+								float alpha = 1/(g_artifact[j]->m_nsamples+1);
+								float curr = g_artifact[j]->m_buf[ch*ARTBUF+idx];
+								// iterative update of average
+								g_artifact[j]->m_buf[ch*ARTBUF+idx] =
+								        curr + alpha*(f-curr);
+							}
+							g_artifact[j]->m_index++;
+							if (g_artifact[j]->m_index > ARTBUF) {
+								g_artifact[j]->m_index = -1;
+								g_artifact[j]->m_nsamples++;
+							}
+						}
+					}
+
 				}
 
 				// xxx filling artifact buffers and subtracting artifact has to happen here!
@@ -1008,9 +1047,8 @@ void *po8_thread(void *)
 						float f = gain * samp / 32767.f;
 						g_fbuf[k][((g_fbufW+i) % g_nsamp)*3 + 1] = f;
 						//g_fbuf[k][(g_fbufW % g_nsamp)*3 + 1] = 0; --sets the color.
-						if (k==0 && i<256) {
+						if (k==0 && i<256)
 							audio[i] = f;
-						}
 					}
 				}
 #ifdef JACK
@@ -1629,11 +1667,10 @@ int main(int argc, char **argv)
 	test_fr.set_bin_params(40,1.0);
 	test_fr.get_bins_test();
 
-	if (argc > 1) {
+	if (argc > 1)
 		strcpy(g_prefstr, argv[1]);
-	} else {
+	else
 		strcpy(g_prefstr, "preferences.mat");
-	}
 
 	MatStor ms(g_prefstr);
 	for (int i=0; i<4; i++) {
@@ -1641,9 +1678,11 @@ int main(int argc, char **argv)
 		if (g_channel[i] < 0) g_channel[i] = 0;
 		if (g_channel[i] >= NCHAN) g_channel[i] = NCHAN-1;
 	}
-	for (int i=0; i<NCHAN; i++) {
+	for (int i=0; i<NCHAN; i++)
 		g_c[i] = new Channel(i, &ms);
-	}
+	for (int i=0; i<STIMCHAN; i++)
+		g_artifact[i] = new Artifact();
+
 	//g_dropped = 0;
 
 	// Verify that the version of the library that we linked against is
@@ -1991,7 +2030,9 @@ int main(int argc, char **argv)
 #ifdef JACK
 	jackClose(0);
 #endif
-	g_wfwriter.close(); //just in case.
+	//just in case.
+	g_wfwriter.close();
+	g_icmswriter.close();
 	//cancel the mmap thread -- probably waiting on a read().
 	if (pthread_cancel(thread1)) {
 		perror("pthread_cancel mmap_thread");

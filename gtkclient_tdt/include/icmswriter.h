@@ -19,7 +19,7 @@ public:
 	std::atomic<long> m_w; //this is great!
 	std::atomic<bool> m_enable;
 	long m_r;
-	wfpak m_d[WFBUFSIZ];
+	icmspak m_d[ICMSBUFSIZ];
 	FILE *m_fid;
 
 	ICMSWriter() {
