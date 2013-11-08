@@ -97,11 +97,21 @@ classdef DaqHwDevice < Inputs.SignalInput
             end
             
             % Channel Setup
-            try
-                set(obj.AnalogInput,'InputType','SingleEnded');
-            catch ME
-                fprintf(2,'[%s] Failed to change Input Mode to "SingleEnded"\n',mfilename);
-                rethrow(ME);
+            % Do some checks here since some boards may not allow setting
+            % single ended mode (e.g. mcc USB-2408)
+            desiredInputType = 'SingleEnded';
+            propInfoInputType = propinfo(obj.AnalogInput,'InputType');
+            if strcmpi(propInfoInputType.ConstraintValue,desiredInputType)
+                % Valid setting
+                try
+                    set(obj.AnalogInput,'InputType','SingleEnded');
+                catch ME
+                    warning('DaqHwDevice:InputType','Failed to change Input Mode to "SingleEnded" \nError was: %s \nInputTypeis: "%s"',mfilename,ME.message,get(obj.AnalogInput,'InputType'));
+                end
+            else
+                % Invalid Setting
+                warning('DaqHwDevice:InputType','InputType "%s" is not an available option.',desiredInputType)
+                disp(propInfoInputType)
             end
             
             % Set-Verify sample rate since this depends on number of
@@ -123,7 +133,13 @@ classdef DaqHwDevice < Inputs.SignalInput
             addchannel(obj.AnalogInput,obj.ChannelIds);
             
             DesiredRange = obj.ChannelInputRange;
-            ActualRange = setverify(obj.AnalogInput.Channel,'InputRange',DesiredRange);
+            try
+                set(obj.AnalogInput.Channel,'InputRange',DesiredRange);
+            catch ME
+                warning('DaqHwDevice:InputRange','Failed to change "InputRange" to [%f %f] \nError was: %s \n',...
+                    DesiredRange(1),DesiredRange(2),ME.message);
+            end
+            ActualRange = get(obj.AnalogInput.Channel,'InputRange');
             
             if iscell(ActualRange)
                 ActualRange = cell2mat(ActualRange);
