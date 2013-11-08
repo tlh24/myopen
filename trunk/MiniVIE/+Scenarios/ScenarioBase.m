@@ -19,6 +19,8 @@ classdef ScenarioBase < Common.MiniVieObj
         SignalSource;
         SignalClassifier;
         
+        ArmStateModel;
+        
         Timer;
         
         % For Grasp Based control
@@ -55,6 +57,8 @@ classdef ScenarioBase < Common.MiniVieObj
             obj.SignalSource = SignalSource;
             obj.SignalClassifier = SignalClassifier;
             
+            obj.ArmStateModel = Controls.ArmStateModel();
+            
             obj.Timer = UiTools.create_timer(mfilename,@(src,evt)update(obj));
             period = 0.05;
             fprintf('[%s] Setting timer refresh rate to %4.2f s\n',mfilename,period);
@@ -81,44 +85,6 @@ classdef ScenarioBase < Common.MiniVieObj
             if ~isempty(obj.Timer) && strcmpi(obj.Timer.Running,'on')
                 stop(obj.Timer);
             end
-        end
-        function applyRangeLimits(obj)
-            % Apply Shoulder Limits
-            obj.JointAnglesDegrees(action_bus_enum.Shoulder_FE) = max(min(...
-                obj.JointAnglesDegrees(action_bus_enum.Shoulder_FE),125),-30);
-            obj.JointAnglesDegrees(action_bus_enum.Shoulder_AbAd) = max(min(...
-                obj.JointAnglesDegrees(action_bus_enum.Shoulder_AbAd),15),-90);
-            obj.JointAnglesDegrees(action_bus_enum.Humeral_Rot) = max(min(...
-                obj.JointAnglesDegrees(action_bus_enum.Humeral_Rot),45),-45);
-            % Apply Elbow Limits
-            obj.JointAnglesDegrees(action_bus_enum.Elbow) = max(min(...
-                obj.JointAnglesDegrees(action_bus_enum.Elbow),125),5);
-            % Apply Wrist Limits
-%             obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) = max(min(...
-%                 obj.JointAnglesDegrees(action_bus_enum.Wrist_FE),60),-60);
-            FE_Lim = 45;
-            obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) = max(min(...
-                obj.JointAnglesDegrees(action_bus_enum.Wrist_FE),FE_Lim),-FE_Lim);
-            obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) = max(min(...
-                obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev),45),-45);
-            obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) = max(min(...
-                obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot),90),-90);
-        end
-        function applyGlobalRateLimits(obj)
-            % Apply global velocity limits
-            
-            globalVelocityMax = 10;
-            globalVelocityMin = 2;
-
-            velocity = obj.JointVelocity;
-
-            velocity = obj.constrain(velocity,-globalVelocityMax,globalVelocityMax);
-            velocity = max(abs(velocity),globalVelocityMin) .* (velocity ~= 0) .* sign(velocity);
-            
-            obj.JointVelocity = velocity;
-            
-%             obj.JointAnglesDegrees = obj.JointAnglesDegrees + velocity;
-%             [velocity(velocity~=0) newVelocity(newVelocity~=0)]
         end
         function [className,prSpeed,rawEmg,windowData,features2D,voteDecision] = getIntentSignals(obj)
             % Perform classification with error checking
@@ -151,67 +117,114 @@ classdef ScenarioBase < Common.MiniVieObj
             
         end
         function generateUpperArmCommand(obj,className,prSpeed)
+            % assign velocities to the joint state model based on the
+            % classified signal name
             if isempty(className)
                 return
             end
             
-            lastVelocity = obj.JointVelocity;
-            desiredVelocity = zeros(size(obj.JointVelocity));
+            s = obj.ArmStateModel;
+            globalGain = 3;
+            prSpeed = prSpeed * globalGain;
             
+            % ensure velocities are stopped
+            s.velocity(1:7) = 0;
+
             % Note gains can/should be adjusted using guiAdjustGains
             %TODO: gain values overwritten on classifier retrain
             switch className
                 case 'No Movement'
                 case {'Shoulder Flexion'}
-                    desiredVelocity(action_bus_enum.Shoulder_FE) = prSpeed;
+                    s.setVelocity(mpl_upper_arm_enum.SHOULDER_FE,+prSpeed);
                 case {'Shoulder Extension'}
-                    desiredVelocity(action_bus_enum.Shoulder_FE) = -prSpeed;
+                    s.setVelocity(mpl_upper_arm_enum.SHOULDER_FE,-prSpeed);
                 case {'Shoulder Abduction'}
-                    desiredVelocity(action_bus_enum.Shoulder_AbAd) = prSpeed;
+                    s.setVelocity(mpl_upper_arm_enum.SHOULDER_ADAB,+prSpeed);
                 case {'Shoulder Adduction'}
-                    desiredVelocity(action_bus_enum.Shoulder_AbAd) = -prSpeed;
+                    s.setVelocity(mpl_upper_arm_enum.SHOULDER_ADAB,-prSpeed);
                 case {'Humeral External Rotation'}
                     desiredVelocity(action_bus_enum.Humeral_Rot) = prSpeed;
                 case {'Humeral Internal Rotation'}
                     desiredVelocity(action_bus_enum.Humeral_Rot) = -prSpeed;
                 case {'Elbow Flexion' 'Elbow Up'}
-                    desiredVelocity(action_bus_enum.Elbow) = prSpeed;
+                    s.setVelocity(mpl_upper_arm_enum.ELBOW,+prSpeed);
                 case {'Elbow Extension' 'Elbow Down'}
-                    desiredVelocity(action_bus_enum.Elbow) = -prSpeed;
+                    s.setVelocity(mpl_upper_arm_enum.ELBOW,-prSpeed);
                 case {'Pronate' 'Wrist Rotate In'}
-                    desiredVelocity(action_bus_enum.Wrist_Rot) = prSpeed;
+                    s.setVelocity(mpl_upper_arm_enum.WRIST_ROT,+prSpeed);
                 case {'Supinate' 'Wrist Rotate Out'}
-                    desiredVelocity(action_bus_enum.Wrist_Rot) = -prSpeed;
+                    s.setVelocity(mpl_upper_arm_enum.WRIST_ROT,-prSpeed);
                 case {'Up' 'Hand Up'}
-                    desiredVelocity(action_bus_enum.Wrist_Dev) = prSpeed;
+                    s.setVelocity(mpl_upper_arm_enum.WRIST_DEV,+prSpeed);
                 case {'Down' 'Hand Down'}
-                    desiredVelocity(action_bus_enum.Wrist_Dev) = -prSpeed;
+                    s.setVelocity(mpl_upper_arm_enum.WRIST_DEV,-prSpeed);
                 case {'Left' 'Wrist Flex' 'Wrist Flex In'}
-                    desiredVelocity(action_bus_enum.Wrist_FE) = prSpeed;
+                    s.setVelocity(mpl_upper_arm_enum.WRIST_FE,+prSpeed);
                 case {'Right' 'Wrist Extend' 'Wrist Extend Out'}
-                    desiredVelocity(action_bus_enum.Wrist_FE) = -prSpeed;
+                    s.setVelocity(mpl_upper_arm_enum.WRIST_FE,-prSpeed);
             end
-            
-            globalGain = 3;
-            desiredVelocity = desiredVelocity .* globalGain;
-            
-            % Apply velocity change rate limiting
-            dt = obj.Timer.InstantPeriod;
-            maxDeltaV = 15*dt;  %max instantaneous velocity change
-            newVelocity = min(abs(lastVelocity) + (maxDeltaV),abs(desiredVelocity)) .* sign(desiredVelocity);
-            
-            obj.JointVelocity = newVelocity;
-            
-            % Apply global velocity limits
-            applyGlobalRateLimits(obj);
-            
-            obj.JointAnglesDegrees = obj.JointAnglesDegrees + obj.JointVelocity;
-            
-            applyRangeLimits(obj);
             
         end
         function generateGraspCommand(obj,className,prSpeed)
-            generateGraspCommandTwoState(obj,className,prSpeed);
+
+            if isempty(className)
+                return
+            end
+
+            % Get the decoded grasp name.  This is equivelant to the class
+            % name, but if it is a 'Grasp' then a flag will be set that
+            % this class can be used for 'hand close'
+            isGraspClass = strfind(lower(className),'grasp');
+            if isGraspClass
+                % Strip off the 'Grasp' string and leave only the type
+                graspName = strtrim(className(1:end-5));
+            else
+                graspName = className;
+            end
+            
+            % Get a list of valid grasp types
+            [enumGrasp, cellGrasps] = enumeration('Controls.GraspTypes');
+            
+            % Handle special case for grasp auto open.  In this paradigm,
+            % only hand close patterns are trained.  The hand opens only
+            % during no movement classes
+            % TODO: Implement
+            %                         % Auto-open
+            %                         if obj.AutoOpenSpeed > 0
+            %                             desiredGraspVelocity = -obj.AutoOpenSpeed;
+            %                         end
+            
+            s = obj.ArmStateModel;
+            switch graspName
+                case 'Hand Open'
+                    s.setVelocity(s.RocStateId,-prSpeed);
+                case cellGrasps
+                    % Any valid grasp == Hand Close
+                    graspId = enumGrasp( strcmp(graspName,cellGrasps) );
+                    if obj.GraspValue < 0.2
+                        s.setRocId(graspId);
+                    end
+                    s.setVelocity(s.RocStateId,+prSpeed);
+                case {'No Movement','Rest'}
+                    s.setVelocity(s.RocStateId,0);
+                otherwise
+                    s.setVelocity(s.RocStateId,0);
+                    if isGraspClass
+                        fprintf('[%s.m] Unmatched grasp: "%s"\n',mfilename,graspName);
+                    end
+            end
+            
+            % joint angles and grasp values fields are updated here for
+            % backward comparatbility
+            % update the state
+            obj.ArmStateModel.update();
+            state = obj.ArmStateModel.getValues();
+            
+            obj.JointAnglesDegrees(1:7) = state(1:7) * 180/pi;
+            obj.GraspValue = state(8);
+            obj.GraspId = s.structState(8).State;
+            
+            %generateGraspCommandTwoState(obj,className,prSpeed);
         end
         function generateGraspCommandTwoState(obj,className,prSpeed)
             
