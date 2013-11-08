@@ -3,6 +3,99 @@ classdef assessmentEval
     methods
     end
     methods (Static = true)
+        function output = computeResults(structTrialLog)
+            
+            
+            
+            if isfield(structTrialLog,'AllClassNames')
+                % structTrialLog =
+                %     AllClassNames: {15x1 cell}
+                %     ClassIdToTest: [6x1 double]
+                %              Data: [1x6 struct]
+                classNames = structTrialLog(:).AllClassNames;
+                classIdToTest = 1:length(structTrialLog.ClassIdToTest);
+                version = 'V2';
+            else
+                % structTrialLog =
+                % 1x6 struct array with fields:
+                %     targetClass
+                %     classDecision
+                %     voteDecision
+                classIdToTest = 1:length(structTrialLog);
+                classNames = {structTrialLog(:).targetClass};
+                if all(cellfun(@isempty,strfind(classNames,'No Movement')))
+                    % Append No Movement if it's not there
+                    classNames{end+1} = 'No Movement';
+                end
+                version = 'V1';
+            end
+            
+            
+            % loop through each valid class
+            for i = classIdToTest
+                
+                if strcmpi(version,'V1')
+                    trialData = structTrialLog(i);
+                else
+                    trialData = structTrialLog.Data(i);
+                end
+                
+                targetClassName = trialData.targetClass;
+                targetClassId = find(strcmpi(classNames,targetClassName));
+
+                
+                noMovementId = find(strcmpi(classNames,'No Movement'),1);
+                if isempty(noMovementId)
+                    disp(classNames);
+                    error('No Movement class required')
+                end
+                
+                %d = structTrialLog(i).classDecision;
+                d = trialData.classDecision;
+                
+                % find the first non-no movement class:
+                movementOnsetId = find(d~=noMovementId,1,'first')-1;
+                
+                if isempty(movementOnsetId)
+                    % Movement started immediately
+                    movementOnsetId = 1;
+                end
+                
+                
+                idCorrect = find(d == targetClassId);
+                
+                if isempty(idCorrect)
+                    uniqueClasses = unique(d);
+                elseif length(idCorrect) < 10
+                    uniqueClasses = unique(d);
+                else
+                    numTries = max(idCorrect)-min(idCorrect)+1;
+                    uniqueClasses = unique(d(min(idCorrect):max(idCorrect)));
+                end
+                
+                % Elimintate the own classes to find mis-classes
+                uniqueClasses(uniqueClasses == targetClassId) = [];
+
+                % Populate outputs:
+                output.classNamesTested{i} = targetClassName;
+                output.totalCompleted(i) = length(idCorrect);
+                output.totalAttempted(i) = length(d)-movementOnsetId;
+                
+                if isempty(idCorrect)
+                    output.motionSelectionTime(i) = length(d);
+                else
+                    output.motionSelectionTime(i) = idCorrect(1)-movementOnsetId;
+                end
+                
+                output.motionCompletionTime(i) = length(d)-movementOnsetId;
+                
+            end
+            
+            
+            
+            
+            
+        end
         function structLogOut = staticAssessmentEval(fileName)
             %computes assessment statistics and displays in console
             %
@@ -13,25 +106,7 @@ classdef assessmentEval
             % fileName can be fullpath "c:\tmp\*.assessmentLog'"
             % fileName can be exact "c:\tmp\myLog.assessmentLog'"
             
-            if nargin == 1
-                % break down user input or handle cases where full or partial
-                % paths are provided
-                [PathName, FileName, FileExtension] = fileparts(fileName);
-                FullFile = fullfile(PathName, [FileName FileExtension]);
-                %fileName = '\\dom1\REDD\Programs\RP3\SENSITIVE_RESTRICTED_Patient_Data\JHMI\JH_TH02\*.assessmentLog';
-                if exist(FullFile,'file') ~= 2
-                    [FileName,PathName,FilterIndex] = uigetfile(FullFile,'MultiSelect','on');
-                    if FilterIndex == 0
-                        % User Cancelled
-                        return
-                    end
-                end
-                
-                if ~iscell(FileName)
-                    FileName = {FileName};
-                end
-            else
-
+            if nargin < 1
                 [FileName,PathName,FilterIndex] = uigetfile('*.assessmentLog','MultiSelect','on');
                 if FilterIndex == 0
                     % User Cancelled
@@ -41,7 +116,33 @@ classdef assessmentEval
                 if ~iscell(FileName)
                     FileName = {FileName};
                 end
-                                
+            else
+                % fileName provided
+                
+                if iscell(fileName)
+                    % fileName is a cell array of full path names
+                    PathName = '';
+                    FileName = fileName;
+                    
+                else
+                    % break down user input or handle cases where full or partial
+                    % paths are provided
+                    [PathName, FileName, FileExtension] = fileparts(fileName);
+                    FullFile = fullfile(PathName, [FileName FileExtension]);
+                    %fileName = '\\dom1\REDD\Programs\RP3\SENSITIVE_RESTRICTED_Patient_Data\JHMI\JH_TH02\*.assessmentLog';
+                    if exist(FullFile,'file') ~= 2
+                        [FileName,PathName,FilterIndex] = uigetfile(FullFile,'MultiSelect','on');
+                        if FilterIndex == 0
+                            % User Cancelled
+                            return
+                        end
+                    end
+                    
+                    if ~iscell(FileName)
+                        FileName = {FileName};
+                    end
+                    
+                end
             end
             
             colors = distinguishable_colors(15);
@@ -54,21 +155,25 @@ classdef assessmentEval
                 hold on
                 
                 fname = fullfile(PathName,FileName{iFile});
+                
+                % loads structTrialLog
                 load(fname,'-mat');
+                
+                
                 if isfield(structTrialLog,'AllClassNames')
-                    % structTrialLog = 
+                    % structTrialLog =
                     %     AllClassNames: {15x1 cell}
                     %     ClassIdToTest: [6x1 double]
-                    %              Data: [1x6 struct]                    
+                    %              Data: [1x6 struct]
                     classNames = structTrialLog(:).AllClassNames;
                     classIdToTest = 1:length(structTrialLog.ClassIdToTest);
                     version = 'V2';
                 else
-                    % structTrialLog = 
+                    % structTrialLog =
                     % 1x6 struct array with fields:
                     %     targetClass
                     %     classDecision
-                    %     voteDecision                    
+                    %     voteDecision
                     classIdToTest = 1:length(structTrialLog);
                     classNames = {structTrialLog(:).targetClass};
                     if all(cellfun(@isempty,strfind(classNames,'No Movement')))
@@ -77,7 +182,7 @@ classdef assessmentEval
                     end
                     version = 'V1';
                 end
-                                
+                
                 fprintf('-------------\n');
                 fprintf('%s\n',fname');
                 fprintf('-------------\n');
