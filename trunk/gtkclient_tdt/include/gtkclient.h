@@ -20,7 +20,7 @@ enum MODES {
 #endif
 #define NSBUF		1024
 
-#define STIMCHAN 	16
+#define STIMCHAN 	32
 #define RECCHAN 	96
 #define NCHAN		96
 #define NUNIT		3	// including unsorted

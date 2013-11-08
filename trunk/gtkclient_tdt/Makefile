@@ -61,7 +61,7 @@ ifeq ($(strip $(STACKPROTECTOR)),true)
 	CFLAGS   += -fstack-protector-all
 endif
 
-all: gtkclient convert2 mmap_test po8e wf_plot   
+all: gtkclient convert2 convert2icms mmap_test po8e wf_plot   
 
 src/%.o: src/%.cpp $(COM_HDR)
 	$(CPP) -c $(CPPFLAGS) $(GTKFLAGS) $< -o $@
@@ -78,6 +78,9 @@ gtkclient: $(GOBJS)
 convert2: src/convert2.o
 	$(CPP) -o $@ -lmatio -lhdf5 -lz $<
 
+convert2icms: src/convert2icms.o
+	$(CPP) -o $@ -lmatio -lhdf5 -lz $<
+
 mmap_test: src/mmap_test.o
 	$(CPP) -o $@ -lrt $^
 
@@ -88,7 +91,7 @@ wf_plot: src/wf_plot.o
 	$(CC) -o $@ -lSDL -lGL -lGLU -lglut -lpthread -lmatio -lhdf5 -lpng $^
 
 clean:
-	rm -rf gtkclient convert2 mmap_test po8e wf_plot src/*.o 
+	rm -rf gtkclient convert2 convert2icms mmap_test po8e wf_plot src/*.o 
 
 deps:
 	sudo apt-get install libgtk2.0-dev \
@@ -101,9 +104,11 @@ deps:
 	@echo "make sure /usr/lib64 is in /etc/ld.so.conf.d/libc.conf"
 	@echo "otherwise Cg may not be found. "
 
-format:
+pretty:
 	astyle -A8 --indent=tab -H -k3 include/*.h
+	rm include/*.h.orig
 	astyle -A8 --indent=tab -H -k3 src/*.cpp
+	rm src/*.cpp.orig
 
 install:
 	install -d $(TARGET)
