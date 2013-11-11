@@ -124,6 +124,7 @@ public:
 			m_ssd[m_ssdn].valid = true;
 			m_ssdn ^= 1; 
 		}
+		m_ticks = ticks;
 	}
 	double getTicks(long double time){ //estimated ticks, of course.
 		return (time - m_timeOffset) * m_slope + m_offset;
