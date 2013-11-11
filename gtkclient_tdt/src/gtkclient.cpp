@@ -635,26 +635,34 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 				glVertex2f( 1.f, rf*2.f-1.f);
 			}
 			glEnd();
-			glBegin(GL_LINE_STRIP);
-			//label the current audio channel ('A')
-			glColor4f(1.f, 1.f, 0.f, 1.f);
-			int h = g_channel[0];
-			xo = (h%g_spikesCols)/xf;
-			xo *= 2.f;
-			xo -= 1.f;
-			yo = ((h/g_spikesCols)+1)/yf;
-			yo *= -2.f;
-			yo += 1.f;
-			float xa, ya;
-			xa = ya = 0.f;
-			if (xo <= -1.f) xa = 2.0/g_viewportSize[0]; //one pixel.
-			if (yo <= -1.f) ya = 2.0/g_viewportSize[1];
-			glVertex2f(xo+xa, yo+ya);
-			glVertex2f(xo+xa, yo+yz);
-			glVertex2f(xo+xz, yo+yz);
-			glVertex2f(xo+xz, yo+ya);
-			glVertex2f(xo+xa, yo+ya);
-			glEnd();
+
+			// label the current audio channel (A) red
+			// and the other 3 channels (B-D) yellow
+			// reverse typical loop order to draw ch A on top
+			for (int k=3; k>=0; k--) {
+				glBegin(GL_LINE_STRIP);
+				if (k==0)
+					glColor4f(1.f, 0.f, 0.f, 1.f);
+				else
+					glColor4f(1.f, 1.f, 0.f, 1.f);
+				int h = g_channel[k];
+				xo = (h%g_spikesCols)/xf;
+				xo *= 2.f;
+				xo -= 1.f;
+				yo = ((h/g_spikesCols)+1)/yf;
+				yo *= -2.f;
+				yo += 1.f;
+				float xa, ya;
+				xa = ya = 0.f;
+				if (xo <= -1.f) xa = 2.0/g_viewportSize[0]; //one pixel.
+				if (yo <= -1.f) ya = 2.0/g_viewportSize[1];
+				glVertex2f(xo+xa, yo+ya);
+				glVertex2f(xo+xa, yo+yz);
+				glVertex2f(xo+xz, yo+yz);
+				glVertex2f(xo+xz, yo+ya);
+				glVertex2f(xo+xa, yo+ya);
+				glEnd();
+			}
 		}
 		glPopMatrix();
 	}
@@ -1288,7 +1296,6 @@ void updateChannelUI(int k)
 	g_uiRecursion++;
 	int ch = g_channel[k];
 	gtk_adjustment_set_value(g_gainSpin[k], g_c[ch]->getGain());
-	//gtk_adjustment_set_value(g_agcSpin[k], g_c[ch]->m_agc);
 	gtk_adjustment_set_value(g_apertureSpin[k*2+0], g_c[ch]->getApertureUv(0));
 	gtk_adjustment_set_value(g_apertureSpin[k*2+1], g_c[ch]->getApertureUv(1));
 	gtk_adjustment_set_value(g_thresholdSpin[k], g_c[ch]->getThreshold());
@@ -1308,7 +1315,8 @@ static void channelSpinCB( GtkWidget *, gpointer p)
 		}
 		//if we are in sort mode, and k == 0, move the other channels ahead of us.
 		//this allows more PCA points for sorting!
-		if (g_mode == MODE_SORT && k == 0 && g_autoChOffset) {
+		//if (g_mode == MODE_SORT && k == 0 && g_autoChOffset) {
+		if (k == 0 && g_autoChOffset) {
 			for (int j=1; j<4; j++) {
 				g_channel[j] = (g_channel[0] + j) % NCHAN;
 				//this does not recurse -- have to set the other stuff manually.
