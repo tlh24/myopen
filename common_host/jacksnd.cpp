@@ -21,7 +21,7 @@ jack_client_t *client;
 
 //#define TESTSONG
 
-using namespace std; 
+using namespace std;
 
 long g_jackSample; 
 
@@ -116,7 +116,9 @@ int process_resample(jack_nframes_t nframes, void* arg){
 					+ 0.0 * r->integral*r->phaseIncrDelta / 200.0;
 				r->integral = r->integral * 0.9999 + q; 
 				if(r->delay < 0){
-					printf("phaseIncr %f q %f integral %f\n", r->phaseIncr, q, r->integral); 
+					#ifdef DEBUG
+					printf("phaseIncr %f q %f integral %f\n", r->phaseIncr, q, r->integral);
+					#endif
 					r->delay = 200; 
 				}
 				r->delay--; 
@@ -292,19 +294,16 @@ int jackInit(int mode)
 		fprintf(stderr, "JACK: no physical playback ports\n");
 		exit (1);
 	}
-	if (jack_connect (client, jack_port_name (output_port1), ports[0])) {
+	if (jack_connect (client, jack_port_name (output_port1), ports[0]))
 		fprintf (stderr, "JACK: cannot connect output ports\n");
-	}
-	if (jack_connect (client, jack_port_name (output_port2), ports[1])) {
+	if (jack_connect (client, jack_port_name (output_port2), ports[1]))
 		fprintf (stderr, "JACK: cannot connect output ports\n");
-	}
-	if (jack_connect (client, jack_port_name (output_port1), ports[4])) { //for my work machine... 
+	if (jack_connect (client, jack_port_name (output_port1), ports[4])) // for my work machine... 
 		fprintf (stderr, "JACK: cannot connect output ports\n");
-	}
-	if (jack_connect (client, jack_port_name (output_port2), ports[5])) {
+	if (jack_connect (client, jack_port_name (output_port2), ports[5]))
 		fprintf (stderr, "JACK: cannot connect output ports\n");
-	}
 	free (ports);
+
 	/* install a signal handler to properly quits jack client */
 	signal(SIGQUIT, jackClose);
 	signal(SIGTERM, jackClose);

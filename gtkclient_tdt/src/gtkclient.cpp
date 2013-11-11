@@ -99,6 +99,8 @@ bool g_cycle = false;
 bool g_showPca = false;
 bool g_autoChOffset = false;
 bool g_showWFVgrid = true;
+bool g_showContGrid = false;
+bool g_showContThresh = true;
 bool g_rtMouseBtn = false;
 bool g_saveUnsorted = true;
 int 	g_polyChan = 0;
@@ -389,9 +391,8 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 	GdkGLContext *glcontext = gtk_widget_get_gl_context (da);
 	GdkGLDrawable *gldrawable = gtk_widget_get_gl_drawable (da);
 
-	if (!gdk_gl_drawable_gl_begin (gldrawable, glcontext)) {
+	if (!gdk_gl_drawable_gl_begin (gldrawable, glcontext))
 		g_assert_not_reached ();
-	}
 
 	//copy over any new data.
 	if (g_pause <= 0.0) {
@@ -426,9 +427,8 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 			}
 		}
 		//and the waveform buffers.
-		for (int i=0; i<NCHAN; i++) {
+		for (int i=0; i<NCHAN; i++)
 			g_c[i]->copy();
-		}
 	}
 	/* draw in here */
 	glMatrixMode(GL_MODELVIEW);
@@ -465,18 +465,25 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 			glColor4f(0.f, 0.5, 1.f, 0.75); //blue, center line
 			glVertex3f( -1.f, (float)((3-k)*2+1)/8.f, 0.f);
 			glVertex3f( 1.f, (float)((3-k)*2+1)/8.f, 0.f);
-			glColor4f(0.f, 0.8f, 0.75f, 0.5);//green, edge lines
-			glVertex3f( -1.f, (float)((3-k)*2)/8.f, 0.f);
-			glVertex3f( 1.f, (float)((3-k)*2)/8.f, 0.f);
+			if (g_showContGrid) {
+				glColor4f(0.f, 0.8f, 0.75f, 0.5);//green, edge lines
+				glVertex3f( -1.f, (float)((3-k)*2)/8.f, 0.f);
+				glVertex3f( 1.f, (float)((3-k)*2)/8.f, 0.f);
+			}
 #ifndef EMG
 			//draw threshold.
-			glColor4f (1., 0.0f, 0.0f, 0.35);
-			float y = (float)((3-k)*2+1)/8.f +
-			          (g_c[g_channel[k]]->getThreshold())/(256.f*128.f*8.f);
-			glVertex3f(-1.f, y, 0.f);
-			glVertex3f( 1.f, y, 0.f);
+			if (g_showContThresh) {
+				float th = g_c[g_channel[k]]->getThreshold();
+				float gn = g_c[g_channel[k]]->getGain();
+				glColor4f (1., 0.0f, 0.0f, 0.35);
+				float y = (float)((3-k)*2+1)/8.f +
+				          (th*gn)/(8.f);
+				glVertex3f(-1.f, y, 0.f);
+				glVertex3f( 1.f, y, 0.f);
+			}
 #endif
 			glEnd();
+
 			//labels.
 			glColor4f(0.f, 0.8f, 0.75f, 0.5);
 			glRasterPos2f(-1.f, (float)((3-k)*2)/8.f +
@@ -513,14 +520,16 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 			snprintf(buf, 64, "%3.2f", i/24414.f);
 			glPrint(buf);
 		}
-		glColor4f(0.f, 0.8f, 0.75f, 0.35);
-		glBegin(GL_LINES);
-		for (int i=0; i<(int)g_nsamp; i+=24414/10) {
-			float x = 2.f*i/g_nsamp-1.f;
-			glVertex2f(x, 0.f);
-			glVertex2f(x, 1.f);
+		if (g_showContGrid) {
+			glColor4f(0.f, 0.8f, 0.75f, 0.35);
+			glBegin(GL_LINES);
+			for (int i=0; i<(int)g_nsamp; i+=24414/10) {
+				float x = 2.f*i/g_nsamp-1.f;
+				glVertex2f(x, 0.f);
+				glVertex2f(x, 1.f);
+			}
+			glEnd();
 		}
-		glEnd();
 		//glPopMatrix ();
 
 		//rasters
@@ -714,9 +723,8 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 	GdkGLContext *glcontext = gtk_widget_get_gl_context (da);
 	GdkGLDrawable *gldrawable = gtk_widget_get_gl_drawable (da);
 
-	if (!gdk_gl_drawable_gl_begin (gldrawable, glcontext)) {
+	if (!gdk_gl_drawable_gl_begin (gldrawable, glcontext))
 		g_assert_not_reached ();
-	}
 
 	glLoadIdentity();
 	glViewport (0, 0, da->allocation.width, da->allocation.height);
@@ -756,9 +764,6 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 		}
 		dname = dirname(linkname);
 		string d(dname);
-
-		//g_vsFade = new cgVertexShader("fade.cg","fade");
-		//g_vsFade->addParams(4,"time","fade","col","off");
 
 		string cgfile;
 
@@ -846,12 +851,10 @@ static gboolean rotate (gpointer user_data)
 void saveState()
 {
 	MatStor ms(g_prefstr);
-	for (int i=0; i<NCHAN; i++) {
+	for (int i=0; i<NCHAN; i++)
 		g_c[i]->save(&ms);
-	}
-	for (int i=0; i<4; i++) {
+	for (int i=0; i<4; i++)
 		ms.setValue(i, "channel", g_channel[i]);
-	}
 	ms.save();
 }
 void destroy(GtkWidget *, gpointer)
@@ -864,7 +867,6 @@ void destroy(GtkWidget *, gpointer)
 			glDeleteBuffersARB(1, &g_vbo1[k]);
 		glDeleteBuffersARB(2, g_vbo2);
 	}
-	//delete g_vsFade;
 	delete g_vsFadeColor;
 	delete g_vsThreshold;
 	cgDestroyContext(myCgContext);
@@ -1197,6 +1199,7 @@ void *po8_thread(void *)
 	}
 	return 0;
 }
+/*
 struct binned_header {
 	double time;
 	unsigned short nchan;
@@ -1213,6 +1216,7 @@ void bswap_64(void *a)
 	b += h;
 	*((long long *)a) = b;
 }
+*/
 void flush_pipe(int fid)
 {
 	fcntl(fid, F_SETFL, O_NONBLOCK);
@@ -1796,6 +1800,8 @@ int main(int argc, char **argv)
 	gtk_box_pack_start(GTK_BOX(v1), g_notebook, TRUE, TRUE, 1);
 	gtk_widget_show(g_notebook);
 
+
+
 	// add a page for rasters
 	box1 = gtk_vbox_new(FALSE, 2);
 
@@ -1803,6 +1809,20 @@ int main(int argc, char **argv)
 	button = gtk_button_new_with_label ("Set all gains from A");
 	g_signal_connect(button, "clicked", G_CALLBACK (gainSetAll),0);
 	gtk_box_pack_start (GTK_BOX (box1), button, TRUE, TRUE, 0);
+
+	button = gtk_check_button_new_with_label("show grid");
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), g_showContGrid);
+	g_signal_connect (button, "toggled",
+	                  G_CALLBACK (basic_checkbox_cb), &g_showContGrid);
+	gtk_box_pack_start (GTK_BOX (box1), button, TRUE, TRUE, 0);
+	gtk_widget_show(button);
+
+	button = gtk_check_button_new_with_label("show threshold");
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), g_showContThresh);
+	g_signal_connect (button, "toggled",
+	                  G_CALLBACK (basic_checkbox_cb), &g_showContThresh);
+	gtk_box_pack_start (GTK_BOX (box1), button, TRUE, TRUE, 0);
+	gtk_widget_show(button);
 
 	//add in a zoom spinner.
 	g_zoomSpin = mk_spinner("Waveform Span", box1,
@@ -1819,6 +1839,8 @@ int main(int argc, char **argv)
 	gtk_label_set_angle(GTK_LABEL(label), 90);
 	gtk_notebook_insert_page(GTK_NOTEBOOK(g_notebook), box1, label, 0);
 	// this concludes the rasters page.
+
+
 
 //add page for sorting. (4 units .. for now .. such is the legacy. )
 	box1 = gtk_vbox_new (FALSE, 0);
