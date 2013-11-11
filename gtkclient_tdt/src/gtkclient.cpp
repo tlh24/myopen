@@ -658,6 +658,36 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 		}
 		glPopMatrix();
 	}
+	if (g_mode == MODE_ICMS) {
+		// XXX TODO, DRAW STUFF HERE
+		/*
+		glPushMatrix();
+		glEnableClientState(GL_VERTEX_ARRAY);
+		float xo, yo, xz, yz;
+		cgGLEnableProfile(myCgVertexProfile);
+		if (g_blendmode == GL_ONE)
+			g_vsFadeColor->setParam(2,"ascale", 0.2f);
+		else
+			g_vsFadeColor->setParam(2,"ascale", 1.f);
+		cgGLDisableProfile(myCgVertexProfile);
+
+		int spikesRows = RECCHAN / g_spikesCols;
+		if (RECCHAN % g_spikesCols) spikesRows++;
+		float xf = g_spikesCols;
+		float yf = spikesRows;
+		xz = 2.f/xf;
+		yz = 2.f/yf;
+
+		for (int k=0; k<RECCHAN; k++) {
+			xo = (k%g_spikesCols)/xf;
+			yo = ((k/g_spikesCols)+1)/yf;
+			g_c[k]->setLoc(xo*2.f-1.f, 1.f-yo*2.f, xz*2.f, yz);
+			g_c[k]->draw(g_drawmode, time, g_cursPos,
+			             g_showPca, g_rtMouseBtn, false, g_showWFVgrid);
+		}
+		*/
+
+	}
 	glDisableClientState(GL_VERTEX_ARRAY);
 
 	if (gdk_gl_drawable_is_double_buffered (gldrawable))
@@ -1387,40 +1417,12 @@ static void blendRadioCB(GtkWidget *button, gpointer p)
 		else g_blendmode = GL_ONE;
 	}
 }
-static void showPcaButtonCB(GtkWidget *button, gpointer * )
-{
-	if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
-		g_showPca = true;
-	else
-		g_showPca = false;
-}
-static void autoChOffsetButtonCB(GtkWidget *button, gpointer * )
-{
-	if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
-		g_autoChOffset = true;
-	else
-		g_autoChOffset = false;
-}
-static void showWFVgridButtonCB(GtkWidget *button, gpointer * )
-{
-	if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
-		g_showWFVgrid = true;
-	else
-		g_showWFVgrid = false;
-}
 static void pauseButtonCB(GtkWidget *button, gpointer * )
 {
 	if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
 		g_pause = gettime();
 	else
 		g_pause = -1.0;
-}
-static void saveUnsortButtonCB(GtkWidget *button, gpointer * )
-{
-	if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
-		g_saveUnsorted = true;
-	else
-		g_saveUnsorted = false;
 }
 static void cycleButtonCB(GtkWidget *button, gpointer * )
 {
@@ -1438,19 +1440,11 @@ static void spikesColsSpinCB( GtkWidget *, gpointer)
 {
 	g_spikesCols = (int)gtk_adjustment_get_value(g_spikesColsSpin);
 }
-static void enableArtifactSubtrCB(GtkWidget *button, gpointer * )
+static void basic_checkbox_cb(GtkWidget *button, bool *p)
 {
-	if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
-		g_enableArtifactSubtr = true;
-	else
-		g_enableArtifactSubtr = false;
-}
-static void trainArtifactTemplCB(GtkWidget *button, gpointer * )
-{
-	g_trainArtifactTempl =
-	        (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))) ?
-	        true :
-	        false;
+	*p = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)) ?
+	     true :
+	     false;
 }
 static void clearArtifactTemplCB(GtkWidget )
 {
@@ -1485,6 +1479,7 @@ static void notebookPageChangedCB(GtkWidget *,
 	if (page == 0) g_mode = MODE_RASTERS;
 	if (page == 1) g_mode = MODE_SORT;
 	if (page == 2) g_mode = MODE_SPIKES;
+	if (page == 3) g_mode = MODE_ICMS;
 }
 static GtkAdjustment *mk_spinner(const char *txt, GtkWidget *container,
                                  float start, float min, float max, float step,
@@ -1774,8 +1769,9 @@ int main(int argc, char **argv)
 		                           gainSpinCB, i);
 		if (i==0) {
 			button = gtk_check_button_new_with_label("auto offset of B,C,D");
+			gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), g_autoChOffset);
 			g_signal_connect (button, "toggled",
-			                  G_CALLBACK (autoChOffsetButtonCB), (gpointer) "o");
+			                  G_CALLBACK (basic_checkbox_cb), &g_autoChOffset);
 			gtk_box_pack_start (GTK_BOX (bx2), button, TRUE, TRUE, 0);
 			gtk_widget_show(button);
 		}
@@ -1856,8 +1852,9 @@ int main(int argc, char **argv)
 
 	//show PCA button.
 	button = gtk_check_button_new_with_label("show PCA");
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), g_showPca);
 	g_signal_connect (button, "toggled",
-	                  G_CALLBACK (showPcaButtonCB), (gpointer) "o");
+	                  G_CALLBACK (basic_checkbox_cb), &g_showPca);
 	gtk_box_pack_start (GTK_BOX (box2), button, TRUE, TRUE, 0);
 	gtk_widget_show(button);
 
@@ -1865,7 +1862,7 @@ int main(int argc, char **argv)
 	button = gtk_check_button_new_with_label("show grid");
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), g_showWFVgrid);
 	g_signal_connect (button, "toggled",
-	                  G_CALLBACK (showWFVgridButtonCB), (gpointer) "o");
+	                  G_CALLBACK (basic_checkbox_cb), &g_showWFVgrid);
 	gtk_box_pack_start (GTK_BOX (box2), button, TRUE, TRUE, 0);
 	gtk_widget_show(button);
 
@@ -1917,6 +1914,7 @@ int main(int argc, char **argv)
 	gtk_notebook_insert_page(GTK_NOTEBOOK(g_notebook), box1, label, 2);
 
 
+
 	// add a page for icms
 	box1 = gtk_vbox_new(FALSE, 0);
 
@@ -1924,14 +1922,14 @@ int main(int argc, char **argv)
 	button = gtk_check_button_new_with_label("enable artifact subtraction");
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), g_enableArtifactSubtr);
 	g_signal_connect (button, "toggled",
-	                  G_CALLBACK (enableArtifactSubtrCB), (gpointer) "o");
+	                  G_CALLBACK (basic_checkbox_cb), &g_enableArtifactSubtr);
 	gtk_box_pack_start (GTK_BOX (box1), button, TRUE, TRUE, 0);
 	gtk_widget_show(button);
 
 	button = gtk_check_button_new_with_label("train artifact templates");
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), g_trainArtifactTempl);
 	g_signal_connect (button, "toggled",
-	                  G_CALLBACK (trainArtifactTemplCB), (gpointer) "o");
+	                  G_CALLBACK (basic_checkbox_cb), &g_trainArtifactTempl);
 	gtk_box_pack_start (GTK_BOX (box1), button, TRUE, TRUE, 0);
 	gtk_widget_show(button);
 
@@ -1947,6 +1945,7 @@ int main(int argc, char **argv)
 	label = gtk_label_new("icms");
 	gtk_label_set_angle(GTK_LABEL(label), 90);
 	gtk_notebook_insert_page(GTK_NOTEBOOK(g_notebook), box1, label, 3);
+
 
 
 	//add a automatic channel change button.
@@ -1978,7 +1977,7 @@ int main(int argc, char **argv)
 	button = gtk_check_button_new_with_label("Save unsorted");
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), g_saveUnsorted);
 	g_signal_connect (button, "toggled",
-	                  G_CALLBACK (saveUnsortButtonCB), (gpointer) "o");
+	                  G_CALLBACK (basic_checkbox_cb), &g_saveUnsorted);
 	gtk_box_pack_start (GTK_BOX (bx), button, TRUE, TRUE, 0);
 	gtk_widget_show(button);
 
