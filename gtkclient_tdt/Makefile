@@ -104,10 +104,11 @@ deps:
 	@echo "otherwise Cg may not be found. "
 
 pretty:
+	# "-rm" means that make ignores errors, if any 
 	astyle -A8 --indent=tab -H -k3 include/*.h
-	rm include/*.h.orig
+	-rm include/*.h.orig
 	astyle -A8 --indent=tab -H -k3 src/*.cpp
-	rm src/*.cpp.orig
+	-rm src/*.cpp.orig
 
 install:
 	install -d $(TARGET)
