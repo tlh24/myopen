@@ -106,8 +106,12 @@ bool 	g_addPoly = false;
 int 	g_channel[4] = {0,32,64,95};
 long double g_lastPo8eTime = 0.0;
 
-double		 g_minISI = 1.3; //ms
-int		 	 g_spikesCols = 16;
+double g_minISI = 1.3; //ms
+int g_spikesCols = 16;
+
+bool g_enableArtifactSubtr = true;
+bool g_trainArtifactTempl = true;
+int g_numArtifactSamps = 1e3;
 
 float g_unsortrate = 0.0; //the rate that unsorted WFs get through.
 float	g_autoThreshold = -3.5; //standard deviations. default negative, w/e.
@@ -130,6 +134,7 @@ GtkAdjustment *g_thresholdSpin[4];
 GtkAdjustment *g_centeringSpin[4];
 GtkAdjustment *g_unsortRateSpin;
 GtkAdjustment *g_minISISpin;
+GtkAdjustment *g_numArtifactSpin;
 GtkAdjustment *g_autoThresholdSpin;
 GtkAdjustment *g_spikesColsSpin;
 GtkAdjustment *g_zoomSpin;
@@ -965,12 +970,6 @@ void *po8_thread(void *)
 			}
 			if (numSamples > 0 && numSamples < bufmax) {
 				bytes += numSamples * nchan * bps;
-				/*
-				if(frame %200 == 0){
-				printf("%d samples at %d Bps of %d chan: %Lf MB/sec\n", numSamples, bps, nchan,
-							((long double)bytes) / ((gettime() - starttime)*(1024.0*1024.0)));
-				}
-				*/
 
 				long double time = gettime();
 				g_lastPo8eTime = time;
@@ -980,10 +979,9 @@ void *po8_thread(void *)
 				int ticks = (unsigned short)(temp[NCHAN*numSamples + numSamples -1]);
 				ticks += (unsigned short)(temp[(NCHAN+1)*numSamples + numSamples -1]) << 16;
 				g_ts.update(time, ticks, frame); //also updates the mmap file.
-				//g_ts.m_ticks = ticks; //for display.
 				g_ts.m_dropped = (int)totalSamples - ticks;
 
-				// get icms times
+				// get icms times, fill icms buffers, and subtract artifact
 				icmspak icms;
 				for (int k=0; k<numSamples; k++) {
 					unsigned int tmp = (unsigned short)(temp[(NCHAN+2)*numSamples+k]);
@@ -1010,6 +1008,7 @@ void *po8_thread(void *)
 					}
 
 					// fill artifact-subtraction buffers
+					// xxx check if we are even filling buffers
 					for (int j=0; j<STIMCHAN; j++) {
 						i64 idx = g_artifact[j]->m_index;
 						if (idx != -1) {
@@ -1020,20 +1019,26 @@ void *po8_thread(void *)
 								float alpha = 1/(g_artifact[j]->m_nsamples+1);
 								float curr = g_artifact[j]->m_buf[ch*ARTBUF+idx];
 								// iterative update of average
-								g_artifact[j]->m_buf[ch*ARTBUF+idx] =
-								        curr + alpha*(f-curr);
+								float next = curr + alpha*(f-curr);
+								if (g_trainArtifactTempl)
+									g_artifact[j]->m_buf[ch*ARTBUF+idx] = next;
+
+								// xxx check if we are subtracting
+								if (g_enableArtifactSubtr) {
+									short subtr = (short)((f-next)*32767.f)/gain;
+									temp[ch*numSamples + k] = subtr;
+								}
 							}
 							g_artifact[j]->m_index++;
 							if (g_artifact[j]->m_index > ARTBUF) {
 								g_artifact[j]->m_index = -1;
-								g_artifact[j]->m_nsamples++;
+								if (g_trainArtifactTempl)
+									g_artifact[j]->m_nsamples++;
 							}
 						}
 					}
 
 				}
-
-				// xxx filling artifact buffers and subtracting artifact has to happen here!
 
 				// copy the data over to g_fbuf for display (broadband trace)
 				// input data is scaled from TDT so that 32767 = 10mV.
@@ -1432,6 +1437,33 @@ static void minISISpinCB( GtkWidget *, gpointer)
 static void spikesColsSpinCB( GtkWidget *, gpointer)
 {
 	g_spikesCols = (int)gtk_adjustment_get_value(g_spikesColsSpin);
+}
+static void enableArtifactSubtrCB(GtkWidget *button, gpointer * )
+{
+	if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
+		g_enableArtifactSubtr = true;
+	else
+		g_enableArtifactSubtr = false;
+}
+static void trainArtifactTemplCB(GtkWidget *button, gpointer * )
+{
+	g_trainArtifactTempl =
+	        (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))) ?
+	        true :
+	        false;
+}
+static void clearArtifactTemplCB(GtkWidget )
+{
+	for (int i=0; i<STIMCHAN; i++) {
+		for (int j=0; j<ARTBUF; j++) {
+			g_artifact[i]->m_buf[j] = 0.f;
+		}
+		g_artifact[i]->m_nsamples = 0;
+	}
+}
+static void numArtifactCB( GtkWidget *, gpointer)
+{
+	g_numArtifactSamps = (int)gtk_adjustment_get_value(g_numArtifactSpin);
 }
 static void zoomSpinCB( GtkWidget *, gpointer )
 {
@@ -1878,23 +1910,44 @@ int main(int argc, char **argv)
 	g_spikesColsSpin = mk_spinner("Columns", box1, g_spikesCols, 3, 32, 1,
 	                              spikesColsSpinCB, 0);
 
-
 // end sort page.
 	gtk_widget_show (box1);
 	label = gtk_label_new("spikes");
 	gtk_label_set_angle(GTK_LABEL(label), 90);
 	gtk_notebook_insert_page(GTK_NOTEBOOK(g_notebook), box1, label, 2);
 
+
 	// add a page for icms
 	box1 = gtk_vbox_new(FALSE, 0);
 
-	// do icms widigts here
+	// enable artifact subtraction
+	button = gtk_check_button_new_with_label("enable artifact subtraction");
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), g_enableArtifactSubtr);
+	g_signal_connect (button, "toggled",
+	                  G_CALLBACK (enableArtifactSubtrCB), (gpointer) "o");
+	gtk_box_pack_start (GTK_BOX (box1), button, TRUE, TRUE, 0);
+	gtk_widget_show(button);
+
+	button = gtk_check_button_new_with_label("train artifact templates");
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), g_trainArtifactTempl);
+	g_signal_connect (button, "toggled",
+	                  G_CALLBACK (trainArtifactTemplCB), (gpointer) "o");
+	gtk_box_pack_start (GTK_BOX (box1), button, TRUE, TRUE, 0);
+	gtk_widget_show(button);
+
+	button = gtk_button_new_with_label ("clear artifact templates");
+	g_signal_connect(button, "clicked", G_CALLBACK (clearArtifactTemplCB), 0);
+	gtk_box_pack_start (GTK_BOX (box1), button, FALSE, FALSE, 1);
+
+	g_numArtifactSpin = mk_spinner("num samples", box1, g_numArtifactSamps,
+	                               1e2, 1e5, 1, numArtifactCB, 0);
 
 	// end icms page
 	gtk_widget_show(box1);
 	label = gtk_label_new("icms");
 	gtk_label_set_angle(GTK_LABEL(label), 90);
 	gtk_notebook_insert_page(GTK_NOTEBOOK(g_notebook), box1, label, 3);
+
 
 	//add a automatic channel change button.
 	button = gtk_check_button_new_with_label("cycle channels");
