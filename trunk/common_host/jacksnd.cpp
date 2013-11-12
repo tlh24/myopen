@@ -12,7 +12,7 @@
 
 #include "jacksnd.h"
 
-jack_port_t *output_port1, *output_port2;
+jack_port_t *output_port[2];
 jack_client_t *client;
 
 #ifndef M_PI
@@ -23,12 +23,15 @@ jack_client_t *client;
 
 using namespace std;
 
-long g_jackSample; 
+long g_jackSample;
 
 typedef struct{
 	float		sine[TABLE_SIZE+1];
 	list<Tone*> tones; 
 } paTestData;
+
+static paTestData g_data;
+static paResample g_resample;
 
 void jackClose(int sig){
 	jack_client_close(client);
@@ -40,20 +43,20 @@ void jackClose(int sig){
 
 int process (jack_nframes_t nframes, void *arg)
 {
-	jack_default_audio_sample_t *out1, *out2;
+	jack_default_audio_sample_t *out[2];
 	paTestData *data = (paTestData*)arg;
 
-	out1 = (jack_default_audio_sample_t*)jack_port_get_buffer (output_port1, nframes);
-	out2 = (jack_default_audio_sample_t*)jack_port_get_buffer (output_port2, nframes);
+	out[0] = (jack_default_audio_sample_t*)jack_port_get_buffer (output_port[0], nframes);
+	out[1] = (jack_default_audio_sample_t*)jack_port_get_buffer (output_port[1], nframes);
 
 	for(unsigned int i=0; i<nframes; i++){
-		out1[i] = 0.f; 
-		out2[i] = 0.f; 
+		out[0][i] = 0.f; 
+		out[1][i] = 0.f; 
 	}
 	list<Tone*>::iterator it;
 	for(it=data->tones.begin(); it != data->tones.end(); it++){
 		for(unsigned int i=0; i<nframes && !((*it)->m_dead); i++){
-			(*it)->sample(g_jackSample + i, &(out1[i]), &(out2[i]), data->sine); 
+			(*it)->sample(g_jackSample + i, &(out[0][i]), &(out[1][i]), data->sine); 
 		}
 	}
 	//remove the 'dead' tones. 
@@ -73,9 +76,9 @@ int process (jack_nframes_t nframes, void *arg)
 
 int process_resample(jack_nframes_t nframes, void* arg){
 	paResample* r = (paResample*)arg; 
-	jack_default_audio_sample_t *out1, *out2;
-	out1 = (jack_default_audio_sample_t*)jack_port_get_buffer (output_port1, nframes);
-	out2 = (jack_default_audio_sample_t*)jack_port_get_buffer (output_port2, nframes);
+	jack_default_audio_sample_t *out[2];
+	out[0] = (jack_default_audio_sample_t*)jack_port_get_buffer (output_port[0], nframes);
+	out[1] = (jack_default_audio_sample_t*)jack_port_get_buffer (output_port[1], nframes);
 	
 	for(unsigned int i=0; i<nframes; i++){
 		long dif = r->wrPtr - r->rdPtr; 
@@ -84,16 +87,16 @@ int process_resample(jack_nframes_t nframes, void* arg){
 				// for the moment, let's comment this out to debug other problems
 				//printf("ERROR: dif <= 0 dif %ld nframes %d rd %ld wr %ld\n", dif, nframes, r->rdPtr, r->wrPtr); 
 			}
-			out1[i] = 0.f; 
-			out2[i] = 0.f; 
+			out[0][i] = 0.f; 
+			out[1][i] = 0.f; 
 		} else if(dif >= RESAMP_MASK){
 			//too much data too fast ..
 			if(i==0) {
 				printf("ERROR: dif >= %d dif %ld nframes %d rd %ld wr %ld\n", RESAMP_MASK, dif, nframes, r->rdPtr, r->wrPtr);
 			}
 			r->rdPtr = r->wrPtr - (RESAMP_SIZ/2); //this will keep zeros coming out.
-			out1[i] = 0.f; 
-			out2[i] = 0.f; 
+			out[0][i] = 0.f; 
+			out[1][i] = 0.f; 
 		} else {
 			float p = r->phase; 
 			float lerp = p - floor(p); 
@@ -101,8 +104,8 @@ int process_resample(jack_nframes_t nframes, void* arg){
 							(lerp)*r->circBuf[0][(r->rdPtr+1)&RESAMP_MASK]; 
 			float a2 = (1-lerp)*r->circBuf[1][r->rdPtr&RESAMP_MASK] + 
 							(lerp)*r->circBuf[1][(r->rdPtr+1)&RESAMP_MASK]; 
-			out1[i] = a1; 
-			out2[i] = a2; 
+			out[0][i] = a1; 
+			out[1][i] = a2; 
 			//increment phase..
 			r->phase += r->phaseIncr;
 			if(r->phase > 1){
@@ -210,24 +213,16 @@ void addTones(paTestData * data, long offset){
 	data->tones.push_back(t);
 }
 
-static paTestData g_data;
-static paResample g_resample;
-
-int jackInit(int mode)
+int jackInit(const char *clientname, int mode)
 {
-	const char **ports;
 	const char *client_name;
 	jack_status_t status;
-	int i;
 
-	for( i=0; i<TABLE_SIZE+1; i++ ){
-		g_data.sine[i] = 0.2 * (float) sin( ((double)i/(double)TABLE_SIZE) * M_PI * 2. );
-	}
 	g_jackSample = 0; 
+
 	/* open a client connection to the JACK server */
-	char jackname[256]; 
-	snprintf(jackname, 256, "jacksnd_%d", mode); 
-	client = jack_client_open (jackname, JackNullOption, &status, NULL);
+
+	client = jack_client_open (clientname, JackNullOption, &status, NULL);
 	if (client == NULL) {
 		fprintf (stderr, "jack_client_open() failed, "
 			 "status = 0x%2.0x\n", status);
@@ -243,9 +238,11 @@ int jackInit(int mode)
 		client_name = jack_get_client_name(client);
 		fprintf (stderr, "unique name `%s' assigned\n", client_name);
 	}
+
 	/* tell the JACK server to call `process()' whenever
 	   there is work to be done.
 	*/
+	
 	if(mode == JACKPROCESS_TONES)
 		jack_set_process_callback (client, process, &g_data);
 	if(mode == JACKPROCESS_RESAMPLE)
@@ -260,15 +257,15 @@ int jackInit(int mode)
 
 	/* create two ports */
 
-	output_port1 = jack_port_register (client, "output1",
+	output_port[0] = jack_port_register (client, "output1",
 					  JACK_DEFAULT_AUDIO_TYPE,
 					  JackPortIsOutput, 0);
 
-	output_port2 = jack_port_register (client, "output2",
+	output_port[1] = jack_port_register (client, "output2",
 					  JACK_DEFAULT_AUDIO_TYPE,
 					  JackPortIsOutput, 0);
 
-	if ((output_port1 == NULL) || (output_port2 == NULL)) {
+	if ((output_port[0] == NULL) || (output_port[1] == NULL)) {
 		fprintf(stderr, "no more JACK ports available\n");
 		exit (1);
 	}
@@ -281,6 +278,36 @@ int jackInit(int mode)
 		exit (1);
 	}
 
+	/* install a signal handler to properly quits jack client */
+	signal(SIGQUIT, jackClose);
+	signal(SIGTERM, jackClose);
+	signal(SIGHUP, jackClose);
+	signal(SIGINT, jackClose);
+
+	return 0; 
+}
+void jackDisconnectAllPorts() {
+	const char **ports;
+	
+	for (int j=0;j<2;j++) { 
+
+		ports = jack_port_get_connections (output_port[j]);
+		if (ports != NULL) {
+			int i = 0;
+			while (ports[i] != NULL) {
+				if (jack_disconnect(client, jack_port_name(output_port[j]), ports[i]))
+					fprintf (stderr, "JACK: cannot disconnect output port %d\n",i);
+				i++;
+			}
+			jack_free(ports);
+		}
+
+	}
+}
+void jackConnectFront() {
+	const char **ports;
+	int i = 0;
+
 	/* Connect the ports.  You can't do this before the client is
 	 * activated, because we can't make connections to clients
 	 * that aren't running.  Note the confusing (but necessary)
@@ -288,63 +315,6 @@ int jackInit(int mode)
 	 * "input" to the backend, and capture ports are "output" from
 	 * it.
 	 */
-	ports = jack_get_ports (client, NULL, NULL,
-				JackPortIsPhysical|JackPortIsInput);
-	if (ports == NULL) {
-		fprintf(stderr, "JACK: no physical playback ports\n");
-		exit (1);
-	}
-	if (jack_connect (client, jack_port_name (output_port1), ports[0]))
-		fprintf (stderr, "JACK: cannot connect output ports\n");
-	if (jack_connect (client, jack_port_name (output_port2), ports[1]))
-		fprintf (stderr, "JACK: cannot connect output ports\n");
-	if (jack_connect (client, jack_port_name (output_port1), ports[4])) // for my work machine... 
-		fprintf (stderr, "JACK: cannot connect output ports\n");
-	if (jack_connect (client, jack_port_name (output_port2), ports[5]))
-		fprintf (stderr, "JACK: cannot connect output ports\n");
-	free (ports);
-
-	/* install a signal handler to properly quits jack client */
-	signal(SIGQUIT, jackClose);
-	signal(SIGTERM, jackClose);
-	signal(SIGHUP, jackClose);
-	signal(SIGINT, jackClose);
-	//make sure it's working ..
-	addTones(&g_data, 20000); 
-	return 0; 
-}
-void jackDisconnectAllPorts() {
-	const char **ports;
-	int i;
-	
-	ports = jack_port_get_connections (output_port1);
-	if (ports != NULL) {
-		i = 0;
-		while (ports[i] != NULL) {
-			if (jack_disconnect (client, jack_port_name(output_port1), ports[i])) {
-				fprintf (stderr, "JACK: cannot disconnect output port %d\n",i);
-			}
-			i++;
-		}
-		jack_free(ports);
-	}
-
-	ports = jack_port_get_connections (output_port2);
-	if (ports != NULL) {
-		i = 0;
-		while (ports[i] != NULL) {
-			if (jack_disconnect (client, jack_port_name(output_port2), ports[i])) {
-				fprintf (stderr, "JACK: cannot disconnect output port %d\n",i);
-			}
-			i++;
-		}
-
-		jack_free(ports);
-	}
-}
-void jackConnectFront() {
-	const char **ports;
-	int i = 0;
 
 	ports = jack_get_ports (client, NULL, NULL,
 				JackPortIsPhysical|JackPortIsInput);
@@ -352,43 +322,51 @@ void jackConnectFront() {
 		fprintf(stderr, "JACK: no physical playback ports\n");
 		exit (1);
 	}
-	while (ports[i] != NULL) {
+	while (ports[i] != NULL)
 		i++;
-	}
-	if (i < 1) {
+	if (i < 1)
 		fprintf (stderr, "JACK: cannot connect front output port");
-	}
-	if (jack_connect (client, jack_port_name (output_port1), ports[0])) {
+	if (jack_connect (client, jack_port_name (output_port[0]), ports[0]))
 		fprintf (stderr, "JACK: cannot connect output ports\n");
-	}
-	if (jack_connect (client, jack_port_name (output_port2), ports[1])) {
+	if (jack_connect (client, jack_port_name (output_port[1]), ports[1]))
 		fprintf (stderr, "JACK: cannot connect output ports\n");
-	}
 	jack_free(ports);
 }
 void jackConnectCenterSub() {
 	const char **ports;
 	int i = 0;
 
+	/* Connect the ports.  You can't do this before the client is
+	 * activated, because we can't make connections to clients
+	 * that aren't running.  Note the confusing (but necessary)
+	 * orientation of the driver backend ports: playback ports are
+	 * "input" to the backend, and capture ports are "output" from
+	 * it.
+	 */
+
 	ports = jack_get_ports (client, NULL, NULL,
 				JackPortIsPhysical|JackPortIsInput);
 	if (ports == NULL) {
 		fprintf(stderr, "JACK: no physical playback ports\n");
 		exit (1);
 	}
-	while (ports[i] != NULL) {
+	while (ports[i] != NULL)
 		i++;
-	}
-	if (i < 5) {
+	if (i < 5)
 		fprintf (stderr, "JACK: cannot connect center/sub ports");
-	}
-	if (jack_connect (client, jack_port_name (output_port1), ports[4])) {	// center
+	if (jack_connect (client, jack_port_name (output_port[0]), ports[4]))	// center
 		fprintf (stderr, "JACK: cannot connect output ports\n");
-	}
-	if (jack_connect (client, jack_port_name (output_port2), ports[5])) {	// sub
+	if (jack_connect (client, jack_port_name (output_port[1]), ports[5]))	// sub
 		fprintf (stderr, "JACK: cannot connect output ports\n");
-	}
 	jack_free(ports);
+}
+void jackTest()
+{
+	// make sure it's working ..
+	for (int i=0;i<TABLE_SIZE+1;i++) {
+		g_data.sine[i] = 0.2 * (float) sin( ((double)i/(double)TABLE_SIZE) * M_PI * 2.0 );
+	}
+	addTones(&g_data, 20000);
 }
 void jackDemo(){
 	/* keep running until the Ctrl+C */
