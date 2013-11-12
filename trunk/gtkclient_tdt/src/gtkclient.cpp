@@ -95,14 +95,14 @@ ICMSWriter	g_icmswriter;
 
 bool g_die = false;
 double g_pause = -1.0;
-bool g_cycle = false;
-bool g_showPca = false;
-bool g_autoChOffset = false;
-bool g_showWFVgrid = true;
-bool g_showContGrid = false;
-bool g_showContThresh = true;
+gboolean g_cycle = false;
+gboolean g_showPca = false;
+gboolean g_autoChOffset = false;
+gboolean g_showWFVgrid = true;
+gboolean g_showContGrid = false;
+gboolean g_showContThresh = true;
 bool g_rtMouseBtn = false;
-bool g_saveUnsorted = true;
+gboolean g_saveUnsorted = true;
 int 	g_polyChan = 0;
 bool 	g_addPoly = false;
 int 	g_channel[4] = {0,32,64,95};
@@ -111,8 +111,8 @@ long double g_lastPo8eTime = 0.0;
 double g_minISI = 1.3; //ms
 int g_spikesCols = 16;
 
-bool g_enableArtifactSubtr = true;
-bool g_trainArtifactTempl = true;
+gboolean g_enableArtifactSubtr = true;
+gboolean g_trainArtifactTempl = true;
 int g_numArtifactSamps = 1e3;
 
 float g_unsortrate = 0.0; //the rate that unsorted WFs get through.
@@ -1436,13 +1436,15 @@ static void pauseButtonCB(GtkWidget *button, gpointer * )
 	else
 		g_pause = -1.0;
 }
-static void cycleButtonCB(GtkWidget *button, gpointer * )
+static void cycleButtonCB(GtkWidget *button, gpointer p)
 {
+	gboolean *b = (gboolean *)p;
 	if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))) {
-		g_cycle = true;
+		*b = true;
 		g_timeout_add(3000, chanscan, (gpointer)0);
-	} else
-		g_cycle = false;
+	} else {
+		*b = false;
+	}
 }
 static void minISISpinCB( GtkWidget *, gpointer)
 {
@@ -1452,11 +1454,12 @@ static void spikesColsSpinCB( GtkWidget *, gpointer)
 {
 	g_spikesCols = (int)gtk_adjustment_get_value(g_spikesColsSpin);
 }
-static void basic_checkbox_cb(GtkWidget *button, bool *p)
+static void basic_checkbox_cb(GtkWidget *button, gpointer p)
 {
-	*p = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)) ?
-	     true :
-	     false;
+	gboolean *b = (gboolean *)p;
+	*b = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)) ?
+		true :
+		false;
 }
 static void clearArtifactTemplCB(GtkWidget )
 {
@@ -1566,6 +1569,16 @@ static void mk_radio(const char *txt, int ntxt,
 		gtk_signal_connect (GTK_OBJECT (button), "clicked",
 		                    GTK_SIGNAL_FUNC (cb), GINT_TO_POINTER(i));
 	}
+}
+static void mk_checkbox(const char *label, GtkWidget *container,
+						gboolean *checkstate, GtkCallback cb)
+{
+
+	GtkWidget *button = gtk_check_button_new_with_label(label);
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), *checkstate);
+	g_signal_connect (button, "toggled", G_CALLBACK (cb), checkstate);
+	gtk_box_pack_start (GTK_BOX (container), button, TRUE, TRUE, 0);
+	gtk_widget_show(button);
 }
 static void openSaveSpikesFile(gpointer parent_window)
 {
@@ -1780,12 +1793,8 @@ int main(int argc, char **argv)
 		                           -64.0, 64.0, 0.1,
 		                           gainSpinCB, i);
 		if (i==0) {
-			button = gtk_check_button_new_with_label("auto offset of B,C,D");
-			gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), g_autoChOffset);
-			g_signal_connect (button, "toggled",
-			                  G_CALLBACK (basic_checkbox_cb), &g_autoChOffset);
-			gtk_box_pack_start (GTK_BOX (bx2), button, TRUE, TRUE, 0);
-			gtk_widget_show(button);
+			mk_checkbox("auto offset of B,C,D", bx2,
+				&g_autoChOffset, basic_checkbox_cb);
 		}
 
 		gtk_box_pack_start (GTK_BOX (frame), bx2, FALSE, FALSE, 1);
@@ -1810,19 +1819,9 @@ int main(int argc, char **argv)
 	g_signal_connect(button, "clicked", G_CALLBACK (gainSetAll),0);
 	gtk_box_pack_start (GTK_BOX (box1), button, TRUE, TRUE, 0);
 
-	button = gtk_check_button_new_with_label("show grid");
-	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), g_showContGrid);
-	g_signal_connect (button, "toggled",
-	                  G_CALLBACK (basic_checkbox_cb), &g_showContGrid);
-	gtk_box_pack_start (GTK_BOX (box1), button, TRUE, TRUE, 0);
-	gtk_widget_show(button);
+	mk_checkbox("show grid", box1, &g_showContGrid, basic_checkbox_cb);
 
-	button = gtk_check_button_new_with_label("show threshold");
-	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), g_showContThresh);
-	g_signal_connect (button, "toggled",
-	                  G_CALLBACK (basic_checkbox_cb), &g_showContThresh);
-	gtk_box_pack_start (GTK_BOX (box1), button, TRUE, TRUE, 0);
-	gtk_widget_show(button);
+	mk_checkbox("show threshold", box1, &g_showContThresh, basic_checkbox_cb);
 
 	//add in a zoom spinner.
 	g_zoomSpin = mk_spinner("Waveform Span", box1,
@@ -1881,20 +1880,10 @@ int main(int argc, char **argv)
 	GtkWidget *box2 = gtk_hbox_new (FALSE, 0);
 
 	//show PCA button.
-	button = gtk_check_button_new_with_label("show PCA");
-	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), g_showPca);
-	g_signal_connect (button, "toggled",
-	                  G_CALLBACK (basic_checkbox_cb), &g_showPca);
-	gtk_box_pack_start (GTK_BOX (box2), button, TRUE, TRUE, 0);
-	gtk_widget_show(button);
+	mk_checkbox("show PCA", box2, &g_showPca, basic_checkbox_cb);
 
 	//show wf voltage grid
-	button = gtk_check_button_new_with_label("show grid");
-	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), g_showWFVgrid);
-	g_signal_connect (button, "toggled",
-	                  G_CALLBACK (basic_checkbox_cb), &g_showWFVgrid);
-	gtk_box_pack_start (GTK_BOX (box2), button, TRUE, TRUE, 0);
-	gtk_widget_show(button);
+	mk_checkbox("show grid", box2, &g_showWFVgrid, basic_checkbox_cb);
 
 	gtk_widget_show(box2);
 	gtk_box_pack_start (GTK_BOX (box1), box2, TRUE, TRUE, 0);
@@ -1949,19 +1938,11 @@ int main(int argc, char **argv)
 	box1 = gtk_vbox_new(FALSE, 0);
 
 	// enable artifact subtraction
-	button = gtk_check_button_new_with_label("enable artifact subtraction");
-	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), g_enableArtifactSubtr);
-	g_signal_connect (button, "toggled",
-	                  G_CALLBACK (basic_checkbox_cb), &g_enableArtifactSubtr);
-	gtk_box_pack_start (GTK_BOX (box1), button, TRUE, TRUE, 0);
-	gtk_widget_show(button);
+	mk_checkbox("enable artifact subtraction", box1,
+				&g_enableArtifactSubtr, basic_checkbox_cb);
 
-	button = gtk_check_button_new_with_label("train artifact templates");
-	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), g_trainArtifactTempl);
-	g_signal_connect (button, "toggled",
-	                  G_CALLBACK (basic_checkbox_cb), &g_trainArtifactTempl);
-	gtk_box_pack_start (GTK_BOX (box1), button, TRUE, TRUE, 0);
-	gtk_widget_show(button);
+	mk_checkbox("train artifact templates", box1,
+				&g_trainArtifactTempl, basic_checkbox_cb);
 
 	button = gtk_button_new_with_label ("clear artifact templates");
 	g_signal_connect(button, "clicked", G_CALLBACK (clearArtifactTemplCB), 0);
@@ -1979,13 +1960,9 @@ int main(int argc, char **argv)
 
 
 	//add a automatic channel change button.
-	button = gtk_check_button_new_with_label("cycle channels");
-	g_signal_connect (button, "toggled",
-	                  G_CALLBACK (cycleButtonCB), (gpointer) "o");
-	gtk_box_pack_start (GTK_BOX (v1), button, TRUE, TRUE, 0);
-	gtk_widget_show(button);
+	mk_checkbox("cycle channels", v1, &g_cycle, cycleButtonCB);
+	
 	//add draw mode (applicable to all)
-
 	bx = gtk_hbox_new(FALSE, 0);
 	mk_radio("lines,points", 2,
 	         bx, true, "draw mode", drawRadioCB);
@@ -2004,12 +1981,8 @@ int main(int argc, char **argv)
 	gtk_widget_show(button);
 
 	//saving unsorted units?
-	button = gtk_check_button_new_with_label("Save unsorted");
-	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), g_saveUnsorted);
-	g_signal_connect (button, "toggled",
-	                  G_CALLBACK (basic_checkbox_cb), &g_saveUnsorted);
-	gtk_box_pack_start (GTK_BOX (bx), button, TRUE, TRUE, 0);
-	gtk_widget_show(button);
+	mk_checkbox("Save unsorted", bx,
+			&g_saveUnsorted, basic_checkbox_cb);
 
 	gtk_box_pack_start (GTK_BOX (v1), bx, TRUE, TRUE, 0);
 
@@ -2101,8 +2074,7 @@ int main(int argc, char **argv)
 
 	//jack.
 #ifdef JACK
-	jackInit(JACKPROCESS_RESAMPLE);
-	jackDisconnectAllPorts();
+	jackInit("gtkclient", JACKPROCESS_RESAMPLE);
 	jackConnectFront();
 	jackSetResample(24414.0625/SAMPFREQ);
 #endif
@@ -2113,8 +2085,7 @@ int main(int argc, char **argv)
 	jackClose(0);
 #endif
 	//just in case.
-	g_wfwriter.close();
-	g_icmswriter.close();
+	closeSaveFiles(0);
 	//cancel the mmap thread -- probably waiting on a read().
 	if (pthread_cancel(thread1)) {
 		perror("pthread_cancel mmap_thread");
