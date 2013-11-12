@@ -129,7 +129,8 @@ public:
 };
 
 void jackClose(int sig); 
-int  jackInit(int mode); 
+int  jackInit(const char *name, int mode);
+void jackTest();
 void jackDemo(); 
 void jackAddTone(Tone* t); 
 void jackAddToneP(float freq, float pan, float scale, float duration); 
