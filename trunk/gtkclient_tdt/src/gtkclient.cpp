@@ -1347,7 +1347,7 @@ static void gainSpinCB( GtkWidget *, gpointer p)
 		g_c[g_channel[h]]->resetPca();
 	}
 }
-static void gainSetAll(gpointer )
+static void gainSetAll(GtkWidget *, gpointer)
 {
 	float gain = gtk_adjustment_get_value(g_gainSpin[0]);
 	for (int i=0; i<NCHAN; i++) {
@@ -1458,10 +1458,10 @@ static void basic_checkbox_cb(GtkWidget *button, gpointer p)
 {
 	gboolean *b = (gboolean *)p;
 	*b = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)) ?
-		true :
-		false;
+	     true :
+	     false;
 }
-static void clearArtifactTemplCB(GtkWidget )
+static void clearArtifactTemplCB(GtkWidget *, gpointer)
 {
 	for (int i=0; i<STIMCHAN; i++) {
 		for (int j=0; j<ARTBUF; j++) {
@@ -1470,11 +1470,11 @@ static void clearArtifactTemplCB(GtkWidget )
 		g_artifact[i]->m_nsamples = 0;
 	}
 }
-static void numArtifactCB( GtkWidget *, gpointer)
+static void numArtifactCB(GtkWidget *, gpointer)
 {
 	g_numArtifactSamps = (int)gtk_adjustment_get_value(g_numArtifactSpin);
 }
-static void zoomSpinCB( GtkWidget *, gpointer )
+static void zoomSpinCB(GtkWidget *, gpointer )
 {
 	float f = gtk_adjustment_get_value(g_zoomSpin); //should be in seconds.
 	g_nsamp = f * 24414.0625;
@@ -1571,16 +1571,22 @@ static void mk_radio(const char *txt, int ntxt,
 	}
 }
 static void mk_checkbox(const char *label, GtkWidget *container,
-						gboolean *checkstate, GtkCallback cb)
+                        gboolean *checkstate, GtkCallback cb)
 {
-
 	GtkWidget *button = gtk_check_button_new_with_label(label);
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), *checkstate);
 	g_signal_connect (button, "toggled", G_CALLBACK (cb), checkstate);
-	gtk_box_pack_start (GTK_BOX (container), button, TRUE, TRUE, 0);
+	gtk_box_pack_start (GTK_BOX(container), button, TRUE, TRUE, 0);
 	gtk_widget_show(button);
 }
-static void openSaveSpikesFile(gpointer parent_window)
+static void mk_button(const char *label, GtkWidget *container,
+                      GtkCallback cb, gpointer data)
+{
+	GtkWidget *button = gtk_button_new_with_label(label);
+	g_signal_connect(button, "clicked", G_CALLBACK(cb), data);
+	gtk_box_pack_start(GTK_BOX(container), button, FALSE, FALSE, 1);
+}
+static void openSaveSpikesFile(GtkWidget *, gpointer parent_window)
 {
 	GtkWidget *dialog;
 	dialog = gtk_file_chooser_dialog_new ("Save Spikes File",
@@ -1600,7 +1606,7 @@ static void openSaveSpikesFile(gpointer parent_window)
 	}
 	gtk_widget_destroy (dialog);
 }
-static void openSaveICMSFile(gpointer parent_window)
+static void openSaveICMSFile(GtkWidget *, gpointer parent_window)
 {
 	GtkWidget *dialog;
 	dialog = gtk_file_chooser_dialog_new ("Save ICMS File",
@@ -1620,7 +1626,7 @@ static void openSaveICMSFile(gpointer parent_window)
 	}
 	gtk_widget_destroy (dialog);
 }
-static void closeSaveFiles(gpointer)
+static void closeSaveFiles(GtkWidget *, gpointer)
 {
 	//have to signal to the other thread, let them close it.
 	g_wfwriter.close();
@@ -1640,12 +1646,12 @@ void saveMatrix(const char *fname, gsl_matrix *v)
 	fclose(fid);
 }
 
-static void calcPCACB(gpointer)
+static void calcPCACB(GtkWidget *, gpointer)
 {
 	for (int h=0; h<4; h++)
 		g_c[g_channel[h]]->computePca();
 }
-static void getTemplateCB( GtkWidget *, gpointer p)
+static void getTemplateCB(GtkWidget *, gpointer p)
 {
 	int aB = (int)((long long)p & 0x1);
 	int j = (int)((long long)p >> 1);
@@ -1794,7 +1800,7 @@ int main(int argc, char **argv)
 		                           gainSpinCB, i);
 		if (i==0) {
 			mk_checkbox("auto offset of B,C,D", bx2,
-				&g_autoChOffset, basic_checkbox_cb);
+			            &g_autoChOffset, basic_checkbox_cb);
 		}
 
 		gtk_box_pack_start (GTK_BOX (frame), bx2, FALSE, FALSE, 1);
@@ -1815,9 +1821,7 @@ int main(int argc, char **argv)
 	box1 = gtk_vbox_new(FALSE, 2);
 
 	//add a gain set-all button.
-	button = gtk_button_new_with_label ("Set all gains from A");
-	g_signal_connect(button, "clicked", G_CALLBACK (gainSetAll),0);
-	gtk_box_pack_start (GTK_BOX (box1), button, TRUE, TRUE, 0);
+	mk_button("Set all gains from A", box1, gainSetAll, NULL);
 
 	mk_checkbox("show grid", box1, &g_showContGrid, basic_checkbox_cb);
 
@@ -1888,10 +1892,7 @@ int main(int argc, char **argv)
 	gtk_widget_show(box2);
 	gtk_box_pack_start (GTK_BOX (box1), box2, TRUE, TRUE, 0);
 
-	button = gtk_button_new_with_label ("calc PCA");
-	g_signal_connect(button, "clicked", G_CALLBACK (calcPCACB),
-	                 (gpointer *)window);
-	gtk_box_pack_start (GTK_BOX (box1), button, FALSE, FALSE, 1);
+	mk_button("calc PCA", box1, calcPCACB, NULL);
 
 //this concludes sort page.
 	gtk_widget_show (box1);
@@ -1914,14 +1915,10 @@ int main(int argc, char **argv)
 	                                 -10.0, 10.0, 0.05, autoThresholdSpinCB, 0);
 	GtkWidget *bx3 = gtk_hbox_new (FALSE, 1);
 	gtk_box_pack_start (GTK_BOX (box1), bx3, FALSE, FALSE, 0);
-	button = gtk_button_new_with_label ("set selected");
-	g_signal_connect(button, "clicked", G_CALLBACK (autoThresholdCB),
-	                 (gpointer *)1);
-	gtk_box_pack_start (GTK_BOX (bx3), button, FALSE, FALSE, 1);
-	button = gtk_button_new_with_label ("set all");
-	g_signal_connect(button, "clicked", G_CALLBACK (autoThresholdCB),
-	                 (gpointer *)2);
-	gtk_box_pack_start (GTK_BOX (bx3), button, FALSE, FALSE, 1);
+
+	mk_button("set selected", bx3, autoThresholdCB, GINT_TO_POINTER(1));
+
+	mk_button("set all", bx3, autoThresholdCB, GINT_TO_POINTER(2));
 
 	g_spikesColsSpin = mk_spinner("Columns", box1, g_spikesCols, 3, 32, 1,
 	                              spikesColsSpinCB, 0);
@@ -1939,14 +1936,12 @@ int main(int argc, char **argv)
 
 	// enable artifact subtraction
 	mk_checkbox("enable artifact subtraction", box1,
-				&g_enableArtifactSubtr, basic_checkbox_cb);
+	            &g_enableArtifactSubtr, basic_checkbox_cb);
 
 	mk_checkbox("train artifact templates", box1,
-				&g_trainArtifactTempl, basic_checkbox_cb);
+	            &g_trainArtifactTempl, basic_checkbox_cb);
 
-	button = gtk_button_new_with_label ("clear artifact templates");
-	g_signal_connect(button, "clicked", G_CALLBACK (clearArtifactTemplCB), 0);
-	gtk_box_pack_start (GTK_BOX (box1), button, FALSE, FALSE, 1);
+	mk_button("clear artifact templates", box1, clearArtifactTemplCB, NULL);
 
 	g_numArtifactSpin = mk_spinner("num samples", box1, g_numArtifactSamps,
 	                               1e2, 1e5, 1, numArtifactCB, 0);
@@ -1961,7 +1956,7 @@ int main(int argc, char **argv)
 
 	//add a automatic channel change button.
 	mk_checkbox("cycle channels", v1, &g_cycle, cycleButtonCB);
-	
+
 	//add draw mode (applicable to all)
 	bx = gtk_hbox_new(FALSE, 0);
 	mk_radio("lines,points", 2,
@@ -1982,25 +1977,18 @@ int main(int argc, char **argv)
 
 	//saving unsorted units?
 	mk_checkbox("Save unsorted", bx,
-			&g_saveUnsorted, basic_checkbox_cb);
+	            &g_saveUnsorted, basic_checkbox_cb);
 
 	gtk_box_pack_start (GTK_BOX (v1), bx, TRUE, TRUE, 0);
 
 	//and save / stop saving buttons
 	bx = gtk_hbox_new (FALSE, 3);
-	button = gtk_button_new_with_label ("Rec Spikes");
-	g_signal_connect(button, "clicked", G_CALLBACK (openSaveSpikesFile),
-	                 (gpointer *)window);
-	gtk_box_pack_start (GTK_BOX (bx), button, FALSE, FALSE, 0);
 
-	button = gtk_button_new_with_label ("Rec ICMS");
-	g_signal_connect(button, "clicked", G_CALLBACK (openSaveICMSFile),
-	                 (gpointer *)window);
-	gtk_box_pack_start (GTK_BOX (bx), button, FALSE, FALSE, 0);
+	mk_button("Rec Spikes", bx, openSaveSpikesFile, NULL);
 
-	button = gtk_button_new_with_label ("Stop All");
-	g_signal_connect(button, "clicked", G_CALLBACK (closeSaveFiles),0);
-	gtk_box_pack_start (GTK_BOX (bx), button, FALSE, FALSE, 0);
+	mk_button("Rec ICMS", bx, openSaveICMSFile, NULL);
+
+	mk_button("Stop All", bx, closeSaveFiles, NULL);
 
 	gtk_box_pack_start (GTK_BOX (v1), bx, TRUE, TRUE, 0);
 
@@ -2085,7 +2073,7 @@ int main(int argc, char **argv)
 	jackClose(0);
 #endif
 	//just in case.
-	closeSaveFiles(0);
+	closeSaveFiles(NULL, NULL);
 	//cancel the mmap thread -- probably waiting on a read().
 	if (pthread_cancel(thread1)) {
 		perror("pthread_cancel mmap_thread");
