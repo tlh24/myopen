@@ -676,7 +676,7 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 		glPopMatrix();
 	}
 	if (g_mode == MODE_ICMS) {
-		// XXX TODO, DRAW STUFF HERE
+		// XXX TODO, DRAW ICMS STUFF HERE
 		/*
 		glPushMatrix();
 		glEnableClientState(GL_VERTEX_ARRAY);
@@ -830,7 +830,7 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 	return TRUE;
 }
 
-static gboolean rotate (gpointer user_data)
+static gboolean rotate(gpointer user_data)
 {
 	GtkWidget *da = GTK_WIDGET (user_data);
 
@@ -1343,7 +1343,6 @@ static void gainSpinCB( GtkWidget *, gpointer p)
 		float gain = gtk_adjustment_get_value(g_gainSpin[h]);
 		printf("gainSpinCB: %f\n", gain);
 		g_c[g_channel[h]]->setGain(gain);
-		//updateGain(g_channel[h]);
 		g_c[g_channel[h]]->resetPca();
 	}
 }
@@ -1352,15 +1351,10 @@ static void gainSetAll(GtkWidget *, gpointer)
 	float gain = gtk_adjustment_get_value(g_gainSpin[0]);
 	for (int i=0; i<NCHAN; i++) {
 		g_c[i]->setGain(gain);
-		//updateGain(i);
+		g_c[i]->resetPca();
 	}
-	//for(int i=0; i<32; i++){
-	//	resetBiquads(i);
-	//}
 	for (int i=0; i<4; i++)
 		gtk_adjustment_set_value(g_gainSpin[i], gain);
-	for (int i=0; i<NCHAN; i++)
-		g_c[i]->resetPca();
 }
 static void unsortRateSpinCB( GtkWidget * , gpointer)
 {
@@ -1486,15 +1480,15 @@ static void zoomSpinCB(GtkWidget *, gpointer )
 static void rasterSpanSpinCB( GtkWidget *, gpointer )
 {
 	g_rasterSpan = gtk_adjustment_get_value(g_rasterSpanSpin);
-	//this is pretty simple.
 }
 static void notebookPageChangedCB(GtkWidget *,
                                   gpointer, int page, gpointer)
 {
-	if (page == 0) g_mode = MODE_RASTERS;
-	if (page == 1) g_mode = MODE_SORT;
-	if (page == 2) g_mode = MODE_SPIKES;
-	if (page == 3) g_mode = MODE_ICMS;
+	g_mode = page;
+	//if (page == 0) g_mode = MODE_RASTERS;
+	//if (page == 1) g_mode = MODE_SORT;
+	//if (page == 2) g_mode = MODE_SPIKES;
+	//if (page == 3) g_mode = MODE_ICMS;
 }
 static GtkAdjustment *mk_spinner(const char *txt, GtkWidget *container,
                                  float start, float min, float max, float step,
@@ -1632,6 +1626,7 @@ static void closeSaveFiles(GtkWidget *, gpointer)
 	g_wfwriter.close();
 	g_icmswriter.close();
 }
+/*
 void saveMatrix(const char *fname, gsl_matrix *v)
 {
 	FILE *fid = fopen(fname, "w");
@@ -1645,7 +1640,7 @@ void saveMatrix(const char *fname, gsl_matrix *v)
 	}
 	fclose(fid);
 }
-
+*/
 static void calcPCACB(GtkWidget *, gpointer)
 {
 	for (int h=0; h<4; h++)
@@ -1816,7 +1811,6 @@ int main(int argc, char **argv)
 	gtk_widget_show(g_notebook);
 
 
-
 	// add a page for rasters
 	box1 = gtk_vbox_new(FALSE, 2);
 
@@ -1844,8 +1838,7 @@ int main(int argc, char **argv)
 	// this concludes the rasters page.
 
 
-
-//add page for sorting. (4 units .. for now .. such is the legacy. )
+	//add page for sorting. (4 units .. for now .. such is the legacy. )
 	box1 = gtk_vbox_new (FALSE, 0);
 	//4-channel control blocks.
 	for (int i=0; i<4; i++) {
