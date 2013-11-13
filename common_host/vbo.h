@@ -325,7 +325,7 @@ public:
 			float ww = 5.f / g_viewportSize[0];
 			float hh = 5.f / g_viewportSize[1];
 			glBegin(GL_LINES); 
-			glColor4f(1.f, 0.f, 0.f, 0.75); 
+			glColor4f(0.3f, 1.f, 0.f, 1.f); 
 			glVertex3f( xx-ww, yy-hh, 0.f);
 			glVertex3f( xx+ww, yy+hh, 0.f);
 			glVertex3f( xx+ww, yy-hh, 0.f);
@@ -350,7 +350,7 @@ public:
 		glVertex3f(fx, fy, 0.f);
 		glEnd(); 
 	}
-	void drawClosestWf(){
+	void drawClosestWf(float gain) {
 		//offsets to the wafeform display.
 		float ow = m_loc[2]; 
 		float oh = m_loc[3]*2; 
@@ -361,7 +361,7 @@ public:
 		glLineWidth(4.f); 
 		glBegin(GL_LINE_STRIP);
 		for(int j=0; j<32; j++){
-			float ny = m_wf[i*32 + j] + 0.5f; 
+			float ny = m_wf[i*32 + j]*gain + 0.5f; 
 			float nx = (float)j/31.f; 
 			glVertex3f(nx*ow+ox, ny*oh+oy, 0.f);
 		}
@@ -370,7 +370,7 @@ public:
 		glLineWidth(1.0f); 
 		glBegin(GL_LINE_STRIP);
 		for(int j=0; j<32; j++){
-			float ny = m_wf[i*32 + j] + 0.5f; 
+			float ny = m_wf[i*32 + j]*gain + 0.5f; 
 			float nx = (float)j/31.f; 
 			glVertex3f(nx*ow+ox, ny*oh+oy, 0.f);
 		}

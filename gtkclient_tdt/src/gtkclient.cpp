@@ -101,6 +101,8 @@ gboolean g_autoChOffset = false;
 gboolean g_showWFVgrid = true;
 gboolean g_showContGrid = false;
 gboolean g_showContThresh = true;
+gboolean g_showISIhist = true;
+gboolean g_showWFstd = true;
 bool g_rtMouseBtn = false;
 gboolean g_saveUnsorted = true;
 int 	g_polyChan = 0;
@@ -114,6 +116,8 @@ int g_spikesCols = 16;
 gboolean g_enableArtifactSubtr = true;
 gboolean g_trainArtifactTempl = true;
 int g_numArtifactSamps = 1e3;
+int g_stimChanDisp = 0;	// 0-31
+float g_artifactDispAtten = 10.f;
 
 float g_unsortrate = 0.0; //the rate that unsorted WFs get through.
 float	g_autoThreshold = -3.5; //standard deviations. default negative, w/e.
@@ -137,6 +141,8 @@ GtkAdjustment *g_centeringSpin[4];
 GtkAdjustment *g_unsortRateSpin;
 GtkAdjustment *g_minISISpin;
 GtkAdjustment *g_numArtifactSpin;
+GtkAdjustment *g_stimChanSpin;
+GtkAdjustment *g_artifactDispAttenSpin;
 GtkAdjustment *g_autoThresholdSpin;
 GtkAdjustment *g_spikesColsSpin;
 GtkAdjustment *g_zoomSpin;
@@ -555,8 +561,10 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 			glEnableClientState(GL_VERTEX_ARRAY);
 			glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo2[k]);
 			glVertexPointer(2, GL_FLOAT, 0, 0);
-			if (k == 0) glColor4f (0., 1., 1., 0.3f); //cyan
-			else glColor4f (1., 0., 0., 0.3f); //red
+			if (k == 0)
+				glColor4f (0., 1., 1., 0.3f); //cyan
+			else
+				glColor4f (1., 0., 0., 0.3f); //red
 			glPointSize(2.0);
 			glDrawArrays(GL_POINTS, 0, sizeof(g_sbuf[k])/8);
 			glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
@@ -649,11 +657,14 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 			// and the other 3 channels (B-D) yellow
 			// reverse typical loop order to draw ch A on top
 			for (int k=3; k>=0; k--) {
+				glLineWidth(2.f);
 				glBegin(GL_LINE_STRIP);
 				if (k==0)
-					glColor4f(1.f, 0.f, 0.f, 1.f);
+					//glColor4f(1.f, 0.f, 0.f, 1.f);
+					glColor4ub(239,59,44,255);
 				else
-					glColor4f(1.f, 1.f, 0.f, 1.f);
+					glColor4ub(255,237,160,255);
+				//glColor4f(1.f, 1.f, 0.f, 1.f);
 				int h = g_channel[k];
 				xo = (h%g_spikesCols)/xf;
 				xo *= 2.f;
@@ -676,34 +687,7 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 		glPopMatrix();
 	}
 	if (g_mode == MODE_ICMS) {
-		// XXX TODO, DRAW ICMS STUFF HERE
-		/*
-		glPushMatrix();
-		glEnableClientState(GL_VERTEX_ARRAY);
-		float xo, yo, xz, yz;
-		cgGLEnableProfile(myCgVertexProfile);
-		if (g_blendmode == GL_ONE)
-			g_vsFadeColor->setParam(2,"ascale", 0.2f);
-		else
-			g_vsFadeColor->setParam(2,"ascale", 1.f);
-		cgGLDisableProfile(myCgVertexProfile);
-
-		int spikesRows = RECCHAN / g_spikesCols;
-		if (RECCHAN % g_spikesCols) spikesRows++;
-		float xf = g_spikesCols;
-		float yf = spikesRows;
-		xz = 2.f/xf;
-		yz = 2.f/yf;
-
-		for (int k=0; k<RECCHAN; k++) {
-			xo = (k%g_spikesCols)/xf;
-			yo = ((k/g_spikesCols)+1)/yf;
-			g_c[k]->setLoc(xo*2.f-1.f, 1.f-yo*2.f, xz*2.f, yz);
-			g_c[k]->draw(g_drawmode, time, g_cursPos,
-			             g_showPca, g_rtMouseBtn, false, g_showWFVgrid);
-		}
-		*/
-
+		g_artifact[g_stimChanDisp]->draw();
 	}
 	glDisableClientState(GL_VERTEX_ARRAY);
 
@@ -1040,9 +1024,9 @@ void *po8_thread(void *)
 								icms.id = (short)j+1; // one-indexed
 								g_icmswriter.add(&icms);
 							}
-							if (g_artifact[j]->m_index == -1)
+							if (g_artifact[j]->m_index == -1) {
 								g_artifact[j]->m_index++;
-							else
+							} else
 								printf("ERR: STIM ARTIFACTS OVERLAP!\n");
 						}
 					}
@@ -1056,14 +1040,15 @@ void *po8_thread(void *)
 								float gain = g_c[ch]->getGain();
 								short samp = temp[ch*numSamples + k];
 								float f = gain * samp / 32767.f;
-								float alpha = 1/(g_artifact[j]->m_nsamples+1);
+								float alpha = 1.f/(g_artifact[j]->m_nsamples+1.f);
 								float curr = g_artifact[j]->m_buf[ch*ARTBUF+idx];
 								// iterative update of average
 								float next = curr + alpha*(f-curr);
-								if (g_trainArtifactTempl)
+								if ((g_trainArtifactTempl) &&
+								    (g_artifact[j]->m_nsamples < g_numArtifactSamps)) {
 									g_artifact[j]->m_buf[ch*ARTBUF+idx] = next;
+								}
 
-								// xxx check if we are subtracting
 								if (g_enableArtifactSubtr) {
 									short subtr = (short)((f-next)*32767.f)/gain;
 									temp[ch*numSamples + k] = subtr;
@@ -1072,8 +1057,10 @@ void *po8_thread(void *)
 							g_artifact[j]->m_index++;
 							if (g_artifact[j]->m_index > ARTBUF) {
 								g_artifact[j]->m_index = -1;
-								if (g_trainArtifactTempl)
+								if ((g_trainArtifactTempl) &&
+								    (g_artifact[j]->m_nsamples < g_numArtifactSamps)) {
 									g_artifact[j]->m_nsamples++;
+								}
 							}
 						}
 					}
@@ -1458,7 +1445,7 @@ static void basic_checkbox_cb(GtkWidget *button, gpointer p)
 static void clearArtifactTemplCB(GtkWidget *, gpointer)
 {
 	for (int i=0; i<STIMCHAN; i++) {
-		for (int j=0; j<ARTBUF; j++) {
+		for (int j=0; j<RECCHAN*ARTBUF; j++) {
 			g_artifact[i]->m_buf[j] = 0.f;
 		}
 		g_artifact[i]->m_nsamples = 0;
@@ -1467,6 +1454,14 @@ static void clearArtifactTemplCB(GtkWidget *, gpointer)
 static void numArtifactCB(GtkWidget *, gpointer)
 {
 	g_numArtifactSamps = (int)gtk_adjustment_get_value(g_numArtifactSpin);
+}
+static void stimChanDispCB(GtkWidget *, gpointer)
+{
+	g_stimChanDisp = (int)gtk_adjustment_get_value(g_stimChanSpin);
+}
+static void artifactDispAttenCB(GtkWidget *, gpointer)
+{
+	g_artifactDispAtten = (float)gtk_adjustment_get_value(g_artifactDispAttenSpin);
 }
 static void zoomSpinCB(GtkWidget *, gpointer )
 {
@@ -1485,10 +1480,6 @@ static void notebookPageChangedCB(GtkWidget *,
                                   gpointer, int page, gpointer)
 {
 	g_mode = page;
-	//if (page == 0) g_mode = MODE_RASTERS;
-	//if (page == 1) g_mode = MODE_SORT;
-	//if (page == 2) g_mode = MODE_SPIKES;
-	//if (page == 3) g_mode = MODE_ICMS;
 }
 static GtkAdjustment *mk_spinner(const char *txt, GtkWidget *container,
                                  float start, float min, float max, float step,
@@ -1875,15 +1866,22 @@ int main(int argc, char **argv)
 	                              unsortRateSpinCB, 0);
 
 	GtkWidget *box2 = gtk_hbox_new (FALSE, 0);
-
-	//show PCA button.
-	mk_checkbox("show PCA", box2, &g_showPca, basic_checkbox_cb);
-
-	//show wf voltage grid
-	mk_checkbox("show grid", box2, &g_showWFVgrid, basic_checkbox_cb);
-
 	gtk_widget_show(box2);
+
+	GtkWidget *box3 = gtk_vbox_new (FALSE, 0);
+	gtk_widget_show(box3);
+	mk_checkbox("show PCA", box3, &g_showPca, basic_checkbox_cb);
+	mk_checkbox("show grid", box3, &g_showWFVgrid, basic_checkbox_cb);
+	gtk_box_pack_start (GTK_BOX (box2), box3, TRUE, TRUE, 0);
+
+	GtkWidget *box4 = gtk_vbox_new (FALSE, 0);
+	gtk_widget_show(box4);
+	mk_checkbox("show ISI", box4, &g_showISIhist, basic_checkbox_cb);
+	mk_checkbox("show std", box4, &g_showWFstd, basic_checkbox_cb);
+	gtk_box_pack_start (GTK_BOX (box2), box4, TRUE, TRUE, 0);
+
 	gtk_box_pack_start (GTK_BOX (box1), box2, TRUE, TRUE, 0);
+
 
 	mk_button("calc PCA", box1, calcPCACB, NULL);
 
@@ -1926,18 +1924,17 @@ int main(int argc, char **argv)
 
 	// add a page for icms
 	box1 = gtk_vbox_new(FALSE, 0);
-
-	// enable artifact subtraction
 	mk_checkbox("enable artifact subtraction", box1,
 	            &g_enableArtifactSubtr, basic_checkbox_cb);
-
 	mk_checkbox("train artifact templates", box1,
 	            &g_trainArtifactTempl, basic_checkbox_cb);
-
 	mk_button("clear artifact templates", box1, clearArtifactTemplCB, NULL);
-
 	g_numArtifactSpin = mk_spinner("num samples", box1, g_numArtifactSamps,
 	                               1e2, 1e5, 1, numArtifactCB, 0);
+	g_stimChanSpin = mk_spinner("stim channel", box1, g_stimChanDisp,
+	                            0, 31, 1, stimChanDispCB, 0);
+	g_artifactDispAttenSpin = mk_spinner("artifact\ndisplay\nattenuation", box1,
+	                                     g_artifactDispAtten, 1, 100, 0.1, artifactDispAttenCB, 0);
 
 	// end icms page
 	gtk_widget_show(box1);
