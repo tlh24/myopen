@@ -3,6 +3,9 @@
 
 #define ARTBUF	64	// ~ 2.6 msec
 
+extern int g_spikesCols;
+extern float g_artifactDispAtten;
+
 class Artifact
 {
 
@@ -18,7 +21,69 @@ public:
 		m_index = -1;
 		m_nsamples  = 0;
 	}
+	~Artifact() {
 
+	}
+	void draw() {
+
+		int rows = RECCHAN / g_spikesCols;
+		if (RECCHAN % g_spikesCols)
+			rows++;
+		float xf = g_spikesCols;
+		float yf = rows;
+		float xz = 2.f/xf;
+		float yz = 2.f/yf;
+
+		for (int k=0; k<RECCHAN; k++) {
+			float xo = (k%g_spikesCols)/xf;
+			float yo = ((k/g_spikesCols)+1)/yf;
+			float x = xo*2.f-1.f;
+			float y = 1.f-yo*2.f;
+			float w = xz;
+			float h = yz;
+
+			glColor4ub(221,52,151,255);
+			glLineWidth(1.5f);
+
+			glBegin(GL_LINE_STRIP);
+			for (int j=0; j<ARTBUF; j++) {
+				float ny = (m_buf[k*ARTBUF+j])/g_artifactDispAtten + 0.5f;
+				float nx = (float)(j)/((float)ARTBUF-1.f);
+				glVertex3f(nx*w+x, ny*h+y, 0.f);
+			}
+			glColor4f(0.f, 0.f, 0.f, 0.75f);
+			glVertex3f(1.f*w+x, 0.5f*h+y, 1.f);
+			glVertex3f(0.f*w+x, 0.5f*h+y, 1.f);
+			glEnd();
+
+			// channel label. upper left hand corner.
+			glColor4f(1.f, 1.f, 1.f, 0.5);
+			glRasterPos2f(x, y + h - 14.f*2.f/g_viewportSize[1]); // 14 pixels vertical offset.
+			//kearning is from the lower left hand corner.
+			char buf[64];
+			snprintf(buf, 64, "Ch %d", k);
+			glPrint(buf);
+		}
+
+		// draw some lines.
+		glLineWidth(1.f);
+		glBegin(GL_LINES);
+		glColor4f(1.f, 1.f, 1.f, 0.4);
+		for (int c=1; c<g_spikesCols; c++) {
+			float cf = (float)c / g_spikesCols;
+			glVertex2f(cf*2.f-1.f, -1.f);
+			glVertex2f(cf*2.f-1.f,  1.f);
+		}
+		for (int r=1; r<rows; r++) {
+			float rf = (float)r / rows;
+			glVertex2f(-1.f, rf*2.f-1.f);
+			glVertex2f( 1.f, rf*2.f-1.f);
+		}
+		glEnd();
+
+		// xxx chan labels here?
+
+	}
 };
 
 #endif

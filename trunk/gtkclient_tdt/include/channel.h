@@ -15,6 +15,9 @@ void glPrint(char *text);
 #define NWFVBO 1024
 #define NUSVBO 512
 
+extern gboolean g_showISIhist;
+extern gboolean g_showWFstd;
+
 //#define NSORT	2
 
 //need some way of encapsulating per-channel information.
@@ -151,9 +154,12 @@ public:
 		//error type 1 moves toward green-yellow; error type 2 moves to purple.
 		//see color wheel in gimp.
 		if (unit == 1) {
-			color[0] = 0.0f;        //cyan.
-			color[1] = 1.0f;
-			color[2] = 1.0f;
+			//color[0] = 0.0f;        //cyan.
+			//color[1] = 1.0f;
+			//color[2] = 1.0f;
+			color[0] = 107.f/255.f;
+			color[1] = 174.f/255.f;
+			color[2] = 214.f/255.f;
 		}
 		if (unit == 3) {
 			color[0] = 0.0f;        //cyan-green.
@@ -167,9 +173,12 @@ public:
 		}
 
 		if (unit == 2) {
-			color[0] = 1.0f;        //red
-			color[1] = 0.0f;
-			color[2] = 0.0f;
+			//color[0] = 1.0f;        //red
+			//color[1] = 0.0f;
+			//color[2] = 0.0f;
+			color[0] = 251.f/255.f;
+			color[1] = 106.f/255.f;
+			color[2] = 74.f/255.f;
 		}
 		if (unit == 4) {
 			color[0] = 1.0f;        //orange
@@ -315,8 +324,9 @@ public:
 		float ow = m_loc[2]/2;
 		float oh = m_loc[3];
 		//draw the distribution in the background
-		if (1) {
-			glColor4f(0.2f,0.f,1.f,0.4f);
+		if (g_showWFstd) {
+			//glColor4f(0.2f,0.f,1.f,0.4f);
+			glColor4ub(8,48,107,150);
 			glBegin(GL_TRIANGLE_STRIP);
 			for (int i=0; i<128; i++) {
 				double x = (double)i / 127.0 - 0.5;
@@ -340,7 +350,8 @@ public:
 		m_wfVbo->draw(drawmode, time, true);
 		if (1) {
 			//draw the threshold & centering.
-			glColor4f(1.f,1.f,1.f,0.4f);
+			//glColor4f(1.f,1.f,1.f,0.4f);
+			glColor4ub(161,217,155,150);
 			glLineWidth(1.f);
 			glBegin(GL_LINE_STRIP);
 			float t = m_threshold*m_gain;
@@ -348,7 +359,8 @@ public:
 			glVertex2f(ox, t);
 			glVertex2f(ow+ox, t);
 			glEnd();
-			glColor4f(1.f,1.f,1.f,0.3f);
+			//glColor4f(1.f,1.f,1.f,0.3f);
+			glColor4ub(161,217,155,150);
 			glBegin(GL_LINE_STRIP);
 			float c = (float)m_centering;
 			c = 31.f-c;
@@ -361,14 +373,18 @@ public:
 		if (sortMode) {
 			m_pcaVbo->draw(GL_POINTS, time, true, cursPos, closest);
 			if (closest)
-				m_pcaVbo->drawClosestWf();
+				m_pcaVbo->drawClosestWf(m_gain);
 			//draw the templates.
 			glLineWidth(3.f);
 			glBegin(GL_LINE_STRIP);
 			for (int k=0; k<NSORT; k++) {
 				// cyan -> purple; red -> orange (color wheel)
-				if (k == 0) glColor4f(0.6f, 0.f, 1.f, 0.65f);
-				else glColor4f(1.f, 0.5f, 0.f, 0.65f);
+				if (k == 0)
+					//glColor4f(0.6f, 0.f, 1.f, 0.65f);
+					glColor4ub(8,48,107,175);
+				else
+					//glColor4f(1.f, 0.5f, 0.f, 0.65f);
+					glColor4ub(103,0,13,175);
 				for (int j=0; j<32; j++) {
 					float ny = m_gain*m_template[k][j] + 0.5f;
 					float nx = (float)(j)/31.f;
@@ -383,7 +399,8 @@ public:
 				glLineWidth(5.f);
 				for (int k=0; k<NSORT; k++) {
 					for (int j=0; j<32; j++) {
-						float ny = m_pca[k][j]*m_pcaScl[k]*m_gain+0.5;
+						//float ny = m_pca[k][j]*m_pcaScl[k]*m_gain+0.5;
+						float ny = m_pca[k][j]*m_pcaScl[k]+0.5; // no need to gain?
 						float nx = (float)(j)/31.f;
 						glColor4f(1.f-k, k, 0.f, 0.75f);
 						glVertex3f(nx*ow+ox, ny*oh+oy, 0.f);
@@ -419,6 +436,7 @@ public:
 				}
 				char buf[64];
 				glColor4f(1.f,1.f,1.f,0.18f);
+				glLineWidth(1.f);
 				for (double v = 0.0; v < top; v+= tic) {
 					float y = m_gain*v/1e4;
 					y /= 2.f;
@@ -447,7 +465,7 @@ public:
 					}
 				}
 			}
-			if (1) { //isi.
+			if (g_showISIhist) { //isi.
 				int nisi = sizeof(m_isi[0])/sizeof(m_isi[0][0]);
 				//draw shaded plots of the ISI.
 				for (int u=0; u<NSORT; u++) {
@@ -472,6 +490,7 @@ public:
 				}
 				//labels -- every 10ms.
 				glColor4f(1.f, 1.f, 1.f, 0.35);
+				glLineWidth(1.f);
 				for (int i=0; i<nisi/10; i++) {
 					float x1 = (float)(i*10)/((float)(nisi-1));
 					float yof = 2.f/g_viewportSize[1]; //1 pixels vertical offset.
@@ -493,7 +512,7 @@ public:
 		}
 		//finally, the channel. upper left hand corner.
 		glColor4f(1.f, 1.f, 1.f, 0.5);
-		glRasterPos2f(ox, oy + oh - 13.f*2.f/g_viewportSize[1]); //13 pixels vertical offset.
+		glRasterPos2f(ox, oy + oh - 14.f*2.f/g_viewportSize[1]); // 14 pixels vertical offset.
 		//kearning is from the lower left hand corner.
 		char buf[64];
 		snprintf(buf, 64, "Ch %d", m_ch);
