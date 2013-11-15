@@ -22,13 +22,13 @@ public:
 	unsigned int radio; //radiochannel
 	int thread;
 	PACKET_TYPE packet_type;
-	char* buffer; //fits strobe and sock
+	char buffer[1024]; //fits strobe and sock
 	
 	spkpak(){	  
 	}
 	
 	~spkpak(){
-	  delete [] buffer;
+	  //delete [] buffer;
 	}
 	
 	spkpak(unsigned int word, unsigned int sz, char* buf, double time, 
@@ -36,7 +36,7 @@ public:
 		
 		radio = rchan;
 		thread = tid;
-		buffer = new char[sz];
+		//buffer = new char[sz];
 		//printf("sz:%d\n", sz);
 		
 		memcpy(buffer, buf, sz);

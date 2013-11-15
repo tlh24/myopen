@@ -169,8 +169,8 @@ int main(int argn, char **argc){
 						unsigned int dropped = 0;
 						fread((void*)&rxtime,8,1,in); //rx time in seconds.
 						fread((void*)&dropped,4,1,in);
-						
 						unsigned int npak = (siz-4)/(4+32);
+						
 						rxpackets += npak;
 						for(unsigned int i=0;i<npak; i++){
 							packet p;

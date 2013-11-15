@@ -68,7 +68,7 @@ float		g_cursPos[2];
 float		g_viewportSize[2] = {640, 480}; //width, height.
 
 char g_bridgeIP[NSCALE][256]; //which thread has which bridge IP. threadsafe
-unsigned int  g_radioChannel[NSCALE] = {124, 84};
+unsigned int  g_radioChannel[NSCALE] = {114, 94};
 
 static float	g_fbuf[NFBUF][NSAMP*3]; //continuous waveform. range [-1 .. 1]
 i64				g_fbufW[NFBUF]; //where to write to (always increment), might not be thread safe
@@ -1184,7 +1184,7 @@ packet format in the file, as saved here:
 									for(int d=0; d<4; d++){
 										g_sortAperture[k][u][(g_sortI-d)&0xf] = 2048;
 									}
-									printf("channel %d unit %d headstage true positive.\n",h,u);
+									//printf("channel %d unit %d headstage true positive.\n",h,u);
 								}else{
 									//headstage found a match. false positive.
 									g_sortWfUnit[k] = u+5;
