@@ -143,8 +143,10 @@ void Headstage::updateGain(int chan){
 	*/
 	//thread handles channels in multiples of 128. If 
 	int tid = chan/128; //0 if lower than 128, etc. This should update to the pertinent thread index in the i64 buffers
-	chan = chan & (0xff ^ 32); //map to the lower channels. Should still map properly to lower channels if > 128
-		// e.g. 42 -> 10,42; 67 -> 67,99 ; 100 -> 68,100. This should be usef if chan is indexing m_c
+	//chan = chan & (0xff ^ 32); //map to the lower channels. Should still map properly to lower channels if > 128
+		// e.g. 42 -> 10,42; 67 -> 67,99 ; 100 -> 68,100. This should be used if chan is indexing m_c
+	chan = chan & ( (128*(tid+1)-1) ^ 32); //the above mapping was not working for anything > 256
+	
 	float gain1 = sqrt(fabs(m_c[chan]->getGain()));
 	float gain2 = sqrt(fabs(m_c[chan+32]->getGain()));
 	float again1, again2; //the actual gains.
@@ -188,7 +190,7 @@ void Headstage::updateGain(int chan){
 	unsigned int* ptr = m_sendbuf[tid];
 	ptr += (m_sendW[tid] % m_sendL[tid]) * 8; //8 because we send 8 32-bit ints /pkt.
 	
-	int kchan = chan &127; //(to send in buf, needs to keep correct channel name) (0-127)
+	int kchan = chan & 127; //(to send in buf, needs to keep correct channel name) (0-127)
 	//use kchan when not indexing m_c, thus, bitwise AND for 127 maps channels > 128 to 0-127.
 	for(i=0; i<4; i++){
 		//remember, chan mapped to 0-31 & 64-95 (above)
@@ -222,8 +224,9 @@ void Headstage::setOsc(int chan){
 	unsigned int* ptr = m_sendbuf[tid];
 	ptr += (m_sendW[tid] % m_sendL[tid]) * 8; //8 because we send 8 32-bit ints /pkt.
 	
-	chan = chan & (0xff ^ 32); //map to the lower channels.
+	//chan = chan & (0xff ^ 32); //map to the lower channels.
 		// e.g. 42 -> 10,42; 67 -> 67,99 ; 100 -> 68,100
+	chan = chan & ( (128*(tid+1)-1) ^ 32); //the above mapping was not working for anything > 256
 		
 	int kchan = chan & 127; 
 	
@@ -301,12 +304,13 @@ void Headstage::setAGC(int ch1, int ch2, int ch3, int ch4){
 		int chan = chs[i];
 		int tid = chan/128;
 		
-		//scop these variables here, otherwise it's a pain
+		//scope these variables here, otherwise it's a pain
 		unsigned int* ptr = m_sendbuf[tid];
 		ptr += (m_sendW[tid] % m_sendL[tid]) * 8; //8 because we send 8 32-bit ints /pkt.
 		
 		//m_c[chan]->getAGC() = target; set ACG elsewhere.
-		chan = chan & (0xff ^ 32); //map to the lower channels (0-31,64-95)
+		//chan = chan & (0xff ^ 32); //map to the lower channels (0-31,64-95)
+		chan = chan & ( (128*(tid+1)-1) ^ 32); //the above mapping was not working for anything > 256
 		unsigned int p = 0;
 		
 		int kchan = chan &127; //(to send, needs to keep correct channel name)
@@ -439,7 +443,9 @@ void Headstage::setBiquad(int chan, float* biquad, int biquadNum){
 	
 	int tid = chan/128; //which thread id does the channel belong to
 	
-	chan = chan & (0xff ^ 32); //map to the lower channels (0-31,64-95)
+	//chan = chan & (0xff ^ 32); //map to the lower channels (0-31,64-95)
+	chan = chan & ( (128*(tid+1)-1) ^ 32); //the above mapping was not working for anything > 256
+	
 	float gain1 = sqrt(fabs(m_c[chan]->getGain()));
 	float gain2 = sqrt(fabs(m_c[chan+32]->getGain()));
 	float b[8];
@@ -515,7 +521,8 @@ void Headstage::setFilter2(int chan){
 void Headstage::setFlat(int chan){
 	//lets you look at the raw ADC samples.
 	int tid = chan/128;
-	chan = chan & (0xff ^ 32); //map to the lower channels.
+	//chan = chan & (0xff ^ 32); //map to the lower channels.
+	chan = chan & ( (128*(tid+1)-1) ^ 32); //the above mapping was not working for anything > 256
 	float biquad[] = {0.0, 1.0, 0.0, 0.0}; //NOTE B assumed to be symmetric.
 		//hence you need to set b[1] not b[0] (and b[2])
 	setBiquad(chan, biquad, 0);
