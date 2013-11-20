@@ -10,12 +10,12 @@ class Headstage{
 
 private:
 	unsigned int*	m_sendbuf[NSCALE];
-	i64				m_sendW[NSCALE]; //where to write to (in 32-byte increments)
-	i64 			m_sendR[NSCALE]; //where to read from
-	i64				m_sendL[NSCALE]; //the length of the buffer (in 32-byte packets)
-	char			m_messages[NSCALE][1024][128]; //save these, plaintext, in the file.
-	i64				m_messW[NSCALE];
-	i64				m_messR[NSCALE];
+	i64		m_sendW[NSCALE]; //where to write to (in 32-byte increments)
+	i64 		m_sendR[NSCALE]; //where to read from
+	i64		m_sendL[NSCALE]; //the length of the buffer (in 32-byte packets)
+	char		m_messages[NSCALE][1024][128]; //save these, plaintext, in the file.
+	i64		m_messW[NSCALE];
+	i64		m_messR[NSCALE];
 
 	unsigned int m_echo[NSCALE] = {0};
 	unsigned int m_headecho[NSCALE] = {0};
