@@ -52,8 +52,10 @@
 #include "timesync.h"
 #include "matStor.h"
 #include "wfwriter.h"
-#include "icmswriter.h"
 #include "jacksnd.h"
+
+#include "icms.pb.h"
+#include "icmswriter.h"
 
 #include "fenv.h" // for debugging nan problems
 
@@ -90,8 +92,9 @@ TimeSync 	g_ts; //keeps track of ticks (TDT time)
 WfWriter	g_wfwriter;
 GLuint 		g_base;            // base display list for the font set.
 
-Artifact 	*g_artifact[STIMCHAN];
-ICMSWriter	g_icmswriter;
+Artifact *g_artifact[STIMCHAN];
+ICMSWriter g_icmswriter;
+
 
 bool g_die = false;
 double g_pause = -1.0;
@@ -117,7 +120,7 @@ gboolean g_enableArtifactSubtr = true;
 gboolean g_trainArtifactTempl = true;
 int g_numArtifactSamps = 1e3;
 int g_stimChanDisp = 0;	// 0-31
-float g_artifactDispAtten = 10.f;
+float g_artifactDispAtten = 20.f;
 
 float g_unsortrate = 0.0; //the rate that unsorted WFs get through.
 float	g_autoThreshold = -3.5; //standard deviations. default negative, w/e.
@@ -131,7 +134,6 @@ GLuint g_vbo1[NFBUF]; //for the waveform display
 GLuint g_vbo2[2] = {0,0}; //for spikes.
 
 //global labels..
-//GtkWidget* g_gainlabel[16];
 GtkWidget *g_infoLabel;
 GtkAdjustment *g_channelSpin[4] = {0,0,0,0};
 GtkAdjustment *g_gainSpin[4] = {0,0,0,0};
@@ -945,7 +947,6 @@ void *po8_thread(void *)
 				card = NULL;
 				break;
 			}
-			int waitCount = 0;
 			bool stopped = false;
 			int numSamples = 0;
 			if (!simulate) {
@@ -1006,7 +1007,6 @@ void *po8_thread(void *)
 				g_ts.m_dropped = (int)totalSamples - ticks;
 
 				// get icms times, fill icms buffers, and subtract artifact
-				icmspak icms;
 				for (int k=0; k<numSamples; k++) {
 					unsigned int tmp = (unsigned short)(temp[(NCHAN+2)*numSamples+k]);
 					tmp += (unsigned short)(temp[(NCHAN+3)*numSamples+k]) << 16;
@@ -1015,15 +1015,15 @@ void *po8_thread(void *)
 					tk += (unsigned short)(temp[(NCHAN+1)*numSamples+k]) << 16;
 
 					// stim pulse?
-					for (int j=0; j<32; j++) {  // int is 32 bits
+					for (int j=0; j<STIMCHAN; j++) {
 						unsigned int id = pow(2,j);
 						if (tmp & id) {
-							if (g_icmswriter.m_enable) {
-								icms.ticks = tk;
-								icms.time = g_ts.getTime(tk);
-								icms.id = (short)j+1; // one-indexed
-								g_icmswriter.add(&icms);
-							}
+							//if (g_icmswriter.m_enable) {
+							//	icms.ticks = tk;
+							//	icms.time = g_ts.getTime(tk);
+							//	icms.id = (short)j+1; // one-indexed
+							//	g_icmswriter.add(&icms);
+							//}
 							if (g_artifact[j]->m_index == -1) {
 								g_artifact[j]->m_index++;
 							} else
@@ -1037,25 +1037,40 @@ void *po8_thread(void *)
 						i64 idx = g_artifact[j]->m_index;
 						if (idx != -1) {
 							for (int ch=0; ch<RECCHAN; ch++) {
-								float gain = g_c[ch]->getGain();
 								short samp = temp[ch*numSamples + k];
-								float f = gain * samp / 32767.f;
+								float f = samp / 32767.f;
 								float alpha = 1.f/(g_artifact[j]->m_nsamples+1.f);
-								float curr = g_artifact[j]->m_buf[ch*ARTBUF+idx];
+								float curr = g_artifact[j]->m_avg[ch*ARTBUF+idx];
 								// iterative update of average
 								float next = curr + alpha*(f-curr);
 								if ((g_trainArtifactTempl) &&
 								    (g_artifact[j]->m_nsamples < g_numArtifactSamps)) {
-									g_artifact[j]->m_buf[ch*ARTBUF+idx] = next;
+									g_artifact[j]->m_now[ch*ARTBUF+idx] = f;
+									g_artifact[j]->m_avg[ch*ARTBUF+idx] = next;
 								}
 
 								if (g_enableArtifactSubtr) {
-									short subtr = (short)((f-next)*32767.f)/gain;
+									short subtr = (short)((f-next)*32767.f);
 									temp[ch*numSamples + k] = subtr;
 								}
 							}
 							g_artifact[j]->m_index++;
 							if (g_artifact[j]->m_index > ARTBUF) {
+								if (g_icmswriter.enabled()) {
+									ICMS o;
+									o.set_ts(g_ts.getTime(tk-ARTBUF));
+									o.set_tick(tk-ARTBUF);
+									o.set_stim_chan(j+1); // 1-indexed
+
+									for (int ch=0; ch<RECCHAN; ch++) {
+										ICMS_artifact *art = o.add_artifact();
+										art->set_rec_chan(ch+1); //1-indexed
+										for (int x=0; x<ARTBUF; x++) {
+											art->add_sample(g_artifact[j]->m_now[ch*ARTBUF+x]);
+										}
+									}
+									g_icmswriter.add(&o);
+								}
 								g_artifact[j]->m_index = -1;
 								if ((g_trainArtifactTempl) &&
 								    (g_artifact[j]->m_nsamples < g_numArtifactSamps)) {
@@ -1172,9 +1187,6 @@ void *po8_thread(void *)
 						}
 					}
 				}
-			} else {
-				//printf("wait count %d\n", waitCount);
-				waitCount++;
 			}
 			frame++;
 		}
@@ -1186,24 +1198,6 @@ void *po8_thread(void *)
 	}
 	return 0;
 }
-/*
-struct binned_header {
-	double time;
-	unsigned short nchan;
-	unsigned short nunits;
-	unsigned short nlags;
-};
-void bswap_64(void *a)
-{
-	long long b = *((long long *)a);
-	unsigned int h = htonl((b>>32) & 0xffffffff);
-	unsigned int l = htonl(b & 0xffffffff);
-	b = l;
-	b <<= 32;
-	b += h;
-	*((long long *)a) = b;
-}
-*/
 void flush_pipe(int fid)
 {
 	fcntl(fid, F_SETFL, O_NONBLOCK);
@@ -1444,12 +1438,8 @@ static void basic_checkbox_cb(GtkWidget *button, gpointer p)
 }
 static void clearArtifactTemplCB(GtkWidget *, gpointer)
 {
-	for (int i=0; i<STIMCHAN; i++) {
-		for (int j=0; j<RECCHAN*ARTBUF; j++) {
-			g_artifact[i]->m_buf[j] = 0.f;
-		}
-		g_artifact[i]->m_nsamples = 0;
-	}
+	for (int i=0; i<STIMCHAN; i++)
+		g_artifact[i]->clearArtifacts();
 }
 static void numArtifactCB(GtkWidget *, gpointer)
 {
@@ -1607,7 +1597,7 @@ static void openSaveICMSFile(GtkWidget *, gpointer parent_window)
 		char *filename;
 		filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
 		g_icmswriter.open(filename);
-		g_free (filename);
+		g_free(filename);
 	}
 	gtk_widget_destroy (dialog);
 }
@@ -1688,6 +1678,8 @@ static void templatePopupMenu (GdkEventButton *event, gpointer p)
 int main(int argc, char **argv)
 {
 
+	using namespace gtkclient;
+
 #ifdef DEBUG
 	feenableexcept(FE_DIVBYZERO|FE_INVALID|FE_OVERFLOW);  // Enable (some) floating point exceptions
 #endif
@@ -1701,6 +1693,10 @@ int main(int argc, char **argv)
 	GtkWidget *button;
 	//GtkWidget *combo;
 	//GtkWidget *paned2;
+
+	// Verify that the version of the library that we linked against is
+	// compatible with the version of the headers we compiled against.
+	GOOGLE_PROTOBUF_VERIFY_VERSION;
 
 	for (int i=0; i<NCHAN; i++) {
 		g_fr[i][0].set_bin_params(40, 1.0);	// nlags, duration (sec)
@@ -1728,10 +1724,6 @@ int main(int argc, char **argv)
 		g_artifact[i] = new Artifact();
 
 	//g_dropped = 0;
-
-	// Verify that the version of the library that we linked against is
-	// compatible with the version of the headers we compiled against.
-	//GOOGLE_PROTOBUF_VERIFY_VERSION;
 
 	gtk_init (&argc, &argv);
 	gtk_gl_init (&argc, &argv);
@@ -1782,7 +1774,7 @@ int main(int argc, char **argv)
 		//right of that, a gain spinner. (need to update depending on ch)
 		g_gainSpin[i] = mk_spinner("gain", bx3,
 		                           g_c[g_channel[i]]->getGain(),
-		                           -64.0, 64.0, 0.1,
+		                           -128.0, 128.0, 0.1,
 		                           gainSpinCB, i);
 		if (i==0) {
 			mk_checkbox("auto offset of B,C,D", bx2,
@@ -1934,7 +1926,7 @@ int main(int argc, char **argv)
 	g_stimChanSpin = mk_spinner("stim channel", box1, g_stimChanDisp,
 	                            0, 31, 1, stimChanDispCB, 0);
 	g_artifactDispAttenSpin = mk_spinner("artifact\ndisplay\nattenuation", box1,
-	                                     g_artifactDispAtten, 1, 100, 0.1, artifactDispAttenCB, 0);
+	                                     g_artifactDispAtten, 0.1, 100, 0.1, artifactDispAttenCB, 0);
 
 	// end icms page
 	gtk_widget_show(box1);
@@ -2069,4 +2061,6 @@ int main(int argc, char **argv)
 		perror("pthread_cancel mmap_thread");
 	}
 	KillFont();
+	// Optional:  Delete all global objects allocated by libprotobuf.
+	google::protobuf::ShutdownProtobufLibrary();
 }
