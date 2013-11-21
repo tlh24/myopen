@@ -4,7 +4,7 @@ message ICMS {
 	required double ts = 1; // timestamp
 	required uint64 tick = 2; // tdt tick
 	required uint32 stim_chan = 3; // stimulation channel
-	optional ICMS_artifact artifact = 4; // artifact waveform
+	repeated ICMS_artifact artifact = 4; // artifact waveform
 }
 
 message ICMS_artifact {

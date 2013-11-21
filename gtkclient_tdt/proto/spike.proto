@@ -1,0 +1,7 @@
+package gtkclient;
+
+message Spike {
+	required double ts = 1; // timestamp
+	required uint64 tick = 2; // tdt tick
+	repeated float wf_sample = 3 [packed=true]; // spike waveform sample
+}
