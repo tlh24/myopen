@@ -14,20 +14,21 @@ TARGET = /usr/local/bin
 CPPFLAGS := -Iinclude -I/usr/local/include -I../common_host
 CPPFLAGS += -Wall -Wcast-align -Wpointer-arith -Wshadow -Wsign-compare \
 -Wformat=2 -Wno-format-y2k -Wmissing-braces -Wparentheses -Wtrigraphs \
--Wextra -pedantic -std=c++11 -Wno-int-to-pointer-cast 
+-Wextra -pedantic -std=c++11 -Wno-int-to-pointer-cast #-mcmodel=medium
 
 CFLAGS := -Wall -Wcast-align -Wpointer-arith -Wshadow -Wsign-compare \
 -Wformat=2 -Wno-format-y2k -Wmissing-braces -Wparentheses -Wtrigraphs \
 -Wextra -pedantic -std=c99
 
 LDFLAGS := -lGL -lGLU -lpthread -lCg -lCgGL -lgsl -lcblas -latlas -lm \
--lmatio -lhdf5 -lPO8eStreaming
+-lmatio -lhdf5 -lprotobuf -lPO8eStreaming #-mcmodel=medium
 
 GLIBS := gtk+-2.0 gtkglext-1.0 gtkglext-x11-1.0
 GTKFLAGS = `pkg-config --cflags $(GLIBS) `
 GTKLD = `pkg-config --libs $(GLIBS) `
 
-GOBJS = src/gtkclient.o src/gettime.o src/glInfo.o src/matStor.o
+GOBJS = src/icms.pb.o src/gtkclient.o src/gettime.o src/glInfo.o \
+src/matStor.o src/icmswriter.o  
 COM_HDR = include/channel.h include/wfwriter.h \
 ../common_host/vbo.h \
 ../common_host/cgVertexShader.h \
@@ -68,17 +69,18 @@ src/%.o: src/%.cpp $(COM_HDR)
 src/%.o: ../common_host/%.cpp $(COM_HDR)
 	$(CPP) -c $(CPPFLAGS) $(GTKFLAGS) $< -o $@
 
-src/%.o: src/%.c
-	$(CC) -c $(CFLAGS) $< -o $@
+src/%.pb.cc src/%.pb.h: proto/%.proto
+	protoc -I$(<D) --cpp_out=src $<
+	mv src/$(*F).pb.h include
 
 gtkclient: $(GOBJS)
 	$(CPP) -o $@ $(GTKLD) $(LDFLAGS) $^
 
 spikes2mat: src/spikes2mat.o
-	$(CPP) -o $@ -lmatio -lhdf5 -lz $<
+	$(CPP) -o $@ -lmatio -lhdf5 -lz $^
 
-icms2mat: src/icms2mat.o
-	$(CPP) -o $@ -lmatio -lhdf5 -lz $<
+icms2mat: src/icms.pb.o src/icms2mat.o src/stimchan.o src/matStor.o
+	$(CPP) -o $@ -lmatio -lhdf5 -lz -lprotobuf $^
 
 mmap_test: src/mmap_test.o
 	$(CPP) -o $@ -lrt $^
@@ -90,7 +92,8 @@ wf_plot: src/wf_plot.o
 	$(CC) -o $@ -lSDL -lGL -lGLU -lglut -lpthread -lmatio -lhdf5 -lpng $^
 
 clean:
-	rm -rf gtkclient spikes2mat icms2mat mmap_test po8e wf_plot src/*.o 
+	rm -rf gtkclient spikes2mat icms2mat mmap_test po8e wf_plot \
+	src/*.pb.cc include/*.pb.h src/*.o 
 
 deps:
 	sudo apt-get install libgtk2.0-dev \
@@ -110,6 +113,14 @@ pretty:
 	astyle -A8 --indent=tab -H -k3 src/*.cpp
 	-rm src/*.cpp.orig
 
+proto:
+	protoc -Iproto --cpp_out=src proto/spike.proto
+	mv src/spike.pb.h include
+	protoc -Iproto --cpp_out=src proto/icms.proto
+	mv src/icms.pb.h include
+	protoc -Iproto --cpp_out=src proto/analog.proto
+	mv src/analog.pb.h include	
+
 install:
 	install -d $(TARGET)
 	install gtkclient -t $(TARGET)
@@ -119,3 +130,7 @@ install:
 	install cg/fade.cg -t $(TARGET)/cg
 	install cg/fadeColor.cg -t $(TARGET)/cg
 	install cg/threshold.cg -t $(TARGET)/cg
+
+.PHONY: proto
+
+.PRECIOUS: src/%.pb.cc

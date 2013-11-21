@@ -1,7 +1,7 @@
 #ifndef __ARTIFACT_H__
 #define __ARTIFACT_H__
 
-#define ARTBUF	64	// ~ 2.6 msec
+#define ARTBUF	128	// 64 ~ 2.62 msec ; 96 ~ 3.93 msec ; 128 ~ 5.24 msec
 
 extern int g_spikesCols;
 extern float g_artifactDispAtten;
@@ -10,19 +10,34 @@ class Artifact
 {
 
 public:
-	float 	m_buf[RECCHAN *ARTBUF];	// the artifact buffer
+	float 	m_avg[RECCHAN *ARTBUF];	// the average artifact buffer
+	float	m_std[RECCHAN *ARTBUF];	// the artifact standard deviation
 	i64		m_index;				// index into the buffer, or -1
 	i64		m_nsamples;				// number of examples in the average
 
+	float	m_now[RECCHAN *ARTBUF];	// the last captured artifact
+	// nb we keep this around not for computing
+	// the average, which can be easily done
+	// recursively, but for saving snippets of
+	//the artifact
+
+
 	Artifact() {
 		for (int i=0; i<RECCHAN*ARTBUF; i++) {
-			m_buf[i] = 0.f;
+			m_avg[i] = 0.f;
+			m_now[i] = 0.f;
 		}
 		m_index = -1;
 		m_nsamples  = 0;
 	}
 	~Artifact() {
 
+	}
+	void clearArtifacts()  {
+		for (int j=0; j<RECCHAN*ARTBUF; j++) {
+			m_avg[j] = 0.f;
+		}
+		m_nsamples = 0;
 	}
 	void draw() {
 
@@ -47,7 +62,7 @@ public:
 
 			glBegin(GL_LINE_STRIP);
 			for (int j=0; j<ARTBUF; j++) {
-				float ny = (m_buf[k*ARTBUF+j])/g_artifactDispAtten + 0.5f;
+				float ny = (m_avg[k*ARTBUF+j])/g_artifactDispAtten + 0.5f;
 				float nx = (float)(j)/((float)ARTBUF-1.f);
 				glVertex3f(nx*w+x, ny*h+y, 0.f);
 			}

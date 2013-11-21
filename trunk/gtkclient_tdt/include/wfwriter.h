@@ -12,7 +12,7 @@ struct wfpak {
 	short len;
 	short	wf[32];
 };
-#define WFBUFSIZ (1024*512) //this is much larger than needed, but eh, insurance.
+#define WFBUFSIZ (1024*64)
 #define WFBUFMASK (WFBUFSIZ-1)
 
 class WfWriter
