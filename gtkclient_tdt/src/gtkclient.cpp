@@ -1016,23 +1016,17 @@ void *po8_thread(void *)
 
 					// stim pulse?
 					for (int j=0; j<STIMCHAN; j++) {
-						unsigned int id = pow(2,j);
+						//unsigned int id = pow(2,j);
+						unsigned int id = (uint) (1 << j); // 2^j
 						if (tmp & id) {
-							//if (g_icmswriter.m_enable) {
-							//	icms.ticks = tk;
-							//	icms.time = g_ts.getTime(tk);
-							//	icms.id = (short)j+1; // one-indexed
-							//	g_icmswriter.add(&icms);
-							//}
-							if (g_artifact[j]->m_index == -1) {
+							if (g_artifact[j]->m_index == -1)
 								g_artifact[j]->m_index++;
-							} else
+							else
 								printf("ERR: STIM ARTIFACTS OVERLAP!\n");
 						}
 					}
 
 					// fill artifact-subtraction buffers
-					// xxx check if we are even filling buffers
 					for (int j=0; j<STIMCHAN; j++) {
 						i64 idx = g_artifact[j]->m_index;
 						if (idx != -1) {
