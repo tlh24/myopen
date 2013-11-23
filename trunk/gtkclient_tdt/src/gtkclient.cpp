@@ -119,7 +119,7 @@ int g_spikesCols = 16;
 gboolean g_enableArtifactSubtr = true;
 gboolean g_trainArtifactTempl = true;
 int g_numArtifactSamps = 1e3;
-int g_stimChanDisp = 0;	// 0-31
+int g_stimChanDisp = 0;	// 0-15
 float g_artifactDispAtten = 20.f;
 
 float g_unsortrate = 0.0; //the rate that unsorted WFs get through.
@@ -1918,7 +1918,7 @@ int main(int argc, char **argv)
 	g_numArtifactSpin = mk_spinner("num samples", box1, g_numArtifactSamps,
 	                               1e2, 1e5, 1, numArtifactCB, 0);
 	g_stimChanSpin = mk_spinner("stim channel", box1, g_stimChanDisp,
-	                            0, 31, 1, stimChanDispCB, 0);
+	                            0, STIMCHAN-1, 1, stimChanDispCB, 0);
 	g_artifactDispAttenSpin = mk_spinner("artifact\ndisplay\nattenuation", box1,
 	                                     g_artifactDispAtten, 0.1, 100, 0.1, artifactDispAttenCB, 0);
 
