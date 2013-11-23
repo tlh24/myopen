@@ -55,19 +55,23 @@ bool ICMSWriter::add(ICMS *o)
 
 	long w = m_w; // atomic;
 
-	unsigned int tmp = ICMS_MAGIC;
-	memcpy(&m_buf[w & ICMS_MASK], &tmp, sizeof(tmp));
-	w += sizeof(tmp);
-
+	unsigned int magic = ICMS_MAGIC;
 	unsigned int sz = o->ByteSize();
-	memcpy(&m_buf[w & ICMS_MASK], &sz, sizeof(sz));
-	w += sizeof(sz);
 
-	//printf("packet sz: %d\n",sz);
-	o->SerializeToArray(&m_buf[w & ICMS_MASK], sz);
-	w += sz;
+	unsigned int *tmp = (unsigned int*)malloc(sizeof(magic)+sizeof(sz)+sz);
+	unsigned int* u = tmp; 
+	*u++ = magic; 
+	*u++ = sz; 
+	o->SerializeToArray((void*)u, sz);
+	char* cp = (char*)tmp; 
+	for (int i=0; i<sz+8; i++) {
+		m_buf[w & ICMS_MASK] = cp[i];
+		w++;
+	}
 
 	m_w = w; // atomic
+
+	free(tmp);
 
 	return true;
 }
@@ -78,26 +82,15 @@ bool ICMSWriter::write()   // call from one and only one thread
 		return true;
 
 	long w = m_w;   // atomic
-	if (w-m_r <= 0)
-		return true;
 
-	// we can write multiple packets at once,
-	// but we need to be aligned on magic
-	unsigned int magic;
-	memcpy(&magic, &m_buf[m_r & ICMS_MASK], sizeof(magic));
-
-	if (magic != ICMS_MAGIC) {
-		printf("magic problem!\n");
-		return false;
-	}
-
-	m_os.write(&m_buf[m_r & ICMS_MASK], w-m_r);
-	if (m_os.fail()) {
-		fprintf(stderr,"ERROR: ICMSWriter write failed!\n");
-		return false;
-	}
-	m_r = w;    // atomic
-
+	while(m_r<w) {
+		m_os.write(&(m_buf[m_r & ICMS_MASK]), 1);
+		if (m_os.fail()) {
+			fprintf(stderr,"ERROR: ICMSWriter write failed!\n");
+			return false;
+		}
+		m_r++; // atomic
+	}  
 	return true;
 }
 
