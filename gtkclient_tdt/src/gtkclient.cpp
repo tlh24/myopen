@@ -122,6 +122,9 @@ int g_numArtifactSamps = 1e3;
 int g_stimChanDisp = 0;	// 0-15
 float g_artifactDispAtten = 20.f;
 
+gboolean g_enableArtifactBlanking = true;
+int g_artifactBlankingSamps = 32;
+
 float g_unsortrate = 0.0; //the rate that unsorted WFs get through.
 float	g_autoThreshold = -3.5; //standard deviations. default negative, w/e.
 
@@ -145,6 +148,7 @@ GtkAdjustment *g_minISISpin;
 GtkAdjustment *g_numArtifactSpin;
 GtkAdjustment *g_stimChanSpin;
 GtkAdjustment *g_artifactDispAttenSpin;
+GtkAdjustment *g_artifactBlankingSampsSpin;
 GtkAdjustment *g_autoThresholdSpin;
 GtkAdjustment *g_spikesColsSpin;
 GtkAdjustment *g_zoomSpin;
@@ -1037,15 +1041,18 @@ void *po8_thread(void *)
 								float curr = g_artifact[j]->m_avg[ch*ARTBUF+idx];
 								// iterative update of average
 								float next = curr + alpha*(f-curr);
+								g_artifact[j]->m_now[ch*ARTBUF+idx] = f; // for saving
 								if ((g_trainArtifactTempl) &&
-								    (g_artifact[j]->m_nsamples < g_numArtifactSamps)) {
-									g_artifact[j]->m_now[ch*ARTBUF+idx] = f;
+									(g_artifact[j]->m_nsamples < g_numArtifactSamps)) {
 									g_artifact[j]->m_avg[ch*ARTBUF+idx] = next;
 								}
-
 								if (g_enableArtifactSubtr) {
 									short subtr = (short)((f-next)*32767.f);
 									temp[ch*numSamples + k] = subtr;
+								}
+								if (g_enableArtifactBlanking && 
+									idx < g_artifactBlankingSamps) {
+										temp[ch*numSamples + k] = 0;
 								}
 							}
 							g_artifact[j]->m_index++;
@@ -1446,6 +1453,10 @@ static void stimChanDispCB(GtkWidget *, gpointer)
 static void artifactDispAttenCB(GtkWidget *, gpointer)
 {
 	g_artifactDispAtten = (float)gtk_adjustment_get_value(g_artifactDispAttenSpin);
+}
+static void artifactBlankingSampsCB(GtkWidget *, gpointer)
+{
+	g_artifactBlankingSamps = (float)gtk_adjustment_get_value(g_artifactBlankingSampsSpin);
 }
 static void zoomSpinCB(GtkWidget *, gpointer )
 {
@@ -1907,7 +1918,6 @@ int main(int argc, char **argv)
 	gtk_notebook_insert_page(GTK_NOTEBOOK(g_notebook), box1, label, 2);
 
 
-
 	// add a page for icms
 	box1 = gtk_vbox_new(FALSE, 0);
 	mk_checkbox("enable artifact subtraction", box1,
@@ -1915,12 +1925,16 @@ int main(int argc, char **argv)
 	mk_checkbox("train artifact templates", box1,
 	            &g_trainArtifactTempl, basic_checkbox_cb);
 	mk_button("clear artifact templates", box1, clearArtifactTemplCB, NULL);
-	g_numArtifactSpin = mk_spinner("num samples", box1, g_numArtifactSamps,
+	g_numArtifactSpin = mk_spinner("artifact\nsubtraction\nsamples", box1, g_numArtifactSamps,
 	                               1e2, 1e5, 1, numArtifactCB, 0);
 	g_stimChanSpin = mk_spinner("stim channel", box1, g_stimChanDisp,
 	                            0, STIMCHAN-1, 1, stimChanDispCB, 0);
 	g_artifactDispAttenSpin = mk_spinner("artifact\ndisplay\nattenuation", box1,
 	                                     g_artifactDispAtten, 0.1, 100, 0.1, artifactDispAttenCB, 0);
+	mk_checkbox("enable artifact blanking", box1,
+	            &g_enableArtifactBlanking, basic_checkbox_cb);
+	g_artifactBlankingSampsSpin = mk_spinner("artifact\nblanking\nsamples", box1,
+	                                     g_artifactBlankingSamps, 0, 64, 1, artifactBlankingSampsCB, 0);
 
 	// end icms page
 	gtk_widget_show(box1);
