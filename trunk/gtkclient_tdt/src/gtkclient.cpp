@@ -1023,59 +1023,68 @@ void *po8_thread(void *)
 						//unsigned int id = pow(2,j);
 						unsigned int id = (uint) (1 << j); // 2^j
 						if (tmp & id) {
-							if (g_artifact[j]->m_index == -1)
-								g_artifact[j]->m_index++;
-							else
+							int z = 0;
+							for (int y=0; y<NARTPTR; y++) {
+								if (g_artifact[j]->m_index[y] == -1) {
+									g_artifact[j]->m_index[y]++;
+									z++;
+									break;
+								}
+							}
+							if (z == NARTPTR) {
 								printf("ERR: STIM ARTIFACTS OVERLAP!\n");
+							}
 						}
 					}
 
 					// fill artifact-subtraction buffers
 					for (int j=0; j<STIMCHAN; j++) {
-						i64 idx = g_artifact[j]->m_index;
-						if (idx != -1) {
-							for (int ch=0; ch<RECCHAN; ch++) {
-								short samp = temp[ch*numSamples + k];
-								float f = samp / 32767.f;
-								float alpha = 1.f/(g_artifact[j]->m_nsamples+1.f);
-								float curr = g_artifact[j]->m_avg[ch*ARTBUF+idx];
-								// iterative update of average
-								float next = curr + alpha*(f-curr);
-								g_artifact[j]->m_now[ch*ARTBUF+idx] = f; // for saving
-								if ((g_trainArtifactTempl) &&
-									(g_artifact[j]->m_nsamples < g_numArtifactSamps)) {
-									g_artifact[j]->m_avg[ch*ARTBUF+idx] = next;
-								}
-								if (g_enableArtifactSubtr) {
-									short subtr = (short)((f-next)*32767.f);
-									temp[ch*numSamples + k] = subtr;
-								}
-								if (g_enableArtifactBlanking && 
-									idx < g_artifactBlankingSamps) {
-										temp[ch*numSamples + k] = 0;
-								}
-							}
-							g_artifact[j]->m_index++;
-							if (g_artifact[j]->m_index > ARTBUF) {
-								if (g_icmswriter.enabled()) {
-									ICMS o;
-									o.set_ts(g_ts.getTime(tk-ARTBUF));
-									o.set_tick(tk-ARTBUF);
-									o.set_stim_chan(j+1); // 1-indexed
-
-									for (int ch=0; ch<RECCHAN; ch++) {
-										ICMS_artifact *art = o.add_artifact();
-										art->set_rec_chan(ch+1); //1-indexed
-										for (int x=0; x<ARTBUF; x++) {
-											art->add_sample(g_artifact[j]->m_now[ch*ARTBUF+x]);
-										}
+						for (int z=0; z<NARTPTR; z++) {
+							i64 idx = g_artifact[j]->m_index[z];
+							if (idx != -1) {
+								for (int ch=0; ch<RECCHAN; ch++) {
+									short samp = temp[ch*numSamples + k];
+									float f = samp / 32767.f;
+									float alpha = 1.f/(g_artifact[j]->m_nsamples+1.f);
+									float curr = g_artifact[j]->m_avg[ch*ARTBUF+idx];
+									// iterative update of average
+									float next = curr + alpha*(f-curr);
+									g_artifact[j]->m_now[ch*ARTBUF+idx] = f; // for saving
+									if ((g_trainArtifactTempl) &&
+										(g_artifact[j]->m_nsamples < g_numArtifactSamps)) {
+										g_artifact[j]->m_avg[ch*ARTBUF+idx] = next;
 									}
-									g_icmswriter.add(&o);
+									if (g_enableArtifactSubtr) {
+										short subtr = (short)((f-next)*32767.f);
+										temp[ch*numSamples + k] = subtr;
+									}
+									if (g_enableArtifactBlanking && 
+										idx < g_artifactBlankingSamps) {
+											temp[ch*numSamples + k] = 0;
+									}
 								}
-								g_artifact[j]->m_index = -1;
-								if ((g_trainArtifactTempl) &&
-								    (g_artifact[j]->m_nsamples < g_numArtifactSamps)) {
-									g_artifact[j]->m_nsamples++;
+								g_artifact[j]->m_index[z]++;
+								if (g_artifact[j]->m_index[z] > ARTBUF) {
+									if (g_icmswriter.enabled()) {
+										ICMS o;
+										o.set_ts(g_ts.getTime(tk-ARTBUF));
+										o.set_tick(tk-ARTBUF);
+										o.set_stim_chan(j+1); // 1-indexed
+
+										for (int ch=0; ch<RECCHAN; ch++) {
+											ICMS_artifact *art = o.add_artifact();
+											art->set_rec_chan(ch+1); //1-indexed
+											for (int x=0; x<ARTBUF; x++) {
+												art->add_sample(g_artifact[j]->m_now[ch*ARTBUF+x]);
+											}
+										}
+										g_icmswriter.add(&o);
+									}
+									g_artifact[j]->m_index[z] = -1;
+									if ((g_trainArtifactTempl) &&
+									    (g_artifact[j]->m_nsamples < g_numArtifactSamps)) {
+										g_artifact[j]->m_nsamples++;
+									}
 								}
 							}
 						}
