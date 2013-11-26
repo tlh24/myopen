@@ -2,6 +2,7 @@
 #define __ARTIFACT_H__
 
 #define ARTBUF	128	// 64 ~ 2.62 msec ; 96 ~ 3.93 msec ; 128 ~ 5.24 msec
+#define NARTPTR	8 // number of artifact buffer pointers
 
 extern int g_spikesCols;
 extern float g_artifactDispAtten;
@@ -12,7 +13,7 @@ class Artifact
 public:
 	float 	m_avg[RECCHAN *ARTBUF];	// the average artifact buffer
 	float	m_std[RECCHAN *ARTBUF];	// the artifact standard deviation
-	i64		m_index;				// index into the buffer, or -1
+	i64		m_index[NARTPTR];		// index into the buffer, or -1
 	i64		m_nsamples;				// number of examples in the average
 
 	float	m_now[RECCHAN *ARTBUF];	// the last captured artifact
@@ -27,7 +28,9 @@ public:
 			m_avg[i] = 0.f;
 			m_now[i] = 0.f;
 		}
-		m_index = -1;
+		for (int i=0; i<NARTPTR; i++) {
+			m_index[i] = -1;
+		}
 		m_nsamples  = 0;
 	}
 	~Artifact() {
