@@ -143,7 +143,7 @@ int main(int argn, char **argc)
 			ra->num_wf++;
 			if (!sc->add_artifact(ra)) {
 				fprintf(stderr, "Error for stimchan %u\n", key);
-			}	
+			}
 		}
 		// just add timestamp/tick to the stimchan's array
 		if (!sc->add_event( o.ts(), o.tick())) {

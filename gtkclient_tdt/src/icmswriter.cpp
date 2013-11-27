@@ -58,12 +58,12 @@ bool ICMSWriter::add(ICMS *o)
 	unsigned int magic = ICMS_MAGIC;
 	unsigned int sz = o->ByteSize();
 
-	unsigned int *tmp = (unsigned int*)malloc(sizeof(magic)+sizeof(sz)+sz);
-	unsigned int* u = tmp; 
-	*u++ = magic; 
-	*u++ = sz; 
-	o->SerializeToArray((void*)u, sz);
-	char* cp = (char*)tmp; 
+	unsigned int *tmp = (unsigned int *)malloc(sizeof(magic)+sizeof(sz)+sz);
+	unsigned int *u = tmp;
+	*u++ = magic;
+	*u++ = sz;
+	o->SerializeToArray((void *)u, sz);
+	char *cp = (char *)tmp;
 	for (int i=0; i<sz+8; i++) {
 		m_buf[w & ICMS_MASK] = cp[i];
 		w++;
@@ -83,14 +83,14 @@ bool ICMSWriter::write()   // call from one and only one thread
 
 	long w = m_w;   // atomic
 
-	while(m_r<w) {
+	while (m_r<w) {
 		m_os.write(&(m_buf[m_r & ICMS_MASK]), 1);
 		if (m_os.fail()) {
 			fprintf(stderr,"ERROR: ICMSWriter write failed!\n");
 			return false;
 		}
 		m_r++; // atomic
-	}  
+	}
 	return true;
 }
 
