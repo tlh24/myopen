@@ -9,6 +9,7 @@ enum MODES {
 	MODE_SORT,
 	MODE_SPIKES,
 	MODE_ICMS,
+	MODE_SAVE,
 	MODE_NUM
 };
 

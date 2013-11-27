@@ -108,6 +108,8 @@ gboolean g_showISIhist = true;
 gboolean g_showWFstd = true;
 bool g_rtMouseBtn = false;
 gboolean g_saveUnsorted = true;
+gboolean g_saveSpikeWF = true;
+gboolean g_saveICMSWF = true;
 int 	g_polyChan = 0;
 bool 	g_addPoly = false;
 int 	g_channel[4] = {0,32,64,95};
@@ -1071,11 +1073,13 @@ void *po8_thread(void *)
 										o.set_tick(tk-ARTBUF);
 										o.set_stim_chan(j+1); // 1-indexed
 
-										for (int ch=0; ch<RECCHAN; ch++) {
-											ICMS_artifact *art = o.add_artifact();
-											art->set_rec_chan(ch+1); //1-indexed
-											for (int x=0; x<ARTBUF; x++) {
-												art->add_sample(g_artifact[j]->m_now[ch*ARTBUF+x]);
+										if (g_saveICMSWF) {
+											for (int ch=0; ch<RECCHAN; ch++) {
+												ICMS_artifact *art = o.add_artifact();
+												art->set_rec_chan(ch+1); //1-indexed
+												for (int x=0; x<ARTBUF; x++) {
+													art->add_sample(g_artifact[j]->m_now[ch*ARTBUF+x]);
+												}
 											}
 										}
 										g_icmswriter.add(&o);
@@ -1483,7 +1487,8 @@ static void rasterSpanSpinCB( GtkWidget *, gpointer )
 static void notebookPageChangedCB(GtkWidget *,
                                   gpointer, int page, gpointer)
 {
-	g_mode = page;
+	// special-case the save tab (don't change the view)
+	g_mode = (page != 4) ? page : g_mode;
 }
 static GtkAdjustment *mk_spinner(const char *txt, GtkWidget *container,
                                  float start, float min, float max, float step,
@@ -1614,6 +1619,14 @@ static void openSaveICMSFile(GtkWidget *, gpointer parent_window)
 		g_free(filename);
 	}
 	gtk_widget_destroy (dialog);
+}
+static void closeSaveSpikeFile(GtkWidget *, gpointer)
+{
+	g_wfwriter.close();
+}
+static void closeSaveICMSFile(GtkWidget *, gpointer)
+{
+	g_icmswriter.close();
 }
 static void closeSaveFiles(GtkWidget *, gpointer)
 {
@@ -1952,6 +1965,60 @@ int main(int argc, char **argv)
 	gtk_notebook_insert_page(GTK_NOTEBOOK(g_notebook), box1, label, 3);
 
 
+	// add page for saving
+	box1 = gtk_vbox_new(FALSE, 3);
+	char buf[128];
+
+	GtkWidget *bxx1, *bxx2;
+
+	snprintf(buf, 128, "Save Spikes");
+	frame = gtk_frame_new (buf);
+	gtk_box_pack_start (GTK_BOX (box1), frame, FALSE, FALSE, 1);
+	bxx1 = gtk_hbox_new (TRUE, 0);
+	gtk_container_add (GTK_CONTAINER (frame), bxx1);
+	gtk_box_pack_start (GTK_BOX (frame), bxx1, FALSE, FALSE, 1);
+
+	bxx2 = gtk_vbox_new(TRUE, 0);
+	gtk_container_add(GTK_CONTAINER (bxx1), bxx2);
+	gtk_box_pack_start(GTK_BOX (bxx1), bxx2, TRUE, TRUE, 0);
+	mk_button("Start", bxx2, openSaveSpikesFile, NULL);
+	mk_checkbox("WF? (xxx)", bxx2, &g_saveSpikeWF, basic_checkbox_cb);
+
+	bxx2 = gtk_vbox_new(TRUE, 0);
+	gtk_container_add(GTK_CONTAINER (bxx1), bxx2);
+	gtk_box_pack_start(GTK_BOX (bxx1), bxx2, TRUE, TRUE, 0);
+	mk_button("Stop", bxx2, closeSaveSpikeFile, NULL);
+	mk_checkbox("Unsorted?", bxx2, &g_saveUnsorted,	basic_checkbox_cb);
+
+	snprintf(buf, 128, "Save ICMS");
+	frame = gtk_frame_new(buf);
+	gtk_box_pack_start(GTK_BOX (box1), frame, FALSE, FALSE, 1);
+
+	bxx1 = gtk_hbox_new (TRUE, 0);
+	gtk_container_add (GTK_CONTAINER (frame), bxx1);
+	gtk_box_pack_start (GTK_BOX (frame), bxx1, TRUE, TRUE, 1);
+
+	bxx2 = gtk_vbox_new(TRUE, 0);
+	gtk_container_add(GTK_CONTAINER (bxx1), bxx2);
+	gtk_box_pack_start(GTK_BOX (bxx1), bxx2, TRUE, TRUE, 0);
+	mk_button("Start", bxx2, openSaveICMSFile, NULL);
+	mk_checkbox("WF?", bxx2, &g_saveICMSWF, basic_checkbox_cb);
+
+	bxx2 = gtk_vbox_new(FALSE, 0);
+	gtk_container_add(GTK_CONTAINER (bxx1), bxx2);
+	gtk_box_pack_start(GTK_BOX (bxx1), bxx2, TRUE, TRUE, 0);
+	mk_button("Stop", bxx2, closeSaveICMSFile, NULL);
+
+	mk_button("Stop All", box1, closeSaveFiles, NULL);
+
+
+
+	// end save page
+	gtk_widget_show(box1);
+	label = gtk_label_new("save");
+	gtk_label_set_angle(GTK_LABEL(label), 90);
+	gtk_notebook_insert_page(GTK_NOTEBOOK(g_notebook), box1, label, 4);
+
 
 	//add a automatic channel change button.
 	mk_checkbox("cycle channels", v1, &g_cycle, cycleButtonCB);
@@ -1973,21 +2040,6 @@ int main(int argc, char **argv)
 	                  G_CALLBACK (pauseButtonCB), (gpointer) "o");
 	gtk_box_pack_start (GTK_BOX (bx), button, TRUE, TRUE, 0);
 	gtk_widget_show(button);
-
-	//saving unsorted units?
-	mk_checkbox("Save unsorted", bx,
-	            &g_saveUnsorted, basic_checkbox_cb);
-
-	gtk_box_pack_start (GTK_BOX (v1), bx, TRUE, TRUE, 0);
-
-	//and save / stop saving buttons
-	bx = gtk_hbox_new (FALSE, 3);
-
-	mk_button("Rec Spikes", bx, openSaveSpikesFile, NULL);
-
-	mk_button("Rec ICMS", bx, openSaveICMSFile, NULL);
-
-	mk_button("Stop All", bx, closeSaveFiles, NULL);
 
 	gtk_box_pack_start (GTK_BOX (v1), bx, TRUE, TRUE, 0);
 
