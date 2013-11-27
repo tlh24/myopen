@@ -1053,16 +1053,16 @@ void *po8_thread(void *)
 									float next = curr + alpha*(f-curr);
 									g_artifact[j]->m_now[ch*ARTBUF+idx] = f; // for saving
 									if ((g_trainArtifactTempl) &&
-										(g_artifact[j]->m_nsamples < g_numArtifactSamps)) {
+									    (g_artifact[j]->m_nsamples < g_numArtifactSamps)) {
 										g_artifact[j]->m_avg[ch*ARTBUF+idx] = next;
 									}
 									if (g_enableArtifactSubtr) {
 										short subtr = (short)((f-next)*32767.f);
 										temp[ch*numSamples + k] = subtr;
 									}
-									if (g_enableArtifactBlanking && 
-										idx < g_artifactBlankingSamps) {
-											temp[ch*numSamples + k] = 0;
+									if (g_enableArtifactBlanking &&
+									    idx < g_artifactBlankingSamps) {
+										temp[ch*numSamples + k] = 0;
 									}
 								}
 								g_artifact[j]->m_index[z]++;
@@ -1956,7 +1956,7 @@ int main(int argc, char **argv)
 	mk_checkbox("enable artifact blanking", box1,
 	            &g_enableArtifactBlanking, basic_checkbox_cb);
 	g_artifactBlankingSampsSpin = mk_spinner("artifact\nblanking\nsamples", box1,
-	                                     g_artifactBlankingSamps, 0, 64, 1, artifactBlankingSampsCB, 0);
+	                              g_artifactBlankingSamps, 0, 64, 1, artifactBlankingSampsCB, 0);
 
 	// end icms page
 	gtk_widget_show(box1);

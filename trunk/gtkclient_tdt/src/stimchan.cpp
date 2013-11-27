@@ -29,7 +29,7 @@ bool StimChan::add_event(double _ts, unsigned long long _tick)
 	return true;
 }
 
-bool StimChan::add_artifact(RecArtifact *_a) 
+bool StimChan::add_artifact(RecArtifact *_a)
 {
 	RecArtifact *a = NULL;
 
@@ -40,8 +40,7 @@ bool StimChan::add_artifact(RecArtifact *_a)
 		a->samples_per_wf = _a->samples_per_wf;
 		a->num_wf = 0;
 		artifacts[_a->rec_chan] = a;
-	}
-	else {
+	} else {
 		a = artifacts[_a->rec_chan];
 	}
 
@@ -51,7 +50,7 @@ bool StimChan::add_artifact(RecArtifact *_a)
 	}
 
 	vector<float> *wf = _a->get_wf_vector();
-	for (unsigned int i=0;i<wf->size();i++)
+	for (unsigned int i=0; i<wf->size(); i++)
 		a->add_wf_sample(wf->at(i));
 	a->num_wf++;
 
@@ -74,10 +73,10 @@ bool StimChan::save(MatStor *ms)
 	memset(buf_tick, 0, sizeof(buf_tick));
 	sprintf(buf_tick, "icms_tick_%03u", stim_chan);
 
-	for(vector<double>::size_type i=0; i != ts.size(); i++)
+	for (vector<double>::size_type i=0; i != ts.size(); i++)
 		ms->setDouble(i, buf_ts, ts[i]);
 
-	for(vector<long long>::size_type i=0; i != ticks.size(); i++)
+	for (vector<long long>::size_type i=0; i != ticks.size(); i++)
 		ms->setDouble(i, buf_tick, (double) ticks[i]);
 
 	map<unsigned int, RecArtifact *>::iterator it;
