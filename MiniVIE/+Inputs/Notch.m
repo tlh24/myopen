@@ -1,11 +1,11 @@
 classdef Notch < Inputs.Filter
     % Notch Filter object, extends filter object
     % Note that an array of center frequencies are supported
-    % Usage: hFilter = Inputs.Notch(centerFrequency,frequencyWidth,Fs);
-    % Example: hFilter = Inputs.Notch([60 120 180],5,1000);
+    % Usage: hFilter = Inputs.Notch(centerFrequency,frequencyWidth,order,Fs);
+    % Example: hFilter = Inputs.Notch([60 120 180],5,64,1000);
     %
     % 01-Sept-2010 Armiger: Created
-    % 08-Mar-2013 Armiger: If a negative filter ordre is specified, a FIR filter is returned, else an IIR filter returned
+    % 08-Mar-2013 Armiger: If a negative filter order is specified, a FIR filter is returned, else an IIR filter returned
     methods
         function obj = Notch(centerFrequency,frequencyWidth,order,Fs)
             % Create Filters

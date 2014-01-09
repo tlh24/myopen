@@ -9,7 +9,7 @@ classdef Filter < handle
         Hb
         Ha
         
-        lastUnfilteredData % store previous samples to avoid filter edge effects
+        lastFilterState % store filter state to avoid filter edge effects
     end
     methods
         function filteredData = apply(obj,unfilteredData)
@@ -17,38 +17,36 @@ classdef Filter < handle
             %
             % Apply filter based on the parameters specified Ha Hb
             %
+
+            % user can specify multiple frequencies to filter (e.g. a notch
+            % filter at [60, 120, 240] Hz
+            numFilters = size(obj.Hb,1);
             
+            % Check validity of saved filter state
+            numChannels = size(unfilteredData,2);
             
-            % Check validity of saved data
-            [numSamples, numChannels] = size(unfilteredData);
-            if ~isequal(numChannels,size(obj.lastUnfilteredData,2))
-                % Size mismatch, can't use previous data
-                obj.lastUnfilteredData = [];
+            % Transient startup
+            if isempty(obj.lastFilterState)
+                obj.lastFilterState = cell(numFilters,1);
+            end
+
+            % Check filter state size
+            for i = 1:numFilters
+                if ~isequal(numChannels,size(obj.lastFilterState{i},2))
+                    % Size mismatch, can't use previous data
+                    obj.lastFilterState{i} = [];
+                end
             end
             
-            % Create a combined data set
-            %combinedUnfilteredData = cat(1,obj.lastUnfilteredData,unfilteredData);
-            combinedUnfilteredData = unfilteredData;
-            %combinedUnfilteredData = cat(1,unfilteredData,obj.lastUnfilteredData);
-            
-            % Preserve some of the new data for the next iteration
-            numPreserved = 150;
-            if numSamples > numPreserved
-                obj.lastUnfilteredData = unfilteredData(end-numPreserved+1:end,:);
-            else
-                obj.lastUnfilteredData = unfilteredData;
-            end
             
             % Now apply filter
-            %removeOffset = (obj.Ha == 1);
-            
             if isa(obj,'Inputs.RemoveOffset')
                 % For a moving average filter, the filter is applied to get
                 % the mean, then the computed mean is subtracted from the
                 % signal
-                movingAverage = filter(obj.Hb,obj.Ha,combinedUnfilteredData);
+                movingAverage = filter(obj.Hb,obj.Ha,unfilteredData);
                 
-                filteredData = combinedUnfilteredData - movingAverage;
+                filteredData = unfilteredData - movingAverage;
                 
             else
                 % Typically, the filter is applied and filtered data is
@@ -56,15 +54,15 @@ classdef Filter < handle
                 
                 % If multiple filters are contained (e.g. notch filters at
                 % various frequencies, apply each filter
-                filteredData = combinedUnfilteredData;
-                for i = 1:size(obj.Hb,1)
-                    filteredData = filter(obj.Hb(i,:),obj.Ha(i,:),filteredData);
-                end
+                filteredData = unfilteredData;
                 
+                for i = 1:numFilters
+                    % save the filter state for the next iteration
+%                     obj.lastFilterState{i} = [];
+                    [filteredData, obj.lastFilterState{i}] = ...
+                        filter(obj.Hb(i,:),obj.Ha(i,:),filteredData,obj.lastFilterState{i});
+                end
             end
-            
-            % return only the latest samples to preserve size
-            filteredData = filteredData(end-numSamples+1:end,:);
             
         end
     end
