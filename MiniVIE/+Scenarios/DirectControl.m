@@ -70,21 +70,24 @@ classdef DirectControl < Common.MiniVieObj
                 jointId = mpl_upper_arm_enum.ELBOW;
                 thresholdA = 0.1;
                 gainA = 2;
-                diffInputA = max(0,MAV(1) - thresholdA) * gainA;
+                chA = 1;
+                diffInputA = max(0,MAV(chA) - thresholdA) * gainA;
                 thresholdB = 0.1;
                 gainB = 2;
-                diffInputB = max(0,MAV(2) - thresholdB) * gainB;
+                chB = 2;
+                diffInputB = max(0,MAV(chB) - thresholdB) * gainB;
                 velocity = diffInputA - diffInputB;
                 obj.ArmStateModel.setVelocity(jointId,velocity);
-                
 
                 jointId = obj.ArmStateModel.RocStateId;
                 thresholdA = 0.1;
                 gainA = 2;
-                diffInputA = max(0,MAV(3) - thresholdA) * gainA;
+                chA = 3;
+                diffInputA = max(0,MAV(chA) - thresholdA) * gainA;
                 thresholdB = 0.1;
                 gainB = 2;
-                diffInputB = max(0,MAV(4) - thresholdB) * gainB;
+                chB = 4;
+                diffInputB = max(0,MAV(chB) - thresholdB) * gainB;
                 velocity = diffInputA - diffInputB;
                 obj.ArmStateModel.setVelocity(jointId,velocity);
                 obj.ArmStateModel.update();
@@ -126,7 +129,7 @@ classdef DirectControl < Common.MiniVieObj
         
     end
     methods(Static = true)
-        function Test
+        function obj = Test
             %Scenarios.DirectControl.Test
             hSource = Inputs.SignalSimulator;
             hSource.initialize();
@@ -134,7 +137,12 @@ classdef DirectControl < Common.MiniVieObj
             obj = Scenarios.DirectControl;
             obj.initialize(hSource);
             
+            obj.ArmStateModel.ApplyAccelerationLimits = 0;
+            obj.ArmStateModel.ApplyVelocityLimits = 0;
+            
             obj.start();
+            
+            GUIs.guiSignalViewer(hSource);
             
         end
     end
