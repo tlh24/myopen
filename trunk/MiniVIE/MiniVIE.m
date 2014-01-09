@@ -6,8 +6,6 @@ classdef MiniVIE < Common.MiniVieObj
         TrainingData
         Presentation
         
-        
-        
         FilePrefix
         
         hg;  % handle graphics
@@ -319,6 +317,10 @@ classdef MiniVIE < Common.MiniVieObj
                 switch string{value}
                     case 'Signal Simulator'
                         h = Inputs.SignalSimulator();
+                        Fs = h.SampleFrequency;
+                        h.addfilter(Inputs.Notch([60 120],4,8,Fs));
+                        %h.addfilter(Inputs.HighPass(15,3,Fs));
+                        h.addfilter(Inputs.LowPass(400,8,Fs));
                     case 'EMG Simulator'
                         [FileName,PathName,FilterIndex] = uigetfile('emgPatternData.mat');
                         if FilterIndex == 0
@@ -361,9 +363,10 @@ classdef MiniVIE < Common.MiniVieObj
                     obj.println('Adding Filters',1);
 
                     Fs = h.SampleFrequency;
+                    
+                    % Disabled high pass for IMES Demo
                     h.addfilter(Inputs.HighPass(15,3,Fs));
                     
-                    Fs = h.SampleFrequency;
                     %                     h.addfilter(Inputs.HighPass(10,8,Fs));
                     %                     %h.addfilter(Inputs.LowPass(350,8,Fs));
                     %                     %h.addfilter(Inputs.Notch(60.*(1:4),5,1,Fs));
@@ -371,7 +374,7 @@ classdef MiniVIE < Common.MiniVieObj
                     %                     % obj.SignalSource.addfilter(Inputs.MAV(150));
                     
                     %                     Fs = h.SampleFrequency;
-                    h.addfilter(Inputs.HighPass(15,3,Fs));
+                    % h.addfilter(Inputs.HighPass(15,3,Fs));
                     %                     %h.addfilter(Inputs.RemoveOffset(10));
                     %                     %h.addfilter(Inputs.Notch([120 240 360],5,1,Fs));
                     %                     h.addfilter(Inputs.Notch([120 240 360],64,1,1000));
