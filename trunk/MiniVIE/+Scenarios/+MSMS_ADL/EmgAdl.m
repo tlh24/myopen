@@ -124,7 +124,8 @@ classdef EmgAdl < handle
                 numRecordSeconds,sampleRate);
             try
                 if 1
-                    obj.hDaq = analoginput('nidaq','Dev2');
+                    %obj.hDaq = analoginput('nidaq','Dev2');
+                    obj.hDaq = analoginput('mcc','0');
                     set(obj.hDaq,'InputType','SingleEnded');
                     addchannel(obj.hDaq, 0:15);
                     obj.hDaq.SampleRate = sampleRate;

@@ -3,11 +3,11 @@
 clc
 % addpath('c:\usr\MiniVIE')
 % addpath('c:\usr\MiniVIE\Utilities\')
-addpath('c:\usr\myopen\MiniVIE')
-addpath('c:\usr\myopen\MiniVIE\Utilities\')
+addpath('c:\svn\myopen\MiniVIE')
+addpath('c:\svn\myopen\MiniVIE\Utilities\')
 % addpath('C:\usr\WRAMC VIE Code')
 %run('C:\usr\Common\addpath_Common.m');
-run('C:\usr\RP2009\VRE\Common\addpath_Common.m');
+% run('C:\usr\RP2009\VRE\Common\addpath_Common.m');
 disp('Setup Done');
 
 %% Setup and load ADL file
@@ -16,14 +16,15 @@ obj = Scenarios.MSMS_ADL.EmgAdl;
 % setMotionFile(obj);  % interactive load
 % setMotionFile(obj,'C:\MSMS\MSMS Beta 0.9.1\Sample Models\WRAMC_Model\Data');  %(exclude file extensions)
 isBimanual = true;
-setMotionFile(obj,'C:\MSMS\Sample Models\WRAMC_Model\Data','LeftArm15',isBimanual); %(exclude file extensions)
+%setMotionFile(obj,'C:\MSMS\Sample Models\WRAMC_Model\Data','LeftArm15',isBimanual); %(exclude file extensions)
+setMotionFile(obj,'C:\MSMS\MSMS Beta 0.9.1\Sample Models\WRAMC_Model\Data','LeftArm15',isBimanual); %(exclude file extensions)
 
 initialize(obj)
 obj.ActiveChannels = 1:16; % Note HW channels are 0-based
 disp('Ready')
 
 %% Preview the EMG Data (optional)
-obj.preview;
+% obj.preview;
 
 %% Start the motions (save prompt at end)
 start(obj.hDaq);

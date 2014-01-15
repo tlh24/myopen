@@ -117,9 +117,11 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
             p = obj.hUdp.getData; %gets latest packets
             if ~isempty(p) && length(p) >= 324
                 r = reshape(typecast(p(1:324),'single'),3,27);
-                fprintf('[%s] PerceptAngles: ',mfilename);
-                fprintf('%6.4f ',r(1,:)');
-                fprintf('\n');
+                if obj.Verbose
+                    fprintf('[%s] PerceptAngles: ',mfilename);
+                    fprintf('%6.4f ',r(1,:)');
+                    fprintf('\n');
+                end
                 
             else
                 % No new data
