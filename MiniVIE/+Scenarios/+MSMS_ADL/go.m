@@ -3,19 +3,18 @@
 clc
 % addpath('c:\usr\MiniVIE')
 % addpath('c:\usr\MiniVIE\Utilities\')
-addpath('c:\usr\myopen\MiniVIE')
-addpath('c:\usr\myopen\MiniVIE\Utilities\')
+addpath('c:\svn\myopen\MiniVIE')
+addpath('c:\svn\myopen\MiniVIE\Utilities\')
 % addpath('C:\usr\WRAMC VIE Code')
 %run('C:\usr\Common\addpath_Common.m');
-run('C:\usr\RP2009\VRE\Common\addpath_Common.m');
+%run('C:\usr\RP2009\VRE\Common\addpath_Common.m');
 disp('Setup Done');
 
 %% Setup and load ADL file
 obj = Scenarios.MSMS_ADL.EmgAdl;
 % Comment out one of these lines to either interactively load or specify files
 % setMotionFile(obj);  % interactive load
-% setMotionFile(obj,'C:\MSMS\MSMS Beta 0.9.1\Sample Models\WRAMC_Model\Data');  %(exclude file extensions)
-setMotionFile(obj,'C:\MSMS\Sample Models\WRAMC_Model\Data','LeftArm15'); %(exclude file extensions)
+setMotionFile(obj,'C:\MSMS\MSMS Beta 0.9.1\Sample Models\WRAMC_Model\Data','RightArm15'); %(exclude file extensions)
 
 initialize(obj)
 obj.ActiveChannels = [1:8 ]; % Note HW channels are 0-based
