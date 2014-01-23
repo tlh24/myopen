@@ -1157,13 +1157,13 @@ daqParams = UiTools.load_temp_file(tempFileName);
 if isempty(daqParams)
     % Use these defaults
     prompt={
-        'Enter DAQ Board Name (e.g. mcc):',...
-        'Enter DAQ Board Id (e.g. 0):',...
+        'Enter DAQ Board Name (e.g. mcc, nidaq):',...
+        'Enter DAQ Board Id (e.g. 0, Dev2):',...
         'Enter DAQ Board Channel Ids (e.g. 0:15):',...
         };
     name='DAQ Parameters';
     numlines=1;
-    defaultanswer={'nidaq','Dev2','0:15'};
+    defaultanswer={'mcc','0','0:15'};
     answer=inputdlg(prompt,name,numlines,defaultanswer);
     assert(length(answer) == 3,'Expected 3 outputs');
     

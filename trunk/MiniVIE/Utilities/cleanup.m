@@ -1,5 +1,8 @@
 % cleanup
 % There's quite a lot to do to clean up the MATLAB workspace
+close all force;
+clear classes;
+clear java;
 try
     dbclear('all');
 end
@@ -24,4 +27,5 @@ try
 end
 close all force;
 clear classes;
+clear java;
 disp('cleanup');
