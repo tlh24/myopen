@@ -1,6 +1,6 @@
 classdef CyberGloveSerial < handle
     % Class file for direct interface with Cyber Glove without Device manager
-    % Usage: h = CyberGloveSerial(comPortName,handleName);
+    % Usage: h = Inputs.CyberGloveSerial(comPortName,handleName);
     %
     % h.initialize()
     % h.getRawData()
