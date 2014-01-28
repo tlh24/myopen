@@ -81,23 +81,11 @@ classdef CytonSerial < handle
             %   send_servo_command(obj,[0 3],[1500 1300]);
             %   send_servo_command(obj,[5 10],[1600 750],[500 600]);
             
-            noSpeedProvided = (nargin < 4);
-            
             % ensure pulse width command is within bounds
             pulseWidth = max(min(pulseWidth,obj.PwmMax),obj.PwmMin);
             
-            cmdString = [];
-            for iServo = 1:length(channelNum)
-                
-                if noSpeedProvided
-                    servoCmd = sprintf('#%d P%d ',channelNum(iServo),pulseWidth(iServo));
-                else
-                    servoCmd = sprintf('#%d P%d S%d ',channelNum(iServo),pulseWidth(iServo),movementSpeed(iServo));
-                end
-                
-                % append commands for group move
-                cmdString = [cmdString servoCmd]; %#ok<*AGROW>
-            end
+            % format message
+            cmdString = encode_lynxterm_cmd(channelNum,pulseWidth,movementSpeed);
             
             % write full string command
             fprintf(obj.hPort,cmdString);
@@ -302,10 +290,10 @@ classdef CytonSerial < handle
             
             % look for a single digit /d behind (?<=) '#'
             jointIds = regexp(cmd_str,'(?<=#)\d','match');
-
+            
             % look for multiple digits /d* behind (?<=) 'P'
             jointPositions = regexp(cmd_str,'(?<=P)\d*','match');
-
+            
             % look for multiple digits /d* behind (?<=) 'S'
             jointSpeeds = regexp(cmd_str,'(?<=S)\d*','match');
             
@@ -325,5 +313,75 @@ classdef CytonSerial < handle
             theta = (theta - 1500) * pi / 1000;
             
         end
+        function cmdString = encode_lynxterm_cmd(channelId,pulseWidth,movementSpeed)
+            % cmdString = encode_lynxterm_cmd(channelId,pulseWidth,movementSpeed)
+            %
+            % Use this command to create a servo command for the lynxtem
+            % PWM controller board
+            %
+            % Inputs:
+            % channelNum, 0-31
+            % pulseWidth in microseconds, 500-2500
+            % movementSpeed in uS per second (optional)
+            %
+            % Outputs:
+            % command string to be transmitted
+            %
+            %
+            % Example Usage:
+            %
+            %   % Send position command to a single servo
+            %   CytonI.encode_lynxterm_cmd(0,1500);
+            %
+            %   % Send position command to a group of servos
+            %   CytonI.encode_lynxterm_cmd([0 3],[1500 1300]);
+            %
+            %   % Send position and velocity commands to a group of servos
+            %   CytonI.encode_lynxterm_cmd([5 10],[1600 750],[500 600]);
+            %
+            %   % Send position commands to a group of servos with a
+            %   % single velocity
+            %   CytonI.encode_lynxterm_cmd([5 10],[1600 750],500);
+            
+            % check if velocity provided
+            isVelocityProvided = (nargin >= 3);
+            
+            % get number of channels
+            numChannels = length(channelId);
+            
+            if (numChannels > 1) && isscalar(pulseWidth)
+                % expand pulseWidth command
+                pulseWidth = repmat(pulseWidth,size(channelId));
+            end
+            % array sizes must be equal
+            assert(isequal(numChannels,length(pulseWidth)),...
+                'Array sizes for channelIds and pulseWidth must be equal for nonscalar inputs');
+            
+            if isVelocityProvided
+                % check velocity
+                if (numChannels > 1) && isscalar(movementSpeed)
+                    % expand movementSpeed command
+                    movementSpeed = repmat(movementSpeed,size(channelId));
+                end
+                % array sizes must be equal
+                assert(isequal(numChannels,length(movementSpeed)),...
+                    'Array sizes for channelIds and movementSpeed must be equal for nonscalar inputs');
+            end
+            
+            % Create command string
+            cmdString = '';
+            for iChannel = 1:numChannels
+                
+                % format message with or without velocity
+                if isVelocityProvided
+                    servoCmd = sprintf('#%d P%d S%d ',channelId(iChannel),pulseWidth(iChannel),movementSpeed(iChannel));
+                else
+                    servoCmd = sprintf('#%d P%d ',channelId(iChannel),pulseWidth(iChannel));
+                end
+                
+                % append commands for group move
+                cmdString = cat(2,cmdString,servoCmd); %#ok<*AGROW>
+            end
+        end % encode_lynxterm_cmd
     end
 end
