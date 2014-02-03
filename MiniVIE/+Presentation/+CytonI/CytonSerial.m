@@ -81,11 +81,18 @@ classdef CytonSerial < handle
             %   send_servo_command(obj,[0 3],[1500 1300]);
             %   send_servo_command(obj,[5 10],[1600 750],[500 600]);
             
+            import Presentation.CytonI.* 
+            
             % ensure pulse width command is within bounds
             pulseWidth = max(min(pulseWidth,obj.PwmMax),obj.PwmMin);
             
             % format message
-            cmdString = encode_lynxterm_cmd(channelNum,pulseWidth,movementSpeed);
+            if nargin > 3
+                
+                cmdString = CytonSerial.encode_lynxterm_cmd(channelNum,pulseWidth,movementSpeed);
+            else
+                cmdString = CytonSerial.encode_lynxterm_cmd(channelNum,pulseWidth);
+            end
             
             % write full string command
             fprintf(obj.hPort,cmdString);
