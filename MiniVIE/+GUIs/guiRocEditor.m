@@ -287,7 +287,7 @@ function hFig = default_figure()
 
 mp = get(0, 'MonitorPositions');
 
-topLeft = [mp(1) mp(4)-mp(2)];
+topLeft = [mp(1,1) mp(1,4)-mp(1,2)];
 windowSize = [800 650];
 
 hFig = figure(...
