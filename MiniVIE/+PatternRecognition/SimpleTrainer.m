@@ -29,7 +29,7 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
                 'setappdata(gcbf,''canceling'',1)');
             hPatch = findobj(h,'type','patch');
             setappdata(h,'canceling',0);
-
+            
             % Ensure data is ready
             ok = wait_for_device(h,obj.SignalSource,obj.SignalClassifier.NumSamplesPerWindow);
             if ~ok
@@ -45,13 +45,13 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
             end
             
             if obj.EnablePictures
-            %f = figure(99);
-            f = UiTools.create_figure('Training...');
-            a = axes('Parent',f);
-            
-            % picture path
-            pathstr = fileparts(which('PatternRecognition.SimpleTrainer'));
-            pathImages = fullfile(pathstr,'Images');
+                %f = figure(99);
+                f = UiTools.create_figure('Training...');
+                a = axes('Parent',f);
+                
+                % picture path
+                pathstr = fileparts(which('PatternRecognition.SimpleTrainer'));
+                pathImages = fullfile(pathstr,'Images');
             end
             
             classNames = obj.SignalClassifier.getClassNames;
@@ -63,62 +63,76 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
                     if getappdata(h,'canceling')
                         break
                     end
-
+                    
                     className = classNames{iClass};
                     
                     if obj.EnablePictures
                         
-                        switch className
-                            case 'Elbow Flexion'
-                                imgName = 'elbow flexion.jpg';
-                            case 'Elbow Extension'
-                                imgName = 'elbow extension.jpg';
-                            case 'Wrist Rotate In'
-                                imgName = 'wrist pronation.jpg';
-                            case 'Wrist Rotate Out'
-                                imgName = 'wrist supination.jpg';
-                            case 'Wrist Flex In'
-                                imgName = 'wrist flexion.jpg';
-                            case 'Wrist Extend Out'
-                                imgName = 'wrist extension.jpg';
-                            case 'Hand Up'
-                                imgName = 'wrist abduction.jpg';
-                            case 'Hand Down'
-                                imgName = 'wrist adduction.jpg';
-                            case 'Hand Open'
-                                imgName = 'hand open.jpg';
-                            case 'Lateral Grasp'
-                                imgName = 'lateral grip.jpg';
-                            case 'Cylindrical Grasp'
-                                imgName = 'cylindrical grip.jpg';
-                            case 'Tip Grasp'
-                                imgName = 'fine pinch grip.jpg';
-                            case 'Hook Grasp'
-                                imgName = 'hook grip.jpg';
-                            case 'Spherical Grasp'
-                                imgName = 'power grip mode.jpg';
-                            case 'Pointer Grasp'
-                                imgName = 'point grip.jpg';
-                            case 'No Movement'
-                                imgName = 'no movement (rest).jpg';
-                            case 'Index'
-                                imgName = 'IndexFinger.png';
-                            case 'Middle'
-                                imgName = 'MiddleFinger.png';
-                            case 'Ring'
-                                imgName = 'RingFinger.png';
-                            case 'Little'
-                                imgName = 'LittleFinger.png';
-                            case 'Thumb'
-                                imgName = 'ThumbFinger.png';
-                            otherwise
-                                fprintf('Unmatched class: "%s"\n',className);
-                                imgName = '';
+                        % first assume classname equals the filename
+                        structDir = dir(fullfile(pathImages,[className '.*']));
+                        if length(structDir) == 1
+                            fileName = fullfile(pathImages,structDir(1).name);
+                        else
+                            % check manual mapping to filename
+                            % TODO abstract this into an xml or otherwise
+                            switch className
+                                case 'Humeral Internal Rotation'
+                                    imgName = 'shoulder(humeral) rotation in.jpg';
+                                case 'Humeral External Rotation'
+                                    imgName = 'shoulder(humeral) rotation out.jpg';
+                                case 'Elbow Flexion'
+                                    imgName = 'elbow flexion.jpg';
+                                case 'Elbow Extension'
+                                    imgName = 'elbow extension.jpg';
+                                case 'Wrist Rotate In'
+                                    imgName = 'wrist pronation.jpg';
+                                case 'Wrist Rotate Out'
+                                    imgName = 'wrist supination.jpg';
+                                case 'Wrist Flex In'
+                                    imgName = 'wrist flexion.jpg';
+                                case 'Wrist Extend Out'
+                                    imgName = 'wrist extension.jpg';
+                                case 'Hand Up'
+                                    imgName = 'wrist abduction.jpg';
+                                case 'Hand Down'
+                                    imgName = 'wrist adduction.jpg';
+                                case 'Hand Open'
+                                    imgName = 'hand open.jpg';
+                                case 'Lateral Grasp'
+                                    imgName = 'lateral grip.jpg';
+                                case 'Cylindrical Grasp'
+                                    imgName = 'cylindrical grip.jpg';
+                                case 'Tip Grasp'
+                                    imgName = 'fine pinch grip.jpg';
+                                case 'Hook Grasp'
+                                    imgName = 'hook grip.jpg';
+                                case 'Spherical Grasp'
+                                    imgName = 'power grip mode.jpg';
+                                case 'Pointer Grasp'
+                                    imgName = 'point grip.jpg';
+                                case 'No Movement'
+                                    imgName = 'no movement (rest).jpg';
+                                case {'Index' 'Index Grasp'}
+                                    imgName = 'IndexFinger.png';
+                                case {'Middle' 'Middle Grasp'}
+                                    imgName = 'MiddleFinger.png';
+                                case {'Ring' 'Ring Grasp'}
+                                    imgName = 'RingFinger.png';
+                                case {'Little' 'Little Grasp'}
+                                    imgName = 'LittleFinger.png';
+                                case {'Thumb' 'Thumb Grasp'}
+                                    imgName = 'ThumbFinger.png';
+                                otherwise
+                                    fprintf('Unmatched class: "%s"\n',className);
+                                    imgName = '';
+                            end
+                            
+                            fileName = fullfile(pathImages,imgName);
                         end
                         
-                        fileName = fullfile(pathImages,imgName);
                         if exist(fileName,'file') ~= 2
                             set(a,'Visible','off')
+                            set(allchild(a),'Visible','off')
                             fprintf('Image failed: "%s\n"',fileName);
                         else
                             img = imread(fileName);
@@ -135,7 +149,7 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
                     set(hPatch,'FaceColor','r');
                     while t < obj.DelayLengthSeconds
                         t = toc;
-
+                        
                         % Check for Cancel button press
                         if getappdata(h,'canceling')
                             break
@@ -150,7 +164,7 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
                     set(hPatch,'FaceColor','g');
                     while t < obj.ContractionLengthSeconds
                         t = toc;
-
+                        
                         % Check for Cancel button press
                         if getappdata(h,'canceling')
                             break
@@ -176,9 +190,9 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
                 pause(0.2);
                 delete(h);
             end
-                        
+            
             obj.TrainingData.saveTrainingData();
-
+            
         end
     end
     methods (Static = true)
@@ -194,7 +208,7 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
             hScenario.SignalClassifier.TrainingDataLabels = classLabelId;
             hScenario.SignalClassifier.train();
             hScenario.SignalClassifier.computeError();
-
+            
         end
         function obj = Default
             
