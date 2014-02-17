@@ -63,9 +63,9 @@ classdef CytonEmgScenario < Scenarios.OnlineRetrainer
                     ang(5) = ang(5) + prSpeed;
                 case {'Supinate' 'Wrist Rotate Out'}
                     ang(5) = ang(5) - prSpeed;
-                case {'Up' 'Hand Up'}
+                case {'Up','Hand Up', 'Radial Deviation','Wrist Abduction'}
                     ang(7) = ang(7) + prSpeed;
-                case {'Down' 'Hand Down'}
+                case {'Down','Hand Down', 'Ulnar Deviation','Wrist Adduction'}
                     ang(7) = ang(7) - prSpeed;
                 case {'Left' 'Wrist Flex' 'Wrist Flex In'}
                     ang(6) = ang(6) + prSpeed;

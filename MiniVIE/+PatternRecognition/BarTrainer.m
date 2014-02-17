@@ -215,9 +215,9 @@ classdef BarTrainer < PatternRecognition.AdaptiveTrainingInterface
                             f = fullfile(pathImages,'wrist flexion.jpg');
                         case {'Wrist Extend Out', 'Wrist Extension'}
                             f = fullfile(pathImages,'wrist extension.jpg');
-                        case {'Hand Up', 'Radial Deviation'}
+                        case {'Up','Hand Up', 'Radial Deviation','Wrist Abduction'}
                             f = fullfile(pathImages,'wrist abduction.jpg');
-                        case {'Hand Down', 'Ulnar Deviation'}
+                        case {'Down','Hand Down', 'Ulnar Deviation','Wrist Adduction'}
                             f = fullfile(pathImages,'wrist adduction.jpg');
                         case {'Hand Open'}
                             f = fullfile(pathImages,'hand open.jpg');

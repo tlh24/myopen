@@ -154,9 +154,9 @@ classdef ScenarioBase < Common.MiniVieObj
                     s.setVelocity(mpl_upper_arm_enum.WRIST_ROT,+prSpeed);
                 case {'Supinate' 'Wrist Rotate Out'}
                     s.setVelocity(mpl_upper_arm_enum.WRIST_ROT,-prSpeed);
-                case {'Up' 'Hand Up'}
+                case {'Up', 'Hand Up', 'Radial Deviation','Wrist Abduction'}
                     s.setVelocity(mpl_upper_arm_enum.WRIST_DEV,+prSpeed);
-                case {'Down' 'Hand Down'}
+                case {'Down','Hand Down', 'Ulnar Deviation','Wrist Adduction'}
                     s.setVelocity(mpl_upper_arm_enum.WRIST_DEV,-prSpeed);
                 case {'Left' 'Wrist Flex' 'Wrist Flex In'}
                     s.setVelocity(mpl_upper_arm_enum.WRIST_FE,+prSpeed);

@@ -308,8 +308,8 @@ classdef guiClassifierChannels < Common.MiniVieObj
             classNames{10}  = 'Wrist Rotate Out';
             classNames{11}  = 'Wrist Flex In';
             classNames{12}  = 'Wrist Extend Out';
-            classNames{13}  = 'Hand Up';
-            classNames{14}  = 'Hand Down';
+            classNames{13}  = 'Wrist Abduction';%'Hand Up';
+            classNames{14}  = 'Wrist Adduction';%'Hand Down';
             classNames{15}  = 'Hand Open';
             
             [enumGrasp, cellGrasps] = enumeration('Controls.GraspTypes'); %#ok<ASGLU>
