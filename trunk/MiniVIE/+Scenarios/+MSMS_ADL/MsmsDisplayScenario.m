@@ -202,10 +202,10 @@ try
         case 'Elbow Extension'
             obj.JointAnglesDegrees(action_bus_enum.Elbow) = ...
                 obj.JointAnglesDegrees(action_bus_enum.Elbow) - speed*gain;
-        case {'Up' 'Hand Up'}
+        case {'Up' 'Hand Up', 'Radial Deviation','Wrist Abduction'}
             obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) = ...
                 obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) - speed*gain;
-        case {'Down' 'Hand Down'}
+        case {'Down' 'Hand Down', 'Ulnar Deviation','Wrist Adduction'}
             obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) = ...
                 obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) + speed*gain;
         case {'Left' 'Wrist Flex' 'Wrist Flex In'}
@@ -259,9 +259,10 @@ try
         msmsAngles(action_bus_enum.Wrist_Rot) = msmsAngles(action_bus_enum.Wrist_Rot) - 90;
         msmsAngles(action_bus_enum.Wrist_FE) = -msmsAngles(action_bus_enum.Wrist_FE);
     else
+        % 2/17/2014 RSA Reconfirmed
         msmsAngles(action_bus_enum.Wrist_Rot) = -msmsAngles(action_bus_enum.Wrist_Rot) + 90;
     end
-    
+        
     % send Values
     obj.hOutput.putdata(msmsAngles);
     

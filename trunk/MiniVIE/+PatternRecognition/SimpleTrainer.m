@@ -92,9 +92,9 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
                                     imgName = 'wrist flexion.jpg';
                                 case 'Wrist Extend Out'
                                     imgName = 'wrist extension.jpg';
-                                case 'Hand Up'
+                                case {'Up','Hand Up', 'Radial Deviation','Wrist Abduction'}
                                     imgName = 'wrist abduction.jpg';
-                                case 'Hand Down'
+                                case {'Down','Hand Down', 'Ulnar Deviation','Wrist Adduction'}
                                     imgName = 'wrist adduction.jpg';
                                 case 'Hand Open'
                                     imgName = 'hand open.jpg';
