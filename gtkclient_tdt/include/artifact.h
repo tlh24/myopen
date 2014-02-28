@@ -13,8 +13,12 @@ class Artifact
 public:
 	float 	m_avg[RECCHAN *ARTBUF];	// the average artifact buffer
 	float	m_std[RECCHAN *ARTBUF];	// the artifact standard deviation
-	i64		m_index[NARTPTR];		// index into the buffer, or -1
+	i64		m_windex[NARTPTR];		// write index into the buffer, or -1
+	i64		m_rindex[NARTPTR];		// read index into the buffer, or -1
 	i64		m_nsamples;				// number of examples in the average
+
+	// windex is where we are writing into m_avg (and m_now)
+	// rindex is where we can read from the buffer to subtract artifact 
 
 	float	m_now[RECCHAN *ARTBUF];	// the last captured artifact
 	// nb we keep this around not for computing
@@ -29,7 +33,8 @@ public:
 			m_now[i] = 0.f;
 		}
 		for (int i=0; i<NARTPTR; i++) {
-			m_index[i] = -1;
+			m_windex[i] = -1;
+			m_rindex[i] = -1;
 		}
 		m_nsamples  = 0;
 	}

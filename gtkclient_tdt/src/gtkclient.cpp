@@ -29,6 +29,7 @@
 #include <matio.h>
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_linalg.h>
+#include <gsl/gsl_fit.h>
 #include <boost/multi_array.hpp>
 #include <map>
 #include <string>
@@ -118,14 +119,18 @@ long double g_lastPo8eTime = 0.0;
 double g_minISI = 1.3; //ms
 int g_spikesCols = 16;
 
+
 gboolean g_enableArtifactSubtr = true;
 gboolean g_trainArtifactTempl = true;
-int g_numArtifactSamps = 1e3;
+gboolean g_enableScaleArtifact = true;
+int g_numArtifactSamps = 1e3; 	// number of artifacts to use to build template
 int g_stimChanDisp = 0;	// 0-15
 float g_artifactDispAtten = 20.f;
 
 gboolean g_enableArtifactBlanking = true;
 int g_artifactBlankingSamps = 32;
+
+gboolean g_enableStimClockBlanking = false;
 
 float g_unsortrate = 0.0; //the rate that unsorted WFs get through.
 float	g_autoThreshold = -3.5; //standard deviations. default negative, w/e.
@@ -920,7 +925,7 @@ void *po8_thread(void *)
 				} else {
 					printf("  card is collecting incoming data.\n");
 					conn_cards++;
-					printf("Waiting for the stream to start on card0 ... ");
+					printf("  waiting for the stream to start on card0 ... ");
 					card->waitForDataReady(); // waits ~ 1200 hours ;-)
 					printf("started\n");
 				}
@@ -937,6 +942,7 @@ void *po8_thread(void *)
 		if (!simulate && card) {
 			nchan = card->numChannels();
 			bps = card->dataSampleSize();
+			printf("  %d channels @ %d bytes/sample\n", nchan, bps);
 		}
 		short *temp = new short[bufmax*(nchan+4)];  // 2^14 samples * 2 bytes/sample * (nChannels+time+stim)
 		short *temptemp = new short[bufmax];
@@ -1012,23 +1018,28 @@ void *po8_thread(void *)
 				g_ts.update(time, ticks, frame); //also updates the mmap file.
 				g_ts.m_dropped = (int)totalSamples - ticks;
 
-				// get icms times, fill icms buffers, and subtract artifact
+				// get icms times, fill icms buffers, // and subtract artifact
 				for (int k=0; k<numSamples; k++) {
-					unsigned int tmp = (unsigned short)(temp[(NCHAN+2)*numSamples+k]);
+					unsigned int tmp = (unsigned short)(temp[(NCHAN+2)*numSamples+k]);	// stim pulse ids
 					tmp += (unsigned short)(temp[(NCHAN+3)*numSamples+k]) << 16;
+
+					if (tmp != 0)
+						printf("icms pulse %d\n", tmp);
 
 					unsigned int tk = (unsigned short)(temp[NCHAN*numSamples+k]);
 					tk += (unsigned short)(temp[(NCHAN+1)*numSamples+k]) << 16;
 
-					// stim pulse?
 					for (int j=0; j<STIMCHAN; j++) {
-						//unsigned int id = pow(2,j);
+
+						// identify stim pulses
+						// unsigned int id = pow(2,j);
 						unsigned int id = (uint) (1 << j); // 2^j
 						if (tmp & id) {
 							int z = 0;
 							for (int y=0; y<NARTPTR; y++) {
-								if (g_artifact[j]->m_index[y] == -1) {
-									g_artifact[j]->m_index[y]++;
+								if (g_artifact[j]->m_windex[y] == -1) {
+									g_artifact[j]->m_windex[y] = 0;
+									g_artifact[j]->m_rindex[y] = 0;
 									z++;
 									break;
 								}
@@ -1037,12 +1048,10 @@ void *po8_thread(void *)
 								printf("ERR: STIM ARTIFACTS OVERLAP!\n");
 							}
 						}
-					}
 
-					// fill artifact-subtraction buffers
-					for (int j=0; j<STIMCHAN; j++) {
+						// update artifact-subtraction buffers
 						for (int z=0; z<NARTPTR; z++) {
-							i64 idx = g_artifact[j]->m_index[z];
+							i64 idx = g_artifact[j]->m_windex[z];
 							if (idx != -1) {
 								for (int ch=0; ch<RECCHAN; ch++) {
 									short samp = temp[ch*numSamples + k];
@@ -1056,17 +1065,10 @@ void *po8_thread(void *)
 									    (g_artifact[j]->m_nsamples < g_numArtifactSamps)) {
 										g_artifact[j]->m_avg[ch*ARTBUF+idx] = next;
 									}
-									if (g_enableArtifactSubtr) {
-										short subtr = (short)((f-next)*32767.f);
-										temp[ch*numSamples + k] = subtr;
-									}
-									if (g_enableArtifactBlanking &&
-									    idx < g_artifactBlankingSamps) {
-										temp[ch*numSamples + k] = 0;
-									}
 								}
-								g_artifact[j]->m_index[z]++;
-								if (g_artifact[j]->m_index[z] > ARTBUF) {
+								g_artifact[j]->m_windex[z]++;
+								if (g_artifact[j]->m_windex[z] >= ARTBUF) {
+
 									if (g_icmswriter.enabled()) {
 										ICMS o;
 										o.set_ts(g_ts.getTime(tk-ARTBUF));
@@ -1084,7 +1086,8 @@ void *po8_thread(void *)
 										}
 										g_icmswriter.add(&o);
 									}
-									g_artifact[j]->m_index[z] = -1;
+
+									g_artifact[j]->m_windex[z] = -1;
 									if ((g_trainArtifactTempl) &&
 									    (g_artifact[j]->m_nsamples < g_numArtifactSamps)) {
 										g_artifact[j]->m_nsamples++;
@@ -1092,8 +1095,81 @@ void *po8_thread(void *)
 								}
 							}
 						}
-					}
 
+					}
+				}
+
+				for (int j=0; j<STIMCHAN; j++) {
+					for (int z=0; z<NARTPTR; z++) {
+						i64 ridx = g_artifact[j]->m_rindex[z]; // read pointer
+						i64 widx = g_artifact[j]->m_windex[z]; // write pointer
+
+						if (ridx == -1)
+							break;
+
+						if  (widx == -1)
+							widx = ARTBUF;
+
+						size_t n = widx - ridx;
+
+						for (int ch=0; ch<RECCHAN; ch++) {
+
+							double c0, c1, cov00, cov01, cov11, chisq;
+							double x[ARTBUF], y[ARTBUF];
+							double y_hat[ARTBUF], y_err[ARTBUF];
+							
+							for (int k=ridx; k<widx; k++) {
+								x[k] = g_artifact[j]->m_nsamples > 0 ?
+									(double)g_artifact[j]->m_avg[ch*ARTBUF+k] :
+									(double)g_artifact[j]->m_now[ch*ARTBUF+k];
+								y_hat[k] = (double)g_artifact[j]->m_avg[ch*ARTBUF+k]; // fall thru
+								y[k] = (double)g_artifact[j]->m_now[ch*ARTBUF+k];
+							}
+
+							// Now we want to scale the average artifact (m_avg) such
+							// that it is close to the current artifact (m_now).
+							// Do this linearly: Y = c_0 + c_1 X
+							// 
+							// If we are not scaling on the fly, y_hat is set to m_avg above
+							if (g_enableScaleArtifact && n > 2) {
+								gsl_fit_linear(&(x[ridx]), 1, &(y[ridx]), 1, n,
+									&c0, &c1, &cov00, &cov01, &cov11, &chisq);
+								for (int k=ridx; k<widx; k++) {
+									gsl_fit_linear_est(x[k], c0, c1, cov00, cov01,
+										cov11, &(y_hat[k]), &(y_err[k]));
+								}
+							}
+
+							int kk = 0;
+							for (int k=ridx; k<widx; k++) {
+								float f = temp[ch*numSamples + kk] / 32767.f;
+								short subtr = (short)((f-y_hat[k])*32767.f);
+								if (g_enableArtifactSubtr) {
+									temp[ch*numSamples + kk] = subtr;
+								}
+								if (g_enableArtifactBlanking &&
+									k < g_artifactBlankingSamps) {
+									temp[ch*numSamples + kk] = 0;
+								}
+								kk++;
+							}
+
+						}
+						g_artifact[j]->m_rindex[z] += n;
+						if (g_artifact[j]->m_rindex[z] >= ARTBUF)
+							g_artifact[j]->m_rindex[z] = -1;
+					}
+				}
+
+				// blank based on the stim clock
+				for (int k=0; k<numSamples; k++) {
+					unsigned int tmp = (unsigned short)(temp[(NCHAN+4)*numSamples+k]);	// stim clock
+
+					if (tmp && g_enableStimClockBlanking) {
+						for (int ch=0; ch<RECCHAN; ch++) {
+							temp[ch*numSamples + k] = 0;
+						}
+					}
 				}
 
 				// copy the data over to g_fbuf for display (broadband trace)
@@ -1118,6 +1194,7 @@ void *po8_thread(void *)
 				g_fbufW += numSamples;
 
 				// copy to the sorting buffers, wrapped.
+
 				int oldo = g_sample & 255;
 				for (int k=0; k<NCHAN; k++) {
 					for ( int i=0; i<numSamples; i++) {
@@ -1757,9 +1834,9 @@ int main(int argc, char **argv)
 
 	window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 #ifndef DEBUG
-	gtk_window_set_title (GTK_WINDOW (window), "gtk TDT client v1.1");
+	gtk_window_set_title (GTK_WINDOW (window), "gtk TDT client v1.2");
 #else
-	gtk_window_set_title (GTK_WINDOW (window), "gtk TDT client v1.1 *** DEBUG ***");
+	gtk_window_set_title (GTK_WINDOW (window), "gtk TDT client v1.2 *** DEBUG ***");
 #endif
 	gtk_window_set_default_size (GTK_WINDOW (window), 850, 800);
 	da1 = gtk_drawing_area_new ();
@@ -1820,6 +1897,7 @@ int main(int argc, char **argv)
 	gtk_box_pack_start(GTK_BOX(v1), g_notebook, TRUE, TRUE, 1);
 	gtk_widget_show(g_notebook);
 
+	// [ rasters | spikes | sort | icms | save ]
 
 	// add a page for rasters
 	box1 = gtk_vbox_new(FALSE, 2);
@@ -1909,6 +1987,7 @@ int main(int argc, char **argv)
 	label = gtk_label_new("sort");
 	gtk_label_set_angle(GTK_LABEL(label), 90);
 	gtk_notebook_insert_page(GTK_NOTEBOOK(g_notebook), box1, label, 1);
+	// insert sort out of order
 
 //add page for sorting a single unit.
 	//box1 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
@@ -1923,11 +2002,10 @@ int main(int argc, char **argv)
 
 	g_autoThresholdSpin = mk_spinner("auto thresh, std", box1, g_autoThreshold,
 	                                 -10.0, 10.0, 0.05, autoThresholdSpinCB, 0);
+	
 	GtkWidget *bx3 = gtk_hbox_new (FALSE, 1);
 	gtk_box_pack_start (GTK_BOX (box1), bx3, FALSE, FALSE, 0);
-
 	mk_button("set selected", bx3, autoThresholdCB, GINT_TO_POINTER(1));
-
 	mk_button("set all", bx3, autoThresholdCB, GINT_TO_POINTER(2));
 
 	g_spikesColsSpin = mk_spinner("Columns", box1, g_spikesCols, 3, 32, 1,
@@ -1937,17 +2015,19 @@ int main(int argc, char **argv)
 	gtk_widget_show (box1);
 	label = gtk_label_new("spikes");
 	gtk_label_set_angle(GTK_LABEL(label), 90);
-	gtk_notebook_insert_page(GTK_NOTEBOOK(g_notebook), box1, label, 2);
+	gtk_notebook_insert_page(GTK_NOTEBOOK(g_notebook), box1, label, 1);
 
 
 	// add a page for icms
 	box1 = gtk_vbox_new(FALSE, 0);
 	mk_checkbox("enable artifact subtraction", box1,
 	            &g_enableArtifactSubtr, basic_checkbox_cb);
+	mk_checkbox("enable scale artifact", box1,
+				&g_enableScaleArtifact, basic_checkbox_cb);
 	mk_checkbox("train artifact templates", box1,
 	            &g_trainArtifactTempl, basic_checkbox_cb);
 	mk_button("clear artifact templates", box1, clearArtifactTemplCB, NULL);
-	g_numArtifactSpin = mk_spinner("artifact\nsubtraction\nsamples", box1, g_numArtifactSamps,
+	g_numArtifactSpin = mk_spinner("artifact\naverage\nsamples", box1, g_numArtifactSamps,
 	                               1e2, 1e5, 1, numArtifactCB, 0);
 	g_stimChanSpin = mk_spinner("stim channel", box1, g_stimChanDisp,
 	                            0, STIMCHAN-1, 1, stimChanDispCB, 0);
@@ -1957,6 +2037,9 @@ int main(int argc, char **argv)
 	            &g_enableArtifactBlanking, basic_checkbox_cb);
 	g_artifactBlankingSampsSpin = mk_spinner("artifact\nblanking\nsamples", box1,
 	                              g_artifactBlankingSamps, 0, 64, 1, artifactBlankingSampsCB, 0);
+
+	mk_checkbox("enable stim clock blanking", box1,
+	            &g_enableStimClockBlanking, basic_checkbox_cb);
 
 	// end icms page
 	gtk_widget_show(box1);
