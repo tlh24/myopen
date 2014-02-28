@@ -18,7 +18,7 @@ public:
 	i64		m_nsamples;				// number of examples in the average
 
 	// windex is where we are writing into m_avg (and m_now)
-	// rindex is where we can read from the buffer to subtract artifact 
+	// rindex is where we can read from the buffer to subtract artifact
 
 	float	m_now[RECCHAN *ARTBUF];	// the last captured artifact
 	// nb we keep this around not for computing
