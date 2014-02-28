@@ -1023,8 +1023,8 @@ void *po8_thread(void *)
 					unsigned int tmp = (unsigned short)(temp[(NCHAN+2)*numSamples+k]);	// stim pulse ids
 					tmp += (unsigned short)(temp[(NCHAN+3)*numSamples+k]) << 16;
 
-					if (tmp != 0)
-						printf("icms pulse %d\n", tmp);
+					//if (tmp != 0)
+					//	printf("icms pulse %d\n", tmp);
 
 					unsigned int tk = (unsigned short)(temp[NCHAN*numSamples+k]);
 					tk += (unsigned short)(temp[(NCHAN+1)*numSamples+k]) << 16;
@@ -1117,11 +1117,11 @@ void *po8_thread(void *)
 							double c0, c1, cov00, cov01, cov11, chisq;
 							double x[ARTBUF], y[ARTBUF];
 							double y_hat[ARTBUF], y_err[ARTBUF];
-							
+
 							for (int k=ridx; k<widx; k++) {
 								x[k] = g_artifact[j]->m_nsamples > 0 ?
-									(double)g_artifact[j]->m_avg[ch*ARTBUF+k] :
-									(double)g_artifact[j]->m_now[ch*ARTBUF+k];
+								       (double)g_artifact[j]->m_avg[ch*ARTBUF+k] :
+								       (double)g_artifact[j]->m_now[ch*ARTBUF+k];
 								y_hat[k] = (double)g_artifact[j]->m_avg[ch*ARTBUF+k]; // fall thru
 								y[k] = (double)g_artifact[j]->m_now[ch*ARTBUF+k];
 							}
@@ -1129,14 +1129,14 @@ void *po8_thread(void *)
 							// Now we want to scale the average artifact (m_avg) such
 							// that it is close to the current artifact (m_now).
 							// Do this linearly: Y = c_0 + c_1 X
-							// 
+							//
 							// If we are not scaling on the fly, y_hat is set to m_avg above
 							if (g_enableScaleArtifact && n > 2) {
 								gsl_fit_linear(&(x[ridx]), 1, &(y[ridx]), 1, n,
-									&c0, &c1, &cov00, &cov01, &cov11, &chisq);
+								               &c0, &c1, &cov00, &cov01, &cov11, &chisq);
 								for (int k=ridx; k<widx; k++) {
 									gsl_fit_linear_est(x[k], c0, c1, cov00, cov01,
-										cov11, &(y_hat[k]), &(y_err[k]));
+									                   cov11, &(y_hat[k]), &(y_err[k]));
 								}
 							}
 
@@ -1148,7 +1148,7 @@ void *po8_thread(void *)
 									temp[ch*numSamples + kk] = subtr;
 								}
 								if (g_enableArtifactBlanking &&
-									k < g_artifactBlankingSamps) {
+								    k < g_artifactBlankingSamps) {
 									temp[ch*numSamples + kk] = 0;
 								}
 								kk++;
@@ -2002,7 +2002,7 @@ int main(int argc, char **argv)
 
 	g_autoThresholdSpin = mk_spinner("auto thresh, std", box1, g_autoThreshold,
 	                                 -10.0, 10.0, 0.05, autoThresholdSpinCB, 0);
-	
+
 	GtkWidget *bx3 = gtk_hbox_new (FALSE, 1);
 	gtk_box_pack_start (GTK_BOX (box1), bx3, FALSE, FALSE, 0);
 	mk_button("set selected", bx3, autoThresholdCB, GINT_TO_POINTER(1));
@@ -2023,7 +2023,7 @@ int main(int argc, char **argv)
 	mk_checkbox("enable artifact subtraction", box1,
 	            &g_enableArtifactSubtr, basic_checkbox_cb);
 	mk_checkbox("enable scale artifact", box1,
-				&g_enableScaleArtifact, basic_checkbox_cb);
+	            &g_enableScaleArtifact, basic_checkbox_cb);
 	mk_checkbox("train artifact templates", box1,
 	            &g_trainArtifactTempl, basic_checkbox_cb);
 	mk_button("clear artifact templates", box1, clearArtifactTemplCB, NULL);
