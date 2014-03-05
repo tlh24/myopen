@@ -120,15 +120,16 @@ double g_minISI = 1.3; //ms
 int g_spikesCols = 16;
 
 
-gboolean g_enableArtifactSubtr = true;
-gboolean g_trainArtifactTempl = true;
-gboolean g_enableScaleArtifact = true;
+gboolean g_enableArtifactSubtr = false;
+gboolean g_trainArtifactTempl = false;
+gboolean g_enableScaleArtifact = false;
 int g_numArtifactSamps = 1e3; 	// number of artifacts to use to build template
 int g_stimChanDisp = 0;	// 0-15
-float g_artifactDispAtten = 20.f;
+float g_artifactDispAtten = 5.f;
 
 gboolean g_enableArtifactBlanking = true;
 int g_artifactBlankingSamps = 32;
+int g_artifactBlankingPreSamps = 16;
 
 gboolean g_enableStimClockBlanking = false;
 
@@ -156,6 +157,7 @@ GtkAdjustment *g_numArtifactSpin;
 GtkAdjustment *g_stimChanSpin;
 GtkAdjustment *g_artifactDispAttenSpin;
 GtkAdjustment *g_artifactBlankingSampsSpin;
+GtkAdjustment *g_artifactBlankingPreSampsSpin;
 GtkAdjustment *g_autoThresholdSpin;
 GtkAdjustment *g_spikesColsSpin;
 GtkAdjustment *g_zoomSpin;
@@ -1147,8 +1149,42 @@ void *po8_thread(void *)
 								if (g_enableArtifactSubtr) {
 									temp[ch*numSamples + kk] = subtr;
 								}
+								//if (g_enableArtifactBlanking &&
+								//    k >= g_artifactBlankingPreSamps &&
+								//    k <  g_artifactBlankingPreSamps+g_artifactBlankingSamps) {
+								//	temp[ch*numSamples + kk] = 0;
+								//}
+								//kk++;
+							}
+
+						}
+						//g_artifact[j]->m_rindex[z] += n;
+						//if (g_artifact[j]->m_rindex[z] >= ARTBUF)
+						//	g_artifact[j]->m_rindex[z] = -1;
+					}
+				}
+
+				// blank based on artifact (MUST HAPPEN LAST)
+				for (int j=0; j<STIMCHAN; j++) {
+					for (int z=0; z<NARTPTR; z++) {
+						i64 ridx = g_artifact[j]->m_rindex[z]; // read pointer
+						i64 widx = g_artifact[j]->m_windex[z]; // write pointer
+
+						if (ridx == -1)
+							break;
+
+						if  (widx == -1)
+							widx = ARTBUF;
+
+						size_t n = widx - ridx;
+
+						for (int ch=0; ch<RECCHAN; ch++) {
+
+							int kk = 0;
+							for (int k=ridx; k<widx; k++) {
 								if (g_enableArtifactBlanking &&
-								    k < g_artifactBlankingSamps) {
+								    k >= g_artifactBlankingPreSamps &&
+								    k <  g_artifactBlankingPreSamps+g_artifactBlankingSamps) {
 									temp[ch*numSamples + kk] = 0;
 								}
 								kk++;
@@ -1546,7 +1582,19 @@ static void artifactDispAttenCB(GtkWidget *, gpointer)
 }
 static void artifactBlankingSampsCB(GtkWidget *, gpointer)
 {
-	g_artifactBlankingSamps = (float)gtk_adjustment_get_value(g_artifactBlankingSampsSpin);
+	int x = (float)gtk_adjustment_get_value(g_artifactBlankingSampsSpin);
+	g_artifactBlankingSamps = (x + g_artifactBlankingPreSamps > ARTBUF) ?
+	                          ARTBUF - g_artifactBlankingPreSamps :
+	                          x;
+	gtk_adjustment_set_value(g_artifactBlankingSampsSpin, g_artifactBlankingSamps);
+}
+static void artifactBlankingPreSampsCB(GtkWidget *, gpointer)
+{
+	int x = (float)gtk_adjustment_get_value(g_artifactBlankingPreSampsSpin);
+	g_artifactBlankingPreSamps = (x + g_artifactBlankingSamps > ARTBUF) ?
+	                             ARTBUF - g_artifactBlankingSamps :
+	                             x;
+	gtk_adjustment_set_value(g_artifactBlankingPreSampsSpin, g_artifactBlankingPreSamps);
 }
 static void zoomSpinCB(GtkWidget *, gpointer )
 {
@@ -2035,8 +2083,10 @@ int main(int argc, char **argv)
 	                                     g_artifactDispAtten, 0.1, 100, 0.1, artifactDispAttenCB, 0);
 	mk_checkbox("enable artifact blanking", box1,
 	            &g_enableArtifactBlanking, basic_checkbox_cb);
+	g_artifactBlankingPreSampsSpin = mk_spinner("artifact\npre-blanking\nsamples", box1,
+	                                 g_artifactBlankingPreSamps, 0, 128, 1, artifactBlankingPreSampsCB, 0);
 	g_artifactBlankingSampsSpin = mk_spinner("artifact\nblanking\nsamples", box1,
-	                              g_artifactBlankingSamps, 0, 64, 1, artifactBlankingSampsCB, 0);
+	                              g_artifactBlankingSamps, 0, 128, 1, artifactBlankingSampsCB, 0);
 
 	mk_checkbox("enable stim clock blanking", box1,
 	            &g_enableStimClockBlanking, basic_checkbox_cb);

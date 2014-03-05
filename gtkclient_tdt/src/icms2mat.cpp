@@ -90,13 +90,13 @@ int main(int argn, char **argc)
 			        in.gcount(), (int) in.tellg());
 			exit(0);
 		}
-		if (sz > 65536) { // hardcoded for now xxx
+		if (sz > 131072) { // hardcoded for now xxx
 			fprintf(stderr, "single packet too long for buffer: %u.\n", sz);
-			break;
+			exit(0);
 		}
 
 		// read protobuf packet
-		char buf[65536]; // xxx
+		char buf[131072]; // xxx
 		in.read(buf, sz);
 		if (in.fail() || in.eof() || in.gcount() != sz) {
 			fprintf(stderr, "read protobuf packet failure\n");
@@ -107,9 +107,9 @@ int main(int argn, char **argc)
 		ICMS o;
 		o.Clear();
 		if (!o.ParseFromArray(buf, sz)) {
-			fprintf(stderr, "failed to parse protobuf packet %ld\n",
-			        packets+1);
-			exit(0);
+			fprintf(stderr, "failed to parse protobuf packet %ld (%d bytes). aborting here.\n",
+			        packets+1, sz);
+			break;
 		}
 
 		unsigned int key = o.stim_chan();
