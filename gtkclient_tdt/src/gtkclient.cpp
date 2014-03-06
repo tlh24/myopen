@@ -129,7 +129,7 @@ float g_artifactDispAtten = 5.f;
 
 gboolean g_enableArtifactBlanking = true;
 int g_artifactBlankingSamps = 32;
-int g_artifactBlankingPreSamps = 16;
+int g_artifactBlankingPreSamps = 32;
 
 gboolean g_enableStimClockBlanking = false;
 
@@ -1020,7 +1020,7 @@ void *po8_thread(void *)
 				g_ts.update(time, ticks, frame); //also updates the mmap file.
 				g_ts.m_dropped = (int)totalSamples - ticks;
 
-				// get icms times, fill icms buffers, // and subtract artifact
+				// get icms times, fill icms buffers
 				for (int k=0; k<numSamples; k++) {
 					unsigned int tmp = (unsigned short)(temp[(NCHAN+2)*numSamples+k]);	// stim pulse ids
 					tmp += (unsigned short)(temp[(NCHAN+3)*numSamples+k]) << 16;
@@ -1154,7 +1154,7 @@ void *po8_thread(void *)
 								//    k <  g_artifactBlankingPreSamps+g_artifactBlankingSamps) {
 								//	temp[ch*numSamples + kk] = 0;
 								//}
-								//kk++;
+								kk++;
 							}
 
 						}

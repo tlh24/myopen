@@ -1,7 +1,7 @@
 #ifndef __ARTIFACT_H__
 #define __ARTIFACT_H__
 
-#define ARTBUF	128	// 64 ~ 2.62 msec ; 96 ~ 3.93 msec ; 128 ~ 5.24 msec
+#define ARTBUF	160	// 64 ~ 2.62 msec ; 96 ~ 3.93 msec ; 128 ~ 5.24 msec
 #define NARTPTR	8 // number of artifact buffer pointers
 
 extern int g_spikesCols;
