@@ -7,6 +7,7 @@ using namespace google::protobuf::io;
 ICMSWriter::ICMSWriter()
 {
 	m_enabled = false;
+	m_fn.assign("");
 }
 
 ICMSWriter::~ICMSWriter()
@@ -17,10 +18,11 @@ ICMSWriter::~ICMSWriter()
 
 bool ICMSWriter::open(const char *fn)
 {
-
 	m_os.open(fn, std::ofstream::binary | std::ofstream::trunc);
 	if (m_os.fail())
 		return false;
+
+	m_fn.assign(fn);
 
 	m_w = 0;
 	m_r = 0;
@@ -34,17 +36,24 @@ bool ICMSWriter::open(const char *fn)
 
 bool ICMSWriter::close()
 {
-	if (!write())
-		return false;
-	m_enabled = false;
+	if (enabled()) {
+		if (!write())
+			return false;
+		m_enabled = false;
 
-	m_os.flush();
-	if (m_os.fail())
-		return false;
-	m_os.close();
+		m_os.flush();
+		if (m_os.fail())
+			return false;
+		m_os.close();
 
-	m_w = 0;
-	m_r = 0;
+		m_fn.clear();
+
+		m_w = 0;
+		m_r = 0;
+
+		fprintf(stdout,"ICMSWriter: stopped logging to file\n");
+	}
+
 	return true;
 }
 
@@ -64,7 +73,7 @@ bool ICMSWriter::add(ICMS *o)
 	*u++ = sz;
 	o->SerializeToArray((void *)u, sz);
 	char *cp = (char *)tmp;
-	for (int i=0; i<sz+8; i++) {
+	for (unsigned int i=0; i<sz+8; i++) {
 		m_buf[w & ICMS_MASK] = cp[i];
 		w++;
 	}
@@ -107,4 +116,9 @@ float ICMSWriter::capacity()
 long ICMSWriter::bytes()
 {
 	return m_r * sizeof(char);
+}
+
+string ICMSWriter::filename()
+{
+	return m_fn;
 }
