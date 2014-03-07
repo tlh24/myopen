@@ -22,6 +22,7 @@ protected:
 	std::atomic<long> m_w;       // atomic write pointer
 	std::atomic<long> m_r;       // atomic read pointer
 	std::atomic<bool> m_enabled; // are we writing?
+	std::string m_fn; // the file name
 	ofstream m_os; // object for writing to file
 
 public:
@@ -49,6 +50,9 @@ public:
 
 	// returns the number of bytes written
 	long bytes();
+
+	// returns the name of the file we are writing to
+	string filename();
 
 	const char *name() {
 		return "ICMS Writer v2";

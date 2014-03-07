@@ -93,7 +93,7 @@ TimeSync 	g_ts; //keeps track of ticks (TDT time)
 WfWriter	g_wfwriter;
 GLuint 		g_base;            // base display list for the font set.
 
-Artifact *g_artifact[STIMCHAN];
+Artifact *g_artifact[STIMCHANCOMBOS];
 ICMSWriter g_icmswriter;
 
 
@@ -162,7 +162,8 @@ GtkAdjustment *g_autoThresholdSpin;
 GtkAdjustment *g_spikesColsSpin;
 GtkAdjustment *g_zoomSpin;
 GtkAdjustment *g_rasterSpanSpin;
-GtkWidget *g_fileSizeLabel;
+GtkWidget *g_spikeFileSizeLabel;
+GtkWidget *g_icmsFileSizeLabel;
 GtkWidget *g_notebook;
 int			g_uiRecursion = 0; //prevents programmatic changes to the UI
 // from causing commands to be sent to the headstage.
@@ -838,13 +839,31 @@ static gboolean rotate(gpointer user_data)
 
 	string s = g_ts.getInfo();
 	char str[256];
+
 	snprintf(str, 256, "\npo8e interval: %f (ms)\n", (double)(gettime() - g_lastPo8eTime)*1000.0);
 	s += string(str);
 	gtk_label_set_text(GTK_LABEL(g_infoLabel), s.c_str());
-	snprintf(str, 256, "spikes: %.2f MB\ticms: %.2f MB",
-	         (double)g_wfwriter.bytes()/1e6,
-	         (double)g_icmswriter.bytes()/1e6);
-	gtk_label_set_text(GTK_LABEL(g_fileSizeLabel), str);
+
+	size_t n;
+
+	if (g_wfwriter.enabled()) {
+		n = g_wfwriter.filename().find_last_of("/");
+
+		snprintf(str, 256, "%s: %.2f MB",
+		         g_wfwriter.filename().substr(n+1).c_str(),
+		         (double)g_wfwriter.bytes()/1e6);
+		gtk_label_set_text(GTK_LABEL(g_spikeFileSizeLabel), str);
+	}
+
+	if (g_icmswriter.enabled()) {
+		n = g_icmswriter.filename().find_last_of("/");
+
+		snprintf(str, 256, "%s: %.2f MB",
+		         g_icmswriter.filename().substr(n+1).c_str(),
+		         (double)g_icmswriter.bytes()/1e6);
+		gtk_label_set_text(GTK_LABEL(g_icmsFileSizeLabel), str);
+	}
+
 	return TRUE;
 }
 void saveState()
@@ -871,7 +890,7 @@ void destroy(GtkWidget *, gpointer)
 	cgDestroyContext(myCgContext);
 	for (int i=0; i<NCHAN; i++)
 		delete g_c[i];
-	for (int i=0; i<STIMCHAN; i++)
+	for (int i=0; i<STIMCHANCOMBOS; i++)
 		delete g_artifact[i];
 	gtk_main_quit();
 }
@@ -1025,31 +1044,31 @@ void *po8_thread(void *)
 					unsigned int tmp = (unsigned short)(temp[(NCHAN+2)*numSamples+k]);	// stim pulse ids
 					tmp += (unsigned short)(temp[(NCHAN+3)*numSamples+k]) << 16;
 
+					if (tmp >= STIMCHANCOMBOS) // 2^STIMCHAN
+						printf("GOT ICMS PULSE ON UNEXPECTEDLY HIGH CHANNEL!\n");
+
 					//if (tmp != 0)
 					//	printf("icms pulse %d\n", tmp);
 
 					unsigned int tk = (unsigned short)(temp[NCHAN*numSamples+k]);
 					tk += (unsigned short)(temp[(NCHAN+1)*numSamples+k]) << 16;
 
-					for (int j=0; j<STIMCHAN; j++) {
-
-						// identify stim pulses
-						// unsigned int id = pow(2,j);
-						unsigned int id = (uint) (1 << j); // 2^j
-						if (tmp & id) {
-							int z = 0;
-							for (int y=0; y<NARTPTR; y++) {
-								if (g_artifact[j]->m_windex[y] == -1) {
-									g_artifact[j]->m_windex[y] = 0;
-									g_artifact[j]->m_rindex[y] = 0;
-									z++;
-									break;
-								}
-							}
-							if (z == NARTPTR) {
-								printf("ERR: STIM ARTIFACTS OVERLAP!\n");
+					// if stimulation, ready subtraction buffer pointers
+					if (tmp > 0) {
+						int z = 0;
+						for (int y=0; y<NARTPTR; y++) {
+							if (g_artifact[tmp]->m_windex[y] == -1) {
+								g_artifact[tmp]->m_windex[y] = 0;
+								g_artifact[tmp]->m_rindex[y] = 0;
+								z++;
+								break;
 							}
 						}
+						if (z >= NARTPTR)
+							printf("ERR: STIM ARTIFACTS OVERLAP!\n");
+					}
+
+					for (int j=0; j<STIMCHANCOMBOS; j++) {
 
 						// update artifact-subtraction buffers
 						for (int z=0; z<NARTPTR; z++) {
@@ -1072,21 +1091,26 @@ void *po8_thread(void *)
 								if (g_artifact[j]->m_windex[z] >= ARTBUF) {
 
 									if (g_icmswriter.enabled()) {
-										ICMS o;
-										o.set_ts(g_ts.getTime(tk-ARTBUF));
-										o.set_tick(tk-ARTBUF);
-										o.set_stim_chan(j+1); // 1-indexed
+										for (int m=0; m<STIMCHAN; m++) {
+											int id = pow(2,m);
+											if (j & id) {
+												ICMS o;
+												o.set_ts(g_ts.getTime(tk-ARTBUF));
+												o.set_tick(tk-ARTBUF);
+												o.set_stim_chan(m+1); // 1-indexed
 
-										if (g_saveICMSWF) {
-											for (int ch=0; ch<RECCHAN; ch++) {
-												ICMS_artifact *art = o.add_artifact();
-												art->set_rec_chan(ch+1); //1-indexed
-												for (int x=0; x<ARTBUF; x++) {
-													art->add_sample(g_artifact[j]->m_now[ch*ARTBUF+x]);
+												if (g_saveICMSWF) {
+													for (int ch=0; ch<RECCHAN; ch++) {
+														ICMS_artifact *art = o.add_artifact();
+														art->set_rec_chan(ch+1); //1-indexed
+														for (int x=0; x<ARTBUF; x++) {
+															art->add_sample(g_artifact[j]->m_now[ch*ARTBUF+x]);
+														}
+													}
 												}
+												g_icmswriter.add(&o);
 											}
 										}
-										g_icmswriter.add(&o);
 									}
 
 									g_artifact[j]->m_windex[z] = -1;
@@ -1101,7 +1125,8 @@ void *po8_thread(void *)
 					}
 				}
 
-				for (int j=0; j<STIMCHAN; j++) {
+				// subtract stimulation artifact buffers
+				for (int j=0; j<STIMCHANCOMBOS; j++) {
 					for (int z=0; z<NARTPTR; z++) {
 						i64 ridx = g_artifact[j]->m_rindex[z]; // read pointer
 						i64 widx = g_artifact[j]->m_windex[z]; // write pointer
@@ -1165,7 +1190,7 @@ void *po8_thread(void *)
 				}
 
 				// blank based on artifact (MUST HAPPEN LAST)
-				for (int j=0; j<STIMCHAN; j++) {
+				for (int j=0; j<STIMCHANCOMBOS; j++) {
 					for (int z=0; z<NARTPTR; z++) {
 						i64 ridx = g_artifact[j]->m_rindex[z]; // read pointer
 						i64 widx = g_artifact[j]->m_windex[z]; // write pointer
@@ -1286,7 +1311,7 @@ void *po8_thread(void *)
 								g_c[k]->addWf(wf, unit, time, true);
 								g_c[k]->updateISI(unit, g_sample - numSamples + m);
 								g_lastSpike[k][unit] = g_sample;
-								if (g_wfwriter.m_enable) {
+								if (g_wfwriter.enabled()) {
 									if (unit > 0 || g_saveUnsorted) {
 										pak.time = time + (double)m/24414.0625;
 										pak.ticks = wfticks;
@@ -1565,7 +1590,7 @@ static void basic_checkbox_cb(GtkWidget *button, gpointer p)
 }
 static void clearArtifactTemplCB(GtkWidget *, gpointer)
 {
-	for (int i=0; i<STIMCHAN; i++)
+	for (int i=0; i<STIMCHANCOMBOS; i++)
 		g_artifact[i]->clearArtifacts();
 }
 static void numArtifactCB(GtkWidget *, gpointer)
@@ -1707,6 +1732,13 @@ static void mk_button(const char *label, GtkWidget *container,
 }
 static void openSaveSpikesFile(GtkWidget *, gpointer parent_window)
 {
+	char buf[256];
+	string f;
+	if (getcwd(buf, sizeof(buf)))
+		f = buf;
+	else
+		f.assign("");
+
 	GtkWidget *dialog;
 	dialog = gtk_file_chooser_dialog_new ("Save Spikes File",
 	                                      (GtkWindow *)parent_window,
@@ -1716,7 +1748,8 @@ static void openSaveSpikesFile(GtkWidget *, gpointer parent_window)
 	                                      NULL);
 	gtk_file_chooser_set_do_overwrite_confirmation(
 	        GTK_FILE_CHOOSER (dialog), TRUE);
-	gtk_file_chooser_set_filename (GTK_FILE_CHOOSER (dialog),"spikes.bin");
+	gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog),f.c_str());
+	gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (dialog),"spikes_1.dat");
 	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
 		char *filename;
 		filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
@@ -1727,6 +1760,13 @@ static void openSaveSpikesFile(GtkWidget *, gpointer parent_window)
 }
 static void openSaveICMSFile(GtkWidget *, gpointer parent_window)
 {
+	char buf[256];
+	string f;
+	if (getcwd(buf, sizeof(buf)))
+		f = buf;
+	else
+		f.assign("");
+
 	GtkWidget *dialog;
 	dialog = gtk_file_chooser_dialog_new ("Save ICMS File",
 	                                      (GtkWindow *)parent_window,
@@ -1736,7 +1776,8 @@ static void openSaveICMSFile(GtkWidget *, gpointer parent_window)
 	                                      NULL);
 	gtk_file_chooser_set_do_overwrite_confirmation(
 	        GTK_FILE_CHOOSER (dialog), TRUE);
-	gtk_file_chooser_set_filename (GTK_FILE_CHOOSER (dialog),"icms.bin");
+	gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog),f.c_str());
+	gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (dialog),"icms_1.pbd");
 	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
 		char *filename;
 		filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
@@ -1872,7 +1913,7 @@ int main(int argc, char **argv)
 	}
 	for (int i=0; i<NCHAN; i++)
 		g_c[i] = new Channel(i, &ms);
-	for (int i=0; i<STIMCHAN; i++)
+	for (int i=0; i<STIMCHANCOMBOS; i++)
 		g_artifact[i] = new Artifact();
 
 	//g_dropped = 0;
@@ -1921,7 +1962,7 @@ int main(int argc, char **argv)
 
 		//channel spinner.
 		g_channelSpin[i] = mk_spinner("ch", bx3,
-		                              g_channel[i], 0, NCHAN, 1,
+		                              g_channel[i], 0, NCHAN-1, 1,
 		                              channelSpinCB, i);
 		//right of that, a gain spinner. (need to update depending on ch)
 		g_gainSpin[i] = mk_spinner("gain", bx3,
@@ -2078,7 +2119,7 @@ int main(int argc, char **argv)
 	g_numArtifactSpin = mk_spinner("artifact\naverage\nsamples", box1, g_numArtifactSamps,
 	                               1e2, 1e5, 1, numArtifactCB, 0);
 	g_stimChanSpin = mk_spinner("stim channel", box1, g_stimChanDisp,
-	                            0, STIMCHAN-1, 1, stimChanDispCB, 0);
+	                            0, STIMCHANCOMBOS-1, 1, stimChanDispCB, 0);
 	g_artifactDispAttenSpin = mk_spinner("artifact\ndisplay\nattenuation", box1,
 	                                     g_artifactDispAtten, 0.1, 100, 0.1, artifactDispAttenCB, 0);
 	mk_checkbox("enable artifact blanking", box1,
@@ -2177,10 +2218,17 @@ int main(int argc, char **argv)
 	gtk_box_pack_start (GTK_BOX (v1), bx, TRUE, TRUE, 0);
 
 	bx = gtk_hbox_new (FALSE, 3);
-	g_fileSizeLabel = gtk_label_new ("KB");
-	gtk_misc_set_alignment (GTK_MISC (g_fileSizeLabel), 0, 0);
-	gtk_box_pack_start (GTK_BOX (bx), g_fileSizeLabel, FALSE, FALSE, 0);
-	gtk_widget_show(g_fileSizeLabel);
+	g_spikeFileSizeLabel = gtk_label_new ("");
+	gtk_misc_set_alignment (GTK_MISC (g_spikeFileSizeLabel), 0, 0);
+	gtk_box_pack_start (GTK_BOX (bx), g_spikeFileSizeLabel, FALSE, FALSE, 0);
+	gtk_widget_show(g_spikeFileSizeLabel);
+	gtk_box_pack_start (GTK_BOX (v1), bx, TRUE, TRUE, 0);
+
+	bx = gtk_hbox_new (FALSE, 3);
+	g_icmsFileSizeLabel = gtk_label_new ("");
+	gtk_misc_set_alignment (GTK_MISC (g_icmsFileSizeLabel), 0, 0);
+	gtk_box_pack_start (GTK_BOX (bx), g_icmsFileSizeLabel, FALSE, FALSE, 0);
+	gtk_widget_show(g_icmsFileSizeLabel);
 	gtk_box_pack_start (GTK_BOX (v1), bx, TRUE, TRUE, 0);
 
 	gtk_paned_add1(GTK_PANED(paned), v1);
