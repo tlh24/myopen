@@ -17,6 +17,8 @@ classdef LivePlot < handle
         hFig
         hAxes
         hLines
+        
+        AxisLimits = []
 
         id = tempname;
     end
@@ -92,8 +94,12 @@ classdef LivePlot < handle
                 axLim(1) = min(dataRange(:));
                 axLim(2) = max(dataRange(:));
                 yLimits = axLim;
-                %ylim(obj.hAxes,yLimits.*1.02);
-                ylim(obj.hAxes,[-5 5]);
+                if isempty(obj.AxisLimits)
+                    ylim(obj.hAxes,yLimits.*1.02);
+                else
+                    ylim(obj.hAxes,obj.AxisLimits);
+                end
+                %ylim(obj.hAxes,[-5 5]);
                 tLast = clock;
             end
         end
