@@ -22,7 +22,6 @@ classdef PhidgetAccel < handle
     % 06Feb2012 Armiger: Created
     % 11Feb2013 Armiger: Added angle measurement and interface for
     %                    guiSignalViewer
-    
     properties (SetAccess = private)
         libraryName = 'phidget21';
         headerName = 'phidget21Matlab.h';
@@ -31,7 +30,11 @@ classdef PhidgetAccel < handle
         AccelMax;
         AccelMin;
         
+        NumChannels;
+        
         hPhid;
+        
+        isInitialized = false;
     end
     methods
         function obj = PhidgetAccel
@@ -42,6 +45,10 @@ classdef PhidgetAccel < handle
         end
         function initialize(obj)
             
+            if obj.isInitialized
+                fprintf('Device already initialized\n');
+                return
+            end
             if ~libisloaded(obj.libraryName)
                 pathName = fileparts(which('Inputs.PhidgetAccel'));
                 loadlibrary(obj.libraryName,fullfile(pathName,obj.headerName));
@@ -86,7 +93,9 @@ classdef PhidgetAccel < handle
                     fprintf('Accel min axis %d = %f\n',i,obj.AccelMin);
                 end
             end
-            
+
+            obj.isInitialized = true;
+            obj.NumChannels = 3;
         end
         function accelValue = getData(obj)
                         
@@ -132,10 +141,39 @@ classdef PhidgetAccel < handle
             
             unloadlibrary(obj.libraryName);
             disp('Library unloaded')
+            obj.isInitialized = false;
+        end
+        function preview(obj)
+            
+            hP = LivePlot(3,100,{'AccX','AccY','AccZ'});
+            
+            StartStopForm([]);
+            while StartStopForm
+                a = obj.getData;
+                hP.putdata(a);
+                fprintf('AccX = %6.2f AccY = %6.2f AccZ = %6.2f \n',a);
+                drawnow
+            end
+            
+        end
+        function previewAngles(obj)
+            % Test Phidget device and return angle measurements
+            
+            hP = LivePlot(6,100,{'XY','YX','XZ','ZX','YZ','ZY'});
+            hP.AxisLimits = [-185 185];
+
+            StartStopForm([]);
+            while StartStopForm()
+                angles = getAngle(obj);
+                hP.putdata(angles);
+                fprintf('[ XY: %6.1f YX: %6.1f | XZ: %6.1f ZX: %6.1f | YZ: %6.1f ZY: %6.1f ]\n',angles);
+                pause(0.02);
+            end
+            
         end
     end
     methods (Static = true)
-        function [newData t] = Test
+        function [newData, t] = Test
             % Test Phidget device and return the true sample rate (since
             % library may be called faster but return duplicate samples
             
