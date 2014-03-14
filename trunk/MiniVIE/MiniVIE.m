@@ -1,4 +1,21 @@
 classdef MiniVIE < Common.MiniVieObj
+    % Sample user interface demonstrating the MiniVIE API functionality.
+    % The basic user interface allows selecting an input source, selecting
+    % a classifier, and a presentiaton which displays limb commands in some
+    % way.  Optional modules are the training interface and the plant
+    % module which control data training interfaces and limb dynamics
+    % respectively
+    %
+    % % First time setup creates a set of buttons on the shortcut menu
+    % MiniVIE.createShortcuts()
+    %
+    % % Session startup (or use the shortcut button: "MiniVIE"
+    % MiniVIE.configurePath()
+    %
+    % % Launch the UI:
+    % obj = MiniVIE
+    % 
+    
     properties
         SignalSource
         SignalClassifier
