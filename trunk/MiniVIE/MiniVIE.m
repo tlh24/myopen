@@ -64,7 +64,7 @@ classdef MiniVIE < Common.MiniVieObj
             set(obj.hg.popups(MiniVIE.SA),'Value',1);
             set(obj.hg.popups(MiniVIE.TRAINING),'String',{'None','Simple Trainer','Mini Guitar Hero','Bar Trainer','Motion Trainer'});
             set(obj.hg.popups(MiniVIE.TRAINING),'Value',1);
-            set(obj.hg.popups(MiniVIE.PRESENTATION),'String',{'None','MiniV','Breakout','AGH','MplVulcanX','MplScenarioMud','MSMS_ADL','MSMS Tasks'});
+            set(obj.hg.popups(MiniVIE.PRESENTATION),'String',{'None','MiniV','Breakout','AGH','MplVulcanX','MplScenarioMud','MSMS_ADL','MSMS Tasks','Online Retraining Demo'});
             set(obj.hg.popups(MiniVIE.PRESENTATION),'Value',1);
         end
         function setupFigure(obj)
@@ -754,6 +754,12 @@ classdef MiniVIE < Common.MiniVieObj
                         h.update();
                         h.Verbose = 0;
                         start(h.Timer);
+                    case 'Online Retraining Demo'
+                        h = Scenarios.OnlineRetrainer;
+                        h.initialize(obj.SignalSource,obj.SignalClassifier,obj.TrainingData);
+                        h.update();
+                        h.Verbose = 1;
+                        start(h.Timer);
                     otherwise
                         % None
                         h = [];
@@ -954,9 +960,6 @@ classdef MiniVIE < Common.MiniVieObj
             set(hLegend,'Location','NorthEastOutside');
             
         end % pbPlotPca
-        
-        
-        
         function pbAdjustGains(obj)
             GUIs.guiGainAdjust(obj);
         end
@@ -1075,6 +1078,9 @@ classdef MiniVIE < Common.MiniVieObj
             obj.TrainingInterface.initialize(...
                 obj.SignalSource,obj.SignalClassifier,obj.TrainingData);
             
+            obj.Presentation = Scenarios.OnlineRetrainer;
+            obj.Presentation.initialize(...
+                obj.SignalSource,obj.SignalClassifier,obj.TrainingData);
         end
         function obj = go
             

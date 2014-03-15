@@ -27,6 +27,11 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
         
         TrainingData; % Online retraininer defined by having access to and adding data to training data
     end
+    events
+        NextClass
+        PreviousClass
+        DataCountChange
+    end
     
     methods
         function initialize(obj,SignalSource,SignalClassifier,TrainingData)
@@ -46,6 +51,9 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
             
             if ~isempty(obj.hJoystick) && ~isempty(SignalClassifier)
                 setupFigure(obj);
+                %obj.hGui = figure
+                
+                
             end
             
             % Set default class to last class (typically No Movement)
@@ -209,6 +217,7 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
                 obj.LastButton = buttonId;
                 doTrain = false;
                 doAddData = false;
+                notify(obj,'PreviousClass'); % Broadcast notice of event
                 return
             end
             if buttonNext && ...
@@ -222,6 +231,7 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
                 obj.LastButton = buttonId;
                 doTrain = false;
                 doAddData = false;
+                notify(obj,'NextClass'); % Broadcast notice of event
                 return
             end
             
@@ -231,6 +241,7 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
                 fprintf('[%s] %d samples disabled for class: %d\n',mfilename,numDisabled,clearClass);
                 doTrain = true;
                 doAddData = false;
+                notify(obj,'DataCountChange'); % Broadcast notice of event  -- change to DataCountChange
                 return
             end
             
@@ -247,6 +258,9 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
             
             % Add data if training button is pressed
             doAddData = trainingButtonPressed;
+            if doAddData
+                notify(obj,'DataCountChange'); % Broadcast notice of event
+            end
             
             % Train if button released or held too long
             if trainingButtonReleased || ...
@@ -314,6 +328,11 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
                 end
                 
                 updateFigure(obj,voteDecision,obj.CurrentClass);
+                
+                if (obj.Verbose > 0 && strcmp(class(obj),'Scenarios.OnlineRetrainer')) %#ok<STISA> Not using isa since we want an exact match
+                    fprintf('\n');
+                end
+                
             catch ME
                 UiTools.display_error_stack(ME);
             end
