@@ -4,7 +4,13 @@ pctGrasp = min(1, pctGrasp);
 pctGrasp = max(0, pctGrasp);
 A = zeros(29,1);
 
-if ~ischar(graspID)
+if isempty(graspID)
+    warning('Received empty grasp ID. Default to Relaxed Hand State');
+    graspID = 'Relaxed';
+elseif ~isa(graspID,'Controls.GraspTypes')
+    warning('Received grasp ID as number. Default to Relaxed Hand State');
+    graspID = 'Relaxed';
+elseif ~ischar(graspID)
     % Convert enumeration type to string
     graspID = char(graspID);
 end

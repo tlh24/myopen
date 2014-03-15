@@ -77,6 +77,9 @@ classdef ScenarioBase < Common.MiniVieObj
         function start(obj)
             % && ishandle(obj.Timer) <-- this is always false
             if ~isempty(obj.Timer) && strcmpi(obj.Timer.Running,'off')
+                % call the update funciton once manually.  
+                % if there is an error this will help debug
+                obj.update();  
                 start(obj.Timer);
             end
         end
