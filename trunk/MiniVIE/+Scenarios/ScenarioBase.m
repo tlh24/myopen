@@ -64,8 +64,9 @@ classdef ScenarioBase < Common.MiniVieObj
             fprintf('[%s] Setting timer refresh rate to %4.2f s\n',mfilename,period);
             obj.Timer.Period = period;
             
+            % Load previous angles.  Does this work with the joint state
+            % machine?
             jointAngles = UiTools.load_temp_file(obj.TempFileName);
-            
             if isempty(jointAngles)
                 obj.JointAnglesDegrees = zeros(size(action_bus_definition));
             else

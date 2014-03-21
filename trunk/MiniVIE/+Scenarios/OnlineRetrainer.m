@@ -50,10 +50,14 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
             initialize@Scenarios.ScenarioBase(obj,SignalSource,SignalClassifier);
             
             if ~isempty(obj.hJoystick) && ~isempty(SignalClassifier)
-                setupFigure(obj);
-                %obj.hGui = figure
-                
-                
+                % Text based UI
+                %setupFigure(obj);
+
+                % User Driven UI
+                obj.hGui = UserDrivenTrainingInterface(obj.TrainingData);
+                obj.hGui.setTrainingSource(obj);
+                obj.Verbose = 0;
+                %obj.start;
             end
             
             % Set default class to last class (typically No Movement)
@@ -327,7 +331,7 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
                     
                 end
                 
-                updateFigure(obj,voteDecision,obj.CurrentClass);
+                %updateFigure(obj,voteDecision,obj.CurrentClass);
                 
                 if (obj.Verbose > 0 && strcmp(class(obj),'Scenarios.OnlineRetrainer')) %#ok<STISA> Not using isa since we want an exact match
                     fprintf('\n');
@@ -431,7 +435,10 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
             
         end
         function close(obj)
-            close@Scenarios.ScenarioBase(obj); % Call superclass update method
+            close@Scenarios.ScenarioBase(obj); % Call superclass close method
+%             if ~isempty(obj.hGui)
+%                 obj.hGui.close();
+%             end
             obj.TrainingData.saveTrainingData;
         end
     end

@@ -28,10 +28,17 @@ classdef ArmStateModel < handle
             obj.structState(2).Name = 'Shoulder AA';
             obj.structState(3).Name = 'Shoulder ROT';
             obj.structState(4).Name = 'Elbow';
+            obj.structState(4).Max = 135 * pi / 180;
             obj.structState(4).Min = 0;
             obj.structState(5).Name = 'Wrist ROT';
+            obj.structState(5).Max = +90 * pi / 180;
+            obj.structState(5).Min = -90 * pi / 180;
             obj.structState(6).Name = 'Wrist DEV';
+            obj.structState(6).Max = +30 * pi / 180;
+            obj.structState(6).Min = -30 * pi / 180;
             obj.structState(7).Name = 'Wrist FE';
+            obj.structState(7).Max = +90 * pi / 180;
+            obj.structState(7).Min = -90 * pi / 180;
             
             obj.structState(8).Name = 'Roc Hand';
             obj.structState(8).Max = 1;
@@ -48,6 +55,20 @@ classdef ArmStateModel < handle
         end
         function value = getValues(obj)
             value = [obj.structState(:).Value];
+        end
+        function setAllValues(obj,values)
+            % set the state for manual positioning
+            storedValues = [obj.structState(:).Value];
+            assert(isequal(size(values(:)),size(storedValues(:))),...
+                'Error input values must match stored value size');
+            
+            for i = 1:length(values)
+                obj.structState(i).Value = values(i);
+            end
+        end
+        function setValue(obj,id,value)
+            % set the state for manual positioning of a single value
+            obj.structState(id).Value = value;
         end
         function upperArmValues = getUpperArmValues(obj)
             upperArmValues = [obj.structState(1:7).Value];
