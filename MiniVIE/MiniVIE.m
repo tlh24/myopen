@@ -376,13 +376,25 @@ classdef MiniVIE < Common.MiniVieObj
                     % Enable buttons
                     set(obj.hg.SignalSourceButtons(:),'Enable','on');
                     
+%                     % Set window size
+%                     numSamples = 250;
+%                     fprintf('Input Source Window Size = %d\n',numSamples);
+%                     h.NumSamples = numSamples;
+                    
                     % Setup filters and remaining properties
                     obj.println('Adding Filters',1);
 
-                    Fs = h.SampleFrequency;
+                    % Parameters
+                    % Ref Hargove 2014 comparison of real-tim controlability
+                    Fs = h.SampleFrequency;                     % 1000 Hz
+                    h.addfilter(Inputs.HighPass(20,3,Fs));      % 20Hz 3rd order butter
+                    
+                    % EMG 250 ms @ 20Hz
+                    
+                    
                     
                     % Disabled high pass for IMES Demo
-                    h.addfilter(Inputs.HighPass(15,3,Fs));
+                    h.addfilter(Inputs.HighPass(20,3,Fs));  % Ref Hargove 2014 comparison of real-tim controlability
                     
                     %                     h.addfilter(Inputs.HighPass(10,8,Fs));
                     %                     %h.addfilter(Inputs.LowPass(350,8,Fs));
@@ -455,7 +467,7 @@ classdef MiniVIE < Common.MiniVieObj
                     
                     h.NumMajorityVotes = 0;
                     
-                    NumSamplesPerWindow = 200;
+                    NumSamplesPerWindow = 250;
                     fprintf('Setting Window Size to: %d\n',NumSamplesPerWindow);
                     h.NumSamplesPerWindow = NumSamplesPerWindow;
                     
@@ -979,8 +991,18 @@ classdef MiniVIE < Common.MiniVieObj
             end
         end
         function pbAssessment(obj)
-            guiClassifierAssessment(obj.SignalSource,obj.SignalClassifier,...
-                obj.TrainingData,obj.FilePrefix);
+            % Select which type of user assessment is to be performed
+            q = questdlg('Select Assessment','Assessment','TAC','MotionTester','Cancel','TAC');
+            switch q
+                case 'TAC'
+                    GUIs.guiTargetAchievementControl(obj.SignalSource,obj.SignalClassifier,...
+                        obj.TrainingData,obj.FilePrefix);
+                case 'MotionTester'
+                    guiClassifierAssessment(obj.SignalSource,obj.SignalClassifier,...
+                        obj.TrainingData,obj.FilePrefix);
+                otherwise
+                    return
+            end
         end
     end
     methods (Static = true)
@@ -1043,13 +1065,15 @@ classdef MiniVIE < Common.MiniVieObj
             MiniVIE.configurePath
             
             obj.SignalSource = Inputs.SignalSimulator();
-            obj.SignalSource.addfilter(Inputs.HighPass());
-            obj.SignalSource.addfilter(Inputs.LowPass());
+            obj.SignalSource.addfilter(Inputs.HighPass(20,3,1000));
+            %obj.SignalSource.addfilter(Inputs.LowPass());
             %obj.SignalSource.addfilter();
             obj.SignalSource.NumSamples = 2000;
             obj.SignalSource.initialize();
             
             obj.TrainingData = PatternRecognition.TrainingData;
+            obj.TrainingData.loadTrainingData('SimBasic.trainingData');
+            
             obj.SignalClassifier = SignalAnalysis.Lda();
             obj.SignalClassifier.initialize(obj.TrainingData);
             
@@ -1067,9 +1091,11 @@ classdef MiniVIE < Common.MiniVieObj
             
             obj.SignalClassifier.NumMajorityVotes = 0;
             
-            NumSamplesPerWindow = 200;
+            NumSamplesPerWindow = 250;
             fprintf('Setting Window Size to: %d\n',NumSamplesPerWindow);
             obj.SignalClassifier.NumSamplesPerWindow = NumSamplesPerWindow;
+            
+            obj.SignalClassifier.train();
             
             obj.TrainingInterface = PatternRecognition.SimpleTrainer();
             obj.TrainingInterface.NumRepetitions = 3;
@@ -1079,8 +1105,7 @@ classdef MiniVIE < Common.MiniVieObj
                 obj.SignalSource,obj.SignalClassifier,obj.TrainingData);
             
             obj.Presentation = Scenarios.OnlineRetrainer;
-            obj.Presentation.initialize(...
-                obj.SignalSource,obj.SignalClassifier,obj.TrainingData);
+            %obj.Presentation.initialize(obj.SignalSource,obj.SignalClassifier,obj.TrainingData);
         end
         function obj = go
             
