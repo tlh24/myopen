@@ -30,6 +30,7 @@
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_fit.h>
+#include <gsl/gsl_spline.h>
 #include <boost/multi_array.hpp>
 #include <map>
 #include <string>
@@ -39,7 +40,6 @@
 #include <libgen.h>
 
 #include "PO8e.h"
-#include "../firmware_stage9_mf/memory.h"
 
 #include "gettime.h"
 #include "cgVertexShader.h"
@@ -54,6 +54,11 @@
 #include "matStor.h"
 #include "wfwriter.h"
 #include "jacksnd.h"
+#include "filter.h"
+#include "spikebuffer.h"
+
+#include "analog.pb.h"
+#include "analogwriter.h"
 
 #include "icms.pb.h"
 #include "icmswriter.h"
@@ -79,23 +84,29 @@ class Artifact;
 float	g_fbuf[NFBUF][NSAMP*3]; //continuous waveform. range [-1 .. 1]. For drawing.
 i64		g_fbufW; //where to write to (always increment)
 i64		g_fbufR; //display thread reads from here - copies to mem
-float	g_obuf[NCHAN][256]; //looping samples of the waveform.  for sorting. [-1 .. 1]
-i64		g_sample = 0;
+
+SpikeBuffer g_spikebuf[NCHAN];
+
 i64		g_lastSpike[NCHAN][NUNIT];
 unsigned int 	g_nsamp = 4096*6; //given the current level of zoom (1 = 4096 samples), how many samples to update?
+
 float 	g_sbuf[NSORT][NCHAN *NSBUF*2]; //2 units, 96 channels, 1024 spikes, 2 floats / spike.
 float	g_rasterSpan = 10.f; // %seconds.
 i64	g_sbufW[NSORT];
 i64	g_sbufR[NSORT];
 Channel 	*g_c[NCHAN];
 FiringRate	g_fr[NCHAN][NSORT];
-TimeSync 	g_ts; //keeps track of ticks (TDT time)
+TimeSync 	g_ts(SRATE_HZ); //keeps track of ticks (TDT time)
 WfWriter	g_wfwriter;
 GLuint 		g_base;            // base display list for the font set.
 
-Artifact *g_artifact[STIMCHANCOMBOS];
+AnalogWriter g_analogwriter;
+
+Artifact *g_artifact[STIMCHAN];
 ICMSWriter g_icmswriter;
 
+FilterButterBand_24k_300_5000 g_bandpass[NCHAN];
+FilterButterLow_24k_3000 g_lowpass[NCHAN];
 
 bool g_die = false;
 double g_pause = -1.0;
@@ -119,13 +130,13 @@ long double g_lastPo8eTime = 0.0;
 double g_minISI = 1.3; //ms
 int g_spikesCols = 16;
 
+gboolean g_filterNeurons = true;
 
 gboolean g_enableArtifactSubtr = false;
 gboolean g_trainArtifactTempl = false;
-gboolean g_enableScaleArtifact = false;
-int g_numArtifactSamps = 1e3; 	// number of artifacts to use to build template
+int g_numArtifactSamps = 1e4; 	// number of artifacts to use to build template
 int g_stimChanDisp = 0;	// 0-15
-float g_artifactDispAtten = 5.f;
+float g_artifactDispAtten = 0.1f;
 
 gboolean g_enableArtifactBlanking = true;
 int g_artifactBlankingSamps = 32;
@@ -133,8 +144,10 @@ int g_artifactBlankingPreSamps = 32;
 
 gboolean g_enableStimClockBlanking = false;
 
-float g_unsortrate = 0.0; //the rate that unsorted WFs get through.
-float	g_autoThreshold = -3.5; //standard deviations. default negative, w/e.
+gboolean g_enableSplines = true;
+gboolean g_enableSubsampleAlignment = true;
+
+float g_autoThreshold = -3.5; //standard deviations. default negative, w/e.
 
 int 	g_mode = MODE_RASTERS;
 int	g_drawmode = GL_LINE_STRIP;
@@ -146,26 +159,14 @@ GLuint g_vbo2[2] = {0,0}; //for spikes.
 
 //global labels..
 GtkWidget *g_infoLabel;
-GtkAdjustment *g_channelSpin[4] = {0,0,0,0};
-GtkAdjustment *g_gainSpin[4] = {0,0,0,0};
-GtkAdjustment *g_apertureSpin[8] = {0,0,0,0};
-GtkAdjustment *g_thresholdSpin[4];
-GtkAdjustment *g_centeringSpin[4];
-GtkAdjustment *g_unsortRateSpin;
-GtkAdjustment *g_minISISpin;
-GtkAdjustment *g_numArtifactSpin;
-GtkAdjustment *g_stimChanSpin;
-GtkAdjustment *g_artifactDispAttenSpin;
-GtkAdjustment *g_artifactBlankingSampsSpin;
-GtkAdjustment *g_artifactBlankingPreSampsSpin;
-GtkAdjustment *g_autoThresholdSpin;
-GtkAdjustment *g_spikesColsSpin;
-GtkAdjustment *g_zoomSpin;
-GtkAdjustment *g_rasterSpanSpin;
+GtkWidget *g_channelSpin[4] = {0,0,0,0};
+GtkWidget *g_gainSpin[4] = {0,0,0,0};
+GtkWidget *g_apertureSpin[8] = {0,0,0,0};
 GtkWidget *g_spikeFileSizeLabel;
 GtkWidget *g_icmsFileSizeLabel;
+GtkWidget *g_analogFileSizeLabel;
 GtkWidget *g_notebook;
-int			g_uiRecursion = 0; //prevents programmatic changes to the UI
+int g_uiRecursion = 0; //prevents programmatic changes to the UI
 // from causing commands to be sent to the headstage.
 
 i64 mod2(i64 a, i64 b)
@@ -175,7 +176,7 @@ i64 mod2(i64 a, i64 b)
 }
 void gsl_matrix_to_mat(gsl_matrix *x, const char *fname)
 {
-	//write a gsl matrix to a .mat file.
+	// write a gsl matrix to a .mat file.
 	// does not free the matrix.
 	mat_t *mat;
 	mat = Mat_CreateVer(fname,NULL,MAT_FT_MAT73);
@@ -328,13 +329,6 @@ static gint motion_notify_event( GtkWidget *,
 			}
 		} else {
 			g_c[g_channel[g_polyChan]]->mouse(g_cursPos);
-			//need to update g_thresholdSpin and g_centeringSpin
-			gtk_adjustment_set_value(
-			        g_thresholdSpin[g_polyChan],
-			        g_c[g_channel[g_polyChan]]->getThreshold());
-			gtk_adjustment_set_value(
-			        g_centeringSpin[g_polyChan],
-			        g_c[g_channel[g_polyChan]]->getCentering());
 		}
 	}
 	if ((state & GDK_BUTTON1_MASK) && (g_mode == MODE_SPIKES)) {
@@ -394,13 +388,15 @@ static gint button_press_event( GtkWidget *,
 				for (int i=3; i>0; i--)
 					g_channel[i] = g_channel[i-1];
 				g_channel[0] = h;
+#ifdef DEBUG
 				printf("channel switched to %d\n", g_channel[0]);
+#endif
 				g_mode = MODE_SORT;
-				gtk_notebook_set_current_page(GTK_NOTEBOOK(g_notebook), 1);
+				gtk_notebook_set_current_page(GTK_NOTEBOOK(g_notebook), MODE_SORT);
 			}
 			//update the UI elements.
 			for (int i=0; i<4; i++) {
-				gtk_adjustment_set_value(g_channelSpin[i], (double)g_channel[i]);
+				gtk_spin_button_set_value(GTK_SPIN_BUTTON(g_channelSpin[i]), g_channel[i]);
 				updateChannelUI(i);
 			}
 		}
@@ -534,18 +530,18 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 		//see glDrawElements for indexed arrays
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 		//draw seconds / ms label here.
-		for (int i=0; i<(int)g_nsamp; i+=24414/5) {
+		for (int i=0; i<(int)g_nsamp; i+=SRATE_HZ/5) {
 			float x = 2.f*i/g_nsamp-1.f + 2.f/g_viewportSize[0];
 			float y = 1.f - 13.f*2.f/g_viewportSize[1];
 			glRasterPos2f(x,y);
 			char buf[64];
-			snprintf(buf, 64, "%3.2f", i/24414.f);
+			snprintf(buf, 64, "%3.2f", i/SRATE_HZ);
 			glPrint(buf);
 		}
 		if (g_showContGrid) {
 			glColor4f(0.f, 0.8f, 0.75f, 0.35);
 			glBegin(GL_LINES);
-			for (int i=0; i<(int)g_nsamp; i+=24414/10) {
+			for (int i=0; i<(int)g_nsamp; i+=SRATE_HZ/10) {
 				float x = 2.f*i/g_nsamp-1.f;
 				glVertex2f(x, 0.f);
 				glVertex2f(x, 1.f);
@@ -779,11 +775,10 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 		glInfo glInfo;
 		glInfo.getInfo();
 		//glInfo.printSelf();
-		if (glInfo.isExtensionSupported("GL_ARB_vertex_buffer_object")) {
+		if (glInfo.isExtensionSupported("GL_ARB_vertex_buffer_object"))
 			printf("Video card supports GL_ARB_vertex_buffer_object.\n");
-		} else {
+		else
 			printf("Video card does NOT support GL_ARB_vertex_buffer_object.\n");
-		}
 		g_vbo1Init = true;
 		//okay, want one vertex buffer (4now): draw the samples.
 		//fill the buffer with temp data.
@@ -839,7 +834,6 @@ static gboolean rotate(gpointer user_data)
 
 	string s = g_ts.getInfo();
 	char str[256];
-
 	snprintf(str, 256, "\npo8e interval: %f (ms)\n", (double)(gettime() - g_lastPo8eTime)*1000.0);
 	s += string(str);
 	gtk_label_set_text(GTK_LABEL(g_infoLabel), s.c_str());
@@ -854,7 +848,6 @@ static gboolean rotate(gpointer user_data)
 		         (double)g_wfwriter.bytes()/1e6);
 		gtk_label_set_text(GTK_LABEL(g_spikeFileSizeLabel), str);
 	}
-
 	if (g_icmswriter.enabled()) {
 		n = g_icmswriter.filename().find_last_of("/");
 
@@ -862,6 +855,14 @@ static gboolean rotate(gpointer user_data)
 		         g_icmswriter.filename().substr(n+1).c_str(),
 		         (double)g_icmswriter.bytes()/1e6);
 		gtk_label_set_text(GTK_LABEL(g_icmsFileSizeLabel), str);
+	}
+	if (g_analogwriter.enabled()) {
+		n = g_analogwriter.filename().find_last_of("/");
+
+		snprintf(str, 256, "%s: %.2f MB",
+		         g_analogwriter.filename().substr(n+1).c_str(),
+		         (double)g_analogwriter.bytes()/1e6);
+		gtk_label_set_text(GTK_LABEL(g_analogFileSizeLabel), str);
 	}
 
 	return TRUE;
@@ -890,7 +891,7 @@ void destroy(GtkWidget *, gpointer)
 	cgDestroyContext(myCgContext);
 	for (int i=0; i<NCHAN; i++)
 		delete g_c[i];
-	for (int i=0; i<STIMCHANCOMBOS; i++)
+	for (int i=0; i<STIMCHAN; i++)
 		delete g_artifact[i];
 	gtk_main_quit();
 }
@@ -914,13 +915,24 @@ void *icmswrite_thread(void *)
 	}
 	return NULL;
 }
+void *analogwrite_thread(void *)
+{
+	while (!g_die) {
+		if (g_analogwriter.write()) //if it can write, it will.
+			usleep(1e4); //poll qicker.
+		else
+			usleep(1e5);
+	}
+	return NULL;
+}
 void *po8_thread(void *)
 {
 	PO8e *card = NULL;
 	bool simulate = false;
-	int bufmax = 16384;	// 2^14 > 10000
+	int bufmax = 10000;	// 2^14 > 10000
 
 	while (!g_die) {
+		printf("PO8e API Version %s\n", revisionString());
 		int totalcards = PO8e::cardCount();
 		int conn_cards = 0;
 		printf("Found %d PO8e card(s) in the system.\n", totalcards);
@@ -939,6 +951,7 @@ void *po8_thread(void *)
 				if (!card->startCollecting()) {
 					printf("  startCollecting() failed with: %d\n",
 					       card->getLastError());
+					card->flushBufferedData();
 					card->stopCollecting();
 					printf("  releasing card0\n");
 					PO8e::releaseCard(card);
@@ -967,6 +980,7 @@ void *po8_thread(void *)
 		}
 		short *temp = new short[bufmax*(nchan+4)];  // 2^14 samples * 2 bytes/sample * (nChannels+time+stim)
 		short *temptemp = new short[bufmax];
+		float *tempfloat = new float[bufmax*NCHAN];
 		while ((simulate || conn_cards > 0) && !g_die) {
 			if (!simulate && !card->waitForDataReady()) { // waits ~ 1200 hours ;-)
 				// this occurs when the rpvdsex circuit is idled.
@@ -994,16 +1008,21 @@ void *po8_thread(void *)
 					break;
 				}
 				if (numSamples > 0) {
+					if (numSamples > bufmax) {
+						printf("samplesReady() returned too many samples for buffer (buffer wrap?): %d\n",
+						       numSamples);
+						numSamples = bufmax;
+					}
 					card->readBlock(temp, numSamples);
 					card->flushBufferedData(numSamples);
 					totalSamples += numSamples;
 				}
 			} else { //simulate!
 				long double now = gettime();
-				numSamples = (int)((now - starttime)*24414.0625 - totalSamples);
+				numSamples = (int)((now - starttime)*SRATE_HZ - totalSamples);
 				if (numSamples >= 250) {
 					numSamples = 250;
-					totalSamples = (now - starttime)*24414.0625;
+					totalSamples = (now - starttime)*SRATE_HZ;
 				}
 				float scale = sin(sinSamples/4e4);
 				for (int i=0; i<numSamples; i++) {
@@ -1015,18 +1034,24 @@ void *po8_thread(void *)
 						temp[k*numSamples +i] = temptemp[i];
 					}
 				}
-				//last part of the buffer is just TDT ticks (most recent -> least delay?)
+				// last part of the buffer is just TDT ticks (most recent -> least delay?)
+				// and the stim-chan id
 				for (int i=0; i<numSamples; i++) {
 					int r = (int)(sinSamples +i);
 					temp[NCHAN*numSamples     +i] = r       & 0xffff;
 					temp[(NCHAN+1)*numSamples +i] = (r>>16) & 0xffff;
+
+					int s = 0;
+					temp[(NCHAN+2)*numSamples +i] = s       & 0xffff;
+					temp[(NCHAN+3)*numSamples +i] = (s>>16) & 0xffff;
+
 				}
 				totalSamples += numSamples;
 				sinSamples += numSamples;
 				if (sinSamples > 4e4*2*3.1415926) sinSamples -= 4e4*2*3.1415926;
 				usleep(70);
 			}
-			if (numSamples > 0 && numSamples < bufmax) {
+			if (numSamples > 0 && numSamples <= bufmax) {
 				bytes += numSamples * nchan * bps;
 
 				long double time = gettime();
@@ -1044,79 +1069,78 @@ void *po8_thread(void *)
 					unsigned int tmp = (unsigned short)(temp[(NCHAN+2)*numSamples+k]);	// stim pulse ids
 					tmp += (unsigned short)(temp[(NCHAN+3)*numSamples+k]) << 16;
 
-					if (tmp >= STIMCHANCOMBOS) // 2^STIMCHAN
-						printf("GOT ICMS PULSE ON UNEXPECTEDLY HIGH CHANNEL!\n");
-
-					//if (tmp != 0)
-					//	printf("icms pulse %d\n", tmp);
+					if (tmp != 0)
+						printf("icms pulse %d\n", tmp);
 
 					unsigned int tk = (unsigned short)(temp[NCHAN*numSamples+k]);
 					tk += (unsigned short)(temp[(NCHAN+1)*numSamples+k]) << 16;
 
-					// if stimulation, ready subtraction buffer pointers
-					if (tmp > 0) {
-						int z = 0;
-						for (int y=0; y<NARTPTR; y++) {
-							if (g_artifact[tmp]->m_windex[y] == -1) {
-								g_artifact[tmp]->m_windex[y] = 0;
-								g_artifact[tmp]->m_rindex[y] = 0;
-								z++;
-								break;
+					for (int j=0; j<STIMCHAN; j++) {
+
+						// identify stim pulses
+						// unsigned int id = pow(2,j);
+						unsigned int id = (uint) (1 << j); // 2^j
+						if (tmp & id) {
+							int z = 0;
+							for (int y=0; y<NARTPTR; y++) {
+								if (g_artifact[j]->m_windex[y] == -1) {
+									g_artifact[j]->m_windex[y] = 0;
+									g_artifact[j]->m_rindex[y] = 0;
+									z++;
+									break;
+								}
+							}
+							if (z == NARTPTR) {
+								printf("ERR: STIM ARTIFACTS OVERLAP!\n");
 							}
 						}
-						if (z >= NARTPTR)
-							printf("ERR: STIM ARTIFACTS OVERLAP!\n");
-					}
-
-					for (int j=0; j<STIMCHANCOMBOS; j++) {
 
 						// update artifact-subtraction buffers
 						for (int z=0; z<NARTPTR; z++) {
 							i64 idx = g_artifact[j]->m_windex[z];
 							if (idx != -1) {
 								for (int ch=0; ch<RECCHAN; ch++) {
-									short samp = temp[ch*numSamples + k];
-									float f = samp / 32767.f;
-									float alpha = 1.f/(g_artifact[j]->m_nsamples+1.f);
-									float curr = g_artifact[j]->m_avg[ch*ARTBUF+idx];
-									// iterative update of average
-									float next = curr + alpha*(f-curr);
-									g_artifact[j]->m_now[ch*ARTBUF+idx] = f; // for saving
-									if ((g_trainArtifactTempl) &&
-									    (g_artifact[j]->m_nsamples < g_numArtifactSamps)) {
-										g_artifact[j]->m_avg[ch*ARTBUF+idx] = next;
-									}
+									float f = temp[ch*numSamples+k] / 32767.f;
+									g_artifact[j]->m_now[ch*ARTBUF+idx] = f;
 								}
 								g_artifact[j]->m_windex[z]++;
 								if (g_artifact[j]->m_windex[z] >= ARTBUF) {
 
 									if (g_icmswriter.enabled()) {
-										for (int m=0; m<STIMCHAN; m++) {
-											int id = pow(2,m);
-											if (j & id) {
-												ICMS o;
-												o.set_ts(g_ts.getTime(tk-ARTBUF));
-												o.set_tick(tk-ARTBUF);
-												o.set_stim_chan(m+1); // 1-indexed
+										ICMS o;
+										o.set_ts(g_ts.getTime(tk-ARTBUF));
+										o.set_tick(tk-ARTBUF);
+										o.set_stim_chan(j+1); // 1-indexed
 
-												if (g_saveICMSWF) {
-													for (int ch=0; ch<RECCHAN; ch++) {
-														ICMS_artifact *art = o.add_artifact();
-														art->set_rec_chan(ch+1); //1-indexed
-														for (int x=0; x<ARTBUF; x++) {
-															art->add_sample(g_artifact[j]->m_now[ch*ARTBUF+x]);
-														}
-													}
+										if (g_saveICMSWF) {
+											for (int ch=0; ch<RECCHAN; ch++) {
+												ICMS_artifact *art = o.add_artifact();
+												art->set_rec_chan(ch+1); //1-indexed
+												for (int x=0; x<ARTBUF; x++) {
+													art->add_sample(g_artifact[j]->m_now[ch*ARTBUF+x]);
 												}
-												g_icmswriter.add(&o);
 											}
 										}
+										g_icmswriter.add(&o);
 									}
 
 									g_artifact[j]->m_windex[z] = -1;
+
 									if ((g_trainArtifactTempl) &&
 									    (g_artifact[j]->m_nsamples < g_numArtifactSamps)) {
 										g_artifact[j]->m_nsamples++;
+
+										// for iterative update of average
+										float alpha = 1.f/g_artifact[j]->m_nsamples;
+
+										for (int ch=0; ch<RECCHAN; ch++) {
+											for (int x=0; x<ARTBUF; x++) {
+												float cur = g_artifact[j]->m_wav[ch*ARTBUF+x];
+												float now = g_artifact[j]->m_now[ch*ARTBUF+x];
+												float nex = cur + alpha*(now-cur);
+												g_artifact[j]->m_wav[ch*ARTBUF+x] = nex;
+											}
+										}
 									}
 								}
 							}
@@ -1125,8 +1149,7 @@ void *po8_thread(void *)
 					}
 				}
 
-				// subtract stimulation artifact buffers
-				for (int j=0; j<STIMCHANCOMBOS; j++) {
+				for (int j=0; j<STIMCHAN; j++) {
 					for (int z=0; z<NARTPTR; z++) {
 						i64 ridx = g_artifact[j]->m_rindex[z]; // read pointer
 						i64 widx = g_artifact[j]->m_windex[z]; // write pointer
@@ -1137,60 +1160,39 @@ void *po8_thread(void *)
 						if  (widx == -1)
 							widx = ARTBUF;
 
-						size_t n = widx - ridx;
-
 						for (int ch=0; ch<RECCHAN; ch++) {
 
-							double c0, c1, cov00, cov01, cov11, chisq;
-							double x[ARTBUF], y[ARTBUF];
-							double y_hat[ARTBUF], y_err[ARTBUF];
-
-							for (int k=ridx; k<widx; k++) {
-								x[k] = g_artifact[j]->m_nsamples > 0 ?
-								       (double)g_artifact[j]->m_avg[ch*ARTBUF+k] :
-								       (double)g_artifact[j]->m_now[ch*ARTBUF+k];
-								y_hat[k] = (double)g_artifact[j]->m_avg[ch*ARTBUF+k]; // fall thru
-								y[k] = (double)g_artifact[j]->m_now[ch*ARTBUF+k];
-							}
-
-							// Now we want to scale the average artifact (m_avg) such
-							// that it is close to the current artifact (m_now).
-							// Do this linearly: Y = c_0 + c_1 X
-							//
-							// If we are not scaling on the fly, y_hat is set to m_avg above
-							if (g_enableScaleArtifact && n > 2) {
-								gsl_fit_linear(&(x[ridx]), 1, &(y[ridx]), 1, n,
-								               &c0, &c1, &cov00, &cov01, &cov11, &chisq);
-								for (int k=ridx; k<widx; k++) {
-									gsl_fit_linear_est(x[k], c0, c1, cov00, cov01,
-									                   cov11, &(y_hat[k]), &(y_err[k]));
-								}
-							}
+							double artifact[ARTBUF];
+							for (int k=ridx; k<widx; k++)
+								artifact[k] =  (double)g_artifact[j]->m_wav[ch*ARTBUF+k];
 
 							int kk = 0;
 							for (int k=ridx; k<widx; k++) {
 								float f = temp[ch*numSamples + kk] / 32767.f;
-								short subtr = (short)((f-y_hat[k])*32767.f);
+								short subtr = (short)((f-artifact[k])*32767.f);
 								if (g_enableArtifactSubtr) {
 									temp[ch*numSamples + kk] = subtr;
 								}
-								//if (g_enableArtifactBlanking &&
-								//    k >= g_artifactBlankingPreSamps &&
-								//    k <  g_artifactBlankingPreSamps+g_artifactBlankingSamps) {
-								//	temp[ch*numSamples + kk] = 0;
-								//}
 								kk++;
 							}
-
 						}
-						//g_artifact[j]->m_rindex[z] += n;
-						//if (g_artifact[j]->m_rindex[z] >= ARTBUF)
-						//	g_artifact[j]->m_rindex[z] = -1;
 					}
 				}
 
-				// blank based on artifact (MUST HAPPEN LAST)
-				for (int j=0; j<STIMCHANCOMBOS; j++) {
+				// optionally filter the neural data
+				for (int k=0; k<NCHAN; k++) {
+					for (int i=0; i<numSamples; i++) {
+						float samp = temp[k*numSamples + i]/32767.f;
+						if (g_filterNeurons)
+							g_lowpass[k].Proc(&samp, &tempfloat[k*numSamples+i], 1);
+						else
+							tempfloat[k*numSamples+i] = samp;
+					}
+
+				}
+
+				// blank based on artifact (must happen after filtering
+				for (int j=0; j<STIMCHAN; j++) {
 					for (int z=0; z<NARTPTR; z++) {
 						i64 ridx = g_artifact[j]->m_rindex[z]; // read pointer
 						i64 widx = g_artifact[j]->m_windex[z]; // write pointer
@@ -1210,7 +1212,7 @@ void *po8_thread(void *)
 								if (g_enableArtifactBlanking &&
 								    k >= g_artifactBlankingPreSamps &&
 								    k <  g_artifactBlankingPreSamps+g_artifactBlankingSamps) {
-									temp[ch*numSamples + kk] = 0;
+									tempfloat[ch*numSamples + kk] = 0.f;
 								}
 								kk++;
 							}
@@ -1222,16 +1224,19 @@ void *po8_thread(void *)
 					}
 				}
 
-				// blank based on the stim clock
+				// blank based on the stim clock (must happen last)
 				for (int k=0; k<numSamples; k++) {
 					unsigned int tmp = (unsigned short)(temp[(NCHAN+4)*numSamples+k]);	// stim clock
 
 					if (tmp && g_enableStimClockBlanking) {
 						for (int ch=0; ch<RECCHAN; ch++) {
-							temp[ch*numSamples + k] = 0;
+							tempfloat[ch*numSamples + k] = 0;
 						}
 					}
 				}
+
+				Analog ac;
+				ac.set_chan(g_channel[0]+1);	// 1-indexed
 
 				// copy the data over to g_fbuf for display (broadband trace)
 				// input data is scaled from TDT so that 32767 = 10mV.
@@ -1240,29 +1245,39 @@ void *po8_thread(void *)
 				for (int k=0; k<NFBUF; k++) {
 					int h = g_channel[k];
 					float gain = g_c[h]->getGain();
+
 					for (int i=0; i<numSamples; i++) {
-						short samp = temp[h*numSamples + i];
-						float f = gain * samp / 32767.f;
+						float f = tempfloat[h*numSamples+i] * gain;
 						g_fbuf[k][((g_fbufW+i) % g_nsamp)*3 + 1] = f;
-						//g_fbuf[k][(g_fbufW % g_nsamp)*3 + 1] = 0; --sets the color.
 						if (k==0 && i<256)
 							audio[i] = f;
+
+						if (k==0) {
+							ac.add_sample(f/gain);	// no need to gain it
+							unsigned int tk = (unsigned short)(temp[NCHAN*numSamples+i]);
+							tk += (unsigned short)(temp[(NCHAN+1)*numSamples+i]) << 16;
+							ac.add_tick(tk);
+							ac.add_ts(g_ts.getTime(tk));
+						}
 					}
 				}
+				if (g_analogwriter.enabled())
+					g_analogwriter.add(&ac);
+
 #ifdef JACK
 				jackAddSamples(&audio[0], &audio[0], numSamples);
 #endif
 				g_fbufW += numSamples;
 
 				// copy to the sorting buffers, wrapped.
+				for ( int i=0; i<numSamples; i++) {
+					unsigned int tk = (unsigned short)(temp[NCHAN*numSamples+i]);
+					tk += (unsigned short)(temp[(NCHAN+1)*numSamples+i]) << 16;
+					for (int k=0; k<NCHAN; k++) {
+						// 1 = +10mV; range = [-1 1] here.
+						float f = tempfloat[k*numSamples + i] * 0.5f;
+						g_spikebuf[k].addSample(tk, f);
 
-				int oldo = g_sample & 255;
-				for (int k=0; k<NCHAN; k++) {
-					for ( int i=0; i<numSamples; i++) {
-						short samp = temp[k*numSamples + i];
-						float f = samp / 32767.f; 	// no gain?
-						g_obuf[k][(oldo+i) & 255] = f;
-						//1 = +10mV; range = [-1 1] here.
 						//update the channel standard deviations, too.
 						double m = g_c[k]->m_mean;
 						g_c[k]->m_var *= 0.999998;
@@ -1272,79 +1287,122 @@ void *po8_thread(void *)
 						g_c[k]->m_mean = m;
 					}
 				}
-				g_sample += numSamples;
 
-				//sort -- see if samples pass threshold.  if so, copy.
-				wfpak pak;
-				float wf[32];
+				// sort -- see if samples pass threshold.  if so, copy.
+				double wflo[NWFSAMP+2];
+				double tklo[NWFSAMP+2];
+
+				double wfhi[NWFSAMPUP+8];
+				double tkhi[NWFSAMPUP+8];
+
+				gsl_interp_accel *spline_acc = gsl_interp_accel_alloc();
+				gsl_spline *spline;
+				if (g_enableSplines)
+					spline = gsl_spline_alloc(gsl_interp_cspline, NWFSAMP+2);
+				else
+					spline = gsl_spline_alloc(gsl_interp_linear, NWFSAMP+2);
+
 				for (int k=0; k<NCHAN && !g_die; k++) {
-					float threshold = g_c[k]->getThreshold(); //1 -> 10mV.
-					int centering = g_c[k]->getCentering();
-					for (int m=0; m<numSamples; m++) {
-						int o = oldo - centering + m - 1;
-						o &= 255;
-						float a = g_obuf[k][o];
-						float b = g_obuf[k][(o+1)&255];
-						//normal template-threshold sorting for now. boring, but known.
-						if ((threshold > 0 && (a <= threshold && b > threshold))
-						    || (threshold < 0 && (a >= threshold && b < threshold))) {
-							for (int g=0; g<32; g++) {
-								wf[g] = g_obuf[k][(oldo+g+m-32) & 255] * 0.5; //range [-0.5 0.5]
-							}
-							int unit = 0; //unsorted.
-							//compare to template.
-							for (int u=1; u>=0; u--) {
-								float sum = 0;
-								for (int j=0; j<32; j++) {
-									float r = wf[j] - g_c[k]->m_template[u][j];
-									sum += r*r;
+					float threshold = g_c[k]->getThreshold(); // 1 -> 10mV.
+					int centering = (float)NWFSAMP - g_c[k]->getCentering()*(float)NWFSAMP/(float)NWFSAMPUP;
+
+					while (g_spikebuf[k].getSpike(tklo,wflo,NWFSAMP+2, threshold, centering)) {
+
+						// fill in tkhi
+						tkhi[0] = tklo[0];
+						double dt = (tklo[NWFSAMP+1]-tklo[0])/(NWFSAMPUP+7);
+						for (int i=0; i<(NWFSAMPUP+7); i++)
+							tkhi[i+1] = tkhi[i] + dt;
+						tkhi[NWFSAMPUP+7] = tklo[NWFSAMP+1];
+
+						gsl_spline_init(spline, tklo, wflo, NWFSAMP+2);
+
+						for (int i=0; i<(NWFSAMPUP+8); i++) {
+							wfhi[i] = gsl_spline_eval(spline, tkhi[i], spline_acc);
+						}
+
+						int dx = 0;
+						if (g_enableSubsampleAlignment) {
+
+							int c = (NWFSAMP+2-centering)*(float)NWFSAMPUP/(float)NWFSAMP;
+							int x0 = c - 4;
+							int x1 = c + 4;
+							for (int i=x0; i<=x1; i++) {
+								float aa = wfhi[i];
+								float bb = wfhi[i+1];
+								if ((threshold > 0 && (aa <= threshold && bb > threshold))
+								    || (threshold < 0 && (aa >= threshold && bb < threshold))) {
+									c = i;
 								}
-								sum /= 32;
-								if (sum < g_c[k]->getAperture(u))
-									unit = u+1;
 							}
-							//check if this exceeds minimum ISI.
-							double wfticks = g_sample - numSamples + m + g_ts.m_dropped;
-							// wfticks is indexed to the start of the waveform.
-							if (g_sample - g_lastSpike[k][unit] > g_minISI*24.4140625) {
-								//need to more precisely calulate spike time here.
-								g_c[k]->addWf(wf, unit, time, true);
-								g_c[k]->updateISI(unit, g_sample - numSamples + m);
-								g_lastSpike[k][unit] = g_sample;
-								if (g_wfwriter.enabled()) {
-									if (unit > 0 || g_saveUnsorted) {
-										pak.time = time + (double)m/24414.0625;
-										pak.ticks = wfticks;
-										pak.channel = k;
-										pak.unit = unit;
-										pak.len = 32;
-										float gain2 = 2.f * 32767.f;
-										for (int g=0; g<32; g++) {
-											pak.wf[g] = (short)(wf[g]*gain2); //should be in original units.
-										}
-										g_wfwriter.add(&pak);
+							dx = (NWFSAMP+2-centering)*(float)NWFSAMPUP/(float)NWFSAMP - c;
+						}
+
+						float wf[NWFSAMPUP];
+						unsigned int tk;
+						for (int i=0; i<NWFSAMPUP; i++) {
+							wf[i] = (float)wfhi[i+4+dx];
+						}
+						tk = (unsigned int)tkhi[4+dx];	// start of waveform
+
+						int unit = 0; //unsorted.
+						//compare to template.
+						for (int u=1; u>=0; u--) {
+							float sum = 0;
+							for (int j=0; j<NWFSAMPUP; j++) {
+								float r = wf[j] - g_c[k]->m_template[u][j];
+								sum += r*r;
+							}
+							sum /= NWFSAMPUP;
+							if (sum < g_c[k]->getAperture(u))
+								unit = u+1;
+						}
+
+						// check if this exceeds minimum ISI.
+						// wftick is indexed to the start of the waveform.
+						if (tk - g_lastSpike[k][unit] > g_minISI*SRATE_KHZ) {
+							long double the_time = g_ts.getTime(tk);
+							//need to more precisely calulate spike time here.
+							g_c[k]->addWf(wf, unit, the_time, true);
+							g_c[k]->updateISI(unit, tk);
+							g_lastSpike[k][unit] = tk;
+							if (g_wfwriter.enabled()) {
+								if (unit > 0 || g_saveUnsorted) {
+									wfpak pak;
+									pak.time = the_time;
+									pak.ticks = tk;
+									pak.channel = k;
+									pak.unit = unit;
+									pak.len = NWFSAMPUP;
+									float gain2 = 2.f * 32767.f;
+									for (int g=0; g<NWFSAMPUP; g++) {
+										pak.wf[g] = (short)(wf[g]*gain2); //should be in original units.
 									}
+									g_wfwriter.add(&pak);
 								}
-								if (unit > 0 && unit <=2) {
-									int uu = unit-1;
-									g_fr[k][uu].add(time + (double)m/24414.0625);
-									i64 w = g_sbufW[uu] % (i64)(sizeof(g_sbuf[0])/8);
-									g_sbuf[uu][w*2+0] = (float)(time);
-									g_sbuf[uu][w*2+1] = (float)k;
-									g_sbufW[uu]++;
-								}
-							} else {
-								g_c[k]->m_isiViolations++;
 							}
+							if (unit > 0 && unit <=2) {
+								int uu = unit-1;
+								g_fr[k][uu].add(the_time);
+								i64 w = g_sbufW[uu] % (i64)(sizeof(g_sbuf[0])/8);
+								g_sbuf[uu][w*2+0] = (float)(the_time);
+								g_sbuf[uu][w*2+1] = (float)k;
+								g_sbufW[uu]++;
+							}
+						} else {
+							g_c[k]->m_isiViolations++;
 						}
 					}
 				}
+				gsl_spline_free(spline);
+				gsl_interp_accel_free(spline_acc);
 			}
 			frame++;
 		}
 		//delete buffers since we have dynamically allocated;
 		delete[] temp;
 		delete[] temptemp;
+		delete[] tempfloat;
 		printf("\n");
 		sleep(1);
 	}
@@ -1376,7 +1434,9 @@ void *mmap_thread(void *)
 	volatile unsigned short *bin = (unsigned short *)mmh->m_addr;
 	mmh->prinfo();
 	fifoHelp *pipe_out = new fifoHelp("/tmp/gtkclient_out.fifo");
+	pipe_out->prinfo();
 	fifoHelp *pipe_in = new fifoHelp("/tmp/gtkclient_in.fifo");
+	pipe_in->prinfo();
 	int frame = 0;
 	bin[NCHAN*2*nlags] = 0;
 	bin[NCHAN*2*nlags+1] = 0;
@@ -1420,7 +1480,7 @@ static gboolean chanscan(gpointer)
 		for (int k=0; k<4; k++) {
 			g_channel[k] = base + k*32;
 			g_channel[k] %= NCHAN;
-			gtk_adjustment_set_value(g_channelSpin[k], (double)g_channel[k]);
+			gtk_spin_button_set_value(GTK_SPIN_BUTTON(g_channelSpin[k]), (double)g_channel[k]);
 		}
 		g_uiRecursion--;
 		//setChans();
@@ -1432,80 +1492,67 @@ void updateChannelUI(int k)
 	//called when a channel changes -- update the UI elements accordingly.
 	g_uiRecursion++;
 	int ch = g_channel[k];
-	gtk_adjustment_set_value(g_gainSpin[k], g_c[ch]->getGain());
-	gtk_adjustment_set_value(g_apertureSpin[k*2+0], g_c[ch]->getApertureUv(0));
-	gtk_adjustment_set_value(g_apertureSpin[k*2+1], g_c[ch]->getApertureUv(1));
-	gtk_adjustment_set_value(g_thresholdSpin[k], g_c[ch]->getThreshold());
-	gtk_adjustment_set_value(g_centeringSpin[k], g_c[ch]->getCentering());
+	gtk_spin_button_set_value(GTK_SPIN_BUTTON(g_gainSpin[k]), g_c[ch]->getGain());
+	gtk_spin_button_set_value(GTK_SPIN_BUTTON(g_apertureSpin[k*2+0]), g_c[ch]->getApertureUv(0));
+	gtk_spin_button_set_value(GTK_SPIN_BUTTON(g_apertureSpin[k*2+1]), g_c[ch]->getApertureUv(1));
+	//gtk_adjustment_set_value(g_thresholdSpin[k], g_c[ch]->getThreshold());
+	//gtk_adjustment_set_value(g_centeringSpin[k], g_c[ch]->getCentering());
 	g_uiRecursion--;
 }
-static void channelSpinCB( GtkWidget *, gpointer p)
+static void channelSpinCB(GtkWidget *spinner, gpointer p)
 {
 	int k = (int)((long long)p & 0xf);
-	if (k >= 0 && k<4) {
-		int ch = (int)gtk_adjustment_get_value(g_channelSpin[k]);
-		printf("channelSpinCB: %d\n", ch);
-		if (ch < NCHAN && ch >= 0 && ch != g_channel[k]) {
-			g_channel[k] = ch;
-			//update the UI too.
-			updateChannelUI(k);
+	int ch = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spinner));
+#ifdef DEBUG
+	printf("channelSpinCB: %d\n", ch);
+#endif
+	if (ch < NCHAN && ch >= 0 && ch != g_channel[k]) {
+		g_channel[k] = ch;
+		updateChannelUI(k); //update the UI too.
+	}
+	//if we are in sort mode, and k == 0, move the other channels ahead of us.
+	//this allows more PCA points for sorting!
+	//if (g_mode == MODE_SORT && k == 0 && g_autoChOffset) {
+	if (k == 0 && g_autoChOffset) {
+		for (int j=1; j<4; j++) {
+			g_channel[j] = (g_channel[0] + j) % NCHAN;
+			//this does not recurse -- have to set the other stuff manually.
+			g_uiRecursion++;
+			gtk_spin_button_set_value(GTK_SPIN_BUTTON(g_channelSpin[j]), (double)g_channel[j]);
+			g_uiRecursion--;
 		}
-		//if we are in sort mode, and k == 0, move the other channels ahead of us.
-		//this allows more PCA points for sorting!
-		//if (g_mode == MODE_SORT && k == 0 && g_autoChOffset) {
-		if (k == 0 && g_autoChOffset) {
-			for (int j=1; j<4; j++) {
-				g_channel[j] = (g_channel[0] + j) % NCHAN;
-				//this does not recurse -- have to set the other stuff manually.
-				g_uiRecursion++;
-				gtk_adjustment_set_value(g_channelSpin[j], (double)g_channel[j]);
-				g_uiRecursion--;
-			}
-			//loop over & update the UI afterward, so we don't have a race-case.
-			for (int j=1; j<4; j++)
-				updateChannelUI(j);
-		}
-		//if(!g_uiRecursion)
-		//	setChans();
+		//loop over & update the UI afterward, so we don't have a race-case.
+		for (int j=1; j<4; j++)
+			updateChannelUI(j);
 	}
 }
-static void gainSpinCB( GtkWidget *, gpointer p)
+static void gainSpinCB(GtkWidget *spinner, gpointer p)
 {
-	int h = (int)((long long)p & 0xf);
-	if (h >= 0 && h < 4 && !g_uiRecursion) {
-		float gain = gtk_adjustment_get_value(g_gainSpin[h]);
-		printf("gainSpinCB: %f\n", gain);
-		g_c[g_channel[h]]->setGain(gain);
-		g_c[g_channel[h]]->resetPca();
+	int x = (int)((long long)p & 0xf);
+	if (!g_uiRecursion) {
+		float gain = gtk_spin_button_get_value(GTK_SPIN_BUTTON(spinner));
+#ifdef DEBUG
+		printf("ch %d (%d) gainSpinCB: %f\n", g_channel[x], x, gain);
+#endif
+		g_c[g_channel[x]]->setGain(gain);
+		g_c[g_channel[x]]->resetPca();
 	}
 }
 static void gainSetAll(GtkWidget *, gpointer)
 {
-	float gain = gtk_adjustment_get_value(g_gainSpin[0]);
+	float gain = gtk_spin_button_get_value(GTK_SPIN_BUTTON(g_gainSpin[0]));
 	for (int i=0; i<NCHAN; i++) {
 		g_c[i]->setGain(gain);
 		g_c[i]->resetPca();
 	}
 	for (int i=0; i<4; i++)
-		gtk_adjustment_set_value(g_gainSpin[i], gain);
+		gtk_spin_button_set_value(GTK_SPIN_BUTTON(g_gainSpin[i]), gain);
 }
-static void unsortRateSpinCB( GtkWidget * , gpointer)
-{
-	float t = gtk_adjustment_get_value(g_unsortRateSpin);
-	g_unsortrate = t;
-	printf("unsortRateSpinCB: %f\n", t);
-}
-static void autoThresholdSpinCB( GtkWidget * , gpointer)
-{
-	float t = gtk_adjustment_get_value(g_autoThresholdSpin);
-	g_autoThreshold = t;
-	printf("autoThresholdSpinCB: %f\n", t);
-}
-static void apertureSpinCB( GtkWidget *, gpointer p)
+static void apertureSpinCB(GtkWidget *spinner, gpointer p)
 {
 	int h = (int)((long long)p & 0xf);
 	if (h >= 0 && h < 8 && !g_uiRecursion) {
-		float a = gtk_adjustment_get_value(g_apertureSpin[h]);
+		float a = gtk_spin_button_get_value(GTK_SPIN_BUTTON(spinner));
 		int j = g_channel[h/2];
 		//gtk likes to call this frequently -- only update when
 		//the value has actually changed.
@@ -1523,7 +1570,7 @@ static void apertureOffCB( GtkWidget *, gpointer p)
 	int h = (int)((long long)p & 0xf);
 	if (h >= 0 && h < 8 && !g_uiRecursion) {
 		int j = g_channel[h/2];
-		gtk_adjustment_set_value(g_apertureSpin[h], 0);
+		gtk_spin_button_set_value(GTK_SPIN_BUTTON(g_apertureSpin[h]), 0);
 		g_c[j]->setApertureLocal(h%2, 0);
 		//setAperture(j);
 	}
@@ -1531,9 +1578,8 @@ static void apertureOffCB( GtkWidget *, gpointer p)
 static void autoThresholdCB( GtkWidget *, gpointer p)
 {
 	int h = (int)((long long)p & 0xf);
-	if (h == 1) {
+	if (h == 1)
 		g_c[g_channel[0]]->autoThreshold(g_autoThreshold);
-	}
 	if (h == 2) {
 		for (int i=0; i<NCHAN; i++) {
 			g_c[i]->autoThreshold(g_autoThreshold);
@@ -1573,14 +1619,6 @@ static void cycleButtonCB(GtkWidget *button, gpointer p)
 		*b = false;
 	}
 }
-static void minISISpinCB( GtkWidget *, gpointer)
-{
-	g_minISI = gtk_adjustment_get_value(g_minISISpin);
-}
-static void spikesColsSpinCB( GtkWidget *, gpointer)
-{
-	g_spikesCols = (int)gtk_adjustment_get_value(g_spikesColsSpin);
-}
 static void basic_checkbox_cb(GtkWidget *button, gpointer p)
 {
 	gboolean *b = (gboolean *)p;
@@ -1588,51 +1626,49 @@ static void basic_checkbox_cb(GtkWidget *button, gpointer p)
 	     true :
 	     false;
 }
-static void clearArtifactTemplCB(GtkWidget *, gpointer)
+static void basic_spinfloat_cb(GtkWidget *spinner, gpointer p)
 {
-	for (int i=0; i<STIMCHANCOMBOS; i++)
+	float *f = (float *)p;
+	*f = (float)gtk_spin_button_get_value(GTK_SPIN_BUTTON(spinner));
+}
+static void basic_spinint_cb(GtkWidget *spinner, gpointer p)
+{
+	int *x = (int *)p;
+	*x = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spinner));
+}
+static void clearArtifactTemplAllCB(GtkWidget *, gpointer)
+{
+	for (int i=0; i<STIMCHAN; i++)
 		g_artifact[i]->clearArtifacts();
 }
-static void numArtifactCB(GtkWidget *, gpointer)
+static void clearArtifactTemplCB(GtkWidget *, gpointer)
 {
-	g_numArtifactSamps = (int)gtk_adjustment_get_value(g_numArtifactSpin);
+	g_artifact[g_stimChanDisp]->clearArtifacts();
 }
-static void stimChanDispCB(GtkWidget *, gpointer)
+static void artifactBlankingSampsCB(GtkWidget *spinner, gpointer)
 {
-	g_stimChanDisp = (int)gtk_adjustment_get_value(g_stimChanSpin);
-}
-static void artifactDispAttenCB(GtkWidget *, gpointer)
-{
-	g_artifactDispAtten = (float)gtk_adjustment_get_value(g_artifactDispAttenSpin);
-}
-static void artifactBlankingSampsCB(GtkWidget *, gpointer)
-{
-	int x = (float)gtk_adjustment_get_value(g_artifactBlankingSampsSpin);
+	int x = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spinner));
 	g_artifactBlankingSamps = (x + g_artifactBlankingPreSamps > ARTBUF) ?
 	                          ARTBUF - g_artifactBlankingPreSamps :
 	                          x;
-	gtk_adjustment_set_value(g_artifactBlankingSampsSpin, g_artifactBlankingSamps);
+	gtk_spin_button_set_value(GTK_SPIN_BUTTON(spinner), g_artifactBlankingSamps);
 }
-static void artifactBlankingPreSampsCB(GtkWidget *, gpointer)
+static void artifactBlankingPreSampsCB(GtkWidget *spinner, gpointer)
 {
-	int x = (float)gtk_adjustment_get_value(g_artifactBlankingPreSampsSpin);
+	int x = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spinner));
 	g_artifactBlankingPreSamps = (x + g_artifactBlankingSamps > ARTBUF) ?
 	                             ARTBUF - g_artifactBlankingSamps :
 	                             x;
-	gtk_adjustment_set_value(g_artifactBlankingPreSampsSpin, g_artifactBlankingPreSamps);
+	gtk_spin_button_set_value(GTK_SPIN_BUTTON(spinner), g_artifactBlankingPreSamps);
 }
-static void zoomSpinCB(GtkWidget *, gpointer )
+static void zoomSpinCB(GtkWidget *spinner, gpointer)
 {
-	float f = gtk_adjustment_get_value(g_zoomSpin); //should be in seconds.
-	g_nsamp = f * 24414.0625;
+	float f = (float) gtk_spin_button_get_value(GTK_SPIN_BUTTON(spinner)); //should be in seconds.
+	g_nsamp = f * SRATE_HZ;
 	//make it multiples of 128.
 	g_nsamp &= (0xffffffff ^ 127);
 	g_nsamp = g_nsamp > NSAMP ? NSAMP : g_nsamp;
 	g_nsamp = g_nsamp < 512 ? 512 : g_nsamp;
-}
-static void rasterSpanSpinCB( GtkWidget *, gpointer )
-{
-	g_rasterSpan = gtk_adjustment_get_value(g_rasterSpanSpin);
 }
 static void notebookPageChangedCB(GtkWidget *,
                                   gpointer, int page, gpointer)
@@ -1640,9 +1676,9 @@ static void notebookPageChangedCB(GtkWidget *,
 	// special-case the save tab (don't change the view)
 	g_mode = (page != 4) ? page : g_mode;
 }
-static GtkAdjustment *mk_spinner(const char *txt, GtkWidget *container,
-                                 float start, float min, float max, float step,
-                                 GtkCallback cb, int cb_val)
+static GtkWidget *mk_spinner(const char *txt, GtkWidget *container,
+                             float start, float min, float max, float step,
+                             GtkCallback cb, gpointer data)
 {
 	GtkWidget *spinner, *label;
 	GtkAdjustment *adj;
@@ -1671,12 +1707,11 @@ static GtkAdjustment *mk_spinner(const char *txt, GtkWidget *container,
 	spinner = gtk_spin_button_new (adj, climb, digits);
 	gtk_spin_button_set_wrap (GTK_SPIN_BUTTON (spinner), FALSE);
 	gtk_box_pack_start (GTK_BOX (bx), spinner, TRUE, TRUE, 2);
-	g_signal_connect(spinner, "value-changed", G_CALLBACK(cb), GINT_TO_POINTER (cb_val));
+	g_signal_connect(spinner, "value-changed", G_CALLBACK(cb), data);
 	gtk_widget_show(spinner);
 
 	gtk_box_pack_start (GTK_BOX (container), bx, TRUE, TRUE, 2);
-
-	return adj;
+	return spinner;
 }
 static void mk_radio(const char *txt, int ntxt,
                      GtkWidget *container, bool vertical,
@@ -1690,7 +1725,6 @@ static void mk_radio(const char *txt, int ntxt,
 	modebox = vertical ? gtk_vbox_new(FALSE, 2) : gtk_hbox_new(FALSE, 2);
 	gtk_container_add (GTK_CONTAINER (frame), modebox);
 	gtk_container_set_border_width (GTK_CONTAINER (modebox), 2);
-	gtk_box_pack_start (GTK_BOX (container), modebox, TRUE, TRUE, 0);
 	gtk_widget_show(modebox);
 
 	char buf[256];
@@ -1786,6 +1820,34 @@ static void openSaveICMSFile(GtkWidget *, gpointer parent_window)
 	}
 	gtk_widget_destroy (dialog);
 }
+static void openSaveAnalogFile(GtkWidget *, gpointer parent_window)
+{
+	char buf[256];
+	string f;
+	if (getcwd(buf, sizeof(buf)))
+		f = buf;
+	else
+		f.assign("");
+
+	GtkWidget *dialog;
+	dialog = gtk_file_chooser_dialog_new ("Save Analog File",
+	                                      (GtkWindow *)parent_window,
+	                                      GTK_FILE_CHOOSER_ACTION_SAVE,
+	                                      GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+	                                      GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
+	                                      NULL);
+	gtk_file_chooser_set_do_overwrite_confirmation(
+	        GTK_FILE_CHOOSER (dialog), TRUE);
+	gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog),f.c_str());
+	gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (dialog),"analog_1.pbd");
+	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
+		char *filename;
+		filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
+		g_analogwriter.open(filename);
+		g_free(filename);
+	}
+	gtk_widget_destroy (dialog);
+}
 static void closeSaveSpikeFile(GtkWidget *, gpointer)
 {
 	g_wfwriter.close();
@@ -1794,11 +1856,16 @@ static void closeSaveICMSFile(GtkWidget *, gpointer)
 {
 	g_icmswriter.close();
 }
+static void closeSaveAnalogFile(GtkWidget *, gpointer)
+{
+	g_analogwriter.close();
+}
 static void closeSaveFiles(GtkWidget *, gpointer)
 {
-	//have to signal to the other thread, let them close it.
+	// TODO: signal to the other thread, let them close it.
 	g_wfwriter.close();
 	g_icmswriter.close();
+	g_analogwriter.close();
 }
 /*
 void saveMatrix(const char *fname, gsl_matrix *v)
@@ -1827,8 +1894,8 @@ static void getTemplateCB(GtkWidget *, gpointer p)
 	if (j < 4) {
 		g_c[g_channel[j]]->updateTemplate(aB+1);
 		//update the UI.
-		gtk_adjustment_set_value(g_apertureSpin[j*2+aB],
-		                         g_c[g_channel[j]]->getApertureUv(aB));
+		gtk_spin_button_set_value(GTK_SPIN_BUTTON(g_apertureSpin[j*2+aB]),
+		                          g_c[g_channel[j]]->getApertureUv(aB));
 		//remove the old poly, now that we've used it.
 		g_c[g_channel[j]]->resetPoly();
 	}
@@ -1870,11 +1937,13 @@ static void templatePopupMenu (GdkEventButton *event, gpointer p)
 }
 int main(int argc, char **argv)
 {
-
 	using namespace gtkclient;
+
+	string titlestr = "gtkclient (TDT) v1.4";
 
 #ifdef DEBUG
 	feenableexcept(FE_DIVBYZERO|FE_INVALID|FE_OVERFLOW);  // Enable (some) floating point exceptions
+	titlestr += " *** DEBUG ***";
 #endif
 
 	GtkWidget *window;
@@ -1886,6 +1955,8 @@ int main(int argc, char **argv)
 	GtkWidget *button;
 	//GtkWidget *combo;
 	//GtkWidget *paned2;
+
+	string s;
 
 	// Verify that the version of the library that we linked against is
 	// compatible with the version of the headers we compiled against.
@@ -1913,7 +1984,7 @@ int main(int argc, char **argv)
 	}
 	for (int i=0; i<NCHAN; i++)
 		g_c[i] = new Channel(i, &ms);
-	for (int i=0; i<STIMCHANCOMBOS; i++)
+	for (int i=0; i<STIMCHAN; i++)
 		g_artifact[i] = new Artifact();
 
 	//g_dropped = 0;
@@ -1922,11 +1993,7 @@ int main(int argc, char **argv)
 	gtk_gl_init (&argc, &argv);
 
 	window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-#ifndef DEBUG
-	gtk_window_set_title (GTK_WINDOW (window), "gtk TDT client v1.2");
-#else
-	gtk_window_set_title (GTK_WINDOW (window), "gtk TDT client v1.2 *** DEBUG ***");
-#endif
+	gtk_window_set_title (GTK_WINDOW (window), titlestr.c_str());
 	gtk_window_set_default_size (GTK_WINDOW (window), 850, 800);
 	da1 = gtk_drawing_area_new ();
 	gtk_widget_set_size_request(GTK_WIDGET(da1), 640, 650);
@@ -1963,18 +2030,17 @@ int main(int argc, char **argv)
 		//channel spinner.
 		g_channelSpin[i] = mk_spinner("ch", bx3,
 		                              g_channel[i], 0, NCHAN-1, 1,
-		                              channelSpinCB, i);
+		                              channelSpinCB, GINT_TO_POINTER(i));
+
 		//right of that, a gain spinner. (need to update depending on ch)
 		g_gainSpin[i] = mk_spinner("gain", bx3,
 		                           g_c[g_channel[i]]->getGain(),
 		                           -128.0, 128.0, 0.1,
-		                           gainSpinCB, i);
+		                           gainSpinCB, GINT_TO_POINTER(i));
 		if (i==0) {
 			mk_checkbox("auto offset of B,C,D", bx2,
 			            &g_autoChOffset, basic_checkbox_cb);
 		}
-
-		gtk_box_pack_start (GTK_BOX (frame), bx2, FALSE, FALSE, 1);
 	}
 	//notebook region!
 	g_notebook = gtk_notebook_new();
@@ -1999,14 +2065,15 @@ int main(int argc, char **argv)
 	mk_checkbox("show threshold", box1, &g_showContThresh, basic_checkbox_cb);
 
 	//add in a zoom spinner.
-	g_zoomSpin = mk_spinner("Waveform Span", box1,
-	                        1.0, 0.1, 2.7, 0.05,
-	                        zoomSpinCB, 0);
-	zoomSpinCB(GTK_WIDGET(NULL), NULL); //init the variables properly.
+	mk_spinner("Waveform Span", box1,
+	           1.0, 0.1, 2.7, 0.05,
+	           zoomSpinCB, NULL);
 
-	g_rasterSpanSpin = mk_spinner("Raster span", box1,
-	                              g_rasterSpan, 1.0, 100.0, 1.0,
-	                              rasterSpanSpinCB, 0);
+	mk_spinner("Raster span", box1,
+	           g_rasterSpan, 1.0, 100.0, 1.0,
+	           basic_spinfloat_cb, (gpointer)&g_rasterSpan);
+
+	mk_checkbox("lowpass filter neurons", box1, &g_filterNeurons, basic_checkbox_cb);
 
 	gtk_widget_show (box1);
 	label = gtk_label_new("rasters");
@@ -2026,14 +2093,13 @@ int main(int argc, char **argv)
 
 		GtkWidget *bx2 = gtk_vbox_new (FALSE, 2);
 		gtk_container_add (GTK_CONTAINER (frame), bx2);
-		gtk_box_pack_start (GTK_BOX (frame), bx2, FALSE, FALSE, 1);
 
 		for (int j=0; j<NSORT; j++) {
 			GtkWidget *bx3 = gtk_hbox_new (FALSE, 2);
 			gtk_container_add (GTK_CONTAINER (bx2), bx3);
 			g_apertureSpin[i*2+j] = mk_spinner("", bx3,
 			                                   g_c[g_channel[i]]->getApertureUv(j), 0, 100, 0.1,
-			                                   apertureSpinCB, i*2+j);
+			                                   apertureSpinCB, GINT_TO_POINTER(i*2+j));
 			label = gtk_label_new("uV");
 			gtk_box_pack_start (GTK_BOX (bx3), label, TRUE, TRUE, 1);
 			//a button for disable.
@@ -2046,10 +2112,6 @@ int main(int argc, char **argv)
 			gtk_box_pack_start (GTK_BOX (bx3), button, TRUE, TRUE, 1);
 		}
 	}
-	//add one for unsorted unit add rate.
-	g_unsortRateSpin = mk_spinner("unsort rate", box1,
-	                              g_unsortrate, 0.0, 40.0, 0.1,
-	                              unsortRateSpinCB, 0);
 
 	GtkWidget *box2 = gtk_hbox_new (FALSE, 0);
 	gtk_widget_show(box2);
@@ -2086,21 +2148,27 @@ int main(int argc, char **argv)
 	box1 = gtk_vbox_new(FALSE, 0);
 	// for the sorting, we show all waveforms (up to a point..)
 	//these should have a minimum enforced ISI.
-	g_minISISpin = mk_spinner("min ISI", box1, g_minISI, 0.2, 3.0, 0.01,
-	                          minISISpinCB, 0);
+	mk_spinner("min ISI", box1, g_minISI, 0.2, 3.0, 0.01,
+	           basic_spinfloat_cb, (gpointer)&g_minISI);
 
-	g_autoThresholdSpin = mk_spinner("auto thresh, std", box1, g_autoThreshold,
-	                                 -10.0, 10.0, 0.05, autoThresholdSpinCB, 0);
+	mk_spinner("auto thresh, std", box1, g_autoThreshold,
+	           -10.0, 10.0, 0.05, basic_spinfloat_cb, (gpointer)&g_autoThreshold);
 
 	GtkWidget *bx3 = gtk_hbox_new (FALSE, 1);
 	gtk_box_pack_start (GTK_BOX (box1), bx3, FALSE, FALSE, 0);
 	mk_button("set selected", bx3, autoThresholdCB, GINT_TO_POINTER(1));
 	mk_button("set all", bx3, autoThresholdCB, GINT_TO_POINTER(2));
 
-	g_spikesColsSpin = mk_spinner("Columns", box1, g_spikesCols, 3, 32, 1,
-	                              spikesColsSpinCB, 0);
+	mk_checkbox("enable csplines", box1,
+	            &g_enableSplines, basic_checkbox_cb);
 
-// end sort page.
+	mk_checkbox("enable subsample alignment", box1,
+	            &g_enableSubsampleAlignment, basic_checkbox_cb);
+
+	mk_spinner("Columns", box1, g_spikesCols, 3, 32, 1,
+	           basic_spinint_cb, (gpointer)&g_spikesCols);
+
+// end spikes page.
 	gtk_widget_show (box1);
 	label = gtk_label_new("spikes");
 	gtk_label_set_angle(GTK_LABEL(label), 90);
@@ -2109,25 +2177,60 @@ int main(int argc, char **argv)
 
 	// add a page for icms
 	box1 = gtk_vbox_new(FALSE, 0);
-	mk_checkbox("enable artifact subtraction", box1,
-	            &g_enableArtifactSubtr, basic_checkbox_cb);
-	mk_checkbox("enable scale artifact", box1,
-	            &g_enableScaleArtifact, basic_checkbox_cb);
-	mk_checkbox("train artifact templates", box1,
+
+	s = "Artifact Subtraction";
+	frame = gtk_frame_new (s.c_str());
+	gtk_box_pack_start (GTK_BOX (box1), frame, FALSE, FALSE, 1);
+
+	box2 = gtk_vbox_new(FALSE, 0);
+	gtk_container_add (GTK_CONTAINER (frame), box2);
+
+	box3 = gtk_hbox_new(FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (box2), box3, TRUE, TRUE, 0);
+
+	box4 = gtk_vbox_new(FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (box3), box4, TRUE, TRUE, 0);
+	mk_checkbox("train", box4,
 	            &g_trainArtifactTempl, basic_checkbox_cb);
-	mk_button("clear artifact templates", box1, clearArtifactTemplCB, NULL);
-	g_numArtifactSpin = mk_spinner("artifact\naverage\nsamples", box1, g_numArtifactSamps,
-	                               1e2, 1e5, 1, numArtifactCB, 0);
-	g_stimChanSpin = mk_spinner("stim channel", box1, g_stimChanDisp,
-	                            0, STIMCHANCOMBOS-1, 1, stimChanDispCB, 0);
-	g_artifactDispAttenSpin = mk_spinner("artifact\ndisplay\nattenuation", box1,
-	                                     g_artifactDispAtten, 0.1, 100, 0.1, artifactDispAttenCB, 0);
-	mk_checkbox("enable artifact blanking", box1,
+
+	box4 = gtk_vbox_new(FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (box3), box4, TRUE, TRUE, 0);
+	mk_checkbox("enable", box4,
+	            &g_enableArtifactSubtr, basic_checkbox_cb);
+
+	mk_spinner("num\ntemplate\nsamples", box2, g_numArtifactSamps,
+	           1e2, 1e5, 1, basic_spinint_cb, (gpointer)&g_numArtifactSamps);
+
+	box3 = gtk_hbox_new(FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (box2), box3, TRUE, TRUE, 0);
+
+	box4 = gtk_vbox_new(FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (box3), box4, TRUE, TRUE, 0);
+	mk_button("clear all", box4, clearArtifactTemplAllCB, NULL);
+
+	box4 = gtk_vbox_new(FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (box3), box4, TRUE, TRUE, 0);
+	mk_button("clear this", box4, clearArtifactTemplCB, NULL);
+
+	mk_spinner("stim chan", box2, g_stimChanDisp,
+	           0, STIMCHAN-1, 1, basic_spinint_cb, (gpointer)&g_stimChanDisp);
+	mk_spinner("attenuation", box2,
+	           g_artifactDispAtten, 0.1, 10, 0.1, basic_spinfloat_cb, (gpointer)&g_artifactDispAtten);
+
+	s = "Artifact Blanking";
+	frame = gtk_frame_new (s.c_str());
+	gtk_box_pack_start (GTK_BOX (box1), frame, FALSE, FALSE, 1);
+
+	box2 = gtk_vbox_new(FALSE, 0);
+	gtk_container_add (GTK_CONTAINER (frame), box2);
+
+	mk_checkbox("enable", box2,
 	            &g_enableArtifactBlanking, basic_checkbox_cb);
-	g_artifactBlankingPreSampsSpin = mk_spinner("artifact\npre-blanking\nsamples", box1,
-	                                 g_artifactBlankingPreSamps, 0, 128, 1, artifactBlankingPreSampsCB, 0);
-	g_artifactBlankingSampsSpin = mk_spinner("artifact\nblanking\nsamples", box1,
-	                              g_artifactBlankingSamps, 0, 128, 1, artifactBlankingSampsCB, 0);
+
+	mk_spinner("pre-blanking\nsamples", box2,
+	           g_artifactBlankingPreSamps, 0, 128, 1, artifactBlankingPreSampsCB, NULL);
+	mk_spinner("blanking\nsamples", box2,
+	           g_artifactBlankingSamps, 0, 128, 1, artifactBlankingSampsCB, NULL);
 
 	mk_checkbox("enable stim clock blanking", box1,
 	            &g_enableStimClockBlanking, basic_checkbox_cb);
@@ -2141,50 +2244,57 @@ int main(int argc, char **argv)
 
 	// add page for saving
 	box1 = gtk_vbox_new(FALSE, 3);
-	char buf[128];
 
 	GtkWidget *bxx1, *bxx2;
 
-	snprintf(buf, 128, "Save Spikes");
-	frame = gtk_frame_new (buf);
+	s = "Save Spikes";
+	frame = gtk_frame_new (s.c_str());
 	gtk_box_pack_start (GTK_BOX (box1), frame, FALSE, FALSE, 1);
 	bxx1 = gtk_hbox_new (TRUE, 0);
 	gtk_container_add (GTK_CONTAINER (frame), bxx1);
-	gtk_box_pack_start (GTK_BOX (frame), bxx1, FALSE, FALSE, 1);
 
 	bxx2 = gtk_vbox_new(TRUE, 0);
 	gtk_container_add(GTK_CONTAINER (bxx1), bxx2);
-	gtk_box_pack_start(GTK_BOX (bxx1), bxx2, TRUE, TRUE, 0);
 	mk_button("Start", bxx2, openSaveSpikesFile, NULL);
 	mk_checkbox("WF? (xxx)", bxx2, &g_saveSpikeWF, basic_checkbox_cb);
 
-	bxx2 = gtk_vbox_new(TRUE, 0);
+	bxx2 = gtk_vbox_new(FALSE, 0);
 	gtk_container_add(GTK_CONTAINER (bxx1), bxx2);
-	gtk_box_pack_start(GTK_BOX (bxx1), bxx2, TRUE, TRUE, 0);
 	mk_button("Stop", bxx2, closeSaveSpikeFile, NULL);
 	mk_checkbox("Unsorted?", bxx2, &g_saveUnsorted,	basic_checkbox_cb);
 
-	snprintf(buf, 128, "Save ICMS");
-	frame = gtk_frame_new(buf);
+
+	s = "Save ICMS";
+	frame = gtk_frame_new(s.c_str());
 	gtk_box_pack_start(GTK_BOX (box1), frame, FALSE, FALSE, 1);
 
 	bxx1 = gtk_hbox_new (TRUE, 0);
 	gtk_container_add (GTK_CONTAINER (frame), bxx1);
-	gtk_box_pack_start (GTK_BOX (frame), bxx1, TRUE, TRUE, 1);
 
 	bxx2 = gtk_vbox_new(TRUE, 0);
 	gtk_container_add(GTK_CONTAINER (bxx1), bxx2);
-	gtk_box_pack_start(GTK_BOX (bxx1), bxx2, TRUE, TRUE, 0);
 	mk_button("Start", bxx2, openSaveICMSFile, NULL);
 	mk_checkbox("WF?", bxx2, &g_saveICMSWF, basic_checkbox_cb);
 
 	bxx2 = gtk_vbox_new(FALSE, 0);
 	gtk_container_add(GTK_CONTAINER (bxx1), bxx2);
-	gtk_box_pack_start(GTK_BOX (bxx1), bxx2, TRUE, TRUE, 0);
 	mk_button("Stop", bxx2, closeSaveICMSFile, NULL);
 
-	mk_button("Stop All", box1, closeSaveFiles, NULL);
 
+	s = "Save Analog";
+	frame = gtk_frame_new(s.c_str());
+	gtk_box_pack_start(GTK_BOX (box1), frame, FALSE, FALSE, 1);
+	bxx1 = gtk_hbox_new (TRUE, 0);
+	gtk_container_add (GTK_CONTAINER (frame), bxx1);
+	bxx2 = gtk_vbox_new (TRUE, 0);
+	gtk_container_add (GTK_CONTAINER (bxx1), bxx2);
+	mk_button("Start", bxx2, openSaveAnalogFile, NULL);
+	bxx2 = gtk_vbox_new (TRUE, 0);
+	gtk_container_add (GTK_CONTAINER (bxx1), bxx2);
+	mk_button("Stop", bxx2, closeSaveAnalogFile, NULL);
+
+
+	mk_button("Stop All", box1, closeSaveFiles, NULL);
 
 
 	// end save page
@@ -2194,8 +2304,21 @@ int main(int argc, char **argv)
 	gtk_notebook_insert_page(GTK_NOTEBOOK(g_notebook), box1, label, 4);
 
 
+
+	// bottom section, visible on all screens
+	bx = gtk_hbox_new (FALSE, 3);
+
 	//add a automatic channel change button.
-	mk_checkbox("cycle channels", v1, &g_cycle, cycleButtonCB);
+	mk_checkbox("cycle channels", bx, &g_cycle, cycleButtonCB);
+
+	//add a pause / go button (applicable to all)
+	button = gtk_check_button_new_with_label("pause");
+	g_signal_connect (button, "toggled",
+	                  G_CALLBACK (pauseButtonCB), NULL);
+	gtk_widget_show(button);
+	gtk_box_pack_start (GTK_BOX (bx), button, FALSE, FALSE, 1);
+
+	gtk_box_pack_start (GTK_BOX (v1), bx, TRUE, TRUE, 0);
 
 	//add draw mode (applicable to all)
 	bx = gtk_hbox_new(FALSE, 0);
@@ -2203,18 +2326,6 @@ int main(int argc, char **argv)
 	         bx, true, "draw mode", drawRadioCB);
 	mk_radio("normal,accum", 2,
 	         bx, true, "blend mode", blendRadioCB);
-	gtk_box_pack_start (GTK_BOX (v1), bx, TRUE, TRUE, 0);
-
-
-	bx = gtk_hbox_new (FALSE, 3);
-
-	//add a pause / go button (applicable to all)
-	button = gtk_check_button_new_with_label("pause");
-	g_signal_connect (button, "toggled",
-	                  G_CALLBACK (pauseButtonCB), (gpointer) "o");
-	gtk_box_pack_start (GTK_BOX (bx), button, TRUE, TRUE, 0);
-	gtk_widget_show(button);
-
 	gtk_box_pack_start (GTK_BOX (v1), bx, TRUE, TRUE, 0);
 
 	bx = gtk_hbox_new (FALSE, 3);
@@ -2229,6 +2340,13 @@ int main(int argc, char **argv)
 	gtk_misc_set_alignment (GTK_MISC (g_icmsFileSizeLabel), 0, 0);
 	gtk_box_pack_start (GTK_BOX (bx), g_icmsFileSizeLabel, FALSE, FALSE, 0);
 	gtk_widget_show(g_icmsFileSizeLabel);
+	gtk_box_pack_start (GTK_BOX (v1), bx, TRUE, TRUE, 0);
+
+	bx = gtk_hbox_new (FALSE, 3);
+	g_analogFileSizeLabel = gtk_label_new ("");
+	gtk_misc_set_alignment (GTK_MISC (g_analogFileSizeLabel), 0, 0);
+	gtk_box_pack_start (GTK_BOX (bx), g_analogFileSizeLabel, FALSE, FALSE, 0);
+	gtk_widget_show(g_analogFileSizeLabel);
 	gtk_box_pack_start (GTK_BOX (v1), bx, TRUE, TRUE, 0);
 
 	gtk_paned_add1(GTK_PANED(paned), v1);
@@ -2275,6 +2393,18 @@ int main(int argc, char **argv)
 	// http://forums.fedoraforum.org/archive/index.php/t-242963.html
 	GTK_WIDGET_SET_FLAGS(da1, GTK_CAN_FOCUS );
 
+	string asciiart = "";
+	asciiart += "       _   _        _ _            _\n";
+	asciiart += "  __ _| |_| | _____| (_) ___ _ __ | |_\n";
+	asciiart += " / _` | __| |/ / __| | |/ _ \\ '_ \\| __|\n";
+	asciiart += "| (_| | |_|   < (__| | |  __/ | | | |_\n";
+	asciiart += " \\__, |\\__|_|\\_\\___|_|_|\\___|_| |_|\\__|\n";
+	asciiart += " |___/      ";
+	asciiart += titlestr;
+	printf("%s\n\n",asciiart.c_str());
+
+	printf("artifact buffer length: %d samples\n",ARTBUF);
+
 	pthread_t thread1;
 	pthread_attr_t attr;
 	pthread_attr_init(&attr);
@@ -2282,6 +2412,7 @@ int main(int argc, char **argv)
 	pthread_create( &thread1, &attr, po8_thread,		0 );
 	pthread_create( &thread1, &attr, wfwrite_thread, 	0 );
 	pthread_create( &thread1, &attr, icmswrite_thread, 	0 );
+	pthread_create( &thread1, &attr, analogwrite_thread,0 );
 	pthread_create( &thread1, &attr, mmap_thread, 		0 );
 
 	//set the initial sampling stage.
@@ -2296,7 +2427,7 @@ int main(int argc, char **argv)
 #ifdef JACK
 	jackInit("gtkclient", JACKPROCESS_RESAMPLE);
 	jackConnectFront();
-	jackSetResample(24414.0625/SAMPFREQ);
+	jackSetResample(SRATE_HZ/SAMPFREQ);
 #endif
 
 	gtk_main ();

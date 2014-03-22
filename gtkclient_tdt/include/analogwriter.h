@@ -2,33 +2,33 @@
 #include <iostream>
 #include <fstream>
 #include <atomic>
-#include "icms.pb.h"
+#include "analog.pb.h"
 
-#ifndef __ICMSWRITER_H__
-#define	__ICMSWRITER_H__
+#ifndef __ANALOGWRITER_H__
+#define	__ANALOGWRITER_H__
 
-#define ICMS_BUF_SIZE (33554432) // BYTES, MUST BE POWER OF 2
-#define ICMS_MASK (ICMS_BUF_SIZE-1)
-#define ICMS_MAGIC 0xdeadbabe
+#define ANALOG_BUF_SIZE (33554432) // BYTES, MUST BE POWER OF 2
+#define ANALOG_MASK (ANALOG_BUF_SIZE-1)
+#define ANALOG_MAGIC 0xbeefbabe
 
 using namespace std;
 using namespace google::protobuf::io;
 using namespace gtkclient;
 
-class ICMSWriter
+class AnalogWriter
 {
 protected:
-	char m_buf[ICMS_BUF_SIZE]; // the protobuf(fer)
-	std::atomic<long> m_w; // atomic write pointer
-	std::atomic<long> m_r; // atomic read pointer
+	char m_buf[ANALOG_BUF_SIZE];      // the protobuf(fer)
+	std::atomic<long> m_w;       // atomic write pointer
+	std::atomic<long> m_r;       // atomic read pointer
 	std::atomic<bool> m_enabled; // are we writing?
 	std::string m_fn; // the file name
 	ofstream m_os; // object for writing to file
 
 public:
-	ICMSWriter();
+	AnalogWriter();
 
-	virtual ~ICMSWriter();
+	virtual ~AnalogWriter();
 
 	// start the writer. fn is filename
 	bool open(const char *fn);
@@ -37,7 +37,7 @@ public:
 	bool close();
 
 	// log an icms protobuf
-	bool add(ICMS *a);
+	bool add(Analog *a);
 
 	// write the buffer to disk
 	bool write();
@@ -55,7 +55,7 @@ public:
 	string filename();
 
 	const char *name() {
-		return "ICMS Writer v2";
+		return "Analog Writer v1";
 	};
 
 protected:

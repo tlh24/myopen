@@ -1,6 +1,8 @@
 #ifndef __WFPACKET_H__
 #define __WFPACKET_H__
 
+#include "gtkclient.h"
+
 //#define _LARGEFILE_SOURCE enabled by default.
 #define _FILE_OFFSET_BITS 64
 
@@ -9,15 +11,15 @@ struct wfpak {
 	long	ticks; //tdt ticks of spike. 8 bytes.
 	short	channel;
 	short	unit;
-	short len;
-	short	wf[32];
+	short   len;
+	short	wf[NWFSAMPUP];
 };
 #define WFBUFSIZ (1024*64)
 #define WFBUFMASK (WFBUFSIZ-1)
 
 class WfWriter
 {
-public:
+protected:
 	std::atomic<long> m_w; //this is great!
 	std::atomic<bool>	m_enable;
 	long m_r;
@@ -25,6 +27,7 @@ public:
 	std::string m_fn; // the file name
 	FILE *m_fid;
 
+public:
 	WfWriter() {
 		m_w = m_r = 0;
 		m_enable = false;

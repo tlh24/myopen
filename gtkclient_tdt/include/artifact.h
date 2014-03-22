@@ -1,7 +1,7 @@
 #ifndef __ARTIFACT_H__
 #define __ARTIFACT_H__
 
-#define ARTBUF	160	// 64 ~ 2.62 msec ; 96 ~ 3.93 msec ; 128 ~ 5.24 msec
+#define ARTBUF	128	// 64 ~ 2.62 msec ; 96 ~ 3.93 msec ; 128 ~ 5.24 msec
 #define NARTPTR	8 // number of artifact buffer pointers
 
 extern int g_spikesCols;
@@ -11,13 +11,13 @@ class Artifact
 {
 
 public:
-	float 	m_avg[RECCHAN *ARTBUF];	// the average artifact buffer
+	float 	m_wav[RECCHAN *ARTBUF];	// the average artifact buffer
 	float	m_std[RECCHAN *ARTBUF];	// the artifact standard deviation
 	i64		m_windex[NARTPTR];		// write index into the buffer, or -1
 	i64		m_rindex[NARTPTR];		// read index into the buffer, or -1
 	i64		m_nsamples;				// number of examples in the average
 
-	// windex is where we are writing into m_avg (and m_now)
+	// windex is where we are writing into m_wav (and m_now)
 	// rindex is where we can read from the buffer to subtract artifact
 
 	float	m_now[RECCHAN *ARTBUF];	// the last captured artifact
@@ -26,10 +26,9 @@ public:
 	// recursively, but for saving snippets of
 	//the artifact
 
-
 	Artifact() {
 		for (int i=0; i<RECCHAN*ARTBUF; i++) {
-			m_avg[i] = 0.f;
+			m_wav[i] = 0.f;
 			m_now[i] = 0.f;
 		}
 		for (int i=0; i<NARTPTR; i++) {
@@ -43,7 +42,7 @@ public:
 	}
 	void clearArtifacts()  {
 		for (int j=0; j<RECCHAN*ARTBUF; j++) {
-			m_avg[j] = 0.f;
+			m_wav[j] = 0.f;
 		}
 		m_nsamples = 0;
 	}
@@ -70,7 +69,8 @@ public:
 
 			glBegin(GL_LINE_STRIP);
 			for (int j=0; j<ARTBUF; j++) {
-				float ny = (m_avg[k*ARTBUF+j])/g_artifactDispAtten + 0.5f;
+				float f  = m_wav[k*ARTBUF+j];
+				float ny = f/g_artifactDispAtten + 0.5f;
 				float nx = (float)(j)/((float)ARTBUF-1.f);
 				glVertex3f(nx*w+x, ny*h+y, 0.f);
 			}
