@@ -174,7 +174,7 @@ classdef ArmStateModel < handle
             stateStruct.Name = 'new state';
             stateStruct.Value = 0;
             stateStruct.IsReversed = 0;     % Changes sign of Value when accessed
-            stateStruct.State = 0;  % used to store Grasp Id
+            stateStruct.State = 0;          % used to store Grasp Id
             stateStruct.Velocity = 0;       % set the velocity and then as time increments position will change
             stateStruct.Max = +pi;          % Max Value
             stateStruct.Min = -pi;          % Min Value
