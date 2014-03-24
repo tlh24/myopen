@@ -90,7 +90,7 @@ classdef TrainingData < handle
             classLabels = obj.ClassLabelId(1:obj.SampleCount);
         end
         function classLabels = getEnabledClassLabels(obj)
-            % classLabels = getClassLabels(obj)
+            % classLabels = getEnabledClassLabels(obj)
             
             assert(obj.SampleCount <= length(obj.ClassLabelId),...
                 'Error getting class labels.  Sample Count [%d] is greater than class labels [%d]',...
@@ -676,7 +676,7 @@ classdef TrainingData < handle
         end %addTrainingData
         
         function obj = saveobj(obj)
-            disp('Calling saveobj method');
+            fprintf('[%s] Calling saveobj method\n',mfilename);
             % If set to true, save as a struct
             if obj.SaveInOldFormat
                 % save(fullFilename,'features3D','classLabelId','classNames','featureNames',...

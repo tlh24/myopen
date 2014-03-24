@@ -29,10 +29,13 @@ classdef ScenarioBase < Common.MiniVieObj
         GraspVelocity = 0;
         GraspLocked = 0;
         
+        % percentage that allows changing of grasps.  Beyond this, the
+        % grasp will be 'locked' in
+        GraspChangeThreshold = 0.2;
+        
         % Counter for opening hand the remaining to full rest position
         GraspChangeCounter = 0;
         GraspChangeCount = 40;
-        
         
         % For opening hand without Hand Open class:
         AutoOpenSpeed = 0;
@@ -42,6 +45,8 @@ classdef ScenarioBase < Common.MiniVieObj
         JointVelocity;
         
         TempFileName = 'jointAngles';
+        
+        Intent = [];
         
         Verbose = 1;
         
@@ -114,6 +119,14 @@ classdef ScenarioBase < Common.MiniVieObj
             [classOut,voteDecision,className,prSpeed,rawEmg,windowData,features2D] ...
                 = getIntent(obj.SignalSource,obj.SignalClassifier);
             
+            obj.Intent.classOut = classOut;
+            obj.Intent.voteDecision = voteDecision;
+            obj.Intent.className = className;
+            obj.Intent.prSpeed = prSpeed;
+            obj.Intent.rawEmg = rawEmg;
+            obj.Intent.windowData = windowData;
+            obj.Intent.features2D = features2D;
+            
             if obj.Verbose > 0
                 fprintf('Class=%2d; Vote=%2d; Class = %16s; S=%6.4f',...
                     classOut,voteDecision,className,prSpeed);
@@ -147,9 +160,9 @@ classdef ScenarioBase < Common.MiniVieObj
                 case {'Shoulder Adduction'}
                     s.setVelocity(mpl_upper_arm_enum.SHOULDER_ADAB,-prSpeed);
                 case {'Humeral External Rotation'}
-                    desiredVelocity(action_bus_enum.Humeral_Rot) = prSpeed;
+                    s.setVelocity(mpl_upper_arm_enum.HUMERAL_ROT,+prSpeed);
                 case {'Humeral Internal Rotation'}
-                    desiredVelocity(action_bus_enum.Humeral_Rot) = -prSpeed;
+                    s.setVelocity(mpl_upper_arm_enum.HUMERAL_ROT,-prSpeed);
                 case {'Elbow Flexion' 'Elbow Up'}
                     s.setVelocity(mpl_upper_arm_enum.ELBOW,+prSpeed);
                 case {'Elbow Extension' 'Elbow Down'}
@@ -205,7 +218,7 @@ classdef ScenarioBase < Common.MiniVieObj
                 case cellGrasps
                     % Any valid grasp == Hand Close
                     graspId = enumGrasp( strcmp(graspName,cellGrasps) );
-                    if obj.GraspValue < 0.2
+                    if obj.GraspValue < obj.GraspChangeThreshold
                         s.setRocId(graspId);
                     end
                     s.setVelocity(s.RocStateId,+prSpeed);

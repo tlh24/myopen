@@ -37,13 +37,13 @@ classdef ArmStateModel < handle
             obj.structState(6).Max = +30 * pi / 180;
             obj.structState(6).Min = -30 * pi / 180;
             obj.structState(7).Name = 'Wrist FE';
-            obj.structState(7).Max = +90 * pi / 180;
-            obj.structState(7).Min = -90 * pi / 180;
+            obj.structState(7).Max = +45 * pi / 180;
+            obj.structState(7).Min = -45 * pi / 180;
+            obj.structState(7).MaxVelocity = 5;
             
             obj.structState(8).Name = 'Roc Hand';
             obj.structState(8).Max = 1;
             obj.structState(8).Min = 0;
-            
             
             %obj.test;
         end
@@ -54,7 +54,10 @@ classdef ArmStateModel < handle
             obj.velocity(id) = velocity;
         end
         function value = getValues(obj)
-            value = [obj.structState(:).Value];
+            v = [obj.structState(:).Value];
+            isReversed = [obj.structState(:).IsReversed] ~= 0;
+            v(isReversed) = -v(isReversed);
+            value = v;
         end
         function setAllValues(obj,values)
             % set the state for manual positioning
@@ -68,14 +71,23 @@ classdef ArmStateModel < handle
         end
         function setValue(obj,id,value)
             % set the state for manual positioning of a single value
+
+            % e.g. obj.setValue(obj.RocStateId,1)  % close hand
             obj.structState(id).Value = value;
         end
         function upperArmValues = getUpperArmValues(obj)
-            upperArmValues = [obj.structState(1:7).Value];
+            % Be sure to access Values using get method so reverse sign is
+            % corrected
+            v = obj.getValues();
+            upperArmValues = v(1:7);
         end
         function [rocId, rocValue] = getRocValues(obj)
-            rocValue = obj.structState(8).Value;
-            rocId = obj.structState(8).State;
+            %[rocId, rocValue] = getRocValues(obj)
+            % Get the Roc Id maintained as the state of the joint defined
+            % for holding Roc grasps
+            v = obj.getValues();
+            rocValue = v(obj.RocStateId);
+            rocId = obj.structState(obj.RocStateId).State;
         end
         function update(obj)
             % perform the forward integration based on the elapsed time
@@ -161,11 +173,12 @@ classdef ArmStateModel < handle
             
             stateStruct.Name = 'new state';
             stateStruct.Value = 0;
+            stateStruct.IsReversed = 0;     % Changes sign of Value when accessed
             stateStruct.State = 0;  % used to store Grasp Id
-            stateStruct.Velocity = 0;
-            stateStruct.Max = +pi;
-            stateStruct.Min = -pi;
-            stateStruct.MaxVelocity = 1;
+            stateStruct.Velocity = 0;       % set the velocity and then as time increments position will change
+            stateStruct.Max = +pi;          % Max Value
+            stateStruct.Min = -pi;          % Min Value
+            stateStruct.MaxVelocity = 1;    % Max Velocity, either direction
             stateStruct.MaxAcceleration = 1;
             stateStruct.LastValue = 0;
             stateStruct.LastVelocity = 0;

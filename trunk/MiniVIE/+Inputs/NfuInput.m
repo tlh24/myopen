@@ -62,6 +62,7 @@ classdef NfuInput < Inputs.CpcHeadstage
 
                 convertedFrame = cellData{i};
                 
+                % Perform Logging
                 try
                     if obj.EnableDataLogging
                         if isempty(obj.hLogFile)

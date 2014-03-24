@@ -130,12 +130,20 @@ switch testId
         hNfu = MPL.NfuUdp.getInstance;
         hNfu.initialize();
 
-        for rocID = [0 1 2 3 4 5 6 7 8 9 10 11 12 13]
-            graspVal = [linspace(0,1,30) ones(1,10) linspace(1,0,30)];
+        for iRoc = 1:length(hNfu.localRoc)
+            RocId = hNfu.localRoc(iRoc).id;
+            RocName = hNfu.localRoc(iRoc).name;
+            
+            numOpenSteps = 30;
+            numWaitSteps = 10;
+            numCloseSteps = 30;
+            
+            graspVal = [linspace(0,1,numOpenSteps) ones(1,numWaitSteps) linspace(1,0,numCloseSteps)];
             for i = 1:length(graspVal)
-                fprintf('ROC %d, %6.2f Pct\n',rocID,graspVal(i)*100);
+                fprintf('Entry #%d, RocId=%d, %14s %6.2f Pct\n',...
+                    iRoc,RocId,RocName,graspVal(i)*100);
                 %hNfu.sendUpperArmHandRoc([zeros(1,4) 0 0 0],rocID,graspVal(i));
-                hNfu.sendUpperArmHandLocalRoc([zeros(1,4) 0 0 0],rocID,graspVal(i));
+                hNfu.sendUpperArmHandLocalRoc([zeros(1,4) 0 0 0],RocId,graspVal(i));
                 pause(0.02);
             end
             disp('Press any key...');pause;

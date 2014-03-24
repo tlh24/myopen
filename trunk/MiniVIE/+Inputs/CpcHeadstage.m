@@ -38,7 +38,7 @@ classdef CpcHeadstage < Inputs.SignalInput
             msgSize = payloadSize + 6;
             expectedLength = payloadSize;
             
-            [diffDataAll seDataAll] = deal([]);
+            [diffDataAll, seDataAll] = deal([]);
             readStart = 1;
             readMax = 10e6;
             remainder = [];
@@ -46,9 +46,9 @@ classdef CpcHeadstage < Inputs.SignalInput
                 readEnd = min(readStart+readMax-1,length(data));
                 %fprintf('Reading %d to %d.\n',readStart,readEnd);
                 bytesIn = [remainder data(readStart:readEnd)'];
-                [dataAligned remainder] = Inputs.CpcHeadstage.AlignDataBytes(bytesIn,msgSize);
+                [dataAligned, remainder] = Inputs.CpcHeadstage.AlignDataBytes(bytesIn,msgSize);
                 validData = Inputs.CpcHeadstage.ValidateMessages(dataAligned,expectedLength);
-                [diffDataI16 seDataU16] = Inputs.CpcHeadstage.GetSignalData(validData,BioampCnt,GPICnt);
+                [diffDataI16, seDataU16] = Inputs.CpcHeadstage.GetSignalData(validData,BioampCnt,GPICnt);
                 
                 diffDataAll = [diffDataAll diffDataI16];
                 

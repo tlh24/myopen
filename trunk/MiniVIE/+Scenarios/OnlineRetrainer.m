@@ -333,7 +333,7 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
                 
                 %updateFigure(obj,voteDecision,obj.CurrentClass);
                 
-                if (obj.Verbose > 0 && strcmp(class(obj),'Scenarios.OnlineRetrainer')) %#ok<STISA> Not using isa since we want an exact match
+                if (obj.Verbose > 0)% && strcmp(class(obj),'Scenarios.OnlineRetrainer')) %#ok<STISA> Not using isa since we want an exact match
                     fprintf('\n');
                 end
                 

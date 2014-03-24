@@ -65,6 +65,8 @@ classdef (Sealed) NfuUdp < handle
         numPacketsReceived = 0;
         
         localRoc
+        localRocXmlFile
+        
     end
     properties (Constant = true)
         nfuStates = {
@@ -89,7 +91,7 @@ classdef (Sealed) NfuUdp < handle
         end
     end
     methods
-        function [ status ] = initialize(obj)
+        function [ status ] = initialize(obj,rocXmlFile)
             % Initialize network interface to NFU.
             % [ status ] = initialize(obj)
             %
@@ -97,7 +99,21 @@ classdef (Sealed) NfuUdp < handle
             % status < 0: Failed
             
             status = 0;
-            obj.readRocTable();
+            
+            if 0% nargin < 2
+                % no roc table passed.  Create one in memory
+                %obj.readRocTable();
+                obj.localRocXmlFile = 'newRoc.xml';
+                fprintf('Creating a NEW roc file: %s\n',obj.localRocXmlFile)
+                obj.localRoc = MPL.RocTable.createRocTables('newRoc.xml');
+            else
+                
+                obj.localRocXmlFile = 'WrRocDefaults.xml';
+                
+                %obj.localRoc = MPL.RocTable.readRocTable('WR.xml');
+                fprintf('Loading roc file: %s\n',obj.localRocXmlFile)
+                obj.localRoc = MPL.RocTable.readRocTable(obj.localRocXmlFile);
+            end
             
             if obj.IsInitialized
                 fprintf('[%s] NFU Comms already initialized\n',mfilename);
@@ -181,7 +197,7 @@ classdef (Sealed) NfuUdp < handle
             
         end
         function readRocTable(obj)
-            obj.localRoc = MPL.RocTable.createRocTables('test.xml');
+            obj.localRoc = MPL.RocTable.createRocTables('WR.xml');
         end
         function sendAllJoints(obj,jointAngles)
             
@@ -200,12 +216,35 @@ classdef (Sealed) NfuUdp < handle
             
         end
         function sendUpperArmHandLocalRoc(obj,upperJointAngles,RocId,RocVal)
+            % Send joint commands to the limb using upper arm values and
+            % parameters for grasp that will be looked up in a local roc
+            % table.  In this case, the RocId should be the Id in the roc
+            % table (i.e. can be 0, non-sequential, etc)
+            
             
             % use local ROC's
             assert(RocVal >= 0,'RocVal < 0');
             assert(RocVal <= 1,'RocVal > 1');
             assert(~isempty(obj.localRoc),'Roc Table Empty');
-            roc = obj.localRoc(RocId+1);
+            
+            % find the roc Id in the table
+            idxTable = [obj.localRoc(:).id] == RocId;
+            % Perform checks:
+            if ~any(idxTable)
+                % rocId not found
+                fprintf('[%s] Requested RocID=%d not found in file "%s"\n',...
+                    mfilename,RocId,obj.localRocXmlFile);
+                roc = obj.localRoc(1); % default to first roc
+            elseif sum(idxTable) > 1
+                % Multiple Roc Ids found
+                fprintf('[%s] Multiple RocID=%d found in file "%s".  Using first entry\n',...
+                    mfilename,RocId,obj.localRocXmlFile);
+                roc = obj.localRoc(idxTable);
+                roc = roc(1);
+            else 
+                % all ok
+                roc = obj.localRoc(idxTable);
+            end
             
             handPos = interp1(roc.waypoint,roc.angles,RocVal);
             p = [upperJointAngles(:); handPos(:)];
@@ -658,17 +697,18 @@ function [s, sequenceNumber] = cpch_bytes_to_signal(b)
 numPacketHeaderBytes = 6;
 numSamplesPerPacket = 20;
 numSampleHeaderBytes = 4;
-%             if (length(cellData{1}) == 406)
-%                 numChannelsPerPacket = 8;
-%             else
-%                 numChannelsPerPacket = 16;
-%             end
+% if (length(cellData{1}) == 406)
+%     numChannelsPerPacket = 8;
+% else
+%     numChannelsPerPacket = 16;
+% end
 numChannelsPerPacket = 16;
 numBytesPerChannel = 2;
 numBytesPerSample = numChannelsPerPacket*numBytesPerChannel + numSampleHeaderBytes;
 cpchpacketSize = numPacketHeaderBytes+numBytesPerSample*numSamplesPerPacket;
 
 % First 6 bytes of message are global header
+%hdr = b(1:numPacketHeaderBytes);
 data = reshape(b(numPacketHeaderBytes+1:cpchpacketSize),...
     numBytesPerSample,numSamplesPerPacket);
 
@@ -679,8 +719,8 @@ s = reshape(typecast(databytes(:),'int16'),...
 
 sequenceNumber = data(3,:);
 
-% DEBUG!!!!! added this to check sequece numbers
-s(16,:) = int16(sequenceNumber);
+% DEBUG!!!!! added this to check sequence numbers
+% s(16,:) = int16(sequenceNumber);
 
 end
 function s = percept_bytes_to_signal(b)

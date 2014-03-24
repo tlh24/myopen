@@ -79,10 +79,9 @@ classdef UserDrivenTrainingInterface < Common.MiniVieObj
             
             image(obj.Images{i},'Parent',obj.hg.ImAxes);
             axis(obj.hg.ImAxes,'off')
-            %             plot(obj.hg.StatusAxes,rand(5))
+            daspect(obj.hg.ImAxes,[1 1 1]);
             %axis(obj.hg.StatusAxes,'off')
             updateBar(obj);
-            
             
             h = title(obj.hg.ImAxes,obj.TrainingData.ClassNames{i});
             set(h,'FontSize',18)
