@@ -108,7 +108,7 @@ int process_resample(jack_nframes_t nframes, void* arg){
 			out[1][i] = a2; 
 			//increment phase..
 			r->phase += r->phaseIncr;
-			if(r->phase > 1){
+			while(r->phase > 1){
 				r->rdPtr++; 
 				r->phase -= 1.f; 
 			}

@@ -1,6 +1,8 @@
 #ifndef __TIMESYNC_H__
 #define __TIMESYNC_H__
 
+#define TIMESYNC_MMAP	"/tmp/timesync.mmap"
+
 class GainController{
 public: 
 	long double m_avg; 
@@ -59,24 +61,31 @@ public:
 	
 	TimeSync(){
 		m_slope = 24414.0625; 
-		m_offset = 0.0; 
-		m_timeOffset = 0.0; 
-		slopeGC = new GainController(3e-5); 
-		offsetGC = new GainController(1e-4); 
-		#define TIMESYNC_MMAP	"/tmp/timesync.mmap"
-		mmh = new mmapHelp(2*sizeof(syncSharedData), TIMESYNC_MMAP); 
-		m_ssd = (syncSharedData*)mmh->m_addr; 
-		if(m_ssd){
-			m_ssd[0].magic = m_ssd[1].magic = 0x134fbab3; 
-			m_ssd[0].valid = false; 
-			m_ssd[1].valid = false; 
-		}
-		m_ssdn = 0; 
+		construct();
+	}
+	TimeSync(long double _slope){
+		m_slope = _slope; 
+		construct();
 	}
 	~TimeSync(){
 		delete slopeGC; 
 		delete offsetGC; 
 		delete mmh; 
+	}
+	void construct() {
+		m_offset = 0.0;
+		m_timeOffset = 0.0;
+		slopeGC = new GainController(3e-5);
+		offsetGC = new GainController(1e-4);
+		mmh = new mmapHelp(2*sizeof(syncSharedData), TIMESYNC_MMAP);
+		mmh->prinfo();
+		m_ssd = (syncSharedData*)mmh->m_addr; 
+		if (m_ssd) {
+			m_ssd[0].magic = m_ssd[1].magic = 0x134fbab3;
+			m_ssd[0].valid = false;
+			m_ssd[1].valid = false;
+		}
+		m_ssdn = 0;
 	}
 	std::string getInfo(){
 		std::stringstream oss; 

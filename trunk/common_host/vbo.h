@@ -88,7 +88,7 @@ public:
 	}
 	float* addRow(){
 		float * r = m_f; 
-		r += ((m_w % m_rows) * m_dim * m_cols); 
+		r += ((m_w % m_rows) * m_dim * m_cols);
 		m_w++; 
 		return r; //write to this pointer. 
 	}
@@ -161,7 +161,8 @@ public:
 	float* m_wf; 
 	float* m_poly; 
 	int    m_polyW;
-	int    m_drawWf; 
+	int    m_drawWf;
+	int m_wfLen;		
 
 	VboPca(int dim, int rows, int cols, int ch, MatStor* ms):Vbo(dim, rows, cols){ 
 		if(dim != 6) printf("Error: dim != 6 in VboPca\n"); 
@@ -179,14 +180,39 @@ public:
 			ms->getValue3(ch, 0, "vbopca_mean", m_mean, 6); 
 			ms->getValue3(ch, 0, "vbopca_max", m_max, 6); 
 		}
-		m_wf = (float*)malloc(rows * 32 * sizeof(float));
+		m_wfLen = 32;
+		m_wf = (float*)malloc(rows * m_wfLen * sizeof(float));
+		m_poly = (float*)malloc(1024 * 2 * sizeof(float)); //for sorting.
+		m_polyW = 0; 
+		m_drawWf = 0; 
+		m_color[3] = -0.5; //additive alpha. so make the points partially transparent.
+	}
+	VboPca(int dim, int rows, int cols, int ch, int wfLen, MatStor* ms):Vbo(dim, rows, cols){ 
+		// set wfLen in constructor
+		if(dim != 6) printf("Error: dim != 6 in VboPca\n"); 
+		m_mean = (float*)malloc(dim * sizeof(float));
+		m_max = (float*)malloc(dim * sizeof(float));
+		m_maxSmooth = (float*)malloc(dim * sizeof(float));
+		m_meanSmooth = (float*)malloc(dim * sizeof(float)); 
+		for(int i=0; i<dim; i++){
+			m_mean[i] = 0.f; 
+			m_max[i] = 1.f;
+			m_maxSmooth[i] = 1.f;
+			m_meanSmooth[i] = 0.f; 
+		}
+		if(ms){
+			ms->getValue3(ch, 0, "vbopca_mean", m_mean, 6); 
+			ms->getValue3(ch, 0, "vbopca_max", m_max, 6); 
+		}
+		m_wfLen = wfLen;
+		m_wf = (float*)malloc(rows * m_wfLen * sizeof(float));
 		m_poly = (float*)malloc(1024 * 2 * sizeof(float)); //for sorting.
 		m_polyW = 0; 
 		m_drawWf = 0; 
 		m_color[3] = -0.5; //additive alpha. so make the points partially transparent.
 	}
 	VboPca(int dim, int rows, int cols, float* pca_mean, float* pca_max):Vbo(dim, rows, cols){ 
-	  //not dependent on matstor
+		// not dependent on matstor
 		if(dim != 6) printf("Error: dim != 6 in VboPca\n"); 
 		m_mean = (float*)malloc(dim * sizeof(float));
 		m_max = (float*)malloc(dim * sizeof(float));
@@ -200,7 +226,8 @@ public:
 		}
 		memcpy(m_mean, pca_mean, dim);
 		memcpy(m_max,  pca_max, dim);
-		m_wf = (float*)malloc(rows * 32 * sizeof(float));
+		m_wfLen = 32;
+		m_wf = (float*)malloc(rows * m_wfLen * sizeof(float));
 		m_poly = (float*)malloc(1024 * 2 * sizeof(float)); //for sorting.
 		m_polyW = 0; 
 		m_drawWf = 0; 
@@ -222,7 +249,7 @@ public:
 		//assumes that we will call addRow() immediately *afterward*.
 		//this is used for the internal cache / mouse selector / aperture recalculation.
 		float* r = m_wf; 
-		r += 32 * (m_w % m_rows); 
+		r += m_wfLen * (m_w % m_rows); 
 		return r; 
 		//returns a pointer that caller can fill with the waveform. 
 	}
@@ -360,18 +387,18 @@ public:
 		glColor4f(0.3f, 1.f, 0.0f, 1.f); 
 		glLineWidth(4.f); 
 		glBegin(GL_LINE_STRIP);
-		for(int j=0; j<32; j++){
-			float ny = m_wf[i*32 + j]*gain + 0.5f; 
-			float nx = (float)j/31.f; 
+		for(int j=0; j<m_wfLen; j++){
+			float ny = m_wf[i*m_wfLen + j]*gain + 0.5f; 
+			float nx = (float)j/(m_wfLen-1); 
 			glVertex3f(nx*ow+ox, ny*oh+oy, 0.f);
 		}
 		glEnd(); 
 		glColor4f(0.f, 0.f, 0.f, 1.f); 
 		glLineWidth(1.0f); 
 		glBegin(GL_LINE_STRIP);
-		for(int j=0; j<32; j++){
-			float ny = m_wf[i*32 + j]*gain + 0.5f; 
-			float nx = (float)j/31.f; 
+		for(int j=0; j<m_wfLen; j++){
+			float ny = m_wf[i*m_wfLen + j]*gain + 0.5f; 
+			float nx = (float)j/(m_wfLen-1); 
 			glVertex3f(nx*ow+ox, ny*oh+oy, 0.f);
 		}
 		glEnd(); 
@@ -379,7 +406,7 @@ public:
 	bool getTemplate(float* temp, float &aperture, float* color){
 		if(m_polyW < 3) return false; 
 		
-		for(int i=0; i<32; i++)
+		for(int i=0; i<m_wfLen; i++)
 			temp[i] = 0.f; 
 		int npts = 0; 
 		bool* inside = (bool*)malloc(m_rows * sizeof(bool)); 
@@ -437,8 +464,8 @@ public:
 				//set the color.
 				for(int j=0; j<3; j++)
 					m_f[m_dim*m_cols*i + j + 3] = color[j];
-				for(int j=0; j<32; j++)
-					temp[j] += m_wf[i*32 + j]; // range 1 mean 0.
+				for(int j=0; j<m_wfLen; j++)
+					temp[j] += m_wf[i*m_wfLen + j]; // range 1 mean 0.
 				npts++; 
 			}else{
 				inside[i] = false; 
@@ -448,17 +475,17 @@ public:
 		if (npts <= 0) {
 			return false;
 		}
-		for(int k=0; k<32; k++){
+		for(int k=0; k<m_wfLen; k++){
 			temp[k] /= (float)npts;
 		}
 		//loop again, calculate mean aperture. (don't do stdev -- the headstage uses abs, not x^2)
 		aperture = 0; 
 		for(int i=0; i<MIN(m_w,m_rows); i++){
 			if(inside[i]){
-				for(int j=0; j<32; j++){
-					float r = m_wf[i*32 + j] - temp[j]; 
+				for(int j=0; j<m_wfLen; j++){
+					float r = m_wf[i*m_wfLen + j] - temp[j]; 
 					if(m_useSAA) aperture += fabs(r); 
-					else aperture += r*r; 
+					else aperture += r*r;
 				}
 			}
 		}
@@ -466,7 +493,7 @@ public:
 		if(m_useSAA){
 			aperture *= 0.45; //empirical.
 		} else {
-			aperture /= 32; 
+			aperture /= m_wfLen; 
 			aperture *= 2.0; //also empirical.
 		}
 		//really should iteratively assign this, moving until we get a set number of type 1/2 errors.
@@ -482,14 +509,14 @@ public:
 			float sum = 0.f;
 			if(m_useSAA){
 				for(int j=0; j<16; j++){
-					sum += fabs(m_wf[i*32 + j + 8] - temp[j]); 
+					sum += fabs(m_wf[i*m_wfLen + j + 8] - temp[j]); 
 				}
 			}else{
-				for(int j=0; j<32; j++){
-					float r = m_wf[i*32 + j] - temp[j];
+				for(int j=0; j<m_wfLen; j++){
+					float r = m_wf[i*m_wfLen + j] - temp[j];
 					sum += r*r; 
 				}
-				sum /= 32.f; 
+				sum /= m_wfLen; 
 			}
 			if(sum < aperture){
 				for(int j=0; j<3; j++)
