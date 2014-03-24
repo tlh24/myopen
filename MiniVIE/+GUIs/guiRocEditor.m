@@ -18,21 +18,25 @@ classdef guiRocEditor < handle
     %
     % 07NOV2013 Armiger: Created
     properties
-        hSink;
-        hMud = MPL.MudCommandEncoder;
+        hSink;                          % handle to the data output sink (udp)
+        hMud = MPL.MudCommandEncoder;   % handle for the message encoder
 
-        structRoc;
+        structRoc;                      % structure for storing the current roc table
+        
         % All Ids are 1 based since this is matlab
         CurrentRocId = 1;
         CurrentWaypointId = 1;
         
+        IsNfu;
+        
+        Verbose = 0;
     end
     properties  (SetObservable)
         jointAngles = zeros(1,27);
     end
     properties (Access = 'protected')
-        hParent;
-        hAxes;
+        hParent;        % Figure
+        hAxes;          % Array of axes for sliders
 
         % roc related gui handles
         hJointSliders;
@@ -43,20 +47,52 @@ classdef guiRocEditor < handle
         
     end
     methods
-        function obj = guiRocEditor
-            obj.createFigure();
+        function obj = guiRocEditor(rocFilename,isNfu)
+            % obj = guiRocEditor(rocFilename,isNfu)
+            % 
+            % Creator Function takes an optional argument for whether there
+            % is an NFU present.  Messaging varies depending on VulcanX or
+            % NFU.  Use true or false to select approprate mode
             
-            obj.structRoc = MPL.RocTable.createRocTables();
-            %% Quick test of vMPL / MPL control via VulcanX
-            %  Create the udp transmission via pnet
-            UdpLocalPort = 56789;
-            UdpDestinationPort = 9027; %9024 = Left; 9027 = Right; (see
-            UdpAddress = '127.0.0.1'; % '192.168.1.101';
-            % PnetClass(localPort,remotePort,remoteIP)
-            obj.hSink = PnetClass(UdpLocalPort,UdpDestinationPort,UdpAddress);
+            if nargin < 1
+                rocFilename = [];
+            end
+            
+            if nargin < 2
+                % Prompt for VulcanX or NFU.  Note cancelling falls to
+                % VulcanX mode
+                q = questdlg('Select MPL Interface','MPL Interface','NFU','VulcanX','VulcanX');
+                if strcmp(q,'NFU')
+                    obj.IsNfu = true;
+                else
+                    obj.IsNfu = false;
+                end
+            else
+                % user provided mode
+                obj.IsNfu = isNfu;
+            end
+            
+            obj.createFigure();
+            if isempty(rocFilename)
+                obj.structRoc = MPL.RocTable.createRocTables();
+            else
+                obj.structRoc = MPL.RocTable.readRocTable(rocFilename);
+            end
+            
+            % Set the data sink for the appropriate device
+            if obj.IsNfu
+                obj.hSink = MPL.NfuUdp.getInstance;
+            else
+                %  Create the udp transmission via pnet
+                UdpLocalPort = 56789;
+                UdpDestinationPort = 9027; %9024 = Left; 9027 = Right; (see
+                UdpAddress = '127.0.0.1'; % '192.168.1.101';
+                % PnetClass(localPort,remotePort,remoteIP)
+                obj.hSink = PnetClass(UdpLocalPort,UdpDestinationPort,UdpAddress);
+            end
+            
             obj.hSink.initialize()
             
-            %%
             obj.updateFigure();
         end
         function createFigure(obj,hParent,nSliders)
@@ -83,6 +119,11 @@ classdef guiRocEditor < handle
 
             patchWidth = (axesRange(:,2) - axesRange(:,1))/15;
             
+            % take the total number of sliders and divide by the number
+            % of siders per row.  the remainder gives the column
+            % position and the quotient gives the row number
+            numRows = floor(nSliders/nSlidersPerRow);
+            numCols = rem(nSliders,nSlidersPerRow); %#ok<NASGU>
             
             for i = 1:nSliders
                 iRow = floor((i-1)/nSlidersPerRow);
@@ -97,7 +138,7 @@ classdef guiRocEditor < handle
                     'TickDir','out',...
                     'TickLength',[.05 .1],...
                     'Units','Pixels',...
-                    'Position',[xPos(iCol+1) 180*iRow+20 axesWidth axesHeight]);
+                    'Position',[xPos(iCol+1) 180*(numRows-iRow-1)+20 axesWidth axesHeight]); %#ok<LAXES>
                 
                 % title(hAx(i),sliderTitle{i},'Interpreter','None');
                 obj.hJointSliders{i} = GUIs.widgetSlider(...
@@ -134,13 +175,19 @@ classdef guiRocEditor < handle
             jhSpinner = javacomponent(jSpinner, [10,600,40,20], hParent);
             jhSpinner.StateChangedCallback = @(src,evt)cbSpinner(src);
             
-            % Roc ID
+            % Roc ID Label
             uicontrol(hParent,'Style','text','Position',[10 620, 60, 20],...
                 'String','RocID:','HorizontalAlignment','Left');
             
-            % Roc ID
+            % Roc Waypoint Label
             uicontrol(hParent,'Style','text','Position',[100 620, 80, 20],...
                 'String','RocWaypoint:','HorizontalAlignment','Left');
+
+            % Test Button
+            uicontrol(hParent,'Style','pushbutton','Position',[10 570, 80, 20],...
+                'String','Test Close','HorizontalAlignment','Left','Callback',@(src,evt)cbTestClose);
+            uicontrol(hParent,'Style','pushbutton','Position',[10 550, 80, 20],...
+                'String','Test Open','HorizontalAlignment','Left','Callback',@(src,evt)cbTestOpen);
             
             % Roc States Listbox
             obj.hRocWaypoints = uicontrol(hParent,'Style','listbox','Position',[100 540, 120, 80],...
@@ -155,6 +202,61 @@ classdef guiRocEditor < handle
                 obj.CurrentWaypointId = get(src,'Value');
                 obj.updateFigure();
             end
+            
+            function cbTestCloseOpen()
+                
+                cbTestClose;
+                pause(0.2)
+                cbTestOpen;
+                
+            end
+            function cbTestOpen()
+                
+                idx = obj.CurrentRocId;
+                thisRoc = obj.structRoc(idx);
+                RocId = thisRoc.id;
+                RocName = thisRoc.name;
+                
+                numOpenSteps = 30;
+                
+                graspVal = linspace(1,0,numOpenSteps);
+                for iVal = 1:length(graspVal)
+                    fprintf('Entry #%d, RocId=%d, %14s %6.2f Pct\n',...
+                        idx,RocId,RocName,graspVal(iVal)*100);
+                    
+                    upperJointAngles = zeros(1,7);
+                    handPos = interp1(thisRoc.waypoint,thisRoc.angles,graspVal(iVal));
+                    obj.jointAngles = [upperJointAngles handPos];
+                    obj.transmit();
+
+                    pause(0.02);
+                end
+                
+            end
+            function cbTestClose()
+                
+                idx = obj.CurrentRocId;
+                thisRoc = obj.structRoc(idx);
+                RocId = thisRoc.id;
+                RocName = thisRoc.name;
+                
+                numCloseSteps = 30;
+                
+                graspVal = linspace(0,1,numCloseSteps);
+                for iVal = 1:length(graspVal)
+                    fprintf('Entry #%d, RocId=%d, %14s %6.2f Pct\n',...
+                        idx,RocId,RocName,graspVal(iVal)*100);
+                    
+                    upperJointAngles = zeros(1,7);
+                    handPos = interp1(thisRoc.waypoint,thisRoc.angles,graspVal(iVal));
+                    obj.jointAngles = [upperJointAngles handPos];
+                    obj.transmit();
+
+                    pause(0.02);
+                end
+                
+            end
+            
         end
         function ang = getdata(obj)
             ang = obj.jointAngles;
@@ -164,13 +266,6 @@ classdef guiRocEditor < handle
             waypointId = obj.CurrentWaypointId;
             
             roc = obj.structRoc(rocId);
-            % set sliders
-            for i = 1:length(roc.joints)
-                iJoint = roc.joints(i);
-                newAngle = roc.angles(waypointId,i);
-                set(obj.hJointSliders{iJoint},'Value',newAngle);
-                obj.jointAngles(iJoint) = newAngle;
-            end
             
             % set list box
             set(obj.hRocWaypoints,...
@@ -179,6 +274,30 @@ classdef guiRocEditor < handle
             % set spinner
             set(obj.jSpinnerModel,'Maximum',length(obj.structRoc)-1); %zero based
             
+            % set sliders
+            currentAngles = obj.jointAngles;
+            finalAngles = currentAngles;
+            for i = 1:length(roc.joints)
+                iJoint = roc.joints(i);
+                newAngle = roc.angles(waypointId,i);
+                set(obj.hJointSliders{iJoint},'Value',newAngle);
+                finalAngles(iJoint) = newAngle;
+            end
+            
+            % interpolate
+            maxDiff = max(abs(finalAngles - currentAngles));
+            
+            numSteps = floor(maxDiff / 0.05);
+            
+            for i = 1:numSteps
+                interpAngles = interp1([0 1],[currentAngles; finalAngles],i/numSteps);
+                obj.jointAngles = interpAngles;
+                transmit(obj);
+                pause(0.02);
+            end
+            
+            % resend final values
+            obj.jointAngles = finalAngles;
             transmit(obj);
             
         end
@@ -219,14 +338,23 @@ classdef guiRocEditor < handle
             end
         end
         function transmit(obj)
-            fprintf('Joint Command:');
-            fprintf(' %6.3f',obj.jointAngles);
-            fprintf('\n');
+            if obj.Verbose
+                fprintf('Joint Command:');
+                fprintf(' %6.3f',obj.jointAngles);
+                fprintf('\n');
+            end
             
             upperArmAngles = obj.jointAngles(1:7);
             handAngles = obj.jointAngles(8:27);
-            msg = obj.hMud.AllJointsPosVelCmd(upperArmAngles,zeros(1,7),handAngles,zeros(1,20));
-            obj.hSink.putData(msg);
+            if obj.IsNfu
+                % NFU
+                obj.hSink.sendAllJoints(obj.jointAngles);
+            else
+                % Vulcan X
+                msg = obj.hMud.AllJointsPosVelCmd(upperArmAngles,zeros(1,7),handAngles,zeros(1,20));
+                obj.hSink.putData(msg);
+            end
+            
         end
         function close(obj)
             close(obj.hAxes);
@@ -285,21 +413,15 @@ end
 
 function hFig = default_figure()
 
+hFig = UiTools.create_figure('JHU/APL: Reduced Order Control (ROC) Editor','guiRocEditor');
+
+% return monitor positions, secondary monitors are in each row
 mp = get(0, 'MonitorPositions');
 
 topLeft = [mp(1,1) mp(1,4)-mp(1,2)];
 windowSize = [800 650];
 
-hFig = figure(...
-    'Color',get(0,'defaultUicontrolBackgroundColor'),...
+set(hFig,...
     'Units','pixels',...
-    'Position',[topLeft(1)+10 topLeft(2)-windowSize(2)-50 windowSize],...
-    'Name',mfilename,...
-    'NumberTitle','off',...
-    'HandleVisibility','Callback',...
-    'IntegerHandle','off',...
-    'RendererMode','manual',...
-    'Renderer','OpenGl',...'zbuffer',...
-    'Visible','on'...
-    );
+    'Position',[topLeft(1)+10 topLeft(2)-windowSize(2)-50 windowSize]);
 end

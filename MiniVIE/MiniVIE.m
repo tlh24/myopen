@@ -90,6 +90,11 @@ classdef MiniVIE < Common.MiniVieObj
             obj.hg.MenuFileSave = uimenu(obj.hg.MenuFile,...
                 'Label','Save Training Data...',...
                 'Callback',@(src,evt)obj.saveTrainingData());
+            obj.hg.MenuTools = uimenu(obj.hg.Figure,...
+                'Label','Tools');
+            obj.hg.MenuToolsRocEdit = uimenu(obj.hg.MenuTools,...
+                'Label','ROC Editor...',...
+                'Callback', @(src,evt) GUIs.guiRocEditor('WrRocDefaults.xml') );
             
             function closeFig(obj)
                 try
@@ -334,10 +339,10 @@ classdef MiniVIE < Common.MiniVieObj
                 switch string{value}
                     case 'Signal Simulator'
                         h = Inputs.SignalSimulator();
-                        Fs = h.SampleFrequency;
-                        h.addfilter(Inputs.Notch([60 120],4,8,Fs));
+                        %Fs = h.SampleFrequency;
+                        %h.addfilter(Inputs.Notch([60 120],4,8,Fs));
                         %h.addfilter(Inputs.HighPass(15,3,Fs));
-                        h.addfilter(Inputs.LowPass(400,8,Fs));
+                        %h.addfilter(Inputs.LowPass(400,8,Fs));
                     case 'EMG Simulator'
                         [FileName,PathName,FilterIndex] = uigetfile('emgPatternData.mat');
                         if FilterIndex == 0
@@ -376,10 +381,12 @@ classdef MiniVIE < Common.MiniVieObj
                     % Enable buttons
                     set(obj.hg.SignalSourceButtons(:),'Enable','on');
                     
-%                     % Set window size
-%                     numSamples = 250;
-%                     fprintf('Input Source Window Size = %d\n',numSamples);
-%                     h.NumSamples = numSamples;
+                    % Set getData size
+                    % Note this is different the the window size for the
+                    % classifier
+                    %numSamples = 250;
+                    %fprintf('Input Source Window Size = %d\n',numSamples);
+                    %h.NumSamples = numSamples;
                     
                     % Setup filters and remaining properties
                     obj.println('Adding Filters',1);
@@ -394,8 +401,6 @@ classdef MiniVIE < Common.MiniVieObj
                     
                     
                     % Disabled high pass for IMES Demo
-                    h.addfilter(Inputs.HighPass(20,3,Fs));  % Ref Hargove 2014 comparison of real-tim controlability
-                    
                     %                     h.addfilter(Inputs.HighPass(10,8,Fs));
                     %                     %h.addfilter(Inputs.LowPass(350,8,Fs));
                     %                     %h.addfilter(Inputs.Notch(60.*(1:4),5,1,Fs));
@@ -1072,7 +1077,7 @@ classdef MiniVIE < Common.MiniVieObj
             obj.SignalSource.initialize();
             
             obj.TrainingData = PatternRecognition.TrainingData;
-            obj.TrainingData.loadTrainingData('SimBasic.trainingData');
+            obj.TrainingData.loadTrainingData('SimAll.trainingData');
             
             obj.SignalClassifier = SignalAnalysis.Lda();
             obj.SignalClassifier.initialize(obj.TrainingData);

@@ -299,9 +299,14 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
             
             % TODO: Hand and wrist and elbow only implemented, not upper arm
             w = zeros(1,3);
-            w(1) = +obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) * pi/180;
-            w(2) = +obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) * pi/180;
-            w(3) = +obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) * pi/180;
+            %w(1) = +obj.JointAnglesDegrees(action_bus_enum.Wrist_Rot) * pi/180;
+            %w(2) = +obj.JointAnglesDegrees(action_bus_enum.Wrist_Dev) * pi/180;
+            %w(3) = +obj.JointAnglesDegrees(action_bus_enum.Wrist_FE) * pi/180;
+            w(1) = +obj.JointAnglesDegrees(mpl_upper_arm_enum.WRIST_ROT) * pi/180;
+            w(2) = +obj.JointAnglesDegrees(mpl_upper_arm_enum.WRIST_DEV) * pi/180;
+            % TODO: determine which angle is correct.  (+) extend on
+            % capital hand wrist disartic
+            w(3) = -obj.JointAnglesDegrees(mpl_upper_arm_enum.WRIST_FE) * pi/180;
             
             e = obj.JointAnglesDegrees(action_bus_enum.Elbow) * pi/180;
             

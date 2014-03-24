@@ -82,9 +82,10 @@ classdef MiniV < hgsetget
             % obj.handle(5).Joint_Param(3) = -jointAngles(6); %% *0; %% Wrist_FE (+ flexion)
             % obj.handle(5).Joint_Param(1) = -jointAngles(7); %% *0; %% Wrist_Dev (+ Radial Dev)
             
-            obj.handle(5).Joint_Param(3) = -jointAngles(5); %% *0; %% Wrist_Rot (+ supination)
-            obj.handle(5).Joint_Param(1) =  jointAngles(6); %% *0; %% Wrist_FE (+ flexion)
-            obj.handle(5).Joint_Param(2) =  jointAngles(7); %% *0; %% Wrist_Dev (+ Radial Dev)
+            % MPL
+            obj.handle(5).Joint_Param(3) =  jointAngles(5); %% *0; %% Wrist_Rot (+ supination)
+            obj.handle(5).Joint_Param(1) =  jointAngles(7); %% *0; %% Wrist_FE (+ flexion)
+            obj.handle(5).Joint_Param(2) = -jointAngles(6); %% *0; %% Wrist_Dev (+ Radial Dev)
             
         end
         function putdata(obj, jointAngles)

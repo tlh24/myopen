@@ -69,14 +69,23 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
             
             % Note the joint ids for the MPL are different than the older
             % action bus definition
+            % jointIds = [
+            %     action_bus_enum.Shoulder_FE
+            %     action_bus_enum.Shoulder_AbAd
+            %     action_bus_enum.Humeral_Rot
+            %     action_bus_enum.Elbow
+            %     action_bus_enum.Wrist_Rot
+            %     action_bus_enum.Wrist_Dev
+            %     action_bus_enum.Wrist_FE
+            %     ];
             jointIds = [
-                action_bus_enum.Shoulder_FE
-                action_bus_enum.Shoulder_AbAd
-                action_bus_enum.Humeral_Rot
-                action_bus_enum.Elbow
-                action_bus_enum.Wrist_Rot
-                action_bus_enum.Wrist_Dev
-                action_bus_enum.Wrist_FE
+                mpl_upper_arm_enum.SHOULDER_FE
+                mpl_upper_arm_enum.SHOULDER_ADAB
+                mpl_upper_arm_enum.HUMERAL_ROT
+                mpl_upper_arm_enum.ELBOW
+                mpl_upper_arm_enum.WRIST_ROT
+                mpl_upper_arm_enum.WRIST_DEV
+                mpl_upper_arm_enum.WRIST_FE
                 ];
             
             % upperArmAngles = jointAngles([1 2 3 4 5 7 6])
@@ -117,7 +126,7 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
             p = obj.hUdp.getData; %gets latest packets
             if ~isempty(p) && length(p) >= 324
                 r = reshape(typecast(p(1:324),'single'),3,27);
-                if obj.Verbose
+                if obj.Verbose > 1
                     fprintf('[%s] PerceptAngles: ',mfilename);
                     fprintf('%6.4f ',r(1,:)');
                     fprintf('\n');

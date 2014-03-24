@@ -83,32 +83,32 @@ f_KChain_List(KChain,1);
 % end
 
 if 0
-%% Add Graphics Data by loading as functions (since these will compile)
-[KChain(2).nodeData,KChain(2).elementData] = ArmData01;     %% Collar
-[KChain(3).nodeData,KChain(3).elementData] = ArmData02;     %% Upper Arm
-[KChain(4).nodeData,KChain(4).elementData] = ArmData03;     %% Forearm
-[KChain(5).nodeData,KChain(5).elementData] = ArmData04;     %% Hand
-[KChain(6).nodeData,KChain(6).elementData] = ArmData05;     %% Thumb1
-[KChain(7).nodeData,KChain(7).elementData] = ArmData06;     %% Thumb2
-[KChain(8).nodeData,KChain(8).elementData] = ArmData07;     %% Thumb3
-[KChain(9).nodeData,KChain(9).elementData] = ArmData08;     %% Index1
-[KChain(10).nodeData,KChain(10).elementData] = ArmData09;   %% Index2
-[KChain(11).nodeData,KChain(11).elementData] = ArmData10;   %% Index3
-[KChain(12).nodeData,KChain(12).elementData] = ArmData11;   %% Middle1
-[KChain(13).nodeData,KChain(13).elementData] = ArmData12;   %% Middle2
-[KChain(14).nodeData,KChain(14).elementData] = ArmData13;   %% Middle3
-[KChain(15).nodeData,KChain(15).elementData] = ArmData14;   %% Ring1
-[KChain(16).nodeData,KChain(16).elementData] = ArmData15;   %% Ring2
-[KChain(17).nodeData,KChain(17).elementData] = ArmData16;   %% Ring3
-[KChain(18).nodeData,KChain(18).elementData] = ArmData17;   %% Pinky1
-[KChain(19).nodeData,KChain(19).elementData] = ArmData18;   %% Pinky2
-[KChain(20).nodeData,KChain(20).elementData] = ArmData19;   %% Pinky3
+    %% Add Graphics Data by loading as functions (since these will compile)
+    [KChain(2).nodeData,KChain(2).elementData] = ArmData01;     %% Collar
+    [KChain(3).nodeData,KChain(3).elementData] = ArmData02;     %% Upper Arm
+    [KChain(4).nodeData,KChain(4).elementData] = ArmData03;     %% Forearm
+    [KChain(5).nodeData,KChain(5).elementData] = ArmData04;     %% Hand
+    [KChain(6).nodeData,KChain(6).elementData] = ArmData05;     %% Thumb1
+    [KChain(7).nodeData,KChain(7).elementData] = ArmData06;     %% Thumb2
+    [KChain(8).nodeData,KChain(8).elementData] = ArmData07;     %% Thumb3
+    [KChain(9).nodeData,KChain(9).elementData] = ArmData08;     %% Index1
+    [KChain(10).nodeData,KChain(10).elementData] = ArmData09;   %% Index2
+    [KChain(11).nodeData,KChain(11).elementData] = ArmData10;   %% Index3
+    [KChain(12).nodeData,KChain(12).elementData] = ArmData11;   %% Middle1
+    [KChain(13).nodeData,KChain(13).elementData] = ArmData12;   %% Middle2
+    [KChain(14).nodeData,KChain(14).elementData] = ArmData13;   %% Middle3
+    [KChain(15).nodeData,KChain(15).elementData] = ArmData14;   %% Ring1
+    [KChain(16).nodeData,KChain(16).elementData] = ArmData15;   %% Ring2
+    [KChain(17).nodeData,KChain(17).elementData] = ArmData16;   %% Ring3
+    [KChain(18).nodeData,KChain(18).elementData] = ArmData17;   %% Pinky1
+    [KChain(19).nodeData,KChain(19).elementData] = ArmData18;   %% Pinky2
+    [KChain(20).nodeData,KChain(20).elementData] = ArmData19;   %% Pinky3
 
 else
     load meshData;
    for i = 1:20
-    KChain(i).nodeData = meshData(i).nodeData
-    KChain(i).elementData = meshData(i).elementData
+        KChain(i).nodeData = meshData(i).nodeData;
+        KChain(i).elementData = meshData(i).elementData;
    end
     
 end
@@ -353,7 +353,7 @@ for iAxis = 1:length(hAxes)
     %% Plot every link, no need for recursion
     for iSegment = 1:length(KChain)
         % Create the patch object:
-%         KChain(iSegment).hPatch(iAxis) = f_show_surface(KChain(iSegment),cell2mat(colorstr_ar(iSegment)));
+        %         KChain(iSegment).hPatch(iAxis) = f_show_surface(KChain(iSegment),cell2mat(colorstr_ar(iSegment)));
            KChain(iSegment).hPatch(iAxis) = patch(...
             'Vertices',KChain(iSegment).nodeData,...
             'Faces',KChain(iSegment).elementData,...
@@ -375,24 +375,24 @@ for iAxis = 1:length(hAxes)
     end
     
     if showBody
-    %% Create static patch objects:
-    %% Clothes (Blue)
-%     staticList = [1:3 8:9 46:55 27];
+        % Create static patch objects:
+        % Clothes (Blue)
+        %     staticList = [1:3 8:9 46:55 27];
     staticList = [1 46 47];
-%     staticList = [];
+        %     staticList = [];
     for i = 1:length(staticList)
         f_show_surface(Body(staticList(i)),'blue');
     end
-    %% Skin
+        % Skin
     staticList = [2:5 8];%:26];
      skin = [.95 .87 .73];
-%     staticList = [];
+        %     staticList = [];
     for i = 1:length(staticList)
         f_show_surface(Body(staticList(i)),skin);
     end
-    %% Eyes
+        % Eyes
     staticList = [6 7];
-%     staticList = [];
+        %     staticList = [];
     for i = 1:length(staticList)
          f_show_surface(Body(staticList(i)),[0.9 0.9 1]);
     end
@@ -425,10 +425,10 @@ for i = 1:length(KChain)
     KChain(i).Joint_Param(2:3) = KChain(i).Joint_Param(2:3)*mirror;
     KChain(i).Joint_Max(2:3) = KChain(i).Joint_Max(2:3)*mirror;
     KChain(i).Joint_Min(2:3) = KChain(i).Joint_Min(2:3)*mirror;
-    %% The Increment poses a problem since only two 
-    %% angles should be negated.  It would be better if [increment] were on
-    %% a per joint basis (i.e. increment = [1 1 1] or [5 5 5]) then the
-    %% next line would be:
+    % The Increment poses a problem since only two
+    % angles should be negated.  It would be better if [increment] were on
+    % a per joint basis (i.e. increment = [1 1 1] or [5 5 5]) then the
+    % next line would be:
     % KChain(i).Increment(2:3) = KChain(i).Increment(2:3)*mirror
     KChain(i).Increment = 1;  
 end

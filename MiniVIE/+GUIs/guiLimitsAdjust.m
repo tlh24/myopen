@@ -17,23 +17,23 @@ classdef guiLimitsAdjust < Common.MiniVieObj
         function obj = guiLimitsAdjust
             % Creator
             defaultLimits = {
-                'Shoulder Flexion/Extension', -45, 180;
-                'Shoulder Abduction/Adduction', -90, 20;
-                'Humeral Rotation', -40, 90;
-                'Elbow Flexion/Extension', 0, 150;
-                'Wrist Rotation', -90, 90;
-                'Wrist Radial/Ulnar Deviation', -15, 45;
-                'Wrist Flexion/Extension', -60, 60;
-                'Finger MCP Flexion/Extension (4x)', -45, 90;
-                'Finger PIP Flexion/Extension (4x)', 0, 100;
-                'Finger DIP Flexion/Extension (4x)', 0, 80;
-                'Index Finger Abduction/Adduction', -20, 0;
-                'Ring Finger Abduction/Adduction', 0, 20;
-                'Little Finger Abduction/Adduction', 0, 20;
-                'Thumb CMC Abduction/Adduction', 0, 120;
-                'Thumb CMC Flexion/Extension', 0, 60;
-                'Thumb MCP Flexion/Extension', 0, 60;
-                'Thumb IP Flexion/Extension', -15, 80;
+                'Shoulder Flexion/Extension', -45, 180, 0;
+                'Shoulder Abduction/Adduction', -90, 20, 0;
+                'Humeral Rotation', -40, 90, 0;
+                'Elbow Flexion/Extension', 0, 150, 0;
+                'Wrist Rotation', -90, 90, 0;
+                'Wrist Radial/Ulnar Deviation', -15, 45, 0;
+                'Wrist Flexion/Extension', -17, 17, 0;
+                'Finger MCP Flexion/Extension (4x)', -45, 90, 0;
+                'Finger PIP Flexion/Extension (4x)', 0, 100, 0;
+                'Finger DIP Flexion/Extension (4x)', 0, 80, 0;
+                'Index Finger Abduction/Adduction', -20, 0, 0;
+                'Ring Finger Abduction/Adduction', 0, 20, 0;
+                'Little Finger Abduction/Adduction', 0, 20, 0;
+                'Thumb CMC Abduction/Adduction', 0, 120, 0;
+                'Thumb CMC Flexion/Extension', 0, 60, 0;
+                'Thumb MCP Flexion/Extension', 0, 60, 0;
+                'Thumb IP Flexion/Extension', -15, 80, 0;
                 };
             obj.limitData = defaultLimits;
             
@@ -43,7 +43,9 @@ classdef guiLimitsAdjust < Common.MiniVieObj
             
             obj.targetModel = hModel;
             addlistener(obj,'ValueChange',@(src,evt)updateModel);
+            obj.limitData(1:7,2) = num2cell([obj.targetModel.structState(1:7).Min]*180/pi);
             obj.limitData(1:7,3) = num2cell([obj.targetModel.structState(1:7).Max]*180/pi);
+            obj.limitData(1:7,4) = num2cell([obj.targetModel.structState(1:7).IsReversed]);
             return
             
             function updateModel
@@ -52,11 +54,13 @@ classdef guiLimitsAdjust < Common.MiniVieObj
                 
                 upperLim = cell2mat(obj.limitData(1:7,3));
                 lowerLim = cell2mat(obj.limitData(1:7,2));
+                isReversed = cell2mat(obj.limitData(1:7,4));
                 
                 % set the ranges in the arm state
                 for i = 1:7
                     obj.targetModel.structState(i).Max = upperLim(i)*pi/180;
                     obj.targetModel.structState(i).Min = lowerLim(i)*pi/180;
+                    obj.targetModel.structState(i).IsReversed = isReversed(i);
                 end
             end
         end
@@ -81,6 +85,8 @@ classdef guiLimitsAdjust < Common.MiniVieObj
             numRows = size(obj.limitData,1);
             iRow = 1;
             % Name spans 4 (of 6) cells
+
+            % label
             uicontrol(...
                 'Parent',obj.hg.Figure,...
                 'Style','text',...
@@ -88,6 +94,7 @@ classdef guiLimitsAdjust < Common.MiniVieObj
                 'String','Joint Name',...
                 'Visible','on',...
                 'FontWeight','bold');
+            % label
             uicontrol(...
                 'Parent',obj.hg.Figure,...
                 'Style','text',...
@@ -95,6 +102,7 @@ classdef guiLimitsAdjust < Common.MiniVieObj
                 'String','Lower',...
                 'Visible','on',...
                 'FontWeight','bold');
+            % label
             uicontrol(...
                 'Parent',obj.hg.Figure,...
                 'Style','text',...
@@ -102,6 +110,7 @@ classdef guiLimitsAdjust < Common.MiniVieObj
                 'String','Upper',...
                 'Visible','on',...
                 'FontWeight','bold');
+            % label
             uicontrol(...
                 'Parent',obj.hg.Figure,...
                 'Style','text',...
@@ -146,7 +155,8 @@ classdef guiLimitsAdjust < Common.MiniVieObj
                     'HorizontalAlignment','center',...
                     'String','',...
                     'Visible','on',...
-                    'Callback',@(src,evt)adjustRange(obj),...
+                    'Value',obj.limitData{iRow,4},...
+                    'Callback',@(src,evt)adjustOutputDirection(obj),...
                     'FontWeight','bold');
             end
         end
@@ -177,6 +187,12 @@ classdef guiLimitsAdjust < Common.MiniVieObj
             
             notify(obj,'ValueChange');
             
+        end
+        function adjustOutputDirection(obj)
+            % Update list of joints to reverse and trigger value change
+            % event
+            obj.limitData(:,4) = get(obj.hg.Reverse,'Value');
+            notify(obj,'ValueChange');
         end
     end
     methods (Static = true)
