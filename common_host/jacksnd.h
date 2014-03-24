@@ -1,8 +1,8 @@
 #ifndef __JACKSND_H__
 #define __JACKSND_H__
 
-#define TABLE_SIZE   (200)
-#define SAMPFREQ		48000.0
+#define TABLE_SIZE 	(200)
+#define SAMPFREQ 	(48000.0)
 
 extern long g_jackSample; 
 
@@ -20,7 +20,7 @@ enum JACKPROCESS_TYPE {
 	JACKPROCESS_RESAMPLE,
 	JACKPROCESS_NUM
 }; 
-#define RESAMP_SIZ 1024
+#define RESAMP_SIZ 4096
 #define RESAMP_MASK (RESAMP_SIZ-1)
 typedef struct{
 	float		circBuf[2][RESAMP_SIZ];
@@ -36,17 +36,17 @@ typedef struct{
 
 class Tone{
 public:
-	float		m_s1; 
-	float		m_s2; 
+	float	m_s1; 
+	float	m_s2; 
 	double	m_phase; 
 	double	m_pincr; 
 	double	m_poff; 
-	long		m_start; //in samples
-	long		m_duration; // in samples; 
-	long		m_attack; 
-	long		m_release; 
-	float		m_distortion; 
-	bool		m_dead; 
+	long	m_start; //in samples
+	long	m_duration; // in samples; 
+	long	m_attack; 
+	long	m_release; 
+	float	m_distortion; 
+	bool	m_dead; 
 	int		m_type; 
 	
 	Tone(float freq, float pan, float scale, long start, long duration){

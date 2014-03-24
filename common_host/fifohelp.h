@@ -52,7 +52,7 @@ public:
 	}
 	void prinfo() {
 		if (m_fd) {
-			printf("%s\n", m_fname);
+			printf("fifo: %s\n", m_fname);
 		}
 	}
 };

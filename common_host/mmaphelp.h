@@ -57,7 +57,7 @@ public:
 		free(m_fname); 
 	}
 	void prinfo(){
-		printf("%s mmap address: %lx\n", m_fname, (long unsigned int)m_addr); 
+		printf("mmap: %s address: %lx\n", m_fname, (long unsigned int)m_addr); 
 	}
 }; 
 #endif
