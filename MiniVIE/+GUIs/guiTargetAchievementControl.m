@@ -58,7 +58,7 @@ set([hTarget.handle.hPatch],'FaceColor',blueArm)
 % Test parameters
 tTimeout = 20; %seconds
 numTrials = 3;
-requiredHoldTime = 1; %s
+requiredHoldTime = 2; %s
 jointAccuracy = 5 * pi / 180; % degrees->radians
 graspAccuracy = 0.05; % percent
 
@@ -92,7 +92,7 @@ trainedClassNames(isRestClass) = [];
 iTest = 0;
 for iTrial = 1:numTrials
     % Randomize
-    %trainedClassNames = trainedClassNames(randperm(length(trainedClassNames)));
+    trainedClassNames = trainedClassNames(randperm(length(trainedClassNames)));
     for iClass = 1:length(trainedClassNames)
         thisClass = trainedClassNames{iClass};
         title(hAxes,thisClass);
@@ -113,7 +113,14 @@ end
 fullFilename = UiTools.ui_select_data_file('.tacAssessment',FilePrefix);
 
 if ~isempty(fullFilename)
-    save(fullFilename,'structTrialLog','TrainingData','-mat');
+    try 
+    	save(fullFilename,'structTrialLog','-mat');
+    	%save(fullFilename,'structTrialLog','TrainingData','-mat');
+    catch ME
+        rethrow(ME);
+        disp(mfilename)
+        %keyboard
+    end
 end
 
 disp('Complete')
