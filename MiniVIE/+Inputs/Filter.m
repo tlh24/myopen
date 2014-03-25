@@ -58,7 +58,7 @@ classdef Filter < handle
                 
                 for i = 1:numFilters
                     % save the filter state for the next iteration
-%                     obj.lastFilterState{i} = [];
+                    %obj.lastFilterState{i} = [];
                     [filteredData, obj.lastFilterState{i}] = ...
                         filter(obj.Hb(i,:),obj.Ha(i,:),filteredData,obj.lastFilterState{i});
                 end

@@ -186,6 +186,8 @@ classdef SignalInput < Common.MiniVieObj
             end
         end %applyAllFilters
         function addfilter(obj,newFilter)
+            % Append data source with a handle to the filter that should be
+            % applied when getting data
             numFilters = length(obj.hFilter);
             obj.hFilter{numFilters+1} = newFilter;
         end %addfilter
