@@ -2,9 +2,9 @@ classdef Lda < SignalAnalysis.Classifier
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % LDA	Perform a linear discriminant analysis
     %
-    % Based on: Kevin Englehart,1997
+    % Based on: Kevin Englehart, 1997
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % 
+    %
     % 01-Sept-2010 Armiger: Created
     methods
         function obj = Lda
@@ -22,13 +22,13 @@ classdef Lda < SignalAnalysis.Classifier
             dataLabels = obj.TrainingData.getClassLabels();
             features3D = obj.TrainingData.getFeatureData();
             featureColumns = obj.convertfeaturedata(features3D);
-
+            
             fprintf('Training LDA with %d Samples (',size(featureColumns,2));
             for iClass = 1:obj.NumClasses
                 fprintf('%d = %d; ',iClass,sum(dataLabels == iClass));
             end
             fprintf(')\n');
-
+            
             fprintf('Active Channels are: [ ');
             fprintf('%d ',obj.getActiveChannels);
             fprintf(']\n');
@@ -64,7 +64,7 @@ classdef Lda < SignalAnalysis.Classifier
                 
             end
         end
-        function [classOut voteDecision classVect] = classify(obj,featuresColumns)
+        function [classOut, voteDecision, classVect] = classify(obj,featuresColumns)
             assert(size(featuresColumns,1) == obj.NumActiveChannels*obj.NumFeatures,...
                 'Expected first dimension of featuredata [%d]to be equal to numActiveChannels*numFeatures [%d]',...
                 size(featuresColumns,1),obj.NumActiveChannels*obj.NumFeatures);
@@ -121,7 +121,7 @@ classdef Lda < SignalAnalysis.Classifier
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
         function [Wg,Cg] = lda(featureData,classId,maxClasses)
-                        
+            
             N = size(featureData,1);
             
             % Following cannot be done with integer data:
@@ -157,12 +157,10 @@ classdef Lda < SignalAnalysis.Classifier
             Pphi = 1/numClasses;
             
             %%-- Compute the LDA weights --%%
-%             Wg = zeros(N,numClasses);
-%             Cg = zeros(1,numClasses);
             if nargin > 2
                 numClasses = maxClasses;
             end
-
+            
             Wg = zeros(N,numClasses);
             Cg = zeros(1,numClasses);
             for i = classList
