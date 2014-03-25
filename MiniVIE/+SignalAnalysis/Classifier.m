@@ -110,14 +110,9 @@ classdef Classifier < Common.MiniVieObj
                 'Training data set has %d features, expected %d\n',numFeatures,obj.NumFeatures);
             assert(~any(obj.getActiveChannels > numChannels),...
                 'Active channels are greater than %d data channels\n',numChannels);
-            % TODO: Can eliminate this step of reshaping twice
-            sortedData2 = permute(featureData3D,[2 1 3]);
             
-            % Reshape data according to how the UNB algorithm wants to see it.  That is
-            % [nFeatures*length(activeChannels) numSamples] with all the features_3D for
-            % the first channels then all the features_3D for the second channel,...
-            activeData = sortedData2(:,obj.getActiveChannels,:);
-            featureData = reshape(activeData,obj.NumFeatures*obj.NumActiveChannels,[]);
+            % reference public static function
+            featureData = SignalAnalysis.Classifier.reshapeFeatures(featureData3D,obj.getActiveChannels);
         end
         function computeGains(obj)
             if ~obj.IsTrained
@@ -271,7 +266,7 @@ classdef Classifier < Common.MiniVieObj
             else
                 fprintf('[%s] Bad virtual channel gain\n',mfilename);
             end
-
+            
             % Use Output Channel Gain adjust user preferences:
             if (length(obj.OutputChannelGain) == length(virtualChannels) ) ||...
                     (length(obj.OutputChannelGain) == 1 )
@@ -375,6 +370,37 @@ classdef Classifier < Common.MiniVieObj
                 voteDecision = noMovementClass;
             end
             
+        end
+        function featureData2D = reshapeFeatures(featureData3D,activeChannels)
+            %featureData2D = SignalAnalysis.Classifier.reshapeFeatures(featureData3D,activeChannels)
+            % Reshape data according to how the UNB algorithm wants to see it.  That is
+            % [nFeatures*length(activeChannels) numSamples] with all the features_3D for
+            % the first channels then all the features_3D for the second channel,...
+            % expects an array of size [nChannels nFeatures numSamples]
+            % creates an array of size [nFeatures*nChannels numSamples]
+
+            assert(ndims(featureData3D) == 3,'Three dimensional feature vector input required');
+            
+            [numChannels, numFeatures, numSamples] = size(featureData3D);
+
+            if nargin < 2
+                activeChannels = 1:numChannels;
+            end
+            
+            if islogical(activeChannels)
+                numActiveChannels = sum(activeChannels);
+            else
+                numActiveChannels = length(activeChannels);
+            end
+            
+            % initial reshape
+            sortedData2 = permute(featureData3D,[2 1 3]);
+            
+            % select only those channles that are enabled
+            activeData = sortedData2(:,activeChannels,:);
+            
+            % final reshape
+            featureData2D = reshape(activeData,numFeatures*numActiveChannels,numSamples);
         end
     end
 end
