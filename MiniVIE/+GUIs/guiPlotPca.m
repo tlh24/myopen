@@ -1,4 +1,4 @@
-function guiPlotPca(TrainingData,activeChannels)
+function guiPlotPca(TrainingData)
 
 % plot the principle components of the current training data
 
@@ -9,7 +9,7 @@ function guiPlotPca(TrainingData,activeChannels)
 hData = TrainingData;
 
 features3D = hData.getFeatureData;
-featureColumns = SignalAnalysis.Classifier.reshapeFeatures(features3D,activeChannels);
+featureColumns = SignalAnalysis.Classifier.reshapeFeatures(features3D,hData.ActiveChannels);
 
 % s = obj.SignalClassifier;
 % featureColumns = s.convertfeaturedata(features3D);
