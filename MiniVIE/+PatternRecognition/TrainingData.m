@@ -161,7 +161,7 @@ classdef TrainingData < handle
             % yBreaks = repmat([-10; 10; NaN],1,size(xBreaks,2));
             
         end
-        function [signalData dataBreaks] = getContinuousData(obj,channels)
+        function [signalData, dataBreaks] = getContinuousData(obj,channels,sortOrder)
             %getContinuousData return raw signal waveform
             %
             % If no channels are specified, the returned data will include
@@ -175,6 +175,9 @@ classdef TrainingData < handle
             if nargin < 2
                 channels = obj.ActiveChannels;
             end
+            if nargin < 3
+                sortOrder = 1:obj.SampleCount;
+            end
             
             [windowSize] = size(obj.SignalDataRaw,2);
             %[numSamples] = size(obj.SignalDataRaw,3);
@@ -182,7 +185,7 @@ classdef TrainingData < handle
             
             dataBreaks = windowSize:windowSize:numSamples*windowSize;
             
-            signalData = reshape(obj.SignalDataRaw(channels,:,1:numSamples),length(channels),[])';
+            signalData = reshape(obj.SignalDataRaw(channels,:,sortOrder),length(channels),[])';
             
         end
         function signalData = getRawSignals(obj)
