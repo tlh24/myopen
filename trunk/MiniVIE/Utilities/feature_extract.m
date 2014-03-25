@@ -86,12 +86,14 @@ Fs = 1000;
 normMAV = MAV(:)./(windowSize./Fs);
 normLEN = LEN(:)./(windowSize./Fs);
 normZC = ZC(:)./(windowSize./Fs);
+normSSC = SSC(:)./(windowSize./Fs);
 normVAR = VAR(:)./(windowSize./Fs);
 
 normVAR = min(normVAR,50);
 normMAV = min(normMAV,50);
 
-features = [normMAV(:) normLEN(:) normZC(:) normVAR(:)];
+% features = [normMAV(:) normLEN(:) normZC(:) normVAR(:)];
+features = [normMAV(:) normLEN(:) normZC(:) normSSC(:)];
 % features = [MAV(:) LEN(:) ZC(:) SSC(:)];
 
 % features(:,[2 3 4]) = log(1+features(:,[2 3 4]));

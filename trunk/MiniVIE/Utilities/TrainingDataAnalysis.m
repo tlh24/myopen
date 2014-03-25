@@ -70,7 +70,7 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
         function plot_emg_filtered(obj,channels,prefix)
             % Plot all the emg data in the training file - filtered
             %
-
+            
             if nargin < 2
                 channels = obj.ActiveChannels;
             end
@@ -79,10 +79,10 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
                 prefix = '';
             end
             
-
+            
             chEmg = obj.getContinuousData(channels);
             chEmg = TrainingDataAnalysis.filter_data(chEmg);
-                        
+            
             % Plot result
             clf
             h = plot(chEmg);
@@ -157,13 +157,13 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
                 else
                     xlabel('Time t, sec');
                 end
-
+                
                 classEmg = chEmg(thisClass,:);
                 
                 %xlim([0 5]);
-%                 for i = 1:size(classEmg,2)
-%                     classEmg(:,i) = classEmg(:,i) + (i*0.5);
-%                 end
+                %                 for i = 1:size(classEmg,2)
+                %                     classEmg(:,i) = classEmg(:,i) + (i*0.5);
+                %                 end
                 x = repmat((1:size(classEmg,1))',1,size(classEmg,2));
                 y = classEmg;
                 xFactor = 1/1000*50/200; % samples per second * refresh rate / windowsize
@@ -174,13 +174,13 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
                 for iLine = 1:length(hLines)
                     set(hLines(iLine),'Color',c(channels(iLine),:));
                 end
-
                 
-%                 for iLine = 1:length(channels)
-%                     rgb = c(channels(iLine),:);
-%                     set(hLines(iLine),'Color',rgb,...
-%                         'LineWidth',1);
-%                 end
+                
+                %                 for iLine = 1:length(channels)
+                %                     rgb = c(channels(iLine),:);
+                %                     set(hLines(iLine),'Color',rgb,...
+                %                         'LineWidth',1);
+                %                 end
                 
                 
                 w = obj.WindowSize;
@@ -190,8 +190,8 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
                 %plot(xBreaks(:),yBreaks(:),'k-');
                 
                 %%
-%                 set(hLines,'Visible','off');
-%                 set(hLines(ch),'Visible','on');
+                %                 set(hLines,'Visible','off');
+                %                 set(hLines(ch),'Visible','on');
                 %set(hLines([1 7]),'Visible','off');
                 %     xlim([0 size(emgData,2)]);
                 ylim([-1.2 1.2]);
@@ -214,6 +214,160 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
             end
             
         end
+        
+        function plot_emg_with_breaks(obj,doFilter)
+            
+            [p, f, e] = fileparts(obj.fullFileName);
+            dataLabel = [f '_emgChannels'];
+
+            l = obj.getAllClassLabels;
+            l = obj.getClassLabels;
+            [l, sortOrder] = sort(l);
+            
+            channels = obj.ActiveChannels;
+            chEmg = obj.getContinuousData(channels,sortOrder);
+            
+            %doFilter = false
+            if doFilter
+                chEmg = TrainingDataAnalysis.filter_data(chEmg);
+                dataLabel = strcat(dataLabel,'_filtered');
+            end
+            
+            c = distinguishable_colors(obj.NumActiveChannels);
+            
+            w = obj.WindowSize;
+            classChange = [find(diff(l) ~= 0) length(l)];
+            
+            for i = 1:obj.NumClasses
+                strClass = obj.ClassNames{i};
+                acronymClass = upper(strClass(regexp(strClass, '\<.')));
+                acronymClassname{i} = acronymClass;
+            end
+            
+            
+            xTickLabels = acronymClassname(l(classChange));
+            xTick = mean( [[0 classChange(1:end-1)*w]; classChange*w] );
+            
+            clf
+            h = gca;
+            hold on
+            
+            for i = 1:obj.NumActiveChannels
+                plot(chEmg(:,i),'Color',c(i,:))
+            end
+            title(sprintf('%s Total=%d Active=%d',dataLabel,...
+                length(obj.getClassLabels),length(obj.getAllClassLabels)) , 'Interpreter','None');
+            set(h,'XTick',xTick)
+            set(h,'XTickLabel',xTickLabels);
+            
+            if doFilter
+                rng = max(std(chEmg)) * 10;
+                ylim([-rng rng])
+            end
+            
+            yLimits = ylim;
+            
+            xBreaks = classChange * w;
+            xBreaks = [xBreaks; xBreaks; nan(size(xBreaks))];
+            yBreaks = repmat([yLimits(1); yLimits(2); NaN],1,size(xBreaks,2));
+            
+            plot(xBreaks,yBreaks,'k')
+            
+            C = num2cell(channels);
+            legend(cellfun(@(x)sprintf('%2d',x),C,'UniformOutput',false));
+            
+            
+            
+            % Save output
+            outFile = [dataLabel '.png'];
+            if ~exist(outFile,'file')
+                win = get(gcf,'Position');
+                pad = 50;
+                screencapture(gcf,[pad pad win(3)-(1*pad) win(4)-(1*pad)],outFile);
+            else
+                fprintf('[%s] File "%s" already exists\n',mfilename,outFile);
+            end
+            
+        end
+        function plot_features_sorted_class(obj)
+            
+            %%
+            
+            % create title for plot
+            [p, f, e] = fileparts(obj.fullFileName);
+            dataLabel = [f '_features'];
+            titleTxt = sprintf('%s Total=%d Active=%d',dataLabel,...
+                length(obj.getClassLabels),length(obj.getAllClassLabels));
+            
+            
+            % find transitions in data set for class labeling
+            %l = obj.getAllClassLabels;
+            l = obj.getClassLabels;
+            [l, sortOrder] = sort(l);
+            classChange = [find(diff(l) ~= 0) length(l)];
+            
+            for i = 1:obj.NumClasses
+                strClass = obj.ClassNames{i};
+                acronymClass = upper(strClass(regexp(strClass, '\<.')));
+                acronymClassname{i} = acronymClass;
+            end
+            
+            xTickLabels = acronymClassname(l(classChange));
+            xTick = mean( [[0 classChange(1:end-1)]; classChange] );
+            
+            clf
+            
+            for iFeature = 1:obj.NumFeatures
+                
+                h = subplot(4,1,iFeature);
+                hold on
+                
+                if iFeature == 1;
+                    title(titleTxt , 'Interpreter','None')
+                end
+                
+                f = obj.getFeatureData;
+                
+                c = distinguishable_colors(obj.NumActiveChannels);
+                
+                for i = 1:obj.NumActiveChannels
+                    iCh = obj.ActiveChannels(i);
+                    plot(squeeze(f(iCh,iFeature,sortOrder)),'Color',c(i,:))
+                end
+                
+                if iFeature == 4;
+                    set(h,'XTick',xTick)
+                    set(h,'XTickLabel',xTickLabels);
+                else
+                    set(h,'XTick',[])
+                end
+                
+                ylabel(obj.FeatureNames{iFeature})
+                
+                yLimits = ylim;
+                
+                xBreaks = classChange;
+                xBreaks = [xBreaks; xBreaks; nan(size(xBreaks))];
+                yBreaks = repmat([yLimits(1); yLimits(2); NaN],1,size(xBreaks,2));
+                
+                plot(xBreaks,yBreaks,'k')
+            end
+            
+            % Save output
+            outFile = [dataLabel '.png'];
+            if ~exist(outFile,'file')
+                win = get(gcf,'Position');
+                pad = 50;
+                screencapture(gcf,[pad pad win(3)-(1*pad) win(4)-(1*pad)],outFile);
+            else
+                fprintf('[%s] File "%s" already exists\n',mfilename,outFile);
+            end
+            
+            
+        end
+        
+        
+        
     end
     methods (Static = true)
         function plot_mav_per_class(filterSpec,channels)
@@ -385,7 +539,7 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
             end
             
         end
-        function [d fileName pathName] = load_data(filterSpec)
+        function [d, fileName, pathName] = load_data(filterSpec)
             % load data from filename of filter specification e.g. *.dat
             if exist(filterSpec,'file')
                 fileName = filterSpec;
@@ -401,11 +555,41 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
             % note that if filtfilt is used, the filter order is doubled
             %HPF = Inputs.HighPass(10,2,1000);
             Fs = 1000;
-            HPF = Inputs.HighPass(15,3,Fs);
-            NF = Inputs.Notch([120 240 360],64,1,Fs);
+            HPF = Inputs.HighPass(20,3,Fs);
+            %NF = Inputs.Notch([120 240 360],64,1,Fs);
             
             filteredData = HPF.apply(double(dataIn));
-            filteredData = NF.apply(filteredData);
+            %filteredData = NF.apply(filteredData);
+        end
+        
+        
+        function batchRunQuickLook(pathName)
+            %%
+            % get files
+            pathName = 'C:\tmp\MPL_01_WD_R_MiniVIE\MiniVIE\';
+            s = dir(fullfile(pathName,'*.trainingData'));
+            
+            obj = TrainingDataAnalysis;
+            
+            set(0,'defaultfigurecolor',[1 1 1]);
+            figure(1)
+            drawnow
+            jFrame = get(handle(gcf),'JavaFrame');
+            jFrame.setMaximized(true);
+            drawnow
+            
+            for i = 1:length(s)
+                obj.loadTrainingData(fullfile(pathName,s(i).name));
+                drawnow
+                plot_emg_with_breaks(obj,0)
+                drawnow
+                plot_emg_with_breaks(obj,1)
+                drawnow
+                obj.plot_features_sorted_class();
+                drawnow
+            end
+            
+            
         end
     end
 end
@@ -425,15 +609,15 @@ numChannels = length(channels);
 c = distinguishable_colors(numChannels);
 clf
 for i = 1:numChannels
-   h = subplot(numChannels,1,i)
-   plot(chEmg(:,i),'Color',c(i,:))
-
-   set(h,'YTick',[]);
-   set(h,'XTick',[]);
-   ylabel(h,num2str(channels(i)))
-   rng = 0.7;
-   ylim([-rng rng]);
-
+    h = subplot(numChannels,1,i)
+    plot(chEmg(:,i),'Color',c(i,:))
+    
+    set(h,'YTick',[]);
+    set(h,'XTick',[]);
+    ylabel(h,num2str(channels(i)))
+    rng = 0.7;
+    ylim([-rng rng]);
+    
 end
 
 
@@ -467,30 +651,30 @@ clf
 dataLabel = [f '_emgChannels'];
 
 for i = 1:obj.NumActiveChannels
-   h = subplot(obj.NumActiveChannels,1,i);
-   plot(chEmg(:,i),'Color',c(i,:))
-
-   hold on
-   xBreaks = classChange * w;
-   xBreaks = [xBreaks; xBreaks; nan(size(xBreaks))];
-   yBreaks = repmat([-10; 10; NaN],1,size(xBreaks,2));
-   
-   plot(xBreaks,yBreaks,'k')
-   
-   set(h,'YTick',[]);
-   if i == 1
-       title(dataLabel, 'Interpreter','None');
-   end
-   if i == obj.NumActiveChannels
-       set(h,'XTick',xTick)
-       set(h,'XTickLabel',xTickLabels)
-   else
-       set(h,'XTick',[]);
-   end
-   ylabel(h,num2str(channels(i)))
-   rng = 0.7;
-   ylim([-rng rng]);
-
+    h = subplot(obj.NumActiveChannels,1,i);
+    plot(chEmg(:,i),'Color',c(i,:))
+    
+    hold on
+    xBreaks = classChange * w;
+    xBreaks = [xBreaks; xBreaks; nan(size(xBreaks))];
+    yBreaks = repmat([-10; 10; NaN],1,size(xBreaks,2));
+    
+    plot(xBreaks,yBreaks,'k')
+    
+    set(h,'YTick',[]);
+    if i == 1
+        title(dataLabel, 'Interpreter','None');
+    end
+    if i == obj.NumActiveChannels
+        set(h,'XTick',xTick)
+        set(h,'XTickLabel',xTickLabels)
+    else
+        set(h,'XTick',[]);
+    end
+    ylabel(h,num2str(channels(i)))
+    rng = 4;
+    ylim([-rng rng]);
+    
 end
 
 % Save output
@@ -504,3 +688,59 @@ else
 end
 
 end
+
+
+% 
+function test
+%%
+% check for filtering artifacts
+
+x = obj.getRawSignals;
+
+
+HPF = Inputs.HighPass(20,3,1000);
+
+l = obj.getClassLabels;
+
+figure(9)
+
+for i = 1:size(x,3)
+    dataIn = x(2,:,i);
+    filteredData = HPF.apply(dataIn);
+    
+    filteredDataOffset = HPF.apply(dataIn-dataIn(1));
+    
+    % Prepend
+    flippedData = rot90(dataIn,2);
+    
+    
+    o1 = dataIn(1);
+    o2 = dataIn(end);
+    
+    padSig = [o1-flippedData+o1 dataIn o2-flippedData+o2 ];
+
+    filteredDataPadded = HPF.apply(padSig);
+    filteredDataPadded = filteredDataPadded(251:500);
+    
+    subplot(3,1,1)
+    plot(1:250,dataIn)
+    subplot(3,1,2)
+    plot(1:250,filteredData)
+    subplot(3,1,3)
+    %plot(1:250,dataIn,1:250,filteredData,1:250,filteredDataPadded,1:250,filteredDataOffset)
+    plot(1:250,filteredDataPadded,1:250,filteredDataOffset)
+    ylim([-5 5])
+    
+    fprintf('%5d %s \n',i,obj.ClassNames{l(i)});
+    pause(0.01)
+end
+
+
+
+
+
+end
+
+
+
+

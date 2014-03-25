@@ -9,8 +9,10 @@
 % path to gain access.  Note that the Class Packages (indicated by '+' in
 % the directory name are part of the MiniVIE directory, so you have
 % immediate access when you are in that directory, or if it is on the path
-addpath(pwd);
-addpath('Utilities');
+MiniVIE.configurePath();
+% MiniVIE.createShortcuts(); % optional
+% addpath(pwd);
+% addpath('Utilities');
 
 %% Step 1: Setup Input Device
 %  Create a handle to a Signal Input device and initialize it.
@@ -19,8 +21,8 @@ addpath('Utilities');
 
 % The particular type of input is dependant on your application and
 % hardware configuration
-%SignalSource = Inputs.DaqHwDevice('nidaq','Dev1');
-%SignalSource = Inputs.DaqHwDevice('mcc','0');
+% SignalSource = Inputs.DaqHwDevice('nidaq','Dev1');
+% SignalSource = Inputs.DaqHwDevice('mcc','0');
 SignalSource = Inputs.SignalSimulator();
 
 % If using the simulator, the box that opens up allows you to press keys to
@@ -32,9 +34,9 @@ SignalSource.initialize();
 %% Step 2: Add input filters
 % Associate filters with the input source
 % TODO: This really should be on a per-channel basis
-SignalSource.addfilter(Inputs.HighPass());
-SignalSource.addfilter(Inputs.LowPass());
-SignalSource.addfilter(Inputs.Notch());
+SignalSource.addfilter(Inputs.HighPass());  % set filter with default parameters
+% SignalSource.addfilter(Inputs.LowPass());
+SignalSource.addfilter(Inputs.Notch([180 290],30,64,1000));  % set filter with custom parameters
 % SignalSource.addfilter(Inputs.MAV);
 
 %Set the number of samples to return when getting data:
@@ -103,3 +105,10 @@ SignalClassifier.NumMajorityVotes = 5; % <-- Adjust majority votes [0 15]
 %% Optional: Play Breakout (uses wrist flex and extend)
 Presentation.MiniBreakout(SignalSource,SignalClassifier)
 %% Optional: Guitar Hero Simulator
+
+%% Optional:
+% Adjust output gain for classifier
+GUIs.guiGainAdjust(SignalClassifier)
+
+
+
