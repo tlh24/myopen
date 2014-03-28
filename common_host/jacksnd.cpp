@@ -279,10 +279,12 @@ int jackInit(const char *clientname, int mode)
 	}
 
 	/* install a signal handler to properly quits jack client */
+#ifdef TESTSONG
 	signal(SIGQUIT, jackClose);
 	signal(SIGTERM, jackClose);
 	signal(SIGHUP, jackClose);
 	signal(SIGINT, jackClose);
+#endif
 
 	return 0; 
 }

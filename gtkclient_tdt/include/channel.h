@@ -77,9 +77,8 @@ public:
 			}
 			ms->getValue3(ch, 0, "pcaScl", m_pcaScl, 2);
 			m_threshold = ms->getValue(ch, "threshold", 0.6f);
-			m_centering = ms->getValue(ch, "centering", 25.f);
+			m_centering = ms->getValue(ch, "centering", NWFSAMPUP/2.f);
 			m_gain = ms->getValue(ch, "gain", 1.f);
-			//m_agc = ms->getValue(ch, "agc", 6000.f);
 		}
 		//init m_wfVbo.
 		for (int i=0; i<NWFVBO; i++) {
@@ -227,9 +226,9 @@ public:
 		return unit;
 	}
 	void copy() {
-		m_wfVbo->copy();
-		m_usVbo->copy();
-		m_pcaVbo->copy(false,false);
+		if (m_wfVbo)  m_wfVbo->copy();
+		if (m_usVbo)  m_usVbo->copy();
+		if (m_pcaVbo) m_pcaVbo->copy(false,false);
 	}
 	void setVertexShader(cgVertexShader *vs) {
 		m_pcaVbo->setVertexShader(vs);

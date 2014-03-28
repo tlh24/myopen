@@ -41,6 +41,8 @@ void Filter::Proc(float *in, float *out, unsigned int kpoints)
 	}
 }
 
+
+
 // 4th-order Butterworth bandpass
 // 300 Hz to 5 kHz @ 24.414 kHz
 // Create with MATLAB like so:
@@ -73,10 +75,11 @@ FilterButterBand_24k_300_5000::FilterButterBand_24k_300_5000()
 	d.push_back(0);
 	d.push_back(0);
 }
-
 FilterButterBand_24k_300_5000::~FilterButterBand_24k_300_5000()
 {
 }
+
+
 
 // 2nd-order Butterworth lowpass
 // 5 kHz @ 24.414 kHz
@@ -104,10 +107,11 @@ FilterButterLow_24k_5000::FilterButterLow_24k_5000()
 	d.push_back(0);
 	d.push_back(0);
 }
-
 FilterButterLow_24k_5000::~FilterButterLow_24k_5000()
 {
 }
+
+
 
 // 2nd-order Butterworth lowpass
 // 3 kHz @ 24.414 kHz
@@ -135,10 +139,11 @@ FilterButterLow_24k_3000::FilterButterLow_24k_3000()
 	d.push_back(0);
 	d.push_back(0);
 }
-
 FilterButterLow_24k_3000::~FilterButterLow_24k_3000()
 {
 }
+
+
 
 // 2nd-order Butterworth lowpass
 // 3 kHz @ 48.8281250 kHz
@@ -166,7 +171,38 @@ FilterButterLow_48k_3000::FilterButterLow_48k_3000()
 	d.push_back(0);
 	d.push_back(0);
 }
-
 FilterButterLow_48k_3000::~FilterButterLow_48k_3000()
+{
+}
+
+
+
+// 2nd-order Butterworth highpass
+// 500 Hz @ 24.414 kHz
+// Create with MATLAB like so:
+/*
+n = 2; % filter order
+sr = 24414.0625;
+hsr = sr/2; % half sample rate
+Wn = [500/hsr];
+[B,A] = butter(n,Wn,'high');
+sprintf('B.push_back(%0.15e);\n',B)
+sprintf('A.push_back(%0.15e);\n',A)
+sprintf('d.push_back(%d);\n', zeros(n,1))
+*/
+FilterButterHigh_24k_500::FilterButterHigh_24k_500()
+{
+	B.push_back(9.130193251118750e-01);
+	B.push_back(-1.826038650223750e+00);
+	B.push_back(9.130193251118750e-01);
+
+	A.push_back(1.000000000000000e+00);
+	A.push_back(-1.818458648312513e+00);
+	A.push_back(8.336186521349873e-01);
+
+	d.push_back(0);
+	d.push_back(0);
+}
+FilterButterHigh_24k_500::~FilterButterHigh_24k_500()
 {
 }

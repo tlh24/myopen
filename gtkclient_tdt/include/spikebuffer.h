@@ -3,7 +3,7 @@
 #ifndef __SPIKEBUFFER_H__
 #define	__SPIKEBUFFER_H__
 
-#define SPIKE_BUF_SIZE (1024) // BYTES, MUST BE POWER OF 2
+#define SPIKE_BUF_SIZE (4096) // BYTES, MUST BE POWER OF 2
 #define SPIKE_MASK (SPIKE_BUF_SIZE-1)
 
 using namespace std;
@@ -34,6 +34,9 @@ public:
 	const char *name() {
 		return "spike buffer v1";
 	};
+
+	long rp();
+	long wp();
 
 protected:
 
