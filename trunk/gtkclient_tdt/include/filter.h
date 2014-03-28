@@ -51,4 +51,11 @@ public:
 	~FilterButterLow_48k_3000();
 };
 
+class FilterButterHigh_24k_500 : public Filter
+{
+public:
+	FilterButterHigh_24k_500();
+	~FilterButterHigh_24k_500();
+};
+
 #endif

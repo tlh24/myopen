@@ -27,9 +27,10 @@ GLIBS := gtk+-2.0 gtkglext-1.0 gtkglext-x11-1.0
 GTKFLAGS = `pkg-config --cflags $(GLIBS) `
 GTKLD = `pkg-config --libs $(GLIBS) `
 
-GOBJS = src/analog.pb.o src/icms.pb.o src/gtkclient.o src/gettime.o src/glInfo.o \
-src/matStor.o src/analogwriter.o src/icmswriter.o src/filter.o src/spikebuffer.o
-COM_HDR = include/channel.h include/wfwriter.h \
+GOBJS = src/analog.pb.o src/icms.pb.o src/gtkclient.o src/gettime.o \
+src/glInfo.o src/matStor.o src/analogwriter.o src/icmswriter.o src/filter.o \
+src/buffer.o src/spikebuffer.o src/rls.o src/nlms.o
+COM_HDR = include/channel.h include/wfwriter.h include/medfilt.h \
 ../common_host/vbo.h \
 ../common_host/cgVertexShader.h \
 ../common_host/firingrate.h \

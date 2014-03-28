@@ -55,7 +55,11 @@
 #include "wfwriter.h"
 #include "jacksnd.h"
 #include "filter.h"
+#include "medfilt.h"
+#include "buffer.h"
 #include "spikebuffer.h"
+#include "rls.h"
+#include "nlms.h"
 
 #include "analog.pb.h"
 #include "analogwriter.h"
@@ -85,6 +89,8 @@ float	g_fbuf[NFBUF][NSAMP*3]; //continuous waveform. range [-1 .. 1]. For drawin
 i64		g_fbufW; //where to write to (always increment)
 i64		g_fbufR; //display thread reads from here - copies to mem
 
+Buffer 	*g_filterbuf[NCHAN];
+
 SpikeBuffer g_spikebuf[NCHAN];
 
 i64		g_lastSpike[NCHAN][NUNIT];
@@ -105,8 +111,15 @@ AnalogWriter g_analogwriter;
 Artifact *g_artifact[STIMCHAN];
 ICMSWriter g_icmswriter;
 
+gboolean g_hipassNeurons = true;
+gboolean g_lopassNeurons = true;
 FilterButterBand_24k_300_5000 g_bandpass[NCHAN];
-FilterButterLow_24k_3000 g_lowpass[NCHAN];
+FilterButterLow_24k_3000 g_lopass[NCHAN];
+FilterButterHigh_24k_500 g_hipass[NCHAN];
+
+int g_whichMedianFilter = 1;
+MedFilt3 g_medfilt3[NCHAN];
+MedFilt5 g_medfilt5[NCHAN];
 
 bool g_die = false;
 double g_pause = -1.0;
@@ -130,7 +143,12 @@ long double g_lastPo8eTime = 0.0;
 double g_minISI = 1.3; //ms
 int g_spikesCols = 16;
 
-gboolean g_filterNeurons = true;
+//gboolean g_enableArtifactRLS = false;
+//RLS g_rls(95,0.999,1e-16);
+
+gboolean g_trainArtifactNLMS = true;
+gboolean g_filterArtifactNLMS = true;
+ArtifactNLMS *g_nlms[RECCHAN];
 
 gboolean g_enableArtifactSubtr = false;
 gboolean g_trainArtifactTempl = false;
@@ -173,6 +191,45 @@ i64 mod2(i64 a, i64 b)
 {
 	i64 c = a % b;
 	return c;
+}
+void saveState()
+{
+	MatStor ms(g_prefstr);
+	for (int i=0; i<NCHAN; i++) {
+		g_c[i]->save(&ms);
+		g_nlms[i]->save(&ms);
+	}
+	for (int i=0; i<STIMCHAN; i++) {
+		g_artifact[i]->save(&ms);
+	}
+	for (int i=0; i<4; i++)
+		ms.setValue(i, "channel", g_channel[i]);
+	ms.save();
+}
+void destroy(int)
+{
+	//save the old values..
+	g_die = true;
+	sleep(0.5);
+	saveState();
+	gtk_main_quit();
+	if (g_vsFadeColor)
+		delete g_vsFadeColor;
+	if (g_vsThreshold)
+		delete g_vsThreshold;
+	cgDestroyContext(myCgContext);
+	if (g_vbo1Init) {
+		for (int k=0; k<NFBUF; k++)
+			glDeleteBuffersARB(1, &g_vbo1[k]);
+		glDeleteBuffersARB(2, g_vbo2);
+	}
+	for (int i=0; i<NCHAN; i++) {
+		delete g_c[i];
+		delete g_filterbuf[i];
+		delete g_nlms[i];
+	}
+	for (int i=0; i<STIMCHAN; i++)
+		delete g_artifact[i];
 }
 void gsl_matrix_to_mat(gsl_matrix *x, const char *fname)
 {
@@ -867,33 +924,49 @@ static gboolean rotate(gpointer user_data)
 
 	return TRUE;
 }
-void saveState()
+void destroyGUI(GtkWidget *, gpointer)
 {
-	MatStor ms(g_prefstr);
-	for (int i=0; i<NCHAN; i++)
-		g_c[i]->save(&ms);
-	for (int i=0; i<4; i++)
-		ms.setValue(i, "channel", g_channel[i]);
-	ms.save();
+	destroy(SIGINT);
 }
-void destroy(GtkWidget *, gpointer)
+void *worker_thread(void *)
 {
-	//save the old values..
-	g_die = true;
-	saveState();
-	if (g_vbo1Init) {
-		for (int k=0; k<NFBUF; k++)
-			glDeleteBuffersARB(1, &g_vbo1[k]);
-		glDeleteBuffersARB(2, g_vbo2);
+	float  f[RECCHAN];
+	double d[RECCHAN];
+	gsl_vector *xvec[RECCHAN];
+	for (int ch=0; ch<RECCHAN; ch++)
+		xvec[ch] = gsl_vector_alloc(RECCHAN-1);
+
+	while (!g_die) {
+		bool dataokay = true;
+		for (int ch=0; ch<RECCHAN; ch++) {
+			if (g_filterbuf[ch]->wp() <= g_filterbuf[ch]->rp()) {
+				dataokay = false;
+				break;
+			}
+		}
+
+		if (dataokay) {
+			for (int ch=0; ch<RECCHAN; ch++) {
+				g_filterbuf[ch]->getSample(&f[ch]);
+				d[ch] = (double)f[ch];
+				int ch3=0;
+				for (int ch2=0; ch2<RECCHAN; ch2++) {
+					if (ch2 != ch) {
+						float x;
+						g_filterbuf[ch2]->getSample(&x);
+						gsl_vector_set(xvec[ch], ch3, (double)x);
+						ch3++;
+					}
+				}
+				g_nlms[ch]->train(xvec[ch],d[ch]);
+			}
+			//printf("lms training\n");
+		}
 	}
-	delete g_vsFadeColor;
-	delete g_vsThreshold;
-	cgDestroyContext(myCgContext);
-	for (int i=0; i<NCHAN; i++)
-		delete g_c[i];
-	for (int i=0; i<STIMCHAN; i++)
-		delete g_artifact[i];
-	gtk_main_quit();
+
+	for (int ch=0; ch<RECCHAN; ch++)
+		gsl_vector_free(xvec[ch]);
+	return NULL;
 }
 void *wfwrite_thread(void *)
 {
@@ -981,6 +1054,11 @@ void *po8_thread(void *)
 		short *temp = new short[bufmax*(nchan+4)];  // 2^14 samples * 2 bytes/sample * (nChannels+time+stim)
 		short *temptemp = new short[bufmax];
 		float *tempfloat = new float[bufmax*NCHAN];
+
+		gsl_vector *xvec[RECCHAN];
+		for (int ch=0; ch<RECCHAN; ch++)
+			xvec[ch] = gsl_vector_alloc(RECCHAN-1);
+
 		while ((simulate || conn_cards > 0) && !g_die) {
 			if (!simulate && !card->waitForDataReady()) { // waits ~ 1200 hours ;-)
 				// this occurs when the rpvdsex circuit is idled.
@@ -1064,13 +1142,57 @@ void *po8_thread(void *)
 				g_ts.update(time, ticks, frame); //also updates the mmap file.
 				g_ts.m_dropped = (int)totalSamples - ticks;
 
+				int icms_counter = -1;
+
 				// get icms times, fill icms buffers
 				for (int k=0; k<numSamples; k++) {
+					for (int ch=0; ch<RECCHAN; ch++) {
+						float f_in = temp[ch*numSamples+k]/32767.f;
+						float f_out = f_in;
+						if (g_hipassNeurons)	// optionally highpass before artifact removal
+							g_hipass[ch].Proc(&f_in, &f_out, 1);
+						if (g_whichMedianFilter == 0)
+							tempfloat[ch*numSamples+k] = f_out;
+						else if (g_whichMedianFilter == 1)
+							tempfloat[ch*numSamples+k] = g_medfilt3[ch].proc(f_out);
+						else
+							tempfloat[ch*numSamples+k] = g_medfilt5[ch].proc(f_out);
+					}
 					unsigned int tmp = (unsigned short)(temp[(NCHAN+2)*numSamples+k]);	// stim pulse ids
 					tmp += (unsigned short)(temp[(NCHAN+3)*numSamples+k]) << 16;
 
-					if (tmp != 0)
-						printf("icms pulse %d\n", tmp);
+					if (tmp != 0) {
+						icms_counter = 0;
+						// printf("icms pulse %d\n", tmp);
+					}
+
+					// fill artifact filtering buffers (for other thread)
+					// filter online here
+					if (icms_counter >= 0) {
+						if (g_filterArtifactNLMS) {
+							float dhat[RECCHAN];
+							for (int ch=0; ch<RECCHAN; ch++) {
+								float f = tempfloat[ch*numSamples+k];
+								g_filterbuf[ch]->addSample(f);
+								int ch3=0;
+								for (int ch2=0; ch2<RECCHAN; ch2++) {
+									if (ch2 != ch) {
+										float ff = tempfloat[ch2*numSamples+k];
+										gsl_vector_set(xvec[ch], ch3, (double)ff);
+										ch3++;
+									}
+								}
+								dhat[ch] = (float)g_nlms[ch]->filter(xvec[ch]);
+							}
+							for (int ch=0; ch<RECCHAN; ch++) {
+								tempfloat[ch*numSamples+k] -= dhat[ch];
+							}
+							//printf("lms filtering\n");
+						}
+						icms_counter++;
+						if (icms_counter >= ARTBUF)
+							icms_counter = -1;
+					}
 
 					unsigned int tk = (unsigned short)(temp[NCHAN*numSamples+k]);
 					tk += (unsigned short)(temp[(NCHAN+1)*numSamples+k]) << 16;
@@ -1100,7 +1222,7 @@ void *po8_thread(void *)
 							i64 idx = g_artifact[j]->m_windex[z];
 							if (idx != -1) {
 								for (int ch=0; ch<RECCHAN; ch++) {
-									float f = temp[ch*numSamples+k] / 32767.f;
+									float f = tempfloat[ch*numSamples+k];
 									g_artifact[j]->m_now[ch*ARTBUF+idx] = f;
 								}
 								g_artifact[j]->m_windex[z]++;
@@ -1145,7 +1267,6 @@ void *po8_thread(void *)
 								}
 							}
 						}
-
 					}
 				}
 
@@ -1168,10 +1289,8 @@ void *po8_thread(void *)
 
 							int kk = 0;
 							for (int k=ridx; k<widx; k++) {
-								float f = temp[ch*numSamples + kk] / 32767.f;
-								short subtr = (short)((f-artifact[k])*32767.f);
 								if (g_enableArtifactSubtr) {
-									temp[ch*numSamples + kk] = subtr;
+									tempfloat[ch*numSamples+kk] -= artifact[k];
 								}
 								kk++;
 							}
@@ -1179,17 +1298,10 @@ void *po8_thread(void *)
 					}
 				}
 
-				// optionally filter the neural data
-				for (int k=0; k<NCHAN; k++) {
-					for (int i=0; i<numSamples; i++) {
-						float samp = temp[k*numSamples + i]/32767.f;
-						if (g_filterNeurons)
-							g_lowpass[k].Proc(&samp, &tempfloat[k*numSamples+i], 1);
-						else
-							tempfloat[k*numSamples+i] = samp;
-					}
-
-				}
+				// optionally lowpass after artifact removal
+				for (int k=0; k<RECCHAN; k++)
+					if (g_lopassNeurons)
+						g_lopass[k].Proc(&tempfloat[k*numSamples], &tempfloat[k*numSamples], numSamples);
 
 				// blank based on artifact (must happen after filtering
 				for (int j=0; j<STIMCHAN; j++) {
@@ -1310,10 +1422,10 @@ void *po8_thread(void *)
 
 						// fill in tkhi
 						tkhi[0] = tklo[0];
-						double dt = (tklo[NWFSAMP+1]-tklo[0])/(NWFSAMPUP+7);
-						for (int i=0; i<(NWFSAMPUP+7); i++)
+						double dt = (tklo[NWFSAMP+2-1]-tklo[0])/(NWFSAMPUP+8-1);
+						for (int i=0; i<(NWFSAMPUP+8-1); i++)
 							tkhi[i+1] = tkhi[i] + dt;
-						tkhi[NWFSAMPUP+7] = tklo[NWFSAMP+1];
+						tkhi[NWFSAMPUP+8-1] = tklo[NWFSAMP+2-1];
 
 						gsl_spline_init(spline, tklo, wflo, NWFSAMP+2);
 
@@ -1322,6 +1434,7 @@ void *po8_thread(void *)
 						}
 
 						int dx = 0;
+
 						if (g_enableSubsampleAlignment) {
 
 							int c = (NWFSAMP+2-centering)*(float)NWFSAMPUP/(float)NWFSAMP;
@@ -1403,6 +1516,8 @@ void *po8_thread(void *)
 		delete[] temp;
 		delete[] temptemp;
 		delete[] tempfloat;
+		for (int ch=0; ch<RECCHAN; ch++)
+			gsl_vector_free(xvec[ch]);
 		printf("\n");
 		sleep(1);
 	}
@@ -1462,7 +1577,7 @@ void *mmap_thread(void *)
 			write(pipe_out->m_fd, "go\n", 3);
 			//printf("sent pipe_out 'go'\n");
 		} else
-			usleep(200000); //does not seem to limit the frame rate, just the startup sync.
+			usleep(100000); //does not seem to limit the frame rate, just the startup sync.
 		frame++;
 	}
 	delete mmh;
@@ -1495,8 +1610,6 @@ void updateChannelUI(int k)
 	gtk_spin_button_set_value(GTK_SPIN_BUTTON(g_gainSpin[k]), g_c[ch]->getGain());
 	gtk_spin_button_set_value(GTK_SPIN_BUTTON(g_apertureSpin[k*2+0]), g_c[ch]->getApertureUv(0));
 	gtk_spin_button_set_value(GTK_SPIN_BUTTON(g_apertureSpin[k*2+1]), g_c[ch]->getApertureUv(1));
-	//gtk_adjustment_set_value(g_thresholdSpin[k], g_c[ch]->getThreshold());
-	//gtk_adjustment_set_value(g_centeringSpin[k], g_c[ch]->getCentering());
 	g_uiRecursion--;
 }
 static void channelSpinCB(GtkWidget *spinner, gpointer p)
@@ -1584,6 +1697,13 @@ static void autoThresholdCB( GtkWidget *, gpointer p)
 		for (int i=0; i<NCHAN; i++) {
 			g_c[i]->autoThreshold(g_autoThreshold);
 		}
+	}
+}
+static void medianFilterRadioCB(GtkWidget *button, gpointer p)
+{
+	if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))) {
+		int i = (int)((long long)p & 0xf);
+		g_whichMedianFilter = i;
 	}
 }
 static void drawRadioCB(GtkWidget *button, gpointer p)
@@ -1715,7 +1835,7 @@ static GtkWidget *mk_spinner(const char *txt, GtkWidget *container,
 }
 static void mk_radio(const char *txt, int ntxt,
                      GtkWidget *container, bool vertical,
-                     const char *frameTxt, GtkCallback cb)
+                     const char *frameTxt, int radio_state, GtkCallback cb)
 {
 	GtkWidget *frame, *button, *modebox;
 	GSList *group;
@@ -1741,7 +1861,9 @@ static void mk_radio(const char *txt, int ntxt,
 		group = gtk_radio_button_get_group (GTK_RADIO_BUTTON (button));
 		a = strtok(0, ",");
 		button = gtk_radio_button_new_with_label (group, (const char *)a );
-		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (button), FALSE);
+		gtk_toggle_button_set_active(
+		        GTK_TOGGLE_BUTTON(button),
+		        i == radio_state);
 		gtk_box_pack_start (GTK_BOX (modebox), button, TRUE, TRUE, 0);
 		gtk_widget_show (button);
 		gtk_signal_connect (GTK_OBJECT (button), "clicked",
@@ -1939,7 +2061,9 @@ int main(int argc, char **argv)
 {
 	using namespace gtkclient;
 
-	string titlestr = "gtkclient (TDT) v1.4";
+	(void) signal(SIGINT,destroy);
+
+	string titlestr = "gtkclient (TDT) v1.5";
 
 #ifdef DEBUG
 	feenableexcept(FE_DIVBYZERO|FE_INVALID|FE_OVERFLOW);  // Enable (some) floating point exceptions
@@ -1982,10 +2106,13 @@ int main(int argc, char **argv)
 		if (g_channel[i] < 0) g_channel[i] = 0;
 		if (g_channel[i] >= NCHAN) g_channel[i] = NCHAN-1;
 	}
-	for (int i=0; i<NCHAN; i++)
+	for (int i=0; i<NCHAN; i++) {
 		g_c[i] = new Channel(i, &ms);
+		g_filterbuf[i] = new Buffer(NSAMP);
+		g_nlms[i] = new ArtifactNLMS(95, 1e-4, i, &ms);
+	}
 	for (int i=0; i<STIMCHAN; i++)
-		g_artifact[i] = new Artifact();
+		g_artifact[i] = new Artifact(i, &ms);
 
 	//g_dropped = 0;
 
@@ -2073,7 +2200,11 @@ int main(int argc, char **argv)
 	           g_rasterSpan, 1.0, 100.0, 1.0,
 	           basic_spinfloat_cb, (gpointer)&g_rasterSpan);
 
-	mk_checkbox("lowpass filter neurons", box1, &g_filterNeurons, basic_checkbox_cb);
+	mk_checkbox("lowpass filter", box1, &g_lopassNeurons, basic_checkbox_cb);
+	mk_checkbox("highpass filter", box1, &g_hipassNeurons, basic_checkbox_cb);
+
+	mk_radio("none,3-pt,5-pt", 3,
+	         box1, true, "median filter", g_whichMedianFilter, medianFilterRadioCB);
 
 	gtk_widget_show (box1);
 	label = gtk_label_new("rasters");
@@ -2177,6 +2308,26 @@ int main(int argc, char **argv)
 
 	// add a page for icms
 	box1 = gtk_vbox_new(FALSE, 0);
+
+	s = "Artifact LMS Filtering";
+	frame = gtk_frame_new (s.c_str());
+	gtk_box_pack_start (GTK_BOX (box1), frame, FALSE, FALSE, 1);
+
+	box2 = gtk_vbox_new(FALSE, 0);
+	gtk_container_add (GTK_CONTAINER (frame), box2);
+
+	box3 = gtk_hbox_new(FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (box2), box3, TRUE, TRUE, 0);
+
+	box4 = gtk_vbox_new(FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (box3), box4, TRUE, TRUE, 0);
+	mk_checkbox("train", box4,
+	            &g_trainArtifactNLMS, basic_checkbox_cb);
+
+	box4 = gtk_vbox_new(FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (box3), box4, TRUE, TRUE, 0);
+	mk_checkbox("filter", box4,
+	            &g_filterArtifactNLMS, basic_checkbox_cb);
 
 	s = "Artifact Subtraction";
 	frame = gtk_frame_new (s.c_str());
@@ -2323,9 +2474,9 @@ int main(int argc, char **argv)
 	//add draw mode (applicable to all)
 	bx = gtk_hbox_new(FALSE, 0);
 	mk_radio("lines,points", 2,
-	         bx, true, "draw mode", drawRadioCB);
+	         bx, true, "draw mode", g_drawmode, drawRadioCB);
 	mk_radio("normal,accum", 2,
-	         bx, true, "blend mode", blendRadioCB);
+	         bx, true, "blend mode", g_blendmode, blendRadioCB);
 	gtk_box_pack_start (GTK_BOX (v1), bx, TRUE, TRUE, 0);
 
 	bx = gtk_hbox_new (FALSE, 3);
@@ -2355,7 +2506,7 @@ int main(int argc, char **argv)
 	gtk_widget_show (paned);
 
 	g_signal_connect_swapped (window, "destroy",
-	                          G_CALLBACK (destroy), NULL);
+	                          G_CALLBACK (destroyGUI), NULL);
 	gtk_widget_set_events (da1, GDK_EXPOSURE_MASK);
 
 	gtk_widget_show (window);
@@ -2414,6 +2565,7 @@ int main(int argc, char **argv)
 	pthread_create( &thread1, &attr, icmswrite_thread, 	0 );
 	pthread_create( &thread1, &attr, analogwrite_thread,0 );
 	pthread_create( &thread1, &attr, mmap_thread, 		0 );
+	pthread_create( &thread1, &attr, worker_thread, 	0 );
 
 	//set the initial sampling stage.
 	//gtk_combo_box_set_active(GTK_COMBO_BOX(combo), 12);
@@ -2437,10 +2589,7 @@ int main(int argc, char **argv)
 #endif
 	//just in case.
 	closeSaveFiles(NULL, NULL);
-	//cancel the mmap thread -- probably waiting on a read().
-	if (pthread_cancel(thread1)) {
-		perror("pthread_cancel mmap_thread");
-	}
+
 	KillFont();
 	// Optional:  Delete all global objects allocated by libprotobuf.
 	google::protobuf::ShutdownProtobufLibrary();

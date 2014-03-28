@@ -1,6 +1,8 @@
 #ifndef __ARTIFACT_H__
 #define __ARTIFACT_H__
 
+#include "matStor.h"
+
 #define ARTBUF	128	// 64 ~ 2.62 msec ; 96 ~ 3.93 msec ; 128 ~ 5.24 msec
 #define NARTPTR	8 // number of artifact buffer pointers
 
@@ -17,6 +19,8 @@ public:
 	i64		m_rindex[NARTPTR];		// read index into the buffer, or -1
 	i64		m_nsamples;				// number of examples in the average
 
+	int 	m_stimchan;
+
 	// windex is where we are writing into m_wav (and m_now)
 	// rindex is where we can read from the buffer to subtract artifact
 
@@ -26,7 +30,8 @@ public:
 	// recursively, but for saving snippets of
 	//the artifact
 
-	Artifact() {
+	Artifact(int _stimchan, MatStor *ms) {
+		m_stimchan = _stimchan;
 		for (int i=0; i<RECCHAN*ARTBUF; i++) {
 			m_wav[i] = 0.f;
 			m_now[i] = 0.f;
@@ -36,6 +41,13 @@ public:
 			m_rindex[i] = -1;
 		}
 		m_nsamples  = 0;
+
+		if (ms) {
+			for (int i=0; i<RECCHAN; i++)
+				ms->getValue3(m_stimchan, i, "artifact", &(m_wav[i*ARTBUF]), ARTBUF);
+			m_nsamples = (int)ms->getValue(m_stimchan, "artifact_nsamples", m_nsamples);
+		}
+
 	}
 	~Artifact() {
 
@@ -105,7 +117,13 @@ public:
 		glEnd();
 
 		// xxx chan labels here?
-
+	}
+	void save(MatStor *ms) {
+		if (ms) {
+			for (int i=0; i<RECCHAN; i++)
+				ms->setValue3(m_stimchan, i, "artifact", &(m_wav[i*ARTBUF]), ARTBUF);
+			ms->setValue(m_stimchan, "artifact_nsamples", m_nsamples);
+		}
 	}
 };
 

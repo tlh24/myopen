@@ -38,7 +38,7 @@ bool SpikeBuffer::getSpike(double *tk, double *wf, int n, float threshold, int a
 	bool res = false;
 
 	// as long as there is space in the buffer for a whole wf
-	while (m_r < w - n) {
+	while (m_r < (w-n)) {
 
 		long x = m_r + alignment;
 
@@ -63,10 +63,23 @@ bool SpikeBuffer::getSpike(double *tk, double *wf, int n, float threshold, int a
 
 float SpikeBuffer::capacity()
 {
-	return (float)(m_w-m_r)/SPIKE_BUF_SIZE;
+	return (float)1.f - (m_w-m_r)/SPIKE_BUF_SIZE;
 }
 
 long SpikeBuffer::bytes()
 {
 	return m_r * sizeof(char);
+}
+
+
+// for debugging
+
+long SpikeBuffer::rp()
+{
+	return m_r;
+}
+
+long SpikeBuffer::wp()
+{
+	return m_w;
 }
