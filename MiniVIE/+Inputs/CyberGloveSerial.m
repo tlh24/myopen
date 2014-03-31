@@ -165,6 +165,25 @@ classdef CyberGloveSerial < handle
             
             clear_buffer(obj);
         end
+        function autoCalibrate(obj)
+
+            glove = obj.getRawData;
+
+            obj.minGlove = glove(:)';
+            obj.maxGlove = glove(:)';
+            
+            StartStopForm([]);
+            while StartStopForm
+                drawnow
+                
+                glove = obj.getRawData;
+                
+                obj.minGlove = min(obj.minGlove,glove(:)');
+                obj.maxGlove = max(obj.maxGlove,glove(:)');
+                disp(glove);
+            end
+            
+        end
         function calibrateGlove(obj)
             fprintf('extend Fingers\n');pause;
             val = obj.mudFormat(obj.getRawData()');
