@@ -44,6 +44,7 @@ classdef ArmStateModel < handle
             obj.structState(8).Name = 'Roc Hand';
             obj.structState(8).Max = 1;
             obj.structState(8).Min = 0;
+            obj.structState(8).State = Controls.GraspTypes.Relaxed;
             
             %obj.test;
         end

@@ -566,7 +566,7 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
         function batchRunQuickLook(pathName)
             %%
             % get files
-            pathName = 'C:\tmp\MPL_01_WD_R_MiniVIE\MiniVIE\';
+            pathName = pwd;%'C:\tmp\MPL_01_WD_R_MiniVIE\MiniVIE\';
             s = dir(fullfile(pathName,'*.trainingData'));
             
             obj = TrainingDataAnalysis;
@@ -580,6 +580,7 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
             
             for i = 1:length(s)
                 obj.loadTrainingData(fullfile(pathName,s(i).name));
+                obj.setActiveChannels(1:16);
                 drawnow
                 plot_emg_with_breaks(obj,0)
                 drawnow

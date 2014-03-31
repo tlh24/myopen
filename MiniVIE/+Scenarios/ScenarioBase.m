@@ -81,6 +81,15 @@ classdef ScenarioBase < Common.MiniVieObj
             
         end
         function start(obj)
+            % Start the main timer function for the scenario.  the timer
+            % function calls the update() method at the specified frequency
+            
+            if ~isempty(obj.Timer) && ~isvalid(obj.Timer)
+                % Use the isvalid method to determine if a timer object exists in memory, but is not cleared from the workspace.
+                fprintf('[%s] Timer object exists in memory, but is invalid.  Re-initialize module.\n',mfilename);
+                return
+            end            
+            
             % && ishandle(obj.Timer) <-- this is always false
             if ~isempty(obj.Timer) && strcmpi(obj.Timer.Running,'off')
                 % call the update funciton once manually.  
@@ -90,7 +99,17 @@ classdef ScenarioBase < Common.MiniVieObj
             end
         end
         function stop(obj)
+            % Stop the main timer function for the scenario.  the timer
+            % function calls the update() method at the specified frequency
+
+            
             % && ishandle(obj.Timer) <-- this is always false
+            
+            if ~isempty(obj.Timer) && ~isvalid(obj.Timer)
+                % Use the isvalid method to determine if a timer object exists in memory, but is not cleared from the workspace.
+                obj.Timer = [];
+            end
+            
             if ~isempty(obj.Timer) && strcmpi(obj.Timer.Running,'on')
                 stop(obj.Timer);
             end

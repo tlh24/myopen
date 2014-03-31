@@ -37,7 +37,7 @@ if tmp && length(IB > 0)
         faceIDs = n1:n2;
 
         R = rem(idx(faceIDs),size(KChain(i).elementData,1));
-        R(find(R == 0)) = size(KChain(i).elementData,1);
+        R(R == 0) = size(KChain(i).elementData,1);
         C = ceil(idx(faceIDs)/size(KChain(i).elementData,1));
         % The Face in row R contains the node
         adjacentNodes = KChain(i).elementData(R,:);

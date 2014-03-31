@@ -17,6 +17,9 @@ classdef GraspTypes
     % desired movement.
     %
     % Usage: [enumGrasp, cellGrasps] = enumeration('Controls.GraspTypes')
+    %
+    % Direct call example:  Controls.GraspTypes.Relaxed
+    % 
    enumeration
       Tip,Lateral,Tripod,Spherical,Power,Extension,Hook,Relaxed,...
           Index,Middle,Ring,Little,Thumb,Cylindrical,Point,Trigger
