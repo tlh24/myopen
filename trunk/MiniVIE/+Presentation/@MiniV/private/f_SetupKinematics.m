@@ -349,7 +349,7 @@ end
 %% execute once
 for iAxis = 1:length(hAxes)
     %% Can use multiple axes (ex. Frontal, Sagittal view)
-    axes(hAxes(iAxis));
+    % axes(hAxes(iAxis));
     %% Plot every link, no need for recursion
     for iSegment = 1:length(KChain)
         % Create the patch object:

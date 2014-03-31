@@ -86,33 +86,36 @@ end
 trainedClassNames(isRestClass) = [];
 
 iTest = 0;
-for iTrial = 1:numTrials
-    % Randomize
-    trainedClassNames = trainedClassNames(randperm(length(trainedClassNames)));
-    for iClass = 1:length(trainedClassNames)
-        thisClass = trainedClassNames{iClass};
-        t = title(hAxes,thisClass);
-        set(t,'FontSize',20)
-        
-        aWait = tic;
-        while toc(aWait) < 2
-            % delay before start
-            %pause(2);
-            hScenario.update();
-            if hScenario.Verbose, fprintf('\n'); end
-            drawnow;
+try
+    for iTrial = 1:numTrials
+        % Randomize
+        trainedClassNames = trainedClassNames(randperm(length(trainedClassNames)));
+        for iClass = 1:length(trainedClassNames)
+            thisClass = trainedClassNames{iClass};
+            t = title(hAxes,thisClass);
+            set(t,'FontSize',20)
+            
+            aWait = tic;
+            while toc(aWait) < 2
+                % delay before start
+                %pause(2);
+                hScenario.update();
+                if hScenario.Verbose, fprintf('\n'); end
+                drawnow;
+            end
+            iTest = iTest + 1;
+            structTrialLog(iTest) = runTrial(thisClass);
         end
-        iTest = iTest + 1;
-        structTrialLog(iTest) = runTrial(thisClass);
     end
+catch ME
+    fprintf('[%s] Exited TAC Assessment with Error: %s\n',mfilename,ME.message);
 end
-
 fullFilename = UiTools.ui_select_data_file('.tacAssessment',FilePrefix);
 
 if ~isempty(fullFilename)
-    try 
-    	save(fullFilename,'structTrialLog','-mat');
-    	%save(fullFilename,'structTrialLog','TrainingData','-mat');
+    try
+        save(fullFilename,'structTrialLog','-mat');
+        %save(fullFilename,'structTrialLog','TrainingData','-mat');
     catch ME
         rethrow(ME);
         disp(mfilename)
@@ -122,7 +125,7 @@ end
 
 disp('Complete')
 
-    % Nested function for running each trial
+% Nested function for running each trial
     function structLog = runTrial(thisClass)
         structLog = [];
         
@@ -275,7 +278,7 @@ disp('Complete')
                 % incorrect angles, so no timer
                 tHold = [];
             end
-                        
+            
             % set user's arm to current position
             %if ~isempty(s.GraspId)
             %    handAngles = Controls.graspInterpolation(aUser(s.JointId), s.GraspId);
@@ -320,7 +323,7 @@ disp('Complete')
             tElapsed = etime(clock,tStart);
             disp(tElapsed)
         end
-
+        
         % Store results in structure
         structLog.startAngle = aStart;
         structLog.angleTimeHistory = angleLog;
