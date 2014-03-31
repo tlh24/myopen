@@ -211,6 +211,9 @@ classdef (Sealed) NfuUdp < handle
                 error('Wrong size for Joint Angles');
             end
             
+            % RSA 3/28/2014 - Added temporary offset for Thumb CMC_AD_AB
+            %p(24) = p(24) - (25*pi/180);
+            
             msg = obj.hMud.DOMPositionCmd(p);
             obj.sendUdpCommand([61;msg]);  % append nfu msg header
             
