@@ -1,7 +1,7 @@
 %% Quick test of vMPL / MPL control via VulcanX
 %  Create the udp transmission via pnet
 UdpLocalPort = 56789;
-UdpDestinationPort = 9027; %9024 = Left; 9027 = Right; (see 
+UdpDestinationPort = 9027; %9024 = Left; 9027 = Right; (see
 UdpAddress = '127.0.0.1'; % '192.168.1.101';
 % PnetClass(localPort,remotePort,remoteIP)
 hSink = PnetClass(UdpLocalPort,UdpDestinationPort,UdpAddress);
@@ -39,3 +39,30 @@ upperArmAngles(3) = 0.3;
 upperArmAngles(4) = 1.3;
 msg = mce.AllJointsPosVelCmd(upperArmAngles,zeros(1,7),handAngles,zeros(1,20));
 hSink.putData(msg);
+
+
+
+
+
+
+%% Alternate test for endpoint velocity, using joystick
+% create joystick
+hJoystick = JoyMexClass();
+%%
+StartStopForm([]);
+while StartStopForm
+    drawnow
+    hJoystick.getdata();
+    endPtVelocities = [hJoystick.axisVal(1:3)./10]'
+    endPtOrientationVelocities = [0 0 0]';
+    rocMode = 1;
+    rocTableIDs = 1;
+    rocTableValues = 1;
+    rocWeights  = 1;
+    
+    msg = mce.EndpointVelocity6HandRocGrasps( ...
+        endPtVelocities, endPtOrientationVelocities, ...
+        rocMode, rocTableIDs, rocTableValues, rocWeights);
+    
+    hSink.putData(msg);
+end
