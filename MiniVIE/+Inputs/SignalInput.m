@@ -162,8 +162,10 @@ classdef SignalInput < Common.MiniVieObj
                 data = getData(obj);
             else
                 try
-                    %data = getData(obj,numSamples+obj.FilterPadding);
-                    data = getData(obj,numSamples);
+                    % Get data, with signal padding to avoid filter edge
+                    % effects.
+                    data = getData(obj,numSamples+obj.FilterPadding);
+                    %data = getData(obj,numSamples);
                 catch
                     % TODO: not ideal but inputs that buffer their data can
                     % only allow getting a certain number of samples
@@ -171,7 +173,8 @@ classdef SignalInput < Common.MiniVieObj
                 end
             end
             filtered = applyAllFilters(obj,data);
-            %filtered = filtered(end-numSamples+1:end,:);
+            % return only the signals requested, regardless of padding
+            filtered = filtered(end-numSamples+1:end,:);
             
         end %getFilteredData
         
