@@ -48,6 +48,21 @@ classdef Filter < handle
                 
                 filteredData = unfilteredData - movingAverage;
                 
+                % elseif isa(obj,'Inputs.HighPass')
+                %     % ensure the offset is removed manually
+                % 
+                %     % If multiple filters are contained (e.g. notch filters at
+                %     % various frequencies, apply each filter
+                %     filteredData = unfilteredData;
+                % 
+                %     filteredData = bsxfun(@minus,filteredData,filteredData(1,:));
+                %     for i = 1:numFilters
+                %         % save the filter state for the next iteration
+                %         % obj.lastFilterState{i} = [];
+                %         [filteredData, obj.lastFilterState{i}] = ...
+                %             filter(obj.Hb(i,:),obj.Ha(i,:),filteredData,obj.lastFilterState{i});
+                %     end
+                
             else
                 % Typically, the filter is applied and filtered data is
                 % returned
