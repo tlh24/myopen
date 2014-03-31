@@ -3,10 +3,6 @@ function guiTargetAchievementControl(SignalSource,SignalClassifier,TrainingData,
 % presented target within the specified time (20s).  The arm must be held
 % within the target region for a time (1s).  Results are logged for
 % Completion time, completion rate, and length error
-% TODO:
-%  - Define a loop for each trained class
-%  - test for grasp
-%  - define the target arm position for each class
 %
 %
 %
@@ -65,7 +61,7 @@ graspAccuracy = 0.05; % percent
 % define a new state based scenario for feed-forward control
 hScenario = Scenarios.ScenarioBase();
 hScenario.initialize(SignalSource,SignalClassifier);
-hScenario.Verbose = 0;
+hScenario.Verbose = 1;
 hScenario.GraspChangeThreshold = 0.2;
 
 % Arm Starting Angles (and grasp)
@@ -95,7 +91,8 @@ for iTrial = 1:numTrials
     trainedClassNames = trainedClassNames(randperm(length(trainedClassNames)));
     for iClass = 1:length(trainedClassNames)
         thisClass = trainedClassNames{iClass};
-        title(hAxes,thisClass);
+        t = title(hAxes,thisClass);
+        set(t,'FontSize',20)
         
         aWait = tic;
         while toc(aWait) < 2
@@ -132,7 +129,18 @@ disp('Complete')
         MAX_SAMPLES = 2000;
         
         angleLog = zeros(MAX_SAMPLES,9); % columns are t, and angles
-        intentLog = cell(MAX_SAMPLES,1); % store intent data
+        % Allocate memory for intent logging
+        sampleIntent = hScenario.Intent;
+        % clear out fields from example intent
+        sampleIntent.classOut = 0;
+        sampleIntent.voteDecision = 0;
+        sampleIntent.className = '';
+        sampleIntent.prSpeed = 0;
+        sampleIntent.rawEmg = [];
+        sampleIntent.windowData = [];
+        sampleIntent.features2D(:) = 0;
+        % Replicate example intent
+        intentLog = repmat(sampleIntent,[MAX_SAMPLES,1]); % store intent data
         logIdx = 0;
         
         % determine which joint to move to set goal
@@ -226,7 +234,12 @@ disp('Complete')
             % add to the log
             logIdx = logIdx + 1;
             angleLog(logIdx,:) = [tElapsed jUser];
-            intentLog{logIdx} = hScenario.Intent;
+            %intentLog{logIdx} = hScenario.Intent;
+            newIntent = hScenario.Intent;
+            % Clear raw data logging to avoid memory overrun
+            newIntent.windowData = [];
+            newIntent.rawEmg = [];
+            intentLog(logIdx) = newIntent;
             
             if isempty(tMovement) && ~isequal(jUser,aTrial)
                 tMovement = clock;
@@ -281,7 +294,7 @@ disp('Complete')
             
             tElapsed = etime(clock,tStart);
             
-            fprintf('Rate is: %f\n',toc(tRefresh))
+            %fprintf('Rate is: %f\n',toc(tRefresh))
         end
         
         if isempty(tMovement)
