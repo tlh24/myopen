@@ -166,7 +166,9 @@ classdef SignalInput < Common.MiniVieObj
                     % effects.
                     data = getData(obj,numSamples+obj.FilterPadding);
                     %data = getData(obj,numSamples);
-                catch
+                catch ME
+                    fprintf('[%s] Unable to get signal count [%d] + filter padding [%d].  Error was: %s \n',...
+                        mfilename,numSamples,obj.FilterPadding,ME.message);
                     % TODO: not ideal but inputs that buffer their data can
                     % only allow getting a certain number of samples
                     data = getData(obj,numSamples);
