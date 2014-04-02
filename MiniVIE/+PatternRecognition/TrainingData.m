@@ -52,9 +52,16 @@ classdef TrainingData < handle
     end
     
     methods
-        function obj = TrainingData
+        function obj = TrainingData(fileName)
             % Creator
-            fprintf('[%s] Creating Training Data Object\n',mfilename);
+            
+            if nargin < 1
+                fprintf('[%s] Creating Training Data Object\n',mfilename);
+            else
+                fprintf('[%s] Creating Training Data Object from file: "%s"\n',mfilename,fileName);
+                obj.loadTrainingData(fileName);
+            end
+            
         end
         function numClasses = get.NumClasses(obj)
             % Number of Classes
