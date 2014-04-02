@@ -13,6 +13,15 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
         fullFileName = '';
     end
     methods
+        function obj = TrainingDataAnalysis(fileName)
+            % Creator
+            if nargin < 1
+                fprintf('[%s] Creating Training Data Analysis Object\n',mfilename);
+            else
+                fprintf('[%s] Creating Training Data Analysis Object from file: "%s"\n',mfilename,fileName);
+                obj.loadTrainingData(fileName);
+            end
+        end
         function [success, fullFile] = loadTrainingData(obj,fname)
             % Overload load method to store filename for use in plotting /
             % analysis
@@ -215,11 +224,11 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
             
         end
         
-        function plot_emg_with_breaks(obj,doFilter)
+        function dataLabel = plot_emg_with_breaks(obj,doFilter)
             
             [p, f, e] = fileparts(obj.fullFileName);
             dataLabel = [f '_emgChannels'];
-
+            
             l = obj.getAllClassLabels;
             l = obj.getClassLabels;
             [l, sortOrder] = sort(l);
@@ -277,19 +286,19 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
             legend(cellfun(@(x)sprintf('%2d',x),C,'UniformOutput',false));
             
             
-            
-            % Save output
-            outFile = [dataLabel '.png'];
-            if ~exist(outFile,'file')
-                win = get(gcf,'Position');
-                pad = 50;
-                screencapture(gcf,[pad pad win(3)-(1*pad) win(4)-(1*pad)],outFile);
-            else
-                fprintf('[%s] File "%s" already exists\n',mfilename,outFile);
+            if nargout < 1
+                % Save output
+                outFile = [dataLabel '.png'];
+                if ~exist(outFile,'file')
+                    win = get(gcf,'Position');
+                    pad = 50;
+                    screencapture(gcf,[pad pad win(3)-(1*pad) win(4)-(1*pad)],outFile);
+                else
+                    fprintf('[%s] File "%s" already exists\n',mfilename,outFile);
+                end
             end
-            
         end
-        function plot_features_sorted_class(obj)
+        function dataLabel = plot_features_sorted_class(obj)
             
             %%
             
@@ -353,20 +362,12 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
                 plot(xBreaks,yBreaks,'k')
             end
             
-            % Save output
-            outFile = [dataLabel '.png'];
-            if ~exist(outFile,'file')
-                win = get(gcf,'Position');
-                pad = 50;
-                screencapture(gcf,[pad pad win(3)-(1*pad) win(4)-(1*pad)],outFile);
-            else
-                fprintf('[%s] File "%s" already exists\n',mfilename,outFile);
+            if nargin < 1
+                save_output(dataLabel);
             end
             
             
         end
-        
-        
         
     end
     methods (Static = true)
@@ -562,17 +563,20 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
             %filteredData = NF.apply(filteredData);
         end
         
-        
         function batchRunQuickLook(pathName)
             %%
             % get files
-            pathName = pwd;%'C:\tmp\MPL_01_WD_R_MiniVIE\MiniVIE\';
+            
+            if nargin < 1
+                pathName = pwd;%'C:\tmp\MPL_01_WD_R_MiniVIE\MiniVIE\';
+            end
+            
             s = dir(fullfile(pathName,'*.trainingData'));
             
             obj = TrainingDataAnalysis;
             
             set(0,'defaultfigurecolor',[1 1 1]);
-            figure(1)
+            figure(99)
             drawnow
             jFrame = get(handle(gcf),'JavaFrame');
             jFrame.setMaximized(true);
@@ -582,21 +586,30 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
                 obj.loadTrainingData(fullfile(pathName,s(i).name));
                 obj.setActiveChannels(1:16);
                 drawnow
-                plot_emg_with_breaks(obj,0)
+                dataLabel = plot_emg_with_breaks(obj,0);
+                save_output(dataLabel,pathName);
                 drawnow
-                plot_emg_with_breaks(obj,1)
+                dataLabel = plot_emg_with_breaks(obj,1);
+                save_output(dataLabel,pathName);
                 drawnow
-                obj.plot_features_sorted_class();
+                dataLabel = obj.plot_features_sorted_class();
+                save_output(dataLabel,pathName);
                 drawnow
+                
+                % Save output
+                [p, f, e] = fileparts(obj.fullFileName);
+                dataLabel = [f '_PCA'];
+                
+                hAxes = GUIs.guiPlotPca(obj);
+                titleTxt = sprintf('%s Total=%d Active=%d',dataLabel,...
+                    length(obj.getClassLabels),length(obj.getAllClassLabels));
+                title(hAxes(1),titleTxt,'Interpreter','None');
+                drawnow
+                save_output(dataLabel,pathName);
             end
-            
-            
         end
     end
 end
-
-
-
 
 function plot_each_emg_channel
 
@@ -690,8 +703,6 @@ end
 
 end
 
-
-% 
 function test
 %%
 % check for filtering artifacts
@@ -719,7 +730,7 @@ for i = 1:size(x,3)
     o2 = dataIn(end);
     
     padSig = [o1-flippedData+o1 dataIn o2-flippedData+o2 ];
-
+    
     filteredDataPadded = HPF.apply(padSig);
     filteredDataPadded = filteredDataPadded(251:500);
     
@@ -743,5 +754,15 @@ end
 end
 
 
-
+function save_output(dataLabel,pathName)
+            % Save output
+            outFile = fullfile(pathName,[dataLabel '.png']);
+            if ~exist(outFile,'file')
+                win = get(gcf,'Position');
+                pad = 50;
+                screencapture(gcf,[pad pad win(3)-(1*pad) win(4)-(1*pad)],outFile);
+            else
+                fprintf('[%s] File "%s" already exists\n',mfilename,outFile);
+            end
+end
 
