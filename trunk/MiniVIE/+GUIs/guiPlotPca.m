@@ -1,4 +1,4 @@
-function guiPlotPca(TrainingData)
+function hAxes = guiPlotPca(TrainingData)
 
 % plot the principle components of the current training data
 
@@ -53,10 +53,11 @@ clf(f)
 
 pcIds = {[1 2] [3 4] [5 6]}; % nPrincipleComponents
 for i = 1:3%length(pcIds)
-    if i == 3
-        hAxes = subplot(2,2,[3 4],'Parent',f);
+    if i == 1
+        % show the first to principle components larger on subplots 1,2
+        hAxes(i) = subplot(2,2,[1 2],'Parent',f);
     else
-        hAxes = subplot(2,2,i,'Parent',f);
+        hAxes(i) = subplot(2,2,i+1,'Parent',f);
     end
     
     PC = allPC(pcIds{i},:);        % array of PC Training Coefficients trimmed to NPC to keep
@@ -65,25 +66,28 @@ for i = 1:3%length(pcIds)
     % plot result
     c = distinguishable_colors(length(uniqueLabels));
     
-    hold(hAxes,'on');
+    hold(hAxes(i),'on');
     hScatter = zeros(1,numClasses);
     hContour = zeros(1,numClasses);
     for iClass = 1:numClasses
         % create contour outlines
-        contourLevel = [2 3];
-        [~, hContour(iClass)] = contour(hAxes,X,Y,G(:,:,iClass),contourLevel);
+        contourLevel = [ 2 3 ];
+        [~, hContour(iClass)] = contour(hAxes(i),X,Y,G(:,:,iClass),contourLevel);
         set(hContour(iClass),'Color',c(iClass,:));
         
         % plot data samples
         thisClass = classLabelId == uniqueLabels(iClass);
-        hScatter(iClass) = plot(hAxes,PC(1,thisClass),PC(2,thisClass),'.');
+        hScatter(iClass) = plot(hAxes(i),PC(1,thisClass),PC(2,thisClass),'.');
         set(hScatter(iClass),'Color',c(iClass,:));
     end
-    axis(hAxes,[min(PC(:)) max(PC(:)) min(PC(:)) max(PC(:))]);
-    xlabel(hAxes,''); ylabel(hAxes,''); title(hAxes,'');
+    axis(hAxes(i),[min(PC(:)) max(PC(:)) min(PC(:)) max(PC(:))]);
+    xlabel(hAxes(i),''); ylabel(hAxes(i),''); title(hAxes(i),'');
     
+    if i == 1
+        % place legend on first axes
+        hLegend = legend(hContour,hData.ClassNames(uniqueLabels));
+        set(hLegend,'Location','NorthEastOutside');
+    end
 end
-hLegend = legend(hContour,hData.ClassNames(uniqueLabels));
-set(hLegend,'Location','NorthEastOutside');
 
 end % guiPlotPca
