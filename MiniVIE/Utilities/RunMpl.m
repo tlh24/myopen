@@ -3,11 +3,11 @@ function [ obj ] = RunMpl
 p.guiName = 'MiniVIE-NFU-MPL';
 % p.filePrefix = 'WR_TR02_L_';
 % p.filePrefix = 'JH_TH01_L_';
-p.filePrefix = 'WACS_01_WD_R_';
+p.filePrefix = 'MPL_01_WD_R_';
 
 UiTools.save_temp_file('defaultFilePrefix',p.filePrefix)
 
-diaryFile = [datestr(now,'yyyymmdd_HHMMSS') '_dairy.txt'];
+diaryFile = [datestr(now,'yyyymmdd_HHMMSS') '_diary.txt'];
 diary(diaryFile);
 
 % define input source
