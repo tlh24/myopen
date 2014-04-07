@@ -895,7 +895,7 @@ classdef MiniVIE < Common.MiniVieObj
         end
         function pbPlotPca(obj)
             % plot the principle components of the current training data
-            GUIs.guiPlotPca(obj.TrainingData)
+            GUIs.guiPlotPca(obj.TrainingData);
         end
         function pbAdjustGains(obj)
             % Launch the gain adjust GUI.  Stop refresh during figure
