@@ -132,6 +132,7 @@ disp('Complete')
         MAX_SAMPLES = 2000;
         
         angleLog = zeros(MAX_SAMPLES,9); % columns are t, and angles
+        graspLog = cell(MAX_SAMPLES,1);
         % Allocate memory for intent logging
         sampleIntent = hScenario.Intent;
         % clear out fields from example intent
@@ -167,10 +168,12 @@ disp('Complete')
             start = (0.25*(maxVal - minVal) + minVal);
             target = (0.75*(maxVal - minVal) + minVal);
             % target = 0.75*(maxVal) * 180 / pi;
+            targetGrasp = [];
         elseif ~s.IsGrasp && s.Direction < 0
             start = (-0.25*(maxVal - minVal) + maxVal);
             target = (-0.75*(maxVal - minVal) + maxVal);
             %target = 0.75*(minVal) * 180 / pi;
+            targetGrasp = [];
         elseif isHandOpen
             % Need to pick a grasp state for Hand Open
             s.GraspId = Controls.GraspTypes.Spherical;
@@ -180,12 +183,14 @@ disp('Complete')
             m.setValue(m.RocStateId,1);
             start = 1;
             target = 0;
+            targetGrasp = 'Hand Open';
         elseif s.IsGrasp % && ~isempty(s.GraspId)
             % Grasp Close
             m = hScenario.ArmStateModel;
             m.setValue(m.RocStateId,0);
             start = 0;
             target = 1;
+            targetGrasp = s.GraspId;
         end
         
         % Start position for this trial
@@ -224,12 +229,20 @@ disp('Complete')
             % (tElapsed < tTimeout) && ~moveComplete
             
             % Time the loop
-            tRefresh = tic;
+            % tRefresh = tic;
             
             % call the update function to perform classification
             hScenario.update()
-            
             if hScenario.Verbose, fprintf('\n'); end
+            
+            % Get Intent
+            newIntent = hScenario.Intent;
+            %%%%%%%%%%%%%%%%%%%%%
+            % Clear raw data logging to avoid memory overrun
+            %%%%%%%%%%%%%%%%%%%%%
+            newIntent.windowData = [];
+            newIntent.rawEmg = [];
+            graspId = hScenario.ArmStateModel.getRocValues;
             
             % Get the user angles from state machine
             jUser = hScenario.ArmStateModel.getValues;
@@ -237,11 +250,7 @@ disp('Complete')
             % add to the log
             logIdx = logIdx + 1;
             angleLog(logIdx,:) = [tElapsed jUser];
-            %intentLog{logIdx} = hScenario.Intent;
-            newIntent = hScenario.Intent;
-            % Clear raw data logging to avoid memory overrun
-            newIntent.windowData = [];
-            newIntent.rawEmg = [];
+            graspLog{logIdx} = graspId;
             intentLog(logIdx) = newIntent;
             
             if isempty(tMovement) && ~isequal(jUser,aTrial)
@@ -260,10 +269,10 @@ disp('Complete')
             % Compare output
             % First make sure all angles are within error band.  AND check
             % that either this isn't a grasp OR the user has the right
-            % grasp selected OR is't hand open and we dont' care the grasp
+            % grasp selected OR it is hand open and we don't care about the grasp
             % state
             isMatched = all(abs(aUser - aGoal) < [repmat(jointAccuracy,1,7) graspAccuracy]) && ...
-                ( ~s.IsGrasp || isHandOpen || (hScenario.ArmStateModel.getRocValues == s.GraspId) );
+                ( ~s.IsGrasp || isHandOpen || (graspId == s.GraspId) );
             if all(isMatched)
                 set([hTarget.handle.hPatch],'FaceColor',greenArm)
                 if isempty(tHold)
@@ -284,7 +293,7 @@ disp('Complete')
             %    handAngles = Controls.graspInterpolation(aUser(s.JointId), s.GraspId);
             %elseif s.IsGrasp
             if s.IsGrasp
-                handAngles = Controls.graspInterpolation(aUser(s.JointId), hScenario.ArmStateModel.getRocValues);
+                handAngles = Controls.graspInterpolation(aUser(s.JointId), graspId);
             else
                 handAngles = zeros(1,29);
             end
@@ -301,19 +310,21 @@ disp('Complete')
         end
         
         if isempty(tMovement)
+            % No movement.  Nothing to log
             disp('Movement Never Started');
             tCompletion = [];
             angleLog = [];
             intentLog = [];
+            graspLog = {};
         else
+            % Movement complete.  Un-allocate log data
             disp('Completion Time:')
             tCompletion = etime(clock,tMovement);
             disp(tCompletion)
             
             angleLog(logIdx:end,:) = [];
             intentLog(logIdx:end) = [];
-            %figure;
-            %plot(angleLog(:,1),angleLog(:,6));
+            graspLog(logIdx:end) = [];
         end
         
         if ~moveComplete
@@ -325,9 +336,13 @@ disp('Complete')
         end
         
         % Store results in structure
-        structLog.startAngle = aStart;
+        structLog.targetClass = thisClass;
+        structLog.targetGrasp = targetGrasp;
+        structLog.startAngle = aTrial;
+        structLog.targetAngle = aGoal;
         structLog.angleTimeHistory = angleLog;
         structLog.intentTimeHistory = intentLog;
+        structLog.graspTimeHistory = graspLog;
         structLog.tStart = tStart;
         structLog.tElapsed = tElapsed;
         structLog.tMovement = tMovement;
