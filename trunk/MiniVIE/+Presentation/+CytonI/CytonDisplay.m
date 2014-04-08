@@ -1,5 +1,37 @@
 classdef CytonDisplay < hgsetget
-    % Class for displaying Cyton Robot
+    % Class for displaying Cyton Robot and controlling visual tools
+    % 
+    %
+    % Usage Example:
+    %     % Note if getting from Cyton Class, use this:
+    %     hDisplay = hCyton.hDisplay;
+    %
+    %     % Turn off the surface render display
+    %     hDisplay.showSurfaces(0)
+    % 
+    %     % Use the target tool to position a target and adjust size
+    %     hDisplay.setTarget([50 50 150])
+    %     hDisplay.setTargetSphereRadius(50)
+    % 
+    %     % get display handles
+    %     hg = hDisplay.getGraphicsHandles
+    %     % enable figure resize
+    %     set(hg.Figure,'Resize','on')
+    % 
+    %     % expand the axes by 50%
+    %     ax = axis(hg.hAxes);
+    %     axis(hg.hAxes,ax.*1.5)
+    % 
+    %     % reset axes to default
+    %     axis(hg.hAxes,'tight')
+    %     drawnow
+    %     axis(hg.hAxes,'auto')
+    % 
+    %     % hide target
+    %     hDisplay.setTargetSphereRadius(0)
+    %     hDisplay.setTarget(eye(4))
+    %
+    %
     %
     % 2011-04-13 Armiger Created
     properties
@@ -50,7 +82,7 @@ classdef CytonDisplay < hgsetget
             
             obj.hg.hAxes = hParentAxes;
             
-            [obj.hg.Transforms obj.hg.Patches obj.hg.Triads] = drawCyton(obj.hg.hAxes,patchData);
+            [obj.hg.Transforms, obj.hg.Patches, obj.hg.Triads] = drawCyton(obj.hg.hAxes,patchData);
             
             axis(obj.hg.hAxes,'equal');
             
@@ -174,6 +206,10 @@ classdef CytonDisplay < hgsetget
                 title(obj.hg.hAxes,'Plant Stopped');
             end
             
+        end
+        function hg = getGraphicsHandles(obj)
+            % Return graphics handles to the user for editing the 
+            hg = obj.hg;
         end
     end
     methods (Static = true)

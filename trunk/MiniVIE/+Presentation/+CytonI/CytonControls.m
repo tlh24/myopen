@@ -2,24 +2,56 @@ classdef CytonControls < hgsetget
     % Class for holding kinematics of Cyton and methods for endpoint
     % based control
     %
-    %     % Get dh param constants
-    %     [~, a, d] = hControls.getDHParams();
+    % Usage Example:
     %
-    %     % Get Jacobian at the current position
-    %     J_ = hControls.symJacobianFull(a(6),d(2),d(3),d(4),d(5),d(6),q(1),q(2),q(3),q(4),q(5),q(6));
+    %     % Get the 'A' matrix frames for the given set of joint angles.
+    %     % The A matrices represent the [DH] transformation between adjacent frames
+    %     A = hControls.getJointFrames
+    % 
+    %     % Multiplying the A matrices gives the transformation from the base frame
+    %     % to each specified joint frame.
+    %     T_0_1 = A(:,:,1);
+    %     T_0_2 = A(:,:,1)*A(:,:,2)
+    %     T_0_3 = A(:,:,1)*A(:,:,2)*A(:,:,3)
+    %     T_0_4 = A(:,:,1)*A(:,:,2)*A(:,:,3)*A(:,:,4)
+    %     T_0_5 = A(:,:,1)*A(:,:,2)*A(:,:,3)*A(:,:,4)*A(:,:,5)
+    % 
+    %     % Get the transformation from the base frame to the specified frame
+    %     % directly.  Note this is the same as T_0_3 above
+    %     hControls.getT_0_N(3)
+    % 
+    %     %% move Cyton with endpoint velocity control
+    % 
+    %     % move down (-z) without retaining endpoint orientation
+    %     endpointVelocity = [0 0 -1 NaN NaN NaN];
+    %     [jointVelocity, J] = hControls.computeVelocity(endpointVelocity);
+    %     q = hCyton.JointParameters;
+    %     q = q + jointVelocity
+    %     hCyton.setJointParameters(q);
+    %     hCyton.hControls.getT_0_N
+    %
+    %
     %
     % Log:
     %   06Feb2012 Armiger: Created
-    %   03Apr2013 Armiger: Added not about incomplete endpoint position and
+    %   03Apr2013 Armiger: Added note about incomplete endpoint position and
     %   orientation functions.  The user should come up with their own
     %   inverse kinematics using the Jacobian solution provided
     properties
+        JacobianMethod = 'DampedLeastSquares';  % Select Jacobian Method {Transpose|PseudoInverse|DampedLeastSquares}
     end
     properties (Dependent = true)
         DH_Params;
     end
     properties (Constant = true) %(SetAccess = private)
         % Symbolically solved kinematic equations
+        %
+        %     % Get dh param constants
+        %     [~, a, d] = hControls.getDHParams();
+        %
+        %     % Get Jacobian at the current position
+        %     J_ = hControls.symJacobianFull(a(6),d(2),d(3),d(4),d(5),d(6),q(1),q(2),q(3),q(4),q(5),q(6));
+        
         symJacobianFull = @(a6,d2,d3,d4,d5,d6,th1,th2,th3,th4,th5,th6)...
             reshape([d4.*(cos(th1).*cos(th3)-cos(th2).*sin(th1).*sin(th3))+d2.*cos(th1)+d5.*(sin(th4).*(cos(th1).*sin(th3)+cos(th2).*cos(th3).*sin(th1))+cos(th4).*sin(th1).*sin(th2))+d3.*sin(th1).*sin(th2),d4.*(cos(th3).*sin(th1)+cos(th1).*cos(th2).*sin(th3))+d2.*sin(th1)+d5.*(sin(th4).*(sin(th1).*sin(th3)-cos(th1).*cos(th2).*cos(th3))-cos(th1).*cos(th4).*sin(th2))-d3.*cos(th1).*sin(th2),0.0,0.0,0.0,1.0,-cos(th1).*(d5.*(cos(th2).*cos(th4)-cos(th3).*sin(th2).*sin(th4))+d3.*cos(th2)+d4.*sin(th2).*sin(th3)),...
             -sin(th1).*(d5.*(cos(th2).*cos(th4)-cos(th3).*sin(th2).*sin(th4))+d3.*cos(th2)+d4.*sin(th2).*sin(th3)),...
@@ -82,7 +114,7 @@ classdef CytonControls < hgsetget
             Value.a = obj.a_;
             Value.d = obj.d_;
         end
-        function [A T_0_n] = getJointFrames(obj)
+        function [A, T_0_n] = getJointFrames(obj)
             % This function contains all the kinematics of the Cyton I
             import Presentation.CytonI.*
             
@@ -236,7 +268,6 @@ classdef CytonControls < hgsetget
             % Workspace constraint:
             % Avoid commanding beyond workspace
             
-            
             jointVelocity = [];
             
             maxTries = 10;
@@ -280,19 +311,21 @@ classdef CytonControls < hgsetget
                 
                 % Compute the joint velocities, q_dot
                 x_dot = endpointVelocity(:);
-                switch 3
-                    case 1
+                switch lower(obj.JacobianMethod)
+                    case lower('Transpose')
                         % Transpose method
                         pinvJ = J';
                         q_dot = pinvJ * x_dot;
-                    case 2
+                    case lower('PseudoInverse')
                         % pseudo-inverse
                         pinvJ = pinv(J);
                         q_dot = pinvJ * x_dot;
-                    case 3
+                    case lower('DampedLeastSquares')
                         % Damped least squares:
                         lambda = 1e-1;
                         q_dot = (J'*J + lambda^2.*eye(7)) \ J' * x_dot;
+                    otherwise
+                        error('Unknown Jacobian Inversion Method. Expected {Transpose|PseudoInverse|DampedLeastSquares}');
                 end
                 
                 nullVelocity = (eye(7) - pinv(J)*J) * q0_dot;
