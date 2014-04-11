@@ -13,6 +13,7 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
     %
     % Log:
     % 30Jul2012 Armiger: Created
+    % 10Apr2014 Armiger: Added an enable flag for using analog joystick inputs
     properties (Access = public)
         RetrainCounts = 15;  % Controls how many samples to wait before auto retrain
         JoystickId = 0  % Joystick Id (0,1,2,etc)
@@ -24,6 +25,11 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
         ButtonDown = 0; % Counts how long the joystick button is down
         CurrentClass = 1;
         LastButton = 0;
+        AnalogEnable = 0;   % Allows class to be changed using either the righ-thand gamepad 
+                            % buttons OR the left-hand D-pad or analog
+                            % stick.  Not if the joystick is an improper
+                            % mode then this can lead to unexpected rapid
+                            % scanning through classes
         
         TrainingData; % Online retraininer defined by having access to and adding data to training data
     end
@@ -207,9 +213,9 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
             
             % change target Class
             buttonPrevious = ismember(buttonId,[2 6]) || ...
-                obj.hJoystick.axisVal(1) > 0.5;
+                (obj.AnalogEnable && obj.hJoystick.axisVal(1) > 0.5);
             buttonNext = ismember(buttonId,[4 8]) || ...
-                obj.hJoystick.axisVal(1) < -0.5;
+                (obj.AnalogEnable && obj.hJoystick.axisVal(1) < -0.5);
             if buttonPrevious && ...
                     (buttonJustPressed || buttonHeld)
                 % move to next class, redraw, done
