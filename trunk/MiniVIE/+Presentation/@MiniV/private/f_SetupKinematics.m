@@ -1,8 +1,8 @@
 %% Setup Kinematic Chain:
 % This function creates the kinematic chain structure KChain.  Input
-% arguments are the handles to either 1 or multiple axes 
+% arguments are the handles to either 1 or multiple axes
 % Can use multiple axes (ex. Frontal, Sagittal view) if hAxes is an array
-function KChain = f_SetupKinematics(hAxes,isLeftArm,scale)
+function KChain = f_SetupKinematics(hAxes,isLeftArm,scale,showBody)
 % global KChain
 
 if nargin < 1
@@ -15,6 +15,10 @@ end
 
 if nargin < 3
     scale = [1 1 1];
+end
+
+if nargin < 4
+    showBody = false;
 end
 
 
@@ -77,7 +81,7 @@ f_KChain_List(KChain,1);
 %     fprintf(s,'%d %d %d %d\n',Left_Arm(i).elementData');
 %     fprintf(s,'];\n');
 %     fclose(s);
-% 
+%
 %     KChain(i+1).nodeData = Left_Arm(i).nodeData;
 %     KChain(i+1).elementData = Left_Arm(i).elementData;
 % end
@@ -103,13 +107,13 @@ if 0
     [KChain(18).nodeData,KChain(18).elementData] = ArmData17;   %% Pinky1
     [KChain(19).nodeData,KChain(19).elementData] = ArmData18;   %% Pinky2
     [KChain(20).nodeData,KChain(20).elementData] = ArmData19;   %% Pinky3
-
+    
 else
     load meshData;
-   for i = 1:20
+    for i = 1:20
         KChain(i).nodeData = meshData(i).nodeData;
         KChain(i).elementData = meshData(i).elementData;
-   end
+    end
     
 end
 
@@ -321,7 +325,7 @@ KChain = mirror_function(KChain,mirror);
 %% Apply Scaling to kinematics
 for i = 1:length(KChain)
     scaleMe = 4:6; %% Ids Txyz which need to be scaled
-    KChain(i).Joint_Loc(scaleMe) = KChain(i).Joint_Loc(scaleMe).*scale; 
+    KChain(i).Joint_Loc(scaleMe) = KChain(i).Joint_Loc(scaleMe).*scale;
 end
 
 %% Make an array of colors for chain
@@ -332,15 +336,15 @@ while length(colorstr_ar)<length(KChain)
     colorstr_ar = [colorstr_ar colorstr_ar]; % repeat colors if array is not long enough
 end
 
-showBody = false;
+%showBody = true;
 if showBody
     
     load('Body.dat','-mat')  %% Load Static patches
-    F_Loc = [f_make_R(KChain(2).Joint_Param(1:3)) KChain(2).Joint_Param(4:6)'; 0 0 0 1];
+    F_Loc = [f_make_R(KChain(2).Joint_Param(1:3)') KChain(2).Joint_Param(4:6)'; 0 0 0 1];
     for i = 1:length(Body)
         Body(i) = f_transform_model(F_Loc,Body(i));
     end
-
+    
 end
 
 
@@ -354,7 +358,7 @@ for iAxis = 1:length(hAxes)
     for iSegment = 1:length(KChain)
         % Create the patch object:
         %         KChain(iSegment).hPatch(iAxis) = f_show_surface(KChain(iSegment),cell2mat(colorstr_ar(iSegment)));
-           KChain(iSegment).hPatch(iAxis) = patch(...
+        KChain(iSegment).hPatch(iAxis) = patch(...
             'Vertices',KChain(iSegment).nodeData,...
             'Faces',KChain(iSegment).elementData,...
             'Parent',hAxes(iAxis),...
@@ -367,7 +371,7 @@ for iAxis = 1:length(hAxes)
         F_Loc = [f_make_R(Joint_Loc(1:3)') Joint_Loc(4:6)'; 0 0 0 1];
         Joint_Param = KChain(iSegment).Joint_Param;
         F_Param = [f_make_R(Joint_Param(1:3)') Joint_Param(4:6)'; 0 0 0 1];
-
+        
         % Create the triad object:
         KChain(iSegment).hTriad(iAxis,:) = f_plot_triad(hAxes,F_Loc*F_Param,0.025*scale(1));
         set(KChain(iSegment).hTriad(iAxis,:),'Parent',hAxes)
@@ -376,26 +380,34 @@ for iAxis = 1:length(hAxes)
     
     if showBody
         % Create static patch objects:
+        hStaticPatches = [];
         % Clothes (Blue)
         %     staticList = [1:3 8:9 46:55 27];
-    staticList = [1 46 47];
+        staticList = [1 46 47];
         %     staticList = [];
-    for i = 1:length(staticList)
-        f_show_surface(Body(staticList(i)),'blue');
-    end
+        for i = 1:length(staticList)
+            hPatch = f_show_surface(Body(staticList(i)),'blue',hAxes(iAxis));
+            hStaticPatches = cat(2,hStaticPatches,hPatch);
+        end
         % Skin
-    staticList = [2:5 8];%:26];
-     skin = [.95 .87 .73];
+        staticList = [2:5 8];%:26];
+        skin = [.95 .87 .73];
         %     staticList = [];
-    for i = 1:length(staticList)
-        f_show_surface(Body(staticList(i)),skin);
-    end
+        for i = 1:length(staticList)
+            hPatch = f_show_surface(Body(staticList(i)),skin,hAxes(iAxis));
+            hStaticPatches = cat(2,hStaticPatches,hPatch);
+        end
         % Eyes
-    staticList = [6 7];
+        staticList = [6 7];
         %     staticList = [];
-    for i = 1:length(staticList)
-         f_show_surface(Body(staticList(i)),[0.9 0.9 1]);
-    end
+        for i = 1:length(staticList)
+            hPatch = f_show_surface(Body(staticList(i)),[0.9 0.9 1],hAxes(iAxis));
+            hStaticPatches = cat(2,hStaticPatches,hPatch);
+        end
+        
+        
+        % Store in first KChain element
+        KChain(1).hStaticPatches = hStaticPatches;
     end
     
     showTable = 0;
@@ -405,7 +417,7 @@ for iAxis = 1:length(hAxes)
         a = f_transform_model(F_Loc,a);
         f_show_surface(a,[0.5020    0.2510    0.2510]);
     end
-
+    
     showBall = 0;
     if showBall
         a = f_stlMesh_to_surface(f_read_stl('Ball.stl'));
@@ -417,10 +429,10 @@ for iAxis = 1:length(hAxes)
 end
 
 function KChain = mirror_function(KChain,mirror)
-%Txyz(1) = Txyz(1) * mirror; Rxyz(2:3) = Rxyz(2:3) * mirror; 
+%Txyz(1) = Txyz(1) * mirror; Rxyz(2:3) = Rxyz(2:3) * mirror;
 for i = 1:length(KChain)
     flipMe = [2 3 4]; %% Ids Corresponding to Rxyz(2:3) and Txyz(1)
-    KChain(i).Joint_Loc(flipMe) = KChain(i).Joint_Loc(flipMe)*mirror; 
+    KChain(i).Joint_Loc(flipMe) = KChain(i).Joint_Loc(flipMe)*mirror;
     
     KChain(i).Joint_Param(2:3) = KChain(i).Joint_Param(2:3)*mirror;
     KChain(i).Joint_Max(2:3) = KChain(i).Joint_Max(2:3)*mirror;
@@ -430,7 +442,7 @@ for i = 1:length(KChain)
     % a per joint basis (i.e. increment = [1 1 1] or [5 5 5]) then the
     % next line would be:
     % KChain(i).Increment(2:3) = KChain(i).Increment(2:3)*mirror
-    KChain(i).Increment = 1;  
+    KChain(i).Increment = 1;
 end
 
 
