@@ -2,6 +2,23 @@ classdef MiniV < hgsetget
     % classdef for MiniV Arm display.
     % Note that get and set methods are inherited from hgsetget
     %
+    %   Usage:
+    %         % Create a left arm with the body and scale = [1 1 1]
+    %         hArm = Presentation.MiniV(hAxes,1,[1 1 1],1);
+    %         axis(hAxes,[0 0.4 -0.4 0.4 0.3 0.7])
+    %
+    %         % Set the base of the Arm:
+    %         hArm.setBaseFrame(makehgtform('translate',[0.3 -0.2 -0.1]))
+    %
+    %         % Set hand angles
+    %         handAngles = rand(1,29)*180/pi;
+    %         hUser.set_hand_angles_degrees(handAngles);
+    %         % Set upper arm angles
+    %         aUser = rand(1,7)*180/pi;
+    %         hUser.set_upper_arm_angles_degrees(aUser)
+    %         %redraw the display
+    %         hUser.redraw
+    %
     % $Log: MiniV.m  $
     % Revision 1.10 2010/10/08 19:58:57EDT Armiger, Robert S. (ArmigRS1-a) 
     % removed self reference
@@ -17,12 +34,21 @@ classdef MiniV < hgsetget
         isTriad = false;
         isLeftArm = true;
         
+        showBody = false;
+        
+        hBase
+        
         aviobj = [];
     end
     
     methods
-        function obj = MiniV(hAxes,isLeftArm,scale)
+        function obj = MiniV(hAxes,isLeftArm,scale,showBody)
             % Create a MiniV class and initialize
+            if nargin < 4
+                obj.showBody = false;
+            else
+                obj.showBody = showBody;
+            end
             if nargin < 3
                 scale = [1 1 1];
             end
@@ -38,7 +64,7 @@ classdef MiniV < hgsetget
                 axis([0 0.4 -0.4 0.4 0.3 0.7])
             end
             
-            obj.handle = f_SetupKinematics(hAxes,obj.isLeftArm,scale);
+            obj.handle = f_SetupKinematics(hAxes,obj.isLeftArm,scale,obj.showBody);
             
             ambient = 0.5;
             diffuse = 0.4;
@@ -46,6 +72,21 @@ classdef MiniV < hgsetget
             material([obj.handle(:).hPatch],[ambient diffuse specular]);
             set([obj.handle(:).hPatch],'FaceLighting','gouraud');
             set([obj.handle(:).hPatch],'FaceAlpha',1.0);
+            
+            if obj.showBody
+                hStatic = [obj.handle(1).hStaticPatches];
+                material(hStatic,[ambient diffuse specular]);
+                set(hStatic,'FaceLighting','gouraud');
+                set(hStatic,'FaceAlpha',1.0);
+            end
+            
+            % Setup a global parent frame for moving dependant objects
+            obj.hBase = hgtransform('Parent',hAxes);
+            set([obj.handle(:).hPatch],'Parent',obj.hBase)
+            if obj.showBody
+                set(hStatic,'Parent',obj.hBase)
+            end
+            %set(hBase,'Matrix',makehgtform('translate',[0 -0.2 -0.1]))
             
             redraw(obj);
                         
@@ -154,6 +195,14 @@ classdef MiniV < hgsetget
             if ~isempty(obj.aviobj)
                 obj.aviobj = close(obj.aviobj);
             end
+        end
+        function setBaseFrame(obj,Frame)
+            % Method for changing the position and orientation of the arm
+            % with respect to global
+            
+            assert(isequal(size(Frame),[4 4]),'Expected a 4x4 transformation');
+            set(obj.hBase,'Matrix',Frame)
+            
         end
     end
 end
