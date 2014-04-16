@@ -1,308 +1,231 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<deployment-project plugin="plugin.deploytool" plugin-version="1.0">
-  <configuration target="target.standalone" target-name="Console Application" name="MiniVIE" location="C:\svn\myopen\MiniVIE\Deploy" file="C:\svn\myopen\MiniVIE\Deploy\MiniVIE.prj" build-checksum="3402158086">
-    <param.project.name>C:\svn\myopen\MiniVIE\Deploy\MiniVIE.prj</param.project.name>
-    <param.target.type>Console Application</param.target.type>
+<deployment-project plugin="plugin.ezdeploy" plugin-version="1.0">
+  <configuration target="target.ezdeploy.standalone" target-name="MATLAB Compiler for Standalone Applications" name="MiniVIE" location="C:\svn\clean\myopen\MiniVIE\Deploy" file="C:\svn\clean\myopen\MiniVIE\Deploy\MiniVIE.prj" preferred-package-type="package.type.exe" build-checksum="1947360733" preferred-package-location="C:\svn\clean\myopen\MiniVIE\Deploy\MiniVIE\for_redistribution">
     <param.appname>MiniVIE</param.appname>
-    <param.intermediate>${PROJECT_ROOT}\MiniVIE\src</param.intermediate>
-    <param.output>${PROJECT_ROOT}\MiniVIE\distrib</param.output>
+    <param.authnamewatermark>Robert Armiger</param.authnamewatermark>
+    <param.email>robert.armiger@jhuapl.edu</param.email>
+    <param.company>JHUAPL</param.company>
+    <param.icon />
+    <param.icons />
+    <param.summary />
+    <param.description />
+    <param.screenshot />
+    <param.version>1.1</param.version>
+    <param.namespace>MiniVIE</param.namespace>
+    <param.guid />
+    <param.installpath.string>MiniVIE</param.installpath.string>
+    <param.installpath.combo>option.installpath.programfiles</param.installpath.combo>
+    <param.logo />
+    <param.install.notes />
+    <param.intermediate>${PROJECT_ROOT}\MiniVIE\for_testing</param.intermediate>
+    <param.output>${PROJECT_ROOT}\MiniVIE\for_redistribution</param.output>
     <param.embed.ctf>true</param.embed.ctf>
-    <param.tbx_on_path>
-      <item>all</item>
-    </param.tbx_on_path>
-    <param.warnings>
-      <warning.fullpath>on</warning.fullpath>
-      <warning.duplicate>on</warning.duplicate>
-      <warning.option.ignored>on</warning.option.ignored>
-      <warning.libname>on</warning.libname>
-      <warning.demo>on</warning.demo>
-    </param.warnings>
-    <param.version>1.0</param.version>
+    <param.target.type>subtarget.standalone</param.target.type>
+    <param.classorg />
+    <param.web.mcr>true</param.web.mcr>
+    <param.package.mcr>false</param.package.mcr>
+    <param.no.mcr>false</param.no.mcr>
+    <param.web.mcr.name>MyAppInstaller_web</param.web.mcr.name>
+    <param.package.mcr.name>MyAppInstaller_mcr</param.package.mcr.name>
+    <param.no.mcr.name>MyAppInstaller_app</param.no.mcr.name>
+    <param.user.defined.mcr.options />
+    <param.windows.command.prompt>false</param.windows.command.prompt>
     <param.user.only.registration>false</param.user.only.registration>
-    <param.c.cpp.options.file />
-    <param.include.dirs />
-    <param.lib.dirs />
-    <param.lib.files />
-    <param.defines />
-    <param.undefines />
-    <param.debug>false</param.debug>
-    <param.share.mcr>false</param.share.mcr>
-    <param.disable.jvm>false</param.disable.jvm>
-    <param.disable.display>false</param.disable.display>
+    <param.mads.no.java>false</param.mads.no.java>
+    <param.mads.exclusive.mcr>false</param.mads.exclusive.mcr>
+    <param.net.framework>option.net.framework.default</param.net.framework>
+    <param.assembly.type>false</param.assembly.type>
+    <param.encryption.key.file />
+    <param.net.enable.remoting>false</param.net.enable.remoting>
+    <param.net.tsa.enable>false</param.net.tsa.enable>
+    <param.net.tsa.assembly />
+    <param.net.tsa.interface />
+    <param.net.tsa.namespace>MiniVIE</param.net.tsa.namespace>
+    <param.net.tsa.superclass />
+    <param.net.tsa.metadata />
+    <param.net.tsa.metadata.assembly>C:\Users\armigrs1\Documents\MATLAB</param.net.tsa.metadata.assembly>
     <param.create.log>false</param.create.log>
     <param.log.file />
-    <param.user.defined.mcr.options />
     <unset>
-      <param.project.name />
-      <param.target.type />
-      <param.appname />
+      <param.authnamewatermark />
+      <param.email />
+      <param.company />
+      <param.icon />
+      <param.icons />
+      <param.summary />
+      <param.description />
+      <param.screenshot />
+      <param.namespace />
+      <param.guid />
+      <param.logo />
+      <param.install.notes />
       <param.intermediate />
       <param.output />
       <param.embed.ctf />
-      <param.tbx_on_path />
-      <param.warnings />
-      <param.version />
+      <param.target.type />
+      <param.classorg />
+      <param.web.mcr />
+      <param.package.mcr />
+      <param.no.mcr />
+      <param.web.mcr.name />
+      <param.package.mcr.name />
+      <param.no.mcr.name />
+      <param.user.defined.mcr.options />
       <param.user.only.registration />
-      <param.c.cpp.options.file />
-      <param.include.dirs />
-      <param.lib.dirs />
-      <param.lib.files />
-      <param.defines />
-      <param.undefines />
-      <param.debug />
-      <param.share.mcr />
-      <param.disable.jvm />
-      <param.disable.display />
+      <param.mads.no.java />
+      <param.mads.exclusive.mcr />
+      <param.net.framework />
+      <param.assembly.type />
+      <param.encryption.key.file />
+      <param.net.enable.remoting />
+      <param.net.tsa.enable />
+      <param.net.tsa.assembly />
+      <param.net.tsa.interface />
+      <param.net.tsa.namespace />
+      <param.net.tsa.superclass />
+      <param.net.tsa.metadata />
+      <param.net.tsa.metadata.assembly />
       <param.create.log />
       <param.log.file />
-      <param.user.defined.mcr.options />
     </unset>
     <fileset.main>
-      <file>C:\svn\myopen\MiniVIE\MiniVIE.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\MiniVIE.m</file>
     </fileset.main>
-    <fileset.resources />
+    <fileset.resources>
+      <file>C:\svn\clean\myopen\MiniVIE\+Common\MiniVieObj.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Common\MiniViePresentation.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Controls\ArmStateModel.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Controls\GraspAngles.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Controls\graspInterpolation.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Controls\GraspTypes.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Db\MiniVieDb.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Db\MplDb.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Db\Record.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+GUIs\guiChannelSelect.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+GUIs\guiClassifierChannels.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+GUIs\guiGainAdjust.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+GUIs\guiLimitsAdjust.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+GUIs\guiPlotPca.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+GUIs\guiRocEditor.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+GUIs\guiSignalViewer.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+GUIs\guiSignalViewerState.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+GUIs\guiTargetAchievementControl.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+GUIs\widgetSlider.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+GUIs\widgetStripChart.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Inputs\@EmgSimulator\EmgSimulator.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Inputs\CpcHeadstage.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Inputs\CpchSerial.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Inputs\DaqHwDevice.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Inputs\Filter.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Inputs\HighPass.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Inputs\IntanUdp.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Inputs\LowPass.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Inputs\NfuInput.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Inputs\Notch.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Inputs\SignalInput.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Inputs\SignalSimulator.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Inputs\UdpDevice.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+MPL\MplScenarioMud.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+MPL\MplVulcanX.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+MPL\MudCommandEncoder.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+MPL\NfuUdp.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+MPL\RocTable.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+PatternRecognition\AdaptiveTrainingInterface.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+PatternRecognition\BarTrainer.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+PatternRecognition\MiniGuitarHero.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+PatternRecognition\MotionTrainer.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+PatternRecognition\SimpleTrainer.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+PatternRecognition\TrainingData.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+PatternRecognition\TrainingInterface.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Presentation\+AirGuitarHero\AirGuitarHeroBase.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Presentation\+AirGuitarHero\AirGuitarHeroEmg.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Presentation\+AirGuitarHero\HwLinesEnum.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Presentation\+AirGuitarHero\NoteDetector.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Presentation\@MiniV\MiniV.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Presentation\@MiniV\private\ArmControl.fig</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Presentation\@MiniV\private\ArmControl.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Presentation\@MiniV\private\f_KChain_IsectNodes.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Presentation\@MiniV\private\f_KChain_IsectNodes2.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Presentation\@MiniV\private\f_KChain_List.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Presentation\@MiniV\private\f_KChain_Load.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Presentation\@MiniV\private\f_KChain_Redraw.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Presentation\@MiniV\private\f_KChain_Save.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Presentation\@MiniV\private\f_magnitude.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Presentation\@MiniV\private\f_make_R.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Presentation\@MiniV\private\f_normalize.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Presentation\@MiniV\private\f_plot3.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Presentation\@MiniV\private\f_plot_triad.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Presentation\@MiniV\private\f_read_stl.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Presentation\@MiniV\private\f_SetJointAngle.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Presentation\@MiniV\private\f_SetupBodyKinematics.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Presentation\@MiniV\private\f_SetupGraphicsChain.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Presentation\@MiniV\private\f_SetupKinematics.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Presentation\@MiniV\private\f_SetupMacros.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Presentation\@MiniV\private\f_show_surface.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Presentation\@MiniV\private\f_stlMesh_to_surface.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Presentation\@MiniV\private\f_transform.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Presentation\@MiniV\private\f_transform_model.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Presentation\@MiniV\private\f_update_triad.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Presentation\@MiniV\private\f_UpdateHandPosition.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Presentation\@MiniV\private\f_UpdateJointAngle.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Presentation\@MiniV\private\run_demo.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Presentation\BreakoutSink.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Presentation\MiniBreakout.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Presentation\OdeSink.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Scenarios\+MSMS_ADL\MotionFile.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Scenarios\+MSMS_ADL\MSMS_WRAMC_Model.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Scenarios\+MSMS_ADL\MsmsDisplayScenario.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Scenarios\MiniVDisplayScenario.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Scenarios\MsmsTasks.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Scenarios\OnlineRetrainer.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Scenarios\ScenarioBase.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+SignalAnalysis\Classifier.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+SignalAnalysis\DiscriminantAnalysis.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+SignalAnalysis\Lda.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+SignalAnalysis\private\eml_max.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+SignalAnalysis\Svm.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\Utilities\action_bus_definition.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\Utilities\action_bus_enum.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\Utilities\alwaysontop.p</file>
+      <file>C:\svn\clean\myopen\MiniVIE\Utilities\computePcaContour.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\Utilities\distinguishable_colors.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\Utilities\feature_extract.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\Utilities\getIntent.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\Utilities\guiClassifierAssessment.fig</file>
+      <file>C:\svn\clean\myopen\MiniVIE\Utilities\guiClassifierAssessment.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\Utilities\HapticAlgorithm.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\Utilities\JoyMEX.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\Utilities\JoyMEX.mexw64</file>
+      <file>C:\svn\clean\myopen\MiniVIE\Utilities\JoyMexClass.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\Utilities\LivePlot.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\Utilities\manualOverRideLeft.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\Utilities\manualOverRideRight.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\Utilities\MicroStrain3DM_GX2.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\Utilities\MicroStrainDCP.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\Utilities\mpl_hand_enum.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\Utilities\mpl_upper_arm_enum.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\Utilities\PlotUtils.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\Utilities\pnet.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\Utilities\pnet.mexw64</file>
+      <file>C:\svn\clean\myopen\MiniVIE\Utilities\PnetClass.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\Utilities\pos.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\Utilities\screencapture.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\Utilities\standardClasses.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\Utilities\StartStopForm.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\Utilities\TrainingDataAnalysis.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\Utilities\UiTools.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\Utilities\UserDrivenTrainingInterface.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\Utilities\ViePlant.m</file>
+    </fileset.resources>
     <fileset.package />
     <build-deliverables>
-      <file name="readme.txt" location="${PROJECT_ROOT}\MiniVIE\distrib" optional="true">C:\svn\myopen\MiniVIE\Deploy\MiniVIE\distrib\readme.txt</file>
-      <file name="MiniVIE.exe" location="${PROJECT_ROOT}\MiniVIE\distrib" optional="false">C:\svn\myopen\MiniVIE\Deploy\MiniVIE\distrib\MiniVIE.exe</file>
+      <file name="readme.txt" location="${PROJECT_ROOT}\MiniVIE\for_testing" optional="true">C:\svn\clean\myopen\MiniVIE\Deploy\MiniVIE\for_testing\readme.txt</file>
+      <file name="MiniVIE.exe" location="${PROJECT_ROOT}\MiniVIE\for_testing" optional="false">C:\svn\clean\myopen\MiniVIE\Deploy\MiniVIE\for_testing\MiniVIE.exe</file>
     </build-deliverables>
     <workflow />
     <matlab>
-      <root>C:\Program Files (x86)\MATLAB\R2012b</root>
-      <path>
-        <directory>C:\svn\myopen\MiniVIE\Utilities</directory>
-        <directory>C:\svn\myopen\MiniVIE</directory>
-        <directory>C:\Users\armigrs1\Documents\MATLAB</directory>
-        <directory>${MATLAB_ROOT}\toolbox\matlab\demos</directory>
-        <directory>${MATLAB_ROOT}\toolbox\matlab\graph2d</directory>
-        <directory>${MATLAB_ROOT}\toolbox\matlab\graph3d</directory>
-        <directory>${MATLAB_ROOT}\toolbox\matlab\graphics</directory>
-        <directory>${MATLAB_ROOT}\toolbox\matlab\plottools</directory>
-        <directory>${MATLAB_ROOT}\toolbox\matlab\scribe</directory>
-        <directory>${MATLAB_ROOT}\toolbox\matlab\specgraph</directory>
-        <directory>${MATLAB_ROOT}\toolbox\matlab\uitools</directory>
-        <directory>${MATLAB_ROOT}\toolbox\local</directory>
-        <directory>${MATLAB_ROOT}\toolbox\matlab\optimfun</directory>
-        <directory>${MATLAB_ROOT}\toolbox\matlab\codetools</directory>
-        <directory>${MATLAB_ROOT}\toolbox\matlab\datafun</directory>
-        <directory>${MATLAB_ROOT}\toolbox\matlab\datamanager</directory>
-        <directory>${MATLAB_ROOT}\toolbox\matlab\datatypes</directory>
-        <directory>${MATLAB_ROOT}\toolbox\matlab\elfun</directory>
-        <directory>${MATLAB_ROOT}\toolbox\matlab\elmat</directory>
-        <directory>${MATLAB_ROOT}\toolbox\matlab\funfun</directory>
-        <directory>${MATLAB_ROOT}\toolbox\matlab\general</directory>
-        <directory>${MATLAB_ROOT}\toolbox\matlab\guide</directory>
-        <directory>${MATLAB_ROOT}\toolbox\matlab\helptools</directory>
-        <directory>${MATLAB_ROOT}\toolbox\matlab\iofun</directory>
-        <directory>${MATLAB_ROOT}\toolbox\matlab\lang</directory>
-        <directory>${MATLAB_ROOT}\toolbox\matlab\matfun</directory>
-        <directory>${MATLAB_ROOT}\toolbox\matlab\ops</directory>
-        <directory>${MATLAB_ROOT}\toolbox\matlab\polyfun</directory>
-        <directory>${MATLAB_ROOT}\toolbox\matlab\randfun</directory>
-        <directory>${MATLAB_ROOT}\toolbox\matlab\sparfun</directory>
-        <directory>${MATLAB_ROOT}\toolbox\matlab\specfun</directory>
-        <directory>${MATLAB_ROOT}\toolbox\matlab\strfun</directory>
-        <directory>${MATLAB_ROOT}\toolbox\matlab\timefun</directory>
-        <directory>${MATLAB_ROOT}\toolbox\matlab\verctrl</directory>
-        <directory>${MATLAB_ROOT}\toolbox\matlab\winfun</directory>
-        <directory>${MATLAB_ROOT}\toolbox\matlab\winfun\NET</directory>
-        <directory>${MATLAB_ROOT}\toolbox\rtw\targets\AUTOSAR\AUTOSAR\dataclasses</directory>
-        <directory>${MATLAB_ROOT}\toolbox\rtw\targets\AUTOSAR\AUTOSAR</directory>
-        <directory>${MATLAB_ROOT}\toolbox\rtw\accel</directory>
-        <directory>${MATLAB_ROOT}\toolbox\simulink\blocks\library</directory>
-        <directory>${MATLAB_ROOT}\toolbox\simulink\blocks\obsolete</directory>
-        <directory>${MATLAB_ROOT}\toolbox\simulink\simulink\dataclasses</directory>
-        <directory>${MATLAB_ROOT}\toolbox\simulink\simulink</directory>
-        <directory>${MATLAB_ROOT}\toolbox\simulink\simulink\slresolve</directory>
-        <directory>${MATLAB_ROOT}\toolbox\simulink\blocks</directory>
-        <directory>${MATLAB_ROOT}\toolbox\simulink\components</directory>
-        <directory>${MATLAB_ROOT}\toolbox\simulink\fixedandfloat</directory>
-        <directory>${MATLAB_ROOT}\toolbox\simulink\fixedandfloat\obsolete</directory>
-        <directory>${MATLAB_ROOT}\toolbox\simulink\dee</directory>
-        <directory>${MATLAB_ROOT}\toolbox\simulink\simulink\MPlayIO</directory>
-        <directory>${MATLAB_ROOT}\toolbox\simulink\simulink\dataobjectwizard</directory>
-        <directory>${MATLAB_ROOT}\toolbox\simulink\simdemos\dataclasses</directory>
-        <directory>${MATLAB_ROOT}\toolbox\simulink\simdemos</directory>
-        <directory>${MATLAB_ROOT}\toolbox\simulink\simdemos\aerospace</directory>
-        <directory>${MATLAB_ROOT}\toolbox\simulink\simdemos\automotive</directory>
-        <directory>${MATLAB_ROOT}\toolbox\simulink\simdemos\industrial</directory>
-        <directory>${MATLAB_ROOT}\toolbox\simulink\simdemos\simfeatures</directory>
-        <directory>${MATLAB_ROOT}\toolbox\simulink\simdemos\simgeneral</directory>
-        <directory>${MATLAB_ROOT}\toolbox\simulink\simulink\modeladvisor</directory>
-        <directory>${MATLAB_ROOT}\toolbox\simulink\simulink\modeladvisor\fixpt</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\glue</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\glue\studio</directory>
-        <directory>${MATLAB_ROOT}\toolbox\stateflow\stateflow</directory>
-        <directory>${MATLAB_ROOT}\toolbox\stateflow\coder</directory>
-        <directory>${MATLAB_ROOT}\toolbox\stateflow\sfdemos</directory>
-        <directory>${MATLAB_ROOT}\toolbox\matlab\apps</directory>
-        <directory>${MATLAB_ROOT}\toolbox\matlab\audiovideo</directory>
-        <directory>${MATLAB_ROOT}\toolbox\coder\emlcodermex</directory>
-        <directory>${MATLAB_ROOT}\toolbox\coder\coverage</directory>
-        <directory>${MATLAB_ROOT}\toolbox\rtw\rtw</directory>
-        <directory>${MATLAB_ROOT}\toolbox\rtw\targets\shared</directory>
-        <directory>${MATLAB_ROOT}\toolbox\rtw\coder_foundation\tfl</directory>
-        <directory>${MATLAB_ROOT}\toolbox\rtw\coder_foundation\build</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\simtargets</directory>
-        <directory>${MATLAB_ROOT}\toolbox\coder\coder</directory>
-        <directory>${MATLAB_ROOT}\toolbox\coder\profile</directory>
-        <directory>${MATLAB_ROOT}\toolbox\coder\rtiostream</directory>
-        <directory>${MATLAB_ROOT}\toolbox\comm\comm</directory>
-        <directory>${MATLAB_ROOT}\toolbox\comm\commutilities\comminit</directory>
-        <directory>${MATLAB_ROOT}\toolbox\comm\commutilities\commmex</directory>
-        <directory>${MATLAB_ROOT}\toolbox\comm\commutilities</directory>
-        <directory>${MATLAB_ROOT}\toolbox\comm\commdeprecated</directory>
-        <directory>${MATLAB_ROOT}\toolbox\comm\commdemos</directory>
-        <directory>${MATLAB_ROOT}\help\toolbox\comm\examples</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\comparisons</directory>
-        <directory>${MATLAB_ROOT}\toolbox\compiler</directory>
-        <directory>${MATLAB_ROOT}\toolbox\compiler\compilerdemos</directory>
-        <directory>${MATLAB_ROOT}\toolbox\control\control</directory>
-        <directory>${MATLAB_ROOT}\toolbox\control\ctrlguis</directory>
-        <directory>${MATLAB_ROOT}\toolbox\control\ctrlobsolete</directory>
-        <directory>${MATLAB_ROOT}\toolbox\control\ctrlutil</directory>
-        <directory>${MATLAB_ROOT}\toolbox\control\ctrldemos</directory>
-        <directory>${MATLAB_ROOT}\help\toolbox\control\examples</directory>
-        <directory>${MATLAB_ROOT}\toolbox\curvefit\curvefit</directory>
-        <directory>${MATLAB_ROOT}\toolbox\curvefit\splines</directory>
-        <directory>${MATLAB_ROOT}\toolbox\curvefit\cftoolgui</directory>
-        <directory>${MATLAB_ROOT}\toolbox\curvefit\sftoolgui</directory>
-        <directory>${MATLAB_ROOT}\toolbox\curvefit\curvefitdemos</directory>
-        <directory>${MATLAB_ROOT}\toolbox\daq\daq</directory>
-        <directory>${MATLAB_ROOT}\toolbox\daq\daqguis</directory>
-        <directory>${MATLAB_ROOT}\toolbox\daq\daqblks\daqblks</directory>
-        <directory>${MATLAB_ROOT}\toolbox\daq\daqblks\daqmasks</directory>
-        <directory>${MATLAB_ROOT}\toolbox\daq\daqblks\daqmex</directory>
-        <directory>${MATLAB_ROOT}\toolbox\daq\daqdemos</directory>
-        <directory>${MATLAB_ROOT}\toolbox\dsp\dsp</directory>
-        <directory>${MATLAB_ROOT}\toolbox\dsp\dsputilities</directory>
-        <directory>${MATLAB_ROOT}\toolbox\dsp\dsputilities\dspinit</directory>
-        <directory>${MATLAB_ROOT}\toolbox\dsp\dsputilities\dspmex</directory>
-        <directory>${MATLAB_ROOT}\toolbox\dsp\dspdemos</directory>
-        <directory>${MATLAB_ROOT}\help\toolbox\dsp\examples</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\dsp\simulink\dsp</directory>
-        <directory>${MATLAB_ROOT}\toolbox\eml\eml</directory>
-        <directory>${MATLAB_ROOT}\toolbox\dsp\filterdesign</directory>
-        <directory>${MATLAB_ROOT}\toolbox\fixedpoint\fixedpointtool</directory>
-        <directory>${MATLAB_ROOT}\toolbox\fixedpoint\fidemos</directory>
-        <directory>${MATLAB_ROOT}\toolbox\fixedpoint\fixedpoint</directory>
-        <directory>${MATLAB_ROOT}\toolbox\simulink\fixedandfloat\fxpdemos</directory>
-        <directory>${MATLAB_ROOT}\toolbox\geoweb\geoweb</directory>
-        <directory>${MATLAB_ROOT}\toolbox\idelink</directory>
-        <directory>${MATLAB_ROOT}\toolbox\idelink\foundation</directory>
-        <directory>${MATLAB_ROOT}\toolbox\idelink\foundation\autointerface</directory>
-        <directory>${MATLAB_ROOT}\toolbox\idelink\foundation\autointerface\ideregisterplugins</directory>
-        <directory>${MATLAB_ROOT}\toolbox\idelink\foundation\util</directory>
-        <directory>${MATLAB_ROOT}\toolbox\idelink\foundation\errorhandler</directory>
-        <directory>${MATLAB_ROOT}\toolbox\idelink\foundation\xmakefile</directory>
-        <directory>${MATLAB_ROOT}\toolbox\idelink\foundation\hookpoints</directory>
-        <directory>${MATLAB_ROOT}\toolbox\images\colorspaces</directory>
-        <directory>${MATLAB_ROOT}\toolbox\images\images</directory>
-        <directory>${MATLAB_ROOT}\toolbox\images\imuitools</directory>
-        <directory>${MATLAB_ROOT}\toolbox\images\iptformats</directory>
-        <directory>${MATLAB_ROOT}\toolbox\images\iptutils</directory>
-        <directory>${MATLAB_ROOT}\toolbox\matlab\imagesci</directory>
-        <directory>${MATLAB_ROOT}\toolbox\images\imdemos</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\instrument</directory>
-        <directory>${MATLAB_ROOT}\toolbox\sam\m3i</directory>
-        <directory>${MATLAB_ROOT}\toolbox\map\map</directory>
-        <directory>${MATLAB_ROOT}\toolbox\map\mapgeodesy</directory>
-        <directory>${MATLAB_ROOT}\toolbox\map\mapdisp</directory>
-        <directory>${MATLAB_ROOT}\toolbox\map\mapformats</directory>
-        <directory>${MATLAB_ROOT}\toolbox\map\mapproj</directory>
-        <directory>${MATLAB_ROOT}\toolbox\map\mapdata</directory>
-        <directory>${MATLAB_ROOT}\toolbox\map\mapdata\sdts</directory>
-        <directory>${MATLAB_ROOT}\toolbox\map\mapdemos</directory>
-        <directory>${MATLAB_ROOT}\toolbox\optim\optim</directory>
-        <directory>${MATLAB_ROOT}\toolbox\optim\optimdemos</directory>
-        <directory>${MATLAB_ROOT}\toolbox\realtime</directory>
-        <directory>${MATLAB_ROOT}\toolbox\realtime\realtime</directory>
-        <directory>${MATLAB_ROOT}\toolbox\realtime\realtime\rtw</directory>
-        <directory>${MATLAB_ROOT}\toolbox\slvnv\reqmgt</directory>
-        <directory>${MATLAB_ROOT}\toolbox\slvnv\slvnv</directory>
-        <directory>${MATLAB_ROOT}\toolbox\simulink\blocks\sb2sl</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\asynciolib</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\cgir_fe</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\coder\coder</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\configset</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\controllib\engine</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\controllib\engine\numerics</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\controllib\engine\options</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\controllib\engine\optim</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\controllib\general</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\controllib\graphics</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\controllib\graphics\utils</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\controllib\graphics\plotoptions</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\controllib\requirements</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\curvefitlib</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\dastudio</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\dastudio\depviewer</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\dspblks\dspblks</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\dspblks\dspmex</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\dsp\vision\matlab\utilities</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\dsp\vision\simulink\utilities</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\dsp\vision\matlab\utilities\mex</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\dsp\vision\simulink\utilities\mex</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\dsp\vision\matlab\utilities\init</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\dsp\vision\matlab\vision</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\dsp\vision\simulink\vision</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\eda\board</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\filterdesignlib</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\hdlshared</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\hwconnectinstaller</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\imageslib</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\mapgeodesy</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\maputils</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\measure</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\multimedia</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\optimlib</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\rptgen</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\sigbldr</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\siglib</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\slcontrollib</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\sldv</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\slvnv</directory>
-        <directory>${MATLAB_ROOT}\toolbox\slvnv\simcoverage</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\spcuilib</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\statslib</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\system\coder</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\system\coreblocks</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\system\fixedpoint</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\system\sfun</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\system\simulink</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\testconsole</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\testmeaslib\general</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\testmeaslib\graphics</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\testmeaslib\simulink</directory>
-        <directory>${MATLAB_ROOT}\toolbox\signal\signal</directory>
-        <directory>${MATLAB_ROOT}\toolbox\signal\sigtools</directory>
-        <directory>${MATLAB_ROOT}\toolbox\signal\sptoolgui</directory>
-        <directory>${MATLAB_ROOT}\toolbox\signal\sigdemos</directory>
-        <directory>${MATLAB_ROOT}\toolbox\shared\simulink</directory>
-        <directory>${MATLAB_ROOT}\toolbox\sl3d\sl3d</directory>
-        <directory>${MATLAB_ROOT}\toolbox\sl3d\sl3ddemos</directory>
-        <directory>${MATLAB_ROOT}\toolbox\slcontrol\slcontrol</directory>
-        <directory>${MATLAB_ROOT}\toolbox\slcontrol\slctrlguis</directory>
-        <directory>${MATLAB_ROOT}\toolbox\slcontrol\slctrlutil</directory>
-        <directory>${MATLAB_ROOT}\toolbox\slcontrol\slctrlobsolete</directory>
-        <directory>${MATLAB_ROOT}\toolbox\slcontrol\slctrldemos</directory>
-        <directory>${MATLAB_ROOT}\help\toolbox\slcontrol\examples</directory>
-        <directory>${MATLAB_ROOT}\toolbox\simulink\simulink\slproject</directory>
-        <directory>${MATLAB_ROOT}\toolbox\simulink\simulink\iodata\iomap</directory>
-        <directory>${MATLAB_ROOT}\toolbox\simulink\simulink\performance</directory>
-        <directory>${MATLAB_ROOT}\toolbox\simulink\simulink\performance\performancea</directory>
-        <directory>${MATLAB_ROOT}\toolbox\simulink\simulink\upgradeadvisor</directory>
-        <directory>${MATLAB_ROOT}\toolbox\stats\stats</directory>
-        <directory>${MATLAB_ROOT}\toolbox\stats\classreg</directory>
-        <directory>${MATLAB_ROOT}\toolbox\stats\statsdemos</directory>
-        <directory>${MATLAB_ROOT}\toolbox\stm\stm</directory>
-        <directory>${MATLAB_ROOT}\toolbox\stm\stmdemos</directory>
-        <directory>${MATLAB_ROOT}\toolbox\symbolic\symbolic</directory>
-        <directory>${MATLAB_ROOT}\toolbox\symbolic\symbolicdemos</directory>
-        <directory>${MATLAB_ROOT}\toolbox\matlab\system</directory>
-        <directory>${MATLAB_ROOT}\toolbox\matlab\timeseries</directory>
-        <directory>${MATLAB_ROOT}\toolbox\matlab\hds</directory>
-      </path>
+      <root>C:\Program Files\MATLAB\R2013b</root>
+      <toolboxes />
     </matlab>
     <platform>
       <unix>false</unix>
@@ -314,9 +237,9 @@
       <linux>false</linux>
       <solaris>false</solaris>
       <osver>6.1</osver>
-      <os32>true</os32>
-      <os64>false</os64>
-      <arch>win32</arch>
+      <os32>false</os32>
+      <os64>true</os64>
+      <arch>win64</arch>
       <matlab>true</matlab>
     </platform>
   </configuration>
