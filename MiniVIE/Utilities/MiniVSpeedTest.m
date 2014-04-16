@@ -6,7 +6,7 @@ p = [300 150 800 600];
 set(hFig,'Position',p)
 hAxes = axes('Parent',hFig);
 hold(hAxes,'on');
-hUser = Presentation.MiniV(hAxes);
+hUser = Presentation.MiniV(hAxes,1,[1 1 1],1);
 hTarget = Presentation.MiniV(hAxes);
 view(hAxes,0,0);
 axis(hAxes,'equal')
@@ -15,6 +15,8 @@ camlight(hLight,'left');
 axis(hAxes,[0 0.4 -0.4 0.4 0.3 0.7])
 
 StartStopForm([])
+
+hUser.setBaseFrame(makehgtform('translate',[0.3 -0.2 -0.1]))
 
 while StartStopForm()
     tRefresh = tic;
