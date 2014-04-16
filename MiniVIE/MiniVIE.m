@@ -1037,49 +1037,8 @@ classdef MiniVIE < Common.MiniVieObj
             %obj.Presentation.initialize(obj.SignalSource,obj.SignalClassifier,obj.TrainingData);
         end
         function obj = go
-            
+            % Start the MINIVIE
             obj = MiniVIE;
-            return
-            
-            %% Combine pieces to make a scenario (EMG Painting)
-            hPollock = Scenarios.EmgJacksonPollock;
-            hPollock.SignalSource = obj.SignalSource;
-            classNames = {'No Movement' 'Wrist Flex' 'Wrist Extend' 'Pronate' 'Supinate' 'Hand Open' 'Hand Close'};
-            obj.SignalClassifier.setClassNames(classNames);
-            obj.TrainingInterface = PatternRecognition.SimpleTrainer;
-            
-            hPollock.EmgClassifier = obj.SignalClassifier;
-            hPollock.TrainingInterface = obj.TrainingInterface;
-            hPollock.begin_training
-            
-            %% Run the Scenario
-            hPollock.run
-            
-            %% Combine pieces differently to create an interactive training module (periodically updates classifier)
-            obj.SignalClassifier.setClassNames({'No Movement' 'Index' 'Middle' 'Ring' 'Little'});
-            obj.SignalClassifier.reset();
-            
-            hMiniAGH = Scenarios.GuitarHeroTrainer;
-            hMiniAGH.SignalSource = obj.SignalSource;
-            hMiniAGH.EmgClassifier = obj.SignalClassifier;
-            hMiniAGH.ResetClassifierOnInitialization = 1;
-            hMiniAGH.initialize();
-            hMiniAGH.run
-            
-            
-            %% Once Classifier is trained
-            hMiniV = Scenarios.MiniVDisplayScenario;
-            hMiniV.setup_display;
-            hMiniV.EmgClassifier = obj.SignalClassifier;
-            hMiniV.SignalSource = obj.SignalSource;
-            hMiniV.CloseGain = [80 80 80 80];
-            start(hMiniV.hTimer);
-            
-            %% Adjust Gains as needed
-            hMiniV.CloseGain = [80 80 80 80];
-            
-            %% Yet another Scenario that allows you to play wii with a video capture device
-            obj = Presentation.AirGuitarHero.AirGuitarHeroEmg;
         end
     end
 end
