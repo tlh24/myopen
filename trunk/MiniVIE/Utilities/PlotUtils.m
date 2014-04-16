@@ -12,6 +12,89 @@ classdef PlotUtils
     % 2013Feb08 Armiger: Created
     %
     methods (Static = true)
+        function varargout = plot3(varargin)
+            % designed to work just like plot3, but if we assume column
+            % vectors the entire array can be passed in as [3 x N]
+            %
+            % Usage: PlotUtils.plot3(columnVecPts)
+            %        PlotUtils.plot3(columnVecPts,'MarkerSize',10)
+            %        hPlot = PlotUtils.plot3(...)  returns a handle
+            %
+            % 6/19/2013 Armiger: Fixed bug with varargin as second
+            % argument. varargin inplies all input variables, of which the
+            % required point set is the first on (varargin{1}). Optional
+            % arguments to plot3 are varargin{2:end}
+            
+            columnVecPts = varargin{1};
+            
+            % Column vectors are a must
+            if size(columnVecPts,1) ~= 3
+                error('Use Column Vectors');
+            end
+            
+            % Note varargin {n:end} has the special property of dissapearing as a
+            % function input when the user provides less than n imputs; so the last
+            % argument will siply not exist is no data is provided
+            hLine = plot3(columnVecPts(1,:),columnVecPts(2,:),columnVecPts(3,:),varargin{2:end});
+            
+            if nargout > 0
+                varargout{1} = hLine;
+            end
+        end
+        function test_plot3
+            %% test function for PlotUtils.plot3
+            %
+            % 6/19/2013 Armiger: Created
+            
+            % Create random point sets
+            pts1 = rand(3,10);
+            pts2 = rand(3,10);
+            
+            % Setup plot
+            clf
+            hold on
+            
+            % Plot points two ways: with / without optional extra arguments
+            PlotUtils.plot3(pts1)
+            h = PlotUtils.plot3(pts2,'r.');
+            
+            disp(h)
+            
+            
+        end
+        
+        function varargout = pointNumbers(columnVecPts,varargin)
+            % plots point numbers at the locations given by columnVecPts,
+            %  which is a [3 x N] array of points.  Typically used after
+            %  plotting points with PlotUtils.plot3
+            %
+            % Usage: PlotUtils.pointNumbers(columnVecPts)
+            %        PlotUtils.pointNumbers(columnVecPts,'MarkerSize',10)
+            %        hPlot = PlotUtils.pointNumbers(...)  returns a handle
+            %
+            
+            % Column vectors are a must
+            if size(columnVecPts,1) ~= 3
+                error('Use Column Vectors');
+            end
+            
+            npts = size(columnVecPts,2);
+            if 10 <= npts && npts <= 99
+                % works for npts 10-99
+                str = [' ' num2str(1:npts,'%2d')];
+                strTxt = reshape(str,[],npts)';
+                hText = text(columnVecPts(1,:),columnVecPts(2,:),columnVecPts(3,:),strTxt,'FontSize',18);
+            elseif npts < 10
+                str = num2str(1:npts,'%1d');
+                strTxt = reshape(str,[],npts)';
+                hText = text(columnVecPts(1,:),columnVecPts(2,:),columnVecPts(3,:),strTxt,'FontSize',18);
+            end
+            
+            if nargout > 0
+                varargout{1} = hText;
+            end
+        end
+        
         function hPatch = ribbon(p1,p2)
             % take two lists of 3d points and plot a ribbon between the two assuming
             % mutual points are given
@@ -52,7 +135,7 @@ classdef PlotUtils
             c = 0;
             fin = [
                 x
-                A*cos(2*pi*f*x+c);
+                A*sin(2*pi*f*x+c);
                 -0.5*ones(size(x))
                 ];
             
@@ -140,8 +223,12 @@ classdef PlotUtils
                 
             end
         end
+        
         function hTriad = triad(F,scale,ax)
             %hTriad = PlotUtils.triad(F,scale,ax)
+            %
+            % F is expected to be a 4x4 transformation matrix to plot.
+            % This can be 4x4xN for multiple triads
             %
             % returned handle is to an hgtransform < hggroup object
             %
@@ -159,7 +246,9 @@ classdef PlotUtils
                 F = eye(4);
             end
             
-            assert(isequal(size(F),[4 4]),'Error: Expected a 4x4 matrix');
+            [d1,d2,d3] = size(F);
+            
+            assert(isequal([d1 d2],[4 4]),'Error: Expected a 4x4 matrix');
             
             xyz_color = {'r-','g-','b-'};
             
@@ -170,13 +259,16 @@ classdef PlotUtils
             holdState = ishold(ax);
             hold(ax,'on');
             
-            hTriad = hgtransform('Parent',ax);
+            hTriad = zeros(d3,1);
+            for i = 1:d3
+                hTriad(i) = hgtransform('Parent',ax);
             
-            plot3(hTriad,Xaxis(1,:),Xaxis(2,:),Xaxis(3,:),xyz_color{1},'LineWidth',2);
-            plot3(hTriad,Yaxis(1,:),Yaxis(2,:),Yaxis(3,:),xyz_color{2},'LineWidth',2);
-            plot3(hTriad,Zaxis(1,:),Zaxis(2,:),Zaxis(3,:),xyz_color{3},'LineWidth',2);
+                plot3(hTriad(i),Xaxis(1,:),Xaxis(2,:),Xaxis(3,:),xyz_color{1},'LineWidth',2);
+                plot3(hTriad(i),Yaxis(1,:),Yaxis(2,:),Yaxis(3,:),xyz_color{2},'LineWidth',2);
+                plot3(hTriad(i),Zaxis(1,:),Zaxis(2,:),Zaxis(3,:),xyz_color{3},'LineWidth',2);
             
-            set(hTriad,'Matrix',F);
+                set(hTriad(i),'Matrix',F(:,:,i));
+            end
             
             % Restore hold state
             if holdState
