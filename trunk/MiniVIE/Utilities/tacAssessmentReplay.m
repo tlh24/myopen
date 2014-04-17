@@ -3,9 +3,11 @@ clear all, clc, close all
 [file,folder]=uigetfile('*.tacAssessment');
 load(fullfile(folder,file),'-mat')
 
-for trialInd = 1:length(structTrialLog)
-    TrialLog = structTrialLog(trialInd);
+tReplay = tic;
 
+for trialInd = 3%1:length(structTrialLog)
+    TrialLog = structTrialLog(trialInd);
+    
     
     % Create a handle to the MiniV animated arm
     hFig = UiTools.create_figure('JHU/APL: Target Achievement Control Replay','TAC Replay');
@@ -28,32 +30,45 @@ for trialInd = 1:length(structTrialLog)
     greenArm = [0.7 0.9 0.6];
     blueArm = [0.7 0.7 0.9];
     set([hTarget.handle.hPatch],'FaceColor',blueArm)
-    
-    % set starting user arm and target arm angles
-    hTarget.set_upper_arm_angles_degrees(TrialLog.targetAngle*180/pi);
-    hUser.set_upper_arm_angles_degrees(TrialLog.startAngle*180/pi);
-    
+        
     % TODO: Set starting target hand angles
-      
+    
     % Necessary for starting position user arm positon
     s = standardClasses(TrialLog.targetClass);
+    if s.IsGrasp
+        handAngles = Controls.graspInterpolation(TrialLog.targetAngle(s.JointId), s.GraspId);
+    else
+        handAngles = zeros(1,29);
+    end
     
-    StartStopForm([])
+    % set starting user arm and target arm angles
+    targetAnglesDegrees = TrialLog.targetAngle*180/pi;
+    hTarget.set_upper_arm_angles_degrees(targetAnglesDegrees);
+    hTarget.set_hand_angles_degrees(handAngles);
+    hTarget.redraw
+    
+    hUser.set_upper_arm_angles_degrees(TrialLog.startAngle*180/pi);
+    hUser.redraw
+    
+    %StartStopForm([])
     
     aUser = TrialLog.angleTimeHistory(:,2:end); % first column is delay;
     tElapsed = TrialLog.angleTimeHistory(:,1);
     graspID = TrialLog.graspTimeHistory;
     
     for i = 1:length(aUser)
-
+        
         if s.IsGrasp
             handAngles = Controls.graspInterpolation(aUser(i,s.JointId), graspID{i});
         else
             handAngles = zeros(1,29);
         end
         
+        userAngles = targetAnglesDegrees;
+        userAngles(s.JointId) = aUser(i,s.JointId)*180/pi;
+        
         hUser.set_hand_angles_degrees(handAngles);
-        hUser.set_upper_arm_angles_degrees(aUser(i,:)*180/pi)
+        hUser.set_upper_arm_angles_degrees(userAngles)
         hUser.redraw
         drawnow
         
@@ -64,6 +79,6 @@ for trialInd = 1:length(structTrialLog)
         % TODO: change color of target arm to green when close
         
         % TBD: Only move desired joint or allow all joints to move?
-
+        
     end
 end
