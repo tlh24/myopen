@@ -122,7 +122,7 @@ end
 h.setClassNames(classNames);
 
 obj.SignalClassifier = h;
-
+obj.SignalClassifier.train();
 
 %% Setup Presentation
 h = p.Scenario;

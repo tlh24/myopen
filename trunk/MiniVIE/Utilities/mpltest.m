@@ -130,7 +130,7 @@ switch testId
         hNfu = MPL.NfuUdp.getInstance;
         hNfu.initialize();
 
-        for iRoc = 1:length(hNfu.localRoc)
+        for iRoc = [3 5 6 8 16]%1:length(hNfu.localRoc)
             RocId = hNfu.localRoc(iRoc).id;
             RocName = hNfu.localRoc(iRoc).name;
             
