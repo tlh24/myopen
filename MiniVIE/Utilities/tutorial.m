@@ -22,8 +22,8 @@ MiniVIE.configurePath();
 % The particular type of input is dependant on your application and
 % hardware configuration
 % SignalSource = Inputs.DaqHwDevice('nidaq','Dev1');
-% SignalSource = Inputs.DaqHwDevice('mcc','0');
-SignalSource = Inputs.SignalSimulator();
+SignalSource = Inputs.DaqHwDevice('mcc','0');
+% SignalSource = Inputs.SignalSimulator();
 
 % If using the simulator, the box that opens up allows you to press keys to
 % change the output pattern.  E.g. 'asdf' selects patterns '1234'
