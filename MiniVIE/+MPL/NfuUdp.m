@@ -19,7 +19,7 @@ classdef (Sealed) NfuUdp < handle
     % to be investigated further
     properties
         
-        Hostname = '192.168.1.111';  % Destination
+        Hostname = '192.168.1.111';  % Destination % 4-16-2014 MSJ changed to .112 to test bilateral NFU comms
         UdpStreamReceivePortNumLocal = 9027
         TcpPortNum = 6200;
         UdpCommandPortNumLocal = 52000;  % This is where udp commands originate locally
@@ -160,6 +160,11 @@ classdef (Sealed) NfuUdp < handle
 %                 obj.enableStreaming(4);
             else
                 % Enable Percepts
+                
+                % 4/14/2014 RSA, KDK, MSJ observed streaming did not start
+                % with 'combined' message (5).  Only streaming with single
+                % CPCH message group...
+                
                 fprintf('[%s] Enabling NFU Percepts Data Stream\n',mfilename);
                 obj.enableStreaming(5);
                 pause(0.1);
@@ -470,6 +475,9 @@ classdef (Sealed) NfuUdp < handle
                     b2 = dataBytes(727:end);  %percept bytes
                     obj.UdpBuffer2{obj.ptr2} = percept_bytes_to_signal(b2);
                     obj.newData2(obj.ptr2) = true;
+                    
+                    % DEBUG display raw readout
+                    % disp(obj.UdpBuffer2{obj.ptr2});
                     
                     % advance ptr
                     obj.ptr2 = obj.ptr2 + 1;

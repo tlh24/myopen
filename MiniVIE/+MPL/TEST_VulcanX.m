@@ -14,14 +14,14 @@ upperArmAngles = zeros(1,7);
 handAngles = zeros(1,20);
 
 %% Specify joint angles and transmit bytes
-upperArmAngles(1) = 0.5;
+upperArmAngles(1) = 0.25;
 upperArmAngles(4) = 1;
 msg = mce.AllJointsPosVelCmd(upperArmAngles,zeros(1,7),handAngles,zeros(1,20));
 hSink.putData(msg);
 
 %% Specify joint angles and ROC command
 graspId = 4;
-graspValue = 0.8;
+graspValue = 1;
 upperArmAngles(1) = 0.5;
 upperArmAngles(3) = 0.5;
 upperArmAngles(4) = 1;
