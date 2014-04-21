@@ -212,16 +212,16 @@ classdef guiRocEditor < handle
             
             % Angles Label
             uicontrol(hParent,'Style','text','Position',[460 620, 120, 20],...
-                'String','Angle Values:','HorizontalAlignment','Left');
+                'String','Angle Values (deg):','HorizontalAlignment','Left');
             
-            % Angles text box
-            % TODO - AJG: create fixed lines so text doesn't jump around.
-            % TODO - AJG: update angles / slider when text box is edited.
-            obj.hAngleBox = uicontrol(hParent,'Style','edit','Max',2,'Position',[460 540, 300, 80],...
-                'horizontalalignment','left',...
-                'String',{'-empty-'},'Callback',@(src,evt)cbListBoxName(src));
+            % Angles Text Box
+            obj.hAngleBox = uicontrol(hParent,'Style','edit','Max',2,'Position',[460 540, 500, 80],...
+                'horizontalalignment','left');
+            
+            % Set Angles Button
+             uicontrol(hParent,'Style','pushbutton','Position',[600 620, 120, 20],...
+                'String','Set Angles','HorizontalAlignment','Left','Callback',@(src,evt)cbGetAngles);
 
-                        
             function cbSpinner(src)
                 obj.CurrentRocId = src.Value+1;
                 obj.CurrentWaypointId = 1;
@@ -231,6 +231,15 @@ classdef guiRocEditor < handle
             function cbListBox(src)
                 obj.CurrentWaypointId = get(src,'Value');
                 obj.updateFigure();
+            end
+            
+            function cbGetAngles()
+                oldAngles = obj.jointAngles;
+                newAngles = textscan(get(obj.hAngleBox,'String'),'%f,');
+
+                % set sliders
+                setSliders(obj,oldAngles,newAngles{1}'*pi/180)
+                display('Joint angles set')
             end
             
             function cbListBoxName(src)
@@ -318,8 +327,8 @@ classdef guiRocEditor < handle
                 'Maximum',length(obj.structRoc)-1,...
                 'Value',rocId-1); %zero based
             
-            % set sliders
             currentAngles = obj.jointAngles;
+            
             finalAngles = currentAngles;
             for i = 1:length(roc.joints)
                 iJoint = roc.joints(i);
@@ -327,10 +336,6 @@ classdef guiRocEditor < handle
                 set(obj.hJointSliders{iJoint},'Value',newAngle);
                 finalAngles(iJoint) = newAngle;
             end
-            
-            % set angle text box
-            angleTextBox = sprintf('%3.1f, ',finalAngles*180/pi);
-            set(obj.hAngleBox, 'String',angleTextBox(1:end-2));
             
             % interpolate
             maxDiff = max(abs(finalAngles - currentAngles));
@@ -348,6 +353,37 @@ classdef guiRocEditor < handle
             obj.jointAngles = finalAngles;
             transmit(obj);
             
+            % set angle text box
+            angleTextBox = sprintf('%+ 6.1f, ',finalAngles*180/pi);
+            set(obj.hAngleBox, 'String',angleTextBox(1:end-2),'FontName','Courier');
+            
+        end
+        
+        function setSliders(obj,oldAngles,newAngles)
+            
+            currentAngles = oldAngles;
+            
+            for i = 1:length(obj.hJointSliders)
+                newAngle = newAngles(i);
+                set(obj.hJointSliders{i},'Value',newAngle);
+                finalAngles(i) = newAngle;
+            end
+            
+            % interpolate
+            maxDiff = max(abs(finalAngles - currentAngles));
+            
+            numSteps = floor(maxDiff / 0.05);
+            
+            for i = 1:numSteps
+                interpAngles = interp1([0 1],[currentAngles; finalAngles],i/numSteps);
+                obj.jointAngles = interpAngles;
+                transmit(obj);
+                pause(0.02);
+            end
+            
+            % resend final values
+            obj.jointAngles = finalAngles;
+            transmit(obj);
         end
         
         function uiOpen(obj)
@@ -384,8 +420,8 @@ classdef guiRocEditor < handle
             else
                 transmit(obj);  
                 
-                angleTextBox = sprintf('%3.1f, ',obj.jointAngles*180/pi);
-                set(obj.hAngleBox, 'String',angleTextBox(1:end-2));
+                angleTextBox = sprintf('%+ 6.1f, ',obj.jointAngles*180/pi);
+                set(obj.hAngleBox, 'String',angleTextBox(1:end-2),'FontName','Courier');
             end
             
         end
@@ -474,7 +510,7 @@ hFig = UiTools.create_figure('JHU/APL: Reduced Order Control (ROC) Editor','guiR
 mp = get(0, 'MonitorPositions');
 
 topLeft = [mp(1,1) mp(1,4)-mp(1,2)];
-windowSize = [800 650];
+windowSize = [1000 650];
 
 set(hFig,...
     'Units','pixels',...
