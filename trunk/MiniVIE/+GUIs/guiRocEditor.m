@@ -85,9 +85,6 @@ classdef guiRocEditor < handle
             T=struct2table(obj.structRoc);
             set(obj.hRocNames,'String',T.name)
             
-            % Set Angle Values max text box after creating the ROC Tables
-%             set(obj.hAngleBox,'Max',length(obj.jointAngles)) 
- 
             % Set the data sink for the appropriate device
             if obj.IsNfu
                 obj.hSink = MPL.NfuUdp.getInstance;
@@ -327,6 +324,7 @@ classdef guiRocEditor < handle
                 'Maximum',length(obj.structRoc)-1,...
                 'Value',rocId-1); %zero based
             
+            % Set sliders
             currentAngles = obj.jointAngles;
             
             finalAngles = currentAngles;
@@ -354,9 +352,12 @@ classdef guiRocEditor < handle
             transmit(obj);
             
             % set angle text box
-            angleTextBox = sprintf('%+ 6.1f, ',finalAngles*180/pi);
+            setAngleTextBox(obj)            
+        end
+        
+        function setAngleTextBox(obj)
+            angleTextBox = sprintf('%+ 6.1f, ',obj.jointAngles*180/pi);
             set(obj.hAngleBox, 'String',angleTextBox(1:end-2),'FontName','Courier');
-            
         end
         
         function setSliders(obj,oldAngles,newAngles)
