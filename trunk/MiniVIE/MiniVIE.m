@@ -624,7 +624,7 @@ classdef MiniVIE < Common.MiniVieObj
                         h = Scenarios.MiniVDisplayScenario;
                         h.initialize(obj.SignalSource,obj.SignalClassifier,obj.TrainingData);
                         h.update();
-                        h.Verbose = 0;
+                        h.Verbose = 1;
                         start(h.Timer);
                         obj.println('Presentation setup complete',1);
                     case 'MplScenarioMud'

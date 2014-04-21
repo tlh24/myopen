@@ -1,26 +1,26 @@
 classdef guiRocEditor < handle
     % GUI manually setting joint angles via sliders for Roc Tables
     %
-    % This allows you to load, edit, save, and visualize changes in 
-    % real-time with vulcanX for the vMPL or MPL.  
-    % TODO: Still have a lot of features to add like copy paste insert 
+    % This allows you to load, edit, save, and visualize changes in
+    % real-time with vulcanX for the vMPL or MPL.
+    % TODO: Still have a lot of features to add like copy paste insert
     % remove, etc but for minor tweaks due to sensor drift this should work.
-    % 
+    %
     % Usage:
-    % 
+    %
     % %setup
     % MiniVIE.configurePath
     % import GUIs.*
-    % 
+    %
     % %run
     % guiRocEditor
-    % 
+    %
     %
     % 07NOV2013 Armiger: Created
     properties
         hSink;                          % handle to the data output sink (udp)
         hMud = MPL.MudCommandEncoder;   % handle for the message encoder
-
+        
         structRoc;                      % structure for storing the current roc table
         
         % All Ids are 1 based since this is matlab
@@ -37,19 +37,21 @@ classdef guiRocEditor < handle
     properties (Access = 'protected')
         hParent;        % Figure
         hAxes;          % Array of axes for sliders
-
+        
         % roc related gui handles
         hJointSliders;
         hRocSpinBox;
         hRocWaypoints;
-        hRocDescription;        
+        hRocDescription;
+        hRocNames;
+        hAngleBox;
         jSpinnerModel;
-        
+                
     end
     methods
         function obj = guiRocEditor(rocFilename,isNfu)
             % obj = guiRocEditor(rocFilename,isNfu)
-            % 
+            %
             % Creator Function takes an optional argument for whether there
             % is an NFU present.  Messaging varies depending on VulcanX or
             % NFU.  Use true or false to select approprate mode
@@ -79,6 +81,13 @@ classdef guiRocEditor < handle
                 obj.structRoc = MPL.RocTable.readRocTable(rocFilename);
             end
             
+            % Set Roc Names Listbox after creating the ROC Tables
+            T=struct2table(obj.structRoc);
+            set(obj.hRocNames,'String',T.name)
+            
+            % Set Angle Values max text box after creating the ROC Tables
+%             set(obj.hAngleBox,'Max',length(obj.jointAngles)) 
+ 
             % Set the data sink for the appropriate device
             if obj.IsNfu
                 obj.hSink = MPL.NfuUdp.getInstance;
@@ -116,7 +125,7 @@ classdef guiRocEditor < handle
             
             sliderTitle = [fieldnames(mpl_upper_arm_enum); fieldnames(mpl_hand_enum)];
             hAx = zeros(nSliders,1);
-
+            
             patchWidth = (axesRange(:,2) - axesRange(:,1))/15;
             
             % take the total number of sliders and divide by the number
@@ -167,7 +176,11 @@ classdef guiRocEditor < handle
             menuFileSave = uimenu(menuFile,'Label','Save As...','Callback',@(src,evt)uiSaveAs(obj));
             
             
-            % Add a Spinner
+            % Roc ID Spinner Label
+            uicontrol(hParent,'Style','text','Position',[10 620, 60, 20],...
+                'String','RocID:','HorizontalAlignment','Left');
+            
+            % Roc ID Spinner
             numRocs = 1;  % needs to be updated when new roc added
             % ref: http://undocumentedmatlab.com/blog/using-spinners-in-matlab-gui/
             obj.jSpinnerModel = javax.swing.SpinnerNumberModel(0,0,numRocs,1);
@@ -175,31 +188,54 @@ classdef guiRocEditor < handle
             jhSpinner = javacomponent(jSpinner, [10,600,40,20], hParent);
             jhSpinner.StateChangedCallback = @(src,evt)cbSpinner(src);
             
-            % Roc ID Label
-            uicontrol(hParent,'Style','text','Position',[10 620, 60, 20],...
-                'String','RocID:','HorizontalAlignment','Left');
-            
-            % Roc Waypoint Label
-            uicontrol(hParent,'Style','text','Position',[100 620, 80, 20],...
-                'String','RocWaypoint:','HorizontalAlignment','Left');
-
             % Test Button
             uicontrol(hParent,'Style','pushbutton','Position',[10 570, 80, 20],...
                 'String','Test Close','HorizontalAlignment','Left','Callback',@(src,evt)cbTestClose);
             uicontrol(hParent,'Style','pushbutton','Position',[10 550, 80, 20],...
                 'String','Test Open','HorizontalAlignment','Left','Callback',@(src,evt)cbTestOpen);
             
-            % Roc States Listbox
-            obj.hRocWaypoints = uicontrol(hParent,'Style','listbox','Position',[100 540, 120, 80],...
+            % Roc Names Label
+            uicontrol(hParent,'Style','text','Position',[100 620, 80, 20],...
+                'String','Roc Names:','HorizontalAlignment','Left');
+            
+            % Roc Names Listbox
+            obj.hRocNames = uicontrol(hParent,'Style','listbox','Position',[100 540, 200, 80],...
+                'String',{'-empty-'},'Callback',@(src,evt)cbListBoxName(src));
+            
+            % Roc Waypoint Label
+            uicontrol(hParent,'Style','text','Position',[320 620, 80, 20],...
+                'String','RocWaypoint:','HorizontalAlignment','Left');
+            
+            % Roc Waypoint Listbox
+            obj.hRocWaypoints = uicontrol(hParent,'Style','listbox','Position',[320 540, 120, 80],...
                 'String',{'0.0' '0.5' '1.0'},'Callback',@(src,evt)cbListBox(src));
             
+            % Angles Label
+            uicontrol(hParent,'Style','text','Position',[460 620, 120, 20],...
+                'String','Angle Values:','HorizontalAlignment','Left');
+            
+            % Angles text box
+            % TODO - AJG: create fixed lines so text doesn't jump around.
+            % TODO - AJG: update angles / slider when text box is edited.
+            obj.hAngleBox = uicontrol(hParent,'Style','edit','Max',2,'Position',[460 540, 300, 80],...
+                'horizontalalignment','left',...
+                'String',{'-empty-'},'Callback',@(src,evt)cbListBoxName(src));
+
+                        
             function cbSpinner(src)
                 obj.CurrentRocId = src.Value+1;
                 obj.CurrentWaypointId = 1;
                 obj.updateFigure();
             end
+            
             function cbListBox(src)
                 obj.CurrentWaypointId = get(src,'Value');
+                obj.updateFigure();
+            end
+            
+            function cbListBoxName(src)
+                obj.CurrentRocId = get(src,'Value');
+                obj.CurrentWaypointId = 1;
                 obj.updateFigure();
             end
             
@@ -228,7 +264,7 @@ classdef guiRocEditor < handle
                     handPos = interp1(thisRoc.waypoint,thisRoc.angles,graspVal(iVal));
                     obj.jointAngles = [upperJointAngles handPos];
                     obj.transmit();
-
+                    
                     pause(0.02);
                 end
                 
@@ -251,7 +287,7 @@ classdef guiRocEditor < handle
                     handPos = interp1(thisRoc.waypoint,thisRoc.angles,graspVal(iVal));
                     obj.jointAngles = [upperJointAngles handPos];
                     obj.transmit();
-
+                    
                     pause(0.02);
                 end
                 
@@ -262,17 +298,25 @@ classdef guiRocEditor < handle
             ang = obj.jointAngles;
         end
         function updateFigure(obj)
+
             rocId = obj.CurrentRocId;
             waypointId = obj.CurrentWaypointId;
             
             roc = obj.structRoc(rocId);
             
-            % set list box
+            % set roc names list box
+            set(obj.hRocNames,...
+                'Value',rocId);
+                        
+            % set roc waypoints list box
             set(obj.hRocWaypoints,...
                 'String',cellfun(@num2str,num2cell(roc.waypoint),'UniformOutput',false),...
                 'Value',waypointId);
+            
             % set spinner
-            set(obj.jSpinnerModel,'Maximum',length(obj.structRoc)-1); %zero based
+            set(obj.jSpinnerModel,...
+                'Maximum',length(obj.structRoc)-1,...
+                'Value',rocId-1); %zero based
             
             % set sliders
             currentAngles = obj.jointAngles;
@@ -283,6 +327,10 @@ classdef guiRocEditor < handle
                 set(obj.hJointSliders{iJoint},'Value',newAngle);
                 finalAngles(iJoint) = newAngle;
             end
+            
+            % set angle text box
+            angleTextBox = sprintf('%3.1f, ',finalAngles*180/pi);
+            set(obj.hAngleBox, 'String',angleTextBox(1:end-2));
             
             % interpolate
             maxDiff = max(abs(finalAngles - currentAngles));
@@ -329,13 +377,17 @@ classdef guiRocEditor < handle
         
         function set.jointAngles(obj,value)
             obj.jointAngles = value;
-
+            
             % slow down the transmit rate when moving sliders
             if delay_send(30)
                 return
             else
-                transmit(obj);
+                transmit(obj);  
+                
+                angleTextBox = sprintf('%3.1f, ',obj.jointAngles*180/pi);
+                set(obj.hAngleBox, 'String',angleTextBox(1:end-2));
             end
+            
         end
         function transmit(obj)
             if obj.Verbose
@@ -372,7 +424,10 @@ classdef guiRocEditor < handle
 end
 
 %Callbacks
-function set_position(src,evnt,obj,i) %#ok<INUSL>
+function set_position(src,evnt,obj,i) %#ok<INUSL> 
+% TODO - AJG: Use this function as a template for setting positions in 'edit' mode. 
+%             Will need to get current positions and then update angles
+%             1:end (use updatefigure)
 newAngle = get(src,'Value');
 
 % Update joint angles for transmission
