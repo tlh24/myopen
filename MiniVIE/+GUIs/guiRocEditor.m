@@ -450,14 +450,6 @@ classdef guiRocEditor < handle
             obj.hAxes = [];
         end
     end
-    methods (Static = true)
-        function mask = getmask()
-            
-            nActionBusAngles = length(action_bus_definition);
-            mask = ones(1,nActionBusAngles);
-        end
-        
-    end
 end
 
 %Callbacks
