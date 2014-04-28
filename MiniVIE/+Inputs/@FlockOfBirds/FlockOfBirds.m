@@ -166,6 +166,187 @@ classdef FlockOfBirds < handle
 %                 pause(0.05);
 %             end
         end
+        function s = TestSession
+            s = serial('COM1');
+            set(s,'BaudRate',115200);
+            set(s,'RequestToSend','off');
+            set(s,'DataTerminalReady','on');
+            set(s,'InputBufferSize',512*10);
+            
+            % Set timeout for serial read
+            set(s,'Timeout',0.5);
+            
+            fopen(s);
+            pause(.5)
+
+            numBirds =3;
+            
+            % Set mode
+            for i = 1:numBirds
+                fwrite(s,[240+i 89]); % set to gather position and angles
+            end
+            
+            
+            pause(0.6);   % 300 misec delay required before AutoConfig commands (p. 83)
+            fwrite(s,[240+1 80 50 numBirds]);  % autoconfig for Master => bird 1
+            pause(0.6);   % 300 misec delay required after AutoConfig commands (p. 83)
+
+            % GROUP MODE
+            % PARAMETERnumber = 35
+            % The GROUP MODE command is only used if you have multiple Birds working together
+            % in a Master/Slave configuration and you want to get data from all the Birds by talking to
+            % only the Master Bird.
+
+            % turn group mode on if necessary
+            fwrite(s,[240+1 80 35 1])
+
+            % request data to be sent Point or Stream
+            fprintf(s,'B'); % Point command
+            
+            % In the POSITION/ANGLES mode, the outputs from the POSITION and ANGLES modes
+            % are combined into one record containing the following twelve bytes:
+            % MSB LSB
+            % 7 6 5 4 3 2 1 0 BYTE #
+            % 1 X8 X7 X6 X5 X4 X3 X2 #1 LSbyte X
+            % 0 X15 X14 X13 X12 X11 X10 X9 #2 MSbyte X
+            % 0 Y8 Y7 Y6 Y5 Y4 Y3 Y2 #3 LSbyte Y
+            % 0 Y15 Y14 Y13 Y12 Y11 Y10 Y9 #4 MSbyte Y
+            % 0 Z8 Z7 Z6 Z5 Z4 Z3 Z2 #5 LSbyte Z
+            % 0 Z15 Z14 Z13 Z12 Z11 Z10 Z9 #6 MSbyte Z
+            % 0 Z8 Z7 Z6 Z5 Z4 Z3 Z2 #7 LSbyte Zang
+            % 0 Z15 Z14 Z13 Z12 Z11 Z10 Z9 #8 MSbyte Zang
+            % 0 Y8 Y7 Y6 Y5 Y4 Y3 Y2 #9 LSbyte Yang
+            % 0 Y15 Y14 Y13 Y12 Y11 Y10 Y9 #10 MSbyte Yang
+            % 0 X8 X7 X6 X5 X4 X3 X2 #11 LSbyte Xang
+            % 0 X15 X14 X13 X12 X11 X10 X9 #12 MSbyte Xang
+
+            % Shift everything up 1 bit:
+            bitshift(uint8([2 0 3 0]),1)
+            
+            % typecast to int16
+            typecast(uint8([2 0 3 0]),'int16')
+            
+            % scale
+            
+            
+            nbytes = 12;
+            % read binary data
+            bird_bytes = fread(s,nbytes,'uint8');
+
+            % convert to position and angles
+            nrec_bytes = 13;   % bytes per record
+            
+            for ibird=1:numBirds
+                byte_start = (ibird-1)*nrec_bytes + 1;    % start of nrec segment
+                byte_end = byte_start + nrec_bytes - 1;   % stop of nrec segment
+                % last byte of each data record contains bird number
+                % check that the correct bird is read in
+                if ibird~=bird_bytes(byte_end)
+                    error('Bird Record in Group Does Not Correspond to Bird Number')
+                end
+                % set indivudal data record - without bird number
+                bird_bytes_ibird = bird_bytes(byte_start:byte_end-1);
+                
+                
+                
+                
+                if bitget(bird_bytes(1),8)~=1
+                    bird_error('First Bird Byte Does Not Have a 1 in highest bit',ibird);
+                else
+                    bird_bytes(1) = bitset(bird_bytes(1),8,0);  % set msbit to zero for calculations
+                end
+                
+                i_lsb=1;  % index to least significant bit
+                i_msb=2;  % index to most significant bit
+                if (bitget(bird_bytes(i_msb),8)~=0) || (bitget(bird_bytes(i_lsb),8)~=0)
+                    bird_error('Bird Byte Does Not Have a 0 in highest bit',bird);
+                end
+                lsb = bitset(bird_bytes(i_lsb),8,0);  % set msb to zero in case it is first byte
+                msb = bitshift(bird_bytes(i_msb),7);
+                value_bin = bitshift(msb+lsb,2);
+                if bitget(value_bin,16)     % negative number
+                    value_bin = bitcmp(value_bin,16);
+                    pos_in = -value_bin*bird.position_conv_fac;
+                else
+                    pos_in = value_bin*bird.position_conv_fac;
+                end
+                posx_in = pos_in;
+                
+                lsb = bitset(bird_bytes(3),8,0);
+                msb = bitshift(bird_bytes(4),7);
+                value_bin = bitshift(msb+lsb,2);
+                if bitget(value_bin,16)     % negative number
+                    value_bin = bitcmp(value_bin,16);
+                    pos_in = -value_bin*bird.position_conv_fac;
+                else
+                    pos_in = value_bin*bird.position_conv_fac;
+                end
+                posy_in = pos_in;
+                
+                lsb = bitset(bird_bytes(5),8,0);  % set msb to zero in case it is first byte
+                msb = bitshift(bird_bytes(6),7);
+                value_bin = bitshift(msb+lsb,2);
+                if bitget(value_bin,16)     % negative number
+                    value_bin = bitcmp(value_bin,16);
+                    pos_in = -value_bin*bird.position_conv_fac;
+                else
+                    pos_in = value_bin*bird.position_conv_fac;
+                end
+                posz_in = pos_in;
+                
+                pos = [posx_in posy_in posz_in];
+                
+                %disp([posx_in posy_in posz_in])
+                
+                lsb = bitset(bird_bytes(7),8,0);  % set msb to zero in case it is first byte
+                msb = bitshift(bird_bytes(8),7);
+                value_bin = bitshift(msb+lsb,2);
+                if bitget(value_bin,16)     % negative number
+                    value_bin = bitcmp(value_bin,16);
+                    ang_value = -value_bin*bird.angle_conv_fac;
+                else
+                    ang_value = value_bin*bird.angle_conv_fac;
+                end
+                ang_z = ang_value;
+                
+                
+                lsb = bitset(bird_bytes(9),8,0);  % set msb to zero in case it is first byte
+                msb = bitshift(bird_bytes(10),7);
+                value_bin = bitshift(msb+lsb,2);
+                if bitget(value_bin,16)     % negative number
+                    value_bin = bitcmp(value_bin,16);
+                    ang_value = -value_bin*bird.angle_conv_fac;
+                else
+                    ang_value = value_bin*bird.angle_conv_fac;
+                end
+                ang_y = ang_value;
+                
+                
+                lsb = bitset(bird_bytes(11),8,0);  % set msb to zero in case it is first byte
+                msb = bitshift(bird_bytes(12),7);
+                value_bin = bitshift(msb+lsb,2);
+                if bitget(value_bin,16)     % negative number
+                    value_bin = bitcmp(value_bin,16);
+                    ang_value = -value_bin*bird.angle_conv_fac;
+                else
+                    ang_value = value_bin*bird.angle_conv_fac;
+                end
+                ang_x = ang_value;
+                
+                ang = [ang_x ang_y ang_z];
+                
+                % Each record can be up to 32768 positive and negative
+                
+                
+                
+                [pos_flock(ibird,:), ang_flock(ibird,:)] = bird_bytes_2_data(bird_bytes_ibird,bird);
+            end
+            
+            
+
+            
+            
+        end
     end
 end
 
