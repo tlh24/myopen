@@ -224,8 +224,8 @@ classdef PlotUtils
             end
         end
         
-        function hTriad = triad(F,scale,ax)
-            %hTriad = PlotUtils.triad(F,scale,ax)
+        function hTriad = triad(F,scale,ax,label)
+            %hTriad = PlotUtils.triad(F,scale,ax,label)
             %
             % F is expected to be a 4x4 transformation matrix to plot.
             % This can be 4x4xN for multiple triads
@@ -236,6 +236,9 @@ classdef PlotUtils
             % note to update use:
             %   set(hTriad,'Matrix',T1)
             
+            if nargin < 4
+                label = '';
+            end
             if nargin < 3
                 ax = gca;
             end
@@ -268,6 +271,10 @@ classdef PlotUtils
                 plot3(hTriad(i),Zaxis(1,:),Zaxis(2,:),Zaxis(3,:),xyz_color{3},'LineWidth',2);
             
                 set(hTriad(i),'Matrix',F(:,:,i));
+                
+                if ~isempty(label)
+                    text(0,0,0,label,'Parent',hTriad(i));
+                end
             end
             
             % Restore hold state
