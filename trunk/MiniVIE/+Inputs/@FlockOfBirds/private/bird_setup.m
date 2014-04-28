@@ -53,6 +53,42 @@ end
 
 % setup serial port
 
+
+% The Bird's 9-pin RS-232C connector is arranged as follows:
+% PIN RS232 SIGNAL1 DIRECTION
+% 1 Carrier Detect Bird to host
+% 2 Receive Data Bird to host
+% 3 Transmit Data host to Bird
+% 4 Data Terminal Rdy Host to Bird
+% 5 Signal Ground Bird to host
+% 6 Data Set Ready Bird to host
+% 7 Request to Send host to Bird
+% 8 Clear to Send Bird to host
+% 9 Ring Indicator No Connect
+% Notes:
+% 1) These are the EIA RS232 signals names. The Bird is configured as Data
+% Communication equipment (DCE) and therefore Transmit Data is an input and
+% Receive Data is an output.
+% 
+% RS-232C signal description:
+% SIGNAL DESCRIPTION
+% Carrier Detect Indicates The Bird is FLYing when high1
+% Receive Data Serial data output from The Bird to the host
+% Transmit Data Serial data output from the host to The Bird
+% Data Terminal Rdy Host data flow control, suspends all data transmission from
+% The Bird when low (internally pulled high to +12V).
+% Signal Ground Signal reference
+% Data Set Ready Indicates The Bird is FLYing when high1
+% Request to Send Holds The Bird in standby when high, Bird Flies when low
+% Clear to Send Indicates The Bird is FLYing when high1
+% Ring Indicator Signal is not used
+% Notes:
+% 1) These signals are high when The Bird is NOT in the reset (standby) condition.
+% There are two ways by which The Bird can be placed in the reset condition:
+% when the front panel switch is in Standby, or when the RS232 Request to Send
+% signal is high. You can disable the Request to Send reset by removing JPR 18.
+% 
+
 bird.bird_port = serial(bird.com_port);
 bird_port = bird.bird_port;
 set(bird_port,'BaudRate',bird.baud_rate);
