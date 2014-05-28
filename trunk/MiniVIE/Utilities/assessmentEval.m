@@ -234,20 +234,21 @@ classdef assessmentEval
             structLogOut = structTrialLog;
         end
         
-        function [overallAccuracy classAccuracyPct classNames] = parseTrialLog(assessmentLogFile)
+        function [overallAccuracy, classAccuracyPct, classNames] = parseTrialLog(assessmentLogFile)
             % [overallAccuracy classAccuracyPct classNames] = AssessmentEval.parseTrialLog(assessmentLogFile)
             
             % is struct, exist file?
             load(assessmentLogFile,'-mat')
             assert(exist('structTrialLog','var') == 1,'Log Missing')
             
-            classNames = {structTrialLog(:).targetClass};
+            %classNames = {structTrialLog(:).targetClass};
+            classNames = {structTrialLog.Data.targetClass};
             
             maxCorrect = 10;  %Number of correct classes to attain (vote/unfiltered)
-            numTestedClasses = length(structTrialLog);
+            numTestedClasses = length(structTrialLog.Data);
             numSuccess = zeros(1,numTestedClasses);
             for i = 1:numTestedClasses
-                numSuccess(i) = sum(structTrialLog(i).classDecision == i);
+                numSuccess(i) = sum(structTrialLog.Data(i).classDecision == i);
             end
             
             classAccuracyPct = numSuccess ./ maxCorrect .* 100;
