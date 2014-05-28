@@ -1,5 +1,5 @@
 classdef FlockOfBirds < handle
-    %FLOCKOFBIRD Class based on bird_io_in_matlab interface for the
+    %FLOCKOFBIRDS Class based on bird_io_in_matlab interface for the
     %Ascension Flock Of Birds System
     %   Class for interfacing Flock of Birds System.  This uses the
     %   bird_io_in_matlab functions for basic communications.  A single
@@ -26,19 +26,53 @@ classdef FlockOfBirds < handle
         end
         function initialize(obj,strComPort)
             
-            bird.nbird = obj.NumSensors;   % number of birds in flock (can be set to one)
-
-            bird_setting_default; % holds default bird settings
-
             if nargin < 2
-                bird.com_port = 'COM1';
-            else
-                bird.com_port = strComPort;
+                strComPort = 'COM4';
             end
-
-            bird = bird_setup(bird);          % setups up serial port and bird settings (bird.bird_port is the serial port object which is returned)
             
-            obj.Bird = bird;
+            % Setup port
+            s = serial(strComPort);          % default = 'COM1'
+            set(s,'BaudRate',115200);        % default = 9600
+            set(s,'RequestToSend','off');    % default = on
+            set(s,'DataTerminalReady','on'); % default = on
+            set(s,'InputBufferSize',512*10); % default = 512
+            set(s,'Timeout',0.5);            % default = 10
+            
+            % Pass back handle to serial port
+            obj.Bird = s;
+            
+            % Open port
+            fopen(s);
+
+            numBirds = obj.NumSensors;
+            
+            % Set mode
+            for i = 1:numBirds
+                fwrite(s,[240+i 89]); % set to gather position and angles
+            end
+            
+            % no light response
+            % if error, blinking lights -- ensure another serial port not
+            % holding RequestToSend high
+            
+            % Autoconfig
+            pause(0.6);   % 300 misec delay required before AutoConfig commands (p. 83)
+            fwrite(s,[240+1 80 50 numBirds]);  % autoconfig for Master => bird 1
+            pause(0.6);   % 300 misec delay required after AutoConfig commands (p. 83)
+            
+            % lights should go on
+            
+            % GROUP MODE
+            % PARAMETERnumber = 35
+            % The GROUP MODE command is only used if you have multiple Birds working together
+            % in a Master/Slave configuration and you want to get data from all the Birds by talking to
+            % only the Master Bird.
+            
+            % turn group mode on if necessary
+            fwrite(s,[240+1 80 35 1])
+            
+            % Start Stream
+            fprintf(s,'@'); % Stream Start
             
         end
         
@@ -61,21 +95,50 @@ classdef FlockOfBirds < handle
                 return
             end
             
-            bird = obj.Bird;
+            s = obj.Bird;
+            numBytes = 13;
             
-            [bird_bytes] = bird_group_bytes(bird);   % will read position of all birds in flock
-            if isempty(bird_bytes);
-                fprintf('Read Failed\n');
-                [pos, ang] = deal([]);
-                return
+            %% Read available bytes
+            numAvailable = s.BytesAvailable;
+            if numAvailable > 0
+                [streamBytes, numRead] = fread(s,numAvailable);
+            else
+                disp('No Data')
+                streamBytes = [];
             end
-            try
-                [pos, ang] = bird_group_bytes_2_data(bird_bytes,bird);   % will convert bytes off all birds in flock
-            catch ME
-                fprintf('Caught Error: %s\n',ME.message);
-                [pos, ang] = deal([]);
-                return
+            
+            streamBytes = uint8(streamBytes);
+            
+            startBits = bitget(streamBytes,8);
+            
+            numMsgs = sum(startBits);
+            
+            % get the messages with start bits
+            %idxRecent = find(startBits,5,'last');
+            idxRecent = find(startBits);
+            
+            % look for messages that have the right number of bytes
+            %idxValid = find(diff(idxRecent) == numBytes,2,'last');
+            idxValid = find(diff(idxRecent) == numBytes);
+                        
+            for i = 1:length(idxValid)
+                msgStart = idxRecent(idxValid(i));
+                thisMessage = streamBytes(msgStart:msgStart+numBytes-1);
+                
+                % get messages
+                
+                [pos, ang, group] = Inputs.FlockOfBirds.parseBytesPositionAngles(thisMessage);
+                
+                %fprintf('Msg #%3d Bird %i\tX:%+6.3f\tY:%+6.3f\tZ:%+6.3f\t',i,group,pos);
+                %fprintf('Rz:%+6.1f\tRy:%+6.1f\tRx:%+6.1f\n',ang*180/pi);
             end
+            
+            pos = pos';
+            ang = ang';
+            
+
+            
+            
         end
         
         function F = getframes(obj)
@@ -92,9 +155,9 @@ classdef FlockOfBirds < handle
             
             F = repmat(eye(4),[1 1 obj.NumSensors]);
             for i = 1:obj.NumSensors
-%                 [R] = birdR(ang(i,:));
-%                 F(1:3,1:3,i) = R;
-%                 F(1:3,4,i) = pos(i,:);
+                %                 [R] = birdR(ang(i,:));
+                %                 F(1:3,1:3,i) = R;
+                %                 F(1:3,4,i) = pos(i,:);
                 
                 F(:,:,i) = makehgtform('translate',pos(i,:),...
                     'zrotate',ang(i,3),...
@@ -116,6 +179,7 @@ classdef FlockOfBirds < handle
             % Setup plots
             hTriad = setup_plot(obj.NumSensors,F_ERT);
             fprintf('[%s] Starting Preview...\n',mfilename);
+            cb_plot_data([],[])
             start(tmr);
             
             function cb_plot_data(src,evt) %#ok<INUSD>
@@ -146,62 +210,169 @@ classdef FlockOfBirds < handle
         function obj = Demo
             % Requires MiniVIE Utilities
             obj = Inputs.FlockOfBirds;
-            obj.NumSensors = 2;
+            obj.NumSensors = 1;
             obj.initialize;
             obj.preview;
             %obj.IsSimulator = true;
             
-%             hPlot = LivePlot(9,100);
-%             StartStopForm([]);
-%             while StartStopForm
-%                 [pos, ang] = obj.getBirdGroup;
-%                 if isempty(pos)
-%                     continue;
-%                 end
-%                 hPlot.putdata(pos(:));
-%                 
-%                 for i = 1:obj.NumSensors
-%                     fprintf('Bird %i\t%+3.3f\t%+3.3f\t%+3.3f\t%+3.1f\t%+3.1f\t%+3.1f\n',i,pos(i,:),ang(i,:)*180/pi);
-%                 end
-%                 pause(0.05);
-%             end
+            %             hPlot = LivePlot(9,100);
+            %             StartStopForm([]);
+            %             while StartStopForm
+            %                 [pos, ang] = obj.getBirdGroup;
+            %                 if isempty(pos)
+            %                     continue;
+            %                 end
+            %                 hPlot.putdata(pos(:));
+            %
+            %                 for i = 1:obj.NumSensors
+            %                     fprintf('Bird %i\t%+3.3f\t%+3.3f\t%+3.3f\t%+3.1f\t%+3.1f\t%+3.1f\n',i,pos(i,:),ang(i,:)*180/pi);
+            %                 end
+            %                 pause(0.05);
+            %             end
         end
         function s = TestSession
-            s = serial('COM1');
-            set(s,'BaudRate',115200);
-            set(s,'RequestToSend','off');
-            set(s,'DataTerminalReady','on');
-            set(s,'InputBufferSize',512*10);
-            
-            % Set timeout for serial read
-            set(s,'Timeout',0.5);
+            %%
+            s = serial('COM4');              % default = 'COM1'
+            set(s,'BaudRate',115200);        % default = 9600
+            set(s,'RequestToSend','off');    % default = on
+            set(s,'DataTerminalReady','on'); % default = on
+            set(s,'InputBufferSize',512*10); % default = 512
+            set(s,'Timeout',0.5);            % default = 10
             
             fopen(s);
-            pause(.5)
-
-            numBirds =3;
+            %%
+            numBirds = 3;
             
             % Set mode
             for i = 1:numBirds
                 fwrite(s,[240+i 89]); % set to gather position and angles
             end
             
+            % no light response
+            % if error, blinking lights -- ensure another serial port not
+            % holding RequestToSend high
             
+            %% Autoconfig
             pause(0.6);   % 300 misec delay required before AutoConfig commands (p. 83)
             fwrite(s,[240+1 80 50 numBirds]);  % autoconfig for Master => bird 1
             pause(0.6);   % 300 misec delay required after AutoConfig commands (p. 83)
-
-            % GROUP MODE
+            
+            % lights should go on
+            
+            %% GROUP MODE
             % PARAMETERnumber = 35
             % The GROUP MODE command is only used if you have multiple Birds working together
             % in a Master/Slave configuration and you want to get data from all the Birds by talking to
             % only the Master Bird.
-
+            
             % turn group mode on if necessary
             fwrite(s,[240+1 80 35 1])
-
-            % request data to be sent Point or Stream
-            fprintf(s,'B'); % Point command
+            
+            %% Loop
+            StartStopForm([]);
+            while StartStopForm
+                drawnow;
+                %% Send Request
+                % request data to be sent Point or Stream
+                fprintf(s,'B'); % Point command
+                
+                % should receive 13*numBirds bytes
+                
+                %% Get response
+                % In the POSITION/ANGLES mode, the outputs from the POSITION and ANGLES modes
+                % are combined into one record containing the following twelve bytes:
+                % MSB LSB
+                % 7 6 5 4 3 2 1 0 BYTE #
+                % 1 X8 X7 X6 X5 X4 X3 X2 #1 LSbyte X
+                % 0 X15 X14 X13 X12 X11 X10 X9 #2 MSbyte X
+                % 0 Y8 Y7 Y6 Y5 Y4 Y3 Y2 #3 LSbyte Y
+                % 0 Y15 Y14 Y13 Y12 Y11 Y10 Y9 #4 MSbyte Y
+                % 0 Z8 Z7 Z6 Z5 Z4 Z3 Z2 #5 LSbyte Z
+                % 0 Z15 Z14 Z13 Z12 Z11 Z10 Z9 #6 MSbyte Z
+                % 0 Z8 Z7 Z6 Z5 Z4 Z3 Z2 #7 LSbyte Zang
+                % 0 Z15 Z14 Z13 Z12 Z11 Z10 Z9 #8 MSbyte Zang
+                % 0 Y8 Y7 Y6 Y5 Y4 Y3 Y2 #9 LSbyte Yang
+                % 0 Y15 Y14 Y13 Y12 Y11 Y10 Y9 #10 MSbyte Yang
+                % 0 X8 X7 X6 X5 X4 X3 X2 #11 LSbyte Xang
+                % 0 X15 X14 X13 X12 X11 X10 X9 #12 MSbyte Xang
+                
+                %  The GROUP MODE address byte is only present if
+                % GROUP MODE is enabled (see change value GROUP MODE).
+                numBytes = 13;
+                % read binary data
+                [birdBytes, numRead] = fread(s,numBytes*numBirds,'uint8');
+                
+                %% Parse response
+                
+                if numRead < numBytes*numBirds
+                    msg = sprintf('The number of bytes read [%d] was fewer than required [%d] \n',...
+                        numRead,numBytes*numBirds);
+                    disp(msg)
+                    continue
+                end
+                
+                [pos, ang] = Inputs.FlockOfBirds.parseBytesPositionAngles(birdBytes);
+                
+                for i = 1:numBirds
+                    fprintf('Bird %i\tX:%+6.3f\tY:%+6.3f\tZ:%+6.3f\t',i,pos(:,i));
+                    fprintf('Rz:%+6.1f\tRy:%+6.1f\tRx:%+6.1f\n',ang(:,i)*180/pi);
+                end
+                
+            end
+            
+            %% Test Stream mode
+            fprintf(s,'@'); % Stream Start
+            
+            %% Stream stop
+            fprintf(s,'?'); % Stream Stop
+            
+            %% Read available bytes
+            numAvailable = s.BytesAvailable;
+            if numAvailable > 0
+                [streamBytes, numRead] = fread(s,numAvailable);
+            else
+                disp('No Data')
+                streamBytes = [];
+            end
+            
+            streamBytes = uint8(streamBytes);
+            
+            startBits = bitget(streamBytes,8);
+            
+            numMsgs = sum(startBits);
+            
+            % get the messages with start bits
+            %idxRecent = find(startBits,5,'last');
+            idxRecent = find(startBits);
+            
+            % look for messages that have the right number of bytes
+            %idxValid = find(diff(idxRecent) == numBytes,2,'last');
+            idxValid = find(diff(idxRecent) == numBytes);
+            
+            for i = 1:length(idxValid)
+                msgStart = idxRecent(idxValid(i));
+                thisMessage = streamBytes(msgStart:msgStart+numBytes-1);
+                
+                % get messages
+                
+                [pos, ang, group] = Inputs.FlockOfBirds.parseBytesPositionAngles(thisMessage);
+                
+                fprintf('Msg #%3d Bird %i\tX:%+6.3f\tY:%+6.3f\tZ:%+6.3f\t',i,group,pos);
+                fprintf('Rz:%+6.1f\tRy:%+6.1f\tRx:%+6.1f\n',ang*180/pi);
+            end
+            
+        end
+        
+        function [pos, ang, group, msg] = parseBytesPositionAngles(birdBytes,isGroupMode)
+            
+            % default outputs
+            [pos, ang, group] = deal([]);
+            
+            msg = '';
+            
+            if nargin < 2
+                isGroupMode = true;
+            end
             
             % In the POSITION/ANGLES mode, the outputs from the POSITION and ANGLES modes
             % are combined into one record containing the following twelve bytes:
@@ -219,133 +390,47 @@ classdef FlockOfBirds < handle
             % 0 Y15 Y14 Y13 Y12 Y11 Y10 Y9 #10 MSbyte Yang
             % 0 X8 X7 X6 X5 X4 X3 X2 #11 LSbyte Xang
             % 0 X15 X14 X13 X12 X11 X10 X9 #12 MSbyte Xang
-
-            % Shift everything up 1 bit:
-            bitshift(uint8([2 0 3 0]),1)
             
-            % typecast to int16
-            typecast(uint8([2 0 3 0]),'int16')
+            %  The GROUP MODE address byte is only present if
+            % GROUP MODE is enabled (see change value GROUP MODE).
+            if isGroupMode
+                numBytes = 13;
+            else
+                numBytes = 12;
+                group = 1;
+            end
             
-            % scale
+            % Parse response
             
+            birdBytes = uint8(birdBytes);
+            birdBytes = reshape(birdBytes,numBytes,[]);
             
-            nbytes = 12;
-            % read binary data
-            bird_bytes = fread(s,nbytes,'uint8');
-
-            % convert to position and angles
-            nrec_bytes = 13;   % bytes per record
+            % get high bit
+            startBits = bitget(birdBytes,8);
             
-            for ibird=1:numBirds
-                byte_start = (ibird-1)*nrec_bytes + 1;    % start of nrec segment
-                byte_end = byte_start + nrec_bytes - 1;   % stop of nrec segment
-                % last byte of each data record contains bird number
-                % check that the correct bird is read in
-                if ibird~=bird_bytes(byte_end)
-                    error('Bird Record in Group Does Not Correspond to Bird Number')
-                end
-                % set indivudal data record - without bird number
-                bird_bytes_ibird = bird_bytes(byte_start:byte_end-1);
-                
-                
-                
-                
-                if bitget(bird_bytes(1),8)~=1
-                    bird_error('First Bird Byte Does Not Have a 1 in highest bit',ibird);
-                else
-                    bird_bytes(1) = bitset(bird_bytes(1),8,0);  % set msbit to zero for calculations
-                end
-                
-                i_lsb=1;  % index to least significant bit
-                i_msb=2;  % index to most significant bit
-                if (bitget(bird_bytes(i_msb),8)~=0) || (bitget(bird_bytes(i_lsb),8)~=0)
-                    bird_error('Bird Byte Does Not Have a 0 in highest bit',bird);
-                end
-                lsb = bitset(bird_bytes(i_lsb),8,0);  % set msb to zero in case it is first byte
-                msb = bitshift(bird_bytes(i_msb),7);
-                value_bin = bitshift(msb+lsb,2);
-                if bitget(value_bin,16)     % negative number
-                    value_bin = bitcmp(value_bin,16);
-                    pos_in = -value_bin*bird.position_conv_fac;
-                else
-                    pos_in = value_bin*bird.position_conv_fac;
-                end
-                posx_in = pos_in;
-                
-                lsb = bitset(bird_bytes(3),8,0);
-                msb = bitshift(bird_bytes(4),7);
-                value_bin = bitshift(msb+lsb,2);
-                if bitget(value_bin,16)     % negative number
-                    value_bin = bitcmp(value_bin,16);
-                    pos_in = -value_bin*bird.position_conv_fac;
-                else
-                    pos_in = value_bin*bird.position_conv_fac;
-                end
-                posy_in = pos_in;
-                
-                lsb = bitset(bird_bytes(5),8,0);  % set msb to zero in case it is first byte
-                msb = bitshift(bird_bytes(6),7);
-                value_bin = bitshift(msb+lsb,2);
-                if bitget(value_bin,16)     % negative number
-                    value_bin = bitcmp(value_bin,16);
-                    pos_in = -value_bin*bird.position_conv_fac;
-                else
-                    pos_in = value_bin*bird.position_conv_fac;
-                end
-                posz_in = pos_in;
-                
-                pos = [posx_in posy_in posz_in];
-                
-                %disp([posx_in posy_in posz_in])
-                
-                lsb = bitset(bird_bytes(7),8,0);  % set msb to zero in case it is first byte
-                msb = bitshift(bird_bytes(8),7);
-                value_bin = bitshift(msb+lsb,2);
-                if bitget(value_bin,16)     % negative number
-                    value_bin = bitcmp(value_bin,16);
-                    ang_value = -value_bin*bird.angle_conv_fac;
-                else
-                    ang_value = value_bin*bird.angle_conv_fac;
-                end
-                ang_z = ang_value;
-                
-                
-                lsb = bitset(bird_bytes(9),8,0);  % set msb to zero in case it is first byte
-                msb = bitshift(bird_bytes(10),7);
-                value_bin = bitshift(msb+lsb,2);
-                if bitget(value_bin,16)     % negative number
-                    value_bin = bitcmp(value_bin,16);
-                    ang_value = -value_bin*bird.angle_conv_fac;
-                else
-                    ang_value = value_bin*bird.angle_conv_fac;
-                end
-                ang_y = ang_value;
-                
-                
-                lsb = bitset(bird_bytes(11),8,0);  % set msb to zero in case it is first byte
-                msb = bitshift(bird_bytes(12),7);
-                value_bin = bitshift(msb+lsb,2);
-                if bitget(value_bin,16)     % negative number
-                    value_bin = bitcmp(value_bin,16);
-                    ang_value = -value_bin*bird.angle_conv_fac;
-                else
-                    ang_value = value_bin*bird.angle_conv_fac;
-                end
-                ang_x = ang_value;
-                
-                ang = [ang_x ang_y ang_z];
-                
-                % Each record can be up to 32768 positive and negative
-                
-                
-                
-                [pos_flock(ibird,:), ang_flock(ibird,:)] = bird_bytes_2_data(bird_bytes_ibird,bird);
+            if any(startBits(1,:) ~= 1) || ~all(all(startBits(2:end,:) == 0))
+                msg = sprintf('The message start bits are out of order\n');
+                disp(msg)
+                return
             end
             
             
-
+            LSB = uint16(birdBytes(1:2:numBytes-1,:));
+            MSB = uint16(birdBytes(2:2:end,:));
             
+            % shift up and typecast to int16
+            MSB = bitshift(MSB,9);
+            LSB = bitshift(LSB,2);
             
+            unsignedWords = bitor(MSB,LSB);
+            
+            V = double(typecast(unsignedWords(:),'int16'));
+            V = reshape(V,6,[]);
+            
+            pos = V(1:3,:) * (36.0/32768.0)*2.54/100; % bird conversion factor for meters
+            ang = V(4:6,:) * (180.0/32768.0)*pi/180; % bird conversion factor for radians
+            
+            group = double(birdBytes(end,:));
         end
     end
 end
@@ -378,3 +463,4 @@ zlabel('')
 
 drawnow
 end %% setup_plot
+

@@ -1,6 +1,11 @@
 classdef Classifier < Common.MiniVieObj
     % Classifier Base class
     %
+    % Note abstract methods need to be implemented by child classes.
+    % 
+    % Methods:
+    %       obj.initialize(hTrainingData)
+    %
     % 01-Sept-2010 Armiger: Created
     properties
         %TODO these are specific to LDA
