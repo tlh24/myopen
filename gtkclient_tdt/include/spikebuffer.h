@@ -25,6 +25,8 @@ public:
 
 	bool getSpike(double *tk, double *wf, int n, float threshold, int alignment);
 
+	bool getSpike(unsigned int *tk, float *wf, int n, float threshold, int alignment);
+
 	// returns buffer capcity as a fraction. 1 means filled. 0 means empty.
 	float capacity();
 

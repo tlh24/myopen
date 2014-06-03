@@ -85,6 +85,8 @@ float	g_viewportSize[2] = {640, 480}; //width, height.
 class Channel;
 class Artifact;
 
+int g_icms_counter = -1;
+
 float	g_fbuf[NFBUF][NSAMP*3]; //continuous waveform. range [-1 .. 1]. For drawing.
 i64		g_fbufW; //where to write to (always increment)
 i64		g_fbufR; //display thread reads from here - copies to mem
@@ -111,15 +113,17 @@ AnalogWriter g_analogwriter;
 Artifact *g_artifact[STIMCHAN];
 ICMSWriter g_icmswriter;
 
-gboolean g_hipassNeurons = true;
 gboolean g_lopassNeurons = true;
+gboolean g_hipassNeurons = false;
 FilterButterBand_24k_300_5000 g_bandpass[NCHAN];
 FilterButterLow_24k_3000 g_lopass[NCHAN];
 FilterButterHigh_24k_500 g_hipass[NCHAN];
 
-int g_whichMedianFilter = 1;
+int g_whichMedianFilter = 0;
 MedFilt3 g_medfilt3[NCHAN];
 MedFilt5 g_medfilt5[NCHAN];
+
+int g_whichAnalogSave = 0;
 
 bool g_die = false;
 double g_pause = -1.0;
@@ -147,23 +151,23 @@ int g_spikesCols = 16;
 //RLS g_rls(95,0.999,1e-16);
 
 gboolean g_trainArtifactNLMS = true;
-gboolean g_filterArtifactNLMS = true;
+gboolean g_filterArtifactNLMS = false;
 ArtifactNLMS *g_nlms[RECCHAN];
 
-gboolean g_enableArtifactSubtr = false;
+gboolean g_enableArtifactSubtr = true;
 gboolean g_trainArtifactTempl = false;
 int g_numArtifactSamps = 1e4; 	// number of artifacts to use to build template
 int g_stimChanDisp = 0;	// 0-15
 float g_artifactDispAtten = 0.1f;
 
 gboolean g_enableArtifactBlanking = true;
-int g_artifactBlankingSamps = 32;
-int g_artifactBlankingPreSamps = 32;
+int g_artifactBlankingSamps = 48;
+int g_artifactBlankingPreSamps = 24;
 
 gboolean g_enableStimClockBlanking = false;
 
-gboolean g_enableSplines = true;
-gboolean g_enableSubsampleAlignment = true;
+//gboolean g_enableSplines = true;
+//gboolean g_enableSubsampleAlignment = true;
 
 float g_autoThreshold = -3.5; //standard deviations. default negative, w/e.
 
@@ -1142,8 +1146,6 @@ void *po8_thread(void *)
 				g_ts.update(time, ticks, frame); //also updates the mmap file.
 				g_ts.m_dropped = (int)totalSamples - ticks;
 
-				int icms_counter = -1;
-
 				// get icms times, fill icms buffers
 				for (int k=0; k<numSamples; k++) {
 					for (int ch=0; ch<RECCHAN; ch++) {
@@ -1162,13 +1164,13 @@ void *po8_thread(void *)
 					tmp += (unsigned short)(temp[(NCHAN+3)*numSamples+k]) << 16;
 
 					if (tmp != 0) {
-						icms_counter = 0;
+						g_icms_counter = 0;
 						// printf("icms pulse %d\n", tmp);
 					}
 
 					// fill artifact filtering buffers (for other thread)
 					// filter online here
-					if (icms_counter >= 0) {
+					if (g_icms_counter >= 0) {
 						if (g_filterArtifactNLMS) {
 							float dhat[RECCHAN];
 							for (int ch=0; ch<RECCHAN; ch++) {
@@ -1182,16 +1184,22 @@ void *po8_thread(void *)
 										ch3++;
 									}
 								}
-								dhat[ch] = (float)g_nlms[ch]->filter(xvec[ch]);
 							}
 							for (int ch=0; ch<RECCHAN; ch++) {
-								tempfloat[ch*numSamples+k] -= dhat[ch];
+								dhat[ch] = (float)g_nlms[ch]->filter(xvec[ch]);
+								//if (ch == 8) {
+								//	printf("xxxd(%d) = %f;\t",k,tempfloat[ch*numSamples+k]);
+								//	printf("xxxdhat(%d) = %f;\n",k,dhat[ch]);
+								//}
+
+								float alpha = tempfloat[ch*numSamples+k] - dhat[ch];
+								tempfloat[ch*numSamples+k] = alpha;
 							}
 							//printf("lms filtering\n");
 						}
-						icms_counter++;
-						if (icms_counter >= ARTBUF)
-							icms_counter = -1;
+						g_icms_counter++;
+						if (g_icms_counter >= LMSBUF)
+							g_icms_counter = -1;
 					}
 
 					unsigned int tk = (unsigned short)(temp[NCHAN*numSamples+k]);
@@ -1347,34 +1355,43 @@ void *po8_thread(void *)
 					}
 				}
 
-				Analog ac;
-				ac.set_chan(g_channel[0]+1);	// 1-indexed
-
 				// copy the data over to g_fbuf for display (broadband trace)
 				// input data is scaled from TDT so that 32767 = 10mV.
 				// send the data for one channel to jack
+				// package data for saving
 				float audio[256];
-				for (int k=0; k<NFBUF; k++) {
-					int h = g_channel[k];
-					float gain = g_c[h]->getGain();
+				for (int k=0; k<RECCHAN; k++) {
+					Analog ac;
+					ac.set_chan(k+1);	// 1-indexed
+
+					float gain = g_c[k]->getGain();
 
 					for (int i=0; i<numSamples; i++) {
-						float f = tempfloat[h*numSamples+i] * gain;
-						g_fbuf[k][((g_fbufW+i) % g_nsamp)*3 + 1] = f;
-						if (k==0 && i<256)
-							audio[i] = f;
+						float f = tempfloat[k*numSamples+i]; // before gain
 
-						if (k==0) {
-							ac.add_sample(f/gain);	// no need to gain it
+						for (int h=0; h<NFBUF; h++) {
+							if (g_channel[h] == k) {
+								g_fbuf[h][((g_fbufW+i) % g_nsamp)*3 + 1] = f * gain;
+								if (h==0 && i<256) {
+									audio[i] = f * gain;
+								}
+							}
+						}
+
+						// here determine if save all analog or just a single analog
+						if (g_channel[0] == k || g_whichAnalogSave == 1) {
+							ac.add_sample(f); // no need to gain it
 							unsigned int tk = (unsigned short)(temp[NCHAN*numSamples+i]);
 							tk += (unsigned short)(temp[(NCHAN+1)*numSamples+i]) << 16;
 							ac.add_tick(tk);
 							ac.add_ts(g_ts.getTime(tk));
 						}
 					}
+					if (g_analogwriter.enabled() &&
+					    (g_channel[0] == k || g_whichAnalogSave == 1)) {
+						g_analogwriter.add(&ac);
+					}
 				}
-				if (g_analogwriter.enabled())
-					g_analogwriter.add(&ac);
 
 #ifdef JACK
 				jackAddSamples(&audio[0], &audio[0], numSamples);
@@ -1401,26 +1418,34 @@ void *po8_thread(void *)
 				}
 
 				// sort -- see if samples pass threshold.  if so, copy.
-				double wflo[NWFSAMP+2];
-				double tklo[NWFSAMP+2];
+				//double wflo[NWFSAMP+2];
+				//double tklo[NWFSAMP+2];
+				float wf[NWFSAMP];
+				unsigned int tkall[NWFSAMP];
 
-				double wfhi[NWFSAMPUP+8];
-				double tkhi[NWFSAMPUP+8];
+				//double wfhi[NWFSAMPUP+8];
+				//double tkhi[NWFSAMPUP+8];
 
+				/*
 				gsl_interp_accel *spline_acc = gsl_interp_accel_alloc();
 				gsl_spline *spline;
 				if (g_enableSplines)
 					spline = gsl_spline_alloc(gsl_interp_cspline, NWFSAMP+2);
 				else
 					spline = gsl_spline_alloc(gsl_interp_linear, NWFSAMP+2);
+				*/
 
 				for (int k=0; k<NCHAN && !g_die; k++) {
 					float threshold = g_c[k]->getThreshold(); // 1 -> 10mV.
-					int centering = (float)NWFSAMP - g_c[k]->getCentering()*(float)NWFSAMP/(float)NWFSAMPUP;
+					//int centering = (float)NWFSAMP - g_c[k]->getCentering()*(float)NWFSAMP/(float)NWFSAMPUP;
+					int centering = (float)NWFSAMP - g_c[k]->getCentering();
+					//int centering = g_c[k]->getCentering();
 
-					while (g_spikebuf[k].getSpike(tklo,wflo,NWFSAMP+2, threshold, centering)) {
+					//while (g_spikebuf[k].getSpike(tklo,wflo,NWFSAMP+2, threshold, centering)) {
+					while (g_spikebuf[k].getSpike(tkall,wf,NWFSAMP, threshold, centering)) {
 
 						// fill in tkhi
+						/*
 						tkhi[0] = tklo[0];
 						double dt = (tklo[NWFSAMP+2-1]-tklo[0])/(NWFSAMPUP+8-1);
 						for (int i=0; i<(NWFSAMPUP+8-1); i++)
@@ -1450,13 +1475,16 @@ void *po8_thread(void *)
 							}
 							dx = (NWFSAMP+2-centering)*(float)NWFSAMPUP/(float)NWFSAMP - c;
 						}
+						*/
 
-						float wf[NWFSAMPUP];
-						unsigned int tk;
-						for (int i=0; i<NWFSAMPUP; i++) {
-							wf[i] = (float)wfhi[i+4+dx];
-						}
-						tk = (unsigned int)tkhi[4+dx];	// start of waveform
+						//float wf[NWFSAMPUP];
+						//unsigned int tk;
+						//for (int i=0; i<NWFSAMPUP; i++) {
+						//	wf[i] = (float)wfhi[i+4+dx];
+						//}
+						//tk = (unsigned int)tkhi[4+dx];	// start of waveform
+
+						unsigned int tk = tkall[0];	// start of waveform
 
 						int unit = 0; //unsorted.
 						//compare to template.
@@ -1486,9 +1514,9 @@ void *po8_thread(void *)
 									pak.ticks = tk;
 									pak.channel = k;
 									pak.unit = unit;
-									pak.len = NWFSAMPUP;
+									pak.len = NWFSAMP;
 									float gain2 = 2.f * 32767.f;
-									for (int g=0; g<NWFSAMPUP; g++) {
+									for (int g=0; g<NWFSAMP; g++) {
 										pak.wf[g] = (short)(wf[g]*gain2); //should be in original units.
 									}
 									g_wfwriter.add(&pak);
@@ -1507,8 +1535,8 @@ void *po8_thread(void *)
 						}
 					}
 				}
-				gsl_spline_free(spline);
-				gsl_interp_accel_free(spline_acc);
+				//gsl_spline_free(spline);
+				//gsl_interp_accel_free(spline_acc);
 			}
 			frame++;
 		}
@@ -1722,6 +1750,13 @@ static void blendRadioCB(GtkWidget *button, gpointer p)
 		else g_blendmode = GL_ONE;
 	}
 }
+static void analogSaveRadioCB(GtkWidget *button, gpointer p)
+{
+	if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))) {
+		int i = (int)((long long)p & 0xf);
+		g_whichAnalogSave = i;
+	}
+}
 static void pauseButtonCB(GtkWidget *button, gpointer * )
 {
 	if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
@@ -1841,7 +1876,7 @@ static void mk_radio(const char *txt, int ntxt,
 	GSList *group;
 
 	frame = gtk_frame_new (frameTxt);
-	gtk_box_pack_start (GTK_BOX (container), frame, TRUE, TRUE, 0);
+	gtk_box_pack_start (GTK_BOX (container), frame, FALSE, FALSE, 0);
 	modebox = vertical ? gtk_vbox_new(FALSE, 2) : gtk_hbox_new(FALSE, 2);
 	gtk_container_add (GTK_CONTAINER (frame), modebox);
 	gtk_container_set_border_width (GTK_CONTAINER (modebox), 2);
@@ -2087,12 +2122,12 @@ int main(int argc, char **argv)
 	GOOGLE_PROTOBUF_VERIFY_VERSION;
 
 	for (int i=0; i<NCHAN; i++) {
-		g_fr[i][0].set_bin_params(40, 1.0);	// nlags, duration (sec)
-		g_fr[i][1].set_bin_params(40, 1.0);	// nlags, duration (sec)
+		g_fr[i][0].set_bin_params(20, 1.0);	// nlags, duration (sec)
+		g_fr[i][1].set_bin_params(20, 1.0);	// nlags, duration (sec)
 	}
 
 	FiringRate test_fr;
-	test_fr.set_bin_params(40,1.0);
+	test_fr.set_bin_params(20,1.0);
 	test_fr.get_bins_test();
 
 	if (argc > 1)
@@ -2109,7 +2144,7 @@ int main(int argc, char **argv)
 	for (int i=0; i<NCHAN; i++) {
 		g_c[i] = new Channel(i, &ms);
 		g_filterbuf[i] = new Buffer(NSAMP);
-		g_nlms[i] = new ArtifactNLMS(95, 1e-4, i, &ms);
+		g_nlms[i] = new ArtifactNLMS(95, 1e-5, i, &ms);
 	}
 	for (int i=0; i<STIMCHAN; i++)
 		g_artifact[i] = new Artifact(i, &ms);
@@ -2290,11 +2325,11 @@ int main(int argc, char **argv)
 	mk_button("set selected", bx3, autoThresholdCB, GINT_TO_POINTER(1));
 	mk_button("set all", bx3, autoThresholdCB, GINT_TO_POINTER(2));
 
-	mk_checkbox("enable csplines", box1,
-	            &g_enableSplines, basic_checkbox_cb);
+	//mk_checkbox("enable csplines", box1,
+	//            &g_enableSplines, basic_checkbox_cb);
 
-	mk_checkbox("enable subsample alignment", box1,
-	            &g_enableSubsampleAlignment, basic_checkbox_cb);
+	//mk_checkbox("enable subsample alignment", box1,
+	//            &g_enableSubsampleAlignment, basic_checkbox_cb);
 
 	mk_spinner("Columns", box1, g_spikesCols, 3, 32, 1,
 	           basic_spinint_cb, (gpointer)&g_spikesCols);
@@ -2435,15 +2470,20 @@ int main(int argc, char **argv)
 	s = "Save Analog";
 	frame = gtk_frame_new(s.c_str());
 	gtk_box_pack_start(GTK_BOX (box1), frame, FALSE, FALSE, 1);
+
 	bxx1 = gtk_hbox_new (TRUE, 0);
 	gtk_container_add (GTK_CONTAINER (frame), bxx1);
+
 	bxx2 = gtk_vbox_new (TRUE, 0);
 	gtk_container_add (GTK_CONTAINER (bxx1), bxx2);
 	mk_button("Start", bxx2, openSaveAnalogFile, NULL);
+
 	bxx2 = gtk_vbox_new (TRUE, 0);
 	gtk_container_add (GTK_CONTAINER (bxx1), bxx2);
 	mk_button("Stop", bxx2, closeSaveAnalogFile, NULL);
 
+	mk_radio("active,all", 2,
+	         box1, false, "channel(s)?", g_whichAnalogSave, analogSaveRadioCB);
 
 	mk_button("Stop All", box1, closeSaveFiles, NULL);
 

@@ -30,8 +30,9 @@ enum MODES {
 #define NSORT		2
 
 #define NWFSAMP		40	// number of wf samples at SRATE_HZ (nb compare with NSAMPWF, above)
-#define NWFSAMPUP	160	// upsampled for alignment / sorting
+#define NWFSAMPUP	40	// upsampled for alignment / sorting
 
+#define LMSBUF 		64
 
 //globals.  could make a class for these but .. eh
 // XXX why NSAMP*3 ???

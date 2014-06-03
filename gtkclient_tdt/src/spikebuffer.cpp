@@ -27,15 +27,12 @@ bool SpikeBuffer::addSample(unsigned int _tk, float _wf)
 
 bool SpikeBuffer::getSpike(double *tk, double *wf, int n, float threshold, int alignment)
 {
-
 	if (alignment >= n) {
 		fprintf(stderr,"ERROR: (Spikebuffer) wf alignment greater than wf length!\n");
 		return false;
 	}
 
 	long w = m_w;   // atomic
-
-	bool res = false;
 
 	// as long as there is space in the buffer for a whole wf
 	while (m_r < (w-n)) {
@@ -53,14 +50,43 @@ bool SpikeBuffer::getSpike(double *tk, double *wf, int n, float threshold, int a
 				wf[i] = (double)m_wf[(m_r+i) & SPIKE_MASK];
 			}
 			m_r++;	// atomic
-			res = true;
-			break;
+			return true;
 		}
 		m_r++;	// atomic
 	}
-	return res;
+	return false;
 }
+bool SpikeBuffer::getSpike(unsigned int *tk, float *wf, int n, float threshold, int alignment)
+{
+	if (alignment >= n) {
+		fprintf(stderr,"ERROR: (Spikebuffer) wf alignment greater than wf length!\n");
+		return false;
+	}
 
+	long w = m_w;   // atomic
+
+	// as long as there is space in the buffer for a whole wf
+	while (m_r < (w-n)) {
+
+		long x = m_r + alignment;
+
+		float a = m_wf[(x  ) & SPIKE_MASK];
+		float b = m_wf[(x+1) & SPIKE_MASK];
+
+		if ((threshold > 0 && (a <= threshold && b > threshold))
+		    || (threshold < 0 && (a >= threshold && b < threshold))) {
+
+			for (int i=0; i<n; i++) {
+				tk[i] = m_tk[(m_r+i) & SPIKE_MASK];
+				wf[i] = m_wf[(m_r+i) & SPIKE_MASK];
+			}
+			m_r++;	// atomic
+			return true;
+		}
+		m_r++;	// atomic
+	}
+	return false;
+}
 float SpikeBuffer::capacity()
 {
 	return (float)1.f - (m_w-m_r)/SPIKE_BUF_SIZE;
