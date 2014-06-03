@@ -366,9 +366,9 @@ public:
 			glColor4ub(161,217,155,150);
 			glBegin(GL_LINE_STRIP);
 			float c = (float)m_centering;
-			c = NWFSAMPUP-1-c;
+			c = NWFSAMP-1-c;
 			c += 0.5f;
-			c /= (NWFSAMPUP-1); //centering transform.
+			c /= (NWFSAMP-1); //centering transform.
 			glVertex2f(ow*c+ox, t-0.2*oh);
 			glVertex2f(ow*c+ox, t+0.2*oh);
 			glEnd();
