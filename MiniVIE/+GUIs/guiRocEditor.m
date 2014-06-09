@@ -233,9 +233,16 @@ classdef guiRocEditor < handle
             function cbGetAngles()
                 oldAngles = obj.jointAngles;
                 newAngles = textscan(get(obj.hAngleBox,'String'),'%f,');
-
+                newAngles = newAngles{1}'*pi/180;
                 % set sliders
-                setSliders(obj,oldAngles,newAngles{1}'*pi/180)
+                setSliders(obj,oldAngles,newAngles)
+                
+                % update the internal roc table in memory
+                rocId = obj.CurrentRocId;
+                waypointId = obj.CurrentWaypointId;
+                nROCAngles = length(obj.structRoc(rocId).angles(waypointId,:));
+                nNewAngles = length(newAngles);
+                obj.structRoc(rocId).angles(waypointId,:) = newAngles((nNewAngles-nROCAngles+1):end);
                 display('Joint angles set')
             end
             
@@ -334,7 +341,7 @@ classdef guiRocEditor < handle
                 set(obj.hJointSliders{iJoint},'Value',newAngle);
                 finalAngles(iJoint) = newAngle;
             end
-            
+                      
             % interpolate
             maxDiff = max(abs(finalAngles - currentAngles));
             
@@ -363,13 +370,13 @@ classdef guiRocEditor < handle
         function setSliders(obj,oldAngles,newAngles)
             
             currentAngles = oldAngles;
-            
+                       
             for i = 1:length(obj.hJointSliders)
                 newAngle = newAngles(i);
                 set(obj.hJointSliders{i},'Value',newAngle);
                 finalAngles(i) = newAngle;
             end
-            
+                        
             % interpolate
             maxDiff = max(abs(finalAngles - currentAngles));
             
@@ -454,9 +461,7 @@ end
 
 %Callbacks
 function set_position(src,evnt,obj,i) %#ok<INUSL> 
-% TODO - AJG: Use this function as a template for setting positions in 'edit' mode. 
-%             Will need to get current positions and then update angles
-%             1:end (use updatefigure)
+
 newAngle = get(src,'Value');
 
 % Update joint angles for transmission
