@@ -29,6 +29,24 @@ end
 %}
 
 
+idxTrained = unique(TrainingData.getClassLabels);
+trainedClassNames = TrainingData.ClassNames(idxTrained);
+
+isRestClass = strcmpi(trainedClassNames,'No Movement');
+if ~any(isRestClass)
+    fprintf('[%s] Failed to find "No Movement" class in training data\n',mfilename);
+end
+trainedClassNames(isRestClass) = [];
+
+if isempty(trainedClassNames)
+    errordlg('No Trained Data Exists');
+    return
+end
+
+
+
+
+
 % setup display
 greenArm = [0.7 0.9 0.6];
 blueArm = [0.7 0.7 0.9];
@@ -76,14 +94,6 @@ hScenario.ArmStateModel.structState(7).MaxVelocity = 1;
 % Each movement presented 5 times
 % TAC2 - two moves requires
 
-idxTrained = unique(TrainingData.getClassLabels);
-trainedClassNames = TrainingData.ClassNames(idxTrained);
-
-isRestClass = strcmpi(trainedClassNames,'No Movement');
-if ~any(isRestClass)
-    fprintf('[%s] Failed to find "No Movement" class in training data\n',mfilename);
-end
-trainedClassNames(isRestClass) = [];
 
 iTest = 0;
 try
