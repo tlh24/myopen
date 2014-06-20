@@ -23,6 +23,10 @@ cellTests = {
     'Edit01',       '[11] edit mpltest.m'
     'MplWrist02',   '[12] Test MPL wrist range of motion [MPL.NfuUdp.getInstance MPL.MudCommandEncoder]'
     'MplWrist03',   '[13] Test MPL wrist range of motion with tactor'
+    'MplShoulderFe','[14] Test MPL shoulder fe range of motion'
+    'MplShouldAbAd','[15] Test MPL shoulder abad range of motion'
+    'MplHumeralRot','[16] Test MPL humeral rot range of motion'
+    'MplElbow',     '[17] Test MPL elbow range of motion'
     'exit',         '[0] Exit'
     };
 

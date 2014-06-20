@@ -3,7 +3,8 @@ function [ obj ] = RunMpl
 p.guiName = 'MiniVIE-NFU-MPL';
 % p.filePrefix = 'WR_TR02_L_';
 % p.filePrefix = 'JH_TH01_L_';
-p.filePrefix = 'MPL_01_WD_R_';
+% p.filePrefix = 'MPL_01_WD_R_';
+p.filePrefix = 'JH05_SD_L_';
 
 UiTools.save_temp_file('defaultFilePrefix',p.filePrefix)
 
