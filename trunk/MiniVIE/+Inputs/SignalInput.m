@@ -178,6 +178,12 @@ classdef SignalInput < Common.MiniVieObj
             % return only the signals requested, regardless of padding
             filtered = filtered(end-numSamples+1:end,:);
             
+            % 6/25/2014
+            % Added limits for max signal
+            emgLim = 5;
+            filtered = max(min(filtered,emgLim),-emgLim);
+
+            
         end %getFilteredData
         
         function filtered = applyAllFilters(obj,data)
