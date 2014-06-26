@@ -241,17 +241,13 @@ classdef assessmentEval
             load(assessmentLogFile,'-mat')
             assert(exist('structTrialLog','var') == 1,'Log Missing')
             
-            %classNames = {structTrialLog(:).targetClass};
-            classNames = {structTrialLog.Data.targetClass};
+            output = assessmentEval.computeResults(structTrialLog);
+            
+            classNames = output.classNamesTested;
             
             maxCorrect = 10;  %Number of correct classes to attain (vote/unfiltered)
-            numTestedClasses = length(structTrialLog.Data);
-            numSuccess = zeros(1,numTestedClasses);
-            for i = 1:numTestedClasses
-                numSuccess(i) = sum(structTrialLog.Data(i).classDecision == i);
-            end
             
-            classAccuracyPct = numSuccess ./ maxCorrect .* 100;
+            classAccuracyPct = output.totalCompleted ./ maxCorrect .* 100;
             overallAccuracy = mean(classAccuracyPct);
             
         end
