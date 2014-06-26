@@ -59,6 +59,10 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
                 
                 obj.update_sensory();
                 
+                if obj.Verbose
+                    fprintf('\n');
+                end
+                
             catch ME
                 UiTools.display_error_stack(ME);
             end
