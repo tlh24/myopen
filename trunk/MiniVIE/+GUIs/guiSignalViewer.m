@@ -89,6 +89,10 @@ classdef guiSignalViewer < Common.MiniVieObj
             obj.updateFigure();
             fprintf('OK\n');
             
+            % Update once manually before timer (helps debugging by
+            % throwing a real error)
+            obj.update()
+            
             start(obj.hTimer);
             
             

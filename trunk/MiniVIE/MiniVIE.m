@@ -332,7 +332,9 @@ classdef MiniVIE < Common.MiniVieObj
                 h = obj.SignalSource;
                 % in there's an old one, try to close it
                 if ~isempty(h)
-                    try, close(h); end
+                    try %#ok<TRYNC>
+                        close(h); 
+                    end
                 end
                 
                 % match the newly selected input
@@ -392,9 +394,11 @@ classdef MiniVIE < Common.MiniVieObj
                     obj.println('Adding Filters',1);
 
                     % Parameters
-                    % Ref Hargove 2014 comparison of real-tim controlability
+                    % Ref Hargove 2014 comparison of real-time controlability
                     Fs = h.SampleFrequency;                     % 1000 Hz
                     h.addfilter(Inputs.HighPass(20,3,Fs));      % 20Hz 3rd order butter
+                    h.addfilter(Inputs.MinLimitFilter(0.2));    % min limit
+                    h.addfilter(Inputs.ConstraintFilter(-5,5)); % range limit
                     
                     % EMG 250 ms @ 20Hz
                     
