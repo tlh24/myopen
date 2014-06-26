@@ -6,19 +6,19 @@ classdef SignalInput < Common.MiniVieObj
     % 01-Sept-2010 Armiger: Created
     properties
         SampleFrequency = 1000; % Hz
-        ChannelIds = []; % Id numbers for activated channels.  Can be zero 
-                         % based or one based, but the channels will always
-                         % be displayed as 1 to N in the GUIs etc.
-        NumSamples = 1000; % This is the number of samples that the input 
-                           % source will maintain in its buffer
+        ChannelIds = []; % Id numbers for activated channels.  Can be zero
+        % based or one based, but the channels will always
+        % be displayed as 1 to N in the GUIs etc.
+        NumSamples = 1000; % This is the number of samples that the input
+        % source will maintain in its buffer
         
         Verbose = 1;
-        hFilter = {};      % contains handles to filter objects that will 
-                           % be applied when the user calls the
-                           % getFilteredData method
+        hFilter = {};      % contains handles to filter objects that will
+        % be applied when the user calls the
+        % getFilteredData method
         FilterPadding = 250; % Number of samples to pad data when getting filtered data to avoid edge effects
-                             % Note that there is still a possibility for a user to getData() and then applyAllFilters() 
-                             % manually, which may return data differently
+        % Note that there is still a possibility for a user to getData() and then applyAllFilters()
+        % manually, which may return data differently
         
     end
     properties (Dependent = true, SetAccess = private)
@@ -157,7 +157,7 @@ classdef SignalInput < Common.MiniVieObj
             % filtered signals directly
             
             % get extra samples before filtering to eliminate edge effects
-
+            
             if nargin < 2
                 data = getData(obj);
             else
@@ -177,12 +177,6 @@ classdef SignalInput < Common.MiniVieObj
             filtered = applyAllFilters(obj,data);
             % return only the signals requested, regardless of padding
             filtered = filtered(end-numSamples+1:end,:);
-            
-            % 6/25/2014
-            % Added limits for max signal
-            emgLim = 5;
-            filtered = max(min(filtered,emgLim),-emgLim);
-
             
         end %getFilteredData
         
@@ -242,7 +236,7 @@ end %previewCommon
 
 
 function previewCleanup(hTimer,hFig)
-try
+try %#ok<TRYNC>
     stop(hTimer);
 end
 delete(hTimer);
