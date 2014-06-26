@@ -1,6 +1,15 @@
 classdef ArmStateModel < handle
     % State controller for handling velocity control of an arm
     %
+    % This controller contains all the logic and states for position and
+    % velocity control of the arm.  This represents an internal state so
+    % that when velocity commands are generated, they are applied to an
+    % internal model of the arm and then absolute joint angles are
+    % typically streamed to an output (MPL, vMPL, MiniV, etc).
+    %
+    % Internal timing is handled by calculating the difference between when
+    % subsequent update commands are issued.
+    %
     % TODO: Add velocity min (if > 0)
     properties
 
@@ -45,6 +54,7 @@ classdef ArmStateModel < handle
             obj.structState(8).Max = 1;
             obj.structState(8).Min = 0;
             obj.structState(8).State = Controls.GraspTypes.Relaxed;
+            obj.structState(8).MaxAcceleration = 1;
             
             %obj.test;
         end
@@ -96,19 +106,43 @@ classdef ArmStateModel < handle
             % apply range limits
             
             dt = max(toc(obj.lastTime),0.001);
+            obj.structState(5)
             
             % set the velocity state and copy the old velocity to last
             for i = 1:length(obj.structState)
                 s = obj.structState(i);
-                v = obj.velocity(i); % no limits on how fast this changes
+                
+                % Note: no limits on how fast this changes.  This is what
+                % is input from the user using the setVelocity method
+                v = obj.velocity(i); 
+                
+                
                 s.DesiredVelocity = v;
                 
-                if obj.ApplyAccelerationLimits
+                if obj.ApplyAccelerationLimits && s.IsAccelLimited
                     desiredAccel = (s.DesiredVelocity - s.LastVelocity) ./ dt;
-                    allowedAccel = sign(desiredAccel) * min(abs(desiredAccel),s.MaxAcceleration);
+                    
+                    % Enable 'stop fast rule'
+                    % You should always be able to decelerate if moving
+                    % in the intended direction.  Same also applys for if
+                    % zero velocity case
+                    if abs(s.DesiredVelocity) > 0
+                        allowedAccel = sign(desiredAccel) * min(abs(desiredAccel),s.MaxAcceleration);
+                    else
+                        allowedAccel = desiredAccel;
+                    end
                                         
                     % Integrate acceleration to get velocity
                     newV = s.LastVelocity + (allowedAccel*dt);
+                    
+                    % if the new velocity is non-zero, make sure it's not
+                    % infinitesimal
+                    if newV < 0
+                        newV = min(newV,-0.1);
+                    elseif newV > 0
+                        newV = max(newV,+0.1);
+                    end
+                    
                 else
                     % Use commanded velocity
                     newV = v;
@@ -124,7 +158,10 @@ classdef ArmStateModel < handle
                 
                 % Integrate velocity to get position
                 s.Value = s.Value + (s.Velocity*dt);
-                s.DesiredValue = s.DesiredValue + (s.DesiredVelocity*dt);
+                
+                
+                % s.DesiredValue = s.DesiredValue + (s.DesiredVelocity*dt);
+                s.DesiredValue = s.Value + (s.DesiredVelocity*dt);
                 
                 % Apply range limits
                 if obj.ApplyValueLimits
@@ -173,14 +210,16 @@ classdef ArmStateModel < handle
         function stateStruct = defaultState
             
             stateStruct.Name = 'new state';
-            stateStruct.Value = 0;
+            stateStruct.Value = 0;          % Typically a joint angle in radians
             stateStruct.IsReversed = 0;     % Changes sign of Value when accessed
+            stateStruct.IsAccelLimited = 0; % Enable accel limiting on a per-joint basis
             stateStruct.State = 0;          % used to store Grasp Id
             stateStruct.Velocity = 0;       % set the velocity and then as time increments position will change
             stateStruct.Max = +pi;          % Max Value
             stateStruct.Min = -pi;          % Min Value
             stateStruct.MaxVelocity = 1;    % Max Velocity, either direction
-            stateStruct.MaxAcceleration = 1;
+            stateStruct.MaxAcceleration = 10;
+            % These are internally updated state variables
             stateStruct.LastValue = 0;
             stateStruct.LastVelocity = 0;
             stateStruct.DesiredValue = 0;
