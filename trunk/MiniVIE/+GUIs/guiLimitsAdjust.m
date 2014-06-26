@@ -159,6 +159,33 @@ classdef guiLimitsAdjust < Common.MiniVieObj
                     'Callback',@(src,evt)adjustOutputDirection(obj),...
                     'FontWeight','bold');
             end
+            
+            obj.hg.Apply = uicontrol(...
+                'Parent',obj.hg.Figure,...
+                'Style','pushbutton',...
+                'Position',pos('cntrl',5,20,1,1),...
+                'HorizontalAlignment','center',...
+                'Enable','off',...
+                'String','Apply',...
+                'Visible','on',...
+                'Callback',@(src,evt)apply(obj));
+            obj.hg.Cancel = uicontrol(...
+                'Parent',obj.hg.Figure,...
+                'Style','pushbutton',...
+                'Position',pos('cntrl',6,20,1,1),...
+                'HorizontalAlignment','center',...
+                'String','Cancel',...
+                'Visible','on',...
+                'Callback',@(src,evt)close(obj));
+            
+        end
+        function changesPending(obj)
+            set(obj.hg.Apply,'Enable','on'); 
+        end
+        function apply(obj)
+            % Apply changes by sending notification
+            notify(obj,'ValueChange');
+            set(obj.hg.Apply,'Enable','off'); 
         end
         function adjustRange(obj)
             % read input and verify
@@ -185,14 +212,16 @@ classdef guiLimitsAdjust < Common.MiniVieObj
             % always restore labels
             set(obj.hg.LabelText,{'String'},obj.limitData(:,1));
             
-            notify(obj,'ValueChange');
-            
+            % Delay change application
+            changesPending(obj);
         end
         function adjustOutputDirection(obj)
             % Update list of joints to reverse and trigger value change
             % event
             obj.limitData(:,4) = get(obj.hg.Reverse,'Value');
-            notify(obj,'ValueChange');
+
+            % Delay change application
+            changesPending(obj);
         end
     end
     methods (Static = true)
@@ -215,7 +244,7 @@ function p = pos( action, varargin )
 p = zeros( 1, 4 ) - 999;
 
 nCol = 6;
-nRow = 18;
+nRow = 20;
 CntrlHeight = 30;
 CntrlWidth = 100;
 CntrlGap = 0;
@@ -249,4 +278,3 @@ switch lower( action )
         error( 'pos: Should not occur' ),
 end %switch
 end %pos
-%/ ---------------------
