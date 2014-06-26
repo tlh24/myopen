@@ -3,7 +3,7 @@ function guiGainAdjust(SignalClassifier)
 % classifer
 %
 % Note there can be issues if this gui is setup while a timer is running.
-% so background processes should be pause until th figure is raised.
+% so background processes should be paused until the figure is raised.
 % e.g.
 % obj.Presentation.stop;
 % GUIs.guiGainAdjust(obj.SignalClassifier)
