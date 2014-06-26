@@ -10,7 +10,8 @@ classdef ArmStateModel < handle
     % Internal timing is handled by calculating the difference between when
     % subsequent update commands are issued.
     %
-    % TODO: Add velocity min (if > 0)
+    % Revisions:
+    % 26JUN2014 Armiger: Added accel rules and min velocity limits
     properties
 
         ApplyValueLimits;
@@ -106,7 +107,9 @@ classdef ArmStateModel < handle
             % apply range limits
             
             dt = max(toc(obj.lastTime),0.001);
-            obj.structState(5)
+            
+            % Debug
+            %obj.structState(4)
             
             % set the velocity state and copy the old velocity to last
             for i = 1:length(obj.structState)
