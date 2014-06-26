@@ -180,7 +180,9 @@ classdef guiLimitsAdjust < Common.MiniVieObj
             
         end
         function changesPending(obj)
-            set(obj.hg.Apply,'Enable','on'); 
+            set(obj.hg.Apply,'Enable','on');
+            % Instant Apply
+            %apply(obj);
         end
         function apply(obj)
             % Apply changes by sending notification
