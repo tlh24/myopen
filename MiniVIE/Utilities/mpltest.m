@@ -68,11 +68,12 @@ switch testId
         if s < 0
             error('NFU Init failed');
         end
-        hNfu.sendUpperArmHandRoc([zeros(1,3) 0 -0.7 -0.5 -0.5],0,0);
+        AA = -0.25;
+        hNfu.sendUpperArmHandRoc([ [0 AA 0] 1.5 -0.7 -0.5 -0.5],0,0);
         pause(1)
-        hNfu.sendUpperArmHandRoc([zeros(1,3) 0.1 0.7 0.5 0.5],0,0);
+        hNfu.sendUpperArmHandRoc([ [0 AA 0] 1.6 0.7 0.5 0.5],0,0);
         pause(1)
-        hNfu.sendUpperArmHandRoc([zeros(1,3) 0 0 0 0],0,0);
+        hNfu.sendUpperArmHandRoc([ [0 AA 0] 1.5 0 0 0],0,0);
         
     case 'MplWrist02'
         %test mpl wrist ROM
