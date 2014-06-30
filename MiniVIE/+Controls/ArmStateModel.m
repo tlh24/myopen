@@ -40,13 +40,10 @@ classdef ArmStateModel < handle
 
             obj.structState(2).Name = 'Shoulder AA';
             obj.structState(2).Max = 15 * pi / 180;
-            obj.structState(2).Min = 15 * pi / 180;
-            obj.structState(2).IsReversed = 1;
-
+            obj.structState(2).Min = -90 * pi / 180;
             obj.structState(3).Name = 'Shoulder ROT';
             obj.structState(3).Max = 0 * pi / 180;
             obj.structState(3).Min = 0 * pi / 180;
-            obj.structState(3).IsReversed = 1;
 
             obj.structState(4).Name = 'Elbow';
             obj.structState(4).Max = 90 * pi / 180;
@@ -64,7 +61,6 @@ classdef ArmStateModel < handle
             obj.structState(7).Max = +45 * pi / 180;
             obj.structState(7).Min = -45 * pi / 180;
             obj.structState(7).MaxVelocity = 5;
-            obj.structState(7).IsReversed = 1;
             
             obj.structState(8).Name = 'Roc Hand';
             obj.structState(8).Max = 1;
@@ -124,7 +120,7 @@ classdef ArmStateModel < handle
             dt = max(toc(obj.lastTime),0.001);
             
             % Debug
-            %obj.structState(4)
+            %obj.structState(5)
             
             % set the velocity state and copy the old velocity to last
             for i = 1:length(obj.structState)

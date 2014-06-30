@@ -113,20 +113,24 @@ classdef MiniV < hgsetget
             % obj.handle(3).Joint_Param(1) = -jointAngles(3); %% *0; %% Humeral Rotation (+ external rot)
             
             % P2
-            obj.handle(3).Joint_Param(3) = -jointAngles(1); %% *0; %% Shoulder FE (+ flexion)
-            obj.handle(3).Joint_Param(2) =  jointAngles(2); %% *0; %% Shoulder AdAb (+ adduction, toward)
-            obj.handle(3).Joint_Param(1) =  jointAngles(3); %% *0; %% Humeral Rotation (+ internal rot)
-
-            obj.handle(4).Joint_Param(3) = jointAngles(4); %% *0; %% Elbow Flexion (+ flexion)
+            % obj.handle(3).Joint_Param(3) = -jointAngles(1); %% *0; %% Shoulder FE (+ flexion)
+            % obj.handle(3).Joint_Param(2) =  jointAngles(2); %% *0; %% Shoulder AdAb (+ adduction, toward)
+            % obj.handle(3).Joint_Param(1) =  jointAngles(3); %% *0; %% Humeral Rotation (+ internal rot)
             
             % obj.handle(5).Joint_Param(2) = jointAngles(5); %% *0; %% Wrist_Rot (+ supination)
             % obj.handle(5).Joint_Param(3) = -jointAngles(6); %% *0; %% Wrist_FE (+ flexion)
             % obj.handle(5).Joint_Param(1) = -jointAngles(7); %% *0; %% Wrist_Dev (+ Radial Dev)
             
             % MPL
+            obj.handle(3).Joint_Param(3) = -jointAngles(1); %% *0; %% Shoulder FE (+ flexion)
+            obj.handle(3).Joint_Param(2) =  jointAngles(2); %% *0; %% Shoulder AdAb (+ adduction, toward)
+            obj.handle(3).Joint_Param(1) =  jointAngles(3); %% *0; %% Humeral Rotation (+ internal rot)
+            
+            obj.handle(4).Joint_Param(3) =  jointAngles(4); %% *0; %% Elbow Flexion (+ flexion)
+            
             obj.handle(5).Joint_Param(3) =  jointAngles(5); %% *0; %% Wrist_Rot (+ supination)
             obj.handle(5).Joint_Param(1) =  jointAngles(7); %% *0; %% Wrist_FE (+ flexion)
-            obj.handle(5).Joint_Param(2) = -jointAngles(6); %% *0; %% Wrist_Dev (+ Radial Dev)
+            obj.handle(5).Joint_Param(2) =  jointAngles(6); %% *0; %% Wrist_Dev (+ Radial Dev)
             
         end
         function putdata(obj, jointAngles)
