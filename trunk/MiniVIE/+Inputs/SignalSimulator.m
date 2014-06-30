@@ -149,6 +149,14 @@ classdef SignalSimulator < Inputs.SignalInput
                     obj.SignalAmplitude = zeros(1,obj.NumChannels);
                     obj.SignalFrequency = 325;
                     obj.SignalAmplitude(1:4) = [1.5 0.2 1.3 0.6];
+                case 13
+                    obj.SignalAmplitude = zeros(1,obj.NumChannels);
+                    obj.SignalFrequency = 285;
+                    obj.SignalAmplitude(1:4) = [1.5 0.2 1.3 0.6];
+                case 14
+                    obj.SignalAmplitude = zeros(1,obj.NumChannels);
+                    obj.SignalFrequency = 285;
+                    obj.SignalAmplitude(1:4) = [0.5 1.2 0.3 1.6];
                 otherwise
             end
         end
@@ -234,6 +242,12 @@ classdef SignalSimulator < Inputs.SignalInput
                     case 'v'
                         setPattern(obj,12);
                         set(obj.hg.hTxtCurrentPattern,'String','Current Pattern 12');
+                    case 'g'
+                        setPattern(obj,13);
+                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern 13');
+                    case 'h'
+                        setPattern(obj,14);
+                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern 14');
                     case 'space'
                         setPattern(obj,0);
                         set(obj.hg.hTxtCurrentPattern,'String','Current Pattern 0');

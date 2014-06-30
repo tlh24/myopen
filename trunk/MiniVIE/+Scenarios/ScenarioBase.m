@@ -174,13 +174,13 @@ classdef ScenarioBase < Common.MiniVieObj
                     s.setVelocity(mpl_upper_arm_enum.SHOULDER_FE,+prSpeed);
                 case {'Shoulder Extension'}
                     s.setVelocity(mpl_upper_arm_enum.SHOULDER_FE,-prSpeed);
-                case {'Shoulder Abduction'}
-                    s.setVelocity(mpl_upper_arm_enum.SHOULDER_ADAB,+prSpeed);
                 case {'Shoulder Adduction'}
+                    s.setVelocity(mpl_upper_arm_enum.SHOULDER_ADAB,+prSpeed);
+                case {'Shoulder Abduction'}
                     s.setVelocity(mpl_upper_arm_enum.SHOULDER_ADAB,-prSpeed);
-                case {'Humeral External Rotation'}
-                    s.setVelocity(mpl_upper_arm_enum.HUMERAL_ROT,+prSpeed);
                 case {'Humeral Internal Rotation'}
+                    s.setVelocity(mpl_upper_arm_enum.HUMERAL_ROT,+prSpeed);
+                case {'Humeral External Rotation'}
                     s.setVelocity(mpl_upper_arm_enum.HUMERAL_ROT,-prSpeed);
                 case {'Elbow Flexion' 'Elbow Up'}
                     s.setVelocity(mpl_upper_arm_enum.ELBOW,+prSpeed);
@@ -190,9 +190,9 @@ classdef ScenarioBase < Common.MiniVieObj
                     s.setVelocity(mpl_upper_arm_enum.WRIST_ROT,+prSpeed);
                 case {'Supinate' 'Wrist Rotate Out'}
                     s.setVelocity(mpl_upper_arm_enum.WRIST_ROT,-prSpeed);
-                case {'Up', 'Hand Up', 'Radial Deviation','Wrist Abduction'}
-                    s.setVelocity(mpl_upper_arm_enum.WRIST_DEV,+prSpeed);
                 case {'Down','Hand Down', 'Ulnar Deviation','Wrist Adduction'}
+                    s.setVelocity(mpl_upper_arm_enum.WRIST_DEV,+prSpeed);
+                case {'Up', 'Hand Up', 'Radial Deviation','Wrist Abduction'}
                     s.setVelocity(mpl_upper_arm_enum.WRIST_DEV,-prSpeed);
                 case {'Left' 'Wrist Flex' 'Wrist Flex In'}
                     s.setVelocity(mpl_upper_arm_enum.WRIST_FE,+prSpeed);
@@ -446,6 +446,8 @@ classdef ScenarioBase < Common.MiniVieObj
                 % Step 2: Convert Intent to limb commands
                 obj.generateUpperArmCommand(className,prSpeed);
                 obj.generateGraspCommand(className,prSpeed);
+                
+                
             catch ME
                 UiTools.display_error_stack(ME);
             end

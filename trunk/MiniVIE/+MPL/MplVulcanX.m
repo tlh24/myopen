@@ -60,7 +60,8 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
                 obj.update_sensory();
                 
                 if obj.Verbose
-                    fprintf('\n');
+                    % print backspace and new line
+                    fprintf('\b\n');
                 end
                 
             catch ME
