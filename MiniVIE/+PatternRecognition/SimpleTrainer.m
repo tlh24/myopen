@@ -233,6 +233,31 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
         end
         function test 
             disp('My Test');
+            % Test script for debugging Simple Trainer function
+            % Allyson Strachan 7/1/14
+
+            % Retrieve Simple Trainer
+             h = PatternRecognition.SimpleTrainer;
+            % Set Pictures as true before beginning
+            h.EnablePictures = 1;
+
+            %Collects three requirements for running Simple Trainer (Signal Source,
+            %Signal Classifier, and Training Data)
+            SignalSource = Inputs.SignalSimulator();
+            SignalSource.addfilter(Inputs.HighPass(20,3,1000));
+            %SignalSource.addfilter(Inputs.LowPass());
+            %SignalSource.addfilter();
+            SignalSource.NumSamples = 2000;
+            SignalSource.initialize();
+            TrainingData = PatternRecognition.TrainingData;
+            TrainingData.setClassNames({'Wrist Extension'  'Wrist Abduction'  'No Movement'});
+            % The established class names are random for testing and can be changed
+            SignalClassifier = SignalAnalysis.Lda();
+            SignalClassifier.initialize(TrainingData);
+
+            % Initializes program to test for bugs
+            h.initialize(SignalSource, SignalClassifier, TrainingData);
+            h.collectdata;
         end
         
          
