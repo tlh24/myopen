@@ -38,11 +38,10 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
             
             obj.SignalSource.NumSamples = obj.SignalClassifier.NumSamplesPerWindow;
             
-            for i = obj.StartupWaitTimeSeconds:-1:1
-                str = sprintf('Get ready to train in %02d seconds',i);
-                waitbar(0,h,str);
-                pause(1);
-            end
+            % 07/01/14 Made changes to order of code to prevent pictures
+            % from interuppting training
+            % A. Strachan
+            
             
             if obj.EnablePictures
                 %f = figure(99);
@@ -53,6 +52,15 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
                 pathstr = fileparts(which('PatternRecognition.SimpleTrainer'));
                 pathImages = fullfile(pathstr,'Images');
             end
+            
+            
+            for i = obj.StartupWaitTimeSeconds:-1:1
+                str = sprintf('Get ready to train in %02d seconds',i);
+                waitbar(0,h,str);
+                pause(1);
+            end
+            
+           
             
             classNames = obj.SignalClassifier.getClassNames;
             
@@ -138,7 +146,8 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
                             img = imread(fileName);
                             set(a,'Visible','on')
                             cla(a);
-                            imshow(img,'Parent',a);
+                            image(img,'Parent',a);
+                            axis(a,'off');
                         end
                     end
                     
@@ -222,6 +231,11 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
             obj.collectdata();
             
         end
+        function test 
+            disp('My Test');
+        end
+        
+         
     end
 end
 
