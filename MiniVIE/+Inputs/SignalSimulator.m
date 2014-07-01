@@ -181,10 +181,41 @@ classdef SignalSimulator < Inputs.SignalInput
             
             obj.hg.hTxtCurrentPattern = uicontrol(obj.hg.hFig,...
                 'Style','text',...
+                'FontSize',10,...
                 'String','Current Pattern: ',...
                 'Position', [20    20    120    20]);
             
             set(hFig,'Visible','on');
+            drawnow
+            
+            % Get the underlying Java reference
+            warning('off','MATLAB:hg:PossibleDeprecatedJavaSetHGProperty');
+            %warning off MATLAB:HandleGraphics:ObsoletedProperty:JavaFrame
+            jFig = get(hFig, 'JavaFrame');
+            jAxis = jFig.getAxisComponent;
+
+            % Set the focus event callback
+            set(jAxis,'FocusGainedCallback',@(src,evt)focusGained);
+            set(jAxis,'FocusLostCallback',@(src,evt)focusLost);
+            
+            focusGained();
+            
+            function focusGained
+                % Callback when window is active, indicating keys will
+                % change the current pattern
+                c = [0.4 0.8 0];
+                set(hFig,'Color',c);
+                set(obj.hg.hTxtCurrentPattern,'BackgroundColor',c);
+                drawnow;
+            end
+            function focusLost
+                % Callback when window loses focus, indicating keys will
+                % not be accepted
+                c = [0.9 0.1 0.1];
+                set(hFig,'Color',c);
+                set(obj.hg.hTxtCurrentPattern,'BackgroundColor',c);
+                drawnow;
+            end
             
             function key_up(evt)
                 % Remove the released key
@@ -195,7 +226,7 @@ classdef SignalSimulator < Inputs.SignalInput
                 if isempty(cellCurrentKeys)
                     % No keys remain down
                     setPattern(obj,0);
-                    set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 0');
+                    set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 0 ');
                 else
                     % Some keys still remain down
                     return
@@ -208,49 +239,49 @@ classdef SignalSimulator < Inputs.SignalInput
                 switch evt.Key
                     case 'a'
                         setPattern(obj,1);
-                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern 1');
+                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 1 ');
                     case 's'
                         setPattern(obj,2);
-                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern 2');
+                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 2 ');
                     case 'd'
                         setPattern(obj,3);
-                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern 3');
+                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 3 ');
                     case 'f'
                         setPattern(obj,4);
-                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern 4');
+                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 4 ');
                     case 'q'
                         setPattern(obj,5);
-                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern 5');
+                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 5 ');
                     case 'w'
                         setPattern(obj,6);
-                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern 6');
+                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 6 ');
                     case 'e'
                         setPattern(obj,7);
-                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern 7');
+                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 7 ');
                     case 'r'
                         setPattern(obj,8);
-                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern 8');
+                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 8 ');
                     case 'z'
                         setPattern(obj,9);
-                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern 9');
+                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 9 ');
                     case 'x'
                         setPattern(obj,10);
-                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern 10');
+                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 10');
                     case 'c'
                         setPattern(obj,11);
-                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern 11');
+                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 11');
                     case 'v'
                         setPattern(obj,12);
-                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern 12');
+                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 12');
                     case 'g'
                         setPattern(obj,13);
-                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern 13');
+                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 13');
                     case 'h'
                         setPattern(obj,14);
-                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern 14');
+                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 14');
                     case 'space'
                         setPattern(obj,0);
-                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern 0');
+                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 0');
                 end
             
                 cellCurrentKeys = unique([cellCurrentKeys {evt.Key}]);
