@@ -35,19 +35,19 @@ classdef ArmStateModel < handle
             obj.structState = repmat(obj.defaultState,8,1);
             
             obj.structState(1).Name = 'Shoulder FE';
-            obj.structState(1).Max = 0 * pi / 180;
-            obj.structState(1).Min = 0 * pi / 180;
+            obj.structState(1).Max = -30 * pi / 180;
+            obj.structState(1).Min = 90 * pi / 180;
 
             obj.structState(2).Name = 'Shoulder AA';
             obj.structState(2).Max = 15 * pi / 180;
             obj.structState(2).Min = -90 * pi / 180;
             obj.structState(3).Name = 'Shoulder ROT';
-            obj.structState(3).Max = 0 * pi / 180;
-            obj.structState(3).Min = 0 * pi / 180;
+            obj.structState(3).Max = -35 * pi / 180;
+            obj.structState(3).Min = 35 * pi / 180;
 
             obj.structState(4).Name = 'Elbow';
-            obj.structState(4).Max = 90 * pi / 180;
-            obj.structState(4).Min = 90 * pi / 180;
+            obj.structState(4).Max = 135 * pi / 180;
+            obj.structState(4).Min = 0 * pi / 180;
 
             obj.structState(5).Name = 'Wrist ROT';
             obj.structState(5).Max = +90 * pi / 180;

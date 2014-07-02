@@ -23,12 +23,26 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
                 error('%s not initialized',mfilename);
             end
             
+            % 07/02/14 These two lines make sure that the units being used to
+            % establish position are pixels and requests data about the
+            % size of the screen, saving that data as the variable
+            % "screensize"
+            % A. Strachan
+            
+           set(0, 'Units', 'pixels');
+           screensize = get(0, 'ScreenSize');
+           
+           
+            
             % Create the waitbar 'gui'
             h = waitbar(0,'','Name',mfilename,...
                 'CreateCancelBtn',...
                 'setappdata(gcbf,''canceling'',1)');
+            set(h,'Position',[ screensize(4)/20 screensize(4)*3/5 270 100]);
             hPatch = findobj(h,'type','patch');
             setappdata(h,'canceling',0);
+            
+           
             
             % Ensure data is ready
             ok = wait_for_device(h,obj.SignalSource,obj.SignalClassifier.NumSamplesPerWindow);
@@ -45,13 +59,15 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
             
             if obj.EnablePictures
                 %f = figure(99);
-                f = UiTools.create_figure('Training...');
+                f = UiTools.create_figure('Training Window');
                 a = axes('Parent',f);
+                set(f,'Position', [screensize(4)/20 screensize(4)*3/12 600 400]);
                 
                 % picture path
                 pathstr = fileparts(which('PatternRecognition.SimpleTrainer'));
                 pathImages = fullfile(pathstr,'Images');
             end
+            
             
             
             for i = obj.StartupWaitTimeSeconds:-1:1

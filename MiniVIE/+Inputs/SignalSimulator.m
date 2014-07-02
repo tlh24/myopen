@@ -190,7 +190,7 @@ classdef SignalSimulator < Inputs.SignalInput
             
             % Get the underlying Java reference
             warning('off','MATLAB:hg:PossibleDeprecatedJavaSetHGProperty');
-            %warning off MATLAB:HandleGraphics:ObsoletedProperty:JavaFrame
+            warning('off','MATLAB:HandleGraphics:ObsoletedProperty:JavaFrame');
             jFig = get(hFig, 'JavaFrame');
             jAxis = jFig.getAxisComponent;
 
