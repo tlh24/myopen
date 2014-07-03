@@ -519,7 +519,16 @@ classdef TrainingData < handle
             
             % Restore class names
             if isfield(S,'classNames')
-                obj.ClassNames = S.classNames;
+                if ~isempty(S.classNames)
+                    obj.ClassNames = S.classNames;
+                else
+                    classes = unique(obj.ClassLabelId);
+                    obj.ClassNames = cell(1,length(classes));
+                    for i = 1:length(classes)
+                        obj.ClassNames{i} = sprintf('Unknown Class #%d',classes(i));
+                    end
+                end
+
             end
             if isfield(S,'activeChannels')
                 obj.ActiveChannels = S.activeChannels;
