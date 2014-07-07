@@ -117,6 +117,17 @@ classdef (Sealed) NfuUdp < handle
             
             if obj.IsInitialized
                 fprintf('[%s] NFU Comms already initialized\n',mfilename);
+                
+                % 7/7/2014 RSA: Resend limb and stream enable commands on initialization
+                % this is applicable if the limb is reset / power cycled to allow matlab 
+                % to reestablish communications
+                fprintf('[%s] Enabling NFU Percepts Data Stream\n',mfilename);
+                obj.enableStreaming(5);
+                pause(0.1);
+                obj.update();
+                pause(0.1);
+                obj.enableRunMode;
+                
                 return
             end
             
@@ -573,7 +584,20 @@ classdef (Sealed) NfuUdp < handle
     end
     methods (Static)
         function singleObj = getInstance(cmd)
+            % singleObj = MPL.NfuUdp.getInstance
+            %
+            %   Returns handle to the singleton NfuUdp interface Object.
+            %   First call calls object constructor.  Subsequent calls will
+            %   return only a handle to the current NFU UDP interface.
+            %
+            %       % Delete singleton object
+            %       singleObj = MPL.NfuUdp.getInstance(-1)
+            
             persistent localObj
+            
+            % Default return argument
+            singleObj = [];
+            
             if nargin < 1
                 cmd = 0;
             end
