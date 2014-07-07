@@ -397,7 +397,7 @@ classdef MiniVIE < Common.MiniVieObj
                     % Ref Hargove 2014 comparison of real-time controlability
                     Fs = h.SampleFrequency;                     % 1000 Hz
                     h.addfilter(Inputs.HighPass(20,3,Fs));      % 20Hz 3rd order butter
-                    %h.addfilter(Inputs.MinLimitFilter(0.2));    % min limit
+                    h.addfilter(Inputs.MinLimitFilter(0.2));    % min limit
                     h.addfilter(Inputs.ConstraintFilter(-5,5)); % range limit
                     
                     % EMG 250 ms @ 20Hz
