@@ -2,9 +2,9 @@ function [ obj ] = RunMpl
 
 p.guiName = 'MiniVIE-NFU-MPL';
 % p.filePrefix = 'WR_TR02_L_';
-% p.filePrefix = 'JH_TH01_L_';
+p.filePrefix = 'JH_TH01_L_';
 % p.filePrefix = 'MPL_01_WD_R_';
-p.filePrefix = 'JH05_SD_L_';
+% p.filePrefix = 'JH05_SD_L_';
 
 UiTools.save_temp_file('defaultFilePrefix',p.filePrefix)
 
@@ -24,10 +24,10 @@ p.Scenario.JoystickId = 0;
 p.Scenario.UdpArmTrackingPort = [];   % for motion capture
 
 % Haptics need to be configured here, and in 
-p.Scenario.EnableFeedback = 0;
-% p.Scenario.EnableFeedback = 1;
-p.Scenario.TactorIds = [5 6 7];
-% p.Scenario.TactorIds = [3 4];  % JH_TH_01
+% p.Scenario.EnableFeedback = 0;
+p.Scenario.EnableFeedback = 1;
+% p.Scenario.TactorIds = [5 6 7];
+p.Scenario.TactorIds = [3 4];  % JH_TH_01
 p.Scenario.enableMicroStrain = 0;
 
 wait_for_ping_response(p.Scenario.UdpAddress);

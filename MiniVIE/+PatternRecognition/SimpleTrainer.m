@@ -28,11 +28,10 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
             % size of the screen, saving that data as the variable
             % "screensize"
             % A. Strachan
+            set(0, 'Units', 'pixels');
+            screensize = get(0, 'ScreenSize');
             
-           set(0, 'Units', 'pixels');
-           screensize = get(0, 'ScreenSize');
-           
-           
+            
             
             % Create the waitbar 'gui'
             h = waitbar(0,'','Name',mfilename,...
@@ -42,7 +41,7 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
             hPatch = findobj(h,'type','patch');
             setappdata(h,'canceling',0);
             
-           
+            
             
             % Ensure data is ready
             ok = wait_for_device(h,obj.SignalSource,obj.SignalClassifier.NumSamplesPerWindow);
@@ -76,7 +75,7 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
                 pause(1);
             end
             
-           
+            
             
             classNames = obj.SignalClassifier.getClassNames;
             
@@ -239,24 +238,27 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
             
             hSignalSource = Inputs.SignalSimulator;
             hSignalSource.initialize;
+
+            hTrainingData = PatternRecognition.TrainingData;
+
             hSignalClassifier = SignalAnalysis.Lda;
-            hSignalClassifier.initialize;
-            
+            hSignalClassifier.initialize(hTrainingData);
+
             obj = PatternRecognition.SimpleTrainer();
-            obj.initialize(hSignalSource,hSignalClassifier);
+            obj.initialize(hSignalSource,hSignalClassifier,hTrainingData);
             obj.collectdata();
             
         end
-        function test 
-            disp('My Test');
+        function Test
+            % Usage: PatternRecognition.SimpleTrainer.Test()
             % Test script for debugging Simple Trainer function
             % Allyson Strachan 7/1/14
-
+            
             % Retrieve Simple Trainer
-             h = PatternRecognition.SimpleTrainer;
+            h = PatternRecognition.SimpleTrainer;
             % Set Pictures as true before beginning
             h.EnablePictures = 1;
-
+            
             %Collects three requirements for running Simple Trainer (Signal Source,
             %Signal Classifier, and Training Data)
             SignalSource = Inputs.SignalSimulator();
@@ -270,13 +272,11 @@ classdef SimpleTrainer < PatternRecognition.TrainingInterface
             % The established class names are random for testing and can be changed
             SignalClassifier = SignalAnalysis.Lda();
             SignalClassifier.initialize(TrainingData);
-
+            
             % Initializes program to test for bugs
             h.initialize(SignalSource, SignalClassifier, TrainingData);
             h.collectdata;
         end
-        
-         
     end
 end
 
