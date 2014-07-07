@@ -1,6 +1,7 @@
 function mpltest
 % Test Script to test MPL functions with NFU
-
+strRouterIp = '192.168.1.1';
+strNfuIp = '192.168.1.111';
 
 fprintf('\n\n\n\n\n');
 fprintf('******************************\n');
@@ -10,9 +11,9 @@ fprintf('Which Test?\n');
 
 % cellTests = { testIdentifier, test description }
 cellTests = {
-    'Ping01',       '[1] Ping router using OS [ping 192.168.1.1 -t]'
-    'Ping02',       '[2] Ping limb system using OS [ping 192.168.1.111 -t]'     
-    'Telnet01',     '[3] Open telnet session (pkgmgr /iu:"TelnetClient") [telnet 192.168.1.111]'
+    'Ping01',       sprintf('[1] Ping router using OS [ping %s -t]',strRouterIp)
+    'Ping02',       sprintf('[2] Ping limb system using OS [ping %s -t]',strNfuIp)
+    'Telnet01',     sprintf('[3] Open telnet session (pkgmgr /iu:"TelnetClient") [telnet %s]',strNfuIp)
     'Pnet01',       '[4] basic pnet tcpsocket and tcplisten on 6200'
     'NfuStream01',  '[5] NFU Streaming [Inputs.NfuInput]'
     'MplWrist01',   '[6] Test MPL wrist range of motion [MPL.NfuUdp.getInstance MPL.MudCommandEncoder]'
@@ -43,13 +44,18 @@ end
 testId = cellTests{response,1};
 switch testId
     case 'Ping01'
-        !ping 192.168.1.1 -t
+        cmd = sprintf('ping %s -t',strRouterIp);
+        disp(cmd);
+        system(cmd);
     case 'Ping02'
-        !ping 192.168.1.111 -t
+        cmd = sprintf('ping %s -t',strNfuIp);
+        disp(cmd);
+        system(cmd);
     case 'Telnet01'
-        !telnet 192.168.1.111
+        cmd = sprintf('telnet %s',strNfuIp);
+        disp(cmd);
+        system(cmd);
     case 'NfuStream01'
-        
         h = Inputs.NfuInput();
         
         fprintf('Adding Filters\n');
