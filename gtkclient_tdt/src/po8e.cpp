@@ -2,6 +2,11 @@
 #include <math.h>
 #include <pthread.h>
 #include "PO8e.h"
+
+#define SRATE_HZ	(24414.0625)
+#define SRATE_KHZ	(24.4140625)
+#define NCHAN		96
+
 bool			g_die = false;
 long double g_startTime = 0.0;
 long double gettime()  //in seconds!
@@ -13,11 +18,15 @@ long double gettime()  //in seconds!
 	return ret - g_startTime;
 }
 
+// service the po8e buffer
+// 96 channels of spike/lfp, followed by time (ticks) split across two chans
+// if there is no po8e card, simulate data with sines
+
 void *po8_thread(void *)
 {
 	PO8e *card = NULL;
 	bool simulate = false;
-	int bufmax = 16384;	// 2^14 > 10000
+	int bufmax = 10000;	// must be >= 10000
 
 	while (!g_die) {
 		int totalcards = PO8e::cardCount();
@@ -57,13 +66,14 @@ void *po8_thread(void *)
 		double		sinSamples = 0.0; // for driving the sinusoids; resets every 4e4.
 		long long bytes = 0;
 		unsigned int frame = 0;
-		unsigned int nchan = 96;
+		unsigned int nchan = NCHAN;
 		unsigned int bps = 2; //bytes/sample
 		if (!simulate) {
 			nchan = card->numChannels();
 			bps = card->dataSampleSize();
+			printf("  %d channels @ %d bytes/sample\n", nchan, bps);
 		}
-		short *temp = new short[bufmax*nchan];  // >10000 samples * 2 bytes/sample * nChannels
+		short *temp = new short[bufmax*(nchan+2)];  // 10000 samples * 2 bytes/sample * (nChannels+time)
 		short *temptemp = new short[bufmax];
 		while ((simulate || conn_cards > 0) && !g_die) {
 			if (!card->waitForDataReady()) { // waits ~ 1200 hours ;-)
@@ -78,7 +88,6 @@ void *po8_thread(void *)
 				card = NULL;
 				break;
 			}
-			int waitCount = 0;
 			bool stopped = false;
 			int numSamples = 0;
 			if (!simulate) {
@@ -93,16 +102,21 @@ void *po8_thread(void *)
 					break;
 				}
 				if (numSamples > 0) {
+					if (numSamples > bufmax) {
+						printf("samplesReady() returned too many samples for buffer (buffer wrap?): %d\n",
+						       numSamples);
+						numSamples = bufmax;
+					}
 					card->readBlock(temp, numSamples);
 					card->flushBufferedData(numSamples);
 					totalSamples += numSamples;
 				}
 			} else { //simulate!
 				long double now = gettime();
-				numSamples = (int)((now - starttime)*24414.0625 - totalSamples);
+				numSamples = (int)((now - starttime)*SRATE_HZ - totalSamples);
 				if (numSamples >= 250) {
 					numSamples = 250;
-					totalSamples = (now - starttime)*24414.0625;
+					totalSamples = (now - starttime)*SRATE_HZ;
 				}
 				float scale = sin(sinSamples/4e4);
 				for (int i=0; i<numSamples; i++) {
@@ -117,8 +131,8 @@ void *po8_thread(void *)
 				//last part of the buffer is just TDT ticks (most recent -> least delay?)
 				for (int i=0; i<numSamples; i++) {
 					int r = (int)(sinSamples +i);
-					temp[96*numSamples +i] = r & 0xffff;
-					temp[97*numSamples +i] = (r>>16) & 0xffff;
+					temp[NCHAN*numSamples     +i] = r       & 0xffff;
+					temp[(NCHAN+1)*numSamples +i] = (r>>16) & 0xffff;
 				}
 				totalSamples += numSamples;
 				sinSamples += numSamples;
@@ -131,9 +145,6 @@ void *po8_thread(void *)
 					fprintf(stderr, "%d samples at %d Bps of %d chan: %Lf MB/sec\n", numSamples, bps, nchan,
 					        ((long double)bytes) / ((gettime() - starttime)*(1024.0*1024.0)));
 				}
-			} else {
-				//printf("wait count %d\n", waitCount);
-				waitCount++;
 			}
 			frame++;
 		}

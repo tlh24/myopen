@@ -1055,7 +1055,7 @@ void *po8_thread(void *)
 			bps = card->dataSampleSize();
 			printf("  %d channels @ %d bytes/sample\n", nchan, bps);
 		}
-		short *temp = new short[bufmax*(nchan+4)];  // 2^14 samples * 2 bytes/sample * (nChannels+time+stim)
+		short *temp = new short[bufmax*(nchan)];  // 2^14 samples * 2 bytes/sample * (nChannels+time+stim+stimclock)
 		short *temptemp = new short[bufmax];
 		float *tempfloat = new float[bufmax*NCHAN];
 
