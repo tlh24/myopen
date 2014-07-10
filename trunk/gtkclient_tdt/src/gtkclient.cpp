@@ -208,6 +208,7 @@ void saveState()
 	}
 	for (int i=0; i<4; i++)
 		ms.setValue(i, "channel", g_channel[i]);
+	ms.setValue(0,"auto_threshold", g_autoThreshold);
 	ms.save();
 }
 void destroy(int)
@@ -1924,11 +1925,29 @@ static void mk_button(const char *label, GtkWidget *container,
 static void openSaveSpikesFile(GtkWidget *, gpointer parent_window)
 {
 	char buf[256];
-	string f;
+	string d;
 	if (getcwd(buf, sizeof(buf)))
-		f = buf;
+		d = buf;
 	else
-		f.assign("");
+		d.assign("");
+
+	stringstream s;
+	string f;
+	string fn;
+	int count = 0;
+	int res = -1;
+
+	do {
+		count++;
+		s.str("");
+		s << "spikes_" << count << ".dat";
+		f = s.str();
+		s.str("");	
+		s << d << "/" << f;
+		fn = s.str();
+		res = access(fn.c_str(), F_OK);
+	}
+	while (!res);	// returns zero on success
 
 	GtkWidget *dialog;
 	dialog = gtk_file_chooser_dialog_new ("Save Spikes File",
@@ -1939,8 +1958,8 @@ static void openSaveSpikesFile(GtkWidget *, gpointer parent_window)
 	                                      NULL);
 	gtk_file_chooser_set_do_overwrite_confirmation(
 	        GTK_FILE_CHOOSER (dialog), TRUE);
-	gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog),f.c_str());
-	gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (dialog),"spikes_1.dat");
+	gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog),d.c_str());
+	gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (dialog),f.c_str());
 	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
 		char *filename;
 		filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
@@ -1952,11 +1971,29 @@ static void openSaveSpikesFile(GtkWidget *, gpointer parent_window)
 static void openSaveICMSFile(GtkWidget *, gpointer parent_window)
 {
 	char buf[256];
-	string f;
+	string d;
 	if (getcwd(buf, sizeof(buf)))
-		f = buf;
+		d = buf;
 	else
-		f.assign("");
+		d.assign("");
+
+	stringstream s;
+	string f;
+	string fn;
+	int count = 0;
+	int res = -1;
+
+	do {
+		count++;
+		s.str("");
+		s << "icms_" << count << ".pbd";
+		f = s.str();
+		s.str("");	
+		s << d << "/" << f;
+		fn = s.str();
+		res = access(fn.c_str(), F_OK);
+	}
+	while (!res);	// returns zero on success
 
 	GtkWidget *dialog;
 	dialog = gtk_file_chooser_dialog_new ("Save ICMS File",
@@ -1967,8 +2004,8 @@ static void openSaveICMSFile(GtkWidget *, gpointer parent_window)
 	                                      NULL);
 	gtk_file_chooser_set_do_overwrite_confirmation(
 	        GTK_FILE_CHOOSER (dialog), TRUE);
-	gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog),f.c_str());
-	gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (dialog),"icms_1.pbd");
+	gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog),d.c_str());
+	gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (dialog),f.c_str());
 	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
 		char *filename;
 		filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
@@ -1980,11 +2017,28 @@ static void openSaveICMSFile(GtkWidget *, gpointer parent_window)
 static void openSaveAnalogFile(GtkWidget *, gpointer parent_window)
 {
 	char buf[256];
-	string f;
+	string d;
 	if (getcwd(buf, sizeof(buf)))
-		f = buf;
+		d = buf;
 	else
-		f.assign("");
+		d.assign("");
+
+	stringstream s;
+	string f, fn;
+	int count = 0;
+	int res = -1;
+
+	do {
+		count++;
+		s.str("");
+		s << "analog_" << count << ".pbd";
+		f = s.str();
+		s.str("");	
+		s << d << "/" << f;
+		fn = s.str();
+		res = access(fn.c_str(), F_OK);
+	}
+	while (!res);	// returns zero on success
 
 	GtkWidget *dialog;
 	dialog = gtk_file_chooser_dialog_new ("Save Analog File",
@@ -1995,8 +2049,8 @@ static void openSaveAnalogFile(GtkWidget *, gpointer parent_window)
 	                                      NULL);
 	gtk_file_chooser_set_do_overwrite_confirmation(
 	        GTK_FILE_CHOOSER (dialog), TRUE);
-	gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog),f.c_str());
-	gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (dialog),"analog_1.pbd");
+	gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog),d.c_str());
+	gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (dialog),f.c_str());
 	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
 		char *filename;
 		filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
@@ -2148,6 +2202,11 @@ int main(int argc, char **argv)
 	}
 	for (int i=0; i<STIMCHAN; i++)
 		g_artifact[i] = new Artifact(i, &ms);
+
+	// pronbably the most ideal would be to create struct methods for matstor
+	// and store general preferences in a struct.
+	// until then, store the values as namespace polluting scalars
+	g_autoThreshold = ms.getValue(0, "auto_threshold", -3.5);
 
 	//g_dropped = 0;
 
