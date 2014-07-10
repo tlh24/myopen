@@ -139,11 +139,19 @@ void *po8_thread(void *)
 				if (sinSamples > 4e4*2*3.1415926) sinSamples -= 4e4*2*3.1415926;
 				usleep(70);
 			}
-			if (numSamples > 0 && numSamples < bufmax) {
+			printf("frame: %d\t", frame);
+			if (numSamples > 0 && numSamples <= bufmax) {
 				bytes += numSamples * nchan * bps;
 				if (frame %200 == 0) { //need to move this to the UI.
-					fprintf(stderr, "%d samples at %d Bps of %d chan: %Lf MB/sec\n", numSamples, bps, nchan,
-					        ((long double)bytes) / ((gettime() - starttime)*(1024.0*1024.0)));
+					int ticks = (unsigned short)(temp[NCHAN*numSamples + numSamples -1]);
+					ticks += (unsigned short)(temp[(NCHAN+1)*numSamples + numSamples -1]) << 16;
+					fprintf(stderr, "%d samples at %d Bps of %d chan: %Lf MB/sec | %d ticks\n", 
+						numSamples,
+						bps,
+						nchan,
+					    ((long double)bytes) / ((gettime() - starttime)*(1024.0*1024.0)),
+					    ticks
+					    );
 				}
 			}
 			frame++;
