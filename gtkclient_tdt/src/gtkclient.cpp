@@ -2643,14 +2643,17 @@ int main(int argc, char **argv)
 	// http://forums.fedoraforum.org/archive/index.php/t-242963.html
 	GTK_WIDGET_SET_FLAGS(da1, GTK_CAN_FOCUS );
 
-	string asciiart = "";
-	asciiart += "       _   _        _ _            _\n";
-	asciiart += "  __ _| |_| | _____| (_) ___ _ __ | |_\n";
+	string asciiart = "\033[1m";
+	asciiart += "\n";
+	asciiart += "           _        _ \033[31m_\033[0m\033[1m\n";
+	asciiart += "       _  | |      | \033[31m(_)\033[0m\033[1m           _ \n";
+	asciiart += "  __ _| |_| | _____| |_  ___ _ __ | |_\n";
 	asciiart += " / _` | __| |/ / __| | |/ _ \\ '_ \\| __|\n";
 	asciiart += "| (_| | |_|   < (__| | |  __/ | | | |_\n";
 	asciiart += " \\__, |\\__|_|\\_\\___|_|_|\\___|_| |_|\\__|\n";
 	asciiart += " |___/      ";
 	asciiart += titlestr;
+	asciiart += "\033[0m";
 	printf("%s\n\n",asciiart.c_str());
 
 	printf("artifact buffer length: %d samples\n",ARTBUF);
