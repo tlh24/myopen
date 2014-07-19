@@ -2176,12 +2176,12 @@ int main(int argc, char **argv)
 	GOOGLE_PROTOBUF_VERIFY_VERSION;
 
 	for (int i=0; i<NCHAN; i++) {
-		g_fr[i][0].set_bin_params(20, 1.0);	// nlags, duration (sec)
-		g_fr[i][1].set_bin_params(20, 1.0);	// nlags, duration (sec)
+		g_fr[i][0].set_bin_params(15, 1.0);	// nlags, duration (sec)
+		g_fr[i][1].set_bin_params(15, 1.0);	// nlags, duration (sec)
 	}
 
 	FiringRate test_fr;
-	test_fr.set_bin_params(20,1.0);
+	test_fr.set_bin_params(15,1.0);
 	test_fr.get_bins_test();
 
 	if (argc > 1)
