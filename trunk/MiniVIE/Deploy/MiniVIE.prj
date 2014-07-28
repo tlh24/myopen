@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <deployment-project plugin="plugin.ezdeploy" plugin-version="1.0">
-  <configuration target="target.ezdeploy.standalone" target-name="MATLAB Compiler for Standalone Applications" name="MiniVIE" location="C:\svn\clean\myopen\MiniVIE\Deploy" file="C:\svn\clean\myopen\MiniVIE\Deploy\MiniVIE.prj" preferred-package-type="package.type.exe" build-checksum="1947360733" preferred-package-location="C:\svn\clean\myopen\MiniVIE\Deploy\MiniVIE\for_redistribution">
+  <configuration target="target.ezdeploy.standalone" target-name="MATLAB Compiler for Standalone Applications" name="MiniVIE" location="C:\svn\clean\myopen\MiniVIE\Deploy" file="C:\svn\clean\myopen\MiniVIE\Deploy\MiniVIE.prj" preferred-package-type="package.type.exe" build-checksum="2729678938" preferred-package-location="C:\svn\clean\myopen\MiniVIE\Deploy\MiniVIE\for_redistribution">
     <param.appname>MiniVIE</param.appname>
     <param.authnamewatermark>Robert Armiger</param.authnamewatermark>
     <param.email>robert.armiger@jhuapl.edu</param.email>
@@ -8,9 +8,9 @@
     <param.icon />
     <param.icons />
     <param.summary />
-    <param.description />
+    <param.description>7/28/2014: Recompiled under MATLAB R2013b 64-bit</param.description>
     <param.screenshot />
-    <param.version>1.1</param.version>
+    <param.version>1.2</param.version>
     <param.namespace>MiniVIE</param.namespace>
     <param.guid />
     <param.installpath.string>MiniVIE</param.installpath.string>
@@ -53,7 +53,6 @@
       <param.icon />
       <param.icons />
       <param.summary />
-      <param.description />
       <param.screenshot />
       <param.namespace />
       <param.guid />
@@ -113,6 +112,7 @@
       <file>C:\svn\clean\myopen\MiniVIE\+GUIs\widgetSlider.m</file>
       <file>C:\svn\clean\myopen\MiniVIE\+GUIs\widgetStripChart.m</file>
       <file>C:\svn\clean\myopen\MiniVIE\+Inputs\@EmgSimulator\EmgSimulator.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Inputs\ConstraintFilter.m</file>
       <file>C:\svn\clean\myopen\MiniVIE\+Inputs\CpcHeadstage.m</file>
       <file>C:\svn\clean\myopen\MiniVIE\+Inputs\CpchSerial.m</file>
       <file>C:\svn\clean\myopen\MiniVIE\+Inputs\DaqHwDevice.m</file>
@@ -120,6 +120,7 @@
       <file>C:\svn\clean\myopen\MiniVIE\+Inputs\HighPass.m</file>
       <file>C:\svn\clean\myopen\MiniVIE\+Inputs\IntanUdp.m</file>
       <file>C:\svn\clean\myopen\MiniVIE\+Inputs\LowPass.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+Inputs\MinLimitFilter.m</file>
       <file>C:\svn\clean\myopen\MiniVIE\+Inputs\NfuInput.m</file>
       <file>C:\svn\clean\myopen\MiniVIE\+Inputs\Notch.m</file>
       <file>C:\svn\clean\myopen\MiniVIE\+Inputs\SignalInput.m</file>
@@ -183,6 +184,8 @@
       <file>C:\svn\clean\myopen\MiniVIE\+SignalAnalysis\DiscriminantAnalysis.m</file>
       <file>C:\svn\clean\myopen\MiniVIE\+SignalAnalysis\Lda.m</file>
       <file>C:\svn\clean\myopen\MiniVIE\+SignalAnalysis\private\eml_max.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+SignalAnalysis\private\svmpredict.mexw64</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+SignalAnalysis\private\svmtrain.mexw64</file>
       <file>C:\svn\clean\myopen\MiniVIE\+SignalAnalysis\Svm.m</file>
       <file>C:\svn\clean\myopen\MiniVIE\Utilities\action_bus_definition.m</file>
       <file>C:\svn\clean\myopen\MiniVIE\Utilities\action_bus_enum.m</file>
