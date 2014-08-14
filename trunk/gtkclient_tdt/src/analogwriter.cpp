@@ -60,7 +60,8 @@ bool AnalogWriter::add(Analog *o)
 	if (!m_enabled)
 		return true;
 
-	long w = m_w; // atomic;
+	std::atomic<long> w; 
+	w = m_w; 
 
 	unsigned int magic = ANALOG_MAGIC;
 	unsigned int sz = o->ByteSize();
@@ -88,7 +89,8 @@ bool AnalogWriter::write()   // call from one and only one thread
 	if (!m_enabled)
 		return true;
 
-	long w = m_w;   // atomic
+	std::atomic<long> w; 
+	w = m_w;   
 
 	while (m_r<w) {
 		m_os.write(&(m_buf[m_r & ANALOG_MASK]), 1);
