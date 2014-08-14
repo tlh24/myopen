@@ -1942,12 +1942,11 @@ static void openSaveSpikesFile(GtkWidget *, gpointer parent_window)
 		s.str("");
 		s << "spikes_" << count << ".dat";
 		f = s.str();
-		s.str("");	
+		s.str("");
 		s << d << "/" << f;
 		fn = s.str();
 		res = access(fn.c_str(), F_OK);
-	}
-	while (!res);	// returns zero on success
+	} while (!res);	// returns zero on success
 
 	GtkWidget *dialog;
 	dialog = gtk_file_chooser_dialog_new ("Save Spikes File",
@@ -1988,12 +1987,11 @@ static void openSaveICMSFile(GtkWidget *, gpointer parent_window)
 		s.str("");
 		s << "icms_" << count << ".pbd";
 		f = s.str();
-		s.str("");	
+		s.str("");
 		s << d << "/" << f;
 		fn = s.str();
 		res = access(fn.c_str(), F_OK);
-	}
-	while (!res);	// returns zero on success
+	} while (!res);	// returns zero on success
 
 	GtkWidget *dialog;
 	dialog = gtk_file_chooser_dialog_new ("Save ICMS File",
@@ -2033,12 +2031,11 @@ static void openSaveAnalogFile(GtkWidget *, gpointer parent_window)
 		s.str("");
 		s << "analog_" << count << ".pbd";
 		f = s.str();
-		s.str("");	
+		s.str("");
 		s << d << "/" << f;
 		fn = s.str();
 		res = access(fn.c_str(), F_OK);
-	}
-	while (!res);	// returns zero on success
+	} while (!res);	// returns zero on success
 
 	GtkWidget *dialog;
 	dialog = gtk_file_chooser_dialog_new ("Save Analog File",
