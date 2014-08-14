@@ -76,8 +76,9 @@ int main(int argn, char **argc)
 			exit(0);
 		}
 		if (magic != ANALOG_MAGIC) {
-			fprintf(stderr, "packet %ld: magic value, %X, does not match expected value, %X.\n", packets+1, magic, ANALOG_MAGIC);
-			exit(0);
+			fprintf(stderr, "packet %ld: magic value, %X, does not match expected value, %X. aborting here.\n",
+			        packets+1, magic, ANALOG_MAGIC);
+			break;
 		}
 
 		// read size
@@ -96,6 +97,8 @@ int main(int argn, char **argc)
 		}
 
 		// read protobuf packet
+		// max int32 is  2,147,483,647
+		// max uint32 is 4,294,967,295
 		char buf[131072]; // xxx
 		in.read(buf, sz);
 		if (in.fail() || in.eof() || in.gcount() != sz) {
@@ -137,7 +140,7 @@ int main(int argn, char **argc)
 
 		for (int i=0; i<a.tick_size(); i++)
 			if (!ac->add_sample(a.ts(i), a.tick(i), a.sample(i)))
-				fprintf(stderr, "Error adding sample for analog chan %u (packet %lu)\n", ch, packets);
+				fprintf(stderr, "Error adding sample for analog chan %u (packet %lu)\n", ch, packets+1);
 
 		packets++;
 		//printf("parsed %ld packets\n", packets);
@@ -149,7 +152,7 @@ int main(int argn, char **argc)
 
 
 	printf("Parsing complete. %lu total packets from %lu analog chans.\n",
-	       packets, analchans.size());
+	       packets+1, analchans.size());
 
 	// now write each stim chan
 	map<unsigned int, AnalogChan *>::iterator it;
