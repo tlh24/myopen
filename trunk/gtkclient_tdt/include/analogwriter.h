@@ -19,8 +19,8 @@ class AnalogWriter
 {
 protected:
 	char m_buf[ANALOG_BUF_SIZE];      // the protobuf(fer)
-	std::atomic<long> m_w;       // atomic write pointer
-	std::atomic<long> m_r;       // atomic read pointer
+	std::atomic<size_t> m_w;       // atomic write pointer
+	std::atomic<size_t> m_r;       // atomic read pointer
 	std::atomic<bool> m_enabled; // are we writing?
 	std::string m_fn; // the file name
 	ofstream m_os; // object for writing to file
