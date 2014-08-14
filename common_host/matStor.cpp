@@ -95,6 +95,26 @@ MatStor::MatStor(const char* fname){
 							r[a] = *w++; 
 						}
 						m_datd1.insert(pair<string,vector<double> >(nam,r));
+					}
+					else if (var->class_type == MAT_C_STRUCT) {
+						fieldmap fm;
+						int n = Mat_VarGetNumberOfFields(var); 	
+						char * const * f = Mat_VarGetStructFieldnames(var);
+						for (int i=0; i<n; i++) {
+							matvar_t * v = Mat_VarGetStructFieldByName(var,f[i],0);
+							if (v->rank == 2 && v->class_type == MAT_C_SINGLE) {
+								string fs = string(v->name);
+								vector<float> r(v->dims[0]);
+								float* w = (float*)v->data;
+								for (MATIOTYP a=0; a<v->dims[0]; a++) {
+									r[a] = *w++;
+								}
+								fm.insert(pair<string,vector<float>>(fs,r));
+							}
+						}
+						if (!fm.empty()) {
+							m_struct1.insert(pair<string,fieldmap>(nam,fm));
+						}
 					} else {
 						cout << "unknown data class for matlab variable " << nam << endl; 
 					}
@@ -178,7 +198,27 @@ void MatStor::save(){
 		Mat_VarWrite(matfp, var, MAT_COMPRESSION_NONE); 
 		Mat_VarFree(var); 
 	}
-	Mat_Close(matfp); 
+	for (map<string, fieldmap>::iterator it = m_struct1.begin(); it != m_struct1.end(); it++) {
+		string nam = (*it).first;
+		fieldmap *f = &((*it).second);
+		vector<const char *> fields;
+		for (fieldmap::iterator it2 = f->begin(); it2 != f->end(); it2++) {
+			fields.push_back((*it2).first.c_str());
+		}
+		MATIOTYP dims[2] = {1,1};
+		matvar_t * var = Mat_VarCreateStruct(nam.c_str(), 2, dims, &fields[0], fields.size());
+		for (fieldmap::iterator it2 = f->begin(); it2 != f->end(); it2++) {
+			string fieldnam = (*it2).first;
+			vector<float> dat = (*it2).second;
+			dims[0] = (size_t)dat.size();
+			matvar_t* field = Mat_VarCreate(NULL,MAT_C_SINGLE,MAT_T_SINGLE,
+				2, dims, dat.data(), 0);
+			Mat_VarSetStructFieldByName(var, fieldnam.c_str(), 0, field);
+		}
+		Mat_VarWrite(matfp, var, MAT_COMPRESSION_NONE);
+		Mat_VarFree(var);
+	}
+	Mat_Close(matfp);
 }
 void MatStor::setValue(int ch, const char* name, float val){
 	map<string, vector<float> >::iterator it; 
@@ -277,6 +317,33 @@ void MatStor::setDouble3(int ch, int un, const char* name, double* val, int siz)
 		m_datd3.insert(pair<string,arrayd3>(string(name), r)); 
 	}
 }
+void MatStor::setStructValue(const char* name, const char* field, size_t idx, float val) {
+	map<string, fieldmap>::iterator it;
+	it = m_struct1.find(string(name));
+	if (it != m_struct1.end()) {
+		fieldmap *f = &((*it).second);
+		fieldmap::iterator it2;
+		it2 = f->find(string(field));
+		if (it2 != f->end()) {
+			vector<float> *r = &((*it2).second);
+			if (idx+1 > r->size())
+				r->resize(idx+1, val);
+			(*r)[idx] = val;
+		}
+		else {
+			vector<float> r(idx+1);
+			r[idx] = val;
+			f->insert(pair<string,vector<float> >(string(field),r));
+		}
+	}
+	else {
+		fieldmap f;
+		vector<float> r(idx+1);
+		r[idx] = val;
+		f.insert(pair<string,vector<float> >(string(field),r));
+		m_struct1.insert(pair<string,fieldmap>(string(name),f));
+	}
+}
 float MatStor::getValue(int ch, const char* name, float def){
 	map<string, vector<float> >::iterator it; 
 	it = m_dat1.find(string(name)); 
@@ -345,6 +412,21 @@ void MatStor::getDouble3(int ch, int un, const char* name, double* val, int siz)
 		}
 	}
 }
+float MatStor::getStructValue(const char * name, const char* field, size_t idx, float def) {
+	map<string, fieldmap>::iterator it;
+	it = m_struct1.find(string(name));
+	if (it != m_struct1.end()) {
+		fieldmap *f = &((*it).second);
+		fieldmap::iterator it2;
+		it2 = f->find(string(field));
+		if (it2 != f->end()) {
+			vector<float> *r = &((*it2).second);
+			if (idx < r->size())
+				return (*it2).second[idx]; 
+		}
+	}
+	return def;
+}
 
 #ifdef TEST
 //compile with: 
@@ -377,6 +459,17 @@ int main(void){
 				}
 			}
 		}
+		// test loading structs
+		float v;
+		v = ms.getStructValue("foo","bar",0,0);
+		if (v != 1) err++;
+		v = ms.getStructValue("foo","bar",1,0);
+		if (v != 2) err++;
+		v = ms.getStructValue("foo","bar",2,0);
+		if (v != 3) err++;
+		v = ms.getStructValue("foo","baz",0,0);
+		if (fabs(v-3.14) > 1e-6) err++;
+
 		cout << err << " errors " << endl; 
 	}
 	//make a 1d vector. 
@@ -402,6 +495,12 @@ int main(void){
 			ms.setValue3(c, b, "d3", r.data(), 10); 
 		}
 	}
+	// test saving struct
+	ms.setStructValue("foo","bar",0,1);
+	ms.setStructValue("foo","bar",1,2);
+	ms.setStructValue("foo","bar",2,3);
+	ms.setStructValue("foo","baz",0,3.14);
+
 	ms.save(); 
 }
 #endif

@@ -18,8 +18,10 @@ class MatStor{
 	typedef boost::multi_array<float, 3> array3; 
 	typedef boost::multi_array<double, 3> arrayd3;
 	std::map<std::string, array3> m_dat3; // 3-d float!
-	std::map<std::string, arrayd3> m_datd3; // 3-d double!	
+	std::map<std::string, arrayd3> m_datd3; // 3-d double!
 
+	typedef std::map<std::string, std::vector<float> > fieldmap;
+	std::map<std::string, fieldmap> m_struct1;
 
 public:
 	MatStor(const char* fname); 
@@ -39,5 +41,8 @@ public:
 	double getDouble(int ch, const char* name, double def);
 	double getDouble2(int ch, int un, const char* name, double def);
 	void getDouble3(int ch, int un, const char* name, double* val, int siz);
+
+	void setStructValue(const char* name, const char* field, size_t idx, float val);
+	float getStructValue(const char * name, const char* field, size_t idx, float def);
 }; 
 #endif
