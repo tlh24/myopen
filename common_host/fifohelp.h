@@ -6,15 +6,16 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-class fifoHelp {
+class fifoHelp
+{
 public:
 	int 	m_fd;
-	char* 	m_fname;
+	char 	*m_fname;
 
-	fifoHelp(const char* fname) {
+	fifoHelp(const char *fname) {
 		m_fd = 0;
 		int sl = strlen(fname);
-		m_fname = (char*)malloc(sl+1);
+		m_fname = (char *)malloc(sl+1);
 		memcpy(m_fname, fname, sl);
 		m_fname[sl] = 0;
 
@@ -29,8 +30,7 @@ public:
 					perror("is not a fifo");
 					return;
 				}
-			}
-			else {
+			} else {
 				printf("%s : ", fname);
 				perror("could not create fifo");
 				return;

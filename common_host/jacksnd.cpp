@@ -25,106 +25,108 @@ using namespace std;
 
 long g_jackSample;
 
-typedef struct{
+typedef struct {
 	float		sine[TABLE_SIZE+1];
-	list<Tone*> tones; 
+	list<Tone *> tones;
 } paTestData;
 
 static paTestData g_data;
 static paResample g_resample;
 
-void jackClose(int sig){
+void jackClose(int sig)
+{
 	jack_client_close(client);
 	fprintf(stderr, "signal %d received, exiting ...\n", sig);
 #ifdef TESTSONG
-	exit(0); 
+	exit(0);
 #endif
 }
 
 int process (jack_nframes_t nframes, void *arg)
 {
 	jack_default_audio_sample_t *out[2];
-	paTestData *data = (paTestData*)arg;
+	paTestData *data = (paTestData *)arg;
 
-	out[0] = (jack_default_audio_sample_t*)jack_port_get_buffer (output_port[0], nframes);
-	out[1] = (jack_default_audio_sample_t*)jack_port_get_buffer (output_port[1], nframes);
+	out[0] = (jack_default_audio_sample_t *)jack_port_get_buffer (output_port[0], nframes);
+	out[1] = (jack_default_audio_sample_t *)jack_port_get_buffer (output_port[1], nframes);
 
-	for(unsigned int i=0; i<nframes; i++){
-		out[0][i] = 0.f; 
-		out[1][i] = 0.f; 
+	for (unsigned int i=0; i<nframes; i++) {
+		out[0][i] = 0.f;
+		out[1][i] = 0.f;
 	}
-	list<Tone*>::iterator it;
-	for(it=data->tones.begin(); it != data->tones.end(); it++){
-		for(unsigned int i=0; i<nframes && !((*it)->m_dead); i++){
-			(*it)->sample(g_jackSample + i, &(out[0][i]), &(out[1][i]), data->sine); 
+	list<Tone *>::iterator it;
+	for (it=data->tones.begin(); it != data->tones.end(); it++) {
+		for (unsigned int i=0; i<nframes && !((*it)->m_dead); i++) {
+			(*it)->sample(g_jackSample + i, &(out[0][i]), &(out[1][i]), data->sine);
 		}
 	}
-	//remove the 'dead' tones. 
-	it = data->tones.begin(); 
-	while(it != data->tones.end()){
-		if((*it)->m_dead){
-			Tone* t = (*it); 
-			it = data->tones.erase(it); 
-			delete t; 
+	//remove the 'dead' tones.
+	it = data->tones.begin();
+	while (it != data->tones.end()) {
+		if ((*it)->m_dead) {
+			Tone *t = (*it);
+			it = data->tones.erase(it);
+			delete t;
 		} else {
-			it++; 
+			it++;
 		}
 	}
-	g_jackSample += nframes; 
+	g_jackSample += nframes;
 	return 0;
 }
 
-int process_resample(jack_nframes_t nframes, void* arg){
-	paResample* r = (paResample*)arg; 
+int process_resample(jack_nframes_t nframes, void *arg)
+{
+	paResample *r = (paResample *)arg;
 	jack_default_audio_sample_t *out[2];
-	out[0] = (jack_default_audio_sample_t*)jack_port_get_buffer (output_port[0], nframes);
-	out[1] = (jack_default_audio_sample_t*)jack_port_get_buffer (output_port[1], nframes);
-	
-	for(unsigned int i=0; i<nframes; i++){
-		long dif = r->wrPtr - r->rdPtr; 
-		if(dif <= 0){ //probably pipe dried up.
-			if(i==0) {
+	out[0] = (jack_default_audio_sample_t *)jack_port_get_buffer (output_port[0], nframes);
+	out[1] = (jack_default_audio_sample_t *)jack_port_get_buffer (output_port[1], nframes);
+
+	for (unsigned int i=0; i<nframes; i++) {
+		long dif = r->wrPtr - r->rdPtr;
+		if (dif <= 0) { //probably pipe dried up.
+			if (i==0) {
 				// for the moment, let's comment this out to debug other problems
-				//printf("ERROR: dif <= 0 dif %ld nframes %d rd %ld wr %ld\n", dif, nframes, r->rdPtr, r->wrPtr); 
+				//printf("ERROR: dif <= 0 dif %ld nframes %d rd %ld wr %ld\n", dif, nframes, r->rdPtr, r->wrPtr);
 			}
-			out[0][i] = 0.f; 
-			out[1][i] = 0.f; 
-		} else if(dif >= RESAMP_MASK){
+			out[0][i] = 0.f;
+			out[1][i] = 0.f;
+		} else if (dif >= RESAMP_MASK) {
 			//too much data too fast ..
-			if(i==0) {
+			if (i==0) {
 				printf("ERROR: dif >= %d dif %ld nframes %d rd %ld wr %ld\n", RESAMP_MASK, dif, nframes, r->rdPtr, r->wrPtr);
 			}
 			r->rdPtr = r->wrPtr - (RESAMP_SIZ/2); //this will keep zeros coming out.
-			out[0][i] = 0.f; 
-			out[1][i] = 0.f; 
+			out[0][i] = 0.f;
+			out[1][i] = 0.f;
 		} else {
-			float p = r->phase; 
-			float lerp = p - floor(p); 
+			float p = r->phase;
+			float lerp = p - floor(p);
 			float a1 = (1-lerp)*r->circBuf[0][r->rdPtr&RESAMP_MASK] +
-							(lerp)*r->circBuf[0][(r->rdPtr+1)&RESAMP_MASK]; 
-			float a2 = (1-lerp)*r->circBuf[1][r->rdPtr&RESAMP_MASK] + 
-							(lerp)*r->circBuf[1][(r->rdPtr+1)&RESAMP_MASK]; 
-			out[0][i] = a1; 
-			out[1][i] = a2; 
+			           (lerp)*r->circBuf[0][(r->rdPtr+1)&RESAMP_MASK];
+			float a2 = (1-lerp)*r->circBuf[1][r->rdPtr&RESAMP_MASK] +
+			           (lerp)*r->circBuf[1][(r->rdPtr+1)&RESAMP_MASK];
+			out[0][i] = a1;
+			out[1][i] = a2;
 			//increment phase..
 			r->phase += r->phaseIncr;
-			while(r->phase > 1){
-				r->rdPtr++; 
-				r->phase -= 1.f; 
+			while (r->phase > 1) {
+				r->rdPtr++;
+				r->phase -= 1.f;
 			}
-			//manage the rate. 
-			if(i == 0){
-				double q = (double)(dif - (RESAMP_SIZ/2)); 
-				r->phaseIncr = r->phaseIncrNom + q*r->phaseIncrDelta 
-					+ 0.0 * r->integral*r->phaseIncrDelta / 200.0;
-				r->integral = r->integral * 0.9999 + q; 
-				if(r->delay < 0){
-					#ifdef DEBUG
+			//manage the rate.
+			if (i == 0) {
+				double q = (double)(dif - (RESAMP_SIZ/2));
+				r->phaseIncr = r->phaseIncrNom + q*r->phaseIncrDelta
+				               + 0.0 * r->integral*r->phaseIncrDelta / 200.0;
+				r->integral = r->integral * 0.9999 + q;
+				if (r->delay < 0) {
+#ifdef DEBUG
 					printf("phaseIncr %f q %f integral %f\n", r->phaseIncr, q, r->integral);
-					#endif
-					r->delay = 200; 
+#endif
+					r->delay = 200;
 				}
-				r->delay--; 
+				r->delay--;
 			}
 		}
 	}
@@ -135,81 +137,96 @@ int process_resample(jack_nframes_t nframes, void* arg){
  * JACK calls this shutdown_callback if the server ever shuts down or
  * decides to disconnect the client.
  */
-void jack_shutdown (void *){
+void jack_shutdown (void *)
+{
 	exit (1);
 }
 
-/* song stuff. well, not really a song -- more of a set of noises. */ 
-float uniform(){ return ((float)rand() / (float)RAND_MAX);}
-float uniformPan(){ return uniform()*2.f -1.f; }
+/* song stuff. well, not really a song -- more of a set of noises. */
+float uniform()
+{
+	return ((float)rand() / (float)RAND_MAX);
+}
+float uniformPan()
+{
+	return uniform()*2.f -1.f;
+}
 
-void addTones(paTestData * data, long offset){
-	float u = 0.f; float ui = 0.25; 
-	float scl = offset / (SAMPFREQ*3*4); 
-	if(scl > 1) scl = 1; 
-	float scl2 = scl * 0.15; 
-	float mel = 0.165f; if(scl > 1.f) scl = 1.f; 
-	long bar = offset / (SAMPFREQ*3); 
-	Tone* t; 
-	t = new Tone(500.f, uniformPan(), mel*0.25, offset+u*SAMPFREQ, SAMPFREQ*scl); 
-	data->tones.push_back(t); u += ui; 
-	t = new Tone(600.f, uniformPan(), mel*0.15, offset+u*SAMPFREQ, SAMPFREQ*scl); 
-	data->tones.push_back(t); u += ui; 
-	t = new Tone(750.f, uniformPan(), mel*0.23, offset+u*SAMPFREQ, SAMPFREQ*scl); 
-	data->tones.push_back(t); u += ui; 
-	t = new Tone(300.f, uniformPan(), mel*0.2, offset+u*SAMPFREQ, SAMPFREQ*scl); 
-	data->tones.push_back(t); u += ui; 
-	t = new Tone(400.f, uniformPan(), mel*0.22, offset+u*SAMPFREQ, SAMPFREQ*1.3*scl); 
-	data->tones.push_back(t); u += ui; 
-	if((bar&1) == 0)
-		t = new Tone(700.f, uniformPan(), mel*scl2*0.5, offset+u*SAMPFREQ, SAMPFREQ*1.3*scl); 
+void addTones(paTestData *data, long offset)
+{
+	float u = 0.f;
+	float ui = 0.25;
+	float scl = offset / (SAMPFREQ*3*4);
+	if (scl > 1) scl = 1;
+	float scl2 = scl * 0.15;
+	float mel = 0.165f;
+	if (scl > 1.f) scl = 1.f;
+	long bar = offset / (SAMPFREQ*3);
+	Tone *t;
+	t = new Tone(500.f, uniformPan(), mel*0.25, offset+u*SAMPFREQ, SAMPFREQ*scl);
+	data->tones.push_back(t);
+	u += ui;
+	t = new Tone(600.f, uniformPan(), mel*0.15, offset+u*SAMPFREQ, SAMPFREQ*scl);
+	data->tones.push_back(t);
+	u += ui;
+	t = new Tone(750.f, uniformPan(), mel*0.23, offset+u*SAMPFREQ, SAMPFREQ*scl);
+	data->tones.push_back(t);
+	u += ui;
+	t = new Tone(300.f, uniformPan(), mel*0.2, offset+u*SAMPFREQ, SAMPFREQ*scl);
+	data->tones.push_back(t);
+	u += ui;
+	t = new Tone(400.f, uniformPan(), mel*0.22, offset+u*SAMPFREQ, SAMPFREQ*1.3*scl);
+	data->tones.push_back(t);
+	u += ui;
+	if ((bar&1) == 0)
+		t = new Tone(700.f, uniformPan(), mel*scl2*0.5, offset+u*SAMPFREQ, SAMPFREQ*1.3*scl);
 	else
-		t = new Tone(800.f, uniformPan(), mel*scl2*0.5, offset+u*SAMPFREQ, SAMPFREQ*1.3*scl); 
-	data->tones.push_back(t); 
-	t = new Tone(300.f, uniformPan(), mel*0.29, offset+u*SAMPFREQ, SAMPFREQ*scl); 
+		t = new Tone(800.f, uniformPan(), mel*scl2*0.5, offset+u*SAMPFREQ, SAMPFREQ*1.3*scl);
 	data->tones.push_back(t);
-	float distortion = (bar&15) - 4; 
-	if(bar < 4) bar = 0;  
-	float freqs[] = {150.f, 125.f, 100.f, 133.f}; 
-	for(int i=0; i< 12; i++){
-		t = new Tone(freqs[bar&3], 0.0, scl*(0.22+0.08*sin(i/2)), offset+((float)i*ui+ui/2)*SAMPFREQ, SAMPFREQ*ui*0.8); 
-		t->m_distortion = distortion; 
+	t = new Tone(300.f, uniformPan(), mel*0.29, offset+u*SAMPFREQ, SAMPFREQ*scl);
+	data->tones.push_back(t);
+	float distortion = (bar&15) - 4;
+	if (bar < 4) bar = 0;
+	float freqs[] = {150.f, 125.f, 100.f, 133.f};
+	for (int i=0; i< 12; i++) {
+		t = new Tone(freqs[bar&3], 0.0, scl*(0.22+0.08*sin(i/2)), offset+((float)i*ui+ui/2)*SAMPFREQ, SAMPFREQ*ui*0.8);
+		t->m_distortion = distortion;
 		data->tones.push_back(t);
 	}
-	float freqs2[] = {112.5f, 93.75f, 75.f, 100.f}; 
-	if((bar&31) > 15){
-		for(int i=0; i< 12; i++){
-			t = new Tone(freqs2[bar&3], 0.0, scl*(0.12+0.06*sin(i/2)), offset+((float)i*ui+ui)*SAMPFREQ, SAMPFREQ*ui*0.6); 
-			t->m_distortion = distortion; 
+	float freqs2[] = {112.5f, 93.75f, 75.f, 100.f};
+	if ((bar&31) > 15) {
+		for (int i=0; i< 12; i++) {
+			t = new Tone(freqs2[bar&3], 0.0, scl*(0.12+0.06*sin(i/2)), offset+((float)i*ui+ui)*SAMPFREQ, SAMPFREQ*ui*0.6);
+			t->m_distortion = distortion;
 			data->tones.push_back(t);
 		}
-		for(int i=0; i<6; i++){
-			t = new Tone(9000, 0.0, scl*(0.02+0.01*cos(i)), offset+((float)i*ui*2+ui)*SAMPFREQ, SAMPFREQ*ui*0.05); 
-			t->m_attack = 200; 
-			t->m_release = 2500; 
+		for (int i=0; i<6; i++) {
+			t = new Tone(9000, 0.0, scl*(0.02+0.01*cos(i)), offset+((float)i*ui*2+ui)*SAMPFREQ, SAMPFREQ*ui*0.05);
+			t->m_attack = 200;
+			t->m_release = 2500;
 			data->tones.push_back(t);
 		}
 	}
-	for(int i=0; i<6; i++){
-		t = new Tone(8000, 0.0, scl*(0.04+0.02*cos(i)), offset+((float)i*ui*2)*SAMPFREQ, SAMPFREQ*ui*0.05); 
-		t->m_attack = 200; 
-		t->m_release = 2500; 
+	for (int i=0; i<6; i++) {
+		t = new Tone(8000, 0.0, scl*(0.04+0.02*cos(i)), offset+((float)i*ui*2)*SAMPFREQ, SAMPFREQ*ui*0.05);
+		t->m_attack = 200;
+		t->m_release = 2500;
 		data->tones.push_back(t);
 	}
-	t = new Tone(8000, 0.0, scl*(0.05), offset+((float)2*ui*2+ui/2)*SAMPFREQ, SAMPFREQ*ui*0.08); 
-	t->m_attack = 200; 
-	t->m_release = 2500; 
+	t = new Tone(8000, 0.0, scl*(0.05), offset+((float)2*ui*2+ui/2)*SAMPFREQ, SAMPFREQ*ui*0.08);
+	t->m_attack = 200;
+	t->m_release = 2500;
 	data->tones.push_back(t);
-		t = new Tone(8000, 0.0, scl*(0.05), offset+((float)5*ui*2+ui/2)*SAMPFREQ, SAMPFREQ*ui*0.08); 
-	t->m_attack = 200; 
-	t->m_release = 2500; 
+	t = new Tone(8000, 0.0, scl*(0.05), offset+((float)5*ui*2+ui/2)*SAMPFREQ, SAMPFREQ*ui*0.08);
+	t->m_attack = 200;
+	t->m_release = 2500;
 	data->tones.push_back(t);
-	float fb = 50.f; 
-	if(bar & 1) fb = 66.f; 
-	t = new Tone(fb, uniformPan(), 0.2, offset+SAMPFREQ, SAMPFREQ*2); 
-	t->m_attack = SAMPFREQ; 
+	float fb = 50.f;
+	if (bar & 1) fb = 66.f;
+	t = new Tone(fb, uniformPan(), 0.2, offset+SAMPFREQ, SAMPFREQ*2);
+	t->m_attack = SAMPFREQ;
 	t->m_release = SAMPFREQ;
-	t->m_distortion = 2 + bar/16; 
+	t->m_distortion = 2 + bar/16;
 	data->tones.push_back(t);
 }
 
@@ -218,14 +235,14 @@ int jackInit(const char *clientname, int mode)
 	const char *client_name;
 	jack_status_t status;
 
-	g_jackSample = 0; 
+	g_jackSample = 0;
 
 	/* open a client connection to the JACK server */
 
 	client = jack_client_open (clientname, JackNullOption, &status, NULL);
 	if (client == NULL) {
 		fprintf (stderr, "jack_client_open() failed, "
-			 "status = 0x%2.0x\n", status);
+		         "status = 0x%2.0x\n", status);
 		if (status & JackServerFailed) {
 			fprintf (stderr, "Unable to connect to JACK server\n");
 		}
@@ -242,10 +259,10 @@ int jackInit(const char *clientname, int mode)
 	/* tell the JACK server to call `process()' whenever
 	   there is work to be done.
 	*/
-	
-	if(mode == JACKPROCESS_TONES)
+
+	if (mode == JACKPROCESS_TONES)
 		jack_set_process_callback (client, process, &g_data);
-	if(mode == JACKPROCESS_RESAMPLE)
+	if (mode == JACKPROCESS_RESAMPLE)
 		jack_set_process_callback (client, process_resample, &g_resample);
 
 	/* tell the JACK server to call `jack_shutdown()' if
@@ -258,12 +275,12 @@ int jackInit(const char *clientname, int mode)
 	/* create two ports */
 
 	output_port[0] = jack_port_register (client, "output1",
-					  JACK_DEFAULT_AUDIO_TYPE,
-					  JackPortIsOutput, 0);
+	                                     JACK_DEFAULT_AUDIO_TYPE,
+	                                     JackPortIsOutput, 0);
 
 	output_port[1] = jack_port_register (client, "output2",
-					  JACK_DEFAULT_AUDIO_TYPE,
-					  JackPortIsOutput, 0);
+	                                     JACK_DEFAULT_AUDIO_TYPE,
+	                                     JackPortIsOutput, 0);
 
 	if ((output_port[0] == NULL) || (output_port[1] == NULL)) {
 		fprintf(stderr, "no more JACK ports available\n");
@@ -286,12 +303,13 @@ int jackInit(const char *clientname, int mode)
 	signal(SIGINT, jackClose);
 #endif
 
-	return 0; 
+	return 0;
 }
-void jackDisconnectAllPorts() {
+void jackDisconnectAllPorts()
+{
 	const char **ports;
-	
-	for (int j=0;j<2;j++) { 
+
+	for (int j=0; j<2; j++) {
 
 		ports = jack_port_get_connections (output_port[j]);
 		if (ports != NULL) {
@@ -306,7 +324,8 @@ void jackDisconnectAllPorts() {
 
 	}
 }
-void jackConnectFront() {
+void jackConnectFront()
+{
 	const char **ports;
 	int i = 0;
 
@@ -319,7 +338,7 @@ void jackConnectFront() {
 	 */
 
 	ports = jack_get_ports (client, NULL, NULL,
-				JackPortIsPhysical|JackPortIsInput);
+	                        JackPortIsPhysical|JackPortIsInput);
 	if (ports == NULL) {
 		fprintf(stderr, "JACK: no physical playback ports\n");
 		exit (1);
@@ -334,7 +353,8 @@ void jackConnectFront() {
 		fprintf (stderr, "JACK: cannot connect output ports\n");
 	jack_free(ports);
 }
-void jackConnectCenterSub() {
+void jackConnectCenterSub()
+{
 	const char **ports;
 	int i = 0;
 
@@ -347,7 +367,7 @@ void jackConnectCenterSub() {
 	 */
 
 	ports = jack_get_ports (client, NULL, NULL,
-				JackPortIsPhysical|JackPortIsInput);
+	                        JackPortIsPhysical|JackPortIsInput);
 	if (ports == NULL) {
 		fprintf(stderr, "JACK: no physical playback ports\n");
 		exit (1);
@@ -365,53 +385,59 @@ void jackConnectCenterSub() {
 void jackTest()
 {
 	// make sure it's working ..
-	for (int i=0;i<TABLE_SIZE+1;i++) {
+	for (int i=0; i<TABLE_SIZE+1; i++) {
 		g_data.sine[i] = 0.2 * (float) sin( ((double)i/(double)TABLE_SIZE) * M_PI * 2.0 );
 	}
 	addTones(&g_data, 20000);
 }
-void jackDemo(){
+void jackDemo()
+{
 	/* keep running until the Ctrl+C */
-	addTones(&g_data, 0); 
-	long offset = 0; 
+	addTones(&g_data, 0);
+	long offset = 0;
 	while (1) {
 		sleep (3);
 		offset += SAMPFREQ*3;
-		addTones(&g_data, offset); 
+		addTones(&g_data, offset);
 	}
 	jack_client_close (client);
 	exit (0);
 }
-void jackAddTone(Tone* t){
+void jackAddTone(Tone *t)
+{
 	g_data.tones.push_back(t);
 }
-void jackAddToneP(float freq, float pan, float scale, float duration){
-	Tone* t = new Tone(freq, pan, scale, -1, duration * SAMPFREQ); 
+void jackAddToneP(float freq, float pan, float scale, float duration)
+{
+	Tone *t = new Tone(freq, pan, scale, -1, duration * SAMPFREQ);
 	g_data.tones.push_back(t);
 }
-void jackAddSamples(float* s1, float* s2, int num){
-	long l = g_resample.wrPtr; 
-	for(int i=0; i<num; i++){
+void jackAddSamples(float *s1, float *s2, int num)
+{
+	long l = g_resample.wrPtr;
+	for (int i=0; i<num; i++) {
 		g_resample.circBuf[0][l&RESAMP_MASK] = s1[i];
 		g_resample.circBuf[1][l&RESAMP_MASK] = s2[i];
-		l++; 
-		g_resample.wrPtr = l; 
+		l++;
+		g_resample.wrPtr = l;
 	}
 }
-void jackSetResample(double rate){
-	g_resample.wrPtr = g_resample.rdPtr = 0; 
-	g_resample.phase = 0.0; 
-	g_resample.phaseIncr = rate; 
-	g_resample.phaseIncrNom = rate; 
+void jackSetResample(double rate)
+{
+	g_resample.wrPtr = g_resample.rdPtr = 0;
+	g_resample.phase = 0.0;
+	g_resample.phaseIncr = rate;
+	g_resample.phaseIncrNom = rate;
 	// 8 cents ~= minimum detectable interval.
-	g_resample.phaseIncrDelta = rate * 0.004631674402 / 500; 
-	g_resample.integral = 0; 
-	g_resample.delay = 0; 
+	g_resample.phaseIncrDelta = rate * 0.004631674402 / 500;
+	g_resample.integral = 0;
+	g_resample.delay = 0;
 }
 #ifdef TESTSONG
-int main(){
-	jackInit(JACKPROCESS_TONES); 
-	jackDemo(); 
-	return 0; 
+int main()
+{
+	jackInit(JACKPROCESS_TONES);
+	jackDemo();
+	return 0;
 }
 #endif
