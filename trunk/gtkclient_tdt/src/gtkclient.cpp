@@ -97,6 +97,7 @@ SpikeBuffer g_spikebuf[NCHAN];
 
 i64		g_lastSpike[NCHAN][NUNIT];
 unsigned int 	g_nsamp = 4096*6; //given the current level of zoom (1 = 4096 samples), how many samples to update?
+float g_zoomSpan = 1.0;
 
 float 	g_sbuf[NSORT][NCHAN *NSBUF*2]; //2 units, 96 channels, 1024 spikes, 2 floats / spike.
 float	g_rasterSpan = 10.f; // %seconds.
@@ -113,7 +114,7 @@ AnalogWriter g_analogwriter;
 Artifact *g_artifact[STIMCHAN];
 ICMSWriter g_icmswriter;
 
-gboolean g_lopassNeurons = true;
+gboolean g_lopassNeurons = false;
 gboolean g_hipassNeurons = false;
 FilterButterBand_24k_300_5000 g_bandpass[NCHAN];
 FilterButterLow_24k_3000 g_lopass[NCHAN];
@@ -144,7 +145,8 @@ bool 	g_addPoly = false;
 int 	g_channel[4] = {0,32,64,95};
 long double g_lastPo8eTime = 0.0;
 
-double g_minISI = 1.3; //ms
+float g_minISI = 1.3; //ms
+float g_autoThreshold = -3.5; //standard deviations. default negative, w/e.
 int g_spikesCols = 16;
 
 //gboolean g_enableArtifactRLS = false;
@@ -169,11 +171,12 @@ gboolean g_enableStimClockBlanking = false;
 //gboolean g_enableSplines = true;
 //gboolean g_enableSubsampleAlignment = true;
 
-float g_autoThreshold = -3.5; //standard deviations. default negative, w/e.
 
 int 	g_mode = MODE_RASTERS;
-int	g_drawmode = GL_LINE_STRIP;
-int	g_blendmode = GL_ONE_MINUS_SRC_ALPHA;
+int g_drawmode[2] = {GL_POINTS, GL_LINE_STRIP};
+int	g_drawmodep = 1;
+int	g_blendmode[2] = {GL_ONE_MINUS_SRC_ALPHA, GL_ONE};
+int g_blendmodep = 0;
 
 bool	g_vbo1Init = false;
 GLuint g_vbo1[NFBUF]; //for the waveform display
@@ -206,9 +209,46 @@ void saveState()
 	for (int i=0; i<STIMCHAN; i++) {
 		g_artifact[i]->save(&ms);
 	}
-	for (int i=0; i<4; i++)
+	for (int i=0; i<4; i++) {
 		ms.setValue(i, "channel", g_channel[i]);
-	ms.setValue(0,"auto_threshold", g_autoThreshold);
+	}
+
+	ms.setStructValue("gui","draw_mode",0,(float)g_drawmodep);
+	ms.setStructValue("gui","blend_mode",0,(float)g_blendmodep);
+	ms.setStructValue("gui","cycle",0,(float)g_cycle);
+
+	ms.setStructValue("raster","show_grid",0,(float)g_showContGrid);
+	ms.setStructValue("raster","show_threshold",0,(float)g_showContThresh);
+	ms.setStructValue("raster","span",0,g_rasterSpan);
+
+	ms.setStructValue("spike","min_isi",0,g_minISI);
+	ms.setStructValue("spike","auto_threshold",0,g_autoThreshold);
+	ms.setStructValue("spike","cols",0,(float)g_spikesCols);
+
+	ms.setStructValue("wf","show_pca",0,(float)g_showPca);
+	ms.setStructValue("wf","show_grid",0,(float)g_showWFVgrid);
+	ms.setStructValue("wf","show_isi",0,(float)g_showISIhist);
+	ms.setStructValue("wf","show_std",0,(float)g_showWFstd);
+	ms.setStructValue("wf","span",0,g_zoomSpan);
+
+	ms.setStructValue("filter","lopass",0,(float)g_lopassNeurons);
+	ms.setStructValue("filter","hipass",0,(float)g_hipassNeurons);
+	ms.setStructValue("filter","median",0,(float)g_whichMedianFilter);
+	//
+	ms.setStructValue("icms","lms_train",0,(float)g_trainArtifactNLMS);
+	ms.setStructValue("icms","lms_filter",0,(float)g_filterArtifactNLMS);
+
+	ms.setStructValue("icms","template_train",0,(float)g_trainArtifactTempl);
+	ms.setStructValue("icms","template_subtract",0,(float)g_enableArtifactSubtr);
+	ms.setStructValue("icms","template_numsamples",0,(float)g_numArtifactSamps);
+	ms.setStructValue("icms","template_chan_disp",0,(float)g_stimChanDisp);
+	ms.setStructValue("icms","template_chan_atten",0,g_artifactDispAtten);
+
+	ms.setStructValue("icms","blank_enable",0,(float)g_enableArtifactBlanking);
+	ms.setStructValue("icms","blank_samples",0,(float)g_artifactBlankingSamps);
+	ms.setStructValue("icms","blank_pre_samples",0,(float)g_artifactBlankingPreSamps);
+	ms.setStructValue("icms","blank_clock_enable",0,(float)g_enableStimClockBlanking);
+
 	ms.save();
 }
 void destroy(int)
@@ -514,7 +554,7 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 	glMatrixMode(GL_MODELVIEW);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glShadeModel(GL_FLAT);
-	glBlendFunc(GL_SRC_ALPHA, g_blendmode);
+	glBlendFunc(GL_SRC_ALPHA, g_blendmode[g_blendmodep]);
 	//draw the cursor no matter what?
 	if (0) {
 		float x = g_cursPos[0] + 1.f/g_viewportSize[0];
@@ -584,7 +624,7 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 			glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo1[k]);
 			glVertexPointer(3, GL_FLOAT, 0, 0);
 			glPointSize(1);
-			glDrawArrays(g_drawmode, 0, g_nsamp);
+			glDrawArrays(g_drawmode[g_drawmodep], 0, g_nsamp);
 
 			cgGLDisableProfile(myCgVertexProfile);
 			checkForCgError("disabling vertex profile");
@@ -681,7 +721,7 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 		glEnableClientState(GL_VERTEX_ARRAY);
 		float xo, yo, xz, yz;
 		cgGLEnableProfile(myCgVertexProfile);
-		if (g_blendmode == GL_ONE)
+		if (g_blendmode[g_blendmodep] == GL_ONE)
 			g_vsFadeColor->setParam(2,"ascale", 0.2f);
 		else
 			g_vsFadeColor->setParam(2,"ascale", 1.f);
@@ -694,7 +734,7 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 				xz = 1.f;
 				yz = 1.f;
 				g_c[g_channel[k]]->setLoc(xo, yo, xz, yz);
-				g_c[g_channel[k]]->draw(g_drawmode, time, g_cursPos,
+				g_c[g_channel[k]]->draw(g_drawmode[g_drawmodep], time, g_cursPos,
 				                        g_showPca, g_rtMouseBtn, true, g_showWFVgrid);
 			}
 		}
@@ -709,7 +749,7 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 				xo = (k%g_spikesCols)/xf;
 				yo = ((k/g_spikesCols)+1)/yf;
 				g_c[k]->setLoc(xo*2.f-1.f, 1.f-yo*2.f, xz*2.f, yz);
-				g_c[k]->draw(g_drawmode, time, g_cursPos,
+				g_c[k]->draw(g_drawmode[g_drawmodep], time, g_cursPos,
 				             g_showPca, g_rtMouseBtn, false, g_showWFVgrid);
 			}
 			//draw some lines.
@@ -1707,7 +1747,7 @@ static void apertureSpinCB(GtkWidget *spinner, gpointer p)
 		}
 	}
 }
-static void apertureOffCB( GtkWidget *, gpointer p)
+static void apertureOffCB(GtkWidget *, gpointer p)
 {
 	int h = (int)((long long)p & 0xf);
 	if (h >= 0 && h < 8 && !g_uiRecursion) {
@@ -1717,7 +1757,7 @@ static void apertureOffCB( GtkWidget *, gpointer p)
 		//setAperture(j);
 	}
 }
-static void autoThresholdCB( GtkWidget *, gpointer p)
+static void autoThresholdCB(GtkWidget *, gpointer p)
 {
 	int h = (int)((long long)p & 0xf);
 	if (h == 1)
@@ -1731,31 +1771,25 @@ static void autoThresholdCB( GtkWidget *, gpointer p)
 static void medianFilterRadioCB(GtkWidget *button, gpointer p)
 {
 	if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))) {
-		int i = (int)((long long)p & 0xf);
-		g_whichMedianFilter = i;
+		g_whichMedianFilter = (int)((long long)p & 0xf);
 	}
 }
 static void drawRadioCB(GtkWidget *button, gpointer p)
 {
 	if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))) {
-		int i = (int)((long long)p & 0xf);
-		if (i == 0) g_drawmode = GL_LINE_STRIP;
-		else g_drawmode = GL_POINTS;
+		g_drawmodep = (int)((long long)p & 0xf);
 	}
 }
 static void blendRadioCB(GtkWidget *button, gpointer p)
 {
 	if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))) {
-		int i = (int)((long long)p & 0xf);
-		if (i == 0) g_blendmode = GL_ONE_MINUS_SRC_ALPHA;
-		else g_blendmode = GL_ONE;
+		g_blendmodep = (int)((long long)p & 0xf);
 	}
 }
 static void analogSaveRadioCB(GtkWidget *button, gpointer p)
 {
 	if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))) {
-		int i = (int)((long long)p & 0xf);
-		g_whichAnalogSave = i;
+		g_whichAnalogSave = (int)((long long)p & 0xf);
 	}
 }
 static void pauseButtonCB(GtkWidget *button, gpointer * )
@@ -1820,6 +1854,7 @@ static void artifactBlankingPreSampsCB(GtkWidget *spinner, gpointer)
 static void zoomSpinCB(GtkWidget *spinner, gpointer)
 {
 	float f = (float) gtk_spin_button_get_value(GTK_SPIN_BUTTON(spinner)); //should be in seconds.
+	g_zoomSpan = f;
 	g_nsamp = f * SRATE_HZ;
 	//make it multiples of 128.
 	g_nsamp &= (0xffffffff ^ 127);
@@ -2149,7 +2184,7 @@ int main(int argc, char **argv)
 
 	(void) signal(SIGINT,destroy);
 
-	string titlestr = "gtkclient (TDT) v1.5";
+	string titlestr = "gtkclient (TDT) v1.6";
 
 #ifdef DEBUG
 	feenableexcept(FE_DIVBYZERO|FE_INVALID|FE_OVERFLOW);  // Enable (some) floating point exceptions
@@ -2200,10 +2235,41 @@ int main(int argc, char **argv)
 	for (int i=0; i<STIMCHAN; i++)
 		g_artifact[i] = new Artifact(i, &ms);
 
-	// pronbably the most ideal would be to create struct methods for matstor
-	// and store general preferences in a struct.
-	// until then, store the values as namespace polluting scalars
-	g_autoThreshold = ms.getValue(0, "auto_threshold", -3.5);
+	g_drawmodep = (int) ms.getStructValue("gui", "draw_mode", 0, (float)g_drawmodep);
+	g_blendmodep = (int) ms.getStructValue("gui", "blend_mode", 0, (float)g_blendmodep);
+	g_cycle = (bool) ms.getStructValue("gui", "cycle", 0, (float)g_cycle);
+
+	g_showContGrid = (bool) ms.getStructValue("raster", "show_grid", 0, (float)g_showContGrid);
+	g_showContThresh = (bool) ms.getStructValue("raster","show_threshold", 0, (float)g_showContThresh);
+	g_rasterSpan = ms.getStructValue("ratser", "span", 0, g_rasterSpan);
+
+	g_minISI = ms.getStructValue("spike", "min_isi", 0, g_minISI);
+	g_autoThreshold = ms.getStructValue("spike", "auto_threshold", 0, g_autoThreshold);
+	g_spikesCols = (int)ms.getStructValue("spike", "cols", 0, (float)g_spikesCols);
+
+	g_showPca = (bool)ms.getStructValue("wf", "show_pca", 0, (float)g_showPca);
+	g_showWFVgrid = (bool)ms.getStructValue("wf", "show_grid", 0, (float)g_showWFVgrid);
+	g_showISIhist = (bool)ms.getStructValue("wf", "show_isi", 0, (float)g_showISIhist);
+	g_showWFstd = (bool)ms.getStructValue("wf", "show_std", 0, (float)g_showWFstd);
+	g_zoomSpan = ms.getStructValue("wf", "span", 0, g_zoomSpan);
+
+	g_lopassNeurons = (bool)ms.getStructValue("filter", "lopass", 0, (float)g_lopassNeurons);
+	g_hipassNeurons = (bool)ms.getStructValue("filter", "hipass", 0, (float)g_hipassNeurons);
+	g_whichMedianFilter = (int)ms.getStructValue("filter", "median", 0, (float)g_whichMedianFilter);
+
+	g_trainArtifactNLMS = (bool)ms.getStructValue("icms", "lms_train", 0, (float)g_trainArtifactNLMS);
+	g_filterArtifactNLMS = (bool)ms.getStructValue("icms", "lms_filter", 0, (float)g_filterArtifactNLMS);
+
+	g_trainArtifactTempl = (bool)ms.getStructValue("icms", "template_train", 0, (float)g_trainArtifactTempl);
+	g_enableArtifactSubtr = (bool)ms.getStructValue("icms", "template_subtract", 0, (float)g_enableArtifactSubtr);
+	g_numArtifactSamps = (int)ms.getStructValue("icms", "template_numsamples", 0, (float)g_numArtifactSamps);
+	g_stimChanDisp = (int)ms.getStructValue("icms", "template_chan_disp", 0, (float)g_stimChanDisp);
+	g_artifactDispAtten = ms.getStructValue("icms", "template_chan_atten", 0, g_artifactDispAtten);
+
+	g_enableArtifactBlanking = (bool)ms.getStructValue("icms", "blank_enable", 0, (float)g_enableArtifactBlanking);
+	g_artifactBlankingSamps = (int)ms.getStructValue("icms", "blank_samples", 0, (float)g_artifactBlankingSamps);
+	g_artifactBlankingPreSamps = (int)ms.getStructValue("icms", "blank_pre_samples", 0, (float)g_artifactBlankingPreSamps);
+	g_enableStimClockBlanking = (bool)ms.getStructValue("icms", "blank_clock_enable", 0, (float)g_enableStimClockBlanking);
 
 	//g_dropped = 0;
 
@@ -2284,7 +2350,7 @@ int main(int argc, char **argv)
 
 	//add in a zoom spinner.
 	mk_spinner("Waveform Span", box1,
-	           1.0, 0.1, 2.7, 0.05,
+	           g_zoomSpan, 0.1, 2.7, 0.05,
 	           zoomSpinCB, NULL);
 
 	mk_spinner("Raster span", box1,
@@ -2370,8 +2436,8 @@ int main(int argc, char **argv)
 	box1 = gtk_vbox_new(FALSE, 0);
 	// for the sorting, we show all waveforms (up to a point..)
 	//these should have a minimum enforced ISI.
-	mk_spinner("min ISI", box1, g_minISI, 0.2, 3.0, 0.01,
-	           basic_spinfloat_cb, (gpointer)&g_minISI);
+	mk_spinner("min ISI, ms", box1, g_minISI,
+	           0.2, 3.0, 0.01, basic_spinfloat_cb, (gpointer)&g_minISI);
 
 	mk_spinner("auto thresh, std", box1, g_autoThreshold,
 	           -10.0, 10.0, 0.05, basic_spinfloat_cb, (gpointer)&g_autoThreshold);
@@ -2569,10 +2635,10 @@ int main(int argc, char **argv)
 
 	//add draw mode (applicable to all)
 	bx = gtk_hbox_new(FALSE, 0);
-	mk_radio("lines,points", 2,
-	         bx, true, "draw mode", g_drawmode, drawRadioCB);
+	mk_radio("points,lines", 2,
+	         bx, true, "draw mode", g_drawmodep, drawRadioCB);
 	mk_radio("normal,accum", 2,
-	         bx, true, "blend mode", g_blendmode, blendRadioCB);
+	         bx, true, "blend mode", g_blendmodep, blendRadioCB);
 	gtk_box_pack_start (GTK_BOX (v1), bx, TRUE, TRUE, 0);
 
 	bx = gtk_hbox_new (FALSE, 3);
