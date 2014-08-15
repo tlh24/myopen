@@ -42,7 +42,7 @@ extern i64		g_fbufR; //display thread reads from here - copies to mem
 extern i64		g_lastSpike[NCHAN][NUNIT];
 extern unsigned int 	g_nsamp; //given the current level of zoom (1 = 4096 samples), how many samples to update?
 
-extern bool 	g_die ;
+extern bool 	g_die;
 extern int 		g_channel[4];
-extern double	g_minISI;
+//extern double	g_minISI;
 #endif
