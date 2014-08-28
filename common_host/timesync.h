@@ -1,6 +1,8 @@
 #ifndef __TIMESYNC_H__
 #define __TIMESYNC_H__
 
+#include <sstream>
+
 #define TIMESYNC_MMAP	"/tmp/timesync.mmap"
 
 class GainController
@@ -145,6 +147,17 @@ public:
 	}
 	long double getTime(double ticks) { //estimated time, of course.
 		return (ticks - m_offset)/m_slope + m_timeOffset;
+	}
+	std::string getTime() {
+		double t = (double)gettime();
+		double hours = floor(t / 3600.0);
+		double minutes = floor((t - hours * 3600.0)/60.0);
+		double seconds = t - hours*3600.0 - minutes*60.0;
+		char buf[256];
+		snprintf(buf, 256, "%02d:%02d:%2.2f", (int)hours, (int)minutes, seconds);
+		std::stringstream oss;
+		oss << buf;
+		return oss.str();
 	}
 };
 class TimeSyncClient

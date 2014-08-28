@@ -62,7 +62,7 @@ ifeq ($(strip $(STACKPROTECTOR)),true)
 	CFLAGS   += -fstack-protector-all
 endif
 
-all: gtkclient spikes2mat icms2mat analog2mat mmap_test po8e wf_plot   
+all: gtkclient timesync spikes2mat icms2mat analog2mat analogdebug mmap_test po8e wf_plot   
 
 src/%.o: src/%.cpp $(COM_HDR)
 	$(CPP) -c $(CPPFLAGS) $(GTKFLAGS) $< -o $@
@@ -77,6 +77,9 @@ src/%.pb.cc src/%.pb.h: proto/%.proto
 gtkclient: $(GOBJS)
 	$(CPP) -o $@ $(GTKLD) $(LDFLAGS) $^
 
+timesync: src/timeclient.o src/gettime.o
+	$(CPP) -o $@ -lpthread -lncurses -lPO8eStreaming $^
+
 spikes2mat: src/spikes2mat.o
 	$(CPP) -o $@ -lmatio -lhdf5 -lz $^
 
@@ -84,6 +87,9 @@ icms2mat: src/icms.pb.o src/icms2mat.o src/stimchan.o src/matStor.o
 	$(CPP) -o $@ -lmatio -lhdf5 -lz -lprotobuf $^
 
 analog2mat: src/analog.pb.o src/analog2mat.o src/analogchan.o src/matStor.o
+	$(CPP) -o $@ -lmatio -lhdf5 -lz -lprotobuf $^
+
+analogdebug: src/analog.pb.o src/analogdebug.o src/analogchan.o src/matStor.o
 	$(CPP) -o $@ -lmatio -lhdf5 -lz -lprotobuf $^
 
 mmap_test: src/mmap_test.o
@@ -96,7 +102,7 @@ wf_plot: src/wf_plot.o
 	$(CC) -o $@ -lSDL -lGL -lGLU -lglut -lpthread -lmatio -lhdf5 -lpng $^
 
 clean:
-	rm -rf gtkclient spikes2mat icms2mat analog2mat mmap_test po8e wf_plot \
+	rm -rf gtkclient timesync spikes2mat icms2mat analog2mat analogdebug mmap_test po8e wf_plot \
 	src/*.pb.cc include/*.pb.h src/*.o 
 
 deps:
@@ -117,6 +123,10 @@ pretty:
 	-rm include/*.h.orig
 	astyle -A8 --indent=tab -H -k3 src/*.cpp
 	-rm src/*.cpp.orig
+	astyle -A8 --indent=tab -H -k3 ../common_host/*.h
+	-rm ../common_host/*.h.orig
+	astyle -A8 --indent=tab -H -k3 ../common_host/*.cpp
+	-rm ../common_host/*.cpp.orig
 
 proto:
 	protoc -Iproto --cpp_out=src proto/spike.proto
@@ -129,9 +139,11 @@ proto:
 install:
 	install -d $(TARGET)
 	install gtkclient -t $(TARGET)
+	install timesync -t $(TARGET)
 	install spikes2mat -t $(TARGET)
 	install icms2mat -t $(TARGET)
 	install analog2mat -t $(TARGET)
+	install analogdebug -t $(TARGET)
 	install -d $(TARGET)/cg
 	install cg/fade.cg -t $(TARGET)/cg
 	install cg/fadeColor.cg -t $(TARGET)/cg
