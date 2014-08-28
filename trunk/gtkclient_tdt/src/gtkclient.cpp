@@ -452,8 +452,11 @@ static gint button_press_event( GtkWidget *,
 	updateCursPos(event->x,event->y);
 	if (g_mode == MODE_SORT) {
 		int u = 0;
-		if (g_cursPos[0] > 0.0f) u += 1;
-		if (g_cursPos[1] < 0.0f) u += 2;
+		if (g_cursPos[0] > 0.0f)
+			u += 1;
+		if (g_cursPos[1] < 0.0f) 
+			u += 2;
+
 		if (event->button == 1) {
 			g_polyChan = u;
 			g_addPoly = false;
