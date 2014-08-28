@@ -53,8 +53,7 @@ void *po8_thread(void *)
 		card = PO8e::connectToCard(0);
 		if (card == NULL)  {
 			g_scroll.push_back("Connection failed to card 0");
-		}
-		else {
+		} else {
 			// todo: connect to multiple cards
 			s = str(format("Connection established to card 0 at %p") % (void *)card);
 			g_scroll.push_back(s);
@@ -125,7 +124,7 @@ void *po8_thread(void *)
 			if (numSamples > 0) {
 				if (numSamples > bufmax) {
 					s = str(format("samplesReady() returned too many samples for buffer (buffer wrap?): %d")
-						% numSamples);
+					        % numSamples);
 					g_scroll.push_back(s);
 					numSamples = bufmax;
 				}
@@ -133,7 +132,7 @@ void *po8_thread(void *)
 				card->flushBufferedData(numSamples);
 				totalSamples += numSamples;
 			}
-			
+
 			if (numSamples > 0 && numSamples <= bufmax) {
 				bytes += numSamples * nchan * bps;
 
@@ -172,7 +171,7 @@ int main()
 	pthread_attr_init(&attr);
 	pthread_create( &thread1, &attr, po8_thread, 0);
 
-	for (int i=0;i<NSCROLL;i++) {
+	for (int i=0; i<NSCROLL; i++) {
 		g_scroll.push_back("");
 	}
 
@@ -180,34 +179,38 @@ int main()
 	curs_set(0);
 	cbreak();
 
-string asciiart ="";
+	string asciiart ="";
 
-asciiart = "   __  _\n";                                     
-asciiart += "  / /_(_)___ ___  ___  _______  ______  _____\n";
-asciiart += " / __/ / __ `__ \\/ _ \\/ ___/ / / / __ \\/ ___/\n";
-asciiart += "/ /_/ / / / / / /  __(__  ) /_/ / / / / /__\n";  
-asciiart += "\\__/_/_/ /_/ /_/\\___/____/\\__, /_/ /_/\\___/\n";  
-asciiart += "   timesync client v0.1  /____/\n";             
+	asciiart = "   __  _\n";
+	asciiart += "  / /_(_)___ ___  ___  _______  ______  _____\n";
+	asciiart += " / __/ / __ `__ \\/ _ \\/ ___/ / / / __ \\/ ___/\n";
+	asciiart += "/ /_/ / / / / / /  __(__  ) /_/ / / / / /__\n";
+	asciiart += "\\__/_/_/ /_/ /_/\\___/____/\\__, /_/ /_/\\___/\n";
+	asciiart += "   timesync client v0.1  /____/\n";
 
-start_color();
-init_pair(1, COLOR_CYAN, COLOR_BLACK);
-attron(COLOR_PAIR(1));
-attron(A_BOLD);
-printw("%s",asciiart.c_str());
-attroff(COLOR_PAIR(1));
-attroff(A_BOLD);
+	start_color();
+	init_pair(1, COLOR_CYAN, COLOR_BLACK);
+	attron(COLOR_PAIR(1));
+	attron(A_BOLD);
+	printw("%s",asciiart.c_str());
+	attroff(COLOR_PAIR(1));
+	attroff(A_BOLD);
 
-	while(!g_die) {
+	while (!g_die) {
 
 		attron(A_BOLD);
-		mvprintw(1,48, "time             %s", g_ts.getTime().c_str()); clrtoeol();
-		mvprintw(2,48, "ticks            %d", g_ts.m_ticks); clrtoeol();
-		mvprintw(3,48, "slope (ticks/s)  %0.5Lf", g_ts.m_slope); clrtoeol();
-		mvprintw(4,48, "po8e  (ms)       %0.5f", 
-			(double)(gettime() - g_lastPo8eTime)*1000.0); clrtoeol();
+		mvprintw(1,48, "time             %s", g_ts.getTime().c_str());
+		clrtoeol();
+		mvprintw(2,48, "ticks            %d", g_ts.m_ticks);
+		clrtoeol();
+		mvprintw(3,48, "slope (ticks/s)  %0.5Lf", g_ts.m_slope);
+		clrtoeol();
+		mvprintw(4,48, "po8e  (ms)       %0.5f",
+		         (double)(gettime() - g_lastPo8eTime)*1000.0);
+		clrtoeol();
 		attroff(A_BOLD);
 
-		for (int i=0;i<NSCROLL;i++) {
+		for (int i=0; i<NSCROLL; i++) {
 			size_t n = g_scroll.size();
 			mvprintw(23-i,1, "%s", g_scroll[n-1-i].c_str());
 			clrtoeol();

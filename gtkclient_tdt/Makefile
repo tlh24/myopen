@@ -111,7 +111,8 @@ deps:
 	libgsl0-dev libatlas-base-dev libjack-jackd2-dev python-matplotlib \
 	python-jsonpickle python-opengl libboost1.49-all-dev pkg-config \
 	libhdf5-dev libsdl1.2-dev astyle \
-	libprotobuf-dev libprotobuf7 protobuf-compiler
+	libprotobuf-dev libprotobuf7 protobuf-compiler \
+	libncurses5-dev
 
 	@echo ""
 	@echo "make sure /usr/lib64 is in /etc/ld.so.conf.d/libc.conf"

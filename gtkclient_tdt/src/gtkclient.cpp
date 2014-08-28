@@ -454,7 +454,7 @@ static gint button_press_event( GtkWidget *,
 		int u = 0;
 		if (g_cursPos[0] > 0.0f)
 			u += 1;
-		if (g_cursPos[1] < 0.0f) 
+		if (g_cursPos[1] < 0.0f)
 			u += 2;
 
 		if (event->button == 1) {
