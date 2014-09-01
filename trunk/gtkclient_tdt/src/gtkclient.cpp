@@ -41,6 +41,7 @@
 
 #include "PO8e.h"
 
+#include "lockfile.h"
 #include "gettime.h"
 #include "cgVertexShader.h"
 #include "vbo.h"
@@ -256,8 +257,8 @@ void destroy(int)
 	//save the old values..
 	g_die = true;
 	sleep(0.5);
-	saveState();
 	gtk_main_quit();
+	saveState();
 	if (g_vsFadeColor)
 		delete g_vsFadeColor;
 	if (g_vsThreshold)
@@ -511,6 +512,10 @@ static gint button_press_event( GtkWidget *,
 static gboolean
 expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 {
+	if (g_die) {
+		return false;
+	}
+
 	GdkGLContext *glcontext = gtk_widget_get_gl_context (da);
 	GdkGLDrawable *gldrawable = gtk_widget_get_gl_drawable (da);
 
@@ -2185,7 +2190,12 @@ int main(int argc, char **argv)
 {
 	using namespace gtkclient;
 
-	(void) signal(SIGINT,destroy);
+	(void) signal(SIGINT, destroy);
+
+	lockfile lf = lockfile("/tmp/gtkclient.lock");
+	if (lf.lock()) {
+		return 1;
+	}
 
 	string titlestr = "gtkclient (TDT) v1.6";
 
@@ -2757,6 +2767,8 @@ int main(int argc, char **argv)
 #endif
 	//just in case.
 	closeSaveFiles(NULL, NULL);
+
+	lf.unlock();
 
 	KillFont();
 	// Optional:  Delete all global objects allocated by libprotobuf.
