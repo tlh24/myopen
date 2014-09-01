@@ -9,6 +9,7 @@
 #include <iostream>
 #include <ncurses.h>
 
+#include "lockfile.h"
 #include "PO8e.h"
 #include "gettime.h"
 #include "mmaphelp.h"
@@ -166,6 +167,11 @@ int main()
 
 	g_startTime = gettime();
 
+	lockfile lf = lockfile("/tmp/timesync.lock");
+	if (lf.lock()) {
+		return 1;
+	}
+
 	pthread_t thread1;
 	pthread_attr_t attr;
 	pthread_attr_init(&attr);
@@ -222,6 +228,8 @@ int main()
 
 	// shutdown stuff here
 	endwin();
+
+	lf.unlock();
 
 	return 0;
 }
