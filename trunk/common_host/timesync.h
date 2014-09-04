@@ -82,7 +82,8 @@ public:
 		m_timeOffset = 0.0;
 		slopeGC = new GainController(3e-5);
 		offsetGC = new GainController(1e-4);
-		mmh = new mmapHelp(2*sizeof(syncSharedData), TIMESYNC_MMAP);
+		// sizeof(*m_ssd) is safer than sizeof(struct syncSharedData)
+		mmh = new mmapHelp(sizeof(*m_ssd), TIMESYNC_MMAP);
 		mmh->prinfo();
 		m_ssd = (syncSharedData *)mmh->m_addr;
 		if (m_ssd) {

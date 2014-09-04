@@ -39,9 +39,9 @@ public:
 				return;
 			}
 			if (fill) {
-				int *s = (int *)malloc(length);
-				write(m_fd, s, length); //not buffered, I think. fill the file out.
-				free(s);
+				off_t size = lseek(m_fd, 0, SEEK_END);
+				ftruncate(m_fd, 0);
+				ftruncate(m_fd, length);
 			}
 		}
 		m_addr = mmap(NULL, length, PROT_READ | PROT_WRITE,
@@ -64,4 +64,3 @@ public:
 	}
 };
 #endif
-

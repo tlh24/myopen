@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <errno.h>
+//#include <errno.h>
 #include <string.h>
 
 // see: http://episteme.arstechnica.com/eve/forums/a/tpc/f/6330927813/m/149009042041
@@ -74,9 +74,6 @@ public:
 		}
 
 		m_fl.l_type = F_UNLCK;
-		m_fl.l_whence = SEEK_SET;
-		m_fl.l_start = 0;
-		m_fl.l_len = 0;
 
 		if (fcntl(m_fd, F_SETLK, &m_fl) == -1) {
 			printf("%s : unexpected error releasing lockfile\n", m_fn.c_str());
