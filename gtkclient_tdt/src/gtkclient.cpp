@@ -2760,7 +2760,7 @@ int main(int argc, char **argv)
 	jackSetResample(SRATE_HZ/SAMPFREQ);
 #endif
 
-	gtk_main ();
+	gtk_main();
 
 #ifdef JACK
 	jackClose(0);

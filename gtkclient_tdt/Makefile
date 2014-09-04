@@ -38,8 +38,8 @@ COM_HDR = include/channel.h include/wfwriter.h include/medfilt.h \
 ../common_host/jacksnd.h
 
 ifeq ($(strip $(DBG)),true)
-	CPPFLAGS += -g -rdynamic -DDEBUG
-	CFLAGS   += -g -rdynamic -DDEBUG
+	CPPFLAGS += -O1 -g -rdynamic -DDEBUG
+	CFLAGS   += -O1 -g -rdynamic -DDEBUG
 else
 	CPPFLAGS += -O3
 	CFLAGS   += -O3
@@ -106,7 +106,7 @@ clean:
 	src/*.pb.cc include/*.pb.h src/*.o 
 
 deps:
-	sudo apt-get install libgtk2.0-dev \
+	sudo apt-get install libgtk2.0-dev libgtk2.0-0-dbg \
 	libgtkgl2.0-dev libgtkglext1-dev freeglut3-dev nvidia-cg-toolkit \
 	libgsl0-dev libatlas-base-dev libjack-jackd2-dev python-matplotlib \
 	python-jsonpickle python-opengl libboost1.49-all-dev pkg-config \
