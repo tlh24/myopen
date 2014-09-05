@@ -30,7 +30,10 @@ public:
 				perror("could not open");
 				return;
 			}
-			if (fill) ftruncate(m_fd, length);
+			if (fill) {
+				ftruncate(m_fd, 0);
+				ftruncate(m_fd, length);
+			}
 		} else {
 			m_fd = open(fname, O_RDWR | O_CREAT, S_IRWXU | S_IRWXG); //user and group permissions.
 			if (m_fd <= 0) {
@@ -39,7 +42,7 @@ public:
 				return;
 			}
 			if (fill) {
-				off_t size = lseek(m_fd, 0, SEEK_END);
+				//off_t size = lseek(m_fd, 0, SEEK_END);
 				ftruncate(m_fd, 0);
 				ftruncate(m_fd, length);
 			}
