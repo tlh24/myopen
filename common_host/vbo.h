@@ -517,6 +517,8 @@ public:
 			}
 		}
 		if (npts <= 0) {
+			if (inside != NULL)
+				free(inside);
 			return false;
 		}
 		for (int k=0; k<m_wfLen; k++) {
@@ -542,6 +544,8 @@ public:
 		}
 		//really should iteratively assign this, moving until we get a set number of type 1/2 errors.
 		copyData(m_vbo, 0, m_rows, m_f, m_dim * m_cols);
+		if (inside != NULL)
+			free(inside);
 		return true;
 	}
 	void updateAperture(float *temp, float aperture, float *color) {
