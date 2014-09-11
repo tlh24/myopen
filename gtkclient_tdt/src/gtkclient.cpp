@@ -1095,7 +1095,7 @@ void *po8_thread(void *)
 		long double starttime = gettime();
 		long double totalSamples = 0.0; //for simulation.
 		double		sinSamples = 0.0; // for driving the sinusoids; resets every 4e4.
-		long long bytes = 0;
+		//long long bytes = 0;
 		unsigned int frame = 0;
 		unsigned int nchan = NCHAN;
 		unsigned int bps = 2; //bytes/sample
@@ -1183,7 +1183,7 @@ void *po8_thread(void *)
 				usleep(70);
 			}
 			if (numSamples > 0 && numSamples <= bufmax) {
-				bytes += numSamples * nchan * bps;
+				//bytes += numSamples * nchan * bps;
 
 				long double time = gettime();
 				g_lastPo8eTime = time;
