@@ -80,7 +80,7 @@ bool StimChan::save(MatStor *ms)
 		ms->setDouble(i, buf_tick, (double) ticks[i]);
 
 	map<unsigned int, RecArtifact *>::iterator it;
-	for (it = artifacts.begin(); it != artifacts.end(); it++) {
+	for (it = artifacts.begin(); it != artifacts.end(); ++it) {
 		unsigned int rec_chan = (*it).second->rec_chan;
 		char buf_wf[128];
 		memset(buf_wf, 0, sizeof(buf_wf));

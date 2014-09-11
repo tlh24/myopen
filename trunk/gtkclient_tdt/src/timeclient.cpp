@@ -76,7 +76,7 @@ void *po8_thread(void *)
 		}
 
 		long double totalSamples = 0.0;
-		long long bytes = 0;
+		//long long bytes = 0;
 		unsigned int frame = 0;
 		unsigned int nchan = 4;
 		unsigned int bps = 2; //bytes/sample
@@ -135,7 +135,7 @@ void *po8_thread(void *)
 			}
 
 			if (numSamples > 0 && numSamples <= bufmax) {
-				bytes += numSamples * nchan * bps;
+				//bytes += numSamples * nchan * bps;
 
 				long double time = gettime();
 				g_lastPo8eTime = time;

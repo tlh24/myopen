@@ -156,7 +156,7 @@ int main(int argn, char **argc)
 
 	// now write each stim chan
 	map<unsigned int, AnalogChan *>::iterator it;
-	for (it = analchans.begin(); it != analchans.end(); it++) {
+	for (it = analchans.begin(); it != analchans.end(); ++it) {
 		printf("analog ch: %d\n", (*it).second->chan);
 		(*it).second->save(&ms);
 	}

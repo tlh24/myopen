@@ -162,7 +162,7 @@ int main(int argn, char **argc)
 
 	// now write each stim chan
 	map<unsigned int, StimChan *>::iterator it;
-	for (it = stimchans.begin(); it != stimchans.end(); it++) {
+	for (it = stimchans.begin(); it != stimchans.end(); ++it) {
 		printf("stim ch: %d\n", (*it).second->stim_chan);
 		(*it).second->save(&ms);
 	}
