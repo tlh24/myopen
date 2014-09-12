@@ -26,7 +26,7 @@ classdef SignalSimulator < Inputs.SignalInput
             else
                 obj.ChannelIds = channelIds;
             end
-
+            
             if nargin < 3
                 MAX_SAMPLES = 4000;
             else
@@ -43,7 +43,7 @@ classdef SignalSimulator < Inputs.SignalInput
         function bufferedData = getData(obj,numSamples)
             % This function will always return the correct size for data
             % (based on the number of samples) however results will be
-            % padded with zeros.  
+            % padded with zeros.
             
             if nargin < 2
                 numSamples = obj.NumSamples;
@@ -82,7 +82,7 @@ classdef SignalSimulator < Inputs.SignalInput
             if (numSamples > bufferSize)
                 error('NumSamples requested [%d] is greater than SignalBuffer size',numSamples,bufferSize);
             end
-
+            
             idxSamples = 1+bufferSize-numSamples : bufferSize;
             bufferedData = obj.SignalBuffer(idxSamples,:);
         end
@@ -172,7 +172,7 @@ classdef SignalSimulator < Inputs.SignalInput
             end
             
             obj.hg.hFig = hFig;
-
+            
             cellCurrentKeys = {};
             
             set(obj.hg.hFig,'Position',[20 50 200 70]);
@@ -189,16 +189,24 @@ classdef SignalSimulator < Inputs.SignalInput
             drawnow
             
             % Get the underlying Java reference
+            % http://undocumentedmatlab.com/blog/detecting-window-focus-events
             warning('off','MATLAB:hg:PossibleDeprecatedJavaSetHGProperty');
             warning('off','MATLAB:HandleGraphics:ObsoletedProperty:JavaFrame');
             jFig = get(hFig, 'JavaFrame');
             jAxis = jFig.getAxisComponent;
-
-            % Set the focus event callback
-            set(jAxis,'FocusGainedCallback',@(src,evt)focusGained);
-            set(jAxis,'FocusLostCallback',@(src,evt)focusLost);
             
-            focusGained();
+            %http://undocumentedmatlab.com/blog/matlab-callbacks-for-java-events-in-r2014a
+            jAxis = handle(jAxis, 'CallbackProperties');
+            
+            try
+                % Set the focus event callback
+                set(jAxis,'FocusGainedCallback',@(src,evt)focusGained);
+                set(jAxis,'FocusLostCallback',@(src,evt)focusLost);
+
+                focusGained();
+            catch ME
+                warning(ME.message);
+            end
             
             function focusGained
                 % Callback when window is active, indicating keys will
@@ -235,7 +243,7 @@ classdef SignalSimulator < Inputs.SignalInput
             end %key_up
             
             function key_down(evt)
-
+                
                 switch evt.Key
                     case 'a'
                         setPattern(obj,1);
@@ -283,7 +291,7 @@ classdef SignalSimulator < Inputs.SignalInput
                         setPattern(obj,0);
                         set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 0');
                 end
-            
+                
                 cellCurrentKeys = unique([cellCurrentKeys {evt.Key}]);
                 
             end %key_down
@@ -299,7 +307,7 @@ classdef SignalSimulator < Inputs.SignalInput
             if ~obj.isRunning
                 fprintf('[%s] Simulator Started\n',mfilename);
                 obj.isRunning = true;
-            end                
+            end
         end
     end
 end
