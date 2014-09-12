@@ -46,7 +46,7 @@ classdef guiRocEditor < handle
         hRocNames;
         hAngleBox;
         jSpinnerModel;
-                
+        
     end
     methods
         function obj = guiRocEditor(rocFilename,isNfu)
@@ -144,7 +144,7 @@ classdef guiRocEditor < handle
                     'TickDir','out',...
                     'TickLength',[.05 .1],...
                     'Units','Pixels',...
-                    'Position',[xPos(iCol+1) 180*(numRows-iRow-1)+20 axesWidth axesHeight]); %#ok<LAXES>
+                    'Position',[xPos(iCol+1) 180*(numRows-iRow-1)+20 axesWidth axesHeight]);
                 
                 % title(hAx(i),sliderTitle{i},'Interpreter','None');
                 obj.hJointSliders{i} = GUIs.widgetSlider(...
@@ -172,7 +172,6 @@ classdef guiRocEditor < handle
             menuFileOpen = uimenu(menuFile,'Label','Open...','Callback',@(src,evt)uiOpen(obj));
             menuFileSave = uimenu(menuFile,'Label','Save As...','Callback',@(src,evt)uiSaveAs(obj));
             
-            
             % Roc ID Spinner Label
             uicontrol(hParent,'Style','text','Position',[10 620, 60, 20],...
                 'String','RocID:','HorizontalAlignment','Left');
@@ -180,7 +179,8 @@ classdef guiRocEditor < handle
             % Roc ID Spinner
             numRocs = 1;  % needs to be updated when new roc added
             % ref: http://undocumentedmatlab.com/blog/using-spinners-in-matlab-gui/
-            obj.jSpinnerModel = javax.swing.SpinnerNumberModel(0,0,numRocs,1);
+            %obj.jSpinnerModel = javax.swing.SpinnerNumberModel(0,0,numRocs,1);
+            obj.jSpinnerModel = javaObjectEDT(javax.swing.SpinnerNumberModel(0,0,numRocs,1));
             jSpinner = javax.swing.JSpinner(obj.jSpinnerModel);
             jhSpinner = javacomponent(jSpinner, [10,600,40,20], hParent);
             jhSpinner.StateChangedCallback = @(src,evt)cbSpinner(src);
@@ -216,9 +216,9 @@ classdef guiRocEditor < handle
                 'horizontalalignment','left');
             
             % Set Angles Button
-             uicontrol(hParent,'Style','pushbutton','Position',[600 620, 120, 20],...
+            uicontrol(hParent,'Style','pushbutton','Position',[600 620, 120, 20],...
                 'String','Set Angles','HorizontalAlignment','Left','Callback',@(src,evt)cbGetAngles);
-
+            
             function cbSpinner(src)
                 obj.CurrentRocId = src.Value+1;
                 obj.CurrentWaypointId = 1;
@@ -311,7 +311,7 @@ classdef guiRocEditor < handle
             ang = obj.jointAngles;
         end
         function updateFigure(obj)
-
+            
             rocId = obj.CurrentRocId;
             waypointId = obj.CurrentWaypointId;
             
@@ -320,7 +320,7 @@ classdef guiRocEditor < handle
             % set roc names list box
             set(obj.hRocNames,...
                 'Value',rocId);
-                        
+            
             % set roc waypoints list box
             set(obj.hRocWaypoints,...
                 'String',cellfun(@num2str,num2cell(roc.waypoint),'UniformOutput',false),...
@@ -341,7 +341,7 @@ classdef guiRocEditor < handle
                 set(obj.hJointSliders{iJoint},'Value',newAngle);
                 finalAngles(iJoint) = newAngle;
             end
-                      
+            
             % interpolate
             maxDiff = max(abs(finalAngles - currentAngles));
             
@@ -359,7 +359,7 @@ classdef guiRocEditor < handle
             transmit(obj);
             
             % set angle text box
-            setAngleTextBox(obj)            
+            setAngleTextBox(obj)
         end
         
         function setAngleTextBox(obj)
@@ -370,13 +370,14 @@ classdef guiRocEditor < handle
         function setSliders(obj,oldAngles,newAngles)
             
             currentAngles = oldAngles;
-                       
+            
+            finalAngles = zeros(1,length(obj.hJointSliders));
             for i = 1:length(obj.hJointSliders)
                 newAngle = newAngles(i);
                 set(obj.hJointSliders{i},'Value',newAngle);
                 finalAngles(i) = newAngle;
             end
-                        
+            
             % interpolate
             maxDiff = max(abs(finalAngles - currentAngles));
             
@@ -426,7 +427,7 @@ classdef guiRocEditor < handle
             if delay_send(30)
                 return
             else
-                transmit(obj);  
+                transmit(obj);
                 
                 angleTextBox = sprintf('%+ 6.1f, ',obj.jointAngles*180/pi);
                 set(obj.hAngleBox, 'String',angleTextBox(1:end-2),'FontName','Courier');
@@ -460,7 +461,7 @@ classdef guiRocEditor < handle
 end
 
 %Callbacks
-function set_position(src,evnt,obj,i) %#ok<INUSL> 
+function set_position(src,evnt,obj,i) %#ok<INUSL>
 
 newAngle = get(src,'Value');
 
