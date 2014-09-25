@@ -1010,7 +1010,7 @@ classdef MiniVIE < Common.MiniVieObj
             obj.SignalClassifier = SignalAnalysis.Lda();
             obj.SignalClassifier.initialize(obj.TrainingData);
             
-            classNames = GUIs.guiClassifierChannels.getSavedDefaults;
+            classNames = obj.TrainingData.ClassNames;
             if isempty(classNames)
                 classNames = GUIs.guiClassifierChannels.getDefaultNames;
             end

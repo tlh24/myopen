@@ -44,9 +44,6 @@ if isempty(trainedClassNames)
 end
 
 
-
-
-
 % setup display
 greenArm = [0.7 0.9 0.6];
 blueArm = [0.7 0.7 0.9];
@@ -96,6 +93,11 @@ hScenario.ArmStateModel.structState(7).MaxVelocity = 1;
 
 
 iTest = 0;
+
+% setup a partial filename for temporary save during TAC
+extension = '.partialTac';
+partialFile = [FilePrefix datestr(now,'yyyymmdd_HHMMSS') extension];
+
 try
     for iTrial = 1:numTrials
         % Randomize
@@ -115,6 +117,11 @@ try
             end
             iTest = iTest + 1;
             structTrialLog(iTest) = runTrial(thisClass);
+            
+            try
+                save(partialFile,'structTrialLog','-mat');
+            end
+            
         end
     end
 catch ME
@@ -126,10 +133,17 @@ if ~isempty(fullFilename)
     try
         save(fullFilename,'structTrialLog','-mat');
         %save(fullFilename,'structTrialLog','TrainingData','-mat');
+        
+        % verify permanent file before deleting partial file
+        if ( exist(fullFilename,'file') == 2 )  % ensure file is there
+            if strcmpi(who('-file',fullFilename),'structTrialLog') % ensure file has data
+                delete(partialFile)
+            end
+        end
+        
     catch ME
-        rethrow(ME);
         disp(mfilename)
-        %keyboard
+        rethrow(ME);
     end
 end
 

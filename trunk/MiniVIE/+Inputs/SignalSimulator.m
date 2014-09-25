@@ -202,27 +202,38 @@ classdef SignalSimulator < Inputs.SignalInput
                 % Set the focus event callback
                 set(jAxis,'FocusGainedCallback',@(src,evt)focusGained);
                 set(jAxis,'FocusLostCallback',@(src,evt)focusLost);
-
+                
                 focusGained();
             catch ME
                 warning(ME.message);
             end
             
             function focusGained
-                % Callback when window is active, indicating keys will
-                % change the current pattern
-                c = [0.4 0.8 0];
-                set(hFig,'Color',c);
-                set(obj.hg.hTxtCurrentPattern,'BackgroundColor',c);
-                drawnow;
+                try
+                    % Callback when window is active, indicating keys will
+                    % change the current pattern
+                    c = [0.4 0.8 0];
+                    set(hFig,'Color',c);
+                    set(obj.hg.hTxtCurrentPattern,'BackgroundColor',c);
+                    drawnow;
+                    
+                catch ME
+                    warning(ME.message);
+                end
             end
             function focusLost
-                % Callback when window loses focus, indicating keys will
-                % not be accepted
-                c = [0.9 0.1 0.1];
-                set(hFig,'Color',c);
-                set(obj.hg.hTxtCurrentPattern,'BackgroundColor',c);
-                drawnow;
+                try
+                    % Callback when window loses focus, indicating keys will
+                    % not be accepted
+                    if ishandle(hFig)
+                        c = [0.9 0.1 0.1];
+                        set(hFig,'Color',c);
+                        set(obj.hg.hTxtCurrentPattern,'BackgroundColor',c);
+                        drawnow;
+                    end
+                catch ME
+                    warning(ME.message);
+                end
             end
             
             function key_up(evt)
