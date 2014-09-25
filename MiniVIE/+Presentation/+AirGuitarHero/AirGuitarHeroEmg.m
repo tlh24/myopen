@@ -66,10 +66,15 @@ classdef AirGuitarHeroEmg < Presentation.AirGuitarHero.AirGuitarHeroBase
             %resetClassifier(obj);
             
             try
-                useSerial = ~isempty(strfind(upper(outputDevice),'COM'));
+                useSerial = strncmpi(outputDevice,'COM',3);
                 if useSerial
-                    obj.hOutput = serial(outputDevice);
-                    fopen(obj.hOutput);
+                    fprintf('Creating serial object at %s...',outputDevice);
+                    s = serial(outputDevice,'BaudRate',115200);
+                    fprintf('Done\n');
+                    fprintf('Opening %s...',s.Port);
+                    fopen(s);
+                    fprintf('Done\n');
+                    obj.hOutput = s;
                     fwrite(obj.hOutput,uint8(0));
                 else
                     % TODO: change output device id

@@ -100,7 +100,7 @@ classdef SignalSimulator < Inputs.SignalInput
                 case 0
                     % No movement
                     obj.SignalFrequency = 60;
-                    obj.SignalAmplitude = 0.04;
+                    obj.SignalAmplitude = 0.15;
                 case 1
                     obj.SignalAmplitude = zeros(1,obj.NumChannels);
                     obj.SignalFrequency = 300;
