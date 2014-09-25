@@ -39,6 +39,7 @@
 
 #include <libgen.h>
 
+#include "threadpool.h"
 #include "PO8e.h"
 
 #include "lockfile.h"
@@ -77,6 +78,8 @@ cgVertexShader		*g_vsFadeColor;
 cgVertexShader		*g_vsThreshold;
 
 using namespace std;
+
+threadpool_t *g_pool;
 
 char	g_prefstr[256];
 
@@ -171,7 +174,6 @@ gboolean g_enableStimClockBlanking = false;
 
 //gboolean g_enableSplines = true;
 //gboolean g_enableSubsampleAlignment = true;
-
 
 int 	g_mode = MODE_RASTERS;
 int g_drawmode[2] = {GL_POINTS, GL_LINE_STRIP};
@@ -374,23 +376,23 @@ void glPrint(char *text) // custom gl print routine.
 	glCallLists(strlen(text), GL_UNSIGNED_BYTE, text);
 	glPopAttrib();  // undoes the glPushAttrib(GL_LIST_BIT);
 }
-GLvoid printGLf(const char *fmt, ...)
-{
-	va_list ap;     /* our argument pointer */
-	char text[256];
-	if (fmt == NULL)    /* if there is no string to draw do nothing */
-		return;
-	va_start(ap, fmt);  /* make ap point to first unnamed arg */
-	/* FIXME: we *should* do boundschecking or something to prevent buffer
-	 * overflows/segmentations faults
-	 */
-	vsprintf(text, fmt, ap);
-	va_end(ap);
-	glPushAttrib(GL_LIST_BIT);
-	glListBase(g_base - 32);
-	glCallLists(strlen(text), GL_UNSIGNED_BYTE, text);
-	glPopAttrib();
-}
+//GLvoid printGLf(const char *fmt, ...)
+//{
+//	va_list ap;     /* our argument pointer */
+//	char text[256];
+//	if (fmt == NULL)    /* if there is no string to draw do nothing */
+//		return;
+//	va_start(ap, fmt);  /* make ap point to first unnamed arg */
+//	/* FIXME: we *should* do boundschecking or something to prevent buffer
+//	 * overflows/segmentations faults
+//	 */
+//	vsprintf(text, fmt, ap);
+//	va_end(ap);
+//	glPushAttrib(GL_LIST_BIT);
+//	glListBase(g_base - 32);
+//	glCallLists(strlen(text), GL_UNSIGNED_BYTE, text);
+//	glPopAttrib();
+//}
 void updateCursPos(float x, float y)
 {
 	g_cursPos[0] = x/g_viewportSize[0];
@@ -981,7 +983,7 @@ void destroyGUI(GtkWidget *, gpointer)
 {
 	destroy(SIGINT);
 }
-void *worker_thread(void *)
+void *nlms_train_thread(void *)
 {
 	float  f[RECCHAN];
 	double d[RECCHAN];
@@ -994,6 +996,7 @@ void *worker_thread(void *)
 		for (int ch=0; ch<RECCHAN; ch++) {
 			if (g_filterbuf[ch]->wp() <= g_filterbuf[ch]->rp()) {
 				dataokay = false;
+				usleep(1e3);
 				break;
 			}
 		}
@@ -1020,6 +1023,68 @@ void *worker_thread(void *)
 	for (int ch=0; ch<RECCHAN; ch++)
 		gsl_vector_free(xvec[ch]);
 	return NULL;
+}
+void sorter_thread(void *arg)
+{
+	int *pk = (int *)arg;
+
+	float wf[NWFSAMP];
+	unsigned int tkall[NWFSAMP];
+
+	float threshold = g_c[*pk]->getThreshold(); // 1 -> 10mV.
+	int centering = (float)NWFSAMP - g_c[*pk]->getCentering();
+
+	while (g_spikebuf[*pk].getSpike(tkall, wf, NWFSAMP, threshold, centering)) {
+
+		unsigned int tk = tkall[0];	// start of waveform
+
+		int unit = 0; //unsorted.
+		for (int u=1; u>=0; u--) { // compare to template.
+			float sum = 0;
+			for (int j=0; j<NWFSAMPUP; j++) {
+				float r = wf[j] - g_c[*pk]->m_template[u][j];
+				sum += r*r;
+			}
+			sum /= NWFSAMPUP;
+			if (sum < g_c[*pk]->getAperture(u))
+				unit = u+1;
+		}
+
+		// check if this exceeds minimum ISI.
+		// wftick is indexed to the start of the waveform.
+		if (tk - g_lastSpike[*pk][unit] > g_minISI*SRATE_KHZ) {
+			long double the_time = g_ts.getTime(tk);
+			//need to more precisely calulate spike time here.
+			g_c[*pk]->addWf(wf, unit, the_time, true);
+			g_c[*pk]->updateISI(unit, tk);
+			g_lastSpike[*pk][unit] = tk;
+			if (g_wfwriter.enabled()) {
+				if (unit > 0 || g_saveUnsorted) {
+					wfpak pak;
+					pak.time = the_time;
+					pak.ticks = tk;
+					pak.channel = *pk;
+					pak.unit = unit;
+					pak.len = NWFSAMP;
+					float gain2 = 2.f * 32767.f;
+					for (int g=0; g<NWFSAMP; g++) {
+						pak.wf[g] = (short)(wf[g]*gain2); //should be in original units.
+					}
+					g_wfwriter.add(&pak);
+				}
+			}
+			if (unit > 0 && unit <=2) { // for drawing
+				int uu = unit-1;
+				g_fr[*pk][uu].add(the_time);
+				i64 w = g_sbufW[uu] % (i64)(sizeof(g_sbuf[0])/8);
+				g_sbuf[uu][w*2+0] = (float)(the_time);
+				g_sbuf[uu][w*2+1] = (float)*pk;
+				g_sbufW[uu]++;
+			}
+		} else {
+			g_c[*pk]->m_isiViolations++;
+		}
+	}
 }
 void *wfwrite_thread(void *)
 {
@@ -1466,130 +1531,20 @@ void *po8_thread(void *)
 					}
 				}
 
-				// sort -- see if samples pass threshold.  if so, copy.
-				//double wflo[NWFSAMP+2];
-				//double tklo[NWFSAMP+2];
-				float wf[NWFSAMP];
-				unsigned int tkall[NWFSAMP];
-
-				//double wfhi[NWFSAMPUP+8];
-				//double tkhi[NWFSAMPUP+8];
-
-				/*
-				gsl_interp_accel *spline_acc = gsl_interp_accel_alloc();
-				gsl_spline *spline;
-				if (g_enableSplines)
-					spline = gsl_spline_alloc(gsl_interp_cspline, NWFSAMP+2);
-				else
-					spline = gsl_spline_alloc(gsl_interp_linear, NWFSAMP+2);
-				*/
-
+				// sort -- see if samples pass threshold. if so, copy.
+				int kch[NCHAN];
 				for (int k=0; k<NCHAN && !g_die; k++) {
-					float threshold = g_c[k]->getThreshold(); // 1 -> 10mV.
-					//int centering = (float)NWFSAMP - g_c[k]->getCentering()*(float)NWFSAMP/(float)NWFSAMPUP;
-					int centering = (float)NWFSAMP - g_c[k]->getCentering();
-					//int centering = g_c[k]->getCentering();
-
-					//while (g_spikebuf[k].getSpike(tklo,wflo,NWFSAMP+2, threshold, centering)) {
-					while (g_spikebuf[k].getSpike(tkall,wf,NWFSAMP, threshold, centering)) {
-
-						// fill in tkhi
-						/*
-						tkhi[0] = tklo[0];
-						double dt = (tklo[NWFSAMP+2-1]-tklo[0])/(NWFSAMPUP+8-1);
-						for (int i=0; i<(NWFSAMPUP+8-1); i++)
-							tkhi[i+1] = tkhi[i] + dt;
-						tkhi[NWFSAMPUP+8-1] = tklo[NWFSAMP+2-1];
-
-						gsl_spline_init(spline, tklo, wflo, NWFSAMP+2);
-
-						for (int i=0; i<(NWFSAMPUP+8); i++) {
-							wfhi[i] = gsl_spline_eval(spline, tkhi[i], spline_acc);
-						}
-
-						int dx = 0;
-
-						if (g_enableSubsampleAlignment) {
-
-							int c = (NWFSAMP+2-centering)*(float)NWFSAMPUP/(float)NWFSAMP;
-							int x0 = c - 4;
-							int x1 = c + 4;
-							for (int i=x0; i<=x1; i++) {
-								float aa = wfhi[i];
-								float bb = wfhi[i+1];
-								if ((threshold > 0 && (aa <= threshold && bb > threshold))
-								    || (threshold < 0 && (aa >= threshold && bb < threshold))) {
-									c = i;
-								}
-							}
-							dx = (NWFSAMP+2-centering)*(float)NWFSAMPUP/(float)NWFSAMP - c;
-						}
-						*/
-
-						//float wf[NWFSAMPUP];
-						//unsigned int tk;
-						//for (int i=0; i<NWFSAMPUP; i++) {
-						//	wf[i] = (float)wfhi[i+4+dx];
-						//}
-						//tk = (unsigned int)tkhi[4+dx];	// start of waveform
-
-						unsigned int tk = tkall[0];	// start of waveform
-
-						int unit = 0; //unsorted.
-						//compare to template.
-						for (int u=1; u>=0; u--) {
-							float sum = 0;
-							for (int j=0; j<NWFSAMPUP; j++) {
-								float r = wf[j] - g_c[k]->m_template[u][j];
-								sum += r*r;
-							}
-							sum /= NWFSAMPUP;
-							if (sum < g_c[k]->getAperture(u))
-								unit = u+1;
-						}
-
-						// check if this exceeds minimum ISI.
-						// wftick is indexed to the start of the waveform.
-						if (tk - g_lastSpike[k][unit] > g_minISI*SRATE_KHZ) {
-							long double the_time = g_ts.getTime(tk);
-							//need to more precisely calulate spike time here.
-							g_c[k]->addWf(wf, unit, the_time, true);
-							g_c[k]->updateISI(unit, tk);
-							g_lastSpike[k][unit] = tk;
-							if (g_wfwriter.enabled()) {
-								if (unit > 0 || g_saveUnsorted) {
-									wfpak pak;
-									pak.time = the_time;
-									pak.ticks = tk;
-									pak.channel = k;
-									pak.unit = unit;
-									pak.len = NWFSAMP;
-									float gain2 = 2.f * 32767.f;
-									for (int g=0; g<NWFSAMP; g++) {
-										pak.wf[g] = (short)(wf[g]*gain2); //should be in original units.
-									}
-									g_wfwriter.add(&pak);
-								}
-							}
-							if (unit > 0 && unit <=2) {
-								int uu = unit-1;
-								g_fr[k][uu].add(the_time);
-								i64 w = g_sbufW[uu] % (i64)(sizeof(g_sbuf[0])/8);
-								g_sbuf[uu][w*2+0] = (float)(the_time);
-								g_sbuf[uu][w*2+1] = (float)k;
-								g_sbufW[uu]++;
-							}
-						} else {
-							g_c[k]->m_isiViolations++;
-						}
-					}
+					kch[k] = k;
+					int res;
+					// try again if thread queue is full
+					do {
+						res = threadpool_add(g_pool, &sorter_thread, &(kch[k]), 0);
+					} while (res != 0);
 				}
-				//gsl_spline_free(spline);
-				//gsl_interp_accel_free(spline_acc);
 			}
 			frame++;
 		}
-		//delete buffers since we have dynamically allocated;
+		// delete buffers since we have dynamically allocated;
 		delete[] temp;
 		delete[] temptemp;
 		delete[] tempfloat;
@@ -2197,7 +2152,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	string titlestr = "gtkclient (TDT) v1.6";
+	string titlestr = "gtkclient (TDT) v1.7";
 
 #ifdef DEBUG
 	feenableexcept(FE_DIVBYZERO|FE_INVALID|FE_OVERFLOW);  // Enable (some) floating point exceptions
@@ -2211,8 +2166,6 @@ int main(int argc, char **argv)
 	GtkWidget *paned;
 	GtkWidget *frame;
 	GtkWidget *button;
-	//GtkWidget *combo;
-	//GtkWidget *paned2;
 
 	string s;
 
@@ -2629,8 +2582,6 @@ int main(int argc, char **argv)
 	gtk_label_set_angle(GTK_LABEL(label), 90);
 	gtk_notebook_insert_page(GTK_NOTEBOOK(g_notebook), box1, label, 4);
 
-
-
 	// bottom section, visible on all screens
 	bx = gtk_hbox_new (FALSE, 3);
 
@@ -2732,7 +2683,15 @@ int main(int argc, char **argv)
 	asciiart += "\033[0m";
 	printf("%s\n\n",asciiart.c_str());
 
-	printf("artifact buffer length: %d samples\n",ARTBUF);
+	printf("artifact buffer: %d samples\n",ARTBUF);
+
+	int nthreads = 8;
+	int nqueue = 256;
+	if ((g_pool = threadpool_create(nthreads, nqueue, 0)) == NULL) {
+		printf("could not create thread pool\n");
+		return 1;
+	}
+	printf("worker threads: %d\nqueue size: %d\n", nthreads, nqueue);
 
 	pthread_t thread1;
 	pthread_attr_t attr;
@@ -2743,7 +2702,7 @@ int main(int argc, char **argv)
 	pthread_create( &thread1, &attr, icmswrite_thread, 	0 );
 	pthread_create( &thread1, &attr, analogwrite_thread,0 );
 	pthread_create( &thread1, &attr, mmap_thread, 		0 );
-	pthread_create( &thread1, &attr, worker_thread, 	0 );
+	pthread_create( &thread1, &attr, nlms_train_thread, 0 );
 
 	//set the initial sampling stage.
 	//gtk_combo_box_set_active(GTK_COMBO_BOX(combo), 12);
@@ -2760,11 +2719,16 @@ int main(int argc, char **argv)
 	jackSetResample(SRATE_HZ/SAMPFREQ);
 #endif
 
-	gtk_main();
+	gtk_main(); // gtk itself uses three threads, it seems
 
 #ifdef JACK
 	jackClose(0);
 #endif
+
+	if (threadpool_destroy(g_pool, threadpool_graceful) != 0) {
+		printf("error on threadpool_destroy\n");
+	}
+
 	//just in case.
 	closeSaveFiles(NULL, NULL);
 

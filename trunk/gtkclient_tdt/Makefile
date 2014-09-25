@@ -16,7 +16,8 @@ CPPFLAGS += -Wall -Wcast-align -Wpointer-arith -Wshadow -Wsign-compare \
 -Wformat=2 -Wno-format-y2k -Wmissing-braces -Wparentheses -Wtrigraphs \
 -Wextra -pedantic -std=c++11 -Wno-int-to-pointer-cast #-mcmodel=medium
 
-CFLAGS := -Wall -Wcast-align -Wpointer-arith -Wshadow -Wsign-compare \
+CFLAGS := -Iinclude -I/usr/local/include -I../common_host
+CFLAGS += -Wall -Wcast-align -Wpointer-arith -Wshadow -Wsign-compare \
 -Wformat=2 -Wno-format-y2k -Wmissing-braces -Wparentheses -Wtrigraphs \
 -Wextra -pedantic -std=c99
 
@@ -29,7 +30,7 @@ GTKLD = `pkg-config --libs $(GLIBS) `
 
 GOBJS = src/analog.pb.o src/icms.pb.o src/gtkclient.o src/gettime.o \
 src/glInfo.o src/matStor.o src/analogwriter.o src/icmswriter.o src/filter.o \
-src/buffer.o src/spikebuffer.o src/rls.o src/nlms.o
+src/buffer.o src/spikebuffer.o src/rls.o src/nlms.o src/threadpool.o
 COM_HDR = include/channel.h include/wfwriter.h include/medfilt.h \
 ../common_host/vbo.h \
 ../common_host/cgVertexShader.h \
@@ -38,8 +39,8 @@ COM_HDR = include/channel.h include/wfwriter.h include/medfilt.h \
 ../common_host/jacksnd.h
 
 ifeq ($(strip $(DBG)),true)
-	CPPFLAGS += -O1 -g -rdynamic -DDEBUG
-	CFLAGS   += -O1 -g -rdynamic -DDEBUG
+	CPPFLAGS += -O0 -g -rdynamic -DDEBUG
+	CFLAGS   += -O0 -g -rdynamic -DDEBUG
 else
 	CPPFLAGS += -O3
 	CFLAGS   += -O3
@@ -73,6 +74,12 @@ src/%.o: ../common_host/%.cpp $(COM_HDR)
 src/%.pb.cc src/%.pb.h: proto/%.proto
 	protoc -I$(<D) --cpp_out=src $<
 	mv src/$(*F).pb.h include
+
+src/threadpool.o: src/threadpool.c
+	$(CC) -c $(CFLAGS) $< -o $@
+
+src/wf_plot.o: src/wf_plot.c
+	$(CC) -c $(CFLAGS) $< -o $@
 
 gtkclient: $(GOBJS)
 	$(CPP) -o $@ $(GTKLD) $(LDFLAGS) $^
