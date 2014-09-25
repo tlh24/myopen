@@ -1,0 +1,16 @@
+This folder contains a basic program that is embedded into a modified Wii Guitar
+
+The Program is designed to run on a 3.3 V Arduino Pro Mini
+Arduino Pro Mini 328 - 3.3V/8MHz
+with a 
+Bluetooth Mate Gold
+WRL-12580
+
+
+
+See:
+http://spectrum.ieee.org/consumer-electronics/gaming/for-those-without-hands-theres-air-guitar-hero
+http://makezine.com/projects/make-29/air-guitar-hero/
+
+ 
+Created 5/25/2013 Armiger
