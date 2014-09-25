@@ -180,7 +180,11 @@ classdef AirGuitarHeroBase < hgsetget
                 % Serial command is a single byte with bit's
                 % set for
                 val = uint8(binvec2dec(~cmd));
-                fwrite(obj.hOutput,val);
+                try
+                    fwrite(obj.hOutput,val);
+                catch ME
+                    warning(ME.message);
+                end
             else
                 % send digital command to daq hw
                 %sendButtonCommand(obj,~([noteMask 0 0 strumOn]));
