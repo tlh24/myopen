@@ -720,6 +720,9 @@ if ~ischar(strIn) || isempty(strIn) || (length(strIn) > 8)
 end
 
 canAddress = '028C901A';
+canAddress = '1FE53018';
+canAddress = '1FFFFFFF';
+
 hexVals = dec2hex(uint8(strIn));
 canOut = sprintf('T%8s%d%s\n',canAddress,size(hexVals,1),hexVals');
 
