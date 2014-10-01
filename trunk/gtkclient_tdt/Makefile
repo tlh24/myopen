@@ -122,8 +122,7 @@ deps:
 	libncurses5-dev cppcheck
 
 	@echo ""
-	@echo "make sure /usr/lib64 is in /etc/ld.so.conf.d/libc.conf"
-	@echo "otherwise Cg may not be found. "
+	@echo "make sure non-free is in /etc/apt/sources.list for nvidia-cg-toolkit."
 
 check:
 	cppcheck -Iinclude -I/usr/local/include -I../common_host --enable=all \
