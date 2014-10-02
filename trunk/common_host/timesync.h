@@ -85,7 +85,7 @@ public:
 		// sizeof(*m_ssd) is safer than sizeof(struct syncSharedData)
 		mmh = new mmapHelp(sizeof(*m_ssd), TIMESYNC_MMAP);
 		mmh->prinfo();
-		m_ssd = static_cast<syncSharedData*>(mmh->m_addr);
+		m_ssd = static_cast<syncSharedData *>(mmh->m_addr);
 		if (m_ssd) {
 			m_ssd[0].magic = m_ssd[1].magic = 0x134fbab3;
 			m_ssd[0].valid = false;
@@ -170,7 +170,7 @@ public:
 	TimeSyncClient() {
 		mmh = new mmapHelp(2*sizeof(syncSharedData), TIMESYNC_MMAP);
 		if (mmh->m_fd > 0) {
-			m_ssd = static_cast<syncSharedData*>(mmh->m_addr);
+			m_ssd = static_cast<syncSharedData *>(mmh->m_addr);
 			m_ssd[0].magic = m_ssd[1].magic = 0;
 		} else
 			printf("Error: could not open %s\n",TIMESYNC_MMAP);
