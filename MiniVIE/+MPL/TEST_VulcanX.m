@@ -52,6 +52,7 @@ hJoystick = JoyMexClass();
 StartStopForm([]);
 while StartStopForm
     drawnow
+    pause(0.1)
     hJoystick.getdata();
     endPtVelocities = [hJoystick.axisVal(1:3)./10]'
     endPtOrientationVelocities = [0 0 0]';
@@ -66,3 +67,34 @@ while StartStopForm
     
     hSink.putData(msg);
 end
+
+
+
+
+%%
+% array of joint angles for arm (adjustable)
+theta = [0 pi/2 pi/2 pi/2 pi/2];
+[T, A] = MPL_Frames(theta);
+
+StartStopForm([]);
+while StartStopForm
+    drawnow
+    pause(0.05)
+
+    hJoystick.getdata();
+    endPtVelocities = [hJoystick.axisVal(1:3)./10]';
+    
+    
+    [jV, J] = MPL_Jacobian(theta, endPtVelocities);
+    
+    theta = theta + jV'*0.5;
+
+    upperArmAngles = [theta(1) theta(2)-pi/2 theta(3)-pi/2 theta(4) theta(5)-pi/2 0 0];
+    msg = mce.AllJointsPosVelCmd(upperArmAngles,zeros(1,7),handAngles,zeros(1,20));
+    hSink.putData(msg);
+end
+
+
+
+
+

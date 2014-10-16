@@ -315,6 +315,10 @@ classdef guiClassifierChannels < Common.MiniVieObj
             [enumGrasp, cellGrasps] = enumeration('Controls.GraspTypes'); %#ok<ASGLU>
             cellGrasps = cellfun(@(s)strcat(s,' Grasp'),cellGrasps,'UniformOutput',false);
             classNames = cat(2,classNames,cellGrasps(:)');
+
+            cellEndpointClasses = {'Endpoint Up', 'Endpoint Down', 'Endpoint In', 'Endpoint Out', 'Endpoint Left', 'Endpoint Right'};
+            classNames = cat(2,classNames,cellEndpointClasses);
+            
             classNames = cat(2,classNames,'No Movement');
             return
             
