@@ -198,6 +198,30 @@ classdef ScenarioBase < Common.MiniVieObj
                     s.setVelocity(mpl_upper_arm_enum.WRIST_FE,+prSpeed);
                 case {'Right' 'Wrist Extend' 'Wrist Extend Out'}
                     s.setVelocity(mpl_upper_arm_enum.WRIST_FE,-prSpeed);
+                case 'Endpoint Up'
+                    eV = [-prSpeed 0 0];
+                case 'Endpoint Down'
+                    eV = [+prSpeed 0 0];
+                case 'Endpoint Out'
+                    eV = [0 +prSpeed 0];
+                case 'Endpoint In'
+                    eV = [0 -prSpeed 0];
+                case 'Endpoint Left'
+                    eV = [0 0 -prSpeed];
+                case 'Endpoint Right'
+                    eV = [0 0 +prSpeed];
+            end
+
+            if strncmp(className,'Endpoint',8)
+                offset = [0 pi/2 pi/2 0 pi/2];
+                [v,J,p] = MPL_JacobianBound(...
+                    [s.structState(1:5).Value] + offset,...
+                    eV/40);
+                %offset(3) = -offset(3);
+                p = p - offset(:);
+                p(3) = -p(3);
+                for i = 1:5, s.structState(i).Value = p(i);end
+                s.velocity(1:5) = 0;
             end
             
         end
