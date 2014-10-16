@@ -27,6 +27,9 @@ classdef guiRocEditor < handle
         CurrentRocId = 1;
         CurrentWaypointId = 1;
         
+        NumOpenSteps = 200;
+        NumCloseSteps = 200;
+
         IsNfu;
         
         Verbose = 0;
@@ -265,17 +268,15 @@ classdef guiRocEditor < handle
                 thisRoc = obj.structRoc(idx);
                 RocId = thisRoc.id;
                 RocName = thisRoc.name;
-                
-                numOpenSteps = 30;
-                
-                graspVal = linspace(1,0,numOpenSteps);
-                for iVal = 1:length(graspVal)
+                                
+                rocVal = linspace(1,0,obj.NumOpenSteps);
+                for iVal = 1:length(rocVal)
                     fprintf('Entry #%d, RocId=%d, %14s %6.2f Pct\n',...
-                        idx,RocId,RocName,graspVal(iVal)*100);
+                        idx,RocId,RocName,rocVal(iVal)*100);
                     
-                    upperJointAngles = zeros(1,7);
-                    handPos = interp1(thisRoc.waypoint,thisRoc.angles,graspVal(iVal));
-                    obj.jointAngles = [upperJointAngles handPos];
+                    allAngles = zeros(1,27);
+                    allAngles(thisRoc.joints) = interp1(thisRoc.waypoint,thisRoc.angles,rocVal(iVal));
+                    obj.jointAngles = allAngles;
                     obj.transmit();
                     
                     pause(0.02);
@@ -288,17 +289,15 @@ classdef guiRocEditor < handle
                 thisRoc = obj.structRoc(idx);
                 RocId = thisRoc.id;
                 RocName = thisRoc.name;
-                
-                numCloseSteps = 30;
-                
-                graspVal = linspace(0,1,numCloseSteps);
-                for iVal = 1:length(graspVal)
+                                
+                rocVal = linspace(0,1, obj.NumCloseSteps);
+                for iVal = 1:length(rocVal)
                     fprintf('Entry #%d, RocId=%d, %14s %6.2f Pct\n',...
-                        idx,RocId,RocName,graspVal(iVal)*100);
+                        idx,RocId,RocName,rocVal(iVal)*100);
                     
-                    upperJointAngles = zeros(1,7);
-                    handPos = interp1(thisRoc.waypoint,thisRoc.angles,graspVal(iVal));
-                    obj.jointAngles = [upperJointAngles handPos];
+                    allAngles = zeros(1,27);
+                    allAngles(thisRoc.joints) = interp1(thisRoc.waypoint,thisRoc.angles,rocVal(iVal));
+                    obj.jointAngles = allAngles;
                     obj.transmit();
                     
                     pause(0.02);
@@ -318,6 +317,7 @@ classdef guiRocEditor < handle
             roc = obj.structRoc(rocId);
             
             % set roc names list box
+            set(obj.hRocNames,'String',{obj.structRoc(:).name})
             set(obj.hRocNames,...
                 'Value',rocId);
             
