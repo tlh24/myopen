@@ -1257,7 +1257,7 @@ void *po8_thread(void *)
 				// ticks are distributed across two shorts
 				int ticks = (unsigned short)(temp[NCHAN*numSamples + numSamples -1]);
 				ticks += (unsigned short)(temp[(NCHAN+1)*numSamples + numSamples -1]) << 16;
-				g_ts.update(time, ticks, frame); //also updates the mmap file.
+				g_ts.update(time, ticks); //also updates the mmap file.
 				g_ts.m_dropped = (int)totalSamples - ticks;
 
 				// get icms times, fill icms buffers
