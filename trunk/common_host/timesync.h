@@ -20,16 +20,16 @@ public:
 		m_avg = 0.0;
 		m_absavg = 1.0;
 		m_gain = initialGain;
-		m_gainIncr = initialGain / 1509.47;
-		m_gainDecr = initialGain / 2896.12;
+		m_gainIncr = initialGain / 1809.47;
+		m_gainDecr = initialGain / 1914.12;
 	}
 	~GainController() {}
 	void update(long double u) {
 		m_avg = m_alpha * m_avg + (1.0-m_alpha)*u;
 		m_absavg = m_alpha * m_absavg + (1.0-m_alpha)*fabs(u);
 		if (m_absavg > 0.0) {
-			if (fabs(m_avg) / m_absavg > 0.3) m_gain += m_gainIncr;
-			else m_gain -= m_gainIncr;
+			if (fabs(m_avg) / m_absavg > 0.45) m_gain += m_gainIncr;
+			else m_gain -= m_gainDecr;
 			if (m_gain < 0.0) m_gain *= -1.0;
 		}
 	}
@@ -48,7 +48,7 @@ struct syncSharedData {
 };
 class TimeSync
 {
-	//take performance counter time, produce ticks.
+	//take performance counter time, produce (predict) ticks.
 public:
 	long double m_slope;
 	long double m_offset;
@@ -59,6 +59,7 @@ public:
 	int			m_ssdn;
 	int 			m_ticks;
 	int			m_dropped;
+	int 			m_frame; 
 	//updated periodically to prevent precision issues.
 
 	GainController *slopeGC;
@@ -80,7 +81,8 @@ public:
 	void construct() {
 		m_offset = 0.0;
 		m_timeOffset = 0.0;
-		slopeGC = new GainController(3e-5);
+		m_frame = 0; 
+		slopeGC = new GainController(2e-5);
 		offsetGC = new GainController(1e-4);
 		// sizeof(*m_ssd) is safer than sizeof(struct syncSharedData)
 		mmh = new mmapHelp(sizeof(*m_ssd), TIMESYNC_MMAP);
@@ -92,6 +94,10 @@ public:
 			m_ssd[1].valid = false;
 		}
 		m_ssdn = 0;
+	}
+	void reset(){
+		m_frame = 0.0; //enables quick reset of m_offset.
+		m_slope = 24414.0625;
 	}
 	std::string getInfo() {
 		std::stringstream oss;
@@ -117,12 +123,16 @@ public:
 		printf("slope ");
 		slopeGC->prinfo();
 	}
-	void update(long double time, int ticks, int frame) {
+	void update(long double time, int ticks) {
 		long double pred = (time-m_timeOffset) * m_slope + m_offset;
 		m_update = ticks - pred;
-		m_offset += m_update * offsetGC->m_gain;
-		offsetGC->update(m_update);
-		if (frame > 2000) {
+		if(m_frame < 100){
+			m_offset += m_update * 0.9; 
+		} else {
+			m_offset += m_update * offsetGC->m_gain;
+			offsetGC->update(m_update);
+		}
+		if (m_frame > 2000) {
 			m_slope += m_update * slopeGC->m_gain;
 			slopeGC->update(m_update);
 		}
@@ -142,6 +152,7 @@ public:
 			m_ssdn ^= 1;
 		}
 		m_ticks = ticks;
+		m_frame++; 
 	}
 	double getTicks(long double time) { //estimated ticks, of course.
 		return (time - m_timeOffset) * m_slope + m_offset;
@@ -178,15 +189,14 @@ public:
 	~TimeSyncClient() {
 		delete mmh;
 	}
-	double getTicks() {
+	void getTicks(long double &time, double &ticks) {
 		int n = 0;
 		if (m_ssd[n].valid == false) n++;
 		if (m_ssd[n].valid && m_ssd[n].magic == 0x134fbab3) {
 			g_startTime = m_ssd[n].startTime; //so the two programs are synced.
-			long double time = gettime();
-			return (time - m_ssd[n].timeOffset) * m_ssd[n].slope + m_ssd[n].offset;
-		} else return 0.0;
-		//time must be passed from gettime();
+			time = gettime();
+			ticks = (time - m_ssd[n].timeOffset) * m_ssd[n].slope + m_ssd[n].offset;
+		}
 	}
 	std::string getInfo() {
 		std::stringstream oss;
