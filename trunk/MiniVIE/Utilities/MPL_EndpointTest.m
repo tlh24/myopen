@@ -44,7 +44,7 @@ rotate3d
 grid on
 
 %%
-hJoystick = JoyMexClass();
+try,hJoystick = JoyMexClass();catch;hJoystick =[];end
 %%
 % array of joint angles for arm (adjustable)
 theta = [0 pi/2 pi/2 pi/2 pi/2];
