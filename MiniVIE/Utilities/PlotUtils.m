@@ -284,5 +284,170 @@ classdef PlotUtils
                 hold(ax,'off');
             end
         end
+        
+        
+                function [hBox, volumeProps] = boundingBox(varargin)
+            %BOUNDINGBOX - Plot a bounding box
+            %
+            %   hBox = LinAlg.boundingBox(bb)
+            %       Plot a bounding box defined by the points in bb.
+            %
+            %   hBox = LinAlg.boundingBox(pts)
+            %       Plot the bounding box around the points
+            %
+            %   hBox = LinAlg.boundingBox(maxPts, minPts)
+            %       Plot the bounding box when defined by extents
+            %
+            %   hBox = LinAlg.boundingBox(hAx, ...)
+            %       Plot on the provided axis.
+            %
+            %   [hBox volumeProps] = LinAlg.boundingBox(...)
+            %       Also return the volume props, a struct with fields 'dimension' and
+            %       'boundVolume'
+            %
+            
+            narginchk(1,3);
+            [hAx, bb, volumeProps] = parseArgs(varargin{:});
+            
+            if isempty(bb)
+                fprintf(2,'BOUNDINGBOX: No bounding box could be found\n');
+                return;
+            end
+            
+            p1 = bb(:,1);
+            p2 = bb(:,2);
+            p3 = bb(:,3);
+            p4 = bb(:,4);
+            p5 = bb(:,5);
+            p6 = bb(:,6);
+            p7 = bb(:,7);
+            p8 = bb(:,8);
+            
+            lineDat = {...
+                [p1 p2],...
+                [p2 p3],...
+                [p3 p4],...
+                [p4 p1],...
+                ...
+                [p5 p6],...
+                [p6 p7],...
+                [p7 p8],...
+                [p8 p5],...
+                ...
+                [p1 p5],...
+                [p2 p6],...
+                [p3 p7],...
+                [p4 p8],...
+                };
+            
+            % Construct handle graphics
+            holdState = ishold(hAx);
+            hold(hAx,'on');
+            
+            hLine = zeros(1,length(lineDat));
+            for i = 1:length(lineDat)
+                hLine(i) = line(lineDat{i}(1,:),lineDat{i}(2,:),lineDat{i}(3,:),'Color','r');
+            end
+            hBox = hggroup;
+            set(hLine,'Parent',hBox) % parent the box to the hggroup
+            
+            if ~holdState
+                hold(hAx,'off')
+            end
+            
+            set(hBox,'UserData',volumeProps);
+            
+            function [hAx, bb, volumeProps] = parseArgs(varargin)
+                %PARSEARGS - Parse the arguments
+                
+                hAx = [];
+                bb = [];
+                volumeProps = [];
+                
+                if nargin == 1
+                    if size(varargin{1}) == 1
+                        return;
+                    end
+                    
+                    [minPts, maxPts, bb]= PlotUtils.defineBoundingBox(varargin{1});
+                    
+                    hAx = gca;
+                elseif nargin == 2
+                    
+                    if size(varargin{1}) == 1
+                        hAx = varargin{1};
+                    else
+                        hAx = gca;
+                        maxPts = varargin{1};
+                        minPts = varargin{2};
+                    end
+                else
+                    hAx = varargin{1};
+                    maxPts = varargin{2};
+                    minPts = varargin{3};
+                end
+                
+                if isempty(bb)
+                    p1 = [minPts(1); minPts(2); minPts(3)];
+                    p2 = [maxPts(1); minPts(2); minPts(3)];
+                    p3 = [maxPts(1); maxPts(2); minPts(3)];
+                    p4 = [minPts(1); maxPts(2); minPts(3)];
+                    
+                    p5 = [minPts(1); minPts(2); maxPts(3)];
+                    p6 = [maxPts(1); minPts(2); maxPts(3)];
+                    p7 = [maxPts(1); maxPts(2); maxPts(3)];
+                    p8 = [minPts(1); maxPts(2); maxPts(3)];
+                    
+                    bb = [p1 p2 p3 p4 p5 p6 p7 p8];
+                end
+                
+                volumeProps.dimensions = maxPts - minPts;
+                volumeProps.boundVolume = prod(volumeProps.dimensions);
+                
+            end % parseArgs
+        end
+        function [mins, maxs, bb] = defineBoundingBox(pts)
+            %DEFINEBOUNDINGBOX - Define a bounding box for a set of points
+            %
+            %   [mins maxs bb] = PlotUtils.defineBoundingBox(pts)
+            %       For a set of 3d points, a 3 x n vector, we find the min and max of
+            %       these points and define an associated bounding box. The bounding
+            %       box, bb, is defined 8 vertices.
+            %
+            
+            bb = [];
+            [a, b] = size(pts);
+            if a ~= 3 && b ~= 3
+                fprintf(2,'Use column vectors\n');
+                return;
+            end
+            
+            % convert to column vectors if row vectors are passed in
+            if a ~= 3
+                pts = pts';
+            end
+            
+            mins = min(pts,[],2);
+            maxs = max(pts,[],2);
+            
+            minx = mins(1);
+            miny = mins(2);
+            minz = mins(3);
+            
+            maxx = maxs(1);
+            maxy = maxs(2);
+            maxz = maxs(3);
+            
+            bb = [...
+                [minx miny minz]
+                [maxx miny minz]
+                [maxx maxy minz]
+                [minx maxy minz]
+                [minx miny maxz]
+                [maxx miny maxz]
+                [maxx maxy maxz]
+                [minx maxy maxz]]';
+        end
+
     end
 end
