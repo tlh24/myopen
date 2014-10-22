@@ -10,7 +10,7 @@ classdef GraspTypes
     % Currently there are two visualizations that turn grasp types into
     % angles.  For the MPL, this is done by mapping the GraspType to a
     % grasp id in the vulcanX xml file.  Alternatively, without an xml file
-    % the roc tables are created in MPLScenarioMUD.  
+    % the roc tables are created in MPL.RocTables.  
     %
     % For the MiniVIE the grasp angles should match these grasp types and
     % turn them into angles specific for the MiniVIE Hand to create the
