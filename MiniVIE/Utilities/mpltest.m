@@ -19,7 +19,7 @@ cellTests = {
     'MplWrist01',   '[6] Test MPL wrist range of motion [MPL.NfuUdp.getInstance MPL.MudCommandEncoder]'
     'MplHand',      '[7] Test MPL ROC grasps [MPL.NfuUdp.getInstance MPL.MudCommandEncoder]'
     'Haptics01',    '[8] Tactor manual control'
-    'Haptics02',    '[9] HapticAlgorithm Runs HapticAlgorithm within  MPL.MplScenarioMud < Scenarios.ScenarioBase'
+    'Haptics02',    '[9] HapticAlgorithm Runs HapticAlgorithm within  MPL.MplNfu < Scenarios.ScenarioBase'
     'Joystick01',   '[10] Joystick Runs JoyMexClass preview for 15 seconds'
     'Edit01',       '[11] edit mpltest.m'
     'MplWrist02',   '[12] Test MPL wrist range of motion [MPL.NfuUdp.getInstance MPL.MudCommandEncoder]'
@@ -140,10 +140,12 @@ switch testId
         %test mpl hand Roc
         hNfu = MPL.NfuUdp.getInstance;
         hNfu.initialize();
+        
+        roc = MPL.RocTable.createRocTables();
 
-        for iRoc = [3 5 6 8 16]%1:length(hNfu.localRoc)
-            RocId = hNfu.localRoc(iRoc).id;
-            RocName = hNfu.localRoc(iRoc).name;
+        for iRoc = [3 5 6 8 16]%1:length(roc)
+            RocId = roc(iRoc).id;
+            RocName = roc(iRoc).name;
             
             numOpenSteps = 30;
             numWaitSteps = 10;
@@ -169,7 +171,7 @@ switch testId
         % HapticAlgorithm: Runs HapticAlgorithm within  MPL.MplScenarioMud < Scenarios.ScenarioBase
         tData = PatternRecognition.TrainingData;
         
-        h = MPL.MplScenarioMud;
+        h = MPL.MplNfu;
         h.initialize([],[],tData);
         h.Verbose = 0;
         h.EnableFeedback = 1;

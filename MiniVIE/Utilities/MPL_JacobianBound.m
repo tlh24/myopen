@@ -41,11 +41,16 @@ constrain = @(x,rng) min(max(x,rng(1)),rng(2));
 % Determine if the position is feasible
 newEndpoint = oc + x0;
 
-newEndpoint(1) = constrain(newEndpoint(1),[1 4]);
-newEndpoint(2) = constrain(newEndpoint(2),[1 5]);
+newEndpoint(1) = constrain(newEndpoint(1),[1 3.5]);
+newEndpoint(2) = constrain(newEndpoint(2),[1 4.5]);
 newEndpoint(3) = constrain(newEndpoint(3),[1 3]);
 
 x0 = newEndpoint - oc;
+if ~isequal(newEndpoint,oc+x0)
+    x0 = x0 ./ norm(x0);
+end
+
+
 
 % PseudoInverse
 % jointVelocity = pinv(J(1:3,:))*x0;
@@ -62,9 +67,10 @@ if theta(4) < 0
     jointVelocity(4) = -jointVelocity(4);
     theta(4) = -theta(4);
 end
-
-theta(1) = constrain(theta(1),deg2rad([-30 120]));
-theta(2) = constrain(theta(2),deg2rad([0 100]));
-theta(3) = constrain(theta(3),deg2rad([45 135]));
-theta(4) = constrain(theta(4),deg2rad([0 135]));
+% 
+% theta(1) = constrain(theta(1),deg2rad([-30 120]));
+% theta(2) = constrain(theta(2),deg2rad([0 100]));
+% theta(3) = constrain(theta(3),deg2rad([45 135]));
+% theta(4) = constrain(theta(4),deg2rad([0 135]));
+% theta(4) = constrain(theta(4),deg2rad([-45 45]));
 

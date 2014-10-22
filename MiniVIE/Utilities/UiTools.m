@@ -149,7 +149,8 @@ classdef UiTools
             %display_error_stack(ME)
             % Given a Matlab exception, show each individual message in
             % stack and then rethrow error
-            disp('---------ERROR--------');
+            fprintf('\n');
+            fprintf('---------ERROR--------');
             disp(ME.message);
             for i = 1:length(ME.stack)
                 disp(ME.stack(i));
