@@ -1,5 +1,5 @@
 classdef MotionTrainer < PatternRecognition.TrainingInterface
-    % Provide cues for prosthetic training via motino of the real or
+    % Provide cues for prosthetic training via motion of the real or
     % virtual limb system
     %
     % 22-Mar-2012 Armiger: Created
@@ -75,7 +75,7 @@ classdef MotionTrainer < PatternRecognition.TrainingInterface
                 
                 if strfind(className,'Grasp')
                     graspName = strtrim(className(1:end-5));
-                    graspId = MPL.MplScenarioMud.graspLookup(graspName);
+                    graspId = MPL.GraspConverter.graspLookup(graspName);
                     obj.hPlant.setGraspId(graspId);
                 end
                 
