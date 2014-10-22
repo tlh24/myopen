@@ -75,11 +75,11 @@ switch testId
             error('NFU Init failed');
         end
         AA = -0.25;
-        hNfu.sendUpperArmHandRoc([ [0 AA 0] 1.5 -0.7 -0.5 -0.5],0,0);
+        hNfu.sendAllJoints([ [0 AA 0] 1.5 -0.7 -0.5 -0.5]);
         pause(1)
-        hNfu.sendUpperArmHandRoc([ [0 AA 0] 1.6 0.7 0.5 0.5],0,0);
+        hNfu.sendAllJoints([ [0 AA 0] 1.6 0.7 0.5 0.5]);
         pause(1)
-        hNfu.sendUpperArmHandRoc([ [0 AA 0] 1.5 0 0 0],0,0);
+        hNfu.sendAllJoints([ [0 AA 0] 1.5 0 0 0]);
         
     case 'MplWrist02'
         %test mpl wrist ROM
@@ -94,7 +94,7 @@ switch testId
             drawnow
             val = sin(toc);
             fprintf('Wrist Angle: %f\n',val);
-            hNfu.sendUpperArmHandRoc([zeros(1,4) val val val],0,0);
+            hNfu.sendAllJoints([zeros(1,4) val val val]);
             pause(0.02);
         end
     case 'MplWrist03'
@@ -111,7 +111,7 @@ switch testId
             
             % Wrist
             val = sin(toc);
-            hNfu.sendUpperArmHandRoc([zeros(1,4) val val val],0,0);
+            hNfu.sendAllJoints([zeros(1,4) val val val]);
             
             % Tactors
             isOdd = @(x)rem(x,2);
@@ -141,28 +141,32 @@ switch testId
         hNfu = MPL.NfuUdp.getInstance;
         hNfu.initialize();
         
-        roc = MPL.RocTable.createRocTables();
+        structRoc = MPL.RocTable.createRocTables();
 
         for iRoc = [3 5 6 8 16]%1:length(roc)
-            RocId = roc(iRoc).id;
-            RocName = roc(iRoc).name;
+            RocId = structRoc(iRoc).id;
+            RocName = structRoc(iRoc).name;
             
             numOpenSteps = 30;
             numWaitSteps = 10;
             numCloseSteps = 30;
             
+            mplAngles = zeros(1,27);
+            
             graspVal = [linspace(0,1,numOpenSteps) ones(1,numWaitSteps) linspace(1,0,numCloseSteps)];
             for i = 1:length(graspVal)
                 fprintf('Entry #%d, RocId=%d, %14s %6.2f Pct\n',...
                     iRoc,RocId,RocName,graspVal(i)*100);
-                %hNfu.sendUpperArmHandRoc([zeros(1,4) 0 0 0],rocID,graspVal(i));
-                hNfu.sendUpperArmHandLocalRoc([zeros(1,4) 0 0 0],RocId,graspVal(i));
+                
+                % perform local interpolation
+                mplAngles(structRoc(iRoc).joints) = interp1(structRoc(iRoc).waypoint,structRoc(iRoc).angles,graspVal(i));
+                
+                hNfu.sendAllJoints(mplAngles);
                 pause(0.02);
             end
             disp('Press any key...');pause;
         end
-        %hNfu.sendUpperArmHandRoc([zeros(1,4) 0 0 0],0,0);
-        hNfu.sendUpperArmHandLocalRoc([zeros(1,4) 0 0 0],0,0);
+        hNfu.sendAllJoints(zeros(1,27));
     case 'Haptics01'
         % Test tactors manually
         test_tactor_nfu();

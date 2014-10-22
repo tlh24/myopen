@@ -53,7 +53,7 @@ classdef ArmStateModel < handle
             obj.structState(5).Name = 'Wrist ROT';
             obj.structState(5).Min = -90 * pi / 180;
             obj.structState(5).Max = +90 * pi / 180;
-            obj.structState(5).IsReversed = 1;
+            obj.structState(5).IsReversed = 0;
             obj.structState(5).MaxVelocity = 4;
 
             obj.structState(6).Name = 'Wrist DEV';
@@ -63,7 +63,7 @@ classdef ArmStateModel < handle
             obj.structState(7).Name = 'Wrist FE';
             obj.structState(7).Min = -45 * pi / 180;
             obj.structState(7).Max = +45 * pi / 180;
-            obj.structState(7).IsReversed = 1;
+            obj.structState(7).IsReversed = 0;
             obj.structState(7).MaxVelocity = 4;
             
             obj.structState(8).Name = 'Roc Hand';

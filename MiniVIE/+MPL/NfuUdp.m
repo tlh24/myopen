@@ -88,7 +88,7 @@ classdef (Sealed) NfuUdp < handle
         end
     end
     methods
-        function [ status ] = initialize(obj,rocXmlFile)
+        function [ status ] = initialize(obj)
             % Initialize network interface to NFU.
             % [ status ] = initialize(obj)
             %
