@@ -296,6 +296,8 @@ classdef guiClassifierChannels < Common.MiniVieObj
         end
         
         function classNames = getDefaultNames
+            
+            % Arm Motions
             classNames{01}  = 'Shoulder Flexion';
             classNames{02}  = 'Shoulder Extension';
             classNames{03}  = 'Shoulder Abduction';
@@ -310,43 +312,30 @@ classdef guiClassifierChannels < Common.MiniVieObj
             classNames{12}  = 'Wrist Extend Out';
             classNames{13}  = 'Wrist Abduction';%'Hand Up';
             classNames{14}  = 'Wrist Adduction';%'Hand Down';
+            
+            % Hand Open
             classNames{15}  = 'Hand Open';
             
+            % Grasps
             [enumGrasp, cellGrasps] = enumeration('Controls.GraspTypes'); %#ok<ASGLU>
             cellGrasps = cellfun(@(s)strcat(s,' Grasp'),cellGrasps,'UniformOutput',false);
             classNames = cat(2,classNames,cellGrasps(:)');
 
+            % End Effector Linear Velocity
             cellEndpointClasses = {'Endpoint Up', 'Endpoint Down', 'Endpoint In', 'Endpoint Out', 'Endpoint Left', 'Endpoint Right'};
             classNames = cat(2,classNames,cellEndpointClasses);
+
+            % End Effector Rotational Velocity
+            cellEndpointClasses = {'Roll In', 'Roll Out', 'Pitch Down', 'Pitch Up', 'Yaw In', 'Yaw Out'};
+            classNames = cat(2,classNames,cellEndpointClasses);
             
+            % Whole Arm Reduced Order Control
+            cellArmRoc = {'Whole Arm Roc FWD', 'Whole Arm Roc REV'};
+            classNames = cat(2,classNames,cellArmRoc);
+
+            % No Movement
             classNames = cat(2,classNames,'No Movement');
-            return
             
-            classNames{16}  = 'Index';
-            classNames{17}  = 'Middle';
-            classNames{18}  = 'Ring';
-            classNames{19}  = 'Little';
-            classNames{20}  = 'Thumb';
-            classNames{21}  = 'All Ad/Abs';
-            classNames{22}  = 'Spider (Fist of Fury)';
-            classNames{23} = 'Lateral Grasp';      %% Grasp #1 per Action ICD RPP-600-ICD_-1401
-            classNames{24} = 'Cylindrical Grasp';  %% Grasp #2 per Action ICD RPP-600-ICD_-1401
-            classNames{25} = 'Tip Grasp';          %% Grasp #3 per Action ICD RPP-600-ICD_-1401
-            classNames{26} = 'Hook Grasp';         %% Grasp #4 per Action ICD RPP-600-ICD_-1401
-            classNames{27} = 'Palmar Grasp';       %% Grasp #5 per Action ICD RPP-600-ICD_-1401
-            classNames{28} = 'Spherical Grasp';    %% Grasp #6 per Action ICD RPP-600-ICD_-1401
-            classNames{29} = 'Pointer Grasp';      %% Grasp #7 per Action ICD RPP-600-ICD_-1401
-            classNames{30} = 'No Movement';
-%             classNames{31} = 'Wrist Rotate In (Raised)';
-%             classNames{32} = 'Wrist Rotate Out (Raised)';
-%             classNames{33} = 'Wrist Flex In (Raised)';
-%             classNames{34} = 'Wrist Extend Out (Raised)';
-%             classNames{35} = 'Hand Up (Raised)';
-%             classNames{36} = 'Hand Down (Raised)';
-%             classNames{37} = 'Hand Open (Raised)';
-%             classNames{39} = 'Tip Grasp (Raised)';         
-%             classNames{40} = 'Spherical Grasp (Raised)'; 
-%             classNames{41} = 'No Movement (Raised)';
         end
     end
 end
