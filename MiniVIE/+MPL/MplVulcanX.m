@@ -17,8 +17,6 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
         
         IsRightSide = 0;
         
-        RocTable = [];
-        
     end
     methods
         function obj = MplVulcanX
@@ -40,9 +38,7 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
             
             obj.hUdp.initialize();
             
-            % create local ROC tables (even though roc tables in vulcan x
-            % can also be specified)
-            obj.RocTable = MPL.RocTable.createRocTables();
+            obj.getRocConfig();
             
             % Remaining superclass initialize methods
             initialize@Scenarios.OnlineRetrainer(obj,SignalSource,SignalClassifier,TrainingData);
@@ -70,7 +66,30 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
             
         end
         function update_control(obj)
-            % Get current joint angles and send commands to VulcanX or NFU
+            % Get current joint angles and send commands to VulcanX
+            %
+            % Process steps include:
+            %   - get joint angles from the JointAngles properties
+            %       -Alternatively this could / should come from the arm
+            %       state model
+            %   - find the grasp roc number corresponding to the grasp name
+            %   - Apply any manual override changes
+            %       - TODO, remove this
+            %   - get joint angles based on roc table
+            %       - Currently only applies to hand.
+            %       - if it's a whole arm roc, it should overwrite the
+            %       upper arm joint values
+            
+            
+            m = obj.ArmStateModel;
+            rocValue = m.structState(m.RocStateId).Value;
+            rocId = m.structState(m.RocStateId).State;
+
+            if isa(rocId,'Controls.GraspTypes')
+                % convert char grasp class name (e.g. 'Spherical') to numerical mpl
+                % grasp value (e.g. 7)
+                rocId = MPL.GraspConverter.graspLookup(rocId);
+            end
             
             % Note the joint ids for the MPL are different than the older
             % action bus definition
@@ -93,32 +112,37 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
                 mpl_upper_arm_enum.WRIST_FE
                 ];
             
-            % upperArmAngles = jointAngles([1 2 3 4 5 7 6])
-            mplArmAngles = obj.JointAnglesDegrees(jointIds) * pi/180;
+            mplAngles = zeros(1,27);
+            %mplAngles(1:7) = obj.JointAnglesDegrees(jointIds) * pi/180;
+            mplAngles(1:7) = [m.structState(jointIds).Value];
             
-            % convert char grasp class name (e.g. 'Spherical') to numerical mpl
-            % grasp value (e.g. 7)
-            graspId = obj.graspLookup(obj.GraspId);
-            
-            
-            % Last chance to override commands before they are sent to the
-            % hardware
-            if obj.IsRightSide
-                [mplArmAngles, graspValue, graspId] = manualOverRideRight(mplArmAngles,obj.GraspValue,graspId);
-            else
-                [mplArmAngles, graspValue, graspId] = manualOverRideLeft(mplArmAngles, obj.GraspValue,graspId);
-            end
-            
-            % Send to vulcanX.  If local roc table exists, use it
+                        
+            % Generate vulcanX message.  If local roc table exists, use it
             if ~isempty(obj.RocTable)
-                % interpolate roc table locally
-                graspValue = max(min(graspValue,1),0);
-                roc = obj.RocTable(graspId+1);
-                handPos = interp1(roc.waypoint,roc.angles,graspValue);
-                msg = obj.hMud.AllJointsPosVelCmd(mplArmAngles,zeros(1,7),handPos,zeros(1,20));
+
+                % check bounds
+                rocValue = max(min(rocValue,1),0);
+                
+                % lookup the Roc id and find the right table
+                iEntry = (rocId == [obj.RocTable(:).id]);
+                if sum(iEntry) < 1
+                    error('Roc Id %d not found',rocId);
+                elseif sum(iEntry) > 1
+                    warning('More than 1 Roc Tables share the id # %d',rocId);
+                    roc = obj.RocTable(find(iEntry,1,'first'));
+                else
+                    roc = obj.RocTable(iEntry);
+                end
+
+                % perform local interpolation
+                mplAngles(roc.joints) = interp1(roc.waypoint,roc.angles,rocValue);
+
+                % generate MUD message using joint angles
+                msg = obj.hMud.AllJointsPosVelCmd(mplAngles(1:7),zeros(1,7),mplAngles(8:27),zeros(1,20));
             else
-                % send roc command
-                msg = obj.hMud.ArmPosVelHandRocGrasps(mplArmAngles,zeros(1,7),1,graspId,graspVal,1);
+                % generate MUD message using joint angles and ROC
+                % parameters
+                msg = obj.hMud.ArmPosVelHandRocGrasps(mplAngles(1:7),zeros(1,7),1,rocId,rocVal,1);
             end
             
             % write message
@@ -144,57 +168,6 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
         end
         
     end
-    methods (Static)
-        function graspId = graspLookup(strGraspName)
-            
-            if isempty(strGraspName)
-                graspId = 0;
-            else
-                % Map the minivie grasp enumeration to the ROC ids on the
-                % Limb
-                switch char(strGraspName)
-                    case 'Tip'
-                        %graspId = 1;  % Pinch (British)
-                        graspId = 2;  % Pinch (American)
-                    case 'Lateral'
-                        graspId = 9;  % Key
-                    case 'Tripod'
-                        graspId = 4;  % 3 Finger Pinch
-                    case 'Spherical'
-                        graspId = 7;  % Spherical
-                        %graspId = 1;
-                    case 'Power'
-                        graspId = 5;  % Cylindrical
-                    case 'Extension'
-                        graspId = 3;  % Palmar (Tray)
-                    case 'Hook'
-                        graspId = 8;  % Hook
-                    case 'Relaxed'
-                        graspId = 0;
-                    case 'Index'
-                        graspId = 9;
-                    case 'Middle'
-                        graspId = 10;
-                    case 'Ring'
-                        graspId = 11;
-                    case 'Little'
-                        graspId = 12;
-                    case 'Thumb'
-                        graspId = 13;
-                    case {'Point', 'Pointer', 'Trigger'}
-                        graspId = 6;
-                    otherwise
-                        graspId = 0;
-                end
-                % zero based index from the enumeration
-                %graspId = find(obj.GraspId == enumeration('Controls.GraspTypes'))-1;
-                
-                %graspId = 1;  % Pinch (American)
-                
-            end
-        end % function graspLookup
-        
-    end % methods (Static)
 end
 
 
