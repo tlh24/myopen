@@ -8,7 +8,7 @@ classdef ScenarioBase < Common.MiniVieObj
     %
     % Note that the joint angles will be saved on closed and loaded on init
     % in the user's tempdir directory
-    % 
+    %
     % Note for finger only classification set the AutoOpenSpeed parameter
     % to > 0 to release automatically
     %
@@ -39,7 +39,7 @@ classdef ScenarioBase < Common.MiniVieObj
         
         % For opening hand without Hand Open class:
         AutoOpenSpeed = 0;
-
+        
         % Store joint state parameters
         JointAnglesDegrees;
         JointVelocity;
@@ -47,6 +47,11 @@ classdef ScenarioBase < Common.MiniVieObj
         TempFileName = 'jointAngles';
         
         Intent = [];
+        
+        % Stores a structure format of roc table data loaded from xml.  See
+        % MPL.RocTable
+        RocTable;
+        RocTableXmlFilename;
         
         Verbose = 1;
         
@@ -88,20 +93,20 @@ classdef ScenarioBase < Common.MiniVieObj
                 % Use the isvalid method to determine if a timer object exists in memory, but is not cleared from the workspace.
                 fprintf('[%s] Timer object exists in memory, but is invalid.  Re-initialize module.\n',mfilename);
                 return
-            end            
+            end
             
             % && ishandle(obj.Timer) <-- this is always false
             if ~isempty(obj.Timer) && strcmpi(obj.Timer.Running,'off')
-                % call the update funciton once manually.  
+                % call the update funciton once manually.
                 % if there is an error this will help debug
-                obj.update();  
+                obj.update();
                 start(obj.Timer);
             end
         end
         function stop(obj)
             % Stop the main timer function for the scenario.  the timer
             % function calls the update() method at the specified frequency
-
+            
             
             % && ishandle(obj.Timer) <-- this is always false
             
@@ -116,10 +121,10 @@ classdef ScenarioBase < Common.MiniVieObj
         end
         function [className,prSpeed,rawEmg,windowData,features2D,voteDecision] = getIntentSignals(obj)
             % Perform classification with error checking
-
+            
             % Init output variables
             [className,prSpeed,rawEmg,windowData,features2D,voteDecision] = deal([]);
-
+            
             % Verify inputs
             if isempty(obj.SignalSource)
                 if obj.Verbose > 0
@@ -165,7 +170,7 @@ classdef ScenarioBase < Common.MiniVieObj
             
             % ensure velocities are stopped
             s.velocity(1:7) = 0;
-
+            
             % Note gains can/should be adjusted using guiAdjustGains
             %TODO: gain values overwritten on classifier retrain
             switch className
@@ -210,8 +215,12 @@ classdef ScenarioBase < Common.MiniVieObj
                     eV = [0 0 -prSpeed];
                 case 'Endpoint Right'
                     eV = [0 0 +prSpeed];
+                case 'Whole Arm Roc FWD'
+                    rocV = +prSpeed;
+                case 'Whole Arm Roc REV'
+                    rocV = -prSpeed;
             end
-
+            
             if strncmp(className,'Endpoint',8)
                 offset = [0 pi/2 pi/2 0 pi/2];
                 [v,J,p] = MPL_JacobianBound(...
@@ -224,13 +233,18 @@ classdef ScenarioBase < Common.MiniVieObj
                 s.velocity(1:5) = 0;
             end
             
+            if strncmp(className,'Whole Arm Roc',13)
+                s.setRocId(16);
+                s.setVelocity(s.RocStateId,rocV);
+            end
+            
         end
         function generateGraspCommand(obj,className,prSpeed)
-
+            
             if isempty(className)
                 return
             end
-
+            
             % Get the decoded grasp name.  This is equivelant to the class
             % name, but if it is a 'Grasp' then a flag will be set that
             % this class can be used for 'hand close'
@@ -268,7 +282,7 @@ classdef ScenarioBase < Common.MiniVieObj
                 case {'No Movement','Rest'}
                     s.setVelocity(s.RocStateId,0);
                 otherwise
-                    s.setVelocity(s.RocStateId,0);
+                    %s.setVelocity(s.RocStateId,0);
                     if isGraspClass
                         fprintf('[%s.m] Unmatched grasp: "%s"\n',mfilename,graspName);
                     end
@@ -281,8 +295,10 @@ classdef ScenarioBase < Common.MiniVieObj
             state = obj.ArmStateModel.getValues();
             
             obj.JointAnglesDegrees(1:7) = state(1:7) * 180/pi;
-            obj.GraspValue = state(8);
-            obj.GraspId = s.structState(8).State;
+            if isGraspClass
+                obj.GraspValue = state(8);
+                obj.GraspId = s.structState(8).State;
+            end
             
             %generateGraspCommandTwoState(obj,className,prSpeed);
         end
@@ -291,7 +307,7 @@ classdef ScenarioBase < Common.MiniVieObj
             if isempty(className)
                 return
             end
-                        
+            
             %%%%%%%%%%%%%%%%%%%%%%%%
             % Process grasps
             %%%%%%%%%%%%%%%%%%%%%%%%
@@ -311,13 +327,13 @@ classdef ScenarioBase < Common.MiniVieObj
             % closing in the locked grasp type, allowing for
             % misclassificaiton.  Hand open and close commands will then
             % only move the hand along the prescribed grasp trajectory
-            % (from 20% to 100%).  
+            % (from 20% to 100%).
             %
             % To return to the rest position, the hand must start at or
             % close to 20% (or 25%), and then a sustained hand open command
-            % must be issued.  
+            % must be issued.
             
-
+            
             
             % Get the decoded grasp name.  This is equivelant to the class
             % name, but if it is a 'Grasp' then a flag will be set that
@@ -332,7 +348,7 @@ classdef ScenarioBase < Common.MiniVieObj
             
             % Get a list of valid grasp types
             [enumGrasp, cellGrasps] = enumeration('Controls.GraspTypes');
-
+            
             
             % Handle special case for grasp auto open.  In this paradigm,
             % only hand close patterns are trained.  The hand opens only
@@ -365,13 +381,13 @@ classdef ScenarioBase < Common.MiniVieObj
                         fprintf('[%s.m] Unmatched grasp: "%s"\n',mfilename,graspName);
                     end
             end
-
+            
             % override
-
+            
             % Limit the max velocity
             graspGain = 0.05;
             obj.GraspVelocity = obj.constrain(desiredGraspVelocity*graspGain,-0.1,0.1);
-
+            
             % Limit the grasp range
             obj.GraspValue = obj.constrain(obj.GraspValue + obj.GraspVelocity, 0.0, 1.0);
             
@@ -384,16 +400,16 @@ classdef ScenarioBase < Common.MiniVieObj
             
             
             return
-
+            
             %obj.GraspValue = max(obj.GraspValue,.21);
             obj.GraspLocked = 1;
-
-%             fprintf('[%s] Grasp Locked==%d; Counter==%2d; Value==%4.1f\n',...
-%                 mfilename,obj.GraspLocked,obj.GraspChangeCounter,obj.GraspValue);
-
+            
+            %             fprintf('[%s] Grasp Locked==%d; Counter==%2d; Value==%4.1f\n',...
+            %                 mfilename,obj.GraspLocked,obj.GraspChangeCounter,obj.GraspValue);
+            
             if obj.GraspLocked
                 % Range is 20% to 100%, no grasp changes allowed
-
+                
                 if strcmpi(graspName,{'Hand Open'})
                     obj.GraspChangeCounter = obj.GraspChangeCounter + 1;
                 else
@@ -410,7 +426,7 @@ classdef ScenarioBase < Common.MiniVieObj
                 else
                     % keep hand locked and move within confined trajectory
                     obj.GraspLocked = 1;
-
+                    
                     % Limit the max velocity
                     obj.GraspVelocity = obj.constrain(desiredGraspVelocity,-0.1,0.1);
                     v = obj.GraspVelocity;
@@ -449,7 +465,7 @@ classdef ScenarioBase < Common.MiniVieObj
                 else
                     % keep hand unlocked and move within prehension trajectory
                     obj.GraspLocked = 0;
-
+                    
                     % Limit the max velocity
                     obj.GraspVelocity = obj.constrain(desiredGraspVelocity,-0.1,0.1);
                     % Limit the grasp range
@@ -486,6 +502,33 @@ classdef ScenarioBase < Common.MiniVieObj
                 
             end
         end
-        
+        function getRocConfig(obj)
+            % Function load roc table into memory and stores in the
+            % RocTable property
+            %
+            % Note this will first try to load info about Roc table xml
+            % file from the user config .xml file
+            
+            % create local ROC tables (even though roc tables in vulcan x
+            % can also be specified)
+            userConfigFile = 'user_config.xml';
+            if exist(userConfigFile,'file')
+                try
+                    fprintf('Reading file: "%s"...',userConfigFile)
+                    a = xmlread(userConfigFile);
+                    fprintf('Done\n')
+                    xmlFileName = char(a.getElementsByTagName('rocTable').item(0).getFirstChild.getData);
+                    obj.RocTable = MPL.RocTable.readRocTable(xmlFileName);
+                    obj.RocTableXmlFilename = xmlFileName;
+                catch ME
+                    warning(ME.message)
+                    fprintf('Failed to parse rocTable entry in file "%s"\n',userConfigFile);
+                    obj.RocTable = MPL.RocTable.createRocTables();
+                end
+            else
+                % No user config
+                obj.RocTable = MPL.RocTable.createRocTables();
+            end
+        end
     end
 end
