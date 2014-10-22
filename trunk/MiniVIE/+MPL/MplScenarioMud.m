@@ -49,6 +49,7 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
     methods
         function obj = MplScenarioMud
             % Creator
+            error('Deprecated.  Please use MPL.MplNfu or MPL.VulcanX');
         end
         function initialize(obj,SignalSource,SignalClassifier,TrainingData)
             

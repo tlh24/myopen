@@ -63,10 +63,7 @@ classdef (Sealed) NfuUdp < handle
         sum4
         
         numPacketsReceived = 0;
-        
-        localRoc
-        localRocXmlFile
-        
+                
     end
     properties (Constant = true)
         nfuStates = {
@@ -99,21 +96,6 @@ classdef (Sealed) NfuUdp < handle
             % status < 0: Failed
             
             status = 0;
-            
-            if 0% nargin < 2
-                % no roc table passed.  Create one in memory
-                %obj.readRocTable();
-                obj.localRocXmlFile = 'newRoc.xml';
-                fprintf('Creating a NEW roc file: %s\n',obj.localRocXmlFile)
-                obj.localRoc = MPL.RocTable.createRocTables('newRoc.xml');
-            else
-                
-                obj.localRocXmlFile = 'WrRocDefaults.xml';
-                
-                %obj.localRoc = MPL.RocTable.readRocTable('WR.xml');
-                fprintf('Loading roc file: %s\n',obj.localRocXmlFile)
-                obj.localRoc = MPL.RocTable.readRocTable(obj.localRocXmlFile);
-            end
             
             if obj.IsInitialized
                 fprintf('[%s] NFU Comms already initialized\n',mfilename);
@@ -212,9 +194,6 @@ classdef (Sealed) NfuUdp < handle
             db.set_value('NFU_output_to_MPL',single(val))  %% 2 = NFU CAN to limb
             
         end
-        function readRocTable(obj)
-            obj.localRoc = MPL.RocTable.createRocTables('WR.xml');
-        end
         function sendAllJoints(obj,jointAngles)
             
             p = zeros(27,1);
@@ -232,53 +211,6 @@ classdef (Sealed) NfuUdp < handle
             
             msg = obj.hMud.DOMPositionCmd(p);
             obj.sendUdpCommand([61;msg]);  % append nfu msg header
-            
-        end
-        function sendUpperArmHandLocalRoc(obj,upperJointAngles,RocId,RocVal)
-            % Send joint commands to the limb using upper arm values and
-            % parameters for grasp that will be looked up in a local roc
-            % table.  In this case, the RocId should be the Id in the roc
-            % table (i.e. can be 0, non-sequential, etc)
-            
-            
-            % use local ROC's
-            assert(RocVal >= 0,'RocVal < 0');
-            assert(RocVal <= 1,'RocVal > 1');
-            assert(~isempty(obj.localRoc),'Roc Table Empty');
-            
-            % find the roc Id in the table
-            idxTable = [obj.localRoc(:).id] == RocId;
-            % Perform checks:
-            if ~any(idxTable)
-                % rocId not found
-                fprintf('[%s] Requested RocID=%d not found in file "%s"\n',...
-                    mfilename,RocId,obj.localRocXmlFile);
-                roc = obj.localRoc(1); % default to first roc
-            elseif sum(idxTable) > 1
-                % Multiple Roc Ids found
-                fprintf('[%s] Multiple RocID=%d found in file "%s".  Using first entry\n',...
-                    mfilename,RocId,obj.localRocXmlFile);
-                roc = obj.localRoc(idxTable);
-                roc = roc(1);
-            else 
-                % all ok
-                roc = obj.localRoc(idxTable);
-            end
-            
-            handPos = interp1(roc.waypoint,roc.angles,RocVal);
-            p = [upperJointAngles(:); handPos(:)];
-            obj.sendAllJoints(p);
-            
-        end
-        function sendUpperArmHandRoc(obj,upperJointAngles,RocId,RocVal)
-            
-            % override remote ROC
-            sendUpperArmHandLocalRoc(obj,upperJointAngles,RocId,RocVal);
-            return
-            
-            msg = obj.hMud.ArmPosVelHandRocGrasps(upperJointAngles,zeros(1,7),1,RocId,RocVal,1);
-            obj.sendUdpCommand([59;msg]);  % append nfu msg header
-            
         end
         
         function sendUdpCommand(obj,msg)
