@@ -14,6 +14,8 @@ classdef MplNfu < Scenarios.OnlineRetrainer
         EnableFeedback = 1;
         TactorIds = [3 4]
         %TactorIds = [5 6 7];
+        
+        GlobalImpedanceValue = 0.8;
     end
     methods
         function initialize(obj,SignalSource,SignalClassifier,TrainingData)
@@ -245,7 +247,10 @@ classdef MplNfu < Scenarios.OnlineRetrainer
                 mplAngles(roc.joints) = interp1(roc.waypoint,roc.angles,rocValue);
                 
                 % generate MUD message using joint angles
-                msg = obj.hMud.AllJointsPosVelCmd(mplAngles(1:7),zeros(1,7),mplAngles(8:27),zeros(1,20));
+                %msg = obj.hMud.AllJointsPosVelCmd(mplAngles(1:7),zeros(1,7),mplAngles(8:27),zeros(1,20));
+                msg = obj.hMud.AllJointsPosVelCmd(mplAngles(1:7),zeros(1,7),...
+                    mplAngles(8:27),zeros(1,20),...
+                    obj.GlobalImpedanceValue*ones(1,27));
             else
                 % generate MUD message using joint angles and ROC
                 % parameters
