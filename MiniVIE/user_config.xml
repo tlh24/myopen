@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<userConfig>
+    <!--ROC Table to be loaded and interpolated locally during MiniVIE Session-->
+    <rocTable>WrRocDefaults.xml</rocTable>
+</userConfig>
