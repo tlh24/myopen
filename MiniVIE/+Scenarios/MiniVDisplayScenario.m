@@ -41,7 +41,7 @@ classdef MiniVDisplayScenario < Scenarios.OnlineRetrainer
             %             set(hFigure,'Position',pos);
             
             set(hFig,'Color',[ 0.8706    0.9216    0.9804]);
-            %set(obj.hFigure,'ToolBar','none');
+            set(hFig,'ToolBar','Figure');
             %set(obj.hFigure,'MenuBar','none');
             set(hFig,'CloseRequestFcn',@(src,evnt)close(obj))
             
@@ -51,23 +51,28 @@ classdef MiniVDisplayScenario < Scenarios.OnlineRetrainer
             view(obj.hAxes,0,0);
             axis(obj.hAxes,'equal')
             axis(obj.hAxes,'off')
-            %axis([0 0.4 -0.4 0.4 0.3 0.7])
-            if obj.isLeftSide
-                axis(obj.hAxes,[0.15 0.25 -0.1 0.1 0.35 0.45]);
-            else
-                axis(obj.hAxes,[-0.25 -0.15 -0.1 0.1 0.35 0.45]);
-            end
+            
+            % View Whole [Left] Arm, Frontal
+            axis([0 0.4 -0.4 0.4 0.3 0.7])
+            
+            % Zoom to hand
+%             if obj.isLeftSide
+%                 axis(obj.hAxes,[0.15 0.25 -0.1 0.1 0.35 0.45]);
+%             else
+%                 axis(obj.hAxes,[-0.25 -0.15 -0.1 0.1 0.35 0.45]);
+%             end
             %rotate3d(obj.hAxes,'on');
             
-            set(obj.hAxes,'CameraUpVector',[0 0 -1]);
-            if obj.isLeftSide
-                set(obj.hAxes,'CameraPosition',[-0.5 -1 0.5]);
-                camroll(obj.hAxes,-60);
-            else
-                set(obj.hAxes,'CameraPosition',[0.5 -1 0.5]);
-                camroll(obj.hAxes,60);
-            end
-            set(obj.hAxes,'CameraViewAngle',6);
+            % Hand and Forearm
+%             set(obj.hAxes,'CameraUpVector',[0 0 -1]);
+%             if obj.isLeftSide
+%                 set(obj.hAxes,'CameraPosition',[-0.5 -1 0.5]);
+%                 camroll(obj.hAxes,-60);
+%             else
+%                 set(obj.hAxes,'CameraPosition',[0.5 -1 0.5]);
+%                 camroll(obj.hAxes,60);
+%             end
+%             set(obj.hAxes,'CameraViewAngle',6);
             hLight = light('Parent',obj.hAxes);
             camlight(hLight,'left');
             

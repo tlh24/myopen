@@ -32,6 +32,7 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
                             % scanning through classes
         
         TrainingData; % Online retraininer defined by having access to and adding data to training data
+        
     end
     events
         NextClass
@@ -445,7 +446,9 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
 %             if ~isempty(obj.hGui)
 %                 obj.hGui.close();
 %             end
-            obj.TrainingData.saveTrainingData;
+            if obj.TrainingData.HasUnsavedData
+                obj.TrainingData.saveTrainingData;
+            end
         end
     end
     methods (Static = true)
