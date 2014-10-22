@@ -24,6 +24,7 @@ classdef TrainingData < handle
     properties (Transient)
         Verbose = 1;            % enables print statements
         SaveInOldFormat = 0;    % save mat file as struct
+        HasUnsavedData = 0;
     end
     properties (SetAccess = private)
         SampleCount = 0;
@@ -594,6 +595,9 @@ classdef TrainingData < handle
             
             success = true;
             
+            % Lower flag that there is new unsaved data
+            obj.HasUnsavedData = 0;
+
         end
         
         function removeTrainingData(obj,iClass)
@@ -692,6 +696,9 @@ classdef TrainingData < handle
             catch ME
                 warning('TrainingInterface:RawSignalData','Failed to record Raw Signal Data: "%s"',ME.message);
             end
+            
+            % Set flag that there is new unsaved data
+            obj.HasUnsavedData = 1;
         end %addTrainingData
         
         function obj = saveobj(obj)
