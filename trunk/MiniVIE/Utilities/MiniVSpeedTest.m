@@ -25,6 +25,12 @@ while StartStopForm()
     aUser = rand(1,7)*180/pi;
     hUser.set_upper_arm_angles_degrees(aUser)
     hUser.redraw
+
+    handAngles = rand(1,29)*180/pi;
+    hTarget.set_hand_angles_degrees(handAngles);
+    aUser = rand(1,7)*180/pi;
+    hTarget.set_upper_arm_angles_degrees(aUser)
+    hTarget.redraw
     
     drawnow
     

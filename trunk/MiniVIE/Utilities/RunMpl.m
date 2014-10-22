@@ -15,7 +15,7 @@ diary(diaryFile);
 p.hSource = Inputs.NfuInput;
 %h = Inputs.CpchSerial(bimanParams.cpchComPort,hex2dec('FFFF'),hex2dec('FFFF'));
 
-p.Scenario = MPL.MplScenarioMud;
+p.Scenario = MPL.MplNfu;
 p.Scenario.enableNfu = 1;
 p.Scenario.UdpAddress = '192.168.1.111';
 p.Scenario.UdpDestinationPort = 9027;
