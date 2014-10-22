@@ -64,7 +64,7 @@ classdef MiniVIE < Common.MiniVieObj
             set(obj.hg.popups(MiniVIE.SA),'Value',1);
             set(obj.hg.popups(MiniVIE.TRAINING),'String',{'None','Simple Trainer','Mini Guitar Hero','Bar Trainer','Motion Trainer'});
             set(obj.hg.popups(MiniVIE.TRAINING),'Value',1);
-            set(obj.hg.popups(MiniVIE.PRESENTATION),'String',{'None','MiniV','Breakout','AGH','MplVulcanX','MplScenarioMud','MSMS_ADL','MSMS Tasks','Online Retraining Demo'});
+            set(obj.hg.popups(MiniVIE.PRESENTATION),'String',{'None','MiniV','Breakout','AGH','MplVulcanX','MplNfu','MSMS_ADL','MSMS Tasks','Online Retraining Demo'});
             set(obj.hg.popups(MiniVIE.PRESENTATION),'Value',1);
         end
         function setupFigure(obj)
@@ -631,37 +631,11 @@ classdef MiniVIE < Common.MiniVieObj
                         h.Verbose = 1;
                         start(h.Timer);
                         obj.println('Presentation setup complete',1);
-                    case 'MplScenarioMud'
-                        switch 'MPL_TR'
-                            case 'VulcanX'
-                                QA = {
-                                    'Enable NFU (y/n):'                     'n'
-                                    'Destination IP (192.168.1.199):'       '127.0.0.1'
-                                    'Destination Port (9027):'              '9027'
-                                    'Enable Tactors (y/n)'                  'n'
-                                    'Tactor Ids ([5 6 7]):'                 '[3 4]'
-                                    'Enable Orientation Sensors (y/n):'     'n'
-                                    };
-                            case 'MPL_TR'
-                                QA = {
-                                    'Enable NFU (y/n):'                     'y'
-                                    'Destination IP (192.168.1.199):'       '192.168.1.111'
-                                    'Destination Port (9027):'              '9027'
-                                    'Enable Tactors (y/n)'                  'y'
-                                    'Tactor Ids ([5 6 7]):'                 '[3 4]'
-                                    'Enable Orientation Sensors (y/n):'     'n'
-                                    };
-                            case 'MPL_WD'
-                                QA = {
-                                    'Enable NFU (y/n):'                     'y'
-                                    'Destination IP (192.168.1.199):'       '192.168.1.111'
-                                    'Destination Port (9027):'              '9027'
-                                    'Enable Tactors (y/n)'                  'n'
-                                    'Tactor Ids ([5 6 7]):'                 '[3 4]'
-                                    'Enable Orientation Sensors (y/n):'     'n'
-                                    };
-                                
-                        end
+                    case 'MplNfu'
+                        QA = {
+                            'Enable Tactors (y/n)'                  'y'
+                            'Tactor Ids ([5 6 7]):'                 '[3 4]'
+                            };
                         name = 'MPL Control Interface';
                         numlines = 1;
                         prompt = QA(:,1);
@@ -669,32 +643,21 @@ classdef MiniVIE < Common.MiniVieObj
                         answer = inputdlg(prompt,name,numlines,defaultanswer);
                         if isempty(answer)
                             % User Cancelled
+                            return
+                        else
+                            assert(length(answer) == 2,'Expected 2 outputs');
                         end
                         
-                        assert(length(answer) == 6,'Expected 6 outputs');
-                        
                         obj.println('Setting up presentation...',1);
-                        h = MPL.MplScenarioMud;
-                        h.enableNfu = strncmpi(answer{1},'y',1);
-                        h.UdpAddress = answer{2}; % TODO: Validate
-                        
-                        port = str2double(answer{3});
-                        assert(~isnan(port),'Invalid Port');
-                        h.UdpDestinationPort = port;
-                        %h.UdpPort = answer{3};
-                        
-                        h.EnableFeedback = strncmpi(answer{4},'y',1);
-                        h.TactorIds = str2num(answer{5}); % TODO: Validate
-                        
-                        h.enableMicroStrain = strncmpi(answer{6},'y',1);
-                        
+                        h = MPL.MplNfu;                        
+                        h.EnableFeedback = strncmpi(answer{1},'y',1);
+                        h.TactorIds = str2num(answer{2}); % TODO: Validate
                         h.initialize(obj.SignalSource,obj.SignalClassifier,obj.TrainingData);
                         h.update();
                         h.Verbose = 0;
                         start(h.Timer);
                         obj.println('Presentation setup complete',1);
                     case 'MplVulcanX'
-                        
                         % Prompt user for VulcanX inputs
                         QA = {
                             'VulcanX IP (127.0.0.1):'            '127.0.0.1'
