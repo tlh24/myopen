@@ -2,4 +2,6 @@
 <userConfig>
     <!--ROC Table to be loaded and interpolated locally during MiniVIE Session-->
     <rocTable>WrRocDefaults.xml</rocTable>
+    <mplNfuIp>192.168.1.112</mplNfuIp>
+    <mplRouterIp>192.168.1.1</mplRouterIp>
 </userConfig>

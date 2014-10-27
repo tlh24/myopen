@@ -19,7 +19,7 @@ classdef (Sealed) NfuUdp < handle
     % to be investigated further
     properties
         
-        Hostname = '192.168.1.112';  % Destination % 4-16-2014 MSJ changed to .112 to test bilateral NFU comms
+        Hostname % info pulled from xml config file.  See .getInstance method
         UdpStreamReceivePortNumLocal = 9027
         TcpPortNum = 6200;
         UdpCommandPortNumLocal = 52000;  % This is where udp commands originate locally
@@ -592,6 +592,9 @@ classdef (Sealed) NfuUdp < handle
             if isempty(localObj) || ~isvalid(localObj)
                 fprintf('[%s] Calling constructor\n',mfilename);
                 localObj = MPL.NfuUdp;
+
+                localObj.Hostname = getUserConfigVar('mplNfuIp','192.168.1.111');
+                
             else
                 fprintf('[%s] Returning existing object\n',mfilename);
             end
