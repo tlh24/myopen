@@ -4,6 +4,10 @@ function mpltest
 strRouterIp = getUserConfigVar('mplRouterIp','192.168.1.1');
 strNfuIp = getUserConfigVar('mplNfuIp','192.168.1.111');
 
+AA = -0.25;
+armTestStart = [[0 AA 0] 1.5 0 0 0];
+
+
 % Note for changing limb stream-To address:
 %     Telnet in to limb:
 %     Launch windows command prompt (cmd.exe)
@@ -89,7 +93,7 @@ switch testId
         pause(1)
         hNfu.sendAllJoints([ [0 AA 0] 1.6 0.7 0.5 0.5]);
         pause(1)
-        hNfu.sendAllJoints([ [0 AA 0] 1.5 0 0 0]);
+        hNfu.sendAllJoints(armTestStart);
         
     case 'MplWrist02'
         %test mpl wrist ROM
@@ -121,7 +125,7 @@ switch testId
             
             % Wrist
             val = sin(toc);
-            hNfu.sendAllJoints([zeros(1,4) val val val]);
+            hNfu.sendAllJoints(armTestStart);
             
             % Tactors
             isOdd = @(x)rem(x,2);
@@ -176,7 +180,7 @@ switch testId
             end
             disp('Press any key...');pause;
         end
-        hNfu.sendAllJoints(zeros(1,27));
+        hNfu.sendAllJoints(armTestStart);
     case 'Haptics01'
         % Test tactors manually
         test_tactor_nfu();
