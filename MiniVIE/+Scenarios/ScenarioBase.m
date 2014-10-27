@@ -499,7 +499,6 @@ classdef ScenarioBase < Common.MiniVieObj
                 delete(obj.Timer);
                 
                 UiTools.save_temp_file(obj.TempFileName,obj.JointAnglesDegrees);
-                
             end
         end
         function getRocConfig(obj)
@@ -511,24 +510,9 @@ classdef ScenarioBase < Common.MiniVieObj
             
             % create local ROC tables (even though roc tables in vulcan x
             % can also be specified)
-            userConfigFile = 'user_config.xml';
-            if exist(userConfigFile,'file')
-                try
-                    fprintf('Reading file: "%s"...',userConfigFile)
-                    a = xmlread(userConfigFile);
-                    fprintf('Done\n')
-                    xmlFileName = char(a.getElementsByTagName('rocTable').item(0).getFirstChild.getData);
-                    obj.RocTable = MPL.RocTable.readRocTable(xmlFileName);
-                    obj.RocTableXmlFilename = xmlFileName;
-                catch ME
-                    warning(ME.message)
-                    fprintf('Failed to parse rocTable entry in file "%s"\n',userConfigFile);
-                    obj.RocTable = MPL.RocTable.createRocTables();
-                end
-            else
-                % No user config
-                obj.RocTable = MPL.RocTable.createRocTables();
-            end
+            xmlFileName = getUserConfigVar('rocTable','WrRocDefaults.xml');
+            obj.RocTable = MPL.RocTable.readRocTable(xmlFileName);
+            obj.RocTableXmlFilename = xmlFileName;
         end
     end
 end
