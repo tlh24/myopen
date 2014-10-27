@@ -19,7 +19,7 @@ classdef (Sealed) NfuUdp < handle
     % to be investigated further
     properties
         
-        Hostname = '192.168.1.111';  % Destination % 4-16-2014 MSJ changed to .112 to test bilateral NFU comms
+        Hostname = '192.168.1.112';  % Destination % 4-16-2014 MSJ changed to .112 to test bilateral NFU comms
         UdpStreamReceivePortNumLocal = 9027
         TcpPortNum = 6200;
         UdpCommandPortNumLocal = 52000;  % This is where udp commands originate locally
@@ -429,6 +429,48 @@ classdef (Sealed) NfuUdp < handle
                     end
                     
                     obj.sum2 = obj.sum2 + 1;
+                    
+                    
+                elseif (len == 1242)
+                    % Store CPC and new percept data with next gen FTSN
+                    
+                    % cpch
+                    
+                    % advance packet counter
+                    obj.numPacketsReceived = obj.numPacketsReceived + 1;
+                    
+                    % read data and mark as new
+                    b1 = dataBytes(1:726);  %cpch bytes
+                    [dataValues, sequenceNumber] = cpch_bytes_to_signal(b1);
+                    obj.UdpBuffer1{obj.ptr1} = dataValues;
+                    obj.newData1(obj.ptr1) = true;
+                    
+                    % advance ptr
+                    obj.ptr1 = obj.ptr1 + 1;
+                    if obj.ptr1 > obj.BufferSize
+                        obj.ptr1 = 1;
+                    end
+                    
+                    obj.sum1 = obj.sum1 + 1;
+                    
+                    % percepts
+                    
+                    % TODO
+                    
+                    %b2 = dataBytes(727:end);  %percept bytes
+                    %obj.UdpBuffer2{obj.ptr2} = percept_bytes_to_signal(b2);
+                    %obj.newData2(obj.ptr2) = true;
+                    
+                    % DEBUG display raw readout
+                    % disp(obj.UdpBuffer2{obj.ptr2});
+                    
+                    % advance ptr
+                    %obj.ptr2 = obj.ptr2 + 1;
+                    %if obj.ptr2 > obj.BufferSize
+                    %    obj.ptr2 = 1;
+                    %end
+                    
+                    %obj.sum2 = obj.sum2 + 1;
                     
                     
                 elseif (len == 131) || (len == 143)
