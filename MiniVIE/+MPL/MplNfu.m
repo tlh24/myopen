@@ -221,12 +221,12 @@ classdef MplNfu < Scenarios.OnlineRetrainer
                 mpl_upper_arm_enum.WRIST_FE
                 ];
             
+            % initialize angles
             mplAngles = zeros(1,27);
-            %mplAngles(1:7) = obj.JointAnglesDegrees(jointIds) * pi/180;
+            % get angles from state controller
             mplAngles(1:7) = [m.structState(jointIds).Value];
             
-            
-            % Generate vulcanX message.  If local roc table exists, use it
+            % Generate MUD message.  If local roc table exists, use it
             if ~isempty(obj.RocTable)
                 
                 % check bounds
@@ -247,8 +247,7 @@ classdef MplNfu < Scenarios.OnlineRetrainer
                 mplAngles(roc.joints) = interp1(roc.waypoint,roc.angles,rocValue);
                 
                 % generate MUD message using joint angles
-                %msg = obj.hMud.AllJointsPosVelCmd(mplAngles(1:7),zeros(1,7),mplAngles(8:27),zeros(1,20));
-                msg = obj.hMud.AllJointsPosVelCmd(mplAngles(1:7),zeros(1,7),...
+                msg = obj.hMud.AllJointsPosVelImpCmd(mplAngles(1:7),zeros(1,7),...
                     mplAngles(8:27),zeros(1,20),...
                     obj.GlobalImpedanceValue*ones(1,27));
             else
