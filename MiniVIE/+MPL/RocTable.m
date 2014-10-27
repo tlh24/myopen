@@ -4,7 +4,6 @@ classdef RocTable < handle
     % MPL.RocTable.createRocTables
     % MPL.RocTable.Test
     %
-    %
     % To reload from MiniVIE GUI:
     % obj.Presentation.hNfu.readRocTable
     %
@@ -13,29 +12,13 @@ classdef RocTable < handle
     properties
     end
     methods (Static=true)
-        function roc = createRocTables(fname)
+        function roc = createRocTables()
             % createRocTables.m
             % testWriteRocTable.m
             % writeRocTable
             % writeRocTableEntry
-            
-            if nargin < 1
-                fname = 'C:\usr\MPL\VulcanX\roc_tables_clinical.xml';
-            end
-            
-            
+                        
             mce = MPL.MudCommandEncoder;
-            
-            % jointIds = 8:27;
-            % basePosition = zeros(1,length(jointIds));
-            % basePosition(:,mce.INDEX_MCP) = 0.1;
-            % basePosition(:,mce.MIDDLE_MCP) = 0.1;
-            % basePosition(:,mce.RING_MCP) = 0.1;
-            % basePosition(:,mce.LITTLE_MCP) = 0.1;
-            % basePosition(:,mce.THUMB_CMC_AD_AB) = 0.1;
-            % basePosition(:,mce.THUMB_CMC) = 0.1;
-            % basePosition(:,mce.THUMB_DIP) = 0.1;
-            % basePosition(:,mce.THUMB_MCP) = 0.1;
             
             basePosition = [0.0000,0.3491,0.3840,0.3142,0.0000,0.3491,0.3840,0.3142,0.0000,0.3491,0.3840,0.3142,0.0000,0.3491,0.3840,0.3142,0.0000,1.0472,0.2618,-0.3491];
             
@@ -43,7 +26,6 @@ classdef RocTable < handle
             basePosition(:,mce.INDEX_AB_AD) = -0.1;
             basePosition(:,mce.LITTLE_AB_AD) = 0.2;
             basePosition(:,mce.THUMB_CMC) = 0.4;
-            
             
             roc(1).id = 0;
             roc(1).name = 'rest';
@@ -57,11 +39,6 @@ classdef RocTable < handle
             roc(2).name = 'FinePinch(British)';
             roc(2).waypoint = [0 0.25 0.4 0.85 1];
             roc(2).joints = [8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27];
-            % roc(2).angles = [...
-            % basePosition;...
-            % 0.0000,0.5236,0.5760,0.4712,0.0000,-0.7854,0.0000,0.0000,0.0000,-0.7854,0.0000,0.0000,0.0000,-0.7854,0.0000,0.0000,1.3963,0.5236,0.5236,-0.3491;...
-            % 0.0000,0.8727,0.9774,0.7679,0.0000,-0.7854,0.0000,0.0000,0.0000,-0.7854,0.0000,0.0000,0.0000,-0.7854,0.0000,0.0000,1.3963,0.8727,0.5236,-0.3491;...
-            % ];
             
             basePosition(mce.THUMB_DIP) = 0.1;
             pos1 = basePosition;
@@ -130,20 +107,7 @@ classdef RocTable < handle
                 0.0000,1.3963,1.5533,1.2392,0.0000,1.3090,1.4486,1.1694,0.0000,1.3963,1.5533,1.2392,0.0000,1.3963,1.5533,1.2392,1.9199,0.5236,0.8727,0.3491;...
                 ];
             roc(6).angles(2:4,[mce.RING_AB_AD mce.LITTLE_AB_AD]) = -1;
-            
-            %             roc(16).joints = [8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27];
-            %             % replicate the base angles
-            %             roc(16).angles = repmat(basePosition,length(roc(16).waypoint),1);
-            %             roc(16).angles(2:3,[mce.INDEX_MCP mce.INDEX_PIP mce.INDEX_DIP]) = 1.2;
-            %             roc(16).angles(2:3,[mce.MIDDLE_MCP mce.MIDDLE_PIP mce.MIDDLE_DIP]) = 1;
-            %             roc(16).angles(2:3,mce.RING_MCP) = 1.6;
-            %             roc(16).angles(2:3,[mce.LITTLE_MCP mce.LITTLE_PIP mce.LITTLE_DIP]) = 1;
-            %
-            %             roc(16).angles(3,mce.THUMB_CMC_AD_AB) = .5;
-            %             roc(16).angles(3,mce.THUMB_CMC) = .5;
-            %             roc(16).angles(3,mce.THUMB_MCP) = 1.2;
-            
-            
+                        
             roc(7).id = 6;
             roc(7).name = 'Trigger(Drill)';
             roc(7).waypoint = [0 0.333 0.556 0.778 1];
@@ -166,9 +130,7 @@ classdef RocTable < handle
             pos0([mce.MIDDLE_MCP mce.MIDDLE_PIP mce.MIDDLE_DIP]) = -0.0;
             pos0([mce.RING_MCP mce.RING_PIP mce.RING_DIP]) = -.1;
             pos1 = [0.0000,0.2618,0.2967,0.2269,0.0000,0.2618,0.2967,0.2269,0.3491,0.2618,0.2967,0.2269,0.3491,0.2618,0.2967,0.2269,1.9199,0.0000,0.2618,-0.3491];
-            %pos1([mce.MIDDLE_MCP mce.MIDDLE_PIP mce.MIDDLE_DIP]) = 0.0;
             pos1([mce.LITTLE_MCP mce.LITTLE_PIP mce.LITTLE_DIP]) = 0.5;
-            %pos1([mce.THUMB_CMC_AD_AB]) = 1.9;
             pos1([mce.THUMB_CMC_AD_AB]) = 0.95;
             pos2 = pos1;
             pos3 = [0.0000,0.9599,1.0647,0.8552,0.0000,0.7854,0.8727,0.6981,0.3491,0.8727,0.9774,0.7679,0.3491,1.0472,0.8694,0.6250,1.9199,0.5236,0.8727,-0.3491];
@@ -182,7 +144,6 @@ classdef RocTable < handle
                 pos2;...
                 pos3;...
                 ];
-            %roc(8).angles(2:end,mce.THUMB_CMC_AD_AB) = 1.8;
             roc(8).angles(2:4,[mce.RING_AB_AD mce.LITTLE_AB_AD]) = 2;
             roc(8).angles(2:4,mce.INDEX_AB_AD) = -1;
             
@@ -269,11 +230,6 @@ classdef RocTable < handle
             roc(16).angles(3,mce.THUMB_CMC) = .5;
             roc(16).angles(3,mce.THUMB_MCP) = 1.2;
             
-            
-            
-            if ~isempty(fname)
-                MPL.RocTable.writeRocTable(fname,roc);
-            end
             % To reload
             % obj.Presentation.hNfu.readRocTable
             
@@ -416,7 +372,6 @@ classdef RocTable < handle
                 0.0000,0.3491,0.3840,0.3142,0.0000,0.3491,0.3840,0.3142,0.0000,0.3491,0.3840,0.3142,0.0000,0.3491,0.3840,0.3142,0.0000,1.0472,0.2618,-0.3491;...
                 0.0000,0.3491,0.3840,0.3142,0.0000,0.3491,0.3840,0.3142,0.0000,0.3491,0.3840,0.3142,0.0000,0.3491,0.3840,0.3142,0.0000,1.0472,0.2618,-0.3491];
             
-            %MPL.writeRocTable('C:\usr\MPL\VulcanX\roc_tables_clinical.xml',roc)
             MPL.RocTable.writeRocTable('roc_test.xml',roc)
         end
     end

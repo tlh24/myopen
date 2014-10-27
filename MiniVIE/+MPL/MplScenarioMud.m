@@ -115,7 +115,7 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
                 
                 obj.hMud = MPL.MudCommandEncoder();
                 
-                obj.localRoc = MPL.RocTable.createRocTables('test.xml');
+                obj.localRoc = MPL.RocTable.createRocTables();
                 
                 % Use MicroStrain for upper arm motion
                 if obj.enableMicroStrain
