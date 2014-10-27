@@ -1,7 +1,7 @@
 function mpltest
 % Test Script to test MPL functions with NFU
 strRouterIp = '192.168.1.1';
-strNfuIp = '192.168.1.111';
+strNfuIp = '192.168.1.112';
 
 fprintf('\n\n\n\n\n');
 fprintf('******************************\n');
