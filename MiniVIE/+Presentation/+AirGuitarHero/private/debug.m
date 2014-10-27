@@ -8,7 +8,7 @@ start(t)
 
 %%
 fprintf('Creating serial object...')
-s = serial('COM18','BaudRate',115200);
+s = serial('COM16','BaudRate',115200);
 fprintf('Done\n')
 %%
 fprintf('Opening %s...',s.Port)
