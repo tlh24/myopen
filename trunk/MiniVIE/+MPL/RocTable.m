@@ -230,6 +230,16 @@ classdef RocTable < handle
             roc(16).angles(3,mce.THUMB_CMC) = .5;
             roc(16).angles(3,mce.THUMB_MCP) = 1.2;
             
+            % add impedance defaults; set as -1 for now (unspecified
+            % impedance)
+            for i = 1:length(roc)
+                roc(i).impedance = roc(i).angles;
+                roc(i).impedance(:) = -1;
+            end
+            
+            if ~isempty(fname)
+                MPL.RocTable.writeRocTable(fname,roc);
+            end
             % To reload
             % obj.Presentation.hNfu.readRocTable
             
@@ -244,6 +254,7 @@ classdef RocTable < handle
             % roc(1).waypoint = [0 1];
             % roc(1).joints = [8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27];
             % roc(1).angles = [2x20]
+            % roc(1).impedance = [2x20]
             
             xDoc = xmlread(xmlFileName);
             xRoot = xDoc.getDocumentElement;
@@ -274,6 +285,18 @@ classdef RocTable < handle
                     structRoc(iTable).waypoint(iWaypoint) = str2double(waypoints.item(iWaypoint-1).getAttribute('index'));
                     newStr = waypoints.item(iWaypoint-1).getElementsByTagName('angles').item(0).getFirstChild.getData;
                     structRoc(iTable).angles(iWaypoint,:) = str2num(newStr); %#ok<ST2NM>
+
+                    % read impedance
+                    xmlItem = waypoints.item(iWaypoint-1).getElementsByTagName('impedance').item(0);
+                    if isempty(xmlItem)
+                        val = structRoc(iTable).angles(iWaypoint,:);
+                        val(:) = -1;
+                        structRoc(iTable).impedance(iWaypoint,:) = val;
+                    else
+                        newStr = xmlItem.getFirstChild.getData;
+                        structRoc(iTable).impedance(iWaypoint,:) = str2num(newStr); %#ok<ST2NM>
+                    end
+                    
                 end
                 
             end
@@ -303,14 +326,14 @@ classdef RocTable < handle
                 MPL.RocTable.writeRocTableEntry(docNode,...
                     structRocTables(i).id,structRocTables(i).name,...
                     structRocTables(i).joints,structRocTables(i).waypoint,...
-                    structRocTables(i).angles);
+                    structRocTables(i).angles,structRocTables(i).impedance);
             end
             
             xmlwrite(xmlFileName,docNode);
             %clc;
             %type(xmlFileName);
         end
-        function writeRocTableEntry(docNode,id,name,jointIds,wayPts,jointAngles)
+        function writeRocTableEntry(docNode,id,name,jointIds,wayPts,jointAngles,jointImpedance)
             % Function appends roc entries to the top-level xml document docNode
             %
             % Usage:
@@ -356,11 +379,19 @@ classdef RocTable < handle
                 tableElement.appendChild(wayPointElement);
                 wayPointElement.setAttribute('index',sprintf('%5.3f',wayPts(iWayPt)))
                 
+                % write angle entry
                 angleElement = docNode.createElement('angles');
                 strAngles = sprintf('%f,',jointAngles(iWayPt,:));
                 strAngles(end) = []; %remove trailing ','
                 angleElement.appendChild(docNode.createTextNode(strAngles));
                 wayPointElement.appendChild(angleElement);
+
+                % write impedance entry
+                impedanceElement = docNode.createElement('impedance');
+                strImpedance = sprintf('%f,',jointImpedance(iWayPt,:));
+                strImpedance(end) = []; %remove trailing ','
+                impedanceElement.appendChild(docNode.createTextNode(strImpedance));
+                wayPointElement.appendChild(impedanceElement);
             end
         end
         function Test
