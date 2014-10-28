@@ -158,9 +158,20 @@ classdef ScenarioBase < Common.MiniVieObj
             if obj.Verbose > 0
                 fprintf('Class=%2d; Vote=%2d; Class = %24s; S=%6.4f',...
                     classOut,voteDecision,className,prSpeed);
-                s = obj.ArmStateModel;
-                fprintf('\t | Roc=%2d; P=%6.4f',...
-                    s.structState(s.RocStateId).State,s.structState(s.RocStateId).Value);
+                try
+                    s = obj.ArmStateModel;
+                    
+                    % could be number or enum type
+                    RocId = s.structState(s.RocStateId).State;
+                    if isnumeric(RocId)
+                        RocId = num2str(RocId);
+                    else
+                        RocId = char(RocId);
+                    end
+                    
+                    fprintf('\t | Roc=%s; P=%6.4f',...
+                        RocId,s.structState(s.RocStateId).Value);
+                end
             end
             
         end
@@ -254,7 +265,9 @@ classdef ScenarioBase < Common.MiniVieObj
                 s.velocity(1:5) = 0;
             end
             
-            if strncmp(className,'Whole Arm Roc',13)
+            % Parse partial classname
+            strMatch = 'Whole Arm Roc';
+            if strncmp(className,strMatch,length(strMatch))
 
                 % only change roc state if at beginning of motion
                 if s.structState(s.RocStateId).Value < obj.RocChangeThreshold && (rocV > 0)
