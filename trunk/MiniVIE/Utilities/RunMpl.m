@@ -2,9 +2,9 @@ function [ obj ] = RunMpl
 
 p.guiName = 'MiniVIE-NFU-MPL';
 % p.filePrefix = 'WR_TR02_L_';
-p.filePrefix = 'JH_TH01_L_';
+% p.filePrefix = 'JH_TH01_L_';
 % p.filePrefix = 'MPL_01_WD_R_';
-% p.filePrefix = 'JH05_SD_L_';
+p.filePrefix = 'JH_SD01_B_L_';
 
 UiTools.save_temp_file('defaultFilePrefix',p.filePrefix)
 
@@ -16,21 +16,16 @@ p.hSource = Inputs.NfuInput;
 %h = Inputs.CpchSerial(bimanParams.cpchComPort,hex2dec('FFFF'),hex2dec('FFFF'));
 
 p.Scenario = MPL.MplNfu;
-p.Scenario.enableNfu = 1;
-p.Scenario.UdpAddress = '192.168.1.111';
-p.Scenario.UdpDestinationPort = 9027;
-p.Scenario.UdpLocalPort = 56010;
 p.Scenario.JoystickId = 0;
-p.Scenario.UdpArmTrackingPort = [];   % for motion capture
 
 % Haptics need to be configured here, and in 
-% p.Scenario.EnableFeedback = 0;
 p.Scenario.EnableFeedback = 1;
 % p.Scenario.TactorIds = [5 6 7];
 p.Scenario.TactorIds = [3 4];  % JH_TH_01
-p.Scenario.enableMicroStrain = 0;
 
-wait_for_ping_response(p.Scenario.UdpAddress);
+% perform windows ping prior to further initialization
+strNfuIp = getUserConfigVar('mplNfuIp','192.168.1.111');
+wait_for_ping_response(strNfuIp);
 
 obj = foo(p);
 

@@ -330,7 +330,11 @@ classdef guiClassifierChannels < Common.MiniVieObj
             classNames = cat(2,classNames,cellEndpointClasses);
             
             % Whole Arm Reduced Order Control
-            cellArmRoc = {'Whole Arm Roc FWD', 'Whole Arm Roc REV'};
+            cellArmRoc = {'Whole Arm Roc 1 FWD', 'Whole Arm Roc 1 REV'};
+            classNames = cat(2,classNames,cellArmRoc);
+            cellArmRoc = {'Whole Arm Roc 2 FWD', 'Whole Arm Roc 2 REV'};
+            classNames = cat(2,classNames,cellArmRoc);
+            cellArmRoc = {'Whole Arm Roc 3 FWD', 'Whole Arm Roc 3 REV'};
             classNames = cat(2,classNames,cellArmRoc);
 
             % No Movement

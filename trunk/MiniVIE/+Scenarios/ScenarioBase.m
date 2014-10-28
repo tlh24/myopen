@@ -28,7 +28,7 @@ classdef ScenarioBase < Common.MiniVieObj
         GraspValue = 0;     % normalized position
         GraspVelocity = 0;
         GraspLocked = 0;
-        
+                
         % percentage that allows changing of grasps.  Beyond this, the
         % grasp will be 'locked' in
         GraspChangeThreshold = 0.2;
@@ -152,8 +152,11 @@ classdef ScenarioBase < Common.MiniVieObj
             obj.Intent.features2D = features2D;
             
             if obj.Verbose > 0
-                fprintf('Class=%2d; Vote=%2d; Class = %16s; S=%6.4f',...
+                fprintf('Class=%2d; Vote=%2d; Class = %24s; S=%6.4f',...
                     classOut,voteDecision,className,prSpeed);
+                s = obj.ArmStateModel;
+                fprintf('\t | Roc=%2d; P=%6.4f',...
+                    s.structState(s.RocStateId).State,s.structState(s.RocStateId).Value);
             end
             
         end
@@ -215,10 +218,24 @@ classdef ScenarioBase < Common.MiniVieObj
                     eV = [0 0 -prSpeed];
                 case 'Endpoint Right'
                     eV = [0 0 +prSpeed];
-                case 'Whole Arm Roc FWD'
-                    rocV = +prSpeed;
-                case 'Whole Arm Roc REV'
-                    rocV = -prSpeed;
+                case {'Whole Arm Roc 1 FWD' 'Whole Arm Roc FWD'}
+                    rocId = 16;
+                    rocV = 0.2;
+                case {'Whole Arm Roc 1 REV' 'Whole Arm Roc REV'}
+                    rocId = 16;
+                    rocV = -0.2;
+                case 'Whole Arm Roc 2 FWD'
+                    rocId = 17;
+                    rocV = 0.2;
+                case 'Whole Arm Roc 2 REV'
+                    rocId = 17;
+                    rocV = -0.2;
+                case 'Whole Arm Roc 3 FWD'
+                    rocId = 18;
+                    rocV = 0.2;
+                case 'Whole Arm Roc 3 REV'
+                    rocId = 18;
+                    rocV = -0.2;
             end
             
             if strncmp(className,'Endpoint',8)
@@ -234,8 +251,14 @@ classdef ScenarioBase < Common.MiniVieObj
             end
             
             if strncmp(className,'Whole Arm Roc',13)
-                s.setRocId(16);
+
+                % only change roc state if at beginning of motion
+                if s.structState(s.RocStateId).Value < 0.1 && (rocV > 0)
+                    s.setRocId(rocId);
+                end
+                
                 s.setVelocity(s.RocStateId,rocV);
+                
             end
             
         end
