@@ -32,6 +32,10 @@ classdef ScenarioBase < Common.MiniVieObj
         % percentage that allows changing of grasps.  Beyond this, the
         % grasp will be 'locked' in
         GraspChangeThreshold = 0.2;
+
+        % percentage that allows changing of rocs.  Beyond this, the
+        % roc will be 'locked' in
+        RocChangeThreshold = 0.1;
         
         % Counter for opening hand the remaining to full rest position
         GraspChangeCounter = 0;
@@ -253,7 +257,7 @@ classdef ScenarioBase < Common.MiniVieObj
             if strncmp(className,'Whole Arm Roc',13)
 
                 % only change roc state if at beginning of motion
-                if s.structState(s.RocStateId).Value < 0.1 && (rocV > 0)
+                if s.structState(s.RocStateId).Value < obj.RocChangeThreshold && (rocV > 0)
                     s.setRocId(rocId);
                 end
                 
