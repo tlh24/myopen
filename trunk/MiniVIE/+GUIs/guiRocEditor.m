@@ -32,6 +32,8 @@ classdef guiRocEditor < handle
 
         IsNfu;
         
+        CommsHold = 1; % controlled by toggle to delay communications with limb until released
+        
         Verbose = 0;
     end
     properties  (SetObservable)
@@ -219,8 +221,12 @@ classdef guiRocEditor < handle
                 'horizontalalignment','left');
             
             % Set Angles Button
-            uicontrol(hParent,'Style','pushbutton','Position',[600 620, 120, 20],...
+            uicontrol(hParent,'Style','pushbutton','Position',[600 620, 80, 20],...
                 'String','Set Angles','HorizontalAlignment','Left','Callback',@(src,evt)cbGetAngles);
+
+            % HOLD Button
+            uicontrol(hParent,'Style','togglebutton','Value',1,'Position',[700 620, 80, 20],...
+                'String','HOLD','HorizontalAlignment','Left','Callback',@(src,evt)cbHold(src));
             
             function cbSpinner(src)
                 obj.CurrentRocId = src.Value+1;
@@ -230,6 +236,11 @@ classdef guiRocEditor < handle
             
             function cbListBox(src)
                 obj.CurrentWaypointId = get(src,'Value');
+                obj.updateFigure();
+            end
+            
+            function cbHold(src)
+                obj.CommsHold = get(src,'Value');
                 obj.updateFigure();
             end
             
@@ -279,7 +290,8 @@ classdef guiRocEditor < handle
                     obj.jointAngles = allAngles;
                     obj.transmit();
                     
-                    pause(0.02);
+                    %pause(0.02);
+                    drawnow
                 end
                 
             end
@@ -342,11 +354,16 @@ classdef guiRocEditor < handle
                 finalAngles(iJoint) = newAngle;
             end
             
+            % move the limb using interpolation to ensure movements are
+            % smooth.  the number of steps is based on the error between
+            % the current position and the final desired position
+            
             % interpolate
             maxDiff = max(abs(finalAngles - currentAngles));
             
             numSteps = floor(maxDiff / 0.05);
             
+            fprintf('%Interpolating %d steps\n',numSteps);
             for i = 1:numSteps
                 interpAngles = interp1([0 1],[currentAngles; finalAngles],i/numSteps);
                 obj.jointAngles = interpAngles;
@@ -439,6 +456,11 @@ classdef guiRocEditor < handle
                 fprintf('Joint Command:');
                 fprintf(' %6.3f',obj.jointAngles);
                 fprintf('\n');
+            end
+            
+            if obj.CommsHold
+                fprintf('Comms on hold\n');
+                return
             end
             
             upperArmAngles = obj.jointAngles(1:7);
