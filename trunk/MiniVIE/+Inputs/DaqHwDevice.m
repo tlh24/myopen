@@ -101,7 +101,7 @@ classdef DaqHwDevice < Inputs.SignalInput
             % single ended mode (e.g. mcc USB-2408)
             desiredInputType = 'SingleEnded';
             propInfoInputType = propinfo(obj.AnalogInput,'InputType');
-            if strcmpi(propInfoInputType.ConstraintValue,desiredInputType)
+            if any(strcmpi(propInfoInputType.ConstraintValue,desiredInputType))
                 % Valid setting
                 try
                     set(obj.AnalogInput,'InputType','SingleEnded');
