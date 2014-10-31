@@ -4,4 +4,5 @@
     <rocTable>GraspAndWholeArmRoc.xml</rocTable>
     <mplNfuIp>192.168.1.111</mplNfuIp>
     <mplRouterIp>192.168.1.1</mplRouterIp>
+    <userFilePrefix>JH_SD01_B_L_</userFilePrefix>
 </userConfig>

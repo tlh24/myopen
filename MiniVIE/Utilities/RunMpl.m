@@ -1,10 +1,8 @@
 function [ obj ] = RunMpl
 
 p.guiName = 'MiniVIE-NFU-MPL';
-% p.filePrefix = 'WR_TR02_L_';
-% p.filePrefix = 'JH_TH01_L_';
-% p.filePrefix = 'MPL_01_WD_R_';
-p.filePrefix = 'JH_SD01_B_R_';
+p.filePrefix = getUserConfigVar('userFilePrefix','NEW_USER_');
+strNfuIp = getUserConfigVar('mplNfuIp','192.168.1.111');
 
 UiTools.save_temp_file('defaultFilePrefix',p.filePrefix)
 
@@ -24,7 +22,6 @@ p.Scenario.EnableFeedback = 1;
 p.Scenario.TactorIds = [3 4];  % JH_TH_01
 
 % perform windows ping prior to further initialization
-strNfuIp = getUserConfigVar('mplNfuIp','192.168.1.111');
 wait_for_ping_response(strNfuIp);
 
 obj = foo(p);
