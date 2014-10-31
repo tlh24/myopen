@@ -14,17 +14,22 @@ hNfu.enableStreaming(1);
 hNfu.enableStreaming(4);
 
 %%
-pnet_conn = hNfu.TcpConnection;
+%pnet_conn = hNfu.TcpConnection;
 mud = MPL.MudCommandEncoder();
 %%
-w = [-15 0 0]*5*pi/180;
+w = [0 0 0];
 rocPos = 0/10;
 rocID = 5;
-elbow = 5*5*pi/180;
+elbow = 80+(30*rand);
 
-msg = mud.ArmPosVelHandRocGrasps([zeros(1,3) elbow w],zeros(1,7),1,rocID,rocPos,1);
+msg = mud.ArmPosVelHandRocGrasps([zeros(1,3) deg2rad(elbow) deg2rad(w)],zeros(1,7),1,rocID,rocPos,1);
+
+msg = mud.AllJointsPosVelImpCmd([zeros(1,3) deg2rad(elbow) w],zeros(1,7),...
+    0.3*ones(1,20),zeros(1,20),...
+    [250*ones(1,7) 0.1*ones(1,20)]);
+
 % pnet( hNfu.TcpConnection, 'write', char(59,msg)); %Upper arm and wrist DOM PV, ROC for hand
-hNfu.sendUdpCommand(char(59,msg));  % append nfu msg header
+hNfu.sendUdpCommand(char(61,msg));  % append nfu msg header
 
 %%
 tic
