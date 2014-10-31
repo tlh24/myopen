@@ -35,7 +35,7 @@ classdef ScenarioBase < Common.MiniVieObj
 
         % percentage that allows changing of rocs.  Beyond this, the
         % roc will be 'locked' in
-        RocChangeThreshold = 0.1;
+        RocChangeThreshold = 0.05;
         
         % Counter for opening hand the remaining to full rest position
         GraspChangeCounter = 0;
@@ -235,10 +235,10 @@ classdef ScenarioBase < Common.MiniVieObj
                     eV = [0 0 +prSpeed];
                 case {'Whole Arm Roc 1 FWD' 'Whole Arm Roc FWD'}
                     rocId = 16;
-                    rocV = 0.2;
+                    rocV = 0.1;
                 case {'Whole Arm Roc 1 REV' 'Whole Arm Roc REV'}
                     rocId = 16;
-                    rocV = -0.2;
+                    rocV = -0.3;
                 case 'Whole Arm Roc 2 FWD'
                     rocId = 17;
                     rocV = 0.2;
@@ -247,10 +247,10 @@ classdef ScenarioBase < Common.MiniVieObj
                     rocV = -0.2;
                 case 'Whole Arm Roc 3 FWD'
                     rocId = 18;
-                    rocV = 0.2;
+                    rocV = 0.4;
                 case 'Whole Arm Roc 3 REV'
                     rocId = 18;
-                    rocV = -0.2;
+                    rocV = -0.4;
             end
             
             if strncmp(className,'Endpoint',8)
