@@ -249,7 +249,8 @@ classdef MplNfu < Scenarios.OnlineRetrainer
                 % generate MUD message using joint angles
                 msg = obj.hMud.AllJointsPosVelImpCmd(mplAngles(1:7),zeros(1,7),...
                     mplAngles(8:27),zeros(1,20),...
-                    obj.GlobalImpedanceValue*ones(1,27));
+                    [100*ones(1,7) 0.1*ones(1,20)]);
+                    %obj.GlobalImpedanceValue*ones(1,27));
             else
                 % generate MUD message using joint angles and ROC
                 % parameters
