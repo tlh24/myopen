@@ -4,7 +4,7 @@ function mpltest
 strRouterIp = getUserConfigVar('mplRouterIp','192.168.1.1');
 strNfuIp = getUserConfigVar('mplNfuIp','192.168.1.111');
 
-AA = -0.25;
+AA = -0.3;
 armTestStart = [[0 AA 0] 1.5 0 0 0];
 
 
@@ -89,12 +89,12 @@ switch testId
             error('NFU Init failed');
         end
         hNfu.sendAllJoints([ [0 AA 0] 1.5 -0.7 -0.5 -0.5]);
-        pause(1.5)
+        pause(1.0)
         AA = -0.25;
         hNfu.sendAllJoints([ [0 AA 0] 1.5 -0.7 -0.5 -0.5]);
-        pause(1.5)
+        pause(1.0)
         hNfu.sendAllJoints([ [0 AA 0] 1.6 0.7 0.5 0.5]);
-        pause(1.5)
+        pause(1.0)
         hNfu.sendAllJoints(armTestStart);
         
     case 'MplWrist02'
