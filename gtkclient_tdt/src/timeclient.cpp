@@ -24,17 +24,19 @@ using boost::format;
 TimeSync 	g_ts(24414.0625); // keeps track of ticks (TDT time)
 
 bool g_die = false;
-bool g_running = false; 
+bool g_running = false;
 long double g_lastPo8eTime = 0.0;
-long double g_po8ePollInterval = 0.0; 
-long double g_po8eAvgInterval = 0.0; 
-int64_t g_tdtOffsetDiff = 0; 
+long double g_po8ePollInterval = 0.0;
+long double g_po8eAvgInterval = 0.0;
+int64_t g_tdtOffsetDiff = 0;
 
-void destroy(int){
+void destroy(int)
+{
 	g_die = true;
 }
 
-void *po8_thread(void *){
+void *po8_thread(void *)
+{
 	PO8e *card = NULL;
 	int bufmax = 10000;	// 2^14 > 10000
 	string s;
@@ -48,14 +50,14 @@ void *po8_thread(void *){
 
 		card = PO8e::connectToCard(0);
 		if (card == NULL)  {
-			printf("Connection failed to card 0");
+			printf("Connection failed to card 0\n");
 		} else {
 			printf("Connection established to card 0 at %p\n", (void *)card);
 			if (!card->startCollecting()) {
 				printf("startCollecting() failed with: %d\n", card->getLastError());
 				card->flushBufferedData();
 				card->stopCollecting();
-				printf("Releasing card0");
+				printf("Releasing card0\n");
 				PO8e::releaseCard(card);
 				card = NULL;
 			} else {
@@ -63,7 +65,7 @@ void *po8_thread(void *){
 				conn_cards++;
 				printf("Waiting for the stream to start on card 0 ...\n");
 				g_ts.reset();
-				card->waitForDataReady(60*60*1000); 
+				card->waitForDataReady(60*60*1000);
 				printf("Started\n");
 			}
 		}
@@ -86,10 +88,10 @@ void *po8_thread(void *){
 		}
 
 		short *temp = new short[bufmax*(nchan)];  // 2^14 samples * 2 bytes/sample * (nChannels+time+stim+stimclock)
-		int64_t *tdtOffsets = new int64_t[bufmax]; 
-		
+		int64_t *tdtOffsets = new int64_t[bufmax];
+
 		while (conn_cards > 0 && !g_die) {
-			if (!card->waitForDataReady(60*60*1000)) { 
+			if (!card->waitForDataReady(60*60*1000)) {
 				// this occurs when the rpvdsex circuit is idled.
 				// and potentially when a glitch happens
 				printf("waitForDataReady() failed with: %d\n", card->getLastError());
@@ -98,7 +100,7 @@ void *po8_thread(void *){
 				printf("Releasing card 0\n");
 				PO8e::releaseCard(card);
 				card = NULL;
-				g_running = false; 
+				g_running = false;
 				break;
 			}
 			bool stopped = false;
@@ -112,13 +114,13 @@ void *po8_thread(void *){
 				printf("Releasing card 0\n");
 				PO8e::releaseCard(card);
 				card = NULL;
-				g_running = false; 
+				g_running = false;
 				break;
 			}
 			if (numSamples > 0) {
 				if (numSamples > bufmax) {
 					printf("samplesReady() returned too many samples for buffer (buffer wrap?): %d\n",
-					        numSamples);
+					       numSamples);
 					numSamples = bufmax;
 				}
 				card->readBlock(temp, numSamples, tdtOffsets);
@@ -131,7 +133,7 @@ void *po8_thread(void *){
 
 				long double time = gettime();
 				g_po8ePollInterval = (time - g_lastPo8eTime)*1000.0;
-				g_po8eAvgInterval = g_po8eAvgInterval * 0.99 + g_po8ePollInterval * 0.01; 
+				g_po8eAvgInterval = g_po8eAvgInterval * 0.99 + g_po8ePollInterval * 0.01;
 				g_lastPo8eTime = time;
 
 				// estimate TDT ticks from perf counter
@@ -140,27 +142,27 @@ void *po8_thread(void *){
 				ticks  = (unsigned short)(temp[0*numSamples + numSamples -1]); //we only care about the last tick.
 				ticks += (unsigned short)(temp[1*numSamples + numSamples -1]) << 16;
 				// it appears we need a checksum. extract.
-				int cs; 
-				cs  = (unsigned short)(temp[2*numSamples + numSamples -1]); 
-				cs += (unsigned short)(temp[3*numSamples + numSamples -1]) << 16; 
+				int cs;
+				cs  = (unsigned short)(temp[2*numSamples + numSamples -1]);
+				cs += (unsigned short)(temp[3*numSamples + numSamples -1]) << 16;
 				int64_t diff = tdtOffsets[numSamples-1] - (int64_t)ticks;
-				if((ticks ^ 0x134fbab3) != cs){
+				if ((ticks ^ 0x134fbab3) != cs) {
 					printf("\nChecksum fail: %x %x\n", ticks, cs);
-					g_running = false; 
+					g_running = false;
 				} else {
-					if(diff != g_tdtOffsetDiff){
-						printf("\nTDT Offset changed rel. ticks! old: %ld new %ld\n", 
-							g_tdtOffsetDiff, diff); 
+					if (diff != g_tdtOffsetDiff) {
+						printf("\nTDT Offset changed rel. ticks! old: %ld new %ld\n",
+						       g_tdtOffsetDiff, diff);
 					} else {
 						// also -- only accept stort-interval responses (ignore outliers..)
-						if(g_po8ePollInterval < g_po8eAvgInterval* 0.5){
+						if (g_po8ePollInterval < g_po8eAvgInterval* 0.5) {
 							g_ts.update(time, ticks); //also updates the mmap file.
 							g_ts.m_dropped = (int)totalSamples - ticks;
 						}
-						g_running = true; 
+						g_running = true;
 					}
-					g_tdtOffsetDiff = diff; 
-				} 
+					g_tdtOffsetDiff = diff;
+				}
 			}
 		}
 		//delete buffers since we have dynamically allocated;
@@ -197,15 +199,15 @@ int main()
 	asciiart += "   timesync client v0.1  /____/\n";
 	*/
 	while (!g_die) {
-		if(g_running){
+		if (g_running) {
 			printf("%s", g_ts.getTime().c_str());
 			printf(" | ticks %d", g_ts.m_ticks);
 			printf(" | slope %0.3Lf", g_ts.m_slope);
 			printf(" | offset %0.1Lf", g_ts.m_offset);
-			printf(" | po8e (ms) %0.2f\r", (double)g_po8ePollInterval); 
-			fflush(stdout); 
+			printf(" | po8e (ms) %0.2f\r", (double)g_po8ePollInterval);
+			fflush(stdout);
 		}
-		usleep(50000); // 20Hz update. 
+		usleep(50000); // 20Hz update.
 	}
 	lf.unlock();
 

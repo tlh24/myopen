@@ -148,6 +148,9 @@ int 	g_polyChan = 0;
 bool 	g_addPoly = false;
 int 	g_channel[4] = {0,32,64,95};
 long double g_lastPo8eTime = 0.0;
+long double g_po8ePollInterval = 0.0;
+long double g_po8eAvgInterval = 0.0;
+int64_t g_tdtOffsetDiff = 0;
 
 float g_minISI = 1.3; //ms
 float g_autoThreshold = -3.5; //standard deviations. default negative, w/e.
@@ -1132,27 +1135,27 @@ void *po8_thread(void *)
 			simulate = true;
 		}
 		if (!simulate) {
-			printf("Connecting to card 0\n");
 			card = PO8e::connectToCard(0);
 			if (card == NULL)
-				printf("  connection failed to card0 \n");
+				printf("Connection failed to card 0\n");
 			else {
 				// todo: connect to multiple cards
-				printf("  connection established to card0 at %p\n", (void *)card);
+				printf("Connection established to card 0 at %p\n", (void *)card);
 				if (!card->startCollecting()) {
-					printf("  startCollecting() failed with: %d\n",
+					printf("startCollecting() failed with: %d\n",
 					       card->getLastError());
 					card->flushBufferedData();
 					card->stopCollecting();
-					printf("  releasing card0\n");
+					printf("Releasing card 0\n");
 					PO8e::releaseCard(card);
 					card = NULL;
 				} else {
-					printf("  card is collecting incoming data.\n");
+					printf("Card is collecting incoming data.\n");
 					conn_cards++;
-					printf("  waiting for the stream to start on card0 ... ");
-					card->waitForDataReady(); // waits ~ 1200 hours ;-)
-					printf("started\n");
+					printf("Waiting for the stream to start on card 0 ...\n");
+					g_ts.reset();
+					card->waitForDataReady(60*60*1000);
+					printf("Started\n");
 				}
 			}
 		}
@@ -1167,25 +1170,27 @@ void *po8_thread(void *)
 		if (!simulate && card) {
 			nchan = card->numChannels();
 			bps = card->dataSampleSize();
-			printf("  %d channels @ %d bytes/sample\n", nchan, bps);
+			printf("%d channels @ %d bytes/sample\n", nchan, bps);
 		}
 		short *temp = new short[bufmax*(nchan)];  // 2^14 samples * 2 bytes/sample * (nChannels+time+stim+stimclock)
 		short *temptemp = new short[bufmax];
 		float *tempfloat = new float[bufmax*NCHAN];
+		int64_t *tdtOffsets = new int64_t[bufmax];
+
 
 		gsl_vector *xvec[RECCHAN];
 		for (int ch=0; ch<RECCHAN; ch++)
 			xvec[ch] = gsl_vector_alloc(RECCHAN-1);
 
 		while ((simulate || conn_cards > 0) && !g_die) {
-			if (!simulate && !card->waitForDataReady()) { // waits ~ 1200 hours ;-)
+			if (!simulate && !card->waitForDataReady(60*60*1000)) {
 				// this occurs when the rpvdsex circuit is idled.
 				// and potentially when a glitch happens
-				printf("  waitForDataReady() failed with: %d\n",
+				printf("waitForDataReady() failed with: %d\n",
 				       card->getLastError());
 				card->stopCollecting();
 				conn_cards--;
-				printf("  releasing card0\n");
+				printf("Releasing card 0\n");
 				PO8e::releaseCard(card);
 				card = NULL;
 				break;
@@ -1195,10 +1200,10 @@ void *po8_thread(void *)
 			if (!simulate) {
 				numSamples = (int)card->samplesReady(&stopped);
 				if (stopped) {
-					printf("  stopped collecting data\n");
+					printf("Stopped collecting data\n");
 					card->stopCollecting();
 					conn_cards--;
-					printf("  releasing card0\n");
+					printf("Releasing card 0\n");
 					PO8e::releaseCard(card);
 					card = NULL;
 					break;
@@ -1209,7 +1214,7 @@ void *po8_thread(void *)
 						       numSamples);
 						numSamples = bufmax;
 					}
-					card->readBlock(temp, numSamples);
+					card->readBlock(temp, numSamples, tdtOffsets);
 					card->flushBufferedData(numSamples);
 					totalSamples += numSamples;
 				}
@@ -1251,14 +1256,35 @@ void *po8_thread(void *)
 				//bytes += numSamples * nchan * bps;
 
 				long double time = gettime();
+				g_po8ePollInterval = (time - g_lastPo8eTime)*1000.0;
+				g_po8eAvgInterval = g_po8eAvgInterval * 0.99 + g_po8ePollInterval * 0.01;
 				g_lastPo8eTime = time;
 
 				// estimate TDT ticks from perf counter
 				// ticks are distributed across two shorts
-				int ticks = (unsigned short)(temp[NCHAN*numSamples + numSamples -1]);
+				int ticks;
+				ticks  = (unsigned short)(temp[(NCHAN  )*numSamples + numSamples -1]); //we only care about the last tick.
 				ticks += (unsigned short)(temp[(NCHAN+1)*numSamples + numSamples -1]) << 16;
-				g_ts.update(time, ticks); //also updates the mmap file.
-				g_ts.m_dropped = (int)totalSamples - ticks;
+				// it appears we need a checksum. extract.
+				int cs;
+				cs  = (unsigned short)(temp[(NCHAN+2)*numSamples + numSamples -1]);
+				cs += (unsigned short)(temp[(NCHAN+3)*numSamples + numSamples -1]) << 16;
+				int64_t diff = tdtOffsets[numSamples-1] - (int64_t)ticks;
+				if ((ticks ^ 0x134fbab3) != cs) {
+					printf("\nChecksum fail: %x %x\n", ticks, cs);
+				} else {
+					if (diff != g_tdtOffsetDiff) {
+						printf("\nTDT Offset changed rel. ticks! old: %ld new %ld\n",
+						       g_tdtOffsetDiff, diff);
+					} else {
+						// also -- only accept stort-interval responses (ignore outliers..)
+						if (g_po8ePollInterval < g_po8eAvgInterval* 0.5) {
+							g_ts.update(time, ticks); //also updates the mmap file.
+							g_ts.m_dropped = (int)totalSamples - ticks;
+						}
+					}
+					g_tdtOffsetDiff = diff;
+				}
 
 				// get icms times, fill icms buffers
 				for (int k=0; k<numSamples; k++) {
@@ -1274,8 +1300,9 @@ void *po8_thread(void *)
 						else
 							tempfloat[ch*numSamples+k] = g_medfilt5[ch].proc(f_out);
 					}
-					unsigned int tmp = (unsigned short)(temp[(NCHAN+2)*numSamples+k]);	// stim pulse ids
-					tmp += (unsigned short)(temp[(NCHAN+3)*numSamples+k]) << 16;
+					unsigned int tmp;
+					tmp  = (unsigned short)(temp[(NCHAN+4)*numSamples+k]);	// stim pulse ids
+					tmp += (unsigned short)(temp[(NCHAN+5)*numSamples+k]) << 16;
 
 					if (tmp != 0) {
 						g_icms_counter = 0;
@@ -1316,7 +1343,8 @@ void *po8_thread(void *)
 							g_icms_counter = -1;
 					}
 
-					unsigned int tk = (unsigned short)(temp[NCHAN*numSamples+k]);
+					unsigned int tk;
+					tk  = (unsigned short)(temp[(NCHAN  )*numSamples+k]);
 					tk += (unsigned short)(temp[(NCHAN+1)*numSamples+k]) << 16;
 
 					for (int j=0; j<STIMCHAN; j++) {
@@ -1398,7 +1426,7 @@ void *po8_thread(void *)
 						i64 widx = g_artifact[j]->m_windex[z]; // write pointer
 
 						if (ridx == -1)
-							break;
+							continue; // do the next iteration over
 
 						if  (widx == -1)
 							widx = ARTBUF;
@@ -1413,6 +1441,7 @@ void *po8_thread(void *)
 							for (int k=ridx; k<widx; k++) {
 								if (g_enableArtifactSubtr) {
 									tempfloat[ch*numSamples+kk] -= artifact[k];
+									//tempfloat[ch*numSamples+kk]  += 0.005f; // XXX DEBUG XXX OMG
 								}
 								kk++;
 							}
@@ -1460,7 +1489,7 @@ void *po8_thread(void *)
 
 				// blank based on the stim clock (must happen last)
 				for (int k=0; k<numSamples; k++) {
-					unsigned int tmp = (unsigned short)(temp[(NCHAN+4)*numSamples+k]);	// stim clock
+					unsigned int tmp = (unsigned short)(temp[(NCHAN+6)*numSamples+k]);	// stim clock
 
 					if (tmp && g_enableStimClockBlanking) {
 						for (int ch=0; ch<RECCHAN; ch++) {
@@ -1514,7 +1543,8 @@ void *po8_thread(void *)
 
 				// copy to the sorting buffers, wrapped.
 				for ( int i=0; i<numSamples; i++) {
-					unsigned int tk = (unsigned short)(temp[NCHAN*numSamples+i]);
+					unsigned int tk;
+					tk  = (unsigned short)(temp[(NCHAN  )*numSamples+i]);
 					tk += (unsigned short)(temp[(NCHAN+1)*numSamples+i]) << 16;
 					for (int k=0; k<NCHAN; k++) {
 						// 1 = +10mV; range = [-1 1] here.
@@ -1548,6 +1578,7 @@ void *po8_thread(void *)
 		delete[] temp;
 		delete[] temptemp;
 		delete[] tempfloat;
+		delete[] tdtOffsets;
 		for (int ch=0; ch<RECCHAN; ch++)
 			gsl_vector_free(xvec[ch]);
 		printf("\n");
