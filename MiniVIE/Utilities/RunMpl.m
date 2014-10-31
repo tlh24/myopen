@@ -4,7 +4,7 @@ p.guiName = 'MiniVIE-NFU-MPL';
 % p.filePrefix = 'WR_TR02_L_';
 % p.filePrefix = 'JH_TH01_L_';
 % p.filePrefix = 'MPL_01_WD_R_';
-p.filePrefix = 'JH_SD01_B_L_';
+p.filePrefix = 'JH_SD01_B_R_';
 
 UiTools.save_temp_file('defaultFilePrefix',p.filePrefix)
 
@@ -70,6 +70,12 @@ h.addfilter(Inputs.HighPass(20,3,Fs));
 % h.addfilter(Inputs.RemoveOffset(10));
 % h.addfilter(Inputs.Notch([120 240 360],5,1,Fs));
 % h.addfilter(Inputs.Notch([120 240 360],64,1,1000));
+
+Fs = h.SampleFrequency;                     % 1000 Hz
+h.addfilter(Inputs.HighPass(20,3,Fs));      % 20Hz 3rd order butter
+h.addfilter(Inputs.MinLimitFilter(0.2));    % min limit
+h.addfilter(Inputs.ConstraintFilter(-5,5)); % range limit
+
 obj.SignalSource = h;
 
 % f = GUIs.guiSignalViewer(h);
