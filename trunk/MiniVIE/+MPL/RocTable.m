@@ -5,7 +5,7 @@ classdef RocTable < handle
     % MPL.RocTable.Test
     %
     % To reload from MiniVIE GUI:
-    % obj.Presentation.hNfu.readRocTable
+    % obj.Presentation.getRocConfig
     %
     % Log:
     %   17Aug2012 Armiger: Created
@@ -237,9 +237,9 @@ classdef RocTable < handle
                 roc(i).impedance(:) = -1;
             end
             
-            if ~isempty(fname)
-                MPL.RocTable.writeRocTable(fname,roc);
-            end
+%             if ~isempty(fname)
+%                 MPL.RocTable.writeRocTable(fname,roc);
+%             end
             % To reload
             % obj.Presentation.hNfu.readRocTable
             
