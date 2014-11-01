@@ -1,8 +1,10 @@
 classdef widgetStripChart < handle
     % General purpose function for making a strip chart plot
-    % Usage: h = widgetStripChart(3,100,{'X' 'Y' 'Z'})
-    %  putdata(h,rand(3,1))
-    %  ...
+    % Usage: 
+    %   h = GUIs.widgetStripChart();
+    %   h.initialize(3,100,{'X' 'Y' 'Z'})
+    %   putdata(h,rand(3,1))
+    %   ...
     %
     % Created 2012-Jan-12 Robert Armiger, Johns Hopkins University Applied
     % Physics Lab
