@@ -23,7 +23,7 @@ function varargout = EMG_GUI_myopen(varargin)
 % This GUI is not resizable.
 % Edit the above text to modify the response to help EMG_GUI_myopen
 
-% Last Modified by GUIDE v2.5 01-Nov-2014 15:20:05
+% Last Modified by GUIDE v2.5 01-Nov-2014 16:05:14
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -57,6 +57,8 @@ function EMG_GUI_myopen_OpeningFcn(hObject, eventdata, handles, varargin)
 handles.output = hObject;
 handles.pathUserData = fullfile(fileparts(which('EMG_GUI_myopen')),'GUI_User_Data');
 handles.pathParameters = fullfile(fileparts(which('EMG_GUI_myopen')),'GUI_Parameters');
+handles.hMiniVie = RUN_MINIVIE();
+handles.trainingStartTime = [];  % used during training to synch recorder and cues
 
 % Update handles structure
 guidata(hObject, handles);
@@ -94,7 +96,7 @@ set(handles.axes3,'xtick',1:10);
 
 %#ok<*NASGU>
 load(fullfile(handles.pathParameters,'switch_threshold.mat'));
-switch_threshold = -1; 
+switch_threshold = -1;
 save(fullfile(handles.pathParameters,'switch_threshold.mat'),'switch_threshold');
 load(fullfile(handles.pathParameters,'complex_movements.mat'));
 complex_movements = 1;
@@ -235,7 +237,7 @@ if contents == 1
     save(fullfile(newPathName,strcat('last_saved_score_',num2str(player_index),'.mat')),'last_saved_score');
     save(fullfile(newPathName,strcat('M',num2str(player_index),'.mat')),'M');
     save(fullfile(newPathName,strcat('S',num2str(player_index),'.mat')),'S');
-
+    
     load(fullfile(handles.pathUserData,'Player_Names.mat'));
     Player_Names = [Player_Names new_player_name];
     save(fullfile(handles.pathUserData,'Player_Names.mat'), 'Player_Names');
@@ -367,9 +369,9 @@ function pushbutton4_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 
-% --- Executes on button press in pushbutton5.
-function pushbutton5_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton5 (see GCBO)
+% --- Executes on button press in pbStart.
+function pbStart_Callback(hObject, eventdata, handles)
+% hObject    handle to pbStart (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
@@ -516,12 +518,12 @@ if flag == true
     evaluation_rest_length_handle = findobj('Tag','edit10');
     evaluation_rest_length = str2double(get(evaluation_rest_length_handle,'String'));
     
-%     training_cue_length = 5;
-%     training_rest_length = 5;
-%     evaluation_cue_length = 7;
-%     evaluation_rest_length = 5;
-%     training_iterations = 3;
-%     evaluation_iterations = 3;
+    %     training_cue_length = 5;
+    %     training_rest_length = 5;
+    %     evaluation_cue_length = 7;
+    %     evaluation_rest_length = 5;
+    %     training_iterations = 3;
+    %     evaluation_iterations = 3;
     
     
     system_mode = get(get(handles.uipanel13,'SelectedObject'),'Tag');
@@ -568,7 +570,7 @@ if flag == true
     %***************
     end_time = length(Provided_Cues)/1000;
     Provided_Cues = [.001:.001:end_time; Provided_Cues'];
-
+    
     save(fullfile(handles.pathParameters,'Provided_Cues.mat'), 'Provided_Cues');
     %     %**************************
     %     new_Provided_Cues =[];
@@ -581,22 +583,99 @@ if flag == true
     %     save('Provided_Cues.mat', 'Provided_Cues');
     %     %**********************
     
-    disp('Starting Simulation...');
-
-    sim('RTPRC_Real_Time_MPL_for_GUI.mdl');
-
-    disp('Simulation Complete.');
+    beginTraining(handles,Provided_Cues,movement_list);
+    
 else
     h = msgbox('You are attempting to explore or evaluate movements you have not trained.  Please train the movements first and try again.',...
         'Illegal Movement Selection','error');
 end
 
 
+% Training function runs cues through the GUI and collects data via MiniVIE
+function beginTraining(handles,Provided_Cues,movement_list)
+
+% Training will take place such that the cue timer and the data
+% recorder are started at the same time.  Checking elapsed time will
+% determine the current cue from the list
+hFig = Cue_Presentation_GUI;
+drawnow;
+
+
+% Setup training timer:
+hTimer = UiTools.create_timer('TrainingTimer',@(src,evt)my_timer_callback);
+hTimer.Period = 0.05;
+hTimer.TimerFcn = @(hTimer,evt)addData(hTimer,handles.figure1,Provided_Cues,movement_list,hFig);
+hTimer.StopFcn = @(hTimer,evt)saveData(handles.figure1,hFig);
+
+GUI_timer(Provided_Cues,movement_list,hFig)
+
+% set start time reference
+handles.trainingStartTime = clock;
+guidata(handles.figure1,handles)
+drawnow;
+
+% start data recorder timer
+start(hTimer);
+
+function addData(hTimer,hFigMain,Provided_Cues,movement_list,hFig)
+
+% get updated handles form main figure
+handles = guidata(hFigMain);
+
+% MiniVIE object
+obj = handles.hMiniVie;
+
+% create a time reference for first time function is executed
+t0 = handles.trainingStartTime;
+
+elapsedTime = etime(clock,t0);
+cueTime = Provided_Cues(1,:);
+
+id = find(elapsedTime <= cueTime,1,'first');
+if isempty(id) || ~ishandle(hFig)
+    currentCue = Provided_Cues(2,end);
+    stop(hTimer);
+else
+    currentCue = Provided_Cues(2,id);
+end
+currentClass = movement_list(currentCue,2);
+
+fprintf('Current Time:   %6f;  Current Cue = %d\n',elapsedTime,currentClass)
+numSamples = obj.SignalClassifier.NumSamplesPerWindow;
+numPad = numSamples;
+numPad = 0;
+rawEmg = obj.SignalSource.getData(numSamples+numPad);
+windowData = obj.SignalSource.applyAllFilters(rawEmg);
+windowData = windowData(end-numSamples+1:end,:);
+
+features = feature_extract(windowData',obj.SignalClassifier.NumSamplesPerWindow);
+
+obj.TrainingData.addTrainingData(currentClass, features, rawEmg(1:obj.SignalClassifier.NumSamplesPerWindow,:)')
+
+% saveData
+function saveData(hMainFig,hFig)
+
+handles = guidata(hMainFig);
+handles.trainingStartTime = [];
+guidata(handles.figure1,handles)
+
+% Save Data using MiniVIE object
+subject_handle = findobj('Tag','listbox1');
+subject = get(subject_handle,'Value');
+pName = fullfile(handles.pathUserData,num2str(subject));
+
+fullFileName = UiTools.ui_select_data_file('.trainingData',fullfile(pName,strcat(num2str(subject),'_')));
+if ~isempty(fullFileName)
+    obj = handles.hMiniVie;
+    obj.TrainingData.saveTrainingData(fullFileName);
+end
+
+close(hFig);
 
 % --- If Enable == 'on', executes on mouse press in 5 pixel border.
-% --- Otherwise, executes on mouse press in 5 pixel border or over pushbutton5.
-function pushbutton5_ButtonDownFcn(hObject, eventdata, handles)
-% hObject    handle to pushbutton5 (see GCBO)
+% --- Otherwise, executes on mouse press in 5 pixel border or over pbStart.
+function pbStart_ButtonDownFcn(hObject, eventdata, handles)
+% hObject    handle to pbStart (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
@@ -1196,7 +1275,7 @@ if flag == true
     end
     set(gca, 'xtick',1:size(movement_names,1),'XTickLabel', movement_names,...
         'ytick',1:size(movement_names,1),'YTickLabel', movement_names);
-
+    
     xticklabel_rotate;
     xlabel('Predicted Cues from Subject Movements');
     
@@ -1377,7 +1456,7 @@ end
 
 % --- Executes when selected object is changed in uipanel10.
 function uipanel10_SelectionChangeFcn(hObject, eventdata, handles)
-% hObject    handle to the selected object in uipanel10 
+% hObject    handle to the selected object in uipanel10
 % eventdata  structure with the following fields (see UIBUTTONGROUP)
 %	EventName: string 'SelectionChanged' (read only)
 %	OldValue: handle of the previously selected object or empty if none was selected
@@ -1531,7 +1610,7 @@ function checkbox78_Callback(hObject, eventdata, handles)
 
 % --- Executes when selected object is changed in uipanel38.
 function uipanel38_SelectionChangeFcn(hObject, eventdata, handles)
-% hObject    handle to the selected object in uipanel38 
+% hObject    handle to the selected object in uipanel38
 % eventdata  structure with the following fields (see UIBUTTONGROUP)
 %	EventName: string 'SelectionChanged' (read only)
 %	OldValue: handle of the previously selected object or empty if none was selected
