@@ -55,7 +55,7 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
             h = plot(chEmg);
             numChannels = length(channels);
             %c = distinguishable_colors(numChannels);
-            c = distinguishable_colors(16);
+            c = distinguishable_colors(32);
             for i = 1:length(h)
                 set(h(i),'Color',c(channels(i),:));
             end
@@ -549,7 +549,7 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
                 [fileName, pathName] = uigetfile(filterSpec);
             end
             d = load(fullfile(pathName,fileName),'-mat');
-            assert(~isempty(d.emgData),'EMG Data Not Found');
+            assert(~isempty(d.signalData),'Signal Data Not Found');
         end
         function filteredData = filter_data(dataIn)
             % filter Data
