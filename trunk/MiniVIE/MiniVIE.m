@@ -62,7 +62,7 @@ classdef MiniVIE < Common.MiniVieObj
             set(obj.hg.popups(MiniVIE.INPUT),'Value',1);
             set(obj.hg.popups(MiniVIE.SA),'String',{'None','LDA Classifier','DiscriminantAnalysis','SupportVectorMachine'});
             set(obj.hg.popups(MiniVIE.SA),'Value',1);
-            set(obj.hg.popups(MiniVIE.TRAINING),'String',{'None','Simple Trainer','Mini Guitar Hero','Bar Trainer','Motion Trainer'});
+            set(obj.hg.popups(MiniVIE.TRAINING),'String',{'None','Simple Trainer','Mini Guitar Hero','Bar Trainer','Motion Trainer','vMPL Trainer'});
             set(obj.hg.popups(MiniVIE.TRAINING),'Value',1);
             set(obj.hg.popups(MiniVIE.PRESENTATION),'String',{'None','MiniV','Breakout','AGH','MplVulcanX','MplNfu','MSMS_ADL','MSMS Tasks','Online Retraining Demo'});
             set(obj.hg.popups(MiniVIE.PRESENTATION),'Value',1);
@@ -581,6 +581,30 @@ classdef MiniVIE < Common.MiniVieObj
                         h = PatternRecognition.MiniGuitarHero();
                     case 'Motion Trainer'
                         h = PatternRecognition.MotionTrainer();
+                    case 'vMPL Trainer'
+                        h = PatternRecognition.VMplTrainer();
+                        QA = {
+                            'Number of Repetitions:'          '3'
+                            'Contraction Length (sec):'       '5'
+                            'Rest Length (sec):'              '5'
+                            };
+                        name='Input for Training Interface';
+                        numLines = 1;
+                        numOutputs = size(QA,1);
+                        prompt = QA(:,1);
+                        defaultanswer = QA(:,2);
+                        answer = inputdlg(prompt,name,numLines,defaultanswer);
+                        if isempty(answer)
+                            % User Cancelled
+                        end
+                        
+                        assert(length(answer) == numOutputs,'Expected %d outputs',numOutputs);
+                        vals = str2double(answer);
+                        assert(~any(isnan(vals)),'Expected 3 numeric values');
+                        
+                        h.NumRepetitions = vals(1);
+                        h.ContractionLengthSeconds = vals(2);
+                        h.DelayLengthSeconds = vals(3);
                     otherwise
                         % None
                         h = [];
@@ -817,6 +841,15 @@ classdef MiniVIE < Common.MiniVieObj
             end
             
             obj.TrainingInterface.collectdata();
+            
+            try
+                while ~obj.TrainingInterface.IsComplete
+                    % wait for training timer to complete
+                    drawnow
+                end
+            end
+            
+            
             if isa(obj.TrainingInterface,'PatternRecognition.AdaptiveTrainingInterface')
                 % If adaptive, no need to retrain
             else

@@ -192,7 +192,7 @@ classdef ScenarioBase < Common.MiniVieObj
             % Note gains can/should be adjusted using guiAdjustGains
             %TODO: gain values overwritten on classifier retrain
             switch className
-                case 'No Movement'
+                case {'No Movement' 'Rest'}
                 case {'Shoulder Flexion'}
                     s.setVelocity(mpl_upper_arm_enum.SHOULDER_FE,+prSpeed);
                 case {'Shoulder Extension'}
@@ -205,21 +205,21 @@ classdef ScenarioBase < Common.MiniVieObj
                     s.setVelocity(mpl_upper_arm_enum.HUMERAL_ROT,+prSpeed);
                 case {'Humeral External Rotation'}
                     s.setVelocity(mpl_upper_arm_enum.HUMERAL_ROT,-prSpeed);
-                case {'Elbow Flexion' 'Elbow Up'}
+                case {'Elbow Flexion' 'Elbow Up' 'Elbow_Flex'}
                     s.setVelocity(mpl_upper_arm_enum.ELBOW,+prSpeed);
-                case {'Elbow Extension' 'Elbow Down'}
+                case {'Elbow Extension' 'Elbow Down' 'Elbow_Extend'}
                     s.setVelocity(mpl_upper_arm_enum.ELBOW,-prSpeed);
                 case {'Pronate' 'Wrist Rotate In'}
                     s.setVelocity(mpl_upper_arm_enum.WRIST_ROT,+prSpeed);
                 case {'Supinate' 'Wrist Rotate Out'}
                     s.setVelocity(mpl_upper_arm_enum.WRIST_ROT,-prSpeed);
-                case {'Down','Hand Down', 'Ulnar Deviation','Wrist Adduction'}
+                case {'Down','Hand Down', 'Ulnar Deviation','Wrist Adduction','Ulnar_Dev'}
                     s.setVelocity(mpl_upper_arm_enum.WRIST_DEV,+prSpeed);
-                case {'Up', 'Hand Up', 'Radial Deviation','Wrist Abduction'}
+                case {'Up', 'Hand Up', 'Radial Deviation','Wrist Abduction','Radial_Dev'}
                     s.setVelocity(mpl_upper_arm_enum.WRIST_DEV,-prSpeed);
-                case {'Left' 'Wrist Flex' 'Wrist Flex In'}
+                case {'Left' 'Wrist Flex' 'Wrist Flex In' 'Wrist_Flex'}
                     s.setVelocity(mpl_upper_arm_enum.WRIST_FE,+prSpeed);
-                case {'Right' 'Wrist Extend' 'Wrist Extend Out'}
+                case {'Right' 'Wrist Extend' 'Wrist Extend Out' 'Wrist_Extend'}
                     s.setVelocity(mpl_upper_arm_enum.WRIST_FE,-prSpeed);
                 case 'Endpoint Up'
                     eV = [-prSpeed 0 0];

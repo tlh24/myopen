@@ -178,7 +178,12 @@ classdef TrainingData < handle
             % Usage:
             %   [signalData dataBreaks] = getContinuousData(obj,channels)
             
-            assert(~isempty(obj.SignalDataRaw),'No Raw Data Found');
+            
+            %s = obj.getRawSignals;
+            s = obj.SignalDataRaw;
+            
+            
+            assert(~isempty(s),'No Raw Data Found');
             
             if nargin < 2
                 channels = obj.ActiveChannels;
@@ -187,17 +192,20 @@ classdef TrainingData < handle
                 sortOrder = 1:obj.SampleCount;
             end
             
-            [windowSize] = size(obj.SignalDataRaw,2);
+            [windowSize] = size(s,2);
             %[numSamples] = size(obj.SignalDataRaw,3);
             [numSamples] = obj.SampleCount;
             
             dataBreaks = windowSize:windowSize:numSamples*windowSize;
             
-            signalData = reshape(obj.SignalDataRaw(channels,:,sortOrder),length(channels),[])';
+            signalData = reshape(s(channels,:,sortOrder),length(channels),[])';
             
         end
         function signalData = getRawSignals(obj)
             % returns valid data (since buffers initialized to larger size)
+            %
+            % Note this also applies the 'enabled' flag so that onlt active
+            % data is returned
             signalData = [];
             
             if all(reshape(isnan(obj.SignalDataRaw(:,:,1)),1,[]))
