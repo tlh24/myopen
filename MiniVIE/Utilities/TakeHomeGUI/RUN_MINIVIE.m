@@ -32,8 +32,12 @@ which_movements = {'Rest','Open','Close','Index_Point','Hook','Fine_Pinch','Jaw_
 
 SignalClassifier.setClassNames(which_movements);
 
+Presentation = MPL.MplVulcanX;
+Presentation.EnableJoystick = false;
+Presentation.initialize(SignalSource, SignalClassifier, TrainingData);
+
 obj.SignalSource = SignalSource;
 obj.SignalClassifier = SignalClassifier;
 obj.TrainingData = TrainingData;
 obj.TrainingInterface = [];
-obj.Presentation = [];
+obj.Presentation = Presentation;

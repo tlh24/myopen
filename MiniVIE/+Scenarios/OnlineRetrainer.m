@@ -17,6 +17,8 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
     properties (Access = public)
         RetrainCounts = 15;  % Controls how many samples to wait before auto retrain
         JoystickId = 0  % Joystick Id (0,1,2,etc)
+        
+        EnableJoystick = true;
     end
     properties (SetAccess = protected)
         hJoystick       % handle to joystick, used to add data to interface
@@ -47,10 +49,14 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
             obj.TrainingData = TrainingData;
             
             % check for joysticks:
-            try
-                obj.hJoystick = JoyMexClass(obj.JoystickId);
-            catch ME
-                fprintf('[%s] Warning: Joystick is disabled. \n %s \n',mfilename,ME.message);
+            if obj.EnableJoystick
+                try
+                    obj.hJoystick = JoyMexClass(obj.JoystickId);
+                catch ME
+                    fprintf('[%s] Warning: Joystick is disabled. \n %s \n',mfilename,ME.message);
+                    obj.hJoystick = [];
+                end
+            else
                 obj.hJoystick = [];
             end
             

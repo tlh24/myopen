@@ -44,7 +44,11 @@ T1 = clock;
 STOPPED = 1;
 TIME = 0;
 
-htimer = timer('TimerFcn',@timerFcn,'Period',1,'ExecutionMode','FixedRate','TasksToExecute',total_time+1);
+% htimer = timer('TimerFcn',@timerFcn,'Period',1,'ExecutionMode','FixedRate','TasksToExecute',total_time+1);
+htimer = UiTools.create_timer('CueTimer',@timerFcn);
+htimer.Period = 1;
+htimer.TasksToExecute = total_time+1;
+
 
 str = formatTimeFcn(TIME);
 %update the GUI
@@ -136,7 +140,7 @@ start(htimer);
 
     function timerFcn(varargin)
         if ~STOPPED
-            timerStatus = findobj('Tag','pushbutton9');
+            timerStatus = findobj('Tag','pbStop');
             STOPPED = get(timerStatus,'UserData');
             %disp(STOPPED);
             time_elapsed = etime(clock,T1);

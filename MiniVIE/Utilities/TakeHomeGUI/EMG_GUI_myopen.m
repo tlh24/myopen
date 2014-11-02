@@ -23,7 +23,7 @@ function varargout = EMG_GUI_myopen(varargin)
 % This GUI is not resizable.
 % Edit the above text to modify the response to help EMG_GUI_myopen
 
-% Last Modified by GUIDE v2.5 01-Nov-2014 16:05:14
+% Last Modified by GUIDE v2.5 01-Nov-2014 21:48:07
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -57,7 +57,9 @@ function EMG_GUI_myopen_OpeningFcn(hObject, eventdata, handles, varargin)
 handles.output = hObject;
 handles.pathUserData = fullfile(fileparts(which('EMG_GUI_myopen')),'GUI_User_Data');
 handles.pathParameters = fullfile(fileparts(which('EMG_GUI_myopen')),'GUI_Parameters');
-handles.hMiniVie = RUN_MINIVIE();
+if ~isfield(handles,'hMiniVie')
+    handles.hMiniVie = RUN_MINIVIE();
+end
 handles.trainingStartTime = [];  % used during training to synch recorder and cues
 
 % Update handles structure
@@ -90,9 +92,9 @@ set(ha,'handlevisibility','off', ...
 load(fullfile(handles.pathUserData,'Recent_Scores.mat'));
 Recent_Scores;
 
-plot(handles.axes3,1:10,Recent_Scores(1:10));
-xlim(handles.axes3,[1 10]);
-set(handles.axes3,'xtick',1:10);
+plot(handles.axesPreview,1:10,Recent_Scores(1:10));
+xlim(handles.axesPreview,[1 10]);
+set(handles.axesPreview,'xtick',1:10);
 
 %#ok<*NASGU>
 load(fullfile(handles.pathParameters,'switch_threshold.mat'));
@@ -248,10 +250,10 @@ end
 fname = strcat('Recent_Scores_',num2str(contents),'.mat');
 load(fullfile(handles.pathUserData,num2str(contents),fname));
 
-plot(handles.axes3,1:10,...
+plot(handles.axesPreview,1:10,...
     Recent_Scores(length(Recent_Scores)-9:length(Recent_Scores)));
-xlim(handles.axes3,[1 10]);
-set(handles.axes3,'xtick',1:10);
+xlim(handles.axesPreview,[1 10]);
+set(handles.axesPreview,'xtick',1:10);
 set(handles.uitable3,'data',Recent_Scores(length(Recent_Scores)-9:length(Recent_Scores)));
 
 fname = strcat('last_saved_score_',num2str(contents),'.mat');
@@ -376,9 +378,9 @@ function pbStart_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 set(hObject,'UserData',1);
-set(handles.pushbutton9,'UserData',0);
+set(handles.pbStop,'UserData',0);
 
-% if strcmp(get(get(handles.uipanel13,'SelectedObject'),'Tag'),'radiobutton18')
+% if strcmp(get(get(handles.panelMode,'SelectedObject'),'Tag'),'radioEvaluate')
 %
 % end
 
@@ -447,147 +449,145 @@ load(fullfile(handles.pathParameters,'switch_threshold.mat'));
 flag = true;
 % Check to see if the user is attempting to explore or evaluate untrained
 % movements.
-if (switch_threshold>0)
+
+isExploreMode = strcmpi(handles.panelMode.SelectedObject.String,'Explore');
+
+if (switch_threshold > 0) || isExploreMode
     
+    % Train classifier:
+    obj = handles.hMiniVie;
     
-    
+    trainedClasses = unique(obj.TrainingData.getClassLabels);
+    trained_cues = trainedClasses;
     
     % Build a classifier for this person for this movement set.
-    subject_handle = findobj('Tag','listbox1');
-    subject = get(subject_handle,'Value');
-    cd(strcat('../Player Data/',num2str(subject)));
-    % Get the Feature_Matrix_Cumulative and Provided_Cues_Cumulative data for
-    % from the proper person's folder.
-    load('Feature_Matrix_Cumulative.mat');
-    load('Provided_Cues_Cumulative.mat');
-    trained_cues = unique(Provided_Cues_Cumulative);
+    %subject_handle = findobj('Tag','listbox1');
+    %subject = get(subject_handle,'Value');
+    %cd(strcat('../Player Data/',num2str(subject)));
+
+    % Ensure that all the desired movements exist in the training data:
     flag=true;
     for i=1:length(movement_list(:,2))
         if sum(trained_cues == movement_list(i,2))==0
-            flag=false;
+            h = msgbox('You are attempting to explore or evaluate movements you have not trained.  Please train the movements first and try again.',...
+                'Illegal Movement Selection','error');
+            return
         end
     end
-    if flag == true
-        % Keep only the movements of interest for this simulation.
-        cues_to_keep = unique(movement_list(:,2));
-        Feature_Matrix_Cumulative_temp = [];
-        Provided_Cues_Cumulative_temp = [];
-        for i = 1:length(cues_to_keep)
-            Feature_Matrix_Cumulative_temp = [Feature_Matrix_Cumulative_temp ; Feature_Matrix_Cumulative(Provided_Cues_Cumulative==cues_to_keep(i),:)];
-            Provided_Cues_Cumulative_temp = [Provided_Cues_Cumulative_temp; Provided_Cues_Cumulative(Provided_Cues_Cumulative==cues_to_keep(i))];
-        end
-        % Transform the Provided_Cues_Cumulative using the movement_list transform.
-        for i = 1:length(cues_to_keep)
-            Provided_Cues_Cumulative_temp(Provided_Cues_Cumulative_temp == cues_to_keep(i)) = i;
-        end
-        % Calculate the new M and S matrices with the obtained data.
-        % Save the M and S matrices to the proper person's folder.
-        cd('../../Functions and Scripts');
-        [M S prior] = Create_LDA(Feature_Matrix_Cumulative_temp, Provided_Cues_Cumulative_temp);
-        cd(strcat('../Player Data/',num2str(subject)));
-        save(strcat('M',num2str(subject),'.mat'),'M');
-        save(strcat('S',num2str(subject),'.mat'),'S');
-        % Get back to GUI Files.
-        cd('../../GUI Files');
+    
+    % disable any classes that are not selected
+
+    % Keep only the movements of interest for this simulation.
+    cues_to_keep = unique(movement_list(:,2));
+    
+    % perform disable function for unselected classes
+    disableTheseCues = setdiff(trained_cues(:)',cues_to_keep(:)');
+    for i = disableTheseCues
+        obj.TrainingData.disableLabeledData(i);
     end
+    obj.SignalClassifier.train
+    obj.SignalClassifier.computeError
 end
-if flag == true
-    % Now create a provided_cues.mat file based on you selected training or
-    % evaluation.
-    % cue_length = 7;
-    % rest_length = 5;
-    % training_iterations = 3;
-    % evaluation_iterations = 3;
-    
-    %Get the settings from the GUI.
-    training_iterations_handle = findobj('Tag','edit5');
-    training_iterations = str2double(get(training_iterations_handle,'String'));
-    
-    training_cue_length_handle = findobj('Tag','edit6');
-    training_cue_length = str2double(get(training_cue_length_handle,'String'));
-    
-    training_rest_length_handle = findobj('Tag','edit7');
-    training_rest_length = str2double(get(training_rest_length_handle,'String'));
-    
-    evaluation_iterations_handle = findobj('Tag','edit8');
-    evaluation_iterations = str2double(get(evaluation_iterations_handle,'String'));
-    
-    evaluation_cue_length_handle = findobj('Tag','edit9');
-    evaluation_cue_length = str2double(get(evaluation_cue_length_handle,'String'));
-    
-    evaluation_rest_length_handle = findobj('Tag','edit10');
-    evaluation_rest_length = str2double(get(evaluation_rest_length_handle,'String'));
-    
-    %     training_cue_length = 5;
-    %     training_rest_length = 5;
-    %     evaluation_cue_length = 7;
-    %     evaluation_rest_length = 5;
-    %     training_iterations = 3;
-    %     evaluation_iterations = 3;
-    
-    
-    system_mode = get(get(handles.uipanel13,'SelectedObject'),'Tag');
-    if strncmp(system_mode,'radiobutton17',length(system_mode))
-        %Make a pseudorandom evaluation set of predicted cues.
-        Provided_Cues = [];
-        load(fullfile(handles.pathParameters,'cue_format.mat'));
-        switch cue_format
-            case 1
-                for i=2:1:length(movement_list)
-                    for j=1:1:training_iterations %(number of iterations per movement = 5)
-                        Provided_Cues = [Provided_Cues;  ones(training_rest_length*1000,1); ones(training_cue_length*1000,1)*i];
-                    end
-                end
-            case -1
+
+
+% Now create a provided_cues.mat file based on you selected training or
+% evaluation.
+% cue_length = 7;
+% rest_length = 5;
+% training_iterations = 3;
+% evaluation_iterations = 3;
+
+%Get the settings from the GUI.
+training_iterations_handle = findobj('Tag','edit5');
+training_iterations = str2double(get(training_iterations_handle,'String'));
+
+training_cue_length_handle = findobj('Tag','edit6');
+training_cue_length = str2double(get(training_cue_length_handle,'String'));
+
+training_rest_length_handle = findobj('Tag','edit7');
+training_rest_length = str2double(get(training_rest_length_handle,'String'));
+
+evaluation_iterations_handle = findobj('Tag','edit8');
+evaluation_iterations = str2double(get(evaluation_iterations_handle,'String'));
+
+evaluation_cue_length_handle = findobj('Tag','edit9');
+evaluation_cue_length = str2double(get(evaluation_cue_length_handle,'String'));
+
+evaluation_rest_length_handle = findobj('Tag','edit10');
+evaluation_rest_length = str2double(get(evaluation_rest_length_handle,'String'));
+
+%     training_cue_length = 5;
+%     training_rest_length = 5;
+%     evaluation_cue_length = 7;
+%     evaluation_rest_length = 5;
+%     training_iterations = 3;
+%     evaluation_iterations = 3;
+
+system_mode = get(get(handles.panelMode,'SelectedObject'),'Tag');
+training_mode = strncmp(system_mode,'radioTrain',length(system_mode));
+
+if training_mode
+    %Make a pseudorandom evaluation set of predicted cues.
+    Provided_Cues = [];
+    load(fullfile(handles.pathParameters,'cue_format.mat'));
+    switch cue_format
+        case 1
+            for i=2:1:length(movement_list)
                 for j=1:1:training_iterations %(number of iterations per movement = 5)
-                    Provided_Cues = [Provided_Cues; ones(training_rest_length*1000,1)];
-                    random_order = [rand(length(movement_list)-1,1) (1:(length(movement_list)-1))'];
-                    random_order = sortrows(random_order,1);
-                    for i=1:1:size(random_order,1) %(random_order does not include rest)
-                        Provided_Cues = [Provided_Cues; ones(training_cue_length*1000,1)*(random_order(i,2)+1)];
-                    end
+                    Provided_Cues = [Provided_Cues;  ones(training_rest_length*1000,1); ones(training_cue_length*1000,1)*i];
                 end
-            otherwise
-        end
-        
-    else
-        Provided_Cues = [];
-        for j=1:1:evaluation_iterations %(number of iterations per movement = 5)
-            random_order = [rand(length(movement_list)-1,1) (1:(length(movement_list)-1))'];
-            random_order = sortrows(random_order,1);
-            for i=1:1:size(random_order,1) %(random_order does not include rest)
-                Provided_Cues = [Provided_Cues;  ones(evaluation_rest_length*1000,1); ones(evaluation_cue_length*1000,1)*(random_order(i,2)+1)];
             end
-        end
+        case -1
+            for j=1:1:training_iterations %(number of iterations per movement = 5)
+                Provided_Cues = [Provided_Cues; ones(training_rest_length*1000,1)];
+                random_order = [rand(length(movement_list)-1,1) (1:(length(movement_list)-1))'];
+                random_order = sortrows(random_order,1);
+                for i=1:1:size(random_order,1) %(random_order does not include rest)
+                    Provided_Cues = [Provided_Cues; ones(training_cue_length*1000,1)*(random_order(i,2)+1)];
+                end
+            end
+        otherwise
     end
-    %***************
-    %Uncomment these lines to run a scenario that lets you compute the best
-    %case movement times.
-    %     Provided_Cues = [];
-    %     for i=2:23 %(random_order does not include rest)
-    %                 Provided_Cues = [Provided_Cues; ones(3000,1); ones(3000,1)*i];
-    %     end
-    %***************
-    end_time = length(Provided_Cues)/1000;
-    Provided_Cues = [.001:.001:end_time; Provided_Cues'];
-    
-    save(fullfile(handles.pathParameters,'Provided_Cues.mat'), 'Provided_Cues');
-    %     %**************************
-    %     new_Provided_Cues =[];
-    %     for i=2:23
-    %         new_Provided_Cues =[ new_Provided_Cues ones(1,3000) ones(1,3000)*i ];
-    %     end
-    %     figure;plot(new_Provided_Cues)
-    %     new_Provided_Cues = [.001:.001:132;new_Provided_Cues];
-    %     Provided_Cues = new_Provided_Cues;
-    %     save('Provided_Cues.mat', 'Provided_Cues');
-    %     %**********************
-    
-    beginTraining(handles,Provided_Cues,movement_list);
     
 else
-    h = msgbox('You are attempting to explore or evaluate movements you have not trained.  Please train the movements first and try again.',...
-        'Illegal Movement Selection','error');
+    % Not training mode
+    Provided_Cues = [];
+    for j=1:1:evaluation_iterations %(number of iterations per movement = 5)
+        random_order = [rand(length(movement_list)-1,1) (1:(length(movement_list)-1))'];
+        random_order = sortrows(random_order,1);
+        for i=1:1:size(random_order,1) %(random_order does not include rest)
+            Provided_Cues = [Provided_Cues;  ones(evaluation_rest_length*1000,1); ones(evaluation_cue_length*1000,1)*(random_order(i,2)+1)];
+        end
+    end
+end
+%***************
+%Uncomment these lines to run a scenario that lets you compute the best
+%case movement times.
+%     Provided_Cues = [];
+%     for i=2:23 %(random_order does not include rest)
+%                 Provided_Cues = [Provided_Cues; ones(3000,1); ones(3000,1)*i];
+%     end
+%***************
+end_time = length(Provided_Cues)/1000;
+Provided_Cues = [.001:.001:end_time; Provided_Cues'];
+
+save(fullfile(handles.pathParameters,'Provided_Cues.mat'), 'Provided_Cues');
+%     %**************************
+%     new_Provided_Cues =[];
+%     for i=2:23
+%         new_Provided_Cues =[ new_Provided_Cues ones(1,3000) ones(1,3000)*i ];
+%     end
+%     figure;plot(new_Provided_Cues)
+%     new_Provided_Cues = [.001:.001:132;new_Provided_Cues];
+%     Provided_Cues = new_Provided_Cues;
+%     save('Provided_Cues.mat', 'Provided_Cues');
+%     %**********************
+
+if training_mode
+    beginTraining(handles,Provided_Cues,movement_list);
+elseif isExploreMode
+    % Start the scenario (VulcanX)
+    obj.Presentation.start();
 end
 
 
@@ -705,19 +705,19 @@ function pushbutton8_Callback(hObject, eventdata, handles)
 
 
 % --- Executes during object creation, after setting all properties.
-function axes3_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to axes3 (see GCBO)
+function axesPreview_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to axesPreview (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
-% Hint: place code in OpeningFcn to populate axes3
+% Hint: place code in OpeningFcn to populate axesPreview
 
 
 
 
 % --------------------------------------------------------------------
-function uipanel13_ButtonDownFcn(hObject, eventdata, handles)
-% hObject    handle to uipanel13 (see GCBO)
+function panelMode_ButtonDownFcn(hObject, eventdata, handles)
+% hObject    handle to panelMode (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
@@ -729,13 +729,18 @@ function uitable3_CreateFcn(hObject, eventdata, handles)
 % handles    empty - handles not created until after all CreateFcns called
 
 
-% --- Executes on button press in pushbutton9.
-function pushbutton9_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton9 (see GCBO)
+% --- Executes on button press in pbStop.
+function pbStop_Callback(hObject, eventdata, handles)
+% hObject    handle to pbStop (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 disp('Stop Sim')
+
+
+% Start the scenario (VulcanX)
+handles.hMiniVie.Presentation.stop();
+
 
 % --------------------------------------------------------------------
 function activex3_stop(hObject, eventdata, handles)
@@ -744,9 +749,9 @@ function activex3_stop(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 
-% --- Executes when selected object is changed in uipanel13.
+% --- Executes when selected object is changed in panelMode.
 function uipanel13_SelectionChangeFcn(hObject, eventdata, handles)
-% hObject    handle to the selected object in uipanel13
+% hObject    handle to the selected object in panelMode
 % eventdata  structure with the following fields (see UIBUTTONGROUP)
 %	EventName: string 'SelectionChanged' (read only)
 %	OldValue: handle of the previously selected object or empty if none was selected
@@ -1006,9 +1011,9 @@ function Close_Callback(hObject, eventdata, handles)
 % Hint: get(hObject,'Value') returns toggle state of Close
 
 
-% --- Executes on button press in pushbutton10.
-function pushbutton10_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton10 (see GCBO)
+% --- Executes on button press in pbRefreshScore.
+function pbRefreshScore_Callback(hObject, eventdata, handles)
+% hObject    handle to pbRefreshScore (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
@@ -1136,9 +1141,9 @@ end
 
 
 
-% --- Executes on button press in pushbutton11.
-function pushbutton11_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton11 (see GCBO)
+% --- Executes on button press in pbUpdateConfusion.
+function pbUpdateConfusion_Callback(hObject, eventdata, handles)
+% hObject    handle to pbUpdateConfusion (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
