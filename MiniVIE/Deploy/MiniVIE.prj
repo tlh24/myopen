@@ -1,89 +1,72 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <deployment-project plugin="plugin.ezdeploy" plugin-version="1.0">
-  <configuration target="target.ezdeploy.standalone" target-name="MATLAB Compiler for Standalone Applications" name="MiniVIE" location="C:\svn\clean\myopen\MiniVIE\Deploy" file="C:\svn\clean\myopen\MiniVIE\Deploy\MiniVIE.prj" preferred-package-type="package.type.exe" build-checksum="2729678938" preferred-package-location="C:\svn\clean\myopen\MiniVIE\Deploy\MiniVIE\for_redistribution">
+  <configuration build-checksum="4136952663" file="C:\svn\clean\myopen\MiniVIE\Deploy\MiniVIE.prj" location="C:\svn\clean\myopen\MiniVIE\Deploy" name="MiniVIE" preferred-package-location="C:\svn\clean\myopen\MiniVIE\Deploy\MiniVIE\for_redistribution" preferred-package-type="package.type.exe" target="target.ezdeploy.standalone" target-name="MATLAB Compiler for Standalone Applications">
     <param.appname>MiniVIE</param.appname>
-    <param.authnamewatermark>Robert Armiger</param.authnamewatermark>
-    <param.email>robert.armiger@jhuapl.edu</param.email>
-    <param.company>JHUAPL</param.company>
     <param.icon />
     <param.icons />
-    <param.summary />
-    <param.description>7/28/2014: Recompiled under MATLAB R2013b 64-bit</param.description>
+    <param.version>1.3</param.version>
+    <param.authnamewatermark>Robert Armiger</param.authnamewatermark>
+    <param.email />
+    <param.company>JHUAPL</param.company>
+    <param.summary>MiniVIE Standalone App</param.summary>
+    <param.description>11/04/2014: Recompiled for take-home
+7/28/2014: Recompiled under MATLAB R2013b 64-bit</param.description>
     <param.screenshot />
-    <param.version>1.2</param.version>
-    <param.namespace>MiniVIE</param.namespace>
     <param.guid />
-    <param.installpath.string>MiniVIE</param.installpath.string>
+    <param.installpath.string>\JHUAPL\MiniVIE\</param.installpath.string>
     <param.installpath.combo>option.installpath.programfiles</param.installpath.combo>
     <param.logo />
     <param.install.notes />
     <param.intermediate>${PROJECT_ROOT}\MiniVIE\for_testing</param.intermediate>
+    <param.files.only>${PROJECT_ROOT}\MiniVIE\for_redistribution_files_only</param.files.only>
     <param.output>${PROJECT_ROOT}\MiniVIE\for_redistribution</param.output>
+    <param.enable.clean.build>false</param.enable.clean.build>
+    <param.user.defined.mcr.options />
     <param.embed.ctf>true</param.embed.ctf>
+    <param.server.ctf>${PROJECT_ROOT}\MiniVIE\for_testing\.ctf</param.server.ctf>
+    <param.server.readme>${PROJECT_ROOT}\MiniVIE\for_testing\readme.txt</param.server.readme>
     <param.target.type>subtarget.standalone</param.target.type>
-    <param.classorg />
+    <param.support.packages />
+    <param.required.mcr.products>
+      <item>35000</item>
+    </param.required.mcr.products>
     <param.web.mcr>true</param.web.mcr>
     <param.package.mcr>false</param.package.mcr>
     <param.no.mcr>false</param.no.mcr>
     <param.web.mcr.name>MyAppInstaller_web</param.web.mcr.name>
     <param.package.mcr.name>MyAppInstaller_mcr</param.package.mcr.name>
     <param.no.mcr.name>MyAppInstaller_app</param.no.mcr.name>
-    <param.user.defined.mcr.options />
-    <param.windows.command.prompt>false</param.windows.command.prompt>
-    <param.user.only.registration>false</param.user.only.registration>
-    <param.mads.no.java>false</param.mads.no.java>
-    <param.mads.exclusive.mcr>false</param.mads.exclusive.mcr>
-    <param.net.framework>option.net.framework.default</param.net.framework>
-    <param.assembly.type>false</param.assembly.type>
-    <param.encryption.key.file />
-    <param.net.enable.remoting>false</param.net.enable.remoting>
-    <param.net.tsa.enable>false</param.net.tsa.enable>
-    <param.net.tsa.assembly />
-    <param.net.tsa.interface />
-    <param.net.tsa.namespace>MiniVIE</param.net.tsa.namespace>
-    <param.net.tsa.superclass />
-    <param.net.tsa.metadata />
-    <param.net.tsa.metadata.assembly>C:\Users\armigrs1\Documents\MATLAB</param.net.tsa.metadata.assembly>
+    <param.windows.command.prompt>true</param.windows.command.prompt>
     <param.create.log>false</param.create.log>
     <param.log.file />
     <unset>
+      <param.icon />
+      <param.icons />
       <param.authnamewatermark />
       <param.email />
       <param.company />
-      <param.icon />
-      <param.icons />
-      <param.summary />
       <param.screenshot />
-      <param.namespace />
       <param.guid />
+      <param.installpath.string />
+      <param.installpath.combo />
       <param.logo />
       <param.install.notes />
       <param.intermediate />
+      <param.files.only />
       <param.output />
+      <param.enable.clean.build />
+      <param.user.defined.mcr.options />
       <param.embed.ctf />
+      <param.server.ctf />
+      <param.server.readme />
       <param.target.type />
-      <param.classorg />
+      <param.support.packages />
       <param.web.mcr />
       <param.package.mcr />
       <param.no.mcr />
       <param.web.mcr.name />
       <param.package.mcr.name />
       <param.no.mcr.name />
-      <param.user.defined.mcr.options />
-      <param.user.only.registration />
-      <param.mads.no.java />
-      <param.mads.exclusive.mcr />
-      <param.net.framework />
-      <param.assembly.type />
-      <param.encryption.key.file />
-      <param.net.enable.remoting />
-      <param.net.tsa.enable />
-      <param.net.tsa.assembly />
-      <param.net.tsa.interface />
-      <param.net.tsa.namespace />
-      <param.net.tsa.superclass />
-      <param.net.tsa.metadata />
-      <param.net.tsa.metadata.assembly />
+      <param.windows.command.prompt />
       <param.create.log />
       <param.log.file />
     </unset>
@@ -91,6 +74,7 @@
       <file>C:\svn\clean\myopen\MiniVIE\MiniVIE.m</file>
     </fileset.main>
     <fileset.resources>
+      <file>${MATLAB_ROOT}\toolbox\matlab\uitools\obsolete\@uitools\schema.m</file>
       <file>C:\svn\clean\myopen\MiniVIE\+Common\MiniVieObj.m</file>
       <file>C:\svn\clean\myopen\MiniVIE\+Common\MiniViePresentation.m</file>
       <file>C:\svn\clean\myopen\MiniVIE\+Controls\ArmStateModel.m</file>
@@ -126,7 +110,8 @@
       <file>C:\svn\clean\myopen\MiniVIE\+Inputs\SignalInput.m</file>
       <file>C:\svn\clean\myopen\MiniVIE\+Inputs\SignalSimulator.m</file>
       <file>C:\svn\clean\myopen\MiniVIE\+Inputs\UdpDevice.m</file>
-      <file>C:\svn\clean\myopen\MiniVIE\+MPL\MplScenarioMud.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+MPL\GraspConverter.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+MPL\MplNfu.m</file>
       <file>C:\svn\clean\myopen\MiniVIE\+MPL\MplVulcanX.m</file>
       <file>C:\svn\clean\myopen\MiniVIE\+MPL\MudCommandEncoder.m</file>
       <file>C:\svn\clean\myopen\MiniVIE\+MPL\NfuUdp.m</file>
@@ -138,12 +123,12 @@
       <file>C:\svn\clean\myopen\MiniVIE\+PatternRecognition\SimpleTrainer.m</file>
       <file>C:\svn\clean\myopen\MiniVIE\+PatternRecognition\TrainingData.m</file>
       <file>C:\svn\clean\myopen\MiniVIE\+PatternRecognition\TrainingInterface.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\+PatternRecognition\VMplTrainer.m</file>
       <file>C:\svn\clean\myopen\MiniVIE\+Presentation\+AirGuitarHero\AirGuitarHeroBase.m</file>
       <file>C:\svn\clean\myopen\MiniVIE\+Presentation\+AirGuitarHero\AirGuitarHeroEmg.m</file>
       <file>C:\svn\clean\myopen\MiniVIE\+Presentation\+AirGuitarHero\HwLinesEnum.m</file>
       <file>C:\svn\clean\myopen\MiniVIE\+Presentation\+AirGuitarHero\NoteDetector.m</file>
       <file>C:\svn\clean\myopen\MiniVIE\+Presentation\@MiniV\MiniV.m</file>
-      <file>C:\svn\clean\myopen\MiniVIE\+Presentation\@MiniV\private\ArmControl.fig</file>
       <file>C:\svn\clean\myopen\MiniVIE\+Presentation\@MiniV\private\ArmControl.m</file>
       <file>C:\svn\clean\myopen\MiniVIE\+Presentation\@MiniV\private\f_KChain_IsectNodes.m</file>
       <file>C:\svn\clean\myopen\MiniVIE\+Presentation\@MiniV\private\f_KChain_IsectNodes2.m</file>
@@ -194,20 +179,17 @@
       <file>C:\svn\clean\myopen\MiniVIE\Utilities\distinguishable_colors.m</file>
       <file>C:\svn\clean\myopen\MiniVIE\Utilities\feature_extract.m</file>
       <file>C:\svn\clean\myopen\MiniVIE\Utilities\getIntent.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\Utilities\getUserConfigVar.m</file>
       <file>C:\svn\clean\myopen\MiniVIE\Utilities\guiClassifierAssessment.fig</file>
       <file>C:\svn\clean\myopen\MiniVIE\Utilities\guiClassifierAssessment.m</file>
       <file>C:\svn\clean\myopen\MiniVIE\Utilities\HapticAlgorithm.m</file>
       <file>C:\svn\clean\myopen\MiniVIE\Utilities\JoyMEX.m</file>
       <file>C:\svn\clean\myopen\MiniVIE\Utilities\JoyMEX.mexw64</file>
       <file>C:\svn\clean\myopen\MiniVIE\Utilities\JoyMexClass.m</file>
-      <file>C:\svn\clean\myopen\MiniVIE\Utilities\LivePlot.m</file>
-      <file>C:\svn\clean\myopen\MiniVIE\Utilities\manualOverRideLeft.m</file>
-      <file>C:\svn\clean\myopen\MiniVIE\Utilities\manualOverRideRight.m</file>
-      <file>C:\svn\clean\myopen\MiniVIE\Utilities\MicroStrain3DM_GX2.m</file>
-      <file>C:\svn\clean\myopen\MiniVIE\Utilities\MicroStrainDCP.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\Utilities\MPL_Frames.m</file>
       <file>C:\svn\clean\myopen\MiniVIE\Utilities\mpl_hand_enum.m</file>
+      <file>C:\svn\clean\myopen\MiniVIE\Utilities\MPL_JacobianBound.m</file>
       <file>C:\svn\clean\myopen\MiniVIE\Utilities\mpl_upper_arm_enum.m</file>
-      <file>C:\svn\clean\myopen\MiniVIE\Utilities\PlotUtils.m</file>
       <file>C:\svn\clean\myopen\MiniVIE\Utilities\pnet.m</file>
       <file>C:\svn\clean\myopen\MiniVIE\Utilities\pnet.mexw64</file>
       <file>C:\svn\clean\myopen\MiniVIE\Utilities\PnetClass.m</file>
@@ -222,12 +204,13 @@
     </fileset.resources>
     <fileset.package />
     <build-deliverables>
-      <file name="readme.txt" location="${PROJECT_ROOT}\MiniVIE\for_testing" optional="true">C:\svn\clean\myopen\MiniVIE\Deploy\MiniVIE\for_testing\readme.txt</file>
-      <file name="MiniVIE.exe" location="${PROJECT_ROOT}\MiniVIE\for_testing" optional="false">C:\svn\clean\myopen\MiniVIE\Deploy\MiniVIE\for_testing\MiniVIE.exe</file>
+      <file location="${PROJECT_ROOT}\MiniVIE\for_testing" name="readme.txt" optional="true">C:\svn\clean\myopen\MiniVIE\Deploy\MiniVIE\for_testing\readme.txt</file>
+      <file location="${PROJECT_ROOT}\MiniVIE\for_testing" name="MiniVIE.exe" optional="false">C:\svn\clean\myopen\MiniVIE\Deploy\MiniVIE\for_testing\MiniVIE.exe</file>
+      <file location="${PROJECT_ROOT}\MiniVIE\for_testing" name="splash.png" optional="false">C:\svn\clean\myopen\MiniVIE\Deploy\MiniVIE\for_testing\splash.png</file>
     </build-deliverables>
     <workflow />
     <matlab>
-      <root>C:\Program Files\MATLAB\R2013b</root>
+      <root>C:\Program Files\MATLAB\R2014b</root>
       <toolboxes />
     </matlab>
     <platform>
@@ -247,4 +230,3 @@
     </platform>
   </configuration>
 </deployment-project>
-
