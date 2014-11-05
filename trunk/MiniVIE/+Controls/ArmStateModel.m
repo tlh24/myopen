@@ -14,9 +14,10 @@ classdef ArmStateModel < handle
     % 26JUN2014 Armiger: Added accel rules and min velocity limits
     properties
 
-        ApplyValueLimits;
-        ApplyVelocityLimits;
-        ApplyAccelerationLimits;
+        ApplyValueLimits = 1;
+        ApplyVelocityLimits = 1;
+        ApplyAccelerationLimits = 0;
+        ApplyReturnToHome = 0;
         
         structState
         lastTime
@@ -28,9 +29,6 @@ classdef ArmStateModel < handle
         function obj = ArmStateModel
             % Create state for upper arm joints and roc grasps
             obj.lastTime = tic;
-            obj.ApplyValueLimits = 1;
-            obj.ApplyVelocityLimits = 1;
-            obj.ApplyAccelerationLimits = 0;
             
             obj.structState = repmat(obj.defaultState,8,1);
             
@@ -41,14 +39,16 @@ classdef ArmStateModel < handle
             obj.structState(2).Name = 'Shoulder AA';
             obj.structState(2).Min = -90 * pi / 180;
             obj.structState(2).Max = 15 * pi / 180;
+
             obj.structState(3).Name = 'Shoulder ROT';
             obj.structState(3).Min = -35 * pi / 180;
             obj.structState(3).Max = 35 * pi / 180;
 
             obj.structState(4).Name = 'Elbow';
-            obj.structState(4).Min = 90 * pi / 180;
+            obj.structState(4).Min = 70 * pi / 180;
             obj.structState(4).Max = 120 * pi / 180;
             obj.structState(4).MaxVelocity = 2;
+            obj.structState(4).DefaultValue = 90 * pi / 180;
 
             obj.structState(5).Name = 'Wrist ROT';
             obj.structState(5).Min = -90 * pi / 180;
@@ -71,8 +71,8 @@ classdef ArmStateModel < handle
             obj.structState(8).Max = 1;
             obj.structState(8).State = Controls.GraspTypes.Relaxed;
             obj.structState(8).MaxAcceleration = 1;
+            obj.structState(8).DefaultValue = 0.15;
             
-            %obj.test;
         end
         function setRocId(obj,id)
             obj.structState(obj.RocStateId).State = id;
@@ -132,10 +132,38 @@ classdef ArmStateModel < handle
                 
                 % Note: no limits on how fast this changes.  This is what
                 % is input from the user using the setVelocity method
-                v = obj.velocity(i); 
-                
+                v = obj.velocity(i);
                 
                 s.DesiredVelocity = v;
+                
+                % check return to home parameter.  If it is set then a null
+                % command will result in an automatic return to the default
+                % position.
+                if obj.ApplyReturnToHome && s.DesiredVelocity == 0
+                    
+                    % Compute position error relative to default position
+                    errorValue = s.Value - s.DefaultValue;
+                    
+                    % Define threshold for 'close to default value'.
+                    % Within this threshold the velocity is computed based
+                    % on the error in order to return perfectly to 0 error.
+                    positionThreshold = 0.05;
+                    if abs(errorValue) < positionThreshold
+                        vReturn = abs(errorValue)/dt;
+                    else
+                        vReturn = s.DefaultVelocity;
+                    end
+                    
+                    % command the state model in the direction of the
+                    % default position at the default velocity
+                    if errorValue < 0
+                        s.DesiredVelocity = +vReturn;
+                    else
+                        s.DesiredVelocity = -vReturn;
+                    end
+                end
+                
+                
                 
                 if obj.ApplyAccelerationLimits && s.IsAccelLimited
                     desiredAccel = (s.DesiredVelocity - s.LastVelocity) ./ dt;
@@ -163,7 +191,7 @@ classdef ArmStateModel < handle
                     
                 else
                     % Use commanded velocity
-                    newV = v;
+                    newV = s.DesiredVelocity;
                 end
 
                 % Apply max velocity limits
@@ -176,7 +204,6 @@ classdef ArmStateModel < handle
                 
                 % Integrate velocity to get position
                 s.Value = s.Value + (s.Velocity*dt);
-                
                 
                 % s.DesiredValue = s.DesiredValue + (s.DesiredVelocity*dt);
                 s.DesiredValue = s.Value + (s.DesiredVelocity*dt);
@@ -237,6 +264,8 @@ classdef ArmStateModel < handle
             stateStruct.Min = -pi;          % Min Value
             stateStruct.MaxVelocity = 1;    % Max Velocity, either direction
             stateStruct.MaxAcceleration = 10;
+            stateStruct.DefaultValue = 0;   % Typically a joint angle in radians representing the 'home' position
+            stateStruct.DefaultVelocity = 0.5; % Typically speed at which home is returned to given no other command
             % These are internally updated state variables
             stateStruct.LastValue = 0;
             stateStruct.LastVelocity = 0;
