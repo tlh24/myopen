@@ -68,6 +68,24 @@ while StartStopForm
     hSink.putData(msg);
 end
 
+%%
+StartStopForm([]);
+while StartStopForm
+    drawnow
+    pause(0.1)
+    endPtVelocities = [0 0 0]'
+    endPtOrientationVelocities = [1 1 1]';
+    rocMode = 1;
+    rocTableIDs = 1;
+    rocTableValues = 1;
+    rocWeights  = 1;
+    
+    msg = mce.EndpointVelocity6HandRocGrasps( ...
+        endPtVelocities, endPtOrientationVelocities, ...
+        rocMode, rocTableIDs, rocTableValues, rocWeights);
+    
+    hSink.putData(msg);
+end
 
 
 

@@ -326,7 +326,7 @@ classdef guiClassifierChannels < Common.MiniVieObj
             classNames = cat(2,classNames,cellEndpointClasses);
 
             % End Effector Rotational Velocity
-            cellEndpointClasses = {'Roll In', 'Roll Out', 'Pitch Down', 'Pitch Up', 'Yaw In', 'Yaw Out'};
+            cellEndpointClasses = {'Endpoint Roll In', 'Endpoint Roll Out', 'Endpoint Pitch Down', 'Endpoint Pitch Up', 'Endpoint Yaw In', 'Endpoint Yaw Out'};
             classNames = cat(2,classNames,cellEndpointClasses);
             
             % Whole Arm Reduced Order Control

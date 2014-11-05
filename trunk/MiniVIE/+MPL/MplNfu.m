@@ -11,6 +11,9 @@ classdef MplNfu < Scenarios.OnlineRetrainer
         hNfu = [];
         hTactors;
         
+        includeVirtual = 0;
+        hUdp
+        
         EnableFeedback = 1;
         TactorIds = [3 4]
         %TactorIds = [5 6 7];
@@ -29,6 +32,15 @@ classdef MplNfu < Scenarios.OnlineRetrainer
             
             if status < 0
                 error('Failed to initialize MPL.NfuUdp');
+            end
+
+            
+            if obj.includeVirtual
+            obj.hUdp = PnetClass(...,
+                25101,9024,'127.0.0.1');
+            
+            obj.hUdp.initialize();
+
             end
             
             obj.getRocConfig();
@@ -259,6 +271,12 @@ classdef MplNfu < Scenarios.OnlineRetrainer
             
             % write message
             obj.hNfu.sendUdpCommand([61;msg]);  % append nfu msg header
+
+            if obj.includeVirtual
+            % write message
+            obj.hUdp.putData(msg);
+            end
+        
         end
     end
 end
