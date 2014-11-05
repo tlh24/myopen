@@ -193,6 +193,10 @@ classdef ScenarioBase < Common.MiniVieObj
             %TODO: gain values overwritten on classifier retrain
             switch className
                 case {'No Movement' 'Rest'}
+                    % debug for endpoint
+                    if length(s.structState(8).State) >= 3;
+                        s.structState(8).State = [0 0 0];
+                    end
                 case {'Shoulder Flexion'}
                     s.setVelocity(mpl_upper_arm_enum.SHOULDER_FE,+prSpeed);
                 case {'Shoulder Extension'}
@@ -254,15 +258,35 @@ classdef ScenarioBase < Common.MiniVieObj
             end
             
             if strncmp(className,'Endpoint',8)
-                offset = [0 pi/2 pi/2 0 pi/2];
-                [v,J,p] = MPL_JacobianBound(...
-                    [s.structState(1:5).Value] + offset,...
-                    eV/40);
-                %offset(3) = -offset(3);
-                p = p - offset(:);
-                p(3) = -p(3);
-                for i = 1:5, s.structState(i).Value = p(i);end
-                s.velocity(1:5) = 0;
+                
+                roll = 0.1*prSpeed;
+                pitch = 0.1*prSpeed;
+                yaw = 0.1*prSpeed;
+                
+                switch className
+                    case     'Endpoint Roll In'
+                        s.structState(8).State = [roll 0 0];
+                    case     'Endpoint Roll Out'
+                        s.structState(8).State = [-roll 0 0];
+                    case     'Endpoint Pitch Down'
+                        s.structState(8).State = [0 pitch 0];
+                    case     'Endpoint Pitch Up'
+                        s.structState(8).State = [0 -pitch 0];
+                    case     'Endpoint Yaw In'
+                        s.structState(8).State = [0 yaw 0];
+                    case     'Endpoint Yaw Out'
+                        s.structState(8).State = [0 -yaw 0];
+                end
+                
+                % offset = [0 pi/2 pi/2 0 pi/2];
+                % [v,J,p] = MPL_JacobianBound(...
+                %     [s.structState(1:5).Value] + offset,...
+                %     eV/40);
+                % %offset(3) = -offset(3);
+                % p = p - offset(:);
+                % p(3) = -p(3);
+                % for i = 1:5, s.structState(i).Value = p(i);end
+                % s.velocity(1:5) = 0;
             end
             
             % Parse partial classname
@@ -356,7 +380,7 @@ classdef ScenarioBase < Common.MiniVieObj
             
             % Implement a new grasp control paradign in which a barrier is
             % created between the grasp shaping portion (rest to
-            % prehension) and then prehensino to fully closed.  Nominally
+            % prehension) and then prehension to fully closed.  Nominally
             % the threshold will be 20%
             %
             %

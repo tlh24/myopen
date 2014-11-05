@@ -84,6 +84,28 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
             m = obj.ArmStateModel;
             rocValue = m.structState(m.RocStateId).Value;
             rocId = m.structState(m.RocStateId).State;
+            
+            % check for endpoint control command.  Currently hijacking the
+            % state variable
+            
+            if length(rocId) >= 3
+                endPtVelocities = [0 0 0]';
+                endPtOrientationVelocities = rocId';
+                rocMode = 1;
+                rocTableIDs = 1;
+                rocTableValues = 1;
+                rocWeights  = 1;
+                
+                msg = obj.hMud.EndpointVelocity6HandRocGrasps( ...
+                    endPtVelocities, endPtOrientationVelocities, ...
+                    rocMode, rocTableIDs, rocTableValues, rocWeights);
+                
+                obj.hUdp.putData(msg);
+                return
+            end
+            
+            
+            
 
             if isa(rocId,'Controls.GraspTypes')
                 % convert char grasp class name (e.g. 'Spherical') to numerical mpl
