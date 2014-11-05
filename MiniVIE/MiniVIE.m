@@ -227,6 +227,13 @@ classdef MiniVIE < Common.MiniVieObj
                 'String','Assessment',...
                 'Enable','off',...
                 'Callback',@(src,evt)obj.pbAssessment());
+
+            obj.hg.PlantButtons(1) = uicontrol(obj.hg.Figure,...
+                'Position',pos('cntrl',MiniVIE.PLANT,3,1,1),...
+                'Style','togglebutton',...
+                'String','Simple Mode',...
+                'Enable','on',...
+                'Callback',@(src,evt)obj.pbSimpleMode());
             
         end
         function setFilePrefix(obj)
@@ -781,6 +788,13 @@ classdef MiniVIE < Common.MiniVieObj
                     set(obj.hg.PresentationButtons(:),'Enable','on');
                 end
                 
+                if isa(h,'Scenarios.ScenarioBase')
+                    % set simple mode where arm returns to home
+                    simpleMode = get(obj.hg.PlantButtons(1),'Value');
+                    h.ArmStateModel.ApplyReturnToHome = simpleMode;
+                end
+                
+                
                 obj.Presentation = h;
             catch ME
                 errordlg(ME.message);
@@ -917,6 +931,14 @@ classdef MiniVIE < Common.MiniVieObj
         function pbPresentationStop(obj)
             if ~isempty(obj.Presentation)
                 stop(obj.Presentation);
+            end
+        end
+        function pbSimpleMode(obj)
+            h = obj.Presentation;
+            if isa(h,'Scenarios.ScenarioBase')
+                % set simple mode where arm returns to home
+                simpleMode = get(obj.hg.PlantButtons(1),'Value');
+                h.ArmStateModel.ApplyReturnToHome = simpleMode;
             end
         end
         function pbAssessment(obj)
