@@ -16,10 +16,17 @@ function charResult = getUserConfigVar(tagName,defaultValue)
 userConfigFile = 'user_config.xml';
 if exist(userConfigFile,'file')
     try
-        fprintf('Reading file: "%s"...',userConfigFile)
         a = xmlread(userConfigFile);
-        fprintf('Done\n')
-        charResult = char(a.getElementsByTagName(tagName).item(0).getFirstChild.getData);
+        hTag = get(a.getElementsByTagName(tagName));
+        if hTag.Length == 0
+            % tag not found
+            charResult = defaultValue;
+        else
+            charResult = char(a.getElementsByTagName(tagName).item(0).getFirstChild.getData);
+        end
+        fprintf('Reading %s: %s=%s\n',userConfigFile,tagName,charResult)
+
+        return
     catch ME
         warning(ME.message)
         fprintf('[%s.m] Failed to parse tag "%s" entry in file "%s"\n',mfilename,tagName,userConfigFile);

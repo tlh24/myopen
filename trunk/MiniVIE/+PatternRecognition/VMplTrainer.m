@@ -17,6 +17,7 @@ classdef VMplTrainer < PatternRecognition.TrainingInterface
         hAxes;
         hText;
         hImage;
+        hLabel;
         
         SequenceLast;
         SequenceTime;
@@ -62,10 +63,19 @@ classdef VMplTrainer < PatternRecognition.TrainingInterface
                 'BackgroundColor','k',...
                 'String','00:00',...
                 'FontSize',32);
+
+            obj.hLabel = uicontrol(obj.hFig,...
+                'Style','Text',...
+                'Units','Normalized',...
+                'Position',[0.13 0.18 0.7750 0.42],...
+                'ForegroundColor',[0.8 0.8 0.8],...
+                'BackgroundColor','k',...
+                'String','Class Name',...
+                'FontSize',32);
             
             % picture path
             pathstr = fileparts(which('MiniVIE'));
-            pathImages = fullfile(pathstr,'Utilities','TakeHomeGUI','GUI_Hand_Images');
+            pathImages = fullfile(pathstr,'Utilities','TakeHomeGUI','GUI_Hand_Images_Named');
                         
             classNames = obj.SignalClassifier.getClassNames;
             
@@ -105,6 +115,15 @@ classdef VMplTrainer < PatternRecognition.TrainingInterface
             
             function update(obj)
                 
+                % User Closed Figure
+                if ~ishandle(obj.hFig)
+                    stop(obj.hTimer)
+                    fprintf('Done\n')
+                    obj.TrainingData.saveTrainingData();
+                    obj.IsComplete = true;
+                    return
+                end                    
+                
                 % create a time reference for first time function is executed
                 elapsedTime = etime(clock,obj.tRef);
                 id = find(elapsedTime < obj.SequenceTime,1,'first');
@@ -119,13 +138,25 @@ classdef VMplTrainer < PatternRecognition.TrainingInterface
                 tRed = 1; %Second
                 if ~isequal(id,obj.SequenceLast)
                     % Cue Transition
-                    [imGray, ~] = getImage(obj.SequenceClass{id},im,imName);
+                    [imGray, ~] = getImageByName(obj.SequenceClass{id},im,imName,0);
                     set(obj.hImage,'CData',imGray);
+                    if isempty(imGray)
+                        set(obj.hLabel,'Visible','on','String',obj.SequenceClass{id});
+                    else
+                        set(obj.hLabel,'Visible','off');
+                    end
                 elseif ( (obj.SequenceTime(id) - elapsedTime) < tRed) && (id < length(obj.SequenceTime))
                     % Approaching Transition
-                    [~, imRed] = getImage(obj.SequenceClass{id},im,imName);
+                    v = obj.SequenceTime(id) - elapsedTime;
+                    [~, imRed] = getImageByName(obj.SequenceClass{id},im,imName,v);
                     set(obj.hImage,'CData',imRed);
+                    if isempty(imRed)
+                        set(obj.hLabel,'Visible','on','String',obj.SequenceClass{id});
+                    else
+                        set(obj.hLabel,'Visible','off');
+                    end
                 end
+                
                 obj.SequenceLast = id;
                     
                 %fprintf('Current Time:   %6f;  Current Cue = %s\n',elapsedTime,obj.SequenceClass{id})
@@ -262,90 +293,34 @@ ok = isReady(hSignalSource,numSamples);
 
 end
 
+function [imGray, imRed] = getImageByName(className,im,imName,x)
+% get hand image based on matching name
+[imGray, imRed] = deal([]);
 
+isMatched = strncmpi(className,imName,length(className));
 
-
-function [imGray, imRed] = getImage(className,im,imName)
-
-% Map VIE class name to image description
-switch className
-    case 'Humeral Internal Rotation'
-        imgName = 'Medial_Rot';
-    case 'Humeral External Rotation'
-        imgName = 'Lateral_Rot';
-    case 'Elbow Flexion'
-        imgName = 'Elbow_Flex';
-    case 'Elbow Extension'
-        imgName = 'Elbow_Extend';
-    case 'Wrist Rotate In'
-        imgName = 'Pronate';
-    case 'Wrist Rotate Out'
-        imgName = 'Supinate';
-    case 'Wrist Flex In'
-        imgName = 'Wrist_Flex';
-    case 'Wrist Extend Out'
-        imgName = 'Wrist_Extend';
-    case {'Up','Hand Up', 'Radial Deviation','Wrist Abduction'}
-        imgName = 'Radial_Dev';
-    case {'Down','Hand Down', 'Ulnar Deviation','Wrist Adduction'}
-        imgName = 'Ulnar_Dev';
-    case 'Hand Open'
-        imgName = 'Open';
-    case 'Hand Close'
-        imgName = 'Close';
-    case 'Lateral Grasp'
-        imgName = 'Key';
-    case 'Cylindrical Grasp'
-        imgName = 'Cylindrical';
-    case 'Tip Grasp'
-        imgName = 'Fine_Pinch';
-    case 'Hook Grasp'
-        imgName = 'Hook';
-    case 'Spherical Grasp'
-        imgName = 'Spherical';
-    case 'Pointer Grasp'
-        imgName = 'Index_Point';
-    case 'No Movement'
-        imgName = 'Rest';
-    case {'Index' 'Index Grasp'}
-        imgName = 'Index';
-    case {'Middle' 'Middle Grasp'}
-        imgName = 'Middle';
-    case {'Ring' 'Ring Grasp'}
-        imgName = 'Ring';
-    case {'Little' 'Little Grasp'}
-        imgName = 'Little';
-    case {'Thumb' 'Thumb Grasp'}
-        imgName = 'Thumb';
-    otherwise
-        fprintf('Unmatched class: "%s"\n',className);
-        imgName = '';
+if sum(isMatched) == 0
+    % Unmatched
+    warning('No image file match name: %s\n',className);
+    return
+elseif sum(isMatched) == 1
+    % Expected 1 match
+else
+    warning('Multiple image files match name: %s\n',className);
+    isMatched = find(isMatched,1,'first');
 end
 
-% List image descriptions 1-31
-imageDescription = {'Rest','Open','Close',...                   % 1-3
-    'Index_Point','Hook','Fine_Pinch','Jaw_Chuck',...           % 4-7
-    'Key','Palmar','Cylindrical','Spherical',...                % 8-11
-    'Pronate','Supinate','Wrist_Flex','Wrist_Extend',...        % 12-15
-    'Radial_Dev','Ulnar_Dev','Elbow_Flex','Elbow_Extend',...    % 16-19
-    'Shoulder_Flex','Shoulder_Extend',...                       % 20-21
-    'Medial_Rot','Lateral_Rot','Abduction','Adduction',...      % 22-25
-    'Thumb','Index','Middle','Ring','Little','Park'};           % 26-31
+imGray = im{isMatched};
 
-% find the class image number
-i = find(strcmp(imgName,imageDescription));
+% imRed(:,:,1) = imGray(:,:,1) .* 1.5;
+% imRed(:,:,2) = imGray(:,:,2) .* 0.5;
+% imRed(:,:,3) = imGray(:,:,3) .* 0.5;
 
-% create the target filename
-name1 = sprintf('hand_%d.jpg',i);
-name2 = sprintf('red_hand_%d.jpg',i);
+imRed(:,:,1) = imGray(:,:,1) .* (1.5 - (x*0.5));
+imRed(:,:,2) = imGray(:,:,2) .* (0.5 + (x*0.5));
+imRed(:,:,3) = imGray(:,:,3) .* (0.5 + (x*0.5));
 
-% find the filename in watever order dir returned
-id1 = strcmpi(name1,imName);
-id2 = strcmpi(name2,imName);
-
-% return the actual image data
-imGray = im{id1};
-imRed = im{id2};
+imRed = uint8(imRed);
 
 end
 
