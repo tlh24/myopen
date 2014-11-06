@@ -45,8 +45,8 @@ classdef ArmStateModel < handle
             obj.structState(3).Max = 35 * pi / 180;
 
             obj.structState(4).Name = 'Elbow';
-            obj.structState(4).Min = 70 * pi / 180;
-            obj.structState(4).Max = 120 * pi / 180;
+            obj.structState(4).Min = 0 * pi / 180;
+            obj.structState(4).Max = 140 * pi / 180;
             obj.structState(4).MaxVelocity = 2;
             obj.structState(4).DefaultValue = 90 * pi / 180;
 
