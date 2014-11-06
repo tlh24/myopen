@@ -11,7 +11,7 @@ switch classConfig
         try
             S = load(classConfig,'-mat');
         catch ME
-            msg = { 'Error reading file', fullFile , ...
+            msg = { 'Error reading file', classConfig , ...
                 'Error was: ' ME.message};
             errordlg(msg);
         end
@@ -20,7 +20,7 @@ switch classConfig
         try
             S = load(classConfig,'-mat');
         catch ME
-            msg = { 'Error reading file', fullFile , ...
+            msg = { 'Error reading file', classConfig , ...
                 'Error was: ' ME.message};
             errordlg(msg);
         end
@@ -137,12 +137,12 @@ if isempty(defaultChannels)
 end
 h.setActiveChannels(defaultChannels);
 
-% load('TR_Basic.classNames','-mat')
-classNames = GUIs.guiClassifierChannels.getSavedDefaults();
-if (isempty(classNames))
-    classNames = GUIs.guiClassifierChannels.getDefaultNames;
-end
-h.setClassNames(classNames);
+% % load('TR_Basic.classNames','-mat')
+% classNames = GUIs.guiClassifierChannels.getSavedDefaults();
+% if (isempty(classNames))
+%     classNames = GUIs.guiClassifierChannels.getDefaultNames;
+% end
+% h.setClassNames(classNames);
 
 obj.SignalClassifier = h;
 obj.SignalClassifier.train();
@@ -162,7 +162,6 @@ h.initialize(obj.SignalSource,obj.SignalClassifier,obj.TrainingData);
 h.Verbose = 0;
 h.update();
 
-%start(h.Timer);
 obj.println('Presentation setup complete',1);
 
 % Enable buttons
@@ -170,5 +169,9 @@ set(obj.hg.PresentationButtons(:),'Enable','on');
 set(obj.hg.popups(5),'Value',5);
 
 obj.Presentation = h;
+
+drawnow;
+start(h.Timer);
+obj.println('Presentation setup complete',1);
 
 end
