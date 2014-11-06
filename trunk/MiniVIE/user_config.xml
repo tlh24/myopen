@@ -22,6 +22,6 @@
     <mplVulcanXCommandPort>9027</mplVulcanXCommandPort>
     <mplVulcanXSensoryPort>25001</mplVulcanXSensoryPort>
     <mplVulcanXIntentPort>9095</mplVulcanXIntentPort>
-    <mplVulcanXIntentPortLocal>78010</mplVulcanXIntentPortLocal>
+    <mplVulcanXIntentPortLocal>58010</mplVulcanXIntentPortLocal>
     
 </userConfig>

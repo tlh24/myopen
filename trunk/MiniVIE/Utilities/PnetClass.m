@@ -54,8 +54,8 @@ classdef PnetClass < handle
                     mfilename,obj.localPort);
                 return
             else
-                fprintf('[%s] Opened pnet socket #%d at local port: %d\n',...
-                    mfilename,obj.hSocket,obj.localPort);
+                fprintf('[%s] Opened pnet socket #%d at local port: %d; Default destination: port %d @ %s\n',...
+                    mfilename,obj.hSocket,obj.localPort,obj.remotePort, obj.remoteIP);
             end
             
             % make non-blocking
