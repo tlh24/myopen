@@ -450,7 +450,7 @@ flag = true;
 % Check to see if the user is attempting to explore or evaluate untrained
 % movements.
 
-isExploreMode = strcmpi(handles.panelMode.SelectedObject.String,'Explore');
+isExploreMode = strcmpi(get(get(handles.panelMode,'SelectedObject'),'String'),'Explore');
 
 if (switch_threshold > 0) || isExploreMode
     
