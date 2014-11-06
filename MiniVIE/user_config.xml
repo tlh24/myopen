@@ -1,8 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <userConfig>
+    <!--Tag definition in MATLAB code:
+    charResult = getUserConfigVar(tagName,defaultValue) -->
+    
+    
+    <!--Prefix to add to save data files -->
+    <userFilePrefix>JH_SD01_B_L_</userFilePrefix>
+
     <!--ROC Table to be loaded and interpolated locally during MiniVIE Session-->
     <rocTable>GraspAndWholeArmRoc.xml</rocTable>
+
+    <!--MPL NFU Comm parameters-->
     <mplNfuIp>192.168.1.111</mplNfuIp>
     <mplRouterIp>192.168.1.1</mplRouterIp>
-    <userFilePrefix>JH_SD01_B_L_</userFilePrefix>
+
+    <!-- Vulcan X Command port typically:  
+    MUD Port (L=9024 R=9027) 
+    Percept Port (L=25101 R=25001)
+    Intent Port (L=9094 R=9095) -->
+    <mplVulcanXIpAddress>127.0.0.1</mplVulcanXIpAddress>
+    <mplVulcanXCommandPort>9027</mplVulcanXCommandPort>
+    <mplVulcanXSensoryPort>25001</mplVulcanXSensoryPort>
+    <mplVulcanXIntentPort>9095</mplVulcanXIntentPort>
+    <mplVulcanXIntentPortLocal>78010</mplVulcanXIntentPortLocal>
+    
 </userConfig>

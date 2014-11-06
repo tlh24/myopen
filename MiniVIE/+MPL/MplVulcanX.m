@@ -10,11 +10,16 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
         % Handles
         hMud;
         hUdp;  % Handle to Udp port.  local port is setup to receive percepts and send to command port
+        hIntentUdp;  % Handle to Intent Udp port. 
 
         VulcanXAddress = '127.0.0.1';   % VulcanX IP (127.0.0.1)
         VulcanXCmdPort = 9027;          % MUD Port (L=9024 R=9027)
         VulcanXLocalPort = 25001;       % Percept Port (L=25101 R=25001)
         
+        IntentAddress = '127.0.0.1';    % IP for class info streaming (127.0.0.1)
+        IntentDestinationPort = 9094;   % Dest Port for class info streaming (L=9094 R=9095)
+        IntentSourcePort = 78010;       % Src Port for class info streaming 
+
         IsRightSide = 0;
         
     end
@@ -33,10 +38,14 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
             obj.hMud = MPL.MudCommandEncoder();
             
             % PnetClass(localPort,remotePort,remoteIP)
-            obj.hUdp = PnetClass(...,
+            obj.hUdp = PnetClass(...
                 obj.VulcanXLocalPort,obj.VulcanXCmdPort,obj.VulcanXAddress);
-            
             obj.hUdp.initialize();
+
+            % setup udp for intent streaming
+            obj.hIntentUdp = PnetClass(...
+                obj.IntentSourcePort,obj.IntentDestinationPort,obj.IntentAddress);
+            obj.hIntentUdp.initialize();
             
             obj.getRocConfig();
             
@@ -53,12 +62,22 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
                     obj.update_control();
                 end
                 
-                obj.update_sensory();
+                % obj.update_sensory();
                 
                 if obj.Verbose
                     % print backspace and new line
                     fprintf('\b\n');
                 end
+                
+                % Stream intent info:
+                % obj.Intent.classOut = classOut;
+                % obj.Intent.voteDecision = voteDecision;
+                % obj.Intent.className = className;
+                % obj.Intent.prSpeed = prSpeed;
+                % obj.Intent.rawEmg = rawEmg;
+                % obj.Intent.windowData = windowData;
+                % obj.Intent.features2D = features2D;
+                obj.hIntentUdp.putData(uint8(obj.Intent.voteDecision));
                 
             catch ME
                 UiTools.display_error_stack(ME);
@@ -79,7 +98,6 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
             %       - Currently only applies to hand.
             %       - if it's a whole arm roc, it should overwrite the
             %       upper arm joint values
-            
             
             m = obj.ArmStateModel;
             rocValue = m.structState(m.RocStateId).Value;
@@ -103,9 +121,6 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
                 obj.hUdp.putData(msg);
                 return
             end
-            
-            
-            
 
             if isa(rocId,'Controls.GraspTypes')
                 % convert char grasp class name (e.g. 'Spherical') to numerical mpl

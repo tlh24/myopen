@@ -689,35 +689,14 @@ classdef MiniVIE < Common.MiniVieObj
                         start(h.Timer);
                         obj.println('Presentation setup complete',1);
                     case 'MplVulcanX'
-                        % Prompt user for VulcanX inputs
-                        QA = {
-                            'VulcanX IP (127.0.0.1):'            '127.0.0.1'
-                            'MUD Port (L=9024 R=9027):'          '9027'
-                            'Percept Port (L=25101 R=25001):'    '25001'
-                            };
-                        name = 'MplVulcanX';
-                        numlines = 1;
-                        prompt = QA(:,1);
-                        defaultanswer = QA(:,2);
-                        answer = inputdlg(prompt,name,numlines,defaultanswer);
-                        if isempty(answer)
-                            % User Cancelled
-                            return
-                        end
-                        
-                        assert(length(answer) == 3,'Expected 3 outputs');
-                        
                         obj.println('Setting up presentation...',1);
                         h = MPL.MplVulcanX;
-                        h.VulcanXAddress = answer{1}; % TODO: Validate
-                        
-                        port = str2double(answer{2});
-                        assert(~isnan(port),'Invalid Port');
-                        h.VulcanXCmdPort = port;
-                        
-                        port = str2double(answer{3});
-                        assert(~isnan(port),'Invalid Port');
-                        h.VulcanXLocalPort = port;
+                        h.VulcanXAddress = getUserConfigVar('mplVulcanXIpAddress','127.0.0.1');
+                        h.VulcanXCmdPort = str2double(getUserConfigVar('mplVulcanXCommandPort','9027'));
+                        h.VulcanXLocalPort = str2double(getUserConfigVar('mplVulcanXSensoryPort','25001'));
+                        h.IntentAddress = getUserConfigVar('mplVulcanXIntentIpAddress','127.0.0.1');
+                        h.IntentDestinationPort = str2double(getUserConfigVar('mplVulcanXIntentPort','9095'));
+                        h.IntentSourcePort = str2double(getUserConfigVar('mplVulcanXIntentPortLocal','78000'));
                         
                         h.initialize(obj.SignalSource,obj.SignalClassifier,obj.TrainingData);
                         h.update();
