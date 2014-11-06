@@ -2,7 +2,7 @@ classdef Classifier < Common.MiniVieObj
     % Classifier Base class
     %
     % Note abstract methods need to be implemented by child classes.
-    % 
+    %
     % Methods:
     %       obj.initialize(hTrainingData)
     %
@@ -287,6 +287,48 @@ classdef Classifier < Common.MiniVieObj
             % features2D = feature_extract(filteredDataWindowAllChannels(:,obj.getActiveChannels)',obj.NumSamplesPerWindow);
             features2D = feature_extract(filteredDataWindowAllChannels',obj.NumSamplesPerWindow);
         end
+        function plotConfusion(obj)
+
+            % plot the confusion matrix for the classifier
+            l = obj.TrainingData.getClassLabels;
+            trainedLabels = unique(l);
+            numClasses = length(trainedLabels);
+            
+            if numClasses == 0
+                errordlg('No Training Data Exisits');
+                return
+            end
+            
+            f = figure(77);
+            clf(f)
+            hAxes = axes('Parent',f);
+            
+            [X,Y] = meshgrid(1:numClasses+1,1:numClasses+1);
+            hSurf = surf(hAxes,X,Y);
+            patchData = surf2patch(hSurf);
+            delete(hSurf);
+            hPatch = patch(patchData,'Parent',hAxes,'FaceColor','flat','EdgeColor','None');
+            view(2)
+            colormap('hot');
+            colorbar;
+            set(hAxes,'cLim',[0 1]);
+            
+            cmat = obj.computeConfusion;
+            cmat = cmat(trainedLabels,trainedLabels);
+            
+            try
+                 if ~isempty(cmat)
+                    classSum = sum(cmat,2);
+                    normMat = cmat ./ repmat(classSum,1,numClasses);
+                    normMat(isnan(normMat)) = 0;
+                    
+                    faceColor = flipud(normMat);
+                    set(hPatch,'FaceVertexCData',faceColor(:));
+                end
+            catch
+                disp('Confusion matrix error')
+            end
+        end
     end
     methods (Static = true)
         function voteDecision = majority_vote(classDecision, numVotes, ...
@@ -383,11 +425,11 @@ classdef Classifier < Common.MiniVieObj
             % the first channels then all the features_3D for the second channel,...
             % expects an array of size [nChannels nFeatures numSamples]
             % creates an array of size [nFeatures*nChannels numSamples]
-
+            
             assert(ndims(featureData3D) == 3,'Three dimensional feature vector input required');
             
             [numChannels, numFeatures, numSamples] = size(featureData3D);
-
+            
             if nargin < 2
                 activeChannels = 1:numChannels;
             end

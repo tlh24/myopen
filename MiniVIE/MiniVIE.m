@@ -187,6 +187,12 @@ classdef MiniVIE < Common.MiniVieObj
                 'String','Plot PCA',...
                 'Enable','off',...
                 'Callback',@(src,evt)obj.pbPlotPca());
+            obj.hg.SignalAnalysisButtons(6) = uicontrol(obj.hg.Figure,...
+                'Position',pos('cntrl',MiniVIE.SA,8,1,1),...
+                'Style','pushbutton',...
+                'String','Plot Confusion Matrix',...
+                'Enable','off',...
+                'Callback',@(src,evt)obj.pbPlotConfusion());
             
             % TrainingButtons
             obj.hg.TrainingButtons(1) = uicontrol(obj.hg.Figure,...
@@ -230,8 +236,8 @@ classdef MiniVIE < Common.MiniVieObj
 
             obj.hg.PlantButtons(1) = uicontrol(obj.hg.Figure,...
                 'Position',pos('cntrl',MiniVIE.PLANT,3,1,1),...
-                'Style','togglebutton',...
-                'String','Simple Mode',...
+                'Style','pushbutton',...
+                'String','Complex Mode',...
                 'Enable','on',...
                 'Callback',@(src,evt)obj.pbSimpleMode());
             
@@ -890,6 +896,10 @@ classdef MiniVIE < Common.MiniVieObj
             % plot the principle components of the current training data
             GUIs.guiPlotPca(obj.TrainingData);
         end
+        function pbPlotConfusion(obj)
+            % plot confusion matrix
+            obj.SignalClassifier.plotConfusion();
+        end
         function pbAdjustGains(obj)
             % Launch the gain adjust GUI.  Stop refresh during figure
             % creation
@@ -915,9 +925,16 @@ classdef MiniVIE < Common.MiniVieObj
         function pbSimpleMode(obj)
             h = obj.Presentation;
             if isa(h,'Scenarios.ScenarioBase')
-                % set simple mode where arm returns to home
-                simpleMode = get(obj.hg.PlantButtons(1),'Value');
-                h.ArmStateModel.ApplyReturnToHome = simpleMode;
+                
+                if h.ArmStateModel.ApplyReturnToHome
+                    % In simple mode, change to complex
+                    set(obj.hg.PlantButtons(1),'String','Complex Mode');
+                    h.ArmStateModel.ApplyReturnToHome = 0;
+                else
+                    set(obj.hg.PlantButtons(1),'String','Simple Mode');
+                    h.ArmStateModel.ApplyReturnToHome = 1;
+                end
+                
             end
         end
         function pbAssessment(obj)

@@ -132,6 +132,11 @@ classdef VMplTrainer < PatternRecognition.TrainingInterface
                     fprintf('Done\n')
                     obj.TrainingData.saveTrainingData();
                     obj.IsComplete = true;
+                    
+                    if ishandle(obj.hFig)
+                        close(obj.hFig);
+                    end
+                    
                     return
                 end
                 
