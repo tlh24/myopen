@@ -957,8 +957,15 @@ classdef MiniVIE < Common.MiniVieObj
         end
     end
     methods (Static = true)
-        function createShortcuts
+        function createShortcuts(suffix)
             % Create MiniVIE shortcuts
+            % This function adds shortcuts for useful tools in working with
+            % the VIE.  The includes going the desired path, running the GUI
+            % and cleaning up the workspace
+            
+            if nargin < 1
+                suffix = '';
+            end
             
             MiniVIE.configurePath();
             
@@ -979,7 +986,7 @@ classdef MiniVIE < Common.MiniVieObj
             % MiniVIE.configurePath;
             cb = sprintf('cd(''%s'') \nMiniVIE.configurePath();',...
                 fileparts(which('MiniVIE')));
-            shortcutUtils.addShortcutToBottom('goto MiniVIE',cb,'','Shortcuts', 'true');
+            shortcutUtils.addShortcutToBottom(strcat('goto MiniVIE',suffix),cb,'','Shortcuts', 'true');
             
             % MiniVIE
             % cd('C:\svn\myopen\MiniVIE');
@@ -987,24 +994,23 @@ classdef MiniVIE < Common.MiniVieObj
             % obj = MiniVIE;
             cb = sprintf('cd(''%s'') \nMiniVIE.configurePath \nobj = MiniVIE;',...
                 fileparts(which('MiniVIE')));
-            shortcutUtils.addShortcutToBottom('MiniVIE',cb,'','Shortcuts', 'true');
+            shortcutUtils.addShortcutToBottom(strcat('MiniVIE',suffix),cb,'','Shortcuts', 'true');
             
             %cleanup
             % run('C:\svn\myopen\MiniVIE\Utilities\cleanup.m')
             cb = sprintf('run(''%s'');',which('cleanup'));
             iconPath = fullfile(iconDir,'TTE_delete.gif');
-            shortcutUtils.addShortcutToBottom('cleanup',cb,iconPath,'Shortcuts', 'true');
+            shortcutUtils.addShortcutToBottom(strcat('cleanup',suffix),cb,iconPath,'Shortcuts', 'true');
             
             %mpltest
             % mpltest();
             cb = 'mpltest()';
-            shortcutUtils.addShortcutToBottom('mpltest',cb,'','Shortcuts', 'true');
+            shortcutUtils.addShortcutToBottom(strcat('mpltest',suffix),cb,'','Shortcuts', 'true');
             
             %RunMpl
             % RunMpl();
             cb = 'obj = RunMpl()';
-            shortcutUtils.addShortcutToBottom('RunMpl',cb,'','Shortcuts', 'true');
-            
+            shortcutUtils.addShortcutToBottom(strcat('RunMpl',suffix),cb,'','Shortcuts', 'true');
             
         end
         function configurePath
