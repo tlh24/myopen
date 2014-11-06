@@ -3,7 +3,7 @@ function [ obj ] = RunTakeHome(classConfig)
 MiniVIE.configurePath();
 
 if nargin < 1
-    classConfig = [];
+    classConfig = '';
 end
 
 switch classConfig
@@ -90,7 +90,8 @@ Fs = h.SampleFrequency;
 % h.addfilter(Inputs.HighPass(20,3,Fs));
 % h.addfilter(Inputs.RemoveOffset(10));
 % h.addfilter(Inputs.Notch([120 240 360],5,1,Fs));
-% h.addfilter(Inputs.Notch([120 240 360],64,1,1000));
+
+h.addfilter(Inputs.Notch([240 300 360 420],64,1,Fs)); % Notch Filters
 h.addfilter(Inputs.HighPass(20,3,Fs));      % 20Hz 3rd order butter
 h.addfilter(Inputs.MinLimitFilter(0.2));    % min limit
 h.addfilter(Inputs.ConstraintFilter(-5,5)); % range limit
@@ -148,6 +149,15 @@ obj.SignalClassifier.train();
 
 %% Setup Presentation
 h = p.Scenario;
+
+%h = MPL.MplVulcanX;
+h.VulcanXAddress = getUserConfigVar('mplVulcanXIpAddress','127.0.0.1');
+h.VulcanXCmdPort = str2double(getUserConfigVar('mplVulcanXCommandPort','9027'));
+h.VulcanXLocalPort = str2double(getUserConfigVar('mplVulcanXSensoryPort','25001'));
+h.IntentAddress = getUserConfigVar('mplVulcanXIntentIpAddress','127.0.0.1');
+h.IntentDestinationPort = str2double(getUserConfigVar('mplVulcanXIntentPort','9095'));
+h.IntentSourcePort = str2double(getUserConfigVar('mplVulcanXIntentPortLocal','78000'));
+
 h.initialize(obj.SignalSource,obj.SignalClassifier,obj.TrainingData);
 h.Verbose = 0;
 h.update();

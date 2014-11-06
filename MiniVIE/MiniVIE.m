@@ -1007,6 +1007,11 @@ classdef MiniVIE < Common.MiniVieObj
             % RunMpl();
             cb = 'obj = RunMpl()';
             shortcutUtils.addShortcutToBottom(strcat('RunMpl',suffix),cb,'','Shortcuts', 'true');
+
+            %RunTakeHome
+            % RunTakeHome();
+            cb = 'obj = RunTakeHome()';
+            shortcutUtils.addShortcutToBottom(strcat('RunTakeHome',suffix),cb,'','Shortcuts', 'true');
             
         end
         function configurePath
