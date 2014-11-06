@@ -295,11 +295,16 @@ classdef Classifier < Common.MiniVieObj
             numClasses = length(trainedLabels);
             
             if numClasses == 0
-                errordlg('No Training Data Exisits');
+                errordlg('No Training Data Exists');
                 return
             end
             
             f = figure(77);
+            set(f,'Units','pixels')
+            p = get(f,'Position');
+            p = [p(1) p(2)/2 800 600];
+            set(f,'Position',p);
+            
             clf(f)
             hAxes = axes('Parent',f);
             
@@ -328,6 +333,17 @@ classdef Classifier < Common.MiniVieObj
             catch
                 disp('Confusion matrix error')
             end
+            
+            classNames = obj.getClassNames;
+            tickVal = (1:numClasses)+0.5;
+            tickLabel = classNames(trainedLabels(:));
+            pad = @(s) sprintf('%s   ',s);
+            tickLabel = cellfun(pad,tickLabel,'UniformOutput',false);
+            set(hAxes,'YTick',tickVal);
+            set(hAxes,'YTickLabel',flipud(tickLabel))
+            
+            hText = xticklabel_rotate(tickVal,30,tickLabel);
+            
         end
     end
     methods (Static = true)

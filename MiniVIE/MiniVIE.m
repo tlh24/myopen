@@ -1009,8 +1009,11 @@ classdef MiniVIE < Common.MiniVieObj
             shortcutUtils.addShortcutToBottom(strcat('RunMpl',suffix),cb,'','Shortcuts', 'true');
 
             %RunTakeHome
-            % RunTakeHome();
-            cb = 'obj = RunTakeHome()';
+            % cd('C:\svn\myopen\MiniVIE');
+            % MiniVIE.configurePath;
+            % obj = RunTakeHome();
+            cb = sprintf('cd(''%s'');\nMiniVIE.configurePath();\nobj = RunTakeHome();',...
+                fileparts(which('MiniVIE')));
             shortcutUtils.addShortcutToBottom(strcat('RunTakeHome',suffix),cb,'','Shortcuts', 'true');
             
         end
@@ -1019,7 +1022,11 @@ classdef MiniVIE < Common.MiniVieObj
             addpath(pathName);
             addpath([pathName filesep 'Utilities']);
         end
-        function obj = Default
+        function obj = Default(dataFile)
+            if nargin < 1
+                dataFile = 'SimAll.trainingData';
+            end
+            
             MiniVIE.configurePath
             
             obj.SignalSource = Inputs.SignalSimulator();
@@ -1030,7 +1037,7 @@ classdef MiniVIE < Common.MiniVieObj
             obj.SignalSource.initialize();
             
             obj.TrainingData = PatternRecognition.TrainingData;
-            obj.TrainingData.loadTrainingData('SimAll.trainingData');
+            obj.TrainingData.loadTrainingData(dataFile);
             
             obj.SignalClassifier = SignalAnalysis.Lda();
             obj.SignalClassifier.initialize(obj.TrainingData);

@@ -18,7 +18,7 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
         
         IntentAddress = '127.0.0.1';    % IP for class info streaming (127.0.0.1)
         IntentDestinationPort = 9094;   % Dest Port for class info streaming (L=9094 R=9095)
-        IntentSourcePort = 78010;       % Src Port for class info streaming 
+        IntentSourcePort = 58010;       % Src Port for class info streaming 
 
         IsRightSide = 0;
         
@@ -77,7 +77,8 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
                 % obj.Intent.rawEmg = rawEmg;
                 % obj.Intent.windowData = windowData;
                 % obj.Intent.features2D = features2D;
-                obj.hIntentUdp.putData(uint8(obj.Intent.voteDecision));
+                %obj.hIntentUdp.putData(uint8(obj.Intent.voteDecision));
+                obj.hIntentUdp.putData(char(obj.Intent.className));
                 
             catch ME
                 UiTools.display_error_stack(ME);

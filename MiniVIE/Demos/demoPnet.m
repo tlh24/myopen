@@ -70,5 +70,5 @@ while len > 0
 end
 
 if newPackets
-    fprintf('%d new packets received on port number %d\n',newPackets,receivePortNumber);
+    fprintf('%d new packet(s) received on port number %d\n',newPackets,receivePortNumber);
 end
