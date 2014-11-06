@@ -1,14 +1,14 @@
 ant:
 <ant>
-  <mkdir dir="C:\svn\clean\myopen\MiniVIE\Deploy\MiniVIE\for_redistribution" />
-  <mkdir dir="C:\svn\clean\myopen\MiniVIE\Deploy\MiniVIE\for_testing" />
-  <mkdir dir="C:\svn\clean\myopen\MiniVIE\Deploy\MiniVIE\for_redistribution_files_only" />
+  <mkdir dir="C:\svn\myopen\MiniVIE\Deploy\MiniVIE\for_redistribution" />
+  <mkdir dir="C:\svn\myopen\MiniVIE\Deploy\MiniVIE\for_testing" />
+  <mkdir dir="C:\svn\myopen\MiniVIE\Deploy\MiniVIE\for_redistribution_files_only" />
 </ant>
-mcc -C -o MiniVIE -W WinMain:MiniVIE -T link:exe -d C:\svn\clean\myopen\MiniVIE\Deploy\MiniVIE\for_testing -v C:\svn\clean\myopen\MiniVIE\MiniVIE.m 
+mcc -C -o MiniVIE -W WinMain:MiniVIE -T link:exe -d C:\svn\myopen\MiniVIE\Deploy\MiniVIE\for_testing -v C:\svn\clean\myopen\MiniVIE\MiniVIE.m 
 Compiler version: 5.2 (R2014b)
 Dependency analysis by REQUIREMENTS.
 [Warning: Requirements cannot analyze
-C:\svn\clean\myopen\MiniVIE\Utilities\alwaysontop.p unless the user provides a
+C:\svn\myopen\MiniVIE\Utilities\alwaysontop.p unless the user provides a
 corresponding M-code along with it in the same folder. Its dependencies may not
 be included in the completion, because its corresponding M-code found by
 REQUIREMENTS either is empty or contains nothing but comments.] 
@@ -24,7 +24,7 @@ REQUIREMENTS either is empty or contains nothing but comments.]
   In Completion>Completion.requirements at 1978
   In requirements at 193] 
 [Warning: Requirements cannot analyze
-C:\svn\clean\myopen\MiniVIE\Utilities\alwaysontop.p unless the user provides a
+C:\svn\myopen\MiniVIE\Utilities\alwaysontop.p unless the user provides a
 corresponding M-code along with it in the same folder. Its dependencies may not
 be included in the completion, because its corresponding M-code found by
 REQUIREMENTS either is empty or contains nothing but comments.] 
@@ -40,7 +40,23 @@ REQUIREMENTS either is empty or contains nothing but comments.]
   In Completion>Completion.requirements at 1978
   In requirements at 193] 
 [Warning: Requirements cannot analyze
-C:\svn\clean\myopen\MiniVIE\Utilities\alwaysontop.p unless the user provides a
+C:\svn\myopen\MiniVIE\Utilities\alwaysontop.p unless the user provides a
+corresponding M-code along with it in the same folder. Its dependencies may not
+be included in the completion, because its corresponding M-code found by
+REQUIREMENTS either is empty or contains nothing but comments.] 
+[> In MatlabSymbol>MatlabSymbol.findCorrespondentMCode at 974
+  In Completion>Completion.recordDependency at 728
+  In Completion>@(client,symbol)recordDependency(obj,client,symbol)
+  In MatlabInspector>MatlabInspector.recordDependency at 215
+  In MatlabInspector>MatlabInspector.evaluateSymbols at 386
+  In MatlabInspector>MatlabInspector.analyzeSymbols at 187
+  In Completion>Completion.findDependentFiles at 1103
+  In Completion>Completion.computeDependencies at 234
+  In Completion>Completion.computePartsList at 1656
+  In Completion>Completion.requirements at 1978
+  In requirements at 193] 
+[Warning: Requirements cannot analyze
+C:\svn\myopen\MiniVIE\Utilities\alwaysontop.p unless the user provides a
 corresponding M-code along with it in the same folder. Its dependencies may not
 be included in the completion, because its corresponding M-code found by
 REQUIREMENTS either is empty or contains nothing but comments.] 
@@ -59,48 +75,48 @@ REQUIREMENTS either is empty or contains nothing but comments.]
 Parsing file "C:\svn\clean\myopen\MiniVIE\MiniVIE.m"
 	(Referenced from: "Compiler Command Line").
 Deleting 37 temporary MEX authorization files.
-Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_9660_29530_9660.auth'.
-Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_9660_1368_9660.auth'.
-Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_9660_22880_9660.auth'.
-Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_9660_18228_9660.auth'.
-Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_9660_26659_9660.auth'.
-Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_9660_3460_9660.auth'.
-Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_9660_23671_9660.auth'.
-Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_9660_20265_9660.auth'.
-Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_9660_7849_9660.auth'.
-Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_9660_14486_9660.auth'.
-Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_9660_5108_9660.auth'.
-Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_9660_32534_9660.auth'.
-Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_9660_7147_9660.auth'.
-Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_9660_26864_9660.auth'.
-Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_9660_7368_9660.auth'.
-Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_9660_24631_9660.auth'.
-Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_9660_10739_9660.auth'.
-Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_9660_15829_9660.auth'.
-Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_9660_26468_9660.auth'.
-Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_9660_20932_9660.auth'.
-Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_9660_22891_9660.auth'.
-Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_9660_14934_9660.auth'.
-Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_9660_2915_9660.auth'.
-Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_9660_27261_9660.auth'.
-Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_9660_3422_9660.auth'.
-Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_9660_32610_9660.auth'.
-Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_9660_1995_9660.auth'.
-Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_9660_18402_9660.auth'.
-Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_9660_23965_9660.auth'.
-Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_9660_13464_9660.auth'.
-Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_9660_22671_9660.auth'.
-Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_9660_23973_9660.auth'.
-Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_9660_30818_9660.auth'.
-Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_9660_24063_9660.auth'.
-Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_9660_1485_9660.auth'.
-Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_9660_3264_9660.auth'.
-Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_9660_27901_9660.auth'.
-Generating file "C:\svn\clean\myopen\MiniVIE\Deploy\MiniVIE\for_testing\readme.txt".
+Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_6004_29310_6004.auth'.
+Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_6004_4760_6004.auth'.
+Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_6004_23498_6004.auth'.
+Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_6004_8937_6004.auth'.
+Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_6004_18393_6004.auth'.
+Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_6004_718_6004.auth'.
+Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_6004_4825_6004.auth'.
+Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_6004_4469_6004.auth'.
+Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_6004_9175_6004.auth'.
+Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_6004_3970_6004.auth'.
+Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_6004_15290_6004.auth'.
+Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_6004_8790_6004.auth'.
+Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_6004_16873_6004.auth'.
+Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_6004_26992_6004.auth'.
+Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_6004_7882_6004.auth'.
+Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_6004_32475_6004.auth'.
+Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_6004_4730_6004.auth'.
+Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_6004_24472_6004.auth'.
+Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_6004_13824_6004.auth'.
+Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_6004_14446_6004.auth'.
+Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_6004_9055_6004.auth'.
+Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_6004_16973_6004.auth'.
+Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_6004_25331_6004.auth'.
+Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_6004_29342_6004.auth'.
+Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_6004_28924_6004.auth'.
+Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_6004_10035_6004.auth'.
+Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_6004_1097_6004.auth'.
+Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_6004_29377_6004.auth'.
+Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_6004_18266_6004.auth'.
+Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_6004_5631_6004.auth'.
+Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_6004_32627_6004.auth'.
+Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_6004_21214_6004.auth'.
+Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_6004_14714_6004.auth'.
+Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_6004_23706_6004.auth'.
+Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_6004_7312_6004.auth'.
+Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_6004_6701_6004.auth'.
+Removing: 'C:\Users\armigrs1\AppData\Local\Temp\mathworks_tmp_6004_29511_6004.auth'.
+Generating file "C:\svn\myopen\MiniVIE\Deploy\MiniVIE\for_testing\readme.txt".
 Packaging...
-Adding custom icon C:\Program Files\MATLAB\R2014b\toolbox\compiler\Resources\default_icon.ico to C:\svn\clean\myopen\MiniVIE\Deploy\MiniVIE\for_testing\MiniVIE.exe.
-Attempting to embed the CTF archive into the application C:\svn\clean\myopen\MiniVIE\Deploy\MiniVIE\for_testing\MiniVIE.exe.
+Adding custom icon C:\Program Files\MATLAB\R2014b\toolbox\compiler\Resources\default_icon.ico to C:\svn\myopen\MiniVIE\Deploy\MiniVIE\for_testing\MiniVIE.exe.
+Attempting to embed the CTF archive into the application C:\svn\myopen\MiniVIE\Deploy\MiniVIE\for_testing\MiniVIE.exe.
 Finished embedding CTF archive. Deleting the external CTF archive.
 Creating the bundle...
-Web based installer created at C:\svn\clean\myopen\MiniVIE\Deploy\MiniVIE\for_redistribution\MyAppInstaller_web.exe.
+Web based installer created at C:\svn\myopen\MiniVIE\Deploy\MiniVIE\for_redistribution\MyAppInstaller_web.exe.
 Packaging complete.
