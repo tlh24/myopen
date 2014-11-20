@@ -268,14 +268,14 @@ classdef ScenarioBase < Common.MiniVieObj
                         s.structState(8).State = [roll 0 0];
                     case     'Endpoint Roll Out'
                         s.structState(8).State = [-roll 0 0];
-                    case     'Endpoint Pitch Down'
-                        s.structState(8).State = [0 pitch 0];
                     case     'Endpoint Pitch Up'
+                        s.structState(8).State = [0 pitch 0];
+                    case     'Endpoint Pitch Down'
                         s.structState(8).State = [0 -pitch 0];
                     case     'Endpoint Yaw In'
-                        s.structState(8).State = [0 yaw 0];
+                        s.structState(8).State = [0 0 yaw];
                     case     'Endpoint Yaw Out'
-                        s.structState(8).State = [0 -yaw 0];
+                        s.structState(8).State = [0 0 -yaw];
                 end
                 
                 % offset = [0 pi/2 pi/2 0 pi/2];

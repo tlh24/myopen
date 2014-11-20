@@ -5,7 +5,7 @@
     
     
     <!--Prefix to add to save data files -->
-    <userFilePrefix>JH_SD01_B_L_</userFilePrefix>
+    <userFilePrefix>APL_CNN_TH_L_</userFilePrefix>
 
     <!--ROC Table to be loaded and interpolated locally during MiniVIE Session-->
     <rocTable>GraspAndWholeArmRoc.xml</rocTable>
@@ -19,7 +19,11 @@
     Percept Port (L=25101 R=25001)
     Intent Port (L=9094 R=9095) -->
     <mplVulcanXIpAddress>127.0.0.1</mplVulcanXIpAddress>
-    <mplVulcanXCommandPort>9027</mplVulcanXCommandPort>
+    <mplVulcanXCommandPort>9024</mplVulcanXCommandPort>
+    <!--    <mplVulcanXIpAddress>127.0.0.1</mplVulcanXIpAddress> -->
+    <!--    <mplVulcanXCommandPort>9024</mplVulcanXCommandPort> -->
+    <!--    <mplVulcanXIpAddress>192.168.1.210</mplVulcanXIpAddress> -->
+    <!--    <mplVulcanXCommandPort>9027</mplVulcanXCommandPort> -->
     <mplVulcanXSensoryPort>25001</mplVulcanXSensoryPort>
     <mplVulcanXIntentPort>9095</mplVulcanXIntentPort>
     <mplVulcanXIntentPortLocal>58010</mplVulcanXIntentPortLocal>

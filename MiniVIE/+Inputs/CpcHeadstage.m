@@ -174,6 +174,7 @@ classdef CpcHeadstage < Inputs.SignalInput
 
             searchMethod = 1;
             if searchMethod == 1
+                bytePattern = [128 0 0];
                 idxStartBytes = find((dataStream == 128));
             else
                 % TODO: this could be a problem if msg id, length, or checksum
