@@ -828,9 +828,8 @@ PERCEPTID_THUMB_FTSN = 5;
 FTSN_PERCEPT_NUM_IDS = 5;
 
 
-clc
 b = uint8(b);
-data_bytes = typecast(b(1:4),'uint32')
+data_bytes = typecast(b(1:4),'uint32');
 data = b(5:end);
 
 
@@ -850,12 +849,12 @@ data = b(5:end);
             }
 %}
 percepts_config = false(1,8);
-for i = 1:Percepts_enable_config_id.PERCEPT_ENABLE_NUM_IDS
+for i = 1:PERCEPT_ENABLE_NUM_IDS
     percepts_config(i) = bitget(data(1),i);
 end
 
 ftsn_config = false(1,5);
-for i = 1:Ftsn_percept_id_type.FTSN_PERCEPT_NUM_IDS
+for i = 1:FTSN_PERCEPT_NUM_IDS
     ftsn_config(i) = bitget(data(2),i);
 end
 
@@ -879,7 +878,7 @@ if (percepts_config(PERCEPT_ENABLE_ACTUATED_PERCEPTS) == true)
     data_index = data_index + 70;
 end
 
-tlm.Percept(1)
+% tlm.Percept(1)
 
 if (percepts_config(PERCEPT_ENABLE_UNACTUATED_PERCEPTS) == true)
     for i = 0:UNACTUATED_PERCEPT_NUM_IDS-1
@@ -888,7 +887,7 @@ if (percepts_config(PERCEPT_ENABLE_UNACTUATED_PERCEPTS) == true)
     data_index = data_index + 16;
 end
 
-tlm.UnactuatedPercept(1)
+% tlm.UnactuatedPercept(1)
 
 
 for i = 0:FTSN_PERCEPT_NUM_IDS-1
@@ -931,7 +930,7 @@ for i = 0:FTSN_PERCEPT_NUM_IDS-1
     end
 end
 
-tlm.FtsnPercept(1)
+% tlm.FtsnPercept(1)
 
 
 

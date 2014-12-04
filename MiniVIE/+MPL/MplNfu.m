@@ -102,8 +102,6 @@ classdef MplNfu < Scenarios.OnlineRetrainer
             
             if ~isempty(tlm)
                 tlm = tlm{end};
-                                
-                %disp(convertedPercepts);
                 
                 % 9/14/2012 RSA verified that these delays between udp
                 % commands are necessary to avoid choppiness in the command

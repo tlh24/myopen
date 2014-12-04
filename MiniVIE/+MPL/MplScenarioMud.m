@@ -168,7 +168,6 @@ classdef MplScenarioMud < Scenarios.OnlineRetrainer
         function update(obj)
             
             try
-                
                 update@Scenarios.OnlineRetrainer(obj); % Call superclass update method
                 
                 if ~isempty(obj.SignalSource)
