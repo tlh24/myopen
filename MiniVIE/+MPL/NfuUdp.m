@@ -374,6 +374,7 @@ classdef (Sealed) NfuUdp < handle
             for i = 1:numReads
                 dataBytes = cellDataBytes{i};
                 len = length(dataBytes);
+
                 if (len == 406) || (len == 726)
                     % Store EMG Data
                     %
@@ -420,7 +421,7 @@ classdef (Sealed) NfuUdp < handle
                     obj.newData2(obj.ptr2) = true;
                     
                     % DEBUG display raw readout
-                    % disp(obj.UdpBuffer2{obj.ptr2});
+                    %disp(obj.UdpBuffer2{obj.ptr2});
                     
                     % advance ptr
                     obj.ptr2 = obj.ptr2 + 1;
@@ -455,22 +456,21 @@ classdef (Sealed) NfuUdp < handle
                     
                     % percepts
                     
-                    % TODO
-                    
-                    %b2 = dataBytes(727:end);  %percept bytes
+                    b2 = dataBytes(727:end);  %percept bytes
                     %obj.UdpBuffer2{obj.ptr2} = percept_bytes_to_signal(b2);
-                    %obj.newData2(obj.ptr2) = true;
+                    obj.UdpBuffer2{obj.ptr2} = decode_percept_msg(b2);
+                    obj.newData2(obj.ptr2) = true;
                     
                     % DEBUG display raw readout
                     % disp(obj.UdpBuffer2{obj.ptr2});
                     
                     % advance ptr
-                    %obj.ptr2 = obj.ptr2 + 1;
-                    %if obj.ptr2 > obj.BufferSize
-                    %    obj.ptr2 = 1;
-                    %end
+                    obj.ptr2 = obj.ptr2 + 1;
+                    if obj.ptr2 > obj.BufferSize
+                        obj.ptr2 = 1;
+                    end
                     
-                    %obj.sum2 = obj.sum2 + 1;
+                    obj.sum2 = obj.sum2 + 1;
                     
                     
                 elseif (len == 131) || (len == 143)
@@ -745,3 +745,308 @@ s = double(reshape(typecast(s16(:),'int16'),3,10));
 s(4,:) = sortedPercepts(7,:);
 
 end
+
+function tlm = decode_percept_msg(b)
+
+% tlm = 
+% 
+%                  Percept: [1x10 struct]
+%        UnactuatedPercept: [1x8 struct]
+%              FtsnPercept: [1x5 struct]
+%     ContactSensorPercept: [1x1 struct]
+    
+
+if nargin < 1
+b = [...
+    106    0    0    0  255  255    0  208  255    0  208  255    0    0    4    0   47  116    0    0    0    1    0   43 ...
+    224    1    0    0  209  255   51   80    0    0    0  248  255   45   52    0    0    0  255    0  208  255    0    0 ...
+    2    0   47  116    0    0    0  254  255   43  224    1    0    0  210  255   51   80    0    0    0  243  255   45 ...
+    52    0    0    0  255    0  208  255    0    0  252  255   47  116    0    0    0  253  255   43  224    1    0    0 ...
+    206  255   51   80    0    0    0  247  255   45   52    0    0    0    2    0   59   15    0    0    0    0    0   40 ...
+    247  255   72    1  255    7   49  254    0    0    0    0    0   49   82    1    0    0  225  255   45   58    0    0 ...
+    0    0    0   60    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 ...
+    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 ...
+    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0  160  122  131   67  186  166   34 ...
+    26  136   33  170  131  255    0  208  255    0    0  252  255   47  116    0    0    0  253  255   43  224    1    0 ...
+    0  207  255   51   80    0    0    0  247  255   45   52    0    0    0    4    0   59   15    0    0    0    1    0 ...
+    40  247  255   72    1  255    7   49  254    0    0    0    1    0   49   82    1    0    0  226  255   45   58    0 ...
+    0    0    0    0   60    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 ...
+    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 ...
+    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0  160  106  170   49  122  165 ...
+    41  234  134   27  250  131   67   90  165   24   58  136   33  202  131   67  218  164   24   26  136   25   26  132 ...
+    67  234  165   42   10  136   32  250  131   67  250  167   38   26  139   33   10  131  234  132    0    0    0    0 ...
+    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 ...
+    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 ...
+    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 ...
+    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 ...
+    0    0    0    0    0    0    0    0    0    0    0    0];
+end
+
+% mixing matlab indexing 1-based and enum count
+
+% Enable Flags
+PERCEPT_ENABLE_ACTUATED_PERCEPTS = 1;
+PERCEPT_ENABLE_UNACTUATED_PERCEPTS = 2;
+PERCEPT_ENABLE_INDEX_FTSN = 3;
+PERCEPT_ENABLE_MIDDLE_FTSN = 4;
+PERCEPT_ENABLE_RING_FTSN = 5;
+PERCEPT_ENABLE_LITTLE_FTSN = 6;
+PERCEPT_ENABLE_THUMB_FTSN = 7;
+PERCEPT_ENABLE_CONTACT = 8;
+PERCEPT_ENABLE_NUM_IDS = 8;
+
+% Actuated
+PERCEPTID_INDEX_AB_AD = 1;
+PERCEPTID_INDEX_MCP = 2;
+PERCEPTID_MIDDLE_MCP = 3;
+PERCEPTID_RING_MCP = 4;
+PERCEPTID_LITTLE_AB_AD = 5;
+PERCEPTID_LITTLE_MCP = 6;
+PERCEPTID_THUMB_CMC_AD_AB = 7;
+PERCEPTID_THUMB_CMC_FE = 8;
+PERCEPTID_THUMB_MCP = 9;
+PERCEPTID_THUMB_DIP = 10;
+PERCEPT_NUM_IDS = 10;
+
+% UnActuated
+PERCEPTID_INDEX_PIP = 1;
+PERCEPTID_INDEX_DIP = 2;
+PERCEPTID_MIDDLE_PIP = 3;
+PERCEPTID_MIDDLE_DIP = 4;
+PERCEPTID_RING_PIP = 5;
+PERCEPTID_RING_DIP = 6;
+PERCEPTID_LITTLE_PIP = 7;
+PERCEPTID_LITTLE_DIP = 8;
+UNACTUATED_PERCEPT_NUM_IDS = 8;
+
+%FTSN
+PERCEPTID_INDEX_FTSN = 1;
+PERCEPTID_MIDDLE_FTSN = 2;
+PERCEPTID_RING_FTSN = 3;
+PERCEPTID_LITTLE_FTSN = 4;
+PERCEPTID_THUMB_FTSN = 5;
+FTSN_PERCEPT_NUM_IDS = 5;
+
+
+clc
+b = uint8(b);
+data_bytes = typecast(b(1:4),'uint32')
+data = b(5:end);
+
+
+
+%{
+            Byte[] data = can_msg.data;
+
+            for (int i = 0; i < (int)Percepts_enable_config_id.PERCEPT_ENABLE_NUM_IDS; i++)
+            {
+                percepts_config[i] = (data[0] & (1 << i)) >= 1 ? true : false;
+            }
+ 
+            tlm.ftsn_config = data[1];
+            for (int i = 0; i < (int)Ftsn_percept_id_type.FTSN_PERCEPT_NUM_IDS; i++)
+            {
+                ftsn_config[i] = (data[1] & (1 << i)) >= 1 ? true : false;
+            }
+%}
+percepts_config = false(1,8);
+for i = 1:Percepts_enable_config_id.PERCEPT_ENABLE_NUM_IDS
+    percepts_config(i) = bitget(data(1),i);
+end
+
+ftsn_config = false(1,5);
+for i = 1:Ftsn_percept_id_type.FTSN_PERCEPT_NUM_IDS
+    ftsn_config(i) = bitget(data(2),i);
+end
+
+%index_size = data[0]
+index_size = data(1);
+
+data_index = 2;
+
+Percepts_enable_config_id.PERCEPT_ENABLE_ACTUATED_PERCEPTS = 1;
+
+ToInt16 = @(b,p) typecast( b(p+1:p+2) ,'Int16');
+
+if (percepts_config(PERCEPT_ENABLE_ACTUATED_PERCEPTS) == true)
+    for i = 0:PERCEPT_NUM_IDS-1
+        tlm.Percept(i+1).Position = ToInt16(data,data_index + i * 7);
+        tlm.Percept(i+1).Velocity = ToInt16(data,data_index + 2 + i * 7);
+        tlm.Percept(i+1).Torque = ToInt16(data,data_index + 4 + i * 7);
+        tlm.Percept(i+1).Temperature = data(1 + data_index + 6 + i * 7);
+        
+    end
+    data_index = data_index + 70;
+end
+
+tlm.Percept(1)
+
+if (percepts_config(PERCEPT_ENABLE_UNACTUATED_PERCEPTS) == true)
+    for i = 0:UNACTUATED_PERCEPT_NUM_IDS-1
+        tlm.UnactuatedPercept(i+1).Position = ToInt16(data, data_index + i * 2);
+    end
+    data_index = data_index + 16;
+end
+
+tlm.UnactuatedPercept(1)
+
+
+for i = 0:FTSN_PERCEPT_NUM_IDS-1
+    if (percepts_config(i+2) == true)
+        tlm.FtsnPercept(i+1).forceConfig = ftsn_config(i+1);
+        
+        %%                    // old style
+        if (ftsn_config(i+1) == false)
+            tlm.FtsnPercept(i+1).force_pressure = ToInt16(data, data_index);
+            data_index = data_index + 2;
+            tlm.FtsnPercept(i+1).force_shear = ToInt16(data, data_index);
+            data_index = data_index + 2;
+            tlm.FtsnPercept(i+1).force_axial = ToInt16(data, data_index);
+            data_index = data_index + 2;
+            
+            tlm.FtsnPercept(i+1).acceleration_x = data(data_index+1);
+            data_index = data_index + 1;
+            tlm.FtsnPercept(i+1).acceleration_y = data(data_index+1);
+            data_index = data_index + 1;
+            tlm.FtsnPercept(i+1).acceleration_z = data(data_index+1);
+            data_index = data_index + 1;
+            %% new sytle
+        else
+            
+            for j = 0:14-1
+                
+                tlm.FtsnPercept(i+1).force(j+1) = data(data_index+1);
+                data_index = data_index + 1;
+            end
+            
+            tlm.FtsnPercept(i+1).acceleration_x = data(data_index+1);
+            data_index = data_index + 1;
+            tlm.FtsnPercept(i+1).acceleration_y = data(data_index+1);
+            data_index = data_index + 1;
+            tlm.FtsnPercept(i+1).acceleration_z = data(data_index+1);
+            data_index = data_index + 1;
+            
+            
+        end
+    end
+end
+
+tlm.FtsnPercept(1)
+
+
+
+if (percepts_config(PERCEPT_ENABLE_CONTACT) == true)
+    contact_data = data(data_index+1:data_index+12);
+    
+    tlm.ContactSensorPercept.index_contact_sensor = contact_data(1);
+    tlm.ContactSensorPercept.middle_contact_sensor = contact_data(2);
+    tlm.ContactSensorPercept.ring_contact_sensor = contact_data(3);
+    tlm.ContactSensorPercept.little_contact_sensor = contact_data(4);
+    
+    tlm.ContactSensorPercept.index_abad_contact_sensor_1 = contact_data(5);
+    tlm.ContactSensorPercept.index_abad_contact_sensor_2 = contact_data(6);
+    
+    tlm.ContactSensorPercept.little_abad_contact_sensor_1 = contact_data(7);
+    tlm.ContactSensorPercept.little_abad_contact_sensor_2 = contact_data(8);
+    
+end
+
+end
+
+%{
+
+Example new percepts:
+
+b =
+
+  Columns 1 through 24
+
+  106    0    0    0  255  255    0  208  255    0  208  255    0    0    4    0   47  116    0    0    0    1    0   43
+
+  Columns 25 through 48
+
+  224    1    0    0  209  255   51   80    0    0    0  248  255   45   52    0    0    0  255    0  208  255    0    0
+
+  Columns 49 through 72
+
+    2    0   47  116    0    0    0  254  255   43  224    1    0    0  210  255   51   80    0    0    0  243  255   45
+
+  Columns 73 through 96
+
+   52    0    0    0  255    0  208  255    0    0  252  255   47  116    0    0    0  253  255   43  224    1    0    0
+
+  Columns 97 through 120
+
+  206  255   51   80    0    0    0  247  255   45   52    0    0    0    2    0   59   15    0    0    0    0    0   40
+
+  Columns 121 through 144
+
+  247  255   72    1  255    7   49  254    0    0    0    0    0   49   82    1    0    0  225  255   45   58    0    0
+
+  Columns 145 through 168
+
+    0    0    0   60    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0
+
+  Columns 169 through 192
+
+    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0
+
+  Columns 193 through 216
+
+    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0  160  122  131   67  186  166   34
+
+  Columns 217 through 240
+
+   26  136   33  170  131  255    0  208  255    0    0  252  255   47  116    0    0    0  253  255   43  224    1    0
+
+  Columns 241 through 264
+
+    0  207  255   51   80    0    0    0  247  255   45   52    0    0    0    4    0   59   15    0    0    0    1    0
+
+  Columns 265 through 288
+
+   40  247  255   72    1  255    7   49  254    0    0    0    1    0   49   82    1    0    0  226  255   45   58    0
+
+  Columns 289 through 312
+
+    0    0    0    0   60    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0
+
+  Columns 313 through 336
+
+    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0
+
+  Columns 337 through 360
+
+    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0  160  106  170   49  122  165
+
+  Columns 361 through 384
+
+   41  234  134   27  250  131   67   90  165   24   58  136   33  202  131   67  218  164   24   26  136   25   26  132
+
+  Columns 385 through 408
+
+   67  234  165   42   10  136   32  250  131   67  250  167   38   26  139   33   10  131  234  132    0    0    0    0
+
+  Columns 409 through 432
+
+    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0
+
+  Columns 433 through 456
+
+    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0
+
+  Columns 457 through 480
+
+    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0
+
+  Columns 481 through 504
+
+    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0
+
+  Columns 505 through 516
+
+    0    0    0    0    0    0    0    0    0    0    0    0
+
+
+%}
+

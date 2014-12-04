@@ -97,11 +97,12 @@ classdef MplNfu < Scenarios.OnlineRetrainer
             end
             
             obj.hNfu.update; %called by getData
-            convertedPercepts = obj.hNfu.get_buffer(2);
+            tlm = obj.hNfu.get_buffer(2);
             
-            if ~isempty(convertedPercepts)
-                convertedPercepts = convertedPercepts{end};
-                
+            
+            if ~isempty(tlm)
+                tlm = tlm{end};
+                                
                 %disp(convertedPercepts);
                 
                 % 9/14/2012 RSA verified that these delays between udp
@@ -113,41 +114,46 @@ classdef MplNfu < Scenarios.OnlineRetrainer
                 switch userMap
                     case 1 % JH_TH_01
                         pause(0.01)
-                        littleT = convertedPercepts(3,6);
+                        PERCEPTID_LITTLE_MCP = 6;
+                        littleT = tlm.Percept(PERCEPTID_LITTLE_MCP).Torque;
+                        %littleT = convertedPercepts(3,6);
                         obj.hTactors(1).SensorLowHigh = [40 60];
                         obj.hTactors(1).ActuatorLowHigh = [40 127];
                         obj.hTactors(1).update(littleT);
                         
                         pause(0.01)
-                        indexT = convertedPercepts(3,2);
+                        PERCEPTID_INDEX_MCP = 2;
+                        indexT = tlm.Percept(PERCEPTID_INDEX_MCP).Torque;
                         obj.hTactors(2).SensorLowHigh = [40 60];
                         obj.hTactors(2).ActuatorLowHigh = [40 127];
                         obj.hTactors(2).update(indexT);
+                        
                     case 2 % WR_TR_01
-                        drawnow
-                        middleT = convertedPercepts(3,3);
-                        obj.hTactors(1).update(middleT);
-                        drawnow
-                        indexT = convertedPercepts(3,2);
-                        obj.hTactors(2).update(indexT);
-                        obj.hTactors(2).SensorLowHigh(1) = 40;
-                        obj.hTactors(2).update(indexT);
-                        drawnow
-                        thumbT = convertedPercepts(3,8);
-                        obj.hTactors(3).SensorLowHigh(1) = 40;
-                        obj.hTactors(3).update(thumbT);
+                        %     drawnow
+                        %     middleT = tlm(3,3);
+                        %     obj.hTactors(1).update(middleT);
+                        %     drawnow
+                        %     indexT = tlm(3,2);
+                        %     obj.hTactors(2).update(indexT);
+                        %     obj.hTactors(2).SensorLowHigh(1) = 40;
+                        %     obj.hTactors(2).update(indexT);
+                        %     drawnow
+                        %     thumbT = tlm(3,8);
+                        %     obj.hTactors(3).SensorLowHigh(1) = 40;
+                        %     obj.hTactors(3).update(thumbT);
                     case 3 % JHMI TH03 Congen
+                        
+                        % Direct serial actuation (no socket integration)
                         if isempty(obj.hTactors)
                             return
                         else
                             hPort = obj.hTactors;
                         end
                         
-                        
                         adjustVal = @(x)max(min(round(x),30),0);
-                        indexT = adjustVal(convertedPercepts(3,2));
-                        middleT = adjustVal(convertedPercepts(3,3));
-                        thumbT = adjustVal(convertedPercepts(3,8));
+                        indexT = adjustVal(tlm(3,2));
+                        middleT = adjustVal(tlm(3,3));
+                        thumbT = adjustVal(tlm(3,8));
                         
                         % === Message 1: Vibration command =========================
                         % Byte 1: (101) % Begin vibration command
