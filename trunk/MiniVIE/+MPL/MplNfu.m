@@ -126,6 +126,8 @@ classdef MplNfu < Scenarios.OnlineRetrainer
                         obj.hTactors(2).ActuatorLowHigh = [40 127];
                         obj.hTactors(2).update(indexT);
                         
+                        %fprintf('Index MCP Torque: %f  Little MCP Torge: %f \n',indexT, littleT);
+                        
                     case 2 % WR_TR_01
                         %     drawnow
                         %     middleT = tlm(3,3);
