@@ -18,10 +18,13 @@
 #define i64 long long
 #define u32 unsigned int
 
+#define TS_SRATE_HZ	(24414.0625)
+//#define TS_SRATE_HZ	(48828.1250)
+
 using namespace std;
 using boost::format;
 
-TimeSync 	g_ts(24414.0625); // keeps track of ticks (TDT time)
+TimeSync 	g_ts(TS_SRATE_HZ); // keeps track of ticks (TDT time)
 
 bool g_die = false;
 bool g_running = false;
