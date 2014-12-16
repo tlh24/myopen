@@ -59,7 +59,7 @@ public:
 	int			m_ssdn;
 	int 			m_ticks;
 	int			m_dropped;
-	int 			m_frame; 
+	int 			m_frame;
 	//updated periodically to prevent precision issues.
 
 	GainController *slopeGC;
@@ -81,7 +81,7 @@ public:
 	void construct() {
 		m_offset = 0.0;
 		m_timeOffset = 0.0;
-		m_frame = 0; 
+		m_frame = 0;
 		slopeGC = new GainController(2e-5);
 		offsetGC = new GainController(1e-4);
 		// sizeof(*m_ssd) is safer than sizeof(struct syncSharedData)
@@ -95,7 +95,7 @@ public:
 		}
 		m_ssdn = 0;
 	}
-	void reset(){
+	void reset() {
 		m_frame = 0.0; //enables quick reset of m_offset.
 		m_slope = 24414.0625;
 	}
@@ -126,8 +126,8 @@ public:
 	void update(long double time, int ticks) {
 		long double pred = (time-m_timeOffset) * m_slope + m_offset;
 		m_update = ticks - pred;
-		if(m_frame < 100){
-			m_offset += m_update * 0.9; 
+		if (m_frame < 100) {
+			m_offset += m_update * 0.9;
 		} else {
 			m_offset += m_update * offsetGC->m_gain;
 			offsetGC->update(m_update);
@@ -152,7 +152,7 @@ public:
 			m_ssdn ^= 1;
 		}
 		m_ticks = ticks;
-		m_frame++; 
+		m_frame++;
 	}
 	double getTicks(long double time) { //estimated ticks, of course.
 		return (time - m_timeOffset) * m_slope + m_offset;
@@ -196,6 +196,9 @@ public:
 			g_startTime = m_ssd[n].startTime; //so the two programs are synced.
 			time = gettime();
 			ticks = (time - m_ssd[n].timeOffset) * m_ssd[n].slope + m_ssd[n].offset;
+		} else {
+			time = gettime();
+			ticks = 0; // not synced with TDT.
 		}
 	}
 	std::string getInfo() {
