@@ -15,11 +15,13 @@ CPPFLAGS := -Iinclude -I/usr/local/include -I../common_host
 CPPFLAGS += -Wall -Wcast-align -Wpointer-arith -Wshadow -Wsign-compare \
 -Wformat=2 -Wno-format-y2k -Wmissing-braces -Wparentheses -Wtrigraphs \
 -Wextra -pedantic -std=c++11 -Wno-int-to-pointer-cast #-mcmodel=medium
+CPPFLAGS += -march=native
 
 CFLAGS := -Iinclude -I/usr/local/include -I../common_host
 CFLAGS += -Wall -Wcast-align -Wpointer-arith -Wshadow -Wsign-compare \
 -Wformat=2 -Wno-format-y2k -Wmissing-braces -Wparentheses -Wtrigraphs \
 -Wextra -pedantic -std=c99
+CFLAGS += -march=native
 
 LDFLAGS := -lGL -lGLU -lpthread -lCg -lCgGL -lgsl -lcblas -latlas -lm \
 -lmatio -lhdf5 -lprotobuf -lPO8eStreaming #-mcmodel=medium
