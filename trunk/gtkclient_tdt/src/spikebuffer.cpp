@@ -32,12 +32,13 @@ bool SpikeBuffer::getSpike(double *tk, double *wf, int n, float threshold, int a
 		return false;
 	}
 
+	long r = m_r;	// atomic
 	long w = m_w;   // atomic
 
 	// as long as there is space in the buffer for a whole wf
-	while (m_r < (w-n)) {
+	while (r < (w-n)) {
 
-		long x = m_r + alignment;
+		long x = r + alignment;
 
 		float a = m_wf[(x  ) & SPIKE_MASK];
 		float b = m_wf[(x+1) & SPIKE_MASK];
@@ -46,13 +47,14 @@ bool SpikeBuffer::getSpike(double *tk, double *wf, int n, float threshold, int a
 		    || (threshold < 0 && (a >= threshold && b < threshold))) {
 
 			for (int i=0; i<n; i++) {
-				tk[i] = (double)m_tk[(m_r+i) & SPIKE_MASK];
-				wf[i] = (double)m_wf[(m_r+i) & SPIKE_MASK];
+				tk[i] = (double)m_tk[(r+i) & SPIKE_MASK];
+				wf[i] = (double)m_wf[(r+i) & SPIKE_MASK];
 			}
-			m_r++;	// atomic
+			r++;
+			m_r = r; // atomic
 			return true;
 		}
-		m_r++;	// atomic
+		r++; // atomic
 	}
 	return false;
 }
@@ -63,12 +65,13 @@ bool SpikeBuffer::getSpike(unsigned int *tk, float *wf, int n, float threshold, 
 		return false;
 	}
 
+	long r = m_r;	// atomic
 	long w = m_w;   // atomic
 
 	// as long as there is space in the buffer for a whole wf
-	while (m_r < (w-n)) {
+	while (r < (w-n)) {
 
-		long x = m_r + alignment;
+		long x = r + alignment;
 
 		float a = m_wf[(x  ) & SPIKE_MASK];
 		float b = m_wf[(x+1) & SPIKE_MASK];
@@ -77,13 +80,14 @@ bool SpikeBuffer::getSpike(unsigned int *tk, float *wf, int n, float threshold, 
 		    || (threshold < 0 && (a >= threshold && b < threshold))) {
 
 			for (int i=0; i<n; i++) {
-				tk[i] = m_tk[(m_r+i) & SPIKE_MASK];
-				wf[i] = m_wf[(m_r+i) & SPIKE_MASK];
+				tk[i] = m_tk[(r+i) & SPIKE_MASK];
+				wf[i] = m_wf[(r+i) & SPIKE_MASK];
 			}
-			m_r++;	// atomic
+			r++;
+			m_r = r; // atomic
 			return true;
 		}
-		m_r++;	// atomic
+		r++; // atomic
 	}
 	return false;
 }
