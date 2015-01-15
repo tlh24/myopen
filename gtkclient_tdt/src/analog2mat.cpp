@@ -18,6 +18,8 @@
 //#define _LARGEFILE_SOURCE enabled by default.
 #define _FILE_OFFSET_BITS 64
 
+#define MY_BUFFER	262144
+
 using namespace std;
 using namespace google::protobuf;
 using namespace gtkclient;
@@ -91,7 +93,7 @@ int main(int argn, char **argc)
 			        in.gcount(), (int) in.tellg());
 			exit(0);
 		}
-		if (sz > 131072) { // hardcoded for now xxx
+		if (sz > MY_BUFFER) { // hardcoded for now xxx
 			fprintf(stderr, "single packet too long for buffer: %u.\n", sz);
 			exit(0);
 		}
@@ -99,7 +101,7 @@ int main(int argn, char **argc)
 		// read protobuf packet
 		// max int32 is  2,147,483,647
 		// max uint32 is 4,294,967,295
-		char buf[131072]; // xxx
+		char buf[MY_BUFFER]; // xxx
 		in.read(buf, sz);
 		if (in.fail() || in.eof() || in.gcount() != sz) {
 			fprintf(stderr, "read protobuf packet failure\n");
