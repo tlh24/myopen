@@ -5,6 +5,8 @@
 
 #define SRATE_HZ	(24414.0625)
 #define SRATE_KHZ	(24.4140625)
+//#define SRATE_HZ	(48828.1250)
+//#define SRATE_KHZ	(48.8281250)
 #define NCHAN		96
 
 bool			g_die = false;
