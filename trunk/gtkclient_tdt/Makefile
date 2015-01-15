@@ -43,6 +43,7 @@ COM_HDR = include/channel.h include/wfwriter.h include/medfilt.h \
 ifeq ($(strip $(DBG)),true)
 	CPPFLAGS += -O0 -g -rdynamic -DDEBUG
 	CFLAGS   += -O0 -g -rdynamic -DDEBUG
+	JACK=false
 else
 	CPPFLAGS += -O3
 	CFLAGS   += -O3
