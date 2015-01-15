@@ -18,7 +18,7 @@ enum MODES {
 //#define SRATE_HZ	(48828.1250)
 //#define SRATE_KHZ	(48.8281250)
 
-#define NSAMP 		(64*1024) 	// about 2.6 seconds.
+#define NSAMP 		(64*1024) 	// about 2.6 seconds. (MUST BE POWER OF 2)
 #define NSAMPWF		256			// number of samples to track for spike sorting (MUST BE POWER OF 2!)
 #define NFBUF 		4 		  	// number of continuous channels to draw	
 #define NSBUF		1024 		// number of recent spikes to track
