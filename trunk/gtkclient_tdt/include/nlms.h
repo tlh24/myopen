@@ -21,6 +21,7 @@ public:
 
 	double train(gsl_vector *x, double d);
 	double filter(gsl_vector *x);
+	void clearWeights();
 };
 
 class ArtifactNLMS : public NLMS

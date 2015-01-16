@@ -62,6 +62,12 @@ double NLMS::filter(gsl_vector *x)
 	return dhat;
 }
 
+//
+void NLMS::clearWeights()
+{
+	gsl_vector_set_zero(w);
+}
+
 ArtifactNLMS::ArtifactNLMS(int _n, double _mu, int _ch, MatStor *ms)
 	: NLMS(_n, _mu)
 {
