@@ -3,5 +3,11 @@ package gtkclient;
 message Spike {
 	required double ts = 1; // timestamp
 	required uint64 tick = 2; // tdt tick
-	repeated float wf_sample = 3 [packed=true]; // spike waveform sample
+	required uint32 channel = 3; // the channel (1-indexed)
+	required uint32 unit = 4; // the unit (0 means unsorted)
+	repeated Spike_waveform wf = 5; // spike waveform
+}
+
+message Spike_waveform {
+	repeated float sample = 1 [packed=true]; // spike waveform sample
 }
