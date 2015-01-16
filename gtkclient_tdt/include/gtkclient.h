@@ -45,4 +45,12 @@ extern unsigned int 	g_nsamp; //given the current level of zoom (1 = 4096 sample
 extern bool 	g_die;
 extern int 		g_channel[4];
 //extern double	g_minISI;
+
+
+typedef struct PO8Data {
+	short *data;
+	size_t numSamples;
+} PO8Data;
+
+
 #endif
