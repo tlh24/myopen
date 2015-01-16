@@ -31,8 +31,8 @@ GTKFLAGS = `pkg-config --cflags $(GLIBS) `
 GTKLD = `pkg-config --libs $(GLIBS) `
 
 GOBJS = src/analog.pb.o src/icms.pb.o src/gtkclient.o src/gettime.o \
-src/glInfo.o src/matStor.o src/analogwriter.o src/icmswriter.o src/filter.o \
-src/buffer.o src/spikebuffer.o src/rls.o src/nlms.o src/threadpool.o
+src/glInfo.o src/matStor.o src/datawriter.o src/filter.o \
+src/spikebuffer.o src/rls.o src/nlms.o src/threadpool.o
 COM_HDR = include/channel.h include/wfwriter.h include/medfilt.h \
 ../common_host/vbo.h \
 ../common_host/cgVertexShader.h \
@@ -66,7 +66,7 @@ ifeq ($(strip $(STACKPROTECTOR)),true)
 	CFLAGS   += -fstack-protector-all
 endif
 
-all: gtkclient timesync spikes2mat icms2mat analog2mat analogdebug mmap_test po8e wf_plot   
+all: gtkclient timesync spikes2mat icms2mat analog2mat mmap_test po8e wf_plot   
 
 src/%.o: src/%.cpp $(COM_HDR)
 	$(CPP) -c $(CPPFLAGS) $(GTKFLAGS) $< -o $@
@@ -99,9 +99,6 @@ icms2mat: src/icms.pb.o src/icms2mat.o src/stimchan.o src/matStor.o
 analog2mat: src/analog.pb.o src/analog2mat.o src/analogchan.o src/matStor.o
 	$(CPP) -o $@ -lmatio -lhdf5 -lz -lprotobuf $^
 
-analogdebug: src/analog.pb.o src/analogdebug.o src/analogchan.o src/matStor.o
-	$(CPP) -o $@ -lmatio -lhdf5 -lz -lprotobuf $^
-
 mmap_test: src/mmap_test.o
 	$(CPP) -o $@ -lrt $^
 
@@ -112,7 +109,7 @@ wf_plot: src/wf_plot.o
 	$(CC) -o $@ -lSDL -lGL -lGLU -lglut -lpthread -lmatio -lhdf5 -lpng $^
 
 clean:
-	rm -rf gtkclient timesync spikes2mat icms2mat analog2mat analogdebug mmap_test po8e wf_plot \
+	rm -rf gtkclient timesync spikes2mat icms2mat analog2mat mmap_test po8e wf_plot \
 	src/*.pb.cc include/*.pb.h src/*.o 
 
 deps:
@@ -157,7 +154,6 @@ install:
 	install spikes2mat -t $(TARGET)
 	install icms2mat -t $(TARGET)
 	install analog2mat -t $(TARGET)
-	install analogdebug -t $(TARGET)
 	install -d $(TARGET)/cg
 	install cg/fade.cg -t $(TARGET)/cg
 	install cg/fadeColor.cg -t $(TARGET)/cg
