@@ -1,7 +1,7 @@
 package gtkclient;
 
 message Analog {
-	required uint32 chan = 1; // recording channel
+	required uint32 chan = 1; // recording channel (1-indexed)
 	repeated double ts = 2 [packed=true]; // timestamp
 	repeated uint64 tick = 3 [packed=true]; // tdt tick
 	repeated float sample = 4 [packed=true]; //  data sample
