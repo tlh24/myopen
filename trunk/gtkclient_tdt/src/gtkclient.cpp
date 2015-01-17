@@ -19,6 +19,7 @@
 #include <inttypes.h>
 #include <sys/time.h>
 #include <pthread.h>
+#include <sched.h>
 #include <netinet/in.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -80,7 +81,7 @@ cgVertexShader		*g_vsThreshold;
 using namespace std;
 using namespace moodycamel; // for lockfree queues
 
-threadpool_t *g_pool;
+//threadpool_t *g_pool;
 
 char	g_prefstr[256];
 
@@ -96,7 +97,7 @@ float	g_fbuf[NFBUF][NSAMP*3]; //continuous waveform. range [-1 .. 1]. For drawin
 i64		g_fbufW; //where to write to (always increment)
 i64		g_fbufR; //display thread reads from here - copies to mem
 
-ReaderWriterQueue<double *> g_filterbuf(NSAMP); // for nlms filtering
+ReaderWriterQueue<gsl_vector *> g_filterbuf(NSAMP); // for nlms filtering
 
 ReaderWriterQueue<PO8Data> g_databuffer(1024);
 
@@ -990,42 +991,40 @@ void destroyGUI(GtkWidget *, gpointer)
 }
 void *nlms_train_thread(void *)
 {
-	gsl_vector *xvec = gsl_vector_alloc(RECCHAN);
+	gsl_vector *xvec;
 	while (!g_die) {
 
-		double *d;
 		int succeeded;
 		do {
-			succeeded = g_filterbuf.try_dequeue(d);
+			succeeded = g_filterbuf.try_dequeue(xvec);
 			if (!succeeded)
 				usleep(1e3);
 		} while (!succeeded);
 
 		for (int ch=0; ch<RECCHAN; ch++) {
-			gsl_vector_set(xvec, ch, d[ch]);
-		}
-		for (int ch=0; ch<RECCHAN; ch++) {
+			double d = gsl_vector_get(xvec, ch);
 			gsl_vector_set(xvec, ch, 0.0);
-			g_nlms[ch]->train(xvec,d[ch]);
-			gsl_vector_set(xvec, ch, d[ch]);
+			g_nlms[ch]->train(xvec,d);
+			gsl_vector_set(xvec, ch, d);
 		}
-		free(d);
+		gsl_vector_free(xvec);
 		//printf("lms training\n");
 	}
-	gsl_vector_free(xvec);
+
 	return NULL;
 }
-void sorter_thread(void *arg)
+//void sorter_thread(void *arg)
+void sorter(int ch)
 {
-	int *pk = (int *)arg;
+	//int ch = (int *)arg;
 
 	float wf[NWFSAMP];
 	unsigned int tkall[NWFSAMP];
 
-	float threshold = g_c[*pk]->getThreshold(); // 1 -> 10mV.
-	int centering = (float)NWFSAMP - g_c[*pk]->getCentering();
+	float threshold = g_c[ch]->getThreshold(); // 1 -> 10mV.
+	int centering = (float)NWFSAMP - g_c[ch]->getCentering();
 
-	while (g_spikebuf[*pk].getSpike(tkall, wf, NWFSAMP, threshold, centering)) {
+	while (g_spikebuf[ch].getSpike(tkall, wf, NWFSAMP, threshold, centering)) {
 
 		unsigned int tk = tkall[0];	// start of waveform
 
@@ -1033,28 +1032,28 @@ void sorter_thread(void *arg)
 		for (int u=1; u>=0; u--) { // compare to template.
 			float sum = 0;
 			for (int j=0; j<NWFSAMPUP; j++) {
-				float r = wf[j] - g_c[*pk]->m_template[u][j];
+				float r = wf[j] - g_c[ch]->m_template[u][j];
 				sum += r*r;
 			}
 			sum /= NWFSAMPUP;
-			if (sum < g_c[*pk]->getAperture(u))
+			if (sum < g_c[ch]->getAperture(u))
 				unit = u+1;
 		}
 
 		// check if this exceeds minimum ISI.
 		// wftick is indexed to the start of the waveform.
-		if (tk - g_lastSpike[*pk][unit] > g_minISI*SRATE_KHZ) {
+		if (tk - g_lastSpike[ch][unit] > g_minISI*SRATE_KHZ) {
 			long double the_time = g_ts.getTime(tk);
 			//need to more precisely calulate spike time here.
-			g_c[*pk]->addWf(wf, unit, the_time, true);
-			g_c[*pk]->updateISI(unit, tk);
-			g_lastSpike[*pk][unit] = tk;
+			g_c[ch]->addWf(wf, unit, the_time, true);
+			g_c[ch]->updateISI(unit, tk);
+			g_lastSpike[ch][unit] = tk;
 			if (g_wfwriter.enabled()) {
 				if (unit > 0 || g_saveUnsorted) {
 					wfpak pak;
 					pak.time = the_time;
 					pak.ticks = tk;
-					pak.channel = *pk;
+					pak.channel = ch;
 					pak.unit = unit;
 					pak.len = NWFSAMP;
 					float gain2 = 2.f * 32767.f;
@@ -1066,14 +1065,14 @@ void sorter_thread(void *arg)
 			}
 			if (unit > 0 && unit <=2) { // for drawing
 				int uu = unit-1;
-				g_fr[*pk][uu].add(the_time);
+				g_fr[ch][uu].add(the_time);
 				i64 w = g_sbufW[uu] % (i64)(sizeof(g_sbuf[0])/8);
 				g_sbuf[uu][w*2+0] = (float)(the_time);
-				g_sbuf[uu][w*2+1] = (float)*pk;
+				g_sbuf[uu][w*2+1] = (float)ch;
 				g_sbufW[uu]++;
 			}
 		} else {
-			g_c[*pk]->m_isiViolations++;
+			g_c[ch]->m_isiViolations++;
 		}
 	}
 }
@@ -1109,6 +1108,16 @@ void *analogwrite_thread(void *)
 }
 void *po8_thread(void *)
 {
+	// operate on the currently running thread.
+	pthread_t this_thread = pthread_self();
+	// struct sched_param is used to store the scheduling priority
+	struct sched_param params;
+	// set the priority higher (SCHED_FIFO is first in first out real-time)
+	// this will set the priority to the lowest level for SCHED_FIFO
+	params.sched_priority = sched_get_priority_min(SCHED_FIFO);
+	// Attempt to set thread real-time priority to the SCHED_FIFO policy
+	pthread_setschedparam(this_thread, SCHED_FIFO, &params);
+
 	PO8e *card = NULL;
 	bool simulate = false;
 	int bufmax = 10000;	// 2^14 > 10000
@@ -1345,17 +1354,20 @@ void *worker_thread(void *)
 			// filter online here
 			if (g_icms_counter >= 0) {
 
+				if (g_trainArtifactNLMS || g_filterArtifactNLMS) {
+					for (int ch=0; ch<RECCHAN; ch++) {
+						gsl_vector_set(xvec, ch, (double)f[ch*ns+k]);
+					}
+				}
+
 				// populate the entire xvec (96 channels)
 				// we zero out the current (desired) element on the fly
 				// so it doesn't predict itself
-				// this is faster than copying the alternatives
+				// this is faster than the alternative
 				if (g_trainArtifactNLMS) {
-					double *o = (double *)malloc(RECCHAN*sizeof(double));
-					for (int ch=0; ch<RECCHAN; ch++) {
-						o[ch] = (double)f[ch*ns+k];
-						gsl_vector_set(xvec, ch, o[ch]);
-					}
-					g_filterbuf.enqueue(o); // free on the other thread
+					gsl_vector *yvec = gsl_vector_alloc(RECCHAN);
+					gsl_vector_memcpy (yvec, xvec);
+					g_filterbuf.enqueue(yvec); // free on the other thread
 				}
 
 				if (g_filterArtifactNLMS) {
@@ -1469,10 +1481,10 @@ void *worker_thread(void *)
 					if (ridx == -1)
 						break;
 
-					for (int ch=0; ch<RECCHAN; ch++) {
-						if (g_enableArtifactBlanking &&
-						    ridx >= g_artifactBlankingPreSamps &&
-						    ridx <  g_artifactBlankingPreSamps+g_artifactBlankingSamps) {
+					if (g_enableArtifactBlanking &&
+					    ridx >= g_artifactBlankingPreSamps &&
+					    ridx <  g_artifactBlankingPreSamps+g_artifactBlankingSamps) {
+						for (int ch=0; ch<RECCHAN; ch++) {
 							f[ch*ns+k] = 0.f;
 						}
 					}
@@ -1483,82 +1495,82 @@ void *worker_thread(void *)
 			}
 
 			// blank based on the stim clock (must happen last)
-			if (blank[k] && g_enableStimClockBlanking) {
+			if (g_enableStimClockBlanking && blank[k]) {
 				for (int ch=0; ch<RECCHAN; ch++) {
 					f[ch*ns+k] = 0.f;
 				}
 			}
 		}
 
-		// copy the data over to g_fbuf for display (broadband trace)
+		// copy data over to g_fbuf for display (broadband trace)
 		// input data is scaled from TDT so that 32767 = 10mV.
 		// send the data for one channel to jack
-		// package data for saving
-
-		for (int ch=0; ch<RECCHAN; ch++) {
-
+		for (int h=0; h<NFBUF; h++) {
+			int ch = g_channel[h];
 			float gain = g_c[ch]->getGain();
-
 			for (size_t k=0; k<ns; k++) {
-
-				for (int h=0; h<NFBUF; h++) {
-					if (g_channel[h] == ch) {
-						g_fbuf[h][((g_fbufW+k) % g_nsamp)*3 + 1] = f[ch*ns+k] * gain;
-						if (h==0) {
-							audio[k] = f[ch*ns+k] * gain;
-						}
-					}
+				float fg = f[ch*ns+k] * gain;
+				g_fbuf[h][((g_fbufW+k) % g_nsamp)*3 + 1] = fg;
+				if (h==0) {
+					audio[k] = fg;
 				}
+			}
+		}
+#ifdef JACK
+		jackAddSamples(audio, audio, ns);
+#endif
+		g_fbufW += ns;
+
+		// package data for sorting / saving
+		for (int ch=0; ch<RECCHAN; ch++) {
+			double m = g_c[ch]->m_mean;
+			for (size_t k=0; k<ns; k++) {
 
 				// 1 = +10mV; range = [-1 1] here.
 				g_spikebuf[ch].addSample(tk[k], f[ch*ns+k] * 0.5f);
 
 				//update the channel standard deviations, too.
-				double m = g_c[ch]->m_mean;
 				g_c[ch]->m_var *= 0.999998;
 				g_c[ch]->m_var += 0.000002*(f[ch*ns+k]-m)*(f[ch*ns+k]-m);
 				m *= 0.999997;
 				m += 0.000003 * f[ch*ns+k];
-				g_c[ch]->m_mean = m;
-
 			}
+			g_c[ch]->m_mean = m;
 		}
 
 		// write broadband signal to disk
 		if (g_analogwriter.enabled()) {
-			for (int ch=0; ch<RECCHAN; ch++) {
-				Analog *ac = new Analog; // deleted by other thread
-				ac->set_chan(ch+1);	// 1-indexed
-				for (size_t k=0; k<ns; k++) {
-					if (g_channel[0] == ch || g_whichAnalogSave == 1) {
+			Analog *ac;
+
+			ac = new Analog; // deleted by other thread
+			ac->set_chan(g_channel[0]+1);	// 1-indexed
+			for (size_t k=0; k<ns; k++) {
+				ac->add_sample(f[g_channel[0]*ns+k]); // no need to gain it
+				ac->add_tick(tk[k]);
+				ac->add_ts(g_ts.getTime(tk[k]));
+			}
+			g_analogwriter.add(ac);
+
+			if (g_whichAnalogSave == 1) {
+				for (int ch=0; ch<RECCHAN; ch++) {
+					if (ch == g_channel[0])
+						continue;
+					ac = new Analog; // deleted by other thread
+					ac->set_chan(ch+1);	// 1-indexed
+					for (size_t k=0; k<ns; k++) {
 						ac->add_sample(f[ch*ns+k]); // no need to gain it
 						ac->add_tick(tk[k]);
 						ac->add_ts(g_ts.getTime(tk[k]));
 					}
 				}
-				if (g_channel[0] == ch || g_whichAnalogSave == 1) {
-					g_analogwriter.add(ac);
-				}
+				g_analogwriter.add(ac);
 			}
 		}
 
-		/*
-					int kch[NCHAN];
-					// sort -- see if samples pass threshold. if so, copy.
-					kch[ch] = ch;
-					int res;
-					// try again if thread queue is full
-					do {
-						res = threadpool_add(g_pool, &sorter_thread, &(kch[ch]), 0);
-					} while (res != 0);
-		*/
-
-
-#ifdef JACK
-		jackAddSamples(audio, audio, ns);
-#endif
-
-		g_fbufW += ns;
+		// sort -- see if samples pass threshold. if so, copy.
+		for (int ch=0; ch<NCHAN; ch++) {
+			sorter(ch);
+		}
 
 		delete[] f;
 		delete[] tk;
@@ -2713,13 +2725,15 @@ int main(int argc, char **argv)
 
 	printf("artifact buffer: %d samples\n",ARTBUF);
 
-	int nthreads = 8;
-	int nqueue = 256;
+	/*
+	int nthreads = 1;
+	int nqueue = 96;
 	if ((g_pool = threadpool_create(nthreads, nqueue, 0)) == NULL) {
 		printf("could not create thread pool\n");
 		return 1;
 	}
 	printf("worker threads: %d\nqueue size: %d\n", nthreads, nqueue);
+	*/
 
 	pthread_t thread1;
 	pthread_attr_t attr;
@@ -2754,9 +2768,11 @@ int main(int argc, char **argv)
 	jackClose(0);
 #endif
 
+	/*
 	if (threadpool_destroy(g_pool, threadpool_graceful) != 0) {
 		printf("error on threadpool_destroy\n");
 	}
+	*/
 
 	//just in case.
 	closeSaveFiles(NULL, NULL);
