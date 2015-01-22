@@ -100,13 +100,13 @@ timesync: src/timeclient.o src/gettime.o
 	$(CPP) -o $@ -lpthread -lncurses -lPO8eStreaming $^
 
 spikes2mat: src/spikes2mat.o
-	$(CPP) -o $@ -lmatio $(HDF5LIB) -lz $^
+	$(CPP) -o $@ -lmatio $(HDFLIB) -lz $^
 
 icms2mat: src/icms.pb.o src/icms2mat.o src/stimchan.o src/matStor.o
-	$(CPP) -o $@ -lmatio $(HDF5LIB)  -lz -lprotobuf $^
+	$(CPP) -o $@ -lmatio $(HDFLIB)  -lz -lprotobuf $^
 
 analog2mat: src/analog.pb.o src/analog2mat.o src/analogchan.o src/matStor.o
-	$(CPP) -o $@ -lmatio $(HDF5LIB)  -lz -lprotobuf $^
+	$(CPP) -o $@ -lmatio $(HDFLIB)  -lz -lprotobuf $^
 
 mmap_test: src/mmap_test.o
 	$(CPP) -o $@ -lrt $^
@@ -115,7 +115,7 @@ po8e: src/po8e.o
 	$(CPP) -o $@ -lPO8eStreaming $^
 
 wf_plot: src/wf_plot.o
-	$(CC) -o $@ -lSDL -lGL -lGLU -lglut -lpthread -lmatio -lhdf5 -lpng $^
+	$(CC) -o $@ -lSDL -lGL -lGLU -lglut -lpthread -lmatio $(HDFLIB) -lpng $^
 
 clean:
 	rm -rf gtkclient timesync spikes2mat icms2mat analog2mat mmap_test po8e wf_plot \
