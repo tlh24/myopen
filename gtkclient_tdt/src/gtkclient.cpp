@@ -892,6 +892,7 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 		//now the vertex buffers.
 		glInfo glInfo;
 		glInfo.getInfo();
+		printf("OpenGL version: %s\n", glInfo.version.c_str());
 		//glInfo.printSelf();
 		if (glInfo.isExtensionSupported("GL_ARB_vertex_buffer_object"))
 			printf("Video card supports GL_ARB_vertex_buffer_object.\n");
