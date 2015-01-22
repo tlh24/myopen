@@ -23,8 +23,17 @@ CFLAGS += -Wall -Wcast-align -Wpointer-arith -Wshadow -Wsign-compare \
 -Wextra -pedantic -std=c99
 CFLAGS += -march=native
 
+ifeq ($(shell lsb_release -sc), wheezy)
+        HDFLIB = -lhdf5
+else
+        ifeq ($(shell lsb_release -sc), jessie)
+                HDFLIB = -lhdf5_serial
+        endif
+endif
+
+
 LDFLAGS := -lGL -lGLU -lpthread -lCg -lCgGL -lgsl -lcblas -latlas -lm \
--lmatio -lhdf5 -lprotobuf -lPO8eStreaming #-mcmodel=medium
+-lmatio $(HDFLIB) -lprotobuf -lPO8eStreaming #-mcmodel=medium
 
 GLIBS := gtk+-2.0 gtkglext-1.0 gtkglext-x11-1.0
 GTKFLAGS = `pkg-config --cflags $(GLIBS) `
@@ -91,13 +100,13 @@ timesync: src/timeclient.o src/gettime.o
 	$(CPP) -o $@ -lpthread -lncurses -lPO8eStreaming $^
 
 spikes2mat: src/spikes2mat.o
-	$(CPP) -o $@ -lmatio -lhdf5 -lz $^
+	$(CPP) -o $@ -lmatio $(HDF5LIB) -lz $^
 
 icms2mat: src/icms.pb.o src/icms2mat.o src/stimchan.o src/matStor.o
-	$(CPP) -o $@ -lmatio -lhdf5 -lz -lprotobuf $^
+	$(CPP) -o $@ -lmatio $(HDF5LIB)  -lz -lprotobuf $^
 
 analog2mat: src/analog.pb.o src/analog2mat.o src/analogchan.o src/matStor.o
-	$(CPP) -o $@ -lmatio -lhdf5 -lz -lprotobuf $^
+	$(CPP) -o $@ -lmatio $(HDF5LIB)  -lz -lprotobuf $^
 
 mmap_test: src/mmap_test.o
 	$(CPP) -o $@ -lrt $^
