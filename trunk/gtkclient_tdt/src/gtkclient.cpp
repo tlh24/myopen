@@ -197,6 +197,7 @@ GtkWidget *g_infoLabel;
 GtkWidget *g_channelSpin[4] = {0,0,0,0};
 GtkWidget *g_gainSpin[4] = {0,0,0,0};
 GtkWidget *g_apertureSpin[8] = {0,0,0,0};
+GtkWidget *g_enabledChkBx[4] = {0,0,0,0};
 GtkWidget *g_spikeFileSizeLabel;
 GtkWidget *g_icmsFileSizeLabel;
 GtkWidget *g_analogFileSizeLabel;
@@ -1570,7 +1571,9 @@ void *worker_thread(void *)
 
 		// sort -- see if samples pass threshold. if so, copy.
 		for (int ch=0; ch<NCHAN; ch++) {
-			sorter(ch);
+			if (g_c[ch]->getEnabled()) {
+				sorter(ch);
+			}
 		}
 
 		delete[] f;
@@ -1671,6 +1674,8 @@ void updateChannelUI(int k)
 	gtk_spin_button_set_value(GTK_SPIN_BUTTON(g_gainSpin[k]), g_c[ch]->getGain());
 	gtk_spin_button_set_value(GTK_SPIN_BUTTON(g_apertureSpin[k*2+0]), g_c[ch]->getApertureUv(0));
 	gtk_spin_button_set_value(GTK_SPIN_BUTTON(g_apertureSpin[k*2+1]), g_c[ch]->getApertureUv(1));
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(g_enabledChkBx[k]), g_c[ch]->getEnabled());
+
 	g_uiRecursion--;
 }
 static void channelSpinCB(GtkWidget *spinner, gpointer p)
@@ -1808,6 +1813,13 @@ static void basic_checkbox_cb(GtkWidget *button, gpointer p)
 	     true :
 	     false;
 }
+static void channelEnabledCB(GtkWidget *button, gpointer p)
+{
+	int x = (int)((long long)p & 0xf);
+	bool b = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button));
+	g_c[g_channel[x]]->setEnabled(b);
+}
+
 static void basic_spinfloat_cb(GtkWidget *spinner, gpointer p)
 {
 	float *f = (float *)p;
@@ -1947,6 +1959,16 @@ static void mk_checkbox(const char *label, GtkWidget *container,
 	g_signal_connect (button, "toggled", G_CALLBACK (cb), checkstate);
 	gtk_box_pack_start (GTK_BOX(container), button, TRUE, TRUE, 0);
 	gtk_widget_show(button);
+}
+static GtkWidget *mk_checkbox2(const char *label, GtkWidget *container,
+                               bool initial_state, GtkCallback cb, gpointer data)
+{
+	GtkWidget *button = gtk_check_button_new_with_label(label);
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), initial_state);
+	g_signal_connect (button, "toggled", G_CALLBACK (cb), data);
+	gtk_box_pack_start (GTK_BOX(container), button, TRUE, TRUE, 0);
+	gtk_widget_show(button);
+	return button;
 }
 static void mk_button(const char *label, GtkWidget *container,
                       GtkCallback cb, gpointer data)
@@ -2321,10 +2343,15 @@ int main(int argc, char **argv)
 		                           g_c[g_channel[i]]->getGain(),
 		                           -128.0, 128.0, 0.1,
 		                           gainSpinCB, GINT_TO_POINTER(i));
+
+		bx3 = gtk_hbox_new (FALSE, 1);
+		g_enabledChkBx[i] = mk_checkbox2("enabled", bx3, g_c[g_channel[i]]->getEnabled(),
+		                                 channelEnabledCB, GINT_TO_POINTER(i));
 		if (i==0) {
-			mk_checkbox("auto offset of B,C,D", bx2,
+			mk_checkbox("offset B,C,D", bx3,
 			            &g_autoChOffset, basic_checkbox_cb);
 		}
+		gtk_box_pack_start (GTK_BOX (bx2), bx3, FALSE, FALSE, 0);
 	}
 	//notebook region!
 	g_notebook = gtk_notebook_new();

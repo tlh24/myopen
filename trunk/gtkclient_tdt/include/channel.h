@@ -43,6 +43,7 @@ public:
 	i64 	m_isi[NSORT][100]; 	//counts of the isi, in units of ms.
 	i64		m_isiViolations;
 	i64		m_lastSpike[NSORT]; //zero when a spike occurs. in samples.
+	bool	m_enabled;
 
 	Channel(int ch, MatStor *ms) {
 		m_wfVbo = new Vbo(6, NWFVBO, NWFSAMPUP+2); // sorted units, with color.
@@ -54,6 +55,7 @@ public:
 		m_ch = ch;
 		m_var = 0.0;
 		m_mean = 0.0;
+		m_enabled = true;
 		//init PCA, template.
 		for (int j=0; j<NWFSAMPUP; j++) {
 			for (int k=0; k<NSORT; k++) {
@@ -79,6 +81,7 @@ public:
 			m_threshold = ms->getValue(ch, "threshold", 0.6f);
 			m_centering = ms->getValue(ch, "centering", NWFSAMPUP/2.f);
 			m_gain = ms->getValue(ch, "gain", 1.f);
+			m_enabled = (bool)ms->getValue(ch, "enabled", 1.f);
 		}
 		//init m_wfVbo.
 		for (int i=0; i<NWFVBO; i++) {
@@ -143,6 +146,7 @@ public:
 		ms->setValue(m_ch, "centering", m_centering);
 		//ms->setValue(m_ch, "agc", m_agc);
 		ms->setValue(m_ch, "gain", m_gain);
+		ms->setValue(m_ch, "enabled", m_enabled);
 		m_pcaVbo->save(m_ch, ms);
 	}
 	int addWf(float *wf, int unit, float time, bool updatePCA) {
@@ -320,6 +324,12 @@ public:
 	float getGain() {
 		return m_gain;
 	}
+	void setEnabled(bool enabled) {
+		m_enabled = enabled;
+	}
+	bool getEnabled() {
+		return m_enabled;
+	}
 	void draw(int drawmode, float time, float *cursPos,
 	          bool showPca, bool closest, bool sortMode, bool showWFVgrid) {
 		float ox = m_loc[0];
@@ -327,6 +337,7 @@ public:
 		float ow = m_loc[2]/2;
 		float oh = m_loc[3];
 		//draw the distribution in the background
+
 		if (g_showWFstd) {
 			//glColor4f(0.2f,0.f,1.f,0.4f);
 			glColor4ub(8,48,107,150);
@@ -347,6 +358,7 @@ public:
 			}
 			glEnd();
 		}
+
 		glColor4f(0.5f, 0.5f, 0.5f, 0.5f);
 		//draw only the spikes in spike mode.
 		m_usVbo->draw(drawmode, time, true);
@@ -513,6 +525,17 @@ public:
 				glEnd();
 			}
 		}
+
+		if (!m_enabled) {
+			glColor4ub(203,24,29,64);
+			glBegin(GL_TRIANGLE_STRIP);
+			glVertex2f(ox   , oy   );
+			glVertex2f(ox+ow, oy   );
+			glVertex2f(ox,    oy+oh);
+			glVertex2f(ox+ow, oy+oh);
+			glEnd();
+		}
+
 		//finally, the channel. upper left hand corner.
 		glColor4f(1.f, 1.f, 1.f, 0.5);
 		glRasterPos2f(ox, oy + oh - 14.f*2.f/g_viewportSize[1]); // 14 pixels vertical offset.
