@@ -52,11 +52,11 @@ classdef MiniVDisplayScenario < Scenarios.OnlineRetrainer
             axis([0 0.4 -0.4 0.4 0.3 0.7])
             
             % Zoom to hand
-%             if obj.isLeftSide
-%                 axis(obj.hAxes,[0.15 0.25 -0.1 0.1 0.35 0.45]);
-%             else
-%                 axis(obj.hAxes,[-0.25 -0.15 -0.1 0.1 0.35 0.45]);
-%             end
+            if obj.isLeftSide
+                axis(obj.hAxes,[0.15 0.25 -0.1 0.1 0.35 0.45]);
+            else
+                axis(obj.hAxes,[-0.25 -0.15 -0.1 0.1 0.35 0.45]);
+            end
             %rotate3d(obj.hAxes,'on');
             
             % Hand and Forearm

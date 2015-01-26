@@ -338,17 +338,17 @@ classdef CytonSerial < handle
             % Example Usage:
             %
             %   % Send position command to a single servo
-            %   CytonI.encode_lynxterm_cmd(0,1500);
+            %   CytonSerial.encode_lynxterm_cmd(0,1500);
             %
             %   % Send position command to a group of servos
-            %   CytonI.encode_lynxterm_cmd([0 3],[1500 1300]);
+            %   CytonSerial.encode_lynxterm_cmd([0 3],[1500 1300]);
             %
             %   % Send position and velocity commands to a group of servos
-            %   CytonI.encode_lynxterm_cmd([5 10],[1600 750],[500 600]);
+            %   CytonSerial.encode_lynxterm_cmd([5 10],[1600 750],[500 600]);
             %
             %   % Send position commands to a group of servos with a
             %   % single velocity
-            %   CytonI.encode_lynxterm_cmd([5 10],[1600 750],500);
+            %   CytonSerial.encode_lynxterm_cmd([5 10],[1600 750],500);
             
             % check if velocity provided
             isVelocityProvided = (nargin >= 3);
