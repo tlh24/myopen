@@ -58,7 +58,7 @@ classdef MiniVIE < Common.MiniVieObj
             setupFigure(obj);
             
             % Set valid input options
-            set(obj.hg.popups(MiniVIE.INPUT),'String',{'None','Signal Simulator','EMG Simulator','DaqHwDevice','CpchSerial','NfuInput','UdpDevice','IntanDevBoard'});
+            set(obj.hg.popups(MiniVIE.INPUT),'String',{'None','Signal Simulator','EMG Simulator','DaqHwDevice','CpchSerial','NfuInput','UdpDevice','IntanDevBoard','OpenBCI','ThalmicLabs MyoUdp'});
             set(obj.hg.popups(MiniVIE.INPUT),'Value',1);
             set(obj.hg.popups(MiniVIE.SA),'String',{'None','LDA Classifier','DiscriminantAnalysis','SupportVectorMachine'});
             set(obj.hg.popups(MiniVIE.SA),'Value',1);
@@ -384,6 +384,10 @@ classdef MiniVIE < Common.MiniVieObj
                         Fs = h.SampleFrequency;
                         %h.addfilter(Inputs.HighPass(10,8,Fs));
                         h.addfilter(Inputs.LowPass(400,8,Fs));
+                    case 'OpenBCI'
+                        h = Inputs.OpenBciChipKit('COM3');
+                    case 'ThalmicLabs MyoUdp'
+                        h = Inputs.MyoUdp.getInstance();
                     otherwise
                         % None
                         h = [];
@@ -409,9 +413,9 @@ classdef MiniVIE < Common.MiniVieObj
                     % Parameters
                     % Ref Hargove 2014 comparison of real-time controlability
                     Fs = h.SampleFrequency;                     % 1000 Hz
-                    h.addfilter(Inputs.HighPass(20,3,Fs));      % 20Hz 3rd order butter
-                    h.addfilter(Inputs.MinLimitFilter(0.2));    % min limit
-                    h.addfilter(Inputs.ConstraintFilter(-5,5)); % range limit
+%                     h.addfilter(Inputs.HighPass(20,3,Fs));      % 20Hz 3rd order butter
+%                     h.addfilter(Inputs.MinLimitFilter(0.2));    % min limit
+%                     h.addfilter(Inputs.ConstraintFilter(-5,5)); % range limit
                     
                     % EMG 250 ms @ 20Hz
                     
