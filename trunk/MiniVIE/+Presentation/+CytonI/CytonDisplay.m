@@ -75,7 +75,7 @@ classdef CytonDisplay < hgsetget
                 set(obj.hg.Figure,'CloseRequestFcn',@(src,evt)close(obj));
                 %set(obj.hg.Figure,'MenuBar','figure');
                 set(obj.hg.Figure,'ToolBar','figure');
-                
+                set(obj.hg.Figure,'Resize','on');
                 hParentAxes = axes('Parent',obj.hg.Figure);
                 
             end
