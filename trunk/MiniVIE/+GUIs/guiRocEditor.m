@@ -87,8 +87,7 @@ classdef guiRocEditor < handle
             end
             
             % Set Roc Names Listbox after creating the ROC Tables
-            T=struct2table(obj.structRoc);
-            set(obj.hRocNames,'String',T.name)
+            set(obj.hRocNames,'String',{obj.structRoc.name})
             
             % Set the data sink for the appropriate device
             if obj.IsNfu
