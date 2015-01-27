@@ -111,18 +111,19 @@ classdef PnetClass < handle
                 maxReads = 500;
             end
 
-            % initialize return arguments
+            % initialize return arguments and allocate space for unknown
+            % number of packets
             cellDataBytes = cell(1,maxReads);
             numReads = 0;
-            
 
+            % Check socket status
             if ~isequal(pnet(obj.hSocket,'status'),6)
                 fprintf(['[%s] pnet socket is disconnected but not closed. '...
                     'Not ready to getData() on port %d \n'],mfilename,obj.localPort);
                 return
             end
-
             
+            % Loop through reads until all packets are read or timeout
             len = 1;
             while (len > 0) && (numReads < maxReads)
                 try
@@ -144,7 +145,12 @@ classdef PnetClass < handle
                     end
                 end
             end
-            %drawnow;
+            
+            % Trim remaining empty cells
+            if numReads < maxReads
+                cellDataBytes(numReads+1:end) = [];
+            end
+            
         end %getAllData        
         function putData(obj,dataBytes,destinationHostname,destinationPortNumber)
             % putData(obj,dataBytes)

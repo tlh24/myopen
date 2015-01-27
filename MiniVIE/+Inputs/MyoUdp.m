@@ -1,6 +1,6 @@
 classdef MyoUdp < Inputs.SignalInput
     % Class for interfacing Thalmic Labs Myo Cuff via pnet udp.
-    %     
+    %
     %     % Test usage:
     %     obj = Inputs.MyoUdp.getInstance;
     %     obj.initialize();
@@ -10,19 +10,13 @@ classdef MyoUdp < Inputs.SignalInput
     end
     properties (SetAccess = private)
         IsInitialized = 0;
-        UdpStreamReceiveSocket = [];
-        BufferSize = 100;
-        UdpBuffer1
-        newData1
-        ptr1
-        sum1
+        UdpStreamReceiveSocket;
+        Buffer
         numPacketsReceived = 0;
-        dataBuffer
+        numValidPackets = 0;
     end
     methods (Access = private)
         function obj = MyoUdp
-            % Creator is private to force singleton
-            reset_buffers(obj);
         end
     end
     methods
@@ -52,8 +46,9 @@ classdef MyoUdp < Inputs.SignalInput
             elseif (obj.UdpStreamReceiveSocket.hSocket ~= 0)
                 fprintf(2,'[%s] Expected receive socket id == 0, got socket id == %d\n',mfilename,obj.UdpStreamReceiveSocket.hSocket);
             end
-
-            obj.dataBuffer = zeros(obj.NumChannels,5000);
+            
+            % data is [numSamples x numChannels]
+            obj.Buffer = Common.DataBuffer(5000,obj.NumChannels);
             
             obj.IsInitialized = true;
             
@@ -61,44 +56,80 @@ classdef MyoUdp < Inputs.SignalInput
         function data = getData(obj,numSamples)
             % This function will always return the correct size for data
             % (based on the number of samples) however results will be
-            % padded with zeros. 
+            % padded with zeros.
+            %
+            % data is [numSamples x numChannels]
             
             if nargin < 2
                 numSamples = obj.NumSamples;
-            end                
-            
-            obj.update();  % read available packets
-            
-            cellData = obj.get_buffer(1);
-            if isempty(cellData)
-                %fprintf('[%s] %s No Data\n',mfilename, datestr(now));
-            end
-
-            
-            % Loop through all available packets and find cpch data
-            for i = 1:length(cellData)
-
-                convertedFrame = cellData{i};
-                
-                convertedFrame = convertedFrame(obj.ChannelIds)';
-                
-                convertedFrame = repmat(convertedFrame,[1 5]);
-                
-                % Place new data in the buffer.  Note this won't overrun
-                % the buffer since there are only 10 samples per packet
-                [numChannels, numNewSamples] = size(convertedFrame);
-                obj.dataBuffer = circshift(obj.dataBuffer,[0 -numNewSamples]);
-                
-                obj.dataBuffer(1:numChannels,end-numNewSamples+1:end) = convertedFrame;
             end
             
-            dataBuff = obj.dataBuffer(:,end-numSamples+1:end)';
+            obj.update();
             
-            EMG_GAIN = 0.01;  %TODO abstract
-            data = EMG_GAIN .* double(dataBuff);
+            data = obj.Buffer.getData(numSamples);
             
         end
-
+        function update(obj)
+            
+            % Update function reads any buffered udp packets and stores
+            % them for later use.
+            [cellDataBytes, numReads] = obj.UdpStreamReceiveSocket.getAllData(1e6);
+            
+            packetSize = 12;
+            isCorrectSize = cellfun(@length,cellDataBytes) == packetSize;
+            nValidPackets = sum(isCorrectSize);
+            
+            % update totals
+            obj.numPacketsReceived = obj.numPacketsReceived + numReads;
+            obj.numValidPackets = obj.numValidPackets + nValidPackets;
+            
+            % convert 2 2d array: [newPackets by numElements]
+            M = reshape([cellDataBytes{isCorrectSize}],packetSize,[]);
+            
+            % convert uchar to int8 to double
+            b = double(M);
+            b(b>127) = b(b>127) - 255;
+            
+            if isempty(b) && sum(~isCorrectSize) > 0
+                fprintf('[%s] Unexpected Packet Size Received\n',mfilename);
+            end
+            
+            % perform upsample
+            upsampleFactor = 5;
+            
+            % repeat samples
+            %e = repmat(b,[5 1]);
+            %f = reshape(e(:),size(b,1),[]);
+            %convertedFrame = f(obj.ChannelIds,:);
+            
+            %interp sampled
+            if nValidPackets > 1
+                g = interp1(b',linspace(1,nValidPackets,nValidPackets*upsampleFactor-upsampleFactor+1));
+            else
+                % can't interpolate
+                g = repmat(b,[1 5])';
+                %disp('Cannot Interpolate')
+            end
+            
+            EMG_GAIN = 0.01;  %TODO abstract
+            
+            obj.Buffer.addData(EMG_GAIN .* g(:,obj.ChannelIds));
+            return
+            
+            % Add however many new samples we received to the rolling
+            % buffer
+            
+            % Place new data in the buffer.  Note this won't overrun
+            % the buffer since there are only 10 samples per packet
+            [numNewSamples, numChannels] = size(convertedFrame);
+            obj.dataBuffer = circshift(obj.dataBuffer,[0 -numNewSamples]);
+            
+            obj.dataBuffer(1:numChannels,end-numNewSamples+1:end) = convertedFrame;
+            dataBuff = obj.dataBuffer(:,end-numSamples+1:end)';
+            
+            
+        end
+        
         function isReady = isReady(obj,numSamples) % Consider removing extra arg
             isReady = 1;
         end
@@ -109,82 +140,6 @@ classdef MyoUdp < Inputs.SignalInput
         function close(obj)
         end
         
-        function reset_buffers(obj)
-            obj.BufferSize = 100;
-            
-            obj.UdpBuffer1 = cell(obj.BufferSize,1);
-            
-            obj.newData1 = false(obj.BufferSize,1);
-            
-            obj.ptr1 = 1;
-            
-            obj.sum1 = 0;
-            
-        end
-        
-        function cellData = get_buffer(obj,id)
-            % read unread buffer data and return array of cells
-            
-            switch id
-                case 1
-                    %fprintf('[%s] reading %d unread data packets\n',mfilename,sum(obj.newData1));
-                    
-                    idOfInterest = obj.ptr1:(obj.ptr1+obj.BufferSize-1);
-                    idOfInterest = idOfInterest(:) & obj.newData1(:);
-                    
-                    % wrap indices eg: 99 100 1 2 3
-                    idOfInterest(idOfInterest > obj.BufferSize) = idOfInterest(idOfInterest > obj.BufferSize) - obj.BufferSize;
-                    
-                    % return buffer
-                    % 05Feb2013: Verified signal packet ordering is correct
-                    % using the nfuSimulator
-                    cellData = obj.UdpBuffer1(idOfInterest);
-                    
-                    % mark all as read
-                    obj.newData1(:) = false;
-            end
-            
-        end
-        function update(obj)
-            % Update function reads any buffered udp packets and stores
-            % them for later use.  Packets are routed based on size to the
-            % appropriate buffer
-            
-            [cellDataBytes, numReads] = obj.UdpStreamReceiveSocket.getAllData();
-            
-            %check how far back we read to get caught up with stream
-            % if numReads > 20
-            %     numReads
-            % end
-            for i = 1:numReads
-                dataBytes = cellDataBytes{i};
-                len = length(dataBytes);
-                if (len == 12)
-                    % Store EMG Data
-                    %
-                    % advance packet counter
-                    obj.numPacketsReceived = obj.numPacketsReceived + 1;
-                    
-                    % read data and mark as new
-                    b = double(dataBytes);
-                    b(b>127) = b(b>127) - 255;
-                    
-                    obj.UdpBuffer1{obj.ptr1} = b;
-                    obj.newData1(obj.ptr1) = true;
-                    
-                    % advance ptr
-                    obj.ptr1 = obj.ptr1 + 1;
-                    if obj.ptr1 > obj.BufferSize
-                        obj.ptr1 = 1;
-                    end
-                    
-                    obj.sum1 = obj.sum1 + 1;
-                elseif len > 0
-                    %len
-                    fprintf('[%s] Unexpected Packet Size: %d bytes\n',mfilename,len);
-                end
-            end
-        end
     end
     methods (Static)
         function [obj, hViewer] = Default
@@ -193,6 +148,24 @@ classdef MyoUdp < Inputs.SignalInput
             obj = Inputs.MyoUdp.getInstance;
             obj.initialize();
             hViewer = GUIs.guiSignalViewer(obj);
+        end
+        function Simulator
+            % Demo the compact version of pnet wrapped into a class.  This can be run
+            % across two matlab session ir within it's own session
+            pnet('closeall')
+            
+            %% Setup Sender (Session 2)
+            hUdpHostSend = PnetClass(4096,10001,'127.0.0.1');
+            [success, msg] = hUdpHostSend.initialize()
+            
+            %% Send (Session 2)
+            i = 1;
+            while StartStopForm
+                i = mod(i+1,255);
+                %hUdpHostSend.putData(char(rand(1,12)*255));
+                hUdpHostSend.putData(char(i*ones(1,12)));
+                pause(eps)
+            end
         end
         function singleObj = getInstance(cmd)
             persistent localObj

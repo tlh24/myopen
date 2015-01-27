@@ -26,7 +26,7 @@ classdef SignalInput < Common.MiniVieObj
     end
     methods (Abstract)
         initialize(obj);
-        data = getData(obj,numSamples);
+        data = getData(obj,numSamples);    % Get raw data.  [numSamples x numChannels]
         isReady = isReady(obj,numSamples); % Consider removing extra arg
         start(obj);
         stop(obj);
