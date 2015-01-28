@@ -26,6 +26,9 @@ classdef guiSignalViewer < Common.MiniVieObj
         NumFrequencySamples = 400;
         
         OffsetTimeDomain = 1.5;
+
+        % Use this to specify the window size that features are computed over
+        FeatureWindowSize = 150;
         
         hg
         hTimer
@@ -83,8 +86,7 @@ classdef guiSignalViewer < Common.MiniVieObj
             
             obj.resetTimePlot();
             
-            numSamplesToDisplay = 200;
-            obj.featureBuffer = NaN(obj.SignalSource.NumChannels,obj.numFeatures,numSamplesToDisplay);
+            obj.resetFeatureBuffer();
             
             obj.updateFigure();
             fprintf('OK\n');
@@ -96,6 +98,11 @@ classdef guiSignalViewer < Common.MiniVieObj
             start(obj.hTimer);
             
             
+        end
+        function resetFeatureBuffer(obj)
+            numSamplesToDisplay = obj.NumFeatureSamples;
+            obj.featureBuffer = NaN(obj.SignalSource.NumChannels,obj.numFeatures,numSamplesToDisplay);
+
         end
         function updateChannels(obj)
             obj.SelectedChannels = obj.hChannelSelect.SelectedChannels;
@@ -228,6 +235,11 @@ classdef guiSignalViewer < Common.MiniVieObj
                         set(obj.hg.MeasureLines,'Visible','off');
                         set(obj.hg.DataLabels,'Visible','off');
 
+                        xlim(obj.hg.Axes(1),[0 obj.NumFeatureSamples]);
+                        xlim(obj.hg.Axes(2),[0 obj.NumFeatureSamples]);
+                        xlim(obj.hg.Axes(3),[0 obj.NumFeatureSamples]);
+                        xlim(obj.hg.Axes(4),[0 obj.NumFeatureSamples]);
+                        
                         obj.updateFeatures();
                     case GUIs.guiSignalViewerState.TimeDomain
                         setAxesVisible(obj.hg.Axes(1),'on');
@@ -241,6 +253,8 @@ classdef guiSignalViewer < Common.MiniVieObj
                         set(obj.hg.MeasureLines,'Visible','on');
                         set(obj.hg.DataLabels,'Visible','on');
 
+                        xlim(obj.hg.Axes(1),[0 obj.NumTimeDomainSamples]);
+
                         obj.updateTimeDomain();
                     case GUIs.guiSignalViewerState.FFT
                         setAxesVisible(obj.hg.Axes(1),'on');
@@ -250,6 +264,8 @@ classdef guiSignalViewer < Common.MiniVieObj
                         ylabel(obj.hg.Axes(1),'|Y(f)|');
                         ylim(obj.hg.Axes(1),[0 1]);
                         %axis(obj.hg.Axes(1),'auto');
+
+                        xlim(obj.hg.Axes(1),[0 obj.NumFrequencySamples]);
 
                         set(obj.hg.MeasureLines,'Visible','off');
                         set(obj.hg.DataLabels,'Visible','off');
@@ -357,12 +373,8 @@ classdef guiSignalViewer < Common.MiniVieObj
                 return;
             end
             
-            windowSize = numSamples;
-            %                 zc_thresh = 0.1;
-            %                 ssc_thresh = 0.1;
-            
             % [numChannels numFeatures]
-            features = feature_extract(channelData',windowSize);
+            features = feature_extract(channelData',obj.FeatureWindowSize);
             
             % [numChannels numFeatures 200]
             obj.featureBuffer = circshift(obj.featureBuffer,[0 0 1]);
