@@ -83,10 +83,13 @@ end
 
 Fs = 1000;
 
-normMAV = MAV(:)./(windowSize./Fs);
+% MAV shouldn't be normalized
+%normMAV = MAV(:)./(windowSize./Fs);
+normMAV = MAV(:);
 normLEN = LEN(:)./(windowSize./Fs);
 normZC = ZC(:)./(windowSize./Fs);
 normSSC = SSC(:)./(windowSize./Fs);
+
 normVAR = VAR(:)./(windowSize./Fs);
 
 normVAR = min(normVAR,50);

@@ -358,6 +358,11 @@ classdef MiniVIE < Common.MiniVieObj
                         %h.addfilter(Inputs.Notch([60 120],4,8,Fs));
                         %h.addfilter(Inputs.HighPass(15,3,Fs));
                         %h.addfilter(Inputs.LowPass(400,8,Fs));
+                        
+                        % Always need the highpass for the 1.2 V offset
+                        Fs = h.SampleFrequency;
+                        h.addfilter(Inputs.HighPass(20,3,Fs));
+                        
                     case 'EMG Simulator'
                         [FileName,PathName,FilterIndex] = uigetfile('emgPatternData.mat');
                         if FilterIndex == 0
@@ -368,6 +373,8 @@ classdef MiniVIE < Common.MiniVieObj
                         end
                         
                         h = Inputs.EmgSimulator(fname);
+                        
+                        
                     case 'DaqHwDevice'
                         %h = Inputs.DaqHwDevice('nidaq','Dev2');
                         %h = Inputs.DaqHwDevice('mcc','0');
