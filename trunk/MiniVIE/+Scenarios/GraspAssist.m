@@ -720,9 +720,9 @@ if ~ischar(strIn) || isempty(strIn) || (length(strIn) > 8)
 end
 
 if nargin < 2
-    canAddress = '028C901A';
+    canAddress = '028C901A';    %NGC DCEEF CAN ADDRESS AS SHIPPED
     canAddress = '1FE53018';
-    canAddress = '1FFFFFFF';
+    canAddress = '1FFFFFFF';    % QNA OLD GRIPPER (ARDUINO NANO)
 end
 
 hexVals = dec2hex(uint8(strIn));
