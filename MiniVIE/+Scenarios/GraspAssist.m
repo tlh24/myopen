@@ -704,7 +704,7 @@ if strcmpi(s.Status,'closed')
 end
 end
 
-function canOut = string2Can(strIn)
+function canOut = string2Can(strIn, canAddress)
 % Convert a text string into CAN compatible message.
 % Format is:
 % T [Extended CAN Addressing Mode]
@@ -719,9 +719,11 @@ if ~ischar(strIn) || isempty(strIn) || (length(strIn) > 8)
     error('Expected a string with 1-8 characters\n');
 end
 
-canAddress = '028C901A';
-canAddress = '1FE53018';
-canAddress = '1FFFFFFF';
+if nargin < 2
+    canAddress = '028C901A';
+    canAddress = '1FE53018';
+    canAddress = '1FFFFFFF';
+end
 
 hexVals = dec2hex(uint8(strIn));
 canOut = sprintf('T%8s%d%s\n',canAddress,size(hexVals,1),hexVals');
