@@ -1032,6 +1032,7 @@ classdef MiniVIE < Common.MiniVieObj
             pathName = fileparts(which('MiniVIE'));
             addpath(pathName);
             addpath([pathName filesep 'Utilities']);
+            addpath(fullfile(pathName,'GUIDE_GUIs'));
         end
         function obj = Default(dataFile)
             if nargin < 1

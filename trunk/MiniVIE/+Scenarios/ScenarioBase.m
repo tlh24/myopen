@@ -347,6 +347,13 @@ classdef ScenarioBase < Common.MiniVieObj
                     s.setVelocity(s.RocStateId,+prSpeed);
                 case {'No Movement','Rest'}
                     s.setVelocity(s.RocStateId,0);
+                    
+                    % Auto-open
+                    if obj.AutoOpenSpeed > 0
+                        %desiredGraspVelocity = -obj.AutoOpenSpeed;
+                        s.setVelocity(s.RocStateId,-obj.AutoOpenSpeed);
+                    end
+                    
                 otherwise
                     %s.setVelocity(s.RocStateId,0);
                     if isGraspClass
