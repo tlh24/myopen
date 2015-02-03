@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <sys/time.h>
+#include <unistd.h>
+#include <proc/readproc.h>
 #include <pthread.h>
 #include <boost/format.hpp>
 #include <deque>
@@ -9,7 +11,6 @@
 #include <iostream>
 #include <ncurses.h>
 
-#include "lockfile.h"
 #include "PO8e.h"
 #include "gettime.h"
 #include "mmaphelp.h"
@@ -183,9 +184,18 @@ int main()
 
 	g_startTime = gettime();
 
-	lockfile lf = lockfile("/tmp/timesync.lock");
-	if (lf.lock()) {
-		return 1;
+	pid_t mypid = getpid();
+
+	PROCTAB *pr = openproc(PROC_FILLSTAT);
+	proc_t pr_info;
+	memset(&pr_info, 0, sizeof(pr_info));
+	while (readproc(pr, &pr_info) != NULL) {
+		if ((!strcmp(pr_info.cmd, "gtkclient")   ||
+		     !strcmp(pr_info.cmd, "timesync")) &&
+		    pr_info.tgid != mypid) {
+			printf("already running with pid: %d\n", pr_info.tgid);
+			return 1;
+		}
 	}
 
 	pthread_t thread1;
@@ -212,7 +222,6 @@ int main()
 		}
 		usleep(50000); // 20Hz update.
 	}
-	lf.unlock();
 
 	return 0;
 }
