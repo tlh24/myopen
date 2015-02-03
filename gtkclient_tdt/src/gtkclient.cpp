@@ -16,6 +16,8 @@
 
 #include <stdio.h>
 #include <sys/types.h>
+#include <unistd.h>
+#include <proc/readproc.h>
 #include <inttypes.h>
 #include <sys/time.h>
 #include <pthread.h>
@@ -45,7 +47,6 @@
 #include "threadpool.h"
 #include "PO8e.h"
 
-#include "lockfile.h"
 #include "gettime.h"
 #include "cgVertexShader.h"
 #include "vbo.h"
@@ -1347,9 +1348,9 @@ void *worker_thread(void *)
 		// big loop through samples
 		for (size_t k=0; k<ns; k++) {
 
-			//if (stim[k] != 0) {
 			g_icms_counter = 0;
-			// printf("icms pulse %d\n", tmp);
+			//if (stim[k] != 0) {
+			//	printf("icms pulse %d\n", stim[k]);
 			//}
 
 			// fill artifact filtering buffers (for other thread)
@@ -2204,9 +2205,18 @@ int main(int argc, char **argv)
 
 	(void) signal(SIGINT, destroy);
 
-	lockfile lf = lockfile("/tmp/gtkclient.lock");
-	if (lf.lock()) {
-		return 1;
+	pid_t mypid = getpid();
+
+	PROCTAB *pr = openproc(PROC_FILLSTAT);
+	proc_t pr_info;
+	memset(&pr_info, 0, sizeof(pr_info));
+	while (readproc(pr, &pr_info) != NULL) {
+		if ((!strcmp(pr_info.cmd, "gtkclient")   ||
+		     !strcmp(pr_info.cmd, "timesync")) &&
+		    pr_info.tgid != mypid) {
+			printf("already running with pid: %d\n", pr_info.tgid);
+			return 1;
+		}
 	}
 
 	string titlestr = "gtkclient (TDT) v1.7";
@@ -2751,7 +2761,10 @@ int main(int argc, char **argv)
 	asciiart += "\033[0m";
 	printf("%s\n\n",asciiart.c_str());
 
+	printf("sampling rate: %f kHz\n", SRATE_KHZ);
+
 	printf("artifact buffer: %d samples\n",ARTBUF);
+
 
 	/*
 	int nthreads = 1;
@@ -2804,8 +2817,6 @@ int main(int argc, char **argv)
 
 	//just in case.
 	closeSaveFiles(NULL, NULL);
-
-	lf.unlock();
 
 	KillFont();
 	// Optional:  Delete all global objects allocated by libprotobuf.

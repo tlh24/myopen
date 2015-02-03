@@ -35,9 +35,9 @@ endif
 LDFLAGS := -lGL -lGLU -lpthread -lCg -lCgGL -lgsl -lcblas -latlas -lm \
 -lmatio $(HDFLIB) -lprotobuf -lPO8eStreaming #-mcmodel=medium
 
-GLIBS := gtk+-2.0 gtkglext-1.0 gtkglext-x11-1.0
-GTKFLAGS = `pkg-config --cflags $(GLIBS) `
-GTKLD = `pkg-config --libs $(GLIBS) `
+GLIBS := gtk+-2.0 gtkglext-1.0 gtkglext-x11-1.0 libprocps
+CPPFLAGS += $(shell pkg-config --cflags $(GLIBS))
+LDFLAGS += $(shell pkg-config --libs $(GLIBS))
 
 GOBJS = src/analog.pb.o src/icms.pb.o src/gtkclient.o src/gettime.o \
 src/glInfo.o src/matStor.o src/datawriter.o src/filter.o \
@@ -78,10 +78,10 @@ endif
 all: gtkclient timesync spikes2mat icms2mat analog2mat mmap_test po8e wf_plot   
 
 src/%.o: src/%.cpp $(COM_HDR)
-	$(CPP) -c $(CPPFLAGS) $(GTKFLAGS) $< -o $@
+	$(CPP) -c $(CPPFLAGS) $< -o $@
 
 src/%.o: ../common_host/%.cpp $(COM_HDR)
-	$(CPP) -c $(CPPFLAGS) $(GTKFLAGS) $< -o $@
+	$(CPP) -c $(CPPFLAGS) $< -o $@
 
 src/%.pb.cc src/%.pb.h: proto/%.proto
 	protoc -I$(<D) --cpp_out=src $<
@@ -94,19 +94,19 @@ src/wf_plot.o: src/wf_plot.c
 	$(CC) -c $(CFLAGS) $< -o $@
 
 gtkclient: $(GOBJS)
-	$(CPP) -o $@ $(GTKLD) $(LDFLAGS) $^
+	$(CPP) -o $@ $(LDFLAGS) $^
 
 timesync: src/timeclient.o src/gettime.o
-	$(CPP) -o $@ -lpthread -lncurses -lPO8eStreaming $^
+	$(CPP) -o $@ $(LDFLAGS) $^
 
 spikes2mat: src/spikes2mat.o
 	$(CPP) -o $@ -lmatio $(HDFLIB) -lz $^
 
 icms2mat: src/icms.pb.o src/icms2mat.o src/stimchan.o src/matStor.o
-	$(CPP) -o $@ -lmatio $(HDFLIB)  -lz -lprotobuf $^
+	$(CPP) -o $@ -lmatio $(HDFLIB) -lz -lprotobuf $^
 
 analog2mat: src/analog.pb.o src/analog2mat.o src/analogchan.o src/matStor.o
-	$(CPP) -o $@ -lmatio $(HDFLIB)  -lz -lprotobuf $^
+	$(CPP) -o $@ -lmatio $(HDFLIB) -lz -lprotobuf $^
 
 mmap_test: src/mmap_test.o
 	$(CPP) -o $@ -lrt $^
@@ -128,7 +128,8 @@ deps:
 	python-jsonpickle python-opengl libboost1.49-all-dev pkg-config \
 	libhdf5-dev libsdl1.2-dev astyle \
 	libprotobuf-dev libprotobuf7 protobuf-compiler \
-	libncurses5-dev cppcheck
+	cppcheck libprocps0-dev
+	#libncurses5-dev 
 
 	@echo ""
 	@echo "make sure non-free is in /etc/apt/sources.list for nvidia-cg-toolkit."
