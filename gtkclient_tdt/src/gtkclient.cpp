@@ -38,6 +38,7 @@
 #include <map>
 #include <string>
 #include <iostream>
+#include <iomanip>
 #include <atomic>
 
 #include <libgen.h>
@@ -136,7 +137,8 @@ MedFilt5 g_medfilt5[NCHAN];
 int g_whichAnalogSave = 0;
 
 bool g_die = false;
-double g_pause = -1.0;
+double g_pause_time = -1.0;
+gboolean g_pause = false;
 gboolean g_cycle = false;
 gboolean g_showPca = false;
 gboolean g_autoChOffset = false;
@@ -533,7 +535,7 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 		g_assert_not_reached ();
 
 	//copy over any new data.
-	if (g_pause <= 0.0) {
+	if (!g_pause) {
 		if (g_fbufR < g_fbufW) {
 			i64 w = g_fbufW; //atomic
 			i64 sta = g_fbufR % g_nsamp;
@@ -586,8 +588,7 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 		glEnd();
 	}
 
-	float time = (float)gettime();
-	if (g_pause > 0.0) time = g_pause;
+	float time = g_pause ? g_pause_time : (float)gettime();
 
 	if (g_mode == MODE_RASTERS) {
 		g_vsThreshold->setParam(2,"xzoom",1.f/g_nsamp);
@@ -1718,95 +1719,6 @@ static void gainSpinCB(GtkWidget *spinner, gpointer p)
 		g_c[g_channel[x]]->resetPca();
 	}
 }
-static void gainSetAll(GtkWidget *, gpointer)
-{
-	float gain = gtk_spin_button_get_value(GTK_SPIN_BUTTON(g_gainSpin[0]));
-	for (int i=0; i<NCHAN; i++) {
-		g_c[i]->setGain(gain);
-		g_c[i]->resetPca();
-	}
-	for (int i=0; i<4; i++)
-		gtk_spin_button_set_value(GTK_SPIN_BUTTON(g_gainSpin[i]), gain);
-}
-static void apertureSpinCB(GtkWidget *spinner, gpointer p)
-{
-	int h = (int)((long long)p & 0xf);
-	if (h >= 0 && h < 8 && !g_uiRecursion) {
-		float a = gtk_spin_button_get_value(GTK_SPIN_BUTTON(spinner));
-		int j = g_channel[h/2];
-		//gtk likes to call this frequently -- only update when
-		//the value has actually changed.
-		if (g_c[j]->getApertureUv(h%2) != a) {
-			if (a >= 0 && a < 2000) {
-				g_c[j]->setApertureUv(h%2, a);
-				//setAperture(j);
-			}
-			//printf("apertureSpinCB: %f ch %d\n", a, j);
-		}
-	}
-}
-static void apertureOffCB(GtkWidget *, gpointer p)
-{
-	int h = (int)((long long)p & 0xf);
-	if (h >= 0 && h < 8 && !g_uiRecursion) {
-		int j = g_channel[h/2];
-		gtk_spin_button_set_value(GTK_SPIN_BUTTON(g_apertureSpin[h]), 0);
-		g_c[j]->setApertureLocal(h%2, 0);
-		//setAperture(j);
-	}
-}
-static void autoThresholdCB(GtkWidget *, gpointer p)
-{
-	int h = (int)((long long)p & 0xf);
-	if (h == 1)
-		g_c[g_channel[0]]->autoThreshold(g_autoThreshold);
-	if (h == 2) {
-		for (int i=0; i<NCHAN; i++) {
-			g_c[i]->autoThreshold(g_autoThreshold);
-		}
-	}
-}
-static void medianFilterRadioCB(GtkWidget *button, gpointer p)
-{
-	if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))) {
-		g_whichMedianFilter = (int)((long long)p & 0xf);
-	}
-}
-static void drawRadioCB(GtkWidget *button, gpointer p)
-{
-	if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))) {
-		g_drawmodep = (int)((long long)p & 0xf);
-	}
-}
-static void blendRadioCB(GtkWidget *button, gpointer p)
-{
-	if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))) {
-		g_blendmodep = (int)((long long)p & 0xf);
-	}
-}
-static void analogSaveRadioCB(GtkWidget *button, gpointer p)
-{
-	if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))) {
-		g_whichAnalogSave = (int)((long long)p & 0xf);
-	}
-}
-static void pauseButtonCB(GtkWidget *button, gpointer * )
-{
-	if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button)))
-		g_pause = gettime();
-	else
-		g_pause = -1.0;
-}
-static void cycleButtonCB(GtkWidget *button, gpointer p)
-{
-	gboolean *b = (gboolean *)p;
-	if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button))) {
-		*b = true;
-		g_timeout_add(3000, chanscan, (gpointer)0);
-	} else {
-		*b = false;
-	}
-}
 static void basic_checkbox_cb(GtkWidget *button, gpointer p)
 {
 	gboolean *b = (gboolean *)p;
@@ -1814,13 +1726,6 @@ static void basic_checkbox_cb(GtkWidget *button, gpointer p)
 	     true :
 	     false;
 }
-static void channelEnabledCB(GtkWidget *button, gpointer p)
-{
-	int x = (int)((long long)p & 0xf);
-	bool b = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(button));
-	g_c[g_channel[x]]->setEnabled(b);
-}
-
 static void basic_spinfloat_cb(GtkWidget *spinner, gpointer p)
 {
 	float *f = (float *)p;
@@ -1830,47 +1735,6 @@ static void basic_spinint_cb(GtkWidget *spinner, gpointer p)
 {
 	int *x = (int *)p;
 	*x = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spinner));
-}
-static void clearNLMSWeightsCB(GtkWidget *, gpointer)
-{
-	for (int i=0; i<NCHAN; i++) {
-		g_nlms[i]->clearWeights();
-	}
-}
-static void clearArtifactTemplAllCB(GtkWidget *, gpointer)
-{
-	for (int i=0; i<STIMCHAN; i++)
-		g_artifact[i]->clearArtifacts();
-}
-static void clearArtifactTemplCB(GtkWidget *, gpointer)
-{
-	g_artifact[g_stimChanDisp]->clearArtifacts();
-}
-static void artifactBlankingSampsCB(GtkWidget *spinner, gpointer)
-{
-	int x = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spinner));
-	g_artifactBlankingSamps = (x + g_artifactBlankingPreSamps > ARTBUF) ?
-	                          ARTBUF - g_artifactBlankingPreSamps :
-	                          x;
-	gtk_spin_button_set_value(GTK_SPIN_BUTTON(spinner), g_artifactBlankingSamps);
-}
-static void artifactBlankingPreSampsCB(GtkWidget *spinner, gpointer)
-{
-	int x = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spinner));
-	g_artifactBlankingPreSamps = (x + g_artifactBlankingSamps > ARTBUF) ?
-	                             ARTBUF - g_artifactBlankingSamps :
-	                             x;
-	gtk_spin_button_set_value(GTK_SPIN_BUTTON(spinner), g_artifactBlankingPreSamps);
-}
-static void zoomSpinCB(GtkWidget *spinner, gpointer)
-{
-	float f = (float) gtk_spin_button_get_value(GTK_SPIN_BUTTON(spinner)); //should be in seconds.
-	g_zoomSpan = f;
-	g_nsamp = f * SRATE_HZ;
-	//make it multiples of 128.
-	g_nsamp &= (0xffffffff ^ 127);
-	g_nsamp = g_nsamp > NSAMP ? NSAMP : g_nsamp;
-	g_nsamp = g_nsamp < 512 ? 512 : g_nsamp;
 }
 static void notebookPageChangedCB(GtkWidget *,
                                   gpointer, int page, gpointer)
@@ -1971,38 +1835,41 @@ static GtkWidget *mk_checkbox2(const char *label, GtkWidget *container,
 	gtk_widget_show(button);
 	return button;
 }
-static void mk_button(const char *label, GtkWidget *container,
-                      GtkCallback cb, gpointer data)
+static GtkWidget *mk_button(const char *label, GtkWidget *container,
+                            GtkCallback cb, gpointer data)
 {
 	GtkWidget *button = gtk_button_new_with_label(label);
 	g_signal_connect(button, "clicked", G_CALLBACK(cb), data);
 	gtk_box_pack_start(GTK_BOX(container), button, FALSE, FALSE, 1);
+	return button;
 }
-static void openSaveSpikesFile(GtkWidget *, gpointer parent_window)
+auto get_cwd = []()
 {
-	char buf[256];
-	string d;
-	if (getcwd(buf, sizeof(buf)))
-		d = buf;
-	else
-		d.assign("");
-
-	stringstream s;
+	char buf[512];
+	return ( getcwd(buf, sizeof(buf)) ? string(buf) : string("") );
+};
+auto mk_legal_filename = [](string basedir, string prefix, string ext)
+{
 	string f;
-	string fn;
 	int count = 0;
 	int res = -1;
-
 	do {
+		stringstream s;
 		count++;
 		s.str("");
-		s << "spikes_" << count << ".dat";
+		s << prefix << setfill('0') << setw(2) << count << ext;
 		f = s.str();
 		s.str("");
-		s << d << "/" << f;
-		fn = s.str();
+		s << basedir << "/" << f;
+		string fn = s.str();
 		res = access(fn.c_str(), F_OK);
 	} while (!res);	// returns zero on success
+	return f;
+};
+static void openSaveSpikesFile(GtkWidget *, gpointer parent_window)
+{
+	string d = get_cwd();
+	string f = mk_legal_filename(d, "spikes_", ".dat");
 
 	GtkWidget *dialog;
 	dialog = gtk_file_chooser_dialog_new ("Save Spikes File",
@@ -2025,29 +1892,8 @@ static void openSaveSpikesFile(GtkWidget *, gpointer parent_window)
 }
 static void openSaveICMSFile(GtkWidget *, gpointer parent_window)
 {
-	char buf[256];
-	string d;
-	if (getcwd(buf, sizeof(buf)))
-		d = buf;
-	else
-		d.assign("");
-
-	stringstream s;
-	string f;
-	string fn;
-	int count = 0;
-	int res = -1;
-
-	do {
-		count++;
-		s.str("");
-		s << "icms_" << count << ".pbd";
-		f = s.str();
-		s.str("");
-		s << d << "/" << f;
-		fn = s.str();
-		res = access(fn.c_str(), F_OK);
-	} while (!res);	// returns zero on success
+	string d = get_cwd();
+	string f = mk_legal_filename(d, "icms_", ".pbd");
 
 	GtkWidget *dialog;
 	dialog = gtk_file_chooser_dialog_new ("Save ICMS File",
@@ -2070,28 +1916,8 @@ static void openSaveICMSFile(GtkWidget *, gpointer parent_window)
 }
 static void openSaveAnalogFile(GtkWidget *, gpointer parent_window)
 {
-	char buf[256];
-	string d;
-	if (getcwd(buf, sizeof(buf)))
-		d = buf;
-	else
-		d.assign("");
-
-	stringstream s;
-	string f, fn;
-	int count = 0;
-	int res = -1;
-
-	do {
-		count++;
-		s.str("");
-		s << "analog_" << count << ".pbd";
-		f = s.str();
-		s.str("");
-		s << d << "/" << f;
-		fn = s.str();
-		res = access(fn.c_str(), F_OK);
-	} while (!res);	// returns zero on success
+	string d = get_cwd();
+	string f = mk_legal_filename(d, "analog_", ".pbd");
 
 	GtkWidget *dialog;
 	dialog = gtk_file_chooser_dialog_new ("Save Analog File",
@@ -2112,25 +1938,6 @@ static void openSaveAnalogFile(GtkWidget *, gpointer parent_window)
 	}
 	gtk_widget_destroy (dialog);
 }
-static void closeSaveSpikeFile(GtkWidget *, gpointer)
-{
-	g_wfwriter.close();
-}
-static void closeSaveICMSFile(GtkWidget *, gpointer)
-{
-	g_icmswriter.close();
-}
-static void closeSaveAnalogFile(GtkWidget *, gpointer)
-{
-	g_analogwriter.close();
-}
-static void closeSaveFiles(GtkWidget *, gpointer)
-{
-	// TODO: signal to the other thread, let them close it.
-	g_wfwriter.close();
-	g_icmswriter.close();
-	g_analogwriter.close();
-}
 /*
 void saveMatrix(const char *fname, gsl_matrix *v)
 {
@@ -2146,11 +1953,6 @@ void saveMatrix(const char *fname, gsl_matrix *v)
 	fclose(fid);
 }
 */
-static void calcPCACB(GtkWidget *, gpointer)
-{
-	for (int h=0; h<4; h++)
-		g_c[g_channel[h]]->computePca();
-}
 static void getTemplateCB(GtkWidget *, gpointer p)
 {
 	int aB = (int)((long long)p & 0x1);
@@ -2232,7 +2034,6 @@ int main(int argc, char **argv)
 	GtkWidget *box1, *bx, *v1, *label;
 	GtkWidget *paned;
 	GtkWidget *frame;
-	GtkWidget *button;
 
 	string s;
 
@@ -2356,7 +2157,12 @@ int main(int argc, char **argv)
 
 		bx3 = gtk_hbox_new (FALSE, 1);
 		g_enabledChkBx[i] = mk_checkbox2("enabled", bx3, g_c[g_channel[i]]->getEnabled(),
-		                                 channelEnabledCB, GINT_TO_POINTER(i));
+		[](GtkWidget *_button, gpointer _p) {
+			int x = (int)((long long)_p & 0xf);
+			bool b = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(_button));
+			g_c[g_channel[x]]->setEnabled(b);
+		}, GINT_TO_POINTER(i));
+
 		if (i==0) {
 			mk_checkbox("offset B,C,D", bx3,
 			            &g_autoChOffset, basic_checkbox_cb);
@@ -2379,16 +2185,34 @@ int main(int argc, char **argv)
 	box1 = gtk_vbox_new(FALSE, 2);
 
 	//add a gain set-all button.
-	mk_button("Set all gains from A", box1, gainSetAll, NULL);
+	mk_button("Set all gains from A", box1,
+	[](GtkWidget *, gpointer) {
+		float g = gtk_spin_button_get_value(GTK_SPIN_BUTTON(g_gainSpin[0]));
+		for (int i=0; i<NCHAN; i++) {
+			g_c[i]->setGain(g);
+			g_c[i]->resetPca();
+		}
+		for (int i=1; i<4; i++) { // 0 is what we are reading from
+			gtk_spin_button_set_value(GTK_SPIN_BUTTON(g_gainSpin[i]), g);
+		}
+	}, NULL);
 
 	mk_checkbox("show grid", box1, &g_showContGrid, basic_checkbox_cb);
 
 	mk_checkbox("show threshold", box1, &g_showContThresh, basic_checkbox_cb);
 
 	//add in a zoom spinner.
-	mk_spinner("Waveform Span", box1,
-	           g_zoomSpan, 0.1, 2.7, 0.05,
-	           zoomSpinCB, NULL);
+	mk_spinner("Waveform Span", box1, g_zoomSpan, 0.1, 2.7, 0.05,
+	[](GtkWidget *_spin, gpointer) {
+		// should be in seconds.
+		float f = (float) gtk_spin_button_get_value(GTK_SPIN_BUTTON(_spin));
+		g_zoomSpan = f;
+		g_nsamp = f * SRATE_HZ;
+		// make it multiples of 128.
+		g_nsamp &= (0xffffffff ^ 127);
+		g_nsamp = g_nsamp > NSAMP ? NSAMP : g_nsamp;
+		g_nsamp = g_nsamp < 512 ? 512 : g_nsamp;
+	}, NULL);
 
 	mk_spinner("Raster span", box1,
 	           g_rasterSpan, 1.0, 100.0, 1.0,
@@ -2398,14 +2222,18 @@ int main(int argc, char **argv)
 	mk_checkbox("highpass filter", box1, &g_hipassNeurons, basic_checkbox_cb);
 
 	mk_radio("none,3-pt,5-pt", 3,
-	         box1, true, "median filter", g_whichMedianFilter, medianFilterRadioCB);
+	         box1, true, "median filter", g_whichMedianFilter,
+	[](GtkWidget *_button, gpointer _p) {
+		if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(_button))) {
+			g_whichMedianFilter = (int)((long long)_p & 0xf);
+		}
+	});
 
 	gtk_widget_show (box1);
 	label = gtk_label_new("rasters");
 	gtk_label_set_angle(GTK_LABEL(label), 90);
 	gtk_notebook_insert_page(GTK_NOTEBOOK(g_notebook), box1, label, 0);
 	// this concludes the rasters page.
-
 
 	//add page for sorting. (4 units .. for now .. such is the legacy. )
 	box1 = gtk_vbox_new (FALSE, 0);
@@ -2422,19 +2250,44 @@ int main(int argc, char **argv)
 		for (int j=0; j<NSORT; j++) {
 			GtkWidget *bx3 = gtk_hbox_new (FALSE, 2);
 			gtk_container_add (GTK_CONTAINER (bx2), bx3);
+			gpointer gp = GINT_TO_POINTER(i*2+j);
+
 			g_apertureSpin[i*2+j] = mk_spinner("", bx3,
 			                                   g_c[g_channel[i]]->getApertureUv(j), 0, 100, 0.1,
-			                                   apertureSpinCB, GINT_TO_POINTER(i*2+j));
+			[](GtkWidget *_spin, gpointer _p) {
+				int h = (int)((long long)_p & 0xf);
+				if (h >= 0 && h < 8 && !g_uiRecursion) {
+					float a = gtk_spin_button_get_value(GTK_SPIN_BUTTON(_spin));
+					int k = g_channel[h/2];
+					//gtk likes to call this frequently -- only update when
+					//the value has actually changed.
+					if (g_c[k]->getApertureUv(h%2) != a) {
+						if (a >= 0 && a < 2000) {
+							g_c[k]->setApertureUv(h%2, a);
+							//setAperture(j);
+						}
+						//printf("apertureSpinCB: %f ch %d\n", a, j);
+					}
+				}
+			}, gp);
 			label = gtk_label_new("uV");
 			gtk_box_pack_start (GTK_BOX (bx3), label, TRUE, TRUE, 1);
+
 			//a button for disable.
-			button = gtk_button_new_with_label("off");
+			GtkWidget *button = mk_button("off", bx3,
+			[](GtkWidget *, gpointer _p) {
+				int h = (int)((long long)_p & 0xf);
+				if (h >= 0 && h < 8 && !g_uiRecursion) {
+					int k = g_channel[h/2];
+					gtk_spin_button_set_value(GTK_SPIN_BUTTON(g_apertureSpin[h]), 0);
+					g_c[k]->setApertureLocal(h%2, 0);
+				}
+			}, gp);
+
 			if (j == 0)
 				setWidgetColor(button, 160, 255, 255);
 			else
 				setWidgetColor(button, 255, 155, 155);
-			g_signal_connect(button, "clicked", G_CALLBACK (apertureOffCB), (gpointer)(i*2+j));
-			gtk_box_pack_start (GTK_BOX (bx3), button, TRUE, TRUE, 1);
 		}
 	}
 
@@ -2455,8 +2308,11 @@ int main(int argc, char **argv)
 
 	gtk_box_pack_start (GTK_BOX (box1), box2, TRUE, TRUE, 0);
 
-
-	mk_button("calc PCA", box1, calcPCACB, NULL);
+	mk_button("calc PCA", box1,
+	[](GtkWidget *, gpointer) {
+		for (int h=0; h<4; h++)
+			g_c[g_channel[h]]->computePca();
+	}, NULL);
 
 //this concludes sort page.
 	gtk_widget_show (box1);
@@ -2481,8 +2337,16 @@ int main(int argc, char **argv)
 
 	GtkWidget *bx3 = gtk_hbox_new (FALSE, 1);
 	gtk_box_pack_start (GTK_BOX (box1), bx3, FALSE, FALSE, 0);
-	mk_button("set selected", bx3, autoThresholdCB, GINT_TO_POINTER(1));
-	mk_button("set all", bx3, autoThresholdCB, GINT_TO_POINTER(2));
+	mk_button("set selected", bx3,
+	[](GtkWidget *, gpointer) {
+		g_c[g_channel[0]]->autoThreshold(g_autoThreshold);
+	}, NULL);
+	mk_button("set all", bx3,
+	[](GtkWidget *, gpointer) {
+		for (int i=0; i<NCHAN; i++) {
+			g_c[i]->autoThreshold(g_autoThreshold);
+		}
+	}, NULL);
 
 	//mk_checkbox("enable csplines", box1,
 	//            &g_enableSplines, basic_checkbox_cb);
@@ -2528,7 +2392,12 @@ int main(int argc, char **argv)
 
 	box4 = gtk_vbox_new(FALSE, 0);
 	gtk_box_pack_start (GTK_BOX (box3), box4, TRUE, TRUE, 0);
-	mk_button("clear lms weights", box4, clearNLMSWeightsCB, NULL);
+	mk_button("clear lms weights", box4,
+	[](GtkWidget *, gpointer) {
+		for (int i=0; i<NCHAN; i++) {
+			g_nlms[i]->clearWeights();
+		}
+	}, NULL);
 
 	s = "Artifact Subtraction";
 	frame = gtk_frame_new (s.c_str());
@@ -2558,11 +2427,18 @@ int main(int argc, char **argv)
 
 	box4 = gtk_vbox_new(FALSE, 0);
 	gtk_box_pack_start (GTK_BOX (box3), box4, TRUE, TRUE, 0);
-	mk_button("clear all", box4, clearArtifactTemplAllCB, NULL);
+	mk_button("clear all", box4,
+	[](GtkWidget *, gpointer) {
+		for (int i=0; i<STIMCHAN; i++)
+			g_artifact[i]->clearArtifacts();
+	}, NULL);
 
 	box4 = gtk_vbox_new(FALSE, 0);
 	gtk_box_pack_start (GTK_BOX (box3), box4, TRUE, TRUE, 0);
-	mk_button("clear this", box4, clearArtifactTemplCB, NULL);
+	mk_button("clear this", box4,
+	[](GtkWidget *, gpointer) {
+		g_artifact[g_stimChanDisp]->clearArtifacts();
+	}, NULL);
 
 	mk_spinner("stim chan", box2, g_stimChanDisp,
 	           0, STIMCHAN-1, 1, basic_spinint_cb, (gpointer)&g_stimChanDisp);
@@ -2579,10 +2455,21 @@ int main(int argc, char **argv)
 	mk_checkbox("enable", box2,
 	            &g_enableArtifactBlanking, basic_checkbox_cb);
 
-	mk_spinner("pre-blanking\nsamples", box2,
-	           g_artifactBlankingPreSamps, 0, 128, 1, artifactBlankingPreSampsCB, NULL);
-	mk_spinner("blanking\nsamples", box2,
-	           g_artifactBlankingSamps, 0, 128, 1, artifactBlankingSampsCB, NULL);
+	mk_spinner("pre-blanking\nsamples", box2, g_artifactBlankingPreSamps, 0, 128, 1,
+	[](GtkWidget *_spin, gpointer) {
+		int x = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(_spin));
+		g_artifactBlankingPreSamps = (x + g_artifactBlankingSamps > ARTBUF)
+		                             ? ARTBUF - g_artifactBlankingSamps : x;
+		gtk_spin_button_set_value(GTK_SPIN_BUTTON(_spin), g_artifactBlankingPreSamps);
+	}, NULL);
+
+	mk_spinner("blanking\nsamples", box2, g_artifactBlankingSamps, 0, 128, 1,
+	[](GtkWidget *_spin, gpointer) {
+		int x = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(_spin));
+		g_artifactBlankingSamps = (x + g_artifactBlankingPreSamps > ARTBUF)
+		                          ? ARTBUF - g_artifactBlankingPreSamps : x;
+		gtk_spin_button_set_value(GTK_SPIN_BUTTON(_spin), g_artifactBlankingSamps);
+	}, NULL);
 
 	mk_checkbox("enable stim clock blanking", box1,
 	            &g_enableStimClockBlanking, basic_checkbox_cb);
@@ -2612,7 +2499,11 @@ int main(int argc, char **argv)
 
 	bxx2 = gtk_vbox_new(FALSE, 0);
 	gtk_container_add(GTK_CONTAINER (bxx1), bxx2);
-	mk_button("Stop", bxx2, closeSaveSpikeFile, NULL);
+	mk_button("Stop", bxx2,
+	[](GtkWidget *, gpointer) {
+		g_wfwriter.close();
+	}, NULL);
+
 	mk_checkbox("Unsorted?", bxx2, &g_saveUnsorted,	basic_checkbox_cb);
 
 
@@ -2630,8 +2521,10 @@ int main(int argc, char **argv)
 
 	bxx2 = gtk_vbox_new(FALSE, 0);
 	gtk_container_add(GTK_CONTAINER (bxx1), bxx2);
-	mk_button("Stop", bxx2, closeSaveICMSFile, NULL);
-
+	mk_button("Stop", bxx2,
+	[](GtkWidget *, gpointer) {
+		g_icmswriter.close();
+	}, NULL);
 
 	s = "Save Analog";
 	frame = gtk_frame_new(s.c_str());
@@ -2646,13 +2539,26 @@ int main(int argc, char **argv)
 
 	bxx2 = gtk_vbox_new (TRUE, 0);
 	gtk_container_add (GTK_CONTAINER (bxx1), bxx2);
-	mk_button("Stop", bxx2, closeSaveAnalogFile, NULL);
+	mk_button("Stop", bxx2,
+	[](GtkWidget *, gpointer) {
+		g_analogwriter.close();
+	}, NULL);
 
-	mk_radio("active,all", 2,
-	         box1, false, "channel(s)?", g_whichAnalogSave, analogSaveRadioCB);
+	mk_radio("active,all", 2, box1, false, "channel(s)?", g_whichAnalogSave,
+	[](GtkWidget *_button, gpointer _p) {
+		if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(_button))) {
+			g_whichAnalogSave = (int)((long long)_p & 0xf);
+		}
+	}
+	        );
 
-	mk_button("Stop All", box1, closeSaveFiles, NULL);
-
+	mk_button("Stop All", box1,
+	[](GtkWidget *, gpointer) {
+		// TODO: signal to the other thread, let them close it.
+		g_wfwriter.close();
+		g_icmswriter.close();
+		g_analogwriter.close();
+	}, NULL);
 
 	// end save page
 	gtk_widget_show(box1);
@@ -2664,23 +2570,46 @@ int main(int argc, char **argv)
 	bx = gtk_hbox_new (FALSE, 3);
 
 	//add a automatic channel change button.
-	mk_checkbox("cycle channels", bx, &g_cycle, cycleButtonCB);
+	mk_checkbox("cycle channels", bx, &g_cycle,
+	[](GtkWidget *_button, gpointer _p) {
+		gboolean *b = (gboolean *)_p;
+		if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(_button))) {
+			*b = true;
+			g_timeout_add(3000, chanscan, (gpointer)0);
+		} else {
+			*b = false;
+		}
+	}
+	           );
 
 	//add a pause / go button (applicable to all)
-	button = gtk_check_button_new_with_label("pause");
-	g_signal_connect (button, "toggled",
-	                  G_CALLBACK (pauseButtonCB), NULL);
-	gtk_widget_show(button);
-	gtk_box_pack_start (GTK_BOX (bx), button, FALSE, FALSE, 1);
+	mk_checkbox("pause", bx, &g_pause,
+	[](GtkWidget *_button, gpointer) {
+		g_pause = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(_button));
+		g_pause_time = g_pause ? gettime() : -1.0;
+	}
+	           );
 
 	gtk_box_pack_start (GTK_BOX (v1), bx, TRUE, TRUE, 0);
 
 	//add draw mode (applicable to all)
 	bx = gtk_hbox_new(FALSE, 0);
-	mk_radio("points,lines", 2,
-	         bx, true, "draw mode", g_drawmodep, drawRadioCB);
-	mk_radio("normal,accum", 2,
-	         bx, true, "blend mode", g_blendmodep, blendRadioCB);
+	mk_radio("points,lines", 2, bx, true, "draw mode", g_drawmodep,
+	[](GtkWidget *_button, gpointer _p) {
+		if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(_button))) {
+			g_drawmodep = (int)((long long)_p & 0xf);
+		}
+	}
+	        );
+
+	mk_radio("normal,accum", 2, bx, true, "blend mode", g_blendmodep,
+	[](GtkWidget *_button, gpointer _p) {
+		if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(_button))) {
+			g_blendmodep = (int)((long long)_p & 0xf);
+		}
+	}
+	        );
+
 	gtk_box_pack_start (GTK_BOX (v1), bx, TRUE, TRUE, 0);
 
 	bx = gtk_hbox_new (FALSE, 3);
@@ -2816,7 +2745,9 @@ int main(int argc, char **argv)
 	*/
 
 	//just in case.
-	closeSaveFiles(NULL, NULL);
+	g_wfwriter.close();
+	g_icmswriter.close();
+	g_analogwriter.close();
 
 	KillFont();
 	// Optional:  Delete all global objects allocated by libprotobuf.
