@@ -84,20 +84,27 @@ classdef RcpDevice < handle
 
         function setGrasp(obj, graspName, graspVelocity)
             
-            graspVelocity = round(graspVelocity * 1000);
+            VELOCITY_SCALE = 2500;
+
+            graspVelocity = round(graspVelocity * VELOCITY_SCALE);
             
-            graspVelocity = max(min(graspVelocity,3000),-3000);
+            graspVelocity = max(min(graspVelocity,1200),-1200);
+            
+            if graspVelocity < 0
+                % move faster in the negative direction
+                graspVelocity = round(graspVelocity * 1.2);
+            end
             
             switch char(graspName)
                 case 'Thumb'
-                    obj.sendMsg(sprintf('V10'));
-                    obj.sendMsg(sprintf('V20'));
-                    obj.sendMsg(sprintf('V3%d',graspVelocity));
-                case 'Index'
                     obj.sendMsg(sprintf('V1%d',graspVelocity));
                     obj.sendMsg(sprintf('V20'));
                     obj.sendMsg(sprintf('V30'));
                 case 'Middle'
+                    obj.sendMsg(sprintf('V10'));
+                    obj.sendMsg(sprintf('V20'));
+                    obj.sendMsg(sprintf('V3%d',graspVelocity));
+                case 'Index'
                     obj.sendMsg(sprintf('V10'));
                     obj.sendMsg(sprintf('V2%d',graspVelocity));
                     obj.sendMsg(sprintf('V30'));
@@ -113,7 +120,12 @@ classdef RcpDevice < handle
         function setIdle(obj)
             obj.velocityCmd = [0 0 0];
         end
-        
+
+        function setVelocity(obj,v)
+            assert(length(v) == 3,'Expected a 3 element array')
+            obj.velocityCmd = v;
+        end
+
         function update(obj)
             % Called by timer object
             string2Can = @(x,y)Scenarios.GraspAssist.CanMessaging.string2Can(x,y);
@@ -163,6 +175,13 @@ classdef RcpDevice < handle
             fprintf(obj.hSerial,msg); % send msg to comm port
             %fprintf(sprintf('%s\n',msg));   % echo msg to console
             
+            % Read down serial buffer
+            bytesAvailable = obj.hSerial.BytesAvailable;
+            if bytesAvailable
+                x = fread(obj.hSerial,bytesAvailable);
+                fprintf('Reply: "%s"\n',char(x)); %#ok<FREAD>
+            end
+
         end
     end
 end

@@ -29,7 +29,7 @@ classdef CanMessaging
             canOut = sprintf('T%8s%d%s\n',canAddress,size(hexVals,1),hexVals');
             
             % DEBUG: For debugging show unconverted commands
-            canOut = [strIn '\n'];
+            disp(strIn);
         end
     end
 end
