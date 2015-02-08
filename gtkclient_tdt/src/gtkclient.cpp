@@ -1566,8 +1566,8 @@ void *worker_thread(void *)
 						ac->add_tick(tk[k]);
 						ac->add_ts(g_ts.getTime(tk[k]));
 					}
+					g_analogwriter.add(ac);
 				}
-				g_analogwriter.add(ac);
 			}
 		}
 
