@@ -212,11 +212,24 @@ classdef CpchSerial < Inputs.CpcHeadstage
             obj.ChannelMask = dec2binvec(double(frameB.Mask), size(obj.DataBuffer,2));
             %fclose(obj.SerialObj);  % not clear why we are closing here (RSA)
         end
-        function data = getData(obj,numSamples)
+        function data = getData(obj,numSamples,idxChannel)
+            %data = getData(obj,numSamples,idxChannel)
+            % get data from buffer.  most recent sample will be at (end)
+            % position.
+            % dataBuffer = [NumSamples by NumChannels];
+            %
+            % optional arguments:
+            %   numSamples, the number of samples requested from getData
+            %   idxChannel, an index into the desired channels.  E.g. get the
+            %   first four channels with iChannel = 1:4
             
             if nargin < 2
                 numSamples = obj.NumSamples;
-            end                
+            end
+            
+            if nargin < 3
+                idxChannel = 1:obj.NumChannels;
+            end
             
             % Start device if not already running
             if (strcmpi(obj.SerialObj.Status, 'closed') || (obj.IsRunning == false))
@@ -322,7 +335,7 @@ classdef CpchSerial < Inputs.CpcHeadstage
             end
             
             % return the most recently requested data
-            data = obj.DataBuffer(end-numSamples+1:end,:);
+            data = obj.DataBuffer(end-numSamples+1:end,idxChannel);
             
         end
         function isReady = isReady(obj,numSamples)

@@ -108,14 +108,23 @@ classdef OpenBciChipKit < Inputs.SignalInput
             fwrite(obj.SerialObj,uint8('b'));  % Start Streaming
             
         end
-        function data = getData(obj,numSamplesRequested)
-            % This function will always return the correct size for data
-            % (based on the number of samples) however results will be
-            % padded with zeros.
-            
+        function data = getData(obj,numSamples,idxChannel)
+            %data = getData(obj,numSamples,idxChannel)
+            % get data from buffer.  most recent sample will be at (end)
+            % position.
+            % dataBuffer = [NumSamples by NumChannels];
+            %
+            % optional arguments:
+            %   numSamples, the number of samples requested from getData
+            %   idxChannel, an index into the desired channels.  E.g. get the
+            %   first four channels with iChannel = 1:4
             
             if nargin < 2
-                numSamplesRequested = obj.NumSamples;
+                numSamples = obj.NumSamples;
+            end
+            
+            if nargin < 3
+                idxChannel = 1:obj.NumChannels;
             end
             
             % Read available bytes from serial device
@@ -242,9 +251,10 @@ classdef OpenBciChipKit < Inputs.SignalInput
             
             % return the most recently requested data
             data = cat(2,...
-                obj.DataBuffer1(end-numSamplesRequested+1:end,:),...
-                obj.DataBuffer2(end-numSamplesRequested+1:end,:));
+                obj.DataBuffer1(end-numSamples+1:end,:),...
+                obj.DataBuffer2(end-numSamples+1:end,:));
             
+            data = data(:,idxChannel);
             
         end
         function isReady = isReady(obj,numSamples)

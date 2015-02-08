@@ -93,12 +93,12 @@ classdef PhidgetAccel < handle
                     fprintf('Accel min axis %d = %f\n',i,obj.AccelMin);
                 end
             end
-
+            
             obj.isInitialized = true;
             obj.NumChannels = 3;
         end
         function accelValue = getData(obj)
-                        
+            
             % get accel values
             accelValuePtr = libpointer('doublePtr',0);
             accelValue = zeros(1,obj.NumAxes);
@@ -161,7 +161,7 @@ classdef PhidgetAccel < handle
             
             hP = LivePlot(6,100,{'XY','YX','XZ','ZX','YZ','ZY'});
             hP.AxisLimits = [-185 185];
-
+            
             StartStopForm([]);
             while StartStopForm()
                 angles = getAngle(obj);

@@ -1,6 +1,6 @@
 classdef EmgSimulator < Inputs.SignalInput
     % Loop pre-recorded EMG data;
-    % 
+    %
     %
     % 09-Oct-2011 Armiger: Created
     properties
@@ -49,22 +49,35 @@ classdef EmgSimulator < Inputs.SignalInput
             obj.SignalBuffer = zeros(MAX_SAMPLES,obj.NumChannels);
             
         end
-        function bufferedData = getData(obj,numSamples)
+        function data = getData(obj,numSamples,idxChannel)
+            %data = getData(obj,numSamples,idxChannel)
+            % get data from buffer.  most recent sample will be at (end)
+            % position.
+            % dataBuffer = [NumSamples by NumChannels];
+            %
+            % optional arguments:
+            %   numSamples, the number of samples requested from getData
+            %   idxChannel, an index into the desired channels.  E.g. get the
+            %   first four channels with iChannel = 1:4
             
             if nargin < 2
                 numSamples = obj.NumSamples;
-            end                
-                        
+            end
+            
+            if nargin < 3
+                idxChannel = 1:obj.NumChannels;
+            end
+            
             t = clock;
             tElapsed = etime(t,obj.lastAccess);
             obj.lastAccess = t;
             
-            [numSamplesInBuffer numChannels] = size(obj.SignalBuffer);
+            numSamplesInBuffer = size(obj.SignalBuffer,1);
             samplesElapsed = round(tElapsed*obj.SampleFrequency);
             
             samplesElapsed = min(samplesElapsed,numSamplesInBuffer);
             samplesElapsed = max(samplesElapsed,1);
-
+            
             % shift buffer
             obj.SignalBuffer = circshift(obj.SignalBuffer,[-samplesElapsed 0]);
             newDataStart = obj.patternPointer(obj.CurrentPattern);
@@ -90,10 +103,10 @@ classdef EmgSimulator < Inputs.SignalInput
             if numSamplesInBuffer < numSamplesRequested
                 error('More samples requested "%d" than buffered "%d" \n',numSamplesRequested,numSamplesInBuffer);
             else
-                bufferedData = obj.SignalBuffer(end-numSamples+1:end,:);
+                data = obj.SignalBuffer(end-numSamples+1:end,idxChannel);
             end
         end
-        function isReady = isReady(obj,numSamples) %#ok<MANU>
+        function isReady = isReady(obj,numSamples) %#ok<INUSL>
             % Consider adding in a phony startup delay
             isReady = true;
             fprintf('[%s] Simulator Ready with %d samples\n',mfilename,numSamples);
@@ -117,7 +130,7 @@ classdef EmgSimulator < Inputs.SignalInput
             end
             
             obj.hg.hFig = hFig;
-
+            
             cellCurrentKeys = {};
             
             set(obj.hg.hFig,'Position',[20 50 200 70]);
@@ -149,7 +162,7 @@ classdef EmgSimulator < Inputs.SignalInput
             end %key_up
             
             function key_down(evt)
-
+                
                 switch evt.Key
                     case 'a'
                         setPattern(obj,1);
@@ -176,7 +189,7 @@ classdef EmgSimulator < Inputs.SignalInput
                         setPattern(obj,8);
                         set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 8');
                 end
-            
+                
                 cellCurrentKeys = unique([cellCurrentKeys {evt.Key}]);
                 
             end %key_down
@@ -192,7 +205,7 @@ classdef EmgSimulator < Inputs.SignalInput
             if ~obj.isRunning
                 fprintf('[%s] Simulator Started\n',mfilename);
                 obj.isRunning = true;
-            end                
+            end
         end
     end
 end

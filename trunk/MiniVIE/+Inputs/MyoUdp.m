@@ -27,7 +27,11 @@ classdef MyoUdp < Inputs.SignalInput
             %
             % status = 0: no error
             % status < 0: Failed
-            obj.SampleFrequency = 200; % Hz
+            
+            
+            % Note, true sample rate is 200 Hz, but this is upsampled to
+            % 100Hz for compatability
+            obj.SampleFrequency = 1000; % Hz
             obj.ChannelIds = (1:8);
             
             status = 0;
@@ -53,20 +57,28 @@ classdef MyoUdp < Inputs.SignalInput
             obj.IsInitialized = true;
             
         end
-        function data = getData(obj,numSamples)
-            % This function will always return the correct size for data
-            % (based on the number of samples) however results will be
-            % padded with zeros.
+        function data = getData(obj,numSamples,idxChannel)
+            %data = getData(obj,numSamples,idxChannel)
+            % get data from buffer.  most recent sample will be at (end)
+            % position.
+            % dataBuffer = [NumSamples by NumChannels];
             %
-            % data is [numSamples x numChannels]
+            % optional arguments:
+            %   numSamples, the number of samples requested from getData
+            %   idxChannel, an index into the desired channels.  E.g. get the
+            %   first four channels with iChannel = 1:4
             
             if nargin < 2
                 numSamples = obj.NumSamples;
             end
             
-            obj.update();
+            if nargin < 3
+                idxChannel = 1:obj.NumChannels;
+            end
             
-            data = obj.Buffer.getData(numSamples);
+            obj.update();
+                        
+            data = obj.Buffer.getData(numSamples,idxChannel);
             
         end
         function update(obj)

@@ -37,8 +37,8 @@ classdef DaqHwDevice < Inputs.SignalInput
         end
         function initialize(obj)
 
-            assert(ischar(obj.DaqDeviceName));
-            assert(ischar(obj.DaqDeviceId));
+            assert(ischar(obj.DaqDeviceName),'Expected "DaqDeviceName" to be a character array');
+            assert(ischar(obj.DaqDeviceId),'Expected "DaqDeviceId" to be a character array');
             
             % verify that adaptor family is installed
             if obj.Verbose
@@ -150,11 +150,26 @@ classdef DaqHwDevice < Inputs.SignalInput
             end
             
         end
-        function data = getData(obj,numSamples)
+        function data = getData(obj,numSamples,idxChannel)
+            %data = getData(obj,numSamples,idxChannel)
+            % get data from buffer.  most recent sample will be at (end)
+            % position.
+            % dataBuffer = [NumSamples by NumChannels];
+            %
+            % optional arguments:
+            %   numSamples, the number of samples requested from getData
+            %   idxChannel, an index into the desired channels.  E.g. get the
+            %   first four channels with iChannel = 1:4
+            %
+            %
             % This function will always return the correct size for data
             % (based on the number of samples) however results will be
             % padded with zeros.  User should check obj.AnalogInput.SamplesAvailable
             % for a deterministic result
+            
+            if nargin < 3
+                idxChannel = 1:obj.NumChannels;
+            end
             
             if nargin < 2
                 numSamples = obj.NumSamples;
@@ -177,6 +192,8 @@ classdef DaqHwDevice < Inputs.SignalInput
             else
                 data = peekdata(obj.AnalogInput,numSamples);
             end
+            
+            data = data(:,idxChannel);
         end
         function isReady = isReady(obj,numSamples)
             % ensure daq device is ready with the right number of samples

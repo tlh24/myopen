@@ -17,10 +17,12 @@ function features = feature_extract(windowData,windowSize,zc_thresh,ssc_thresh) 
 
 if nargin < 4
     ssc_thresh = 0.25;
+    ssc_thresh = 0.15;
 %     ssc_thresh = 0.2;
 end
 if nargin < 3
     zc_thresh = 0.25;
+    zc_thresh = 0.15;
 %     zc_thresh = 0.15; % JHMI_SD_01_LR
 end
 

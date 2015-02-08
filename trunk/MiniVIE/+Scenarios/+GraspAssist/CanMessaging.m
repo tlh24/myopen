@@ -27,6 +27,9 @@ classdef CanMessaging
             
             hexVals = dec2hex(uint8(strIn));
             canOut = sprintf('T%8s%d%s\n',canAddress,size(hexVals,1),hexVals');
+            
+            % DEBUG: For debugging show unconverted commands
+            canOut = [strIn '\n'];
         end
     end
 end

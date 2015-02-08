@@ -52,10 +52,25 @@ classdef UdpDevice < Inputs.SignalInput
                 pnet(obj.udp, 'writepacket');
             end
         end
-        function data = getData(obj,numSamplesRequested)
-            % This function will always return the correct size for data
-            % (based on the number of samples) however results will be
-            % padded with zeros.  
+        function data = getData(obj,numSamples,iChannel)
+            %data = getData(obj,numSamples,idxChannel)
+            % get data from buffer.  most recent sample will be at (end)
+            % position.
+            % dataBuffer = [NumSamples by NumChannels];
+            %
+            % optional arguments:
+            %   numSamples, the number of samples requested from getData
+            %   iChannel, an index into the desired channels.  E.g. get the
+            %   first four channels with iChannel = 1:4
+            
+            if nargin < 2
+                numSamples = obj.NumSamples;
+            end
+            
+            if nargin < 3
+                iChannel = 1:obj.NumChannels;
+            end
+            
             len = 1;
             while(len > 0)
                 len=pnet(obj.udp,'readpacket','noblock');
@@ -86,16 +101,16 @@ classdef UdpDevice < Inputs.SignalInput
                     end
                 end
             end
-            numSamples = numSamplesRequested*5;
+            numSamplesDevice = numSamples*5;
             s = size(obj.dd, 2);
-            if numSamples < s
-                data = obj.dd(:, s - numSamples + 1 : end);
+            if numSamplesDevice < s
+                data = obj.dd(:, s - numSamplesDevice + 1 : end);
             else
-                data = zeros(8,numSamples);
-                data(:,numSamples - s + 1 : end) = obj.dd; 
+                data = zeros(8,numSamplesDevice);
+                data(:,numSamplesDevice - s + 1 : end) = obj.dd; 
             end
             data = data' * 100; % # samples by # channels.
-            data = data(1:5:end, :); 
+            data = data(1:5:end, iChannel); 
         end
         function isReady = isReady(obj,numSamples)
             isReady = 1;

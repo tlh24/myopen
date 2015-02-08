@@ -40,13 +40,23 @@ classdef SignalSimulator < Inputs.SignalInput
             obj.uiControlPanel();
             
         end
-        function bufferedData = getData(obj,numSamples)
-            % This function will always return the correct size for data
-            % (based on the number of samples) however results will be
-            % padded with zeros.
+        function data = getData(obj,numSamples,idxChannel)
+            %data = getData(obj,numSamples,idxChannel)
+            % get data from buffer.  most recent sample will be at (end)
+            % position.
+            % dataBuffer = [NumSamples by NumChannels];
+            %
+            % optional arguments:
+            %   numSamples, the number of samples requested from getData
+            %   idxChannel, an index into the desired channels.  E.g. get the
+            %   first four channels with iChannel = 1:4
             
             if nargin < 2
                 numSamples = obj.NumSamples;
+            end
+            
+            if nargin < 3
+                idxChannel = 1:obj.NumChannels;
             end
             
             % Note this returned data size conforms to the getdata methods
@@ -84,7 +94,7 @@ classdef SignalSimulator < Inputs.SignalInput
             end
             
             idxSamples = 1+bufferSize-numSamples : bufferSize;
-            bufferedData = obj.SignalBuffer(idxSamples,:);
+            data = obj.SignalBuffer(idxSamples,idxChannel);
         end
         function isReady = isReady(obj,numSamples)  %#ok<INUSL>
             % Consider adding in a phony startup delay
