@@ -46,16 +46,30 @@ classdef DataBuffer < handle
             end
         end
         
-        function data = getData(obj,numSamples)
+        function data = getData(obj,numSamples,idxChannel)
+            %data = getData(obj,numSamples,idxChannel)
             % get data from buffer.  most recent sample will be at (end)
             % position.
             % dataBuffer = [NumSamples by NumChannels];
+            %
+            % optional arguments:
+            %   numSamples, the number of samples requested from getData
+            %   idxChannel, an index into the desired channels.  E.g. get the
+            %   first four channels with iChannel = 1:4
+            
+            if nargin < 2
+                numSamples = obj.NumSamples;
+            end
+            
+            if nargin < 3
+                idxChannel = 1:obj.NumChannels;
+            end
             
             if numSamples > obj.NumSamples
                 error('Requested sammples %d is greated than buffer size %d',numSamples,obj.NumSamples);
             end
             
-            data = obj.dataBuffer(size(obj.dataBuffer,1)-numSamples+1:size(obj.dataBuffer,1),:);
+            data = obj.dataBuffer(size(obj.dataBuffer,1)-numSamples+1:size(obj.dataBuffer,1),idxChannel);
             
         end
     end

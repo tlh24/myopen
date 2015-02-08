@@ -31,23 +31,24 @@ classdef NfuInput < Inputs.CpcHeadstage
             status = obj.hNfu.initialize();  % streaming begins here
 
         end
-% RSA: disabled this function.  superclass method will be called        
-%         function data = getFilteredData(obj)
-%             % Temp = make the NFU agnostic to filter settings since this is
-%             % done in hardware
-%             %data = getData(obj);
-%             
-%             data = getFilteredData@Inputs.SignalInput(obj);
-%             
-%         end
-        function data = getData(obj,numSamples)
-            % This function will always return the correct size for data
-            % (based on the number of samples) however results will be
-            % padded with zeros. 
+        function data = getData(obj,numSamples,idxChannel)
+            %data = getData(obj,numSamples,idxChannel)
+            % get data from buffer.  most recent sample will be at (end)
+            % position.
+            % dataBuffer = [NumSamples by NumChannels];
+            %
+            % optional arguments:
+            %   numSamples, the number of samples requested from getData
+            %   idxChannel, an index into the desired channels.  E.g. get the
+            %   first four channels with iChannel = 1:4
             
             if nargin < 2
                 numSamples = obj.NumSamples;
-            end                
+            end
+            
+            if nargin < 3
+                idxChannel = 1:obj.NumChannels;
+            end              
             
             obj.hNfu.update();  % read available packets
             
@@ -105,7 +106,7 @@ classdef NfuInput < Inputs.CpcHeadstage
             dataBuff = obj.dataBuffer(:,end-numSamples+1:end)';
             
             EMG_GAIN = 50;  %TODO abstract
-            data = EMG_GAIN .* double(dataBuff) ./ 512;
+            data = EMG_GAIN .* double(dataBuff(:,idxChannel)) ./ 512;
             
         end
         function isReady = isReady(obj,numSamples)

@@ -26,7 +26,7 @@ classdef SignalInput < Common.MiniVieObj
     end
     methods (Abstract)
         initialize(obj);
-        data = getData(obj,numSamples);    % Get raw data.  [numSamples x numChannels]
+        data = getData(obj,numSamples,channelIds);    % Get raw data.  [numSamples x numChannels]
         isReady = isReady(obj,numSamples); % Consider removing extra arg
         start(obj);
         stop(obj);
@@ -149,7 +149,8 @@ classdef SignalInput < Common.MiniVieObj
             end
         end %audiopreview
         
-        function filtered = getFilteredData(obj,numSamples)
+        function filtered = getFilteredData(obj,numSamples, idxChannel)
+            %filtered = getFilteredData(obj,numSamples, channelIds)
             % Simplified call to get data and apply filters
             
             % Note that in an xpc implmentation, since the filtering is
@@ -158,25 +159,31 @@ classdef SignalInput < Common.MiniVieObj
             
             % get extra samples before filtering to eliminate edge effects
             
-            if nargin < 2
-                data = getData(obj);
-            else
-                try
-                    % Get data, with signal padding to avoid filter edge
-                    % effects.
-                    data = getData(obj,numSamples+obj.FilterPadding);
-                    %data = getData(obj,numSamples);
-                catch ME
-                    fprintf('[%s] Unable to get signal count [%d] + filter padding [%d].  Error was: %s \n',...
-                        mfilename,numSamples,obj.FilterPadding,ME.message);
-                    % TODO: not ideal but inputs that buffer their data can
-                    % only allow getting a certain number of samples
-                    data = getData(obj,numSamples);
-                end
+            if nargin < 3
+                idxChannel = 1:obj.NumChannels;
             end
+
+            if nargin < 2
+                numSamples = obj.SignalSource.NumSamples;
+            end
+            
+            try
+                % Get data, with signal padding to avoid filter edge
+                % effects.
+                data = getData(obj,numSamples+obj.FilterPadding);
+                %data = getData(obj,numSamples);
+            catch ME
+                fprintf('[%s] Unable to get signal count [%d] + filter padding [%d].  Error was: %s \n',...
+                    mfilename,numSamples,obj.FilterPadding,ME.message);
+                % TODO: not ideal but inputs that buffer their data can
+                % only allow getting a certain number of samples
+                data = getData(obj,numSamples);
+            end
+            
             filtered = applyAllFilters(obj,data);
             % return only the signals requested, regardless of padding
-            filtered = filtered(end-numSamples+1:end,:);
+            filtered = filtered(end-numSamples+1:end,idxChannel);
+            
             
         end %getFilteredData
         

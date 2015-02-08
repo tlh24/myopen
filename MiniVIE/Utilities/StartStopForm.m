@@ -1,9 +1,14 @@
 function isRunning = StartStopForm(manualState)
 % Use as a simple form to control a while loop
-% Example: while StartStopForm
+% Example: 
+%          
+%           while StartStopForm
 %               do stuff
-%          end
-% To reset: StartStopForm([])
+%           end
+%
+% To reset: 
+%           StartStopForm([])
+% 
 % Created 2009-Apr-21 Robert Armiger, Johns Hopkins University Applied
 % Physics Lab
 

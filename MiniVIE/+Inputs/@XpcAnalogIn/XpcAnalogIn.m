@@ -43,7 +43,7 @@ classdef XpcAnalogIn < Inputs.SignalInput
             % addsignals
             signalToken = 'PCI-6040E Analog/p';
             
-            [signalIds isMatched] = getSignalIds(signalToken);
+            [signalIds, isMatched] = getSignalIds(signalToken);
                         
             newScope.addsignal(signalIds);
             fprintf('Adding Signals:\n')

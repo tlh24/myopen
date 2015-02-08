@@ -28,14 +28,23 @@ classdef PhidgetSource < Inputs.SignalInput
             obj.SignalBuffer = zeros(MAX_SAMPLES,obj.NumChannels);
             
         end
-        function bufferedData = getData(obj,numSamples)
-            % This function will always return the correct size for data
-            % (based on the number of samples) however results will be
-            % padded with zeros.  User should check obj.AnalogInput.SamplesAvailable
-            % for a deterministic result
+        function data = getData(obj,numSamples,idxChannel)
+            %data = getData(obj,numSamples,idxChannel)
+            % get data from buffer.  most recent sample will be at (end)
+            % position.
+            % dataBuffer = [NumSamples by NumChannels];
+            %
+            % optional arguments:
+            %   numSamples, the number of samples requested from getData
+            %   idxChannel, an index into the desired channels.  E.g. get the
+            %   first four channels with iChannel = 1:4
             
             if nargin < 2
                 numSamples = obj.NumSamples;
+            end
+            
+            if nargin < 3
+                idxChannel = 1:obj.NumChannels;
             end
             
             % Get 10 samples at a time and return sample buffer
@@ -62,7 +71,7 @@ classdef PhidgetSource < Inputs.SignalInput
             end
             
             idxSamples = 1+bufferSize-numSamples : bufferSize;
-            bufferedData = obj.SignalBuffer(idxSamples,:);
+            data = obj.SignalBuffer(idxSamples,idxChannel);
         end
         function isReady = isReady(obj,numSamples)
             isReady = true;
