@@ -23,7 +23,7 @@ function varargout = GraspAssistTrainer(varargin)
 
 % Edit the above text to modify the response to help GraspAssistTrainer
 
-% Last Modified by GUIDE v2.5 31-Jan-2015 21:36:28
+% Last Modified by GUIDE v2.5 08-Feb-2015 16:31:45
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -78,6 +78,7 @@ end
 
 
 set(handles.menuToolsCapture,'Checked','off')
+setDeviceEnable(handles,0);
 
 if ispc && isequal(get(handles.editReps,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(handles.editReps,'BackgroundColor','white');
@@ -88,7 +89,6 @@ end
 guidata(hObject, handles);
 % UIWAIT makes GraspAssistTrainer wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
-
 
 % --- Outputs from this function are returned to the command line.
 function varargout = GraspAssistTrainer_OutputFcn(hObject, eventdata, handles)
@@ -101,17 +101,7 @@ function varargout = GraspAssistTrainer_OutputFcn(hObject, eventdata, handles)
 varargout{1} = handles.output;
 
 function editReps_Callback(hObject, eventdata, handles)
-% hObject    handle to editReps (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of editReps as text
-%        str2double(get(hObject,'String')) returns contents of editReps as a double
-
-
-% Hints: get(hObject,'String') returns contents of editReps as text
-%        str2double(get(hObject,'String')) returns contents of editReps as a double
-
+% Change the number of Repetitions
 newVal = str2double(get(hObject,'String'));
 
 % check for non-negative, integers
@@ -130,57 +120,7 @@ handles.numRepetitions = newVal;
 % Update handles structure
 guidata(hObject, handles);
 
-
-% --------------------------------------------------------------------
-function menuTools_Callback(hObject, eventdata, handles)
-% hObject    handle to menuTools (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-% --------------------------------------------------------------------
-function menuToolsConnect_Callback(hObject, eventdata, handles)
-% hObject    handle to menuToolsConnect (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% wait for paramter gui
-devParams = setupDeviceParameters();
-
-handles.hDevice = Scenarios.GraspAssist.RcpDevice(devParams.Port,devParams.CanAddr);
-handles.hDevice.hTimer.Period = devParams.RefreshRate;
-
-if strcmpi(devParams.AsciiMode,'ascii')
-    handles.hDevice.SendAscii = 1;
-else
-    handles.hDevice.SendAscii = 0;
-end
-
-
-start(handles.hDevice.hTimer);
-% Update handles structure
-guidata(hObject, handles);
-% --------------------------------------------------------------------
-function menuToolsCapture_Callback(hObject, eventdata, handles)
-% hObject    handle to menuToolsCapture (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-switch get(handles.menuToolsCapture,'Checked')
-    case 'on'
-        set(handles.menuToolsCapture,'Checked','off');
-        handles.doRecordVideo = 0;
-    otherwise
-        set(handles.menuToolsCapture,'Checked','on');
-        handles.doRecordVideo = 1;
-end
-
-% Update handles structure
-guidata(hObject, handles);
-
-% --- Executes on selection change in listbox1.
 function listbox1_Callback(hObject, eventdata, handles)
-% hObject    handle to listbox1 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
 
 function handles = setup_axes(handles)
 
@@ -212,7 +152,6 @@ armUser = [0 0 0 0 -45 0 0];
 handles.hMiniV.set_upper_arm_angles_degrees(armUser)
 handles.hMiniV.redraw
 
-% --- Executes on button press in pbGo.
 function pbGo_Callback(hObject, eventdata, handles)
 % hObject    handle to pbGo (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -221,6 +160,10 @@ function pbGo_Callback(hObject, eventdata, handles)
 if ~get(hObject,'Value')
     return
 end
+
+start(handles.hDevice.hTimer);
+
+pause(1);
 
 pctGrasp = 0;
 direction = 1;
@@ -247,12 +190,12 @@ set(handles.editReps,'Enable','off');
 
 t = tic();
 while get(hObject,'Value')
-
+    
     %disp('Running')
     set(hObject,'String','STOP');
     
     % control speed
-    hSpeed = get(handles.uibuttongroup1,'SelectedObject'); 
+    hSpeed = get(handles.uibuttongroup1,'SelectedObject');
     switch hSpeed.String
         case 'Slow'
             velocity = 0.1 * direction;
@@ -291,21 +234,21 @@ while get(hObject,'Value')
             iGrasp = 1;
             iRepetition = iRepetition + 1;
         end
-
+        
     else
         addPause = 0;
-    end        
+    end
     
-    graspType = contents{values(iGrasp)};    
+    graspType = contents{values(iGrasp)};
     grasp = Controls.GraspTypes.(graspType);
     handAngles = Controls.graspInterpolation(pctGrasp, grasp)';
-
+    
     handles.hMiniV.set_hand_angles_degrees(handAngles);
     handles.hMiniV.redraw
-
+    
     % update physical hardware
     updateDevice(handles, grasp, velocity);
-        
+    
     if addPause;
         pause(delay);
     end
@@ -313,17 +256,17 @@ while get(hObject,'Value')
     if iRepetition > handles.numRepetitions
         break;
     end
-
+    
     str = sprintf('Rep # %d: %s',iRepetition,graspType);
     set(handles.txtStatus,'String',str);
-
+    
     drawnow
-
+    
     if doRecord
-       % Write each frame to the file.
-       currFrame = getframe(handles.figure1);
-       drawnow
-       vidObj.writeVideo(currFrame);
+        % Write each frame to the file.
+        currFrame = getframe(handles.figure1);
+        drawnow
+        vidObj.writeVideo(currFrame);
     end
     
 end
@@ -335,9 +278,6 @@ if doRecord
     % Close the file.
     close(vidObj);
 end
-
-%disp('Done')
-
 function onCompletion(handles)
 
 handles.hMiniV.set_hand_angles_degrees(zeros(1,29));
@@ -349,8 +289,15 @@ set(handles.listbox1,'Enable','on');
 set(handles.txtStatus,'String','');
 set(handles.editReps,'Enable','on');
 
+stop(handles.hDevice.hTimer);
+
 if ~isempty(handles.hDevice)
-    handles.hDevice.setIdle;
+    handles.hDevice.setIdle();
+    handles.hDevice.update();
+    pause(0.1);
+    handles.hDevice.update();
+    pause(0.1);
+    handles.hDevice.update();
 end
 
 function updateDevice(handles, graspName, graspVelocity)
@@ -358,16 +305,13 @@ function updateDevice(handles, graspName, graspVelocity)
 if ~isempty(handles.hDevice)
     handles.hDevice.setGrasp(graspName, graspVelocity);
 end
-
-
-
 function devParams = setupDeviceParameters()
 % Setup device parameters
 
 tempFileName = 'defaultGraspAssistDeviceParams';
 devParams = UiTools.load_temp_file(tempFileName);
 if isempty(devParams)
-    defaultanswer={'COM26','1FFFFFFF','ASCII','0.1'};
+    defaultanswer={'COM26','1FFFFFFF','ASCII','3','0.1'};
 else
     defaultanswer={devParams.Port,devParams.CanAddr,...
         devParams.AsciiMode,num2str(devParams.RefreshRate)};
@@ -376,18 +320,200 @@ end
 % Use these defaults
 prompt={
     'Enter COM Port (e.g. COM26):',...
-    'Enter CAN Address (e.g. 1FFFFFFF):',...
-    'Enter ASCII mode (e.g. ASCII):',...
+    'Enter CAN Address (e.g. 1FFFFFFF / 028C901A):',...
+    'Enter ASCII mode (e.g. ASCII / BINARY):',...
+    'Enter Thumb Mode (e.g. 3 / T):',...
     'Enter refresh rate (e.g. 0.1):',...
     };
 name='Device Parameters';
 numlines=1;
 answer=inputdlg(prompt,name,numlines,defaultanswer);
-assert(length(answer) == 4,'Expected 4 outputs');
+if length(answer) ~= 5
+    devParams = [];
+    return;
+end
 
 devParams.Port = answer{1};
 devParams.CanAddr = answer{2};
 devParams.AsciiMode = answer{3};
-devParams.RefreshRate = str2double(answer{4});
+devParams.ThumbMode = answer{4};
+devParams.RefreshRate = answer{5};
 
 UiTools.save_temp_file(tempFileName,devParams);
+function setDeviceEnable(handles,state)
+% control sub menu availablity
+
+if state
+    % Device commands active
+    set(handles.menuToolsRcpHome,'Enable','on')
+    set(handles.menuToolsRcpJoystick,'Enable','on')
+    set(handles.menuToolsRcpJoystick,'Checked','off')
+else
+    % Device commands inactive
+    set(handles.menuToolsRcpHome,'Enable','off')
+    set(handles.menuToolsRcpJoystick,'Enable','off')
+    set(handles.menuToolsRcpJoystick,'Checked','off')
+end
+
+function menuToolsCapture_Callback(hObject, eventdata, handles)
+% hObject    handle to menuToolsCapture (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+switch get(handles.menuToolsCapture,'Checked')
+    case 'on'
+        set(handles.menuToolsCapture,'Checked','off');
+        handles.doRecordVideo = 0;
+    otherwise
+        set(handles.menuToolsCapture,'Checked','on');
+        handles.doRecordVideo = 1;
+end
+
+% Update handles structure
+guidata(hObject, handles);
+function menuToolsConnect_Callback(hObject, eventdata, handles)
+% hObject    handle to menuToolsConnect (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+try
+    
+    % wait for paramter gui
+    devParams = setupDeviceParameters();
+    
+    if isempty(devParams)
+        % User Cancelled
+        return;
+    end
+    
+    handles.hDevice = Scenarios.GraspAssist.RcpDevice(devParams.Port,devParams.CanAddr);
+    handles.hDevice.initialize();
+    handles.hDevice.hTimer.Period = str2double(devParams.RefreshRate);
+    
+    if strcmpi(devParams.AsciiMode,'ascii')
+        handles.hDevice.SendAscii = 1;
+    else
+        handles.hDevice.SendAscii = 0;
+    end
+    
+    if strcmpi(devParams.ThumbMode,'T')
+        handles.hDevice.UseThumbT = 1;
+    else
+        handles.hDevice.UseThumbT = 0;
+    end
+    
+    
+    % Home all
+    if strcmp('OK',questdlg('Ready to home?','Home All Actuators','OK','Cancel','OK'))
+        disp('Home All');
+        handles.hDevice.sendMsg('HA');
+        handles.hDevice.update();
+    end
+    
+    setDeviceEnable(handles,1);
+catch ME
+    % Failed during device setup.  Remove temp file
+    tempFileName = 'defaultGraspAssistDeviceParams';
+    UiTools.delete_temp_file(tempFileName);
+    fprintf(2,'Device setup failed.  Removing temp parameter file\n');
+    errordlg(ME.message);
+    rethrow(ME);
+end
+% Update handles structure
+guidata(handles.figure1, handles);
+function menuToolsRcpHome_Callback(hObject, eventdata, handles)
+% hObject    handle to menuToolsRcpHome (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+if isempty(handles.hDevice)
+    errordlg('Device not conencted');
+    return
+end
+
+% Home all
+if strcmp('OK',questdlg('Ready to home?','Home All Actuators','OK','Cancel','OK'))
+    disp('Home All');
+    handles.hDevice.sendMsg('HA');
+    handles.hDevice.update();
+end
+function menuToolsRcpJoystick_Callback(hObject, eventdata, handles)
+% hObject    handle to menuToolsRcpJoystick (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+if isempty(handles.hDevice)
+    set(handles.pbGo,'Enable','on');
+    set(handles.pbGo,'Value',0);
+    set(hObject,'Checked','off')
+    return
+end
+
+if strcmpi(get(hObject,'Checked'),'on')
+    set(handles.pbGo,'Enable','on');
+    set(handles.pbGo,'Value',0);
+    set(hObject,'Checked','off')
+    return
+else
+    set(handles.pbGo,'Enable','off');
+    set(handles.pbGo,'Value',0);
+    set(hObject,'Checked','on')
+end
+
+
+try,clear joymex,end
+JoyMEX('init',0);
+
+start(handles.hDevice.hTimer);
+
+while strcmpi(get(hObject,'Checked'),'on')
+    drawnow
+    %handles.hDevice.update();
+    
+    % get joystick input
+    [a, ab] = JoyMEX(0);
+    
+    
+    if(ab(4))
+        handles.hDevice.sendMsg('HA');
+    elseif(ab(1))
+        handles.hDevice.sendMsg('CTA');
+    elseif(ab(2))
+        handles.hDevice.sendMsg('CTB');
+    elseif(ab(3))
+        %handles.hDevice.sendMsg('CTC');
+        fprintf(1,'Command CTC Disabled\n');
+    elseif(ab(5))
+        handles.hDevice.setVelocity([300 0 0]);
+    elseif(ab(6))
+        handles.hDevice.setVelocity([0 300 0]);
+    elseif(ab(7))
+        handles.hDevice.setVelocity([0 0 300]);
+    elseif(ab(8))
+        handles.hDevice.setVelocity([0 0 0]);
+    else
+        fingersJoystickAxis = 1; %% depends on joystick
+        v1 = a(fingersJoystickAxis) * (abs(a(fingersJoystickAxis)) > 0.15);
+        
+        fingersJoystickAxis = 3; %% depends on joystick
+        v3 = a(fingersJoystickAxis) * (abs(a(fingersJoystickAxis)) > 0.15);
+        
+        V1 = round(v1*1000);
+        V3 = round(v3*1000);
+        handles.hDevice.setVelocity([V3 V3 V3]);
+        
+    end
+end
+
+
+% see onCompletion()
+stop(handles.hDevice.hTimer);
+
+if ~isempty(handles.hDevice)
+    handles.hDevice.setIdle();
+    handles.hDevice.update();
+    pause(0.1);
+    handles.hDevice.update();
+    pause(0.1);
+    handles.hDevice.update();
+end
