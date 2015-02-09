@@ -20,7 +20,7 @@ classdef UserDrivenTrainingInterface < Common.MiniVieObj
             obj.loadClassImages();
             obj.SelectionIndex = length(obj.Images);
             
-            obj.hg.Figure = UiTools.create_figure('JHU/APL User Driven Training Interface','uiTrainTag');
+            obj.hg.Figure = UiTools.create_figure('User Driven Training Interface','uiTrainTag');
             numAxes = 5;
             obj.hg.ImAxes = subplot(numAxes,1,1:numAxes-1,'Parent',obj.hg.Figure);
             %             obj.hg.ImLabelAxes = subplot(4,1,1,'Parent',obj.hg.Figure);

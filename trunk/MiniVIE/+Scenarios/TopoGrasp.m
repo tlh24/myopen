@@ -158,7 +158,7 @@ obj.WristRotCmd = 0;
 end
 %Private
 function closeRequestFcn(src,obj)
-    stop(obj.hTimer);
-    delete(obj.hTimer)
-    delete(src);
+try,stop(obj.hTimer);end
+try,delete(obj.hTimer);end
+try,delete(src);end
 end

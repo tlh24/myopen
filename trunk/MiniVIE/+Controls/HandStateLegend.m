@@ -145,8 +145,8 @@ end
 
 %Private
 function closeRequestFcn(src,obj)
-delete(obj.hStateListener);
-delete(src);
+try delete(obj.hStateListener);end
+try delete(src);end
 end
 
 function hImage = show_image(hAx,imName,isLeftHanded)
