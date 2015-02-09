@@ -1,5 +1,5 @@
 <deployment-project plugin="plugin.ezdeploy" plugin-version="1.0">
-  <configuration build-checksum="189984683" file="C:\svn\myopen\MiniVIE\GUIDE_GUIs\GraspAssistTrainer.prj" location="C:\svn\myopen\MiniVIE\GUIDE_GUIs" name="GraspAssistTrainer" preferred-package-location="C:\svn\myopen\MiniVIE\GUIDE_GUIs\GraspAssistTrainer\for_redistribution" preferred-package-type="package.type.exe" target="target.ezdeploy.standalone" target-name="MATLAB Compiler for Standalone Applications">
+  <configuration build-checksum="3552054737" file="C:\svn\myopen\MiniVIE\GUIDE_GUIs\GraspAssistTrainer.prj" location="C:\svn\myopen\MiniVIE\GUIDE_GUIs" name="GraspAssistTrainer" preferred-package-location="C:\svn\myopen\MiniVIE\GUIDE_GUIs\GraspAssistTrainer\for_redistribution" preferred-package-type="package.type.exe" target="target.ezdeploy.standalone" target-name="MATLAB Compiler for Standalone Applications">
     <param.appname>GraspAssistTrainer</param.appname>
     <param.icon>${PROJECT_ROOT}\GraspAssistTrainer_resources\icon.ico</param.icon>
     <param.icons>
@@ -217,6 +217,18 @@
       <file>C:\svn\myopen\MiniVIE\Utilities\xticklabel_rotate.m</file>
     </fileset.resources>
     <fileset.package>
+      <file>C:\svn\myopen\MiniVIE\+Controls\private\CylinderTip.TIF</file>
+      <file>C:\svn\myopen\MiniVIE\+Controls\private\CylinderTip_Active.TIF</file>
+      <file>C:\svn\myopen\MiniVIE\+Controls\private\Hook.TIF</file>
+      <file>C:\svn\myopen\MiniVIE\+Controls\private\Hook_Active.TIF</file>
+      <file>C:\svn\myopen\MiniVIE\+Controls\private\Key.TIF</file>
+      <file>C:\svn\myopen\MiniVIE\+Controls\private\Key_Active.TIF</file>
+      <file>C:\svn\myopen\MiniVIE\+Controls\private\Opposition.TIF</file>
+      <file>C:\svn\myopen\MiniVIE\+Controls\private\Opposition_Active.TIF</file>
+      <file>C:\svn\myopen\MiniVIE\+Controls\private\Platform.TIF</file>
+      <file>C:\svn\myopen\MiniVIE\+Controls\private\Platform_Active.TIF</file>
+      <file>C:\svn\myopen\MiniVIE\+Controls\private\Point.TIF</file>
+      <file>C:\svn\myopen\MiniVIE\+Controls\private\Point_Active.TIF</file>
       <file>C:\svn\myopen\MiniVIE\+Presentation\@MiniV\private\Body.dat</file>
       <file>C:\svn\myopen\MiniVIE\+Presentation\@MiniV\private\meshData.mat</file>
     </fileset.package>

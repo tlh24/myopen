@@ -150,7 +150,18 @@ try delete(src);end
 end
 
 function hImage = show_image(hAx,imName,isLeftHanded)
-im = imread(which(imName));
+
+try
+    im = imread(which(imName));
+catch
+    try
+        im = imread(imName);
+    catch
+        fprintf('Failed to find image file "%s" on path. pwd="%s"\n',imName,pwd);
+        im = zeros(812,876,3,'uint8');
+    end
+end
+
 %crop
 im(1:76,:,:) = [];
 im(end-60:end,:,:) = [];
