@@ -6,7 +6,7 @@ function varargout = GraspAssistTrainer(varargin)
 %      H = GRASPASSISTTRAINER returns the handle to a new GRASPASSISTTRAINER or the handle to
 %      the existing singleton*.
 %
-%      GRASPASSISTTRAINER('CALLBACK',hObject,eventData,handles,...) calls the local
+%      GRASPASSISTTRresAINER('CALLBACK',hObject,eventData,handles,...) calls the local
 %      function named CALLBACK in GRASPASSISTTRAINER.M with the given input arguments.
 %
 %      GRASPASSISTTRAINER('Property','Value',...) creates a new GRASPASSISTTRAINER or raises the
