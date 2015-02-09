@@ -1,5 +1,5 @@
 <deployment-project plugin="plugin.ezdeploy" plugin-version="1.0">
-  <configuration build-checksum="3037637463" file="C:\svn\myopen\MiniVIE\GUIDE_GUIs\GraspAssistTrainer.prj" location="C:\svn\myopen\MiniVIE\GUIDE_GUIs" name="GraspAssistTrainer" preferred-package-location="C:\svn\myopen\MiniVIE\GUIDE_GUIs\GraspAssistTrainer\for_redistribution" preferred-package-type="package.type.exe" target="target.ezdeploy.standalone" target-name="MATLAB Compiler for Standalone Applications">
+  <configuration build-checksum="3912203522" file="C:\svn\myopen\MiniVIE\GUIDE_GUIs\GraspAssistTrainer.prj" location="C:\svn\myopen\MiniVIE\GUIDE_GUIs" name="GraspAssistTrainer" preferred-package-location="C:\svn\myopen\MiniVIE\GUIDE_GUIs\GraspAssistTrainer\for_redistribution" preferred-package-type="package.type.exe" target="target.ezdeploy.standalone" target-name="MATLAB Compiler for Standalone Applications">
     <param.appname>GraspAssistTrainer</param.appname>
     <param.icon />
     <param.icons />
@@ -31,7 +31,7 @@
     <param.web.mcr>true</param.web.mcr>
     <param.package.mcr>false</param.package.mcr>
     <param.no.mcr>false</param.no.mcr>
-    <param.web.mcr.name>MCR</param.web.mcr.name>
+    <param.web.mcr.name>MCR_Installer</param.web.mcr.name>
     <param.package.mcr.name>MyAppInstaller_mcr</param.package.mcr.name>
     <param.no.mcr.name>MyAppInstaller_app</param.no.mcr.name>
     <param.windows.command.prompt>true</param.windows.command.prompt>
@@ -215,7 +215,10 @@
       <file>C:\svn\myopen\MiniVIE\Utilities\ViePlant.m</file>
       <file>C:\svn\myopen\MiniVIE\Utilities\xticklabel_rotate.m</file>
     </fileset.resources>
-    <fileset.package />
+    <fileset.package>
+      <file>C:\svn\myopen\MiniVIE\+Presentation\@MiniV\private\Body.dat</file>
+      <file>C:\svn\myopen\MiniVIE\+Presentation\@MiniV\private\meshData.mat</file>
+    </fileset.package>
     <build-deliverables>
       <file location="${PROJECT_ROOT}\GraspAssistTrainer\for_testing" name="readme.txt" optional="true">C:\svn\myopen\MiniVIE\GUIDE_GUIs\GraspAssistTrainer\for_testing\readme.txt</file>
       <file location="${PROJECT_ROOT}\GraspAssistTrainer\for_testing" name="GraspAssistTrainer.exe" optional="false">C:\svn\myopen\MiniVIE\GUIDE_GUIs\GraspAssistTrainer\for_testing\GraspAssistTrainer.exe</file>
