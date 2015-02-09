@@ -158,12 +158,15 @@ function pbGo_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 if ~get(hObject,'Value')
+    set(handles.menuTools,'Enable','on')
     return
+else
+    set(handles.menuTools,'Enable','off')
 end
 
-start(handles.hDevice.hTimer);
-
-pause(1);
+if ~isempty(handles.hDevice)
+    start(handles.hDevice.hTimer);
+end
 
 pctGrasp = 0;
 direction = 1;
@@ -288,8 +291,11 @@ set(handles.pbGo,'Value',0);
 set(handles.listbox1,'Enable','on');
 set(handles.txtStatus,'String','');
 set(handles.editReps,'Enable','on');
+set(handles.menuTools,'Enable','on')
 
-stop(handles.hDevice.hTimer);
+if ~isempty(handles.hDevice)
+    stop(handles.hDevice.hTimer);
+end
 
 if ~isempty(handles.hDevice)
     handles.hDevice.setIdle();
