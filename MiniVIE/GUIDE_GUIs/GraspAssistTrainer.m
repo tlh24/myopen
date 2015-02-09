@@ -23,7 +23,7 @@ function varargout = GraspAssistTrainer(varargin)
 
 % Edit the above text to modify the response to help GraspAssistTrainer
 
-% Last Modified by GUIDE v2.5 08-Feb-2015 16:31:45
+% Last Modified by GUIDE v2.5 08-Feb-2015 20:17:43
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -63,6 +63,7 @@ handles.numRepetitions = 5;
 handles.doRecordVideo = 0;
 
 handles.hDevice = [];
+handles.hEmg = [];
 
 % set the gui options
 % [~, cellGrasps] = enumeration('Controls.GraspTypes');
@@ -141,7 +142,6 @@ if isLeftSide
 else
     axis(hAxes,[-0.25 -0.15 -0.1 0.1 0.35 0.45]);
 end
-%rotate3d(obj.hAxes,'on');
 
 hLight = light('Parent',hAxes);
 camlight(hLight,'left');
@@ -314,7 +314,7 @@ if isempty(devParams)
     defaultanswer={'COM26','1FFFFFFF','ASCII','3','0.1'};
 else
     defaultanswer={devParams.Port,devParams.CanAddr,...
-        devParams.AsciiMode,num2str(devParams.RefreshRate)};
+        devParams.AsciiMode,devParams.ThumbMode,devParams.RefreshRate};
 end
 
 % Use these defaults
@@ -348,11 +348,15 @@ if state
     set(handles.menuToolsRcpHome,'Enable','on')
     set(handles.menuToolsRcpJoystick,'Enable','on')
     set(handles.menuToolsRcpJoystick,'Checked','off')
+    set(handles.menuToolsRcpEmg,'Enable','on')
+    set(handles.menuToolsRcpEmg,'Checked','off')
 else
     % Device commands inactive
     set(handles.menuToolsRcpHome,'Enable','off')
     set(handles.menuToolsRcpJoystick,'Enable','off')
     set(handles.menuToolsRcpJoystick,'Checked','off')
+    set(handles.menuToolsRcpEmg,'Enable','off')
+    set(handles.menuToolsRcpEmg,'Checked','off')
 end
 
 function menuToolsCapture_Callback(hObject, eventdata, handles)
@@ -517,3 +521,117 @@ if ~isempty(handles.hDevice)
     pause(0.1);
     handles.hDevice.update();
 end
+
+
+% --------------------------------------------------------------------
+function menuToolsRcpEmg_Callback(hObject, eventdata, handles)
+% Run the EMG Scenario
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Handle GUI Controls
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+if strcmpi(get(hObject,'Checked'),'on')
+    try stop(handles.hEmg.Presentation.Timer);end
+    try delete(handles.hEmg.Presentation.hTopoState.hLegend.hLegendFig);end
+    try delete(handles.hEmg.Presentation.hGui.hg.Figure); end
+    
+    set(handles.pbGo,'Enable','on');
+    set(handles.pbGo,'Value',0);
+    set(hObject,'Checked','off')
+    return
+else
+    set(handles.pbGo,'Enable','off');
+    set(handles.pbGo,'Value',0);
+    set(hObject,'Checked','on')
+end
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Get input mode from user
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+reply = questdlg('Select Input Source','Input Source','Intan','Myo','Simulator','Simulator');
+switch reply
+    case 'Simulator'
+        p.hSource = Inputs.SignalSimulator;
+        defaultChannels = 1:4;
+    case 'Intan'
+        p.hSource = Inputs.IntanUdp.getInstance;
+        %p.hSource.addfilter(Inputs.Notch([120 180 240 300 360],64,1,1000));
+        Fs = p.hSource.SampleFrequency;
+        p.hSource.addfilter(Inputs.HighPass(10,8,Fs));
+        %p.hSource.addfilter(Inputs.LowPass(400,8,Fs));
+        defaultChannels = 1:4;
+    case 'Myo'
+        p.hSource = Inputs.MyoUdp.getInstance;
+        defaultChannels = 1:8;
+    otherwise
+        return
+end
+
+p.guiName = 'MiniVIE Grasp Assist';
+p.filePrefix = 'GraspAssist_';
+
+p.ClassNames = {...
+    'Up' 'Down' 'Left' 'Right' ...
+    'Wrist Flex In' ...
+    'Wrist Extend Out' ...
+    'Wrist Rotate In' ...
+    'Wrist Rotate Out' ...
+    'No Movement'};
+%             p.ClassNames = {...
+%                 'Up' 'Down' 'Left' 'Right' ...
+%                 'No Movement'};
+
+p.hPresentation = Scenarios.GraspAssist(handles.hDevice,handles.hMiniV);
+p.hPresentation.ConnectRcp = true;
+
+% handle all the generic MiniVIE gui setup stuff. Mostly just custom
+% parameter setting
+
+%% Inputs
+h = p.hSource;
+h.NumSamples = 4000;
+h.initialize();
+
+handles.hEmg.SignalSource = h;
+
+%% Signal Analysis
+h = SignalAnalysis.Lda();
+h.NumMajorityVotes = 3;
+
+NumSamplesPerWindow = 150;
+fprintf('Setting Window Size to: %d\n',NumSamplesPerWindow);
+h.NumSamplesPerWindow = NumSamplesPerWindow;
+
+handles.hEmg.TrainingData = TrainingDataAnalysis();
+ok = handles.hEmg.TrainingData.loadTrainingData([]);
+if ~ok
+    handles.hEmg.TrainingData.initialize(handles.hEmg.SignalSource.NumChannels,h.NumSamplesPerWindow);
+end
+
+% Initialize Classifier with data object
+h.initialize(handles.hEmg.TrainingData);
+
+h.setActiveChannels(defaultChannels);
+
+classNames = p.ClassNames;
+if (isempty(classNames))
+    classNames = GUIs.guiClassifierChannels.getDefaultNames;
+end
+h.setClassNames(classNames);
+
+handles.hEmg.SignalClassifier = h;
+
+%% Setup Presentation
+h = p.hPresentation;
+h.initialize(handles.hEmg.SignalSource,handles.hEmg.SignalClassifier,handles.hEmg.TrainingData);
+h.Verbose = 1;
+h.update();
+
+handles.hEmg.Presentation = h;
+
+start(handles.hEmg.Presentation.Timer);
+
+% Update handles structure
+guidata(hObject, handles);

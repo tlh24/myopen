@@ -355,6 +355,9 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
             end
         end
         function updateFigure(obj,decodedClassId,labeledClass)
+            % Deprecated
+            return
+            
             % Update figure (optional)
             if isempty(obj.hGui) || ~all(ishandle([obj.hGui{:}]))
                 return

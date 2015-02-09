@@ -14,6 +14,7 @@ classdef RcpDevice < handle
         iLast = 0;
         newHomeMessage = '';
         newThumbMessage = '';
+        newFingerPositionMessage = '';
         velocityCmd = [0 0 0];
     end
     methods
@@ -62,6 +63,9 @@ classdef RcpDevice < handle
                 return;
             elseif strncmp(msg, 'CTC', 3)
                 obj.newThumbMessage = msg;
+                return;
+            elseif strncmp(msg, 'PA', 2)
+                obj.newFingerPositionMessage = msg;
                 return;
             end
             
@@ -144,6 +148,11 @@ classdef RcpDevice < handle
                 return
             end
 
+            if ~isempty(obj.newFingerPositionMessage)
+                fprintf(obj.hSerial,string2Can(obj.newFingerPositionMessage,obj.CanAddress));
+                return
+            end                
+            
             % finally, process velocity commands
             
             % rotate which joint gets updated

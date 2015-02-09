@@ -10,30 +10,38 @@ classdef GraspAssist < Scenarios.OnlineRetrainer
     %     mode == 1 :
     % 21-Apr-2013 Armiger: Created
     properties
-        
+        ConnectRcp = false;
     end
     properties (SetAccess = private)
         % Handles
         hDevice
         hTopoState
+        hDisplay    % Handle to an external display if provided at creation
         
         LastIntent
         
-        ConnectRcp = false;
     end
     methods
-        function obj = GraspAssist
+        function obj = GraspAssist(hDevice,hDisplay)
             % Creator
+            
+            if nargin >=1
+                obj.hDisplay = hDisplay;
+            end
+            
+            if nargin >= 2
+                obj.hDevice = hDevice;
+            end
+            
         end
         function initialize(obj,SignalSource,SignalClassifier,TrainingData)
             %initialize(obj,SignalSource,SignalClassifier,TrainingData)
             % Initialize scenario with source, algorithm, and data
             % method extends class with udp and calls superclass init
             
-            
             % setup serial device
-            if obj.ConnectRcp
-                comPort = 'COM26';
+            if obj.ConnectRcp && isempty(obj.hDevice)
+                comPort = 'COM10';
                 obj.hDevice = serialSetup(comPort);
                 fprintf('Connecting serial device on %s...\n',comPort)
                 
@@ -45,13 +53,13 @@ classdef GraspAssist < Scenarios.OnlineRetrainer
                     fprintf(obj.hDevice,string2Can('HA'));
                     disp('[Press any key to continue]'),pause
                 end
-                
             end
             disp('Device setup Complete');
             
             obj.hTopoState = Scenarios.TopoGrasp();
-            
-            obj.hTopoState.setup_display();
+            if isempty(obj.hDisplay)
+                obj.hTopoState.setup_display();
+            end
             
             isLeftSide = 1;
             obj.hTopoState.hHandState = Controls.HandStatePointer;
@@ -59,11 +67,10 @@ classdef GraspAssist < Scenarios.OnlineRetrainer
             obj.hTopoState.hLegend = Controls.HandStateLegend(obj.hTopoState.hHandState,isLeftSide);
             obj.hTopoState.hLegend.EnableStateChangeBeep = 1;
             
-            
             % Remaining superclass initialize methods
             initialize@Scenarios.OnlineRetrainer(obj,SignalSource,SignalClassifier,TrainingData);
             
-            period = 0.15;
+            period = 0.1;
             fprintf('[%s] Setting timer refresh rate to %4.2f s\n',mfilename,period);
             obj.Timer.Period = period;
             
@@ -152,7 +159,7 @@ classdef GraspAssist < Scenarios.OnlineRetrainer
                 
             end
             
-            updateFigure(obj,obj.LastIntent.voteDecision,obj.CurrentClass);
+            %updateFigure(obj,obj.LastIntent.voteDecision,obj.CurrentClass);
         end
         
         function update(obj)
@@ -176,7 +183,7 @@ classdef GraspAssist < Scenarios.OnlineRetrainer
                 
                 
                 
-                if obj.ConnectRcp
+                if obj.ConnectRcp && isa(obj.hDevice,'serial')
                     i = handAngles(action_bus_enum.Index_MCP);
                     m = handAngles(action_bus_enum.Middle_MCP);
                     
@@ -190,8 +197,16 @@ classdef GraspAssist < Scenarios.OnlineRetrainer
                     fprintf(obj.hDevice,string2Can(cmd));
                     
                     %pause(0.2);
+                elseif obj.ConnectRcp && isa(obj.hDevice,'Scenarios.GraspAssist.RcpDevice')
+                    i = handAngles(action_bus_enum.Index_MCP);
+                    m = handAngles(action_bus_enum.Middle_MCP);
+                    
+                    cmd = sprintf('PA%d',round(i*10));
+                    obj.hDevice.sendMsg(cmd);
+                    % Timer will be off, so maually update
+                    obj.hDevice.update()
+                    
                 end
-                
                 
                 % set wrist angles
                 idx = action_bus_enum.Wrist_FE;
@@ -212,11 +227,16 @@ classdef GraspAssist < Scenarios.OnlineRetrainer
                     obj.hTopoState.JointAnglesDegrees(idx) = obj.hTopoState.JointAnglesDegrees(idx) + GAIN*obj.hTopoState.WristDevCmd;
                 end
                 obj.hTopoState.JointAnglesDegrees(idx) = max(min(obj.hTopoState.JointAnglesDegrees(idx),30),-10);
+
                 
-                obj.hTopoState.hOutput.set_upper_arm_angles_degrees(obj.hTopoState.JointAnglesDegrees);
-                obj.hTopoState.hOutput.set_hand_angles_degrees(handAngles);
-                obj.hTopoState.hOutput.redraw();
-                
+                if isempty(obj.hDisplay)
+                    hMiniV = obj.hTopoState.hOutput;
+                else
+                    hMiniV = obj.hDisplay;
+                end
+                hMiniV.set_upper_arm_angles_degrees(obj.hTopoState.JointAnglesDegrees);
+                hMiniV.set_hand_angles_degrees(handAngles);
+                hMiniV.redraw();
                 
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 if obj.Verbose > 1, fprintf('\n'); end
@@ -240,12 +260,16 @@ classdef GraspAssist < Scenarios.OnlineRetrainer
             %p.hSource = Inputs.CpchSerial('COM1');
             if mode == 1
                 p.hSource = Inputs.SignalSimulator;
-            else
+            elseif mode == 2
                 p.hSource = Inputs.IntanUdp.getInstance;
                 %p.hSource.addfilter(Inputs.Notch([120 180 240 300 360],64,1,1000));
                 Fs = p.hSource.SampleFrequency;
                 p.hSource.addfilter(Inputs.HighPass(10,8,Fs));
                 %p.hSource.addfilter(Inputs.LowPass(400,8,Fs));
+            elseif mode == 3
+                p.hSource = Inputs.MyoUdp.getInstance;
+            else
+                error('Unknown Control Mode Id');
             end
             
             p.ClassNames = {...
