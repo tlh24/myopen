@@ -35,6 +35,7 @@ else
     end
 end
 
+F(4,1:4) = [0 0 0 1];
 set(hTriad,'Matrix',F);
 
 Xaxis = scaleX.*[0 1;0 0; 0 0];

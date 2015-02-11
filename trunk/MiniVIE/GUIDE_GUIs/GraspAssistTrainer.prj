@@ -1,5 +1,5 @@
 <deployment-project plugin="plugin.ezdeploy" plugin-version="1.0">
-  <configuration build-checksum="3552054737" file="C:\svn\myopen\MiniVIE\GUIDE_GUIs\GraspAssistTrainer.prj" location="C:\svn\myopen\MiniVIE\GUIDE_GUIs" name="GraspAssistTrainer" preferred-package-location="C:\svn\myopen\MiniVIE\GUIDE_GUIs\GraspAssistTrainer\for_redistribution" preferred-package-type="package.type.exe" target="target.ezdeploy.standalone" target-name="MATLAB Compiler for Standalone Applications">
+  <configuration build-checksum="1514643268" file="C:\svn\myopen\MiniVIE\GUIDE_GUIs\GraspAssistTrainer.prj" location="C:\svn\myopen\MiniVIE\GUIDE_GUIs" name="GraspAssistTrainer" preferred-package-location="C:\svn\myopen\MiniVIE\GUIDE_GUIs\GraspAssistTrainer\for_redistribution" preferred-package-type="package.type.exe" target="target.ezdeploy.standalone" target-name="MATLAB Compiler for Standalone Applications">
     <param.appname>GraspAssistTrainer</param.appname>
     <param.icon>${PROJECT_ROOT}\GraspAssistTrainer_resources\icon.ico</param.icon>
     <param.icons>
