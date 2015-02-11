@@ -1,5 +1,5 @@
 <deployment-project plugin="plugin.ezdeploy" plugin-version="1.0">
-  <configuration build-checksum="107145115" file="C:\svn\myopen\MiniVIE\GUIDE_GUIs\GraspAssistTrainer.prj" location="C:\svn\myopen\MiniVIE\GUIDE_GUIs" name="GraspAssistTrainer" preferred-package-location="C:\svn\myopen\MiniVIE\GUIDE_GUIs\GraspAssistTrainer\for_redistribution" preferred-package-type="package.type.exe" target="target.ezdeploy.standalone" target-name="MATLAB Compiler for Standalone Applications">
+  <configuration build-checksum="2428901298" file="C:\svn\myopen\MiniVIE\GUIDE_GUIs\GraspAssistTrainer.prj" location="C:\svn\myopen\MiniVIE\GUIDE_GUIs" name="GraspAssistTrainer" preferred-package-location="C:\svn\myopen\MiniVIE\GUIDE_GUIs\GraspAssistTrainer\for_redistribution" preferred-package-type="package.type.exe" target="target.ezdeploy.standalone" target-name="MATLAB Compiler for Standalone Applications">
     <param.appname>GraspAssistTrainer</param.appname>
     <param.icon>${PROJECT_ROOT}\GraspAssistTrainer_resources\icon.ico</param.icon>
     <param.icons>
@@ -8,12 +8,13 @@
       <file>${PROJECT_ROOT}\GraspAssistTrainer_resources\icon_24.png</file>
       <file>${PROJECT_ROOT}\GraspAssistTrainer_resources\icon_16.png</file>
     </param.icons>
-    <param.version>1.0</param.version>
+    <param.version>1.1</param.version>
     <param.authnamewatermark />
     <param.email />
     <param.company />
     <param.summary />
-    <param.description />
+    <param.description>v1.0 Initial Revision
+v1.1 Enabled MiniVIE Menus</param.description>
     <param.screenshot>${PROJECT_ROOT}\GraspAssistTrainer.png</param.screenshot>
     <param.guid />
     <param.installpath.string>\GraspAssistTrainer\</param.installpath.string>
@@ -43,12 +44,10 @@
     <param.create.log>false</param.create.log>
     <param.log.file />
     <unset>
-      <param.version />
       <param.authnamewatermark />
       <param.email />
       <param.company />
       <param.summary />
-      <param.description />
       <param.guid />
       <param.installpath.string />
       <param.installpath.combo />

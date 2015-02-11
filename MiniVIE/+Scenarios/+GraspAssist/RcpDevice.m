@@ -150,6 +150,7 @@ classdef RcpDevice < handle
 
             if ~isempty(obj.newFingerPositionMessage)
                 fprintf(obj.hSerial,string2Can(obj.newFingerPositionMessage,obj.CanAddress));
+                obj.newFingerPositionMessage = '';
                 return
             end                
             
