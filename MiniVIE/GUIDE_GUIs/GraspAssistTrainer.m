@@ -317,7 +317,7 @@ function devParams = setupDeviceParameters()
 tempFileName = 'defaultGraspAssistDeviceParams';
 devParams = UiTools.load_temp_file(tempFileName);
 if isempty(devParams)
-    defaultanswer={'COM26','1FFFFFFF','ASCII','3','0.1'};
+    defaultanswer={'COM26','1FFFFFFF','ASCII','100','0'};
 else
     defaultanswer={devParams.Port,devParams.CanAddr,...
         devParams.AsciiMode,devParams.ThumbMode,devParams.RefreshRate};
@@ -328,8 +328,8 @@ prompt={
     'Enter COM Port (e.g. COM26):',...
     'Enter CAN Address (e.g. 1FFFFFFF / 028C901A):',...
     'Enter ASCII mode (e.g. ASCII / BINARY):',...
-    'Enter Thumb Mode (e.g. 3 / T):',...
-    'Enter refresh rate (e.g. 0.1):',...
+    'Enter Refresh delay in milliseconds (e.g. 100):',...
+    'Enter Thumb ID is "T" (e.g. 0 / 1):',...
     };
 name='Device Parameters';
 numlines=1;
@@ -342,8 +342,8 @@ end
 devParams.Port = answer{1};
 devParams.CanAddr = answer{2};
 devParams.AsciiMode = answer{3};
-devParams.ThumbMode = answer{4};
-devParams.RefreshRate = answer{5};
+devParams.RefreshRate = answer{4};
+devParams.ThumbMode = answer{5};
 
 UiTools.save_temp_file(tempFileName,devParams);
 function setDeviceEnable(handles,state)
@@ -398,20 +398,24 @@ try
     
     handles.hDevice = Scenarios.GraspAssist.RcpDevice(devParams.Port,devParams.CanAddr);
     handles.hDevice.initialize();
-    handles.hDevice.hTimer.Period = str2double(devParams.RefreshRate);
     
+    % set refresh rate, from ms to s
+    period = str2double(devParams.RefreshRate) / 1000;
+    handles.hDevice.hTimer.Period = period;
+    
+    % set comm mode
     if strcmpi(devParams.AsciiMode,'ascii')
         handles.hDevice.SendAscii = 1;
     else
         handles.hDevice.SendAscii = 0;
     end
     
-    if strcmpi(devParams.ThumbMode,'T')
+    % thumbIsT parameter
+    if strcmpi(devParams.ThumbMode,'1')
         handles.hDevice.UseThumbT = 1;
     else
         handles.hDevice.UseThumbT = 0;
     end
-    
     
     % Home all
     if strcmp('OK',questdlg('Ready to home?','Home All Actuators','OK','Cancel','OK'))
