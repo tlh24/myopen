@@ -63,6 +63,7 @@ classdef GraspAssist < Scenarios.OnlineRetrainer
             
             isLeftSide = 1;
             obj.hTopoState.hHandState = Controls.HandStatePointer;
+            addlistener(obj.hTopoState.hHandState,'StateChange',@(src,evt)moveThumb(obj));
             
             obj.hTopoState.hLegend = Controls.HandStateLegend(obj.hTopoState.hHandState,isLeftSide);
             obj.hTopoState.hLegend.EnableStateChangeBeep = 1;
@@ -161,7 +162,29 @@ classdef GraspAssist < Scenarios.OnlineRetrainer
             
             %updateFigure(obj,obj.LastIntent.voteDecision,obj.CurrentClass);
         end
-        
+        function moveThumb(obj)
+            % Callback for a state change event from a HandState object
+            
+            if obj.ConnectRcp && isa(obj.hDevice,'Scenarios.GraspAssist.RcpDevice')
+
+                switch char(obj.hTopoState.hHandState.CurrentState)
+                    case 'Platform'
+                        obj.hDevice.sendMsg('CTB');
+                    case 'Point'
+                        obj.hDevice.sendMsg('CTA');
+                    case 'Hook'
+                    case 'Key'
+                    case 'Opposition'
+                    case 'CylinderTip'
+                    case 'PointExtend'
+                    otherwise
+                        return;
+                end
+                % Timer will be off, so maually update
+                obj.hDevice.update()
+                pause(0.1)
+            end
+        end
         function update(obj)
             % main timer update command
             
@@ -180,9 +203,7 @@ classdef GraspAssist < Scenarios.OnlineRetrainer
                 obj.hTopoState.hHandState.putdata(obj.hTopoState.HandCmd/20);
                 obj.hTopoState.hLegend.setHandCmd(obj.hTopoState.HandCmd);
                 handAngles = obj.hTopoState.hHandState.graspToJointAngles();
-                
-                
-                
+                                
                 if obj.ConnectRcp && isa(obj.hDevice,'serial')
                     i = handAngles(action_bus_enum.Index_MCP);
                     m = handAngles(action_bus_enum.Middle_MCP);
@@ -200,11 +221,20 @@ classdef GraspAssist < Scenarios.OnlineRetrainer
                 elseif obj.ConnectRcp && isa(obj.hDevice,'Scenarios.GraspAssist.RcpDevice')
                     i = handAngles(action_bus_enum.Index_MCP);
                     m = handAngles(action_bus_enum.Middle_MCP);
-                    
+                                        
                     cmd = sprintf('PA%d',round(i*10));
                     obj.hDevice.sendMsg(cmd);
                     % Timer will be off, so maually update
                     obj.hDevice.update()
+                    
+                    % see also the moveThumb callback for thumb commands
+                    
+                    % Read down serial buffer
+                    bytesAvailable = obj.hDevice.hSerial.BytesAvailable;
+                    if bytesAvailable
+                        x = fread(obj.hDevice.hSerial,bytesAvailable);
+                        fprintf('Reply: "%s"\n',char(x)); %#ok<FREAD>
+                    end
                     
                 end
                 
@@ -237,9 +267,9 @@ classdef GraspAssist < Scenarios.OnlineRetrainer
                 hMiniV.set_upper_arm_angles_degrees(obj.hTopoState.JointAnglesDegrees);
                 hMiniV.set_hand_angles_degrees(handAngles);
                 hMiniV.redraw();
-                
+
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                if obj.Verbose > 1, fprintf('\n'); end
+                if obj.Verbose >= 1, fprintf('\n'); end
             catch ME
                 UiTools.display_error_stack(ME);
             end

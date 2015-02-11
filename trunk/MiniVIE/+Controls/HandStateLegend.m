@@ -229,7 +229,7 @@ function updateStateDiagram(src,obj)
 if obj.EnableStateChangeBeep
     if isempty(obj.hAudioPlayer)
         try
-            [y,Fs] = wavread(obj.StateChangeSound);
+            [y,Fs] = audioread(obj.StateChangeSound);
             obj.hAudioPlayer = audioplayer(y,Fs);
             play(obj.hAudioPlayer);
         catch ME
