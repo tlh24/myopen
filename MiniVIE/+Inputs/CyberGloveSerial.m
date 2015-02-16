@@ -69,7 +69,7 @@ classdef CyberGloveSerial < handle
             end
 
             % setup port
-            obj.hPort = setup_serial(comPortName,handleName);
+            obj.hPort = setup_serial(obj.comPortName,obj.handleName);
             
             % query device for # sensors
             obj.nSensors = queryCmd(obj,'?S',4);
