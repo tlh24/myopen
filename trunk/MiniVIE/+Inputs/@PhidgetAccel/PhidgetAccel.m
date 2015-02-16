@@ -5,7 +5,26 @@ classdef PhidgetAccel < handle
     % For use with 32-bit Matlab on windows based systems only.  Note that
     % 32 bit matlab will run on 32/64 bit Windows XP/Vista/7
     %
-    % Usage:
+    % Refer to product documentation at:
+    % "http://www.phidgets.com/products.php?product_id=1059"
+    %
+    % Interface type:
+    % This device communicates via USB using the Phidgets driver library.  The
+    % Phidget21 C library is contained in phidget21.dll, and referenced using
+    % the phidget21Matlab.h header file.  These files are stored in the package
+    % folder: C:\svn\myopen\MiniVIE\+Inputs\@PhidgetAccel
+    % 
+    % C library files in matlab are interfaced using the following commands:
+    % - loadlibrary
+    % - libpointer
+    % - libstruct
+    % - calllib
+    % More info can be found via MATLAB Documentation: 
+    % MATLAB > Advanced Software Development > Calling External Functions >
+    % Call C Shared Libraries
+    %
+    %
+    % Example 1:
     %   hPhidget = Inputs.PhidgetAccel();
     %   hPhidget.initialize();
     %
@@ -16,6 +35,18 @@ classdef PhidgetAccel < handle
     %   % access to the dll can cause memory issues / crashes if not
     %   % properly managed
     %   hPhidget.close();
+    %
+    % Example 2:
+    %   hPhidget = Inputs.PhidgetAccel();
+    %   hPhidget.initialize();
+    %   hPhidget.preview;
+    %   hPhidget.close();
+    %
+    % Example 3:
+    %   hPhidget = Inputs.PhidgetAccel();
+    %   hPhidget.initialize();
+    %   hPhidget.previewAngles;
+    %   hPhidget.close();    
     %
     % See Also: Inputs.PhidgetSource
     %
@@ -39,12 +70,19 @@ classdef PhidgetAccel < handle
     methods
         function obj = PhidgetAccel
             % Create PhidgetAccel object
+            % Current support is only for 32-bit MATLAB installations on
+            % windows.
+            % 
+            % initialize() method must be called before use.
+            % close() method must be called before reinitialization
+            %
             assert(strcmpi(computer('arch'),'WIN32'),...
                 'Phidget interface currently only supported on 32bit matlab running on windows architecture');
             
         end
         function initialize(obj)
-            
+            % obj.initialize()
+            % Initialize Phidget Accelerometer 
             if obj.isInitialized
                 fprintf('Device already initialized\n');
                 return
@@ -98,6 +136,9 @@ classdef PhidgetAccel < handle
             obj.NumChannels = 3;
         end
         function accelValue = getData(obj)
+            if ~obj.isInitialized
+                error('Device not initialized\n');
+            end
             
             % get accel values
             accelValuePtr = libpointer('doublePtr',0);
@@ -115,6 +156,10 @@ classdef PhidgetAccel < handle
             % directions
             %
             % Order is: [XY YX XZ ZX YZ ZY]
+
+            if ~obj.isInitialized
+                error('Device not initialized\n');
+            end
             
             accelValue = getData(obj);
             if isempty(accelValue)
@@ -144,6 +189,14 @@ classdef PhidgetAccel < handle
             obj.isInitialized = false;
         end
         function preview(obj)
+            % Opens strip-chart preview of the accel device output and
+            % plots data in real-time
+            %
+            % Requires MiniVIE env to be configured
+
+            if ~obj.isInitialized
+                error('Device not initialized\n');
+            end
             
             hP = LivePlot(3,100,{'AccX','AccY','AccZ'});
             
@@ -157,7 +210,12 @@ classdef PhidgetAccel < handle
             
         end
         function previewAngles(obj)
-            % Test Phidget device and return angle measurements
+            % Opens strip-chart preview of the accel device output and
+            % plots angle measurements in real-time
+
+            if ~obj.isInitialized
+                error('Device not initialized\n');
+            end
             
             hP = LivePlot(6,100,{'XY','YX','XZ','ZX','YZ','ZY'});
             hP.AxisLimits = [-185 185];

@@ -20,11 +20,24 @@ classdef FlockOfBirds < handle
         NumSensors = 3;
         IsSimulator = false; %Controls whether real data or random output is returned (debugging)
     end
+    properties (SetAccess = private)
+        isInitialized = false;
+    end
     
     methods
         function obj = FlockOfBirds
+            % Creator
         end
         function initialize(obj,strComPort)
+            %obj.initialize(strComPort)
+            % Create serial port
+            % set FoB specific params
+            % begin streaming
+            
+            if obj.isInitialized
+                fprintf('Device already initialized\n');
+                return
+            end
             
             if nargin < 2
                 strComPort = 'COM4';
@@ -56,9 +69,9 @@ classdef FlockOfBirds < handle
             % holding RequestToSend high
             
             % Autoconfig
-            pause(0.6);   % 300 misec delay required before AutoConfig commands (p. 83)
+            pause(0.3);   % 300 misec delay required before AutoConfig commands (p. 83)
             fwrite(s,[240+1 80 50 numBirds]);  % autoconfig for Master => bird 1
-            pause(0.6);   % 300 misec delay required after AutoConfig commands (p. 83)
+            pause(0.3);   % 300 misec delay required after AutoConfig commands (p. 83)
             
             % lights should go on
             
@@ -77,6 +90,10 @@ classdef FlockOfBirds < handle
         end
         
         function [pos ang R] = getSingleBird(obj)
+            if ~obj.isInitialized
+                error('Device not initialized\n');
+            end
+            error('deprecated');
             
             bird = obj.Bird;
             
@@ -87,6 +104,14 @@ classdef FlockOfBirds < handle
         end
         
         function [pos, ang] = getBirdGroup(obj)
+            %[pos, ang] = getBirdGroup(obj)
+            % get the position and angle of the flock of birds sensor(s).
+            % This assumes that stream mode is active and that there is new
+            % data available.
+
+            if ~obj.isInitialized
+                error('Device not initialized\n');
+            end
             
             if obj.IsSimulator
                 pos = rand(3,obj.NumSensors);
@@ -98,7 +123,7 @@ classdef FlockOfBirds < handle
             s = obj.Bird;
             numBytes = 13;
             
-            %% Read available bytes
+            % Read available bytes
             numAvailable = s.BytesAvailable;
             if numAvailable > 0
                 [streamBytes, numRead] = fread(s,numAvailable);
@@ -107,8 +132,11 @@ classdef FlockOfBirds < handle
                 streamBytes = [];
             end
             
+            % fread returns bytes as double precision, convert to uint8 for
+            % bitwise operations
             streamBytes = uint8(streamBytes);
             
+            % find start bits
             startBits = bitget(streamBytes,8);
             
             numMsgs = sum(startBits);
@@ -136,16 +164,19 @@ classdef FlockOfBirds < handle
             pos = pos';
             ang = ang';
             
-
-            
-            
         end
         
         function F = getframes(obj)
             %F = getframes(obj)
             % returns 4x4xobj.NumSensors frame transforms for Flock of
             % Birds
+            %
+            % This function calls the getBirdGroup method, but then
+            % performs an additional step of converting the output to a 4x4
+            % frame
             
+            % call the actual data handling method: 
+            % (Note, init status is checked within getBirdGroup
             [pos, ang] = getBirdGroup(obj);
             
             if isempty(pos)
@@ -155,16 +186,11 @@ classdef FlockOfBirds < handle
             
             F = repmat(eye(4),[1 1 obj.NumSensors]);
             for i = 1:obj.NumSensors
-                %                 [R] = birdR(ang(i,:));
-                %                 F(1:3,1:3,i) = R;
-                %                 F(1:3,4,i) = pos(i,:);
-                
                 F(:,:,i) = makehgtform('translate',pos(i,:),...
                     'zrotate',ang(i,3),...
                     'yrotate',ang(i,2),...
                     'xrotate',ang(i,1));
             end
-            
         end
         
         function preview(obj)
@@ -205,6 +231,31 @@ classdef FlockOfBirds < handle
             
         end %% preview
         
+        function close(obj)
+            % cancel streaming, close and cleanup serial port
+            
+            % stop streaming
+            try 
+                % Stream stop
+                fprintf(obj.Bird,'?'); % Stream Stop
+
+                % Autoconfig
+                pause(0.3);   % 300 misec delay required before AutoConfig commands (p. 83)
+                fwrite(obj.Bird,[240+1 80 50 numBirds]);  % autoconfig for Master => bird 1
+                pause(0.3);   % 300 misec delay required after AutoConfig commands (p. 83)
+            end
+            
+            % close port
+            try
+                fclose(obj.Bird);
+            end
+            
+            % remove port
+            try 
+                delete(obj.Bird);
+            end
+                       
+        end
     end
     methods (Static = true)
         function obj = Demo
@@ -231,7 +282,11 @@ classdef FlockOfBirds < handle
             %             end
         end
         function s = TestSession
-            %%
+            %% Example command-line session
+            % This provides an example command-line session, independant of
+            % the class object, using native matlab commands
+            
+            %% Setup Port
             s = serial('COM4');              % default = 'COM1'
             set(s,'BaudRate',115200);        % default = 9600
             set(s,'RequestToSend','off');    % default = on
@@ -240,7 +295,8 @@ classdef FlockOfBirds < handle
             set(s,'Timeout',0.5);            % default = 10
             
             fopen(s);
-            %%
+            
+            %% Set initial mode
             numBirds = 3;
             
             % Set mode
@@ -253,9 +309,9 @@ classdef FlockOfBirds < handle
             % holding RequestToSend high
             
             %% Autoconfig
-            pause(0.6);   % 300 misec delay required before AutoConfig commands (p. 83)
+            pause(0.3);   % 300 misec delay required before AutoConfig commands (p. 83)
             fwrite(s,[240+1 80 50 numBirds]);  % autoconfig for Master => bird 1
-            pause(0.6);   % 300 misec delay required after AutoConfig commands (p. 83)
+            pause(0.3);   % 300 misec delay required after AutoConfig commands (p. 83)
             
             % lights should go on
             
@@ -282,19 +338,19 @@ classdef FlockOfBirds < handle
                 % In the POSITION/ANGLES mode, the outputs from the POSITION and ANGLES modes
                 % are combined into one record containing the following twelve bytes:
                 % MSB LSB
-                % 7 6 5 4 3 2 1 0 BYTE #
-                % 1 X8 X7 X6 X5 X4 X3 X2 #1 LSbyte X
-                % 0 X15 X14 X13 X12 X11 X10 X9 #2 MSbyte X
-                % 0 Y8 Y7 Y6 Y5 Y4 Y3 Y2 #3 LSbyte Y
-                % 0 Y15 Y14 Y13 Y12 Y11 Y10 Y9 #4 MSbyte Y
-                % 0 Z8 Z7 Z6 Z5 Z4 Z3 Z2 #5 LSbyte Z
-                % 0 Z15 Z14 Z13 Z12 Z11 Z10 Z9 #6 MSbyte Z
-                % 0 Z8 Z7 Z6 Z5 Z4 Z3 Z2 #7 LSbyte Zang
-                % 0 Z15 Z14 Z13 Z12 Z11 Z10 Z9 #8 MSbyte Zang
-                % 0 Y8 Y7 Y6 Y5 Y4 Y3 Y2 #9 LSbyte Yang
-                % 0 Y15 Y14 Y13 Y12 Y11 Y10 Y9 #10 MSbyte Yang
-                % 0 X8 X7 X6 X5 X4 X3 X2 #11 LSbyte Xang
-                % 0 X15 X14 X13 X12 X11 X10 X9 #12 MSbyte Xang
+                % 7   6   5   4   3   2   1   0   BYTE #
+                % 1   X8  X7  X6  X5  X4  X3  X2  #1  LSbyte X
+                % 0   X15 X14 X13 X12 X11 X10 X9  #2  MSbyte X
+                % 0   Y8  Y7  Y6  Y5  Y4  Y3  Y2  #3  LSbyte Y
+                % 0   Y15 Y14 Y13 Y12 Y11 Y10 Y9  #4  MSbyte Y
+                % 0   Z8  Z7  Z6  Z5  Z4  Z3  Z2  #5  LSbyte Z
+                % 0   Z15 Z14 Z13 Z12 Z11 Z10 Z9  #6  MSbyte Z
+                % 0   Z8  Z7  Z6  Z5  Z4  Z3  Z2  #7  LSbyte Zang
+                % 0   Z15 Z14 Z13 Z12 Z11 Z10 Z9  #8  MSbyte Zang
+                % 0   Y8  Y7  Y6  Y5  Y4  Y3  Y2  #9  LSbyte Yang
+                % 0   Y15 Y14 Y13 Y12 Y11 Y10 Y9  #10 MSbyte Yang
+                % 0   X8  X7  X6  X5  X4  X3  X2  #11 LSbyte Xang
+                % 0   X15 X14 X13 X12 X11 X10 X9  #12 MSbyte Xang
                 
                 %  The GROUP MODE address byte is only present if
                 % GROUP MODE is enabled (see change value GROUP MODE).
@@ -303,7 +359,6 @@ classdef FlockOfBirds < handle
                 [birdBytes, numRead] = fread(s,numBytes*numBirds,'uint8');
                 
                 %% Parse response
-                
                 if numRead < numBytes*numBirds
                     msg = sprintf('The number of bytes read [%d] was fewer than required [%d] \n',...
                         numRead,numBytes*numBirds);
