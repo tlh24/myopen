@@ -150,7 +150,11 @@ classdef FlockOfBirds < handle
             % look for messages that have the right number of bytes
             %idxValid = find(diff(idxRecent) == numBytes,2,'last');
             idxValid = find(diff(idxRecent) == numBytes);
-                        
+            
+            pos = [];
+            ang = [];
+            group = [];
+            
             for i = 1:length(idxValid)
                 msgStart = idxRecent(idxValid(i));
                 thisMessage = streamBytes(msgStart:msgStart+numBytes-1);
