@@ -87,6 +87,8 @@ classdef FlockOfBirds < handle
             % Start Stream
             fprintf(s,'@'); % Stream Start
             
+            % Set init flag
+            obj.isInitialized = true;
         end
         
         function [pos ang R] = getSingleBird(obj)
@@ -254,7 +256,10 @@ classdef FlockOfBirds < handle
             try 
                 delete(obj.Bird);
             end
-                       
+            
+            % Set init flag
+            obj.isInitialized = false;
+
         end
     end
     methods (Static = true)
