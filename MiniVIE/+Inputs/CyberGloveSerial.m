@@ -1,6 +1,6 @@
 classdef CyberGloveSerial < handle
     % Class file for direct interface with Cyber Glove without Device manager
-    % Usage: h = Inputs.CyberGloveSerial(comPortName,handleName);
+    % Usage: h = Inputs.CyberGloveSerial();
     %
     % h.initialize()
     % h.getRawData()
@@ -31,30 +31,57 @@ classdef CyberGloveSerial < handle
         minLim =   [-35 -110 -35   5 -90 -15 -60 -20 -30   0  0 -20 -30   0  0  0 -30   0  0  0 -30   0  0   0  0  0 -20] * pi/180;
         maxGlove = [  0     0     0     0     0   144   164   182   149   172   232     0   183   166   238   104   170   147   199    74   170   205   231   170   167   174   219 ];
         minGlove = [  0     0     0     0     0    67     1   124    66    66    48     0    69    84    63   155    60    75    74   151    66    89    95   108    88    63    69 ];
+        
+        comPortName     = 'COM1';
+        handleName      = 'CyberGlove'
+        isInitialized   = false;
     end
     methods
         function obj = CyberGloveSerial(comPortName,handleName)
             % CyberGloveSerial - for direct serial control of glove
             % Constructor.
             
-            if nargin < 1
-                comPortName = 'COM1';
+            % Allow parameter overwrite
+            if nargin >= 1
+                obj.comPortName = comPortName;
             end
-            if nargin < 2
-                handleName = 'CyberGlove';
+            if nargin >= 2
+                obj.handleName = handleName;
             end
             
-            obj.hPort = setup_serial(comPortName,handleName);
+            % RSA: moved connection to init method
+            %obj.hPort = setup_serial(comPortName,handleName);
             
+            % provide unique id
             obj.id = fix(2^16*rand);
         end
-        function initialize(obj)
+        function initialize(obj,comPortName,handleName)
+            %obj.initialize(comPortName,handleName)
+            % Perform serial port setup and send initial config commands to
+            % glove
+            
+            % Allow parameter overwrite
+            if nargin >= 2
+                obj.comPortName = comPortName;
+            end
+            if nargin >= 3
+                obj.handleName = handleName;
+            end
+
+            % setup port
+            obj.hPort = setup_serial(comPortName,handleName);
+            
+            % query device for # sensors
             obj.nSensors = queryCmd(obj,'?S',4);
             if isempty(obj.nSensors)
                 error('No response from device')
             end
-            
+
+            % query device for L/R
             obj.isRightHanded = queryCmd(obj,'?R',4);
+
+            % call method for determining where this data fits in overall
+            % list of arm+hand data.  (Leftover from sources and sinks)
             obj.hardwareMask = getHardwareMask(obj);
         end
         
@@ -63,7 +90,15 @@ classdef CyberGloveSerial < handle
             obj.hPort = [];
         end
         function close(obj)
-            fclose(obj.hPort);
+            % close the port
+            try
+                fclose(obj.hPort);
+            end
+            % delete the port
+            try
+                delete(obj.hPort);
+                obj.hPort = [];
+            end
         end
         function actionBusAngles = getdata(obj)
             
@@ -147,6 +182,7 @@ classdef CyberGloveSerial < handle
             % Wrist abduction sensor
         end
         function rawData = getRawData(obj)
+            % read the raw sensor values form the device
             fwrite(obj.hPort,'G');
             nBytes = obj.nSensors + 2;
             [A, count] = fread(obj.hPort,nBytes,'uint8');
@@ -247,15 +283,17 @@ classdef CyberGloveSerial < handle
             q = max(obj.minLim, min(obj.maxLim,q));
         end
         
-        function clear_buffer(obj)
+        function b = clear_buffer(obj)
             % read leftover bytes if there are any
-            if obj.hPort.BytesAvailable > 0
-                fread(obj.hPort,obj.hPort.BytesAvailable);
+            numBytes = obj.hPort.BytesAvailable;
+            if numBytes > 0
+                b = fread(obj.hPort,numBytes);
             end
         end
         function switchVal = getswitch(obj)
+            % return the value of the wrist switch (0/1)
             fwrite(obj.hPort,'?W');
-            [A count] = fread(obj.hPort,4,'uint8');
+            [A, count] = fread(obj.hPort,4,'uint8');
             
             assert(isequal(A(1:2),uint8('?W')'))
             assert(count == 4);
