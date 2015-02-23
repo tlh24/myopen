@@ -362,5 +362,26 @@ classdef CytonI < Presentation.CytonI.Robot
             obj.testROM;
             
         end
+        function hCyton = TestHardware(comPort)
+            %Presentation.CytonI.CytonI.TestHardware('COM1')
+            %
+            % Perform Test by connecting to physical device
+
+            import Presentation.CytonI.*
+            
+            delete(instrfindall)
+
+            % Launch the cyton virtual integration environment (VIE)
+            hCyton = CytonI;
+            
+            drawnow
+
+            % Link the cyton VIE to the physical device
+            hCyton.connectToHardware(comPort)
+
+            % Launch the joint control gui
+            hCyton.guiJointSliders
+
+        end
     end
 end
