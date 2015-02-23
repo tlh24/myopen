@@ -4,11 +4,13 @@ hCyton = Presentation.CytonI.CytonI;
 %%
 % set joint values in radians for joints with ids 1-8
 hCyton.setJointIdValue(1,1)
-hCyton.setJointIdValue(2,1)
+hCyton.setJointIdValue(2,0)
+hCyton.setJointIdValue(4,pi/2)
 
 % wait for movements to complete
 while ~hCyton.hPlant.allMovesComplete,disp('waiting');drawnow;end
 
+%%
 % return the joint parameters:
 q = hCyton.JointParameters
 
