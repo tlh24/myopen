@@ -680,6 +680,8 @@ classdef CytonControls < hgsetget
         end
         function J = numericJacobian(q)
             
+            % Kinematics for the Cyton Robot
+            
             DH = @Presentation.CytonI.Robot.DH_transformation;
             
             % Computed statically from getDHParams
@@ -704,6 +706,7 @@ classdef CytonControls < hgsetget
                 8.0000
                 8.0000];
             
+            % A matrices represent the kinematics of each joint
             piOver2 = pi/2;
             A1 = DH(a(1),  piOver2, d(1), q(1) );
             A2 = DH(a(2), -piOver2, d(2), q(2) );
@@ -713,6 +716,8 @@ classdef CytonControls < hgsetget
             A6 = DH(a(6),  piOver2, d(6), q(6) + piOver2 );
             A7 = DH(a(7),  0, d(7), q(7) );
             
+            % T matrices represent the transform form the base to each
+            % joint
             T_0_1 = A1;
             T_0_2 = A1*A2;
             T_0_3 = A1*A2*A3;
@@ -721,7 +726,8 @@ classdef CytonControls < hgsetget
             T_0_6 = A1*A2*A3*A4*A5*A6;
             T_0_7 = A1*A2*A3*A4*A5*A6*A7;
             
-            % Define components for Jacobian
+            % Define components for Jacobian:
+            % z-axis is just the 3rd column of the transforms
             z0 = [0 0 1]';
             z1 = T_0_1(1:3,3);
             z2 = T_0_2(1:3,3);
@@ -731,6 +737,8 @@ classdef CytonControls < hgsetget
             z6 = T_0_6(1:3,3);
             %z7 = T_0_7(1:3,3);
             
+            % The joint centers are just the 4th colum from each transformation matrix
+            % to the base
             o0 = [0 0 0]';
             o1 = T_0_1(1:3,4,1);
             o2 = T_0_2(1:3,4,1);
