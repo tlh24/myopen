@@ -678,33 +678,16 @@ classdef CytonControls < hgsetget
             disp('Done');
             
         end
-        function J = numericJacobian(q)
-            
+        function [J, A] = numericJacobian(q)
+            % Compute numeric Jacobian for the given joint position
+            %
             % Kinematics for the Cyton Robot
             
             DH = @Presentation.CytonI.Robot.DH_transformation;
             
             % Computed statically from getDHParams
-            d = [
-                37.9300
-                -4.6200
-                145.0000
-                11.0000
-                175.0000
-                7.4000
-                -7.6500
-                0
-                0];
-            a = [
-                0
-                0
-                0
-                0
-                0
-                67.7000
-                53.1500
-                8.0000
-                8.0000];
+            d = [37.9300 -4.6200 145.0000 11.0000 175.0000 7.4000 -7.6500 0 0];
+            a = [0 0 0 0 0 67.7000 53.1500 8.0000 8.0000];
             
             % A matrices represent the kinematics of each joint
             piOver2 = pi/2;
@@ -761,6 +744,8 @@ classdef CytonControls < hgsetget
             J11 = [J1 J2 J3 J4 J5 J6 J7];
             
             J = [J11; z0 z1 z2 z3 z4 z5 z6];
+            
+            A = cat(3,A1,A2,A3,A4,A5,A6,A7);
             
         end
     end

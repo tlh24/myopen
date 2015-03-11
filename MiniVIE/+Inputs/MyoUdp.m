@@ -14,6 +14,11 @@ classdef MyoUdp < Inputs.SignalInput
         Buffer
         numPacketsReceived = 0;
         numValidPackets = 0;
+
+        Orientation
+        Accelerometer
+        Gyroscope
+    
     end
     methods (Access = private)
         function obj = MyoUdp
@@ -77,7 +82,7 @@ classdef MyoUdp < Inputs.SignalInput
             end
             
             obj.update();
-                        
+            
             data = obj.Buffer.getData(numSamples,idxChannel);
             
         end
@@ -87,9 +92,14 @@ classdef MyoUdp < Inputs.SignalInput
             % them for later use.
             [cellDataBytes, numReads] = obj.UdpStreamReceiveSocket.getAllData(1e6);
             
-            packetSize = 12;
+            packetSize = 48;
             isCorrectSize = cellfun(@length,cellDataBytes) == packetSize;
             nValidPackets = sum(isCorrectSize);
+            
+            if nValidPackets == 0
+                % no new data, nothing to do
+                return
+            end
             
             % update totals
             obj.numPacketsReceived = obj.numPacketsReceived + numReads;
@@ -98,9 +108,17 @@ classdef MyoUdp < Inputs.SignalInput
             % convert 2 2d array: [newPackets by numElements]
             M = reshape([cellDataBytes{isCorrectSize}],packetSize,[]);
             
+            channelIds = obj.ChannelIds;
+            %%
+            
+            nValidPackets = size(M,2);
+            
+            % convert EMG samples first (bytes 0..7
+            E = M(1:8,:);
+            
             % convert uchar to int8 to double
-            b = double(M);
-            b(b>127) = b(b>127) - 255;
+            b = double(E);
+            b(b > 127) = b(b > 127) - 255;
             
             if isempty(b) && sum(~isCorrectSize) > 0
                 fprintf('[%s] Unexpected Packet Size Received\n',mfilename);
@@ -123,9 +141,53 @@ classdef MyoUdp < Inputs.SignalInput
                 %disp('Cannot Interpolate')
             end
             
+            try
+                % convert Orientation data (bytes 9..48)
+                b = M(9:48,:);  % single bytes
+                s = reshape( typecast(b(:),'single'), 10, []);
+                
+                % onOrientationData provides its current orientation, which is
+                % represented as a unit quaternion.
+                quat = s(1:4,:);
+                % onAccelerometerDataprovides the accelerometer data of myo, in
+                % units of g.
+                accel = s(5:7,:);
+                % onGyroscopeData provides the gyroscope data of myo, in units
+                % of deg / s.
+                gyro = s(8:10,:);
+                
+                % Convert quaternion to rotation matrix
+                % This could fail if all zeros are sent as quaternion
+                % data
+                R = repmat(eye(3),[1 1 nValidPackets]);
+                for i = 1:nValidPackets
+                    try
+                        R(:,:,i) = LinAlg.quaternionToRMatrix(quat(:,i));
+                    catch ME
+                        warning(ME.message);
+                    end
+                end
+                xyz = LinAlg.decompose_R(R);
+                
+                % Display Output
+                fprintf('orient: [%6.1f %6.1f %6.1f]; accel: [%6.2f %6.2f %6.2f]; gyro: [%8.1f %8.1f %8.1f] \n',...
+                    xyz(1,end),xyz(2,end),xyz(3,end),...
+                    accel(1,end),accel(2,end),accel(3,end),...
+                    gyro(1,end),gyro(2,end),gyro(3,end) );
+                
+                obj.Orientation = xyz;
+                obj.Accelerometer = accel;
+                obj.Gyroscope = gyro;
+
+            catch ME
+                disp(mfilename);
+                disp('Caught an error');
+                keyboard
+                disp(ME.message)
+            end
             EMG_GAIN = 0.01;  %TODO abstract
+            obj.Buffer.addData(EMG_GAIN .* g(:,channelIds));
             
-            obj.Buffer.addData(EMG_GAIN .* g(:,obj.ChannelIds));
             return
             
             % Add however many new samples we received to the rolling
