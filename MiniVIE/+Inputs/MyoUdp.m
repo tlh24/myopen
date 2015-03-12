@@ -1,10 +1,35 @@
 classdef MyoUdp < Inputs.SignalInput
-    % Class for interfacing Thalmic Labs Myo Cuff via pnet udp.
+    % Class for interfacing Thalmic Labs Myo Cuff via pnet udp.  The basic
+    % architecture is that the Myo SDK is used within MyoUdp.exe which
+    % handles device interface and low level communications.  The
+    % executable file then streams the EMG, orientation, accelerometer, and
+    % gyroscope data via UDP on port 10001 at 200Hz.  Note this is so far
+    % independant from MATLAB so any receiver code could be written to take
+    % the EMG data.  Note that the device pairing and connection can be
+    % managed using the myo armband manager software from thalmic
+    % On the matlab side, the getData command reads buffered UDP packets,
+    % interpolated the EMG data up to the expected 1kHz and returns the
+    % data.  The orientation, accelerometer, and gyroscope data are
+    % currently returned as property values.  Future versions may make
+    % these available as seperate channel data for pattern classification.
     %
+    % Known Limitations:
+    % As stated above, the maximum data rate is 200Hz for the armband and
+    % the data resolution is only 8-bits.  Also, the myo is set to timeout
+    % after 30 seconds of no motion to conserve battery.  Shaking the
+    % device will wake it and resue streaming.  Currently only one myo can
+    % stream at a time, though this is targeted for future revisions in the
+    % MiniVIE software
+    % 
     %     % Test usage:
+    %     MiniVIE.configurePath
     %     obj = Inputs.MyoUdp.getInstance;
     %     obj.initialize();
-    %     hViewer = GUIs.guiSignalViewer(a);
+    %     hViewer = GUIs.guiSignalViewer(obj);
+    %
+    % Revisions:
+    %   1/27/2015 Armiger: Initial revision for streaming EMG
+    %   2/24/2015 Armiger: Updated .exe to include orientation data
     properties
         UdpStreamReceivePortNumLocal = 10001;
     end
