@@ -324,7 +324,10 @@ if isempty(evt) % Pointer Control
     return
 end
 
-if ~isfield(evt,'Key')
+% Previously we were looking for evt.Key.  In R2014b this event is now
+% designated by EventName
+
+if ~strcmp(evt.EventName,'KeyPress')
     return
 end
 
