@@ -324,11 +324,6 @@ if isempty(evt) % Pointer Control
     return
 end
 
-if ~isfield(evt,'Key')
-    return
-end
-
-
 switch evt.Key
     case 'leftarrow'
         p = obj.normalizedPaddlePosition;

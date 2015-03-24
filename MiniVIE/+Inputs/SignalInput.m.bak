@@ -164,7 +164,7 @@ classdef SignalInput < Common.MiniVieObj
             end
 
             if nargin < 2
-                numSamples = obj.NumSamples;
+                numSamples = obj.SignalSource.NumSamples;
             end
             
             try

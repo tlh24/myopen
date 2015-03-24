@@ -47,6 +47,7 @@ classdef MyoUdp < Inputs.SignalInput
     end
     methods (Access = private)
         function obj = MyoUdp
+            obj.Verbose = 0;
         end
     end
     methods
