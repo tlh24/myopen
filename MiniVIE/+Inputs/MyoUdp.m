@@ -13,6 +13,15 @@ classdef MyoUdp < Inputs.SignalInput
     % currently returned as property values.  Future versions may make
     % these available as seperate channel data for pattern classification.
     %
+    % Data packet information:
+    % Data packet size is 48 bytes.
+    %     uchar values encoding:
+    %     Bytes 0-7: int8 [8] emgSamples
+    %     Bytes 8-23: float [4]  quaternion (rotation)
+    %     Bytes 24-35: float [3] accelerometer data, in units of g
+    %     Bytes 36-47: float [3] gyroscope data, in units of deg / s
+    %
+    %
     % Known Limitations:
     % As stated above, the maximum data rate is 200Hz for the armband and
     % the data resolution is only 8-bits.  Also, the myo is set to timeout
@@ -251,7 +260,7 @@ classdef MyoUdp < Inputs.SignalInput
         end
         function Simulator
             % Demo the compact version of pnet wrapped into a class.  This can be run
-            % across two matlab session ir within it's own session
+            % across two matlab sessions or within it's own session
             pnet('closeall')
             
             %% Setup Sender (Session 2)
