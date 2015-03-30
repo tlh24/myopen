@@ -236,7 +236,10 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
             channels = obj.ActiveChannels;
             chEmg = obj.getContinuousData(channels,sortOrder);
             
-            %doFilter = false
+            if nargin < 2
+                doFilter = false;
+            end
+            
             if doFilter
                 chEmg = TrainingDataAnalysis.filter_data(chEmg);
                 dataLabel = strcat(dataLabel,'_filtered');
