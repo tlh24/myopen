@@ -1,0 +1,4 @@
+*.trainingData
+*.assessmentLog
+*.partialTac
+*.tacAssessment
