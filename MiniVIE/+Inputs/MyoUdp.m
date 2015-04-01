@@ -49,9 +49,9 @@ classdef MyoUdp < Inputs.SignalInput
         numPacketsReceived = 0;
         numValidPackets = 0;
 
-        Orientation
-        Accelerometer
-        Gyroscope
+        Orientation         % Euler Angles, Degrees
+        Accelerometer       % X,Y,Z Acceleration, (g)
+        Gyroscope           % X,Y,Z Angular Rate, (deg/s)
     
     end
     methods (Access = private)
@@ -89,6 +89,25 @@ classdef MyoUdp < Inputs.SignalInput
                 return
             elseif (obj.UdpStreamReceiveSocket.hSocket ~= 0)
                 fprintf(2,'[%s] Expected receive socket id == 0, got socket id == %d\n',mfilename,obj.UdpStreamReceiveSocket.hSocket);
+            end
+            
+            % check for data:
+            [~, numReads] = obj.UdpStreamReceiveSocket.getAllData(1e6);
+            
+            if numReads > 0
+                fprintf('[%s] UDP Data Stream Detected\n', mfilename);
+            else
+                f = fullfile(fileparts(which('MiniVIE')),'+Inputs','MyoUdp.exe');
+                fprintf('[%s] UDP Data Stream NOT Detected\n', mfilename);
+                
+                reply = questdlg({'UDP Data not detected.' ...
+                    'Launch MyoUdp.exe to begin streaming?'...
+                    '(Ensure that Myo Armband is connected before proceeding)'},...
+                    'Launch MyoUdp.exe','OK','Cancel','OK');
+                if strcmp(reply,'OK')
+                    fprintf('[%s] Launching %s\n', mfilename, f);
+                    system(strcat(f,' &'));
+                end
             end
             
             % data is [numSamples x numChannels]
@@ -197,11 +216,15 @@ classdef MyoUdp < Inputs.SignalInput
                 R = repmat(eye(3),[1 1 nValidPackets]);
                 for i = 1:nValidPackets
                     try
-                        R(:,:,i) = LinAlg.quaternionToRMatrix(quat(:,i));
+                        % renormalize quaternion in case of rounding errors
+                        normQ = quat(:,i) ./ norm(quat(:,i));
+                        % convert to rotation matrix
+                        R(:,:,i) = LinAlg.quaternionToRMatrix(normQ);
                     catch ME
                         warning(ME.message);
                     end
                 end
+                % Convert to Euler angles
                 xyz = LinAlg.decompose_R(R);
                 
                 % Display Output
@@ -217,8 +240,8 @@ classdef MyoUdp < Inputs.SignalInput
             catch ME
                 disp(mfilename);
                 disp('Caught an error');
-                keyboard
                 disp(ME.message)
+                keyboard
             end
             EMG_GAIN = 0.01;  %TODO abstract
             obj.Buffer.addData(EMG_GAIN .* g(:,channelIds));
@@ -247,6 +270,7 @@ classdef MyoUdp < Inputs.SignalInput
         function stop(obj)
         end
         function close(obj)
+            Inputs.MyoUdp.getInstance(-1);
         end
         
     end
@@ -285,10 +309,10 @@ classdef MyoUdp < Inputs.SignalInput
             if cmd < 0
                 fprintf('[%s] Deleting Udp comms object\n',mfilename);
                 try
-                    obj.UdpStreamReceiveSocket.close();
+                    localObj.UdpStreamReceiveSocket.close();
                 end
                 try
-                    obj.UdpCommandSocket.close();
+                    localObj.UdpCommandSocket.close();
                 end
                 %IsInitialized
                 localObj = [];

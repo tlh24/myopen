@@ -818,17 +818,17 @@ classdef LinAlg
             
             figure(1)
             clf
-            f_plot3(p,'b.');
+            PlotUtils.plot3(p,'b.');
             hold on
             axis square
             
-            [N n c] = LinAlg.fitPlaneFromPoints(p); %% Ax + By + Cz  = 1
+            [N, n, c] = LinAlg.fitPlaneFromPoints(p); %% Ax + By + Cz  = 1
             A = N(1);
             B = N(2);
             C = N(3);
             D = N(4);
             
-            f_plot3(c,'k*');
+            PlotUtils.plot3(c,'k*');
             
             [xgrid,ygrid] = meshgrid(linspace(min(X(:,1)),max(X(:,1)),5), ...
                 linspace(min(X(:,2)),max(X(:,2)),5));
@@ -1070,7 +1070,7 @@ classdef LinAlg
                 drawnow
             end % update_plot
             
-            function [hFig hPointSet] = setup_registration_figure()
+            function [hFig, hPointSet] = setup_registration_figure()
                 % Create a figure for monitoring registration process
                 % Returns handle to figure and a [2 1] handle array for the source and
                 % target point clouds used for matching
