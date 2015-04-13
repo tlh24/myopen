@@ -29,7 +29,7 @@ classdef MyoUdp < Inputs.SignalInput
     % device will wake it and resue streaming.  Currently only one myo can
     % stream at a time, though this is targeted for future revisions in the
     % MiniVIE software
-    % 
+    %
     %     % Test usage:
     %     MiniVIE.configurePath
     %     obj = Inputs.MyoUdp.getInstance;
@@ -48,11 +48,11 @@ classdef MyoUdp < Inputs.SignalInput
         Buffer
         numPacketsReceived = 0;
         numValidPackets = 0;
-
+        
         Orientation         % Euler Angles, Degrees
         Accelerometer       % X,Y,Z Acceleration, (g)
         Gyroscope           % X,Y,Z Angular Rate, (deg/s)
-    
+        
     end
     methods (Access = private)
         function obj = MyoUdp
@@ -228,15 +228,17 @@ classdef MyoUdp < Inputs.SignalInput
                 xyz = LinAlg.decompose_R(R);
                 
                 % Display Output
-                fprintf('orient: [%6.1f %6.1f %6.1f]; accel: [%6.2f %6.2f %6.2f]; gyro: [%8.1f %8.1f %8.1f] \n',...
-                    xyz(1,end),xyz(2,end),xyz(3,end),...
-                    accel(1,end),accel(2,end),accel(3,end),...
-                    gyro(1,end),gyro(2,end),gyro(3,end) );
+                if obj.Verbose > 0
+                    fprintf('orient: [%6.1f %6.1f %6.1f]; accel: [%6.2f %6.2f %6.2f]; gyro: [%8.1f %8.1f %8.1f] \n',...
+                        xyz(1,end),xyz(2,end),xyz(3,end),...
+                        accel(1,end),accel(2,end),accel(3,end),...
+                        gyro(1,end),gyro(2,end),gyro(3,end) );
+                end
                 
                 obj.Orientation = xyz;
                 obj.Accelerometer = accel;
                 obj.Gyroscope = gyro;
-
+                
             catch ME
                 disp(mfilename);
                 disp('Caught an error');
