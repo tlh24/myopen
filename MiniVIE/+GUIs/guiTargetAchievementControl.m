@@ -44,7 +44,7 @@ if isempty(trainedClassNames)
 end
 
 
-% setup display
+% setup display colors
 greenArm = [0.7 0.9 0.6];
 blueArm = [0.7 0.7 0.9];
 

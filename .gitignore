@@ -2,3 +2,8 @@
 *.assessmentLog
 *.partialTac
 *.tacAssessment
+*.fig
+*.tif
+*.png
+*.mat
+*.zip
