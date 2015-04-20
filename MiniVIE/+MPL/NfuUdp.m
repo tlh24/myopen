@@ -458,6 +458,11 @@ classdef (Sealed) NfuUdp < handle
                     
                     b2 = dataBytes(727:end);  %percept bytes
                     %obj.UdpBuffer2{obj.ptr2} = percept_bytes_to_signal(b2);
+                    
+                    % TODO: Disabled percept message
+                    continue
+                    
+                    
                     obj.UdpBuffer2{obj.ptr2} = decode_percept_msg(b2);
                     obj.newData2(obj.ptr2) = true;
                     

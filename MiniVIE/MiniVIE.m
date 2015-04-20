@@ -301,13 +301,16 @@ classdef MiniVIE < Common.MiniVieObj
             
         end
         function saveTrainingData(obj)
-            if isempty(obj.SignalSource)
-                errordlg('Select an Input Source');
-                return;
-            elseif isempty(obj.SignalClassifier)
-                errordlg('Select a Classifier');
-                return;
-            end
+            % save the training data object.  should not require input
+            % source
+            
+            % if isempty(obj.SignalSource)
+            %     errordlg('Select an Input Source');
+            %     return;
+            % elseif isempty(obj.SignalClassifier)
+            %     errordlg('Select a Classifier');
+            %     return;
+            % end
             
             assert(~isempty(obj.TrainingData),'Training Data module does not exist');
             
@@ -420,9 +423,9 @@ classdef MiniVIE < Common.MiniVieObj
                     % Parameters
                     % Ref Hargove 2014 comparison of real-time controlability
                     Fs = h.SampleFrequency;                     % 1000 Hz
-%                     h.addfilter(Inputs.HighPass(20,3,Fs));      % 20Hz 3rd order butter
-%                     h.addfilter(Inputs.MinLimitFilter(0.2));    % min limit
-%                     h.addfilter(Inputs.ConstraintFilter(-5,5)); % range limit
+                    h.addfilter(Inputs.HighPass(20,3,Fs));      % 20Hz 3rd order butter
+                    h.addfilter(Inputs.MinLimitFilter(0.2));    % min limit
+                    h.addfilter(Inputs.ConstraintFilter(-5,5)); % range limit
                     
                     % EMG 250 ms @ 20Hz
                     

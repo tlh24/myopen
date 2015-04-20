@@ -168,6 +168,8 @@ switch testId
             numCloseSteps = 30;
             
             mplAngles = zeros(1,27);
+            mplAngles(2) = -0.3;
+            mplAngles(4) = 1.5;
             
             graspVal = [linspace(0,1,numOpenSteps) ones(1,numWaitSteps) linspace(1,0,numCloseSteps)];
             for i = 1:length(graspVal)

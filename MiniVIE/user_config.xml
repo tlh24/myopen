@@ -4,13 +4,12 @@
     charResult = getUserConfigVar(tagName,defaultValue) -->
     
     <!--Prefix to add to save data files -->
-    <userFilePrefix>JHMI_TH01_L_</userFilePrefix>
 
     <!--ROC Table to be loaded and interpolated locally during MiniVIE Session-->
     <rocTable>GraspAndWholeArmRoc.xml</rocTable>
 
     <!--MPL NFU Comm parameters-->
-    <mplNfuIp>192.168.1.111</mplNfuIp>
+    <mplNfuIp>192.168.1.112</mplNfuIp>
     <mplRouterIp>192.168.1.1</mplRouterIp>
 
     <!-- Vulcan X Command port typically:  
