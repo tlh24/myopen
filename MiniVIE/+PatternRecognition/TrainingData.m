@@ -30,6 +30,7 @@ classdef TrainingData < handle
         SampleCount = 0;
         SampleRate = [];
         ActiveChannels = [1 3];
+        ActiveFeatures = [1 2 3 4];
         ClassNames = {'MotionA' 'MotionB' 'No Movement'};
         FeatureNames = {'MAV' 'LEN' 'SSC' 'ZC'};
         MaxChannels = 4;
@@ -220,6 +221,29 @@ classdef TrainingData < handle
                 warning('TrainingInterface:getEmgData','Failed to get Emg Data: %s',ME.message);
             end
         end
+        function [predictors, response] = getDataTable(obj)
+            % Return data formatted for ML Statistics Toolbox Classifiers
+            %
+            % response — Classification values
+            % numeric vector | categorical vector | logical vector | character array | cell array of strings
+            % Classification values, specified as a categorical or character array, 
+            % logical or numeric vector, or cell array of strings. 
+            % 
+            % Data Types: single | double | logical | char | cell
+            %
+            % Predictor values, specified as a matrix of numeric values.
+            % Each column of x represents one variable, and each row
+            % represents one observation.  
+            %
+            % Note: for use in the Classiication Learner App, use:
+            % myData = table(predictors, response)
+
+            % return cell array of class labels
+            response = obj.ClassNames(obj.getClassLabels);
+            
+            predictors = SignalAnalysis.Classifier.reshapeFeatures(obj.getFeatureData,obj.ActiveChannels)';
+            
+        end
         
         function setClassNames(obj,classNames)
             % setClassNames(obj,featureNames)
@@ -261,6 +285,18 @@ classdef TrainingData < handle
             end
             
             obj.ActiveChannels = activeChannels;
+            
+        end
+        function setActiveFeatures(obj,activeFeatures)
+            %setActiveChannels(obj,activeChannels)
+            
+            if obj.Verbose
+                fprintf('[%s] Setting Active Channels to: [',mfilename);
+                fprintf(' %d',activeFeatures);
+                fprintf(' ]\n');
+            end
+            
+            obj.ActiveFeatures = activeFeatures;
             
         end
         function initialize(obj,numChannels,numSamplesPerWindow)
@@ -386,7 +422,7 @@ classdef TrainingData < handle
             
         end
         
-        function [success str] = validate(obj)
+        function [success, str] = validate(obj)
             
             success = false;
             str = '';
@@ -414,8 +450,14 @@ classdef TrainingData < handle
             
             success = true;
         end
-        function recomputeFeatures(obj)
+        function recomputeFeatures(obj,zc_thresh,ssc_thresh)
             assert(~isempty(obj.SignalDataRaw),'No signal data exists');
+            
+            if nargin < 2
+                zc_thresh = 0;
+                ssc_thresh = 0;
+            end
+            
             
             % Apply filter
             Fs = obj.SampleRate;
@@ -425,11 +467,11 @@ classdef TrainingData < handle
             fprintf('[%s] Filtering Data...',mfilename);
             numEmgSamples = size(obj.SignalDataRaw,3);
             filteredData = double(obj.SignalDataRaw);
-            for i = 1:numEmgSamples
-                filteredData(:,:,i) = HPF.apply(filteredData(:,:,i)')';
-                filteredData(:,:,i) = NF.apply(filteredData(:,:,i)')';
-            end
-            fprintf('Done\n');
+%             for i = 1:numEmgSamples
+%                 filteredData(:,:,i) = HPF.apply(filteredData(:,:,i)')';
+%                 filteredData(:,:,i) = NF.apply(filteredData(:,:,i)')';
+%             end
+%             fprintf('Done\n');
             
             % Feature extract
             [numChannels, windowSize, numSamples] = size(obj.SignalDataRaw);
@@ -439,7 +481,7 @@ classdef TrainingData < handle
             features3D = zeros(numChannels,numFeatures,numSamples);
             for i = 1:size(obj.SignalDataRaw,3)
                 features3D(:,:,i) = feature_extract(...
-                    filteredData(:,:,i),windowSize);
+                    filteredData(:,:,i),windowSize,zc_thresh,ssc_thresh);
             end
             fprintf('Done\n');
             

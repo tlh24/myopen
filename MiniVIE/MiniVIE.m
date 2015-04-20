@@ -60,7 +60,7 @@ classdef MiniVIE < Common.MiniVieObj
             % Set valid input options
             set(obj.hg.popups(MiniVIE.INPUT),'String',{'None','Signal Simulator','EMG Simulator','DaqHwDevice','CpchSerial','NfuInput','UdpDevice','IntanDevBoard','OpenBCI','ThalmicLabs MyoUdp'});
             set(obj.hg.popups(MiniVIE.INPUT),'Value',1);
-            set(obj.hg.popups(MiniVIE.SA),'String',{'None','LDA Classifier','DiscriminantAnalysis','SupportVectorMachine'});
+            set(obj.hg.popups(MiniVIE.SA),'String',{'None','LDA Classifier','DiscriminantAnalysis','SupportVectorMachine','SvmStatTlbx'});
             set(obj.hg.popups(MiniVIE.SA),'Value',1);
             set(obj.hg.popups(MiniVIE.TRAINING),'String',{'None','Simple Trainer','Mini Guitar Hero','Bar Trainer','Motion Trainer','vMPL Trainer'});
             set(obj.hg.popups(MiniVIE.TRAINING),'Value',1);
@@ -479,8 +479,6 @@ classdef MiniVIE < Common.MiniVieObj
                     return;
                 end
                 
-                
-                
                 switch string{value}
                     case 'LDA Classifier'
                         h = SignalAnalysis.Lda();
@@ -488,6 +486,8 @@ classdef MiniVIE < Common.MiniVieObj
                         h = SignalAnalysis.DiscriminantAnalysis();
                     case 'SupportVectorMachine'
                         h = SignalAnalysis.Svm();
+                    case 'SvmStatTlbx'
+                        h = SignalAnalysis.SvmStatTlbx();
                     otherwise
                         % None
                         h = [];

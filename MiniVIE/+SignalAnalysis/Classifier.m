@@ -31,7 +31,7 @@ classdef Classifier < Common.MiniVieObj
     end
     methods (Abstract)
         train(obj);
-        [classOut voteDecision] = classify(obj,featureColumns);
+        [classOut, voteDecision] = classify(obj,featureColumns);
     end
     methods
         function numClasses = get.NumClasses(obj)
@@ -100,6 +100,30 @@ classdef Classifier < Common.MiniVieObj
             GUIs.guiClassifierChannels.setSavedDefaults(obj.getClassNames);
         end
         
+        function printStatus(obj)
+            % Print statistics related to training
+            if isempty(obj.TrainingData)
+                error('No Training Data Exists');
+            elseif isempty(obj.getActiveChannels)
+                error('No channels selected for training');
+            end
+            
+            f = obj.TrainingData.getFeatureData;
+            
+            feats = convertfeaturedata(obj,f);
+            dataLabels = obj.TrainingData.getClassLabels;
+            
+            fprintf('Training %s with %d Samples (',mfilename,size(feats,2));
+            for iClass = 1:obj.NumClasses
+                fprintf('%d = %d; ',iClass,sum(dataLabels == iClass));
+            end
+            fprintf(')\n');
+            
+            fprintf('Active Channels are: [ ');
+            fprintf('%d ',obj.getActiveChannels);
+            fprintf(']\n');
+        end
+        
         function featureData = convertfeaturedata(obj,featureData3D)
             % expects an array of size [nChannels nFeatures numSamples]
             % creates an array of size [nFeatures*nChannels numSamples]
@@ -139,6 +163,11 @@ classdef Classifier < Common.MiniVieObj
             MAV = squeeze(mean(mavFeatures,1));
             
             obj.VirtualChannelGain = ones(1,obj.NumClasses);
+            if isempty(MAV)
+                % no feature / training data
+                return
+            end
+            
             for iClass = 1:obj.NumClasses
                 % get the magnitude value for each class
                 obj.VirtualChannelGain(iClass) = mean(MAV(classOut == iClass));
@@ -288,7 +317,7 @@ classdef Classifier < Common.MiniVieObj
             features2D = feature_extract(filteredDataWindowAllChannels',obj.NumSamplesPerWindow);
         end
         function plotConfusion(obj)
-
+            
             % plot the confusion matrix for the classifier
             l = obj.TrainingData.getClassLabels;
             trainedLabels = unique(l);
@@ -322,7 +351,7 @@ classdef Classifier < Common.MiniVieObj
             cmat = cmat(trainedLabels,trainedLabels);
             
             try
-                 if ~isempty(cmat)
+                if ~isempty(cmat)
                     classSum = sum(cmat,2);
                     normMat = cmat ./ repmat(classSum,1,numClasses);
                     normMat(isnan(normMat)) = 0;
@@ -465,5 +494,43 @@ classdef Classifier < Common.MiniVieObj
             % final reshape
             featureData2D = reshape(activeData,numFeatures*numActiveChannels,numSamples);
         end
+        function numConverted = cellArrayToNum(cellToConvert,cellList)
+            % Convert a cell array of strings to numeric value representing
+            % a unique list of strings
+            %
+            % cellToConvert =
+            %     'No Movement'
+            %     'No Movement'
+            %     'No Movement'
+            %     'Index Grasp'
+            %     'Index Grasp'
+            %     'Index Grasp'
+            %     'Index Grasp'
+            %     'Index Grasp'
+            %     'Index Grasp'
+            %     'Index Grasp'
+            %
+            %
+            % cellList =
+            %
+            %     'Index Grasp'
+            %     'Middle Grasp'
+            %     'Ring Grasp'
+            %     'Little Grasp'
+            %     'No Movement'
+            %
+            % Converts to [5 5 5 1 1 1 1 ....]
+            
+            % initialize output
+            numConverted = zeros(size(cellToConvert));
+            
+            % loop thorugh each list entry and find the matching strings
+            for i = 1:length(cellList)
+                isFound = strcmp(cellToConvert,cellList{i});
+                numConverted(isFound) = i;
+            end
+            
+        end
+        
     end
 end
