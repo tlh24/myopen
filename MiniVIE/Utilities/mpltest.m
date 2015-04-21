@@ -7,7 +7,6 @@ strNfuIp = UserConfig.getUserConfigVar('mplNfuIp','192.168.1.111');
 AA = -0.3;
 armTestStart = [[0 AA 0] 2.1 0 0 0];
 
-
 % Note for changing limb stream-To address:
 %     Telnet in to limb:
 %     Launch windows command prompt (cmd.exe)
@@ -16,6 +15,14 @@ armTestStart = [[0 AA 0] 2.1 0 0 0];
 %     > cat /fs/etfs/hostname
 %     > vi /fs/etfs/hostname
 %     > reboot
+
+
+% Note for quick NFU based limb position adjust:
+% hNfu = MPL.NfuUdp.getInstance;
+% s = hNfu.initialize();
+% hNfu.sendAllJoints([ [-0.35 -0.2 0] 1.8 -0.7 -0.5 -0.5])  % radians
+
+
 
 fprintf('\n\n\n\n\n');
 fprintf('******************************\n');

@@ -59,6 +59,7 @@ classdef UiTools
                 'Name',figureName);
         end
         function save_temp_file(defaultFile,storedVariable)
+            %UiTools.save_temp_file(defaultFile,storedVariable)
             % Create a temp file that will be stored in the tempdir
             % directory (e.g. C:\Users\armigrs1\AppData\Local\Temp\)
             %

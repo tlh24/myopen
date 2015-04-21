@@ -103,6 +103,42 @@ classdef ArmStateModel < handle
             % e.g. obj.setValue(obj.RocStateId,1)  % close hand
             obj.structState(id).Value = value;
         end
+        function saveTempState(obj)
+            % Save the state structure for use when restarting limb between
+            % sessions
+            
+            UiTools.save_temp_file('lastArmState',obj.structState);
+            
+        end
+        function success = loadTempState(obj)
+            % Load the state structure for use when restarting limb between
+            % sessions
+            tempFileName = 'lastArmState';
+            s = UiTools.load_temp_file(tempFileName);
+            
+            if isempty(s)
+                success = false;
+                return
+            end
+
+            % Validate the loaded file against the known state fields
+            testState = Controls.ArmStateModel.defaultState;
+            f = fieldnames(testState);
+            for i = 1:length(f)
+                if ~isfield(s,f{i})
+                    warning('Expected field "%s" in temp state file %s. Aborting\n',f{i},tempFileName);
+                    success = false;
+                end
+            end
+            
+            if ~success
+                return
+            else
+                obj.structState = s;
+                success = true;
+            end
+            
+        end
         function upperArmValues = getUpperArmValues(obj)
             % Be sure to access Values using get method so reverse sign is
             % corrected
