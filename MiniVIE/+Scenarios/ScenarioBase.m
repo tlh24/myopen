@@ -583,7 +583,7 @@ classdef ScenarioBase < Common.MiniVieObj
             
             % create local ROC tables (even though roc tables in vulcan x
             % can also be specified)
-            xmlFileName = getUserConfigVar('rocTable','WrRocDefaults.xml');
+            xmlFileName = UserConfig.getUserConfigVar('rocTable','WrRocDefaults.xml');
             obj.RocTable = MPL.RocTable.readRocTable(xmlFileName);
             obj.RocTableXmlFilename = xmlFileName;
         end

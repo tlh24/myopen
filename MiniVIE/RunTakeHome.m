@@ -30,8 +30,8 @@ switch classConfig
 end
 
 p.guiName = 'MiniVIE-NFU-VulcanX';
-p.filePrefix = getUserConfigVar('userFilePrefix','NEW_USER_');
-strNfuIp = getUserConfigVar('mplNfuIp','192.168.1.111');
+p.filePrefix = UserConfig.getUserConfigVar('userFilePrefix','NEW_USER_');
+strNfuIp = UserConfig.getUserConfigVar('mplNfuIp','192.168.1.111');
 
 UiTools.save_temp_file('defaultFilePrefix',p.filePrefix)
 
@@ -151,12 +151,12 @@ obj.SignalClassifier.train();
 h = p.Scenario;
 
 %h = MPL.MplVulcanX;
-h.VulcanXAddress = getUserConfigVar('mplVulcanXIpAddress','127.0.0.1');
-h.VulcanXCmdPort = str2double(getUserConfigVar('mplVulcanXCommandPort','9027'));
-h.VulcanXLocalPort = str2double(getUserConfigVar('mplVulcanXSensoryPort','25001'));
-h.IntentAddress = getUserConfigVar('mplVulcanXIntentIpAddress','127.0.0.1');
-h.IntentDestinationPort = str2double(getUserConfigVar('mplVulcanXIntentPort','9095'));
-h.IntentSourcePort = str2double(getUserConfigVar('mplVulcanXIntentPortLocal','78000'));
+h.VulcanXAddress = UserConfig.getUserConfigVar('mplVulcanXIpAddress','127.0.0.1');
+h.VulcanXCmdPort = str2double(UserConfig.getUserConfigVar('mplVulcanXCommandPort','9027'));
+h.VulcanXLocalPort = str2double(UserConfig.getUserConfigVar('mplVulcanXSensoryPort','25001'));
+h.IntentAddress = UserConfig.getUserConfigVar('mplVulcanXIntentIpAddress','127.0.0.1');
+h.IntentDestinationPort = str2double(UserConfig.getUserConfigVar('mplVulcanXIntentPort','9095'));
+h.IntentSourcePort = str2double(UserConfig.getUserConfigVar('mplVulcanXIntentPortLocal','78000'));
 
 h.initialize(obj.SignalSource,obj.SignalClassifier,obj.TrainingData);
 h.Verbose = 0;

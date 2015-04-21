@@ -1,4 +1,4 @@
-function charResult = getUserConfigVar(tagName,defaultValue)
+function charResult = getUserConfigVar(tagName,defaultValue,userConfigFile)
 %charResult = getUserConfigVar(tagName,defaultValue)
 % Read tag from user config xml file
 %
@@ -12,8 +12,10 @@ function charResult = getUserConfigVar(tagName,defaultValue)
 %     <mplRouterIp>192.168.1.1</mplRouterIp>
 % </userConfig>
 
+if nargin < 3
+    userConfigFile = 'user_config.xml';
+end
 
-userConfigFile = 'user_config.xml';
 if exist(userConfigFile,'file')
     try
         a = xmlread(userConfigFile);

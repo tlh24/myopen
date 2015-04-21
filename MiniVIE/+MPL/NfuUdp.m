@@ -598,7 +598,7 @@ classdef (Sealed) NfuUdp < handle
                 fprintf('[%s] Calling constructor\n',mfilename);
                 localObj = MPL.NfuUdp;
 
-                localObj.Hostname = getUserConfigVar('mplNfuIp','192.168.1.111');
+                localObj.Hostname = UserConfig.getUserConfigVar('mplNfuIp','192.168.1.111');
                 
             else
                 fprintf('[%s] Returning existing object\n',mfilename);
