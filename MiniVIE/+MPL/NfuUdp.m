@@ -20,10 +20,10 @@ classdef (Sealed) NfuUdp < handle
     properties
         
         Hostname % info pulled from xml config file.  See .getInstance method
-        UdpStreamReceivePortNumLocal = 9027
-        TcpPortNum = 6200;
-        UdpCommandPortNumLocal = 52000;  % This is where udp commands originate locally
-        UdpCommandPortNumRemote = 6201;  % This is where udp commands are sent to
+        UdpStreamReceivePortNumLocal% = 9027
+        TcpPortNum% = 6200;
+        UdpCommandPortNumLocal% = 52000;  % This is where udp commands originate locally
+        UdpCommandPortNumRemote% = 6201;  % This is where udp commands are sent to
         
         EnableDataLogging = 0;
         
@@ -599,6 +599,10 @@ classdef (Sealed) NfuUdp < handle
                 localObj = MPL.NfuUdp;
 
                 localObj.Hostname = UserConfig.getUserConfigVar('mplNfuIp','192.168.1.111');
+                localObj.UdpStreamReceivePortNumLocal = UserConfig.getUserConfigVar('mplNfuUdpStreamPort',9027);
+                localObj.TcpPortNum = UserConfig.getUserConfigVar('mplNfuTcpCommandPort',6200);
+                localObj.UdpCommandPortNumLocal = UserConfig.getUserConfigVar('mplNfuUdpCommandPortLocal',52000);
+                localObj.UdpCommandPortNumRemote = UserConfig.getUserConfigVar('mplNfuUdpCommandPort',6201);
                 
             else
                 fprintf('[%s] Returning existing object\n',mfilename);

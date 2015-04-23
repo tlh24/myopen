@@ -4,13 +4,18 @@
     charResult = getUserConfigVar(tagName,defaultValue) -->
     
     <!--Prefix to add to save data files -->
+    <userFilePrefix>JHMI_TH01_L_</userFilePrefix>
 
     <!--ROC Table to be loaded and interpolated locally during MiniVIE Session-->
     <rocTable>GraspAndWholeArmRoc.xml</rocTable>
 
     <!--MPL NFU Comm parameters-->
-    <mplNfuIp>192.168.1.112</mplNfuIp>
     <mplRouterIp>192.168.1.1</mplRouterIp>
+    <mplNfuIp>192.168.1.111</mplNfuIp><!--(L=192.168.1.111 R=192.168.1.112) /fs/etfs/hostname -->
+    <mplNfuUdpStreamPort>9024</mplNfuUdpStreamPort><!--(L=9024 R=9027) /fs/etfs/telem_port -->
+    <mplNfuTcpCommandPort>6200</mplNfuTcpCommandPort><!--(L=6200 R=6210) /fs/etfs/cmd_port-->
+    <mplNfuUdpCommandPort>6201</mplNfuUdpCommandPort><!--(L=6201 R=6211) /fs/etfs/cmd_udp_port-->
+    <mplNfuUdpCommandPortLocal>52000</mplNfuUdpCommandPortLocal><!--(L=52000 R=52010)-->
 
     <!-- Vulcan X Command port typically:  
     MUD Port (L=9024 R=9027) 
@@ -24,6 +29,6 @@
     <!--    <mplVulcanXCommandPort>9027</mplVulcanXCommandPort> -->
     <mplVulcanXSensoryPort>25001</mplVulcanXSensoryPort>
     <mplVulcanXIntentPort>9095</mplVulcanXIntentPort>
-    <mplVulcanXIntentPortLocal>58010</mplVulcanXIntentPortLocal>
+    <mplVulcanXIntentPortLocal>58001</mplVulcanXIntentPortLocal>
     
 </userConfig>

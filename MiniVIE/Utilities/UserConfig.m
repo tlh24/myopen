@@ -10,17 +10,22 @@ classdef UserConfig < handle
     
     methods (Static)
         function singleObj = getInstance(userConfigFile)
+            % Static creator method.  this will provide a singleton handle
+            % to the class file
             persistent localObj
 
             if isempty(localObj) || ~isvalid(localObj)
                 if nargin < 1
-                    userConfigFile = 'user_config.xml';
-%                     userConfigFile = uigetfile('user_config.xml');
-%                     if userConfigFile == 0
-%                         % User Cancelled
-%                         singleObj = [];
-%                         return
-%                     end
+                    
+                    %userConfigFile = 'user_config.xml';
+                    
+                    userConfigFile = uigetfile('user_config.xml');
+                    if userConfigFile == 0
+                        % User Cancelled
+                        singleObj = [];
+                        return
+                    end
+                    
                 end
                 userConfigFile = which(userConfigFile);
                 fprintf('[%s] Calling constructor with config file %s\n',mfilename,userConfigFile);
@@ -60,6 +65,9 @@ classdef UserConfig < handle
                         charResult = char(a.getElementsByTagName(tagName).item(0).getFirstChild.getData);
                     end
                     fprintf('Reading %s: %s=%s\n',userFile,tagName,charResult)
+                    if ~ischar(defaultValue)
+                        charResult = str2double(charResult);
+                    end
                     
                     return
                 catch ME

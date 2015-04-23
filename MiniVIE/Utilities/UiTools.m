@@ -126,11 +126,9 @@ classdef UiTools
             % extension = '.assessmentLog'
             
             if nargin < 2
-                tempFileName = 'defaultFilePrefix';
-                filePrefix = UiTools.load_temp_file(tempFileName);
-                if isempty(filePrefix)
-                    filePrefix = 'FILE_';  %TODO, abstract this
-                end
+                %tempFileName = 'defaultFilePrefix';
+                %filePrefix = UiTools.load_temp_file(tempFileName);
+                filePrefix = UserConfig.getUserConfigVar('userFilePrefix','FILE_');
             else
                 filePrefix = prefix;
             end
