@@ -9,6 +9,9 @@ classdef CytonEndpointGui
             import Presentation.CytonI.*
             hCyton = CytonI;
             
+            % Set an initial condition
+            %hCyton.setJointParameters([0 -pi/4 0 -pi/4 0 -pi/2 0 1]);
+            
             % figure setup
             f = UiTools.create_figure('EndPointVelocityControl','guiEndpoint');
             clf(f)
