@@ -16,7 +16,14 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
     % 10Apr2014 Armiger: Added an enable flag for using analog joystick inputs
     properties (Access = public)
         RetrainCounts = 15;  % Controls how many samples to wait before auto retrain
-        JoystickId = 0  % Joystick Id (0,1,2,etc)
+
+        JoystickId                  % System ID for desired joystickJoystick Id (0,1,2,etc) 
+        JoystickButtonNext          % List of buttons to go to next class
+        JoystickButtonPrevious      % List of buttons to go to previous class
+        JoystickButtonTrain         % List of buttons to go to train
+        JoystickButtonClear         % List of buttons to go to clear data
+        JoystickAxis                % axis value for changing class. can be (-) to flip axis for next/previous
+        JoystickAxisThreshold       % limit until joystick axis registers event
         
         EnableJoystick = true;
     end
@@ -27,9 +34,9 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
         ButtonDown = 0; % Counts how long the joystick button is down
         CurrentClass = 1;
         LastButton = 0;
-        AnalogEnable = 0;   % Allows class to be changed using either the righ-thand gamepad 
+        AnalogEnable = 0;   % Allows class to be changed using either the right-hand gamepad 
                             % buttons OR the left-hand D-pad or analog
-                            % stick.  Not if the joystick is an improper
+                            % stick.  Note if the joystick is an improper
                             % mode then this can lead to unexpected rapid
                             % scanning through classes
         
@@ -37,6 +44,7 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
         
     end
     events
+        % Events signify to a GUI that the training event occured
         NextClass
         PreviousClass
         DataCountChange
@@ -50,6 +58,15 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
             
             % check for joysticks:
             if obj.EnableJoystick
+                
+                obj.JoystickId = UserConfig.getUserConfigVar('joystickId',0);
+                obj.JoystickButtonNext = UserConfig.getUserConfigVar('joystickButtonNext',[4 8]);
+                obj.JoystickButtonPrevious = UserConfig.getUserConfigVar('joystickButtonPrevious',[2 6]);
+                obj.JoystickButtonTrain = UserConfig.getUserConfigVar('joystickButtonTrain',3);
+                obj.JoystickButtonClear = UserConfig.getUserConfigVar('joystickButtonClear',1);
+                obj.JoystickAxis = UserConfig.getUserConfigVar('joystickAxis',1);
+                obj.JoystickAxisThreshold = UserConfig.getUserConfigVar('joystickAxisThreshold',0.7);                
+                
                 try
                     obj.hJoystick = JoyMexClass(obj.JoystickId);
                 catch ME
@@ -217,12 +234,12 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
             %obj.hJoystick
             buttonJustPressed = obj.LastButton == 0;
             buttonHeld = obj.ButtonDown > 15;
-            
+
             % change target Class
-            buttonPrevious = ismember(buttonId,[2 6]) || ...
-                (obj.AnalogEnable && obj.hJoystick.axisVal(1) > 0.5);
-            buttonNext = ismember(buttonId,[4 8]) || ...
-                (obj.AnalogEnable && obj.hJoystick.axisVal(1) < -0.5);
+            buttonPrevious = ismember(buttonId,obj.JoystickButtonPrevious) || ...
+                (obj.AnalogEnable && sign(obj.JoystickAxis) * obj.hJoystick.axisVal(abs(obj.JoystickAxis)) > obj.JoystickAxisThreshold);
+            buttonNext = ismember(buttonId,obj.JoystickButtonNext) || ...
+                (obj.AnalogEnable && sign(obj.JoystickAxis) * obj.hJoystick.axisVal(abs(obj.JoystickAxis)) < -obj.JoystickAxisThreshold);
             if buttonPrevious && ...
                     (buttonJustPressed || buttonHeld)
                 % move to next class, redraw, done
@@ -252,7 +269,7 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
                 return
             end
             
-            if (buttonId == 1)
+            if (buttonId == obj.JoystickButtonClear)
                 clearClass = obj.CurrentClass;
                 numDisabled = obj.TrainingData.disableLabeledData(clearClass);
                 fprintf('[%s] %d samples disabled for class: %d\n',mfilename,numDisabled,clearClass);
@@ -268,8 +285,8 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
                 obj.ButtonDown = 0;
             end
             
-            trainingButtonPressed = (buttonId == 3);
-            trainingButtonReleased = (buttonId == 0) && (obj.LastButton == 3);
+            trainingButtonPressed = (buttonId == obj.JoystickButtonTrain);
+            trainingButtonReleased = (buttonId == 0) && (obj.LastButton == obj.JoystickButtonTrain);
             trainingButtonHeld = (obj.ButtonDown > obj.RetrainCounts);
             obj.LastButton = buttonId;
             

@@ -1,34 +1,81 @@
 <?xml version="1.0" encoding="utf-8"?>
 <userConfig>
     <!--Tag definition in MATLAB code:
-    charResult = getUserConfigVar(tagName,defaultValue) -->
+    charResult = UserConfig.getUserConfigVar(tagName,defaultValue) -->
     
     <!--Prefix to add to save data files -->
-    <userFilePrefix>JHMI_TH01_L_</userFilePrefix>
-
+    <add key="userFilePrefix"   value="JHMI_TH01_L_"/>
+    
     <!--ROC Table to be loaded and interpolated locally during MiniVIE Session-->
-    <rocTable>GraspAndWholeArmRoc.xml</rocTable>
-
+    <add key="rocTable"         value="GraspAndWholeArmRoc.xml"/>
+    
+    <!--joystick Training Parameters -->
+    <add key="joystickId"                   value="0"/><!--System ID for desired joystick-->
+    <add key="joystickButtonNext"           value="[4 8]"/><!--List of buttons to go to next class-->
+    <add key="joystickButtonPrevious"       value="[2 6]"/><!--List of buttons to go to previous class-->
+    <add key="joystickButtonTrain"          value="3"/><!--List of buttons to go to train-->
+    <add key="joystickButtonClear"          value="1"/><!--List of buttons to go to clear data-->
+    <add key="joystickAxis"                 value="1"/><!--axis value for changing class can be (-) to invert axis for next/previous-->
+    <add key="joystickAxisThreshold"        value="0.7"/><!--threshold limit on joystick axis-->
+    
     <!--MPL NFU Comm parameters-->
-    <mplRouterIp>192.168.1.1</mplRouterIp>
-    <mplNfuIp>192.168.1.111</mplNfuIp><!--(L=192.168.1.111 R=192.168.1.112) /fs/etfs/hostname -->
-    <mplNfuUdpStreamPort>9024</mplNfuUdpStreamPort><!--(L=9024 R=9027) /fs/etfs/telem_port -->
-    <mplNfuTcpCommandPort>6200</mplNfuTcpCommandPort><!--(L=6200 R=6210) /fs/etfs/cmd_port-->
-    <mplNfuUdpCommandPort>6201</mplNfuUdpCommandPort><!--(L=6201 R=6211) /fs/etfs/cmd_udp_port-->
-    <mplNfuUdpCommandPortLocal>52000</mplNfuUdpCommandPortLocal><!--(L=52000 R=52010)-->
+    <add key="mplRouterIp"                  value="192.168.1.1"/>
+    <add key="mplNfuIp"                     value="192.168.1.111"/> <!--(L=192.168.1.111 R=192.168.1.112) /fs/etfs/hostname -->
+    <add key="mplNfuUdpStreamPort"          value="9027"/>          <!--(L=9024 R=9027) /fs/etfs/telem_port -->
+    <add key="mplNfuTcpCommandPort"         value="6200"/>          <!--(L=6200 R=6210) /fs/etfs/cmd_port-->
+    <add key="mplNfuUdpCommandPort"         value="6201"/>          <!--(L=6201 R=6211) /fs/etfs/cmd_udp_port-->
+    <add key="mplNfuUdpCommandPortLocal"    value="52000"/>         <!--(L=52000 R=52010)-->
 
     <!-- Vulcan X Command port typically:  
     MUD Port (L=9024 R=9027) 
     Percept Port (L=25101 R=25001)
     Intent Port (L=9094 R=9095) -->
-    <mplVulcanXIpAddress>127.0.0.1</mplVulcanXIpAddress>
-    <mplVulcanXCommandPort>9027</mplVulcanXCommandPort>
-    <!--    <mplVulcanXIpAddress>127.0.0.1</mplVulcanXIpAddress> -->
-    <!--    <mplVulcanXCommandPort>9024</mplVulcanXCommandPort> -->
-    <!--    <mplVulcanXIpAddress>192.168.1.210</mplVulcanXIpAddress> -->
-    <!--    <mplVulcanXCommandPort>9027</mplVulcanXCommandPort> -->
-    <mplVulcanXSensoryPort>25001</mplVulcanXSensoryPort>
-    <mplVulcanXIntentPort>9095</mplVulcanXIntentPort>
-    <mplVulcanXIntentPortLocal>58001</mplVulcanXIntentPortLocal>
+    <add key="mplVulcanXIpAddress"          value="127.0.0.1"/>
+    <add key="mplVulcanXCommandPort"        value="9027"/>
+    <add key="mplVulcanXSensoryPort"        value="25001"/>
+    <add key="mplVulcanXIntentPort"         value="9095"/>
+    <add key="mplVulcanXIntentPortLocal"    value="58001"/>
     
+    <!-- User defined joint limits
+     Optionally limit the range of each joint prior to sending to the MPL
+     Value format: "MinAngle, MaxAngle" (degrees)
+     
+     TODO: Currently only upper arm limits are parsed
+     -->
+    <add key="ApplyUserJointLimits"   value="true"/>
+
+    <add key="SHOULDER_FE_LIMITS"     value=" -35, 170" />
+    <add key="SHOULDER_AB_AD_LIMITS"  value=" -90, 0" />
+    <add key="HUMERAL_ROT_LIMITS"     value=" -35, 80" />
+    <add key="ELBOW_LIMITS"           value="  10, 140" />
+
+    <add key="WRIST_ROT_LIMITS"       value=" -90, 90" />
+    <add key="WRIST_AB_AD_LIMITS"     value=" -45, 45" />
+    <add key="WRIST_FE_LIMITS"        value=" -60, 60" />
+
+    <add key="INDEX_AB_AD_LIMITS"     value=" -20, 0" />
+    <add key="INDEX_MCP_LIMITS"       value=" -40, 85" />
+    <add key="INDEX_PIP_LIMITS"       value="   0, 100" />
+    <add key="INDEX_DIP_LIMITS"       value="   0, 80" />
+
+    <add key="MIDDLE_AB_AD_LIMITS"    value=" -20, 0" />
+    <add key="MIDDLE_MCP_LIMITS"      value=" -40, 85" />
+    <add key="MIDDLE_PIP_LIMITS"      value="   0, 100" />
+    <add key="MIDDLE_DIP_LIMITS"      value="   0, 80" />
+
+    <add key="RING_AB_AD_LIMITS"      value="   0, 20" />
+    <add key="RING_MCP_LIMITS"        value=" -40, 85" />
+    <add key="RING_PIP_LIMITS"        value="   0, 100" />
+    <add key="RING_DIP_LIMITS"        value="   0, 80" />
+
+    <add key="LITTLE_AB_AD_LIMITS"    value="   0, 20" />
+    <add key="LITTLE_MCP_LIMITS"      value=" -40, 85" />
+    <add key="LITTLE_PIP_LIMITS"      value="   0, 100" />
+    <add key="LITTLE_DIP_LIMITS"      value="   0, 80" />
+
+    <add key="THUMB_CMC_AB_AD_LIMITS" value="  8, 135" />
+    <add key="THUMB_CMC_FE_LIMITS"    value="   8, 80" />
+    <add key="THUMB_MCP_LIMITS"       value="   8, 80" />
+    <add key="THUMB_DIP_LIMITS"       value=" -12, 60" />
+        
 </userConfig>
