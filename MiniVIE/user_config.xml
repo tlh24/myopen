@@ -21,7 +21,7 @@
     <!--MPL NFU Comm parameters-->
     <add key="mplRouterIp"                  value="192.168.1.1"/>
     <add key="mplNfuIp"                     value="192.168.1.111"/> <!--(L=192.168.1.111 R=192.168.1.112) /fs/etfs/hostname -->
-    <add key="mplNfuUdpStreamPort"          value="9027"/>          <!--(L=9024 R=9027) /fs/etfs/telem_port -->
+    <add key="mplNfuUdpStreamPort"          value="6300"/>          <!--(L=6300 R=6310) /fs/etfs/telem_port -->
     <add key="mplNfuTcpCommandPort"         value="6200"/>          <!--(L=6200 R=6210) /fs/etfs/cmd_port-->
     <add key="mplNfuUdpCommandPort"         value="6201"/>          <!--(L=6201 R=6211) /fs/etfs/cmd_udp_port-->
     <add key="mplNfuUdpCommandPortLocal"    value="52000"/>         <!--(L=52000 R=52010)-->
