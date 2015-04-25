@@ -99,6 +99,10 @@ public:
 		m_frame = 0.0; //enables quick reset of m_offset.
 		m_slope = 24414.0625;
 	}
+	void reset(long double _slope) {
+		m_frame = 0.0;
+		m_slope = _slope;
+	}
 	std::string getInfo() {
 		std::stringstream oss;
 		long double off = m_offset - m_slope * m_timeOffset;

@@ -1250,7 +1250,7 @@ void *po8_thread(void *)
 					printf("Card is collecting incoming data.\n");
 					conn_cards++;
 					printf("Waiting for the stream to start on card 0 ...\n");
-					g_ts.reset();
+					g_ts.reset(SRATE_HZ);
 					card->waitForDataReady(60*60*1000);
 					printf("Started\n");
 				}
