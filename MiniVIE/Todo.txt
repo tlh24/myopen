@@ -1,15 +1,14 @@
 To do:
 
-- Save dialog comes up twice on bar trainer exit
-
-- Clicking add twice sorts class list
-
 - handle case where new classes are added to existing training data
    - use enums to identify classes
    - verify confusion matrix updated properly
 
+- allow save joint limits
+- allow update of active channels
+- remove active channels from temp file for bimanual
 
-% Training data mamangement
+% Training data management
 
 Within MiniVIE
 Training Data is conditionally initialized when classifier selected (if isempty)
