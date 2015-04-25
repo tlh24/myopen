@@ -16,7 +16,7 @@
     <add key="joystickButtonTrain"          value="3"/><!--List of buttons to go to train-->
     <add key="joystickButtonClear"          value="1"/><!--List of buttons to go to clear data-->
     <add key="joystickAxis"                 value="1"/><!--axis value for changing class can be (-) to invert axis for next/previous-->
-    <add key="joystickAxisThreshold"        value="0.7"/><!--threshold limit on joystick axis-->
+    <add key="joystickAxisThreshold"        value="0.9"/><!--threshold limit on joystick axis-->
     
     <!--MPL NFU Comm parameters-->
     <add key="mplRouterIp"                  value="192.168.1.1"/>

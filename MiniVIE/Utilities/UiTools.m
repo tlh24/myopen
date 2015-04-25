@@ -128,7 +128,7 @@ classdef UiTools
             if nargin < 2
                 %tempFileName = 'defaultFilePrefix';
                 %filePrefix = UiTools.load_temp_file(tempFileName);
-                filePrefix = UserConfig.getUserConfigVar('userFilePrefix','FILE_');
+                filePrefix = UserConfig.getUserConfigVar('userFilePrefix','NEW_USER_');
             else
                 filePrefix = prefix;
             end

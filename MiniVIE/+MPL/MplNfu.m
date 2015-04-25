@@ -4,6 +4,61 @@ classdef MplNfu < Scenarios.OnlineRetrainer
     %
     % This scenario is used to send commands via a router directly to the NFU
     %
+    % Communications are handled through TCP for setting parameters, UDP
+    % for sending joint angles from host to NFU and for the NFU to stream
+    % data to the host
+    %
+    %
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%% NFU DEBUG Information
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%% Transferring a new NFU image
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+    % E:\>ftp 192.168.1.112
+    % Connected to 192.168.1.112.
+    % 220 192.168.1.112 FTP server (QNXNTO-ftpd 20081216) ready.
+    % User (192.168.1.112:(none)): ftp
+    % 331 Guest login ok, type your name as password.
+    % Password:
+    % 230 Guest login ok, access restrictions apply.
+    % ftp> cd /tmp
+    % 250 CWD command successful.
+    % ftp> bin
+    % 200 Type set to I.
+    % ftp> put NFU.port_numbers_in_file.ifs
+    % 200 PORT command successful.
+    % 150 Opening BINARY mode data connection for 'NFU.port_numbers_in_file.ifs'.
+    % 226 Transfer complete.
+    % ftp: 4333168 bytes sent in 10.63Seconds 407.48Kbytes/sec.
+    % ftp>
+    %
+    %
+    %
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%% Programming new NFU image
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % 
+    % 
+    % QNX Neutrino (localhost) (ttyp1)
+    % 
+    % login: root
+    % # cd /tmp
+    % # ls
+    % NFU.port_numbers_in_file.ifs
+    % run
+    % # NFUFlashUtilities verify_ifs NFU.port_numbers_in_file.ifs
+    % Checksum passed
+    %  #
+    % # NFUFlashUtilities program 512 NFU.port_numbers_in_file.ifs
+    % Scanning image
+    % 8
+    % # reboot
+    % 
+    % 
+    % 
     % 01-Sept-2010 Armiger: Created
     properties
         % Handles

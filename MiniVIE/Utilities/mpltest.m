@@ -5,7 +5,7 @@ strRouterIp = UserConfig.getUserConfigVar('mplRouterIp','192.168.1.1');
 strNfuIp = UserConfig.getUserConfigVar('mplNfuIp','192.168.1.111');
 
 AA = -0.3;
-armTestStart = [[0 AA 0] 2.1 0 0 0];
+armTestStart = [[0 AA 0] 1.6 0 0 0];
 
 % Note for changing limb stream-To address:
 %     Telnet in to limb:

@@ -42,17 +42,17 @@ classdef MiniVIE < Common.MiniVieObj
     end
     methods
         function obj = MiniVIE
+            % Creator
+            % Sets up the environment and runs the MiniVIE default display
             obj.configurePath;
-            
-            % On startup, get file prefix from temp files
-            tempFileName = 'defaultFilePrefix';
-            filePrefix = UiTools.load_temp_file(tempFileName);
-            if isempty(filePrefix)
-                filePrefix = 'FILE_';
-            end
-            obj.FilePrefix = filePrefix;
+            obj.FilePrefix = UserConfig.getUserConfigVar('userFilePrefix','NEW_USER_');
             
             obj.initialize();
+
+            % set figure name
+            guiName = strcat(obj.FilePrefix,'MiniVIE');
+            set(obj.hg.Figure,'Name',guiName);
+
         end
         function initialize(obj)
             setupFigure(obj);
@@ -244,12 +244,7 @@ classdef MiniVIE < Common.MiniVieObj
         end
         function setFilePrefix(obj)
             
-            tempFileName = 'defaultFilePrefix';
-            
-            filePrefix = UiTools.load_temp_file(tempFileName);
-            if isempty(filePrefix)
-                filePrefix = 'FILE_';
-            end
+            filePrefix = obj.FilePrefix;
             
             % Use these defaults
             prompt={
@@ -268,9 +263,10 @@ classdef MiniVIE < Common.MiniVieObj
             
             filePrefix = answer{1};
             
-            UiTools.save_temp_file(tempFileName,filePrefix);
-            
             obj.FilePrefix = filePrefix;
+            
+            guiName = strcat(obj.FilePrefix,'MiniVIE');
+            set(obj.hg.Figure,'Name',guiName);
         end
         function loadData(obj)
             if isempty(obj.SignalSource)
@@ -803,8 +799,9 @@ classdef MiniVIE < Common.MiniVieObj
             % current date and time with extention reflecting contents
             % extension = '.assessmentLog'
             
+            % get save file from xml instead of object
             filePrefix = obj.FilePrefix;
-            
+                        
             FilterSpec = ['*' extension];
             DialogTitle = 'Select File to Write';
             DefaultName = [filePrefix datestr(now,'yyyymmdd_HHMMSS') extension];
