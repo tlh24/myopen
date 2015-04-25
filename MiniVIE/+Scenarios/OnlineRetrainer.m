@@ -15,9 +15,9 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
     % 30Jul2012 Armiger: Created
     % 10Apr2014 Armiger: Added an enable flag for using analog joystick inputs
     properties (Access = public)
-        RetrainCounts = 15;  % Controls how many samples to wait before auto retrain
-
-        JoystickId                  % System ID for desired joystickJoystick Id (0,1,2,etc) 
+        RetrainCounts = 25;         % Controls how many samples to wait before auto retrain
+        ClassChangeCounts = 15;     % Controls how many updates to wait before changing class
+        JoystickId                  % System ID for desired joystickJoystick Id (0,1,2,etc)
         JoystickButtonNext          % List of buttons to go to next class
         JoystickButtonPrevious      % List of buttons to go to previous class
         JoystickButtonTrain         % List of buttons to go to train
@@ -31,14 +31,13 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
         hJoystick       % handle to joystick, used to add data to interface
         hGui            % handle to the graphics object
         
-        ButtonDown = 0; % Counts how long the joystick button is down
         CurrentClass = 1;
-        LastButton = 0;
-        AnalogEnable = 0;   % Allows class to be changed using either the right-hand gamepad 
-                            % buttons OR the left-hand D-pad or analog
-                            % stick.  Note if the joystick is an improper
-                            % mode then this can lead to unexpected rapid
-                            % scanning through classes
+
+        AnalogEnable = 1;   % Allows class to be changed using either the right-hand gamepad
+        % buttons OR the left-hand D-pad or analog
+        % stick.  Note if the joystick is an improper
+        % mode then this can lead to unexpected rapid
+        % scanning through classes
         
         TrainingData; % Online retraininer defined by having access to and adding data to training data
         
@@ -62,13 +61,14 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
                 obj.JoystickId = UserConfig.getUserConfigVar('joystickId',0);
                 obj.JoystickButtonNext = UserConfig.getUserConfigVar('joystickButtonNext',[4 8]);
                 obj.JoystickButtonPrevious = UserConfig.getUserConfigVar('joystickButtonPrevious',[2 6]);
-                obj.JoystickButtonTrain = UserConfig.getUserConfigVar('joystickButtonTrain',3);
+                obj.JoystickButtonTrain = UserConfig.getUserConfigVar('joystickButtonTrain',[3 11]);
                 obj.JoystickButtonClear = UserConfig.getUserConfigVar('joystickButtonClear',1);
                 obj.JoystickAxis = UserConfig.getUserConfigVar('joystickAxis',1);
-                obj.JoystickAxisThreshold = UserConfig.getUserConfigVar('joystickAxisThreshold',0.7);                
+                obj.JoystickAxisThreshold = UserConfig.getUserConfigVar('joystickAxisThreshold',0.7);
                 
                 try
                     obj.hJoystick = JoyMexClass(obj.JoystickId);
+                    obj.hJoystick.doSwapAxes = false;
                 catch ME
                     fprintf('[%s] Warning: Joystick is disabled. \n %s \n',mfilename,ME.message);
                     obj.hJoystick = [];
@@ -82,7 +82,7 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
             if ~isempty(obj.hJoystick) && ~isempty(SignalClassifier)
                 % Text based UI
                 %setupFigure(obj);
-
+                
                 % User Driven UI
                 obj.hGui = UserDrivenTrainingInterface(obj.TrainingData);
                 obj.hGui.setTrainingSource(obj);
@@ -101,9 +101,9 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
             %obj.hGui = guiOnlineRetrain(SignalSource,SignalClassifier);
             %%
             classNames = obj.SignalClassifier.getClassNames;
-%             classNames = cell(1,25);
+            %             classNames = cell(1,25);
             numClasses = length(classNames);
-
+            
             screenSz = get(0,'ScreenSize');
             f = UiTools.create_figure('Training Progress');
             set(f,'Resize','on');
@@ -182,94 +182,92 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
             
             set(obj.hGui,'ColumnWidth',repmat({65},1,n+1))
         end
-        function [doTrain, doAddData] = getCommand2(obj)
-            % Buttons map directly to classes
-            
-            % Check joystick for buttons, if any, add this to training data
-            obj.hJoystick.getdata();
-            % Note only one button can be pressed at a time, lowest button
-            % number wins
-            buttonId = find(obj.hJoystick.buttonVal,1,'first');
-            
-            if isempty(buttonId)
-                % Button release
-                buttonWasDepressed = obj.ButtonDown > 0;
-                doAddData = false;
-                doTrain = buttonWasDepressed;
-                obj.ButtonDown = 0;
-                return
-            end
-            
-            obj.ButtonDown = obj.ButtonDown + 1;
-            
-            doAddData = true;
-            doTrain = ~mod(obj.ButtonDown,obj.RetrainCounts);
-            
-            % If button is down, add the current data as training data to
-            % that class
-            obj.CurrentClass = max(min(buttonId,obj.SignalClassifier.NumClasses),1);
-            
-        end
         function [doTrain, doAddData, clearClass] = getCommand(obj)
             % Joystick buttons change classes, another button trains data
             
+            % Initialize return arguments
             clearClass = 0;
             doTrain = false;
             doAddData = false;
-
+                        
+            % get handle for joystick
+            joy = obj.hJoystick;
+            
+            % synch the joystick deadband with that of the gui
+            joy.axisDeadband(obj.JoystickAxis) = obj.JoystickAxisThreshold;
+            
             % Check joystick for buttons, if any, add this to training data
-            [success, msg] = obj.hJoystick.getdata();
+            [success, msg] = joy.getdata();
             if ~success
                 fprintf('[%s] Error getting Joystick command.  Is it still connected? Error="%s"\n',mfilename,msg);
                 return
             end
             
-            % Note only one button can be pressed at a time, lowest button
-            % number wins
-            buttonId = find(obj.hJoystick.buttonVal,1,'first');
-            if isempty(buttonId)
-                buttonId = 0;
+            % Add data if training button is pressed
+            doAddData = any(joy.buttonVal(obj.JoystickButtonTrain));
+            if doAddData
+                notify(obj,'DataCountChange'); % Broadcast notice of event
             end
             
-            %obj.hJoystick
-            buttonJustPressed = obj.LastButton == 0;
-            buttonHeld = obj.ButtonDown > 15;
-
+            % Train if button released or held too long
+            if any(joy.buttonsHeldCount(obj.JoystickButtonTrain) > obj.RetrainCounts) || ...
+                    any(joy.buttonsReleased(obj.JoystickButtonTrain))
+                doTrain = true;
+                
+                %reset counter
+                joy.buttonsHeldCount(obj.JoystickButtonTrain) = 1;
+                
+            else
+                doTrain = false;
+            end
+            
+            if doAddData
+                % Return after this point so that class changes aren't
+                % allowed if you are adding data
+                return
+            end
+            
             % change target Class
-            buttonPrevious = ismember(buttonId,obj.JoystickButtonPrevious) || ...
-                (obj.AnalogEnable && sign(obj.JoystickAxis) * obj.hJoystick.axisVal(abs(obj.JoystickAxis)) > obj.JoystickAxisThreshold);
-            buttonNext = ismember(buttonId,obj.JoystickButtonNext) || ...
-                (obj.AnalogEnable && sign(obj.JoystickAxis) * obj.hJoystick.axisVal(abs(obj.JoystickAxis)) < -obj.JoystickAxisThreshold);
-            if buttonPrevious && ...
-                    (buttonJustPressed || buttonHeld)
+            
+            % go to previous if the button is pressed or if it is held long
+            % enough or if analog switching is enabled and the analog axis
+            % is depressed in the correct direction
+            
+            if any(joy.buttonsPressed(obj.JoystickButtonPrevious)) || ...
+                    any(joy.buttonsHeldCount(obj.JoystickButtonPrevious) > obj.ClassChangeCounts) || ...
+                    (obj.AnalogEnable && ...
+                    (sign(obj.JoystickAxis) * joy.axisVal(abs(obj.JoystickAxis)) >= obj.JoystickAxisThreshold) && ...
+                    joy.axisHeldCount(obj.JoystickAxis) == 1 || joy.axisHeldCount(obj.JoystickAxis) > obj.ClassChangeCounts )
                 % move to next class, redraw, done
-                obj.CurrentClass = obj.CurrentClass+1;
+                obj.CurrentClass = obj.CurrentClass + 1;
                 if obj.CurrentClass > obj.SignalClassifier.NumClasses
                     % wrap to bottom
                     obj.CurrentClass = 1;
                 end
-                obj.LastButton = buttonId;
                 doTrain = false;
                 doAddData = false;
                 notify(obj,'PreviousClass'); % Broadcast notice of event
                 return
             end
-            if buttonNext && ...
-                    (buttonJustPressed || buttonHeld)
+            if any(joy.buttonsPressed(obj.JoystickButtonNext)) || ...
+                    any(joy.buttonsHeldCount(obj.JoystickButtonNext) > obj.ClassChangeCounts) || ...
+                    (obj.AnalogEnable && ...
+                    (sign(obj.JoystickAxis) * joy.axisVal(abs(obj.JoystickAxis)) < -obj.JoystickAxisThreshold) && ...
+                    joy.axisHeldCount(obj.JoystickAxis) == 1 || joy.axisHeldCount(obj.JoystickAxis) > obj.ClassChangeCounts )
                 % move to previous class, redraw, done
-                obj.CurrentClass = obj.CurrentClass-1;
+                obj.CurrentClass = obj.CurrentClass - 1;
                 if obj.CurrentClass < 1
                     % wrap to top
                     obj.CurrentClass = obj.SignalClassifier.NumClasses;
                 end
-                obj.LastButton = buttonId;
                 doTrain = false;
                 doAddData = false;
                 notify(obj,'NextClass'); % Broadcast notice of event
                 return
             end
             
-            if (buttonId == obj.JoystickButtonClear)
+            % Check for clear command
+            if joy.buttonVal(obj.JoystickButtonClear)
                 clearClass = obj.CurrentClass;
                 numDisabled = obj.TrainingData.disableLabeledData(clearClass);
                 fprintf('[%s] %d samples disabled for class: %d\n',mfilename,numDisabled,clearClass);
@@ -277,32 +275,6 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
                 doAddData = false;
                 notify(obj,'DataCountChange'); % Broadcast notice of event  -- change to DataCountChange
                 return
-            end
-            
-            if buttonId > 0
-                obj.ButtonDown = obj.ButtonDown + 1;
-            else
-                obj.ButtonDown = 0;
-            end
-            
-            trainingButtonPressed = (buttonId == obj.JoystickButtonTrain);
-            trainingButtonReleased = (buttonId == 0) && (obj.LastButton == obj.JoystickButtonTrain);
-            trainingButtonHeld = (obj.ButtonDown > obj.RetrainCounts);
-            obj.LastButton = buttonId;
-            
-            % Add data if training button is pressed
-            doAddData = trainingButtonPressed;
-            if doAddData
-                notify(obj,'DataCountChange'); % Broadcast notice of event
-            end
-            
-            % Train if button released or held too long
-            if trainingButtonReleased || ...
-                    (trainingButtonPressed && trainingButtonHeld)
-                doTrain = true;
-                obj.ButtonDown = 0; %reset counter
-            else
-                doTrain = false;
             end
             
         end
@@ -339,9 +311,10 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
                 % without error
                 
                 l = obj.TrainingData.getClassLabels;
+                numSamples = obj.TrainingData.SampleCount;
                 
                 
-                if doTrain && ~isempty(l)
+                if doTrain && ~isempty(l) && numSamples > 1
                     % retrain
                     obj.SignalClassifier.train();
                     obj.SignalClassifier.computeError();
@@ -398,7 +371,7 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
             paddedName{decodedClassId} = ['[ ' classNames{decodedClassId} ' ]'];
             
             hText = obj.hGui{1};
-
+            
             for i = 1:length(hText)
                 if i == labeledClass
                     str = sprintf('%30s %4d <<<',paddedName{i},classSum(i));
@@ -469,9 +442,9 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
         end
         function close(obj)
             close@Scenarios.ScenarioBase(obj); % Call superclass close method
-%             if ~isempty(obj.hGui)
-%                 obj.hGui.close();
-%             end
+            %             if ~isempty(obj.hGui)
+            %                 obj.hGui.close();
+            %             end
             if obj.TrainingData.HasUnsavedData
                 obj.TrainingData.saveTrainingData;
             end
@@ -479,6 +452,8 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
     end
     methods (Static = true)
         function obj = Test
+            %Scenarios.OnlineRetrainer.Test
+            
             obj = Scenarios.OnlineRetrainer;
             hTrainingData = PatternRecognition.TrainingData();
             %hTrainingData.initialize();

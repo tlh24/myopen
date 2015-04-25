@@ -17,6 +17,40 @@ classdef JoyMexClass < handle
         axisVal
         povVal
         
+        % Logical array of buttons that went from up to down on last update 
+        buttonsPressed
+        
+        % Logical array of buttons that went from down to up on last update 
+        buttonsReleased
+
+        % Logical array of buttons that went from down to down (held)
+        buttonsHeld
+
+        % double array of number of updates each button has been down
+        buttonsHeldCount
+
+        % Logical array of axes outside of deadband
+        axisActive
+
+        % Logical array of axes that went from up to down on last update 
+        axisPressed
+        
+        % Logical array of axes that went from down to up on last update 
+        axisReleased
+
+        % Logical array of axes that went from down to down (held)
+        axisHeld
+
+        % double array of number of updates each axis has been down
+        axisHeldCount
+        
+        % double array of number the normalized dead for each axis
+        axisDeadband
+
+        % Internal state of axis and buttons at last update
+        axisValLast
+        buttonValLast
+        
     end
     methods
         function obj = JoyMexClass(joyId)
@@ -54,8 +88,66 @@ classdef JoyMexClass < handle
             obj.nAxes = length(a);
             obj.nButtons = length(b);
             obj.nPov = 0;
+
+            obj.axisDeadband = 0.02*ones(1,obj.nAxes);
+            
+            % initialize joystick activity counters
+            obj.buttonsHeldCount = zeros(1,obj.nButtons);
+            obj.axisHeldCount = zeros(1,obj.nAxes);
             
         end
+        function update(obj)
+            % Call MEX Function
+            
+            % get current state
+            [obj.axisVal, obj.buttonVal] = JoyMEX(obj.id);
+
+            % Handle the init case with unknown state
+            if isempty(obj.axisValLast)
+                obj.axisValLast = obj.axisVal;
+            end
+            if isempty(obj.buttonValLast)
+                obj.buttonValLast = obj.buttonVal;
+            end
+            
+            % Compare the two states to determine what changed
+            buttonDiff = obj.buttonVal - obj.buttonValLast;
+            obj.buttonsPressed = buttonDiff == 1;
+            obj.buttonsReleased = buttonDiff == -1;
+
+            % this could be | to return true the first press rather than
+            % update#2 which is the first hold.  For that, the user can
+            % just read obj.buttonVal
+            obj.buttonsHeld = obj.buttonVal & obj.buttonValLast; 
+            
+            obj.buttonsHeldCount(obj.buttonsReleased) = 0;
+            obj.buttonsHeldCount(obj.buttonsPressed) = 1;
+            obj.buttonsHeldCount(obj.buttonsHeld) = obj.buttonsHeldCount(obj.buttonsHeld) + 1;
+
+            % Compute difference of axis value
+            % Axes outside deadband
+            obj.axisActive = abs(obj.axisVal) > obj.axisDeadband;
+            % Axes outside deadband @ last update
+            axisActiveLast = abs(obj.axisValLast) > obj.axisDeadband;
+            % Axis activation changes
+            axisDiff = obj.axisActive - axisActiveLast;
+
+            obj.axisPressed = axisDiff == 1;
+            obj.axisReleased = axisDiff == -1;
+            obj.axisHeld = obj.axisActive & axisActiveLast;
+            
+            obj.axisHeldCount(obj.axisReleased) = 0;
+            obj.axisHeldCount(obj.axisPressed) = 1;
+            obj.axisHeldCount(obj.axisHeld) = obj.axisHeldCount(obj.axisHeld) + 1;
+            
+            % Store state for next update
+            obj.axisValLast = obj.axisVal;
+            obj.buttonValLast = obj.buttonVal;
+
+            %obj.axisHeldCount
+            
+        end
+        
         function [success, msg] = getdata(obj)
             %[success, msg] = getdata(obj)
             % Call JoyMex function to get latest button and axis values.
@@ -66,8 +158,7 @@ classdef JoyMexClass < handle
             msg = '';
             
             try
-                % Call MEX Function
-                [obj.axisVal, obj.buttonVal] = JoyMEX(obj.id);
+                update(obj);
             catch ME
                 msg = ME.message;
                 return
@@ -86,6 +177,7 @@ classdef JoyMexClass < handle
         function swapaxes(obj)
             % Swap axes for compatability with JavaJoystick Class
             obj.axisVal([1 2 3 4 5 6]) = obj.axisVal([2 1 6 3 4 5]);
+            obj.axisValLast([1 2 3 4 5 6]) = obj.axisValLast([2 1 6 3 4 5]);
         end
         function preview(obj)
             

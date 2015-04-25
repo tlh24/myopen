@@ -28,10 +28,10 @@ classdef UserConfig < handle
                     [FileName,PathName,FilterIndex] = uigetfile('user_config.xml');
                     if FilterIndex == 0
                         % User Cancelled
-                        singleObj = [];
-                        return
+                        userConfigFile = '';
+                    else
+                        userConfigFile = fullfile(PathName,FileName);
                     end
-                    userConfigFile = fullfile(PathName,FileName);
                 end
                 
                 % ensure full path is resolved
@@ -42,7 +42,9 @@ classdef UserConfig < handle
                 localObj.userConfigFile = userConfigFile;
                 
                 % read the file
-                localObj.domNode = xmlread(userConfigFile);
+                if ~isempty(userConfigFile)
+                    localObj.domNode = xmlread(userConfigFile);
+                end
                 
             else
                 %fprintf('[%s] Returning existing object\n',mfilename);

@@ -1,10 +1,15 @@
-function [ obj ] = RunTakeHome(classConfig)
+function [ obj ] = RunTakeHome(classConfig,configFile)
 
 MiniVIE.configurePath();
 
 if nargin < 1
     classConfig = '';
 end
+if nargin < 1
+    configFile = 'user_config.xml';
+end
+
+UserConfig.getInstance(configFile);
 
 switch classConfig
     case 'BasicJointMotions.classNames'
@@ -29,8 +34,8 @@ switch classConfig
         classNames = GUIs.guiClassifierChannels.getDefaultNames;
 end
 
-p.guiName = 'MiniVIE-NFU-VulcanX';
 p.filePrefix = UserConfig.getUserConfigVar('userFilePrefix','NEW_USER_');
+p.guiName = strcat(p.filePrefix,'MiniVIE-NFU-VulcanX');
 strNfuIp = UserConfig.getUserConfigVar('mplNfuIp','192.168.1.111');
 
 UiTools.save_temp_file('defaultFilePrefix',p.filePrefix)

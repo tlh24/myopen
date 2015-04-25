@@ -8,4 +8,6 @@
 *.mat
 *.zip
 *.asv
+*.log
+*.bak
 *.o

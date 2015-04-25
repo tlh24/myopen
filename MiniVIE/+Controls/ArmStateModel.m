@@ -17,7 +17,7 @@ classdef ArmStateModel < handle
         ApplyValueLimits = 1;
         ApplyVelocityLimits = 1;
         ApplyAccelerationLimits = 0;
-        ApplyReturnToHome = 0;
+        ApplyReturnToHome = 0;       % Used for 'simple' or 'complex' arm mode
         
         structState
         lastTime
@@ -32,42 +32,42 @@ classdef ArmStateModel < handle
             
             obj.structState = repmat(obj.defaultState,8,1);
             
-            r = UserConfig.getUserConfigVar('SHOULDER_FE_LIMITS',[-10 75]);
+            r = UserConfig.getUserConfigVar('SHOULDER_FE_LIMITS',[-35 170]);
             obj.structState(1).Name = 'Shoulder FE';
             obj.structState(1).Min = r(1) * pi / 180;
             obj.structState(1).Max = r(2) * pi / 180;
 
-            r = UserConfig.getUserConfigVar('SHOULDER_AB_AD_LIMITS',[-50 5]);
+            r = UserConfig.getUserConfigVar('SHOULDER_AB_AD_LIMITS',[-110 15]);
             obj.structState(2).Name = 'Shoulder AA';
             obj.structState(2).Min = r(1) * pi / 180;
             obj.structState(2).Max = r(2) * pi / 180;
 
-            r = UserConfig.getUserConfigVar('HUMERAL_ROT_LIMITS',[-25 25]);
+            r = UserConfig.getUserConfigVar('HUMERAL_ROT_LIMITS',[-90 90]);
             obj.structState(3).Name = 'Shoulder ROT';
             obj.structState(3).Min = r(1) * pi / 180;
             obj.structState(3).Max = r(2) * pi / 180;
 
             % Limit of ~120 degrees needed for TH Socket
-            r = UserConfig.getUserConfigVar('ELBOW_LIMITS',[80 120]);
+            r = UserConfig.getUserConfigVar('ELBOW_LIMITS',[0 135]);
             obj.structState(4).Name = 'Elbow';
             obj.structState(4).MaxVelocity = 2;
             obj.structState(4).DefaultValue = 90 * pi / 180;
             obj.structState(4).Min = r(1) * pi / 180;
             obj.structState(4).Max = r(2) * pi / 180;
 
-            r = UserConfig.getUserConfigVar('WRIST_ROT_LIMITS',[-50 5]);
+            r = UserConfig.getUserConfigVar('WRIST_ROT_LIMITS',[-90 90]);
             obj.structState(5).Name = 'Wrist ROT';
             obj.structState(5).IsReversed = 0;
             obj.structState(5).MaxVelocity = 4;
             obj.structState(5).Min = r(1) * pi / 180;
             obj.structState(5).Max = r(2) * pi / 180;
 
-            r = UserConfig.getUserConfigVar('WRIST_AB_AD_LIMITS',[-30 30]);
+            r = UserConfig.getUserConfigVar('WRIST_AB_AD_LIMITS',[-35 35]);
             obj.structState(6).Name = 'Wrist DEV';
             obj.structState(6).Min = r(1) * pi / 180;
             obj.structState(6).Max = r(2) * pi / 180;
 
-            r = UserConfig.getUserConfigVar('WRIST_FE_LIMITS',[-45 45]);
+            r = UserConfig.getUserConfigVar('WRIST_FE_LIMITS',[-90 90]);
             obj.structState(7).Name = 'Wrist FE';
             obj.structState(7).IsReversed = 0;
             obj.structState(7).MaxVelocity = 4;
