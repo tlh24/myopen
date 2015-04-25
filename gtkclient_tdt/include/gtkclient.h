@@ -29,8 +29,7 @@ enum MODES {
 #define NUNIT		3	// including unsorted
 #define NSORT		2
 
-#define NWFSAMP		40	// number of wf samples at SRATE_HZ (nb compare with NSAMPWF, above)
-#define NWFSAMPUP	40	// upsampled for alignment / sorting
+#define NWFSAMP		40		// number of wf samples at SRATE_HZ (nb compare with NSAMPWF, above)
 
 #define LMSBUF 		64
 

@@ -18,6 +18,9 @@ void glPrint(char *text);
 extern gboolean g_showISIhist;
 extern gboolean g_showWFstd;
 
+extern int g_whichAlignment;
+extern int g_whichSpikePreEmphasis;
+
 //#define NSORT	2
 
 //need some way of encapsulating per-channel information.
@@ -32,9 +35,9 @@ public:
 	Vbo	*m_wfVbo; 		// range 1 mean 0
 	Vbo	*m_usVbo;
 	VboPca	*m_pcaVbo; 		// 2D points, with color.
-	float	m_pca[NSORT][NWFSAMPUP]; 	// range 1 mean 0
+	float	m_pca[NSORT][NWFSAMP]; 	// range 1 mean 0
 	float 	m_pcaScl[NSORT]; 	// sqrt of the eigenvalues.
-	float	m_template[NSORT][NWFSAMPUP]; // range 1 mean 0.
+	float	m_template[NSORT][NWFSAMP]; // range 1 mean 0.
 	float	m_loc[4];
 	int		m_ch; 			//channel number, obvi.
 	//float 	m_agc;
@@ -46,9 +49,9 @@ public:
 	bool	m_enabled;
 
 	Channel(int ch, MatStor *ms) {
-		m_wfVbo = new Vbo(6, NWFVBO, NWFSAMPUP+2); // sorted units, with color.
-		m_usVbo = new Vbo(3, NUSVBO, NWFSAMPUP+2); // unsorted units, all gray.
-		m_pcaVbo = new VboPca(6, 1024*8, 1, ch, NWFSAMPUP, ms);
+		m_wfVbo = new Vbo(6, NWFVBO, NWFSAMP+2); // sorted units, with color.
+		m_usVbo = new Vbo(3, NUSVBO, NWFSAMP+2); // unsorted units, all gray.
+		m_pcaVbo = new VboPca(6, 1024*8, 1, ch, NWFSAMP, ms);
 		m_wfVbo->m_useSAA = m_usVbo->m_useSAA = m_pcaVbo->m_useSAA = false;
 		m_pcaVbo->m_fade = 0.f;
 		m_isiViolations = 0;
@@ -57,14 +60,14 @@ public:
 		m_mean = 0.0;
 		m_enabled = true;
 		//init PCA, template.
-		for (int j=0; j<NWFSAMPUP; j++) {
+		for (int j=0; j<NWFSAMP; j++) {
 			for (int k=0; k<NSORT; k++) {
 				m_pca[k][j] = 1.f/8.f;
 				m_pcaScl[k] = 1.f;
 			}
 			//m_pca[1][j] = (j > 15 ? 1.f/8.f : -1.f/8.f);
 		}
-		for (int j=0; j<NWFSAMPUP; j++) {
+		for (int j=0; j<NWFSAMP; j++) {
 			for (int k=0; k<NSORT; k++) {
 				m_template[k][j] = 0.5*sinf(j/6.f) / 1e2;	// sinusoids scaled to ~100 uV
 			}
@@ -73,13 +76,13 @@ public:
 		//read from matlab if it's there..
 		if (ms) {
 			for (int j=0; j<NSORT; j++) {
-				ms->getValue3(ch, j, "pca", &(m_pca[j][0]), NWFSAMPUP);
-				ms->getValue3(ch, j, "template", &(m_template[j][0]), NWFSAMPUP);
+				ms->getValue3(ch, j, "pca", &(m_pca[j][0]), NWFSAMP);
+				ms->getValue3(ch, j, "template", &(m_template[j][0]), NWFSAMP);
 				m_aperture[j] = ms->getValue2(ch, j, "aperture", 0.f); // old default: 0.003f
 			}
 			ms->getValue3(ch, 0, "pcaScl", m_pcaScl, 2);
 			m_threshold = ms->getValue(ch, "threshold", 0.6f);
-			m_centering = ms->getValue(ch, "centering", NWFSAMPUP/2.f);
+			m_centering = ms->getValue(ch, "centering", NWFSAMP/2.f);
 			m_gain = ms->getValue(ch, "gain", 1.f);
 			m_enabled = (bool)ms->getValue(ch, "enabled", 1.f);
 		}
@@ -137,8 +140,8 @@ public:
 	}
 	void save(MatStor *ms) {
 		for (int j=0; j<NSORT; j++) {
-			ms->setValue3(m_ch, j, "pca", &(m_pca[j][0]), NWFSAMPUP);
-			ms->setValue3(m_ch, j, "template", &(m_template[j][0]), NWFSAMPUP);
+			ms->setValue3(m_ch, j, "pca", &(m_pca[j][0]), NWFSAMP);
+			ms->setValue3(m_ch, j, "template", &(m_template[j][0]), NWFSAMP);
 			ms->setValue2(m_ch, j, "aperture", m_aperture[j]);
 		}
 		ms->setValue3(m_ch, 0, "pcaScl", m_pcaScl, 2);
@@ -151,7 +154,7 @@ public:
 	}
 	int addWf(float *wf, int unit, float time, bool updatePCA) {
 		if (!m_wfVbo) return 0; //being called from another thread, likely.
-		//wf assumed to be NWFSAMPUP points long.
+		//wf assumed to be NWFSAMP points long.
 		//wf should range 1 mean 0.
 		float color[3] = {0.5, 0.5, 0.5}; //unsorted.
 		//error type 1 moves toward green-yellow; error type 2 moves to purple.
@@ -196,7 +199,7 @@ public:
 		//copy to m_wfVbo first.
 		if (unit > 0) {
 			float *f = m_wfVbo->addRow();
-			for (int j=0; j<NWFSAMPUP; j++) {
+			for (int j=0; j<NWFSAMP; j++) {
 				f[(j+1)*6 + 1] = wf[j];
 				f[(j+1)*6 + 2] = time;
 				for (int k=0; k<NUNIT; k++)
@@ -204,7 +207,7 @@ public:
 			}
 		} else {
 			float *f = m_usVbo->addRow();
-			for (int j=0; j<NWFSAMPUP; j++) {
+			for (int j=0; j<NWFSAMP; j++) {
 				f[(j+1)*3 + 1] = wf[j];
 				f[(j+1)*3 + 2] = time;
 			}
@@ -212,13 +215,13 @@ public:
 		if (updatePCA) {
 			//add waveform to database.
 			float *nw = m_pcaVbo->addWf();
-			for (int j=0; j<NWFSAMPUP; j++) {
+			for (int j=0; j<NWFSAMP; j++) {
 				nw[j] = wf[j];
 			}
 			//compute PCA. just inner product.
 			float *pca = m_pcaVbo->addRow();
 			pca[0] = pca[1] = 0.f;
-			for (int j=0; j<NWFSAMPUP; j++) {
+			for (int j=0; j<NWFSAMP; j++) {
 				for (int i=0; i<NSORT; i++)
 					pca[i] += m_pca[i][j] * wf[j];
 			}
@@ -249,7 +252,7 @@ public:
 		//possibly set the threshold and centering for this channel.
 		//incoming location will be in global coordinates (+-1)
 
-		float n  = NWFSAMPUP-1;
+		float n  = NWFSAMP-1;
 		float nn = n*2;
 
 		float x = f[0];
@@ -369,15 +372,31 @@ public:
 			glColor4ub(161,217,155,150);
 			glLineWidth(1.f);
 			glBegin(GL_LINE_STRIP);
-			float t = m_threshold*m_gain;
-			t = oh*(t/2.f+0.5) + oy;
-			glVertex2f(ox, t);
-			glVertex2f(ow+ox, t);
+			float t0 = m_threshold*m_gain;
+			float t = oh*(t0/2.f+0.5) + oy;
+			if (g_whichSpikePreEmphasis == 0) {
+				glVertex2f(ox, t);
+				glVertex2f(ow+ox, t);
+			} else if (g_whichSpikePreEmphasis == 1) {
+				glVertex2f(ox, t);
+				glVertex2f(ow+ox, t);
+				glEnd();
+				glBegin(GL_LINE_STRIP);
+				float t2 = oh*(-t0/2.f+0.5) + oy;
+				glVertex2f(ox, t2);
+				glVertex2f(ow+ox, t2);
+			}
 			glEnd();
 			//glColor4f(1.f,1.f,1.f,0.3f);
+
 			glColor4ub(161,217,155,150);
 			glBegin(GL_LINE_STRIP);
-			float c = (float)m_centering;
+			float c;
+			if (g_whichAlignment == 0) { // cursor aligned
+				c = (float)m_centering;
+			} else{
+				c = floor(NWFSAMP/2);
+			}
 			c = NWFSAMP-1-c;
 			c += 0.5f;
 			c /= (NWFSAMP-1); //centering transform.
@@ -400,9 +419,9 @@ public:
 				else
 					//glColor4f(1.f, 0.5f, 0.f, 0.65f);
 					glColor4ub(103,0,13,175);
-				for (int j=0; j<NWFSAMPUP; j++) {
+				for (int j=0; j<NWFSAMP; j++) {
 					float ny = m_gain*m_template[k][j] + 0.5f;
-					float nx = (float)(j)/(NWFSAMPUP-1);
+					float nx = (float)(j)/(NWFSAMP-1);
 					glVertex3f(nx*ow+ox, ny*oh+oy, 0.f);
 				}
 				glColor4f(0.f, 0.f, 0.f, 0.75f);
@@ -413,10 +432,10 @@ public:
 			if (showPca) {
 				glLineWidth(5.f);
 				for (int k=0; k<NSORT; k++) {
-					for (int j=0; j<NWFSAMPUP; j++) {
+					for (int j=0; j<NWFSAMP; j++) {
 						//float ny = m_pca[k][j]*m_pcaScl[k]*m_gain+0.5;
 						float ny = m_pca[k][j]*m_pcaScl[k]+0.5; // no need to gain?
-						float nx = (float)(j)/(NWFSAMPUP-1);
+						float nx = (float)(j)/(NWFSAMP-1);
 						glColor4f(1.f-k, k, 0.f, 0.75f);
 						glVertex3f(nx*ow+ox, ny*oh+oy, 0.f);
 					}
@@ -557,10 +576,10 @@ public:
 			color[1] = 0.f;
 			color[2] = 0.f;
 		}
-		float temp[NWFSAMPUP];
+		float temp[NWFSAMP];
 		m_pcaVbo->getTemplate(temp, aperture, color);
 		printf("template %d ", unit);
-		for (int i=0; i<NWFSAMPUP; i++) {
+		for (int i=0; i<NWFSAMP; i++) {
 			m_template[unit-1][i] = temp[i];
 			printf("%d ", (int)((temp[i]+0.5f) * 255));
 		}
@@ -586,38 +605,43 @@ public:
 		//whatever ... this can be blocking.
 		long double t;
 		int nsamp = MIN(m_pcaVbo->m_w, m_pcaVbo->m_rows);
-		if (nsamp < NWFSAMPUP) {
+		if (nsamp < NWFSAMP) {
 			printf("Channel::computePca %d (%d) samples, not enough\n", nsamp, m_pcaVbo->m_w);
 			return;
 		} else {
 			printf("Channel::computePca  %d samples\n", nsamp);
 		}
-		float mean[NWFSAMPUP];
-		for (int j=0; j<NWFSAMPUP; j++) mean[j] = 0.f;
-		for (int i=0; i<nsamp; i++) {
-			for (int j=0; j<NWFSAMPUP; j++)
-				mean[j] += m_pcaVbo->m_wf[i*NWFSAMPUP + j];
-		}
-		for (int j=0; j<NWFSAMPUP; j++) {
+
+		/*
+		float mean[NWFSAMP];
+		for (int j=0; j<NWFSAMP; j++) {
+			mean[j] = 0.f;
+			for (int i=0; i<nsamp; i++) {
+				mean[j] += m_pcaVbo->m_wf[i*NWFSAMP + j];
+			}
 			mean[j] /= (float)nsamp;
 		}
+		*/
+
+
 		//gsl is row major!
-		gsl_matrix *m = gsl_matrix_alloc(nsamp, NWFSAMPUP); //rows, columns (like matlab)
+		gsl_matrix *m = gsl_matrix_alloc(nsamp, NWFSAMP); //rows, columns (like matlab)
 		for (int i=0; i<nsamp; i++) {
-			for (int j=0; j<NWFSAMPUP; j++) {
-				m->data[i*NWFSAMPUP + j] = m_pcaVbo->m_wf[i*NWFSAMPUP + j]; // - mean[j];
+			for (int j=0; j<NWFSAMP; j++) {
+				m->data[i*NWFSAMP + j] = m_pcaVbo->m_wf[i*NWFSAMP + j]; // - mean[j];
 			}
 		}
+
 		//gsl_matrix_to_mat(m, "wavforms.mat");
 		if (0) {
 			//method 1 - SVD.  slow.
 			// I'm looking at matlab's princomp function.
 			// they say S = X0' * X0 ./ (n-1), but computed using SVD.
 			//columns of V seem to contain the principle components.
-			gsl_matrix *x = gsl_matrix_alloc(NWFSAMPUP,NWFSAMPUP);
-			gsl_matrix *v = gsl_matrix_alloc(NWFSAMPUP,NWFSAMPUP);
-			gsl_vector *s = gsl_vector_alloc(NWFSAMPUP);
-			gsl_vector *work = gsl_vector_alloc(NWFSAMPUP);
+			gsl_matrix *x = gsl_matrix_alloc(NWFSAMP,NWFSAMP);
+			gsl_matrix *v = gsl_matrix_alloc(NWFSAMP,NWFSAMP);
+			gsl_vector *s = gsl_vector_alloc(NWFSAMP);
+			gsl_vector *work = gsl_vector_alloc(NWFSAMP);
 
 			gsl_linalg_SV_decomp_mod(m, x, v, s, work);
 
@@ -626,9 +650,9 @@ public:
 			int offset = 0;
 			gsl_matrix_to_mat(v, "pca_coef.mat");
 			while (s->data[offset] > 1000) offset++;
-			for (int i=0; i<NWFSAMPUP; i++) {
-				m_pca[0][i] = v->data[i*NWFSAMPUP + offset];
-				m_pca[1][i] = v->data[i*NWFSAMPUP + 1 + offset];
+			for (int i=0; i<NWFSAMP; i++) {
+				m_pca[0][i] = v->data[i*NWFSAMP + offset];
+				m_pca[1][i] = v->data[i*NWFSAMP + 1 + offset];
 				printf("%f %f\n", m_pca[0][i],
 				       m_pca[1][i]);
 			}
@@ -639,28 +663,37 @@ public:
 			gsl_vector_free(work);
 		} else {
 			//method 2 - eigen decomposition.
-			gsl_matrix *cov = gsl_matrix_alloc(NWFSAMPUP,NWFSAMPUP);
+			gsl_matrix *cov = gsl_matrix_calloc(NWFSAMP,NWFSAMP); // calloc inits zero
 			t = gettime();
 			gsl_blas_dgemm(CblasTrans,CblasNoTrans,1.0/nsamp,m,m,0.0,cov);
 			printf("dgemm time %Lf siz %d\t", gettime()-t,nsamp);
+
 			//regularize.
-			for (int i=0; i<NWFSAMPUP; i++)
-				cov->data[i*NWFSAMPUP+i] += 0.001;
+			for (int i=0; i<NWFSAMP; i++)
+				cov->data[i*NWFSAMP+i] += 1e-5;
+
 			//gsl_matrix_to_mat(cov, "pca_cov.mat");
+
 			//eigen decomp.
 			t = gettime();
-			gsl_eigen_symmv_workspace *ws = gsl_eigen_symmv_alloc(NWFSAMPUP);
-			gsl_matrix *v = gsl_matrix_alloc(NWFSAMPUP,NWFSAMPUP);
-			gsl_vector *d = gsl_vector_alloc(NWFSAMPUP);
+			gsl_eigen_symmv_workspace *ws = gsl_eigen_symmv_alloc(NWFSAMP);
+			gsl_vector *d = gsl_vector_alloc(NWFSAMP);
+			gsl_matrix *v = gsl_matrix_alloc(NWFSAMP,NWFSAMP);
 			gsl_eigen_symmv(cov, d, v, ws);
 			gsl_matrix_to_mat(v, "pca_v.mat");
-			//the result will be unsorted. sort it, ascending.
-			size_t p[2];
-			gsl_sort_largest_index(p,2,d->data,1,NWFSAMPUP);
+
+			// the result will be unsorted
+			// sort it, descending based on the magnitude of the eigenvalue
+			gsl_eigen_symmv_sort(d, v, GSL_EIGEN_SORT_ABS_DESC);
+
+			//size_t p[2];
+			//gsl_sort_largest_index(p,2,d->data,1,NWFSAMP);
+
+			// normalize to identity covariance
 			for (int k=0; k<2; k++) {
-				for (int i=0; i<NWFSAMPUP; i++) {
-					m_pca[k][i] = v->data[p[k] + i*NWFSAMPUP] / sqrt(d->data[p[k]]);
-					m_pcaScl[k] = sqrt(d->data[p[k]]);
+				for (int i=0; i<NWFSAMP; i++) {
+					m_pca[k][i] = v->data[k + i*NWFSAMP] / sqrt(d->data[k]);
+					m_pcaScl[k] = sqrt(d->data[k]);
 				}
 			}
 			printf("eig decomp time %Lf\t", gettime()-t);
@@ -674,8 +707,8 @@ public:
 		for (int i=0; i<nsamp; i++) {
 			float pca[2] = {0,0};
 			for (int k=0; k<2; k++) {
-				for (int j=0; j<NWFSAMPUP; j++) {
-					pca[k] += m_pcaVbo->m_wf[i*NWFSAMPUP + j] * m_pca[k][j];
+				for (int j=0; j<NWFSAMP; j++) {
+					pca[k] += m_pcaVbo->m_wf[i*NWFSAMP + j] * m_pca[k][j];
 				}
 			}
 			m_pcaVbo->m_f[i*6 + 0] = pca[0];

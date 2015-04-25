@@ -8,13 +8,29 @@
 
 using namespace std;
 
+class NEO
+{
+protected:
+	float x_prev;
+	float x_prev2;
+	float m_mean;
+public:
+	NEO();
+	~NEO();
+
+	float eval(float x);
+	float mean();
+};
+
 class SpikeBuffer
 {
 protected:
 	float m_wf[SPIKE_BUF_SIZE];	 		// the spike buffer
 	unsigned int m_tk[SPIKE_BUF_SIZE];	// the tick buffer
+	float m_neo[SPIKE_BUF_SIZE];		// the neo buffer
 	std::atomic<long> m_w;       		// atomic write pointer
 	std::atomic<long> m_r;       		// atomic read pointer
+	NEO neo;
 
 public:
 	SpikeBuffer();
@@ -25,7 +41,7 @@ public:
 
 	bool getSpike(double *tk, double *wf, int n, float threshold, int alignment);
 
-	bool getSpike(unsigned int *tk, float *wf, int n, float threshold, int alignment);
+	bool getSpike(unsigned int *tk, float *wf, int n, float threshold, int alignment, int pre_emphasis);
 
 	// returns buffer capcity as a fraction. 1 means filled. 0 means empty.
 	float capacity();
@@ -34,7 +50,7 @@ public:
 	long bytes();
 
 	const char *name() {
-		return "spike buffer v1";
+		return "spike buffer v2";
 	};
 
 	long rp();

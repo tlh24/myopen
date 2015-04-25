@@ -92,7 +92,7 @@ int main(int argn, char **argc)
 	ticks = (i64 *)malloc(packets * sizeof(i64));
 	channel = (short *)malloc(packets * sizeof(short));
 	unit = (short *)malloc(packets * sizeof(short));
-	wf = (short *)malloc(NWFSAMPUP * packets * sizeof(short));
+	wf = (short *)malloc(NWFSAMP * packets * sizeof(short));
 
 	if (time == 0 || ticks == 0 || channel == 0 || unit == 0 || wf == 0) {
 		printf("not enough memory to convert in-place. bummer.");
@@ -156,17 +156,17 @@ int main(int argn, char **argc)
 	for (int c=0; c<maxch; c++) {
 		for (int u=0; u<maxunit; u++) {
 			i64 m = unitCount(c, u);
-			short *w = (short *)malloc(NWFSAMPUP * m * sizeof(short));
+			short *w = (short *)malloc(NWFSAMP * m * sizeof(short));
 			i64 m2 = 0;
 			for (i64 i=0; i<n; i++) {
 				if (channel[i] == c && unit[i] == u) {
-					for (i64 g=0; g<NWFSAMPUP; g++) {
-						w[m2*NWFSAMPUP + g] = wf[i*NWFSAMPUP+g];
+					for (i64 g=0; g<NWFSAMP; g++) {
+						w[m2*NWFSAMP + g] = wf[i*NWFSAMP+g];
 					}
 					m2++;
 				}
 			}
-			dims2[0] = NWFSAMPUP;
+			dims2[0] = NWFSAMP;
 			dims2[1] = m;
 			wf_cell[index] = Mat_VarCreate
 			                 (NULL, MAT_C_INT16, MAT_T_INT16, 2, dims2, w, 0);

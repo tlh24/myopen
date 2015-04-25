@@ -12,7 +12,7 @@ struct wfpak {
 	short	channel;
 	short	unit;
 	short   len;
-	short	wf[NWFSAMPUP];
+	short	wf[NWFSAMP];
 };
 #define WFBUFSIZ (1024*64)
 #define WFBUFMASK (WFBUFSIZ-1)

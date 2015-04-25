@@ -15,6 +15,7 @@
 #include <Cg/cgGL.h>
 
 #include <stdio.h>
+#include <float.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <proc/readproc.h>
@@ -33,7 +34,6 @@
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_fit.h>
-#include <gsl/gsl_spline.h>
 #include <boost/multi_array.hpp>
 #include <map>
 #include <string>
@@ -105,6 +105,8 @@ ReaderWriterQueue<PO8Data> g_databuffer(1024);
 
 SpikeBuffer g_spikebuf[NCHAN];
 
+NEO temp_neo;
+
 i64		g_lastSpike[NCHAN][NUNIT];
 unsigned int 	g_nsamp = 4096*6; //given the current level of zoom (1 = 4096 samples), how many samples to update?
 float g_zoomSpan = 1.0;
@@ -159,8 +161,26 @@ long double g_po8ePollInterval = 0.0;
 long double g_po8eAvgInterval = 0.0;
 int64_t g_tdtOffsetDiff = 0;
 
+int g_whichSpikePreEmphasis = 0;
+enum EMPHASIS {
+	EMPHASIS_NONE = 0,
+	EMPHASIS_ABS,
+	EMPHASIS_NEO
+};
+
+int g_whichAlignment = 0;
+enum ALIGN {
+	ALIGN_CROSSING = 0,
+	ALIGN_MIN,
+	ALIGN_MAX,
+	ALIGN_ABS,
+	ALIGN_SLOPE,
+	ALIGN_NEO
+};
+
 float g_minISI = 1.3; //ms
 float g_autoThreshold = -3.5; //standard deviations. default negative, w/e.
+float g_neoThreshold = 8;
 int g_spikesCols = 16;
 
 //gboolean g_enableArtifactRLS = false;
@@ -181,9 +201,6 @@ int g_artifactBlankingSamps = 48;
 int g_artifactBlankingPreSamps = 24;
 
 gboolean g_enableStimClockBlanking = false;
-
-//gboolean g_enableSplines = true;
-//gboolean g_enableSubsampleAlignment = true;
 
 int 	g_mode = MODE_RASTERS;
 int g_drawmode[2] = {GL_POINTS, GL_LINE_STRIP};
@@ -215,6 +232,7 @@ i64 mod2(i64 a, i64 b)
 }
 void saveState()
 {
+	printf("Saving Preferences\n");
 	MatStor ms(g_prefstr);
 	for (int i=0; i<NCHAN; i++) {
 		g_c[i]->save(&ms);
@@ -235,8 +253,11 @@ void saveState()
 	ms.setStructValue("raster","show_threshold",0,(float)g_showContThresh);
 	ms.setStructValue("raster","span",0,g_rasterSpan);
 
+	ms.setStructValue("spike","pre_emphasis",0,(float)g_whichSpikePreEmphasis);
+	ms.setStructValue("spike","alignment_mode",0,(float)g_whichAlignment);
 	ms.setStructValue("spike","min_isi",0,g_minISI);
 	ms.setStructValue("spike","auto_threshold",0,g_autoThreshold);
+	ms.setStructValue("spike","neo_threshold",0,g_neoThreshold);
 	ms.setStructValue("spike","cols",0,(float)g_spikesCols);
 
 	ms.setStructValue("wf","show_pca",0,(float)g_showPca);
@@ -1020,26 +1041,107 @@ void *nlms_train_thread(void *)
 //void sorter_thread(void *arg)
 void sorter(int ch)
 {
-	//int ch = (int *)arg;
+	float wf_sp[2*NWFSAMP];
+	unsigned int tk_sp[2*NWFSAMP];
 
-	float wf[NWFSAMP];
-	unsigned int tkall[NWFSAMP];
+	float threshold;
+	if (g_whichSpikePreEmphasis == 2) {
+		threshold = g_neoThreshold;
+	} else {
+		threshold = g_c[ch]->getThreshold(); // 1 -> 10mV.
+	}
 
-	float threshold = g_c[ch]->getThreshold(); // 1 -> 10mV.
-	int centering = (float)NWFSAMP - g_c[ch]->getCentering();
+	while (g_spikebuf[ch].getSpike(tk_sp, wf_sp, 2*NWFSAMP, threshold, NWFSAMP, g_whichSpikePreEmphasis)) {
+		// ask for twice the width of a spike waveform so that we may align
 
-	while (g_spikebuf[ch].getSpike(tkall, wf, NWFSAMP, threshold, centering)) {
+		int a = floor(NWFSAMP/2);
+		int b = floor(NWFSAMP/2)+NWFSAMP;
 
-		unsigned int tk = tkall[0];	// start of waveform
+		int centering = a;
+		float v;
+
+		switch (g_whichAlignment) {
+		case ALIGN_CROSSING:
+			//centering = (float)NWFSAMP - g_c[ch]->getCentering();
+			centering = g_c[ch]->getCentering() + a;
+			break;
+		case ALIGN_MIN:
+			v = FLT_MAX;
+			for (int i=a; i<b; i++) {
+				if (v > wf_sp[i]) {
+					v = wf_sp[i];
+					centering = i;
+				}
+			}
+		break;
+		case ALIGN_MAX:
+			v = FLT_MIN;
+			for (int i=a; i<b; i++) {
+				if (v < wf_sp[i]) {
+					v = wf_sp[i];
+					centering = i;
+				}
+			}
+	
+		break;
+		case ALIGN_ABS:
+			 v = FLT_MIN;
+			for (int i=a; i<b; i++) {
+				if (v < fabs(wf_sp[i])) {
+					v = fabs(wf_sp[i]);
+					centering = i;
+				}
+			}
+		
+		break;
+		case ALIGN_SLOPE: 
+			 v = FLT_MIN;
+			for (int i=a; i<b; i++) {
+				if (v < wf_sp[i+1]-wf_sp[i]) {
+					v = wf_sp[i+1]-wf_sp[i];
+					centering = i;
+				}
+			}
+		
+		break;
+		case ALIGN_NEO: {
+			NEO neo;
+			for (int i=0; i<a; i++) {	// preload neo
+				neo.eval(wf_sp[i]);
+			}
+			 v = FLT_MIN;
+			for (int i=a; i<b; i++) {
+				float tmp = neo.eval(wf_sp[i]);
+				if (v < tmp) {
+					v = tmp;
+					centering = i;
+				}
+			}
+		}
+		break;
+		default:
+			printf("bad alignment type. exiting.\n");
+			exit(1);
+		}
+
+		// ideally don't do this unnecessary copy
+		// rather just keep track of the pointer
+		float wf[NWFSAMP];
+		for (int i=0; i<NWFSAMP; i++) {
+			wf[i] = wf_sp[centering - (int)floor(NWFSAMP/2) + i];
+		}
+
+		unsigned int tk = tk_sp[centering];	// start of waveform
+
 
 		int unit = 0; //unsorted.
 		for (int u=1; u>=0; u--) { // compare to template.
 			float sum = 0;
-			for (int j=0; j<NWFSAMPUP; j++) {
+			for (int j=0; j<NWFSAMP; j++) {
 				float r = wf[j] - g_c[ch]->m_template[u][j];
 				sum += r*r;
 			}
-			sum /= NWFSAMPUP;
+			sum /= NWFSAMP;
 			if (sum < g_c[ch]->getAperture(u))
 				unit = u+1;
 		}
@@ -1310,7 +1412,7 @@ void *worker_thread(void *)
 		do {
 			succeeded = g_databuffer.try_dequeue(p);
 			if (!succeeded)
-				usleep(1e3);
+				usleep(1e3);	
 		} while (!succeeded);
 
 		size_t ns = p.numSamples;
@@ -2054,6 +2156,7 @@ int main(int argc, char **argv)
 		strcpy(g_prefstr, argv[1]);
 	else
 		strcpy(g_prefstr, "preferences.mat");
+	printf("using %s for settings\n", g_prefstr);
 
 	MatStor ms(g_prefstr);
 	for (int i=0; i<4; i++) {
@@ -2076,8 +2179,11 @@ int main(int argc, char **argv)
 	g_showContThresh = (bool) ms.getStructValue("raster","show_threshold", 0, (float)g_showContThresh);
 	g_rasterSpan = ms.getStructValue("ratser", "span", 0, g_rasterSpan);
 
+	g_whichSpikePreEmphasis = ms.getStructValue("spike", "pre_emphasis", 0, g_whichSpikePreEmphasis);
+	g_whichAlignment = ms.getStructValue("spike", "alignment_mode", 0, g_whichAlignment);
 	g_minISI = ms.getStructValue("spike", "min_isi", 0, g_minISI);
 	g_autoThreshold = ms.getStructValue("spike", "auto_threshold", 0, g_autoThreshold);
+	g_neoThreshold = ms.getStructValue("spike", "neo_threshold", 0, g_neoThreshold);
 	g_spikesCols = (int)ms.getStructValue("spike", "cols", 0, (float)g_spikesCols);
 
 	g_showPca = (bool)ms.getStructValue("wf", "show_pca", 0, (float)g_showPca);
@@ -2327,6 +2433,23 @@ int main(int argc, char **argv)
 
 //add a page for viewing all the spikes.
 	box1 = gtk_vbox_new(FALSE, 0);
+
+	mk_radio("none,abs,NEO", 3,
+	         box1, true, "Spike Pre-emphasis", g_whichSpikePreEmphasis,
+	[](GtkWidget *_button, gpointer _p) {
+		if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(_button))) {
+			g_whichSpikePreEmphasis = (int)((long long)_p & 0xf);
+		}
+	});
+
+	mk_radio("crossing,min,max,abs,slope,neo", 6,
+	         box1, true, "Spike Alignment", g_whichAlignment,
+	[](GtkWidget *_button, gpointer _p) {
+		if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(_button))) {
+			g_whichAlignment = (int)((long long)_p & 0xf);
+		}
+	});
+
 	// for the sorting, we show all waveforms (up to a point..)
 	//these should have a minimum enforced ISI.
 	mk_spinner("min ISI, ms", box1, g_minISI,
@@ -2334,6 +2457,9 @@ int main(int argc, char **argv)
 
 	mk_spinner("auto thresh, std", box1, g_autoThreshold,
 	           -10.0, 10.0, 0.05, basic_spinfloat_cb, (gpointer)&g_autoThreshold);
+
+	mk_spinner("NEO thresh, a.u.", box1, g_neoThreshold,
+	           0, 20, 1, basic_spinfloat_cb, (gpointer)&g_neoThreshold);
 
 	GtkWidget *bx3 = gtk_hbox_new (FALSE, 1);
 	gtk_box_pack_start (GTK_BOX (box1), bx3, FALSE, FALSE, 0);
@@ -2347,12 +2473,6 @@ int main(int argc, char **argv)
 			g_c[i]->autoThreshold(g_autoThreshold);
 		}
 	}, NULL);
-
-	//mk_checkbox("enable csplines", box1,
-	//            &g_enableSplines, basic_checkbox_cb);
-
-	//mk_checkbox("enable subsample alignment", box1,
-	//            &g_enableSubsampleAlignment, basic_checkbox_cb);
 
 	mk_spinner("Columns", box1, g_spikesCols, 3, 32, 1,
 	           basic_spinint_cb, (gpointer)&g_spikesCols);
@@ -2559,6 +2679,12 @@ int main(int argc, char **argv)
 		g_icmswriter.close();
 		g_analogwriter.close();
 	}, NULL);
+
+	mk_button("Save Preferences", box1,
+		[](GtkWidget *, gpointer) {
+			saveState();
+		}, NULL);
+
 
 	// end save page
 	gtk_widget_show(box1);
