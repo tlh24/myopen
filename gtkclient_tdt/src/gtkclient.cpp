@@ -1124,21 +1124,15 @@ void sorter(int ch)
 			exit(1);
 		}
 
-		// ideally don't do this unnecessary copy
-		// rather just keep track of the pointer
-		float wf[NWFSAMP];
-		for (int i=0; i<NWFSAMP; i++) {
-			wf[i] = wf_sp[centering - (int)floor(NWFSAMP/2) + i];
-		}
+		size_t idx = centering-(int)floor(NWFSAMP/2);
 
-		unsigned int tk = tk_sp[centering];	// start of waveform
-
+		unsigned int tk = tk_sp[centering]; // alignment time
 
 		int unit = 0; //unsorted.
 		for (int u=1; u>=0; u--) { // compare to template.
 			float sum = 0;
 			for (int j=0; j<NWFSAMP; j++) {
-				float r = wf[j] - g_c[ch]->m_template[u][j];
+				float r = wf_sp[idx+j] - g_c[ch]->m_template[u][j];
 				sum += r*r;
 			}
 			sum /= NWFSAMP;
@@ -1151,7 +1145,7 @@ void sorter(int ch)
 		if (tk - g_lastSpike[ch][unit] > g_minISI*SRATE_KHZ) {
 			long double the_time = g_ts.getTime(tk);
 			//need to more precisely calulate spike time here.
-			g_c[ch]->addWf(wf, unit, the_time, true);
+			g_c[ch]->addWf(&wf_sp[idx], unit, the_time, true);
 			g_c[ch]->updateISI(unit, tk);
 			g_lastSpike[ch][unit] = tk;
 			if (g_wfwriter.enabled()) {
@@ -1164,7 +1158,7 @@ void sorter(int ch)
 					pak.len = NWFSAMP;
 					float gain2 = 2.f * 32767.f;
 					for (int g=0; g<NWFSAMP; g++) {
-						pak.wf[g] = (short)(wf[g]*gain2); //should be in original units.
+						pak.wf[g] = (short)(wf_sp[idx+g]*gain2); //should be in original units.
 					}
 					g_wfwriter.add(&pak);
 				}
