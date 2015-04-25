@@ -2453,7 +2453,7 @@ int main(int argc, char **argv)
 	           -10.0, 10.0, 0.05, basic_spinfloat_cb, (gpointer)&g_autoThreshold);
 
 	mk_spinner("NEO thresh, a.u.", box1, g_neoThreshold,
-	           0, 20, 1, basic_spinfloat_cb, (gpointer)&g_neoThreshold);
+	           0, 100, 1, basic_spinfloat_cb, (gpointer)&g_neoThreshold);
 
 	GtkWidget *bx3 = gtk_hbox_new (FALSE, 1);
 	gtk_box_pack_start (GTK_BOX (box1), bx3, FALSE, FALSE, 0);
