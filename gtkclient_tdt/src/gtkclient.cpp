@@ -1073,7 +1073,7 @@ void sorter(int ch)
 					centering = i;
 				}
 			}
-		break;
+			break;
 		case ALIGN_MAX:
 			v = FLT_MIN;
 			for (int i=a; i<b; i++) {
@@ -1082,34 +1082,34 @@ void sorter(int ch)
 					centering = i;
 				}
 			}
-	
-		break;
+
+			break;
 		case ALIGN_ABS:
-			 v = FLT_MIN;
+			v = FLT_MIN;
 			for (int i=a; i<b; i++) {
 				if (v < fabs(wf_sp[i])) {
 					v = fabs(wf_sp[i]);
 					centering = i;
 				}
 			}
-		
-		break;
-		case ALIGN_SLOPE: 
-			 v = FLT_MIN;
+
+			break;
+		case ALIGN_SLOPE:
+			v = FLT_MIN;
 			for (int i=a; i<b; i++) {
 				if (v < wf_sp[i+1]-wf_sp[i]) {
 					v = wf_sp[i+1]-wf_sp[i];
 					centering = i;
 				}
 			}
-		
-		break;
+
+			break;
 		case ALIGN_NEO: {
 			NEO neo;
 			for (int i=0; i<a; i++) {	// preload neo
 				neo.eval(wf_sp[i]);
 			}
-			 v = FLT_MIN;
+			v = FLT_MIN;
 			for (int i=a; i<b; i++) {
 				float tmp = neo.eval(wf_sp[i]);
 				if (v < tmp) {
@@ -1406,7 +1406,7 @@ void *worker_thread(void *)
 		do {
 			succeeded = g_databuffer.try_dequeue(p);
 			if (!succeeded)
-				usleep(1e3);	
+				usleep(1e3);
 		} while (!succeeded);
 
 		size_t ns = p.numSamples;
@@ -2675,9 +2675,9 @@ int main(int argc, char **argv)
 	}, NULL);
 
 	mk_button("Save Preferences", box1,
-		[](GtkWidget *, gpointer) {
-			saveState();
-		}, NULL);
+	[](GtkWidget *, gpointer) {
+		saveState();
+	}, NULL);
 
 
 	// end save page

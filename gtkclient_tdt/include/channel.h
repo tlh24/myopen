@@ -394,7 +394,7 @@ public:
 			float c;
 			if (g_whichAlignment == 0) { // cursor aligned
 				c = (float)m_centering;
-			} else{
+			} else {
 				c = floor(NWFSAMP/2);
 			}
 			c = NWFSAMP-1-c;
