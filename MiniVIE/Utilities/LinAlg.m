@@ -1202,7 +1202,7 @@ classdef LinAlg
                     % Z-Y-X Euler Angles from a 3x3 Rotation Matrix
                     % X-Y-Z Fixed Angles from a 3x3 Rotation Matrix
                     
-                    % Vectorized solution
+                    % Vectorized solution                      
                     Y_pos = atan2(-R(3,1,:),+sqrt(1-R(3,1,:).^2));
                     Y_neg = atan2(-R(3,1,:),-sqrt(1-R(3,1,:).^2));
                     
