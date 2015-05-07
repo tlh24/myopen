@@ -122,6 +122,7 @@ WfWriter	g_wfwriter;
 GLuint 		g_base;            // base display list for the font set.
 
 AnalogWriter g_analogwriter;
+AnalogWriter g_analogwriter_prefilter;
 
 Artifact *g_artifact[STIMCHAN];
 ICMSWriter g_icmswriter;
@@ -228,8 +229,6 @@ GtkWidget *g_gainSpin[4] = {0,0,0,0};
 GtkWidget *g_apertureSpin[8] = {0,0,0,0};
 GtkWidget *g_enabledChkBx[4] = {0,0,0,0};
 GtkWidget *g_spikeFileSizeLabel;
-GtkWidget *g_icmsFileSizeLabel;
-GtkWidget *g_analogFileSizeLabel;
 GtkWidget *g_notebook;
 int g_uiRecursion = 0; //prevents programmatic changes to the UI
 // from causing commands to be sent to the headstage.
@@ -1000,22 +999,10 @@ static gboolean rotate(gpointer user_data)
 		         (double)g_wfwriter.bytes()/1e6);
 		gtk_label_set_text(GTK_LABEL(g_spikeFileSizeLabel), str);
 	}
-	if (g_icmswriter.enabled()) {
-		n = g_icmswriter.filename().find_last_of("/");
 
-		snprintf(str, 256, "%s: %.2f MB",
-		         g_icmswriter.filename().substr(n+1).c_str(),
-		         (double)g_icmswriter.bytes()/1e6);
-		gtk_label_set_text(GTK_LABEL(g_icmsFileSizeLabel), str);
-	}
-	if (g_analogwriter.enabled()) {
-		n = g_analogwriter.filename().find_last_of("/");
-
-		snprintf(str, 256, "%s: %.2f MB",
-		         g_analogwriter.filename().substr(n+1).c_str(),
-		         (double)g_analogwriter.bytes()/1e6);
-		gtk_label_set_text(GTK_LABEL(g_analogFileSizeLabel), str);
-	}
+	g_icmswriter.draw();
+	g_analogwriter.draw();
+	g_analogwriter_prefilter.draw();
 
 	return TRUE;
 }
@@ -1209,6 +1196,16 @@ void *analogwrite_thread(void *)
 {
 	while (!g_die) {
 		if (g_analogwriter.write()) // if it can write, it will
+			usleep(1e4); // poll quicker
+		else
+			usleep(1e5);
+	}
+	return NULL;
+}
+void *analogwrite_prefilter_thread(void *)
+{
+	while (!g_die) {
+		if (g_analogwriter_prefilter.write()) // if it can write, it will
 			usleep(1e4); // poll quicker
 		else
 			usleep(1e5);
@@ -1438,7 +1435,34 @@ void *worker_thread(void *)
 		}
 		free(p.data);
 
-		// save pre-filtering broadband here
+		// write (pre-filtered) broadband signal to disk
+		if (g_analogwriter_prefilter.enabled()) {
+			Analog *ac;
+
+			ac = new Analog; // deleted by other thread
+			ac->set_chan(g_channel[0]+1);	// 1-indexed
+			for (size_t k=0; k<ns; k++) {
+				ac->add_sample(f[g_channel[0]*ns+k]); // no need to gain it
+				ac->add_tick(tk[k]);
+				ac->add_ts(g_ts.getTime(tk[k]));
+			}
+			g_analogwriter_prefilter.add(ac);
+
+			if (g_whichAnalogSave == 1) {
+				for (int ch=0; ch<RECCHAN; ch++) {
+					if (ch == g_channel[0])
+						continue;
+					ac = new Analog; // deleted by other thread
+					ac->set_chan(ch+1);	// 1-indexed
+					for (size_t k=0; k<ns; k++) {
+						ac->add_sample(f[ch*ns+k]); // no need to gain it
+						ac->add_tick(tk[k]);
+						ac->add_ts(g_ts.getTime(tk[k]));
+					}
+					g_analogwriter_prefilter.add(ac);
+				}
+			}
+		}
 
 		// pre-artifact-removal filtering
 		for (int ch=0; ch<RECCHAN; ch++) {
@@ -2047,6 +2071,30 @@ static void openSaveAnalogFile(GtkWidget *, gpointer parent_window)
 		char *filename;
 		filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
 		g_analogwriter.open(filename);
+		g_free(filename);
+	}
+	gtk_widget_destroy (dialog);
+}
+static void openSaveAnalogPrefilterFile(GtkWidget *, gpointer parent_window)
+{
+	string d = get_cwd();
+	string f = mk_legal_filename(d, "analog_pre_", ".pbd");
+
+	GtkWidget *dialog;
+	dialog = gtk_file_chooser_dialog_new ("Save Analog (pre-filter) File",
+	                                      (GtkWindow *)parent_window,
+	                                      GTK_FILE_CHOOSER_ACTION_SAVE,
+	                                      GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+	                                      GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
+	                                      NULL);
+	gtk_file_chooser_set_do_overwrite_confirmation(
+	        GTK_FILE_CHOOSER (dialog), TRUE);
+	gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog),d.c_str());
+	gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (dialog),f.c_str());
+	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
+		char *filename;
+		filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
+		g_analogwriter_prefilter.open(filename);
 		g_free(filename);
 	}
 	gtk_widget_destroy (dialog);
@@ -2675,7 +2723,25 @@ int main(int argc, char **argv)
 		g_analogwriter.close();
 	}, NULL);
 
-	mk_radio("active,all", 2, box1, false, "channel(s)?", g_whichAnalogSave,
+	s = "Save Analog (pre-filter)";
+	frame = gtk_frame_new(s.c_str());
+	gtk_box_pack_start(GTK_BOX (box1), frame, FALSE, FALSE, 1);
+
+	bxx1 = gtk_hbox_new (TRUE, 0);
+	gtk_container_add (GTK_CONTAINER (frame), bxx1);
+
+	bxx2 = gtk_vbox_new (TRUE, 0);
+	gtk_container_add (GTK_CONTAINER (bxx1), bxx2);
+	mk_button("Start", bxx2, openSaveAnalogPrefilterFile, NULL);
+
+	bxx2 = gtk_vbox_new (TRUE, 0);
+	gtk_container_add (GTK_CONTAINER (bxx1), bxx2);
+	mk_button("Stop", bxx2,
+	[](GtkWidget *, gpointer) {
+		g_analogwriter_prefilter.close();
+	}, NULL);
+
+	mk_radio("active,all", 2, box1, false, "analog channel(s)?", g_whichAnalogSave,
 	[](GtkWidget *_button, gpointer _p) {
 		if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(_button))) {
 			g_whichAnalogSave = (int)((long long)_p & 0xf);
@@ -2689,6 +2755,7 @@ int main(int argc, char **argv)
 		g_wfwriter.close();
 		g_icmswriter.close();
 		g_analogwriter.close();
+		g_analogwriter_prefilter.close();
 	}, NULL);
 
 	mk_button("Save Preferences", box1,
@@ -2757,18 +2824,28 @@ int main(int argc, char **argv)
 	gtk_box_pack_start (GTK_BOX (v1), bx, TRUE, TRUE, 0);
 
 	bx = gtk_hbox_new (FALSE, 3);
-	g_icmsFileSizeLabel = gtk_label_new ("");
-	gtk_misc_set_alignment (GTK_MISC (g_icmsFileSizeLabel), 0, 0);
-	gtk_box_pack_start (GTK_BOX (bx), g_icmsFileSizeLabel, FALSE, FALSE, 0);
-	gtk_widget_show(g_icmsFileSizeLabel);
+	label = gtk_label_new ("");
+	gtk_misc_set_alignment (GTK_MISC (label), 0, 0);
+	gtk_box_pack_start (GTK_BOX (bx), label, FALSE, FALSE, 0);
+	gtk_widget_show(label);
 	gtk_box_pack_start (GTK_BOX (v1), bx, TRUE, TRUE, 0);
+	g_icmswriter.registerWidget(label);
 
 	bx = gtk_hbox_new (FALSE, 3);
-	g_analogFileSizeLabel = gtk_label_new ("");
-	gtk_misc_set_alignment (GTK_MISC (g_analogFileSizeLabel), 0, 0);
-	gtk_box_pack_start (GTK_BOX (bx), g_analogFileSizeLabel, FALSE, FALSE, 0);
-	gtk_widget_show(g_analogFileSizeLabel);
+	label = gtk_label_new ("");
+	gtk_misc_set_alignment (GTK_MISC (label), 0, 0);
+	gtk_box_pack_start (GTK_BOX (bx), label, FALSE, FALSE, 0);
+	gtk_widget_show(label);
 	gtk_box_pack_start (GTK_BOX (v1), bx, TRUE, TRUE, 0);
+	g_analogwriter.registerWidget(label);
+
+	bx = gtk_hbox_new (FALSE, 3);
+	label = gtk_label_new ("");
+	gtk_misc_set_alignment (GTK_MISC (label), 0, 0);
+	gtk_box_pack_start (GTK_BOX (bx), label, FALSE, FALSE, 0);
+	gtk_widget_show(label);
+	gtk_box_pack_start (GTK_BOX (v1), bx, TRUE, TRUE, 0);
+	g_analogwriter_prefilter.registerWidget(label);
 
 	gtk_paned_add1(GTK_PANED(paned), v1);
 	gtk_paned_add2(GTK_PANED(paned), da1);
@@ -2846,13 +2923,14 @@ int main(int argc, char **argv)
 	pthread_attr_t attr;
 	pthread_attr_init(&attr);
 	g_startTime = gettime();
-	pthread_create( &thread1, &attr, po8_thread,		0 );
-	pthread_create( &thread1, &attr, worker_thread,		0 );
-	pthread_create( &thread1, &attr, wfwrite_thread, 	0 );
-	pthread_create( &thread1, &attr, icmswrite_thread, 	0 );
-	pthread_create( &thread1, &attr, analogwrite_thread,0 );
-	pthread_create( &thread1, &attr, mmap_thread, 		0 );
-	pthread_create( &thread1, &attr, nlms_train_thread, 0 );
+	pthread_create( &thread1, &attr, po8_thread,					0 );
+	pthread_create( &thread1, &attr, worker_thread,					0 );
+	pthread_create( &thread1, &attr, wfwrite_thread, 				0 );
+	pthread_create( &thread1, &attr, icmswrite_thread, 				0 );
+	pthread_create( &thread1, &attr, analogwrite_thread,			0 );
+	pthread_create( &thread1, &attr, analogwrite_prefilter_thread,	0 );
+	pthread_create( &thread1, &attr, mmap_thread, 					0 );
+	pthread_create( &thread1, &attr, nlms_train_thread, 			0 );
 
 	//set the initial sampling stage.
 	//gtk_combo_box_set_active(GTK_COMBO_BOX(combo), 12);
@@ -2885,6 +2963,7 @@ int main(int argc, char **argv)
 	g_wfwriter.close();
 	g_icmswriter.close();
 	g_analogwriter.close();
+	g_analogwriter_prefilter.close();
 
 	KillFont();
 	// Optional:  Delete all global objects allocated by libprotobuf.
