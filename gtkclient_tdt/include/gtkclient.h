@@ -5,12 +5,11 @@
 #define u32 unsigned int
 
 enum MODES {
-	MODE_RASTERS,
+	MODE_RASTERS = 0,
 	MODE_SPIKES,
 	MODE_SORT,
 	MODE_ICMS,
-	MODE_SAVE,
-	MODE_NUM
+	MODE_SAVE
 };
 
 #define KHZ_24

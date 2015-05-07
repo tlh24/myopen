@@ -333,6 +333,9 @@ public:
 	bool getEnabled() {
 		return m_enabled;
 	}
+	void toggleEnabled() {
+		m_enabled = !m_enabled;
+	}
 	void draw(int drawmode, float time, float *cursPos,
 	          bool showPca, bool closest, bool sortMode, bool showWFVgrid) {
 		float ox = m_loc[0];

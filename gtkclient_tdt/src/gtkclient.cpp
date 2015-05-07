@@ -212,13 +212,13 @@ int g_artifactBlankingPreSamps = 24;
 
 gboolean g_enableStimClockBlanking = false;
 
-int 	g_mode = MODE_RASTERS;
+int g_mode = MODE_RASTERS;
 int g_drawmode[2] = {GL_POINTS, GL_LINE_STRIP};
 int	g_drawmodep = 1;
 int	g_blendmode[2] = {GL_ONE_MINUS_SRC_ALPHA, GL_ONE};
 int g_blendmodep = 0;
 
-bool	g_vbo1Init = false;
+bool g_vbo1Init = false;
 GLuint g_vbo1[NFBUF]; //for the waveform display
 GLuint g_vbo2[2] = {0,0}; //for spikes.
 
@@ -499,7 +499,7 @@ static gint button_press_event( GtkWidget *,
 		if (g_cursPos[1] < 0.0f)
 			u += 2;
 
-		if (event->button == 1) {
+		if (event->button == 1) { // left click
 			g_polyChan = u;
 			g_addPoly = false;
 			if (event->type==GDK_2BUTTON_PRESS) {
@@ -514,7 +514,7 @@ static gint button_press_event( GtkWidget *,
 				}
 			}
 		}
-		if (event->button == 3) {
+		if (event->button == 3) { // right click
 			if (g_c[g_channel[u]]->m_pcaVbo->m_polyW > 10 && g_mode == MODE_SORT)
 				templatePopupMenu(event, (gpointer)u);
 		}
@@ -528,7 +528,7 @@ static gint button_press_event( GtkWidget *,
 		float y = (g_cursPos[1]*-1.f + 1.f)/2.f; //0,0 = upper left hand corner.
 		int sc = (int)floor(x*xf);
 		int sr = (int)floor(y*yf);
-		if (event->type==GDK_2BUTTON_PRESS) { //double click.
+		if (event->button==1 && event->type==GDK_2BUTTON_PRESS) { // double (left) click
 			int h =  sr*g_spikesCols + sc;
 			if (h >= 0 && h < NCHAN) {
 				//shift channels down, like a priority queue.
@@ -545,6 +545,17 @@ static gint button_press_event( GtkWidget *,
 			for (int i=0; i<4; i++) {
 				gtk_spin_button_set_value(GTK_SPIN_BUTTON(g_channelSpin[i]), g_channel[i]);
 				updateChannelUI(i);
+			}
+		}
+		if (event->button==3) { // (right click)
+			int h =  sr*g_spikesCols + sc;
+			if (h >= 0 && h < NCHAN) {
+				g_c[h]->toggleEnabled();
+				for (int i=0; i<4; i++) {
+					if (g_channel[i] == h) {
+						updateChannelUI(i);
+					}
+				}
 			}
 		}
 	}
@@ -2150,6 +2161,7 @@ static void templatePopupMenu (GdkEventButton *event, gpointer p)
 
 	menuitem = gtk_menu_item_new_with_label("set template 2 (red)");
 	setWidgetColor(menuitem, 255, 130, 130);
+	//setWidgetColor(menuitem, 128, 255, 255);
 	g_signal_connect(menuitem, "activate",
 	                 G_CALLBACK(getTemplateCB), (gpointer)(s*2+1));
 	gtk_menu_shell_append(GTK_MENU_SHELL(menu), menuitem);
@@ -2182,7 +2194,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	string titlestr = "gtkclient (TDT) v1.7";
+	string titlestr = "gtkclient (TDT) v1.75";
 
 #ifdef DEBUG
 	feenableexcept(FE_DIVBYZERO|FE_INVALID|FE_OVERFLOW);  // Enable (some) floating point exceptions
@@ -2937,8 +2949,6 @@ int main(int argc, char **argv)
 	gtk_widget_show_all (window);
 
 	g_timeout_add (1000 / 30, rotate, da1);
-	//change the channel every 2 seconds.
-	g_timeout_add(3000, chanscan, (gpointer)0);
 
 	//jack.
 #ifdef JACK
