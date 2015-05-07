@@ -30,7 +30,7 @@ protected:
 	float m_neo[SPIKE_BUF_SIZE];		// the neo buffer
 	std::atomic<long> m_w;       		// atomic write pointer
 	std::atomic<long> m_r;       		// atomic read pointer
-	NEO neo;
+	NEO neof;
 
 public:
 	SpikeBuffer();
@@ -39,9 +39,7 @@ public:
 
 	bool addSample(unsigned int _tk, float _wf);
 
-	bool getSpike(double *tk, double *wf, int n, float threshold, int alignment);
-
-	bool getSpike(unsigned int *tk, float *wf, int n, float threshold, int alignment, int pre_emphasis);
+	bool getSpike(unsigned int *tk, float *wf, float *neo, int n, float threshold, int alignment, int pre_emphasis);
 
 	// returns buffer capcity as a fraction. 1 means filled. 0 means empty.
 	float capacity();

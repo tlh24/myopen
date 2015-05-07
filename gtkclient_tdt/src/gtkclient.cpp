@@ -105,8 +105,6 @@ ReaderWriterQueue<PO8Data> g_databuffer(1024);
 
 SpikeBuffer g_spikebuf[NCHAN];
 
-NEO temp_neo;
-
 i64		g_lastSpike[NCHAN][NUNIT];
 unsigned int 	g_nsamp = 4096*6; //given the current level of zoom (1 = 4096 samples), how many samples to update?
 float g_zoomSpan = 1.0;
@@ -1049,6 +1047,7 @@ void *nlms_train_thread(void *)
 void sorter(int ch)
 {
 	float wf_sp[2*NWFSAMP];
+	float neo_sp[2*NWFSAMP];
 	unsigned int tk_sp[2*NWFSAMP];
 
 	float threshold;
@@ -1058,7 +1057,7 @@ void sorter(int ch)
 		threshold = g_c[ch]->getThreshold(); // 1 -> 10mV.
 	}
 
-	while (g_spikebuf[ch].getSpike(tk_sp, wf_sp, 2*NWFSAMP, threshold, NWFSAMP, g_whichSpikePreEmphasis)) {
+	while (g_spikebuf[ch].getSpike(tk_sp, wf_sp, neo_sp, 2*NWFSAMP, threshold, NWFSAMP, g_whichSpikePreEmphasis)) {
 		// ask for twice the width of a spike waveform so that we may align
 
 		int a = floor(NWFSAMP/2);
@@ -1112,15 +1111,10 @@ void sorter(int ch)
 
 			break;
 		case ALIGN_NEO: {
-			NEO neo;
-			for (int i=0; i<a; i++) {	// preload neo
-				neo.eval(wf_sp[i]);
-			}
 			v = FLT_MIN;
 			for (int i=a; i<b; i++) {
-				float tmp = neo.eval(wf_sp[i]);
-				if (v < tmp) {
-					v = tmp;
+				if (v < neo_sp[i]) {
+					v = neo_sp[i];
 					centering = i;
 				}
 			}
