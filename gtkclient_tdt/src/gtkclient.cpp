@@ -93,8 +93,6 @@ float	g_viewportSize[2] = {640, 480}; //width, height.
 class Channel;
 class Artifact;
 
-int g_icms_counter = -1;
-
 float	g_fbuf[NFBUF][NSAMP*3]; //continuous waveform. range [-1 .. 1]. For drawing.
 i64		g_fbufW; //where to write to (always increment)
 i64		g_fbufR; //display thread reads from here - copies to mem
@@ -1038,12 +1036,10 @@ void *nlms_train_thread(void *)
 			gsl_vector_set(xvec, ch, d);
 		}
 		gsl_vector_free(xvec);
-		//printf("lms training\n");
 	}
 
 	return NULL;
 }
-//void sorter_thread(void *arg)
 void sorter(int ch)
 {
 	float wf_sp[2*NWFSAMP];
@@ -1469,6 +1465,37 @@ void *worker_thread(void *)
 			}
 		}
 
+		// fill artifact filtering buffers (for other thread)
+		// we do both training and filtering before filtering
+		// on the intuition that it will work better this way
+		for (size_t k=0; k<ns; k++) {
+			if (g_trainArtifactNLMS || g_filterArtifactNLMS) {
+				for (int ch=0; ch<RECCHAN; ch++) {
+					gsl_vector_set(xvec, ch, (double)f[ch*ns+k]);
+				}
+			}
+
+			// populate the entire xvec (96 channels)
+			// we zero out the current (desired) element on the fly
+			// so it doesn't predict itself
+			// this is faster than the alternative
+			if (g_trainArtifactNLMS) {
+				gsl_vector *yvec = gsl_vector_alloc(RECCHAN);
+				gsl_vector_memcpy (yvec, xvec);
+				g_filterbuf.enqueue(yvec); // free on the other thread
+			}
+
+			// filter online here
+			if (g_filterArtifactNLMS) {
+				for (int ch=0; ch<RECCHAN; ch++) {
+					double d = gsl_vector_get(xvec, ch);
+					gsl_vector_set(xvec, ch, 0.0);
+					f[ch*ns+k] -= (float)g_nlms[ch]->filter(xvec);
+					gsl_vector_set(xvec, ch, d);
+				}
+			}
+		}
+
 		// pre-artifact-removal filtering
 		for (int ch=0; ch<RECCHAN; ch++) {
 			if (g_hipassNeurons)
@@ -1485,45 +1512,9 @@ void *worker_thread(void *)
 		// big loop through samples
 		for (size_t k=0; k<ns; k++) {
 
-			g_icms_counter = 0;
 			//if (stim[k] != 0) {
 			//	printf("icms pulse %d\n", stim[k]);
 			//}
-
-			// fill artifact filtering buffers (for other thread)
-			// filter online here
-			if (g_icms_counter >= 0) {
-
-				if (g_trainArtifactNLMS || g_filterArtifactNLMS) {
-					for (int ch=0; ch<RECCHAN; ch++) {
-						gsl_vector_set(xvec, ch, (double)f[ch*ns+k]);
-					}
-				}
-
-				// populate the entire xvec (96 channels)
-				// we zero out the current (desired) element on the fly
-				// so it doesn't predict itself
-				// this is faster than the alternative
-				if (g_trainArtifactNLMS) {
-					gsl_vector *yvec = gsl_vector_alloc(RECCHAN);
-					gsl_vector_memcpy (yvec, xvec);
-					g_filterbuf.enqueue(yvec); // free on the other thread
-				}
-
-				if (g_filterArtifactNLMS) {
-					for (int ch=0; ch<RECCHAN; ch++) {
-						double d = gsl_vector_get(xvec, ch);
-						gsl_vector_set(xvec, ch, 0.0);
-						f[ch*ns+k] -= (float)g_nlms[ch]->filter(xvec);
-						gsl_vector_set(xvec, ch, d);
-					}
-					// printf("lms filtering\n");
-				}
-
-				//g_icms_counter++;
-				//if (g_icms_counter >= LMSBUF)
-				//	g_icms_counter = -1;
-			}
 
 			for (int j=0; j<STIMCHAN; j++) {
 
