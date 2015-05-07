@@ -1,3 +1,4 @@
+#include <gtk/gtk.h>
 #include <iostream>
 #include <fstream>
 #include "readerwriterqueue.h"
@@ -10,6 +11,7 @@ DataWriter::DataWriter()
 {
 	m_enabled = false;
 	m_fn.assign("");
+	m_w = NULL;
 }
 
 DataWriter::~DataWriter()
@@ -72,6 +74,23 @@ string DataWriter::filename()
 	return m_fn;
 }
 
+void DataWriter::registerWidget(GtkWidget *w)
+{
+	m_w = w;
+}
+
+void DataWriter::draw()
+{
+	if (enabled()) {
+		size_t n = filename().find_last_of("/");
+
+		char str[256];
+		snprintf(str, 256, "%s: %.2f MB",
+		         filename().substr(n+1).c_str(),
+		         (double)bytes()/1e6);
+		gtk_label_set_text(GTK_LABEL(m_w), str);
+	}
+}
 
 
 AnalogWriter::AnalogWriter()

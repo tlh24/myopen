@@ -1,4 +1,5 @@
 /* datawriter.h - inspired by protobuflogger.h, by zheng */
+#include <gtk/gtk.h>
 #include <iostream>
 #include <fstream>
 #include <atomic>
@@ -28,6 +29,7 @@ protected:
 	size_t m_num_written; 			// how many objects have been written
 	std::string m_fn; 				// the file name
 	ofstream m_os;					// object for writing to file
+	GtkWidget *m_w;					// for drawing to the gui
 
 public:
 	DataWriter();
@@ -54,6 +56,10 @@ public:
 
 	// returns the name of the file we are writing to
 	virtual string filename();
+
+	virtual void registerWidget(GtkWidget *w);
+
+	virtual void draw();
 
 	virtual const char *name() = 0;
 };
