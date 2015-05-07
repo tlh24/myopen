@@ -128,9 +128,18 @@ ICMSWriter g_icmswriter;
 
 gboolean g_lopassNeurons = false;
 gboolean g_hipassNeurons = false;
+
+#if defined KHZ_24
 FilterButterBand_24k_300_5000 g_bandpass[NCHAN];
 FilterButterLow_24k_3000 g_lopass[NCHAN];
 FilterButterHigh_24k_500 g_hipass[NCHAN];
+#elif defined KHZ_48
+FilterButterBand_48k_300_5000 g_bandpass[NCHAN];
+FilterButterLow_48k_3000 g_lopass[NCHAN];
+FilterButterHigh_48k_500 g_hipass[NCHAN];
+#else
+#error Bad sampling rate!
+#endif
 
 int g_whichMedianFilter = 0;
 MedFilt3 g_medfilt3[NCHAN];
@@ -1429,6 +1438,8 @@ void *worker_thread(void *)
 		}
 		free(p.data);
 
+		// save pre-filtering broadband here
+
 		// pre-artifact-removal filtering
 		for (int ch=0; ch<RECCHAN; ch++) {
 			if (g_hipassNeurons)
@@ -1597,7 +1608,13 @@ void *worker_thread(void *)
 			// blank based on the stim clock (must happen last)
 			if (g_enableStimClockBlanking && blank[k]) {
 				for (int ch=0; ch<RECCHAN; ch++) {
+					// note that if we keep track of the last value from the
+					// previous loop through, we could do sample-and-hold
+					// rather than zero-out. which is better?
 					f[ch*ns+k] = 0.f;
+					// nan-ing is also a good idea but poisons further
+					// computations
+					//f[ch*ns+k] = nanf("");
 				}
 			}
 		}
