@@ -615,95 +615,92 @@ public:
 			printf("Channel::computePca  %d samples\n", nsamp);
 		}
 
-		/*
-		float mean[NWFSAMP];
-		for (int j=0; j<NWFSAMP; j++) {
-			mean[j] = 0.f;
-			for (int i=0; i<nsamp; i++) {
-				mean[j] += m_pcaVbo->m_wf[i*NWFSAMP + j];
-			}
-			mean[j] /= (float)nsamp;
-		}
-		*/
-
-
 		//gsl is row major!
 		gsl_matrix *m = gsl_matrix_alloc(nsamp, NWFSAMP); //rows, columns (like matlab)
 		for (int i=0; i<nsamp; i++) {
 			for (int j=0; j<NWFSAMP; j++) {
-				m->data[i*NWFSAMP + j] = m_pcaVbo->m_wf[i*NWFSAMP + j]; // - mean[j];
+				m->data[i*NWFSAMP + j] = m_pcaVbo->m_wf[i*NWFSAMP + j];
 			}
 		}
 
-		//gsl_matrix_to_mat(m, "wavforms.mat");
-		if (0) {
-			//method 1 - SVD.  slow.
-			// I'm looking at matlab's princomp function.
-			// they say S = X0' * X0 ./ (n-1), but computed using SVD.
-			//columns of V seem to contain the principle components.
-			gsl_matrix *x = gsl_matrix_alloc(NWFSAMP,NWFSAMP);
-			gsl_matrix *v = gsl_matrix_alloc(NWFSAMP,NWFSAMP);
-			gsl_vector *s = gsl_vector_alloc(NWFSAMP);
-			gsl_vector *work = gsl_vector_alloc(NWFSAMP);
+#ifdef DEBUG
+		gsl_matrix_to_mat(m, "wavforms.mat");
+#endif
 
-			gsl_linalg_SV_decomp_mod(m, x, v, s, work);
+		//method 1 - SVD.  slow.
+		// I'm looking at matlab's princomp function.
+		// they say S = X0' * X0 ./ (n-1), but computed using SVD.
+		//columns of V seem to contain the principle components.
+		/*
+		gsl_matrix *x = gsl_matrix_alloc(NWFSAMP,NWFSAMP);
+		gsl_matrix *v = gsl_matrix_alloc(NWFSAMP,NWFSAMP);
+		gsl_vector *s = gsl_vector_alloc(NWFSAMP);
+		gsl_vector *work = gsl_vector_alloc(NWFSAMP);
 
-			//copy! v is untransposed and in row-major. s should be sorted descending.
-			printf("pca coef!\n");
-			int offset = 0;
-			gsl_matrix_to_mat(v, "pca_coef.mat");
-			while (s->data[offset] > 1000) offset++;
+		gsl_linalg_SV_decomp_mod(m, x, v, s, work);
+
+		//copy! v is untransposed and in row-major. s should be sorted descending.
+		printf("pca coef!\n");
+		int offset = 0;
+		gsl_matrix_to_mat(v, "pca_coef.mat");
+		while (s->data[offset] > 1000) offset++;
+		for (int i=0; i<NWFSAMP; i++) {
+			m_pca[0][i] = v->data[i*NWFSAMP + offset];
+			m_pca[1][i] = v->data[i*NWFSAMP + 1 + offset];
+			printf("%f %f\n", m_pca[0][i],
+			       m_pca[1][i]);
+		}
+		gsl_matrix_free(m);
+		gsl_matrix_free(x);
+		gsl_matrix_free(v);
+		gsl_vector_free(s);
+		gsl_vector_free(work);
+		*/
+
+		//method 2 - eigen decomposition.
+		gsl_matrix *cov = gsl_matrix_alloc(NWFSAMP,NWFSAMP);
+		t = gettime();
+		gsl_blas_dgemm(CblasTrans,CblasNoTrans,1.0/nsamp,m,m,0.0,cov);
+		printf("dgemm time %Lf siz %d\t", gettime()-t,nsamp);
+
+		//regularize.
+		for (int i=0; i<NWFSAMP; i++)
+			cov->data[i*NWFSAMP+i] += 1e-5;
+
+#ifdef DEBUG
+		gsl_matrix_to_mat(cov, "pca_cov.mat");
+#endif
+
+		//eigen decomp.
+		t = gettime();
+		gsl_vector *d = gsl_vector_alloc(NWFSAMP);
+		gsl_matrix *v = gsl_matrix_alloc(NWFSAMP,NWFSAMP);
+		gsl_eigen_symmv_workspace *ws = gsl_eigen_symmv_alloc(NWFSAMP);
+		gsl_eigen_symmv(cov, d, v, ws);
+		gsl_eigen_symmv_free(ws);
+
+#ifdef DEBUG
+		gsl_matrix_to_mat(v, "pca_v.mat");
+#endif
+
+		// the result will be unsorted
+		// sort it, descending based on the magnitude of the eigenvalue
+		gsl_eigen_symmv_sort(d, v, GSL_EIGEN_SORT_ABS_DESC);
+
+		//size_t p[2];
+		//gsl_sort_largest_index(p,2,d->data,1,NWFSAMP);
+
+		// normalize to identity covariance
+		for (int k=0; k<2; k++) {
+			m_pcaScl[k] = sqrt(d->data[k]);
 			for (int i=0; i<NWFSAMP; i++) {
-				m_pca[0][i] = v->data[i*NWFSAMP + offset];
-				m_pca[1][i] = v->data[i*NWFSAMP + 1 + offset];
-				printf("%f %f\n", m_pca[0][i],
-				       m_pca[1][i]);
+				m_pca[k][i] = v->data[k + i*NWFSAMP] / m_pcaScl[k];
 			}
-			gsl_matrix_free(m);
-			gsl_matrix_free(x);
-			gsl_matrix_free(v);
-			gsl_vector_free(s);
-			gsl_vector_free(work);
-		} else {
-			//method 2 - eigen decomposition.
-			gsl_matrix *cov = gsl_matrix_calloc(NWFSAMP,NWFSAMP); // calloc inits zero
-			t = gettime();
-			gsl_blas_dgemm(CblasTrans,CblasNoTrans,1.0/nsamp,m,m,0.0,cov);
-			printf("dgemm time %Lf siz %d\t", gettime()-t,nsamp);
-
-			//regularize.
-			for (int i=0; i<NWFSAMP; i++)
-				cov->data[i*NWFSAMP+i] += 1e-5;
-
-			//gsl_matrix_to_mat(cov, "pca_cov.mat");
-
-			//eigen decomp.
-			t = gettime();
-			gsl_eigen_symmv_workspace *ws = gsl_eigen_symmv_alloc(NWFSAMP);
-			gsl_vector *d = gsl_vector_alloc(NWFSAMP);
-			gsl_matrix *v = gsl_matrix_alloc(NWFSAMP,NWFSAMP);
-			gsl_eigen_symmv(cov, d, v, ws);
-			gsl_matrix_to_mat(v, "pca_v.mat");
-
-			// the result will be unsorted
-			// sort it, descending based on the magnitude of the eigenvalue
-			gsl_eigen_symmv_sort(d, v, GSL_EIGEN_SORT_ABS_DESC);
-
-			//size_t p[2];
-			//gsl_sort_largest_index(p,2,d->data,1,NWFSAMP);
-
-			// normalize to identity covariance
-			for (int k=0; k<2; k++) {
-				m_pcaScl[k] = sqrt(d->data[k]);
-				for (int i=0; i<NWFSAMP; i++) {
-					m_pca[k][i] = v->data[k + i*NWFSAMP] / m_pcaScl[k];
-				}
-			}
-			printf("eig decomp time %Lf\t", gettime()-t);
-			gsl_matrix_free(v);
-			gsl_vector_free(d);
-			gsl_eigen_symmv_free(ws);
 		}
+		printf("eig decomp time %Lf\t", gettime()-t);
+		gsl_matrix_free(v);
+		gsl_vector_free(d);
+		gsl_matrix_free(m);
 
 		//recalculate the pca points for immediate display.
 		//t = gettime();
@@ -722,6 +719,7 @@ public:
 			//	m_pcaVbo->m_f[i*6 + 3 + k] = 0.5f;
 		}
 		//printf("naive reproject %f\n", gettime()-t); //it's fast (enough).
+
 		t = gettime();
 		m_pcaVbo->m_r = 0;
 		m_pcaVbo->m_w = nsamp; //force a copy-over of the whole thing.
