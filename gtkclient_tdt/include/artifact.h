@@ -3,7 +3,15 @@
 
 #include "matStor.h"
 
-#define ARTBUF	128	// 64 ~ 2.62 msec ; 96 ~ 3.93 msec ; 128 ~ 5.24 msec
+#if defined KHZ_24
+#define ARTBUF	128	// 64 ~ 2.62 msec ; 128 ~ 5.24 msec
+#elif defined KHZ_48
+#define ARTBUF 	256
+#else
+#error
+#error Bad sampling rate!
+#endif
+
 #define NARTPTR	8 // number of artifact buffer pointers
 
 extern int g_spikesCols;
@@ -25,10 +33,9 @@ public:
 	// rindex is where we can read from the buffer to subtract artifact
 
 	float	m_now[RECCHAN *ARTBUF];	// the last captured artifact
-	// nb we keep this around not for computing
-	// the average, which can be easily done
-	// recursively, but for saving snippets of
-	//the artifact
+	// nb we keep this around not for computing the average,
+	// which can be easily done recursively,
+	// but for saving snippets of the artifact
 
 	Artifact(int _stimchan, MatStor *ms) {
 		m_stimchan = _stimchan;
