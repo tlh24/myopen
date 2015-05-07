@@ -694,9 +694,9 @@ public:
 
 			// normalize to identity covariance
 			for (int k=0; k<2; k++) {
+				m_pcaScl[k] = sqrt(d->data[k]);
 				for (int i=0; i<NWFSAMP; i++) {
-					m_pca[k][i] = v->data[k + i*NWFSAMP] / sqrt(d->data[k]);
-					m_pcaScl[k] = sqrt(d->data[k]);
+					m_pca[k][i] = v->data[k + i*NWFSAMP] / m_pcaScl[k];
 				}
 			}
 			printf("eig decomp time %Lf\t", gettime()-t);
