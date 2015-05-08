@@ -237,7 +237,7 @@ i64 mod2(i64 a, i64 b)
 void saveState()
 {
 	printf("Saving Preferences\n");
-	MatStor ms(g_prefstr);
+	MatStor ms(g_prefstr); 	// no need to load before saving here
 	for (int i=0; i<NCHAN; i++) {
 		g_c[i]->save(&ms);
 		g_nlms[i]->save(&ms);
@@ -2215,6 +2215,7 @@ int main(int argc, char **argv)
 	printf("using %s for settings\n", g_prefstr);
 
 	MatStor ms(g_prefstr);
+	ms.load();
 	for (int i=0; i<4; i++) {
 		g_channel[i] = ms.getValue(i, "channel", i*16);
 		if (g_channel[i] < 0) g_channel[i] = 0;

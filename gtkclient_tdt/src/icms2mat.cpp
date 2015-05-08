@@ -165,9 +165,9 @@ int main(int argn, char **argc)
 	for (it = stimchans.begin(); it != stimchans.end(); ++it) {
 		printf("stim ch: %d\n", (*it).second->stim_chan);
 		(*it).second->save(&ms);
+		ms.save();
+		ms.clear();
 	}
-
-	ms.save();
 
 	return 0;
 }
