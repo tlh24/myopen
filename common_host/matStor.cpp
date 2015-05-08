@@ -18,113 +18,124 @@ using namespace std;
 MatStor::MatStor(const char *fname)
 {
 	m_name = string(fname);
-	mat_t *m_matfp = Mat_Open(fname, MAT_ACC_RDWR);
-	if (m_matfp == 0) {
-		printf("MatStor will have to create a new %s\n", fname);
-	} else {
-		//need to read the matrices in.
-		matvar_t *var = Mat_VarReadNext(m_matfp);
-		while (var != NULL) {
-			string nam = string(var->name);
+}
+MatStor::~MatStor() {}
+void MatStor::load()
+{
+	mat_t *matfp = Mat_Open(m_name.c_str(), MAT_ACC_RDWR);
+	if (matfp == 0) {
+		printf("MatStor: %s: nothing to load\n", m_name.c_str());
+		return;
+	}
 
-			if (var->rank == 3) {
+	//need to read the matrices in.
+	matvar_t *var = Mat_VarReadNext(matfp);
+	while (var != NULL) {
+		string nam = string(var->name);
+
+		if (var->rank == 3) {
+			if (var->class_type == MAT_C_SINGLE) {
+				// switch from matlab order to C order.
+				array3 r(boost::extents[var->dims[2]][var->dims[1]][var->dims[0]]);
+				float *w = (float *)var->data;
+				for (MATIOTYP a=0; a<var->dims[2]; a++) {
+					for (MATIOTYP b=0; b<var->dims[1]; b++) {
+						for (MATIOTYP c=0; c<var->dims[0]; c++) {
+							r[a][b][c] = *w++;
+						}
+					}
+				}
+				m_dat3.insert(pair<string,array3>(nam,r));
+			} else if (var->class_type == MAT_C_DOUBLE) {
+				arrayd3 r(boost::extents[var->dims[2]][var->dims[1]][var->dims[0]]);
+				double *w = (double *)var->data;
+				for (MATIOTYP a=0; a<var->dims[2]; a++) {
+					for (MATIOTYP b=0; b<var->dims[1]; b++) {
+						for (MATIOTYP c=0; c<var->dims[0]; c++) {
+							r[a][b][c] = *w++;
+						}
+					}
+				}
+				m_datd3.insert(pair<string,arrayd3>(nam,r));
+			} else {
+				cout << "unknown data class for matlab variable " << nam << endl;
+			}
+		} else if (var->rank == 2) {
+			if (var->dims[1] > 1) {
 				if (var->class_type == MAT_C_SINGLE) {
-					// switch from matlab order to C order.
-					array3 r(boost::extents[var->dims[2]][var->dims[1]][var->dims[0]]);
+					array2 r(boost::extents[var->dims[1]][var->dims[0]]);
 					float *w = (float *)var->data;
-					for (MATIOTYP a=0; a<var->dims[2]; a++) {
-						for (MATIOTYP b=0; b<var->dims[1]; b++) {
-							for (MATIOTYP c=0; c<var->dims[0]; c++) {
-								r[a][b][c] = *w++;
-							}
+					for (MATIOTYP a=0; a<var->dims[1]; a++) {
+						for (MATIOTYP b=0; b<var->dims[0]; b++) {
+							r[a][b] = *w++;
 						}
 					}
-					m_dat3.insert(pair<string,array3>(nam,r));
+					m_dat2.insert(pair<string,array2>(nam,r));
 				} else if (var->class_type == MAT_C_DOUBLE) {
-					arrayd3 r(boost::extents[var->dims[2]][var->dims[1]][var->dims[0]]);
+					arrayd2 r(boost::extents[var->dims[1]][var->dims[0]]);
 					double *w = (double *)var->data;
-					for (MATIOTYP a=0; a<var->dims[2]; a++) {
-						for (MATIOTYP b=0; b<var->dims[1]; b++) {
-							for (MATIOTYP c=0; c<var->dims[0]; c++) {
-								r[a][b][c] = *w++;
-							}
+					for (MATIOTYP a=0; a<var->dims[1]; a++) {
+						for (MATIOTYP b=0; b<var->dims[0]; b++) {
+							r[a][b] = *w++;
 						}
 					}
-					m_datd3.insert(pair<string,arrayd3>(nam,r));
+					m_datd2.insert(pair<string,arrayd2>(nam,r));
 				} else {
 					cout << "unknown data class for matlab variable " << nam << endl;
 				}
-			} else if (var->rank == 2) {
-				if (var->dims[1] > 1) {
-					if (var->class_type == MAT_C_SINGLE) {
-						array2 r(boost::extents[var->dims[1]][var->dims[0]]);
-						float *w = (float *)var->data;
-						for (MATIOTYP a=0; a<var->dims[1]; a++) {
-							for (MATIOTYP b=0; b<var->dims[0]; b++) {
-								r[a][b] = *w++;
+			} else {
+				if (var->class_type == MAT_C_SINGLE) {
+					vector<float> r(var->dims[0]);
+					float *w = (float *)var->data;
+					for (MATIOTYP a=0; a<var->dims[0]; a++) {
+						r[a] = *w++;
+					}
+					m_dat1.insert(pair<string,vector<float> >(nam,r));
+				} else if (var->class_type == MAT_C_DOUBLE) {
+					vector<double> r(var->dims[0]);
+					double *w = (double *)var->data;
+					for (MATIOTYP a=0; a<var->dims[0]; a++) {
+						r[a] = *w++;
+					}
+					m_datd1.insert(pair<string,vector<double> >(nam,r));
+				} else if (var->class_type == MAT_C_STRUCT) {
+					fieldmap fm;
+					int n = Mat_VarGetNumberOfFields(var);
+					char *const *f = Mat_VarGetStructFieldnames(var);
+					for (int i=0; i<n; i++) {
+						matvar_t *v = Mat_VarGetStructFieldByName(var,f[i],0);
+						if (v->rank == 2 && v->class_type == MAT_C_SINGLE) {
+							string fs = string(v->name);
+							vector<float> r(v->dims[0]);
+							float *w = (float *)v->data;
+							for (MATIOTYP a=0; a<v->dims[0]; a++) {
+								r[a] = *w++;
 							}
+							fm.insert(pair<string,vector<float>>(fs,r));
 						}
-						m_dat2.insert(pair<string,array2>(nam,r));
-					} else if (var->class_type == MAT_C_DOUBLE) {
-						arrayd2 r(boost::extents[var->dims[1]][var->dims[0]]);
-						double *w = (double *)var->data;
-						for (MATIOTYP a=0; a<var->dims[1]; a++) {
-							for (MATIOTYP b=0; b<var->dims[0]; b++) {
-								r[a][b] = *w++;
-							}
-						}
-						m_datd2.insert(pair<string,arrayd2>(nam,r));
-					} else {
-						cout << "unknown data class for matlab variable " << nam << endl;
+					}
+					if (!fm.empty()) {
+						m_struct1.insert(pair<string,fieldmap>(nam,fm));
 					}
 				} else {
-					if (var->class_type == MAT_C_SINGLE) {
-						vector<float> r(var->dims[0]);
-						float *w = (float *)var->data;
-						for (MATIOTYP a=0; a<var->dims[0]; a++) {
-							r[a] = *w++;
-						}
-						m_dat1.insert(pair<string,vector<float> >(nam,r));
-					} else if (var->class_type == MAT_C_DOUBLE) {
-						vector<double> r(var->dims[0]);
-						double *w = (double *)var->data;
-						for (MATIOTYP a=0; a<var->dims[0]; a++) {
-							r[a] = *w++;
-						}
-						m_datd1.insert(pair<string,vector<double> >(nam,r));
-					} else if (var->class_type == MAT_C_STRUCT) {
-						fieldmap fm;
-						int n = Mat_VarGetNumberOfFields(var);
-						char *const *f = Mat_VarGetStructFieldnames(var);
-						for (int i=0; i<n; i++) {
-							matvar_t *v = Mat_VarGetStructFieldByName(var,f[i],0);
-							if (v->rank == 2 && v->class_type == MAT_C_SINGLE) {
-								string fs = string(v->name);
-								vector<float> r(v->dims[0]);
-								float *w = (float *)v->data;
-								for (MATIOTYP a=0; a<v->dims[0]; a++) {
-									r[a] = *w++;
-								}
-								fm.insert(pair<string,vector<float>>(fs,r));
-							}
-						}
-						if (!fm.empty()) {
-							m_struct1.insert(pair<string,fieldmap>(nam,fm));
-						}
-					} else {
-						cout << "unknown data class for matlab variable " << nam << endl;
-					}
+					cout << "unknown data class for matlab variable " << nam << endl;
 				}
 			}
-			var = Mat_VarReadNext(m_matfp);
 		}
-		Mat_Close(m_matfp);
+		var = Mat_VarReadNext(matfp);
 	}
+	Mat_Close(matfp);
 }
-MatStor::~MatStor() {}
 void MatStor::save()
 {
-	mat_t *matfp = Mat_Create(m_name.c_str(),NULL);
+	mat_t *matfp;
+
+	matfp = Mat_Open(m_name.c_str(), MAT_ACC_RDWR);
+	if (matfp == 0) {
+		printf("MatStor: will have to create %s\n", m_name.c_str());
+		matfp = Mat_Create(m_name.c_str(),NULL);
+	}
+
 	for (map<string, array3>::iterator it3 = m_dat3.begin(); it3 != m_dat3.end(); it3++) {
 		string nam = (*it3).first;
 		array3 dat = (*it3).second;
@@ -217,6 +228,17 @@ void MatStor::save()
 	}
 	Mat_Close(matfp);
 }
+void MatStor::clear()
+{
+	m_dat1.clear();
+	m_datd1.clear();
+	m_dat2.clear();
+	m_datd2.clear();
+	m_dat3.clear();
+	m_datd3.clear();
+	m_struct1.clear();
+}
+
 void MatStor::setValue(int ch, const char *name, float val)
 {
 	map<string, vector<float> >::iterator it;
@@ -443,6 +465,7 @@ float MatStor::getStructValue(const char *name, const char *field, size_t idx, f
 int main(void)
 {
 	MatStor ms("test.mat");
+	ms.load();
 	if (1) {
 		int err = 0;
 		//verify, test.mat already created.

@@ -27,7 +27,9 @@ class MatStor
 public:
 	MatStor(const char *fname);
 	~MatStor();
+	void load();
 	void save();
+	void clear(); // clears internal structures
 
 	void setValue(int ch, const char *name, float val);
 	void setValue2(int ch, int un, const char *name, float val);
