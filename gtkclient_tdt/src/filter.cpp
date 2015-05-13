@@ -82,7 +82,45 @@ FilterButterBand_24k_300_5000::~FilterButterBand_24k_300_5000()
 
 
 // 4th-order Butterworth bandpass
-// 300 Hz to 5 kHz @ 48.828125 kHz
+// 500 Hz to 3 kHz @ 24.4140625 kHz
+// Create with MATLAB like so:
+/*
+n = 4; % filter order
+sr = 24414.0625;
+hsr = sr/2; % half sample rate
+Wn = [500/hsr 3000/hsr];
+[B,A] = butter(n/2,Wn);
+sprintf('B.push_back(%0.15e);\n',B)
+sprintf('A.push_back(%0.15e);\n',A)
+sprintf('d.push_back(%d);\n', zeros(n,1))
+*/
+FilterButterBand_24k_500_3000::FilterButterBand_24k_500_3000()
+{
+	B.push_back(7.019288884370775e-02);
+	B.push_back(0.000000000000000e+00);
+	B.push_back(-1.403857776874155e-01);
+	B.push_back(0.000000000000000e+00);
+	B.push_back(7.019288884370775e-02);
+
+	A.push_back(1.000000000000000e+00);
+	A.push_back(-2.964109741329699e+00);
+	A.push_back(3.399899301982100e+00);
+	A.push_back(-1.833496984438643e+00);
+	A.push_back(4.042913923177344e-01);
+
+	d.push_back(0);
+	d.push_back(0);
+	d.push_back(0);
+	d.push_back(0);
+}
+FilterButterBand_24k_500_3000::~FilterButterBand_24k_500_3000()
+{
+}
+
+
+
+// 4th-order Butterworth bandpass
+// 300 Hz to 5 kHz @ 48.8281250 kHz
 // Create with MATLAB like so:
 /*
 n = 4; % filter order
@@ -102,13 +140,11 @@ FilterButterBand_48k_300_5000::FilterButterBand_48k_300_5000()
 	B.push_back(0.000000000000000e+00);
 	B.push_back(6.325743528801947e-02);
 
-
 	A.push_back(1.000000000000000e+00);
 	A.push_back(-3.132874105110674e+00);
 	A.push_back(3.707314974017143e+00);
 	A.push_back(-2.000492567522976e+00);
 	A.push_back(4.264766788841259e-01);
-
 
 	d.push_back(0);
 	d.push_back(0);
@@ -116,6 +152,44 @@ FilterButterBand_48k_300_5000::FilterButterBand_48k_300_5000()
 	d.push_back(0);
 }
 FilterButterBand_48k_300_5000::~FilterButterBand_48k_300_5000()
+{
+}
+
+
+
+// 4th-order Butterworth bandpass
+// 500 Hz to 3 kHz @ 48.8281250 kHz
+// Create with MATLAB like so:
+/*
+n = 4; % filter order
+sr = 48828.1250;
+hsr = sr/2; % half sample rate
+Wn = [500/hsr 3000/hsr];
+[B,A] = butter(n/2,Wn);
+sprintf('B.push_back(%0.15e);\n',B)
+sprintf('A.push_back(%0.15e);\n',A)
+sprintf('d.push_back(%d);\n', zeros(n,1))
+*/
+FilterButterBand_48k_500_3000::FilterButterBand_48k_500_3000()
+{
+	B.push_back(2.096338286120706e-02);
+	B.push_back(0.000000000000000e+00);
+	B.push_back(-4.192676572241413e-02);
+	B.push_back(0.000000000000000e+00);
+	B.push_back(2.096338286120706e-02);
+
+	A.push_back(1.000000000000000e+00);
+	A.push_back(-3.506316855705519e+00);
+	A.push_back(4.656826478135855e+00);
+	A.push_back(-2.784569962264977e+00);
+	A.push_back(6.345581252925552e-01);
+
+	d.push_back(0);
+	d.push_back(0);
+	d.push_back(0);
+	d.push_back(0);
+}
+FilterButterBand_48k_500_3000::~FilterButterBand_48k_500_3000()
 {
 }
 

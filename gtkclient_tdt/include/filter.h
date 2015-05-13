@@ -31,11 +31,23 @@ public:
 	FilterButterBand_24k_300_5000();
 	~FilterButterBand_24k_300_5000();
 };
+class FilterButterBand_24k_500_3000 : public Filter
+{
+public:
+	FilterButterBand_24k_500_3000();
+	~FilterButterBand_24k_500_3000();
+};
 class FilterButterBand_48k_300_5000 : public Filter
 {
 public:
 	FilterButterBand_48k_300_5000();
 	~FilterButterBand_48k_300_5000();
+};
+class FilterButterBand_48k_500_3000 : public Filter
+{
+public:
+	FilterButterBand_48k_500_3000();
+	~FilterButterBand_48k_500_3000();
 };
 
 // LOWPASS
