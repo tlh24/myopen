@@ -127,11 +127,11 @@ gboolean g_lopassNeurons = false;
 gboolean g_hipassNeurons = false;
 
 #if defined KHZ_24
-FilterButterBand_24k_300_5000 g_bandpass[NCHAN];
+FilterButterBand_24k_500_3000 g_bandpass[NCHAN];
 FilterButterLow_24k_3000 g_lopass[NCHAN];
 FilterButterHigh_24k_500 g_hipass[NCHAN];
 #elif defined KHZ_48
-FilterButterBand_48k_300_5000 g_bandpass[NCHAN];
+FilterButterBand_48k_500_3000 g_bandpass[NCHAN];
 FilterButterLow_48k_3000 g_lopass[NCHAN];
 FilterButterHigh_48k_500 g_hipass[NCHAN];
 #else
@@ -1496,19 +1496,6 @@ void *worker_thread(void *)
 			}
 		}
 
-		// pre-artifact-removal filtering
-		for (int ch=0; ch<RECCHAN; ch++) {
-			if (g_hipassNeurons)
-				g_hipass[ch].Proc(&f[ch*ns], &f[ch*ns], ns);
-			for (size_t k=0; k<ns; k++) {
-				// xxx implement this using function pointers?
-				if (g_whichMedianFilter == 1)
-					f[ch*ns+k] = g_medfilt3[ch].proc(f[ch*ns+k]);
-				else if (g_whichMedianFilter == 2)
-					f[ch*ns+k] = g_medfilt5[ch].proc(f[ch*ns+k]);
-			}
-		}
-
 		// big loop through samples
 		for (size_t k=0; k<ns; k++) {
 
@@ -1597,11 +1584,22 @@ void *worker_thread(void *)
 				}
 			}
 
-			// optionally lowpass after artifact removal
-			if (g_lopassNeurons) {
-				for (int ch=0; ch<RECCHAN; ch++) {
+			// post-artifact-removal filtering
+			for (int ch=0; ch<RECCHAN; ch++) {
+
+				if ( g_hipassNeurons &&  g_lopassNeurons)
+					g_bandpass[ch].Proc(&f[ch*ns+k], &f[ch*ns+k], 1);
+
+				if ( g_hipassNeurons && !g_lopassNeurons)
+					g_hipass[ch].Proc(&f[ch*ns+k], &f[ch*ns+k], 1);
+
+				if (!g_hipassNeurons &&  g_lopassNeurons)
 					g_lopass[ch].Proc(&f[ch*ns+k], &f[ch*ns+k], 1);
-				}
+
+				if (g_whichMedianFilter == 1)
+					f[ch*ns+k] = g_medfilt3[ch].proc(f[ch*ns+k]);
+				else if (g_whichMedianFilter == 2)
+					f[ch*ns+k] = g_medfilt5[ch].proc(f[ch*ns+k]);
 			}
 
 			// blank based on artifact (must happen after filtering
