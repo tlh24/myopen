@@ -87,6 +87,7 @@ classdef CytonI < Presentation.CytonI.Robot
     % 2013Jan25 Armiger: Added slider interface
     
     properties
+        Name
         ControlMode = Presentation.CytonI.CytonControls.JointPositionMode;
         %JointPositionSetpoint;
         %EndpointPositionSetpoint;
@@ -105,18 +106,29 @@ classdef CytonI < Presentation.CytonI.Robot
     end
     
     methods
-        function obj = CytonI
+        function obj = CytonI(name,hDisplayAxes)
+            
+            if nargin < 1
+                obj.Name = 'NewCyton';
+            else
+                obj.Name = name;
+            end
+                        
+            if nargin < 2
+                hDisplayAxes = gca;
+            end
+            
             % Create control and plant blocks
             import Presentation.CytonI.*
             
             obj.hControls = CytonControls(obj);
-            obj.hPlant = CytonPlant;
+            obj.hPlant = CytonPlant(obj.Name);
             
             % Set Default Position
             setJointParameters(obj,zeros(obj.NumDof,1));
             
             obj.hDisplay = CytonDisplay(obj);
-            obj.hDisplay.initialize();
+            obj.hDisplay.initialize(hDisplayAxes);
             obj.hDisplay.updateFigure;
             
             start(obj.hPlant);

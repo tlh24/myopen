@@ -77,7 +77,8 @@ classdef CytonDisplay < hgsetget
                 set(obj.hg.Figure,'ToolBar','figure');
                 set(obj.hg.Figure,'Resize','on');
                 hParentAxes = axes('Parent',obj.hg.Figure);
-                
+            else
+                obj.hg.Figure = get(hParentAxes,'Parent');
             end
             
             obj.hg.hAxes = hParentAxes;
@@ -97,7 +98,7 @@ classdef CytonDisplay < hgsetget
             obj.hg.hSphere = Utils.plotSphere([0 0 0]',sphereRadius,'Parent',obj.hg.hTarget);
             obj.hg.hTriad = Utils.plot_triad(obj.hg.hTarget,eye(4),100);
             
-            obj.hTimer = UiTools.create_timer(mfilename,@(src,evt)updateFigure(obj));
+            obj.hTimer = UiTools.create_timer(strcat(mfilename,'-',obj.hCyton.Name),@(src,evt)updateFigure(obj));
             obj.hTimer.Period = 0.1;
             
             obj.hg.pbRun = uicontrol(...

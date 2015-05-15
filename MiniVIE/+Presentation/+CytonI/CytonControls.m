@@ -7,7 +7,7 @@ classdef CytonControls < hgsetget
     %     % Get the 'A' matrix frames for the given set of joint angles.
     %     % The A matrices represent the [DH] transformation between adjacent frames
     %     A = hControls.getJointFrames
-    % 
+    %
     %     % Multiplying the A matrices gives the transformation from the base frame
     %     % to each specified joint frame.
     %     T_0_1 = A(:,:,1);
@@ -15,13 +15,13 @@ classdef CytonControls < hgsetget
     %     T_0_3 = A(:,:,1)*A(:,:,2)*A(:,:,3)
     %     T_0_4 = A(:,:,1)*A(:,:,2)*A(:,:,3)*A(:,:,4)
     %     T_0_5 = A(:,:,1)*A(:,:,2)*A(:,:,3)*A(:,:,4)*A(:,:,5)
-    % 
+    %
     %     % Get the transformation from the base frame to the specified frame
     %     % directly.  Note this is the same as T_0_3 above
     %     hControls.getT_0_N(3)
-    % 
+    %
     %     %% move Cyton with endpoint velocity control
-    % 
+    %
     %     % move down (-z) without retaining endpoint orientation
     %     endpointVelocity = [0 0 -1 NaN NaN NaN];
     %     [jointVelocity, J] = hControls.computeVelocity(endpointVelocity);
@@ -280,7 +280,7 @@ classdef CytonControls < hgsetget
             
             % Compute jacobian
             J = obj.numericJacobian(q);
-
+            
             lockedJoints = false(1,8);
             while maxTries >= 0
                 maxTries = maxTries - 1;
@@ -330,7 +330,7 @@ classdef CytonControls < hgsetget
                 
                 nullVelocity = (eye(7) - pinv(J)*J) * q0_dot;
                 q_dot = q_dot + nullVelocity;
-
+                
                 
                 % check desired velocity against joint limits
                 recompute = false;
@@ -437,7 +437,7 @@ classdef CytonControls < hgsetget
         
     end
     methods (Static = true)
-        function [T_0_n a d] = getDHParams()
+        function [T_0_n, a, d] = getDHParams()
             % This function contains all the kinematics of the Cyton I with respect to
             % the global coordinate system
             
@@ -583,14 +583,14 @@ classdef CytonControls < hgsetget
             % For debug purposes, if you plot all these transformations, it
             % will show the robot in a 'home' position.
             %%
-            patchData = CytonDisplay.quickLoadPatchData();
-            T_0_n = CytonControls.getDHParams();
+            patchData = Presentation.CytonI.CytonDisplay.quickLoadPatchData();
+            T_0_n = Presentation.CytonI.CytonControls.getDHParams();
             clf
             axis equal
             rotate3d on
             N = 10;
             for i = 1:N
-                Utils.plot_triad(T_0_n(:,:,i),50);
+                PlotUtils.triad(T_0_n(:,:,i),50);
             end
             %%
             for i = 1:N
@@ -678,58 +678,66 @@ classdef CytonControls < hgsetget
             disp('Done');
             
         end
+        function [A, T] = forwardKinematics(q)
+            % Computer forward Kinematics for Cyton
+            % Returns 4x4 'A' matrices of each joint kinematics
+            DH = @Presentation.CytonI.Robot.DH_transformation;
+            
+            % Computed statically from getDHParams()
+            d = [37.9300 -4.6200 145.0000 11.0000 175.0000 7.4000 -7.6500 0 0];
+            a = [0 0 0 0 0 67.7000 53.1500 8.0000 8.0000];
+            
+            % [A] matrices represent the kinematics of each joint relative
+            % to the previous link (relative transformations)
+            piOver2 = pi/2;
+            A(:,:,1) = DH(a(1),  piOver2, d(1), q(1) );
+            A(:,:,2) = DH(a(2), -piOver2, d(2), q(2) );
+            A(:,:,3) = DH(a(3),  piOver2, d(3), q(3) );
+            A(:,:,4) = DH(a(4), -piOver2, d(4), q(4) );
+            A(:,:,5) = DH(a(5),  piOver2, d(5), q(5) );
+            A(:,:,6) = DH(a(6),  piOver2, d(6), q(6) + piOver2 );
+            A(:,:,7) = DH(a(7),  0, d(7), q(7) );
+
+            if nargout > 1
+                % Forward multiply the [A] matrices to get the [T] matrices
+                % relative to the base frame (global transformations)
+                T(:,:,1) = A(:,:,1);
+                T(:,:,2) = T(:,:,1)*A(:,:,2);
+                T(:,:,3) = T(:,:,2)*A(:,:,3);
+                T(:,:,4) = T(:,:,3)*A(:,:,4);
+                T(:,:,5) = T(:,:,4)*A(:,:,5);
+                T(:,:,6) = T(:,:,5)*A(:,:,6);
+                T(:,:,7) = T(:,:,6)*A(:,:,7);
+            end
+            
+        end
         function [J, A] = numericJacobian(q)
             % Compute numeric Jacobian for the given joint position
             %
             % Kinematics for the Cyton Robot
             
-            DH = @Presentation.CytonI.Robot.DH_transformation;
-            
-            % Computed statically from getDHParams
-            d = [37.9300 -4.6200 145.0000 11.0000 175.0000 7.4000 -7.6500 0 0];
-            a = [0 0 0 0 0 67.7000 53.1500 8.0000 8.0000];
-            
-            % A matrices represent the kinematics of each joint
-            piOver2 = pi/2;
-            A1 = DH(a(1),  piOver2, d(1), q(1) );
-            A2 = DH(a(2), -piOver2, d(2), q(2) );
-            A3 = DH(a(3),  piOver2, d(3), q(3) );
-            A4 = DH(a(4), -piOver2, d(4), q(4) );
-            A5 = DH(a(5),  piOver2, d(5), q(5) );
-            A6 = DH(a(6),  piOver2, d(6), q(6) + piOver2 );
-            A7 = DH(a(7),  0, d(7), q(7) );
-            
-            % T matrices represent the transform form the base to each
-            % joint
-            T_0_1 = A1;
-            T_0_2 = A1*A2;
-            T_0_3 = A1*A2*A3;
-            T_0_4 = A1*A2*A3*A4;
-            T_0_5 = A1*A2*A3*A4*A5;
-            T_0_6 = A1*A2*A3*A4*A5*A6;
-            T_0_7 = A1*A2*A3*A4*A5*A6*A7;
-            
+            [A, T] = Presentation.CytonI.CytonControls.forwardKinematics(q);
+                        
             % Define components for Jacobian:
             % z-axis is just the 3rd column of the transforms
             z0 = [0 0 1]';
-            z1 = T_0_1(1:3,3);
-            z2 = T_0_2(1:3,3);
-            z3 = T_0_3(1:3,3);
-            z4 = T_0_4(1:3,3);
-            z5 = T_0_5(1:3,3);
-            z6 = T_0_6(1:3,3);
-            %z7 = T_0_7(1:3,3);
+            z1 = T(1:3,3,1);
+            z2 = T(1:3,3,2);
+            z3 = T(1:3,3,3);
+            z4 = T(1:3,3,4);
+            z5 = T(1:3,3,5);
+            z6 = T(1:3,3,6);
             
-            % The joint centers are just the 4th colum from each transformation matrix
-            % to the base
+            % The joint centers are just the 4th column from each
+            % transformation matrix to the base
             o0 = [0 0 0]';
-            o1 = T_0_1(1:3,4,1);
-            o2 = T_0_2(1:3,4,1);
-            o3 = T_0_3(1:3,4,1);
-            o4 = T_0_4(1:3,4,1);
-            o5 = T_0_5(1:3,4,1);
-            o6 = T_0_6(1:3,4,1);
-            o7 = T_0_7(1:3,4,1);
+            o1 = T(1:3,4,1);
+            o2 = T(1:3,4,2);
+            o3 = T(1:3,4,3);
+            o4 = T(1:3,4,4);
+            o5 = T(1:3,4,5);
+            o6 = T(1:3,4,6);
+            o7 = T(1:3,4,7);
             
             % Per Eq. 4.64, J is the Geometric Jacobian
             oc = o7;
@@ -744,9 +752,289 @@ classdef CytonControls < hgsetget
             J11 = [J1 J2 J3 J4 J5 J6 J7];
             
             J = [J11; z0 z1 z2 z3 z4 z5 z6];
+                        
+        end
+        function [q_dot, nullSpaceApplied, lockedJoints] = inverseVelocity(q,endpointVelocity,JacobianMethod)
             
-            A = cat(3,A1,A2,A3,A4,A5,A6,A7);
+            if nargin < 3
+                JacobianMethod = 'DampedLeastSquares';
+            end
             
+            % q = rand(7,1)
+            % endpointVelocity = [0 0 1 0 0 0]';
+            
+            
+            % Notes on building an endpoint velocity controller
+            %
+            % Basic form:
+            % q_dot = pinvJ * x_dot
+            %
+            % This has issues when a joint limit is reached
+            %
+            %
+            % Joint Limit Avoidance:
+            % Null space can be used to delay contact with joint limits
+            %
+            % (Liegeois 1977)
+            % q_dot = pinvJ * x_dot + (I - pinvJ*J) * q0_dot
+            % where q0_dot is a velocity away from the joint limits
+            %
+            %
+            %
+            % Invalid Jacobian
+            %
+            %
+            % Workspace constraint:
+            % Avoid commanding beyond workspace
+            
+            q_dot = [];
+            nullSpaceApplied = false;
+            
+            maxTries = 10;
+            
+            % Use this to knock out any motions that we don;t case about.
+            % A nan in the x,y,z linear of angular velocity means this is a
+            % free parameter (i.e. because a 0 would imply keep that
+            % endpoint motion constant)
+            isIgnoredDof = isnan(endpointVelocity);
+            % replace the nan with zero so calcualtions can compute
+            endpointVelocity(isIgnoredDof) = 0;
+            
+            % Get current position
+            %q = obj.hCyton.JointParameters;
+            
+            % Compute jacobian
+            [J, A] = Presentation.CytonI.CytonControls.numericJacobian(q);
+            
+            lockedJoints = false(1,8);
+            while maxTries >= 0
+                maxTries = maxTries - 1;
+                
+                J(:,lockedJoints) = 0;
+                
+                J(isIgnoredDof,:) = 0;
+                
+                q0_dot = zeros(7,1);
+                enableNullSpace = 0;
+                if enableNullSpace
+                    % Apply null space by defining q0 velocity which is an
+                    % optional velocity in the null space that will try to
+                    % pull the robot away from joint limits
+                    distLowerLim = q(1:7) - JointLimits(1:7,1);
+                    distUpperLim = q(1:7) - JointLimits(1:7,2);
+                    
+                    %[distLowerLim distUpperLim]'
+                    
+                    limThresh = 0.25;
+                    isCloseLower = distLowerLim < limThresh;
+                    isCloseUpper = distUpperLim > -limThresh;
+                    
+                    %q0_dot(isCloseLower) = -(distLowerLim(isCloseLower)-limThresh);
+                    %q0_dot(isCloseUpper) = -(distUpperLim(isCloseUpper)+limThresh);
+                    
+                    q0_dot(isCloseLower) = -1;
+                    q0_dot(isCloseUpper) = -1;
+                    
+                    % always try to restore robot to this config:
+                    qNom = [0 0 0 0 0 0 0]';
+                    q0_dot = qNom - q;
+                    
+                    if any(q0_dot)
+                        nullSpaceApplied = 1;
+                        q0_dot'
+                    end
+                end
+                
+                % Compute the joint velocities, q_dot
+                x_dot = endpointVelocity(:);
+                switch lower(JacobianMethod)
+                    case lower('Transpose')
+                        % Transpose method
+                        pinvJ = J';
+                        q_dot = pinvJ * x_dot;
+                    case lower('PseudoInverse')
+                        % pseudo-inverse
+                        pinvJ = pinv(J);
+                        q_dot = pinvJ * x_dot;
+                    case lower('DampedLeastSquares')
+                        % Damped least squares:
+                        lambda = 1e-1;
+                        q_dot = (J'*J + lambda^2.*eye(7)) \ J' * x_dot;
+                    otherwise
+                        error('Unknown Jacobian Inversion Method. Expected {Transpose|PseudoInverse|DampedLeastSquares}');
+                end
+                
+                % pseudo-inverse
+                pinvJ = pinv(J);
+                q_dot = pinvJ * x_dot;
+                
+                % compare requested and actual joint velocity
+                actualVelocity = J*q_dot;
+                if all( abs(actualVelocity - endpointVelocity) < 1e-6)
+                    % near perfect solution, return q_dot
+                    % ... but this hasn't been checked against joint
+                    % limits.  So if you use these values to update
+                    % q_new = q + q_dot, some joints may saturate and
+                    % result in anomolous movement.  So, we can't exist
+                    % here.
+                    
+                    [IsLimit, lockedJointsOut] = Presentation.CytonI.CytonControls.checkJointLimits(q,q_dot,lockedJoints);
+                    
+                    if any(lockedJointsOut ~= lockedJoints)
+                        lockedJoints = lockedJointsOut;
+                        recompute = true;
+                        continue
+                    end
+                    
+                    recompute = false
+                    break
+                else
+                    warning('Poor J match')
+                end
+                
+                
+                % Compute the null velocity.  Note the null velocity should
+                % be at least as big as the velocity that is pulling the
+                % join past it's limit
+                
+                q0_dot_scaled = q0_dot .* q_dot;
+                
+                nullVelocity = (eye(7) - pinv(J)*J) * q0_dot_scaled;
+                
+                
+                q_dot = q_dot + nullVelocity;
+                
+                
+                % check desired velocity against joint limits
+                recompute = false;
+                for iJoint = 1:7
+                    
+                    limitVal = JointLimits(iJoint,:);
+                    
+                    % Check each joint and set flag
+                    if q(iJoint) >= limitVal(2)
+                        q(iJoint) = limitVal(2);
+                        IsLimit(iJoint) = 1;
+                    elseif q(iJoint) <= limitVal(1)
+                        q(iJoint) = limitVal(1);
+                        IsLimit(iJoint) = -1;
+                    else
+                        IsLimit(iJoint) = 0;
+                    end
+                    
+                    atLimitPos = IsLimit(iJoint) > 0 && q_dot(iJoint) > 0;
+                    atLimitNeg = IsLimit(iJoint) < 0 && q_dot(iJoint) < 0;
+                    if ~lockedJoints(iJoint) && atLimitPos
+                        %fprintf('Joint %d commanded against + limit\n',iJoint)
+                        lockedJoints(iJoint) = true;
+                        recompute = true;
+                    elseif ~lockedJoints(iJoint) && atLimitNeg
+                        %fprintf('Joint %d commanded against - limit\n',iJoint)
+                        lockedJoints(iJoint) = true;
+                        recompute = true;
+                    end
+                    
+                end
+                
+                if ~recompute
+                    jointVelocity = [q_dot; 0];
+                    break;
+                end
+            end
+            
+            
+            if recompute
+                warning('Abnormal termination');
+            end
+            
+        end
+        
+        function [IsLimit, lockedJoints] = checkJointLimits(q,q_dot,lockedJoints)
+            % check desired velocity against joint limits
+            
+            JointLimits = [
+                -pi/2 pi/2
+                -pi/2 pi/2
+                -pi/2 pi/2
+                -pi/2 pi/2
+                -pi/2 pi/2
+                -pi/2 pi/2
+                -pi/2 pi/2
+                0 1
+                ];
+            IsLimit = zeros(7,1);
+            %lockedJoints = false(1,8);
+            
+            for iJoint = 1:7
+                
+                limitVal = JointLimits(iJoint,:);
+                
+                % Check each joint and set flag
+                
+                % First if any joint angle is at or past it's joint limit,
+                % then set flag high
+                if q(iJoint) >= limitVal(2)
+                    q(iJoint) = limitVal(2);
+                    IsLimit(iJoint) = 1;
+                elseif q(iJoint) <= limitVal(1)
+                    q(iJoint) = limitVal(1);
+                    IsLimit(iJoint) = -1;
+                else
+                    IsLimit(iJoint) = 0;
+                end
+                
+                % Additionally, check if any joint is within joint limit,
+                % but the joint velocity command would send it past it's
+                % limit
+                atLimitPos = IsLimit(iJoint) > 0 && q_dot(iJoint) > 0;
+                atLimitNeg = IsLimit(iJoint) < 0 && q_dot(iJoint) < 0;
+                if ~lockedJoints(iJoint) && atLimitPos
+                    %fprintf('Joint %d commanded against + limit\n',iJoint)
+                    lockedJoints(iJoint) = true;
+                    %recompute = true;
+                elseif ~lockedJoints(iJoint) && atLimitNeg
+                    %fprintf('Joint %d commanded against - limit\n',iJoint)
+                    lockedJoints(iJoint) = true;
+                    %recompute = true;
+                end
+            end
+        end
+        function [qOut, isLimit] = applyJointLimits(qIn)
+            % check joint angles against joint limits.  Returns joint values saturated
+            % at limits.  Additionally an output mask is returned with +1 -1 or 0 if
+            % the angle is at the positive or negative limit
+            
+            qOut = qIn;
+            
+            jointLimits = [
+                -pi/2 pi/2
+                -pi/2 pi/2
+                -pi/2 pi/2
+                -pi/2 pi/2
+                -pi/2 pi/2
+                -pi/2 pi/2
+                -pi/2 pi/2
+                ];
+            
+            isLimit = zeros(size(jointLimits,1),1);
+            
+            for iJoint = 1:7
+                
+                % Check each joint and set flag
+                
+                % If any joint angle is at or past it's joint limit,
+                % then set flag high
+                if qOut(iJoint) <= jointLimits(iJoint,1)
+                    qOut(iJoint) = jointLimits(iJoint,1);
+                    isLimit(iJoint) = -1;
+                elseif qOut(iJoint) >= jointLimits(iJoint,2)
+                    qOut(iJoint) = jointLimits(iJoint,2);
+                    isLimit(iJoint) = +1;
+                else
+                    isLimit(iJoint) = 0;
+                end
+                
+            end
         end
     end
 end

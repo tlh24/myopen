@@ -25,7 +25,9 @@ for i = 1:nTransforms
     hTriads(i) = Utils.plot_triad(hAxes,eye(4),triadScale);
 end
 
-hTransforms(1) = hgtransform('Parent',hAxes);
+hGlobal = hgtransform('Parent',hAxes);
+
+hTransforms(1) = hgtransform('Parent',hGlobal);
 hTransforms(2) = hgtransform('Parent',hTransforms(1));
 hTransforms(3) = hgtransform('Parent',hTransforms(2));
 hTransforms(4) = hgtransform('Parent',hTransforms(3));
@@ -36,6 +38,10 @@ hTransforms(7) = hgtransform('Parent',hTransforms(6));
 hTransforms(8) = hgtransform('Parent',hTransforms(7));
 hTransforms(9) = hgtransform('Parent',hTransforms(7));
 
+hTransforms(10) = hGlobal;
+
+
+set(hPatches(1),'Parent',hGlobal);
 set(hPatches(2),'Parent',hTransforms(1));
 set(hPatches(3),'Parent',hTransforms(2));
 set(hPatches(4),'Parent',hTransforms(3));

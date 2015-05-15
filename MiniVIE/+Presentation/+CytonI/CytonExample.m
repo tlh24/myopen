@@ -1,4 +1,13 @@
 classdef CytonExample
+    % Contains selected examples showing some of the finer points of robot
+    % control.  Starting with a basic inverse velocity case, the Jacobian
+    % can be used to computer joint angle velocities to achieve a given
+    % endpoint motion of the end effector.  The first problem we run into
+    % is that a joint that hits a limit will 'saturate' and the achieved
+    % end effector motion will be incorrect.  There are two ways to
+    % approach this problem.  1 is to avoid the limit in the first place
+    % and 2 is to remove it from the solution set and relay on other joints
+    % to achieve the motion independantly.
     methods (Static = true)
         function CytonExample_rvc_toolbox
             % Control the cyton using Peter Corke's robot vision and

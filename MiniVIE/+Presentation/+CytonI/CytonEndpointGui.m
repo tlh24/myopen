@@ -1,6 +1,6 @@
 classdef CytonEndpointGui
     % Test gui for endpoint velocity control
-    % Usage: CytonEndpointGui.Run()
+    % Usage: Presentation.CytonI.CytonEndpointGui.Run()
     %
     % 03-Apr-2013 Armiger: Created
     methods (Static = true)

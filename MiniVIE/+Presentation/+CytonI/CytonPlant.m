@@ -24,6 +24,7 @@ classdef CytonPlant < hgsetget
     properties
         Verbose = 0;
         ApplyLimits = true;
+        Name
         
         GlobalMaxSpeed = 2;       % rad/s 
     end
@@ -58,7 +59,8 @@ classdef CytonPlant < hgsetget
         DefaultSpeed = 1;   %rad/s
     end
     methods
-        function obj = CytonPlant()
+        function obj = CytonPlant(name)
+            obj.Name = name;
             reset(obj);
         end
         function val = get.GripperLimits(obj)
@@ -124,7 +126,7 @@ classdef CytonPlant < hgsetget
             obj.DesiredPosition = obj.DefaultPosition*ones(obj.NumJoints,1);
             obj.CurrentPosition = obj.DefaultPosition*ones(obj.NumJoints,1);
             
-            obj.hTimer = UiTools.create_timer('CytonPlant',@(src,evt)update(obj));
+            obj.hTimer = UiTools.create_timer(strcat('CytonPlant','-',obj.Name),@(src,evt)update(obj));
             obj.hTimer.Period = 0.02;
         end
         function allComplete = allMovesComplete(obj)
