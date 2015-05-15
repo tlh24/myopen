@@ -137,6 +137,31 @@ classdef CytonExample
             end
         end
         
+        function DualCyton
+            % Dual Cyton Demo
+            
+            % Create two instances using unique names
+            clf
+            ax = gca;
+            h1 = Presentation.CytonI.CytonI('CytonLeft',ax);
+            h2 = Presentation.CytonI.CytonI('CytonRight',ax);
+            
+            % move the base frames to seperate the robots
+            hg = h1.hDisplay.getGraphicsHandles;
+            set(hg.Transforms(10),'Matrix',makehgtform('translate',[150 0 0]))
+            
+            hg = h2.hDisplay.getGraphicsHandles;
+            set(hg.Transforms(10),'Matrix',makehgtform('translate',[-150 0 0]))
+            
+            % update lighting
+            delete(findall(gca,'type','light'))
+            camlight('left')
+            
+            %% Update joint angles for each robot
+            h1.setJointParameters(0.2*randn(8,1))
+            h2.setJointParameters(0.2*randn(8,1))
+            
+        end
     end
     
     
