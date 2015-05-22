@@ -151,7 +151,7 @@ classdef CytonExample
             set(hg.Transforms(10),'Matrix',makehgtform('translate',[150 0 0]))
             
             hg = h2.hDisplay.getGraphicsHandles;
-            set(hg.Transforms(10),'Matrix',makehgtform('translate',[-150 0 0]))
+            set(hg.Transforms(10),'Matrix',makehgtform('translate',[-150 0 500],'xrotate',pi))
             
             % update lighting
             delete(findall(gca,'type','light'))

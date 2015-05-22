@@ -32,7 +32,9 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
         hGui            % handle to the graphics object
         
         CurrentClass = 1;
-
+        
+        RetrainCounter = 0;
+        
         AnalogEnable = 1;   % Allows class to be changed using either the right-hand gamepad
         % buttons OR the left-hand D-pad or analog
         % stick.  Note if the joystick is an improper
@@ -41,6 +43,9 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
         
         TrainingData; % Online retraininer defined by having access to and adding data to training data
         
+    end
+    properties (Access = private)
+        AddState = 0;  % The mode state whether to add new data
     end
     events
         % Events signify to a GUI that the training event occured
@@ -79,7 +84,8 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
             
             initialize@Scenarios.ScenarioBase(obj,SignalSource,SignalClassifier);
             
-            if ~isempty(obj.hJoystick) && ~isempty(SignalClassifier)
+            %if ~isempty(obj.hJoystick) && ~isempty(SignalClassifier)
+            if ~isempty(SignalClassifier)
                 % Text based UI
                 %setupFigure(obj);
                 
@@ -87,6 +93,11 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
                 obj.hGui = UserDrivenTrainingInterface(obj.TrainingData);
                 obj.hGui.setTrainingSource(obj);
                 obj.Verbose = 0;
+                addlistener(obj.hGui,'ClearClass',@(src,evt)guiClearClass(obj) );
+                addlistener(obj.hGui,'ClassChange',@(src,evt)guiClassChange(obj) );
+                addlistener(obj.hGui,'StartAdd',@(src,evt)guiStartAdd(obj) );
+                addlistener(obj.hGui,'StopAdd',@(src,evt)guiStopAdd(obj) );
+                
                 %obj.start;
             end
             
@@ -189,7 +200,7 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
             clearClass = 0;
             doTrain = false;
             doAddData = false;
-                        
+            
             % get handle for joystick
             joy = obj.hJoystick;
             
@@ -205,9 +216,6 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
             
             % Add data if training button is pressed
             doAddData = any(joy.buttonVal(obj.JoystickButtonTrain));
-            if doAddData
-                notify(obj,'DataCountChange'); % Broadcast notice of event
-            end
             
             % Train if button released or held too long
             if any(joy.buttonsHeldCount(obj.JoystickButtonTrain) > obj.RetrainCounts) || ...
@@ -268,16 +276,31 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
             
             % Check for clear command
             if joy.buttonVal(obj.JoystickButtonClear)
-                clearClass = obj.CurrentClass;
-                numDisabled = obj.TrainingData.disableLabeledData(clearClass);
-                fprintf('[%s] %d samples disabled for class: %d\n',mfilename,numDisabled,clearClass);
                 doTrain = true;
                 doAddData = false;
-                notify(obj,'DataCountChange'); % Broadcast notice of event  -- change to DataCountChange
+                clearCurrentClassData(obj);
                 return
             end
             
         end
+        function clearCurrentClassData(obj)
+            clearClass = obj.CurrentClass;
+            numDisabled = obj.TrainingData.disableLabeledData(clearClass);
+            fprintf('[%s] %d samples disabled for class: %d\n',mfilename,numDisabled,clearClass);
+            notify(obj,'DataCountChange'); % Broadcast notice of event  -- change to DataCountChange
+        end
+        function retrain(obj)
+            % perform retraining
+            if ~isempty(obj.TrainingData.getClassLabels) && ...
+                    obj.TrainingData.SampleCount > 1
+                % retrain
+                obj.SignalClassifier.train();
+                obj.SignalClassifier.computeError();
+                obj.SignalClassifier.computeGains();
+                obj.SignalClassifier.computeConfusion();
+            end
+        end
+        
         function update(obj)
             
             % Performs intent classification
@@ -301,15 +324,34 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
                 % All subsequent commands rely on joystick for labelling
                 % correct class
                 if isempty(obj.hJoystick)
-                    return
+                    [joystickTrain, joystickAddData] = deal(0);
+                else
+                    [joystickTrain, joystickAddData] = getCommand(obj);
+                end
+                                
+                % Check the GUI for add command as well
+                guiAddData = obj.AddState;
+                
+                % Retrain if the gui button is held too long or if it is
+                % just released
+                guiTrain = obj.RetrainCounter >= obj.RetrainCounts || ...
+                    obj.RetrainCounter > 0 && ~guiAddData;
+                
+                if guiAddData
+                    obj.RetrainCounter = obj.RetrainCounter + 1;
+                else
+                    obj.RetrainCounter = 0;
                 end
                 
-                [doTrain, doAddData] = getCommand(obj);
+                if obj.RetrainCounter > obj.RetrainCounts
+                    obj.RetrainCounter = 1;
+                end
                 
+                doAddData = joystickAddData || guiAddData;
+                doTrain = joystickTrain || guiTrain;
                 
                 % if all the data is cleared out, then we can't retrain
                 % without error
-                
                 l = obj.TrainingData.getClassLabels;
                 numSamples = obj.TrainingData.SampleCount;
                 
@@ -322,9 +364,11 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
                     obj.SignalClassifier.computeConfusion();
                 end
                 
-                % If button is down, add the current data as training data to
+                % If training, add the current data as training data to
                 % that class
                 if doAddData
+                    
+                    notify(obj,'DataCountChange'); % Broadcast notice of event
                     
                     % Add a new sample of data based on the CurrentClass property
                     assert(~isempty(obj.CurrentClass),'No class is selected to tag new data');
@@ -333,7 +377,6 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
                         rawEmg(1:obj.SignalClassifier.NumSamplesPerWindow,:)')
                     
                 end
-                
                 %updateFigure(obj,voteDecision,obj.CurrentClass);
                 
                 if (obj.Verbose > 0)% && strcmp(class(obj),'Scenarios.OnlineRetrainer')) %#ok<STISA> Not using isa since we want an exact match
@@ -449,6 +492,29 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
                 obj.TrainingData.saveTrainingData;
             end
         end
+    end
+    methods (Access = private)
+        % Private functions mainly for handling events from the optional
+        % GUI
+        function guiClassChange(obj)
+            % change the class based on input from the GUI
+            obj.CurrentClass = obj.hGui.SelectionIndex;
+        end
+        function guiStartAdd(obj)
+            % change add data mode
+            obj.AddState = 1;
+        end
+        function guiStopAdd(obj)
+            % change add data mode
+            obj.AddState = 0;
+        end
+        function guiClearClass(obj)
+            % clear the data and retrain
+            clearCurrentClassData(obj);
+            retrain(obj);
+        end
+
+        
     end
     methods (Static = true)
         function obj = Test
