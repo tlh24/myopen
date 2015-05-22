@@ -4,7 +4,8 @@
     charResult = UserConfig.getUserConfigVar(tagName,defaultValue) -->
     
     <!--Prefix to add to save data files -->
-    <add key="userFilePrefix"   value="JHMI_TH01_L_"/>
+    <!--<add key="userFilePrefix"   value="JHMI_TH01_L_"/>-->
+    <add key="userFilePrefix"   value="USER_"/>
     
     <!--ROC Table to be loaded and interpolated locally during MiniVIE Session-->
     <add key="rocTable"         value="GraspAndWholeArmRoc.xml"/>
