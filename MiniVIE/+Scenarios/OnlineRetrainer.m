@@ -20,8 +20,8 @@ classdef OnlineRetrainer < Scenarios.ScenarioBase
         JoystickId                  % System ID for desired joystickJoystick Id (0,1,2,etc)
         JoystickButtonNext          % List of buttons to go to next class
         JoystickButtonPrevious      % List of buttons to go to previous class
-        JoystickButtonTrain         % List of buttons to go to train
-        JoystickButtonClear         % List of buttons to go to clear data
+        JoystickButtonTrain         % List of buttons to train
+        JoystickButtonClear         % List of buttons to clear data
         JoystickAxis                % axis value for changing class. can be (-) to flip axis for next/previous
         JoystickAxisThreshold       % limit until joystick axis registers event
         

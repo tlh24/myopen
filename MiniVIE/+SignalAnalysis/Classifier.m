@@ -328,8 +328,33 @@ classdef Classifier < Common.MiniVieObj
                 return
             end
             
-            f = figure(77);
+            % Compute full confusion matrix
+            cmat = obj.computeConfusion;
+            % Downselect only trained classes (omit those with no data)
+            cmat = cmat(trainedLabels,trainedLabels);
+            
+            if isempty(cmat)
+                % No Data
+                return
+            end
+            
+            % Compute the total number of examples
+            classSum = sum(cmat,2);
+            % Normalize based on the number of examples
+            normMat = cmat ./ repmat(classSum,1,numClasses);
+            % should not occur, but if divided by zero, set to zero
+            normMat(isnan(normMat)) = 0;
+            
+            % flip the matrix, convert to percent
+            faceColor = flipud(normMat) * 100;
+
+
+            %% Plot Results
+            
+            % create figure
+            f = UiTools.create_figure('Confusion Matrix','Confusion_Matrix');
             set(f,'Units','pixels')
+            set(f,'ToolBar','figure')
             p = get(f,'Position');
             p = [p(1) p(2)/2 800 600];
             set(f,'Position',p);
@@ -337,31 +362,16 @@ classdef Classifier < Common.MiniVieObj
             clf(f)
             hAxes = axes('Parent',f);
             
+            % create colored surface
             [X,Y] = meshgrid(1:numClasses+1,1:numClasses+1);
-            hSurf = surf(hAxes,X,Y);
-            patchData = surf2patch(hSurf);
-            delete(hSurf);
-            hPatch = patch(patchData,'Parent',hAxes,'FaceColor','flat','EdgeColor','None');
-            view(2)
-            colormap('hot');
-            colorbar;
-            set(hAxes,'cLim',[0 1]);
+            surface(X,Y,zeros(size(X)),faceColor,'Parent',hAxes);
+            view(hAxes,2)
+            colormap(hAxes,'hot');
+            colorbar(hAxes);
+            set(hAxes,'cLim',[0 100]);
             
-            cmat = obj.computeConfusion;
-            cmat = cmat(trainedLabels,trainedLabels);
-            
-            try
-                if ~isempty(cmat)
-                    classSum = sum(cmat,2);
-                    normMat = cmat ./ repmat(classSum,1,numClasses);
-                    normMat(isnan(normMat)) = 0;
-                    
-                    faceColor = flipud(normMat);
-                    set(hPatch,'FaceVertexCData',faceColor(:));
-                end
-            catch
-                disp('Confusion matrix error')
-            end
+            set(hAxes,'XLim',[1 numClasses+1])
+            set(hAxes,'YLim',[1 numClasses+1])
             
             classNames = obj.getClassNames;
             tickVal = (1:numClasses)+0.5;
@@ -371,7 +381,9 @@ classdef Classifier < Common.MiniVieObj
             set(hAxes,'YTick',tickVal);
             set(hAxes,'YTickLabel',flipud(tickLabel))
             
-            hText = xticklabel_rotate(tickVal,30,tickLabel);
+            xticklabel_rotate(tickVal,30,tickLabel);
+            
+            title('Actual versus predicted class (%)','Parent',hAxes);
             
         end
     end

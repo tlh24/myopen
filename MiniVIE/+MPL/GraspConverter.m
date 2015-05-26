@@ -12,12 +12,14 @@ classdef GraspConverter < handle
                         %graspId = 1;  % Pinch (British)
                         graspId = 2;  % Pinch (American)
                     case 'Lateral'
-                        graspId = 9;  % Key
+                        graspId = 15;  % Key
                     case 'Tripod'
                         graspId = 4;  % 3 Finger Pinch
                     case 'Spherical'
                         graspId = 7;  % Spherical
                         %graspId = 1;
+                    case 'Cylindrical'
+                        graspId = 5;  % Cylindrical
                     case 'Power'
                         graspId = 5;  % Cylindrical
                     case 'Extension'

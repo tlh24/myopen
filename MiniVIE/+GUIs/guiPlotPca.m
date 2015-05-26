@@ -1,6 +1,6 @@
 function hAxes = guiPlotPca(TrainingData)
 
-% plot the principle components of the current training data
+% plot the principal components of the current training data
 
 % TODO break out the math and the plotting parts
 
@@ -46,15 +46,19 @@ subSample = ceil(length(allPC)./targetNum);
 allPC = allPC(:,1:subSample:end);
 classLabelId = classLabelId(:,1:subSample:end);
 
-f = figure(99);
+
+f = UiTools.create_figure('Feature Data Principal Component Analysis','plot_pca');
+set(f,'ToolBar','figure')
+set(f,'Resize','on')
+
 drawnow;
 clf(f)
 
 
-pcIds = {[1 2] [3 4] [5 6]}; % nPrincipleComponents
+pcIds = {[1 2] [3 4] [5 6]}; % nPrincipalComponents
 for i = 1:3%length(pcIds)
     if i == 1
-        % show the first to principle components larger on subplots 1,2
+        % show the first to principal components larger on subplots 1,2
         hAxes(i) = subplot(2,2,[1 2],'Parent',f);
     else
         hAxes(i) = subplot(2,2,i+1,'Parent',f);
@@ -69,6 +73,7 @@ for i = 1:3%length(pcIds)
     hold(hAxes(i),'on');
     hScatter = zeros(1,numClasses);
     hContour = zeros(1,numClasses);
+    hLabel = zeros(1,numClasses);
     for iClass = 1:numClasses
         % create contour outlines
         contourLevel = [ 2 3 ];
@@ -79,13 +84,17 @@ for i = 1:3%length(pcIds)
         thisClass = classLabelId == uniqueLabels(iClass);
         hScatter(iClass) = plot(hAxes(i),PC(1,thisClass),PC(2,thisClass),'.');
         set(hScatter(iClass),'Color',c(iClass,:));
+        
+        % Work around for contour labels in R2014B
+        hLabel(iClass) = plot(nan,'-','Color',c(iClass,:));
+        
     end
     axis(hAxes(i),[min(PC(:)) max(PC(:)) min(PC(:)) max(PC(:))]);
-    xlabel(hAxes(i),''); ylabel(hAxes(i),''); title(hAxes(i),'');
+    xlabel(hAxes(i),sprintf('PC%d',pcIds{i}(1))); ylabel(hAxes(i),sprintf('PC%d',pcIds{i}(2))); title(hAxes(i),'');
     
     if i == 1
         % place legend on first axes
-        hLegend = legend(hContour,hData.ClassNames(uniqueLabels));
+        hLegend = legend(hLabel,hData.ClassNames(uniqueLabels));
         set(hLegend,'Location','NorthEastOutside');
     end
 end

@@ -147,7 +147,7 @@ classdef UserDrivenTrainingInterface < Common.MiniVieObj
             %axis(obj.hg.StatusAxes,'off')
             updateBar(obj);
             
-            h = title(obj.hg.ImAxes,currentClass);
+            h = title(currentClass,'Parent',obj.hg.ImAxes);
             set(h,'FontSize',18)
         end
         
