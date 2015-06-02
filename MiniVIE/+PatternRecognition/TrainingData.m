@@ -2,7 +2,7 @@ classdef TrainingData < handle
     % Class to hold pattern recognition training data
     % Methods will include those to recompute features from data and to
     % extract data signals on a per-class basis
-    % Also, add ability to remove data from certain classes
+    % Also, adds ability to remove data from certain classes
     %
     % The class should operate in passive mode if just reading saved data,
     % but also has an active mode that would get data and add to the
@@ -58,7 +58,7 @@ classdef TrainingData < handle
             % Creator
             
             if nargin < 1
-                fprintf('[%s] Creating Training Data Object\n',mfilename);
+                fprintf('[%s] Creating Empty Training Data Object\n',mfilename);
             else
                 fprintf('[%s] Creating Training Data Object from file: "%s"\n',mfilename,fileName);
                 obj.loadTrainingData(fileName);
