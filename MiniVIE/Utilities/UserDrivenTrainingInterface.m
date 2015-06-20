@@ -141,7 +141,9 @@ classdef UserDrivenTrainingInterface < Common.MiniVieObj
                 set(obj.hg.hSelection,'Enable','on');
             end
 
-            image(obj.Images{i},'Parent',obj.hg.ImAxes);
+            %image(rot90(obj.Images{i},2),'Parent',obj.hg.ImAxes);
+            image(flipud(obj.Images{i}),'Parent',obj.hg.ImAxes);
+            axis(obj.hg.ImAxes,'xy')
             axis(obj.hg.ImAxes,'off')
             daspect(obj.hg.ImAxes,[1 1 1]);
             %axis(obj.hg.StatusAxes,'off')
