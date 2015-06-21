@@ -136,7 +136,7 @@ deps:
 
 check:
 	cppcheck -Iinclude -I/usr/local/include -I../common_host --enable=all \
-		src/*.cpp
+		-q src/*.cpp
 
 pretty:
 	# "-rm" means that make ignores errors, if any 

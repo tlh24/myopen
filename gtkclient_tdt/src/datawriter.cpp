@@ -10,6 +10,7 @@ using namespace moodycamel;
 DataWriter::DataWriter()
 {
 	m_enabled = false;
+	m_num_written = 0;
 	m_fn.assign("");
 	m_w = NULL;
 }

@@ -18,6 +18,8 @@
 //#define _LARGEFILE_SOURCE enabled by default.
 #define _FILE_OFFSET_BITS 64
 
+#define MY_BUFFER	262144
+
 using namespace std;
 using namespace google::protobuf;
 using namespace gtkclient;
@@ -30,23 +32,23 @@ int main(int argn, char **argc)
 	ifstream in;
 
 	if (argn != 3 && argn != 2) {
-		printf("usage: icms2mat infile.dat outfile.mat\n");
-		printf(" or just: icms2mat infile.dat\n");
-		exit(0);
+		printf("usage: icms2mat infile.pbd outfile.mat\n");
+		printf(" or just: icms2mat infile.pbd\n");
+		return EXIT_FAILURE;
 	}
 
 	// in file
 	in.open(argc[1]);
 	if (!in.good()) {
 		fprintf(stderr,"Could not open %s\n", argc[1]);
-		exit(0);
+		return EXIT_FAILURE;
 	}
 
 	// out file
 	int nn = strlen(argc[1]);
 	if (nn < 5 || nn > 511) {
-		printf(" infile not .bin?\n");
-		exit(0);
+		printf(" infile not .pbd?\n");
+		return EXIT_FAILURE;
 	}
 	char s[512];
 	if (argn == 2) {
@@ -73,34 +75,37 @@ int main(int argn, char **argc)
 			fprintf(stderr,
 			        "read magic failure. gcount: %ld at %d\n",
 			        in.gcount(), (int) in.tellg());
-			exit(0);
+			return EXIT_FAILURE;
 		}
 		if (magic != ICMS_MAGIC) {
-			fprintf(stderr, "magic value is wrong: %u.\n", magic);
-			exit(0);
+			fprintf(stderr, "packet %ld: magic value, %X, does not match expected value, %X. aborting here.\n",
+			        packets+1, magic, ICMS_MAGIC);
+			break;
 		}
 
 		// read size
 		unsigned int sz;
 		in.read((char *) &sz, sizeof (sz));
 		if (in.eof())
-			exit(0);
+			return EXIT_FAILURE;
 		if (in.fail() || in.gcount() != sizeof (sz)) {
 			fprintf(stderr, "read size failure. gcount: %ld at %d\n",
 			        in.gcount(), (int) in.tellg());
-			exit(0);
+			return EXIT_FAILURE;
 		}
-		if (sz > 131072) { // hardcoded for now xxx
+		if (sz > MY_BUFFER) {
 			fprintf(stderr, "single packet too long for buffer: %u.\n", sz);
-			exit(0);
+			return EXIT_FAILURE;
 		}
 
 		// read protobuf packet
-		char buf[131072]; // xxx
+		// max int32 is  2,147,483,647
+		// max uint32 is 4,294,967,295
+		char buf[MY_BUFFER];
 		in.read(buf, sz);
 		if (in.fail() || in.eof() || in.gcount() != sz) {
 			fprintf(stderr, "read protobuf packet failure\n");
-			exit(0);
+			return EXIT_FAILURE;
 		}
 
 		// parse protobuf
@@ -165,9 +170,9 @@ int main(int argn, char **argc)
 	for (it = stimchans.begin(); it != stimchans.end(); ++it) {
 		printf("stim ch: %d\n", (*it).second->stim_chan);
 		(*it).second->save(&ms);
-		ms.save();
+		ms.save(true);	// append to file
 		ms.clear();
 	}
 
-	return 0;
+	return EXIT_SUCCESS;
 }

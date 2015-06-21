@@ -236,7 +236,7 @@ i64 mod2(i64 a, i64 b)
 }
 void saveState()
 {
-	printf("Saving Preferences\n");
+	printf("Saving Preferences to %s\n", g_prefstr);
 	MatStor ms(g_prefstr); 	// no need to load before saving here
 	for (int i=0; i<NCHAN; i++) {
 		g_c[i]->save(&ms);
@@ -273,7 +273,7 @@ void saveState()
 	ms.setStructValue("filter","lopass",0,(float)g_lopassNeurons);
 	ms.setStructValue("filter","hipass",0,(float)g_hipassNeurons);
 	ms.setStructValue("filter","median",0,(float)g_whichMedianFilter);
-	//
+
 	ms.setStructValue("icms","lms_train",0,(float)g_trainArtifactNLMS);
 	ms.setStructValue("icms","lms_filter",0,(float)g_filterArtifactNLMS);
 
@@ -996,10 +996,8 @@ static gboolean rotate(gpointer user_data)
 	s += string(str);
 	gtk_label_set_text(GTK_LABEL(g_infoLabel), s.c_str());
 
-	size_t n;
-
 	if (g_wfwriter.enabled()) {
-		n = g_wfwriter.filename().find_last_of("/");
+		size_t n = g_wfwriter.filename().find_last_of("/");
 
 		snprintf(str, 256, "%s: %.2f MB",
 		         g_wfwriter.filename().substr(n+1).c_str(),
@@ -2232,7 +2230,7 @@ int main(int argc, char **argv)
 
 	g_showContGrid = (bool) ms.getStructValue("raster", "show_grid", 0, (float)g_showContGrid);
 	g_showContThresh = (bool) ms.getStructValue("raster","show_threshold", 0, (float)g_showContThresh);
-	g_rasterSpan = ms.getStructValue("ratser", "span", 0, g_rasterSpan);
+	g_rasterSpan = ms.getStructValue("raster", "span", 0, g_rasterSpan);
 
 	g_whichSpikePreEmphasis = ms.getStructValue("spike", "pre_emphasis", 0, g_whichSpikePreEmphasis);
 	g_whichAlignment = ms.getStructValue("spike", "alignment_mode", 0, g_whichAlignment);

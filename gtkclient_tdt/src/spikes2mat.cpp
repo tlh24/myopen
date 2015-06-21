@@ -24,34 +24,36 @@ int main(int argn, char **argc)
 	if (argn != 3 && argn != 2) {
 		printf("usage: spikes2mat infile.dat outfile.mat\n");
 		printf(" or just: convert infile.dat\n");
-		exit(0);
+		return EXIT_FAILURE;
 	}
 
 	FILE *in = fopen(argc[1], "r");
 	if (!in) {
 		printf("could not open %s\n", argc[1]);
-		exit(0);
+		return EXIT_FAILURE;
 	}
-	mat_t *mat;
 	int nn = strlen(argc[1]);
 	if (nn < 5 || nn > 511) {
 		printf(" infile not .bin?\n");
-		exit(0);
+		fclose(in);
+		return EXIT_FAILURE;
 	}
 	char s[512];
-	strncpy(s, argc[1], 512);
-	s[nn-3] = 'm';
-	s[nn-2] = 'a';
-	s[nn-1] = 't';
 	if (argn == 2) {
-		mat = Mat_CreateVer(s, NULL,MAT_FT_MAT73);
+		strncpy(s, argc[1], 512);
+		s[nn-3] = 'm';
+		s[nn-2] = 'a';
+		s[nn-1] = 't';
 	} else {
-		mat = Mat_CreateVer(argc[2], NULL,MAT_FT_MAT73);
+		strncpy(s, argc[2], 512);
 	}
+	mat_t *mat = Mat_CreateVer(s, NULL, MAT_FT_MAT73);
 	if (!mat) {
 		printf("could not open for writing %s\n", argc[2]);
-		exit(0);
+		fclose(in);
+		return EXIT_FAILURE;
 	}
+
 	//this is (for now) a two-stage process:
 	//have to scan through the file,
 	//determine what's there, allocate memory appropritately,
@@ -71,7 +73,8 @@ int main(int argn, char **argc)
 			} else {
 				printf("magic number seems off, is 0x%x, %lld bytes, %lld packets\n",
 				       v,pos,packets);
-				exit(0);
+				fclose(in);
+				return EXIT_FAILURE;
 			}
 			if (ferror(in) || feof(in)) done = true;
 		}
@@ -81,26 +84,22 @@ int main(int argn, char **argc)
 		printf("too big for matlab.\n");
 	}
 	fseeko(in, 0, SEEK_SET);
-	//okay, allocate appropriate data structs:
-	double *time;
-	i64 *ticks;
-	short *channel;
-	short *unit;
-	short *wf;
 
-	time = (double *)malloc(packets * sizeof(double));
-	ticks = (i64 *)malloc(packets * sizeof(i64));
-	channel = (short *)malloc(packets * sizeof(short));
-	unit = (short *)malloc(packets * sizeof(short));
-	wf = (short *)malloc(NWFSAMP * packets * sizeof(short));
+	//okay, allocate appropriate data structs:
+	short *channel = (short *)malloc(packets * sizeof(short));
+	short *unit = (short *)malloc(packets * sizeof(short));
+	short *wf = (short *)malloc(NWFSAMP * packets * sizeof(short));
+	double *time = (double *)malloc(packets * sizeof(double));
+	i64 *ticks = (i64 *)malloc(packets * sizeof(i64));
 
 	if (time == 0 || ticks == 0 || channel == 0 || unit == 0 || wf == 0) {
 		printf("not enough memory to convert in-place. bummer.");
-		exit(0);
+		fclose(in);
+		return EXIT_FAILURE;
 	}
-	i64 n = 0;
 	wfpak pak;
 	done = false;
+	i64 n = 0;
 	while (!done) {
 		fread((void *)&v,4,1,in);
 		if (ferror(in) || feof(in)) done = true;
@@ -119,13 +118,27 @@ int main(int argn, char **argc)
 			} else {
 				printf("second pass, magic number seems off, is 0x%x, %lld bytes, %lld packets\n",
 				       v,pos,n);
-				exit(0);
+				fclose(in);
+				return EXIT_FAILURE;
 			}
 			if (ferror(in) || feof(in)) done = true;
 		}
 	}
-	//write out to matlab.
-	//might as well coalesce here, since it's all in memory.
+	fclose(in);
+
+	// write out to matlab.
+	// might as well coalesce here, since it's all in memory.
+
+	// do it this way to minimize memory footprint.
+	auto unitCount = [&](int ch, int un) -> i64 {
+		i64 m = 0;
+		for (i64 i=0; i<n; i++) {
+			if (channel[i] == ch && unit[i] == un)
+				m++;
+		}
+		return m;
+	};
+
 	int maxch = 0;
 	int maxunit = 0;
 	for (i64 i=0; i<n; i++) {
@@ -135,22 +148,15 @@ int main(int argn, char **argc)
 	printf("max channel %d max unit %d\n", maxch, maxunit);
 	if (maxch > 1024 || maxunit > 100) {
 		printf("these numbers seem crazy.  quitting. \n");
-		exit(0);
+		return EXIT_FAILURE;
 	}
 	maxch++;  //zero-indexed.
 	maxunit++;
 	size_t dims[2], dims2[2];
 	dims[0] = maxunit;
 	dims[1] = maxch;
-	//do it this way to minimize memory footprint.
-	auto unitCount = [&](int ch, int un) -> i64 {
-		i64 m = 0;
-		for (i64 i=0; i<n; i++) {
-			if (channel[i] == ch && unit[i] == un)
-				m++;
-		}
-		return m;
-	};
+
+	// wf
 	int index = 0;
 	matvar_t **wf_cell = (matvar_t **)malloc(dims[0]*dims[1]*sizeof(matvar_t *));
 	for (int c=0; c<maxch; c++) {
@@ -179,7 +185,9 @@ int main(int argn, char **argc)
 	Mat_VarWrite(mat, cell_matvar, MAT_COMPRESSION_NONE);
 	Mat_VarFree(cell_matvar);
 	free(wf_cell);
+	free(wf);
 
+	// time
 	index = 0;
 	matvar_t **time_cell = (matvar_t **)malloc(dims[0]*dims[1]*sizeof(matvar_t *));
 	for (int c=0; c<maxch; c++) {
@@ -205,7 +213,9 @@ int main(int argn, char **argc)
 	Mat_VarWrite(mat, cell_matvar, MAT_COMPRESSION_NONE);
 	Mat_VarFree(cell_matvar);
 	free(time_cell);
+	free(time);
 
+	// ticks
 	index = 0;
 	matvar_t **ticks_cell = (matvar_t **)malloc(dims[0]*dims[1]*sizeof(matvar_t *));
 	for (int c=0; c<maxch; c++) {
@@ -230,7 +240,11 @@ int main(int argn, char **argc)
 	Mat_VarWrite(mat, cell_matvar, MAT_COMPRESSION_NONE);
 	Mat_VarFree(cell_matvar);
 	free(ticks_cell);
+	free(ticks);
+
+	free(channel);
+	free(unit);
 
 	Mat_Close(mat);
-	fclose(in);
+	return EXIT_SUCCESS;
 }

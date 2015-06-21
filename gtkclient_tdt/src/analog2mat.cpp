@@ -32,23 +32,23 @@ int main(int argn, char **argc)
 	ifstream in;
 
 	if (argn != 3 && argn != 2) {
-		printf("usage: analog2mat infile.dat outfile.mat\n");
-		printf(" or just: analog2mat infile.dat\n");
-		exit(0);
+		printf("usage: analog2mat infile.pbd outfile.mat\n");
+		printf(" or just: analog2mat infile.pbd\n");
+		return EXIT_FAILURE;
 	}
 
 	// in file
 	in.open(argc[1]);
 	if (!in.good()) {
 		fprintf(stderr,"Could not open %s\n", argc[1]);
-		exit(0);
+		return EXIT_FAILURE;
 	}
 
 	// out file
 	int nn = strlen(argc[1]);
 	if (nn < 5 || nn > 511) {
-		printf(" infile not .bin?\n");
-		exit(0);
+		printf(" infile not .pbd?\n");
+		return EXIT_FAILURE;
 	}
 	char s[512];
 	if (argn == 2) {
@@ -75,7 +75,7 @@ int main(int argn, char **argc)
 			fprintf(stderr,
 			        "read magic failure. gcount: %ld at %d\n",
 			        in.gcount(), (int) in.tellg());
-			exit(0);
+			return EXIT_FAILURE;
 		}
 		if (magic != ANALOG_MAGIC) {
 			fprintf(stderr, "packet %ld: magic value, %X, does not match expected value, %X. aborting here.\n",
@@ -87,25 +87,25 @@ int main(int argn, char **argc)
 		unsigned int sz;
 		in.read((char *) &sz, sizeof (sz));
 		if (in.eof())
-			exit(0);
+			return EXIT_FAILURE;
 		if (in.fail() || in.gcount() != sizeof (sz)) {
 			fprintf(stderr, "read size failure. gcount: %ld at %d\n",
 			        in.gcount(), (int) in.tellg());
-			exit(0);
+			return EXIT_FAILURE;
 		}
-		if (sz > MY_BUFFER) { // hardcoded for now xxx
+		if (sz > MY_BUFFER) {
 			fprintf(stderr, "single packet too long for buffer: %u.\n", sz);
-			exit(0);
+			return EXIT_FAILURE;
 		}
 
 		// read protobuf packet
 		// max int32 is  2,147,483,647
 		// max uint32 is 4,294,967,295
-		char buf[MY_BUFFER]; // xxx
+		char buf[MY_BUFFER];
 		in.read(buf, sz);
 		if (in.fail() || in.eof() || in.gcount() != sz) {
 			fprintf(stderr, "read protobuf packet failure\n");
-			exit(0);
+			return EXIT_FAILURE;
 		}
 
 		// parse protobuf
@@ -137,7 +137,7 @@ int main(int argn, char **argc)
 
 		if (a.tick_size() != a.sample_size()) {
 			fprintf(stderr, "samples and ticks dont align!\n");
-			exit(0);
+			return EXIT_FAILURE;
 		}
 
 		for (int i=0; i<a.tick_size(); i++)
@@ -161,9 +161,9 @@ int main(int argn, char **argc)
 	for (it = analchans.begin(); it != analchans.end(); ++it) {
 		printf("analog ch: %d\n", (*it).second->chan);
 		(*it).second->save(&ms);
-		ms.save();
+		ms.save(true);	// append to file
 		ms.clear();
 	}
 
-	return 0;
+	return EXIT_SUCCESS;
 }
