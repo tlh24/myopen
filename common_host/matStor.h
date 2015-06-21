@@ -8,7 +8,10 @@ class MatStor
 {
 	std::string m_name; //name of the file.
 
-	std::map<std::string, std::vector<float> > m_dat1; // 1-d float
+	typedef std::pair<std::string, std::vector<float> > pairfloat1;
+	typedef std::map<std::string, std::vector<float> > mapfloat1;
+
+	mapfloat1 m_dat1; // 1-d float
 	std::map<std::string, std::vector<double> > m_datd1; // 1-d double
 
 	typedef boost::multi_array<float, 2> array2;
@@ -21,14 +24,14 @@ class MatStor
 	std::map<std::string, array3> m_dat3; // 3-d float!
 	std::map<std::string, arrayd3> m_datd3; // 3-d double!
 
-	typedef std::map<std::string, std::vector<float> > fieldmap;
-	std::map<std::string, fieldmap> m_struct1;
+	std::map<std::string, mapfloat1> m_struct1;
 
 public:
 	MatStor(const char *fname);
 	~MatStor();
 	void load();
 	void save();
+	void save(bool append); // append to file, rather than overwriting
 	void clear(); // clears internal structures
 
 	void setValue(int ch, const char *name, float val);
@@ -47,5 +50,7 @@ public:
 
 	void setStructValue(const char *name, const char *field, size_t idx, float val);
 	float getStructValue(const char *name, const char *field, size_t idx, float def);
+
+	void printStructs(); // for debugging
 };
 #endif
