@@ -5,22 +5,24 @@ classdef SignalSimulator < Inputs.SignalInput
     %
     % 01-Sept-2010 Armiger: Created
     properties
-        DcOffset = 1.2;
-        NoisePower = 0.5;
-        SignalFrequency = 100; %Hz
-        SignalAmplitude = 0.5;
+        DcOffset = 1.2;         % Sets the DC offset of the synthetic signals
+        NoisePower = 0.5;       % Sets amplitude of randn() noise added to signals
+        SignalFrequency = 100;  % Sets the current base frequency (Hz) for signals
+        SignalAmplitude = 0.5;  % Sets the current amplitude for signals.
+        % Can either be scalar or an array of size
+        % numSignals
     end
     properties (SetAccess=private)
-        SignalBuffer;
-        hg;
-        isRunning = false;
+        SignalBuffer;       % internal signal data buffer
+        hg;                 % handle graphics
+        isRunning = false;  % maintain 'run' state
     end
     methods
         function obj = SignalSimulator
             % Constructor
         end
         function initialize(obj,channelIds,maxSamples)
-            
+            % Initialize the signal parameters and raise the control figure
             if nargin < 2
                 obj.ChannelIds = 0:15;
             else
@@ -33,7 +35,7 @@ classdef SignalSimulator < Inputs.SignalInput
                 MAX_SAMPLES = maxSamples;
             end
             
-            
+            % Create internal buffer
             obj.SignalBuffer = zeros(MAX_SAMPLES,obj.NumChannels);
             
             % Raise control panel figure
@@ -71,19 +73,22 @@ classdef SignalSimulator < Inputs.SignalInput
             A = expand(obj.SignalAmplitude,obj.NumChannels);
             f = expand(obj.SignalFrequency,obj.NumChannels);
             
-            
             for iChannel = 1:obj.NumChannels
+                % Randomize phase
                 p = 0.5*randn(1);
+                
+                % create data with form A * sin(2*pi*f*t + phase) + offset
                 channelData = A(iChannel)*sin(2*pi*f(iChannel)*t + p) + obj.DcOffset;
+                
+                % add signal noise on top of sine wave
                 channelData = channelData + obj.NoisePower.*randn(1,sampleBlock);
                 
+                % assign to full channel data matrix
                 newData(:,iChannel) = channelData;
             end
-            % Following two lines were added but unsure what they were intended to do.  Disabling on check-in
-            %lastVal = obj.SignalBuffer(end,end);
             
-            %newData(:,end) = (1:size(newData,1)) + lastVal;
-            
+            % add the new signals to the internal buffer.  New signals go
+            % on the end of the buffer (i.e. row 1 is the oldest data)
             obj.SignalBuffer = circshift(obj.SignalBuffer,[-sampleBlock 0]);
             obj.SignalBuffer(end-sampleBlock+1:end,:) = newData;
             
@@ -93,18 +98,26 @@ classdef SignalSimulator < Inputs.SignalInput
                 error('NumSamples requested [%d] is greater than SignalBuffer size',numSamples,bufferSize);
             end
             
+            % return the requested samples from the end of the buffer
             idxSamples = 1+bufferSize-numSamples : bufferSize;
             data = obj.SignalBuffer(idxSamples,idxChannel);
         end
         function isReady = isReady(obj,numSamples)  %#ok<INUSL>
+            % Always ready, so nothing to do here.  Emulates Data
+            % Acquisition toolbox behavior
+            
             % Consider adding in a phony startup delay
             isReady = true;
             fprintf('[%s] Simulator Ready with %d samples\n',mfilename,numSamples);
         end
         function close(obj)
+            % when closing the object, close the figure
             delete(obj.hg.hFig)
         end
         function setPattern(obj,id)
+            % Set the signal parameters based on the 'id' value.
+            % Amplitude, offset, and frequency are all specified herein.
+            
             obj.NoisePower = 0.04;
             switch id
                 case 0
@@ -171,25 +184,29 @@ classdef SignalSimulator < Inputs.SignalInput
             end
         end
         function uiControlPanel(obj)
-            hFig = UiTools.create_figure('EMG Simulator','EMG_Simulator_Figure');
+            % Create a small gui that will allow keyboard callbacks to
+            % change the simulator signal pattern.  Additionally, change
+            % the color of the figure if it loses focus (only works on
+            % MATLAB versions up to R2014a).  The mechanism
+            % for detecting windows focus event does not work in R2014b.
+            % The issue is related in changes in the figure's
+            % AxisComponent.
             
-            if isempty(hFig)
-                error('Failed to create figure');
-            else
-                set(hFig,'Position',[1 1 1 1]);
-                drawnow
-                alwaysontop(hFig);
-            end
+            % create a reusable figure
+            hFig = UiTools.create_figure('Signal Simulator');
+            % set to lower left corner of screen
+            set(hFig,'Position',[20 50 220 70]);
             
-            obj.hg.hFig = hFig;
+            % force redraw before forcing always on top
+            drawnow
+            alwaysontop(hFig);
             
             cellCurrentKeys = {};
             
-            set(obj.hg.hFig,'Position',[20 50 200 70]);
-            set(obj.hg.hFig,'WindowKeyPressFcn',@(src,evt)key_down(evt));
-            set(obj.hg.hFig,'WindowKeyReleaseFcn',@(src,evt)key_up(evt));
+            set(hFig,'WindowKeyPressFcn',@(src,evt)key_down(obj,evt));
+            set(hFig,'WindowKeyReleaseFcn',@(src,evt)key_up(obj,evt));
             
-            obj.hg.hTxtCurrentPattern = uicontrol(obj.hg.hFig,...
+            hTxt = uicontrol(hFig,...
                 'Style','text',...
                 'FontSize',10,...
                 'String','Current Pattern: ',...
@@ -214,9 +231,15 @@ classdef SignalSimulator < Inputs.SignalInput
                 set(jAxis,'FocusLostCallback',@(src,evt)focusLost);
                 
                 focusGained();
-            catch ME
-                warning(ME.message);
+            catch ERR
+                warning(ERR.message);
             end
+            
+            % store handles in public property for editing
+            obj.hg.hFig = hFig;
+            obj.hg.hTxtCurrentPattern = hTxt;
+            
+            return
             
             function focusGained
                 try
@@ -224,7 +247,7 @@ classdef SignalSimulator < Inputs.SignalInput
                     % change the current pattern
                     c = [0.4 0.8 0];
                     set(hFig,'Color',c);
-                    set(obj.hg.hTxtCurrentPattern,'BackgroundColor',c);
+                    set(hTxt,'BackgroundColor',c);
                     drawnow;
                     
                 catch ME
@@ -238,7 +261,7 @@ classdef SignalSimulator < Inputs.SignalInput
                     if ishandle(hFig)
                         c = [0.9 0.1 0.1];
                         set(hFig,'Color',c);
-                        set(obj.hg.hTxtCurrentPattern,'BackgroundColor',c);
+                        set(hTxt,'BackgroundColor',c);
                         drawnow;
                     end
                 catch ME
@@ -246,7 +269,7 @@ classdef SignalSimulator < Inputs.SignalInput
                 end
             end
             
-            function key_up(evt)
+            function key_up(obj,evt)
                 % Remove the released key
                 isReleased = strcmpi(evt.Key,cellCurrentKeys);
                 
@@ -255,62 +278,61 @@ classdef SignalSimulator < Inputs.SignalInput
                 if isempty(cellCurrentKeys)
                     % No keys remain down
                     setPattern(obj,0);
-                    set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 0 ');
+                    set(hTxt,'String','Current Pattern: 0 ');
                 else
                     % Some keys still remain down
                     return
                 end
                 
             end %key_up
-            
-            function key_down(evt)
+            function key_down(obj,evt)
                 
                 switch evt.Key
                     case 'a'
                         setPattern(obj,1);
-                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 1 ');
+                        set(hTxt,'String','Current Pattern: 1 ');
                     case 's'
                         setPattern(obj,2);
-                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 2 ');
+                        set(hTxt,'String','Current Pattern: 2 ');
                     case 'd'
                         setPattern(obj,3);
-                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 3 ');
+                        set(hTxt,'String','Current Pattern: 3 ');
                     case 'f'
                         setPattern(obj,4);
-                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 4 ');
+                        set(hTxt,'String','Current Pattern: 4 ');
                     case 'q'
                         setPattern(obj,5);
-                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 5 ');
+                        set(hTxt,'String','Current Pattern: 5 ');
                     case 'w'
                         setPattern(obj,6);
-                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 6 ');
+                        set(hTxt,'String','Current Pattern: 6 ');
                     case 'e'
                         setPattern(obj,7);
-                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 7 ');
+                        set(hTxt,'String','Current Pattern: 7 ');
                     case 'r'
                         setPattern(obj,8);
-                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 8 ');
+                        set(hTxt,'String','Current Pattern: 8 ');
                     case 'z'
                         setPattern(obj,9);
-                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 9 ');
+                        set(hTxt,'String','Current Pattern: 9 ');
                     case 'x'
                         setPattern(obj,10);
-                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 10');
+                        set(hTxt,'String','Current Pattern: 10');
                     case 'c'
                         setPattern(obj,11);
-                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 11');
+                        set(hTxt,'String','Current Pattern: 11');
                     case 'v'
                         setPattern(obj,12);
-                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 12');
+                        set(hTxt,'String','Current Pattern: 12');
                     case 'g'
                         setPattern(obj,13);
-                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 13');
+                        set(hTxt,'String','Current Pattern: 13');
                     case 'h'
                         setPattern(obj,14);
-                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 14');
+                        set(hTxt,'String','Current Pattern: 14');
                     case 'space'
                         setPattern(obj,0);
-                        set(obj.hg.hTxtCurrentPattern,'String','Current Pattern: 0');
+                        set(hTxt,'String','Current Pattern: 0');
                 end
                 
                 cellCurrentKeys = unique([cellCurrentKeys {evt.Key}]);
@@ -319,12 +341,16 @@ classdef SignalSimulator < Inputs.SignalInput
             
         end %uiControlPanel
         function stop(obj)
+            % Required method from Inputs.SignalInput, but there's nothing
+            % to start or stop, so just display a status message
             if obj.isRunning
                 fprintf('[%s] Simulator Stopped\n',mfilename);
                 obj.isRunning = false;
             end
         end
         function start(obj)
+            % Required method from Inputs.SignalInput, but there's nothing
+            % to start or stop, so just display a status message
             if ~obj.isRunning
                 fprintf('[%s] Simulator Started\n',mfilename);
                 obj.isRunning = true;

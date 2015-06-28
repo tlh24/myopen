@@ -361,13 +361,13 @@ classdef Classifier < Common.MiniVieObj
             
             clf(f)
             hAxes = axes('Parent',f);
-            
+            drawnow
             % create colored surface
             [X,Y] = meshgrid(1:numClasses+1,1:numClasses+1);
             surface(X,Y,zeros(size(X)),faceColor,'Parent',hAxes);
             view(hAxes,2)
             colormap(hAxes,'hot');
-            colorbar(hAxes);
+            colorbar('peer',hAxes);
             set(hAxes,'cLim',[0 100]);
             
             set(hAxes,'XLim',[1 numClasses+1])

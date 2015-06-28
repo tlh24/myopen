@@ -224,7 +224,7 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
             
         end
         
-        function dataLabel = plot_emg_with_breaks(obj,doFilter)
+        function dataLabel = plot_emg_with_breaks(obj,doFilter,channels)
             
             [p, f, e] = fileparts(obj.fullFileName);
             dataLabel = [f '_emgChannels'];
@@ -233,7 +233,10 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
             l = obj.getClassLabels;
             [l, sortOrder] = sort(l);
             
-            channels = obj.ActiveChannels;
+            if nargin < 3
+                channels = obj.ActiveChannels;
+            end
+            
             chEmg = obj.getContinuousData(channels,sortOrder);
             
             if nargin < 2
@@ -245,7 +248,7 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
                 dataLabel = strcat(dataLabel,'_filtered');
             end
             
-            c = distinguishable_colors(obj.NumActiveChannels);
+            c = distinguishable_colors(max(channels));
             
             w = obj.WindowSize;
             classChange = [find(diff(l) ~= 0) length(l)];
@@ -264,7 +267,7 @@ classdef TrainingDataAnalysis < PatternRecognition.TrainingData
             h = gca;
             hold on
             
-            for i = 1:obj.NumActiveChannels
+            for i = 1:length(channels)
                 plot(chEmg(:,i),'Color',c(i,:))
             end
             title(sprintf('%s Total=%d Active=%d',dataLabel,...

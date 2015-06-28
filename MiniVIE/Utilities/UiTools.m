@@ -1,5 +1,6 @@
 classdef UiTools
-    % Class with static methods for common ui tasks
+    % Class with static methods for common ui tasks.  See individual
+    % methods for further details
     methods (Static = true)
         function hTimer = create_timer(timerName,TimerFcn)
             % Create a named timer which will search for previous versions
@@ -27,12 +28,31 @@ classdef UiTools
         end
         function hFigure = create_figure(figureName,figureTag)
             % Usage: hFigure = UiTools.create_figure(figureName,figureTag)
+            %
+            % Creates a reusable figure by searching tags for the figure
+            % name.  If one already exists, those figures are closed and
+            % then a new window is relainched
+            %
+            % Inputs: 
+            %   figureName - (required) Name of the figure that will
+            %                display in the menu titlebar  
+            %   figureTag  - (optional) Unique tag that will find the
+            %                figure globally.  If not specified the tag
+            %                will be the figure name with spaces replaced
+            %                with underscores
+            %   
+            %
+            % Revisions:
+            % Armiger 2011 - Created
             
             if nargin < 2
+                % Default will be name with spaces replaced with
+                % underscores
                 figureTag = strrep(figureName,' ','_');
             end
             
-            % Consts
+            % Get the background color so that new graphics will match the
+            % figure
             figureColor = get(0,'defaultUicontrolBackgroundColor');
             
             % Startup
@@ -44,7 +64,9 @@ classdef UiTools
                 delete(existingFigs)
             end
             
-            % Figure Setup
+            % Figure Setup.  Parameters are set to use the figure name,
+            % disable menu and toolbar and turn off resize.  (these can
+            % always be re-enabled
             hFigure = figure(...
                 'Units','pixels',...
                 'Color',figureColor,...
@@ -174,6 +196,5 @@ classdef UiTools
             sortedDirContents = structDirContents(id);
             
         end
-        
     end
 end

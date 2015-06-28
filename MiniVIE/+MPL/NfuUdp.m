@@ -19,6 +19,10 @@ classdef (Sealed) NfuUdp < handle
     % to be investigated further
     properties
         
+        % /fs/etfs/telem_port defaults to 9027
+        % /fs/etfs/cmd_port defaults to 6200
+        % /fs/etfs/cmd_udp_port defaults to 6201
+        
         Hostname % info pulled from xml config file.  See .getInstance method
         UdpStreamReceivePortNumLocal% = 9027
         TcpPortNum% = 6200;
