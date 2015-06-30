@@ -96,6 +96,12 @@ classdef Classifier < Common.MiniVieObj
             hGui = GUIs.guiClassifierChannels;
             uiwait(hGui.hFigure)
             obj.setClassNames(hGui.ClassNames);
+            
+            if any(obj.TrainingData.getClassLabelCount)
+                % (try to) retrain with the latest settings
+                obj.train();
+            end
+            
             % Save last selected classes
             GUIs.guiClassifierChannels.setSavedDefaults(obj.getClassNames);
         end

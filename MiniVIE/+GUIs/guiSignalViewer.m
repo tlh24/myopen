@@ -76,7 +76,7 @@ classdef guiSignalViewer < Common.MiniVieObj
             % Need to be careful here if this overruns the buffers of the signal source objects
             %obj.SignalSource.NumSamples = 3000;
             
-            obj.hChannelSelect = GUIs.guiChannelSelect;
+            obj.hChannelSelect = GUIs.guiChannelSelect(obj.hg.PanelChannels);
             addlistener(obj.hChannelSelect,'ValueChange',@(src,evt)obj.updateChannels);
             obj.hChannelSelect.setAvailableChannels(obj.SignalSource.NumChannels);
             obj.SelectedChannels = obj.hChannelSelect.SelectedChannels;
@@ -119,6 +119,9 @@ classdef guiSignalViewer < Common.MiniVieObj
             obj.hg.Axes(2) = axes('Parent',obj.hg.PanelAxes,'Units','Normalized','Position',[0.05 0.05 0.9 0.9]);
             obj.hg.Axes(1) = axes('Parent',obj.hg.PanelAxes,'Units','Normalized','Position',[0.05 0.05 0.9 0.9]);
             
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            % Plot Domain Button Group Panel:
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             obj.hg.PanelDomain = uibuttongroup(obj.hg.Figure,'Units','Pixels','Position',[80 40 200 150]);
             set(obj.hg.PanelDomain,'Title','Plot Domain');
             % Create three radio buttons in the button group.
@@ -132,6 +135,9 @@ classdef guiSignalViewer < Common.MiniVieObj
             set(obj.hg.PanelDomain,'SelectionChangeFcn',@(src,evt)selcbk(src));
             set(obj.hg.PanelDomain,'Visible','on');
             
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            % Plot Properties Panel:
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             obj.hg.PanelProps = uibuttongroup(obj.hg.Figure,'Units','Pixels','Position',[290 40 200 150]);
             set(obj.hg.PanelProps ,'Title','Plot Properties');
             
@@ -146,6 +152,15 @@ classdef guiSignalViewer < Common.MiniVieObj
             obj.hg.editSamples = uicontrol('Style','edit','String',' -- ','Units','Normalized',...
                 'pos',[0.5 0.4 0.4 0.15],'parent',obj.hg.PanelProps,'HandleVisibility','off',...
                 'Callback',@setSamplesCallback);
+            
+            
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            % Plot Properties Panel:
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            obj.hg.PanelChannels = uipanel(obj.hg.Figure,'Units','Pixels','Position',[500 40 200 150]);
+            set(obj.hg.PanelChannels ,'Title','Channel Select');
+
+            return;
             
             function setSamplesCallback(src,~)
                 str = get(src,'String');

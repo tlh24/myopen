@@ -1,10 +1,16 @@
 classdef guiChannelSelect < Common.MiniVieObj
     % GUI To get channels
-    % TODO: Make blocking?
+    %
+    % Creates a small GUI with buttons to enable or disable channels.
+    % Channel value changes are braodcast using events
     %
     % 01-Sept-2010 Armiger: Created
+    % 2015JUN29 Armiger: Updated to allow docking of the channel selection
+    %   if a panel object is passed instead of a figure
+    
     properties
         hFigure
+        hParent
         
         numChannelsMax = 32;        % Max channels this gui can display
         numChannelsAvailable = 32;
@@ -26,11 +32,19 @@ classdef guiChannelSelect < Common.MiniVieObj
         defaultChannels = [];
     end
     events
+        % Broadcast events when buttons are pressed
         ValueChange
     end
     methods
-        function obj = guiChannelSelect
-            obj.setupFigure();
+        function obj = guiChannelSelect(parent)
+            % Creator.  Default is no arguments.  Parent should be a
+            % uipanel object
+
+            if nargin < 1
+                parent = [];
+            end
+
+            obj.setupFigure(parent);
             selectedChannels = obj.getLastChannels;
             obj.setActiveChannels(selectedChannels);
             
@@ -156,22 +170,39 @@ classdef guiChannelSelect < Common.MiniVieObj
             save(fullFile,'selectedChannels','-mat');
             
         end
-        function setupFigure(obj)
+        function setupFigure(obj,parent)
             
-            obj.hFigure = UiTools.create_figure('Select Channels');
-            % set(obj.hFigure,'CloseRequestFcn',@(src,evt)obj.close);
-            
-            if isempty(obj.hFigure)
-                error('Failed to create figure');
-            else
-                set(obj.hFigure,'Position',[1 1 1 1]);
+            if isempty(parent)
+                obj.hFigure = UiTools.create_figure('Select Channels');
+                % set(obj.hFigure,'CloseRequestFcn',@(src,evt)obj.close);
+                
+                if isempty(obj.hFigure)
+                    error('Failed to create figure');
+                else
+                    set(obj.hFigure,'Position',[1 1 1 1]);
+                end
+                set(obj.hFigure,'Position',[200 500 200 70],'CloseRequestFcn',@(src,evt)close(obj));
+                set(obj.hFigure,'Position',pos('fig'));
+                parent = obj.hFigure;
             end
+            
+            obj.hParent = parent;
+            
+            fig = parent;
+            % if the object is a figure or figure descendent, return the
+            % figure. Otherwise return [].
+            while ~isempty(fig) && ~strcmp('figure', get(fig,'type'))
+                fig = get(fig,'parent');
+            end
+            
+            obj.hFigure = fig;
+            
+            
             %a = axes('Visible','off','Parent',obj.hFigure);
             %colorOrder = get(a, 'ColorOrder');
             %obj.ColorOrder = repmat(colorOrder,[obj.numChannelsMax 1]);
             obj.ColorOrder = [distinguishable_colors(16); distinguishable_colors(16)];
             
-            set(obj.hFigure,'Position',[200 500 200 70],'CloseRequestFcn',@(src,evt)close(obj));
             
             obj.handles.menuFile = uimenu(obj.hFigure, 'Label','&File');
             
@@ -195,7 +226,7 @@ classdef guiChannelSelect < Common.MiniVieObj
             % layout channel buttons in rows of 8
             numColumns = obj.numChannelsPerRow;
             
-            set(obj.hFigure,'Position',pos('fig'));
+            
             
             for iChannel = 1:obj.numChannelsMax
                 iColumn = mod(iChannel-1,numColumns)+1;
@@ -203,7 +234,7 @@ classdef guiChannelSelect < Common.MiniVieObj
                 iRow = ceil(iChannel / numColumns);
                 
                 obj.handles.pbChannels(iChannel) = uicontrol(...
-                    'Parent',obj.hFigure,...
+                    'Parent',obj.hParent,...
                     'Style','togglebutton',...
                     'Position',pos('cntrl',iColumn,iRow,1,1),...
                     'String',num2str(iChannel),...

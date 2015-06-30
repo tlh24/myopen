@@ -245,18 +245,76 @@ classdef TrainingData < handle
             
         end
         
-        function setClassNames(obj,classNames)
+        function success = setClassNames(obj,classNames)
             % setClassNames(obj,featureNames)
-            % Set class names as a cell array of strings
+            % Set class names as a cell array of strings.  Note This could
+            % pose a problem if the class names are being reordered.
+            % perform a check if the classname existed before and update
+            % map
+            success = false;
             
             assert(iscell(classNames),'Expected a cell array of strings');
             
             isValid = cellfun(@ischar,classNames);
             assert(all(isValid),'Expected a cell array of strings');
             
+            % Which classes have data?
+            
+            % get all labels
+            classLabelList = obj.getAllClassLabels;
+            
+            % determine which classes are trained with data
+            idTrained = unique(classLabelList);
+            
+            % find unique classes
+            trainedClassNames = obj.ClassNames(idTrained);
+            
+            % these are the classes in both the old and new list
+            maintainedClasses = intersect(obj.ClassNames,classNames);
+            
+            % these are the classes about to lose data
+            deleteClassses = setdiff( trainedClassNames, maintainedClasses);
+            
+            % Prompt here to continue
+            if ~isempty(deleteClassses)
+                reply = questdlg([{'Are you sure you want to remove trained classes:'},deleteClassses(:)'],'Data Loss','Yes','No','No');
+                if ~strcmp(reply,'Yes')
+                    return
+                end
+            end
+            
+            
+            % create new label list
+            newClassLabelId = nan(size(obj.ClassLabelId));
+            
+            % reassign the labels
+            for i = 1:length(maintainedClasses)
+                oldId = find(strcmp(maintainedClasses{i},obj.ClassNames));
+                newId = find(strcmp(maintainedClasses{i},classNames));
+                
+                newClassLabelId( classLabelList == oldId ) = newId;
+                
+            end
+            
+            % delete the data
+            for i = 1:length(deleteClassses)
+                id = find(strcmp(deleteClassses{i},obj.ClassNames));
+                
+                idRemove = obj.ClassLabelId == id;
+                
+                newClassLabelId(idRemove) = [];
+                
+                obj.SignalFeatures3D(:,:,idRemove) = [];
+                obj.ClassLabelId(idRemove) = [];
+                obj.SignalDataRaw(:,:,idRemove) = [];
+                obj.SampleCount = obj.SampleCount - sum(idRemove);
+                
+            end
+            obj.ClassLabelId = newClassLabelId;
+            
             % Update the property
             obj.ClassNames = classNames;
-            
+            success = true;
         end
         function setFeatureNames(obj,featureNames)
             % setFeatureNames(obj,featureNames)

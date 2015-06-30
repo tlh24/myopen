@@ -824,7 +824,26 @@ classdef MiniVIE < Common.MiniVieObj
     end
     methods (Access = private)
         function pbSignalView(obj)
+            
             obj.SignalViewer = GUIs.guiSignalViewer(obj.SignalSource);
+            
+            % link the viewer with a classifier if it exists
+            
+            addlistener(obj.SignalViewer.hChannelSelect,'ValueChange',@(src,evt)update_channels);
+            
+            function update_channels
+                
+                if isempty(obj.SignalClassifier)
+                    disp('nope')
+                else
+                    disp('yup')
+                    ch = obj.SignalViewer.hChannelSelect.SelectedChannels;
+                    obj.SignalClassifier.setActiveChannels(ch);
+                    
+                end
+                
+            end
+            
         end
         function pbSignalAudio(obj)
             obj.SignalSource.audiopreview(1,1,200);
@@ -890,6 +909,10 @@ classdef MiniVIE < Common.MiniVieObj
             obj.TrainingData.clearData();
         end
         function pbTrain(obj)
+            if ~any(obj.TrainingData.getClassLabelCount)
+                return
+            end
+            
             obj.SignalClassifier.train();
             obj.SignalClassifier.computeError();
             obj.SignalClassifier.computeConfusion();

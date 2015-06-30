@@ -71,6 +71,12 @@ classdef ScenarioBase < Common.MiniVieObj
             obj.SignalSource = SignalSource;
             obj.SignalClassifier = SignalClassifier;
             
+            if isempty(obj.SignalClassifier.getClassNames)
+                % Must have some classes defined to do anyting
+                msg = 'No Output Classnames Specified';
+                error(msg);
+            end
+            
             obj.ArmStateModel = Controls.ArmStateModel();
             
             obj.Timer = UiTools.create_timer(mfilename,@(src,evt)update(obj));
