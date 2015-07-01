@@ -26,23 +26,32 @@ classdef DataBuffer < handle
             % create empty buffer
             obj.dataBuffer = zeros(obj.NumSamples,obj.NumChannels);
         end
-        function addData(obj,newData)
+        function addData(obj,newData,channelIds)
             % Add new data to buffer.  if more samples than buffer is
             % provided, then data will be clipped
             
+            if nargin < 3
+                channelIds = 1:obj.NumChannels;
+            end
+            
+            % new data may be a different number of channels if the
+            % channelIds param is set
             [numNewSamples, numChannels] = size(newData);
             
-            assert(numChannels == obj.NumChannels,'[%s] Error new data must be size [%d numSamples]. Input was [%d %d].',...
-                mfilename, obj.NumChannels,numChannels,numNewSamples)
+            assert(numChannels == length(channelIds),...
+                '[%s] Error new data must be size [%d numSamples]. Input was [%d %d].',...
+                mfilename,length(channelIds),numChannels,numNewSamples)
             
             if numNewSamples > obj.NumSamples
-                % Replace entire buffer
-                obj.dataBuffer = newData(:,end-size(obj.dataBuffer,1)+1:end)';
+                % Replace entire buffer (crop new samples if needed)
+                obj.dataBuffer(:,channelIds) = ...
+                    newData(end-size(obj.dataBuffer,1)+1:end,channelIds);
             else
-                
-                obj.dataBuffer = circshift(obj.dataBuffer,[-numNewSamples 0]);
+
+                % shift the channels requested
+                obj.dataBuffer(:,channelIds) = circshift(obj.dataBuffer(:,channelIds),[-numNewSamples 0]);
                 rowIdx = size(obj.dataBuffer,1)-numNewSamples+1:size(obj.dataBuffer,1);
-                obj.dataBuffer(rowIdx,:) = newData;
+                obj.dataBuffer(rowIdx,channelIds) = newData;
             end
         end
         

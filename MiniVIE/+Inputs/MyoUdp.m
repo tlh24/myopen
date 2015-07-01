@@ -1,5 +1,5 @@
 classdef MyoUdp < Inputs.SignalInput
-    % Class for interfacing Thalmic Labs Myo Cuff via pnet udp.  The basic
+    % Class for interfacing Thalmic Labs Myo Armband via pnet udp.  The basic
     % architecture is that the Myo SDK is used within MyoUdp.exe which
     % handles device interface and low level communications.  The
     % executable file then streams the EMG, orientation, accelerometer, and
@@ -36,15 +36,30 @@ classdef MyoUdp < Inputs.SignalInput
     %     obj.initialize();
     %     hViewer = GUIs.guiSignalViewer(obj);
     %
+    % Installation Notes
+    %
+    % The MyoUdp class will launch a helper program MyoUdp.exe based on the
+    % Myo Armband SDK for streaming EMG data.  This executable requires the
+    % Microsoft Visual Studio 2013 Redistributable Package.  If it is not
+    % installed, you may get an error about missing DLL files.
+    % http://www.microsoft.com/en-us/download/confirmation.aspx?id=40784
+    %
+    %
     % Revisions:
     %   1/27/2015 Armiger: Initial revision for streaming EMG
     %   2/24/2015 Armiger: Updated .exe to include orientation data
+    %   7/01/2015 Armiger: Added support for dual streaming armbands (2
+    %                      computers)
     properties
-        UdpStreamReceivePortNumLocal = 10001;
+        UdpPortNum8 = 10001;     % stream port for channels 1-8
+        UdpPortNum16 = 10002;    % stream port for channels 9-16
+        
+        EMG_GAIN = 0.01;  %Scaling from int8 to voltage
     end
     properties (SetAccess = private)
         IsInitialized = 0;
-        UdpStreamReceiveSocket;
+        UdpSocket8;
+        UdpSocket16;
         Buffer
         numPacketsReceived = 0;
         numValidPackets = 0;
@@ -68,11 +83,10 @@ classdef MyoUdp < Inputs.SignalInput
             % status = 0: no error
             % status < 0: Failed
             
-            
             % Note, true sample rate is 200 Hz, but this is upsampled to
             % 100Hz for compatability
             obj.SampleFrequency = 1000; % Hz
-            obj.ChannelIds = (1:8);
+            obj.ChannelIds = 1:16;
             
             status = 0;
             
@@ -82,32 +96,33 @@ classdef MyoUdp < Inputs.SignalInput
             end
             
             % Open a udp port to receive streaming data on
-            obj.UdpStreamReceiveSocket = PnetClass(obj.UdpStreamReceivePortNumLocal);
-            if ~obj.UdpStreamReceiveSocket.initialize()
+            obj.UdpSocket8 = PnetClass(obj.UdpPortNum8);
+            obj.UdpSocket16 = PnetClass(obj.UdpPortNum16);
+            if ~obj.UdpSocket8.initialize()
                 fprintf(2,'[%s] Failed to initialize udp socket\n',mfilename);
                 status = -1;
                 return
-            elseif (obj.UdpStreamReceiveSocket.hSocket ~= 0)
-                fprintf(2,'[%s] Expected receive socket id == 0, got socket id == %d\n',mfilename,obj.UdpStreamReceiveSocket.hSocket);
+            elseif (obj.UdpSocket8.hSocket ~= 0)
+                fprintf(2,'[%s] Expected receive socket id == 0, got socket id == %d\n',mfilename,obj.UdpSocket8.hSocket);
+            end
+            if ~obj.UdpSocket16.initialize()
+                fprintf(2,'[%s] Failed to initialize udp socket\n',mfilename);
+                status = -1;
+                return
             end
             
             % check for data:
-            [~, numReads] = obj.UdpStreamReceiveSocket.getAllData(1e6);
-            
+            [~, numReads] = obj.UdpSocket8.getAllData(1e6);
             if numReads > 0
-                fprintf('[%s] UDP Data Stream Detected\n', mfilename);
+                fprintf('[%s] UDP Data Stream 1-8 Detected\n', mfilename);
             else
-                f = fullfile(fileparts(which('MiniVIE')),'+Inputs','MyoUdp.exe');
-                fprintf('[%s] UDP Data Stream NOT Detected\n', mfilename);
-                
-                reply = questdlg({'UDP Data not detected.' ...
-                    'Launch MyoUdp.exe to begin streaming?'...
-                    '(Ensure that Myo Armband is connected before proceeding)'},...
-                    'Launch MyoUdp.exe','OK','Cancel','OK');
-                if strcmp(reply,'OK')
-                    fprintf('[%s] Launching %s\n', mfilename, f);
-                    system(strcat(f,' &'));
-                end
+                fprintf('[%s] UDP Data Stream 1-8 NOT Detected\n', mfilename);
+            end
+            [~, numReads] = obj.UdpSocket16.getAllData(1e6);
+            if numReads > 0
+                fprintf('[%s] UDP Data Stream 9-16 Detected\n', mfilename);
+            else
+                fprintf('[%s] UDP Data Stream 9-16 NOT Detected\n', mfilename);
             end
             
             % data is [numSamples x numChannels]
@@ -144,123 +159,48 @@ classdef MyoUdp < Inputs.SignalInput
             
             % Update function reads any buffered udp packets and stores
             % them for later use.
-            [cellDataBytes, numReads] = obj.UdpStreamReceiveSocket.getAllData(1e6);
             
-            packetSize = 48;
-            isCorrectSize = cellfun(@length,cellDataBytes) == packetSize;
-            nValidPackets = sum(isCorrectSize);
+            maxRead = 1e6; % max number of buffered UDP packets to read
             
-            if nValidPackets == 0
-                % no new data, nothing to do
-                return
-            end
-            
-            % update totals
-            obj.numPacketsReceived = obj.numPacketsReceived + numReads;
-            obj.numValidPackets = obj.numValidPackets + nValidPackets;
-            
-            % convert 2 2d array: [newPackets by numElements]
-            M = reshape([cellDataBytes{isCorrectSize}],packetSize,[]);
-            
-            channelIds = obj.ChannelIds;
-            %%
-            
-            nValidPackets = size(M,2);
-            
-            % convert EMG samples first (bytes 0..7
-            E = M(1:8,:);
-            
-            % convert uchar to int8 to double
-            b = double(E);
-            b(b > 127) = b(b > 127) - 255;
-            
-            if isempty(b) && sum(~isCorrectSize) > 0
-                fprintf('[%s] Unexpected Packet Size Received\n',mfilename);
-            end
-            
-            % perform upsample
-            upsampleFactor = 5;
-            
-            % repeat samples
-            %e = repmat(b,[5 1]);
-            %f = reshape(e(:),size(b,1),[]);
-            %convertedFrame = f(obj.ChannelIds,:);
-            
-            %interp sampled
-            if nValidPackets > 1
-                g = interp1(b',linspace(1,nValidPackets,nValidPackets*upsampleFactor-upsampleFactor+1));
-            else
-                % can't interpolate
-                g = repmat(b,[1 5])';
-                %disp('Cannot Interpolate')
-            end
-            
-            try
-                % convert Orientation data (bytes 9..48)
-                b = M(9:48,:);  % single bytes
-                s = reshape( typecast(b(:),'single'), 10, []);
-                
-                % onOrientationData provides its current orientation, which is
-                % represented as a unit quaternion.
-                quat = s(1:4,:);
-                % onAccelerometerDataprovides the accelerometer data of myo, in
-                % units of g.
-                accel = s(5:7,:);
-                % onGyroscopeData provides the gyroscope data of myo, in units
-                % of deg / s.
-                gyro = s(8:10,:);
-                
-                % Convert quaternion to rotation matrix
-                % This could fail if all zeros are sent as quaternion
-                % data
-                R = repmat(eye(3),[1 1 nValidPackets]);
-                for i = 1:nValidPackets
-                    try
-                        % renormalize quaternion in case of rounding errors
-                        normQ = quat(:,i) ./ norm(quat(:,i));
-                        % convert to rotation matrix
-                        R(:,:,i) = LinAlg.quaternionToRMatrix(normQ);
-                    catch ME
-                        warning(ME.message);
-                    end
+            % read udp for channels 1-8
+            [cellDataBytes, numReads] = obj.UdpSocket8.getAllData(maxRead);
+            if numReads > 0
+                % convert data bytes
+                [emgData,angle,accel,gyro,nValidPackets] = obj.convertPackets(cellDataBytes);
+                if nValidPackets == 0
+                    disp('Invalid Packets for channels 1-8');
+                    return
                 end
-                % Convert to Euler angles
-                xyz = LinAlg.decompose_R(R);
                 
                 % Display Output
                 if obj.Verbose > 0
-                    fprintf('orient: [%6.1f %6.1f %6.1f]; accel: [%6.2f %6.2f %6.2f]; gyro: [%8.1f %8.1f %8.1f] \n',...
-                        xyz(1,end),xyz(2,end),xyz(3,end),...
+                    fprintf('angle: [%6.1f %6.1f %6.1f]; accel: [%6.2f %6.2f %6.2f]; gyro: [%8.1f %8.1f %8.1f] \n',...
+                        angle(1,end),angle(2,end),angle(3,end),...
                         accel(1,end),accel(2,end),accel(3,end),...
                         gyro(1,end),gyro(2,end),gyro(3,end) );
                 end
                 
-                obj.Orientation = xyz;
+                % update object
+                obj.Orientation = angle;
                 obj.Accelerometer = accel;
                 obj.Gyroscope = gyro;
                 
-            catch ME
-                disp(mfilename);
-                disp('Caught an error');
-                disp(ME.message)
-                keyboard
+                obj.Buffer.addData(obj.EMG_GAIN .* emgData,1:8);
             end
-            EMG_GAIN = 0.01;  %TODO abstract
-            obj.Buffer.addData(EMG_GAIN .* g(:,channelIds));
             
-            return
             
-            % Add however many new samples we received to the rolling
-            % buffer
-            
-            % Place new data in the buffer.  Note this won't overrun
-            % the buffer since there are only 10 samples per packet
-            [numNewSamples, numChannels] = size(convertedFrame);
-            obj.dataBuffer = circshift(obj.dataBuffer,[0 -numNewSamples]);
-            
-            obj.dataBuffer(1:numChannels,end-numNewSamples+1:end) = convertedFrame;
-            dataBuff = obj.dataBuffer(:,end-numSamples+1:end)';
-            
+            % read udp for channels 9-16
+            [cellDataBytes, numReads] = obj.UdpSocket16.getAllData(maxRead);
+            if numReads > 0
+                % convert data bytes
+                [emgData,angle,accel,gyro,nValidPackets] = obj.convertPackets(cellDataBytes);
+                if nValidPackets == 0
+                    disp('Invalid Packets for channels 9-16');
+                    return
+                end
+                
+                obj.Buffer.addData(obj.EMG_GAIN .* emgData,9:16);
+            end
             
         end
         
@@ -291,7 +231,7 @@ classdef MyoUdp < Inputs.SignalInput
             
             %% Setup Sender (Session 2)
             hUdpHostSend = PnetClass(4096,10001,'127.0.0.1');
-            [success, msg] = hUdpHostSend.initialize()
+            [success, msg] = hUdpHostSend.initialize();
             
             %% Send (Session 2)
             i = 1;
@@ -302,6 +242,90 @@ classdef MyoUdp < Inputs.SignalInput
                 pause(eps)
             end
         end
+        function [emgData, xyz, accel, gyro,nValidPackets] = convertPackets(cellDataBytes)
+            % Read buffered udp packets and return results
+            
+            % default outputs
+            [emgData, xyz, accel, gyro] = deal([]);
+            
+            % compute number of valid packets
+            packetSize = 48;
+            isCorrectSize = cellfun(@length,cellDataBytes) == packetSize;
+            nValidPackets = sum(isCorrectSize);
+            
+            if nValidPackets == 0
+                % no new data, nothing to do
+                return
+            end
+            
+            % convert 2d array: [newPackets by numElements]
+            orderedBytes = reshape([cellDataBytes{isCorrectSize}],packetSize,[]);
+            
+            nValidPackets = size(orderedBytes,2);
+            
+            % convert EMG samples first (bytes 0..7)
+            emgBytes = orderedBytes(1:8,:);
+            
+            % convert uchar to int8 to double
+            emgSamples = double(emgBytes);
+            emgSamples(emgSamples > 127) = emgSamples(emgSamples > 127) - 255;
+            
+            if isempty(emgSamples) && sum(~isCorrectSize) > 0
+                fprintf('[%s] Unexpected Packet Size Received\n',mfilename);
+            end
+            
+            % perform upsample
+            upsampleFactor = 5;
+            
+            %interp sampled
+            if nValidPackets > 1
+                emgData = interp1(emgSamples',linspace(1,nValidPackets,nValidPackets*upsampleFactor-upsampleFactor+1));
+            else
+                % can't interpolate
+                emgData = repmat(emgSamples,[1 5])';
+                %disp('Cannot Interpolate')
+            end
+            
+            try
+                % convert Orientation data (bytes 9..48)
+                motionBytes = orderedBytes(9:48,:);  % single bytes
+                singleData = reshape( typecast(motionBytes(:),'single'), 10, []);
+                
+                % onOrientationData provides its current orientation, which is
+                % represented as a unit quaternion.
+                quat = singleData(1:4,:);
+                % onAccelerometerDataprovides the accelerometer data of myo, in
+                % units of g.
+                accel = singleData(5:7,:);
+                % onGyroscopeData provides the gyroscope data of myo, in units
+                % of deg / s.
+                gyro = singleData(8:10,:);
+                
+                % Convert quaternion to rotation matrix
+                % This could fail if all zeros are sent as quaternion
+                % data
+                R = repmat(eye(3),[1 1 nValidPackets]);
+                for i = 1:nValidPackets
+                    try
+                        % renormalize quaternion in case of rounding errors
+                        normQ = quat(:,i) ./ norm(quat(:,i));
+                        % convert to rotation matrix
+                        R(:,:,i) = LinAlg.quaternionToRMatrix(normQ);
+                    catch ME
+                        warning(ME.message);
+                    end
+                end
+                % Convert to Euler angles
+                xyz = LinAlg.decompose_R(R);
+                
+            catch ME
+                disp(mfilename);
+                disp('Caught an error');
+                disp(ME.message)
+                keyboard
+            end
+            
+        end
         function singleObj = getInstance(cmd)
             persistent localObj
             if nargin < 1
@@ -311,7 +335,7 @@ classdef MyoUdp < Inputs.SignalInput
             if cmd < 0
                 fprintf('[%s] Deleting Udp comms object\n',mfilename);
                 try
-                    localObj.UdpStreamReceiveSocket.close();
+                    localObj.UdpSocket8.close();
                 end
                 try
                     localObj.UdpCommandSocket.close();
