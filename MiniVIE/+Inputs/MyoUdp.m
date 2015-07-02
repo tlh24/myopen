@@ -117,6 +117,18 @@ classdef MyoUdp < Inputs.SignalInput
                 fprintf('[%s] UDP Data Stream 1-8 Detected\n', mfilename);
             else
                 fprintf('[%s] UDP Data Stream 1-8 NOT Detected\n', mfilename);
+                
+                f = fullfile(fileparts(which('MiniVIE')),'+Inputs','MyoUdp.exe');
+                fprintf('[%s] UDP Data Stream NOT Detected\n', mfilename);
+                
+                reply = questdlg({'UDP Data not detected.' ...
+                    'Launch MyoUdp.exe to begin streaming?'...
+                    '(Ensure that Myo Armband is connected before proceeding)'},...
+                    'Launch MyoUdp.exe','OK','Cancel','OK');
+                if strcmp(reply,'OK')
+                    fprintf('[%s] Launching %s\n', mfilename, f);
+                    system(strcat(f,' &'));
+                end
             end
             [~, numReads] = obj.UdpSocket16.getAllData(1e6);
             if numReads > 0
