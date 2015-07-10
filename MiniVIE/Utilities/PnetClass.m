@@ -87,7 +87,7 @@ classdef PnetClass < handle
                     % "One or more output arguments not assigned during call to "pnet"."
                     len = pnet(obj.hSocket,'readpacket','noblock');
                 catch ME
-                    fprintf('[%s] Caught pnet error during readpacket: "%s"\n',mfilename,ME.message);
+                    fprintf(2,'[%s] Caught pnet error during readpacket: "%s"\n',mfilename,ME.message);
                     len = 0;
                 end
                 if len > 0
@@ -95,7 +95,7 @@ classdef PnetClass < handle
                         dataBytes = pnet(obj.hSocket,'read',len,'uint8','noblock');
                         numReads = numReads + 1;
                     catch ME
-                        fprintf('[%s] Caught pnet error during read: "%s"\n',mfilename,ME.message);
+                        fprintf(2,'[%s] Caught pnet error during read: "%s"\n',mfilename,ME.message);
                         dataBytes = [];
                     end
                 end
@@ -105,7 +105,7 @@ classdef PnetClass < handle
             % [cellDataBytes, numReads] = getAllData(obj,maxReads)
             % read down buffer and return all packets as cell array
             
-            assert(~isempty(obj.hSocket),'[%s] PnetClass not initialized\n');
+            assert(~isempty(obj.hSocket),'[%s] PnetClass not initialized\n',mfilename);
             
             if nargin < 2
                 maxReads = 500;
@@ -131,7 +131,7 @@ classdef PnetClass < handle
                     % "One or more output arguments not assigned during call to "pnet"."
                     len = pnet(obj.hSocket,'readpacket','noblock');
                 catch ME
-                    fprintf('[%s] Caught pnet error during readpacket: "%s"\n',mfilename,ME.message);
+                    fprintf(2,'[%s] Caught pnet error during readpacket: "%s"\n',mfilename,ME.message);
                     len = 0;
                 end
                 if len > 0

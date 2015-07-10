@@ -965,10 +965,13 @@ classdef MiniVIE < Common.MiniVieObj
         end
         function pbAssessment(obj)
             % Select which type of user assessment is to be performed
-            q = questdlg('Select Assessment','Assessment','TAC','MotionTester','Cancel','TAC');
+            q = questdlg('Select Assessment:','Assessment','TAC-1','TAC-3','MotionTester','TAC-1');
             switch q
-                case 'TAC'
+                case 'TAC-1'
                     GUIs.guiTargetAchievementControl(obj.SignalSource,obj.SignalClassifier,...
+                        obj.TrainingData,obj.FilePrefix);
+                case 'TAC-3'
+                    GUIs.guiTargetAchievementControlMulti(obj.SignalSource,obj.SignalClassifier,...
                         obj.TrainingData,obj.FilePrefix);
                 case 'MotionTester'
                     guiClassifierAssessment(obj.SignalSource,obj.SignalClassifier,...

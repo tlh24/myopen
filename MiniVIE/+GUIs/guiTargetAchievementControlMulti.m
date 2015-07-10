@@ -29,15 +29,18 @@ end
 %}
 
 
-idxTrained = unique(TrainingData.getClassLabels);
-trainedClassNames = TrainingData.ClassNames(idxTrained);
+% get classes with data
+idxTrained = unique(TrainingData.getClassLabels);           % class numbers for classes with data e.g. [ 1 2 3 4 5 10]
+trainedClassNames = TrainingData.ClassNames(idxTrained);    % cell list of trained class names
 
+% Find and remove the rest class 
 isRestClass = strcmpi(trainedClassNames,'No Movement');
 if ~any(isRestClass)
     fprintf('[%s] Failed to find "No Movement" class in training data\n',mfilename);
 end
 trainedClassNames(isRestClass) = [];
 
+% ensure that there are valid classes
 if isempty(trainedClassNames)
     errordlg('No Trained Data Exists');
     return
@@ -106,28 +109,34 @@ partialFile = [FilePrefix datestr(now,'yyyymmdd_HHMMSS') extension];
 
 % Need to cross reference trained classes with allowable degrees of
 % freedom.
-for i = 1:length(trainedClassNames)
-    jointInfo(i) = standardClasses(trainedClassNames{i});
-end
+jointInfo = standardClasses(trainedClassNames);
 
 numDof = 8;  % 7 arm motions and one hand
 
-isTestablDof = false(1,numDof);
+isTestableDof = false(1,numDof);
 for i = 1:numDof
     % joint has both dof trained.  ok to evaluate
-    isTestablDof(i) = sum([jointInfo(:).JointId] == i) >= 2;
+    isTestableDof(i) = sum([jointInfo(:).JointId] == i) >= 2;
 end
 
-if sum(isTestablDof) < 3
+if sum(isTestableDof) < 3
     str = 'Not enough degrees of freedom trained for TAC3 assessment';
     errordlg(str);
-    error(str);
+    %error(str);
 end
+
+
+
+%%%%%%%%%%%%%%%%%%%%%
+% Begin the TAC
+%%%%%%%%%%%%%%%%%%%%%
+
+
 
 %try
     for iTrial = 1:numTrials
         % Randomize -- pick 3 of the available dof
-        availableDof = find(isTestablDof);
+        availableDof = find(isTestableDof);
         dofTestSet = availableDof(randperm(length(availableDof),3));
         
         availableGrasp = [jointInfo(:).GraspId];
