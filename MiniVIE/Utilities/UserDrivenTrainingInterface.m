@@ -129,9 +129,6 @@ classdef UserDrivenTrainingInterface < Common.MiniVieObj
             
             classNames = obj.TrainingData.ClassNames;
             currentClass = classNames{i};
-
-            % set(obj.hg.hSelection,'String',classNames)
-            % set(obj.hg.hSelection,'FontSize',14)
             
             set(obj.hg.hSelection,'Value',obj.SelectionIndex);
             % Prevent changing class while adding data
@@ -140,13 +137,23 @@ classdef UserDrivenTrainingInterface < Common.MiniVieObj
             else
                 set(obj.hg.hSelection,'Enable','on');
             end
-
-            %image(rot90(obj.Images{i},2),'Parent',obj.hg.ImAxes);
-            image(flipud(obj.Images{i}),'Parent',obj.hg.ImAxes);
+            
+            % Get the image (RGB) and display
+            im = obj.Images{i};
+            
+            % Flip the image manually and display using normal xy axis
+            % since on release R2013 this led to inverted axis labels
+            imFlip = im;
+            for i = 1:size(imFlip,3)
+                % flip each dimension
+                imFlip(:,:,i) = flipud(imFlip(:,:,i));
+            end
+            
+            % show image
+            image(imFlip,'Parent',obj.hg.ImAxes);
             axis(obj.hg.ImAxes,'xy')
             axis(obj.hg.ImAxes,'off')
             daspect(obj.hg.ImAxes,[1 1 1]);
-            %axis(obj.hg.StatusAxes,'off')
             updateBar(obj);
             
             h = title(currentClass,'Parent',obj.hg.ImAxes);
