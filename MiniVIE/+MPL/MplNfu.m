@@ -320,22 +320,26 @@ classdef MplNfu < Scenarios.OnlineRetrainer
                 mplAngles(roc.joints) = interp1(roc.waypoint,roc.angles,rocValue);
                 
                 % generate MUD message using joint angles
+                %obj.GlobalImpedanceValue*ones(1,27));
                 msg = obj.hMud.AllJointsPosVelImpCmd(mplAngles(1:7),zeros(1,7),...
                     mplAngles(8:27),zeros(1,20),...
-                    [100*ones(1,7) 0.1*ones(1,20)]);
-                    %obj.GlobalImpedanceValue*ones(1,27));
+                    [10*ones(1,7) 0.5*ones(1,20)]);
+                    
+                %nfuMsg = [uint8(62);msg(:)];  % append nfu message ID
+                nfuMsg = [uint8(61);msg(:)];  % append nfu message ID
             else
                 % generate MUD message using joint angles and ROC
                 % parameters
                 msg = obj.hMud.ArmPosVelHandRocGrasps(mplAngles(1:7),zeros(1,7),1,rocId,rocVal,1);
+                nfuMsg = [uint8(61);msg(:)];  % append nfu message ID
             end
             
             % write message
-            obj.hNfu.sendUdpCommand([61;msg]);  % append nfu msg header
+            obj.hNfu.sendUdpCommand(nfuMsg);  % append nfu msg header
 
             if obj.includeVirtual
-            % write message
-            obj.hUdp.putData(msg);
+                % write message
+                obj.hUdp.putData(msg);
             end
         
         end

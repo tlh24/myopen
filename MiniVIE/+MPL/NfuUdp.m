@@ -14,6 +14,12 @@ classdef (Sealed) NfuUdp < handle
     % Note data streams start in the initialize function
     %
     %
+    % NFU Message IDs:
+    %   59 - Arm position and hand ROC
+    %   60 - Tactor command
+    %   61 - All joints position
+    %   62 - All joints impedance
+    %
     % Note: cellData = get_buffer(obj,id) currently uses two methods for
     % percepts and for EMG data.  one with flipud and one without.  Needs
     % to be investigated further
@@ -198,7 +204,12 @@ classdef (Sealed) NfuUdp < handle
             db.set_value('NFU_output_to_MPL',single(val))  %% 2 = NFU CAN to limb
             
         end
-        function sendAllJoints(obj,jointAngles)
+        function sendAllJoints(obj,jointAngles,stiffnessCmd)
+            
+            if nargin < 3
+                % use default impedance
+                stiffnessCmd = [5.0*ones(1,7) 0.1*ones(1,20)]; % 16 Nm/rad Upper Arm  0.1-1 Hand
+            end
             
             p = zeros(27,1);
             if length(jointAngles) == 7
@@ -213,8 +224,15 @@ classdef (Sealed) NfuUdp < handle
             % RSA 3/28/2014 - Added temporary offset for Thumb CMC_AD_AB
             %p(24) = p(24) - (25*pi/180);
             
-            msg = obj.hMud.DOMPositionCmd(p);
-            obj.sendUdpCommand([61;msg]);  % append nfu msg header
+            % 7/29/2015 - RSA: CHange message to include impedance
+            %msg = obj.hMud.DOMPositionCmd(p);
+            %obj.sendUdpCommand([61;msg]);  % append nfu msg header
+            msg = obj.hMud.AllJointsPosVelImpCmd(p(1:7),zeros(1,7),p(8:27),zeros(1,20),stiffnessCmd);
+            %msg = [uint8(62);msg(:)];  % append nfu message ID
+            msg = [uint8(61);msg(:)];  % append nfu message ID
+            
+            obj.sendUdpCommand(msg);  % append nfu msg header
+            
         end
         
         function sendUdpCommand(obj,msg)

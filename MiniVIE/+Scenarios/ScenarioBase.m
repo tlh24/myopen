@@ -200,8 +200,8 @@ classdef ScenarioBase < Common.MiniVieObj
             switch className
                 case {'No Movement' 'Rest'}
                     % debug for endpoint
-                    if length(s.structState(8).State) >= 3;
-                        s.structState(8).State = [0 0 0];
+                    if length(s.structState(8).State) >= 6;
+                        s.structState(8).State = [0 0 0 0 0 0];
                     end
                 case {'Shoulder Flexion'}
                     s.setVelocity(mpl_upper_arm_enum.SHOULDER_FE,+prSpeed);
@@ -231,18 +231,6 @@ classdef ScenarioBase < Common.MiniVieObj
                     s.setVelocity(mpl_upper_arm_enum.WRIST_FE,+prSpeed);
                 case {'Right' 'Wrist Extend' 'Wrist Extend Out' 'Wrist_Extend'}
                     s.setVelocity(mpl_upper_arm_enum.WRIST_FE,-prSpeed);
-                case 'Endpoint Up'
-                    eV = [-prSpeed 0 0];
-                case 'Endpoint Down'
-                    eV = [+prSpeed 0 0];
-                case 'Endpoint Out'
-                    eV = [0 +prSpeed 0];
-                case 'Endpoint In'
-                    eV = [0 -prSpeed 0];
-                case 'Endpoint Left'
-                    eV = [0 0 -prSpeed];
-                case 'Endpoint Right'
-                    eV = [0 0 +prSpeed];
                 case {'Whole Arm Roc 1 FWD' 'Whole Arm Roc FWD'}
                     rocId = 16;
                     rocV = 0.1;
@@ -265,24 +253,41 @@ classdef ScenarioBase < Common.MiniVieObj
             
             if strncmp(className,'Endpoint',8)
                 
+                Vx = 0.1*prSpeed;
+                Vy = 0.1*prSpeed;
+                Vz = 0.1*prSpeed;
                 roll = 0.1*prSpeed;
                 pitch = 0.1*prSpeed;
                 yaw = 0.1*prSpeed;
                 
                 switch className
+                    case 'Endpoint Up'
+                        s.structState(8).State = [Vx 0 0 0 0 0];
+                    case 'Endpoint Down'
+                        s.structState(8).State = [-Vx 0 0 0 0 0];
+                    case 'Endpoint In'
+                        s.structState(8).State = [0 Vy 0 0 0 0];
+                    case 'Endpoint Out'
+                        s.structState(8).State = [0 -Vy 0 0 0 0];
+                    case 'Endpoint Left'
+                        s.structState(8).State = [0 0 Vz 0 0 0];
+                    case 'Endpoint Right'
                     case     'Endpoint Roll In'
-                        s.structState(8).State = [roll 0 0];
+                        s.structState(8).State = [0 0 -Vz 0 0 0];
                     case     'Endpoint Roll Out'
-                        s.structState(8).State = [-roll 0 0];
+                        s.structState(8).State = [0 0 0 -roll 0 0];
                     case     'Endpoint Pitch Up'
-                        s.structState(8).State = [0 pitch 0];
+                        s.structState(8).State = [0 0 0 0 pitch 0];
                     case     'Endpoint Pitch Down'
-                        s.structState(8).State = [0 -pitch 0];
+                        s.structState(8).State = [0 0 0 0 -pitch 0];
                     case     'Endpoint Yaw In'
-                        s.structState(8).State = [0 0 yaw];
+                        s.structState(8).State = [0 0 0 0 0 yaw];
                     case     'Endpoint Yaw Out'
-                        s.structState(8).State = [0 0 -yaw];
+                        s.structState(8).State = [0 0 0 0 0 -yaw];
+                    otherwise
+                        s.structState(8).State = 0;
                 end
+
                 
                 % offset = [0 pi/2 pi/2 0 pi/2];
                 % [v,J,p] = MPL_JacobianBound(...

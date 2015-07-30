@@ -1,5 +1,8 @@
 function [ obj ] = RunMpl
 
+% Set patient parameter set
+UserConfig.getInstance('MPL_05_TR_R_user_config.xml');
+
 p.guiName = 'MiniVIE-NFU-MPL';
 p.filePrefix = UserConfig.getUserConfigVar('userFilePrefix','NEW_USER_');
 strNfuIp = UserConfig.getUserConfigVar('mplNfuIp','192.168.1.111');

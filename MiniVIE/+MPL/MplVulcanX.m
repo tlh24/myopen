@@ -107,12 +107,12 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
             % check for endpoint control command.  Currently hijacking the
             % state variable
             
-            if length(rocId) >= 3
-                endPtVelocities = [0 0 0]';
-                endPtOrientationVelocities = rocId';
+            if length(rocId) >= 6
+                endPtVelocities = rocId(1:3)'
+                endPtOrientationVelocities = rocId(4:6)';
                 rocMode = 1;
                 rocTableIDs = 1;
-                rocTableValues = 1;
+                rocTableValues = 0;
                 rocWeights  = 1;
                 
                 msg = obj.hMud.EndpointVelocity6HandRocGrasps( ...
@@ -160,7 +160,7 @@ classdef MplVulcanX < Scenarios.OnlineRetrainer
 
                 % check bounds
                 rocValue = max(min(rocValue,1),0);
-                
+                rocId
                 % lookup the Roc id and find the right table
                 iEntry = (rocId == [obj.RocTable(:).id]);
                 if sum(iEntry) < 1
