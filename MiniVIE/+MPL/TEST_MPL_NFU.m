@@ -11,9 +11,9 @@ mud = MPL.MudCommandEncoder();
 % msg = AllJointsPosVelImpCmd(obj,armPositions[7],armVelocities[7], ...
 %                                 fingerPositions[20],fingerVelocities[20], ...
 %                                 stiffnessCmd[27])
-armPositions = [0 0 0 0 0.0 0 0.3*randn];
+armPositions = [0 0 0 0 -0.4 0 0.3];
 armVelocities = zeros(1,7);
-fingerPositions = 0.3*rand*ones(1,20);
+fingerPositions = 0*ones(1,20);
 fingerPositions(mud.INDEX_AB_AD) = -fingerPositions(mud.INDEX_AB_AD);
 fingerPositions(mud.THUMB_CMC_AD_AB) = 2*fingerPositions(mud.THUMB_CMC_AD_AB);
 fingerVelocities = zeros(1,20);

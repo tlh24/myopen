@@ -43,14 +43,16 @@ cellTests = {
     'Haptics02',    '[9] HapticAlgorithm Runs HapticAlgorithm within  MPL.MplNfu < Scenarios.ScenarioBase'
     'Joystick01',   '[10] Joystick Runs JoyMexClass preview for 15 seconds'
     'Edit01',       '[11] edit mpltest.m'
-    'MplWrist02',   '[12] Test MPL wrist range of motion [MPL.NfuUdp.getInstance MPL.MudCommandEncoder]'
-    'MplWrist03',   '[13] Test MPL wrist range of motion with tactor'
-    'MplShoulderFe','[14] Test MPL shoulder fe range of motion'
-    'MplShouldAbAd','[15] Test MPL shoulder abad range of motion'
-    'MplHumeralRot','[16] Test MPL humeral rot range of motion'
-    'MplElbow',     '[17] Test MPL elbow range of motion'
+    'MplThumb',     '[12] Test MPL Thumb'
     'exit',         '[0] Exit'
     };
+
+%     'MplWrist02',   '[12] Test MPL wrist range of motion [MPL.NfuUdp.getInstance MPL.MudCommandEncoder]'
+%     'MplWrist03',   '[13] Test MPL wrist range of motion with tactor'
+%     'MplShoulderFe','[14] Test MPL shoulder fe range of motion'
+%     'MplShouldAbAd','[15] Test MPL shoulder abad range of motion'
+%     'MplHumeralRot','[16] Test MPL humeral rot range of motion'
+%     'MplElbow',     '[17] Test MPL elbow range of motion'
 
 for i = 1:size(cellTests,1)
     fprintf('%s\n',cellTests{i,2});
@@ -127,7 +129,7 @@ switch testId
         %test mpl wrist ROM
         hNfu = MPL.NfuUdp.getInstance;
         assert(hNfu.initialize() >=0 ,'NFU Init Failed');
-
+        
         tic;
         while StartStopForm
             drawnow
@@ -148,7 +150,7 @@ switch testId
             hNfu.tactorControl(tactorId, 100, tVal, 100, 100, 0);
             tactorId = 4;
             hNfu.tactorControl(tactorId, 100, 100-tVal, 100, 100, 0);
-
+            
             fprintf('Wrist Angle: %6.2f\t Tactor: %d\n',val,tVal);
             
             pause(0.02);  % control rate here
@@ -165,7 +167,7 @@ switch testId
         hNfu.initialize();
         
         structRoc = MPL.RocTable.createRocTables();
-
+        
         for iRoc = [3 5 6 8 16]%1:length(roc)
             RocId = structRoc(iRoc).id;
             RocName = structRoc(iRoc).name;
@@ -227,6 +229,34 @@ switch testId
             fprintf('tcplisten success: %d\n',t);
             pnet(t,'close');
             pnet(p,'close');
+        end
+    case 'MplThumb'
+        hNfu = MPL.NfuUdp.getInstance;
+        hNfu.initialize();
+        mud = MPL.MudCommandEncoder();
+        
+        armPositions = zeros(1,7);
+        armVelocities = zeros(1,7);
+        fingerPositions = zeros(1,20);
+        fingerVelocities = zeros(1,20);
+        stiffnessCmd = [5.0*ones(1,7) 1*ones(1,20)]; % 16 Nm/rad Upper Arm  0.1-1 Hand
+        N = 10;
+        maxVal = 0.9;
+        StartStopForm([]);
+        while StartStopForm
+            for i = 20:-1:17
+                for j = [linspace(0,maxVal,N) linspace(maxVal,0,N)]
+                    fingerPositions(i) = j;
+                    fingerPositions(mud.INDEX_AB_AD) = -fingerPositions(mud.INDEX_AB_AD);
+                    fingerPositions(mud.THUMB_CMC_AD_AB) = 2*fingerPositions(mud.THUMB_CMC_AD_AB);
+                    msg = mud.AllJointsPosVelImpCmd(armPositions,armVelocities,fingerPositions,fingerVelocities,stiffnessCmd);
+                    msg = [uint8(61);msg];  % append nfu message ID
+                    %msg = mud.AllJointsPosVelCmd(armPositions,armVelocities,fingerPositions,fingerVelocities);
+                    %msg = [uint8(61),msg];  % append nfu message ID
+                    hNfu.sendUdpCommand(msg);  % append nfu msg header
+                    pause(0.02)
+                end
+            end
         end
     otherwise
         fprintf('Unmatched test "%s"\n',testId);

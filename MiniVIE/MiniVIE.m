@@ -839,7 +839,6 @@ classdef MiniVIE < Common.MiniVieObj
                     disp('yup')
                     ch = obj.SignalViewer.hChannelSelect.SelectedChannels;
                     obj.SignalClassifier.setActiveChannels(ch);
-                    
                 end
                 
             end

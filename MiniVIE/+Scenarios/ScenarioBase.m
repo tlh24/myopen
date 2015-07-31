@@ -252,6 +252,7 @@ classdef ScenarioBase < Common.MiniVieObj
             end
             
             if strncmp(className,'Endpoint',8)
+                % Handle Endpoint Classes under a special case
                 
                 Vx = 0.1*prSpeed;
                 Vy = 0.1*prSpeed;
@@ -261,31 +262,32 @@ classdef ScenarioBase < Common.MiniVieObj
                 yaw = 0.1*prSpeed;
                 
                 switch className
-                    case 'Endpoint Up'
-                        s.structState(8).State = [Vx 0 0 0 0 0];
-                    case 'Endpoint Down'
-                        s.structState(8).State = [-Vx 0 0 0 0 0];
-                    case 'Endpoint In'
-                        s.structState(8).State = [0 Vy 0 0 0 0];
                     case 'Endpoint Out'
-                        s.structState(8).State = [0 -Vy 0 0 0 0];
+                        s.structState(8).State = [Vx 0 0 0 0 0 0 0];
+                    case 'Endpoint In'
+                        s.structState(8).State = [-Vx 0 0 0 0 0 0 0];
                     case 'Endpoint Left'
-                        s.structState(8).State = [0 0 Vz 0 0 0];
+                        s.structState(8).State = [0 Vy 0 0 0 0 0 0];
                     case 'Endpoint Right'
-                    case     'Endpoint Roll In'
-                        s.structState(8).State = [0 0 -Vz 0 0 0];
-                    case     'Endpoint Roll Out'
-                        s.structState(8).State = [0 0 0 -roll 0 0];
-                    case     'Endpoint Pitch Up'
-                        s.structState(8).State = [0 0 0 0 pitch 0];
-                    case     'Endpoint Pitch Down'
-                        s.structState(8).State = [0 0 0 0 -pitch 0];
-                    case     'Endpoint Yaw In'
-                        s.structState(8).State = [0 0 0 0 0 yaw];
-                    case     'Endpoint Yaw Out'
-                        s.structState(8).State = [0 0 0 0 0 -yaw];
+                        s.structState(8).State = [0 -Vy 0 0 0 0 0 0];
+                    case 'Endpoint Up'
+                        s.structState(8).State = [0 0 Vz 0 0 0 0 0];
+                    case 'Endpoint Down'
+                        s.structState(8).State = [0 0 -Vz 0 0 0 0 0];
+                    case 'Endpoint Roll In'
+                        s.structState(8).State = [0 0 0 roll 0 0 0 0 0];
+                    case 'Endpoint Roll Out'
+                        s.structState(8).State = [0 0 0 -roll 0 0 0 0];
+                    case 'Endpoint Pitch Up'
+                        s.structState(8).State = [0 0 0 0 pitch 0 0 0];
+                    case 'Endpoint Pitch Down'
+                        s.structState(8).State = [0 0 0 0 -pitch 0 0 0];
+                    case 'Endpoint Yaw In'
+                        s.structState(8).State = [0 0 0 0 0 yaw 0 0];
+                    case 'Endpoint Yaw Out'
+                        s.structState(8).State = [0 0 0 0 0 -yaw 0 0];
                     otherwise
-                        s.structState(8).State = 0;
+                        warning('Unmatched Endpoint Class');
                 end
 
                 
@@ -339,25 +341,49 @@ classdef ScenarioBase < Common.MiniVieObj
             % Handle special case for grasp auto open.  In this paradigm,
             % only hand close patterns are trained.  The hand opens only
             % during no movement classes
-            % TODO: Implement
-            %                         % Auto-open
-            %                         if obj.AutoOpenSpeed > 0
-            %                             desiredGraspVelocity = -obj.AutoOpenSpeed;
-            %                         end
             
             s = obj.ArmStateModel;
+
+            % Set a switch for sending hand open / close with endpoint
+            isEndpointMode = length(s.structState(8).State) >= 6;
+            
             switch graspName
                 case 'Hand Open'
-                    s.setVelocity(s.RocStateId,-prSpeed);
+
+                    if isEndpointMode
+                        rocId = 1;
+                        rocValue = 1;
+                        s.structState(8).State = [0 0 0 0 0 0 rocId rocValue];
+                    else
+                        % Joint Mode
+                        s.setVelocity(s.RocStateId,-prSpeed);
+                    end
+                    
                 case cellGrasps
                     % Any valid grasp == Hand Close
                     graspId = enumGrasp( strcmp(graspName,cellGrasps) );
                     if obj.GraspValue < obj.GraspChangeThreshold
                         s.setRocId(graspId);
                     end
-                    s.setVelocity(s.RocStateId,+prSpeed);
+                    
+                    if isEndpointMode
+                        rocId = 1;
+                        rocValue = -1;
+                        s.structState(8).State = [0 0 0 0 0 0 rocId rocValue];
+                    else
+                        % Joint Mode
+                        s.setVelocity(s.RocStateId,+prSpeed);
+                    end
+                
                 case {'No Movement','Rest'}
-                    s.setVelocity(s.RocStateId,0);
+                    if isEndpointMode
+                        rocId = 1;
+                        rocValue = 0;
+                        s.structState(8).State = [0 0 0 0 0 0 rocId rocValue];
+                    else
+                        % Joint Mode
+                        s.setVelocity(s.RocStateId,0);
+                    end
                     
                     % Auto-open
                     if obj.AutoOpenSpeed > 0
