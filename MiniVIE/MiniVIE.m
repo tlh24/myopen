@@ -94,7 +94,7 @@ classdef MiniVIE < Common.MiniVieObj
                 'Label','Tools');
             obj.hg.MenuToolsRocEdit = uimenu(obj.hg.MenuTools,...
                 'Label','ROC Editor...',...
-                'Callback', @(src,evt) GUIs.guiRocEditor('WrRocDefaults.xml') );
+                'Callback', @(src,evt) GUIs.guiRocEditor(UserConfig.getUserConfigVar('rocTable','WrRocDefaults.xml')) );
             
             function closeFig(obj)
                 try
