@@ -166,8 +166,11 @@ switch testId
         hNfu = MPL.NfuUdp.getInstance;
         hNfu.initialize();
         
-        structRoc = MPL.RocTable.createRocTables();
+        t = UserConfig.getUserConfigVar('rocTable','WrRocDefaults.xml');
+        structRoc = MPL.RocTable.readRocTable(t);
         
+        StartStopForm([]);
+        while StartStopForm
         for iRoc = [3 5 6 8 16]%1:length(roc)
             RocId = structRoc(iRoc).id;
             RocName = structRoc(iRoc).name;
@@ -191,7 +194,8 @@ switch testId
                 hNfu.sendAllJoints(mplAngles);
                 pause(0.02);
             end
-            disp('Press any key...');pause;
+            disp('Wait...');pause(1);
+        end
         end
         hNfu.sendAllJoints(armTestStart);
     case 'Haptics01'
