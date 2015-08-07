@@ -94,7 +94,7 @@ classdef MiniVIE < Common.MiniVieObj
                 'Label','Tools');
             obj.hg.MenuToolsRocEdit = uimenu(obj.hg.MenuTools,...
                 'Label','ROC Editor...',...
-                'Callback', @(src,evt) GUIs.guiRocEditor(UserConfig.getUserConfigVar('rocTable','WrRocDefaults.xml')) );
+                'Callback', @(src,evt) cbRocEditor(obj) );
             
             function closeFig(obj)
                 try
@@ -978,6 +978,20 @@ classdef MiniVIE < Common.MiniVieObj
                 otherwise
                     return
             end
+        end
+        % Callback (cb) functions
+        function cbRocEditor(obj)
+            % Launch the ROC Editor.  
+            
+            % Ensure that if a scenario exists that it is not running
+            if ~isempty(obj.Presentation)
+                obj.Presentation.stop();
+                drawnow
+            end
+            
+            % Open GUI
+            rocTable = UserConfig.getUserConfigVar('rocTable','WrRocDefaults.xml');
+            GUIs.guiRocEditor(rocTable);
         end
     end
     methods (Static = true)
