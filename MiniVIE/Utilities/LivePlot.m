@@ -95,7 +95,11 @@ classdef LivePlot < handle
                 axLim(2) = max(dataRange(:));
                 yLimits = axLim;
                 if isempty(obj.AxisLimits)
-                    ylim(obj.hAxes,yLimits.*1.02);
+                    if all(yLimits == 0)
+                        yLimits = [-1 1];
+                    else
+                        ylim(obj.hAxes,yLimits.*1.02);
+                    end
                 else
                     ylim(obj.hAxes,obj.AxisLimits);
                 end

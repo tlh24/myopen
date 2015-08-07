@@ -45,6 +45,8 @@ classdef (Sealed) NfuUdp < handle
         hLogFile
         
         busVoltageWarn = 22; %V
+        
+        Verbose = 1;
     end
     properties (SetAccess = private)
         hMud = MPL.MudCommandEncoder();
@@ -73,7 +75,7 @@ classdef (Sealed) NfuUdp < handle
         sum4
         
         numPacketsReceived = 0;
-                
+        
     end
     properties (Constant = true)
         nfuStates = {
@@ -111,7 +113,7 @@ classdef (Sealed) NfuUdp < handle
                 fprintf('[%s] NFU Comms already initialized\n',mfilename);
                 
                 % 7/7/2014 RSA: Resend limb and stream enable commands on initialization
-                % this is applicable if the limb is reset / power cycled to allow matlab 
+                % this is applicable if the limb is reset / power cycled to allow matlab
                 % to reestablish communications
                 fprintf('[%s] Enabling NFU Percepts Data Stream\n',mfilename);
                 obj.enableStreaming(5);
@@ -158,9 +160,9 @@ classdef (Sealed) NfuUdp < handle
                 % delay between messages
                 pause(0.1);
                 
-%                 % Enable Percepts
-%                 fprintf('[%s] Enabling Percepts Data Stream\n',mfilename);
-%                 obj.enableStreaming(4);
+                %                 % Enable Percepts
+                %                 fprintf('[%s] Enabling Percepts Data Stream\n',mfilename);
+                %                 obj.enableStreaming(4);
             else
                 % Enable Percepts
                 
@@ -183,6 +185,85 @@ classdef (Sealed) NfuUdp < handle
             obj.IsInitialized = true;
             
             obj.enableRunMode;
+            
+        end
+        function [ status, result ] = ping(obj,isBlocking)
+            % Ping the limb system using the underlying windows ping
+            % command
+            %
+            % argument "isBlocking", if true, will block until a successful
+            % ping is received (default)
+            %
+            % returns status = 0 and, in result, the ping output string.
+            % If "ping" fails or does not exist on your system, system
+            % returns a nonzero value in status, and an explanatory message
+            % in result.
+            %
+            % Note, the command status is checked for a valid response
+            % string the the system status variable may be 0 (success) even
+            % if the destinatino host is unreachable
+            %
+            % 07AUG2015 Armiger: Created
+            
+            if nargin < 2
+                isBlocking = true; %default
+            end
+            
+            ip = obj.Hostname;
+            
+            if ispc
+                % windows format
+                strPing = sprintf('ping %s -n 1',ip);
+            else
+                % unix (mac) format
+                strPing = sprintf('ping %s -c 1',ip);
+            end
+            
+            if obj.Verbose
+                fprintf('[%s] Trying to ping %s...\n',mfilename,obj.Hostname);
+            end
+            
+            status = 1;
+            while status
+                
+                % Execute system ping command: status == 0 is good, otherwise 1 if bad
+                [~,result] = system(strPing);
+                
+                % Note this case returns success even though the ping failed
+                %
+                % Pinging 192.168.1.111 with 32 bytes of data:
+                % Reply from 192.168.1.200: Destination host unreachable.
+                %
+                % Ping statistics for 192.168.1.111:
+                %     Packets: Sent = 1, Received = 1, Lost = 0 (0% loss)
+                
+                % Look for these strings in the response to determine success
+                if ispc
+                    % windows format
+                    strSuccess = sprintf('Reply from %s: bytes=32',ip);
+                else
+                    % unix format
+                    %strSuccess = '1 packets transmitted, 1 received';
+                    
+                    % TODO: unix / mac response is untested
+                    disp(result)
+                    error('Untested ping response output');
+                end
+                
+                status = isempty( strfind(result,strSuccess) );
+                
+                if obj.Verbose
+                    if status
+                        fprintf('[%s] Ping Failed\n',mfilename);
+                    else
+                        fprintf('[%s] Ping Success\n',mfilename)
+                    end
+                end
+                
+                if ~isBlocking
+                    break;
+                end
+            end % while
             
         end
         function enableRunMode(obj)
@@ -378,7 +459,8 @@ classdef (Sealed) NfuUdp < handle
                     
                     % mark all as read
                     obj.newData2(:) = false;
-                    
+                otherwise
+                    error('Invalid Buffer');
             end
             
         end
@@ -389,6 +471,11 @@ classdef (Sealed) NfuUdp < handle
             
             [cellDataBytes, numReads] = obj.UdpStreamReceiveSocket.getAllData();
             
+            if obj.Verbose >= 2
+                fprintf('Packets Read:')
+                disp(cellDataBytes)
+            end
+            
             %check how far back we read to get caught up with stream
             if numReads > 20
                 numReads
@@ -396,7 +483,7 @@ classdef (Sealed) NfuUdp < handle
             for i = 1:numReads
                 dataBytes = cellDataBytes{i};
                 len = length(dataBytes);
-
+                
                 if (len == 406) || (len == 726)
                     % Store EMG Data
                     %
@@ -479,12 +566,8 @@ classdef (Sealed) NfuUdp < handle
                     % percepts
                     
                     b2 = dataBytes(727:end);  %percept bytes
+
                     %obj.UdpBuffer2{obj.ptr2} = percept_bytes_to_signal(b2);
-                    
-                    % TODO: Disabled percept message
-                    continue
-                    
-                    
                     obj.UdpBuffer2{obj.ptr2} = decode_percept_msg(b2);
                     obj.newData2(obj.ptr2) = true;
                     
@@ -619,7 +702,7 @@ classdef (Sealed) NfuUdp < handle
             if isempty(localObj) || ~isvalid(localObj)
                 fprintf('[%s] Calling constructor\n',mfilename);
                 localObj = MPL.NfuUdp;
-
+                
                 localObj.Hostname = UserConfig.getUserConfigVar('mplNfuIp','192.168.1.111');
                 localObj.UdpStreamReceivePortNumLocal = UserConfig.getUserConfigVar('mplNfuUdpStreamPort',9027);
                 localObj.TcpPortNum = UserConfig.getUserConfigVar('mplNfuTcpCommandPort',6200);
@@ -779,38 +862,40 @@ end
 
 function tlm = decode_percept_msg(b)
 
-% tlm = 
-% 
+tlm = [];
+
+% tlm =
+%
 %                  Percept: [1x10 struct]
 %        UnactuatedPercept: [1x8 struct]
 %              FtsnPercept: [1x5 struct]
 %     ContactSensorPercept: [1x1 struct]
-    
+
 
 if nargin < 1
-b = [...
-    106    0    0    0  255  255    0  208  255    0  208  255    0    0    4    0   47  116    0    0    0    1    0   43 ...
-    224    1    0    0  209  255   51   80    0    0    0  248  255   45   52    0    0    0  255    0  208  255    0    0 ...
-    2    0   47  116    0    0    0  254  255   43  224    1    0    0  210  255   51   80    0    0    0  243  255   45 ...
-    52    0    0    0  255    0  208  255    0    0  252  255   47  116    0    0    0  253  255   43  224    1    0    0 ...
-    206  255   51   80    0    0    0  247  255   45   52    0    0    0    2    0   59   15    0    0    0    0    0   40 ...
-    247  255   72    1  255    7   49  254    0    0    0    0    0   49   82    1    0    0  225  255   45   58    0    0 ...
-    0    0    0   60    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 ...
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 ...
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0  160  122  131   67  186  166   34 ...
-    26  136   33  170  131  255    0  208  255    0    0  252  255   47  116    0    0    0  253  255   43  224    1    0 ...
-    0  207  255   51   80    0    0    0  247  255   45   52    0    0    0    4    0   59   15    0    0    0    1    0 ...
-    40  247  255   72    1  255    7   49  254    0    0    0    1    0   49   82    1    0    0  226  255   45   58    0 ...
-    0    0    0    0   60    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 ...
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 ...
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0  160  106  170   49  122  165 ...
-    41  234  134   27  250  131   67   90  165   24   58  136   33  202  131   67  218  164   24   26  136   25   26  132 ...
-    67  234  165   42   10  136   32  250  131   67  250  167   38   26  139   33   10  131  234  132    0    0    0    0 ...
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 ...
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 ...
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 ...
-    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 ...
-    0    0    0    0    0    0    0    0    0    0    0    0];
+    b = [...
+        106    0    0    0  255  255    0  208  255    0  208  255    0    0    4    0   47  116    0    0    0    1    0   43 ...
+        224    1    0    0  209  255   51   80    0    0    0  248  255   45   52    0    0    0  255    0  208  255    0    0 ...
+        2    0   47  116    0    0    0  254  255   43  224    1    0    0  210  255   51   80    0    0    0  243  255   45 ...
+        52    0    0    0  255    0  208  255    0    0  252  255   47  116    0    0    0  253  255   43  224    1    0    0 ...
+        206  255   51   80    0    0    0  247  255   45   52    0    0    0    2    0   59   15    0    0    0    0    0   40 ...
+        247  255   72    1  255    7   49  254    0    0    0    0    0   49   82    1    0    0  225  255   45   58    0    0 ...
+        0    0    0   60    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 ...
+        0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 ...
+        0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0  160  122  131   67  186  166   34 ...
+        26  136   33  170  131  255    0  208  255    0    0  252  255   47  116    0    0    0  253  255   43  224    1    0 ...
+        0  207  255   51   80    0    0    0  247  255   45   52    0    0    0    4    0   59   15    0    0    0    1    0 ...
+        40  247  255   72    1  255    7   49  254    0    0    0    1    0   49   82    1    0    0  226  255   45   58    0 ...
+        0    0    0    0   60    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 ...
+        0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 ...
+        0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0  160  106  170   49  122  165 ...
+        41  234  134   27  250  131   67   90  165   24   58  136   33  202  131   67  218  164   24   26  136   25   26  132 ...
+        67  234  165   42   10  136   32  250  131   67  250  167   38   26  139   33   10  131  234  132    0    0    0    0 ...
+        0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 ...
+        0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 ...
+        0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 ...
+        0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 ...
+        0    0    0    0    0    0    0    0    0    0    0    0];
 end
 
 % mixing matlab indexing 1-based and enum count
