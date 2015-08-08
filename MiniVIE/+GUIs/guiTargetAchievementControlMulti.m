@@ -70,7 +70,7 @@ axis(hAxes,[0 0.4 -0.4 0.4 0.3 0.7])
 set([hTarget.handle.hPatch],'FaceColor',blueArm)
 
 % Test parameters
-tTimeout = 20; %seconds
+tTimeout = 45; %seconds
 numTrials = 3;
 requiredHoldTime = 2; %s
 jointAccuracy = 5 * pi / 180; % degrees->radians

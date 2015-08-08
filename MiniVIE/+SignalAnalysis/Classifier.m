@@ -187,11 +187,12 @@ classdef Classifier < Common.MiniVieObj
             fprintf(' %6.2f',obj.VirtualChannelGain);
             fprintf(']\n');
         end
-        function confuseMat = computeConfusion(obj)
+        function [confuseMat, normMat] = computeConfusion(obj)
             % Compute and return confusion matrix.  Note matrix is row
             % dominant in the sense that each row is the desired decision
             % and each column reports the actual decision.
             
+            normMat = [];
             if ~obj.IsTrained
                 fprintf('[%s] Classifier untrained. Cannot compute confusion.\n',mfilename);
                 confuseMat = [];
@@ -223,6 +224,15 @@ classdef Classifier < Common.MiniVieObj
             end
             
             obj.ConfusionMatrix = confuseMat;
+            
+            
+            % Compute the total number of examples
+            classSum = sum(confuseMat,2);
+            % Normalize based on the number of examples
+            normMat = confuseMat ./ repmat(classSum,1,obj.NumClasses);
+            % should not occur, but if divided by zero, set to zero
+            normMat(isnan(normMat)) = 0;
+
         end
         function [normalizedError, classAccuracy] = computeError(obj,hData)
             %[normalizedError, classAccuracy] = computeError(obj,hData)
