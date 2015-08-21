@@ -112,7 +112,7 @@ mmap_test: src/mmap_test.o
 	$(CPP) -o $@ -lrt $^
 
 po8e: src/po8e.o
-	$(CPP) -o $@ -lPO8eStreaming $^
+	$(CPP) -o $@ -lpthread -lPO8eStreaming $^
 
 wf_plot: src/wf_plot.o
 	$(CC) -o $@ -lSDL -lGL -lGLU -lglut -lpthread -lmatio $(HDFLIB) -lpng $^
