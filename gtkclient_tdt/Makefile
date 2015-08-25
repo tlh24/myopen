@@ -7,8 +7,8 @@ JACK = true
 MUDFLAP = false
 STACKPROTECTOR = false
 
-CC  = gcc
-CPP = g++
+CC  = clang
+CPP = clang++
 TARGET = /usr/local/bin
 
 CPPFLAGS := -Iinclude -I/usr/local/include -I../common_host
@@ -35,19 +35,22 @@ endif
 LDFLAGS := -lGL -lGLU -lpthread -lCg -lCgGL -lgsl -lcblas -latlas -lm \
 -lmatio $(HDFLIB) -lprotobuf -lPO8eStreaming #-mcmodel=medium
 
-GLIBS := gtk+-2.0 gtkglext-1.0 gtkglext-x11-1.0 libprocps
+GLIBS := gtk+-2.0 gtkglext-1.0 gtkglext-x11-1.0 lua5.1 libprocps
 CPPFLAGS += $(shell pkg-config --cflags $(GLIBS))
 LDFLAGS += $(shell pkg-config --libs $(GLIBS))
 
 GOBJS = src/analog.pb.o src/icms.pb.o src/gtkclient.o src/gettime.o \
 src/glInfo.o src/matStor.o src/datawriter.o src/filter.o \
-src/spikebuffer.o src/rls.o src/nlms.o src/threadpool.o
+src/spikebuffer.o src/rls.o src/nlms.o src/lconf.o
+# src/threadpool.o
 COM_HDR = include/channel.h include/wfwriter.h include/medfilt.h \
+include/po8e_conf.h \
 ../common_host/vbo.h \
 ../common_host/cgVertexShader.h \
 ../common_host/firingrate.h \
 ../common_host/timesync.h \
-../common_host/jacksnd.h
+../common_host/jacksnd.h \
+../common_host/lconf.h
 
 ifeq ($(strip $(DBG)),true)
 	CPPFLAGS += -O0 -g -rdynamic -DDEBUG
@@ -87,8 +90,8 @@ src/%.pb.cc src/%.pb.h: proto/%.proto
 	protoc -I$(<D) --cpp_out=src $<
 	mv src/$(*F).pb.h include
 
-src/threadpool.o: src/threadpool.c
-	$(CC) -c $(CFLAGS) $< -o $@
+#src/threadpool.o: src/threadpool.c
+#	$(CC) -c $(CFLAGS) $< -o $@
 
 src/wf_plot.o: src/wf_plot.c
 	$(CC) -c $(CFLAGS) $< -o $@
@@ -111,8 +114,8 @@ analog2mat: src/analog.pb.o src/analog2mat.o src/analogchan.o src/matStor.o
 mmap_test: src/mmap_test.o
 	$(CPP) -o $@ -lrt $^
 
-po8e: src/po8e.o
-	$(CPP) -o $@ -lpthread -lPO8eStreaming $^
+po8e: src/po8e.pb.o src/po8e.o src/lconf.o src/po8e_conf.o
+	$(CPP) -o $@ $(LDFLAGS) $^
 
 wf_plot: src/wf_plot.o
 	$(CC) -o $@ -lSDL -lGL -lGLU -lglut -lpthread -lmatio $(HDFLIB) -lpng $^
@@ -128,7 +131,8 @@ deps:
 	python-jsonpickle python-opengl libboost1.49-all-dev pkg-config \
 	libhdf5-dev libsdl1.2-dev astyle \
 	libprotobuf-dev libprotobuf7 protobuf-compiler \
-	cppcheck libprocps0-dev
+	cppcheck libprocps0-dev \
+	liblua5.1-0-dev
 	#libncurses5-dev 
 
 	@echo ""
@@ -149,14 +153,6 @@ pretty:
 	astyle -A8 --indent=tab -H -k3 ../common_host/*.cpp
 	-rm ../common_host/*.cpp.orig
 
-proto:
-	protoc -Iproto --cpp_out=src proto/spike.proto
-	mv src/spike.pb.h include
-	protoc -Iproto --cpp_out=src proto/icms.proto
-	mv src/icms.pb.h include
-	protoc -Iproto --cpp_out=src proto/analog.proto
-	mv src/analog.pb.h include	
-
 install:
 	install -d $(TARGET)
 	install gtkclient -t $(TARGET)
@@ -168,7 +164,5 @@ install:
 	install cg/fade.cg -t $(TARGET)/cg
 	install cg/fadeColor.cg -t $(TARGET)/cg
 	install cg/threshold.cg -t $(TARGET)/cg
-
-.PHONY: proto
 
 .PRECIOUS: src/%.pb.cc

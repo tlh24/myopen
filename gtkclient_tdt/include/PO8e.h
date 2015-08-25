@@ -135,8 +135,8 @@ extern "C"
 typedef int size_t;
 typedef int bool;
 enum {
-	false = 0,
-	true = 1
+false = 0,
+true = 1
 };
 #endif
 	/* function to get the SVN revision information */

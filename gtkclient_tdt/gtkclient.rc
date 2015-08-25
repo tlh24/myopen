@@ -1,0 +1,30 @@
+-- This configuration file is written in the lua language
+-- More details about lua here: http://www.lua.org/manual/5.1/
+
+-- comments are prefixed by double dashes
+
+data_type = {
+  NEURAL = 0, -- the default type
+  EVENT = 1,
+  ANALOG = 2,
+  STIM_PULSES = 3,
+  BLANK_CLOCK = 4,
+}
+
+channels = {}
+for i=1, 96 do
+  channel = {
+    id = i,
+    scale_factor = 3276700,
+    data_type = data_type.NEURAL,
+  }
+  channels[i] = channel
+end
+
+card = {
+  id = 1,
+  channels = channels,
+}
+
+po8e_cards = {};
+po8e_cards[1] = card

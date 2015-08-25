@@ -5,6 +5,8 @@
 #include <vector>
 #include "PO8e.h"
 
+#include "po8e_conf.h" // parse po8e conf files
+
 #define SRATE_HZ	(24414.0625)
 #define SRATE_KHZ	(24.4140625)
 //#define SRATE_HZ	(48828.1250)
@@ -111,7 +113,21 @@ void po8_thread(PO8e *p)
 
 int main(void)
 {
-	usleep(4e5);
+	po8eConf pc;
+
+	pc.loadConf("gtkclient.rc");
+
+	for (size_t i=0;i<pc.cards.size();i++) {
+		printf("card %lu in conf (%d channels)\n",
+			pc.cards[i]->id(), 
+			pc.cards[i]->channel_size()
+		);
+		for (int j=0;j<pc.cards[i]->channel_size();j++) {
+			auto channel = pc.cards[i]->channel(j);
+			printf("  ch: %02lu: scale_factor: %lu data_type: %d\n",
+				channel.id(), channel.scale_factor(), channel.data_type());
+		}
+	}
 
 	std::vector <std::thread> threads;
 	std::vector <PO8e *> cards;
