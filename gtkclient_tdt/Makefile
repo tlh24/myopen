@@ -31,7 +31,6 @@ else
         endif
 endif
 
-
 LDFLAGS := -lGL -lGLU -lpthread -lCg -lCgGL -lgsl -lcblas -latlas -lm \
 -lmatio $(HDFLIB) -lprotobuf -lPO8eStreaming #-mcmodel=medium
 
@@ -86,12 +85,12 @@ src/%.o: src/%.cpp $(COM_HDR)
 src/%.o: ../common_host/%.cpp $(COM_HDR)
 	$(CPP) -c $(CPPFLAGS) $< -o $@
 
+src/%.pb.o: src/%.pb.cc $(COM_HDR)
+	$(CPP) -c $(CPPFLAGS) $< -o $@
+
 src/%.pb.cc src/%.pb.h: proto/%.proto
 	protoc -I$(<D) --cpp_out=src $<
 	mv src/$(*F).pb.h include
-
-#src/threadpool.o: src/threadpool.c
-#	$(CC) -c $(CFLAGS) $< -o $@
 
 src/wf_plot.o: src/wf_plot.c
 	$(CC) -c $(CFLAGS) $< -o $@
