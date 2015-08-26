@@ -26,9 +26,9 @@ bool po8eConf::loadConf(const char *conf)
 	return true;
 }
 // calling function should free memory
-po8e_card * po8eConf::loadCard(size_t idx)
+po8eCard * po8eConf::loadCard(size_t idx)
 {
-	auto card = new po8e_card;
+	auto card = new po8eCard;
 	size_t stack = 0;
 	lua_getglobal(L, "po8e_cards");
 	stack++;
@@ -54,6 +54,13 @@ po8e_card * po8eConf::loadCard(size_t idx)
 				chan->set_id(lua_tointeger(L, -1));
 				lua_pop(L, 1);
 				stack--;
+				lua_getfield(L, -1, "name");
+				stack++;
+				if (lua_isstring(L, -1)) {
+					chan->set_name(lua_tostring(L, -1));
+				}
+				lua_pop(L, 1);
+				stack--;
 				lua_getfield(L, -1, "scale_factor");
 				stack++;
 				if (lua_isnumber(L, -1))
@@ -65,22 +72,22 @@ po8e_card * po8eConf::loadCard(size_t idx)
 				if (lua_isnumber(L, -1)) {
 					switch (lua_tointeger(L, -1)) {
 						case 0:
-							chan->set_data_type(po8e_channel::NEURAL);
+							chan->set_data_type(po8eChannel::NEURAL);
 							break;
 						case 1:
-							chan->set_data_type(po8e_channel::EVENT);
+							chan->set_data_type(po8eChannel::EVENT);
 							break;
 						case 2:
-							chan->set_data_type(po8e_channel::ANALOG);
+							chan->set_data_type(po8eChannel::ANALOG);
 							break;
 						case 3:
-							chan->set_data_type(po8e_channel::STIM_PULSES);
+							chan->set_data_type(po8eChannel::STIM_PULSES);
 							break;
 						case 4:
-							chan->set_data_type(po8e_channel::BLANK_CLOCK);
+							chan->set_data_type(po8eChannel::BLANK_CLOCK);
 							break;
 						default:
-							chan->set_data_type(po8e_channel::NEURAL);
+							chan->set_data_type(po8eChannel::NEURAL);
 					}
 				}
 				lua_pop(L, 1);

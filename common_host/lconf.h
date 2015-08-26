@@ -1,6 +1,7 @@
 #ifndef _INCLUDE_LCONF_
 #define _INCLUDE_LCONF_
 
+#include <string>
 #include <lua.hpp>
 
 using namespace std;
@@ -11,11 +12,13 @@ public:
 
 	luaConf();
 	~luaConf();
-	bool loadConf(const char *conf);
+	virtual const char *name();
+	virtual bool loadConf(const char *conf);
 	bool getString(string varName, string &varValue);
 	bool getBool(string varName);
+protected:
+	lua_State *L;
 private:
-	lua_State *m_L;
 };
 
 #endif

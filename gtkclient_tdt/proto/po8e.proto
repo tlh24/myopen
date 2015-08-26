@@ -1,13 +1,14 @@
 package gtkclient;
 
-message po8e_card {
+message po8eCard {
 	required uint64 id = 1; // zero-indexed
-	repeated po8e_channel channel = 2;
+	repeated po8eChannel channel = 2;
 }
 
-message po8e_channel {
+message po8eChannel {
 	required uint64 id = 1; // 1-indexed
-	optional uint64 scale_factor = 2 [default = 1];
+	optional string name = 2;
+	optional uint64 scale_factor = 3 [default = 1];
 	enum DataTypes {
 	  NEURAL = 0; // uses scale_factor
 	  EVENT = 1;
@@ -15,5 +16,5 @@ message po8e_channel {
 	  STIM_PULSES = 3;
 	  BLANK_CLOCK = 4;
 	}
-	optional DataTypes data_type = 3 [default = NEURAL];
+	optional DataTypes data_type = 4 [default = NEURAL];
 }

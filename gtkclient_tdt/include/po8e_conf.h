@@ -15,10 +15,10 @@ public:
 	~po8eConf();
 	const char *name();
 	bool loadConf(const char *conf);
-	vector <po8e_card*> cards;
+	vector <po8eCard*> cards;
 protected:
 private:
-	po8e_card * loadCard(size_t i);
+	po8eCard * loadCard(size_t i);
 	size_t numCards();
 	bool isCard(int index);
 	bool isChannel(int index);
