@@ -15,6 +15,7 @@ channels = {}
 for i=1, 96 do
   channel = {
     id = i,
+    name = string.format("%s_%03d", "M1", i),
     scale_factor = 3276700,
     data_type = data_type.NEURAL,
   }
