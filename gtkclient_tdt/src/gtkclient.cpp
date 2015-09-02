@@ -294,7 +294,7 @@ void destroy(int)
 {
 	//save the old values..
 	g_die = true;
-	sleep(0.5);
+	sleep(1);
 	gtk_main_quit();
 	saveState();
 	if (g_vsFadeColor)
