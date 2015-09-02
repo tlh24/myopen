@@ -21,7 +21,9 @@
 #include <proc/readproc.h>
 #include <inttypes.h>
 #include <sys/time.h>
-#include <pthread.h>
+#include <thread>
+#include <algorithm>
+#include <vector>
 #include <sched.h>
 #include <netinet/in.h>
 #include <stdlib.h>
@@ -45,7 +47,6 @@
 
 #include "readerwriterqueue.h"
 
-#include "threadpool.h"
 #include "PO8e.h"
 
 #include "gettime.h"
@@ -83,8 +84,6 @@ cgVertexShader		*g_vsThreshold;
 using namespace std;
 using namespace moodycamel; // for lockfree queues
 
-//threadpool_t *g_pool;
-
 char	g_prefstr[256];
 
 float	g_cursPos[2];
@@ -99,7 +98,7 @@ i64		g_fbufR; //display thread reads from here - copies to mem
 
 ReaderWriterQueue<gsl_vector *> g_filterbuf(NSAMP); // for nlms filtering
 
-ReaderWriterQueue<PO8Data> g_databuffer(1024);
+std::vector <ReaderWriterQueue<PO8Data>*> g_dataqueues;
 
 SpikeBuffer g_spikebuf[NCHAN];
 
@@ -220,10 +219,10 @@ GLuint g_vbo2[2] = {0,0}; //for spikes.
 
 //global labels..
 GtkWidget *g_infoLabel;
-GtkWidget *g_channelSpin[4] = {0,0,0,0};
-GtkWidget *g_gainSpin[4] = {0,0,0,0};
-GtkWidget *g_apertureSpin[8] = {0,0,0,0};
-GtkWidget *g_enabledChkBx[4] = {0,0,0,0};
+GtkWidget *g_channelSpin[4] = {nullptr,nullptr,nullptr,nullptr};
+GtkWidget *g_gainSpin[4] = {nullptr,nullptr,nullptr,nullptr};
+GtkWidget *g_apertureSpin[8] = {nullptr,nullptr,nullptr,nullptr};
+GtkWidget *g_enabledChkBx[4] = {nullptr,nullptr,nullptr,nullptr};
 GtkWidget *g_spikeFileSizeLabel;
 GtkWidget *g_notebook;
 int g_uiRecursion = 0; //prevents programmatic changes to the UI
@@ -242,8 +241,8 @@ void saveState()
 		g_c[i]->save(&ms);
 		g_nlms[i]->save(&ms);
 	}
-	for (int i=0; i<STIMCHAN; i++) {
-		g_artifact[i]->save(&ms);
+	for (auto &elem : g_artifact) {
+		elem->save(&ms);
 	}
 	for (int i=0; i<4; i++) {
 		ms.setValue(i, "channel", g_channel[i]);
@@ -294,7 +293,7 @@ void destroy(int)
 {
 	//save the old values..
 	g_die = true;
-	sleep(0.5);
+	sleep(1);
 	gtk_main_quit();
 	saveState();
 	if (g_vsFadeColor)
@@ -303,23 +302,23 @@ void destroy(int)
 		delete g_vsThreshold;
 	cgDestroyContext(myCgContext);
 	if (g_vbo1Init) {
-		for (int k=0; k<NFBUF; k++)
-			glDeleteBuffersARB(1, &g_vbo1[k]);
+		for (auto &elem : g_vbo1)
+			glDeleteBuffersARB(1, &elem);
 		glDeleteBuffersARB(2, g_vbo2);
 	}
 	for (int i=0; i<NCHAN; i++) {
 		delete g_c[i];
 		delete g_nlms[i];
 	}
-	for (int i=0; i<STIMCHAN; i++)
-		delete g_artifact[i];
+	for (auto &elem : g_artifact)
+		delete elem;
 }
 void gsl_matrix_to_mat(gsl_matrix *x, const char *fname)
 {
 	// write a gsl matrix to a .mat file.
 	// does not free the matrix.
 	mat_t *mat;
-	mat = Mat_CreateVer(fname,NULL,MAT_FT_MAT73);
+	mat = Mat_CreateVer(fname,nullptr,MAT_FT_MAT73);
 	if (!mat) {
 		printf("could not open %s for writing \n", fname);
 		return;
@@ -374,11 +373,11 @@ void BuildFont(void)
 	// connection to the display in the DISPLAY environment
 	// value, and will be around only long enough to load
 	// the font.
-	dpy = XOpenDisplay(NULL); // default to DISPLAY env.
+	dpy = XOpenDisplay(nullptr); // default to DISPLAY env.
 	fontInfo = XLoadQueryFont(dpy, "-adobe-helvetica-medium-r-normal--14-*-*-*-p-*-iso8859-1");
-	if (fontInfo == NULL) {
+	if (fontInfo == nullptr) {
 		fontInfo = XLoadQueryFont(dpy, "fixed");
-		if (fontInfo == NULL) {
+		if (fontInfo == nullptr) {
 			printf("no X font available?\n");
 		}
 	}
@@ -401,7 +400,7 @@ void KillFont(void)
 }
 void glPrint(char *text) // custom gl print routine.
 {
-	if (text == NULL) { // if there's no text, do nothing.
+	if (text == nullptr) { // if there's no text, do nothing.
 		return;
 	}
 	glPushAttrib(GL_LIST_BIT);  // alert that we're about to offset the display lists with glListBase
@@ -433,9 +432,9 @@ void updateCursPos(float x, float y)
 	g_cursPos[0] = x/g_viewportSize[0];
 	g_cursPos[1] = y/g_viewportSize[1];
 	//convert to -1 to +1
-	for (int i=0; i<2; i++) {
-		g_cursPos[i] -= 0.5f;
-		g_cursPos[i] *= 2.f;
+	for (auto &g_cursPo : g_cursPos) {
+		g_cursPo -= 0.5f;
+		g_cursPo *= 2.f;
 	}
 	g_cursPos[1] *= -1; //zero at the top for gtk; bottom for opengl.
 }
@@ -603,8 +602,8 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 			}
 		}
 		//and the waveform buffers.
-		for (int i=0; i<NCHAN; i++)
-			g_c[i]->copy();
+		for (auto &elem : g_c)
+			elem->copy();
 	}
 	/* draw in here */
 	glMatrixMode(GL_MODELVIEW);
@@ -677,7 +676,7 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 			checkForCgError("enabling vertex profile");
 
 			glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo1[k]);
-			glVertexPointer(3, GL_FLOAT, 0, 0);
+			glVertexPointer(3, GL_FLOAT, 0, nullptr);
 			glPointSize(1);
 			glDrawArrays(g_drawmode[g_drawmodep], 0, g_nsamp);
 
@@ -729,7 +728,7 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 		for (int k=0; k<2; k++) {
 			glEnableClientState(GL_VERTEX_ARRAY);
 			glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo2[k]);
-			glVertexPointer(2, GL_FLOAT, 0, 0);
+			glVertexPointer(2, GL_FLOAT, 0, nullptr);
 			if (k == 0)
 				glColor4f (0., 1., 1., 0.3f); //cyan
 			else
@@ -949,7 +948,7 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 			glGenBuffersARB(1, &g_vbo1[k]);
 			glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo1[k]);
 			glBufferDataARB(GL_ARRAY_BUFFER_ARB, NSAMP*3*sizeof(float),
-			                0, GL_DYNAMIC_DRAW_ARB);
+			                nullptr, GL_DYNAMIC_DRAW_ARB);
 			glBufferSubDataARB(GL_ARRAY_BUFFER_ARB,
 			                   0, sizeof(g_fbuf[0]), g_fbuf[k]);
 			int bufferSize;
@@ -968,12 +967,12 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 			glGenBuffersARB(1, &g_vbo2[k]);
 			glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo2[k]);
 			glBufferDataARB(GL_ARRAY_BUFFER_ARB, sizeof(g_sbuf[k]),
-			                0, GL_DYNAMIC_DRAW_ARB);
+			                nullptr, GL_DYNAMIC_DRAW_ARB);
 			glBufferSubDataARB(GL_ARRAY_BUFFER_ARB,
 			                   0, sizeof(g_sbuf[k]), g_sbuf[k]);
 		}
-		for (int i=0; i<NCHAN; i++) {
-			g_c[i]->configure(g_vsFadeColor);
+		for (auto &elem : g_c) {
+			elem->configure(g_vsFadeColor);
 		}
 	}
 	BuildFont(); //so we're in the right context?
@@ -1015,7 +1014,7 @@ void destroyGUI(GtkWidget *, gpointer)
 {
 	destroy(SIGINT);
 }
-void *nlms_train_thread(void *)
+void nlms_train()
 {
 	gsl_vector *xvec;
 	while (!g_die) {
@@ -1035,8 +1034,6 @@ void *nlms_train_thread(void *)
 		}
 		gsl_vector_free(xvec);
 	}
-
-	return NULL;
 }
 void sorter(int ch)
 {
@@ -1171,7 +1168,7 @@ void sorter(int ch)
 		}
 	}
 }
-void *wfwrite_thread(void *)
+void wfwrite()
 {
 	while (!g_die) {
 		if (g_wfwriter.write()) //if it can write, it will.
@@ -1179,9 +1176,8 @@ void *wfwrite_thread(void *)
 		else
 			usleep(1e5);
 	}
-	return NULL;
 }
-void *icmswrite_thread(void *)
+void icmswrite()
 {
 	while (!g_die) {
 		if (g_icmswriter.write()) //if it can write, it will.
@@ -1189,9 +1185,8 @@ void *icmswrite_thread(void *)
 		else
 			usleep(1e5);
 	}
-	return NULL;
 }
-void *analogwrite_thread(void *)
+void analogwrite()
 {
 	while (!g_die) {
 		if (g_analogwriter.write()) // if it can write, it will
@@ -1199,9 +1194,8 @@ void *analogwrite_thread(void *)
 		else
 			usleep(1e5);
 	}
-	return NULL;
 }
-void *analogwrite_prefilter_thread(void *)
+void analogwrite_prefilter()
 {
 	while (!g_die) {
 		if (g_analogwriter_prefilter.write()) // if it can write, it will
@@ -1209,230 +1203,152 @@ void *analogwrite_prefilter_thread(void *)
 		else
 			usleep(1e5);
 	}
-	return NULL;
 }
-void *po8_thread(void *)
+void po8e(PO8e *p, ReaderWriterQueue<PO8Data> *q)
 {
-	// operate on the currently running thread.
-	pthread_t this_thread = pthread_self();
-	// struct sched_param is used to store the scheduling priority
-	struct sched_param params;
-	// set the priority higher (SCHED_FIFO is first in first out real-time)
-	// this will set the priority to the lowest level for SCHED_FIFO
-	params.sched_priority = sched_get_priority_min(SCHED_FIFO);
-	// Attempt to set thread real-time priority to the SCHED_FIFO policy
-	pthread_setschedparam(this_thread, SCHED_FIFO, &params);
+	size_t bufmax = 10000;	// must be >= 10000
 
-	PO8e *card = NULL;
-	bool simulate = false;
-	int bufmax = 10000;	// 2^14 > 10000
+	size_t read_size = 1024;
+
+	printf("Waiting for the stream to start ...\n");
+	p->waitForDataReady(60*60*1000);
+
+	if (p == nullptr) {
+		return; /// xxx how to recover?
+	}
+
+	auto nchan = p->numChannels();
+	auto bps = p->dataSampleSize(); // bytes/sample
+	printf("Card %p: %d channels @ %d bytes/sample\n", (void *)p, nchan, bps);
+
+	// 10000 samples * 2 bytes/sample * nChannels
+	auto buff = new short[bufmax*(nchan)];
+	auto tick = new int64_t[bufmax];
+
+	// get the initial tick value. hopefully a small number
+	p->readBlock(buff, 1, tick);
+	int64_t last_tick = tick[0] - 1;
 
 	while (!g_die) {
-		printf("PO8e API Version %s\n", revisionString());
-		int totalcards = PO8e::cardCount();
-		int conn_cards = 0;
-		printf("Found %d PO8e card(s) in the system.\n", totalcards);
-		if (totalcards < 1) {
-			printf("  simulating instead.\n");
-			simulate = true;
+
+		bool stopped = false;
+		size_t numSamples = p->samplesReady(&stopped);
+		if (stopped) {
+			break; // xxx how to recover?
 		}
-		if (!simulate) {
-			card = PO8e::connectToCard(0);
-			if (card == NULL)
-				printf("Connection failed to card 0\n");
-			else {
-				// todo: connect to multiple cards
-				printf("Connection established to card 0 at %p\n", (void *)card);
-				if (!card->startCollecting()) {
-					printf("startCollecting() failed with: %d\n",
-					       card->getLastError());
-					card->flushBufferedData();
-					card->stopCollecting();
-					printf("Releasing card 0\n");
-					PO8e::releaseCard(card);
-					card = NULL;
-				} else {
-					printf("Card is collecting incoming data.\n");
-					conn_cards++;
-					printf("Waiting for the stream to start on card 0 ...\n");
-					g_ts.reset(SRATE_HZ);
-					card->waitForDataReady(60*60*1000);
-					printf("Started\n");
+
+		if (numSamples >= read_size) {
+			if (numSamples > bufmax) {
+				printf("samplesReady() returned too many samples (buffer wrap?): %zu\n",
+				       numSamples);
+				numSamples = bufmax;
+			}
+
+			size_t numRead = p->readBlock(buff, read_size, tick);
+			p->flushBufferedData(numRead);
+
+			if (tick[0] != last_tick + 1) {
+				printf("%p: PO8e tick glitch between blocks. Expected %zu got %zu\n",
+				       p, last_tick+1, tick[0]);
+				g_ts.m_dropped++;
+				// xxx how to recover?
+			}
+			for (size_t i=0; i<numRead-1; i++) {
+				if (tick[i+1] != tick[i] + 1) {
+					printf("%p: PO8e tick glitch within block. Expected %zu got %zu\n",
+					       p, tick[i]+1, tick[i+1]);
+					g_ts.m_dropped++;
+					// xxx how to recover?
 				}
 			}
-		}
-		// start the timer used to compute the speed and set the collected bytes to 0
-		long double starttime = gettime();
-		long double totalSamples = 0.0; //for simulation.
-		double		sinSamples = 0.0; // for driving the sinusoids; resets every 4e4.
-		//long long bytes = 0;
-		unsigned int nchan = NCHAN;
-		unsigned int bps = 2; //bytes/sample
-		if (!simulate && card) {
-			nchan = card->numChannels();
-			bps = card->dataSampleSize();
-			printf("%d channels @ %d bytes/sample\n", nchan, bps);
-		}
-		short *temp = new short[bufmax*(nchan)];  // 2^14 samples * 2 bytes/sample * (nChannels+time+stim+stimclock)
-		short *temptemp = new short[bufmax];
-		int64_t *tdtOffsets = new int64_t[bufmax];
+			last_tick = tick[numRead-1];
 
-		while ((simulate || conn_cards > 0) && !g_die) {
-			if (!simulate && !card->waitForDataReady(60*60*1000)) {
-				// this occurs when the rpvdsex circuit is idled.
-				// and potentially when a glitch happens
-				printf("waitForDataReady() failed with: %d\n",
-				       card->getLastError());
-				card->stopCollecting();
-				conn_cards--;
-				printf("Releasing card 0\n");
-				PO8e::releaseCard(card);
-				card = NULL;
-				break;
+			long double time = gettime();
+			g_po8ePollInterval = (time - g_lastPo8eTime)*1000.0;
+			g_po8eAvgInterval = g_po8eAvgInterval * 0.99 + g_po8ePollInterval * 0.01;
+			g_lastPo8eTime = time;
+
+			// also -- only accept stort-interval responses (ignore outliers..)
+			if (g_po8ePollInterval < g_po8eAvgInterval* 0.5) {
+				g_ts.update(time, last_tick); //also updates the mmap file.
 			}
-			bool stopped = false;
-			int numSamples = 0;
-			if (!simulate) {
-				numSamples = (int)card->samplesReady(&stopped);
-				if (stopped) {
-					printf("Stopped collecting data\n");
-					card->stopCollecting();
-					conn_cards--;
-					printf("Releasing card 0\n");
-					PO8e::releaseCard(card);
-					card = NULL;
-					break;
-				}
-				if (numSamples > 0) {
-					if (numSamples > bufmax) {
-						printf("samplesReady() returned too many samples for buffer (buffer wrap?): %d\n",
-						       numSamples);
-						numSamples = bufmax;
-					}
-					card->readBlock(temp, numSamples, tdtOffsets);
-					card->flushBufferedData(numSamples);
-					totalSamples += numSamples;
-				}
-			} else { //simulate!
-				long double now = gettime();
-				numSamples = (int)((now - starttime)*SRATE_HZ - totalSamples);
-				if (numSamples >= 250) {
-					numSamples = 250;
-					totalSamples = (now - starttime)*SRATE_HZ;
-				}
-				float scale = sin(sinSamples/4e4);
-				for (int i=0; i<numSamples; i++) {
-					temptemp[i] =  (short)(sinf((float)
-					                            ((sinSamples + i)/6.0))*32768.f*scale);
-				}
-				for (int k=0; k<NCHAN; k++) {
-					for (int i=0; i<numSamples; i++) {
-						temp[k*numSamples +i] = temptemp[i];
-					}
-				}
-				// last part of the buffer is just TDT ticks (most recent -> least delay?)
-				// and the stim-chan id
-				for (int i=0; i<numSamples; i++) {
-					int r = (int)(sinSamples +i);
-					temp[NCHAN*numSamples     +i] = r       & 0xffff;
-					temp[(NCHAN+1)*numSamples +i] = (r>>16) & 0xffff;
 
-					int s = 0;
-					temp[(NCHAN+2)*numSamples +i] = s       & 0xffff;
-					temp[(NCHAN+3)*numSamples +i] = (s>>16) & 0xffff;
-
-				}
-				totalSamples += numSamples;
-				sinSamples += numSamples;
-				if (sinSamples > 4e4*2*3.1415926) sinSamples -= 4e4*2*3.1415926;
-				usleep(70);
-			}
-			if (numSamples > 0 && numSamples <= bufmax) {
-				//bytes += numSamples * nchan * bps;
-
-				long double time = gettime();
-				g_po8ePollInterval = (time - g_lastPo8eTime)*1000.0;
-				g_po8eAvgInterval = g_po8eAvgInterval * 0.99 + g_po8ePollInterval * 0.01;
-				g_lastPo8eTime = time;
-
-				// estimate TDT ticks from perf counter
-				// ticks are distributed across two shorts
-				int ticks;
-				ticks  = (unsigned short)(temp[(NCHAN  )*numSamples + numSamples -1]); //we only care about the last tick.
-				ticks += (unsigned short)(temp[(NCHAN+1)*numSamples + numSamples -1]) << 16;
-				// it appears we need a checksum. extract.
-				int cs;
-				cs  = (unsigned short)(temp[(NCHAN+2)*numSamples + numSamples -1]);
-				cs += (unsigned short)(temp[(NCHAN+3)*numSamples + numSamples -1]) << 16;
-				int64_t diff = tdtOffsets[numSamples-1] - (int64_t)ticks;
-				if ((ticks ^ 0x134fbab3) != cs) {
-					printf("\nChecksum fail: %x %x\n", ticks, cs);
-				} else {
-					if (diff != g_tdtOffsetDiff) {
-						printf("\nTDT Offset changed rel. ticks! old: %ld new %ld\n",
-						       g_tdtOffsetDiff, diff);
-					} else {
-						// also -- only accept stort-interval responses (ignore outliers..)
-						if (g_po8ePollInterval < g_po8eAvgInterval* 0.5) {
-							g_ts.update(time, ticks); //also updates the mmap file.
-							g_ts.m_dropped = (int)totalSamples - ticks;
-						}
-					}
-					g_tdtOffsetDiff = diff;
-				}
-
-				PO8Data p;
-				p.data = (short *)malloc((NCHAN+7)*numSamples*sizeof(short));
-				memcpy(p.data, temp, (NCHAN+7)*numSamples*sizeof(short));
-				p.numSamples = numSamples;
-				g_databuffer.enqueue(p);
-				// NB the other thread frees the memory allocated to p.data
-			}
+			PO8Data o;
+			o.data = (short *)malloc(nchan*numRead*sizeof(short));
+			memcpy(o.data, buff, nchan*numRead*sizeof(short));
+			o.numChannels = nchan;
+			o.numSamples = numRead;
+			o.tick = tick[0];
+			q->enqueue(o);
+			// NB the other thread frees the memory allocated to p.data
+		} else {
+			usleep(1e3);
 		}
-		// delete buffers since we have dynamically allocated;
-		delete[] temp;
-		delete[] temptemp;
-		delete[] tdtOffsets;
-		printf("\n");
-		sleep(1);
 	}
-	return 0;
+
+	// delete buffers since we have dynamically allocated;
+	delete[] buff;
+	delete[] tick;
+
+	printf("  stopped collecting data\n");
+	p->stopCollecting();
+	printf("  releasing card %p\n", p);
+	PO8e::releaseCard(p);
+
+	printf("\n");
+	sleep(1);
 }
 
-
-void *worker_thread(void *)
+void worker()
 {
 	gsl_vector *xvec = gsl_vector_alloc(RECCHAN);
 
 	while (!g_die) {
 
-		PO8Data p;
-		int succeeded;
-		do {
-			succeeded = g_databuffer.try_dequeue(p);
-			if (!succeeded)
-				usleep(1e3);
-		} while (!succeeded);
+		// xxx check for alignment on reading from queues
 
-		size_t ns = p.numSamples;
+		PO8Data p[2]; // xxx hard coded
+		for (size_t i=0; i<g_dataqueues.size(); i++) {
+			int succeeded;
+			do {
+				succeeded = g_dataqueues[i]->try_dequeue(p[i]);
+				if (!succeeded)
+					usleep(1e3);
+			} while (!succeeded);
+		}
 
-		float *f 			= new float[ns*NCHAN];
-		unsigned int *tk 	= new unsigned int[ns];
-		unsigned int *stim 	= new unsigned int[ns];
-		bool *blank 		= new bool[ns];
-		float *audio 		= new float[ns];
+		if (p[0].numSamples != p[1].numSamples) {	// handle better
+			printf("bad error\n");
+			break;
+			// xxx
+		}
+
+		auto ns = p[0].numSamples;
+		auto nc = p[0].numChannels;
+
+		auto f 		= new float[ns*nc];
+		auto tk 	= new unsigned int[ns];
+		tk[0] = p[0].tick;
+		for (size_t i=1; i < ns; i++) {
+			tk[i] = tk[i-1] + 1;
+		}
+
+		// xxx check for ticks to be aligned xxx
+
+		auto stim 	= new unsigned int[ns];
+		auto blank 		= new bool[ns];
+		auto audio 		= new float[ns];
 
 		for (size_t k=0; k<ns; k++) {
-			for (int ch=0; ch<NCHAN; ch++) {
-				f[ch*ns+k] = (float)p.data[ch*ns+k]/32767.f;
+			for (size_t ch=0; ch<nc; ch++) {
+				f[ch*ns+k] = (float)p[0].data[ch*ns+k]/32767;
 			}
-			tk[k]    = (unsigned short)(p.data[(NCHAN  )*ns + k]);
-			tk[k]   += (unsigned short)(p.data[(NCHAN+1)*ns + k]) << 16;
-			stim[k]  = (unsigned short)(p.data[(NCHAN+4)*ns + k]);
-			stim[k] += (unsigned short)(p.data[(NCHAN+5)*ns + k]) << 16;
-			blank[k] = p.data[(NCHAN+6)*ns + k] > 0;
+			stim[k]  = (unsigned short)(p[1].data[8*ns + k]);
+			stim[k] += (unsigned short)(p[1].data[9*ns + k]) << 16;
+			blank[k] = p[1].data[10*ns + k] > 0;
 		}
-		free(p.data);
+		free(p[0].data);
+		free(p[1].data);
 
 		// write (pre-filtered) broadband signal to disk
 		if (g_analogwriter_prefilter.enabled()) {
@@ -1530,7 +1446,7 @@ void *worker_thread(void *)
 						g_artifact[j]->m_windex[z]++;
 						if (g_artifact[j]->m_windex[z] >= ARTBUF) {
 							if (g_icmswriter.enabled()) {
-								ICMS *o = new ICMS; // deleted by other thread
+								auto o = new ICMS; // deleted by other thread
 								o->set_ts(g_ts.getTime(tk[k]-ARTBUF));
 								o->set_tick(tk[k]-ARTBUF);
 								o->set_stim_chan(j+1); // 1-indexed
@@ -1601,9 +1517,9 @@ void *worker_thread(void *)
 			}
 
 			// blank based on artifact (must happen after filtering
-			for (int j=0; j<STIMCHAN; j++) {
+			for (auto &elem : g_artifact) {
 				for (int z=0; z<NARTPTR; z++) {
-					i64 ridx = g_artifact[j]->m_rindex[z]; // read pointer
+					i64 ridx = elem->m_rindex[z]; // read pointer
 
 					if (ridx == -1)
 						break;
@@ -1615,9 +1531,9 @@ void *worker_thread(void *)
 							f[ch*ns+k] = 0.f;
 						}
 					}
-					g_artifact[j]->m_rindex[z]++;
-					if (g_artifact[j]->m_rindex[z] >= ARTBUF)
-						g_artifact[j]->m_rindex[z] = -1;
+					elem->m_rindex[z]++;
+					if (elem->m_rindex[z] >= ARTBUF)
+						elem->m_rindex[z] = -1;
 				}
 			}
 
@@ -1715,7 +1631,6 @@ void *worker_thread(void *)
 	}
 
 	gsl_vector_free(xvec);
-	return 0;
 }
 
 void flush_pipe(int fid)
@@ -1729,7 +1644,7 @@ void flush_pipe(int fid)
 	opts ^= O_NONBLOCK;
 	fcntl(fid, F_SETFL, opts);
 }
-void *mmap_thread(void *)
+void mmap_fun()
 {
 	// sockets are too slow -- we need to memmap a file(s).
 	/* matlab can do this -- very well, too! e.g:
@@ -1740,12 +1655,12 @@ void *mmap_thread(void *)
 	// the same for all neurons.
 	int nlags = g_fr[0][0].get_lags();
 	size_t length = (NCHAN+1)*NSORT*nlags*2; // (chans+time)*(2 units)*lags*sizeof(short)
-	mmapHelp *mmh = new mmapHelp(length, "/tmp/binned.mmap");
+	auto mmh = new mmapHelp(length, "/tmp/binned.mmap");
 	volatile unsigned short *bin = (unsigned short *)mmh->m_addr;
 	mmh->prinfo();
-	fifoHelp *pipe_out = new fifoHelp("/tmp/gtkclient_out.fifo");
+	auto pipe_out = new fifoHelp("/tmp/gtkclient_out.fifo");
 	pipe_out->prinfo();
-	fifoHelp *pipe_in = new fifoHelp("/tmp/gtkclient_in.fifo");
+	auto pipe_in = new fifoHelp("/tmp/gtkclient_in.fifo");
 	pipe_in->prinfo();
 	int frame = 0;
 	bin[NCHAN*2*nlags] = 0;
@@ -1778,7 +1693,6 @@ void *mmap_thread(void *)
 	delete mmh;
 	delete pipe_in;
 	delete pipe_out;
-	return NULL;
 }
 static gboolean chanscan(gpointer)
 {
@@ -1883,7 +1797,7 @@ static GtkWidget *mk_spinner(const char *txt, GtkWidget *container,
 	gtk_box_pack_start (GTK_BOX (bx), label, TRUE, TRUE, 2);
 	gtk_widget_show(label);
 	adj = (GtkAdjustment *)gtk_adjustment_new(
-	              start, min, max, step, step, 0.0);
+	          start, min, max, step, step, 0.0);
 	float climb = 0.0;
 	int digits = 0;
 	if (step <= 0.001) {
@@ -1926,7 +1840,7 @@ static void mk_radio(const char *txt, int ntxt,
 	strncpy(buf, txt, 256);
 	char *a = strtok(buf, ",");
 
-	button = gtk_radio_button_new_with_label (NULL, (const char *)a );
+	button = gtk_radio_button_new_with_label (nullptr, (const char *)a );
 	gtk_box_pack_start (GTK_BOX (modebox), button, TRUE, TRUE, 0);
 	gtk_widget_show (button);
 	gtk_signal_connect (GTK_OBJECT (button), "clicked",
@@ -1934,11 +1848,11 @@ static void mk_radio(const char *txt, int ntxt,
 
 	for (int i=1; i<ntxt; i++) {
 		group = gtk_radio_button_get_group (GTK_RADIO_BUTTON (button));
-		a = strtok(0, ",");
+		a = strtok(nullptr, ",");
 		button = gtk_radio_button_new_with_label (group, (const char *)a );
 		gtk_toggle_button_set_active(
-		        GTK_TOGGLE_BUTTON(button),
-		        i == radio_state);
+		    GTK_TOGGLE_BUTTON(button),
+		    i == radio_state);
 		gtk_box_pack_start (GTK_BOX (modebox), button, TRUE, TRUE, 0);
 		gtk_widget_show (button);
 		gtk_signal_connect (GTK_OBJECT (button), "clicked",
@@ -2008,7 +1922,7 @@ static void openSaveSpikesFile(GtkWidget *, gpointer parent_window)
 	                                      GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
 	                                      NULL);
 	gtk_file_chooser_set_do_overwrite_confirmation(
-	        GTK_FILE_CHOOSER (dialog), TRUE);
+	    GTK_FILE_CHOOSER (dialog), TRUE);
 	gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog),d.c_str());
 	gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (dialog),f.c_str());
 	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
@@ -2032,7 +1946,7 @@ static void openSaveICMSFile(GtkWidget *, gpointer parent_window)
 	                                      GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
 	                                      NULL);
 	gtk_file_chooser_set_do_overwrite_confirmation(
-	        GTK_FILE_CHOOSER (dialog), TRUE);
+	    GTK_FILE_CHOOSER (dialog), TRUE);
 	gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog),d.c_str());
 	gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (dialog),f.c_str());
 	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
@@ -2056,7 +1970,7 @@ static void openSaveAnalogFile(GtkWidget *, gpointer parent_window)
 	                                      GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
 	                                      NULL);
 	gtk_file_chooser_set_do_overwrite_confirmation(
-	        GTK_FILE_CHOOSER (dialog), TRUE);
+	    GTK_FILE_CHOOSER (dialog), TRUE);
 	gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog),d.c_str());
 	gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (dialog),f.c_str());
 	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
@@ -2080,7 +1994,7 @@ static void openSaveAnalogPrefilterFile(GtkWidget *, gpointer parent_window)
 	                                      GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
 	                                      NULL);
 	gtk_file_chooser_set_do_overwrite_confirmation(
-	        GTK_FILE_CHOOSER (dialog), TRUE);
+	    GTK_FILE_CHOOSER (dialog), TRUE);
 	gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog),d.c_str());
 	gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (dialog),f.c_str());
 	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
@@ -2151,8 +2065,8 @@ static void templatePopupMenu (GdkEventButton *event, gpointer p)
 
 	/* Note: event can be NULL here when called from view_onPopupMenu;
 	 *  gdk_event_get_time() accepts a NULL argument */
-	gtk_menu_popup(GTK_MENU(menu), NULL, NULL, NULL, NULL,
-	               (event != NULL) ? event->button : 0,
+	gtk_menu_popup(GTK_MENU(menu), nullptr, nullptr, nullptr, nullptr,
+	               (event != nullptr) ? event->button : 0,
 	               gdk_event_get_time((GdkEvent *)event));
 }
 int main(int argc, char **argv)
@@ -2166,7 +2080,7 @@ int main(int argc, char **argv)
 	PROCTAB *pr = openproc(PROC_FILLSTAT);
 	proc_t pr_info;
 	memset(&pr_info, 0, sizeof(pr_info));
-	while (readproc(pr, &pr_info) != NULL) {
+	while (readproc(pr, &pr_info) != nullptr) {
 		if ((!strcmp(pr_info.cmd, "gtkclient")   ||
 		     !strcmp(pr_info.cmd, "timesync")) &&
 		    pr_info.tgid != mypid) {
@@ -2195,9 +2109,9 @@ int main(int argc, char **argv)
 	// compatible with the version of the headers we compiled against.
 	GOOGLE_PROTOBUF_VERIFY_VERSION;
 
-	for (int i=0; i<NCHAN; i++) {
-		g_fr[i][0].set_bin_params(15, 1.0);	// nlags, duration (sec)
-		g_fr[i][1].set_bin_params(15, 1.0);	// nlags, duration (sec)
+	for (auto &elem : g_fr) {
+		elem[0].set_bin_params(15, 1.0);	// nlags, duration (sec)
+		elem[1].set_bin_params(15, 1.0);	// nlags, duration (sec)
 	}
 
 	FiringRate test_fr;
@@ -2347,14 +2261,14 @@ int main(int argc, char **argv)
 	mk_button("Set all gains from A", box1,
 	[](GtkWidget *, gpointer) {
 		float g = gtk_spin_button_get_value(GTK_SPIN_BUTTON(g_gainSpin[0]));
-		for (int i=0; i<NCHAN; i++) {
-			g_c[i]->setGain(g);
-			g_c[i]->resetPca();
+		for (auto &elem : g_c) {
+			elem->setGain(g);
+			elem->resetPca();
 		}
 		for (int i=1; i<4; i++) { // 0 is what we are reading from
 			gtk_spin_button_set_value(GTK_SPIN_BUTTON(g_gainSpin[i]), g);
 		}
-	}, NULL);
+	}, nullptr);
 
 	mk_checkbox("show grid", box1, &g_showContGrid, basic_checkbox_cb);
 
@@ -2371,7 +2285,7 @@ int main(int argc, char **argv)
 		g_nsamp &= (0xffffffff ^ 127);
 		g_nsamp = g_nsamp > NSAMP ? NSAMP : g_nsamp;
 		g_nsamp = g_nsamp < 512 ? 512 : g_nsamp;
-	}, NULL);
+	}, nullptr);
 
 	mk_spinner("Raster span", box1,
 	           g_rasterSpan, 1.0, 100.0, 1.0,
@@ -2469,9 +2383,9 @@ int main(int argc, char **argv)
 
 	mk_button("calc PCA", box1,
 	[](GtkWidget *, gpointer) {
-		for (int h=0; h<4; h++)
-			g_c[g_channel[h]]->computePca();
-	}, NULL);
+		for (auto &elem : g_channel)
+			g_c[elem]->computePca();
+	}, nullptr);
 
 //this concludes sort page.
 	gtk_widget_show (box1);
@@ -2519,13 +2433,13 @@ int main(int argc, char **argv)
 	mk_button("set selected", bx3,
 	[](GtkWidget *, gpointer) {
 		g_c[g_channel[0]]->autoThreshold(g_autoThreshold);
-	}, NULL);
+	}, nullptr);
 	mk_button("set all", bx3,
 	[](GtkWidget *, gpointer) {
-		for (int i=0; i<NCHAN; i++) {
-			g_c[i]->autoThreshold(g_autoThreshold);
+		for (auto &elem : g_c) {
+			elem->autoThreshold(g_autoThreshold);
 		}
-	}, NULL);
+	}, nullptr);
 
 	mk_spinner("Columns", box1, g_spikesCols, 3, 32, 1,
 	           basic_spinint_cb, (gpointer)&g_spikesCols);
@@ -2567,10 +2481,10 @@ int main(int argc, char **argv)
 	gtk_box_pack_start (GTK_BOX (box3), box4, TRUE, TRUE, 0);
 	mk_button("clear lms weights", box4,
 	[](GtkWidget *, gpointer) {
-		for (int i=0; i<NCHAN; i++) {
-			g_nlms[i]->clearWeights();
+		for (auto &g_nlm : g_nlms) {
+			g_nlm->clearWeights();
 		}
-	}, NULL);
+	}, nullptr);
 
 	s = "Artifact Subtraction";
 	frame = gtk_frame_new (s.c_str());
@@ -2602,16 +2516,16 @@ int main(int argc, char **argv)
 	gtk_box_pack_start (GTK_BOX (box3), box4, TRUE, TRUE, 0);
 	mk_button("clear all", box4,
 	[](GtkWidget *, gpointer) {
-		for (int i=0; i<STIMCHAN; i++)
-			g_artifact[i]->clearArtifacts();
-	}, NULL);
+		for (auto &elem : g_artifact)
+			elem->clearArtifacts();
+	}, nullptr);
 
 	box4 = gtk_vbox_new(FALSE, 0);
 	gtk_box_pack_start (GTK_BOX (box3), box4, TRUE, TRUE, 0);
 	mk_button("clear this", box4,
 	[](GtkWidget *, gpointer) {
 		g_artifact[g_stimChanDisp]->clearArtifacts();
-	}, NULL);
+	}, nullptr);
 
 	mk_spinner("stim chan", box2, g_stimChanDisp,
 	           0, STIMCHAN-1, 1, basic_spinint_cb, (gpointer)&g_stimChanDisp);
@@ -2634,7 +2548,7 @@ int main(int argc, char **argv)
 		g_artifactBlankingPreSamps = (x + g_artifactBlankingSamps > ARTBUF)
 		                             ? ARTBUF - g_artifactBlankingSamps : x;
 		gtk_spin_button_set_value(GTK_SPIN_BUTTON(_spin), g_artifactBlankingPreSamps);
-	}, NULL);
+	}, nullptr);
 
 	mk_spinner("blanking\nsamples", box2, g_artifactBlankingSamps, 0, 128, 1,
 	[](GtkWidget *_spin, gpointer) {
@@ -2642,7 +2556,7 @@ int main(int argc, char **argv)
 		g_artifactBlankingSamps = (x + g_artifactBlankingPreSamps > ARTBUF)
 		                          ? ARTBUF - g_artifactBlankingPreSamps : x;
 		gtk_spin_button_set_value(GTK_SPIN_BUTTON(_spin), g_artifactBlankingSamps);
-	}, NULL);
+	}, nullptr);
 
 	mk_checkbox("enable stim clock blanking", box1,
 	            &g_enableStimClockBlanking, basic_checkbox_cb);
@@ -2667,7 +2581,7 @@ int main(int argc, char **argv)
 
 	bxx2 = gtk_vbox_new(TRUE, 0);
 	gtk_container_add(GTK_CONTAINER (bxx1), bxx2);
-	mk_button("Start", bxx2, openSaveSpikesFile, NULL);
+	mk_button("Start", bxx2, openSaveSpikesFile, nullptr);
 	mk_checkbox("WF? (xxx)", bxx2, &g_saveSpikeWF, basic_checkbox_cb);
 
 	bxx2 = gtk_vbox_new(FALSE, 0);
@@ -2675,7 +2589,7 @@ int main(int argc, char **argv)
 	mk_button("Stop", bxx2,
 	[](GtkWidget *, gpointer) {
 		g_wfwriter.close();
-	}, NULL);
+	}, nullptr);
 
 	mk_checkbox("Unsorted?", bxx2, &g_saveUnsorted,	basic_checkbox_cb);
 
@@ -2689,7 +2603,7 @@ int main(int argc, char **argv)
 
 	bxx2 = gtk_vbox_new(TRUE, 0);
 	gtk_container_add(GTK_CONTAINER (bxx1), bxx2);
-	mk_button("Start", bxx2, openSaveICMSFile, NULL);
+	mk_button("Start", bxx2, openSaveICMSFile, nullptr);
 	mk_checkbox("WF?", bxx2, &g_saveICMSWF, basic_checkbox_cb);
 
 	bxx2 = gtk_vbox_new(FALSE, 0);
@@ -2697,7 +2611,7 @@ int main(int argc, char **argv)
 	mk_button("Stop", bxx2,
 	[](GtkWidget *, gpointer) {
 		g_icmswriter.close();
-	}, NULL);
+	}, nullptr);
 
 	s = "Save Analog";
 	frame = gtk_frame_new(s.c_str());
@@ -2708,14 +2622,14 @@ int main(int argc, char **argv)
 
 	bxx2 = gtk_vbox_new (TRUE, 0);
 	gtk_container_add (GTK_CONTAINER (bxx1), bxx2);
-	mk_button("Start", bxx2, openSaveAnalogFile, NULL);
+	mk_button("Start", bxx2, openSaveAnalogFile, nullptr);
 
 	bxx2 = gtk_vbox_new (TRUE, 0);
 	gtk_container_add (GTK_CONTAINER (bxx1), bxx2);
 	mk_button("Stop", bxx2,
 	[](GtkWidget *, gpointer) {
 		g_analogwriter.close();
-	}, NULL);
+	}, nullptr);
 
 	s = "Save Analog (pre-filter)";
 	frame = gtk_frame_new(s.c_str());
@@ -2726,14 +2640,14 @@ int main(int argc, char **argv)
 
 	bxx2 = gtk_vbox_new (TRUE, 0);
 	gtk_container_add (GTK_CONTAINER (bxx1), bxx2);
-	mk_button("Start", bxx2, openSaveAnalogPrefilterFile, NULL);
+	mk_button("Start", bxx2, openSaveAnalogPrefilterFile, nullptr);
 
 	bxx2 = gtk_vbox_new (TRUE, 0);
 	gtk_container_add (GTK_CONTAINER (bxx1), bxx2);
 	mk_button("Stop", bxx2,
 	[](GtkWidget *, gpointer) {
 		g_analogwriter_prefilter.close();
-	}, NULL);
+	}, nullptr);
 
 	mk_radio("active,all", 2, box1, false, "analog channel(s)?", g_whichAnalogSave,
 	[](GtkWidget *_button, gpointer _p) {
@@ -2750,12 +2664,12 @@ int main(int argc, char **argv)
 		g_icmswriter.close();
 		g_analogwriter.close();
 		g_analogwriter_prefilter.close();
-	}, NULL);
+	}, nullptr);
 
 	mk_button("Save Preferences", box1,
 	[](GtkWidget *, gpointer) {
 		saveState();
-	}, NULL);
+	}, nullptr);
 
 
 	// end save page
@@ -2773,7 +2687,7 @@ int main(int argc, char **argv)
 		gboolean *b = (gboolean *)_p;
 		if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(_button))) {
 			*b = true;
-			g_timeout_add(3000, chanscan, (gpointer)0);
+			g_timeout_add(3000, chanscan, (gpointer)nullptr);
 		} else {
 			*b = false;
 		}
@@ -2854,14 +2768,14 @@ int main(int argc, char **argv)
 
 	/* prepare GL */
 	glconfig = gdk_gl_config_new_by_mode (GdkGLConfigMode(
-	                GDK_GL_MODE_RGB |
-	                GDK_GL_MODE_DEPTH |
-	                GDK_GL_MODE_DOUBLE));
+	        GDK_GL_MODE_RGB |
+	        GDK_GL_MODE_DEPTH |
+	        GDK_GL_MODE_DOUBLE));
 
 	if (!glconfig)
 		g_assert_not_reached ();
 
-	if (!gtk_widget_set_gl_capability (da1, glconfig, NULL, TRUE,
+	if (!gtk_widget_set_gl_capability (da1, glconfig, nullptr, TRUE,
 	                                   GDK_GL_RGBA_TYPE)) {
 		g_assert_not_reached ();
 	}
@@ -2902,29 +2816,67 @@ int main(int argc, char **argv)
 
 	printf("artifact buffer: %d samples\n",ARTBUF);
 
+	g_startTime = gettime();
 
-	/*
-	int nthreads = 1;
-	int nqueue = 96;
-	if ((g_pool = threadpool_create(nthreads, nqueue, 0)) == NULL) {
-		printf("could not create thread pool\n");
+	std::vector <std::thread> threads;
+	std::vector <PO8e *> cards;
+
+	printf("PO8e API Version %s\n", revisionString());
+	int totalcards = PO8e::cardCount();
+	printf("Found %d PO8e card(s) in the system.\n", totalcards);
+	if (totalcards < 1) {
+		printf("Quitting.\n");
 		return 1;
 	}
-	printf("worker threads: %d\nqueue size: %d\n", nthreads, nqueue);
-	*/
 
-	pthread_t thread1;
-	pthread_attr_t attr;
-	pthread_attr_init(&attr);
-	g_startTime = gettime();
-	pthread_create( &thread1, &attr, po8_thread,					0 );
-	pthread_create( &thread1, &attr, worker_thread,					0 );
-	pthread_create( &thread1, &attr, wfwrite_thread, 				0 );
-	pthread_create( &thread1, &attr, icmswrite_thread, 				0 );
-	pthread_create( &thread1, &attr, analogwrite_thread,			0 );
-	pthread_create( &thread1, &attr, analogwrite_prefilter_thread,	0 );
-	pthread_create( &thread1, &attr, mmap_thread, 					0 );
-	pthread_create( &thread1, &attr, nlms_train_thread, 			0 );
+	for (int i=0; i<totalcards; i++) {
+		PO8e *p = PO8e::connectToCard(i);
+		if (p != nullptr) {
+			printf("Connection established to card %d at %p\n", i, p);
+			cards.push_back(p);
+		}
+	}
+	if (cards.size() < 1) {
+		printf("Connected to 0 cards. Quitting.\n");
+		return 1;
+	}
+
+	auto configureCard = [&](PO8e* p) -> bool {
+		// return zero on success
+		// return one on failure
+		if (!p->startCollecting())
+		{
+			printf("startCollecting() failed with: %d\n", p->getLastError());
+			p->flushBufferedData();
+			p->stopCollecting();
+			printf("Releasing card %p\n", p);
+			PO8e::releaseCard(p);
+			return 1;
+		}
+		printf("Card %p is collecting incoming data.\n", p);
+		return 0;
+	};
+
+	cards.erase(std::remove_if(
+	                cards.begin(),
+	                cards.end(),
+	                configureCard),
+	            cards.end()
+	           );
+
+	for (size_t i=0; i<cards.size(); i++) {
+		ReaderWriterQueue<PO8Data> *q = new ReaderWriterQueue<PO8Data>(512);
+		threads.push_back(std::thread(po8e, cards[i], q));
+		g_dataqueues.push_back(q);
+	}
+
+	threads.push_back(std::thread(worker));
+	threads.push_back(std::thread(wfwrite));
+	threads.push_back(std::thread(icmswrite));
+	threads.push_back(std::thread(analogwrite));
+	threads.push_back(std::thread(analogwrite_prefilter));
+	threads.push_back(std::thread(mmap_fun));
+	threads.push_back(std::thread(nlms_train));
 
 	//set the initial sampling stage.
 	//gtk_combo_box_set_active(GTK_COMBO_BOX(combo), 12);
@@ -2945,12 +2897,6 @@ int main(int argc, char **argv)
 	jackClose(0);
 #endif
 
-	/*
-	if (threadpool_destroy(g_pool, threadpool_graceful) != 0) {
-		printf("error on threadpool_destroy\n");
-	}
-	*/
-
 	//just in case.
 	g_wfwriter.close();
 	g_icmswriter.close();
@@ -2960,4 +2906,13 @@ int main(int argc, char **argv)
 	KillFont();
 	// Optional:  Delete all global objects allocated by libprotobuf.
 	google::protobuf::ShutdownProtobufLibrary();
+
+	for (auto &thread : threads) {
+		thread.join();
+	}
+
+	for (auto &q : g_dataqueues) {
+		delete q;
+	}
+
 }

@@ -54,10 +54,11 @@ extern bool 	g_die;
 extern int 		g_channel[4];
 //extern double	g_minISI;
 
-
 typedef struct PO8Data {
-	short *data;
+	int64_t tick;	// this is the tick for the first sample
+	size_t numChannels;
 	size_t numSamples;
+	short *data;
 } PO8Data;
 
 
