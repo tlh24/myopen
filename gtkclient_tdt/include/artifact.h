@@ -8,7 +8,6 @@
 #elif defined KHZ_48
 #define ARTBUF 	256
 #else
-#error
 #error Bad sampling rate!
 #endif
 
@@ -37,7 +36,8 @@ public:
 	// which can be easily done recursively,
 	// but for saving snippets of the artifact
 
-	Artifact(int _stimchan, MatStor *ms) {
+	Artifact(int _stimchan, MatStor *ms)
+	{
 		m_stimchan = _stimchan;
 		for (int i=0; i<RECCHAN*ARTBUF; i++) {
 			m_wav[i] = 0.f;
@@ -56,16 +56,19 @@ public:
 		}
 
 	}
-	~Artifact() {
+	~Artifact()
+	{
 
 	}
-	void clearArtifacts()  {
+	void clearArtifacts()
+	{
 		for (int j=0; j<RECCHAN*ARTBUF; j++) {
 			m_wav[j] = 0.f;
 		}
 		m_nsamples = 0;
 	}
-	void draw() {
+	void draw()
+	{
 
 		int rows = RECCHAN / g_spikesCols;
 		if (RECCHAN % g_spikesCols)
@@ -125,7 +128,8 @@ public:
 
 		// xxx chan labels here?
 	}
-	void save(MatStor *ms) {
+	void save(MatStor *ms)
+	{
 		if (ms) {
 			for (int i=0; i<RECCHAN; i++)
 				ms->setValue3(m_stimchan, i, "artifact", &(m_wav[i*ARTBUF]), ARTBUF);

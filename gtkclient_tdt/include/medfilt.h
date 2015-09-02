@@ -10,17 +10,20 @@ private:
 	float v[3];
 
 public:
-	MedFilt3() {
+	MedFilt3()
+	{
 		v[0] = 0.f;
 		v[1] = 0.f;
 		v[2] = 0.f;
 	}
 
-	~MedFilt3() {
+	~MedFilt3()
+	{
 
 	}
 
-	float proc(float x) {
+	float proc(float x)
+	{
 		// update
 		v[0] = v[1];
 		v[1] = v[2];
@@ -42,7 +45,8 @@ private:
 	float v[5];
 
 public:
-	MedFilt5() {
+	MedFilt5()
+	{
 		v[0] = 0.f;
 		v[1] = 0.f;
 		v[2] = 0.f;
@@ -50,11 +54,13 @@ public:
 		v[4] = 0.f;
 	}
 
-	~MedFilt5() {
+	~MedFilt5()
+	{
 
 	}
 
-	float proc(float x) {
+	float proc(float x)
+	{
 		// update
 		v[0] = v[1];
 		v[1] = v[2];

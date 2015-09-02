@@ -48,7 +48,8 @@ public:
 	i64		m_lastSpike[NSORT]; //zero when a spike occurs. in samples.
 	bool	m_enabled;
 
-	Channel(int ch, MatStor *ms) {
+	Channel(int ch, MatStor *ms)
+	{
 		m_wfVbo = new Vbo(6, NWFVBO, NWFSAMP+2); // sorted units, with color.
 		m_usVbo = new Vbo(3, NUSVBO, NWFSAMP+2); // unsorted units, all gray.
 		m_pcaVbo = new VboPca(6, 1024*8, 1, ch, NWFSAMP, ms);
@@ -130,7 +131,8 @@ public:
 			}
 		}
 	}
-	~Channel() {
+	~Channel()
+	{
 		delete m_wfVbo;
 		m_wfVbo = 0;
 		delete m_usVbo;
@@ -138,7 +140,8 @@ public:
 		delete m_pcaVbo;
 		m_pcaVbo = 0;
 	}
-	void save(MatStor *ms) {
+	void save(MatStor *ms)
+	{
 		for (int j=0; j<NSORT; j++) {
 			ms->setValue3(m_ch, j, "pca", &(m_pca[j][0]), NWFSAMP);
 			ms->setValue3(m_ch, j, "template", &(m_template[j][0]), NWFSAMP);
@@ -152,7 +155,8 @@ public:
 		ms->setValue(m_ch, "enabled", m_enabled);
 		m_pcaVbo->save(m_ch, ms);
 	}
-	int addWf(float *wf, int unit, float time, bool updatePCA) {
+	int addWf(float *wf, int unit, float time, bool updatePCA)
+	{
 		if (!m_wfVbo) return 0; //being called from another thread, likely.
 		//wf assumed to be NWFSAMP points long.
 		//wf should range 1 mean 0.
@@ -232,23 +236,27 @@ public:
 		}
 		return unit;
 	}
-	void copy() {
+	void copy()
+	{
 		if (m_wfVbo)  m_wfVbo->copy();
 		if (m_usVbo)  m_usVbo->copy();
 		if (m_pcaVbo) m_pcaVbo->copy(false,false);
 	}
-	void setVertexShader(cgVertexShader *vs) {
+	void setVertexShader(cgVertexShader *vs)
+	{
 		m_pcaVbo->setVertexShader(vs);
 		m_wfVbo->setVertexShader(vs);
 		m_usVbo->setVertexShader(vs);
 	}
-	void configure(cgVertexShader *vs) {
+	void configure(cgVertexShader *vs)
+	{
 		m_pcaVbo->configure();
 		m_wfVbo->configure();
 		m_usVbo->configure();
 		setVertexShader(vs);
 	}
-	bool mouse(float *f) {
+	bool mouse(float *f)
+	{
 		//possibly set the threshold and centering for this channel.
 		//incoming location will be in global coordinates (+-1)
 
@@ -271,13 +279,16 @@ public:
 			return true;
 		} else return false;
 	}
-	void addPoly(float *f) {
+	void addPoly(float *f)
+	{
 		m_pcaVbo->addPoly(f);
 	}
-	void resetPoly() {
+	void resetPoly()
+	{
 		m_pcaVbo->m_polyW = 0;
 	}
-	void setApertureLocal(int n, float aperture) {
+	void setApertureLocal(int n, float aperture)
+	{
 		if (n >= 0 && n <= 1) m_aperture[n] = aperture;
 		float color[3] = {0.f, 1.f, 1.f};
 		if (n == 1) {
@@ -287,26 +298,32 @@ public:
 		}
 		m_pcaVbo->updateAperture(m_template[n], aperture, color);
 	}
-	float getThreshold() {
+	float getThreshold()
+	{
 		return m_threshold;
 	}
-	void setThreshold(float thresh) {
+	void setThreshold(float thresh)
+	{
 		if (thresh != m_threshold)
 			resetPca();
 		m_threshold = thresh;
 	}
-	void autoThreshold(double s) {
+	void autoThreshold(double s)
+	{
 		m_threshold = m_mean + sqrt(m_var) * s;
 	}
-	int getCentering() {
+	int getCentering()
+	{
 		return (int)m_centering;
 	}
-	void setCentering(float c) {
+	void setCentering(float c)
+	{
 		if (c != m_centering)
 			resetPca();
 		m_centering = c;
 	}
-	void setLoc(float x, float y, float w, float h) {
+	void setLoc(float x, float y, float w, float h)
+	{
 		m_wfVbo->setLoc(x, y+h/2, w/2.f, h*m_gain);
 		m_usVbo->setLoc(x, y+h/2, w/2.f, h*m_gain);
 		m_pcaVbo->setLoc(x+w/2.f, y+h/4, w/2.f, h/2.f);
@@ -315,7 +332,8 @@ public:
 		m_loc[2] = w;
 		m_loc[3] = h;
 	}
-	void setGain(float gain) {
+	void setGain(float gain)
+	{
 		float x = m_loc[0];
 		float y = m_loc[1];
 		float w = m_loc[2];
@@ -324,20 +342,25 @@ public:
 		m_usVbo->setLoc(x, y+h/2, w/2.f, h*gain);
 		m_gain = gain;
 	}
-	float getGain() {
+	float getGain()
+	{
 		return m_gain;
 	}
-	void setEnabled(bool enabled) {
+	void setEnabled(bool enabled)
+	{
 		m_enabled = enabled;
 	}
-	bool getEnabled() {
+	bool getEnabled()
+	{
 		return m_enabled;
 	}
-	void toggleEnabled() {
+	void toggleEnabled()
+	{
 		m_enabled = !m_enabled;
 	}
 	void draw(int drawmode, float time, float *cursPos,
-	          bool showPca, bool closest, bool sortMode, bool showWFVgrid) {
+	          bool showPca, bool closest, bool sortMode, bool showWFVgrid)
+	{
 		float ox = m_loc[0];
 		float oy = m_loc[1];
 		float ow = m_loc[2]/2;
@@ -566,7 +589,8 @@ public:
 		snprintf(buf, 64, "Ch %d", m_ch);
 		glPrint(buf);
 	}
-	int updateTemplate(int unit) {
+	int updateTemplate(int unit)
+	{
 		//called when the button is clicked.
 		if (unit < 1 || unit > NSORT) {
 			printf("unit out of range in Channel::updateTemplate()\n");
@@ -591,7 +615,8 @@ public:
 		printf("m_aperture[%d][%d] = %f\n", m_ch, unit-1, m_aperture[unit-1]);
 		return true;
 	}
-	void resetPca() {
+	void resetPca()
+	{
 		//should be called if threshold, gain
 		//(or really anything else) is changed / invalidates current display.
 		m_pcaVbo->reset();
@@ -604,7 +629,8 @@ public:
 			}
 		}
 	}
-	void computePca() {
+	void computePca()
+	{
 		//whatever ... this can be blocking.
 		long double t;
 		int nsamp = MIN(m_pcaVbo->m_w, m_pcaVbo->m_rows);
@@ -726,7 +752,8 @@ public:
 		m_pcaVbo->copy(false,true);
 		printf("copy %Lf\n", gettime()-t);
 	}
-	void updateISI(int unit, int sample) {
+	void updateISI(int unit, int sample)
+	{
 		//this used for calculating ISI.
 		unit -= 1; //comes in 0 = uhnsorted.
 		if (unit >=0 && unit < NSORT) {
@@ -738,12 +765,14 @@ public:
 			m_lastSpike[unit] = sample;
 		}
 	}
-	float getAperture(int unit) {
+	float getAperture(int unit)
+	{
 		if (unit >=0 && unit < NSORT) {
 			return m_aperture[unit];
 		} else return 0.f;
 	}
-	float getApertureUv(int unit) {
+	float getApertureUv(int unit)
+	{
 		//returns the aperture in uv. (uv^2 is less intuitive)
 		//input samples are 1 = 10mV.
 		//so waveform misalignment of 0.1 (1mV) -> 0.01; should be represented as
@@ -753,7 +782,8 @@ public:
 			return sqrt(m_aperture[unit] * 1e8);
 		} else return 0.f;
 	}
-	void setApertureUv(int unit, float aper) {
+	void setApertureUv(int unit, float aper)
+	{
 		if (unit >=0 && unit < NSORT) {
 			setApertureLocal( unit, aper*aper / 1e8);
 		}

@@ -20,7 +20,8 @@ public:
 	virtual ~RecArtifact();
 	void clear();
 	bool add_wf_sample(float f);
-	vector<float> * get_wf_vector() {
+	vector<float> *get_wf_vector()
+	{
 		return &wf;
 	};
 

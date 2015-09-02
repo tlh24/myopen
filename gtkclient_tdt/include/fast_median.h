@@ -38,7 +38,7 @@ datavalue opt_med3(datavalue *p)
 	PIX_SORT(p[0],p[1]) ;
 	PIX_SORT(p[1],p[2]) ;
 	PIX_SORT(p[0],p[1]) ;
-	return(p[1]) ;
+	return (p[1]) ;
 }
 
 
@@ -78,7 +78,7 @@ datavalue opt_med5(datavalue *p)
 	PIX_SORT(p[1],p[2]) ;
 	PIX_SORT(p[2],p[3]) ;
 	PIX_SORT(p[1],p[2]) ;
-	return(p[2]) ;
+	return (p[2]) ;
 }
 
 /*----------------------------------------------------------------------------
@@ -206,7 +206,7 @@ datavalue opt_med9(datavalue *p)
 	PIX_SORT(p[4], p[2]) ;
 	PIX_SORT(p[6], p[4]) ;
 	PIX_SORT(p[4], p[2]) ;
-	return(p[4]) ;
+	return (p[4]) ;
 }
 
 /* based on optimal Batcher's sort for 16 elements, using 63 swaps

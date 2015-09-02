@@ -47,7 +47,8 @@ public:
 	// returns the number of bytes written
 	long bytes();
 
-	const char *name() {
+	const char *name()
+	{
 		return "spike buffer v2";
 	};
 

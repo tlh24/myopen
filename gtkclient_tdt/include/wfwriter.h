@@ -2,6 +2,9 @@
 #define __WFPACKET_H__
 
 #include "gtkclient.h"
+#include <atomic>
+#include <string>
+#include <iostream>
 
 //#define _LARGEFILE_SOURCE enabled by default.
 #define _FILE_OFFSET_BITS 64
@@ -28,14 +31,16 @@ protected:
 	FILE *m_fid;
 
 public:
-	WfWriter() {
+	WfWriter()
+	{
 		m_w = m_r = 0;
 		m_enable = false;
 		m_fn.assign("");
 		m_fid = 0;
 	}
 	~WfWriter() {}
-	FILE *open(char *name) {
+	FILE *open(char *name)
+	{
 		m_fid = fopen(name, "w");
 		if (m_fid == 0)
 			std::cout << "could not open " << name << std::endl;
@@ -45,7 +50,8 @@ public:
 		fprintf(stdout,"WfWriter: started logging to %s.\n",m_fn.c_str());
 		return m_fid;
 	}
-	void close() {
+	void close()
+	{
 		if (m_enable) {
 			write();
 			fclose(m_fid);
@@ -55,13 +61,15 @@ public:
 			fprintf(stdout,"WfWriter: stopped logging to file\n");
 		}
 	}
-	void add(wfpak *wf) {  //non-blocking. call from po8e thread.
+	void add(wfpak *wf)    //non-blocking. call from po8e thread.
+	{
 		if (m_enable) {
 			long w = m_w++; //must be atomic.
 			memcpy(&(m_d[w & WFBUFMASK]), wf, sizeof(wfpak));
 		}
 	}
-	int write() { //call from another thread.
+	int write()   //call from another thread.
+	{
 		if (m_enable) {
 			long w = m_w;
 			for (; m_r<w; m_r++) {
@@ -73,15 +81,18 @@ public:
 		}
 		return 0;
 	}
-	bool enabled() {
+	bool enabled()
+	{
 		return m_enable;
 	}
-	long bytes() {
+	long bytes()
+	{
 		return m_r * sizeof(wfpak);
 	}
 	//convert the file to matlab.
 
-	std::string filename() {
+	std::string filename()
+	{
 		return m_fn;
 	}
 };

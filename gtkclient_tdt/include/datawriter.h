@@ -87,7 +87,8 @@ public:
 	// returns the number of objects in the queue
 	size_t capacity();
 
-	const char *name() {
+	const char *name()
+	{
 		return "Analog Writer v3";
 	};
 
@@ -118,7 +119,8 @@ public:
 	// returns the number of objects in the queue
 	size_t capacity();
 
-	const char *name() {
+	const char *name()
+	{
 		return "ICMS Writer v3";
 	};
 
