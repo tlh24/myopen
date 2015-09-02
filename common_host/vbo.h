@@ -22,7 +22,8 @@ public:
 	GLuint	m_vbo;
 	cgVertexShader *m_vs; //need to convert this to GLSL, not CG -- fewer deps.
 
-	Vbo(int dim, int rows, int cols) {
+	Vbo(int dim, int rows, int cols)
+	{
 		m_dim = dim;
 		m_rows = rows;
 		m_cols = cols;
@@ -44,11 +45,13 @@ public:
 		m_reset = false;
 		m_useSAA = true; //default to headstage SAA algorithm.
 	}
-	virtual ~Vbo() {
+	virtual ~Vbo()
+	{
 		free(m_f);
 		if (m_vbo) glDeleteBuffersARB(1, &m_vbo);
 	}
-	void configure() {
+	void configure()
+	{
 		if (m_vbo) glDeleteBuffersARB(1, &m_vbo);
 		int siz = m_dim*m_rows*m_cols*sizeof(float);
 		glGenBuffersARB(1, &m_vbo);
@@ -58,26 +61,31 @@ public:
 		glBufferSubDataARB(GL_ARRAY_BUFFER_ARB,
 		                   0, siz, m_f);
 	}
-	void setVertexShader(cgVertexShader *vs) {
+	void setVertexShader(cgVertexShader *vs)
+	{
 		// just stores a pointer! must be instantiated elsewhere.
 		m_vs = vs;
 	}
-	void setLoc(float x, float y, float w, float h) {
+	void setLoc(float x, float y, float w, float h)
+	{
 		m_loc[0] = x;
 		m_loc[1] = y;
 		m_loc[2] = w;
 		m_loc[3] = h;
 	}
-	void setColor(float r, float g, float b, float a) {
+	void setColor(float r, float g, float b, float a)
+	{
 		m_color[0] = r;
 		m_color[1] = g;
 		m_color[2] = b;
 		m_color[3] = a;
 	}
-	void setFade(float f) {
+	void setFade(float f)
+	{
 		m_fade = f;
 	}
-	virtual void copy() {
+	void copy()
+	{
 		//copy the new stuff to the VBO. can be called from a different thread.
 		unsigned int sta = m_r % m_rows;
 		unsigned int fin = m_w % m_rows;
@@ -95,17 +103,20 @@ public:
 		}
 		m_r = m_w;
 	}
-	float *addRow() {
+	float *addRow()
+	{
 		float *r = m_f;
 		r += ((m_w % m_rows) * m_dim * m_cols);
 		m_w++;
 		return r; //write to this pointer.
 	}
-	void reset() {
+	void reset()
+	{
 		m_reset = true;
 	}
 	void drawReal(int drawmode, float time, bool update,
-	              float x, float y, float w, float h) { //draws everything! things should be set up at this point..
+	              float x, float y, float w, float h)   //draws everything! things should be set up at this point..
+	{
 		if (!m_vs) {
 			printf("m_vs = NULL in Vbo::drawReal\n");
 			return;
@@ -161,7 +172,8 @@ public:
 			glDisableClientState(GL_COLOR_ARRAY);
 		}
 	}
-	virtual void draw(int drawmode, float time, bool update) {
+	void draw(int drawmode, float time, bool update)
+	{
 		glLineWidth(1.f);
 		drawReal(drawmode, time, update, m_loc[0],m_loc[1],m_loc[2],m_loc[3]);
 	}
@@ -179,7 +191,8 @@ public:
 	int    m_drawWf;
 	int m_wfLen;
 
-	VboPca(int dim, int rows, int cols, int ch, MatStor *ms):Vbo(dim, rows, cols) {
+	VboPca(int dim, int rows, int cols, int ch, MatStor *ms):Vbo(dim, rows, cols)
+	{
 		if (dim != 6) printf("Error: dim != 6 in VboPca\n");
 		m_mean = (float *)malloc(dim * sizeof(float));
 		m_max = (float *)malloc(dim * sizeof(float));
@@ -202,7 +215,8 @@ public:
 		m_drawWf = 0;
 		m_color[3] = -0.5; //additive alpha. so make the points partially transparent.
 	}
-	VboPca(int dim, int rows, int cols, int ch, int wfLen, MatStor *ms):Vbo(dim, rows, cols) {
+	VboPca(int dim, int rows, int cols, int ch, int wfLen, MatStor *ms):Vbo(dim, rows, cols)
+	{
 		// set wfLen in constructor
 		if (dim != 6) printf("Error: dim != 6 in VboPca\n");
 		m_mean = (float *)malloc(dim * sizeof(float));
@@ -226,7 +240,8 @@ public:
 		m_drawWf = 0;
 		m_color[3] = -0.5; //additive alpha. so make the points partially transparent.
 	}
-	VboPca(int dim, int rows, int cols, float *pca_mean, float *pca_max):Vbo(dim, rows, cols) {
+	VboPca(int dim, int rows, int cols, float *pca_mean, float *pca_max):Vbo(dim, rows, cols)
+	{
 		// not dependent on matstor
 		if (dim != 6) printf("Error: dim != 6 in VboPca\n");
 		m_mean = (float *)malloc(dim * sizeof(float));
@@ -248,7 +263,8 @@ public:
 		m_drawWf = 0;
 		m_color[3] = -0.5; //additive alpha. so make the points partially transparent.
 	}
-	virtual ~VboPca() {
+	virtual ~VboPca()
+	{
 		free(m_mean);
 		free(m_max);
 		free(m_maxSmooth);
@@ -256,11 +272,13 @@ public:
 		free(m_wf);
 		free(m_poly);
 	}
-	void save(int ch, MatStor *ms) {
+	void save(int ch, MatStor *ms)
+	{
 		ms->setValue3(ch, 0, "vbopca_mean", m_mean, 6);
 		ms->setValue3(ch, 0, "vbopca_max", m_max, 6);
 	}
-	float *addWf() {
+	float *addWf()
+	{
 		//assumes that we will call addRow() immediately *afterward*.
 		//this is used for the internal cache / mouse selector / aperture recalculation.
 		float *r = m_wf;
@@ -268,13 +286,15 @@ public:
 		return r;
 		//returns a pointer that caller can fill with the waveform.
 	}
-	void calcScale(float &x, float &y, float &w, float &h) {
+	void calcScale(float &x, float &y, float &w, float &h)
+	{
 		w = m_loc[2] / (2.5*m_maxSmooth[0]);
 		h = m_loc[3] / (2*m_maxSmooth[1]);
 		x = m_loc[0] - (m_meanSmooth[0] - m_maxSmooth[0])*w;
 		y = m_loc[1] - (m_meanSmooth[1] - m_maxSmooth[1])*h;
 	}
-	void addPoly(float *curs) {
+	void addPoly(float *curs)
+	{
 		//add it in local coordinates.
 		float x,y,w,h;
 		calcScale(x,y,w,h);
@@ -289,7 +309,8 @@ public:
 		m_poly[p*2 + 1] = cy;
 		m_polyW++;
 	}
-	virtual void copy(bool updateScale, bool updateAll) {
+	void copy(bool updateScale, bool updateAll)
+	{
 		//update the mean & max excursion. only makes sense for 2d data.
 		if (updateScale) {
 			for (int i = m_r; i<m_w; i++) {
@@ -334,7 +355,8 @@ public:
 		}
 		Vbo::copy();
 	}
-	virtual void draw(int drawmode, float time, bool update, float *curs, bool drawclose) {
+	void draw(int drawmode, float time, bool update, float *curs, bool drawclose)
+	{
 		//order: we scale before offset. pretty easy algebra.
 		float x,y,w,h;
 		calcScale(x,y,w,h);
@@ -412,7 +434,8 @@ public:
 		glVertex3f(fx, fy, 0.f);
 		glEnd();
 	}
-	void drawClosestWf(float gain) {
+	void drawClosestWf(float gain)
+	{
 		//offsets to the wafeform display.
 		float ow = m_loc[2];
 		float oh = m_loc[3]*2;
@@ -438,7 +461,8 @@ public:
 		}
 		glEnd();
 	}
-	bool getTemplate(float *temp, float &aperture, float *color) {
+	bool getTemplate(float *temp, float &aperture, float *color)
+	{
 		if (m_polyW < 3) return false;
 
 		for (int i=0; i<m_wfLen; i++)
@@ -548,7 +572,8 @@ public:
 			free(inside);
 		return true;
 	}
-	void updateAperture(float *temp, float aperture, float *color) {
+	void updateAperture(float *temp, float aperture, float *color)
+	{
 		// redisplays the sorting based on MSE / SAA algorithm.
 		// wf and template are range 1 mean 0. (+-0.5)
 		// if m_useSAA aperture is 1/255 whats in the UI.

@@ -1,5 +1,7 @@
 #include "gettime.h"
-#include <time.h>
+#include <sys/time.h>                   // for CLOCK_MONOTONIC_RAW
+#include <time.h>                       // for timespec, clock_gettime
+
 
 long double g_startTime = 0.0;
 

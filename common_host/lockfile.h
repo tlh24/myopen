@@ -19,16 +19,19 @@ public:
 	std::string m_fn;
 	bool m_locked;
 
-	lockfile(const char *fname) {
+	lockfile(const char *fname)
+	{
 		m_fn = std::string(fname);
 		m_locked = false;
 	}
 
-	~lockfile() {
+	~lockfile()
+	{
 	}
 
 	// returns false on success and true on error
-	bool lock() {
+	bool lock()
+	{
 
 		if (m_locked) {
 			printf("%s : already locked\n", m_fn.c_str());
@@ -66,7 +69,8 @@ public:
 	}
 
 	// returns false on success and true on error
-	bool unlock() {
+	bool unlock()
+	{
 
 		if (!m_locked) {
 			printf("%s : not locked\n", m_fn.c_str());

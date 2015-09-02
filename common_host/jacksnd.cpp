@@ -1,16 +1,14 @@
 // this is adapted from jack's simple_client.c
 
-#include <stdio.h>
-#include <errno.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-#include <signal.h>
-#include <unistd.h>
-#include <jack/jack.h>
-#include <list>
-
 #include "jacksnd.h"
+#include <jack/jack.h>                  // for jack_port_name, etc
+#include <jack/types.h>                 // for jack_default_audio_sample_t, etc
+#include <math.h>                       // for sin, cos, M_PI, floor
+#include <stdio.h>                      // for fprintf, stderr, NULL, etc
+#include <stdlib.h>                     // for exit, rand, RAND_MAX
+#include <unistd.h>                     // for sleep
+#include <list>                         // for list, _List_iterator, etc
+
 
 jack_port_t *output_port[2];
 jack_client_t *client;

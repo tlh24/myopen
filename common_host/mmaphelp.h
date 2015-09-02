@@ -14,7 +14,8 @@ public:
 	void *m_addr;
 	char *m_fname;
 
-	mmapHelp(int length, const char *fname, bool fill = true) {
+	mmapHelp(int length, const char *fname, bool fill = true)
+	{
 		m_length = 0;
 		m_addr = 0;
 		m_fd = 0;
@@ -57,12 +58,14 @@ public:
 			m_length = length;
 		}
 	}
-	~mmapHelp() {
+	~mmapHelp()
+	{
 		if (m_addr) munmap(m_addr, m_length);
 		if (m_fd) close(m_fd);
 		free(m_fname);
 	}
-	void prinfo() {
+	void prinfo()
+	{
 		printf("mmap: %s address: %lx\n", m_fname, (long unsigned int)m_addr);
 	}
 };

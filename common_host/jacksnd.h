@@ -1,6 +1,8 @@
 #ifndef __JACKSND_H__
 #define __JACKSND_H__
 
+#include <math.h>                       // for atan, floor
+
 #define TABLE_SIZE 	(200)
 #define SAMPFREQ 	(48000.0)
 
@@ -50,7 +52,8 @@ public:
 	bool	m_dead;
 	int		m_type;
 
-	Tone(float freq, float pan, float scale, long start, long duration) {
+	Tone(float freq, float pan, float scale, long start, long duration)
+	{
 		pan = pan > 1.f ? 1.f : pan;
 		pan = pan < -1.f ? -1.f : pan;
 		m_s1 = 1.f - pan;
@@ -72,7 +75,8 @@ public:
 	}
 	~Tone() {}
 
-	void sample(long s, float *d1, float *d2, float *sine) {
+	void sample(long s, float *d1, float *d2, float *sine)
+	{
 		if (m_start == -1) m_start = s;
 		if (m_dead || s > m_start + m_duration + m_release) {
 			m_dead = true;

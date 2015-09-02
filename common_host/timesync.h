@@ -1,7 +1,9 @@
 #ifndef __TIMESYNC_H__
 #define __TIMESYNC_H__
 
+#include <cmath>
 #include <sstream>
+#include "mmaphelp.h"
 
 #define TIMESYNC_MMAP	"/tmp/timesync.mmap"
 
@@ -15,7 +17,8 @@ public:
 	long double m_gainIncr;
 	long double m_gainDecr;
 
-	GainController(double initialGain) {
+	GainController(double initialGain)
+	{
 		m_alpha = 0.95;
 		m_avg = 0.0;
 		m_absavg = 1.0;
@@ -24,18 +27,20 @@ public:
 		m_gainDecr = initialGain / 1914.12;
 	}
 	~GainController() {}
-	void update(long double u) {
+	void update(long double u)
+	{
 		m_avg = m_alpha * m_avg + (1.0-m_alpha)*u;
-		m_absavg = m_alpha * m_absavg + (1.0-m_alpha)*fabs(u);
+		m_absavg = m_alpha * m_absavg + (1.0-m_alpha)*fabs((double)u);
 		if (m_absavg > 0.0) {
-			if (fabs(m_avg) / m_absavg > 0.45) m_gain += m_gainIncr;
+			if (fabs((double)m_avg) / m_absavg > 0.45) m_gain += m_gainIncr;
 			else m_gain -= m_gainDecr;
 			if (m_gain < 0.0) m_gain *= -1.0;
 		}
 	}
-	void prinfo() {
+	void prinfo()
+	{
 		printf("gain controller: ratio %.4Lf, gain %.7Lf avg %.4Lf absavg %.4Lf\n",
-		       fabs(m_avg) / m_absavg, m_gain, m_avg, m_absavg);
+		       fabs((double)m_avg) / m_absavg, m_gain, m_avg, m_absavg);
 	}
 };
 struct syncSharedData {
@@ -65,20 +70,24 @@ public:
 	GainController *slopeGC;
 	GainController *offsetGC;
 
-	TimeSync() {
+	TimeSync()
+	{
 		m_slope = 24414.0625;
 		construct();
 	}
-	TimeSync(long double _slope) {
+	TimeSync(long double _slope)
+	{
 		m_slope = _slope;
 		construct();
 	}
-	~TimeSync() {
+	~TimeSync()
+	{
 		delete slopeGC;
 		delete offsetGC;
 		delete mmh;
 	}
-	void construct() {
+	void construct()
+	{
 		m_offset = 0.0;
 		m_timeOffset = 0.0;
 		m_frame = 0;
@@ -95,15 +104,18 @@ public:
 		}
 		m_ssdn = 0;
 	}
-	void reset() {
+	void reset()
+	{
 		m_frame = 0.0; //enables quick reset of m_offset.
 		m_slope = 24414.0625;
 	}
-	void reset(long double _slope) {
+	void reset(long double _slope)
+	{
 		m_frame = 0.0;
 		m_slope = _slope;
 	}
-	std::string getInfo() {
+	std::string getInfo()
+	{
 		std::stringstream oss;
 		long double off = m_offset - m_slope * m_timeOffset;
 		double t = (double)gettime();
@@ -119,7 +131,8 @@ public:
 		oss << " update:"<< m_update;
 		return oss.str();
 	}
-	void prinfo() {
+	void prinfo()
+	{
 		printf("sync offset %Lf slope %.4Lf update %.4Lf\n",
 		       m_offset, m_slope, m_update);
 		printf("offset ");
@@ -127,7 +140,8 @@ public:
 		printf("slope ");
 		slopeGC->prinfo();
 	}
-	void update(long double time, int ticks) {
+	void update(long double time, int ticks)
+	{
 		long double pred = (time-m_timeOffset) * m_slope + m_offset;
 		m_update = ticks - pred;
 		if (m_frame < 100) {
@@ -158,13 +172,16 @@ public:
 		m_ticks = ticks;
 		m_frame++;
 	}
-	double getTicks(long double time) { //estimated ticks, of course.
+	double getTicks(long double time)   //estimated ticks, of course.
+	{
 		return (time - m_timeOffset) * m_slope + m_offset;
 	}
-	long double getTime(double ticks) { //estimated time, of course.
+	long double getTime(double ticks)   //estimated time, of course.
+	{
 		return (ticks - m_offset)/m_slope + m_timeOffset;
 	}
-	std::string getTime() {
+	std::string getTime()
+	{
 		double t = (double)gettime();
 		double hours = floor(t / 3600.0);
 		double minutes = floor((t - hours * 3600.0)/60.0);
@@ -182,7 +199,8 @@ public:
 	mmapHelp	*mmh;
 	syncSharedData *m_ssd;
 
-	TimeSyncClient() {
+	TimeSyncClient()
+	{
 		mmh = new mmapHelp(2*sizeof(syncSharedData), TIMESYNC_MMAP);
 		if (mmh->m_fd > 0) {
 			m_ssd = static_cast<syncSharedData *>(mmh->m_addr);
@@ -190,10 +208,12 @@ public:
 		} else
 			printf("Error: could not open %s\n",TIMESYNC_MMAP);
 	}
-	~TimeSyncClient() {
+	~TimeSyncClient()
+	{
 		delete mmh;
 	}
-	void getTicks(long double &time, double &ticks) {
+	void getTicks(long double &time, double &ticks)
+	{
 		int n = 0;
 		if (m_ssd[n].valid == false) n++;
 		if (m_ssd[n].valid && m_ssd[n].magic == 0x134fbab3) {
@@ -205,7 +225,8 @@ public:
 			ticks = 0; // not synced with TDT.
 		}
 	}
-	std::string getInfo() {
+	std::string getInfo()
+	{
 		std::stringstream oss;
 		double t = (double)gettime();
 		double hours = floor(t / 3600.0);

@@ -89,7 +89,8 @@ public:
 
 	// Note: The queue should not be accessed concurrently while it's
 	// being deleted. It's up to the user to synchronize this.
-	~ReaderWriterQueue() {
+	~ReaderWriterQueue()
+	{
 		// Make sure we get the latest version of all variables from other CPUs:
 		fence(memory_order_sync);
 
@@ -118,14 +119,16 @@ public:
 	// Enqueues a copy of element if there is room in the queue.
 	// Returns true if the element was enqueued, false otherwise.
 	// Does not allocate memory.
-	AE_FORCEINLINE bool try_enqueue(T const &element) {
+	AE_FORCEINLINE bool try_enqueue(T const &element)
+	{
 		return inner_enqueue<CannotAlloc>(element);
 	}
 
 	// Enqueues a moved copy of element if there is room in the queue.
 	// Returns true if the element was enqueued, false otherwise.
 	// Does not allocate memory.
-	AE_FORCEINLINE bool try_enqueue(T&& element) {
+	AE_FORCEINLINE bool try_enqueue(T &&element)
+	{
 		return inner_enqueue<CannotAlloc>(std::forward<T>(element));
 	}
 
@@ -133,14 +136,16 @@ public:
 	// Enqueues a copy of element on the queue.
 	// Allocates an additional block of memory if needed.
 	// Only fails (returns false) if memory allocation fails.
-	AE_FORCEINLINE bool enqueue(T const &element) {
+	AE_FORCEINLINE bool enqueue(T const &element)
+	{
 		return inner_enqueue<CanAlloc>(element);
 	}
 
 	// Enqueues a moved copy of element on the queue.
 	// Allocates an additional block of memory if needed.
 	// Only fails (returns false) if memory allocation fails.
-	AE_FORCEINLINE bool enqueue(T&& element) {
+	AE_FORCEINLINE bool enqueue(T &&element)
+	{
 		return inner_enqueue<CanAlloc>(std::forward<T>(element));
 	}
 
@@ -149,7 +154,8 @@ public:
 	// returns false instead. If the queue has at least one element,
 	// moves front to result using operator=, then returns true.
 	template<typename U>
-	bool try_dequeue(U &result) {
+	bool try_dequeue(U &result)
+	{
 #ifndef NDEBUG
 		ReentrantGuard guard(this->dequeuing);
 #endif
@@ -229,7 +235,8 @@ public:
 	// queue appears empty at the time the method is called, nullptr is
 	// returned instead.
 	// Must be called only from the consumer thread.
-	T *peek() {
+	T *peek()
+	{
 #ifndef NDEBUG
 		ReentrantGuard guard(this->dequeuing);
 #endif
@@ -260,7 +267,8 @@ public:
 	// Removes the front element from the queue, if any, without returning it.
 	// Returns true on success, or false if the queue appeared empty at the time
 	// `pop` was called.
-	bool pop() {
+	bool pop()
+	{
 #ifndef NDEBUG
 		ReentrantGuard guard(this->dequeuing);
 #endif
@@ -316,7 +324,8 @@ public:
 
 	// Returns the approximate number of items currently in the queue.
 	// Safe to call from both the producer and consumer threads.
-	inline size_t size_approx() const {
+	inline size_t size_approx() const
+	{
 		size_t result = 0;
 		Block *frontBlock_ = frontBlock.load();
 		Block *block = frontBlock_;
@@ -335,7 +344,8 @@ private:
 	enum AllocationMode { CanAlloc, CannotAlloc };
 
 	template<AllocationMode canAlloc, typename U>
-	bool inner_enqueue(U&& element) {
+	bool inner_enqueue(U &&element)
+	{
 #ifndef NDEBUG
 		ReentrantGuard guard(this->enqueuing);
 #endif
@@ -431,7 +441,8 @@ private:
 
 
 
-	AE_FORCEINLINE static size_t ceilToPow2(size_t x) {
+	AE_FORCEINLINE static size_t ceilToPow2(size_t x)
+	{
 		// From http://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
 		--x;
 		x |= x >> 1;
@@ -445,7 +456,8 @@ private:
 	}
 
 	template<typename U>
-	static AE_FORCEINLINE char *align_for(char *ptr) {
+	static AE_FORCEINLINE char *align_for(char *ptr)
+	{
 		const std::size_t alignment = std::alignment_of<U>::value;
 		return ptr + (alignment - (reinterpret_cast<std::uintptr_t>(ptr) % alignment)) % alignment;
 	}
@@ -453,7 +465,8 @@ private:
 #ifndef NDEBUG
 	struct ReentrantGuard {
 		ReentrantGuard(bool &_inSection)
-			: inSection(_inSection) {
+			: inSection(_inSection)
+		{
 			assert(!inSection);
 			if (inSection) {
 				throw std::runtime_error("ReaderWriterQueue does not support enqueuing or dequeuing elements from other elements' ctors and dtors");
@@ -462,7 +475,8 @@ private:
 			inSection = true;
 		}
 
-		~ReentrantGuard() {
+		~ReentrantGuard()
+		{
 			inSection = false;
 		}
 
@@ -489,14 +503,16 @@ private:
 
 		const size_t size;
 
-		AE_FORCEINLINE size_t sizeMask() const {
+		AE_FORCEINLINE size_t sizeMask() const
+		{
 			return size - 1;
 		}
 
 
 		// size must be a power of two (and greater than 0)
 		Block(size_t const &_size, char *_rawThis, char *_data)
-			: front(0), tail(0), next(nullptr), data(_data), size(_size), rawThis(_rawThis) {
+			: front(0), tail(0), next(nullptr), data(_data), size(_size), rawThis(_rawThis)
+		{
 		}
 
 	private:
@@ -508,7 +524,8 @@ private:
 	};
 
 
-	static Block *make_block(size_t capacity) {
+	static Block *make_block(size_t capacity)
+	{
 		// Allocate enough memory for the block itself, as well as all the elements it will contain
 		auto size = sizeof(Block) + std::alignment_of<Block>::value - 1;
 		size += sizeof(T) * capacity + std::alignment_of<T>::value - 1;

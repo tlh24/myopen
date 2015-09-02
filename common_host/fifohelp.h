@@ -12,7 +12,8 @@ public:
 	int 	m_fd;
 	char 	*m_fname;
 
-	fifoHelp(const char *fname) {
+	fifoHelp(const char *fname)
+	{
 		m_fd = 0;
 		int sl = strlen(fname);
 		m_fname = (char *)malloc(sl+1);
@@ -44,13 +45,15 @@ public:
 			return;
 		}
 	}
-	~fifoHelp() {
+	~fifoHelp()
+	{
 		if (m_fd) {
 			close(m_fd);
 		}
 		free(m_fname);
 	}
-	void prinfo() {
+	void prinfo()
+	{
 		if (m_fd) {
 			printf("fifo: %s\n", m_fname);
 		}

@@ -268,44 +268,51 @@ public:
 #ifdef AE_VCPP
 #pragma warning(disable: 4100)		// Get rid of (erroneous) 'unreferenced formal parameter' warning
 #endif
-	template<typename U> weak_atomic(U&& x) : value(std::forward<U>(x)) {  }
+	template<typename U> weak_atomic(U &&x) : value(std::forward<U>(x)) {  }
 	weak_atomic(weak_atomic const &other) : value(other.value) {  }
-	weak_atomic(weak_atomic&& other) : value(std::move(other.value)) {  }
+	weak_atomic(weak_atomic &&other) : value(std::move(other.value)) {  }
 #ifdef AE_VCPP
 #pragma warning(default: 4100)
 #endif
 
-	AE_FORCEINLINE operator T() const {
+	AE_FORCEINLINE operator T() const
+	{
 		return load();
 	}
 
 
 #ifndef AE_USE_STD_ATOMIC_FOR_WEAK_ATOMIC
-	template<typename U> AE_FORCEINLINE weak_atomic const &operator=(U&& x) {
+	template<typename U> AE_FORCEINLINE weak_atomic const &operator=(U&& x)
+	{
 		value = std::forward<U>(x);
 		return *this;
 	}
-	AE_FORCEINLINE weak_atomic const &operator=(weak_atomic const &other) {
+	AE_FORCEINLINE weak_atomic const &operator=(weak_atomic const &other)
+	{
 		value = other.value;
 		return *this;
 	}
 
-	AE_FORCEINLINE T load() const {
+	AE_FORCEINLINE T load() const
+	{
 		return value;
 	}
 #else
 	template<typename U>
-	AE_FORCEINLINE weak_atomic const &operator=(U&& x) {
+	AE_FORCEINLINE weak_atomic const &operator=(U&& x)
+	{
 		value.store(std::forward<U>(x), std::memory_order_relaxed);
 		return *this;
 	}
 
-	AE_FORCEINLINE weak_atomic const &operator=(weak_atomic const &other) {
+	AE_FORCEINLINE weak_atomic const &operator=(weak_atomic const &other)
+	{
 		value.store(other.value.load(std::memory_order_relaxed), std::memory_order_relaxed);
 		return *this;
 	}
 
-	AE_FORCEINLINE T load() const {
+	AE_FORCEINLINE T load() const
+	{
 		return value.load(std::memory_order_relaxed);
 	}
 #endif

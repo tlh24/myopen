@@ -26,23 +26,26 @@ public:
 	char		m_vertexPNames[128][128];
 	int			m_numParams;
 
-	cgVertexShader(const char *fname, const char *entry) {
+	cgVertexShader(const char *fname, const char *entry)
+	{
 		m_vertexProgram = cgCreateProgramFromFile(
-		                          myCgContext,              /* Cg runtime context */
-		                          CG_SOURCE,                /* Program in human-readable form */
-		                          fname,  /* Name of file containing program */
-		                          myCgVertexProfile,        /* Profile: OpenGL ARB vertex program */
-		                          entry,      /* Entry function name */
-		                          NULL);                    /* No extra compiler options */
+		                      myCgContext,              /* Cg runtime context */
+		                      CG_SOURCE,                /* Program in human-readable form */
+		                      fname,  /* Name of file containing program */
+		                      myCgVertexProfile,        /* Profile: OpenGL ARB vertex program */
+		                      entry,      /* Entry function name */
+		                      NULL);                    /* No extra compiler options */
 		checkForCgError("creating vertex program from file");
 		cgGLLoadProgram(m_vertexProgram);
 		checkForCgError("loading vertex program");
 		m_numParams = 0;
 	}
-	~cgVertexShader() {
+	~cgVertexShader()
+	{
 		cgDestroyProgram(m_vertexProgram);
 	}
-	void addParams(int n, ...) {
+	void addParams(int n, ...)
+	{
 		va_list vl;
 		va_start(vl,n);
 		for (int i=0; i<n; i++) {
@@ -54,7 +57,8 @@ public:
 		m_numParams = n;
 		checkForCgError("loading vertex program variables");
 	}
-	void setParam(int n, ...) {
+	void setParam(int n, ...)
+	{
 		//assumes we are just setting floats.
 		//first argument is the number of floats + 1.
 		va_list vl;
@@ -86,7 +90,8 @@ public:
 		va_end(vl);
 		free(v);
 	}
-	void bind() {
+	void bind()
+	{
 		cgGLBindProgram(m_vertexProgram);
 		checkForCgError("binding vertex program");
 	}

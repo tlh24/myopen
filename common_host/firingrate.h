@@ -22,7 +22,8 @@ private:
 	double	m_a;
 	double	m_integral;
 public:
-	FiringRate() {
+	FiringRate()
+	{
 		m_w = m_l = 0;
 		set_a(0.001);
 		m_duration = 1.0;
@@ -31,32 +32,40 @@ public:
 		for (int i=0; i<FR_LEN; i++)
 			m_ts[i] = -1e10;
 	}
-	~FiringRate() {
+	~FiringRate()
+	{
 		//nothing allocated.
 	}
-	void set_a(double a_req) {
+	void set_a(double a_req)
+	{
 		m_a = a_req;
 		m_integral = 3.1415926/(4*sqrt(m_a));
 	}
-	void set_bin_params(unsigned int lags, double duration) {
+	void set_bin_params(unsigned int lags, double duration)
+	{
 		m_lags = lags;
 		m_duration = duration;
 	}
-	int get_lags() {
+	int get_lags()
+	{
 		return m_lags;
 	}
-	double get_duration() {
+	double get_duration()
+	{
 		return m_duration;
 	}
-	void add(double time) { //time is in seconds.
+	void add(double time)   //time is in seconds.
+	{
 		m_ts[m_w & (FR_LEN-1)] = time;
 		m_w++;
 	}
-	void update_ml(double time, unsigned int w) {
+	void update_ml(double time, unsigned int w)
+	{
 		while (m_l < w && (time - m_ts[m_l & (FR_LEN-1)]) > m_duration)
 			m_l++;
 	}
-	unsigned short get_rate(double time) { //time is the current time.
+	unsigned short get_rate(double time)   //time is the current time.
+	{
 		unsigned int w = m_w; //atomic.
 		update_ml(time, w);
 		double y = 0.0;
@@ -73,7 +82,8 @@ public:
 		return s;
 	}
 	/** bmi3  / skunkape interface **/
-	unsigned short get_count(double starttime, double endtime) {
+	unsigned short get_count(double starttime, double endtime)
+	{
 		//gets count of spikes in time range (starttime, endtime]
 		m_l=m_w;//this will mark all spikes "read", this affects get_coutn_since
 		unsigned short count=0;
@@ -83,7 +93,8 @@ public:
 		}
 		return count;
 	}
-	unsigned short get_count_since() {
+	unsigned short get_count_since()
+	{
 		//gets count of spikes since last check
 		//by doing math on m_w and m_l, which is fast
 		unsigned int local_ml=m_l;
@@ -95,7 +106,8 @@ public:
 		return ((FR_LEN-local_ml ) + local_mw);
 	}
 	/** lagged bin interface (bmi5 & matlab) **/
-	void get_bins(double time, unsigned short *out) {
+	void get_bins(double time, unsigned short *out)
+	{
 		int w = m_w - 1; //atomic.
 		int i = 0;
 		double lw = m_duration / (double)m_lags;
@@ -124,7 +136,8 @@ public:
 			}
 		}
 	}
-	void get_bins_test() { //matt was complaining that nobody does unit tests.  so here.
+	void get_bins_test()   //matt was complaining that nobody does unit tests.  so here.
+	{
 		//spikes must be added temporal order!
 		add(1-0.4); //0.5 bin[3] 0.5 bin[4]
 		add(1-0.35); //bin[3]

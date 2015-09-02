@@ -11,33 +11,40 @@ public:
 	long double	m_lastCallTime;
 	long double	m_smoothedCallTime;
 
-	PerfTimer() {
+	PerfTimer()
+	{
 		m_total = 0.0;
 		m_ncalls = 0;
 		m_lastStart = 0.0;
 	}
 	~PerfTimer() {}
-	void enter() {
+	void enter()
+	{
 		m_lastStart = gettime();
 	}
-	void exit() {
+	void exit()
+	{
 		if (m_lastStart > 0.0) { //in case exit is called before enter.
 			m_lastCallTime = gettime() - m_lastStart;
 			m_total += m_lastCallTime;
 			m_ncalls++;
 		}
 	}
-	double totalTime() {
+	double totalTime()
+	{
 		return m_total;
 	}
-	double lastTime() {
+	double lastTime()
+	{
 		return m_lastCallTime;
 	}
-	double meanTime() {
+	double meanTime()
+	{
 		if (m_ncalls) return (m_total / (long double)m_ncalls);
 		else return 0;
 	}
-	double smoothedCallTime() {
+	double smoothedCallTime()
+	{
 		m_smoothedCallTime *= 0.9;
 		m_smoothedCallTime += 0.1 * m_lastCallTime;
 		return m_smoothedCallTime;
@@ -51,12 +58,14 @@ public:
 	long double		m_t[16]; //last 16 vsync times.
 	int				m_ptr;
 
-	VsyncTimer() {
+	VsyncTimer()
+	{
 		for (int i=0; i<16; i++)
 			m_t[i] = 0.0;
 	}
 	~VsyncTimer() {}
-	long double add(long double time) {
+	long double add(long double time)
+	{
 		m_t[m_ptr&15] = time;
 		long double mean = time - m_t[(m_ptr+1)&15];
 		mean /= 15.0; //mean intercall.
