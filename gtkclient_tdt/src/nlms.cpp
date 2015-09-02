@@ -1,9 +1,9 @@
-#include <float.h>
-#include <gsl/gsl_vector.h>
-#include <gsl/gsl_linalg.h>
-#include <gsl/gsl_blas.h>
-#include "matStor.h"
-#include "nlms.h"
+#include <float.h>                      // for FLT_EPSILON
+#include <gsl/gsl_blas.h>               // for gsl_blas_ddot, etc
+#include <gsl/gsl_vector_double.h>      // for gsl_vector, etc
+#include "matStor.h"                    // for MatStor
+#include "nlms.h"                       // for ArtifactNLMS, NLMS
+
 
 NLMS::NLMS(int _n, double _mu)
 {

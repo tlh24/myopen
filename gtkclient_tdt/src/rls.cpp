@@ -1,7 +1,7 @@
-#include <gsl/gsl_matrix.h>
-#include <gsl/gsl_linalg.h>
-#include <gsl/gsl_blas.h>
-#include "rls.h"
+#include <gsl/gsl_blas.h>               // for gsl_blas_dgemm
+#include <gsl/gsl_cblas.h>
+#include <gsl/gsl_matrix_double.h>      // for gsl_matrix_alloc, etc
+#include "rls.h"                        // for RLS
 
 RLS::RLS(int _n, double _lambda, double _delta)
 {

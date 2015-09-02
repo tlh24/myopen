@@ -1,20 +1,15 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <signal.h>
-#include <sys/time.h>
-#include <unistd.h>
-#include <proc/readproc.h>
-#include <pthread.h>
-#include <boost/format.hpp>
-#include <deque>
-#include <string.h>
-#include <iostream>
-#include <ncurses.h>
-
-#include "PO8e.h"
-#include "gettime.h"
-#include "mmaphelp.h"
-#include "timesync.h"
+#include <proc/readproc.h>              // for proc_t, openproc, readproc, etc
+#include <pthread.h>                    // for pthread_attr_init, etc
+#include <signal.h>                     // for signal, SIGINT
+#include <stdio.h>                      // for printf, NULL, fflush, etc
+#include <string.h>                     // for strcmp, memset
+#include <sys/types.h>                  // for int64_t
+#include <unistd.h>                     // for getpid, sleep, usleep, etc
+#include <boost/format/format_fwd.hpp>  // for format
+#include <string>                       // for string
+#include "PO8e.h"                       // for PO8e, revisionString
+#include "gettime.h"                    // for gettime, g_startTime
+#include "timesync.h"                   // for TimeSync
 
 #define i64 long long
 #define u32 unsigned int

@@ -120,7 +120,7 @@ int main(int argn, char **argc)
 		unsigned int ch = a.chan();
 
 		// try to find the analog chan in our map
-		AnalogChan *ac = NULL;
+		AnalogChan *ac = nullptr;
 		if (analchans.find(ch) == analchans.end()) {
 			// not found, it is a new chan
 			ac = new AnalogChan();

@@ -1,16 +1,13 @@
 // program to convert gtkclient's stream-saved output to matlab files.
 
-#include <stdlib.h>
-#include <stdarg.h>
-#include <string.h>
-#include <memory.h>
-#include <math.h>
-#include <matio.h>
-#include <atomic>
-#include <iostream>
-#include "wfwriter.h"
-#include <assert.h>
-#include <zlib.h>
+#include <matio.h>                      // for matvar_t, Mat_VarCreate, etc
+#include <stdbool.h>                    // for true, false, bool
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for printf, fclose, feof, etc
+#include <stdlib.h>                     // for free, malloc, EXIT_FAILURE, etc
+#include <string.h>                     // for strncpy, strlen
+#include "gtkclient.h"                  // for NWFSAMP
+#include "wfwriter.h"                   // for wfpak
 
 #define u64 unsigned long long
 #define i64 long long
@@ -132,7 +129,8 @@ int main(int argn, char **argc)
 	// do it this way to minimize memory footprint.
 	auto unitCount = [&](int ch, int un) -> i64 {
 		i64 m = 0;
-		for (i64 i=0; i<n; i++) {
+		for (i64 i=0; i<n; i++)
+		{
 			if (channel[i] == ch && unit[i] == un)
 				m++;
 		}

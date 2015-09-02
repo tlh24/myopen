@@ -120,7 +120,7 @@ int main(int argn, char **argc)
 		unsigned int key = o.stim_chan();
 
 		// try to find the stim chan in our map
-		StimChan *sc = NULL;
+		StimChan *sc = nullptr;
 		if (stimchans.find(key) == stimchans.end()) {
 			// not found, it is a new unit
 			sc = new StimChan();
@@ -137,7 +137,7 @@ int main(int argn, char **argc)
 
 		// if it exists, add stim artifact
 		for (int i=0; i<o.artifact_size(); i++) {
-			RecArtifact *ra = NULL;
+			RecArtifact *ra = nullptr;
 			ICMS_artifact a = o.artifact(i);
 			ra = new RecArtifact();
 			ra->rec_chan = a.rec_chan();

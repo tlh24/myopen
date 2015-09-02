@@ -88,7 +88,7 @@ bool StimChan::save(MatStor *ms)
 
 		unsigned int m = (*it).second->samples_per_wf;
 		unsigned int n = (*it).second->num_wf;
-		vector<float>* wf = (*it).second->get_wf_vector();
+		vector<float> *wf = (*it).second->get_wf_vector();
 		for (unsigned int i=0; i<m; i++)
 			for (unsigned int j=0; j<n; j++)
 				ms->setDouble2(i, j, buf_wf, (double)(*wf)[j*m+i]);
