@@ -5,11 +5,14 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <stropts.h>
+#include <poll.h>
 
 class fifoHelp
 {
 public:
 	int 	m_fd;
+	struct  pollfd m_pollfd;
 	char 	*m_fname;
 
 	fifoHelp(const char *fname)
@@ -44,6 +47,7 @@ public:
 			perror("could not open");
 			return;
 		}
+		m_pollfd.fd = m_fd;
 	}
 	~fifoHelp()
 	{
@@ -58,6 +62,21 @@ public:
 			printf("fifo: %s\n", m_fname);
 		}
 	}
+	void setR()
+	{
+		m_pollfd.events = POLLIN;
+	}
+	void setW()
+	{
+		m_pollfd.events = POLLOUT;
+	}
+	void setRW()
+	{
+		m_pollfd.events = POLLIN | POLLOUT;
+	}
+	bool Poll(int timeout) // follows poll() semantics
+	{
+		return poll(&m_pollfd, 1, timeout) > 1;
+	}
 };
 #endif
-
