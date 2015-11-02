@@ -52,21 +52,23 @@ int process (jack_nframes_t nframes, void *arg)
 		out[0][i] = 0.f;
 		out[1][i] = 0.f;
 	}
-	list<Tone *>::iterator it;
-	for (it=data->tones.begin(); it != data->tones.end(); it++) {
-		for (unsigned int i=0; i<nframes && !((*it)->m_dead); i++) {
-			(*it)->sample(g_jackSample + i, &(out[0][i]), &(out[1][i]), data->sine);
+
+	// try using c++ 11 semantics
+    for (auto &tone : data->tones) {
+    	for (unsigned int i=0; i<nframes && !(tone->m_dead); i++) {
+			tone->sample(g_jackSample + i, &(out[0][i]), &(out[1][i]), data->sine);
 		}
-	}
+    }
+
 	//remove the 'dead' tones.
-	it = data->tones.begin();
+	list<Tone *>::iterator it = data->tones.begin();
 	while (it != data->tones.end()) {
 		if ((*it)->m_dead) {
 			Tone *t = (*it);
 			it = data->tones.erase(it);
 			delete t;
 		} else {
-			it++;
+			++it;
 		}
 	}
 	g_jackSample += nframes;
@@ -297,19 +299,16 @@ int jackInit(const char *clientname, int mode)
 #ifdef TESTSONG
 	signal(SIGQUIT, jackClose);
 	signal(SIGTERM, jackClose);
-	signal(SIGHUP, jackClose);
-	signal(SIGINT, jackClose);
+	signal(SIGHUP,  jackClose);
+	signal(SIGINT,  jackClose);
 #endif
 
 	return 0;
 }
 void jackDisconnectAllPorts()
 {
-	const char **ports;
-
 	for (int j=0; j<2; j++) {
-
-		ports = jack_port_get_connections (output_port[j]);
+		const char **ports = jack_port_get_connections (output_port[j]);
 		if (ports != NULL) {
 			int i = 0;
 			while (ports[i] != NULL) {
@@ -319,7 +318,6 @@ void jackDisconnectAllPorts()
 			}
 			jack_free(ports);
 		}
-
 	}
 }
 void jackConnectFront()

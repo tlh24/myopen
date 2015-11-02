@@ -25,9 +25,9 @@ enum JACKPROCESS_TYPE {
 #define RESAMP_SIZ 4096
 #define RESAMP_MASK (RESAMP_SIZ-1)
 typedef struct {
-	float		circBuf[2][RESAMP_SIZ];
-	long		wrPtr;
-	long		rdPtr;
+	float	circBuf[2][RESAMP_SIZ];
+	long	wrPtr;
+	long	rdPtr;
 	double	phase;
 	double	phaseIncr;
 	double	phaseIncrNom;
@@ -141,4 +141,3 @@ void jackDisconnectAllPorts();
 void jackConnectFront();
 void jackConnectCenterSub();
 #endif
-
