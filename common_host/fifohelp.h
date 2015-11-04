@@ -76,7 +76,7 @@ public:
 	}
 	bool Poll(int timeout) // follows poll() semantics
 	{
-		return poll(&m_pollfd, 1, timeout) > 1;
+		return poll(&m_pollfd, 1, timeout) > 0;
 	}
 };
 #endif
