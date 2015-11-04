@@ -54,11 +54,11 @@ int process (jack_nframes_t nframes, void *arg)
 	}
 
 	// try using c++ 11 semantics
-    for (auto &tone : data->tones) {
-    	for (unsigned int i=0; i<nframes && !(tone->m_dead); i++) {
+	for (auto &tone : data->tones) {
+		for (unsigned int i=0; i<nframes && !(tone->m_dead); i++) {
 			tone->sample(g_jackSample + i, &(out[0][i]), &(out[1][i]), data->sine);
 		}
-    }
+	}
 
 	//remove the 'dead' tones.
 	list<Tone *>::iterator it = data->tones.begin();
