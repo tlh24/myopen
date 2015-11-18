@@ -53,6 +53,8 @@ public:
 	{
 		if (m_fd) {
 			close(m_fd);
+			m_fd = 0;
+			m_pollfd.fd = 0;
 		}
 		free(m_fname);
 	}
