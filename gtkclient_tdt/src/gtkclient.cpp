@@ -1883,7 +1883,7 @@ static GtkWidget *mk_spinner(const char *txt, GtkWidget *container,
 	gtk_box_pack_start (GTK_BOX (bx), label, TRUE, TRUE, 2);
 	gtk_widget_show(label);
 	adj = (GtkAdjustment *)gtk_adjustment_new(
-	              start, min, max, step, step, 0.0);
+	          start, min, max, step, step, 0.0);
 	float climb = 0.0;
 	int digits = 0;
 	if (step <= 0.001) {
@@ -1937,8 +1937,8 @@ static void mk_radio(const char *txt, int ntxt,
 		a = strtok(0, ",");
 		button = gtk_radio_button_new_with_label (group, (const char *)a );
 		gtk_toggle_button_set_active(
-		        GTK_TOGGLE_BUTTON(button),
-		        i == radio_state);
+		    GTK_TOGGLE_BUTTON(button),
+		    i == radio_state);
 		gtk_box_pack_start (GTK_BOX (modebox), button, TRUE, TRUE, 0);
 		gtk_widget_show (button);
 		gtk_signal_connect (GTK_OBJECT (button), "clicked",
@@ -2008,7 +2008,7 @@ static void openSaveSpikesFile(GtkWidget *, gpointer parent_window)
 	                                      GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
 	                                      NULL);
 	gtk_file_chooser_set_do_overwrite_confirmation(
-	        GTK_FILE_CHOOSER (dialog), TRUE);
+	    GTK_FILE_CHOOSER (dialog), TRUE);
 	gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog),d.c_str());
 	gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (dialog),f.c_str());
 	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
@@ -2032,7 +2032,7 @@ static void openSaveICMSFile(GtkWidget *, gpointer parent_window)
 	                                      GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
 	                                      NULL);
 	gtk_file_chooser_set_do_overwrite_confirmation(
-	        GTK_FILE_CHOOSER (dialog), TRUE);
+	    GTK_FILE_CHOOSER (dialog), TRUE);
 	gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog),d.c_str());
 	gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (dialog),f.c_str());
 	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
@@ -2056,7 +2056,7 @@ static void openSaveAnalogFile(GtkWidget *, gpointer parent_window)
 	                                      GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
 	                                      NULL);
 	gtk_file_chooser_set_do_overwrite_confirmation(
-	        GTK_FILE_CHOOSER (dialog), TRUE);
+	    GTK_FILE_CHOOSER (dialog), TRUE);
 	gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog),d.c_str());
 	gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (dialog),f.c_str());
 	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
@@ -2080,7 +2080,7 @@ static void openSaveAnalogPrefilterFile(GtkWidget *, gpointer parent_window)
 	                                      GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
 	                                      NULL);
 	gtk_file_chooser_set_do_overwrite_confirmation(
-	        GTK_FILE_CHOOSER (dialog), TRUE);
+	    GTK_FILE_CHOOSER (dialog), TRUE);
 	gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog),d.c_str());
 	gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (dialog),f.c_str());
 	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
@@ -2854,9 +2854,9 @@ int main(int argc, char **argv)
 
 	/* prepare GL */
 	glconfig = gdk_gl_config_new_by_mode (GdkGLConfigMode(
-	                GDK_GL_MODE_RGB |
-	                GDK_GL_MODE_DEPTH |
-	                GDK_GL_MODE_DOUBLE));
+	        GDK_GL_MODE_RGB |
+	        GDK_GL_MODE_DEPTH |
+	        GDK_GL_MODE_DOUBLE));
 
 	if (!glconfig)
 		g_assert_not_reached ();
