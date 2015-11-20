@@ -8,6 +8,7 @@
 #include <stdlib.h>                     // for exit, rand, RAND_MAX
 #include <unistd.h>                     // for sleep
 #include <list>                         // for list, _List_iterator, etc
+#include "random.h"
 
 
 jack_port_t *output_port[2];
@@ -143,10 +144,6 @@ void jack_shutdown (void *)
 }
 
 /* song stuff. well, not really a song -- more of a set of noises. */
-float uniform()
-{
-	return ((float)rand() / (float)RAND_MAX);
-}
 float uniformPan()
 {
 	return uniform()*2.f -1.f;
