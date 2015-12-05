@@ -51,7 +51,7 @@ wait_samples:
 	//the toggle statement should not get out of sync b/c there are set/clear statements above.
 	w[p1 + (FIO_FLAG_T - FIO_FLAG_D)] = r7;
 	//apply integrator highpass + gain (2, add twice)).
-	r5 = [i0++]; //r5 = 32000,-16384. (lo, high)
+	r5 = [i0++]; //r5 = 32000,-16384. (lo, high) --- 25 instructions, >= 7 stalls, to this point. 
 .align 8
 	a0 = r2.l * r5.l, a1 = r2.h * r5.l || r1 = [i1++]; // r1 = integrated mean
 	a0 += r2.l * r5.l, a1 += r2.h * r5.l || r6 = [i0++]; //r6 = 16384 (1), 800 (mu)
@@ -102,7 +102,7 @@ r5.l = (a0 += r1.l * r6.l), r5.h = (a1 += r1.h * r6.h) || r1 = [i1++m2] || r2 = 
 r5.l = (a0 += r1.l * r6.l), r5.h = (a1 += r1.h * r6.h) || r1 = [i1++m2] || r2 = [i0--];//r2 = w6, i0 @ 5
 	a0 = r2.l * r7.h, a1 = r2.h * r7.h || [i0++m3] = r5; //write 5, i0 @ 7
 r5.l = (a0 += r1.l * r6.l), r5.h = (a1 += r1.h * r6.h) || r1 = [i1++m3] || r2 = [i0--];// inc to x1(n-1) r2 = w1, i0 @ 6
-	mnop || [i0++] = r5; //write 6.
+	mnop || [i0++] = r5; //write 6.  --- 41 instructions. 
 /* LMS adaptive noise remover (above)
 	want to predict the current channel based on samples from the previous 8.
 	at this point i1 will point to x(n-1) of the present channel.
@@ -180,7 +180,7 @@ r5.l = (a0 += r1.l * r6.l), r5.h = (a1 += r1.h * r6.h) || r1 = [i1++m3] || r2 = 
 
 	[i2++] = r0; // save y4(n-1)
 	[i2++] = r1; // save y4(n-2) (normally pipelined)
-	[--sp] = r0; //store the samples on the stack.
+	[--sp] = r0; //store the samples on the stack. --- 27 instructions. 
 
 	//read in the samples -- SPORT1
 	r0 = w[p0 + (SPORT1_RX - SPORT0_RX)] (z);
