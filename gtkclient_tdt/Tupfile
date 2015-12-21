@@ -1,0 +1,22 @@
+include_rules
+
+CPPFLAGS += -Iinclude -Iproto -I../common_host
+CPPFLAGS += `pkg-config --cflags gtk+-2.0 lua5.1`
+
+LDFLAGS += -lpthread -lGL -lGLU -lCg -lCgGL -lgsl -lcblas -latlas -lm
+LDFLAGS += -lprotobuf -lPO8eStreaming -lmatio
+LDFLAGS += `pkg-config --libs gtk+-2.0 gtkglext-1.0 lua5.1 libprocps`
+
+: src/po8e.o proto/po8e.pb.o ../common_host/lconf.o src/po8e_conf.o |> !ld |> po8e
+
+: src/timeclient.o ../common_host/gettime.o |> !ld |> timesync
+
+: src/analog2mat.o proto/analog.pb.o src/analogchan.o ../common_host/matStor.o |> !ld |> analog2mat
+
+: src/icms2mat.o proto/icms.pb.o src/stimchan.o ../common_host/matStor.o |> !ld |> icms2mat
+
+: src/spikes2mat.o |> !ld |> spikes2mat
+
+: src/mmap_test.o |> !ld |> mmap_test
+
+: src/gtkclient.o ../common_host/gettime.o ../common_host/matStor.o ../common_host/glInfo.o src/datawriter.o src/analogwriter.o src/icmswriter.o src/filter.o src/spikebuffer.o src/rls.o src/nlms.o proto/icms.pb.o proto/analog.pb.o|> !ld |> gtkclient

@@ -3,24 +3,11 @@
 #include <iostream>
 #include <fstream>
 #include <atomic>
-#include "readerwriterqueue.h"
-#include "icms.pb.h"
-#include "analog.pb.h"
 
 #ifndef __DATAWRITER_H__
 #define	__DATAWRITER_H__
 
 using namespace std;
-using namespace google::protobuf::io;
-using namespace gtkclient;
-using namespace moodycamel;
-
-enum {
-	ANALOG_BUF_SIZE = 65536,
-	ANALOG_MAGIC 	= 0xbeefbabe,
-	ICMS_BUF_SIZE 	= 65536,
-	ICMS_MAGIC 		= 0xdeadbabe
-};
 
 class DataWriter
 {
@@ -63,70 +50,5 @@ public:
 
 	virtual const char *name() = 0;
 };
-
-class AnalogWriter : public DataWriter
-{
-protected:
-	ReaderWriterQueue<Analog *> *m_q; // the protobuf(fer)
-
-public:
-	AnalogWriter();
-
-	// start the writer. fn is filename
-	bool open(const char *fn);
-
-	//flush and close log file
-	bool close();
-
-	// log an analog protobuf
-	bool add(Analog *a);
-
-	// write the buffer to disk
-	bool write();
-
-	// returns the number of objects in the queue
-	size_t capacity();
-
-	const char *name()
-	{
-		return "Analog Writer v3";
-	};
-
-protected:
-
-};
-
-class ICMSWriter : public DataWriter
-{
-protected:
-	ReaderWriterQueue<ICMS *> *m_q; // the protobuf(fer)
-
-public:
-	ICMSWriter();
-
-	// start the writer. fn is filename
-	bool open(const char *fn);
-
-	//flush and close log file
-	bool close();
-
-	// log an icms protobuf
-	bool add(ICMS *a);
-
-	// write the buffer to disk
-	bool write();
-
-	// returns the number of objects in the queue
-	size_t capacity();
-
-	const char *name()
-	{
-		return "ICMS Writer v3";
-	};
-
-protected:
-
-};
-
 
 #endif

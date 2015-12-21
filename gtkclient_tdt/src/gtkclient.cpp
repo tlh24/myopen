@@ -72,6 +72,8 @@
 #include "icms.pb.h"
 
 #include "datawriter.h"
+#include "analogwriter.h"
+#include "icmswriter.h"
 
 #include "fenv.h" // for debugging nan problems
 

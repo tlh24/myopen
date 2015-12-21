@@ -1,0 +1,18 @@
+CPP = clang++
+
+CPPFLAGS += -Wextra -pedantic -std=c++11 -Wno-int-to-pointer-cast
+CPPFLAGS += -Wall -Wcast-align -Wpointer-arith -Wshadow -Wsign-compare
+CPPFLAGS += -Wformat=2 -Wno-format-y2k -Wmissing-braces -Wparentheses
+CPPFLAGS += -Wtrigraphs -Wextra -pedantic -std=c++11
+CPPFLAGS += -Wno-int-to-pointer-cast
+CPPFLAGS += -march=native
+
+# these are to analyize automatic loop vectorization failures
+CPPFLAGS += -Rpass=loop-vectorize
+CPPFLAGS += -Rpass-analysis=loop-vectorize
+CPPFLAGS += -Rpass-missed=loop-vectorized
+
+!cpp = |> ^ CPP %f^ $(CPP) -c $(CPPFLAGS) %f -o %o |>
+#!cpp = |> $(CPP) -c $(CPPFLAGS) %f -o %o |>
+!ld = |> ^ LINK %o^ $(CPP) %f -o %o $(LDFLAGS) |>
+!protoc = |> ^ PROTOC %f^ protoc --cpp_out=. %f |>

@@ -9,7 +9,7 @@
 #include "analog.pb.h"
 #include "analogchan.h"
 #include "matStor.h"
-#include "datawriter.h"
+#include "analogwriter.h"
 
 #define u64 unsigned long long
 #define i64 long long

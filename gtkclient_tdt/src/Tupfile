@@ -1,0 +1,28 @@
+include_rules
+
+CPPFLAGS += -I../include -I../proto -I../../common_host
+CPPFLAGS += `pkg-config --cflags gtk+-2.0 gtkglext-1.0 lua5.1`
+
+LDFLAGS += -lpthread -lGL -lprotobuf -lPO8eStreaming
+LDFLAGS += `pkg-config --libs gtk+-2.0 gtkglext-1.0 lua5.1 libprocps`
+
+OBJS = timeclient.cpp \
+spikes2mat.cpp \
+filter.cpp \
+mmap_test.cpp \
+datawriter.cpp \
+stimchan.cpp \
+analogchan.cpp \
+spikebuffer.cpp \
+rls.cpp \
+nlms.cpp \
+
+: foreach $(OBJS) |> !cpp |> %B.o
+
+: po8e_conf.cpp | ../proto/po8e.pb.h |> !cpp |> %B.o
+: po8e.cpp | ../proto/po8e.pb.h |> !cpp |> %B.o
+: analog2mat.cpp | ../proto/analog.pb.h |> !cpp |> %B.o
+: icms2mat.cpp | ../proto/icms.pb.h |> !cpp |> %B.o
+: analogwriter.cpp | ../proto/analog.pb.h |> !cpp |> %B.o
+: icmswriter.cpp | ../proto/icms.pb.h |> !cpp |> %B.o
+: gtkclient.cpp | ../proto/analog.pb.h ../proto/icms.pb.h |> !cpp |> %B.o

@@ -1,0 +1,7 @@
+include_rules
+
+CPPFLAGS += `pkg-config --cflags lua5.1`
+LDFLAGS += `pkg-config --libs lua5.1`
+OBJS = gettime.cpp lconf.cpp matStor.cpp glInfo.cpp
+
+: foreach $(OBJS) |> !cpp |> %B.o
