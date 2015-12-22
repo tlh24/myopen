@@ -117,18 +117,18 @@ int main(void)
 
 	pc.loadConf("gtkclient.rc");
 
-	for (size_t i=0;i<pc.cards.size();i++) {
+	for (size_t i=0; i<pc.cards.size(); i++) {
 		printf("card %lu in conf (%d channels)\n",
-			pc.cards[i]->id(), 
-			pc.cards[i]->channel_size()
-		);
-		for (int j=0;j<pc.cards[i]->channel_size();j++) {
+		       pc.cards[i]->id(),
+		       pc.cards[i]->channel_size()
+		      );
+		for (int j=0; j<pc.cards[i]->channel_size(); j++) {
 			auto channel = pc.cards[i]->channel(j);
 			printf("  ch: %02lu (%s) scale_factor: %lu data_type: %d\n",
-				channel.id(),
-				channel.name().c_str(),
-				channel.scale_factor(),
-				channel.data_type());
+			       channel.id(),
+			       channel.name().c_str(),
+			       channel.scale_factor(),
+			       channel.data_type());
 		}
 	}
 
