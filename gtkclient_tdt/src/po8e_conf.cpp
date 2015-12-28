@@ -19,14 +19,14 @@ bool po8eConf::loadConf(const char *conf)
 	if (!luaConf::loadConf(conf))
 		return false;
 
-	for (size_t i=0; i<numCards();i++) {
+	for (size_t i=0; i<numCards(); i++) {
 		auto card = loadCard(i);
 		cards.push_back(card);
 	}
 	return true;
 }
 // calling function should free memory
-po8eCard * po8eConf::loadCard(size_t idx)
+po8eCard *po8eConf::loadCard(size_t idx)
 {
 	auto card = new po8eCard;
 	size_t stack = 0;
@@ -71,23 +71,23 @@ po8eCard * po8eConf::loadCard(size_t idx)
 				stack++;
 				if (lua_isnumber(L, -1)) {
 					switch (lua_tointeger(L, -1)) {
-						case 0:
-							chan->set_data_type(po8eChannel::NEURAL);
-							break;
-						case 1:
-							chan->set_data_type(po8eChannel::EVENT);
-							break;
-						case 2:
-							chan->set_data_type(po8eChannel::ANALOG);
-							break;
-						case 3:
-							chan->set_data_type(po8eChannel::STIM_PULSES);
-							break;
-						case 4:
-							chan->set_data_type(po8eChannel::BLANK_CLOCK);
-							break;
-						default:
-							chan->set_data_type(po8eChannel::NEURAL);
+					case 0:
+						chan->set_data_type(po8eChannel::NEURAL);
+						break;
+					case 1:
+						chan->set_data_type(po8eChannel::EVENT);
+						break;
+					case 2:
+						chan->set_data_type(po8eChannel::ANALOG);
+						break;
+					case 3:
+						chan->set_data_type(po8eChannel::STIM_PULSES);
+						break;
+					case 4:
+						chan->set_data_type(po8eChannel::BLANK_CLOCK);
+						break;
+					default:
+						chan->set_data_type(po8eChannel::NEURAL);
 					}
 				}
 				lua_pop(L, 1);
@@ -96,8 +96,7 @@ po8eCard * po8eConf::loadCard(size_t idx)
 			lua_pop(L, 1);
 			stack--;
 		}
-	}
-	else
+	} else
 		goto error;
 	lua_pop(L, stack);
 	return card;

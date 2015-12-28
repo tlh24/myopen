@@ -7,8 +7,13 @@ JACK = true
 MUDFLAP = false
 STACKPROTECTOR = false
 
-CC  = clang
-CPP = clang++
+CC  = clang-3.6
+CPP = clang++-3.6
+ifeq ($(shell lsb_release -sc), jessie)
+        CC = clang-3.5
+        CPP = clang++-3.5
+endif
+
 TARGET = /usr/local/bin
 
 CPPFLAGS := -Iinclude -I/usr/local/include -I../common_host
@@ -40,7 +45,7 @@ LDFLAGS += $(shell pkg-config --libs $(GLIBS))
 
 GOBJS = src/analog.pb.o src/icms.pb.o src/gtkclient.o src/gettime.o \
 src/glInfo.o src/matStor.o src/datawriter.o src/filter.o \
-src/spikebuffer.o src/rls.o src/nlms.o src/lconf.o
+src/spikebuffer.o src/rls.o src/nlms.o src/lconf.o src/random.o
 # src/threadpool.o
 COM_HDR = include/channel.h include/wfwriter.h include/medfilt.h \
 include/po8e_conf.h \
@@ -121,7 +126,7 @@ wf_plot: src/wf_plot.o
 
 clean:
 	rm -rf gtkclient timesync spikes2mat icms2mat analog2mat mmap_test po8e wf_plot \
-	src/*.pb.cc include/*.pb.h src/*.o 
+	src/*.pb.cc include/*.pb.h src/*.o
 
 deps:
 	sudo apt-get install libgtk2.0-dev libgtk2.0-0-dbg \
@@ -132,7 +137,7 @@ deps:
 	libprotobuf-dev libprotobuf7 protobuf-compiler \
 	cppcheck libprocps0-dev \
 	liblua5.1-0-dev
-	#libncurses5-dev 
+	#libncurses5-dev
 
 	@echo ""
 	@echo "make sure non-free is in /etc/apt/sources.list for nvidia-cg-toolkit."
@@ -142,7 +147,7 @@ check:
 		-q src/*.cpp
 
 pretty:
-	# "-rm" means that make ignores errors, if any 
+	# "-rm" means that make ignores errors, if any
 	astyle -A8 --indent=tab -H -k3 include/*.h
 	-rm include/*.h.orig
 	astyle -A8 --indent=tab -H -k3 src/*.cpp

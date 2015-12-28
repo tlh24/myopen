@@ -8,6 +8,7 @@
 #include <gsl/gsl_sort.h>
 #include <string>
 #include "matStor.h"
+#include "random.h"
 
 void gsl_matrix_to_mat(gsl_matrix *x, const char *fname);
 long double gettime();
@@ -115,7 +116,7 @@ public:
 			f[2] = 0.f;
 			for (int j=0; j<(m_usVbo->m_cols-2); j++) {
 				f[(j+1)*3 + 0] = (float)j/(m_usVbo->m_cols-3);
-				f[(j+1)*3 + 1] = (float)rand()/(float)RAND_MAX - 0.5f;
+				f[(j+1)*3 + 1] = uniform() - 0.5f;
 				f[(j+1)*3 + 2] = 0.0f;
 			}
 			f[(m_usVbo->m_cols-1)*3 + 0] = 1.f;
