@@ -19,4 +19,4 @@ LDFLAGS += `pkg-config --libs gtk+-2.0 gtkglext-1.0 lua5.1 libprocps`
 
 : src/mmap_test.o |> !ld |> mmap_test
 
-: src/gtkclient.o ../common_host/gettime.o ../common_host/matStor.o ../common_host/glInfo.o src/datawriter.o src/analogwriter.o src/icmswriter.o src/filter.o src/spikebuffer.o src/rls.o src/nlms.o proto/icms.pb.o proto/analog.pb.o|> !ld |> gtkclient
+: src/gtkclient.o ../common_host/gettime.o ../common_host/matStor.o ../common_host/glInfo.o ../common_host/random.o src/datawriter.o src/analogwriter.o src/icmswriter.o src/filter.o src/spikebuffer.o src/rls.o src/nlms.o proto/icms.pb.o proto/analog.pb.o|> !ld |> gtkclient
