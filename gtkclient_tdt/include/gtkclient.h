@@ -61,11 +61,4 @@ typedef struct PO8Data {
 	short *data;
 } PO8Data;
 
-//#define ANSI_RED     "\x1b[31m"
-//#define ANSI_COLOR_GREEN   "\x1b[32m"
-//#define ANSI_COLOR_YELLOW  "\x1b[33m"
-
-#define WARN(M) fprintf(stderr, "\x1b[31m[WARNING]\x1b[0m\x1b[1m " M " \x1b[0m\n")
-
-
 #endif

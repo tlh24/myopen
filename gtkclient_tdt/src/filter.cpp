@@ -23,11 +23,9 @@ void Filter::Proc(float *in, float *out, unsigned int kpoints)
 {
 	// Direct Form II Transposed filter.
 	// see the matlab help.
-	double y;
-	double x;
 	for (unsigned int i=0; i<kpoints; i++) {
-		x = in[i];
-		y = (d[0] + B[0]*x);
+		double x = in[i];
+		double y = (d[0] + B[0]*x);
 		out[i] = (float)(y);
 		unsigned int j;
 		for (j=0; j<B.size()-2; j++) {

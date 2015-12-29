@@ -68,6 +68,7 @@
 #include "spikebuffer.h"
 #include "rls.h"
 #include "nlms.h"
+#include "util.h"
 
 #include "analog.pb.h"
 #include "icms.pb.h"
@@ -323,7 +324,7 @@ void gsl_matrix_to_mat(gsl_matrix *x, const char *fname)
 	mat_t *mat;
 	mat = Mat_CreateVer(fname,nullptr,MAT_FT_MAT73);
 	if (!mat) {
-		printf("could not open %s for writing \n", fname);
+		warn("could not open %s for writing", fname);
 		return;
 	}
 	size_t dims[2];
@@ -331,7 +332,7 @@ void gsl_matrix_to_mat(gsl_matrix *x, const char *fname)
 	dims[1] = x->size2;
 	double *d = (double *)malloc(dims[0]*dims[1]*sizeof(double));
 	if (!d) {
-		printf("could not allocate memory for copy \n");
+		warn("could not allocate memory for copy");
 		return;
 	}
 	//reformat and transpose.
@@ -381,7 +382,7 @@ void BuildFont(void)
 	if (fontInfo == nullptr) {
 		fontInfo = XLoadQueryFont(dpy, "fixed");
 		if (fontInfo == nullptr) {
-			printf("no X font available?\n");
+			warn("no X font available?");
 		}
 	}
 	// after loading this font info, this would probably be the time
@@ -474,7 +475,7 @@ static gint motion_notify_event( GtkWidget *,
 		}
 	}
 	if ((state & GDK_BUTTON1_MASK) && (g_mode == MODE_SPIKES)) {
-		printf("TODO: interact with channel.\n");
+		warn("TODO: interact with channel");
 	}
 	if (state & GDK_BUTTON3_MASK)
 		g_rtMouseBtn = true;
@@ -533,9 +534,7 @@ static gint button_press_event( GtkWidget *,
 				for (int i=3; i>0; i--)
 					g_channel[i] = g_channel[i-1];
 				g_channel[0] = h;
-#ifdef DEBUG
-				printf("channel switched to %d\n", g_channel[0]);
-#endif
+				debug("channel switched to %d", g_channel[0]);
 				g_mode = MODE_SORT;
 				gtk_notebook_set_current_page(GTK_NOTEBOOK(g_notebook), MODE_SORT);
 			}
@@ -1117,7 +1116,7 @@ void sorter(int ch)
 		}
 		break;
 		default:
-			printf("bad alignment type. exiting.\n");
+			error("bad alignment type. exiting");
 			exit(1);
 		}
 
@@ -1247,8 +1246,8 @@ void po8e(PO8e *p, ReaderWriterQueue<PO8Data> *q)
 
 		if (numSamples >= read_size) {
 			if (numSamples > bufmax) {
-				printf("samplesReady() returned too many samples (buffer wrap?): %zu\n",
-				       numSamples);
+				warn("samplesReady() returned too many samples (buffer wrap?): %zu",
+				     numSamples);
 				numSamples = bufmax;
 			}
 
@@ -1256,15 +1255,15 @@ void po8e(PO8e *p, ReaderWriterQueue<PO8Data> *q)
 			p->flushBufferedData(numRead);
 
 			if (tick[0] != last_tick + 1) {
-				printf("%p: PO8e tick glitch between blocks. Expected %zu got %zu\n",
-				       p, last_tick+1, tick[0]);
+				warn("%p: PO8e tick glitch between blocks. Expected %zu got %zu",
+				     p, last_tick+1, tick[0]);
 				g_ts.m_dropped++;
 				// xxx how to recover?
 			}
 			for (size_t i=0; i<numRead-1; i++) {
 				if (tick[i+1] != tick[i] + 1) {
-					printf("%p: PO8e tick glitch within block. Expected %zu got %zu\n",
-					       p, tick[i]+1, tick[i+1]);
+					warn("%p: PO8e tick glitch within block. Expected %zu got %zu",
+					     p, tick[i]+1, tick[i+1]);
 					g_ts.m_dropped++;
 					// xxx how to recover?
 				}
@@ -1329,7 +1328,7 @@ void worker()
 			break;
 
 		if (p[0].numSamples != p[1].numSamples) {	// handle better
-			printf("po8e card sample mismatch\n");
+			warn("po8e card sample mismatch");
 			break;
 		}
 
@@ -1442,7 +1441,7 @@ void worker()
 						}
 					}
 					if (z == NARTPTR) {
-						printf("ERR: STIM ARTIFACTS OVERLAP!\n");
+						warn("STIM ARTIFACTS OVERLAP");
 					}
 				}
 
@@ -1742,9 +1741,7 @@ static void channelSpinCB(GtkWidget *spinner, gpointer p)
 {
 	int k = (int)((long long)p & 0xf);
 	int ch = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spinner));
-#ifdef DEBUG
-	printf("channelSpinCB: %d\n", ch);
-#endif
+	debug("channelSpinCB: %d", ch);
 	if (ch < NCHAN && ch >= 0 && ch != g_channel[k]) {
 		g_channel[k] = ch;
 		updateChannelUI(k); //update the UI too.
@@ -1770,9 +1767,7 @@ static void gainSpinCB(GtkWidget *spinner, gpointer p)
 	int x = (int)((long long)p & 0xf);
 	if (!g_uiRecursion) {
 		float gain = gtk_spin_button_get_value(GTK_SPIN_BUTTON(spinner));
-#ifdef DEBUG
-		printf("ch %d (%d) gainSpinCB: %f\n", g_channel[x], x, gain);
-#endif
+		debug("ch %d (%d) gainSpinCB: %f", g_channel[x], x, gain);
 		g_c[g_channel[x]]->setGain(gain);
 		g_c[g_channel[x]]->resetPca();
 	}
@@ -2099,7 +2094,7 @@ int main(int argc, char **argv)
 		if ((!strcmp(pr_info.cmd, "gtkclient")   ||
 		     !strcmp(pr_info.cmd, "timesync")) &&
 		    pr_info.tgid != mypid) {
-			printf("already running with pid: %d\n", pr_info.tgid);
+			error("already running with pid: %d", pr_info.tgid);
 			return 1;
 		}
 	}
@@ -2844,12 +2839,12 @@ int main(int argc, char **argv)
 	int totalcards = PO8e::cardCount();
 	printf("Found %d PO8e card(s) in the system.\n", totalcards);
 	if (totalcards < 1) {
-		printf("Quitting.\n");
+		error("Quitting");
 		return 1;
 	}
 
 	if (totalcards != (int)pc.cards.size()) {
-		WARN("num detected po8e cards differs from num in config files");
+		warn("num detected po8e cards differs from num in config files");
 	}
 
 	for (int i=0; i<totalcards; i++) {
@@ -2860,7 +2855,7 @@ int main(int argc, char **argv)
 		}
 	}
 	if (cards.size() < 1) {
-		printf("Connected to 0 cards. Quitting.\n");
+		error("Connected to 0 cards");
 		return 1;
 	}
 
@@ -2869,7 +2864,7 @@ int main(int argc, char **argv)
 		// return one on failure
 		if (!p->startCollecting())
 		{
-			printf("startCollecting() failed with: %d\n", p->getLastError());
+			warn("startCollecting() failed with: %d", p->getLastError());
 			p->flushBufferedData();
 			p->stopCollecting();
 			printf("Releasing card %p\n", p);

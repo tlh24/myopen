@@ -9,6 +9,7 @@
 #include <string>
 #include "matStor.h"
 #include "random.h"
+#include "util.h"
 
 void gsl_matrix_to_mat(gsl_matrix *x, const char *fname);
 long double gettime();
@@ -594,7 +595,7 @@ public:
 	{
 		//called when the button is clicked.
 		if (unit < 1 || unit > NSORT) {
-			printf("unit out of range in Channel::updateTemplate()\n");
+			warn("unit out of range in Channel::updateTemplate()");
 			return false;
 		}
 		float aperture = 0;

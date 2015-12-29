@@ -1,4 +1,5 @@
 #include <boost/tokenizer.hpp>
+#include "util.h"
 #include "po8e_conf.h"
 
 using namespace std;
@@ -138,7 +139,7 @@ bool po8eConf::isCard(int index)
 	lua_getfield(L, index, "id");
 	stack++;
 	if (!lua_isnumber(L, -1)) {
-		printf("%s: card missing or malformed field 'id'\n", name());
+		warn("%s: card missing or malformed field 'id'", name());
 		goto error;
 	}
 	lua_pop(L, 1);
@@ -146,7 +147,7 @@ bool po8eConf::isCard(int index)
 	lua_getfield(L, index, "channels");
 	stack++;
 	if (!lua_istable(L, -1)) {
-		printf("%s: card missing or malformed field 'channels'\n", name());
+		warn("%s: card missing or malformed field 'channels'", name());
 		goto error;
 	}
 	lua_pop(L, stack);
@@ -165,7 +166,7 @@ bool po8eConf::isChannel(int index)
 	lua_getfield(L, index, "id");
 	stack++;
 	if (!lua_isnumber(L, -1)) {
-		printf("%s: channel missing or malformed field 'id'\n", name());
+		warn("%s: channel missing or malformed field 'id'", name());
 		goto error;
 	}
 	lua_pop(L, stack);

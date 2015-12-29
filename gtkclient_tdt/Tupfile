@@ -9,7 +9,7 @@ LDFLAGS += -lprotobuf -lPO8eStreaming -lmatio
 LDFLAGS += `pkg-config --libs gtk+-2.0 gtkglext-1.0 lua5.1 libprocps`
 LDFLAGS  += -ljack
 
-: src/po8e.o proto/po8e.pb.o ../common_host/lconf.o src/po8e_conf.o |> !ld |> po8e
+: src/po8e.o ../common_host/util.o proto/po8e.pb.o ../common_host/lconf.o src/po8e_conf.o |> !ld |> po8e
 
 : src/timeclient.o ../common_host/gettime.o |> !ld |> timesync
 
@@ -22,6 +22,7 @@ LDFLAGS  += -ljack
 : src/mmap_test.o |> !ld |> mmap_test
 
 : src/gtkclient.o \
+../common_host/util.o \
 ../common_host/gettime.o \
 ../common_host/matStor.o \
 ../common_host/glInfo.o \
