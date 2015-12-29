@@ -1216,9 +1216,9 @@ void po8e(PO8e *p, ReaderWriterQueue<PO8Data> *q)
 
 	printf("Waiting for the stream to start ...\n");
 	//p->waitForDataReady(1);
-    while(p->samplesReady() == 0 && !g_die) {
-    	usleep(5000);
-    }
+	while (p->samplesReady() == 0 && !g_die) {
+		usleep(5000);
+	}
 
 	if (p == nullptr || g_die) {
 		return; /// xxx how to recover?

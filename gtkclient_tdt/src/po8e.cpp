@@ -36,9 +36,9 @@ void po8_thread(PO8e *p)
 
 	printf("Waiting for the stream to start ...\n");
 	//p->waitForDataReady(0x3e8);
-    while(p->samplesReady() == 0) {
-    	usleep(5000);
-    }
+	while (p->samplesReady() == 0) {
+		usleep(5000);
+	}
 
 	// start the timer used to compute the speed and set the collected bytes to 0
 	//long double starttime = gettime();
