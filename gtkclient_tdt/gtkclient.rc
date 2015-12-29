@@ -46,4 +46,4 @@ card = {
   channels = channels,
 }
 
-po8e_cards[2] = card
+--po8e_cards[2] = card

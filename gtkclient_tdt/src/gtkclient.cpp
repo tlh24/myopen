@@ -2192,10 +2192,6 @@ int main(int argc, char **argv)
 	g_artifactBlankingPreSamps = (int)ms.getStructValue("icms", "blank_pre_samples", 0, (float)g_artifactBlankingPreSamps);
 	g_enableStimClockBlanking = (bool)ms.getStructValue("icms", "blank_clock_enable", 0, (float)g_enableStimClockBlanking);
 
-	// read po8e config
-	po8eConf pc;
-
-
 	//g_dropped = 0;
 
 	gtk_init (&argc, &argv);
@@ -2837,6 +2833,10 @@ int main(int argc, char **argv)
 
 	g_startTime = gettime();
 
+	// read po8e config
+	po8eConf pc;
+	pc.loadConf("gtkclient.rc"); // todo read from proper place
+
 	std::vector <std::thread> threads;
 	std::vector <PO8e *> cards;
 
@@ -2846,6 +2846,10 @@ int main(int argc, char **argv)
 	if (totalcards < 1) {
 		printf("Quitting.\n");
 		return 1;
+	}
+
+	if (totalcards != (int)pc.cards.size()) {
+		WARN("num detected po8e cards differs from num in config files");
 	}
 
 	for (int i=0; i<totalcards; i++) {
