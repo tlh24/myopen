@@ -15,7 +15,7 @@ stimchan.cpp \
 analogchan.cpp \
 spikebuffer.cpp \
 rls.cpp \
-nlms.cpp \
+nlms.cpp
 
 : foreach $(OBJS) |> !cpp |> %B.o
 
@@ -25,4 +25,4 @@ nlms.cpp \
 : icms2mat.cpp | ../proto/icms.pb.h |> !cpp |> %B.o
 : analogwriter.cpp | ../proto/analog.pb.h |> !cpp |> %B.o
 : icmswriter.cpp | ../proto/icms.pb.h |> !cpp |> %B.o
-: gtkclient.cpp | ../proto/analog.pb.h ../proto/icms.pb.h |> !cpp |> %B.o
+: gtkclient.cpp | ../proto/analog.pb.h ../proto/icms.pb.h ../proto/po8e.pb.h |> !cpp |> %B.o

@@ -29,3 +29,21 @@ card = {
 
 po8e_cards = {};
 po8e_cards[1] = card
+
+channels = {}
+for i=1, 96 do
+  channel = {
+    id = i,
+    name = string.format("%s_%03d", "S1", i),
+    scale_factor = 3276700,
+    data_type = data_type.NEURAL,
+  }
+  channels[i] = channel
+end
+
+card = {
+  id = 2,
+  channels = channels,
+}
+
+po8e_cards[2] = card

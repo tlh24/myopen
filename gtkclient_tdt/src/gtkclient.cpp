@@ -48,6 +48,7 @@
 #include "readerwriterqueue.h"
 
 #include "PO8e.h"
+#include "po8e_conf.h"
 
 #include "gettime.h"
 #include "cgVertexShader.h"
@@ -2190,6 +2191,10 @@ int main(int argc, char **argv)
 	g_artifactBlankingSamps = (int)ms.getStructValue("icms", "blank_samples", 0, (float)g_artifactBlankingSamps);
 	g_artifactBlankingPreSamps = (int)ms.getStructValue("icms", "blank_pre_samples", 0, (float)g_artifactBlankingPreSamps);
 	g_enableStimClockBlanking = (bool)ms.getStructValue("icms", "blank_clock_enable", 0, (float)g_enableStimClockBlanking);
+
+	// read po8e config
+	po8eConf pc;
+
 
 	//g_dropped = 0;
 

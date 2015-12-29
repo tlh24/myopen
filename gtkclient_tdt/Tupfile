@@ -21,4 +21,18 @@ LDFLAGS  += -ljack
 
 : src/mmap_test.o |> !ld |> mmap_test
 
-: src/gtkclient.o ../common_host/gettime.o ../common_host/matStor.o ../common_host/glInfo.o ../common_host/random.o ../common_host/jacksnd.o src/datawriter.o src/analogwriter.o src/icmswriter.o src/filter.o src/spikebuffer.o src/rls.o src/nlms.o proto/icms.pb.o proto/analog.pb.o|> !ld |> gtkclient
+: src/gtkclient.o \
+../common_host/gettime.o \
+../common_host/matStor.o \
+../common_host/glInfo.o \
+../common_host/random.o \
+../common_host/jacksnd.o \
+../common_host/lconf.o \
+src/datawriter.o \
+src/analogwriter.o \
+src/icmswriter.o \
+src/filter.o \
+src/spikebuffer.o \
+src/rls.o src/nlms.o \
+src/po8e_conf.o \
+proto/icms.pb.o proto/analog.pb.o proto/po8e.pb.o |> !ld |> gtkclient
