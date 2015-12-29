@@ -1020,13 +1020,15 @@ void nlms_train()
 {
 	gsl_vector *xvec;
 	while (!g_die) {
-
-		int succeeded;
+		int succeeded = 0;
 		do {
 			succeeded = g_filterbuf.try_dequeue(xvec);
 			if (!succeeded)
 				usleep(1e3);
-		} while (!succeeded);
+		} while (!succeeded && !g_die);
+
+		if (!succeeded)
+			continue;
 
 		for (int ch=0; ch<RECCHAN; ch++) {
 			double d = gsl_vector_get(xvec, ch);
@@ -1213,9 +1215,12 @@ void po8e(PO8e *p, ReaderWriterQueue<PO8Data> *q)
 	size_t read_size = 1024;
 
 	printf("Waiting for the stream to start ...\n");
-	p->waitForDataReady(60*60*1000);
+	//p->waitForDataReady(1);
+    while(p->samplesReady() == 0 && !g_die) {
+    	usleep(5000);
+    }
 
-	if (p == nullptr) {
+	if (p == nullptr || g_die) {
 		return; /// xxx how to recover?
 	}
 
@@ -1316,13 +1321,15 @@ void worker()
 				succeeded = g_dataqueues[i]->try_dequeue(p[i]);
 				if (!succeeded)
 					usleep(1e3);
-			} while (!succeeded);
+			} while (!succeeded && !g_die);
 		}
 
-		if (p[0].numSamples != p[1].numSamples) {	// handle better
-			printf("bad error\n");
+		if (g_die)
 			break;
-			// xxx
+
+		if (p[0].numSamples != p[1].numSamples) {	// handle better
+			printf("po8e card sample mismatch\n");
+			break;
 		}
 
 		auto ns = p[0].numSamples;
@@ -1660,10 +1667,14 @@ void mmap_fun()
 	auto mmh = new mmapHelp(length, "/tmp/binned.mmap");
 	volatile unsigned short *bin = (unsigned short *)mmh->m_addr;
 	mmh->prinfo();
+
 	auto pipe_out = new fifoHelp("/tmp/gtkclient_out.fifo");
 	pipe_out->prinfo();
+
 	auto pipe_in = new fifoHelp("/tmp/gtkclient_in.fifo");
+	pipe_in->setR(); // so we can poll
 	pipe_in->prinfo();
+
 	int frame = 0;
 	bin[NCHAN*2*nlags] = 0;
 	bin[NCHAN*2*nlags+1] = 0;
@@ -1671,26 +1682,27 @@ void mmap_fun()
 
 	while (!g_die) {
 		//printf("%d waiting for matlab...\n", frame);
-		double reqTime = 0.0;
-		int r = read(pipe_in->m_fd, &reqTime, 8); // send it the time you want to sample,
-		double end = reqTime; 	// or < 0 to bin 'now'.
-		if (end < 0) end = (double)gettime();
-		if (r >= 3) {
-			for (int i=0; i<NCHAN; i++) {
-				for (int j=0; j<2; j++) {
-					g_fr[i][j].get_bins(end, (unsigned short *)&(bin[(i*2+j)*nlags]));
+		if (pipe_in->Poll(1000)) {
+			double reqTime = 0.0;
+			int r = read(pipe_in->m_fd, &reqTime, 8); // send it the time you want to sample,
+			double end = (reqTime > 0) ? reqTime : (double)gettime(); // < 0 to bin 'now'
+			if (r >= 3) {
+				for (int i=0; i<NCHAN; i++) {
+					for (int j=0; j<2; j++) {
+						g_fr[i][j].get_bins(end, (unsigned short *)&(bin[(i*2+j)*nlags]));
+					}
 				}
-			}
-			bin[NCHAN*2*nlags]++; //counter.
-			// N.B. seems we need to touch all memory to update the first page.
-			//msync(addr, length, MS_SYNC);
-			//  if made with shm_open, msync is ok -- no writes to disk.
-			usleep(100); //seems reliable with this in place.
-			write(pipe_out->m_fd, "go\n", 3);
-			//printf("sent pipe_out 'go'\n");
-		} else
-			usleep(100000); //does not seem to limit the frame rate, just the startup sync.
-		frame++;
+				bin[NCHAN*2*nlags]++; //counter.
+				// N.B. seems we need to touch all memory to update the first page.
+				//msync(addr, length, MS_SYNC);
+				//  if made with shm_open, msync is ok -- no writes to disk.
+				usleep(100); //seems reliable with this in place.
+				write(pipe_out->m_fd, "go\n", 3);
+				//printf("sent pipe_out 'go'\n");
+			} else
+				usleep(100000); //does not seem to limit the frame rate, just the startup sync.
+			frame++;
+		}
 	}
 	delete mmh;
 	delete pipe_in;
@@ -2091,7 +2103,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	string titlestr = "gtkclient (TDT) v1.75";
+	string titlestr = "gtkclient (TDT) v1.90";
 
 #ifdef DEBUG
 	feenableexcept(FE_DIVBYZERO|FE_INVALID|FE_OVERFLOW);  // Enable (some) floating point exceptions
