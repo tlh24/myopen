@@ -132,16 +132,21 @@ int main(void)
 			       channel.name().c_str(),
 			       channel.scale_factor());
 			switch (channel.data_type()) {
-				case po8eChannel::NEURAL:
-					printf("NEURAL\n"); break;
-				case po8eChannel::EVENT:
-					printf("EVENT\n"); break;
-				case po8eChannel::ANALOG:
-					printf("NEURAL\n"); break;
-				case po8eChannel::STIM_PULSES:
-					printf("STIM_PULSES\n"); break;
-				case po8eChannel::BLANK_CLOCK:
-					printf("BLANK_CLOCK\n"); break;
+			case po8eChannel::NEURAL:
+				printf("NEURAL\n");
+				break;
+			case po8eChannel::EVENT:
+				printf("EVENT\n");
+				break;
+			case po8eChannel::ANALOG:
+				printf("NEURAL\n");
+				break;
+			case po8eChannel::STIM_PULSES:
+				printf("STIM_PULSES\n");
+				break;
+			case po8eChannel::BLANK_CLOCK:
+				printf("BLANK_CLOCK\n");
+				break;
 			}
 		}
 	}
