@@ -102,7 +102,7 @@ i64		g_fbufR; //display thread reads from here - copies to mem
 
 ReaderWriterQueue<gsl_vector *> g_filterbuf(NSAMP); // for nlms filtering
 
-std::vector <ReaderWriterQueue<PO8Data>*> g_dataqueues;
+vector <pair<ReaderWriterQueue<PO8Data>*, po8eCard *>> g_dataqueues;
 
 SpikeBuffer g_spikebuf[NCHAN];
 
@@ -1214,6 +1214,8 @@ void po8e(PO8e *p, ReaderWriterQueue<PO8Data> *q)
 
 	size_t read_size = 1024;
 
+	//printf("card id: %lu\n", c->id());
+
 	printf("Waiting for the stream to start ...\n");
 	//p->waitForDataReady(1);
 	while (p->samplesReady() == 0 && !g_die) {
@@ -1314,11 +1316,17 @@ void worker()
 
 		// xxx check for alignment on reading from queues
 
-		PO8Data p[2]; // xxx hard coded
-		for (size_t i=0; i<g_dataqueues.size(); i++) {
+		auto n = g_dataqueues.size();
+
+		auto p = new PO8Data[n];
+		auto c = new po8eCard[n];
+
+		for (size_t i=0; i<n; i++) {
+			auto q = g_dataqueues[i].first;
+			c[i] = *(g_dataqueues[i].second);
 			int succeeded;
 			do {
-				succeeded = g_dataqueues[i]->try_dequeue(p[i]);
+				succeeded = q->try_dequeue(p[i]);
 				if (!succeeded)
 					usleep(1e3);
 			} while (!succeeded && !g_die);
@@ -1327,13 +1335,26 @@ void worker()
 		if (g_die)
 			break;
 
-		if (p[0].numSamples != p[1].numSamples) {	// handle better
-			warn("po8e card sample mismatch");
-			break;
-		}
-
 		auto ns = p[0].numSamples;
 		auto nc = p[0].numChannels;
+
+		auto mismatch = false;
+		for (size_t i=0; i<n; i++) {
+			if (p[i].numSamples != ns) {
+				warn("po8e card sample mismatch");
+				mismatch = true;
+				break;
+			}
+			if (p[i].numChannels != (size_t)c[i].channel_size()) {
+				warn("po8e card %d: expected %d channels (%d actual)",
+				     c[i].id(), c[i].channel_size(), p[i].numChannels);
+				mismatch = true;
+				break;
+			}
+		}
+
+		if (mismatch)
+			break;
 
 		auto f 		= new float[ns*nc];
 		auto tk 	= new unsigned int[ns];
@@ -1345,8 +1366,8 @@ void worker()
 		// xxx check for ticks to be aligned xxx
 
 		auto stim 	= new unsigned int[ns];
-		auto blank 		= new bool[ns];
-		auto audio 		= new float[ns];
+		auto blank 	= new bool[ns];
+		auto audio 	= new float[ns];
 
 		for (size_t k=0; k<ns; k++) {
 			for (size_t ch=0; ch<nc; ch++) {
@@ -2832,8 +2853,8 @@ int main(int argc, char **argv)
 	po8eConf pc;
 	pc.loadConf("gtkclient.rc"); // todo read from proper place
 
-	std::vector <std::thread> threads;
-	std::vector <PO8e *> cards;
+	vector <thread> threads;
+	vector <PO8e *> cards;
 
 	printf("PO8e API Version %s\n", revisionString());
 	int totalcards = PO8e::cardCount();
@@ -2860,8 +2881,8 @@ int main(int argc, char **argv)
 	}
 
 	auto configureCard = [&](PO8e* p) -> bool {
-		// return zero on success
-		// return one on failure
+		// return true on success
+		// return false on failure
 		if (!p->startCollecting())
 		{
 			warn("startCollecting() failed with: %d", p->getLastError());
@@ -2869,32 +2890,34 @@ int main(int argc, char **argv)
 			p->stopCollecting();
 			printf("Releasing card %p\n", p);
 			PO8e::releaseCard(p);
-			return 1;
+			return false;
 		}
 		printf("Card %p is collecting incoming data.\n", p);
-		return 0;
+		return true;
 	};
 
-	cards.erase(std::remove_if(
-	                cards.begin(),
-	                cards.end(),
-	                configureCard),
-	            cards.end()
-	           );
+	//cards.erase(remove_if(
+	//                cards.beggin(),
+	//                cards.end(),
+	//                configureCard),
+	//            cards.end()
+	//           );
 
 	for (size_t i=0; i<cards.size(); i++) {
-		ReaderWriterQueue<PO8Data> *q = new ReaderWriterQueue<PO8Data>(512);
-		threads.push_back(std::thread(po8e, cards[i], q));
-		g_dataqueues.push_back(q);
+		if (configureCard(cards[i])) {
+			ReaderWriterQueue<PO8Data> *q = new ReaderWriterQueue<PO8Data>(512);
+			threads.push_back(thread(po8e, cards[i], q));
+			g_dataqueues.push_back(pair<ReaderWriterQueue<PO8Data>*, po8eCard *>(q, pc.cards[i]));
+		}
 	}
 
-	threads.push_back(std::thread(worker));
-	threads.push_back(std::thread(wfwrite));
-	threads.push_back(std::thread(icmswrite));
-	threads.push_back(std::thread(analogwrite));
-	threads.push_back(std::thread(analogwrite_prefilter));
-	threads.push_back(std::thread(mmap_fun));
-	threads.push_back(std::thread(nlms_train));
+	threads.push_back(thread(worker));
+	threads.push_back(thread(wfwrite));
+	threads.push_back(thread(icmswrite));
+	threads.push_back(thread(analogwrite));
+	threads.push_back(thread(analogwrite_prefilter));
+	threads.push_back(thread(mmap_fun));
+	threads.push_back(thread(nlms_train));
 
 	//set the initial sampling stage.
 	//gtk_combo_box_set_active(GTK_COMBO_BOX(combo), 12);
@@ -2930,7 +2953,7 @@ int main(int argc, char **argv)
 	}
 
 	for (auto &q : g_dataqueues) {
-		delete q;
+		delete q.first;
 	}
 
 }
