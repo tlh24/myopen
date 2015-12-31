@@ -232,11 +232,6 @@ GtkWidget *g_notebook;
 int g_uiRecursion = 0; //prevents programmatic changes to the UI
 // from causing commands to be sent to the headstage.
 
-i64 mod2(i64 a, i64 b)
-{
-	i64 c = a % b;
-	return c;
-}
 void saveState()
 {
 	printf("Saving Preferences to %s\n", g_prefstr);
@@ -2896,13 +2891,6 @@ int main(int argc, char **argv)
 		return true;
 	};
 
-	//cards.erase(remove_if(
-	//                cards.beggin(),
-	//                cards.end(),
-	//                configureCard),
-	//            cards.end()
-	//           );
-
 	for (size_t i=0; i<cards.size(); i++) {
 		if (configureCard(cards[i])) {
 			ReaderWriterQueue<PO8Data> *q = new ReaderWriterQueue<PO8Data>(512);
@@ -2919,11 +2907,9 @@ int main(int argc, char **argv)
 	threads.push_back(thread(mmap_fun));
 	threads.push_back(thread(nlms_train));
 
-	//set the initial sampling stage.
-	//gtk_combo_box_set_active(GTK_COMBO_BOX(combo), 12);
-	gtk_widget_show_all (window);
+	gtk_widget_show_all(window);
 
-	g_timeout_add (1000 / 30, rotate, da1);
+	g_timeout_add(1000 / 30, rotate, da1);
 
 	//jack.
 #ifdef JACK
