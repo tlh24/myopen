@@ -9,9 +9,9 @@
 //
 //  AUTHOR: Song Ho Ahn (song.ahn@gmail.com)
 // CREATED: 2005-10-04
-// UPDATED: 2009-10-07
+// UPDATED: 2013-03-06
 //
-// Copyright (c) 2005 Song Ho Ahn
+// Copyright (c) 2005-2013 Song Ho Ahn
 ///////////////////////////////////////////////////////////////////////////////
 
 #ifndef GLINFO_H
@@ -25,6 +25,7 @@ struct glInfo {
 	std::string vendor;
 	std::string renderer;
 	std::string version;
+	std::string glslVersion;
 	std::vector <std::string> extensions;
 	int redBits;
 	int greenBits;
@@ -45,7 +46,7 @@ struct glInfo {
 		stencilBits(0), maxTextureSize(0), maxLights(0), maxAttribStacks(0),
 		maxModelViewStacks(0), maxClipPlanes(0), maxTextureStacks(0) {}
 
-	bool getInfo();                             // extract info
+	void getInfo();         					// extract info
 	void printSelf();                           // print itself
 	bool isExtensionSupported(const std::string &ext); // check if a extension is supported
 };
