@@ -11,10 +11,6 @@
 #include "matStor.h"
 #include "analogwriter.h"
 
-#define u64 unsigned long long
-#define i64 long long
-#define u32 unsigned int
-
 //#define _LARGEFILE_SOURCE enabled by default.
 #define _FILE_OFFSET_BITS 64
 
@@ -61,13 +57,13 @@ int main(int argn, char **argc)
 	}
 	MatStor ms(s);
 
-	unsigned long packets=0;
-	map<unsigned int,AnalogChan *> analchans;
+	u64 packets=0;
+	map<u32,AnalogChan *> analchans;
 
 	while (!in.eof()) {
 
 		// read magic
-		unsigned int magic;
+		u32 magic;
 		in.read((char *) &magic, sizeof(magic));
 		if (in.eof())
 			break;
@@ -78,13 +74,13 @@ int main(int argn, char **argc)
 			return EXIT_FAILURE;
 		}
 		if (magic != ANALOG_MAGIC) {
-			fprintf(stderr, "packet %ld: magic value, %X, does not match expected value, %X. aborting here.\n",
+			fprintf(stderr, "packet %lu: magic value, %X, does not match expected value, %X. aborting here.\n",
 			        packets+1, magic, ANALOG_MAGIC);
 			break;
 		}
 
 		// read size
-		unsigned int sz;
+		u32 sz;
 		in.read((char *) &sz, sizeof (sz));
 		if (in.eof())
 			return EXIT_FAILURE;
@@ -112,12 +108,12 @@ int main(int argn, char **argc)
 		Analog a;
 		a.Clear();
 		if (!a.ParseFromArray(buf, sz)) {
-			fprintf(stderr, "failed to parse protobuf packet %ld (%d bytes). aborting here.\n",
+			fprintf(stderr, "failed to parse protobuf packet %lu (%d bytes). aborting here.\n",
 			        packets+1, sz);
 			break;
 		}
 
-		unsigned int ch = a.chan();
+		u32 ch = a.chan();
 
 		// try to find the analog chan in our map
 		AnalogChan *ac = nullptr;
@@ -142,7 +138,8 @@ int main(int argn, char **argc)
 
 		for (int i=0; i<a.tick_size(); i++)
 			if (!ac->add_sample(a.ts(i), a.tick(i), a.sample(i)))
-				fprintf(stderr, "Error adding sample for analog chan %u (packet %lu)\n", ch, packets+1);
+				fprintf(stderr, "Error adding sample for analog chan %u (packet %lu)\n",
+				        ch, packets+1);
 
 		packets++;
 		//printf("parsed %ld packets\n", packets);
@@ -157,7 +154,7 @@ int main(int argn, char **argc)
 	       packets+1, analchans.size());
 
 	// now write each stim chan
-	map<unsigned int, AnalogChan *>::iterator it;
+	map<u32, AnalogChan *>::iterator it;
 	for (it = analchans.begin(); it != analchans.end(); ++it) {
 		printf("analog ch: %d\n", (*it).second->chan);
 		(*it).second->save(&ms);

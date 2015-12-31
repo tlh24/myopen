@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include "util.h"
 #include "analogwriter.h"
 
 using namespace google::protobuf::io;
@@ -46,10 +47,10 @@ bool AnalogWriter::write()   // call from a single consumer thread
 		dequeued = m_q->try_dequeue(o);
 		if (dequeued) {
 
-			unsigned int magic = ANALOG_MAGIC;
-			unsigned int sz = o->ByteSize();
-			unsigned int *tmp = (unsigned int *)malloc(sizeof(magic)+sizeof(sz)+sz);
-			unsigned int *u = tmp;
+			u32 magic = ANALOG_MAGIC;
+			u32 sz = o->ByteSize();
+			u32 *tmp = (u32 *)malloc(sizeof(magic)+sizeof(sz)+sz);
+			u32 *u = tmp;
 			*u++ = magic;
 			*u++ = sz;
 			o->SerializeToArray((void *)u, sz);

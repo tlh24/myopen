@@ -39,7 +39,7 @@ SpikeBuffer::~SpikeBuffer()
 {
 }
 
-bool SpikeBuffer::addSample(unsigned int _tk, float _wf)
+bool SpikeBuffer::addSample(u32 _tk, float _wf)
 {
 	long w = m_w; // atomic;
 
@@ -52,7 +52,7 @@ bool SpikeBuffer::addSample(unsigned int _tk, float _wf)
 
 	return true;
 }
-bool SpikeBuffer::getSpike(unsigned int *tk, float *wf, float *neo, int n, float threshold, int alignment, int pre_emphasis)
+bool SpikeBuffer::getSpike(u32 *tk, float *wf, float *neo, int n, float threshold, int alignment, int pre_emphasis)
 {
 	if (alignment >= n) {
 		fprintf(stderr,"ERROR: (Spikebuffer) wf alignment greater than wf length!\n");

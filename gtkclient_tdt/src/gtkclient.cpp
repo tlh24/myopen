@@ -107,7 +107,7 @@ vector <pair<ReaderWriterQueue<PO8Data>*, po8eCard *>> g_dataqueues;
 SpikeBuffer g_spikebuf[NCHAN];
 
 i64		g_lastSpike[NCHAN][NUNIT];
-unsigned int 	g_nsamp = 4096*6; //given the current level of zoom (1 = 4096 samples), how many samples to update?
+u32 	g_nsamp = 4096*6; //given the current level of zoom (1 = 4096 samples), how many samples to update?
 float g_zoomSpan = 1.0;
 
 float 	g_sbuf[NSORT][NCHAN *NSBUF*2]; //2 units, 96 channels, 1024 spikes, 2 floats / spike.
@@ -1041,9 +1041,9 @@ void nlms_train()
 }
 void sorter(int ch)
 {
-	float wf_sp[2*NWFSAMP];
-	float neo_sp[2*NWFSAMP];
-	unsigned int tk_sp[2*NWFSAMP];
+	float 	wf_sp[2*NWFSAMP];
+	float 	neo_sp[2*NWFSAMP];
+	u32 	tk_sp[2*NWFSAMP];
 
 	float threshold;
 	if (g_whichSpikePreEmphasis == 2) {
@@ -1122,7 +1122,7 @@ void sorter(int ch)
 
 		size_t idx = centering-(int)floor(NWFSAMP/2);
 
-		unsigned int tk = tk_sp[centering]; // alignment time
+		u32 tk = tk_sp[centering]; // alignment time
 
 		int unit = 0; //unsorted.
 		for (int u=1; u>=0; u--) { // compare to template.
@@ -1154,7 +1154,7 @@ void sorter(int ch)
 					pak.len = NWFSAMP;
 					float gain2 = 2.f * 32767.f;
 					for (int g=0; g<NWFSAMP; g++) {
-						pak.wf[g] = (short)(wf_sp[idx+g]*gain2); //should be in original units.
+						pak.wf[g] = (i16)(wf_sp[idx+g]*gain2); //should be in original units.
 					}
 					g_wfwriter.add(&pak);
 				}
@@ -1231,7 +1231,7 @@ void po8e(PO8e *p, ReaderWriterQueue<PO8Data> *q)
 	printf("Card %p: %d channels @ %d bytes/sample\n", (void *)p, nchan, bps);
 
 	// 10000 samples * 2 bytes/sample * nChannels
-	auto buff = new short[bufmax*(nchan)];
+	auto buff = new i16[bufmax*(nchan)];
 	auto tick = new int64_t[bufmax];
 
 	// get the initial tick value. hopefully a small number
@@ -1283,8 +1283,8 @@ void po8e(PO8e *p, ReaderWriterQueue<PO8Data> *q)
 			}
 
 			PO8Data o;
-			o.data = (short *)malloc(nchan*numRead*sizeof(short));
-			memcpy(o.data, buff, nchan*numRead*sizeof(short));
+			o.data = (i16 *)malloc(nchan*numRead*sizeof(i16));
+			memcpy(o.data, buff, nchan*numRead*sizeof(i16));
 			o.numChannels = nchan;
 			o.numSamples = numRead;
 			o.tick = tick[0];
@@ -1357,7 +1357,7 @@ void worker()
 			break;
 
 		auto f 		= new float[ns*nc];
-		auto tk 	= new unsigned int[ns];
+		auto tk 	= new u32[ns];
 		tk[0] = p[0].tick;
 		for (size_t i=1; i < ns; i++) {
 			tk[i] = tk[i-1] + 1;
@@ -1365,7 +1365,7 @@ void worker()
 
 		// xxx check for ticks to be aligned xxx
 
-		auto stim 	= new unsigned int[ns];
+		auto stim 	= new u32[ns];
 		auto blank 	= new bool[ns];
 		auto audio 	= new float[ns];
 
@@ -1373,8 +1373,8 @@ void worker()
 			for (size_t ch=0; ch<nc; ch++) {
 				f[ch*ns+k] = (float)p[0].data[ch*ns+k]/32767;
 			}
-			stim[k]  = (unsigned short)(p[1].data[8*ns + k]);
-			stim[k] += (unsigned short)(p[1].data[9*ns + k]) << 16;
+			stim[k]  = (u16)(p[1].data[8*ns + k]);
+			stim[k] += (u16)(p[1].data[9*ns + k]) << 16;
 			blank[k] = p[1].data[10*ns + k] > 0;
 		}
 		free(p[0].data);
@@ -1450,7 +1450,7 @@ void worker()
 			for (int j=0; j<STIMCHAN; j++) {
 
 				// identify stim pulses
-				unsigned int id = (uint) (1 << j); // 2^j
+				u32 id = (uint) (1 << j); // 2^j
 				if (stim[k] & id) {
 					int z = 0;
 					for (int y=0; y<NARTPTR; y++) {
@@ -1686,7 +1686,7 @@ void mmap_fun()
 	int nlags = g_fr[0][0].get_lags();
 	size_t length = (NCHAN+1)*NSORT*nlags*2; // (chans+time)*(2 units)*lags*sizeof(short)
 	auto mmh = new mmapHelp(length, "/tmp/binned.mmap");
-	volatile unsigned short *bin = (unsigned short *)mmh->m_addr;
+	volatile u16 *bin = (u16 *)mmh->m_addr;
 	mmh->prinfo();
 
 	auto pipe_out = new fifoHelp("/tmp/gtkclient_out.fifo");
@@ -1710,7 +1710,7 @@ void mmap_fun()
 			if (r >= 3) {
 				for (int i=0; i<NCHAN; i++) {
 					for (int j=0; j<2; j++) {
-						g_fr[i][j].get_bins(end, (unsigned short *)&(bin[(i*2+j)*nlags]));
+						g_fr[i][j].get_bins(end, (u16 *)&(bin[(i*2+j)*nlags]));
 					}
 				}
 				bin[NCHAN*2*nlags]++; //counter.
@@ -1760,7 +1760,7 @@ void updateChannelUI(int k)
 }
 static void channelSpinCB(GtkWidget *spinner, gpointer p)
 {
-	int k = (int)((long long)p & 0xf);
+	int k = (int)((i64)p & 0xf);
 	int ch = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spinner));
 	debug("channelSpinCB: %d", ch);
 	if (ch < NCHAN && ch >= 0 && ch != g_channel[k]) {
@@ -1785,7 +1785,7 @@ static void channelSpinCB(GtkWidget *spinner, gpointer p)
 }
 static void gainSpinCB(GtkWidget *spinner, gpointer p)
 {
-	int x = (int)((long long)p & 0xf);
+	int x = (int)((i64)p & 0xf);
 	if (!g_uiRecursion) {
 		float gain = gtk_spin_button_get_value(GTK_SPIN_BUTTON(spinner));
 		debug("ch %d (%d) gainSpinCB: %f", g_channel[x], x, gain);
@@ -2053,8 +2053,8 @@ void saveMatrix(const char *fname, gsl_matrix *v)
 */
 static void getTemplateCB(GtkWidget *, gpointer p)
 {
-	int aB = (int)((long long)p & 0x1);
-	int j = (int)((long long)p >> 1);
+	int aB = (int)((i64)p & 0x1);
+	int j = (int)((i64)p >> 1);
 	if (j < 4) {
 		g_c[g_channel[j]]->updateTemplate(aB+1);
 		//update the UI.
@@ -2075,7 +2075,7 @@ static void setWidgetColor(GtkWidget *widget, unsigned char red, unsigned char g
 static void templatePopupMenu (GdkEventButton *event, gpointer p)
 {
 	GtkWidget *menu, *menuitem;
-	int s = (int)((long long)p & 0xff);
+	int s = (int)((i64)p & 0xff);
 
 	menu = gtk_menu_new();
 
@@ -2262,7 +2262,7 @@ int main(int argc, char **argv)
 		bx3 = gtk_hbox_new (FALSE, 1);
 		g_enabledChkBx[i] = mk_checkbox2("enabled", bx3, g_c[g_channel[i]]->getEnabled(),
 		[](GtkWidget *_button, gpointer _p) {
-			int x = (int)((long long)_p & 0xf);
+			int x = (int)((i64)_p & 0xf);
 			bool b = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(_button));
 			g_c[g_channel[x]]->setEnabled(b);
 		}, GINT_TO_POINTER(i));
@@ -2329,7 +2329,7 @@ int main(int argc, char **argv)
 	         box1, true, "median filter", g_whichMedianFilter,
 	[](GtkWidget *_button, gpointer _p) {
 		if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(_button))) {
-			g_whichMedianFilter = (int)((long long)_p & 0xf);
+			g_whichMedianFilter = (int)((i64)_p & 0xf);
 		}
 	});
 
@@ -2359,7 +2359,7 @@ int main(int argc, char **argv)
 			g_apertureSpin[i*2+j] = mk_spinner("", bx3,
 			                                   g_c[g_channel[i]]->getApertureUv(j), 0, 100, 0.1,
 			[](GtkWidget *_spin, gpointer _p) {
-				int h = (int)((long long)_p & 0xf);
+				int h = (int)((i64)_p & 0xf);
 				if (h >= 0 && h < 8 && !g_uiRecursion) {
 					float a = gtk_spin_button_get_value(GTK_SPIN_BUTTON(_spin));
 					int k = g_channel[h/2];
@@ -2380,7 +2380,7 @@ int main(int argc, char **argv)
 			//a button for disable.
 			GtkWidget *button = mk_button("off", bx3,
 			[](GtkWidget *, gpointer _p) {
-				int h = (int)((long long)_p & 0xf);
+				int h = (int)((i64)_p & 0xf);
 				if (h >= 0 && h < 8 && !g_uiRecursion) {
 					int k = g_channel[h/2];
 					gtk_spin_button_set_value(GTK_SPIN_BUTTON(g_apertureSpin[h]), 0);
@@ -2436,7 +2436,7 @@ int main(int argc, char **argv)
 	         box1, true, "Spike Pre-emphasis", g_whichSpikePreEmphasis,
 	[](GtkWidget *_button, gpointer _p) {
 		if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(_button))) {
-			g_whichSpikePreEmphasis = (int)((long long)_p & 0xf);
+			g_whichSpikePreEmphasis = (int)((i64)_p & 0xf);
 		}
 	});
 
@@ -2444,7 +2444,7 @@ int main(int argc, char **argv)
 	         box1, true, "Spike Alignment", g_whichAlignment,
 	[](GtkWidget *_button, gpointer _p) {
 		if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(_button))) {
-			g_whichAlignment = (int)((long long)_p & 0xf);
+			g_whichAlignment = (int)((i64)_p & 0xf);
 		}
 	});
 
@@ -2683,7 +2683,7 @@ int main(int argc, char **argv)
 	mk_radio("active,all", 2, box1, false, "analog channel(s)?", g_whichAnalogSave,
 	[](GtkWidget *_button, gpointer _p) {
 		if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(_button))) {
-			g_whichAnalogSave = (int)((long long)_p & 0xf);
+			g_whichAnalogSave = (int)((i64)_p & 0xf);
 		}
 	}
 	        );
@@ -2740,7 +2740,7 @@ int main(int argc, char **argv)
 	mk_radio("points,lines", 2, bx, true, "draw mode", g_drawmodep,
 	[](GtkWidget *_button, gpointer _p) {
 		if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(_button))) {
-			g_drawmodep = (int)((long long)_p & 0xf);
+			g_drawmodep = (int)((i64)_p & 0xf);
 		}
 	}
 	        );
@@ -2748,7 +2748,7 @@ int main(int argc, char **argv)
 	mk_radio("normal,accum", 2, bx, true, "blend mode", g_blendmodep,
 	[](GtkWidget *_button, gpointer _p) {
 		if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(_button))) {
-			g_blendmodep = (int)((long long)_p & 0xf);
+			g_blendmodep = (int)((i64)_p & 0xf);
 		}
 	}
 	        );

@@ -128,7 +128,7 @@ public:
 		m_loc[2] = m_loc[3] = 1.f;
 		for (int u=0; u<NSORT; u++) {
 			m_lastSpike[u] = 0;
-			for (unsigned int i=0; i < sizeof(m_isi[0])/sizeof(m_isi[0][0]); i++) {
+			for (size_t i=0; i < sizeof(m_isi[0])/sizeof(m_isi[0][0]); i++) {
 				m_isi[u][i] = 0;
 			}
 		}
@@ -626,7 +626,7 @@ public:
 		m_usVbo->setFade(1.7);
 		for (int u=0; u<NSORT; u++) {
 			m_lastSpike[u] = 0;
-			for (unsigned int i=0; i < sizeof(m_isi[0])/sizeof(m_isi[0][0]); i++) {
+			for (size_t i=0; i < sizeof(m_isi[0])/sizeof(m_isi[0][0]); i++) {
 				m_isi[u][i] = 0;
 			}
 		}

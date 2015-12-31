@@ -11,11 +11,11 @@
 
 struct wfpak {
 	double time; //wall clock time of spike, aligned to beginning.
-	long	ticks; //tdt ticks of spike. 8 bytes.
-	short	channel;
-	short	unit;
-	short   len;
-	short	wf[NWFSAMP];
+	i64	ticks; //tdt ticks of spike. 8 bytes.
+	i16	channel;
+	i16	unit;
+	i16   len;
+	i16	wf[NWFSAMP];
 };
 #define WFBUFSIZ (1024*64)
 #define WFBUFMASK (WFBUFSIZ-1)
@@ -23,9 +23,9 @@ struct wfpak {
 class WfWriter
 {
 protected:
-	std::atomic<long> m_w; //this is great!
+	std::atomic<i64> m_w; //this is great!
 	std::atomic<bool>	m_enable;
-	long m_r;
+	i64 m_r;
 	wfpak m_d[WFBUFSIZ];
 	std::string m_fn; // the file name
 	FILE *m_fid;
@@ -64,16 +64,16 @@ public:
 	void add(wfpak *wf)    //non-blocking. call from po8e thread.
 	{
 		if (m_enable) {
-			long w = m_w++; //must be atomic.
+			i64 w = m_w++; //must be atomic.
 			memcpy(&(m_d[w & WFBUFMASK]), wf, sizeof(wfpak));
 		}
 	}
 	int write()   //call from another thread.
 	{
 		if (m_enable) {
-			long w = m_w;
+			i64 w = m_w;
 			for (; m_r<w; m_r++) {
-				unsigned int tmp = 0xc0edfad0; //magic number, for alignment.
+				u32 tmp = 0xc0edfad0; //magic number, for alignment.
 				fwrite((void *)&tmp, 4, 1, m_fid);
 				fwrite((void *)&(m_d[m_r & WFBUFMASK]), sizeof(wfpak), 1, m_fid);
 			}
@@ -85,7 +85,7 @@ public:
 	{
 		return m_enable;
 	}
-	long bytes()
+	i64 bytes()
 	{
 		return m_r * sizeof(wfpak);
 	}

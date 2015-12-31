@@ -1,7 +1,8 @@
-#include <atomic>
-
 #ifndef __SPIKEBUFFER_H__
 #define	__SPIKEBUFFER_H__
+
+#include <atomic>
+#include "util.h"
 
 #define SPIKE_BUF_SIZE (4096) // BYTES, MUST BE POWER OF 2
 #define SPIKE_MASK (SPIKE_BUF_SIZE-1)
@@ -25,11 +26,11 @@ public:
 class SpikeBuffer
 {
 protected:
-	float m_wf[SPIKE_BUF_SIZE];	 		// the spike buffer
-	unsigned int m_tk[SPIKE_BUF_SIZE];	// the tick buffer
-	float m_neo[SPIKE_BUF_SIZE];		// the neo buffer
-	std::atomic<long> m_w;       		// atomic write pointer
-	std::atomic<long> m_r;       		// atomic read pointer
+	float m_wf[SPIKE_BUF_SIZE];	 	// the spike buffer
+	u32 m_tk[SPIKE_BUF_SIZE];		// the tick buffer
+	float m_neo[SPIKE_BUF_SIZE];	// the neo buffer
+	std::atomic<long> m_w;       	// atomic write pointer
+	std::atomic<long> m_r;       	// atomic read pointer
 	NEO neof;
 
 public:
@@ -37,9 +38,9 @@ public:
 
 	virtual ~SpikeBuffer();
 
-	bool addSample(unsigned int _tk, float _wf);
+	bool addSample(u32 _tk, float _wf);
 
-	bool getSpike(unsigned int *tk, float *wf, float *neo, int n, float threshold, int alignment, int pre_emphasis);
+	bool getSpike(u32 *tk, float *wf, float *neo, int n, float threshold, int alignment, int pre_emphasis);
 
 	// returns buffer capcity as a fraction. 1 means filled. 0 means empty.
 	float capacity();

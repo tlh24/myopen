@@ -1,6 +1,7 @@
 #ifndef __VBO_H__
 #define __VBO_H__
 
+#include "util.h"
 #include "matStor.h"
 
 void copyData(GLuint vbo, u32 sta, u32 fin, float *ptr, int stride);

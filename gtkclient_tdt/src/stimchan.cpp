@@ -22,7 +22,7 @@ void StimChan::clear()
 	artifacts.clear();
 }
 
-bool StimChan::add_event(double _ts, unsigned long long _tick)
+bool StimChan::add_event(double _ts, u64 _tick)
 {
 	ts.push_back(_ts);
 	ticks.push_back(_tick);
@@ -50,7 +50,7 @@ bool StimChan::add_artifact(RecArtifact *_a)
 	}
 
 	vector<float> *wf = _a->get_wf_vector();
-	for (unsigned int i=0; i<wf->size(); i++)
+	for (u32 i=0; i<wf->size(); i++)
 		a->add_wf_sample(wf->at(i));
 	a->num_wf++;
 
@@ -76,21 +76,21 @@ bool StimChan::save(MatStor *ms)
 	for (vector<double>::size_type i=0; i != ts.size(); i++)
 		ms->setDouble(i, buf_ts, ts[i]);
 
-	for (vector<long long>::size_type i=0; i != ticks.size(); i++)
+	for (vector<i64>::size_type i=0; i != ticks.size(); i++)
 		ms->setDouble(i, buf_tick, (double) ticks[i]);
 
-	map<unsigned int, RecArtifact *>::iterator it;
+	map<u32, RecArtifact *>::iterator it;
 	for (it = artifacts.begin(); it != artifacts.end(); ++it) {
-		unsigned int rec_chan = (*it).second->rec_chan;
+		u32 rec_chan = (*it).second->rec_chan;
 		char buf_wf[128];
 		memset(buf_wf, 0, sizeof(buf_wf));
 		sprintf(buf_wf, "icms_wf_%03u_%03u", stim_chan, rec_chan);
 
-		unsigned int m = (*it).second->samples_per_wf;
-		unsigned int n = (*it).second->num_wf;
+		u32 m = (*it).second->samples_per_wf;
+		u32 n = (*it).second->num_wf;
 		vector<float> *wf = (*it).second->get_wf_vector();
-		for (unsigned int i=0; i<m; i++)
-			for (unsigned int j=0; j<n; j++)
+		for (u32 i=0; i<m; i++)
+			for (u32 j=0; j<n; j++)
 				ms->setDouble2(i, j, buf_wf, (double)(*wf)[j*m+i]);
 	}
 

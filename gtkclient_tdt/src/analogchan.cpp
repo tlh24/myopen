@@ -22,7 +22,7 @@ void AnalogChan::clear()
 	samples.clear();
 }
 
-bool AnalogChan::add_sample(double _ts, unsigned long long _tick, float _sample)
+bool AnalogChan::add_sample(double _ts, u64 _tick, float _sample)
 {
 	ts.push_back(_ts);
 	ticks.push_back(_tick);
@@ -42,19 +42,16 @@ bool AnalogChan::save(MatStor *ms)
 
 	memset(buf, 0, sizeof(buf));
 	sprintf(buf, "ad_ts_%03u", chan);
-
 	for (vector<double>::size_type i=0; i != ts.size(); i++)
 		ms->setDouble(i, buf, (double) ts[i]);
 
 	memset(buf, 0, sizeof(buf));
 	sprintf(buf, "ad_tick_%03u", chan);
-
-	for (vector<long long>::size_type i=0; i != ticks.size(); i++)
+	for (vector<i64>::size_type i=0; i != ticks.size(); i++)
 		ms->setDouble(i, buf, (double) ticks[i]);
 
 	memset(buf, 0, sizeof(buf));
 	sprintf(buf, "ad_samp_%03u", chan);
-
 	for (vector<float>::size_type i=0; i != samples.size(); i++)
 		ms->setDouble(i, buf, (double) samples[i]);
 

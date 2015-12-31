@@ -11,10 +11,6 @@
 #include "matStor.h"
 #include "icmswriter.h"
 
-#define u64 unsigned long long
-#define i64 long long
-#define u32 unsigned int
-
 //#define _LARGEFILE_SOURCE enabled by default.
 #define _FILE_OFFSET_BITS 64
 
@@ -61,13 +57,13 @@ int main(int argn, char **argc)
 	}
 	MatStor ms(s);
 
-	unsigned long packets=0;
-	map<unsigned int,StimChan *> stimchans;
+	u64 packets=0;
+	map<u32,StimChan *> stimchans;
 
 	while (!in.eof()) {
 
 		// read magic
-		unsigned int magic;
+		u32 magic;
 		in.read((char *) &magic, sizeof(magic));
 		if (in.eof())
 			break;
@@ -78,13 +74,13 @@ int main(int argn, char **argc)
 			return EXIT_FAILURE;
 		}
 		if (magic != ICMS_MAGIC) {
-			fprintf(stderr, "packet %ld: magic value, %X, does not match expected value, %X. aborting here.\n",
+			fprintf(stderr, "packet %lu: magic value, %X, does not match expected value, %X. aborting here.\n",
 			        packets+1, magic, ICMS_MAGIC);
 			break;
 		}
 
 		// read size
-		unsigned int sz;
+		u32 sz;
 		in.read((char *) &sz, sizeof (sz));
 		if (in.eof())
 			return EXIT_FAILURE;
@@ -112,12 +108,12 @@ int main(int argn, char **argc)
 		ICMS o;
 		o.Clear();
 		if (!o.ParseFromArray(buf, sz)) {
-			fprintf(stderr, "failed to parse protobuf packet %ld (%d bytes). aborting here.\n",
+			fprintf(stderr, "failed to parse protobuf packet %lu (%d bytes). aborting here.\n",
 			        packets+1, sz);
 			break;
 		}
 
-		unsigned int key = o.stim_chan();
+		u32 key = o.stim_chan();
 
 		// try to find the stim chan in our map
 		StimChan *sc = nullptr;
@@ -163,10 +159,10 @@ int main(int argn, char **argc)
 	ShutdownProtobufLibrary();
 
 	printf("Parsing complete. %lu total pulses from %lu stim chans.\n",
-	       packets, stimchans.size());
+	       packets+1, stimchans.size());
 
 	// now write each stim chan
-	map<unsigned int, StimChan *>::iterator it;
+	map<u32, StimChan *>::iterator it;
 	for (it = stimchans.begin(); it != stimchans.end(); ++it) {
 		printf("stim ch: %d\n", (*it).second->stim_chan);
 		(*it).second->save(&ms);

@@ -3,6 +3,7 @@
 #include <thread>
 #include <algorithm>
 #include <vector>
+#include "util.h"
 #include "PO8e.h"
 
 #include "po8e_conf.h" // parse po8e conf files
@@ -42,8 +43,8 @@ void po8_thread(PO8e *p)
 
 	// start the timer used to compute the speed and set the collected bytes to 0
 	//long double starttime = gettime();
-	//long long bytes = 0;
-	unsigned int frame = 0;
+	//i64 bytes = 0;
+	u32 frame = 0;
 
 	if (p == nullptr) {
 		return;
@@ -54,12 +55,12 @@ void po8_thread(PO8e *p)
 	printf("Card %p: %d channels @ %d bytes/sample\n", (void *)p, nchan, bps);
 
 	// 10000 samples * 2 bytes/sample * nChannels
-	auto buffs = new short[bufmax*(nchan)];
-	auto ticks = new int64_t[bufmax];
+	auto buffs = new i16[bufmax*(nchan)];
+	auto ticks = new i64[bufmax];
 
 	// get the initial tick value. hopefully a small number
 	p->readBlock(buffs, 1, ticks);
-	int64_t last_tick = ticks[0] - 1;
+	i64 last_tick = ticks[0] - 1;
 
 	while (!g_die) {
 

@@ -19,15 +19,15 @@ Filter::~Filter()
 	d.clear();
 }
 
-void Filter::Proc(float *in, float *out, unsigned int kpoints)
+void Filter::Proc(float *in, float *out, u32 kpoints)
 {
 	// Direct Form II Transposed filter.
 	// see the matlab help.
-	for (unsigned int i=0; i<kpoints; i++) {
+	for (u32 i=0; i<kpoints; i++) {
 		double x = in[i];
 		double y = (d[0] + B[0]*x);
 		out[i] = (float)(y);
-		unsigned int j;
+		u32 j;
 		for (j=0; j<B.size()-2; j++) {
 			d[j] = d[j+1] + B[j+1]*x - A[j+1]*y;
 			if (isnan(d[j]) || !isfinite(d[j]))
