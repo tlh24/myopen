@@ -900,10 +900,12 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 		       glInfo.version.c_str());
 		printf("GLSL version: %s\n", glInfo.glslVersion.c_str());
 		printf("Renderer: %s\n", glInfo.renderer.c_str());
-		if (glInfo.isExtensionSupported("GL_ARB_vertex_buffer_object"))
+		if (glInfo.isExtensionSupported("GL_ARB_vertex_buffer_object")) {
 			printf("Video card supports GL_ARB_vertex_buffer_object.\n");
-		else
-			printf("Video card does NOT support GL_ARB_vertex_buffer_object.\n");
+		} else {
+			error("Video card does NOT support GL_ARB_vertex_buffer_object");
+			exit(1);
+		}
 		// probably should die here?
 
 		g_vbo1Init = true;
