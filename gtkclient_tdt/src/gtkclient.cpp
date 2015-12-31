@@ -896,8 +896,8 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 		glInfo glInfo;
 		glInfo.getInfo();
 		printf("OpenGL (%s) version: %s\n",
-			glInfo.vendor.c_str(),
-			glInfo.version.c_str());
+		       glInfo.vendor.c_str(),
+		       glInfo.version.c_str());
 		printf("GLSL version: %s\n", glInfo.glslVersion.c_str());
 		printf("Renderer: %s\n", glInfo.renderer.c_str());
 		if (glInfo.isExtensionSupported("GL_ARB_vertex_buffer_object"))
