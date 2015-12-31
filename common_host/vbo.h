@@ -611,7 +611,8 @@ public:
 	}
 };
 
-void copyData(GLuint vbo, u32 sta, u32 fin, float *ptr, int stride) {
+void copyData(GLuint vbo, u32 sta, u32 fin, float *ptr, int stride)
+{
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB, vbo);
 	sta *= stride;
 	fin *= stride;

@@ -895,13 +895,16 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 		//now the vertex buffers.
 		glInfo glInfo;
 		glInfo.getInfo();
-		printf("OpenGL version: %s\n", glInfo.version.c_str());
-		//glInfo.printSelf();
+		printf("OpenGL (%s) version: %s\n",
+			glInfo.vendor.c_str(),
+			glInfo.version.c_str());
+		printf("GLSL version: %s\n", glInfo.glslVersion.c_str());
+		printf("Renderer: %s\n", glInfo.renderer.c_str());
 		if (glInfo.isExtensionSupported("GL_ARB_vertex_buffer_object"))
 			printf("Video card supports GL_ARB_vertex_buffer_object.\n");
 		else
 			printf("Video card does NOT support GL_ARB_vertex_buffer_object.\n");
-			// probably should die here?
+		// probably should die here?
 
 		g_vbo1Init = true;
 		//okay, want one vertex buffer (4now): draw the samples.
