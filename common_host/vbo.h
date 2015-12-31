@@ -6,6 +6,7 @@
 
 void copyData(GLuint vbo, u32 sta, u32 fin, float *ptr, int stride);
 extern float g_viewportSize[2];
+
 class Vbo
 {
 public:
@@ -184,13 +185,13 @@ class VboPca : public Vbo
 public:
 	float	*m_mean; //center of the data (used for PCA)
 	float	*m_max;
-	float *m_maxSmooth;
-	float *m_meanSmooth;
-	float *m_wf;
-	float *m_poly;
-	int    m_polyW;
-	int    m_drawWf;
-	int m_wfLen;
+	float 	*m_maxSmooth;
+	float 	*m_meanSmooth;
+	float 	*m_wf;
+	float 	*m_poly;
+	int 	m_polyW;
+	int 	m_drawWf;
+	int 	m_wfLen;
 
 	VboPca(int dim, int rows, int cols, int ch, MatStor *ms):Vbo(dim, rows, cols)
 	{
@@ -609,4 +610,13 @@ public:
 		copyData(m_vbo, 0, m_rows, m_f, m_dim * m_cols);
 	}
 };
+
+void copyData(GLuint vbo, u32 sta, u32 fin, float *ptr, int stride) {
+	glBindBufferARB(GL_ARRAY_BUFFER_ARB, vbo);
+	sta *= stride;
+	fin *= stride;
+	ptr += sta;
+	glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, sta*4, (fin-sta)*4, (GLvoid *)ptr);
+}
+
 #endif

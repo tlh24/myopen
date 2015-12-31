@@ -219,7 +219,9 @@ int g_blendmodep = 0;
 
 bool g_vbo1Init = false;
 GLuint g_vbo1[NFBUF]; //for the waveform display
-GLuint g_vbo2[2] = {0,0}; //for spikes.
+GLuint g_vbo2[2] = {0,0}; //for spike ticks.
+// why are there two?
+// xxx could use g_vbo2 to handle other event ticks
 
 //global labels..
 GtkWidget *g_infoLabel;
@@ -301,8 +303,7 @@ void destroy(int)
 		delete g_vsThreshold;
 	cgDestroyContext(myCgContext);
 	if (g_vbo1Init) {
-		for (auto &elem : g_vbo1)
-			glDeleteBuffersARB(1, &elem);
+		glDeleteBuffersARB(NFBUF, g_vbo1);
 		glDeleteBuffersARB(2, g_vbo2);
 	}
 	for (int i=0; i<NCHAN; i++) {
@@ -311,48 +312,6 @@ void destroy(int)
 	}
 	for (auto &elem : g_artifact)
 		delete elem;
-}
-void gsl_matrix_to_mat(gsl_matrix *x, const char *fname)
-{
-	// write a gsl matrix to a .mat file.
-	// does not free the matrix.
-	mat_t *mat;
-	mat = Mat_CreateVer(fname,nullptr,MAT_FT_MAT73);
-	if (!mat) {
-		warn("could not open %s for writing", fname);
-		return;
-	}
-	size_t dims[2];
-	dims[0] = x->size1;
-	dims[1] = x->size2;
-	double *d = (double *)malloc(dims[0]*dims[1]*sizeof(double));
-	if (!d) {
-		warn("could not allocate memory for copy");
-		return;
-	}
-	//reformat and transpose.
-	//matio expects fortran style, column-major format.
-	//gsl is row-major.
-	for (size_t i=0; i<dims[0]; i++) { //rows
-		for (size_t j=0; j<dims[1]; j++) { //columns
-			d[j*dims[0] + i] = x->data[i*x->tda + j];
-		}
-	}
-	matvar_t *matvar;
-	matvar = Mat_VarCreate("a",MAT_C_DOUBLE,MAT_T_DOUBLE,
-	                       2,dims,d,0);
-	Mat_VarWrite( mat, matvar, MAT_COMPRESSION_NONE );
-	Mat_VarFree(matvar);
-	free(d);
-	Mat_Close(mat);
-}
-void copyData(GLuint vbo, u32 sta, u32 fin, float *ptr, int stride)
-{
-	glBindBufferARB(GL_ARRAY_BUFFER_ARB, vbo);
-	sta *= stride;
-	fin *= stride;
-	ptr += sta;
-	glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, sta*4, (fin-sta)*4, (GLvoid *)ptr);
 }
 void BuildFont(void)
 {
@@ -565,6 +524,15 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 
 	if (!gdk_gl_drawable_gl_begin (gldrawable, glcontext))
 		g_assert_not_reached ();
+
+
+	auto copyData = [](GLuint vbo, u32 sta, u32 fin, float *ptr, int stride) {
+		glBindBufferARB(GL_ARRAY_BUFFER_ARB, vbo);
+		sta *= stride;
+		fin *= stride;
+		ptr += sta;
+		glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, sta*4, (fin-sta)*4, (GLvoid *)ptr);
+	};
 
 	//copy over any new data.
 	if (!g_pause) {
@@ -933,16 +901,18 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 			printf("Video card supports GL_ARB_vertex_buffer_object.\n");
 		else
 			printf("Video card does NOT support GL_ARB_vertex_buffer_object.\n");
+			// probably should die here?
+
 		g_vbo1Init = true;
 		//okay, want one vertex buffer (4now): draw the samples.
 		//fill the buffer with temp data.
+		glGenBuffersARB(NFBUF, g_vbo1);
 		for (int k=0; k<NFBUF; k++) {
 			for (int i=0; i<NSAMP; i++) {
 				g_fbuf[k][i*3+0] = (float)i;
 				g_fbuf[k][i*3+1] = sinf((float)i *0.02);
 				g_fbuf[k][i*3+2] = 0.f;
 			}
-			glGenBuffersARB(1, &g_vbo1[k]);
 			glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo1[k]);
 			glBufferDataARB(GL_ARRAY_BUFFER_ARB, NSAMP*3*sizeof(float),
 			                nullptr, GL_DYNAMIC_DRAW_ARB);
@@ -953,7 +923,9 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 			                          GL_BUFFER_SIZE_ARB, &bufferSize);
 			//printf("Vertex Array in VBO:%d bytes\n", bufferSize);
 		}
+
 		//have one VBO that's filled with spike times & channels.
+		glGenBuffersARB(2, g_vbo2);
 		for (int k=0; k<2; k++) {
 			for (int i=0; i<NCHAN; i++) {
 				for (int j=0; j<NSBUF; j++) {
@@ -961,7 +933,6 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 					g_sbuf[k][(i*NSBUF+j)*2+1] = (float)i;
 				}
 			}
-			glGenBuffersARB(1, &g_vbo2[k]);
 			glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo2[k]);
 			glBufferDataARB(GL_ARRAY_BUFFER_ARB, sizeof(g_sbuf[k]),
 			                nullptr, GL_DYNAMIC_DRAW_ARB);

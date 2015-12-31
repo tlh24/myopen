@@ -34,8 +34,8 @@ private:
 	float 	m_gain;
 	float 	m_aperture[NSORT]; 	// aka MSE per sample.
 public:
-	Vbo	*m_wfVbo; 		// range 1 mean 0
-	Vbo	*m_usVbo;
+	Vbo		*m_wfVbo; 		// range 1 mean 0
+	Vbo		*m_usVbo;		// unsorted units
 	VboPca	*m_pcaVbo; 		// 2D points, with color.
 	float	m_pca[NSORT][NWFSAMP]; 	// range 1 mean 0
 	float 	m_pcaScl[NSORT]; 	// sqrt of the eigenvalues.
@@ -152,7 +152,6 @@ public:
 		ms->setValue3(m_ch, 0, "pcaScl", m_pcaScl, 2);
 		ms->setValue(m_ch, "threshold", m_threshold);
 		ms->setValue(m_ch, "centering", m_centering);
-		//ms->setValue(m_ch, "agc", m_agc);
 		ms->setValue(m_ch, "gain", m_gain);
 		ms->setValue(m_ch, "enabled", m_enabled);
 		m_pcaVbo->save(m_ch, ms);
@@ -791,5 +790,38 @@ public:
 		}
 	}
 };
+
+void gsl_matrix_to_mat(gsl_matrix *x, const char *fname)
+{
+	// write a gsl matrix to a .mat file.
+	// does not free the matrix.
+	mat_t *mat;
+	mat = Mat_CreateVer(fname,nullptr,MAT_FT_MAT73);
+	if (!mat) {
+		warn("could not open %s for writing", fname);
+		return;
+	}
+	size_t dims[2];
+	dims[0] = x->size1;
+	dims[1] = x->size2;
+	double *d = (double *)malloc(dims[0]*dims[1]*sizeof(double));
+	if (!d) {
+		warn("could not allocate memory for copy");
+		return;
+	}
+	//reformat and transpose.
+	//matio expects fortran style, column-major format.
+	//gsl is row-major.
+	for (size_t i=0; i<dims[0]; i++) //rows
+		for (size_t j=0; j<dims[1]; j++) //columns
+			d[j*dims[0] + i] = x->data[i*x->tda + j];
+
+	matvar_t *matvar;
+	matvar = Mat_VarCreate("a", MAT_C_DOUBLE, MAT_T_DOUBLE, 2, dims, d, 0);
+	Mat_VarWrite(mat, matvar, MAT_COMPRESSION_NONE);
+	Mat_VarFree(matvar);
+	free(d);
+	Mat_Close(mat);
+}
 
 #endif
