@@ -16,6 +16,7 @@ public:
 	const char *name();
 	bool loadConf(const char *conf);
 	vector <po8eCard *> cards;
+	size_t numNeuralChannels();
 protected:
 private:
 	po8eCard *loadCard(size_t i);

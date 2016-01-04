@@ -26,6 +26,19 @@ bool po8eConf::loadConf(const char *conf)
 	}
 	return true;
 }
+// returns the number of neural channels over all cards
+size_t po8eConf::numNeuralChannels()
+{
+	size_t n = 0;
+	for (auto &c : cards) {
+		for (auto i=0; i<c->channel_size(); i++) {
+			if (c->channel(i).data_type() == po8eChannel::NEURAL) {
+				n += 1;
+			}
+		}
+	}
+	return n;
+}
 // calling function should free memory
 po8eCard *po8eConf::loadCard(size_t idx)
 {
