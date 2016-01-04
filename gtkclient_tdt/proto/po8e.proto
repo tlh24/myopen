@@ -15,6 +15,7 @@ message po8eChannel {
 	  ANALOG = 2; // uses scale_factor
 	  STIM_PULSES = 3;
 	  BLANK_CLOCK = 4;
+	  IGNORE = 5;
 	}
 	optional DataTypes data_type = 4 [default = NEURAL];
 }
