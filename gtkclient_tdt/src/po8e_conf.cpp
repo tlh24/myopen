@@ -26,6 +26,7 @@ bool po8eConf::loadConf(const char *conf)
 	}
 	return true;
 }
+//size_t po8eConf::numChannels()
 // returns the number of neural channels over all cards
 size_t po8eConf::numNeuralChannels()
 {
@@ -72,6 +73,10 @@ po8eCard *po8eConf::loadCard(size_t idx)
 				stack++;
 				if (lua_isstring(L, -1)) {
 					chan->set_name(lua_tostring(L, -1));
+				} else { // no name field set
+					char s[8];
+					sprintf(s, "ch_%03lu", chan->id());
+					chan->set_name(s);
 				}
 				lua_pop(L, 1);
 				stack--;
@@ -99,6 +104,9 @@ po8eCard *po8eConf::loadCard(size_t idx)
 						break;
 					case 4:
 						chan->set_data_type(po8eChannel::BLANK_CLOCK);
+						break;
+					case 5:
+						chan->set_data_type(po8eChannel::IGNORE);
 						break;
 					default:
 						chan->set_data_type(po8eChannel::NEURAL);
