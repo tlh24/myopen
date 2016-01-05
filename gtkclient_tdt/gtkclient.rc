@@ -7,17 +7,16 @@ data_type = {
   NEURAL = 0, -- the default type
   EVENT = 1,
   ANALOG = 2,
-  STIM_PULSES = 3,
-  BLANK_CLOCK = 4,
+  IGNORE = 3,
 }
 
 channels = {}
 for i=1, 96 do
   channel = {
     id = i,
-    name = string.format("%s_%03d", "M1", i),
-    scale_factor = 3276700,
-    data_type = data_type.NEURAL,
+    --name = string.format("%s_%03d", "M1", i),
+    --scale_factor = 3276700,
+    --data_type = NEURAL,
   }
   channels[i] = channel
 end
@@ -35,8 +34,8 @@ for i=1, 96 do
   channel = {
     id = i,
     name = string.format("%s_%03d", "S1", i),
-    scale_factor = 3276700,
-    data_type = data_type.NEURAL,
+    scale_factor = 666,
+    data_type = data_type.IGNORE,
   }
   channels[i] = channel
 end

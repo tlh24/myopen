@@ -120,35 +120,26 @@ int main(void)
 	po8eConf pc;
 
 	pc.loadConf("gtkclient.rc");
+	printf("Total channels:\n");
+	printf("  -> neural: %zu\n", pc.numNeuralChannels());
+	printf("  -> event: %zu\n", pc.numEventChannels());
+	printf("  -> analog: %zu\n", pc.numAnalogChannels());
+	printf("  -> ignored: %zu\n", pc.numIgnoredChannels());
 
-	for (size_t i=0; i<pc.cards.size(); i++) {
+	printf("\n\n");
+
+	for (auto &c : pc.cards) {
 		printf("card %lu in conf (%d channels)\n",
-		       pc.cards[i]->id(),
-		       pc.cards[i]->channel_size()
+		       c->id(),
+		       c->channel_size()
 		      );
-		for (int j=0; j<pc.cards[i]->channel_size(); j++) {
-			auto channel = pc.cards[i]->channel(j);
-			printf("  ch: %02lu (%s) scale_factor: %lu data_type: ",
+		for (int j=0; j<c->channel_size(); j++) {
+			auto channel = c->channel(j);
+			printf("  ch: %02lu (%s) scale_factor: %lu data_type: %s\n",
 			       channel.id(),
 			       channel.name().c_str(),
-			       channel.scale_factor());
-			switch (channel.data_type()) {
-			case po8eChannel::NEURAL:
-				printf("NEURAL\n");
-				break;
-			case po8eChannel::EVENT:
-				printf("EVENT\n");
-				break;
-			case po8eChannel::ANALOG:
-				printf("NEURAL\n");
-				break;
-			case po8eChannel::STIM_PULSES:
-				printf("STIM_PULSES\n");
-				break;
-			case po8eChannel::BLANK_CLOCK:
-				printf("BLANK_CLOCK\n");
-				break;
-			}
+			       channel.scale_factor(),
+			       po8e::channel_DataTypes_Name(channel.data_type()).c_str());
 		}
 	}
 

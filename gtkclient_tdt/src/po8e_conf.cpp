@@ -26,24 +26,39 @@ bool po8eConf::loadConf(const char *conf)
 	}
 	return true;
 }
-//size_t po8eConf::numChannels()
-// returns the number of neural channels over all cards
-size_t po8eConf::numNeuralChannels()
+// returns the number of channels over all cards
+size_t po8eConf::numChannels(po8e::channel_DataTypes x)
 {
 	size_t n = 0;
 	for (auto &c : cards) {
 		for (auto i=0; i<c->channel_size(); i++) {
-			if (c->channel(i).data_type() == po8eChannel::NEURAL) {
+			if (c->channel(i).data_type() == x) {
 				n += 1;
 			}
 		}
 	}
 	return n;
 }
-// calling function should free memory
-po8eCard *po8eConf::loadCard(size_t idx)
+size_t po8eConf::numNeuralChannels() // helper
 {
-	auto card = new po8eCard;
+	return numChannels(po8e::channel::NEURAL);
+}
+size_t po8eConf::numEventChannels() // helper
+{
+	return numChannels(po8e::channel::EVENT);
+}
+size_t po8eConf::numAnalogChannels() // helper
+{
+	return numChannels(po8e::channel::ANALOG);
+}
+size_t po8eConf::numIgnoredChannels() // helper
+{
+	return numChannels(po8e::channel::IGNORE);
+}
+// calling function should free memory
+po8e::card *po8eConf::loadCard(size_t idx)
+{
+	auto card = new po8e::card;
 	size_t stack = 0;
 	lua_getglobal(L, "po8e_cards");
 	stack++;
@@ -89,27 +104,9 @@ po8eCard *po8eConf::loadCard(size_t idx)
 				lua_getfield(L, -1, "data_type");
 				stack++;
 				if (lua_isnumber(L, -1)) {
-					switch (lua_tointeger(L, -1)) {
-					case 0:
-						chan->set_data_type(po8eChannel::NEURAL);
-						break;
-					case 1:
-						chan->set_data_type(po8eChannel::EVENT);
-						break;
-					case 2:
-						chan->set_data_type(po8eChannel::ANALOG);
-						break;
-					case 3:
-						chan->set_data_type(po8eChannel::STIM_PULSES);
-						break;
-					case 4:
-						chan->set_data_type(po8eChannel::BLANK_CLOCK);
-						break;
-					case 5:
-						chan->set_data_type(po8eChannel::IGNORE);
-						break;
-					default:
-						chan->set_data_type(po8eChannel::NEURAL);
+					int v = (int)lua_tointeger(L, -1);
+					if (po8e::channel_DataTypes_IsValid(v)) {
+						chan->set_data_type(po8e::channel_DataTypes(v));
 					}
 				}
 				lua_pop(L, 1);

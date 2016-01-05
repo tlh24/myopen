@@ -102,7 +102,7 @@ i64		g_fbufR; //display thread reads from here - copies to mem
 
 ReaderWriterQueue<gsl_vector *> g_filterbuf(NSAMP); // for nlms filtering
 
-vector <pair<ReaderWriterQueue<PO8Data>*, po8eCard *>> g_dataqueues;
+vector <pair<ReaderWriterQueue<PO8Data>*, po8e::card *>> g_dataqueues;
 
 SpikeBuffer g_spikebuf[NCHAN];
 
@@ -115,6 +115,7 @@ float	g_rasterSpan = 10.f; // %seconds.
 i64	g_sbufW[NSORT];
 i64	g_sbufR[NSORT];
 Channel 	*g_c[NCHAN];
+//Channel 	*g_c = nullptr;
 FiringRate	g_fr[NCHAN][NSORT];
 TimeSync 	g_ts(SRATE_HZ); //keeps track of ticks (TDT time)
 WfWriter	g_wfwriter;
@@ -162,13 +163,16 @@ bool g_rtMouseBtn = false;
 gboolean g_saveUnsorted = true;
 gboolean g_saveSpikeWF = true;
 gboolean g_saveICMSWF = true;
+
+// for drawing circles around pca points
 int 	g_polyChan = 0;
 bool 	g_addPoly = false;
+
 int 	g_channel[4] = {0,32,64,95};
+
 long double g_lastPo8eTime = 0.0;
 long double g_po8ePollInterval = 0.0;
 long double g_po8eAvgInterval = 0.0;
-int64_t g_tdtOffsetDiff = 0;
 
 int g_whichSpikePreEmphasis = 0;
 enum EMPHASIS {
@@ -1179,7 +1183,7 @@ void analogwrite_prefilter()
 			usleep(1e5);
 	}
 }
-void po8e(PO8e *p, ReaderWriterQueue<PO8Data> *q)
+void po8e_fun(PO8e *p, ReaderWriterQueue<PO8Data> *q)
 {
 	size_t bufmax = 10000;	// must be >= 10000
 
@@ -1203,7 +1207,7 @@ void po8e(PO8e *p, ReaderWriterQueue<PO8Data> *q)
 
 	// 10000 samples * 2 bytes/sample * nChannels
 	auto buff = new i16[bufmax*(nchan)];
-	auto tick = new int64_t[bufmax];
+	auto tick = new i64[bufmax];
 
 	// get the initial tick value. hopefully a small number
 	p->readBlock(buff, 1, tick);
@@ -1290,7 +1294,7 @@ void worker()
 		auto n = g_dataqueues.size();
 
 		auto p = new PO8Data[n];
-		auto c = new po8eCard[n];
+		auto c = new po8e::card[n];
 
 		for (size_t i=0; i<n; i++) {
 			auto q = g_dataqueues[i].first;
@@ -1322,9 +1326,14 @@ void worker()
 				mismatch = true;
 				break;
 			}
+			if (p[i].tick != p[0].tick) {
+				warn("p08e ticks misaligned between cards");
+				mismatch = true;
+				break;
+			}
 		}
 
-		if (mismatch)
+		if (mismatch) // exit the worker; no data will be processed
 			break;
 
 		auto f 		= new float[ns*nc];
@@ -1333,8 +1342,6 @@ void worker()
 		for (size_t i=1; i < ns; i++) {
 			tk[i] = tk[i-1] + 1;
 		}
-
-		// xxx check for ticks to be aligned xxx
 
 		auto stim 	= new u32[ns];
 		auto blank 	= new bool[ns];
@@ -2851,6 +2858,12 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
+	// here we figure out how many channels we have
+	// and allocate memory accordingly
+
+
+
+
 	auto configureCard = [&](PO8e* p) -> bool {
 		// return true on success
 		// return false on failure
@@ -2870,8 +2883,8 @@ int main(int argc, char **argv)
 	for (size_t i=0; i<cards.size(); i++) {
 		if (configureCard(cards[i])) {
 			ReaderWriterQueue<PO8Data> *q = new ReaderWriterQueue<PO8Data>(512);
-			threads.push_back(thread(po8e, cards[i], q));
-			g_dataqueues.push_back(pair<ReaderWriterQueue<PO8Data>*, po8eCard *>(q, pc.cards[i]));
+			threads.push_back(thread(po8e_fun, cards[i], q));
+			g_dataqueues.push_back(pair<ReaderWriterQueue<PO8Data>*, po8e::card *>(q, pc.cards[i]));
 		}
 	}
 
