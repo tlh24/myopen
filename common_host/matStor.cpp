@@ -259,6 +259,17 @@ void MatStor::setValue(int ch, const char *name, float val)
 		m_dat1.insert(pairfloat1(string(name),r));
 	}
 }
+void MatStor::setValue(const char *name, vector<float> v)
+{
+	mapfloat1::iterator it = m_dat1.find(string(name));
+	if (it != m_dat1.end()) {
+		vector<float> *r = &((*it).second);
+		(*r) = v;
+	} else {
+		m_dat1.insert(pairfloat1(string(name),v));
+	}
+}
+
 void MatStor::setDouble(int ch, const char *name, double val)
 {
 	map<string, vector<double> >::iterator it = m_datd1.find(string(name));

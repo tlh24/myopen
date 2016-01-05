@@ -35,6 +35,7 @@ public:
 	void clear(); // clears internal structures
 
 	void setValue(int ch, const char *name, float val);
+	void setValue(const char *name, std::vector<float> v);
 	void setValue2(int ch, int un, const char *name, float val);
 	void setValue3(int ch, int un, const char *name, float *val, int siz);
 	float getValue(int ch, const char *name, float def);
