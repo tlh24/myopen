@@ -240,7 +240,7 @@ void saveState()
 	MatStor ms(g_prefstr); 	// no need to load before saving here
 	for (auto &c : g_c)
 		c->save(&ms);
-	for (int i=0; i<NCHAN; i++) {
+	for (int i=0; i<RECCHAN; i++) {
 		g_nlms[i]->save(&ms);
 	}
 	for (auto &elem : g_artifact) {
@@ -307,7 +307,7 @@ void destroy(int)
 		glDeleteBuffersARB(NFBUF, g_vbo1);
 		glDeleteBuffersARB(2, g_vbo2);
 	}
-	for (int i=0; i<NCHAN; i++) {
+	for (int i=0; i<RECCHAN; i++) {
 		delete g_nlms[i];
 	}
 	for (auto &elem : g_artifact)
@@ -2150,7 +2150,7 @@ int main(int argc, char **argv)
 		if (g_channel[i] < 0) g_channel[i] = 0;
 		if (g_channel[i] >= NCHAN) g_channel[i] = NCHAN-1;
 	}
-	for (int i=0; i<NCHAN; i++) {
+	for (int i=0; i<RECCHAN; i++) {
 		g_nlms[i] = new ArtifactNLMS(96, 1e-5, i, &ms);
 	}
 	for (int i=0; i<STIMCHAN; i++)
@@ -2499,8 +2499,8 @@ int main(int argc, char **argv)
 	gtk_box_pack_start (GTK_BOX (box3), box4, TRUE, TRUE, 0);
 	mk_button("clear lms weights", box4,
 	[](GtkWidget *, gpointer) {
-		for (auto &g_nlm : g_nlms) {
-			g_nlm->clearWeights();
+		for (auto &o : g_nlms) {
+			o->clearWeights();
 		}
 	}, nullptr);
 
