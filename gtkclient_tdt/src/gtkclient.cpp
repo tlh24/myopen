@@ -104,7 +104,7 @@ ReaderWriterQueue<gsl_vector *> g_filterbuf(NSAMP); // for nlms filtering
 
 vector <pair<ReaderWriterQueue<PO8Data>*, po8e::card *>> g_dataqueues;
 
-SpikeBuffer g_spikebuf[NCHAN];
+SpikeBuffer *g_spikebuf = nullptr;
 
 i64		g_lastSpike[NCHAN][NUNIT];
 u32 	g_nsamp = 4096*6; //given the current level of zoom (1 = 4096 samples), how many samples to update?
@@ -314,6 +314,7 @@ void destroy(int)
 		//delete g_c[i];
 		delete g_nlms[i];
 	}
+	delete[] g_spikebuf;
 	for (auto &elem : g_artifact)
 		delete elem;
 }
@@ -2141,13 +2142,14 @@ int main(int argc, char **argv)
 	po8eConf pc;
 	pc.loadConf("gtkclient.rc"); // TODO read from proper place
 
-	auto n = pc.numNeuralChannels();
-	printf("%zu neural channels\n", n);
+	auto nc = pc.numNeuralChannels();
+	printf("%zu neural channels\n", nc);
 
-	for (size_t i=0; i<n; i++) {
+	for (size_t i=0; i<nc; i++) {
 		auto c = new Channel(i, &ms);
 		g_c.push_back(c);
 	}
+	g_spikebuf = new SpikeBuffer[nc];
 
 	for (int i=0; i<4; i++) {
 		g_channel[i] = ms.getValue(i, "channel", i*16);
