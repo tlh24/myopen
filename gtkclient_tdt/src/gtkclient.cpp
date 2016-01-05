@@ -114,8 +114,7 @@ float 	g_sbuf[NSORT][NCHAN *NSBUF*2]; //2 units, 96 channels, 1024 spikes, 2 flo
 float	g_rasterSpan = 10.f; // %seconds.
 i64	g_sbufW[NSORT];
 i64	g_sbufR[NSORT];
-Channel 	*g_c[NCHAN];
-//Channel 	*g_c = nullptr;
+vector <Channel *> g_c;
 FiringRate	g_fr[NCHAN][NSORT];
 TimeSync 	g_ts(SRATE_HZ); //keeps track of ticks (TDT time)
 WfWriter	g_wfwriter;
@@ -242,8 +241,9 @@ void saveState()
 {
 	printf("Saving Preferences to %s\n", g_prefstr);
 	MatStor ms(g_prefstr); 	// no need to load before saving here
+	for (auto &c : g_c)
+		c->save(&ms);
 	for (int i=0; i<NCHAN; i++) {
-		g_c[i]->save(&ms);
 		g_nlms[i]->save(&ms);
 	}
 	for (auto &elem : g_artifact) {
@@ -311,7 +311,7 @@ void destroy(int)
 		glDeleteBuffersARB(2, g_vbo2);
 	}
 	for (int i=0; i<NCHAN; i++) {
-		delete g_c[i];
+		//delete g_c[i];
 		delete g_nlms[i];
 	}
 	for (auto &elem : g_artifact)
@@ -477,8 +477,9 @@ static gint button_press_event( GtkWidget *,
 		}
 	}
 	if (g_mode == MODE_SPIKES) {
-		int spikesRows = NCHAN / g_spikesCols;
-		if (NCHAN % g_spikesCols) spikesRows++;
+		int nc = (int)g_c.size();
+		int spikesRows = nc / g_spikesCols;
+		if (nc % g_spikesCols) spikesRows++;
 		float xf = g_spikesCols;
 		float yf = spikesRows;
 		float x = (g_cursPos[0] + 1.f)/ 2.f;
@@ -487,7 +488,7 @@ static gint button_press_event( GtkWidget *,
 		int sr = (int)floor(y*yf);
 		if (event->button==1 && event->type==GDK_2BUTTON_PRESS) { // double (left) click
 			int h =  sr*g_spikesCols + sc;
-			if (h >= 0 && h < NCHAN) {
+			if (h >= 0 && h < nc) {
 				//shift channels down, like a priority queue.
 				for (int i=3; i>0; i--)
 					g_channel[i] = g_channel[i-1];
@@ -504,7 +505,7 @@ static gint button_press_event( GtkWidget *,
 		}
 		if (event->button==3) { // (right click)
 			int h =  sr*g_spikesCols + sc;
-			if (h >= 0 && h < NCHAN) {
+			if (h >= 0 && h < nc) {
 				g_c[h]->toggleEnabled();
 				for (int i=0; i<4; i++) {
 					if (g_channel[i] == h) {
@@ -571,8 +572,8 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 			}
 		}
 		//and the waveform buffers.
-		for (auto &elem : g_c)
-			elem->copy();
+		for (auto &c : g_c)
+			c->copy();
 	}
 	/* draw in here */
 	glMatrixMode(GL_MODELVIEW);
@@ -762,13 +763,14 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 			}
 		}
 		if (g_mode == MODE_SPIKES) {
-			int spikesRows = NCHAN / g_spikesCols;
-			if (NCHAN % g_spikesCols) spikesRows++;
+			int nc = (int)g_c.size();
+			int spikesRows = nc / g_spikesCols;
+			if (nc % g_spikesCols) spikesRows++;
 			float xf = g_spikesCols;
 			float yf = spikesRows;
 			xz = 2.f/xf;
 			yz = 2.f/yf;
-			for (int k=0; k<NCHAN; k++) {
+			for (int k=0; k<nc; k++) {
 				xo = (k%g_spikesCols)/xf;
 				yo = ((k/g_spikesCols)+1)/yf;
 				g_c[k]->setLoc(xo*2.f-1.f, 1.f-yo*2.f, xz*2.f, yz);
@@ -948,8 +950,8 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 			glBufferSubDataARB(GL_ARRAY_BUFFER_ARB,
 			                   0, sizeof(g_sbuf[k]), g_sbuf[k]);
 		}
-		for (auto &elem : g_c) {
-			elem->configure(g_vsFadeColor);
+		for (auto &c : g_c) {
+			c->configure(g_vsFadeColor);
 		}
 	}
 	BuildFont(); //so we're in the right context?
@@ -1189,8 +1191,6 @@ void po8e_fun(PO8e *p, ReaderWriterQueue<PO8Data> *q)
 
 	size_t read_size = 1024;
 
-	//printf("card id: %lu\n", c->id());
-
 	printf("Waiting for the stream to start ...\n");
 	//p->waitForDataReady(1);
 	while (p->samplesReady() == 0 && !g_die) {
@@ -1288,8 +1288,6 @@ void worker()
 	gsl_vector *xvec = gsl_vector_alloc(RECCHAN);
 
 	while (!g_die) {
-
-		// xxx check for alignment on reading from queues
 
 		auto n = g_dataqueues.size();
 
@@ -1625,8 +1623,8 @@ void worker()
 		}
 
 		// sort -- see if samples pass threshold. if so, copy.
-		for (int ch=0; ch<NCHAN; ch++) {
-			if (g_c[ch]->getEnabled()) {
+		for (int ch=0; ch<(int)g_c.size(); ch++) {
+			if (g_c[ch]->getEnabled()) { //XXX put this into channel class?
 				sorter(ch);
 			}
 		}
@@ -1661,6 +1659,7 @@ void mmap_fun()
 	 * */
 	// XXX we make an assumption here that the number of lags is
 	// the same for all neurons.
+	//auto nc = g_c.size();
 	int nlags = g_fr[0][0].get_lags();
 	size_t length = (NCHAN+1)*NSORT*nlags*2; // (chans+time)*(2 units)*lags*sizeof(short)
 	auto mmh = new mmapHelp(length, "/tmp/binned.mmap");
@@ -1716,7 +1715,7 @@ static gboolean chanscan(gpointer)
 		base &= 31;
 		for (int k=0; k<4; k++) {
 			g_channel[k] = base + k*32;
-			g_channel[k] %= NCHAN;
+			g_channel[k] %= g_c.size();
 			gtk_spin_button_set_value(GTK_SPIN_BUTTON(g_channelSpin[k]), (double)g_channel[k]);
 		}
 		g_uiRecursion--;
@@ -1740,8 +1739,9 @@ static void channelSpinCB(GtkWidget *spinner, gpointer p)
 {
 	int k = (int)((i64)p & 0xf);
 	int ch = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spinner));
+	int nc = (int)g_c.size();
 	debug("channelSpinCB: %d", ch);
-	if (ch < NCHAN && ch >= 0 && ch != g_channel[k]) {
+	if (ch < nc && ch >= 0 && ch != g_channel[k]) {
 		g_channel[k] = ch;
 		updateChannelUI(k); //update the UI too.
 	}
@@ -1750,7 +1750,7 @@ static void channelSpinCB(GtkWidget *spinner, gpointer p)
 	//if (g_mode == MODE_SORT && k == 0 && g_autoChOffset) {
 	if (k == 0 && g_autoChOffset) {
 		for (int j=1; j<4; j++) {
-			g_channel[j] = (g_channel[0] + j) % NCHAN;
+			g_channel[j] = (g_channel[0] + j) % nc;
 			//this does not recurse -- have to set the other stuff manually.
 			g_uiRecursion++;
 			gtk_spin_button_set_value(GTK_SPIN_BUTTON(g_channelSpin[j]), (double)g_channel[j]);
@@ -2127,6 +2127,7 @@ int main(int argc, char **argv)
 	test_fr.set_bin_params(15,1.0);
 	test_fr.get_bins_test();
 
+	// load matlab preferences
 	if (argc > 1)
 		strcpy(g_prefstr, argv[1]);
 	else
@@ -2135,13 +2136,25 @@ int main(int argc, char **argv)
 
 	MatStor ms(g_prefstr);
 	ms.load();
+
+	// load the lua-based po8e config
+	po8eConf pc;
+	pc.loadConf("gtkclient.rc"); // TODO read from proper place
+
+	auto n = pc.numNeuralChannels();
+	printf("%zu neural channels\n", n);
+
+	for (size_t i=0; i<n; i++) {
+		auto c = new Channel(i, &ms);
+		g_c.push_back(c);
+	}
+
 	for (int i=0; i<4; i++) {
 		g_channel[i] = ms.getValue(i, "channel", i*16);
 		if (g_channel[i] < 0) g_channel[i] = 0;
 		if (g_channel[i] >= NCHAN) g_channel[i] = NCHAN-1;
 	}
 	for (int i=0; i<NCHAN; i++) {
-		g_c[i] = new Channel(i, &ms);
 		g_nlms[i] = new ArtifactNLMS(96, 1e-5, i, &ms);
 	}
 	for (int i=0; i<STIMCHAN; i++)
@@ -2228,7 +2241,7 @@ int main(int argc, char **argv)
 
 		//channel spinner.
 		g_channelSpin[i] = mk_spinner("ch", bx3,
-		                              g_channel[i], 0, NCHAN-1, 1,
+		                              g_channel[i], 0, g_c.size()-1, 1,
 		                              channelSpinCB, GINT_TO_POINTER(i));
 
 		//right of that, a gain spinner. (need to update depending on ch)
@@ -2270,9 +2283,9 @@ int main(int argc, char **argv)
 	mk_button("Set all gains from A", box1,
 	[](GtkWidget *, gpointer) {
 		float g = gtk_spin_button_get_value(GTK_SPIN_BUTTON(g_gainSpin[0]));
-		for (auto &elem : g_c) {
-			elem->setGain(g);
-			elem->resetPca();
+		for (auto &c : g_c) {
+			c->setGain(g);
+			c->resetPca();
 		}
 		for (int i=1; i<4; i++) { // 0 is what we are reading from
 			gtk_spin_button_set_value(GTK_SPIN_BUTTON(g_gainSpin[i]), g);
@@ -2445,8 +2458,8 @@ int main(int argc, char **argv)
 	}, nullptr);
 	mk_button("set all", bx3,
 	[](GtkWidget *, gpointer) {
-		for (auto &elem : g_c) {
-			elem->autoThreshold(g_autoThreshold);
+		for (auto &c : g_c) {
+			c->autoThreshold(g_autoThreshold);
 		}
 	}, nullptr);
 
@@ -2827,10 +2840,6 @@ int main(int argc, char **argv)
 
 	g_startTime = gettime();
 
-	// read po8e config
-	po8eConf pc;
-	pc.loadConf("gtkclient.rc"); // todo read from proper place
-
 	vector <thread> threads;
 	vector <PO8e *> cards;
 
@@ -2857,12 +2866,6 @@ int main(int argc, char **argv)
 		error("Connected to 0 cards");
 		return 1;
 	}
-
-	// here we figure out how many channels we have
-	// and allocate memory accordingly
-
-
-
 
 	auto configureCard = [&](PO8e* p) -> bool {
 		// return true on success
