@@ -10,6 +10,7 @@
 #include "matStor.h"
 #include "random.h"
 #include "util.h"
+#include "spikebuffer.h"
 
 void gsl_matrix_to_mat(gsl_matrix *x, const char *fname);
 long double gettime();
@@ -49,6 +50,9 @@ public:
 	i64		m_isiViolations;
 	i64		m_lastSpike[NSORT]; //zero when a spike occurs. in samples.
 	bool	m_enabled;
+	SpikeBuffer m_spkbuf;
+	// TODO wrap spikebuffer methods into channel so that we can make the
+	// spikebuffer private
 
 	Channel(int ch, MatStor *ms)
 	{

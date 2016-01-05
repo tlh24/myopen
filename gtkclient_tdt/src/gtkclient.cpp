@@ -104,8 +104,6 @@ ReaderWriterQueue<gsl_vector *> g_filterbuf(NSAMP); // for nlms filtering
 
 vector <pair<ReaderWriterQueue<PO8Data>*, po8e::card *>> g_dataqueues;
 
-SpikeBuffer *g_spikebuf = nullptr;
-
 i64		g_lastSpike[NCHAN][NUNIT];
 u32 	g_nsamp = 4096*6; //given the current level of zoom (1 = 4096 samples), how many samples to update?
 float g_zoomSpan = 1.0;
@@ -311,10 +309,8 @@ void destroy(int)
 		glDeleteBuffersARB(2, g_vbo2);
 	}
 	for (int i=0; i<NCHAN; i++) {
-		//delete g_c[i];
 		delete g_nlms[i];
 	}
-	delete[] g_spikebuf;
 	for (auto &elem : g_artifact)
 		delete elem;
 }
@@ -1030,7 +1026,7 @@ void sorter(int ch)
 		threshold = g_c[ch]->getThreshold(); // 1 -> 10mV.
 	}
 
-	while (g_spikebuf[ch].getSpike(tk_sp, wf_sp, neo_sp, 2*NWFSAMP, threshold, NWFSAMP, g_whichSpikePreEmphasis)) {
+	while (g_c[ch]->m_spkbuf.getSpike(tk_sp, wf_sp, neo_sp, 2*NWFSAMP, threshold, NWFSAMP, g_whichSpikePreEmphasis)) {
 		// ask for twice the width of a spike waveform so that we may align
 
 		int a = floor(NWFSAMP/2);
@@ -1578,12 +1574,13 @@ void worker()
 		g_fbufW += ns;
 
 		// package data for sorting / saving
+
 		for (int ch=0; ch<RECCHAN; ch++) {
 			double m = g_c[ch]->m_mean;
 			for (size_t k=0; k<ns; k++) {
 
 				// 1 = +10mV; range = [-1 1] here.
-				g_spikebuf[ch].addSample(tk[k], f[ch*ns+k] * 0.5f);
+				g_c[ch]->m_spkbuf.addSample(tk[k], f[ch*ns+k] * 0.5f);
 
 				//update the channel standard deviations, too.
 				g_c[ch]->m_var *= 0.999998;
@@ -2149,7 +2146,6 @@ int main(int argc, char **argv)
 		auto c = new Channel(i, &ms);
 		g_c.push_back(c);
 	}
-	g_spikebuf = new SpikeBuffer[nc];
 
 	for (int i=0; i<4; i++) {
 		g_channel[i] = ms.getValue(i, "channel", i*16);
