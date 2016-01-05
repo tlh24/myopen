@@ -104,7 +104,6 @@ ReaderWriterQueue<gsl_vector *> g_filterbuf(NSAMP); // for nlms filtering
 
 vector <pair<ReaderWriterQueue<PO8Data>*, po8e::card *>> g_dataqueues;
 
-i64		g_lastSpike[NCHAN][NUNIT];
 u32 	g_nsamp = 4096*6; //given the current level of zoom (1 = 4096 samples), how many samples to update?
 float g_zoomSpan = 1.0;
 
@@ -1112,12 +1111,11 @@ void sorter(int ch)
 
 		// check if this exceeds minimum ISI.
 		// wftick is indexed to the start of the waveform.
-		if (tk - g_lastSpike[ch][unit] > g_minISI*SRATE_KHZ) {
+		if (tk - g_c[ch]->m_lastSpike[unit] > g_minISI*SRATE_KHZ) {
 			long double the_time = g_ts.getTime(tk);
 			//need to more precisely calulate spike time here.
 			g_c[ch]->addWf(&wf_sp[idx], unit, the_time, true);
 			g_c[ch]->updateISI(unit, tk);
-			g_lastSpike[ch][unit] = tk;
 			if (g_wfwriter.enabled()) {
 				if (unit > 0 || g_saveUnsorted) {
 					wfpak pak;
@@ -1575,7 +1573,7 @@ void worker()
 
 		// package data for sorting / saving
 
-		for (int ch=0; ch<RECCHAN; ch++) {
+		for (size_t ch=0; ch<g_c.size(); ch++) {
 			double m = g_c[ch]->m_mean;
 			for (size_t k=0; k<ns; k++) {
 
