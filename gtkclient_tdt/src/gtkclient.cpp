@@ -107,12 +107,12 @@ vector <pair<ReaderWriterQueue<PO8Data>*, po8e::card *>> g_dataqueues;
 u32 	g_nsamp = 4096*6; //given the current level of zoom (1 = 4096 samples), how many samples to update?
 float g_zoomSpan = 1.0;
 
-float 	g_sbuf[NSORT][NCHAN *NSBUF*2]; //2 units, 96 channels, 1024 spikes, 2 floats / spike.
+float 	g_sbuf[NSORT][RECCHAN *NSBUF*2]; //2 units, 96 channels, 1024 spikes, 2 floats / spike.
 float	g_rasterSpan = 10.f; // %seconds.
 i64	g_sbufW[NSORT];
 i64	g_sbufR[NSORT];
 vector <Channel *> g_c;
-FiringRate	g_fr[NCHAN][NSORT];
+FiringRate	g_fr[RECCHAN][NSORT];
 TimeSync 	g_ts(SRATE_HZ); //keeps track of ticks (TDT time)
 WfWriter	g_wfwriter;
 GLuint 		g_base;            // base display list for the font set.
@@ -127,20 +127,20 @@ gboolean g_lopassNeurons = false;
 gboolean g_hipassNeurons = false;
 
 #if defined KHZ_24
-FilterButterBand_24k_500_3000 g_bandpass[NCHAN];
-FilterButterLow_24k_3000 g_lopass[NCHAN];
-FilterButterHigh_24k_500 g_hipass[NCHAN];
+FilterButterBand_24k_500_3000 g_bandpass[RECCHAN];
+FilterButterLow_24k_3000 g_lopass[RECCHAN];
+FilterButterHigh_24k_500 g_hipass[RECCHAN];
 #elif defined KHZ_48
-FilterButterBand_48k_500_3000 g_bandpass[NCHAN];
-FilterButterLow_48k_3000 g_lopass[NCHAN];
-FilterButterHigh_48k_500 g_hipass[NCHAN];
+FilterButterBand_48k_500_3000 g_bandpass[RECCHAN];
+FilterButterLow_48k_3000 g_lopass[RECCHAN];
+FilterButterHigh_48k_500 g_hipass[RECCHAN];
 #else
 #error Bad sampling rate!
 #endif
 
 int g_whichMedianFilter = 0;
-MedFilt3 g_medfilt3[NCHAN];
-MedFilt5 g_medfilt5[NCHAN];
+MedFilt3 g_medfilt3[RECCHAN];
+MedFilt5 g_medfilt5[RECCHAN];
 
 int g_whichAnalogSave = 0;
 
@@ -916,7 +916,7 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 		//have one VBO that's filled with spike times & channels.
 		glGenBuffersARB(2, g_vbo2);
 		for (int k=0; k<2; k++) {
-			for (int i=0; i<NCHAN; i++) {
+			for (int i=0; i<RECCHAN; i++) {
 				for (int j=0; j<NSBUF; j++) {
 					g_sbuf[k][(i*NSBUF+j)*2+0] = (float)i/256.0+(float)j/2048.0;
 					g_sbuf[k][(i*NSBUF+j)*2+1] = (float)i;
@@ -1642,7 +1642,7 @@ void mmap_fun()
 	// the same for all neurons.
 	//auto nc = g_c.size();
 	int nlags = g_fr[0][0].get_lags();
-	size_t length = (NCHAN+1)*NSORT*nlags*2; // (chans+time)*(2 units)*lags*sizeof(short)
+	size_t length = (RECCHAN+1)*NSORT*nlags*2; // (chans+time)*(2 units)*lags*sizeof(short)
 	auto mmh = new mmapHelp(length, "/tmp/binned.mmap");
 	volatile u16 *bin = (u16 *)mmh->m_addr;
 	mmh->prinfo();
@@ -1655,8 +1655,8 @@ void mmap_fun()
 	pipe_in->prinfo();
 
 	int frame = 0;
-	bin[NCHAN*2*nlags] = 0;
-	bin[NCHAN*2*nlags+1] = 0;
+	bin[RECCHAN*2*nlags] = 0;
+	bin[RECCHAN*2*nlags+1] = 0;
 	flush_pipe(pipe_out->m_fd);
 
 	while (!g_die) {
@@ -1666,12 +1666,12 @@ void mmap_fun()
 			int r = read(pipe_in->m_fd, &reqTime, 8); // send it the time you want to sample,
 			double end = (reqTime > 0) ? reqTime : (double)gettime(); // < 0 to bin 'now'
 			if (r >= 3) {
-				for (int i=0; i<NCHAN; i++) {
+				for (int i=0; i<RECCHAN; i++) {
 					for (int j=0; j<2; j++) {
 						g_fr[i][j].get_bins(end, (u16 *)&(bin[(i*2+j)*nlags]));
 					}
 				}
-				bin[NCHAN*2*nlags]++; //counter.
+				bin[RECCHAN*2*nlags]++; //counter.
 				// N.B. seems we need to touch all memory to update the first page.
 				//msync(addr, length, MS_SYNC);
 				//  if made with shm_open, msync is ok -- no writes to disk.
@@ -2132,7 +2132,7 @@ int main(int argc, char **argv)
 	for (size_t i=0; i<g_channel.size(); i++) {
 		g_channel[i] = ms.getInt(i, "channel", i*16);
 		if (g_channel[i] < 0) g_channel[i] = 0;
-		if (g_channel[i] >= NCHAN) g_channel[i] = NCHAN-1;
+		if (g_channel[i] >= (int)nc) g_channel[i] = (int)nc-1;
 	}
 	for (int i=0; i<STIMCHAN; i++)
 		g_artifact.push_back(new Artifact(i, &ms));

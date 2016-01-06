@@ -38,7 +38,6 @@ enum MODES { // ui tabs
 #define NSORT		2
 
 #define RECCHAN 	96
-#define NCHAN		96
 
 //#define LMSBUF 		64
 
