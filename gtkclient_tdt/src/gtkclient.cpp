@@ -120,7 +120,7 @@ GLuint 		g_base;            // base display list for the font set.
 AnalogWriter g_analogwriter;
 AnalogWriter g_analogwriter_prefilter;
 
-Artifact *g_artifact[STIMCHAN];
+vector <Artifact *> g_artifact;
 ICMSWriter g_icmswriter;
 
 gboolean g_lopassNeurons = false;
@@ -164,7 +164,7 @@ gboolean g_saveICMSWF = true;
 int 	g_polyChan = 0;
 bool 	g_addPoly = false;
 
-int 	g_channel[4] = {0,32,64,95};
+vector<int> g_channel {0,32,64,95};
 
 long double g_lastPo8eTime = 0.0;
 long double g_po8ePollInterval = 0.0;
@@ -197,12 +197,12 @@ int g_spikesCols = 16;
 
 gboolean g_trainArtifactNLMS = true;
 gboolean g_filterArtifactNLMS = false;
-ArtifactNLMS *g_nlms[RECCHAN];
+vector <ArtifactNLMS *> g_nlms;
 
 gboolean g_enableArtifactSubtr = true;
 gboolean g_trainArtifactTempl = false;
 int g_numArtifactSamps = 1e4; 	// number of artifacts to use to build template
-int g_stimChanDisp = 0;	// 0-15
+int g_stimChanDisp = 0;	// number of artifact channels
 float g_artifactDispAtten = 0.1f;
 
 gboolean g_enableArtifactBlanking = true;
@@ -240,15 +240,11 @@ void saveState()
 	MatStor ms(g_prefstr); 	// no need to load before saving here
 	for (auto &c : g_c)
 		c->save(&ms);
-	for (int i=0; i<RECCHAN; i++) {
-		g_nlms[i]->save(&ms);
-	}
-	for (auto &elem : g_artifact) {
-		elem->save(&ms);
-	}
-	for (int i=0; i<4; i++) {
-		ms.setValue(i, "channel", g_channel[i]);
-	}
+	for (auto &x : g_nlms)
+		x->save(&ms);
+	for (auto &a : g_artifact)
+		a->save(&ms);
+	ms.setInt("channel", g_channel);
 
 	ms.setStructValue("gui","draw_mode",0,(float)g_drawmodep);
 	ms.setStructValue("gui","blend_mode",0,(float)g_blendmodep);
@@ -307,11 +303,6 @@ void destroy(int)
 		glDeleteBuffersARB(NFBUF, g_vbo1);
 		glDeleteBuffersARB(2, g_vbo2);
 	}
-	for (int i=0; i<RECCHAN; i++) {
-		delete g_nlms[i];
-	}
-	for (auto &elem : g_artifact)
-		delete elem;
 }
 void BuildFont(void)
 {
@@ -1003,13 +994,14 @@ void nlms_train()
 		if (!succeeded)
 			continue;
 
-		for (int ch=0; ch<RECCHAN; ch++) {
+		for (auto &x : g_nlms) {
+			auto ch = x->ch();
 			double d = gsl_vector_get(xvec, ch);
 			gsl_vector_set(xvec, ch, 0.0);
-			g_nlms[ch]->train(xvec,d);
+			x->train(xvec, d);
 			gsl_vector_set(xvec, ch, d);
 		}
-		gsl_vector_free(xvec);
+		gsl_vector_free(xvec); // free memory allocated in other thread
 	}
 }
 void sorter(int ch)
@@ -1280,7 +1272,7 @@ void po8e_fun(PO8e *p, ReaderWriterQueue<PO8Data> *q)
 
 void worker()
 {
-	gsl_vector *xvec = gsl_vector_alloc(RECCHAN);
+	gsl_vector *xvec = gsl_vector_alloc(g_c.size());
 
 	while (!g_die) {
 
@@ -1365,7 +1357,7 @@ void worker()
 			g_analogwriter_prefilter.add(ac);
 
 			if (g_whichAnalogSave == 1) {
-				for (int ch=0; ch<RECCHAN; ch++) {
+				for (int ch=0; ch<(int)nc; ch++) {
 					if (ch == g_channel[0])
 						continue;
 					ac = new Analog; // deleted by other thread
@@ -1385,7 +1377,7 @@ void worker()
 		// on the intuition that it will work better this way
 		for (size_t k=0; k<ns; k++) {
 			if (g_trainArtifactNLMS || g_filterArtifactNLMS) {
-				for (int ch=0; ch<RECCHAN; ch++) {
+				for (int ch=0; ch<(int)nc; ch++) {
 					gsl_vector_set(xvec, ch, (double)f[ch*ns+k]);
 				}
 			}
@@ -1395,14 +1387,14 @@ void worker()
 			// so it doesn't predict itself
 			// this is faster than the alternative
 			if (g_trainArtifactNLMS) {
-				gsl_vector *yvec = gsl_vector_alloc(RECCHAN);
+				gsl_vector *yvec = gsl_vector_alloc(nc);
 				gsl_vector_memcpy (yvec, xvec);
 				g_filterbuf.enqueue(yvec); // free on the other thread
 			}
 
 			// filter online here
 			if (g_filterArtifactNLMS) {
-				for (int ch=0; ch<RECCHAN; ch++) {
+				for (int ch=0; ch<(int)nc; ch++) {
 					double d = gsl_vector_get(xvec, ch);
 					gsl_vector_set(xvec, ch, 0.0);
 					f[ch*ns+k] -= (float)g_nlms[ch]->filter(xvec);
@@ -1418,16 +1410,17 @@ void worker()
 			//	printf("icms pulse %d\n", stim[k]);
 			//}
 
-			for (int j=0; j<STIMCHAN; j++) {
+			for (auto &a : g_artifact) {
 
 				// identify stim pulses
-				u32 id = (uint) (1 << j); // 2^j
+				i32 sc = a->m_stimchan;
+				u32 id = (uint) (1 << sc); // 2^x
 				if (stim[k] & id) {
 					int z = 0;
 					for (int y=0; y<NARTPTR; y++) {
-						if (g_artifact[j]->m_windex[y] == -1) {
-							g_artifact[j]->m_windex[y] = 0;
-							g_artifact[j]->m_rindex[y] = 0;
+						if (a->m_windex[y] == -1) {
+							a->m_windex[y] = 0;
+							a->m_rindex[y] = 0;
 							z++;
 							break;
 						}
@@ -1439,59 +1432,59 @@ void worker()
 
 				// update artifact-subtraction buffers
 				for (int z=0; z<NARTPTR; z++) {
-					i64 idx = g_artifact[j]->m_windex[z]; // write pointer
+					i64 idx = a->m_windex[z]; // write pointer
 					if (idx != -1) {
-						for (int ch=0; ch<RECCHAN; ch++) {
-							g_artifact[j]->m_now[ch*ARTBUF+idx] = f[ch*ns+k];
+						for (int ch=0; ch<(int)nc; ch++) {
+							a->m_now[ch*ARTBUF+idx] = f[ch*ns+k];
 						}
-						g_artifact[j]->m_windex[z]++;
-						if (g_artifact[j]->m_windex[z] >= ARTBUF) {
+						a->m_windex[z]++;
+						if (a->m_windex[z] >= ARTBUF) {
 							if (g_icmswriter.enabled()) {
 								auto o = new ICMS; // deleted by other thread
 								o->set_ts(g_ts.getTime(tk[k]-ARTBUF));
 								o->set_tick(tk[k]-ARTBUF);
-								o->set_stim_chan(j+1); // 1-indexed
+								o->set_stim_chan(sc+1); // 1-indexed
 
 								if (g_saveICMSWF) {
-									for (int ch=0; ch<RECCHAN; ch++) {
+									for (int ch=0; ch<(int)nc; ch++) {
 										ICMS_artifact *art = o->add_artifact();
 										art->set_rec_chan(ch+1); //1-indexed
 										for (int x=0; x<ARTBUF; x++) {
-											art->add_sample(g_artifact[j]->m_now[ch*ARTBUF+x]);
+											art->add_sample(a->m_now[ch*ARTBUF+x]);
 										}
 									}
 								}
 								g_icmswriter.add(o);
 							}
-							g_artifact[j]->m_windex[z] = -1;
+							a->m_windex[z] = -1;
 
 							if ((g_trainArtifactTempl) &&
-							    (g_artifact[j]->m_nsamples < g_numArtifactSamps)) {
-								g_artifact[j]->m_nsamples++;
+							    (a->m_nsamples < g_numArtifactSamps)) {
+								a->m_nsamples++;
 
 								// for iterative update of average
-								float alpha = 1.f/g_artifact[j]->m_nsamples;
+								float alpha = 1.f/a->m_nsamples;
 
-								for (int ch=0; ch<RECCHAN; ch++) {
+								for (int ch=0; ch<(int)nc; ch++) {
 									for (int x=0; x<ARTBUF; x++) {
-										float cur = g_artifact[j]->m_wav[ch*ARTBUF+x];
-										float now = g_artifact[j]->m_now[ch*ARTBUF+x];
+										float cur = a->m_wav[ch*ARTBUF+x];
+										float now = a->m_now[ch*ARTBUF+x];
 										float nex = cur + alpha*(now-cur);
-										g_artifact[j]->m_wav[ch*ARTBUF+x] = nex;
+										a->m_wav[ch*ARTBUF+x] = nex;
 									}
 								}
 							}
 						}
 					}
 
-					i64 ridx = g_artifact[j]->m_rindex[z]; // read pointer
+					i64 ridx = a->m_rindex[z]; // read pointer
 
 					if (ridx == -1)
 						continue; // try next z-pointer
 
 					if (g_enableArtifactSubtr) {
-						for (int ch=0; ch<RECCHAN; ch++) {
-							f[ch*ns+k] -= g_artifact[j]->m_wav[ch*ARTBUF+ridx];
+						for (int ch=0; ch<(int)nc; ch++) {
+							f[ch*ns+k] -= a->m_wav[ch*ARTBUF+ridx];
 						}
 					}
 					// nb. updating the read pointer happens below,
@@ -1500,7 +1493,7 @@ void worker()
 			}
 
 			// post-artifact-removal filtering
-			for (int ch=0; ch<RECCHAN; ch++) {
+			for (int ch=0; ch<(int)nc; ch++) {
 
 				if ( g_hipassNeurons &&  g_lopassNeurons)
 					g_bandpass[ch].Proc(&f[ch*ns+k], &f[ch*ns+k], 1);
@@ -1528,7 +1521,7 @@ void worker()
 					if (g_enableArtifactBlanking &&
 					    ridx >= g_artifactBlankingPreSamps &&
 					    ridx <  g_artifactBlankingPreSamps+g_artifactBlankingSamps) {
-						for (int ch=0; ch<RECCHAN; ch++) {
+						for (int ch=0; ch<(int)nc; ch++) {
 							f[ch*ns+k] = 0.f;
 						}
 					}
@@ -1540,14 +1533,14 @@ void worker()
 
 			// blank based on the stim clock (must happen last)
 			if (g_enableStimClockBlanking && blank[k]) {
-				for (int ch=0; ch<RECCHAN; ch++) {
+				for (int ch=0; ch<(int)nc; ch++) {
 					// note that if we keep track of the last value from the
 					// previous loop through, we could do sample-and-hold
 					// rather than zero-out. which is better?
-					f[ch*ns+k] = 0.f;
 					// nan-ing is also a good idea but poisons further
 					// computations
 					//f[ch*ns+k] = nanf("");
+					f[ch*ns+k] = 0.f;
 				}
 			}
 		}
@@ -1573,20 +1566,21 @@ void worker()
 
 		// package data for sorting / saving
 
-		for (size_t ch=0; ch<g_c.size(); ch++) {
-			double m = g_c[ch]->m_mean;
+		//for (size_t ch=0; ch<nc; ch++) {
+		for (auto &ch : g_c) {
+			double m = ch->m_mean;
 			for (size_t k=0; k<ns; k++) {
-
-				// 1 = +10mV; range = [-1 1] here.
-				g_c[ch]->m_spkbuf.addSample(tk[k], f[ch*ns+k] * 0.5f);
+				auto x = f[ch->m_ch*ns+k];
+				// 1 = +10mV; range = [-1 1] here. XXX really?!?
+				ch->m_spkbuf.addSample(tk[k], x);
 
 				//update the channel standard deviations, too.
-				g_c[ch]->m_var *= 0.999998;
-				g_c[ch]->m_var += 0.000002*(f[ch*ns+k]-m)*(f[ch*ns+k]-m);
+				ch->m_var *= 0.999998;
+				ch->m_var += 0.000002*(x-m)*(x-m);
 				m *= 0.999997;
-				m += 0.000003 * f[ch*ns+k];
+				m += 0.000003*x;
 			}
-			g_c[ch]->m_mean = m;
+			ch->m_mean = m;
 		}
 
 		// write broadband signal to disk
@@ -1619,7 +1613,7 @@ void worker()
 		}
 
 		// sort -- see if samples pass threshold. if so, copy.
-		for (int ch=0; ch<(int)g_c.size(); ch++) {
+		for (int ch=0; ch<(int)nc; ch++) {
 			if (g_c[ch]->getEnabled()) { //XXX put this into channel class?
 				sorter(ch);
 			}
@@ -2141,20 +2135,16 @@ int main(int argc, char **argv)
 	printf("%zu neural channels\n", nc);
 
 	for (size_t i=0; i<nc; i++) {
-		auto c = new Channel(i, &ms);
-		g_c.push_back(c);
+		g_c.push_back(new Channel(i, &ms));
+		g_nlms.push_back(new ArtifactNLMS(nc, 1e-5, i, &ms)); // 1e-5 good mu?
 	}
-
-	for (int i=0; i<4; i++) {
-		g_channel[i] = ms.getValue(i, "channel", i*16);
+	for (size_t i=0; i<g_channel.size(); i++) {
+		g_channel[i] = ms.getInt(i, "channel", i*16);
 		if (g_channel[i] < 0) g_channel[i] = 0;
 		if (g_channel[i] >= NCHAN) g_channel[i] = NCHAN-1;
 	}
-	for (int i=0; i<RECCHAN; i++) {
-		g_nlms[i] = new ArtifactNLMS(96, 1e-5, i, &ms);
-	}
 	for (int i=0; i<STIMCHAN; i++)
-		g_artifact[i] = new Artifact(i, &ms);
+		g_artifact.push_back(new Artifact(i, &ms));
 
 	g_drawmodep = (int) ms.getStructValue("gui", "draw_mode", 0, (float)g_drawmodep);
 	g_blendmodep = (int) ms.getStructValue("gui", "blend_mode", 0, (float)g_blendmodep);
@@ -2401,8 +2391,8 @@ int main(int argc, char **argv)
 
 	mk_button("calc PCA", box1,
 	[](GtkWidget *, gpointer) {
-		for (auto &elem : g_channel)
-			g_c[elem]->computePca();
+		for (auto &x : g_channel)
+			g_c[x]->computePca();
 	}, nullptr);
 
 //this concludes sort page.
@@ -2534,8 +2524,8 @@ int main(int argc, char **argv)
 	gtk_box_pack_start (GTK_BOX (box3), box4, TRUE, TRUE, 0);
 	mk_button("clear all", box4,
 	[](GtkWidget *, gpointer) {
-		for (auto &elem : g_artifact)
-			elem->clearArtifacts();
+		for (auto &a : g_artifact)
+			a->clearArtifacts();
 	}, nullptr);
 
 	box4 = gtk_vbox_new(FALSE, 0);
@@ -2546,7 +2536,7 @@ int main(int argc, char **argv)
 	}, nullptr);
 
 	mk_spinner("stim chan", box2, g_stimChanDisp,
-	           0, STIMCHAN-1, 1, basic_spinint_cb, (gpointer)&g_stimChanDisp);
+	           0, g_artifact.size()-1, 1, basic_spinint_cb, (gpointer)&g_stimChanDisp);
 	mk_spinner("attenuation", box2,
 	           g_artifactDispAtten, 0.1, 10, 0.1, basic_spinfloat_cb, (gpointer)&g_artifactDispAtten);
 

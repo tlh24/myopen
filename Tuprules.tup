@@ -1,4 +1,5 @@
 CPP = clang++
+#CPP = g++
 
 CPPFLAGS += -Wextra -pedantic -std=c++11 -Wno-int-to-pointer-cast
 CPPFLAGS += -Wall -Wcast-align -Wpointer-arith -Wshadow -Wsign-compare

@@ -547,14 +547,18 @@ int main(void)
 		// int32 (a)
 		for (int i=0; i<10; i++) {
 			int v;
-			v = ms.getInt(i, "i1a", 0); if (v != (float)i) err++;
-			v = ms.getInt(i, "i1b", 0); if (v != (float)i) err++;
+			v = ms.getInt(i, "i1a", 0);
+			if (v != (float)i) err++;
+			v = ms.getInt(i, "i1b", 0);
+			if (v != (float)i) err++;
 		}
 
 		for (int i=0; i<10; i++) {
 			float v;
-			v = ms.getValue(i, "f1a", 0.f); if (v != (float)i) err++;
-			v = ms.getValue(i, "f1b", 0.f); if (v != (float)i) err++;
+			v = ms.getValue(i, "f1a", 0.f);
+			if (v != (float)i) err++;
+			v = ms.getValue(i, "f1b", 0.f);
+			if (v != (float)i) err++;
 		}
 		float f = 0.f;
 		for (int b=8; b>=0; b--) {

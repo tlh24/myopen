@@ -66,20 +66,16 @@ public:
 		m_var = 0.0;
 		m_mean = 0.0;
 		m_enabled = true;
-		//init PCA, template.
-		for (int j=0; j<NWFSAMP; j++) {
-			for (int k=0; k<NSORT; k++) {
+
+		for (int k=0; k<NSORT; k++) {
+			for (int j=0; j<NWFSAMP; j++) {
 				m_pca[k][j] = 1.f/8.f;
-				m_pcaScl[k] = 1.f;
+				m_template[k][j] = 0.5*sinf(j/6.f) / 1e2; // sinusoids scaled to ~100 uV
 			}
-			//m_pca[1][j] = (j > 15 ? 1.f/8.f : -1.f/8.f);
+			m_pcaScl[k] = 1.f;
+			m_aperture[k] = 0.f;
 		}
-		for (int j=0; j<NWFSAMP; j++) {
-			for (int k=0; k<NSORT; k++) {
-				m_template[k][j] = 0.5*sinf(j/6.f) / 1e2;	// sinusoids scaled to ~100 uV
-			}
-			//m_template[1][j] = 0.4*sinf((j+12)/8.f) / 1e2;	// scaled to ~ 100 microvolts
-		}
+
 		//read from matlab if it's there..
 		if (ms) {
 			for (int j=0; j<NSORT; j++) {
@@ -760,9 +756,10 @@ public:
 	void updateISI(int unit, int sample)
 	{
 		//this used for calculating ISI.
-		unit -= 1; //comes in 0 = uhnsorted.
+		unit -= 1; //comes in 0 = uhnsorted. // XXX double check this
 		if (unit >=0 && unit < NSORT) {
-			int b = floor((sample - m_lastSpike[unit])/SRATE_KHZ - 0.5);
+			int dsamp = sample - m_lastSpike[unit];
+			int b = floor(dsamp/SRATE_KHZ - 0.5);
 			int nisi = (int)(sizeof(m_isi[0])/sizeof(m_isi[0][0]));
 			//printf("%d isi %d u %d\n", m_ch, b, unit);
 			if (b > 0 && b < nisi)
@@ -800,7 +797,7 @@ void gsl_matrix_to_mat(gsl_matrix *x, const char *fname)
 	// write a gsl matrix to a .mat file.
 	// does not free the matrix.
 	mat_t *mat;
-	mat = Mat_CreateVer(fname,nullptr,MAT_FT_MAT73);
+	mat = Mat_CreateVer(fname, nullptr, MAT_FT_MAT73);
 	if (!mat) {
 		warn("could not open %s for writing", fname);
 		return;

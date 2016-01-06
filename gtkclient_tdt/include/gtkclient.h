@@ -34,10 +34,11 @@ enum MODES { // ui tabs
 #define NSBUF		1024 		// number of recent spikes to track
 
 #define STIMCHAN 	8
-#define RECCHAN 	96
-#define NCHAN		96
 #define NUNIT		3			// including unsorted
 #define NSORT		2
+
+#define RECCHAN 	96
+#define NCHAN		96
 
 //#define LMSBUF 		64
 
@@ -49,7 +50,7 @@ extern i64		g_fbufR; //display thread reads from here - copies to mem
 extern u32 		g_nsamp; //given the current level of zoom (1 = 4096 samples), how many samples to update?
 
 extern bool 	g_die;
-extern int 		g_channel[4];
+//extern int 		g_channel[4];
 //extern double	g_minISI;
 
 typedef struct PO8Data {

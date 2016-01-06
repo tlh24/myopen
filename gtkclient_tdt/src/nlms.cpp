@@ -71,13 +71,13 @@ void NLMS::clearWeights()
 ArtifactNLMS::ArtifactNLMS(int _n, double _mu, int _ch, MatStor *ms)
 	: NLMS(_n, _mu)
 {
-	ch = _ch;
+	m_ch = _ch;
 	if (ms) {
 		for (int i=0; i<n; i++) {
-			double d = ms->getDouble2(ch, i, "nlms_w", 1.0/(double)n);
+			double d = ms->getDouble2(m_ch, i, "nlms_w", 1.0/(double)n);
 			gsl_vector_set(w, i, d);
 		}
-		mu = ms->getDouble(ch, "nlms_mu", mu);
+		mu = ms->getDouble(0, "nlms_mu", mu);
 	}
 }
 ArtifactNLMS::~ArtifactNLMS()
@@ -85,12 +85,17 @@ ArtifactNLMS::~ArtifactNLMS()
 
 }
 
+int ArtifactNLMS::ch()
+{
+	return m_ch;
+}
+
 void ArtifactNLMS::save(MatStor *ms)
 {
 	if (ms) {
 		for (int i=0; i<n; i++) {
-			ms->setDouble2(ch, i, "nlms_w", gsl_vector_get(w,i));
+			ms->setDouble2(m_ch, i, "nlms_w", gsl_vector_get(w,i));
 		}
-		ms->setDouble(ch, "nlms_mu", mu);
+		ms->setDouble(0, "nlms_mu", mu);
 	}
 }

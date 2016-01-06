@@ -22,16 +22,18 @@ public:
 	double train(gsl_vector *x, double d);
 	double filter(gsl_vector *x);
 	void clearWeights();
+	// TODO getter/setter for learning rate  (mu)
 };
 
 class ArtifactNLMS : public NLMS
 {
 protected:
-	int ch;	// the channel to operate on
+	int m_ch;	// the channel to operate on
 public:
 	ArtifactNLMS(int _n, double _mu, int _ch, MatStor *ms);
 	~ArtifactNLMS();
 
+	int ch();
 	void save(MatStor *ms);
 };
 
