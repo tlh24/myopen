@@ -289,20 +289,11 @@ void saveState()
 }
 void destroy(int)
 {
-	//save the old values..
-	g_die = true;
-	sleep(1);
-	gtk_main_quit();
-	saveState();
-	if (g_vsFadeColor)
-		delete g_vsFadeColor;
-	if (g_vsThreshold)
-		delete g_vsThreshold;
-	cgDestroyContext(myCgContext);
-	if (g_vbo1Init) {
-		glDeleteBuffersARB(NFBUF, g_vbo1);
-		glDeleteBuffersARB(2, g_vbo2);
-	}
+	saveState(); 		// save the old values (do this first)
+	g_die = true;		// tell threads to finish
+	sleep(1);			// sleep a bit
+	gtk_main_quit();	// tell gui thread to finish
+	// now the rest of cleanup happens in main
 }
 void BuildFont(void)
 {
@@ -1597,7 +1588,7 @@ void worker()
 			g_analogwriter.add(ac);
 
 			if (g_whichAnalogSave == 1) {
-				for (int ch=0; ch<RECCHAN; ch++) {
+				for (int ch=0; ch<(int)nc; ch++) {
 					if (ch == g_channel[0])
 						continue;
 					ac = new Analog; // deleted by other thread
@@ -2902,12 +2893,6 @@ int main(int argc, char **argv)
 	jackClose(0);
 #endif
 
-	//just in case.
-	g_wfwriter.close();
-	g_icmswriter.close();
-	g_analogwriter.close();
-	g_analogwriter_prefilter.close();
-
 	KillFont();
 	// Optional:  Delete all global objects allocated by libprotobuf.
 	google::protobuf::ShutdownProtobufLibrary();
@@ -2916,8 +2901,25 @@ int main(int argc, char **argv)
 		thread.join();
 	}
 
+	// these should automatically be closed when their destructor is called
+	// however it should be safe to manually close after their thread is
+	// joined and finished
+	g_wfwriter.close();
+	g_icmswriter.close();
+	g_analogwriter.close();
+	g_analogwriter_prefilter.close();
+
 	for (auto &q : g_dataqueues) {
 		delete q.first;
 	}
 
+	if (g_vsFadeColor)
+		delete g_vsFadeColor;
+	if (g_vsThreshold)
+		delete g_vsThreshold;
+	cgDestroyContext(myCgContext);
+	if (g_vbo1Init) {
+		glDeleteBuffersARB(NFBUF, g_vbo1);
+		glDeleteBuffersARB(2, g_vbo2);
+	}
 }
