@@ -1,7 +1,7 @@
 include_rules
 
-CPPFLAGS += `pkg-config --cflags lua5.1`
-LDFLAGS += `pkg-config --libs lua5.1`
+CPPFLAGS += `pkg-config --cflags lua5.1 hdf5`
+LDFLAGS += `pkg-config --libs lua5.1 hdf5`
 OBJS = gettime.cpp lconf.cpp matStor.cpp glInfo.cpp util.cpp random.cpp jacksnd.cpp
 
 : foreach $(OBJS) |> !cpp |> %B.o
