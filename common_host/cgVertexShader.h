@@ -1,4 +1,8 @@
+#ifndef __CG_VERTEX_SHADER_H__
+#define __CG_VERTEX_SHADER_H__
 //enacpsulate a vertex shader
+#include <stdio.h>
+#include <cstring>
 #include <Cg/cg.h>    /* included in Cg toolkit for nvidia */
 #include <Cg/cgGL.h>
 
@@ -96,3 +100,4 @@ public:
 		checkForCgError("binding vertex program");
 	}
 };
+#endif

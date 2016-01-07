@@ -53,6 +53,7 @@
 #include "gettime.h"
 #include "cgVertexShader.h"
 #include "vbo.h"
+#include "vbo_timeseries.h"
 #include "firingrate.h"
 #include "gtkclient.h"
 #include "mmaphelp.h"
@@ -615,6 +616,7 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 			snprintf(buf, 128, "%c %d", 'A'+k, g_channel[k]);
 			glPrint(buf);
 		}
+
 		//continuous waveform drawing..
 		for (int k=0; k<NFBUF; k++) {
 			glEnableClientState(GL_VERTEX_ARRAY);

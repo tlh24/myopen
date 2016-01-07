@@ -15,7 +15,8 @@ stimchan.cpp \
 analogchan.cpp \
 spikebuffer.cpp \
 rls.cpp \
-nlms.cpp
+nlms.cpp \
+vbo_timeseries.cpp
 
 : foreach $(OBJS) |> !cpp |> %B.o
 
