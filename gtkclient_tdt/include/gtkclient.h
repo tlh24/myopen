@@ -46,7 +46,7 @@ enum MODES { // ui tabs
 extern float	g_fbuf[NFBUF][NSAMP*3]; //continuous waveform. range [-1 .. 1]. For drawing.
 extern i64		g_fbufW; //where to write to (always increment)
 extern i64		g_fbufR; //display thread reads from here - copies to mem
-extern u32 		g_nsamp; //given the current level of zoom (1 = 4096 samples), how many samples to update?
+//extern u32 		g_nsamp; //given the current level of zoom (1 = 4096 samples), how many samples to update?
 
 extern bool 	g_die;
 //extern int 		g_channel[4];

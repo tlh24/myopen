@@ -127,20 +127,20 @@ gboolean g_lopassNeurons = false;
 gboolean g_hipassNeurons = false;
 
 #if defined KHZ_24
-FilterButterBand_24k_500_3000 g_bandpass[RECCHAN];
-FilterButterLow_24k_3000 g_lopass[RECCHAN];
-FilterButterHigh_24k_500 g_hipass[RECCHAN];
+vector <FilterButterBand_24k_500_3000> g_bandpass;
+vector <FilterButterLow_24k_3000> g_lopass;
+vector <FilterButterHigh_24k_500> g_hipass;
 #elif defined KHZ_48
-FilterButterBand_48k_500_3000 g_bandpass[RECCHAN];
-FilterButterLow_48k_3000 g_lopass[RECCHAN];
-FilterButterHigh_48k_500 g_hipass[RECCHAN];
+vector <FilterButterBand_48k_500_3000> g_bandpass;
+vector <FilterButterLow_48k_3000> g_lopass;
+vector <FilterButterHigh_48k_500> g_hipass;
 #else
 #error Bad sampling rate!
 #endif
 
 int g_whichMedianFilter = 0;
-MedFilt3 g_medfilt3[RECCHAN];
-MedFilt5 g_medfilt5[RECCHAN];
+vector <MedFilt3> g_medfilt3;
+vector <MedFilt5> g_medfilt5;
 
 int g_whichAnalogSave = 0;
 
@@ -1485,7 +1485,6 @@ void worker()
 
 			// post-artifact-removal filtering
 			for (int ch=0; ch<(int)nc; ch++) {
-
 				if ( g_hipassNeurons &&  g_lopassNeurons)
 					g_bandpass[ch].Proc(&f[ch*ns+k], &f[ch*ns+k], 1);
 
@@ -2128,6 +2127,19 @@ int main(int argc, char **argv)
 	for (size_t i=0; i<nc; i++) {
 		g_c.push_back(new Channel(i, &ms));
 		g_nlms.push_back(new ArtifactNLMS(nc, 1e-5, i, &ms)); // 1e-5 good mu?
+		g_medfilt3.push_back(MedFilt3());
+		g_medfilt5.push_back(MedFilt5());
+#if defined KHZ_24
+		g_bandpass.push_back(FilterButterBand_24k_500_3000());
+		g_lopass.push_back(FilterButterLow_24k_3000());
+		g_hipass.push_back(FilterButterHigh_24k_500());
+#elif defined KHZ_48
+		g_bandpass.push_back(FilterButterBand_48k_500_3000());
+		g_lopass.push_back(FilterButterLow_48k_3000());
+		g_hipass.push_back(FilterButterHigh_48k_500());
+#else
+#error Bad sampling rate!
+#endif
 	}
 	for (size_t i=0; i<g_channel.size(); i++) {
 		g_channel[i] = ms.getInt(i, "channel", i*16);
