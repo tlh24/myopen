@@ -992,7 +992,7 @@ static gboolean rotate(gpointer user_data)
 
 	string s = g_ts.getInfo();
 	char str[256];
-	snprintf(str, 256, "\npo8e interval: %f (ms)\n", (double)(gettime() - g_lastPo8eTime)*1000.0);
+	snprintf(str, 256, "\npo8e poll (avg): %Lf (ms)\n", g_po8eAvgInterval);
 	s += string(str);
 	gtk_label_set_text(GTK_LABEL(g_infoLabel), s.c_str());
 
