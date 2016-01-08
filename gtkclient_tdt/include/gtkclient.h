@@ -39,12 +39,6 @@ enum MODES { // ui tabs
 
 #define RECCHAN 	96
 
-//globals.  could make a class for these but .. eh
-// XXX why NSAMP*3 ???
-extern float	g_fbuf[NFBUF][NSAMP*3]; //continuous waveform. range [-1 .. 1]. For drawing.
-extern i64		g_fbufW; //where to write to (always increment)
-extern i64		g_fbufR; //display thread reads from here - copies to mem
-
 typedef struct PO8Data {
 	int64_t tick;	// this is the tick for the first sample
 	size_t numChannels;

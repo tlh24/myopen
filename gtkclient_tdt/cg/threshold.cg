@@ -4,15 +4,15 @@ struct V_Output {
   float3 color    : COLOR;
 };
 
-V_Output threshold(float3 position : POSITION, 
-				uniform float xzoom, 
+V_Output threshold(float3 position : POSITION,
+				uniform float xzoom,
 				uniform float yoffset)
-{	
+{
 	V_Output OUT;
-	float x = position.x * xzoom * 2 - 1.f; 
+	float x = position.x * xzoom * 2 - 1.f;
 	OUT.position = float4(x, position.y/8+yoffset+0.125,0,1);
-	float gb = 1.0 - (0.5*position.z); 
+	float gb = 1.0 - (0.5*position.z);
 	OUT.color = float3(1,gb,gb);
 
-	return OUT;	
+	return OUT;
 }

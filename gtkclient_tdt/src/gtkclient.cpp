@@ -97,15 +97,12 @@ float	g_viewportSize[2] = {640, 480}; //width, height.
 class Channel;
 class Artifact;
 
-float	g_fbuf[NFBUF][NSAMP*3]; //continuous waveform. range [-1 .. 1]. For drawing.
-i64		g_fbufW; //where to write to (always increment)
-i64		g_fbufR; //display thread reads from here - copies to mem
+vector <VboTimeseries *> g_timeseries;
 
 ReaderWriterQueue<gsl_vector *> g_filterbuf(NSAMP); // for nlms filtering
 
 vector <pair<ReaderWriterQueue<PO8Data>*, po8e::card *>> g_dataqueues;
 
-u32 	g_nsamp = 4096*6; //given the current level of zoom (1 = 4096 samples), how many samples to update?
 float g_zoomSpan = 1.0;
 
 float 	g_sbuf[NSORT][RECCHAN *NSBUF*2]; //2 units, 96 channels, 1024 spikes, 2 floats / spike.
@@ -219,7 +216,6 @@ int	g_blendmode[2] = {GL_ONE_MINUS_SRC_ALPHA, GL_ONE};
 int g_blendmodep = 0;
 
 bool g_vbo1Init = false;
-GLuint g_vbo1[NFBUF]; //for the waveform display
 GLuint g_vbo2[2] = {0,0}; //for spike ticks.
 // why are there two?
 // xxx could use g_vbo2 to handle other event ticks
@@ -520,20 +516,11 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 
 	//copy over any new data.
 	if (!g_pause) {
-		if (g_fbufR < g_fbufW) {
-			i64 w = g_fbufW; //atomic
-			i64 sta = g_fbufR % g_nsamp;
-			i64 fin = w % g_nsamp;
-			for (int k=0; k<NFBUF; k++) {
-				if (fin < sta) { //wrap
-					copyData(g_vbo1[k], sta, g_nsamp, g_fbuf[k], 3);
-					copyData(g_vbo1[k], 0, fin, g_fbuf[k], 3);
-				} else {
-					copyData(g_vbo1[k], sta, fin, g_fbuf[k], 3);
-				}
-			}
-			g_fbufR = w;
+
+		for (auto &x : g_timeseries) {
+			x->copy();
 		}
+
 		//ditto for the spike buffers (these can be disordered ..they generally don't overlap.)
 		for (int k=0; k<2; k++) { //will ultimately need more than 2, or have per-dot color.
 			if (g_sbufR[k] < g_sbufW[k]) {
@@ -554,6 +541,7 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 		for (auto &c : g_c)
 			c->copy();
 	}
+
 	/* draw in here */
 	glMatrixMode(GL_MODELVIEW);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -575,7 +563,6 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 	float time = g_pause ? g_pause_time : (float)gettime();
 
 	if (g_mode == MODE_RASTERS) {
-		g_vsThreshold->setParam(2,"xzoom",1.f/g_nsamp);
 
 		//glPushMatrix();
 		//glScalef(1.f, 0.5f, 1.f); //don't think this does anythaaang.
@@ -617,44 +604,34 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 			glPrint(buf);
 		}
 
-		//continuous waveform drawing..
-		for (int k=0; k<NFBUF; k++) {
-			glEnableClientState(GL_VERTEX_ARRAY);
-			g_vsThreshold->setParam(2,"yoffset",(3-k)/4.f);
-			g_vsThreshold->bind();
-			cgGLEnableProfile(myCgVertexProfile);
-			checkForCgError("enabling vertex profile");
-
-			glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo1[k]);
-			glVertexPointer(3, GL_FLOAT, 0, nullptr);
-			glPointSize(1);
-			glDrawArrays(g_drawmode[g_drawmodep], 0, g_nsamp);
-
-			cgGLDisableProfile(myCgVertexProfile);
-			checkForCgError("disabling vertex profile");
+		int n = g_timeseries.size();
+		for (int k=0; k<n; k++) {
+			float yoffset = (n-k-1)/((float)n);
+			g_timeseries[k]->draw(g_drawmode[g_drawmodep], yoffset);
 		}
-		//see glDrawElements for indexed arrays
-		glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+
+		u32 nplot = g_timeseries[0]->m_nplot;
+
 		//draw seconds / ms label here.
-		for (int i=0; i<(int)g_nsamp; i+=SRATE_HZ/5) {
-			float x = 2.f*i/g_nsamp-1.f + 2.f/g_viewportSize[0];
+		for (u32 i=0; i<nplot; i+=SRATE_HZ/5) {
+			float x = 2.f*i/nplot-1.f + 2.f/g_viewportSize[0];
 			float y = 1.f - 13.f*2.f/g_viewportSize[1];
 			glRasterPos2f(x,y);
 			char buf[64];
 			snprintf(buf, 64, "%3.2f", i/SRATE_HZ);
 			glPrint(buf);
 		}
+
 		if (g_showContGrid) {
 			glColor4f(0.f, 0.8f, 0.75f, 0.35);
 			glBegin(GL_LINES);
-			for (int i=0; i<(int)g_nsamp; i+=SRATE_HZ/10) {
-				float x = 2.f*i/g_nsamp-1.f;
+			for (u32 i=0; i<nplot; i+=SRATE_HZ/10) {
+				float x = 2.f*i/nplot-1.f;
 				glVertex2f(x, 0.f);
 				glVertex2f(x, 1.f);
 			}
 			glEnd();
 		}
-		//glPopMatrix ();
 
 		//rasters
 #ifndef EMG
@@ -720,6 +697,7 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 #endif
 		//end VBO
 	}
+
 	if (g_mode == MODE_SORT || g_mode == MODE_SPIKES) {
 		glPushMatrix();
 		glEnableClientState(GL_VERTEX_ARRAY);
@@ -892,28 +870,15 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 			error("Video card does NOT support GL_ARB_vertex_buffer_object");
 			exit(1);
 		}
-		// probably should die here?
+
+		for (auto &x : g_timeseries) {
+			x->configure();
+			x->setVertexShader(g_vsThreshold);
+			x->setCGProfile(myCgVertexProfile);
+			x->setNPlot(g_zoomSpan * SRATE_HZ);
+		}
 
 		g_vbo1Init = true;
-		//okay, want one vertex buffer (4now): draw the samples.
-		//fill the buffer with temp data.
-		glGenBuffersARB(NFBUF, g_vbo1);
-		for (int k=0; k<NFBUF; k++) {
-			for (int i=0; i<NSAMP; i++) {
-				g_fbuf[k][i*3+0] = (float)i;
-				g_fbuf[k][i*3+1] = sinf((float)i *0.02);
-				g_fbuf[k][i*3+2] = 0.f;
-			}
-			glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo1[k]);
-			glBufferDataARB(GL_ARRAY_BUFFER_ARB, NSAMP*3*sizeof(float),
-			                nullptr, GL_DYNAMIC_DRAW_ARB);
-			glBufferSubDataARB(GL_ARRAY_BUFFER_ARB,
-			                   0, sizeof(g_fbuf[0]), g_fbuf[k]);
-			int bufferSize;
-			glGetBufferParameterivARB(GL_ARRAY_BUFFER_ARB,
-			                          GL_BUFFER_SIZE_ARB, &bufferSize);
-			//printf("Vertex Array in VBO:%d bytes\n", bufferSize);
-		}
 
 		//have one VBO that's filled with spike times & channels.
 		glGenBuffersARB(2, g_vbo2);
@@ -1537,7 +1502,6 @@ void worker()
 			}
 		}
 
-		// copy data over to g_fbuf for display (broadband trace)
 		// input data is scaled from TDT so that 32767 = 10mV.
 		// send the data for one channel to jack
 		for (int h=0; h<NFBUF; h++) {
@@ -1545,7 +1509,7 @@ void worker()
 			float gain = g_c[ch]->getGain();
 			for (size_t k=0; k<ns; k++) {
 				float fg = f[ch*ns+k] * gain;
-				g_fbuf[h][((g_fbufW+k) % g_nsamp)*3 + 1] = fg;
+				g_timeseries[h]->addData(&fg, 1); // timeseries trace
 				if (h==0) {
 					audio[k] = fg;
 				}
@@ -1554,11 +1518,9 @@ void worker()
 #ifdef JACK
 		jackAddSamples(audio, audio, ns);
 #endif
-		g_fbufW += ns;
 
 		// package data for sorting / saving
 
-		//for (size_t ch=0; ch<nc; ch++) {
 		for (auto &ch : g_c) {
 			double m = ch->m_mean;
 			for (size_t k=0; k<ns; k++) {
@@ -2080,7 +2042,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	string titlestr = "gtkclient (TDT) v1.90";
+	string titlestr = "gtkclient (TDT) v1.91";
 
 #ifdef DEBUG
 	feenableexcept(FE_DIVBYZERO|FE_INVALID|FE_OVERFLOW);  // Enable (some) floating point exceptions
@@ -2150,6 +2112,10 @@ int main(int argc, char **argv)
 	}
 	for (int i=0; i<STIMCHAN; i++)
 		g_artifact.push_back(new Artifact(i, &ms));
+
+	for (int i=0; i<NFBUF; i++) {
+		g_timeseries.push_back(new VboTimeseries(NSAMP));
+	}
 
 	g_drawmodep = (int) ms.getStructValue("gui", "draw_mode", 0, (float)g_drawmodep);
 	g_blendmodep = (int) ms.getStructValue("gui", "blend_mode", 0, (float)g_blendmodep);
@@ -2293,11 +2259,8 @@ int main(int argc, char **argv)
 		// should be in seconds.
 		float f = (float) gtk_spin_button_get_value(GTK_SPIN_BUTTON(_spin));
 		g_zoomSpan = f;
-		g_nsamp = f * SRATE_HZ;
-		// make it multiples of 128.
-		g_nsamp &= (0xffffffff ^ 127);
-		g_nsamp = g_nsamp > NSAMP ? NSAMP : g_nsamp;
-		g_nsamp = g_nsamp < 512 ? 512 : g_nsamp;
+		for (auto &x : g_timeseries)
+			x->setNPlot(f * SRATE_HZ);
 	}, nullptr);
 
 	mk_spinner("Raster span", box1,
@@ -2933,7 +2896,6 @@ int main(int argc, char **argv)
 		delete g_vsThreshold;
 	cgDestroyContext(myCgContext);
 	if (g_vbo1Init) {
-		glDeleteBuffersARB(NFBUF, g_vbo1);
 		glDeleteBuffersARB(2, g_vbo2);
 	}
 }
