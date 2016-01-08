@@ -98,6 +98,7 @@ class Channel;
 class Artifact;
 
 vector <VboTimeseries *> g_timeseries;
+vector <VboRaster *> g_rasters;
 
 ReaderWriterQueue<gsl_vector *> g_filterbuf(NSAMP); // for nlms filtering
 
@@ -105,10 +106,11 @@ vector <pair<ReaderWriterQueue<PO8Data>*, po8e::card *>> g_dataqueues;
 
 float g_zoomSpan = 1.0;
 
-float 	g_sbuf[NSORT][RECCHAN *NSBUF*2]; //2 units, 96 channels, 1024 spikes, 2 floats / spike.
-float	g_rasterSpan = 10.f; // %seconds.
-i64	g_sbufW[NSORT];
-i64	g_sbufR[NSORT];
+//float 	g_sbuf[NSORT][RECCHAN *NSBUF*2]; //2 units, 96 channels, 1024 spikes, 2 floats / spike.
+//float	g_rasterSpan = 10.f; // %seconds.
+//i64	g_sbufW[NSORT];
+//i64	g_sbufR[NSORT];
+
 vector <Channel *> g_c;
 FiringRate	g_fr[RECCHAN][NSORT];
 TimeSync 	g_ts(SRATE_HZ); //keeps track of ticks (TDT time)
@@ -521,6 +523,11 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 			x->copy();
 		}
 
+		for (auto &x : g_rasters) {
+			x->copy();
+		}
+
+		/*
 		//ditto for the spike buffers (these can be disordered ..they generally don't overlap.)
 		for (int k=0; k<2; k++) { //will ultimately need more than 2, or have per-dot color.
 			if (g_sbufR[k] < g_sbufW[k]) {
@@ -537,6 +544,8 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 				g_sbufR[k] = w;
 			}
 		}
+		*/
+
 		//and the waveform buffers.
 		for (auto &c : g_c)
 			c->copy();
@@ -635,6 +644,7 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 
 		//rasters
 #ifndef EMG
+
 		glShadeModel(GL_FLAT);
 		float vscale = 97.f;
 		glPushMatrix();
@@ -651,6 +661,7 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 		}
 		glTranslatef((0 - (float)lt + adj), 1.f, 0.f);
 
+		/*
 		//VBO drawing..
 		for (int k=0; k<2; k++) {
 			glEnableClientState(GL_VERTEX_ARRAY);
@@ -663,7 +674,11 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 			glPointSize(2.0);
 			glDrawArrays(GL_POINTS, 0, sizeof(g_sbuf[k])/8);
 			glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
-		}
+		}*/
+
+		for (&x : g_rasters)
+			x->draw();
+
 		//draw current time.
 		glColor4f (1., 0., 0., 0.5);
 		glBegin(GL_LINES);
@@ -878,8 +893,12 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 			x->setNPlot(g_zoomSpan * SRATE_HZ);
 		}
 
-		g_vbo1Init = true;
+		for (auto &x : g_rasters) {
+			x->configure();
+			// set number of points shown here
+		}
 
+		/*
 		//have one VBO that's filled with spike times & channels.
 		glGenBuffersARB(2, g_vbo2);
 		for (int k=0; k<2; k++) {
@@ -895,9 +914,13 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 			glBufferSubDataARB(GL_ARRAY_BUFFER_ARB,
 			                   0, sizeof(g_sbuf[k]), g_sbuf[k]);
 		}
+		*/
 		for (auto &c : g_c) {
 			c->configure(g_vsFadeColor);
 		}
+
+		g_vbo1Init = true;
+
 	}
 	BuildFont(); //so we're in the right context?
 
@@ -1084,6 +1107,7 @@ void sorter(int ch)
 			if (unit > 0 && unit <=2) { // for drawing
 				int uu = unit-1;
 				g_fr[ch][uu].add(the_time);
+				// do g_rasters stuff here xxx
 				i64 w = g_sbufW[uu] % (i64)(sizeof(g_sbuf[0])/8);
 				g_sbuf[uu][w*2+0] = (float)(the_time);
 				g_sbuf[uu][w*2+1] = (float)ch;
