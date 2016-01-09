@@ -643,7 +643,7 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 		lt *= (int)g_rasterSpan;
 		float x = time - (float)lt;
 		float adj = 0.f;
-		float movtime = 0.20 + log10(g_rasterSpan);
+		float movtime = 0.25 + log10(g_rasterSpan);
 		if (x < movtime) {
 			x /= movtime;
 			adj = 2.f*x*x*x -3.f*x*x + 1;
@@ -915,7 +915,7 @@ static gboolean rotate(gpointer user_data)
 
 	string s = g_ts.getInfo();
 	char str[256];
-	snprintf(str, 256, "\npo8e interval: %f (ms)\n", (double)(gettime() - g_lastPo8eTime)*1000.0);
+	snprintf(str, 256, "\npo8e poll (avg): %.4Lf (ms)\n", g_po8eAvgInterval);
 	s += string(str);
 	gtk_label_set_text(GTK_LABEL(g_infoLabel), s.c_str());
 
@@ -1134,7 +1134,7 @@ void po8e_fun(PO8e *p, ReaderWriterQueue<PO8Data> *q)
 {
 	size_t bufmax = 10000;	// must be >= 10000
 
-	size_t read_size = 1024;
+	size_t read_size = 32; // samples
 
 	printf("Waiting for the stream to start ...\n");
 	//p->waitForDataReady(1);
@@ -1192,16 +1192,6 @@ void po8e_fun(PO8e *p, ReaderWriterQueue<PO8Data> *q)
 			}
 			last_tick = tick[numRead-1];
 
-			long double time = gettime();
-			g_po8ePollInterval = (time - g_lastPo8eTime)*1000.0;
-			g_po8eAvgInterval = g_po8eAvgInterval * 0.99 + g_po8ePollInterval * 0.01;
-			g_lastPo8eTime = time;
-
-			// also -- only accept stort-interval responses (ignore outliers..)
-			if (g_po8ePollInterval < g_po8eAvgInterval* 0.5) {
-				g_ts.update(time, last_tick); //also updates the mmap file.
-			}
-
 			PO8Data o;
 			o.data = (i16 *)malloc(nchan*numRead*sizeof(i16));
 			memcpy(o.data, buff, nchan*numRead*sizeof(i16));
@@ -1232,20 +1222,26 @@ void worker()
 {
 	gsl_vector *xvec = gsl_vector_alloc(g_c.size());
 
+	vector<PO8Data> p;
+	vector<po8e::card *> c;
+
 	while (!g_die) {
 
 		auto n = g_dataqueues.size();
 
-		auto p = new PO8Data[n];
-		auto c = new po8e::card[n];
+		p.clear();
+		c.clear();
 
 		for (size_t i=0; i<n; i++) {
 			auto q = g_dataqueues[i].first;
-			c[i] = *(g_dataqueues[i].second);
+			c.push_back(g_dataqueues[i].second);
 			int succeeded;
 			do {
-				succeeded = q->try_dequeue(p[i]);
-				if (!succeeded)
+				PO8Data x;
+				succeeded = q->try_dequeue(x);
+				if (succeeded)
+					p.push_back(x);
+				else
 					usleep(1e3);
 			} while (!succeeded && !g_die);
 		}
@@ -1263,9 +1259,9 @@ void worker()
 				mismatch = true;
 				break;
 			}
-			if (p[i].numChannels != (size_t)c[i].channel_size()) {
+			if (p[i].numChannels != (size_t)c[i]->channel_size()) {
 				warn("po8e card %d: expected %d channels (%d actual)",
-				     c[i].id(), c[i].channel_size(), p[i].numChannels);
+				     c[i]->id(), c[i]->channel_size(), p[i].numChannels);
 				mismatch = true;
 				break;
 			}
@@ -1278,6 +1274,16 @@ void worker()
 
 		if (mismatch) // exit the worker; no data will be processed
 			break;
+
+		long double time = gettime();
+		g_po8ePollInterval = (time - g_lastPo8eTime)*1000.0;
+		g_po8eAvgInterval = g_po8eAvgInterval * 0.99 + g_po8ePollInterval * 0.01;
+		g_lastPo8eTime = time;
+
+		// also -- only accept stort-interval responses (ignore outliers..)
+		if (g_po8ePollInterval < g_po8eAvgInterval*1.5) {
+			g_ts.update(time, p[0].tick); //also updates the mmap file.
+		}
 
 		auto f 		= new float[ns*nc];
 		auto tk 	= new u32[ns];
@@ -1298,8 +1304,9 @@ void worker()
 			stim[k] += (u16)(p[1].data[9*ns + k]) << 16;
 			blank[k] = p[1].data[10*ns + k] > 0;
 		}
-		free(p[0].data);
-		free(p[1].data);
+		for (size_t i=0; i<n; i++) {
+			free(p[i].data);
+		}
 
 		// write (pre-filtered) broadband signal to disk
 		if (g_analogwriter_prefilter.enabled()) {
@@ -2805,8 +2812,13 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	if (totalcards != (int)pc.cards.size()) {
-		warn("num detected po8e cards differs from num in config files");
+	if (totalcards < (int)pc.cards.size()) {
+		error("config describes more po8e cards than detected");
+		return 1;
+	}
+
+	if (totalcards > (int)pc.cards.size()) {
+		totalcards = (int)pc.cards.size();
 	}
 
 	for (int i=0; i<totalcards; i++) {

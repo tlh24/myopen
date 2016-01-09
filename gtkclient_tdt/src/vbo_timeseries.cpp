@@ -8,11 +8,11 @@
 VboTimeseries::VboTimeseries(u32 n)
 {
 	m_n = n;
-	m_f = (float *)malloc(m_n*3*sizeof(float)); // TODO check for malloc failure
+	m_f = (float *)malloc(m_n*3*sizeof(float)); // check for malloc failure
 	for (u32 i=0; i<m_n; i++) {
-		m_f[i*3+0] = (float)i;
-		m_f[i*3+1] = sinf((float)i*0.02); // arbitrary initial data
-		m_f[i*3+2] = 0.f;
+		m_f[i*3+0] = (float)i; // x
+		m_f[i*3+1] = sinf((float)i*0.02); // y
+		m_f[i*3+2] = 0.f; // color (not used presently)
 	}
 	m_w = 0;
 	m_r = 0;
@@ -36,9 +36,6 @@ void VboTimeseries::configure()
 	int siz = m_n*3*sizeof(float);
 	glBufferDataARB(GL_ARRAY_BUFFER_ARB, siz, 0, GL_STATIC_DRAW_ARB);
 	glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, 0, siz, m_f);
-	//int sz;
-	//glGetBufferParameterivARB(GL_ARRAY_BUFFER_ARB, GL_BUFFER_SIZE_ARB, &sz);
-	//printf("Vertex Array in VBO:%d bytes\n", sz);
 }
 void VboTimeseries::setCGProfile(CGprofile pro)
 {
