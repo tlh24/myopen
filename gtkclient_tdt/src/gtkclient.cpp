@@ -53,6 +53,7 @@
 #include "gettime.h"
 #include "cgVertexShader.h"
 #include "vbo.h"
+#include "vbo_raster.h"
 #include "vbo_timeseries.h"
 #include "firingrate.h"
 #include "gtkclient.h"
@@ -98,7 +99,8 @@ class Channel;
 class Artifact;
 
 vector <VboTimeseries *> g_timeseries;
-vector <VboRaster *> g_rasters;
+vector <VboRaster *> g_spikeraster;
+// can do another raster vector for other types of rasters (icms ticks, etc)
 
 ReaderWriterQueue<gsl_vector *> g_filterbuf(NSAMP); // for nlms filtering
 
@@ -106,10 +108,8 @@ vector <pair<ReaderWriterQueue<PO8Data>*, po8e::card *>> g_dataqueues;
 
 float g_zoomSpan = 1.0;
 
-//float 	g_sbuf[NSORT][RECCHAN *NSBUF*2]; //2 units, 96 channels, 1024 spikes, 2 floats / spike.
-//float	g_rasterSpan = 10.f; // %seconds.
-//i64	g_sbufW[NSORT];
-//i64	g_sbufR[NSORT];
+bool g_vboInit = false;
+float	g_rasterSpan = 10.f; // %seconds.
 
 vector <Channel *> g_c;
 FiringRate	g_fr[RECCHAN][NSORT];
@@ -216,11 +216,6 @@ int g_drawmode[2] = {GL_POINTS, GL_LINE_STRIP};
 int	g_drawmodep = 1;
 int	g_blendmode[2] = {GL_ONE_MINUS_SRC_ALPHA, GL_ONE};
 int g_blendmodep = 0;
-
-bool g_vbo1Init = false;
-GLuint g_vbo2[2] = {0,0}; //for spike ticks.
-// why are there two?
-// xxx could use g_vbo2 to handle other event ticks
 
 //global labels..
 GtkWidget *g_infoLabel;
@@ -507,15 +502,6 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 	if (!gdk_gl_drawable_gl_begin (gldrawable, glcontext))
 		g_assert_not_reached ();
 
-
-	auto copyData = [](GLuint vbo, u32 sta, u32 fin, float *ptr, int stride) {
-		glBindBufferARB(GL_ARRAY_BUFFER_ARB, vbo);
-		sta *= stride;
-		fin *= stride;
-		ptr += sta;
-		glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, sta*4, (fin-sta)*4, (GLvoid *)ptr);
-	};
-
 	//copy over any new data.
 	if (!g_pause) {
 
@@ -523,28 +509,9 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 			x->copy();
 		}
 
-		for (auto &x : g_rasters) {
+		for (auto &x : g_spikeraster) {
 			x->copy();
 		}
-
-		/*
-		//ditto for the spike buffers (these can be disordered ..they generally don't overlap.)
-		for (int k=0; k<2; k++) { //will ultimately need more than 2, or have per-dot color.
-			if (g_sbufR[k] < g_sbufW[k]) {
-				i64 len = sizeof(g_sbuf[k])/8; //total # of pts.
-				i64 w = g_sbufW[k];
-				i64 sta = g_sbufR[k] % len;
-				i64 fin = w % len;
-				if (fin < sta) { //wrap
-					copyData(g_vbo2[k], sta, len, g_sbuf[k], 2);
-					copyData(g_vbo2[k], 0, fin, g_sbuf[k], 2);
-				} else {
-					copyData(g_vbo2[k], sta, fin, g_sbuf[k], 2);
-				}
-				g_sbufR[k] = w;
-			}
-		}
-		*/
 
 		//and the waveform buffers.
 		for (auto &c : g_c)
@@ -646,11 +613,11 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 #ifndef EMG
 
 		glShadeModel(GL_FLAT);
-		float vscale = 97.f;
+		float vscale = g_c.size() + 1;
 		glPushMatrix();
 		glScalef(1.f/g_rasterSpan, -1.f/vscale, 1.f);
-		int lt = (int)time / (int)g_rasterSpan;
-		lt *= (int)g_rasterSpan;
+		int lt = (int)time / (int)g_rasterSpan; // why these two lines, not:
+		lt *= (int)g_rasterSpan;				// lt = (int)time ???
 		float x = time - (float)lt;
 		float adj = 0.f;
 		float movtime = 0.25 + log10(g_rasterSpan);
@@ -661,23 +628,8 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 		}
 		glTranslatef((0 - (float)lt + adj), 1.f, 0.f);
 
-		/*
-		//VBO drawing..
-		for (int k=0; k<2; k++) {
-			glEnableClientState(GL_VERTEX_ARRAY);
-			glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo2[k]);
-			glVertexPointer(2, GL_FLOAT, 0, nullptr);
-			if (k == 0)
-				glColor4f (0., 1., 1., 0.3f); //cyan
-			else
-				glColor4f (1., 0., 0., 0.3f); //red
-			glPointSize(2.0);
-			glDrawArrays(GL_POINTS, 0, sizeof(g_sbuf[k])/8);
-			glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
-		}*/
-
-		for (&x : g_rasters)
-			x->draw();
+		for (auto &o : g_spikeraster)
+			o->draw();
 
 		//draw current time.
 		glColor4f (1., 0., 0., 0.5);
@@ -838,7 +790,7 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
-	if (!g_vbo1Init) { //start it up!
+	if (!g_vboInit) { //start it up!
 		//start up Cg first.(glInfo seems to trample some structures)
 		myCgContext = cgCreateContext();
 		checkForCgError("creating Cg context\n");
@@ -893,33 +845,15 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 			x->setNPlot(g_zoomSpan * SRATE_HZ);
 		}
 
-		for (auto &x : g_rasters) {
+		for (auto &x : g_spikeraster) {
 			x->configure();
-			// set number of points shown here
 		}
 
-		/*
-		//have one VBO that's filled with spike times & channels.
-		glGenBuffersARB(2, g_vbo2);
-		for (int k=0; k<2; k++) {
-			for (int i=0; i<RECCHAN; i++) {
-				for (int j=0; j<NSBUF; j++) {
-					g_sbuf[k][(i*NSBUF+j)*2+0] = (float)i/256.0+(float)j/2048.0;
-					g_sbuf[k][(i*NSBUF+j)*2+1] = (float)i;
-				}
-			}
-			glBindBufferARB(GL_ARRAY_BUFFER_ARB, g_vbo2[k]);
-			glBufferDataARB(GL_ARRAY_BUFFER_ARB, sizeof(g_sbuf[k]),
-			                nullptr, GL_DYNAMIC_DRAW_ARB);
-			glBufferSubDataARB(GL_ARRAY_BUFFER_ARB,
-			                   0, sizeof(g_sbuf[k]), g_sbuf[k]);
-		}
-		*/
-		for (auto &c : g_c) {
-			c->configure(g_vsFadeColor);
+		for (auto &x : g_c) {
+			x->configure(g_vsFadeColor);
 		}
 
-		g_vbo1Init = true;
+		g_vboInit = true;
 
 	}
 	BuildFont(); //so we're in the right context?
@@ -1104,14 +1038,10 @@ void sorter(int ch)
 					g_wfwriter.add(&pak);
 				}
 			}
-			if (unit > 0 && unit <=2) { // for drawing
+			if (unit > 0 && unit < NUNIT) {
 				int uu = unit-1;
 				g_fr[ch][uu].add(the_time);
-				// do g_rasters stuff here xxx
-				i64 w = g_sbufW[uu] % (i64)(sizeof(g_sbuf[0])/8);
-				g_sbuf[uu][w*2+0] = (float)(the_time);
-				g_sbuf[uu][w*2+1] = (float)ch;
-				g_sbufW[uu]++;
+				g_spikeraster[uu]->addEvent((float)the_time, (float)ch); // for drawing
 			}
 		} else {
 			g_c[ch]->m_isiViolations++;
@@ -2148,6 +2078,15 @@ int main(int argc, char **argv)
 		g_timeseries.push_back(new VboTimeseries(NSAMP));
 	}
 
+	for (int i=0; i<NSORT; i++) {
+		VboRaster *o = new VboRaster(nc, NSBUF);
+		if (i==0)
+			o->setColor(0.0, 1.0, 1.0, 0.3); //cyan
+		else
+			o->setColor(1.0, 0.0, 0.0, 0.3); //red
+		g_spikeraster.push_back(o);
+	}
+
 	g_drawmodep = (int) ms.getStructValue("gui", "draw_mode", 0, (float)g_drawmodep);
 	g_blendmodep = (int) ms.getStructValue("gui", "blend_mode", 0, (float)g_blendmodep);
 	g_cycle = (bool) ms.getStructValue("gui", "cycle", 0, (float)g_cycle);
@@ -2931,7 +2870,4 @@ int main(int argc, char **argv)
 	if (g_vsThreshold)
 		delete g_vsThreshold;
 	cgDestroyContext(myCgContext);
-	if (g_vbo1Init) {
-		glDeleteBuffersARB(2, g_vbo2);
-	}
 }

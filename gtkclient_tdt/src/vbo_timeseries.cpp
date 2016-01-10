@@ -34,7 +34,7 @@ void VboTimeseries::configure()
 	glGenBuffersARB(1, &m_vbo);
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB, m_vbo);
 	int siz = m_n*3*sizeof(float);
-	glBufferDataARB(GL_ARRAY_BUFFER_ARB, siz, 0, GL_STATIC_DRAW_ARB);
+	glBufferDataARB(GL_ARRAY_BUFFER_ARB, siz, 0, GL_DYNAMIC_DRAW_ARB);
 	glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, 0, siz, m_f);
 }
 void VboTimeseries::setCGProfile(CGprofile pro)

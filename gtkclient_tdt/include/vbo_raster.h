@@ -14,24 +14,20 @@ protected:
 	float 				*m_f; // local floating point memory
 	std::atomic<u32> 	m_w; // write pointer
 	std::atomic<u32> 	m_r; // read pointer (for copying to graphics memory).
-	u32 				m_n; // number of samples in buffer
+	u32 				m_nchan; // number of channels
+	u32 				m_nsamp; // number of samples in buffer
 	GLuint				m_vbo;	// vertex buffer object
-	CGprofile   		m_pro;
-	cgVertexShader 		*m_vs;	// vertex shader
+	float 				m_red;
+	float 				m_green;
+	float 				m_blue;
+	float 				m_alpha;
 public:
-	u32 				m_nplot; // number of samples to plot
-	VboRaster(u32 n);
+	VboRaster(u32 nchan, u32 nsamp);
 	~VboRaster();
 	void configure();
-	void setCGProfile(CGprofile pro);
-	void setVertexShader(cgVertexShader *vs);
-	void setNPlot(u32 _nplot);
+	void setColor(float r, float g, float b, float a);
 	void copy();
-	void addData(float *f, u32 ns);
-	void draw(int drawmode, float yoffset);
-
-	// need for each raster object to have a color
+	void addEvent(float the_time, float the_chan);
+	void draw();
 };
-#endif
-
 #endif

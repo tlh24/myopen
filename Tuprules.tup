@@ -8,8 +8,8 @@ CPPFLAGS += -Wtrigraphs -Wextra -pedantic -std=c++11
 CPPFLAGS += -Wno-int-to-pointer-cast
 CPPFLAGS += -march=native
 
-#CPPFLAGS += -O3
-CPPFLAGS += -O0 -g -DDEBUG
+CPPFLAGS += -O3
+#CPPFLAGS += -O0 -g -DDEBUG
 
 # these are to analyize automatic loop vectorization failures
 #CPPFLAGS += -Rpass=loop-vectorize
