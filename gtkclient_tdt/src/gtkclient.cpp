@@ -2831,7 +2831,7 @@ int main(int argc, char **argv)
 			}
 			printf("Connection established to card %d at %p\n", id, p);
 			if (configureCard(p)) {
-			ReaderWriterQueue<PO8Data> *q = new ReaderWriterQueue<PO8Data>(512);
+				ReaderWriterQueue<PO8Data> *q = new ReaderWriterQueue<PO8Data>(512);
 				threads.push_back(thread(po8e_fun, p, q));
 				g_dataqueues.push_back(pair<ReaderWriterQueue<PO8Data>*, po8e::card *>(q, pc.cards[i]));
 			}
