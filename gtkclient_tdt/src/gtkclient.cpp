@@ -1251,7 +1251,7 @@ void worker()
 
 		size_t nnc = 0; // num neural channels
 		for (auto &card : c) {
-			for (size_t j=0; j<card->channel_size(); j++) {
+			for (int j=0; j<card->channel_size(); j++) {
 				if (card->channel(j).data_type() == po8e::channel::NEURAL) {
 					nnc++;
 				}
@@ -1260,9 +1260,9 @@ void worker()
 		auto f = new float[nnc * ns];
 		size_t nc_i = 0;
 		for (size_t i=0; i<c.size(); i++) {
-			for (size_t j=0; j<c[i]->channel_size(); j++) {
-				if (c[i].channel(j).data_type() == po8e::channel::NEURAL) {
-					auto scale_factor = c[i].channel(j).scale_factor();
+			for (int j=0; j<c[i]->channel_size(); j++) {
+				if (c[i]->channel(j).data_type() == po8e::channel::NEURAL) {
+					auto scale_factor = c[i]->channel(j).scale_factor();
 					for (size_t k=0; k<ns; k++) {
 						f[nc_i*ns+k] = (float)p[i].data[j*ns+k]/scale_factor;
 					}
@@ -2824,13 +2824,13 @@ int main(int argc, char **argv)
 
 	for (int i=0; i<totalcards; i++) {
 		if (pc.cards[i]->enabled()) {
-			auto id = pc.cards[i]->id();
+			int id = (int)pc.cards[i]->id();
 			PO8e *p = PO8e::connectToCard(id-1); // 0-indexed
 			if (p == nullptr) {
 				break;
 			}
 			printf("Connection established to card %d at %p\n", id, p);
-			if (configureCard(p) {
+			if (configureCard(p)) {
 			ReaderWriterQueue<PO8Data> *q = new ReaderWriterQueue<PO8Data>(512);
 				threads.push_back(thread(po8e_fun, p, q));
 				g_dataqueues.push_back(pair<ReaderWriterQueue<PO8Data>*, po8e::card *>(q, pc.cards[i]));
