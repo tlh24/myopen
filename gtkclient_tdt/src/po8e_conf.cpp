@@ -79,7 +79,9 @@ po8e::card *po8eConf::loadCard(size_t idx)
 
 		lua_getfield(L, -1, "enabled");
 		stack++;
-		card->set_enabled(lua_toboolean(L, -1));
+		if (lua_isboolean(L, -1)) {
+			card->set_enabled(lua_toboolean(L, -1));
+		}
 		lua_pop(L, 1);
 		stack--;
 
