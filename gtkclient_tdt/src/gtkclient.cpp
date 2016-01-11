@@ -2836,9 +2836,6 @@ int main(int argc, char **argv)
 				g_dataqueues.push_back(pair<ReaderWriterQueue<PO8Data>*, po8e::card *>(q, pc.cards[i]));
 			}
 		}
-		else {
-			printff("card %d disabled\n", id)
-		}
 	}
 
 	if (g_dataqueues.size() < 1) {
