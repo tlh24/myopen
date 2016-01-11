@@ -1203,18 +1203,20 @@ void worker()
 		if (g_die)
 			break;
 
-		auto ns = p[0].numSamples;
-		auto nc = p[0].numChannels;
-
 		auto mismatch = false;
 		for (size_t i=0; i<n; i++) {
-			if (p[i].numSamples != ns) {
+			if (p[i].numSamples != p[0].numSamples) {
 				warn("po8e card sample mismatch");
 				mismatch = true;
 				break;
 			}
+			if (p[i].numChannels != p[0].numChannels) {
+				warn("po8e card channel mismatch");
+				mismatch = true;
+				break;
+			}
 			if (p[i].numChannels != (size_t)c[i]->channel_size()) {
-				warn("po8e card %d: expected %d channels (%d actual)",
+				warn("po8e card %d: configured for %d channels (%d received in po8e packet)",
 				     c[i]->id(), c[i]->channel_size(), p[i].numChannels);
 				mismatch = true;
 				break;
@@ -1239,27 +1241,48 @@ void worker()
 			g_ts.update(time, p[0].tick); //also updates the mmap file.
 		}
 
-		auto f 		= new float[ns*nc];
+		auto ns = p[0].numSamples;
+
 		auto tk 	= new u32[ns];
 		tk[0] = p[0].tick;
 		for (size_t i=1; i < ns; i++) {
 			tk[i] = tk[i-1] + 1;
 		}
 
-		auto stim 	= new u32[ns];
-		auto blank 	= new bool[ns];
+		size_t nnc = 0; // num neural channels
+		for (auto &card : c) {
+			for (size_t j=0; j<card->channel_size(); j++) {
+				if (card->channel(j).data_type() == po8e::channel::NEURAL) {
+					nnc++;
+				}
+			}
+		}
+		auto f = new float[nnc][ns];
+		size_t nc_i = 0;
+		for (size_t i=0; i<c.size(); i++) {
+			for (size_t j=0; j<c[i]->channel_size(); j++) {
+				if (c[i].channel(j).data_type() == po8e::channel::NEURAL) {
+					auto scale_factor = c[i].channel(j).scale_factor();
+					for (size_t k=0; k<ns; k++) {
+						f[nc_i][k] = (float)p[i].data[j*ns+k]/scale_factor;
+					}
+				}
+				nc_i++;
+			}
+		}
+
 		auto audio 	= new float[ns];
 
-		for (size_t k=0; k<ns; k++) {
-			for (size_t ch=0; ch<nc; ch++) {
-				f[ch*ns+k] = (float)p[0].data[ch*ns+k]/32767;
-			}
-			stim[k]  = (u16)(p[1].data[8*ns + k]);
-			stim[k] += (u16)(p[1].data[9*ns + k]) << 16;
-			blank[k] = p[1].data[10*ns + k] > 0;
-		}
-		for (size_t i=0; i<n; i++) {
-			free(p[i].data);
+		// TODO: these two need to be set. Keep empty for now
+		auto stim 	= new u32[ns];
+		auto blank 	= new bool[ns];
+		//stim[k]  = (u16)(p[1].data[8*ns + k]);
+		//stim[k] += (u16)(p[1].data[9*ns + k]) << 16;
+		//blank[k] = p[1].data[10*ns + k] > 0;
+
+		// free the po8e data packet
+		for (auto &x : p) {
+			free(x.data);
 		}
 
 		// write (pre-filtered) broadband signal to disk
@@ -1269,20 +1292,20 @@ void worker()
 			ac = new Analog; // deleted by other thread
 			ac->set_chan(g_channel[0]+1);	// 1-indexed
 			for (size_t k=0; k<ns; k++) {
-				ac->add_sample(f[g_channel[0]*ns+k]); // no need to gain it
+				ac->add_sample(f[g_channel[0]][k]); // no need to gain it
 				ac->add_tick(tk[k]);
 				ac->add_ts(g_ts.getTime(tk[k]));
 			}
 			g_analogwriter_prefilter.add(ac);
 
-			if (g_whichAnalogSave == 1) {
-				for (int ch=0; ch<(int)nc; ch++) {
+			if (g_whichAnalogSave == 1) { // save all channels
+				for (int ch=0; ch<(int)nnc; ch++) {
 					if (ch == g_channel[0])
 						continue;
 					ac = new Analog; // deleted by other thread
 					ac->set_chan(ch+1);	// 1-indexed
 					for (size_t k=0; k<ns; k++) {
-						ac->add_sample(f[ch*ns+k]); // no need to gain it
+						ac->add_sample(f[ch][k]); // no need to gain it
 						ac->add_tick(tk[k]);
 						ac->add_ts(g_ts.getTime(tk[k]));
 					}
@@ -1296,8 +1319,8 @@ void worker()
 		// on the intuition that it will work better this way
 		for (size_t k=0; k<ns; k++) {
 			if (g_trainArtifactNLMS || g_filterArtifactNLMS) {
-				for (int ch=0; ch<(int)nc; ch++) {
-					gsl_vector_set(xvec, ch, (double)f[ch*ns+k]);
+				for (int ch=0; ch<(int)nnc; ch++) {
+					gsl_vector_set(xvec, ch, (double)f[ch][k]);
 				}
 			}
 
@@ -1306,17 +1329,17 @@ void worker()
 			// so it doesn't predict itself
 			// this is faster than the alternative
 			if (g_trainArtifactNLMS) {
-				gsl_vector *yvec = gsl_vector_alloc(nc);
+				gsl_vector *yvec = gsl_vector_alloc(nnc);
 				gsl_vector_memcpy (yvec, xvec);
 				g_filterbuf.enqueue(yvec); // free on the other thread
 			}
 
 			// filter online here
 			if (g_filterArtifactNLMS) {
-				for (int ch=0; ch<(int)nc; ch++) {
+				for (int ch=0; ch<(int)nnc; ch++) {
 					double d = gsl_vector_get(xvec, ch);
 					gsl_vector_set(xvec, ch, 0.0);
-					f[ch*ns+k] -= (float)g_nlms[ch]->filter(xvec);
+					f[ch][k] -= (float)g_nlms[ch]->filter(xvec);
 					gsl_vector_set(xvec, ch, d);
 				}
 			}
@@ -1353,8 +1376,8 @@ void worker()
 				for (int z=0; z<NARTPTR; z++) {
 					i64 idx = a->m_windex[z]; // write pointer
 					if (idx != -1) {
-						for (int ch=0; ch<(int)nc; ch++) {
-							a->m_now[ch*ARTBUF+idx] = f[ch*ns+k];
+						for (int ch=0; ch<(int)nnc; ch++) {
+							a->m_now[ch*ARTBUF+idx] = f[ch][k];
 						}
 						a->m_windex[z]++;
 						if (a->m_windex[z] >= ARTBUF) {
@@ -1365,7 +1388,7 @@ void worker()
 								o->set_stim_chan(sc+1); // 1-indexed
 
 								if (g_saveICMSWF) {
-									for (int ch=0; ch<(int)nc; ch++) {
+									for (int ch=0; ch<(int)nnc; ch++) {
 										ICMS_artifact *art = o->add_artifact();
 										art->set_rec_chan(ch+1); //1-indexed
 										for (int x=0; x<ARTBUF; x++) {
@@ -1384,7 +1407,7 @@ void worker()
 								// for iterative update of average
 								float alpha = 1.f/a->m_nsamples;
 
-								for (int ch=0; ch<(int)nc; ch++) {
+								for (int ch=0; ch<(int)nnc; ch++) {
 									for (int x=0; x<ARTBUF; x++) {
 										float cur = a->m_wav[ch*ARTBUF+x];
 										float now = a->m_now[ch*ARTBUF+x];
@@ -1402,8 +1425,8 @@ void worker()
 						continue; // try next z-pointer
 
 					if (g_enableArtifactSubtr) {
-						for (int ch=0; ch<(int)nc; ch++) {
-							f[ch*ns+k] -= a->m_wav[ch*ARTBUF+ridx];
+						for (int ch=0; ch<(int)nnc; ch++) {
+							f[ch][k] -= a->m_wav[ch*ARTBUF+ridx];
 						}
 					}
 					// nb. updating the read pointer happens below,
@@ -1412,20 +1435,20 @@ void worker()
 			}
 
 			// post-artifact-removal filtering
-			for (int ch=0; ch<(int)nc; ch++) {
+			for (int ch=0; ch<(int)nnc; ch++) {
 				if ( g_hipassNeurons &&  g_lopassNeurons)
-					g_bandpass[ch].Proc(&f[ch*ns+k], &f[ch*ns+k], 1);
+					g_bandpass[ch].Proc(&f[ch][k], &f[ch][k], 1);
 
 				if ( g_hipassNeurons && !g_lopassNeurons)
-					g_hipass[ch].Proc(&f[ch*ns+k], &f[ch*ns+k], 1);
+					g_hipass[ch].Proc(&f[ch][k], &f[ch][k], 1);
 
 				if (!g_hipassNeurons &&  g_lopassNeurons)
-					g_lopass[ch].Proc(&f[ch*ns+k], &f[ch*ns+k], 1);
+					g_lopass[ch].Proc(&f[ch][k], &f[ch][k], 1);
 
 				if (g_whichMedianFilter == 1)
-					f[ch*ns+k] = g_medfilt3[ch].proc(f[ch*ns+k]);
+					f[ch*ns+k] = g_medfilt3[ch].proc(f[ch][k]);
 				else if (g_whichMedianFilter == 2)
-					f[ch*ns+k] = g_medfilt5[ch].proc(f[ch*ns+k]);
+					f[ch*ns+k] = g_medfilt5[ch].proc(f[ch][k]);
 			}
 
 			// blank based on artifact (must happen after filtering
@@ -1439,8 +1462,8 @@ void worker()
 					if (g_enableArtifactBlanking &&
 					    ridx >= g_artifactBlankingPreSamps &&
 					    ridx <  g_artifactBlankingPreSamps+g_artifactBlankingSamps) {
-						for (int ch=0; ch<(int)nc; ch++) {
-							f[ch*ns+k] = 0.f;
+						for (int ch=0; ch<(int)nnc; ch++) {
+							f[ch][k] = 0.f;
 						}
 					}
 					elem->m_rindex[z]++;
@@ -1451,14 +1474,14 @@ void worker()
 
 			// blank based on the stim clock (must happen last)
 			if (g_enableStimClockBlanking && blank[k]) {
-				for (int ch=0; ch<(int)nc; ch++) {
+				for (int ch=0; ch<(int)nnc; ch++) {
 					// note that if we keep track of the last value from the
 					// previous loop through, we could do sample-and-hold
 					// rather than zero-out. which is better?
 					// nan-ing is also a good idea but poisons further
 					// computations
 					//f[ch*ns+k] = nanf("");
-					f[ch*ns+k] = 0.f;
+					f[ch][k] = 0.f;
 				}
 			}
 		}
@@ -1469,7 +1492,7 @@ void worker()
 			int ch = g_channel[h];
 			float gain = g_c[ch]->getGain();
 			for (size_t k=0; k<ns; k++) {
-				float fg = f[ch*ns+k] * gain;
+				float fg = f[ch][k] * gain;
 				g_timeseries[h]->addData(&fg, 1); // timeseries trace
 				if (h==0) {
 					audio[k] = fg;
@@ -1485,7 +1508,7 @@ void worker()
 		for (auto &ch : g_c) {
 			double m = ch->m_mean;
 			for (size_t k=0; k<ns; k++) {
-				auto x = f[ch->m_ch*ns+k];
+				auto x = f[ch->m_ch][k];
 				// 1 = +10mV; range = [-1 1] here. XXX really?!?
 				ch->m_spkbuf.addSample(tk[k], x);
 
@@ -1505,20 +1528,20 @@ void worker()
 			ac = new Analog; // deleted by other thread
 			ac->set_chan(g_channel[0]+1);	// 1-indexed
 			for (size_t k=0; k<ns; k++) {
-				ac->add_sample(f[g_channel[0]*ns+k]); // no need to gain it
+				ac->add_sample(f[g_channel[0]][k]); // no need to gain it
 				ac->add_tick(tk[k]);
 				ac->add_ts(g_ts.getTime(tk[k]));
 			}
 			g_analogwriter.add(ac);
 
 			if (g_whichAnalogSave == 1) {
-				for (int ch=0; ch<(int)nc; ch++) {
+				for (int ch=0; ch<(int)nnc; ch++) {
 					if (ch == g_channel[0])
 						continue;
 					ac = new Analog; // deleted by other thread
 					ac->set_chan(ch+1);	// 1-indexed
 					for (size_t k=0; k<ns; k++) {
-						ac->add_sample(f[ch*ns+k]); // no need to gain it
+						ac->add_sample(f[ch][k]); // no need to gain it
 						ac->add_tick(tk[k]);
 						ac->add_ts(g_ts.getTime(tk[k]));
 					}
@@ -1528,7 +1551,7 @@ void worker()
 		}
 
 		// sort -- see if samples pass threshold. if so, copy.
-		for (int ch=0; ch<(int)nc; ch++) {
+		for (int ch=0; ch<(int)nnc; ch++) {
 			if (g_c[ch]->getEnabled()) { //XXX put this into channel class?
 				sorter(ch);
 			}
@@ -2765,7 +2788,6 @@ int main(int argc, char **argv)
 	g_startTime = gettime();
 
 	vector <thread> threads;
-	vector <PO8e *> cards;
 
 	printf("PO8e API Version %s\n", revisionString());
 	int totalcards = PO8e::cardCount();
@@ -2784,18 +2806,6 @@ int main(int argc, char **argv)
 		totalcards = (int)pc.cards.size();
 	}
 
-	for (int i=0; i<totalcards; i++) {
-		PO8e *p = PO8e::connectToCard(i);
-		if (p != nullptr) {
-			printf("Connection established to card %d at %p\n", i, p);
-			cards.push_back(p);
-		}
-	}
-	if (cards.size() < 1) {
-		error("Connected to 0 cards");
-		return 1;
-	}
-
 	auto configureCard = [&](PO8e* p) -> bool {
 		// return true on success
 		// return false on failure
@@ -2804,20 +2814,33 @@ int main(int argc, char **argv)
 			warn("startCollecting() failed with: %d", p->getLastError());
 			p->flushBufferedData();
 			p->stopCollecting();
-			printf("Releasing card %p\n", p);
+			printf(" -> Releasing card %p\n", p);
 			PO8e::releaseCard(p);
 			return false;
 		}
-		printf("Card %p is collecting incoming data.\n", p);
+		printf(" -> Card %p is collecting incoming data.\n", p);
 		return true;
 	};
 
-	for (size_t i=0; i<cards.size(); i++) {
-		if (configureCard(cards[i])) {
+	for (int i=0; i<totalcards; i++) {
+		if (pc.cards[i]->enabled()) {
+			auto id = pc.cards[i]->id();
+			PO8e *p = PO8e::connectToCard(id-1); // 0-indexed
+			if (p == nullptr) {
+				break;
+			}
+			printf("Connection established to card %d at %p\n", id, p);
+			if (configureCard(p) {
 			ReaderWriterQueue<PO8Data> *q = new ReaderWriterQueue<PO8Data>(512);
-			threads.push_back(thread(po8e_fun, cards[i], q));
-			g_dataqueues.push_back(pair<ReaderWriterQueue<PO8Data>*, po8e::card *>(q, pc.cards[i]));
+				threads.push_back(thread(po8e_fun, p, q));
+				g_dataqueues.push_back(pair<ReaderWriterQueue<PO8Data>*, po8e::card *>(q, pc.cards[i]));
+			}
 		}
+	}
+
+	if (g_dataqueues.size() < 1) {
+		error("Connected to zero po8e cards");
+		return 1;
 	}
 
 	threads.push_back(thread(worker));
@@ -2863,6 +2886,7 @@ int main(int argc, char **argv)
 
 	for (auto &q : g_dataqueues) {
 		delete q.first;
+		// q.second is deleted when the po8e_conf object is destructed
 	}
 
 	if (g_vsFadeColor)

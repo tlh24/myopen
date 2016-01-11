@@ -10,6 +10,9 @@ po8eConf::po8eConf()
 }
 po8eConf::~po8eConf()
 {
+	for (auto &c : cards) {
+		delete c;
+	}
 }
 const char *po8eConf::name()
 {
@@ -55,7 +58,7 @@ size_t po8eConf::numIgnoredChannels() // helper
 {
 	return numChannels(po8e::channel::IGNORE);
 }
-// calling function should free memory
+// allocates memory
 po8e::card *po8eConf::loadCard(size_t idx)
 {
 	auto card = new po8e::card;
@@ -67,11 +70,19 @@ po8e::card *po8eConf::loadCard(size_t idx)
 	lua_rawgeti(L, -1, idx+1);	// lua is 1-indexed
 	stack++;
 	if (isCard(-1)) {
+
 		lua_getfield(L, -1, "id");
 		stack++;
 		card->set_id(lua_tointeger(L, -1));
 		lua_pop(L, 1);
 		stack--;
+
+		lua_getfield(L, -1, "enabled");
+		stack++;
+		card->set_enabled(lua_toboolean(L, -1));
+		lua_pop(L, 1);
+		stack--;
+
 		lua_getfield(L, -1, "channels");
 		stack++;
 		for (size_t i=1; i<=lua_objlen(L, -1); i++) { // lua is 1-indexed
@@ -79,11 +90,13 @@ po8e::card *po8eConf::loadCard(size_t idx)
 			stack++;
 			if (isChannel(-1)) {
 				auto chan = card->add_channel();
+
 				lua_getfield(L, -1, "id");
 				stack++;
 				chan->set_id(lua_tointeger(L, -1));
 				lua_pop(L, 1);
 				stack--;
+
 				lua_getfield(L, -1, "name");
 				stack++;
 				if (lua_isstring(L, -1)) {
@@ -95,12 +108,14 @@ po8e::card *po8eConf::loadCard(size_t idx)
 				}
 				lua_pop(L, 1);
 				stack--;
+
 				lua_getfield(L, -1, "scale_factor");
 				stack++;
 				if (lua_isnumber(L, -1))
 					chan->set_scale_factor(lua_tointeger(L, -1));
 				lua_pop(L, 1);
 				stack--;
+
 				lua_getfield(L, -1, "data_type");
 				stack++;
 				if (lua_isnumber(L, -1)) {
@@ -127,10 +142,10 @@ error:
 size_t po8eConf::numCards()
 {
 	size_t stack = 0;
+	size_t num_cards = 0;
 	lua_getglobal(L, "po8e_cards");
 	stack++;
 	if (lua_istable(L, -1)) {
-		size_t num_cards = 0;
 		for (size_t i=1; i<=lua_objlen(L, -1); i++) { // lua is 1-indexed
 			lua_rawgeti(L, -1, i);
 			stack++;
@@ -140,11 +155,9 @@ size_t po8eConf::numCards()
 			lua_pop(L, 1);
 			stack--;
 		}
-		lua_pop(L, stack);
-		return num_cards;
 	}
 	lua_pop(L, stack);
-	return 0;
+	return num_cards;
 }
 // the card struct needs:
 // - "id" (integer)
@@ -174,7 +187,7 @@ error:
 	lua_pop(L, stack);
 	return false;
 }
-// the channel struct needs at least:
+// the Channel struct needs at least:
 // - "id" (integer)
 bool po8eConf::isChannel(int index)
 {

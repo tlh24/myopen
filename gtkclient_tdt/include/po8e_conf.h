@@ -14,12 +14,12 @@ public:
 	~po8eConf();
 	const char *name();
 	bool loadConf(const char *conf);
-	vector <po8e::card *> cards;
 	size_t numChannels(po8e::channel_DataTypes x);
 	size_t numNeuralChannels();
 	size_t numEventChannels();
 	size_t numAnalogChannels();
 	size_t numIgnoredChannels();
+	vector <po8e::card *> cards;
 protected:
 private:
 	po8e::card *loadCard(size_t i);
