@@ -1257,14 +1257,14 @@ void worker()
 				}
 			}
 		}
-		auto f = new float[nnc][ns];
+		auto f = new float[nnc * ns];
 		size_t nc_i = 0;
 		for (size_t i=0; i<c.size(); i++) {
 			for (size_t j=0; j<c[i]->channel_size(); j++) {
 				if (c[i].channel(j).data_type() == po8e::channel::NEURAL) {
 					auto scale_factor = c[i].channel(j).scale_factor();
 					for (size_t k=0; k<ns; k++) {
-						f[nc_i][k] = (float)p[i].data[j*ns+k]/scale_factor;
+						f[nc_i*ns+k] = (float)p[i].data[j*ns+k]/scale_factor;
 					}
 				}
 				nc_i++;
@@ -1292,7 +1292,7 @@ void worker()
 			ac = new Analog; // deleted by other thread
 			ac->set_chan(g_channel[0]+1);	// 1-indexed
 			for (size_t k=0; k<ns; k++) {
-				ac->add_sample(f[g_channel[0]][k]); // no need to gain it
+				ac->add_sample(f[g_channel[0]*ns+k]); // no need to gain it
 				ac->add_tick(tk[k]);
 				ac->add_ts(g_ts.getTime(tk[k]));
 			}
@@ -1305,7 +1305,7 @@ void worker()
 					ac = new Analog; // deleted by other thread
 					ac->set_chan(ch+1);	// 1-indexed
 					for (size_t k=0; k<ns; k++) {
-						ac->add_sample(f[ch][k]); // no need to gain it
+						ac->add_sample(f[ch*ns+k]); // no need to gain it
 						ac->add_tick(tk[k]);
 						ac->add_ts(g_ts.getTime(tk[k]));
 					}
@@ -1320,7 +1320,7 @@ void worker()
 		for (size_t k=0; k<ns; k++) {
 			if (g_trainArtifactNLMS || g_filterArtifactNLMS) {
 				for (int ch=0; ch<(int)nnc; ch++) {
-					gsl_vector_set(xvec, ch, (double)f[ch][k]);
+					gsl_vector_set(xvec, ch, (double)f[ch*ns+k]);
 				}
 			}
 
@@ -1339,7 +1339,7 @@ void worker()
 				for (int ch=0; ch<(int)nnc; ch++) {
 					double d = gsl_vector_get(xvec, ch);
 					gsl_vector_set(xvec, ch, 0.0);
-					f[ch][k] -= (float)g_nlms[ch]->filter(xvec);
+					f[ch*ns+k] -= (float)g_nlms[ch]->filter(xvec);
 					gsl_vector_set(xvec, ch, d);
 				}
 			}
@@ -1377,7 +1377,7 @@ void worker()
 					i64 idx = a->m_windex[z]; // write pointer
 					if (idx != -1) {
 						for (int ch=0; ch<(int)nnc; ch++) {
-							a->m_now[ch*ARTBUF+idx] = f[ch][k];
+							a->m_now[ch*ARTBUF+idx] = f[ch*ns+k];
 						}
 						a->m_windex[z]++;
 						if (a->m_windex[z] >= ARTBUF) {
@@ -1426,7 +1426,7 @@ void worker()
 
 					if (g_enableArtifactSubtr) {
 						for (int ch=0; ch<(int)nnc; ch++) {
-							f[ch][k] -= a->m_wav[ch*ARTBUF+ridx];
+							f[ch*ns+k] -= a->m_wav[ch*ARTBUF+ridx];
 						}
 					}
 					// nb. updating the read pointer happens below,
@@ -1437,18 +1437,18 @@ void worker()
 			// post-artifact-removal filtering
 			for (int ch=0; ch<(int)nnc; ch++) {
 				if ( g_hipassNeurons &&  g_lopassNeurons)
-					g_bandpass[ch].Proc(&f[ch][k], &f[ch][k], 1);
+					g_bandpass[ch].Proc(&f[ch*ns+k], &f[ch*ns+k], 1);
 
 				if ( g_hipassNeurons && !g_lopassNeurons)
-					g_hipass[ch].Proc(&f[ch][k], &f[ch][k], 1);
+					g_hipass[ch].Proc(&f[ch*ns+k], &f[ch*ns+k], 1);
 
 				if (!g_hipassNeurons &&  g_lopassNeurons)
-					g_lopass[ch].Proc(&f[ch][k], &f[ch][k], 1);
+					g_lopass[ch].Proc(&f[ch*ns+k], &f[ch*ns+k], 1);
 
 				if (g_whichMedianFilter == 1)
-					f[ch*ns+k] = g_medfilt3[ch].proc(f[ch][k]);
+					f[ch*ns+k] = g_medfilt3[ch].proc(f[ch*ns+k]);
 				else if (g_whichMedianFilter == 2)
-					f[ch*ns+k] = g_medfilt5[ch].proc(f[ch][k]);
+					f[ch*ns+k] = g_medfilt5[ch].proc(f[ch*ns+k]);
 			}
 
 			// blank based on artifact (must happen after filtering
@@ -1463,7 +1463,7 @@ void worker()
 					    ridx >= g_artifactBlankingPreSamps &&
 					    ridx <  g_artifactBlankingPreSamps+g_artifactBlankingSamps) {
 						for (int ch=0; ch<(int)nnc; ch++) {
-							f[ch][k] = 0.f;
+							f[ch*ns+k] = 0.f;
 						}
 					}
 					elem->m_rindex[z]++;
@@ -1481,7 +1481,7 @@ void worker()
 					// nan-ing is also a good idea but poisons further
 					// computations
 					//f[ch*ns+k] = nanf("");
-					f[ch][k] = 0.f;
+					f[ch*ns+k] = 0.f;
 				}
 			}
 		}
@@ -1492,7 +1492,7 @@ void worker()
 			int ch = g_channel[h];
 			float gain = g_c[ch]->getGain();
 			for (size_t k=0; k<ns; k++) {
-				float fg = f[ch][k] * gain;
+				float fg = f[ch*ns+k] * gain;
 				g_timeseries[h]->addData(&fg, 1); // timeseries trace
 				if (h==0) {
 					audio[k] = fg;
@@ -1508,7 +1508,7 @@ void worker()
 		for (auto &ch : g_c) {
 			double m = ch->m_mean;
 			for (size_t k=0; k<ns; k++) {
-				auto x = f[ch->m_ch][k];
+				auto x = f[ch->m_ch*ns+k];
 				// 1 = +10mV; range = [-1 1] here. XXX really?!?
 				ch->m_spkbuf.addSample(tk[k], x);
 
@@ -1528,7 +1528,7 @@ void worker()
 			ac = new Analog; // deleted by other thread
 			ac->set_chan(g_channel[0]+1);	// 1-indexed
 			for (size_t k=0; k<ns; k++) {
-				ac->add_sample(f[g_channel[0]][k]); // no need to gain it
+				ac->add_sample(f[g_channel[0]*ns+k]); // no need to gain it
 				ac->add_tick(tk[k]);
 				ac->add_ts(g_ts.getTime(tk[k]));
 			}
@@ -1541,7 +1541,7 @@ void worker()
 					ac = new Analog; // deleted by other thread
 					ac->set_chan(ch+1);	// 1-indexed
 					for (size_t k=0; k<ns; k++) {
-						ac->add_sample(f[ch][k]); // no need to gain it
+						ac->add_sample(f[ch*ns+k]); // no need to gain it
 						ac->add_tick(tk[k]);
 						ac->add_ts(g_ts.getTime(tk[k]));
 					}
