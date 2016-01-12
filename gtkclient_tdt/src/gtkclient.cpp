@@ -1088,6 +1088,9 @@ void po8e_fun(PO8e *p, ReaderWriterQueue<PO8Data> *q)
 {
 	size_t bufmax = 10000;	// must be >= 10000
 
+	// TODO: this actually should depend on the sampling rate.
+	// also, perhaps it would be better to grab as many samples as possible
+	// that are available on each card, like, query each and take the minimum
 	size_t read_size = 32; // samples
 
 	printf("Waiting for the stream to start ...\n");

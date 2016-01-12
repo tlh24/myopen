@@ -1,12 +1,12 @@
 CPP = clang++
 #CPP = g++
 
-CPPFLAGS += -Wextra -pedantic -std=c++11 -Wno-int-to-pointer-cast
-CPPFLAGS += -Wall -Wcast-align -Wpointer-arith -Wshadow -Wsign-compare
+CPPFLAGS += -Wall -Wextra -pedantic -Wshadow
+CPPFLAGS += -std=c++11 -Wno-int-to-pointer-cast -Wtrigraphs
+CPPFLAGS += -Wstrict-overflow -fno-strict-aliasing
+CPPFLAGS += -Wcast-align -Wpointer-arith -Wsign-compare
 CPPFLAGS += -Wformat=2 -Wno-format-y2k -Wmissing-braces -Wparentheses
-CPPFLAGS += -Wtrigraphs -Wextra -pedantic -std=c++11
-CPPFLAGS += -Wno-int-to-pointer-cast
-CPPFLAGS += -march=native
+CPPFLAGS += -Wno-missing-field-initializers -march=native
 
 CPPFLAGS += -O3
 #CPPFLAGS += -O0 -g -DDEBUG

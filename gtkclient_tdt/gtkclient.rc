@@ -15,7 +15,7 @@ for i=1, 96 do
   channel = {
     id = i,
     --name = string.format("%s_%03d", "M1", i),
-    --scale_factor = 3276700,
+    --scale_factor = 32767,
     --data_type = NEURAL,
   }
   channels[i] = channel
@@ -34,8 +34,7 @@ for i=1, 96 do
   channel = {
     id = i,
     name = string.format("%s_%03d", "S1", i),
-    scale_factor = 666,
-    data_type = data_type.IGNORE,
+    --data_type = data_type.IGNORE,
   }
   channels[i] = channel
 end
