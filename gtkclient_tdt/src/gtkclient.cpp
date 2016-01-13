@@ -100,6 +100,7 @@ class Artifact;
 
 vector <VboTimeseries *> g_timeseries;
 vector <VboRaster *> g_spikeraster;
+vector <VboRaster *> g_eventraster;
 // can do another raster vector for other types of rasters (icms ticks, etc)
 
 ReaderWriterQueue<gsl_vector *> g_filterbuf(NSAMP); // for nlms filtering
@@ -503,17 +504,16 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 
 	//copy over any new data.
 	if (!g_pause) {
-
 		for (auto &x : g_timeseries) {
 			x->copy();
 		}
-
-		for (auto &x : g_spikeraster) {
+		for (auto &x : g_spikeraster) { // spikes
 			x->copy();
 		}
-
-		//and the waveform buffers.
-		for (auto &c : g_c)
+		for (auto &x : g_eventraster) { // non-spike events
+			x->copy();
+		}
+		for (auto &c : g_c) //and the waveform buffers
 			c->copy();
 	}
 
@@ -664,6 +664,9 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 			snprintf(buf, 128, "%c %d", 'A'+k, g_channel[k]);
 			glPrint(buf);
 		}
+
+		// do g_eventrasters here
+
 #endif
 		//end VBO
 	}
@@ -849,6 +852,9 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 		}
 
 		for (auto &x : g_spikeraster) {
+			x->configure();
+		}
+		for (auto &x : g_eventraster) {
 			x->configure();
 		}
 
@@ -1280,21 +1286,46 @@ void worker()
 
 		auto audio 	= new float[ns];
 
+		// stim channels (and event channels generally)
 		size_t nec = 0; // num event channels
 		size_t nsc = 0; // num stim channels
 		for (auto &card : c) {
 			for (int j=0; j<card->channel_size(); j++) {
 				if (card->channel(j).data_type() == po8e::channel::EVENT) {
-					nec++;
 					if (card->channel(j).name().compare("stim") == 0) {
 						nsc++;
+					}
+					else {
+						nec++;
+					}
+				}
+			}
+		}
+		auto events = new bool[nec*ns];
+		auto stim 	= new bool[nsc*ns];
+		size_t ns_i = 0;
+		size_t ne_i = 0;
+		for (size_t i=0; i<c.size(); i++) {
+			for (int j=0; j<c[i]->channel_size(); j++) {
+				if (c[i]->channel(j).data_type() == po8e::channel::EVENT) {
+					if (c[i]->channel(j).name().compare("stim") == 0) {
+						for (size_t k=0; k<ns; k++) {
+							stim[nc_i*ns+k] = (bool)p[i].data[j*ns+k];
+						}
+						ns_i++;
+					}
+					else {
+						for (size_t k=0; k<ns; k++) {
+							events[nc_i*ns+k] = (bool)p[i].data[j*ns+k];
+						}
+						ne_i++;
 					}
 				}
 			}
 		}
 
-		// TODO: these two need to be set. Keep empty for now
-		auto stim 	= new u32[nsc*ns];
+
+		// TODO:  need to be set. Keep empty for now
 		auto blank 	= new bool[ns];
 		//stim[k]  = (u16)(p[1].data[8*ns + k]);
 		//stim[k] += (u16)(p[1].data[9*ns + k]) << 16;
@@ -2028,7 +2059,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	string titlestr = "gtkclient (TDT) v1.91";
+	string titlestr = "gtkclient (TDT) v1.95";
 
 #ifdef DEBUG
 	feenableexcept(FE_DIVBYZERO|FE_INVALID|FE_OVERFLOW);  // Enable (some) floating point exceptions
@@ -2067,7 +2098,12 @@ int main(int argc, char **argv)
 	pc.loadConf("gtkclient.rc"); // TODO read from proper place
 
 	auto nc = pc.numNeuralChannels();
-	printf("%zu neural channels\n", nc);
+	printf("neural channels:\t%zu\n", nc);
+
+	printf("event channels:\t\t%zu\n", pc.numEventChannels());
+	printf("analog channels:\t%zu\n", pc.numAnalogChannels());
+	printf("ignored channels:\t%zu\n", pc.numIgnoredChannels());
+
 
 	for (size_t i=0; i<(nc*NSORT); i++) {
 		auto fr = new FiringRate();
@@ -2121,6 +2157,13 @@ int main(int argc, char **argv)
 			o->setColor(0.0, 1.0, 1.0, 0.3); //cyan
 		else
 			o->setColor(1.0, 0.0, 0.0, 0.3); //red
+		g_spikeraster.push_back(o);
+	}
+
+	// non-spike events
+	if (pc.numEventChannels() > 0) {
+		VboRaster *o = new VboRaster(pc.numEventChannels(), NSBUF);
+		o->setColor(0.0, 1.0, 0.0, 0.3); // green
 		g_spikeraster.push_back(o);
 	}
 
