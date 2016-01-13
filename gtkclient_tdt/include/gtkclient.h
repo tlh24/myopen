@@ -37,8 +37,6 @@ enum MODES { // ui tabs
 #define NUNIT		3			// including unsorted
 #define NSORT		2
 
-#define RECCHAN 	96
-
 typedef struct PO8Data {
 	int64_t tick;	// this is the tick for the first sample
 	size_t numChannels;

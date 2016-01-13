@@ -112,7 +112,7 @@ bool g_vboInit = false;
 float	g_rasterSpan = 10.f; // %seconds.
 
 vector <Channel *> g_c;
-FiringRate	g_fr[RECCHAN][NSORT];
+vector <FiringRate *> g_fr;
 TimeSync 	g_ts(SRATE_HZ); //keeps track of ticks (TDT time)
 WfWriter	g_wfwriter;
 GLuint 		g_base;            // base display list for the font set.
@@ -1045,7 +1045,7 @@ void sorter(int ch)
 			}
 			if (unit > 0 && unit < NUNIT) {
 				int uu = unit-1;
-				// g_fr[ch][uu].add(the_time); // TODO fix this
+				g_fr[ch*NSORT+uu]->add(the_time);
 				g_spikeraster[uu]->addEvent((float)the_time, (float)ch); // for drawing
 			}
 		}
@@ -1594,25 +1594,24 @@ void mmap_fun()
 	 * m = memmapfile('/tmp/binned.mmap', 'Format', {'uint16' [194 10] 'x'})
 	 * A = m.Data(1).x;
 	 * */
-	// XXX we make an assumption here that the number of lags is
-	// the same for all neurons.
-	//auto nc = g_c.size();
-	int nlags = g_fr[0][0].get_lags();
-	size_t length = (RECCHAN+1)*NSORT*nlags*2; // (chans+time)*(2 units)*lags*sizeof(short)
-	auto mmh = new mmapHelp(length, "/tmp/binned.mmap");
+	auto nc = g_fr.size();
+	// nb we assume that the number of lags is the same for all chans & units.
+	int nlags = g_fr[0]->get_lags();
+	size_t length = (nc+1)*nlags*sizeof(u16); // nc+1 because of counter
+	auto mmh = new mmapHelp(length, "/tmp/binned.mmap"); // xxx conf file?
 	volatile u16 *bin = (u16 *)mmh->m_addr;
 	mmh->prinfo();
 
-	auto pipe_out = new fifoHelp("/tmp/gtkclient_out.fifo");
+	auto pipe_out = new fifoHelp("/tmp/gtkclient_out.fifo"); // xxx conf file
 	pipe_out->prinfo();
 
-	auto pipe_in = new fifoHelp("/tmp/gtkclient_in.fifo");
+	auto pipe_in = new fifoHelp("/tmp/gtkclient_in.fifo"); // xxx conf file
 	pipe_in->setR(); // so we can poll
 	pipe_in->prinfo();
 
 	int frame = 0;
-	bin[RECCHAN*2*nlags] = 0;
-	bin[RECCHAN*2*nlags+1] = 0;
+	bin[nc*nlags] = 0;
+	bin[nc*nlags+1] = 0;
 	flush_pipe(pipe_out->m_fd);
 
 	while (!g_die) {
@@ -1622,12 +1621,10 @@ void mmap_fun()
 			int r = read(pipe_in->m_fd, &reqTime, 8); // send it the time you want to sample,
 			double end = (reqTime > 0) ? reqTime : (double)gettime(); // < 0 to bin 'now'
 			if (r >= 3) {
-				for (int i=0; i<RECCHAN; i++) {
-					for (int j=0; j<2; j++) {
-						g_fr[i][j].get_bins(end, (u16 *)&(bin[(i*2+j)*nlags]));
-					}
+				for (size_t i=0; i<nc; i++) {
+					g_fr[i]->get_bins(end, (u16 *)&(bin[i*nlags]));
 				}
-				bin[RECCHAN*2*nlags]++; //counter.
+				bin[nc*nlags]++; //counter.
 				// N.B. seems we need to touch all memory to update the first page.
 				//msync(addr, length, MS_SYNC);
 				//  if made with shm_open, msync is ok -- no writes to disk.
@@ -2038,18 +2035,13 @@ int main(int argc, char **argv)
 	// compatible with the version of the headers we compiled against.
 	GOOGLE_PROTOBUF_VERIFY_VERSION;
 
-	for (auto &elem : g_fr) {
-		elem[0].set_bin_params(15, 1.0);	// nlags, duration (sec)
-		elem[1].set_bin_params(15, 1.0);	// nlags, duration (sec)
-	}
-
-	FiringRate test_fr;
-	test_fr.set_bin_params(15,1.0);
-	test_fr.get_bins_test();
+	//FiringRate test_fr;
+	//test_fr.set_bin_params(15,1.0);
+	//test_fr.get_bins_test();
 
 	// load matlab preferences
 	if (argc > 1)
-		strcpy(g_prefstr, argv[1]);
+		strncpy(g_prefstr, argv[1], 256);
 	else
 		strcpy(g_prefstr, "preferences.mat");
 	printf("using %s for settings\n", g_prefstr);
@@ -2064,6 +2056,11 @@ int main(int argc, char **argv)
 	auto nc = pc.numNeuralChannels();
 	printf("%zu neural channels\n", nc);
 
+	for (size_t i=0; i<(nc*NSORT); i++) {
+		auto fr = new FiringRate();
+		fr->set_bin_params(20, 1.0); // nlags, duration (sec)
+		g_fr.push_back(fr);
+	}
 
 	size_t nc_i = 0;
 	for (size_t i=0; i<pc.cards.size(); i++) {

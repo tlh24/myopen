@@ -11,6 +11,8 @@
 #error Bad sampling rate!
 #endif
 
+#define RECCHAN 	96
+
 #define NARTPTR	8 // number of artifact buffer pointers
 
 extern int g_spikesCols;
