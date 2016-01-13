@@ -147,7 +147,6 @@ int g_whichAnalogSave = 0;
 bool g_die = false;
 double g_pause_time = -1.0;
 gboolean g_pause = false;
-gboolean g_cycle = false;
 gboolean g_showPca = false;
 gboolean g_autoChOffset = false;
 gboolean g_showWFVgrid = true;
@@ -242,7 +241,6 @@ void saveState()
 
 	ms.setStructValue("gui","draw_mode",0,(float)g_drawmodep);
 	ms.setStructValue("gui","blend_mode",0,(float)g_blendmodep);
-	ms.setStructValue("gui","cycle",0,(float)g_cycle);
 
 	ms.setStructValue("raster","show_grid",0,(float)g_showContGrid);
 	ms.setStructValue("raster","show_threshold",0,(float)g_showContThresh);
@@ -462,16 +460,17 @@ static gint button_press_event( GtkWidget *,
 			int h =  sr*g_spikesCols + sc;
 			if (h >= 0 && h < nc) {
 				//shift channels down, like a priority queue.
-				for (int i=3; i>0; i--)
+				for (int i=g_channel.size()-1; i>0; i--) {
 					g_channel[i] = g_channel[i-1];
+				}
 				g_channel[0] = h;
-				debug("channel switched to %d", g_channel[0]);
+				debug("channel switched to %d", g_channel[0]+1);
 				g_mode = MODE_SORT;
 				gtk_notebook_set_current_page(GTK_NOTEBOOK(g_notebook), MODE_SORT);
 			}
 			//update the UI elements.
-			for (int i=0; i<4; i++) {
-				gtk_spin_button_set_value(GTK_SPIN_BUTTON(g_channelSpin[i]), g_channel[i]);
+			for (size_t i=0; i<g_channel.size(); i++) {
+				gtk_spin_button_set_value(GTK_SPIN_BUTTON(g_channelSpin[i]), g_channel[i]+1);
 				updateChannelUI(i);
 			}
 		}
@@ -1644,23 +1643,6 @@ void mmap_fun()
 	delete pipe_in;
 	delete pipe_out;
 }
-static gboolean chanscan(gpointer)
-{
-	if (g_cycle) {
-		g_uiRecursion++;
-		int base = g_channel[0];
-		base ++;
-		base &= 31;
-		for (int k=0; k<4; k++) {
-			g_channel[k] = base + k*32;
-			g_channel[k] %= g_c.size();
-			gtk_spin_button_set_value(GTK_SPIN_BUTTON(g_channelSpin[k]), (double)g_channel[k]);
-		}
-		g_uiRecursion--;
-		//setChans();
-	}
-	return g_cycle; //if this is false, don't call again.
-}
 void updateChannelUI(int k)
 {
 	//called when a channel changes -- update the UI elements accordingly.
@@ -1670,7 +1652,6 @@ void updateChannelUI(int k)
 	gtk_spin_button_set_value(GTK_SPIN_BUTTON(g_apertureSpin[k*2+0]), g_c[ch]->getApertureUv(0));
 	gtk_spin_button_set_value(GTK_SPIN_BUTTON(g_apertureSpin[k*2+1]), g_c[ch]->getApertureUv(1));
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(g_enabledChkBx[k]), g_c[ch]->getEnabled());
-
 	g_uiRecursion--;
 }
 static void channelSpinCB(GtkWidget *spinner, gpointer p)
@@ -1679,25 +1660,25 @@ static void channelSpinCB(GtkWidget *spinner, gpointer p)
 	int ch = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spinner));
 	ch--; // make zero indexed
 	int nc = (int)g_c.size();
-	debug("channelSpinCB: %d", ch);
+	debug("channelSpinCB: %d", ch+1);
 	if (ch < nc && ch >= 0 && ch != g_channel[k]) {
 		g_channel[k] = ch;
 		updateChannelUI(k); //update the UI too.
 	}
 	//if we are in sort mode, and k == 0, move the other channels ahead of us.
 	//this allows more PCA points for sorting!
-	//if (g_mode == MODE_SORT && k == 0 && g_autoChOffset) {
 	if (k == 0 && g_autoChOffset) {
-		for (int j=1; j<4; j++) {
+		for (size_t j=1; j<g_channel.size(); j++) {
 			g_channel[j] = (g_channel[0] + j) % nc;
 			//this does not recurse -- have to set the other stuff manually.
 			g_uiRecursion++;
-			gtk_spin_button_set_value(GTK_SPIN_BUTTON(g_channelSpin[j]), (double)g_channel[j]);
+			gtk_spin_button_set_value(GTK_SPIN_BUTTON(g_channelSpin[j]), (double)g_channel[j]+1);
 			g_uiRecursion--;
 		}
 		//loop over & update the UI afterward, so we don't have a race-case.
-		for (int j=1; j<4; j++)
+		for (int j=1; j<4; j++) {
 			updateChannelUI(j);
+		}
 	}
 }
 static void gainSpinCB(GtkWidget *spinner, gpointer p)
@@ -2135,7 +2116,6 @@ int main(int argc, char **argv)
 
 	g_drawmodep = (int) ms.getStructValue("gui", "draw_mode", 0, (float)g_drawmodep);
 	g_blendmodep = (int) ms.getStructValue("gui", "blend_mode", 0, (float)g_blendmodep);
-	g_cycle = (bool) ms.getStructValue("gui", "cycle", 0, (float)g_cycle);
 
 	g_showContGrid = (bool) ms.getStructValue("raster", "show_grid", 0, (float)g_showContGrid);
 	g_showContThresh = (bool) ms.getStructValue("raster","show_threshold", 0, (float)g_showContThresh);
@@ -2315,10 +2295,10 @@ int main(int argc, char **argv)
 		for (int j=0; j<NSORT; j++) {
 			GtkWidget *bx3 = gtk_hbox_new (FALSE, 2);
 			gtk_container_add (GTK_CONTAINER (bx2), bx3);
-			gpointer gp = GINT_TO_POINTER(i*2+j);
+			gpointer gp = GINT_TO_POINTER(i*NSORT+j);
 
-			g_apertureSpin[i*2+j] = mk_spinner("", bx3,
-			                                   g_c[g_channel[i]]->getApertureUv(j), 0, 100, 0.1,
+			g_apertureSpin[i*NSORT+j] = mk_spinner("", bx3,
+               g_c[g_channel[i]]->getApertureUv(j), 0, 100, 0.1,
 			[](GtkWidget *_spin, gpointer _p) {
 				int h = (int)((i64)_p & 0xf);
 				if (h >= 0 && h < 8 && !g_uiRecursion) {
@@ -2672,19 +2652,6 @@ int main(int argc, char **argv)
 
 	// bottom section, visible on all screens
 	bx = gtk_hbox_new (FALSE, 3);
-
-	//add a automatic channel change button.
-	mk_checkbox("cycle channels", bx, &g_cycle,
-	[](GtkWidget *_button, gpointer _p) {
-		gboolean *b = (gboolean *)_p;
-		if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(_button))) {
-			*b = true;
-			g_timeout_add(3000, chanscan, (gpointer)nullptr);
-		} else {
-			*b = false;
-		}
-	}
-	           );
 
 	//add a pause / go button (applicable to all)
 	mk_checkbox("pause", bx, &g_pause,
