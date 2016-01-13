@@ -103,11 +103,12 @@ po8e::card *po8eConf::loadCard(size_t idx)
 				stack++;
 				if (lua_isstring(L, -1)) {
 					chan->set_name(lua_tostring(L, -1));
-				} else { // no name field set
-					char s[8];
-					sprintf(s, "ch_%03lu", chan->id());
-					chan->set_name(s);
 				}
+				//else { // no name field set
+				//	char s[8];
+				//	sprintf(s, "ch_%03lu", chan->id());
+				//	chan->set_name(s);
+				//}
 				lua_pop(L, 1);
 				stack--;
 
