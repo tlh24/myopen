@@ -2298,7 +2298,7 @@ int main(int argc, char **argv)
 			gpointer gp = GINT_TO_POINTER(i*NSORT+j);
 
 			g_apertureSpin[i*NSORT+j] = mk_spinner("", bx3,
-               g_c[g_channel[i]]->getApertureUv(j), 0, 100, 0.1,
+			                                       g_c[g_channel[i]]->getApertureUv(j), 0, 100, 0.1,
 			[](GtkWidget *_spin, gpointer _p) {
 				int h = (int)((i64)_p & 0xf);
 				if (h >= 0 && h < 8 && !g_uiRecursion) {
