@@ -24,8 +24,6 @@ extern gboolean g_showWFstd;
 extern int g_whichAlignment;
 extern int g_whichSpikePreEmphasis;
 
-//#define NSORT	2
-
 //need some way of encapsulating per-channel information.
 class Channel
 {
@@ -47,12 +45,12 @@ public:
 	double	m_var; 			//variance of the continuous waveform, 1 = 10mV^2.
 	double	m_mean; 		//mean of the continuous waveform.
 	i64 	m_isi[NSORT][100]; 	//counts of the isi, in units of ms.
-	i64		m_isiViolations;
 	i64		m_lastSpike[NSORT]; //zero when a spike occurs. in samples.
 	bool	m_enabled;
 	SpikeBuffer m_spkbuf;
 	// TODO wrap spikebuffer methods into channel so that we can make the
 	// spikebuffer private
+	string 	m_chanName;
 
 	Channel(int ch, MatStor *ms)
 	{
@@ -61,7 +59,6 @@ public:
 		m_pcaVbo = new VboPca(6, 1024*8, 1, ch, NWFSAMP, ms);
 		m_wfVbo->m_useSAA = m_usVbo->m_useSAA = m_pcaVbo->m_useSAA = false;
 		m_pcaVbo->m_fade = 0.f;
-		m_isiViolations = 0;
 		m_ch = ch;
 		m_var = 0.0;
 		m_mean = 0.0;
@@ -496,7 +493,7 @@ public:
 					units = std::string("mV");
 				}
 				char buf[64];
-				glColor4f(1.f,1.f,1.f,0.18f);
+				glColor4f(1.f,1.f,1.f,0.3f);
 				glLineWidth(1.f);
 				for (double v = 0.0; v < top; v+= tic) {
 					float y = m_gain*v/1e4;
@@ -506,7 +503,7 @@ public:
 					glVertex3f(0.f*ow+ox, y*oh+oy, 0.f);
 					glVertex3f(1.f*ow+ox, y*oh+oy, 0.f);
 					glEnd();
-					snprintf(buf, 64, "%d%s", (int)floor(v/div), units.c_str());
+					snprintf(buf, 64, "%d %s", (int)floor(v/div), units.c_str());
 					float yof = 4.f/g_viewportSize[1]; //1 pixels vertical offset.
 					float xof = 2.f*(strlen(buf)*8)/g_viewportSize[0];
 					glRasterPos2f(1.f*ow+ox-xof, y*oh+oy+yof);
@@ -587,7 +584,11 @@ public:
 		glRasterPos2f(ox, oy + oh - 14.f*2.f/g_viewportSize[1]); // 14 pixels vertical offset.
 		//kearning is from the lower left hand corner.
 		char buf[64];
-		snprintf(buf, 64, "Ch %d", m_ch);
+		if (m_chanName.length() > 0) {
+			snprintf(buf, 64, "%s", m_chanName.c_str());
+		} else {
+			snprintf(buf, 64, "Ch %d", m_ch+1);
+		}
 		glPrint(buf);
 	}
 	int updateTemplate(int unit)
@@ -718,7 +719,7 @@ public:
 		//gsl_sort_largest_index(p,2,d->data,1,NWFSAMP);
 
 		// normalize to identity covariance
-		for (int k=0; k<2; k++) {
+		for (int k=0; k<NSORT; k++) {
 			m_pcaScl[k] = sqrt(d->data[k]);
 			for (int i=0; i<NWFSAMP; i++) {
 				m_pca[k][i] = v->data[k + i*NWFSAMP] / m_pcaScl[k];
@@ -733,7 +734,7 @@ public:
 		//t = gettime();
 		for (int i=0; i<nsamp; i++) {
 			float pca[2] = {0,0};
-			for (int k=0; k<2; k++) {
+			for (int k=0; k<NSORT; k++) {
 				for (int j=0; j<NWFSAMP; j++) {
 					pca[k] += m_pcaVbo->m_wf[i*NWFSAMP + j] * m_pca[k][j];
 				}
@@ -756,7 +757,7 @@ public:
 	void updateISI(int unit, int sample)
 	{
 		//this used for calculating ISI.
-		unit -= 1; //comes in 0 = uhnsorted. // XXX double check this
+		unit -= 1; //comes in 0 = unsorted.
 		if (unit >=0 && unit < NSORT) {
 			int dsamp = sample - m_lastSpike[unit];
 			int b = floor(dsamp/SRATE_KHZ - 0.5);
