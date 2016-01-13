@@ -9,7 +9,8 @@ CPPFLAGS += -Wformat=2 -Wno-format-y2k -Wmissing-braces -Wparentheses
 CPPFLAGS += -Wno-missing-field-initializers -march=native
 
 CPPFLAGS += -O3
-#CPPFLAGS += -O0 -g -DDEBUG
+#CPPFLAGS += -O0 -g -DDEBUG -fsanitize=bounds
+#LDFLAGS  += -fsanitize=bounds
 
 # these are to analyize automatic loop vectorization failures
 #CPPFLAGS += -Rpass=loop-vectorize
