@@ -569,21 +569,25 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 			}
 #endif
 			glEnd();
-
-			//labels.
-			glColor4f(0.f, 0.8f, 0.75f, 0.5);
-			glRasterPos2f(-1.f, (float)((3-k)*2)/8.f +
-			              2.f*2.f/g_viewportSize[1]); //2 pixels vertical offset.
-			//kearning is from the lower right hand corner.
-			char buf[128];
-			snprintf(buf, 128, "%c %d", 'A'+k, g_channel[k]);
-			glPrint(buf);
 		}
 
 		int n = g_timeseries.size();
 		for (int k=0; k<n; k++) {
 			float yoffset = (n-k-1)/((float)n);
 			g_timeseries[k]->draw(g_drawmode[g_drawmodep], yoffset);
+
+			//labels.
+			glColor4f(1.f, 1.f, 1.f, 0.5);
+			glRasterPos2f(-1.f, yoffset +
+			              2.f*2.f/g_viewportSize[1]); // 2px vertical offset
+			//kearning is from the lower right hand corner.
+			char buf[128];
+			if (g_c[g_channel[k]]->m_chanName.length() > 0) {
+				snprintf(buf, 128, "%c: %s", 'A'+k, g_c[g_channel[k]]->m_chanName.c_str());
+			} else {
+				snprintf(buf, 128, "%c: %d", 'A'+k, g_channel[k]+1);
+			}
+			glPrint(buf);
 		}
 
 		u32 nplot = g_timeseries[0]->m_nplot;
@@ -1018,33 +1022,33 @@ void sorter(int ch)
 
 		// check if this exceeds minimum ISI.
 		// wftick is indexed to the start of the waveform.
-		if (tk - g_c[ch]->m_lastSpike[unit] > g_minISI*SRATE_KHZ) {
+		bool passed = true;
+		if (unit > 0) { // sorted
+			passed = (tk - g_c[ch]->m_lastSpike[unit-1]) > g_minISI*SRATE_KHZ;
+		}
+
+		if (passed) {
 			long double the_time = g_ts.getTime(tk);
-			//need to more precisely calulate spike time here.
 			g_c[ch]->addWf(&wf_sp[idx], unit, the_time, true);
-			g_c[ch]->updateISI(unit, tk);
-			if (g_wfwriter.enabled()) {
-				if (unit > 0 || g_saveUnsorted) {
-					wfpak pak;
-					pak.time = the_time;
-					pak.ticks = tk;
-					pak.channel = ch;
-					pak.unit = unit;
-					pak.len = NWFSAMP;
-					float gain2 = 2.f * 32767.f;
-					for (int g=0; g<NWFSAMP; g++) {
-						pak.wf[g] = (i16)(wf_sp[idx+g]*gain2); //should be in original units.
-					}
-					g_wfwriter.add(&pak);
+			g_c[ch]->updateISI(unit, tk); // does nothing for unit==0
+			if (g_wfwriter.enabled() && (unit > 0 || g_saveUnsorted)) {
+				wfpak pak;
+				pak.time = the_time;
+				pak.ticks = tk;
+				pak.channel = ch;
+				pak.unit = unit;
+				pak.len = NWFSAMP;
+				float gain2 = 2 * 32767.f / 1e4; // XXX is this set to proper per-chan gain?
+				for (int g=0; g<NWFSAMP; g++) {
+					pak.wf[g] = (i16)(wf_sp[idx+g]*gain2); //should be in original units.
 				}
+				g_wfwriter.add(&pak);
 			}
 			if (unit > 0 && unit < NUNIT) {
 				int uu = unit-1;
-				g_fr[ch][uu].add(the_time);
+				// g_fr[ch][uu].add(the_time); // TODO fix this
 				g_spikeraster[uu]->addEvent((float)the_time, (float)ch); // for drawing
 			}
-		} else {
-			g_c[ch]->m_isiViolations++;
 		}
 	}
 }
@@ -1168,7 +1172,7 @@ void po8e_fun(PO8e *p, ReaderWriterQueue<PO8Data> *q)
 
 	printf("  stopped collecting data\n");
 	p->stopCollecting();
-	printf("  releasing card %p\n", p);
+	printf("  releasing card %p\n", (void *)p);
 	PO8e::releaseCard(p);
 
 	printf("\n");
@@ -1265,12 +1269,13 @@ void worker()
 		for (size_t i=0; i<c.size(); i++) {
 			for (int j=0; j<c[i]->channel_size(); j++) {
 				if (c[i]->channel(j).data_type() == po8e::channel::NEURAL) {
-					auto scale_factor = c[i]->channel(j).scale_factor();
+					float scale_factor = (float)c[i]->channel(j).scale_factor();
+					scale_factor /= 1e6; // to get uV
 					for (size_t k=0; k<ns; k++) {
 						f[nc_i*ns+k] = (float)p[i].data[j*ns+k]/scale_factor;
 					}
+					nc_i++;
 				}
-				nc_i++;
 			}
 		}
 
@@ -1495,7 +1500,9 @@ void worker()
 			int ch = g_channel[h];
 			float gain = g_c[ch]->getGain();
 			for (size_t k=0; k<ns; k++) {
-				float fg = f[ch*ns+k] * gain;
+				// scale into a reasonable range for audio
+				// and timeseries display
+				float fg = f[ch*ns+k] * gain / 1e4;
 				g_timeseries[h]->addData(&fg, 1); // timeseries trace
 				if (h==0) {
 					audio[k] = fg;
@@ -1511,8 +1518,8 @@ void worker()
 		for (auto &ch : g_c) {
 			double m = ch->m_mean;
 			for (size_t k=0; k<ns; k++) {
-				auto x = f[ch->m_ch*ns+k];
-				// 1 = +10mV; range = [-1 1] here. XXX really?!?
+				auto x = f[ch->m_ch*ns+k] / 1e4; // scale so 1 = +10 mV
+				// 1 = +10mV; range = [-1 1] here.
 				ch->m_spkbuf.addSample(tk[k], x);
 
 				//update the channel standard deviations, too.
@@ -1670,6 +1677,7 @@ static void channelSpinCB(GtkWidget *spinner, gpointer p)
 {
 	int k = (int)((i64)p & 0xf);
 	int ch = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(spinner));
+	ch--; // make zero indexed
 	int nc = (int)g_c.size();
 	debug("channelSpinCB: %d", ch);
 	if (ch < nc && ch >= 0 && ch != g_channel[k]) {
@@ -2075,8 +2083,20 @@ int main(int argc, char **argv)
 	auto nc = pc.numNeuralChannels();
 	printf("%zu neural channels\n", nc);
 
+
+	size_t nc_i = 0;
+	for (size_t i=0; i<pc.cards.size(); i++) {
+		for (int j=0; j<pc.cards[i]->channel_size(); j++) {
+			if (pc.cards[i]->channel(j).data_type() == po8e::channel::NEURAL) {
+				auto o = new Channel(nc_i, &ms);
+				o->m_chanName = pc.cards[i]->channel(j).name();
+				g_c.push_back(o);
+				nc_i++;
+			}
+		}
+	}
+
 	for (size_t i=0; i<nc; i++) {
-		g_c.push_back(new Channel(i, &ms));
 		g_nlms.push_back(new ArtifactNLMS(nc, 1e-5, i, &ms)); // 1e-5 good mu?
 		g_medfilt3.push_back(MedFilt3());
 		g_medfilt5.push_back(MedFilt5());
@@ -2182,7 +2202,7 @@ int main(int argc, char **argv)
 	//4-channel control blocks.
 	for (int i=0; i<4; i++) {
 		char buf[128];
-		snprintf(buf, 128, "%c", 'A'+i);
+		snprintf(buf, 128, "%c", 'A'+i+1);
 		frame = gtk_frame_new (buf);
 		//gtk_frame_set_shadow_type(GTK_FRAME(frame),  GTK_SHADOW_ETCHED_IN);
 		gtk_box_pack_start (GTK_BOX (v1), frame, FALSE, FALSE, 0);
@@ -2194,7 +2214,7 @@ int main(int argc, char **argv)
 
 		//channel spinner.
 		g_channelSpin[i] = mk_spinner("ch", bx3,
-		                              g_channel[i], 0, g_c.size()-1, 1,
+		                              g_channel[i]+1, 1, g_c.size(), 1,
 		                              channelSpinCB, GINT_TO_POINTER(i));
 
 		//right of that, a gain spinner. (need to update depending on ch)
@@ -2832,7 +2852,7 @@ int main(int argc, char **argv)
 			if (p == nullptr) {
 				break;
 			}
-			printf("Connection established to card %d at %p\n", id, p);
+			printf("Connection established to card %d at %p\n", id, (void *)p);
 			if (configureCard(p)) {
 				ReaderWriterQueue<PO8Data> *q = new ReaderWriterQueue<PO8Data>(512);
 				threads.push_back(thread(po8e_fun, p, q));
