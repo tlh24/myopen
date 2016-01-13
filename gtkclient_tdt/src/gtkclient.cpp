@@ -1280,8 +1280,21 @@ void worker()
 
 		auto audio 	= new float[ns];
 
+		size_t nec = 0; // num event channels
+		size_t nsc = 0; // num stim channels
+		for (auto &card : c) {
+			for (int j=0; j<card->channel_size(); j++) {
+				if (card->channel(j).data_type() == po8e::channel::EVENT) {
+					nec++;
+					if (card->channel(j).name().compare("stim") == 0) {
+						nsc++;
+					}
+				}
+			}
+		}
+
 		// TODO: these two need to be set. Keep empty for now
-		auto stim 	= new u32[ns];
+		auto stim 	= new u32[nsc*ns];
 		auto blank 	= new bool[ns];
 		//stim[k]  = (u16)(p[1].data[8*ns + k]);
 		//stim[k] += (u16)(p[1].data[9*ns + k]) << 16;
