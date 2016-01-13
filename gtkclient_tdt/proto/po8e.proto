@@ -9,7 +9,7 @@ message card {
 message channel {
 	required uint64 id = 1; // 1-indexed
 	optional string name = 2;
-	optional uint64 scale_factor = 3 [default = 32767];
+	optional uint64 scale_factor = 3 [default = 3276700];
 	enum DataTypes {
 	  NEURAL = 0; // uses scale_factor
 	  EVENT = 1;
