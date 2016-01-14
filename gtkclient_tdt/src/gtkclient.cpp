@@ -612,13 +612,18 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 			glEnd();
 		}
 
-		//rasters
+
 #ifndef EMG
+		//rasters
+		float vscale = g_c.size() + 1;
+		for (auto &o : g_eventraster) {
+			vscale += o->size();
+		}
 
 		glShadeModel(GL_FLAT);
-		float vscale = g_c.size() + 1;
 		glPushMatrix();
 		glScalef(1.f/g_rasterSpan, -1.f/vscale, 1.f);
+
 		int lt = (int)time / (int)g_rasterSpan; // why these two lines, not:
 		lt *= (int)g_rasterSpan;				// lt = (int)time ???
 		float x = time - (float)lt;
@@ -630,9 +635,6 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 			adj *= g_rasterSpan;
 		}
 		glTranslatef((0 - (float)lt + adj), 1.f, 0.f);
-
-		for (auto &o : g_spikeraster)
-			o->draw();
 
 		//draw current time.
 		glColor4f (1., 0., 0., 0.5);
@@ -646,8 +648,19 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 			glVertex3f( (float)t, vscale, 0.f);
 		}
 		glEnd();
+
+		for (auto &o : g_spikeraster) {
+			o->draw();
+		}
+
+		glTranslatef(0.f, g_c.size(), 0.f);
+		for (auto &o : g_eventraster) {
+			o->draw();
+		}
+
 		//glEnable(GL_LINE_SMOOTH);
 		glPopMatrix (); //so we don't have to worry about time.
+
 		//draw current channel
 		for (int k=0; k<4; k++) {
 			glBegin(GL_LINE_STRIP);
@@ -2164,7 +2177,7 @@ int main(int argc, char **argv)
 	if (pc.numEventChannels() > 0) {
 		VboRaster *o = new VboRaster(pc.numEventChannels(), NSBUF);
 		o->setColor(0.0, 1.0, 0.0, 0.3); // green
-		g_spikeraster.push_back(o);
+		g_eventraster.push_back(o);
 	}
 
 	g_drawmodep = (int) ms.getStructValue("gui", "draw_mode", 0, (float)g_drawmodep);
