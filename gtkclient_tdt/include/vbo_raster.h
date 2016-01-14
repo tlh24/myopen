@@ -27,7 +27,7 @@ public:
 	void configure();
 	void setColor(float r, float g, float b, float a);
 	void copy();
-	void addEvent(float the_time, float the_chan);
+	void addEvent(float the_time, int the_chan);
 	void draw();
 	u32 size();
 };

@@ -74,11 +74,11 @@ void VboRaster::copy()
 		m_r = w; // atomic
 	}
 }
-void VboRaster::addEvent(float the_time, float the_chan)
+void VboRaster::addEvent(float the_time, int the_chan)
 {
 	u32 w = m_w % (m_nchan * m_nsamp); // atomic
 	m_f[w*2+0] = the_time;
-	m_f[w*2+1] = the_chan;
+	m_f[w*2+1] = (float)the_chan;
 	m_w++; // atomic
 }
 void VboRaster::draw()
