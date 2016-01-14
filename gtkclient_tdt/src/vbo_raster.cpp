@@ -91,3 +91,7 @@ void VboRaster::draw()
 	glDrawArrays(GL_POINTS, 0, m_nchan*m_nsamp);
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 }
+u32 VboRaster::size()
+{
+	return m_nchan;
+}

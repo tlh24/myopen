@@ -29,5 +29,6 @@ public:
 	void copy();
 	void addEvent(float the_time, float the_chan);
 	void draw();
+	u32 size();
 };
 #endif
