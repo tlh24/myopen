@@ -14,7 +14,7 @@ channels = {}
 for i=1, 96 do
   channel = {
     id = i,
-    --name = string.format("%s_%03d", "M1", i),
+    name = string.format("%s %03d", "M1", i),
     --scale_factor = 32767,
     --data_type = NEURAL,
   }
@@ -33,8 +33,16 @@ channels = {}
 for i=1, 96 do
   channel = {
     id = i,
-    name = string.format("%s_%03d", "S1", i),
-    --data_type = data_type.IGNORE,
+    name = string.format("%s %03d", "S1", i),
+  }
+  channels[i] = channel
+end
+
+for i=97, 100 do
+  channel = {
+    id = i,
+    name = "stim",
+    data_type = data_type.EVENT,
   }
   channels[i] = channel
 end

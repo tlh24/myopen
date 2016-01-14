@@ -678,8 +678,6 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 			glPrint(buf);
 		}
 
-		// do g_eventrasters here
-
 #endif
 		//end VBO
 	}
@@ -1065,7 +1063,7 @@ void sorter(int ch)
 			if (unit > 0 && unit < NUNIT) {
 				int uu = unit-1;
 				g_fr[ch*NSORT+uu]->add(the_time);
-				g_spikeraster[uu]->addEvent((float)the_time, (float)ch); // for drawing
+				g_spikeraster[uu]->addEvent((float)the_time, ch); // for drawing
 			}
 		}
 	}
@@ -1113,7 +1111,7 @@ void po8e_fun(PO8e *p, ReaderWriterQueue<PO8Data> *q)
 	// TODO: this actually should depend on the sampling rate.
 	// also, perhaps it would be better to grab as many samples as possible
 	// that are available on each card, like, query each and take the minimum
-	size_t read_size = 32; // samples
+	size_t read_size = 16; // samples
 
 	printf("Waiting for the stream to start ...\n");
 	//p->waitForDataReady(1);
@@ -1235,11 +1233,6 @@ void worker()
 				mismatch = true;
 				break;
 			}
-			if (p[i].numChannels != p[0].numChannels) {
-				warn("po8e card channel mismatch");
-				mismatch = true;
-				break;
-			}
 			if (p[i].numChannels != (size_t)c[i]->channel_size()) {
 				warn("po8e card %d: configured for %d channels (%d received in po8e packet)",
 				     c[i]->id(), c[i]->channel_size(), p[i].numChannels);
@@ -1307,8 +1300,7 @@ void worker()
 				if (card->channel(j).data_type() == po8e::channel::EVENT) {
 					if (card->channel(j).name().compare("stim") == 0) {
 						nsc++;
-					}
-					else {
+					} else {
 						nec++;
 					}
 				}
@@ -1323,13 +1315,12 @@ void worker()
 				if (c[i]->channel(j).data_type() == po8e::channel::EVENT) {
 					if (c[i]->channel(j).name().compare("stim") == 0) {
 						for (size_t k=0; k<ns; k++) {
-							stim[nc_i*ns+k] = (bool)p[i].data[j*ns+k];
+							stim[ns_i*ns+k] = (bool)p[i].data[j*ns+k];
 						}
 						ns_i++;
-					}
-					else {
+					} else {
 						for (size_t k=0; k<ns; k++) {
-							events[nc_i*ns+k] = (bool)p[i].data[j*ns+k];
+							events[ne_i*ns+k] = (bool)p[i].data[j*ns+k];
 						}
 						ne_i++;
 					}
@@ -1337,17 +1328,26 @@ void worker()
 			}
 		}
 
+		// free the po8e data packet
+		for (auto &x : p) {
+			free(x.data);
+		}
+
+		// hardcode the zeroth element, maybe fix this XXX
+		for (size_t k=0; k<ns; k++) {
+			for (size_t i=0; i<nsc; i++) {
+				if (stim[i*ns+k]) {
+					auto the_time = (float) g_ts.getTime(tk[k]);
+					g_eventraster[0]->addEvent((float)the_time, i); // to draw
+				}
+			}
+		}
 
 		// TODO:  need to be set. Keep empty for now
 		auto blank 	= new bool[ns];
 		//stim[k]  = (u16)(p[1].data[8*ns + k]);
 		//stim[k] += (u16)(p[1].data[9*ns + k]) << 16;
 		//blank[k] = p[1].data[10*ns + k] > 0;
-
-		// free the po8e data packet
-		for (auto &x : p) {
-			free(x.data);
-		}
 
 		// write (pre-filtered) broadband signal to disk
 		if (g_analogwriter_prefilter.enabled()) {
@@ -1416,6 +1416,7 @@ void worker()
 			//	printf("icms pulse %d\n", stim[k]);
 			//}
 
+			/*
 			for (auto &a : g_artifact) {
 
 				// identify stim pulses
@@ -1497,6 +1498,7 @@ void worker()
 					// in the per-artifact blanking code block
 				}
 			}
+			*/
 
 			// post-artifact-removal filtering
 			for (int ch=0; ch<(int)nnc; ch++) {
@@ -1515,6 +1517,7 @@ void worker()
 					f[ch*ns+k] = g_medfilt5[ch].proc(f[ch*ns+k]);
 			}
 
+			/*
 			// blank based on artifact (must happen after filtering
 			for (auto &elem : g_artifact) {
 				for (int z=0; z<NARTPTR; z++) {
@@ -1548,6 +1551,7 @@ void worker()
 					f[ch*ns+k] = 0.f;
 				}
 			}
+			*/
 		}
 
 		// input data is scaled from TDT so that 32767 = 10mV.
@@ -2175,7 +2179,7 @@ int main(int argc, char **argv)
 
 	// non-spike events
 	if (pc.numEventChannels() > 0) {
-		VboRaster *o = new VboRaster(pc.numEventChannels(), NSBUF);
+		VboRaster *o = new VboRaster(pc.numEventChannels(), 2*NSBUF);
 		o->setColor(0.0, 1.0, 0.0, 0.3); // green
 		g_eventraster.push_back(o);
 	}
