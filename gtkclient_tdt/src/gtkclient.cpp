@@ -42,6 +42,7 @@
 #include <iostream>
 #include <iomanip>
 #include <atomic>
+#include <mutex>
 
 #include <libgen.h>
 
@@ -105,6 +106,7 @@ vector <VboRaster *> g_eventraster;
 
 ReaderWriterQueue<gsl_vector *> g_filterbuf(NSAMP); // for nlms filtering
 
+std::mutex g_po8e_mutex;
 vector <pair<ReaderWriterQueue<PO8Data>*, po8e::card *>> g_dataqueues;
 
 float g_zoomSpan = 1.0;
@@ -191,9 +193,6 @@ float g_minISI = 1.3; //ms
 float g_autoThreshold = -3.5; //standard deviations. default negative, w/e.
 float g_neoThreshold = 8;
 int g_spikesCols = 16;
-
-//gboolean g_enableArtifactRLS = false;
-//RLS g_rls(95,0.999,1e-16);
 
 gboolean g_trainArtifactNLMS = true;
 gboolean g_filterArtifactNLMS = false;
@@ -1140,6 +1139,8 @@ void po8e_fun(PO8e *p, ReaderWriterQueue<PO8Data> *q)
 		bool stopped = false;
 		size_t numSamples = p->samplesReady(&stopped);
 		if (stopped) {
+			warn("samplesReady() indicated that we are stopped: numSamples: %zu",
+			     numSamples);
 			break; // xxx how to recover?
 		}
 
@@ -1150,8 +1151,15 @@ void po8e_fun(PO8e *p, ReaderWriterQueue<PO8Data> *q)
 				numSamples = bufmax;
 			}
 
-			size_t numRead = p->readBlock(buff, read_size, tick);
-			p->flushBufferedData(numRead);
+
+			size_t numRead;
+
+			{
+				// warning: these braces are intentional
+				std::lock_guard<std::mutex> lock(g_po8e_mutex);
+				numRead = p->readBlock(buff, read_size, tick);
+				p->flushBufferedData(numRead);
+			}
 
 			if (tick[0] != last_tick + 1) {
 				warn("%p: PO8e tick glitch between blocks. Expected %zu got %zu",
