@@ -58,6 +58,20 @@ size_t po8eConf::numIgnoredChannels() // helper
 {
 	return numChannels(po8e::channel::IGNORE);
 }
+size_t po8eConf::readSize()
+{
+	size_t read_size = 16; // reasonable default
+	lua_getglobal(L, "po8e_read_size");
+	if (lua_isnumber(L, -1)) {
+		// note that lua_tointeger returns 0 on a problem
+		read_size = (size_t)lua_tointeger(L, -1);
+	}
+	if (read_size < 1) {
+		read_size = 16;
+	}
+	lua_pop(L, 1);
+	return read_size;
+}
 // allocates memory
 po8e::card *po8eConf::loadCard(size_t idx)
 {

@@ -108,6 +108,7 @@ ReaderWriterQueue<gsl_vector *> g_filterbuf(NSAMP); // for nlms filtering
 
 std::mutex g_po8e_mutex;
 vector <pair<ReaderWriterQueue<PO8Data>*, po8e::card *>> g_dataqueues;
+size_t g_po8e_read_size = 16;
 
 float g_zoomSpan = 1.0;
 
@@ -1050,7 +1051,7 @@ void sorter(int ch)
 				wfpak pak;
 				pak.time = the_time;
 				pak.ticks = tk;
-				pak.channel = ch;
+				pak.channel = ch; // zero-indexed
 				pak.unit = unit;
 				pak.len = NWFSAMP;
 				float gain2 = 2 * 32767.f / 1e4; // XXX is this set to proper per-chan gain?
@@ -1107,11 +1108,6 @@ void po8e_fun(PO8e *p, ReaderWriterQueue<PO8Data> *q)
 {
 	size_t bufmax = 10000;	// must be >= 10000
 
-	// TODO: this actually should depend on the sampling rate.
-	// also, perhaps it would be better to grab as many samples as possible
-	// that are available on each card, like, query each and take the minimum
-	size_t read_size = 16; // samples
-
 	printf("Waiting for the stream to start ...\n");
 	//p->waitForDataReady(1);
 	while (p->samplesReady() == 0 && !g_die) {
@@ -1144,7 +1140,7 @@ void po8e_fun(PO8e *p, ReaderWriterQueue<PO8Data> *q)
 			break; // xxx how to recover?
 		}
 
-		if (numSamples >= read_size) {
+		if (numSamples >= g_po8e_read_size) {
 			if (numSamples > bufmax) {
 				warn("samplesReady() returned too many samples (buffer wrap?): %zu",
 				     numSamples);
@@ -1157,7 +1153,7 @@ void po8e_fun(PO8e *p, ReaderWriterQueue<PO8Data> *q)
 			{
 				// warning: these braces are intentional
 				std::lock_guard<std::mutex> lock(g_po8e_mutex);
-				numRead = p->readBlock(buff, read_size, tick);
+				numRead = p->readBlock(buff, g_po8e_read_size, tick);
 				p->flushBufferedData(numRead);
 			}
 
@@ -2122,12 +2118,15 @@ int main(int argc, char **argv)
 	po8eConf pc;
 	pc.loadConf("gtkclient.rc"); // TODO read from proper place
 
-	auto nc = pc.numNeuralChannels();
-	printf("neural channels:\t%zu\n", nc);
+	g_po8e_read_size = pc.readSize();
+	printf("po8e read size:\t\t%zu\n", 	g_po8e_read_size);
 
-	printf("event channels:\t\t%zu\n", pc.numEventChannels());
-	printf("analog channels:\t%zu\n", pc.numAnalogChannels());
-	printf("ignored channels:\t%zu\n", pc.numIgnoredChannels());
+	auto nc = pc.numNeuralChannels();
+	printf("neural channels:\t%zu\n", 	nc);
+
+	printf("event channels:\t\t%zu\n", 	pc.numEventChannels());
+	printf("analog channels:\t%zu\n", 	pc.numAnalogChannels());
+	printf("ignored channels:\t%zu\n", 	pc.numIgnoredChannels());
 
 
 	for (size_t i=0; i<(nc*NSORT); i++) {
