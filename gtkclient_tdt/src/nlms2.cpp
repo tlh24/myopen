@@ -16,19 +16,19 @@ ArtifactNLMS2::ArtifactNLMS2(int _n, double _mu, MatStor *ms)
 	Wshadow = gsl_matrix_alloc(n, n);
 
 	gsl_matrix_set_all(W, 1.0/(double)n);	// init weights
-    if (ms) {
-        for (size_t i=0; i<n; i++) {
+	if (ms) {
+		for (size_t i=0; i<n; i++) {
 			for (size_t j=0; j<n; j++) {
 				double d = ms->getDouble2(i, j, "nlms_w", 1.0/(double)n);
 				gsl_matrix_set(W, i, j, d);
 			}
-        }
-        mu = ms->getDouble(0, "nlms_mu", mu);
-    }
+		}
+		mu = ms->getDouble(0, "nlms_mu", mu);
+	}
 
-    for (size_t i=0; i<n; i++) {	// diagonal should be zero
-        gsl_matrix_set(W, i, i, 0.0);
-    }
+	for (size_t i=0; i<n; i++) {	// diagonal should be zero
+		gsl_matrix_set(W, i, i, 0.0);
+	}
 }
 
 ArtifactNLMS2::~ArtifactNLMS2()
@@ -122,7 +122,7 @@ void ArtifactNLMS2::clearWeights()
 void ArtifactNLMS2::save(MatStor *ms)
 {
 	if (ms) {
-		for (int i=0; i<n; i++) {
+		for (size_t i=0; i<n; i++) {
 			for (size_t j=0; j<n; j++) {
 				ms->setDouble2(i, j, "nlms_w", gsl_matrix_get(W,i,j));
 			}
