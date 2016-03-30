@@ -13,6 +13,10 @@ ifeq ($(shell lsb_release -sc), jessie)
         CC = clang-3.5
         CPP = clang++-3.5
 endif
+ifeq ($(shell lsb_release -sc), stretch)
+        CC = gcc
+        CPP = g++
+endif
 
 TARGET = /usr/local/bin
 
@@ -128,8 +132,19 @@ clean:
 	rm -rf gtkclient timesync spikes2mat icms2mat analog2mat mmap_test po8e wf_plot \
 	src/*.pb.cc include/*.pb.h src/*.o
 
-deps:
-	sudo apt-get install libgtk2.0-dev libgtk2.0-0-dbg \
+	
+ifeq ($(shell lsb_release -sc), stretch)
+# as of April 2016.
+DEPS = libgtk2.0-dev libgtk2.0-0-dbg \
+	libgtkgl2.0-dev libgtkglext1-dev freeglut3-dev nvidia-cg-toolkit \
+	libgsl-dev libatlas-base-dev libjack-jackd2-dev python-matplotlib \
+	python-jsonpickle python-opengl libboost1.58-all-dev pkg-config \
+	libhdf5-dev libsdl1.2-dev astyle \
+	libprotobuf-dev protobuf-compiler \
+	cppcheck libprocps-dev \
+	liblua5.1-0-dev	
+else
+DEPS = libgtk2.0-dev libgtk2.0-0-dbg \
 	libgtkgl2.0-dev libgtkglext1-dev freeglut3-dev nvidia-cg-toolkit \
 	libgsl0-dev libatlas-base-dev libjack-jackd2-dev python-matplotlib \
 	python-jsonpickle python-opengl libboost1.49-all-dev pkg-config \
@@ -137,11 +152,12 @@ deps:
 	libprotobuf-dev libprotobuf7 protobuf-compiler \
 	cppcheck libprocps0-dev \
 	liblua5.1-0-dev
-	#libncurses5-dev
-
+endif
+deps:
+	sudo apt-get install $(DEPS); 
 	@echo ""
 	@echo "make sure non-free is in /etc/apt/sources.list for nvidia-cg-toolkit."
-
+	
 check:
 	cppcheck -Iinclude -I/usr/local/include -I../common_host --enable=all \
 		-q src/*.cpp
