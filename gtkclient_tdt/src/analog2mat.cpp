@@ -58,29 +58,80 @@ int main(int argn, char **argc)
 	MatStor ms(s);
 
 	u64 packets=0;
-	map<u32,AnalogChan *> analchans;
+
+	// read magic aka is this the right filetype
+	u32 magic;
+	in.read((char *) &magic, sizeof(magic));
+	if (in.eof()) {
+		fprintf(stderr, "cannot read infile at magic word\n");
+		return EXIT_FAILURE;
+	}
+	if (in.fail() || in.gcount() != sizeof (magic)) {
+		fprintf(stderr, "read magic failure. gcount: %ld at %d\n",
+		        in.gcount(), (int) in.tellg());
+		return EXIT_FAILURE;
+	}
+	if (magic != ANALOG_MAGIC) {
+		fprintf(stderr, "magic, %X, does not match expected value, %X.\n",
+		        magic, ANALOG_MAGIC);
+		return EXIT_FAILURE;
+	}
+
+	// read file header size
+	u32 sz;
+	in.read((char *) &sz, sizeof (sz));
+	if (in.eof()) {
+		fprintf(stderr, "cannot read infile at file header size\n");
+		return EXIT_FAILURE;
+	}
+	if (in.fail() || in.gcount() != sizeof (sz)) {
+		fprintf(stderr, "read size failure. gcount: %ld at %d\n",
+		        in.gcount(), (int) in.tellg());
+		return EXIT_FAILURE;
+	}
+	if (sz > MY_BUFFER) {
+		fprintf(stderr, "file header too long for buffer: %u.\n", sz);
+		return EXIT_FAILURE;
+	}
+
+	// read AnalogfileHeader protobuf packet
+	// max int32 is  2,147,483,647
+	// max uint32 is 4,294,967,295
+	char buf[MY_BUFFER];
+	in.read(buf, sz);
+	if (in.fail() || in.eof() || in.gcount() != sz) {
+		fprintf(stderr, "read AnalogFileHeader failure\n");
+		return EXIT_FAILURE;
+	}
+
+	// parse protobuf
+	AnalogFileHeader fh;
+	fh.Clear();
+	if (!fh.ParseFromArray(buf, sz)) {
+		fprintf(stderr, "failed to parse AnalogFileHeader (%d bytes).\n", sz);
+		return EXIT_FAILURE;
+	}
+
+	double sr = fh.sr();
+	u32 nc = fh.nchans();
+	printf("File contains %d channels and is sampled at %f Hz\n", nc, sr);
+
+	map<u32, string> name_map;
+	for (int i=0; i<fh.name_size(); i++) {
+		auto name = fh.name(i);
+		name_map.insert( pair<u32, string>(name.ch(), name.name()) );
+	}
+	map<u32, float> scale_map;
+	for (int i=0; i<fh.scale_size(); i++) {
+		auto scale = fh.scale(i);
+		scale_map.insert( pair<u32, float>(scale.ch(), scale.scale()) );
+	}
+
+	int raw_j = 0;
 
 	while (!in.eof()) {
 
-		// read magic
-		u32 magic;
-		in.read((char *) &magic, sizeof(magic));
-		if (in.eof())
-			break;
-		if (in.fail() || in.gcount() != sizeof (magic)) {
-			fprintf(stderr,
-			        "read magic failure. gcount: %ld at %d\n",
-			        in.gcount(), (int) in.tellg());
-			return EXIT_FAILURE;
-		}
-		if (magic != ANALOG_MAGIC) {
-			fprintf(stderr, "packet %lu: magic value, %X, does not match expected value, %X. aborting here.\n",
-			        packets+1, magic, ANALOG_MAGIC);
-			break;
-		}
-
 		// read size
-		u32 sz;
 		in.read((char *) &sz, sizeof (sz));
 		if (in.eof())
 			return EXIT_FAILURE;
@@ -94,25 +145,44 @@ int main(int argn, char **argc)
 			return EXIT_FAILURE;
 		}
 
-		// read protobuf packet
+		// read AnalogData protobuf packet
 		// max int32 is  2,147,483,647
 		// max uint32 is 4,294,967,295
-		char buf[MY_BUFFER];
 		in.read(buf, sz);
 		if (in.fail() || in.eof() || in.gcount() != sz) {
-			fprintf(stderr, "read protobuf packet failure\n");
+			fprintf(stderr, "read AnalogData packet failure\n");
 			return EXIT_FAILURE;
 		}
 
 		// parse protobuf
-		Analog a;
+		AnalogData a;
 		a.Clear();
 		if (!a.ParseFromArray(buf, sz)) {
-			fprintf(stderr, "failed to parse protobuf packet %lu (%d bytes). aborting here.\n",
+			fprintf(stderr,
+			        "AnalogData packet %lu (%d bytes) failed to parse. aborting.\n",
 			        packets+1, sz);
 			break;
 		}
 
+		/*
+		auto ns = a.nsamp();
+		auto tmp = a.data();
+		int16_t *raw;
+		raw = (int16_t*)tmp.data();
+
+		for (auto i=0; i<(int)nc; i++) {
+			for (auto j=0; j<(int)ns;j++) {
+				ms.set_i16_2(i, raw_j+j, "raw", raw[i*ns+j]);
+			}
+		}
+		*/
+
+		//auto ts = a.ts();
+		//auto tick = a.tick();
+
+		//raw_j += ns;
+
+		/*
 		u32 ch = a.chan();
 
 		// try to find the analog chan in our map
@@ -140,27 +210,32 @@ int main(int argn, char **argc)
 			if (!ac->add_sample(a.ts(i), a.tick(i), a.sample(i)))
 				fprintf(stderr, "Error adding sample for analog chan %u (packet %lu)\n",
 				        ch, packets+1);
-
+		*/
 		packets++;
-		//printf("parsed %ld packets\n", packets);
+		printf("parsed %ld packets\n", packets);
+
 
 	}
 	in.close();
 
 	ShutdownProtobufLibrary();
 
+	ms.save();
 
-	printf("Parsing complete. %lu total packets from %lu analog chans.\n",
-	       packets+1, analchans.size());
+	// print some more stats here
+	//printf("Parsing complete. %lu total packets from %lu analog chans.\n",
+	//       packets+1, analchans.size());
 
 	// now write each stim chan
-	map<u32, AnalogChan *>::iterator it;
+	/*
+	map<u32, AnalogData *>::iterator it;
 	for (it = analchans.begin(); it != analchans.end(); ++it) {
 		printf("analog ch: %d\n", (*it).second->chan);
 		(*it).second->save(&ms);
 		ms.save(true);	// append to file
 		ms.clear();
 	}
+	*/
 
 	return EXIT_SUCCESS;
 }
