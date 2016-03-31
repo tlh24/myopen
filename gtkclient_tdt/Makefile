@@ -7,8 +7,8 @@ JACK = true
 MUDFLAP = false
 STACKPROTECTOR = false
 
-CC  = clang-3.6
-CPP = clang++-3.6
+CC  = clang-3.5
+CPP = clang++-3.5
 ifeq ($(shell lsb_release -sc), jessie)
         CC = clang-3.5
         CPP = clang++-3.5
