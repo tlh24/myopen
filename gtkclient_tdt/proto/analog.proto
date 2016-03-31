@@ -1,8 +1,33 @@
 package gtkclient;
 
-message Analog {
-	required uint32 chan = 1; // recording channel (1-indexed)
-	repeated double ts = 2 [packed=true]; // timestamp
-	repeated uint64 tick = 3 [packed=true]; // tdt tick
-	repeated float sample = 4 [packed=true]; //  data sample
+// Basically saving broadband data was getting too costly.
+// Need to be more efficient. How?
+// 1. dont send ts and tick for each channel and sample,
+//    but rather just the first tick and ts for a "chunk" of data.
+//    In practice, this is the size of a po8e read.
+// 2. Send data as int16_t in a byte array
+// 3. Don't send the magic number between each packet
+
+message AnalogFileHeader {
+	required double sr = 1; 	// sampling rate
+	required uint32 nchans = 2;	// number of channels
+	repeated AnalogChannelName name = 3; // map
+	repeated AnalogChannelScale scale = 4; // map
+}
+
+message AnalogChannelName {
+	required uint32 ch = 1;	// 1-indexed
+	required string name = 2;
+}
+
+message AnalogChannelScale {
+	required uint32 ch = 1; // 1-indexed
+	required float scale = 2;
+}
+
+message AnalogData {
+	required double ts = 1; 		// timestamp
+	required uint32 tick = 2; 		// tdt tick
+	required uint32 nsamp = 3;		// number of samples per channel
+	required bytes data = 4;		// data samples
 }
