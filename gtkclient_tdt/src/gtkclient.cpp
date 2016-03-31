@@ -2128,7 +2128,7 @@ static void openSaveAnalogPrefilterFile(GtkWidget *, gpointer parent_window)
 static void openSaveAnalogFile(GtkWidget *, gpointer parent_window)
 {
 	string d = get_cwd();
-	string f = mk_legal_filename(d, "analog_", ".pbd");
+	string f = mk_legal_filename(d, "analog_post_", ".h5");
 
 	GtkWidget *dialog;
 	dialog = gtk_file_chooser_dialog_new ("Save Analog File",
