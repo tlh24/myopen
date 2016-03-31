@@ -1,7 +1,7 @@
 #define GL_GLEXT_PROTOTYPES
 
 #include <math.h>
-#include <GL/glut.h>    // Header File For The GLUT Library
+#include <GL/glut.h>		// Header File For The GLUT Library
 #include "util.h"
 #include "vbo_timeseries.h"
 
