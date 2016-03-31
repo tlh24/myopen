@@ -11,57 +11,66 @@ AnalogWriter::AnalogWriter()
 	m_q = NULL;
 }
 
-bool AnalogWriter::open(const char *fn)
+bool AnalogWriter::open(const char *fn, AnalogFileHeader *h)
 {
-	if (enabled())
+	if (isEnabled())
 		return false;
-	m_q = new ReaderWriterQueue<Analog *>(ANALOG_BUF_SIZE);
-	return DataWriter::open(fn);
+	if (!DataWriter::open(fn)) {
+		return false;
+	}
+	m_q = new ReaderWriterQueue<AnalogData *>(ANALOG_BUF_SIZE);
+
+	if (!writeFileHeader(h)) {
+		AnalogWriter::close();
+		return false;
+	}
+
+	enable();
+	return true;
 }
 
 bool AnalogWriter::close()
 {
-	if (enabled()) {
-		delete m_q;
-		m_q = NULL;
-	}
+	disable();
+	delete m_q;
+	m_q = NULL;
 	return DataWriter::close();
 }
 
-bool AnalogWriter::add(Analog *o)	// call from a single producer thread
+bool AnalogWriter::add(AnalogData *o)	// call from a single producer thread
 {
-	if (!m_enabled)
+	if (!isEnabled()) {
 		return false;
-
+	}
 	return m_q->enqueue(o);	// todo: what if this (memory alloc) fails
 }
 
 bool AnalogWriter::write()   // call from a single consumer thread
 {
-	if (!m_enabled)
+	if (!isEnabled())
 		return false;
 
 	bool dequeued;
 	do {
-		Analog *o;
+		AnalogData *o;
 		dequeued = m_q->try_dequeue(o);
 		if (dequeued) {
 
-			u32 magic = ANALOG_MAGIC;
 			u32 sz = o->ByteSize();
-			u32 *tmp = (u32 *)malloc(sizeof(magic)+sizeof(sz)+sz);
+			size_t n = sizeof(sz)+sz;
+			u32 *tmp = (u32 *)malloc(n);
 			u32 *u = tmp;
-			*u++ = magic;
 			*u++ = sz;
 			o->SerializeToArray((void *)u, sz);
 			char *c = (char *)tmp;
-			m_os.write(c, sz+8);
+			m_os.write(c, n);
 			if (m_os.fail()) { // write lost, should we requeue?
 				fprintf(stderr,"ERROR: %s write failed!\n", name());
-
+				free(tmp);
+				delete o;
 				return false;
 			}
-			m_num_written += sz+8;
+			m_num_written += n;
 			free(tmp);
 			delete o;	// free the memory that was pointed to
 		}
@@ -75,4 +84,28 @@ size_t AnalogWriter::capacity()
 	if (!m_q)
 		return 0;
 	return m_q->size_approx();
+}
+bool AnalogWriter::writeFileHeader(AnalogFileHeader *h)
+{
+	// First send the magic at the start of the file
+	u32 magic = ANALOG_MAGIC;
+	u32 sz = h->ByteSize();
+	size_t n = sizeof(magic)+sizeof(sz)+sz;
+	u32 *tmp = (u32 *)malloc(n);
+	u32 *u = tmp;
+	*u++ = magic;
+	*u++ = sz;
+	h->SerializeToArray((void *)u, sz);
+	char *c = (char *)tmp;
+	m_os.write(c, n);
+	if (m_os.fail()) { // write lost, should we requeue?
+		fprintf(stderr,"ERROR: %s write failed! Data lost!\n", name());
+		free(tmp);
+		delete h;
+		return false;
+	}
+	m_num_written += n;
+	free(tmp);
+	delete h;	// free the memory that was pointed to
+	return true;
 }

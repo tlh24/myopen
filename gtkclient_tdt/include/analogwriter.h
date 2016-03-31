@@ -21,19 +21,20 @@ enum {
 class AnalogWriter : public DataWriter
 {
 protected:
-	ReaderWriterQueue<Analog *> *m_q; // the protobuf(fer)
+	ReaderWriterQueue<AnalogData *> *m_q; // the protobuf(fer)
 
 public:
 	AnalogWriter();
 
 	// start the writer. fn is filename
-	bool open(const char *fn);
+	using DataWriter::open;
+	bool open(const char *fn,  AnalogFileHeader *h);
 
 	//flush and close log file
 	bool close();
 
 	// log an analog protobuf
-	bool add(Analog *a);
+	bool add(AnalogData *a);
 
 	// write the buffer to disk
 	bool write();
@@ -43,11 +44,11 @@ public:
 
 	const char *name()
 	{
-		return "Analog Writer v3";
+		return "Analog Writer v4";
 	};
 
 protected:
-
+	bool writeFileHeader(AnalogFileHeader *h);
 };
 
 #endif
