@@ -1,3 +1,4 @@
+#include <array>
 #include "h5writer.h"
 
 H5Writer::H5Writer()
@@ -29,8 +30,7 @@ bool H5Writer::open(const char *fn)
 
 	fprintf(stdout,"%s: started logging to %s.\n", name(), fn);
 
-	// dont enable here: rather, enable in the subclasses
-	//enable();
+	// we intentionally don't enable here: rather, enable in the subclasses
 
 	return true;
 }
@@ -85,11 +85,21 @@ void H5Writer::registerWidget(GtkWidget *w)
 void H5Writer::draw()
 {
 	if (isEnabled()) {
+
+		std::array<std::string, 5> u = {"B", "kB", "MB", "GB", "TB"};
+
+		int i = 0;
+		auto b = bytes();
+
+		while (b > 1e3) {
+			b \= 1e3;
+			i++;
+		}
+
 		size_t n = filename().find_last_of("/");
 		char str[256];
-		snprintf(str, 256, "%s: %.2f MB",
-		         filename().substr(n+1).c_str(),
-		         (double)bytes()/1e6);
+		snprintf(str, 256, "%s: %.2f %s",
+		         filename().substr(n+1).c_str(), b, u[i].c_str());
 		gtk_label_set_text(GTK_LABEL(m_w), str);
 	}
 }
