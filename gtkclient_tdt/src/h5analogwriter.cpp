@@ -51,12 +51,6 @@ bool H5AnalogWriter::open(const char *fn, size_t nc)
 
 	m_q = new ReaderWriterQueue<AD *>(H5A_BUF_SIZE);
 
-	// TODO: here we should write some metadata
-	//if (!writeFileHeader(h)) {
-	//	H5AnalogWriter::close();
-	//	return false;
-	//}
-
 	m_nc = nc;
 
 	enable();

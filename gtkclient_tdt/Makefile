@@ -136,7 +136,7 @@ DEPS = libgtk2.0-dev libgtk2.0-0-dbg \
 	libhdf5-dev libsdl1.2-dev astyle \
 	libprotobuf-dev protobuf-compiler \
 	cppcheck libprocps-dev \
-	liblua5.1-0-dev	
+	liblua5.1-0-dev
 else
 DEPS = libgtk2.0-dev libgtk2.0-0-dbg \
 	libgtkgl2.0-dev libgtkglext1-dev freeglut3-dev nvidia-cg-toolkit \
@@ -148,10 +148,10 @@ DEPS = libgtk2.0-dev libgtk2.0-0-dbg \
 	liblua5.1-0-dev
 endif
 deps:
-	sudo apt-get install $(DEPS); 
+	sudo apt-get install $(DEPS);
 	@echo ""
 	@echo "make sure non-free is in /etc/apt/sources.list for nvidia-cg-toolkit."
-	
+
 check:
 	cppcheck -Iinclude -I/usr/local/include -I../common_host --enable=all \
 		-q src/*.cpp

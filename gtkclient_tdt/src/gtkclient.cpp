@@ -1910,7 +1910,7 @@ static GtkWidget *mk_radio(const char *txt, int ntxt,
 	gtk_box_pack_start (GTK_BOX (modebox), button, TRUE, TRUE, 0);
 	gtk_widget_show (button);
 	g_signal_connect (GTK_OBJECT (button), "clicked",
-	                    G_CALLBACK(cb), GINT_TO_POINTER(0));
+	                  G_CALLBACK(cb), GINT_TO_POINTER(0));
 
 	for (int i=1; i<ntxt; i++) {
 		group = gtk_radio_button_get_group (GTK_RADIO_BUTTON (button));
@@ -1922,7 +1922,7 @@ static GtkWidget *mk_radio(const char *txt, int ntxt,
 		gtk_box_pack_start (GTK_BOX (modebox), button, TRUE, TRUE, 0);
 		gtk_widget_show (button);
 		g_signal_connect (GTK_OBJECT (button), "clicked",
-		                    G_CALLBACK (cb), GINT_TO_POINTER(i));
+		                  G_CALLBACK (cb), GINT_TO_POINTER(i));
 	}
 	return modebox;
 }
