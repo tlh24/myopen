@@ -94,10 +94,10 @@ void H5Writer::draw()
 		if (b >= 1e3) {
 			b /= 1e3;
 			snprintf(str, 256, "%s: %.2f GB",
-				filename().substr(n+1).c_str(), b);
+			         filename().substr(n+1).c_str(), b);
 		} else {
 			snprintf(str, 256, "%s: %.2f MB",
-				filename().substr(n+1).c_str(), b);
+			         filename().substr(n+1).c_str(), b);
 		}
 		gtk_label_set_text(GTK_LABEL(m_w), str);
 	}
