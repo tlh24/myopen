@@ -86,13 +86,13 @@ void H5Writer::draw()
 {
 	if (isEnabled()) {
 
-		std::array<std::string, 5> u = {"B", "kB", "MB", "GB", "TB"};
+		std::array<std::string, 5> u { {"B", "kB", "MB", "GB", "TB"} };
 
 		int i = 0;
-		auto b = bytes();
+		double b = bytes();
 
 		while (b > 1e3) {
-			b \= 1e3;
+			b /= 1e3;
 			i++;
 		}
 
