@@ -1,29 +1,29 @@
-/* datawriter.h - inspired by protobuflogger.h, by zheng */
+/* H5Writer.h - inspired by protobuflogger.h, by zheng */
 #include <gtk/gtk.h>
-#include <iostream>
-#include <fstream>
+#include <string>
 #include <atomic>
+#include "hdf5.h"
 
-#ifndef __DATAWRITER_H__
-#define	__DATAWRITER_H__
+#ifndef __H5WRITER_H__
+#define	__H5WRITER_H__
 
 using namespace std;
 
-class DataWriter
+class H5Writer
 {
 private:
-	std::atomic<bool> m_enabled;	// are we writing?
+	atomic<bool> m_enabled;	// are we writing?
 
 protected:
-	size_t m_num_written; 			// how many bytes have been written
-	std::string m_fn; 				// the file name
-	ofstream m_os;					// object for writing to file
-	GtkWidget *m_w;					// for drawing to the gui
+	size_t m_num_written; 	// how many bytes have been written
+	string m_fn; 			// the file name
+	hid_t m_h5file;				// the h5 file
+	GtkWidget *m_w;			// for drawing to the gui
 
 public:
-	DataWriter();
+	H5Writer();
 
-	virtual ~DataWriter();
+	virtual ~H5Writer();
 
 	// start the writer. fn is filename
 	virtual bool open(const char *fn);

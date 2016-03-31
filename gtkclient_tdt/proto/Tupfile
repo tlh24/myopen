@@ -1,0 +1,4 @@
+include_rules
+
+: foreach *.proto |> !protoc |> %g.pb.cc | %g.pb.h
+: foreach *.pb.cc | *.pb.h |> !cpp |> %g.pb.o

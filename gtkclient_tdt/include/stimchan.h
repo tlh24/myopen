@@ -2,6 +2,7 @@
 #define __STIMCHAN_H_
 
 #include <map>
+#include "util.h"
 #include "matStor.h"
 
 using namespace std;
@@ -9,9 +10,9 @@ using namespace std;
 class RecArtifact
 {
 public:
-	unsigned int rec_chan;
-	unsigned int samples_per_wf;
-	unsigned int num_wf;
+	u32 rec_chan;
+	u32 samples_per_wf;
+	u32 num_wf;
 protected:
 	vector<float> wf; // vector of all artifact waveforms (num_sampes_per_wf*num_wf)
 
@@ -31,17 +32,17 @@ protected:
 class StimChan
 {
 public:
-	unsigned int stim_chan; // channel number
+	u32 stim_chan; // channel number
 protected:
 	vector<double> ts; // vector of all timestamps for this stim chan
-	vector<long long> ticks; // vector to all the ticks for this stim chan
-	map<unsigned int,RecArtifact *> artifacts;
+	vector<i64> ticks; // vector to all the ticks for this stim chan
+	map<u32,RecArtifact *> artifacts;
 
 public:
 	StimChan();
 	virtual ~StimChan();
 	void clear();
-	bool add_event(double _ts, unsigned long long _tick);
+	bool add_event(double _ts, u64 _tick);
 	bool add_artifact(RecArtifact *_a);
 	bool save(MatStor *ms);
 

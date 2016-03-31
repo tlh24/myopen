@@ -9,12 +9,17 @@
 //
 //  AUTHOR: Song Ho Ahn (song.ahn@gmail.com)
 // CREATED: 2005-10-04
-// UPDATED: 2009-10-06
+// UPDATED: 2013-03-06
 //
-// Copyright (c) 2005 Song Ho Ahn
+// Copyright (c) 2005-2013 Song Ho Ahn
 ///////////////////////////////////////////////////////////////////////////////
 
+#ifdef __APPLE__
+#include <OpenGL/gl.h>
+#else
 #include <GL/gl.h>
+#endif
+
 #include <iostream>
 #include <sstream>
 #include <iomanip>
@@ -24,42 +29,59 @@
 
 
 
+// version 2.0 or greater
+#define GL_SHADING_LANGUAGE_VERSION       0x8B8C
+
+
+
 ///////////////////////////////////////////////////////////////////////////////
 // extract openGL info
 // This function must be called after GL rendering context opened.
 ///////////////////////////////////////////////////////////////////////////////
-bool glInfo::getInfo()
+void glInfo::getInfo()
 {
-	char *str = 0;
-	char *tok = 0;
+	std::string str;
 
 	// get vendor string
-	str = (char *)glGetString(GL_VENDOR);
-	if (str) this->vendor = str;                 // check NULL return value
-	else return false;
+	str = (const char *)glGetString(GL_VENDOR);
+	this->vendor = str;             // check NULL return value
 
 	// get renderer string
-	str = (char *)glGetString(GL_RENDERER);
-	if (str) this->renderer = str;               // check NULL return value
-	else return false;
+	str = (const char *)glGetString(GL_RENDERER);
+	this->renderer = str;           // check NULL return value
 
 	// get version string
-	str = (char *)glGetString(GL_VERSION);
-	if (str) this->version = str;                // check NULL return value
-	else return false;
+	str = (const char *)glGetString(GL_VERSION);
+	this->version = str;            // check NULL return value
 
 	// get all extensions as a string
-	str = (char *)glGetString(GL_EXTENSIONS);
+	str = (const char *)glGetString(GL_EXTENSIONS);
 
 	// split extensions
-	if (str) {
-		tok = strtok((char *)str, " ");
+	if (str.size() > 0) {
+		char *str2 = new char[str.size() + 1];
+		strcpy(str2, str.c_str());
+		char *tok = strtok(str2, " ");
 		while (tok) {
 			this->extensions.push_back(tok);    // put a extension into struct
 			tok = strtok(0, " ");               // next token
 		}
-	} else {
-		return false;
+		delete [] str2;
+	}
+
+	// get GLSL version string (v2.0+)
+	str = (const char *)glGetString(GL_SHADING_LANGUAGE_VERSION);
+	if (str.size() > 0)
+		this->glslVersion = str;
+	else {
+		// "GL_SHADING_LANGUAGE_VERSION" token is added later (v2.0) after the
+		// first GLSL included in OpenGL (v1.5). If "GL_SHADING_LANGUAGE_VERSION"
+		// is invalid token but "GL_ARB_shading_language_100" is supported, then
+		// the GLSL version should be 1.0.rev.51
+		if (isExtensionSupported("GL_ARB_shading_language_100"))
+			glslVersion = "1.0.51"; // the first GLSL version
+		else
+			glslVersion = "";
 	}
 
 	// sort extension by alphabetical order
@@ -93,8 +115,6 @@ bool glInfo::getInfo()
 
 	// get max texture stacks
 	glGetIntegerv(GL_MAX_TEXTURE_STACK_DEPTH, &this->maxTextureStacks);
-
-	return true;
 }
 
 
@@ -131,6 +151,7 @@ void glInfo::printSelf()
 	ss << "==================" << std::endl;
 	ss << "Vendor: " << this->vendor << std::endl;
 	ss << "Version: " << this->version << std::endl;
+	ss << "GLSL Version: " << this->glslVersion << std::endl;
 	ss << "Renderer: " << this->renderer << std::endl;
 
 	ss << std::endl;

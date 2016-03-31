@@ -9,10 +9,6 @@
 #include "gtkclient.h"                  // for NWFSAMP
 #include "wfwriter.h"                   // for wfpak
 
-#define u64 unsigned long long
-#define i64 long long
-#define u32 unsigned int
-
 //#define _LARGEFILE_SOURCE enabled by default.
 #define _FILE_OFFSET_BITS 64
 
@@ -58,7 +54,7 @@ int main(int argn, char **argc)
 	i64 pos = 0;
 	i64 packets = 0;
 	bool done = false;
-	unsigned int v;
+	u32 v;
 	while (!done) {
 		fread((void *)&v,4,1,in);
 		if (ferror(in) || feof(in)) done = true;
@@ -68,24 +64,24 @@ int main(int argn, char **argc)
 				fseek(in, sizeof(wfpak), SEEK_CUR);
 				pos += 4 + sizeof(wfpak);
 			} else {
-				printf("magic number seems off, is 0x%x, %lld bytes, %lld packets\n",
-				       v,pos,packets);
+				printf("magic number seems off, is 0x%x, %ld bytes, %ld packets\n",
+				       v, pos, packets);
 				fclose(in);
 				return EXIT_FAILURE;
 			}
 			if (ferror(in) || feof(in)) done = true;
 		}
 	}
-	printf("total %lld packets\n", packets);
+	printf("total %ld packets\n", packets);
 	if (packets > 0x7fffffff) {
 		printf("too big for matlab.\n");
 	}
 	fseeko(in, 0, SEEK_SET);
 
 	//okay, allocate appropriate data structs:
-	short *channel = (short *)malloc(packets * sizeof(short));
-	short *unit = (short *)malloc(packets * sizeof(short));
-	short *wf = (short *)malloc(NWFSAMP * packets * sizeof(short));
+	i16 *channel = (i16 *)malloc(packets * sizeof(i16));
+	i16 *unit = (i16 *)malloc(packets * sizeof(i16));
+	i16 *wf = (i16 *)malloc(NWFSAMP * packets * sizeof(i16));
 	double *time = (double *)malloc(packets * sizeof(double));
 	i64 *ticks = (i64 *)malloc(packets * sizeof(i64));
 
@@ -113,8 +109,8 @@ int main(int argn, char **argc)
 				n++;
 				pos += 4 + sizeof(wfpak);
 			} else {
-				printf("second pass, magic number seems off, is 0x%x, %lld bytes, %lld packets\n",
-				       v,pos,n);
+				printf("second pass, magic number seems off, is 0x%x, %ld bytes, %ld packets\n",
+				       v, pos, n);
 				fclose(in);
 				return EXIT_FAILURE;
 			}
@@ -160,7 +156,7 @@ int main(int argn, char **argc)
 	for (int c=0; c<maxch; c++) {
 		for (int u=0; u<maxunit; u++) {
 			i64 m = unitCount(c, u);
-			short *w = (short *)malloc(NWFSAMP * m * sizeof(short));
+			i16 *w = (i16 *)malloc(NWFSAMP * m * sizeof(i16));
 			i64 m2 = 0;
 			for (i64 i=0; i<n; i++) {
 				if (channel[i] == c && unit[i] == u) {

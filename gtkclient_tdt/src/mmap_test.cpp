@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <sys/time.h>
 #include <time.h>
+#include "util.h"
 
 long double 	g_startTime = 0.0;
 long double gettime()  //in seconds!
@@ -64,11 +65,11 @@ int main()
 	}
 	//need to flush pipe_in, so that we can block synchronously.
 	flush_pipe(pipe_out);
-	unsigned short *bin = (unsigned short *)addr;
+	u16 *bin = (u16 *)addr;
 	int skipped = 0;
 	int total = 5000;
-	unsigned short prev = bin[0]-1;
-	unsigned short prev2 = bin[length/2-1]-1;
+	u16 prev = bin[0]-1;
+	u16 prev2 = bin[length/2-1]-1;
 	char *buf[32];
 	g_startTime = gettime();
 	for (int i=0; i<total; i++) {

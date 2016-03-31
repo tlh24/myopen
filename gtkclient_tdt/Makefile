@@ -20,40 +20,44 @@ endif
 
 TARGET = /usr/local/bin
 
-CPPFLAGS := -Iinclude -I/usr/local/include -I../common_host
+CPPFLAGS := -Iinclude -I/usr/local/include -I../common_host -Iproto
 CPPFLAGS += -Wall -Wcast-align -Wpointer-arith -Wshadow -Wsign-compare \
 -Wformat=2 -Wno-format-y2k -Wmissing-braces -Wparentheses -Wtrigraphs \
 -Wextra -pedantic -std=c++11 -Wno-int-to-pointer-cast #-mcmodel=medium
 CPPFLAGS += -march=native
 
-CFLAGS := -Iinclude -I/usr/local/include -I../common_host
+CFLAGS := -Iinclude -I/usr/local/include -I../common_host -Iproto
 CFLAGS += -Wall -Wcast-align -Wpointer-arith -Wshadow -Wsign-compare \
 -Wformat=2 -Wno-format-y2k -Wmissing-braces -Wparentheses -Wtrigraphs \
 -Wextra -pedantic -std=c99
 CFLAGS += -march=native
 
-ifeq ($(shell lsb_release -sc), wheezy)
-        HDFLIB = -lhdf5
-else
-        ifeq ($(shell lsb_release -sc), jessie)
-                HDFLIB = -lhdf5_serial
-        endif
-endif
+LDFLAGS := -lGL -lGLU -lpthread -lCg -lCgGL -lgsl -lcblas -latlas -lm -lz \
+-lmatio -lprotobuf -lPO8eStreaming #-mcmodel=medium
 
-LDFLAGS := -lGL -lGLU -lpthread -lCg -lCgGL -lgsl -lcblas -latlas -lm \
--lmatio $(HDFLIB) -lprotobuf -lPO8eStreaming #-mcmodel=medium
-
-GLIBS := gtk+-2.0 gtkglext-1.0 gtkglext-x11-1.0 lua5.1 libprocps
+GLIBS := gtk+-2.0 gtkglext-1.0 gtkglext-x11-1.0 lua5.1 libprocps hdf5
 CPPFLAGS += $(shell pkg-config --cflags $(GLIBS))
 LDFLAGS += $(shell pkg-config --libs $(GLIBS))
 
-GOBJS = src/analog.pb.o src/icms.pb.o src/gtkclient.o src/gettime.o \
-src/glInfo.o src/matStor.o src/datawriter.o src/filter.o \
-src/spikebuffer.o src/rls.o src/nlms.o src/lconf.o src/random.o
-# src/threadpool.o
-COM_HDR = include/channel.h include/wfwriter.h include/medfilt.h \
-include/po8e_conf.h \
+GOBJS = proto/po8e.pb.o proto/icms.pb.o src/gtkclient.o \
+src/datawriter.o src/h5writer.o src/h5analogwriter.o \
+src/filter.o src/po8e_conf.o \
+src/spikebuffer.o src/nlms2.o \
+src/vbo_raster.o src/vbo_timeseries.o \
+src/icmswriter.o \
+../common_host/domainSocket.o \
+../common_host/gettime.o \
+../common_host/matStor.o \
+../common_host/glInfo.o \
+../common_host/util.o \
+../common_host/random.o \
+../common_host/lconf.o
+
+COM_HDR = include/channel.h include/wfwriter.h \
+include/po8e_conf.h include/vbo_raster.h include/vbo_timeseries.h \
+../common_host/util.h \
 ../common_host/vbo.h \
+../common_host/domainSocket.h \
 ../common_host/cgVertexShader.h \
 ../common_host/firingrate.h \
 ../common_host/timesync.h \
@@ -72,7 +76,7 @@ endif
 ifeq ($(strip $(JACK)),true)
 	CPPFLAGS += -DJACK
 	LDFLAGS  += -ljack
-	GOBJS    += src/jacksnd.o
+	GOBJS    += ../common_host/jacksnd.o
 endif
 
 ifeq ($(strip $(MUDFLAP)),true)
@@ -86,51 +90,41 @@ ifeq ($(strip $(STACKPROTECTOR)),true)
 	CFLAGS   += -fstack-protector-all
 endif
 
-all: gtkclient timesync spikes2mat icms2mat analog2mat mmap_test po8e wf_plot   
+all: gtkclient timesync spikes2mat icms2mat mmap_test po8e
 
 src/%.o: src/%.cpp $(COM_HDR)
 	$(CPP) -c $(CPPFLAGS) $< -o $@
 
-src/%.o: ../common_host/%.cpp $(COM_HDR)
+../common_host/%.o: ../common_host/%.cpp $(COM_HDR)
 	$(CPP) -c $(CPPFLAGS) $< -o $@
 
-src/%.pb.o: src/%.pb.cc $(COM_HDR)
+proto/%.pb.o: proto/%.pb.cc $(COM_HDR)
 	$(CPP) -c $(CPPFLAGS) $< -o $@
 
-src/%.pb.cc src/%.pb.h: proto/%.proto
-	protoc -I$(<D) --cpp_out=src $<
-	mv src/$(*F).pb.h include
-
-src/wf_plot.o: src/wf_plot.c
-	$(CC) -c $(CFLAGS) $< -o $@
+proto/%.pb.cc proto/%.pb.h: proto/%.proto
+	protoc -I$(<D) --cpp_out=proto/ $<
 
 gtkclient: $(GOBJS)
 	$(CPP) -o $@ $(LDFLAGS) $^
 
-timesync: src/timeclient.o src/gettime.o
+timesync: src/timeclient.o ../common_host/gettime.o
 	$(CPP) -o $@ $(LDFLAGS) $^
 
 spikes2mat: src/spikes2mat.o
-	$(CPP) -o $@ -lmatio $(HDFLIB) -lz $^
+	$(CPP) -o $@ $(LDFLAGS) $^
 
-icms2mat: src/icms.pb.o src/icms2mat.o src/stimchan.o src/matStor.o
-	$(CPP) -o $@ -lmatio $(HDFLIB) -lz -lprotobuf $^
-
-analog2mat: src/analog.pb.o src/analog2mat.o src/analogchan.o src/matStor.o
-	$(CPP) -o $@ -lmatio $(HDFLIB) -lz -lprotobuf $^
+icms2mat: proto/icms.pb.o src/icms2mat.o src/stimchan.o ../common_host/matStor.o
+	$(CPP) -o $@ $(LDFLAGS) -lprotobuf $^
 
 mmap_test: src/mmap_test.o
 	$(CPP) -o $@ -lrt $^
 
-po8e: src/po8e.pb.o src/po8e.o src/lconf.o src/po8e_conf.o
+po8e: proto/po8e.pb.o src/po8e.o ../common_host/util.o ../common_host/lconf.o src/po8e_conf.o
 	$(CPP) -o $@ $(LDFLAGS) $^
 
-wf_plot: src/wf_plot.o
-	$(CC) -o $@ -lSDL -lGL -lGLU -lglut -lpthread -lmatio $(HDFLIB) -lpng $^
-
 clean:
-	rm -rf gtkclient timesync spikes2mat icms2mat analog2mat mmap_test po8e wf_plot \
-	src/*.pb.cc include/*.pb.h src/*.o
+	rm -rf gtkclient timesync spikes2mat icms2mat mmap_test po8e \
+	proto/*.pb.cc proto/*.pb.h proto/*.o src/*.o ../common_host/*.o
 
 	
 ifeq ($(shell lsb_release -sc), stretch)
@@ -179,10 +173,9 @@ install:
 	install timesync -t $(TARGET)
 	install spikes2mat -t $(TARGET)
 	install icms2mat -t $(TARGET)
-	install analog2mat -t $(TARGET)
 	install -d $(TARGET)/cg
 	install cg/fade.cg -t $(TARGET)/cg
 	install cg/fadeColor.cg -t $(TARGET)/cg
 	install cg/threshold.cg -t $(TARGET)/cg
 
-.PRECIOUS: src/%.pb.cc
+.PRECIOUS: proto/%.pb.cc proto/%.pb.h

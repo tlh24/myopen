@@ -3,6 +3,7 @@
 #include <thread>
 #include <algorithm>
 #include <vector>
+#include "util.h"
 #include "PO8e.h"
 
 #include "po8e_conf.h" // parse po8e conf files
@@ -35,12 +36,15 @@ void po8_thread(PO8e *p)
 	size_t bufmax = 10000;	// must be >= 10000
 
 	printf("Waiting for the stream to start ...\n");
-	p->waitForDataReady(60*60*1000);
+	//p->waitForDataReady(0x3e8);
+	while (p->samplesReady() == 0) {
+		usleep(5000);
+	}
 
 	// start the timer used to compute the speed and set the collected bytes to 0
 	//long double starttime = gettime();
-	//long long bytes = 0;
-	unsigned int frame = 0;
+	//i64 bytes = 0;
+	u32 frame = 0;
 
 	if (p == nullptr) {
 		return;
@@ -51,12 +55,12 @@ void po8_thread(PO8e *p)
 	printf("Card %p: %d channels @ %d bytes/sample\n", (void *)p, nchan, bps);
 
 	// 10000 samples * 2 bytes/sample * nChannels
-	auto buffs = new short[bufmax*(nchan)];
-	auto ticks = new int64_t[bufmax];
+	auto buffs = new i16[bufmax*(nchan)];
+	auto ticks = new i64[bufmax];
 
 	// get the initial tick value. hopefully a small number
 	p->readBlock(buffs, 1, ticks);
-	int64_t last_tick = ticks[0] - 1;
+	i64 last_tick = ticks[0] - 1;
 
 	while (!g_die) {
 
@@ -116,19 +120,26 @@ int main(void)
 	po8eConf pc;
 
 	pc.loadConf("gtkclient.rc");
+	printf("Total channels:\n");
+	printf("  -> neural: %zu\n", pc.numNeuralChannels());
+	printf("  -> event: %zu\n", pc.numEventChannels());
+	printf("  -> analog: %zu\n", pc.numAnalogChannels());
+	printf("  -> ignored: %zu\n", pc.numIgnoredChannels());
 
-	for (size_t i=0; i<pc.cards.size(); i++) {
+	printf("\n\n");
+
+	for (auto &c : pc.cards) {
 		printf("card %lu in conf (%d channels)\n",
-		       pc.cards[i]->id(),
-		       pc.cards[i]->channel_size()
+		       c->id(),
+		       c->channel_size()
 		      );
-		for (int j=0; j<pc.cards[i]->channel_size(); j++) {
-			auto channel = pc.cards[i]->channel(j);
-			printf("  ch: %02lu (%s) scale_factor: %lu data_type: %d\n",
+		for (int j=0; j<c->channel_size(); j++) {
+			auto channel = c->channel(j);
+			printf("  ch: %02lu (%s) scale_factor: %lu data_type: %s\n",
 			       channel.id(),
 			       channel.name().c_str(),
 			       channel.scale_factor(),
-			       channel.data_type());
+			       po8e::channel_DataTypes_Name(channel.data_type()).c_str());
 		}
 	}
 

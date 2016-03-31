@@ -2,6 +2,7 @@
 #define __FILTER_H_
 
 #include <vector>
+#include "util.h"
 
 using namespace std;
 
@@ -17,7 +18,7 @@ protected:
 public:
 	Filter();
 	virtual ~Filter();
-	virtual void Proc(float *in, float *out, unsigned int kpoints);
+	virtual void Proc(float *in, float *out, u32 kpoints);
 
 protected:
 };

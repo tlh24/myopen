@@ -55,15 +55,15 @@ class TimeSync
 {
 	//take performance counter time, produce (predict) ticks.
 public:
-	long double m_slope;
-	long double m_offset;
-	long double m_timeOffset;
-	long double m_update;
-	mmapHelp	*mmh;
+	long double 	m_slope;
+	long double 	m_offset;
+	long double 	m_timeOffset;
+	long double 	m_update;
+	mmapHelp	   *mmh;
 	syncSharedData *m_ssd;
-	int			m_ssdn;
+	int				m_ssdn;
 	int 			m_ticks;
-	int			m_dropped;
+	int				m_dropped;
 	int 			m_frame;
 	//updated periodically to prevent precision issues.
 

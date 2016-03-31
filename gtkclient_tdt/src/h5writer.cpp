@@ -1,35 +1,31 @@
-#include <gtk/gtk.h>
-#include <iostream>
-#include <fstream>
-#include "datawriter.h"
+#include "h5writer.h"
 
-DataWriter::DataWriter()
+H5Writer::H5Writer()
 {
 	m_enabled = false;
-	m_num_written = 0;
+	m_h5file = 0;
 	m_fn.assign("");
 	m_w = NULL;
 }
 
-DataWriter::~DataWriter()
+H5Writer::~H5Writer()
 {
 	close();
 }
 
-bool DataWriter::open(const char *fn)
+bool H5Writer::open(const char *fn)
 {
 	if (isEnabled()) {
 		return false;
 	}
-	m_os.open(fn, std::ofstream::binary | std::ofstream::trunc);
+	// Create a new file using default properties.
+	m_h5file = H5Fcreate(fn, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 
-	if (m_os.fail()) {
+	if (m_h5file < 0) {
 		return false;
 	}
 
 	m_fn.assign(fn);
-
-	m_num_written = 0;
 
 	fprintf(stdout,"%s: started logging to %s.\n", name(), fn);
 
@@ -39,53 +35,54 @@ bool DataWriter::open(const char *fn)
 	return true;
 }
 
-bool DataWriter::close()
+bool H5Writer::close()
 {
+
 	if (isEnabled()) {	// subclass should have disabled already honestly.
 		disable();
 		fprintf(stdout,"%s: stopped logging to file\n", name());
-		m_num_written = 0;
 		m_fn.clear();
-		m_os.flush();
-		if (m_os.fail()) {
-			return false;
-		}
-		m_os.close();
 	}
+
+	if (m_h5file) {
+		H5Fclose(m_h5file);
+		m_h5file = 0;
+	}
+
 	return true;
 }
 
-bool DataWriter::isEnabled()
+bool H5Writer::isEnabled()
 {
 	return m_enabled;
 }
 
-void DataWriter::enable()
+void H5Writer::enable()
 {
 	m_enabled = true;
 }
 
-void DataWriter::disable()
+void H5Writer::disable()
 {
 	m_enabled = false;
 }
 
-size_t DataWriter::bytes()
+size_t H5Writer::bytes()
 {
-	return m_num_written * sizeof(char);
+	return 0;
 }
 
-string DataWriter::filename()
+string H5Writer::filename()
 {
 	return m_fn;
 }
 
-void DataWriter::registerWidget(GtkWidget *w)
+void H5Writer::registerWidget(GtkWidget *w)
 {
 	m_w = w;
 }
 
-void DataWriter::draw()
+void H5Writer::draw()
 {
 	if (isEnabled()) {
 		size_t n = filename().find_last_of("/");

@@ -7,12 +7,10 @@
 #include <unistd.h>                     // for getpid, sleep, usleep, etc
 #include <boost/format/format_fwd.hpp>  // for format
 #include <string>                       // for string
+#include "util.h"
 #include "PO8e.h"                       // for PO8e, revisionString
 #include "gettime.h"                    // for gettime, g_startTime
 #include "timesync.h"                   // for TimeSync
-
-#define i64 long long
-#define u32 unsigned int
 
 #define TS_SRATE_HZ	(24414.0625)
 //#define TS_SRATE_HZ	(48828.1250)
@@ -70,9 +68,9 @@ void *po8_thread(void *)
 		}
 
 		long double totalSamples = 0.0;
-		//long long bytes = 0;
-		unsigned int nchan = 4;
-		unsigned int bps = 2; //bytes/sample
+		//i64 bytes = 0;
+		u32 nchan = 4;
+		u32 bps = 2; //bytes/sample
 
 		if (card) {
 			nchan = card->numChannels();
@@ -86,7 +84,7 @@ void *po8_thread(void *)
 			g_die = true;
 		}
 
-		short *temp = new short[bufmax*(nchan)];  // 2^14 samples * 2 bytes/sample * (nChannels+time+stim+stimclock)
+		i16 *temp = new i16[bufmax*(nchan)];  // 2^14 samples * 2 bytes/sample * (nChannels+time+stim+stimclock)
 		int64_t *tdtOffsets = new int64_t[bufmax];
 
 		while (conn_cards > 0 && !g_die) {
@@ -138,12 +136,12 @@ void *po8_thread(void *)
 				// estimate TDT ticks from perf counter
 				// ticks are distributed across two shorts
 				int ticks;
-				ticks  = (unsigned short)(temp[0*numSamples + numSamples -1]); //we only care about the last tick.
-				ticks += (unsigned short)(temp[1*numSamples + numSamples -1]) << 16;
+				ticks  = (u16)(temp[0*numSamples + numSamples -1]); //we only care about the last tick.
+				ticks += (u16)(temp[1*numSamples + numSamples -1]) << 16;
 				// it appears we need a checksum. extract.
 				int cs;
-				cs  = (unsigned short)(temp[2*numSamples + numSamples -1]);
-				cs += (unsigned short)(temp[3*numSamples + numSamples -1]) << 16;
+				cs  = (u16)(temp[2*numSamples + numSamples -1]);
+				cs += (u16)(temp[3*numSamples + numSamples -1]) << 16;
 				int64_t diff = tdtOffsets[numSamples-1] - (int64_t)ticks;
 				if ((ticks ^ 0x134fbab3) != cs) {
 					printf("\nChecksum fail: %x %x\n", ticks, cs);

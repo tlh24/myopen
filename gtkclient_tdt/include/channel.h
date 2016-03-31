@@ -9,6 +9,8 @@
 #include <string>
 #include "matStor.h"
 #include "random.h"
+#include "util.h"
+#include "spikebuffer.h"
 
 void gsl_matrix_to_mat(gsl_matrix *x, const char *fname);
 long double gettime();
@@ -22,8 +24,6 @@ extern gboolean g_showWFstd;
 extern int g_whichAlignment;
 extern int g_whichSpikePreEmphasis;
 
-//#define NSORT	2
-
 //need some way of encapsulating per-channel information.
 class Channel
 {
@@ -33,8 +33,8 @@ private:
 	float 	m_gain;
 	float 	m_aperture[NSORT]; 	// aka MSE per sample.
 public:
-	Vbo	*m_wfVbo; 		// range 1 mean 0
-	Vbo	*m_usVbo;
+	Vbo		*m_wfVbo; 		// range 1 mean 0
+	Vbo		*m_usVbo;		// unsorted units
 	VboPca	*m_pcaVbo; 		// 2D points, with color.
 	float	m_pca[NSORT][NWFSAMP]; 	// range 1 mean 0
 	float 	m_pcaScl[NSORT]; 	// sqrt of the eigenvalues.
@@ -45,9 +45,13 @@ public:
 	double	m_var; 			//variance of the continuous waveform, 1 = 10mV^2.
 	double	m_mean; 		//mean of the continuous waveform.
 	i64 	m_isi[NSORT][100]; 	//counts of the isi, in units of ms.
-	i64		m_isiViolations;
 	i64		m_lastSpike[NSORT]; //zero when a spike occurs. in samples.
 	bool	m_enabled;
+	SpikeBuffer m_spkbuf;
+	// TODO wrap spikebuffer methods into channel so that we can make the
+	// spikebuffer private
+	string 	m_chanName;
+	float 	m_scaleFactor; // from po8e scaling to uV
 
 	Channel(int ch, MatStor *ms)
 	{
@@ -56,25 +60,20 @@ public:
 		m_pcaVbo = new VboPca(6, 1024*8, 1, ch, NWFSAMP, ms);
 		m_wfVbo->m_useSAA = m_usVbo->m_useSAA = m_pcaVbo->m_useSAA = false;
 		m_pcaVbo->m_fade = 0.f;
-		m_isiViolations = 0;
 		m_ch = ch;
 		m_var = 0.0;
 		m_mean = 0.0;
 		m_enabled = true;
-		//init PCA, template.
-		for (int j=0; j<NWFSAMP; j++) {
-			for (int k=0; k<NSORT; k++) {
+
+		for (int k=0; k<NSORT; k++) {
+			for (int j=0; j<NWFSAMP; j++) {
 				m_pca[k][j] = 1.f/8.f;
-				m_pcaScl[k] = 1.f;
+				m_template[k][j] = 0.5*sinf(j/6.f) / 1e2; // sinusoids scaled to ~100 uV
 			}
-			//m_pca[1][j] = (j > 15 ? 1.f/8.f : -1.f/8.f);
+			m_pcaScl[k] = 1.f;
+			m_aperture[k] = 0.f;
 		}
-		for (int j=0; j<NWFSAMP; j++) {
-			for (int k=0; k<NSORT; k++) {
-				m_template[k][j] = 0.5*sinf(j/6.f) / 1e2;	// sinusoids scaled to ~100 uV
-			}
-			//m_template[1][j] = 0.4*sinf((j+12)/8.f) / 1e2;	// scaled to ~ 100 microvolts
-		}
+
 		//read from matlab if it's there..
 		if (ms) {
 			for (int j=0; j<NSORT; j++) {
@@ -127,7 +126,7 @@ public:
 		m_loc[2] = m_loc[3] = 1.f;
 		for (int u=0; u<NSORT; u++) {
 			m_lastSpike[u] = 0;
-			for (unsigned int i=0; i < sizeof(m_isi[0])/sizeof(m_isi[0][0]); i++) {
+			for (size_t i=0; i < sizeof(m_isi[0])/sizeof(m_isi[0][0]); i++) {
 				m_isi[u][i] = 0;
 			}
 		}
@@ -151,7 +150,6 @@ public:
 		ms->setValue3(m_ch, 0, "pcaScl", m_pcaScl, 2);
 		ms->setValue(m_ch, "threshold", m_threshold);
 		ms->setValue(m_ch, "centering", m_centering);
-		//ms->setValue(m_ch, "agc", m_agc);
 		ms->setValue(m_ch, "gain", m_gain);
 		ms->setValue(m_ch, "enabled", m_enabled);
 		m_pcaVbo->save(m_ch, ms);
@@ -496,7 +494,7 @@ public:
 					units = std::string("mV");
 				}
 				char buf[64];
-				glColor4f(1.f,1.f,1.f,0.18f);
+				glColor4f(1.f,1.f,1.f,0.3f);
 				glLineWidth(1.f);
 				for (double v = 0.0; v < top; v+= tic) {
 					float y = m_gain*v/1e4;
@@ -506,7 +504,7 @@ public:
 					glVertex3f(0.f*ow+ox, y*oh+oy, 0.f);
 					glVertex3f(1.f*ow+ox, y*oh+oy, 0.f);
 					glEnd();
-					snprintf(buf, 64, "%d%s", (int)floor(v/div), units.c_str());
+					snprintf(buf, 64, "%d %s", (int)floor(v/div), units.c_str());
 					float yof = 4.f/g_viewportSize[1]; //1 pixels vertical offset.
 					float xof = 2.f*(strlen(buf)*8)/g_viewportSize[0];
 					glRasterPos2f(1.f*ow+ox-xof, y*oh+oy+yof);
@@ -587,14 +585,18 @@ public:
 		glRasterPos2f(ox, oy + oh - 14.f*2.f/g_viewportSize[1]); // 14 pixels vertical offset.
 		//kearning is from the lower left hand corner.
 		char buf[64];
-		snprintf(buf, 64, "Ch %d", m_ch);
+		if (m_chanName.length() > 0) {
+			snprintf(buf, 64, "%s", m_chanName.c_str());
+		} else {
+			snprintf(buf, 64, "Ch %d", m_ch+1);
+		}
 		glPrint(buf);
 	}
 	int updateTemplate(int unit)
 	{
 		//called when the button is clicked.
 		if (unit < 1 || unit > NSORT) {
-			printf("unit out of range in Channel::updateTemplate()\n");
+			warn("unit out of range in Channel::updateTemplate()");
 			return false;
 		}
 		float aperture = 0;
@@ -625,7 +627,7 @@ public:
 		m_usVbo->setFade(1.7);
 		for (int u=0; u<NSORT; u++) {
 			m_lastSpike[u] = 0;
-			for (unsigned int i=0; i < sizeof(m_isi[0])/sizeof(m_isi[0][0]); i++) {
+			for (size_t i=0; i < sizeof(m_isi[0])/sizeof(m_isi[0][0]); i++) {
 				m_isi[u][i] = 0;
 			}
 		}
@@ -718,7 +720,7 @@ public:
 		//gsl_sort_largest_index(p,2,d->data,1,NWFSAMP);
 
 		// normalize to identity covariance
-		for (int k=0; k<2; k++) {
+		for (int k=0; k<NSORT; k++) {
 			m_pcaScl[k] = sqrt(d->data[k]);
 			for (int i=0; i<NWFSAMP; i++) {
 				m_pca[k][i] = v->data[k + i*NWFSAMP] / m_pcaScl[k];
@@ -733,7 +735,7 @@ public:
 		//t = gettime();
 		for (int i=0; i<nsamp; i++) {
 			float pca[2] = {0,0};
-			for (int k=0; k<2; k++) {
+			for (int k=0; k<NSORT; k++) {
 				for (int j=0; j<NWFSAMP; j++) {
 					pca[k] += m_pcaVbo->m_wf[i*NWFSAMP + j] * m_pca[k][j];
 				}
@@ -756,9 +758,10 @@ public:
 	void updateISI(int unit, int sample)
 	{
 		//this used for calculating ISI.
-		unit -= 1; //comes in 0 = uhnsorted.
+		unit -= 1; //comes in 0 = unsorted.
 		if (unit >=0 && unit < NSORT) {
-			int b = floor((sample - m_lastSpike[unit])/SRATE_KHZ - 0.5);
+			int dsamp = sample - m_lastSpike[unit];
+			int b = floor(dsamp/SRATE_KHZ - 0.5);
 			int nisi = (int)(sizeof(m_isi[0])/sizeof(m_isi[0][0]));
 			//printf("%d isi %d u %d\n", m_ch, b, unit);
 			if (b > 0 && b < nisi)
@@ -790,5 +793,38 @@ public:
 		}
 	}
 };
+
+void gsl_matrix_to_mat(gsl_matrix *x, const char *fname)
+{
+	// write a gsl matrix to a .mat file.
+	// does not free the matrix.
+	mat_t *mat;
+	mat = Mat_CreateVer(fname, nullptr, MAT_FT_MAT73);
+	if (!mat) {
+		warn("could not open %s for writing", fname);
+		return;
+	}
+	size_t dims[2];
+	dims[0] = x->size1;
+	dims[1] = x->size2;
+	double *d = (double *)malloc(dims[0]*dims[1]*sizeof(double));
+	if (!d) {
+		warn("could not allocate memory for copy");
+		return;
+	}
+	//reformat and transpose.
+	//matio expects fortran style, column-major format.
+	//gsl is row-major.
+	for (size_t i=0; i<dims[0]; i++) //rows
+		for (size_t j=0; j<dims[1]; j++) //columns
+			d[j*dims[0] + i] = x->data[i*x->tda + j];
+
+	matvar_t *matvar;
+	matvar = Mat_VarCreate("a", MAT_C_DOUBLE, MAT_T_DOUBLE, 2, dims, d, 0);
+	Mat_VarWrite(mat, matvar, MAT_COMPRESSION_NONE);
+	Mat_VarFree(matvar);
+	free(d);
+	Mat_Close(mat);
+}
 
 #endif

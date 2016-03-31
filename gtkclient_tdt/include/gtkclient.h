@@ -1,10 +1,9 @@
 #ifndef __GTKCLIENT_H__
 #define __GTKCLIENT_H__
 
-#define i64 long long
-#define u32 unsigned int
+#include "util.h"
 
-enum MODES {
+enum MODES { // ui tabs
 	MODE_RASTERS = 0,
 	MODE_SPIKES,
 	MODE_SORT,
@@ -35,30 +34,14 @@ enum MODES {
 #define NSBUF		1024 		// number of recent spikes to track
 
 #define STIMCHAN 	8
-#define RECCHAN 	96
-#define NCHAN		96
 #define NUNIT		3			// including unsorted
 #define NSORT		2
 
-//#define LMSBUF 		64
-
-//globals.  could make a class for these but .. eh
-// XXX why NSAMP*3 ???
-extern float	g_fbuf[NFBUF][NSAMP*3]; //continuous waveform. range [-1 .. 1]. For drawing.
-extern i64		g_fbufW; //where to write to (always increment)
-extern i64		g_fbufR; //display thread reads from here - copies to mem
-extern i64		g_lastSpike[NCHAN][NUNIT];
-extern unsigned int 	g_nsamp; //given the current level of zoom (1 = 4096 samples), how many samples to update?
-
-extern bool 	g_die;
-extern int 		g_channel[4];
-//extern double	g_minISI;
-
-
 typedef struct PO8Data {
-	short *data;
+	int64_t tick;	// this is the tick for the first sample
+	size_t numChannels;
 	size_t numSamples;
+	i16 *data;
 } PO8Data;
-
 
 #endif

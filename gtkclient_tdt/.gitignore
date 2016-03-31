@@ -3,7 +3,6 @@ timesync
 convert2
 spikes2mat
 icms2mat
-analog2mat
 mmap_test
 po8e
 wf_plot
@@ -15,3 +14,4 @@ spikes_pb2.py
 *.dat
 *.bin
 *.pbd
+*.h5
