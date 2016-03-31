@@ -1,4 +1,6 @@
 #include <float.h>                      // for FLT_EPSILON
+#include <atomic>
+#include <mutex>
 #include <gsl/gsl_blas.h>               // for gsl_blas_ddot, etc
 #include <gsl/gsl_vector_double.h>      // for gsl_vector, etc
 #include "matStor.h"                    // for MatStor
@@ -11,6 +13,7 @@ NLMS::NLMS(int _n, double _mu)
 	mu = _mu;
 
 	w = gsl_vector_alloc(n);
+	wshadow = gsl_vector_alloc(n);
 	// set weights
 	// gsl_vector_float_set_zero(w);
 	gsl_vector_set_all(w, 1.0/(double)n);	// possibly a better prior
@@ -19,6 +22,7 @@ NLMS::NLMS(int _n, double _mu)
 NLMS::~NLMS()
 {
 	gsl_vector_free(w);
+	gsl_vector_free(wshadow);
 }
 
 // x is the input vector (nx1)
@@ -28,9 +32,12 @@ double NLMS::train(gsl_vector *x, double d)
 {
 	// in the below we use (roughly) the notation of Haykin, 4th ed. pg 324
 
+	// local copy of w
+	gsl_vector_memcpy(wshadow, w);
+
 	// dhat(k) = w'(k) * x(k);
 	double dhat;
-	gsl_blas_ddot(w, x, &dhat);
+	gsl_blas_ddot(wshadow, x, &dhat);
 
 	// alpha(k) = d(k) - dhat(k);
 	// nb Haykin uses e, rather than alpha
@@ -42,7 +49,13 @@ double NLMS::train(gsl_vector *x, double d)
 	double temp = (mu * alpha) / ((xnorm * xnorm) + FLT_EPSILON);
 
 	// w(k+1) = w(k) + temp(k) * x(k)
-	gsl_blas_daxpy(temp, x, w);
+	gsl_blas_daxpy(temp, x, wshadow);
+
+	// note that these braces are mandatory
+	{
+		std::lock_guard<std::mutex> lock(mx);
+		gsl_vector_memcpy(w, wshadow);
+	}
 
 	//for (int i=0; i<10 ; i++)
 	//	printf("%f\t",w->data[i]);
@@ -57,15 +70,16 @@ double NLMS::filter(gsl_vector *x)
 {
 	// dhat(k) = w'(k) * x(k);
 	double dhat;
+	std::lock_guard<std::mutex> lock(mx);
 	gsl_blas_ddot(w, x, &dhat);
-
 	return dhat;
 }
 
 //
 void NLMS::clearWeights()
 {
-	gsl_vector_set_zero(w);
+	std::lock_guard<std::mutex> lock(mx);
+	gsl_vector_set_all(w, 1.0/(double)n); // possibly a better prior than zero
 }
 
 ArtifactNLMS::ArtifactNLMS(int _n, double _mu, int _ch, MatStor *ms)
