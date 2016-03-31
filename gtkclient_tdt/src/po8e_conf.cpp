@@ -34,9 +34,11 @@ size_t po8eConf::numChannels(po8e::channel_DataTypes x)
 {
 	size_t n = 0;
 	for (auto &c : cards) {
-		for (auto i=0; i<c->channel_size(); i++) {
-			if (c->channel(i).data_type() == x) {
-				n += 1;
+		if (c->enabled()) {
+			for (auto i=0; i<c->channel_size(); i++) {
+				if (c->channel(i).data_type() == x) {
+					n += 1;
+				}
 			}
 		}
 	}
@@ -117,12 +119,11 @@ po8e::card *po8eConf::loadCard(size_t idx)
 				stack++;
 				if (lua_isstring(L, -1)) {
 					chan->set_name(lua_tostring(L, -1));
+				} else { // no name field set
+					char s[8];
+					sprintf(s, "Ch %03lu", chan->id());
+					chan->set_name(s);
 				}
-				//else { // no name field set
-				//	char s[8];
-				//	sprintf(s, "ch_%03lu", chan->id());
-				//	chan->set_name(s);
-				//}
 				lua_pop(L, 1);
 				stack--;
 
