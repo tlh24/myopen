@@ -13,6 +13,8 @@
 
 #define MATIOTYP size_t
 
+#define max(a,b) (a > b ? a : b)
+
 using namespace std;
 
 MatStor::MatStor(const char *fname)
@@ -36,7 +38,7 @@ void MatStor::load()
 		if (var->rank == 3) {
 			if (var->class_type == MAT_C_SINGLE) {
 				// switch from matlab order to C order.
-				array3 r(boost::extents[var->dims[2]][var->dims[1]][var->dims[0]]);
+				arrayf3 r(boost::extents[var->dims[2]][var->dims[1]][var->dims[0]]);
 				float *w = (float *)var->data;
 				for (MATIOTYP a=0; a<var->dims[2]; a++) {
 					for (MATIOTYP b=0; b<var->dims[1]; b++) {
@@ -45,7 +47,7 @@ void MatStor::load()
 						}
 					}
 				}
-				m_dat3.insert(pair<string,array3>(nam,r));
+				m_datf3.insert(pair<string,arrayf3>(nam,r));
 			} else if (var->class_type == MAT_C_DOUBLE) {
 				arrayd3 r(boost::extents[var->dims[2]][var->dims[1]][var->dims[0]]);
 				double *w = (double *)var->data;
@@ -63,14 +65,14 @@ void MatStor::load()
 		} else if (var->rank == 2) {
 			if (var->dims[1] > 1) {
 				if (var->class_type == MAT_C_SINGLE) {
-					array2 r(boost::extents[var->dims[1]][var->dims[0]]);
+					arrayf2 r(boost::extents[var->dims[1]][var->dims[0]]);
 					float *w = (float *)var->data;
 					for (MATIOTYP a=0; a<var->dims[1]; a++) {
 						for (MATIOTYP b=0; b<var->dims[0]; b++) {
 							r[a][b] = *w++;
 						}
 					}
-					m_dat2.insert(pair<string,array2>(nam,r));
+					m_datf2.insert(pair<string,arrayf2>(nam,r));
 				} else if (var->class_type == MAT_C_DOUBLE) {
 					arrayd2 r(boost::extents[var->dims[1]][var->dims[0]]);
 					double *w = (double *)var->data;
@@ -146,10 +148,10 @@ void MatStor::save(bool append)
 		matfp = Mat_CreateVer(m_name.c_str(),NULL, MAT_FT_MAT73);
 	}
 
-	for (auto &x : m_dat3) {
+	for (auto &x : m_datf3) {
 		string nam = x.first;
-		array3 dat = x.second;
-		const array3::size_type *dims = dat.shape();
+		arrayf3 dat = x.second;
+		const arrayf3::size_type *dims = dat.shape();
 		MATIOTYP matdims[3];
 		matdims[0] = dims[2];
 		matdims[1] = dims[1];
@@ -172,10 +174,10 @@ void MatStor::save(bool append)
 		Mat_VarWrite(matfp, var, MAT_COMPRESSION_NONE);
 		Mat_VarFree(var);
 	}
-	for (auto &x : m_dat2) {
+	for (auto &x : m_datf2) {
 		string nam = x.first;
-		array2 dat = x.second;
-		const array2::size_type *dims = dat.shape();
+		arrayf2 dat = x.second;
+		const arrayf2::size_type *dims = dat.shape();
 		MATIOTYP matdims[2];
 		matdims[0] = dims[1];
 		matdims[1] = dims[0];
@@ -253,12 +255,21 @@ void MatStor::save()
 }
 void MatStor::clear()
 {
+	// 1-d
+	m_dati1.clear();
 	m_datf1.clear();
 	m_datd1.clear();
-	m_dat2.clear();
+
+	// 2-d
+	m_dati16_2.clear();
+	m_datf2.clear();
 	m_datd2.clear();
-	m_dat3.clear();
+
+	// 3-d
+	m_datf3.clear();
 	m_datd3.clear();
+
+	// structs
 	m_struct1.clear();
 }
 void MatStor::setInt(int ch, const char *name, int val)
@@ -275,7 +286,7 @@ void MatStor::setInt(int ch, const char *name, int val)
 		m_dati1.insert(pair_int_1(string(name),r));
 	}
 }
-void MatStor::setInt(const char *name, std::vector<int> v)
+void MatStor::setInt(const char *name, vector<int> v)
 {
 	map_int_1::iterator it = m_dati1.find(string(name));
 	if (it != m_dati1.end()) {
@@ -353,21 +364,47 @@ double MatStor::getDouble(int ch, const char *name, double def)
 	}
 	return def;
 }
-#define max(a,b) (a > b ? a : b)
+void MatStor::set_i16_2(int m, int n, const char *name, i16 val)
+{
+	// n increments faster than m.
+	map<string, arrayi16_2>::iterator it = m_dati16_2.find(string(name));
+	if (it != m_dati16_2.end()) {
+		arrayi16_2 *r = &((*it).second);
+		const arrayi16_2::size_type *dims = r->shape();
+		if (m+1 > (int)dims[0] || n+1 > (int)dims[1])
+			r->resize(boost::extents[max(m+1,(int)dims[0])][max(n+1,(int)dims[1])]);
+		(*r)[m][n] = val;
+	} else {
+		arrayi16_2 r(boost::extents[m+1][n+1]);
+		r[m][n] = val;
+		m_dati16_2.insert(pair<string,arrayi16_2>(string(name), r));
+	}
+}
+i16 MatStor::get_i16_2(int m, int n, const char *name, i16 def)
+{
+	map<string, arrayi16_2>::iterator it = m_dati16_2.find(string(name));
+	if (it != m_dati16_2.end()) {
+		arrayi16_2 *r = &((*it).second);
+		const arrayi16_2::size_type *dims = r->shape();
+		if (m < (int)dims[0] && n < (int)dims[1])
+			return (*it).second[m][n];
+	}
+	return def;
+}
 void MatStor::setValue2(int ch, int un, const char *name, float val)
 {
 	// un increments faster than ch.
-	map<string, array2>::iterator it = m_dat2.find(string(name));
-	if (it != m_dat2.end()) {
-		array2 *r = &((*it).second);
-		const array2::size_type *dims = r->shape();
+	map<string, arrayf2>::iterator it = m_datf2.find(string(name));
+	if (it != m_datf2.end()) {
+		arrayf2 *r = &((*it).second);
+		const arrayf2::size_type *dims = r->shape();
 		if (ch+1 > (int)dims[0] || un+1 > (int)dims[1])
 			r->resize(boost::extents[max(ch+1,(int)dims[0])][max(un+1,(int)dims[1])]);
 		(*r)[ch][un] = val;
 	} else {
-		array2 r(boost::extents[ch+1][un+1]);
+		arrayf2 r(boost::extents[ch+1][un+1]);
 		r[ch][un] = val;
-		m_dat2.insert(pair<string,array2>(string(name), r));
+		m_datf2.insert(pair<string,arrayf2>(string(name), r));
 	}
 }
 void MatStor::setDouble2(int ch, int un, const char *name, double val)
@@ -389,19 +426,19 @@ void MatStor::setDouble2(int ch, int un, const char *name, double val)
 void MatStor::setValue3(int ch, int un, const char *name, float *val, int siz)
 {
 	// [ch][un][siz]
-	map<string, array3>::iterator it = m_dat3.find(string(name));
-	if (it != m_dat3.end()) {
-		array3 *r = &((*it).second);
-		const array3::size_type *dims = r->shape();
+	map<string, arrayf3>::iterator it = m_datf3.find(string(name));
+	if (it != m_datf3.end()) {
+		arrayf3 *r = &((*it).second);
+		const arrayf3::size_type *dims = r->shape();
 		if (ch+1 > (int)dims[0] || un+1 > (int)dims[1] || siz > (int)dims[2])
 			r->resize(boost::extents[max(ch+1,(int)dims[0])][max(un+1,(int)dims[1])][max(siz,(int)dims[2])]);
 		for (int i=0; i<siz; i++)
 			(*r)[ch][un][i] = *val++;
 	} else {
-		array3 r(boost::extents[ch+1][un+1][siz]);
+		arrayf3 r(boost::extents[ch+1][un+1][siz]);
 		for (int i=0; i<siz; i++)
 			r[ch][un][i] = *val++;
-		m_dat3.insert(pair<string,array3>(string(name), r));
+		m_datf3.insert(pair<string,arrayf3>(string(name), r));
 	}
 }
 void MatStor::setDouble3(int ch, int un, const char *name, double *val, int siz)
@@ -448,10 +485,10 @@ void MatStor::setStructValue(const char *name, const char *field, size_t idx, fl
 }
 float MatStor::getValue2(int ch, int un, const char *name, float def)
 {
-	map<string, array2>::iterator it = m_dat2.find(string(name));
-	if (it != m_dat2.end()) {
-		array2 *r = &((*it).second);
-		const array2::size_type *dims = r->shape();
+	map<string, arrayf2>::iterator it = m_datf2.find(string(name));
+	if (it != m_datf2.end()) {
+		arrayf2 *r = &((*it).second);
+		const arrayf2::size_type *dims = r->shape();
 		if (ch < (int)dims[0] && un < (int)dims[1])
 			return (*it).second[ch][un];
 	}
@@ -470,10 +507,10 @@ double MatStor::getDouble2(int ch, int un, const char *name, double def)
 }
 void MatStor::getValue3(int ch, int un, const char *name, float *val, int siz)
 {
-	map<string, array3>::iterator it = m_dat3.find(string(name));
-	if (it != m_dat3.end()) {
-		array3 *r = &((*it).second);
-		const array3::size_type *dims = r->shape();
+	map<string, arrayf3>::iterator it = m_datf3.find(string(name));
+	if (it != m_datf3.end()) {
+		arrayf3 *r = &((*it).second);
+		const arrayf3::size_type *dims = r->shape();
 		if (ch < (int)dims[0] && un < (int)dims[1] && siz <= (int)dims[2]) {
 			for (int i=0; i<siz; i++) {
 				*val++ = (*r)[ch][un][i];
