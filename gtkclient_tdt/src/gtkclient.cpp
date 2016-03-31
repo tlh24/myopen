@@ -789,7 +789,7 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 }
 
 static gboolean
-configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
+configure1(GtkWidget *da, GdkEventConfigure *, gpointer)
 {
 	GdkGLContext *glcontext = gtk_widget_get_gl_context (da);
 	GdkGLDrawable *gldrawable = gtk_widget_get_gl_drawable (da);
@@ -797,12 +797,16 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 	if (!gdk_gl_drawable_gl_begin (gldrawable, glcontext))
 		g_assert_not_reached ();
 
+	// save the viewport size.
+	GtkAllocation allocation;
+	gtk_widget_get_allocation(da, &allocation);
+
 	glLoadIdentity();
-	glViewport (0, 0, da->allocation.width, da->allocation.height);
-	g_viewportSize[0] = (float)da->allocation.width;
-	g_viewportSize[1] = (float)da->allocation.height;
+	glViewport (0, 0, allocation.width, allocation.height);
+	g_viewportSize[0] = (float)allocation.width;
+	g_viewportSize[1] = (float)allocation.height;
 	/*printf("allocation.width %d allocation_height %d\n",
-		da->allocation.width, da->allocation.height); */
+		allocation.width, allocation.height); */
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	glOrtho (-1,1,-1,1,0,1);
@@ -891,10 +895,14 @@ configure1 (GtkWidget *da, GdkEventConfigure *, gpointer)
 
 static gboolean rotate(gpointer user_data)
 {
-	GtkWidget *da = GTK_WIDGET (user_data);
+	GtkWidget *da = GTK_WIDGET(user_data);
+	GdkWindow *win = gtk_widget_get_window(da);
 
-	gdk_window_invalidate_rect (da->window, &da->allocation, FALSE);
-	gdk_window_process_updates (da->window, FALSE);
+	GtkAllocation allocation;
+	gtk_widget_get_allocation (da, &allocation);
+
+	gdk_window_invalidate_rect(win, &allocation, FALSE);
+	gdk_window_process_updates (win, FALSE);
 
 	string s = g_ts.getInfo();
 	char str[256];
@@ -2436,7 +2444,7 @@ int main(int argc, char **argv)
 	window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_title (GTK_WINDOW (window), titlestr.c_str());
 	gtk_window_set_default_size (GTK_WINDOW (window), 850, 800);
-	da1 = gtk_drawing_area_new ();
+	da1 = gtk_drawing_area_new();
 	gtk_widget_set_size_request(GTK_WIDGET(da1), 640, 650);
 
 	paned = gtk_hpaned_new();
