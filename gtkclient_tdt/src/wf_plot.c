@@ -3,10 +3,10 @@
 #include <GL/freeglut.h>
 #include <png.h>
 
-matvar_t* g_wf;
+matvar_t *g_wf;
 int g_frame = 0;
 
-int writeImage(char* filename, int width, int height, unsigned char* buf, char* title)
+int writeImage(char *filename, int width, int height, unsigned char *buf, char *title)
 {
 	int code = 0;
 	FILE *fp = NULL;
@@ -96,21 +96,21 @@ void display(void)
 	int i, j, k;
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	double* d = (double*)g_wf->data;
+	double *d = (double *)g_wf->data;
 	int rows = g_wf->dims[0];
 	int cols = g_wf->dims[1];
-	if(rows == 2) {
+	if (rows == 2) {
 		//scatterplot!
 		float min = 1e8;
 		float max = -1e8;
-		for(j=0; j<2; j++) {
-			for(i=0; i<cols; i++) {
+		for (j=0; j<2; j++) {
+			for (i=0; i<cols; i++) {
 				float e = (float)d[i*2+j];
 				max = max < e ? e : max;
 				min = min > e ? e : min;
 			}
 			//transform the data.
-			for(i=0; i<cols; i++) {
+			for (i=0; i<cols; i++) {
 				float e = (float)d[i*2+j];
 				e -= min;
 				e /= max - min;
@@ -125,7 +125,7 @@ void display(void)
 		//alpha = alpha < 0.01 ? 0.01 : alpha;
 		glColor4f(0.8f, 0.6f, 0.5f, 0.3);
 		glBegin(GL_POINTS);
-		for(i=0; i< cols; i++) {
+		for (i=0; i< cols; i++) {
 			float x = (float)d[i*2+0];
 			float y = (float)d[i*2+1];
 			glVertex2f(x,y);
@@ -134,7 +134,7 @@ void display(void)
 	} else {
 		float min = 1e8;
 		float max = -1e8;
-		for(i=0; i< rows * cols; i++) {
+		for (i=0; i< rows * cols; i++) {
 			float e = (float)d[i];
 			max = max < e ? e : max;
 			min = min > e ? e : min;
@@ -142,7 +142,7 @@ void display(void)
 		int up = 6;
 		int down = cols / 15000;
 		down = down > 1 ? down : 1;
-		float* sm = (float*)malloc((rows-1) * up * sizeof(float));
+		float *sm = (float *)malloc((rows-1) * up * sizeof(float));
 		int sms = (rows-1) * up;
 		//glEnable(GL_LINE_SMOOTH);
 		glLineWidth(1.f);
@@ -153,30 +153,30 @@ void display(void)
 		alpha = alpha < 0.01 ? 0.01 : alpha;
 		glColor4f(0.8f, 0.6f, 0.5f, alpha);
 		glBegin(GL_LINE_STRIP);
-		for(i = 0; i< cols; i += down) {
+		for (i = 0; i< cols; i += down) {
 			glVertex2f(-1.f, -1.f);
-			for(j=0; j < rows-1; j++) {
-				for(k=0; k<up; k++) {
+			for (j=0; j < rows-1; j++) {
+				for (k=0; k<up; k++) {
 					sm[j*up+k] = (d[i/2*rows + j]*(up-k) + d[i/2*rows + j+1]*k)/up;
 				}
 			}
 			// now need to apply some smoothing based on derivatives?
-			for(k=0; k < up*2; k++) {
+			for (k=0; k < up*2; k++) {
 				//forwards pass.
-				for(j=0; j < sms-2; j++) {
+				for (j=0; j < sms-2; j++) {
 					float slope = sm[j+1] - sm[j];
 					float slope2 = sm[j+2] - sm[j+1];
 					sm[j+1] += 0.1 * (slope2 - slope);
 				}
 
 				//backwards pass.
-				for(j=sms-1; j >= 2; j--) {
+				for (j=sms-1; j >= 2; j--) {
 					float slope = sm[j-1] - sm[j];
 					float slope2 = sm[j-2] - sm[j-1];
 					sm[j-1] += 0.1 * (slope2 - slope);
 				}
 			}
-			for(j=0; j < sms; j++) {
+			for (j=0; j < sms; j++) {
 				float x = (float) j / (float)(sms - 1);
 				x -= 0.5f;
 				x *= 2.f;
@@ -206,9 +206,9 @@ void display(void)
 
 	glFlush();
 	//save a screenshot.
-	if(g_frame == 0) {
-		unsigned char* px = (unsigned char*)malloc(500*500*3);
-		glReadPixels(0,0,500,500,GL_RGB, GL_UNSIGNED_BYTE, (GLvoid*)px);
+	if (g_frame == 0) {
+		unsigned char *px = (unsigned char *)malloc(500*500*3);
+		glReadPixels(0,0,500,500,GL_RGB, GL_UNSIGNED_BYTE, (GLvoid *)px);
 		writeImage("test.png", 500, 500, px, "waveform");
 		free(px);
 		//glutLeaveMainLoop();
@@ -239,13 +239,13 @@ void init()
 	glOrtho(-1.0, 1.0, -1.0, 1.0, -1.0, 1.0);  */
 }
 
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
-	if(argc != 2) {
+	if (argc != 2) {
 		printf("usage: simple waveforms.mat\n");
 		exit(0);
 	}
-	mat_t* mfid = Mat_Open(argv[1], MAT_ACC_RDONLY);
+	mat_t *mfid = Mat_Open(argv[1], MAT_ACC_RDONLY);
 	if (mfid == NULL) {
 		fprintf(stderr,"Error opening MAT file \"%s\"!\n",argv[1]);
 	}
