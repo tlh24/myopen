@@ -15,3 +15,4 @@ spikes_pb2.py
 *.dat
 *.bin
 *.pbd
+*.h5
