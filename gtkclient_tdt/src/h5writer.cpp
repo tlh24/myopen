@@ -86,20 +86,19 @@ void H5Writer::draw()
 {
 	if (isEnabled()) {
 
-		std::array<std::string, 5> u { {"B", "kB", "MB", "GB", "TB"} };
-
-		int i = 0;
-		double b = bytes();
-
-		while (b > 1e3) {
-			b /= 1e3;
-			i++;
-		}
-
 		size_t n = filename().find_last_of("/");
 		char str[256];
-		snprintf(str, 256, "%s: %.2f %s",
-		         filename().substr(n+1).c_str(), b, u[i].c_str());
+
+		double b = bytes() / 1e6;
+
+		if (b >= 1e3) {
+			b /= 1e3;
+			snprintf(str, 256, "%s: %.2f GB",
+				filename().substr(n+1).c_str(), b);
+		} else {
+			snprintf(str, 256, "%s: %.2f MB",
+				filename().substr(n+1).c_str(), b);
+		}
 		gtk_label_set_text(GTK_LABEL(m_w), str);
 	}
 }
