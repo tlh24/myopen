@@ -67,18 +67,19 @@
 #include "wfwriter.h"
 #include "jacksnd.h"
 #include "filter.h"
-#include "medfilt.h"
 #include "spikebuffer.h"
-#include "rls.h"
-#include "nlms.h"
+#include "nlms2.h"
 #include "util.h"
 
-#include "analog.pb.h"
+#include "domainSocket.h"
+
 #include "icms.pb.h"
 
 #include "datawriter.h"
-#include "analogwriter.h"
 #include "icmswriter.h"
+
+#include "h5writer.h"
+#include "h5analogwriter.h"
 
 #include "fenv.h" // for debugging nan problems
 
@@ -99,12 +100,14 @@ float	g_viewportSize[2] = {640, 480}; //width, height.
 class Channel;
 class Artifact;
 
+domainSocketClient g_sock;
+
 vector <VboTimeseries *> g_timeseries;
 vector <VboRaster *> g_spikeraster;
 vector <VboRaster *> g_eventraster;
 // can do another raster vector for other types of rasters (icms ticks, etc)
 
-ReaderWriterQueue<gsl_vector *> g_filterbuf(NSAMP); // for nlms filtering
+ReaderWriterQueue<gsl_matrix *> g_filterbuf(NSAMP); // for nlms filtering
 
 std::mutex g_po8e_mutex;
 vector <pair<ReaderWriterQueue<PO8Data>*, po8e::card *>> g_dataqueues;
@@ -121,8 +124,8 @@ TimeSync 	g_ts(SRATE_HZ); //keeps track of ticks (TDT time)
 WfWriter	g_wfwriter;
 GLuint 		g_base;            // base display list for the font set.
 
-AnalogWriter g_analogwriter;
-AnalogWriter g_analogwriter_prefilter;
+H5AnalogWriter g_analogwriter_postfilter;
+H5AnalogWriter g_analogwriter_prefilter;
 
 vector <Artifact *> g_artifact;
 ICMSWriter g_icmswriter;
@@ -134,19 +137,24 @@ gboolean g_hipassNeurons = false;
 vector <FilterButterBand_24k_500_3000> g_bandpass;
 vector <FilterButterLow_24k_3000> g_lopass;
 vector <FilterButterHigh_24k_500> g_hipass;
+double g_sr = 24414.0625;
 #elif defined KHZ_48
 vector <FilterButterBand_48k_500_3000> g_bandpass;
 vector <FilterButterLow_48k_3000> g_lopass;
 vector <FilterButterHigh_48k_500> g_hipass;
+double g_sr = 48828.1250;
 #else
 #error Bad sampling rate!
 #endif
 
-int g_whichMedianFilter = 0;
-vector <MedFilt3> g_medfilt3;
-vector <MedFilt5> g_medfilt5;
+int g_whichAnalogSave = 0; // (1,2,3) -> (single,active,all)
+enum SAVE {
+	SAVE_SINGLE = 0,
+	SAVE_ENABLED,
+	SAVE_ALL
+};
+GtkWidget *g_whichAnalogSaveWidget;
 
-int g_whichAnalogSave = 0;
 
 bool g_die = false;
 double g_pause_time = -1.0;
@@ -197,7 +205,7 @@ int g_spikesCols = 16;
 
 gboolean g_trainArtifactNLMS = true;
 gboolean g_filterArtifactNLMS = false;
-vector <ArtifactNLMS *> g_nlms;
+ArtifactNLMS2 *g_nlms;
 
 gboolean g_enableArtifactSubtr = true;
 gboolean g_trainArtifactTempl = false;
@@ -234,10 +242,9 @@ void saveState()
 	MatStor ms(g_prefstr); 	// no need to load before saving here
 	for (auto &c : g_c)
 		c->save(&ms);
-	for (auto &x : g_nlms)
-		x->save(&ms);
 	for (auto &a : g_artifact)
 		a->save(&ms);
+	g_nlms->save(&ms);
 	ms.setInt("channel", g_channel);
 
 	ms.setStructValue("gui","draw_mode",0,(float)g_drawmodep);
@@ -262,7 +269,6 @@ void saveState()
 
 	ms.setStructValue("filter","lopass",0,(float)g_lopassNeurons);
 	ms.setStructValue("filter","hipass",0,(float)g_hipassNeurons);
-	ms.setStructValue("filter","median",0,(float)g_whichMedianFilter);
 
 	ms.setStructValue("icms","lms_train",0,(float)g_trainArtifactNLMS);
 	ms.setStructValue("icms","lms_filter",0,(float)g_filterArtifactNLMS);
@@ -906,8 +912,8 @@ static gboolean rotate(gpointer user_data)
 	}
 
 	g_icmswriter.draw();
-	g_analogwriter.draw();
 	g_analogwriter_prefilter.draw();
+	g_analogwriter_postfilter.draw();
 
 	return TRUE;
 }
@@ -917,11 +923,11 @@ void destroyGUI(GtkWidget *, gpointer)
 }
 void nlms_train()
 {
-	gsl_vector *xvec;
+	gsl_matrix *X;
 	while (!g_die) {
 		int succeeded = 0;
 		do {
-			succeeded = g_filterbuf.try_dequeue(xvec);
+			succeeded = g_filterbuf.try_dequeue(X);
 			if (!succeeded)
 				usleep(1e3);
 		} while (!succeeded && !g_die);
@@ -929,14 +935,8 @@ void nlms_train()
 		if (!succeeded)
 			continue;
 
-		for (auto &x : g_nlms) {
-			auto ch = x->ch();
-			double d = gsl_vector_get(xvec, ch);
-			gsl_vector_set(xvec, ch, 0.0);
-			x->train(xvec, d);
-			gsl_vector_set(xvec, ch, d);
-		}
-		gsl_vector_free(xvec); // free memory allocated in other thread
+		g_nlms->train(X);
+		gsl_matrix_free(X); // free memory allocated in other thread
 	}
 }
 void sorter(int ch)
@@ -1064,6 +1064,23 @@ void sorter(int ch)
 				int uu = unit-1;
 				g_fr[ch*NSORT+uu]->add(the_time);
 				g_spikeraster[uu]->addEvent((float)the_time, ch); // for drawing
+
+				// HACK HACK HACK
+				// XXX XXX XXX XX
+				// HACK HACK HACK
+				/*
+				if (ch == 0 && unit == 1) { //nb zero-indexed
+					if (!g_sock.Send(".")) {
+						warn("ack!");
+					}
+
+					auto o = new ICMS; // deleted by other thread
+					o->set_ts(the_time);
+					o->set_tick(tk);
+					o->set_stim_chan(2); // 1-indexed
+					g_icmswriter.add(o);
+				}
+				*/
 			}
 		}
 	}
@@ -1086,19 +1103,19 @@ void icmswrite()
 			usleep(1e5);
 	}
 }
-void analogwrite()
+void analogwrite_prefilter()
 {
 	while (!g_die) {
-		if (g_analogwriter.write()) // if it can write, it will
+		if (g_analogwriter_prefilter.write()) // if it can write, it will
 			usleep(1e4); // poll quicker
 		else
 			usleep(1e5);
 	}
 }
-void analogwrite_prefilter()
+void analogwrite()
 {
 	while (!g_die) {
-		if (g_analogwriter_prefilter.write()) // if it can write, it will
+		if (g_analogwriter_postfilter.write()) // if it can write, it will
 			usleep(1e4); // poll quicker
 		else
 			usleep(1e5);
@@ -1201,7 +1218,6 @@ void po8e_fun(PO8e *p, ReaderWriterQueue<PO8Data> *q)
 
 void worker()
 {
-	gsl_vector *xvec = gsl_vector_alloc(g_c.size());
 
 	vector<PO8Data> p;
 	vector<po8e::card *> c;
@@ -1271,23 +1287,20 @@ void worker()
 			tk[i] = tk[i-1] + 1;
 		}
 
-		size_t nnc = 0; // num neural channels
-		for (auto &card : c) {
-			for (int j=0; j<card->channel_size(); j++) {
-				if (card->channel(j).data_type() == po8e::channel::NEURAL) {
-					nnc++;
-				}
-			}
-		}
+		size_t nnc = g_c.size(); // num neural channels
+
 		auto f = new float[nnc * ns];
+		gsl_matrix *X = gsl_matrix_alloc(nnc, ns);
+		auto raw = new i16[nnc * ns];
 		size_t nc_i = 0;
 		for (size_t i=0; i<c.size(); i++) {
 			for (int j=0; j<c[i]->channel_size(); j++) {
 				if (c[i]->channel(j).data_type() == po8e::channel::NEURAL) {
-					float scale_factor = (float)c[i]->channel(j).scale_factor();
-					scale_factor /= 1e6; // to get uV
+					auto scale_factor = g_c[nc_i]->m_scaleFactor;
 					for (size_t k=0; k<ns; k++) {
 						f[nc_i*ns+k] = (float)p[i].data[j*ns+k]/scale_factor;
+						gsl_matrix_set(X, nc_i, k, f[nc_i*ns+k]);
+						raw[nc_i*ns+k] = p[i].data[j*ns+k];
 					}
 					nc_i++;
 				}
@@ -1354,79 +1367,92 @@ void worker()
 		//blank[k] = p[1].data[10*ns + k] > 0;
 
 		// write (pre-filtered) broadband signal to disk
-		if (g_analogwriter_prefilter.enabled()) {
-			Analog *ac;
+		if (g_analogwriter_prefilter.isEnabled()) {
 
-			ac = new Analog; // deleted by other thread
-			ac->set_chan(g_channel[0]+1);	// 1-indexed
-			for (size_t k=0; k<ns; k++) {
-				ac->add_sample(f[g_channel[0]*ns+k]); // no need to gain it
-				ac->add_tick(tk[k]);
-				ac->add_ts(g_ts.getTime(tk[k]));
+			AD *ad; // analog data
+			ad = new AD; // deleted by other thread
+
+			ad->tk = tk[0];
+			ad->ts = g_ts.getTime(tk[0]);
+			ad->ns = ns;
+
+			switch (g_whichAnalogSave) {
+			case SAVE_SINGLE: {
+				ad->nc = 1;
+				int ch = g_channel[0];
+				ad->data = new i16[ns];
+				memcpy(ad->data, &raw[ch*ns], ns*sizeof(i16));
+				break;
 			}
-			g_analogwriter_prefilter.add(ac);
-
-			if (g_whichAnalogSave == 1) { // save all channels
-				for (int ch=0; ch<(int)nnc; ch++) {
-					if (ch == g_channel[0])
-						continue;
-					ac = new Analog; // deleted by other thread
-					ac->set_chan(ch+1);	// 1-indexed
-					for (size_t k=0; k<ns; k++) {
-						ac->add_sample(f[ch*ns+k]); // no need to gain it
-						ac->add_tick(tk[k]);
-						ac->add_ts(g_ts.getTime(tk[k]));
+			case SAVE_ENABLED: {
+				u32 num_enabled = 0;
+				for (auto &ch : g_c) {
+					if (ch->getEnabled()) {
+						num_enabled++;
 					}
-					g_analogwriter_prefilter.add(ac);
 				}
+				ad->data = new i16[num_enabled*ns];
+				size_t c_i = 0;
+				for (size_t ch=0; ch<nnc; ch++) {
+					if (g_c[ch]->getEnabled()) {
+						for (size_t k=0; k<ns; k++) {
+							ad->data[c_i*ns+k] = raw[ch*ns+k];
+						}
+						c_i++;
+					}
+				}
+				ad->nc = num_enabled;
+				break;
 			}
+			case SAVE_ALL: {
+				ad->nc = nnc;
+				ad->data = new i16[nnc*ns];
+				memcpy(ad->data, raw, nnc*ns*sizeof(i16));
+				break;
+			}
+			default:
+				error("bad analog save mode. exiting.");
+				exit(1);
+			}
+			// ad and associanted memory freed by other other thread
+			g_analogwriter_prefilter.add(ad);
 		}
 
 		// fill artifact filtering buffers (for other thread)
 		// we do both training and filtering before filtering
 		// on the intuition that it will work better this way
-		for (size_t k=0; k<ns; k++) {
-			if (g_trainArtifactNLMS || g_filterArtifactNLMS) {
-				for (int ch=0; ch<(int)nnc; ch++) {
-					gsl_vector_set(xvec, ch, (double)f[ch*ns+k]);
-				}
-			}
 
-			// populate the entire xvec (96 channels)
-			// we zero out the current (desired) element on the fly
-			// so it doesn't predict itself
-			// this is faster than the alternative
-			if (g_trainArtifactNLMS) {
-				gsl_vector *yvec = gsl_vector_alloc(nnc);
-				gsl_vector_memcpy (yvec, xvec);
-				g_filterbuf.enqueue(yvec); // free on the other thread
-			}
-
-			// filter online here
-			if (g_filterArtifactNLMS) {
-				for (int ch=0; ch<(int)nnc; ch++) {
-					double d = gsl_vector_get(xvec, ch);
-					gsl_vector_set(xvec, ch, 0.0);
-					f[ch*ns+k] -= (float)g_nlms[ch]->filter(xvec);
-					gsl_vector_set(xvec, ch, d);
-				}
-			}
+		if (g_trainArtifactNLMS) {
+			gsl_matrix *Y;
+			Y = gsl_matrix_alloc(nnc, ns);
+			gsl_matrix_memcpy(Y, X);
+			g_filterbuf.enqueue(Y); // free on the other thread
 		}
 
+		gsl_matrix *Z;
+		Z = gsl_matrix_alloc(nnc, ns);
+
+		// filter online here
+		if (g_filterArtifactNLMS) {
+			g_nlms->filter(X, Z);
+			gsl_matrix_memcpy(X, Z);
+		}
+
+		gsl_matrix_free(Z);
+
 		// big loop through samples
+		// TODO: make this use X, too
 		for (size_t k=0; k<ns; k++) {
 
-			//if (stim[k] != 0) {
-			//	printf("icms pulse %d\n", stim[k]);
-			//}
+			for (size_t i=0; i<nsc; i++) {
 
-			/*
-			for (auto &a : g_artifact) {
+				//if (stim[i*ns+k]) {
+				//	printf("icms pulse\n");
+				//}
 
-				// identify stim pulses
-				i32 sc = a->m_stimchan;
-				u32 id = (uint) (1 << sc); // 2^x
-				if (stim[k] & id) {
+				auto a = g_artifact[i];
+
+				if (stim[i*ns+k]) {
 					int z = 0;
 					for (int y=0; y<NARTPTR; y++) {
 						if (a->m_windex[y] == -1) {
@@ -1450,11 +1476,11 @@ void worker()
 						}
 						a->m_windex[z]++;
 						if (a->m_windex[z] >= ARTBUF) {
-							if (g_icmswriter.enabled()) {
+							if (g_icmswriter.isEnabled()) {
 								auto o = new ICMS; // deleted by other thread
 								o->set_ts(g_ts.getTime(tk[k]-ARTBUF));
 								o->set_tick(tk[k]-ARTBUF);
-								o->set_stim_chan(sc+1); // 1-indexed
+								o->set_stim_chan(i+1); // 1-indexed
 
 								if (g_saveICMSWF) {
 									for (int ch=0; ch<(int)nnc; ch++) {
@@ -1502,30 +1528,36 @@ void worker()
 					// in the per-artifact blanking code block
 				}
 			}
-			*/
+		}
+
+		for (size_t k=0; k<ns; k++) {
 
 			// post-artifact-removal filtering
-			for (int ch=0; ch<(int)nnc; ch++) {
+			for (size_t ch=0; ch<nnc; ch++) {
+
+				float samp = (float)gsl_matrix_get(X, ch, k);
+
 				if ( g_hipassNeurons &&  g_lopassNeurons)
-					g_bandpass[ch].Proc(&f[ch*ns+k], &f[ch*ns+k], 1);
+					g_bandpass[ch].Proc(&samp, &samp, 1);
 
 				if ( g_hipassNeurons && !g_lopassNeurons)
-					g_hipass[ch].Proc(&f[ch*ns+k], &f[ch*ns+k], 1);
+					g_hipass[ch].Proc(&samp, &samp, 1);
 
 				if (!g_hipassNeurons &&  g_lopassNeurons)
-					g_lopass[ch].Proc(&f[ch*ns+k], &f[ch*ns+k], 1);
+					g_lopass[ch].Proc(&samp, &samp, 1);
 
-				if (g_whichMedianFilter == 1)
-					f[ch*ns+k] = g_medfilt3[ch].proc(f[ch*ns+k]);
-				else if (g_whichMedianFilter == 2)
-					f[ch*ns+k] = g_medfilt5[ch].proc(f[ch*ns+k]);
+				gsl_matrix_set(X, ch, k, (double)samp);
 			}
 
-			/*
+		}
+
+		// XXX TODO: MAKE THIS USE X TOO
+		for (size_t k=0; k<ns; k++) {
+
 			// blank based on artifact (must happen after filtering
-			for (auto &elem : g_artifact) {
+			for (auto &a : g_artifact) {
 				for (int z=0; z<NARTPTR; z++) {
-					i64 ridx = elem->m_rindex[z]; // read pointer
+					i64 ridx = a->m_rindex[z]; // read pointer
 
 					if (ridx == -1)
 						break;
@@ -1537,9 +1569,9 @@ void worker()
 							f[ch*ns+k] = 0.f;
 						}
 					}
-					elem->m_rindex[z]++;
-					if (elem->m_rindex[z] >= ARTBUF)
-						elem->m_rindex[z] = -1;
+					a->m_rindex[z]++;
+					if (a->m_rindex[z] >= ARTBUF)
+						a->m_rindex[z] = -1;
 				}
 			}
 
@@ -1555,8 +1587,60 @@ void worker()
 					f[ch*ns+k] = 0.f;
 				}
 			}
-			*/
 		}
+
+		// write (post-filtered) broadband signal to disk
+		if (g_analogwriter_postfilter.isEnabled()) {
+
+			AD *ad; // analog data
+			ad = new AD; // deleted by other thread
+
+			ad->tk = tk[0];
+			ad->ts = g_ts.getTime(tk[0]);
+			ad->ns = ns;
+
+			switch (g_whichAnalogSave) {
+			case SAVE_SINGLE: {
+				ad->nc = 1;
+				int ch = g_channel[0];
+				ad->data = new i16[ns];
+				memcpy(ad->data, &raw[ch*ns], ns*sizeof(i16));
+				break;
+			}
+			case SAVE_ENABLED: {
+				u32 num_enabled = 0;
+				for (auto &ch : g_c) {
+					if (ch->getEnabled()) {
+						num_enabled++;
+					}
+				}
+				ad->data = new i16[num_enabled*ns];
+				size_t c_i = 0;
+				for (size_t ch=0; ch<nnc; ch++) {
+					if (g_c[ch]->getEnabled()) {
+						for (size_t k=0; k<ns; k++) {
+							ad->data[c_i*ns+k] = raw[ch*ns+k];
+						}
+						c_i++;
+					}
+				}
+				ad->nc = num_enabled;
+				break;
+			}
+			case SAVE_ALL: {
+				ad->nc = nnc;
+				ad->data = new i16[nnc*ns];
+				memcpy(ad->data, raw, nnc*ns*sizeof(i16));
+				break;
+			}
+			default:
+				error("bad analog save mode. exiting.");
+				exit(1);
+			}
+			// ad and associanted memory freed by other other thread
+			g_analogwriter_postfilter.add(ad);
+		}
+
 
 		// input data is scaled from TDT so that 32767 = 10mV.
 		// send the data for one channel to jack
@@ -1566,7 +1650,8 @@ void worker()
 			for (size_t k=0; k<ns; k++) {
 				// scale into a reasonable range for audio
 				// and timeseries display
-				float fg = f[ch*ns+k] * gain / 1e4;
+				//float fg = f[ch*ns+k] * gain / 1e4;
+				float fg = (float)gsl_matrix_get(X, ch, k) * gain / 1e4;
 				g_timeseries[h]->addData(&fg, 1); // timeseries trace
 				if (h==0) {
 					audio[k] = fg;
@@ -1582,7 +1667,8 @@ void worker()
 		for (auto &ch : g_c) {
 			double m = ch->m_mean;
 			for (size_t k=0; k<ns; k++) {
-				auto x = f[ch->m_ch*ns+k] / 1e4; // scale so 1 = +10 mV
+				//auto x = f[ch->m_ch*ns+k] / 1e4; // scale so 1 = +10 mV
+				float x = (float)gsl_matrix_get(X, ch->m_ch, k) / 1e4; // scale so 1 = +10 mV
 				// 1 = +10mV; range = [-1 1] here.
 				ch->m_spkbuf.addSample(tk[k], x);
 
@@ -1595,35 +1681,6 @@ void worker()
 			ch->m_mean = m;
 		}
 
-		// write broadband signal to disk
-		if (g_analogwriter.enabled()) {
-			Analog *ac;
-
-			ac = new Analog; // deleted by other thread
-			ac->set_chan(g_channel[0]+1);	// 1-indexed
-			for (size_t k=0; k<ns; k++) {
-				ac->add_sample(f[g_channel[0]*ns+k]); // no need to gain it
-				ac->add_tick(tk[k]);
-				ac->add_ts(g_ts.getTime(tk[k]));
-			}
-			g_analogwriter.add(ac);
-
-			if (g_whichAnalogSave == 1) {
-				for (int ch=0; ch<(int)nnc; ch++) {
-					if (ch == g_channel[0])
-						continue;
-					ac = new Analog; // deleted by other thread
-					ac->set_chan(ch+1);	// 1-indexed
-					for (size_t k=0; k<ns; k++) {
-						ac->add_sample(f[ch*ns+k]); // no need to gain it
-						ac->add_tick(tk[k]);
-						ac->add_ts(g_ts.getTime(tk[k]));
-					}
-					g_analogwriter.add(ac);
-				}
-			}
-		}
-
 		// sort -- see if samples pass threshold. if so, copy.
 		for (int ch=0; ch<(int)nnc; ch++) {
 			if (g_c[ch]->getEnabled()) { //XXX put this into channel class?
@@ -1632,13 +1689,12 @@ void worker()
 		}
 
 		delete[] f;
+		gsl_matrix_free(X);
 		delete[] tk;
 		delete[] stim;
 		delete[] blank;
 		delete[] audio;
 	}
-
-	gsl_vector_free(xvec);
 }
 
 void flush_pipe(int fid)
@@ -1791,19 +1847,30 @@ static GtkWidget *mk_spinner(const char *txt, GtkWidget *container,
 	          start, min, max, step, step, 0.0);
 	float climb = 0.0;
 	int digits = 0;
-	if (step <= 0.001) {
-		climb = 0.0001;
+
+	if (step <= 1e-6) {
+		climb = 1e-7;
+		digits = 7;
+	} else if (step <= 1e-5) {
+		climb = 1e-6;
+		digits = 6;
+	} else if (step <= 1e-4) {
+		climb = 1e-5;
+		digits = 5;
+	} else if (step <= 1e-3) {
+		climb = 1e-4;
 		digits = 4;
-	} else if (step <= 0.01) {
-		climb = 0.001;
+	} else if (step <= 1e-2) {
+		climb = 1e-3;
 		digits = 3;
 	} else if (step <= 0.1) {
-		climb = 0.01;
+		climb = 1e-2;
 		digits = 2;
 	} else if (step <= 0.99) {
 		climb = 0.1;
 		digits = 1;
 	}
+
 	spinner = gtk_spin_button_new (adj, climb, digits);
 	gtk_spin_button_set_wrap (GTK_SPIN_BUTTON (spinner), FALSE);
 	gtk_box_pack_start (GTK_BOX (bx), spinner, TRUE, TRUE, 2);
@@ -1813,9 +1880,9 @@ static GtkWidget *mk_spinner(const char *txt, GtkWidget *container,
 	gtk_box_pack_start (GTK_BOX (container), bx, TRUE, TRUE, 2);
 	return spinner;
 }
-static void mk_radio(const char *txt, int ntxt,
-                     GtkWidget *container, bool vertical,
-                     const char *frameTxt, int radio_state, GtkCallback cb)
+static GtkWidget *mk_radio(const char *txt, int ntxt,
+                           GtkWidget *container, bool vertical,
+                           const char *frameTxt, int radio_state, GtkCallback cb)
 {
 	GtkWidget *frame, *button, *modebox;
 	GSList *group;
@@ -1849,6 +1916,7 @@ static void mk_radio(const char *txt, int ntxt,
 		gtk_signal_connect (GTK_OBJECT (button), "clicked",
 		                    GTK_SIGNAL_FUNC (cb), GINT_TO_POINTER(i));
 	}
+	return modebox;
 }
 static void mk_checkbox(const char *label, GtkWidget *container,
                         gboolean *checkstate, GtkCallback cb)
@@ -1876,6 +1944,43 @@ static GtkWidget *mk_button(const char *label, GtkWidget *container,
 	g_signal_connect(button, "clicked", G_CALLBACK(cb), data);
 	gtk_box_pack_start(GTK_BOX(container), button, FALSE, FALSE, 1);
 	return button;
+}
+// this guy is just like mk_radio but is a menu
+static GtkWidget *mk_combobox(const char *txt, int ntxt, GtkWidget *container,
+                              bool vertical, const char *labelText,
+                              int box_state, GtkCallback cb)
+{
+	GtkWidget *bx, *frame, *combo;
+
+	frame = gtk_frame_new(labelText);
+	gtk_box_pack_start(GTK_BOX(container), frame, FALSE, FALSE, 0);
+	bx = vertical ? gtk_vbox_new(FALSE, 2) : gtk_hbox_new(FALSE, 2);
+	gtk_container_add(GTK_CONTAINER(frame), bx);
+	gtk_container_set_border_width (GTK_CONTAINER(bx), 2);
+	gtk_widget_show(bx);
+
+	combo = gtk_combo_box_text_new();
+
+	char buf[256];
+	strncpy(buf, txt, 256);
+
+	char *a = strtok(buf, ",");
+	gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(combo), (const char *)a);
+
+	for (int i=1; i<ntxt; i++) {
+		a = strtok(nullptr, ",");
+		gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(combo), (const char *)a);
+	}
+
+	gtk_signal_connect (GTK_OBJECT (combo), "changed",
+	                    GTK_SIGNAL_FUNC (cb), nullptr);
+
+
+	gtk_combo_box_set_active(GTK_COMBO_BOX(combo), box_state);
+	gtk_box_pack_start (GTK_BOX(bx), combo, TRUE, TRUE, 0);
+	gtk_widget_show(combo);
+
+	return combo;
 }
 auto get_cwd = []()
 {
@@ -1948,6 +2053,78 @@ static void openSaveICMSFile(GtkWidget *, gpointer parent_window)
 	}
 	gtk_widget_destroy (dialog);
 }
+static void openSaveAnalogPrefilterFile(GtkWidget *, gpointer parent_window)
+{
+
+	gtk_widget_set_sensitive(g_whichAnalogSaveWidget, false);
+
+	string d = get_cwd();
+	string f = mk_legal_filename(d, "analog_pre_", ".h5");
+
+	GtkWidget *dialog;
+	dialog = gtk_file_chooser_dialog_new ("Save Analog (pre-filter) File",
+	                                      (GtkWindow *)parent_window,
+	                                      GTK_FILE_CHOOSER_ACTION_SAVE,
+	                                      GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+	                                      GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
+	                                      NULL);
+	gtk_file_chooser_set_do_overwrite_confirmation(
+	    GTK_FILE_CHOOSER (dialog), TRUE);
+	gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog),d.c_str());
+	gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (dialog),f.c_str());
+	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
+		char *filename;
+		filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
+
+		size_t nc;
+		switch (g_whichAnalogSave) {
+		case SAVE_SINGLE: {
+			nc = 1;
+			break;
+		}
+		case SAVE_ENABLED: {
+			u32 num_enabled = 0;
+			for (size_t i=0; i< g_c.size(); i++) {
+				if (g_c[i]->getEnabled()) {
+					num_enabled++;
+				}
+			}
+			nc = num_enabled;
+			for (int i=0; i<4; i++) {
+				gtk_widget_set_sensitive(g_enabledChkBx[i], false);
+			}
+			break;
+		}
+		case SAVE_ALL: {
+			nc = g_c.size();
+			break;
+		}
+		default:
+			error("bad analog save mode. exiting.");
+			exit(1);
+		}
+
+		g_analogwriter_prefilter.open(filename, nc);
+		g_free(filename);
+
+		auto scale = new float[g_c.size()];
+		int max_str = 0;
+		for (size_t i=0; i<g_c.size(); i++) {
+			scale[i] = g_c[i]->m_scaleFactor;
+			max_str = max_str > (int)g_c[i]->m_chanName.size() ?
+			          max_str : g_c[i]->m_chanName.size();
+		}
+		auto name = new char[max_str*g_c.size()];
+		for (size_t i=0; i<g_c.size(); i++) {
+			strncpy(&name[i*max_str], g_c[i]->m_chanName.c_str(),
+			        g_c[i]->m_chanName.size());
+		}
+		g_analogwriter_prefilter.setMetaData(g_sr, scale, name, max_str);
+		delete[] scale;
+		delete[] name;
+	}
+	gtk_widget_destroy (dialog);
+}
 static void openSaveAnalogFile(GtkWidget *, gpointer parent_window)
 {
 	string d = get_cwd();
@@ -1967,50 +2144,56 @@ static void openSaveAnalogFile(GtkWidget *, gpointer parent_window)
 	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
 		char *filename;
 		filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
-		g_analogwriter.open(filename);
-		g_free(filename);
-	}
-	gtk_widget_destroy (dialog);
-}
-static void openSaveAnalogPrefilterFile(GtkWidget *, gpointer parent_window)
-{
-	string d = get_cwd();
-	string f = mk_legal_filename(d, "analog_pre_", ".pbd");
 
-	GtkWidget *dialog;
-	dialog = gtk_file_chooser_dialog_new ("Save Analog (pre-filter) File",
-	                                      (GtkWindow *)parent_window,
-	                                      GTK_FILE_CHOOSER_ACTION_SAVE,
-	                                      GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-	                                      GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
-	                                      NULL);
-	gtk_file_chooser_set_do_overwrite_confirmation(
-	    GTK_FILE_CHOOSER (dialog), TRUE);
-	gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog),d.c_str());
-	gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (dialog),f.c_str());
-	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
-		char *filename;
-		filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
-		g_analogwriter_prefilter.open(filename);
+		size_t nc;
+		switch (g_whichAnalogSave) {
+		case SAVE_SINGLE: {
+			nc = 1;
+			break;
+		}
+		case SAVE_ENABLED: {
+			u32 num_enabled = 0;
+			for (size_t i=0; i< g_c.size(); i++) {
+				if (g_c[i]->getEnabled()) {
+					num_enabled++;
+				}
+			}
+			nc = num_enabled;
+			for (int i=0; i<4; i++) {
+				gtk_widget_set_sensitive(g_enabledChkBx[i], false);
+			}
+			break;
+		}
+		case SAVE_ALL: {
+			nc = g_c.size();
+			break;
+		}
+		default:
+			error("bad analog save mode. exiting.");
+			exit(1);
+		}
+
+		g_analogwriter_postfilter.open(filename, nc);
 		g_free(filename);
+
+		auto scale = new float[g_c.size()];
+		int max_str = 0;
+		for (size_t i=0; i<g_c.size(); i++) {
+			scale[i] = g_c[i]->m_scaleFactor;
+			max_str = max_str > (int)g_c[i]->m_chanName.size() ?
+			          max_str : g_c[i]->m_chanName.size();
+		}
+		auto name = new char[max_str*g_c.size()];
+		for (size_t i=0; i<g_c.size(); i++) {
+			strncpy(&name[i*max_str], g_c[i]->m_chanName.c_str(),
+			        g_c[i]->m_chanName.size());
+		}
+		g_analogwriter_postfilter.setMetaData(g_sr, scale, name, max_str);
+		delete[] scale;
+		delete[] name;
 	}
 	gtk_widget_destroy (dialog);
 }
-/*
-void saveMatrix(const char *fname, gsl_matrix *v)
-{
-	FILE *fid = fopen(fname, "w");
-	int m = v->size1;
-	int n = v->size2;
-	for (int i=0; i<m; i++) {
-		for (int j=0; j<n; j++) {
-			fprintf(fid,"%f ", v->data[i*n + j]);
-		}
-		fprintf(fid,"\n");
-	}
-	fclose(fid);
-}
-*/
 static void getTemplateCB(GtkWidget *, gpointer p)
 {
 	int aB = (int)((i64)p & 0x1);
@@ -2136,21 +2319,24 @@ int main(int argc, char **argv)
 	}
 
 	size_t nc_i = 0;
-	for (size_t i=0; i<pc.cards.size(); i++) {
-		for (int j=0; j<pc.cards[i]->channel_size(); j++) {
-			if (pc.cards[i]->channel(j).data_type() == po8e::channel::NEURAL) {
-				auto o = new Channel(nc_i, &ms);
-				o->m_chanName = pc.cards[i]->channel(j).name();
-				g_c.push_back(o);
-				nc_i++;
+	for (auto &c : pc.cards) {
+		if (c->enabled()) {
+			for (int j=0; j<c->channel_size(); j++) {
+				if (c->channel(j).data_type() == po8e::channel::NEURAL) {
+					auto o = new Channel(nc_i, &ms);
+					o->m_chanName = c->channel(j).name();
+					float scale_factor = (float)c->channel(j).scale_factor();
+					scale_factor /= 1e6; // to get uV
+					o->m_scaleFactor = scale_factor;
+					g_c.push_back(o);
+					nc_i++;
+				}
 			}
 		}
 	}
 
+	g_nlms = new ArtifactNLMS2(nc, &ms);
 	for (size_t i=0; i<nc; i++) {
-		g_nlms.push_back(new ArtifactNLMS(nc, 1e-5, i, &ms)); // 1e-5 good mu?
-		g_medfilt3.push_back(MedFilt3());
-		g_medfilt5.push_back(MedFilt5());
 #if defined KHZ_24
 		g_bandpass.push_back(FilterButterBand_24k_500_3000());
 		g_lopass.push_back(FilterButterLow_24k_3000());
@@ -2213,7 +2399,6 @@ int main(int argc, char **argv)
 
 	g_lopassNeurons = (bool)ms.getStructValue("filter", "lopass", 0, (float)g_lopassNeurons);
 	g_hipassNeurons = (bool)ms.getStructValue("filter", "hipass", 0, (float)g_hipassNeurons);
-	g_whichMedianFilter = (int)ms.getStructValue("filter", "median", 0, (float)g_whichMedianFilter);
 
 	g_trainArtifactNLMS = (bool)ms.getStructValue("icms", "lms_train", 0, (float)g_trainArtifactNLMS);
 	g_filterArtifactNLMS = (bool)ms.getStructValue("icms", "lms_filter", 0, (float)g_filterArtifactNLMS);
@@ -2230,6 +2415,12 @@ int main(int argc, char **argv)
 	g_enableStimClockBlanking = (bool)ms.getStructValue("icms", "blank_clock_enable", 0, (float)g_enableStimClockBlanking);
 
 	//g_dropped = 0;
+
+	if (g_sock.Connect("/tmp/parasrv.sock")) {
+		printf("connected to parasrv socket\n");
+	} else {
+		warn("cannot connect to socket");
+	}
 
 	gtk_init (&argc, &argv);
 	gtk_gl_init (&argc, &argv);
@@ -2343,14 +2534,6 @@ int main(int argc, char **argv)
 	mk_checkbox("lowpass filter", box1, &g_lopassNeurons, basic_checkbox_cb);
 	mk_checkbox("highpass filter", box1, &g_hipassNeurons, basic_checkbox_cb);
 
-	mk_radio("none,3-pt,5-pt", 3,
-	         box1, true, "median filter", g_whichMedianFilter,
-	[](GtkWidget *_button, gpointer _p) {
-		if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(_button))) {
-			g_whichMedianFilter = (int)((i64)_p & 0xf);
-		}
-	});
-
 	gtk_widget_show (box1);
 	label = gtk_label_new("rasters");
 	gtk_label_set_angle(GTK_LABEL(label), 90);
@@ -2450,21 +2633,20 @@ int main(int argc, char **argv)
 //add a page for viewing all the spikes.
 	box1 = gtk_vbox_new(FALSE, 0);
 
-	mk_radio("none,abs,NEO", 3,
-	         box1, true, "Spike Pre-emphasis", g_whichSpikePreEmphasis,
-	[](GtkWidget *_button, gpointer _p) {
-		if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(_button))) {
-			g_whichSpikePreEmphasis = (int)((i64)_p & 0xf);
-		}
-	});
+	mk_combobox("none,abs,NEO", 3, box1, false, "Spike Pre-emphasis",
+	            g_whichSpikePreEmphasis,
+	[](GtkWidget *_w, gpointer) {
+		g_whichSpikePreEmphasis =
+		    gtk_combo_box_get_active(GTK_COMBO_BOX(_w));
+	}
+	           );
 
-	mk_radio("crossing,min,max,abs,slope,neo", 6,
-	         box1, true, "Spike Alignment", g_whichAlignment,
-	[](GtkWidget *_button, gpointer _p) {
-		if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(_button))) {
-			g_whichAlignment = (int)((i64)_p & 0xf);
-		}
-	});
+	mk_combobox("crossing,min,max,abs,slope,neo", 6, box1, false, "Spike Alignment",
+	            g_whichSpikePreEmphasis,
+	[](GtkWidget *_w, gpointer) {
+		g_whichAlignment = gtk_combo_box_get_active(GTK_COMBO_BOX(_w));
+	}
+	           );
 
 	// for the sorting, we show all waveforms (up to a point..)
 	//these should have a minimum enforced ISI.
@@ -2503,6 +2685,7 @@ int main(int argc, char **argv)
 	// add a page for icms
 	box1 = gtk_vbox_new(FALSE, 0);
 
+	// LMS
 	s = "Artifact LMS Filtering";
 	frame = gtk_frame_new (s.c_str());
 	gtk_box_pack_start (GTK_BOX (box1), frame, FALSE, FALSE, 1);
@@ -2530,9 +2713,7 @@ int main(int argc, char **argv)
 	gtk_box_pack_start (GTK_BOX (box3), box4, TRUE, TRUE, 0);
 	mk_button("clear lms weights", box4,
 	[](GtkWidget *, gpointer) {
-		for (auto &o : g_nlms) {
-			o->clearWeights();
-		}
+		g_nlms->clearWeights();
 	}, nullptr);
 
 	s = "Artifact Subtraction";
@@ -2662,24 +2843,6 @@ int main(int argc, char **argv)
 		g_icmswriter.close();
 	}, nullptr);
 
-	s = "Save Analog";
-	frame = gtk_frame_new(s.c_str());
-	gtk_box_pack_start(GTK_BOX (box1), frame, FALSE, FALSE, 1);
-
-	bxx1 = gtk_hbox_new (TRUE, 0);
-	gtk_container_add (GTK_CONTAINER (frame), bxx1);
-
-	bxx2 = gtk_vbox_new (TRUE, 0);
-	gtk_container_add (GTK_CONTAINER (bxx1), bxx2);
-	mk_button("Start", bxx2, openSaveAnalogFile, nullptr);
-
-	bxx2 = gtk_vbox_new (TRUE, 0);
-	gtk_container_add (GTK_CONTAINER (bxx1), bxx2);
-	mk_button("Stop", bxx2,
-	[](GtkWidget *, gpointer) {
-		g_analogwriter.close();
-	}, nullptr);
-
 	s = "Save Analog (pre-filter)";
 	frame = gtk_frame_new(s.c_str());
 	gtk_box_pack_start(GTK_BOX (box1), frame, FALSE, FALSE, 1);
@@ -2696,23 +2859,61 @@ int main(int argc, char **argv)
 	mk_button("Stop", bxx2,
 	[](GtkWidget *, gpointer) {
 		g_analogwriter_prefilter.close();
+		gtk_widget_set_sensitive(g_whichAnalogSaveWidget, true);
+		for (int i=0; i<4; i++) {
+			gtk_widget_set_sensitive(g_enabledChkBx[i], true);
+		}
 	}, nullptr);
 
-	mk_radio("active,all", 2, box1, false, "analog channel(s)?", g_whichAnalogSave,
+	s = "Save Analog (post-filter)";
+	frame = gtk_frame_new(s.c_str());
+	gtk_box_pack_start(GTK_BOX (box1), frame, FALSE, FALSE, 1);
+
+	bxx1 = gtk_hbox_new (TRUE, 0);
+	gtk_container_add (GTK_CONTAINER (frame), bxx1);
+
+	bxx2 = gtk_vbox_new (TRUE, 0);
+	gtk_container_add (GTK_CONTAINER (bxx1), bxx2);
+	mk_button("Start", bxx2, openSaveAnalogFile, nullptr);
+
+	bxx2 = gtk_vbox_new (TRUE, 0);
+	gtk_container_add (GTK_CONTAINER (bxx1), bxx2);
+	mk_button("Stop", bxx2,
+	[](GtkWidget *, gpointer) {
+		g_analogwriter_postfilter.close();
+		gtk_widget_set_sensitive(g_whichAnalogSaveWidget, true);
+		for (int i=0; i<4; i++) {
+			gtk_widget_set_sensitive(g_enabledChkBx[i], true);
+		}
+	}, nullptr);
+
+	g_whichAnalogSaveWidget =
+	    mk_radio("active,enabled,all", 3, box1, false, "analog channel(s)?", g_whichAnalogSave,
 	[](GtkWidget *_button, gpointer _p) {
 		if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(_button))) {
 			g_whichAnalogSave = (int)((i64)_p & 0xf);
+
+			/* if active:
+				-> lock down A channel spinner
+				-> lock down double click on channel
+				-> lock down enable/disable for A (right click and checkbox single chan)
+			  if enabled:
+				-> lock down disabler (rt click)
+			*/
 		}
-	}
-	        );
+	});
 
 	mk_button("Stop All", box1,
 	[](GtkWidget *, gpointer) {
 		// TODO: signal to the other thread, let them close it.
 		g_wfwriter.close();
 		g_icmswriter.close();
-		g_analogwriter.close();
 		g_analogwriter_prefilter.close();
+		g_analogwriter_postfilter.close();
+		gtk_widget_set_sensitive(g_whichAnalogSaveWidget, true);
+		for (int i=0; i<4; i++) {
+			gtk_widget_set_sensitive(g_enabledChkBx[i], true);
+		}
 	}, nullptr);
 
 	mk_button("Save Preferences", box1,
@@ -2781,7 +2982,7 @@ int main(int argc, char **argv)
 	gtk_box_pack_start (GTK_BOX (bx), label, FALSE, FALSE, 0);
 	gtk_widget_show(label);
 	gtk_box_pack_start (GTK_BOX (v1), bx, TRUE, TRUE, 0);
-	g_analogwriter.registerWidget(label);
+	g_analogwriter_prefilter.registerWidget(label);
 
 	bx = gtk_hbox_new (FALSE, 3);
 	label = gtk_label_new ("");
@@ -2789,7 +2990,7 @@ int main(int argc, char **argv)
 	gtk_box_pack_start (GTK_BOX (bx), label, FALSE, FALSE, 0);
 	gtk_widget_show(label);
 	gtk_box_pack_start (GTK_BOX (v1), bx, TRUE, TRUE, 0);
-	g_analogwriter_prefilter.registerWidget(label);
+	g_analogwriter_postfilter.registerWidget(label);
 
 	gtk_paned_add1(GTK_PANED(paned), v1);
 	gtk_paned_add2(GTK_PANED(paned), da1);
@@ -2924,6 +3125,7 @@ int main(int argc, char **argv)
 
 	//jack.
 #ifdef JACK
+	warn("starting jack");
 	jackInit("gtkclient", JACKPROCESS_RESAMPLE);
 	jackConnectFront();
 	jackSetResample(SRATE_HZ/SAMPFREQ);
@@ -2948,8 +3150,8 @@ int main(int argc, char **argv)
 	// joined and finished
 	g_wfwriter.close();
 	g_icmswriter.close();
-	g_analogwriter.close();
 	g_analogwriter_prefilter.close();
+	g_analogwriter_postfilter.close();
 
 	for (auto &q : g_dataqueues) {
 		delete q.first;
