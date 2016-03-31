@@ -13,7 +13,7 @@ ICMSWriter::ICMSWriter()
 
 bool ICMSWriter::open(const char *fn)
 {
-	if (enabled())
+	if (isEnabled())
 		return false;
 	m_q = new ReaderWriterQueue<ICMS *>(ICMS_BUF_SIZE);
 	return DataWriter::open(fn);
@@ -21,7 +21,7 @@ bool ICMSWriter::open(const char *fn)
 
 bool ICMSWriter::close()
 {
-	if (enabled()) {
+	if (isEnabled()) {
 		delete m_q;
 		m_q = NULL;
 	}
@@ -30,7 +30,7 @@ bool ICMSWriter::close()
 
 bool ICMSWriter::add(ICMS *o)	// call from a single producer thread
 {
-	if (!m_enabled)
+	if (!isEnabled())
 		return false;
 
 	return m_q->enqueue(o);	// todo: what if this (memory alloc) fails
@@ -38,7 +38,7 @@ bool ICMSWriter::add(ICMS *o)	// call from a single producer thread
 
 bool ICMSWriter::write()   // call from a single consumer thread
 {
-	if (!m_enabled)
+	if (!isEnabled())
 		return false;
 
 	bool dequeued;

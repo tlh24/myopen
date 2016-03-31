@@ -5,7 +5,7 @@ message Spike {
 	required uint64 tick = 2; // tdt tick
 	required uint32 channel = 3; // the channel (1-indexed)
 	required uint32 unit = 4; // the unit (0 means unsorted)
-	repeated Spike_waveform wf = 5; // spike waveform
+	repeated Spike_waveform wf = 5; // spike waveform // xxx why repeated?
 }
 
 message Spike_waveform {
