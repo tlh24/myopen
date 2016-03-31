@@ -8,7 +8,10 @@ CPPFLAGS += -Wcast-align -Wpointer-arith -Wsign-compare
 CPPFLAGS += -Wformat=2 -Wno-format-y2k -Wmissing-braces -Wparentheses
 CPPFLAGS += -Wno-missing-field-initializers -march=native
 
+LDFLAGS  += -ljack
+
 CPPFLAGS += -O3
+CPPFLAGS += -DJACK
 #CPPFLAGS += -O0 -g -DDEBUG -fsanitize=bounds
 #LDFLAGS  += -fsanitize=bounds
 
