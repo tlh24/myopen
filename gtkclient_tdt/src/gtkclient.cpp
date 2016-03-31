@@ -1902,7 +1902,7 @@ static GtkWidget *mk_radio(const char *txt, int ntxt,
 	gtk_box_pack_start (GTK_BOX (modebox), button, TRUE, TRUE, 0);
 	gtk_widget_show (button);
 	gtk_signal_connect (GTK_OBJECT (button), "clicked",
-	                    GTK_SIGNAL_FUNC (cb), GINT_TO_POINTER(0));
+	                    G_CALLBACK(cb), GINT_TO_POINTER(0));
 
 	for (int i=1; i<ntxt; i++) {
 		group = gtk_radio_button_get_group (GTK_RADIO_BUTTON (button));
@@ -1914,7 +1914,7 @@ static GtkWidget *mk_radio(const char *txt, int ntxt,
 		gtk_box_pack_start (GTK_BOX (modebox), button, TRUE, TRUE, 0);
 		gtk_widget_show (button);
 		gtk_signal_connect (GTK_OBJECT (button), "clicked",
-		                    GTK_SIGNAL_FUNC (cb), GINT_TO_POINTER(i));
+		                    G_CALLBACK (cb), GINT_TO_POINTER(i));
 	}
 	return modebox;
 }
@@ -1973,7 +1973,7 @@ static GtkWidget *mk_combobox(const char *txt, int ntxt, GtkWidget *container,
 	}
 
 	gtk_signal_connect (GTK_OBJECT (combo), "changed",
-	                    GTK_SIGNAL_FUNC (cb), nullptr);
+	                    G_CALLBACK (cb), nullptr);
 
 
 	gtk_combo_box_set_active(GTK_COMBO_BOX(combo), box_state);
