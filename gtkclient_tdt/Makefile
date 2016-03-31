@@ -38,7 +38,7 @@ LDFLAGS += $(shell pkg-config --libs $(GLIBS))
 GOBJS = proto/po8e.pb.o proto/icms.pb.o src/gtkclient.o \
 src/datawriter.o src/h5writer.o src/h5analogwriter.o \
 src/filter.o src/po8e_conf.o \
-src/spikebuffer.o src/nlms.o  src/nlms2.o \
+src/spikebuffer.o src/nlms2.o \
 src/vbo_raster.o src/vbo_timeseries.o \
 src/icmswriter.o \
 ../common_host/domainSocket.o \
