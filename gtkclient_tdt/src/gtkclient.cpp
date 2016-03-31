@@ -3042,7 +3042,7 @@ int main(int argc, char **argv)
 
 	//in order to receive keypresses, must be focusable!
 	// http://forums.fedoraforum.org/archive/index.php/t-242963.html
-	GTK_WIDGET_SET_FLAGS(da1, GTK_CAN_FOCUS );
+	gtk_widget_set_can_focus(da1, true);
 
 	string asciiart = "\033[1m";
 	asciiart += "\n";
