@@ -2263,7 +2263,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	string titlestr = "gtkclient (TDT) v1.95";
+	string titlestr = "gtkclient (TDT) v1.99";
 
 #ifdef DEBUG
 	feenableexcept(FE_DIVBYZERO|FE_INVALID|FE_OVERFLOW);  // Enable (some) floating point exceptions
@@ -2299,7 +2299,10 @@ int main(int argc, char **argv)
 
 	// load the lua-based po8e config
 	po8eConf pc;
-	pc.loadConf("gtkclient.rc"); // TODO read from proper place
+	if (!pc.loadConf("gtkclient.rc")) {
+		error("No config file! Aborting!");
+		return 1;
+	}
 
 	g_po8e_read_size = pc.readSize();
 	printf("po8e read size:\t\t%zu\n", 	g_po8e_read_size);
@@ -2310,6 +2313,11 @@ int main(int argc, char **argv)
 	printf("event channels:\t\t%zu\n", 	pc.numEventChannels());
 	printf("analog channels:\t%zu\n", 	pc.numAnalogChannels());
 	printf("ignored channels:\t%zu\n", 	pc.numIgnoredChannels());
+
+	if (nc == 0) {
+		error("No neural channels? Aborting!");
+		return 1;
+	}
 
 
 	for (size_t i=0; i<(nc*NSORT); i++) {
