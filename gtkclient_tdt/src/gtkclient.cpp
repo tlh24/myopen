@@ -2259,9 +2259,11 @@ int main(int argc, char **argv)
 		     !strcmp(pr_info.cmd, "timesync")) &&
 		    pr_info.tgid != mypid) {
 			error("already running with pid: %d", pr_info.tgid);
+			closeproc(pr);
 			return 1;
 		}
 	}
+	closeproc(pr);
 
 	string titlestr = "gtkclient (TDT) v1.99";
 
@@ -3165,6 +3167,18 @@ int main(int argc, char **argv)
 		delete q.first;
 		// q.second is deleted when the po8e_conf object is destructed
 	}
+
+	// clean out our standard vectors
+	for (auto &o : g_c)
+		delete o;
+	for (auto &o : g_spikeraster)
+		delete o;
+	for (auto &o : g_timeseries)
+		delete o;
+	for (auto &o : g_artifact)
+		delete o;
+	for (auto &o : g_fr)
+		delete o;
 
 	if (g_vsFadeColor)
 		delete g_vsFadeColor;
