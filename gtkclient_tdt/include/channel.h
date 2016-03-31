@@ -51,6 +51,7 @@ public:
 	// TODO wrap spikebuffer methods into channel so that we can make the
 	// spikebuffer private
 	string 	m_chanName;
+	float 	m_scaleFactor; // from po8e scaling to uV
 
 	Channel(int ch, MatStor *ms)
 	{
