@@ -131,6 +131,7 @@ void MatStor::load()
 				}
 			}
 		}
+		Mat_VarFree(var);
 		var = Mat_VarReadNext(matfp);
 	}
 	Mat_Close(matfp);
