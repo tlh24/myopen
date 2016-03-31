@@ -7,27 +7,27 @@
 #include "nlms2.h"                       // for ArtifactNLMS, NLMS
 
 
-ArtifactNLMS2::ArtifactNLMS2(int _n, double _mu, MatStor *ms)
+ArtifactNLMS2::ArtifactNLMS2(int _n, MatStor *ms)
 {
 	n = _n;
-	mu = _mu;
+	mu = 1e-5;	// reasonable default
 
 	W = gsl_matrix_alloc(n, n);
 	Wshadow = gsl_matrix_alloc(n, n);
 
 	gsl_matrix_set_all(W, 1.0/(double)n);	// init weights
+	for (size_t i=0; i<n; i++) {	// diagonal should be zero
+		gsl_matrix_set(W, i, i, 0.0);
+	}
+
 	if (ms) {
 		for (size_t i=0; i<n; i++) {
 			for (size_t j=0; j<n; j++) {
-				double d = ms->getDouble2(i, j, "nlms_w", 1.0/(double)n);
+				double d = ms->getDouble2(i, j, "nlms_w", gsl_matrix_get(W, i, j));
 				gsl_matrix_set(W, i, j, d);
 			}
 		}
 		mu = ms->getDouble(0, "nlms_mu", mu);
-	}
-
-	for (size_t i=0; i<n; i++) {	// diagonal should be zero
-		gsl_matrix_set(W, i, i, 0.0);
 	}
 }
 
@@ -35,6 +35,16 @@ ArtifactNLMS2::~ArtifactNLMS2()
 {
 	gsl_matrix_free(W);
 	gsl_matrix_free(Wshadow);
+}
+
+void ArtifactNLMS2::setMu(float _mu)
+{
+	mu = (double)_mu;
+}
+
+float ArtifactNLMS2::getMu()
+{
+	return (float)mu;
 }
 
 // X is the input matrix (n by t)
@@ -49,8 +59,11 @@ void ArtifactNLMS2::train(gsl_matrix *X)
 	Y = gsl_matrix_alloc(n, t);
 	gsl_matrix_memcpy(Y, X);
 
-	// local copy of W
-	gsl_matrix_memcpy(Wshadow, W);
+	{
+		std::lock_guard<std::mutex> lock(m2);
+		// local copy of W
+		gsl_matrix_memcpy(Wshadow, W);
+	}
 
 	for (size_t i=0; i<n; i++) {
 
@@ -83,45 +96,46 @@ void ArtifactNLMS2::train(gsl_matrix *X)
 			gsl_blas_daxpy(temp, &x.vector, &w.vector);
 
 		}
-
-		//for (int i=0; i<10 ; i++)
-		//	printf("%f\t",w->data[i]);
-		//printf("\n");
 	}
 
 	gsl_matrix_free(Y);
 
-	std::lock_guard<std::mutex> lock(mx);
-	gsl_matrix_memcpy(W, Wshadow);
+	{
+		std::lock_guard<std::mutex> lock(m1);
+		gsl_matrix_memcpy(W, Wshadow);
+	}
 
 }
 
 // X is the input matrix (n by t)
-// and the cleaned output matrix (n x t)
-// output is the filtered value, dhat (scalar)
+// Y is the cleaned output matrix (n x t)
 void ArtifactNLMS2::filter(gsl_matrix *X, gsl_matrix *Y)
 {
 	// copy X into Y
 	gsl_matrix_memcpy(Y, X);
 
-	std::lock_guard<std::mutex> lock(mx);
-
-	// Y = W' * X - X;
-	gsl_blas_dgemm (CblasTrans, CblasNoTrans, 1.0, W, X, -1.0, Y);
+	{
+		std::lock_guard<std::mutex> lock(m1);
+		// Y = W' * X - X;
+		gsl_blas_dgemm (CblasTrans, CblasNoTrans, 1.0, W, X, -1.0, Y);
+	}
 }
 
 void ArtifactNLMS2::clearWeights()
 {
-	std::lock_guard<std::mutex> lock(mx);
-	gsl_matrix_set_all(W, 1.0/(double)n);
+	std::lock_guard<std::mutex> lock1(m1);
+	std::lock_guard<std::mutex> lock2(m2);
+	gsl_matrix_set_all(Wshadow, 1.0/(double)n);
 	for (size_t i=0; i<n; i++) {
-		gsl_matrix_set(W, i, i, 0.0);
+		gsl_matrix_set(Wshadow, i, i, 0.0);
 	}
+	gsl_matrix_memcpy(W, Wshadow);
 }
 
 void ArtifactNLMS2::save(MatStor *ms)
 {
 	if (ms) {
+		std::lock_guard<std::mutex> lock(m1);
 		for (size_t i=0; i<n; i++) {
 			for (size_t j=0; j<n; j++) {
 				ms->setDouble2(i, j, "nlms_w", gsl_matrix_get(W,i,j));
@@ -130,4 +144,3 @@ void ArtifactNLMS2::save(MatStor *ms)
 		ms->setDouble(0, "nlms_mu", mu);
 	}
 }
-
