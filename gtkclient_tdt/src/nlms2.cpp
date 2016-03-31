@@ -10,7 +10,7 @@
 ArtifactNLMS2::ArtifactNLMS2(int _n, MatStor *ms)
 {
 	n = _n;
-	mu = 1e-5;	// reasonable default
+	mu = 1e-6;	// reasonable default
 
 	W = gsl_matrix_alloc(n, n);
 	Wshadow = gsl_matrix_alloc(n, n);
