@@ -33,15 +33,15 @@ bool H5AnalogWriter::open(const char *fn, size_t nc)
 		return false;
 	}
 
-    //Create a dataset creation property list and set it to use chunking
-    m_h5chunkprops = H5Pcreate(H5P_DATASET_CREATE);
-    hsize_t chunk_dims[2] = {nc < 32 ? nc : 32, 32};
-    H5Pset_chunk(m_h5chunkprops, 2, chunk_dims);
+	//Create a dataset creation property list and set it to use chunking
+	m_h5chunkprops = H5Pcreate(H5P_DATASET_CREATE);
+	hsize_t chunk_dims[2] = {nc < 32 ? nc : 32, 32};
+	H5Pset_chunk(m_h5chunkprops, 2, chunk_dims);
 
 	// Create the dataset
 	// TODO: eventually put this into a group
 	m_h5dataset = H5Dcreate(m_h5file, "/analog", H5T_STD_I16LE, m_h5dataspace,
-		H5P_DEFAULT, m_h5chunkprops, H5P_DEFAULT);
+	                        H5P_DEFAULT, m_h5chunkprops, H5P_DEFAULT);
 
 	if (m_h5dataset < 0) {
 		H5Sclose(m_h5dataspace);
@@ -125,7 +125,7 @@ bool H5AnalogWriter::write()   // call from a single consumer thread
 			hid_t filespace = H5Dget_space(m_h5dataset);
 			hsize_t offset[2] = {0, m_ns};
 			H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offset, NULL,
-			packet_dims, NULL);
+			                    packet_dims, NULL);
 
 			// Define memory space for new data
 			// TODO CHECK FOR ERROR
@@ -134,7 +134,7 @@ bool H5AnalogWriter::write()   // call from a single consumer thread
 			// Write the dataset.
 			// TODO: CHECK FOR ERROR
 			H5Dwrite(m_h5dataset, H5T_NATIVE_INT16, memspace, filespace,
-				H5P_DEFAULT, o->data);
+			         H5P_DEFAULT, o->data);
 
 			m_ns += o->ns; // increment sample pointer
 
@@ -168,7 +168,7 @@ bool H5AnalogWriter::setMetaData(double sr, float *scale, char *name, int slen)
 
 	ds = H5Screate(H5S_SCALAR);
 	attr = H5Acreate(m_h5dataset, "Sampling Rate", H5T_IEEE_F64LE, ds,
-		H5P_DEFAULT, H5P_DEFAULT);
+	                 H5P_DEFAULT, H5P_DEFAULT);
 	H5Awrite(attr, H5T_NATIVE_DOUBLE, &sr); // TODO: CHECK ERROR
 	H5Aclose(attr); // TODO: check error
 	H5Sclose(ds);
@@ -176,7 +176,7 @@ bool H5AnalogWriter::setMetaData(double sr, float *scale, char *name, int slen)
 	hsize_t dims = m_nc;
 	ds = H5Screate_simple(1, &dims, NULL);
 	attr = H5Acreate(m_h5dataset, "Scale Factor", H5T_IEEE_F32LE, ds,
-		H5P_DEFAULT, H5P_DEFAULT);
+	                 H5P_DEFAULT, H5P_DEFAULT);
 	H5Awrite(attr, H5T_NATIVE_FLOAT, scale); // TODO: CHECK ERROR
 	H5Aclose(attr); // TODO: check error
 	H5Sclose(ds);
@@ -187,7 +187,7 @@ bool H5AnalogWriter::setMetaData(double sr, float *scale, char *name, int slen)
 
 	H5Tset_strpad(atype, H5T_STR_NULLTERM);
 	attr = H5Acreate(m_h5dataset, "Channel Name", atype, ds,
-		H5P_DEFAULT, H5P_DEFAULT);
+	                 H5P_DEFAULT, H5P_DEFAULT);
 	H5Awrite(attr, atype, name); // TODO: CHECK ERROR
 	H5Aclose(attr);
 	H5Sclose(ds);
