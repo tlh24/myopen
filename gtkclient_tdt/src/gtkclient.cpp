@@ -1319,8 +1319,6 @@ void worker()
 			}
 		}
 
-		auto audio 	= new float[ns];
-
 		// stim channels (and event channels generally)
 		size_t nec = 0; // num event channels
 		size_t nsc = 0; // num stim channels
@@ -1653,6 +1651,7 @@ void worker()
 			g_analogwriter_postfilter.add(ad);
 		}
 
+		auto audio 	= new float[ns];
 
 		// input data is scaled from TDT so that 32767 = 10mV.
 		// send the data for one channel to jack
@@ -1883,7 +1882,7 @@ static GtkWidget *mk_spinner(const char *txt, GtkWidget *container,
 	}
 
 	GtkWidget *spinner = gtk_spin_button_new(
-		GTK_ADJUSTMENT(adj), climb, digits);
+	                         GTK_ADJUSTMENT(adj), climb, digits);
 	gtk_spin_button_set_wrap (GTK_SPIN_BUTTON(spinner), FALSE);
 	gtk_box_pack_start(GTK_BOX(bx), spinner, TRUE, TRUE, 2);
 	g_signal_connect(spinner, "value-changed", G_CALLBACK(cb), data);
@@ -3102,11 +3101,11 @@ int main(int argc, char **argv)
 			warn("startCollecting() failed with: %d", p->getLastError());
 			p->flushBufferedData();
 			p->stopCollecting();
-			printf(" -> Releasing card %p\n", (void*)p);
+			printf(" -> Releasing card %p\n", (void *)p);
 			PO8e::releaseCard(p);
 			return false;
 		}
-		printf(" -> Card %p is collecting incoming data.\n", (void*)p);
+		printf(" -> Card %p is collecting incoming data.\n", (void *)p);
 		return true;
 	};
 

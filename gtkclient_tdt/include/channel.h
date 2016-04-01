@@ -640,7 +640,7 @@ public:
 		int nsamp = MIN((int)m_pcaVbo->m_w, m_pcaVbo->m_rows);
 		if (nsamp < NWFSAMP) {
 			printf("Channel::computePca %d (%d) samples, not enough\n",
-				nsamp, (int)m_pcaVbo->m_w);
+			       nsamp, (int)m_pcaVbo->m_w);
 			return;
 		} else {
 			printf("Channel::computePca  %d samples\n", nsamp);

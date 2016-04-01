@@ -23,10 +23,6 @@ for i=1, 96 do
   channels[i] = channel
 end
 
-for i=9, 96 do
-  channels[i].data_type = IGNORE
-end
-
 card = {
   id = 1,
   channels = channels,
@@ -61,4 +57,4 @@ card = {
   channels = channels,
 }
 
---po8e_cards[2] = card
+po8e_cards[2] = card
