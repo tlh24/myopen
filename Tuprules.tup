@@ -1,5 +1,6 @@
-CPP = clang++
-#CPP = g++
+CPP = clang++-3.8
+
+LINK=clang++-3.8
 
 CPPFLAGS += -Wall -Wextra -pedantic -Wshadow
 CPPFLAGS += -std=c++11 -Wno-int-to-pointer-cast -Wtrigraphs
@@ -12,8 +13,10 @@ LDFLAGS  += -ljack
 
 CPPFLAGS += -O3
 CPPFLAGS += -DJACK
-#CPPFLAGS += -O0 -g -DDEBUG -fsanitize=bounds
-#LDFLAGS  += -fsanitize=bounds
+
+#CPPFLAGS += -O1 -g -DDEBUG
+#CPPFLAGS += -fno-inline -fno-omit-frame-pointer
+#LDFLAGS  += -fno-inline -fno-omit-frame-pointer
 
 # these are to analyize automatic loop vectorization failures
 #CPPFLAGS += -Rpass=loop-vectorize

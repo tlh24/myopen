@@ -145,7 +145,7 @@ DEPS = libgtk2.0-dev libgtk2.0-0-dbg \
 	libhdf5-dev libsdl1.2-dev astyle \
 	libprotobuf-dev libprotobuf7 protobuf-compiler \
 	cppcheck libprocps0-dev \
-	liblua5.1-0-dev
+	liblua5.1-0-dev libgl1-mesa-glx
 endif
 deps:
 	sudo apt-get install $(DEPS);
