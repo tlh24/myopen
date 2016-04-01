@@ -2,6 +2,7 @@
 #include <gtk/gtk.h>
 #include <string>
 #include <atomic>
+#include <mutex>
 #include "hdf5.h"
 
 #ifndef __H5WRITER_H__
@@ -12,13 +13,14 @@ using namespace std;
 class H5Writer
 {
 private:
-	atomic<bool> m_enabled;	// are we writing?
+	atomic<bool> m_enabled;		// are we writing?
 
 protected:
-	size_t m_num_written; 	// how many bytes have been written
-	string m_fn; 			// the file name
-	hid_t m_h5file;				// the h5 file
-	GtkWidget *m_w;			// for drawing to the gui
+	size_t 		m_num_written; 	// how many bytes have been written
+	string 		m_fn; 			// the file name
+	hid_t 		m_h5file;		// the h5 file
+	GtkWidget 	*m_w;			// for drawing to the gui
+	mutex 		m_mtx;			// so we dont disable while writing
 
 public:
 	H5Writer();
