@@ -38,7 +38,7 @@ enum MODES { // ui tabs
 #define NSORT		2
 
 typedef struct PO8Data {
-	int64_t tick;	// this is the tick for the first sample
+	i64 tick;	// this is the tick for the first sample
 	size_t numChannels;
 	size_t numSamples;
 	i16 *data;

@@ -11,12 +11,12 @@ CPPFLAGS += -Wno-missing-field-initializers -march=native
 
 LDFLAGS  += -ljack
 
-CPPFLAGS += -O3
-CPPFLAGS += -DJACK
+#CPPFLAGS += -O3
+#CPPFLAGS += -DJACK
 
-#CPPFLAGS += -O1 -g -DDEBUG
-#CPPFLAGS += -fno-inline -fno-omit-frame-pointer
-#LDFLAGS  += -fno-inline -fno-omit-frame-pointer
+CPPFLAGS += -O1 -g -DDEBUG
+CPPFLAGS += -fno-inline -fno-omit-frame-pointer
+LDFLAGS  += -fno-inline -fno-omit-frame-pointer
 
 # these are to analyize automatic loop vectorization failures
 #CPPFLAGS += -Rpass=loop-vectorize
