@@ -31,9 +31,6 @@ public:
 	//flush and close log file
 	virtual bool close();
 
-	// write the buffer to disk
-	virtual bool write() = 0;
-
 	// is the writer enabled?
 	virtual bool isEnabled();
 

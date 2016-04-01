@@ -1,3 +1,4 @@
+#include <vector>
 #include "h5writer.h"
 #include "readerwriterqueue.h"
 
@@ -22,15 +23,17 @@ enum {
 class H5AnalogWriter : public H5Writer
 {
 protected:
-	hid_t 	m_h5dataspace;
-	hid_t 	m_h5chunkprops;
-	hid_t 	m_h5dataset;
-	ReaderWriterQueue<AD *> *m_q; // the queue for data packets
-	size_t	m_nc;	// num channels
-	size_t  m_ns; 	// number of samples allocated to dataset
+	hid_t			m_h5group;
+	hid_t			m_h5dataspace;
+	hid_t 			m_h5chunkprops;
+	hid_t 			m_h5dataset;
+	ReaderWriterQueue<AD *> *m_q; 	// the queue for data packets
+	size_t			m_nc;			// num channels
+	size_t  		m_ns;			// number of samples allocated to dataset
 
 public:
 	H5AnalogWriter();
+	~H5AnalogWriter();
 
 	// start the writer. fn is filename
 	using H5Writer::open;
@@ -54,7 +57,7 @@ public:
 
 	const char *name()
 	{
-		return "H5 Analog Writer v1";
+		return "H5 Analog Writer v1.1";
 	};
 
 protected:

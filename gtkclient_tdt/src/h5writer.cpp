@@ -1,5 +1,5 @@
-#include <array>
 #include "h5writer.h"
+#include "util.h"
 
 H5Writer::H5Writer()
 {
