@@ -1153,7 +1153,7 @@ void po8e_fun(PO8e *p, ReaderWriterQueue<PO8Data> *q)
 
 	// get the initial tick value. hopefully a small number
 	p->readBlock(buff, 1, tick);
-	int64_t last_tick = tick[0] - 1;
+	i64 last_tick = tick[0] - 1;
 
 	while (!g_die) {
 
@@ -1293,10 +1293,13 @@ void worker()
 
 		auto ns = p[0].numSamples;
 
-		auto tk 	= new u32[ns];
+		auto tk 	= new i64[ns];
+		auto ts 	= new double[ns];
 		tk[0] = p[0].tick;
+		ts[0] = g_ts.getTime(tk[0]);
 		for (size_t i=1; i < ns; i++) {
 			tk[i] = tk[i-1] + 1;
+			ts[i] = g_ts.getTime(tk[i]);
 		}
 
 		size_t nnc = g_c.size(); // num neural channels
@@ -1364,8 +1367,7 @@ void worker()
 		for (size_t k=0; k<ns; k++) {
 			for (size_t i=0; i<nsc; i++) {
 				if (stim[i*ns+k]) {
-					auto the_time = (float) g_ts.getTime(tk[k]);
-					g_eventraster[0]->addEvent((float)the_time, i); // to draw
+					g_eventraster[0]->addEvent((float)ts[k], i); // to draw
 				}
 			}
 		}
@@ -1382,9 +1384,11 @@ void worker()
 			AD *ad; // analog data
 			ad = new AD; // deleted by other thread
 
-			ad->tk = tk[0];
-			ad->ts = g_ts.getTime(tk[0]);
-			ad->ns = ns;
+			ad->tk = new i64[ns];
+			memcpy(ad->tk, tk, ns*sizeof(i64));
+
+			ad->ts = new double[ns];
+			memcpy(ad->ts, ts, ns*sizeof(double));
 
 			switch (g_whichAnalogSave) {
 			case SAVE_SINGLE: {
@@ -1605,9 +1609,11 @@ void worker()
 			AD *ad; // analog data
 			ad = new AD; // deleted by other thread
 
-			ad->tk = tk[0];
-			ad->ts = g_ts.getTime(tk[0]);
-			ad->ns = ns;
+			ad->tk = new i64[ns];
+			memcpy(ad->tk, &tk, ns*sizeof(i64));
+
+			ad->ts = new double[ns];
+			memcpy(ad->ts, &ts, ns*sizeof(double));
 
 			switch (g_whichAnalogSave) {
 			case SAVE_SINGLE: {
@@ -1700,6 +1706,7 @@ void worker()
 		}
 
 		delete[] tk;
+		delete[] ts;
 		delete[] f;
 		delete[] raw;
 		gsl_matrix_free(X);

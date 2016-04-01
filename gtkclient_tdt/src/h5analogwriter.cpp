@@ -150,6 +150,8 @@ bool H5AnalogWriter::write()   // call from a single consumer thread
 			//	fprintf(stderr,"ERROR: %s write failed!\n", name());
 			//}
 			delete[] (o->data);
+			delete[] (o->ts);
+			delete[] (o->tk);
 			delete o; // free the memory that was pointed to
 		}
 	} while (dequeued);

@@ -9,11 +9,11 @@ using namespace std;
 using namespace moodycamel;
 
 typedef struct AD {
-	i64 	tk;	// the tick for the first sample
-	double 	ts;	// the ts for the first sample
-	size_t 	nc;	// num channels
-	size_t 	ns;	// num samples
-	i16 	*data;
+	i64 	*tk;	// the tick for the first sample
+	double 	*ts;	// the ts for the first sample
+	size_t 	nc;		// num channels
+	size_t 	ns;		// num samples
+	i16 	*data;	// the actual data samples
 } AD;
 
 enum {
