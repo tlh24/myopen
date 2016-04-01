@@ -1384,6 +1384,8 @@ void worker()
 			AD *ad; // analog data
 			ad = new AD; // deleted by other thread
 
+			ad->ns = ns;
+
 			ad->tk = new i64[ns];
 			memcpy(ad->tk, tk, ns*sizeof(i64));
 
@@ -1608,6 +1610,8 @@ void worker()
 
 			AD *ad; // analog data
 			ad = new AD; // deleted by other thread
+
+			ad->ns = ns;
 
 			ad->tk = new i64[ns];
 			memcpy(ad->tk, &tk, ns*sizeof(i64));
