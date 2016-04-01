@@ -1,4 +1,4 @@
-// ©2013 Cameron Desrochers.
+// ©2013-2016 Cameron Desrochers.
 // Distributed under the simplified BSD license (see the license file that
 // should have come with this header).
 
@@ -10,7 +10,7 @@
 #include <cassert>
 #include <stdexcept>
 #include <cstdint>
-#include <cstdlib>		// For malloc/free & size_t
+#include <cstdlib>		// For malloc/free/abort & size_t
 
 
 // A lock-free queue for a single-consumer, single-producer architecture.
@@ -26,7 +26,15 @@
 // one role, is not safe unless properly synchronized.
 // Using the queue exclusively from one thread is fine, though a bit silly.
 
-#define CACHE_LINE_SIZE 64
+#ifndef MOODYCAMEL_CACHE_LINE_SIZE
+#define MOODYCAMEL_CACHE_LINE_SIZE 64
+#endif
+
+#ifndef MOODYCAMEL_EXCEPTIONS_ENABLED
+#if (defined(_MSC_VER) && defined(_CPPUNWIND)) || (defined(__GNUC__) && defined(__EXCEPTIONS)) || (!defined(_MSC_VER) && !defined(__GNUC__))
+#define MOODYCAMEL_EXCEPTIONS_ENABLED
+#endif
+#endif
 
 #ifdef AE_VCPP
 #pragma warning(push)
@@ -38,7 +46,7 @@
 namespace moodycamel
 {
 
-template<typename T>
+template<typename T, size_t MAX_BLOCK_SIZE = 512>
 class ReaderWriterQueue
 {
 	// Design: Based on a queue-of-queues. The low-level queues are just
@@ -59,27 +67,63 @@ class ReaderWriterQueue
 	// consumer is done dequeuing an object, but the consumer knows the tail
 	// will never go backwards, only forwards.
 	// If there is no room to enqueue an object, an additional block (of
-	// greater size than the last block) is added. Blocks are never removed.
+	// equal size to the last block) is added. Blocks are never removed.
 
 public:
 	// Constructs a queue that can hold maxSize elements without further
-	// allocations. Allocates maxSize + 1, rounded up to the nearest power
-	// of 2, elements.
+	// allocations. If more than MAX_BLOCK_SIZE elements are requested,
+	// then several blocks of MAX_BLOCK_SIZE each are reserved (including
+	// at least one extra buffer block).
 	explicit ReaderWriterQueue(size_t maxSize = 15)
-		: largestBlockSize(ceilToPow2(maxSize + 1))		// We need a spare slot to fit maxSize elements in the block
 #ifndef NDEBUG
-		,enqueuing(false)
+		: enqueuing(false)
 		,dequeuing(false)
 #endif
 	{
 		assert(maxSize > 0);
+		assert(MAX_BLOCK_SIZE == ceilToPow2(MAX_BLOCK_SIZE) && "MAX_BLOCK_SIZE must be a power of 2");
+		assert(MAX_BLOCK_SIZE >= 2 && "MAX_BLOCK_SIZE must be at least 2");
 
-		auto firstBlock = make_block(largestBlockSize);
-		if (firstBlock == nullptr) {
-			throw std::bad_alloc();
+		Block *firstBlock = nullptr;
+
+		largestBlockSize = ceilToPow2(maxSize + 1);		// We need a spare slot to fit maxSize elements in the block
+		if (largestBlockSize > MAX_BLOCK_SIZE * 2) {
+			// We need a spare block in case the producer is writing to a different block the consumer is reading from, and
+			// wants to enqueue the maximum number of elements. We also need a spare element in each block to avoid the ambiguity
+			// between front == tail meaning "empty" and "full".
+			// So the effective number of slots that are guaranteed to be usable at any time is the block size - 1 times the
+			// number of blocks - 1. Solving for maxSize and applying a ceiling to the division gives us (after simplifying):
+			size_t initialBlockCount = (maxSize + MAX_BLOCK_SIZE * 2 - 3) / (MAX_BLOCK_SIZE - 1);
+			largestBlockSize = MAX_BLOCK_SIZE;
+			Block *lastBlock = nullptr;
+			for (size_t i = 0; i != initialBlockCount; ++i) {
+				auto block = make_block(largestBlockSize);
+				if (block == nullptr) {
+#ifdef MOODYCAMEL_EXCEPTIONS_ENABLED
+					throw std::bad_alloc();
+#else
+					abort();
+#endif
+				}
+				if (firstBlock == nullptr) {
+					firstBlock = block;
+				} else {
+					lastBlock->next = block;
+				}
+				lastBlock = block;
+				block->next = firstBlock;
+			}
+		} else {
+			firstBlock = make_block(largestBlockSize);
+			if (firstBlock == nullptr) {
+#ifdef MOODYCAMEL_EXCEPTIONS_ENABLED
+				throw std::bad_alloc();
+#else
+				abort();
+#endif
+			}
+			firstBlock->next = firstBlock;
 		}
-		firstBlock->next = firstBlock;
-
 		frontBlock = firstBlock;
 		tailBlock = firstBlock;
 
@@ -102,7 +146,7 @@ public:
 			size_t blockFront = block->front;
 			size_t blockTail = block->tail;
 
-			for (size_t i = blockFront; i != blockTail; i = (i + 1) & block->sizeMask()) {
+			for (size_t i = blockFront; i != blockTail; i = (i + 1) & block->sizeMask) {
 				auto element = reinterpret_cast<T *>(block->data + i * sizeof(T));
 				element->~T();
 				(void)element;
@@ -172,25 +216,41 @@ public:
 		// tail block is at the front block or not, the producer fills up the front block *and
 		// moves on*, which would make us skip a filled block. Seems unlikely, but was consistently
 		// reproducible in practice.
-		Block *tailBlockAtStart = tailBlock;
-		fence(memory_order_acquire);
+		// In order to avoid overhead in the common case, though, we do a double-checked pattern
+		// where we have the fast path if the front block is not empty, then read the tail block,
+		// then re-read the front block and check if it's not empty again, then check if the tail
+		// block has advanced.
 
 		Block *frontBlock_ = frontBlock.load();
-		size_t blockTail = frontBlock_->tail.load();
+		size_t blockTail = frontBlock_->localTail;
 		size_t blockFront = frontBlock_->front.load();
-		fence(memory_order_acquire);
 
-		if (blockFront != blockTail) {
+		if (blockFront != blockTail || blockFront != (frontBlock_->localTail = frontBlock_->tail.load())) {
+			fence(memory_order_acquire);
+
+non_empty_front_block:
 			// Front block not empty, dequeue from here
 			auto element = reinterpret_cast<T *>(frontBlock_->data + blockFront * sizeof(T));
 			result = std::move(*element);
 			element->~T();
 
-			blockFront = (blockFront + 1) & frontBlock_->sizeMask();
+			blockFront = (blockFront + 1) & frontBlock_->sizeMask;
 
 			fence(memory_order_release);
 			frontBlock_->front = blockFront;
-		} else if (frontBlock_ != tailBlockAtStart) {
+		} else if (frontBlock_ != tailBlock.load()) {
+			fence(memory_order_acquire);
+
+			frontBlock_ = frontBlock.load();
+			blockTail = frontBlock_->localTail = frontBlock_->tail.load();
+			blockFront = frontBlock_->front.load();
+			fence(memory_order_acquire);
+
+			if (blockFront != blockTail) {
+				// Oh look, the front block isn't empty after all
+				goto non_empty_front_block;
+			}
+
 			// Front block is empty but there's another block ahead, advance to it
 			Block *nextBlock = frontBlock_->next;
 			// Don't need an acquire fence here since next can only ever be set on the tailBlock,
@@ -198,7 +258,7 @@ public:
 			// ensures next is up-to-date on this CPU in case we recently were at tailBlock.
 
 			size_t nextBlockFront = nextBlock->front.load();
-			size_t nextBlockTail = nextBlock->tail;
+			size_t nextBlockTail = nextBlock->localTail = nextBlock->tail.load();
 			fence(memory_order_acquire);
 
 			// Since the tailBlock is only ever advanced after being written to,
@@ -217,7 +277,7 @@ public:
 			result = std::move(*element);
 			element->~T();
 
-			nextBlockFront = (nextBlockFront + 1) & frontBlock_->sizeMask();
+			nextBlockFront = (nextBlockFront + 1) & frontBlock_->sizeMask;
 
 			fence(memory_order_release);
 			frontBlock_->front = nextBlockFront;
@@ -242,25 +302,34 @@ public:
 #endif
 		// See try_dequeue() for reasoning
 
-		Block *tailBlockAtStart = tailBlock;
-		fence(memory_order_acquire);
-
 		Block *frontBlock_ = frontBlock.load();
-		size_t blockTail = frontBlock_->tail.load();
+		size_t blockTail = frontBlock_->localTail;
 		size_t blockFront = frontBlock_->front.load();
-		fence(memory_order_acquire);
 
-		if (blockFront != blockTail) {
+		if (blockFront != blockTail || blockFront != (frontBlock_->localTail = frontBlock_->tail.load())) {
+			fence(memory_order_acquire);
+non_empty_front_block:
 			return reinterpret_cast<T *>(frontBlock_->data + blockFront * sizeof(T));
-		} else if (frontBlock_ != tailBlockAtStart) {
+		} else if (frontBlock_ != tailBlock.load()) {
+			fence(memory_order_acquire);
+			frontBlock_ = frontBlock.load();
+			blockTail = frontBlock_->localTail = frontBlock_->tail.load();
+			blockFront = frontBlock_->front.load();
+			fence(memory_order_acquire);
+
+			if (blockFront != blockTail) {
+				goto non_empty_front_block;
+			}
+
 			Block *nextBlock = frontBlock_->next;
 
 			size_t nextBlockFront = nextBlock->front.load();
 			fence(memory_order_acquire);
 
-			assert(nextBlockFront != nextBlock->tail);
+			assert(nextBlockFront != nextBlock->tail.load());
 			return reinterpret_cast<T *>(nextBlock->data + nextBlockFront * sizeof(T));
 		}
+
 		return nullptr;
 	}
 
@@ -274,29 +343,37 @@ public:
 #endif
 		// See try_dequeue() for reasoning
 
-		Block *tailBlockAtStart = tailBlock;
-		fence(memory_order_acquire);
-
 		Block *frontBlock_ = frontBlock.load();
-		size_t blockTail = frontBlock_->tail.load();
+		size_t blockTail = frontBlock_->localTail;
 		size_t blockFront = frontBlock_->front.load();
-		fence(memory_order_acquire);
 
-		if (blockFront != blockTail) {
-			// Front block not empty, pop
+		if (blockFront != blockTail || blockFront != (frontBlock_->localTail = frontBlock_->tail.load())) {
+			fence(memory_order_acquire);
+
+non_empty_front_block:
 			auto element = reinterpret_cast<T *>(frontBlock_->data + blockFront * sizeof(T));
 			element->~T();
 
-			blockFront = (blockFront + 1) & frontBlock_->sizeMask();
+			blockFront = (blockFront + 1) & frontBlock_->sizeMask;
 
 			fence(memory_order_release);
 			frontBlock_->front = blockFront;
-		} else if (frontBlock_ != tailBlockAtStart) {
+		} else if (frontBlock_ != tailBlock.load()) {
+			fence(memory_order_acquire);
+			frontBlock_ = frontBlock.load();
+			blockTail = frontBlock_->localTail = frontBlock_->tail.load();
+			blockFront = frontBlock_->front.load();
+			fence(memory_order_acquire);
+
+			if (blockFront != blockTail) {
+				goto non_empty_front_block;
+			}
+
 			// Front block is empty but there's another block ahead, advance to it
 			Block *nextBlock = frontBlock_->next;
 
 			size_t nextBlockFront = nextBlock->front.load();
-			size_t nextBlockTail = nextBlock->tail;
+			size_t nextBlockTail = nextBlock->localTail = nextBlock->tail.load();
 			fence(memory_order_acquire);
 
 			assert(nextBlockFront != nextBlockTail);
@@ -310,7 +387,7 @@ public:
 			auto element = reinterpret_cast<T *>(frontBlock_->data + nextBlockFront * sizeof(T));
 			element->~T();
 
-			nextBlockFront = (nextBlockFront + 1) & frontBlock_->sizeMask();
+			nextBlockFront = (nextBlockFront + 1) & frontBlock_->sizeMask;
 
 			fence(memory_order_release);
 			frontBlock_->front = nextBlockFront;
@@ -333,7 +410,7 @@ public:
 			fence(memory_order_acquire);
 			size_t blockFront = block->front.load();
 			size_t blockTail = block->tail.load();
-			result += (blockTail - blockFront) & block->sizeMask();
+			result += (blockTail - blockFront) & block->sizeMask;
 			block = block->next.load();
 		} while (block != frontBlock_);
 		return result;
@@ -358,75 +435,79 @@ private:
 		//     Advance tail to the block we just enqueued to
 
 		Block *tailBlock_ = tailBlock.load();
-		size_t blockFront = tailBlock_->front.load();
+		size_t blockFront = tailBlock_->localFront;
 		size_t blockTail = tailBlock_->tail.load();
-		fence(memory_order_acquire);
 
-		size_t nextBlockTail = (blockTail + 1) & tailBlock_->sizeMask();
-		if (nextBlockTail != blockFront) {
+		size_t nextBlockTail = (blockTail + 1) & tailBlock_->sizeMask;
+		if (nextBlockTail != blockFront || nextBlockTail != (tailBlock_->localFront = tailBlock_->front.load())) {
+			fence(memory_order_acquire);
 			// This block has room for at least one more element
 			char *location = tailBlock_->data + blockTail * sizeof(T);
 			new (location) T(std::forward<U>(element));
 
 			fence(memory_order_release);
 			tailBlock_->tail = nextBlockTail;
-		} else if (tailBlock_->next.load() != frontBlock) {
-			// Note that the reason we can't advance to the frontBlock and start adding new entries there
-			// is because if we did, then dequeue would stay in that block, eventually reading the new values,
-			// instead of advancing to the next full block (whose values were enqueued first and so should be
-			// consumed first).
-
-			fence(memory_order_acquire);		// Ensure we get latest writes if we got the latest frontBlock
-
-			// tailBlock is full, but there's a free block ahead, use it
-			Block *tailBlockNext = tailBlock_->next.load();
-			size_t nextBlockFront = tailBlockNext->front.load();
-			nextBlockTail = tailBlockNext->tail.load();
+		} else {
 			fence(memory_order_acquire);
+			if (tailBlock_->next.load() != frontBlock) {
+				// Note that the reason we can't advance to the frontBlock and start adding new entries there
+				// is because if we did, then dequeue would stay in that block, eventually reading the new values,
+				// instead of advancing to the next full block (whose values were enqueued first and so should be
+				// consumed first).
 
-			// This block must be empty since it's not the head block and we
-			// go through the blocks in a circle
-			assert(nextBlockFront == nextBlockTail);
-			AE_UNUSED(nextBlockFront);
+				fence(memory_order_acquire);		// Ensure we get latest writes if we got the latest frontBlock
 
-			char *location = tailBlockNext->data + nextBlockTail * sizeof(T);
-			new (location) T(std::forward<U>(element));
+				// tailBlock is full, but there's a free block ahead, use it
+				Block *tailBlockNext = tailBlock_->next.load();
+				size_t nextBlockFront = tailBlockNext->localFront = tailBlockNext->front.load();
+				nextBlockTail = tailBlockNext->tail.load();
+				fence(memory_order_acquire);
 
-			tailBlockNext->tail = (nextBlockTail + 1) & tailBlockNext->sizeMask();
+				// This block must be empty since it's not the head block and we
+				// go through the blocks in a circle
+				assert(nextBlockFront == nextBlockTail);
+				tailBlockNext->localFront = nextBlockFront;
 
-			fence(memory_order_release);
-			tailBlock = tailBlockNext;
-		} else if (canAlloc == CanAlloc) {
-			// tailBlock is full and there's no free block ahead; create a new block
-			auto newBlock = make_block(largestBlockSize * 2);
-			if (newBlock == nullptr) {
-				// Could not allocate a block!
+				char *location = tailBlockNext->data + nextBlockTail * sizeof(T);
+				new (location) T(std::forward<U>(element));
+
+				tailBlockNext->tail = (nextBlockTail + 1) & tailBlockNext->sizeMask;
+
+				fence(memory_order_release);
+				tailBlock = tailBlockNext;
+			} else if (canAlloc == CanAlloc) {
+				// tailBlock is full and there's no free block ahead; create a new block
+				auto newBlockSize = largestBlockSize >= MAX_BLOCK_SIZE ? largestBlockSize : largestBlockSize * 2;
+				auto newBlock = make_block(newBlockSize);
+				if (newBlock == nullptr) {
+					// Could not allocate a block!
+					return false;
+				}
+				largestBlockSize = newBlockSize;
+
+				new (newBlock->data) T(std::forward<U>(element));
+
+				assert(newBlock->front == 0);
+				newBlock->tail = newBlock->localTail = 1;
+
+				newBlock->next = tailBlock_->next.load();
+				tailBlock_->next = newBlock;
+
+				// Might be possible for the dequeue thread to see the new tailBlock->next
+				// *without* seeing the new tailBlock value, but this is OK since it can't
+				// advance to the next block until tailBlock is set anyway (because the only
+				// case where it could try to read the next is if it's already at the tailBlock,
+				// and it won't advance past tailBlock in any circumstance).
+
+				fence(memory_order_release);
+				tailBlock = newBlock;
+			} else if (canAlloc == CannotAlloc) {
+				// Would have had to allocate a new block to enqueue, but not allowed
+				return false;
+			} else {
+				assert(false && "Should be unreachable code");
 				return false;
 			}
-			largestBlockSize *= 2;
-
-			new (newBlock->data) T(std::forward<U>(element));
-
-			assert(newBlock->front == 0);
-			newBlock->tail = 1;
-
-			newBlock->next = tailBlock_->next.load();
-			tailBlock_->next = newBlock;
-
-			// Might be possible for the dequeue thread to see the new tailBlock->next
-			// *without* seeing the new tailBlock value, but this is OK since it can't
-			// advance to the next block until tailBlock is set anyway (because the only
-			// case where it could try to read the next is if it's already at the tailBlock,
-			// and it won't advance past tailBlock in any circumstance).
-
-			fence(memory_order_release);
-			tailBlock = newBlock;
-		} else if (canAlloc == CannotAlloc) {
-			// Would have had to allocate a new block to enqueue, but not allowed
-			return false;
-		} else {
-			assert(false && "Should be unreachable code");
-			return false;
 		}
 
 		return true;
@@ -467,11 +548,7 @@ private:
 		ReentrantGuard(bool &_inSection)
 			: inSection(_inSection)
 		{
-			assert(!inSection);
-			if (inSection) {
-				throw std::runtime_error("ReaderWriterQueue does not support enqueuing or dequeuing elements from other elements' ctors and dtors");
-			}
-
+			assert(!inSection && "ReaderWriterQueue does not support enqueuing or dequeuing elements from other elements' ctors and dtors");
 			inSection = true;
 		}
 
@@ -490,28 +567,24 @@ private:
 
 	struct Block {
 		// Avoid false-sharing by putting highly contended variables on their own cache lines
-		AE_ALIGN(CACHE_LINE_SIZE)
 		weak_atomic<size_t> front;	// (Atomic) Elements are read from here
+		size_t localTail;			// An uncontended shadow copy of tail, owned by the consumer
 
-		AE_ALIGN(CACHE_LINE_SIZE)
+		char cachelineFiller0[MOODYCAMEL_CACHE_LINE_SIZE - sizeof(weak_atomic<size_t>) - sizeof(size_t)];
 		weak_atomic<size_t> tail;	// (Atomic) Elements are enqueued here
+		size_t localFront;
 
-		AE_ALIGN(CACHE_LINE_SIZE)	// next isn't very contended, but we don't want it on the same cache line as tail (which is)
+		char cachelineFiller1[MOODYCAMEL_CACHE_LINE_SIZE - sizeof(weak_atomic<size_t>) - sizeof(size_t)];	// next isn't very contended, but we don't want it on the same cache line as tail (which is)
 		weak_atomic<Block *> next;	// (Atomic)
 
 		char *data;		// Contents (on heap) are aligned to T's alignment
 
-		const size_t size;
-
-		AE_FORCEINLINE size_t sizeMask() const
-		{
-			return size - 1;
-		}
+		const size_t sizeMask;
 
 
 		// size must be a power of two (and greater than 0)
 		Block(size_t const &_size, char *_rawThis, char *_data)
-			: front(0), tail(0), next(nullptr), data(_data), size(_size), rawThis(_rawThis)
+			: front(0), localTail(0), tail(0), localFront(0), next(nullptr), data(_data), sizeMask(_size - 1), rawThis(_rawThis)
 		{
 		}
 
@@ -542,7 +615,7 @@ private:
 private:
 	weak_atomic<Block *> frontBlock;		// (Atomic) Elements are enqueued to this block
 
-	char cachelineFiller[CACHE_LINE_SIZE - sizeof(weak_atomic<Block *>)];
+	char cachelineFiller[MOODYCAMEL_CACHE_LINE_SIZE - sizeof(weak_atomic<Block *>)];
 	weak_atomic<Block *> tailBlock;		// (Atomic) Elements are dequeued from this block
 
 	size_t largestBlockSize;
@@ -551,6 +624,140 @@ private:
 	bool enqueuing;
 	bool dequeuing;
 #endif
+};
+
+// Like ReaderWriterQueue, but also providees blocking operations
+template<typename T, size_t MAX_BLOCK_SIZE = 512>
+class BlockingReaderWriterQueue
+{
+private:
+	typedef ::moodycamel::ReaderWriterQueue<T, MAX_BLOCK_SIZE> ReaderWriterQueue;
+
+public:
+	explicit BlockingReaderWriterQueue(size_t maxSize = 15)
+		: inner(maxSize)
+	{ }
+
+
+	// Enqueues a copy of element if there is room in the queue.
+	// Returns true if the element was enqueued, false otherwise.
+	// Does not allocate memory.
+	AE_FORCEINLINE bool try_enqueue(T const &element)
+	{
+		if (inner.try_enqueue(element)) {
+			sema.signal();
+			return true;
+		}
+		return false;
+	}
+
+	// Enqueues a moved copy of element if there is room in the queue.
+	// Returns true if the element was enqueued, false otherwise.
+	// Does not allocate memory.
+	AE_FORCEINLINE bool try_enqueue(T &&element)
+	{
+		if (inner.try_enqueue(std::forward<T>(element))) {
+			sema.signal();
+			return true;
+		}
+		return false;
+	}
+
+
+	// Enqueues a copy of element on the queue.
+	// Allocates an additional block of memory if needed.
+	// Only fails (returns false) if memory allocation fails.
+	AE_FORCEINLINE bool enqueue(T const &element)
+	{
+		if (inner.enqueue(element)) {
+			sema.signal();
+			return true;
+		}
+		return false;
+	}
+
+	// Enqueues a moved copy of element on the queue.
+	// Allocates an additional block of memory if needed.
+	// Only fails (returns false) if memory allocation fails.
+	AE_FORCEINLINE bool enqueue(T &&element)
+	{
+		if (inner.enqueue(std::forward<T>(element))) {
+			sema.signal();
+			return true;
+		}
+		return false;
+	}
+
+
+	// Attempts to dequeue an element; if the queue is empty,
+	// returns false instead. If the queue has at least one element,
+	// moves front to result using operator=, then returns true.
+	template<typename U>
+	bool try_dequeue(U &result)
+	{
+		if (sema.tryWait()) {
+			bool success = inner.try_dequeue(result);
+			assert(success);
+			AE_UNUSED(success);
+			return true;
+		}
+		return false;
+	}
+
+
+	// Attempts to dequeue an element; if the queue is empty,
+	// waits until an element is available, then dequeues it.
+	template<typename U>
+	void wait_dequeue(U &result)
+	{
+		sema.wait();
+		bool success = inner.try_dequeue(result);
+		AE_UNUSED(result);
+		assert(success);
+		AE_UNUSED(success);
+	}
+
+
+	// Returns a pointer to the front element in the queue (the one that
+	// would be removed next by a call to `try_dequeue` or `pop`). If the
+	// queue appears empty at the time the method is called, nullptr is
+	// returned instead.
+	// Must be called only from the consumer thread.
+	AE_FORCEINLINE T *peek()
+	{
+		return inner.peek();
+	}
+
+	// Removes the front element from the queue, if any, without returning it.
+	// Returns true on success, or false if the queue appeared empty at the time
+	// `pop` was called.
+	AE_FORCEINLINE bool pop()
+	{
+		if (sema.tryWait()) {
+			bool result = inner.pop();
+			assert(result);
+			AE_UNUSED(result);
+			return true;
+		}
+		return false;
+	}
+
+	// Returns the approximate number of items currently in the queue.
+	// Safe to call from both the producer and consumer threads.
+	AE_FORCEINLINE size_t size_approx() const
+	{
+		return sema.availableApprox();
+	}
+
+
+private:
+	// Disable copying & assignment
+	BlockingReaderWriterQueue(ReaderWriterQueue const &) {  }
+	BlockingReaderWriterQueue &operator=(ReaderWriterQueue const &) {  }
+
+private:
+	ReaderWriterQueue inner;
+	spsc_sema::LightweightSemaphore sema;
 };
 
 }    // end namespace moodycamel
