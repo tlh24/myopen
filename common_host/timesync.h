@@ -1,6 +1,7 @@
 #ifndef __TIMESYNC_H__
 #define __TIMESYNC_H__
 
+#include <atomic>
 #include <cmath>
 #include <sstream>
 #include "mmaphelp.h"
@@ -62,7 +63,7 @@ public:
 	mmapHelp	   *mmh;
 	syncSharedData *m_ssd;
 	int				m_ssdn;
-	int 			m_ticks;
+	std::atomic<int>m_ticks;
 	int				m_dropped;
 	int 			m_frame;
 	//updated periodically to prevent precision issues.
@@ -175,6 +176,10 @@ public:
 	double getTicks(long double time)   //estimated ticks, of course.
 	{
 		return (time - m_timeOffset) * m_slope + m_offset;
+	}
+	int getTicks()
+	{
+		return m_ticks;
 	}
 	long double getTime(double ticks)   //estimated time, of course.
 	{

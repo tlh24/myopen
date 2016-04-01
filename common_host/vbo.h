@@ -1,6 +1,7 @@
 #ifndef __VBO_H__
 #define __VBO_H__
 
+#include <atomic>
 #include "util.h"
 #include "matStor.h"
 
@@ -14,7 +15,7 @@ public:
 	int		m_dim; // 2, 3, 4... dimensional.
 	int		m_rows; // C style matrix
 	int		m_cols; // e.g. 34 for waveforms.
-	int		m_w; //write pointer.
+	std::atomic<int> m_w; //write pointer.
 	int		m_r; //read pointer.  (for copying to graphics memory).
 	float	m_loc[4]; //location on the screen - x, y, w, h.
 	float	m_color[4];
@@ -384,7 +385,7 @@ public:
 			//find the closest in our dataset.
 			float d = 1e9;
 			int closest = 0;
-			for (int i=0; i< MIN(m_w,m_rows); i++) {
+			for (int i=0; i< MIN((int)m_w,m_rows); i++) {
 				float xx = m_f[i*m_cols*m_dim + 0];
 				float yy = m_f[i*m_cols*m_dim + 1];
 				xx -= cx;
@@ -472,7 +473,7 @@ public:
 		int npts = 0;
 		bool *inside = (bool *)malloc(m_rows * sizeof(bool));
 		int len = MIN(m_polyW, 1024);
-		for (int i=0; i<MIN(m_w,m_rows) && len > 3; i++) {
+		for (int i=0; i<MIN((int)m_w,m_rows) && len > 3; i++) {
 			//task 1 is to see if each pca point is within the poly region.
 			//this is easy - count the number of polylines crossed by a line
 			//starting at this point heading to -inf.
@@ -552,7 +553,7 @@ public:
 		}
 		//loop again, calculate mean aperture. (don't do stdev -- the headstage uses abs, not x^2)
 		aperture = 0;
-		for (int i=0; i<MIN(m_w,m_rows); i++) {
+		for (int i=0; i<MIN((int)m_w,m_rows); i++) {
 			if (inside[i]) {
 				for (int j=0; j<m_wfLen; j++) {
 					float r = m_wf[i*m_wfLen + j] - temp[j];
@@ -580,7 +581,7 @@ public:
 		// wf and template are range 1 mean 0. (+-0.5)
 		// if m_useSAA aperture is 1/255 whats in the UI.
 		// else aperture just the MSE.
-		for (int i=0; i<MIN(m_w,m_rows); i++) {
+		for (int i=0; i<MIN((int)m_w,m_rows); i++) {
 			float sum = 0.f;
 			if (m_useSAA) {
 				for (int j=0; j<16; j++) {

@@ -3134,8 +3134,8 @@ int main(int argc, char **argv)
 	threads.push_back(thread(worker));
 	threads.push_back(thread(wfwrite));
 	threads.push_back(thread(icmswrite));
-	threads.push_back(thread(analogwrite));
 	threads.push_back(thread(analogwrite_prefilter));
+	threads.push_back(thread(analogwrite));
 	threads.push_back(thread(mmap_fun));
 	threads.push_back(thread(nlms_train));
 

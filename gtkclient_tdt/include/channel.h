@@ -222,6 +222,7 @@ public:
 				nw[j] = wf[j];
 			}
 			//compute PCA. just inner product.
+			// TODO: this seems to be a data race
 			float *pca = m_pcaVbo->addRow();
 			pca[0] = pca[1] = 0.f;
 			for (int j=0; j<NWFSAMP; j++) {
@@ -636,9 +637,10 @@ public:
 	{
 		//whatever ... this can be blocking.
 		long double t;
-		int nsamp = MIN(m_pcaVbo->m_w, m_pcaVbo->m_rows);
+		int nsamp = MIN((int)m_pcaVbo->m_w, m_pcaVbo->m_rows);
 		if (nsamp < NWFSAMP) {
-			printf("Channel::computePca %d (%d) samples, not enough\n", nsamp, m_pcaVbo->m_w);
+			printf("Channel::computePca %d (%d) samples, not enough\n",
+				nsamp, (int)m_pcaVbo->m_w);
 			return;
 		} else {
 			printf("Channel::computePca  %d samples\n", nsamp);

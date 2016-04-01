@@ -207,7 +207,7 @@ int main()
 	while (!g_die) {
 		if (g_running) {
 			printf("%s", g_ts.getTime().c_str());
-			printf(" | ticks %d", g_ts.m_ticks);
+			printf(" | ticks %d", g_ts.getTicks());
 			printf(" | slope %0.3Lf", g_ts.m_slope);
 			printf(" | offset %0.1Lf", g_ts.m_offset);
 			printf(" | po8e (ms) %0.2f\r", (double)g_po8ePollInterval);
