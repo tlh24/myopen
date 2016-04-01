@@ -2311,7 +2311,7 @@ int main(int argc, char **argv)
 
 	// load the lua-based po8e config
 	po8eConf pc;
-	if (!pc.loadConf("gtkclient.rc")) {
+	if (!pc.loadConf("po8e.rc")) {
 		error("No config file! Aborting!");
 		return 1;
 	}
