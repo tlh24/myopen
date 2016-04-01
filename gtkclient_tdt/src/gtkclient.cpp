@@ -1251,8 +1251,12 @@ void worker()
 			} while (!succeeded && !g_die);
 		}
 
-		if (g_die)
+		if (g_die) {
+			for (auto &x : p) {
+				free(x.data);
+			}
 			break;
+		}
 
 		auto mismatch = false;
 		for (size_t i=0; i<n; i++) {
@@ -1879,7 +1883,7 @@ static GtkWidget *mk_spinner(const char *txt, GtkWidget *container,
 	}
 
 	GtkWidget *spinner = gtk_spin_button_new(
-	                         GTK_ADJUSTMENT(adj), climb, digits);
+		GTK_ADJUSTMENT(adj), climb, digits);
 	gtk_spin_button_set_wrap (GTK_SPIN_BUTTON(spinner), FALSE);
 	gtk_box_pack_start(GTK_BOX(bx), spinner, TRUE, TRUE, 2);
 	g_signal_connect(spinner, "value-changed", G_CALLBACK(cb), data);
@@ -3098,11 +3102,11 @@ int main(int argc, char **argv)
 			warn("startCollecting() failed with: %d", p->getLastError());
 			p->flushBufferedData();
 			p->stopCollecting();
-			printf(" -> Releasing card %p\n", (void *)p);
+			printf(" -> Releasing card %p\n", (void*)p);
 			PO8e::releaseCard(p);
 			return false;
 		}
-		printf(" -> Card %p is collecting incoming data.\n", (void *)p);
+		printf(" -> Card %p is collecting incoming data.\n", (void*)p);
 		return true;
 	};
 
