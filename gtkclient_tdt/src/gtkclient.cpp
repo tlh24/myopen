@@ -960,6 +960,7 @@ void sorter(int ch)
 		threshold = g_c[ch]->getThreshold(); // 1 -> 10mV.
 	}
 
+
 	while (g_c[ch]->m_spkbuf.getSpike(tk_sp, wf_sp, neo_sp, 2*NWFSAMP, threshold, NWFSAMP, g_whichSpikePreEmphasis)) {
 		// ask for twice the width of a spike waveform so that we may align
 
@@ -1076,19 +1077,18 @@ void sorter(int ch)
 				// HACK HACK HACK
 				// XXX XXX XXX XX
 				// HACK HACK HACK
-				/*
-				if (ch == 0 && unit == 1) { //nb zero-indexed
-					if (!g_sock.Send(".")) {
-						warn("ack!");
-					}
 
-					auto o = new ICMS; // deleted by other thread
-					o->set_ts(the_time);
-					o->set_tick(tk);
-					o->set_stim_chan(2); // 1-indexed
-					g_icmswriter.add(o);
-				}
-				*/
+				//if (ch == 0 && unit == 1) { //nb zero-indexed
+				//	if (!g_sock.Send(".")) {
+				//		warn("ack!");
+				//	}
+				//
+				//	auto o = new ICMS; // deleted by other thread
+				//	o->set_ts(the_time);
+				//	o->set_tick(tk);
+				//	o->set_stim_chan(2); // 1-indexed
+				//	g_icmswriter.add(o);
+				//}
 			}
 		}
 	}
@@ -1696,12 +1696,14 @@ void worker()
 			}
 		}
 
-		delete[] f;
-		gsl_matrix_free(X);
 		delete[] tk;
+		delete[] f;
+		delete[] raw;
+		gsl_matrix_free(X);
+		delete[] audio;
+		delete[] events;
 		delete[] stim;
 		delete[] blank;
-		delete[] audio;
 	}
 }
 
@@ -1844,15 +1846,12 @@ static GtkWidget *mk_spinner(const char *txt, GtkWidget *container,
                              float start, float min, float max, float step,
                              GtkCallback cb, gpointer data)
 {
-	GtkWidget *spinner, *label;
-	GtkAdjustment *adj;
 	GtkWidget *bx = gtk_hbox_new (FALSE, 1);
 
-	label = gtk_label_new (txt);
+	GtkWidget *label = gtk_label_new (txt);
 	gtk_box_pack_start (GTK_BOX (bx), label, TRUE, TRUE, 2);
 	gtk_widget_show(label);
-	adj = (GtkAdjustment *)gtk_adjustment_new(
-	          start, min, max, step, step, 0.0);
+	GtkObject *adj = gtk_adjustment_new(start, min, max, step, step, 0.0);
 	float climb = 0.0;
 	int digits = 0;
 
@@ -1879,9 +1878,10 @@ static GtkWidget *mk_spinner(const char *txt, GtkWidget *container,
 		digits = 1;
 	}
 
-	spinner = gtk_spin_button_new (adj, climb, digits);
-	gtk_spin_button_set_wrap (GTK_SPIN_BUTTON (spinner), FALSE);
-	gtk_box_pack_start (GTK_BOX (bx), spinner, TRUE, TRUE, 2);
+	GtkWidget *spinner = gtk_spin_button_new(
+	                         GTK_ADJUSTMENT(adj), climb, digits);
+	gtk_spin_button_set_wrap (GTK_SPIN_BUTTON(spinner), FALSE);
+	gtk_box_pack_start(GTK_BOX(bx), spinner, TRUE, TRUE, 2);
 	g_signal_connect(spinner, "value-changed", G_CALLBACK(cb), data);
 	gtk_widget_show(spinner);
 
@@ -2439,7 +2439,7 @@ int main(int argc, char **argv)
 	}
 
 	gtk_init (&argc, &argv);
-	gtk_gl_init (&argc, &argv);
+	gtk_gl_init(&argc, &argv);
 
 	window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_title (GTK_WINDOW (window), titlestr.c_str());
@@ -3098,11 +3098,11 @@ int main(int argc, char **argv)
 			warn("startCollecting() failed with: %d", p->getLastError());
 			p->flushBufferedData();
 			p->stopCollecting();
-			printf(" -> Releasing card %p\n", p);
+			printf(" -> Releasing card %p\n", (void *)p);
 			PO8e::releaseCard(p);
 			return false;
 		}
-		printf(" -> Card %p is collecting incoming data.\n", p);
+		printf(" -> Card %p is collecting incoming data.\n", (void *)p);
 		return true;
 	};
 
