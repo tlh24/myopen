@@ -84,19 +84,19 @@ void po8_thread(PO8e *p)
 
 			if (ticks[0] != last_tick + 1) {
 				printf("%p: PO8e tick glitch between blocks. Expected %zu got %zu\n",
-				       p, last_tick+1, ticks[0]);
+				       (void *)p, last_tick+1, ticks[0]);
 			}
 			for (int i=0; i<READ_SIZE-1; i++) {
 				if (ticks[i+1] != ticks[i] + 1) {
 					printf("%p: PO8e tick glitch within block. Expected %zu got %zu\n",
-					       p, ticks[i]+1, ticks[i+1]);
+					       (void *)p, ticks[i]+1, ticks[i+1]);
 				}
 			}
 			last_tick = ticks[READ_SIZE-1];
 
 			if (frame %200 == 0) { //need to move this to the UI.
 				printf("%p: %u samples (%d Bps, %d ch) Last Tick: %zu\n",
-				       p, READ_SIZE, bps, nchan, ticks[READ_SIZE-1]);
+				       (void *)p, READ_SIZE, bps, nchan, ticks[READ_SIZE-1]);
 			}
 			frame++;
 		}

@@ -54,6 +54,7 @@ bool SpikeBuffer::addSample(u32 _tk, float _wf)
 }
 bool SpikeBuffer::getSpike(u32 *tk, float *wf, float *neo, int n, float threshold, int alignment, int pre_emphasis)
 {
+
 	if (alignment >= n) {
 		fprintf(stderr,"ERROR: (Spikebuffer) wf alignment greater than wf length!\n");
 		return false;
