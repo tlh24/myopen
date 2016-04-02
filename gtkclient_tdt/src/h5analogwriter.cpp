@@ -28,9 +28,9 @@ bool H5AnalogWriter::open(const char *fn, size_t nc)
 		return false;
 	}
 
-   // Create a group
+	// Create a group
 	m_h5group = H5Gcreate2(m_h5file, "/Analog",
-   		H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+	                       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
 	if (m_h5group < 0) {
 		close();
@@ -54,7 +54,7 @@ bool H5AnalogWriter::open(const char *fn, size_t nc)
 	H5Pset_chunk(prop, 2, chunk_dims);
 	// Create the analog dataset
 	m_h5Dsamples = H5Dcreate(m_h5file, "/Analog/Samples", H5T_STD_I16LE,
-		ds, H5P_DEFAULT, prop, H5P_DEFAULT);
+	                         ds, H5P_DEFAULT, prop, H5P_DEFAULT);
 	if (m_h5Dsamples < 0) {
 		close();
 		return false;
@@ -79,7 +79,7 @@ bool H5AnalogWriter::open(const char *fn, size_t nc)
 	H5Pset_chunk(prop, 1, chunk_dims);
 	// Create the tick dataset
 	m_h5Dtk = H5Dcreate(m_h5file, "/Analog/Ticks", H5T_STD_I64LE,
-		ds, H5P_DEFAULT, prop, H5P_DEFAULT);
+	                    ds, H5P_DEFAULT, prop, H5P_DEFAULT);
 
 	if (m_h5Dtk < 0) {
 		debug("tick set debug");
@@ -105,7 +105,7 @@ bool H5AnalogWriter::open(const char *fn, size_t nc)
 	H5Pset_chunk(prop, 1, chunk_dims);
 	// Create the tick dataset
 	m_h5Dts = H5Dcreate(m_h5file, "/Analog/Timestamps", H5T_IEEE_F64LE,
-		ds, H5P_DEFAULT, prop, H5P_DEFAULT);
+	                    ds, H5P_DEFAULT, prop, H5P_DEFAULT);
 
 	if (m_h5Dts < 0) {
 		debug("ts set debug");
@@ -205,14 +205,14 @@ bool H5AnalogWriter::write()   // call from a single consumer thread
 			hsize_t offset[2] = {0, m_ns};
 			hsize_t packet_dims[2] = {m_nc, o->ns};
 			H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offset, NULL,
-				packet_dims, NULL);
+			                    packet_dims, NULL);
 			// Define memory space for new data
 			// TODO CHECK FOR ERROR
 			hid_t memspace = H5Screate_simple(2, packet_dims, NULL);
 			// Write the dataset.
 			// TODO: CHECK FOR ERROR
 			H5Dwrite(m_h5Dsamples, H5T_NATIVE_INT16, memspace, filespace,
-				H5P_DEFAULT, o->data);
+			         H5P_DEFAULT, o->data);
 			H5Sclose(memspace);
 			H5Sclose(filespace);
 
@@ -225,14 +225,14 @@ bool H5AnalogWriter::write()   // call from a single consumer thread
 			offset[0] = m_ns;
 			packet_dims[0] = o->ns;
 			H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offset, NULL,
-				packet_dims, NULL);
+			                    packet_dims, NULL);
 			// Define memory space for new data
 			// TODO CHECK FOR ERROR
 			memspace = H5Screate_simple(1, packet_dims, NULL);
 			// Write the dataset.
 			// TODO: CHECK FOR ERROR
 			H5Dwrite(m_h5Dtk, H5T_NATIVE_INT64, memspace, filespace,
-				H5P_DEFAULT, o->tk);
+			         H5P_DEFAULT, o->tk);
 			H5Sclose(memspace);
 			H5Sclose(filespace);
 
@@ -245,14 +245,14 @@ bool H5AnalogWriter::write()   // call from a single consumer thread
 			offset[0] = m_ns;
 			packet_dims[0] = o->ns;
 			H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offset, NULL,
-				packet_dims, NULL);
+			                    packet_dims, NULL);
 			// Define memory space for new data
 			// TODO CHECK FOR ERROR
 			memspace = H5Screate_simple(1, packet_dims, NULL);
 			// Write the dataset.
 			// TODO: CHECK FOR ERROR
 			H5Dwrite(m_h5Dts, H5T_NATIVE_DOUBLE, memspace, filespace,
-				H5P_DEFAULT, o->ts);
+			         H5P_DEFAULT, o->ts);
 			H5Sclose(memspace);
 			H5Sclose(filespace);
 
