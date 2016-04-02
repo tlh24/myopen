@@ -28,7 +28,7 @@ bool H5Writer::open(const char *fn)
 
 	m_fn.assign(fn);
 
-	fprintf(stdout,"%s: started logging to %s.\n", name(), fn);
+	fprintf(stdout,"%s: started logging to %s\n", name(), fn);
 
 	// we intentionally don't enable here: rather, enable in the subclasses
 
@@ -37,16 +37,14 @@ bool H5Writer::open(const char *fn)
 
 bool H5Writer::close()
 {
-
-	if (isEnabled()) {	// subclass should have disabled already honestly.
-		disable();
-		fprintf(stdout,"%s: stopped logging to file\n", name());
-		m_fn.clear();
-	}
-
 	if (m_h5file) {
 		H5Fclose(m_h5file);
 		m_h5file = 0;
+	}
+
+	if (!m_fn.empty()) {
+		fprintf(stdout,"%s: stopped logging to %s\n", name(), m_fn.c_str());
+		m_fn.clear();
 	}
 
 	return true;
@@ -59,11 +57,13 @@ bool H5Writer::isEnabled()
 
 void H5Writer::enable()
 {
+	lock_guard<mutex> lock(m_mtx);
 	m_enabled = true;
 }
 
 void H5Writer::disable()
 {
+	lock_guard<mutex> lock(m_mtx);
 	m_enabled = false;
 }
 

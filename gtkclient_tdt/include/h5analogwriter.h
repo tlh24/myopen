@@ -33,7 +33,7 @@ protected:
 
 public:
 	H5AnalogWriter();
-	//~H5AnalogWriter();
+	~H5AnalogWriter();
 
 	// start the writer. fn is filename
 	using H5Writer::open;

@@ -9,11 +9,15 @@ H5AnalogWriter::H5AnalogWriter()
 	m_h5dataspace = 0;
 	m_h5chunkprops = 0;
 	m_h5dataset = 0;
-	m_q = NULL;
+	m_q = new ReaderWriterQueue<AD *>(H5A_BUF_SIZE);
 	m_nc = 0;
 	m_ns = 0;
 }
-
+H5AnalogWriter::~H5AnalogWriter()
+{
+	delete m_q;
+	m_q = NULL;
+}
 bool H5AnalogWriter::open(const char *fn, size_t nc)
 {
 	if (isEnabled())
@@ -60,8 +64,6 @@ bool H5AnalogWriter::open(const char *fn, size_t nc)
 		return false;
 	}
 
-	m_q = new ReaderWriterQueue<AD *>(H5A_BUF_SIZE);
-
 	m_nc = nc;
 
 	enable();
@@ -72,11 +74,8 @@ bool H5AnalogWriter::close()
 {
 	disable();
 
-	m_nc = 0;
 	m_ns = 0;
-
-	delete m_q;
-	m_q = NULL;
+	m_nc = 0;
 
 	if (m_h5dataset > 0) {
 		H5Dclose(m_h5dataset);
@@ -93,12 +92,21 @@ bool H5AnalogWriter::close()
 		m_h5dataspace = 0;
 	}
 
+	if (m_h5group > 0) {
+		H5Gclose(m_h5group);
+		m_h5group = 0;
+	}
+
 	return H5Writer::close();
 }
 
 bool H5AnalogWriter::add(AD *o)	// call from a single producer thread
 {
 	if (!isEnabled()) {
+		delete[] (o->data);
+		delete[] (o->ts);
+		delete[] (o->tk);
+		delete o;
 		return false;
 	}
 	return m_q->enqueue(o);	// todo: what if this (memory alloc) fails
@@ -109,11 +117,22 @@ bool H5AnalogWriter::write()   // call from a single consumer thread
 	if (!isEnabled())
 		return false;
 
+	//Lock so that the file isnt closed out from under us
+	lock_guard<mutex> lock(m_mtx); // very important!!!
+
 	bool dequeued;
 	do {
 		AD *o;
 		dequeued = m_q->try_dequeue(o);
 		if (dequeued) {
+
+			if (!isEnabled()) {
+				delete[] (o->data);
+				delete[] (o->ts);
+				delete[] (o->tk);
+				delete o;
+				break;
+			}
 
 			if (o->nc != m_nc) {
 				warn("well this is embarassing");
@@ -161,9 +180,7 @@ bool H5AnalogWriter::write()   // call from a single consumer thread
 
 size_t H5AnalogWriter::capacity()
 {
-	if (!m_q)
-		return 0;
-	return m_q->size_approx();
+	return m_q ? m_q->size_approx() : 0;
 }
 size_t H5AnalogWriter::bytes()
 {
