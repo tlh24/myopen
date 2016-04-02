@@ -9,10 +9,10 @@ using namespace std;
 using namespace moodycamel;
 
 typedef struct AD {
-	i64 	*tk;	// the tick for the first sample
-	double 	*ts;	// the ts for the first sample
 	size_t 	nc;		// num channels
 	size_t 	ns;		// num samples
+	i64 	*tk;	// the tick for the first sample
+	double 	*ts;	// the ts for the first sample
 	i16 	*data;	// the actual data samples
 } AD;
 
@@ -25,8 +25,10 @@ class H5AnalogWriter : public H5Writer
 protected:
 	hid_t			m_h5group;
 	vector<hid_t>	m_h5dataspaces;
-	hid_t 			m_h5chunkprops;
-	hid_t 			m_h5dataset;
+	vector<hid_t> 	m_h5chunkprops;
+	hid_t 			m_h5Dsamples;
+	hid_t 			m_h5Dtk;
+	hid_t 			m_h5Dts;
 	ReaderWriterQueue<AD *> *m_q; 	// the queue for data packets
 	size_t			m_nc;			// num channels
 	size_t  		m_ns;			// number of samples allocated to dataset

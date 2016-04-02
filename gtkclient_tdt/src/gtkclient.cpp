@@ -2147,6 +2147,9 @@ static void openSaveAnalogPrefilterFile(GtkWidget *, gpointer parent_window)
 }
 static void openSaveAnalogFile(GtkWidget *, gpointer parent_window)
 {
+
+	gtk_widget_set_sensitive(g_whichAnalogSaveWidget, false);
+
 	string d = get_cwd();
 	string f = mk_legal_filename(d, "analog_post_", ".h5");
 

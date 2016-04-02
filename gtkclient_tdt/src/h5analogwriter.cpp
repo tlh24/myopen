@@ -7,8 +7,10 @@ H5AnalogWriter::H5AnalogWriter()
 {
 	m_h5group = 0;
 	m_h5dataspaces.clear();
-	m_h5chunkprops = 0;
-	m_h5dataset = 0;
+	m_h5chunkprops.clear();
+	m_h5Dsamples = 0;
+	m_h5Dtk = 0;
+	m_h5Dts = 0;
 	m_q = new ReaderWriterQueue<AD *>(H5A_BUF_SIZE);
 	m_nc = 0;
 	m_ns = 0;
@@ -31,9 +33,10 @@ bool H5AnalogWriter::open(const char *fn, size_t nc)
    		H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
 	if (m_h5group < 0) {
-		H5Writer::close();
+		close();
 		return false;
 	}
+
 
 	// create analog dataspace
 	// do not allow numchans to grow
@@ -41,30 +44,76 @@ bool H5AnalogWriter::open(const char *fn, size_t nc)
 	hsize_t init_dims[2] = {nc, 0};
 	hsize_t max_dims[2] = {nc, H5S_UNLIMITED};
 	hid_t ds = H5Screate_simple(2, init_dims, max_dims);
-
 	if (ds < 0) {
-		H5Gclose(m_h5group);
-		H5Writer::close();
+		close();
 		return false;
 	}
-
 	//Create a dataset creation property list and set it to use chunking
-	m_h5chunkprops = H5Pcreate(H5P_DATASET_CREATE);
+	hid_t prop = H5Pcreate(H5P_DATASET_CREATE);
 	hsize_t chunk_dims[2] = {nc < 32 ? nc : 32, 32};
-	H5Pset_chunk(m_h5chunkprops, 2, chunk_dims);
-
+	H5Pset_chunk(prop, 2, chunk_dims);
 	// Create the analog dataset
-	m_h5dataset = H5Dcreate(m_h5file, "/Analog/Samples", H5T_STD_I16LE,
-		ds, H5P_DEFAULT, m_h5chunkprops, H5P_DEFAULT);
-
-	if (m_h5dataset < 0) {
-		H5Sclose(ds);
-		H5Gclose(m_h5group);
-		H5Writer::close();
+	m_h5Dsamples = H5Dcreate(m_h5file, "/Analog/Samples", H5T_STD_I16LE,
+		ds, H5P_DEFAULT, prop, H5P_DEFAULT);
+	if (m_h5Dsamples < 0) {
+		close();
 		return false;
 	}
-
 	m_h5dataspaces.push_back(ds);
+	m_h5chunkprops.push_back(prop);
+
+
+	// create tick dataspace
+	// allow the number of samples to be unlimited
+	init_dims[0] 	= 0;
+	max_dims[0] 	= H5S_UNLIMITED;
+	ds = H5Screate_simple(1, init_dims, max_dims);
+	if (ds < 0) {
+		debug("tick space debug");
+		close();
+		return false;
+	}
+	//Create a dataset creation property list and set it to use chunking
+	prop = H5Pcreate(H5P_DATASET_CREATE);
+	chunk_dims[0] = 32;
+	H5Pset_chunk(prop, 1, chunk_dims);
+	// Create the tick dataset
+	m_h5Dtk = H5Dcreate(m_h5file, "/Analog/Ticks", H5T_STD_I64LE,
+		ds, H5P_DEFAULT, prop, H5P_DEFAULT);
+
+	if (m_h5Dtk < 0) {
+		debug("tick set debug");
+		close();
+		return false;
+	}
+	m_h5dataspaces.push_back(ds);
+	m_h5chunkprops.push_back(prop);
+
+	// create timestamp dataspace
+	// allow the number of samples to be unlimited
+	init_dims[0] 	= 0;
+	max_dims[0] 	= H5S_UNLIMITED;
+	ds = H5Screate_simple(1, init_dims, max_dims);
+	if (ds < 0) {
+		debug("ts space debug");
+		close();
+		return false;
+	}
+	//Create a dataset creation property list and set it to use chunking
+	prop = H5Pcreate(H5P_DATASET_CREATE);
+	chunk_dims[0] = 32;
+	H5Pset_chunk(prop, 1, chunk_dims);
+	// Create the tick dataset
+	m_h5Dts = H5Dcreate(m_h5file, "/Analog/Timestamps", H5T_IEEE_F64LE,
+		ds, H5P_DEFAULT, prop, H5P_DEFAULT);
+
+	if (m_h5Dts < 0) {
+		debug("ts set debug");
+		close();
+		return false;
+	}
+	m_h5dataspaces.push_back(ds);
+	m_h5chunkprops.push_back(prop);
 
 	m_nc = nc;
 
@@ -79,19 +128,31 @@ bool H5AnalogWriter::close()
 	m_ns = 0;
 	m_nc = 0;
 
-	if (m_h5dataset > 0) {
-		H5Dclose(m_h5dataset);
-		m_h5dataset = 0;
+	if (m_h5Dts > 0) {
+		H5Dclose(m_h5Dts);
+		m_h5Dts = 0;
 	}
 
-	if (m_h5chunkprops > 0) {
-		H5Pclose(m_h5chunkprops);
-		m_h5chunkprops = 0;
+	if (m_h5Dtk > 0) {
+		H5Dclose(m_h5Dtk);
+		m_h5Dtk = 0;
 	}
 
-	for (auto &ds : m_h5dataspaces) {
-		if (ds > 0) {
-			H5Sclose(ds);
+	if (m_h5Dsamples > 0) {
+		H5Dclose(m_h5Dsamples);
+		m_h5Dsamples = 0;
+	}
+
+	for (auto &x : m_h5chunkprops) {
+		if (x > 0) {
+			H5Pclose(x);
+		}
+	}
+	m_h5chunkprops.clear();
+
+	for (auto &x : m_h5dataspaces) {
+		if (x > 0) {
+			H5Sclose(x);
 		}
 	}
 	m_h5dataspaces.clear();
@@ -108,8 +169,8 @@ bool H5AnalogWriter::add(AD *o)	// call from a single producer thread
 {
 	if (!isEnabled()) {
 		delete[] (o->data);
-		delete[] (o->ts);
 		delete[] (o->tk);
+		delete[] (o->ts);
 		delete o;
 		return false;
 	}
@@ -130,51 +191,79 @@ bool H5AnalogWriter::write()   // call from a single consumer thread
 		dequeued = m_q->try_dequeue(o);
 		if (dequeued) {
 
-			if (!isEnabled()) {
-				delete[] (o->data);
-				delete[] (o->ts);
-				delete[] (o->tk);
-				delete o;
-				break;
-			}
-
 			if (o->nc != m_nc) {
 				warn("well this is embarassing");
 			}
 
-			hsize_t packet_dims[2] = {m_nc, o->ns};
 
-			// extend dataset to fit new data
+			// extend sample dataset to fit new data
 			// TODO: CHECK FOR ERROR
 			hsize_t new_dims[2] = {m_nc, m_ns + o->ns};
-			H5Dset_extent(m_h5dataset, new_dims);
-
+			H5Dset_extent(m_h5Dsamples, new_dims);
 			// select hyperslab in extended oprtion of dataset
-			hid_t filespace = H5Dget_space(m_h5dataset);
+			hid_t filespace = H5Dget_space(m_h5Dsamples);
 			hsize_t offset[2] = {0, m_ns};
+			hsize_t packet_dims[2] = {m_nc, o->ns};
 			H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offset, NULL,
-			                    packet_dims, NULL);
-
+				packet_dims, NULL);
 			// Define memory space for new data
 			// TODO CHECK FOR ERROR
 			hid_t memspace = H5Screate_simple(2, packet_dims, NULL);
-
 			// Write the dataset.
 			// TODO: CHECK FOR ERROR
-			H5Dwrite(m_h5dataset, H5T_NATIVE_INT16, memspace, filespace,
-			         H5P_DEFAULT, o->data);
-
-			m_ns += o->ns; // increment sample pointer
-
+			H5Dwrite(m_h5Dsamples, H5T_NATIVE_INT16, memspace, filespace,
+				H5P_DEFAULT, o->data);
 			H5Sclose(memspace);
 			H5Sclose(filespace);
+
+			// extend tick dataset to fit new data
+			// TODO: CHECK FOR ERROR
+			new_dims[0] = m_ns + o->ns;
+			H5Dset_extent(m_h5Dtk, new_dims);
+			// select hyperslab in extended oprtion of dataset
+			filespace = H5Dget_space(m_h5Dtk);
+			offset[0] = m_ns;
+			packet_dims[0] = o->ns;
+			H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offset, NULL,
+				packet_dims, NULL);
+			// Define memory space for new data
+			// TODO CHECK FOR ERROR
+			memspace = H5Screate_simple(1, packet_dims, NULL);
+			// Write the dataset.
+			// TODO: CHECK FOR ERROR
+			H5Dwrite(m_h5Dtk, H5T_NATIVE_INT64, memspace, filespace,
+				H5P_DEFAULT, o->tk);
+			H5Sclose(memspace);
+			H5Sclose(filespace);
+
+			// extend ts dataset to fit new data
+			// TODO: CHECK FOR ERROR
+			new_dims[0] = m_ns + o->ns;
+			H5Dset_extent(m_h5Dts, new_dims);
+			// select hyperslab in extended oprtion of dataset
+			filespace = H5Dget_space(m_h5Dts);
+			offset[0] = m_ns;
+			packet_dims[0] = o->ns;
+			H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offset, NULL,
+				packet_dims, NULL);
+			// Define memory space for new data
+			// TODO CHECK FOR ERROR
+			memspace = H5Screate_simple(1, packet_dims, NULL);
+			// Write the dataset.
+			// TODO: CHECK FOR ERROR
+			H5Dwrite(m_h5Dts, H5T_NATIVE_DOUBLE, memspace, filespace,
+				H5P_DEFAULT, o->ts);
+			H5Sclose(memspace);
+			H5Sclose(filespace);
+
+			m_ns += o->ns; // increment sample pointer
 
 			//if (m_os.fail()) { // write lost, should we requeue?
 			//	fprintf(stderr,"ERROR: %s write failed!\n", name());
 			//}
 			delete[] (o->data);
-			delete[] (o->ts);
 			delete[] (o->tk);
+			delete[] (o->ts);
 			delete o; // free the memory that was pointed to
 		}
 	} while (dequeued);
@@ -195,7 +284,7 @@ bool H5AnalogWriter::setMetaData(double sr, float *scale, char *name, int slen)
 	hid_t ds, attr, atype;
 
 	ds = H5Screate(H5S_SCALAR);
-	attr = H5Acreate(m_h5dataset, "Sampling Rate", H5T_IEEE_F64LE, ds,
+	attr = H5Acreate(m_h5group, "Sampling Rate", H5T_IEEE_F64LE, ds,
 	                 H5P_DEFAULT, H5P_DEFAULT);
 	H5Awrite(attr, H5T_NATIVE_DOUBLE, &sr); // TODO: CHECK ERROR
 	H5Aclose(attr); // TODO: check error
@@ -203,7 +292,7 @@ bool H5AnalogWriter::setMetaData(double sr, float *scale, char *name, int slen)
 
 	hsize_t dims = m_nc;
 	ds = H5Screate_simple(1, &dims, NULL);
-	attr = H5Acreate(m_h5dataset, "Scale Factor", H5T_IEEE_F32LE, ds,
+	attr = H5Acreate(m_h5group, "Scale Factor", H5T_IEEE_F32LE, ds,
 	                 H5P_DEFAULT, H5P_DEFAULT);
 	H5Awrite(attr, H5T_NATIVE_FLOAT, scale); // TODO: CHECK ERROR
 	H5Aclose(attr); // TODO: check error
@@ -214,7 +303,7 @@ bool H5AnalogWriter::setMetaData(double sr, float *scale, char *name, int slen)
 	H5Tset_size(atype, slen);
 
 	H5Tset_strpad(atype, H5T_STR_NULLTERM);
-	attr = H5Acreate(m_h5dataset, "Channel Name", atype, ds,
+	attr = H5Acreate(m_h5group, "Channel Name", atype, ds,
 	                 H5P_DEFAULT, H5P_DEFAULT);
 	H5Awrite(attr, atype, name); // TODO: CHECK ERROR
 	H5Aclose(attr);
