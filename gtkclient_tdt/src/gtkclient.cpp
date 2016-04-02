@@ -482,12 +482,19 @@ static gint button_press_event( GtkWidget *,
 			}
 		}
 		if (event->button==3) { // (right click)
-			int h =  sr*g_spikesCols + sc;
-			if (h >= 0 && h < nc) {
-				g_c[h]->toggleEnabled();
-				for (int i=0; i<4; i++) {
-					if (g_channel[i] == h) {
-						updateChannelUI(i);
+
+			if ( (!g_analogwriter_prefilter.isEnabled() && !g_analogwriter_postfilter.isEnabled()) ||
+			     ((g_analogwriter_prefilter.isEnabled() || g_analogwriter_postfilter.isEnabled())  &&
+			      g_whichAnalogSave == SAVE_ALL)
+			   ) {
+
+				int h =  sr*g_spikesCols + sc;
+				if (h >= 0 && h < nc) {
+					g_c[h]->toggleEnabled();
+					for (int i=0; i<4; i++) {
+						if (g_channel[i] == h) {
+							updateChannelUI(i);
+						}
 					}
 				}
 			}
