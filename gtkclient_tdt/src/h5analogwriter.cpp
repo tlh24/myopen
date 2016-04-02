@@ -6,7 +6,7 @@
 H5AnalogWriter::H5AnalogWriter()
 {
 	m_h5group = 0;
-	m_h5dataspace = 0;
+	m_h5dataspaces.clear();
 	m_h5chunkprops = 0;
 	m_h5dataset = 0;
 	m_q = new ReaderWriterQueue<AD *>(H5A_BUF_SIZE);
@@ -40,9 +40,9 @@ bool H5AnalogWriter::open(const char *fn, size_t nc)
 	// but allow the number of samples to be unlimited
 	hsize_t init_dims[2] = {nc, 0};
 	hsize_t max_dims[2] = {nc, H5S_UNLIMITED};
-	m_h5dataspace = H5Screate_simple(2, init_dims, max_dims);
+	hid_t ds = H5Screate_simple(2, init_dims, max_dims);
 
-	if (m_h5dataspace < 0) {
+	if (ds < 0) {
 		H5Gclose(m_h5group);
 		H5Writer::close();
 		return false;
@@ -53,16 +53,18 @@ bool H5AnalogWriter::open(const char *fn, size_t nc)
 	hsize_t chunk_dims[2] = {nc < 32 ? nc : 32, 32};
 	H5Pset_chunk(m_h5chunkprops, 2, chunk_dims);
 
-	// Create the dataset
+	// Create the analog dataset
 	m_h5dataset = H5Dcreate(m_h5file, "/Analog/Samples", H5T_STD_I16LE,
-		m_h5dataspace, H5P_DEFAULT, m_h5chunkprops, H5P_DEFAULT);
+		ds, H5P_DEFAULT, m_h5chunkprops, H5P_DEFAULT);
 
 	if (m_h5dataset < 0) {
-		H5Sclose(m_h5dataspace);
+		H5Sclose(ds);
 		H5Gclose(m_h5group);
 		H5Writer::close();
 		return false;
 	}
+
+	m_h5dataspaces.push_back(ds);
 
 	m_nc = nc;
 
@@ -87,10 +89,12 @@ bool H5AnalogWriter::close()
 		m_h5chunkprops = 0;
 	}
 
-	if (m_h5dataspace > 0) {
-		H5Sclose(m_h5dataspace);
-		m_h5dataspace = 0;
+	for (auto &ds : m_h5dataspaces) {
+		if (ds > 0) {
+			H5Sclose(ds);
+		}
 	}
+	m_h5dataspaces.clear();
 
 	if (m_h5group > 0) {
 		H5Gclose(m_h5group);

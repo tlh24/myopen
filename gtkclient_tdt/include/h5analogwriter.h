@@ -24,7 +24,7 @@ class H5AnalogWriter : public H5Writer
 {
 protected:
 	hid_t			m_h5group;
-	hid_t			m_h5dataspace;
+	vector<hid_t>	m_h5dataspaces;
 	hid_t 			m_h5chunkprops;
 	hid_t 			m_h5dataset;
 	ReaderWriterQueue<AD *> *m_q; 	// the queue for data packets
