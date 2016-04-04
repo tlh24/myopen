@@ -116,8 +116,8 @@ void ArtifactNLMS2::filter(gsl_matrix *X, gsl_matrix *Y)
 
 	{
 		std::lock_guard<std::mutex> lock(m1);
-		// Y = W' * X - X;
-		gsl_blas_dgemm (CblasTrans, CblasNoTrans, 1.0, W, X, -1.0, Y);
+		// Y = X - W' * X;
+		gsl_blas_dgemm (CblasTrans, CblasNoTrans, -1.0, W, X, 1.0, Y);
 	}
 }
 
