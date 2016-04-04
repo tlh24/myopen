@@ -48,9 +48,16 @@ bool H5AnalogWriter::open(const char *fn, size_t nc)
 		close();
 		return false;
 	}
-	//Create a dataset creation property list and set it to use chunking
+
+	// Create a dataset creation property list and set it to use chunking
+	// Online advice is to, "keep chunks above 10KiB or so"
+	// Realistically it should probably be something that can fit into L1 cache
+	// so: definitely under 64 KB
+	// 32*32*2 bytes ~= 2 KB
+	// 32*128*2 bytes ~= 8 KB
+	// also, perhaps compression will work better with slightly larger blocks
 	hid_t prop = H5Pcreate(H5P_DATASET_CREATE);
-	hsize_t chunk_dims[2] = {nc < 32 ? nc : 32, 32};
+	hsize_t chunk_dims[2] = {nc < 32 ? nc : 32, 128};
 	H5Pset_chunk(prop, 2, chunk_dims);
 	// Create the analog dataset
 	m_h5Dsamples = H5Dcreate(m_h5file, "/Analog/Samples", H5T_STD_I16LE,
@@ -75,7 +82,7 @@ bool H5AnalogWriter::open(const char *fn, size_t nc)
 	}
 	//Create a dataset creation property list and set it to use chunking
 	prop = H5Pcreate(H5P_DATASET_CREATE);
-	chunk_dims[0] = 32;
+	chunk_dims[0] = 128;
 	H5Pset_chunk(prop, 1, chunk_dims);
 	// Create the tick dataset
 	m_h5Dtk = H5Dcreate(m_h5file, "/Analog/Ticks", H5T_STD_I64LE,
@@ -101,7 +108,7 @@ bool H5AnalogWriter::open(const char *fn, size_t nc)
 	}
 	//Create a dataset creation property list and set it to use chunking
 	prop = H5Pcreate(H5P_DATASET_CREATE);
-	chunk_dims[0] = 32;
+	chunk_dims[0] = 128;
 	H5Pset_chunk(prop, 1, chunk_dims);
 	// Create the tick dataset
 	m_h5Dts = H5Dcreate(m_h5file, "/Analog/Timestamps", H5T_IEEE_F64LE,
