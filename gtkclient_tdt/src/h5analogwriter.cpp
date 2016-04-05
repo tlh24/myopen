@@ -68,7 +68,7 @@ bool H5AnalogWriter::open(const char *fn, size_t nc)
 		return false;
 	}
 	m_h5dataspaces.push_back(ds);
-	m_h5chunkprops.push_back(prop);
+	m_h5props.push_back(prop);
 
 
 	// create tick dataspace
@@ -97,7 +97,7 @@ bool H5AnalogWriter::open(const char *fn, size_t nc)
 		return false;
 	}
 	m_h5dataspaces.push_back(ds);
-	m_h5chunkprops.push_back(prop);
+	m_h5props.push_back(prop);
 
 	// create timestamp dataspace
 	// allow the number of samples to be unlimited
@@ -125,7 +125,7 @@ bool H5AnalogWriter::open(const char *fn, size_t nc)
 		return false;
 	}
 	m_h5dataspaces.push_back(ds);
-	m_h5chunkprops.push_back(prop);
+	m_h5props.push_back(prop);
 
 	m_nc = nc;
 

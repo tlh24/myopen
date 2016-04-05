@@ -8,7 +8,7 @@ H5Writer::H5Writer()
 	m_h5file = 0;
 	m_h5group = 0;
 	m_h5dataspaces.clear();
-	m_h5chunkprops.clear();
+	m_h5props.clear();
 	m_w = NULL;
 	m_deflate = true;
 	m_deflate_level = 1;
@@ -43,12 +43,12 @@ bool H5Writer::open(const char *fn)
 
 bool H5Writer::close()
 {
-	for (auto &x : m_h5chunkprops) {
+	for (auto &x : m_h5props) {
 		if (x > 0) {
 			H5Pclose(x);
 		}
 	}
-	m_h5chunkprops.clear();
+	m_h5props.clear();
 
 	for (auto &x : m_h5dataspaces) {
 		if (x > 0) {
