@@ -14,8 +14,8 @@ typedef struct SPIKE {
 	i16		un;		// unit (0=unsorted, 1=a, 2=b, 3=c, etc)
 	i64		tk; 	// tdt tick of the spike, aligned to the start of the wf
 	double 	ts; 	// the timesamp of spike, aligned to the start of the wf
-	size_t	ns;		// number of waveform samples
-	i16		*wf;	// the waveform
+	size_t	nwf;	// number of waveform samples
+	double	*wf;	// the waveform
 } SPIKE;
 
 enum {
@@ -26,7 +26,7 @@ class H5SpikeWriter : public H5Writer
 {
 protected:
 	size_t			m_nc;			// num channels
-	size_t			m_nu;			// num units (including unsorted)
+	size_t			m_nu;			// num units (not including unsorted)
 	size_t			m_nwf;			// number of samples in a wf
 	vector<hid_t> 	m_h5groups;		// holds a group for each ch and unit
 	map<pair<i16, i16>, hid_t> m_h5Dtk;	// holds a tk dataset for each (ch,un)
@@ -39,25 +39,25 @@ public:
 	H5SpikeWriter();
 	~H5SpikeWriter();
 
-	// start the writer. fn is filename
+	// start the writer. fn is filename; num chans, num units, num wf samples
 	using H5Writer::open;
 	bool open(const char *fn, size_t nc, size_t nu, size_t nwf);
 
+	// close log file
+	bool close();
+
 	//bool setMetaData(double sr, float *scale, char *name, int slen);
 
-	//flush and close log file
-	//bool close();
-
 	// log an analog protobuf
-	//bool add(SPIKE *s);
+	bool add(SPIKE *s);
 
 	// write the buffer to disk
-	//bool write();
+	bool write();
 
 	// returns the number of objects in the queue
-	//size_t capacity();
+	size_t capacity();
 
-	//size_t bytes();
+	size_t bytes();
 
 	const char *name()
 	{

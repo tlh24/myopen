@@ -36,7 +36,7 @@ public:
 	// start the writer. fn is filename
 	virtual bool open(const char *fn);
 
-	//flush and close log file
+	// close log file
 	virtual bool close();
 
 	// is the writer enabled?

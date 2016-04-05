@@ -11,7 +11,7 @@ H5SpikeWriter::H5SpikeWriter()
 	m_h5Dts.clear();
 	m_h5Dwf.clear();
 	m_ns.clear();
-	m_q = new ReaderWriterQueue<SPIKE *>(H5S_BUF_SIZE);
+	m_q = NULL;
 }
 H5SpikeWriter::~H5SpikeWriter()
 {
@@ -38,8 +38,9 @@ bool H5SpikeWriter::open(const char *fn, size_t nc, size_t nu, size_t nwf)
 	// create a group for each channel and for each unit in each channel
 	hid_t group;
 	for (size_t i=1; i<=nc; i++) { // 1-indexed
-		char buf[32];
-		sprintf(buf, "/Spikes/%03zu", i);
+
+		char buf[256];
+		sprintf(buf, "/Spikes/Chan%03zu", i);
 		group = H5Gcreate2(m_h5file, buf,
 		                   H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 		if (group < 0) {
@@ -48,7 +49,10 @@ bool H5SpikeWriter::open(const char *fn, size_t nc, size_t nu, size_t nwf)
 		}
 		m_h5groups.push_back(group);
 		for (size_t j=0; j<=nu; j++) { // 1-indexed, zero is unsorted
-			sprintf(buf, "/Spikes/%03zu/%03zu", i, j);
+
+			auto idx = make_pair(i,j);
+
+			sprintf(buf, "/Spikes/Chan%03zu/Unit%03zu", i, j);
 			group = H5Gcreate2(m_h5file, buf,
 			                   H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 			if (group < 0) {
@@ -56,144 +60,166 @@ bool H5SpikeWriter::open(const char *fn, size_t nc, size_t nu, size_t nwf)
 				return false;
 			}
 			m_h5groups.push_back(group);
+
+			// in the below we'll need, at most, 2 dims
+			hsize_t init_dims[2], max_dims[2], chunk_dims[2];
+
+			hid_t prop, ds, dset;
+
+			// TICKS
+			init_dims[0] 	= 0;
+			max_dims[0] 	= H5S_UNLIMITED;
+			ds = H5Screate_simple(1, init_dims, max_dims);
+			if (ds < 0) {
+				close();
+				return false;
+			}
+			prop = H5Pcreate(H5P_DATASET_CREATE);
+			if (m_shuffle)
+				shuffleDataset(prop);
+			if (m_deflate)
+				deflateDataset(prop);
+			chunk_dims[0] = 128;
+			H5Pset_chunk(prop, 1, chunk_dims);
+			sprintf(buf, "/Spikes/Chan%03zu/Unit%03zu/Ticks", i, j);
+			dset = H5Dcreate(m_h5file, buf, H5T_STD_I64LE,
+			                 ds, H5P_DEFAULT, prop, H5P_DEFAULT);
+			if (dset < 0) {
+				close();
+				return false;
+			}
+			m_h5Dtk[idx] = dset;
+			m_h5dataspaces.push_back(ds);
+			m_h5props.push_back(prop);
+
+			// TIMESTAMPS
+			init_dims[0] 	= 0;
+			max_dims[0] 	= H5S_UNLIMITED;
+			ds = H5Screate_simple(1, init_dims, max_dims);
+			if (ds < 0) {
+				close();
+				return false;
+			}
+			prop = H5Pcreate(H5P_DATASET_CREATE);
+			if (m_shuffle)
+				shuffleDataset(prop);
+			if (m_deflate)
+				deflateDataset(prop);
+			chunk_dims[0] = 128;
+			H5Pset_chunk(prop, 1, chunk_dims);
+			sprintf(buf, "/Spikes/Chan%03zu/Unit%03zu/Timestamps", i, j);
+			dset = H5Dcreate(m_h5file, buf, H5T_IEEE_F64LE,
+			                 ds, H5P_DEFAULT, prop, H5P_DEFAULT);
+			if (dset < 0) {
+				close();
+				return false;
+			}
+			m_h5Dts[idx] = dset;
+			m_h5dataspaces.push_back(ds);
+			m_h5props.push_back(prop);
+
+			// WAVEFORMS
+			init_dims[0] 	= nwf;
+			init_dims[1]	= 0;
+			max_dims[0]		= nwf;
+			max_dims[1] 	= H5S_UNLIMITED;
+			ds = H5Screate_simple(2, init_dims, max_dims);
+			if (ds < 0) {
+				close();
+				return false;
+			}
+			prop = H5Pcreate(H5P_DATASET_CREATE);
+			if (m_shuffle)
+				shuffleDataset(prop);
+			if (m_deflate)
+				deflateDataset(prop);
+			chunk_dims[0] = nwf;
+			chunk_dims[1] = 128;
+			H5Pset_chunk(prop, 2, chunk_dims);
+			sprintf(buf, "/Spikes/Chan%03zu/Unit%03zu/Waveforms", i, j);
+			dset = H5Dcreate(m_h5file, buf, H5T_IEEE_F64LE,
+			                 ds, H5P_DEFAULT, prop, H5P_DEFAULT);
+			if (dset < 0) {
+				close();
+				return false;
+			}
+			m_h5Dwf[idx] = dset;
+			m_h5dataspaces.push_back(ds);
+			m_h5props.push_back(prop);
+
+			m_ns[idx] = 0;
+
 		}
 	}
-	/*
-
-	// create analog dataspace
-	// do not allow numchans to grow
-	// but allow the number of samples to be unlimited
-	hsize_t init_dims[2] = {nc, 0};
-	hsize_t max_dims[2] = {nc, H5S_UNLIMITED};
-	hid_t ds = H5Screate_simple(2, init_dims, max_dims);
-	if (ds < 0) {
-		close();
-		return false;
-	}
-	// Create a dataset creation property list and set it to use chunking
-	// Online advice is to, "keep chunks above 10KiB or so"
-	// Realistically it should probably be something that can fit into L1 cache
-	// so: definitely under 64 KB
-	// 32*32*2 bytes ~= 2 KB
-	// 32*128*2 bytes ~= 8 KB
-	// also, perhaps compression will work better with slightly larger blocks
-	hid_t prop = H5Pcreate(H5P_DATASET_CREATE);
-	if (m_shuffle)
-		shuffleDataset(prop);
-	if (m_deflate)
-		deflateDataset(prop);
-	hsize_t chunk_dims[2] = {nc < 32 ? nc : 32, 128};
-	H5Pset_chunk(prop, 2, chunk_dims);
-	// Create the analog dataset
-	m_h5Dsamples = H5Dcreate(m_h5file, "/Analog/Samples", H5T_STD_I16LE,
-	                         ds, H5P_DEFAULT, prop, H5P_DEFAULT);
-	if (m_h5Dsamples < 0) {
-		close();
-		return false;
-	}
-	m_h5dataspaces.push_back(ds);
-	m_h5props.push_back(prop);
-
-
-	// create tick dataspace
-	// allow the number of samples to be unlimited
-	init_dims[0] 	= 0;
-	max_dims[0] 	= H5S_UNLIMITED;
-	ds = H5Screate_simple(1, init_dims, max_dims);
-	if (ds < 0) {
-		close();
-		return false;
-	}
-	//Create a dataset creation property list and set it to use chunking
-	prop = H5Pcreate(H5P_DATASET_CREATE);
-	if (m_shuffle)
-		shuffleDataset(prop);
-	if (m_deflate)
-		deflateDataset(prop);
-	chunk_dims[0] = 128;
-	H5Pset_chunk(prop, 1, chunk_dims);
-	// Create the tick dataset
-	m_h5Dtk = H5Dcreate(m_h5file, "/Analog/Ticks", H5T_STD_I64LE,
-	                    ds, H5P_DEFAULT, prop, H5P_DEFAULT);
-
-	if (m_h5Dtk < 0) {
-		close();
-		return false;
-	}
-	m_h5dataspaces.push_back(ds);
-	m_h5props.push_back(prop);
-
-	// create timestamp dataspace
-	// allow the number of samples to be unlimited
-	init_dims[0] 	= 0;
-	max_dims[0] 	= H5S_UNLIMITED;
-	ds = H5Screate_simple(1, init_dims, max_dims);
-	if (ds < 0) {
-		close();
-		return false;
-	}
-	//Create a dataset creation property list and set it to use chunking
-	prop = H5Pcreate(H5P_DATASET_CREATE);
-	if (m_shuffle)
-		shuffleDataset(prop);
-	if (m_deflate)
-		deflateDataset(prop);
-	chunk_dims[0] = 128;
-	H5Pset_chunk(prop, 1, chunk_dims);
-	// Create the tick dataset
-	m_h5Dts = H5Dcreate(m_h5file, "/Analog/Timestamps", H5T_IEEE_F64LE,
-	                    ds, H5P_DEFAULT, prop, H5P_DEFAULT);
-
-	if (m_h5Dts < 0) {
-		close();
-		return false;
-	}
-	m_h5dataspaces.push_back(ds);
-	m_h5props.push_back(prop);
 
 	m_nc = nc;
+	m_nu = nu;
+	m_nwf = nwf;
+
+	m_q = new ReaderWriterQueue<SPIKE *>(H5S_BUF_SIZE);
 
 	enable();
-	*/
+
 	return true;
 }
-/*
+
 bool H5SpikeWriter::close()
 {
 	disable();
 
-	m_ns = 0;
+	if (m_q) {
+		delete m_q;
+		m_q = NULL;
+	}
+
+	m_nwf = 0;
+	m_nu = 0;
 	m_nc = 0;
 
-	if (m_h5Dts > 0) {
-		H5Dclose(m_h5Dts);
-		m_h5Dts = 0;
+	for (auto &x : m_h5groups) {
+		if (x > 0) {
+			H5Gclose(x);
+		}
 	}
+	m_h5groups.clear();
 
-	if (m_h5Dtk > 0) {
-		H5Dclose(m_h5Dtk);
-		m_h5Dtk = 0;
+	for (auto &kv : m_h5Dtk) {
+		if (kv.second > 0) {
+			H5Dclose(kv.second);
+		}
 	}
+	m_h5Dtk.clear();
 
-	if (m_h5Dsamples > 0) {
-		H5Dclose(m_h5Dsamples);
-		m_h5Dsamples = 0;
+	for (auto &kv : m_h5Dts) {
+		if (kv.second > 0) {
+			H5Dclose(kv.second);
+		}
 	}
+	m_h5Dts.clear();
+
+	for (auto &kv : m_h5Dwf) {
+		if (kv.second > 0) {
+			H5Dclose(kv.second);
+		}
+	}
+	m_h5Dwf.clear();
+
+	m_ns.clear();
 
 	return H5Writer::close();
 }
 
-bool H5SpikeWriter::add(AD *o)	// call from a single producer thread
+
+bool H5SpikeWriter::add(SPIKE *s)	// call from a single producer thread
 {
 	if (!isEnabled()) {
-		delete[] (o->data);
-		delete[] (o->tk);
-		delete[] (o->ts);
-		delete o;
+		delete[] (s->wf);
+		delete s;
 		return false;
 	}
-	return m_q->enqueue(o);	// todo: what if this (memory alloc) fails
+	return m_q->enqueue(s);	// todo: what if this (memory alloc) fails
 }
+
 
 bool H5SpikeWriter::write()   // call from a single consumer thread
 {
@@ -205,83 +231,83 @@ bool H5SpikeWriter::write()   // call from a single consumer thread
 
 	bool dequeued;
 	do {
-		AD *o;
-		dequeued = m_q->try_dequeue(o);
+		SPIKE *s;
+		dequeued = m_q->try_dequeue(s);
 		if (dequeued) {
 
-			if (o->nc != m_nc) {
+			if (s->nwf != m_nwf) {
 				warn("well this is embarassing");
 			}
 
-			// extend sample dataset to fit new data
-			// TODO: CHECK FOR ERROR
-			hsize_t new_dims[2] = {m_nc, m_ns + o->ns};
-			H5Dset_extent(m_h5Dsamples, new_dims);
-			// select hyperslab in extended oprtion of dataset
-			hid_t filespace = H5Dget_space(m_h5Dsamples);
-			hsize_t offset[2] = {0, m_ns};
-			hsize_t packet_dims[2] = {m_nc, o->ns};
-			H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offset, NULL,
-			                    packet_dims, NULL);
-			// Define memory space for new data
-			// TODO CHECK FOR ERROR
-			hid_t memspace = H5Screate_simple(2, packet_dims, NULL);
-			// Write the dataset.
-			// TODO: CHECK FOR ERROR
-			H5Dwrite(m_h5Dsamples, H5T_NATIVE_INT16, memspace, filespace,
-			         H5P_DEFAULT, o->data);
-			H5Sclose(memspace);
-			H5Sclose(filespace);
+			auto idx = make_pair(s->ch, s->un);
 
-			// extend tick dataset to fit new data
-			// TODO: CHECK FOR ERROR
-			new_dims[0] = m_ns + o->ns;
-			H5Dset_extent(m_h5Dtk, new_dims);
+			hsize_t new_dims[2], offset[2], packet_dims[2];
+			hid_t filespace, memspace;
+
+			// TICKS
+			// extend dataset for new data (TODO: CHECK FOR ERROR)
+			new_dims[0] = m_ns[idx] + 1;
+			H5Dset_extent(m_h5Dtk[idx], new_dims);
 			// select hyperslab in extended oprtion of dataset
-			filespace = H5Dget_space(m_h5Dtk);
-			offset[0] = m_ns;
-			packet_dims[0] = o->ns;
+			filespace = H5Dget_space(m_h5Dtk[idx]);
+			offset[0] = m_ns[idx];
+			packet_dims[0] = 1;
 			H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offset, NULL,
 			                    packet_dims, NULL);
-			// Define memory space for new data
-			// TODO CHECK FOR ERROR
+			// Define memory space for new data (TODO CHECK FOR ERROR)
 			memspace = H5Screate_simple(1, packet_dims, NULL);
-			// Write the dataset.
-			// TODO: CHECK FOR ERROR
-			H5Dwrite(m_h5Dtk, H5T_NATIVE_INT64, memspace, filespace,
-			         H5P_DEFAULT, o->tk);
+			// Write the dataset (TODO: CHECK FOR ERROR)
+			H5Dwrite(m_h5Dtk[idx], H5T_NATIVE_INT64, memspace, filespace,
+			         H5P_DEFAULT, &(s->tk));
 			H5Sclose(memspace);
 			H5Sclose(filespace);
 
-			// extend ts dataset to fit new data
-			// TODO: CHECK FOR ERROR
-			new_dims[0] = m_ns + o->ns;
-			H5Dset_extent(m_h5Dts, new_dims);
+			// TIMESTAMPS
+			// extend dataset for new data (TODO: CHECK FOR ERROR)
+			new_dims[0] = m_ns[idx] + 1;
+			H5Dset_extent(m_h5Dts[idx], new_dims);
 			// select hyperslab in extended oprtion of dataset
-			filespace = H5Dget_space(m_h5Dts);
-			offset[0] = m_ns;
-			packet_dims[0] = o->ns;
+			filespace = H5Dget_space(m_h5Dts[idx]);
+			offset[0] = m_ns[idx];
+			packet_dims[0] = 1;
 			H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offset, NULL,
 			                    packet_dims, NULL);
-			// Define memory space for new data
-			// TODO CHECK FOR ERROR
+			// Define memory space for new data (TODO CHECK FOR ERROR)
 			memspace = H5Screate_simple(1, packet_dims, NULL);
-			// Write the dataset.
-			// TODO: CHECK FOR ERROR
-			H5Dwrite(m_h5Dts, H5T_NATIVE_DOUBLE, memspace, filespace,
-			         H5P_DEFAULT, o->ts);
+			// Write the dataset (TODO: CHECK FOR ERROR)
+			H5Dwrite(m_h5Dts[idx], H5T_IEEE_F64LE, memspace, filespace,
+			         H5P_DEFAULT, &(s->ts));
 			H5Sclose(memspace);
 			H5Sclose(filespace);
 
-			m_ns += o->ns; // increment sample pointer
+			// WAVEFORMS
+			// extend dataset for new data (TODO: CHECK FOR ERROR)
+			new_dims[0] = m_nwf;
+			new_dims[1] = m_ns[idx] + 1;
+			H5Dset_extent(m_h5Dwf[idx], new_dims);
+			// select hyperslab in extended oprtion of dataset
+			filespace = H5Dget_space(m_h5Dwf[idx]);
+			offset[0] = 0;
+			offset[1] = m_ns[idx];
+			packet_dims[0] = m_nwf;
+			packet_dims[1] = 1;
+			H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offset, NULL,
+			                    packet_dims, NULL);
+			// Define memory space for new data (TODO CHECK FOR ERROR)
+			memspace = H5Screate_simple(1, packet_dims, NULL);
+			// Write the dataset (TODO: CHECK FOR ERROR)
+			H5Dwrite(m_h5Dwf[idx], H5T_IEEE_F64LE, memspace, filespace,
+			         H5P_DEFAULT, s->wf);
+			H5Sclose(memspace);
+			H5Sclose(filespace);
+
+			m_ns[idx] += 1; // increment sample pointer
 
 			//if (m_os.fail()) { // write lost, should we requeue?
 			//	fprintf(stderr,"ERROR: %s write failed!\n", name());
 			//}
-			delete[] (o->data);
-			delete[] (o->tk);
-			delete[] (o->ts);
-			delete o; // free the memory that was pointed to
+			delete[] (s->wf);
+			delete s; // free the memory that was pointed to
 		}
 	} while (dequeued);
 
@@ -294,8 +320,15 @@ size_t H5SpikeWriter::capacity()
 }
 size_t H5SpikeWriter::bytes()
 {
-	return m_ns * m_nc * sizeof(i16);
+	size_t n = 0;
+	for (auto &x : m_ns) {
+		n += x.second * sizeof(i64);
+		n += x.second * sizeof(double);
+		n += x.second * m_nwf * sizeof(double);
+	}
+	return n;
 }
+/*
 bool H5SpikeWriter::setMetaData(double sr, float *scale, char *name, int slen)
 {
 	hid_t ds, attr, atype;

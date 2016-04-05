@@ -9,14 +9,12 @@ H5AnalogWriter::H5AnalogWriter()
 	m_h5Dsamples = 0;
 	m_h5Dtk = 0;
 	m_h5Dts = 0;
-	m_q = new ReaderWriterQueue<AD *>(H5A_BUF_SIZE);
+	m_q = NULL;
 	m_nc = 0;
 	m_ns = 0;
 }
 H5AnalogWriter::~H5AnalogWriter()
 {
-	delete m_q;
-	m_q = NULL;
 }
 bool H5AnalogWriter::open(const char *fn, size_t nc)
 {
@@ -129,6 +127,8 @@ bool H5AnalogWriter::open(const char *fn, size_t nc)
 
 	m_nc = nc;
 
+	m_q = new ReaderWriterQueue<AD *>(H5A_BUF_SIZE);
+
 	enable();
 	return true;
 }
@@ -136,6 +136,11 @@ bool H5AnalogWriter::open(const char *fn, size_t nc)
 bool H5AnalogWriter::close()
 {
 	disable();
+
+	if (m_q) {
+		delete m_q;
+		m_q = NULL;
+	}
 
 	m_ns = 0;
 	m_nc = 0;
@@ -269,7 +274,11 @@ size_t H5AnalogWriter::capacity()
 }
 size_t H5AnalogWriter::bytes()
 {
-	return m_ns * m_nc * sizeof(i16);
+	size_t n = 0;
+	n += m_ns * m_nc * sizeof(i16);
+	n += m_ns * sizeof(i64);
+	n += m_ns * sizeof(double);
+	return n;
 }
 bool H5AnalogWriter::setMetaData(double sr, float *scale, char *name, int slen)
 {
