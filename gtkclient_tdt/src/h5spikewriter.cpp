@@ -28,7 +28,7 @@ bool H5SpikeWriter::open(const char *fn, size_t nc, size_t nu, size_t nwf);
 
 	// Create a group
 	m_h5topgroup = H5Gcreate2(m_h5file, "/Spikes",
-								H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+	                          H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
 	if (m_h5topgroup < 0) {
 		close();
@@ -36,15 +36,26 @@ bool H5SpikeWriter::open(const char *fn, size_t nc, size_t nu, size_t nwf);
 	}
 
 	// create a group for each channel and for each unit in each channel
+	hid_t group;
 	for (size_t i=1; i<=nc; i++) { // 1-indexed
 		char buf[32];
 		sprintf(buf, "/Spikes/%03i", i);
-		m_h5topgroup = H5Gcreate2(m_h5file, buf,
-								H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+		group = H5Gcreate2(m_h5file, buf,
+		                   H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+		if (group < 0) {
+			close();
+			return false;
+		}
+		m_h5groups.push_back(group);
 		for (size_t j=0; j<=nu; j++) { // 1-indexed, zero is unsorted
 			sprintf(buf, "/Spikes/%03i/%03i", i, j);
-			m_h5topgroup = H5Gcreate2(m_h5file, buf,
-								H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+			group = H5Gcreate2(m_h5file, buf,
+			                   H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+			if (group < 0) {
+				close();
+				return false;
+			}
+			m_h5groups.push_back(group);
 		}
 	}
 	/*
