@@ -18,7 +18,7 @@ H5SpikeWriter::~H5SpikeWriter()
 	delete m_q;
 	m_q = NULL;
 }
-bool H5SpikeWriter::open(const char *fn, size_t nc, size_t nu, size_t nwf);
+bool H5SpikeWriter::open(const char *fn, size_t nc, size_t nu, size_t nwf)
 {
 	if (isEnabled())
 		return false;
@@ -39,7 +39,7 @@ bool H5SpikeWriter::open(const char *fn, size_t nc, size_t nu, size_t nwf);
 	hid_t group;
 	for (size_t i=1; i<=nc; i++) { // 1-indexed
 		char buf[32];
-		sprintf(buf, "/Spikes/%03i", i);
+		sprintf(buf, "/Spikes/%03zu", i);
 		group = H5Gcreate2(m_h5file, buf,
 		                   H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 		if (group < 0) {
@@ -48,7 +48,7 @@ bool H5SpikeWriter::open(const char *fn, size_t nc, size_t nu, size_t nwf);
 		}
 		m_h5groups.push_back(group);
 		for (size_t j=0; j<=nu; j++) { // 1-indexed, zero is unsorted
-			sprintf(buf, "/Spikes/%03i/%03i", i, j);
+			sprintf(buf, "/Spikes/%03zu/%03zu", i, j);
 			group = H5Gcreate2(m_h5file, buf,
 			                   H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 			if (group < 0) {
