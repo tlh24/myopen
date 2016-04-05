@@ -1,4 +1,3 @@
-#include <vector>
 #include "h5writer.h"
 #include "readerwriterqueue.h"
 
@@ -23,9 +22,6 @@ enum {
 class H5AnalogWriter : public H5Writer
 {
 protected:
-	hid_t			m_h5group;
-	vector<hid_t>	m_h5dataspaces;
-	vector<hid_t> 	m_h5chunkprops;
 	hid_t 			m_h5Dsamples;
 	hid_t 			m_h5Dtk;
 	hid_t 			m_h5Dts;

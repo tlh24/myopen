@@ -5,9 +5,7 @@
 
 H5AnalogWriter::H5AnalogWriter()
 {
-	m_h5group = 0;
-	m_h5dataspaces.clear();
-	m_h5chunkprops.clear();
+
 	m_h5Dsamples = 0;
 	m_h5Dtk = 0;
 	m_h5Dts = 0;
@@ -155,25 +153,6 @@ bool H5AnalogWriter::close()
 	if (m_h5Dsamples > 0) {
 		H5Dclose(m_h5Dsamples);
 		m_h5Dsamples = 0;
-	}
-
-	for (auto &x : m_h5chunkprops) {
-		if (x > 0) {
-			H5Pclose(x);
-		}
-	}
-	m_h5chunkprops.clear();
-
-	for (auto &x : m_h5dataspaces) {
-		if (x > 0) {
-			H5Sclose(x);
-		}
-	}
-	m_h5dataspaces.clear();
-
-	if (m_h5group > 0) {
-		H5Gclose(m_h5group);
-		m_h5group = 0;
 	}
 
 	return H5Writer::close();

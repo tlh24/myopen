@@ -1,6 +1,7 @@
 /* H5Writer.h - inspired by protobuflogger.h, by zheng */
 #include <gtk/gtk.h>
 #include <string>
+#include <vector>
 #include <atomic>
 #include <mutex>
 #include "hdf5.h"
@@ -16,14 +17,16 @@ private:
 	atomic<bool> m_enabled;		// are we writing?
 
 protected:
-	size_t 		m_num_written; 	// how many bytes have been written
-	string 		m_fn; 			// the file name
-	hid_t 		m_h5file;		// the h5 file
-	GtkWidget 	*m_w;			// for drawing to the gui
-	mutex 		m_mtx;			// so we dont disable while writing
-	bool		m_deflate;		// should we compress?
-	int 		m_deflate_level; // 0 [uncompressed]- 9 [max compressed]
-	bool 		m_shuffle;		// makes compression more efficient
+	string 			m_fn; 			// the file name
+	hid_t 			m_h5file;		// the h5 file
+	hid_t			m_h5group;		// assume one group per file
+	vector<hid_t>	m_h5dataspaces;	// [ containers for the datapsaces
+	vector<hid_t> 	m_h5chunkprops;	// [ and the chunk properties
+	mutex 			m_mtx;			// so we dont disable while writing
+	GtkWidget 		*m_w;			// for drawing to the gui
+	bool			m_deflate;		// should we compress?
+	int 			m_deflate_level; // 0 [uncompressed]- 9 [max compressed]
+	bool 			m_shuffle;		// makes compression more efficient
 
 public:
 	H5Writer();

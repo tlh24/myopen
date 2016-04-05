@@ -4,8 +4,11 @@
 H5Writer::H5Writer()
 {
 	m_enabled = false;
-	m_h5file = 0;
 	m_fn.assign("");
+	m_h5file = 0;
+	m_h5group = 0;
+	m_h5dataspaces.clear();
+	m_h5chunkprops.clear();
 	m_w = NULL;
 	m_deflate = true;
 	m_deflate_level = 1;
@@ -40,6 +43,25 @@ bool H5Writer::open(const char *fn)
 
 bool H5Writer::close()
 {
+	for (auto &x : m_h5chunkprops) {
+		if (x > 0) {
+			H5Pclose(x);
+		}
+	}
+	m_h5chunkprops.clear();
+
+	for (auto &x : m_h5dataspaces) {
+		if (x > 0) {
+			H5Sclose(x);
+		}
+	}
+	m_h5dataspaces.clear();
+
+	if (m_h5group > 0) {
+		H5Gclose(m_h5group);
+		m_h5group = 0;
+	}
+
 	if (m_h5file) {
 		H5Fclose(m_h5file);
 		m_h5file = 0;
