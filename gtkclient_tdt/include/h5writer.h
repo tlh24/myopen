@@ -19,7 +19,7 @@ private:
 protected:
 	string 			m_fn; 			// the file name
 	hid_t 			m_h5file;		// the h5 file
-	hid_t			m_h5group;		// assume one group per file
+	hid_t			m_h5topgroup;	// assume one top group per file
 	vector<hid_t>	m_h5dataspaces;	// [ containers for the datapsaces
 	vector<hid_t> 	m_h5props;		// [ and the chunk properties
 	mutex 			m_mtx;			// so we dont disable while writing

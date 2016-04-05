@@ -27,10 +27,10 @@ bool H5AnalogWriter::open(const char *fn, size_t nc)
 	}
 
 	// Create a group
-	m_h5group = H5Gcreate2(m_h5file, "/Analog",
-	                       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+	m_h5topgroup = H5Gcreate2(m_h5file, "/Analog",
+	                          H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
-	if (m_h5group < 0) {
+	if (m_h5topgroup < 0) {
 		close();
 		return false;
 	}
@@ -188,7 +188,6 @@ bool H5AnalogWriter::write()   // call from a single consumer thread
 				warn("well this is embarassing");
 			}
 
-
 			// extend sample dataset to fit new data
 			// TODO: CHECK FOR ERROR
 			hsize_t new_dims[2] = {m_nc, m_ns + o->ns};
@@ -277,7 +276,7 @@ bool H5AnalogWriter::setMetaData(double sr, float *scale, char *name, int slen)
 	hid_t ds, attr, atype;
 
 	ds = H5Screate(H5S_SCALAR);
-	attr = H5Acreate(m_h5group, "Sampling Rate", H5T_IEEE_F64LE, ds,
+	attr = H5Acreate(m_h5topgroup, "Sampling Rate", H5T_IEEE_F64LE, ds,
 	                 H5P_DEFAULT, H5P_DEFAULT);
 	H5Awrite(attr, H5T_NATIVE_DOUBLE, &sr); // TODO: CHECK ERROR
 	H5Aclose(attr); // TODO: check error
@@ -285,7 +284,7 @@ bool H5AnalogWriter::setMetaData(double sr, float *scale, char *name, int slen)
 
 	hsize_t dims = m_nc;
 	ds = H5Screate_simple(1, &dims, NULL);
-	attr = H5Acreate(m_h5group, "Scale Factor", H5T_IEEE_F32LE, ds,
+	attr = H5Acreate(m_h5topgroup, "Scale Factor", H5T_IEEE_F32LE, ds,
 	                 H5P_DEFAULT, H5P_DEFAULT);
 	H5Awrite(attr, H5T_NATIVE_FLOAT, scale); // TODO: CHECK ERROR
 	H5Aclose(attr); // TODO: check error
@@ -296,7 +295,7 @@ bool H5AnalogWriter::setMetaData(double sr, float *scale, char *name, int slen)
 	H5Tset_size(atype, slen);
 
 	H5Tset_strpad(atype, H5T_STR_NULLTERM);
-	attr = H5Acreate(m_h5group, "Channel Name", atype, ds,
+	attr = H5Acreate(m_h5topgroup, "Channel Name", atype, ds,
 	                 H5P_DEFAULT, H5P_DEFAULT);
 	H5Awrite(attr, atype, name); // TODO: CHECK ERROR
 	H5Aclose(attr);

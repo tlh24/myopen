@@ -6,7 +6,7 @@ H5Writer::H5Writer()
 	m_enabled = false;
 	m_fn.assign("");
 	m_h5file = 0;
-	m_h5group = 0;
+	m_h5topgroup = 0;
 	m_h5dataspaces.clear();
 	m_h5props.clear();
 	m_w = NULL;
@@ -57,9 +57,9 @@ bool H5Writer::close()
 	}
 	m_h5dataspaces.clear();
 
-	if (m_h5group > 0) {
-		H5Gclose(m_h5group);
-		m_h5group = 0;
+	if (m_h5topgroup > 0) {
+		H5Gclose(m_h5topgroup);
+		m_h5topgroup = 0;
 	}
 
 	if (m_h5file) {
