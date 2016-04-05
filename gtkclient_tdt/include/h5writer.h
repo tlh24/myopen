@@ -21,6 +21,9 @@ protected:
 	hid_t 		m_h5file;		// the h5 file
 	GtkWidget 	*m_w;			// for drawing to the gui
 	mutex 		m_mtx;			// so we dont disable while writing
+	bool		m_deflate;		// should we compress?
+	int 		m_deflate_level; // 0 [uncompressed]- 9 [max compressed]
+	bool 		m_shuffle;		// makes compression more efficient
 
 public:
 	H5Writer();
@@ -54,6 +57,9 @@ public:
 	virtual void draw();
 
 	virtual const char *name() = 0;
+protected:
+	void shuffleDataset(hid_t prop);
+	void deflateDataset(hid_t prop);
 };
 
 #endif

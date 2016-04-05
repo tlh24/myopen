@@ -7,6 +7,9 @@ H5Writer::H5Writer()
 	m_h5file = 0;
 	m_fn.assign("");
 	m_w = NULL;
+	m_deflate = true;
+	m_deflate_level = 1;
+	m_shuffle = true;
 }
 
 H5Writer::~H5Writer()
@@ -100,5 +103,35 @@ void H5Writer::draw()
 			         filename().substr(n+1).c_str(), b);
 		}
 		gtk_label_set_text(GTK_LABEL(m_w), str);
+	}
+}
+void H5Writer::shuffleDataset(hid_t prop)
+{
+	if (H5Zfilter_avail(H5Z_FILTER_SHUFFLE)) {
+		unsigned int filter_info;
+		H5Zget_filter_info(H5Z_FILTER_SHUFFLE, &filter_info);
+		if ((filter_info & H5Z_FILTER_CONFIG_ENCODE_ENABLED) ||
+		    (filter_info & H5Z_FILTER_CONFIG_DECODE_ENABLED) ) {
+			H5Pset_shuffle(prop);
+		} else {
+			error("HDF5: shuffle filter not available");
+		}
+	} else {
+		error("HDF5: shuffle filter not available");
+	}
+}
+void H5Writer::deflateDataset(hid_t prop)
+{
+	if (H5Zfilter_avail(H5Z_FILTER_DEFLATE)) {
+		unsigned int filter_info;
+		H5Zget_filter_info(H5Z_FILTER_DEFLATE, &filter_info);
+		if ((filter_info & H5Z_FILTER_CONFIG_ENCODE_ENABLED) &&
+		    (filter_info & H5Z_FILTER_CONFIG_DECODE_ENABLED) ) {
+			H5Pset_deflate(prop, m_deflate_level);
+		} else {
+			error("HDF5: gzip filter not available");
+		}
+	} else {
+		error("HDF5: gzip filter not available");
 	}
 }

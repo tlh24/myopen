@@ -48,7 +48,6 @@ bool H5AnalogWriter::open(const char *fn, size_t nc)
 		close();
 		return false;
 	}
-
 	// Create a dataset creation property list and set it to use chunking
 	// Online advice is to, "keep chunks above 10KiB or so"
 	// Realistically it should probably be something that can fit into L1 cache
@@ -57,6 +56,10 @@ bool H5AnalogWriter::open(const char *fn, size_t nc)
 	// 32*128*2 bytes ~= 8 KB
 	// also, perhaps compression will work better with slightly larger blocks
 	hid_t prop = H5Pcreate(H5P_DATASET_CREATE);
+	if (m_shuffle)
+		shuffleDataset(prop);
+	if (m_deflate)
+		deflateDataset(prop);
 	hsize_t chunk_dims[2] = {nc < 32 ? nc : 32, 128};
 	H5Pset_chunk(prop, 2, chunk_dims);
 	// Create the analog dataset
@@ -76,12 +79,15 @@ bool H5AnalogWriter::open(const char *fn, size_t nc)
 	max_dims[0] 	= H5S_UNLIMITED;
 	ds = H5Screate_simple(1, init_dims, max_dims);
 	if (ds < 0) {
-		debug("tick space debug");
 		close();
 		return false;
 	}
 	//Create a dataset creation property list and set it to use chunking
 	prop = H5Pcreate(H5P_DATASET_CREATE);
+	if (m_shuffle)
+		shuffleDataset(prop);
+	if (m_deflate)
+		deflateDataset(prop);
 	chunk_dims[0] = 128;
 	H5Pset_chunk(prop, 1, chunk_dims);
 	// Create the tick dataset
@@ -89,7 +95,6 @@ bool H5AnalogWriter::open(const char *fn, size_t nc)
 	                    ds, H5P_DEFAULT, prop, H5P_DEFAULT);
 
 	if (m_h5Dtk < 0) {
-		debug("tick set debug");
 		close();
 		return false;
 	}
@@ -102,12 +107,15 @@ bool H5AnalogWriter::open(const char *fn, size_t nc)
 	max_dims[0] 	= H5S_UNLIMITED;
 	ds = H5Screate_simple(1, init_dims, max_dims);
 	if (ds < 0) {
-		debug("ts space debug");
 		close();
 		return false;
 	}
 	//Create a dataset creation property list and set it to use chunking
 	prop = H5Pcreate(H5P_DATASET_CREATE);
+	if (m_shuffle)
+		shuffleDataset(prop);
+	if (m_deflate)
+		deflateDataset(prop);
 	chunk_dims[0] = 128;
 	H5Pset_chunk(prop, 1, chunk_dims);
 	// Create the tick dataset
@@ -115,7 +123,6 @@ bool H5AnalogWriter::open(const char *fn, size_t nc)
 	                    ds, H5P_DEFAULT, prop, H5P_DEFAULT);
 
 	if (m_h5Dts < 0) {
-		debug("ts set debug");
 		close();
 		return false;
 	}

@@ -59,7 +59,7 @@ public:
 
 	const char *name()
 	{
-		return "H5 Analog Writer v1.1";
+		return "H5 Analog Writer v1.2";
 	};
 
 protected:
