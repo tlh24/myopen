@@ -33,6 +33,7 @@ src/vbo_timeseries.o \
 src/datawriter.o \
 src/icmswriter.o \
 src/h5writer.o \
+src/h5spikewriter.o \
 src/h5analogwriter.o \
 src/filter.o \
 src/spikebuffer.o \
