@@ -79,6 +79,7 @@
 #include "icmswriter.h"
 
 #include "h5writer.h"
+#include "h5spikewriter.h"
 #include "h5analogwriter.h"
 
 #include "fenv.h" // for debugging nan problems
@@ -121,11 +122,12 @@ float	g_rasterSpan = 10.f; // %seconds.
 vector <Channel *> g_c;
 vector <FiringRate *> g_fr;
 TimeSync 	g_ts(SRATE_HZ); //keeps track of ticks (TDT time)
-WfWriter	g_wfwriter;
+//WfWriter	g_wfwriter;
 GLuint 		g_base;            // base display list for the font set.
 
-H5AnalogWriter g_analogwriter_postfilter;
-H5AnalogWriter g_analogwriter_prefilter;
+H5SpikeWriter	g_spikewriter;
+H5AnalogWriter	g_analogwriter_postfilter;
+H5AnalogWriter	g_analogwriter_prefilter;
 
 vector <Artifact *> g_artifact;
 ICMSWriter g_icmswriter;
@@ -917,6 +919,7 @@ static gboolean rotate(gpointer user_data)
 	s += string(str);
 	gtk_label_set_text(GTK_LABEL(g_infoLabel), s.c_str());
 
+	/*
 	if (g_wfwriter.enabled()) {
 		size_t n = g_wfwriter.filename().find_last_of("/");
 
@@ -925,8 +928,10 @@ static gboolean rotate(gpointer user_data)
 		         (double)g_wfwriter.bytes()/1e6);
 		gtk_label_set_text(GTK_LABEL(g_spikeFileSizeLabel), str);
 	}
+	*/
 
 	g_icmswriter.draw();
+	g_spikewriter.draw();
 	g_analogwriter_prefilter.draw();
 	g_analogwriter_postfilter.draw();
 
@@ -1063,7 +1068,21 @@ void sorter(int ch)
 			long double the_time = g_ts.getTime(tk);
 			g_c[ch]->addWf(&wf_sp[idx], unit, the_time, true);
 			g_c[ch]->updateISI(unit, tk); // does nothing for unit==0
-			if (g_wfwriter.enabled() && (unit > 0 || g_saveUnsorted)) {
+			if (g_spikewriter.isEnabled() && (unit > 0 || g_saveUnsorted)) {
+
+				SPIKE *s;
+				s = new SPIKE;	// deleted by other thread
+				s->ch = ch+1;	// 1-indexed
+				s->un = unit;
+				s->tk = tk;
+				s->ts = the_time;
+				s->nwf = NWFSAMP; // xxx if no save wf -> 0
+				s->wf = new float[s->nwf];
+				for (size_t g=0; g<s->nwf; g++) {
+					s->wf[g] = wf_sp[idx+g] * 1e4;
+				}
+				g_spikewriter.add(s); // other thread deletes memory
+				/*
 				wfpak pak;
 				pak.time = the_time;
 				pak.ticks = tk;
@@ -1075,6 +1094,7 @@ void sorter(int ch)
 					pak.wf[g] = (i16)(wf_sp[idx+g]*gain2); //should be in original units.
 				}
 				g_wfwriter.add(&pak);
+				*/
 			}
 			if (unit > 0 && unit < NUNIT) {
 				int uu = unit-1;
@@ -1100,10 +1120,10 @@ void sorter(int ch)
 		}
 	}
 }
-void wfwrite()
+void spikewrite()
 {
 	while (!g_die) {
-		if (g_wfwriter.write()) //if it can write, it will.
+		if (g_spikewriter.write()) //if it can write, it will.
 			usleep(1e4); //poll qicker.
 		else
 			usleep(1e5);
@@ -2035,7 +2055,7 @@ auto mk_legal_filename = [](string basedir, string prefix, string ext)
 static void openSaveSpikesFile(GtkWidget *, gpointer parent_window)
 {
 	string d = get_cwd();
-	string f = mk_legal_filename(d, "spikes_", ".dat");
+	string f = mk_legal_filename(d, "spikes_", ".h5");
 
 	GtkWidget *dialog;
 	dialog = gtk_file_chooser_dialog_new ("Save Spikes File",
@@ -2051,7 +2071,7 @@ static void openSaveSpikesFile(GtkWidget *, gpointer parent_window)
 	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
 		char *filename;
 		filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
-		g_wfwriter.open(filename);
+		g_spikewriter.open(filename, g_c.size(), NSORT, NWFSAMP);
 		g_free (filename);
 	}
 	gtk_widget_destroy (dialog);
@@ -2852,13 +2872,13 @@ int main(int argc, char **argv)
 	bxx2 = gtk_vbox_new(TRUE, 0);
 	gtk_container_add(GTK_CONTAINER (bxx1), bxx2);
 	mk_button("Start", bxx2, openSaveSpikesFile, nullptr);
-	mk_checkbox("WF? (xxx)", bxx2, &g_saveSpikeWF, basic_checkbox_cb);
+	mk_checkbox("WF? (does this work?)", bxx2, &g_saveSpikeWF, basic_checkbox_cb);
 
 	bxx2 = gtk_vbox_new(FALSE, 0);
 	gtk_container_add(GTK_CONTAINER (bxx1), bxx2);
 	mk_button("Stop", bxx2,
 	[](GtkWidget *, gpointer) {
-		g_wfwriter.close();
+		g_spikewriter.close();
 	}, nullptr);
 
 	mk_checkbox("Unsorted?", bxx2, &g_saveUnsorted,	basic_checkbox_cb);
@@ -2946,7 +2966,7 @@ int main(int argc, char **argv)
 	mk_button("Stop All", box1,
 	[](GtkWidget *, gpointer) {
 		// TODO: signal to the other thread, let them close it.
-		g_wfwriter.close();
+		g_spikewriter.close();
 		g_icmswriter.close();
 		g_analogwriter_prefilter.close();
 		g_analogwriter_postfilter.close();
@@ -3152,7 +3172,7 @@ int main(int argc, char **argv)
 	}
 
 	threads.push_back(thread(worker));
-	threads.push_back(thread(wfwrite));
+	threads.push_back(thread(spikewrite));
 	threads.push_back(thread(icmswrite));
 	threads.push_back(thread(analogwrite_prefilter));
 	threads.push_back(thread(analogwrite));
@@ -3188,7 +3208,7 @@ int main(int argc, char **argv)
 	// these should automatically be closed when their destructor is called
 	// however it should be safe to manually close after their thread is
 	// joined and finished
-	g_wfwriter.close();
+	g_spikewriter.close();
 	g_icmswriter.close();
 	g_analogwriter_prefilter.close();
 	g_analogwriter_postfilter.close();

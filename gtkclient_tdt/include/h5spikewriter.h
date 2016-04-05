@@ -15,7 +15,7 @@ typedef struct SPIKE {
 	i64		tk; 	// tdt tick of the spike, aligned to the start of the wf
 	double 	ts; 	// the timesamp of spike, aligned to the start of the wf
 	size_t	nwf;	// number of waveform samples
-	double	*wf;	// the waveform
+	float	*wf;	// the waveform
 } SPIKE;
 
 enum {

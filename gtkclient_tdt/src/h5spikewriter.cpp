@@ -137,7 +137,7 @@ bool H5SpikeWriter::open(const char *fn, size_t nc, size_t nu, size_t nwf)
 			chunk_dims[1] = 128;
 			H5Pset_chunk(prop, 2, chunk_dims);
 			sprintf(buf, "/Spikes/Chan%03zu/Unit%03zu/Waveforms", i, j);
-			dset = H5Dcreate(m_h5file, buf, H5T_IEEE_F64LE,
+			dset = H5Dcreate(m_h5file, buf, H5T_IEEE_F32LE,
 			                 ds, H5P_DEFAULT, prop, H5P_DEFAULT);
 			if (dset < 0) {
 				close();
@@ -296,7 +296,7 @@ bool H5SpikeWriter::write()   // call from a single consumer thread
 			// Define memory space for new data (TODO CHECK FOR ERROR)
 			memspace = H5Screate_simple(1, packet_dims, NULL);
 			// Write the dataset (TODO: CHECK FOR ERROR)
-			H5Dwrite(m_h5Dwf[idx], H5T_IEEE_F64LE, memspace, filespace,
+			H5Dwrite(m_h5Dwf[idx], H5T_IEEE_F32LE, memspace, filespace,
 			         H5P_DEFAULT, s->wf);
 			H5Sclose(memspace);
 			H5Sclose(filespace);
@@ -324,7 +324,7 @@ size_t H5SpikeWriter::bytes()
 	for (auto &x : m_ns) {
 		n += x.second * sizeof(i64);
 		n += x.second * sizeof(double);
-		n += x.second * m_nwf * sizeof(double);
+		n += x.second * m_nwf * sizeof(float);
 	}
 	return n;
 }
