@@ -18,8 +18,7 @@ H5SpikeWriter::~H5SpikeWriter()
 	delete m_q;
 	m_q = NULL;
 }
-/*
-bool H5SpikeWriter::open(const char *fn, size_t nc)
+bool H5SpikeWriter::open(const char *fn, size_t nc, size_t nu, size_t nwf);
 {
 	if (isEnabled())
 		return false;
@@ -28,14 +27,27 @@ bool H5SpikeWriter::open(const char *fn, size_t nc)
 	}
 
 	// Create a group
-	m_h5group = H5Gcreate2(m_h5file, "/Analog",
-	                       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+	m_h5topgroup = H5Gcreate2(m_h5file, "/Spikes",
+								H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
-	if (m_h5group < 0) {
+	if (m_h5topgroup < 0) {
 		close();
 		return false;
 	}
 
+	// create a group for each channel and for each unit in each channel
+	for (size_t i=1; i<=nc; i++) { // 1-indexed
+		char buf[32];
+		sprintf(buf, "/Spikes/%03i", i);
+		m_h5topgroup = H5Gcreate2(m_h5file, buf,
+								H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+		for (size_t j=0; j<=nu; j++) { // 1-indexed, zero is unsorted
+			sprintf(buf, "/Spikes/%03i/%03i", i, j);
+			m_h5topgroup = H5Gcreate2(m_h5file, buf,
+								H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+		}
+	}
+	/*
 
 	// create analog dataspace
 	// do not allow numchans to grow
@@ -131,9 +143,10 @@ bool H5SpikeWriter::open(const char *fn, size_t nc)
 	m_nc = nc;
 
 	enable();
+	*/
 	return true;
 }
-
+/*
 bool H5SpikeWriter::close()
 {
 	disable();

@@ -40,8 +40,8 @@ public:
 	~H5SpikeWriter();
 
 	// start the writer. fn is filename
-	//using H5Writer::open;
-	//bool open(const char *fn, size_t nc, size_t nu, size_t nwf);
+	using H5Writer::open;
+	bool open(const char *fn, size_t nc, size_t nu, size_t nwf);
 
 	//bool setMetaData(double sr, float *scale, char *name, int slen);
 

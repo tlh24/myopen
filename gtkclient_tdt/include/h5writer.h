@@ -14,7 +14,7 @@ using namespace std;
 class H5Writer
 {
 private:
-	atomic<bool> m_enabled;		// are we writing?
+	atomic<bool> m_enabled;			// are we writing?
 
 protected:
 	string 			m_fn; 			// the file name

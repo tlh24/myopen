@@ -1,8 +1,8 @@
 #include "h5writer.h"
 #include "readerwriterqueue.h"
 
-#ifndef __H5H5AnalogWriter_H__
-#define	__H5H5AnalogWriter_H__
+#ifndef __H5AnalogWriter_H__
+#define	__H5AnalogWriter_H__
 
 using namespace std;
 using namespace moodycamel;
