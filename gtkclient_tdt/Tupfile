@@ -15,8 +15,6 @@ LDFLAGS += `pkg-config --libs $(PKG_LIBS)`
 
 : src/icms2mat.o proto/icms.pb.o src/stimchan.o ../common_host/matStor.o |> !ld |> icms2mat
 
-: src/spikes2mat.o |> !ld |> spikes2mat
-
 : src/mmap_test.o |> !ld |> mmap_test
 
 : src/gtkclient.o \

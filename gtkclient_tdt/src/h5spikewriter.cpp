@@ -40,7 +40,7 @@ bool H5SpikeWriter::open(const char *fn, size_t nc, size_t nu, size_t nwf)
 	for (size_t i=1; i<=nc; i++) { // 1-indexed
 
 		char buf[256];
-		sprintf(buf, "/Spikes/Chan%03zu", i);
+		sprintf(buf, "/Spikes/Chan%zu", i);
 		group = H5Gcreate2(m_h5file, buf,
 		                   H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 		if (group < 0) {
@@ -52,7 +52,7 @@ bool H5SpikeWriter::open(const char *fn, size_t nc, size_t nu, size_t nwf)
 
 			auto idx = make_pair(i,j);
 
-			sprintf(buf, "/Spikes/Chan%03zu/Unit%03zu", i, j);
+			sprintf(buf, "/Spikes/Chan%zu/Unit%zu", i, j);
 			group = H5Gcreate2(m_h5file, buf,
 			                   H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 			if (group < 0) {
@@ -81,7 +81,7 @@ bool H5SpikeWriter::open(const char *fn, size_t nc, size_t nu, size_t nwf)
 				deflateDataset(prop);
 			chunk_dims[0] = 128;
 			H5Pset_chunk(prop, 1, chunk_dims);
-			sprintf(buf, "/Spikes/Chan%03zu/Unit%03zu/Ticks", i, j);
+			sprintf(buf, "/Spikes/Chan%zu/Unit%zu/Ticks", i, j);
 			dset = H5Dcreate(m_h5file, buf, H5T_STD_I64LE,
 			                 ds, H5P_DEFAULT, prop, H5P_DEFAULT);
 			if (dset < 0) {
@@ -107,7 +107,7 @@ bool H5SpikeWriter::open(const char *fn, size_t nc, size_t nu, size_t nwf)
 				deflateDataset(prop);
 			chunk_dims[0] = 128;
 			H5Pset_chunk(prop, 1, chunk_dims);
-			sprintf(buf, "/Spikes/Chan%03zu/Unit%03zu/Timestamps", i, j);
+			sprintf(buf, "/Spikes/Chan%zu/Unit%zu/Timestamps", i, j);
 			dset = H5Dcreate(m_h5file, buf, H5T_IEEE_F64LE,
 			                 ds, H5P_DEFAULT, prop, H5P_DEFAULT);
 			if (dset < 0) {
@@ -136,7 +136,7 @@ bool H5SpikeWriter::open(const char *fn, size_t nc, size_t nu, size_t nwf)
 			chunk_dims[0] = nwf;
 			chunk_dims[1] = 128;
 			H5Pset_chunk(prop, 2, chunk_dims);
-			sprintf(buf, "/Spikes/Chan%03zu/Unit%03zu/Waveforms", i, j);
+			sprintf(buf, "/Spikes/Chan%zu/Unit%zu/Waveforms", i, j);
 			dset = H5Dcreate(m_h5file, buf, H5T_IEEE_F32LE,
 			                 ds, H5P_DEFAULT, prop, H5P_DEFAULT);
 			if (dset < 0) {
@@ -328,37 +328,31 @@ size_t H5SpikeWriter::bytes()
 	}
 	return n;
 }
-/*
-bool H5SpikeWriter::setMetaData(double sr, float *scale, char *name, int slen)
+
+bool H5SpikeWriter::setMetaData(double sr, char *name, int slen)
 {
 	hid_t ds, attr, atype;
 
+	// sampling rate
 	ds = H5Screate(H5S_SCALAR);
-	attr = H5Acreate(m_h5group, "Sampling Rate", H5T_IEEE_F64LE, ds,
+	attr = H5Acreate(m_h5topgroup, "Sampling Rate", H5T_IEEE_F64LE, ds,
 	                 H5P_DEFAULT, H5P_DEFAULT);
 	H5Awrite(attr, H5T_NATIVE_DOUBLE, &sr); // TODO: CHECK ERROR
 	H5Aclose(attr); // TODO: check error
 	H5Sclose(ds);
 
+	// channel names
 	hsize_t dims = m_nc;
-	ds = H5Screate_simple(1, &dims, NULL);
-	attr = H5Acreate(m_h5group, "Scale Factor", H5T_IEEE_F32LE, ds,
-	                 H5P_DEFAULT, H5P_DEFAULT);
-	H5Awrite(attr, H5T_NATIVE_FLOAT, scale); // TODO: CHECK ERROR
-	H5Aclose(attr); // TODO: check error
-	H5Sclose(ds);
-
 	ds = H5Screate_simple(1, &dims, NULL);
 	atype = H5Tcopy(H5T_C_S1);
 	H5Tset_size(atype, slen);
-
 	H5Tset_strpad(atype, H5T_STR_NULLTERM);
-	attr = H5Acreate(m_h5group, "Channel Name", atype, ds,
+	attr = H5Acreate(m_h5topgroup, "Channel Name", atype, ds,
 	                 H5P_DEFAULT, H5P_DEFAULT);
 	H5Awrite(attr, atype, name); // TODO: CHECK ERROR
 	H5Aclose(attr);
+	H5Tclose(atype);
 	H5Sclose(ds);
 
 	return true;
 }
-*/

@@ -40,7 +40,10 @@ CPPFLAGS += $(shell pkg-config --cflags $(GLIBS))
 LDFLAGS += $(shell pkg-config --libs $(GLIBS))
 
 GOBJS = proto/po8e.pb.o proto/icms.pb.o src/gtkclient.o \
-src/datawriter.o src/h5writer.o src/h5analogwriter.o \
+src/datawriter.o \
+src/h5writer.o \
+src/h5spikewriter.o \
+src/h5analogwriter.o \
 src/filter.o src/po8e_conf.o \
 src/spikebuffer.o src/nlms2.o \
 src/vbo_raster.o src/vbo_timeseries.o \
@@ -53,7 +56,7 @@ src/icmswriter.o \
 ../common_host/random.o \
 ../common_host/lconf.o
 
-COM_HDR = include/channel.h include/wfwriter.h \
+COM_HDR = include/channel.h \
 include/po8e_conf.h include/vbo_raster.h include/vbo_timeseries.h \
 ../common_host/util.h \
 ../common_host/vbo.h \
@@ -90,7 +93,7 @@ ifeq ($(strip $(STACKPROTECTOR)),true)
 	CFLAGS   += -fstack-protector-all
 endif
 
-all: gtkclient timesync spikes2mat icms2mat mmap_test po8e
+all: gtkclient timesync icms2mat mmap_test po8e
 
 src/%.o: src/%.cpp $(COM_HDR)
 	$(CPP) -c $(CPPFLAGS) $< -o $@
@@ -110,8 +113,8 @@ gtkclient: $(GOBJS)
 timesync: src/timeclient.o ../common_host/gettime.o
 	$(CPP) -o $@ $(LDFLAGS) $^
 
-spikes2mat: src/spikes2mat.o
-	$(CPP) -o $@ $(LDFLAGS) $^
+#spikes2mat: src/spikes2mat.o
+#	$(CPP) -o $@ $(LDFLAGS) $^
 
 icms2mat: proto/icms.pb.o src/icms2mat.o src/stimchan.o ../common_host/matStor.o
 	$(CPP) -o $@ $(LDFLAGS) -lprotobuf $^
@@ -123,7 +126,7 @@ po8e: proto/po8e.pb.o src/po8e.o ../common_host/util.o ../common_host/lconf.o sr
 	$(CPP) -o $@ $(LDFLAGS) $^
 
 clean:
-	rm -rf gtkclient timesync spikes2mat icms2mat mmap_test po8e \
+	rm -rf gtkclient timesync icms2mat mmap_test po8e \
 	proto/*.pb.cc proto/*.pb.h proto/*.o src/*.o ../common_host/*.o
 
 	
@@ -171,7 +174,6 @@ install:
 	install -d $(TARGET)
 	install gtkclient -t $(TARGET)
 	install timesync -t $(TARGET)
-	install spikes2mat -t $(TARGET)
 	install icms2mat -t $(TARGET)
 	install -d $(TARGET)/cg
 	install cg/fade.cg -t $(TARGET)/cg

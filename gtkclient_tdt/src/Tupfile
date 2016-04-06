@@ -9,7 +9,6 @@ LDFLAGS += -lpthread -lGL -lprotobuf -lPO8eStreaming
 LDFLAGS += `pkg-config --libs $(PKG_LIBS)`
 
 OBJS = timeclient.cpp \
-spikes2mat.cpp \
 filter.cpp \
 mmap_test.cpp \
 datawriter.cpp \

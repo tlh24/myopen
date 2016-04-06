@@ -18,14 +18,14 @@ enum MODES { // ui tabs
 #define SRATE_HZ	(24414.0625)
 #define SRATE_KHZ	(24.4140625)
 #define NSAMP 		(64*1024)	// about 2.6 seconds. (MUST BE POWER OF 2)
-#define NSAMPWF		256			// samples to track for spike sorting (MUST BE POWER OF 2!)
-#define NWFSAMP		40 			// wf samples at SRATE_HZ (nb compare with NSAMPWF, above)
+#define NSAMPWF		512			// samples to track for spike sorting (MUST BE POWER OF 2!)
+#define NWFSAMP		48 			// wf samples at SRATE_HZ (nb compare with NSAMPWF, above)
 #elif defined KHZ_48
 #define SRATE_HZ	(48828.1250)
 #define SRATE_KHZ	(48.8281250)
 #define NSAMP 		(128*1024)
-#define NSAMPWF		512
-#define NWFSAMP		80
+#define NSAMPWF		1024
+#define NWFSAMP		96
 #else
 #error Bad sampling rate!
 #endif

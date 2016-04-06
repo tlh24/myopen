@@ -64,7 +64,6 @@
 #include "artifact.h"
 #include "timesync.h"
 #include "matStor.h"
-#include "wfwriter.h"
 #include "jacksnd.h"
 #include "filter.h"
 #include "spikebuffer.h"
@@ -122,10 +121,12 @@ float	g_rasterSpan = 10.f; // %seconds.
 vector <Channel *> g_c;
 vector <FiringRate *> g_fr;
 TimeSync 	g_ts(SRATE_HZ); //keeps track of ticks (TDT time)
-//WfWriter	g_wfwriter;
 GLuint 		g_base;            // base display list for the font set.
 
 H5SpikeWriter	g_spikewriter;
+gboolean 		g_saveUnsorted = true;
+gboolean 		g_saveSpikeWF = true;
+
 H5AnalogWriter	g_analogwriter_postfilter;
 H5AnalogWriter	g_analogwriter_prefilter;
 
@@ -169,8 +170,6 @@ gboolean g_showContThresh = true;
 gboolean g_showISIhist = true;
 gboolean g_showWFstd = true;
 bool g_rtMouseBtn = false;
-gboolean g_saveUnsorted = true;
-gboolean g_saveSpikeWF = true;
 gboolean g_saveICMSWF = true;
 
 // for drawing circles around pca points
@@ -233,7 +232,6 @@ GtkWidget *g_channelSpin[4] = {nullptr,nullptr,nullptr,nullptr};
 GtkWidget *g_gainSpin[4] = {nullptr,nullptr,nullptr,nullptr};
 GtkWidget *g_apertureSpin[8] = {nullptr,nullptr,nullptr,nullptr};
 GtkWidget *g_enabledChkBx[4] = {nullptr,nullptr,nullptr,nullptr};
-GtkWidget *g_spikeFileSizeLabel;
 GtkWidget *g_notebook;
 int g_uiRecursion = 0; //prevents programmatic changes to the UI
 // from causing commands to be sent to the headstage.
@@ -248,6 +246,10 @@ void saveState()
 		a->save(&ms);
 	g_nlms->save(&ms);
 	ms.setInt("channel", g_channel);
+
+	ms.setStructValue("savemode", "unsorted_spikes", 0, (float)g_saveUnsorted);
+	ms.setStructValue("savemode", "spike_waveforms", 0, (float)g_saveSpikeWF);
+	ms.setStructValue("savemode", "icms_waveforms", 0, (float)g_saveICMSWF);
 
 	ms.setStructValue("gui","draw_mode",0,(float)g_drawmodep);
 	ms.setStructValue("gui","blend_mode",0,(float)g_blendmodep);
@@ -919,17 +921,6 @@ static gboolean rotate(gpointer user_data)
 	s += string(str);
 	gtk_label_set_text(GTK_LABEL(g_infoLabel), s.c_str());
 
-	/*
-	if (g_wfwriter.enabled()) {
-		size_t n = g_wfwriter.filename().find_last_of("/");
-
-		snprintf(str, 256, "%s: %.2f MB",
-		         g_wfwriter.filename().substr(n+1).c_str(),
-		         (double)g_wfwriter.bytes()/1e6);
-		gtk_label_set_text(GTK_LABEL(g_spikeFileSizeLabel), str);
-	}
-	*/
-
 	g_icmswriter.draw();
 	g_spikewriter.draw();
 	g_analogwriter_prefilter.draw();
@@ -1082,19 +1073,6 @@ void sorter(int ch)
 					s->wf[g] = wf_sp[idx+g] * 1e4;
 				}
 				g_spikewriter.add(s); // other thread deletes memory
-				/*
-				wfpak pak;
-				pak.time = the_time;
-				pak.ticks = tk;
-				pak.channel = ch; // zero-indexed
-				pak.unit = unit;
-				pak.len = NWFSAMP;
-				float gain2 = 2 * 32767.f / 1e4; // XXX is this set to proper per-chan gain?
-				for (int g=0; g<NWFSAMP; g++) {
-					pak.wf[g] = (i16)(wf_sp[idx+g]*gain2); //should be in original units.
-				}
-				g_wfwriter.add(&pak);
-				*/
 			}
 			if (unit > 0 && unit < NUNIT) {
 				int uu = unit-1;
@@ -2073,6 +2051,19 @@ static void openSaveSpikesFile(GtkWidget *, gpointer parent_window)
 		filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
 		g_spikewriter.open(filename, g_c.size(), NSORT, NWFSAMP);
 		g_free (filename);
+
+		int max_str = 0;
+		for (size_t i=0; i<g_c.size(); i++) {
+			max_str = max_str > (int)g_c[i]->m_chanName.size() ?
+			          max_str : g_c[i]->m_chanName.size();
+		}
+		auto name = new char[max_str*g_c.size()];
+		for (size_t i=0; i<g_c.size(); i++) {
+			strncpy(&name[i*max_str], g_c[i]->m_chanName.c_str(),
+			        g_c[i]->m_chanName.size());
+		}
+		g_spikewriter.setMetaData(g_sr, name, max_str);
+		delete[] name;
 	}
 	gtk_widget_destroy (dialog);
 }
@@ -2436,6 +2427,10 @@ int main(int argc, char **argv)
 		o->setColor(0.0, 1.0, 0.0, 0.3); // green
 		g_eventraster.push_back(o);
 	}
+
+	g_saveUnsorted 	= (bool) ms.getStructValue("savemode", "unsorted_spikes", 0, (float)g_saveUnsorted);
+	g_saveSpikeWF  	= (bool)ms.getStructValue("savemode", "spike_waveforms", 0, (float)g_saveSpikeWF);
+	g_saveICMSWF	= (bool)ms.getStructValue("savemode", "icms_waveforms", 0, (float)g_saveICMSWF);
 
 	g_drawmodep = (int) ms.getStructValue("gui", "draw_mode", 0, (float)g_drawmodep);
 	g_blendmodep = (int) ms.getStructValue("gui", "blend_mode", 0, (float)g_blendmodep);
@@ -2872,7 +2867,7 @@ int main(int argc, char **argv)
 	bxx2 = gtk_vbox_new(TRUE, 0);
 	gtk_container_add(GTK_CONTAINER (bxx1), bxx2);
 	mk_button("Start", bxx2, openSaveSpikesFile, nullptr);
-	mk_checkbox("WF? (does this work?)", bxx2, &g_saveSpikeWF, basic_checkbox_cb);
+	mk_checkbox("WF?", bxx2, &g_saveSpikeWF, basic_checkbox_cb);
 
 	bxx2 = gtk_vbox_new(FALSE, 0);
 	gtk_container_add(GTK_CONTAINER (bxx1), bxx2);
@@ -3022,11 +3017,12 @@ int main(int argc, char **argv)
 	gtk_box_pack_start (GTK_BOX (v1), bx, TRUE, TRUE, 0);
 
 	bx = gtk_hbox_new (FALSE, 3);
-	g_spikeFileSizeLabel = gtk_label_new ("");
-	gtk_misc_set_alignment (GTK_MISC (g_spikeFileSizeLabel), 0, 0);
-	gtk_box_pack_start (GTK_BOX (bx), g_spikeFileSizeLabel, FALSE, FALSE, 0);
-	gtk_widget_show(g_spikeFileSizeLabel);
+	label = gtk_label_new ("");
+	gtk_misc_set_alignment (GTK_MISC (label), 0, 0);
+	gtk_box_pack_start (GTK_BOX (bx), label, FALSE, FALSE, 0);
+	gtk_widget_show(label);
 	gtk_box_pack_start (GTK_BOX (v1), bx, TRUE, TRUE, 0);
+	g_spikewriter.registerWidget(label);
 
 	bx = gtk_hbox_new (FALSE, 3);
 	label = gtk_label_new ("");

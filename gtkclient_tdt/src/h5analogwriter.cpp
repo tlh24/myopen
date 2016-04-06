@@ -284,6 +284,7 @@ bool H5AnalogWriter::setMetaData(double sr, float *scale, char *name, int slen)
 {
 	hid_t ds, attr, atype;
 
+	// sampling rate
 	ds = H5Screate(H5S_SCALAR);
 	attr = H5Acreate(m_h5topgroup, "Sampling Rate", H5T_IEEE_F64LE, ds,
 	                 H5P_DEFAULT, H5P_DEFAULT);
@@ -291,6 +292,7 @@ bool H5AnalogWriter::setMetaData(double sr, float *scale, char *name, int slen)
 	H5Aclose(attr); // TODO: check error
 	H5Sclose(ds);
 
+	// scale factor
 	hsize_t dims = m_nc;
 	ds = H5Screate_simple(1, &dims, NULL);
 	attr = H5Acreate(m_h5topgroup, "Scale Factor", H5T_IEEE_F32LE, ds,
@@ -299,15 +301,16 @@ bool H5AnalogWriter::setMetaData(double sr, float *scale, char *name, int slen)
 	H5Aclose(attr); // TODO: check error
 	H5Sclose(ds);
 
+	// channel names
 	ds = H5Screate_simple(1, &dims, NULL);
 	atype = H5Tcopy(H5T_C_S1);
 	H5Tset_size(atype, slen);
-
 	H5Tset_strpad(atype, H5T_STR_NULLTERM);
 	attr = H5Acreate(m_h5topgroup, "Channel Name", atype, ds,
 	                 H5P_DEFAULT, H5P_DEFAULT);
 	H5Awrite(attr, atype, name); // TODO: CHECK ERROR
 	H5Aclose(attr);
+	H5Tclose(atype);
 	H5Sclose(ds);
 
 	return true;

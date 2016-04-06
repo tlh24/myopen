@@ -46,7 +46,7 @@ public:
 	// close log file
 	bool close();
 
-	//bool setMetaData(double sr, float *scale, char *name, int slen);
+	bool setMetaData(double sr, char *name, int slen);
 
 	// log an analog protobuf
 	bool add(SPIKE *s);
