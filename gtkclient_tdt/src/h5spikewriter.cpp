@@ -235,7 +235,7 @@ bool H5SpikeWriter::write()   // call from a single consumer thread
 		dequeued = m_q->try_dequeue(s);
 		if (dequeued) {
 
-			if (s->nwf != m_nwf) {
+			if ((s->nwf != m_nwf) && s->nwf != 0) {
 				warn("well this is embarassing");
 			}
 
@@ -282,24 +282,26 @@ bool H5SpikeWriter::write()   // call from a single consumer thread
 
 			// WAVEFORMS
 			// extend dataset for new data (TODO: CHECK FOR ERROR)
-			new_dims[0] = m_nwf;
-			new_dims[1] = m_ns[idx] + 1;
-			H5Dset_extent(m_h5Dwf[idx], new_dims);
-			// select hyperslab in extended oprtion of dataset
-			filespace = H5Dget_space(m_h5Dwf[idx]);
-			offset[0] = 0;
-			offset[1] = m_ns[idx];
-			packet_dims[0] = m_nwf;
-			packet_dims[1] = 1;
-			H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offset, NULL,
-			                    packet_dims, NULL);
-			// Define memory space for new data (TODO CHECK FOR ERROR)
-			memspace = H5Screate_simple(1, packet_dims, NULL);
-			// Write the dataset (TODO: CHECK FOR ERROR)
-			H5Dwrite(m_h5Dwf[idx], H5T_IEEE_F32LE, memspace, filespace,
-			         H5P_DEFAULT, s->wf);
-			H5Sclose(memspace);
-			H5Sclose(filespace);
+			if (s->nwf != 0) {
+				new_dims[0] = m_nwf;
+				new_dims[1] = m_ns[idx] + 1;
+				H5Dset_extent(m_h5Dwf[idx], new_dims);
+				// select hyperslab in extended oprtion of dataset
+				filespace = H5Dget_space(m_h5Dwf[idx]);
+				offset[0] = 0;
+				offset[1] = m_ns[idx];
+				packet_dims[0] = m_nwf;
+				packet_dims[1] = 1;
+				H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offset, NULL,
+				                    packet_dims, NULL);
+				// Define memory space for new data (TODO CHECK FOR ERROR)
+				memspace = H5Screate_simple(1, packet_dims, NULL);
+				// Write the dataset (TODO: CHECK FOR ERROR)
+				H5Dwrite(m_h5Dwf[idx], H5T_IEEE_F32LE, memspace, filespace,
+				         H5P_DEFAULT, s->wf);
+				H5Sclose(memspace);
+				H5Sclose(filespace);
+			}
 
 			m_ns[idx] += 1; // increment sample pointer
 

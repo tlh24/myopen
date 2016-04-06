@@ -1060,17 +1060,21 @@ void sorter(int ch)
 			g_c[ch]->addWf(&wf_sp[idx], unit, the_time, true);
 			g_c[ch]->updateISI(unit, tk); // does nothing for unit==0
 			if (g_spikewriter.isEnabled() && (unit > 0 || g_saveUnsorted)) {
-
 				SPIKE *s;
 				s = new SPIKE;	// deleted by other thread
 				s->ch = ch+1;	// 1-indexed
 				s->un = unit;
 				s->tk = tk;
 				s->ts = the_time;
-				s->nwf = NWFSAMP; // xxx if no save wf -> 0
-				s->wf = new float[s->nwf];
-				for (size_t g=0; g<s->nwf; g++) {
-					s->wf[g] = wf_sp[idx+g] * 1e4;
+				if (g_saveSpikeWF) {
+					s->nwf = NWFSAMP;
+					s->wf = new float[s->nwf];
+					for (size_t g=0; g<s->nwf; g++) {
+						s->wf[g] = wf_sp[idx+g] * 1e4;
+					}
+				} else {
+					s->nwf = 0;
+					s->wf = new float[0];
 				}
 				g_spikewriter.add(s); // other thread deletes memory
 			}
