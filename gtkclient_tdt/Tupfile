@@ -1,11 +1,11 @@
 include_rules
 
-PKG_LIBS = gtk+-2.0 gtkglext-1.0 lua5.1 libprocps hdf5
+PKG_LIBS = gtk+-2.0 gtkglext-1.0 gsl lua5.1 libprocps hdf5 matio
 
 CPPFLAGS += -Iinclude -Iproto -I../common_host
 CPPFLAGS += `pkg-config --cflags $(PKG_LIBS)`
 
-LDFLAGS += -lpthread -lGL -lGLU -lCg -lCgGL -lgsl -lcblas -latlas -lm
+LDFLAGS += -lpthread -lGL -lGLU -lCg -lCgGL
 LDFLAGS += -lprotobuf -lPO8eStreaming -lmatio
 LDFLAGS += `pkg-config --libs $(PKG_LIBS)`
 

@@ -8,6 +8,8 @@ CPPFLAGS += -Wstrict-overflow -fno-strict-aliasing
 CPPFLAGS += -Wcast-align -Wpointer-arith -Wsign-compare
 CPPFLAGS += -Wformat=2 -Wno-format-y2k -Wmissing-braces -Wparentheses
 CPPFLAGS += -Wno-missing-field-initializers
+#CPPFLAGS += -Wno-deprecated-declarations -stdlib=libstdc++
+#CPPFLAGS += -Wno-braced-scalar-init -Wno-unused-result
 
 LDFLAGS  += -ljack
 
