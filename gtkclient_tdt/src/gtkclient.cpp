@@ -4,14 +4,14 @@
 
 #include <gtk/gtk.h>
 #include <gtk/gtkgl.h>
-#include <GL/glut.h>    // Header File For The GLUT Library
-#include <GL/gl.h>	// Header File For The OpenGL32 Library
-#include <GL/glu.h>	// Header File For The GLu32 Library
-#include <GL/glx.h>     // Header file for the glx libraries.
+#include <GL/glut.h>	// Header File For The GLUT Library
+#include <GL/gl.h>		// Header File For The OpenGL32 Library
+#include <GL/glu.h>		// Header File For The GLu32 Library
+#include <GL/glx.h>		// Header file for the glx libraries.
 #include "../common_host/glext.h"
 #include "../common_host/glInfo.h"
 
-#include <Cg/cg.h>    /* included in Cg toolkit for nvidia */
+#include <Cg/cg.h>		/* included in Cg toolkit for nvidia */
 #include <Cg/cgGL.h>
 
 #include <stdio.h>
@@ -2351,12 +2351,28 @@ int main(int argc, char **argv)
 	MatStor ms(g_prefstr);
 	ms.load();
 
+	auto fileExists = [](const char *f) {
+		struct stat sb;
+		int res = stat(f, &sb);
+		if (res == 0)
+			if (S_ISREG(sb.st_mode))
+				return true;
+		return false;
+	};
+
 	// load the lua-based po8e config
 	po8eConf pc;
-	if (!pc.loadConf("po8e.rc")) {
+	bool conf_ok = false;
+	if (fileExists("po8e.rc")) {
+		conf_ok = pc.loadConf("po8e.rc");
+	} else if (fileExists("rc/po8e.rc")) {
+		conf_ok = pc.loadConf("rc/po8e.rc");
+	}
+	if (!conf_ok) {
 		error("No config file! Aborting!");
 		return 1;
 	}
+
 
 	g_po8e_read_size = pc.readSize();
 	printf("po8e read size:\t\t%zu\n", 	g_po8e_read_size);
