@@ -9,16 +9,18 @@ CPPFLAGS += -Wcast-align -Wpointer-arith -Wsign-compare
 CPPFLAGS += -Wformat=2 -Wno-format-y2k -Wmissing-braces -Wparentheses
 CPPFLAGS += -Wno-missing-field-initializers
 #CPPFLAGS += -Wno-deprecated-declarations -stdlib=libstdc++
-#CPPFLAGS += -Wno-braced-scalar-init -Wno-unused-result
+CPPFLAGS += -Wno-braced-scalar-init -Wno-unused-result
 
 LDFLAGS  += -ljack
 
 CPPFLAGS += -O3 -fslp-vectorize-aggressive -march=native
 CPPFLAGS += -DJACK
 
-#CPPFLAGS += -O0 -g -DDEBUG
+#CPPFLAGS += -O1 -g -DDEBUG
 #CPPFLAGS += -fno-inline -fno-omit-frame-pointer
 #LDFLAGS  += -fno-inline -fno-omit-frame-pointer
+#CPPFLAGS += -fsanitize=address
+#LDFLAGS  += -fsanitize=address
 
 # these are to analyize automatic loop vectorization failures
 #CPPFLAGS += -Rpass=loop-vectorize
