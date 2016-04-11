@@ -2104,9 +2104,6 @@ static void openSaveICMSFile(GtkWidget *, gpointer parent_window)
 }
 static void openSaveAnalogPrefilterFile(GtkWidget *, gpointer parent_window)
 {
-
-	gtk_widget_set_sensitive(g_whichAnalogSaveWidget, false);
-
 	string d = get_cwd();
 	string f = mk_legal_filename(d, "analog_pre_", ".h5");
 
@@ -2153,6 +2150,8 @@ static void openSaveAnalogPrefilterFile(GtkWidget *, gpointer parent_window)
 			exit(1);
 		}
 
+		gtk_widget_set_sensitive(g_whichAnalogSaveWidget, false);
+
 		g_analogwriter_prefilter.open(filename, nc);
 		g_free(filename);
 
@@ -2176,9 +2175,6 @@ static void openSaveAnalogPrefilterFile(GtkWidget *, gpointer parent_window)
 }
 static void openSaveAnalogFile(GtkWidget *, gpointer parent_window)
 {
-
-	gtk_widget_set_sensitive(g_whichAnalogSaveWidget, false);
-
 	string d = get_cwd();
 	string f = mk_legal_filename(d, "analog_post_", ".h5");
 
@@ -2224,6 +2220,8 @@ static void openSaveAnalogFile(GtkWidget *, gpointer parent_window)
 			error("bad analog save mode. exiting.");
 			exit(1);
 		}
+
+		gtk_widget_set_sensitive(g_whichAnalogSaveWidget, false);
 
 		g_analogwriter_postfilter.open(filename, nc);
 		g_free(filename);
