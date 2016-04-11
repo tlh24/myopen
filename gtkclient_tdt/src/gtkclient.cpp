@@ -110,7 +110,7 @@ vector <VboRaster *> g_eventraster;
 ReaderWriterQueue<gsl_matrix *> g_filterbuf(NSAMP); // for nlms filtering
 
 std::mutex g_po8e_mutex;
-vector <pair<ReaderWriterQueue<PO8Data>*, po8e::card *>> g_dataqueues;
+vector <pair<ReaderWriterQueue<PO8Data *>*, po8e::card *>> g_dataqueues;
 size_t g_po8e_read_size = 16;
 
 float g_zoomSpan = 1.0;
@@ -934,7 +934,7 @@ void destroyGUI(GtkWidget *, gpointer)
 }
 void nlms_train()
 {
-	gsl_matrix *X;
+	gsl_matrix *X = nullptr;
 	while (!g_die) {
 		int succeeded = 0;
 		do {
@@ -948,7 +948,10 @@ void nlms_train()
 
 		g_nlms->train(X);
 		gsl_matrix_free(X); // free memory allocated in other thread
+		X = nullptr;
 	}
+	if (X)
+		gsl_matrix_free(X);
 }
 void sorter(int ch)
 {
@@ -1138,7 +1141,7 @@ void analogwrite()
 			usleep(1e5);
 	}
 }
-void po8e_fun(PO8e *p, ReaderWriterQueue<PO8Data> *q)
+void po8e_fun(PO8e *p, ReaderWriterQueue<PO8Data *> *q)
 {
 	size_t bufmax = 10000;	// must be >= 10000
 
@@ -1207,14 +1210,16 @@ void po8e_fun(PO8e *p, ReaderWriterQueue<PO8Data> *q)
 			}
 			last_tick = tick[numRead-1];
 
-			PO8Data o;
-			o.data = (i16 *)malloc(nchan*numRead*sizeof(i16));
-			memcpy(o.data, buff, nchan*numRead*sizeof(i16));
-			o.numChannels = nchan;
-			o.numSamples = numRead;
-			o.tick = tick[0];
+			PO8Data *o;
+			o = new PO8Data;
+			o->data = new i16[nchan*numRead];
+			memcpy(o->data, buff, nchan*numRead*sizeof(i16));
+			o->numChannels = nchan;
+			o->numSamples = numRead;
+			o->tick = tick[0];
 			q->enqueue(o);
-			// NB the other thread frees the memory allocated to p.data
+			// NB the other thread frees o
+			// and the memory allocated to o->data
 		} else {
 			usleep(1e3);
 		}
@@ -1236,7 +1241,7 @@ void po8e_fun(PO8e *p, ReaderWriterQueue<PO8Data> *q)
 void worker()
 {
 
-	vector<PO8Data> p;
+	vector<PO8Data *> p;
 	vector<po8e::card *> c;
 
 	while (!g_die) {
@@ -1251,7 +1256,7 @@ void worker()
 			c.push_back(g_dataqueues[i].second);
 			int succeeded;
 			do {
-				PO8Data x;
+				PO8Data *x;
 				succeeded = q->try_dequeue(x);
 				if (succeeded)
 					p.push_back(x);
@@ -1262,25 +1267,26 @@ void worker()
 
 		if (g_die) {
 			for (auto &x : p) {
-				free(x.data);
+				delete[] (x->data);
+				delete x;
 			}
 			break;
 		}
 
 		auto mismatch = false;
 		for (size_t i=0; i<n; i++) {
-			if (p[i].numSamples != p[0].numSamples) {
+			if (p[i]->numSamples != p[0]->numSamples) {
 				warn("po8e card sample mismatch");
 				mismatch = true;
 				break;
 			}
-			if (p[i].numChannels != (size_t)c[i]->channel_size()) {
+			if (p[i]->numChannels != (size_t)c[i]->channel_size()) {
 				warn("po8e card %d: configured for %d channels (%d received in po8e packet)",
-				     c[i]->id(), c[i]->channel_size(), p[i].numChannels);
+				     c[i]->id(), c[i]->channel_size(), p[i]->numChannels);
 				mismatch = true;
 				break;
 			}
-			if (p[i].tick != p[0].tick) {
+			if (p[i]->tick != p[0]->tick) {
 				warn("p08e ticks misaligned between cards");
 				mismatch = true;
 				break;
@@ -1297,14 +1303,14 @@ void worker()
 
 		// also -- only accept stort-interval responses (ignore outliers..)
 		if (g_po8ePollInterval < g_po8eAvgInterval*1.5) {
-			g_ts.update(time, p[0].tick); //also updates the mmap file.
+			g_ts.update(time, p[0]->tick); //also updates the mmap file.
 		}
 
-		auto ns = p[0].numSamples;
+		auto ns = p[0]->numSamples;
 
 		auto tk 	= new i64[ns];
 		auto ts 	= new double[ns];
-		tk[0] = p[0].tick;
+		tk[0] = p[0]->tick;
 		ts[0] = g_ts.getTime(tk[0]);
 		for (size_t i=1; i < ns; i++) {
 			tk[i] = tk[i-1] + 1;
@@ -1322,9 +1328,9 @@ void worker()
 				if (c[i]->channel(j).data_type() == po8e::channel::NEURAL) {
 					auto scale_factor = g_c[nc_i]->m_scaleFactor;
 					for (size_t k=0; k<ns; k++) {
-						f[nc_i*ns+k] = (float)p[i].data[j*ns+k]/scale_factor;
+						f[nc_i*ns+k] = (float)p[i]->data[j*ns+k]/scale_factor;
 						gsl_matrix_set(X, nc_i, k, f[nc_i*ns+k]);
-						raw[nc_i*ns+k] = p[i].data[j*ns+k];
+						raw[nc_i*ns+k] = p[i]->data[j*ns+k];
 					}
 					nc_i++;
 				}
@@ -1354,12 +1360,12 @@ void worker()
 				if (c[i]->channel(j).data_type() == po8e::channel::EVENT) {
 					if (c[i]->channel(j).name().compare("stim") == 0) {
 						for (size_t k=0; k<ns; k++) {
-							stim[ns_i*ns+k] = (bool)p[i].data[j*ns+k];
+							stim[ns_i*ns+k] = (bool)p[i]->data[j*ns+k];
 						}
 						ns_i++;
 					} else {
 						for (size_t k=0; k<ns; k++) {
-							events[ne_i*ns+k] = (bool)p[i].data[j*ns+k];
+							events[ne_i*ns+k] = (bool)p[i]->data[j*ns+k];
 						}
 						ne_i++;
 					}
@@ -1369,7 +1375,8 @@ void worker()
 
 		// free the po8e data packet
 		for (auto &x : p) {
-			free(x.data);
+			delete[] (x->data);
+			delete x;
 		}
 
 		// hardcode the zeroth element, maybe fix this XXX
@@ -3159,9 +3166,9 @@ int main(int argc, char **argv)
 			}
 			printf("Connection established to card %d at %p\n", id, (void *)p);
 			if (configureCard(p)) {
-				ReaderWriterQueue<PO8Data> *q = new ReaderWriterQueue<PO8Data>(512);
+				ReaderWriterQueue<PO8Data *> *q = new ReaderWriterQueue<PO8Data *>(512);
 				threads.push_back(thread(po8e_fun, p, q));
-				g_dataqueues.push_back(pair<ReaderWriterQueue<PO8Data>*, po8e::card *>(q, pc.cards[i]));
+				g_dataqueues.push_back(pair<ReaderWriterQueue<PO8Data *>*, po8e::card *>(q, pc.cards[i]));
 			}
 		}
 	}
