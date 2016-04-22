@@ -194,78 +194,19 @@ public:
 	int 	m_drawWf;
 	int 	m_wfLen;
 
-	VboPca(int dim, int rows, int cols, int ch, MatStor *ms):Vbo(dim, rows, cols)
+	VboPca(int dim, int rows, int cols, int ch, MatStor *ms) : Vbo(dim, rows, cols)
 	{
-		if (dim != 6) printf("Error: dim != 6 in VboPca\n");
-		m_mean = (float *)malloc(dim * sizeof(float));
-		m_max = (float *)malloc(dim * sizeof(float));
-		m_maxSmooth = (float *)malloc(dim * sizeof(float));
-		m_meanSmooth = (float *)malloc(dim * sizeof(float));
-		for (int i=0; i<dim; i++) {
-			m_mean[i] = 0.f;
-			m_max[i] = 1.f;
-			m_maxSmooth[i] = 1.f;
-			m_meanSmooth[i] = 0.f;
-		}
-		if (ms) {
-			ms->getValue3(ch, 0, "vbopca_mean", m_mean, 6);
-			ms->getValue3(ch, 0, "vbopca_max", m_max, 6);
-		}
-		m_wfLen = 32;
-		m_wf = (float *)malloc(rows * m_wfLen * sizeof(float));
-		m_poly = (float *)malloc(1024 * 2 * sizeof(float)); //for sorting.
-		m_polyW = 0;
-		m_drawWf = 0;
-		m_color[3] = -0.5; //additive alpha. so make the points partially transparent.
+		construct(ch, 32, nullptr, nullptr, ms);
 	}
-	VboPca(int dim, int rows, int cols, int ch, int wfLen, MatStor *ms):Vbo(dim, rows, cols)
+	VboPca(int dim, int rows, int cols, float *pca_mean, float *pca_max) : Vbo(dim, rows, cols)
 	{
-		// set wfLen in constructor
-		if (dim != 6) printf("Error: dim != 6 in VboPca\n");
-		m_mean = (float *)malloc(dim * sizeof(float));
-		m_max = (float *)malloc(dim * sizeof(float));
-		m_maxSmooth = (float *)malloc(dim * sizeof(float));
-		m_meanSmooth = (float *)malloc(dim * sizeof(float));
-		for (int i=0; i<dim; i++) {
-			m_mean[i] = 0.f;
-			m_max[i] = 1.f;
-			m_maxSmooth[i] = 1.f;
-			m_meanSmooth[i] = 0.f;
-		}
-		if (ms) {
-			ms->getValue3(ch, 0, "vbopca_mean", m_mean, 6);
-			ms->getValue3(ch, 0, "vbopca_max", m_max, 6);
-		}
-		m_wfLen = wfLen;
-		m_wf = (float *)malloc(rows * m_wfLen * sizeof(float));
-		m_poly = (float *)malloc(1024 * 2 * sizeof(float)); //for sorting.
-		m_polyW = 0;
-		m_drawWf = 0;
-		m_color[3] = -0.5; //additive alpha. so make the points partially transparent.
+		construct(-1, 32, pca_mean, pca_max, nullptr);
 	}
-	VboPca(int dim, int rows, int cols, float *pca_mean, float *pca_max):Vbo(dim, rows, cols)
+	VboPca(int dim, int rows, int cols, int ch, int wfLen, MatStor *ms) : Vbo(dim, rows, cols)
 	{
-		// not dependent on matstor
-		if (dim != 6) printf("Error: dim != 6 in VboPca\n");
-		m_mean = (float *)malloc(dim * sizeof(float));
-		m_max = (float *)malloc(dim * sizeof(float));
-		m_maxSmooth = (float *)malloc(dim * sizeof(float));
-		m_meanSmooth = (float *)malloc(dim * sizeof(float));
-		for (int i=0; i<dim; i++) {
-			m_mean[i] = 0.f;
-			m_max[i] = 1.f;
-			m_maxSmooth[i] = 1.f;
-			m_meanSmooth[i] = 0.f;
-		}
-		memcpy(m_mean, pca_mean, dim);
-		memcpy(m_max,  pca_max, dim);
-		m_wfLen = 32;
-		m_wf = (float *)malloc(rows * m_wfLen * sizeof(float));
-		m_poly = (float *)malloc(1024 * 2 * sizeof(float)); //for sorting.
-		m_polyW = 0;
-		m_drawWf = 0;
-		m_color[3] = -0.5; //additive alpha. so make the points partially transparent.
+		construct(ch, wfLen, nullptr, nullptr, ms);
 	}
+
 	virtual ~VboPca()
 	{
 		free(m_mean);
@@ -275,10 +216,40 @@ public:
 		free(m_wf);
 		free(m_poly);
 	}
+	void construct(int ch, int wfLen, float *pca_mean, float *pca_max,
+		MatStor *ms) {
+		//if (m_dim != 6) printf("Error: dim != 6 in VboPca\n");
+		m_mean = (float *)malloc(m_dim * sizeof(float));
+		m_max = (float *)malloc(m_dim * sizeof(float));
+		m_maxSmooth = (float *)malloc(m_dim * sizeof(float));
+		m_meanSmooth = (float *)malloc(m_dim * sizeof(float));
+		for (int i=0; i<m_dim; i++) {
+			m_mean[i] = 0.f;
+			m_max[i] = 1.f;
+			m_maxSmooth[i] = 1.f;
+			m_meanSmooth[i] = 0.f;
+		}
+		if (ms) {
+			ms->getValue3(ch, 0, "vbopca_mean", m_mean, m_dim);
+			ms->getValue3(ch, 0, "vbopca_max", m_max, m_dim);
+		} else if (pca_mean && pca_max) {
+			memcpy(m_mean, pca_mean, m_dim);
+			memcpy(m_max,  pca_max, m_dim);
+		}
+		m_wfLen = wfLen;
+		m_wf = (float *)malloc(m_rows * m_wfLen * sizeof(float));
+		// XXX DO WE NEED TO SET THE SIZE OF THE POLY TO BE 1024*NSORT?
+		m_poly = (float *)malloc(1024 * 3 * sizeof(float)); //for sorting.
+		m_polyW = 0;
+		m_drawWf = 0;
+		m_color[3] = -0.5; //additive alpha. so make the points partially transparent.
+	}
 	void save(int ch, MatStor *ms)
 	{
-		ms->setValue3(ch, 0, "vbopca_mean", m_mean, 6);
-		ms->setValue3(ch, 0, "vbopca_max", m_max, 6);
+		if (ms) {
+			ms->setValue3(ch, 0, "vbopca_mean", m_mean, m_dim);
+			ms->setValue3(ch, 0, "vbopca_max", m_max, m_dim);
+		}
 	}
 	float *addWf()
 	{
