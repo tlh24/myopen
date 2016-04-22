@@ -32,7 +32,7 @@ CFLAGS += -Wall -Wcast-align -Wpointer-arith -Wshadow -Wsign-compare \
 -Wextra -pedantic -std=c99
 CFLAGS += -march=native
 
-LDFLAGS := -lGL -lGLU -lpthread -lCg -lCgGL -lgsl -lcblas -latlas -lm -lz \
+LDFLAGS := -lGL -lGLU -lpthread -lCg -lCgGL -lm -lz \
 -lmatio -lprotobuf -lPO8eStreaming -larmadillo #-mcmodel=medium
 
 GLIBS := gtk+-2.0 gtkglext-1.0 gtkglext-x11-1.0 lua5.1 libprocps hdf5
@@ -129,12 +129,11 @@ clean:
 	rm -rf gtkclient timesync icms2mat mmap_test po8e \
 	proto/*.pb.cc proto/*.pb.h proto/*.o src/*.o ../common_host/*.o
 
-	
 ifeq ($(shell lsb_release -sc), stretch)
 # as of April 2016.
 DEPS = libgtk2.0-dev libgtk2.0-0-dbg \
 	libgtkgl2.0-dev libgtkglext1-dev freeglut3-dev nvidia-cg-toolkit \
-	libgsl-dev libatlas-base-dev libjack-jackd2-dev python-matplotlib \
+	libjack-jackd2-dev python-matplotlib \
 	python-jsonpickle python-opengl libboost1.58-all-dev pkg-config \
 	libhdf5-dev libsdl1.2-dev astyle \
 	libprotobuf-dev protobuf-compiler \
@@ -143,7 +142,9 @@ DEPS = libgtk2.0-dev libgtk2.0-0-dbg \
 else
 DEPS = libgtk2.0-dev libgtk2.0-0-dbg \
 	libgtkgl2.0-dev libgtkglext1-dev freeglut3-dev nvidia-cg-toolkit \
-	libgsl0-dev libatlas-base-dev libjack-jackd2-dev python-matplotlib \
+	libblas-common libblas-dev libopenblas-base libopenblas-dev \
+	libarpack2 libarpack2-dev \
+	libjack-jackd2-dev python-matplotlib \
 	python-jsonpickle python-opengl libboost1.49-all-dev pkg-config \
 	libhdf5-dev libsdl1.2-dev astyle \
 	libprotobuf-dev libprotobuf7 protobuf-compiler \

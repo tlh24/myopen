@@ -28,17 +28,16 @@ private:
 	float 	m_threshold; 	// 1 = + 10mV.
 	float	m_centering; 	// left/right centering. used to look for threshold crossing.
 	float 	m_gain;
-	float 	m_aperture[NSORT]; 	// aka MSE per sample.
+	float 	m_aperture[NSORT]; 		// aka MSE per sample.
 public:
-	Vbo		*m_wfVbo; 		// range 1 mean 0
-	Vbo		*m_usVbo;		// unsorted units
-	VboPca	*m_pcaVbo; 		// 2D points, with color.
+	Vbo		*m_wfVbo; 				// range 1 mean 0
+	Vbo		*m_usVbo;				// unsorted units
+	VboPca	*m_pcaVbo; 				// 2D points, with color.
 	float	m_pca[NSORT][NWFSAMP]; 	// range 1 mean 0
-	float 	m_pcaScl[NSORT]; 	// sqrt of the eigenvalues.
+	float 	m_pcaScl[NSORT]; 		// sqrt of the eigenvalues.
 	float	m_template[NSORT][NWFSAMP]; // range 1 mean 0.
 	float	m_loc[4];
 	int		m_ch; 			//channel number, obvi.
-	//double	m_var; 			//variance of the continuous waveform, 1 = 10mV^2.
 	running_stat<double>	m_wfstats; // mean of the continuous waveform.
 	i64 	m_isi[NSORT][100]; 	//counts of the isi, in units of ms.
 	i64		m_lastSpike[NSORT]; //zero when a spike occurs. in samples.

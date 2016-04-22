@@ -35,10 +35,6 @@
 #include <matio.h>
 #include <armadillo>
 
-#include <gsl/gsl_math.h>
-#include <gsl/gsl_linalg.h>
-#include <gsl/gsl_fit.h>
-
 #include <boost/multi_array.hpp>
 #include <map>
 #include <string>
