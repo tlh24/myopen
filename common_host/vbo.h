@@ -217,7 +217,8 @@ public:
 		free(m_poly);
 	}
 	void construct(int ch, int wfLen, float *pca_mean, float *pca_max,
-		MatStor *ms) {
+	               MatStor *ms)
+	{
 		//if (m_dim != 6) printf("Error: dim != 6 in VboPca\n");
 		m_mean = (float *)malloc(m_dim * sizeof(float));
 		m_max = (float *)malloc(m_dim * sizeof(float));
