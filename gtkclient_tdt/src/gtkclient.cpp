@@ -167,6 +167,7 @@ bool g_die = false;
 double g_pause_time = -1.0;
 gboolean g_pause = false;
 gboolean g_showPca = false;
+gboolean g_showUnsorted = true;
 gboolean g_autoChOffset = false;
 gboolean g_showWFVgrid = true;
 gboolean g_showContGrid = false;
@@ -270,6 +271,7 @@ void saveState()
 	ms.setStructValue("spike","cols",0,(float)g_spikesCols);
 
 	ms.setStructValue("wf","show_pca",0,(float)g_showPca);
+	ms.setStructValue("wf","show_unsorted",0,(float)g_showUnsorted);
 	ms.setStructValue("wf","show_grid",0,(float)g_showWFVgrid);
 	ms.setStructValue("wf","show_isi",0,(float)g_showISIhist);
 	ms.setStructValue("wf","show_std",0,(float)g_showWFstd);
@@ -2467,6 +2469,7 @@ int main(int argc, char **argv)
 	g_spikesCols = (int)ms.getStructValue("spike", "cols", 0, (float)g_spikesCols);
 
 	g_showPca = (bool)ms.getStructValue("wf", "show_pca", 0, (float)g_showPca);
+	g_showUnsorted = (bool)ms.getStructValue("wf", "show_pca", 0, (float)g_showUnsorted);
 	g_showWFVgrid = (bool)ms.getStructValue("wf", "show_grid", 0, (float)g_showWFVgrid);
 	g_showISIhist = (bool)ms.getStructValue("wf", "show_isi", 0, (float)g_showISIhist);
 	g_showWFstd = (bool)ms.getStructValue("wf", "show_std", 0, (float)g_showWFstd);
@@ -2676,6 +2679,7 @@ int main(int argc, char **argv)
 
 	GtkWidget *box3 = gtk_vbox_new (FALSE, 0);
 	gtk_widget_show(box3);
+	mk_checkbox("show Unsorted", box3, &g_showUnsorted, basic_checkbox_cb);
 	mk_checkbox("show PCA", box3, &g_showPca, basic_checkbox_cb);
 	mk_checkbox("show grid", box3, &g_showWFVgrid, basic_checkbox_cb);
 	gtk_box_pack_start (GTK_BOX (box2), box3, TRUE, TRUE, 0);

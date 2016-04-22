@@ -17,7 +17,7 @@ void glPrint(char *text);
 
 extern gboolean g_showISIhist;
 extern gboolean g_showWFstd;
-
+extern gboolean g_showUnsorted;
 extern int g_whichAlignment;
 extern int g_whichSpikePreEmphasis;
 
@@ -388,7 +388,9 @@ public:
 
 		glColor4f(0.5f, 0.5f, 0.5f, 0.5f);
 		//draw only the spikes in spike mode.
-		m_usVbo->draw(drawmode, time, true);
+		if (g_showUnsorted) {
+			m_usVbo->draw(drawmode, time, true);
+		}
 		m_wfVbo->draw(drawmode, time, true);
 		if (1) {
 			//draw the threshold & centering.
