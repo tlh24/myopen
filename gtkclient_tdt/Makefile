@@ -33,7 +33,7 @@ CFLAGS += -Wall -Wcast-align -Wpointer-arith -Wshadow -Wsign-compare \
 CFLAGS += -march=native
 
 LDFLAGS := -lGL -lGLU -lpthread -lCg -lCgGL -lgsl -lcblas -latlas -lm -lz \
--lmatio -lprotobuf -lPO8eStreaming #-mcmodel=medium
+-lmatio -lprotobuf -lPO8eStreaming -larmadillo #-mcmodel=medium
 
 GLIBS := gtk+-2.0 gtkglext-1.0 gtkglext-x11-1.0 lua5.1 libprocps hdf5
 CPPFLAGS += $(shell pkg-config --cflags $(GLIBS))
@@ -154,6 +154,7 @@ deps:
 	sudo apt-get install $(DEPS);
 	@echo ""
 	@echo "make sure non-free is in /etc/apt/sources.list for nvidia-cg-toolkit."
+	@echo "also please install libarmadillo >= 6.7"
 
 check:
 	cppcheck -Iinclude -I/usr/local/include -I../common_host --enable=all \
