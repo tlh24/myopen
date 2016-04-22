@@ -44,4 +44,10 @@ typedef struct PO8Data {
 	i16 *data;
 } PO8Data;
 
+typedef struct MatPack {
+	size_t rows;
+	size_t cols;
+	double *data;
+} MatPack;
+
 #endif

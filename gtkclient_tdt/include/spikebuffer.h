@@ -1,6 +1,7 @@
 #ifndef __SPIKEBUFFER_H__
 #define	__SPIKEBUFFER_H__
 
+#include <armadillo>
 #include <atomic>
 #include "util.h"
 
@@ -8,13 +9,14 @@
 #define SPIKE_MASK (SPIKE_BUF_SIZE-1)
 
 using namespace std;
+using namespace arma;
 
 class NEO
 {
 protected:
 	float x_prev;
 	float x_prev2;
-	float m_mean;
+	running_stat<float> m_stats;
 public:
 	NEO();
 	~NEO();

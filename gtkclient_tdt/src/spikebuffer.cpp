@@ -7,7 +7,7 @@ NEO::NEO()
 {
 	x_prev  = 0;
 	x_prev2 = 0;
-	m_mean  = 0;
+	m_stats.reset();
 }
 
 NEO::~NEO()
@@ -20,13 +20,12 @@ float NEO::eval(float x)
 	x_prev2 = x_prev;
 	x_prev = x;
 	// exponential running average
-	m_mean *= 0.999997;
-	m_mean += 0.000003 * y;
+	m_stats(y);
 	return y;
 }
 float NEO::mean()
 {
-	return m_mean;
+	return m_stats.mean();
 }
 
 SpikeBuffer::SpikeBuffer()

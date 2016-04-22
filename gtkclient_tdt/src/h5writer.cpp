@@ -10,9 +10,9 @@ H5Writer::H5Writer()
 	m_h5dataspaces.clear();
 	m_h5props.clear();
 	m_w = NULL;
-	m_deflate = false;
+	m_deflate = true;
 	m_deflate_level = 1;
-	m_shuffle = false;
+	m_shuffle = true;
 }
 
 H5Writer::~H5Writer()

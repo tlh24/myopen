@@ -1,18 +1,15 @@
 #ifndef __CHANNEL_H__
 #define __CHANNEL_H__
 
-#include <gsl/gsl_math.h>
-#include <gsl/gsl_linalg.h>
-#include <gsl/gsl_eigen.h>
-#include <gsl/gsl_blas.h>
-#include <gsl/gsl_sort.h>
+#include <armadillo>
 #include <string>
 #include "matStor.h"
 #include "random.h"
 #include "util.h"
 #include "spikebuffer.h"
 
-void gsl_matrix_to_mat(gsl_matrix *x, const char *fname);
+using namespace arma;
+
 long double gettime();
 void glPrint(char *text);
 #define NWFVBO 1024
@@ -41,9 +38,8 @@ public:
 	float	m_template[NSORT][NWFSAMP]; // range 1 mean 0.
 	float	m_loc[4];
 	int		m_ch; 			//channel number, obvi.
-	//float 	m_agc;
-	double	m_var; 			//variance of the continuous waveform, 1 = 10mV^2.
-	double	m_mean; 		//mean of the continuous waveform.
+	//double	m_var; 			//variance of the continuous waveform, 1 = 10mV^2.
+	running_stat<double>	m_wfstats; // mean of the continuous waveform.
 	i64 	m_isi[NSORT][100]; 	//counts of the isi, in units of ms.
 	i64		m_lastSpike[NSORT]; //zero when a spike occurs. in samples.
 	bool	m_enabled;
@@ -61,8 +57,8 @@ public:
 		m_wfVbo->m_useSAA = m_usVbo->m_useSAA = m_pcaVbo->m_useSAA = false;
 		m_pcaVbo->m_fade = 0.f;
 		m_ch = ch;
-		m_var = 0.0;
-		m_mean = 0.0;
+		//m_var = 0.0;
+		m_wfstats.reset();
 		m_enabled = true;
 
 		for (int k=0; k<NSORT; k++) {
@@ -310,7 +306,7 @@ public:
 	}
 	void autoThreshold(double s)
 	{
-		m_threshold = m_mean + sqrt(m_var) * s;
+		m_threshold = m_wfstats.mean() + m_wfstats.stddev() * s;
 	}
 	int getCentering()
 	{
@@ -376,10 +372,12 @@ public:
 				x *= 2.0;
 				x /= m_gain;
 				double f = 0.5; // 1.0 / (sqrt(m_var) * 2.50662827); leave the normalization const out.
-				if (m_var <= 0) {
-					m_var = 1e-6;        // protect against divide by zero
+				double m = m_wfstats.mean();
+				double v = m_wfstats.var();
+				if (v <= 0) {
+					v = 1e-6;	// protect against div/0
 				}
-				double e = (x - m_mean)*(x - m_mean) / (-2.0 * m_var);
+				double e = (x - m)*(x - m) / (-2.0 * v);
 				f *= exp(e);
 				float g = (float)i / 127.f;
 				glVertex2f(ox     , g*oh+oy);
@@ -635,128 +633,72 @@ public:
 	}
 	void computePca()
 	{
-		//whatever ... this can be blocking.
 		long double t;
 		int nsamp = MIN((int)m_pcaVbo->m_w, m_pcaVbo->m_rows);
 		if (nsamp < NWFSAMP) {
 			printf("Channel::computePca %d (%d) samples, not enough\n",
 			       nsamp, (int)m_pcaVbo->m_w);
 			return;
-		} else {
-			printf("Channel::computePca  %d samples\n", nsamp);
 		}
 
-		//gsl is row major!
-		gsl_matrix *m = gsl_matrix_alloc(nsamp, NWFSAMP); //rows, columns (like matlab)
+		mat X(nsamp, NWFSAMP);
 		for (int i=0; i<nsamp; i++) {
 			for (int j=0; j<NWFSAMP; j++) {
-				m->data[i*NWFSAMP + j] = m_pcaVbo->m_wf[i*NWFSAMP + j];
+				X(i, j) = m_pcaVbo->m_wf[i*NWFSAMP + j];
 			}
 		}
 
-#ifdef DEBUG
-		gsl_matrix_to_mat(m, "wavforms.mat");
-#endif
+		printf("PCA [%d x %d]\t", nsamp, NWFSAMP);
 
-		//method 1 - SVD.  slow.
-		// I'm looking at matlab's princomp function.
-		// they say S = X0' * X0 ./ (n-1), but computed using SVD.
-		//columns of V seem to contain the principle components.
-		/*
-		gsl_matrix *x = gsl_matrix_alloc(NWFSAMP,NWFSAMP);
-		gsl_matrix *v = gsl_matrix_alloc(NWFSAMP,NWFSAMP);
-		gsl_vector *s = gsl_vector_alloc(NWFSAMP);
-		gsl_vector *work = gsl_vector_alloc(NWFSAMP);
-
-		gsl_linalg_SV_decomp_mod(m, x, v, s, work);
-
-		//copy! v is untransposed and in row-major. s should be sorted descending.
-		printf("pca coef!\n");
-		int offset = 0;
-		gsl_matrix_to_mat(v, "pca_coef.mat");
-		while (s->data[offset] > 1000) offset++;
-		for (int i=0; i<NWFSAMP; i++) {
-			m_pca[0][i] = v->data[i*NWFSAMP + offset];
-			m_pca[1][i] = v->data[i*NWFSAMP + 1 + offset];
-			printf("%f %f\n", m_pca[0][i],
-			       m_pca[1][i]);
-		}
-		gsl_matrix_free(m);
-		gsl_matrix_free(x);
-		gsl_matrix_free(v);
-		gsl_vector_free(s);
-		gsl_vector_free(work);
-		*/
-
-		//method 2 - eigen decomposition.
-		gsl_matrix *cov = gsl_matrix_alloc(NWFSAMP,NWFSAMP);
+		// standardize the data
 		t = gettime();
-		gsl_blas_dgemm(CblasTrans,CblasNoTrans,1.0/nsamp,m,m,0.0,cov);
-		printf("dgemm time %Lf siz %d\t", gettime()-t,nsamp);
+		mat C = cov(X);
+		printf("cov: %0.3Lf ms\t", 1e3*(gettime()-t));
 
-		//regularize.
-		for (int i=0; i<NWFSAMP; i++)
-			cov->data[i*NWFSAMP+i] += 1e-5;
-
-#ifdef DEBUG
-		gsl_matrix_to_mat(cov, "pca_cov.mat");
-#endif
-
-		//eigen decomp.
+		// compute eigenvalues and eigenvectors
 		t = gettime();
-		gsl_vector *d = gsl_vector_alloc(NWFSAMP);
-		gsl_matrix *v = gsl_matrix_alloc(NWFSAMP,NWFSAMP);
-		gsl_eigen_symmv_workspace *ws = gsl_eigen_symmv_alloc(NWFSAMP);
-		gsl_eigen_symmv(cov, d, v, ws);
-		gsl_eigen_symmv_free(ws);
+		vec eigval;
+		mat eigvec;
+		eig_sym(eigval, eigvec, C);
 
-#ifdef DEBUG
-		gsl_matrix_to_mat(v, "pca_v.mat");
-#endif
+		// sort descending
+		vec d = fliplr(eigval);
+		mat V = fliplr(eigvec);
 
-		// the result will be unsorted
-		// sort it, descending based on the magnitude of the eigenvalue
-		gsl_eigen_symmv_sort(d, v, GSL_EIGEN_SORT_ABS_DESC);
-
-		//size_t p[2];
-		//gsl_sort_largest_index(p,2,d->data,1,NWFSAMP);
-
-		// normalize to identity covariance
+		// normalize the eigenvectors by the sqrt of the eigenvalues
 		for (int k=0; k<NSORT; k++) {
-			m_pcaScl[k] = sqrt(d->data[k]);
+			m_pcaScl[k] = sqrt(d(k));
 			for (int i=0; i<NWFSAMP; i++) {
-				m_pca[k][i] = v->data[k + i*NWFSAMP] / m_pcaScl[k];
+				m_pca[k][i] = V(i,k) / m_pcaScl[k];
 			}
 		}
-		printf("eig decomp time %Lf\t", gettime()-t);
-		gsl_matrix_free(v);
-		gsl_vector_free(d);
-		gsl_matrix_free(m);
 
-		//recalculate the pca points for immediate display.
-		//t = gettime();
+		// recalculate the pca points for immediate display.
+		t = gettime();
 		for (int i=0; i<nsamp; i++) {
-			float pca[2] = {0,0};
 			for (int k=0; k<NSORT; k++) {
+				float pca = 0;
 				for (int j=0; j<NWFSAMP; j++) {
-					pca[k] += m_pcaVbo->m_wf[i*NWFSAMP + j] * m_pca[k][j];
+					pca += m_pcaVbo->m_wf[i*NWFSAMP + j] * m_pca[k][j];
 				}
+				m_pcaVbo->m_f[i*6 + k] = pca;
 			}
-			m_pcaVbo->m_f[i*6 + 0] = pca[0];
-			m_pcaVbo->m_f[i*6 + 1] = pca[1];
-			//m_pcaVbo->m_f[i*6 + 2] = 0.f;
-			//leave whatever it used to be sorted as (color).
-			//for(int k=0; k<3; k++)
-			//	m_pcaVbo->m_f[i*6 + 3 + k] = 0.5f;
 		}
-		//printf("naive reproject %f\n", gettime()-t); //it's fast (enough).
+		printf("eig: %0.3Lf ms\t", 1e3*(gettime()-t));
 
 		t = gettime();
 		m_pcaVbo->m_r = 0;
 		m_pcaVbo->m_w = nsamp; //force a copy-over of the whole thing.
 		m_pcaVbo->copy(false,true);
-		printf("copy %Lf\n", gettime()-t);
+		printf("cpy: %0.3Lf ms\n", 1e3*(gettime()-t));
+
+#ifdef DEBUG
+		X.save("waveforms.h5", hdf5_binary);
+		C.save("pca_cov.h5", hdf5_binary);
+		V.save("pca_v.h5", hdf5_binary);
+#endif
 	}
+
 	void updateISI(int unit, int sample)
 	{
 		//this used for calculating ISI.
@@ -795,38 +737,5 @@ public:
 		}
 	}
 };
-
-void gsl_matrix_to_mat(gsl_matrix *x, const char *fname)
-{
-	// write a gsl matrix to a .mat file.
-	// does not free the matrix.
-	mat_t *mat;
-	mat = Mat_CreateVer(fname, nullptr, MAT_FT_MAT73);
-	if (!mat) {
-		warn("could not open %s for writing", fname);
-		return;
-	}
-	size_t dims[2];
-	dims[0] = x->size1;
-	dims[1] = x->size2;
-	double *d = (double *)malloc(dims[0]*dims[1]*sizeof(double));
-	if (!d) {
-		warn("could not allocate memory for copy");
-		return;
-	}
-	//reformat and transpose.
-	//matio expects fortran style, column-major format.
-	//gsl is row-major.
-	for (size_t i=0; i<dims[0]; i++) //rows
-		for (size_t j=0; j<dims[1]; j++) //columns
-			d[j*dims[0] + i] = x->data[i*x->tda + j];
-
-	matvar_t *matvar;
-	matvar = Mat_VarCreate("a", MAT_C_DOUBLE, MAT_T_DOUBLE, 2, dims, d, 0);
-	Mat_VarWrite(mat, matvar, MAT_COMPRESSION_NONE);
-	Mat_VarFree(matvar);
-	free(d);
-	Mat_Close(mat);
-}
 
 #endif

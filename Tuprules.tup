@@ -16,7 +16,7 @@ LDFLAGS  += -ljack
 CPPFLAGS += -O3 -fslp-vectorize-aggressive -march=native
 CPPFLAGS += -DJACK
 
-#CPPFLAGS += -O1 -g -DDEBUG
+#CPPFLAGS += -O0 -g -DDEBUG
 #CPPFLAGS += -fno-inline -fno-omit-frame-pointer
 #LDFLAGS  += -fno-inline -fno-omit-frame-pointer
 #CPPFLAGS += -fsanitize=address

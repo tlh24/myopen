@@ -33,9 +33,12 @@
 #include <math.h>
 #include <arpa/inet.h>
 #include <matio.h>
+#include <armadillo>
+
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_fit.h>
+
 #include <boost/multi_array.hpp>
 #include <map>
 #include <string>
@@ -90,6 +93,7 @@ cgVertexShader		*g_vsFadeColor;
 cgVertexShader		*g_vsThreshold;
 
 using namespace std;
+using namespace arma;
 using namespace moodycamel; // for lockfree queues
 
 char	g_prefstr[256];
@@ -107,7 +111,7 @@ vector <VboRaster *> g_spikeraster;
 vector <VboRaster *> g_eventraster;
 // can do another raster vector for other types of rasters (icms ticks, etc)
 
-ReaderWriterQueue<gsl_matrix *> g_filterbuf(NSAMP); // for nlms filtering
+ReaderWriterQueue<mat *> g_filterbuf(NSAMP); // for nlms filtering
 
 std::mutex g_po8e_mutex;
 vector <pair<ReaderWriterQueue<PO8Data *>*, po8e::card *>> g_dataqueues;
@@ -934,7 +938,7 @@ void destroyGUI(GtkWidget *, gpointer)
 }
 void nlms_train()
 {
-	gsl_matrix *X = nullptr;
+	mat *X;
 	while (!g_die) {
 		int succeeded = 0;
 		do {
@@ -946,12 +950,9 @@ void nlms_train()
 		if (!succeeded)
 			continue;
 
-		g_nlms->train(X);
-		gsl_matrix_free(X); // free memory allocated in other thread
-		X = nullptr;
+		g_nlms->train(*X);
+		delete X;
 	}
-	if (X)
-		gsl_matrix_free(X);
 }
 void sorter(int ch)
 {
@@ -1320,7 +1321,7 @@ void worker()
 		size_t nnc = g_c.size(); // num neural channels
 
 		auto f = new float[nnc * ns];
-		gsl_matrix *X = gsl_matrix_alloc(nnc, ns);
+		mat X(nnc, ns);
 		auto raw = new i16[nnc * ns];
 		size_t nc_i = 0;
 		for (size_t i=0; i<c.size(); i++) {
@@ -1329,7 +1330,7 @@ void worker()
 					auto scale_factor = g_c[nc_i]->m_scaleFactor;
 					for (size_t k=0; k<ns; k++) {
 						f[nc_i*ns+k] = (float)p[i]->data[j*ns+k]/scale_factor;
-						gsl_matrix_set(X, nc_i, k, f[nc_i*ns+k]);
+						X(nc_i, k) = f[nc_i*ns+k];
 						raw[nc_i*ns+k] = p[i]->data[j*ns+k];
 					}
 					nc_i++;
@@ -1455,22 +1456,15 @@ void worker()
 		// on the intuition that it will work better this way
 
 		if (g_trainArtifactNLMS) {
-			gsl_matrix *Y;
-			Y = gsl_matrix_alloc(nnc, ns);
-			gsl_matrix_memcpy(Y, X);
+			auto Y = new mat(X);
 			g_filterbuf.enqueue(Y); // free on the other thread
 		}
 
-		gsl_matrix *Z;
-		Z = gsl_matrix_alloc(nnc, ns);
-
 		// filter online here
 		if (g_filterArtifactNLMS) {
-			g_nlms->filter(X, Z);
-			gsl_matrix_memcpy(X, Z);
+			X -= g_nlms->filter(X);
 		}
 
-		gsl_matrix_free(Z);
 
 		// big loop through samples
 		// TODO: make this use X, too
@@ -1567,7 +1561,7 @@ void worker()
 			// post-artifact-removal filtering
 			for (size_t ch=0; ch<nnc; ch++) {
 
-				float samp = (float)gsl_matrix_get(X, ch, k);
+				float samp = (float)X(ch, k);
 
 				if ( g_hipassNeurons &&  g_lopassNeurons)
 					g_bandpass[ch].Proc(&samp, &samp, 1);
@@ -1578,7 +1572,7 @@ void worker()
 				if (!g_hipassNeurons &&  g_lopassNeurons)
 					g_lopass[ch].Proc(&samp, &samp, 1);
 
-				gsl_matrix_set(X, ch, k, (double)samp);
+				X(ch, k) = (double)samp;
 			}
 
 		}
@@ -1688,7 +1682,7 @@ void worker()
 				// scale into a reasonable range for audio
 				// and timeseries display
 				//float fg = f[ch*ns+k] * gain / 1e4;
-				float fg = (float)gsl_matrix_get(X, ch, k) * gain / 1e4;
+				float fg = (float)X(ch, k) * gain / 1e4;
 				g_timeseries[h]->addData(&fg, 1); // timeseries trace
 				if (h==0) {
 					audio[k] = fg;
@@ -1702,20 +1696,22 @@ void worker()
 		// package data for sorting / saving
 
 		for (auto &ch : g_c) {
-			double m = ch->m_mean;
+			//double m = ch->m_wfstats.mean();
 			for (size_t k=0; k<ns; k++) {
 				//auto x = f[ch->m_ch*ns+k] / 1e4; // scale so 1 = +10 mV
-				float x = (float)gsl_matrix_get(X, ch->m_ch, k) / 1e4; // scale so 1 = +10 mV
+				float x = (float)X(ch->m_ch, k) / 1e4; // scale so 1 = +10 mV
 				// 1 = +10mV; range = [-1 1] here.
 				ch->m_spkbuf.addSample(tk[k], x);
 
-				//update the channel standard deviations, too.
-				ch->m_var *= 0.999998;
-				ch->m_var += 0.000002*(x-m)*(x-m);
-				m *= 0.999997;
-				m += 0.000003*x;
+				//update the channel running stats (means and stddevs, etc).
+				ch->m_wfstats(x);
+
+				//ch->m_var *= 0.999998;
+				//ch->m_var += 0.000002*(x-m)*(x-m);
+				//m *= 0.999997;
+				//m += 0.000003*x;
 			}
-			ch->m_mean = m;
+			//ch->m_mean = m;
 		}
 
 		// sort -- see if samples pass threshold. if so, copy.
@@ -1729,7 +1725,6 @@ void worker()
 		delete[] ts;
 		delete[] f;
 		delete[] raw;
-		gsl_matrix_free(X);
 		delete[] audio;
 		delete[] events;
 		delete[] stim;
@@ -2037,7 +2032,7 @@ auto mk_legal_filename = [](string basedir, string prefix, string ext)
 		s.str("");
 		s << basedir << "/" << f;
 		string fn = s.str();
-		res = access(fn.c_str(), F_OK);
+		res = ::access(fn.c_str(), F_OK);
 	} while (!res);	// returns zero on success
 	return f;
 };
@@ -2695,8 +2690,9 @@ int main(int argc, char **argv)
 
 	mk_button("calc PCA", box1,
 	[](GtkWidget *, gpointer) {
-		for (auto &x : g_channel)
+		for (auto &x : g_channel) {
 			g_c[x]->computePca();
+		}
 	}, nullptr);
 
 //this concludes sort page.

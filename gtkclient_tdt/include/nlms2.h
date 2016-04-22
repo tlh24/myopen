@@ -3,21 +3,20 @@
 
 #include <atomic>
 #include <mutex>
-#include <gsl/gsl_math.h>
-#include <gsl/gsl_blas.h>
+#include <armadillo>
+
+using namespace arma;
 
 class MatStor;
 
 class ArtifactNLMS2
 {
 protected:
-	size_t n;				// order of the filter
-	double mu;				// learning rate. a small number try 1e-5
+	size_t n;		// order of the filter
+	double mu;		// learning rate. a small number try 1e-5
 
-	gsl_matrix *W;			// weights (n by n)
-	gsl_matrix *Wshadow; 	// shadow weights (for thread safety)
-	std::mutex m1;			// for thread safety
-	std::mutex m2;			// for thread safety
+	mat W;			// weights (n by n)
+
 public:
 
 	ArtifactNLMS2(int _n, MatStor *ms);
@@ -25,8 +24,8 @@ public:
 
 	void setMu(float _mu);
 	float getMu();
-	void train(gsl_matrix *X);
-	void filter(gsl_matrix *X, gsl_matrix *Y);
+	void train(mat X);
+	mat filter(mat X);
 	void clearWeights();
 	void save(MatStor *ms);
 };

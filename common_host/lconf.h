@@ -16,6 +16,7 @@ public:
 	virtual bool loadConf(const char *conf);
 	bool getString(string varName, string &varValue);
 	bool getBool(string varName);
+	int getInt(string varName);
 protected:
 	lua_State *L;
 private:

@@ -127,3 +127,48 @@ error:
 	       name(), varName.c_str());
 	return false;
 }
+// returns 0 if there is an error
+int luaConf::getInt(string varName)
+{
+	size_t stack = 0;
+	int x;
+
+	char_separator<char> sep(".");
+	tokenizer<char_separator<char>> tokens(varName, sep);
+
+	auto t = tokens.begin();
+
+	lua_getglobal(L, (*t).c_str());	// object to stack @ -1
+	stack++;
+
+	while (true) {
+		if (lua_isnumber(L, -1)) {
+			x = lua_tointeger(L, -1);
+			break;
+		} else if (lua_istable(L, -1)) {
+			lua_pushnil(L); // nil key
+			if (lua_next(L, -2)) {
+				lua_pop(L, 2); // pop off k,v
+				t++;
+				if (t != tokens.end()) {
+					lua_getfield(L, -1, (*t).c_str());
+					stack++;
+				}
+			} else {
+				goto error;
+			}
+		} else {
+			goto error;
+		}
+	}
+	lua_pop(L, stack);
+#ifdef DEBUG
+	printf("%s: loaded %s\n", name(), varName.c_str());
+#endif
+	return x;
+error:
+	lua_pop(L, stack);
+	printf("%s: variable '%s' is empty or does not exist\n",
+	       name(), varName.c_str());
+	return 0;
+}
