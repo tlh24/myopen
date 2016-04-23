@@ -34,8 +34,9 @@ enum MODES { // ui tabs
 #define NSBUF		1024 		// number of recent spikes to track
 
 #define STIMCHAN 	8
-#define NUNIT		3			// including unsorted
-#define NSORT		2
+#define NSORT		4
+#define NUNIT		NSORT+1		// including unsorted
+
 
 typedef struct PO8Data {
 	i64 tick;	// this is the tick for the first sample

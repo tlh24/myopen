@@ -240,7 +240,7 @@ public:
 		m_wfLen = wfLen;
 		m_wf = (float *)malloc(m_rows * m_wfLen * sizeof(float));
 		// XXX DO WE NEED TO SET THE SIZE OF THE POLY TO BE 1024*NSORT?
-		m_poly = (float *)malloc(1024 * 3 * sizeof(float)); //for sorting.
+		m_poly = (float *)malloc(1024 * 2 * sizeof(float)); //for sorting.
 		m_polyW = 0;
 		m_drawWf = 0;
 		m_color[3] = -0.5; //additive alpha. so make the points partially transparent.
@@ -379,7 +379,7 @@ public:
 			float ww = 5.f / g_viewportSize[0];
 			float hh = 5.f / g_viewportSize[1];
 			glBegin(GL_LINES);
-			glColor4f(0.3f, 1.f, 0.f, 1.f);
+			glColor4f(0.418f, 0.240f, 0.604f, 1.f);
 			glVertex3f( xx-ww, yy-hh, 0.f);
 			glVertex3f( xx+ww, yy+hh, 0.f);
 			glVertex3f( xx+ww, yy-hh, 0.f);
@@ -417,7 +417,7 @@ public:
 		float ox = m_loc[0] - m_loc[2];
 		float oy = m_loc[1] - m_loc[3]/2;
 		int i = m_drawWf;
-		glColor4f(0.3f, 1.f, 0.0f, 1.f);
+		glColor4f(0.418f, 0.240f, 0.604f, 1.f);
 		glLineWidth(4.f);
 		glBegin(GL_LINE_STRIP);
 		for (int j=0; j<m_wfLen; j++) {
@@ -529,7 +529,8 @@ public:
 			if (inside[i]) {
 				for (int j=0; j<m_wfLen; j++) {
 					float r = m_wf[i*m_wfLen + j] - temp[j];
-					if (m_useSAA) aperture += fabs(r);
+					if (m_useSAA)
+						aperture += fabs(r);
 					else aperture += r*r;
 				}
 			}

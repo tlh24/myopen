@@ -162,14 +162,18 @@ GtkWidget *g_whichAnalogSaveWidget;
 bool g_die = false;
 double g_pause_time = -1.0;
 gboolean g_pause = false;
-gboolean g_showPca = false;
-gboolean g_showUnsorted = true;
 gboolean g_autoChOffset = false;
-gboolean g_showWFVgrid = true;
+
+gboolean g_showUnsorted = true;
+gboolean g_showTemplate = true;
+gboolean g_showPca 		= false;
+gboolean g_showWFVgrid 	= true;
+gboolean g_showISIhist 	= true;
+gboolean g_showWFstd 	= true;
+
 gboolean g_showContGrid = false;
 gboolean g_showContThresh = true;
-gboolean g_showISIhist = true;
-gboolean g_showWFstd = true;
+
 bool g_rtMouseBtn = false;
 gboolean g_saveICMSWF = true;
 
@@ -205,17 +209,17 @@ float g_autoThreshold = -3.5; //standard deviations. default negative, w/e.
 float g_neoThreshold = 8;
 int g_spikesCols = 16;
 
-gboolean g_trainArtifactNLMS = true;
+gboolean g_trainArtifactNLMS = false;
 gboolean g_filterArtifactNLMS = false;
 ArtifactNLMS2 *g_nlms;
 
-gboolean g_enableArtifactSubtr = true;
+gboolean g_enableArtifactSubtr = false;
 gboolean g_trainArtifactTempl = false;
 int g_numArtifactSamps = 1e4; 	// number of artifacts to use to build template
 int g_stimChanDisp = 0;	// number of artifact channels
 float g_artifactDispAtten = 0.1f;
 
-gboolean g_enableArtifactBlanking = true;
+gboolean g_enableArtifactBlanking = false;
 int g_artifactBlankingSamps = 48;
 int g_artifactBlankingPreSamps = 24;
 
@@ -231,7 +235,7 @@ int g_blendmodep = 0;
 GtkWidget *g_infoLabel;
 GtkWidget *g_channelSpin[4] = {nullptr,nullptr,nullptr,nullptr};
 GtkWidget *g_gainSpin[4] = {nullptr,nullptr,nullptr,nullptr};
-GtkWidget *g_apertureSpin[8] = {nullptr,nullptr,nullptr,nullptr};
+GtkWidget *g_apertureSpin[4*NSORT];
 GtkWidget *g_enabledChkBx[4] = {nullptr,nullptr,nullptr,nullptr};
 GtkWidget *g_notebook;
 int g_uiRecursion = 0; //prevents programmatic changes to the UI
@@ -266,11 +270,13 @@ void saveState()
 	ms.setStructValue("spike","neo_threshold",0,g_neoThreshold);
 	ms.setStructValue("spike","cols",0,(float)g_spikesCols);
 
-	ms.setStructValue("wf","show_pca",0,(float)g_showPca);
 	ms.setStructValue("wf","show_unsorted",0,(float)g_showUnsorted);
+	ms.setStructValue("wf","show_template",0,(float)g_showTemplate);
+	ms.setStructValue("wf","show_pca",0,(float)g_showPca);
 	ms.setStructValue("wf","show_grid",0,(float)g_showWFVgrid);
 	ms.setStructValue("wf","show_isi",0,(float)g_showISIhist);
 	ms.setStructValue("wf","show_std",0,(float)g_showWFstd);
+
 	ms.setStructValue("wf","span",0,g_zoomSpan);
 
 	ms.setStructValue("filter","lopass",0,(float)g_lopassNeurons);
@@ -424,9 +430,9 @@ static gint motion_notify_event( GtkWidget *,
 		g_rtMouseBtn = false;
 	return TRUE;
 }
-//forward declaration.
-static void templatePopupMenu (GdkEventButton *event, gpointer userdata);
+// forward declarations.
 void updateChannelUI(int k);
+static void getTemplateCB(GtkWidget *, gpointer _p);
 
 static gint button_press_event( GtkWidget *,
                                 GdkEventButton *event )
@@ -455,8 +461,34 @@ static gint button_press_event( GtkWidget *,
 			}
 		}
 		if (event->button == 3) { // right click
-			if (g_c[g_channel[u]]->m_pcaVbo->m_polyW > 10 && g_mode == MODE_SORT)
-				templatePopupMenu(event, (gpointer)u);
+			if (g_c[g_channel[u]]->m_pcaVbo->m_polyW > 10 && g_mode == MODE_SORT) {
+
+				u32 bits;
+
+				GtkWidget *menu = gtk_menu_new();
+
+				for (int j=0; j<NSORT; j++) {
+					char buf[255];
+					sprintf(buf, "set template %i", j+1);
+					GtkWidget *menuitem = gtk_menu_item_new_with_label(buf);
+
+					bits = 0;
+					bits = u << 16; 	// left shift channel
+					bits = bits | j; 	// OR in unit
+
+					g_signal_connect(menuitem, "activate",
+					                 G_CALLBACK(getTemplateCB), GUINT_TO_POINTER(bits));
+					gtk_menu_shell_append(GTK_MENU_SHELL(menu), menuitem);
+				}
+
+				gtk_widget_show_all(menu);
+
+				/* Note: event can be NULL here when called from view_onPopupMenu;
+				 *  gdk_event_get_time() accepts a NULL argument */
+				gtk_menu_popup(GTK_MENU(menu), nullptr, nullptr, nullptr, nullptr,
+				               (event != nullptr) ? event->button : 0,
+				               gdk_event_get_time((GdkEvent *)event));
+			}
 		}
 	}
 	if (g_mode == MODE_SPIKES) {
@@ -720,7 +752,7 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 				yz = 1.f;
 				g_c[g_channel[k]]->setLoc(xo, yo, xz, yz);
 				g_c[g_channel[k]]->draw(g_drawmode[g_drawmodep], time, g_cursPos,
-				                        g_showPca, g_rtMouseBtn, true, g_showWFVgrid);
+				                        g_rtMouseBtn, true);
 			}
 		}
 		if (g_mode == MODE_SPIKES) {
@@ -736,7 +768,7 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 				yo = ((k/g_spikesCols)+1)/yf;
 				g_c[k]->setLoc(xo*2.f-1.f, 1.f-yo*2.f, xz*2.f, yz);
 				g_c[k]->draw(g_drawmode[g_drawmodep], time, g_cursPos,
-				             g_showPca, g_rtMouseBtn, false, g_showWFVgrid);
+				             g_rtMouseBtn, false);
 			}
 			//draw some lines.
 			glBegin(GL_LINES);
@@ -1038,16 +1070,20 @@ void sorter(int ch)
 
 		u32 tk = tk_sp[centering]; // alignment time
 
-		int unit = 0; //unsorted.
-		for (int u=1; u>=0; u--) { // compare to template.
-			float sum = 0;
+		int unit = 0; // unsorted.
+		vec mse(NSORT);
+		mse.zeros();
+		for (int u=0; u<NSORT; u++) { // compare to template.
 			for (int j=0; j<NWFSAMP; j++) {
-				float r = wf_sp[idx+j] - g_c[ch]->m_template[u][j];
-				sum += r*r;
+				double r = wf_sp[idx+j] - g_c[ch]->m_template[u][j];
+				mse(u) += r*r;
 			}
-			sum /= NWFSAMP;
-			if (sum < g_c[ch]->getAperture(u))
-				unit = u+1;
+		}
+		mse /= NWFSAMP;
+		uword z;
+		double min_mse = mse.min(z);
+		if (min_mse < g_c[ch]->getAperture(z)) {
+			unit = z+1;
 		}
 
 		// check if this exceeds minimum ISI.
@@ -1800,8 +1836,9 @@ void updateChannelUI(int k)
 	g_uiRecursion++;
 	int ch = g_channel[k];
 	gtk_spin_button_set_value(GTK_SPIN_BUTTON(g_gainSpin[k]), g_c[ch]->getGain());
-	gtk_spin_button_set_value(GTK_SPIN_BUTTON(g_apertureSpin[k*2+0]), g_c[ch]->getApertureUv(0));
-	gtk_spin_button_set_value(GTK_SPIN_BUTTON(g_apertureSpin[k*2+1]), g_c[ch]->getApertureUv(1));
+	for (int i=0; i<NSORT; i++) {
+		gtk_spin_button_set_value(GTK_SPIN_BUTTON(g_apertureSpin[k*NSORT+i]), g_c[ch]->getApertureUv(i));
+	}
 	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(g_enabledChkBx[k]), g_c[ch]->getEnabled());
 	g_uiRecursion--;
 }
@@ -2011,6 +2048,112 @@ static GtkWidget *mk_combobox(const char *txt, int ntxt, GtkWidget *container,
 
 	return combo;
 }
+void renderControlBlock(GtkWidget *container, int i)
+{
+	GtkWidget *frame, *bx;
+	char buf[64];
+	snprintf(buf, 64, "%c", 'A'+i);
+	frame = gtk_frame_new(buf);
+	gtk_box_pack_start(GTK_BOX(container), frame, FALSE, FALSE, 0);
+
+	bx = gtk_vbox_new(TRUE, 1);
+	gtk_container_add(GTK_CONTAINER(frame), bx);
+
+	//channel spinner.
+	g_channelSpin[i] = mk_spinner("ch   ", bx,
+	                              g_channel[i]+1, 1, g_c.size(), 1,
+	                              channelSpinCB, GINT_TO_POINTER(i));
+
+	//right of that, a gain spinner. (need to update depending on ch)
+	g_gainSpin[i] = mk_spinner("gain", bx,
+	                           g_c[g_channel[i]]->getGain(),
+	                           1, 128, 1,
+	                           gainSpinCB, GINT_TO_POINTER(i));
+
+	g_enabledChkBx[i] = mk_checkbox2("enabled", bx, g_c[g_channel[i]]->getEnabled(),
+	[](GtkWidget *_button, gpointer _p) {
+		int x = GPOINTER_TO_INT(_p);
+		bool b = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(_button));
+		g_c[g_channel[x]]->setEnabled(b);
+	}, GINT_TO_POINTER(i));
+}
+static void setWidgetColor(GtkWidget *widget, unsigned char red, unsigned char green, unsigned char blue)
+{
+	GdkColor color;
+	color.red = red*256;
+	color.green = green*256;
+	color.blue = blue*256;
+	gtk_widget_modify_bg(widget, GTK_STATE_NORMAL, &color);
+}
+void renderSortingBlock(GtkWidget *container, int i)
+{
+	GtkWidget *frame, *bx, *bx2;
+	char buf[128];
+	snprintf(buf, 128, "%c aperture", 'A'+i);
+	frame = gtk_frame_new (buf);
+	gtk_box_pack_start(GTK_BOX(container), frame, FALSE, FALSE, 1);
+
+	bx = gtk_vbox_new(TRUE, 1);
+	gtk_container_add (GTK_CONTAINER(frame), bx);
+
+	for (int j=0; j<NSORT; j++) {
+		bx2 = gtk_hbox_new(FALSE, 1);
+		gtk_container_add(GTK_CONTAINER(bx), bx2);
+
+		u32 bits = 0;
+		bits = i << 16; 	// left shift channel
+		bits = bits | j; 	// OR in unit
+
+		g_apertureSpin[i*NSORT+j] = mk_spinner("", bx2,
+		                                       g_c[g_channel[i]]->getApertureUv(j), 0, 100, 0.1,
+		[](GtkWidget *_spin, gpointer _p) {
+			// unpack bits
+			u32 u = GPOINTER_TO_UINT(_p);
+			int ch = (u >> 16) & 0xFFFF;
+			int un = u & 0xFFFF;
+			if (ch < 4 && un < NSORT && !g_uiRecursion) {
+				float a = gtk_spin_button_get_value(GTK_SPIN_BUTTON(_spin));
+
+				// only update when the value has actually changed.
+				if (g_c[g_channel[ch]]->getApertureUv(un) != a) {
+					if (a >= 0 && a < 2000) {
+						g_c[g_channel[ch]]->setApertureUv(un, a);
+					}
+				}
+			}
+		}, GUINT_TO_POINTER(bits));
+
+		//a button for disable.
+		GtkWidget *button = mk_button("off", bx2,
+		[](GtkWidget *, gpointer _p) {
+			// unpack bits
+			u32 u = GPOINTER_TO_UINT(_p);
+			int ch = (u >> 16) & 0xFFFF;
+			int un = u & 0xFFFF;
+			if (ch < 4 && un < NSORT && !g_uiRecursion) {
+				gtk_spin_button_set_value(GTK_SPIN_BUTTON(g_apertureSpin[ch*NSORT+un]), 0);
+				g_c[g_channel[ch]]->setApertureLocal(un, 0);
+			}
+		}, GUINT_TO_POINTER(bits));
+
+		switch (j) {
+		case 0:
+			setWidgetColor(button, 166, 206, 227);	// blue
+			break;
+		case 1:
+			setWidgetColor(button, 251, 154, 153);	// red
+			break;
+		case 2:
+			setWidgetColor(button, 178, 223, 138);	// green
+			break;
+		case 3:
+			setWidgetColor(button, 253, 191, 111);	// orange
+			break;
+		}
+
+	}
+}
+
 auto get_cwd = []()
 {
 	char buf[512];
@@ -2237,55 +2380,25 @@ static void openSaveAnalogFile(GtkWidget *, gpointer parent_window)
 	}
 	gtk_widget_destroy (dialog);
 }
-static void getTemplateCB(GtkWidget *, gpointer p)
+// make this an anonymous function since it's only called once
+static void getTemplateCB(GtkWidget *, gpointer _p)
 {
-	int aB = (int)((i64)p & 0x1);
-	int j = (int)((i64)p >> 1);
-	if (j < 4) {
-		g_c[g_channel[j]]->updateTemplate(aB+1);
-		//update the UI.
-		gtk_spin_button_set_value(GTK_SPIN_BUTTON(g_apertureSpin[j*2+aB]),
-		                          g_c[g_channel[j]]->getApertureUv(aB));
-		//remove the old poly, now that we've used it.
-		g_c[g_channel[j]]->resetPoly();
-	}
+	// unpack bits
+	u32 u = GPOINTER_TO_UINT(_p);
+	int i = (u >> 16) & 0xFFFF;
+	int ch = g_channel[i];
+	int un = u & 0xFFFF;
+
+	debug("ch: %d\t un: %d", ch, un);
+
+	g_c[ch]->updateTemplate(un);
+	//update the UI.
+	gtk_spin_button_set_value(GTK_SPIN_BUTTON(g_apertureSpin[i*NSORT+un]),
+	                          g_c[ch]->getApertureUv(un));
+	//remove the old poly, now that we've used it.
+	g_c[ch]->resetPoly();
 }
-static void setWidgetColor(GtkWidget *widget, unsigned char red, unsigned char green, unsigned char blue)
-{
-	GdkColor color;
-	color.red = red*256;
-	color.green = green*256;
-	color.blue = blue*256;
-	gtk_widget_modify_bg(widget, GTK_STATE_NORMAL, &color);
-}
-static void templatePopupMenu (GdkEventButton *event, gpointer p)
-{
-	GtkWidget *menu, *menuitem;
-	int s = (int)((i64)p & 0xff);
 
-	menu = gtk_menu_new();
-
-	menuitem = gtk_menu_item_new_with_label("set template 1 (cyan)");
-	setWidgetColor(menuitem, 128, 255, 255);
-	g_signal_connect(menuitem, "activate",
-	                 G_CALLBACK(getTemplateCB), (gpointer)(s*2+0));
-	gtk_menu_shell_append(GTK_MENU_SHELL(menu), menuitem);
-
-	menuitem = gtk_menu_item_new_with_label("set template 2 (red)");
-	setWidgetColor(menuitem, 255, 130, 130);
-	//setWidgetColor(menuitem, 128, 255, 255);
-	g_signal_connect(menuitem, "activate",
-	                 G_CALLBACK(getTemplateCB), (gpointer)(s*2+1));
-	gtk_menu_shell_append(GTK_MENU_SHELL(menu), menuitem);
-
-	gtk_widget_show_all(menu);
-
-	/* Note: event can be NULL here when called from view_onPopupMenu;
-	 *  gdk_event_get_time() accepts a NULL argument */
-	gtk_menu_popup(GTK_MENU(menu), nullptr, nullptr, nullptr, nullptr,
-	               (event != nullptr) ? event->button : 0,
-	               gdk_event_get_time((GdkEvent *)event));
-}
 int main(int argc, char **argv)
 {
 	using namespace gtkclient;
@@ -2318,7 +2431,8 @@ int main(int argc, char **argv)
 	GtkWidget *window;
 	GtkWidget *da1;
 	GdkGLConfig *glconfig;
-	GtkWidget *box1, *bx, *v1, *label;
+	GtkWidget *box1, *box2, *box3, *box4;
+	GtkWidget *bx, *bx2, *v1, *label;
 	GtkWidget *paned;
 	GtkWidget *frame;
 
@@ -2432,21 +2546,31 @@ int main(int argc, char **argv)
 
 	for (int i=0; i<NSORT; i++) {
 		VboRaster *o = new VboRaster(nc, NSBUF);
-		if (i==0)
-			o->setColor(0.0, 1.0, 1.0, 0.3); //cyan
-		else
-			o->setColor(1.0, 0.0, 0.0, 0.3); //red
+		switch (i) {
+		case 0:
+			o->setColor(0.122, 0.471, 0.706, 0.3);	// blue
+			break;
+		case 1:
+			o->setColor(0.890, 0.102, 0.110, 0.3);	// red
+			break;
+		case 2:
+			o->setColor(0.200, 0.628, 0.173, 0.3);	// green
+			break;
+		case 3:
+			o->setColor(1.000, 0.489, 0.000, 0.3); // orange
+			break;
+		}
 		g_spikeraster.push_back(o);
 	}
 
 	// non-spike events
 	if (pc.numEventChannels() > 0) {
 		VboRaster *o = new VboRaster(pc.numEventChannels(), 2*NSBUF);
-		o->setColor(0.0, 1.0, 0.0, 0.3); // green
+		o->setColor(0.418, 0.240, 0.604, 0.3); // purple
 		g_eventraster.push_back(o);
 	}
 
-	g_saveUnsorted 	= (bool) ms.getStructValue("savemode", "unsorted_spikes", 0, (float)g_saveUnsorted);
+	g_saveUnsorted 	= (bool)ms.getStructValue("savemode", "unsorted_spikes", 0, (float)g_saveUnsorted);
 	g_saveSpikeWF  	= (bool)ms.getStructValue("savemode", "spike_waveforms", 0, (float)g_saveSpikeWF);
 	g_saveICMSWF	= (bool)ms.getStructValue("savemode", "icms_waveforms", 0, (float)g_saveICMSWF);
 
@@ -2464,8 +2588,9 @@ int main(int argc, char **argv)
 	g_neoThreshold = ms.getStructValue("spike", "neo_threshold", 0, g_neoThreshold);
 	g_spikesCols = (int)ms.getStructValue("spike", "cols", 0, (float)g_spikesCols);
 
+	g_showUnsorted = (bool)ms.getStructValue("wf", "show_unsorted", 0, (float)g_showUnsorted);
+	g_showTemplate = (bool)ms.getStructValue("wf", "show_template", 0, (float)g_showTemplate);
 	g_showPca = (bool)ms.getStructValue("wf", "show_pca", 0, (float)g_showPca);
-	g_showUnsorted = (bool)ms.getStructValue("wf", "show_pca", 0, (float)g_showUnsorted);
 	g_showWFVgrid = (bool)ms.getStructValue("wf", "show_grid", 0, (float)g_showWFVgrid);
 	g_showISIhist = (bool)ms.getStructValue("wf", "show_isi", 0, (float)g_showISIhist);
 	g_showWFstd = (bool)ms.getStructValue("wf", "show_std", 0, (float)g_showWFstd);
@@ -2501,7 +2626,7 @@ int main(int argc, char **argv)
 
 	window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_title (GTK_WINDOW (window), titlestr.c_str());
-	gtk_window_set_default_size (GTK_WINDOW (window), 850, 800);
+	gtk_window_set_default_size (GTK_WINDOW (window), 890, 650);
 	da1 = gtk_drawing_area_new();
 	gtk_widget_set_size_request(GTK_WIDGET(da1), 640, 650);
 
@@ -2509,7 +2634,7 @@ int main(int argc, char **argv)
 	gtk_container_add (GTK_CONTAINER (window), paned);
 
 	v1 = gtk_vbox_new (FALSE, 0);
-	gtk_widget_set_size_request(GTK_WIDGET(v1), 220, 650);
+	gtk_widget_set_size_request(GTK_WIDGET(v1), 250, 650);
 
 	bx = gtk_vbox_new (FALSE, 2);
 
@@ -2521,44 +2646,29 @@ int main(int argc, char **argv)
 
 	gtk_box_pack_start (GTK_BOX (v1), bx, FALSE, FALSE, 0);
 
-	//4-channel control blocks.
-	for (int i=0; i<4; i++) {
-		char buf[128];
-		snprintf(buf, 128, "%c", 'A'+i+1);
-		frame = gtk_frame_new (buf);
-		//gtk_frame_set_shadow_type(GTK_FRAME(frame),  GTK_SHADOW_ETCHED_IN);
-		gtk_box_pack_start (GTK_BOX (v1), frame, FALSE, FALSE, 0);
+	// render 4-channel control blocks.
+	bx2 = gtk_hbox_new(TRUE, 1);
+	gtk_box_pack_start(GTK_BOX(bx), bx2, FALSE, FALSE, 0);
+	renderControlBlock(bx2, 0);
+	renderControlBlock(bx2, 1);
+	bx2 = gtk_hbox_new(TRUE, 1);
+	gtk_box_pack_start(GTK_BOX(bx), bx2, FALSE, FALSE, 0);
+	renderControlBlock(bx2, 2);
+	renderControlBlock(bx2, 3);
 
-		GtkWidget *bx2 = gtk_vbox_new (FALSE, 1);
-		gtk_container_add (GTK_CONTAINER (frame), bx2);
-		GtkWidget *bx3 = gtk_hbox_new (FALSE, 1);
-		gtk_box_pack_start (GTK_BOX (bx2), bx3, FALSE, FALSE, 0);
+	bx2 = gtk_hbox_new(FALSE, 2);
+	gtk_box_pack_start(GTK_BOX(bx), bx2, FALSE, FALSE, 0);
 
-		//channel spinner.
-		g_channelSpin[i] = mk_spinner("ch", bx3,
-		                              g_channel[i]+1, 1, g_c.size(), 1,
-		                              channelSpinCB, GINT_TO_POINTER(i));
+	mk_checkbox("offset B,C,D", bx2, &g_autoChOffset, basic_checkbox_cb);
 
-		//right of that, a gain spinner. (need to update depending on ch)
-		g_gainSpin[i] = mk_spinner("gain", bx3,
-		                           g_c[g_channel[i]]->getGain(),
-		                           -128.0, 128.0, 0.1,
-		                           gainSpinCB, GINT_TO_POINTER(i));
-
-		bx3 = gtk_hbox_new (FALSE, 1);
-		g_enabledChkBx[i] = mk_checkbox2("enabled", bx3, g_c[g_channel[i]]->getEnabled(),
-		[](GtkWidget *_button, gpointer _p) {
-			int x = (int)((i64)_p & 0xf);
-			bool b = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(_button));
-			g_c[g_channel[x]]->setEnabled(b);
-		}, GINT_TO_POINTER(i));
-
-		if (i==0) {
-			mk_checkbox("offset B,C,D", bx3,
-			            &g_autoChOffset, basic_checkbox_cb);
-		}
-		gtk_box_pack_start (GTK_BOX (bx2), bx3, FALSE, FALSE, 0);
+	//add a pause / go button (applicable to all)
+	mk_checkbox("pause", bx2, &g_pause,
+	[](GtkWidget *_button, gpointer) {
+		g_pause = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(_button));
+		g_pause_time = g_pause ? gettime() : -1.0;
 	}
+	           );
+
 	//notebook region!
 	g_notebook = gtk_notebook_new();
 	gtk_notebook_set_tab_pos (GTK_NOTEBOOK (g_notebook), GTK_POS_LEFT);
@@ -2605,8 +2715,15 @@ int main(int argc, char **argv)
 	           g_rasterSpan, 1.0, 100.0, 1.0,
 	           basic_spinfloat_cb, (gpointer)&g_rasterSpan);
 
-	mk_checkbox("lowpass filter", box1, &g_lopassNeurons, basic_checkbox_cb);
-	mk_checkbox("highpass filter", box1, &g_hipassNeurons, basic_checkbox_cb);
+	frame = gtk_frame_new ("Filter");
+	gtk_box_pack_start (GTK_BOX(box1), frame, TRUE, TRUE, 0);
+
+	box2 = gtk_hbox_new (FALSE, 0);
+	gtk_widget_show(box2);
+	gtk_container_add (GTK_CONTAINER (frame), box2);
+
+	mk_checkbox("Lowpass", box2, &g_lopassNeurons, basic_checkbox_cb);
+	mk_checkbox("Highpass", box2, &g_hipassNeurons, basic_checkbox_cb);
 
 	gtk_widget_show (box1);
 	label = gtk_label_new("rasters");
@@ -2616,77 +2733,37 @@ int main(int argc, char **argv)
 
 	//add page for sorting. (4 units .. for now .. such is the legacy. )
 	box1 = gtk_vbox_new (FALSE, 0);
+
 	//4-channel control blocks.
-	for (int i=0; i<4; i++) {
-		char buf[128];
-		snprintf(buf, 128, "%c template aperture", 'A'+i);
-		frame = gtk_frame_new (buf);
-		gtk_box_pack_start (GTK_BOX (box1), frame, FALSE, FALSE, 1);
+	box2 = gtk_hbox_new(FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(box1), box2, TRUE, TRUE, 0);
+	renderSortingBlock(box2, 0);
+	renderSortingBlock(box2, 1);
+	box2 = gtk_hbox_new (FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(box1), box2, TRUE, TRUE, 0);
+	renderSortingBlock(box2, 2);
+	renderSortingBlock(box2, 3);
 
-		GtkWidget *bx2 = gtk_vbox_new (FALSE, 2);
-		gtk_container_add (GTK_CONTAINER (frame), bx2);
+	frame = gtk_frame_new ("Show?");
+	gtk_box_pack_start (GTK_BOX(box1), frame, TRUE, TRUE, 0);
 
-		for (int j=0; j<NSORT; j++) {
-			GtkWidget *bx3 = gtk_hbox_new (FALSE, 2);
-			gtk_container_add (GTK_CONTAINER (bx2), bx3);
-			gpointer gp = GINT_TO_POINTER(i*NSORT+j);
-
-			g_apertureSpin[i*NSORT+j] = mk_spinner("", bx3,
-			                                       g_c[g_channel[i]]->getApertureUv(j), 0, 100, 0.1,
-			[](GtkWidget *_spin, gpointer _p) {
-				int h = (int)((i64)_p & 0xf);
-				if (h >= 0 && h < 8 && !g_uiRecursion) {
-					float a = gtk_spin_button_get_value(GTK_SPIN_BUTTON(_spin));
-					int k = g_channel[h/2];
-					//gtk likes to call this frequently -- only update when
-					//the value has actually changed.
-					if (g_c[k]->getApertureUv(h%2) != a) {
-						if (a >= 0 && a < 2000) {
-							g_c[k]->setApertureUv(h%2, a);
-							//setAperture(j);
-						}
-						//printf("apertureSpinCB: %f ch %d\n", a, j);
-					}
-				}
-			}, gp);
-			label = gtk_label_new("uV");
-			gtk_box_pack_start (GTK_BOX (bx3), label, TRUE, TRUE, 1);
-
-			//a button for disable.
-			GtkWidget *button = mk_button("off", bx3,
-			[](GtkWidget *, gpointer _p) {
-				int h = (int)((i64)_p & 0xf);
-				if (h >= 0 && h < 8 && !g_uiRecursion) {
-					int k = g_channel[h/2];
-					gtk_spin_button_set_value(GTK_SPIN_BUTTON(g_apertureSpin[h]), 0);
-					g_c[k]->setApertureLocal(h%2, 0);
-				}
-			}, gp);
-
-			if (j == 0)
-				setWidgetColor(button, 160, 255, 255);
-			else
-				setWidgetColor(button, 255, 155, 155);
-		}
-	}
-
-	GtkWidget *box2 = gtk_hbox_new (FALSE, 0);
+	box2 = gtk_hbox_new (FALSE, 0);
 	gtk_widget_show(box2);
+	gtk_container_add (GTK_CONTAINER (frame), box2);
 
-	GtkWidget *box3 = gtk_vbox_new (FALSE, 0);
+	box3 = gtk_vbox_new (FALSE, 0);
 	gtk_widget_show(box3);
-	mk_checkbox("show Unsorted", box3, &g_showUnsorted, basic_checkbox_cb);
-	mk_checkbox("show PCA", box3, &g_showPca, basic_checkbox_cb);
-	mk_checkbox("show grid", box3, &g_showWFVgrid, basic_checkbox_cb);
+	mk_checkbox("Unsorted", box3, &g_showUnsorted, basic_checkbox_cb);
+	mk_checkbox("Template", box3, &g_showTemplate, basic_checkbox_cb);
+	mk_checkbox("PCA", box3, &g_showPca, basic_checkbox_cb);
 	gtk_box_pack_start (GTK_BOX (box2), box3, TRUE, TRUE, 0);
 
-	GtkWidget *box4 = gtk_vbox_new (FALSE, 0);
-	gtk_widget_show(box4);
-	mk_checkbox("show ISI", box4, &g_showISIhist, basic_checkbox_cb);
-	mk_checkbox("show std", box4, &g_showWFstd, basic_checkbox_cb);
-	gtk_box_pack_start (GTK_BOX (box2), box4, TRUE, TRUE, 0);
-
-	gtk_box_pack_start (GTK_BOX (box1), box2, TRUE, TRUE, 0);
+	box3 = gtk_vbox_new (FALSE, 0);
+	gtk_widget_show(box3);
+	mk_checkbox("grid", box3, &g_showWFVgrid, basic_checkbox_cb);
+	mk_checkbox("ISI", box3, &g_showISIhist, basic_checkbox_cb);
+	mk_checkbox("STD", box3, &g_showWFstd, basic_checkbox_cb);
+	gtk_box_pack_start (GTK_BOX (box2), box3, TRUE, TRUE, 0);
 
 	mk_button("calc PCA", box1,
 	[](GtkWidget *, gpointer) {
@@ -2695,18 +2772,18 @@ int main(int argc, char **argv)
 		}
 	}, nullptr);
 
-//this concludes sort page.
+	//this concludes sort page.
 	gtk_widget_show (box1);
 	label = gtk_label_new("sort");
 	gtk_label_set_angle(GTK_LABEL(label), 90);
 	gtk_notebook_insert_page(GTK_NOTEBOOK(g_notebook), box1, label, 1);
 	// insert sort out of order
 
-//add page for sorting a single unit.
+	//add page for sorting a single unit.
 	//box1 = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
 
 
-//add a page for viewing all the spikes.
+	//add a page for viewing all the spikes.
 	box1 = gtk_vbox_new(FALSE, 0);
 
 	mk_combobox("none,abs,NEO", 3, box1, false, "Spike Pre-emphasis",
@@ -2729,19 +2806,32 @@ int main(int argc, char **argv)
 	mk_spinner("min ISI, ms", box1, g_minISI,
 	           0.2, 3.0, 0.01, basic_spinfloat_cb, (gpointer)&g_minISI);
 
-	mk_spinner("auto thresh, std", box1, g_autoThreshold,
+	frame = gtk_frame_new ("Threshold");
+	gtk_box_pack_start (GTK_BOX(box1), frame, FALSE, FALSE, 0);
+
+	box2 = gtk_hbox_new (FALSE, 1);
+	gtk_widget_show(box2);
+	gtk_container_add(GTK_CONTAINER(frame), box2);
+
+	box3 = gtk_vbox_new (TRUE, 1);
+	gtk_widget_show(box3);
+	gtk_box_pack_start(GTK_BOX(box2), box3, TRUE, TRUE, 0);
+
+	mk_spinner("STD", box3, g_autoThreshold,
 	           -10.0, 10.0, 0.05, basic_spinfloat_cb, (gpointer)&g_autoThreshold);
 
-	mk_spinner("NEO thresh, a.u.", box1, g_neoThreshold,
+	mk_spinner("NEO", box3, g_neoThreshold,
 	           0, 100, 1, basic_spinfloat_cb, (gpointer)&g_neoThreshold);
 
-	GtkWidget *bx3 = gtk_hbox_new (FALSE, 1);
-	gtk_box_pack_start (GTK_BOX (box1), bx3, FALSE, FALSE, 0);
-	mk_button("set selected", bx3,
+	box3 = gtk_vbox_new (TRUE, 1);
+	gtk_widget_show(box3);
+	gtk_box_pack_start(GTK_BOX(box2), box3, TRUE, TRUE, 0);
+
+	mk_button("set selected", box3,
 	[](GtkWidget *, gpointer) {
 		g_c[g_channel[0]]->autoThreshold(g_autoThreshold);
 	}, nullptr);
-	mk_button("set all", bx3,
+	mk_button("set all", box3,
 	[](GtkWidget *, gpointer) {
 		for (auto &c : g_c) {
 			c->autoThreshold(g_autoThreshold);
@@ -3006,14 +3096,6 @@ int main(int argc, char **argv)
 
 	// bottom section, visible on all screens
 	bx = gtk_hbox_new (FALSE, 3);
-
-	//add a pause / go button (applicable to all)
-	mk_checkbox("pause", bx, &g_pause,
-	[](GtkWidget *_button, gpointer) {
-		g_pause = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(_button));
-		g_pause_time = g_pause ? gettime() : -1.0;
-	}
-	           );
 
 	gtk_box_pack_start (GTK_BOX (v1), bx, TRUE, TRUE, 0);
 

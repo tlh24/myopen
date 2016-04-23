@@ -12,12 +12,16 @@ using namespace arma;
 
 long double gettime();
 void glPrint(char *text);
-#define NWFVBO 1024
 #define NUSVBO 512
+#define NWFVBO NUSVBO*NSORT
 
+extern gboolean g_showUnsorted;
+extern gboolean g_showTemplate;
+extern gboolean g_showPca;
+extern gboolean g_showWFVgrid;
 extern gboolean g_showISIhist;
 extern gboolean g_showWFstd;
-extern gboolean g_showUnsorted;
+
 extern int g_whichAlignment;
 extern int g_whichSpikePreEmphasis;
 
@@ -33,8 +37,8 @@ public:
 	Vbo		*m_wfVbo; 				// range 1 mean 0
 	Vbo		*m_usVbo;				// unsorted units
 	VboPca	*m_pcaVbo; 				// 2D points, with color.
-	float	m_pca[NSORT][NWFSAMP]; 	// range 1 mean 0
-	float 	m_pcaScl[NSORT]; 		// sqrt of the eigenvalues.
+	float	m_pca[2][NWFSAMP]; 	// range 1 mean 0
+	float 	m_pcaScl[2]; 		// sqrt of the eigenvalues.
 	float	m_template[NSORT][NWFSAMP]; // range 1 mean 0.
 	float	m_loc[4];
 	int		m_ch; 			//channel number, obvi.
@@ -50,9 +54,9 @@ public:
 
 	Channel(int ch, MatStor *ms)
 	{
-		m_wfVbo = new Vbo(6, NWFVBO, NWFSAMP+2); // sorted units, with color.
-		m_usVbo = new Vbo(3, NUSVBO, NWFSAMP+2); // unsorted units, all gray.
-		m_pcaVbo = new VboPca(6, 1024*8, 1, ch, NWFSAMP, ms);
+		m_wfVbo = new Vbo(6, 	NWFVBO, NWFSAMP+2); // sorted units, with color.
+		m_usVbo = new Vbo(3, 	NUSVBO, NWFSAMP+2); // unsorted units, all gray.
+		m_pcaVbo = new VboPca(6, 1024*8, 1, ch, NWFSAMP, ms);	// x, y, t, r, g, b
 		m_wfVbo->m_useSAA = m_usVbo->m_useSAA = m_pcaVbo->m_useSAA = false;
 		m_pcaVbo->m_fade = 0.f;
 		m_ch = ch;
@@ -60,40 +64,51 @@ public:
 		m_wfstats.reset();
 		m_enabled = true;
 
+		for (int j=0; j<NWFSAMP; j++) {
+			// only need first two pc's
+			m_pca[0][j] = 1.f/8.f;
+			m_pca[1][j] = 1.f/8.f;
+		}
+		m_pcaScl[0] = 1.f;
+		m_pcaScl[1] = 1.f;
+
 		for (int k=0; k<NSORT; k++) {
 			for (int j=0; j<NWFSAMP; j++) {
-				m_pca[k][j] = 1.f/8.f;
 				m_template[k][j] = 0.5*sinf(j/6.f) / 1e2; // sinusoids scaled to ~100 uV
 			}
-			m_pcaScl[k] = 1.f;
 			m_aperture[k] = 0.f;
 		}
 
 		//read from matlab if it's there..
 		if (ms) {
+			ms->getValue3(ch, 0, "pca", &(m_pca[0][0]), NWFSAMP);
+			ms->getValue3(ch, 1, "pca", &(m_pca[1][0]), NWFSAMP);
+			ms->getValue3(ch, 0, "pcaScl", m_pcaScl, 2);
 			for (int j=0; j<NSORT; j++) {
-				ms->getValue3(ch, j, "pca", &(m_pca[j][0]), NWFSAMP);
 				ms->getValue3(ch, j, "template", &(m_template[j][0]), NWFSAMP);
 				m_aperture[j] = ms->getValue2(ch, j, "aperture", 0.f); // old default: 0.003f
 			}
-			ms->getValue3(ch, 0, "pcaScl", m_pcaScl, 2);
+
 			m_threshold = ms->getValue(ch, "threshold", 0.6f);
 			m_centering = ms->getValue(ch, "centering", NWFSAMP/2.f);
 			m_gain = ms->getValue(ch, "gain", 1.f);
 			m_enabled = (bool)ms->getValue(ch, "enabled", 1.f);
 		}
+
 		//init m_wfVbo.
 		for (int i=0; i<NWFVBO; i++) {
 			float *f = m_wfVbo->addRow();
 			f[0] = 0.f;
 			f[1] = 0.5f;
 			f[2] = 0.f;
-			f[3] = f[4] = f[5] = 0.f;
+			f[3] = 0.f;
+			f[4] = 0.f;
+			f[5] = 0.f;
 			for (int j=0; j<(m_wfVbo->m_cols-2); j++) {
 				f[(j+1)*6 + 0] = (float)j/(m_wfVbo->m_cols-3);
 				f[(j+1)*6 + 1] = 0.5f;
 				f[(j+1)*6 + 2] = 0.0f;
-				for (int k=0; k<NUNIT; k++)
+				for (int k=0; k<3; k++)
 					f[(j+1)*6 + 3 + k] = 0.5f; //all init gray.
 			}
 			f[(m_wfVbo->m_cols-1)*6 + 0] = 1.f;
@@ -102,6 +117,7 @@ public:
 			for (int k=0; k<NUNIT; k++)
 				f[(m_wfVbo->m_cols-1)*6 + 3 + k] = 0.5f; //all init gray.
 		}
+
 		//init unsorted Vbo,
 		for (int i=0; i<NUSVBO; i++) {
 			float *f = m_usVbo->addRow();
@@ -117,8 +133,10 @@ public:
 			f[(m_usVbo->m_cols-1)*3 + 1] = 0.5f;
 			f[(m_usVbo->m_cols-1)*3 + 2] = 0.0f;
 		}
+
 		m_loc[0] = m_loc[1] = 0.f;
 		m_loc[2] = m_loc[3] = 1.f;
+
 		for (int u=0; u<NSORT; u++) {
 			m_lastSpike[u] = 0;
 			for (size_t i=0; i < sizeof(m_isi[0])/sizeof(m_isi[0][0]); i++) {
@@ -157,6 +175,31 @@ public:
 		float color[3] = {0.5, 0.5, 0.5}; //unsorted.
 		//error type 1 moves toward green-yellow; error type 2 moves to purple.
 		//see color wheel in gimp.
+
+		switch (unit) {	// 1-indexed
+		case 1:
+			color[0] =  31.f/255.f;
+			color[1] = 120.f/255.f;
+			color[2] = 180.f/255.f;
+			break;
+		case 2:
+			color[0] = 227.f/255.f;
+			color[1] =  26.f/255.f;
+			color[2] =  28.f/255.f;
+			break;
+		case 3:
+			color[0] =  51.f/255.f;
+			color[1] = 160.f/255.f;
+			color[2] =  44.f/255.f;
+			break;
+		case 4:
+			color[0] = 255.f/255.f;
+			color[1] = 127.f/255.f;
+			color[2] =   0.f/255.f;
+			break;
+		}
+
+		/*
 		if (unit == 1) {
 			//color[0] = 0.0f;        //cyan.
 			//color[1] = 1.0f;
@@ -165,11 +208,13 @@ public:
 			color[1] = 174.f/255.f;
 			color[2] = 214.f/255.f;
 		}
+
 		if (unit == 3) {
 			color[0] = 0.0f;        //cyan-green.
 			color[1] = 1.0f;
 			color[2] = 0.5f;
 		}
+
 		if (unit == 5) {
 			color[0] = 0.0f;        //blue-green
 			color[1] = 0.5f;
@@ -184,23 +229,27 @@ public:
 			color[1] = 106.f/255.f;
 			color[2] = 74.f/255.f;
 		}
+
 		if (unit == 4) {
 			color[0] = 1.0f;        //orange
 			color[1] = 0.5f;
 			color[2] = 0.0f;
 		}
+
 		if (unit == 6) {
 			color[0] = 1.0f;        //magenta.
 			color[1] = 0.0f;
 			color[2] = 0.5f;
 		}
+		*/
+
 		//copy to m_wfVbo first.
 		if (unit > 0) {
 			float *f = m_wfVbo->addRow();
 			for (int j=0; j<NWFSAMP; j++) {
 				f[(j+1)*6 + 1] = wf[j];
 				f[(j+1)*6 + 2] = time;
-				for (int k=0; k<NUNIT; k++)
+				for (int k=0; k<3; k++)
 					f[(j+1)*6 + 3 + k] = color[k];
 			}
 		} else {
@@ -219,13 +268,14 @@ public:
 			//compute PCA. just inner product.
 			// TODO: this seems to be a data race
 			float *pca = m_pcaVbo->addRow();
-			pca[0] = pca[1] = 0.f;
-			for (int j=0; j<NWFSAMP; j++) {
-				for (int i=0; i<NSORT; i++)
+			for (int i=0; i<2; i++) {
+				pca[i] = 0.f;
+				for (int j=0; j<NWFSAMP; j++) {
 					pca[i] += m_pca[i][j] * wf[j];
+				}
 			}
 			pca[2] = time;
-			for (int i=0; i<NUNIT; i++) {
+			for (int i=0; i<3; i++) {
 				pca[3+i] = color[i];
 			}
 		}
@@ -284,12 +334,33 @@ public:
 	}
 	void setApertureLocal(int n, float aperture)
 	{
-		if (n >= 0 && n <= 1) m_aperture[n] = aperture;
+		// XXX TODO
+		// need to increase the limits to num_sorted, right?
+		// also need to include more colors here
+		if (n >= 0 && n < NSORT)
+			m_aperture[n] = aperture;
 		float color[3] = {0.f, 1.f, 1.f};
-		if (n == 1) {
-			color[0] = 1.f;        //red
-			color[1] = 0.f;
-			color[2] = 0.f;
+		switch (n) {	// 0-indexed
+		case 0:
+			color[0] =  31.f/255.f;
+			color[1] = 120.f/255.f;
+			color[2] = 180.f/255.f;
+			break;
+		case 1:
+			color[0] = 227.f/255.f;
+			color[1] =  26.f/255.f;
+			color[2] =  28.f/255.f;
+			break;
+		case 2:
+			color[0] =  51.f/255.f;
+			color[1] = 160.f/255.f;
+			color[2] =  44.f/255.f;
+			break;
+		case 3:
+			color[0] = 255.f/255.f;
+			color[1] = 127.f/255.f;
+			color[2] =   0.f/255.f;
+			break;
 		}
 		m_pcaVbo->updateAperture(m_template[n], aperture, color);
 	}
@@ -354,7 +425,7 @@ public:
 		m_enabled = !m_enabled;
 	}
 	void draw(int drawmode, float time, float *cursPos,
-	          bool showPca, bool closest, bool sortMode, bool showWFVgrid)
+	          bool closest, bool sortMode)
 	{
 		float ox = m_loc[0];
 		float oy = m_loc[1];
@@ -433,28 +504,44 @@ public:
 			m_pcaVbo->draw(GL_POINTS, time, true, cursPos, closest);
 			if (closest)
 				m_pcaVbo->drawClosestWf(m_gain);
-			//draw the templates.
-			glLineWidth(3.f);
+
 			glBegin(GL_LINE_STRIP);
-			for (int k=0; k<NSORT; k++) {
-				// cyan -> purple; red -> orange (color wheel)
-				if (k == 0)
+
+			//draw the templates.
+			if (g_showTemplate) {
+				glLineWidth(3.f);
+				for (int k=0; k<NSORT; k++) {
+					switch (k) {
+					case 0:
+						glColor4ub( 31,120,180,175);
+						break;
+					case 1:
+						glColor4ub(227, 26, 28,175);
+						break;
+					case 2:
+						glColor4ub( 51,160, 44,175);
+						break;
+					case 3:
+						glColor4ub(255,127,  0,175);
+						break;
+					}
 					//glColor4f(0.6f, 0.f, 1.f, 0.65f);
-					glColor4ub(8,48,107,175);
-				else
+					//glColor4ub(8,48,107,175);
 					//glColor4f(1.f, 0.5f, 0.f, 0.65f);
-					glColor4ub(103,0,13,175);
-				for (int j=0; j<NWFSAMP; j++) {
-					float ny = m_gain*m_template[k][j] + 0.5f;
-					float nx = (float)(j)/(NWFSAMP-1);
-					glVertex3f(nx*ow+ox, ny*oh+oy, 0.f);
+					//glColor4ub(103,0,13,175);
+					for (int j=0; j<NWFSAMP; j++) {
+						float ny = m_gain*m_template[k][j] + 0.5f;
+						float nx = (float)(j)/(NWFSAMP-1);
+						glVertex3f(nx*ow+ox, ny*oh+oy, 0.f);
+					}
+					glColor4f(0.f, 0.f, 0.f, 0.75f);
+					glVertex3f(1.f*ow+ox, 0.5f*oh+oy, 1.f);
+					glVertex3f(0.f*ow+ox, 0.5f*oh+oy, 1.f);
 				}
-				glColor4f(0.f, 0.f, 0.f, 0.75f);
-				glVertex3f(1.f*ow+ox, 0.5f*oh+oy, 1.f);
-				glVertex3f(0.f*ow+ox, 0.5f*oh+oy, 1.f);
 			}
+
 			//and the PCA templates.
-			if (showPca) {
+			if (g_showPca) {
 				glLineWidth(5.f);
 				for (int k=0; k<NSORT; k++) {
 					for (int j=0; j<NWFSAMP; j++) {
@@ -469,8 +556,10 @@ public:
 					glVertex3f(0.f*ow+ox, 0.5f*oh+oy, 1.f);
 				}
 			}
+
 			glEnd();
-			if (showWFVgrid) {
+
+			if (g_showWFVgrid) {
 				//draw vertical scale.
 				double top = 10e3/m_gain; //10 mV
 				double tic = 1; //uV
@@ -534,10 +623,17 @@ public:
 					}
 					max = max < 100 ? 100 : max;
 					float scl = (float)max;
-					if (u == 0)
-						glColor4f(0.0f,1.f,1.f,0.2f);
-					else
-						glColor4f(1.f,0.0f,0.f,0.25f);
+					switch (u) {
+					case 0:
+						glColor4f(0.0f, 1.0f, 1.0f, 0.2f);
+						break;
+					case 1:
+						glColor4f(1.0f, 0.0f, 0.0f, 0.25f);
+						break;
+					case 2:
+						glColor4f(0.0f, 1.0f, 0.0f, 0.25f);
+						break;
+					}
 					glBegin(GL_TRIANGLE_STRIP);
 					for (int i=0; i < nisi; i++) {
 						float y1 = (float)m_isi[u][i]/scl;
@@ -592,30 +688,43 @@ public:
 		}
 		glPrint(buf);
 	}
-	int updateTemplate(int unit)
+	int updateTemplate(int unit)	// why / when is this called?
 	{
-		//called when the button is clicked.
-		if (unit < 1 || unit > NSORT) {
+		if (unit < 0 || unit >= NSORT) {
 			warn("unit out of range in Channel::updateTemplate()");
 			return false;
 		}
+
 		float aperture = 0;
-		float color[3] = {0.f, 1.f, 1.f};
-		if (unit == 2) {
-			color[0] = 1.f;
-			color[1] = 0.f;
-			color[2] = 0.f;
+		float color[3] = {0.f, 0.f, 0.f};
+		switch (unit) {	// 0-indexed
+		case 0:
+			color[0] =  31.f/255.f;
+			color[1] = 120.f/255.f;
+			color[2] = 180.f/255.f;
+			break;
+		case 1:
+			color[0] = 227.f/255.f;
+			color[1] =  26.f/255.f;
+			color[2] =  28.f/255.f;
+			break;
+		case 2:
+			color[0] =  51.f/255.f;
+			color[1] = 160.f/255.f;
+			color[2] =  44.f/255.f;
+			break;
+		case 3:
+			color[0] = 255.f/255.f;
+			color[1] = 127.f/255.f;
+			color[2] =   0.f/255.f;
+			break;
 		}
 		float temp[NWFSAMP];
 		m_pcaVbo->getTemplate(temp, aperture, color);
-		printf("template %d ", unit);
 		for (int i=0; i<NWFSAMP; i++) {
-			m_template[unit-1][i] = temp[i];
-			printf("%d ", (int)((temp[i]+0.5f) * 255));
+			m_template[unit][i] = temp[i];
 		}
-		printf("\n");
-		m_aperture[unit-1] = aperture;
-		printf("m_aperture[%d][%d] = %f\n", m_ch, unit-1, m_aperture[unit-1]);
+		m_aperture[unit] = aperture;
 		return true;
 	}
 	void resetPca()
@@ -667,7 +776,7 @@ public:
 		mat V = fliplr(eigvec);
 
 		// normalize the eigenvectors by the sqrt of the eigenvalues
-		for (int k=0; k<NSORT; k++) {
+		for (int k=0; k<2; k++) {
 			m_pcaScl[k] = sqrt(d(k));
 			for (int i=0; i<NWFSAMP; i++) {
 				m_pca[k][i] = V(i,k) / m_pcaScl[k];
@@ -677,7 +786,7 @@ public:
 		// recalculate the pca points for immediate display.
 		t = gettime();
 		for (int i=0; i<nsamp; i++) {
-			for (int k=0; k<NSORT; k++) {
+			for (int k=0; k<2; k++) {
 				float pca = 0;
 				for (int j=0; j<NWFSAMP; j++) {
 					pca += m_pcaVbo->m_wf[i*NWFSAMP + j] * m_pca[k][j];
