@@ -6,6 +6,7 @@
 #include "matStor.h"
 
 void copyData(GLuint vbo, u32 sta, u32 fin, float *ptr, int stride);
+void glColor4_8bit(int r, int g, int b, int a);
 extern float g_viewportSize[2];
 
 class Vbo
@@ -355,7 +356,7 @@ public:
 			cx /= w;
 			cy /= h;
 			//find the closest in our dataset.
-			float d = 1e9;
+			float d = FLT_MAX;
 			int closest = 0;
 			for (int i=0; i< MIN((int)m_w,m_rows); i++) {
 				float xx = m_f[i*m_cols*m_dim + 0];
@@ -376,10 +377,10 @@ public:
 			yy *= h;
 			xx += x;
 			yy += y;
-			float ww = 5.f / g_viewportSize[0];
-			float hh = 5.f / g_viewportSize[1];
+			float ww = 10.f / g_viewportSize[0];
+			float hh = 10.f / g_viewportSize[1];
 			glBegin(GL_LINES);
-			glColor4f(0.418f, 0.240f, 0.604f, 1.f);
+			glColor4_8bit(233, 162, 201, 255);
 			glVertex3f( xx-ww, yy-hh, 0.f);
 			glVertex3f( xx+ww, yy+hh, 0.f);
 			glVertex3f( xx+ww, yy-hh, 0.f);
@@ -417,7 +418,7 @@ public:
 		float ox = m_loc[0] - m_loc[2];
 		float oy = m_loc[1] - m_loc[3]/2;
 		int i = m_drawWf;
-		glColor4f(0.418f, 0.240f, 0.604f, 1.f);
+		glColor4_8bit(233, 162, 201, 255);
 		glLineWidth(4.f);
 		glBegin(GL_LINE_STRIP);
 		for (int j=0; j<m_wfLen; j++) {
@@ -592,6 +593,16 @@ void copyData(GLuint vbo, u32 sta, u32 fin, float *ptr, int stride)
 	fin *= stride;
 	ptr += sta;
 	glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, sta*4, (fin-sta)*4, (GLvoid *)ptr);
+}
+
+// just a helper function
+void glColor4_8bit(int r, int g, int b, int a)
+{
+	glColor4f(
+	    (float)(r % 256)/255.f,
+	    (float)(g % 256)/255.f,
+	    (float)(b % 256)/255.f,
+	    (float)(a % 256)/255.f);
 }
 
 #endif
