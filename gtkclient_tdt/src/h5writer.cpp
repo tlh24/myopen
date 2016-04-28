@@ -1,4 +1,5 @@
 #include "h5writer.h"
+#include <string.h>
 #include "util.h"
 
 H5Writer::H5Writer()
@@ -156,4 +157,17 @@ void H5Writer::deflateDataset(hid_t prop)
 	} else {
 		error("HDF5: gzip filter not available");
 	}
+}
+void H5Writer::setUUID(char *uuid_str)
+{
+	// all h5 files get the same uuid (until we restart the program)
+	hid_t ds = H5Screate(H5S_SCALAR);
+	hid_t dtype = H5Tcopy (H5T_C_S1);
+	H5Tset_size(dtype, strlen(uuid_str));
+	H5Tset_strpad(dtype, H5T_STR_NULLTERM);
+	hid_t dset = H5Dcreate(m_h5file, "/identifier", dtype, ds,
+	                       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+	H5Dwrite(dset, dtype, H5S_ALL, H5S_ALL, H5P_DEFAULT, uuid_str);
+	H5Dclose(dset);
+	H5Sclose(ds);
 }

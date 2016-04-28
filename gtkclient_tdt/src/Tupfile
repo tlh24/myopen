@@ -1,7 +1,7 @@
 include_rules
 
 PKG_LIBS  = gtk+-2.0 blas-openblas gtkglext-1.0 lua5.1 libprocps
-PKG_LIBS += hdf5 matio
+PKG_LIBS += hdf5 matio uuid
 
 CPPFLAGS += -I../include -I../proto -I../../common_host
 CPPFLAGS += `pkg-config --cflags $(PKG_LIBS)`

@@ -34,6 +34,7 @@
 #include <arpa/inet.h>
 #include <matio.h>
 #include <armadillo>
+#include <uuid.h>
 
 #include <boost/multi_array.hpp>
 #include <map>
@@ -91,6 +92,8 @@ cgVertexShader		*g_vsThreshold;
 using namespace std;
 using namespace arma;
 using namespace moodycamel; // for lockfree queues
+
+uuid_t	g_uuid;
 
 char	g_prefstr[256];
 
@@ -2209,6 +2212,9 @@ static void openSaveSpikesFile(GtkWidget *, gpointer parent_window)
 			strncpy(&name[i*max_str], g_c[i]->m_chanName.c_str(),
 			        g_c[i]->m_chanName.size());
 		}
+		char uuid[37];
+		uuid_unparse(g_uuid, uuid);
+		g_spikewriter.setUUID(uuid);
 		g_spikewriter.setMetaData(g_sr, name, max_str);
 		delete[] name;
 	}
@@ -2303,6 +2309,9 @@ static void openSaveAnalogPrefilterFile(GtkWidget *, gpointer parent_window)
 			strncpy(&name[i*max_str], g_c[i]->m_chanName.c_str(),
 			        g_c[i]->m_chanName.size());
 		}
+		char uuid[37];
+		uuid_unparse(g_uuid, uuid);
+		g_analogwriter_prefilter.setUUID(uuid);
 		g_analogwriter_prefilter.setMetaData(g_sr, scale, name, max_str);
 		delete[] scale;
 		delete[] name;
@@ -2374,6 +2383,9 @@ static void openSaveAnalogFile(GtkWidget *, gpointer parent_window)
 			strncpy(&name[i*max_str], g_c[i]->m_chanName.c_str(),
 			        g_c[i]->m_chanName.size());
 		}
+		char uuid[37];
+		uuid_unparse(g_uuid, uuid);
+		g_analogwriter_postfilter.setUUID(uuid);
 		g_analogwriter_postfilter.setMetaData(g_sr, scale, name, max_str);
 		delete[] scale;
 		delete[] name;
@@ -2421,7 +2433,9 @@ int main(int argc, char **argv)
 	}
 	closeproc(pr);
 
-	string titlestr = "gtkclient (TDT) v1.99";
+	uuid_generate(g_uuid);
+
+	string titlestr = "gtkclient (TDT) v2.00";
 
 #ifdef DEBUG
 	feenableexcept(FE_DIVBYZERO|FE_INVALID|FE_OVERFLOW);  // Enable (some) floating point exceptions

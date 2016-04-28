@@ -138,7 +138,7 @@ DEPS = libgtk2.0-dev libgtk2.0-0-dbg \
 	libhdf5-dev libsdl1.2-dev astyle \
 	libprotobuf-dev protobuf-compiler \
 	cppcheck libprocps-dev \
-	liblua5.1-0-dev
+	liblua5.1-0-dev libuuid1 uuid-dev
 else
 DEPS = libgtk2.0-dev libgtk2.0-0-dbg \
 	libgtkgl2.0-dev libgtkglext1-dev freeglut3-dev nvidia-cg-toolkit \
@@ -149,7 +149,7 @@ DEPS = libgtk2.0-dev libgtk2.0-0-dbg \
 	libhdf5-dev libsdl1.2-dev astyle \
 	libprotobuf-dev libprotobuf7 protobuf-compiler \
 	cppcheck libprocps0-dev \
-	liblua5.1-0-dev libgl1-mesa-glx
+	liblua5.1-0-dev libgl1-mesa-glx uuid-dev libuuid1
 endif
 deps:
 	sudo apt-get install $(DEPS);

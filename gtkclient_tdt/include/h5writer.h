@@ -59,6 +59,8 @@ public:
 
 	virtual void draw();
 
+	virtual void setUUID(char *uuid_str);
+
 	virtual const char *name() = 0;
 protected:
 	void shuffleDataset(hid_t prop);
