@@ -2598,7 +2598,7 @@ int main(int argc, char **argv)
 	// non-spike events
 	if (pc.numEventChannels() > 0) {
 		VboRaster *o = new VboRaster(pc.numEventChannels(), 2*NSBUF);
-		o->setColor(0.418, 0.240, 0.604, 0.3); // purple
+		o->setColor(1.0, 1.0, 50.f/255.f, 0.75); // purple
 		g_eventraster.push_back(o);
 	}
 
