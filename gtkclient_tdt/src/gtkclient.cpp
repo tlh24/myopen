@@ -67,6 +67,7 @@
 #include "jacksnd.h"
 #include "filter.h"
 #include "spikebuffer.h"
+#include "artifact_filter.h"
 #include "nlms2.h"
 #include "util.h"
 
@@ -110,7 +111,7 @@ vector <VboRaster *> g_spikeraster;
 vector <VboRaster *> g_eventraster;
 // can do another raster vector for other types of rasters (icms ticks, etc)
 
-ReaderWriterQueue<mat *> g_filterbuf(NSAMP); // for nlms filtering
+ReaderWriterQueue<mat *> g_filterbuf(1024); // for nlms filtering
 
 std::mutex g_po8e_mutex;
 vector <pair<ReaderWriterQueue<PO8Data *>*, po8e::card *>> g_dataqueues;
@@ -212,6 +213,9 @@ float g_autoThreshold = -3.5; //standard deviations. default negative, w/e.
 float g_neoThreshold = 8;
 int g_spikesCols = 16;
 
+gboolean g_artifactFilterRun = false;
+ArtifactFilter *g_artifactFilter;
+
 gboolean g_trainArtifactNLMS = false;
 gboolean g_filterArtifactNLMS = false;
 ArtifactNLMS2 *g_nlms;
@@ -284,6 +288,8 @@ void saveState()
 
 	ms.setStructValue("filter","lopass",0,(float)g_lopassNeurons);
 	ms.setStructValue("filter","hipass",0,(float)g_hipassNeurons);
+
+	ms.setStructValue("icms","filter_run",0,(float)g_artifactFilterRun);
 
 	ms.setStructValue("icms","lms_train",0,(float)g_trainArtifactNLMS);
 	ms.setStructValue("icms","lms_filter",0,(float)g_filterArtifactNLMS);
@@ -972,19 +978,26 @@ void destroyGUI(GtkWidget *, gpointer)
 void nlms_train()
 {
 	mat *X;
+	mat Y;
 	while (!g_die) {
 		int succeeded = 0;
-		do {
+		int ndequeued = 0;
+		Y.reset();
+		while (ndequeued < 100 && !g_die) {
 			succeeded = g_filterbuf.try_dequeue(X);
-			if (!succeeded)
-				usleep(1e3);
-		} while (!succeeded && !g_die);
+			if (succeeded) {
+				Y = join_rows(Y, *X);
+				delete X;
+				ndequeued++;
+				printf("q size: %zu\n", g_filterbuf.size_approx());
+			}
+		}
 
-		if (!succeeded)
-			continue;
-
-		g_nlms->train(*X);
-		delete X;
+		if (succeeded) {
+			g_nlms->train(Y);
+		} else {
+			usleep(1e3);
+		}
 	}
 }
 void sorter(int ch)
@@ -1502,6 +1515,10 @@ void worker()
 			X -= g_nlms->filter(X);
 		}
 
+		// filter online here
+		if (g_artifactFilterRun) {
+			X -= g_artifactFilter->filter(X);
+		}
 
 		// big loop through samples
 		// TODO: make this use X, too
@@ -2532,6 +2549,7 @@ int main(int argc, char **argv)
 		}
 	}
 
+	g_artifactFilter = new ArtifactFilter(nc);
 	g_nlms = new ArtifactNLMS2(nc, &ms);
 	for (size_t i=0; i<nc; i++) {
 #if defined KHZ_24
@@ -2612,6 +2630,8 @@ int main(int argc, char **argv)
 
 	g_lopassNeurons = (bool)ms.getStructValue("filter", "lopass", 0, (float)g_lopassNeurons);
 	g_hipassNeurons = (bool)ms.getStructValue("filter", "hipass", 0, (float)g_hipassNeurons);
+
+	g_artifactFilterRun = (bool)ms.getStructValue("icms", "filter_run", 0, (float)g_artifactFilterRun);
 
 	g_trainArtifactNLMS = (bool)ms.getStructValue("icms", "lms_train", 0, (float)g_trainArtifactNLMS);
 	g_filterArtifactNLMS = (bool)ms.getStructValue("icms", "lms_filter", 0, (float)g_filterArtifactNLMS);
@@ -2864,6 +2884,54 @@ int main(int argc, char **argv)
 
 	// add a page for icms
 	box1 = gtk_vbox_new(FALSE, 0);
+
+	// Artifact Filter
+	s = "Artifact Filter";
+	frame = gtk_frame_new (s.c_str());
+	gtk_box_pack_start (GTK_BOX (box1), frame, FALSE, FALSE, 1);
+
+	box2 = gtk_vbox_new(FALSE, 0);
+	gtk_container_add (GTK_CONTAINER (frame), box2);
+
+	box3 = gtk_hbox_new(FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (box2), box3, TRUE, TRUE, 0);
+
+	box4 = gtk_vbox_new(FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (box3), box4, TRUE, TRUE, 0);
+	mk_checkbox("apply filter", box4,
+	            &g_artifactFilterRun, basic_checkbox_cb);
+
+	box3 = gtk_hbox_new(FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (box2), box3, TRUE, TRUE, 0);
+
+	box4 = gtk_vbox_new(FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (box3), box4, TRUE, TRUE, 0);
+	mk_button("load weights", box4,
+	[](GtkWidget *, gpointer parent_window) {
+		string d = get_cwd();
+		d += "/etc";
+
+		GtkWidget *dialog = gtk_file_chooser_dialog_new ("Load Filter Weights",
+		                    (GtkWindow *)parent_window,
+		                    GTK_FILE_CHOOSER_ACTION_OPEN,
+		                    GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+		                    GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
+		                    NULL);
+		gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog),d.c_str());
+		if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
+			char *fn = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
+			g_artifactFilter->loadWeights(fn);
+			g_free(fn);
+		}
+		gtk_widget_destroy(dialog);
+	}, nullptr);
+
+	box4 = gtk_vbox_new(FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (box3), box4, TRUE, TRUE, 0);
+	mk_button("clear weights", box4,
+	[](GtkWidget *, gpointer) {
+		g_artifactFilter->clearWeights();
+	}, nullptr);
 
 	// LMS
 	s = "Artifact LMS Filtering";

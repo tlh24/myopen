@@ -19,6 +19,7 @@ h5analogwriter.cpp \
 stimchan.cpp \
 analogchan.cpp \
 spikebuffer.cpp \
+artifact_filter.cpp \
 nlms2.cpp \
 vbo_raster.cpp \
 vbo_timeseries.cpp
