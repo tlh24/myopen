@@ -27,7 +27,7 @@ mat ArtifactFilter::filter(mat X)
 void ArtifactFilter::loadWeights(const char *fn)
 {
 	// automatically detect format type
-	W.load(fn);
+	W.load(fn, hdf5_binary_trans);
 }
 
 void ArtifactFilter::clearWeights()
