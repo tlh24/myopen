@@ -54,7 +54,8 @@ end
 
 card = {
   id = 2,
-  channels = channels,
+  enabled = false,
+  channels = {}
 }
 
 po8e_cards[2] = card
