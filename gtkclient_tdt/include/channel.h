@@ -114,7 +114,7 @@ public:
 			f[(m_wfVbo->m_cols-1)*6 + 0] = 1.f;
 			f[(m_wfVbo->m_cols-1)*6 + 1] = 0.5f;
 			f[(m_wfVbo->m_cols-1)*6 + 2] = 0.0f;
-			for (int k=0; k<NUNIT; k++)
+			for (int k=0; k<3; k++)
 				f[(m_wfVbo->m_cols-1)*6 + 3 + k] = 0.5f; //all init gray.
 		}
 
