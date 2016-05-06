@@ -21,6 +21,8 @@ CPPFLAGS += -DJACK
 #LDFLAGS  += -fno-inline -fno-omit-frame-pointer
 #CPPFLAGS += -fsanitize=address
 #LDFLAGS  += -fsanitize=address
+#CPPFLAGS += -fsanitize=memory -fPIE -pie
+#LDFLAGS  += -fsanitize=memory -fPIE -pie
 
 # these are to analyize automatic loop vectorization failures
 #CPPFLAGS += -Rpass=loop-vectorize
