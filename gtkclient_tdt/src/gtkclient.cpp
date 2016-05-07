@@ -1216,7 +1216,7 @@ void worker()
 			continue;
 		}
 
-		char * ptr = (char*)buf.data();
+		char *ptr = (char *)buf.data();
 
 		u64 nnc, ns;
 

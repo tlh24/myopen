@@ -85,7 +85,8 @@ void po8e_thread(PO8e *p, ReaderWriterQueue<PO8Data *> *q)
 
 		bool stopped = false;
 		size_t numSamples;
-		{	// intentional braces
+		{
+			// intentional braces
 			lock_guard<mutex> lock(g_po8e_mutex);
 			numSamples = p->samplesReady(&stopped);
 		}
@@ -93,14 +94,14 @@ void po8e_thread(PO8e *p, ReaderWriterQueue<PO8Data *> *q)
 		if (p->getLastError() > 0) {
 			//warn("%p: samplesReady() indicated that we are stopped: numSamples: %zu",
 			//     (void*)p, numSamples);
-			warn("%p: card has thrown an error: %d", (void*)p, p->getLastError());
+			warn("%p: card has thrown an error: %d", (void *)p, p->getLastError());
 			break; // xxx how to recover?
 		}
 
 		if (numSamples >= g_po8e_read_size) {
 			if (numSamples > bufmax) {
 				printf("%p: samplesReady() returned too many samples (buffer wrap?): %zu\n",
-				       (void*)p, numSamples);
+				       (void *)p, numSamples);
 				numSamples = bufmax;
 			}
 
@@ -264,7 +265,7 @@ void worker_thread()
 
 		zmq::message_t buf(nbytes);
 
-		char * ptr = (char*)buf.data();
+		char *ptr = (char *)buf.data();
 
 		// nchan - 8 bytes
 		memcpy(ptr+0, &nnc, sizeof(u64));
