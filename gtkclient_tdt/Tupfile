@@ -1,6 +1,7 @@
 include_rules
 
-LDFLAGS += `pkg-config --libs libzmq lua5.1 protobuf` -lPO8eStreaming
+LDFLAGS += `pkg-config --libs libzmq lua5.1 libprocps protobuf`
+LDFLAGS += -lPO8eStreaming
 
 : src/po8e.o \
 ../common_host/util.o \

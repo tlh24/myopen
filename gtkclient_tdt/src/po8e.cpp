@@ -1,10 +1,12 @@
 #include <stdio.h>
+#include <signal.h>				// for signal, SIGINT
 #include <math.h>
 #include <cstring>
 #include <thread>
 #include <atomic>
 #include <mutex>
 #include <vector>
+#include <proc/readproc.h>		// for proc_t, openproc, readproc, etc
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -14,7 +16,7 @@
 #include "PO8e.h"
 #include "timesync.h"
 #include "readerwriterqueue.h"
-#include "po8e_conf.h" // parse po8e conf files
+#include "po8e_conf.h" 			// parse po8e conf files
 
 #define KHZ_24
 
@@ -50,6 +52,12 @@ size_t g_po8e_read_size = 16; // po8e block read size
 
 TimeSync 	g_ts(SRATE_HZ); //keeps track of ticks (TDT time)
 bool		g_die = false;
+bool		g_running = false;
+
+void destroy(int)
+{
+	g_die = true;
+}
 
 // service the po8e buffer
 // 96 channels of spike/lfp, followed by time (ticks) split across two chans
@@ -200,6 +208,8 @@ void worker_thread()
 			break;
 		}
 
+		g_running = true;
+
 		auto mismatch = false;
 		for (size_t i=0; i<n; i++) {
 			if (p[i]->numSamples != p[0]->numSamples) {
@@ -301,6 +311,23 @@ void worker_thread()
 int main(void)
 {
 
+	(void) signal(SIGINT,destroy);
+
+	g_startTime = gettime();
+
+	pid_t mypid = getpid();
+
+	PROCTAB *pr = openproc(PROC_FILLSTAT);
+	proc_t pr_info;
+	memset(&pr_info, 0, sizeof(pr_info));
+	while (readproc(pr, &pr_info) != NULL) {
+		if (!strcmp(pr_info.cmd, "po8e") &&
+		    pr_info.tgid != mypid) {
+			error("already running with pid: %d", pr_info.tgid);
+			return 1;
+		}
+	}
+
 	auto fileExists = [](const char *f) {
 		struct stat sb;
 		int res = stat(f, &sb);
@@ -398,9 +425,18 @@ int main(void)
 
 	threads.push_back(thread(worker_thread));
 
-	printf("press enter to quit.\n");
-	getchar(); // wait for enter
-	g_die = true;
+	while (!g_die) {
+		if (g_running) {
+			printf("%s", g_ts.getTime().c_str());
+			printf(" | ticks %d", g_ts.getTicks());
+			printf(" | slope %0.3Lf", g_ts.m_slope);
+			printf(" | offset %0.1Lf", g_ts.m_offset);
+			printf(" | po8e (ms) %0.2f\r", g_po8eStats.mean());
+			fflush(stdout);
+		}
+		usleep(50000); // 20Hz update.
+	}
+
 
 	for (auto &thread : threads) {
 		thread.join();
@@ -411,5 +447,5 @@ int main(void)
 		// q.second is deleted when the po8e_conf object is destructed
 	}
 
-	usleep(4e5);
+	usleep(1e5);
 }
