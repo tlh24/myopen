@@ -1,13 +1,17 @@
 include_rules
 
+CPPFLAGS += -I../include -I../proto -I../../common_host
+CPPFLAGS += `pkg-config --cflags libzmq lua5.1`
+
+: po8e.cpp | ../proto/po8e.pb.h |> !cpp |> %B.o
+
+include_rules
+
 PKG_LIBS  = gtk+-2.0 blas-openblas gtkglext-1.0 lua5.1 libprocps
-PKG_LIBS += hdf5 matio uuid
+PKG_LIBS += hdf5 matio uuid libzmq protobuf gl
 
 CPPFLAGS += -I../include -I../proto -I../../common_host
 CPPFLAGS += `pkg-config --cflags $(PKG_LIBS)`
-
-LDFLAGS += -lpthread -lGL -lprotobuf -lPO8eStreaming
-LDFLAGS += `pkg-config --libs $(PKG_LIBS)`
 
 OBJS = timeclient.cpp \
 filter.cpp \
@@ -27,7 +31,6 @@ vbo_timeseries.cpp
 : foreach $(OBJS) |> !cpp |> %B.o
 
 : po8e_conf.cpp | ../proto/po8e.pb.h |> !cpp |> %B.o
-: po8e.cpp | ../proto/po8e.pb.h |> !cpp |> %B.o
 : icms2mat.cpp | ../proto/icms.pb.h |> !cpp |> %B.o
 : icmswriter.cpp | ../proto/icms.pb.h |> !cpp |> %B.o
 : gtkclient.cpp | ../proto/icms.pb.h ../proto/po8e.pb.h |> !cpp |> %B.o

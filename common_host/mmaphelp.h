@@ -2,6 +2,7 @@
 #ifndef __MMAPHELP_H__
 #define __MMAPHELP_H__
 
+#include <cstring>
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <unistd.h>

@@ -29,12 +29,14 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+#include <cstring>
 #include <memory.h>
 #include <math.h>
 #include <arpa/inet.h>
 #include <matio.h>
 #include <armadillo>
 #include <uuid.h>
+#include <zmq.hpp>
 
 #include <boost/multi_array.hpp>
 #include <map>
@@ -48,7 +50,7 @@
 
 #include "readerwriterqueue.h"
 
-#include "PO8e.h"
+//#include "PO8e.h"
 #include "po8e_conf.h"
 
 #include "gettime.h"
@@ -98,6 +100,8 @@ uuid_t	g_uuid;
 
 char	g_prefstr[256];
 
+zmq::context_t g_zmq_context(1);	// single zmq thread
+
 float	g_cursPos[2];
 float	g_viewportSize[2] = {640, 480}; //width, height.
 
@@ -113,9 +117,7 @@ vector <VboRaster *> g_eventraster;
 
 ReaderWriterQueue<mat *> g_filterbuf(1024); // for nlms filtering
 
-std::mutex g_po8e_mutex;
 vector <pair<ReaderWriterQueue<PO8Data *>*, po8e::card *>> g_dataqueues;
-size_t g_po8e_read_size = 16;
 
 float g_zoomSpan = 1.0;
 
@@ -124,7 +126,8 @@ float	g_rasterSpan = 10.f; // %seconds.
 
 vector <Channel *> g_c;
 vector <FiringRate *> g_fr;
-TimeSync 	g_ts(SRATE_HZ); //keeps track of ticks (TDT time)
+//TimeSync 	g_ts(SRATE_HZ); //keeps track of ticks (TDT time)
+TimeSyncClient *g_tsc;
 GLuint 		g_base;            // base display list for the font set.
 
 H5SpikeWriter	g_spikewriter;
@@ -958,12 +961,14 @@ static gboolean rotate(gpointer user_data)
 	gdk_window_invalidate_rect(win, &allocation, FALSE);
 	gdk_window_process_updates (win, FALSE);
 
+	// XXX do this properly
+	/*
 	string s = g_ts.getInfo();
 	char str[256];
 	snprintf(str, 256, "\npo8e poll (avg): %.4Lf (ms)\n", g_po8eAvgInterval);
 	s += string(str);
 	gtk_label_set_text(GTK_LABEL(g_infoLabel), s.c_str());
-
+	*/
 	g_icmswriter.draw();
 	g_spikewriter.draw();
 	g_analogwriter_prefilter.draw();
@@ -1110,7 +1115,7 @@ void sorter(int ch)
 		}
 
 		if (passed) {
-			long double the_time = g_ts.getTime(tk);
+			long double the_time = g_tsc->getTime(tk);
 			g_c[ch]->addWf(&wf_sp[idx], unit, the_time, true);
 			g_c[ch]->updateISI(unit, tk); // does nothing for unit==0
 			if (g_spikewriter.isEnabled() && (unit > 0 || g_saveUnsorted)) {
@@ -1192,201 +1197,65 @@ void analogwrite()
 			usleep(1e5);
 	}
 }
-void po8e_fun(PO8e *p, ReaderWriterQueue<PO8Data *> *q)
-{
-	size_t bufmax = 10000;	// must be >= 10000
-
-	printf("Waiting for the stream to start ...\n");
-	//p->waitForDataReady(1);
-	while (p->samplesReady() == 0 && !g_die) {
-		usleep(5000);
-	}
-
-	if (p == nullptr || g_die) {
-		return; /// xxx how to recover?
-	}
-
-	auto nchan = p->numChannels();
-	auto bps = p->dataSampleSize(); // bytes/sample
-	printf("Card %p: %d channels @ %d bytes/sample\n", (void *)p, nchan, bps);
-
-	// 10000 samples * 2 bytes/sample * nChannels
-	auto buff = new i16[bufmax*(nchan)];
-	auto tick = new i64[bufmax];
-
-	// get the initial tick value. hopefully a small number
-	p->readBlock(buff, 1, tick);
-	i64 last_tick = tick[0] - 1;
-
-	while (!g_die) {
-
-		bool stopped = false;
-		size_t numSamples = p->samplesReady(&stopped);
-		if (stopped) {
-			warn("samplesReady() indicated that we are stopped: numSamples: %zu",
-			     numSamples);
-			break; // xxx how to recover?
-		}
-
-		if (numSamples >= g_po8e_read_size) {
-			if (numSamples > bufmax) {
-				warn("samplesReady() returned too many samples (buffer wrap?): %zu",
-				     numSamples);
-				numSamples = bufmax;
-			}
-
-
-			size_t numRead;
-
-			{
-				// warning: these braces are intentional
-				std::lock_guard<std::mutex> lock(g_po8e_mutex);
-				numRead = p->readBlock(buff, g_po8e_read_size, tick);
-				p->flushBufferedData(numRead);
-			}
-
-			if (tick[0] != last_tick + 1) {
-				warn("%p: PO8e tick glitch between blocks. Expected %zu got %zu",
-				     p, last_tick+1, tick[0]);
-				g_ts.m_dropped++;
-				// xxx how to recover?
-			}
-			for (size_t i=0; i<numRead-1; i++) {
-				if (tick[i+1] != tick[i] + 1) {
-					warn("%p: PO8e tick glitch within block. Expected %zu got %zu",
-					     p, tick[i]+1, tick[i+1]);
-					g_ts.m_dropped++;
-					// xxx how to recover?
-				}
-			}
-			last_tick = tick[numRead-1];
-
-			PO8Data *o;
-			o = new PO8Data;
-			o->data = new i16[nchan*numRead];
-			memcpy(o->data, buff, nchan*numRead*sizeof(i16));
-			o->numChannels = nchan;
-			o->numSamples = numRead;
-			o->tick = tick[0];
-			q->enqueue(o);
-			// NB the other thread frees o
-			// and the memory allocated to o->data
-		} else {
-			usleep(1e3);
-		}
-	}
-
-	// delete buffers since we have dynamically allocated;
-	delete[] buff;
-	delete[] tick;
-
-	printf("  stopped collecting data\n");
-	p->stopCollecting();
-	printf("  releasing card %p\n", (void *)p);
-	PO8e::releaseCard(p);
-
-	printf("\n");
-	sleep(1);
-}
 
 void worker()
 {
 
-	vector<PO8Data *> p;
-	vector<po8e::card *> c;
+	//  Prepare our socket
+	zmq::socket_t socket(g_zmq_context, ZMQ_SUB);	// subscribe to data
+	socket.connect("ipc:///tmp/po8e.sock");
+	socket.setsockopt(ZMQ_SUBSCRIBE, "", 0);
+	printf("Receiving data on ipc\n");
 
 	while (!g_die) {
 
-		auto n = g_dataqueues.size();
+		zmq::message_t buf;
 
-		p.clear();
-		c.clear();
-
-		for (size_t i=0; i<n; i++) {
-			auto q = g_dataqueues[i].first;
-			c.push_back(g_dataqueues[i].second);
-			int succeeded;
-			do {
-				PO8Data *x;
-				succeeded = q->try_dequeue(x);
-				if (succeeded)
-					p.push_back(x);
-				else
-					usleep(1e3);
-			} while (!succeeded && !g_die);
+		if (!socket.recv(&buf, ZMQ_NOBLOCK)) {
+			usleep(1e4);	// sleepwait. lame.
+			continue;
 		}
 
-		if (g_die) {
-			for (auto &x : p) {
-				delete[] (x->data);
-				delete x;
-			}
-			break;
-		}
+		char * ptr = (char*)buf.data();
 
-		auto mismatch = false;
-		for (size_t i=0; i<n; i++) {
-			if (p[i]->numSamples != p[0]->numSamples) {
-				warn("po8e card sample mismatch");
-				mismatch = true;
-				break;
-			}
-			if (p[i]->numChannels != (size_t)c[i]->channel_size()) {
-				warn("po8e card %d: configured for %d channels (%d received in po8e packet)",
-				     c[i]->id(), c[i]->channel_size(), p[i]->numChannels);
-				mismatch = true;
-				break;
-			}
-			if (p[i]->tick != p[0]->tick) {
-				warn("p08e ticks misaligned between cards");
-				mismatch = true;
-				break;
-			}
-		}
+		u64 nnc, ns;
 
-		if (mismatch) // exit the worker; no data will be processed
-			break;
-
-		long double time = gettime();
-		g_po8ePollInterval = (time - g_lastPo8eTime)*1000.0;
-		g_po8eAvgInterval = g_po8eAvgInterval * 0.99 + g_po8ePollInterval * 0.01;
-		g_lastPo8eTime = time;
-
-		// also -- only accept stort-interval responses (ignore outliers..)
-		if (g_po8ePollInterval < g_po8eAvgInterval*1.5) {
-			g_ts.update(time, p[0]->tick); //also updates the mmap file.
-		}
-
-		auto ns = p[0]->numSamples;
+		// parse message
+		memcpy(&nnc, ptr+0, sizeof(u64));
+		memcpy(&ns, ptr+8, sizeof(u64));
 
 		auto tk 	= new i64[ns];
 		auto ts 	= new double[ns];
-		tk[0] = p[0]->tick;
-		ts[0] = g_ts.getTime(tk[0]);
+
+		memcpy(tk, ptr+16, sizeof(i64));
+		memcpy(ts, ptr+24, sizeof(double));
+
+		//ts[0] = g_tsc->getTime(tk[0]);
 		for (size_t i=1; i < ns; i++) {
 			tk[i] = tk[i-1] + 1;
-			ts[i] = g_ts.getTime(tk[i]);
+			ts[i] = g_tsc->getTime(tk[i]);
 		}
 
-		size_t nnc = g_c.size(); // num neural channels
+		auto raw = new i16[nnc * ns];
+		memcpy(raw, ptr+32, nnc*ns*sizeof(i16));
+
+		//size_t nnc = g_c.size(); // num neural channels
 
 		auto f = new float[nnc * ns];
 		mat X(nnc, ns);
-		auto raw = new i16[nnc * ns];
-		size_t nc_i = 0;
-		for (size_t i=0; i<c.size(); i++) {
-			for (int j=0; j<c[i]->channel_size(); j++) {
-				if (c[i]->channel(j).data_type() == po8e::channel::NEURAL) {
-					auto scale_factor = g_c[nc_i]->m_scaleFactor;
-					for (size_t k=0; k<ns; k++) {
-						f[nc_i*ns+k] = (float)p[i]->data[j*ns+k]/scale_factor;
-						X(nc_i, k) = f[nc_i*ns+k];
-						raw[nc_i*ns+k] = p[i]->data[j*ns+k];
-					}
-					nc_i++;
-				}
+		for (size_t i=0; i<nnc; i++) {
+			auto scale_factor = g_c[i]->m_scaleFactor;
+			for (size_t k=0; k<ns; k++) {
+				f[i*ns+k] = (float)raw[i*ns+k]/scale_factor;
+				X(i, k) = f[i*ns+k];
 			}
 		}
+
+
+		// XXX XXX XXX
+		// all the events and stim stuff is disabled for now
+
+		/*
 
 		// stim channels (and event channels generally)
 		size_t nec = 0; // num event channels
@@ -1424,12 +1293,6 @@ void worker()
 			}
 		}
 
-		// free the po8e data packet
-		for (auto &x : p) {
-			delete[] (x->data);
-			delete x;
-		}
-
 		// hardcode the zeroth element, maybe fix this XXX
 		for (size_t k=0; k<ns; k++) {
 			for (size_t i=0; i<nsc; i++) {
@@ -1438,6 +1301,9 @@ void worker()
 				}
 			}
 		}
+
+
+		*/
 
 		// TODO:  need to be set. Keep empty for now
 		auto blank 	= new bool[ns];
@@ -1522,6 +1388,11 @@ void worker()
 
 		// big loop through samples
 		// TODO: make this use X, too
+
+		// XXX disable for now
+
+		/*
+
 		for (size_t k=0; k<ns; k++) {
 
 			for (size_t i=0; i<nsc; i++) {
@@ -1609,6 +1480,8 @@ void worker()
 				}
 			}
 		}
+
+		*/
 
 		for (size_t k=0; k<ns; k++) {
 
@@ -1780,8 +1653,9 @@ void worker()
 		delete[] f;
 		delete[] raw;
 		delete[] audio;
-		delete[] events;
-		delete[] stim;
+		// XXX reenable soon
+		//delete[] events;
+		//delete[] stim;
 		delete[] blank;
 	}
 }
@@ -2452,6 +2326,8 @@ int main(int argc, char **argv)
 
 	uuid_generate(g_uuid);
 
+	g_tsc = new TimeSyncClient(); //tells us the ticks when things happen.
+
 	string titlestr = "gtkclient (TDT) v2.00";
 
 #ifdef DEBUG
@@ -2509,9 +2385,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-
-	g_po8e_read_size = pc.readSize();
-	printf("po8e read size:\t\t%zu\n", 	g_po8e_read_size);
+	printf("po8e read size:\t\t%zu\n", 	pc.readSize());
 
 	auto nc = pc.numNeuralChannels();
 	printf("neural channels:\t%zu\n", 	nc);
@@ -2531,6 +2405,19 @@ int main(int argc, char **argv)
 		fr->set_bin_params(20, 1.0); // nlags, duration (sec)
 		g_fr.push_back(fr);
 	}
+
+	// TODO
+	// interesting. okay so here we need to ask the po8e server
+	// how many channels we have, etc that or parse the po8e conf file
+	// ourselves
+	//
+	// minimally need to know:
+	//
+	// the number of neural channels
+	// the name for each neural channel
+	// the scale factor for each neural channel
+	// number of event channels
+
 
 	size_t nc_i = 0;
 	for (auto &c : pc.cards) {
@@ -3298,60 +3185,6 @@ int main(int argc, char **argv)
 
 	vector <thread> threads;
 
-	printf("PO8e API Version %s\n", revisionString());
-	int totalcards = PO8e::cardCount();
-	printf("Found %d PO8e card(s) in the system.\n", totalcards);
-	if (totalcards < 1) {
-		error("Quitting");
-		return 1;
-	}
-
-	if (totalcards < (int)pc.cards.size()) {
-		error("config describes more po8e cards than detected");
-		return 1;
-	}
-
-	if (totalcards > (int)pc.cards.size()) {
-		totalcards = (int)pc.cards.size();
-	}
-
-	auto configureCard = [&](PO8e* p) -> bool {
-		// return true on success
-		// return false on failure
-		if (!p->startCollecting())
-		{
-			warn("startCollecting() failed with: %d", p->getLastError());
-			p->flushBufferedData();
-			p->stopCollecting();
-			printf(" -> Releasing card %p\n", (void *)p);
-			PO8e::releaseCard(p);
-			return false;
-		}
-		printf(" -> Card %p is collecting incoming data.\n", (void *)p);
-		return true;
-	};
-
-	for (int i=0; i<totalcards; i++) {
-		if (pc.cards[i]->enabled()) {
-			int id = (int)pc.cards[i]->id();
-			PO8e *p = PO8e::connectToCard(id-1); // 0-indexed
-			if (p == nullptr) {
-				break;
-			}
-			printf("Connection established to card %d at %p\n", id, (void *)p);
-			if (configureCard(p)) {
-				ReaderWriterQueue<PO8Data *> *q = new ReaderWriterQueue<PO8Data *>(512);
-				threads.push_back(thread(po8e_fun, p, q));
-				g_dataqueues.push_back(pair<ReaderWriterQueue<PO8Data *>*, po8e::card *>(q, pc.cards[i]));
-			}
-		}
-	}
-
-	if (g_dataqueues.size() < 1) {
-		error("Connected to zero po8e cards");
-		return 1;
-	}
-
 	threads.push_back(thread(worker));
 	threads.push_back(thread(spikewrite));
 	threads.push_back(thread(icmswrite));
@@ -3410,6 +3243,8 @@ int main(int argc, char **argv)
 		delete o;
 	for (auto &o : g_fr)
 		delete o;
+
+	delete g_tsc;
 
 	if (g_vsFadeColor)
 		delete g_vsFadeColor;

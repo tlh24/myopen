@@ -1,16 +1,21 @@
 include_rules
 
+LDFLAGS += `pkg-config --libs libzmq lua5.1 protobuf` -lPO8eStreaming
+
+: src/po8e.o \
+../common_host/util.o \
+../common_host/gettime.o \
+proto/po8e.pb.o \
+../common_host/lconf.o \
+src/po8e_conf.o |> !ld |> po8e
+
+include_rules
+
 PKG_LIBS  = gtk+-2.0 blas-openblas gtkglext-1.0 lua5.1 libprocps
-PKG_LIBS += hdf5 matio uuid
+PKG_LIBS += hdf5 matio uuid libzmq protobuf gl glu
 
-CPPFLAGS += -Iinclude -Iproto -I../common_host
-CPPFLAGS += `pkg-config --cflags $(PKG_LIBS)`
-
-LDFLAGS += -lpthread -lGL -lGLU -lCg -lCgGL
-LDFLAGS += -lprotobuf -lPO8eStreaming -lmatio -larmadillo
+LDFLAGS += -lCg -lCgGL -larmadillo -ljack
 LDFLAGS += `pkg-config --libs $(PKG_LIBS)`
-
-: src/po8e.o ../common_host/util.o proto/po8e.pb.o ../common_host/lconf.o src/po8e_conf.o |> !ld |> po8e
 
 : src/timeclient.o ../common_host/gettime.o |> !ld |> timesync
 

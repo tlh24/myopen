@@ -4,6 +4,7 @@
 #include <atomic>
 #include <cmath>
 #include <sstream>
+#include "gettime.h"
 #include "mmaphelp.h"
 
 #define TIMESYNC_MMAP	"/tmp/timesync.mmap"
@@ -228,6 +229,30 @@ public:
 		} else {
 			time = gettime();
 			ticks = 0; // not synced with TDT.
+		}
+	}
+	double getTicks(long double time)   //estimated ticks, of course.
+	{
+		int n = 0;
+		if (m_ssd[n].valid == false) n++;
+		if (m_ssd[n].valid && m_ssd[n].magic == 0x134fbab3) {
+			g_startTime = m_ssd[n].startTime; //so the two programs are synced.
+			return (time - m_ssd[n].timeOffset) * m_ssd[n].slope + m_ssd[n].offset;
+		} else {
+			return 0;
+			printf("why zero?!?\n");
+		}
+	}
+	long double getTime(double ticks)   //estimated time, of course.
+	{
+		int n = 0;
+		if (m_ssd[n].valid == false) n++;
+		if (m_ssd[n].valid && m_ssd[n].magic == 0x134fbab3) {
+			g_startTime = m_ssd[n].startTime; //so the two programs are synced.
+			return (ticks - m_ssd[n].offset)/m_ssd[n].slope + m_ssd[n].timeOffset;
+		} else {
+			return 0;
+			printf("why zero?!?\n");
 		}
 	}
 	std::string getInfo()
