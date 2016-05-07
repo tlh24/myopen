@@ -133,23 +133,29 @@ ifeq ($(shell lsb_release -sc), stretch)
 # as of April 2016.
 DEPS = libgtk2.0-dev libgtk2.0-0-dbg \
 	libgtkgl2.0-dev libgtkglext1-dev freeglut3-dev nvidia-cg-toolkit \
+	libblas-common libblas-dev libopenblas-base libopenblas-dev \
+	libarpack2 libarpack2-dev \
 	libjack-jackd2-dev python-matplotlib \
 	python-jsonpickle python-opengl libboost1.58-all-dev pkg-config \
-	libhdf5-dev libsdl1.2-dev astyle \
+	libhdf5-dev libsdl1.2-dev \
 	libprotobuf-dev protobuf-compiler \
-	cppcheck libprocps-dev \
-	liblua5.1-0-dev libuuid1 uuid-dev
+	astyle cppcheck \
+	libprocps3 libprocps3-dev \
+	liblua5.1-0-dev libuuid1 uuid-dev libuuid1 \
+	libzmq3 libzmq3-dbg libzmq3-dev
 else
 DEPS = libgtk2.0-dev libgtk2.0-0-dbg \
 	libgtkgl2.0-dev libgtkglext1-dev freeglut3-dev nvidia-cg-toolkit \
 	libblas-common libblas-dev libopenblas-base libopenblas-dev \
 	libarpack2 libarpack2-dev \
 	libjack-jackd2-dev python-matplotlib \
-	python-jsonpickle python-opengl libboost1.49-all-dev pkg-config \
-	libhdf5-dev libsdl1.2-dev astyle \
-	libprotobuf-dev libprotobuf7 protobuf-compiler \
-	cppcheck libprocps0-dev \
-	liblua5.1-0-dev libgl1-mesa-glx uuid-dev libuuid1
+	python-jsonpickle python-opengl libboost-dev pkg-config \
+	libhdf5-dev libsdl1.2-dev \
+	libprotobuf-dev protobuf-compiler \
+	astyle cppcheck \
+	libprocps3 libprocps3-dev \
+	liblua5.1-0-dev libgl1-mesa-glx uuid-dev libuuid1 \
+	libzmq3 libzmq3-dbg libzmq3-dev
 endif
 deps:
 	sudo apt-get install $(DEPS);
