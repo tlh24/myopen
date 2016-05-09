@@ -1207,14 +1207,21 @@ void worker()
 	socket.setsockopt(ZMQ_SUBSCRIBE, "", 0);
 	printf("Receiving data on ipc\n");
 
+	// init poll set
+	zmq::pollitem_t items [] = {
+		{ socket, 0, ZMQ_POLLIN, 0 }
+	};
+
 	while (!g_die) {
 
 		zmq::message_t buf;
 
-		if (!socket.recv(&buf, ZMQ_NOBLOCK)) {
-			usleep(1e4);	// sleepwait. lame.
-			continue;
+		zmq::poll(&items[0], 1, -1); //  -1 means block
+
+		if (items[0].revents & ZMQ_POLLIN) {
+			socket.recv(&buf);
 		}
+
 
 		char *ptr = (char *)buf.data();
 
