@@ -1,3 +1,4 @@
+#include <string>
 #include <boost/tokenizer.hpp>
 #include "util.h"
 #include "po8e_conf.h"
@@ -62,17 +63,17 @@ size_t po8eConf::numIgnoredChannels() // helper
 }
 size_t po8eConf::readSize()
 {
-	size_t read_size = 16; // reasonable default
-	lua_getglobal(L, "po8e_read_size");
-	if (lua_isnumber(L, -1)) {
-		// note that lua_tointeger returns 0 on a problem
-		read_size = (size_t)lua_tointeger(L, -1);
-	}
+	size_t read_size = getInt("po8e.read_size");
 	if (read_size < 1) {
-		read_size = 16;
+		read_size = 16;	// reasonable default
 	}
-	lua_pop(L, 1);
 	return read_size;
+}
+string po8eConf::socket()
+{
+	string s = "tcp://*:1337"; // reasonable default
+	getString("po8e.socket", s); // s unchanged on error
+	return s;
 }
 // allocates memory
 po8e::card *po8eConf::loadCard(size_t idx)

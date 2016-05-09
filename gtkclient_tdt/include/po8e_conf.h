@@ -21,6 +21,7 @@ public:
 	size_t numIgnoredChannels();
 	vector <po8e::card *> cards;
 	size_t readSize();
+	string socket();
 protected:
 private:
 	po8e::card *loadCard(size_t i);

@@ -3,7 +3,10 @@
 
 -- comments are prefixed by double dashes
 
-po8e_read_size = 8 -- samples
+po8e = {}
+
+po8e.read_size = 8 -- samples
+po8e.socket = "ipc:///tmp/po8e.sock" -- eg "tcp://127.0.0.1:1337"
 
 NEURAL = 0 -- the default type
 EVENT = 1
