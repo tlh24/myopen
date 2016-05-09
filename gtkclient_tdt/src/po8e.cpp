@@ -49,6 +49,7 @@ zmq::context_t g_zmq_context(1);	// single zmq thread
 mutex g_po8e_mutex;
 vector <pair<ReaderWriterQueue<PO8Data *>*, po8e::card *>> g_q;
 size_t g_po8e_read_size = 16; // po8e block read size
+string g_po8e_socket_name = "tcp://*:1337";
 
 TimeSync 	g_ts(SRATE_HZ); //keeps track of ticks (TDT time)
 bool		g_die = false;
@@ -172,8 +173,7 @@ void worker_thread()
 
 	//  Prepare our socket
 	zmq::socket_t socket(g_zmq_context, ZMQ_PUB);	// we will publish data
-	socket.bind("ipc:///tmp/po8e.sock");
-	printf("Serving data on ipc\n");
+	socket.bind(g_po8e_socket_name.c_str());
 
 	vector<PO8Data *> p;
 	vector<po8e::card *> c;
@@ -352,6 +352,9 @@ int main(void)
 
 	g_po8e_read_size = pc.readSize();
 	printf("po8e read size:\t\t%zu\n", 	g_po8e_read_size);
+
+	g_po8e_socket_name = pc.socket();
+	printf("po8e socket:\t\t%s\n", 	g_po8e_socket_name.c_str());
 
 	size_t nc = pc.numNeuralChannels();
 	printf("Neural channels:\t%zu\n", 	nc);
