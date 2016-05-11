@@ -1,6 +1,6 @@
 include_rules
 
-LDFLAGS += `pkg-config --libs libzmq lua5.1 libprocps protobuf`
+LDFLAGS += `pkg-config --libs libzmq luajit libprocps protobuf`
 LDFLAGS += -lPO8eStreaming
 
 : src/po8e.o \
@@ -12,7 +12,7 @@ src/po8e_conf.o |> !ld |> po8e
 
 include_rules
 
-PKG_LIBS  = gtk+-2.0 blas-openblas gtkglext-1.0 lua5.1 libprocps
+PKG_LIBS  = gtk+-2.0 blas-openblas gtkglext-1.0 luajit libprocps
 PKG_LIBS += hdf5 matio uuid libzmq protobuf gl glu
 
 LDFLAGS += -lCg -lCgGL -larmadillo -ljack

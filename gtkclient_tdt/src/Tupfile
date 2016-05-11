@@ -1,13 +1,13 @@
 include_rules
 
 CPPFLAGS += -I../include -I../proto -I../../common_host
-CPPFLAGS += `pkg-config --cflags libzmq lua5.1`
+CPPFLAGS += `pkg-config --cflags libzmq luajit`
 
 : po8e.cpp | ../proto/po8e.pb.h |> !cpp |> %B.o
 
 include_rules
 
-PKG_LIBS  = gtk+-2.0 blas-openblas gtkglext-1.0 lua5.1 libprocps
+PKG_LIBS  = gtk+-2.0 blas-openblas gtkglext-1.0 luajit libprocps
 PKG_LIBS += hdf5 matio uuid libzmq protobuf gl
 
 CPPFLAGS += -I../include -I../proto -I../../common_host
