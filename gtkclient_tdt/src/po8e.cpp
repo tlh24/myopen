@@ -31,7 +31,8 @@
 #endif
 
 typedef struct PO8Data {
-	i64 tick;	// this is the tick for the first sample
+	i64 tick;		// tick for the first sample
+	long double time; // timestamp of the first sample
 	size_t numChannels;
 	size_t numSamples;
 	i16 *data;
@@ -147,6 +148,7 @@ void po8e_thread(PO8e *p, ReaderWriterQueue<PO8Data *> *q)
 			o->numChannels = nchan;
 			o->numSamples = numRead;
 			o->tick = tick[0];
+			o->time = gettime();
 			q->enqueue(o);
 			// NB the other thread frees o
 			// and the memory allocated to o->data
@@ -211,6 +213,7 @@ void worker_thread()
 		g_running = true;
 
 		auto mismatch = false;
+		long double time = 0;
 		for (size_t i=0; i<n; i++) {
 			if (p[i]->numSamples != p[0]->numSamples) {
 				warn("po8e card sample mismatch");
@@ -228,14 +231,15 @@ void worker_thread()
 				mismatch = true;
 				break;
 			}
+			time += p[i]->time;
 		}
+		time /= n;
 
 		if (mismatch) // exit the worker; no data will be processed
 			break;
 
 		// XXX TODO when to reset the running stats?
 
-		long double time = gettime();
 		long double last_interval = (time - g_lastPo8eTime)*1000.0; // msec
 		g_po8eStats( last_interval );
 		g_lastPo8eTime = time;
@@ -316,7 +320,6 @@ int main(void)
 	g_startTime = gettime();
 
 	pid_t mypid = getpid();
-
 	PROCTAB *pr = openproc(PROC_FILLSTAT);
 	proc_t pr_info;
 	memset(&pr_info, 0, sizeof(pr_info));
@@ -430,11 +433,11 @@ int main(void)
 
 	while (!g_die) {
 		if (g_running) {
-			printf("%s", g_ts.getTime().c_str());
-			printf(" | ticks %d", g_ts.getTicks());
+			printf("ts %s", g_ts.getTime().c_str());
+			printf(" | tk %d", g_ts.getTicks());
 			printf(" | slope %0.3Lf", g_ts.m_slope);
 			printf(" | offset %0.1Lf", g_ts.m_offset);
-			printf(" | po8e (ms) %0.2f\r", g_po8eStats.mean());
+			printf(" | po8e %0.2f\r", g_po8eStats.mean());
 			fflush(stdout);
 		}
 		usleep(50000); // 20Hz update.
