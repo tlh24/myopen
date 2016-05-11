@@ -5,6 +5,7 @@ spikes2mat
 icms2mat
 mmap_test
 po8e
+af
 wf_plot
 analogdebug
 *.pb.cc

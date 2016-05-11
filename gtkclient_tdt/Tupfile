@@ -10,12 +10,14 @@ proto/po8e.pb.o \
 ../common_host/lconf.o \
 src/po8e_conf.o |> !ld |> po8e
 
-include_rules
+LDFLAGS += `pkg-config --libs hdf5`
+LDFLAGS += -larmadillo
 
-PKG_LIBS  = gtk+-2.0 blas-openblas gtkglext-1.0 luajit libprocps
-PKG_LIBS += hdf5 matio uuid libzmq protobuf gl glu
+: src/af.o ../common_host/util.o src/artifact_filter.o |> !ld |> af
 
-LDFLAGS += -lCg -lCgGL -larmadillo -ljack
+PKG_LIBS  = gtk+-2.0 blas-openblas gtkglext-1.0 matio uuid gl glu
+
+LDFLAGS += -lCg -lCgGL -ljack
 LDFLAGS += `pkg-config --libs $(PKG_LIBS)`
 
 : src/timeclient.o ../common_host/gettime.o |> !ld |> timesync
