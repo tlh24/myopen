@@ -35,7 +35,7 @@ CFLAGS += -march=native
 LDFLAGS := -lGL -lGLU -lpthread -lCg -lCgGL -lm -lz \
 -lmatio -lprotobuf -lPO8eStreaming -larmadillo #-mcmodel=medium
 
-GLIBS := gtk+-2.0 gtkglext-1.0 gtkglext-x11-1.0 lua5.1 libprocps hdf5
+GLIBS := gtk+-2.0 gtkglext-1.0 gtkglext-x11-1.0 luajit libprocps hdf5
 CPPFLAGS += $(shell pkg-config --cflags $(GLIBS))
 LDFLAGS += $(shell pkg-config --libs $(GLIBS))
 
@@ -141,7 +141,7 @@ DEPS = libgtk2.0-dev libgtk2.0-0-dbg \
 	libprotobuf-dev protobuf-compiler \
 	astyle cppcheck \
 	libprocps3 libprocps3-dev \
-	liblua5.1-0-dev libuuid1 uuid-dev libuuid1 \
+	luajit libuuid1 uuid-dev libuuid1 \
 	libzmq3 libzmq3-dbg libzmq3-dev
 else
 DEPS = libgtk2.0-dev libgtk2.0-0-dbg \
@@ -154,7 +154,7 @@ DEPS = libgtk2.0-dev libgtk2.0-0-dbg \
 	libprotobuf-dev protobuf-compiler \
 	astyle cppcheck \
 	libprocps3 libprocps3-dev \
-	liblua5.1-0-dev libgl1-mesa-glx uuid-dev libuuid1 \
+	luajit libgl1-mesa-glx uuid-dev libuuid1 \
 	libzmq3 libzmq3-dbg libzmq3-dev
 endif
 deps:

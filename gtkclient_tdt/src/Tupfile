@@ -1,7 +1,7 @@
 include_rules
 
 CPPFLAGS += -I../include -I../proto -I../../common_host
-CPPFLAGS += `pkg-config --cflags libzmq lua5.1 libprocps protobuf`
+CPPFLAGS += `pkg-config --cflags libzmq luajit libprocps protobuf`
 
 : po8e.cpp | ../proto/po8e.pb.h |> !cpp |> %B.o
 

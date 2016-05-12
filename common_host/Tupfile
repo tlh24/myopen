@@ -1,6 +1,6 @@
 include_rules
 
-PKG_LIBS = lua5.1 hdf5
+PKG_LIBS = luajit hdf5
 
 CPPFLAGS += `pkg-config --cflags $(PKG_LIBS)`
 LDFLAGS += `pkg-config --libs $(PKG_LIBS)`
