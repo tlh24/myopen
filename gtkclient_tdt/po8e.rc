@@ -6,7 +6,7 @@
 po8e = {}
 
 po8e.read_size = 8 -- samples
-po8e.socket = "ipc:///tmp/po8e.sock" -- eg "tcp://127.0.0.1:1337"
+po8e.socket = "ipc:///tmp/po8e.zmq" -- eg "tcp://127.0.0.1:1337"
 
 NEURAL = 0 -- the default type
 EVENT = 1
@@ -57,8 +57,8 @@ end
 
 card = {
   id = 2,
-  enabled = false,
-  channels = {}
+  --enabled = false,
+  channels = channels
 }
 
 po8e_cards[2] = card

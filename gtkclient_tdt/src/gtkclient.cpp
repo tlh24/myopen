@@ -1203,7 +1203,9 @@ void worker()
 
 	//  Prepare our socket
 	zmq::socket_t socket(g_zmq_context, ZMQ_SUB);	// subscribe to data
-	socket.connect("ipc:///tmp/po8e.sock");
+	socket.connect("ipc:///tmp/af.zmq");
+	//socket.connect("ipc:///tmp/po8e.zmq");
+	//socket.connect("tcp://drumkit:2001");
 	socket.setsockopt(ZMQ_SUBSCRIBE, "", 0);
 	printf("Receiving data on ipc\n");
 
@@ -1221,7 +1223,6 @@ void worker()
 		if (items[0].revents & ZMQ_POLLIN) {
 			socket.recv(&buf);
 		}
-
 
 		char *ptr = (char *)buf.data();
 

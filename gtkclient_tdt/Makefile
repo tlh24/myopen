@@ -182,6 +182,7 @@ install:
 	install -d $(TARGET)
 	install gtkclient -t $(TARGET)
 	install po8e -t $(TARGET)
+	install af -t $(TARGET)
 	install timesync -t $(TARGET)
 	install icms2mat -t $(TARGET)
 	install -d $(TARGET)/cg
