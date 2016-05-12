@@ -21,7 +21,7 @@ ArtifactFilter::~ArtifactFilter()
 mat ArtifactFilter::filter(mat X)
 {
 	// Xhat = W * X;
-	return W.t() * X;
+	return W * X;
 }
 
 // load weights from a file

@@ -1,7 +1,6 @@
 #ifndef __ARTIFACT_FILTER_H__
 #define	__ARTIFACT_FILTER_H__
 
-//#include <string>
 #include <armadillo>
 
 using namespace std;
