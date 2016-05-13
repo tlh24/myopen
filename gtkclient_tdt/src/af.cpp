@@ -176,6 +176,7 @@ int main(int argc, char *argv[])
 	}
 
 	printf("artifact filter\n");
+	printf("usage: af [insock] [outsock]\n\n");
 	printf("receiving on\t%s\n", zin.c_str());
 	printf("sending on\t%s\n", zout.c_str());
 
