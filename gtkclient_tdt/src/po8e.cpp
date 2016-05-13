@@ -15,7 +15,6 @@
 #include "util.h"
 #include "PO8e.h"
 #include "timesync.h"
-#include "readerwriterqueue.h"
 #include "po8e_conf.h" 			// parse po8e conf files
 
 #define KHZ_24
@@ -30,43 +29,43 @@
 #error Bad sampling rate!
 #endif
 
-typedef struct PO8Data {
-	i64 tick;		// tick for the first sample
-	long double time; // timestamp of the first sample
-	size_t numChannels;
-	size_t numSamples;
-	i16 *data;
-} PO8Data;
-
 using namespace std;
 using namespace arma;
-using namespace moodycamel;
 
 running_stat<double>	g_po8eStats;
 long double g_lastPo8eTime = 0.0;
 
-zmq::context_t g_zmq_context(1);	// single zmq thread
-
 mutex g_po8e_mutex;
-vector <pair<ReaderWriterQueue<PO8Data *>*, po8e::card *>> g_q;
 size_t g_po8e_read_size = 16; // po8e block read size
 string g_po8e_socket_name = "tcp://*:1337";
 
 TimeSync 	g_ts(SRATE_HZ); //keeps track of ticks (TDT time)
-bool		g_die = false;
+bool		s_interrupted = false;
 bool		g_running = false;
 
-void destroy(int)
+static void s_signal_handler(int)
 {
-	g_die = true;
+	s_interrupted = true;
+}
+
+static void s_catch_signals(void)
+{
+	struct sigaction action;
+	action.sa_handler = s_signal_handler;
+	action.sa_flags = 0;
+	sigemptyset(&action.sa_mask);
+	sigaction(SIGINT, &action, NULL);
+	sigaction(SIGQUIT, &action, NULL);
+	sigaction(SIGTERM, &action, NULL);
 }
 
 // service the po8e buffer
-// 96 channels of spike/lfp, followed by time (ticks) split across two chans
-// if there is no po8e card, simulate data with sines
-
-void po8e_thread(PO8e *p, ReaderWriterQueue<PO8Data *> *q)
+void po8e_thread(zmq::context_t &ctx, PO8e *p, int id)
 {
+
+	zmq::socket_t socket(ctx, ZMQ_PUB);
+	socket.bind(sprintf("inproc://po8e-%d", id));
+
 	size_t bufmax = 10000;	// must be >= 10000
 
 	printf("Waiting for the stream to start ...\n");
@@ -79,19 +78,19 @@ void po8e_thread(PO8e *p, ReaderWriterQueue<PO8Data *> *q)
 		return; /// xxx how to recover?
 	}
 
-	auto nchan = p->numChannels();
+	auto nc = p->numChannels();
 	auto bps = p->dataSampleSize(); // bytes/sample
-	printf("Card %p: %d channels @ %d bytes/sample\n", (void *)p, nchan, bps);
+	printf("Card %p: %d channels @ %d bytes/sample\n", (void *)p, nc, bps);
 
 	// 10000 samples * 2 bytes/sample * nChannels
-	auto buff = new i16[bufmax*(nchan)];
+	auto data = new i16[bufmax*(nc)];
 	auto tick = new i64[bufmax];
 
 	// get the initial tick value. hopefully a small number
-	p->readBlock(buff, 1, tick);
+	p->readBlock(data, 1, tick);
 	i64 last_tick = tick[0] - 1;
 
-	while (!g_die) {
+	while (!s_interrupted) {
 
 		bool stopped = false;
 		size_t numSamples;
@@ -115,14 +114,15 @@ void po8e_thread(PO8e *p, ReaderWriterQueue<PO8Data *> *q)
 				numSamples = bufmax;
 			}
 
-			size_t numRead;
+			size_t ns;
 
 			{
 				// warning: these braces are intentional
 				lock_guard<mutex> lock(g_po8e_mutex);
-				numRead = p->readBlock(buff, g_po8e_read_size, tick);
-				p->flushBufferedData(numRead);
+				ns = p->readBlock(data, g_po8e_read_size, tick);
+				p->flushBufferedData(ns);
 			}
+			double ts = gettime();
 
 			if (tick[0] != last_tick + 1) {
 				warn("%p: PO8e tick glitch between blocks. Expected %zu got %zu",
@@ -130,7 +130,7 @@ void po8e_thread(PO8e *p, ReaderWriterQueue<PO8Data *> *q)
 				g_ts.m_dropped++;
 				// xxx how to recover?
 			}
-			for (size_t i=0; i<numRead-1; i++) {
+			for (size_t i=0; i<ns-1; i++) {
 				if (tick[i+1] != tick[i] + 1) {
 					warn("%p: PO8e tick glitch within block. Expected %zu got %zu",
 					     p, tick[i]+1, tick[i+1]);
@@ -138,27 +138,28 @@ void po8e_thread(PO8e *p, ReaderWriterQueue<PO8Data *> *q)
 					// xxx how to recover?
 				}
 			}
-			last_tick = tick[numRead-1];
+			last_tick = tick[ns-1];
 
+			// pack message
+			size_t nbytes = 32 + nc*ns*sizeof(i16);
+			zmq::message_t msg(nbytes);
+			char *ptr = (char *)msg.data();
 
-			PO8Data *o;
-			o = new PO8Data;
-			o->data = new i16[nchan*numRead];
-			memcpy(o->data, buff, nchan*numRead*sizeof(i16));
-			o->numChannels = nchan;
-			o->numSamples = numRead;
-			o->tick = tick[0];
-			o->time = gettime();
-			q->enqueue(o);
-			// NB the other thread frees o
-			// and the memory allocated to o->data
+			memcpy(ptr+0, &nc, sizeof(u64)); // nc - 8 bytes
+			memcpy(ptr+8, &ns, sizeof(u64)); // ns - 8 bytes
+			memcpy(ptr+16, tick, sizeof(i64)); // tk - 8 bytes
+			memcpy(ptr+24, &ts, sizeof(double)); // ts - 8 bytes
+			memcpy(ptr+32, data, nc*ns*sizeof(i16)); // data - nc*ns bytes
+
+			socket.send(msg);
+
 		} else {
 			usleep(1e3);
 		}
 	}
 
 	// delete buffers since we have dynamically allocated;
-	delete[] buff;
+	delete[] data;
 	delete[] tick;
 
 	printf("  stopped collecting data\n");
@@ -167,26 +168,32 @@ void po8e_thread(PO8e *p, ReaderWriterQueue<PO8Data *> *q)
 	PO8e::releaseCard(p);
 
 	printf("\n");
-	sleep(1);
+	//sleep(1);
 }
 
-void worker_thread()
+void worker_thread(zmq::context_t &ctx, int n)
 {
 
-	//  Prepare our socket
-	zmq::socket_t socket(g_zmq_context, ZMQ_PUB);	// we will publish data
-	socket.bind(g_po8e_socket_name.c_str());
+	//  Prepare our sockets
+
+	auto socks = zmq::socket_t[n];
+	auto items = zmq::pollitem_t[n];
+	for (int i=0; i<n; i++) {
+		zmq::socket_t s(ctx, ZMQ_SUB);
+		s.connect(sprintf("inproc://po8e-%d", i));
+		s.setsockopt(ZMQ_SUBSCRIBE, "", 0);	// subscribe to everything
+		socks.push_back(s);
+	}
+
+	zmq::socket_t socket_out(ctx, ZMQ_PUB);	// we will publish data
+	socket_out.bind(g_po8e_socket_name.c_str());
 
 	vector<PO8Data *> p;
 	vector<po8e::card *> c;
 
-	while (!g_die) {
+	while (!s_interrupted) {
 
-		auto n = g_q.size();
-
-		p.clear();
-		c.clear();
-
+		auto n = socks.size();
 
 		for (size_t i=0; i<n; i++) {
 			auto q = g_q[i].first;
@@ -276,27 +283,15 @@ void worker_thread()
 		}
 
 		size_t nbytes = 32 + nnc*ns*sizeof(i16);
-
 		zmq::message_t buf(nbytes);
-
 		char *ptr = (char *)buf.data();
 
-		// nchan - 8 bytes
-		memcpy(ptr+0, &nnc, sizeof(u64));
+		memcpy(ptr+0, &nnc, sizeof(u64)); // nc - 8 bytes
+		memcpy(ptr+8, &ns, sizeof(u64)); // nsamp - 8 bytes
+		memcpy(ptr+16, &tk, sizeof(i64)); // tk - 8 bytes
+		memcpy(ptr+24, &ts, sizeof(double)); // ts - 8 bytes
+		memcpy(ptr+32, raw, nnc*ns*sizeof(i16)); // data - nnc*ns bytes
 
-		// nsamp - 8 bytes
-		memcpy(ptr+8, &ns, sizeof(u64));
-
-		// tk - 8 bytes
-		memcpy(ptr+16, &tk, sizeof(i64));
-
-		// ts - 8 bytes
-		memcpy(ptr+24, &ts, sizeof(double));
-
-		// data - nnc*ns bytes
-		memcpy(ptr+32, raw, nnc*ns*sizeof(i16));
-
-		// TODO send data via zeromq here
 		socket.send(buf);
 
 		delete[] raw;
@@ -315,9 +310,13 @@ void worker_thread()
 int main(void)
 {
 
-	(void) signal(SIGINT,destroy);
+	s_catch_signals();
 
 	g_startTime = gettime();
+
+	zmq::context_t zcontext(1);	// single zmq thread
+	zmq::socket_t controller(zcontext, ZMQ_PUB);
+	controller.bind("inproc://controller");
 
 	pid_t mypid = getpid();
 	PROCTAB *pr = openproc(PROC_FILLSTAT);
@@ -417,19 +416,17 @@ int main(void)
 			}
 			printf("Connection established to card %d at %p\n", id, (void *)p);
 			if (configureCard(p)) {
-				ReaderWriterQueue<PO8Data *> *q = new ReaderWriterQueue<PO8Data *>(512);
-				threads.push_back(thread(po8e_thread, p, q));
-				g_q.push_back(pair<ReaderWriterQueue<PO8Data *>*, po8e::card *>(q, pc.cards[i]));
+				threads.push_back(thread(po8e_thread, std::ref(zcontext), p, id-1));
 			}
 		}
 	}
 
-	if (g_q.size() < 1) {
+	if (threads.size() < 1) {
 		error("Connected to zero po8e cards");
 		return 1;
 	}
 
-	threads.push_back(thread(worker_thread));
+	threads.push_back(thread(worker_thread, std::ref(zcontext), threads.size()));
 
 	while (!g_die) {
 		if (g_running) {
@@ -448,10 +445,4 @@ int main(void)
 		thread.join();
 	}
 
-	for (auto &q : g_q) {
-		delete q.first;
-		// q.second is deleted when the po8e_conf object is destructed
-	}
-
-	usleep(1e5);
 }

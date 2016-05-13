@@ -22,6 +22,7 @@ static void s_catch_signals(void)
 	action.sa_flags = 0;
 	sigemptyset(&action.sa_mask);
 	sigaction(SIGINT, &action, NULL);
+	sigaction(SIGQUIT, &action, NULL);
 	sigaction(SIGTERM, &action, NULL);
 }
 
@@ -216,7 +217,7 @@ int main(int argc, char *argv[])
 	zmq::socket_t subscriber(zcontext, ZMQ_XSUB);
 	subscriber.connect(zin.c_str()); // XXX hardcoded for now!!!
 
-	// this socket publishes recevied message to local threads
+	// this socket publishes received message to local threads
 	zmq::socket_t publisher(zcontext, ZMQ_XPUB);
 	publisher.bind("inproc://data");
 
