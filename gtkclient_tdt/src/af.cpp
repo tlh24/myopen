@@ -193,9 +193,11 @@ int main(int argc, char *argv[])
 		if (!strcmp(pr_info.cmd, "af") &&
 		    pr_info.tgid != mypid) {
 			error("already running with pid: %d", pr_info.tgid);
+			closeproc(pr);
 			return 1;
 		}
 	}
+	closeproc(pr);
 
 	// xxx need to ask po8e for how many channels there are here, i guess
 

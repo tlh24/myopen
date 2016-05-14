@@ -17,8 +17,6 @@
 #include "timesync.h"
 #include "po8e_conf.h" 			// parse po8e conf files
 
-#define KHZ_24
-
 #if defined KHZ_24
 #define SRATE_HZ	(24414.0625)
 #define SRATE_KHZ	(24.4140625)
@@ -64,23 +62,29 @@ void po8e_thread(zmq::context_t &ctx, PO8e *p, int id)
 {
 
 	zmq::socket_t socket(ctx, ZMQ_PUB);
-	socket.bind(sprintf("inproc://po8e-%d", id));
+	std::stringstream ss;
+	ss << "inproc://po8e-" << id;
+	socket.bind(ss.str().c_str());
 
 	size_t bufmax = 10000;	// must be >= 10000
 
 	printf("Waiting for the stream to start ...\n");
 	//p->waitForDataReady(1);
-	while (p->samplesReady() == 0 && !g_die) {
+	while (p->samplesReady() == 0 && !s_interrupted) {
 		usleep(5000);
 	}
 
-	if (p == nullptr || g_die) {
-		return; /// xxx how to recover?
+	if (p == nullptr || s_interrupted) {
+		debug("Stopped collecting data");
+		p->stopCollecting();
+		debug("Releasing card %p", (void *)p);
+		PO8e::releaseCard(p);
+		return;
 	}
 
-	auto nc = p->numChannels();
+	u64 nc = p->numChannels();
 	auto bps = p->dataSampleSize(); // bytes/sample
-	printf("Card %p: %d channels @ %d bytes/sample\n", (void *)p, nc, bps);
+	printf("Card %p: %lu channels @ %d bytes/sample\n", (void *)p, nc, bps);
 
 	// 10000 samples * 2 bytes/sample * nChannels
 	auto data = new i16[bufmax*(nc)];
@@ -109,8 +113,8 @@ void po8e_thread(zmq::context_t &ctx, PO8e *p, int id)
 
 		if (numSamples >= g_po8e_read_size) {
 			if (numSamples > bufmax) {
-				printf("%p: samplesReady() returned too many samples (buffer wrap?): %zu\n",
-				       (void *)p, numSamples);
+				warn("%p: samplesReady() returned too many samples (buffer wrap?): %zu",
+				     (void *)p, numSamples);
 				numSamples = bufmax;
 			}
 
@@ -162,148 +166,176 @@ void po8e_thread(zmq::context_t &ctx, PO8e *p, int id)
 	delete[] data;
 	delete[] tick;
 
-	printf("  stopped collecting data\n");
-	p->stopCollecting();
-	printf("  releasing card %p\n", (void *)p);
-	PO8e::releaseCard(p);
-
-	printf("\n");
-	//sleep(1);
+	{
+		// warning: these braces are intentional
+		lock_guard<mutex> lock(g_po8e_mutex);
+		debug("Stopped collecting data");
+		p->stopCollecting();
+		p->flushBufferedData(-1, true);
+		debug("Releasing card %p", (void *)p);
+		PO8e::releaseCard(p);
+	}
 }
 
-void worker_thread(zmq::context_t &ctx, int n)
+void worker(zmq::context_t &ctx, vector<po8e::card *> &cards)
 {
 
 	//  Prepare our sockets
 
-	auto socks = zmq::socket_t[n];
-	auto items = zmq::pollitem_t[n];
+	int n = cards.size();
+
+	vector<zmq::socket_t> socks;
+	vector<zmq::pollitem_t> items;
 	for (int i=0; i<n; i++) {
-		zmq::socket_t s(ctx, ZMQ_SUB);
-		s.connect(sprintf("inproc://po8e-%d", i));
-		s.setsockopt(ZMQ_SUBSCRIBE, "", 0);	// subscribe to everything
-		socks.push_back(s);
+		socks.push_back( zmq::socket_t(ctx, ZMQ_SUB) );
+		std::stringstream ss;
+		ss << "inproc://po8e-" << i;
+		socks[i].connect(ss.str().c_str());
+		socks[i].setsockopt(ZMQ_SUBSCRIBE, "", 0);	// subscribe to everything
+		zmq::pollitem_t p = {socks[i], 0, ZMQ_POLLIN, 0};
+		items.push_back(p);
 	}
+
+	// for control input
+	zmq::socket_t controller(ctx, ZMQ_SUB);
+	controller.connect("inproc://controller");
+	controller.setsockopt(ZMQ_SUBSCRIBE, "", 0);
+	zmq::pollitem_t p = {controller, 0, ZMQ_POLLIN, 0};
+	items.push_back(p);
 
 	zmq::socket_t socket_out(ctx, ZMQ_PUB);	// we will publish data
 	socket_out.bind(g_po8e_socket_name.c_str());
 
-	vector<PO8Data *> p;
-	vector<po8e::card *> c;
+	while (true) {
 
-	while (!s_interrupted) {
+		zmq::poll(items.data(), items.size(), -1);
 
-		auto n = socks.size();
-
-		for (size_t i=0; i<n; i++) {
-			auto q = g_q[i].first;
-			c.push_back(g_q[i].second);
-			int succeeded;
-			do {
-				PO8Data *x;
-				succeeded = q->try_dequeue(x);
-				if (succeeded)
-					p.push_back(x);
-				else
-					usleep(1e3);
-			} while (!succeeded && !g_die);
+		int nready = 0;
+		for (int i=0; i<n; i++) {
+			if (items[i].revents & ZMQ_POLLIN) {
+				nready++;
+			}
 		}
 
-		if (g_die) {
-			for (auto &x : p) {
-				delete[] (x->data);
-				delete x;
+		if (nready == n) {
+
+			g_running = true;
+
+			auto nc = new u64[n];
+			auto ns = new u64[n];
+			auto tk = new i64[n];
+			auto ts = new double[n];
+			vector<i16 *> data;
+
+			for (int i=0; i<n; i++) {
+				zmq::message_t msg;
+				socks[i].recv(&msg);
+				char *ptr = (char *)(msg.data());
+				memcpy(&(nc[i]), ptr+0, sizeof(u64));
+				memcpy(&(ns[i]), ptr+8, sizeof(u64));
+				memcpy(&(tk[i]), ptr+16, sizeof(i64));
+				memcpy(&(ts[i]), ptr+24, sizeof(double));
+				auto x = new i16[nc[i]*ns[i]];
+				memcpy(x, ptr+32, nc[i]*ns[i]*sizeof(i16));
+				data.push_back(x);
 			}
-			break;
-		}
 
-		g_running = true;
+			bool mismatch = false;
+			double time = 0.0;
 
-		auto mismatch = false;
-		long double time = 0;
-		for (size_t i=0; i<n; i++) {
-			if (p[i]->numSamples != p[0]->numSamples) {
-				warn("po8e card sample mismatch");
-				mismatch = true;
-				break;
-			}
-			if (p[i]->numChannels != (size_t)c[i]->channel_size()) {
-				warn("po8e card %d: configured for %d channels (%d received in po8e packet)",
-				     c[i]->id(), c[i]->channel_size(), p[i]->numChannels);
-				mismatch = true;
-				break;
-			}
-			if (p[i]->tick != p[0]->tick) {
-				warn("p08e ticks misaligned between cards");
-				mismatch = true;
-				break;
-			}
-			time += p[i]->time;
-		}
-		time /= n;
-
-		if (mismatch) // exit the worker; no data will be processed
-			break;
-
-		// XXX TODO when to reset the running stats?
-
-		long double last_interval = (time - g_lastPo8eTime)*1000.0; // msec
-		g_po8eStats( last_interval );
-		g_lastPo8eTime = time;
-
-		// also -- only accept stort-interval responses (ignore outliers..)
-		if (last_interval < 1.5*g_po8eStats.mean() ) {
-			g_ts.update(time, p[0]->tick); //also updates the mmap file.
-		}
-
-		u64 nnc = 0; // num neural channels
-		for (size_t i=0; i<c.size(); i++) {
-			for (int j=0; j<c[i]->channel_size(); j++) {
-				if (c[i]->channel(j).data_type() == po8e::channel::NEURAL) {
-					nnc++;
+			for (int i=0; i<n; i++) {
+				if (nc[i] != (u64)cards[i]->channel_size()) {
+					warn("po8e packet channel mismatch");
+					mismatch = true;
+					break;
 				}
+				if (ns[i] != ns[0]) {
+					warn("po8e packet sample mismatch");
+					mismatch = true;
+					break;
+				}
+				if (tk[i] != tk[0]) {
+					warn("p08e packet ticks misaligned");
+					mismatch = true;
+					break;
+				}
+				time += ts[i];
 			}
-		}
-		u64 ns = p[0]->numSamples;
+			time /= n;
 
-		i64 tk = p[0]->tick;
-		double ts = g_ts.getTime(tk);
+			if (mismatch) { // exit the worker; no data will be processed
+				break;
+				// XXX CLEANUP MEMORY HERE
 
-		auto raw = new i16[nnc * ns];
-		size_t nc_i = 0;
-		for (size_t i=0; i<c.size(); i++) {
-			for (int j=0; j<c[i]->channel_size(); j++) {
-				if (c[i]->channel(j).data_type() == po8e::channel::NEURAL) {
-					for (size_t k=0; k<ns; k++) {
-						raw[nc_i*ns+k] = p[i]->data[j*ns+k];
+			}
+
+			// XXX TODO when to reset the running stats?
+
+			long double last_interval = (time - g_lastPo8eTime)*1000.0; // msec
+			g_po8eStats( last_interval );
+			g_lastPo8eTime = time;
+
+			// also -- only accept stort-interval responses (ignore outliers..)
+			if (last_interval < 1.5*g_po8eStats.mean() ) {
+				g_ts.update(time, tk[0]); //also updates the mmap file.
+			}
+
+			// package up neural data here
+			// should also pack up and broadcast events data, etc below
+
+			u64 nnc = 0; // num neural channels
+			for (auto &c : cards) {
+				for (int j=0; j<c->channel_size(); j++) {
+					if (c->channel(j).data_type() == po8e::channel::NEURAL) {
+						nnc++;
 					}
-					nc_i++;
 				}
 			}
+
+			auto raw = new i16[nnc * ns[0]];
+			size_t nc_i = 0;
+			for (int i=0; i<(int)cards.size(); i++) {
+				for (int j=0; j<cards[i]->channel_size(); j++) {
+					if (cards[i]->channel(j).data_type() == po8e::channel::NEURAL) {
+						for (size_t k=0; k<ns[0]; k++) {
+							raw[nc_i*ns[0]+k] = data[i][j*ns[0]+k];
+						}
+						nc_i++;
+					}
+				}
+			}
+
+			size_t nbytes = 32 + nnc*ns[0]*sizeof(i16);
+			zmq::message_t buf(nbytes);
+			char *ptr = (char *)buf.data();
+
+			memcpy(ptr+0, &nnc, sizeof(u64)); // nnc - 8 bytes
+			memcpy(ptr+8, ns, sizeof(u64)); // ns - 8 bytes
+			memcpy(ptr+16, tk, sizeof(i64)); // tk - 8 bytes
+			memcpy(ptr+24, &time, sizeof(double)); // ts - 8 bytes
+			memcpy(ptr+32, raw, nnc*ns[0]*sizeof(i16)); // data - nnc*ns bytes
+
+			socket_out.send(buf);
+
+			delete[] raw;
+
+			for (auto &x : data) {
+				delete[] x;
+			}
+
+			delete[] nc;
+			delete[] ns;
+			delete[] tk;
+			delete[] ts;
 		}
 
-		size_t nbytes = 32 + nnc*ns*sizeof(i16);
-		zmq::message_t buf(nbytes);
-		char *ptr = (char *)buf.data();
-
-		memcpy(ptr+0, &nnc, sizeof(u64)); // nc - 8 bytes
-		memcpy(ptr+8, &ns, sizeof(u64)); // nsamp - 8 bytes
-		memcpy(ptr+16, &tk, sizeof(i64)); // tk - 8 bytes
-		memcpy(ptr+24, &ts, sizeof(double)); // ts - 8 bytes
-		memcpy(ptr+32, raw, nnc*ns*sizeof(i16)); // data - nnc*ns bytes
-
-		socket.send(buf);
-
-		delete[] raw;
-
-		// free the po8e data packet
-		for (auto &x : p) {
-			delete[] (x->data);
-			delete x;
+		if (items[n].revents & ZMQ_POLLIN) {
+			// eventually check for what the message says
+			//controller.recv(&buf);
+			break;
 		}
+
 	}
-
-	// XXX cleanup any memory here ???
 
 }
 
@@ -312,11 +344,9 @@ int main(void)
 
 	s_catch_signals();
 
-	g_startTime = gettime();
-
 	zmq::context_t zcontext(1);	// single zmq thread
-	zmq::socket_t controller(zcontext, ZMQ_PUB);
-	controller.bind("inproc://controller");
+
+	g_startTime = gettime();
 
 	pid_t mypid = getpid();
 	PROCTAB *pr = openproc(PROC_FILLSTAT);
@@ -326,9 +356,11 @@ int main(void)
 		if (!strcmp(pr_info.cmd, "po8e") &&
 		    pr_info.tgid != mypid) {
 			error("already running with pid: %d", pr_info.tgid);
+			closeproc(pr);
 			return 1;
 		}
 	}
+	closeproc(pr);
 
 	auto fileExists = [](const char *f) {
 		struct stat sb;
@@ -369,9 +401,10 @@ int main(void)
 		return 1;
 	}
 
-	printf("\n\n");
+	printf("\n");
 
 	vector <thread> threads;
+	vector <po8e::card *> cards;
 
 	printf("PO8e API Version %s\n", revisionString());
 	int totalcards = PO8e::cardCount();
@@ -399,11 +432,11 @@ int main(void)
 			warn("startCollecting() failed with: %d", p->getLastError());
 			p->flushBufferedData();
 			p->stopCollecting();
-			printf("Releasing card %p\n", (void *)p);
+			debug("Releasing card %p\n", (void *)p);
 			PO8e::releaseCard(p);
 			return false;
 		}
-		printf("Card %p is collecting incoming data.\n", (void *)p);
+		debug("Card %p is collecting incoming data", (void *)p);
 		return true;
 	};
 
@@ -417,6 +450,7 @@ int main(void)
 			printf("Connection established to card %d at %p\n", id, (void *)p);
 			if (configureCard(p)) {
 				threads.push_back(thread(po8e_thread, std::ref(zcontext), p, id-1));
+				cards.push_back(pc.cards[i]);
 			}
 		}
 	}
@@ -426,9 +460,12 @@ int main(void)
 		return 1;
 	}
 
-	threads.push_back(thread(worker_thread, std::ref(zcontext), threads.size()));
+	threads.push_back(thread(worker, std::ref(zcontext), std::ref(cards)));
 
-	while (!g_die) {
+	zmq::socket_t controller(zcontext, ZMQ_PUB);
+	controller.bind("inproc://controller");
+
+	while (!s_interrupted) {
 		if (g_running) {
 			printf("ts %s", g_ts.getTime().c_str());
 			printf(" | tk %d", g_ts.getTicks());
@@ -440,6 +477,10 @@ int main(void)
 		usleep(50000); // 20Hz update.
 	}
 
+	std::string s("KILL");
+	zmq::message_t msg(s.size());
+	memcpy(msg.data(), s.c_str(), s.size());
+	controller.send(msg);
 
 	for (auto &thread : threads) {
 		thread.join();

@@ -11,9 +11,6 @@ enum MODES { // ui tabs
 	MODE_SAVE
 };
 
-#define KHZ_24
-//#define KHZ_48
-
 #if defined KHZ_24
 #define SRATE_HZ	(24414.0625)
 #define SRATE_KHZ	(24.4140625)

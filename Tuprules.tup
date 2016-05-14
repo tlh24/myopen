@@ -11,6 +11,7 @@ CPPFLAGS += -Wno-missing-field-initializers
 #CPPFLAGS += -Wno-deprecated-declarations -stdlib=libstdc++
 CPPFLAGS += -Wno-braced-scalar-init -Wno-unused-result
 
+CPPFLAGS += -DKHZ_24
 LDFLAGS  += -lpthread
 
 CPPFLAGS += -O3 -fslp-vectorize-aggressive -march=native

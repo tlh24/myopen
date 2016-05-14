@@ -46,14 +46,14 @@ for i=1, 96 do
   channels[i] = channel
 end
 
---for i=97, 100 do
---  channel = {
---    id = i,
---    name = "stim",
---    data_type = EVENT
---  }
---  channels[i] = channel
---end
+for i=97, 100 do
+  channel = {
+    id = i,
+    name = "stim",
+    data_type = EVENT
+  }
+  channels[i] = channel
+end
 
 card = {
   id = 2,

@@ -1203,8 +1203,8 @@ void worker()
 
 	//  Prepare our socket
 	zmq::socket_t socket(g_zmq_context, ZMQ_SUB);	// subscribe to data
-	socket.connect("ipc:///tmp/af.zmq");
-	//socket.connect("ipc:///tmp/po8e.zmq");
+	//socket.connect("ipc:///tmp/af.zmq");
+	socket.connect("ipc:///tmp/po8e.zmq");
 	//socket.connect("tcp://drumkit:2001");
 	socket.setsockopt(ZMQ_SUBSCRIBE, "", 0);
 	printf("Receiving data on ipc\n");
@@ -2317,13 +2317,11 @@ int main(int argc, char **argv)
 	(void) signal(SIGINT, destroy);
 
 	pid_t mypid = getpid();
-
 	PROCTAB *pr = openproc(PROC_FILLSTAT);
 	proc_t pr_info;
 	memset(&pr_info, 0, sizeof(pr_info));
 	while (readproc(pr, &pr_info) != nullptr) {
-		if ((!strcmp(pr_info.cmd, "gtkclient")   ||
-		     !strcmp(pr_info.cmd, "timesync")) &&
+		if (!strcmp(pr_info.cmd, "gtkclient") &&
 		    pr_info.tgid != mypid) {
 			error("already running with pid: %d", pr_info.tgid);
 			closeproc(pr);
@@ -2336,7 +2334,7 @@ int main(int argc, char **argv)
 
 	g_tsc = new TimeSyncClient(); //tells us the ticks when things happen.
 
-	string titlestr = "gtkclient (TDT) v2.00";
+	string titlestr = "gtkclient (TDT) v2.10";
 
 #ifdef DEBUG
 	feenableexcept(FE_DIVBYZERO|FE_INVALID|FE_OVERFLOW);  // Enable (some) floating point exceptions
