@@ -465,7 +465,35 @@ int main(void)
 	zmq::socket_t controller(zcontext, ZMQ_PUB);
 	controller.bind("inproc://controller");
 
+
+	zmq::socket_t query(zcontext, ZMQ_REP);
+	query.bind("ipc:///tmp/po8e-query.ipc");
+
+	zmq::pollitem_t items [] = {
+		{ query, 0, ZMQ_POLLIN, 0 },
+	};
+
 	while (!s_interrupted) {
+
+		zmq::poll(items, 1, 50);	// 50 msec ie 20 hz
+
+		zmq::message_t msg;
+
+		if (items[0].revents & ZMQ_POLLIN) {
+			query.recv(&msg);
+			if (strcmp(msg.data(), "NNC")) {
+				msg.rebuild(sizeof(u64)); // bytes
+				u64 nnc = pc.numNerualChannels();
+				memcpy(msg.data(), &nnc, sizeof(u64));
+				query.send(&msg);
+			}
+			else {
+				msg.rebuild(3);
+				memcpy(msg.data(), "ERR", 3);
+				query.send(&msg);
+			}
+		}
+
 		if (g_running) {
 			printf("ts %s", g_ts.getTime().c_str());
 			printf(" | tk %d", g_ts.getTicks());
@@ -474,7 +502,6 @@ int main(void)
 			printf(" | po8e %0.2f\r", g_po8eStats.mean());
 			fflush(stdout);
 		}
-		usleep(50000); // 20Hz update.
 	}
 
 	std::string s("KILL");
