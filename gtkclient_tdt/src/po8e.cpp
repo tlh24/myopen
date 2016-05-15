@@ -481,16 +481,16 @@ int main(void)
 
 		if (items[0].revents & ZMQ_POLLIN) {
 			query.recv(&msg);
-			if (strcmp(msg.data(), "NNC")) {
+			if (strncmp((char*)msg.data(), "NNC", msg.size()) == 0) {
 				msg.rebuild(sizeof(u64)); // bytes
-				u64 nnc = pc.numNerualChannels();
+				u64 nnc = pc.numNeuralChannels();
 				memcpy(msg.data(), &nnc, sizeof(u64));
-				query.send(&msg);
+				query.send(msg);
 			}
 			else {
 				msg.rebuild(3);
 				memcpy(msg.data(), "ERR", 3);
-				query.send(&msg);
+				query.send(msg);
 			}
 		}
 
