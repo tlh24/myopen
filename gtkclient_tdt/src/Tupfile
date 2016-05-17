@@ -27,7 +27,8 @@ spikebuffer.cpp \
 artifact_filter.cpp \
 nlms2.cpp \
 vbo_raster.cpp \
-vbo_timeseries.cpp
+vbo_timeseries.cpp \
+pulse_queue.cpp pulser.cpp
 
 : foreach $(OBJS) |> !cpp |> %B.o
 

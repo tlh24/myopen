@@ -1,6 +1,10 @@
 include_rules
 
-LDFLAGS += `pkg-config --libs libzmq luajit libprocps protobuf`
+LDFLAGS += `pkg-config --libs libzmq libprocps`
+
+: src/pulser.o src/pulse_queue.o ../common_host/random.o ../common_host/util.o |> !ld |> pulser
+
+LDFLAGS += `pkg-config --libs luajit protobuf`
 LDFLAGS += -lPO8eStreaming
 
 : src/po8e.o \
