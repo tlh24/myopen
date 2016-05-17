@@ -22,5 +22,6 @@
 void warn(const char *s, ...);
 void error(const char *s, ...);
 void debug(const char *s, ...);
+bool check_running(const char *program_name);
 
 #endif
