@@ -6,7 +6,6 @@
 #include <atomic>
 #include <mutex>
 #include <vector>
-#include <proc/readproc.h>		// for proc_t, openproc, readproc, etc
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -348,19 +347,10 @@ int main(void)
 
 	g_startTime = gettime();
 
-	pid_t mypid = getpid();
-	PROCTAB *pr = openproc(PROC_FILLSTAT);
-	proc_t pr_info;
-	memset(&pr_info, 0, sizeof(pr_info));
-	while (readproc(pr, &pr_info) != NULL) {
-		if (!strcmp(pr_info.cmd, "po8e") &&
-		    pr_info.tgid != mypid) {
-			error("already running with pid: %d", pr_info.tgid);
-			closeproc(pr);
-			return 1;
-		}
+	if (check_running("po8e")) {
+		error("executable already running");
+		return 1;
 	}
-	closeproc(pr);
 
 	auto fileExists = [](const char *f) {
 		struct stat sb;
@@ -481,13 +471,12 @@ int main(void)
 
 		if (items[0].revents & ZMQ_POLLIN) {
 			query.recv(&msg);
-			if (strncmp((char*)msg.data(), "NNC", msg.size()) == 0) {
+			if (strncmp((char *)msg.data(), "NNC", msg.size()) == 0) {
 				msg.rebuild(sizeof(u64)); // bytes
 				u64 nnc = pc.numNeuralChannels();
 				memcpy(msg.data(), &nnc, sizeof(u64));
 				query.send(msg);
-			}
-			else {
+			} else {
 				msg.rebuild(3);
 				memcpy(msg.data(), "ERR", 3);
 				query.send(msg);

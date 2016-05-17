@@ -18,7 +18,6 @@
 #include <float.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <proc/readproc.h>
 #include <inttypes.h>
 #include <sys/time.h>
 #include <thread>
@@ -2316,19 +2315,10 @@ int main(int argc, char **argv)
 
 	(void) signal(SIGINT, destroy);
 
-	pid_t mypid = getpid();
-	PROCTAB *pr = openproc(PROC_FILLSTAT);
-	proc_t pr_info;
-	memset(&pr_info, 0, sizeof(pr_info));
-	while (readproc(pr, &pr_info) != nullptr) {
-		if (!strcmp(pr_info.cmd, "gtkclient") &&
-		    pr_info.tgid != mypid) {
-			error("already running with pid: %d", pr_info.tgid);
-			closeproc(pr);
-			return 1;
-		}
+	if (check_running("gtkclient")) {
+		error("executable already running");
+		return 1;
 	}
-	closeproc(pr);
 
 	uuid_generate(g_uuid);
 
