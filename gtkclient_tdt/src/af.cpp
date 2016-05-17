@@ -1,6 +1,5 @@
 #include <signal.h>				// for signal, SIGINT
 #include <thread>
-#include <proc/readproc.h>		// for proc_t, openproc, readproc, etc
 #include <armadillo>
 #include <zmq.hpp>
 #include "util.h"
@@ -185,19 +184,10 @@ int main(int argc, char *argv[])
 
 	zmq::context_t zcontext(1);	// single zmq thread
 
-	pid_t mypid = getpid();
-	PROCTAB *pr = openproc(PROC_FILLSTAT);
-	proc_t pr_info;
-	memset(&pr_info, 0, sizeof(pr_info));
-	while (readproc(pr, &pr_info) != NULL) {
-		if (!strcmp(pr_info.cmd, "af") &&
-		    pr_info.tgid != mypid) {
-			error("already running with pid: %d", pr_info.tgid);
-			closeproc(pr);
-			return 1;
-		}
+	if (check_running("af")) {
+		error("executable already running");
+		return 1;
 	}
-	closeproc(pr);
 
 	// xxx need to ask po8e for how many channels there are here, i guess
 
