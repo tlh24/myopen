@@ -11,16 +11,19 @@ protected:
 	double	m_ts[FR_LEN];
 	unsigned int	m_w; // write to here. (what happens when wraps?)
 public:
-	KernelSmoother() {
+	KernelSmoother()
+	{
 		m_w = 0;
 		for (int i=0; i<FR_LEN; i++) {
 			m_ts[i] = -1e10;	// why?
 		}
 	}
-	~KernelSmoother() {
+	~KernelSmoother()
+	{
 		//nothing allocated.
 	}
-	void add(double time) { // n.b. time is in seconds.
+	void add(double time)   // n.b. time is in seconds.
+	{
 		m_ts[m_w & (FR_LEN-1)] = time;
 		m_w++;
 	}
@@ -29,7 +32,8 @@ public:
 class GaussianKernelSmoother : public KernelSmoother
 {
 public:
-	double get_rate(double time, double sigma) {
+	double get_rate(double time, double sigma)
+	{
 		// time is the time to evaluate the rate (seconds)
 		// sigma is the width of the gaussian kernel (seconds)
 		// return a short as that's really all the resolution we need...
