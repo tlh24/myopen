@@ -2110,6 +2110,7 @@ static void openSaveSpikesFile(GtkWidget *, gpointer parent_window)
 			strncpy(&name[i*max_str], g_c[i]->m_chanName.c_str(),
 			        g_c[i]->m_chanName.size());
 		}
+		g_spikewriter.setVersion();
 		char uuid[37];
 		uuid_unparse(g_uuid, uuid);
 		g_spikewriter.setUUID(uuid);
@@ -2207,6 +2208,7 @@ static void openSaveAnalogPrefilterFile(GtkWidget *, gpointer parent_window)
 			strncpy(&name[i*max_str], g_c[i]->m_chanName.c_str(),
 			        g_c[i]->m_chanName.size());
 		}
+		g_analogwriter_prefilter.setVersion();
 		char uuid[37];
 		uuid_unparse(g_uuid, uuid);
 		g_analogwriter_prefilter.setUUID(uuid);
@@ -2281,6 +2283,7 @@ static void openSaveAnalogFile(GtkWidget *, gpointer parent_window)
 			strncpy(&name[i*max_str], g_c[i]->m_chanName.c_str(),
 			        g_c[i]->m_chanName.size());
 		}
+		g_analogwriter_postfilter.setVersion();
 		char uuid[37];
 		uuid_unparse(g_uuid, uuid);
 		g_analogwriter_postfilter.setUUID(uuid);

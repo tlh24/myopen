@@ -171,3 +171,18 @@ void H5Writer::setUUID(char *uuid_str)
 	H5Dclose(dset);
 	H5Sclose(ds);
 }
+void H5Writer::setVersion()
+{
+	// set the NWB version
+	const char *str = "NWB-1.0.0";
+
+	hid_t ds = H5Screate(H5S_SCALAR);
+	hid_t dtype = H5Tcopy (H5T_C_S1);
+	H5Tset_size(dtype, strlen(str));
+	H5Tset_strpad(dtype, H5T_STR_NULLTERM);
+	hid_t dset = H5Dcreate(m_h5file, "/neurodata_version", dtype, ds,
+	                       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+	H5Dwrite(dset, dtype, H5S_ALL, H5S_ALL, H5P_DEFAULT, str);
+	H5Dclose(dset);
+	H5Sclose(ds);
+}

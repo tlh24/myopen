@@ -1,4 +1,3 @@
-/* H5Writer.h - inspired by protobuflogger.h, by zheng */
 #include <gtk/gtk.h>
 #include <string>
 #include <vector>
@@ -60,6 +59,8 @@ public:
 	virtual void draw();
 
 	virtual void setUUID(char *uuid_str);
+
+	virtual void setVersion();
 
 	virtual const char *name() = 0;
 protected:
