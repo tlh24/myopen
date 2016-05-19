@@ -2196,10 +2196,12 @@ static void openSaveAnalogPrefilterFile(GtkWidget *, gpointer parent_window)
 		g_analogwriter_prefilter.open(filename, nc);
 		g_free(filename);
 
-		auto scale = new float[g_c.size()];
+		// note we are assuming here that all channels get the same scaling
+		// this is done because of limitations of NWB,
+		// and honestly it should be true for each coherent datatype
+		auto scale = g_c[0]->m_scaleFactor;
 		int max_str = 0;
 		for (size_t i=0; i<g_c.size(); i++) {
-			scale[i] = g_c[i]->m_scaleFactor;
 			max_str = max_str > (int)g_c[i]->m_chanName.size() ?
 			          max_str : g_c[i]->m_chanName.size();
 		}
@@ -2212,8 +2214,7 @@ static void openSaveAnalogPrefilterFile(GtkWidget *, gpointer parent_window)
 		char uuid[37];
 		uuid_unparse(g_uuid, uuid);
 		g_analogwriter_prefilter.setUUID(uuid);
-		g_analogwriter_prefilter.setMetaData(g_sr, scale, name, max_str);
-		delete[] scale;
+		g_analogwriter_prefilter.setMetaData(scale, name, max_str);
 		delete[] name;
 	}
 	gtk_widget_destroy (dialog);
@@ -2271,10 +2272,12 @@ static void openSaveAnalogFile(GtkWidget *, gpointer parent_window)
 		g_analogwriter_postfilter.open(filename, nc);
 		g_free(filename);
 
-		auto scale = new float[g_c.size()];
+		// note we are assuming here that all channels get the same scaling
+		// this is done because of limitations of NWB,
+		// and honestly it should be true for each coherent datatype
+		auto scale = g_c[0]->m_scaleFactor;
 		int max_str = 0;
 		for (size_t i=0; i<g_c.size(); i++) {
-			scale[i] = g_c[i]->m_scaleFactor;
 			max_str = max_str > (int)g_c[i]->m_chanName.size() ?
 			          max_str : g_c[i]->m_chanName.size();
 		}
@@ -2287,8 +2290,7 @@ static void openSaveAnalogFile(GtkWidget *, gpointer parent_window)
 		char uuid[37];
 		uuid_unparse(g_uuid, uuid);
 		g_analogwriter_postfilter.setUUID(uuid);
-		g_analogwriter_postfilter.setMetaData(g_sr, scale, name, max_str);
-		delete[] scale;
+		g_analogwriter_postfilter.setMetaData(scale, name, max_str);
 		delete[] name;
 	}
 	gtk_widget_destroy (dialog);
