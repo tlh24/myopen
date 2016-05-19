@@ -7,7 +7,7 @@ H5Writer::H5Writer()
 	m_enabled = false;
 	m_fn.assign("");
 	m_h5file = 0;
-	m_h5topgroup = 0;
+	m_h5groups.clear();
 	m_h5dataspaces.clear();
 	m_h5props.clear();
 	m_w = NULL;
@@ -33,8 +33,26 @@ bool H5Writer::open(const char *fn)
 		return false;
 	}
 
-	m_fn.assign(fn);
+	if (!createGroup("/general")) {
+		return false;
+	}
+	if (!createGroup("/acquisition")) {
+		return false;
+	}
+	if (!createGroup("/stimulus")) {
+		return false;
+	}
+	if (!createGroup("/eopohs")) {
+		return false;
+	}
+	if (!createGroup("/processing")) {
+		return false;
+	}
+	if (!createGroup("/analysis")) {
+		return false;
+	}
 
+	m_fn.assign(fn);
 	fprintf(stdout,"%s: started logging to %s\n", name(), fn);
 
 	// we intentionally don't enable here: rather, enable in the subclasses
@@ -58,10 +76,12 @@ bool H5Writer::close()
 	}
 	m_h5dataspaces.clear();
 
-	if (m_h5topgroup > 0) {
-		H5Gclose(m_h5topgroup);
-		m_h5topgroup = 0;
+	for (auto &x : m_h5groups) {
+		if (x > 0) {
+			H5Gclose(x);
+		}
 	}
+	m_h5groups.clear();
 
 	if (m_h5file) {
 		H5Fclose(m_h5file);
@@ -169,6 +189,7 @@ void H5Writer::setUUID(char *uuid_str)
 	                       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 	H5Dwrite(dset, dtype, H5S_ALL, H5S_ALL, H5P_DEFAULT, uuid_str);
 	H5Dclose(dset);
+	H5Tclose(dtype);
 	H5Sclose(ds);
 }
 void H5Writer::setVersion()
@@ -184,5 +205,16 @@ void H5Writer::setVersion()
 	                       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 	H5Dwrite(dset, dtype, H5S_ALL, H5S_ALL, H5P_DEFAULT, str);
 	H5Dclose(dset);
+	H5Tclose(dtype);
 	H5Sclose(ds);
+}
+bool H5Writer::createGroup(const char *s)
+{
+	hid_t g = H5Gcreate(m_h5file, s, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+	if (g < 0) {
+		close();
+		return false;
+	}
+	m_h5groups.push_back(g);
+	return true;
 }
