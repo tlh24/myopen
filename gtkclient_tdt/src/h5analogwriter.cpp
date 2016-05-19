@@ -1,3 +1,4 @@
+#include <cstring>
 #include "util.h"
 #include "h5analogwriter.h"
 
@@ -24,17 +25,17 @@ bool H5AnalogWriter::open(const char *fn, size_t nc)
 		return false;
 	}
 
-	// Create a group
-	m_h5topgroup = H5Gcreate2(m_h5file, "/Analog",
-	                          H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-
-	if (m_h5topgroup < 0) {
-		close();
+	if (!createGroup("/acquisition/timeseries")) {
+		return false;
+	}
+	if (!createGroup("/acquisition/timeseries/broadband")) {
+		return false;
+	}
+	if (!createGroup("/acquisition/timeseries/broadband/sync")) {
 		return false;
 	}
 
-
-	// create analog dataspace
+	// create broadband/data dataspace
 	// do not allow numchans to grow
 	// but allow the number of samples to be unlimited
 	hsize_t init_dims[2] = {nc, 0};
@@ -58,9 +59,9 @@ bool H5AnalogWriter::open(const char *fn, size_t nc)
 		deflateDataset(prop);
 	hsize_t chunk_dims[2] = {nc < 32 ? nc : 32, 128};
 	H5Pset_chunk(prop, 2, chunk_dims);
-	// Create the analog dataset
-	m_h5Dsamples = H5Dcreate(m_h5file, "/Analog/Samples", H5T_STD_I16LE,
-	                         ds, H5P_DEFAULT, prop, H5P_DEFAULT);
+	// Create the broadband dataset
+	m_h5Dsamples = H5Dcreate(m_h5file, "/acquisition/timeseries/broadband/data",
+	                         H5T_STD_I16LE, ds, H5P_DEFAULT, prop, H5P_DEFAULT);
 	if (m_h5Dsamples < 0) {
 		close();
 		return false;
@@ -69,7 +70,7 @@ bool H5AnalogWriter::open(const char *fn, size_t nc)
 	m_h5props.push_back(prop);
 
 
-	// create tick dataspace
+	// create broadband/sync/ticks dataspace
 	// allow the number of samples to be unlimited
 	init_dims[0] 	= 0;
 	max_dims[0] 	= H5S_UNLIMITED;
@@ -87,9 +88,8 @@ bool H5AnalogWriter::open(const char *fn, size_t nc)
 	chunk_dims[0] = 128;
 	H5Pset_chunk(prop, 1, chunk_dims);
 	// Create the tick dataset
-	m_h5Dtk = H5Dcreate(m_h5file, "/Analog/Ticks", H5T_STD_I64LE,
-	                    ds, H5P_DEFAULT, prop, H5P_DEFAULT);
-
+	m_h5Dtk = H5Dcreate(m_h5file, "/acquisition/timeseries/broadband/sync/ticks",
+	                    H5T_STD_I64LE, ds, H5P_DEFAULT, prop, H5P_DEFAULT);
 	if (m_h5Dtk < 0) {
 		close();
 		return false;
@@ -97,7 +97,8 @@ bool H5AnalogWriter::open(const char *fn, size_t nc)
 	m_h5dataspaces.push_back(ds);
 	m_h5props.push_back(prop);
 
-	// create timestamp dataspace
+
+	// create broadband/timestamps dataspace
 	// allow the number of samples to be unlimited
 	init_dims[0] 	= 0;
 	max_dims[0] 	= H5S_UNLIMITED;
@@ -114,10 +115,9 @@ bool H5AnalogWriter::open(const char *fn, size_t nc)
 		deflateDataset(prop);
 	chunk_dims[0] = 128;
 	H5Pset_chunk(prop, 1, chunk_dims);
-	// Create the tick dataset
-	m_h5Dts = H5Dcreate(m_h5file, "/Analog/Timestamps", H5T_IEEE_F64LE,
-	                    ds, H5P_DEFAULT, prop, H5P_DEFAULT);
-
+	// Create the timestamps dataset
+	m_h5Dts = H5Dcreate(m_h5file, "/acquisition/timeseries/broadband/timestamps",
+	                    H5T_IEEE_F64LE, ds, H5P_DEFAULT, prop, H5P_DEFAULT);
 	if (m_h5Dts < 0) {
 		close();
 		return false;
@@ -280,34 +280,88 @@ size_t H5AnalogWriter::bytes()
 	n += m_ns * sizeof(double);
 	return n;
 }
-bool H5AnalogWriter::setMetaData(double sr, float *scale, char *name, int slen)
+bool H5AnalogWriter::setMetaData(float scale, char *name, int slen)
 {
 	hid_t ds, attr, atype;
 
-	// sampling rate
+	// broadband/description
 	ds = H5Screate(H5S_SCALAR);
-	attr = H5Acreate(m_h5topgroup, "Sampling Rate", H5T_IEEE_F64LE, ds,
+	atype = H5Tcopy(H5T_C_S1);
+	const char *desc = "Broadband Data";
+	H5Tset_size(atype, strlen(desc));
+	H5Tset_strpad(atype, H5T_STR_NULLTERM);
+	attr = H5Acreate_by_name(m_h5file,
+	                         "/acquisition/timeseries/broadband", "description",
+	                         atype, ds, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+	H5Awrite(attr, atype, desc); // TODO: CHECK ERROR
+	H5Aclose(attr); // TODO: check error
+	H5Tclose(atype);
+	H5Sclose(ds);
+
+	// broadband/neurodata_type
+	ds = H5Screate(H5S_SCALAR);
+	atype = H5Tcopy(H5T_C_S1);
+	const char *neurodata_type = "TimeSeries";
+	H5Tset_size(atype, strlen(desc));
+	H5Tset_strpad(atype, H5T_STR_NULLTERM);
+	attr = H5Acreate_by_name(m_h5file,
+	                         "/acquisition/timeseries/broadband", "neurodata_type",
+	                         atype, ds, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+	H5Awrite(attr, atype, neurodata_type); // TODO: CHECK ERROR
+	H5Aclose(attr); // TODO: check error
+	H5Tclose(atype);
+	H5Sclose(ds);
+
+	// broadband/data/conversion
+	ds = H5Screate(H5S_SCALAR);
+	attr = H5Acreate_by_name(m_h5file, "/acquisition/timeseries/broadband/data", "conversion",
+	                         H5T_IEEE_F32LE, ds, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+	H5Awrite(attr, H5T_NATIVE_FLOAT, &scale); // TODO: CHECK ERROR
+	H5Aclose(attr); // TODO: check error
+	H5Sclose(ds);
+
+	// broadband/timestamps/interval
+	ds = H5Screate(H5S_SCALAR);
+	attr = H5Acreate_by_name(m_h5file, "/acquisition/timeseries/broadband/timestamps", "interval",
+	                         H5T_STD_I32LE, ds, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+	i32 interval = 1;
+	H5Awrite(attr, H5T_NATIVE_INT32, &interval); // TODO: CHECK ERROR
+	H5Aclose(attr); // TODO: check error
+	H5Sclose(ds);
+
+	// broadband/timestamps/unit
+	ds = H5Screate(H5S_SCALAR);
+	atype = H5Tcopy(H5T_C_S1);
+	const char *unit = "Seconds";
+	H5Tset_size(atype, strlen(unit));
+	H5Tset_strpad(atype, H5T_STR_NULLTERM);
+	attr = H5Acreate_by_name(m_h5file, "/acquisition/timeseries/broadband/timestamps", "unit",
+	                         atype, ds, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+	H5Awrite(attr, atype, unit); // TODO: CHECK ERROR
+	H5Aclose(attr); // TODO: check error
+	H5Tclose(atype);
+	H5Sclose(ds);
+
+	// sampling rate
+	// this isnt allowed in NWB spec if timestamps are set
+	/*
+	ds = H5Screate(H5S_SCALAR);
+	attr = H5Acreate(m_h5file, "/acquisition/broadband/Sampling Rate", H5T_IEEE_F64LE, ds,
 	                 H5P_DEFAULT, H5P_DEFAULT);
 	H5Awrite(attr, H5T_NATIVE_DOUBLE, &sr); // TODO: CHECK ERROR
 	H5Aclose(attr); // TODO: check error
 	H5Sclose(ds);
-
-	// scale factor
-	hsize_t dims = m_nc;
-	ds = H5Screate_simple(1, &dims, NULL);
-	attr = H5Acreate(m_h5topgroup, "Scale Factor", H5T_IEEE_F32LE, ds,
-	                 H5P_DEFAULT, H5P_DEFAULT);
-	H5Awrite(attr, H5T_NATIVE_FLOAT, scale); // TODO: CHECK ERROR
-	H5Aclose(attr); // TODO: check error
-	H5Sclose(ds);
+	*/
 
 	// channel names
+	// XXX this should be moved elsewhere for NWB compliance
+	hsize_t dims = m_nc;
 	ds = H5Screate_simple(1, &dims, NULL);
 	atype = H5Tcopy(H5T_C_S1);
 	H5Tset_size(atype, slen);
 	H5Tset_strpad(atype, H5T_STR_NULLTERM);
-	attr = H5Acreate(m_h5topgroup, "Channel Name", atype, ds,
-	                 H5P_DEFAULT, H5P_DEFAULT);
+	attr = H5Acreate_by_name(m_h5file, "/acquisition/timeseries/broadband", "Channel Name",
+	                         atype, ds, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 	H5Awrite(attr, atype, name); // TODO: CHECK ERROR
 	H5Aclose(attr);
 	H5Tclose(atype);
@@ -315,3 +369,4 @@ bool H5AnalogWriter::setMetaData(double sr, float *scale, char *name, int slen)
 
 	return true;
 }
+

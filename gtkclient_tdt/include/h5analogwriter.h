@@ -37,7 +37,7 @@ public:
 	using H5Writer::open;
 	bool open(const char *fn, size_t nc);
 
-	bool setMetaData(double sr, float *scale, char *name, int slen);
+	bool setMetaData(float scale, char *name, int slen);
 
 	//flush and close log file
 	bool close();
@@ -55,7 +55,7 @@ public:
 
 	const char *name()
 	{
-		return "H5 Analog Writer v1.2";
+		return "H5 Analog Writer v1.5";
 	};
 
 protected:
