@@ -28,7 +28,6 @@ protected:
 	size_t			m_nc;			// num channels
 	size_t			m_nu;			// num units (not including unsorted)
 	size_t			m_nwf;			// number of samples in a wf
-	vector<hid_t> 	m_h5groups;		// holds a group for each ch and unit
 	map<pair<i16, i16>, hid_t> m_h5Dtk;	// holds a tk dataset for each (ch,un)
 	map<pair<i16, i16>, hid_t> m_h5Dts;	// holds a ts dataset for each (ch,un)
 	map<pair<i16, i16>, hid_t> m_h5Dwf;	// holds a wf dataset for each (ch,un)

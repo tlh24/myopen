@@ -27,34 +27,34 @@ bool H5SpikeWriter::open(const char *fn, size_t nc, size_t nu, size_t nwf)
 	}
 
 	// Create a group
-	m_h5topgroup = H5Gcreate2(m_h5file, "/Spikes",
-	                          H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-
-	if (m_h5topgroup < 0) {
+	hid_t group = H5Gcreate(m_h5file, "/acquisition/Spikes",
+	                        H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+	if (group < 0) {
 		close();
 		return false;
 	}
+	m_h5groups.push_back(group);
 
 	// create a group for each channel and for each unit in each channel
-	hid_t group;
 	for (size_t i=1; i<=nc; i++) { // 1-indexed
 
 		char buf[256];
-		sprintf(buf, "/Spikes/Chan%zu", i);
-		group = H5Gcreate2(m_h5file, buf,
-		                   H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+		sprintf(buf, "/acquisition/Spikes/Chan%zu", i);
+		group = H5Gcreate(m_h5file, buf,
+		                  H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 		if (group < 0) {
 			close();
 			return false;
 		}
 		m_h5groups.push_back(group);
+
 		for (size_t j=0; j<=nu; j++) { // 1-indexed, zero is unsorted
 
 			auto idx = make_pair(i,j);
 
-			sprintf(buf, "/Spikes/Chan%zu/Unit%zu", i, j);
-			group = H5Gcreate2(m_h5file, buf,
-			                   H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+			sprintf(buf, "/acquisition/Spikes/Chan%zu/Unit%zu", i, j);
+			group = H5Gcreate(m_h5file, buf,
+			                  H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 			if (group < 0) {
 				close();
 				return false;
@@ -81,7 +81,7 @@ bool H5SpikeWriter::open(const char *fn, size_t nc, size_t nu, size_t nwf)
 				deflateDataset(prop);
 			chunk_dims[0] = 128;
 			H5Pset_chunk(prop, 1, chunk_dims);
-			sprintf(buf, "/Spikes/Chan%zu/Unit%zu/Ticks", i, j);
+			sprintf(buf, "/acquisition/Spikes/Chan%zu/Unit%zu/Ticks", i, j);
 			dset = H5Dcreate(m_h5file, buf, H5T_STD_I64LE,
 			                 ds, H5P_DEFAULT, prop, H5P_DEFAULT);
 			if (dset < 0) {
@@ -107,7 +107,7 @@ bool H5SpikeWriter::open(const char *fn, size_t nc, size_t nu, size_t nwf)
 				deflateDataset(prop);
 			chunk_dims[0] = 128;
 			H5Pset_chunk(prop, 1, chunk_dims);
-			sprintf(buf, "/Spikes/Chan%zu/Unit%zu/Timestamps", i, j);
+			sprintf(buf, "/acquisition/Spikes/Chan%zu/Unit%zu/Timestamps", i, j);
 			dset = H5Dcreate(m_h5file, buf, H5T_IEEE_F64LE,
 			                 ds, H5P_DEFAULT, prop, H5P_DEFAULT);
 			if (dset < 0) {
@@ -136,7 +136,7 @@ bool H5SpikeWriter::open(const char *fn, size_t nc, size_t nu, size_t nwf)
 			chunk_dims[0] = nwf;
 			chunk_dims[1] = 128;
 			H5Pset_chunk(prop, 2, chunk_dims);
-			sprintf(buf, "/Spikes/Chan%zu/Unit%zu/Waveforms", i, j);
+			sprintf(buf, "/acquisition/Spikes/Chan%zu/Unit%zu/Waveforms", i, j);
 			dset = H5Dcreate(m_h5file, buf, H5T_IEEE_F32LE,
 			                 ds, H5P_DEFAULT, prop, H5P_DEFAULT);
 			if (dset < 0) {
@@ -175,13 +175,6 @@ bool H5SpikeWriter::close()
 	m_nwf = 0;
 	m_nu = 0;
 	m_nc = 0;
-
-	for (auto &x : m_h5groups) {
-		if (x > 0) {
-			H5Gclose(x);
-		}
-	}
-	m_h5groups.clear();
 
 	for (auto &kv : m_h5Dtk) {
 		if (kv.second > 0) {
@@ -337,7 +330,7 @@ bool H5SpikeWriter::setMetaData(double sr, char *name, int slen)
 
 	// sampling rate
 	ds = H5Screate(H5S_SCALAR);
-	attr = H5Acreate(m_h5topgroup, "Sampling Rate", H5T_IEEE_F64LE, ds,
+	attr = H5Acreate(m_h5file, "/acquisition/Spikes/Sampling Rate", H5T_IEEE_F64LE, ds,
 	                 H5P_DEFAULT, H5P_DEFAULT);
 	H5Awrite(attr, H5T_NATIVE_DOUBLE, &sr); // TODO: CHECK ERROR
 	H5Aclose(attr); // TODO: check error
@@ -349,7 +342,7 @@ bool H5SpikeWriter::setMetaData(double sr, char *name, int slen)
 	atype = H5Tcopy(H5T_C_S1);
 	H5Tset_size(atype, slen);
 	H5Tset_strpad(atype, H5T_STR_NULLTERM);
-	attr = H5Acreate(m_h5topgroup, "Channel Name", atype, ds,
+	attr = H5Acreate(m_h5file, "/acquisition/Spikes/Channel Name", atype, ds,
 	                 H5P_DEFAULT, H5P_DEFAULT);
 	H5Awrite(attr, atype, name); // TODO: CHECK ERROR
 	H5Aclose(attr);
