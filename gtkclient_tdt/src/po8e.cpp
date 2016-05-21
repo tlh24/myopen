@@ -34,7 +34,8 @@ long double g_lastPo8eTime = 0.0;
 
 mutex g_po8e_mutex;
 size_t g_po8e_read_size = 16; // po8e block read size
-string g_po8e_socket_name = "tcp://*:1337";
+string g_po8e_neural_socket_name = "tcp://*:1337";
+string g_po8e_events_socket_name = "tcp://*:1338";
 
 TimeSync 	g_ts(SRATE_HZ); //keeps track of ticks (TDT time)
 bool		s_interrupted = false;
@@ -202,8 +203,30 @@ void worker(zmq::context_t &ctx, vector<po8e::card *> &cards)
 	zmq::pollitem_t p = {controller, 0, ZMQ_POLLIN, 0};
 	items.push_back(p);
 
-	zmq::socket_t socket_out(ctx, ZMQ_PUB);	// we will publish data
-	socket_out.bind(g_po8e_socket_name.c_str());
+	zmq::socket_t neural_sock(ctx, ZMQ_PUB);	// we will publish neural data
+	neural_sock.bind(g_po8e_neural_socket_name.c_str());
+
+	zmq::socket_t events_sock(ctx, ZMQ_PUB);	// we will publish neural data
+	events_sock.bind(g_po8e_events_socket_name.c_str());
+
+	u64 nnc = 0; // num neural channels
+	u64 nec = 0; // num events channels
+	for (auto &c : cards) {
+		for (int j=0; j<c->channel_size(); j++) {
+			switch (c->channel(j).data_type()) {
+			case po8e::channel::NEURAL:
+				nnc++;
+				break;
+			case po8e::channel::EVENTS:
+				nec++;
+				break;
+			case po8e::channel::ANALOG:
+				break;
+			case po8e::channel::IGNORE:
+				break;
+			}
+		}
+	}
 
 	while (true) {
 
@@ -279,31 +302,36 @@ void worker(zmq::context_t &ctx, vector<po8e::card *> &cards)
 				g_ts.update(time, tk[0]); //also updates the mmap file.
 			}
 
-			// package up neural data here
-			// should also pack up and broadcast events data, etc below
+			// package up neural data and event here
 
-			u64 nnc = 0; // num neural channels
-			for (auto &c : cards) {
-				for (int j=0; j<c->channel_size(); j++) {
-					if (c->channel(j).data_type() == po8e::channel::NEURAL) {
-						nnc++;
-					}
-				}
-			}
-
-			auto raw = new i16[nnc * ns[0]];
+			auto neural = new i16[nnc * ns[0]];
+			auto events = new i16[nec * ns[0]];
 			size_t nc_i = 0;
+			size_t ne_i = 0;
 			for (int i=0; i<(int)cards.size(); i++) {
 				for (int j=0; j<cards[i]->channel_size(); j++) {
-					if (cards[i]->channel(j).data_type() == po8e::channel::NEURAL) {
+					switch (cards[i]->channel(j).data_type()) {
+					case po8e::channel::NEURAL:
 						for (size_t k=0; k<ns[0]; k++) {
-							raw[nc_i*ns[0]+k] = data[i][j*ns[0]+k];
+							neural[nc_i*ns[0]+k] = data[i][j*ns[0]+k];
 						}
 						nc_i++;
+						break;
+					case po8e::channel::EVENTS:
+						for (size_t k=0; k<ns[0]; k++) {
+							events[ne_i*ns[0]+k] = data[i][j*ns[0]+k];
+						}
+						ne_i++;
+						break;
+					case po8e::channel::ANALOG:
+						break;
+					case po8e::channel::IGNORE:
+						break;
 					}
 				}
 			}
 
+			// send neural data
 			size_t nbytes = 32 + nnc*ns[0]*sizeof(i16);
 			zmq::message_t buf(nbytes);
 			char *ptr = (char *)buf.data();
@@ -312,11 +340,25 @@ void worker(zmq::context_t &ctx, vector<po8e::card *> &cards)
 			memcpy(ptr+8, ns, sizeof(u64)); // ns - 8 bytes
 			memcpy(ptr+16, tk, sizeof(i64)); // tk - 8 bytes
 			memcpy(ptr+24, &time, sizeof(double)); // ts - 8 bytes
-			memcpy(ptr+32, raw, nnc*ns[0]*sizeof(i16)); // data - nnc*ns bytes
+			memcpy(ptr+32, neural, nnc*ns[0]*sizeof(i16)); // data - nnc*ns bytes
 
-			socket_out.send(buf);
+			neural_sock.send(buf);
 
-			delete[] raw;
+			// send events data
+			nbytes = 32 + nec*ns[0]*sizeof(i16);
+			buf.rebuild(nbytes);
+			ptr = (char *)buf.data();
+
+			memcpy(ptr+0, &nec, sizeof(u64)); // nec - 8 bytes
+			memcpy(ptr+8, ns, sizeof(u64)); // ns - 8 bytes
+			memcpy(ptr+16, tk, sizeof(i64)); // tk - 8 bytes
+			memcpy(ptr+24, &time, sizeof(double)); // ts - 8 bytes
+			memcpy(ptr+32, events, nec*ns[0]*sizeof(i16)); // data - nnc*ns bytes
+
+			events_sock.send(buf);
+
+			delete[] neural;
+			delete[] events;
 
 			for (auto &x : data) {
 				delete[] x;
@@ -377,8 +419,10 @@ int main(void)
 	g_po8e_read_size = pc.readSize();
 	printf("po8e read size:\t\t%zu\n", 	g_po8e_read_size);
 
-	g_po8e_socket_name = pc.socket();
-	printf("po8e socket:\t\t%s\n", 	g_po8e_socket_name.c_str());
+	g_po8e_neural_socket_name = pc.neuralSocketName();
+	g_po8e_events_socket_name = pc.eventsSocketName();
+	printf("po8e neural socket:\t%s\n", 	g_po8e_neural_socket_name.c_str());
+	printf("po8e events socket:\t%s\n", 	g_po8e_events_socket_name.c_str());
 
 	size_t nc = pc.numNeuralChannels();
 	printf("Neural channels:\t%zu\n", 	nc);

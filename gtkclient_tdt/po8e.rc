@@ -4,16 +4,14 @@
 -- comments are prefixed by double dashes
 
 po8e = {}
-
 po8e.read_size = 8 -- samples
-po8e.socket = "ipc:///tmp/po8e.zmq" -- eg "tcp://127.0.0.1:1337"
+po8e.neural_socket = "ipc:///tmp/broadband.zmq" -- eg "tcp://127.0.0.1:1337"
+po8e.events_socket = "ipc:///tmp/events.zmq"
 
 NEURAL = 0 -- the default type
-EVENT = 1
+EVENTS = 1
 ANALOG = 2
 IGNORE = 3
-
--- CARD 1
 
 channels = {}
 for i=1, 96 do
@@ -40,25 +38,28 @@ channels = {}
 for i=1, 96 do
   channel = {
     id = i,
-    --name = string.format("%s %03d", "S1", i),
-    --data_type = IGNORE
+    name = string.format("%s %03d", "S1", i),
+    data_type = NEURAL
   }
   channels[i] = channel
 end
 
-for i=97, 100 do
+channels[97] ={}
+channels[97].id = 97
+channels[97].name = "stim"
+channels[97].data_type = EVENTS
+
+for i=98, 100 do
   channel = {
     id = i,
-    name = "stim",
-    data_type = EVENT
+    data_type = IGNORE
   }
   channels[i] = channel
 end
 
 card = {
   id = 2,
-  --enabled = false,
-  channels = channels
+  channels = channels,
 }
 
 po8e_cards[2] = card

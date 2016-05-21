@@ -33,7 +33,7 @@ public:
 	void setPulseDT(double dt);
 	void setNumSimultaneous(int _n);
 
-	int step();
+	std::vector<int> step();
 
 };
 

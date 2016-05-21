@@ -1200,17 +1200,22 @@ void analogwrite()
 void worker()
 {
 
-	//  Prepare our socket
-	zmq::socket_t socket(g_zmq_context, ZMQ_SUB);	// subscribe to data
+	// Prepare our sockets
+
+	zmq::socket_t neural_sock(g_zmq_context, ZMQ_SUB);
+	neural_sock.connect("ipc:///tmp/broadband.zmq");
+	neural_sock.setsockopt(ZMQ_SUBSCRIBE, "", 0);
+
+	zmq::socket_t events_sock(g_zmq_context, ZMQ_SUB);
+	events_sock.connect("ipc:///tmp/events.zmq");
+	events_sock.setsockopt(ZMQ_SUBSCRIBE, "", 0);
+
 	//socket.connect("ipc:///tmp/af.zmq");
-	socket.connect("ipc:///tmp/po8e.zmq");
-	//socket.connect("tcp://drumkit:2001");
-	socket.setsockopt(ZMQ_SUBSCRIBE, "", 0);
-	printf("Receiving data on ipc\n");
 
 	// init poll set
 	zmq::pollitem_t items [] = {
-		{ socket, 0, ZMQ_POLLIN, 0 }
+		{ neural_sock, 0, ZMQ_POLLIN, 0 },
+		{ events_sock, 0, ZMQ_POLLIN, 0 }
 	};
 
 	while (!g_die) {
@@ -1220,450 +1225,486 @@ void worker()
 		zmq::poll(&items[0], 1, -1); //  -1 means block
 
 		if (items[0].revents & ZMQ_POLLIN) {
-			socket.recv(&buf);
-		}
+			neural_sock.recv(&buf);
 
-		char *ptr = (char *)buf.data();
+			char *ptr = (char *)buf.data();
 
-		u64 nnc, ns;
+			u64 nnc, ns;
 
-		// parse message
-		memcpy(&nnc, ptr+0, sizeof(u64));
-		memcpy(&ns, ptr+8, sizeof(u64));
+			// parse message
+			memcpy(&nnc, ptr+0, sizeof(u64));
+			memcpy(&ns, ptr+8, sizeof(u64));
 
-		auto tk 	= new i64[ns];
-		auto ts 	= new double[ns];
+			auto tk 	= new i64[ns];
+			auto ts 	= new double[ns];
 
-		memcpy(tk, ptr+16, sizeof(i64));
-		memcpy(ts, ptr+24, sizeof(double));
+			memcpy(tk, ptr+16, sizeof(i64));
+			memcpy(ts, ptr+24, sizeof(double));
 
-		//ts[0] = g_tsc->getTime(tk[0]);
-		for (size_t i=1; i < ns; i++) {
-			tk[i] = tk[i-1] + 1;
-			ts[i] = g_tsc->getTime(tk[i]);
-		}
+			//ts[0] = g_tsc->getTime(tk[0]);
+			for (size_t i=1; i < ns; i++) {
+				tk[i] = tk[i-1] + 1;
+				ts[i] = g_tsc->getTime(tk[i]);
+			}
 
-		auto raw = new i16[nnc * ns];
-		memcpy(raw, ptr+32, nnc*ns*sizeof(i16));
+			auto raw = new i16[nnc * ns];
+			memcpy(raw, ptr+32, nnc*ns*sizeof(i16));
 
-		//size_t nnc = g_c.size(); // num neural channels
+			//size_t nnc = g_c.size(); // num neural channels
 
-		auto f = new float[nnc * ns];
-		mat X(nnc, ns);
-		for (size_t i=0; i<nnc; i++) {
-			auto scale_factor = g_c[i]->m_scaleFactor;
+			auto f = new float[nnc * ns];
+			mat X(nnc, ns);
+			for (size_t i=0; i<nnc; i++) {
+				auto scale_factor = g_c[i]->m_scaleFactor;
+				for (size_t k=0; k<ns; k++) {
+					f[i*ns+k] = (float)raw[i*ns+k]/scale_factor;
+					X(i, k) = f[i*ns+k];
+				}
+			}
+
+
+			// XXX XXX XXX
+			// all the events and stim stuff is disabled for now
+
+			/*
+
+			// stim channels (and event channels generally)
+			size_t nec = 0; // num event channels
+			size_t nsc = 0; // num stim channels
+			for (auto &card : c) {
+				for (int j=0; j<card->channel_size(); j++) {
+					if (card->channel(j).data_type() == po8e::channel::EVENTS) {
+						if (card->channel(j).name().compare("stim") == 0) {
+							nsc++;
+						} else {
+							nec++;
+						}
+					}
+				}
+			}
+			auto events = new bool[nec*ns];
+			auto stim 	= new bool[nsc*ns];
+			size_t ns_i = 0;
+			size_t ne_i = 0;
+			for (size_t i=0; i<c.size(); i++) {
+				for (int j=0; j<c[i]->channel_size(); j++) {
+					if (c[i]->channel(j).data_type() == po8e::channel::EVENTS) {
+						if (c[i]->channel(j).name().compare("stim") == 0) {
+							for (size_t k=0; k<ns; k++) {
+								stim[ns_i*ns+k] = (bool)p[i]->data[j*ns+k];
+							}
+							ns_i++;
+						} else {
+							for (size_t k=0; k<ns; k++) {
+								events[ne_i*ns+k] = (bool)p[i]->data[j*ns+k];
+							}
+							ne_i++;
+						}
+					}
+				}
+			}
+
+			// hardcode the zeroth element, maybe fix this XXX
 			for (size_t k=0; k<ns; k++) {
-				f[i*ns+k] = (float)raw[i*ns+k]/scale_factor;
-				X(i, k) = f[i*ns+k];
-			}
-		}
-
-
-		// XXX XXX XXX
-		// all the events and stim stuff is disabled for now
-
-		/*
-
-		// stim channels (and event channels generally)
-		size_t nec = 0; // num event channels
-		size_t nsc = 0; // num stim channels
-		for (auto &card : c) {
-			for (int j=0; j<card->channel_size(); j++) {
-				if (card->channel(j).data_type() == po8e::channel::EVENT) {
-					if (card->channel(j).name().compare("stim") == 0) {
-						nsc++;
-					} else {
-						nec++;
+				for (size_t i=0; i<nsc; i++) {
+					if (stim[i*ns+k]) {
+						g_eventraster[0]->addEvent((float)ts[k], i); // to draw
 					}
 				}
 			}
-		}
-		auto events = new bool[nec*ns];
-		auto stim 	= new bool[nsc*ns];
-		size_t ns_i = 0;
-		size_t ne_i = 0;
-		for (size_t i=0; i<c.size(); i++) {
-			for (int j=0; j<c[i]->channel_size(); j++) {
-				if (c[i]->channel(j).data_type() == po8e::channel::EVENT) {
-					if (c[i]->channel(j).name().compare("stim") == 0) {
-						for (size_t k=0; k<ns; k++) {
-							stim[ns_i*ns+k] = (bool)p[i]->data[j*ns+k];
-						}
-						ns_i++;
-					} else {
-						for (size_t k=0; k<ns; k++) {
-							events[ne_i*ns+k] = (bool)p[i]->data[j*ns+k];
-						}
-						ne_i++;
-					}
+
+
+			*/
+
+			// TODO:  need to be set. Keep empty for now
+			auto blank 	= new bool[ns];
+			//stim[k]  = (u16)(p[1].data[8*ns + k]);
+			//stim[k] += (u16)(p[1].data[9*ns + k]) << 16;
+			//blank[k] = p[1].data[10*ns + k] > 0;
+
+			// write (pre-filtered) broadband signal to disk
+			if (g_analogwriter_prefilter.isEnabled()) {
+
+				AD *ad; // analog data
+				ad = new AD; // deleted by other thread
+
+				ad->ns = ns;
+
+				ad->tk = new i64[ns];
+				memcpy(ad->tk, tk, ns*sizeof(i64));
+
+				ad->ts = new double[ns];
+				memcpy(ad->ts, ts, ns*sizeof(double));
+
+				switch (g_whichAnalogSave) {
+				case SAVE_SINGLE: {
+					ad->nc = 1;
+					int ch = g_channel[0];
+					ad->data = new i16[ns];
+					memcpy(ad->data, &raw[ch*ns], ns*sizeof(i16));
+					break;
 				}
-			}
-		}
-
-		// hardcode the zeroth element, maybe fix this XXX
-		for (size_t k=0; k<ns; k++) {
-			for (size_t i=0; i<nsc; i++) {
-				if (stim[i*ns+k]) {
-					g_eventraster[0]->addEvent((float)ts[k], i); // to draw
-				}
-			}
-		}
-
-
-		*/
-
-		// TODO:  need to be set. Keep empty for now
-		auto blank 	= new bool[ns];
-		//stim[k]  = (u16)(p[1].data[8*ns + k]);
-		//stim[k] += (u16)(p[1].data[9*ns + k]) << 16;
-		//blank[k] = p[1].data[10*ns + k] > 0;
-
-		// write (pre-filtered) broadband signal to disk
-		if (g_analogwriter_prefilter.isEnabled()) {
-
-			AD *ad; // analog data
-			ad = new AD; // deleted by other thread
-
-			ad->ns = ns;
-
-			ad->tk = new i64[ns];
-			memcpy(ad->tk, tk, ns*sizeof(i64));
-
-			ad->ts = new double[ns];
-			memcpy(ad->ts, ts, ns*sizeof(double));
-
-			switch (g_whichAnalogSave) {
-			case SAVE_SINGLE: {
-				ad->nc = 1;
-				int ch = g_channel[0];
-				ad->data = new i16[ns];
-				memcpy(ad->data, &raw[ch*ns], ns*sizeof(i16));
-				break;
-			}
-			case SAVE_ENABLED: {
-				u32 num_enabled = 0;
-				for (auto &ch : g_c) {
-					if (ch->getEnabled()) {
-						num_enabled++;
-					}
-				}
-				ad->data = new i16[num_enabled*ns];
-				size_t c_i = 0;
-				for (size_t ch=0; ch<nnc; ch++) {
-					if (g_c[ch]->getEnabled()) {
-						for (size_t k=0; k<ns; k++) {
-							ad->data[c_i*ns+k] = raw[ch*ns+k];
-						}
-						c_i++;
-					}
-				}
-				ad->nc = num_enabled;
-				break;
-			}
-			case SAVE_ALL: {
-				ad->nc = nnc;
-				ad->data = new i16[nnc*ns];
-				memcpy(ad->data, raw, nnc*ns*sizeof(i16));
-				break;
-			}
-			default:
-				error("bad analog save mode. exiting.");
-				exit(1);
-			}
-			// ad and associanted memory freed by other other thread
-			g_analogwriter_prefilter.add(ad);
-		}
-
-		// fill artifact filtering buffers (for other thread)
-		// we do both training and filtering before filtering
-		// on the intuition that it will work better this way
-
-		if (g_trainArtifactNLMS) {
-			auto Y = new mat(X);
-			g_filterbuf.enqueue(Y); // free on the other thread
-		}
-
-		// filter online here
-		if (g_filterArtifactNLMS) {
-			X -= g_nlms->filter(X);
-		}
-
-		// filter online here
-		if (g_artifactFilterRun) {
-			X -= g_artifactFilter->filter(X);
-		}
-
-		// big loop through samples
-		// TODO: make this use X, too
-
-		// XXX disable for now
-
-		/*
-
-		for (size_t k=0; k<ns; k++) {
-
-			for (size_t i=0; i<nsc; i++) {
-
-				//if (stim[i*ns+k]) {
-				//	printf("icms pulse\n");
-				//}
-
-				auto a = g_artifact[i];
-
-				if (stim[i*ns+k]) {
-					int z = 0;
-					for (int y=0; y<NARTPTR; y++) {
-						if (a->m_windex[y] == -1) {
-							a->m_windex[y] = 0;
-							a->m_rindex[y] = 0;
-							z++;
-							break;
+				case SAVE_ENABLED: {
+					u32 num_enabled = 0;
+					for (auto &ch : g_c) {
+						if (ch->getEnabled()) {
+							num_enabled++;
 						}
 					}
-					if (z == NARTPTR) {
-						warn("STIM ARTIFACTS OVERLAP");
-					}
-				}
-
-				// update artifact-subtraction buffers
-				for (int z=0; z<NARTPTR; z++) {
-					i64 idx = a->m_windex[z]; // write pointer
-					if (idx != -1) {
-						for (int ch=0; ch<(int)nnc; ch++) {
-							a->m_now[ch*ARTBUF+idx] = f[ch*ns+k];
+					ad->data = new i16[num_enabled*ns];
+					size_t c_i = 0;
+					for (size_t ch=0; ch<nnc; ch++) {
+						if (g_c[ch]->getEnabled()) {
+							for (size_t k=0; k<ns; k++) {
+								ad->data[c_i*ns+k] = raw[ch*ns+k];
+							}
+							c_i++;
 						}
-						a->m_windex[z]++;
-						if (a->m_windex[z] >= ARTBUF) {
-							if (g_icmswriter.isEnabled()) {
-								auto o = new ICMS; // deleted by other thread
-								o->set_ts(g_ts.getTime(tk[k]-ARTBUF));
-								o->set_tick(tk[k]-ARTBUF);
-								o->set_stim_chan(i+1); // 1-indexed
+					}
+					ad->nc = num_enabled;
+					break;
+				}
+				case SAVE_ALL: {
+					ad->nc = nnc;
+					ad->data = new i16[nnc*ns];
+					memcpy(ad->data, raw, nnc*ns*sizeof(i16));
+					break;
+				}
+				default:
+					error("bad analog save mode. exiting.");
+					exit(1);
+				}
+				// ad and associanted memory freed by other other thread
+				g_analogwriter_prefilter.add(ad);
+			}
 
-								if (g_saveICMSWF) {
+			// fill artifact filtering buffers (for other thread)
+			// we do both training and filtering before filtering
+			// on the intuition that it will work better this way
+
+			if (g_trainArtifactNLMS) {
+				auto Y = new mat(X);
+				g_filterbuf.enqueue(Y); // free on the other thread
+			}
+
+			// filter online here
+			if (g_filterArtifactNLMS) {
+				X -= g_nlms->filter(X);
+			}
+
+			// filter online here
+			if (g_artifactFilterRun) {
+				X -= g_artifactFilter->filter(X);
+			}
+
+			// big loop through samples
+			// TODO: make this use X, too
+
+			// XXX disable for now
+
+			/*
+
+			for (size_t k=0; k<ns; k++) {
+
+				for (size_t i=0; i<nsc; i++) {
+
+					//if (stim[i*ns+k]) {
+					//	printf("icms pulse\n");
+					//}
+
+					auto a = g_artifact[i];
+
+					if (stim[i*ns+k]) {
+						int z = 0;
+						for (int y=0; y<NARTPTR; y++) {
+							if (a->m_windex[y] == -1) {
+								a->m_windex[y] = 0;
+								a->m_rindex[y] = 0;
+								z++;
+								break;
+							}
+						}
+						if (z == NARTPTR) {
+							warn("STIM ARTIFACTS OVERLAP");
+						}
+					}
+
+					// update artifact-subtraction buffers
+					for (int z=0; z<NARTPTR; z++) {
+						i64 idx = a->m_windex[z]; // write pointer
+						if (idx != -1) {
+							for (int ch=0; ch<(int)nnc; ch++) {
+								a->m_now[ch*ARTBUF+idx] = f[ch*ns+k];
+							}
+							a->m_windex[z]++;
+							if (a->m_windex[z] >= ARTBUF) {
+								if (g_icmswriter.isEnabled()) {
+									auto o = new ICMS; // deleted by other thread
+									o->set_ts(g_ts.getTime(tk[k]-ARTBUF));
+									o->set_tick(tk[k]-ARTBUF);
+									o->set_stim_chan(i+1); // 1-indexed
+
+									if (g_saveICMSWF) {
+										for (int ch=0; ch<(int)nnc; ch++) {
+											ICMS_artifact *art = o->add_artifact();
+											art->set_rec_chan(ch+1); //1-indexed
+											for (int x=0; x<ARTBUF; x++) {
+												art->add_sample(a->m_now[ch*ARTBUF+x]);
+											}
+										}
+									}
+									g_icmswriter.add(o);
+								}
+								a->m_windex[z] = -1;
+
+								if ((g_trainArtifactTempl) &&
+								    (a->m_nsamples < g_numArtifactSamps)) {
+									a->m_nsamples++;
+
+									// for iterative update of average
+									float alpha = 1.f/a->m_nsamples;
+
 									for (int ch=0; ch<(int)nnc; ch++) {
-										ICMS_artifact *art = o->add_artifact();
-										art->set_rec_chan(ch+1); //1-indexed
 										for (int x=0; x<ARTBUF; x++) {
-											art->add_sample(a->m_now[ch*ARTBUF+x]);
+											float cur = a->m_wav[ch*ARTBUF+x];
+											float now = a->m_now[ch*ARTBUF+x];
+											float nex = cur + alpha*(now-cur);
+											a->m_wav[ch*ARTBUF+x] = nex;
 										}
 									}
 								}
-								g_icmswriter.add(o);
-							}
-							a->m_windex[z] = -1;
-
-							if ((g_trainArtifactTempl) &&
-							    (a->m_nsamples < g_numArtifactSamps)) {
-								a->m_nsamples++;
-
-								// for iterative update of average
-								float alpha = 1.f/a->m_nsamples;
-
-								for (int ch=0; ch<(int)nnc; ch++) {
-									for (int x=0; x<ARTBUF; x++) {
-										float cur = a->m_wav[ch*ARTBUF+x];
-										float now = a->m_now[ch*ARTBUF+x];
-										float nex = cur + alpha*(now-cur);
-										a->m_wav[ch*ARTBUF+x] = nex;
-									}
-								}
 							}
 						}
-					}
 
-					i64 ridx = a->m_rindex[z]; // read pointer
+						i64 ridx = a->m_rindex[z]; // read pointer
 
-					if (ridx == -1)
-						continue; // try next z-pointer
+						if (ridx == -1)
+							continue; // try next z-pointer
 
-					if (g_enableArtifactSubtr) {
-						for (int ch=0; ch<(int)nnc; ch++) {
-							f[ch*ns+k] -= a->m_wav[ch*ARTBUF+ridx];
+						if (g_enableArtifactSubtr) {
+							for (int ch=0; ch<(int)nnc; ch++) {
+								f[ch*ns+k] -= a->m_wav[ch*ARTBUF+ridx];
+							}
 						}
-					}
-					// nb. updating the read pointer happens below,
-					// in the per-artifact blanking code block
-				}
-			}
-		}
-
-		*/
-
-		for (size_t k=0; k<ns; k++) {
-
-			// post-artifact-removal filtering
-			for (size_t ch=0; ch<nnc; ch++) {
-
-				float samp = (float)X(ch, k);
-
-				if ( g_hipassNeurons &&  g_lopassNeurons)
-					g_bandpass[ch].Proc(&samp, &samp, 1);
-
-				if ( g_hipassNeurons && !g_lopassNeurons)
-					g_hipass[ch].Proc(&samp, &samp, 1);
-
-				if (!g_hipassNeurons &&  g_lopassNeurons)
-					g_lopass[ch].Proc(&samp, &samp, 1);
-
-				X(ch, k) = (double)samp;
-			}
-
-		}
-
-		// XXX TODO: MAKE THIS USE X TOO
-		for (size_t k=0; k<ns; k++) {
-
-			// blank based on artifact (must happen after filtering
-			for (auto &a : g_artifact) {
-				for (int z=0; z<NARTPTR; z++) {
-					i64 ridx = a->m_rindex[z]; // read pointer
-
-					if (ridx == -1)
-						break;
-
-					if (g_enableArtifactBlanking &&
-					    ridx >= g_artifactBlankingPreSamps &&
-					    ridx <  g_artifactBlankingPreSamps+g_artifactBlankingSamps) {
-						for (int ch=0; ch<(int)nnc; ch++) {
-							f[ch*ns+k] = 0.f;
-						}
-					}
-					a->m_rindex[z]++;
-					if (a->m_rindex[z] >= ARTBUF)
-						a->m_rindex[z] = -1;
-				}
-			}
-
-			// blank based on the stim clock (must happen last)
-			if (g_enableStimClockBlanking && blank[k]) {
-				for (int ch=0; ch<(int)nnc; ch++) {
-					// note that if we keep track of the last value from the
-					// previous loop through, we could do sample-and-hold
-					// rather than zero-out. which is better?
-					// nan-ing is also a good idea but poisons further
-					// computations
-					//f[ch*ns+k] = nanf("");
-					f[ch*ns+k] = 0.f;
-				}
-			}
-		}
-
-		// write (post-filtered) broadband signal to disk
-		if (g_analogwriter_postfilter.isEnabled()) {
-
-			AD *ad; // analog data
-			ad = new AD; // deleted by other thread
-
-			ad->ns = ns;
-
-			ad->tk = new i64[ns];
-			memcpy(ad->tk, &tk, ns*sizeof(i64));
-
-			ad->ts = new double[ns];
-			memcpy(ad->ts, &ts, ns*sizeof(double));
-
-			switch (g_whichAnalogSave) {
-			case SAVE_SINGLE: {
-				ad->nc = 1;
-				int ch = g_channel[0];
-				ad->data = new i16[ns];
-				memcpy(ad->data, &raw[ch*ns], ns*sizeof(i16));
-				break;
-			}
-			case SAVE_ENABLED: {
-				u32 num_enabled = 0;
-				for (auto &ch : g_c) {
-					if (ch->getEnabled()) {
-						num_enabled++;
+						// nb. updating the read pointer happens below,
+						// in the per-artifact blanking code block
 					}
 				}
-				ad->data = new i16[num_enabled*ns];
-				size_t c_i = 0;
-				for (size_t ch=0; ch<nnc; ch++) {
-					if (g_c[ch]->getEnabled()) {
-						for (size_t k=0; k<ns; k++) {
-							ad->data[c_i*ns+k] = raw[ch*ns+k];
-						}
-						c_i++;
-					}
-				}
-				ad->nc = num_enabled;
-				break;
 			}
-			case SAVE_ALL: {
-				ad->nc = nnc;
-				ad->data = new i16[nnc*ns];
-				memcpy(ad->data, raw, nnc*ns*sizeof(i16));
-				break;
-			}
-			default:
-				error("bad analog save mode. exiting.");
-				exit(1);
-			}
-			// ad and associanted memory freed by other other thread
-			g_analogwriter_postfilter.add(ad);
-		}
 
-		auto audio 	= new float[ns];
+			*/
 
-		// input data is scaled from TDT so that 32767 = 10mV.
-		// send the data for one channel to jack
-		for (int h=0; h<NFBUF; h++) {
-			int ch = g_channel[h];
-			float gain = g_c[ch]->getGain();
 			for (size_t k=0; k<ns; k++) {
-				// scale into a reasonable range for audio
-				// and timeseries display
-				//float fg = f[ch*ns+k] * gain / 1e4;
-				float fg = (float)X(ch, k) * gain / 1e4;
-				g_timeseries[h]->addData(&fg, 1); // timeseries trace
-				if (h==0) {
-					audio[k] = fg;
+
+				// post-artifact-removal filtering
+				for (size_t ch=0; ch<nnc; ch++) {
+
+					float samp = (float)X(ch, k);
+
+					if ( g_hipassNeurons &&  g_lopassNeurons)
+						g_bandpass[ch].Proc(&samp, &samp, 1);
+
+					if ( g_hipassNeurons && !g_lopassNeurons)
+						g_hipass[ch].Proc(&samp, &samp, 1);
+
+					if (!g_hipassNeurons &&  g_lopassNeurons)
+						g_lopass[ch].Proc(&samp, &samp, 1);
+
+					X(ch, k) = (double)samp;
+				}
+
+			}
+
+			// XXX TODO: MAKE THIS USE X TOO
+			for (size_t k=0; k<ns; k++) {
+
+				// blank based on artifact (must happen after filtering
+				for (auto &a : g_artifact) {
+					for (int z=0; z<NARTPTR; z++) {
+						i64 ridx = a->m_rindex[z]; // read pointer
+
+						if (ridx == -1)
+							break;
+
+						if (g_enableArtifactBlanking &&
+						    ridx >= g_artifactBlankingPreSamps &&
+						    ridx <  g_artifactBlankingPreSamps+g_artifactBlankingSamps) {
+							for (int ch=0; ch<(int)nnc; ch++) {
+								f[ch*ns+k] = 0.f;
+							}
+						}
+						a->m_rindex[z]++;
+						if (a->m_rindex[z] >= ARTBUF)
+							a->m_rindex[z] = -1;
+					}
+				}
+
+				// blank based on the stim clock (must happen last)
+				if (g_enableStimClockBlanking && blank[k]) {
+					for (int ch=0; ch<(int)nnc; ch++) {
+						// note that if we keep track of the last value from the
+						// previous loop through, we could do sample-and-hold
+						// rather than zero-out. which is better?
+						// nan-ing is also a good idea but poisons further
+						// computations
+						//f[ch*ns+k] = nanf("");
+						f[ch*ns+k] = 0.f;
+					}
 				}
 			}
-		}
+
+			// write (post-filtered) broadband signal to disk
+			if (g_analogwriter_postfilter.isEnabled()) {
+
+				AD *ad; // analog data
+				ad = new AD; // deleted by other thread
+
+				ad->ns = ns;
+
+				ad->tk = new i64[ns];
+				memcpy(ad->tk, &tk, ns*sizeof(i64));
+
+				ad->ts = new double[ns];
+				memcpy(ad->ts, &ts, ns*sizeof(double));
+
+				switch (g_whichAnalogSave) {
+				case SAVE_SINGLE: {
+					ad->nc = 1;
+					int ch = g_channel[0];
+					ad->data = new i16[ns];
+					memcpy(ad->data, &raw[ch*ns], ns*sizeof(i16));
+					break;
+				}
+				case SAVE_ENABLED: {
+					u32 num_enabled = 0;
+					for (auto &ch : g_c) {
+						if (ch->getEnabled()) {
+							num_enabled++;
+						}
+					}
+					ad->data = new i16[num_enabled*ns];
+					size_t c_i = 0;
+					for (size_t ch=0; ch<nnc; ch++) {
+						if (g_c[ch]->getEnabled()) {
+							for (size_t k=0; k<ns; k++) {
+								ad->data[c_i*ns+k] = raw[ch*ns+k];
+							}
+							c_i++;
+						}
+					}
+					ad->nc = num_enabled;
+					break;
+				}
+				case SAVE_ALL: {
+					ad->nc = nnc;
+					ad->data = new i16[nnc*ns];
+					memcpy(ad->data, raw, nnc*ns*sizeof(i16));
+					break;
+				}
+				default:
+					error("bad analog save mode. exiting.");
+					exit(1);
+				}
+				// ad and associanted memory freed by other other thread
+				g_analogwriter_postfilter.add(ad);
+			}
+
+			auto audio 	= new float[ns];
+
+			// input data is scaled from TDT so that 32767 = 10mV.
+			// send the data for one channel to jack
+			for (int h=0; h<NFBUF; h++) {
+				int ch = g_channel[h];
+				float gain = g_c[ch]->getGain();
+				for (size_t k=0; k<ns; k++) {
+					// scale into a reasonable range for audio
+					// and timeseries display
+					//float fg = f[ch*ns+k] * gain / 1e4;
+					float fg = (float)X(ch, k) * gain / 1e4;
+					g_timeseries[h]->addData(&fg, 1); // timeseries trace
+					if (h==0) {
+						audio[k] = fg;
+					}
+				}
+			}
 #ifdef JACK
-		jackAddSamples(audio, audio, ns);
+			jackAddSamples(audio, audio, ns);
 #endif
 
-		// package data for sorting / saving
+			// package data for sorting / saving
 
-		for (auto &ch : g_c) {
-			//double m = ch->m_wfstats.mean();
-			for (size_t k=0; k<ns; k++) {
-				//auto x = f[ch->m_ch*ns+k] / 1e4; // scale so 1 = +10 mV
-				float x = (float)X(ch->m_ch, k) / 1e4; // scale so 1 = +10 mV
-				// 1 = +10mV; range = [-1 1] here.
-				ch->m_spkbuf.addSample(tk[k], x);
+			for (auto &ch : g_c) {
+				//double m = ch->m_wfstats.mean();
+				for (size_t k=0; k<ns; k++) {
+					//auto x = f[ch->m_ch*ns+k] / 1e4; // scale so 1 = +10 mV
+					float x = (float)X(ch->m_ch, k) / 1e4; // scale so 1 = +10 mV
+					// 1 = +10mV; range = [-1 1] here.
+					ch->m_spkbuf.addSample(tk[k], x);
 
-				//update the channel running stats (means and stddevs, etc).
-				ch->m_wfstats(x);
+					//update the channel running stats (means and stddevs, etc).
+					ch->m_wfstats(x);
 
-				//ch->m_var *= 0.999998;
-				//ch->m_var += 0.000002*(x-m)*(x-m);
-				//m *= 0.999997;
-				//m += 0.000003*x;
+					//ch->m_var *= 0.999998;
+					//ch->m_var += 0.000002*(x-m)*(x-m);
+					//m *= 0.999997;
+					//m += 0.000003*x;
+				}
+				//ch->m_mean = m;
 			}
-			//ch->m_mean = m;
+
+			// sort -- see if samples pass threshold. if so, copy.
+			for (int ch=0; ch<(int)nnc; ch++) {
+				if (g_c[ch]->getEnabled()) { //XXX put this into channel class?
+					sorter(ch);
+				}
+			}
+
+			delete[] tk;
+			delete[] ts;
+			delete[] f;
+			delete[] raw;
+			delete[] audio;
+			// XXX reenable soon
+			//delete[] events;
+			//delete[] stim;
+			delete[] blank;
 		}
 
-		// sort -- see if samples pass threshold. if so, copy.
-		for (int ch=0; ch<(int)nnc; ch++) {
-			if (g_c[ch]->getEnabled()) { //XXX put this into channel class?
-				sorter(ch);
+		if (items[1].revents & ZMQ_POLLIN) {
+
+			events_sock.recv(&buf);
+
+			char *ptr = (char *)buf.data();
+
+			u64 nec, ns;
+
+			// parse message
+			memcpy(&nec, ptr+0, sizeof(u64));
+			memcpy(&ns, ptr+8, sizeof(u64));
+
+			auto tk 	= new i64[ns];
+			auto ts 	= new double[ns];
+
+			memcpy(tk, ptr+16, sizeof(i64));
+			memcpy(ts, ptr+24, sizeof(double));
+
+			//ts[0] = g_tsc->getTime(tk[0]);
+			for (size_t i=1; i < ns; i++) {
+				tk[i] = tk[i-1] + 1;
+				ts[i] = g_tsc->getTime(tk[i]);
 			}
+
+			auto events = new bool[nec*ns];
+
+			// need to think about how to encode and unpack
+			// events.
+			//
+			// if they're packed into a 16 bit integer
+			// then we get 16 bits per events channel
+
+
 		}
 
-		delete[] tk;
-		delete[] ts;
-		delete[] f;
-		delete[] raw;
-		delete[] audio;
-		// XXX reenable soon
-		//delete[] events;
-		//delete[] stim;
-		delete[] blank;
 	}
 }
 

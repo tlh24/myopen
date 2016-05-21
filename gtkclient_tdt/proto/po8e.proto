@@ -12,7 +12,7 @@ message channel {
 	optional uint64 scale_factor = 3 [default = 3276700];
 	enum DataTypes {
 	  NEURAL = 0; // uses scale_factor
-	  EVENT = 1;
+	  EVENTS = 1;
 	  ANALOG = 2; // uses scale_factor
 	  IGNORE = 3;
 	}

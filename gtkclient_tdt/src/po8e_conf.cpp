@@ -51,7 +51,7 @@ size_t po8eConf::numNeuralChannels() // helper
 }
 size_t po8eConf::numEventChannels() // helper
 {
-	return numChannels(po8e::channel::EVENT);
+	return numChannels(po8e::channel::EVENTS);
 }
 size_t po8eConf::numAnalogChannels() // helper
 {
@@ -69,10 +69,16 @@ size_t po8eConf::readSize()
 	}
 	return read_size;
 }
-string po8eConf::socket()
+string po8eConf::neuralSocketName()
 {
 	string s = "tcp://*:1337"; // reasonable default
-	getString("po8e.socket", s); // s unchanged on error
+	getString("po8e.neural_socket", s); // s unchanged on error
+	return s;
+}
+string po8eConf::eventsSocketName()
+{
+	string s = "tcp://*:1338"; // reasonable default
+	getString("po8e.events_socket", s); // s unchanged on error
 	return s;
 }
 // allocates memory

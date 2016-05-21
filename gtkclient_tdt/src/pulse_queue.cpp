@@ -46,7 +46,7 @@ void PulseQueue::setNumSimultaneous(int _n)
 	numSimultaneous = _n > n ? n : _n;
 }
 
-int PulseQueue::step()
+std::vector<int> PulseQueue::step()
 {
 	// advance clock
 	auto t = gettime();
@@ -72,16 +72,18 @@ int PulseQueue::step()
 		qtmp.pop();
 	}
 
+	std::vector<int> pulses;
+
 	// do i need to pulse and can i?
 	if (pulseQ.size() > 0 && (t-tlast) > pulseDT) {
 		for (int i=0; i<std::min((int)pulseQ.size(), numSimultaneous); i++) {
-			auto x = pulseQ.front();
+			pulses.push_back(pulseQ.front());
 			pulseQ.pop();
-			printf("%d\t%Lf\n", x+1, t);
+			//printf("%d\t%Lf\n", x+1, t);
 		}
 		tlast = t;
 	}
-	return 0; // xXXXXXX xXXX XXX
+	return pulses;
 }
 
 long double PulseQueue::gettime()
