@@ -79,7 +79,6 @@ std::vector<int> PulseQueue::step()
 		for (int i=0; i<std::min((int)pulseQ.size(), numSimultaneous); i++) {
 			pulses.push_back(pulseQ.front());
 			pulseQ.pop();
-			//printf("%d\t%Lf\n", x+1, t);
 		}
 		tlast = t;
 	}

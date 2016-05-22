@@ -15,7 +15,6 @@ bool s_interrupted = false;
 static void s_signal_handler(int)
 {
 	s_interrupted = true;
-	printf("interrputed!\n");
 }
 
 static void s_catch_signals(void)
@@ -38,25 +37,9 @@ u16 bit(int n)
 
 }
 
-#define BIT(n)                  ( 1<<(n) )
-
-#define BIT_SET(y, mask)        ( y |=  (mask) )
-#define BIT_CLEAR(y, mask)      ( y &= ~(mask) )
-#define BIT_FLIP(y, mask)       ( y ^=  (mask) )
-
-
 int g_nchan = 16;
-double g_dpulset = 1; // msec
-int g_nsimultaneous = 1;
-
-void worker(zmq::context_t &ctx)
-{
-	zmq::socket_t sock(ctx, ZMQ_REP);
-	sock.bind("ipc:///tmp/pulser");
-
-	while (!s_interrupted) { }
-	printf("thread exiting\n");
-}
+double g_dpulset = 0.001; // seconds
+int g_nsimultaneous = 2;
 
 int main()
 {
@@ -76,15 +59,15 @@ int main()
 	}
 
 	int nc = comedi_get_n_channels(card, 0);
-	printf("num chans = %d\n", nc);
+	printf("max dio chans = %d\n", nc);
 
 	for (int i=0; i<nc; i++) {
 		comedi_dio_config(card, 0, i, COMEDI_OUTPUT);
 	}
 
-	PulseQueue p(16);
-	p.setPulseDT(0);
-	p.setNumSimultaneous(16);
+	PulseQueue p(g_nchan);
+	p.setPulseDT(g_dpulset);
+	p.setNumSimultaneous(g_nsimultaneous);
 	p.setPulseRate(1, 20);
 	p.setPulseRate(2, 40);
 	p.setPulseRate(3, 55);
@@ -106,8 +89,6 @@ int main()
 	ts.tv_sec = 0; // 0 seconds
 	ts.tv_nsec = 100000; // 100 micorseconds
 
-	//std::thread t1(worker, std::ref(zcontext) );
-
 	while (!s_interrupted) {
 		std::vector<int> v = p.step();
 
@@ -115,11 +96,8 @@ int main()
 
 			u32 bits = 0;
 			for (int i=0; i<(int)v.size(); i++) {
-				printf("ch = %d\t", v[i]);
 				bits |= bit(v[i]);
 			}
-
-			printf("bits = 0x%08x\n", bits);
 
 			comedi_dio_bitfield2(card, 0, 0xFFFF, &bits, 0);
 			nanosleep(&ts, NULL);
@@ -128,8 +106,6 @@ int main()
 		}
 
 	}
-
-	//t1.join();
 
 	comedi_close(card);
 
