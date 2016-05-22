@@ -1222,7 +1222,7 @@ void worker()
 
 		zmq::message_t buf;
 
-		zmq::poll(&items[0], 1, -1); //  -1 means block
+		zmq::poll(&items[0], 2, -1); //  -1 means block
 
 		if (items[0].revents & ZMQ_POLLIN) {
 			neural_sock.recv(&buf);
@@ -1672,36 +1672,31 @@ void worker()
 
 		if (items[1].revents & ZMQ_POLLIN) {
 
+			auto check_bit = [](u16 var, int n) -> bool {
+				if (n < 0 || n > 15) {
+					return false;
+				}
+				return (var) & (1<<n);
+			};
+
 			events_sock.recv(&buf);
 
 			char *ptr = (char *)buf.data();
 
-			u64 nec, ns;
+			u16 ec;
+			double ts;
+			u16 ev;
 
 			// parse message
-			memcpy(&nec, ptr+0, sizeof(u64));
-			memcpy(&ns, ptr+8, sizeof(u64));
+			memcpy(&ec, ptr+0, sizeof(u16));
+			memcpy(&ts, ptr+10, sizeof(double));
+			memcpy(&ev, ptr+18, sizeof(u16));
 
-			auto tk 	= new i64[ns];
-			auto ts 	= new double[ns];
-
-			memcpy(tk, ptr+16, sizeof(i64));
-			memcpy(ts, ptr+24, sizeof(double));
-
-			//ts[0] = g_tsc->getTime(tk[0]);
-			for (size_t i=1; i < ns; i++) {
-				tk[i] = tk[i-1] + 1;
-				ts[i] = g_tsc->getTime(tk[i]);
+			for (int i=0; i<16;i++) {
+				if (check_bit(ev, i)) {
+					g_eventraster[ec]->addEvent((float)ts, i);
+				}
 			}
-
-			auto events = new bool[nec*ns];
-
-			// need to think about how to encode and unpack
-			// events.
-			//
-			// if they're packed into a 16 bit integer
-			// then we get 16 bits per events channel
-
 
 		}
 
@@ -2526,7 +2521,7 @@ int main(int argc, char **argv)
 
 	// non-spike events
 	if (pc.numEventChannels() > 0) {
-		VboRaster *o = new VboRaster(pc.numEventChannels(), 2*NSBUF);
+		VboRaster *o = new VboRaster(pc.numEventChannels()*16, 2*NSBUF);
 		o->setColor(1.0, 1.0, 50.f/255.f, 0.75); // purple
 		g_eventraster.push_back(o);
 	}

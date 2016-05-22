@@ -335,27 +335,32 @@ void worker(zmq::context_t &ctx, vector<po8e::card *> &cards)
 			size_t nbytes = 32 + nnc*ns[0]*sizeof(i16);
 			zmq::message_t buf(nbytes);
 			char *ptr = (char *)buf.data();
-
 			memcpy(ptr+0, &nnc, sizeof(u64)); // nnc - 8 bytes
 			memcpy(ptr+8, ns, sizeof(u64)); // ns - 8 bytes
 			memcpy(ptr+16, tk, sizeof(i64)); // tk - 8 bytes
 			memcpy(ptr+24, &time, sizeof(double)); // ts - 8 bytes
 			memcpy(ptr+32, neural, nnc*ns[0]*sizeof(i16)); // data - nnc*ns bytes
-
 			neural_sock.send(buf);
 
 			// send events data
-			nbytes = 32 + nec*ns[0]*sizeof(i16);
-			buf.rebuild(nbytes);
-			ptr = (char *)buf.data();
+			for (int i=0; i<(int)nec; i++) {
+				for (int k=0; k<(int)ns[0]; k++) {
+					if (events[i*ns[0]+k] > 0) {
+						u16 ec  	= (u16)i; // event chan (0-idxed)
+						i64 tk2 	= (i64)tk[0] + k;	// tk
+						double ts2 	= (double)g_ts.getTime(tk[0] + k);	// ts
+						u16 ev  	= (u16)events[i*ns[0]+k];	// event
 
-			memcpy(ptr+0, &nec, sizeof(u64)); // nec - 8 bytes
-			memcpy(ptr+8, ns, sizeof(u64)); // ns - 8 bytes
-			memcpy(ptr+16, tk, sizeof(i64)); // tk - 8 bytes
-			memcpy(ptr+24, &time, sizeof(double)); // ts - 8 bytes
-			memcpy(ptr+32, events, nec*ns[0]*sizeof(i16)); // data - nnc*ns bytes
-
-			events_sock.send(buf);
+						buf.rebuild(20); // bytes
+						ptr = (char*)buf.data();
+						memcpy(ptr+0, &ec, sizeof(u16)); // 2 bytes
+						memcpy(ptr+2, &tk2, sizeof(u64)); // 8 bytes
+						memcpy(ptr+10, &ts2, sizeof(double)); // 8 bytes
+						memcpy(ptr+18, &ev, sizeof(u16));	// 2 bytes
+						events_sock.send(buf);
+					}
+				}
+			}
 
 			delete[] neural;
 			delete[] events;
@@ -499,7 +504,6 @@ int main(void)
 	zmq::socket_t controller(zcontext, ZMQ_PUB);
 	controller.bind("inproc://controller");
 
-
 	zmq::socket_t query(zcontext, ZMQ_REP);
 	query.bind("ipc:///tmp/po8e-query.ipc");
 
@@ -509,7 +513,10 @@ int main(void)
 
 	while (!s_interrupted) {
 
-		zmq::poll(items, 1, 50);	// 50 msec ie 20 hz
+		try {
+			zmq::poll(items, 1, 50);	// 50 msec ie 20 hz
+		}
+		catch(zmq::error_t & e) {}
 
 		zmq::message_t msg;
 
