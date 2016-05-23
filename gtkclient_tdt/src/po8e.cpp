@@ -352,7 +352,7 @@ void worker(zmq::context_t &ctx, vector<po8e::card *> &cards)
 						u16 ev  	= (u16)events[i*ns[0]+k];	// event
 
 						buf.rebuild(20); // bytes
-						ptr = (char*)buf.data();
+						ptr = (char *)buf.data();
 						memcpy(ptr+0, &ec, sizeof(u16)); // 2 bytes
 						memcpy(ptr+2, &tk2, sizeof(u64)); // 8 bytes
 						memcpy(ptr+10, &ts2, sizeof(double)); // 8 bytes
@@ -515,8 +515,7 @@ int main(void)
 
 		try {
 			zmq::poll(items, 1, 50);	// 50 msec ie 20 hz
-		}
-		catch(zmq::error_t & e) {}
+		} catch (zmq::error_t &e) {}
 
 		zmq::message_t msg;
 

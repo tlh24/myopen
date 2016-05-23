@@ -1673,7 +1673,8 @@ void worker()
 		if (items[1].revents & ZMQ_POLLIN) {
 
 			auto check_bit = [](u16 var, int n) -> bool {
-				if (n < 0 || n > 15) {
+				if (n < 0 || n > 15)
+				{
 					return false;
 				}
 				return (var) & (1<<n);
@@ -1692,7 +1693,7 @@ void worker()
 			memcpy(&ts, ptr+10, sizeof(double));
 			memcpy(&ev, ptr+18, sizeof(u16));
 
-			for (int i=0; i<16;i++) {
+			for (int i=0; i<16; i++) {
 				if (check_bit(ev, i)) {
 					g_eventraster[ec]->addEvent((float)ts, i);
 				}
