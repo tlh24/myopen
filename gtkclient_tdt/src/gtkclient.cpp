@@ -2438,12 +2438,12 @@ int main(int argc, char **argv)
 	memcpy(&nnc, (u64 *)msg.data(), sizeof(u64));
 
 	// get nec, num events channels
-	zmq::message_t msg(3);
+	msg.rebuild(3);
 	memcpy(msg.data(), "NEC", 3);
 	po8e_query_sock.send(msg);
 	msg.rebuild();
 	po8e_query_sock.recv(&msg);
-	memcpy(&mec, (u64 *)msg.data(), sizeof(u64));
+	memcpy(&nec, (u64 *)msg.data(), sizeof(u64));
 
 	//auto nnc = pc.numNeuralChannels();
 	printf("neural channels:\t%zu\n", 	nnc);
@@ -2541,8 +2541,8 @@ int main(int argc, char **argv)
 	}
 
 	// non-spike events
-	if (pc.numEventChannels() > 0) {
-		VboRaster *o = new VboRaster(pc.numEventChannels()*16, 2*NSBUF);
+	if (nec > 0) {
+		VboRaster *o = new VboRaster(nec*16, 2*NSBUF);
 		o->setColor(1.0, 1.0, 50.f/255.f, 0.75); // purple
 		g_eventraster.push_back(o);
 	}

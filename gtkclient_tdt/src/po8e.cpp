@@ -436,7 +436,7 @@ int main(void)
 
 	size_t nc = pc.numNeuralChannels();
 	printf("Neural channels:\t%zu\n", 	nc);
-	printf("Event channels:\t\t%zu\n", 	pc.numEventChannels());
+	printf("Event channels:\t\t%zu\n", 	pc.numEventsChannels());
 	printf("Analog channels:\t%zu\n", 	pc.numAnalogChannels());
 	printf("Ignored channels:\t%zu\n", 	pc.numIgnoredChannels());
 
@@ -526,7 +526,7 @@ int main(void)
 
 		auto isCommand = [](zmq::message_t &m, const char *c) {
 			return strncmp((char *) m.data(), c, m.size()) == 0;
-		}
+		};
 
 
 		if (items[0].revents & ZMQ_POLLIN) {
@@ -536,14 +536,12 @@ int main(void)
 				u64 nnc = pc.numNeuralChannels();
 				memcpy(msg.data(), &nnc, sizeof(u64));
 				query.send(msg);
-			}
-			elseif (isCommand(msg, "NEC")) {
+			} else if (isCommand(msg, "NEC")) {
 				msg.rebuild(sizeof(u64)); // bytes
 				u64 nec = pc.numEventsChannels();
 				memcpy(msg.data(), &nec, sizeof(u64));
 				query.send(msg);
-			}
-			else {
+			} else {
 				msg.rebuild(3);
 				memcpy(msg.data(), "ERR", 3);
 				query.send(msg);
