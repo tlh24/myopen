@@ -2401,6 +2401,9 @@ int main(int argc, char **argv)
 	MatStor ms(g_prefstr);
 	ms.load();
 
+	zmq::socket_t po8e_query_sock(g_zmq_context, ZMQ_REQ);
+	po8e_query_sock.connect("ipc:///tmp/po8e-query.zmq");
+
 	auto fileExists = [](const char *f) {
 		struct stat sb;
 		int res = stat(f, &sb);
@@ -2423,22 +2426,35 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	printf("po8e read size:\t\t%zu\n", 	pc.readSize());
+	u64 nnc; // num neural channels
 
-	auto nc = pc.numNeuralChannels();
-	printf("neural channels:\t%zu\n", 	nc);
+	zmq::message_t request(3);
+	memcpy(request.data(), "NNC", 3);
+	po8e_query_sock.send(request);
+
+	//  Get the reply.
+	zmq::message_t reply;
+	po8e_query_sock.recv(&reply);
+	memcpy(&nnc, (u64 *)reply.data(), sizeof(u64));
+
+	//auto nnc = pc.numNeuralChannels();
+	printf("neural channels:\t%zu\n", 	nnc);
+
+
+
+
 
 	printf("event channels:\t\t%zu\n", 	pc.numEventChannels());
 	printf("analog channels:\t%zu\n", 	pc.numAnalogChannels());
 	printf("ignored channels:\t%zu\n", 	pc.numIgnoredChannels());
 
-	if (nc == 0) {
+	if (nnc == 0) {
 		error("No neural channels? Aborting!");
 		return 1;
 	}
 
 
-	for (size_t i=0; i<(nc*NSORT); i++) {
+	for (size_t i=0; i<(nnc*NSORT); i++) {
 		auto fr = new FiringRate();
 		fr->set_bin_params(20, 1.0); // nlags, duration (sec)
 		g_fr.push_back(fr);
@@ -2474,9 +2490,9 @@ int main(int argc, char **argv)
 		}
 	}
 
-	g_artifactFilter = new ArtifactFilter(nc);
-	g_nlms = new ArtifactNLMS2(nc, &ms);
-	for (size_t i=0; i<nc; i++) {
+	g_artifactFilter = new ArtifactFilter(nnc);
+	g_nlms = new ArtifactNLMS2(nnc, &ms);
+	for (size_t i=0; i<nnc; i++) {
 #if defined KHZ_24
 		g_bandpass.push_back(FilterButterBand_24k_500_3000());
 		g_lopass.push_back(FilterButterLow_24k_3000());
@@ -2492,7 +2508,7 @@ int main(int argc, char **argv)
 	for (size_t i=0; i<g_channel.size(); i++) {
 		g_channel[i] = ms.getInt(i, "channel", i*16);
 		if (g_channel[i] < 0) g_channel[i] = 0;
-		if (g_channel[i] >= (int)nc) g_channel[i] = (int)nc-1;
+		if (g_channel[i] >= (int)nnc) g_channel[i] = (int)nnc-1;
 	}
 	for (int i=0; i<STIMCHAN; i++)
 		g_artifact.push_back(new Artifact(i, &ms));
@@ -2502,7 +2518,7 @@ int main(int argc, char **argv)
 	}
 
 	for (int i=0; i<NSORT; i++) {
-		VboRaster *o = new VboRaster(nc, NSBUF);
+		VboRaster *o = new VboRaster(nnc, NSBUF);
 		switch (i) {
 		case 0:
 			o->setColor(0.122, 0.471, 0.706, 0.3);	// blue

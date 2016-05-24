@@ -30,12 +30,14 @@ using namespace std;
 using namespace arma;
 
 running_stat<double>	g_po8eStats;
-long double g_lastPo8eTime = 0.0;
+long double 			g_lastPo8eTime = 0.0;
 
 mutex g_po8e_mutex;
 size_t g_po8e_read_size = 16; // po8e block read size
 string g_po8e_neural_socket_name = "tcp://*:1337";
 string g_po8e_events_socket_name = "tcp://*:1338";
+string g_po8e_query_socket_name = "ipc:///tmp/po8e-query.zmq";
+
 
 TimeSync 	g_ts(SRATE_HZ); //keeps track of ticks (TDT time)
 bool		s_interrupted = false;
@@ -44,6 +46,7 @@ bool		g_running = false;
 static void s_signal_handler(int)
 {
 	s_interrupted = true;
+	g_running = false;
 }
 
 static void s_catch_signals(void)
@@ -424,6 +427,8 @@ int main(void)
 	g_po8e_read_size = pc.readSize();
 	printf("po8e read size:\t\t%zu\n", 	g_po8e_read_size);
 
+	printf("po8e query socket:\t%s\n", 		g_po8e_query_socket_name.c_str());
+
 	g_po8e_neural_socket_name = pc.neuralSocketName();
 	g_po8e_events_socket_name = pc.eventsSocketName();
 	printf("po8e neural socket:\t%s\n", 	g_po8e_neural_socket_name.c_str());
@@ -505,7 +510,7 @@ int main(void)
 	controller.bind("inproc://controller");
 
 	zmq::socket_t query(zcontext, ZMQ_REP);
-	query.bind("ipc:///tmp/po8e-query.ipc");
+	query.bind(g_po8e_query_socket_name.c_str());
 
 	zmq::pollitem_t items [] = {
 		{ query, 0, ZMQ_POLLIN, 0 },
@@ -526,6 +531,7 @@ int main(void)
 				u64 nnc = pc.numNeuralChannels();
 				memcpy(msg.data(), &nnc, sizeof(u64));
 				query.send(msg);
+				//} elseif {
 			} else {
 				msg.rebuild(3);
 				memcpy(msg.data(), "ERR", 3);
