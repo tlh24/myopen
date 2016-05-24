@@ -2428,6 +2428,7 @@ int main(int argc, char **argv)
 
 	u64 nnc; // num neural channels
 	u64 nec; // num event channels
+	u64 nac; // number of analog channels
 
 	// get nnc, num neural channels
 	zmq::message_t msg(3);
@@ -2445,11 +2446,19 @@ int main(int argc, char **argv)
 	po8e_query_sock.recv(&msg);
 	memcpy(&nec, (u64 *)msg.data(), sizeof(u64));
 
+	// get nac, num events channels
+	msg.rebuild(3);
+	memcpy(msg.data(), "NAC", 3);
+	po8e_query_sock.send(msg);
+	msg.rebuild();
+	po8e_query_sock.recv(&msg);
+	memcpy(&nac, (u64 *)msg.data(), sizeof(u64));
+
 	//auto nnc = pc.numNeuralChannels();
 	printf("neural channels:\t%zu\n", 	nnc);
-	printf("events channels:\t\t%zu\n", nec);
+	printf("events channels:\t%zu\n", 	nec);
+	printf("analog channels:\t%zu\n", 	nac);
 
-	printf("analog channels:\t%zu\n", 	pc.numAnalogChannels());
 	printf("ignored channels:\t%zu\n", 	pc.numIgnoredChannels());
 
 	if (nnc == 0) {
