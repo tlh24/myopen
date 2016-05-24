@@ -16,7 +16,7 @@ public:
 	bool loadConf(const char *conf);
 	size_t numChannels(po8e::channel_DataTypes x);
 	size_t numNeuralChannels();
-	size_t numEventChannels();
+	size_t numEventsChannels();
 	size_t numAnalogChannels();
 	size_t numIgnoredChannels();
 	vector <po8e::card *> cards;

@@ -49,7 +49,7 @@ size_t po8eConf::numNeuralChannels() // helper
 {
 	return numChannels(po8e::channel::NEURAL);
 }
-size_t po8eConf::numEventChannels() // helper
+size_t po8eConf::numEventsChannels() // helper
 {
 	return numChannels(po8e::channel::EVENTS);
 }
