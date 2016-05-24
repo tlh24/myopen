@@ -546,6 +546,11 @@ int main(void)
 				u64 nac = pc.numAnalogChannels();
 				memcpy(msg.data(), &nac, sizeof(u64));
 				query.send(msg);
+			} else if (isCommand(msg, "NIC")) {
+				msg.rebuild(sizeof(u64)); // bytes
+				u64 nic = pc.numIgnoredChannels();
+				memcpy(msg.data(), &nic, sizeof(u64));
+				query.send(msg);
 			} else {
 				msg.rebuild(3);
 				memcpy(msg.data(), "ERR", 3);

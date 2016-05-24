@@ -2428,7 +2428,8 @@ int main(int argc, char **argv)
 
 	u64 nnc; // num neural channels
 	u64 nec; // num event channels
-	u64 nac; // number of analog channels
+	u64 nac; // num analog channels
+	u64 nic; // num ignored cahnnels
 
 	// get nnc, num neural channels
 	zmq::message_t msg(3);
@@ -2446,7 +2447,7 @@ int main(int argc, char **argv)
 	po8e_query_sock.recv(&msg);
 	memcpy(&nec, (u64 *)msg.data(), sizeof(u64));
 
-	// get nac, num events channels
+	// get nac, num analog channels
 	msg.rebuild(3);
 	memcpy(msg.data(), "NAC", 3);
 	po8e_query_sock.send(msg);
@@ -2454,18 +2455,24 @@ int main(int argc, char **argv)
 	po8e_query_sock.recv(&msg);
 	memcpy(&nac, (u64 *)msg.data(), sizeof(u64));
 
+	// get nic, num ignored channels
+	msg.rebuild(3);
+	memcpy(msg.data(), "NIC", 3);
+	po8e_query_sock.send(msg);
+	msg.rebuild();
+	po8e_query_sock.recv(&msg);
+	memcpy(&nic, (u64 *)msg.data(), sizeof(u64));
+
 	//auto nnc = pc.numNeuralChannels();
 	printf("neural channels:\t%zu\n", 	nnc);
 	printf("events channels:\t%zu\n", 	nec);
 	printf("analog channels:\t%zu\n", 	nac);
-
-	printf("ignored channels:\t%zu\n", 	pc.numIgnoredChannels());
+	printf("ignored channels:\t%zu\n", 	nic);
 
 	if (nnc == 0) {
 		error("No neural channels? Aborting!");
 		return 1;
 	}
-
 
 	for (size_t i=0; i<(nnc*NSORT); i++) {
 		auto fr = new FiringRate();
@@ -2473,17 +2480,9 @@ int main(int argc, char **argv)
 		g_fr.push_back(fr);
 	}
 
-	// TODO
-	// interesting. okay so here we need to ask the po8e server
-	// how many channels we have, etc that or parse the po8e conf file
-	// ourselves
-	//
-	// minimally need to know:
-	//
-	// the number of neural channels
+	// TODO ask po8e zmq:
 	// the name for each neural channel
 	// the scale factor for each neural channel
-	// number of event channels
 
 
 	size_t nc_i = 0;
