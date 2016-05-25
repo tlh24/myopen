@@ -1240,17 +1240,13 @@ void worker()
 				ts[i] = g_tsc->getTime(tk[i]);
 			}
 
-			auto raw = new i16[nnc * ns];
-			memcpy(raw, ptr+32, nnc*ns*sizeof(i16));
-
-			//size_t nnc = g_c.size(); // num neural channels
-
 			auto f = new float[nnc * ns];
+			memcpy(f, ptr+32, nnc*ns*sizeof(float));
+
+			// can more efficiently fill X, i think
 			mat X(nnc, ns);
 			for (size_t i=0; i<nnc; i++) {
-				auto scale_factor = g_c[i]->m_scaleFactor;
 				for (size_t k=0; k<ns; k++) {
-					f[i*ns+k] = (float)raw[i*ns+k]/scale_factor;
 					X(i, k) = f[i*ns+k];
 				}
 			}
@@ -1316,6 +1312,10 @@ void worker()
 			//blank[k] = p[1].data[10*ns + k] > 0;
 
 			// write (pre-filtered) broadband signal to disk
+
+			/*
+			// disbale saving for now
+
 			if (g_analogwriter_prefilter.isEnabled()) {
 
 				AD *ad; // analog data
@@ -1370,6 +1370,8 @@ void worker()
 				// ad and associanted memory freed by other other thread
 				g_analogwriter_prefilter.add(ad);
 			}
+
+			*/
 
 			// fill artifact filtering buffers (for other thread)
 			// we do both training and filtering before filtering
@@ -1547,6 +1549,10 @@ void worker()
 			}
 
 			// write (post-filtered) broadband signal to disk
+			// disable for now
+
+			/*
+
 			if (g_analogwriter_postfilter.isEnabled()) {
 
 				AD *ad; // analog data
@@ -1602,6 +1608,8 @@ void worker()
 				g_analogwriter_postfilter.add(ad);
 			}
 
+			*/
+
 			auto audio 	= new float[ns];
 
 			// input data is scaled from TDT so that 32767 = 10mV.
@@ -1655,7 +1663,7 @@ void worker()
 			delete[] tk;
 			delete[] ts;
 			delete[] f;
-			delete[] raw;
+			//delete[] raw;
 			delete[] audio;
 			// XXX reenable soon
 			//delete[] events;

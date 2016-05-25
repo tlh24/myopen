@@ -288,10 +288,8 @@ void worker(zmq::context_t &ctx, vector<po8e::card *> &cards)
 			}
 			time /= n;
 
-			if (mismatch) { // exit the worker; no data will be processed
+			if (mismatch) { // exit the worker; no more data will be processed
 				break;
-				// XXX CLEANUP MEMORY HERE
-
 			}
 
 			// XXX TODO when to reset the running stats?
@@ -307,7 +305,7 @@ void worker(zmq::context_t &ctx, vector<po8e::card *> &cards)
 
 			// package up neural data and event here
 
-			auto neural = new i16[nnc * ns[0]];
+			auto neural = new float[nnc * ns[0]];
 			auto events = new i16[nec * ns[0]];
 			size_t nc_i = 0;
 			size_t ne_i = 0;
@@ -316,7 +314,9 @@ void worker(zmq::context_t &ctx, vector<po8e::card *> &cards)
 					switch (cards[i]->channel(j).data_type()) {
 					case po8e::channel::NEURAL:
 						for (size_t k=0; k<ns[0]; k++) {
-							neural[nc_i*ns[0]+k] = data[i][j*ns[0]+k];
+							neural[nc_i*ns[0]+k] = (float)data[i][j*ns[0]+k];
+							neural[nc_i*ns[0]+k] /= cards[i]->channel(j).scale_factor();
+							neural[nc_i*ns[0]+k] *= 1e6; // convert to uV
 						}
 						nc_i++;
 						break;
@@ -335,14 +335,14 @@ void worker(zmq::context_t &ctx, vector<po8e::card *> &cards)
 			}
 
 			// send neural data
-			size_t nbytes = 32 + nnc*ns[0]*sizeof(i16);
+			size_t nbytes = 32 + nnc*ns[0]*sizeof(float);
 			zmq::message_t buf(nbytes);
 			char *ptr = (char *)buf.data();
 			memcpy(ptr+0, &nnc, sizeof(u64)); // nnc - 8 bytes
 			memcpy(ptr+8, ns, sizeof(u64)); // ns - 8 bytes
 			memcpy(ptr+16, tk, sizeof(i64)); // tk - 8 bytes
 			memcpy(ptr+24, &time, sizeof(double)); // ts - 8 bytes
-			memcpy(ptr+32, neural, nnc*ns[0]*sizeof(i16)); // data - nnc*ns bytes
+			memcpy(ptr+32, neural, nnc*ns[0]*sizeof(float)); // data - nnc*ns bytes
 			neural_sock.send(buf);
 
 			// send events data
