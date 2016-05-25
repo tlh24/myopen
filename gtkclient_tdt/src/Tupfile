@@ -35,4 +35,4 @@ pulse_queue.cpp pulser.cpp
 : po8e_conf.cpp | ../proto/po8e.pb.h |> !cpp |> %B.o
 : icms2mat.cpp | ../proto/icms.pb.h |> !cpp |> %B.o
 : icmswriter.cpp | ../proto/icms.pb.h |> !cpp |> %B.o
-: gtkclient.cpp | ../proto/icms.pb.h ../proto/po8e.pb.h |> !cpp |> %B.o
+: gtkclient.cpp | ../proto/icms.pb.h |> !cpp |> %B.o

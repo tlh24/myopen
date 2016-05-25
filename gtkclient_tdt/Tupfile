@@ -39,8 +39,6 @@ LDFLAGS += `pkg-config --libs $(PKG_LIBS)`
 ../common_host/glInfo.o \
 ../common_host/random.o \
 ../common_host/jacksnd.o \
-../common_host/lconf.o \
-../common_host/domainSocket.o \
 src/vbo_raster.o \
 src/vbo_timeseries.o \
 src/datawriter.o \
@@ -52,6 +50,4 @@ src/filter.o \
 src/spikebuffer.o \
 src/artifact_filter.o \
 src/nlms2.o \
-src/po8e_conf.o \
-proto/icms.pb.o \
-proto/po8e.pb.o |> !ld |> gtkclient
+proto/icms.pb.o |> !ld |> gtkclient

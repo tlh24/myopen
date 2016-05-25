@@ -49,9 +49,6 @@
 
 #include "readerwriterqueue.h"
 
-//#include "PO8e.h"
-#include "po8e_conf.h"
-
 #include "gettime.h"
 #include "cgVertexShader.h"
 #include "vbo.h"
@@ -71,8 +68,6 @@
 #include "artifact_filter.h"
 #include "nlms2.h"
 #include "util.h"
-
-#include "domainSocket.h"
 
 #include "icms.pb.h"
 
@@ -107,8 +102,6 @@ float	g_viewportSize[2] = {640, 480}; //width, height.
 class Channel;
 class Artifact;
 
-domainSocketClient g_sock;
-
 vector <VboTimeseries *> g_timeseries;
 vector <VboRaster *> g_spikeraster;
 vector <VboRaster *> g_eventraster;
@@ -116,7 +109,7 @@ vector <VboRaster *> g_eventraster;
 
 ReaderWriterQueue<mat *> g_filterbuf(1024); // for nlms filtering
 
-vector <pair<ReaderWriterQueue<PO8Data *>*, po8e::card *>> g_dataqueues;
+//vector <pair<ReaderWriterQueue<PO8Data *>*, po8e::card *>> g_dataqueues;
 
 float g_zoomSpan = 1.0;
 
@@ -189,9 +182,9 @@ bool 	g_addPoly = false;
 
 vector<int> g_channel {0,32,64,95};
 
-long double g_lastPo8eTime = 0.0;
-long double g_po8ePollInterval = 0.0;
-long double g_po8eAvgInterval = 0.0;
+//long double g_lastPo8eTime = 0.0;
+//long double g_po8ePollInterval = 0.0;
+//long double g_po8eAvgInterval = 0.0;
 
 int g_whichSpikePreEmphasis = 0;
 enum EMPHASIS {
@@ -2404,28 +2397,6 @@ int main(int argc, char **argv)
 	zmq::socket_t po8e_query_sock(g_zmq_context, ZMQ_REQ);
 	po8e_query_sock.connect("ipc:///tmp/po8e-query.zmq");
 
-	auto fileExists = [](const char *f) {
-		struct stat sb;
-		int res = stat(f, &sb);
-		if (res == 0)
-			if (S_ISREG(sb.st_mode))
-				return true;
-		return false;
-	};
-
-	// load the lua-based po8e config
-	po8eConf pc;
-	bool conf_ok = false;
-	if (fileExists("po8e.rc")) {
-		conf_ok = pc.loadConf("po8e.rc");
-	} else if (fileExists("rc/po8e.rc")) {
-		conf_ok = pc.loadConf("rc/po8e.rc");
-	}
-	if (!conf_ok) {
-		error("No config file! Aborting!");
-		return 1;
-	}
-
 	u64 nnc; // num neural channels
 	u64 nec; // num event channels
 	u64 nac; // num analog channels
@@ -2463,7 +2434,6 @@ int main(int argc, char **argv)
 	po8e_query_sock.recv(&msg);
 	memcpy(&nic, (u64 *)msg.data(), sizeof(u64));
 
-	//auto nnc = pc.numNeuralChannels();
 	printf("neural channels:\t%zu\n", 	nnc);
 	printf("events channels:\t%zu\n", 	nec);
 	printf("analog channels:\t%zu\n", 	nac);
@@ -2480,26 +2450,39 @@ int main(int argc, char **argv)
 		g_fr.push_back(fr);
 	}
 
-	// TODO ask po8e zmq:
-	// the name for each neural channel
-	// the scale factor for each neural channel
+	for (u64 ch=0; ch<nnc; ch++) {
 
+		auto o = new Channel(ch, &ms);
 
-	size_t nc_i = 0;
-	for (auto &c : pc.cards) {
-		if (c->enabled()) {
-			for (int j=0; j<c->channel_size(); j++) {
-				if (c->channel(j).data_type() == po8e::channel::NEURAL) {
-					auto o = new Channel(nc_i, &ms);
-					o->m_chanName = c->channel(j).name();
-					float scale_factor = (float)c->channel(j).scale_factor();
-					scale_factor /= 1e6; // to get uV
-					o->m_scaleFactor = scale_factor;
-					g_c.push_back(o);
-					nc_i++;
-				}
-			}
-		}
+		// NC : X : NAME
+		msg.rebuild(2);
+		memcpy(msg.data(), "NC", 2);
+		po8e_query_sock.send(msg, ZMQ_SNDMORE);
+		msg.rebuild(sizeof(u64));
+		memcpy(msg.data(), &ch, sizeof(u64));
+		po8e_query_sock.send(msg, ZMQ_SNDMORE);
+		msg.rebuild(4);
+		memcpy(msg.data(), "NAME", 4);
+		po8e_query_sock.send(msg);
+		msg.rebuild();
+		po8e_query_sock.recv(&msg);
+		o->m_chanName = (char *)msg.data();
+
+		// NC : X : SCALE
+		msg.rebuild(2);
+		memcpy(msg.data(), "NC", 2);
+		po8e_query_sock.send(msg, ZMQ_SNDMORE);
+		msg.rebuild(sizeof(u64));
+		memcpy(msg.data(), &ch, sizeof(u64));
+		po8e_query_sock.send(msg, ZMQ_SNDMORE);
+		msg.rebuild(5);
+		memcpy(msg.data(), "SCALE", 5);
+		po8e_query_sock.send(msg);
+		msg.rebuild();
+		po8e_query_sock.recv(&msg);
+
+		memcpy(&(o->m_scaleFactor), (float *)msg.data(), sizeof(float *));
+		g_c.push_back(o);
 	}
 
 	g_artifactFilter = new ArtifactFilter(nnc);
@@ -2601,12 +2584,6 @@ int main(int argc, char **argv)
 	g_enableStimClockBlanking = (bool)ms.getStructValue("icms", "blank_clock_enable", 0, (float)g_enableStimClockBlanking);
 
 	//g_dropped = 0;
-
-	if (g_sock.Connect("/tmp/parasrv.sock")) {
-		printf("connected to parasrv socket\n");
-	} else {
-		warn("cannot connect to socket");
-	}
 
 	gtk_init (&argc, &argv);
 	gtk_gl_init(&argc, &argv);
@@ -3293,10 +3270,10 @@ int main(int argc, char **argv)
 	g_analogwriter_prefilter.close();
 	g_analogwriter_postfilter.close();
 
-	for (auto &q : g_dataqueues) {
-		delete q.first;
-		// q.second is deleted when the po8e_conf object is destructed
-	}
+	//for (auto &q : g_dataqueues) {
+	//	delete q.first;
+	// q.second is deleted when the po8e_conf object is destructed
+	//}
 
 	// clean out our standard vectors
 	for (auto &o : g_c)

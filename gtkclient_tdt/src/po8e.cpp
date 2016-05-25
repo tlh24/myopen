@@ -504,6 +504,20 @@ int main(void)
 		return 1;
 	}
 
+	std::vector<std::pair<std::string,float>> neural_name_scale;
+
+	for (auto &c : cards) {
+		if (c->enabled()) {
+			for (int j=0; j<c->channel_size(); j++) {
+				if (c->channel(j).data_type() == po8e::channel::NEURAL) {
+					neural_name_scale.emplace_back(
+					    c->channel(j).name(),
+					    (float)c->channel(j).scale_factor()/1e6); // uV
+				}
+			}
+		}
+	}
+
 	threads.push_back(thread(worker, std::ref(zcontext), std::ref(cards)));
 
 	zmq::socket_t controller(zcontext, ZMQ_PUB);
@@ -551,6 +565,26 @@ int main(void)
 				u64 nic = pc.numIgnoredChannels();
 				memcpy(msg.data(), &nic, sizeof(u64));
 				query.send(msg);
+			} else if (isCommand(msg, "NC")) {
+				query.recv(&msg); // get the channel number (zero-indexed)
+				u64 ch;
+				memcpy(&ch, (u64 *)msg.data(), sizeof(u64));
+				query.recv(&msg); // get sub-command
+				if (isCommand(msg, "NAME")) {
+					std::string s = neural_name_scale[ch].first;
+					msg.rebuild(s.size()); // bytes
+					memcpy(msg.data(), s.c_str(), s.size());
+					query.send(msg);
+				} else if (isCommand(msg, "SCALE")) {
+					float f = neural_name_scale[ch].second;
+					msg.rebuild(sizeof(float)); // bytes
+					memcpy(msg.data(), &f, sizeof(float));
+					query.send(msg);
+				} else {
+					msg.rebuild(3);
+					memcpy(msg.data(), "ERR", 3);
+					query.send(msg);
+				}
 			} else {
 				msg.rebuild(3);
 				memcpy(msg.data(), "ERR", 3);
