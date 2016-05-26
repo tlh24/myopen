@@ -21,6 +21,7 @@ LDFLAGS += -larmadillo
 
 : src/af.o ../common_host/util.o src/artifact_filter.o |> !ld |> af
 : src/bp.o ../common_host/util.o src/filter.o |> !ld |> bp
+: src/notch.o ../common_host/util.o src/filter.o |> !ld |> notch
 
 PKG_LIBS  = gtk+-2.0 blas-openblas gtkglext-1.0 matio uuid gl glu
 
@@ -47,7 +48,6 @@ src/icmswriter.o \
 src/h5writer.o \
 src/h5spikewriter.o \
 src/h5analogwriter.o \
-src/filter.o \
 src/spikebuffer.o \
 src/artifact_filter.o \
 src/nlms2.o \

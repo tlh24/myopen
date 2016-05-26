@@ -500,3 +500,57 @@ FilterButterHigh_48k_500::FilterButterHigh_48k_500()
 	d.push_back(0);
 	d.push_back(0);
 }
+
+
+
+// 2nd-order IIR Notch filter
+// 60 Hz @ 24 kHz and Q-factor of 35
+// Create with MATLAB like so:
+/*
+n = 2;
+sr = 24414.0625;
+Wn = 60*2/sr;
+bw = Wn/35;
+[B,A] = iirnotch(Wn, bw);
+sprintf('B.push_back(%0.15e);\n',B)
+sprintf('A.push_back(%0.15e);\n',A)
+sprintf('d.push_back(%d);\n', zeros(n,1))
+*/
+FilterNotch_24k_60::FilterNotch_24k_60()
+{
+	B.push_back(9.997794549870981e-01);
+	B.push_back(-1.999320525639886e+00);
+	B.push_back(9.997794549870981e-01);
+	A.push_back(1.000000000000000e+00);
+	A.push_back(-1.999320525639886e+00);
+	A.push_back(9.995589099741962e-01);
+	d.push_back(0);
+	d.push_back(0);
+}
+
+
+
+// 2nd-order IIR Notch filter
+// 60 Hz @ 48 kHz and Q-factor of 35
+// Create with MATLAB like so:
+/*
+n = 2;
+sr = 48828.1250;
+Wn = 60*2/sr;
+bw = Wn/35;
+[B,A] = iirnotch(Wn, bw);
+sprintf('B.push_back(%0.15e);\n',B)
+sprintf('A.push_back(%0.15e);\n',A)
+sprintf('d.push_back(%d);\n', zeros(n,1))
+*/
+FilterNotch_48k_60::FilterNotch_48k_60()
+{
+	B.push_back(9.998897153335239e-01);
+	B.push_back(-1.999719827122692e+00);
+	B.push_back(9.998897153335239e-01);
+	A.push_back(1.000000000000000e+00);
+	A.push_back(-1.999719827122692e+00);
+	A.push_back(9.997794306670478e-01);
+	d.push_back(0);
+	d.push_back(0);
+}

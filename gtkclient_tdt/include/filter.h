@@ -115,4 +115,16 @@ public:
 	FilterButterHigh_48k_500();
 };
 
+// NOTCH
+class FilterNotch_24k_60 : public Filter
+{
+public:
+	FilterNotch_24k_60();
+};
+class FilterNotch_48k_60 : public Filter
+{
+public:
+	FilterNotch_48k_60();
+};
+
 #endif

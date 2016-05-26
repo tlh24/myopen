@@ -1184,7 +1184,7 @@ void worker()
 	// Prepare our sockets
 
 	zmq::socket_t neural_sock(g_zmq_context, ZMQ_SUB);
-	neural_sock.connect("ipc:///tmp/bp.zmq");
+	neural_sock.connect("ipc:///tmp/broadband.zmq");
 	neural_sock.setsockopt(ZMQ_SUBSCRIBE, "", 0);
 
 	zmq::socket_t events_sock(g_zmq_context, ZMQ_SUB);

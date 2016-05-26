@@ -147,7 +147,6 @@ void filter(zmq::context_t &ctx, std::string zout, ArtifactNLMS3 &nlms)
 
 			msg.rebuild(32+nnc*ns*sizeof(i16));
 			memcpy(msg.data(), buf, msg.size());
-
 			socket_out.send(msg);
 
 			delete[] buf;

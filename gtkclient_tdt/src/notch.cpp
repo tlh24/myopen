@@ -4,8 +4,6 @@
 #include "util.h"
 #include "filter.h"
 
-// bandpass filter
-
 bool s_interrupted = false;
 
 static void s_signal_handler(int)
@@ -26,21 +24,13 @@ static void s_catch_signals(void)
 
 int main(int argc, char *argv[])
 {
-	// bp [ lo ] [ hi ] [zmq in] [ zmq out ]
-
-	int lo, hi;
 	std::string zin, zout;
 
-	lo   = argc > 1 ? atoi(argv[1]) : 300;
-	hi   = argc > 2 ? atoi(argv[2]) : 3000;
 	zin  = argc > 3 ? argv[3] : "ipc:///tmp/broadband.zmq";
-	zout = argc > 4 ? argv[4] : "ipc:///tmp/bp.zmq";
+	zout = argc > 4 ? argv[4] : "ipc:///tmp/notch.zmq";
 
-	printf("band-pass filter (IIR, 4th order Butterworth)\n");
-	printf("usage: bp [lo=(300|500)] [hi=(3000|5000)] [zmq_sub] [zmq_pub]\n\n");
-
-	printf("lo cutoff: %d\n", lo);
-	printf("hi cutoff: %d\n", hi);
+	printf("notch filter (60 Hz, 2nd order IIR, Q=35)\n");
+	printf("usage: notch [zmq_sub] [zmq_pub]\n\n");
 
 	printf("ZMQ SUB: %s\n", zin.c_str());
 	printf("ZMQ PUB: %s\n", zout.c_str());
@@ -50,7 +40,7 @@ int main(int argc, char *argv[])
 
 	zmq::context_t zcontext(1);	// single zmq thread
 
-	if (check_running("bp")) {
+	if (check_running("notch")) {
 		error("executable already running");
 		return 1;
 	}
@@ -66,39 +56,13 @@ int main(int argc, char *argv[])
 	po8e_query_sock.recv(&msg);
 	memcpy(&nnc, (u64 *)msg.data(), sizeof(u64));
 
-	vector <Filter *> bandpass;
+	vector <Filter *> notch;
 
 	for (size_t i=0; i<nnc; i++) {
 #if defined KHZ_24
-		switch (lo+hi) {
-		case 3300:
-			bandpass.push_back(new FilterButterBand_24k_300_3000());
-			break;
-		case 5300:
-			bandpass.push_back(new FilterButterBand_24k_300_5000());
-			break;
-		case 3500:
-			bandpass.push_back(new FilterButterBand_24k_500_3000());
-			break;
-		case 5500:
-			bandpass.push_back(new FilterButterBand_24k_500_5000());
-			break;
-		}
+		notch.push_back(new FilterNotch_24k_60());
 #elif defined KHZ_48
-		switch (lo+hi) {
-		case 3300:
-			bandpass.push_back(new FilterButterBand_48k_300_3000());
-			break;
-		case 5300:
-			bandpass.push_back(new FilterButterBand_48k_300_5000());
-			break;
-		case 3500:
-			bandpass.push_back(new FilterButterBand_48k_500_3000());
-			break;
-		case 5500:
-			bandpass.push_back(new FilterButterBand_48k_500_5000());
-			break;
-		}
+		notch.push_back(new FilterNotch_48k_60());
 #else
 #error Bad sampling rate!
 #endif
@@ -156,7 +120,7 @@ int main(int argc, char *argv[])
 			memcpy(f, buf+32, nc*ns*sizeof(float));
 
 			for (size_t i=0; i<nc; i++) {
-				bandpass[i]->Proc(&(f[i*ns]), &(f[i*ns]), ns);
+				notch[i]->Proc(&(f[i*ns]), &(f[i*ns]), ns);
 			}
 
 			// copy the filtered data back to the buffer
@@ -184,7 +148,7 @@ int main(int argc, char *argv[])
 
 	}
 
-	for (auto &x : bandpass) {
+	for (auto &x : notch) {
 		delete x;
 	}
 
