@@ -4,6 +4,7 @@ convert2
 spikes2mat
 icms2mat
 mmap_test
+noop
 po8e
 bp
 notch

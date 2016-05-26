@@ -19,9 +19,10 @@ src/po8e_conf.o |> !ld |> po8e
 LDFLAGS += `pkg-config --libs hdf5`
 LDFLAGS += -larmadillo
 
-: src/af.o ../common_host/util.o src/artifact_filter.o |> !ld |> af
+: src/noop.o ../common_host/util.o |> !ld |> noop
 : src/bp.o ../common_host/util.o src/filter.o |> !ld |> bp
 : src/notch.o ../common_host/util.o src/filter.o |> !ld |> notch
+: src/af.o ../common_host/util.o src/artifact_filter.o |> !ld |> af
 
 PKG_LIBS  = gtk+-2.0 blas-openblas gtkglext-1.0 matio uuid gl glu
 

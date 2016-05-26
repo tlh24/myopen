@@ -1,5 +1,4 @@
 #include <signal.h>				// for signal, SIGINT
-#include <thread>
 #include <zmq.hpp>
 #include "util.h"
 #include "filter.h"
