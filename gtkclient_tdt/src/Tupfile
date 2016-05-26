@@ -8,6 +8,7 @@ CPPFLAGS += `pkg-config --cflags libzmq luajit libprocps protobuf`
 CPPFLAGS += `pkg-config --cflags hdf5`
 
 : af.cpp |> !cpp |> %B.o
+: bp.cpp |> !cpp |> %B.o
 
 PKG_LIBS  = gtk+-2.0 blas-openblas gtkglext-1.0 matio uuid gl glu
 
