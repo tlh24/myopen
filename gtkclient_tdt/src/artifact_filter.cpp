@@ -44,7 +44,7 @@ void ArtifactFilter::clearWeights()
 
 ArtifactNLMS3::ArtifactNLMS3(int _n) : ArtifactFilter(_n)
 {
-	mu = 1e-5; // reasonable default
+	mu = 1e-6; // reasonable default
 }
 
 ArtifactNLMS3::~ArtifactNLMS3()
@@ -66,6 +66,8 @@ void ArtifactNLMS3::train(mat X)
 	// copy X -> Y
 	mat Y(X);
 
+	mat Z(W);	// copy W -> Z
+
 	for (size_t i=0; i<n; i++) {
 
 		X.row(i).zeros();
@@ -84,10 +86,15 @@ void ArtifactNLMS3::train(mat X)
 
 			// w(k+1) = w(k) + x(k) * temp(k)
 			// scalar has to come second because of operator overloading
-			W.col(i) += X.col(k) * temp;
+			Z.col(i) += X.col(k) * temp;
 		}
 
 		X.row(i) = Y.row(i);
+	}
+
+	{
+		lock_guard<mutex> lock(mtx);
+		W = Z;
 	}
 
 }

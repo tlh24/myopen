@@ -5,8 +5,6 @@
 #include "util.h"
 #include "artifact_filter.h"
 
-// af - the Artifact Filter
-
 bool s_interrupted = false;
 
 static void s_signal_handler(int)
@@ -25,7 +23,7 @@ static void s_catch_signals(void)
 	sigaction(SIGTERM, &action, NULL);
 }
 
-void trainer(zmq::context_t &ctx, ArtifactNLMS3 &nlms)
+void trainer(zmq::context_t &ctx, ArtifactNLMS3 &af)
 {
 
 	// for data
@@ -55,25 +53,25 @@ void trainer(zmq::context_t &ctx, ArtifactNLMS3 &nlms)
 
 			char *ptr = (char *)buf.data();
 
-			u64 nnc, ns;
+			u64 nc, ns;
 
 			// parse message
-			memcpy(&nnc, ptr+0, sizeof(u64));
+			memcpy(&nc, ptr+0, sizeof(u64));
 			memcpy(&ns, ptr+8, sizeof(u64));
 
-			auto data = new i16[nnc * ns];
-			memcpy(data, ptr+32, nnc*ns*sizeof(i16));
+			auto f = new float[nc*ns];
+			memcpy(f, ptr+32, nc*ns*sizeof(float));
 
-			mat X(nnc, ns);
-			for (size_t i=0; i<nnc; i++) {
+			mat X(nc, ns);
+			for (size_t i=0; i<nc; i++) {
 				for (size_t k=0; k<ns; k++) {
-					X(i, k) = data[i*ns+k];
+					X(i, k) = f[i*ns+k];
 				}
 			}
 
-			nlms.train(X);
+			af.train(X);
 
-			delete[] data;
+			delete[] f;
 		}
 
 		if (items[1].revents & ZMQ_POLLIN) {
@@ -83,7 +81,8 @@ void trainer(zmq::context_t &ctx, ArtifactNLMS3 &nlms)
 	}
 }
 
-void filter(zmq::context_t &ctx, std::string zout, ArtifactNLMS3 &nlms)
+void filter(zmq::context_t &ctx, std::string zin, std::string zout,
+            ArtifactNLMS3 &af)
 {
 
 	zmq::socket_t socket_in(ctx, ZMQ_SUB);
@@ -104,6 +103,17 @@ void filter(zmq::context_t &ctx, std::string zout, ArtifactNLMS3 &nlms)
 		{ controller, 	0, ZMQ_POLLIN, 0 }
 	};
 
+	int waiter = 0;
+	int counter = 0;
+	std::vector<const char *> spinner;
+	spinner.emplace_back(">>>    >>>");
+	spinner.emplace_back(" >>>    >>");
+	spinner.emplace_back("  >>>    >");
+	spinner.emplace_back("   >>>    ");
+	spinner.emplace_back("    >>>   ");
+	spinner.emplace_back(">    >>>  ");
+	spinner.emplace_back(">>    >>> ");
+
 	while (true) {
 
 		zmq::message_t msg;
@@ -117,35 +127,35 @@ void filter(zmq::context_t &ctx, std::string zout, ArtifactNLMS3 &nlms)
 			auto buf = new char[msg.size()];
 			memcpy(buf, msg.data(), msg.size());
 
-			u64 nnc, ns;
+			u64 nc, ns;
 
 			// parse message
-			memcpy(&nnc, buf+0, sizeof(u64));
+			memcpy(&nc, buf+0, sizeof(u64));
 			memcpy(&ns, buf+8, sizeof(u64));
 
-			auto raw = new i16[nnc * ns];
-			memcpy(raw, buf+32, nnc*ns*sizeof(i16));
+			auto f = new float[nc*ns];
+			memcpy(f, buf+32, nc*ns*sizeof(float));
 
-			mat X(nnc, ns);
-			for (size_t i=0; i<nnc; i++) {
+			mat X(nc, ns);
+			for (size_t i=0; i<nc; i++) {
 				for (size_t j=0; j<ns; j++) {
-					X(i, j) = raw[i*ns+j];
+					X(i, j) = f[i*ns+j];
 				}
 			}
 
-			mat Y = nlms.filter(X);
+			mat Y = af.filter(X);
 
-			for (size_t i=0; i<nnc; i++) {
+			for (size_t i=0; i<nc; i++) {
 				for (size_t j=0; j<ns; j++) {
-					raw[i*ns+j] -= Y(i, j);
+					f[i*ns+j] -= Y(i, j);
 				}
 			}
 
-			memcpy(buf+32, raw, nnc*ns*sizeof(i16));
+			memcpy(buf+32, f, nc*ns*sizeof(float));
 
-			delete[] raw;
+			delete[] f;
 
-			msg.rebuild(32+nnc*ns*sizeof(i16));
+			msg.rebuild(32+nc*ns*sizeof(float));
 			memcpy(msg.data(), buf, msg.size());
 			socket_out.send(msg);
 
@@ -157,27 +167,32 @@ void filter(zmq::context_t &ctx, std::string zout, ArtifactNLMS3 &nlms)
 			break;
 		}
 
+		if (waiter % 200 == 0) {
+			printf(" [%s]%s[%s]\r",
+			       zin.c_str(),
+			       spinner[counter % spinner.size()],
+			       zout.c_str());
+			fflush(stdout);
+			counter++;
+		}
+		waiter++;
+
 	}
 }
 
 int main(int argc, char *argv[])
 {
-	std::string zin, zout;
-	if (argc > 1) {
-		zin = argv[1];
-	} else {
-		zin = "ipc:///tmp/po8e.zmq";
-	}
-	if (argc > 2) {
-		zout = argv[2];
-	} else {
-		zout = "ipc:///tmp/af.zmq";
-	}
+	// af [zmq_sub] [zmq_pub]
+
+	std::string zin  = argc > 1 ? argv[1] : "ipc:///tmp/broadband.zmq";
+	std::string zout = argc > 2 ? argv[2] : "ipc:///tmp/af.zmq";
 
 	printf("artifact filter\n");
-	printf("usage: af [insock] [outsock]\n\n");
-	printf("receiving on\t%s\n", zin.c_str());
-	printf("sending on\t%s\n", zout.c_str());
+	printf("usage: af [zmq_sub] [zmq_pub]\n\n");
+
+	printf("ZMQ SUB: %s\n", zin.c_str());
+	printf("ZMQ PUB: %s\n", zout.c_str());
+	printf("\n");
 
 	s_catch_signals();
 
@@ -188,15 +203,21 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	// xxx need to ask po8e for how many channels there are here, i guess
+	zmq::socket_t po8e_query_sock(zcontext, ZMQ_REQ);
+	po8e_query_sock.connect("ipc:///tmp/po8e-query.zmq");
 
-	ArtifactNLMS3 nlms(192); // XXX hardcoded
-	nlms.setMu(1e-6);
+	u64 nnc; // num neural channels
+	zmq::message_t msg(3);
+	memcpy(msg.data(), "NNC", 3);
+	po8e_query_sock.send(msg);
+	msg.rebuild();
+	po8e_query_sock.recv(&msg);
+	memcpy(&nnc, (u64 *)msg.data(), sizeof(u64));
 
-	// xxx also need to load config from luaconf
+	ArtifactNLMS3 af(nnc);
 
-	std::thread t1(trainer, std::ref(zcontext), std::ref(nlms));
-	std::thread t2(filter, std::ref(zcontext), zout, std::ref(nlms));
+	std::thread t1(trainer, std::ref(zcontext), std::ref(af));
+	std::thread t2(filter, std::ref(zcontext), zin, zout, std::ref(af));
 
 	// here is what will do:
 	// subscribe to messages from po8e (tcp)
@@ -206,7 +227,7 @@ int main(int argc, char *argv[])
 
 	// this socket subscribes to messages sent from the po8e
 	zmq::socket_t subscriber(zcontext, ZMQ_XSUB);
-	subscriber.connect(zin.c_str()); // XXX hardcoded for now!!!
+	subscriber.connect(zin.c_str());
 
 	// this socket publishes received message to local threads
 	zmq::socket_t publisher(zcontext, ZMQ_XPUB);
@@ -221,12 +242,12 @@ int main(int argc, char *argv[])
 	} catch (zmq::error_t &e) {}
 
 	std::string s("KILL");
-	zmq::message_t msg(s.size());
+	msg.rebuild(s.size());
 	memcpy(msg.data(), s.c_str(), s.size());
 	controller.send(msg);
 
 	t1.join();
 	t2.join();
-	nlms.saveWeights("nlms.h5");
+	af.saveWeights("af.h5");
 	printf("\nsaving weights\n");
 }

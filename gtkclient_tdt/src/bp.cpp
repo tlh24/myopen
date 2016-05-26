@@ -4,8 +4,6 @@
 #include "util.h"
 #include "filter.h"
 
-// bandpass filter
-
 bool s_interrupted = false;
 
 static void s_signal_handler(int)

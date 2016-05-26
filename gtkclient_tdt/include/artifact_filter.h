@@ -1,6 +1,8 @@
 #ifndef __ARTIFACT_FILTER_H__
 #define	__ARTIFACT_FILTER_H__
 
+#include <atomic>
+#include <mutex>
 #include <armadillo>
 
 using namespace std;
@@ -11,6 +13,8 @@ class ArtifactFilter
 protected:
 	size_t n;		// order of the filter
 	mat W;			// weights (n by n)
+
+	mutex mtx;
 
 public:
 
