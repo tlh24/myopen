@@ -132,18 +132,9 @@ H5AnalogWriter	g_analogwriter_prefilter;
 vector <Artifact *> g_artifact;
 ICMSWriter g_icmswriter;
 
-gboolean g_lopassNeurons = false;
-gboolean g_hipassNeurons = false;
-
 #if defined KHZ_24
-vector <FilterButterBand_24k_500_3000> g_bandpass;
-vector <FilterButterLow_24k_3000> g_lopass;
-vector <FilterButterHigh_24k_500> g_hipass;
 double g_sr = 24414.0625;
 #elif defined KHZ_48
-vector <FilterButterBand_48k_500_3000> g_bandpass;
-vector <FilterButterLow_48k_3000> g_lopass;
-vector <FilterButterHigh_48k_500> g_hipass;
 double g_sr = 48828.1250;
 #else
 #error Bad sampling rate!
@@ -280,9 +271,6 @@ void saveState()
 	ms.setStructValue("wf","show_std",0,(float)g_showWFstd);
 
 	ms.setStructValue("wf","span",0,g_zoomSpan);
-
-	ms.setStructValue("filter","lopass",0,(float)g_lopassNeurons);
-	ms.setStructValue("filter","hipass",0,(float)g_hipassNeurons);
 
 	ms.setStructValue("icms","filter_run",0,(float)g_artifactFilterRun);
 
@@ -1196,7 +1184,7 @@ void worker()
 	// Prepare our sockets
 
 	zmq::socket_t neural_sock(g_zmq_context, ZMQ_SUB);
-	neural_sock.connect("ipc:///tmp/broadband.zmq");
+	neural_sock.connect("ipc:///tmp/bp.zmq");
 	neural_sock.setsockopt(ZMQ_SUBSCRIBE, "", 0);
 
 	zmq::socket_t events_sock(g_zmq_context, ZMQ_SUB);
@@ -1488,27 +1476,6 @@ void worker()
 			}
 
 			*/
-
-			for (size_t k=0; k<ns; k++) {
-
-				// post-artifact-removal filtering
-				for (size_t ch=0; ch<nnc; ch++) {
-
-					float samp = (float)X(ch, k);
-
-					if ( g_hipassNeurons &&  g_lopassNeurons)
-						g_bandpass[ch].Proc(&samp, &samp, 1);
-
-					if ( g_hipassNeurons && !g_lopassNeurons)
-						g_hipass[ch].Proc(&samp, &samp, 1);
-
-					if (!g_hipassNeurons &&  g_lopassNeurons)
-						g_lopass[ch].Proc(&samp, &samp, 1);
-
-					X(ch, k) = (double)samp;
-				}
-
-			}
 
 			// XXX TODO: MAKE THIS USE X TOO
 			for (size_t k=0; k<ns; k++) {
@@ -2495,19 +2462,7 @@ int main(int argc, char **argv)
 
 	g_artifactFilter = new ArtifactFilter(nnc);
 	g_nlms = new ArtifactNLMS2(nnc, &ms);
-	for (size_t i=0; i<nnc; i++) {
-#if defined KHZ_24
-		g_bandpass.push_back(FilterButterBand_24k_500_3000());
-		g_lopass.push_back(FilterButterLow_24k_3000());
-		g_hipass.push_back(FilterButterHigh_24k_500());
-#elif defined KHZ_48
-		g_bandpass.push_back(FilterButterBand_48k_500_3000());
-		g_lopass.push_back(FilterButterLow_48k_3000());
-		g_hipass.push_back(FilterButterHigh_48k_500());
-#else
-#error Bad sampling rate!
-#endif
-	}
+
 	for (size_t i=0; i<g_channel.size(); i++) {
 		g_channel[i] = ms.getInt(i, "channel", i*16);
 		if (g_channel[i] < 0) g_channel[i] = 0;
@@ -2571,9 +2526,6 @@ int main(int argc, char **argv)
 	g_showISIhist = (bool)ms.getStructValue("wf", "show_isi", 0, (float)g_showISIhist);
 	g_showWFstd = (bool)ms.getStructValue("wf", "show_std", 0, (float)g_showWFstd);
 	g_zoomSpan = ms.getStructValue("wf", "span", 0, g_zoomSpan);
-
-	g_lopassNeurons = (bool)ms.getStructValue("filter", "lopass", 0, (float)g_lopassNeurons);
-	g_hipassNeurons = (bool)ms.getStructValue("filter", "hipass", 0, (float)g_hipassNeurons);
 
 	g_artifactFilterRun = (bool)ms.getStructValue("icms", "filter_run", 0, (float)g_artifactFilterRun);
 
@@ -2686,16 +2638,6 @@ int main(int argc, char **argv)
 	mk_spinner("Raster span", box1,
 	           g_rasterSpan, 1.0, 100.0, 1.0,
 	           basic_spinfloat_cb, (gpointer)&g_rasterSpan);
-
-	frame = gtk_frame_new ("Filter");
-	gtk_box_pack_start (GTK_BOX(box1), frame, TRUE, TRUE, 0);
-
-	box2 = gtk_hbox_new (FALSE, 0);
-	gtk_widget_show(box2);
-	gtk_container_add (GTK_CONTAINER (frame), box2);
-
-	mk_checkbox("Lowpass", box2, &g_lopassNeurons, basic_checkbox_cb);
-	mk_checkbox("Highpass", box2, &g_hipassNeurons, basic_checkbox_cb);
 
 	gtk_widget_show (box1);
 	label = gtk_label_new("rasters");
