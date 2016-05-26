@@ -26,8 +26,8 @@ int main(int argc, char *argv[])
 {
 	std::string zin, zout;
 
-	zin  = argc > 3 ? argv[3] : "ipc:///tmp/broadband.zmq";
-	zout = argc > 4 ? argv[4] : "ipc:///tmp/notch.zmq";
+	zin  = argc > 1 ? argv[1] : "ipc:///tmp/broadband.zmq";
+	zout = argc > 2 ? argv[2] : "ipc:///tmp/notch.zmq";
 
 	printf("notch filter (60 Hz, 2nd order IIR, Q=35)\n");
 	printf("usage: notch [zmq_sub] [zmq_pub]\n\n");
