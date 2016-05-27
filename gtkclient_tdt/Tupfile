@@ -24,7 +24,15 @@ LDFLAGS += -larmadillo
 : src/notch.o ../common_host/util.o src/filter.o |> !ld |> notch
 : src/af.o ../common_host/util.o src/artifact_filter.o |> !ld |> af
 
-PKG_LIBS  = gtk+-2.0 blas-openblas gtkglext-1.0 matio uuid gl glu
+LDFLAGS += `pkg-config --libs uuid`
+
+: src/h5bbsave.o \
+../common_host/util.o \
+../common_host/gettime.o \
+src/h5writer.o \
+src/h5analogwriter.o |> !ld |> h5bbsave
+
+PKG_LIBS  = gtk+-2.0 blas-openblas gtkglext-1.0 matio gl glu
 
 LDFLAGS += -lCg -lCgGL -ljack
 LDFLAGS += `pkg-config --libs $(PKG_LIBS)`

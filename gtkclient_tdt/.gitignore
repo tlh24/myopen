@@ -10,6 +10,7 @@ bp
 notch
 pulser
 af
+h5bbsave
 wf_plot
 analogdebug
 *.pb.cc
