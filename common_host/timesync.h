@@ -21,7 +21,7 @@ public:
 
 	GainController(double initialGain)
 	{
-		m_alpha = 0.95;
+		m_alpha = 0.975;
 		m_avg = 0.0;
 		m_absavg = 1.0;
 		m_gain = initialGain;
@@ -33,11 +33,11 @@ public:
 	{
 		m_avg = m_alpha * m_avg + (1.0-m_alpha)*u;
 		m_absavg = m_alpha * m_absavg + (1.0-m_alpha)*fabs((double)u);
-		if (m_absavg > 0.0) {
-			if (fabs((double)m_avg) / m_absavg > 0.45) m_gain += m_gainIncr;
-			else m_gain -= m_gainDecr;
-			if (m_gain < 0.0) m_gain *= -1.0;
-		}
+		if (fabs((double)m_avg) / m_absavg > 0.45)
+			m_gain += m_gainIncr;
+		else
+			m_gain -= m_gainDecr;
+		if (m_gain < 0.0) m_gain *= -1.0;
 	}
 	void prinfo()
 	{
