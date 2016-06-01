@@ -63,7 +63,6 @@ static void s_catch_signals(void)
 // service the po8e buffer
 void po8e_thread(zmq::context_t &ctx, PO8e *p, int id)
 {
-
 	zmq::socket_t socket(ctx, ZMQ_PUB);
 	std::stringstream ss;
 	ss << "inproc://po8e-" << id;
@@ -129,7 +128,20 @@ void po8e_thread(zmq::context_t &ctx, PO8e *p, int id)
 				ns = p->readBlock(data, g_po8e_read_size, tick);
 				p->flushBufferedData(ns);
 			}
+
 			double ts = gettime();
+
+			if (id==0) {
+				double tk = tick[ns-1] + numSamples - ns;
+				long double last_interval = (ts - g_lastPo8eTime)*1000.0; // msec
+				g_po8eStats( last_interval );
+				g_lastPo8eTime = ts;
+
+				// also -- only accept stort-interval responses (ignore outliers..)
+				if (last_interval < 1.5*g_po8eStats.mean() ) {
+					g_ts.update(ts, tk); //also updates the mmap file.
+				}
+			}
 
 			if (tick[0] != last_tick + 1) {
 				warn("%p: PO8e tick glitch between blocks. Expected %zu got %zu",
@@ -148,15 +160,14 @@ void po8e_thread(zmq::context_t &ctx, PO8e *p, int id)
 			last_tick = tick[ns-1];
 
 			// pack message
-			size_t nbytes = 32 + nc*ns*sizeof(i16);
+			size_t nbytes = 24 + nc*ns*sizeof(i16);
 			zmq::message_t msg(nbytes);
 			char *ptr = (char *)msg.data();
 
 			memcpy(ptr+0, &nc, sizeof(u64)); // nc - 8 bytes
 			memcpy(ptr+8, &ns, sizeof(u64)); // ns - 8 bytes
-			memcpy(ptr+16, tick, sizeof(i64)); // tk - 8 bytes
-			memcpy(ptr+24, &ts, sizeof(double)); // ts - 8 bytes
-			memcpy(ptr+32, data, nc*ns*sizeof(i16)); // data - nc*ns bytes
+			memcpy(ptr+16, tick, sizeof(i64)); // tk - 8 bytes (zeroth tick)
+			memcpy(ptr+24, data, nc*ns*sizeof(i16)); // data - nc*ns bytes
 
 			socket.send(msg);
 
@@ -249,7 +260,6 @@ void worker(zmq::context_t &ctx, vector<po8e::card *> &cards)
 			auto nc = new u64[n];
 			auto ns = new u64[n];
 			auto tk = new i64[n];
-			auto ts = new double[n];
 			vector<i16 *> data;
 
 			for (int i=0; i<n; i++) {
@@ -259,14 +269,12 @@ void worker(zmq::context_t &ctx, vector<po8e::card *> &cards)
 				memcpy(&(nc[i]), ptr+0, sizeof(u64));
 				memcpy(&(ns[i]), ptr+8, sizeof(u64));
 				memcpy(&(tk[i]), ptr+16, sizeof(i64));
-				memcpy(&(ts[i]), ptr+24, sizeof(double));
 				auto x = new i16[nc[i]*ns[i]];
-				memcpy(x, ptr+32, nc[i]*ns[i]*sizeof(i16));
+				memcpy(x, ptr+24, nc[i]*ns[i]*sizeof(i16));
 				data.push_back(x);
 			}
 
 			bool mismatch = false;
-			double time = 0.0;
 
 			for (int i=0; i<n; i++) {
 				if (nc[i] != (u64)cards[i]->channel_size()) {
@@ -284,29 +292,16 @@ void worker(zmq::context_t &ctx, vector<po8e::card *> &cards)
 					mismatch = true;
 					break;
 				}
-				time += ts[i];
 			}
-			time /= n;
 
 			if (mismatch) { // exit the worker; no more data will be processed
 				break;
 			}
 
-			// XXX TODO when to reset the running stats?
-
-			long double last_interval = (time - g_lastPo8eTime)*1000.0; // msec
-			g_po8eStats( last_interval );
-			g_lastPo8eTime = time;
-
-			// also -- only accept stort-interval responses (ignore outliers..)
-			if (last_interval < 1.5*g_po8eStats.mean() ) {
-				g_ts.update(time, tk[0]); //also updates the mmap file.
-			}
-
 			// package up neural data and event here
 
 			auto neural = new float[nnc * ns[0]];
-			auto events = new i16[nec * ns[0]];
+			auto events = new u16[nec * ns[0]];
 			size_t nc_i = 0;
 			size_t ne_i = 0;
 			for (int i=0; i<(int)cards.size(); i++) {
@@ -335,14 +330,13 @@ void worker(zmq::context_t &ctx, vector<po8e::card *> &cards)
 			}
 
 			// send neural data
-			size_t nbytes = 32 + nnc*ns[0]*sizeof(float);
+			size_t nbytes = 24 + nnc*ns[0]*sizeof(float);
 			zmq::message_t buf(nbytes);
 			char *ptr = (char *)buf.data();
 			memcpy(ptr+0, &nnc, sizeof(u64)); // nnc - 8 bytes
 			memcpy(ptr+8, ns, sizeof(u64)); // ns - 8 bytes
-			memcpy(ptr+16, tk, sizeof(i64)); // tk - 8 bytes
-			memcpy(ptr+24, &time, sizeof(double)); // ts - 8 bytes
-			memcpy(ptr+32, neural, nnc*ns[0]*sizeof(float)); // data - nnc*ns bytes
+			memcpy(ptr+16, tk, sizeof(i64)); // tk - 8 bytes (zeroth tick)
+			memcpy(ptr+24, neural, nnc*ns[0]*sizeof(float)); // data - nnc*ns bytes
 			neural_sock.send(buf);
 
 			// send events data
@@ -351,15 +345,13 @@ void worker(zmq::context_t &ctx, vector<po8e::card *> &cards)
 					if (events[i*ns[0]+k] > 0) {
 						u16 ec  	= (u16)i; // event chan (0-idxed)
 						i64 tk2 	= (i64)tk[0] + k;	// tk
-						double ts2 	= (double)g_ts.getTime(tk[0] + k);	// ts
 						u16 ev  	= (u16)events[i*ns[0]+k];	// event
 
-						buf.rebuild(20); // bytes
+						buf.rebuild(12); // bytes
 						ptr = (char *)buf.data();
 						memcpy(ptr+0, &ec, sizeof(u16)); // 2 bytes
-						memcpy(ptr+2, &tk2, sizeof(u64)); // 8 bytes
-						memcpy(ptr+10, &ts2, sizeof(double)); // 8 bytes
-						memcpy(ptr+18, &ev, sizeof(u16));	// 2 bytes
+						memcpy(ptr+2, &tk2, sizeof(i64)); // 8 bytes
+						memcpy(ptr+10, &ev, sizeof(u16));	// 2 bytes
 						events_sock.send(buf);
 					}
 				}
@@ -375,7 +367,6 @@ void worker(zmq::context_t &ctx, vector<po8e::card *> &cards)
 			delete[] nc;
 			delete[] ns;
 			delete[] tk;
-			delete[] ts;
 		}
 
 		if (items[n].revents & ZMQ_POLLIN) {
@@ -504,15 +495,17 @@ int main(void)
 		return 1;
 	}
 
-	std::vector<std::pair<std::string,float>> neural_name_scale;
+	std::vector<std::string> neural_name;
+	std::vector<std::string> event_name;
 
 	for (auto &c : cards) {
 		if (c->enabled()) {
 			for (int j=0; j<c->channel_size(); j++) {
 				if (c->channel(j).data_type() == po8e::channel::NEURAL) {
-					neural_name_scale.emplace_back(
-					    c->channel(j).name(),
-					    (float)c->channel(j).scale_factor()/1e6); // uV
+					neural_name.push_back(c->channel(j).name());
+				}
+				if (c->channel(j).data_type() == po8e::channel::EVENTS) {
+					event_name.push_back(c->channel(j).name());
 				}
 			}
 		}
@@ -571,14 +564,24 @@ int main(void)
 				memcpy(&ch, (u64 *)msg.data(), sizeof(u64));
 				query.recv(&msg); // get sub-command
 				if (isCommand(msg, "NAME")) {
-					std::string s = neural_name_scale[ch].first;
+					std::string s = neural_name[ch];
 					msg.rebuild(s.size()); // bytes
 					memcpy(msg.data(), s.c_str(), s.size());
 					query.send(msg);
-				} else if (isCommand(msg, "SCALE")) {
-					float f = neural_name_scale[ch].second;
-					msg.rebuild(sizeof(float)); // bytes
-					memcpy(msg.data(), &f, sizeof(float));
+				} else {
+					msg.rebuild(3);
+					memcpy(msg.data(), "ERR", 3);
+					query.send(msg);
+				}
+			} else if (isCommand(msg, "EC")) {
+				query.recv(&msg); // get the channel number (zero-indexed)
+				u64 ch;
+				memcpy(&ch, (u64 *)msg.data(), sizeof(u64));
+				query.recv(&msg); // get sub-command
+				if (isCommand(msg, "NAME")) {
+					std::string s = event_name[ch];
+					msg.rebuild(s.size()); // bytes
+					memcpy(msg.data(), s.c_str(), s.size());
 					query.send(msg);
 				} else {
 					msg.rebuild(3);
