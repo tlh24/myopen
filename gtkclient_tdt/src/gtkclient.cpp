@@ -47,7 +47,7 @@
 
 #include <libgen.h>
 
-#include "readerwriterqueue.h"
+//#include "readerwriterqueue.h"
 
 #include "gettime.h"
 #include "cgVertexShader.h"
@@ -63,10 +63,10 @@
 #include "timesync.h"
 #include "matStor.h"
 #include "jacksnd.h"
-#include "filter.h"
+//#include "filter.h"
 #include "spikebuffer.h"
-#include "artifact_filter.h"
-#include "nlms2.h"
+//#include "artifact_filter.h"
+//#include "nlms2.h"
 #include "util.h"
 
 //#include "icms.pb.h"
@@ -76,7 +76,7 @@
 
 #include "h5writer.h"
 #include "h5spikewriter.h"
-#include "h5analogwriter.h"
+//#include "h5analogwriter.h"
 
 #include "fenv.h" // for debugging nan problems
 
@@ -88,7 +88,6 @@ cgVertexShader		*g_vsThreshold;
 
 using namespace std;
 using namespace arma;
-using namespace moodycamel; // for lockfree queues
 
 uuid_t	g_uuid;
 
@@ -107,7 +106,7 @@ vector <VboRaster *> g_spikeraster;
 vector <VboRaster *> g_eventraster;
 // can do another raster vector for other types of rasters (icms ticks, etc)
 
-ReaderWriterQueue<mat *> g_filterbuf(1024); // for nlms filtering
+//ReaderWriterQueue<mat *> g_filterbuf(1024); // for nlms filtering
 
 //vector <pair<ReaderWriterQueue<PO8Data *>*, po8e::card *>> g_dataqueues;
 
@@ -200,12 +199,12 @@ float g_autoThreshold = -3.5; //standard deviations. default negative, w/e.
 float g_neoThreshold = 8;
 int g_spikesCols = 16;
 
-gboolean g_artifactFilterRun = false;
-ArtifactFilter *g_artifactFilter;
+//gboolean g_artifactFilterRun = false;
+//ArtifactFilter *g_artifactFilter;
 
-gboolean g_trainArtifactNLMS = false;
-gboolean g_filterArtifactNLMS = false;
-ArtifactNLMS2 *g_nlms;
+//gboolean g_trainArtifactNLMS = false;
+//gboolean g_filterArtifactNLMS = false;
+//ArtifactNLMS2 *g_nlms;
 
 gboolean g_enableArtifactSubtr = false;
 gboolean g_trainArtifactTempl = false;
@@ -243,7 +242,7 @@ void saveState()
 		c->save(&ms);
 	for (auto &a : g_artifact)
 		a->save(&ms);
-	g_nlms->save(&ms);
+	//g_nlms->save(&ms);
 	ms.setInt("channel", g_channel);
 
 	ms.setStructValue("savemode", "unsorted_spikes", 0, (float)g_saveUnsorted);
@@ -275,8 +274,8 @@ void saveState()
 
 	//ms.setStructValue("icms","filter_run",0,(float)g_artifactFilterRun);
 
-	ms.setStructValue("icms","lms_train",0,(float)g_trainArtifactNLMS);
-	ms.setStructValue("icms","lms_filter",0,(float)g_filterArtifactNLMS);
+	//ms.setStructValue("icms","lms_train",0,(float)g_trainArtifactNLMS);
+	//ms.setStructValue("icms","lms_filter",0,(float)g_filterArtifactNLMS);
 
 	ms.setStructValue("icms","template_train",0,(float)g_trainArtifactTempl);
 	ms.setStructValue("icms","template_subtract",0,(float)g_enableArtifactSubtr);
@@ -2474,8 +2473,8 @@ int main(int argc, char **argv)
 		g_c.push_back(o);
 	}
 
-	g_artifactFilter = new ArtifactFilter(nnc);
-	g_nlms = new ArtifactNLMS2(nnc, &ms);
+	//g_artifactFilter = new ArtifactFilter(nnc);
+	//g_nlms = new ArtifactNLMS2(nnc, &ms);
 
 	for (size_t i=0; i<g_channel.size(); i++) {
 		g_channel[i] = ms.getInt(i, "channel", i*16);
@@ -2543,8 +2542,8 @@ int main(int argc, char **argv)
 
 	//g_artifactFilterRun = (bool)ms.getStructValue("icms", "filter_run", 0, (float)g_artifactFilterRun);
 
-	g_trainArtifactNLMS = (bool)ms.getStructValue("icms", "lms_train", 0, (float)g_trainArtifactNLMS);
-	g_filterArtifactNLMS = (bool)ms.getStructValue("icms", "lms_filter", 0, (float)g_filterArtifactNLMS);
+	//g_trainArtifactNLMS = (bool)ms.getStructValue("icms", "lms_train", 0, (float)g_trainArtifactNLMS);
+	//g_filterArtifactNLMS = (bool)ms.getStructValue("icms", "lms_filter", 0, (float)g_filterArtifactNLMS);
 
 	g_trainArtifactTempl = (bool)ms.getStructValue("icms", "template_train", 0, (float)g_trainArtifactTempl);
 	g_enableArtifactSubtr = (bool)ms.getStructValue("icms", "template_subtract", 0, (float)g_enableArtifactSubtr);
@@ -2830,6 +2829,7 @@ int main(int argc, char **argv)
 	*/
 
 	// LMS
+	/*
 	s = "Artifact LMS Filtering";
 	frame = gtk_frame_new (s.c_str());
 	gtk_box_pack_start (GTK_BOX (box1), frame, FALSE, FALSE, 1);
@@ -2859,6 +2859,7 @@ int main(int argc, char **argv)
 	[](GtkWidget *, gpointer) {
 		g_nlms->clearWeights();
 	}, nullptr);
+	*/
 
 	s = "Artifact Subtraction";
 	frame = gtk_frame_new (s.c_str());

@@ -184,9 +184,11 @@ install:
 	install po8e -t $(TARGET)
 	install bp -t $(TARGET)
 	install notch -t $(TARGET)
+	install noop -t $(TARGET)
 	install af -t $(TARGET)
+	install h5bbsave -t $(TARGET)
+	install h5evsave -t $(TARGET)
 	install timesync -t $(TARGET)
-	install icms2mat -t $(TARGET)
 	install -d $(TARGET)/cg
 	install cg/fade.cg -t $(TARGET)/cg
 	install cg/fadeColor.cg -t $(TARGET)/cg

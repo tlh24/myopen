@@ -5,6 +5,6 @@ PKG_LIBS = luajit hdf5 libprocps
 CPPFLAGS += `pkg-config --cflags $(PKG_LIBS)`
 LDFLAGS += `pkg-config --libs $(PKG_LIBS)`
 
-OBJS = gettime.cpp lconf.cpp matStor.cpp glInfo.cpp util.cpp random.cpp jacksnd.cpp domainSocket.cpp
+OBJS = gettime.cpp lconf.cpp matStor.cpp glInfo.cpp util.cpp random.cpp jacksnd.cpp
 
 : foreach $(OBJS) |> !cpp |> %B.o

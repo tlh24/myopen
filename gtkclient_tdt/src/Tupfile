@@ -1,44 +1,42 @@
 include_rules
 
 CPPFLAGS += -I../include -I../proto -I../../common_host
-CPPFLAGS += `pkg-config --cflags libzmq luajit libprocps protobuf`
-
-: po8e.cpp | ../proto/po8e.pb.h |> !cpp |> %B.o
-
-CPPFLAGS += `pkg-config --cflags hdf5`
-
-: noop.cpp |> !cpp |> %B.o
-: notch.cpp |> !cpp |> %B.o
-: bp.cpp |> !cpp |> %B.o
-: af.cpp |> !cpp |> %B.o
-
-PKG_LIBS  = gtk+-2.0 blas-openblas gtkglext-1.0 matio uuid gl glu
-
-CPPFLAGS += -I../include -I../proto -I../../common_host
-CPPFLAGS += `pkg-config --cflags $(PKG_LIBS)`
 
 OBJS = timeclient.cpp \
 filter.cpp \
 mmap_test.cpp \
-datawriter.cpp \
-h5writer.cpp \
-h5spikewriter.cpp \
-h5analogwriter.cpp \
-h5eventwriter.cpp \
-h5bbsave.cpp \
-h5evsave.cpp \
-stimchan.cpp \
-analogchan.cpp \
 spikebuffer.cpp \
 artifact_filter.cpp \
-nlms2.cpp \
 vbo_raster.cpp \
 vbo_timeseries.cpp \
 pulse_queue.cpp pulser.cpp
 
 : foreach $(OBJS) |> !cpp |> %B.o
 
+CPPFLAGS += `pkg-config --cflags libzmq luajit libprocps protobuf`
+
+: po8e.cpp | ../proto/po8e.pb.h |> !cpp |> %B.o
+
+CPPFLAGS += `pkg-config --cflags hdf5 uuid`
+
+OBJS = \
+h5writer.cpp \
+h5analogwriter.cpp \
+h5eventwriter.cpp \
+h5bbsave.cpp \
+h5evsave.cpp \
+noop.cpp \
+notch.cpp \
+bp.cpp \
+af.cpp
+
+: foreach $(OBJS) |> !cpp |> %B.o
+
+PKG_LIBS  = gtk+-2.0 blas-openblas gtkglext-1.0 matio gl glu
+CPPFLAGS += `pkg-config --cflags $(PKG_LIBS)`
+
+OBJS = h5spikewriter.cpp
+: foreach $(OBJS) |> !cpp |> %B.o
+
 : po8e_conf.cpp | ../proto/po8e.pb.h |> !cpp |> %B.o
-: icms2mat.cpp | ../proto/icms.pb.h |> !cpp |> %B.o
-: icmswriter.cpp | ../proto/icms.pb.h |> !cpp |> %B.o
-: gtkclient.cpp | ../proto/icms.pb.h |> !cpp |> %B.o
+: gtkclient.cpp |> !cpp |> %B.o
