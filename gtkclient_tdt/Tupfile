@@ -32,6 +32,12 @@ LDFLAGS += `pkg-config --libs uuid`
 src/h5writer.o \
 src/h5analogwriter.o |> !ld |> h5bbsave
 
+: src/h5evsave.o \
+../common_host/util.o \
+../common_host/gettime.o \
+src/h5writer.o \
+src/h5eventwriter.o |> !ld |> h5evsave
+
 PKG_LIBS  = gtk+-2.0 blas-openblas gtkglext-1.0 matio gl glu
 
 LDFLAGS += -lCg -lCgGL -ljack

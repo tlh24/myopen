@@ -24,7 +24,9 @@ datawriter.cpp \
 h5writer.cpp \
 h5spikewriter.cpp \
 h5analogwriter.cpp \
+h5eventwriter.cpp \
 h5bbsave.cpp \
+h5evsave.cpp \
 stimchan.cpp \
 analogchan.cpp \
 spikebuffer.cpp \

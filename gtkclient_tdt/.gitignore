@@ -11,6 +11,7 @@ notch
 pulser
 af
 h5bbsave
+h5evsave
 wf_plot
 analogdebug
 *.pb.cc
