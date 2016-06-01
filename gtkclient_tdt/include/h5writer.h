@@ -1,4 +1,3 @@
-#include <gtk/gtk.h>
 #include <string>
 #include <vector>
 #include <atomic>
@@ -22,7 +21,6 @@ protected:
 	vector<hid_t>	m_h5dataspaces;	// [ containers for the datapsaces
 	vector<hid_t> 	m_h5props;		// [ and the chunk properties
 	mutex 			m_mtx;			// so we dont disable while writing
-	GtkWidget 		*m_w;			// for drawing to the gui
 	bool			m_deflate;		// should we compress?
 	int 			m_deflate_level; // 0 [uncompressed]- 9 [max compressed]
 	bool 			m_shuffle;		// makes compression more efficient
@@ -45,8 +43,9 @@ public:
 	virtual void enable();
 	virtual void disable();
 
-	// returns the number of objects in the queue
-	virtual size_t capacity() = 0;
+	void setDeflate(bool b);
+	void setDeflateLevel(int x);
+	void setShuffle(bool b);
 
 	// returns the number of bytes written
 	virtual size_t bytes();
@@ -54,13 +53,13 @@ public:
 	// returns the name of the file we are writing to
 	virtual string filename();
 
-	virtual void registerWidget(GtkWidget *w);
-
-	virtual void draw();
-
 	virtual void setUUID(char *uuid_str);
 
 	virtual void setVersion();
+
+	void setFileCreateDate(char *str);
+
+	void setSessionDescription(const char *str);
 
 	virtual const char *name() = 0;
 protected:

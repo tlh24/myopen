@@ -1,6 +1,6 @@
-#include "h5writer.h"
 #include <string.h>
 #include "util.h"
+#include "h5writer.h"
 
 H5Writer::H5Writer()
 {
@@ -10,7 +10,6 @@ H5Writer::H5Writer()
 	m_h5groups.clear();
 	m_h5dataspaces.clear();
 	m_h5props.clear();
-	m_w = NULL;
 	m_deflate = true;
 	m_deflate_level = 1;
 	m_shuffle = true;
@@ -33,18 +32,45 @@ bool H5Writer::open(const char *fn)
 		return false;
 	}
 
+	// these are all required by NWB
 	if (!createGroup("/general")) {
 		return false;
 	}
 	if (!createGroup("/acquisition")) {
 		return false;
 	}
+	if (!createGroup("/acquisition/images")) {
+		return false;
+	}
+	if (!createGroup("/acquisition/timeseries")) {
+		return false;
+	}
 	if (!createGroup("/stimulus")) {
+		return false;
+	}
+	if (!createGroup("/stimulus/presentation")) {
+		return false;
+	}
+	if (!createGroup("/stimulus/templates")) {
 		return false;
 	}
 	if (!createGroup("/epochs")) {
 		return false;
 	}
+
+	hsize_t dims = 0;
+	hid_t ds = H5Screate_simple(1, &dims, NULL);
+	hid_t atype = H5Tcopy(H5T_C_S1);
+	H5Tset_size(atype, 1); // size must be at least 1
+	H5Tset_strpad(atype, H5T_STR_NULLTERM);
+	hid_t attr = H5Acreate_by_name(m_h5file,
+	                               "/epochs", "tags",
+	                               atype, ds, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+	H5Awrite(attr, atype, "");
+	H5Aclose(attr);
+	H5Tclose(atype);
+	H5Sclose(ds);
+
 	if (!createGroup("/processing")) {
 		return false;
 	}
@@ -112,6 +138,18 @@ void H5Writer::disable()
 	lock_guard<mutex> lock(m_mtx);
 	m_enabled = false;
 }
+void H5Writer::setDeflate(bool b)
+{
+	m_deflate = b;
+}
+void H5Writer::setDeflateLevel(int x)
+{
+	m_deflate_level = x < 0 ? 0 : x > 9 ? 9 : x;
+}
+void H5Writer::setShuffle(bool b)
+{
+	m_shuffle = b;
+}
 
 size_t H5Writer::bytes()
 {
@@ -123,31 +161,6 @@ string H5Writer::filename()
 	return m_fn;
 }
 
-void H5Writer::registerWidget(GtkWidget *w)
-{
-	m_w = w;
-}
-
-void H5Writer::draw()
-{
-	if (isEnabled()) {
-
-		size_t n = filename().find_last_of("/");
-		char str[256];
-
-		double b = bytes() / 1e6;
-
-		if (b >= 1e3) {
-			b /= 1e3;
-			snprintf(str, 256, "%s: %.2f GB",
-			         filename().substr(n+1).c_str(), b);
-		} else {
-			snprintf(str, 256, "%s: %.2f MB",
-			         filename().substr(n+1).c_str(), b);
-		}
-		gtk_label_set_text(GTK_LABEL(m_w), str);
-	}
-}
 void H5Writer::shuffleDataset(hid_t prop)
 {
 	if (H5Zfilter_avail(H5Z_FILTER_SHUFFLE)) {
@@ -202,6 +215,34 @@ void H5Writer::setVersion()
 	H5Tset_size(dtype, strlen(str));
 	H5Tset_strpad(dtype, H5T_STR_NULLTERM);
 	hid_t dset = H5Dcreate(m_h5file, "/nwb_version", dtype, ds,
+	                       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+	H5Dwrite(dset, dtype, H5S_ALL, H5S_ALL, H5P_DEFAULT, str);
+	H5Dclose(dset);
+	H5Tclose(dtype);
+	H5Sclose(ds);
+}
+void H5Writer::setFileCreateDate(char *str)
+{
+
+	hsize_t dims = 1;
+	hid_t ds = H5Screate_simple(1, &dims, NULL);
+	hid_t dtype = H5Tcopy(H5T_C_S1);
+	H5Tset_size(dtype, strlen(str));
+	H5Tset_strpad(dtype, H5T_STR_NULLTERM);
+	hid_t dset = H5Dcreate(m_h5file, "/file_create_date", dtype, ds,
+	                       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+	H5Dwrite(dset, dtype, H5S_ALL, H5S_ALL, H5P_DEFAULT, str);
+	H5Dclose(dset);
+	H5Tclose(dtype);
+	H5Sclose(ds);
+}
+void H5Writer::setSessionDescription(const char *str)
+{
+	hid_t ds = H5Screate(H5S_SCALAR);
+	hid_t dtype = H5Tcopy (H5T_C_S1);
+	H5Tset_size(dtype, strlen(str));
+	H5Tset_strpad(dtype, H5T_STR_NULLTERM);
+	hid_t dset = H5Dcreate(m_h5file, "/session_description", dtype, ds,
 	                       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 	H5Dwrite(dset, dtype, H5S_ALL, H5S_ALL, H5P_DEFAULT, str);
 	H5Dclose(dset);
