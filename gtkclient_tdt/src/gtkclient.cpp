@@ -47,8 +47,6 @@
 
 #include <libgen.h>
 
-//#include "readerwriterqueue.h"
-
 #include "gettime.h"
 #include "cgVertexShader.h"
 #include "vbo.h"
@@ -63,20 +61,11 @@
 #include "timesync.h"
 #include "matStor.h"
 #include "jacksnd.h"
-//#include "filter.h"
 #include "spikebuffer.h"
-//#include "artifact_filter.h"
-//#include "nlms2.h"
 #include "util.h"
-
-//#include "icms.pb.h"
-
-//#include "datawriter.h"
-//#include "icmswriter.h"
 
 #include "h5writer.h"
 #include "h5spikewriter.h"
-//#include "h5analogwriter.h"
 
 #include "fenv.h" // for debugging nan problems
 
@@ -104,11 +93,6 @@ class Artifact;
 vector <VboTimeseries *> g_timeseries;
 vector <VboRaster *> g_spikeraster;
 vector <VboRaster *> g_eventraster;
-// can do another raster vector for other types of rasters (icms ticks, etc)
-
-//ReaderWriterQueue<mat *> g_filterbuf(1024); // for nlms filtering
-
-//vector <pair<ReaderWriterQueue<PO8Data *>*, po8e::card *>> g_dataqueues;
 
 float g_zoomSpan = 1.0;
 
@@ -117,7 +101,6 @@ float	g_rasterSpan = 10.f; // %seconds.
 
 vector <Channel *> g_c;
 vector <FiringRate *> g_fr;
-//TimeSync 	g_ts(SRATE_HZ); //keeps track of ticks (TDT time)
 TimeSyncClient *g_tsc;
 GLuint 		g_base;            // base display list for the font set.
 
@@ -125,11 +108,8 @@ H5SpikeWriter	g_spikewriter;
 gboolean 		g_saveUnsorted = true;
 gboolean 		g_saveSpikeWF = true;
 
-//H5AnalogWriter	g_analogwriter_postfilter;
-//H5AnalogWriter	g_analogwriter_prefilter;
 
 vector <Artifact *> g_artifact;
-//ICMSWriter g_icmswriter;
 
 #if defined KHZ_24
 double g_sr = 24414.0625;
@@ -139,15 +119,6 @@ double g_sr = 48828.1250;
 #error Bad sampling rate!
 #endif
 
-/*
-int g_whichAnalogSave = 0; // (1,2,3) -> (single,active,all)
-enum SAVE {
-	SAVE_SINGLE = 0,
-	SAVE_ENABLED,
-	SAVE_ALL
-};
-GtkWidget *g_whichAnalogSaveWidget;
-*/
 
 bool g_die = false;
 double g_pause_time = -1.0;
@@ -173,9 +144,6 @@ bool 	g_addPoly = false;
 
 vector<int> g_channel {0,32,64,95};
 
-//long double g_lastPo8eTime = 0.0;
-//long double g_po8ePollInterval = 0.0;
-//long double g_po8eAvgInterval = 0.0;
 
 int g_whichSpikePreEmphasis = 0;
 enum EMPHASIS {
@@ -199,12 +167,6 @@ float g_autoThreshold = -3.5; //standard deviations. default negative, w/e.
 float g_neoThreshold = 8;
 int g_spikesCols = 16;
 
-//gboolean g_artifactFilterRun = false;
-//ArtifactFilter *g_artifactFilter;
-
-//gboolean g_trainArtifactNLMS = false;
-//gboolean g_filterArtifactNLMS = false;
-//ArtifactNLMS2 *g_nlms;
 
 gboolean g_enableArtifactSubtr = false;
 gboolean g_trainArtifactTempl = false;
@@ -271,11 +233,6 @@ void saveState()
 	ms.setStructValue("wf","show_std",0,(float)g_showWFstd);
 
 	ms.setStructValue("wf","span",0,g_zoomSpan);
-
-	//ms.setStructValue("icms","filter_run",0,(float)g_artifactFilterRun);
-
-	//ms.setStructValue("icms","lms_train",0,(float)g_trainArtifactNLMS);
-	//ms.setStructValue("icms","lms_filter",0,(float)g_filterArtifactNLMS);
 
 	ms.setStructValue("icms","template_train",0,(float)g_trainArtifactTempl);
 	ms.setStructValue("icms","template_subtract",0,(float)g_enableArtifactSubtr);
@@ -511,26 +468,6 @@ static gint button_press_event( GtkWidget *,
 				updateChannelUI(i);
 			}
 		}
-		/*
-		if (event->button==3) { // (right click)
-
-			if ( (!g_analogwriter_prefilter.isEnabled() && !g_analogwriter_postfilter.isEnabled()) ||
-			     ((g_analogwriter_prefilter.isEnabled() || g_analogwriter_postfilter.isEnabled())  &&
-			      g_whichAnalogSave == SAVE_ALL)
-			   ) {
-
-				int h =  sr*g_spikesCols + sc;
-				if (h >= 0 && h < nc) {
-					g_c[h]->toggleEnabled();
-					for (int i=0; i<4; i++) {
-						if (g_channel[i] == h) {
-							updateChannelUI(i);
-						}
-					}
-				}
-			}
-		}
-		*/
 	}
 	return TRUE;
 }
@@ -943,18 +880,7 @@ static gboolean rotate(gpointer user_data)
 	gdk_window_invalidate_rect(win, &allocation, FALSE);
 	gdk_window_process_updates (win, FALSE);
 
-	// XXX do this properly
-	/*
-	string s = g_ts.getInfo();
-	char str[256];
-	snprintf(str, 256, "\npo8e poll (avg): %.4Lf (ms)\n", g_po8eAvgInterval);
-	s += string(str);
-	gtk_label_set_text(GTK_LABEL(g_infoLabel), s.c_str());
-	*/
-	//g_icmswriter.draw();
 	g_spikewriter.draw();
-	//g_analogwriter_prefilter.draw();
-	//g_analogwriter_postfilter.draw();
 
 	return TRUE;
 }
@@ -962,33 +888,6 @@ void destroyGUI(GtkWidget *, gpointer)
 {
 	destroy(SIGINT);
 }
-/*
-void nlms_train()
-{
-	mat *X;
-	mat Y;
-	while (!g_die) {
-		int succeeded = 0;
-		int ndequeued = 0;
-		Y.reset();
-		while (ndequeued < 100 && !g_die) {
-			succeeded = g_filterbuf.try_dequeue(X);
-			if (succeeded) {
-				Y = join_rows(Y, *X);
-				delete X;
-				ndequeued++;
-				printf("q size: %zu\n", g_filterbuf.size_approx());
-			}
-		}
-
-		if (succeeded) {
-			g_nlms->train(Y);
-		} else {
-			usleep(1e3);
-		}
-	}
-}
-*/
 void sorter(int ch)
 {
 	float 	wf_sp[2*NWFSAMP];
@@ -1154,36 +1053,6 @@ void spikewrite()
 			usleep(1e5);
 	}
 }
-
-/*
-void icmswrite()
-{
-	while (!g_die) {
-		if (g_icmswriter.write()) //if it can write, it will.
-			usleep(1e4); // poll quicker
-		else
-			usleep(1e5);
-	}
-}
-void analogwrite_prefilter()
-{
-	while (!g_die) {
-		if (g_analogwriter_prefilter.write()) // if it can write, it will
-			usleep(1e4); // poll quicker
-		else
-			usleep(1e5);
-	}
-}
-void analogwrite()
-{
-	while (!g_die) {
-		if (g_analogwriter_postfilter.write()) // if it can write, it will
-			usleep(1e4); // poll quicker
-		else
-			usleep(1e5);
-	}
-}
-*/
 void worker()
 {
 
@@ -1303,68 +1172,6 @@ void worker()
 			//stim[k]  = (u16)(p[1].data[8*ns + k]);
 			//stim[k] += (u16)(p[1].data[9*ns + k]) << 16;
 			//blank[k] = p[1].data[10*ns + k] > 0;
-
-			// write (pre-filtered) broadband signal to disk
-
-			/*
-			// disbale saving for now
-
-			if (g_analogwriter_prefilter.isEnabled()) {
-
-				AD *ad; // analog data
-				ad = new AD; // deleted by other thread
-
-				ad->ns = ns;
-
-				ad->tk = new i64[ns];
-				memcpy(ad->tk, tk, ns*sizeof(i64));
-
-				ad->ts = new double[ns];
-				memcpy(ad->ts, ts, ns*sizeof(double));
-
-				switch (g_whichAnalogSave) {
-				case SAVE_SINGLE: {
-					ad->nc = 1;
-					int ch = g_channel[0];
-					ad->data = new i16[ns];
-					memcpy(ad->data, &raw[ch*ns], ns*sizeof(i16));
-					break;
-				}
-				case SAVE_ENABLED: {
-					u32 num_enabled = 0;
-					for (auto &ch : g_c) {
-						if (ch->getEnabled()) {
-							num_enabled++;
-						}
-					}
-					ad->data = new i16[num_enabled*ns];
-					size_t c_i = 0;
-					for (size_t ch=0; ch<nnc; ch++) {
-						if (g_c[ch]->getEnabled()) {
-							for (size_t k=0; k<ns; k++) {
-								ad->data[c_i*ns+k] = raw[ch*ns+k];
-							}
-							c_i++;
-						}
-					}
-					ad->nc = num_enabled;
-					break;
-				}
-				case SAVE_ALL: {
-					ad->nc = nnc;
-					ad->data = new i16[nnc*ns];
-					memcpy(ad->data, raw, nnc*ns*sizeof(i16));
-					break;
-				}
-				default:
-					error("bad analog save mode. exiting.");
-					exit(1);
-				}
-				// ad and associanted memory freed by other other thread
-				g_analogwriter_prefilter.add(ad);
-			}
-
-			*/
 
 			// fill artifact filtering buffers (for other thread)
 			// we do both training and filtering before filtering
@@ -1522,68 +1329,6 @@ void worker()
 				}
 			}
 
-			// write (post-filtered) broadband signal to disk
-			// disable for now
-
-			/*
-
-			if (g_analogwriter_postfilter.isEnabled()) {
-
-				AD *ad; // analog data
-				ad = new AD; // deleted by other thread
-
-				ad->ns = ns;
-
-				ad->tk = new i64[ns];
-				memcpy(ad->tk, &tk, ns*sizeof(i64));
-
-				ad->ts = new double[ns];
-				memcpy(ad->ts, &ts, ns*sizeof(double));
-
-				switch (g_whichAnalogSave) {
-				case SAVE_SINGLE: {
-					ad->nc = 1;
-					int ch = g_channel[0];
-					ad->data = new i16[ns];
-					memcpy(ad->data, &raw[ch*ns], ns*sizeof(i16));
-					break;
-				}
-				case SAVE_ENABLED: {
-					u32 num_enabled = 0;
-					for (auto &ch : g_c) {
-						if (ch->getEnabled()) {
-							num_enabled++;
-						}
-					}
-					ad->data = new i16[num_enabled*ns];
-					size_t c_i = 0;
-					for (size_t ch=0; ch<nnc; ch++) {
-						if (g_c[ch]->getEnabled()) {
-							for (size_t k=0; k<ns; k++) {
-								ad->data[c_i*ns+k] = raw[ch*ns+k];
-							}
-							c_i++;
-						}
-					}
-					ad->nc = num_enabled;
-					break;
-				}
-				case SAVE_ALL: {
-					ad->nc = nnc;
-					ad->data = new i16[nnc*ns];
-					memcpy(ad->data, raw, nnc*ns*sizeof(i16));
-					break;
-				}
-				default:
-					error("bad analog save mode. exiting.");
-					exit(1);
-				}
-				// ad and associanted memory freed by other other thread
-				g_analogwriter_postfilter.add(ad);
-			}
-
-			*/
-
 			auto audio 	= new float[ns];
 
 			// input data is scaled from TDT so that 32767 = 10mV.
@@ -1618,13 +1363,7 @@ void worker()
 
 					//update the channel running stats (means and stddevs, etc).
 					ch->m_wfstats(x);
-
-					//ch->m_var *= 0.999998;
-					//ch->m_var += 0.000002*(x-m)*(x-m);
-					//m *= 0.999997;
-					//m += 0.000003*x;
 				}
-				//ch->m_mean = m;
 			}
 
 			// sort -- see if samples pass threshold. if so, copy.
@@ -1637,11 +1376,7 @@ void worker()
 			delete[] tk;
 			delete[] ts;
 			delete[] f;
-			//delete[] raw;
 			delete[] audio;
-			// XXX reenable soon
-			//delete[] events;
-			//delete[] stim;
 			delete[] blank;
 		}
 
@@ -2131,185 +1866,6 @@ static void openSaveSpikesFile(GtkWidget *, gpointer parent_window)
 	}
 	gtk_widget_destroy (dialog);
 }
-/*
-static void openSaveICMSFile(GtkWidget *, gpointer parent_window)
-{
-	string d = get_cwd();
-	string f = mk_legal_filename(d, "icms_", ".pbd");
-
-	GtkWidget *dialog;
-	dialog = gtk_file_chooser_dialog_new ("Save ICMS File",
-	                                      (GtkWindow *)parent_window,
-	                                      GTK_FILE_CHOOSER_ACTION_SAVE,
-	                                      GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-	                                      GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
-	                                      NULL);
-	gtk_file_chooser_set_do_overwrite_confirmation(
-	    GTK_FILE_CHOOSER (dialog), TRUE);
-	gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog),d.c_str());
-	gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (dialog),f.c_str());
-	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
-		char *filename;
-		filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
-		g_icmswriter.open(filename);
-		g_free(filename);
-	}
-	gtk_widget_destroy (dialog);
-}
-static void openSaveAnalogPrefilterFile(GtkWidget *, gpointer parent_window)
-{
-	string d = get_cwd();
-	string f = mk_legal_filename(d, "analog_pre_", ".h5");
-
-	GtkWidget *dialog;
-	dialog = gtk_file_chooser_dialog_new ("Save Analog (pre-filter) File",
-	                                      (GtkWindow *)parent_window,
-	                                      GTK_FILE_CHOOSER_ACTION_SAVE,
-	                                      GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-	                                      GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
-	                                      NULL);
-	gtk_file_chooser_set_do_overwrite_confirmation(
-	    GTK_FILE_CHOOSER (dialog), TRUE);
-	gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog),d.c_str());
-	gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (dialog),f.c_str());
-	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
-		char *filename;
-		filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
-
-		size_t nc;
-		switch (g_whichAnalogSave) {
-		case SAVE_SINGLE: {
-			nc = 1;
-			break;
-		}
-		case SAVE_ENABLED: {
-			u32 num_enabled = 0;
-			for (size_t i=0; i< g_c.size(); i++) {
-				if (g_c[i]->getEnabled()) {
-					num_enabled++;
-				}
-			}
-			nc = num_enabled;
-			for (int i=0; i<4; i++) {
-				gtk_widget_set_sensitive(g_enabledChkBx[i], false);
-			}
-			break;
-		}
-		case SAVE_ALL: {
-			nc = g_c.size();
-			break;
-		}
-		default:
-			error("bad analog save mode. exiting.");
-			exit(1);
-		}
-
-		gtk_widget_set_sensitive(g_whichAnalogSaveWidget, false);
-
-
-		g_analogwriter_prefilter.open(filename, nc);
-		g_free(filename);
-
-		// note we are assuming here that all channels get the same scaling
-		// this is done because of limitations of NWB,
-		// and honestly it should be true for each coherent datatype
-		auto scale = g_c[0]->m_scaleFactor;
-		int max_str = 0;
-		for (size_t i=0; i<g_c.size(); i++) {
-			max_str = max_str > (int)g_c[i]->m_chanName.size() ?
-			          max_str : g_c[i]->m_chanName.size();
-		}
-		auto name = new char[max_str*g_c.size()];
-		for (size_t i=0; i<g_c.size(); i++) {
-			strncpy(&name[i*max_str], g_c[i]->m_chanName.c_str(),
-			        g_c[i]->m_chanName.size());
-		}
-		g_analogwriter_prefilter.setVersion();
-		char uuid[37];
-		uuid_unparse(g_uuid, uuid);
-		g_analogwriter_prefilter.setUUID(uuid);
-		g_analogwriter_prefilter.setMetaData(scale, name, max_str);
-		delete[] name;
-	}
-	gtk_widget_destroy (dialog);
-}
-static void openSaveAnalogFile(GtkWidget *, gpointer parent_window)
-{
-	string d = get_cwd();
-	string f = mk_legal_filename(d, "analog_post_", ".h5");
-
-	GtkWidget *dialog;
-	dialog = gtk_file_chooser_dialog_new ("Save Analog File",
-	                                      (GtkWindow *)parent_window,
-	                                      GTK_FILE_CHOOSER_ACTION_SAVE,
-	                                      GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-	                                      GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
-	                                      NULL);
-	gtk_file_chooser_set_do_overwrite_confirmation(
-	    GTK_FILE_CHOOSER (dialog), TRUE);
-	gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog),d.c_str());
-	gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (dialog),f.c_str());
-	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
-		char *filename;
-		filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
-
-		size_t nc;
-		switch (g_whichAnalogSave) {
-		case SAVE_SINGLE: {
-			nc = 1;
-			break;
-		}
-		case SAVE_ENABLED: {
-			u32 num_enabled = 0;
-			for (size_t i=0; i< g_c.size(); i++) {
-				if (g_c[i]->getEnabled()) {
-					num_enabled++;
-				}
-			}
-			nc = num_enabled;
-			for (int i=0; i<4; i++) {
-				gtk_widget_set_sensitive(g_enabledChkBx[i], false);
-			}
-			break;
-		}
-		case SAVE_ALL: {
-			nc = g_c.size();
-			break;
-		}
-		default:
-			error("bad analog save mode. exiting.");
-			exit(1);
-		}
-
-		gtk_widget_set_sensitive(g_whichAnalogSaveWidget, false);
-
-		g_analogwriter_postfilter.open(filename, nc);
-		g_free(filename);
-
-		// note we are assuming here that all channels get the same scaling
-		// this is done because of limitations of NWB,
-		// and honestly it should be true for each coherent datatype
-		auto scale = g_c[0]->m_scaleFactor;
-		int max_str = 0;
-		for (size_t i=0; i<g_c.size(); i++) {
-			max_str = max_str > (int)g_c[i]->m_chanName.size() ?
-			          max_str : g_c[i]->m_chanName.size();
-		}
-		auto name = new char[max_str*g_c.size()];
-		for (size_t i=0; i<g_c.size(); i++) {
-			strncpy(&name[i*max_str], g_c[i]->m_chanName.c_str(),
-			        g_c[i]->m_chanName.size());
-		}
-		g_analogwriter_postfilter.setVersion();
-		char uuid[37];
-		uuid_unparse(g_uuid, uuid);
-		g_analogwriter_postfilter.setUUID(uuid);
-		g_analogwriter_postfilter.setMetaData(scale, name, max_str);
-		delete[] name;
-	}
-	gtk_widget_destroy (dialog);
-}
-*/
 // make this an anonymous function since it's only called once
 static void getTemplateCB(GtkWidget *, gpointer _p)
 {
@@ -2331,7 +1887,6 @@ static void getTemplateCB(GtkWidget *, gpointer _p)
 
 int main(int argc, char **argv)
 {
-	//using namespace gtkclient;
 
 	(void) signal(SIGINT, destroy);
 
@@ -2344,7 +1899,7 @@ int main(int argc, char **argv)
 
 	g_tsc = new TimeSyncClient(); //tells us the ticks when things happen.
 
-	string titlestr = "gtkclient (TDT) v2.10";
+	string titlestr = "gtkclient (TDT) v2.20";
 
 #ifdef DEBUG
 	feenableexcept(FE_DIVBYZERO|FE_INVALID|FE_OVERFLOW);  // Enable (some) floating point exceptions
@@ -2360,10 +1915,6 @@ int main(int argc, char **argv)
 	GtkWidget *frame;
 
 	string s;
-
-	// Verify that the version of the library that we linked against is
-	// compatible with the version of the headers we compiled against.
-	//GOOGLE_PROTOBUF_VERIFY_VERSION;
 
 	//FiringRate test_fr;
 	//test_fr.set_bin_params(15,1.0);
@@ -2453,28 +2004,8 @@ int main(int argc, char **argv)
 		po8e_query_sock.recv(&msg);
 		o->m_chanName = (char *)msg.data();
 
-		// NC : X : SCALE
-		// XXX not necessary anymore
-		/*
-		msg.rebuild(2);
-		memcpy(msg.data(), "NC", 2);
-		po8e_query_sock.send(msg, ZMQ_SNDMORE);
-		msg.rebuild(sizeof(u64));
-		memcpy(msg.data(), &ch, sizeof(u64));
-		po8e_query_sock.send(msg, ZMQ_SNDMORE);
-		msg.rebuild(5);
-		memcpy(msg.data(), "SCALE", 5);
-		po8e_query_sock.send(msg);
-		msg.rebuild();
-		po8e_query_sock.recv(&msg);
-
-		memcpy(&(o->m_scaleFactor), (float *)msg.data(), sizeof(float *));
-		*/
 		g_c.push_back(o);
 	}
-
-	//g_artifactFilter = new ArtifactFilter(nnc);
-	//g_nlms = new ArtifactNLMS2(nnc, &ms);
 
 	for (size_t i=0; i<g_channel.size(); i++) {
 		g_channel[i] = ms.getInt(i, "channel", i*16);
@@ -2539,11 +2070,6 @@ int main(int argc, char **argv)
 	g_showISIhist = (bool)ms.getStructValue("wf", "show_isi", 0, (float)g_showISIhist);
 	g_showWFstd = (bool)ms.getStructValue("wf", "show_std", 0, (float)g_showWFstd);
 	g_zoomSpan = ms.getStructValue("wf", "span", 0, g_zoomSpan);
-
-	//g_artifactFilterRun = (bool)ms.getStructValue("icms", "filter_run", 0, (float)g_artifactFilterRun);
-
-	//g_trainArtifactNLMS = (bool)ms.getStructValue("icms", "lms_train", 0, (float)g_trainArtifactNLMS);
-	//g_filterArtifactNLMS = (bool)ms.getStructValue("icms", "lms_filter", 0, (float)g_filterArtifactNLMS);
 
 	g_trainArtifactTempl = (bool)ms.getStructValue("icms", "template_train", 0, (float)g_trainArtifactTempl);
 	g_enableArtifactSubtr = (bool)ms.getStructValue("icms", "template_subtract", 0, (float)g_enableArtifactSubtr);
@@ -2778,89 +2304,6 @@ int main(int argc, char **argv)
 	// add a page for icms
 	box1 = gtk_vbox_new(FALSE, 0);
 
-	/*
-	// Artifact Filter
-	s = "Artifact Filter";
-	frame = gtk_frame_new (s.c_str());
-	gtk_box_pack_start (GTK_BOX (box1), frame, FALSE, FALSE, 1);
-
-	box2 = gtk_vbox_new(FALSE, 0);
-	gtk_container_add (GTK_CONTAINER (frame), box2);
-
-	box3 = gtk_hbox_new(FALSE, 0);
-	gtk_box_pack_start (GTK_BOX (box2), box3, TRUE, TRUE, 0);
-
-	box4 = gtk_vbox_new(FALSE, 0);
-	gtk_box_pack_start (GTK_BOX (box3), box4, TRUE, TRUE, 0);
-	mk_checkbox("apply filter", box4,
-	            &g_artifactFilterRun, basic_checkbox_cb);
-
-	box3 = gtk_hbox_new(FALSE, 0);
-	gtk_box_pack_start (GTK_BOX (box2), box3, TRUE, TRUE, 0);
-
-	box4 = gtk_vbox_new(FALSE, 0);
-	gtk_box_pack_start (GTK_BOX (box3), box4, TRUE, TRUE, 0);
-	mk_button("load weights", box4,
-	[](GtkWidget *, gpointer parent_window) {
-		string d = get_cwd();
-		d += "/etc";
-
-		GtkWidget *dialog = gtk_file_chooser_dialog_new ("Load Filter Weights",
-		                    (GtkWindow *)parent_window,
-		                    GTK_FILE_CHOOSER_ACTION_OPEN,
-		                    GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-		                    GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
-		                    NULL);
-		gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog),d.c_str());
-		if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
-			char *fn = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
-			g_artifactFilter->loadWeights(fn);
-			g_free(fn);
-		}
-		gtk_widget_destroy(dialog);
-	}, nullptr);
-
-	box4 = gtk_vbox_new(FALSE, 0);
-	gtk_box_pack_start (GTK_BOX (box3), box4, TRUE, TRUE, 0);
-	mk_button("clear weights", box4,
-	[](GtkWidget *, gpointer) {
-		g_artifactFilter->clearWeights();
-	}, nullptr);
-	*/
-
-	// LMS
-	/*
-	s = "Artifact LMS Filtering";
-	frame = gtk_frame_new (s.c_str());
-	gtk_box_pack_start (GTK_BOX (box1), frame, FALSE, FALSE, 1);
-
-	box2 = gtk_vbox_new(FALSE, 0);
-	gtk_container_add (GTK_CONTAINER (frame), box2);
-
-	box3 = gtk_hbox_new(FALSE, 0);
-	gtk_box_pack_start (GTK_BOX (box2), box3, TRUE, TRUE, 0);
-
-	box4 = gtk_vbox_new(FALSE, 0);
-	gtk_box_pack_start (GTK_BOX (box3), box4, TRUE, TRUE, 0);
-	mk_checkbox("train", box4,
-	            &g_trainArtifactNLMS, basic_checkbox_cb);
-
-	box4 = gtk_vbox_new(FALSE, 0);
-	gtk_box_pack_start (GTK_BOX (box3), box4, TRUE, TRUE, 0);
-	mk_checkbox("filter", box4,
-	            &g_filterArtifactNLMS, basic_checkbox_cb);
-
-	box3 = gtk_hbox_new(FALSE, 0);
-	gtk_box_pack_start (GTK_BOX (box2), box3, TRUE, TRUE, 0);
-
-	box4 = gtk_vbox_new(FALSE, 0);
-	gtk_box_pack_start (GTK_BOX (box3), box4, TRUE, TRUE, 0);
-	mk_button("clear lms weights", box4,
-	[](GtkWidget *, gpointer) {
-		g_nlms->clearWeights();
-	}, nullptr);
-	*/
-
 	s = "Artifact Subtraction";
 	frame = gtk_frame_new (s.c_str());
 	gtk_box_pack_start (GTK_BOX (box1), frame, FALSE, FALSE, 1);
@@ -2968,102 +2411,6 @@ int main(int argc, char **argv)
 
 	mk_checkbox("Unsorted?", bxx2, &g_saveUnsorted,	basic_checkbox_cb);
 
-	/*
-	s = "Save ICMS";
-	frame = gtk_frame_new(s.c_str());
-	gtk_box_pack_start(GTK_BOX (box1), frame, FALSE, FALSE, 1);
-
-	bxx1 = gtk_hbox_new (TRUE, 0);
-	gtk_container_add (GTK_CONTAINER (frame), bxx1);
-
-	bxx2 = gtk_vbox_new(TRUE, 0);
-	gtk_container_add(GTK_CONTAINER (bxx1), bxx2);
-	mk_button("Start", bxx2, openSaveICMSFile, nullptr);
-	mk_checkbox("WF?", bxx2, &g_saveICMSWF, basic_checkbox_cb);
-
-	bxx2 = gtk_vbox_new(FALSE, 0);
-	gtk_container_add(GTK_CONTAINER (bxx1), bxx2);
-	mk_button("Stop", bxx2,
-	[](GtkWidget *, gpointer) {
-		g_icmswriter.close();
-	}, nullptr);
-
-		s = "Save Analog (pre-filter)";
-		frame = gtk_frame_new(s.c_str());
-		gtk_box_pack_start(GTK_BOX (box1), frame, FALSE, FALSE, 1);
-
-		bxx1 = gtk_hbox_new (TRUE, 0);
-		gtk_container_add (GTK_CONTAINER (frame), bxx1);
-
-		bxx2 = gtk_vbox_new (TRUE, 0);
-		gtk_container_add (GTK_CONTAINER (bxx1), bxx2);
-		mk_button("Start", bxx2, openSaveAnalogPrefilterFile, nullptr);
-
-		bxx2 = gtk_vbox_new (TRUE, 0);
-		gtk_container_add (GTK_CONTAINER (bxx1), bxx2);
-		mk_button("Stop", bxx2,
-		[](GtkWidget *, gpointer) {
-			g_analogwriter_prefilter.close();
-			gtk_widget_set_sensitive(g_whichAnalogSaveWidget, true);
-			for (int i=0; i<4; i++) {
-				gtk_widget_set_sensitive(g_enabledChkBx[i], true);
-			}
-		}, nullptr);
-
-		s = "Save Analog (post-filter)";
-		frame = gtk_frame_new(s.c_str());
-		gtk_box_pack_start(GTK_BOX (box1), frame, FALSE, FALSE, 1);
-
-		bxx1 = gtk_hbox_new (TRUE, 0);
-		gtk_container_add (GTK_CONTAINER (frame), bxx1);
-
-		bxx2 = gtk_vbox_new (TRUE, 0);
-		gtk_container_add (GTK_CONTAINER (bxx1), bxx2);
-		mk_button("Start", bxx2, openSaveAnalogFile, nullptr);
-
-		bxx2 = gtk_vbox_new (TRUE, 0);
-		gtk_container_add (GTK_CONTAINER (bxx1), bxx2);
-		mk_button("Stop", bxx2,
-		[](GtkWidget *, gpointer) {
-			g_analogwriter_postfilter.close();
-			gtk_widget_set_sensitive(g_whichAnalogSaveWidget, true);
-			for (int i=0; i<4; i++) {
-				gtk_widget_set_sensitive(g_enabledChkBx[i], true);
-			}
-		}, nullptr);
-
-		g_whichAnalogSaveWidget =
-		    mk_radio("active,enabled,all", 3, box1, false, "analog channel(s)?", g_whichAnalogSave,
-		[](GtkWidget *_button, gpointer _p) {
-			if (gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(_button))) {
-				g_whichAnalogSave = (int)((i64)_p & 0xf);
-
-				// if active:
-				//	-> lock down A channel spinner
-				//	-> lock down double click on channel
-				//	-> lock down enable/disable for A (right click and checkbox single chan)
-				//  if enabled:
-				//	-> lock down disabler (rt click)
-				//
-			}
-		});
-		*/
-
-	/*
-		mk_button("Stop All", box1,
-		[](GtkWidget *, gpointer) {
-			// TODO: signal to the other thread, let them close it.
-			g_spikewriter.close();
-			g_icmswriter.close();
-			//g_analogwriter_prefilter.close();
-			//g_analogwriter_postfilter.close();
-			//gtk_widget_set_sensitive(g_whichAnalogSaveWidget, true);
-			//for (int i=0; i<4; i++) {
-			//	gtk_widget_set_sensitive(g_enabledChkBx[i], true);
-			//}
-		}, nullptr);
-	*/
-
 	mk_button("Save Preferences", box1,
 	[](GtkWidget *, gpointer) {
 		saveState();
@@ -3108,32 +2455,6 @@ int main(int argc, char **argv)
 	gtk_widget_show(label);
 	gtk_box_pack_start (GTK_BOX (v1), bx, TRUE, TRUE, 0);
 	g_spikewriter.registerWidget(label);
-
-	/*
-	bx = gtk_hbox_new (FALSE, 3);
-	label = gtk_label_new ("");
-	gtk_misc_set_alignment (GTK_MISC (label), 0, 0);
-	gtk_box_pack_start (GTK_BOX (bx), label, FALSE, FALSE, 0);
-	gtk_widget_show(label);
-	gtk_box_pack_start (GTK_BOX (v1), bx, TRUE, TRUE, 0);
-	g_icmswriter.registerWidget(label);
-
-	bx = gtk_hbox_new (FALSE, 3);
-	label = gtk_label_new ("");
-	gtk_misc_set_alignment (GTK_MISC (label), 0, 0);
-	gtk_box_pack_start (GTK_BOX (bx), label, FALSE, FALSE, 0);
-	gtk_widget_show(label);
-	gtk_box_pack_start (GTK_BOX (v1), bx, TRUE, TRUE, 0);
-	g_analogwriter_prefilter.registerWidget(label);
-
-	bx = gtk_hbox_new (FALSE, 3);
-	label = gtk_label_new ("");
-	gtk_misc_set_alignment (GTK_MISC (label), 0, 0);
-	gtk_box_pack_start (GTK_BOX (bx), label, FALSE, FALSE, 0);
-	gtk_widget_show(label);
-	gtk_box_pack_start (GTK_BOX (v1), bx, TRUE, TRUE, 0);
-	g_analogwriter_postfilter.registerWidget(label);
-	*/
 
 	gtk_paned_add1(GTK_PANED(paned), v1);
 	gtk_paned_add2(GTK_PANED(paned), da1);
@@ -3202,11 +2523,7 @@ int main(int argc, char **argv)
 
 	threads.push_back(thread(worker));
 	threads.push_back(thread(spikewrite));
-	//threads.push_back(thread(icmswrite));
-	//threads.push_back(thread(analogwrite_prefilter));
-	//threads.push_back(thread(analogwrite));
 	threads.push_back(thread(mmap_fun));
-	//threads.push_back(thread(nlms_train));
 
 	gtk_widget_show_all(window);
 
@@ -3227,8 +2544,6 @@ int main(int argc, char **argv)
 #endif
 
 	KillFont();
-	// Optional:  Delete all global objects allocated by libprotobuf.
-	//google::protobuf::ShutdownProtobufLibrary();
 
 	for (auto &thread : threads) {
 		thread.join();
@@ -3238,14 +2553,6 @@ int main(int argc, char **argv)
 	// however it should be safe to manually close after their thread is
 	// joined and finished
 	g_spikewriter.close();
-	//g_icmswriter.close();
-	//g_analogwriter_prefilter.close();
-	//g_analogwriter_postfilter.close();
-
-	//for (auto &q : g_dataqueues) {
-	//	delete q.first;
-	// q.second is deleted when the po8e_conf object is destructed
-	//}
 
 	// clean out our standard vectors
 	for (auto &o : g_c)
