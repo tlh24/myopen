@@ -124,6 +124,9 @@ int main(int argc, char *argv[])
 	spinner.emplace_back(">    >>>  ");
 	spinner.emplace_back(">>    >>> ");
 
+	size_t zin_n = zin.find_last_of("/");
+	size_t zout_n = zout.find_last_of("/");
+
 	while (!s_interrupted) {
 
 		try {
@@ -150,18 +153,18 @@ int main(int argc, char *argv[])
 			}
 
 			auto f = new float[nc*ns];
-			memcpy(f, buf+32, nc*ns*sizeof(float));
+			memcpy(f, buf+24, nc*ns*sizeof(float));
 
 			for (size_t i=0; i<nc; i++) {
 				bandpass[i]->Proc(&(f[i*ns]), &(f[i*ns]), ns);
 			}
 
 			// copy the filtered data back to the buffer
-			memcpy(buf+32, f, nc*ns*sizeof(float));
+			memcpy(buf+24, f, nc*ns*sizeof(float));
 
 			delete[] f;
 
-			msg.rebuild(32+nc*ns*sizeof(float));
+			msg.rebuild(24+nc*ns*sizeof(float));
 			memcpy(msg.data(), buf, msg.size());
 			socket_out.send(msg);
 
@@ -169,9 +172,9 @@ int main(int argc, char *argv[])
 
 			if (waiter % 200 == 0) {
 				printf(" [%s]%s[%s]\r",
-				       zin.c_str(),
+				       zin.substr(zin_n+1).c_str(),
 				       spinner[counter % spinner.size()],
-				       zout.c_str());
+				       zout.substr(zout_n+1).c_str());
 				fflush(stdout);
 				counter++;
 			}

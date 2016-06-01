@@ -1,4 +1,5 @@
-#include <signal.h>				// for signal, SIGINT
+#include <signal.h>	// for signal, SIGINT
+#include <string>
 #include <zmq.hpp>
 #include "util.h"
 
@@ -64,6 +65,9 @@ int main(int argc, char *argv[])
 	spinner.emplace_back(">    >>>  ");
 	spinner.emplace_back(">>    >>> ");
 
+	size_t zin_n = zin.find_last_of("/");
+	size_t zout_n = zout.find_last_of("/");
+
 	while (!s_interrupted) {
 
 		try {
@@ -91,9 +95,9 @@ int main(int argc, char *argv[])
 
 			if (waiter % 200 == 0) {
 				printf(" [%s]%s[%s]\r",
-				       zin.c_str(),
+				       zin.substr(zin_n+1).c_str(),
 				       spinner[counter % spinner.size()],
-				       zout.c_str());
+				       zout.substr(zout_n+1).c_str());
 				fflush(stdout);
 				counter++;
 			}
