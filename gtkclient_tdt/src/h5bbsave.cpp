@@ -1,6 +1,7 @@
 #include <signal.h>				// for signal, SIGINT
 #include <zmq.hpp>
 #include <uuid.h>
+#include <ctime>
 #include "util.h"
 #include "timesync.h"
 #include "h5analogwriter.h"
@@ -91,9 +92,16 @@ int main(int argc, char *argv[])
 	char uu[37];
 	uuid_unparse(u, uu);
 
+	time_t now;
+	time(&now);
+	char create_date[sizeof("YYYY-MM-DDTHH:MM:SSZ")];
+	strftime(create_date, sizeof(create_date), "%FT%TZ", gmtime(&now));
+
 	h5.open(fn.c_str(), nnc);
 	h5.setVersion();
 	h5.setUUID(uu);
+	h5.setFileCreateDate(create_date);
+	h5.setSessionDescription("broadband data");
 	h5.setMetaData(1.0/3276700, name, max_str);
 
 	delete[] name;
