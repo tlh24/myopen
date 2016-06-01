@@ -1,5 +1,6 @@
 #include <utility>
 #include <map>
+#include <gtk/gtk.h>
 #include "h5writer.h"
 #include "readerwriterqueue.h"
 
@@ -33,6 +34,7 @@ protected:
 	map<pair<i16, i16>, hid_t> m_h5Dwf;	// holds a wf dataset for each (ch,un)
 	map<pair<i16, i16>, size_t> m_ns;	// num samples written for each (ch,un)
 	ReaderWriterQueue<SPIKE *> *m_q; 	// the queue for data packets
+	GtkWidget		*m_w;				// for drawing to the gui
 
 public:
 	H5SpikeWriter();
@@ -57,6 +59,10 @@ public:
 	size_t capacity();
 
 	size_t bytes();
+
+	void registerWidget(GtkWidget *w);
+
+	void draw();
 
 	const char *name()
 	{

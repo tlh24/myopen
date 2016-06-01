@@ -12,6 +12,7 @@ H5SpikeWriter::H5SpikeWriter()
 	m_h5Dwf.clear();
 	m_ns.clear();
 	m_q = NULL;
+	m_w = NULL;
 }
 H5SpikeWriter::~H5SpikeWriter()
 {
@@ -322,6 +323,31 @@ size_t H5SpikeWriter::bytes()
 		n += x.second * m_nwf * sizeof(float);
 	}
 	return n;
+}
+void H5SpikeWriter::registerWidget(GtkWidget *w)
+{
+	m_w = w;
+}
+
+void H5SpikeWriter::draw()
+{
+	if (isEnabled()) {
+
+		size_t n = filename().find_last_of("/");
+		char str[256];
+
+		double b = bytes() / 1e6;
+
+		if (b >= 1e3) {
+			b /= 1e3;
+			snprintf(str, 256, "%s: %.2f GB",
+			         filename().substr(n+1).c_str(), b);
+		} else {
+			snprintf(str, 256, "%s: %.2f MB",
+			         filename().substr(n+1).c_str(), b);
+		}
+		gtk_label_set_text(GTK_LABEL(m_w), str);
+	}
 }
 
 bool H5SpikeWriter::setMetaData(double sr, char *name, int slen)
