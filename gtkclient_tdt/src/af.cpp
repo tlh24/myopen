@@ -1,5 +1,6 @@
 #include <signal.h>				// for signal, SIGINT
 #include <thread>
+#include <sys/stat.h>
 #include <armadillo>
 #include <zmq.hpp>
 #include "util.h"
@@ -218,6 +219,14 @@ int main(int argc, char *argv[])
 	memcpy(&nnc, (u64 *)msg.data(), sizeof(u64));
 
 	ArtifactNLMS3 af(nnc);
+
+	struct stat buf;
+	if (stat("af.h5", &buf) == 0) { // ie file exists
+		printf("loading af weights\n");
+		af.loadWeights("af.h5");
+	}
+
+	af.setMu(1e-5);
 
 	std::thread t1(trainer, std::ref(zcontext), std::ref(af));
 	std::thread t2(filter, std::ref(zcontext), zin, zout, std::ref(af));
