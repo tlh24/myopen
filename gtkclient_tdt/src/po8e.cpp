@@ -47,6 +47,7 @@ static void s_signal_handler(int)
 {
 	s_interrupted = true;
 	g_running = false;
+	printf("\n");
 }
 
 static void s_catch_signals(void)
