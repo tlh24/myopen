@@ -11,6 +11,7 @@ bool s_interrupted = false;
 static void s_signal_handler(int)
 {
 	s_interrupted = true;
+	printf("\n");
 }
 
 static void s_catch_signals(void)
@@ -57,7 +58,11 @@ int main(int argc, char *argv[])
 	memcpy(msg.data(), "NEC", 3);
 	po8e_query_sock.send(msg);
 	msg.rebuild();
-	po8e_query_sock.recv(&msg);
+	try {
+		po8e_query_sock.recv(&msg);
+	} catch (zmq::error_t &e) {
+		exit(1);
+	}
 	memcpy(&nec, (u64 *)msg.data(), sizeof(u64));
 
 	std::vector <std::string> names;
@@ -83,10 +88,10 @@ int main(int argc, char *argv[])
 	char uu[37];
 	uuid_unparse(u, uu);
 
-	time_t now;
-	time(&now);
+	time_t t_create;
+	time(&t_create);
 	char create_date[sizeof("YYYY-MM-DDTHH:MM:SSZ")];
-	strftime(create_date, sizeof(create_date), "%FT%TZ", gmtime(&now));
+	strftime(create_date, sizeof(create_date), "%FT%TZ", gmtime(&t_create));
 
 	h5.open(fn.c_str(), nec, names);
 	h5.setVersion();
@@ -115,6 +120,8 @@ int main(int argc, char *argv[])
 	spinner.emplace_back(">    >>>  ");
 	spinner.emplace_back(">>    >>> ");
 
+	size_t zin_n = zin.find_last_of("/");
+
 	while (!s_interrupted) {
 
 		try {
@@ -138,11 +145,19 @@ int main(int argc, char *argv[])
 
 			h5.write(ec, tk, ts, ev); // frees memory when done
 
-			if (waiter % 200 == 0) {
-				printf(" [%s]%s[%s]\r",
-				       zin.c_str(),
+			if (waiter % 20 == 0) {
+				time_t now;
+				time(&now);
+				double sec = difftime(now, t_create);
+				int min = sec / 60;
+				int hr  = min / 60;
+				printf(" [%s]%s[%s] (%02d:%02d:%02d)\r",
+				       zin.substr(zin_n+1).c_str(),
 				       spinner[counter % spinner.size()],
-				       fn.c_str());
+				       fn.c_str(),
+				       hr,
+				       min % 60,
+				       int(sec) % 60);
 				fflush(stdout);
 				counter++;
 			}
