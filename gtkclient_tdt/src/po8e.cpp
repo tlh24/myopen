@@ -596,11 +596,11 @@ int main(void)
 		}
 
 		if (g_running) {
-			printf("ts %s", g_ts.getTime().c_str());
-			printf(" | tk %d", g_ts.getTicks());
-			printf(" | slope %0.3Lf", g_ts.m_slope);
-			printf(" | offset %0.1Lf", g_ts.m_offset);
-			printf(" | po8e %0.2f\r", g_po8eStats.mean());
+			printf("ts %s ", g_ts.getTime().c_str());
+			printf("| tk %d ", g_ts.getTicks());
+			printf("| sl %0.3Lf ", g_ts.m_slope);
+			printf("| os %0.1Lf ", g_ts.m_offset);
+			printf("| mu %0.2f\r", g_po8eStats.mean());
 			fflush(stdout);
 		}
 	}
