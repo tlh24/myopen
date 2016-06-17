@@ -380,8 +380,12 @@ void worker(zmq::context_t &ctx, vector<po8e::card *> &cards)
 
 }
 
-int main(void)
+int main(int argc, char *argv[])
 {
+	std::string rc  = argc > 1 ? argv[1] : "po8e.rc";
+
+	printf("po8e\n");
+	printf("usage: po8e [config file]\n\n");
 
 	s_catch_signals();
 
@@ -394,24 +398,9 @@ int main(void)
 		return 1;
 	}
 
-	auto fileExists = [](const char *f) {
-		struct stat sb;
-		int res = stat(f, &sb);
-		if (res == 0)
-			if (S_ISREG(sb.st_mode))
-				return true;
-		return false;
-	};
-
 	// load the lua-based po8e config
 	po8eConf pc;
-	bool conf_ok = false;
-	if (fileExists("po8e.rc")) {
-		conf_ok = pc.loadConf("po8e.rc");
-	} else if (fileExists("rc/po8e.rc")) {
-		conf_ok = pc.loadConf("rc/po8e.rc");
-	}
-	if (!conf_ok) {
+	if (!pc.loadConf(rc)) {
 		error("No config file! Aborting!");
 		return 1;
 	}

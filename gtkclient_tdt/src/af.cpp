@@ -226,7 +226,7 @@ int main(int argc, char *argv[])
 		af.loadWeights("af.h5");
 	}
 
-	af.setMu(1e-5);
+	af.setMu(5e-6);
 
 	std::thread t1(trainer, std::ref(zcontext), std::ref(af));
 	std::thread t2(filter, std::ref(zcontext), zin, zout, std::ref(af));

@@ -30,6 +30,10 @@ bool po8eConf::loadConf(const char *conf)
 	}
 	return true;
 }
+bool po8eConf::loadConf(string conf)
+{
+	return loadConf(conf.c_str());
+}
 // returns the number of channels over all cards
 size_t po8eConf::numChannels(po8e::channel_DataTypes x)
 {

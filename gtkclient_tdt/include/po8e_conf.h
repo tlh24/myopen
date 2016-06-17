@@ -1,6 +1,7 @@
 #ifndef _INCLUDE_PO8ECONF_
 #define _INCLUDE_PO8ECONF_
 
+#include <string>
 #include <vector>
 #include "po8e.pb.h"
 #include "lconf.h"
@@ -14,6 +15,7 @@ public:
 	~po8eConf();
 	const char *name();
 	bool loadConf(const char *conf);
+	bool loadConf(std::string conf);
 	size_t numChannels(po8e::channel_DataTypes x);
 	size_t numNeuralChannels();
 	size_t numEventsChannels();
