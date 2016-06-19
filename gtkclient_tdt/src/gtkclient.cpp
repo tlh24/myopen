@@ -1020,26 +1020,12 @@ void sorter(int ch)
 				}
 				g_spikewriter.add(s); // other thread deletes memory
 			}
-			if (unit > 0 && unit < NUNIT) {
-				int uu = unit-1;
-				g_fr[ch*NSORT+uu]->add(the_time);
-				g_spikeraster[uu]->addEvent((float)the_time, ch); // for drawing
-
-				// HACK HACK HACK
-				// XXX XXX XXX XX
-				// HACK HACK HACK
-
-				//if (ch == 0 && unit == 1) { //nb zero-indexed
-				//	if (!g_sock.Send(".")) {
-				//		warn("ack!");
-				//	}
-				//
-				//	auto o = new ICMS; // deleted by other thread
-				//	o->set_ts(the_time);
-				//	o->set_tick(tk);
-				//	o->set_stim_chan(2); // 1-indexed
-				//	g_icmswriter.add(o);
-				//}
+			if (unit < NUNIT) { // should always be true
+				if (unit > 0) {
+					int uu = unit-1;
+					g_spikeraster[uu]->addEvent((float)the_time, ch); // for drawing
+				}
+				g_fr[ch*NUNIT+unit]->add(the_time); // including unsorted
 			}
 		}
 	}
@@ -1980,7 +1966,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	for (size_t i=0; i<(nnc*NSORT); i++) {
+	for (size_t i=0; i<(nnc*NUNIT); i++) {
 		auto fr = new FiringRate();
 		fr->set_bin_params(20, 1.0); // nlags, duration (sec)
 		g_fr.push_back(fr);

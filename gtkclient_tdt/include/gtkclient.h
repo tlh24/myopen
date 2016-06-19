@@ -32,7 +32,7 @@ enum MODES { // ui tabs
 
 #define STIMCHAN 	8
 #define NSORT		4
-#define NUNIT		NSORT+1		// including unsorted
+#define NUNIT		(NSORT+1)	// including unsorted (parens are important!)
 
 
 typedef struct PO8Data {
