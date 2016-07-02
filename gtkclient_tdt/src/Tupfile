@@ -28,7 +28,8 @@ h5evsave.cpp \
 noop.cpp \
 notch.cpp \
 bp.cpp \
-af.cpp
+af.cpp \
+af2.cpp
 
 : foreach $(OBJS) |> !cpp |> %B.o
 

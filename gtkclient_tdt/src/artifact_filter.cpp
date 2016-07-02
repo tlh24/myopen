@@ -16,6 +16,11 @@ ArtifactFilter::~ArtifactFilter()
 {
 }
 
+size_t ArtifactFilter::order()
+{
+	return n;
+}
+
 // X is the input matrix (n by t)
 // returns the predicted output matrix Xhat, (n x t)
 mat ArtifactFilter::filter(mat X)
@@ -97,4 +102,58 @@ void ArtifactNLMS3::train(mat X)
 		W = Z;
 	}
 
+}
+
+
+ArtifactFilterDirect::ArtifactFilterDirect(int _n) : ArtifactFilter(_n)
+{
+	num_batches = 0;
+	Phi.zeros(n, n);
+}
+
+ArtifactFilterDirect::~ArtifactFilterDirect()
+{
+}
+
+size_t ArtifactFilterDirect::numBatches()
+{
+	return num_batches;
+}
+void ArtifactFilterDirect::clearWeights()
+{
+	ArtifactFilter::clearWeights();
+	num_batches = 0;
+}
+
+void ArtifactFilterDirect::train(mat X)
+{
+	num_batches++;
+
+	size_t t = X.n_cols;
+
+	double alpha = ((double)num_batches-1.0)/(double)num_batches;
+
+	mat tmp = 1.0/double(t) * X*X.t();
+
+	Phi = alpha * Phi + (1-alpha) * tmp;
+	mat P = inv_sympd(Phi);
+	//printf("rcond Phi %f\n", rcond(Phi));
+	//mat P = inv(Phi);
+
+	mat L = diagmat(1/diagvec(P));
+
+	{
+		lock_guard<mutex> lock(mtx);
+		W = -L * P;
+		W.diag().zeros();
+	}
+
+}
+
+// X is the input matrix (n by t)
+// returns the predicted output matrix Xhat, (n x t)
+mat ArtifactFilterDirect::filter(mat X)
+{
+	// Xhat = W * X;
+	return W * X;
 }

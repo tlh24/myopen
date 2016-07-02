@@ -21,6 +21,7 @@ public:
 	ArtifactFilter(int _n);
 	~ArtifactFilter();
 
+	size_t order();
 	mat filter(mat X);
 	void loadWeights(const char *f);
 	void saveWeights(const char *f);
@@ -38,6 +39,21 @@ public:
 	~ArtifactNLMS3();
 	void setMu(float _mu);
 	void train(mat X);
+};
+
+class ArtifactFilterDirect : public ArtifactFilter
+{
+protected:
+	size_t num_batches; // how many batches have gone into the weights
+	mat Phi; 		// X*X' the second uncentered moment
+public:
+
+	ArtifactFilterDirect(int _n);
+	~ArtifactFilterDirect();
+	size_t numBatches();
+	void clearWeights();
+	void train(mat X);
+	mat filter(mat X);
 };
 
 

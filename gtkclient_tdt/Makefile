@@ -186,6 +186,7 @@ install:
 	install notch -t $(TARGET)
 	install noop -t $(TARGET)
 	install af -t $(TARGET)
+	install af2 -t $(TARGET)
 	install h5bbsave -t $(TARGET)
 	install h5evsave -t $(TARGET)
 	install timesync -t $(TARGET)
