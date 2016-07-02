@@ -1814,7 +1814,7 @@ auto mk_legal_filename = [](string basedir, string prefix, string ext)
 static void openSaveSpikesFile(GtkWidget *, gpointer parent_window)
 {
 	string d = get_cwd();
-	string f = mk_legal_filename(d, "spikes_", ".h5");
+	string f = mk_legal_filename(d, "spk_", ".h5");
 
 	GtkWidget *dialog;
 	dialog = gtk_file_chooser_dialog_new ("Save Spikes File",
