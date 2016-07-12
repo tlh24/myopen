@@ -7,6 +7,7 @@ filter.cpp \
 mmap_test.cpp \
 spikebuffer.cpp \
 artifact_filter.cpp \
+artifact_subtract.cpp \
 vbo_raster.cpp \
 vbo_timeseries.cpp \
 pulse_queue.cpp pulser.cpp
@@ -29,7 +30,8 @@ noop.cpp \
 notch.cpp \
 bp.cpp \
 af.cpp \
-af2.cpp
+af2.cpp \
+subtr.cpp
 
 : foreach $(OBJS) |> !cpp |> %B.o
 

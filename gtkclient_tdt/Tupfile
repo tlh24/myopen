@@ -24,6 +24,7 @@ LDFLAGS += -larmadillo
 : src/notch.o ../common_host/util.o src/filter.o |> !ld |> notch
 : src/af.o ../common_host/util.o src/artifact_filter.o |> !ld |> af
 : src/af2.o ../common_host/util.o src/artifact_filter.o |> !ld |> af2
+: src/subtr.o ../common_host/util.o src/artifact_subtract.o |> !ld |> subtr
 
 LDFLAGS += `pkg-config --libs uuid`
 
