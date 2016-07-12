@@ -491,7 +491,7 @@ public:
 			if (g_whichAlignment == 0) { // cursor aligned
 				c = (float)m_centering;
 			} else {
-				c = floor(NWFSAMP/2);
+				c = floor(NWFSAMP/2) + floor(NWFSAMP/8.0);
 			}
 			c = NWFSAMP-1-c;
 			c += 0.5f;

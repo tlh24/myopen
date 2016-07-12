@@ -905,8 +905,8 @@ void sorter(int ch)
 	while (g_c[ch]->m_spkbuf.getSpike(tk_sp, wf_sp, neo_sp, 2*NWFSAMP, threshold, NWFSAMP, g_whichSpikePreEmphasis)) {
 		// ask for twice the width of a spike waveform so that we may align
 
-		int a = floor(NWFSAMP/2);
-		int b = floor(NWFSAMP/2)+NWFSAMP;
+		int a = floor(NWFSAMP/2.0);
+		int b = floor(NWFSAMP/2.0)+NWFSAMP;
 
 		int centering = a;
 		float v;
@@ -921,7 +921,7 @@ void sorter(int ch)
 			for (int i=a; i<b; i++) {
 				if (v > wf_sp[i]) {
 					v = wf_sp[i];
-					centering = i;
+					centering = i + floor(NWFSAMP/8.0);
 				}
 			}
 			break;
@@ -930,7 +930,7 @@ void sorter(int ch)
 			for (int i=a; i<b; i++) {
 				if (v < wf_sp[i]) {
 					v = wf_sp[i];
-					centering = i;
+					centering = i + floor(NWFSAMP/8.0);
 				}
 			}
 
@@ -940,7 +940,7 @@ void sorter(int ch)
 			for (int i=a; i<b; i++) {
 				if (v < fabs(wf_sp[i])) {
 					v = fabs(wf_sp[i]);
-					centering = i;
+					centering = i + floor(NWFSAMP/8.0);
 				}
 			}
 
@@ -950,7 +950,7 @@ void sorter(int ch)
 			for (int i=a; i<b; i++) {
 				if (v < wf_sp[i+1]-wf_sp[i]) {
 					v = wf_sp[i+1]-wf_sp[i];
-					centering = i;
+					centering = i + floor(NWFSAMP/8.0);
 				}
 			}
 
@@ -960,7 +960,7 @@ void sorter(int ch)
 			for (int i=a; i<b; i++) {
 				if (v < neo_sp[i]) {
 					v = neo_sp[i];
-					centering = i;
+					centering = i + floor(NWFSAMP/8.0);
 				}
 			}
 		}
@@ -970,7 +970,7 @@ void sorter(int ch)
 			exit(1);
 		}
 
-		size_t idx = centering-(int)floor(NWFSAMP/2);
+		size_t idx = centering-(int)floor(NWFSAMP/2.0);
 
 		u32 tk = tk_sp[centering]; // alignment time
 
@@ -1062,11 +1062,10 @@ void worker()
 
 	while (!g_die) {
 
-		zmq::message_t buf;
-
 		zmq::poll(&items[0], 2, -1); //  -1 means block
 
 		if (items[0].revents & ZMQ_POLLIN) {
+			zmq::message_t buf;
 			neural_sock.recv(&buf);
 
 			char *ptr = (char *)buf.data();
@@ -1376,6 +1375,7 @@ void worker()
 				return (var) & (1<<n);
 			};
 
+			zmq::message_t buf;
 			events_sock.recv(&buf);
 
 			char *ptr = (char *)buf.data();
