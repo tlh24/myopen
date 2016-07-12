@@ -2234,7 +2234,7 @@ int main(int argc, char **argv)
 	           );
 
 	mk_combobox("crossing,min,max,abs,slope,neo", 6, box1, false, "Spike Alignment",
-	            g_whichSpikePreEmphasis,
+	            g_whichAlignment,
 	[](GtkWidget *_w, gpointer) {
 		g_whichAlignment = gtk_combo_box_get_active(GTK_COMBO_BOX(_w));
 	}
