@@ -192,7 +192,6 @@ install:
 	install bbview -t $(TARGET)
 	install h5bbsave -t $(TARGET)
 	install h5evsave -t $(TARGET)
-	install timesync -t $(TARGET)
 	install -d $(TARGET)/cg
 	install cg/fade.cg -t $(TARGET)/cg
 	install cg/fadeColor.cg -t $(TARGET)/cg

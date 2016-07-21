@@ -891,9 +891,9 @@ void destroyGUI(GtkWidget *, gpointer)
 }
 void sorter(int ch)
 {
-	float 	wf_sp[2*NWFSAMP];
-	float 	neo_sp[2*NWFSAMP];
-	u32 	tk_sp[2*NWFSAMP];
+	float 	wf_sp[3*NWFSAMP];
+	float 	neo_sp[3*NWFSAMP];
+	u32 	tk_sp[3*NWFSAMP];
 
 	float threshold;
 	if (g_whichSpikePreEmphasis == 2) {
@@ -903,7 +903,7 @@ void sorter(int ch)
 	}
 
 
-	while (g_c[ch]->m_spkbuf.getSpike(tk_sp, wf_sp, neo_sp, 2*NWFSAMP, threshold, NWFSAMP, g_whichSpikePreEmphasis)) {
+	while (g_c[ch]->m_spkbuf.getSpike(tk_sp, wf_sp, neo_sp, 3*NWFSAMP, threshold, NWFSAMP, g_whichSpikePreEmphasis)) {
 		// ask for twice the width of a spike waveform so that we may align
 
 		int a = floor(NWFSAMP/2.0);

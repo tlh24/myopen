@@ -16,9 +16,9 @@ protected:
 	int delay;	// delay in samples
 	float alpha; // averaging parameter
 	int buflen;	// samples
-	float * sa;	// SA buffer
-	std::queue<i64> * q;	// holds a queue of ticks
-	int * hot_ptr;	// pointer in buffer of where stim is happening
+	float *sa;	// SA buffer
+	std::queue<i64> *q;	// holds a queue of ticks
+	int *hot_ptr;	// pointer in buffer of where stim is happening
 public:
 
 	ArtifactSubtract(int _buflen);
