@@ -86,15 +86,16 @@ void VboTimeseries::addData(float *f, u32 ns)
 		m_f[((w+k)% m_nplot)*3 +1] = f[k];
 	m_w += ns; // atomic
 }
-void VboTimeseries::draw(int drawmode, float yoffset)
+void VboTimeseries::draw(int drawmode, float nchan, float yoffset)
 {
 	if (!m_vs) {
 		warn("m_vs = NULL in VboTimeseries");
 		return;
 	}
 	glEnableClientState(GL_VERTEX_ARRAY);
-	m_vs->setParam(2, "xzoom", 1.f/m_nplot);
-	m_vs->setParam(2, "yoffset", yoffset);
+	m_vs->setParam(3, "xzoom", 1.f/m_nplot);
+	m_vs->setParam(3, "nchan", nchan);
+	m_vs->setParam(3, "yoffset", yoffset);
 	m_vs->bind();
 
 	cgGLEnableProfile(m_pro);

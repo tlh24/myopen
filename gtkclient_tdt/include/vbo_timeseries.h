@@ -28,6 +28,6 @@ public:
 	void setNPlot(u32 _nplot);
 	void copy();
 	void addData(float *f, u32 ns);
-	void draw(int drawmode, float yoffset);
+	void draw(int drawmode, float nchan, float yoffset);
 };
 #endif
