@@ -26,17 +26,16 @@ h5evsave.cpp \
 noop.cpp \
 notch.cpp \
 bp.cpp \
+lfp.cpp \
 af.cpp \
 af2.cpp \
 subtr.cpp
-
 : foreach $(OBJS) |> !cpp |> %B.o
 
 PKG_LIBS  = gtk+-2.0 blas-openblas gtkglext-1.0 matio gl glu
 CPPFLAGS += `pkg-config --cflags $(PKG_LIBS)`
 
-OBJS = h5spikewriter.cpp
+OBJS = h5spikewriter.cpp bbview.cpp gtkclient.cpp
 : foreach $(OBJS) |> !cpp |> %B.o
 
 : po8e_conf.cpp | ../proto/po8e.pb.h |> !cpp |> %B.o
-: gtkclient.cpp |> !cpp |> %B.o

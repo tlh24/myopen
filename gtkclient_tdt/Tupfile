@@ -41,12 +41,19 @@ src/h5analogwriter.o |> !ld |> h5bbsave
 src/h5writer.o \
 src/h5eventwriter.o |> !ld |> h5evsave
 
-PKG_LIBS  = gtk+-2.0 blas-openblas gtkglext-1.0 matio gl glu
-
-LDFLAGS += -lCg -lCgGL -ljack
+PKG_LIBS  = gtk+-2.0 gtkglext-1.0 gl glu
+LDFLAGS += -lCg -lCgGL
 LDFLAGS += `pkg-config --libs $(PKG_LIBS)`
 
-: src/timeclient.o ../common_host/gettime.o |> !ld |> timesync
+ :src/bbview.o \
+../common_host/util.o \
+../common_host/glInfo.o \
+src/vbo_timeseries.o \
+ |> !ld |> bbview
+
+PKG_LIBS  = blas-openblas matio
+LDFLAGS += -ljack
+LDFLAGS += `pkg-config --libs $(PKG_LIBS)`
 
 : src/mmap_test.o |> !ld |> mmap_test
 
@@ -63,3 +70,5 @@ src/h5writer.o \
 src/h5spikewriter.o \
 src/spikebuffer.o \
  |> !ld |> gtkclient
+
+

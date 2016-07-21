@@ -556,7 +556,7 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 		int n = g_timeseries.size();
 		for (int k=0; k<n; k++) {
 			float yoffset = (n-k-1)/((float)n);
-			g_timeseries[k]->draw(g_drawmode[g_drawmodep], yoffset);
+			g_timeseries[k]->draw(g_drawmode[g_drawmodep], n, yoffset);
 
 			//labels.
 			glColor4f(1.f, 1.f, 1.f, 0.5);
@@ -655,7 +655,7 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 			//labels.
 			glRasterPos2f(1.f - 2.f*35.f/g_viewportSize[1],
 			              y+ 2.f*2.f/g_viewportSize[1]); //2 pixels vertical offset.
-			//kearning is from the lower right hand corner.
+			// kerning is from the lower right hand corner.
 			char buf[128] = {0,0,0,0};
 			snprintf(buf, 128, "%c %d", 'A'+k, g_channel[k]);
 			glPrint(buf);
@@ -824,8 +824,8 @@ configure1(GtkWidget *da, GdkEventConfigure *, gpointer)
 		g_vsFadeColor->addParams(5,"time","fade","col","off","ascale");
 
 		cgfile = d + "/cg/" + "threshold.cg";
-		g_vsThreshold = new cgVertexShader(cgfile.c_str(),"threshold");
-		g_vsThreshold->addParams(2,"xzoom","yoffset");
+		g_vsThreshold = new cgVertexShader(cgfile.c_str(),"thresholdB");
+		g_vsThreshold->addParams(3, "xzoom", "nchan", "yoffset");
 
 		//now the vertex buffers.
 		glInfo glInfo;
