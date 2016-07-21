@@ -12,6 +12,7 @@
 #include <armadillo>
 #include <zmq.hpp>
 #include "util.h"
+#include "lockfile.h"
 #include "PO8e.h"
 #include "timesync.h"
 #include "po8e_conf.h" 			// parse po8e conf files
@@ -393,7 +394,8 @@ int main(int argc, char *argv[])
 
 	g_startTime = gettime();
 
-	if (check_running("po8e")) {
+	lockfile lf("/tmp/po8e.lock");
+	if (lf.lock()) {
 		error("executable already running");
 		return 1;
 	}
@@ -603,5 +605,7 @@ int main(int argc, char *argv[])
 	for (auto &thread : threads) {
 		thread.join();
 	}
+
+	lf.unlock();
 
 }

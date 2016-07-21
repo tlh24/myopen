@@ -63,6 +63,7 @@
 #include "jacksnd.h"
 #include "spikebuffer.h"
 #include "util.h"
+#include "lockfile.h"
 
 #include "h5writer.h"
 #include "h5spikewriter.h"
@@ -1876,7 +1877,8 @@ int main(int argc, char **argv)
 
 	(void) signal(SIGINT, destroy);
 
-	if (check_running("gtkclient")) {
+	lockfile lf("/tmp/gtkclient.lock");
+	if (lf.lock()) {
 		error("executable already running");
 		return 1;
 	}
@@ -2559,4 +2561,6 @@ int main(int argc, char **argv)
 	if (g_vsThreshold)
 		delete g_vsThreshold;
 	cgDestroyContext(myCgContext);
+
+	lf.unlock();
 }

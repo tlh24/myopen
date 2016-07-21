@@ -40,11 +40,6 @@ int main(int argc, char *argv[])
 
 	zmq::context_t zcontext(1);	// single zmq thread
 
-	if (check_running("notch")) {
-		error("executable already running");
-		return 1;
-	}
-
 	zmq::socket_t po8e_query_sock(zcontext, ZMQ_REQ);
 	po8e_query_sock.connect("ipc:///tmp/po8e-query.zmq");
 

@@ -188,11 +188,14 @@ int main(int argc, char *argv[])
 {
 	// af [zmq_sub] [zmq_pub]
 
-	std::string zin  = argc > 1 ? argv[1] : "ipc:///tmp/broadband.zmq";
-	std::string zout = argc > 2 ? argv[2] : "ipc:///tmp/af.zmq";
+	if (argc < 3) {
+		printf("\naf - artifact filter\n");
+		printf("usage: af [zmq_sub] [zmq_pub]\n\n");
+		return 1;
+	}
 
-	printf("artifact filter\n");
-	printf("usage: af [zmq_sub] [zmq_pub]\n\n");
+	std::string zin  = argv[1];
+	std::string zout = argv[2];
 
 	printf("ZMQ SUB: %s\n", zin.c_str());
 	printf("ZMQ PUB: %s\n", zout.c_str());
@@ -201,11 +204,6 @@ int main(int argc, char *argv[])
 	s_catch_signals();
 
 	zmq::context_t zcontext(1);	// single zmq thread
-
-	if (check_running("af")) {
-		error("executable already running");
-		return 1;
-	}
 
 	zmq::socket_t po8e_query_sock(zcontext, ZMQ_REQ);
 	po8e_query_sock.connect("ipc:///tmp/po8e-query.zmq");

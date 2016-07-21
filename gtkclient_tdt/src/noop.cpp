@@ -37,11 +37,6 @@ int main(int argc, char *argv[])
 
 	zmq::context_t zcontext(1);	// single zmq thread
 
-	if (check_running("noop")) {
-		error("executable already running");
-		return 1;
-	}
-
 	zmq::socket_t socket_in(zcontext, ZMQ_SUB);
 	socket_in.connect(zin.c_str());
 	socket_in.setsockopt(ZMQ_SUBSCRIBE, "", 0);	// subscribe to everything

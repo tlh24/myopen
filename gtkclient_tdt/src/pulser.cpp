@@ -6,6 +6,7 @@
 #include <comedilib.h>
 #include <zmq.hpp>
 #include "util.h"
+#include "lockfile.h"
 #include "pulse_queue.h"
 
 // pulser - a pulse generator / scheduler
@@ -38,8 +39,8 @@ u16 bit(int n)
 }
 
 int g_nchan = 16;
-double g_dpulset = 0.001; // seconds
-int g_nsimultaneous = 2;
+double g_dpulset = 0.003; // seconds
+int g_nsimultaneous = 3;
 
 int main()
 {
@@ -47,7 +48,8 @@ int main()
 
 	zmq::context_t zcontext(1);	// single zmq thread
 
-	if (check_running("pulser")) {
+	lockfile lf("/tmp/pulser.lock");
+	if (lf.lock()) {
 		error("executable already running");
 		return 1;
 	}
@@ -68,22 +70,23 @@ int main()
 	PulseQueue p(g_nchan);
 	p.setPulseDT(g_dpulset);
 	p.setNumSimultaneous(g_nsimultaneous);
-	p.setPulseRate(1, 20);
-	p.setPulseRate(2, 40);
-	p.setPulseRate(3, 55);
-	p.setPulseRate(4, 70);
-	p.setPulseRate(5, 90);
-	p.setPulseRate(6, 105);
-	p.setPulseRate(7, 125);
-	p.setPulseRate(8, 140);
-	p.setPulseRate(9, 160);
-	p.setPulseRate(10, 175);
-	p.setPulseRate(11, 195);
-	p.setPulseRate(12, 210);
-	p.setPulseRate(13, 230);
-	p.setPulseRate(14, 245);
-	p.setPulseRate(15, 260);
-	p.setPulseRate(16, 280);
+	p.setPulseRate(1,   46);
+	/*p.setPulseRate(2,   78);
+	p.setPulseRate(3,  155);
+	p.setPulseRate(4,  231);
+	p.setPulseRate(5,  263);
+	p.setPulseRate(6,  231);
+	p.setPulseRate(7,  155);
+	p.setPulseRate(8,   78);
+	p.setPulseRate(9,  150);
+	p.setPulseRate(10, 106);
+	p.setPulseRate(11,   0);
+	p.setPulseRate(12,   0);
+	p.setPulseRate(13,   0);
+	p.setPulseRate(14,   0);
+	p.setPulseRate(15,   0);
+	p.setPulseRate(16, 106);
+	*/
 
 	struct timespec ts;
 	ts.tv_sec = 0; // 0 seconds
@@ -108,5 +111,7 @@ int main()
 	}
 
 	comedi_close(card);
+
+	lf.unlock();
 
 }

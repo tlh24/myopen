@@ -39,11 +39,6 @@ int main(int argc, char *argv[])
 
 	s_catch_signals();
 
-	//if (check_running("h5evsave")) {
-	//	error("executable already running");
-	//	return 1;
-	//}
-
 	TimeSyncClient *tsc = new TimeSyncClient();  // translates tk and ts
 
 	H5EventWriter h5;
