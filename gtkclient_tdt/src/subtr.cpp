@@ -28,12 +28,15 @@ int main(int argc, char *argv[])
 {
 	// subtr [zmq_sub_bb] [zmq_sub_ev] [zmq_pub_bb]
 
-	std::string zbb  = argc > 1 ? argv[1] : "ipc:///tmp/broadband.zmq";
-	std::string zev  = argc > 2 ? argv[2] : "ipc:///tmp/events.zmq";
-	std::string zout = argc > 3 ? argv[3] : "ipc:///tmp/subtr.zmq";
+	if (argc < 4) {
+		printf("\nsubtr - artifact subtraction\n");
+		printf("usage: subtr [zmq_sub_bb] [zmq_sub_ev] [zmq_pub]\n\n");
+		return 1;
+	}
 
-	printf("artifact subtraction\n");
-	printf("usage: subtr [zmq_sub_bb] [zmq_sub_ev] [zmq_pub]\n\n");
+	std::string zbb 	= argv[1];
+	std::string zev 	= argv[2];
+	std::string zout 	= argv[3];
 
 	printf("ZMQ SUB BROADBAND: %s\n", zbb.c_str());
 	printf("ZMQ SUB EVENTS: %s\n", zev.c_str());
@@ -75,7 +78,8 @@ int main(int argc, char *argv[])
 	memcpy(msg.data(), "EC", 2);
 	po8e_query_sock.send(msg, ZMQ_SNDMORE);
 	msg.rebuild(sizeof(u64));
-	{	// reduce scope for ch
+	{
+		// reduce scope for ch
 		u64 ch = 0;
 		memcpy(msg.data(), &ch, sizeof(u64));
 	}
@@ -86,7 +90,7 @@ int main(int argc, char *argv[])
 	msg.rebuild();
 	po8e_query_sock.recv(&msg);
 	if (strcmp((char *)msg.data(), "stim") != 0) {
-		error("events channel name (%s) is unexpected", (char*)msg.data());
+		error("events channel name (%s) is unexpected", (char *)msg.data());
 		return 1;
 	}
 
@@ -221,10 +225,10 @@ int main(int argc, char *argv[])
 		// print some ascii art
 		if (waiter % 200 == 0) {
 			printf(" [%s|%s]%s[%s]\r",
-			zbb.substr(zbb_n+1).c_str(),
-			zev.substr(zev_n+1).c_str(),
-			spinner[counter % spinner.size()],
-			zout.substr(zout_n+1).c_str());
+			       zbb.substr(zbb_n+1).c_str(),
+			       zev.substr(zev_n+1).c_str(),
+			       spinner[counter % spinner.size()],
+			       zout.substr(zout_n+1).c_str());
 			fflush(stdout);
 			counter++;
 		}

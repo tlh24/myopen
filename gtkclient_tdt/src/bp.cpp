@@ -25,16 +25,19 @@ int main(int argc, char *argv[])
 {
 	// bp [ lo ] [ hi ] [zmq in] [ zmq out ]
 
+	if (argc < 5) {
+		printf("\nbp - band-pass filter (IIR, 4th order Butterworth)\n");
+		printf("usage: bp [lo=(300|500)] [hi=(3000|5000)] [zmq_sub] [zmq_pub]\n\n");
+		return 1;
+	}
+
 	int lo, hi;
 	std::string zin, zout;
 
-	lo   = argc > 1 ? atoi(argv[1]) : 300;
-	hi   = argc > 2 ? atoi(argv[2]) : 3000;
-	zin  = argc > 3 ? argv[3] : "ipc:///tmp/broadband.zmq";
-	zout = argc > 4 ? argv[4] : "ipc:///tmp/bp.zmq";
-
-	printf("band-pass filter (IIR, 4th order Butterworth)\n");
-	printf("usage: bp [lo=(300|500)] [hi=(3000|5000)] [zmq_sub] [zmq_pub]\n\n");
+	lo   = atoi(argv[1]);
+	hi   = atoi(argv[2]);
+	zin  = argv[3];
+	zout = argv[4];
 
 	printf("lo cutoff: %d\n", lo);
 	printf("hi cutoff: %d\n", hi);

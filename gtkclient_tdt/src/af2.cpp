@@ -206,15 +206,17 @@ void filter(zmq::context_t &ctx, std::string zin, std::string zout,
 
 int main(int argc, char *argv[])
 {
-	// af2 [zmq_sub] [zmq_pub]
+	// af2 [batch_size_samps] [zmq_sub] [zmq_pub]
 
-	size_t batch_size = 24414*60;
+	if (argc < 4) {
+		printf("\naf2 - artifact filter v2 (direct computation / batch update)\n");
+		printf("usage: af2 [batch_size_samps] [zmq_sub] [zmq_pub]\n\n");
+		return 1;
+	}
 
-	std::string zin  = argc > 1 ? argv[1] : "ipc:///tmp/broadband.zmq";
-	std::string zout = argc > 2 ? argv[2] : "ipc:///tmp/af2.zmq";
-
-	printf("artifact filter v2 (direct computation / batch update)\n");
-	printf("usage: af2 [zmq_sub] [zmq_pub]\n\n");
+	size_t batch_size 	= atoi(argv[1]);
+	std::string zin 	= argv[2];
+	std::string zout 	= argv[3];
 
 	printf("Batch Size: %zu samples\n", batch_size);
 	printf("ZMQ SUB: %s\n", zin.c_str());

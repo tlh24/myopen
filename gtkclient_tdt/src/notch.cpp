@@ -24,13 +24,16 @@ static void s_catch_signals(void)
 
 int main(int argc, char *argv[])
 {
-	std::string zin, zout;
+	// notch [zmq_sub] [zmq_pub]
 
-	zin  = argc > 1 ? argv[1] : "ipc:///tmp/broadband.zmq";
-	zout = argc > 2 ? argv[2] : "ipc:///tmp/notch.zmq";
+	if (argc < 3) {
+		printf("notch - notch filter (60 Hz, 2nd order IIR, Q=35)\n");
+		printf("usage: notch [zmq_sub] [zmq_pub]\n\n");
+		return 1;
+	}
 
-	printf("notch filter (60 Hz, 2nd order IIR, Q=35)\n");
-	printf("usage: notch [zmq_sub] [zmq_pub]\n\n");
+	std::string zin  = argv[1];
+	std::string zout = argv[2];
 
 	printf("ZMQ SUB: %s\n", zin.c_str());
 	printf("ZMQ PUB: %s\n", zout.c_str());

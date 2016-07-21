@@ -23,11 +23,16 @@ static void s_catch_signals(void)
 
 int main(int argc, char *argv[])
 {
-	std::string zin  = argc > 1 ? argv[1] : "ipc:///tmp/broadband.zmq";
-	std::string zout = argc > 2 ? argv[2] : "ipc:///tmp/noop.zmq";
+	// noop [zmq_sub] [zmq_pub]
 
-	printf("no-operation filter\n");
-	printf("usage: noop [zmq_sub] [zmq_pub]\n\n");
+	if (argc < 3) {
+		printf("\nnoop - no-operation filter\n");
+		printf("usage: noop [zmq_sub] [zmq_pub]\n\n");
+		return 1;
+	}
+
+	std::string zin  = argv[1];
+	std::string zout = argv[2];
 
 	printf("ZMQ SUB: %s\n", zin.c_str());
 	printf("ZMQ PUB: %s\n", zout.c_str());

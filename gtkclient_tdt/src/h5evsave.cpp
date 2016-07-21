@@ -27,11 +27,16 @@ static void s_catch_signals(void)
 
 int main(int argc, char *argv[])
 {
-	std::string zin = argc > 1 ? argv[1] : "ipc:///tmp/events.zmq";
-	std::string fn	= argc > 2 ? argv[2] : "events.h5";
+	// h5evsave [zmq_sub] [filename]
 
-	printf("save event data to NWB (HDF5)\n");
-	printf("usage: h5evsave [zmq_sub] [filename]\n\n");
+	if (argc < 3) {
+		printf("\nh5evsave - save event data to NWB (HDF5)\n");
+		printf("usage: h5bbsave [zmq_sub] [filename]\n\n");
+		return 1;
+	}
+
+	std::string zin = argv[1];
+	std::string fn	= argv[2];
 
 	printf("ZMQ SUB: %s\n", zin.c_str());
 	printf("Filename: %s\n", fn.c_str());
