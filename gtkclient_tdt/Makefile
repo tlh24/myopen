@@ -183,6 +183,7 @@ install:
 	install gtkclient -t $(TARGET)
 	install po8e -t $(TARGET)
 	install bp -t $(TARGET)
+	install lfp -t $(TARGET)
 	install notch -t $(TARGET)
 	install noop -t $(TARGET)
 	install af -t $(TARGET)

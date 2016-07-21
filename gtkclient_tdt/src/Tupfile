@@ -11,15 +11,12 @@ artifact_subtract.cpp \
 vbo_raster.cpp \
 vbo_timeseries.cpp \
 pulse_queue.cpp pulser.cpp
-
 : foreach $(OBJS) |> !cpp |> %B.o
 
-CPPFLAGS += `pkg-config --cflags libzmq luajit libprocps protobuf`
-
+CPPFLAGS += `pkg-config --cflags libzmq luajit protobuf`
 : po8e.cpp | ../proto/po8e.pb.h |> !cpp |> %B.o
 
 CPPFLAGS += `pkg-config --cflags hdf5 uuid`
-
 OBJS = \
 h5writer.cpp \
 h5analogwriter.cpp \

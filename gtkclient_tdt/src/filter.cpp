@@ -39,6 +39,104 @@ void Filter::Proc(float *in, float *out, u32 kpoints)
 	}
 }
 
+
+
+
+// 4th-order Butterworth bandpass
+// 12 Hz to 30 Hz @ 24.4140625 kHz (Beta band)
+// Create with MATLAB like so:
+/*
+n = 4; % filter order
+sr = 24414.0625;
+Wn = [12 30] * 2 / sr;
+[B,A] = butter(n/2,Wn);
+sprintf('B.push_back(%0.15e);\n',B)
+sprintf('A.push_back(%0.15e);\n',A)
+sprintf('d.push_back(%d);\n', zeros(n,1))
+*/
+FilterButterBand_24k_12_30::FilterButterBand_24k_12_30()
+{
+	B.push_back(5.347418739718647e-06);
+	B.push_back(0.000000000000000e+00);
+	B.push_back(-1.069483747943729e-05);
+	B.push_back(0.000000000000000e+00);
+	B.push_back(5.347418739718647e-06);
+	A.push_back(1.000000000000000e+00);
+	A.push_back(-3.993401115634115e+00);
+	A.push_back(5.980272503032142e+00);
+	A.push_back(-3.980341502328953e+00);
+	A.push_back(9.934701154976102e-01);
+	d.push_back(0);
+	d.push_back(0);
+	d.push_back(0);
+	d.push_back(0);
+}
+
+
+
+// 4th-order Butterworth bandpass
+// 30 Hz to 60 Hz @ 24.4140625 kHz (Gamma band)
+// Create with MATLAB like so:
+/*
+n = 4; % filter order
+sr = 24414.0625;
+Wn = [30 60] * 2 / sr;
+[B,A] = butter(n/2,Wn);
+sprintf('B.push_back(%0.15e);\n',B)
+sprintf('A.push_back(%0.15e);\n',A)
+sprintf('d.push_back(%d);\n', zeros(n,1))
+*/
+FilterButterBand_24k_30_60::FilterButterBand_24k_30_60()
+{
+	B.push_back(1.482161223149413e-05);
+	B.push_back(0.000000000000000e+00);
+	B.push_back(-2.964322446298827e-05);
+	B.push_back(0.000000000000000e+00);
+	B.push_back(1.482161223149413e-05);
+	A.push_back(1.000000000000000e+00);
+	A.push_back(-3.988843488879197e+00);
+	A.push_back(5.966828851497890e+00);
+	A.push_back(-3.967125913421611e+00);
+	A.push_back(9.891405649389968e-01);
+	d.push_back(0);
+	d.push_back(0);
+	d.push_back(0);
+	d.push_back(0);
+}
+
+
+
+// 4th-order Butterworth bandpass
+// 60 Hz to 200 Hz @ 24.4140625 kHz (High Gamma band)
+// Create with MATLAB like so:
+/*
+n = 4; % filter order
+sr = 24414.0625;
+Wn = [60 200] * 2 / sr;
+[B,A] = butter(n/2,Wn);
+sprintf('B.push_back(%0.15e);\n',B)
+sprintf('A.push_back(%0.15e);\n',A)
+sprintf('d.push_back(%d);\n', zeros(n,1))
+*/
+FilterButterBand_24k_60_200::FilterButterBand_24k_60_200()
+{
+	B.push_back(3.164499462186806e-04);
+	B.push_back(0.000000000000000e+00);
+	B.push_back(-6.328998924373612e-04);
+	B.push_back(0.000000000000000e+00);
+	B.push_back(3.164499462186806e-04);
+	A.push_back(1.000000000000000e+00);
+	A.push_back(-3.947486645748951e+00);
+	A.push_back(5.845335270653234e+00);
+	A.push_back(-3.848169886203691e+00);
+	A.push_back(9.503218771757743e-01);
+	d.push_back(0);
+	d.push_back(0);
+	d.push_back(0);
+	d.push_back(0);
+}
+
+
 // 4th-order Butterworth bandpass
 // 300 Hz to 3000 Hz @ 24.4140625 kHz
 // Create with MATLAB like so:
@@ -68,7 +166,6 @@ FilterButterBand_24k_300_3000::FilterButterBand_24k_300_3000()
 	d.push_back(0);
 	d.push_back(0);
 }
-
 
 
 
@@ -133,6 +230,7 @@ FilterButterBand_24k_500_3000::FilterButterBand_24k_500_3000()
 	d.push_back(0);
 	d.push_back(0);
 }
+
 
 
 // 4th-order Butterworth bandpass
