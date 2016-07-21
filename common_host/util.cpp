@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <cstring>
-#include <proc/readproc.h>	// for proc_t, openproc, readproc, etc
+//#include <proc/readproc.h>	// for proc_t, openproc, readproc, etc
 #include "util.h"
 
 void warn(const char *s, ...)
@@ -39,7 +39,7 @@ void debug(const char *s, ...)
 
 // checks if another executable with the same name is running
 // ie are we running already
-bool check_running(const char *program_name)
+/*bool check_running(const char *program_name)
 {
 	pid_t mypid = getpid();
 	PROCTAB *pr = openproc(PROC_FILLSTAT);
@@ -56,3 +56,4 @@ bool check_running(const char *program_name)
 	closeproc(pr);
 	return running;
 }
+*/

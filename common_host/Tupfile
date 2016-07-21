@@ -1,10 +1,12 @@
 include_rules
 
-PKG_LIBS = luajit hdf5 libprocps
-
-CPPFLAGS += `pkg-config --cflags $(PKG_LIBS)`
-LDFLAGS += `pkg-config --libs $(PKG_LIBS)`
-
-OBJS = gettime.cpp lconf.cpp matStor.cpp glInfo.cpp util.cpp random.cpp jacksnd.cpp
-
+OBJS = gettime.cpp glInfo.cpp util.cpp random.cpp jacksnd.cpp
 : foreach $(OBJS) |> !cpp |> %B.o
+
+CPPFLAGS += `pkg-config --cflags luajit`
+LDFLAGS += `pkg-config --libs luajit`
+: lconf.cpp |> !cpp |> %B.o
+
+CPPFLAGS += `pkg-config --cflags hdf5`
+LDFLAGS += `pkg-config --libs hdf5`
+: matStor.cpp |> !cpp |> %B.o

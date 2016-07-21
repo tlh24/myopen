@@ -4,8 +4,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
-//#include <errno.h>
-#include <string.h>
+#include <string>
 
 // see: http://episteme.arstechnica.com/eve/forums/a/tpc/f/6330927813/m/149009042041
 // and: http://beej.us/guide/bgipc/output/html/multipage/flocking.html
@@ -19,10 +18,10 @@ public:
 	std::string m_fn;
 	bool m_locked;
 
-	lockfile(const char *fname)
+	lockfile(const char *fname) : m_fn(fname)
 	{
-		m_fn = std::string(fname);
 		m_locked = false;
+		m_fd = 0;
 	}
 
 	~lockfile()
@@ -45,7 +44,7 @@ public:
 		m_fl.l_pid    = getpid(); /* our PID                      */
 
 		// open file
-		m_fd = open(m_fn.c_str(), O_RDWR | O_CREAT);
+		m_fd = open(m_fn.c_str(), O_RDWR | O_CREAT, S_IRWXU);
 		if (m_fd == -1) {
 			printf("%s : could not open lockfile\n", m_fn.c_str());
 			return true;
