@@ -97,8 +97,7 @@ int main(int argc, char *argv[])
 	// xxx set or at least print sample length and delay
 	std::vector <ArtifactSubtract *> subtr;
 	for (size_t i=0; i<nnc; i++) {
-		auto o = new ArtifactSubtract(64);
-		o->setDelay(16); // samples
+		auto o = new ArtifactSubtract(16, 64, 16, 0.99);
 		subtr.push_back(o);
 	}
 
@@ -217,8 +216,20 @@ int main(int argc, char *argv[])
 				s_interrupted = true;
 			}
 
-			for (size_t ch=0; ch<nnc; ch++) {
-				subtr[ch]->processStim(tk, ev);
+			auto check_bit = [](u16 var, int n) -> bool {
+				if (n < 0 || n > 15)
+				{
+					return false;
+				}
+				return (var) & (1<<n);
+			};
+
+			for (int i=0; i<16; i++) {
+				if (check_bit(ev, i)) {
+					for (size_t ch=0; ch<nnc; ch++) {
+						subtr[ch]->processStim(tk, ev, 100); // xxx need to use real current!
+					}
+				}
 			}
 		}
 
