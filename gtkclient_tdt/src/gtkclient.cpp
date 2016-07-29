@@ -469,6 +469,18 @@ static gint button_press_event( GtkWidget *,
 				updateChannelUI(i);
 			}
 		}
+
+		if (event->button==3) { // (right click)
+			int h =  sr*g_spikesCols + sc;
+			if (h >= 0 && h < nc) {
+				g_c[h]->toggleEnabled();
+				for (size_t i=0; i<g_channel.size(); i++) {
+					if (g_channel[i] == h) {
+						updateChannelUI(i);
+					}
+				}
+			}
+		}
 	}
 	return TRUE;
 }
