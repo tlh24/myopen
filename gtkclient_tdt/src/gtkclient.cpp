@@ -94,6 +94,7 @@ class Artifact;
 vector <VboTimeseries *> g_timeseries;
 vector <VboRaster *> g_spikeraster;
 vector <VboRaster *> g_eventraster;
+int g_ec_stim = -1;
 
 float g_zoomSpan = 1.0;
 
@@ -651,6 +652,7 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 		glTranslatef(0.f, g_c.size(), 0.f);
 		for (auto &o : g_eventraster) {
 			o->draw();
+			glTranslatef(0.f, o->size(), 0.f);
 		}
 
 		//glEnable(GL_LINE_SMOOTH);
@@ -1402,12 +1404,15 @@ void worker()
 			memcpy(&tk, ptr+2, sizeof(i64));
 			memcpy(&ev, ptr+10, sizeof(u16));
 
-			for (int i=0; i<16; i++) {
-				if (check_bit(ev, i)) {
-					g_eventraster[ec]->addEvent(g_tsc->getTime(tk), i);
+			if (ec == g_ec_stim) {
+				for (int i=0; i<16; i++) {
+					if (check_bit(ev, i)) {
+						g_eventraster[ec]->addEvent(g_tsc->getTime(tk), i);
+					}
 				}
+			} else {
+				g_eventraster[ec]->addEvent(g_tsc->getTime(tk), 0);
 			}
-
 		}
 
 	}
@@ -1899,7 +1904,7 @@ int main(int argc, char **argv)
 
 	g_tsc = new TimeSyncClient(); //tells us the ticks when things happen.
 
-	string titlestr = "gtkclient (TDT) v2.20";
+	string titlestr = "gtkclient (TDT) v2.25";
 
 #ifdef DEBUG
 	feenableexcept(FE_DIVBYZERO|FE_INVALID|FE_OVERFLOW);  // Enable (some) floating point exceptions
@@ -2002,8 +2007,9 @@ int main(int argc, char **argv)
 		po8e_query_sock.send(msg);
 		msg.rebuild();
 		po8e_query_sock.recv(&msg);
-		o->m_chanName = (char *)msg.data();
-
+		//o->m_chanName = (char *)msg.data();
+		std::string str((char *)msg.data(), msg.size());
+		o->m_chanName = str;
 		g_c.push_back(o);
 	}
 
@@ -2038,11 +2044,34 @@ int main(int argc, char **argv)
 		g_spikeraster.push_back(o);
 	}
 
-	// non-spike events
-	if (nec > 0) {
-		VboRaster *o = new VboRaster(nec*16, 2*NSBUF);
-		o->setColor(1.0, 1.0, 50.f/255.f, 0.75); // purple
-		g_eventraster.push_back(o);
+	for (u64 ch=0; ch<nec; ch++) {
+
+		// EC : X : NAME
+		msg.rebuild(2);
+		memcpy(msg.data(), "EC", 2);
+		po8e_query_sock.send(msg, ZMQ_SNDMORE);
+		msg.rebuild(sizeof(u64));
+		memcpy(msg.data(), &ch, sizeof(u64));
+		po8e_query_sock.send(msg, ZMQ_SNDMORE);
+		msg.rebuild(4);
+		memcpy(msg.data(), "NAME", 4);
+		po8e_query_sock.send(msg);
+		msg.rebuild();
+		po8e_query_sock.recv(&msg);
+		std::string ec_name((char *)msg.data(), msg.size());
+
+		if (strcmp(ec_name.c_str(), "stim") == 0) {
+			VboRaster *o = new VboRaster(16, 2*NSBUF);
+			o->setColor(1.0, 1.0, 50.f/255.f, 0.75); // yellow
+			g_eventraster.push_back(o);
+			g_ec_stim = ch;
+		}
+		else {
+			VboRaster *o = new VboRaster(1, 2*NSBUF);
+			o->setColor(202.f/255.f, 178.f/255.f, 214.f/255.f, 0.95); // purple
+			g_eventraster.push_back(o);
+		}
+
 	}
 
 	g_saveUnsorted 	= (bool)ms.getStructValue("savemode", "unsorted_spikes", 0, (float)g_saveUnsorted);

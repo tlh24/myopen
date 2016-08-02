@@ -6,6 +6,10 @@
 #include "util.h"
 #include "artifact_subtract.h"
 
+int g_ec_stim = -1;
+int g_ec_current = -1;
+u16 g_current = 0;
+
 bool s_interrupted = false;
 
 static void s_signal_handler(int)
@@ -67,31 +71,29 @@ int main(int argc, char *argv[])
 	po8e_query_sock.recv(&msg);
 	memcpy(&nec, (u64 *)msg.data(), sizeof(u64));
 
-	// need to ask the po8e for events data details
-	if (nec > 1) {
-		error("i cannot yet handle more than a single events channel!");
-		return 1;
-	}
+	for (u64 ch=0; ch<nec; ch++) {
 
-	// EC : 0 : NAME
-	msg.rebuild(2);
-	memcpy(msg.data(), "EC", 2);
-	po8e_query_sock.send(msg, ZMQ_SNDMORE);
-	msg.rebuild(sizeof(u64));
-	{
-		// reduce scope for ch
-		u64 ch = 0;
+		// EC : X : NAME
+		msg.rebuild(2);
+		memcpy(msg.data(), "EC", 2);
+		po8e_query_sock.send(msg, ZMQ_SNDMORE);
+		msg.rebuild(sizeof(u64));
 		memcpy(msg.data(), &ch, sizeof(u64));
-	}
-	po8e_query_sock.send(msg, ZMQ_SNDMORE);
-	msg.rebuild(4);
-	memcpy(msg.data(), "NAME", 4);
-	po8e_query_sock.send(msg);
-	msg.rebuild();
-	po8e_query_sock.recv(&msg);
-	if (strcmp((char *)msg.data(), "stim") != 0) {
-		error("events channel name (%s) is unexpected", (char *)msg.data());
-		return 1;
+		po8e_query_sock.send(msg, ZMQ_SNDMORE);
+		msg.rebuild(4);
+		memcpy(msg.data(), "NAME", 4);
+		po8e_query_sock.send(msg);
+		msg.rebuild();
+		po8e_query_sock.recv(&msg);
+		std::string ec_name((char *)msg.data(), msg.size());
+
+		if (strcmp(ec_name.c_str(), "stim") == 0) {
+			g_ec_stim = ch;
+		}
+
+		if (strcmp(ec_name.c_str(), "current") == 0) {
+			g_ec_current = ch;
+		}
 	}
 
 	// xxx set or at least print sample length and delay
@@ -211,25 +213,27 @@ int main(int argc, char *argv[])
 			memcpy(&tk, ptr+2, sizeof(i64));
 			memcpy(&ev, ptr+10, sizeof(u16));
 
-			if (ec != 0) {
-				error("stim event id mismatch (expected %d; got %d", 0, ec);
-				s_interrupted = true;
-			}
+			if (ec == g_ec_stim) {
 
-			auto check_bit = [](u16 var, int n) -> bool {
-				if (n < 0 || n > 15)
-				{
-					return false;
-				}
-				return (var) & (1<<n);
-			};
+				auto check_bit = [](u16 var, int n) -> bool {
+					if (n < 0 || n > 15)
+					{
+						return false;
+					}
+					return (var) & (1<<n);
+				};
 
-			for (int i=0; i<16; i++) {
-				if (check_bit(ev, i)) {
-					for (size_t ch=0; ch<nnc; ch++) {
-						subtr[ch]->processStim(tk, ev, 100); // xxx need to use real current!
+				for (int i=0; i<16; i++) {
+					if (check_bit(ev, i)) {
+						for (size_t ch=0; ch<nnc; ch++) {
+							subtr[ch]->processStim(tk, i, g_current);
+						}
 					}
 				}
+			}
+
+			if (ec == g_ec_current) {
+				g_current = ev;
 			}
 		}
 

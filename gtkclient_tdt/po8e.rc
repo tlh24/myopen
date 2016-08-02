@@ -49,7 +49,12 @@ channels[97].id = 97
 channels[97].name = "stim"
 channels[97].data_type = EVENTS
 
-for i=98, 100 do
+channels[98] ={}
+channels[98].id = 98
+channels[98].name = "current"
+channels[98].data_type = EVENTS
+
+for i=99, 100 do
   channel = {
     id = i,
     data_type = IGNORE
