@@ -2065,8 +2065,7 @@ int main(int argc, char **argv)
 			o->setColor(1.0, 1.0, 50.f/255.f, 0.75); // yellow
 			g_eventraster.push_back(o);
 			g_ec_stim = ch;
-		}
-		else {
+		} else {
 			VboRaster *o = new VboRaster(1, 2*NSBUF);
 			o->setColor(202.f/255.f, 178.f/255.f, 214.f/255.f, 0.95); // purple
 			g_eventraster.push_back(o);

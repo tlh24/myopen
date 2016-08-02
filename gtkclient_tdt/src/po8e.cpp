@@ -309,24 +309,24 @@ void worker(zmq::context_t &ctx, vector<po8e::card *> &cards)
 			for (int i=0; i<(int)cards.size(); i++) {
 				for (int j=0; j<cards[i]->channel_size(); j++) {
 					switch (cards[i]->channel(j).data_type()) {
-						case po8e::channel::NEURAL:
-							for (size_t k=0; k<ns[0]; k++) {
-								neural[nc_i*ns[0]+k] = (float)data[i][j*ns[0]+k];
-								neural[nc_i*ns[0]+k] /= cards[i]->channel(j).scale_factor();
-								neural[nc_i*ns[0]+k] *= 1e6; // convert to uV
-							}
-							nc_i++;
-							break;
-						case po8e::channel::EVENTS:
-							for (size_t k=0; k<ns[0]; k++) {
-								events[ne_i*ns[0]+k] = (u16)data[i][j*ns[0]+k];
-							}
-							ne_i++;
-							break;
-						case po8e::channel::ANALOG:
-							break;
-						case po8e::channel::IGNORE:
-							break;
+					case po8e::channel::NEURAL:
+						for (size_t k=0; k<ns[0]; k++) {
+							neural[nc_i*ns[0]+k] = (float)data[i][j*ns[0]+k];
+							neural[nc_i*ns[0]+k] /= cards[i]->channel(j).scale_factor();
+							neural[nc_i*ns[0]+k] *= 1e6; // convert to uV
+						}
+						nc_i++;
+						break;
+					case po8e::channel::EVENTS:
+						for (size_t k=0; k<ns[0]; k++) {
+							events[ne_i*ns[0]+k] = (u16)data[i][j*ns[0]+k];
+						}
+						ne_i++;
+						break;
+					case po8e::channel::ANALOG:
+						break;
+					case po8e::channel::IGNORE:
+						break;
 					}
 				}
 			}
