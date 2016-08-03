@@ -10,7 +10,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <armadillo>
-#include <zmq.hpp>
+#include <zmq.h>
 #include "util.h"
 #include "lockfile.h"
 #include "PO8e.h"
@@ -63,12 +63,24 @@ static void s_catch_signals(void)
 }
 
 // service the po8e buffer
-void po8e_thread(zmq::context_t &ctx, PO8e *p, int id)
+void po8e_thread(void *ctx, PO8e *p, int id)
 {
-	zmq::socket_t socket(ctx, ZMQ_PUB);
+
+	void *socket = zmq_socket(ctx, ZMQ_PUB);
+	if (socket == NULL) {
+		error("zmq: could not create socket");
+		//zmq_ctx_destroy(zcontext);
+		return;
+	}
+
 	std::stringstream ss;
 	ss << "inproc://po8e-" << id;
-	socket.bind(ss.str().c_str());
+	if (zmq_bind(socket, ss.str().c_str()) != 0) {
+		error("zmq: could not bind to socket");
+		zmq_close(socket);
+		//zmq_ctx_destroy(zcontext);
+		return;
+	}
 
 	size_t bufmax = 10000;	// must be >= 10000
 
@@ -83,6 +95,7 @@ void po8e_thread(zmq::context_t &ctx, PO8e *p, int id)
 		p->stopCollecting();
 		debug("Releasing card %p", (void *)p);
 		PO8e::releaseCard(p);
+		zmq_close(socket);
 		return;
 	}
 
@@ -162,16 +175,18 @@ void po8e_thread(zmq::context_t &ctx, PO8e *p, int id)
 			last_tick = tick[ns-1];
 
 			// pack message
+			// XXX for speed, it's better to statically allocate here
 			size_t nbytes = 24 + nc*ns*sizeof(i16);
-			zmq::message_t msg(nbytes);
-			char *ptr = (char *)msg.data();
+			char *buf = new char[nbytes];
 
-			memcpy(ptr+0, &nc, sizeof(u64)); // nc - 8 bytes
-			memcpy(ptr+8, &ns, sizeof(u64)); // ns - 8 bytes
-			memcpy(ptr+16, tick, sizeof(i64)); // tk - 8 bytes (zeroth tick)
-			memcpy(ptr+24, data, nc*ns*sizeof(i16)); // data - nc*ns bytes
+			memcpy(&buf[0], &nc, sizeof(u64)); // nc - 8 bytes
+			memcpy(&buf[8], &ns, sizeof(u64)); // ns - 8 bytes
+			memcpy(&buf[16], tick, sizeof(i64)); // tk - 8 bytes (zeroth tick)
+			memcpy(&buf[24], data, nc*ns*sizeof(i16)); // data - nc*ns bytes
 
-			socket.send(msg);
+			zmq_send(socket, buf, nbytes, 0);
+
+			delete[] buf;
 
 		} else {
 			usleep(1e3);
@@ -191,39 +206,41 @@ void po8e_thread(zmq::context_t &ctx, PO8e *p, int id)
 		debug("Releasing card %p", (void *)p);
 		PO8e::releaseCard(p);
 	}
+
+	zmq_close(socket);
 }
 
-void worker(zmq::context_t &ctx, vector<po8e::card *> &cards)
+void worker(void *ctx, vector<po8e::card *> &cards)
 {
 
 	//  Prepare our sockets
 
 	int n = cards.size();
 
-	vector<zmq::socket_t> socks;
-	vector<zmq::pollitem_t> items;
+	vector<void *> socks;
+	vector<zmq_pollitem_t> items;
 	for (int i=0; i<n; i++) {
-		socks.push_back( zmq::socket_t(ctx, ZMQ_SUB) );
+		socks.push_back( zmq_socket(ctx, ZMQ_SUB) );
 		std::stringstream ss;
 		ss << "inproc://po8e-" << i;
-		socks[i].connect(ss.str().c_str());
-		socks[i].setsockopt(ZMQ_SUBSCRIBE, "", 0);	// subscribe to everything
-		zmq::pollitem_t p = {socks[i], 0, ZMQ_POLLIN, 0};
+		zmq_connect(socks[i], ss.str().c_str());
+		zmq_setsockopt(socks[i], ZMQ_SUBSCRIBE, "", 0);	// subscribe to everything
+		zmq_pollitem_t p = {socks[i], 0, ZMQ_POLLIN, 0};
 		items.push_back(p);
 	}
 
 	// for control input
-	zmq::socket_t controller(ctx, ZMQ_SUB);
-	controller.connect("inproc://controller");
-	controller.setsockopt(ZMQ_SUBSCRIBE, "", 0);
-	zmq::pollitem_t p = {controller, 0, ZMQ_POLLIN, 0};
+	void *controller = zmq_socket(ctx, ZMQ_SUB);
+	zmq_connect(controller, "inproc://controller");
+	zmq_setsockopt(controller, ZMQ_SUBSCRIBE, "", 0);
+	zmq_pollitem_t p = {controller, 0, ZMQ_POLLIN, 0};
 	items.push_back(p);
 
-	zmq::socket_t neural_sock(ctx, ZMQ_PUB);	// we will publish neural data
-	neural_sock.bind(g_po8e_neural_socket_name.c_str());
+	void *neural_sock = zmq_socket(ctx, ZMQ_PUB);	// we will publish neural data
+	zmq_bind(neural_sock, g_po8e_neural_socket_name.c_str());
 
-	zmq::socket_t events_sock(ctx, ZMQ_PUB);	// we will publish events data
-	events_sock.bind(g_po8e_events_socket_name.c_str());
+	void *events_sock = zmq_socket(ctx, ZMQ_PUB);	// we will publish events data
+	zmq_bind(events_sock, g_po8e_events_socket_name.c_str());
 
 	u64 nnc = 0; // num neural channels
 	u64 nec = 0; // num events channels
@@ -246,7 +263,7 @@ void worker(zmq::context_t &ctx, vector<po8e::card *> &cards)
 
 	while (true) {
 
-		zmq::poll(items.data(), items.size(), -1);
+		zmq_poll(items.data(), items.size(), -1);
 
 		int nready = 0;
 		for (int i=0; i<n; i++) {
@@ -264,16 +281,19 @@ void worker(zmq::context_t &ctx, vector<po8e::card *> &cards)
 			auto tk = new i64[n];
 			vector<i16 *> data;
 
+			zmq_msg_t msg;
+
 			for (int i=0; i<n; i++) {
-				zmq::message_t msg;
-				socks[i].recv(&msg);
-				char *ptr = (char *)(msg.data());
+				zmq_msg_init(&msg);
+				zmq_msg_recv(&msg, socks[i], 0);
+				char *ptr = (char *)zmq_msg_data(&msg);
 				memcpy(&(nc[i]), ptr+0, sizeof(u64));
 				memcpy(&(ns[i]), ptr+8, sizeof(u64));
 				memcpy(&(tk[i]), ptr+16, sizeof(i64));
 				auto x = new i16[nc[i]*ns[i]];
 				memcpy(x, ptr+24, nc[i]*ns[i]*sizeof(i16));
 				data.push_back(x);
+				zmq_msg_close(&msg);
 			}
 
 			bool mismatch = false;
@@ -333,13 +353,14 @@ void worker(zmq::context_t &ctx, vector<po8e::card *> &cards)
 
 			// send neural data
 			size_t nbytes = 24 + nnc*ns[0]*sizeof(float);
-			zmq::message_t buf(nbytes);
-			char *ptr = (char *)buf.data();
+			zmq_msg_init_size(&msg, nbytes);
+			char *ptr = (char *)zmq_msg_data(&msg);
 			memcpy(ptr+0, &nnc, sizeof(u64)); // nnc - 8 bytes
 			memcpy(ptr+8, ns, sizeof(u64)); // ns - 8 bytes
 			memcpy(ptr+16, tk, sizeof(i64)); // tk - 8 bytes (zeroth tick)
 			memcpy(ptr+24, neural, nnc*ns[0]*sizeof(float)); // data - nnc*ns bytes
-			neural_sock.send(buf);
+			zmq_msg_send(&msg, neural_sock, 0);
+			zmq_msg_close(&msg);
 
 			// send events data
 			for (int i=0; i<(int)nec; i++) {
@@ -349,12 +370,13 @@ void worker(zmq::context_t &ctx, vector<po8e::card *> &cards)
 						i64 tk2 	= (i64)tk[0] + k;	// tk
 						u16 ev  	= (u16)events[i*ns[0]+k];	// event
 
-						buf.rebuild(12); // bytes
-						ptr = (char *)buf.data();
+						zmq_msg_init_size(&msg, 12); // bytes
+						ptr = (char *)zmq_msg_data(&msg);
 						memcpy(ptr+0, &ec, sizeof(u16)); // 2 bytes
 						memcpy(ptr+2, &tk2, sizeof(i64)); // 8 bytes
 						memcpy(ptr+10, &ev, sizeof(u16));	// 2 bytes
-						events_sock.send(buf);
+						zmq_msg_send(&msg, events_sock, 0);
+						zmq_msg_close(&msg);
 					}
 				}
 			}
@@ -379,6 +401,14 @@ void worker(zmq::context_t &ctx, vector<po8e::card *> &cards)
 
 	}
 
+	zmq_close(events_sock);
+	zmq_close(neural_sock);
+	zmq_close(controller);
+
+	for (auto &sock : socks) {
+		zmq_close(sock);
+	}
+
 }
 
 int main(int argc, char *argv[])
@@ -390,7 +420,49 @@ int main(int argc, char *argv[])
 
 	s_catch_signals();
 
-	zmq::context_t zcontext(1);	// single zmq thread
+	void *zcontext = zmq_ctx_new();
+	if (zcontext == NULL) {
+		error("zmq: could not create context");
+		return 1;
+	}
+
+	// we don't need 1024 sockets
+	if (zmq_ctx_set(zcontext, ZMQ_MAX_SOCKETS, 64) != 0) {
+		error("zmq: could not set max sockets");
+		return 1;
+	}
+
+	void *controller = zmq_socket(zcontext, ZMQ_PUB);
+	if (controller == NULL) {
+		error("zmq: could not create socket");
+		zmq_ctx_destroy(zcontext);
+		return 1;
+	}
+
+	if (zmq_bind(controller, "inproc://controller") != 0) {
+		error("zmq: could not bind to socket");
+		zmq_close(controller);
+		zmq_ctx_destroy(zcontext);
+		return 1;
+	}
+
+	// XXX eventually the query socket will be pulled from the rc file
+	// so this will have to come after parsing the rc file
+	void *query = zmq_socket(zcontext, ZMQ_REP);
+	if (controller == NULL) {
+		error("zmq: could not create socket");
+		zmq_close(controller);
+		zmq_ctx_destroy(zcontext);
+		return 1;
+	}
+
+	if (zmq_bind(query, g_po8e_query_socket_name.c_str()) != 0) {
+		error("zmq: could not bind to socket");
+		zmq_close(query);
+		zmq_close(controller);
+		zmq_ctx_destroy(zcontext);
+		return 1;
+	}
 
 	g_startTime = gettime();
 
@@ -410,12 +482,12 @@ int main(int argc, char *argv[])
 	g_po8e_read_size = pc.readSize();
 	printf("po8e read size:\t\t%zu\n", 	g_po8e_read_size);
 
-	printf("po8e query socket:\t%s\n", 		g_po8e_query_socket_name.c_str());
+	printf("po8e query socket:\t%s\n", 	g_po8e_query_socket_name.c_str());
 
 	g_po8e_neural_socket_name = pc.neuralSocketName();
 	g_po8e_events_socket_name = pc.eventsSocketName();
-	printf("po8e neural socket:\t%s\n", 	g_po8e_neural_socket_name.c_str());
-	printf("po8e events socket:\t%s\n", 	g_po8e_events_socket_name.c_str());
+	printf("po8e neural socket:\t%s\n", g_po8e_neural_socket_name.c_str());
+	printf("po8e events socket:\t%s\n", g_po8e_events_socket_name.c_str());
 
 	size_t nc = pc.numNeuralChannels();
 	printf("Neural channels:\t%zu\n", 	nc);
@@ -476,7 +548,7 @@ int main(int argc, char *argv[])
 			}
 			printf("Connection established to card %d at %p\n", id, (void *)p);
 			if (configureCard(p)) {
-				threads.push_back(thread(po8e_thread, std::ref(zcontext), p, id-1));
+				threads.push_back(thread(po8e_thread, zcontext, p, id-1));
 				cards.push_back(pc.cards[i]);
 			}
 		}
@@ -503,87 +575,71 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	threads.push_back(thread(worker, std::ref(zcontext), std::ref(cards)));
+	threads.push_back(thread(worker, zcontext, std::ref(cards)));
 
-	zmq::socket_t controller(zcontext, ZMQ_PUB);
-	controller.bind("inproc://controller");
-
-	zmq::socket_t query(zcontext, ZMQ_REP);
-	query.bind(g_po8e_query_socket_name.c_str());
-
-	zmq::pollitem_t items [] = {
+	zmq_pollitem_t items [] = {
 		{ query, 0, ZMQ_POLLIN, 0 },
 	};
 
 	while (!s_interrupted) {
 
-		try {
-			zmq::poll(items, 1, 50);	// 50 msec ie 20 hz
-		} catch (zmq::error_t &e) {}
+		if (zmq_poll(items, 1, 50) == -1) {// 50 msec ie 20 Hz
+			break;
+		}
 
-		zmq::message_t msg;
-
-		auto isCommand = [](zmq::message_t &m, const char *c) {
-			return strncmp((char *) m.data(), c, m.size()) == 0;
+		// nb we must not assume that the string is null terminated!
+		auto isCommand = [](zmq_msg_t *m, const char *c) {
+			return strncmp((char *)zmq_msg_data(m), c, zmq_msg_size(m)) == 0;
 		};
 
-
 		if (items[0].revents & ZMQ_POLLIN) {
-			query.recv(&msg);
-			if (isCommand(msg, "NNC")) {
-				msg.rebuild(sizeof(u64)); // bytes
+			zmq_msg_t msg;
+			zmq_msg_init(&msg);
+			zmq_msg_recv(&msg, query, 0);
+			if (isCommand(&msg, "NNC")) {
 				u64 nnc = pc.numNeuralChannels();
-				memcpy(msg.data(), &nnc, sizeof(u64));
-				query.send(msg);
-			} else if (isCommand(msg, "NEC")) {
-				msg.rebuild(sizeof(u64)); // bytes
+				zmq_send(query, &nnc, sizeof(u64), 0);
+			} else if (isCommand(&msg, "NEC")) {
 				u64 nec = pc.numEventsChannels();
-				memcpy(msg.data(), &nec, sizeof(u64));
-				query.send(msg);
-			} else if (isCommand(msg, "NAC")) {
-				msg.rebuild(sizeof(u64)); // bytes
+				zmq_send(query, &nec, sizeof(u64), 0);
+			} else if (isCommand(&msg, "NAC")) {
 				u64 nac = pc.numAnalogChannels();
-				memcpy(msg.data(), &nac, sizeof(u64));
-				query.send(msg);
-			} else if (isCommand(msg, "NIC")) {
-				msg.rebuild(sizeof(u64)); // bytes
+				zmq_send(query, &nac, sizeof(u64), 0);
+			} else if (isCommand(&msg, "NIC")) {
 				u64 nic = pc.numIgnoredChannels();
-				memcpy(msg.data(), &nic, sizeof(u64));
-				query.send(msg);
-			} else if (isCommand(msg, "NC")) {
-				query.recv(&msg); // get the channel number (zero-indexed)
+				zmq_send(query, &nic, sizeof(u64), 0);
+			} else if (isCommand(&msg, "NC")) {
+				zmq_msg_close(&msg);
+				zmq_msg_init(&msg);
+				zmq_msg_recv(&msg, query, 0); // get the channel number (zero-indexed)
 				u64 ch;
-				memcpy(&ch, (u64 *)msg.data(), sizeof(u64));
-				query.recv(&msg); // get sub-command
-				if (isCommand(msg, "NAME")) {
+				memcpy(&ch, (u64 *)zmq_msg_data(&msg), sizeof(u64));
+				zmq_msg_close(&msg);
+				zmq_msg_init(&msg);
+				zmq_msg_recv(&msg, query, 0); // get sub-command
+				if (isCommand(&msg, "NAME")) {
 					std::string s = neural_name[ch];
-					msg.rebuild(s.size()); // bytes
-					memcpy(msg.data(), s.c_str(), s.size());
-					query.send(msg);
+					zmq_send(query, s.c_str(), s.size(), 0);
 				} else {
-					msg.rebuild(3);
-					memcpy(msg.data(), "ERR", 3);
-					query.send(msg);
+					zmq_send(query,"ERR", 3, 0);
 				}
-			} else if (isCommand(msg, "EC")) {
-				query.recv(&msg); // get the channel number (zero-indexed)
+			} else if (isCommand(&msg, "EC")) {
+				zmq_msg_close(&msg);
+				zmq_msg_init(&msg);
+				zmq_msg_recv(&msg, query, 0); // get the channel number (zero-indexed)
 				u64 ch;
-				memcpy(&ch, (u64 *)msg.data(), sizeof(u64));
-				query.recv(&msg); // get sub-command
-				if (isCommand(msg, "NAME")) {
+				memcpy(&ch, (u64 *)zmq_msg_data(&msg), sizeof(u64));
+				zmq_msg_close(&msg);
+				zmq_msg_init(&msg);
+				zmq_msg_recv(&msg, query, 0); // get sub-command
+				if (isCommand(&msg, "NAME")) {
 					std::string s = event_name[ch];
-					msg.rebuild(s.size()); // bytes
-					memcpy(msg.data(), s.c_str(), s.size());
-					query.send(msg);
+					zmq_send(query, s.c_str(), s.size(), 0);
 				} else {
-					msg.rebuild(3);
-					memcpy(msg.data(), "ERR", 3);
-					query.send(msg);
+					zmq_send(query, "ERR", 3, 0);
 				}
 			} else {
-				msg.rebuild(3);
-				memcpy(msg.data(), "ERR", 3);
-				query.send(msg);
+				zmq_send(query, "ERR", 3, 0);
 			}
 		}
 
@@ -597,15 +653,15 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	std::string s("KILL");
-	zmq::message_t msg(s.size());
-	memcpy(msg.data(), s.c_str(), s.size());
-	controller.send(msg);
+	zmq_send(controller, "KILL", 4, 0);
 
 	for (auto &thread : threads) {
 		thread.join();
 	}
 
-	lf.unlock();
+	zmq_close(query);
+	zmq_close(controller);
+	zmq_ctx_destroy(zcontext);
 
+	lf.unlock();
 }
