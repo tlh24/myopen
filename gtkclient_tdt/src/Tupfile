@@ -22,10 +22,15 @@ bp.cpp \
 lfp.cpp
 : foreach $(OBJS) |> !cpp |> %B.o
 
+CPPFLAGS += `pkg-config --cflags hdf5`
+
+OBJS = af2.cpp
+: foreach $(OBJS) |> !cpp |> %B.o
+
 CPPFLAGS += `pkg-config --cflags luajit protobuf`
 : po8e.cpp | ../proto/po8e.pb.h |> !cpp |> %B.o
 
-CPPFLAGS += `pkg-config --cflags hdf5 uuid`
+CPPFLAGS += `pkg-config --cflags uuid`
 OBJS = \
 h5writer.cpp \
 h5analogwriter.cpp \
@@ -33,7 +38,6 @@ h5eventwriter.cpp \
 h5bbsave.cpp \
 h5evsave.cpp \
 af.cpp \
-af2.cpp \
 subtr.cpp
 : foreach $(OBJS) |> !cpp |> %B.o
 
