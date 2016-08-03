@@ -47,6 +47,12 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
+	// we don't need 1024 sockets
+	if (zmq_ctx_set(zcontext, ZMQ_MAX_SOCKETS, 64) != 0) {
+		error("zmq: could not set max sockets");
+		return 1;
+	}
+
 	void *socket_in = zmq_socket(zcontext, ZMQ_SUB);
 	if (socket_in == NULL) {
 		error("zmq: could not create socket");
