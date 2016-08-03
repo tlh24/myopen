@@ -17,6 +17,8 @@ LDFLAGS  += -lpthread
 CPPFLAGS += -O3 -fslp-vectorize-aggressive -march=native
 CPPFLAGS += -DJACK
 
+FLAGS += -lprofiler
+
 #CPPFLAGS += -O0 -g -DDEBUG
 #CPPFLAGS += -fno-inline -fno-omit-frame-pointer
 #LDFLAGS  += -fno-inline -fno-omit-frame-pointer

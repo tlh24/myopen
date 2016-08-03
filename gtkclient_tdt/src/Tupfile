@@ -13,7 +13,12 @@ vbo_timeseries.cpp \
 pulse_queue.cpp pulser.cpp
 : foreach $(OBJS) |> !cpp |> %B.o
 
-CPPFLAGS += `pkg-config --cflags libzmq luajit protobuf`
+CPPFLAGS += `pkg-config --cflags libzmq`
+
+OBJS = noop.cpp
+: foreach $(OBJS) |> !cpp |> %B.o
+
+CPPFLAGS += `pkg-config --cflags luajit protobuf`
 : po8e.cpp | ../proto/po8e.pb.h |> !cpp |> %B.o
 
 CPPFLAGS += `pkg-config --cflags hdf5 uuid`
@@ -23,7 +28,6 @@ h5analogwriter.cpp \
 h5eventwriter.cpp \
 h5bbsave.cpp \
 h5evsave.cpp \
-noop.cpp \
 notch.cpp \
 bp.cpp \
 lfp.cpp \

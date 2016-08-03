@@ -1,5 +1,8 @@
 include_rules
 
+LDFLAGS += `pkg-config --libs libzmq`
+: src/noop.o ../common_host/util.o |> !ld |> noop
+
 LDFLAGS += `pkg-config --libs libzmq comedilib`
 
 : src/pulser.o src/pulse_queue.o \
@@ -19,7 +22,6 @@ src/po8e_conf.o |> !ld |> po8e
 LDFLAGS += `pkg-config --libs hdf5`
 LDFLAGS += -larmadillo
 
-: src/noop.o ../common_host/util.o |> !ld |> noop
 : src/bp.o ../common_host/util.o src/filter.o |> !ld |> bp
 : src/lfp.o ../common_host/util.o src/filter.o |> !ld |> lfp
 : src/notch.o ../common_host/util.o src/filter.o |> !ld |> notch

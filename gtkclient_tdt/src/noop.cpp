@@ -1,6 +1,8 @@
 #include <signal.h>	// for signal, SIGINT
 #include <string>
-#include <zmq.hpp>
+#include <cstring>
+#include <vector>
+#include <zmq.h>
 #include "util.h"
 
 bool s_interrupted = false;
@@ -34,77 +36,59 @@ int main(int argc, char *argv[])
 	std::string zin  = argv[1];
 	std::string zout = argv[2];
 
-	printf("ZMQ SUB: %s\n", zin.c_str());
-	printf("ZMQ PUB: %s\n", zout.c_str());
-	printf("\n");
+	debug("ZMQ SUB: %s", zin.c_str());
+	debug("ZMQ PUB: %s", zout.c_str());
 
 	s_catch_signals();
 
-	zmq::context_t zcontext(1);	// single zmq thread
-
-	zmq::socket_t socket_in(zcontext, ZMQ_SUB);
-	socket_in.connect(zin.c_str());
-	socket_in.setsockopt(ZMQ_SUBSCRIBE, "", 0);	// subscribe to everything
-
-	zmq::socket_t socket_out(zcontext, ZMQ_PUB);
-	socket_out.bind(zout.c_str());
-
-	// init poll set
-	zmq::pollitem_t items [] = {
-		{ socket_in, 	0, ZMQ_POLLIN, 0 }
-	};
-
-	int waiter = 0;
-	int counter = 0;
-	std::vector<const char *> spinner;
-	spinner.emplace_back(">>>    >>>");
-	spinner.emplace_back(" >>>    >>");
-	spinner.emplace_back("  >>>    >");
-	spinner.emplace_back("   >>>    ");
-	spinner.emplace_back("    >>>   ");
-	spinner.emplace_back(">    >>>  ");
-	spinner.emplace_back(">>    >>> ");
-
-	size_t zin_n = zin.find_last_of("/");
-	size_t zout_n = zout.find_last_of("/");
-
-	while (!s_interrupted) {
-
-		try {
-			zmq::poll(&items[0], 1, -1); //  -1 means block
-		} catch (zmq::error_t &e) {}
-
-		zmq::message_t msg;
-
-		if (items[0].revents & ZMQ_POLLIN) {
-
-			socket_in.recv(&msg);
-
-			auto n = msg.size();
-
-			// copy message to buffer
-			auto buf = new char[n];
-			memcpy(buf, msg.data(),n);
-
-			msg.rebuild(n);
-			memcpy(msg.data(), buf, n);
-
-			socket_out.send(msg);
-
-			delete[] buf;
-
-			if (waiter % 200 == 0) {
-				printf(" [%s]%s[%s]\r",
-				       zin.substr(zin_n+1).c_str(),
-				       spinner[counter % spinner.size()],
-				       zout.substr(zout_n+1).c_str());
-				fflush(stdout);
-				counter++;
-			}
-			waiter++;
-
-		}
-
+	void *zcontext = zmq_ctx_new();
+	if (zcontext == NULL) {
+		error("zmq: could not create context");
+		return 1;
 	}
 
+	void *socket_in = zmq_socket(zcontext, ZMQ_SUB);
+	if (socket_in == NULL) {
+		error("zmq: could not create socket");
+		zmq_ctx_destroy(zcontext);
+		return 1;
+	}
+
+	if (zmq_connect(socket_in, zin.c_str()) != 0) {
+		error("zmq: could not connect to socket");
+		zmq_close(socket_in);
+		zmq_ctx_destroy(zcontext);
+		return 1;
+	}
+
+	// subscribe to everything
+	if (zmq_setsockopt(socket_in, ZMQ_SUBSCRIBE, "", 0) !=0) {
+		error("zmq: could not set socket options");
+		zmq_close(socket_in);
+		zmq_ctx_destroy(zcontext);
+		return 1;
+	}
+
+	void *socket_out = zmq_socket(zcontext, ZMQ_PUB);
+	if (socket_out == NULL) {
+		error("zmq: could not create socket");
+		zmq_close(socket_in);
+		zmq_ctx_destroy(zcontext);
+		return 1;
+	}
+
+	if (zmq_bind(socket_out, zout.c_str()) != 0) {
+		error("zmq: could not bind to socket");
+		zmq_close(socket_out);
+		zmq_close(socket_in);
+		zmq_ctx_destroy(zcontext);
+		return 1;
+	}
+
+	zmq_proxy(socket_in, socket_out, NULL);
+
+	// cleanup
+	zmq_close(socket_out);
+	zmq_close(socket_in);
+	zmq_ctx_destroy(zcontext);
 }
