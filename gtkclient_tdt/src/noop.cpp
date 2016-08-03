@@ -1,12 +1,10 @@
 #include <signal.h>	// for signal, SIGINT
 #include <string>
-#include <cstring>
 #include <vector>
 #include <zmq.h>
 #include "util.h"
 
 bool s_interrupted = false;
-
 std::vector <void *> g_socks;
 
 static void s_signal_handler(int)
@@ -56,7 +54,7 @@ int main(int argc, char *argv[])
 	void *zcontext = zmq_ctx_new();
 	if (zcontext == NULL) {
 		error("zmq: could not create context");
-		die(zcontext, 1);
+		return 1;
 	}
 
 	// we don't need 1024 sockets
