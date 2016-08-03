@@ -85,7 +85,9 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	zmq_proxy(socket_in, socket_out, NULL);
+	while (!s_interrupted) {
+		zmq_proxy(socket_in, socket_out, NULL);
+	}
 
 	// cleanup
 	zmq_close(socket_out);
