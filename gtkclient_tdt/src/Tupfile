@@ -15,7 +15,11 @@ pulse_queue.cpp pulser.cpp
 
 CPPFLAGS += `pkg-config --cflags libzmq`
 
-OBJS = noop.cpp
+OBJS = \
+noop.cpp \
+notch.cpp \
+bp.cpp \
+lfp.cpp
 : foreach $(OBJS) |> !cpp |> %B.o
 
 CPPFLAGS += `pkg-config --cflags luajit protobuf`
@@ -28,9 +32,6 @@ h5analogwriter.cpp \
 h5eventwriter.cpp \
 h5bbsave.cpp \
 h5evsave.cpp \
-notch.cpp \
-bp.cpp \
-lfp.cpp \
 af.cpp \
 af2.cpp \
 subtr.cpp

@@ -86,7 +86,8 @@ int main(int argc, char *argv[])
 	u64 nnc; // num neural channels
 	zmq_send(po8e_query_sock, "NNC", 3, 0);
 	if (zmq_recv(po8e_query_sock, &nnc, sizeof(u64), 0) == -1) {
-		die(zcontext, 0);
+		error("zmq: could not recv from query sock");
+		die(zcontext, 1);
 	}
 
 	vector <Filter *> bandpass;
