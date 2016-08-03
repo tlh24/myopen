@@ -54,7 +54,6 @@ int main(int argc, char *argv[])
 
 	debug("lo cutoff: %d", lo);
 	debug("hi cutoff: %d", hi);
-
 	debug("ZMQ SUB: %s", zin.c_str());
 	debug("ZMQ PUB: %s", zout.c_str());
 
