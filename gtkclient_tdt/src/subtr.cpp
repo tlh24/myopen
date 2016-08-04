@@ -1,8 +1,11 @@
 #include <signal.h>				// for signal, SIGINT
 #include <thread>
+#include <string>
+#include <cstring>
 #include <sys/stat.h>
 #include <armadillo>
-#include <zmq.hpp>
+#include <zmq.h>
+#include "zmq_packet.h"
 #include "util.h"
 #include "artifact_subtract.h"
 
@@ -11,6 +14,7 @@ int g_ec_current = -1;
 u16 g_current = 0;
 
 bool s_interrupted = false;
+std::vector <void *> g_socks;
 
 static void s_signal_handler(int)
 {
@@ -28,6 +32,16 @@ static void s_catch_signals(void)
 	sigaction(SIGTERM, &action, NULL);
 }
 
+static void die(void *ctx, int status)
+{
+	s_interrupted = true;
+	for (auto &sock : g_socks) {
+		zmq_close(sock);
+	}
+	zmq_ctx_destroy(ctx);
+	exit(status);
+}
+
 int main(int argc, char *argv[])
 {
 	// subtr [zmq_sub_bb] [zmq_sub_ev] [zmq_pub_bb]
@@ -42,58 +56,72 @@ int main(int argc, char *argv[])
 	std::string zev 	= argv[2];
 	std::string zout 	= argv[3];
 
-	printf("ZMQ SUB BROADBAND: %s\n", zbb.c_str());
-	printf("ZMQ SUB EVENTS: %s\n", zev.c_str());
-	printf("ZMQ PUB: %s\n", zout.c_str());
-	printf("\n");
+	debug("ZMQ SUB BROADBAND: %s", zbb.c_str());
+	debug("ZMQ SUB EVENTS: %s", zev.c_str());
+	debug("ZMQ PUB: %s", zout.c_str());
 
 	s_catch_signals();
 
-	zmq::context_t zcontext(1);	// single zmq thread
+	void *zcontext = zmq_ctx_new();
+	if (zcontext == NULL) {
+		error("zmq: could not create context");
+		return 1;
+	}
 
-	zmq::socket_t po8e_query_sock(zcontext, ZMQ_REQ);
-	po8e_query_sock.connect("ipc:///tmp/po8e-query.zmq");
+	// we don't need 1024 sockets
+	if (zmq_ctx_set(zcontext, ZMQ_MAX_SOCKETS, 64) != 0) {
+		error("zmq: could not set max sockets");
+		die(zcontext, 1);
+	}
+
+	void *po8e_query_sock = zmq_socket(zcontext, ZMQ_REQ);
+	if (po8e_query_sock == NULL) {
+		error("zmq: could not create socket");
+		die(zcontext, 1);
+	}
+	g_socks.push_back(po8e_query_sock);
+
+	if (zmq_connect(po8e_query_sock, "ipc:///tmp/po8e-query.zmq") != 0) {
+		error("zmq: could not connect to socket");
+		die(zcontext, 1);
+	}
 
 	u64 nnc; // num neural channels
-	u64 nec; // num events channels
-	zmq::message_t msg(3);
-	memcpy(msg.data(), "NNC", 3);
-	po8e_query_sock.send(msg);
-	msg.rebuild();
-	po8e_query_sock.recv(&msg);
-	memcpy(&nnc, (u64 *)msg.data(), sizeof(u64));
+	zmq_send(po8e_query_sock, "NNC", 3, 0);
+	if (zmq_recv(po8e_query_sock, &nnc, sizeof(u64), 0) == -1) {
+		error("zmq: could not recv from query sock");
+		die(zcontext, 1);
+	}
 
-	// get nec, num events channels
-	msg.rebuild(3);
-	memcpy(msg.data(), "NEC", 3);
-	po8e_query_sock.send(msg);
-	msg.rebuild();
-	po8e_query_sock.recv(&msg);
-	memcpy(&nec, (u64 *)msg.data(), sizeof(u64));
+	u64 nec; // num events channels
+	zmq_send(po8e_query_sock, "NEC", 3, 0);
+	if (zmq_recv(po8e_query_sock, &nec, sizeof(u64), 0) == -1) {
+		error("zmq: could not recv from query sock");
+		die(zcontext, 1);
+	}
+
+	// nb we must not assume that the string is null terminated!
+	auto is = [](zmq_msg_t *m, const char *c) {
+		return strncmp((char *)zmq_msg_data(m), c, zmq_msg_size(m)) == 0;
+	};
 
 	for (u64 ch=0; ch<nec; ch++) {
-
 		// EC : X : NAME
-		msg.rebuild(2);
-		memcpy(msg.data(), "EC", 2);
-		po8e_query_sock.send(msg, ZMQ_SNDMORE);
-		msg.rebuild(sizeof(u64));
-		memcpy(msg.data(), &ch, sizeof(u64));
-		po8e_query_sock.send(msg, ZMQ_SNDMORE);
-		msg.rebuild(4);
-		memcpy(msg.data(), "NAME", 4);
-		po8e_query_sock.send(msg);
-		msg.rebuild();
-		po8e_query_sock.recv(&msg);
-		std::string ec_name((char *)msg.data(), msg.size());
+		zmq_send(po8e_query_sock, "EC", 2, ZMQ_SNDMORE);
+		zmq_send(po8e_query_sock, &ch, sizeof(u64), ZMQ_SNDMORE);
+		zmq_send(po8e_query_sock, "NAME", 4, 0);
 
-		if (strcmp(ec_name.c_str(), "stim") == 0) {
+		zmq_msg_t msg;
+		zmq_msg_init(&msg);
+		zmq_msg_recv(&msg, po8e_query_sock, 0);
+
+		if (is(&msg, "stim")) {
 			g_ec_stim = ch;
 		}
-
-		if (strcmp(ec_name.c_str(), "current") == 0) {
+		if (is(&msg, "current")) {
 			g_ec_current = ch;
 		}
+		zmq_msg_close(&msg);
 	}
 
 	// xxx set or at least print sample length and delay
@@ -104,114 +132,102 @@ int main(int argc, char *argv[])
 	}
 
 	// subscribe to broadband messages from the po8e
-	zmq::socket_t sock_bb(zcontext, ZMQ_SUB);
-	sock_bb.connect(zbb.c_str());
-	sock_bb.setsockopt(ZMQ_SUBSCRIBE, "", 0);	// subscribe to everything
+	void *socket_bb = zmq_socket(zcontext, ZMQ_SUB);
+	if (socket_bb == NULL) {
+		error("zmq: could not create socket");
+		die(zcontext, 1);
+	}
+	g_socks.push_back(socket_bb);
 
+	if (zmq_connect(socket_bb, zbb.c_str()) != 0) {
+		error("zmq: could not connect to socket");
+		die(zcontext, 1);
+	}
+	// subscribe to everything
+	if (zmq_setsockopt(socket_bb, ZMQ_SUBSCRIBE, "", 0) != 0) {
+		error("zmq: could not set socket options");
+		die(zcontext, 1);
+	}
 
 	// same but for events messages
-	zmq::socket_t sock_ev(zcontext, ZMQ_SUB);
-	sock_ev.connect(zev.c_str());
-	sock_ev.setsockopt(ZMQ_SUBSCRIBE, "", 0);	// subscribe to everything
+	void *socket_ev = zmq_socket(zcontext, ZMQ_SUB);
+	if (socket_ev == NULL) {
+		error("zmq: could not create socket");
+		die(zcontext, 1);
+	}
+	g_socks.push_back(socket_ev);
+
+	if (zmq_connect(socket_ev, zev.c_str()) != 0) {
+		error("zmq: could not connect to socket");
+		die(zcontext, 1);
+	}
+	// subscribe to everything
+	if (zmq_setsockopt(socket_ev, ZMQ_SUBSCRIBE, "", 0) != 0) {
+		error("zmq: could not set socket options");
+		die(zcontext, 1);
+	}
 
 	// publish SA subtracted data with this socket
-	zmq::socket_t sock_out(zcontext, ZMQ_PUB);
-	sock_out.bind(zout.c_str());
-
-	int waiter = 0;
-	int counter = 0;
-	std::vector<const char *> spinner;
-	spinner.emplace_back(">>>    >>>");
-	spinner.emplace_back(" >>>    >>");
-	spinner.emplace_back("  >>>    >");
-	spinner.emplace_back("   >>>    ");
-	spinner.emplace_back("    >>>   ");
-	spinner.emplace_back(">    >>>  ");
-	spinner.emplace_back(">>    >>> ");
-
-	size_t zbb_n = zbb.find_last_of("/");
-	size_t zev_n = zev.find_last_of("/");
-	size_t zout_n = zout.find_last_of("/");
+	void *socket_out = zmq_socket(zcontext, ZMQ_PUB);
+	if (socket_out == NULL) {
+		error("zmq: could not create socket");
+		die(zcontext, 1);
+	}
+	g_socks.push_back(socket_out);
+	if (zmq_bind(socket_out, zout.c_str()) != 0) {
+		error("zmq: could not bind to socket");
+		die(zcontext, 1);
+	}
 
 	// init poll set
-	zmq::pollitem_t items [] = {
-		{ sock_bb, 	0, ZMQ_POLLIN, 0 },
-		{ sock_ev, 	0, ZMQ_POLLIN, 0 }
+	zmq_pollitem_t items [] = {
+		{ socket_bb, 0, ZMQ_POLLIN, 0 },
+		{ socket_ev, 0, ZMQ_POLLIN, 0 }
 	};
 
 	while (!s_interrupted) {
 
-		try {
-			zmq::poll(&items[0], 2, -1); //  -1 means block
-		} catch (zmq::error_t &e) {}
-
+		if (zmq_poll(items, 2, -1) == -1) { //  -1 means block
+			break;
+		}
 
 		if (items[0].revents & ZMQ_POLLIN) {
 
-			sock_bb.recv(&msg);
-			auto n = msg.size();
-			char *ptr = (char *)msg.data();
+			zmq_msg_t msg;
+			zmq_msg_init(&msg);
+			zmq_msg_recv(&msg, socket_bb, 0);
 
-			u64 nc, ns;
+			zmq_cont_packet *p = (zmq_cont_packet *)zmq_msg_data(&msg);
+			size_t nbytes = zmq_msg_size(&msg);
 
-			// parse message
-			memcpy(&nc, ptr+0, sizeof(u64));
+			u64 nc = p->nc;
+			u64 ns = p->ns;
+			i64 tk = p->tk;
 
-			if (nnc != nc) {
-				error("num channel mismatch (expected %d got %d)", nnc, nc);
-				s_interrupted = true;
-			}
-
-			memcpy(&ns, ptr+8, sizeof(u64));
-
-			auto tk = new i64[ns];
-
-			memcpy(tk, ptr+16, sizeof(i64));
-
-			for (size_t i=1; i < ns; i++) {
-				tk[i] = tk[i-1] + 1;
-			}
-
-			auto f = new float[nc * ns];
-			auto g = new float[nc * ns];
-			memcpy(f, ptr+24, nc*ns*sizeof(float));
+			float *f = &(p->f); // for convenience
 
 			for (size_t i=0; i<nc; i++) {
 				for (size_t k=0; k<ns; k++) {
-					g[i*ns+k] = subtr[i]->processSample(tk[k], f[i*ns+k]);
+					f[i*ns+k] = subtr[i]->processSample(tk+k, f[i*ns+k]);
 				}
 			}
 
-			// copy message to buffer
-			auto buf = new char[n];
-			memcpy(buf, msg.data(), n);
-			memcpy(buf+24, g, nc*ns*sizeof(float));
-
-			msg.rebuild(n);
-			memcpy(msg.data(), buf, n);
-
-			sock_out.send(msg);
-
-			delete[] buf;
-
-			delete[] tk;
-			delete[] f;
-			delete[] g;
+			zmq_send(socket_out, p, nbytes, 0);
+			zmq_msg_close(&msg);
 		}
 
+		// xxx need to use zmq_packet technique here xxx
 		if (items[1].revents & ZMQ_POLLIN) {
 
-			sock_ev.recv(&msg);
-			char *ptr = (char *)msg.data();
+			zmq_msg_t msg;
+			zmq_msg_init(&msg);
+			zmq_msg_recv(&msg, socket_ev, 0);
 
-			u16 ec;
-			i64 tk;
-			u16 ev;
+			zmq_event_packet *p = (zmq_event_packet *)zmq_msg_data(&msg);
 
-			// parse message
-			memcpy(&ec, ptr+0, sizeof(u16));
-			memcpy(&tk, ptr+2, sizeof(i64));
-			memcpy(&ev, ptr+10, sizeof(u16));
+			u16 ec = p->ec;
+			i64 tk = p->tk;
+			u16 ev = p->ev;
 
 			if (ec == g_ec_stim) {
 
@@ -235,19 +251,8 @@ int main(int argc, char *argv[])
 			if (ec == g_ec_current) {
 				g_current = ev;
 			}
+			zmq_msg_close(&msg);
 		}
-
-		// print some ascii art
-		if (waiter % 200 == 0) {
-			printf(" [%s|%s]%s[%s]\r",
-			       zbb.substr(zbb_n+1).c_str(),
-			       zev.substr(zev_n+1).c_str(),
-			       spinner[counter % spinner.size()],
-			       zout.substr(zout_n+1).c_str());
-			fflush(stdout);
-			counter++;
-		}
-		waiter++;
 
 	}
 
@@ -256,6 +261,5 @@ int main(int argc, char *argv[])
 		delete o;
 	}
 
-	printf("\n");
-
+	die(zcontext, 0);
 }
