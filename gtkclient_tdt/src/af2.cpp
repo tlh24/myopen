@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include <armadillo>
 #include <zmq.h>
+#include "zmq_packet.h"
 #include "util.h"
 #include "artifact_filter.h"
 
@@ -69,23 +70,12 @@ void trainer(void *ctx, size_t batch_size, ArtifactFilterDirect &af)
 			zmq_msg_init(&msg);
 			zmq_msg_recv(&msg, socket, 0);
 
-			char *ptr = (char *)zmq_msg_data(&msg);
+			zmq_cont_packet *p = (zmq_cont_packet *)zmq_msg_data(&msg);
 
-			u64 nc, ns;
+			u64 nc = p->nc;
+			u64 ns = p->ns;
 
-			// parse message
-			memcpy(&nc, ptr+0, sizeof(u64));
-			memcpy(&ns, ptr+8, sizeof(u64));
-
-			if (nc != af.order()) {
-				error("channel size / filter order mismatch!");
-				s_interrupted = true;
-				break;
-			}
-
-			auto f = new float[nc*ns];
-			memcpy(f, ptr+24, nc*ns*sizeof(float));
-			zmq_msg_close(&msg);
+			float *f = &(p->f); // for convenience
 
 			if (idx+ns >= batch_size) {
 				X.resize(nc, idx+ns+1);
@@ -100,12 +90,13 @@ void trainer(void *ctx, size_t batch_size, ArtifactFilterDirect &af)
 			idx += ns;
 
 			if (idx >= batch_size) {
+				debug("af2: training on batch");
 				af.train(X);
 				X.set_size(nc, batch_size);
 				idx = 0;
 			}
 
-			delete[] f;
+			zmq_msg_close(&msg);
 		}
 
 		if (items[1].revents & ZMQ_POLLIN) {
@@ -146,20 +137,13 @@ void filter(void *ctx, std::string zout, ArtifactFilterDirect &af)
 			zmq_msg_init(&msg);
 			zmq_msg_recv(&msg, socket_in, 0);
 
-			char *ptr = (char *)zmq_msg_data(&msg);
+			zmq_cont_packet *p = (zmq_cont_packet *)zmq_msg_data(&msg);
+			size_t nbytes = zmq_msg_size(&msg);
 
-			u64 nc, ns;
-			i64 tk;
+			u64 nc = p->nc;
+			u64 ns = p->ns;
 
-			// parse message
-			memcpy(&nc, ptr+0,  sizeof(u64));
-			memcpy(&ns, ptr+8,  sizeof(u64));
-			memcpy(&tk, ptr+16, sizeof(i64));
-
-			auto f = new float[nc*ns];
-			memcpy(f, ptr+24, nc*ns*sizeof(float));
-			ptr = NULL;
-			zmq_msg_close(&msg);
+			float *f = &(p->f); // for convenience
 
 			mat X(nc, ns);
 			for (size_t i=0; i<nc; i++) {
@@ -176,17 +160,7 @@ void filter(void *ctx, std::string zout, ArtifactFilterDirect &af)
 				}
 			}
 
-			size_t nbytes = 24 + nc*ns*sizeof(float);
-			zmq_msg_init_size(&msg, nbytes);
-			ptr = (char *)zmq_msg_data(&msg);
-			memcpy(ptr+0,  &nc, sizeof(u64)); // nc - 8 bytes
-			memcpy(ptr+8,  &ns, sizeof(u64)); // ns - 8 bytes
-			memcpy(ptr+16, &tk, sizeof(i64)); // tk - 8 bytes (zeroth tick)
-			memcpy(ptr+24, f, 	nc*ns*sizeof(float));
-
-			delete[] f;
-
-			zmq_msg_send(&msg, socket_out, 0);
+			zmq_send(socket_out, p, nbytes, 0);
 			zmq_msg_close(&msg);
 		}
 

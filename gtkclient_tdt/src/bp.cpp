@@ -2,6 +2,7 @@
 #include <string>
 #include <cstring>
 #include <zmq.h>
+#include "zmq_packet.h"
 #include "util.h"
 #include "filter.h"
 
@@ -172,38 +173,20 @@ int main(int argc, char *argv[])
 			zmq_msg_init(&msg);
 			zmq_msg_recv(&msg, socket_in, 0);
 
-			// copy message to buffer
+			zmq_cont_packet *p = (zmq_cont_packet *)zmq_msg_data(&msg);
 			size_t nbytes = zmq_msg_size(&msg);
-			auto buf = new char[nbytes];
-			memcpy(buf, zmq_msg_data(&msg), nbytes);
 
-			zmq_msg_close(&msg);
+			u64 nc = p->nc;
+			u64 ns = p->ns;
 
-			u64 nc, ns;
-			// parse message
-			memcpy(&nc, buf+0, sizeof(u64));
-			memcpy(&ns, buf+8, sizeof(u64));
-
-			if (nc != nnc) {
-				error("channel mismatch! aborting!");
-				die(zcontext, 1);
-			}
-
-			auto f = new float[nc*ns];
-			memcpy(f, buf+24, nc*ns*sizeof(float));
+			float *f = &(p->f); // for convenience
 
 			for (size_t i=0; i<nc; i++) {
 				bandpass[i]->Proc(&(f[i*ns]), &(f[i*ns]), ns);
 			}
 
-			// copy the filtered data back to the buffer
-			memcpy(buf+24, f, nc*ns*sizeof(float));
-
-			delete[] f;
-
-			zmq_send(socket_out, buf, nbytes, 0);
-
-			delete[] buf;
+			zmq_send(socket_out, p, nbytes, 0);
+			zmq_msg_close(&msg);
 		}
 
 	}

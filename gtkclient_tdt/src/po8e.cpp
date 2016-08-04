@@ -641,6 +641,7 @@ int main(int argc, char *argv[])
 			} else {
 				zmq_send(query, "ERR", 3, 0);
 			}
+			zmq_msg_close(&msg);
 		}
 
 		if (g_running) {
