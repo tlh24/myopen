@@ -31,7 +31,8 @@
 #include "util.h"
 #include "lockfile.h"
 
-#include <zmq.hpp>
+#include <zmq.h>
+#include "zmq_packet.h"
 
 #if defined KHZ_24
 #define SRATE_HZ	(24414.0625)
@@ -63,6 +64,7 @@ vector <VboTimeseries *> g_timeseries;
 float g_zoomSpan = 1.0;
 
 bool s_interrupted = false;
+std::vector <void *> g_socks;
 
 gboolean g_pause = false;
 
@@ -96,6 +98,17 @@ static void s_catch_signals(void)
 	sigaction(SIGINT, &action, NULL);
 	sigaction(SIGQUIT, &action, NULL);
 	sigaction(SIGTERM, &action, NULL);
+}
+
+static void die(void *ctx, int status)
+{
+	s_interrupted = true;
+	gtk_main_quit();
+	for (auto &sock : g_socks) {
+		zmq_close(sock);
+	}
+	zmq_ctx_destroy(ctx);
+	exit(status);
 }
 
 void BuildFont(void)
@@ -385,36 +398,47 @@ key_event(GtkWidget *, GdkEventKey *event)
 
 	return true;
 }
-void worker(zmq::context_t &ctx, std::string zin)
+void worker(void *ctx, std::string zin)
 {
-	zmq::socket_t sock(ctx, ZMQ_SUB);
-	sock.connect(zin.c_str());
-	sock.setsockopt(ZMQ_SUBSCRIBE, "", 0);	// subscribe to everything
+	void *socket_in = zmq_socket(ctx, ZMQ_SUB);
+	if (socket_in == NULL) {
+		error("zmq: could not create socket");
+		die(ctx, 1);
+	}
+	g_socks.push_back(socket_in);
+
+	if (zmq_connect(socket_in, zin.c_str()) != 0) {
+		error("zmq: could not connect to socket");
+		die(ctx, 1);
+	}
+	// subscribe to everything
+	if (zmq_setsockopt(socket_in, ZMQ_SUBSCRIBE, "", 0) != 0) {
+		error("zmq: could not set socket options");
+		die(ctx, 1);
+	}
 
 	// init poll set
-	zmq::pollitem_t items [] = {
-		{ sock, 	0, ZMQ_POLLIN, 0 }
+	zmq_pollitem_t items [] = {
+		{ socket_in, 0, ZMQ_POLLIN, 0 }
 	};
 
 	while (!s_interrupted) {
 
-		try {
-			zmq::poll(&items[0], 1, -1); //  -1 means block
-		} catch (zmq::error_t &e) {}
+		if (zmq_poll(items, 1, -1) == -1) { //  -1 means block
+			break;
+		}
 
 		if (items[0].revents & ZMQ_POLLIN) {
-			zmq::message_t buf;
-			sock.recv(&buf);
+			zmq_msg_t msg;
+			zmq_msg_init(&msg);
+			zmq_msg_recv(&msg, socket_in, 0);
 
-			char *ptr = (char *)buf.data();
+			zmq_cont_packet *p = (zmq_cont_packet *)zmq_msg_data(&msg);
 
-			u64 nc, ns;
+			u64 nc = p->nc;
+			u64 ns = p->ns;
 
-			// parse message
-			memcpy(&nc, ptr+0, sizeof(u64));
-			memcpy(&ns, ptr+8, sizeof(u64));
-			auto f = new float[nc*ns];
-			memcpy(f, ptr+24, nc*ns*sizeof(float));
+			float *f = &(p->f); // for convenience
 
 			for (u64 i=0; i<nc; i++) {
 				for (u64 j=0; j<ns; j++) {
@@ -423,7 +447,7 @@ void worker(zmq::context_t &ctx, std::string zin)
 				}
 			}
 
-			delete[] f;
+			zmq_msg_close(&msg);
 		}
 
 	}
@@ -442,29 +466,46 @@ int main(int argc, char **argv)
 
 	std::string zin  = argv[1];
 
-	printf("ZMQ SUB: %s\n", zin.c_str());
-	printf("\n");
+	debug("ZMQ SUB: %s\n", zin.c_str());
 
 	s_catch_signals();
 
-	zmq::context_t zcontext(1);	// single zmq thread
+	void *zcontext = zmq_ctx_new();
+	if (zcontext == NULL) {
+		error("zmq: could not create context");
+		return 1;
+	}
 
-	zmq::socket_t po8e_query_sock(zcontext, ZMQ_REQ);
-	po8e_query_sock.connect("ipc:///tmp/po8e-query.zmq");
+	// we don't need 1024 sockets
+	if (zmq_ctx_set(zcontext, ZMQ_MAX_SOCKETS, 64) != 0) {
+		error("zmq: could not set max sockets");
+		die(zcontext, 1);
+	}
+
+	void *po8e_query_sock = zmq_socket(zcontext, ZMQ_REQ);
+	if (po8e_query_sock == NULL) {
+		error("zmq: could not create socket");
+		die(zcontext, 1);
+	}
+	g_socks.push_back(po8e_query_sock);
+
+	if (zmq_connect(po8e_query_sock, "ipc:///tmp/po8e-query.zmq") != 0) {
+		error("zmq: could not connect to socket");
+		die(zcontext, 1);
+	}
 
 	u64 nnc; // num neural channels
-	zmq::message_t msg(3);
-	memcpy(msg.data(), "NNC", 3);
-	po8e_query_sock.send(msg);
-	msg.rebuild();
-	po8e_query_sock.recv(&msg);
-	memcpy(&nnc, (u64 *)msg.data(), sizeof(u64));
+	zmq_send(po8e_query_sock, "NNC", 3, 0);
+	if (zmq_recv(po8e_query_sock, &nnc, sizeof(u64), 0) == -1) {
+		error("zmq: could not recv from query sock");
+		die(zcontext, 1);
+	}
 
 	for (size_t i=0; i<nnc; i++) {
 		g_timeseries.push_back(new VboTimeseries(NSAMP));
 	}
 
-	std::thread t1(worker, std::ref(zcontext), zin);
+	std::thread t1(worker, zcontext, zin);
 
 	gtk_init (&argc, &argv);
 	gtk_gl_init(&argc, &argv);
@@ -532,5 +573,6 @@ int main(int argc, char **argv)
 		delete g_vsThreshold;
 	cgDestroyContext(myCgContext);
 
+	die(zcontext, 0);
 }
 

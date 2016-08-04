@@ -196,5 +196,4 @@ int main(int argc, char *argv[])
 	}
 
 	die(zcontext, 0);
-
 }
