@@ -5,8 +5,8 @@ LDFLAGS += `pkg-config --libs libzmq`
 
 LDFLAGS += `pkg-config --libs luajit libxdg-basedir`
 : src/bp.o ../common_host/util.o ../common_host/lconf.o src/filter.o |> !ld |> bp
-: src/lfp.o ../common_host/util.o src/filter.o |> !ld |> lfp
-: src/notch.o ../common_host/util.o src/filter.o |> !ld |> notch
+: src/lfp.o ../common_host/util.o ../common_host/lconf.o src/filter.o |> !ld |> lfp
+: src/notch.o ../common_host/util.o ../common_host/lconf.o src/filter.o |> !ld |> notch
 
 LDFLAGS += `pkg-config --libs comedilib`
 
@@ -17,9 +17,9 @@ LDFLAGS += `pkg-config --libs comedilib`
 LDFLAGS += `pkg-config --libs hdf5`
 LDFLAGS += -larmadillo
 
-: src/af.o ../common_host/util.o src/artifact_filter.o |> !ld |> af
-: src/af2.o ../common_host/util.o src/artifact_filter.o |> !ld |> af2
-: src/subtr.o ../common_host/util.o src/artifact_subtract.o |> !ld |> subtr
+: src/af.o ../common_host/util.o ../common_host/lconf.o src/artifact_filter.o |> !ld |> af
+: src/af2.o ../common_host/util.o ../common_host/lconf.o src/artifact_filter.o |> !ld |> af2
+: src/subtr.o ../common_host/util.o ../common_host/lconf.o src/artifact_subtract.o |> !ld |> subtr
 
 LDFLAGS += `pkg-config --libs uuid luajit protobuf`
 LDFLAGS += -lPO8eStreaming
@@ -62,6 +62,7 @@ LDFLAGS += `pkg-config --libs $(PKG_LIBS)`
 
 : src/gtkclient.o \
 ../common_host/util.o \
+../common_host/lconf.o \
 ../common_host/gettime.o \
 ../common_host/matStor.o \
 ../common_host/glInfo.o \

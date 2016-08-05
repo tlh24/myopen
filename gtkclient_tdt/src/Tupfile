@@ -10,7 +10,8 @@ artifact_filter.cpp \
 artifact_subtract.cpp \
 vbo_raster.cpp \
 vbo_timeseries.cpp \
-pulse_queue.cpp pulser.cpp
+pulse_queue.cpp \
+pulser.cpp
 : foreach $(OBJS) |> !cpp |> %B.o
 
 CPPFLAGS += `pkg-config --cflags libzmq`
@@ -19,15 +20,11 @@ OBJS = noop.cpp
 : foreach $(OBJS) |> !cpp |> %B.o
 
 CPPFLAGS += `pkg-config --cflags luajit libxdg-basedir`
-OBJS = notch.cpp \
-bp.cpp \
-lfp.cpp
+OBJS = notch.cpp bp.cpp lfp.cpp
 : foreach $(OBJS) |> !cpp |> %B.o
 
 CPPFLAGS += `pkg-config --cflags hdf5`
-OBJS = af2.cpp \
-af.cpp \
-subtr.cpp
+OBJS = af.cpp af2.cpp subtr.cpp
 : foreach $(OBJS) |> !cpp |> %B.o
 
 CPPFLAGS += `pkg-config --cflags protobuf`
@@ -38,7 +35,7 @@ OBJS = h5writer.cpp \
 h5analogwriter.cpp \
 h5eventwriter.cpp \
 h5bbsave.cpp \
-h5evsave.cpp \
+h5evsave.cpp
 : foreach $(OBJS) |> !cpp |> %B.o
 
 PKG_LIBS  = gtk+-2.0 blas-openblas gtkglext-1.0 matio gl glu
