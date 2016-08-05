@@ -13,21 +13,22 @@ vbo_timeseries.cpp \
 pulse_queue.cpp pulser.cpp
 : foreach $(OBJS) |> !cpp |> %B.o
 
-CPPFLAGS += `pkg-config --cflags libzmq`
+CPPFLAGS += `pkg-config --cflags libzmq luajit libxdg-basedir`
 
-OBJS = \
-noop.cpp \
-notch.cpp \
+OBJS = noop.cpp
+: foreach $(OBJS) |> !cpp |> %B.o
+
+CPPFLAGS += `pkg-config --cflags luajit libxdg-basedir`
+OBJS = notch.cpp \
 bp.cpp \
 lfp.cpp
 : foreach $(OBJS) |> !cpp |> %B.o
 
 CPPFLAGS += `pkg-config --cflags hdf5`
-
 OBJS = af2.cpp
 : foreach $(OBJS) |> !cpp |> %B.o
 
-CPPFLAGS += `pkg-config --cflags luajit protobuf`
+CPPFLAGS += `pkg-config --cflags protobuf`
 : po8e.cpp | ../proto/po8e.pb.h |> !cpp |> %B.o
 
 CPPFLAGS += `pkg-config --cflags uuid`

@@ -2,7 +2,9 @@ include_rules
 
 LDFLAGS += `pkg-config --libs libzmq`
 : src/noop.o ../common_host/util.o |> !ld |> noop
-: src/bp.o ../common_host/util.o src/filter.o |> !ld |> bp
+
+LDFLAGS += `pkg-config --libs luajit libxdg-basedir`
+: src/bp.o ../common_host/util.o ../common_host/lconf.o src/filter.o |> !ld |> bp
 : src/lfp.o ../common_host/util.o src/filter.o |> !ld |> lfp
 : src/notch.o ../common_host/util.o src/filter.o |> !ld |> notch
 
@@ -19,7 +21,7 @@ LDFLAGS += -larmadillo
 : src/af2.o ../common_host/util.o src/artifact_filter.o |> !ld |> af2
 : src/subtr.o ../common_host/util.o src/artifact_subtract.o |> !ld |> subtr
 
-LDFLAGS += `pkg-config --libs luajit protobuf`
+LDFLAGS += `pkg-config --libs uuid luajit protobuf`
 LDFLAGS += -lPO8eStreaming
 
 : src/po8e.o \
@@ -28,8 +30,6 @@ LDFLAGS += -lPO8eStreaming
 proto/po8e.pb.o \
 ../common_host/lconf.o \
 src/po8e_conf.o |> !ld |> po8e
-
-LDFLAGS += `pkg-config --libs uuid`
 
 : src/h5bbsave.o \
 ../common_host/util.o \

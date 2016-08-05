@@ -140,9 +140,13 @@ DEPS = libgtk2.0-dev libgtk2.0-0-dbg \
 	libhdf5-dev libsdl1.2-dev \
 	libprotobuf-dev protobuf-compiler \
 	astyle cppcheck \
-	libprocps3 libprocps3-dev \
+	libprocps4 libprocps-dev \
 	luajit libuuid1 uuid-dev libuuid1 \
-	libzmq3 libzmq3-dbg libzmq3-dev
+	libzmq5 libzmq5-dbg libzmq3-dev \
+	libgoogle-perftools-dev libgoogle-perftools4 libgoogle-perftools4-dbg \
+	google-perftools \
+	libcomedi0 libcomedi-dev \
+	libxdg-basedir-dev libxdg-basedir1 libxdg-basedir1-dbg
 else
 DEPS = libgtk2.0-dev libgtk2.0-0-dbg \
 	libgtkgl2.0-dev libgtkglext1-dev freeglut3-dev nvidia-cg-toolkit \
@@ -155,7 +159,11 @@ DEPS = libgtk2.0-dev libgtk2.0-0-dbg \
 	astyle cppcheck \
 	libprocps3 libprocps3-dev \
 	luajit libgl1-mesa-glx uuid-dev libuuid1 \
-	libzmq3 libzmq3-dbg libzmq3-dev
+	libzmq3 libzmq3-dbg libzmq3-dev \
+	libgoogle-perftools-dev libgoogle-perftools4 libgoogle-perftools4-dbg \
+	google-perftools \
+	libcomedi0 libcomedi-dev \
+	libxdg-basedir-dev libxdg-basedir1 libxdg-basedir1-dbg
 endif
 deps:
 	sudo apt-get install $(DEPS);

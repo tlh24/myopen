@@ -35,4 +35,5 @@ LDFLAGS  += -lprofiler -ltcmalloc
 !cpp = |> ^ CPP %f^ $(CPP) -c $(CPPFLAGS) %f -o %o |>
 #!cpp = |> $(CPP) -c $(CPPFLAGS) %f -o %o |>
 !ld = |> ^ LINK %o^ $(CPP) %f -o %o $(LDFLAGS) |>
+#!ld = |> $(CPP) %f -o %o $(LDFLAGS) |>
 !protoc = |> ^ PROTOC %f^ protoc --cpp_out=. %f |>
