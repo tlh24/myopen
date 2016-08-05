@@ -77,7 +77,7 @@ bool luaConf::getString(string varName, string &varValue)
 error:
 	lua_pop(L, stack);
 	error("%s: variable '%s' is empty or does not exist",
-	       name(), varName.c_str());
+	      name(), varName.c_str());
 	return false;
 }
 // returns false if there is an error
@@ -121,7 +121,7 @@ bool luaConf::getBool(string varName)
 error:
 	lua_pop(L, stack);
 	error("%s: variable '%s' is empty or does not exist",
-	       name(), varName.c_str());
+	      name(), varName.c_str());
 	return false;
 }
 // returns 0 if there is an error
@@ -164,6 +164,6 @@ int luaConf::getInt(string varName)
 error:
 	lua_pop(L, stack);
 	error("%s: variable '%s' is empty or does not exist",
-	       name(), varName.c_str());
+	      name(), varName.c_str());
 	return 0;
 }

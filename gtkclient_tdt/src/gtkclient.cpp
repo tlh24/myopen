@@ -1118,9 +1118,9 @@ void worker()
 				}
 				g_timeseries[h]->addData(x, ns); // timeseries trace
 				if (h==0) {
-					#ifdef JACK
+#ifdef JACK
 					jackAddSamples(x, x, ns);
-					#endif
+#endif
 				}
 			}
 
