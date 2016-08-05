@@ -35,7 +35,9 @@
 #include <matio.h>
 #include <armadillo>
 #include <uuid.h>
-#include <zmq.hpp>
+
+#include <zmq.h>
+#include "zmq_packet.h"
 
 #include <boost/multi_array.hpp>
 #include <map>
@@ -83,7 +85,8 @@ uuid_t	g_uuid;
 
 char	g_prefstr[256];
 
-zmq::context_t g_zmq_context(1);	// single zmq thread
+void *g_zmq_ctx;
+std::vector <void *> g_socks;
 
 float	g_cursPos[2];
 float	g_viewportSize[2] = {640, 480}; //width, height.
@@ -120,7 +123,6 @@ double g_sr = 48828.1250;
 #else
 #error Bad sampling rate!
 #endif
-
 
 bool g_die = false;
 double g_pause_time = -1.0;
@@ -253,9 +255,17 @@ void destroy(int)
 {
 	saveState(); 		// save the old values (do this first)
 	g_die = true;		// tell threads to finish
-	sleep(1);			// sleep a bit
 	gtk_main_quit();	// tell gui thread to finish
 	// now the rest of cleanup happens in main
+}
+static void die(int status)
+{
+	g_die = true;
+	for (auto &sock : g_socks) {
+		zmq_close(sock);
+	}
+	zmq_ctx_destroy(g_zmq_ctx);
+	exit(status);
 }
 void BuildFont(void)
 {
@@ -1059,277 +1069,42 @@ void worker()
 
 	// Prepare our sockets
 
-	zmq::socket_t neural_sock(g_zmq_context, ZMQ_SUB);
-	neural_sock.connect("ipc:///tmp/noop.zmq");
-	neural_sock.setsockopt(ZMQ_SUBSCRIBE, "", 0);
+	void *neural_sock = zmq_socket(g_zmq_ctx, ZMQ_SUB);	// we will publish neural data
+	zmq_connect(neural_sock, "ipc:///tmp/noop.zmq");
+	zmq_setsockopt(neural_sock, ZMQ_SUBSCRIBE, "", 0);
 
-	zmq::socket_t events_sock(g_zmq_context, ZMQ_SUB);
-	events_sock.connect("ipc:///tmp/events.zmq");
-	events_sock.setsockopt(ZMQ_SUBSCRIBE, "", 0);
+	void *events_sock = zmq_socket(g_zmq_ctx, ZMQ_SUB);	// we will publish events data
+	zmq_connect(events_sock, "ipc:///tmp/events.zmq");
+	zmq_setsockopt(events_sock, ZMQ_SUBSCRIBE, "", 0);
 
 	//socket.connect("ipc:///tmp/af.zmq");
 
 	// init poll set
-	zmq::pollitem_t items [] = {
+	zmq_pollitem_t items [] = {
 		{ neural_sock, 0, ZMQ_POLLIN, 0 },
 		{ events_sock, 0, ZMQ_POLLIN, 0 }
 	};
 
 	while (!g_die) {
 
-		zmq::poll(&items[0], 2, -1); //  -1 means block
+		if (zmq_poll(items, 2, -1) == -1) {
+			break;
+		}
 
 		if (items[0].revents & ZMQ_POLLIN) {
-			zmq::message_t buf;
-			neural_sock.recv(&buf);
+			zmq_msg_t msg;
+			zmq_msg_init(&msg);
+			zmq_msg_recv(&msg, neural_sock, 0);
 
-			char *ptr = (char *)buf.data();
+			zmq_cont_packet *p = (zmq_cont_packet *)zmq_msg_data(&msg);
 
-			u64 nnc, ns;
+			//u64 nc = p->nc;
+			u64 ns = p->ns;
+			i64 tk = p->tk;
 
-			// parse message
-			memcpy(&nnc, ptr+0, sizeof(u64));
-			memcpy(&ns, ptr+8, sizeof(u64));
+			float *f = &(p->f); // for convenience
 
-			auto tk 	= new i64[ns];
-			auto ts 	= new double[ns];
-
-			memcpy(tk, ptr+16, sizeof(i64));
-
-			ts[0] = g_tsc->getTime(tk[0]);
-			for (size_t i=1; i < ns; i++) {
-				tk[i] = tk[i-1] + 1;
-				ts[i] = g_tsc->getTime(tk[i]);
-			}
-
-			auto f = new float[nnc * ns];
-			memcpy(f, ptr+24, nnc*ns*sizeof(float));
-
-			// can more efficiently fill X, i think
-			mat X(nnc, ns);
-			for (size_t i=0; i<nnc; i++) {
-				for (size_t k=0; k<ns; k++) {
-					X(i, k) = f[i*ns+k];
-				}
-			}
-
-
-			// XXX XXX XXX
-			// all the events and stim stuff is disabled for now
-
-			/*
-
-			// stim channels (and event channels generally)
-			size_t nec = 0; // num event channels
-			size_t nsc = 0; // num stim channels
-			for (auto &card : c) {
-				for (int j=0; j<card->channel_size(); j++) {
-					if (card->channel(j).data_type() == po8e::channel::EVENTS) {
-						if (card->channel(j).name().compare("stim") == 0) {
-							nsc++;
-						} else {
-							nec++;
-						}
-					}
-				}
-			}
-			auto events = new bool[nec*ns];
-			auto stim 	= new bool[nsc*ns];
-			size_t ns_i = 0;
-			size_t ne_i = 0;
-			for (size_t i=0; i<c.size(); i++) {
-				for (int j=0; j<c[i]->channel_size(); j++) {
-					if (c[i]->channel(j).data_type() == po8e::channel::EVENTS) {
-						if (c[i]->channel(j).name().compare("stim") == 0) {
-							for (size_t k=0; k<ns; k++) {
-								stim[ns_i*ns+k] = (bool)p[i]->data[j*ns+k];
-							}
-							ns_i++;
-						} else {
-							for (size_t k=0; k<ns; k++) {
-								events[ne_i*ns+k] = (bool)p[i]->data[j*ns+k];
-							}
-							ne_i++;
-						}
-					}
-				}
-			}
-
-			// hardcode the zeroth element, maybe fix this XXX
-			for (size_t k=0; k<ns; k++) {
-				for (size_t i=0; i<nsc; i++) {
-					if (stim[i*ns+k]) {
-						g_eventraster[0]->addEvent((float)ts[k], i); // to draw
-					}
-				}
-			}
-
-
-			*/
-
-			// TODO:  need to be set. Keep empty for now
-			auto blank 	= new bool[ns];
-			//stim[k]  = (u16)(p[1].data[8*ns + k]);
-			//stim[k] += (u16)(p[1].data[9*ns + k]) << 16;
-			//blank[k] = p[1].data[10*ns + k] > 0;
-
-			// fill artifact filtering buffers (for other thread)
-			// we do both training and filtering before filtering
-			// on the intuition that it will work better this way
-
-			/*
-						if (g_trainArtifactNLMS) {
-							auto Y = new mat(X);
-							g_filterbuf.enqueue(Y); // free on the other thread
-						}
-
-						// filter online here
-						if (g_filterArtifactNLMS) {
-							X -= g_nlms->filter(X);
-						}
-
-						// filter online here
-						if (g_artifactFilterRun) {
-							X -= g_artifactFilter->filter(X);
-						}
-						*/
-
-			// big loop through samples
-			// TODO: make this use X, too
-
-			// XXX disable for now
-
-			/*
-
-			for (size_t k=0; k<ns; k++) {
-
-				for (size_t i=0; i<nsc; i++) {
-
-					//if (stim[i*ns+k]) {
-					//	printf("icms pulse\n");
-					//}
-
-					auto a = g_artifact[i];
-
-					if (stim[i*ns+k]) {
-						int z = 0;
-						for (int y=0; y<NARTPTR; y++) {
-							if (a->m_windex[y] == -1) {
-								a->m_windex[y] = 0;
-								a->m_rindex[y] = 0;
-								z++;
-								break;
-							}
-						}
-						if (z == NARTPTR) {
-							warn("STIM ARTIFACTS OVERLAP");
-						}
-					}
-
-					// update artifact-subtraction buffers
-					for (int z=0; z<NARTPTR; z++) {
-						i64 idx = a->m_windex[z]; // write pointer
-						if (idx != -1) {
-							for (int ch=0; ch<(int)nnc; ch++) {
-								a->m_now[ch*ARTBUF+idx] = f[ch*ns+k];
-							}
-							a->m_windex[z]++;
-							if (a->m_windex[z] >= ARTBUF) {
-								if (g_icmswriter.isEnabled()) {
-									auto o = new ICMS; // deleted by other thread
-									o->set_ts(g_ts.getTime(tk[k]-ARTBUF));
-									o->set_tick(tk[k]-ARTBUF);
-									o->set_stim_chan(i+1); // 1-indexed
-
-									if (g_saveICMSWF) {
-										for (int ch=0; ch<(int)nnc; ch++) {
-											ICMS_artifact *art = o->add_artifact();
-											art->set_rec_chan(ch+1); //1-indexed
-											for (int x=0; x<ARTBUF; x++) {
-												art->add_sample(a->m_now[ch*ARTBUF+x]);
-											}
-										}
-									}
-									g_icmswriter.add(o);
-								}
-								a->m_windex[z] = -1;
-
-								if ((g_trainArtifactTempl) &&
-								    (a->m_nsamples < g_numArtifactSamps)) {
-									a->m_nsamples++;
-
-									// for iterative update of average
-									float alpha = 1.f/a->m_nsamples;
-
-									for (int ch=0; ch<(int)nnc; ch++) {
-										for (int x=0; x<ARTBUF; x++) {
-											float cur = a->m_wav[ch*ARTBUF+x];
-											float now = a->m_now[ch*ARTBUF+x];
-											float nex = cur + alpha*(now-cur);
-											a->m_wav[ch*ARTBUF+x] = nex;
-										}
-									}
-								}
-							}
-						}
-
-						i64 ridx = a->m_rindex[z]; // read pointer
-
-						if (ridx == -1)
-							continue; // try next z-pointer
-
-						if (g_enableArtifactSubtr) {
-							for (int ch=0; ch<(int)nnc; ch++) {
-								f[ch*ns+k] -= a->m_wav[ch*ARTBUF+ridx];
-							}
-						}
-						// nb. updating the read pointer happens below,
-						// in the per-artifact blanking code block
-					}
-				}
-			}
-
-			*/
-
-			// XXX TODO: MAKE THIS USE X TOO
-			for (size_t k=0; k<ns; k++) {
-
-				// blank based on artifact (must happen after filtering
-				for (auto &a : g_artifact) {
-					for (int z=0; z<NARTPTR; z++) {
-						i64 ridx = a->m_rindex[z]; // read pointer
-
-						if (ridx == -1)
-							break;
-
-						if (g_enableArtifactBlanking &&
-						    ridx >= g_artifactBlankingPreSamps &&
-						    ridx <  g_artifactBlankingPreSamps+g_artifactBlankingSamps) {
-							for (int ch=0; ch<(int)nnc; ch++) {
-								f[ch*ns+k] = 0.f;
-							}
-						}
-						a->m_rindex[z]++;
-						if (a->m_rindex[z] >= ARTBUF)
-							a->m_rindex[z] = -1;
-					}
-				}
-
-				// blank based on the stim clock (must happen last)
-				if (g_enableStimClockBlanking && blank[k]) {
-					for (int ch=0; ch<(int)nnc; ch++) {
-						// note that if we keep track of the last value from the
-						// previous loop through, we could do sample-and-hold
-						// rather than zero-out. which is better?
-						// nan-ing is also a good idea but poisons further
-						// computations
-						//f[ch*ns+k] = nanf("");
-						f[ch*ns+k] = 0.f;
-					}
-				}
-			}
-
-			auto audio 	= new float[ns];
+			auto x = new float[ns];
 
 			// input data is scaled from TDT so that 32767 = 10mV.
 			// send the data for one channel to jack
@@ -1339,45 +1114,34 @@ void worker()
 				for (size_t k=0; k<ns; k++) {
 					// scale into a reasonable range for audio
 					// and timeseries display
-					//float fg = f[ch*ns+k] * gain / 1e4;
-					float fg = (float)X(ch, k) * gain / 1e4;
-					g_timeseries[h]->addData(&fg, 1); // timeseries trace
-					if (h==0) {
-						audio[k] = fg;
+					x[k] = f[ch*ns+k] * gain / 1e4;
+				}
+				g_timeseries[h]->addData(x, ns); // timeseries trace
+				if (h==0) {
+					#ifdef JACK
+					jackAddSamples(x, x, ns);
+					#endif
+				}
+			}
+
+			delete[] x;
+
+			// package data for sorting / saving
+			for (auto &ch : g_c) {
+				for (size_t k=0; k<ns; k++) {
+					auto samp = f[ch->m_ch*ns+k] / 1e4; // scale so 1 = +10 mV
+					// 1 = +10mV; range = [-1 1] here.
+					ch->m_spkbuf.addSample(tk+k, samp);
+					// update the channel running stats (means and stddevs, etc).
+					ch->m_wfstats(samp);
+					// sort -- see if samples pass threshold. if so, copy.
+					if (ch->getEnabled()) {
+						sorter(ch->m_ch); // XXX put this into channel class?
 					}
 				}
 			}
-#ifdef JACK
-			jackAddSamples(audio, audio, ns);
-#endif
 
-			// package data for sorting / saving
-
-			for (auto &ch : g_c) {
-				//double m = ch->m_wfstats.mean();
-				for (size_t k=0; k<ns; k++) {
-					//auto x = f[ch->m_ch*ns+k] / 1e4; // scale so 1 = +10 mV
-					float x = (float)X(ch->m_ch, k) / 1e4; // scale so 1 = +10 mV
-					// 1 = +10mV; range = [-1 1] here.
-					ch->m_spkbuf.addSample(tk[k], x);
-
-					//update the channel running stats (means and stddevs, etc).
-					ch->m_wfstats(x);
-				}
-			}
-
-			// sort -- see if samples pass threshold. if so, copy.
-			for (int ch=0; ch<(int)nnc; ch++) {
-				if (g_c[ch]->getEnabled()) { //XXX put this into channel class?
-					sorter(ch);
-				}
-			}
-
-			delete[] tk;
-			delete[] ts;
-			delete[] f;
-			delete[] audio;
-			delete[] blank;
+			zmq_msg_close(&msg);
 		}
 
 		if (items[1].revents & ZMQ_POLLIN) {
@@ -1390,19 +1154,15 @@ void worker()
 				return (var) & (1<<n);
 			};
 
-			zmq::message_t buf;
-			events_sock.recv(&buf);
+			zmq_msg_t msg;
+			zmq_msg_init(&msg);
+			zmq_msg_recv(&msg, events_sock, 0);
 
-			char *ptr = (char *)buf.data();
+			zmq_event_packet *p = (zmq_event_packet *)zmq_msg_data(&msg);
 
-			u16 ec;
-			i64 tk;
-			u16 ev;
-
-			// parse message
-			memcpy(&ec, ptr+0, sizeof(u16));
-			memcpy(&tk, ptr+2, sizeof(i64));
-			memcpy(&ev, ptr+10, sizeof(u16));
+			u16 ec = p->ec;
+			i64 tk = p->tk;
+			u16 ev = p->ev;
 
 			if (ec == g_ec_stim) {
 				for (int i=0; i<16; i++) {
@@ -1413,6 +1173,8 @@ void worker()
 			} else {
 				g_eventraster[ec]->addEvent(g_tsc->getTime(tk), 0);
 			}
+
+			zmq_msg_close(&msg);
 		}
 
 	}
@@ -1935,45 +1697,54 @@ int main(int argc, char **argv)
 	MatStor ms(g_prefstr);
 	ms.load();
 
-	zmq::socket_t po8e_query_sock(g_zmq_context, ZMQ_REQ);
-	po8e_query_sock.connect("ipc:///tmp/po8e-query.zmq");
+	g_zmq_ctx = zmq_ctx_new();
+	if (g_zmq_ctx == NULL) {
+		error("zmq: could not create context");
+		return 1;
+	}
+
+	// we don't need 1024 sockets
+	if (zmq_ctx_set(g_zmq_ctx, ZMQ_MAX_SOCKETS, 64) != 0) {
+		error("zmq: could not set max sockets");
+		die(1);
+	}
+
+	void *po8e_query_sock = zmq_socket(g_zmq_ctx, ZMQ_REQ);
+	if (po8e_query_sock == NULL) {
+		error("zmq: could not create socket");
+		die(1);
+	}
+	g_socks.push_back(po8e_query_sock);
+
+	if (zmq_connect(po8e_query_sock, "ipc:///tmp/po8e-query.zmq") != 0) {
+		error("zmq: could not connect to socket");
+		die(1);
+	}
 
 	u64 nnc; // num neural channels
+	zmq_send(po8e_query_sock, "NNC", 3, 0);
+	if (zmq_recv(po8e_query_sock, &nnc, sizeof(u64), 0) == -1) {
+		error("zmq: could not recv from query sock");
+		die(1);
+	}
 	u64 nec; // num event channels
+	zmq_send(po8e_query_sock, "NEC", 3, 0);
+	if (zmq_recv(po8e_query_sock, &nec, sizeof(u64), 0) == -1) {
+		error("zmq: could not recv from query sock");
+		die(1);
+	}
 	u64 nac; // num analog channels
+	zmq_send(po8e_query_sock, "NAC", 3, 0);
+	if (zmq_recv(po8e_query_sock, &nac, sizeof(u64), 0) == -1) {
+		error("zmq: could not recv from query sock");
+		die(1);
+	}
 	u64 nic; // num ignored cahnnels
-
-	// get nnc, num neural channels
-	zmq::message_t msg(3);
-	memcpy(msg.data(), "NNC", 3);
-	po8e_query_sock.send(msg);
-	msg.rebuild();
-	po8e_query_sock.recv(&msg);
-	memcpy(&nnc, (u64 *)msg.data(), sizeof(u64));
-
-	// get nec, num events channels
-	msg.rebuild(3);
-	memcpy(msg.data(), "NEC", 3);
-	po8e_query_sock.send(msg);
-	msg.rebuild();
-	po8e_query_sock.recv(&msg);
-	memcpy(&nec, (u64 *)msg.data(), sizeof(u64));
-
-	// get nac, num analog channels
-	msg.rebuild(3);
-	memcpy(msg.data(), "NAC", 3);
-	po8e_query_sock.send(msg);
-	msg.rebuild();
-	po8e_query_sock.recv(&msg);
-	memcpy(&nac, (u64 *)msg.data(), sizeof(u64));
-
-	// get nic, num ignored channels
-	msg.rebuild(3);
-	memcpy(msg.data(), "NIC", 3);
-	po8e_query_sock.send(msg);
-	msg.rebuild();
-	po8e_query_sock.recv(&msg);
-	memcpy(&nic, (u64 *)msg.data(), sizeof(u64));
+	zmq_send(po8e_query_sock, "NIC", 3, 0);
+	if (zmq_recv(po8e_query_sock, &nic, sizeof(u64), 0) == -1) {
+		error("zmq: could not recv from query sock");
+		die(1);
+	}
 
 	printf("neural channels:\t%zu\n", 	nnc);
 	printf("events channels:\t%zu\n", 	nec);
@@ -1982,7 +1753,7 @@ int main(int argc, char **argv)
 
 	if (nnc == 0) {
 		error("No neural channels? Aborting!");
-		return 1;
+		die(1);
 	}
 
 	for (size_t i=0; i<(nnc*NUNIT); i++) {
@@ -1996,21 +1767,18 @@ int main(int argc, char **argv)
 		auto o = new Channel(ch, &ms);
 
 		// NC : X : NAME
-		msg.rebuild(2);
-		memcpy(msg.data(), "NC", 2);
-		po8e_query_sock.send(msg, ZMQ_SNDMORE);
-		msg.rebuild(sizeof(u64));
-		memcpy(msg.data(), &ch, sizeof(u64));
-		po8e_query_sock.send(msg, ZMQ_SNDMORE);
-		msg.rebuild(4);
-		memcpy(msg.data(), "NAME", 4);
-		po8e_query_sock.send(msg);
-		msg.rebuild();
-		po8e_query_sock.recv(&msg);
-		//o->m_chanName = (char *)msg.data();
-		std::string str((char *)msg.data(), msg.size());
+		zmq_send(po8e_query_sock, "NC", 2, ZMQ_SNDMORE);
+		zmq_send(po8e_query_sock, &ch, sizeof(u64), ZMQ_SNDMORE);
+		zmq_send(po8e_query_sock, "NAME", 4, 0);
+
+		zmq_msg_t msg;
+		zmq_msg_init(&msg);
+		zmq_msg_recv(&msg, po8e_query_sock, 0);
+
+		std::string str((char *)zmq_msg_data(&msg), zmq_msg_size(&msg));
 		o->m_chanName = str;
 		g_c.push_back(o);
+		zmq_msg_close(&msg);
 	}
 
 	for (size_t i=0; i<g_channel.size(); i++) {
@@ -2044,23 +1812,22 @@ int main(int argc, char **argv)
 		g_spikeraster.push_back(o);
 	}
 
+	// nb we must not assume that the string is null terminated!
+	auto is = [](zmq_msg_t *m, const char *c) {
+		return strncmp((char *)zmq_msg_data(m), c, zmq_msg_size(m)) == 0;
+	};
+
 	for (u64 ch=0; ch<nec; ch++) {
-
 		// EC : X : NAME
-		msg.rebuild(2);
-		memcpy(msg.data(), "EC", 2);
-		po8e_query_sock.send(msg, ZMQ_SNDMORE);
-		msg.rebuild(sizeof(u64));
-		memcpy(msg.data(), &ch, sizeof(u64));
-		po8e_query_sock.send(msg, ZMQ_SNDMORE);
-		msg.rebuild(4);
-		memcpy(msg.data(), "NAME", 4);
-		po8e_query_sock.send(msg);
-		msg.rebuild();
-		po8e_query_sock.recv(&msg);
-		std::string ec_name((char *)msg.data(), msg.size());
+		zmq_send(po8e_query_sock, "EC", 2, ZMQ_SNDMORE);
+		zmq_send(po8e_query_sock, &ch, sizeof(u64), ZMQ_SNDMORE);
+		zmq_send(po8e_query_sock, "NAME", 4, 0);
 
-		if (strcmp(ec_name.c_str(), "stim") == 0) {
+		zmq_msg_t msg;
+		zmq_msg_init(&msg);
+		zmq_msg_recv(&msg, po8e_query_sock, 0);
+
+		if (is(&msg, "stim")) {
 			VboRaster *o = new VboRaster(16, 2*NSBUF);
 			o->setColor(1.0, 1.0, 50.f/255.f, 0.75); // yellow
 			g_eventraster.push_back(o);
@@ -2070,7 +1837,7 @@ int main(int argc, char **argv)
 			o->setColor(202.f/255.f, 178.f/255.f, 214.f/255.f, 0.95); // purple
 			g_eventraster.push_back(o);
 		}
-
+		zmq_msg_close(&msg);
 	}
 
 	g_saveUnsorted 	= (bool)ms.getStructValue("savemode", "unsorted_spikes", 0, (float)g_saveUnsorted);
