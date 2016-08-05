@@ -13,7 +13,7 @@ vbo_timeseries.cpp \
 pulse_queue.cpp pulser.cpp
 : foreach $(OBJS) |> !cpp |> %B.o
 
-CPPFLAGS += `pkg-config --cflags libzmq luajit libxdg-basedir`
+CPPFLAGS += `pkg-config --cflags libzmq`
 
 OBJS = noop.cpp
 : foreach $(OBJS) |> !cpp |> %B.o
@@ -25,7 +25,9 @@ lfp.cpp
 : foreach $(OBJS) |> !cpp |> %B.o
 
 CPPFLAGS += `pkg-config --cflags hdf5`
-OBJS = af2.cpp
+OBJS = af2.cpp \
+af.cpp \
+subtr.cpp
 : foreach $(OBJS) |> !cpp |> %B.o
 
 CPPFLAGS += `pkg-config --cflags protobuf`
@@ -38,8 +40,6 @@ h5analogwriter.cpp \
 h5eventwriter.cpp \
 h5bbsave.cpp \
 h5evsave.cpp \
-af.cpp \
-subtr.cpp
 : foreach $(OBJS) |> !cpp |> %B.o
 
 PKG_LIBS  = gtk+-2.0 blas-openblas gtkglext-1.0 matio gl glu
