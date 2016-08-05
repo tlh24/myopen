@@ -35,9 +35,9 @@ long double 			g_lastPo8eTime = 0.0;
 
 mutex g_po8e_mutex;
 size_t g_po8e_read_size = 16; // po8e block read size
-string g_po8e_neural_socket_name = "tcp://*:1337";
-string g_po8e_events_socket_name = "tcp://*:1338";
-string g_po8e_query_socket_name = "ipc:///tmp/po8e-query.zmq";
+string g_po8e_neural_socket_name = "ipc:///tmp/broadband.zmq";
+string g_po8e_events_socket_name = "ipc:///tmp/events.zmq";
+string g_po8e_query_socket_name = "ipc:///tmp/query.zmq";
 
 
 TimeSync 	g_ts(SRATE_HZ); //keeps track of ticks (TDT time)
@@ -420,6 +420,46 @@ int main(int argc, char *argv[])
 
 	s_catch_signals();
 
+	g_startTime = gettime();
+
+	lockfile lf("/tmp/po8e.lock");
+	if (lf.lock()) {
+		error("executable already running");
+		return 1;
+	}
+
+	// load the lua-based po8e config
+	po8eConf pc;
+	if (!pc.loadConf(rc)) {
+		error("No config file! Aborting!");
+		return 1;
+	}
+
+	g_po8e_read_size = pc.readSize();
+	printf("po8e read size:\t\t%zu\n", 	g_po8e_read_size);
+
+	pc.querySocketName(g_po8e_query_socket_name);
+	printf("po8e query socket:\t%s\n", 	g_po8e_query_socket_name.c_str());
+
+	pc.neuralSocketName(g_po8e_neural_socket_name);
+	printf("po8e neural socket:\t%s\n", g_po8e_neural_socket_name.c_str());
+
+	pc.eventsSocketName(g_po8e_events_socket_name);
+	printf("po8e events socket:\t%s\n", g_po8e_events_socket_name.c_str());
+
+	size_t nc = pc.numNeuralChannels();
+	printf("Neural channels:\t%zu\n", 	nc);
+	printf("Event channels:\t\t%zu\n", 	pc.numEventsChannels());
+	printf("Analog channels:\t%zu\n", 	pc.numAnalogChannels());
+	printf("Ignored channels:\t%zu\n", 	pc.numIgnoredChannels());
+
+	if (nc == 0) {
+		error("No neural channels configured!");
+		return 1;
+	}
+
+	printf("\n");
+
 	void *zcontext = zmq_ctx_new();
 	if (zcontext == NULL) {
 		error("zmq: could not create context");
@@ -446,8 +486,6 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	// XXX eventually the query socket will be pulled from the rc file
-	// so this will have to come after parsing the rc file
 	void *query = zmq_socket(zcontext, ZMQ_REP);
 	if (controller == NULL) {
 		error("zmq: could not create socket");
@@ -463,44 +501,6 @@ int main(int argc, char *argv[])
 		zmq_ctx_destroy(zcontext);
 		return 1;
 	}
-
-	g_startTime = gettime();
-
-	lockfile lf("/tmp/po8e.lock");
-	if (lf.lock()) {
-		error("executable already running");
-		return 1;
-	}
-
-	// load the lua-based po8e config
-	po8eConf pc;
-	if (!pc.loadConf(rc)) {
-		error("No config file! Aborting!");
-		return 1;
-	}
-
-	g_po8e_read_size = pc.readSize();
-	printf("po8e read size:\t\t%zu\n", 	g_po8e_read_size);
-
-	printf("po8e query socket:\t%s\n", 	g_po8e_query_socket_name.c_str());
-
-	g_po8e_neural_socket_name = pc.neuralSocketName();
-	g_po8e_events_socket_name = pc.eventsSocketName();
-	printf("po8e neural socket:\t%s\n", g_po8e_neural_socket_name.c_str());
-	printf("po8e events socket:\t%s\n", g_po8e_events_socket_name.c_str());
-
-	size_t nc = pc.numNeuralChannels();
-	printf("Neural channels:\t%zu\n", 	nc);
-	printf("Event channels:\t\t%zu\n", 	pc.numEventsChannels());
-	printf("Analog channels:\t%zu\n", 	pc.numAnalogChannels());
-	printf("Ignored channels:\t%zu\n", 	pc.numIgnoredChannels());
-
-	if (nc == 0) {
-		error("No neural channels configured!");
-		return 1;
-	}
-
-	printf("\n");
 
 	vector <thread> threads;
 	vector <po8e::card *> cards;

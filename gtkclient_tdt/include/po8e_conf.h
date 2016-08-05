@@ -23,8 +23,9 @@ public:
 	size_t numIgnoredChannels();
 	vector <po8e::card *> cards;
 	size_t readSize();
-	string neuralSocketName();
-	string eventsSocketName();
+	void neuralSocketName(std::string &s);
+	void eventsSocketName(std::string &s);
+	void querySocketName(std::string &s);
 protected:
 private:
 	po8e::card *loadCard(size_t i);

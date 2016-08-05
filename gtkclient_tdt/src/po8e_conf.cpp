@@ -73,17 +73,17 @@ size_t po8eConf::readSize()
 	}
 	return read_size;
 }
-string po8eConf::neuralSocketName()
+void po8eConf::neuralSocketName(std::string &s)
 {
-	string s = "tcp://*:1337"; // reasonable default
 	getString("po8e.neural_socket", s); // s unchanged on error
-	return s;
 }
-string po8eConf::eventsSocketName()
+void po8eConf::eventsSocketName(std::string &s)
 {
-	string s = "tcp://*:1338"; // reasonable default
 	getString("po8e.events_socket", s); // s unchanged on error
-	return s;
+}
+void po8eConf::querySocketName(std::string &s)
+{
+	getString("po8e.query_socket", s); // s unchanged on error
 }
 // allocates memory
 po8e::card *po8eConf::loadCard(size_t idx)
