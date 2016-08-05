@@ -49,6 +49,7 @@ LDFLAGS += `pkg-config --libs $(PKG_LIBS)`
 
  :src/bbview.o \
 ../common_host/util.o \
+../common_host/lconf.o \
 ../common_host/glInfo.o \
 src/vbo_timeseries.o \
  |> !ld |> bbview
