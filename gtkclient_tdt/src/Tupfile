@@ -34,8 +34,7 @@ CPPFLAGS += `pkg-config --cflags protobuf`
 : po8e.cpp | ../proto/po8e.pb.h |> !cpp |> %B.o
 
 CPPFLAGS += `pkg-config --cflags uuid`
-OBJS = \
-h5writer.cpp \
+OBJS = h5writer.cpp \
 h5analogwriter.cpp \
 h5eventwriter.cpp \
 h5bbsave.cpp \
