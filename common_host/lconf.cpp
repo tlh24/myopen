@@ -1,4 +1,5 @@
 #include <boost/tokenizer.hpp>
+#include "util.h"
 #include "lconf.h"
 
 using namespace std;
@@ -28,10 +29,10 @@ bool luaConf::loadConf(const char *conf)  	// returns true on success
 	if (lua_pcall(L, 0, LUA_MULTRET, 0) != 0) {
 		goto error;
 	}
-	printf("%s: loaded %s\n", name(), conf);
+	debug("%s: loaded %s", name(), conf);
 	return true;
 error:
-	printf("%s: error %s\n", name(), lua_tostring(L, -1));
+	error("%s: %s", name(), lua_tostring(L, -1));
 	lua_pop(L, 1);	// pop error message from stack
 	return false;
 }
@@ -71,13 +72,11 @@ bool luaConf::getString(string varName, string &varValue)
 	}
 
 	lua_pop(L, stack);
-#ifdef DEBUG
-	printf("%s: loaded %s\n", name(), varName.c_str());
-#endif
+	debug("%s: loaded %s", name(), varName.c_str());
 	return true;
 error:
 	lua_pop(L, stack);
-	printf("%s: variable '%s' is empty or does not exist\n",
+	error("%s: variable '%s' is empty or does not exist",
 	       name(), varName.c_str());
 	return false;
 }
@@ -117,13 +116,11 @@ bool luaConf::getBool(string varName)
 		}
 	}
 	lua_pop(L, stack);
-#ifdef DEBUG
-	printf("%s: loaded %s\n", name(), varName.c_str());
-#endif
+	debug("%s: loaded %s", name(), varName.c_str());
 	return b;
 error:
 	lua_pop(L, stack);
-	printf("%s: variable '%s' is empty or does not exist\n",
+	error("%s: variable '%s' is empty or does not exist",
 	       name(), varName.c_str());
 	return false;
 }
@@ -162,13 +159,11 @@ int luaConf::getInt(string varName)
 		}
 	}
 	lua_pop(L, stack);
-#ifdef DEBUG
-	printf("%s: loaded %s\n", name(), varName.c_str());
-#endif
+	debug("%s: loaded %s", name(), varName.c_str());
 	return x;
 error:
 	lua_pop(L, stack);
-	printf("%s: variable '%s' is empty or does not exist\n",
+	error("%s: variable '%s' is empty or does not exist",
 	       name(), varName.c_str());
 	return 0;
 }
