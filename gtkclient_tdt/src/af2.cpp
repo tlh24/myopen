@@ -6,6 +6,9 @@
 #include <armadillo>
 #include <zmq.h>
 #include "zmq_packet.h"
+#include <basedir.h>
+#include <basedir_fs.h>
+#include "lconf.h"
 #include "util.h"
 #include "artifact_filter.h"
 
@@ -191,6 +194,25 @@ int main(int argc, char *argv[])
 
 	s_catch_signals();
 
+	xdgHandle xdg;
+	xdgInitHandle(&xdg);
+	char *confpath = xdgConfigFind("spk/spk.rc", &xdg);
+	char *tmp = confpath;
+	// confpath is "string1\0string2\0string3\0\0"
+
+	luaConf conf;
+
+	while (*tmp) {
+		conf.loadConf(tmp);
+		tmp += strlen(tmp) + 1;
+	}
+	if (confpath)
+		free(confpath);
+	xdgWipeHandle(&xdg);
+
+	std::string zq = "ipc:///tmp/query.zmq";
+	conf.getString("spk.query_socket", zq);
+
 	void *zcontext = zmq_ctx_new();
 	if (zcontext == NULL) {
 		error("zmq: could not create context");
@@ -203,21 +225,21 @@ int main(int argc, char *argv[])
 		die(zcontext, 1);
 	}
 
-	void *po8e_query_sock = zmq_socket(zcontext, ZMQ_REQ);
-	if (po8e_query_sock == NULL) {
+	void *query_sock = zmq_socket(zcontext, ZMQ_REQ);
+	if (query_sock == NULL) {
 		error("zmq: could not create socket");
 		die(zcontext, 1);
 	}
-	g_socks.push_back(po8e_query_sock);
+	g_socks.push_back(query_sock);
 
-	if (zmq_connect(po8e_query_sock, "ipc:///tmp/po8e-query.zmq") != 0) {
+	if (zmq_connect(query_sock, zq.c_str()) != 0) {
 		error("zmq: could not connect to socket");
 		die(zcontext, 1);
 	}
 
 	u64 nnc; // num neural channels
-	zmq_send(po8e_query_sock, "NNC", 3, 0);
-	if (zmq_recv(po8e_query_sock, &nnc, sizeof(u64), 0) == -1) {
+	zmq_send(query_sock, "NNC", 3, 0);
+	if (zmq_recv(query_sock, &nnc, sizeof(u64), 0) == -1) {
 		error("zmq: could not recv from query sock");
 		die(zcontext, 1);
 	}

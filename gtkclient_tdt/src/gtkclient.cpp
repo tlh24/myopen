@@ -39,6 +39,10 @@
 #include <zmq.h>
 #include "zmq_packet.h"
 
+#include <basedir.h>
+#include <basedir_fs.h>
+#include "lconf.h"
+
 #include <boost/multi_array.hpp>
 #include <map>
 #include <string>
@@ -1666,7 +1670,7 @@ int main(int argc, char **argv)
 
 	g_tsc = new TimeSyncClient(); //tells us the ticks when things happen.
 
-	string titlestr = "gtkclient (TDT) v2.25";
+	string titlestr = "gtkclient (TDT) v2.30";
 
 #ifdef DEBUG
 	feenableexcept(FE_DIVBYZERO|FE_INVALID|FE_OVERFLOW);  // Enable (some) floating point exceptions
@@ -1697,6 +1701,26 @@ int main(int argc, char **argv)
 	MatStor ms(g_prefstr);
 	ms.load();
 
+	xdgHandle xdg;
+	xdgInitHandle(&xdg);
+	char *confpath = xdgConfigFind("spk/spk.rc", &xdg);
+	char *tmp = confpath;
+	// confpath is "string1\0string2\0string3\0\0"
+
+	luaConf conf;
+
+	while (*tmp) {
+		conf.loadConf(tmp);
+		tmp += strlen(tmp) + 1;
+	}
+	if (confpath)
+		free(confpath);
+	xdgWipeHandle(&xdg);
+
+	std::string zq = "ipc:///tmp/query.zmq";
+	conf.getString("spk.query_socket", zq);
+
+
 	g_zmq_ctx = zmq_ctx_new();
 	if (g_zmq_ctx == NULL) {
 		error("zmq: could not create context");
@@ -1709,39 +1733,39 @@ int main(int argc, char **argv)
 		die(1);
 	}
 
-	void *po8e_query_sock = zmq_socket(g_zmq_ctx, ZMQ_REQ);
-	if (po8e_query_sock == NULL) {
+	void *query_sock = zmq_socket(g_zmq_ctx, ZMQ_REQ);
+	if (query_sock == NULL) {
 		error("zmq: could not create socket");
 		die(1);
 	}
-	g_socks.push_back(po8e_query_sock);
+	g_socks.push_back(query_sock);
 
-	if (zmq_connect(po8e_query_sock, "ipc:///tmp/po8e-query.zmq") != 0) {
+	if (zmq_connect(query_sock, zq.c_str()) != 0) {
 		error("zmq: could not connect to socket");
 		die(1);
 	}
 
 	u64 nnc; // num neural channels
-	zmq_send(po8e_query_sock, "NNC", 3, 0);
-	if (zmq_recv(po8e_query_sock, &nnc, sizeof(u64), 0) == -1) {
+	zmq_send(query_sock, "NNC", 3, 0);
+	if (zmq_recv(query_sock, &nnc, sizeof(u64), 0) == -1) {
 		error("zmq: could not recv from query sock");
 		die(1);
 	}
 	u64 nec; // num event channels
-	zmq_send(po8e_query_sock, "NEC", 3, 0);
-	if (zmq_recv(po8e_query_sock, &nec, sizeof(u64), 0) == -1) {
+	zmq_send(query_sock, "NEC", 3, 0);
+	if (zmq_recv(query_sock, &nec, sizeof(u64), 0) == -1) {
 		error("zmq: could not recv from query sock");
 		die(1);
 	}
 	u64 nac; // num analog channels
-	zmq_send(po8e_query_sock, "NAC", 3, 0);
-	if (zmq_recv(po8e_query_sock, &nac, sizeof(u64), 0) == -1) {
+	zmq_send(query_sock, "NAC", 3, 0);
+	if (zmq_recv(query_sock, &nac, sizeof(u64), 0) == -1) {
 		error("zmq: could not recv from query sock");
 		die(1);
 	}
 	u64 nic; // num ignored cahnnels
-	zmq_send(po8e_query_sock, "NIC", 3, 0);
-	if (zmq_recv(po8e_query_sock, &nic, sizeof(u64), 0) == -1) {
+	zmq_send(query_sock, "NIC", 3, 0);
+	if (zmq_recv(query_sock, &nic, sizeof(u64), 0) == -1) {
 		error("zmq: could not recv from query sock");
 		die(1);
 	}
@@ -1767,13 +1791,13 @@ int main(int argc, char **argv)
 		auto o = new Channel(ch, &ms);
 
 		// NC : X : NAME
-		zmq_send(po8e_query_sock, "NC", 2, ZMQ_SNDMORE);
-		zmq_send(po8e_query_sock, &ch, sizeof(u64), ZMQ_SNDMORE);
-		zmq_send(po8e_query_sock, "NAME", 4, 0);
+		zmq_send(query_sock, "NC", 2, ZMQ_SNDMORE);
+		zmq_send(query_sock, &ch, sizeof(u64), ZMQ_SNDMORE);
+		zmq_send(query_sock, "NAME", 4, 0);
 
 		zmq_msg_t msg;
 		zmq_msg_init(&msg);
-		zmq_msg_recv(&msg, po8e_query_sock, 0);
+		zmq_msg_recv(&msg, query_sock, 0);
 
 		std::string str((char *)zmq_msg_data(&msg), zmq_msg_size(&msg));
 		o->m_chanName = str;
@@ -1819,13 +1843,13 @@ int main(int argc, char **argv)
 
 	for (u64 ch=0; ch<nec; ch++) {
 		// EC : X : NAME
-		zmq_send(po8e_query_sock, "EC", 2, ZMQ_SNDMORE);
-		zmq_send(po8e_query_sock, &ch, sizeof(u64), ZMQ_SNDMORE);
-		zmq_send(po8e_query_sock, "NAME", 4, 0);
+		zmq_send(query_sock, "EC", 2, ZMQ_SNDMORE);
+		zmq_send(query_sock, &ch, sizeof(u64), ZMQ_SNDMORE);
+		zmq_send(query_sock, "NAME", 4, 0);
 
 		zmq_msg_t msg;
 		zmq_msg_init(&msg);
-		zmq_msg_recv(&msg, po8e_query_sock, 0);
+		zmq_msg_recv(&msg, query_sock, 0);
 
 		if (is(&msg, "stim")) {
 			VboRaster *o = new VboRaster(16, 2*NSBUF);
