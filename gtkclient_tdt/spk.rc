@@ -1,0 +1,7 @@
+-- This configuration file is written in the lua language
+-- More details about lua here: http://www.lua.org/manual/5.1/
+
+-- comments are prefixed by double dashes
+
+spk = {}
+spk.query_socket = "ipc:///tmp/query.zmq"
