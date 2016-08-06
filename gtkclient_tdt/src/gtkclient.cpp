@@ -16,6 +16,7 @@
 
 #include <stdio.h>
 #include <float.h>
+#include <limits.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <inttypes.h>
@@ -101,7 +102,7 @@ class Artifact;
 vector <VboTimeseries *> g_timeseries;
 vector <VboRaster *> g_spikeraster;
 vector <VboRaster *> g_eventraster;
-int g_ec_stim = -1;
+u64 g_ec_stim = UINT_MAX;
 
 float g_zoomSpan = 1.0;
 
@@ -1073,11 +1074,11 @@ void worker()
 
 	// Prepare our sockets
 
-	void *neural_sock = zmq_socket(g_zmq_ctx, ZMQ_SUB);	// we will publish neural data
+	void *neural_sock = zmq_socket(g_zmq_ctx, ZMQ_SUB);
 	zmq_connect(neural_sock, "ipc:///tmp/noop.zmq");
 	zmq_setsockopt(neural_sock, ZMQ_SUBSCRIBE, "", 0);
 
-	void *events_sock = zmq_socket(g_zmq_ctx, ZMQ_SUB);	// we will publish events data
+	void *events_sock = zmq_socket(g_zmq_ctx, ZMQ_SUB);
 	zmq_connect(events_sock, "ipc:///tmp/events.zmq");
 	zmq_setsockopt(events_sock, ZMQ_SUBSCRIBE, "", 0);
 
@@ -1096,17 +1097,17 @@ void worker()
 		}
 
 		if (items[0].revents & ZMQ_POLLIN) {
-			zmq_msg_t msg;
-			zmq_msg_init(&msg);
-			zmq_msg_recv(&msg, neural_sock, 0);
-
-			zmq_cont_packet *p = (zmq_cont_packet *)zmq_msg_data(&msg);
-
-			//u64 nc = p->nc;
+			zmq_msg_t header;
+			zmq_msg_init(&header);
+			zmq_msg_recv(&header, neural_sock, 0);
+			zmq_neural_header *p = (zmq_neural_header *)zmq_msg_data(&header);
 			u64 ns = p->ns;
 			i64 tk = p->tk;
 
-			float *f = &(p->f); // for convenience
+			zmq_msg_t body;
+			zmq_msg_init(&body);
+			zmq_msg_recv(&body, neural_sock, 0);
+			float *f = (float*)zmq_msg_data(&body);
 
 			auto x = new float[ns];
 
@@ -1145,7 +1146,8 @@ void worker()
 				}
 			}
 
-			zmq_msg_close(&msg);
+			zmq_msg_close(&header);
+			zmq_msg_close(&body);
 		}
 
 		if (items[1].revents & ZMQ_POLLIN) {
@@ -1164,7 +1166,7 @@ void worker()
 
 			zmq_event_packet *p = (zmq_event_packet *)zmq_msg_data(&msg);
 
-			u16 ec = p->ec;
+			u64 ec = p->ec;
 			i64 tk = p->tk;
 			u16 ev = p->ev;
 

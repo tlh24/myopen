@@ -433,16 +433,17 @@ void worker(void *ctx, std::string zin)
 		}
 
 		if (items[0].revents & ZMQ_POLLIN) {
-			zmq_msg_t msg;
-			zmq_msg_init(&msg);
-			zmq_msg_recv(&msg, socket_in, 0);
-
-			zmq_cont_packet *p = (zmq_cont_packet *)zmq_msg_data(&msg);
-
+			zmq_msg_t header;
+			zmq_msg_init(&header);
+			zmq_msg_recv(&header, socket_in, 0);
+			zmq_neural_header *p = (zmq_neural_header *)zmq_msg_data(&header);
 			u64 nc = p->nc;
 			u64 ns = p->ns;
 
-			float *f = &(p->f); // for convenience
+			zmq_msg_t body;
+			zmq_msg_init(&body);
+			zmq_msg_recv(&body, socket_in, 0);
+			float *f = (float*)zmq_msg_data(&body);
 
 			for (u64 i=0; i<nc; i++) {
 				for (u64 j=0; j<ns; j++) {
@@ -451,7 +452,8 @@ void worker(void *ctx, std::string zin)
 				}
 			}
 
-			zmq_msg_close(&msg);
+			zmq_msg_close(&header);
+			zmq_msg_close(&body);
 		}
 
 	}

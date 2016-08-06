@@ -204,14 +204,14 @@ int main(int argc, char *argv[])
 			zmq_msg_recv(&body, socket_in, 0);
 			size_t nb = zmq_msg_size(&body);
 			float *f = (float*)zmq_msg_data(&body);
-			
+
 			for (size_t i=0; i<nc; i++) {
 				bandpass[i]->Proc(&(f[i*ns]), &(f[i*ns]), ns);
 			}
 
 			zmq_send(socket_out, p, nh, ZMQ_SNDMORE);
 			zmq_send(socket_out, f, nb, 0);
-			
+
 			zmq_msg_close(&header);
 			zmq_msg_close(&body);
 		}

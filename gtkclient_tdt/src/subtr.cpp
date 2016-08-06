@@ -2,6 +2,7 @@
 #include <thread>
 #include <string>
 #include <cstring>
+#include <limits.h>
 #include <sys/stat.h>
 #include <armadillo>
 #include <zmq.h>
@@ -12,8 +13,8 @@
 #include "util.h"
 #include "artifact_subtract.h"
 
-int g_ec_stim = -1;
-int g_ec_current = -1;
+u64 g_ec_stim = UINT_MAX;
+u64 g_ec_current = UINT_MAX;
 u16 g_current = 0;
 
 bool s_interrupted = false;
@@ -215,18 +216,20 @@ int main(int argc, char *argv[])
 
 		if (items[0].revents & ZMQ_POLLIN) {
 
-			zmq_msg_t msg;
-			zmq_msg_init(&msg);
-			zmq_msg_recv(&msg, socket_bb, 0);
-
-			zmq_cont_packet *p = (zmq_cont_packet *)zmq_msg_data(&msg);
-			size_t nbytes = zmq_msg_size(&msg);
-
+			zmq_msg_t header;
+			zmq_msg_init(&header);
+			zmq_msg_recv(&header, socket_bb, 0);
+			size_t nh = zmq_msg_size(&header);
+			zmq_neural_header *p = (zmq_neural_header *)zmq_msg_data(&header);
 			u64 nc = p->nc;
 			u64 ns = p->ns;
 			i64 tk = p->tk;
 
-			float *f = &(p->f); // for convenience
+			zmq_msg_t body;
+			zmq_msg_init(&body);
+			zmq_msg_recv(&body, socket_bb, 0);
+			size_t nb = zmq_msg_size(&body);
+			float *f = (float*)zmq_msg_data(&body);
 
 			for (size_t i=0; i<nc; i++) {
 				for (size_t k=0; k<ns; k++) {
@@ -234,8 +237,10 @@ int main(int argc, char *argv[])
 				}
 			}
 
-			zmq_send(socket_out, p, nbytes, 0);
-			zmq_msg_close(&msg);
+			zmq_send(socket_out, p, nh, ZMQ_SNDMORE);
+			zmq_send(socket_out, f, nb, 0);
+			zmq_msg_close(&header);
+			zmq_msg_close(&body);
 		}
 
 		// xxx need to use zmq_packet technique here xxx
@@ -247,7 +252,7 @@ int main(int argc, char *argv[])
 
 			zmq_event_packet *p = (zmq_event_packet *)zmq_msg_data(&msg);
 
-			u16 ec = p->ec;
+			u64 ec = p->ec;
 			i64 tk = p->tk;
 			u16 ev = p->ev;
 

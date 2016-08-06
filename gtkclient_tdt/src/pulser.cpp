@@ -80,13 +80,14 @@ int main()
 	p.setPulseRate(8,   78);
 	p.setPulseRate(9,  150);
 	p.setPulseRate(10, 106);
-	p.setPulseRate(11,   0);
-	p.setPulseRate(12,   0);
-	p.setPulseRate(13,   0);
-	p.setPulseRate(14,   0);
-	p.setPulseRate(15,   0);
+	p.setPulseRate(11,   10);
+	p.setPulseRate(12,   10);
+	p.setPulseRate(13,   10);
+	p.setPulseRate(14,   10);
+	p.setPulseRate(15,   10);
 	p.setPulseRate(16, 106);
 	*/
+
 
 	struct timespec ts;
 	ts.tv_sec = 0; // 0 seconds

@@ -69,16 +69,17 @@ void trainer(void *ctx, size_t batch_size, ArtifactFilterDirect &af)
 		zmq_poll(items, 2, -1); //  -1 means block
 
 		if (items[0].revents & ZMQ_POLLIN) {
-			zmq_msg_t msg;
-			zmq_msg_init(&msg);
-			zmq_msg_recv(&msg, socket, 0);
-
-			zmq_cont_packet *p = (zmq_cont_packet *)zmq_msg_data(&msg);
-
+			zmq_msg_t header;
+			zmq_msg_init(&header);
+			zmq_msg_recv(&header, socket, 0);
+			zmq_neural_header *p = (zmq_neural_header *)zmq_msg_data(&header);
 			u64 nc = p->nc;
 			u64 ns = p->ns;
 
-			float *f = &(p->f); // for convenience
+			zmq_msg_t body;
+			zmq_msg_init(&body);
+			zmq_msg_recv(&body, socket, 0);
+			float *f = (float*)zmq_msg_data(&body);
 
 			if (idx+ns >= batch_size) {
 				X.resize(nc, idx+ns+1);
@@ -99,7 +100,8 @@ void trainer(void *ctx, size_t batch_size, ArtifactFilterDirect &af)
 				idx = 0;
 			}
 
-			zmq_msg_close(&msg);
+			zmq_msg_close(&header);
+			zmq_msg_close(&body);
 		}
 
 		if (items[1].revents & ZMQ_POLLIN) {
@@ -136,17 +138,19 @@ void filter(void *ctx, std::string zout, ArtifactFilterDirect &af)
 		zmq_poll(items, 2, -1); //  -1 means block
 
 		if (items[0].revents & ZMQ_POLLIN) {
-			zmq_msg_t msg;
-			zmq_msg_init(&msg);
-			zmq_msg_recv(&msg, socket_in, 0);
-
-			zmq_cont_packet *p = (zmq_cont_packet *)zmq_msg_data(&msg);
-			size_t nbytes = zmq_msg_size(&msg);
-
+			zmq_msg_t header;
+			zmq_msg_init(&header);
+			zmq_msg_recv(&header, socket_in, 0);
+			size_t nh = zmq_msg_size(&header);
+			zmq_neural_header *p = (zmq_neural_header *)zmq_msg_data(&header);
 			u64 nc = p->nc;
 			u64 ns = p->ns;
 
-			float *f = &(p->f); // for convenience
+			zmq_msg_t body;
+			zmq_msg_init(&body);
+			zmq_msg_recv(&body, socket_in, 0);
+			size_t nb = zmq_msg_size(&body);
+			float *f = (float*)zmq_msg_data(&body);
 
 			mat X(nc, ns);
 			for (size_t i=0; i<nc; i++) {
@@ -163,8 +167,11 @@ void filter(void *ctx, std::string zout, ArtifactFilterDirect &af)
 				}
 			}
 
-			zmq_send(socket_out, p, nbytes, 0);
-			zmq_msg_close(&msg);
+			zmq_send(socket_out, p, nh, ZMQ_SNDMORE);
+			zmq_send(socket_out, f, nb, 0);
+
+			zmq_msg_close(&header);
+			zmq_msg_close(&body);
 		}
 
 		if (items[1].revents & ZMQ_POLLIN) {

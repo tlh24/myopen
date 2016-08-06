@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
 
 			zmq_send(socket_out, p, nh, ZMQ_SNDMORE);
 			zmq_send(socket_out, f, nb, 0);
-			
+
 			zmq_msg_close(&header);
 			zmq_msg_close(&body);
 		}
