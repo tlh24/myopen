@@ -1,6 +1,6 @@
-CPP = clang++-3.8
+CPP = clang++-3.9
 
-LINK=clang++-3.8
+LINK=clang++-3.9
 
 CPPFLAGS += -Wall -Wextra -pedantic -Wshadow
 CPPFLAGS += -std=c++11 -Wno-int-to-pointer-cast -Wtrigraphs

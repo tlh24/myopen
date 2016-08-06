@@ -210,24 +210,29 @@ int main(int argc, char *argv[])
 		}
 
 		if (items[0].revents & ZMQ_POLLIN) {
-			zmq_msg_t msg;
-			zmq_msg_init(&msg);
-			zmq_msg_recv(&msg, socket_in, 0);
-
-			zmq_cont_packet *p = (zmq_cont_packet *)zmq_msg_data(&msg);
-			size_t nbytes = zmq_msg_size(&msg);
-
+			zmq_msg_t header;
+			zmq_msg_init(&header);
+			zmq_msg_recv(&header, socket_in, 0);
+			size_t nh = zmq_msg_size(&header);
+			zmq_neural_header *p = (zmq_neural_header *)zmq_msg_data(&header);
 			u64 nc = p->nc;
 			u64 ns = p->ns;
 
-			float *f = &(p->f); // for convenience
+			zmq_msg_t body;
+			zmq_msg_init(&body);
+			zmq_msg_recv(&body, socket_in, 0);
+			size_t nb = zmq_msg_size(&body);
+			float *f = (float*)zmq_msg_data(&body);
 
 			for (size_t i=0; i<nc; i++) {
 				bandpass[i]->Proc(&(f[i*ns]), &(f[i*ns]), ns);
 			}
 
-			zmq_send(socket_out, p, nbytes, 0);
-			zmq_msg_close(&msg);
+			zmq_send(socket_out, p, nh, ZMQ_SNDMORE);
+			zmq_send(socket_out, f, nb, 0);
+			
+			zmq_msg_close(&header);
+			zmq_msg_close(&body);
 		}
 
 	}

@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <armadillo>
 #include <zmq.h>
+#include "zmq_packet.h"
 #include "util.h"
 #include "lockfile.h"
 #include "PO8e.h"
@@ -147,6 +148,7 @@ void po8e_thread(void *ctx, PO8e *p, int id)
 			double ts = gettime();
 
 			if (id==0) {
+				// we synchronize the most recent (ie last) tick with "now"
 				double tk = tick[ns-1] + numSamples - ns;
 				long double last_interval = (ts - g_lastPo8eTime)*1000.0; // msec
 				g_po8eStats( last_interval );
@@ -174,19 +176,20 @@ void po8e_thread(void *ctx, PO8e *p, int id)
 			}
 			last_tick = tick[ns-1];
 
-			// pack message
-			// XXX for speed, it's better to statically allocate here
-			size_t nbytes = 24 + nc*ns*sizeof(i16);
-			char *buf = new char[nbytes];
+			// pack and send message in two parts: header and body
 
-			memcpy(&buf[0], &nc, sizeof(u64)); // nc - 8 bytes
-			memcpy(&buf[8], &ns, sizeof(u64)); // ns - 8 bytes
-			memcpy(&buf[16], tick, sizeof(i64)); // tk - 8 bytes (zeroth tick)
-			memcpy(&buf[24], data, nc*ns*sizeof(i16)); // data - nc*ns bytes
+			zmq_neural_header h;
+			h.nc = nc;
+			h.ns = ns;
+			h.tk = tick[0]; // send the earliest/first tick for block
 
-			zmq_send(socket, buf, nbytes, 0);
+			zmq_send(socket, (void*)&h, sizeof(h), ZMQ_SNDMORE);
 
-			delete[] buf;
+			// nb generally the data in the continuous neural streams are
+			// floating point numbers, here, however, we are sending i16s
+			// internally for further processing
+
+			zmq_send(socket, (void*)data, nc*ns*sizeof(i16), 0);
 
 		} else {
 			usleep(1e3);
@@ -281,19 +284,23 @@ void worker(void *ctx, vector<po8e::card *> &cards)
 			auto tk = new i64[n];
 			vector<i16 *> data;
 
-			zmq_msg_t msg;
-
 			for (int i=0; i<n; i++) {
-				zmq_msg_init(&msg);
-				zmq_msg_recv(&msg, socks[i], 0);
-				char *ptr = (char *)zmq_msg_data(&msg);
-				memcpy(&(nc[i]), ptr+0, sizeof(u64));
-				memcpy(&(ns[i]), ptr+8, sizeof(u64));
-				memcpy(&(tk[i]), ptr+16, sizeof(i64));
+				zmq_msg_t header;
+				zmq_msg_init(&header);
+				zmq_msg_recv(&header, socks[i], 0);
+				zmq_neural_header *h = (zmq_neural_header *)zmq_msg_data(&header);
+				nc[i] = h->nc;
+				ns[i] = h->ns;
+				tk[i] = h->tk;
+				zmq_msg_close(&header);
+
+				zmq_msg_t body;
+				zmq_msg_init(&body);
+				zmq_msg_recv(&body, socks[i], 0);
 				auto x = new i16[nc[i]*ns[i]];
-				memcpy(x, ptr+24, nc[i]*ns[i]*sizeof(i16));
+				memcpy(x, (i16*)zmq_msg_data(&body), nc[i]*ns[i]*sizeof(i16));
 				data.push_back(x);
-				zmq_msg_close(&msg);
+				zmq_msg_close(&body);
 			}
 
 			bool mismatch = false;
@@ -321,7 +328,6 @@ void worker(void *ctx, vector<po8e::card *> &cards)
 			}
 
 			// package up neural data and event here
-
 			auto neural = new float[nnc * ns[0]];
 			auto events = new u16[nec * ns[0]];
 			size_t nc_i = 0;
@@ -352,31 +358,22 @@ void worker(void *ctx, vector<po8e::card *> &cards)
 			}
 
 			// send neural data
-			size_t nbytes = 24 + nnc*ns[0]*sizeof(float);
-			zmq_msg_init_size(&msg, nbytes);
-			char *ptr = (char *)zmq_msg_data(&msg);
-			memcpy(ptr+0, &nnc, sizeof(u64)); // nnc - 8 bytes
-			memcpy(ptr+8, ns, sizeof(u64)); // ns - 8 bytes
-			memcpy(ptr+16, tk, sizeof(i64)); // tk - 8 bytes (zeroth tick)
-			memcpy(ptr+24, neural, nnc*ns[0]*sizeof(float)); // data - nnc*ns bytes
-			zmq_msg_send(&msg, neural_sock, 0);
-			zmq_msg_close(&msg);
+			zmq_neural_header h;
+			h.nc = nnc;
+			h.ns = ns[0];
+			h.tk = tk[0];
+			zmq_send(neural_sock, (void*)&h, sizeof(h), ZMQ_SNDMORE);
+			zmq_send(neural_sock, (void*)neural, nnc*ns[0]*sizeof(float), 0);
 
 			// send events data
 			for (int i=0; i<(int)nec; i++) {
 				for (int k=0; k<(int)ns[0]; k++) {
 					if (events[i*ns[0]+k] > 0) {
-						u16 ec  	= (u16)i; // event chan (0-idxed)
-						i64 tk2 	= (i64)tk[0] + k;	// tk
-						u16 ev  	= (u16)events[i*ns[0]+k];	// event
-
-						zmq_msg_init_size(&msg, 12); // bytes
-						ptr = (char *)zmq_msg_data(&msg);
-						memcpy(ptr+0, &ec, sizeof(u16)); // 2 bytes
-						memcpy(ptr+2, &tk2, sizeof(i64)); // 8 bytes
-						memcpy(ptr+10, &ev, sizeof(u16));	// 2 bytes
-						zmq_msg_send(&msg, events_sock, 0);
-						zmq_msg_close(&msg);
+						zmq_event_packet pk;
+						pk.ec = (u64)i;	// event chan (0-indexed)
+						pk.tk = (i64)tk[0]+k; // tick
+						pk.ev = (u16)events[i*ns[0]+k]; // event value
+						zmq_send(events_sock, (void*)&pk, sizeof(pk), 0);
 					}
 				}
 			}
