@@ -1,5 +1,6 @@
 #include <signal.h>				// for signal, SIGINT
-#include <zmq.hpp>
+#include <zmq.h>
+#include "zmq_packet.h"
 #include <uuid.h>
 #include <ctime>
 #include "util.h"
