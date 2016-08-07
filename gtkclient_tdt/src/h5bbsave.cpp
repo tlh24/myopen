@@ -125,7 +125,6 @@ int main(int argc, char *argv[])
 
 		names.push_back(std::string((const char *)zmq_msg_data(&msg), zmq_msg_size(&msg)));
 		zmq_msg_close(&msg);
-
 	}
 
 	size_t max_str = 0;
@@ -201,7 +200,6 @@ int main(int argc, char *argv[])
 			zmq_msg_t header;
 			zmq_msg_init(&header);
 			zmq_msg_recv(&header, socket_in, 0);
-			size_t nh = zmq_msg_size(&header);
 			zmq_neural_header *p = (zmq_neural_header *)zmq_msg_data(&header);
 
 			u64 nc = p->nc;
@@ -220,7 +218,6 @@ int main(int argc, char *argv[])
 			zmq_msg_t body;
 			zmq_msg_init(&body);
 			zmq_msg_recv(&body, socket_in, 0);
-			size_t nb = zmq_msg_size(&body);
 			float *f = (float *)zmq_msg_data(&body);
 
 			auto x = new i16[nc*ns];
