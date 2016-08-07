@@ -61,7 +61,7 @@ void trainer(void *ctx, ArtifactNLMS3 &af)
 
 	while (true) {
 
-		zmq::poll(items, 2, -1); //  -1 means block
+		zmq_poll(items, 2, -1); //  -1 means block
 
 		if (items[0].revents & ZMQ_POLLIN) {
 			zmq_msg_t header;
