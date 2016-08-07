@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include <signal.h>	// for signal, SIGINT
 #include <string>
 #include <cstring>

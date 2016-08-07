@@ -7,7 +7,7 @@ CPPFLAGS += -std=c++11 -Wno-int-to-pointer-cast -Wtrigraphs
 CPPFLAGS += -Wstrict-overflow -fno-strict-aliasing
 CPPFLAGS += -Wcast-align -Wpointer-arith -Wsign-compare
 CPPFLAGS += -Wformat=2 -Wno-format-y2k -Wmissing-braces -Wparentheses
-CPPFLAGS += -Wno-missing-field-initializers
+CPPFLAGS += -Wno-missing-field-initializers -Wno-format-nonliteral
 #CPPFLAGS += -Wno-deprecated-declarations -stdlib=libstdc++
 CPPFLAGS += -Wno-braced-scalar-init -Wno-unused-result
 

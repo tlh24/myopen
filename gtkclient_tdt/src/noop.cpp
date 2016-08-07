@@ -1,4 +1,5 @@
 #include <signal.h>	// for signal, SIGINT
+#include <cstdlib>
 #include <string>
 #include <vector>
 #include <zmq.h>
