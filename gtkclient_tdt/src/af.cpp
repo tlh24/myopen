@@ -1,12 +1,19 @@
 #include <signal.h>				// for signal, SIGINT
 #include <thread>
+#include <string>
+#include <cstring>
 #include <sys/stat.h>
 #include <armadillo>
-#include <zmq.hpp>
+#include <zmq.h>
+#include "zmq_packet.h"
+#include <basedir.h>
+#include <basedir_fs.h>
+#include "lconf.h"
 #include "util.h"
 #include "artifact_filter.h"
 
 bool s_interrupted = false;
+std::vector <void *> g_socks;
 
 static void s_signal_handler(int)
 {
@@ -24,44 +31,50 @@ static void s_catch_signals(void)
 	sigaction(SIGTERM, &action, NULL);
 }
 
-void trainer(zmq::context_t &ctx, ArtifactNLMS3 &af)
+static void die(void *ctx, int status)
+{
+	s_interrupted = true;
+	for (auto &sock : g_socks) {
+		zmq_close(sock);
+	}
+	zmq_ctx_destroy(ctx);
+	exit(status);
+}
+
+void trainer(void *ctx, ArtifactNLMS3 &af)
 {
 
 	// for data
-	zmq::socket_t socket(ctx, ZMQ_SUB);
-	socket.connect("inproc://data");
-	socket.setsockopt(ZMQ_SUBSCRIBE, "", 0);	// subscribe to everything
+	void *socket = zmq_socket(ctx, ZMQ_SUB);
+	zmq_connect(socket, "inproc://data");
+	zmq_setsockopt(socket, ZMQ_SUBSCRIBE, "", 0);
 
 	// for control input
-	zmq::socket_t controller(ctx, ZMQ_SUB);
-	controller.connect("inproc://controller");
-	controller.setsockopt(ZMQ_SUBSCRIBE, "", 0);
+	void *controller = zmq_socket(ctx, ZMQ_SUB);
+	zmq_connect(controller, "inproc://controller");
+	zmq_setsockopt(controller, ZMQ_SUBSCRIBE, "", 0);
 
-	// init poll set
-	zmq::pollitem_t items [] = {
+	zmq_pollitem_t items [] = {
 		{ socket, 		0, ZMQ_POLLIN, 0 },
 		{ controller, 	0, ZMQ_POLLIN, 0}
 	};
 
 	while (true) {
 
-		zmq::message_t buf;
-
-		zmq::poll(&items[0], 2, -1); //  -1 means block
+		zmq::poll(items, 2, -1); //  -1 means block
 
 		if (items[0].revents & ZMQ_POLLIN) {
-			socket.recv(&buf);
+			zmq_msg_t header;
+			zmq_msg_init(&header);
+			zmq_msg_recv(&header, socket, 0);
+			zmq_neural_header *p = (zmq_neural_header *)zmq_msg_data(&header);
+			u64 nc = p->nc;
+			u64 ns = p->ns;
 
-			char *ptr = (char *)buf.data();
-
-			u64 nc, ns;
-
-			// parse message
-			memcpy(&nc, ptr+0, sizeof(u64));
-			memcpy(&ns, ptr+8, sizeof(u64));
-
-			auto f = new float[nc*ns];
-			memcpy(f, ptr+24, nc*ns*sizeof(float));
+			zmq_msg_t body;
+			zmq_msg_init(&body);
+			zmq_msg_recv(&body, socket, 0);
+			float *f = (float *)zmq_msg_data(&body);
 
 			mat X(nc, ns);
 			for (size_t i=0; i<nc; i++) {
@@ -72,7 +85,8 @@ void trainer(zmq::context_t &ctx, ArtifactNLMS3 &af)
 
 			af.train(X);
 
-			delete[] f;
+			zmq_msg_close(&header);
+			zmq_msg_close(&body);
 		}
 
 		if (items[1].revents & ZMQ_POLLIN) {
@@ -82,63 +96,45 @@ void trainer(zmq::context_t &ctx, ArtifactNLMS3 &af)
 	}
 }
 
-void filter(zmq::context_t &ctx, std::string zin, std::string zout,
-            ArtifactNLMS3 &af)
+void filter(void *ctx, std::string zout, ArtifactNLMS3 &af)
 {
+	// for data in
+	void *socket_in = zmq_socket(ctx, ZMQ_SUB);
+	zmq_connect(socket_in, "inproc://data");
+	zmq_setsockopt(socket_in, ZMQ_SUBSCRIBE, "", 0);
 
-	zmq::socket_t socket_in(ctx, ZMQ_SUB);
-	socket_in.connect("inproc://data");
-	socket_in.setsockopt(ZMQ_SUBSCRIBE, "", 0);	// subscribe to everything
-
-	zmq::socket_t socket_out(ctx, ZMQ_PUB);
-	socket_out.bind(zout.c_str());
+	// for data out
+	void *socket_out = zmq_socket(ctx, ZMQ_PUB);
+	zmq_connect(socket_out, zout.c_str());
 
 	// for control input
-	zmq::socket_t controller(ctx, ZMQ_SUB);
-	controller.connect("inproc://controller");
-	controller.setsockopt(ZMQ_SUBSCRIBE, "", 0);
+	void *controller = zmq_socket(ctx, ZMQ_SUB);
+	zmq_connect(controller, "inproc://controller");
+	zmq_setsockopt(controller, ZMQ_SUBSCRIBE, "", 0);
 
-	// init poll set
-	zmq::pollitem_t items [] = {
+	zmq_pollitem_t items [] = {
 		{ socket_in, 	0, ZMQ_POLLIN, 0 },
 		{ controller, 	0, ZMQ_POLLIN, 0 }
 	};
 
-	int waiter = 0;
-	int counter = 0;
-	std::vector<const char *> spinner;
-	spinner.emplace_back(">>>    >>>");
-	spinner.emplace_back(" >>>    >>");
-	spinner.emplace_back("  >>>    >");
-	spinner.emplace_back("   >>>    ");
-	spinner.emplace_back("    >>>   ");
-	spinner.emplace_back(">    >>>  ");
-	spinner.emplace_back(">>    >>> ");
-
-	size_t zin_n = zin.find_last_of("/");
-	size_t zout_n = zout.find_last_of("/");
-
 	while (true) {
 
-		zmq::message_t msg;
-
-		zmq::poll(&items[0], 2, -1); //  -1 means block
+		zmq_poll(items, 2, -1); //  -1 means block
 
 		if (items[0].revents & ZMQ_POLLIN) {
-			socket_in.recv(&msg);
+			zmq_msg_t header;
+			zmq_msg_init(&header);
+			zmq_msg_recv(&header, socket_in, 0);
+			size_t nh = zmq_msg_size(&header);
+			zmq_neural_header *p = (zmq_neural_header *)zmq_msg_data(&header);
+			u64 nc = p->nc;
+			u64 ns = p->ns;
 
-			// copy message to buffer
-			auto buf = new char[msg.size()];
-			memcpy(buf, msg.data(), msg.size());
-
-			u64 nc, ns;
-
-			// parse message
-			memcpy(&nc, buf+0, sizeof(u64));
-			memcpy(&ns, buf+8, sizeof(u64));
-
-			auto f = new float[nc*ns];
-			memcpy(f, buf+24, nc*ns*sizeof(float));
+			zmq_msg_t body;
+			zmq_msg_init(&body);
+			zmq_msg_recv(&body, socket_in, 0);
+			size_t nb = zmq_msg_size(&body);
+			float *f = (float *)zmq_msg_data(&body);
 
 			mat X(nc, ns);
 			for (size_t i=0; i<nc; i++) {
@@ -155,32 +151,17 @@ void filter(zmq::context_t &ctx, std::string zin, std::string zout,
 				}
 			}
 
-			memcpy(buf+24, f, nc*ns*sizeof(float));
+			zmq_send(socket_out, p, nh, ZMQ_SNDMORE);
+			zmq_send(socket_out, f, nb, 0);
 
-			delete[] f;
-
-			msg.rebuild(24+nc*ns*sizeof(float));
-			memcpy(msg.data(), buf, msg.size());
-			socket_out.send(msg);
-
-			delete[] buf;
+			zmq_msg_close(&header);
+			zmq_msg_close(&body);
 		}
 
 		if (items[1].revents & ZMQ_POLLIN) {
 			//controller.recv(&buf);
 			break;
 		}
-
-		if (waiter % 200 == 0) {
-			printf(" [%s]%s[%s]\r",
-			       zin.substr(zin_n+1).c_str(),
-			       spinner[counter % spinner.size()],
-			       zout.substr(zout_n+1).c_str());
-			fflush(stdout);
-			counter++;
-		}
-		waiter++;
-
 	}
 }
 
@@ -197,24 +178,60 @@ int main(int argc, char *argv[])
 	std::string zin  = argv[1];
 	std::string zout = argv[2];
 
-	printf("ZMQ SUB: %s\n", zin.c_str());
-	printf("ZMQ PUB: %s\n", zout.c_str());
-	printf("\n");
+	debug("ZMQ SUB: %s", zin.c_str());
+	debug("ZMQ PUB: %s", zout.c_str());
 
 	s_catch_signals();
 
-	zmq::context_t zcontext(1);	// single zmq thread
+	xdgHandle xdg;
+	xdgInitHandle(&xdg);
+	char *confpath = xdgConfigFind("spk/spk.rc", &xdg);
+	char *tmp = confpath;
+	// confpath is "string1\0string2\0string3\0\0"
 
-	zmq::socket_t po8e_query_sock(zcontext, ZMQ_REQ);
-	po8e_query_sock.connect("ipc:///tmp/po8e-query.zmq");
+	luaConf conf;
+
+	while (*tmp) {
+		conf.loadConf(tmp);
+		tmp += strlen(tmp) + 1;
+	}
+	if (confpath)
+		free(confpath);
+	xdgWipeHandle(&xdg);
+
+	std::string zq = "ipc:///tmp/query.zmq";
+	conf.getString("spk.query_socket", zq);
+
+	void *zcontext = zmq_ctx_new();
+	if (zcontext == NULL) {
+		error("zmq: could not create context");
+		return 1;
+	}
+
+	// we don't need 1024 sockets
+	if (zmq_ctx_set(zcontext, ZMQ_MAX_SOCKETS, 64) != 0) {
+		error("zmq: could not set max sockets");
+		die(zcontext, 1);
+	}
+
+	void *query_sock = zmq_socket(zcontext, ZMQ_REQ);
+	if (query_sock == NULL) {
+		error("zmq: could not create socket");
+		die(zcontext, 1);
+	}
+	g_socks.push_back(query_sock);
+
+	if (zmq_connect(query_sock, zq.c_str()) != 0) {
+		error("zmq: could not connect to socket");
+		die(zcontext, 1);
+	}
 
 	u64 nnc; // num neural channels
-	zmq::message_t msg(3);
-	memcpy(msg.data(), "NNC", 3);
-	po8e_query_sock.send(msg);
-	msg.rebuild();
-	po8e_query_sock.recv(&msg);
-	memcpy(&nnc, (u64 *)msg.data(), sizeof(u64));
+	zmq_send(query_sock, "NNC", 3, 0);
+	if (zmq_recv(query_sock, &nnc, sizeof(u64), 0) == -1) {
+		error("zmq: could not recv from query sock");
+		die(zcontext, 1);
+	}
 
 	ArtifactNLMS3 af(nnc);
 
@@ -226,38 +243,65 @@ int main(int argc, char *argv[])
 
 	af.setMu(5e-6);
 
-	std::thread t1(trainer, std::ref(zcontext), std::ref(af));
-	std::thread t2(filter, std::ref(zcontext), zin, zout, std::ref(af));
+	std::thread t1(trainer, zcontext, std::ref(af));
+	std::thread t2(filter, zcontext, zout, std::ref(af));
 
 	// here is what will do:
-	// subscribe to messages from po8e (tcp)
+	// subscribe to messages from po8e
 	// publish them to the training thread (inproc)
 	// publish them to the filter thread (also inproc)
-	// the filter thread then publishes the result (tcp)
+	// the filter thread then publishes the results
+	// the controller socket handles killing threads
+
+	void *controller = zmq_socket(zcontext, ZMQ_PUB);
+	if (controller == NULL) {
+		error("zmq: could not create socket");
+		zmq_ctx_destroy(zcontext);
+		return 1;
+	}
+
+	if (zmq_bind(controller, "inproc://controller") != 0) {
+		error("zmq: could not bind to socket");
+		zmq_close(controller);
+		zmq_ctx_destroy(zcontext);
+		return 1;
+	}
 
 	// this socket subscribes to messages sent from the po8e
-	zmq::socket_t subscriber(zcontext, ZMQ_XSUB);
-	subscriber.connect(zin.c_str());
+	void *subscriber = zmq_socket(zcontext, ZMQ_XSUB);
+	if (subscriber == NULL) {
+		error("zmq: could not create socket");
+		die(zcontext, 1);
+	}
+	g_socks.push_back(subscriber);
+	if (zmq_connect(subscriber, zin.c_str()) != 0) {
+		error("zmq: could not connect to socket");
+		die(zcontext, 1);
+	}
 
 	// this socket publishes received message to local threads
-	zmq::socket_t publisher(zcontext, ZMQ_XPUB);
-	publisher.bind("inproc://data");
-
-	zmq::socket_t controller(zcontext, ZMQ_PUB);
-	controller.bind("inproc://controller");
+	void *publisher = zmq_socket(zcontext, ZMQ_XPUB);
+	if (publisher == NULL) {
+		error("zmq: could not create socket");
+		die(zcontext, 1);
+	}
+	g_socks.push_back(publisher);
+	if (zmq_bind(publisher, "inproc://data") != 0) {
+		error("zmq: could not bind to socket");
+		die(zcontext, 1);
+	}
 
 	// this hooks up the subscriber to the publisher
-	try {
-		zmq::proxy(subscriber, publisher, nullptr);
-	} catch (zmq::error_t &e) {}
+	while (!s_interrupted) {
+		zmq_proxy(subscriber, publisher, NULL);
+	}
 
-	std::string s("KILL");
-	msg.rebuild(s.size());
-	memcpy(msg.data(), s.c_str(), s.size());
-	controller.send(msg);
+	zmq_send(controller, "KILL", 4, 0);
 
 	t1.join();
 	t2.join();
 	af.saveWeights("af.h5");
 	printf("\nsaving weights\n");
+
+	die(zcontext, 0);
 }

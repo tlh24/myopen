@@ -54,7 +54,6 @@ void trainer(void *ctx, size_t batch_size, ArtifactFilterDirect &af)
 	zmq_connect(controller, "inproc://controller");
 	zmq_setsockopt(controller, ZMQ_SUBSCRIBE, "", 0);
 
-	// init poll set
 	zmq_pollitem_t items [] = {
 		{ socket, 		0, ZMQ_POLLIN, 0 },
 		{ controller, 	0, ZMQ_POLLIN, 0}
@@ -127,7 +126,6 @@ void filter(void *ctx, std::string zout, ArtifactFilterDirect &af)
 	zmq_connect(controller, "inproc://controller");
 	zmq_setsockopt(controller, ZMQ_SUBSCRIBE, "", 0);
 
-	// init poll set
 	zmq_pollitem_t items [] = {
 		{ socket_in, 	0, ZMQ_POLLIN, 0 },
 		{ controller, 	0, ZMQ_POLLIN, 0 }
