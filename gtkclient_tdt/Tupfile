@@ -33,6 +33,7 @@ src/po8e_conf.o |> !ld |> po8e
 
 : src/h5bbsave.o \
 ../common_host/util.o \
+../common_host/lconf.o \
 ../common_host/gettime.o \
 src/h5writer.o \
 src/h5analogwriter.o |> !ld |> h5bbsave

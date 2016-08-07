@@ -204,7 +204,7 @@ int main(int argc, char *argv[])
 			zmq_msg_init(&body);
 			zmq_msg_recv(&body, socket_in, 0);
 			size_t nb = zmq_msg_size(&body);
-			float *f = (float*)zmq_msg_data(&body);
+			float *f = (float *)zmq_msg_data(&body);
 
 			for (size_t i=0; i<nc; i++) {
 				bandpass[i]->Proc(&(f[i*ns]), &(f[i*ns]), ns);

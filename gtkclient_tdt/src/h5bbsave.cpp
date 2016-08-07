@@ -1,9 +1,12 @@
 #include <signal.h>				// for signal, SIGINT
 #include <zmq.h>
 #include "zmq_packet.h"
+#include <basedir.h>
+#include <basedir_fs.h>
 #include <uuid.h>
 #include <ctime>
 #include "util.h"
+#include "lconf.h"
 #include "timesync.h"
 #include "h5analogwriter.h"
 
@@ -218,7 +221,7 @@ int main(int argc, char *argv[])
 			zmq_msg_init(&body);
 			zmq_msg_recv(&body, socket_in, 0);
 			size_t nb = zmq_msg_size(&body);
-			float *f = (float*)zmq_msg_data(&body);
+			float *f = (float *)zmq_msg_data(&body);
 
 			auto x = new i16[nc*ns];
 			for (size_t i=0; i<nc; i++) {

@@ -1107,7 +1107,7 @@ void worker()
 			zmq_msg_t body;
 			zmq_msg_init(&body);
 			zmq_msg_recv(&body, neural_sock, 0);
-			float *f = (float*)zmq_msg_data(&body);
+			float *f = (float *)zmq_msg_data(&body);
 
 			auto x = new float[ns];
 

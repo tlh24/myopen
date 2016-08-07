@@ -79,7 +79,7 @@ void trainer(void *ctx, size_t batch_size, ArtifactFilterDirect &af)
 			zmq_msg_t body;
 			zmq_msg_init(&body);
 			zmq_msg_recv(&body, socket, 0);
-			float *f = (float*)zmq_msg_data(&body);
+			float *f = (float *)zmq_msg_data(&body);
 
 			if (idx+ns >= batch_size) {
 				X.resize(nc, idx+ns+1);
@@ -150,7 +150,7 @@ void filter(void *ctx, std::string zout, ArtifactFilterDirect &af)
 			zmq_msg_init(&body);
 			zmq_msg_recv(&body, socket_in, 0);
 			size_t nb = zmq_msg_size(&body);
-			float *f = (float*)zmq_msg_data(&body);
+			float *f = (float *)zmq_msg_data(&body);
 
 			mat X(nc, ns);
 			for (size_t i=0; i<nc; i++) {

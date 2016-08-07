@@ -183,13 +183,13 @@ void po8e_thread(void *ctx, PO8e *p, int id)
 			h.ns = ns;
 			h.tk = tick[0]; // send the earliest/first tick for block
 
-			zmq_send(socket, (void*)&h, sizeof(h), ZMQ_SNDMORE);
+			zmq_send(socket, (void *)&h, sizeof(h), ZMQ_SNDMORE);
 
 			// nb generally the data in the continuous neural streams are
 			// floating point numbers, here, however, we are sending i16s
 			// internally for further processing
 
-			zmq_send(socket, (void*)data, nc*ns*sizeof(i16), 0);
+			zmq_send(socket, (void *)data, nc*ns*sizeof(i16), 0);
 
 		} else {
 			usleep(1e3);
@@ -298,7 +298,7 @@ void worker(void *ctx, vector<po8e::card *> &cards)
 				zmq_msg_init(&body);
 				zmq_msg_recv(&body, socks[i], 0);
 				auto x = new i16[nc[i]*ns[i]];
-				memcpy(x, (i16*)zmq_msg_data(&body), nc[i]*ns[i]*sizeof(i16));
+				memcpy(x, (i16 *)zmq_msg_data(&body), nc[i]*ns[i]*sizeof(i16));
 				data.push_back(x);
 				zmq_msg_close(&body);
 			}
@@ -362,8 +362,8 @@ void worker(void *ctx, vector<po8e::card *> &cards)
 			h.nc = nnc;
 			h.ns = ns[0];
 			h.tk = tk[0];
-			zmq_send(neural_sock, (void*)&h, sizeof(h), ZMQ_SNDMORE);
-			zmq_send(neural_sock, (void*)neural, nnc*ns[0]*sizeof(float), 0);
+			zmq_send(neural_sock, (void *)&h, sizeof(h), ZMQ_SNDMORE);
+			zmq_send(neural_sock, (void *)neural, nnc*ns[0]*sizeof(float), 0);
 
 			// send events data
 			for (int i=0; i<(int)nec; i++) {
@@ -373,7 +373,7 @@ void worker(void *ctx, vector<po8e::card *> &cards)
 						pk.ec = (u64)i;	// event chan (0-indexed)
 						pk.tk = (i64)tk[0]+k; // tick
 						pk.ev = (u16)events[i*ns[0]+k]; // event value
-						zmq_send(events_sock, (void*)&pk, sizeof(pk), 0);
+						zmq_send(events_sock, (void *)&pk, sizeof(pk), 0);
 					}
 				}
 			}

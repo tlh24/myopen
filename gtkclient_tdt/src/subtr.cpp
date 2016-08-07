@@ -229,7 +229,7 @@ int main(int argc, char *argv[])
 			zmq_msg_init(&body);
 			zmq_msg_recv(&body, socket_bb, 0);
 			size_t nb = zmq_msg_size(&body);
-			float *f = (float*)zmq_msg_data(&body);
+			float *f = (float *)zmq_msg_data(&body);
 
 			for (size_t i=0; i<nc; i++) {
 				for (size_t k=0; k<ns; k++) {
