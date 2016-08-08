@@ -137,7 +137,7 @@ int main(int argc, char *argv[])
 
 				long double t = get_time() - t0;
 
-				printf("%d\t%lld\t%Lf\n", i, tk, t);
+				printf("%d\t%ld\t%Lf\n", i, tk, t);
 
 				zmq_msg_close(&header);
 				zmq_msg_close(&body);
@@ -148,3 +148,4 @@ int main(int argc, char *argv[])
 		die(zcontext, 0);
 	}
 }
+
