@@ -9,7 +9,7 @@ CPPFLAGS += -Wcast-align -Wpointer-arith -Wsign-compare
 CPPFLAGS += -Wformat=2 -Wno-format-y2k -Wmissing-braces -Wparentheses
 CPPFLAGS += -Wno-missing-field-initializers -Wno-format-nonliteral
 #CPPFLAGS += -Wno-deprecated-declarations -stdlib=libstdc++
-CPPFLAGS += -Wno-braced-scalar-init -Wno-unused-result
+CPPFLAGS += -Wno-braced-scalar-init -Wno-unused-result -Wthread-safety
 
 CPPFLAGS += -DKHZ_24
 LDFLAGS  += -lpthread
