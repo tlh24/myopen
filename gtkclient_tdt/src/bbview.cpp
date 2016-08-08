@@ -104,14 +104,19 @@ static void s_catch_signals(void)
 	sigaction(SIGTERM, &action, NULL);
 }
 
-static void die(void *ctx, int status)
+static void cleanup(void *ctx)
 {
-	s_interrupted = true;
-	gtk_main_quit();
 	for (auto &sock : g_socks) {
 		zmq_close(sock);
 	}
 	zmq_ctx_destroy(ctx);
+}
+
+static void die(void *ctx, int status)
+{
+	s_interrupted = true;
+	gtk_main_quit();
+	cleanup(ctx);
 	exit(status);
 }
 
@@ -410,7 +415,6 @@ void worker(void *ctx, std::string zin)
 		die(ctx, 1);
 	}
 	g_socks.push_back(socket_in);
-
 	if (zmq_connect(socket_in, zin.c_str()) != 0) {
 		error("zmq: could not connect to socket %s", zin.c_str());
 		die(ctx, 1);
@@ -421,14 +425,21 @@ void worker(void *ctx, std::string zin)
 		die(ctx, 1);
 	}
 
+	// for control input
+	void *controller = zmq_socket(ctx, ZMQ_SUB);
+	g_socks.push_back(controller);
+	zmq_connect(controller, "inproc://controller");
+	zmq_setsockopt(controller, ZMQ_SUBSCRIBE, "", 0);
+
 	// init poll set
 	zmq_pollitem_t items [] = {
-		{ socket_in, 0, ZMQ_POLLIN, 0 }
+		{ socket_in, 	0,	ZMQ_POLLIN,	0 },
+		{ controller, 	0,	ZMQ_POLLIN,	0}
 	};
 
 	while (!s_interrupted) {
 
-		if (zmq_poll(items, 1, -1) == -1) { //  -1 means block
+		if (zmq_poll(items, 2, -1) == -1) { //  -1 means block
 			break;
 		}
 
@@ -454,6 +465,12 @@ void worker(void *ctx, std::string zin)
 
 			zmq_msg_close(&header);
 			zmq_msg_close(&body);
+		}
+
+		if (items[1].revents & ZMQ_POLLIN) {
+			// eventually check for what the message says
+			//controller.recv(&buf);
+			break;
 		}
 
 	}
@@ -500,10 +517,20 @@ int main(int argc, char **argv)
 		error("zmq: could not create context");
 		return 1;
 	}
-
 	// we don't need 1024 sockets
 	if (zmq_ctx_set(zcontext, ZMQ_MAX_SOCKETS, 64) != 0) {
 		error("zmq: could not set max sockets");
+		die(zcontext, 1);
+	}
+
+	void *controller = zmq_socket(zcontext, ZMQ_PUB);
+	if (controller == NULL) {
+		error("zmq: could not create socket");
+		die(zcontext, 1);
+	}
+	g_socks.push_back(controller);
+	if (zmq_bind(controller, "inproc://controller") != 0) {
+		error("zmq: could not bind to socket");
 		die(zcontext, 1);
 	}
 
@@ -513,7 +540,6 @@ int main(int argc, char **argv)
 		die(zcontext, 1);
 	}
 	g_socks.push_back(query_sock);
-
 	if (zmq_connect(query_sock, zq.c_str()) != 0) {
 		error("zmq: could not connect to socket");
 		die(zcontext, 1);
@@ -587,6 +613,8 @@ int main(int argc, char **argv)
 
 	gtk_main(); // gtk itself uses three threads, it seems
 
+	zmq_send(controller, "KILL", 4, 0);
+
 	t1.join();
 
 	KillFont();
@@ -598,6 +626,6 @@ int main(int argc, char **argv)
 		delete g_vsThreshold;
 	cgDestroyContext(myCgContext);
 
-	die(zcontext, 0);
+	cleanup(zcontext);
 }
 
