@@ -2,6 +2,7 @@ include_rules
 
 LDFLAGS += `pkg-config --libs libzmq`
 : src/noop.o ../common_host/util.o |> !ld |> noop
+: src/latency_test.o ../common_host/util.o |> !ld |> latency_test
 
 LDFLAGS += `pkg-config --libs luajit libxdg-basedir`
 : src/bp.o ../common_host/util.o ../common_host/lconf.o src/filter.o |> !ld |> bp

@@ -16,7 +16,7 @@ pulser.cpp
 
 CPPFLAGS += `pkg-config --cflags libzmq`
 
-OBJS = noop.cpp
+OBJS = noop.cpp latency_test.cpp
 : foreach $(OBJS) |> !cpp |> %B.o
 
 CPPFLAGS += `pkg-config --cflags luajit libxdg-basedir`

@@ -180,7 +180,6 @@ int main(int argc, char *argv[])
 		die(zcontext, 1);
 	}
 
-	// init poll set
 	zmq_pollitem_t items [] = {
 		{ socket_in, 0, ZMQ_POLLIN, 0 }
 	};

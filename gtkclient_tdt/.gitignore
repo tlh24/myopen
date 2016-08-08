@@ -17,6 +17,7 @@ subtr
 h5bbsave
 h5evsave
 wf_plot
+latency_test
 analogdebug
 *.pb.cc
 *.pb.h
