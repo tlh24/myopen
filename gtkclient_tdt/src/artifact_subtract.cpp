@@ -1,4 +1,5 @@
 #include "artifact_subtract.h"
+#include <cstring>
 
 ArtifactSubtract::ArtifactSubtract(int _nsc, int _buflen, int _delay, float _alpha)
 {
@@ -35,6 +36,7 @@ void ArtifactSubtract::processStim(i64 tk, u16 chan, u16 current)
 
 	if (sa[chan].find(current) == sa[chan].end()) {
 		auto x = new float[buflen];
+		memset(x, 0, buflen);
 		sa[chan].insert({current, x});
 	}
 	if (hot_ptr[chan].find(current) == hot_ptr[chan].end()) {

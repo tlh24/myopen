@@ -12,7 +12,7 @@
 class ArtifactSubtract
 {
 protected:
-	int nsc;	// num stim channels (always 16)
+	int nsc;	// num stim channels
 	int buflen;	// samples
 	int delay; // delay in samples
 	float alpha; // averaging parameter

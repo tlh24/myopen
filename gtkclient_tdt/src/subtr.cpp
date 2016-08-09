@@ -90,7 +90,6 @@ int main(int argc, char *argv[])
 		error("zmq: could not create context");
 		return 1;
 	}
-
 	// we don't need 1024 sockets
 	if (zmq_ctx_set(zcontext, ZMQ_MAX_SOCKETS, 64) != 0) {
 		error("zmq: could not set max sockets");
@@ -103,7 +102,6 @@ int main(int argc, char *argv[])
 		die(zcontext, 1);
 	}
 	g_socks.push_back(query_sock);
-
 	if (zmq_connect(query_sock, zq.c_str()) != 0) {
 		error("zmq: could not connect to socket");
 		die(zcontext, 1);
@@ -161,12 +159,10 @@ int main(int argc, char *argv[])
 		die(zcontext, 1);
 	}
 	g_socks.push_back(socket_bb);
-
 	if (zmq_connect(socket_bb, zbb.c_str()) != 0) {
 		error("zmq: could not connect to socket");
 		die(zcontext, 1);
 	}
-	// subscribe to everything
 	if (zmq_setsockopt(socket_bb, ZMQ_SUBSCRIBE, "", 0) != 0) {
 		error("zmq: could not set socket options");
 		die(zcontext, 1);
@@ -179,12 +175,10 @@ int main(int argc, char *argv[])
 		die(zcontext, 1);
 	}
 	g_socks.push_back(socket_ev);
-
 	if (zmq_connect(socket_ev, zev.c_str()) != 0) {
 		error("zmq: could not connect to socket");
 		die(zcontext, 1);
 	}
-	// subscribe to everything
 	if (zmq_setsockopt(socket_ev, ZMQ_SUBSCRIBE, "", 0) != 0) {
 		error("zmq: could not set socket options");
 		die(zcontext, 1);
@@ -243,7 +237,6 @@ int main(int argc, char *argv[])
 			zmq_msg_close(&body);
 		}
 
-		// xxx need to use zmq_packet technique here xxx
 		if (items[1].revents & ZMQ_POLLIN) {
 
 			zmq_msg_t msg;
@@ -255,6 +248,8 @@ int main(int argc, char *argv[])
 			u64 ec = p->ec;
 			i64 tk = p->tk;
 			u16 ev = p->ev;
+
+			zmq_msg_close(&msg);
 
 			if (ec == g_ec_stim) {
 
@@ -278,7 +273,6 @@ int main(int argc, char *argv[])
 			if (ec == g_ec_current) {
 				g_current = ev;
 			}
-			zmq_msg_close(&msg);
 		}
 
 	}
