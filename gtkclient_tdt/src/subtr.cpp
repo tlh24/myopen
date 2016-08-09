@@ -145,12 +145,7 @@ int main(int argc, char *argv[])
 		zmq_msg_close(&msg);
 	}
 
-	// xxx set or at least print sample length and delay
-	std::vector <ArtifactSubtract *> subtr;
-	for (size_t i=0; i<nnc; i++) {
-		auto o = new ArtifactSubtract(16, 64, 16, 0.99);
-		subtr.push_back(o);
-	}
+	ArtifactSubtract subtr(16, nnc, 64, 16, 0.99);
 
 	// subscribe to broadband messages from the po8e
 	void *socket_bb = zmq_socket(zcontext, ZMQ_SUB);
@@ -225,9 +220,9 @@ int main(int argc, char *argv[])
 			size_t nb = zmq_msg_size(&body);
 			float *f = (float *)zmq_msg_data(&body);
 
-			for (size_t i=0; i<nc; i++) {
+			for (size_t ch=0; ch<nc; ch++) {
 				for (size_t k=0; k<ns; k++) {
-					f[i*ns+k] = subtr[i]->processSample(tk+k, f[i*ns+k]);
+					f[ch*ns+k] = subtr.processSample(ch, tk+k, f[ch*ns+k]);
 				}
 			}
 
@@ -263,9 +258,7 @@ int main(int argc, char *argv[])
 
 				for (int i=0; i<16; i++) {
 					if (check_bit(ev, i)) {
-						for (size_t ch=0; ch<nnc; ch++) {
-							subtr[ch]->processStim(tk, i, g_current);
-						}
+						subtr.processStim(i, g_current, tk);
 					}
 				}
 			}
@@ -275,11 +268,6 @@ int main(int argc, char *argv[])
 			}
 		}
 
-	}
-
-	// clean up
-	for (auto &o : subtr) {
-		delete o;
 	}
 
 	die(zcontext, 0);
