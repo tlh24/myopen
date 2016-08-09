@@ -144,8 +144,7 @@ int main(int argc, char *argv[])
 
 			}
 		}
-
-		die(zcontext, 0);
 	}
+	die(zcontext, 0);
 }
 
