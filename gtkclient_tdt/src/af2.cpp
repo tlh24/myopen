@@ -46,11 +46,13 @@ void trainer(void *ctx, size_t batch_size, ArtifactFilterDirect &af)
 
 	// for data
 	void *socket = zmq_socket(ctx, ZMQ_SUB);
+	g_socks.push_back(socket);
 	zmq_connect(socket, "inproc://data");
 	zmq_setsockopt(socket, ZMQ_SUBSCRIBE, "", 0);
 
 	// for control input
 	void *controller = zmq_socket(ctx, ZMQ_SUB);
+	g_socks.push_back(controller);
 	zmq_connect(controller, "inproc://controller");
 	zmq_setsockopt(controller, ZMQ_SUBSCRIBE, "", 0);
 
@@ -104,7 +106,6 @@ void trainer(void *ctx, size_t batch_size, ArtifactFilterDirect &af)
 		}
 
 		if (items[1].revents & ZMQ_POLLIN) {
-			//controller.recv(&buf);
 			break;
 		}
 	}
@@ -114,15 +115,18 @@ void filter(void *ctx, std::string zout, ArtifactFilterDirect &af)
 {
 	// for data in
 	void *socket_in = zmq_socket(ctx, ZMQ_SUB);
+	g_socks.push_back(socket_in);
 	zmq_connect(socket_in, "inproc://data");
 	zmq_setsockopt(socket_in, ZMQ_SUBSCRIBE, "", 0);
 
 	// for data out
 	void *socket_out = zmq_socket(ctx, ZMQ_PUB);
-	zmq_connect(socket_out, zout.c_str());
+	g_socks.push_back(socket_out);
+	zmq_bind(socket_out, zout.c_str());
 
 	// for control input
 	void *controller = zmq_socket(ctx, ZMQ_SUB);
+	g_socks.push_back(controller);
 	zmq_connect(controller, "inproc://controller");
 	zmq_setsockopt(controller, ZMQ_SUBSCRIBE, "", 0);
 
@@ -173,7 +177,6 @@ void filter(void *ctx, std::string zout, ArtifactFilterDirect &af)
 		}
 
 		if (items[1].revents & ZMQ_POLLIN) {
-			//controller.recv(&buf);
 			break;
 		}
 	}
@@ -270,15 +273,12 @@ int main(int argc, char *argv[])
 	void *controller = zmq_socket(zcontext, ZMQ_PUB);
 	if (controller == NULL) {
 		error("zmq: could not create socket");
-		zmq_ctx_destroy(zcontext);
-		return 1;
+		die(zcontext, 1);
 	}
-
+	g_socks.push_back(controller);
 	if (zmq_bind(controller, "inproc://controller") != 0) {
 		error("zmq: could not bind to socket");
-		zmq_close(controller);
-		zmq_ctx_destroy(zcontext);
-		return 1;
+		die(zcontext, 1);
 	}
 
 	// this socket subscribes to messages sent from the po8e
