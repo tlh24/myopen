@@ -583,8 +583,8 @@ expose1 (GtkWidget *da, GdkEventExpose *, gpointer )
 
 		int n = g_timeseries.size();
 		for (int k=0; k<n; k++) {
-			float yoffset = (n-k-1)/((float)n);
-			g_timeseries[k]->draw(g_drawmode[g_drawmodep], n, yoffset);
+			float yoffset = (float)k/n + 1.f/(2.f*n);
+			g_timeseries[k]->draw(g_drawmode[g_drawmodep], (float)n, yoffset);
 
 			//labels.
 			glColor4f(1.f, 1.f, 1.f, 0.5);
@@ -1069,17 +1069,17 @@ void spikewrite()
 			usleep(1e5);
 	}
 }
-void worker()
+void worker(const char *zb, const char *ze)
 {
 
 	// Prepare our sockets
 
 	void *neural_sock = zmq_socket(g_zmq_ctx, ZMQ_SUB);
-	zmq_connect(neural_sock, "ipc:///tmp/noop.zmq");
+	zmq_connect(neural_sock, zb);
 	zmq_setsockopt(neural_sock, ZMQ_SUBSCRIBE, "", 0);
 
 	void *events_sock = zmq_socket(g_zmq_ctx, ZMQ_SUB);
-	zmq_connect(events_sock, "ipc:///tmp/events.zmq");
+	zmq_connect(events_sock, ze);
 	zmq_setsockopt(events_sock, ZMQ_SUBSCRIBE, "", 0);
 
 	//socket.connect("ipc:///tmp/af.zmq");
@@ -1721,6 +1721,15 @@ int main(int argc, char **argv)
 
 	std::string zq = "ipc:///tmp/query.zmq";
 	conf.getString("spk.query_socket", zq);
+	printf("zmq query socket: %s\n", zq.c_str());
+
+	std::string zb = "ipc:///tmp/broadband.zmq";
+	conf.getString("spk.broadband_socket", zb);
+	printf("zmq broadband socket: %s\n", zb.c_str());
+
+	std::string ze = "ipc:///tmp/events.zmq";
+	conf.getString("spk.events_socket", ze);
+	printf("zmq events socket: %s\n", ze.c_str());
 
 
 	g_zmq_ctx = zmq_ctx_new();
@@ -2342,7 +2351,7 @@ int main(int argc, char **argv)
 
 	vector <thread> threads;
 
-	threads.push_back(thread(worker));
+	threads.push_back(thread(worker, zb.c_str(), ze.c_str()));
 	threads.push_back(thread(spikewrite));
 	threads.push_back(thread(mmap_fun));
 

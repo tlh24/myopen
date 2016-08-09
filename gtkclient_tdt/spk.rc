@@ -4,4 +4,10 @@
 -- comments are prefixed by double dashes
 
 spk = {}
+
+-- the query sock is used by many programs in the spk family
 spk.query_socket = "ipc:///tmp/query.zmq"
+
+-- the broadband and events socks are used by spk
+spk.broadband_socket = "ipc:///tmp/broadband.zmq"
+spk.events_socket = "ipc:///tmp/events.zmq"
