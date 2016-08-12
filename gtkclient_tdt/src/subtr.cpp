@@ -145,7 +145,7 @@ int main(int argc, char *argv[])
 		zmq_msg_close(&msg);
 	}
 
-	ArtifactSubtract subtr(16, nnc, 64, 16, 0.99);
+	ArtifactSubtract subtr(16, nnc, 200, 64, 0.99);
 
 	int hwm = 8192;
 

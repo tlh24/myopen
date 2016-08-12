@@ -1,18 +1,18 @@
 #include "artifact_subtract.h"
 #include <cstring>
 
-ArtifactSubtract::ArtifactSubtract(int _nrc, int _nsc, int _maxcurrent,
+ArtifactSubtract::ArtifactSubtract(int _nsc, int _nrc, int _maxcurrent,
                                    int _buflen, float _alpha)
 {
-	nrc = _nrc;					// 96
-	nsc = _nsc;					// 16
-	maxcurrent = _maxcurrent;	// 100
+	nsc = _nsc;				// 16
+	nrc = _nrc;				// 96
+	maxcurrent = _maxcurrent;		// 100
 	buflen = _buflen;			// 64
 	alpha = _alpha;				// 0.99;
 
 	sa = new float[maxcurrent*nsc*nrc*buflen];	// stim artifact buffer
 	of = new long[maxcurrent*nsc];				// buffer read offset
-	memset(of, -1, maxcurrent*nsc);
+	memset(of, -1, maxcurrent*nsc*sizeof(long));
 }
 
 ArtifactSubtract::~ArtifactSubtract()
@@ -66,7 +66,7 @@ void ArtifactSubtract::filter(float *f, u16 *sc, u16 *current, int ns)
 						of[j*nsc+i] = 0;
 					}
 				}
-				if (of[i*nsc+j] != -1) {
+				if (of[j*nsc+i] != -1) {
 					nstim++;
 				}
 			}
@@ -75,6 +75,8 @@ void ArtifactSubtract::filter(float *f, u16 *sc, u16 *current, int ns)
 		if (nstim == 0) {
 			continue;
 		}
+
+		printf(".");
 
 		// now loop through again and update (if appropriate) and
 		// apply (always) the artifact buffers to the data matrix
@@ -91,7 +93,8 @@ void ArtifactSubtract::filter(float *f, u16 *sc, u16 *current, int ns)
 							x[*idx] *= alpha;
 							x[*idx] += (1.0-alpha) * f[m*ns+k];
 						}
-						f[m*ns+k] -= x[*idx]; // subtract templates
+						//f[m*ns+k] -= x[*idx]; // subtract templates
+						f[m*ns+k] = 0; // debug!!!
 					}
 					// advance buffer and reset if necessary
 					(*idx)++;

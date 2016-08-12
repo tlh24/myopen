@@ -176,7 +176,7 @@ int main(int argc, char *argv[])
 		error("zmq: could not create socket");
 		die(zcontext, 1);
 	}
-	zmq_setsockopt(socket_out, ZMQ_SNDHWM, &hwm, sizeof(hwm));
+	//zmq_setsockopt(socket_out, ZMQ_SNDHWM, &hwm, sizeof(hwm));
 	g_socks.push_back(socket_out);
 	if (zmq_bind(socket_out, zout.c_str()) != 0) {
 		error("zmq: could not bind to socket");
