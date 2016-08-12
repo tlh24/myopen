@@ -40,6 +40,10 @@ string g_po8e_neural_socket_name = "ipc:///tmp/broadband.zmq";
 string g_po8e_events_socket_name = "ipc:///tmp/events.zmq";
 string g_po8e_query_socket_name = "ipc:///tmp/query.zmq";
 
+// we need this global because if only one card is enabled
+// we'd like the thread for that card to use that card for timesync
+// even if the card id is the first card
+int g_enabled_cards = 0;
 
 TimeSync 	g_ts(SRATE_HZ); //keeps track of ticks (TDT time)
 bool		s_interrupted = false;
@@ -147,7 +151,7 @@ void po8e_thread(void *ctx, PO8e *p, int id)
 
 			double ts = gettime();
 
-			if (id==0) {
+			if (id==0 || g_enabled_cards == 1) {
 				// we synchronize the most recent (ie last) tick with "now"
 				double tk = tick[ns-1] + numSamples - ns;
 				long double last_interval = (ts - g_lastPo8eTime)*1000.0; // msec
@@ -225,6 +229,7 @@ void worker(void *ctx, vector<po8e::card *> &cards)
 	for (int i=0; i<n; i++) {
 		socks.push_back( zmq_socket(ctx, ZMQ_SUB) );
 		std::stringstream ss;
+		// xxx ok this needs to be keeyed off of the card id!!!
 		ss << "inproc://po8e-" << i;
 		zmq_connect(socks[i], ss.str().c_str());
 		zmq_setsockopt(socks[i], ZMQ_SUBSCRIBE, "", 0);	// subscribe to everything
@@ -280,6 +285,7 @@ void worker(void *ctx, vector<po8e::card *> &cards)
 
 		if (nready == n) {
 
+			printf(".");
 			g_running = true;
 
 			auto nc = new u64[n];
@@ -544,6 +550,9 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
+
+	g_enabled_cards = cards.size();
+	printf("g_enabled_cards: %d\n", g_enabled_cards);
 
 	if (threads.size() < 1) {
 		error("Connected to zero po8e cards");
