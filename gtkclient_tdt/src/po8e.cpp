@@ -178,7 +178,7 @@ void po8e_thread(void *ctx, PO8e *p, int id)
 
 			// pack and send message in two parts: header and body
 
-			zmq_neural_header h;
+			zmq_packet_header h;
 			h.nc = nc;
 			h.ns = ns;
 			h.tk = tick[0]; // send the earliest/first tick for block
@@ -239,10 +239,13 @@ void worker(void *ctx, vector<po8e::card *> &cards)
 	zmq_pollitem_t p = {controller, 0, ZMQ_POLLIN, 0};
 	items.push_back(p);
 
+	int wm = 2048; // high watermark (messages)
 	void *neural_sock = zmq_socket(ctx, ZMQ_PUB);	// we will publish neural data
+	zmq_setsockopt(neural_sock, ZMQ_SNDHWM, &wm, sizeof(wm));
 	zmq_bind(neural_sock, g_po8e_neural_socket_name.c_str());
 
 	void *events_sock = zmq_socket(ctx, ZMQ_PUB);	// we will publish events data
+	zmq_setsockopt(events_sock, ZMQ_SNDHWM, &wm, sizeof(wm));
 	zmq_bind(events_sock, g_po8e_events_socket_name.c_str());
 
 	u64 nnc = 0; // num neural channels
@@ -288,7 +291,7 @@ void worker(void *ctx, vector<po8e::card *> &cards)
 				zmq_msg_t header;
 				zmq_msg_init(&header);
 				zmq_msg_recv(&header, socks[i], 0);
-				zmq_neural_header *h = (zmq_neural_header *)zmq_msg_data(&header);
+				zmq_packet_header *h = (zmq_packet_header *)zmq_msg_data(&header);
 				nc[i] = h->nc;
 				ns[i] = h->ns;
 				tk[i] = h->tk;
@@ -329,7 +332,7 @@ void worker(void *ctx, vector<po8e::card *> &cards)
 
 			// package up neural data and event here
 			auto neural = new float[nnc * ns[0]];
-			auto events = new u16[nec * ns[0]];
+			auto events = new i16[nec * ns[0]];
 			size_t nc_i = 0;
 			size_t ne_i = 0;
 			for (int i=0; i<(int)cards.size(); i++) {
@@ -344,9 +347,7 @@ void worker(void *ctx, vector<po8e::card *> &cards)
 						nc_i++;
 						break;
 					case po8e::channel::EVENTS:
-						for (size_t k=0; k<ns[0]; k++) {
-							events[ne_i*ns[0]+k] = (u16)data[i][j*ns[0]+k];
-						}
+						memcpy(&events[ne_i*ns[0]], &data[i][j*ns[0]], ns[i]*sizeof(i16));
 						ne_i++;
 						break;
 					case po8e::channel::ANALOG:
@@ -358,7 +359,7 @@ void worker(void *ctx, vector<po8e::card *> &cards)
 			}
 
 			// send neural data
-			zmq_neural_header h;
+			zmq_packet_header h;
 			h.nc = nnc;
 			h.ns = ns[0];
 			h.tk = tk[0];
@@ -366,17 +367,10 @@ void worker(void *ctx, vector<po8e::card *> &cards)
 			zmq_send(neural_sock, (void *)neural, nnc*ns[0]*sizeof(float), 0);
 
 			// send events data
-			for (int i=0; i<(int)nec; i++) {
-				for (int k=0; k<(int)ns[0]; k++) {
-					if (events[i*ns[0]+k] > 0) {
-						zmq_event_packet pk;
-						pk.ec = (u64)i;	// event chan (0-indexed)
-						pk.tk = (i64)tk[0]+k; // tick
-						pk.ev = (u16)events[i*ns[0]+k]; // event value
-						zmq_send(events_sock, (void *)&pk, sizeof(pk), 0);
-					}
-				}
-			}
+			// reuse the neural header
+			h.nc = nec;
+			zmq_send(events_sock, (void *)&h, sizeof(h), ZMQ_SNDMORE);
+			zmq_send(events_sock, (void *)events, nec*ns[0]*sizeof(i16), 0);
 
 			delete[] neural;
 			delete[] events;

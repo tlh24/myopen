@@ -15,17 +15,18 @@ class ArtifactSubtract
 protected:
 	int nsc;	// num stim channels
 	int nrc; 	// num rec channels
+	int maxcurrent; // num currents allowed
 	int buflen;	// samples per buffer
-	int delay; // delay in samples
 	float alpha; // averaging parameter
-	std::unordered_map<u16, float *> *sa; 	// SA buffers
-	std::unordered_map<u16, int> *offset; 	// offset into SA buffer
-	std::queue<std::pair<u16,i64>> *q; 		// a queue of ticks
+
+	float *sa;
+	long  *of; // read offset, signed (-1 is a sentinal)
+
 public:
-	ArtifactSubtract(int _nsc, int _nrc, int _buflen, int _delay, float _alpha);
+	ArtifactSubtract(int _nsc, int _nrc, int _maxcurrent,
+	                 int _buflen, float _alpha);
 	~ArtifactSubtract();
-	void processStim(u16 sc, u16 current, i64 tk);
-	float processSample(size_t rc, i64 tk, float f);
+	void filter(float *f, u16 *sc, u16 *current, int ns);
 };
 
 #endif

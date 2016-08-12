@@ -171,13 +171,15 @@ int main(int argc, char *argv[])
 #endif
 	}
 
+	int hwm = 2048;
+
 	void *socket_in = zmq_socket(zcontext, ZMQ_SUB);
 	if (socket_in == NULL) {
 		error("zmq: could not create socket");
 		die(zcontext, 1);
 	}
 	g_socks.push_back(socket_in);
-
+	zmq_setsockopt(socket_in, ZMQ_RCVHWM, &hwm, sizeof(hwm));
 	if (zmq_connect(socket_in, zin.c_str()) != 0) {
 		error("zmq: could not connect to socket");
 		die(zcontext, 1);
@@ -194,6 +196,7 @@ int main(int argc, char *argv[])
 		die(zcontext, 1);
 	}
 	g_socks.push_back(socket_out);
+	zmq_setsockopt(socket_out, ZMQ_SNDHWM, &hwm, sizeof(hwm));
 	if (zmq_bind(socket_out, zout.c_str()) != 0) {
 		error("zmq: could not bind to socket");
 		die(zcontext, 1);
@@ -215,7 +218,7 @@ int main(int argc, char *argv[])
 			zmq_msg_init(&header);
 			zmq_msg_recv(&header, socket_in, 0);
 			size_t nh = zmq_msg_size(&header);
-			zmq_neural_header *p = (zmq_neural_header *)zmq_msg_data(&header);
+			zmq_packet_header *p = (zmq_packet_header *)zmq_msg_data(&header);
 			u64 nc = p->nc;
 			u64 ns = p->ns;
 

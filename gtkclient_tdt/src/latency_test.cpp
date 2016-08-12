@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
 				zmq_msg_t header;
 				zmq_msg_init(&header);
 				zmq_msg_recv(&header, items[i].socket, 0);
-				zmq_neural_header *p = (zmq_neural_header *)zmq_msg_data(&header);
+				zmq_packet_header *p = (zmq_packet_header *)zmq_msg_data(&header);
 				i64 tk = p->tk;
 				zmq_msg_t body;
 				zmq_msg_init(&body);

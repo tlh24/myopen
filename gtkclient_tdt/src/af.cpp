@@ -44,8 +44,11 @@ static void die(void *ctx, int status)
 void trainer(void *ctx, ArtifactNLMS3 &af)
 {
 
+	int hwm = 2048;
+
 	// for data
 	void *socket = zmq_socket(ctx, ZMQ_SUB);
+	zmq_setsockopt(socket, ZMQ_RCVHWM, &hwm, sizeof(hwm));
 	zmq_connect(socket, "inproc://data");
 	zmq_setsockopt(socket, ZMQ_SUBSCRIBE, "", 0);
 
@@ -67,7 +70,7 @@ void trainer(void *ctx, ArtifactNLMS3 &af)
 			zmq_msg_t header;
 			zmq_msg_init(&header);
 			zmq_msg_recv(&header, socket, 0);
-			zmq_neural_header *p = (zmq_neural_header *)zmq_msg_data(&header);
+			zmq_packet_header *p = (zmq_packet_header *)zmq_msg_data(&header);
 			u64 nc = p->nc;
 			u64 ns = p->ns;
 
@@ -98,13 +101,18 @@ void trainer(void *ctx, ArtifactNLMS3 &af)
 
 void filter(void *ctx, std::string zout, ArtifactNLMS3 &af)
 {
+
+	int hwm = 2048;
+
 	// for data in
 	void *socket_in = zmq_socket(ctx, ZMQ_SUB);
+	zmq_setsockopt(socket_in, ZMQ_RCVHWM, &hwm, sizeof(hwm));
 	zmq_connect(socket_in, "inproc://data");
 	zmq_setsockopt(socket_in, ZMQ_SUBSCRIBE, "", 0);
 
 	// for data out
 	void *socket_out = zmq_socket(ctx, ZMQ_PUB);
+	zmq_setsockopt(socket_out, ZMQ_SNDHWM, &hwm, sizeof(hwm));
 	zmq_connect(socket_out, zout.c_str());
 
 	// for control input
@@ -126,7 +134,7 @@ void filter(void *ctx, std::string zout, ArtifactNLMS3 &af)
 			zmq_msg_init(&header);
 			zmq_msg_recv(&header, socket_in, 0);
 			size_t nh = zmq_msg_size(&header);
-			zmq_neural_header *p = (zmq_neural_header *)zmq_msg_data(&header);
+			zmq_packet_header *p = (zmq_packet_header *)zmq_msg_data(&header);
 			u64 nc = p->nc;
 			u64 ns = p->ns;
 
@@ -267,6 +275,8 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
+	int hwm = 2048;
+
 	// this socket subscribes to messages sent from the po8e
 	void *subscriber = zmq_socket(zcontext, ZMQ_XSUB);
 	if (subscriber == NULL) {
@@ -274,6 +284,7 @@ int main(int argc, char *argv[])
 		die(zcontext, 1);
 	}
 	g_socks.push_back(subscriber);
+	zmq_setsockopt(subscriber, ZMQ_RCVHWM, &hwm, sizeof(hwm));
 	if (zmq_connect(subscriber, zin.c_str()) != 0) {
 		error("zmq: could not connect to socket");
 		die(zcontext, 1);

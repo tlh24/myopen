@@ -85,7 +85,6 @@ int main(int argc, char *argv[])
 		error("zmq: could not create context");
 		return 1;
 	}
-
 	// we don't need 1024 sockets
 	if (zmq_ctx_set(zcontext, ZMQ_MAX_SOCKETS, 64) != 0) {
 		error("zmq: could not set max sockets");
@@ -98,7 +97,6 @@ int main(int argc, char *argv[])
 		die(zcontext, 1);
 	}
 	g_socks.push_back(query_sock);
-
 	if (zmq_connect(query_sock, zq.c_str()) != 0) {
 		error("zmq: could not connect to socket");
 		die(zcontext, 1);
@@ -186,19 +184,31 @@ int main(int argc, char *argv[])
 
 		if (items[0].revents & ZMQ_POLLIN) {
 
-			zmq_msg_t msg;
-			zmq_msg_init(&msg);
-			zmq_msg_recv(&msg, socket_in, 0);
-			zmq_event_packet *p = (zmq_event_packet *)zmq_msg_data(&msg);
-
-			u64 ec = p->ec;
+			zmq_msg_t header;
+			zmq_msg_init(&header);
+			zmq_msg_recv(&header, socket_in, 0);
+			zmq_packet_header *p = (zmq_packet_header *)zmq_msg_data(&header);
+			u64 nc = p->nc;
+			u64 ns = p->ns;
 			i64 tk = p->tk;
-			double ts = tsc->getTime(tk);
-			u16 ev = p->ev;
 
-			h5.write(ec, tk, ts, ev); // frees memory when done
+			zmq_msg_t body;
+			zmq_msg_init(&body);
+			zmq_msg_recv(&body, socket_in, 0);
+			i16 *ev = (i16 *)zmq_msg_data(&body);
 
-			zmq_msg_close(&msg);
+			for (u64 ec=0; ec<nc; ec++) {
+				for (u64 k=0; k<ns; k++) {
+					i16 x = ev[ec*ns+k];
+					if (x != 0) {
+						// frees memory when done
+						h5.write(ec, tk+k, tsc->getTime(tk+k), x);
+					}
+				}
+			}
+
+			zmq_msg_close(&body);
+			zmq_msg_close(&header);
 
 			if (waiter % 20 == 0) {
 				time_t now;

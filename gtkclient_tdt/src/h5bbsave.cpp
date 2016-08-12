@@ -200,7 +200,7 @@ int main(int argc, char *argv[])
 			zmq_msg_t header;
 			zmq_msg_init(&header);
 			zmq_msg_recv(&header, socket_in, 0);
-			zmq_neural_header *p = (zmq_neural_header *)zmq_msg_data(&header);
+			zmq_packet_header *p = (zmq_packet_header *)zmq_msg_data(&header);
 
 			u64 nc = p->nc;
 			u64 ns = p->ns;

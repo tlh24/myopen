@@ -1100,7 +1100,7 @@ void worker(const char *zb, const char *ze)
 			zmq_msg_t header;
 			zmq_msg_init(&header);
 			zmq_msg_recv(&header, neural_sock, 0);
-			zmq_neural_header *p = (zmq_neural_header *)zmq_msg_data(&header);
+			zmq_packet_header *p = (zmq_packet_header *)zmq_msg_data(&header);
 			u64 ns = p->ns;
 			i64 tk = p->tk;
 
@@ -1160,27 +1160,38 @@ void worker(const char *zb, const char *ze)
 				return (var) & (1<<n);
 			};
 
-			zmq_msg_t msg;
-			zmq_msg_init(&msg);
-			zmq_msg_recv(&msg, events_sock, 0);
-
-			zmq_event_packet *p = (zmq_event_packet *)zmq_msg_data(&msg);
-
-			u64 ec = p->ec;
+			zmq_msg_t header;
+			zmq_msg_init(&header);
+			zmq_msg_recv(&header, events_sock, 0);
+			zmq_packet_header *p = (zmq_packet_header *)zmq_msg_data(&header);
+			u64 nc = p->nc;
+			u64 ns = p->ns;
 			i64 tk = p->tk;
-			u16 ev = p->ev;
 
-			if (ec == g_ec_stim) {
-				for (int i=0; i<16; i++) {
-					if (check_bit(ev, i)) {
-						g_eventraster[ec]->addEvent(g_tsc->getTime(tk), i);
+			zmq_msg_t body;
+			zmq_msg_init(&body);
+			zmq_msg_recv(&body, events_sock, 0);
+			i16 *ev = (i16 *)zmq_msg_data(&body);
+
+			for (u64 ec=0; ec<nc; ec++) {
+				for (u64 k=0; k<ns; k++) {
+					i16 x = ev[ec*ns+k];
+					if (x != 0) {
+						if (ec == g_ec_stim) {
+							for (int i=0; i<16; i++) {
+								if (check_bit(x, i)) {
+									g_eventraster[ec]->addEvent(g_tsc->getTime(tk+k), i);
+								}
+							}
+						} else {
+							g_eventraster[ec]->addEvent(g_tsc->getTime(tk+k), 0);
+						}
 					}
 				}
-			} else {
-				g_eventraster[ec]->addEvent(g_tsc->getTime(tk), 0);
 			}
 
-			zmq_msg_close(&msg);
+			zmq_msg_close(&header);
+			zmq_msg_close(&body);
 		}
 
 	}

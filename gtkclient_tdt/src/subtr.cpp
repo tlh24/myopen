@@ -147,6 +147,8 @@ int main(int argc, char *argv[])
 
 	ArtifactSubtract subtr(16, nnc, 64, 16, 0.99);
 
+	int hwm = 8192;
+
 	// subscribe to broadband messages from the po8e
 	void *socket_bb = zmq_socket(zcontext, ZMQ_SUB);
 	if (socket_bb == NULL) {
@@ -154,6 +156,7 @@ int main(int argc, char *argv[])
 		die(zcontext, 1);
 	}
 	g_socks.push_back(socket_bb);
+	zmq_setsockopt(socket_bb, ZMQ_RCVHWM, &hwm, sizeof(hwm));
 	if (zmq_connect(socket_bb, zbb.c_str()) != 0) {
 		error("zmq: could not connect to socket");
 		die(zcontext, 1);
@@ -170,6 +173,7 @@ int main(int argc, char *argv[])
 		die(zcontext, 1);
 	}
 	g_socks.push_back(socket_ev);
+	zmq_setsockopt(socket_ev, ZMQ_RCVHWM, &hwm, sizeof(hwm));
 	if (zmq_connect(socket_ev, zev.c_str()) != 0) {
 		error("zmq: could not connect to socket");
 		die(zcontext, 1);
@@ -186,6 +190,7 @@ int main(int argc, char *argv[])
 		die(zcontext, 1);
 	}
 	g_socks.push_back(socket_out);
+	zmq_setsockopt(socket_out, ZMQ_SNDHWM, &hwm, sizeof(hwm));
 	if (zmq_bind(socket_out, zout.c_str()) != 0) {
 		error("zmq: could not bind to socket");
 		die(zcontext, 1);
@@ -197,74 +202,117 @@ int main(int argc, char *argv[])
 		{ socket_ev, 0, ZMQ_POLLIN, 0 }
 	};
 
+	zmq_msg_t bbh, evh;
+	zmq_msg_t bb_body, ev_body;
+	size_t nbh, neh;
+	zmq_packet_header *bbp, *evp;
+	size_t nb;
+	float *f;
+	i16 *ev;
+
+	bool get_bb = true;
+	bool get_ev = true;
+
+	u64 bbtick_last = 0;
+	u64 evtick_last = 0;
+
+	bool ok_print_err = true;
+
 	while (!s_interrupted) {
 
 		if (zmq_poll(items, 2, -1) == -1) { //  -1 means block
 			break;
 		}
 
-		if (items[0].revents & ZMQ_POLLIN) {
+		if (	(items[0].revents & ZMQ_POLLIN || !get_bb) &&
+		        (items[1].revents & ZMQ_POLLIN || !get_ev) ) {
 
-			zmq_msg_t header;
-			zmq_msg_init(&header);
-			zmq_msg_recv(&header, socket_bb, 0);
-			size_t nh = zmq_msg_size(&header);
-			zmq_neural_header *p = (zmq_neural_header *)zmq_msg_data(&header);
-			u64 nc = p->nc;
-			u64 ns = p->ns;
-			i64 tk = p->tk;
+			if (get_bb) {
+				zmq_msg_init(&bbh);
+				zmq_msg_recv(&bbh, socket_bb, 0);
+				nbh = zmq_msg_size(&bbh);
+				bbp = (zmq_packet_header *)zmq_msg_data(&bbh);
 
-			zmq_msg_t body;
-			zmq_msg_init(&body);
-			zmq_msg_recv(&body, socket_bb, 0);
-			size_t nb = zmq_msg_size(&body);
-			float *f = (float *)zmq_msg_data(&body);
-
-			for (size_t ch=0; ch<nc; ch++) {
-				for (size_t k=0; k<ns; k++) {
-					f[ch*ns+k] = subtr.processSample(ch, tk+k, f[ch*ns+k]);
+				if (bbp->tk - bbtick_last != bbp->ns && bbtick_last != 0) {
+					warn("lost %ld bb samples", bbp->tk - bbtick_last - bbp->ns);
 				}
+				bbtick_last = bbp->tk;
+
+				zmq_msg_init(&bb_body);
+				zmq_msg_recv(&bb_body, socket_bb, 0);
+				nb = zmq_msg_size(&bb_body);
+				f = (float *)zmq_msg_data(&bb_body);
 			}
 
-			zmq_send(socket_out, p, nh, ZMQ_SNDMORE);
-			zmq_send(socket_out, f, nb, 0);
-			zmq_msg_close(&header);
-			zmq_msg_close(&body);
-		}
+			if (get_ev) {
+				zmq_msg_init(&evh);
+				zmq_msg_recv(&evh, socket_ev, 0);
+				neh = zmq_msg_size(&evh);
+				evp = (zmq_packet_header *)zmq_msg_data(&evh);
 
-		if (items[1].revents & ZMQ_POLLIN) {
-
-			zmq_msg_t msg;
-			zmq_msg_init(&msg);
-			zmq_msg_recv(&msg, socket_ev, 0);
-
-			zmq_event_packet *p = (zmq_event_packet *)zmq_msg_data(&msg);
-
-			u64 ec = p->ec;
-			i64 tk = p->tk;
-			u16 ev = p->ev;
-
-			zmq_msg_close(&msg);
-
-			if (ec == g_ec_stim) {
-
-				auto check_bit = [](u16 var, int n) -> bool {
-					if (n < 0 || n > 15)
-					{
-						return false;
-					}
-					return (var) & (1<<n);
-				};
-
-				for (int i=0; i<16; i++) {
-					if (check_bit(ev, i)) {
-						subtr.processStim(i, g_current, tk);
-					}
+				if (evp->tk - evtick_last != evp->ns && evtick_last != 0) {
+					warn("lost %ld ev samples", evp->tk - evtick_last - evp->ns);
 				}
+				evtick_last = evp->tk;
+
+				zmq_msg_init(&ev_body);
+				zmq_msg_recv(&ev_body, socket_ev, 0);
+				ev = (i16 *)zmq_msg_data(&ev_body);
 			}
 
-			if (ec == g_ec_current) {
-				g_current = ev;
+			if (bbp->tk < evp->tk) {
+				get_ev = false;
+				if (ok_print_err) {
+					printf("dropped bb\t%ld %ld %ld\n", bbp->tk, evp->tk, bbp->tk - evp->tk);
+					ok_print_err = false;
+				}
+				zmq_msg_close(&bbh);
+				zmq_msg_close(&bb_body);
+			}
+
+			if (bbp->tk > evp->tk) {
+				get_bb = false;
+				if (ok_print_err) {
+					printf("dropped ev\t%ld %ld %ld\n", bbp->tk, evp->tk, bbp->tk - evp->tk);
+					ok_print_err = false;
+				}
+				zmq_msg_close(&evh);
+				zmq_msg_close(&ev_body);
+			}
+
+			if (bbp->tk == evp->tk) {	// ie packets are aligned
+
+				ok_print_err = true;
+
+				if (bbp->ns != evp->ns) {
+					warn("bb/ev packet sample mismatch");
+					break;
+				}
+
+				u64 ns  = bbp->ns;
+
+				// xxx incidentally how will we handle multiple (different) currents??!
+
+				auto sc = new u16[ns];
+				memcpy(sc, &(ev[g_ec_stim*ns]), ns*sizeof(u16));
+				auto cu = new u16[ns];
+				memcpy(cu, &(ev[g_ec_current*ns]), ns*sizeof(u16));
+
+				subtr.filter(f, sc, cu, ns);
+
+				delete[] cu;
+				delete[] sc;
+
+				zmq_send(socket_out, (void *)&bbh, nbh, ZMQ_SNDMORE);
+				zmq_send(socket_out, f, nb, 0);
+
+				zmq_msg_close(&bbh);
+				zmq_msg_close(&evh);
+				zmq_msg_close(&bb_body);
+				zmq_msg_close(&ev_body);
+
+				get_bb = true;
+				get_ev = true;
 			}
 		}
 
