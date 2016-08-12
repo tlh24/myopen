@@ -91,7 +91,7 @@ void ArtifactSubtract::filter(float *f, u16 *sc, u16 *current, int ns)
 							x[*idx] *= alpha;
 							x[*idx] += (1.0-alpha) * f[m*ns+k];
 						}
-						//f[m*ns+k] -= x[*idx]; // subtract templates
+						f[m*ns+k] -= x[*idx]; // subtract templates
 
 					}
 					// advance buffer and reset if necessary
