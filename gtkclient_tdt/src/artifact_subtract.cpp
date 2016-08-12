@@ -59,7 +59,7 @@ void ArtifactSubtract::filter(float *f, u16 *sc, u16 *current, int ns)
 		for (int j=0; j<maxcurrent; j++) {	// loop over currents
 			for (int i=0; i<nsc; i++) {	// loop over stimchans
 				if (sc[k] > 0) {	// ie if there is stim this sample
-					if (check_bit(sc[k], 0) && current[k] == (j+1)) {
+					if (check_bit(sc[k], i) && current[k] == (j+1)) {
 						if (of[j*nsc+i] != -1) {
 							error("went hot while hot!");
 						}
@@ -75,8 +75,6 @@ void ArtifactSubtract::filter(float *f, u16 *sc, u16 *current, int ns)
 		if (nstim == 0) {
 			continue;
 		}
-
-		printf(".");
 
 		// now loop through again and update (if appropriate) and
 		// apply (always) the artifact buffers to the data matrix
@@ -94,7 +92,7 @@ void ArtifactSubtract::filter(float *f, u16 *sc, u16 *current, int ns)
 							x[*idx] += (1.0-alpha) * f[m*ns+k];
 						}
 						//f[m*ns+k] -= x[*idx]; // subtract templates
-						f[m*ns+k] = 0; // debug!!!
+
 					}
 					// advance buffer and reset if necessary
 					(*idx)++;
