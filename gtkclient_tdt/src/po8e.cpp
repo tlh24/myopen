@@ -229,8 +229,7 @@ void worker(void *ctx, vector<po8e::card *> &cards)
 	for (int i=0; i<n; i++) {
 		socks.push_back( zmq_socket(ctx, ZMQ_SUB) );
 		std::stringstream ss;
-		// xxx ok this needs to be keeyed off of the card id!!!
-		ss << "inproc://po8e-" << i;
+		ss << "inproc://po8e-" << cards[i]->id()-1;
 		zmq_connect(socks[i], ss.str().c_str());
 		zmq_setsockopt(socks[i], ZMQ_SUBSCRIBE, "", 0);	// subscribe to everything
 		zmq_pollitem_t p = {socks[i], 0, ZMQ_POLLIN, 0};
@@ -285,7 +284,6 @@ void worker(void *ctx, vector<po8e::card *> &cards)
 
 		if (nready == n) {
 
-			printf(".");
 			g_running = true;
 
 			auto nc = new u64[n];
@@ -552,7 +550,6 @@ int main(int argc, char *argv[])
 	}
 
 	g_enabled_cards = cards.size();
-	printf("g_enabled_cards: %d\n", g_enabled_cards);
 
 	if (threads.size() < 1) {
 		error("Connected to zero po8e cards");
