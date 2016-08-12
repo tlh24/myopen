@@ -303,7 +303,7 @@ int main(int argc, char *argv[])
 				delete[] cu;
 				delete[] sc;
 
-				zmq_send(socket_out, (void *)&bbh, nbh, ZMQ_SNDMORE);
+				zmq_send(socket_out, bbp, nbh, ZMQ_SNDMORE);
 				zmq_send(socket_out, f, nb, 0);
 
 				zmq_msg_close(&bbh);
