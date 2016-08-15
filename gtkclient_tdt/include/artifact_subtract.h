@@ -1,9 +1,10 @@
 #ifndef __ARTIFACT_SUBTRACT_H__
 #define	__ARTIFACT_SUBTRACT_H__
 
-#include <queue>
-#include <unordered_map>
 #include "util.h"
+#include <armadillo>
+
+using namespace arma;
 
 // This class represents the effects of N stimulation channels
 // (and their 2^N combinations) with K currents on M recording channels.
@@ -27,6 +28,9 @@ public:
 	                 int _buflen, float _alpha);
 	~ArtifactSubtract();
 	void filter(float *f, u16 *sc, u16 *current, int ns);
+	void loadWeights(const char *f);
+	void saveWeights(const char *f);
+	void clearWeights();
 };
 
 #endif

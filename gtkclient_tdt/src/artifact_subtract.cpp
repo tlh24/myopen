@@ -11,6 +11,7 @@ ArtifactSubtract::ArtifactSubtract(int _nsc, int _nrc, int _maxcurrent,
 	alpha = _alpha;				// 0.99;
 
 	sa = new float[maxcurrent*nsc*nrc*buflen];	// stim artifact buffer
+	memset(sa, 0, maxcurrent*nsc*nrc*buflen*sizeof(float));
 	of = new long[maxcurrent*nsc];				// buffer read offset
 	memset(of, -1, maxcurrent*nsc*sizeof(long));
 }
@@ -103,4 +104,26 @@ void ArtifactSubtract::filter(float *f, u16 *sc, u16 *current, int ns)
 			}
 		}
 	}
+}
+
+// load weights from a file
+void ArtifactSubtract::loadWeights(const char *f)
+{
+	// since we construct X using a pointer to an auxilary backing store
+	// AND pass the constrctor the argument copy_aux_mem = false,
+	// no memcpy is necessary
+	fvec X(sa, maxcurrent*nsc*nrc*buflen, false);
+	X.load(f, hdf5_binary);
+}
+
+void ArtifactSubtract::saveWeights(const char *f)
+{
+	// likewise here: no memcpy is necessary
+	fvec X(sa, maxcurrent*nsc*nrc*buflen, false);
+	X.save(f, hdf5_binary);
+}
+
+void ArtifactSubtract::clearWeights()
+{
+	memset(sa, 0, maxcurrent*nsc*nrc*buflen*sizeof(float));
 }

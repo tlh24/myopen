@@ -147,6 +147,12 @@ int main(int argc, char *argv[])
 
 	ArtifactSubtract subtr(16, nnc, 200, 64, 0.99);
 
+	struct stat buf;
+	if (stat("subtr.h5", &buf) == 0) { // ie file exists
+		printf("loading subtr weights\n");
+		subtr.loadWeights("subtr.h5");
+	}
+
 	int hwm = 8192;
 
 	// subscribe to broadband messages from the po8e
@@ -317,6 +323,9 @@ int main(int argc, char *argv[])
 		}
 
 	}
+
+	subtr.saveWeights("subtr.h5");
+	printf("\nsaving weights\n");
 
 	die(zcontext, 0);
 }
