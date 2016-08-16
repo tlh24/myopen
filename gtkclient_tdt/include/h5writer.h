@@ -59,6 +59,8 @@ public:
 
 	void setFileCreateDate(char *str);
 
+	void setSessionStartTime(char *str);
+
 	void setSessionDescription(const char *str);
 
 	virtual const char *name() = 0;

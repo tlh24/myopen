@@ -236,6 +236,20 @@ void H5Writer::setFileCreateDate(char *str)
 	H5Tclose(dtype);
 	H5Sclose(ds);
 }
+void H5Writer::setSessionStartTime(char *str)
+{
+	hsize_t dims = 1;
+	hid_t ds = H5Screate_simple(1, &dims, NULL);
+	hid_t dtype = H5Tcopy(H5T_C_S1);
+	H5Tset_size(dtype, strlen(str));
+	H5Tset_strpad(dtype, H5T_STR_NULLTERM);
+	hid_t dset = H5Dcreate(m_h5file, "/session_start_time", dtype, ds,
+	                       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+	H5Dwrite(dset, dtype, H5S_ALL, H5S_ALL, H5P_DEFAULT, str);
+	H5Dclose(dset);
+	H5Tclose(dtype);
+	H5Sclose(ds);
+}
 void H5Writer::setSessionDescription(const char *str)
 {
 	hid_t ds = H5Screate(H5S_SCALAR);

@@ -109,6 +109,13 @@ int main(int argc, char *argv[])
 		die(zcontext, 1);
 	}
 
+	zmq_send(query_sock, "START_TIME", 10, 0);
+	char start_time[sizeof("YYYY-MM-DDTHH:MM:SSZ")];
+	if (zmq_recv(query_sock, start_time, sizeof(start_time), 0) == -1) {
+		error("zmq: could not recv from query sock");
+		die(zcontext, 1);
+	}
+
 	std::vector <std::string> names;
 
 	for (u64 ch=0; ch<nec; ch++) {
@@ -139,6 +146,7 @@ int main(int argc, char *argv[])
 	h5.setVersion();
 	h5.setUUID(uu);
 	h5.setFileCreateDate(create_date);
+	h5.setSessionStartTime(start_time);
 	h5.setSessionDescription("event data");
 	h5.setMetaData();
 
