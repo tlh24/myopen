@@ -416,6 +416,11 @@ int main(int argc, char *argv[])
 	s_catch_signals();
 
 	g_startTime = gettime();
+	time_t t_start;
+	time(&t_start);
+	char session_start_time[sizeof("YYYY-MM-DDTHH:MM:SSZ")];
+	strftime(session_start_time, sizeof(session_start_time),
+	         "%FT%TZ", gmtime(&t_start));
 
 	lockfile lf("/tmp/po8e.lock");
 	if (lf.lock()) {
@@ -635,6 +640,8 @@ int main(int argc, char *argv[])
 				} else {
 					zmq_send(query, "ERR", 3, 0);
 				}
+			} else if (isCommand(&msg, "START_TIME")) {
+				zmq_send(query, session_start_time, sizeof(session_start_time), 0);
 			} else {
 				zmq_send(query, "ERR", 3, 0);
 			}
