@@ -4,10 +4,10 @@
 -- comments are prefixed by double dashes
 
 po8e = {}
-po8e.read_size = 8 -- samples
-po8e.neural_socket = "ipc:///tmp/broadband.zmq" -- eg "tcp://127.0.0.1:1337"
-po8e.events_socket = "ipc:///tmp/events.zmq"
-po8e.query_socket = "ipc:///tmp/query.zmq"
+po8e.read_size = 16 -- samples
+po8e.query_socket = "tcp://*:1337"
+po8e.neural_socket = "tcp://*:2000"
+po8e.events_socket = "tcp://*:3000"
 
 NEURAL = 0 -- the default type
 EVENTS = 1
@@ -28,6 +28,7 @@ end
 card = {
   id = 1,
   channels = channels,
+  enabled = false
 }
 
 po8e_cards = {};

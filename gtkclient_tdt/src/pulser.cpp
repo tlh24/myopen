@@ -70,8 +70,8 @@ int main()
 	PulseQueue p(g_nchan);
 	p.setPulseDT(g_dpulset);
 	p.setNumSimultaneous(g_nsimultaneous);
-	p.setPulseRate(1,   46);
-	/*p.setPulseRate(2,   78);
+	/*p.setPulseRate(1,   46);
+	p.setPulseRate(2,   78);
 	p.setPulseRate(3,  155);
 	p.setPulseRate(4,  231);
 	p.setPulseRate(5,  263);
@@ -85,8 +85,8 @@ int main()
 	p.setPulseRate(13,   10);
 	p.setPulseRate(14,   10);
 	p.setPulseRate(15,   10);
-	p.setPulseRate(16, 106);
 	*/
+	p.setPulseRate(16, 106);
 
 
 	struct timespec ts;

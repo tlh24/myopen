@@ -1,0 +1,40 @@
+-- This configuration file is written in the lua language
+-- More details about lua here: http://www.lua.org/manual/5.1/
+
+-- comments are prefixed by double dashes
+
+po8e = {}
+po8e.read_size = 8 -- samples
+po8e.neural_socket = "ipc:///tmp/broadband.zmq" -- eg "tcp://127.0.0.1:1337"
+po8e.events_socket = "ipc:///tmp/events.zmq"
+
+NEURAL = 0 -- the default type
+EVENTS = 1
+ANALOG = 2
+IGNORE = 3
+
+channels = {}
+for i=1, 96 do
+  channel = {
+    id = i,
+    name = string.format("%s %03d", "M1", i),
+    scale_factor = 3276700,
+    data_type = NEURAL
+  }
+  channels[i] = channel
+end
+
+card = {
+  id = 1,
+  channels = channels,
+}
+
+po8e_cards = {};
+po8e_cards[1] = card
+
+card = {
+  id = 2,
+  enabled = false,
+  channels = {}
+}
+po8e_cards[2] = card

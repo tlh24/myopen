@@ -1,0 +1,12 @@
+include_rules
+
+OBJS = gettime.cpp glInfo.cpp util.cpp random.cpp jacksnd.cpp
+: foreach $(OBJS) |> !cpp |> %B.o
+
+CPPFLAGS += `pkg-config --cflags luajit`
+LDFLAGS += `pkg-config --libs luajit`
+: lconf.cpp |> !cpp |> %B.o
+
+CPPFLAGS += `pkg-config --cflags hdf5`
+LDFLAGS += `pkg-config --libs hdf5`
+: matStor.cpp |> !cpp |> %B.o
